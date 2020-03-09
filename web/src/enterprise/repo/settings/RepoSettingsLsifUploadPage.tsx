@@ -124,7 +124,9 @@ export const RepoSettingsLsifUploadPage: FunctionComponent<Props> = ({
                     ) : (
                         <div className="alert alert-primary mb-4 mt-3">
                             <ClockOutlineIcon className="icon-inline" />{' '}
-                            <span className="e2e-upload-state">Upload is queued.</span>
+                            <span className="e2e-upload-state">
+                                Upload is queued. There are {uploadOrError.placeInQueue} uploads ahead of this one.
+                            </span>
                         </div>
                     )}
 
