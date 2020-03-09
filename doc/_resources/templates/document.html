@@ -63,9 +63,10 @@
                             </svg>
                     </div>
                     <li class="content-nav-no-hover">
-                        <a class="content-nav-section-header" href="/user">User documentation</a>
+                        <a class="content-nav-section-header" href="/user">Usage</a>
                         <ul class="content-nav-section-group">
-                            <li><a href="/user/code_intelligence">Code intelligence overview</a></li>
+                            <li><a href="/user/tour">Tour</a></li>
+                            <li><a href="/user/code_intelligence">Code Intelligence</a></li>
                             <li class="content-nav-no-hover">
                                 <ul class="content-nav-section-subsection">
                                     <li><a href="/user/code_intelligence/basic_code_intelligence">Basic code intelligence</a></li>
@@ -76,7 +77,7 @@
                                     <li><a href="/user/code_intelligence/language_servers">Language servers</a></li>
                                 </ul>
                             </li>
-                            <li><a href="/user/search">Code search overview</a></li>
+                            <li><a href="/user/search">Code Search</a></li>
                             <li class="content-nav-no-hover">
                                 <ul class="content-nav-section-subsection">
                                     <li><a href="/user/search/queries">Search query syntax</a></li>
@@ -89,11 +90,11 @@
                             <li><a href="/user/themes">Color themes</a></li>
                             <li><a href="/user/organizations">Organizations</a></li>
                             <li><a href="/user/repository">Repositories</a></li>
-                            <li><a href="/user/tour">Sourcegraph tour</a></li>
                             <li><a href="/user/markdown">Sourcegraph-flavored Markdown</a></li>
                             <li><a href="/user/campaigns">Campaigns <span class="badge badge-primary">private beta</span></a></li>
                             <li><a href="/user/usage_statistics">Usage statistics</a></li>
                             <li><a href="/user/user_surveys">User surveys</a></li>
+                            <li><a href="/user/quick_links">Quick links</a></li>
                         </ul>
                     </li>
                 </ul>
@@ -105,26 +106,25 @@
                             </svg>
                     </div>
                     <li class="content-nav-no-hover">
-                        <a class="content-nav-section-header" href="/admin">Site admin documentation</a>
+                        <a class="content-nav-section-header" href="/admin">Administration</a>
                         <ul class="content-nav-section-group">
-                            <li><a href="/admin/privileges">Site admin privileges</a></li>
                             <li><a href="/admin/install">Installing Sourcegraph</a></li>
                             <li class="content-nav-no-hover">
                                 <ul class="content-nav-section-subsection">
                                     <li><a href="/admin/install/docker">Install Sourcegraph with Docker</a></li>
                                     <li class="content-nav-no-hover" data-sub-section-item="Install Sourcegraph with Docker" )>
-                                        <ul>
-                                            <li><a href="/admin/install/docker/aws">Install Sourcegraph with Docker on AWS</a></li>
-                                            <li><a href="/admin/install/docker/digitalocean">Install Sourcegraph with Docker on DigitalOcean</a></li>
-                                            <li><a href="/admin/install/docker/google_cloud">Install Sourcegraph with Docker on Google Cloud</a></li>
+                                        <ul class="content-nav-section-subsection">
+                                            <li><a href="/admin/install/docker/aws">AWS</a></li>
+                                            <li><a href="/admin/install/docker/digitalocean">DigitalOcean</a></li>
+                                            <li><a href="/admin/install/docker/google_cloud">Google Cloud</a></li>
                                         </ul>
                                     </li>
                                     <li><a href="/admin/install/docker-compose">Install Sourcegraph with Docker Compose</a></li>
-                                    <li class="content-nav-no-hover" data-sub-section-item="Install Sourcegraph with Docker Compose" )>
-                                        <ul>
-                                            <li><a href="/admin/install/docker-compose/aws">Install Sourcegraph with Docker Compose on AWS</a></li>
-                                            <li><a href="/admin/install/docker-compose/digitalocean">Install Sourcegraph with Docker Compose on DigitalOcean</a></li>
-                                            <li><a href="/admin/install/docker-compose/google_cloud">Install Sourcegraph with Docker Compose on Google Cloud</a></li>
+                                    <li class="content-nav-no-hover" data-sub-section-item="Install Sourcegraph with Docker Compose">
+                                        <ul class="content-nav-section-subsection">
+                                            <li><a href="/admin/install/docker-compose/aws">AWS</a></li>
+                                            <li><a href="/admin/install/docker-compose/digitalocean">DigitalOcean</a></li>
+                                            <li><a href="/admin/install/docker-compose/google_cloud">Google Cloud</a></li>
                                         </ul>
                                     </li>
                                     <li><a href="/admin/install/cluster">Installing Sourcegraph on a cluster</a></li>
@@ -190,6 +190,7 @@
                             <li><a href="/admin/user_data_deletion">User data deletion</a></li>
                             <li><a href="/admin/external_database">Using external databases with Sourcegraph</a></li>
                             <li><a href="/admin/extensions">Sourcegraph extensions and the extension registry</a></li>
+                            <li><a href="/admin/privileges">Site admin privileges</a></li>
                             <li><a href="/admin/faq">Administration FAQ</a></li>
                             <li><a href="/admin/lfaq">Administration LFAQ</a></li>
                             <li><a href="/admin/troubleshooting">Administration troubleshooting</a></li>
@@ -230,10 +231,11 @@
                             </svg>
                     </div>
                     <li class="content-nav-no-hover">
-                        <a class="content-nav-section-header" href="/extensions">Sourcegraph extensions</a>
+                        <a class="content-nav-section-header" href="/extensions">Extensions</a>
                         <ul class="content-nav-section-group">
-                            <li><a href="/extensions/principles">Principles of extensibility for Sourcegraph</a></li>
+                            <li><a href="/extensions/usage">Using Sourcegraph extensions</a></li>
                             <li><a href="/extensions/security">Security and privacy of Sourcegraph extensions</a></li>
+                            <li><a href="/extensions/principles">Principles of extensibility for Sourcegraph</a></li>
                             <li><a href="/extensions/authoring">Sourcegraph extension authoring</a></li>
                             <li class="content-nav-no-hover">
                                 <ul class="content-nav-section-subsection">
@@ -243,8 +245,8 @@
                                     <li><a href="/extensions/authoring/debugging">Debugging a Sourcegraph extension</a></li>
                                     <li><a href="/extensions/authoring/ux_style_guide">Extension UX style guide</a></li>
                                     <li><a href="/extensions/authoring/tutorials">Extension authoring tutorials</a></li>
-                                    <li class="content-nav-no-hover" data-sub-section-item="Extension authoring tutorials" )>
-                                        <ul>
+                                    <li class="content-nav-no-hover" data-sub-section-item="Extension authoring tutorials">
+                                        <ul class="content-nav-section-subsection">
                                             <li><a href="/extensions/authoring/tutorials/hello_world">Building a "Hello, world!" Sourcegraph extension</a></li>
                                             <li><a href="/extensions/authoring/tutorials/lang_specific_extension_tutorial">Building a language-specific extension tutorial</a></li>
                                             <li><a href="/extensions/authoring/tutorials/button_custom_commands">Sourcegraph extension buttons and custom commands</a></li>
@@ -259,7 +261,6 @@
                                     <li><a href="/extensions/authoring/manifest">Sourcegraph extension manifest - package.json</a></li>
                                 </ul>
                             </li>
-                            <li><a href="/extensions/usage">Using Sourcegraph extensions</a></li>
                         </ul>
                     </li>
                 </ul>
@@ -271,7 +272,7 @@
                             </svg>
                     </div>
                     <li class="content-nav-no-hover">
-                        <a class="content-nav-section-header" href="/api">Sourcegraph APIs</a>
+                        <a class="content-nav-section-header" href="/api">API Documentation</a>
                         <ul class="content-nav-section-group">
                             <li><a href="/api/graphql">GraphQL API</a></li>
                             <li class="content-nav-no-hover">
@@ -304,7 +305,7 @@
                             </svg>
                     </div>
                     <li class="content-nav-no-hover">
-                        <a class="content-nav-section-header" href="/dev">Open source development documentation</a>
+                        <a class="content-nav-section-header" href="/dev">Developing Sourcegraph</a>
                         <ul class="content-nav-section-group">
                             <li><a href="/dev/campaigns_development">Developing campaigns</a></li>
                             <li><a href="/dev/graphql_api">Developing the Sourcegraph GraphQL API</a></li>
