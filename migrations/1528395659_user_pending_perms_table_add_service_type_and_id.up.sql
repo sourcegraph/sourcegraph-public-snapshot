@@ -17,7 +17,7 @@ ALTER TABLE user_pending_permissions ALTER COLUMN service_id SET NOT NULL;
 --     INSERT INTO user_pending_permissions
 --       (bind_id, permission, object_type, object_ids, service_type, service_id, updated_at)
 --     VALUES
---       (“joe”, "read", "repos", <bitmap of repo IDs>, "gitlab", "https://gitlab.com/", NOW());
+--       ("joe", "read", "repos", <bitmap of repo IDs>, "gitlab", "https://gitlab.com/", NOW());
 ALTER TABLE user_pending_permissions
     DROP CONSTRAINT IF EXISTS user_pending_permissions_perm_object_unique,
     DROP CONSTRAINT IF EXISTS user_pending_permissions_service_perm_object_unique,
