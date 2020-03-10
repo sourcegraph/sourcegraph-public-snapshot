@@ -64,7 +64,7 @@ func TestSearchIndexEnabled(t *testing.T) {
 	}
 
 	defaults := map[string]conftypes.RawUnified{
-		"Cluster":         confdefaults.Cluster,
+		"Kubernetes":      confdefaults.KubernetesOrDockerComposeOrPureDocker,
 		"Default":         confdefaults.Default,
 		"DevAndTesting":   confdefaults.DevAndTesting,
 		"DockerContainer": confdefaults.DockerContainer,

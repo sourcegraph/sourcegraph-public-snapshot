@@ -15,7 +15,7 @@ function isSuccessfulFetch(result: CompletionResult): result is CompletionList {
     return result !== LOADING && !isErrorLike(result)
 }
 
-// In order to handle keyboard events correctly, we need to explictly manage/control some of the
+// In order to handle keyboard events correctly, we need to explicitly manage/control some of the
 // state of Downshift since we have no control over the underlying TextArea element.
 //
 // (See https://github.com/paypal/downshift#control-props for more information.)

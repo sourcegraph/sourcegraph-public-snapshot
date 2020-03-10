@@ -5,14 +5,10 @@ import { DefaultMap } from './default-map'
  * items together and retrieving the set of all items for a given set.
  */
 export class DisjointSet<T> {
-    /**
-     * For every linked value `v1` and `v2`, `v2` in `links[v1]` and `v1` in `links[v2]`.
-     */
+    /** For every linked value `v1` and `v2`, `v2` in `links[v1]` and `v1` in `links[v2]`. */
     private links = new DefaultMap<T, Set<T>>(() => new Set())
 
-    /**
-     * Return an iterator of all elements int he set.
-     */
+    /** Return an iterator of all elements in the set. */
     public keys(): IterableIterator<T> {
         return this.links.keys()
     }

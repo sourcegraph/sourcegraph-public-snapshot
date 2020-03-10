@@ -47,6 +47,7 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
             pluralNoun="changesets"
             history={history}
             location={location}
+            noShowLoaderOnSlowLoad={true}
             useURLQuery={false}
         />
     </div>

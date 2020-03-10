@@ -1,4 +1,4 @@
-# Site administration documentation
+# Administration
 
 Site administrators are the admins responsible for deploying, managing, and configuring Sourcegraph for regular users. They have [special privileges](privileges.md) on the Sourcegraph instance.
 

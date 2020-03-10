@@ -51,8 +51,8 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 	s := NewAuthzStore(dbconn.Global, clock).(*authzStore)
 
 	type update struct {
-		bindIDs []string
-		repoID  int32
+		accounts *ExternalAccounts
+		repoID   int32
 	}
 	tests := []struct {
 		name          string
@@ -73,16 +73,28 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 			},
 			updates: []update{
 				{
-					bindIDs: []string{"alice@example.com"},
-					repoID:  1,
+					accounts: &ExternalAccounts{
+						ServiceType: "sourcegraph",
+						ServiceID:   "https://sourcegraph.com/",
+						AccountIDs:  []string{"alice@example.com"},
+					},
+					repoID: 1,
 				},
 				{
-					bindIDs: []string{"alice2@example.com"},
-					repoID:  2,
+					accounts: &ExternalAccounts{
+						ServiceType: "sourcegraph",
+						ServiceID:   "https://sourcegraph.com/",
+						AccountIDs:  []string{"alice2@example.com"},
+					},
+					repoID: 2,
 				},
 				{
-					bindIDs: []string{"alice3@example.com"},
-					repoID:  3,
+					accounts: &ExternalAccounts{
+						ServiceType: "sourcegraph",
+						ServiceID:   "https://sourcegraph.com/",
+						AccountIDs:  []string{"alice3@example.com"},
+					},
+					repoID: 3,
 				},
 			},
 			expectRepoIDs: []uint32{1, 2},
@@ -99,12 +111,20 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 			},
 			updates: []update{
 				{
-					bindIDs: []string{"alice"},
-					repoID:  1,
+					accounts: &ExternalAccounts{
+						ServiceType: "sourcegraph",
+						ServiceID:   "https://sourcegraph.com/",
+						AccountIDs:  []string{"alice"},
+					},
+					repoID: 1,
 				},
 				{
-					bindIDs: []string{"bob"},
-					repoID:  2,
+					accounts: &ExternalAccounts{
+						ServiceType: "sourcegraph",
+						ServiceID:   "https://sourcegraph.com/",
+						AccountIDs:  []string{"bob"},
+					},
+					repoID: 2,
 				},
 			},
 			expectRepoIDs: []uint32{1},
@@ -117,10 +137,9 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 			globals.SetPermissionsUserMapping(test.config)
 
 			for _, update := range test.updates {
-				err := s.store.SetRepoPendingPermissions(ctx, update.bindIDs, &authz.RepoPermissions{
-					RepoID:   update.repoID,
-					Perm:     authz.Read,
-					Provider: authz.ProviderSourcegraph,
+				err := s.store.SetRepoPendingPermissions(ctx, update.accounts, &authz.RepoPermissions{
+					RepoID: update.repoID,
+					Perm:   authz.Read,
 				})
 				if err != nil {
 					t.Fatal(err)
@@ -133,10 +152,9 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 			}
 
 			p := &authz.UserPermissions{
-				UserID:   user.ID,
-				Perm:     authz.Read,
-				Type:     authz.PermRepos,
-				Provider: authz.ProviderSourcegraph,
+				UserID: user.ID,
+				Perm:   authz.Read,
+				Type:   authz.PermRepos,
 			}
 			err = s.store.LoadUserPermissions(ctx, p)
 			if err != nil {
@@ -179,10 +197,9 @@ func TestAuthzStore_AuthorizedRepos(t *testing.T) {
 					{ID: 2},
 					{ID: 4},
 				},
-				UserID:   1,
-				Perm:     authz.Read,
-				Type:     authz.PermRepos,
-				Provider: authz.ProviderSourcegraph,
+				UserID: 1,
+				Perm:   authz.Read,
+				Type:   authz.PermRepos,
 			},
 			updates: []update{
 				{
@@ -210,10 +227,9 @@ func TestAuthzStore_AuthorizedRepos(t *testing.T) {
 					{ID: 1},
 					{ID: 2},
 				},
-				UserID:   2,
-				Perm:     authz.Read,
-				Type:     authz.PermRepos,
-				Provider: authz.ProviderSourcegraph,
+				UserID: 2,
+				Perm:   authz.Read,
+				Type:   authz.PermRepos,
 			},
 			updates: []update{
 				{
@@ -230,10 +246,9 @@ func TestAuthzStore_AuthorizedRepos(t *testing.T) {
 
 			for _, update := range test.updates {
 				err := s.store.SetRepoPermissions(ctx, &authz.RepoPermissions{
-					RepoID:   update.repoID,
-					Perm:     authz.Read,
-					UserIDs:  toBitmap(update.userIDs...),
-					Provider: authz.ProviderSourcegraph,
+					RepoID:  update.repoID,
+					Perm:    authz.Read,
+					UserIDs: toBitmap(update.userIDs...),
 				})
 				if err != nil {
 					t.Fatal(err)
@@ -261,16 +276,19 @@ func TestAuthzStore_RevokeUserPermissions(t *testing.T) {
 
 	// Set both effective and pending permissions for a user
 	if err := s.store.SetRepoPermissions(ctx, &authz.RepoPermissions{
-		RepoID:   1,
-		Perm:     authz.Read,
-		UserIDs:  toBitmap(1),
-		Provider: authz.ProviderSourcegraph,
+		RepoID:  1,
+		Perm:    authz.Read,
+		UserIDs: toBitmap(1),
 	}); err != nil {
 		t.Fatal(err)
 	}
 
-	bindIDs := []string{"alice", "alice@example.com"}
-	if err := s.store.SetRepoPendingPermissions(ctx, bindIDs, &authz.RepoPermissions{
+	accounts := &ExternalAccounts{
+		ServiceType: "sourcegraph",
+		ServiceID:   "https://sourcegraph.com/",
+		AccountIDs:  []string{"alice", "alice@example.com"},
+	}
+	if err := s.store.SetRepoPendingPermissions(ctx, accounts, &authz.RepoPermissions{
 		RepoID: 1,
 		Perm:   authz.Read,
 	}); err != nil {
@@ -280,6 +298,8 @@ func TestAuthzStore_RevokeUserPermissions(t *testing.T) {
 	// Revoke all of them
 	if err := s.RevokeUserPermissions(ctx, &db.RevokeUserPermissionsArgs{
 		UserID:         1,
+		ServiceType:    "sourcegraph",
+		ServiceID:      "https://sourcegraph.com/",
 		Username:       "alice",
 		VerifiedEmails: []string{"alice@example.com"},
 	}); err != nil {
@@ -288,20 +308,21 @@ func TestAuthzStore_RevokeUserPermissions(t *testing.T) {
 
 	// The user should not have any permissions now
 	err := s.store.LoadUserPermissions(ctx, &authz.UserPermissions{
-		UserID:   1,
-		Perm:     authz.Read,
-		Type:     authz.PermRepos,
-		Provider: authz.ProviderSourcegraph,
+		UserID: 1,
+		Perm:   authz.Read,
+		Type:   authz.PermRepos,
 	})
 	if err != authz.ErrPermsNotFound {
 		t.Fatalf("err: want %q but got %v", authz.ErrPermsNotFound, err)
 	}
 
-	for _, bindID := range bindIDs {
+	for _, bindID := range accounts.AccountIDs {
 		err = s.store.LoadUserPendingPermissions(ctx, &authz.UserPendingPermissions{
-			BindID: bindID,
-			Perm:   authz.Read,
-			Type:   authz.PermRepos,
+			ServiceType: accounts.ServiceType,
+			ServiceID:   accounts.ServiceID,
+			BindID:      bindID,
+			Perm:        authz.Read,
+			Type:        authz.PermRepos,
 		})
 		if err != authz.ErrPermsNotFound {
 			t.Fatalf("[%s] err: want %q but got %v", bindID, authz.ErrPermsNotFound, err)

@@ -9,7 +9,11 @@ import promClient from 'prom-client'
  * bucket for different endpoints, which makes half of the metrics useless in the
  * presence of large uploads.
  */
-export const metricsMiddleware = (req: express.Request, res: express.Response, next: express.NextFunction): void => {
+export const metricsMiddleware = <T>(
+    req: express.Request,
+    res: express.Response<T>,
+    next: express.NextFunction
+): void => {
     let histogram: promClient.Histogram<string> | undefined
     switch (req.path) {
         case '/upload':

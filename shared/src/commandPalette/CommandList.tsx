@@ -48,6 +48,7 @@ export interface CommandListClassProps {
     resultsContainerClassName?: string
     actionItemClassName?: string
     noResultsClassName?: string
+    iconClassName?: string
 }
 
 export interface CommandListProps

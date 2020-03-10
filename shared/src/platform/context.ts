@@ -5,7 +5,8 @@ import { GraphQLResult } from '../graphql/graphql'
 import * as GQL from '../graphql/schema'
 import { Settings, SettingsCascadeOrError } from '../settings/settings'
 import { TelemetryService } from '../telemetry/telemetryService'
-import { FileSpec, PositionSpec, RawRepoSpec, RepoSpec, RevSpec, ViewStateSpec } from '../util/url'
+import { FileSpec, UIPositionSpec, RawRepoSpec, RepoSpec, RevSpec, ViewStateSpec } from '../util/url'
+import { DiffPart } from '@sourcegraph/codeintellify'
 
 export interface EndpointPair {
     /** The endpoint to proxy the API of the other thread from */
@@ -16,6 +17,17 @@ export interface EndpointPair {
 }
 export const isEndpointPair = (val: any): val is EndpointPair =>
     typeof val === 'object' && val !== null && isEndpoint(val.proxy) && isEndpoint(val.expose)
+
+/**
+ * Context information of an invocation of `urlToFile`
+ */
+export interface URLToFileContext {
+    /**
+     * If `urlToFile` is called because of a go to definition invocation on a diff,
+     * the part of the diff it was invoked on.
+     */
+    part: DiffPart | undefined
+}
 
 /**
  * Platform-specific data and methods shared by multiple Sourcegraph components.
@@ -104,11 +116,13 @@ export interface PlatformContext {
     /**
      * Constructs the URL (possibly relative or absolute) to the file with the specified options.
      *
-     * @param location The specific repository, revision, file, position, and view state to generate the URL for.
+     * @param target The specific repository, revision, file, position, and view state to generate the URL for.
+     * @param context Contextual information about the context of this invocation.
      * @returns The URL to the file with the specified options.
      */
     urlToFile(
-        location: RepoSpec & Partial<RawRepoSpec> & RevSpec & FileSpec & Partial<PositionSpec> & Partial<ViewStateSpec>
+        target: RepoSpec & Partial<RawRepoSpec> & RevSpec & FileSpec & Partial<UIPositionSpec> & Partial<ViewStateSpec>,
+        context: URLToFileContext
     ): string
 
     /**

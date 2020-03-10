@@ -8,6 +8,7 @@ import { CampaignChangesets } from './changesets/CampaignChangesets'
 import { queryChangesets, queryChangesetPlans } from './backend'
 import { FilteredConnectionQueryArgs } from '../../../components/FilteredConnection'
 import { Subject } from 'rxjs'
+import classNames from 'classnames'
 
 interface Props extends ThemeProps {
     campaign:
@@ -50,10 +51,10 @@ export const CampaignTabs: React.FunctionComponent<Props> = ({
 }) => {
     const queryChangesetsConnection = useCallback(
         (args: FilteredConnectionQueryArgs) =>
-            campaign && campaign.__typename === 'CampaignPlan'
+            campaign.__typename === 'CampaignPlan'
                 ? queryChangesetPlans(campaign.id, args)
                 : queryChangesets(campaign.id, args),
-        [campaign]
+        [campaign.id, campaign.__typename]
     )
 
     const changesets = useMemo(
@@ -69,17 +70,8 @@ export const CampaignTabs: React.FunctionComponent<Props> = ({
     return (
         <TabsWithLocalStorageViewStatePersistence
             storageKey="campaignTab"
-            className={className}
+            className={classNames(className, 'mb-3')}
             tabs={[
-                {
-                    id: 'diff',
-                    label: (
-                        <span className="e2e-campaign-diff-tab">
-                            Diff <span className="text-success">+{totalAdditions}</span>{' '}
-                            <span className="text-danger">-{totalDeletions}</span>
-                        </span>
-                    ),
-                },
                 {
                     id: 'changesets',
                     label: (
@@ -89,6 +81,15 @@ export const CampaignTabs: React.FunctionComponent<Props> = ({
                                 {campaign.changesetPlans.totalCount +
                                     (campaign.__typename === 'Campaign' ? campaign.changesets.totalCount : 0)}
                             </span>
+                        </span>
+                    ),
+                },
+                {
+                    id: 'diff',
+                    label: (
+                        <span className="e2e-campaign-diff-tab">
+                            Diff <span className="text-success">+{totalAdditions}</span>{' '}
+                            <span className="text-danger">-{totalDeletions}</span>
                         </span>
                     ),
                 },

@@ -1,21 +1,13 @@
-/**
- * The directory relative to the storage where SQLite databases are located.
- */
+/** The directory relative to the storage where SQLite databases are located. */
 export const DBS_DIR = 'dbs'
 
-/**
- * The directory relative to the storage where scratch SQLite databases create created during processing.
- */
+/** The directory relative to the storage where scratch SQLite databases create created during processing. */
 export const TEMP_DIR = 'temp'
 
-/**
- * The directory relative to the storage where raw dumps are uploaded.
- */
+/** The directory relative to the storage where raw dumps are uploaded. */
 export const UPLOADS_DIR = 'uploads'
 
-/**
- * The maximum number of rows to bulk insert in Postgres.
- */
+/** The maximum number of rows to bulk insert in Postgres. */
 export const MAX_POSTGRES_BATCH_SIZE = 5000
 
 /**
@@ -24,9 +16,7 @@ export const MAX_POSTGRES_BATCH_SIZE = 5000
  */
 export const MAX_TRAVERSAL_LIMIT = 100
 
-/**
- * A random integer specific to the Postgres database used to generate advisory lock ids.
- */
+/** A random integer specific to the Postgres database used to generate advisory lock ids. */
 export const ADVISORY_LOCK_ID_SALT = 1688730858
 
 /**
@@ -35,3 +25,6 @@ export const ADVISORY_LOCK_ID_SALT = 1688730858
  * limit.
  */
 export const MAX_COMMITS_PER_UPDATE = MAX_TRAVERSAL_LIMIT * 1.5
+
+/** The number of remote dumps we will query per page of reference results. */
+export const DEFAULT_REFERENCES_REMOTE_DUMP_LIMIT = 20

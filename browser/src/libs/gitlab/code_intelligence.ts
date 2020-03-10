@@ -6,7 +6,7 @@ import { ViewResolver } from '../code_intelligence/views'
 import { diffDOMFunctions, singleFileDOMFunctions } from './dom_functions'
 import { getCommandPaletteMount } from './extensions'
 import { resolveCommitFileInfo, resolveDiffFileInfo, resolveFileInfo } from './file_info'
-import { getPageInfo, GitLabPageKind } from './scrape'
+import { getPageInfo, GitLabPageKind, getFilePathsFromCodeView } from './scrape'
 import { toAbsoluteBlobURL } from '../../shared/util/url'
 import { subTypeOf } from '../../../../shared/src/util/types'
 import { NotificationType } from '../../../../shared/src/api/client/services/notifications'
@@ -143,12 +143,38 @@ export const gitlabCodeHost = subTypeOf<CodeHost>()({
         ...getPageInfo(),
         privateRepository: window.location.hostname !== 'gitlab.com',
     }),
-    urlToFile: (sourcegraphURL, target): string => {
+    urlToFile: (sourcegraphURL, target, context): string => {
         // A view state means that a panel must be shown, and panels are currently only supported on
         // Sourcegraph (not code hosts).
         // Make sure the location is also on this Gitlab instance, return an absolute URL otherwise.
         if (target.viewState || !target.rawRepoName.startsWith(window.location.hostname)) {
             return toAbsoluteBlobURL(sourcegraphURL, target)
+        }
+
+        // Stay on same page in MR if possible.
+        // TODO to be entirely correct, this would need to compare the rev of the code view with the target rev.
+        const currentPage = getPageInfo()
+        if (currentPage.rawRepoName === target.rawRepoName && context.part !== undefined) {
+            const codeViews = document.querySelectorAll<HTMLElement>(codeViewResolver.selector)
+            for (const codeView of codeViews) {
+                const { filePath, baseFilePath } = getFilePathsFromCodeView(codeView)
+                if (filePath !== target.filePath && baseFilePath !== target.filePath) {
+                    continue
+                }
+                if (!target.position) {
+                    const url = new URL(window.location.href)
+                    url.hash = codeView.id
+                    return url.href
+                }
+                const partSelector = context.part !== null ? { head: '.new_line', base: '.old_line' }[context.part] : ''
+                const link = codeView.querySelector<HTMLAnchorElement>(
+                    `${partSelector} a[data-linenumber="${target.position.line}"]`
+                )
+                if (!link) {
+                    break
+                }
+                return new URL(link.href).href
+            }
         }
 
         // Go to specific URL on this Gitlab instance.
@@ -167,6 +193,7 @@ export const gitlabCodeHost = subTypeOf<CodeHost>()({
         resultsContainerClassName: 'dropdown-content',
         selectedActionItemClassName: 'is-focused',
         noResultsClassName: 'px-3',
+        iconClassName: 's16 align-bottom',
     },
     codeViewToolbarClassProps: {
         className: 'code-view-toolbar--gitlab',

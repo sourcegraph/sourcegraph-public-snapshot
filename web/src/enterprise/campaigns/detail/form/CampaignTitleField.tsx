@@ -12,13 +12,16 @@ interface Props {
  * A text field for a campaign's title.
  */
 export const CampaignTitleField: React.FunctionComponent<Props> = ({ value, onChange, className = '', disabled }) => (
-    <input
-        className={`form-control ${className}`}
-        value={value}
-        onChange={event => onChange(event.target.value)}
-        placeholder="Title"
-        disabled={disabled}
-        autoFocus={true}
-        required={true}
-    />
+    <div className="form-group">
+        <label htmlFor="campaignTitle">Title</label>
+        <input
+            className={`form-control ${className}`}
+            value={value}
+            onChange={event => onChange(event.target.value)}
+            disabled={disabled}
+            autoFocus={true}
+            required={true}
+            id="campaignTitle"
+        />
+    </div>
 )

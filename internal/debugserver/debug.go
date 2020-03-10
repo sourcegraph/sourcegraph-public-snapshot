@@ -72,6 +72,11 @@ func Start(extra ...Endpoint) {
 		return
 	}
 
+	// we're protected by adminOnly on the front of this
+	trace.AuthRequest = func(req *http.Request) (any, sensitive bool) {
+		return true, true
+	}
+
 	pp := http.NewServeMux()
 	index := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte(`
@@ -102,6 +107,7 @@ func Start(extra ...Endpoint) {
 	pp.Handle("/debug/pprof/trace", http.HandlerFunc(pprof.Trace))
 	pp.Handle("/debug/requests", http.HandlerFunc(trace.Traces))
 	pp.Handle("/debug/events", http.HandlerFunc(trace.Events))
+
 	pp.Handle("/metrics", promhttp.Handler())
 	for _, e := range extra {
 		pp.Handle(e.Path, e.Handler)

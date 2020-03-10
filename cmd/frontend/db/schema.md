@@ -36,7 +36,7 @@ Foreign-key constraints:
  created_at       | timestamp with time zone | not null default now()
  updated_at       | timestamp with time zone | not null default now()
  base_ref         | text                     | not null
- description      | text                     | 
+ description      | text                     | not null
 Indexes:
     "campaign_jobs_pkey" PRIMARY KEY, btree (id)
     "campaign_jobs_campaign_plan_repo_rev_unique" UNIQUE CONSTRAINT, btree (campaign_plan_id, repo_id, rev) DEFERRABLE
@@ -82,7 +82,7 @@ Referenced by:
 -------------------+--------------------------+--------------------------------------------------------
  id                | bigint                   | not null default nextval('campaigns_id_seq'::regclass)
  name              | text                     | not null
- description       | text                     | 
+ description       | text                     | not null
  author_id         | integer                  | not null
  namespace_user_id | integer                  | 
  namespace_org_id  | integer                  | 
@@ -743,10 +743,10 @@ Indexes:
  repo_id    | integer                  | not null
  permission | text                     | not null
  user_ids   | bytea                    | not null
- provider   | text                     | not null
+ provider   | text                     | 
  updated_at | timestamp with time zone | not null
 Indexes:
-    "repo_permissions_perm_provider_unique" UNIQUE CONSTRAINT, btree (repo_id, permission, provider)
+    "repo_permissions_perm_unique" UNIQUE CONSTRAINT, btree (repo_id, permission)
 
 ```
 
@@ -892,16 +892,18 @@ Foreign-key constraints:
 
 # Table "public.user_pending_permissions"
 ```
-   Column    |           Type           |                               Modifiers                               
--------------+--------------------------+-----------------------------------------------------------------------
- id          | integer                  | not null default nextval('user_pending_permissions_id_seq'::regclass)
- bind_id     | text                     | not null
- permission  | text                     | not null
- object_type | text                     | not null
- object_ids  | bytea                    | not null
- updated_at  | timestamp with time zone | not null
+    Column    |           Type           |                               Modifiers                               
+--------------+--------------------------+-----------------------------------------------------------------------
+ id           | integer                  | not null default nextval('user_pending_permissions_id_seq'::regclass)
+ bind_id      | text                     | not null
+ permission   | text                     | not null
+ object_type  | text                     | not null
+ object_ids   | bytea                    | not null
+ updated_at   | timestamp with time zone | not null
+ service_type | text                     | not null
+ service_id   | text                     | not null
 Indexes:
-    "user_pending_permissions_perm_object_unique" UNIQUE CONSTRAINT, btree (bind_id, permission, object_type)
+    "user_pending_permissions_service_perm_object_unique" UNIQUE CONSTRAINT, btree (service_type, service_id, permission, object_type, bind_id)
 
 ```
 
@@ -914,9 +916,9 @@ Indexes:
  object_type | text                     | not null
  object_ids  | bytea                    | not null
  updated_at  | timestamp with time zone | not null
- provider    | text                     | not null
+ provider    | text                     | 
 Indexes:
-    "user_permissions_perm_object_provider_unique" UNIQUE CONSTRAINT, btree (user_id, permission, object_type, provider)
+    "user_permissions_perm_object_unique" UNIQUE CONSTRAINT, btree (user_id, permission, object_type)
 
 ```
 

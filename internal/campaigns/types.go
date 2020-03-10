@@ -256,7 +256,7 @@ func (c *ChangesetJob) Clone() *ChangesetJob {
 	return &cc
 }
 
-// SuccessfullyCompleted returns true for jobs that have already succesfully run
+// SuccessfullyCompleted returns true for jobs that have already successfully run
 func (c *ChangesetJob) SuccessfullyCompleted() bool {
 	return c.Error == "" && !c.FinishedAt.IsZero() && c.ChangesetID != 0
 }
@@ -384,34 +384,6 @@ func (c *Changeset) URL() (s string, err error) {
 	default:
 		return "", errors.New("unknown changeset type")
 	}
-}
-
-// ReviewState of a Changeset.
-func (c *Changeset) ReviewState() (s ChangesetReviewState, err error) {
-	states := map[ChangesetReviewState]bool{}
-
-	switch m := c.Metadata.(type) {
-	case *github.PullRequest:
-		// For GitHub we need to use `ChangesetEvents.ReviewState`
-		log15.Warn("Changeset.ReviewState() called, but GitHub review state is calculated through ChangesetEvents.ReviewState", "changeset", c)
-		return ChangesetReviewStatePending, nil
-
-	case *bitbucketserver.PullRequest:
-		for _, r := range m.Reviewers {
-			switch r.Status {
-			case "UNAPPROVED":
-				states[ChangesetReviewStatePending] = true
-			case "NEEDS_WORK":
-				states[ChangesetReviewStateChangesRequested] = true
-			case "APPROVED":
-				states[ChangesetReviewStateApproved] = true
-			}
-		}
-	default:
-		return "", errors.New("unknown changeset type")
-	}
-
-	return SelectReviewState(states), nil
 }
 
 // Events returns the list of ChangesetEvents from the Changeset's metadata.
@@ -909,7 +881,7 @@ func (e *ChangesetEvent) ReviewState() (ChangesetReviewState, error) {
 			return "", errors.New("ChangesetEvent metadata event not PullRequestReview")
 		}
 
-		s := ChangesetReviewState(review.State)
+		s := ChangesetReviewState(strings.ToUpper(review.State))
 		if !s.Valid() {
 			// Ignore invalid states
 			log15.Warn("invalid review state", "state", review.State)
@@ -1242,6 +1214,46 @@ func (e *ChangesetEvent) Update(o *ChangesetEvent) {
 		if e.CreatedAt.IsZero() {
 			e.CreatedAt = o.CreatedAt
 		}
+	case *bitbucketserver.Activity:
+		o := o.Metadata.(*bitbucketserver.Activity)
+
+		if e.CreatedDate == 0 {
+			e.CreatedDate = o.CreatedDate
+		}
+
+		if e.User == (bitbucketserver.User{}) {
+			e.User = o.User
+		}
+
+		if e.Action == "" {
+			e.Action = o.Action
+		}
+
+		if e.CommentAction == "" {
+			e.CommentAction = o.CommentAction
+		}
+
+		if e.Comment == nil && o.Comment != nil {
+			e.Comment = o.Comment
+		}
+
+		if len(e.AddedReviewers) == 0 {
+			e.AddedReviewers = o.AddedReviewers
+		}
+
+		if len(e.RemovedReviewers) == 0 {
+			e.RemovedReviewers = o.RemovedReviewers
+		}
+
+		if e.Commit == nil && o.Commit != nil {
+			e.Commit = o.Commit
+		}
+
+	case *github.CheckRun:
+		// TODO: https://github.com/sourcegraph/sourcegraph/issues/8796
+	case *github.CheckSuite:
+		// TODO: https://github.com/sourcegraph/sourcegraph/issues/8796
+
 	default:
 		panic(errors.Errorf("unknown changeset event metadata %T", e))
 	}
@@ -1454,8 +1466,8 @@ const (
 	ChangesetEventKindBitbucketServerMerged     ChangesetEventKind = "bitbucketserver:merged"
 )
 
-// ChangesetSyncHeuristics represents data about the sync status of a changeset
-type ChangesetSyncHeuristics struct {
+// ChangesetSyncData represents data about the sync status of a changeset
+type ChangesetSyncData struct {
 	ChangesetID int64
 	// UpdatedAt is the time we last updated / synced the changeset in our DB
 	UpdatedAt time.Time

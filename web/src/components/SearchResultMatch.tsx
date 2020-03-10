@@ -89,7 +89,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                         }
                         return of(markdownHTML)
                     }),
-                    // Return the raw body if markdown rendering fails, maintaing the text structure.
+                    // Return the raw body if markdown rendering fails, maintaining the text structure.
                     catchError(() => of('<pre>' + sanitizeHtml(props.item.body.text) + '</pre>'))
                 )
                 .subscribe(

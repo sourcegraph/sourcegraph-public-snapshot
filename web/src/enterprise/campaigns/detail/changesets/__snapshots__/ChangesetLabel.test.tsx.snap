@@ -16,7 +16,7 @@ exports[`ChangesetLabel renders a dark label with white text 1`] = `
 
 exports[`ChangesetLabel renders a light label with dark text 1`] = `
 <span
-  className="badge mr-2 badge-secondary"
+  className="badge mr-2 badge-secondary changeset-label__text--dark"
   data-tooltip="Something is wrong"
   style={
     Object {
