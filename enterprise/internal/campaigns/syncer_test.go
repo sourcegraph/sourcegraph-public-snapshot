@@ -167,9 +167,9 @@ func TestSyncerRun(t *testing.T) {
 				return []campaigns.ChangesetSyncData{
 					{
 						ChangesetID:       1,
-						UpdatedAt:         now.Add(-24 * time.Hour),
-						LatestEvent:       now.Add(-24 * time.Hour),
-						ExternalUpdatedAt: now.Add(-24 * time.Hour),
+						UpdatedAt:         now.Add(-2 * maxSyncDelay),
+						LatestEvent:       now.Add(-2 * maxSyncDelay),
+						ExternalUpdatedAt: now.Add(-2 * maxSyncDelay),
 					},
 				}, nil
 			},
