@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -41,16 +42,24 @@ type PermsSyncer struct {
 // user-centric and repository-centric ways.
 type PermsFetcher interface {
 	authz.Provider
-	// FetchUserPerms returns a list of repository IDs (on code host) that the given
-	// account has read access on the code host. The repository ID should be the same
-	// value as it would be used as api.ExternalRepoSpec.ID. The returned list should
-	// only include private repositories.
-	FetchUserPerms(ctx context.Context, account *extsvc.ExternalAccount) ([]string, error)
+	// FetchUserPerms returns a list of repository/project IDs (on code host) that the
+	// given account has read access on the code host. The repository ID should be the
+	// same value as it would be used as api.ExternalRepoSpec.ID. The returned list
+	// should only include private repositories/project IDs.
+	//
+	// Because permissions fetching APIs are often expensive, the implementation should
+	// try to return partial but valid results in case of error, and it is up to callers
+	// to decide whether to discard.
+	FetchUserPerms(ctx context.Context, account *extsvc.ExternalAccount) ([]extsvc.ExternalRepoID, error)
 	// FetchRepoPerms returns a list of user IDs (on code host) who have read ccess to
-	// the given repository on the code host. The user ID should be the same value as it
-	// would be used as extsvc.ExternalAccount.AccountID. The returned list should include
-	// both direct access and inherited from the group/organization/team membership.
-	FetchRepoPerms(ctx context.Context, repo *api.ExternalRepoSpec) ([]string, error)
+	// the given repository/project on the code host. The user ID should be the same value
+	// as it would be used as extsvc.ExternalAccount.AccountID. The returned list should
+	// include both direct access and inherited from the group/organization/team membership.
+	//
+	// Because permissions fetching APIs are often expensive, the implementation should
+	// try to return partial but valid results in case of error, and it is up to callers
+	// to decide whether to discard.
+	FetchRepoPerms(ctx context.Context, repo *api.ExternalRepoSpec) ([]extsvc.ExternalAccountID, error)
 }
 
 // NewPermsSyncer returns a new permissions syncing request manager.
@@ -135,20 +144,23 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32) error {
 
 		for i := range extIDs {
 			repoSpecs = append(repoSpecs, api.ExternalRepoSpec{
-				ID:          extIDs[i],
+				ID:          string(extIDs[i]),
 				ServiceType: fetcher.ServiceType(),
 				ServiceID:   fetcher.ServiceID(),
 			})
 		}
 	}
 
-	// Get corresponding internal database IDs
-	rs, err := s.reposStore.ListRepos(ctx, repos.StoreListReposArgs{
-		ExternalRepos: repoSpecs,
-		PerPage:       int64(len(repoSpecs)), // We want to get all repositories in one shot
-	})
-	if err != nil {
-		return errors.Wrap(err, "list external repositories")
+	var rs []*repos.Repo
+	if len(repoSpecs) > 0 {
+		// Get corresponding internal database IDs
+		rs, err = s.reposStore.ListRepos(ctx, repos.StoreListReposArgs{
+			ExternalRepos: repoSpecs,
+			PerPage:       int64(len(repoSpecs)), // We want to get all repositories in one shot
+		})
+		if err != nil {
+			return errors.Wrap(err, "list external repositories")
+		}
 	}
 
 	// Save permissions to database
@@ -201,22 +213,31 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID) erro
 	// TODO(jchen): Ship the initial design to unblock working on authz providers,
 	// but should revisit the feasibility of using ExternalAccount before final delivery.
 
-	usernames, err := fetcher.FetchRepoPerms(ctx, &repo.ExternalRepo)
+	accountIDs, err := fetcher.FetchRepoPerms(ctx, &repo.ExternalRepo)
 	if err != nil {
 		return errors.Wrap(err, "fetch repository permissions")
 	}
 
-	// Get corresponding internal database IDs
-	// TODO(jchen): Remove the use of dbconn.Global().
-	users, err := db.Users.GetByUsernames(ctx, usernames...)
-	if err != nil {
-		return errors.Wrap(err, "get users by usernames")
-	}
+	bindUsernamesSet := make(map[string]struct{})
+	var users []*types.User
+	if len(accountIDs) > 0 {
+		usernames := make([]string, len(accountIDs))
+		for i := range accountIDs {
+			usernames[i] = string(accountIDs[i])
+		}
 
-	// Set up set of all usernames that need to be bound to permissions
-	bindUsernamesSet := make(map[string]struct{}, len(usernames))
-	for i := range usernames {
-		bindUsernamesSet[usernames[i]] = struct{}{}
+		// Get corresponding internal database IDs
+		// TODO(jchen): Remove the use of dbconn.Global().
+		users, err = db.Users.GetByUsernames(ctx, usernames...)
+		if err != nil {
+			return errors.Wrap(err, "get users by usernames")
+		}
+
+		// Set up set of all usernames that need to be bound to permissions
+		bindUsernamesSet = make(map[string]struct{}, len(usernames))
+		for i := range usernames {
+			bindUsernamesSet[usernames[i]] = struct{}{}
+		}
 	}
 
 	// Save permissions to database

@@ -73,6 +73,7 @@ func TestSearchResults(t *testing.T) {
 				OnlyRepoIDs:     true,
 				IncludePatterns: []string{"r", "p"},
 				LimitOffset:     limitOffset,
+				NoArchived:      true,
 			}
 			if !reflect.DeepEqual(op, want) {
 				t.Fatalf("got %+v, want %+v", op, want)
@@ -105,6 +106,7 @@ func TestSearchResults(t *testing.T) {
 			want := db.ReposListOptions{
 				OnlyRepoIDs: true,
 				LimitOffset: limitOffset,
+				NoArchived:  true,
 			}
 
 			if !reflect.DeepEqual(op, want) {
@@ -176,6 +178,7 @@ func TestSearchResults(t *testing.T) {
 			want := db.ReposListOptions{
 				OnlyRepoIDs: true,
 				LimitOffset: limitOffset,
+				NoArchived:  true,
 			}
 
 			if !reflect.DeepEqual(op, want) {

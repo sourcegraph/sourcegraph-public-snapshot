@@ -8,9 +8,6 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 )
 
 var ErrPermsNotFound = errors.New("permissions not found")
@@ -60,17 +57,6 @@ const (
 	PermRepos PermType = "repos"
 )
 
-// ProviderType is the type of provider implementation for the permissions.
-type ProviderType string
-
-// The list of available provider types.
-const (
-	ProviderBitbucketServer ProviderType = bitbucketserver.ServiceType
-	ProviderGitHub          ProviderType = github.ServiceType
-	ProviderGitLab          ProviderType = gitlab.ServiceType
-	ProviderSourcegraph     ProviderType = "sourcegraph"
-)
-
 // RepoPermsSort sorts a slice of RepoPerms to guarantee a stable ordering.
 type RepoPermsSort []RepoPerms
 
@@ -109,7 +95,6 @@ type UserPermissions struct {
 	Perm      Perms
 	Type      PermType
 	IDs       *roaring.Bitmap
-	Provider  ProviderType
 	UpdatedAt time.Time
 }
 
@@ -142,7 +127,6 @@ func (p *UserPermissions) TracingFields() []otlog.Field {
 		otlog.Int32("UserPermissions.UserID", p.UserID),
 		otlog.String("UserPermissions.Perm", string(p.Perm)),
 		otlog.String("UserPermissions.Type", string(p.Type)),
-		otlog.String("UserPermissions.Provider", string(p.Provider)),
 	}
 
 	if p.IDs != nil {
@@ -161,7 +145,6 @@ type RepoPermissions struct {
 	RepoID    int32
 	Perm      Perms
 	UserIDs   *roaring.Bitmap
-	Provider  ProviderType
 	UpdatedAt time.Time
 }
 
@@ -175,7 +158,6 @@ func (p *RepoPermissions) TracingFields() []otlog.Field {
 	fs := []otlog.Field{
 		otlog.Int32("RepoPermissions.RepoID", p.RepoID),
 		otlog.String("RepoPermissions.Perm", string(p.Perm)),
-		otlog.String("RepoPermissions.Provider", string(p.Provider)),
 	}
 
 	if p.UserIDs != nil {

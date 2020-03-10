@@ -37,6 +37,7 @@ export enum FilterType {
     message = 'message',
     content = 'content',
     patterntype = 'patterntype',
+    index = 'index',
 }
 
 export const isFilterType = (filter: string): filter is FilterType => filter in FilterType

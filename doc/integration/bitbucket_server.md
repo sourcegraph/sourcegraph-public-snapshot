@@ -59,7 +59,7 @@ The plugin also supports an experimental method of faster ACL permissions fetchi
   // ...
 }
 ```
-The speed improvements are subtle and more noticable for larger instances with thousands of repositories. This may remove the occasional slow search that has incurred the overhead of refreshing expired permissions information.
+The speed improvements are subtle and more noticeable for larger instances with thousands of repositories. This may remove the occasional slow search that has incurred the overhead of refreshing expired permissions information.
 
 ## Browser extension
 

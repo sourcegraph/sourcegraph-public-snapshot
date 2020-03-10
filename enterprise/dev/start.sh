@@ -21,9 +21,6 @@ if [ -f "$DEV_PRIVATE_PATH/enterprise/dev/critical-config.json" ]; then
     exit 1
 fi
 
-echo "Installing enterprise web dependencies..."
-[ -n "${OFFLINE-}" ] || yarn --check-files
-
 source "$DEV_PRIVATE_PATH/enterprise/dev/env"
 
 export SITE_CONFIG_FILE=$DEV_PRIVATE_PATH/enterprise/dev/site-config.json

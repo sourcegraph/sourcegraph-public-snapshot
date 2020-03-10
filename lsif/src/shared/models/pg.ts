@@ -2,14 +2,10 @@ import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from 'ty
 import { EncodedBloomFilter } from '../datastructures/bloom-filter'
 import { MAX_POSTGRES_BATCH_SIZE } from '../constants'
 
-/**
- * The primary key of the `lsif_uploads` table.
- */
+/** The primary key of the `lsif_uploads` table. */
 export type DumpId = number
 
-/**
- * The possible states of an LsifUpload entity.
- */
+/** The possible states of an LsifUpload entity. */
 export type LsifUploadState = 'queued' | 'completed' | 'errored' | 'processing'
 
 /**
@@ -20,38 +16,26 @@ export type LsifUploadState = 'queued' | 'completed' | 'errored' | 'processing'
  */
 @Entity({ name: 'lsif_uploads' })
 export class LsifUpload {
-    /**
-     * The number of model instances that can be inserted at once.
-     */
+    /** The number of model instances that can be inserted at once. */
     public static BatchSize = MAX_POSTGRES_BATCH_SIZE
 
-    /**
-     * A unique ID required by typeorm entities.
-     */
+    /** A unique ID required by typeorm entities. */
     @PrimaryGeneratedColumn('increment', { type: 'int' })
     public id!: DumpId
 
-    /**
-     * The internal identifier of the source repository.
-     */
+    /** The internal identifier of the source repository. */
     @Column('text', { name: 'repository_id' })
     public repositoryId!: number
 
-    /**
-     *  The source commit.
-     */
+    /**  The source commit. */
     @Column('text')
     public commit!: string
 
-    /**
-     * The root of all files in the dump.
-     */
+    /** The root of all files in the dump. */
     @Column('text')
     public root!: string
 
-    /**
-     * The type of indexer used to produce the dump.
-     */
+    /** The type of indexer used to produce the dump. */
     @Column('text')
     public indexer!: string
 
@@ -70,57 +54,39 @@ export class LsifUpload {
     @Column('text')
     public state!: LsifUploadState
 
-    /**
-     * The time the dump was uploaded.
-     */
+    /** The time the dump was uploaded. */
     @Column('timestamp with time zone', { name: 'uploaded_at' })
     public uploadedAt!: Date
 
-    /**
-     * The time the upload started its conversion.
-     */
+    /** The time the upload started its conversion. */
     @Column('timestamp with time zone', { name: 'started_at', nullable: true })
     public startedAt!: Date | null
 
-    /**
-     * The time the conversion completed or errored.
-     */
+    /** The time the conversion completed or errored. */
     @Column('timestamp with time zone', { name: 'finished_at', nullable: true })
     public finishedAt!: Date | null
 
-    /**
-     * The error message that occurred during processing (if any).
-     */
+    /** The error message that occurred during processing (if any). */
     @Column('text', { name: 'failure_summary', nullable: true })
     public failureSummary!: string | null
 
-    /**
-     * The stacktrace of the error that occurred during processing (if any).
-     */
+    /** The stacktrace of the error that occurred during processing (if any). */
     @Column('text', { name: 'failure_stacktrace', nullable: true })
     public failureStacktrace!: string | null
 
-    /**
-     * The opentracing headers from the upload request.
-     */
+    /** The opentracing headers from the upload request. */
     @Column('text', { name: 'tracing_context' })
     public tracingContext!: string
 
-    /**
-     * Whether or not this commit is visible at the tip of the default branch.
-     */
+    /** Whether or not this commit is visible at the tip of the default branch. */
     @Column('boolean', { name: 'visible_at_tip' })
     public visibleAtTip!: boolean
 }
 
-/**
- * A view of LsifUpload entities with state = 'completed'.
- */
+/** A view of LsifUpload entities with state = 'completed'. */
 @Entity({ name: 'lsif_dumps' })
 export class LsifDump extends LsifUpload {
-    /**
-     * The time the dump was created.
-     */
+    /** The time the dump was created. */
     @Column('timestamp with time zone', { name: 'processed_at' })
     public processedAt!: Date
 }
@@ -131,26 +97,18 @@ export class LsifDump extends LsifUpload {
  */
 @Entity({ name: 'lsif_commits' })
 export class Commit {
-    /**
-     * The number of model instances that can be inserted at once.
-     */
+    /** The number of model instances that can be inserted at once. */
     public static BatchSize = MAX_POSTGRES_BATCH_SIZE
 
-    /**
-     * A unique ID required by typeorm entities.
-     */
+    /** A unique ID required by typeorm entities. */
     @PrimaryGeneratedColumn('increment', { type: 'int' })
     public id!: number
 
-    /**
-     * The internal identifier of the source repository.
-     */
+    /** The internal identifier of the source repository. */
     @Column('text', { name: 'repository_id' })
     public repositoryId!: number
 
-    /**
-     * The source commit.
-     */
+    /** The source commit. */
     @Column('text')
     public commit!: string
 
@@ -168,27 +126,19 @@ export class Commit {
  * identical column descriptions.
  */
 class Package {
-    /**
-     * A unique ID required by typeorm entities.
-     */
+    /** A unique ID required by typeorm entities. */
     @PrimaryGeneratedColumn('increment', { type: 'int' })
     public id!: number
 
-    /**
-     * The name of the package type (e.g. npm, pip).
-     */
+    /** The name of the package type (e.g. npm, pip). */
     @Column('text')
     public scheme!: string
 
-    /**
-     * The name of the package this repository and commit provides.
-     */
+    /** The name of the package this repository and commit provides. */
     @Column('text')
     public name!: string
 
-    /**
-     * The version of the package this repository and commit provides.
-     */
+    /** The version of the package this repository and commit provides. */
     @Column('text', { nullable: true })
     public version!: string | null
 
@@ -200,9 +150,7 @@ class Package {
     @JoinColumn({ name: 'dump_id' })
     public dump!: LsifDump
 
-    /**
-     * The foreign key to the dump.
-     */
+    /** The foreign key to the dump. */
     @Column('integer')
     public dump_id!: DumpId
 }
@@ -213,9 +161,7 @@ class Package {
  */
 @Entity({ name: 'lsif_packages' })
 export class PackageModel extends Package {
-    /**
-     * The number of model instances that can be inserted at once.
-     */
+    /** The number of model instances that can be inserted at once. */
     public static BatchSize = MAX_POSTGRES_BATCH_SIZE
 }
 
@@ -225,9 +171,7 @@ export class PackageModel extends Package {
  */
 @Entity({ name: 'lsif_references' })
 export class ReferenceModel extends Package {
-    /**
-     * The number of model instances that can be inserted at once.
-     */
+    /** The number of model instances that can be inserted at once. */
     public static BatchSize = MAX_POSTGRES_BATCH_SIZE
 
     /**
@@ -240,7 +184,5 @@ export class ReferenceModel extends Package {
     public filter!: EncodedBloomFilter
 }
 
-/**
- * The entities composing the Postgres database models.
- */
+/** The entities composing the Postgres database models. */
 export const entities = [LsifUpload, Commit, LsifDump, PackageModel, ReferenceModel]

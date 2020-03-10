@@ -9,17 +9,13 @@ import { TableInserter } from '../database/inserter'
 import { visibleDumps, ancestorLineage, bidirectionalLineage } from '../models/queries'
 import { isDefined } from '../util'
 
-/**
- * The insertion metrics for Postgres.
- */
+/** The insertion metrics for Postgres. */
 const insertionMetrics = {
     durationHistogram: sharedMetrics.postgresInsertionDurationHistogram,
     errorsCounter: sharedMetrics.postgresQueryErrorsCounter,
 }
 
-/**
- * A wrapper around the database tables that control dumps and commits.
- */
+/** A wrapper around the database tables that control dumps and commits. */
 export class DumpManager {
     /**
      * Create a new `DumpManager` backed by the given database connection.

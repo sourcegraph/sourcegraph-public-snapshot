@@ -1,8 +1,6 @@
 import { readEnvInt } from '../settings'
 
-/**
- * HTTP address for internal frontend HTTP API.
- */
+/** HTTP address for internal frontend HTTP API. */
 export const SRC_FRONTEND_INTERNAL = process.env.SRC_FRONTEND_INTERNAL || 'sourcegraph-frontend-internal'
 
 /**
@@ -13,7 +11,5 @@ export const SRC_FRONTEND_INTERNAL = process.env.SRC_FRONTEND_INTERNAL || 'sourc
  */
 export const DELAY_BEFORE_UNREACHABLE_LOG = readEnvInt('DELAY_BEFORE_UNREACHABLE_LOG', 15)
 
-/**
- * How long to wait between polling config.
- */
+/** How long to wait between polling config. */
 export const CONFIG_POLL_INTERVAL = 5

@@ -29,8 +29,6 @@ type AuthorizedReposArgs struct {
 	Perm authz.Perms
 	// The type of permissions to be verified.
 	Type authz.PermType
-	// The type of authz provider to load user permissions.
-	Provider authz.ProviderType
 }
 
 // RevokeUserPermissionsArgs contains required arguments to revoke user permissions, it includes all

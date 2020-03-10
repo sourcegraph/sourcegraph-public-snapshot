@@ -12,14 +12,21 @@ const (
 	eventTypeHeader = "X-Event-Key"
 )
 
-func WebHookType(r *http.Request) string {
+func WebhookEventType(r *http.Request) string {
 	return r.Header.Get(eventTypeHeader)
 }
 
-func ParseWebHook(event string, payload []byte) (e interface{}, err error) {
-	e = &PullRequestEvent{}
-	return e, json.Unmarshal(payload, e)
+func ParseWebhookEvent(eventType string, payload []byte) (e interface{}, err error) {
+	switch eventType {
+	case "ping":
+		return PingEvent{}, nil
+	default:
+		e = &PullRequestEvent{}
+		return e, json.Unmarshal(payload, e)
+	}
 }
+
+type PingEvent struct{}
 
 type PullRequestEvent struct {
 	Date        time.Time   `json:"date"`

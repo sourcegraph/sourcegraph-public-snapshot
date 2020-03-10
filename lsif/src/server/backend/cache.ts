@@ -6,18 +6,12 @@ import { Connection, EntityManager } from 'typeorm'
 import { createSqliteConnection } from '../../shared/database/sqlite'
 import { Logger } from 'winston'
 
-/**
- * A wrapper around a cache value promise.
- */
+/** A wrapper around a cache value promise. */
 interface CacheEntry<K, V> {
-    /**
-     * The key that can retrieve this cache entry.
-     */
+    /** The key that can retrieve this cache entry. */
     key: K
 
-    /**
-     * The promise that will resolve the cache value.
-     */
+    /** The promise that will resolve the cache value. */
     promise: Promise<V>
 
     /**
@@ -69,19 +63,13 @@ interface CacheMetrics {
  * it is actively being used.
  */
 export class GenericCache<K, V> {
-    /**
-     * A map from from keys to nodes in `lruList`.
-     */
+    /** A map from from keys to nodes in `lruList`. */
     private cache = new Map<K, Yallist.Node<CacheEntry<K, V>>>()
 
-    /**
-     * A linked list of cache entires ordered by last-touch.
-     */
+    /** A linked list of cache entires ordered by last-touch. */
     private lruList = new Yallist<CacheEntry<K, V>>()
 
-    /**
-     * The additive size of the items currently in the cache.
-     */
+    /** The additive size of the items currently in the cache. */
     private size = 0
 
     /**
@@ -102,9 +90,7 @@ export class GenericCache<K, V> {
         private cacheMetrics: CacheMetrics
     ) {}
 
-    /**
-     * Remove all values from the cache.
-     */
+    /** Remove all values from the cache. */
     public async flush(): Promise<void> {
         await Promise.all(Array.from(this.cache.keys()).map(key => this.bustKey(key)))
     }
@@ -303,9 +289,7 @@ export class GenericCache<K, V> {
     }
 }
 
-/**
- * A cache of SQLite database connections indexed by database filenames.
- */
+/** A cache of SQLite database connections indexed by database filenames. */
 export class ConnectionCache extends GenericCache<string, Connection> {
     /**
      * Create a new `ConnectionCache` with the given maximum (soft) size for
@@ -374,20 +358,14 @@ export class ConnectionCache extends GenericCache<string, Connection> {
  * of the in-memory representation.
  */
 export interface EncodedJsonCacheValue<T> {
-    /**
-     * The size of the encoded value.
-     */
+    /** The size of the encoded value. */
     size: number
 
-    /**
-     * The decoded value.
-     */
+    /** The decoded value. */
     data: T
 }
 
-/**
- * A cache of decoded values encoded as JSON and gzipped in a SQLite database.
- */
+/** A cache of decoded values encoded as JSON and gzipped in a SQLite database. */
 class EncodedJsonCache<K, V> extends GenericCache<K, EncodedJsonCacheValue<V>> {
     /**
      * Create a new `EncodedJsonCache` with the given maximum (soft) size for
@@ -447,9 +425,7 @@ export class ResultChunkCache extends EncodedJsonCache<string, sqliteModels.Resu
     }
 }
 
-/**
- * Return a promise and a function pair. The promise resolves once the function is called.
- */
+/** Return a promise and a function pair. The promise resolves once the function is called. */
 export function createBarrierPromise(): { wait: Promise<void>; done: () => void } {
     let done!: () => void
     const wait = new Promise<void>(resolve => (done = resolve))

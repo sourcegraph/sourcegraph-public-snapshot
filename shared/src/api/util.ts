@@ -1,6 +1,29 @@
-import { ProxiedObject, ProxyValue } from '@sourcegraph/comlink'
+import { ProxiedObject, ProxyValue, transferHandlers } from '@sourcegraph/comlink'
 import { Subscription } from 'rxjs'
 import { Subscribable, Unsubscribable } from 'sourcegraph'
+
+/**
+ * Tests whether a value is a WHATWG URL object.
+ */
+export const isURL = (value: any): value is URL =>
+    typeof value !== 'undefined' &&
+    value !== null &&
+    typeof value.toString === 'function' &&
+    value.href === value.toString()
+
+/**
+ * Registers global comlink transfer handlers.
+ * This needs to be called before using comlink.
+ * Idempotent.
+ */
+export function registerComlinkTransferHandlers(): void {
+    transferHandlers.set('URL', {
+        canHandle: isURL,
+        // TODO the comlink types could be better here to avoid the any
+        serialize: (url: any) => url.href,
+        deserialize: (urlString: any) => new URL(urlString),
+    })
+}
 
 /**
  * Creates a synchronous Subscription that will unsubscribe the given proxied Subscription asynchronously.

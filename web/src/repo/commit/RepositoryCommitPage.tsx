@@ -17,7 +17,7 @@ import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable'
 import { propertyIsDefined } from '../../../../shared/src/util/types'
-import { FileSpec, ModeSpec, PositionSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../shared/src/util/url'
+import { FileSpec, ModeSpec, UIPositionSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../shared/src/util/url'
 import { getHover } from '../../backend/features'
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
@@ -133,7 +133,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
 
     private getLSPTextDocumentPositionParams(
         hoveredToken: HoveredToken & RepoSpec & RevSpec & FileSpec & ResolvedRevSpec
-    ): RepoSpec & RevSpec & ResolvedRevSpec & FileSpec & PositionSpec & ModeSpec {
+    ): RepoSpec & RevSpec & ResolvedRevSpec & FileSpec & UIPositionSpec & ModeSpec {
         return {
             repoName: hoveredToken.repoName,
             rev: hoveredToken.rev,

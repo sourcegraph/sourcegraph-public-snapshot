@@ -743,10 +743,10 @@ Indexes:
  repo_id    | integer                  | not null
  permission | text                     | not null
  user_ids   | bytea                    | not null
- provider   | text                     | not null
+ provider   | text                     | 
  updated_at | timestamp with time zone | not null
 Indexes:
-    "repo_permissions_perm_provider_unique" UNIQUE CONSTRAINT, btree (repo_id, permission, provider)
+    "repo_permissions_perm_unique" UNIQUE CONSTRAINT, btree (repo_id, permission)
 
 ```
 
@@ -914,9 +914,9 @@ Indexes:
  object_type | text                     | not null
  object_ids  | bytea                    | not null
  updated_at  | timestamp with time zone | not null
- provider    | text                     | not null
+ provider    | text                     | 
 Indexes:
-    "user_permissions_perm_object_provider_unique" UNIQUE CONSTRAINT, btree (user_id, permission, object_type, provider)
+    "user_permissions_perm_object_unique" UNIQUE CONSTRAINT, btree (user_id, permission, object_type)
 
 ```
 

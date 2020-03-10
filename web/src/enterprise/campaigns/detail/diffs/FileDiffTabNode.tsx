@@ -37,7 +37,7 @@ export const FileDiffTabNode: React.FunctionComponent<FileDiffTabNodeProps> = ({
                     history={history}
                     persistLines={persistLines}
                     key={fileDiffNode.internalID}
-                ></FileDiffNode>
+                />
             ))}
         </div>
     )

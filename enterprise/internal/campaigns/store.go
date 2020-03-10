@@ -175,7 +175,7 @@ RETURNING c.id,
 // which can only be done via `Transact`.
 //
 // When the error value pointed to by the first given `err` is nil, or when no error
-// pointer is given, the transaction is commited. Otherwise, it's rolled-back.
+// pointer is given, the transaction is committed. Otherwise, it's rolled-back.
 func (s *Store) Done(errs ...*error) {
 	switch tx, ok := s.db.(dbutil.Tx); {
 	case !ok:
