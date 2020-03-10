@@ -5,7 +5,10 @@
     "jsx": "react",
     "module": "esnext",
     "sourceRoot": "src",
-    "typeRoots": ["src/types", "../node_modules/@types"],
+    "baseUrl": ".",
+    "paths": {
+      "*": ["src/types/*", "*"],
+    },
     "rootDir": ".",
     "outDir": "./out",
   },

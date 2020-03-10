@@ -983,14 +983,14 @@ func testStore(db *sql.DB) func(*testing.T) {
 			})
 		})
 
-		t.Run("ListChangesetHeuristics", func(t *testing.T) {
+		t.Run("ListChangesetSyncData", func(t *testing.T) {
 			// Differs from clock() due to updates higher up
 			externalUpdatedAt := clock().Add(-2 * time.Second)
-			hs, err := s.ListChangesetSyncHeuristics(ctx)
+			hs, err := s.ListChangesetSyncData(ctx)
 			if err != nil {
 				t.Fatal(err)
 			}
-			want := []cmpgn.ChangesetSyncHeuristics{
+			want := []cmpgn.ChangesetSyncData{
 				{
 					ChangesetID:       2,
 					UpdatedAt:         clock(),

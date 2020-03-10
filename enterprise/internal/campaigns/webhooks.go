@@ -11,9 +11,9 @@ import (
 
 	gh "github.com/google/go-github/v28/github"
 	"github.com/hashicorp/go-multierror"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	bbs "github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -588,6 +588,12 @@ func (*GitHubWebhook) checkRunEvent(cr *gh.CheckRun) *github.CheckRun {
 // Upsert ensures the creation of the BitbucketServer campaigns webhook.
 // This happens periodically at the specified interval.
 func (h *BitbucketServerWebhook) Upsert(every time.Duration) {
+	externalURL := func() string {
+		return conf.Cached(func() interface{} {
+			return conf.Get().ExternalURL
+		})().(string)
+	}
+
 	for {
 		args := repos.StoreListExternalServicesArgs{Kinds: []string{"BITBUCKETSERVER"}}
 		es, err := h.Repos.ListExternalServices(context.Background(), args)
@@ -615,7 +621,7 @@ func (h *BitbucketServerWebhook) Upsert(every time.Duration) {
 				continue
 			}
 
-			endpoint := globals.ExternalURL().String() + "/.api/bitbucket-server-webhooks"
+			endpoint := externalURL() + "/.api/bitbucket-server-webhooks"
 
 			wh := bbs.Webhook{
 				Name:     h.Name,

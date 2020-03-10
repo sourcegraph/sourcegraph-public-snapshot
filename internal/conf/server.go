@@ -130,7 +130,7 @@ func (s *Server) Edit(ctx context.Context, computeEdits func(current *Unified, r
 	return nil
 }
 
-// Start initalizes the server instance.
+// Start initializes the server instance.
 func (s *Server) Start() {
 	s.once.Do(func() {
 		go s.watchSource()

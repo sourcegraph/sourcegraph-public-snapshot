@@ -142,7 +142,7 @@ func Main() {
 		`github-proxy: github-proxy`,
 		`repo-updater: repo-updater`,
 		`syntect_server: sh -c 'env QUIET=true ROCKET_ENV=production ROCKET_PORT=9238 ROCKET_LIMITS='"'"'{json=10485760}'"'"' ROCKET_SECRET_KEY='"'"'SeerutKeyIsI7releuantAndknvsuZPluaseIgnorYA='"'"' ROCKET_KEEP_ALIVE=0 ROCKET_ADDRESS='"'"'"127.0.0.1"'"'"' syntect_server | grep -v "Rocket has launched" | grep -v "Warning: environment is"' | grep -v 'Configured for production'`,
-		`prometheus: prometheus --config.file=/sg_config_prometheus/prometheus.yml  --storage.tsdb.path=/var/opt/sourcegraph/prometheus --web.console.libraries=/usr/share/prometheus/console_libraries --web.console.templates=/usr/share/prometheus/consoles >> /var/opt/sourcegraph/prometheus.log 2>&1`,
+		`prometheus: prometheus --config.file=/sg_config_prometheus/prometheus.yml --web.enable-admin-api --storage.tsdb.path=/var/opt/sourcegraph/prometheus --web.console.libraries=/usr/share/prometheus/console_libraries --web.console.templates=/usr/share/prometheus/consoles >> /var/opt/sourcegraph/prometheus.log 2>&1`,
 		`grafana: /usr/share/grafana/bin/grafana-server -config /sg_config_grafana/grafana-single-container.ini -homepath /usr/share/grafana >> /var/opt/sourcegraph/grafana.log 2>&1`,
 		postgresExporterLine,
 	}
@@ -175,9 +175,9 @@ func Main() {
 	procDiedAction := goreman.Shutdown
 	if ignore, _ := strconv.ParseBool(os.Getenv("IGNORE_PROCESS_DEATH")); ignore {
 		// IGNORE_PROCESS_DEATH is an escape hatch so that sourcegraph/server
-		// keeps running in the case of a subprocess dieing on startup. An
+		// keeps running in the case of a subprocess dying on startup. An
 		// example use case is connecting to postgres even though frontend is
-		// dieing due to a bad migration.
+		// dying due to a bad migration.
 		procDiedAction = goreman.Ignore
 	}
 

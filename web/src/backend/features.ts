@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs'
 import { HoverMerged } from '../../../shared/src/api/client/types/hover'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
-import { FileSpec, PositionSpec, RepoSpec, ResolvedRevSpec } from '../../../shared/src/util/url'
+import { FileSpec, UIPositionSpec, RepoSpec, ResolvedRevSpec } from '../../../shared/src/util/url'
 
 /**
  * Fetches hover information for the given location.
@@ -10,7 +10,7 @@ import { FileSpec, PositionSpec, RepoSpec, ResolvedRevSpec } from '../../../shar
  * @returns hover for the location
  */
 export function getHover(
-    ctx: RepoSpec & ResolvedRevSpec & FileSpec & PositionSpec,
+    ctx: RepoSpec & ResolvedRevSpec & FileSpec & UIPositionSpec,
     { extensionsController }: ExtensionsControllerProps
 ): Observable<HoverMerged | null> {
     return extensionsController.services.textDocumentHover.getHover({

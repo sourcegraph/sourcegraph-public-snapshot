@@ -92,7 +92,7 @@ func Test_Parse(t *testing.T) {
 		{
 			Name:  "Whitespace basic",
 			Input: "a b",
-			Want:  "(and a b)",
+			Want:  "(concat a b)",
 		},
 		{
 			Name:  "Basic",
@@ -110,7 +110,7 @@ func Test_Parse(t *testing.T) {
 		{
 			Name:  "Reduced complex query mixed caps",
 			Input: "a and b AND c or d and (e OR f) g h i or j",
-			Want:  "(or (and a b c) (and d (or e f) g h i) j)",
+			Want:  "(or (and a b c) (and d (concat (or e f) g h i)) j)",
 		},
 		{
 			Name:  "Basic reduced complex query",
@@ -140,7 +140,48 @@ func Test_Parse(t *testing.T) {
 		{
 			Name:  "Paren reduction over operators",
 			Input: "(((a b c))) and d",
-			Want:  "(and a b c d)",
+			Want:  "(and (concat a b c) d)",
+		},
+		// Partition parameters and concatenated patterns.
+		{
+			Input: "a (b and c) d",
+			Want:  "(concat a (and b c) d)",
+		},
+		{
+			Input: "(a b c) and (d e f) and (g h i)",
+			Want:  "(and (concat a b c) (concat d e f) (concat g h i))",
+		},
+		{
+			Input: "(a) repo:foo (b)",
+			Want:  "(and repo:foo (concat a b))",
+		},
+		{
+			Input: "a b (repo:foo c d)",
+			Want:  "(concat a b (and repo:foo (concat c d)))",
+		},
+		{
+			Input: "a repo:b repo:c (d repo:e repo:f)",
+			Want:  "(and repo:b repo:c (concat a (and repo:e repo:f d)))",
+		},
+		{
+			Input: "a repo:b repo:c (repo:e repo:f (repo:g repo:h))",
+			Want:  "(and repo:b repo:c repo:e repo:f repo:g repo:h a)",
+		},
+		{
+			Input: "a repo:b repo:c (repo:e repo:f (repo:g repo:h)) b",
+			Want:  "(and repo:b repo:c repo:e repo:f repo:g repo:h (concat a b))",
+		},
+		{
+			Input: "a repo:b repo:c (repo:e repo:f (repo:g repo:h b)) ",
+			Want:  "(and repo:b repo:c (concat a (and repo:e repo:f repo:g repo:h b)))",
+		},
+		{
+			Input: "(repo:foo a (repo:bar b (repo:qux c)))",
+			Want:  "(and repo:foo (concat a (and repo:bar (concat b (and repo:qux c)))))",
+		},
+		{
+			Input: "a repo:b repo:c (d repo:e repo:f e)",
+			Want:  "(and repo:b repo:c (concat a (and repo:e repo:f (concat d e))))",
 		},
 		// Errors.
 		{
@@ -187,32 +228,32 @@ func Test_Parse(t *testing.T) {
 		{
 			Name:  "nested paren reduction with whitespace",
 			Input: "(((a b c))) d",
-			Want:  "(and a b c d)",
+			Want:  "(concat a b c d)",
 		},
 		{
 			Name:  "left paren reduction with whitespace",
 			Input: "(a b) c d",
-			Want:  "(and a b c d)",
+			Want:  "(concat a b c d)",
 		},
 		{
 			Name:  "right paren reduction with whitespace",
 			Input: "a b (c d)",
-			Want:  "(and a b c d)",
+			Want:  "(concat a b c d)",
 		},
 		{
 			Name:  "grouped paren reduction with whitespace",
 			Input: "(a b) (c d)",
-			Want:  "(and a b c d)",
+			Want:  "(concat a b c d)",
 		},
 		{
 			Name:  "multiple grouped paren reduction with whitespace",
 			Input: "(a b) (c d) (e f)",
-			Want:  "(and a b c d e f)",
+			Want:  "(concat a b c d e f)",
 		},
 		{
 			Name:  "interpolated grouped paren reduction",
 			Input: "(a b) c d (e f)",
-			Want:  "(and a b c d e f)",
+			Want:  "(concat a b c d e f)",
 		},
 		{
 			Name:  "mixed interpolated grouped paren reduction",
@@ -248,7 +289,7 @@ func Test_Parse(t *testing.T) {
 		{
 			Name:  "complex interpolated nested empty paren",
 			Input: "(()x(  )(y or () or (f))())",
-			Want:  "(and x (or y f))",
+			Want:  "(concat x (or y f))",
 		},
 	}
 	for _, tt := range cases {

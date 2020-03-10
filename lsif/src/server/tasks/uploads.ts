@@ -208,7 +208,7 @@ export async function* candidateFiles(): AsyncIterable<string> {
  * @param filename The file to remove.
  */
 async function purgeFile(filename: string): Promise<boolean> {
-    if (Date.now() - (await fs.stat(filename)).mtimeMs < settings.FAILED_UPLOAD_MAX_AGE) {
+    if (Date.now() - (await fs.stat(filename)).mtimeMs < settings.FAILED_UPLOAD_MAX_AGE * 1000) {
         return false
     }
 

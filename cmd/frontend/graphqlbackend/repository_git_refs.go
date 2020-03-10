@@ -41,7 +41,7 @@ func (r *RepositoryResolver) GitRefs(ctx context.Context, args *refsArgs) (*gitR
 		}
 		branches, err = git.ListBranches(ctx, *cachedRepo, git.BranchesOptions{
 			// We intentionally do not ask for commits here since it requires
-			// a seperate git call per branch. We only need the git commits to
+			// a separate git call per branch. We only need the git commits to
 			// sort by author/commit date and there are few enough branches to
 			// warrant doing it interactively.
 			IncludeCommit: false,

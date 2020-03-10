@@ -256,7 +256,7 @@ func (c *ChangesetJob) Clone() *ChangesetJob {
 	return &cc
 }
 
-// SuccessfullyCompleted returns true for jobs that have already succesfully run
+// SuccessfullyCompleted returns true for jobs that have already successfully run
 func (c *ChangesetJob) SuccessfullyCompleted() bool {
 	return c.Error == "" && !c.FinishedAt.IsZero() && c.ChangesetID != 0
 }
@@ -1466,8 +1466,8 @@ const (
 	ChangesetEventKindBitbucketServerMerged     ChangesetEventKind = "bitbucketserver:merged"
 )
 
-// ChangesetSyncHeuristics represents data about the sync status of a changeset
-type ChangesetSyncHeuristics struct {
+// ChangesetSyncData represents data about the sync status of a changeset
+type ChangesetSyncData struct {
 	ChangesetID int64
 	// UpdatedAt is the time we last updated / synced the changeset in our DB
 	UpdatedAt time.Time

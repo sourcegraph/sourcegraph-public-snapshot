@@ -65,6 +65,8 @@ func (*schemaResolver) DeleteUser(ctx context.Context, args *struct {
 	// This call is purely for the purpose of cleanup.
 	if err := db.Authz.RevokeUserPermissions(ctx, &db.RevokeUserPermissionsArgs{
 		UserID:         user.ID,
+		ServiceType:    "sourcegraph",
+		ServiceID:      "https://sourcegraph.com/",
 		Username:       user.Username,
 		VerifiedEmails: emailStrs,
 	}); err != nil {

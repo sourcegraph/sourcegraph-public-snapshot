@@ -102,11 +102,10 @@ func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (filte
 		}
 
 		return Authz.AuthorizedRepos(ctx, &AuthorizedReposArgs{
-			Repos:    repos,
-			UserID:   currentUser.ID,
-			Perm:     p,
-			Type:     authz.PermRepos,
-			Provider: authz.ProviderSourcegraph,
+			Repos:  repos,
+			UserID: currentUser.ID,
+			Perm:   p,
+			Type:   authz.PermRepos,
 		})
 	}
 

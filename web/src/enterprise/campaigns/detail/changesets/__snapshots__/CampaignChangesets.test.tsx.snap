@@ -49,6 +49,7 @@ exports[`CampaignChangesets renders 1`] = `
         "state": undefined,
       }
     }
+    noShowLoaderOnSlowLoad={true}
     nodeComponent={[Function]}
     nodeComponentProps={
       Object {

@@ -190,6 +190,8 @@ tslint.config.js @sourcegraph/web
 # Symbols
 /cmd/frontend/graphqlbackend/*symbols* @sourcegraph/code-intel
 /enterprise/cmd/frontend/internal/symbols @sourcegraph/code-intel
+/cmd/symbols/.ctags.d/ @sourcegraph/code-intel
+/cmd/symbols/internal/pkg/ctags/ @sourcegraph/code-intel
 
 # Saved searches
 /web/src/SavedQuery.tsx @attfarhan

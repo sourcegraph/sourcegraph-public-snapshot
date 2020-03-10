@@ -199,4 +199,12 @@ export const searchFilterSuggestions: SearchFilterSuggestions = {
             assign({ type: FilterType.patterntype })
         ),
     },
+    index: {
+        default: 'yes',
+        values: [{ value: 'no' }, { value: 'only' }, { value: 'yes' }].map(
+            assign({
+                type: FilterType.index,
+            })
+        ),
+    },
 }

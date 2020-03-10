@@ -562,7 +562,7 @@ func updateFileIfDifferent(path string, content []byte) (bool, error) {
 	}
 
 	// fsync to ensure the disk contents are written. This is important, since
-	// we are not gaurenteed that os.Rename is recorded to disk after f's
+	// we are not guaranteed that os.Rename is recorded to disk after f's
 	// contents.
 	if err := f.Sync(); err != nil {
 		f.Close()
