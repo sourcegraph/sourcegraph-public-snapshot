@@ -499,7 +499,9 @@ func (r *searchResolver) logSearchLatency(ctx context.Context, durationMs int32)
 		}
 	}
 
-	// Don't record composite searches that specify more than one type:.
+	// Don't record composite searches that specify more than one type:
+	// because we can't break down the search timings into multiple
+	// categories.
 	if len(types) > 1 {
 		return
 	}
@@ -540,7 +542,7 @@ func (r *searchResolver) logSearchLatency(ctx context.Context, durationMs int32)
 	if len(types) == 1 {
 		actor := actor.FromContext(ctx)
 		if actor.IsAuthenticated() {
-			value := fmt.Sprintf(`{"durationMs": %s}`, strconv.FormatInt(int64(durationMs), 10))
+			value := fmt.Sprintf(`{"durationMs": %d}`, durationMs)
 			eventName := fmt.Sprintf("search.latencies.%s", types[0])
 			err := usagestats.LogBackendEvent(actor.UID, eventName, json.RawMessage(value))
 			if err != nil {
