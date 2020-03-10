@@ -319,7 +319,7 @@ Here is the `action.json` file that defines this as an action:
 
 Please note that the `"scopeQuery"` makes sure that the repositories over which we run the action all contain Go code in which we have a call to `fmt.Sprintf`. That narrows the list of repositories down considerably, even though we still need to search through the whole repository with Comby. (We're aware that this is a limitation and are working on improving the workflows involving exact search results.)
 
-Save the defintion in a file, for example `go-comby.action.json`.
+Save the definition in a file, for example `go-comby.action.json`.
 
 Now we can execute the action and turn it into a campaign:
 

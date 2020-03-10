@@ -29,8 +29,6 @@ type AuthorizedReposArgs struct {
 	Perm authz.Perms
 	// The type of permissions to be verified.
 	Type authz.PermType
-	// The type of authz provider to load user permissions.
-	Provider authz.ProviderType
 }
 
 // RevokeUserPermissionsArgs contains required arguments to revoke user permissions, it includes all
@@ -38,6 +36,12 @@ type AuthorizedReposArgs struct {
 type RevokeUserPermissionsArgs struct {
 	// The user ID that will be used to revoke effective permissions.
 	UserID int32
+	// The type of the code host as if it would be used as ExternalAccountSpec.ServiceType,
+	// e.g. "github", "gitlab", "bitbucketServer" and "sourcegraph".
+	ServiceType string
+	// The ID of the code host as if it would be used as ExternalAccountSpec.ServiceID,
+	// e.g. "https://github.com/", "https://gitlab.com/" and "https://sourcegraph.com/".
+	ServiceID string
 	// The username that will be used to revoke pending permissions.
 	Username string
 	// The list of verified emails that will be used to revoke pending permissions.

@@ -28,7 +28,7 @@ import { RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
 import { EmptyRepositoryPage, RepositoryCloningInProgressPage } from './RepositoryGitDataContainer'
 import { RevisionsPopover } from './RevisionsPopover'
-import { PatternTypeProps, CaseSensitivityProps } from '../search'
+import { PatternTypeProps, CaseSensitivityProps, SmartSearchFieldProps } from '../search'
 import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
 import { RepoSettingsSideBarItem } from './settings/RepoSettingsSidebar'
 
@@ -46,7 +46,8 @@ export interface RepoRevContainerContext
             Exclude<keyof RepoContainerContext, 'onDidUpdateRepository' | 'onDidUpdateExternalLinks'>
         >,
         PatternTypeProps,
-        CaseSensitivityProps {
+        CaseSensitivityProps,
+        SmartSearchFieldProps {
     repo: GQL.IRepository
     rev: string
     resolvedRev: ResolvedRev
@@ -68,7 +69,8 @@ interface RepoRevContainerProps
         ThemeProps,
         ActivationProps,
         PatternTypeProps,
-        CaseSensitivityProps {
+        CaseSensitivityProps,
+        SmartSearchFieldProps {
     routes: readonly RepoRevContainerRoute[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarItems: readonly RepoSettingsSideBarItem[]
@@ -227,6 +229,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
             setCaseSensitivity: this.props.setCaseSensitivity,
             repoSettingsAreaRoutes: this.props.repoSettingsAreaRoutes,
             repoSettingsSidebarItems: this.props.repoSettingsSidebarItems,
+            smartSearchField: this.props.smartSearchField,
         }
 
         return (

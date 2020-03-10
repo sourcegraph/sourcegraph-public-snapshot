@@ -60,7 +60,7 @@ export const CampaignNode: React.FunctionComponent<CampaignNodeProps> = ({ node,
                         dangerousInnerHTML={
                             node.description ? renderMarkdown(node.description, { plainText: true }) : 'No description'
                         }
-                    ></Markdown>
+                    />
                 </div>
                 <div data-tooltip="Open changesets">
                     {changesetCountByState(GQL.ChangesetState.OPEN) + node.changesetPlans.totalCount}{' '}

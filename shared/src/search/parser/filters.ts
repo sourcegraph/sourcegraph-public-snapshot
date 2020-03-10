@@ -93,6 +93,11 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         description: 'Include results from forked repositories.',
         singular: true,
     },
+    [FilterType.index]: {
+        discreteValues: ['yes', 'no', 'only'],
+        description: 'Include results from indexed repositories',
+        singular: true,
+    },
     [FilterType.lang]: {
         negatable: true,
         description: negated => `${negated ? 'Exclude' : 'Include only'} results from the given language`,

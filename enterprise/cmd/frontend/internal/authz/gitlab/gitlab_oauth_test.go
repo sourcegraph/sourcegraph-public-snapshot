@@ -28,7 +28,7 @@ func Test_GitLab_RepoPerms(t *testing.T) {
 		// Configures the provider. Do NOT set the MaxBatchRequests and MinBatchThreshold fields in
 		// the test struct declarations, as these are set to a range of values in the test logic,
 		// itself.
-		op OAuthAuthzProviderOp
+		op OAuthProviderOp
 
 		calls []call
 	}
@@ -92,7 +92,7 @@ func Test_GitLab_RepoPerms(t *testing.T) {
 	tests := []test{
 		{
 			description: "standard config",
-			op: OAuthAuthzProviderOp{
+			op: OAuthProviderOp{
 				BaseURL: mustURL(t, "https://gitlab.mine"),
 			},
 			calls: []call{
@@ -240,7 +240,7 @@ func Test_GitLab_RepoPerms_cache(t *testing.T) {
 	gitlab.MockListTree = gitlabMock.ListTree
 
 	ctx := context.Background()
-	authzProvider := newOAuthProvider(OAuthAuthzProviderOp{
+	authzProvider := newOAuthProvider(OAuthProviderOp{
 		BaseURL:   mustURL(t, "https://gitlab.mine"),
 		MockCache: make(mockCache),
 		CacheTTL:  3 * time.Hour,
@@ -384,7 +384,7 @@ func Test_GitLab_RepoPerms_batchVisibility(t *testing.T) {
 		gitlab.MockListTree = gitlabMock.ListTree
 
 		ctx := context.Background()
-		authzProvider := newOAuthProvider(OAuthAuthzProviderOp{
+		authzProvider := newOAuthProvider(OAuthProviderOp{
 			BaseURL:           mustURL(t, "https://gitlab.mine"),
 			MockCache:         make(mockCache),
 			CacheTTL:          3 * time.Hour,
@@ -435,7 +435,7 @@ func Test_GitLab_RepoPerms_batchVisibility(t *testing.T) {
 		gitlab.MockListTree = gitlabMock.ListTree
 
 		ctx := context.Background()
-		authzProvider := newOAuthProvider(OAuthAuthzProviderOp{
+		authzProvider := newOAuthProvider(OAuthProviderOp{
 			BaseURL:           mustURL(t, "https://gitlab.mine"),
 			MockCache:         make(mockCache),
 			CacheTTL:          3 * time.Hour,

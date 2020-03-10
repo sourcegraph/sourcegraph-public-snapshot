@@ -337,7 +337,7 @@ func (s *FakeStore) UpsertRepos(ctx context.Context, upserts ...*Repo) error {
 	for _, r := range updates {
 		repo := s.repoByID[r.ID]
 		if repo == nil {
-			return errors.Errorf("upserting repo with non-existant ID: id=%v", r.ID)
+			return errors.Errorf("upserting repo with non-existent ID: id=%v", r.ID)
 		}
 		s.repoByID[r.ID] = r
 	}

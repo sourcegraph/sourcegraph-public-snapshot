@@ -30,9 +30,7 @@ describe('Backend', () => {
         for (const position of positions) {
             const { locations } = util.filterNodeModules(
                 util.mapLocations(
-                    (await ctx.backend.references(repositoryId, commit, 'src/index.ts', position)) || {
-                        locations: [],
-                    }
+                    await util.queryAllReferences(ctx.backend, repositoryId, commit, 'src/index.ts', position, 50)
                 )
             )
 

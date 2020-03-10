@@ -104,42 +104,28 @@ type ParserResult<T = Token> = ParseError | ParseSuccess<T>
 type Parser<T = Token> = (input: string, start: number) => ParserResult<T>
 
 /**
- * Returns a {@link Parser} that succeeds if zero or more of the given `parseToken` parsers,
- * separated by `parsedSeparator`, are found in a search query.
+ * Returns a {@link Parser} that succeeds if zero or more tokens parsed
+ * by the given `parseToken` parsers are found in a search query.
  */
-const zeroOrMore = (
-    parseToken: Parser<Exclude<Token, Sequence>>,
-    parseSeparator: Parser<Exclude<Token, Sequence>>
-): Parser<Sequence> => (input, start) => {
+const zeroOrMore = (parseToken: Parser): Parser<Sequence> => (input, start) => {
     const members: Pick<ParseSuccess<Exclude<Token, Sequence>>, 'range' | 'token'>[] = []
-    let end = start + 1
     let adjustedStart = start
-    // try to start with separator
-    const separatorResult = parseSeparator(input, start)
-    if (separatorResult.type === 'success') {
-        end = separatorResult.range.end
-        adjustedStart = separatorResult.range.end
-        const { token, range } = separatorResult
-        members.push({ token, range })
-    }
-    let result = parseToken(input, adjustedStart)
-    while (result.type !== 'error') {
-        const { token, range } = result
-        members.push({ token, range })
+    let end = start + 1
+    while (input[adjustedStart] !== undefined) {
+        const result = parseToken(input, adjustedStart)
+        if (result.type === 'error') {
+            return result
+        }
+        if (result.token.type === 'sequence') {
+            for (const m of result.token.members) {
+                members.push(m)
+            }
+        } else {
+            const { range, token } = result
+            members.push({ range, token })
+        }
         end = result.range.end
-        if (input[end] === undefined) {
-            // EOF
-            break
-        }
-        // Parse separator
-        const separatorResult = parseSeparator(input, end)
-        if (separatorResult.type === 'error') {
-            return separatorResult
-        }
-        // Try to parse another token.
-        end = separatorResult.range.end
-        members.push({ token: separatorResult.token, range: separatorResult.range })
-        result = parseToken(input, end)
+        adjustedStart = end
     }
     return {
         type: 'success',
@@ -151,7 +137,7 @@ const zeroOrMore = (
 /**
  * Returns a {@link Parser} that succeeds if any of the given parsers succeeds.
  */
-const oneOf = <T extends Exclude<Token, Sequence>>(...parsers: Parser<T>[]): Parser<T> => (input, start) => {
+const oneOf = <T>(...parsers: Parser<T>[]): Parser<T> => (input, start) => {
     const expected: string[] = []
     for (const parser of parsers) {
         const result = parser(input, start)
@@ -240,6 +226,33 @@ const filterDelimiter = character(':')
 const filterValue = oneOf<Quoted | Literal>(quoted, literal)
 
 /**
+ * Returns a {@link Parser} that succeeds if a token parsed by `parseToken`,
+ * followed by whitespace or EOF, is found in the search query.
+ */
+const followedByWhitespace = (parseToken: Parser<Exclude<Token, Sequence>>): Parser<Sequence> => (input, start) => {
+    const members: Pick<ParseSuccess<Exclude<Token, Sequence>>, 'range' | 'token'>[] = []
+    const tokenResult = parseToken(input, start)
+    if (tokenResult.type === 'error') {
+        return tokenResult
+    }
+    members.push({ token: tokenResult.token, range: tokenResult.range })
+    let { end } = tokenResult.range
+    if (input[end] !== undefined) {
+        const separatorResult = whitespace(input, end)
+        if (separatorResult.type === 'error') {
+            return separatorResult
+        }
+        members.push({ token: separatorResult.token, range: separatorResult.range })
+        end = separatorResult.range.end
+    }
+    return {
+        type: 'success',
+        range: { start, end },
+        token: { type: 'sequence', members },
+    }
+}
+
+/**
  * A {@link Parser} that will attempt to parse {@link Filter} tokens
  * (consisting a of a filter type and a filter value, separated by a colon)
  * in a search query.
@@ -272,7 +285,7 @@ const filter: Parser<Filter> = (input, start) => {
 /**
  * A {@link Parser} for a Sourcegraph search query.
  */
-const searchQuery = zeroOrMore(oneOf<Filter | Quoted | Literal>(filter, quoted, literal), whitespace)
+const searchQuery = zeroOrMore(oneOf<Token>(whitespace, ...[filter, quoted, literal].map(followedByWhitespace)))
 
 /**
  * Parses a search query string.

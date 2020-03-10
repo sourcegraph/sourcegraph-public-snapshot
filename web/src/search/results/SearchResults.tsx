@@ -9,7 +9,7 @@ import {
     PatternTypeProps,
     InteractiveSearchProps,
     CaseSensitivityProps,
-    searchURLIsCaseSensitive,
+    parseSearchURL,
 } from '..'
 import { Contributions, Evaluated } from '../../../../shared/src/api/protocol'
 import { FetchFileCtx } from '../../../../shared/src/components/CodeExcerpt'
@@ -112,11 +112,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
             this.componentUpdates
                 .pipe(
                     startWith(this.props),
-                    map(props => ({
-                        query: parseSearchURLQuery(props.location.search),
-                        patternType: parseSearchURLPatternType(props.location.search),
-                        caseSensitive: searchURLIsCaseSensitive(props.location.search),
-                    })),
+                    map(props => parseSearchURL(props.location.search)),
                     // Search when a new search query was specified in the URL
                     distinctUntilChanged((a, b) => isEqual(a, b)),
                     filter(

@@ -26,7 +26,6 @@ window.sgdocs = (() => {
       mobileNavInit()
       navInit()
       scrollNavToSelected()
-      breadcrumbsInit()
       docsVersionLinks()
       startSourcegraphCommandInit()
       setTimeout(schemaLinkCheck, 0) // Browser scrolls straight to element without this
@@ -108,18 +107,6 @@ window.sgdocs = (() => {
 
   function scrollNavToSelected() {
     setTimeout(() => scrollToElement(CONTENT_NAV, CONTENT_NAV.querySelector('.selected')), 50)
-  }
-
-  function breadcrumbsInit() {
-    const capitalized = ['AWS', 'URL', 'CI', 'LSIF', 'GRAPHQL', 'API', 'UI', 'SSL', 'NGINX', 'TLS', 'SSH', 'SSO', 'FAQ', 'SQL']
-    document.querySelectorAll('.breadcrumb-links a').forEach((el, index) => {
-      if (index > 0) {
-        let text = el.text.replace(/_/g, ' ')
-        text = text.charAt(0).toUpperCase() + text.slice(1)
-        capitalized.forEach(word => text = text.replace(new RegExp(word, 'gi'), word))
-        el.text = text
-      }
-    })
   }
 
   /**
