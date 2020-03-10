@@ -301,7 +301,7 @@ func getSourcegraphVersion() (string, error) {
 }
 
 func sourcegraphVersionCheck(version, constraint, minDate string) (bool, error) {
-	if version == "dev" {
+	if version == "dev" || version == "0.0.0+dev" {
 		return true, nil
 	}
 

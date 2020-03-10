@@ -38,6 +38,12 @@ func TestSourcegraphVersionCheck(t *testing.T) {
 			expected:       true,
 		},
 		{
+			currentVersion: "0.0.0+dev",
+			constraint:     ">= 3.13",
+			minDate:        "2020-01-19",
+			expected:       true,
+		},
+		{
 			currentVersion: "54959_2020-01-29_9258595",
 			minDate:        "2020-01-19",
 			constraint:     ">= 999.13",
