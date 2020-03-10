@@ -13,7 +13,6 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
-
 ### Changed
 
 - The "automation" feature was renamed to "campaigns".
@@ -24,7 +23,6 @@ All notable changes to Sourcegraph are documented in this file.
   past commit [821032e2ee45f21f701](https://github.com/sourcegraph/deploy-sourcegraph/commit/821032e2ee45f21f701caac624e4f090c59fd259) or when upgrading to 3.14.
   New installations starting with the mentioned commit or with 3.14 do not need this migration step.
 - Aggregated search latencies (in ms) of search queries are now included in [pings](https://docs.sourcegraph.com/admin/pings).
-
 
 ### Fixed
 
