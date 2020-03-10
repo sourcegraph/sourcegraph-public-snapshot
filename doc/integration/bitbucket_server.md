@@ -115,7 +115,17 @@ Since Sourcegraph is only interested in the IDs of either repositories or users 
 
 The lists returned by both endpoints are encoded as [Roaring Bitmaps](https://roaringbitmap.org/).
 
-Since only a single request is required to fetch the complete list of desired IDs and the response contains only IDs, encoded in an efficient binary format, these two endpoints make the fetching of permissions roughly **eight times faster** (measured on an instance with 10000 repositories) than using Bitbucket Server's REST API. (Bitbucket Server admins can further increase the performance of these endpoints by increasing the [`page.max.repositories` property in the Bitbucket Server configuration](https://confluence.atlassian.com/bitbucketserver/bitbucket-server-config-properties-776640155.html#BitbucketServerconfigproperties-Paging), but you should check your other Bitbucket Server plugins will not be adversely affected by increasing this.)
+Since only a single request is required to fetch the complete list of desired IDs and the response contains only IDs, encoded in an efficient binary format, these two endpoints make the fetching of permissions roughly **eight times faster** (measured on an instance with 10000 repositories) than using Bitbucket Server's REST API.
+
+The feature is opt-in on Sourcegraph's side but the endpoints are enabled by default on Bitbucket Server, which makes it easy to load-test and benchmark the endpoints with a single request. For example, in order to fetch all the repository IDs a single user has access to:
+
+```
+curl 'https://bitbucket.example.com/rest/sourcegraph-admin/1.0/permissions/repositories?user=USERNAME&permission=read' -X GET -H 'Authorization: Bearer YOUR_TOKEN' --output /dev/null
+```
+
+In our tests we could see that using these endpoints reduces the overall load on the instance, because instead of doing `<num_repos_user_has_access_to>/1000` requests that take 600-900ms each, Sourcegraph would only do a single request that takes 1000-1500ms.
+
+Bitbucket Server admins can further increase the performance of these endpoints by increasing the [`page.max.repositories` property in the Bitbucket Server configuration](https://confluence.atlassian.com/bitbucketserver/bitbucket-server-config-properties-776640155.html#BitbucketServerconfigproperties-Paging), but you should check your other Bitbucket Server plugins will not be adversely affected by increasing this.
 
 The plugin uses `RepositoryService`, `UserManager`, `UserService` and `SecurityService` provided by the Atlassian SDK to fetch users or repositories from Bitbucket Server's database. You can see the full code for these two endpoints in [`PermissionRouter.java`](https://github.com/sourcegraph/bitbucket-server-plugin/blob/master/src/main/java/com/sourcegraph/permission/PermissionRouter.java)
 
