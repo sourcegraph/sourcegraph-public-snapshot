@@ -3,8 +3,11 @@ package campaigns
 import (
 	"reflect"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -282,6 +285,23 @@ func (c *Changeset) Clone() *Changeset {
 	tt := *c
 	tt.CampaignIDs = c.CampaignIDs[:len(c.CampaignIDs):len(c.CampaignIDs)]
 	return &tt
+}
+
+func (c *Changeset) SetMetadata(meta interface{}) {
+	switch pr := meta.(type) {
+	case *github.PullRequest:
+		c.Metadata = pr
+		c.ExternalID = strconv.FormatInt(pr.Number, 10)
+		c.ExternalServiceType = github.ServiceType
+		c.ExternalBranch = pr.HeadRefName
+		c.ExternalUpdatedAt = pr.UpdatedAt
+	case *bitbucketserver.PullRequest:
+		c.Metadata = pr
+		c.ExternalID = strconv.FormatInt(int64(pr.ID), 10)
+		c.ExternalServiceType = bitbucketserver.ServiceType
+		c.ExternalBranch = git.AbbreviateRef(pr.FromRef.ID)
+		c.ExternalUpdatedAt = unixMilliToTime(int64(pr.UpdatedDate))
+	}
 }
 
 // RemoveCampaignID removes the given id from the Changesets CampaignIDs slice.

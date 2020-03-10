@@ -439,13 +439,14 @@ func RunChangesetJob(
 		// We restore the newest metadata returned by the
 		// `ccs.CreateChangesets` call above and then update the Changeset in
 		// the database.
-		clone.Metadata = cs.Changeset.Metadata
+		clone.SetMetadata(cs.Changeset.Metadata)
 		if err = store.UpdateChangesets(ctx, clone); err != nil {
 			return err
 		}
 	}
 
-	if err := store.UpsertChangesetEvents(ctx, cs.Events()...); err != nil {
+	if err := store.UpsertChangesetEvents(ctx, clone.Events()...); err != nil {
+		log15.Error("UpsertChangesetEvents", "err", err)
 		return err
 	}
 

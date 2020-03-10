@@ -175,7 +175,7 @@ func (s GithubSource) CreateChangeset(ctx context.Context, c *Changeset) (bool, 
 		exists = true
 	}
 
-	s.SetExternalFields(c, pr)
+	c.SetMetadata(pr)
 
 	return exists, nil
 }
@@ -220,18 +220,10 @@ func (s GithubSource) LoadChangesets(ctx context.Context, cs ...*Changeset) erro
 	}
 
 	for i := range cs {
-		s.SetExternalFields(cs[i], prs[i])
+		cs[i].SetMetadata(prs[i])
 	}
 
 	return nil
-}
-
-func (s GithubSource) SetExternalFields(c *Changeset, pr *github.PullRequest) {
-	c.Changeset.Metadata = pr
-	c.Changeset.ExternalID = strconv.FormatInt(pr.Number, 10)
-	c.Changeset.ExternalServiceType = github.ServiceType
-	c.Changeset.ExternalBranch = pr.HeadRefName
-	c.Changeset.ExternalUpdatedAt = pr.UpdatedAt
 }
 
 // UpdateChangeset updates the given *Changeset in the code host.
