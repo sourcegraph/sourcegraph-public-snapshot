@@ -3,6 +3,7 @@ package authz
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/RoaringBitmap/roaring"
 	"github.com/pkg/errors"
@@ -33,6 +34,8 @@ type PermsSyncer struct {
 	reposStore repos.Store
 	// The database interface for any permissions operations.
 	permsStore *edb.PermsStore
+	// The mockable function to return the current time.
+	clock func() time.Time
 }
 
 // PermsFetcher is an authz.Provider that could also fetch permissions in both
@@ -52,12 +55,13 @@ type PermsFetcher interface {
 }
 
 // NewPermsSyncer returns a new permissions syncing request manager.
-func NewPermsSyncer(fetchers map[string]PermsFetcher, reposStore repos.Store, permsStore *edb.PermsStore) *PermsSyncer {
+func NewPermsSyncer(fetchers map[string]PermsFetcher, reposStore repos.Store, permsStore *edb.PermsStore, clock func() time.Time) *PermsSyncer {
 	return &PermsSyncer{
 		queue:      newRequestQueue(),
 		fetchers:   fetchers,
 		reposStore: reposStore,
 		permsStore: permsStore,
+		clock:      clock,
 	}
 }
 
@@ -271,6 +275,18 @@ func (s *PermsSyncer) Run(ctx context.Context) {
 			// No waiting request is in the queue
 			continue
 		}
+
+		// Check if it's the time to sync the request
+		if s.clock().Before(request.nextSyncAt) {
+			dur := request.nextSyncAt.Sub(s.clock())
+			time.AfterFunc(dur, func() {
+				notify(s.queue.notifyEnqueue)
+			})
+
+			log15.Debug("PermsSyncer.Run.waitForNextSync", "duration", dur)
+			continue
+		}
+
 		notify(notifyDequeued)
 
 		err := s.syncPerms(ctx, request)

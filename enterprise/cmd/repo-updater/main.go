@@ -59,10 +59,11 @@ func enterpriseInit(db *sql.DB, repoStore repos.Store, cf *httpcli.Factory, serv
 
 		// Set up background permissions syncing
 		// TODO(jchen): Get a list of authz.Provider that implements the PermsFetcher.
-		permsStore := edb.NewPermsStore(db, func() time.Time {
+		clock := func() time.Time {
 			return time.Now().UTC().Truncate(time.Microsecond)
-		})
-		permsSyncer := authz.NewPermsSyncer(nil, repoStore, permsStore)
+		}
+		permsStore := edb.NewPermsStore(db, clock)
+		permsSyncer := authz.NewPermsSyncer(nil, repoStore, permsStore, clock)
 		permsScheduler := authz.NewPermsScheduler(10*time.Minute, db)
 		go authz.Sync(ctx, permsScheduler, permsSyncer)
 	})
