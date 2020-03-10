@@ -264,7 +264,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID) erro
 	}
 	defer txs.Done(&err)
 
-	accounts := &edb.ServiceAccounts{
+	accounts := &edb.ExternalAccounts{
 		ServiceType: "sourcegraph",
 		ServiceID:   "https://sourcegraph.com/",
 		AccountIDs:  pendingBindUsernames,

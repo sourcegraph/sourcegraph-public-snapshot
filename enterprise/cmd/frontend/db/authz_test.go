@@ -51,7 +51,7 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 	s := NewAuthzStore(dbconn.Global, clock).(*authzStore)
 
 	type update struct {
-		accounts *ServiceAccounts
+		accounts *ExternalAccounts
 		repoID   int32
 	}
 	tests := []struct {
@@ -73,7 +73,7 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 			},
 			updates: []update{
 				{
-					accounts: &ServiceAccounts{
+					accounts: &ExternalAccounts{
 						ServiceType: "sourcegraph",
 						ServiceID:   "https://sourcegraph.com/",
 						AccountIDs:  []string{"alice@example.com"},
@@ -81,7 +81,7 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 					repoID: 1,
 				},
 				{
-					accounts: &ServiceAccounts{
+					accounts: &ExternalAccounts{
 						ServiceType: "sourcegraph",
 						ServiceID:   "https://sourcegraph.com/",
 						AccountIDs:  []string{"alice2@example.com"},
@@ -89,7 +89,7 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 					repoID: 2,
 				},
 				{
-					accounts: &ServiceAccounts{
+					accounts: &ExternalAccounts{
 						ServiceType: "sourcegraph",
 						ServiceID:   "https://sourcegraph.com/",
 						AccountIDs:  []string{"alice3@example.com"},
@@ -111,7 +111,7 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 			},
 			updates: []update{
 				{
-					accounts: &ServiceAccounts{
+					accounts: &ExternalAccounts{
 						ServiceType: "sourcegraph",
 						ServiceID:   "https://sourcegraph.com/",
 						AccountIDs:  []string{"alice"},
@@ -119,7 +119,7 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 					repoID: 1,
 				},
 				{
-					accounts: &ServiceAccounts{
+					accounts: &ExternalAccounts{
 						ServiceType: "sourcegraph",
 						ServiceID:   "https://sourcegraph.com/",
 						AccountIDs:  []string{"bob"},
@@ -283,7 +283,7 @@ func TestAuthzStore_RevokeUserPermissions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	accounts := &ServiceAccounts{
+	accounts := &ExternalAccounts{
 		ServiceType: "sourcegraph",
 		ServiceID:   "https://sourcegraph.com/",
 		AccountIDs:  []string{"alice", "alice@example.com"},

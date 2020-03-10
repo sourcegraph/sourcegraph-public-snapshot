@@ -67,7 +67,7 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 		mockUsers          []*types.User
 		gqlTests           []*gqltesting.Test
 		expUserIDs         []uint32
-		expAccounts        *edb.ServiceAccounts
+		expAccounts        *edb.ExternalAccounts
 	}{
 		{
 			name: "set permissions via email",
@@ -102,7 +102,7 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 				},
 			},
 			expUserIDs: []uint32{1},
-			expAccounts: &edb.ServiceAccounts{
+			expAccounts: &edb.ExternalAccounts{
 				ServiceType: "sourcegraph",
 				ServiceID:   "https://sourcegraph.com/",
 				AccountIDs:  []string{"bob"},
@@ -141,7 +141,7 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 				},
 			},
 			expUserIDs: []uint32{1},
-			expAccounts: &edb.ServiceAccounts{
+			expAccounts: &edb.ExternalAccounts{
 				ServiceType: "sourcegraph",
 				ServiceID:   "https://sourcegraph.com/",
 				AccountIDs:  []string{"bob"},
@@ -174,7 +174,7 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 				}
 				return nil
 			}
-			edb.Mocks.Perms.SetRepoPendingPermissions = func(_ context.Context, accounts *edb.ServiceAccounts, _ *authz.RepoPermissions) error {
+			edb.Mocks.Perms.SetRepoPendingPermissions = func(_ context.Context, accounts *edb.ExternalAccounts, _ *authz.RepoPermissions) error {
 				if diff := cmp.Diff(test.expAccounts, accounts); diff != "" {
 					return fmt.Errorf("accounts: %v", diff)
 				}

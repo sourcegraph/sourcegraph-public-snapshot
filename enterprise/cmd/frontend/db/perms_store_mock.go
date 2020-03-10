@@ -12,6 +12,6 @@ type MockPerms struct {
 	LoadUserPermissions        func(ctx context.Context, p *authz.UserPermissions) error
 	LoadUserPendingPermissions func(ctx context.Context, p *authz.UserPendingPermissions) error
 	SetRepoPermissions         func(ctx context.Context, p *authz.RepoPermissions) error
-	SetRepoPendingPermissions  func(ctx context.Context, accounts *ServiceAccounts, p *authz.RepoPermissions) error
+	SetRepoPendingPermissions  func(ctx context.Context, accounts *ExternalAccounts, p *authz.RepoPermissions) error
 	ListPendingUsers           func(ctx context.Context) ([]string, error)
 }

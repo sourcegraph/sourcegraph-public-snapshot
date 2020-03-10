@@ -129,7 +129,7 @@ func (s *authzStore) RevokeUserPermissions(ctx context.Context, args *db.RevokeU
 		return err
 	}
 
-	accounts := &ServiceAccounts{
+	accounts := &ExternalAccounts{
 		ServiceType: args.ServiceType,
 		ServiceID:   args.ServiceID,
 		AccountIDs:  append([]string{args.Username}, args.VerifiedEmails...),

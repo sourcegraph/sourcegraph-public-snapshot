@@ -444,19 +444,19 @@ AND bind_id = %s
 	)
 }
 
-// ServiceAccounts contains a list of acounts that belong to the same external service.
-type ServiceAccounts struct {
+// ExternalAccounts contains a list of acounts that belong to the same external service.
+type ExternalAccounts struct {
 	ServiceType string
 	ServiceID   string
 	AccountIDs  []string
 }
 
 // TracingFields returns tracing fields for the opentracing log.
-func (s *ServiceAccounts) TracingFields() []otlog.Field {
+func (s *ExternalAccounts) TracingFields() []otlog.Field {
 	return []otlog.Field{
-		otlog.String("ServiceAccounts.ServiceType", s.ServiceType),
-		otlog.String("ServiceAccounts.Perm", s.ServiceID),
-		otlog.Int("ServiceAccounts.AccountIDs.Count", len(s.AccountIDs)),
+		otlog.String("ExternalAccounts.ServiceType", s.ServiceType),
+		otlog.String("ExternalAccounts.Perm", s.ServiceID),
+		otlog.Int("ExternalAccounts.AccountIDs.Count", len(s.AccountIDs)),
 	}
 }
 
@@ -468,7 +468,7 @@ func (s *ServiceAccounts) TracingFields() []otlog.Field {
 // This method starts its own transaction for update consistency if the caller hasn't started one already.
 //
 // Example input:
-//  &ServiceAccounts{
+//  &ExternalAccounts{
 //      ServiceType: "sourcegraph",
 //      ServiceID:   "https://sourcegraph.com/",
 //      AccountIDs:  []string{"alice", "bob"},
@@ -489,7 +489,7 @@ func (s *ServiceAccounts) TracingFields() []otlog.Field {
 //   repo_id | permission |   user_ids   | updated_at
 //  ---------+------------+--------------+------------
 //         1 |       read | bitmap{1, 2} | <DateTime>
-func (s *PermsStore) SetRepoPendingPermissions(ctx context.Context, accounts *ServiceAccounts, p *authz.RepoPermissions) (err error) {
+func (s *PermsStore) SetRepoPendingPermissions(ctx context.Context, accounts *ExternalAccounts, p *authz.RepoPermissions) (err error) {
 	if Mocks.Perms.SetRepoPendingPermissions != nil {
 		return Mocks.Perms.SetRepoPendingPermissions(ctx, accounts, p)
 	}
@@ -681,7 +681,7 @@ func (s *PermsStore) batchLoadUserPendingPermissions(ctx context.Context, q *sql
 }
 
 func insertUserPendingPermissionsBatchQuery(
-	accounts *ServiceAccounts,
+	accounts *ExternalAccounts,
 	p *authz.RepoPermissions,
 ) (*sqlf.Query, error) {
 	const format = `
@@ -1095,7 +1095,7 @@ func (s *PermsStore) DeleteAllUserPermissions(ctx context.Context, userID int32)
 
 // DeleteAllUserPendingPermissions deletes all rows with given bind IDs from the "user_pending_permissions" table.
 // It accepts list of bind IDs because a user has multiple bind IDs, e.g. username and email addresses.
-func (s *PermsStore) DeleteAllUserPendingPermissions(ctx context.Context, accounts *ServiceAccounts) (err error) {
+func (s *PermsStore) DeleteAllUserPendingPermissions(ctx context.Context, accounts *ExternalAccounts) (err error) {
 	ctx, save := s.observe(ctx, "DeleteAllUserPendingPermissions", "")
 	defer func() { save(&err, accounts.TracingFields()...) }()
 

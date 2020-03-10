@@ -103,7 +103,7 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 	}
 	defer txs.Done(&err)
 
-	accounts := &edb.ServiceAccounts{
+	accounts := &edb.ExternalAccounts{
 		ServiceType: "sourcegraph",
 		ServiceID:   "https://sourcegraph.com/",
 		AccountIDs:  pendingBindIDs,

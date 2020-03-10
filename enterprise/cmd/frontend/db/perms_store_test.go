@@ -555,7 +555,7 @@ func testPermsStore_LoadUserPendingPermissions(db *sql.DB) func(*testing.T) {
 			s := NewPermsStore(db, clock)
 			defer cleanupPermsTables(t, s)
 
-			accounts := &ServiceAccounts{
+			accounts := &ExternalAccounts{
 				ServiceType: "sourcegraph",
 				ServiceID:   "https://sourcegraph.com/",
 				AccountIDs:  []string{"bob"},
@@ -586,7 +586,7 @@ func testPermsStore_LoadUserPendingPermissions(db *sql.DB) func(*testing.T) {
 			s := NewPermsStore(db, clock)
 			defer cleanupPermsTables(t, s)
 
-			accounts := &ServiceAccounts{
+			accounts := &ExternalAccounts{
 				ServiceType: "sourcegraph",
 				ServiceID:   "https://sourcegraph.com/",
 				AccountIDs:  []string{"alice"},
@@ -617,7 +617,7 @@ func testPermsStore_LoadUserPendingPermissions(db *sql.DB) func(*testing.T) {
 			s := NewPermsStore(db, clock)
 			defer cleanupPermsTables(t, s)
 
-			accounts := &ServiceAccounts{
+			accounts := &ExternalAccounts{
 				ServiceType: "sourcegraph",
 				ServiceID:   "https://sourcegraph.com/",
 				AccountIDs:  []string{"alice", "bob"},
@@ -781,7 +781,7 @@ func checkRepoPendingPermsTable(ctx context.Context, s *PermsStore, bindIDs map[
 
 func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 	type update struct {
-		accounts *ServiceAccounts
+		accounts *ExternalAccounts
 		perm     *authz.RepoPermissions
 	}
 	tests := []struct {
@@ -794,7 +794,7 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 			name: "empty",
 			updates: []update{
 				{
-					accounts: &ServiceAccounts{
+					accounts: &ExternalAccounts{
 						ServiceType: "sourcegraph",
 						ServiceID:   "https://sourcegraph.com/",
 						AccountIDs:  nil,
@@ -810,7 +810,7 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 			name: "add",
 			updates: []update{
 				{
-					accounts: &ServiceAccounts{
+					accounts: &ExternalAccounts{
 						ServiceType: "sourcegraph",
 						ServiceID:   "https://sourcegraph.com/",
 						AccountIDs:  []string{"alice"},
@@ -821,7 +821,7 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 					},
 				},
 				{
-					accounts: &ServiceAccounts{
+					accounts: &ExternalAccounts{
 						ServiceType: "sourcegraph",
 						ServiceID:   "https://sourcegraph.com/",
 						AccountIDs:  []string{"alice", "bob"},
@@ -832,7 +832,7 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 					},
 				},
 				{
-					accounts: &ServiceAccounts{
+					accounts: &ExternalAccounts{
 						ServiceType: "sourcegraph",
 						ServiceID:   "https://sourcegraph.com/",
 						AccountIDs:  []string{"cindy", "david"},
@@ -859,7 +859,7 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 			name: "add and update",
 			updates: []update{
 				{
-					accounts: &ServiceAccounts{
+					accounts: &ExternalAccounts{
 						ServiceType: "sourcegraph",
 						ServiceID:   "https://sourcegraph.com/",
 						AccountIDs:  []string{"alice", "bob"},
@@ -870,7 +870,7 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 					},
 				},
 				{
-					accounts: &ServiceAccounts{
+					accounts: &ExternalAccounts{
 						ServiceType: "sourcegraph",
 						ServiceID:   "https://sourcegraph.com/",
 						AccountIDs:  []string{"bob", "cindy"},
@@ -881,7 +881,7 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 					},
 				},
 				{
-					accounts: &ServiceAccounts{
+					accounts: &ExternalAccounts{
 						ServiceType: "sourcegraph",
 						ServiceID:   "https://sourcegraph.com/",
 						AccountIDs:  []string{"alice", "bob"},
@@ -892,7 +892,7 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 					},
 				},
 				{
-					accounts: &ServiceAccounts{
+					accounts: &ExternalAccounts{
 						ServiceType: "sourcegraph",
 						ServiceID:   "https://sourcegraph.com/",
 						AccountIDs:  []string{"cindy", "david"},
@@ -918,7 +918,7 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 			name: "add and clear",
 			updates: []update{
 				{
-					accounts: &ServiceAccounts{
+					accounts: &ExternalAccounts{
 						ServiceType: "sourcegraph",
 						ServiceID:   "https://sourcegraph.com/",
 						AccountIDs:  []string{"alice", "bob", "cindy"},
@@ -929,7 +929,7 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 					},
 				},
 				{
-					accounts: &ServiceAccounts{
+					accounts: &ExternalAccounts{
 						ServiceType: "sourcegraph",
 						ServiceID:   "https://sourcegraph.com/",
 						AccountIDs:  []string{},
@@ -998,7 +998,7 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 
 func testPermsStore_ListPendingUsers(db *sql.DB) func(t *testing.T) {
 	type update struct {
-		accounts *ServiceAccounts
+		accounts *ExternalAccounts
 		perm     *authz.RepoPermissions
 	}
 	tests := []struct {
@@ -1014,7 +1014,7 @@ func testPermsStore_ListPendingUsers(db *sql.DB) func(t *testing.T) {
 			name: "has user with pending permissions",
 			updates: []update{
 				{
-					accounts: &ServiceAccounts{
+					accounts: &ExternalAccounts{
 						ServiceType: "sourcegraph",
 						ServiceID:   "https://sourcegraph.com/",
 						AccountIDs:  []string{"alice"},
@@ -1031,7 +1031,7 @@ func testPermsStore_ListPendingUsers(db *sql.DB) func(t *testing.T) {
 			name: "has user but with empty object_ids",
 			updates: []update{
 				{
-					accounts: &ServiceAccounts{
+					accounts: &ExternalAccounts{
 						ServiceType: "sourcegraph",
 						ServiceID:   "https://sourcegraph.com/",
 						AccountIDs:  []string{"bob@example.com"},
@@ -1042,7 +1042,7 @@ func testPermsStore_ListPendingUsers(db *sql.DB) func(t *testing.T) {
 					},
 				},
 				{
-					accounts: &ServiceAccounts{
+					accounts: &ExternalAccounts{
 						ServiceType: "sourcegraph",
 						ServiceID:   "https://sourcegraph.com/",
 						AccountIDs:  nil,
@@ -1090,7 +1090,7 @@ func testPermsStore_ListPendingUsers(db *sql.DB) func(t *testing.T) {
 
 func testPermsStore_GrantPendingPermissions(db *sql.DB) func(t *testing.T) {
 	type pending struct {
-		accounts *ServiceAccounts
+		accounts *ExternalAccounts
 		perm     *authz.RepoPermissions
 	}
 	type update struct {
@@ -1143,7 +1143,7 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(t *testing.T) {
 					},
 					pendings: []pending{
 						{
-							accounts: &ServiceAccounts{
+							accounts: &ExternalAccounts{
 								ServiceType: "sourcegraph",
 								ServiceID:   "https://sourcegraph.com/",
 								AccountIDs:  []string{"alice"},
@@ -1154,7 +1154,7 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(t *testing.T) {
 							},
 						},
 						{
-							accounts: &ServiceAccounts{
+							accounts: &ExternalAccounts{
 								ServiceType: "sourcegraph",
 								ServiceID:   "https://sourcegraph.com/",
 								AccountIDs:  []string{"bob"},
@@ -1214,7 +1214,7 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(t *testing.T) {
 					},
 					pendings: []pending{
 						{
-							accounts: &ServiceAccounts{
+							accounts: &ExternalAccounts{
 								ServiceType: "sourcegraph",
 								ServiceID:   "https://sourcegraph.com/",
 								AccountIDs:  []string{"alice"},
@@ -1225,7 +1225,7 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(t *testing.T) {
 							},
 						},
 						{
-							accounts: &ServiceAccounts{
+							accounts: &ExternalAccounts{
 								ServiceType: "sourcegraph",
 								ServiceID:   "https://sourcegraph.com/",
 								AccountIDs:  []string{"bob"},
@@ -1285,7 +1285,7 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(t *testing.T) {
 					},
 					pendings: []pending{
 						{
-							accounts: &ServiceAccounts{
+							accounts: &ExternalAccounts{
 								ServiceType: "sourcegraph",
 								ServiceID:   "https://sourcegraph.com/",
 								AccountIDs:  []string{"alice@example.com"},
@@ -1296,7 +1296,7 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(t *testing.T) {
 							},
 						},
 						{
-							accounts: &ServiceAccounts{
+							accounts: &ExternalAccounts{
 								ServiceType: "sourcegraph",
 								ServiceID:   "https://sourcegraph.com/",
 								AccountIDs:  []string{"alice2@example.com"},
@@ -1460,7 +1460,7 @@ func testPermsStore_DeleteAllUserPendingPermissions(db *sql.DB) func(t *testing.
 
 		ctx := context.Background()
 
-		accounts := &ServiceAccounts{
+		accounts := &ExternalAccounts{
 			ServiceType: "sourcegraph",
 			ServiceID:   "https://sourcegraph.com/",
 			AccountIDs:  []string{"alice", "bob"},
@@ -1534,7 +1534,7 @@ func testPermsStore_DatabaseDeadlocks(db *sql.DB) func(t *testing.T) {
 			}
 		}
 		setRepoPendingPermissions := func(ctx context.Context, t *testing.T) {
-			accounts := &ServiceAccounts{
+			accounts := &ExternalAccounts{
 				ServiceType: "sourcegraph",
 				ServiceID:   "https://sourcegraph.com/",
 				AccountIDs:  []string{"alice"},
