@@ -63,8 +63,7 @@ func enterpriseInit(db *sql.DB, repoStore repos.Store, cf *httpcli.Factory, serv
 			return time.Now().UTC().Truncate(time.Microsecond)
 		}
 		permsStore := edb.NewPermsStore(db, clock)
-		permsSyncer := authz.NewPermsSyncer(nil, repoStore, permsStore, clock)
-		permsScheduler := authz.NewPermsScheduler(10*time.Minute, db)
-		go authz.Sync(ctx, permsScheduler, permsSyncer)
+		permsSyncer := authz.NewPermsSyncer(nil, repoStore, permsStore, db, clock)
+		go permsSyncer.Run(ctx)
 	})
 }

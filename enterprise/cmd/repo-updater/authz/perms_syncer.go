@@ -6,19 +6,22 @@ import (
 	"time"
 
 	"github.com/RoaringBitmap/roaring"
+	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
-// PermsSyncer is a permissions syncing request manager that is in charge of
-// both accepting and processing those requests. It is meant to be running
-// in the background.
+// PermsSyncer is a permissions syncing manager that is in charge of keeping
+// permissions up-to-date for users and repositories at best effort.
+//
+// It is meant to be running in the background.
 type PermsSyncer struct {
 	// The priority queue to maintain the permissions syncing requests.
 	queue *requestQueue
@@ -34,8 +37,12 @@ type PermsSyncer struct {
 	reposStore repos.Store
 	// The database interface for any permissions operations.
 	permsStore *edb.PermsStore
+	// TODO(jchen): Move all DB calls to authz.PermsStore and remove this field.
+	db dbutil.DB
 	// The mockable function to return the current time.
 	clock func() time.Time
+	// The time duration of how often to compute schedule for users and repositories.
+	scheduleInterval time.Duration
 }
 
 // PermsFetcher is an authz.Provider that could also fetch permissions in both
@@ -55,13 +62,21 @@ type PermsFetcher interface {
 }
 
 // NewPermsSyncer returns a new permissions syncing request manager.
-func NewPermsSyncer(fetchers map[string]PermsFetcher, reposStore repos.Store, permsStore *edb.PermsStore, clock func() time.Time) *PermsSyncer {
+func NewPermsSyncer(
+	fetchers map[string]PermsFetcher,
+	reposStore repos.Store,
+	permsStore *edb.PermsStore,
+	db dbutil.DB,
+	clock func() time.Time,
+) *PermsSyncer {
 	return &PermsSyncer{
-		queue:      newRequestQueue(),
-		fetchers:   fetchers,
-		reposStore: reposStore,
-		permsStore: permsStore,
-		clock:      clock,
+		queue:            newRequestQueue(),
+		fetchers:         fetchers,
+		reposStore:       reposStore,
+		permsStore:       permsStore,
+		db:               db,
+		clock:            clock,
+		scheduleInterval: 10 * time.Minute,
 	}
 }
 
@@ -255,10 +270,9 @@ func (s *PermsSyncer) syncPerms(ctx context.Context, request *syncRequest) error
 	return err
 }
 
-// Run starts running the syncer, this method is blocking and should be called as a goroutine.
-func (s *PermsSyncer) Run(ctx context.Context) {
-	log15.Debug("started perms syncer")
-	defer log15.Info("stopped perms syncer")
+func (s *PermsSyncer) runSync(ctx context.Context) {
+	log15.Debug("PermsSyncer.runSync.started")
+	defer log15.Info("PermsSyncer.runSync.stopped")
 
 	// To unblock the "select" on the next loop iteration if no enqueue happened in between.
 	notifyDequeued := make(chan struct{}, 1)
@@ -294,5 +308,250 @@ func (s *PermsSyncer) Run(ctx context.Context) {
 			log15.Warn("Failed to sync permissions", "type", request.typ, "id", request.id, "err", err)
 			continue
 		}
+	}
+}
+
+type scanResult struct {
+	id   int32
+	time time.Time
+}
+
+// TODO(jchen): Move this to authz.PermsStore.
+func (s *PermsSyncer) loadIDsWithTime(ctx context.Context, q *sqlf.Query) ([]scanResult, error) {
+	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args())
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []scanResult
+	for rows.Next() {
+		var id int32
+		var t time.Time
+		if err = rows.Scan(&id, &t); err != nil {
+			return nil, err
+		}
+
+		results = append(results, scanResult{id: id, time: t})
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return results, nil
+}
+
+// scheduleUsersWithNoPerms returns computed schedules for users who have no permissions
+// found in database.
+// TODO(jchen): Move this to authz.PermsStore.
+func (s *PermsSyncer) scheduleUsersWithNoPerms(ctx context.Context) ([]ScheduledUser, error) {
+	q := sqlf.Sprintf(`
+-- source: enterprise/cmd/repo-updater/authz/perms_scheduler.go:PermsScheduler.scheduleUsersWithNoPerms
+SELECT users.id, '1970-01-01 00:00:00+00' FROM users
+WHERE users.id NOT IN
+	(SELECT perms.user_id FROM user_permissions AS perms)
+`)
+	results, err := s.loadIDsWithTime(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+
+	users := make([]ScheduledUser, len(results))
+	for i := range results {
+		users[i] = ScheduledUser{
+			Priority: PriorityLow,
+			UserID:   results[i].id,
+			// NOTE: Have NextSyncAt with zero value (i.e. not set) gives it higher priority.
+		}
+	}
+	return users, nil
+}
+
+// scheduleReposWithNoPerms returns computed schedules for private repositories that
+// have no permissions found in database.
+// TODO(jchen): Move this to authz.PermsStore.
+func (s *PermsSyncer) scheduleReposWithNoPerms(ctx context.Context) ([]ScheduledRepo, error) {
+	q := sqlf.Sprintf(`
+-- source: enterprise/cmd/repo-updater/authz/perms_scheduler.go:PermsScheduler.scheduleReposWithNoPerms
+SELECT repo.id, '1970-01-01 00:00:00+00' FROM repo
+WHERE repo.private = TRUE AND repo.id NOT IN
+	(SELECT perms.repo_id FROM repo_permissions AS perms)
+`)
+
+	results, err := s.loadIDsWithTime(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+
+	repos := make([]ScheduledRepo, len(results))
+	for i := range results {
+		repos[i] = ScheduledRepo{
+			Priority: PriorityLow,
+			RepoID:   api.RepoID(results[i].id),
+			// NOTE: Have NextSyncAt with zero value (i.e. not set) gives it higher priority.
+		}
+	}
+	return repos, nil
+}
+
+// scheduleUsersWithOldestPerms returns computed schedules for users who have oldest
+// permissions in database and capped results by the limit.
+// TODO(jchen): Move this to authz.PermsStore.
+func (s *PermsSyncer) scheduleUsersWithOldestPerms(ctx context.Context, limit int) ([]ScheduledUser, error) {
+	q := sqlf.Sprintf(`
+-- source: enterprise/cmd/repo-updater/authz/perms_scheduler.go:PermsScheduler.scheduleUsersWithOldestPerms
+SELECT user_id, updated_at FROM user_permissions
+ORDER BY updated_at ASC
+LIMIT %s
+`, limit)
+
+	results, err := s.loadIDsWithTime(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+
+	users := make([]ScheduledUser, len(results))
+	for i := range results {
+		users[i] = ScheduledUser{
+			Priority:   PriorityLow,
+			UserID:     results[i].id,
+			NextSyncAt: results[i].time,
+		}
+	}
+	return users, nil
+}
+
+// scheduleReposWithOldestPerms returns computed schedules for private repositories that
+// have oldest permissions in database.
+// TODO(jchen): Move this to authz.PermsStore.
+func (s *PermsSyncer) scheduleReposWithOldestPerms(ctx context.Context, limit int) ([]ScheduledRepo, error) {
+	q := sqlf.Sprintf(`
+-- source: enterprise/cmd/repo-updater/authz/perms_scheduler.go:PermsScheduler.scheduleReposWithOldestPerms
+SELECT repo_id, updated_at FROM repo_permissions
+ORDER BY updated_at ASC
+LIMIT %s
+`, limit)
+
+	results, err := s.loadIDsWithTime(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+
+	repos := make([]ScheduledRepo, len(results))
+	for i := range results {
+		repos[i] = ScheduledRepo{
+			Priority:   PriorityLow,
+			RepoID:     api.RepoID(results[i].id),
+			NextSyncAt: results[i].time,
+		}
+	}
+	return repos, nil
+}
+
+// Schedule contains information for scheduling users and repositories.
+type Schedule struct {
+	Users []ScheduledUser
+	Repos []ScheduledRepo
+}
+
+// ScheduledRepo contains information for scheduling a user.
+type ScheduledUser struct {
+	Priority
+	UserID     int32
+	NextSyncAt time.Time
+}
+
+// ScheduledRepo contains for scheduling a repository.
+type ScheduledRepo struct {
+	Priority
+	api.RepoID
+	NextSyncAt time.Time
+}
+
+// schedule computes schedule four lists in the following order:
+//   1. Users with no permissions, because they can't do anything meaningful (e.g. not able to search).
+//   2. Private repositories with no permissions, because those can't be viewed by anyone except site admins.
+//   3. Rolling updating user permissions over time from oldest ones.
+//   4. Rolling updating repository permissions over time from oldest ones.
+func (s *PermsSyncer) schedule(ctx context.Context) (*Schedule, error) {
+	schedule := new(Schedule)
+
+	users, err := s.scheduleUsersWithNoPerms(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "schedule users with no permissions")
+	}
+	schedule.Users = append(schedule.Users, users...)
+
+	repos, err := s.scheduleReposWithNoPerms(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "schedule repositories with no permissions")
+	}
+	schedule.Repos = append(schedule.Repos, repos...)
+
+	// TODO(jchen): Predict a limit taking account into:
+	//   1. Based on total repos and users that make sense to finish syncing before
+	//      next schedule call, so we don't waste database bandwidth.
+	//   2. How we're doing in terms of rate limiting.
+	// Formula (in worse case scenario, at the pace of 1 req/s):
+	//   initial limit  = <predicted from the previous step>
+	//	 consumed by users = <initial limit> / (<total repos> / <page size>)
+	//   consumed by repos = (<initial limit> - <consumed by users>) / (<total users> / <page size>)
+	// Hard coded both to 100 for now.
+	const limit = 100
+
+	// TODO(jchen): Use better heuristics for setting NexySyncAt, the initial version
+	// just uses the value of LastUpdatedAt get from the perms tables.
+
+	users, err = s.scheduleUsersWithOldestPerms(ctx, limit)
+	if err != nil {
+		return nil, errors.Wrap(err, "load users with oldest permissions")
+	}
+	schedule.Users = append(schedule.Users, users...)
+
+	repos, err = s.scheduleReposWithOldestPerms(ctx, limit)
+	if err != nil {
+		return nil, errors.Wrap(err, "scan repositories with oldest permissions")
+	}
+	schedule.Repos = append(schedule.Repos, repos...)
+
+	return schedule, nil
+}
+
+func (s *PermsSyncer) runSchedule(ctx context.Context) {
+	log15.Debug("PermsSyncer.runSchedule.started")
+	defer log15.Info("PermsSyncer.runSchedule.stopped")
+
+	ticker := time.NewTicker(s.scheduleInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+		case <-ctx.Done():
+			return
+		}
+
+		schedule, err := s.schedule(ctx)
+		if err != nil {
+			log15.Error("Failed to compute schedule", "err", err)
+			continue
+		}
+
+		s.ScheduleUsers(ctx, schedule.Users...)
+		s.ScheduleRepos(ctx, schedule.Repos...)
+	}
+}
+
+// Run kicks off the permissions syncing process, this method is blocking and
+// should be called as a goroutine.
+func (s *PermsSyncer) Run(ctx context.Context) {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	go s.runSync(ctx)
+	go s.runSchedule(ctx)
+
+	select {
+	case <-ctx.Done():
 	}
 }
