@@ -65,9 +65,9 @@ func enterpriseInit(db *sql.DB, repoStore repos.Store, cf *httpcli.Factory, serv
 
 // startBackgroundPermsSync sets up background permissions syncing.
 func startBackgroundPermsSync(ctx context.Context, repoStore repos.Store, db dbutil.DB) {
-	// Wait until config is available
+	// Block until config is available, otherwise will always get default value (i.e. false).
 	enabled := conf.Cached(func() interface{} {
-		return conf.ExperimentalFeatures().BackgroundPermsSync == "enabled"
+		return conf.PermissionsBackgroundSyncEnabled()
 	})().(bool)
 	if !enabled {
 		log15.Debug("startBackgroundPermsSync.notEnabled")
