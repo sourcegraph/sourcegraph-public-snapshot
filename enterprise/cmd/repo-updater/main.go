@@ -15,6 +15,8 @@ import (
 	edb "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater/authz"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -57,13 +59,26 @@ func enterpriseInit(db *sql.DB, repoStore repos.Store, cf *httpcli.Factory, serv
 			}
 		}()
 
-		// Set up background permissions syncing
-		// TODO(jchen): Get a list of authz.Provider that implements the PermsFetcher.
-		clock := func() time.Time {
-			return time.Now().UTC().Truncate(time.Microsecond)
-		}
-		permsStore := edb.NewPermsStore(db, clock)
-		permsSyncer := authz.NewPermsSyncer(nil, repoStore, permsStore, db, clock)
-		go permsSyncer.Run(ctx)
+		go startBackgroundPermsSync(ctx, repoStore, db)
 	})
+}
+
+// startBackgroundPermsSync sets up background permissions syncing.
+func startBackgroundPermsSync(ctx context.Context, repoStore repos.Store, db dbutil.DB) {
+	// Wait until config is available
+	enabled := conf.Cached(func() interface{} {
+		return conf.ExperimentalFeatures().BackgroundPermsSync == "enabled"
+	})().(bool)
+	if !enabled {
+		log15.Debug("startBackgroundPermsSync.notEnabled")
+		return
+	}
+
+	// TODO(jchen): Get a list of authz.Provider that implements the PermsFetcher.
+	clock := func() time.Time {
+		return time.Now().UTC().Truncate(time.Microsecond)
+	}
+	permsStore := edb.NewPermsStore(db, clock)
+	permsSyncer := authz.NewPermsSyncer(nil, repoStore, permsStore, db, clock)
+	go permsSyncer.Run(ctx)
 }

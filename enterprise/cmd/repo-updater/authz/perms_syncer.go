@@ -34,6 +34,7 @@ type PermsSyncer struct {
 	// permissions syncing process to the background for all authz providers.
 	fetchers map[string]PermsFetcher
 	// The database interface for any repos and external services operations.
+	// TODO(jchen): Move all DB calls to authz.PermsStore and remove this field.
 	reposStore repos.Store
 	// The database interface for any permissions operations.
 	permsStore *edb.PermsStore
