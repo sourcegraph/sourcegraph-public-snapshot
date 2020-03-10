@@ -28,6 +28,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The [Kubernetes deployment](https://github.com/sourcegraph/deploy-sourcegraph) frontend role has added services as a resource to watch/listen/get.
   This change does not affect the newly-introduced, restricted Kubernetes config files.
 - Archived repositories are excluded from search by default. Adding `archived:yes` includes archived repositories.
+- Forked repositories are excluded from search by default. Adding `fork:yes` includes forked repositories.
 
 ### Fixed
 
