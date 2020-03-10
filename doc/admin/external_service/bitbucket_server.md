@@ -47,6 +47,7 @@ By default, all Sourcegraph users can view all repositories. To configure Source
 With the [Sourcegraph Bitbucket Server plugin](../../integration/bitbucket_server.md#sourcegraph-bitbucket-server-plugin) you can enable fast permission syncing:
 
 1. Connect Bitbucket Server to Sourcegraph (_see instructions above_).
+1. Follow the [instructions to set up repository permissions](../repo/permissions.md#bitbucket_server) with Bitbucket Server.
 1. Install the [Sourcegraph Bitbucket Server plugin](../../integration/bitbucket_server.md#sourcegraph-bitbucket-server-plugin) on your Bitbucket Server instance.
 1. In Sourcegraph, go to **Site admin > Manage repositories** and edit the Bitbucket Server configuration.
 1. Add the `"plugin.permissions"` property:
