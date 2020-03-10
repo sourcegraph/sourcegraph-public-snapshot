@@ -48,15 +48,6 @@ func TestNextSync(t *testing.T) {
 			want: clock().Add(1 * time.Hour),
 		},
 		{
-			// Could happen due to clock skew
-			name: "Future change",
-			h: campaigns.ChangesetSyncData{
-				UpdatedAt:         clock(),
-				ExternalUpdatedAt: clock().Add(1 * time.Hour),
-			},
-			want: clock().Add(minSyncDelay),
-		},
-		{
 			name: "Diff max is capped",
 			h: campaigns.ChangesetSyncData{
 				UpdatedAt:         clock(),
@@ -71,6 +62,15 @@ func TestNextSync(t *testing.T) {
 				ExternalUpdatedAt: clock().Add(-1 * minSyncDelay / 2),
 			},
 			want: clock().Add(minSyncDelay),
+		},
+		{
+			name: "Event arrives after sync",
+			h: campaigns.ChangesetSyncData{
+				UpdatedAt:         clock(),
+				ExternalUpdatedAt: clock().Add(-1 * maxSyncDelay / 2),
+				LatestEvent:       clock().Add(10 * time.Minute),
+			},
+			want: clock().Add(10 * time.Minute).Add(minSyncDelay),
 		},
 	}
 	for _, tt := range tests {
