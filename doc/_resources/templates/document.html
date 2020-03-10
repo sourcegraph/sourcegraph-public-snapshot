@@ -21,6 +21,24 @@
     </div>
 {{end}}
 
+{{define "breadcrumb"}}
+    {{with .Content}}
+        <div class="nav-container flex-container mb-2 pt-2 breadcrumbs small-hidden">
+            <span class="breadcrumb-links">
+                {{if eq (len .Breadcrumbs) 0}}
+                    <a href="/" class="active">docs</a> &nbsp;
+                {{end}}
+                {{range .Breadcrumbs}}
+                    <a href="{{.URL}}" class="{{if .IsActive}}active{{end}}">
+                        {{if eq .Label "Documentation"}}docs{{else}}{{.Label}}{{end}}
+                    </a>
+                    {{if not .IsActive}}/{{end}}
+                {{end}}
+            </span>
+        </div>
+    {{end}}
+{{end}}
+
 {{define "content"}}
     <div class="docs-content">
         <div class="nav-sticky-wrapper content-nav-wrapper column large-3 medium-4 mobile-show">
