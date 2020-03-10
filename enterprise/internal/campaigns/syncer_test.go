@@ -13,10 +13,6 @@ import (
 
 func TestNextSync(t *testing.T) {
 	clock := func() time.Time { return time.Date(2020, 01, 01, 01, 01, 01, 01, time.UTC) }
-	type args struct {
-		lastSync   time.Time
-		lastChange time.Time
-	}
 	tests := []struct {
 		name string
 		h    campaigns.ChangesetSyncData
@@ -72,10 +68,15 @@ func TestNextSync(t *testing.T) {
 			},
 			want: clock().Add(minSyncDelay),
 		},
+		{
+			name: "Never synced",
+			h:    campaigns.ChangesetSyncData{},
+			want: clock(),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := nextSync(tt.h)
+			got := nextSync(clock, tt.h)
 			if diff := cmp.Diff(got, tt.want); diff != "" {
 				t.Fatal(diff)
 			}
