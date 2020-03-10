@@ -42,9 +42,9 @@ Done! Sourcegraph will now receive webhook events from Bitbucket Server and use 
 
 By default, all Sourcegraph users can view all repositories. To configure Sourcegraph to use Bitbucket Server's repository permissions, see [Repository permissions](../repo/permissions.md#bitbucket_server).
 
-### Experimental: Fast permission syncing
+### Fast permission syncing
 
-With the [Sourcegraph Bitbucket Server plugin](../../integration/bitbucket_server.md#sourcegraph-bitbucket-server-plugin) you can enable the **experimental** and faster permissions fetching:
+With the [Sourcegraph Bitbucket Server plugin](../../integration/bitbucket_server.md#sourcegraph-bitbucket-server-plugin) you can enable fast permission syncing:
 
 1. Connect Bitbucket Server to Sourcegraph (_see instructions above_).
 1. Install the [Sourcegraph Bitbucket Server plugin](../../integration/bitbucket_server.md#sourcegraph-bitbucket-server-plugin) on your Bitbucket Server instance.

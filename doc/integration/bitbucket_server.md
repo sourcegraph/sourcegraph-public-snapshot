@@ -54,13 +54,13 @@ Once the plugin is installed, go to **Administration > Add-ons > Sourcegraph** t
 
 To configure a webhook on the Sourcegraph side, set the [`"plugin.webhooks"` property in the Bitbucket Server configuration](../admin/external_service/bitbucket_server.md#webhooks). Once that is configured Sourcegraph automatically makes sure in the background that a global webhook for usage with [Campaigns](../user/campaigns.md) is created on the Bitbucket Server instance.
 
-### Experimental: fast permission syncing
+### Fast permission syncing
 
-The plugin also supports an optional, experimental method of faster ACL permissions syncing that aims to improve the speed of fetching a user's permissions from Bitbucket (which can reduce the time a user has to wait to run a search if their permissions data has expired).
+The plugin also supports an optional method of faster ACL permissions syncing that aims to improve the speed of fetching a user's permissions from Bitbucket (which can reduce the time a user has to wait to run a search if their permissions data has expired).
 
 You can enable this feature when [configuring the connection to your Bitbucket Server instance on Sourcegraph](../admin/external_service/bitbucket_server.md#repository-permissions).
 
-The speed improvements are subtle and more noticeable for larger instances with thousands of repositories. 
+The speed improvements are most important on larger Bitbucket Server instances with thousands of repositories. When connected to these instances, Sourcegraph would have to make many wasteful requests to fetch permission data if the plugin is not installed.
 
 To learn how and why this works, read the [through technical details of fast permission syncing](#fast-permissions-syncing) below.
 
@@ -78,7 +78,9 @@ It does that by fetching the required JavaScript code from the configured Source
 
 The code that's injected is the code of the [Sourcegraph browser extension](#browser-extension). It is hosted by your Sourcegraph instance in this case and adds the same code intelligence functionality to all files and pull requests viewed on Bitbucket Server.
 
-The code talks directly to the Sourcegraph instance that's configured in the Bitbucket Server plugin configuration. It doesn't add any more load to the Bitbucker Server instance.
+The code only talks to the Sourcegraph instance that's configured in the Bitbucket Server plugin configuration. It doesn't add any more load to the Bitbucker Server instance.
+
+No private code, private repository names, usernames, or any other specific data is sent somewhere else. The code will send usage information to the connected private Sourcegraph instance only, so that the site admins can see usage statistics.
 
 If it failed to load or talk to the Sourcegraph instance, messages are logged to the browser console.
 
@@ -106,7 +108,7 @@ When Sourcegraph is configured to use [Bitbucket Server's repository permissions
 
 The Bitbucket Server REST API only provides **paginated** endpoints to fetch either the list of repositories a given user has access to, or the list of users that have access to a given repository. Both endpoints return the **full representation of the entities**.
 
-Since Sourcegraph is only interested in the IDs of either repositories or users (those are already synced to its database) the Bitbucket Server plugins adds two REST endpoints to provide more efficient endpoints:
+Since Sourcegraph is only interested in the IDs of either repositories or users (those are already synced to its database) the Bitbucket Server plugins adds two REST endpoints that only return IDs to provide a more efficient way of fetching permission data:
 
 - `/permissions/repositories?user=<USERNAME>&permission=<PERMISSION_LEVEL>`<br /> Returns **a list of repository IDs** the given `user` has access to on the given `permission` level.
 - `/permissions/users?repository=<REPO>&permission=<PERMISSION_LEVEL>`<br /> Returns **a list of user IDs** that have access to the given `repository` on the given `permission` level.
