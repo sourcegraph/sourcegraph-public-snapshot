@@ -84,6 +84,8 @@
 // 1528395657_add_not_null_constraint_to_campaign_job_description.up.sql (151B)
 // 1528395658_perms_table_provider_nullable.down.sql (1.011kB)
 // 1528395658_perms_table_provider_nullable.up.sql (894B)
+// 1528395659_user_pending_perms_table_add_service_type_and_id.down.sql (499B)
+// 1528395659_user_pending_perms_table_add_service_type_and_id.up.sql (1.289kB)
 
 package migrations
 
@@ -1832,6 +1834,46 @@ func _1528395658_perms_table_provider_nullableUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395659_user_pending_perms_table_add_service_type_and_idDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xac\x90\xc1\x4a\xc4\x30\x14\x45\xf7\xf9\x8a\xbb\x54\xe8\x7c\x41\x56\x9d\x69\x94\x40\x9b\x6a\x9b\x82\xbb\x30\x6d\x1f\xfa\x74\x4c\x6b\x92\x0a\xfe\xbd\xcc\xe0\x60\x37\x82\x03\xf3\x56\x6f\x73\x0e\xdc\xb3\x55\xf7\xda\x48\x21\x36\x1b\x34\xd3\xe1\x80\x7e\x3f\xbc\x21\xbd\x10\x86\xc9\xc7\x14\xf6\xec\x93\xc8\x4b\xab\x1a\xd8\x7c\x5b\x2a\x2c\x91\x82\x9b\xc9\x8f\xec\x9f\xdd\x4c\xe1\x9d\x63\xe4\xc9\x47\x01\x00\x45\x53\x3f\x60\x57\x9b\xd6\x36\xb9\x36\x16\xfa\x0e\xea\x49\xb7\xb6\xfd\x13\x3b\xfd\x6e\xea\x5f\x69\x48\x2e\x52\xf8\xe4\x81\xdc\xe2\xf9\x63\xa1\xec\x1a\xca\xb5\x2a\x2f\x8a\xb5\xe9\x02\xfe\x84\x1f\xaf\x33\xfa\xb1\x53\xb8\xe9\xd9\x8f\x8e\xc7\x0c\xbf\x5c\x86\x1f\x24\x7d\xcd\x74\x2b\xc5\xbf\xaa\x9d\xe7\x95\x5d\x65\x56\xd3\xce\x21\x8e\x2a\x79\x0d\x11\x8f\x52\x88\x5d\x5d\x55\xda\x4a\xf1\x1d\x00\x00\xff\xff\x44\x01\xb1\x5e\xf3\x01\x00\x00")
+
+func _1528395659_user_pending_perms_table_add_service_type_and_idDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395659_user_pending_perms_table_add_service_type_and_idDownSql,
+		"1528395659_user_pending_perms_table_add_service_type_and_id.down.sql",
+	)
+}
+
+func _1528395659_user_pending_perms_table_add_service_type_and_idDownSql() (*asset, error) {
+	bytes, err := _1528395659_user_pending_perms_table_add_service_type_and_idDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395659_user_pending_perms_table_add_service_type_and_id.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x3, 0xfc, 0xba, 0x1d, 0xea, 0x33, 0x9, 0xe7, 0xc6, 0x85, 0x28, 0x1e, 0x54, 0xc4, 0x76, 0xb6, 0xc6, 0x4c, 0xdc, 0x1d, 0x49, 0xfd, 0x9d, 0x17, 0x3c, 0x1e, 0x4a, 0x50, 0x6c, 0x1f, 0xe, 0x9}}
+	return a, nil
+}
+
+var __1528395659_user_pending_perms_table_add_service_type_and_idUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xa4\x52\x4d\x6f\x9b\x40\x10\xbd\xf3\x2b\x46\x5c\x12\x4b\x6b\xe7\x1e\xda\x4a\xc4\xa6\x15\x12\x86\xd4\x2c\x6d\x6e\x68\xcd\x8e\xcd\x46\x78\x97\xee\x87\x93\xf4\xd7\x57\x8b\xed\x94\x54\x75\x15\xb9\xbe\x18\x86\x79\x6f\xde\x9b\x37\x77\xc9\x97\x34\x8f\x82\x60\x3a\x85\x98\x73\x90\xf8\x04\x8d\xea\xdc\x4e\x1a\xb0\x0a\x6c\x8b\xd0\xa3\xe4\x42\x6e\xa1\x47\xbd\x13\xc6\x08\xe5\x3f\xb1\x75\x87\x66\xe6\x51\xb4\x45\x28\x95\xd3\x0d\x6e\x35\xeb\x5b\x60\xce\xb6\x3f\xa1\xd7\x6a\x2f\x38\x6a\x10\x66\x20\x51\xb2\x7b\x01\x25\x11\x9c\xc1\xa1\x62\xf0\x48\x42\x3c\x89\x6d\x9d\x01\xc3\x36\xe8\x87\x1a\xb4\xc0\x71\xc3\x5c\x67\x61\xcf\x3a\x87\x06\x36\x4a\x03\x3e\x0b\x63\xbd\x10\xad\x9e\xcc\x2c\x88\x33\x9a\xac\x80\xc6\x77\x59\xe2\x49\x75\x7d\xd4\x59\x8f\x75\xc6\x8b\x05\xcc\x8b\xac\x5a\xe6\x60\x50\xef\x45\x83\xb5\x7d\xe9\x11\x68\xf2\x40\xa3\xa0\xba\x5f\xc4\xf4\x1f\xe8\x32\xa1\x6f\x61\x1f\xe1\xca\xfc\xb6\x7a\x15\xbd\x53\xc4\xd0\xf4\x37\x19\x7e\x40\x5e\x50\xc8\xab\x2c\x8b\x82\x8b\x2d\x09\x7e\x81\x21\xc1\xbd\x9d\xd6\xda\xde\xdc\xde\xdc\x8c\x6c\xcd\x1a\xb5\xbb\xf9\x2f\x6f\x82\xff\xe9\x6c\x3a\x85\x15\x36\x1a\x99\x45\x70\x52\xfc\x70\x08\x8d\x92\xc6\x6a\x26\xa4\xf5\x99\x0b\xd9\x74\x8e\xe3\xf8\xfe\x66\x03\x2c\x79\x66\xbb\xbe\x43\x10\xd2\xa0\xb6\xb7\xbe\xe4\x7f\x69\x5e\x26\x2b\x0a\x69\x4e\x8b\xb3\xe2\x4e\xbd\x00\xd7\x6b\x21\x79\x2d\x38\x19\x1d\x31\x01\xb5\x7e\xc4\xc6\x0e\x49\xbc\xbe\x08\x6e\xc8\x9b\x8c\xc8\xc8\x15\x01\xd7\x73\x66\x91\xd7\xcc\x4e\x4e\xec\xdf\xe2\xac\x4a\xca\xd1\xac\xf0\x51\x61\x48\x20\xd4\xc8\xf8\xe1\xbf\x57\x26\x24\xf0\x61\x2d\xec\x8e\xf5\xa0\x36\xe0\x4b\x90\x2e\xcc\x27\x02\xe1\x56\xd8\x8e\xad\x7d\xe3\x29\x8b\x43\x65\x88\x21\x24\x90\x17\xdf\xaf\x27\x93\xf7\xc5\x11\x78\x01\x8b\x55\x71\x0f\xf3\x22\x2f\xe9\x2a\x4e\x73\x0a\xe9\x67\x48\x1e\xd2\x92\x96\x67\x61\xc3\x73\x7d\xdc\xc0\x21\x1e\x72\x29\xd5\x69\x5b\xe7\x28\x0f\xe7\xfb\xca\x78\x01\x4f\x70\x5c\x34\x54\x79\xfa\xb5\x4a\xe0\xfa\x7c\x5c\x67\xd3\x3e\xde\xc3\x24\x0a\x82\x79\xb1\x5c\xa6\x34\x0a\x7e\x05\x00\x00\xff\xff\x74\xde\xa1\xf3\x09\x05\x00\x00")
+
+func _1528395659_user_pending_perms_table_add_service_type_and_idUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395659_user_pending_perms_table_add_service_type_and_idUpSql,
+		"1528395659_user_pending_perms_table_add_service_type_and_id.up.sql",
+	)
+}
+
+func _1528395659_user_pending_perms_table_add_service_type_and_idUpSql() (*asset, error) {
+	bytes, err := _1528395659_user_pending_perms_table_add_service_type_and_idUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395659_user_pending_perms_table_add_service_type_and_id.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x28, 0x91, 0xce, 0x6b, 0xba, 0x57, 0xaf, 0x73, 0x13, 0xc9, 0x96, 0x1d, 0x8, 0x8b, 0x8d, 0xbd, 0x3c, 0x7c, 0x98, 0xba, 0xc1, 0x8d, 0x8f, 0x6b, 0xe8, 0x69, 0x78, 0xee, 0x55, 0x67, 0xdb, 0x7a}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2007,6 +2049,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395657_add_not_null_constraint_to_campaign_job_description.up.sql":   _1528395657_add_not_null_constraint_to_campaign_job_descriptionUpSql,
 	"1528395658_perms_table_provider_nullable.down.sql":                       _1528395658_perms_table_provider_nullableDownSql,
 	"1528395658_perms_table_provider_nullable.up.sql":                         _1528395658_perms_table_provider_nullableUpSql,
+	"1528395659_user_pending_perms_table_add_service_type_and_id.down.sql":    _1528395659_user_pending_perms_table_add_service_type_and_idDownSql,
+	"1528395659_user_pending_perms_table_add_service_type_and_id.up.sql":      _1528395659_user_pending_perms_table_add_service_type_and_idUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -2134,6 +2178,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395657_add_not_null_constraint_to_campaign_job_description.up.sql":   {_1528395657_add_not_null_constraint_to_campaign_job_descriptionUpSql, map[string]*bintree{}},
 	"1528395658_perms_table_provider_nullable.down.sql":                       {_1528395658_perms_table_provider_nullableDownSql, map[string]*bintree{}},
 	"1528395658_perms_table_provider_nullable.up.sql":                         {_1528395658_perms_table_provider_nullableUpSql, map[string]*bintree{}},
+	"1528395659_user_pending_perms_table_add_service_type_and_id.down.sql":    {_1528395659_user_pending_perms_table_add_service_type_and_idDownSql, map[string]*bintree{}},
+	"1528395659_user_pending_perms_table_add_service_type_and_id.up.sql":      {_1528395659_user_pending_perms_table_add_service_type_and_idUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

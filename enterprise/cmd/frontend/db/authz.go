@@ -74,9 +74,11 @@ func (s *authzStore) GrantPendingPermissions(ctx context.Context, args *db.Grant
 
 	for _, bindID := range bindIDs {
 		err = txs.GrantPendingPermissions(ctx, args.UserID, &authz.UserPendingPermissions{
-			BindID: bindID,
-			Perm:   args.Perm,
-			Type:   args.Type,
+			ServiceType: "sourcegraph",
+			ServiceID:   "https://sourcegraph.com/",
+			BindID:      bindID,
+			Perm:        args.Perm,
+			Type:        args.Type,
 		})
 		if err != nil {
 			return errors.Wrap(err, "grant pending permissions")
@@ -127,8 +129,12 @@ func (s *authzStore) RevokeUserPermissions(ctx context.Context, args *db.RevokeU
 		return err
 	}
 
-	bindIDs := append([]string{args.Username}, args.VerifiedEmails...)
-	if err := txs.DeleteAllUserPendingPermissions(ctx, bindIDs); err != nil {
+	accounts := &ExternalAccounts{
+		ServiceType: args.ServiceType,
+		ServiceID:   args.ServiceID,
+		AccountIDs:  append([]string{args.Username}, args.VerifiedEmails...),
+	}
+	if err := txs.DeleteAllUserPendingPermissions(ctx, accounts); err != nil {
 		return err
 	}
 	return nil
