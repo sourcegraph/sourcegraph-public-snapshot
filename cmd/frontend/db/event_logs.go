@@ -224,6 +224,19 @@ type EventFilterOptions struct {
 	ByEventName string
 	// If not empty, only include events that matche a list of given event names
 	ByEventNames []string
+	// If not empty, only include events that match a given name, and include an argument matching a given argument value.
+	ByEventNameWithArgument *EventArgumentMatch
+}
+
+// EventArgumentMatch provides the options for matching an event with
+// a specific JSON value passed as an argument.
+type EventArgumentMatch struct {
+	// Only match events with a given name.
+	EventName string
+	// The name of the JSON key to match against.
+	ArgumentName string
+	// The actual value passed to the JSON key to match.
+	ArgumentValue string
 }
 
 // CountUniqueUsersPerPeriod provides a count of unique active users in a given time span, broken up into periods of
@@ -254,6 +267,10 @@ func (l *eventLogs) CountUniqueUsersPerPeriod(ctx context.Context, periodType Pe
 			}
 			if opt.EventFilters.ByEventName != "" {
 				conds = append(conds, sqlf.Sprintf("name = %s", opt.EventFilters.ByEventName))
+			}
+			if opt.EventFilters.ByEventNameWithArgument != nil {
+				conds = append(conds, sqlf.Sprintf("name = %s", opt.EventFilters.ByEventNameWithArgument.EventName))
+				conds = append(conds, sqlf.Sprintf("argument->>%s=%s", opt.EventFilters.ByEventNameWithArgument.ArgumentName, opt.EventFilters.ByEventNameWithArgument.ArgumentValue))
 			}
 			if len(opt.EventFilters.ByEventNames) > 0 {
 				items := []*sqlf.Query{}
@@ -288,6 +305,10 @@ func (l *eventLogs) CountEventsPerPeriod(ctx context.Context, periodType PeriodT
 		}
 		if opt.ByEventName != "" {
 			conds = append(conds, sqlf.Sprintf("name = %s", opt.ByEventName))
+		}
+		if opt.ByEventNameWithArgument != nil {
+			conds = append(conds, sqlf.Sprintf("name = %s", opt.ByEventNameWithArgument.EventName))
+			conds = append(conds, sqlf.Sprintf("argument->>%s=%s", opt.ByEventNameWithArgument.ArgumentName, opt.ByEventNameWithArgument.ArgumentValue))
 		}
 		if len(opt.ByEventNames) > 0 {
 			items := []*sqlf.Query{}
@@ -519,12 +540,4 @@ func (l *eventLogs) ListUniqueUsersAll(ctx context.Context, startDate, endDate t
 		return nil, err
 	}
 	return users, nil
-}
-
-func (l *eventLogs) CountEventByArgumentMatch(ctx context.Context, periodType, eventName, argumentName, match string) (int, error) {
-	q := sqlf.Sprintf(`SELECT COUNT(*) FROM event_logs WHERE name LIKE %s AND argument->>%s=%s;`, eventName, argumentName, match)
-	r := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	var count int
-	err := r.Scan(&count)
-	return count, err
 }

@@ -117,9 +117,10 @@ func getAndMarshalCodeIntelUsageJSON(ctx context.Context) (json.RawMessage, erro
 func getAndMarshalSearchUsageJSON(ctx context.Context) (json.RawMessage, error) {
 	days, weeks, months := 2, 1, 1
 	searchLatency, err := usagestats.GetSearchUsageStatistics(ctx, &usagestats.SearchUsageStatisticsOptions{
-		DayPeriods:   &days,
-		WeekPeriods:  &weeks,
-		MonthPeriods: &months,
+		DayPeriods:         &days,
+		WeekPeriods:        &weeks,
+		MonthPeriods:       &months,
+		IncludeEventCounts: !conf.Get().DisableNonCriticalTelemetry,
 	})
 	if err != nil {
 		return nil, err
@@ -191,8 +192,6 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 	if err != nil {
 		logFunc("externalServicesKinds failed", "error", err)
 	}
-	// Use this to receive number of search unique users. Just need to pass diff start date, and send this in an object.
-	// searchUniqueUsers, err := db.EventLogs.CountUniqueUsersByEventNames(ctx, startDate, endDate, []string{"SearchResultsQueried"})
 
 	contents, err := json.Marshal(&pingRequest{
 		ClientSiteID:         siteid.Get(),

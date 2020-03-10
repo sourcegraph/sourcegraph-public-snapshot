@@ -10,9 +10,10 @@ import (
 // SearchUsageStatisticsOptions contains options for the number of daily, weekly, and monthly
 // periods in which to calculate the latency percentiles.
 type SearchUsageStatisticsOptions struct {
-	DayPeriods   *int
-	WeekPeriods  *int
-	MonthPeriods *int
+	DayPeriods         *int
+	WeekPeriods        *int
+	MonthPeriods       *int
+	IncludeEventCounts bool
 }
 
 var (
@@ -40,15 +41,15 @@ func GetSearchUsageStatistics(ctx context.Context, opt *SearchUsageStatisticsOpt
 		}
 	}
 
-	daily, err := searchActivity(ctx, db.Daily, dayPeriods)
+	daily, err := searchActivity(ctx, db.Daily, dayPeriods, opt.IncludeEventCounts)
 	if err != nil {
 		return nil, err
 	}
-	weekly, err := searchActivity(ctx, db.Weekly, weekPeriods)
+	weekly, err := searchActivity(ctx, db.Weekly, weekPeriods, opt.IncludeEventCounts)
 	if err != nil {
 		return nil, err
 	}
-	monthly, err := searchActivity(ctx, db.Monthly, monthPeriods)
+	monthly, err := searchActivity(ctx, db.Monthly, monthPeriods, opt.IncludeEventCounts)
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +60,7 @@ func GetSearchUsageStatistics(ctx context.Context, opt *SearchUsageStatisticsOpt
 	}, nil
 }
 
-func searchActivity(ctx context.Context, periodType db.PeriodType, periods int) ([]*types.SearchUsagePeriod, error) {
+func searchActivity(ctx context.Context, periodType db.PeriodType, periods int, includeEventCounts bool) ([]*types.SearchUsagePeriod, error) {
 	if periods == 0 {
 		return []*types.SearchUsagePeriod{}, nil
 	}
@@ -94,34 +95,52 @@ func searchActivity(ctx context.Context, periodType db.PeriodType, periods int) 
 		}
 	}
 
+	searchModeNameToArgumentMatches := map[string]struct {
+		eventName          string
+		argumentName       string
+		getEventStatistics func(p *types.SearchUsagePeriod) *types.SearchEventStatistics
+	}{
+		"plain":       {eventName: "SearchResultsQueried", argumentName: "mode", getEventStatistics: func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.SearchModes.PlainText }},
+		"interactive": {eventName: "SearchResultsQueried", argumentName: "mode", getEventStatistics: func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.SearchModes.Interactive }},
+	}
+
+	for searchMode, eventAndArgNames := range searchModeNameToArgumentMatches {
+		userCounts, err := db.EventLogs.CountUniqueUsersPerPeriod(ctx, periodType, timeNow().UTC(), periods, &db.CountUniqueUsersOptions{
+			EventFilters: &db.EventFilterOptions{
+				ByEventNameWithArgument: &db.EventArgumentMatch{EventName: eventAndArgNames.eventName, ArgumentName: eventAndArgNames.argumentName, ArgumentValue: searchMode}},
+		})
+		if err != nil {
+			return nil, err
+		}
+		for i, uc := range userCounts {
+			activityPeriods[i].StartTime = uc.Start
+			eventAndArgNames.getEventStatistics(activityPeriods[i]).UserCount = int32(uc.Count)
+		}
+		if includeEventCounts {
+			eventCounts, err := db.EventLogs.CountEventsPerPeriod(ctx, periodType, timeNow().UTC(), periods, &db.EventFilterOptions{ByEventNameWithArgument: &db.EventArgumentMatch{EventName: eventAndArgNames.eventName, ArgumentName: eventAndArgNames.argumentName, ArgumentValue: searchMode}})
+			if err != nil {
+				return nil, err
+			}
+			for i, ec := range eventCounts {
+				count := int32(ec.Count)
+				eventAndArgNames.getEventStatistics(activityPeriods[i]).EventsCount = &count
+			}
+		}
+	}
+
 	return activityPeriods, nil
 }
 
 func newSearchEventPeriod() *types.SearchUsagePeriod {
 	return &types.SearchUsagePeriod{
-		Literal:    &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}},
-		Regexp:     &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}},
-		Structural: &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}},
-		File:       &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}},
-		Repo:       &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}},
-		Diff:       &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}},
-		Commit:     &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}},
-		Symbol:     &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}},
+		Literal:     &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}},
+		Regexp:      &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}},
+		Structural:  &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}},
+		File:        &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}},
+		Repo:        &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}},
+		Diff:        &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}},
+		Commit:      &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}},
+		Symbol:      &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}},
+		SearchModes: &types.SearchModeUsageStatistics{Interactive: &types.SearchEventStatistics{EventsCount: nil}, PlainText: &types.SearchEventStatistics{EventsCount: nil}},
 	}
 }
-
-func (l *eventLogs) CountInteractiveSearches(ctx context.Context, startDate, endDate time.Time) (int, error) {
-	interactive_count, err := CountEventByArgumentMatch('SearchResultsQueried', 'mode', 'interactive')
-	if err != nil {
-		return nil, err
-	}
-	return interactive_count, nil
-}
-
-
-func (l *eventLogs) CountPlaintextSearches(ctx context.Context, startDate, endDate time.Time) (int, error) {
-	plain_count, err := CountEventByArgumentMatch('SearchResultsQueried', 'mode', 'plain')
-	if err != nil {
-		return nil, err
-	}
-	return plain_count, nil
