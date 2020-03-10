@@ -109,12 +109,12 @@ func main() {
 		globalBefore   = globalFlags.String("before", "", "A command to run before sync. It is run from the current working directory.")
 		globalReposDir = globalFlags.String("repos-dir", "", "src-expose's git directories. src-expose creates a git repo per directory synced. The git repo is then served to Sourcegraph. The repositories are stored and served relative to this directory. Default: ~/.sourcegraph/src-expose-repos")
 		globalConfig   = globalFlags.String("config", "", "If set will be used instead of command line arguments to specify configuration.")
-		globalAddr     = globalFlags.String("addr", "127.0.0.1:3434", "address on which to serve (end with : for unused port)")
+		globalAddr     = globalFlags.String("addr", ":3434", "address on which to serve (end with : for unused port)")
 
 		syncFlags = flag.NewFlagSet("sync", flag.ExitOnError)
 
 		serveFlags = flag.NewFlagSet("serve", flag.ExitOnError)
-		serveAddr  = serveFlags.String("addr", "127.0.0.1:3434", "address on which to serve (end with : for unused port)")
+		serveAddr  = serveFlags.String("addr", ":3434", "address on which to serve (end with : for unused port)")
 	)
 
 	newLogger := func(prefix string) *log.Logger {
