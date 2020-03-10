@@ -1466,8 +1466,8 @@ const (
 	ChangesetEventKindBitbucketServerMerged     ChangesetEventKind = "bitbucketserver:merged"
 )
 
-// ChangesetSyncHeuristics represents data about the sync status of a changeset
-type ChangesetSyncHeuristics struct {
+// ChangesetSyncData represents data about the sync status of a changeset
+type ChangesetSyncData struct {
 	ChangesetID int64
 	// UpdatedAt is the time we last updated / synced the changeset in our DB
 	UpdatedAt time.Time
