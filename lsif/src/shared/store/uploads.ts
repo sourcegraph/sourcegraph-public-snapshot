@@ -63,11 +63,11 @@ export class UploadManager {
             uploads,
             raw,
             totalCount,
-        }: {
+        } = await instrumentQuery<{
             uploads: pgModels.LsifUpload[]
             raw: { upload_id: number; rank: string | undefined }[]
             totalCount: number
-        } = await instrumentQuery(async () => {
+        }>(async () => {
             let queryBuilder = this.connection
                 .getRepository(pgModels.LsifUpload)
                 .createQueryBuilder('upload')
