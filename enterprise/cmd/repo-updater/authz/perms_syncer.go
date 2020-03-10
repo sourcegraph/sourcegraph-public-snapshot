@@ -19,7 +19,7 @@ import (
 )
 
 // PermsSyncer is a permissions syncing manager that is in charge of keeping
-// permissions up-to-date for users and repositories at best effort.
+// permissions up-to-date for users and repositories.
 //
 // It is meant to be running in the background.
 type PermsSyncer struct {
@@ -34,7 +34,7 @@ type PermsSyncer struct {
 	db dbutil.DB
 	// The mockable function to return the current time.
 	clock func() time.Time
-	// The time duration of how often to compute schedule for users and repositories.
+	// The time duration of how often to re-compute schedule for users and repositories.
 	scheduleInterval time.Duration
 }
 
@@ -300,7 +300,7 @@ func (s *PermsSyncer) runSync(ctx context.Context) {
 		}
 
 		// Check if it's the time to sync the request
-		if s.clock().Before(request.nextSyncAt) {
+		if wait := request.nextSyncAt.Sub(s.clock()); wait > 0 {
 			dur := request.nextSyncAt.Sub(s.clock())
 			time.AfterFunc(dur, func() {
 				notify(s.queue.notifyEnqueue)
