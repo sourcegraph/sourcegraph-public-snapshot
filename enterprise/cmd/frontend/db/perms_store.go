@@ -438,9 +438,9 @@ AND bind_id = %s
 		format+lock,
 		p.ServiceType,
 		p.ServiceID,
-		p.BindID,
 		p.Perm.String(),
 		p.Type,
+		p.BindID,
 	)
 }
 
@@ -1027,9 +1027,9 @@ AND bind_id = %s
 
 	return sqlf.Sprintf(
 		format,
-		p.BindID,
 		p.Perm.String(),
 		p.Type,
+		p.BindID,
 	)
 }
 

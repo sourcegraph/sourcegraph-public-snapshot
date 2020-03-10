@@ -569,9 +569,11 @@ func testPermsStore_LoadUserPendingPermissions(db *sql.DB) func(*testing.T) {
 			}
 
 			up := &authz.UserPendingPermissions{
-				BindID: "alice",
-				Perm:   authz.Read,
-				Type:   authz.PermRepos,
+				ServiceType: "sourcegraph",
+				ServiceID:   "https://sourcegraph.com/",
+				BindID:      "alice",
+				Perm:        authz.Read,
+				Type:        authz.PermRepos,
 			}
 			err := s.LoadUserPendingPermissions(context.Background(), up)
 			if err != authz.ErrPermsNotFound {
@@ -1114,9 +1116,11 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(t *testing.T) {
 				{
 					userID: 1,
 					perm: &authz.UserPendingPermissions{
-						BindID: "alice",
-						Perm:   authz.Read,
-						Type:   authz.PermRepos,
+						ServiceType: "sourcegraph",
+						ServiceID:   "https://sourcegraph.com/",
+						BindID:      "alice",
+						Perm:        authz.Read,
+						Type:        authz.PermRepos,
 					},
 				},
 			},
@@ -1384,13 +1388,13 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(t *testing.T) {
 				// Query and check rows in "user_pending_permissions" table.
 				bindIDs, err := checkUserPendingPermsTable(ctx, s, test.expectUserPendingPerms)
 				if err != nil {
-					t.Fatal(err)
+					t.Fatal("user_pending_permissions:", err)
 				}
 
 				// Query and check rows in "repo_pending_permissions" table.
 				err = checkRepoPendingPermsTable(ctx, s, bindIDs, test.expectRepoPendingPerms)
 				if err != nil {
-					t.Fatal(err)
+					t.Fatal("repo_pending_permissions:", err)
 				}
 			})
 		}
