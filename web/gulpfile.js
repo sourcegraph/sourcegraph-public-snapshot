@@ -6,6 +6,7 @@ const createWebpackCompiler = require('webpack')
 const WebpackDevServer = require('webpack-dev-server')
 const { graphQLTypes, schema, watchGraphQLTypes, watchSchema } = require('../shared/gulpfile')
 const webpackConfig = require('./webpack.config')
+const { readFile } = require('mz/fs')
 
 const WEBPACK_STATS_OPTIONS = {
   all: false,
@@ -45,6 +46,10 @@ async function webpackDevServer() {
     publicPath: '/.assets/',
     contentBase: './ui/assets',
     stats: WEBPACK_STATS_OPTIONS,
+    https: {
+      cert: await readFile(__dirname + '/../dev/cert.pem'),
+      key: await readFile(__dirname + '/../dev/cert.key'),
+    },
     noInfo: false,
     disableHostCheck: true,
     proxy: {

@@ -40,6 +40,6 @@
     }
   ],
   "jest": {
-    "testURL": "http://localhost:3080"
+    "testURL": "https://localhost:3080"
   }
 }

@@ -38,6 +38,7 @@ Sourcegraph has the following dependencies:
 - [SQLite](https://www.sqlite.org/index.html) tools
 - [Golang Migrate](https://github.com/golang-migrate/migrate/) (v4.7.0 or higher)
 - [Comby](https://github.com/comby-tools/comby/) (v0.11.3 or higher)
+- [mkcert](https://github.com/FiloSottile/mkcert) (v1.4.1 or higher)
 
 The following are two recommendations for installing these dependencies:
 
@@ -55,7 +56,7 @@ The following are two recommendations for installing these dependencies:
 3.  Install Go, Node Version Manager, PostgreSQL, Redis, Git, NGINX, golang-migrate, Comby, and SQLite tools with the following command:
 
     ```bash
-    brew install go yarn redis postgresql git gnu-sed nginx golang-migrate comby sqlite pcre FiloSottile/musl-cross/musl-cross
+    brew install go yarn redis postgresql git gnu-sed nginx golang-migrate comby sqlite pcre FiloSottile/musl-cross/musl-cross mkcert nss
     ```
 
 4.  Install the Node Version Manager (`nvm`) using:
@@ -109,6 +110,12 @@ The following are two recommendations for installing these dependencies:
 
 8.  Open a new Terminal window to ensure `psql` is now on your `$PATH`.
 
+9.  Globally register the mkcert fake CA
+
+    ```bash
+    mkcert -install
+    ```
+
 ### Ubuntu
 
 
@@ -136,7 +143,7 @@ The following are two recommendations for installing these dependencies:
 3. Install dependencies:
 
     ```bash
-    sudo apt install -y make git-all postgresql postgresql-contrib redis-server nginx libpcre3-dev libsqlite3-dev pkg-config golang-go musl-tools docker-ce docker-ce-cli containerd.io yarn
+    sudo apt install -y make git-all postgresql postgresql-contrib redis-server nginx libpcre3-dev libsqlite3-dev pkg-config golang-go musl-tools docker-ce docker-ce-cli containerd.io yarn libnss3-tools
 
     # install golang-migrate (you must move the extracted binary into your $PATH)
     curl -L https://github.com/golang-migrate/migrate/releases/download/v4.7.0/migrate.linux-amd64.tar.gz | tar xvz
@@ -149,6 +156,13 @@ The following are two recommendations for installing these dependencies:
 
     # in repo dir: install current recommendend version of Node JS
     nvm install
+
+    # run this anywhere you aren't annoyed by the mkcert dir. installs mkcert, used for local SSL certificates.
+    git clone https://github.com/FiloSottile/mkcert && cd mkcert
+    go build -ldflags "-X main.Version=$(git describe --tags)"
+
+    # globally register the mkcert fake CA
+    mkcert -install
     ```
 
 4. Configure startup services
@@ -261,7 +275,7 @@ cd sourcegraph
 
 This will continuously compile your code and live reload your locally running instance of Sourcegraph.
 
-Navigate your browser to http://localhost:3080 to see if everything worked.
+Navigate your browser to https://localhost:3080 to see if everything worked.
 
 ## Troubleshooting
 
@@ -381,9 +395,9 @@ Requires "Debugger for Chrome" extension.
   - Mac OS: `/Applications/Google\ Chrome\ Canary.app/Contents/MacOS/Google\ Chrome\ Canary --remote-debugging-port=9222`
   - Windows: `start chrome.exe –remote-debugging-port=9222`
   - Linux: `chromium-browser --remote-debugging-port=9222`
-- Go to http://localhost:3080
+- Go to https://localhost:3080
 - Open the Debugger in VSCode: "View" > "Debug"
-- Launch the `(ui) http://localhost:3080/*` debug configuration
+- Launch the `(ui) https://localhost:3080/*` debug configuration
 - Set breakpoints, enjoy
 
 ### Debug Go code

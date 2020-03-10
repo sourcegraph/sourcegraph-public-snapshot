@@ -15,7 +15,7 @@ user_id_to_delete=$(
         -H 'Content-Type: application/json; charset=utf-8' \
         -XPOST \
         -d '{"query":"query($username: String!) { user(username: $username) { id } }","variables":{"username":"'"$username_to_delete"'"}}' \
-        http://localhost:3080/.api/graphql \
+        https://localhost:3080/.api/graphql \
         | jq -c -r '.data.user.id'
                  )
 
@@ -30,5 +30,5 @@ curl -sS \
     -H 'Content-Type: application/json; charset=utf-8' \
     -XPOST \
     -d '{"query":"mutation($user: ID!) { deleteUser(user: $user) { alwaysNil } }","variables":{"user":"'"$user_id_to_delete"'"}}' \
-    http://localhost:3080/.api/graphql
+    https://localhost:3080/.api/graphql
 echo

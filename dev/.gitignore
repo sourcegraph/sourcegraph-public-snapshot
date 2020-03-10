@@ -3,3 +3,5 @@
 /config_combined.json
 /config_backup.json
 /nginx.pid
+/cert.pem
+/cert.key

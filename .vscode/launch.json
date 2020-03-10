@@ -54,7 +54,7 @@
       "request": "attach",
       "port": 9222,
       "webRoot": "${workspaceRoot}/web",
-      "url": "http://localhost:3080/*",
+      "url": "https://localhost:3080/*",
       "sourceMaps": true,
     },
     {

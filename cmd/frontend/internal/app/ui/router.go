@@ -464,7 +464,7 @@ func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, err error, status
 // serveErrorTest makes it easy to test styling/layout of the error template by
 // visiting:
 //
-// 	http://localhost:3080/__errorTest?nodebug=true&error=theerror&status=500
+// 	https://localhost:3080/__errorTest?nodebug=true&error=theerror&status=500
 //
 // The `nodebug=true` parameter hides error messages (which is ALWAYS the case
 // in production), `error` controls the error message text, and status controls

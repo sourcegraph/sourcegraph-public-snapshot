@@ -39,7 +39,7 @@ interface SourcegraphContext
 
     readonly sentryDSN: string | null
 
-    /** Externally accessible URL for Sourcegraph (e.g., https://sourcegraph.com or http://localhost:3080). */
+    /** Externally accessible URL for Sourcegraph (e.g., https://sourcegraph.com or https://localhost:3080). */
     externalURL: string
 
     /** URL path to image/font/etc. assets on server */

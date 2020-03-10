@@ -24,29 +24,29 @@ import (
 // Examples:
 //
 // Get a plaintext dir listing:
-//     http://localhost:3080/github.com/gorilla/mux/-/raw/
+//     https://localhost:3080/github.com/gorilla/mux/-/raw/
 //
 // Get a file's contents (as text/plain, images will not be rendered by browsers):
-//     http://localhost:3080/github.com/gorilla/mux/-/raw/mux.go
-//     http://localhost:3080/github.com/sourcegraph/sourcegraph/-/raw/ui/assets/img/bg-hero.png
+//     https://localhost:3080/github.com/gorilla/mux/-/raw/mux.go
+//     https://localhost:3080/github.com/sourcegraph/sourcegraph/-/raw/ui/assets/img/bg-hero.png
 //
 // Get a zip archive of a repository:
-//     curl -H 'Accept: application/zip' http://localhost:3080/github.com/gorilla/mux/-/raw/ -o repo.zip
+//     curl -H 'Accept: application/zip' https://localhost:3080/github.com/gorilla/mux/-/raw/ -o repo.zip
 //
 // Get a tar archive of a repository:
-//     curl -H 'Accept: application/x-tar' http://localhost:3080/github.com/gorilla/mux/-/raw/ -o repo.tar
+//     curl -H 'Accept: application/x-tar' https://localhost:3080/github.com/gorilla/mux/-/raw/ -o repo.tar
 //
 // Get a zip/tar archive of a _subdirectory_ of a repository:
-//     curl -H 'Accept: application/zip' http://localhost:3080/github.com/gorilla/mux/-/raw/.github -o repo-subdir.zip
+//     curl -H 'Accept: application/zip' https://localhost:3080/github.com/gorilla/mux/-/raw/.github -o repo-subdir.zip
 //
 // Get a zip/tar archive of a _file_ in a repository:
-//     curl -H 'Accept: application/zip' http://localhost:3080/github.com/gorilla/mux/-/raw/mux.go -o repo-file.zip
+//     curl -H 'Accept: application/zip' https://localhost:3080/github.com/gorilla/mux/-/raw/mux.go -o repo-file.zip
 //
 // Authenticate using an access token:
-//     curl -H 'Accept: application/zip' http://fe70a9eeffc8ea7b1edf7c67095c143d1ada7e1b@localhost:3080/github.com/gorilla/mux/-/raw/ -o repo.zip
+//     curl -H 'Accept: application/zip' https://fe70a9eeffc8ea7b1edf7c67095c143d1ada7e1b@localhost:3080/github.com/gorilla/mux/-/raw/ -o repo.zip
 //
 // Download an archive without specifying an Accept header (e.g. download via browser):
-//     curl -O -J http://localhost:3080/github.com/gorilla/mux/-/raw?format=zip
+//     curl -O -J https://localhost:3080/github.com/gorilla/mux/-/raw?format=zip
 //
 // Known issues:
 //

@@ -10,7 +10,7 @@
 // Testing out the layout/styling of the error page that is used to handle
 // internal server errors, 404s, etc. is very easy by visiting:
 //
-// 	http://localhost:3080/__errorTest?nodebug=true&error=theerror&status=500
+// 	https://localhost:3080/__errorTest?nodebug=true&error=theerror&status=500
 //
 // The parameters are as follows:
 //

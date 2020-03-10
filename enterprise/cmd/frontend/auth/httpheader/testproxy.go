@@ -16,7 +16,7 @@ import (
 
 var (
 	addr           = flag.String("addr", ":4080", "HTTP listen address")
-	urlStr         = flag.String("url", "http://localhost:3080", "proxy origin URL (Sourcegraph HTTP/HTTPS URL)") // CI:LOCALHOST_OK
+	urlStr         = flag.String("url", "https://localhost:3080", "proxy origin URL (Sourcegraph HTTP/HTTPS URL)") // CI:LOCALHOST_OK
 	username       = flag.String("username", os.Getenv("USER"), "username to report to Sourcegraph")
 	usernamePrefix = flag.String("usernamePrefix", "", "prefix to place in front of username in the auth header value")
 	httpHeader     = flag.String("header", "X-Forwarded-User", "name of HTTP header to add to request")

@@ -52,7 +52,7 @@ To use Sourcegraph OSS:
     ./dev/start.sh
     ```
 
-Sourcegraph should now be running at http://localhost:3080.
+Sourcegraph should now be running at https://localhost:3080.
 
 For detailed instructions and troubleshooting, see the [local development documentation](./doc/dev/local_development.md).
 

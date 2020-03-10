@@ -75,6 +75,11 @@ export GLOBAL_SETTINGS_FILE=${GLOBAL_SETTINGS_FILE:-./dev/global-settings.json}
 export SITE_CONFIG_ALLOW_EDITS=true
 export GLOBAL_SETTINGS_ALLOW_EDITS=true
 
+# Generate SSL certificates if they don't exist
+if [[ ! -f "./dev/cert.pem" || ! -f "./dev/cert.key" ]]; then
+    mkcert -cert-file ./dev/cert.pem -key-file ./dev/cert.key localhost 127.0.0.1 ::1
+fi
+
 # WebApp
 export NODE_ENV=development
 export NODE_OPTIONS="--max_old_space_size=4096"

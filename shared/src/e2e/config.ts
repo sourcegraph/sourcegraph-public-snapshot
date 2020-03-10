@@ -136,9 +136,9 @@ const configFields: ConfigFields = {
     },
     sourcegraphBaseUrl: {
         envVar: 'SOURCEGRAPH_BASE_URL',
-        defaultValue: 'http://localhost:3080',
+        defaultValue: 'https://localhost:3080',
         description:
-            'The base URL of the Sourcegraph instance, e.g., https://sourcegraph.sgdev.org or http://localhost:3080.',
+            'The base URL of the Sourcegraph instance, e.g., https://sourcegraph.sgdev.org or https://localhost:3080.',
     },
     includeAdminOnboarding: {
         envVar: 'INCLUDE_ADMIN_ONBOARDING',

@@ -6,7 +6,7 @@
       "allowSignup": false
     }
   ],
-  "externalURL": "http://localhost:3080/",
+  "externalURL": "https://localhost:3080/",
   "update.channel": "release",
   "experimentalFeatures": {
     "discussions": "enabled"
