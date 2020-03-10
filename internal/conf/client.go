@@ -216,6 +216,10 @@ func (c *client) continuouslyUpdate(optOnlySetByTests *continuousUpdateOptions) 
 			if time.Since(start) > opt.delayBeforeUnreachableLog || !isFrontendUnreachableError(err) {
 				opt.log("received error during background config update, err: %s", err)
 			}
+		} else {
+			// We successfully fetched the config, we reset the timer to give
+			// frontend time if it needs to restart
+			start = time.Now()
 		}
 
 		opt.sleep()
