@@ -76,13 +76,13 @@ The Bitbucket Server plugin provides **native code intelligence** without users 
 
 It does that by fetching the required JavaScript code from the configured Sourcegraph instance and injecting it into the HTML that the Bitbucket Server instance serves. See the [`sourcegraph-bitbucket.js`](https://github.com/sourcegraph/bitbucket-server-plugin/blob/master/src/main/resources/js/sourcegraph-bitbucket.js) file for how it does that.
 
-The code that's injected is the code of the [Sourcegraph browser extension](#browser-extension), but hosted by your Sourcegraph instance, and adds the same code intelligence functionality to files and pull requests viewed on Bitbucket Server.
+The code that's injected is the code of the [Sourcegraph browser extension](#browser-extension). It is hosted by your Sourcegraph instance in this case and adds the same code intelligence functionality to all files and pull requests viewed on Bitbucket Server.
 
 The code talks directly to the Sourcegraph instance that's configured in the Bitbucket Server plugin configuration. It doesn't add any more load to the Bitbucker Server instance.
 
 If it failed to load or talk to the Sourcegraph instance, messages are logged to the browser console.
 
-When the Sourcegraph instance is updated to a newer version, the code that's loaded and injected might also be updated.
+When the Sourcegraph instance is updated to a newer version, the embedded browser extension code that provides the native code intelligence may also be updated.
 
 #### Webhooks
 
@@ -113,7 +113,7 @@ Since Sourcegraph is only interested in the IDs of either repositories or users 
 
 The lists returned by both endpoints are encoded as [Roaring Bitmaps](https://roaringbitmap.org/).
 
-Since only a single request is required to fetch the complete list of desired IDs and the response contains only IDs, encoded in an efficient binary format, these two endpoints make the fetching of permissions roughly **eight times faster** (measured on an instance with 10000 repositories) than using Bitbucket Server's REST API. (Bitbucket Server admins can further increase the performance of these endpoints by increasing the [`page.max.repositories` property in the Bitbucket Server configuration](https://confluence.atlassian.com/bitbucketserver/bitbucket-server-config-properties-776640155.html#BitbucketServerconfigproperties-Paging).)
+Since only a single request is required to fetch the complete list of desired IDs and the response contains only IDs, encoded in an efficient binary format, these two endpoints make the fetching of permissions roughly **eight times faster** (measured on an instance with 10000 repositories) than using Bitbucket Server's REST API. (Bitbucket Server admins can further increase the performance of these endpoints by increasing the [`page.max.repositories` property in the Bitbucket Server configuration](https://confluence.atlassian.com/bitbucketserver/bitbucket-server-config-properties-776640155.html#BitbucketServerconfigproperties-Paging), but you should check your other Bitbucket Server plugins will not be adversely affected by increasing this.)
 
 The plugin uses `RepositoryService`, `UserManager`, `UserService` and `SecurityService` provided by the Atlassian SDK to fetch users or repositories from Bitbucket Server's database. You can see the full code for these two endpoints in [`PermissionRouter.java`](https://github.com/sourcegraph/bitbucket-server-plugin/blob/master/src/main/java/com/sourcegraph/permission/PermissionRouter.java)
 
