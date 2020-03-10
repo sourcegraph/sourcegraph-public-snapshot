@@ -246,7 +246,7 @@ func containsPattern(node Node) bool {
 // (2) Any nonterminal node is concatenated (ordered in the tree) if its
 // descendents contain one or more search patterns.
 func partitionParameters(nodes []Node) []Node {
-	patterns := []Node{}
+	var patterns, unorderedParams []Node
 	unorderedParams := []Node{}
 	for _, n := range nodes {
 		switch v := n.(type) {
