@@ -66,7 +66,7 @@ Disabling the webhooks is as easy as removing the `"plugin.webhooks"` property a
 
 The plugin also supports an optional method of faster ACL permissions syncing that aims to improve the speed of fetching a user's permissions from Bitbucket (which can reduce the time a user has to wait to run a search if their permissions data has expired).
 
-You can enable this feature when [configuring the connection to your Bitbucket Server instance on Sourcegraph](../admin/external_service/bitbucket_server.md#repository-permissions). For more information on when permissions are fetched, how long they're cached and how to configure that behaviour see our documentation on [Repository permissions](../admin/repo/permissions).
+You can enable this feature when [configuring the connection to your Bitbucket Server instance on Sourcegraph](../admin/external_service/bitbucket_server.md#repository-permissions). For more information on when permissions are fetched, how long they're cached and how to configure that behaviour see our documentation on [Repository permissions](../admin/repo/permissions.md).
 
 The speed improvements are most important on larger Bitbucket Server instances with thousands of repositories. When connected to these instances, Sourcegraph would have to make many wasteful requests to fetch permission data if the plugin is not installed.
 
