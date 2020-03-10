@@ -167,22 +167,22 @@ Foreign-key constraints:
 
 # Table "public.changesets"
 ```
-        Column         |              Type               |                        Modifiers                        
------------------------+---------------------------------+---------------------------------------------------------
- id                    | bigint                          | not null default nextval('changesets_id_seq'::regclass)
- campaign_ids          | jsonb                           | not null default '{}'::jsonb
- repo_id               | integer                         | not null
- created_at            | timestamp with time zone        | not null default now()
- updated_at            | timestamp with time zone        | not null default now()
- metadata              | jsonb                           | not null default '{}'::jsonb
- external_id           | text                            | not null
- external_service_type | text                            | not null
- external_deleted_at   | timestamp with time zone        | 
- external_branch       | text                            | 
- external_updated_at   | timestamp with time zone        | 
- external_state        | changeset_external_state        | 
- external_review_state | changeset_external_review_state | 
- external_check_state  | changeset_external_check_state  | 
+        Column         |           Type           |                        Modifiers                        
+-----------------------+--------------------------+---------------------------------------------------------
+ id                    | bigint                   | not null default nextval('changesets_id_seq'::regclass)
+ campaign_ids          | jsonb                    | not null default '{}'::jsonb
+ repo_id               | integer                  | not null
+ created_at            | timestamp with time zone | not null default now()
+ updated_at            | timestamp with time zone | not null default now()
+ metadata              | jsonb                    | not null default '{}'::jsonb
+ external_id           | text                     | not null
+ external_service_type | text                     | not null
+ external_deleted_at   | timestamp with time zone | 
+ external_branch       | text                     | 
+ external_updated_at   | timestamp with time zone | 
+ external_state        | text                     | 
+ external_review_state | text                     | 
+ external_check_state  | text                     | 
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
