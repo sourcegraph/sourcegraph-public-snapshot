@@ -68,7 +68,8 @@ export class SiteAdminPingsPage extends React.Component<Props, State> {
                         tooltips) and search queries
                     </li>
                     <li>
-                        Aggregate daily, weekly, and monthly total counts of code intelligence events (e.g., hover tooltips)
+                        Aggregate daily, weekly, and monthly total counts of code intelligence events (e.g., hover
+                        tooltips)
                     </li>
                     <li>Total count of code campaigns created</li>
                 </ul>
