@@ -22,23 +22,19 @@
 {{end}}
 
 {{define "breadcrumb"}}
-    {{ with .Content }}
+    {{with .Content}}
         <div class="nav-container flex-container mb-2 pt-2 breadcrumbs small-hidden">
-          <span class="breadcrumb-links">
-            {{if eq (len .Breadcrumbs ) 0}}
-                <a href="/" class="active">docs</a> &nbsp;
-            {{end}}
-              {{range .Breadcrumbs}}
-                  <a href="{{.URL}}" class="{{if .IsActive}}active{{end}}">
-                  {{if eq .Label "Documentation"}}
-                      docs
-                  {{else}}
-                      {{.Label}}
-                  {{end}}
-                </a>
-                  {{if not .IsActive}}/{{end}}
-              {{end}} &nbsp;
-          </span>
+            <span class="breadcrumb-links">
+                {{if eq (len .Breadcrumbs) 0}}
+                    <a href="/" class="active">docs</a> &nbsp;
+                {{end}}
+                {{range .Breadcrumbs}}
+                    <a href="{{.URL}}" class="{{if .IsActive}}active{{end}}">
+                        {{if eq .Label "Documentation"}}docs{{else}}{{.Label}}{{end}}
+                    </a>
+                    {{if not .IsActive}}/{{end}}
+                {{end}}
+            </span>
         </div>
     {{end}}
 {{end}}
