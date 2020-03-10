@@ -552,7 +552,5 @@ func (s *PermsSyncer) Run(ctx context.Context) {
 	go s.runSync(ctx)
 	go s.runSchedule(ctx)
 
-	select {
-	case <-ctx.Done():
-	}
+	<-ctx.Done()
 }
