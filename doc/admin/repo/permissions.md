@@ -173,7 +173,7 @@ The default `hardTTL` is **3 days**, after which a user's cached permissions mus
 
 ### Fast permission sync with Bitbucket Server plugin
 
-By installing the [Bitbucket Server plugin](../../../integration/bitbucket_server.md) you can make use of the fast permission sync feature that allows using Bitbucket Server permissions on larger instances.
+By installing the [Bitbucket Server plugin](../../../integration/bitbucket_server.md), you can make use of the fast permission sync feature that allows using Bitbucket Server permissions on larger instances.
 
 ---
 
