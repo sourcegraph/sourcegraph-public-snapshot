@@ -523,9 +523,8 @@ func (l *eventLogs) ListUniqueUsersAll(ctx context.Context, startDate, endDate t
 
 func (l *eventLogs) CountEventByArgumentMatch(ctx context.Context, periodType, eventName, argumentName, match string) (int, error) {
 	q := sqlf.Sprintf(`SELECT COUNT(*) FROM event_logs WHERE name LIKE %s AND argument->>%s=%s;`, eventName, argumentName, match)
-	r, err := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	r := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	var count int
 	err := r.Scan(&count)
-	defer rows.Close()
 	return count, err
 }

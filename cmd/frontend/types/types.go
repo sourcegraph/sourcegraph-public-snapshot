@@ -221,21 +221,44 @@ type SearchUsageStatistics struct {
 // to the updatecheck handler. This struct is marshalled and sent to
 // BigQuery, which requires the input match its schema exactly.
 type SearchUsagePeriod struct {
-	StartTime  time.Time
-	Literal    *SearchEventStatistics
-	Regexp     *SearchEventStatistics
-	Structural *SearchEventStatistics
-	File       *SearchEventStatistics
-	Repo       *SearchEventStatistics
-	Diff       *SearchEventStatistics
-	Commit     *SearchEventStatistics
-	Symbol     *SearchEventStatistics
+	StartTime          time.Time
+	Literal            *SearchEventStatistics
+	Regexp             *SearchEventStatistics
+	Structural         *SearchEventStatistics
+	File               *SearchEventStatistics
+	Repo               *SearchEventStatistics
+	Diff               *SearchEventStatistics
+	Commit             *SearchEventStatistics
+	Symbol             *SearchEventStatistics
+	Case               *SearchEventStatistics
+	RepoGroup          *SearchEventStatistics
+	Fork               *SearchEventStatistics
+	Archived           *SearchEventStatistics
+	Lang               *SearchEventStatistics
+	Type               *SearchEventStatistics
+	RepoHasFile        *SearchEventStatistics
+	RepoHasCommitAfter *SearchEventStatistics
+	PatternType        *SearchEventStatistics
+	Content            *SearchEventStatistics
+	Before             *SearchEventStatistics
+	After              *SearchEventStatistics
+	Author             *SearchEventStatistics
+	Committer          *SearchEventStatistics
+	Message            *SearchEventStatistics
+	SearchModes        *SearchModeUsageStatistics
+}
+
+type SearchModeUsageStatistics struct {
+	Interactive *SearchEventStatistics
+	PlainText   *SearchEventStatistics
 }
 
 // NOTE: DO NOT alter this struct without making a symmetric change
 // to the updatecheck handler. This struct is marshalled and sent to
 // BigQuery, which requires the input match its schema exactly.
 type SearchEventStatistics struct {
+	UserCount      *int32
+	EventsCount    *int32
 	EventLatencies *SearchEventLatencies
 }
 
