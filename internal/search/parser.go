@@ -247,7 +247,6 @@ func containsPattern(node Node) bool {
 // descendents contain one or more search patterns.
 func partitionParameters(nodes []Node) []Node {
 	var patterns, unorderedParams []Node
-	unorderedParams := []Node{}
 	for _, n := range nodes {
 		switch v := n.(type) {
 		case Parameter:
