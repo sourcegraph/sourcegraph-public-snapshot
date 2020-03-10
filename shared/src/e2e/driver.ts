@@ -652,7 +652,10 @@ export async function createDriverForTest(options: DriverOptions): Promise<Drive
                         !message.text().includes('Download the React DevTools') &&
                         !message.text().includes('[HMR]') &&
                         !message.text().includes('[WDS]') &&
-                        !message.text().includes('Warning: componentWillReceiveProps has been renamed')
+                        !message.text().includes('Warning: componentWillReceiveProps has been renamed') &&
+                        !/^A cookie associated with a resource at \S+ was set with `SameSite=None` but without `Secure`/.test(
+                            message.text()
+                        )
                 ),
                 // Immediately format remote handles to strings, but maintain order.
                 map(formatPuppeteerConsoleMessage),
