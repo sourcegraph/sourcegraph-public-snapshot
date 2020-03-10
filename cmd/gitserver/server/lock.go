@@ -14,7 +14,7 @@ import (
 // the lock may remove the directory's $GIT_DIR while holding the lock.
 //
 // The main use of RepositoryLocker is to prevent concurrent clones. However,
-// it is also used during maintance tasks such as recloning/migrating/etc.
+// it is also used during maintenance tasks such as recloning/migrating/etc.
 type RepositoryLocker struct {
 	// mu protects status
 	mu sync.Mutex

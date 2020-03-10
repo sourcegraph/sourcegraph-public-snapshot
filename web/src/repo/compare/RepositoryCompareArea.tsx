@@ -19,7 +19,7 @@ import {
     escapeRevspecForURL,
     FileSpec,
     ModeSpec,
-    PositionSpec,
+    UIPositionSpec,
     RepoSpec,
     ResolvedRevSpec,
     RevSpec,
@@ -126,7 +126,7 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
 
     private getLSPTextDocumentPositionParams(
         hoveredToken: HoveredToken & RepoSpec & RevSpec & FileSpec & ResolvedRevSpec
-    ): RepoSpec & RevSpec & ResolvedRevSpec & FileSpec & PositionSpec & ModeSpec {
+    ): RepoSpec & RevSpec & ResolvedRevSpec & FileSpec & UIPositionSpec & ModeSpec {
         return {
             repoName: hoveredToken.repoName,
             rev: hoveredToken.rev,

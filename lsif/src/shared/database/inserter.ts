@@ -8,14 +8,10 @@ import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity
  * `TableInserter`.
  */
 interface TableInserterMetrics {
-    /**
-     * A histogram that is observed on each round-trip to the database.
-     */
+    /** A histogram that is observed on each round-trip to the database. */
     durationHistogram: promClient.Histogram<string>
 
-    /**
-     * A counter that increments on each error that occurs during an insertion.
-     */
+    /** A counter that increments on each error that occurs during an insertion. */
     errorsCounter: promClient.Counter<string>
 }
 
@@ -31,9 +27,7 @@ interface TableInserterMetrics {
  * See https://www.sqlite.org/limits.html#max_variable_number.
  */
 export class TableInserter<T, M extends new () => T> {
-    /**
-     * The set of entity values that will be inserted in the next invocation of `executeBatch`.
-     */
+    /** The set of entity values that will be inserted in the next invocation of `executeBatch`. */
     private batch: QueryDeepPartialEntity<T>[] = []
 
     /**
@@ -69,9 +63,7 @@ export class TableInserter<T, M extends new () => T> {
         }
     }
 
-    /**
-     * Ensure any outstanding records are inserted into the database.
-     */
+    /** Ensure any outstanding records are inserted into the database. */
     public flush(): Promise<void> {
         return this.executeBatch()
     }

@@ -27,29 +27,35 @@ describe('match', () => {
 
 describe('score', () => {
     test('matches', () => {
-        expect(score(['l'], 'file:///f', 'l')).toBe(10)
-        expect(score(['*'], 'file:///f', 'l')).toBe(5)
-        expect(score(['x'], 'file:///f', 'l')).toBe(0)
-        expect(score([{ scheme: 'file' }], 'file:///f', 'l')).toBe(10)
-        expect(score([{ scheme: '*' }], 'file:///f', 'l')).toBe(5)
-        expect(score([{ scheme: 'x' }], 'file:///f', 'l')).toBe(0)
-        expect(score([{ pattern: 'file:///*.txt' }], 'file:///f.txt', 'l')).toBe(10)
-        expect(score([{ pattern: '**/*.txt' }], 'file:///f.txt', 'l')).toBe(10)
-        expect(score([{ pattern: '*.txt' }], 'file:///f.txt', 'l')).toBe(5)
+        expect(score(['l'], new URL('file:///f'), 'l')).toBe(10)
+        expect(score(['*'], new URL('file:///f'), 'l')).toBe(5)
+        expect(score(['x'], new URL('file:///f'), 'l')).toBe(0)
+        expect(score([{ scheme: 'file' }], new URL('file:///f'), 'l')).toBe(10)
+        expect(score([{ scheme: '*' }], new URL('file:///f'), 'l')).toBe(5)
+        expect(score([{ scheme: 'x' }], new URL('file:///f'), 'l')).toBe(0)
+        expect(score([{ pattern: '**/*.txt' }], new URL('file:///f.txt'), 'l')).toBe(10)
+        expect(score([{ pattern: '*.txt' }], new URL('file:///f.txt'), 'l')).toBe(10)
+        expect(score([{ baseUri: 'git://repo?rev', pattern: '*.txt' }], new URL('git://repo?rev#f.txt'), 'l')).toBe(10)
+        expect(score([{ baseUri: 'file:///a/b', pattern: '*.txt' }], new URL('file:///a/b/c.txt'), 'l')).toBe(5)
+        expect(score([{ baseUri: 'git://repo?rev', pattern: '**/*.txt' }], new URL('git://repo?rev#f.txt'), 'l')).toBe(
+            10
+        )
+        expect(score([{ baseUri: 'git://repo', pattern: '**/*.txt' }], new URL('git://repo?rev#f.txt'), 'l')).toBe(10)
+        expect(score([{ baseUri: 'git://repo?rev' }], new URL('git://repo?rev#f.txt'), 'l')).toBe(5)
         expect(
             score(
                 [{ pattern: '*.go' }],
-                'git://127.0.0.1-3434/repos/.git?51c44e6be08627c613f787032a2759162bf6f7c2#web/api.go',
+                new URL('git://127.0.0.1-3434/repos/.git?51c44e6be08627c613f787032a2759162bf6f7c2#web/api.go'),
                 'l'
             )
         ).toBe(5)
-        expect(score([{ pattern: 'f.txt' }], 'file:///f.txt', 'l')).toBe(10)
-        expect(score([{ pattern: 'x' }], 'file:///f.txt', 'l')).toBe(0)
-        expect(score([{ pattern: 'f.txt', language: 'x' }], 'file:///f.txt', 'l')).toBe(0)
-        expect(score([{ language: 'x' }], 'file:///f.txt', 'l')).toBe(0)
-        expect(score([{ language: 'l' }], 'file:///f.txt', 'l')).toBe(10)
-        expect(score([{ language: '*' }], 'file:///f.txt', 'l')).toBe(5)
-        expect(score([{}], 'file:///f.txt', 'l')).toBe(5)
+        expect(score([{ pattern: 'f.txt' }], new URL('file:///f.txt'), 'l')).toBe(10)
+        expect(score([{ pattern: 'x' }], new URL('file:///f.txt'), 'l')).toBe(0)
+        expect(score([{ pattern: 'f.txt', language: 'x' }], new URL('file:///f.txt'), 'l')).toBe(0)
+        expect(score([{ language: 'x' }], new URL('file:///f.txt'), 'l')).toBe(0)
+        expect(score([{ language: 'l' }], new URL('file:///f.txt'), 'l')).toBe(10)
+        expect(score([{ language: '*' }], new URL('file:///f.txt'), 'l')).toBe(5)
+        expect(score([{}], new URL('file:///f.txt'), 'l')).toBe(5)
     })
 })
 

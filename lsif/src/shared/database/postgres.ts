@@ -19,24 +19,16 @@ import { DatabaseLogger } from './logger'
  */
 const MINIMUM_MIGRATION_VERSION = 1528395652
 
-/**
- * How many times to try to check the current database migration version on startup.
- */
+/** How many times to try to check the current database migration version on startup. */
 const MAX_SCHEMA_POLL_RETRIES = readEnvInt('MAX_SCHEMA_POLL_RETRIES', 60)
 
-/**
- * How long to wait (in seconds) between queries to check the current database migration version on startup.
- */
+/** How long to wait (in seconds) between queries to check the current database migration version on startup. */
 const SCHEMA_POLL_INTERVAL = readEnvInt('SCHEMA_POLL_INTERVAL', 5)
 
-/**
- * How many times to try to connect to Postgres on startup.
- */
+/** How many times to try to connect to Postgres on startup. */
 const MAX_CONNECTION_RETRIES = readEnvInt('MAX_CONNECTION_RETRIES', 60)
 
-/**
- * How long to wait (in seconds) between Postgres connection attempts.
- */
+/** How long to wait (in seconds) between Postgres connection attempts. */
 const CONNECTION_RETRY_INTERVAL = readEnvInt('CONNECTION_RETRY_INTERVAL', 5)
 
 /**

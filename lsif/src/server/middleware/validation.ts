@@ -55,9 +55,7 @@ export const validateOptionalInt = (key: string): ValidationChain =>
         .isInt()
         .toInt()
 
-/**
- * A validator used for a string query field.
- */
+/** A validator used for a string query field. */
 export const validateQuery = validateOptionalString('query')
 
 /**
@@ -69,21 +67,19 @@ export const validateLsifUploadState = query('state')
     .optional()
     .isIn(['queued', 'completed', 'errored', 'processing'])
 
-/**
- * Create a validator for an integer limit field.
- */
+/** Create a validator for an integer limit field. */
 export const validateLimit = validateOptionalInt('limit')
 
-/**
- * A validator used for an integer offset field.
- */
+/** A validator used for an integer offset field. */
 export const validateOffset = validateOptionalInt('offset')
 
-/**
- * Create a validator for a cursor that is serialized as the supplied generic type.
- */
+/** Create a validator for a cursor that is serialized as the supplied generic type. */
 export const validateCursor = <T>(): ValidationChain =>
     validateOptionalString('cursor').customSanitizer(value => parseCursor<T>(value))
+
+interface ValidationErrorResponse {
+    errors: Record<string, ValidationError>
+}
 
 /**
  * Middleware function used to apply a sequence of validators and then return
@@ -91,7 +87,7 @@ export const validateCursor = <T>(): ValidationChain =>
  */
 export const validationMiddleware = (chains: ValidationChain[]) => async (
     req: express.Request,
-    res: express.Response<{ errors: Record<string, ValidationError> }>,
+    res: express.Response<ValidationErrorResponse>,
     next: express.NextFunction
 ): Promise<void> => {
     await Promise.all(chains.map(chain => chain.run(req)))

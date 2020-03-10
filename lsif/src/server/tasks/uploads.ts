@@ -192,9 +192,7 @@ export const cleanFailedUploads = async ({ logger = createSilentLogger() }: Trac
     }
 }
 
-/**
- * Return an async iterable that yields the path of all files in the temp and uploads dir.
- */
+/** Return an async iterable that yields the path of all files in the temp and uploads dir. */
 export async function* candidateFiles(): AsyncIterable<string> {
     for (const directory of [constants.TEMP_DIR, constants.UPLOADS_DIR]) {
         for (const basename of await fs.readdir(path.join(settings.STORAGE_ROOT, directory))) {
@@ -210,7 +208,7 @@ export async function* candidateFiles(): AsyncIterable<string> {
  * @param filename The file to remove.
  */
 async function purgeFile(filename: string): Promise<boolean> {
-    if (Date.now() - (await fs.stat(filename)).mtimeMs < settings.FAILED_UPLOAD_MAX_AGE) {
+    if (Date.now() - (await fs.stat(filename)).mtimeMs < settings.FAILED_UPLOAD_MAX_AGE * 1000) {
         return false
     }
 

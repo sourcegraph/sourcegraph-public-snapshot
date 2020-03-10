@@ -17,7 +17,7 @@ import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../../shared/src/settings/settings'
-import { AbsoluteRepoFile, ModeSpec, parseHash, PositionSpec } from '../../../../../shared/src/util/url'
+import { AbsoluteRepoFile, ModeSpec, parseHash, UIPositionSpec } from '../../../../../shared/src/util/url'
 import { isDiscussionsEnabled } from '../../../discussions'
 import { RepoHeaderContributionsLifecycleProps } from '../../RepoHeader'
 import { RepoRevSidebarCommits } from '../../RepoRevSidebarCommits'
@@ -25,7 +25,7 @@ import { DiscussionsTree } from '../discussions/DiscussionsTree'
 import { ThemeProps } from '../../../../../shared/src/theme'
 interface Props
     extends AbsoluteRepoFile,
-        Partial<PositionSpec>,
+        Partial<UIPositionSpec>,
         ModeSpec,
         RepoHeaderContributionsLifecycleProps,
         SettingsCascadeProps,
@@ -44,7 +44,7 @@ interface Props
 export type BlobPanelTabID = 'info' | 'def' | 'references' | 'discussions' | 'impl' | 'typedef' | 'history'
 
 /** The subject (what the contextual information refers to). */
-interface PanelSubject extends AbsoluteRepoFile, ModeSpec, Partial<PositionSpec> {
+interface PanelSubject extends AbsoluteRepoFile, ModeSpec, Partial<UIPositionSpec> {
     repoID: string
 
     /**

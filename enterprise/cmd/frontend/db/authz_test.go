@@ -118,9 +118,8 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 
 			for _, update := range test.updates {
 				err := s.store.SetRepoPendingPermissions(ctx, update.bindIDs, &authz.RepoPermissions{
-					RepoID:   update.repoID,
-					Perm:     authz.Read,
-					Provider: authz.ProviderSourcegraph,
+					RepoID: update.repoID,
+					Perm:   authz.Read,
 				})
 				if err != nil {
 					t.Fatal(err)
@@ -133,10 +132,9 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 			}
 
 			p := &authz.UserPermissions{
-				UserID:   user.ID,
-				Perm:     authz.Read,
-				Type:     authz.PermRepos,
-				Provider: authz.ProviderSourcegraph,
+				UserID: user.ID,
+				Perm:   authz.Read,
+				Type:   authz.PermRepos,
 			}
 			err = s.store.LoadUserPermissions(ctx, p)
 			if err != nil {
@@ -179,10 +177,9 @@ func TestAuthzStore_AuthorizedRepos(t *testing.T) {
 					{ID: 2},
 					{ID: 4},
 				},
-				UserID:   1,
-				Perm:     authz.Read,
-				Type:     authz.PermRepos,
-				Provider: authz.ProviderSourcegraph,
+				UserID: 1,
+				Perm:   authz.Read,
+				Type:   authz.PermRepos,
 			},
 			updates: []update{
 				{
@@ -210,10 +207,9 @@ func TestAuthzStore_AuthorizedRepos(t *testing.T) {
 					{ID: 1},
 					{ID: 2},
 				},
-				UserID:   2,
-				Perm:     authz.Read,
-				Type:     authz.PermRepos,
-				Provider: authz.ProviderSourcegraph,
+				UserID: 2,
+				Perm:   authz.Read,
+				Type:   authz.PermRepos,
 			},
 			updates: []update{
 				{
@@ -230,10 +226,9 @@ func TestAuthzStore_AuthorizedRepos(t *testing.T) {
 
 			for _, update := range test.updates {
 				err := s.store.SetRepoPermissions(ctx, &authz.RepoPermissions{
-					RepoID:   update.repoID,
-					Perm:     authz.Read,
-					UserIDs:  toBitmap(update.userIDs...),
-					Provider: authz.ProviderSourcegraph,
+					RepoID:  update.repoID,
+					Perm:    authz.Read,
+					UserIDs: toBitmap(update.userIDs...),
 				})
 				if err != nil {
 					t.Fatal(err)
@@ -261,10 +256,9 @@ func TestAuthzStore_RevokeUserPermissions(t *testing.T) {
 
 	// Set both effective and pending permissions for a user
 	if err := s.store.SetRepoPermissions(ctx, &authz.RepoPermissions{
-		RepoID:   1,
-		Perm:     authz.Read,
-		UserIDs:  toBitmap(1),
-		Provider: authz.ProviderSourcegraph,
+		RepoID:  1,
+		Perm:    authz.Read,
+		UserIDs: toBitmap(1),
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -288,10 +282,9 @@ func TestAuthzStore_RevokeUserPermissions(t *testing.T) {
 
 	// The user should not have any permissions now
 	err := s.store.LoadUserPermissions(ctx, &authz.UserPermissions{
-		UserID:   1,
-		Perm:     authz.Read,
-		Type:     authz.PermRepos,
-		Provider: authz.ProviderSourcegraph,
+		UserID: 1,
+		Perm:   authz.Read,
+		Type:   authz.PermRepos,
 	})
 	if err != authz.ErrPermsNotFound {
 		t.Fatalf("err: want %q but got %v", authz.ErrPermsNotFound, err)

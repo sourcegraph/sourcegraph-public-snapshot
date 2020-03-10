@@ -78,7 +78,7 @@ describe('DependencyManager', () => {
         await updatePackages(ce, 'r6', ['x', 'z'])
 
         const getReferencedDumpIds = async () => {
-            const { references } = await dependencyManager.getReferences({
+            const { packageReferences } = await dependencyManager.getPackageReferences({
                 repositoryId: repositoryId2,
                 scheme: 'npm',
                 name: 'p1',
@@ -88,7 +88,7 @@ describe('DependencyManager', () => {
                 offset: 0,
             })
 
-            return references.map(reference => reference.dump_id).sort()
+            return packageReferences.map(packageReference => packageReference.dump_id).sort()
         }
 
         await dumpManager.updateCommits(
@@ -156,7 +156,7 @@ describe('DependencyManager', () => {
             }
         }
 
-        const { references } = await dependencyManager.getReferences({
+        const { packageReferences } = await dependencyManager.getPackageReferences({
             repositoryId: repositoryId2,
             scheme: 'npm',
             name: 'p1',
@@ -166,7 +166,7 @@ describe('DependencyManager', () => {
             offset: 0,
         })
 
-        expect(references.map(reference => reference.dump_id).sort()).toEqual(dumps)
+        expect(packageReferences.map(packageReference => packageReference.dump_id).sort()).toEqual(dumps)
     })
 
     it('references only returned if dumps visible at tip', async () => {
@@ -199,7 +199,7 @@ describe('DependencyManager', () => {
 
         const getReferencedDumpIds = async () =>
             (
-                await dependencyManager.getReferences({
+                await dependencyManager.getPackageReferences({
                     repositoryId: repositoryId2,
                     scheme: 'npm',
                     name: 'p1',
@@ -208,8 +208,8 @@ describe('DependencyManager', () => {
                     limit: 50,
                     offset: 0,
                 })
-            ).references
-                .map(reference => reference.dump_id)
+            ).packageReferences
+                .map(packageReference => packageReference.dump_id)
                 .sort()
 
         const updateVisibility = async (visibleA: boolean, visibleB: boolean, visibleC: boolean) => {

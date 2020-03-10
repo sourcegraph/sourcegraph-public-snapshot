@@ -18,7 +18,7 @@ There are four fields for configuring which repositories are mirrored:
 - [`repos`](bitbucket_server.md#configuration)<br>A list of repositories in `projectKey/repositorySlug` format.
 - [`repositoryQuery`](bitbucket_server.md#configuration)<br>A list of strings with some pre-defined options (`none`, `all`), and/or a [Bitbucket Server Repo Search Request Query Parameters](https://docs.atlassian.com/bitbucket-server/rest/6.1.2/bitbucket-rest.html#idp355).
 - [`exclude`](bitbucket_server.md#configuration)<br>A list of repositories to exclude which takes precedence over the `repos`, and `repositoryQuery` fields.
-- ['excludePersonalRepositories'](bitbucket_server.md#configuration)<br>With this enabled, Sourcegraph will exclude any personal repositories from being imported, even if it has access to them.
+- [`excludePersonalRepositories`](bitbucket_server.md#configuration)<br>With this enabled, Sourcegraph will exclude any personal repositories from being imported, even if it has access to them.
 
 ## Webhooks
 
@@ -40,8 +40,25 @@ Done! Sourcegraph will now receive webhook events from Bitbucket Server and use 
 
 ## Repository permissions
 
-By default, all Sourcegraph users can view all repositories. To configure Sourcegraph to use
-Bitbucket Server's repository permissions, see [Repository permissions](../repo/permissions.md#bitbucket_server).
+By default, all Sourcegraph users can view all repositories. To configure Sourcegraph to use Bitbucket Server's repository permissions, see [Repository permissions](../repo/permissions.md#bitbucket_server).
+
+### Fast permission syncing
+
+With the [Sourcegraph Bitbucket Server plugin](../../integration/bitbucket_server.md#sourcegraph-bitbucket-server-plugin) you can enable fast permission syncing:
+
+1. Connect Bitbucket Server to Sourcegraph (_see instructions above_).
+1. Install the [Sourcegraph Bitbucket Server plugin](../../integration/bitbucket_server.md#sourcegraph-bitbucket-server-plugin) on your Bitbucket Server instance.
+1. In Sourcegraph, go to **Site admin > Manage repositories** and edit the Bitbucket Server configuration.
+1. Add the `"plugin.permissions"` property:
+
+```json
+{
+  // [...]
+  "plugin": {
+    "permissions": "enabled"
+  }
+}
+```
 
 ### Authentication for older Bitbucket Server versions
 

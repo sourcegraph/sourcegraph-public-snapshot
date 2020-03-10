@@ -15,7 +15,7 @@ describe('Correlator', () => {
 
         const projectRoot = c.projectRoot
         expect(c.lsifVersion).toEqual('0.4.3')
-        expect(projectRoot?.href).toEqual('file:///lsif-test')
+        expect(projectRoot?.href).toEqual('file:///lsif-test/')
     })
 
     it('should require metadata vertex before document vertices', () => {

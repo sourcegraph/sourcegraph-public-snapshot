@@ -418,6 +418,20 @@ describe('Search regression test suite', () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 0)
         })
+        test('Archived repos excluded by default', async () => {
+            const urlQuery = buildSearchURLQuery('type:repo facebookarchive', GQL.SearchPatternType.regexp, false)
+            await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 0)
+        })
+        test('Archived repos included by archived option', async () => {
+            const urlQuery = buildSearchURLQuery(
+                'type:repo facebookarchive archived:yes',
+                GQL.SearchPatternType.regexp,
+                false
+            )
+            await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 0)
+        })
 
         test('Search timeout', async function() {
             this.timeout(2 * 1000)

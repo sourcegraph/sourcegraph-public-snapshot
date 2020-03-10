@@ -32,3 +32,13 @@ type ExternalAccountData struct {
 	AuthData    *json.RawMessage
 	AccountData *json.RawMessage
 }
+
+// ExternalAccountID is a descriptive type for the external identifier of an external account
+// on the code host. It can be the string representation of an integer (e.g. GitLab) or a
+// GraphQL ID (e.g. GitHub) depends on the code host type.
+type ExternalAccountID string
+
+// ExternalRepoID is a descriptive type for the external identifier of an external repository
+// on the code host. It can be the string representation of an integer (e.g. GitLab) or a
+// GraphQL ID (e.g. GitHub) depends on the code host type.
+type ExternalRepoID string

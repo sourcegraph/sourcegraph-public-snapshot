@@ -857,7 +857,7 @@ func (r *searchResolver) withTimeout(ctx context.Context) (context.Context, cont
 			return nil, nil, errors.WithMessage(err, `invalid "timeout:" value (examples: "timeout:2s", "timeout:200ms")`)
 		}
 	} else if r.countIsSet() {
-		// If `count:` is set but `timeout:` is not explicitely set, use the max timeout
+		// If `count:` is set but `timeout:` is not explicitly set, use the max timeout
 		d = maxTimeout
 	}
 	// don't run queries longer than 1 minute.
@@ -868,7 +868,7 @@ func (r *searchResolver) withTimeout(ctx context.Context) (context.Context, cont
 	return ctx, cancel, nil
 }
 
-func (r *searchResolver) determineResultTypes(args search.TextParameters, forceOnlyResultType string) (resultTypes []string, seenResultTypes map[string]struct{}) {
+func (r *searchResolver) determineResultTypes(args search.TextParameters, forceOnlyResultType string) (resultTypes []string) {
 	// Determine which types of results to return.
 	if forceOnlyResultType != "" {
 		resultTypes = []string{forceOnlyResultType}
@@ -877,10 +877,9 @@ func (r *searchResolver) determineResultTypes(args search.TextParameters, forceO
 	} else {
 		resultTypes, _ = r.query.StringValues(query.FieldType)
 		if len(resultTypes) == 0 {
-			resultTypes = []string{"file", "path", "repo", "ref"}
+			resultTypes = []string{"file", "path", "repo"}
 		}
 	}
-	seenResultTypes = make(map[string]struct{}, len(resultTypes))
 	for _, resultType := range resultTypes {
 		if resultType == "file" {
 			args.PatternInfo.PatternMatchesContent = true
@@ -888,7 +887,7 @@ func (r *searchResolver) determineResultTypes(args search.TextParameters, forceO
 			args.PatternInfo.PatternMatchesPath = true
 		}
 	}
-	return resultTypes, seenResultTypes
+	return resultTypes
 }
 
 func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, start time.Time) (repos, missingRepoRevs []*search.RepositoryRevisions, res *SearchResultsResolver, err error) {
@@ -904,10 +903,7 @@ func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, st
 
 	tr.LazyPrintf("searching %d repos, %d missing", len(repos), len(missingRepoRevs))
 	if len(repos) == 0 {
-		alert, err := r.alertForNoResolvedRepos(ctx)
-		if err != nil {
-			return nil, nil, nil, err
-		}
+		alert := r.alertForNoResolvedRepos(ctx)
 		return nil, nil, &SearchResultsResolver{alert: alert, start: start}, nil
 	}
 	if overLimit {
@@ -986,6 +982,9 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		options = &getPatternInfoOptions{performLiteralSearch: true}
 	}
 	p, err := r.getPatternInfo(options)
+	if err != nil {
+		return nil, err
+	}
 
 	// Fallback to literal search for searching repos and files if
 	// the structural search pattern is empty.
@@ -995,9 +994,6 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		forceOnlyResultType = ""
 	}
 
-	if err != nil {
-		return nil, err
-	}
 	args := search.TextParameters{
 		PatternInfo:     p,
 		Repos:           repos,
@@ -1015,7 +1011,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		return nil, err
 	}
 
-	resultTypes, seenResultTypes := r.determineResultTypes(args, forceOnlyResultType)
+	resultTypes := r.determineResultTypes(args, forceOnlyResultType)
 	tr.LazyPrintf("resultTypes: %v", resultTypes)
 
 	var (
@@ -1032,7 +1028,8 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		fileMatches   = make(map[string]*FileMatchResolver)
 		fileMatchesMu sync.Mutex
 		// Alert is a potential alert shown to the user.
-		alert *searchAlert
+		alert           *searchAlert
+		seenResultTypes = make(map[string]struct{})
 	)
 
 	waitGroup := func(required bool) *sync.WaitGroup {
