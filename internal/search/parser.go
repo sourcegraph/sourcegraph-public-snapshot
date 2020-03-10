@@ -274,12 +274,13 @@ func partitionParameters(nodes []Node) []Node {
 // scanParameterList scans for consecutive leaf nodes.
 func (p *parser) parseParameterList() ([]Node, error) {
 	var nodes []Node
+loop:
 	for {
 		if err := p.skipSpaces(); err != nil {
 			return nil, err
 		}
 		if p.done() {
-			goto done
+			break loop
 		}
 		switch {
 		case p.expect(LPAREN):
@@ -295,16 +296,15 @@ func (p *parser) parseParameterList() ([]Node, error) {
 				// Return a non-nil node if we parsed "()".
 				nodes = []Node{Parameter{Value: ""}}
 			}
-			goto done
+			break loop
 		case p.match(AND), p.match(OR):
 			// Caller advances.
-			goto done
+			break loop
 		default:
 			parameter := p.ParseParameter()
 			nodes = append(nodes, parameter)
 		}
 	}
-done:
 	return partitionParameters(nodes), nil
 }
 
