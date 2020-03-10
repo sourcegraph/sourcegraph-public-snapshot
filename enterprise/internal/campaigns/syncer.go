@@ -13,8 +13,8 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
-// A ChangesetSyncer periodically sync the metadata of the changesets
-// saved in the database
+// A ChangesetSyncer periodically syncs metadata of changesets
+// saved in the database.
 type ChangesetSyncer struct {
 	Store       SyncStore
 	ReposStore  repos.Store
@@ -192,7 +192,7 @@ func (s *ChangesetSyncer) computeSchedule(ctx context.Context) ([]scheduledSync,
 }
 
 // EnqueueChangesetSyncs will enqueue the changesets with the supplied ids for high priority syncing.
-// An error indicates that no changesets have been synced
+// An error indicates that no changesets have been enqueued.
 func (s *ChangesetSyncer) EnqueueChangesetSyncs(ctx context.Context, ids []int64) error {
 	if s.queue == nil {
 		return errors.New("background syncing not initialised")
@@ -207,7 +207,7 @@ func (s *ChangesetSyncer) EnqueueChangesetSyncs(ctx context.Context, ids []int64
 	return nil
 }
 
-// SyncChangesetByID will sync a single changeset given its id
+// SyncChangesetByID will sync a single changeset given its id.
 func (s *ChangesetSyncer) SyncChangesetByID(ctx context.Context, id int64) error {
 	log15.Debug("SyncChangesetByID", "id", id)
 	cs, err := s.Store.GetChangeset(ctx, GetChangesetOpts{
@@ -220,7 +220,7 @@ func (s *ChangesetSyncer) SyncChangesetByID(ctx context.Context, id int64) error
 }
 
 // SyncChangesets refreshes the metadata of the given changesets and
-// updates them in the database
+// updates them in the database.
 func (s *ChangesetSyncer) SyncChangesets(ctx context.Context, cs ...*campaigns.Changeset) (err error) {
 	if len(cs) == 0 {
 		return nil
@@ -389,16 +389,14 @@ type scheduledSync struct {
 }
 
 // changesetPriorityQueue is a min heap that sorts syncs by priority
-// and time of next sync
-// It is not safe for concurrent use so callers should protect it with
-// a mutex
+// and time of next sync. It is not safe for concurrent use.
 type changesetPriorityQueue struct {
 	items []scheduledSync
 	index map[int64]int // changesetID -> index
 }
 
 // newChangesetPriorityQueue creates a new queue for holding changeset sync instructions in chronological order.
-// items with a high priority will always appear at the front of the queue
+// items with a high priority will always appear at the front of the queue.
 func newChangesetPriorityQueue() *changesetPriorityQueue {
 	q := &changesetPriorityQueue{
 		items: make([]scheduledSync, 0),
@@ -453,7 +451,7 @@ func (pq *changesetPriorityQueue) Pop() interface{} {
 
 // End of heap methods
 
-// Peek fetches the highest priority item without removing it
+// Peek fetches the highest priority item without removing it.
 func (pq *changesetPriorityQueue) Peek() (scheduledSync, bool) {
 	if len(pq.items) == 0 {
 		return scheduledSync{}, false
@@ -461,9 +459,9 @@ func (pq *changesetPriorityQueue) Peek() (scheduledSync, bool) {
 	return pq.items[0], true
 }
 
-// Upsert modifies at item if it exists or adds a new item
+// Upsert modifies at item if it exists or adds a new item if not.
 // NOTE: If an existing item is high priority, it will not be changed back
-// to normal. This allows high priority items to stay that way through reschedules
+// to normal. This allows high priority items to stay that way through reschedules.
 func (pq *changesetPriorityQueue) Upsert(ss ...scheduledSync) {
 	for _, s := range ss {
 		i, ok := pq.index[s.changesetID]
@@ -480,7 +478,7 @@ func (pq *changesetPriorityQueue) Upsert(ss ...scheduledSync) {
 	}
 }
 
-// Get fetches the item with the supplied id without removing it
+// Get fetches the item with the supplied id without removing it.
 func (pq *changesetPriorityQueue) Get(id int64) (scheduledSync, bool) {
 	i, ok := pq.index[id]
 	if !ok {
