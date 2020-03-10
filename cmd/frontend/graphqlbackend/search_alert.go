@@ -290,12 +290,12 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 
 		proposedQueries := []*searchQueryDescription{}
 		if forksNotSet {
-			tryIncludeArchived := resolveRepoOp{
+			tryIncludeForks := resolveRepoOp{
 				repoFilters:      repoFilters,
 				minusRepoFilters: minusRepoFilters,
 				noForks:          false,
 			}
-			if reposExist(ctx, tryIncludeArchived) {
+			if reposExist(ctx, tryIncludeForks) {
 				proposedQueries = append(proposedQueries, &searchQueryDescription{
 					description: "include forked repositories in your query.",
 					query:       r.originalQuery + " fork:yes",
