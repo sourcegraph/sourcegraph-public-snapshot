@@ -134,9 +134,10 @@ func (s BitbucketServerSource) CreateChangeset(ctx context.Context, c *Changeset
 		}
 	}
 
-	c.Changeset.Metadata = pr
-	c.Changeset.ExternalID = strconv.FormatInt(int64(pr.ID), 10)
-	c.Changeset.ExternalServiceType = bitbucketserver.ServiceType
+	if err := s.LoadExtraMetadata(ctx, pr); err != nil {
+		return false, errors.Wrap(err, "loading extra metadata")
+	}
+	s.SetExternalFields(c, pr)
 
 	return exists, nil
 }
@@ -187,24 +188,11 @@ func (s BitbucketServerSource) LoadChangesets(ctx context.Context, cs ...*Change
 			return err
 		}
 
-		err = s.client.LoadPullRequestActivities(ctx, pr)
+		err = s.LoadExtraMetadata(ctx, pr)
 		if err != nil {
-			return errors.Wrap(err, "loading pr activities")
+			return errors.Wrap(err, "loading extra metadata")
 		}
-
-		err = s.client.LoadPullRequestCommits(ctx, pr)
-		if err != nil {
-			return errors.Wrap(err, "loading pr commits")
-		}
-
-		err = s.client.LoadPullRequestBuildStatuses(ctx, pr)
-		if err != nil {
-			return errors.Wrap(err, "loading pr build status")
-		}
-
-		cs[i].Changeset.ExternalBranch = git.AbbreviateRef(pr.FromRef.ID)
-		cs[i].Changeset.ExternalUpdatedAt = unixMilliToTime(int64(pr.UpdatedDate))
-		cs[i].Changeset.Metadata = pr
+		s.SetExternalFields(cs[i], pr)
 	}
 
 	if len(notFound) > 0 {
@@ -212,6 +200,30 @@ func (s BitbucketServerSource) LoadChangesets(ctx context.Context, cs ...*Change
 	}
 
 	return nil
+}
+
+func (s BitbucketServerSource) LoadExtraMetadata(ctx context.Context, pr *bitbucketserver.PullRequest) error {
+	if err := s.client.LoadPullRequestActivities(ctx, pr); err != nil {
+		return errors.Wrap(err, "loading pr activities")
+	}
+
+	if err := s.client.LoadPullRequestCommits(ctx, pr); err != nil {
+		return errors.Wrap(err, "loading pr commits")
+	}
+
+	if err := s.client.LoadPullRequestBuildStatuses(ctx, pr); err != nil {
+		return errors.Wrap(err, "loading pr build status")
+	}
+
+	return nil
+}
+
+func (s BitbucketServerSource) SetExternalFields(c *Changeset, pr *bitbucketserver.PullRequest) {
+	c.Changeset.Metadata = pr
+	c.Changeset.ExternalID = strconv.FormatInt(int64(pr.ID), 10)
+	c.Changeset.ExternalServiceType = bitbucketserver.ServiceType
+	c.Changeset.ExternalBranch = git.AbbreviateRef(pr.FromRef.ID)
+	c.Changeset.ExternalUpdatedAt = unixMilliToTime(int64(pr.UpdatedDate))
 }
 
 func (s BitbucketServerSource) UpdateChangeset(ctx context.Context, c *Changeset) error {

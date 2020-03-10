@@ -445,6 +445,10 @@ func RunChangesetJob(
 		}
 	}
 
+	if err := store.UpsertChangesetEvents(ctx, cs.Events()...); err != nil {
+		return err
+	}
+
 	c.ChangesetIDs = append(c.ChangesetIDs, clone.ID)
 	if err = store.UpdateCampaign(ctx, c); err != nil {
 		return err
