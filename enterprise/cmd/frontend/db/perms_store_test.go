@@ -277,13 +277,11 @@ func testPermsStore_SetUserPermissions(db *sql.DB) func(*testing.T) {
 					UserID: 1,
 					Perm:   authz.Read,
 					IDs:    toBitmap(1),
-				},
-				{
+				}, {
 					UserID: 2,
 					Perm:   authz.Read,
 					IDs:    toBitmap(1, 2),
-				},
-				{
+				}, {
 					UserID: 3,
 					Perm:   authz.Read,
 					IDs:    toBitmap(3, 4),
@@ -308,18 +306,15 @@ func testPermsStore_SetUserPermissions(db *sql.DB) func(*testing.T) {
 					UserID: 1,
 					Perm:   authz.Read,
 					IDs:    toBitmap(1),
-				},
-				{
+				}, {
 					UserID: 1,
 					Perm:   authz.Read,
 					IDs:    toBitmap(2, 3),
-				},
-				{
+				}, {
 					UserID: 2,
 					Perm:   authz.Read,
 					IDs:    toBitmap(1, 2),
-				},
-				{
+				}, {
 					UserID: 2,
 					Perm:   authz.Read,
 					IDs:    toBitmap(1, 3),
@@ -342,8 +337,7 @@ func testPermsStore_SetUserPermissions(db *sql.DB) func(*testing.T) {
 					UserID: 1,
 					Perm:   authz.Read,
 					IDs:    toBitmap(1, 2, 3),
-				},
-				{
+				}, {
 					UserID: 1,
 					Perm:   authz.Read,
 					IDs:    toBitmap(),
@@ -424,13 +418,11 @@ func testPermsStore_SetRepoPermissions(db *sql.DB) func(*testing.T) {
 					RepoID:  1,
 					Perm:    authz.Read,
 					UserIDs: toBitmap(1),
-				},
-				{
+				}, {
 					RepoID:  2,
 					Perm:    authz.Read,
 					UserIDs: toBitmap(1, 2),
-				},
-				{
+				}, {
 					RepoID:  3,
 					Perm:    authz.Read,
 					UserIDs: toBitmap(3, 4),
@@ -455,18 +447,15 @@ func testPermsStore_SetRepoPermissions(db *sql.DB) func(*testing.T) {
 					RepoID:  1,
 					Perm:    authz.Read,
 					UserIDs: toBitmap(1),
-				},
-				{
+				}, {
 					RepoID:  1,
 					Perm:    authz.Read,
 					UserIDs: toBitmap(2, 3),
-				},
-				{
+				}, {
 					RepoID:  2,
 					Perm:    authz.Read,
 					UserIDs: toBitmap(1, 2),
-				},
-				{
+				}, {
 					RepoID:  2,
 					Perm:    authz.Read,
 					UserIDs: toBitmap(3, 4),
@@ -490,8 +479,7 @@ func testPermsStore_SetRepoPermissions(db *sql.DB) func(*testing.T) {
 					RepoID:  1,
 					Perm:    authz.Read,
 					UserIDs: toBitmap(1, 2, 3),
-				},
-				{
+				}, {
 					RepoID:  1,
 					Perm:    authz.Read,
 					UserIDs: toBitmap(),
@@ -819,8 +807,7 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 						RepoID: 1,
 						Perm:   authz.Read,
 					},
-				},
-				{
+				}, {
 					accounts: &ExternalAccounts{
 						ServiceType: "sourcegraph",
 						ServiceID:   "https://sourcegraph.com/",
@@ -830,8 +817,7 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 						RepoID: 2,
 						Perm:   authz.Read,
 					},
-				},
-				{
+				}, {
 					accounts: &ExternalAccounts{
 						ServiceType: "sourcegraph",
 						ServiceID:   "https://sourcegraph.com/",
@@ -868,8 +854,7 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 						RepoID: 1,
 						Perm:   authz.Read,
 					},
-				},
-				{
+				}, {
 					accounts: &ExternalAccounts{
 						ServiceType: "sourcegraph",
 						ServiceID:   "https://sourcegraph.com/",
@@ -879,8 +864,7 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 						RepoID: 1,
 						Perm:   authz.Read,
 					},
-				},
-				{
+				}, {
 					accounts: &ExternalAccounts{
 						ServiceType: "sourcegraph",
 						ServiceID:   "https://sourcegraph.com/",
@@ -890,8 +874,7 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 						RepoID: 2,
 						Perm:   authz.Read,
 					},
-				},
-				{
+				}, {
 					accounts: &ExternalAccounts{
 						ServiceType: "sourcegraph",
 						ServiceID:   "https://sourcegraph.com/",
@@ -927,8 +910,7 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 						RepoID: 1,
 						Perm:   authz.Read,
 					},
-				},
-				{
+				}, {
 					accounts: &ExternalAccounts{
 						ServiceType: "sourcegraph",
 						ServiceID:   "https://sourcegraph.com/",
@@ -1040,8 +1022,7 @@ func testPermsStore_ListPendingUsers(db *sql.DB) func(t *testing.T) {
 						RepoID: 1,
 						Perm:   authz.Read,
 					},
-				},
-				{
+				}, {
 					accounts: &ExternalAccounts{
 						ServiceType: "sourcegraph",
 						ServiceID:   "https://sourcegraph.com/",
@@ -1134,8 +1115,7 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(t *testing.T) {
 							RepoID:  1,
 							Perm:    authz.Read,
 							UserIDs: toBitmap(1),
-						},
-						{
+						}, {
 							RepoID:  2,
 							Perm:    authz.Read,
 							UserIDs: toBitmap(1, 2),
@@ -1152,8 +1132,7 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(t *testing.T) {
 								RepoID: 1,
 								Perm:   authz.Read,
 							},
-						},
-						{
+						}, {
 							accounts: &ExternalAccounts{
 								ServiceType: "sourcegraph",
 								ServiceID:   "https://sourcegraph.com/",
@@ -1205,8 +1184,7 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(t *testing.T) {
 							RepoID:  1,
 							Perm:    authz.Read,
 							UserIDs: toBitmap(1),
-						},
-						{
+						}, {
 							RepoID:  2,
 							Perm:    authz.Read,
 							UserIDs: toBitmap(1, 2),
@@ -1223,8 +1201,7 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(t *testing.T) {
 								RepoID: 1,
 								Perm:   authz.Read,
 							},
-						},
-						{
+						}, {
 							accounts: &ExternalAccounts{
 								ServiceType: "sourcegraph",
 								ServiceID:   "https://sourcegraph.com/",
@@ -1276,8 +1253,7 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(t *testing.T) {
 							RepoID:  1,
 							Perm:    authz.Read,
 							UserIDs: toBitmap(1),
-						},
-						{
+						}, {
 							RepoID:  2,
 							Perm:    authz.Read,
 							UserIDs: toBitmap(1, 2),
@@ -1294,8 +1270,7 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(t *testing.T) {
 								RepoID: 1,
 								Perm:   authz.Read,
 							},
-						},
-						{
+						}, {
 							accounts: &ExternalAccounts{
 								ServiceType: "sourcegraph",
 								ServiceID:   "https://sourcegraph.com/",
@@ -1319,8 +1294,7 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(t *testing.T) {
 						Perm:        authz.Read,
 						Type:        authz.PermRepos,
 					},
-				},
-				{
+				}, {
 					userID: 3,
 					perm: &authz.UserPendingPermissions{
 						ServiceType: "sourcegraph",
