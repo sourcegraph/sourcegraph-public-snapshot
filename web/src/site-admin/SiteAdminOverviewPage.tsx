@@ -139,7 +139,7 @@ export const SiteAdminOverviewPage: React.FunctionComponent<Props> = ({
                             <Collapsible
                                 title={<>{setupPercentage < 100 ? 'Get started with Sourcegraph' : 'Setup status'}</>}
                                 defaultExpanded={setupPercentage < 100}
-                                className="list-group-item"
+                                className="list-group-item e2e-site-admin-overview-menu"
                                 titleClassName="h4 mb-0 mt-2 font-weight-normal p-2"
                             >
                                 {activation.completed && (

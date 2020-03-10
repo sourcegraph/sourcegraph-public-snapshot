@@ -371,6 +371,12 @@ describe('e2e test suite', () => {
             // Flaky https://github.com/sourcegraph/sourcegraph/issues/2704
             // await percySnapshot(page, 'Search results code')
         })
+
+        test('Site admin overview', async () => {
+            await driver.page.goto(sourcegraphBaseUrl + '/site-admin')
+            await driver.page.waitForSelector('.e2e-site-admin-overview-menu', { visible: true })
+            await percySnapshot(driver.page, 'Site admin overview')
+        })
     })
 
     describe('Theme switcher', () => {
