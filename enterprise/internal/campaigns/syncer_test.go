@@ -84,6 +84,17 @@ func TestNextSync(t *testing.T) {
 }
 
 func TestChangesetPriorityQueue(t *testing.T) {
+	assertOrder := func(t *testing.T, q *changesetPriorityQueue, expected []int64) {
+		t.Helper()
+		ids := make([]int64, len(q.items))
+		for i := range ids {
+			ids[i] = q.items[i].changesetID
+		}
+		if diff := cmp.Diff(expected, ids); diff != "" {
+			t.Fatal(diff)
+		}
+	}
+
 	now := time.Now()
 	q := newChangesetPriorityQueue()
 
@@ -119,12 +130,16 @@ func TestChangesetPriorityQueue(t *testing.T) {
 		q.Upsert(items[i])
 	}
 
+	assertOrder(t, q, []int64{2, 4, 3, 1, 5})
+
 	// Set item to high priority
 	q.Upsert(scheduledSync{
 		changesetID: 4,
 		nextSync:    now.Add(-2 * time.Hour),
 		priority:    priorityHigh,
 	})
+
+	assertOrder(t, q, []int64{4, 2, 3, 1, 5})
 
 	// Can't reduce priority of existing item
 	q.Upsert(scheduledSync{
@@ -136,7 +151,8 @@ func TestChangesetPriorityQueue(t *testing.T) {
 	if q.Len() != len(items) {
 		t.Fatalf("Expected %d, got %d", q.Len(), len(items))
 	}
-	expectedOrder := []int64{4, 2, 3, 1, 5}
+
+	assertOrder(t, q, []int64{4, 2, 3, 1, 5})
 
 	for i := 0; i < len(items); i++ {
 		peeked, ok := q.Peek()
@@ -146,9 +162,6 @@ func TestChangesetPriorityQueue(t *testing.T) {
 		item := heap.Pop(q).(scheduledSync)
 		if peeked.changesetID != item.changesetID {
 			t.Fatalf("Peeked and Popped item should have the same id")
-		}
-		if item.changesetID != expectedOrder[i] {
-			t.Fatalf("Expected item at index %d to be %d, got %d", i, expectedOrder[i], item.changesetID)
 		}
 	}
 
