@@ -25,14 +25,6 @@ import (
 type PermsSyncer struct {
 	// The priority queue to maintain the permissions syncing requests.
 	queue *requestQueue
-	// fetchers is a list of authz.Provider implementations that also
-	// implemented PermsFetcher. Keys are ServiceID (e.g. https://gitlab.com/).
-	// TODO(jchen): Use conf.Watch to get up-to-date authz providers.
-	// The current approach is to minimize the changes required by keeping
-	// the authz.Provider interface as-is, so each authz provider could be
-	// opt-in progressively until we fully complete the transition of moving
-	// permissions syncing process to the background for all authz providers.
-	fetchers map[string]PermsFetcher
 	// The database interface for any repos and external services operations.
 	// TODO(jchen): Move all DB calls to authz.PermsStore and remove this field.
 	reposStore repos.Store
@@ -62,9 +54,8 @@ type PermsFetcher interface {
 	FetchRepoPerms(ctx context.Context, repo *api.ExternalRepoSpec) ([]string, error)
 }
 
-// NewPermsSyncer returns a new permissions syncing request manager.
+// NewPermsSyncer returns a new permissions syncing manager.
 func NewPermsSyncer(
-	fetchers map[string]PermsFetcher,
 	reposStore repos.Store,
 	permsStore *edb.PermsStore,
 	db dbutil.DB,
@@ -72,7 +63,6 @@ func NewPermsSyncer(
 ) *PermsSyncer {
 	return &PermsSyncer{
 		queue:            newRequestQueue(),
-		fetchers:         fetchers,
 		reposStore:       reposStore,
 		permsStore:       permsStore,
 		db:               db,
@@ -109,6 +99,24 @@ func (s *PermsSyncer) ScheduleRepos(ctx context.Context, repos ...ScheduledRepo)
 	}
 }
 
+// fetchers returns a list of authz.Provider that also implemented PermsFetcher.
+// Keys are ServiceID (e.g. https://gitlab.com/). The current approach is to
+// minimize the changes required by keeping the authz.Provider interface as-is,
+// so each authz provider could be opt-in progressively until we fully complete
+// the transition of moving permissions syncing process to the background for
+// all authz providers.
+func (s *PermsSyncer) fetchers() map[string]PermsFetcher {
+	_, providers := authz.GetProviders()
+	fetchers := make(map[string]PermsFetcher, len(providers))
+
+	for i := range providers {
+		if f, ok := providers[i].(PermsFetcher); ok {
+			fetchers[f.ServiceID()] = f
+		}
+	}
+	return fetchers
+}
+
 // syncUserPerms processes permissions syncing request in user-centric way.
 func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32) error {
 	// TODO(jchen): Remove the use of dbconn.Global().
@@ -121,7 +129,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32) error {
 
 	var repoSpecs []api.ExternalRepoSpec
 	for _, acct := range accts {
-		fetcher := s.fetchers[acct.ServiceID]
+		fetcher := s.fetchers()[acct.ServiceID]
 		if fetcher == nil {
 			// We have no authz provider configured for this external account.
 			continue
@@ -187,7 +195,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID) erro
 		return nil
 	}
 
-	fetcher := s.fetchers[repo.ExternalRepo.ServiceID]
+	fetcher := s.fetchers()[repo.ExternalRepo.ServiceID]
 	if fetcher == nil {
 		// We have no authz provider configured for this repository.
 		return nil

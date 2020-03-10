@@ -18,7 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
 func main() {
@@ -74,11 +74,10 @@ func startBackgroundPermsSync(ctx context.Context, repoStore repos.Store, db dbu
 		return
 	}
 
-	// TODO(jchen): Get a list of authz.Provider that implements the PermsFetcher.
 	clock := func() time.Time {
 		return time.Now().UTC().Truncate(time.Microsecond)
 	}
 	permsStore := edb.NewPermsStore(db, clock)
-	permsSyncer := authz.NewPermsSyncer(nil, repoStore, permsStore, db, clock)
+	permsSyncer := authz.NewPermsSyncer(repoStore, permsStore, db, clock)
 	go permsSyncer.Run(ctx)
 }
