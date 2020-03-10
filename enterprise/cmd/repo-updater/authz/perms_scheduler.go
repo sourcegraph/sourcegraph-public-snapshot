@@ -77,6 +77,7 @@ WHERE users.id NOT IN
 		users[i] = ScheduledUser{
 			Priority: PriorityLow,
 			UserID:   results[i].id,
+			// NOTE: Have NextSyncAt with zero value (i.e. not set) gives it higher priority.
 		}
 	}
 	return users, nil
@@ -102,6 +103,7 @@ WHERE repo.private = TRUE AND repo.id NOT IN
 		repos[i] = ScheduledRepo{
 			Priority: PriorityLow,
 			RepoID:   api.RepoID(results[i].id),
+			// NOTE: Have NextSyncAt with zero value (i.e. not set) gives it higher priority.
 		}
 	}
 	return repos, nil
@@ -125,9 +127,9 @@ LIMIT %s
 	users := make([]ScheduledUser, len(results))
 	for i := range results {
 		users[i] = ScheduledUser{
-			Priority:      PriorityLow,
-			UserID:        results[i].id,
-			LastUpdatedAt: results[i].time,
+			Priority:   PriorityLow,
+			UserID:     results[i].id,
+			NextSyncAt: results[i].time,
 		}
 	}
 	return users, nil
@@ -151,9 +153,9 @@ LIMIT %s
 	repos := make([]ScheduledRepo, len(results))
 	for i := range results {
 		repos[i] = ScheduledRepo{
-			Priority:      PriorityLow,
-			RepoID:        api.RepoID(results[i].id),
-			LastUpdatedAt: results[i].time,
+			Priority:   PriorityLow,
+			RepoID:     api.RepoID(results[i].id),
+			NextSyncAt: results[i].time,
 		}
 	}
 	return repos, nil
@@ -168,15 +170,15 @@ type Schedule struct {
 // ScheduledRepo contains information for scheduling a user.
 type ScheduledUser struct {
 	Priority
-	UserID        int32
-	LastUpdatedAt time.Time
+	UserID     int32
+	NextSyncAt time.Time
 }
 
 // ScheduledRepo contains for scheduling a repository.
 type ScheduledRepo struct {
 	Priority
 	api.RepoID
-	LastUpdatedAt time.Time
+	NextSyncAt time.Time
 }
 
 // schedule computes schedule four lists in the following order:
@@ -207,6 +209,9 @@ func (s *PermsScheduler) schedule(ctx context.Context) (*Schedule, error) {
 	//   consumed by repos = (<initial threshold> - <consumed by users>) / (<total users> / <page size>)
 	// Hard coded both to 100 for now.
 	const threshold = 100
+
+	// TODO(jchen): Use better heuristics for setting NexySyncAt, the initial version
+	// just uses the value of LastUpdatedAt get from the perms tables.
 
 	users, err = s.scheduleUsersWithOldestPerms(ctx, threshold)
 	if err != nil {

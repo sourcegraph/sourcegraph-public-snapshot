@@ -66,10 +66,10 @@ func NewPermsSyncer(fetchers map[string]PermsFetcher, reposStore repos.Store, pe
 func (s *PermsSyncer) ScheduleUsers(ctx context.Context, users ...ScheduledUser) {
 	for i := range users {
 		updated := s.queue.enqueue(&requestMeta{
-			priority:    users[i].Priority,
-			typ:         requestTypeUser,
-			id:          users[i].UserID,
-			lastUpdated: users[i].LastUpdatedAt,
+			priority:   users[i].Priority,
+			typ:        requestTypeUser,
+			id:         users[i].UserID,
+			nextSyncAt: users[i].NextSyncAt,
 		})
 		log15.Debug("PermsSyncer.queue.enqueued", "userID", users[i].UserID, "updated", updated)
 	}
@@ -80,10 +80,10 @@ func (s *PermsSyncer) ScheduleUsers(ctx context.Context, users ...ScheduledUser)
 func (s *PermsSyncer) ScheduleRepos(ctx context.Context, repos ...ScheduledRepo) {
 	for i := range repos {
 		updated := s.queue.enqueue(&requestMeta{
-			priority:    repos[i].Priority,
-			typ:         requestTypeRepo,
-			id:          int32(repos[i].RepoID),
-			lastUpdated: repos[i].LastUpdatedAt,
+			priority:   repos[i].Priority,
+			typ:        requestTypeRepo,
+			id:         int32(repos[i].RepoID),
+			nextSyncAt: repos[i].NextSyncAt,
 		})
 		log15.Debug("PermsSyncer.queue.enqueued", "repoID", repos[i].RepoID, "updated", updated)
 	}
