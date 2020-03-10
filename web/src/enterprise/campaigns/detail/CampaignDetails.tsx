@@ -534,7 +534,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
 
                     {!updateMode && (
                         <>
-                            <h3 className="mt-3 mb-2">Changesets</h3>
+                            <h3 className="mt-3">Changesets</h3>
                             {(campaign?.changesets.totalCount ?? 0) +
                             (campaignPlan || campaign)!.changesetPlans.totalCount ? (
                                 <CampaignTabs
@@ -544,12 +544,12 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                     persistLines={!!campaign}
                                     history={history}
                                     location={location}
-                                    className="mt-3"
+                                    className="mt-2"
                                     isLightTheme={isLightTheme}
                                 />
                             ) : (
                                 (campaignPlan || campaign)!.status.state !== GQL.BackgroundProcessState.PROCESSING && (
-                                    <p className="mt-3 text-muted">No changesets</p>
+                                    <p className="mt-2 text-muted">No changesets</p>
                                 )
                             )}
                         </>

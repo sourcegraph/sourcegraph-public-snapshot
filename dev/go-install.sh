@@ -38,7 +38,7 @@ esac
 $ok || exit 1
 
 mkdir -p .bin
-export GOBIN=$PWD/.bin
+export GOBIN=$(mktemp -d)
 export GO111MODULE=on
 
 INSTALL_GO_PKGS="github.com/mattn/goreman \
@@ -105,10 +105,20 @@ do_install() {
 		fi
 	done
 	if ( go install -v -gcflags="$GCFLAGS" -tags "$TAGS" -race=$race $cmds ); then
-		if $verbose; then
-			# echo each command on its own line
-			echo "$cmdlist" | tr ' ' '\012'
-		fi
+        for cmd in $cmdlist; do
+            # Check whether the binary of each command has changed
+            diff "${GOBIN}/${cmd}" "${PWD}/.bin/${cmd}" >/dev/null
+            if [ $? -ne 0 ]
+            then
+                # Binary updated. Move it to correct location.
+                mv "${GOBIN}/${cmd}" "${PWD}/.bin/${cmd}"
+
+                # Output name of command so it can be restarted.
+                if $verbose; then
+                    echo "$cmd"
+                fi
+            fi
+        done
 	else
 		failed="$failed $cmdlist"
 	fi

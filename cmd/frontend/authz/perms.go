@@ -172,15 +172,31 @@ func (p *RepoPermissions) TracingFields() []otlog.Field {
 
 // UserPendingPermissions defines permissions that a not-yet-created user has to
 // perform on a given set of object IDs. Not-yet-created users may exist on the
-// code host but not yet in Sourcegraph. `BindID` is used to map this stub user
-// to an actual user when the actual user is created; it can either be a username
-// or email.
+// code host but not yet in Sourcegraph. "ServiceType", "ServiceID" and "BindID"
+// are used to map this stub user to an actual user when the user is created.
 type UserPendingPermissions struct {
-	ID        int32
-	BindID    string
-	Perm      Perms
-	Type      PermType
-	IDs       *roaring.Bitmap
+	// The auto-generated internal database ID.
+	ID int32
+	// The type of the code host as if it would be used as ExternalAccountSpec.ServiceType,
+	// e.g. "github", "gitlab", "bitbucketServer" and "sourcegraph".
+	ServiceType string
+	// The ID of the code host as if it would be used as ExternalAccountSpec.ServiceID,
+	// e.g. "https://github.com/", "https://gitlab.com/" and "https://sourcegraph.com/".
+	ServiceID string
+	// The account ID that a code host (and its authz provider) uses to identify a user,
+	// e.g. a username (for Bitbucket Server), a GraphID ( for GitHub), or a user ID
+	// (for GitLab).
+	//
+	// When use the Sourcegraph authz provider, "BindID" can be either a username or
+	// an email based on site configuration.
+	BindID string
+	// The permissions this user has to the "IDs" of the "Type".
+	Perm Perms
+	// The type of permissions this user has.
+	Type PermType
+	// The object IDs with the "Type".
+	IDs *roaring.Bitmap
+	// The last updated time.
 	UpdatedAt time.Time
 }
 
@@ -188,6 +204,8 @@ type UserPendingPermissions struct {
 func (p *UserPendingPermissions) TracingFields() []otlog.Field {
 	fs := []otlog.Field{
 		otlog.Int32("UserPendingPermissions.ID", p.ID),
+		otlog.String("UserPendingPermissions.ServiceType", p.ServiceType),
+		otlog.String("UserPendingPermissions.ServiceID", p.ServiceID),
 		otlog.String("UserPendingPermissions.BindID", p.BindID),
 		otlog.String("UserPendingPermissions.Perm", string(p.Perm)),
 		otlog.String("UserPendingPermissions.Type", string(p.Type)),

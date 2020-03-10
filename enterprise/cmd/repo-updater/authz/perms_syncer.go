@@ -210,8 +210,6 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID) erro
 	// one-to-one username mapping between the internal database and the code host.
 	// See last paragraph of https://docs.sourcegraph.com/admin/auth#username-normalization
 	// for details.
-	// TODO(jchen): Ship the initial design to unblock working on authz providers,
-	// but should revisit the feasibility of using ExternalAccount before final delivery.
 
 	accountIDs, err := fetcher.FetchRepoPerms(ctx, &repo.ExternalRepo)
 	if err != nil {
@@ -266,9 +264,15 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID) erro
 	}
 	defer txs.Done(&err)
 
+	accounts := &edb.ExternalAccounts{
+		ServiceType: "sourcegraph",
+		ServiceID:   "https://sourcegraph.com/",
+		AccountIDs:  pendingBindUsernames,
+	}
+
 	if err = txs.SetRepoPermissions(ctx, p); err != nil {
 		return errors.Wrap(err, "set repository permissions")
-	} else if err = txs.SetRepoPendingPermissions(ctx, pendingBindUsernames, p); err != nil {
+	} else if err = txs.SetRepoPendingPermissions(ctx, accounts, p); err != nil {
 		return errors.Wrap(err, "set repository pending permissions")
 	}
 
