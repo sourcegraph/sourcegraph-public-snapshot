@@ -301,12 +301,11 @@ func (s *PermsSyncer) runSync(ctx context.Context) {
 
 		// Check if it's the time to sync the request
 		if wait := request.nextSyncAt.Sub(s.clock()); wait > 0 {
-			dur := request.nextSyncAt.Sub(s.clock())
-			time.AfterFunc(dur, func() {
+			time.AfterFunc(wait, func() {
 				notify(s.queue.notifyEnqueue)
 			})
 
-			log15.Debug("PermsSyncer.Run.waitForNextSync", "duration", dur)
+			log15.Debug("PermsSyncer.Run.waitForNextSync", "duration", wait)
 			continue
 		}
 
