@@ -38,8 +38,10 @@ esac
 
 $ok || exit 1
 
+# For the core Go packages, point $GOBIN to the final location.
+# This must be done BEFORE building the target commands.
 mkdir -p .bin
-export GOBIN=$(mktemp -d)
+export GOBIN="${PWD}/.bin"
 export GO111MODULE=on
 
 INSTALL_GO_PKGS="github.com/mattn/goreman \
@@ -56,6 +58,12 @@ if ! go install $INSTALL_GO_PKGS; then
     echo >&2 "failed to install prerequisites, aborting."
     exit 1
 fi
+
+# For the target commands, build into a temp directory for comparison, so that
+# we can update only those packages that change. Clean up the temp at exit.
+tmpdir="$(mktemp -d -t src-binaries)"
+trap 'rm "$tmpdir"/*; rmdir "$tmpdir"' EXIT
+export GOBIN="$tmpdir"
 
 TAGS='dev'
 if [ -n "$DELVE" ]; then
@@ -106,11 +114,9 @@ do_install() {
         fi
     done
     if ( go install -v -gcflags="$GCFLAGS" -tags "$TAGS" -race=$race $cmds ); then
-        for cmd in $cmdlist; do
+        for cmd in $cmdlist ; do
             # Check whether the binary of each command has changed
-            diff "${GOBIN}/${cmd}" "${PWD}/.bin/${cmd}" >/dev/null
-            if [ $? -ne 0 ]
-            then
+            if ! cmp -s "${GOBIN}/${cmd}" "${PWD}/.bin/${cmd}" ; then
                 # Binary updated. Move it to correct location.
                 mv "${GOBIN}/${cmd}" "${PWD}/.bin/${cmd}"
 
