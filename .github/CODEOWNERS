@@ -192,6 +192,7 @@ tslint.config.js @sourcegraph/web
 /enterprise/cmd/frontend/internal/symbols @sourcegraph/code-intel
 /cmd/symbols/.ctags.d/ @sourcegraph/code-intel
 /cmd/symbols/internal/pkg/ctags/ @sourcegraph/code-intel
+/shared/src/languages* @sourcegraph/code-intel
 
 # Saved searches
 /web/src/SavedQuery.tsx @attfarhan
