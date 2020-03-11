@@ -73,8 +73,31 @@ func NewPermsSyncer(
 
 // ScheduleUsers schedules new permissions syncing requests for given users
 // in desired priority.
-func (s *PermsSyncer) ScheduleUsers(ctx context.Context, users ...ScheduledUser) {
+//
+// This method implements the authz.PermsSyncer in the OSS namespace.
+func (s *PermsSyncer) ScheduleUsers(ctx context.Context, priority Priority, userIDs ...int32) {
+	users := make([]scheduledUser, len(userIDs))
+	for i := range userIDs {
+		users[i] = scheduledUser{
+			Priority: priority,
+			UserID:   userIDs[i],
+			// NOTE: Have NextSyncAt with zero value (i.e. not set) gives it higher priority,
+			// as the request is most likely triggered by a user action from OSS namespace.
+		}
+	}
+
+	s.scheduleUsers(ctx, users...)
+}
+
+func (s *PermsSyncer) scheduleUsers(ctx context.Context, users ...scheduledUser) {
 	for i := range users {
+		select {
+		case <-ctx.Done():
+			log15.Debug("PermsSyncer.scheduleUsers.canceled")
+			return
+		default:
+		}
+
 		updated := s.queue.enqueue(&requestMeta{
 			priority:   users[i].Priority,
 			typ:        requestTypeUser,
@@ -87,8 +110,31 @@ func (s *PermsSyncer) ScheduleUsers(ctx context.Context, users ...ScheduledUser)
 
 // ScheduleRepos schedules new permissions syncing requests for given repositories
 // in desired priority.
-func (s *PermsSyncer) ScheduleRepos(ctx context.Context, repos ...ScheduledRepo) {
+//
+// This method implements the authz.PermsSyncer in the OSS namespace.
+func (s *PermsSyncer) ScheduleRepos(ctx context.Context, priority Priority, repoIDs ...api.RepoID) {
+	repos := make([]scheduledRepo, len(repoIDs))
+	for i := range repoIDs {
+		repos[i] = scheduledRepo{
+			Priority: priority,
+			RepoID:   repoIDs[i],
+			// NOTE: Have NextSyncAt with zero value (i.e. not set) gives it higher priority,
+			// as the request is most likely triggered by a user action from OSS namespace.
+		}
+	}
+
+	s.scheduleRepos(ctx, repos...)
+}
+
+func (s *PermsSyncer) scheduleRepos(ctx context.Context, repos ...scheduledRepo) {
 	for i := range repos {
+		select {
+		case <-ctx.Done():
+			log15.Debug("PermsSyncer.scheduleRepos.canceled")
+			return
+		default:
+		}
+
 		updated := s.queue.enqueue(&requestMeta{
 			priority:   repos[i].Priority,
 			typ:        requestTypeRepo,
@@ -352,7 +398,7 @@ func (s *PermsSyncer) loadIDsWithTime(ctx context.Context, q *sqlf.Query) ([]sca
 // scheduleUsersWithNoPerms returns computed schedules for users who have no permissions
 // found in database.
 // TODO(jchen): Move this to authz.PermsStore.
-func (s *PermsSyncer) scheduleUsersWithNoPerms(ctx context.Context) ([]ScheduledUser, error) {
+func (s *PermsSyncer) scheduleUsersWithNoPerms(ctx context.Context) ([]scheduledUser, error) {
 	q := sqlf.Sprintf(`
 -- source: enterprise/cmd/repo-updater/authz/perms_scheduler.go:PermsScheduler.scheduleUsersWithNoPerms
 SELECT users.id, '1970-01-01 00:00:00+00' FROM users
@@ -364,9 +410,9 @@ WHERE users.id NOT IN
 		return nil, err
 	}
 
-	users := make([]ScheduledUser, len(results))
+	users := make([]scheduledUser, len(results))
 	for i := range results {
-		users[i] = ScheduledUser{
+		users[i] = scheduledUser{
 			Priority: PriorityLow,
 			UserID:   results[i].id,
 			// NOTE: Have NextSyncAt with zero value (i.e. not set) gives it higher priority.
@@ -378,7 +424,7 @@ WHERE users.id NOT IN
 // scheduleReposWithNoPerms returns computed schedules for private repositories that
 // have no permissions found in database.
 // TODO(jchen): Move this to authz.PermsStore.
-func (s *PermsSyncer) scheduleReposWithNoPerms(ctx context.Context) ([]ScheduledRepo, error) {
+func (s *PermsSyncer) scheduleReposWithNoPerms(ctx context.Context) ([]scheduledRepo, error) {
 	q := sqlf.Sprintf(`
 -- source: enterprise/cmd/repo-updater/authz/perms_scheduler.go:PermsScheduler.scheduleReposWithNoPerms
 SELECT repo.id, '1970-01-01 00:00:00+00' FROM repo
@@ -391,9 +437,9 @@ WHERE repo.private = TRUE AND repo.id NOT IN
 		return nil, err
 	}
 
-	repos := make([]ScheduledRepo, len(results))
+	repos := make([]scheduledRepo, len(results))
 	for i := range results {
-		repos[i] = ScheduledRepo{
+		repos[i] = scheduledRepo{
 			Priority: PriorityLow,
 			RepoID:   api.RepoID(results[i].id),
 			// NOTE: Have NextSyncAt with zero value (i.e. not set) gives it higher priority.
@@ -405,7 +451,7 @@ WHERE repo.private = TRUE AND repo.id NOT IN
 // scheduleUsersWithOldestPerms returns computed schedules for users who have oldest
 // permissions in database and capped results by the limit.
 // TODO(jchen): Move this to authz.PermsStore.
-func (s *PermsSyncer) scheduleUsersWithOldestPerms(ctx context.Context, limit int) ([]ScheduledUser, error) {
+func (s *PermsSyncer) scheduleUsersWithOldestPerms(ctx context.Context, limit int) ([]scheduledUser, error) {
 	q := sqlf.Sprintf(`
 -- source: enterprise/cmd/repo-updater/authz/perms_scheduler.go:PermsScheduler.scheduleUsersWithOldestPerms
 SELECT user_id, updated_at FROM user_permissions
@@ -418,9 +464,9 @@ LIMIT %s
 		return nil, err
 	}
 
-	users := make([]ScheduledUser, len(results))
+	users := make([]scheduledUser, len(results))
 	for i := range results {
-		users[i] = ScheduledUser{
+		users[i] = scheduledUser{
 			Priority:   PriorityLow,
 			UserID:     results[i].id,
 			NextSyncAt: results[i].time,
@@ -432,7 +478,7 @@ LIMIT %s
 // scheduleReposWithOldestPerms returns computed schedules for private repositories that
 // have oldest permissions in database.
 // TODO(jchen): Move this to authz.PermsStore.
-func (s *PermsSyncer) scheduleReposWithOldestPerms(ctx context.Context, limit int) ([]ScheduledRepo, error) {
+func (s *PermsSyncer) scheduleReposWithOldestPerms(ctx context.Context, limit int) ([]scheduledRepo, error) {
 	q := sqlf.Sprintf(`
 -- source: enterprise/cmd/repo-updater/authz/perms_scheduler.go:PermsScheduler.scheduleReposWithOldestPerms
 SELECT repo_id, updated_at FROM repo_permissions
@@ -445,9 +491,9 @@ LIMIT %s
 		return nil, err
 	}
 
-	repos := make([]ScheduledRepo, len(results))
+	repos := make([]scheduledRepo, len(results))
 	for i := range results {
-		repos[i] = ScheduledRepo{
+		repos[i] = scheduledRepo{
 			Priority:   PriorityLow,
 			RepoID:     api.RepoID(results[i].id),
 			NextSyncAt: results[i].time,
@@ -456,21 +502,21 @@ LIMIT %s
 	return repos, nil
 }
 
-// Schedule contains information for scheduling users and repositories.
-type Schedule struct {
-	Users []ScheduledUser
-	Repos []ScheduledRepo
+// schedule contains information for scheduling users and repositories.
+type schedule struct {
+	Users []scheduledUser
+	Repos []scheduledRepo
 }
 
-// ScheduledRepo contains information for scheduling a user.
-type ScheduledUser struct {
+// scheduledUser contains information for scheduling a user.
+type scheduledUser struct {
 	Priority
 	UserID     int32
 	NextSyncAt time.Time
 }
 
-// ScheduledRepo contains for scheduling a repository.
-type ScheduledRepo struct {
+// scheduledRepo contains for scheduling a repository.
+type scheduledRepo struct {
 	Priority
 	api.RepoID
 	NextSyncAt time.Time
@@ -481,8 +527,8 @@ type ScheduledRepo struct {
 //   2. Private repositories with no permissions, because those can't be viewed by anyone except site admins.
 //   3. Rolling updating user permissions over time from oldest ones.
 //   4. Rolling updating repository permissions over time from oldest ones.
-func (s *PermsSyncer) schedule(ctx context.Context) (*Schedule, error) {
-	schedule := new(Schedule)
+func (s *PermsSyncer) schedule(ctx context.Context) (*schedule, error) {
+	schedule := new(schedule)
 
 	users, err := s.scheduleUsersWithNoPerms(ctx)
 	if err != nil {
@@ -545,8 +591,8 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 			continue
 		}
 
-		s.ScheduleUsers(ctx, schedule.Users...)
-		s.ScheduleRepos(ctx, schedule.Repos...)
+		s.scheduleUsers(ctx, schedule.Users...)
+		s.scheduleRepos(ctx, schedule.Repos...)
 	}
 }
 
