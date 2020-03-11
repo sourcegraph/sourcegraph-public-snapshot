@@ -150,7 +150,7 @@ func nextSync(h campaigns.ChangesetSyncData) time.Time {
 	// Simple linear backoff for now
 	diff := lastSync.Sub(lastChange)
 
-	// If the last change has happened SINCE our last sync this indicates a webhook
+	// If the last change has happened AFTER our last sync this indicates a webhook
 	// has arrived. In this case, we should check again in minSyncDelay after
 	// the hook arrived. If multiple webhooks arrive in close succession this will
 	// cause us to wait for a quiet period of at least minSyncDelay
