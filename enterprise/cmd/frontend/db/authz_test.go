@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -51,7 +52,7 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 	s := NewAuthzStore(dbconn.Global, clock).(*authzStore)
 
 	type update struct {
-		accounts *ExternalAccounts
+		accounts *extsvc.ExternalAccounts
 		repoID   int32
 	}
 	tests := []struct {
@@ -73,7 +74,7 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 			},
 			updates: []update{
 				{
-					accounts: &ExternalAccounts{
+					accounts: &extsvc.ExternalAccounts{
 						ServiceType: "sourcegraph",
 						ServiceID:   "https://sourcegraph.com/",
 						AccountIDs:  []string{"alice@example.com"},
@@ -81,7 +82,7 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 					repoID: 1,
 				},
 				{
-					accounts: &ExternalAccounts{
+					accounts: &extsvc.ExternalAccounts{
 						ServiceType: "sourcegraph",
 						ServiceID:   "https://sourcegraph.com/",
 						AccountIDs:  []string{"alice2@example.com"},
@@ -89,7 +90,7 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 					repoID: 2,
 				},
 				{
-					accounts: &ExternalAccounts{
+					accounts: &extsvc.ExternalAccounts{
 						ServiceType: "sourcegraph",
 						ServiceID:   "https://sourcegraph.com/",
 						AccountIDs:  []string{"alice3@example.com"},
@@ -111,7 +112,7 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 			},
 			updates: []update{
 				{
-					accounts: &ExternalAccounts{
+					accounts: &extsvc.ExternalAccounts{
 						ServiceType: "sourcegraph",
 						ServiceID:   "https://sourcegraph.com/",
 						AccountIDs:  []string{"alice"},
@@ -119,7 +120,7 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 					repoID: 1,
 				},
 				{
-					accounts: &ExternalAccounts{
+					accounts: &extsvc.ExternalAccounts{
 						ServiceType: "sourcegraph",
 						ServiceID:   "https://sourcegraph.com/",
 						AccountIDs:  []string{"bob"},
@@ -283,7 +284,7 @@ func TestAuthzStore_RevokeUserPermissions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	accounts := &ExternalAccounts{
+	accounts := &extsvc.ExternalAccounts{
 		ServiceType: "sourcegraph",
 		ServiceID:   "https://sourcegraph.com/",
 		AccountIDs:  []string{"alice", "alice@example.com"},
