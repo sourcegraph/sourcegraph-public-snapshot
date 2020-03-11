@@ -13,10 +13,6 @@ import (
 
 func TestNextSync(t *testing.T) {
 	clock := func() time.Time { return time.Date(2020, 01, 01, 01, 01, 01, 01, time.UTC) }
-	type args struct {
-		lastSync   time.Time
-		lastChange time.Time
-	}
 	tests := []struct {
 		name string
 		h    campaigns.ChangesetSyncData
@@ -48,15 +44,6 @@ func TestNextSync(t *testing.T) {
 			want: clock().Add(1 * time.Hour),
 		},
 		{
-			// Could happen due to clock skew
-			name: "Future change",
-			h: campaigns.ChangesetSyncData{
-				UpdatedAt:         clock(),
-				ExternalUpdatedAt: clock().Add(1 * time.Hour),
-			},
-			want: clock().Add(minSyncDelay),
-		},
-		{
 			name: "Diff max is capped",
 			h: campaigns.ChangesetSyncData{
 				UpdatedAt:         clock(),
@@ -72,10 +59,24 @@ func TestNextSync(t *testing.T) {
 			},
 			want: clock().Add(minSyncDelay),
 		},
+		{
+			name: "Event arrives after sync",
+			h: campaigns.ChangesetSyncData{
+				UpdatedAt:         clock(),
+				ExternalUpdatedAt: clock().Add(-1 * maxSyncDelay / 2),
+				LatestEvent:       clock().Add(10 * time.Minute),
+			},
+			want: clock().Add(10 * time.Minute).Add(minSyncDelay),
+		},
+		{
+			name: "Never synced",
+			h:    campaigns.ChangesetSyncData{},
+			want: clock(),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := nextSync(tt.h)
+			got := nextSync(clock, tt.h)
 			if diff := cmp.Diff(got, tt.want); diff != "" {
 				t.Fatal(diff)
 			}
