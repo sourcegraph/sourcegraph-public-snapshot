@@ -64,7 +64,20 @@ export const CampaignUpdateDiff: React.FunctionComponent<Props> = ({
     if (queriedChangesets) {
         const [changesets, changesetPlans] = queriedChangesets
         const changed = changesetPlans.nodes.filter(changesetPlan =>
-            changesets.nodes.some(changeset => changeset.repository.id === changesetPlan.repository.id)
+            changesets.nodes.some(
+                changeset =>
+                    changeset.repository.id === changesetPlan.repository.id &&
+                    // if the corresponding changeset is already merged, we won't update that anymore
+                    (changeset.__typename === 'ExternalChangeset'
+                        ? ![GQL.ChangesetState.MERGED, GQL.ChangesetState.CLOSED].includes(changeset.state)
+                        : true)
+            )
+        )
+        const unmodified = changesets.nodes.filter(
+            changeset =>
+                changeset.__typename === 'ExternalChangeset' &&
+                [GQL.ChangesetState.MERGED, GQL.ChangesetState.CLOSED].includes(changeset.state) &&
+                changesetPlans.nodes.some(changesetPlan => changesetPlan.repository.id === changeset.repository.id)
         )
         const added = changesetPlans.nodes.filter(
             changesetPlan =>
@@ -88,7 +101,7 @@ export const CampaignUpdateDiff: React.FunctionComponent<Props> = ({
                 {campaignPlan.changesetPlans.totalCount}{' '}
                 {pluralize('changeset', campaignPlan.changesetPlans.totalCount)} (
                 {campaign.publishedAt
-                    ? changed.length - deleted.length + added.length
+                    ? unmodified.length + changed.length - deleted.length + added.length
                     : campaign.changesets.totalCount - deleted.length}{' '}
                 published, {newDraftCount} {pluralize('draft', newDraftCount)}):
                 <TabsWithLocalStorageViewStatePersistence
@@ -110,6 +123,15 @@ export const CampaignUpdateDiff: React.FunctionComponent<Props> = ({
                                 <span>
                                     To be updated{' '}
                                     <span className="badge badge-secondary badge-pill">{changed.length}</span>
+                                </span>
+                            ),
+                        },
+                        {
+                            id: 'unmodified',
+                            label: (
+                                <span>
+                                    Unmodified{' '}
+                                    <span className="badge badge-secondary badge-pill">{unmodified.length}</span>
                                 </span>
                             ),
                         },
@@ -140,6 +162,19 @@ export const CampaignUpdateDiff: React.FunctionComponent<Props> = ({
                     </div>
                     <div key="changed" className="pt-3">
                         {changed.map(changeset => (
+                            <ChangesetNode
+                                enablePublishing={false}
+                                history={history}
+                                location={location}
+                                node={changeset}
+                                isLightTheme={isLightTheme}
+                                key={changeset.id}
+                            />
+                        ))}
+                        {changed.length === 0 && <span className="text-muted">No changesets</span>}
+                    </div>
+                    <div key="unmodified" className="pt-3">
+                        {unmodified.map(changeset => (
                             <ChangesetNode
                                 enablePublishing={false}
                                 history={history}
