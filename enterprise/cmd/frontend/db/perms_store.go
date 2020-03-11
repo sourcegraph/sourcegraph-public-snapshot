@@ -1220,15 +1220,19 @@ func (s *PermsStore) batchLoadIDs(ctx context.Context, q *sqlf.Query) (map[int32
 }
 
 // ListExternalAccounts returns all external accounts that are associated with given user.
-func (s *PermsStore) ListExternalAccounts(ctx context.Context, userID int32) (results []*extsvc.ExternalAccount, err error) {
+func (s *PermsStore) ListExternalAccounts(ctx context.Context, userID int32) (accounts []*extsvc.ExternalAccount, err error) {
 	ctx, save := s.observe(ctx, "ListExternalAccounts", "")
 	defer func() { save(&err, otlog.Int32("userID", userID)) }()
 
 	q := sqlf.Sprintf(`
 -- source: enterprise/cmd/frontend/db/perms_store.go:PermsStore.ListExternalAccounts
-SELECT id, user_id, service_type, service_id, client_id, account_id, auth_data, account_data, created_at, updated_at
+SELECT id, user_id,
+       service_type, service_id, client_id, account_id,
+       auth_data, account_data,
+       created_at, updated_at
 FROM user_external_accounts
 WHERE user_id = %d
+ORDER BY id ASC
 `, userID)
 	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
@@ -1237,17 +1241,22 @@ WHERE user_id = %d
 	defer rows.Close()
 
 	for rows.Next() {
-		var ea extsvc.ExternalAccount
-		if err := rows.Scan(&ea.ID, &ea.UserID, &ea.ServiceType, &ea.ServiceID, &ea.ClientID, &ea.AccountID, &ea.AuthData, &ea.AccountData, &ea.CreatedAt, &ea.UpdatedAt); err != nil {
+		var acct extsvc.ExternalAccount
+		if err := rows.Scan(
+			&acct.ID, &acct.UserID,
+			&acct.ServiceType, &acct.ServiceID, &acct.ClientID, &acct.AccountID,
+			&acct.AuthData, &acct.AccountData,
+			&acct.CreatedAt, &acct.UpdatedAt,
+		); err != nil {
 			return nil, err
 		}
-		results = append(results, &ea)
+		accounts = append(accounts, &acct)
 	}
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}
 
-	return results, nil
+	return accounts, nil
 }
 
 // GetUserIDsByExternalAccounts returns all user IDs matched by given external account specs.
