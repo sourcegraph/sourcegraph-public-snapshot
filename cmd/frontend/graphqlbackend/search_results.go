@@ -787,7 +787,7 @@ func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.Te
 
 var (
 	// The default timeout to use for queries.
-	defaultTimeout = 10 * time.Second
+	defaultTimeout = 20 * time.Second
 	// The max timeout to use for queries.
 	maxTimeout = time.Minute
 )
