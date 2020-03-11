@@ -407,20 +407,20 @@ func (s *Store) createChangesetsQuery(cs []*campaigns.Changeset) (*sqlf.Query, e
 
 func batchChangesetsQuery(fmtstr string, cs []*campaigns.Changeset) (*sqlf.Query, error) {
 	type record struct {
-		ID                  int64                          `json:"id"`
-		RepoID              api.RepoID                     `json:"repo_id"`
-		CreatedAt           time.Time                      `json:"created_at"`
-		UpdatedAt           time.Time                      `json:"updated_at"`
-		Metadata            json.RawMessage                `json:"metadata"`
-		CampaignIDs         json.RawMessage                `json:"campaign_ids"`
-		ExternalID          string                         `json:"external_id"`
-		ExternalServiceType string                         `json:"external_service_type"`
-		ExternalBranch      string                         `json:"external_branch"`
-		ExternalDeletedAt   *time.Time                     `json:"external_deleted_at"`
-		ExternalUpdatedAt   *time.Time                     `json:"external_updated_at"`
-		ExternalState       campaigns.ChangesetState       `json:"external_state"`
-		ExternalReviewState campaigns.ChangesetReviewState `json:"external_review_state"`
-		ExternalCheckState  campaigns.ChangesetCheckState  `json:"external_check_state"`
+		ID                  int64                           `json:"id"`
+		RepoID              api.RepoID                      `json:"repo_id"`
+		CreatedAt           time.Time                       `json:"created_at"`
+		UpdatedAt           time.Time                       `json:"updated_at"`
+		Metadata            json.RawMessage                 `json:"metadata"`
+		CampaignIDs         json.RawMessage                 `json:"campaign_ids"`
+		ExternalID          string                          `json:"external_id"`
+		ExternalServiceType string                          `json:"external_service_type"`
+		ExternalBranch      string                          `json:"external_branch"`
+		ExternalDeletedAt   *time.Time                      `json:"external_deleted_at"`
+		ExternalUpdatedAt   *time.Time                      `json:"external_updated_at"`
+		ExternalState       *campaigns.ChangesetState       `json:"external_state"`
+		ExternalReviewState *campaigns.ChangesetReviewState `json:"external_review_state"`
+		ExternalCheckState  *campaigns.ChangesetCheckState  `json:"external_check_state"`
 	}
 
 	records := make([]record, 0, len(cs))
@@ -448,9 +448,15 @@ func batchChangesetsQuery(fmtstr string, cs []*campaigns.Changeset) (*sqlf.Query
 			ExternalBranch:      c.ExternalBranch,
 			ExternalDeletedAt:   nullTimeColumn(c.ExternalDeletedAt),
 			ExternalUpdatedAt:   nullTimeColumn(c.ExternalUpdatedAt),
-			ExternalState:       c.ExternalState,
-			ExternalReviewState: c.ExternalReviewState,
-			ExternalCheckState:  c.ExternalCheckState,
+		}
+		if len(c.ExternalState) > 0 {
+			r.ExternalState = &c.ExternalState
+		}
+		if len(c.ExternalReviewState) > 0 {
+			r.ExternalReviewState = &c.ExternalReviewState
+		}
+		if len(c.ExternalCheckState) > 0 {
+			r.ExternalCheckState = &c.ExternalCheckState
 		}
 
 		records = append(records, r)
