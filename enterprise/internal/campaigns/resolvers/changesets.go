@@ -235,10 +235,7 @@ func (r *changesetResolver) CheckState(ctx context.Context) (*campaigns.Changese
 	if err != nil {
 		return nil, err
 	}
-	state, err := campaigns.ComputeCheckState(r.Changeset, events), nil
-	if err != nil {
-		return nil, err
-	}
+	state := campaigns.ComputeCheckState(r.Changeset, events)
 	if state == campaigns.ChangesetCheckStateUnknown {
 		return nil, nil
 	}
