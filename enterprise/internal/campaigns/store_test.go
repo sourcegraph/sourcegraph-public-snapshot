@@ -722,7 +722,12 @@ func testStore(db *sql.DB) func(*testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				defer s.DeleteChangeset(ctx, cs.ID)
+				defer func() {
+					err := s.DeleteChangeset(ctx, cs.ID)
+					if err != nil {
+						t.Fatal(err)
+					}
+				}()
 
 				fromDB, err := s.GetChangeset(ctx, GetChangesetOpts{
 					ID: cs.ID,
