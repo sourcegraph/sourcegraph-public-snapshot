@@ -637,7 +637,7 @@ func (ce ChangesetEvents) State() ChangesetState {
 
 // ComputeCheckState computes the overall check state based on the current synced check state
 // and any webhook events that have arrived after the most recent sync
-func ComputeCheckState(c *Changeset, events []*ChangesetEvent) ChangesetCheckState {
+func ComputeCheckState(c *Changeset, events ChangesetEvents) ChangesetCheckState {
 	switch m := c.Metadata.(type) {
 	case *github.PullRequest:
 		return computeGitHubCheckState(c.UpdatedAt, m, events)
