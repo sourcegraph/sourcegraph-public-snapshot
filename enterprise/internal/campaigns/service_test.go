@@ -73,8 +73,8 @@ func TestService(t *testing.T) {
  y
 `
 		patches := []campaigns.CampaignPlanPatch{
-			{Repo: api.RepoID(rs[0].ID), BaseRevision: "b0", Patch: patch},
-			{Repo: api.RepoID(rs[1].ID), BaseRevision: "b1", Patch: patch},
+			{Repo: api.RepoID(rs[0].ID), BaseRevision: "deadbeef", BaseRef: "refs/heads/master", Patch: patch},
+			{Repo: api.RepoID(rs[1].ID), BaseRevision: "f00b4r", BaseRef: "refs/heads/master", Patch: patch},
 		}
 
 		plan, err := svc.CreateCampaignPlanFromPatches(ctx, patches, user.ID)
@@ -98,8 +98,8 @@ func TestService(t *testing.T) {
 			wantJobs[i] = &campaigns.CampaignJob{
 				CampaignPlanID: plan.ID,
 				RepoID:         patch.Repo,
-				BaseRef:        patch.BaseRevision,
-				Rev:            commit,
+				Rev:            patch.BaseRevision,
+				BaseRef:        patch.BaseRef,
 				Diff:           patch.Patch,
 				StartedAt:      now,
 				FinishedAt:     now,

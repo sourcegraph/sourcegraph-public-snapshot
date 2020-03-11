@@ -537,6 +537,7 @@ func (r *Resolver) CreateCampaignPlanFromPatches(ctx context.Context, args graph
 		patches[i] = campaigns.CampaignPlanPatch{
 			Repo:         repo,
 			BaseRevision: patch.BaseRevision,
+			BaseRef:      patch.BaseRef,
 			Patch:        patch.Patch,
 		}
 	}

@@ -120,16 +120,11 @@ func (s *Service) CreateCampaignPlanFromPatches(ctx context.Context, patches []c
 			continue
 		}
 
-		commit, err := s.repoResolveRevision(ctx, repo, patch.BaseRevision)
-		if err != nil {
-			return nil, errors.Wrapf(err, "repository %q", repo.Name)
-		}
-
 		job := &campaigns.CampaignJob{
 			CampaignPlanID: plan.ID,
 			RepoID:         patch.Repo,
-			BaseRef:        patch.BaseRevision,
-			Rev:            commit,
+			BaseRef:        patch.BaseRef,
+			Rev:            patch.BaseRevision,
 			Diff:           patch.Patch,
 			StartedAt:      s.clock(),
 			FinishedAt:     s.clock(),

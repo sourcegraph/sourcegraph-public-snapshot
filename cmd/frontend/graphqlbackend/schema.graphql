@@ -418,8 +418,13 @@ input CampaignPlanPatch {
     # The repository that this patch is applied to.
     repository: ID!
 
-    # The base revision in the repository that this patch is applied to.
+    # The base revision in the repository that this patch is based on.
+    # Example: "4095572721c6234cd72013fd49dff4fb48f0f8a4"
     baseRevision: String!
+
+    # The reference to the base revision at the time the patch was created.
+    # Example: "refs/heads/master"
+    baseRef: String!
 
     # The patch (in unified diff format) to apply.
     #
