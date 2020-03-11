@@ -25,7 +25,7 @@ func (c *Client) Exists(ctx context.Context, args *struct {
 	req := &lsifRequest{
 		path:       "/exists",
 		query:      query,
-		routingKey: fmt.Sprintf("%s:%s", args.RepoID, args.Commit),
+		routingKey: fmt.Sprintf("%d:%s", args.RepoID, args.Commit),
 	}
 
 	payload := struct {
@@ -58,7 +58,7 @@ func (c *Client) Upload(ctx context.Context, args *struct {
 		method:     "POST",
 		query:      query,
 		body:       args.Body,
-		routingKey: fmt.Sprintf("%s:%s", args.RepoID, args.Commit),
+		routingKey: fmt.Sprintf("%d:%s", args.RepoID, args.Commit),
 	}
 
 	payload := struct {
@@ -160,7 +160,7 @@ func (c *Client) locationQuery(ctx context.Context, args *struct {
 		path:       fmt.Sprintf("/%s", args.Operation),
 		cursor:     args.Cursor,
 		query:      query,
-		routingKey: fmt.Sprintf("%s:%s", args.RepoID, args.Commit),
+		routingKey: fmt.Sprintf("%d:%s", args.RepoID, args.Commit),
 	}
 
 	payload := struct {
@@ -194,7 +194,7 @@ func (c *Client) Hover(ctx context.Context, args *struct {
 	req := &lsifRequest{
 		path:       fmt.Sprintf("/hover"),
 		query:      query,
-		routingKey: fmt.Sprintf("%s:%s", args.RepoID, args.Commit),
+		routingKey: fmt.Sprintf("%d:%s", args.RepoID, args.Commit),
 	}
 
 	payload := struct {
