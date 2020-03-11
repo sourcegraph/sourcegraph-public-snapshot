@@ -41,7 +41,7 @@ The [Kubernetes cluster deployment option](https://github.com/sourcegraph/deploy
 
 ## Other tools
 
-- [Sentry](https://sentry.io) error reporting, configured via the `sentry` property in [site configuration](config/site_config.md)
+- [Sentry](https://sentry.io) error reporting, configured via the `sentry` property in [site configuration](../config/site_config.md)
 - [Go net/trace](#viewing-go-net-trace-information)
 - [Honeycomb](https://honeycomb.io/)
 

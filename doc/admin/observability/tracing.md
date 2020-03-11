@@ -3,7 +3,7 @@
 ## Inspecting traces (Jaeger or LightStep)
 
 If LightStep or Jaeger is configured (using the [`useJaeger` or `lightstep*` site configuration
-properties](config/site_config.md)), every HTTP response will include an `X-Trace` header with a link
+properties](../config/site_config.md)), every HTTP response will include an `X-Trace` header with a link
 to the trace for that request. Inspecting the spans and logs attached to the trace will help
 identify the problematic service or dependency.
 
