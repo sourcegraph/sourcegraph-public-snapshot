@@ -61,7 +61,7 @@ fi
 
 # For the target commands, build into a temp directory for comparison, so that
 # we can update only those packages that change. Clean up the temp at exit.
-tmpdir="$(mktemp -d -t src-binaries)"
+tmpdir="$(mktemp -d -t src-binaries.XXXXXXXX)"
 trap 'rm "$tmpdir"/*; rmdir "$tmpdir"' EXIT
 export GOBIN="$tmpdir"
 
