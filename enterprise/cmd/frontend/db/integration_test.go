@@ -34,6 +34,9 @@ func TestIntegration_PermsStore(t *testing.T) {
 		{"PermsStore/DeleteAllUserPermissions", testPermsStore_DeleteAllUserPermissions(db)},
 		{"PermsStore/DeleteAllUserPendingPermissions", testPermsStore_DeleteAllUserPendingPermissions(db)},
 		{"PermsStore/DatabaseDeadlocks", testPermsStore_DatabaseDeadlocks(db)},
+
+		{"PermsStore/ListExternalAccounts", testPermsStore_ListExternalAccounts(db)},
+		{"PermsStore/GetUserIDsByExternalAccounts", testPermsStore_GetUserIDsByExternalAccounts(db)},
 	} {
 		t.Run(tc.name, tc.test)
 	}

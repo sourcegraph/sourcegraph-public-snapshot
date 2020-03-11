@@ -9,8 +9,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -174,10 +172,7 @@ func (s *PermsSyncer) fetchers() map[string]PermsFetcher {
 
 // syncUserPerms processes permissions syncing request in user-centric way.
 func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32) error {
-	// TODO(jchen): Remove the use of dbconn.Global().
-	accts, err := db.ExternalAccounts.List(ctx, db.ExternalAccountsListOptions{
-		UserID: userID,
-	})
+	accts, err := s.permsStore.ListExternalAccounts(ctx, userID)
 	if err != nil {
 		return errors.Wrap(err, "list external accounts")
 	}
@@ -259,35 +254,33 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID) erro
 		return nil
 	}
 
-	// NOTE: The following logic is based on the assumption that we have accurate
-	// one-to-one username mapping between the internal database and the code host.
-	// See last paragraph of https://docs.sourcegraph.com/admin/auth#username-normalization
-	// for details.
-
-	accountIDs, err := fetcher.FetchRepoPerms(ctx, &repo.ExternalRepo)
+	extAccountIDs, err := fetcher.FetchRepoPerms(ctx, &repo.ExternalRepo)
 	if err != nil {
 		return errors.Wrap(err, "fetch repository permissions")
 	}
 
-	bindUsernamesSet := make(map[string]struct{})
-	var users []*types.User
-	if len(accountIDs) > 0 {
-		usernames := make([]string, len(accountIDs))
-		for i := range accountIDs {
-			usernames[i] = string(accountIDs[i])
+	pendingAccountIDsSet := make(map[string]struct{})
+	var userIDs map[string]int32 // Account ID -> User ID
+	if len(extAccountIDs) > 0 {
+		accountIDs := make([]string, len(extAccountIDs))
+		for i := range extAccountIDs {
+			accountIDs[i] = string(extAccountIDs[i])
 		}
 
 		// Get corresponding internal database IDs
-		// TODO(jchen): Remove the use of dbconn.Global().
-		users, err = db.Users.GetByUsernames(ctx, usernames...)
+		userIDs, err = s.permsStore.GetUserIDsByExternalAccounts(ctx, &extsvc.ExternalAccounts{
+			ServiceType: fetcher.ServiceType(),
+			ServiceID:   fetcher.ServiceID(),
+			AccountIDs:  accountIDs,
+		})
 		if err != nil {
-			return errors.Wrap(err, "get users by usernames")
+			return errors.Wrap(err, "get user IDs by external accounts")
 		}
 
-		// Set up set of all usernames that need to be bound to permissions
-		bindUsernamesSet = make(map[string]struct{}, len(usernames))
-		for i := range usernames {
-			bindUsernamesSet[usernames[i]] = struct{}{}
+		// Set up the set of all account IDs that need to be bound to permissions
+		pendingAccountIDsSet = make(map[string]struct{}, len(accountIDs))
+		for i := range accountIDs {
+			pendingAccountIDsSet[accountIDs[i]] = struct{}{}
 		}
 	}
 
@@ -298,17 +291,17 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID) erro
 		UserIDs: roaring.NewBitmap(),
 	}
 
-	for i := range users {
+	for aid, uid := range userIDs {
 		// Add existing user to permissions
-		p.UserIDs.Add(uint32(users[i].ID))
+		p.UserIDs.Add(uint32(uid))
 
-		// Remove existing user from set of pending users
-		delete(bindUsernamesSet, users[i].Username)
+		// Remove existing user from the set of pending users
+		delete(pendingAccountIDsSet, aid)
 	}
 
-	pendingBindUsernames := make([]string, 0, len(bindUsernamesSet))
-	for id := range bindUsernamesSet {
-		pendingBindUsernames = append(pendingBindUsernames, id)
+	pendingAccountIDs := make([]string, 0, len(pendingAccountIDsSet))
+	for aid := range pendingAccountIDsSet {
+		pendingAccountIDs = append(pendingAccountIDs, aid)
 	}
 
 	txs, err := s.permsStore.Transact(ctx)
@@ -317,10 +310,10 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID) erro
 	}
 	defer txs.Done(&err)
 
-	accounts := &edb.ExternalAccounts{
-		ServiceType: "sourcegraph",
-		ServiceID:   "https://sourcegraph.com/",
-		AccountIDs:  pendingBindUsernames,
+	accounts := &extsvc.ExternalAccounts{
+		ServiceType: fetcher.ServiceType(),
+		ServiceID:   fetcher.ServiceID(),
+		AccountIDs:  pendingAccountIDs,
 	}
 
 	if err = txs.SetRepoPermissions(ctx, p); err != nil {

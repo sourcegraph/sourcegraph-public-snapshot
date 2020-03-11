@@ -12,8 +12,10 @@ import (
 
 	"github.com/RoaringBitmap/roaring"
 	"github.com/gitchander/permutation"
+	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -22,12 +24,8 @@ func cleanupPermsTables(t *testing.T, s *PermsStore) {
 		return
 	}
 
-	str := `DELETE FROM user_permissions;
-DELETE FROM repo_permissions;
-DELETE FROM user_pending_permissions;
-DELETE FROM repo_pending_permissions;
-`
-	if err := s.execute(context.Background(), sqlf.Sprintf(str)); err != nil {
+	q := `TRUNCATE TABLE user_permissions, repo_permissions, user_pending_permissions, repo_pending_permissions;`
+	if err := s.execute(context.Background(), sqlf.Sprintf(q)); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -543,7 +541,7 @@ func testPermsStore_LoadUserPendingPermissions(db *sql.DB) func(*testing.T) {
 			s := NewPermsStore(db, clock)
 			defer cleanupPermsTables(t, s)
 
-			accounts := &ExternalAccounts{
+			accounts := &extsvc.ExternalAccounts{
 				ServiceType: "sourcegraph",
 				ServiceID:   "https://sourcegraph.com/",
 				AccountIDs:  []string{"bob"},
@@ -574,7 +572,7 @@ func testPermsStore_LoadUserPendingPermissions(db *sql.DB) func(*testing.T) {
 			s := NewPermsStore(db, clock)
 			defer cleanupPermsTables(t, s)
 
-			accounts := &ExternalAccounts{
+			accounts := &extsvc.ExternalAccounts{
 				ServiceType: "sourcegraph",
 				ServiceID:   "https://sourcegraph.com/",
 				AccountIDs:  []string{"alice"},
@@ -605,7 +603,7 @@ func testPermsStore_LoadUserPendingPermissions(db *sql.DB) func(*testing.T) {
 			s := NewPermsStore(db, clock)
 			defer cleanupPermsTables(t, s)
 
-			accounts := &ExternalAccounts{
+			accounts := &extsvc.ExternalAccounts{
 				ServiceType: "sourcegraph",
 				ServiceID:   "https://sourcegraph.com/",
 				AccountIDs:  []string{"alice", "bob"},
@@ -769,7 +767,7 @@ func checkRepoPendingPermsTable(ctx context.Context, s *PermsStore, bindIDs map[
 
 func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 	type update struct {
-		accounts *ExternalAccounts
+		accounts *extsvc.ExternalAccounts
 		perm     *authz.RepoPermissions
 	}
 	tests := []struct {
@@ -782,7 +780,7 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 			name: "empty",
 			updates: []update{
 				{
-					accounts: &ExternalAccounts{
+					accounts: &extsvc.ExternalAccounts{
 						ServiceType: "sourcegraph",
 						ServiceID:   "https://sourcegraph.com/",
 						AccountIDs:  nil,
@@ -798,7 +796,7 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 			name: "add",
 			updates: []update{
 				{
-					accounts: &ExternalAccounts{
+					accounts: &extsvc.ExternalAccounts{
 						ServiceType: "sourcegraph",
 						ServiceID:   "https://sourcegraph.com/",
 						AccountIDs:  []string{"alice"},
@@ -808,7 +806,7 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 						Perm:   authz.Read,
 					},
 				}, {
-					accounts: &ExternalAccounts{
+					accounts: &extsvc.ExternalAccounts{
 						ServiceType: "sourcegraph",
 						ServiceID:   "https://sourcegraph.com/",
 						AccountIDs:  []string{"alice", "bob"},
@@ -818,7 +816,7 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 						Perm:   authz.Read,
 					},
 				}, {
-					accounts: &ExternalAccounts{
+					accounts: &extsvc.ExternalAccounts{
 						ServiceType: "sourcegraph",
 						ServiceID:   "https://sourcegraph.com/",
 						AccountIDs:  []string{"cindy", "david"},
@@ -845,7 +843,7 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 			name: "add and update",
 			updates: []update{
 				{
-					accounts: &ExternalAccounts{
+					accounts: &extsvc.ExternalAccounts{
 						ServiceType: "sourcegraph",
 						ServiceID:   "https://sourcegraph.com/",
 						AccountIDs:  []string{"alice", "bob"},
@@ -855,7 +853,7 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 						Perm:   authz.Read,
 					},
 				}, {
-					accounts: &ExternalAccounts{
+					accounts: &extsvc.ExternalAccounts{
 						ServiceType: "sourcegraph",
 						ServiceID:   "https://sourcegraph.com/",
 						AccountIDs:  []string{"bob", "cindy"},
@@ -865,7 +863,7 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 						Perm:   authz.Read,
 					},
 				}, {
-					accounts: &ExternalAccounts{
+					accounts: &extsvc.ExternalAccounts{
 						ServiceType: "sourcegraph",
 						ServiceID:   "https://sourcegraph.com/",
 						AccountIDs:  []string{"alice", "bob"},
@@ -875,7 +873,7 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 						Perm:   authz.Read,
 					},
 				}, {
-					accounts: &ExternalAccounts{
+					accounts: &extsvc.ExternalAccounts{
 						ServiceType: "sourcegraph",
 						ServiceID:   "https://sourcegraph.com/",
 						AccountIDs:  []string{"cindy", "david"},
@@ -901,7 +899,7 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 			name: "add and clear",
 			updates: []update{
 				{
-					accounts: &ExternalAccounts{
+					accounts: &extsvc.ExternalAccounts{
 						ServiceType: "sourcegraph",
 						ServiceID:   "https://sourcegraph.com/",
 						AccountIDs:  []string{"alice", "bob", "cindy"},
@@ -911,7 +909,7 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 						Perm:   authz.Read,
 					},
 				}, {
-					accounts: &ExternalAccounts{
+					accounts: &extsvc.ExternalAccounts{
 						ServiceType: "sourcegraph",
 						ServiceID:   "https://sourcegraph.com/",
 						AccountIDs:  []string{},
@@ -978,9 +976,9 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 	}
 }
 
-func testPermsStore_ListPendingUsers(db *sql.DB) func(t *testing.T) {
+func testPermsStore_ListPendingUsers(db *sql.DB) func(*testing.T) {
 	type update struct {
-		accounts *ExternalAccounts
+		accounts *extsvc.ExternalAccounts
 		perm     *authz.RepoPermissions
 	}
 	tests := []struct {
@@ -996,7 +994,7 @@ func testPermsStore_ListPendingUsers(db *sql.DB) func(t *testing.T) {
 			name: "has user with pending permissions",
 			updates: []update{
 				{
-					accounts: &ExternalAccounts{
+					accounts: &extsvc.ExternalAccounts{
 						ServiceType: "sourcegraph",
 						ServiceID:   "https://sourcegraph.com/",
 						AccountIDs:  []string{"alice"},
@@ -1013,7 +1011,7 @@ func testPermsStore_ListPendingUsers(db *sql.DB) func(t *testing.T) {
 			name: "has user but with empty object_ids",
 			updates: []update{
 				{
-					accounts: &ExternalAccounts{
+					accounts: &extsvc.ExternalAccounts{
 						ServiceType: "sourcegraph",
 						ServiceID:   "https://sourcegraph.com/",
 						AccountIDs:  []string{"bob@example.com"},
@@ -1023,7 +1021,7 @@ func testPermsStore_ListPendingUsers(db *sql.DB) func(t *testing.T) {
 						Perm:   authz.Read,
 					},
 				}, {
-					accounts: &ExternalAccounts{
+					accounts: &extsvc.ExternalAccounts{
 						ServiceType: "sourcegraph",
 						ServiceID:   "https://sourcegraph.com/",
 						AccountIDs:  nil,
@@ -1069,9 +1067,9 @@ func testPermsStore_ListPendingUsers(db *sql.DB) func(t *testing.T) {
 	}
 }
 
-func testPermsStore_GrantPendingPermissions(db *sql.DB) func(t *testing.T) {
+func testPermsStore_GrantPendingPermissions(db *sql.DB) func(*testing.T) {
 	type pending struct {
-		accounts *ExternalAccounts
+		accounts *extsvc.ExternalAccounts
 		perm     *authz.RepoPermissions
 	}
 	type update struct {
@@ -1123,7 +1121,7 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(t *testing.T) {
 					},
 					pendings: []pending{
 						{
-							accounts: &ExternalAccounts{
+							accounts: &extsvc.ExternalAccounts{
 								ServiceType: "sourcegraph",
 								ServiceID:   "https://sourcegraph.com/",
 								AccountIDs:  []string{"alice"},
@@ -1133,7 +1131,7 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(t *testing.T) {
 								Perm:   authz.Read,
 							},
 						}, {
-							accounts: &ExternalAccounts{
+							accounts: &extsvc.ExternalAccounts{
 								ServiceType: "sourcegraph",
 								ServiceID:   "https://sourcegraph.com/",
 								AccountIDs:  []string{"bob"},
@@ -1192,7 +1190,7 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(t *testing.T) {
 					},
 					pendings: []pending{
 						{
-							accounts: &ExternalAccounts{
+							accounts: &extsvc.ExternalAccounts{
 								ServiceType: "sourcegraph",
 								ServiceID:   "https://sourcegraph.com/",
 								AccountIDs:  []string{"alice"},
@@ -1202,7 +1200,7 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(t *testing.T) {
 								Perm:   authz.Read,
 							},
 						}, {
-							accounts: &ExternalAccounts{
+							accounts: &extsvc.ExternalAccounts{
 								ServiceType: "sourcegraph",
 								ServiceID:   "https://sourcegraph.com/",
 								AccountIDs:  []string{"bob"},
@@ -1261,7 +1259,7 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(t *testing.T) {
 					},
 					pendings: []pending{
 						{
-							accounts: &ExternalAccounts{
+							accounts: &extsvc.ExternalAccounts{
 								ServiceType: "sourcegraph",
 								ServiceID:   "https://sourcegraph.com/",
 								AccountIDs:  []string{"alice@example.com"},
@@ -1271,7 +1269,7 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(t *testing.T) {
 								Perm:   authz.Read,
 							},
 						}, {
-							accounts: &ExternalAccounts{
+							accounts: &extsvc.ExternalAccounts{
 								ServiceType: "sourcegraph",
 								ServiceID:   "https://sourcegraph.com/",
 								AccountIDs:  []string{"alice2@example.com"},
@@ -1375,7 +1373,7 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(t *testing.T) {
 	}
 }
 
-func testPermsStore_DeleteAllUserPermissions(db *sql.DB) func(t *testing.T) {
+func testPermsStore_DeleteAllUserPermissions(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		s := NewPermsStore(db, clock)
 		defer cleanupPermsTables(t, s)
@@ -1427,14 +1425,14 @@ func testPermsStore_DeleteAllUserPermissions(db *sql.DB) func(t *testing.T) {
 	}
 }
 
-func testPermsStore_DeleteAllUserPendingPermissions(db *sql.DB) func(t *testing.T) {
+func testPermsStore_DeleteAllUserPendingPermissions(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		s := NewPermsStore(db, clock)
 		defer cleanupPermsTables(t, s)
 
 		ctx := context.Background()
 
-		accounts := &ExternalAccounts{
+		accounts := &extsvc.ExternalAccounts{
 			ServiceType: "sourcegraph",
 			ServiceID:   "https://sourcegraph.com/",
 			AccountIDs:  []string{"alice", "bob"},
@@ -1482,7 +1480,7 @@ func testPermsStore_DeleteAllUserPendingPermissions(db *sql.DB) func(t *testing.
 	}
 }
 
-func testPermsStore_DatabaseDeadlocks(db *sql.DB) func(t *testing.T) {
+func testPermsStore_DatabaseDeadlocks(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		s := NewPermsStore(db, time.Now)
 		defer cleanupPermsTables(t, s)
@@ -1508,7 +1506,7 @@ func testPermsStore_DatabaseDeadlocks(db *sql.DB) func(t *testing.T) {
 			}
 		}
 		setRepoPendingPermissions := func(ctx context.Context, t *testing.T) {
-			accounts := &ExternalAccounts{
+			accounts := &extsvc.ExternalAccounts{
 				ServiceType: "sourcegraph",
 				ServiceID:   "https://sourcegraph.com/",
 				AccountIDs:  []string{"alice"},
@@ -1573,5 +1571,158 @@ func testPermsStore_DatabaseDeadlocks(db *sql.DB) func(t *testing.T) {
 		}()
 
 		wg.Wait()
+	}
+}
+
+func cleanupUsersTable(t *testing.T, s *PermsStore) {
+	if t.Failed() {
+		return
+	}
+
+	q := `TRUNCATE TABLE users RESTART IDENTITY CASCADE;`
+	if err := s.execute(context.Background(), sqlf.Sprintf(q)); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func testPermsStore_ListExternalAccounts(db *sql.DB) func(*testing.T) {
+	return func(t *testing.T) {
+		s := NewPermsStore(db, time.Now)
+		defer cleanupUsersTable(t, s)
+
+		ctx := context.Background()
+
+		// Set up test users and external accounts
+		extSQL := `
+INSERT INTO user_external_accounts(user_id, service_type, service_id, account_id, client_id, created_at, updated_at)
+	VALUES(%s, %s, %s, %s, %s, %s, %s)
+`
+		qs := []*sqlf.Query{
+			sqlf.Sprintf(`INSERT INTO users(username) VALUES('alice')`), // ID=1
+			sqlf.Sprintf(`INSERT INTO users(username) VALUES('bob')`),   // ID=2
+
+			sqlf.Sprintf(extSQL, 1, "gitlab", "https://gitlab.com/", "alice_gitlab", "alice_gitlab_client_id", clock(), clock()), // ID=1
+			sqlf.Sprintf(extSQL, 1, "github", "https://github.com/", "alice_github", "alice_github_client_id", clock(), clock()), // ID=2
+			sqlf.Sprintf(extSQL, 2, "gitlab", "https://gitlab.com/", "bob_gitlab", "bob_gitlab_client_id", clock(), clock()),     // ID=3
+		}
+		for _, q := range qs {
+			if err := s.execute(ctx, q); err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		{
+			// Check external accounts for "alice"
+			accounts, err := s.ListExternalAccounts(ctx, 1)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			expAccounts := []*extsvc.ExternalAccount{
+				{
+					ID:     1,
+					UserID: 1,
+					ExternalAccountSpec: extsvc.ExternalAccountSpec{
+						ServiceType: "gitlab",
+						ServiceID:   "https://gitlab.com/",
+						AccountID:   "alice_gitlab",
+						ClientID:    "alice_gitlab_client_id",
+					},
+					CreatedAt: clock(),
+					UpdatedAt: clock(),
+				},
+				{
+					ID:     2,
+					UserID: 1,
+					ExternalAccountSpec: extsvc.ExternalAccountSpec{
+						ServiceType: "github",
+						ServiceID:   "https://github.com/",
+						AccountID:   "alice_github",
+						ClientID:    "alice_github_client_id",
+					},
+					CreatedAt: clock(),
+					UpdatedAt: clock(),
+				},
+			}
+			if diff := cmp.Diff(expAccounts, accounts); diff != "" {
+				t.Fatalf(diff)
+			}
+		}
+
+		{
+			// Check external accounts for "bob"
+			accounts, err := s.ListExternalAccounts(ctx, 2)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			expAccounts := []*extsvc.ExternalAccount{
+				{
+					ID:     3,
+					UserID: 2,
+					ExternalAccountSpec: extsvc.ExternalAccountSpec{
+						ServiceType: "gitlab",
+						ServiceID:   "https://gitlab.com/",
+						AccountID:   "bob_gitlab",
+						ClientID:    "bob_gitlab_client_id",
+					},
+					CreatedAt: clock(),
+					UpdatedAt: clock(),
+				},
+			}
+			if diff := cmp.Diff(expAccounts, accounts); diff != "" {
+				t.Fatalf(diff)
+			}
+		}
+	}
+}
+
+func testPermsStore_GetUserIDsByExternalAccounts(db *sql.DB) func(t *testing.T) {
+	return func(t *testing.T) {
+		s := NewPermsStore(db, time.Now)
+		defer cleanupUsersTable(t, s)
+
+		ctx := context.Background()
+
+		// Set up test users and external accounts
+		extSQL := `
+INSERT INTO user_external_accounts(user_id, service_type, service_id, account_id, client_id, created_at, updated_at)
+	VALUES(%s, %s, %s, %s, %s, %s, %s)
+`
+		qs := []*sqlf.Query{
+			sqlf.Sprintf(`INSERT INTO users(username) VALUES('alice')`), // ID=1
+			sqlf.Sprintf(`INSERT INTO users(username) VALUES('bob')`),   // ID=2
+			sqlf.Sprintf(`INSERT INTO users(username) VALUES('cindy')`), // ID=3
+
+			sqlf.Sprintf(extSQL, 1, "gitlab", "https://gitlab.com/", "alice_gitlab", "alice_gitlab_client_id", clock(), clock()), // ID=1
+			sqlf.Sprintf(extSQL, 1, "github", "https://github.com/", "alice_github", "alice_github_client_id", clock(), clock()), // ID=2
+			sqlf.Sprintf(extSQL, 2, "gitlab", "https://gitlab.com/", "bob_gitlab", "bob_gitlab_client_id", clock(), clock()),     // ID=3
+			sqlf.Sprintf(extSQL, 3, "gitlab", "https://gitlab.com/", "cindy_gitlab", "cindy_gitlab_client_id", clock(), clock()), // ID=4
+		}
+		for _, q := range qs {
+			if err := s.execute(ctx, q); err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		accounts := &extsvc.ExternalAccounts{
+			ServiceType: "gitlab",
+			ServiceID:   "https://gitlab.com/",
+			AccountIDs:  []string{"alice_gitlab", "bob_gitlab", "david_gitlab"},
+		}
+		userIDs, err := s.GetUserIDsByExternalAccounts(ctx, accounts)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(userIDs) != 2 {
+			t.Fatalf("len(userIDs): want 2 but got %v", userIDs)
+		}
+
+		if userIDs["alice_gitlab"] != 1 {
+			t.Fatalf(`userIDs["alice_gitlab"]: want 1 but got %d`, userIDs["alice_gitlab"])
+		} else if userIDs["bob_gitlab"] != 2 {
+			t.Fatalf(`userIDs["bob_gitlab"]: want 2 but got %d`, userIDs["bob_gitlab"])
+		}
 	}
 }
