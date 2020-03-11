@@ -618,6 +618,23 @@ func (ce ChangesetEvents) ReviewState() (ChangesetReviewState, error) {
 	return SelectReviewState(states), nil
 }
 
+// State returns the  state of the changeset to which the events belong and assumes the events
+// are sorted
+func (ce ChangesetEvents) State() ChangesetState {
+	state := ChangesetStateOpen
+	for _, e := range ce {
+		switch e.Kind {
+		case ChangesetEventKindGitHubClosed, ChangesetEventKindBitbucketServerDeclined:
+			state = ChangesetStateClosed
+		case ChangesetEventKindGitHubMerged, ChangesetEventKindBitbucketServerMerged:
+			state = ChangesetStateMerged
+		case ChangesetEventKindGitHubReopened, ChangesetEventKindBitbucketServerReopened:
+			state = ChangesetStateOpen
+		}
+	}
+	return state
+}
+
 // ComputeCheckState computes the overall check state based on the current synced check state
 // and any webhook events that have arrived after the most recent sync
 func ComputeCheckState(c *Changeset, events []*ChangesetEvent) ChangesetCheckState {
@@ -630,6 +647,19 @@ func ComputeCheckState(c *Changeset, events []*ChangesetEvent) ChangesetCheckSta
 	}
 
 	return ChangesetCheckStateUnknown
+}
+
+// ComputeChangesetState computes the overall check state for the changeset and its
+// associated events. The events should be presorted.
+func ComputeChangesetState(c *Changeset, events ChangesetEvents) (ChangesetState, error) {
+	if len(events) == 0 {
+		return c.State()
+	}
+	newestEvent := events[len(events)-1]
+	if c.UpdatedAt.After(newestEvent.Timestamp()) {
+		return c.State()
+	}
+	return events.State(), nil
 }
 
 func computeBitbucketBuildStatus(pr *bitbucketserver.PullRequest) ChangesetCheckState {
