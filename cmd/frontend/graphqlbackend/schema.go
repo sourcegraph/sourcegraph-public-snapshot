@@ -663,6 +663,8 @@ enum ChangesetReviewState {
     APPROVED
     CHANGES_REQUESTED
     PENDING
+    COMMENTED
+    DISMISSED
 }
 
 # The state of continuous integration checks on a changeset
