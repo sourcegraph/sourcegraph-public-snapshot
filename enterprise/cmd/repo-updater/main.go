@@ -63,6 +63,8 @@ func enterpriseInit(db *sql.DB, repoStore repos.Store, cf *httpcli.Factory, serv
 			}
 		}()
 
+		// TODO(jchen): This is an unfortunate compromise to not rewrite ossDB.ExternalServices for now.
+		dbconn.Global = db
 		go startBackgroundPermsSync(ctx, repoStore, db)
 	})
 }
@@ -79,9 +81,6 @@ func startBackgroundPermsSync(ctx context.Context, repoStore repos.Store, db dbu
 	}
 
 	go func() {
-		// TODO(jchen): This is an unfortunate compromise to not rewrite ossDB.ExternalServices for now.
-		dbconn.Global = db.(*sql.DB)
-
 		t := time.NewTicker(5 * time.Second)
 		for range t.C {
 			allowAccessByDefault, authzProviders, _, _ :=
