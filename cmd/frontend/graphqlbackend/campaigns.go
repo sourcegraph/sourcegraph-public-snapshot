@@ -182,9 +182,9 @@ type ChangesetCountsArgs struct {
 
 type ListChangesetsArgs struct {
 	First       *int32
-	State       *string
-	ReviewState *string
-	CheckState  *string
+	State       *campaigns.ChangesetState
+	ReviewState *campaigns.ChangesetReviewState
+	CheckState  *campaigns.ChangesetCheckState
 }
 
 type CampaignResolver interface {
