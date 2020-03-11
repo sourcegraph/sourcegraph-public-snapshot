@@ -1319,12 +1319,30 @@ func (e *ChangesetEvent) Update(o *ChangesetEvent) {
 		}
 
 	case *github.CheckRun:
-		// TODO: https://github.com/sourcegraph/sourcegraph/issues/8796
+		o := o.Metadata.(*github.CheckRun)
+		updateGithubCheckRun(e, o)
+
 	case *github.CheckSuite:
-		// TODO: https://github.com/sourcegraph/sourcegraph/issues/8796
+		o := o.Metadata.(*github.CheckSuite)
+		if e.Status == "" {
+			e.Status = o.Status
+		}
+		if e.Conclusion == "" {
+			e.Conclusion = o.Conclusion
+		}
+		e.CheckRuns = o.CheckRuns
 
 	default:
 		panic(errors.Errorf("unknown changeset event metadata %T", e))
+	}
+}
+
+func updateGithubCheckRun(e, o *github.CheckRun) {
+	if e.Status == "" {
+		e.Status = o.Status
+	}
+	if e.Conclusion == "" {
+		e.Conclusion = o.Conclusion
 	}
 }
 
