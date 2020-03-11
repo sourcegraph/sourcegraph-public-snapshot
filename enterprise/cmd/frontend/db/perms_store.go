@@ -1220,7 +1220,7 @@ func (s *PermsStore) batchLoadIDs(ctx context.Context, q *sqlf.Query) (map[int32
 }
 
 // ListExternalAccounts returns all external accounts that are associated with given user.
-func (s *PermsStore) ListExternalAccounts(ctx context.Context, userID int32) (results []*extsvc.ExternalAccount, err error) {
+func (s *PermsStore) ListExternalAccounts(ctx context.Context, userID int32) (accounts []*extsvc.ExternalAccount, err error) {
 	ctx, save := s.observe(ctx, "ListExternalAccounts", "")
 	defer func() { save(&err, otlog.Int32("userID", userID)) }()
 
@@ -1237,17 +1237,22 @@ WHERE user_id = %d
 	defer rows.Close()
 
 	for rows.Next() {
-		var ea extsvc.ExternalAccount
-		if err := rows.Scan(&ea.ID, &ea.UserID, &ea.ServiceType, &ea.ServiceID, &ea.ClientID, &ea.AccountID, &ea.AuthData, &ea.AccountData, &ea.CreatedAt, &ea.UpdatedAt); err != nil {
+		var acct extsvc.ExternalAccount
+		if err := rows.Scan(
+			&acct.ID, &acct.UserID,
+			&acct.ServiceType, &acct.ServiceID, &acct.ClientID, &acct.AccountID,
+			&acct.AuthData, &acct.AccountData,
+			&acct.CreatedAt, &acct.UpdatedAt,
+		); err != nil {
 			return nil, err
 		}
-		results = append(results, &ea)
+		accounts = append(accounts, &acct)
 	}
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}
 
-	return results, nil
+	return accounts, nil
 }
 
 // GetUserIDsByExternalAccounts returns all user IDs matched by given external account specs.
