@@ -1,4 +1,4 @@
-package main
+package authz
 
 import (
 	"context"
@@ -521,7 +521,7 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 		}
 
 		allowAccessByDefault, authzProviders, seriousProblems, _ :=
-			authzProvidersFromConfig(context.Background(), &test.cfg, &store, nil)
+			ProvidersFromConfig(context.Background(), &test.cfg, &store, nil)
 		if allowAccessByDefault != test.expAuthzAllowAccessByDefault {
 			t.Errorf("allowAccessByDefault: (actual) %v != (expected) %v", asJSON(t, allowAccessByDefault), asJSON(t, test.expAuthzAllowAccessByDefault))
 		}
