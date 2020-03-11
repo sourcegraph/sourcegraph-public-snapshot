@@ -390,7 +390,7 @@ type scanResult struct {
 
 // TODO(jchen): Move this to authz.PermsStore.
 func (s *PermsSyncer) loadIDsWithTime(ctx context.Context, q *sqlf.Query) ([]scanResult, error) {
-	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args())
+	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
 	}
@@ -420,7 +420,8 @@ func (s *PermsSyncer) scheduleUsersWithNoPerms(ctx context.Context) ([]scheduled
 	q := sqlf.Sprintf(`
 -- source: enterprise/cmd/repo-updater/authz/perms_scheduler.go:PermsScheduler.scheduleUsersWithNoPerms
 SELECT users.id, '1970-01-01 00:00:00+00' FROM users
-WHERE users.id NOT IN
+WHERE users.site_admin = FALSE
+AND users.id NOT IN
 	(SELECT perms.user_id FROM user_permissions AS perms)
 `)
 	results, err := s.loadIDsWithTime(ctx, q)
