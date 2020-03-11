@@ -298,6 +298,7 @@ export const queryChangesets = (
                                     url
                                 }
                                 createdAt
+                                updatedAt
                                 diff {
                                     fileDiffs {
                                         nodes {
@@ -458,4 +459,18 @@ export async function publishChangeset(changesetPlan: ID): Promise<IEmptyRespons
         { changesetPlan }
     ).toPromise()
     return dataOrThrowErrors(result).publishChangeset
+}
+
+export async function syncChangeset(changeset: ID): Promise<IEmptyResponse> {
+    const result = await mutateGraphQL(
+        gql`
+            mutation SyncChangeset($changeset: ID!) {
+                syncChangeset(changeset: $changeset) {
+                    alwaysNil
+                }
+            }
+        `,
+        { changeset }
+    ).toPromise()
+    return dataOrThrowErrors(result).syncChangeset
 }

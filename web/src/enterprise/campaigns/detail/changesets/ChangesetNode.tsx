@@ -27,7 +27,7 @@ import { DiffStat } from '../../../../components/diff/DiffStat'
 import { FileDiffNode } from '../../../../components/diff/FileDiffNode'
 import { Markdown } from '../../../../../../shared/src/components/Markdown'
 import { renderMarkdown } from '../../../../../../shared/src/util/markdown'
-import { publishChangeset as _publishChangeset } from '../backend'
+import { publishChangeset as _publishChangeset, syncChangeset } from '../backend'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Subject } from 'rxjs'
 import ErrorIcon from 'mdi-react/ErrorIcon'
@@ -35,6 +35,8 @@ import { asError } from '../../../../../../shared/src/util/errors'
 import { ChangesetLabel } from './ChangesetLabel'
 import classNames from 'classnames'
 import { DraftBadge } from '../../DraftBadge'
+import SyncIcon from 'mdi-react/SyncIcon'
+import { parseISO, formatDistanceToNow } from 'date-fns'
 
 export interface ChangesetNodeProps extends ThemeProps {
     node: IExternalChangeset | IChangesetPlan
@@ -53,6 +55,7 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
     location,
     enablePublishing,
 }) => {
+    const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null)
     const [isLoading, setIsLoading] = useState<boolean>()
     useEffect(() => {
         setIsLoading(node.__typename === 'ChangesetPlan' && node.publicationEnqueued)
@@ -70,6 +73,16 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
             setPublishError(asError(error))
         } finally {
             setIsLoading(false)
+        }
+    }
+    const enqueueChangeset: React.MouseEventHandler = async () => {
+        if (node.__typename === 'ExternalChangeset') {
+            setLastUpdatedAt(node.updatedAt)
+            await syncChangeset(node.id)
+            // campaign should be refreshed, in case the burndown chart has changed
+            if (campaignUpdates) {
+                campaignUpdates.next()
+            }
         }
     }
     const fileDiffs = node.diff?.fileDiffs
@@ -99,6 +112,9 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
             data-tooltip={changesetStageLabels[changesetState]}
         />
     )
+
+    const UpdateLoaderIcon =
+        node.__typename === 'ExternalChangeset' && node.updatedAt !== lastUpdatedAt ? SyncIcon : LoadingSpinner
 
     const changesetNodeRow = (
         <div className="d-flex align-items-center m-1 ml-2">
@@ -160,6 +176,18 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                 )}
             </div>
             <div className="flex-shrink-0 flex-grow-0 ml-1 d-flex flex-column align-items-end">
+                {node.__typename === 'ExternalChangeset' && (
+                    <span
+                        data-tooltip={`Last synced ${formatDistanceToNow(parseISO(node.updatedAt))} ago. ${
+                            node.updatedAt === lastUpdatedAt ? 'Currently refreshing' : 'Click to prioritize refresh'
+                        }`}
+                    >
+                        <UpdateLoaderIcon
+                            className={classNames('icon-inline', node.updatedAt !== lastUpdatedAt && 'cursor-pointer')}
+                            onClick={enqueueChangeset}
+                        />
+                    </span>
+                )}
                 {fileDiffs && <DiffStat {...fileDiffs.diffStat} expandedCounts={true} />}
                 {node.__typename === 'ExternalChangeset' && (
                     <ReviewStateIcon

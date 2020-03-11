@@ -102,6 +102,7 @@ describe('ChangesetNode', () => {
                             name: 'sourcegraph',
                             url: 'github.com/sourcegraph/sourcegraph',
                         },
+                        updatedAt: new Date('2020-01-01').toISOString(),
                     } as IExternalChangeset
                 }
                 campaignUpdates={new Subject<void>()}

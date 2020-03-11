@@ -184,6 +184,14 @@ Object {
         <div
           className="flex-shrink-0 flex-grow-0 ml-1 d-flex flex-column align-items-end"
         >
+          <span
+            data-tooltip="Last synced almost 14 years ago. Click to prioritize refresh"
+          >
+            <Memo(SyncIcon)
+              className="icon-inline cursor-pointer"
+              onClick={[Function]}
+            />
+          </span>
           <DiffStat
             added={100}
             changed={200}
