@@ -252,6 +252,7 @@ Dockerfile @sourcegraph/distribution
 /lsif/ @sourcegraph/code-intel
 /internal/lsif @sourcegraph/code-intel
 /enterprise/internal/codeintel @sourcegraph/code-intel
+/cmd/lsif-server/ @sourcegraph/code-intel
 /cmd/frontend/graphqlbackend/codeintel.go @sourcegraph/code-intel
 
 # Development
