@@ -59,11 +59,7 @@ export class UploadManager {
         limit: number,
         offset: number
     ): Promise<{ uploads: LsifUploadWithPlaceInQueue[]; totalCount: number }> {
-        const {
-            uploads,
-            raw,
-            totalCount,
-        } = await instrumentQuery<{
+        const { uploads, raw, totalCount } = await instrumentQuery<{
             uploads: pgModels.LsifUpload[]
             raw: { upload_id: number; rank: string | undefined }[]
             totalCount: number
