@@ -1226,9 +1226,13 @@ func (s *PermsStore) ListExternalAccounts(ctx context.Context, userID int32) (ac
 
 	q := sqlf.Sprintf(`
 -- source: enterprise/cmd/frontend/db/perms_store.go:PermsStore.ListExternalAccounts
-SELECT id, user_id, service_type, service_id, client_id, account_id, auth_data, account_data, created_at, updated_at
+SELECT id, user_id,
+       service_type, service_id, client_id, account_id,
+       auth_data, account_data,
+       created_at, updated_at
 FROM user_external_accounts
 WHERE user_id = %d
+ORDER BY id ASC
 `, userID)
 	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
