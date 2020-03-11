@@ -14,6 +14,18 @@ const PROPS = {
 }
 
 describe('CampaignActionsBar', () => {
+    test('new with plan', () =>
+        expect(
+            createRenderer().render(
+                <CampaignActionsBar {...PROPS} mode="viewing" previewingCampaignPlan={true} campaign={undefined} />
+            )
+        ).toMatchSnapshot())
+    test('new without plan', () =>
+        expect(
+            createRenderer().render(
+                <CampaignActionsBar {...PROPS} mode="viewing" previewingCampaignPlan={false} campaign={undefined} />
+            )
+        ).toMatchSnapshot())
     test('not editable', () =>
         expect(
             createRenderer().render(
