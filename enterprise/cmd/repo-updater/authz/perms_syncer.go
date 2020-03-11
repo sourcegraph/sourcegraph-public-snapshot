@@ -278,9 +278,9 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID) erro
 		}
 
 		// Set up the set of all account IDs that need to be bound to permissions
-		pendingAccountIDsSet = make(map[string]struct{}, len(extAccountIDs))
-		for i := range extAccountIDs {
-			pendingAccountIDsSet[string(extAccountIDs[i])] = struct{}{}
+		pendingAccountIDsSet = make(map[string]struct{}, len(accountIDs))
+		for i := range accountIDs {
+			pendingAccountIDsSet[accountIDs[i]] = struct{}{}
 		}
 	}
 
@@ -300,8 +300,8 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID) erro
 	}
 
 	pendingAccountIDs := make([]string, 0, len(pendingAccountIDsSet))
-	for id := range pendingAccountIDsSet {
-		pendingAccountIDs = append(pendingAccountIDs, id)
+	for aid := range pendingAccountIDsSet {
+		pendingAccountIDs = append(pendingAccountIDs, aid)
 	}
 
 	txs, err := s.permsStore.Transact(ctx)
