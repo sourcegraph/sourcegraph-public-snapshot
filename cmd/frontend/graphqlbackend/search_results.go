@@ -540,14 +540,11 @@ func (r *searchResolver) logSearchLatency(ctx context.Context, durationMs int32)
 
 	// Only log the time if we successfully resolved one search type.
 	if len(types) == 1 {
-		actor := actor.FromContext(ctx)
-		if actor.IsAuthenticated() {
-			value := fmt.Sprintf(`{"durationMs": %d}`, durationMs)
-			eventName := fmt.Sprintf("search.latencies.%s", types[0])
-			err := usagestats.LogBackendEvent(actor.UID, eventName, json.RawMessage(value))
-			if err != nil {
-				log15.Warn("Could not log search latency", "err", err)
-			}
+		value := fmt.Sprintf(`{"durationMs": %d}`, durationMs)
+		eventName := fmt.Sprintf("search.latencies.%s", types[0])
+		err := usagestats.LogBackendEvent(actor.FromContext(ctx).UID, eventName, json.RawMessage(value))
+		if err != nil {
+			log15.Warn("Could not log search latency", "err", err)
 		}
 	}
 }
