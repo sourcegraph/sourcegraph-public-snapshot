@@ -89,10 +89,13 @@ func (h Webhook) upsertChangesetEvent(
 	}
 
 	// The webhook may have caused the external state of the changeset to change
-	// so we need to update it. The state is computed based on the events stored in metadata
-	// along with
-	csEvents := append(cs.Events(), event)
-	updateExternalState(cs, csEvents)
+	// so we need to update it. We need all events as we may have received more than just the
+	// event we are currently handling
+	events, _, err := tx.ListChangesetEvents(ctx, ListChangesetEventsOpts{
+		ChangesetIDs: []int64{cs.ID},
+		Limit:        -1,
+	})
+	updateExternalState(cs, events)
 
 	return nil
 }
