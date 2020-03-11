@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -444,22 +445,6 @@ AND bind_id = %s
 	)
 }
 
-// ExternalAccounts contains a list of acounts that belong to the same external service.
-type ExternalAccounts struct {
-	ServiceType string
-	ServiceID   string
-	AccountIDs  []string
-}
-
-// TracingFields returns tracing fields for the opentracing log.
-func (s *ExternalAccounts) TracingFields() []otlog.Field {
-	return []otlog.Field{
-		otlog.String("ExternalAccounts.ServiceType", s.ServiceType),
-		otlog.String("ExternalAccounts.Perm", s.ServiceID),
-		otlog.Int("ExternalAccounts.AccountIDs.Count", len(s.AccountIDs)),
-	}
-}
-
 // SetRepoPendingPermissions performs a full update for p with given accounts, new account IDs
 // found will be upserted and account IDs no longer in AccountIDs will be removed.
 //
@@ -489,7 +474,7 @@ func (s *ExternalAccounts) TracingFields() []otlog.Field {
 //   repo_id | permission |   user_ids   | updated_at
 //  ---------+------------+--------------+------------
 //         1 |       read | bitmap{1, 2} | <DateTime>
-func (s *PermsStore) SetRepoPendingPermissions(ctx context.Context, accounts *ExternalAccounts, p *authz.RepoPermissions) (err error) {
+func (s *PermsStore) SetRepoPendingPermissions(ctx context.Context, accounts *extsvc.ExternalAccounts, p *authz.RepoPermissions) (err error) {
 	if Mocks.Perms.SetRepoPendingPermissions != nil {
 		return Mocks.Perms.SetRepoPendingPermissions(ctx, accounts, p)
 	}
@@ -681,7 +666,7 @@ func (s *PermsStore) batchLoadUserPendingPermissions(ctx context.Context, q *sql
 }
 
 func insertUserPendingPermissionsBatchQuery(
-	accounts *ExternalAccounts,
+	accounts *extsvc.ExternalAccounts,
 	p *authz.RepoPermissions,
 ) (*sqlf.Query, error) {
 	const format = `
@@ -1095,7 +1080,7 @@ func (s *PermsStore) DeleteAllUserPermissions(ctx context.Context, userID int32)
 
 // DeleteAllUserPendingPermissions deletes all rows with given bind IDs from the "user_pending_permissions" table.
 // It accepts list of bind IDs because a user has multiple bind IDs, e.g. username and email addresses.
-func (s *PermsStore) DeleteAllUserPendingPermissions(ctx context.Context, accounts *ExternalAccounts) (err error) {
+func (s *PermsStore) DeleteAllUserPendingPermissions(ctx context.Context, accounts *extsvc.ExternalAccounts) (err error) {
 	ctx, save := s.observe(ctx, "DeleteAllUserPendingPermissions", "")
 	defer func() { save(&err, accounts.TracingFields()...) }()
 
