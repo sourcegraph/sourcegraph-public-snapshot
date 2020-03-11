@@ -10,21 +10,21 @@ import (
 )
 
 func main() {
+	targets, ok := os.LookupEnv("LSIF_RUN_TARGET")
+	if !ok {
+		targets = "server,worker"
+	}
+
 	procfile := []string{}
-
-	serverOnly, _ := strconv.ParseBool(os.Getenv("SERVER_ONLY"))
-	workerOnly, _ := strconv.ParseBool(os.Getenv("WORKER_ONLY"))
-
-	if serverOnly && workerOnly {
-		log.Fatal("Flags server_only and worker_only are mutually exclusive")
-	}
-
-	if !workerOnly {
-		procfile = append(procfile, `lsif-server: node /lsif/out/server/server.js`)
-	}
-
-	if !serverOnly {
-		procfile = append(procfile, `lsif-worker: node /lsif/out/worker/worker.js`)
+	for _, target := range strings.Split(targets, ",") {
+		switch target {
+		case "server":
+			procfile = append(procfile, `lsif-server: node /lsif/out/server/server.js`)
+		case "worker":
+			procfile = append(procfile, `lsif-worker: node /lsif/out/worker/worker.js`)
+		default:
+			log.Fatalf("Unknown value '%s' for LSIF_RUN_TARGET (expected 'server' or 'worker')", target)
+		}
 	}
 
 	// Shutdown if any process dies
