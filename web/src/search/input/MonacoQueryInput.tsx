@@ -280,16 +280,16 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
             )
         )
 
-        // Submit on enter when not showing suggestions.
+        // Submit on enter, hiding the suggestions widget if it's visible.
         this.subscriptions.add(
             toUnsubscribable(
                 editor.addAction({
                     id: 'submitOnEnter',
                     label: 'submitOnEnter',
                     keybindings: [Monaco.KeyCode.Enter],
-                    precondition: '!suggestWidgetVisible',
                     run: () => {
                         this.onSubmit()
+                        editor.trigger('submitOnEnter', 'hideSuggestWidget', [])
                     },
                 })
             )

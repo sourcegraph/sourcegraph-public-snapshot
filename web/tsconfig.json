@@ -3,7 +3,10 @@
   "references": [{ "path": "../shared" }, { "path": "../schema" }],
   "compilerOptions": {
     "module": "commonjs",
-    "typeRoots": ["../shared/src/types", "../node_modules/@types", "src/types"],
+    "baseUrl": ".",
+    "paths": {
+      "*": ["src/types/*", "../shared/src/types/*", "*"],
+    },
     "jsx": "react",
     "rootDir": ".",
     "outDir": "out",

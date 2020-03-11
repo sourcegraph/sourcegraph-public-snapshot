@@ -432,6 +432,16 @@ describe('Search regression test suite', () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 0)
         })
+        test('Fork repos excluded by default', async () => {
+            const urlQuery = buildSearchURLQuery('type:repo sgtest/mux', GQL.SearchPatternType.regexp, false)
+            await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 0)
+        })
+        test('Forked repos included by by fork option', async () => {
+            const urlQuery = buildSearchURLQuery('type:repo sgtest/mux fork:yes', GQL.SearchPatternType.regexp, false)
+            await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 0)
+        })
 
         test('Search timeout', async function() {
             this.timeout(2 * 1000)

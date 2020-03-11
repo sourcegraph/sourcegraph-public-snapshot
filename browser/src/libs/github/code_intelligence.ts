@@ -382,6 +382,11 @@ export const githubCodeHost: CodeHost = {
                         // GitHub uses L for the left side, R for both right side and the unchanged/white parts
                         url.hash += `${context.part === 'base' ? 'L' : 'R'}${target.position.line}`
                     }
+                    // Only use URL if it is visible
+                    // TODO: Expand hidden lines to reveal
+                    if (!document.querySelector(url.hash)) {
+                        break
+                    }
                     return url.href
                 }
             }
