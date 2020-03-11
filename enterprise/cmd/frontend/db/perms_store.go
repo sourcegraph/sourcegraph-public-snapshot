@@ -1091,6 +1091,7 @@ func (s *PermsStore) DeleteAllUserPendingPermissions(ctx context.Context, accoun
 		items[i] = sqlf.Sprintf("%s", accounts.AccountIDs[i])
 	}
 	q := sqlf.Sprintf(`
+-- source: enterprise/cmd/frontend/db/perms_store.go:PermsStore.DeleteAllUserPendingPermissions
 DELETE FROM user_pending_permissions
 WHERE service_type = %s
 AND service_id = %s
@@ -1216,6 +1217,80 @@ func (s *PermsStore) batchLoadIDs(ctx context.Context, q *sqlf.Query) (map[int32
 	}
 
 	return loaded, nil
+}
+
+// ListExternalAccounts returns all external accounts that are associated with given user.
+func (s *PermsStore) ListExternalAccounts(ctx context.Context, userID int32) (results []*extsvc.ExternalAccount, err error) {
+	ctx, save := s.observe(ctx, "ListExternalAccounts", "")
+	defer func() { save(&err, otlog.Int32("userID", userID)) }()
+
+	q := sqlf.Sprintf(`
+-- source: enterprise/cmd/frontend/db/perms_store.go:PermsStore.ListExternalAccounts
+SELECT id, user_id, service_type, service_id, client_id, account_id, auth_data, account_data, created_at, updated_at
+FROM user_external_accounts
+WHERE user_id = %d
+`, userID)
+	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var ea extsvc.ExternalAccount
+		if err := rows.Scan(&ea.ID, &ea.UserID, &ea.ServiceType, &ea.ServiceID, &ea.ClientID, &ea.AccountID, &ea.AuthData, &ea.AccountData, &ea.CreatedAt, &ea.UpdatedAt); err != nil {
+			return nil, err
+		}
+		results = append(results, &ea)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return results, nil
+}
+
+// GetUserIDsByExternalAccounts returns all user IDs matched by given external account specs.
+// The returned set has mapping relation as "account ID -> user ID". The number of results
+// could be less than the candidate list due to some users are not associated with any external
+// account.
+func (s *PermsStore) GetUserIDsByExternalAccounts(ctx context.Context, accounts *extsvc.ExternalAccounts) (_ map[string]int32, err error) {
+	ctx, save := s.observe(ctx, "ListUsersByExternalAccounts", "")
+	defer func() { save(&err, accounts.TracingFields()...) }()
+
+	items := make([]*sqlf.Query, len(accounts.AccountIDs))
+	for i := range accounts.AccountIDs {
+		items[i] = sqlf.Sprintf("%s", accounts.AccountIDs[i])
+	}
+
+	q := sqlf.Sprintf(`
+-- source: enterprise/cmd/frontend/db/perms_store.go:PermsStore.GetUserIDsByExternalAccounts
+SELECT user_id, account_id
+FROM user_external_accounts
+WHERE service_type = %s
+AND service_id = %s
+AND account_id IN (%s)
+`, accounts.ServiceType, accounts.ServiceID, sqlf.Join(items, ","))
+	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	userIDs := make(map[string]int32)
+	for rows.Next() {
+		var userID int32
+		var accountID string
+		if err := rows.Scan(&userID, &accountID); err != nil {
+			return nil, err
+		}
+		userIDs[accountID] = userID
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return userIDs, nil
 }
 
 // tx begins a new transaction.
