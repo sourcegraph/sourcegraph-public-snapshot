@@ -1,5 +1,4 @@
 import * as pgModels from '../models/pg'
-import pRetry, { AbortError } from 'p-retry'
 import { Brackets, Connection, EntityManager } from 'typeorm'
 import { FORMAT_TEXT_MAP, Span, Tracer } from 'opentracing'
 import { instrumentQuery, withInstrumentedTransaction } from '../database/postgres'
@@ -279,64 +278,6 @@ export class UploadManager {
         await instrumentQuery(() => this.connection.createEntityManager().save(upload))
 
         return upload
-    }
-
-    /**
-     * Wait for the given upload to be converted. The function resolves to true if the
-     * conversion completed within the given timeout and false otherwise. If the upload
-     * conversion throws an error, that error is thrown in-band. A NaN-valued max wait
-     * will block forever.
-     *
-     * @param uploadId The id of the upload to block on.
-     * @param maxWait The maximum time (in seconds) to wait for the promise to resolve.
-     */
-    public async waitForUploadToConvert(uploadId: number, maxWait: number | undefined): Promise<boolean> {
-        const UPLOADINPROGRESS = 'UploadInProgressError'
-        class UploadInProgressError extends Error {
-            public readonly name = UPLOADINPROGRESS
-            public readonly code = UPLOADINPROGRESS
-            constructor() {
-                super('upload in progress')
-            }
-        }
-
-        const checkUploadState = async (): Promise<void> => {
-            const upload = await instrumentQuery(() =>
-                this.connection.getRepository(pgModels.LsifUpload).findOneOrFail({ id: uploadId })
-            )
-
-            if (upload.state === 'errored') {
-                const error = new Error(upload.failureSummary || '')
-                error.stack = upload.failureStacktrace || ''
-                throw new AbortError(error)
-            }
-
-            if (upload.state !== 'completed') {
-                throw new UploadInProgressError()
-            }
-        }
-
-        const retryConfig =
-            maxWait === undefined
-                ? { forever: true }
-                : {
-                      factor: 1,
-                      retries: maxWait,
-                      minTimeout: 1000,
-                      maxTimeout: 1000,
-                  }
-
-        try {
-            await pRetry(checkUploadState, retryConfig)
-        } catch (error) {
-            if (error && error.code === UPLOADINPROGRESS) {
-                return false
-            }
-
-            throw error
-        }
-
-        return true
     }
 
     /**

@@ -46,18 +46,6 @@ paths:
           required: false
           schema:
             type: string
-        - name: blocking
-          in: query
-          description: If true, block the request until the upload is processed.
-          required: false
-          schema:
-            type: boolean
-        - name: maxWait
-          in: query
-          description: The maximum time (in seconds) that request will block. The conversion will continue asynchronously if this much time has elapsed.
-          required: false
-          schema:
-            type: number
         - name: indexerName
           in: query
           description: The name of the indexer that generated the payload. This is required only if there is no tool info supplied in the payload's metadata vertex.
