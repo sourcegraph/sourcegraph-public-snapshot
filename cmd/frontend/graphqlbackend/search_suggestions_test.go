@@ -66,8 +66,8 @@ func TestSearchSuggestions(t *testing.T) {
 	t.Run("single term", func(t *testing.T) {
 		var calledReposListAll, calledReposListFoo bool
 		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
-			wantFoo := db.ReposListOptions{IncludePatterns: []string{"foo"}, OnlyRepoIDs: true, LimitOffset: limitOffset, NoArchived: true} // when treating term as repo: field
-			wantAll := db.ReposListOptions{OnlyRepoIDs: true, LimitOffset: limitOffset, NoArchived: true}                                   // when treating term as text query
+			wantFoo := db.ReposListOptions{IncludePatterns: []string{"foo"}, OnlyRepoIDs: true, LimitOffset: limitOffset, NoArchived: true, NoForks: true} // when treating term as repo: field
+			wantAll := db.ReposListOptions{OnlyRepoIDs: true, LimitOffset: limitOffset, NoArchived: true, NoForks: true}                                   // when treating term as text query
 			if reflect.DeepEqual(op, wantAll) {
 				calledReposListAll = true
 				return []*types.Repo{{Name: "bar-repo"}}, nil
@@ -213,6 +213,7 @@ func TestSearchSuggestions(t *testing.T) {
 				OnlyRepoIDs:     true,
 				LimitOffset:     limitOffset,
 				NoArchived:      true,
+				NoForks:         true,
 			}
 			if !reflect.DeepEqual(op, want) {
 				t.Errorf("got %+v, want %+v", op, want)
@@ -308,6 +309,7 @@ func TestSearchSuggestions(t *testing.T) {
 				OnlyRepoIDs:     true,
 				LimitOffset:     limitOffset,
 				NoArchived:      true,
+				NoForks:         true,
 			}
 
 			if !reflect.DeepEqual(op, want) {

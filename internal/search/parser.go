@@ -39,6 +39,7 @@ type operatorKind int
 const (
 	Or operatorKind = iota
 	And
+	Concat
 )
 
 // Operator is a nonterminal node of kind Kind with child nodes Operands.
@@ -63,11 +64,15 @@ func (node Operator) String() string {
 		result = append(result, child.String())
 	}
 	var kind string
-	if node.Kind == Or {
+	switch node.Kind {
+	case Or:
 		kind = "or"
-	} else {
+	case And:
 		kind = "and"
+	case Concat:
+		kind = "concat"
 	}
+
 	return fmt.Sprintf("(%s %s)", kind, strings.Join(result, " "))
 }
 
@@ -202,15 +207,79 @@ func (p *parser) ParseParameter() Parameter {
 	return ScanParameter(p.buf[start:p.pos])
 }
 
+func visit(node Node, f func(node Node)) {
+	switch v := node.(type) {
+	case Parameter:
+		f(v)
+	case Operator:
+		f(v)
+		for _, n := range v.Operands {
+			visit(n, f)
+		}
+	}
+}
+
+// containsPattern returns true if any descendent of node is a search pattern
+// (i.e., a parameter where the field is the empty string).
+func containsPattern(node Node) bool {
+	var result bool
+	f := func(node Node) {
+		switch v := node.(type) {
+		case Parameter:
+			if v.Field == "" {
+				result = true
+			}
+		}
+	}
+	visit(node, f)
+	return result
+}
+
+// partitionParameters constructs a parse tree to distinguish terms where
+// ordering is insignificant (e.g., "repo:foo file:bar") versus terms where
+// ordering may be significant (e.g., search patterns like "foo bar"). Search
+// patterns are parameters whose field is the empty string.
+//
+// The resulting tree defines an ordering relation on nodes in the following cases:
+// (1) When more than one search patterns exist at the same operator level, they
+// are concatenated in order.
+// (2) Any nonterminal node is concatenated (ordered in the tree) if its
+// descendents contain one or more search patterns.
+func partitionParameters(nodes []Node) []Node {
+	var patterns, unorderedParams []Node
+	for _, n := range nodes {
+		switch v := n.(type) {
+		case Parameter:
+			if v.Field == "" {
+				patterns = append(patterns, n)
+			} else {
+				unorderedParams = append(unorderedParams, n)
+			}
+		case Operator:
+			if containsPattern(n) {
+				patterns = append(patterns, n)
+			} else {
+				unorderedParams = append(unorderedParams, n)
+			}
+		}
+	}
+	if len(patterns) > 1 {
+		orderedPatterns := newOperator(patterns, Concat)
+		return newOperator(append(unorderedParams, orderedPatterns...), And)
+	}
+	return newOperator(append(unorderedParams, patterns...), And)
+}
+
 // scanParameterList scans for consecutive leaf nodes.
 func (p *parser) parseParameterList() ([]Node, error) {
 	var nodes []Node
+loop:
 	for {
 		if err := p.skipSpaces(); err != nil {
 			return nil, err
 		}
 		if p.done() {
-			break
+			break loop
 		}
 		switch {
 		case p.expect(LPAREN):
@@ -224,18 +293,18 @@ func (p *parser) parseParameterList() ([]Node, error) {
 			p.balanced--
 			if len(nodes) == 0 {
 				// Return a non-nil node if we parsed "()".
-				return []Node{Parameter{Value: ""}}, nil
+				nodes = []Node{Parameter{Value: ""}}
 			}
-			return nodes, nil
+			break loop
 		case p.match(AND), p.match(OR):
 			// Caller advances.
-			return nodes, nil
+			break loop
 		default:
 			parameter := p.ParseParameter()
 			nodes = append(nodes, parameter)
 		}
 	}
-	return nodes, nil
+	return partitionParameters(nodes), nil
 }
 
 // reduce takes lists of left and right nodes and reduces them if possible. For example,

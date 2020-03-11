@@ -126,6 +126,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 	repoGroupFilters, _ := r.query.StringValues(query.FieldRepoGroup)
 	fork, _ := r.query.StringValue(query.FieldFork)
 	onlyForks, noForks := fork == "only", fork == "no"
+	forksNotSet := len(fork) == 0
 	archived, _ := r.query.StringValue(query.FieldArchived)
 	archivedNotSet := len(archived) == 0
 
@@ -288,6 +289,21 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 		}
 
 		proposedQueries := []*searchQueryDescription{}
+		if forksNotSet {
+			tryIncludeForks := resolveRepoOp{
+				repoFilters:      repoFilters,
+				minusRepoFilters: minusRepoFilters,
+				noForks:          false,
+			}
+			if reposExist(ctx, tryIncludeForks) {
+				proposedQueries = append(proposedQueries, &searchQueryDescription{
+					description: "include forked repositories in your query.",
+					query:       r.originalQuery + " fork:yes",
+					patternType: r.patternType,
+				})
+			}
+		}
+
 		if archivedNotSet {
 			tryIncludeArchived := resolveRepoOp{
 				repoFilters:      repoFilters,
