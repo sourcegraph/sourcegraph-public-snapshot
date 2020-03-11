@@ -21230,23 +21230,6 @@ Array [
                   </strong>
                   ?
                 </p>
-                <div
-                  className="form-group"
-                >
-                  <label>
-                    <input
-                      checked={false}
-                      onChange={[Function]}
-                      type="checkbox"
-                    />
-                     
-                    Close all 
-                    2
-                     
-                    changesets
-                     on code hosts
-                  </label>
-                </div>
                 <button
                   className="btn mr-1 btn-secondary mr-1"
                   disabled={true}
@@ -21287,23 +21270,6 @@ Array [
                   </strong>
                   ?
                 </p>
-                <div
-                  className="form-group"
-                >
-                  <label>
-                    <input
-                      checked={false}
-                      onChange={[Function]}
-                      type="checkbox"
-                    />
-                     
-                    Close all 
-                    2
-                     
-                    changesets
-                     on code hosts
-                  </label>
-                </div>
                 <button
                   className="btn mr-1 btn-danger"
                   disabled={true}

@@ -53,6 +53,7 @@ const campaignFragment = gql`
                     name
                     url
                 }
+                state
                 diff {
                     fileDiffs {
                         totalCount

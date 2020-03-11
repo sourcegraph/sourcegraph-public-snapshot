@@ -1,7 +1,7 @@
 import React from 'react'
 import { createRenderer } from 'react-test-renderer/shallow'
 import { CampaignActionsBar } from './CampaignActionsBar'
-import { BackgroundProcessState } from '../../../../../shared/src/graphql/schema'
+import { BackgroundProcessState, ChangesetState } from '../../../../../shared/src/graphql/schema'
 
 const PROPS = {
     name: 'Super campaign',
@@ -22,7 +22,7 @@ describe('CampaignActionsBar', () => {
                     mode="viewing"
                     previewingCampaignPlan={false}
                     campaign={{
-                        changesets: { totalCount: 0 },
+                        changesets: { totalCount: 0, nodes: [] },
                         closedAt: null,
                         name: 'Super campaign',
                         status: {
@@ -42,7 +42,7 @@ describe('CampaignActionsBar', () => {
                     mode="viewing"
                     previewingCampaignPlan={false}
                     campaign={{
-                        changesets: { totalCount: 0 },
+                        changesets: { totalCount: 0, nodes: [] },
                         closedAt: null,
                         name: 'Super campaign',
                         status: {
@@ -62,7 +62,7 @@ describe('CampaignActionsBar', () => {
                     mode="viewing"
                     previewingCampaignPlan={false}
                     campaign={{
-                        changesets: { totalCount: 0 },
+                        changesets: { totalCount: 0, nodes: [] },
                         closedAt: new Date().toISOString(),
                         name: 'Super campaign',
                         status: {
@@ -82,7 +82,7 @@ describe('CampaignActionsBar', () => {
                     mode="editing"
                     previewingCampaignPlan={false}
                     campaign={{
-                        changesets: { totalCount: 0 },
+                        changesets: { totalCount: 0, nodes: [] },
                         closedAt: null,
                         name: 'Super campaign',
                         status: {
@@ -102,7 +102,7 @@ describe('CampaignActionsBar', () => {
                     mode="editing"
                     previewingCampaignPlan={false}
                     campaign={{
-                        changesets: { totalCount: 0 },
+                        changesets: { totalCount: 0, nodes: [] },
                         closedAt: null,
                         name: 'Super campaign',
                         status: {
@@ -122,7 +122,7 @@ describe('CampaignActionsBar', () => {
                     mode="saving"
                     previewingCampaignPlan={false}
                     campaign={{
-                        changesets: { totalCount: 0 },
+                        changesets: { totalCount: 0, nodes: [] },
                         closedAt: null,
                         name: 'Super campaign',
                         status: {
@@ -142,7 +142,7 @@ describe('CampaignActionsBar', () => {
                     mode="deleting"
                     previewingCampaignPlan={false}
                     campaign={{
-                        changesets: { totalCount: 0 },
+                        changesets: { totalCount: 0, nodes: [] },
                         closedAt: null,
                         name: 'Super campaign',
                         status: {
@@ -162,7 +162,54 @@ describe('CampaignActionsBar', () => {
                     mode="closing"
                     previewingCampaignPlan={false}
                     campaign={{
-                        changesets: { totalCount: 0 },
+                        changesets: { totalCount: 0, nodes: [] },
+                        closedAt: null,
+                        name: 'Super campaign',
+                        status: {
+                            state: BackgroundProcessState.COMPLETED,
+                        },
+                        viewerCanAdminister: true,
+                        publishedAt: new Date().toISOString(),
+                    }}
+                />
+            )
+        ).toMatchSnapshot())
+    test('some changesets still open', () =>
+        expect(
+            createRenderer().render(
+                <CampaignActionsBar
+                    {...PROPS}
+                    mode="viewing"
+                    previewingCampaignPlan={false}
+                    campaign={{
+                        changesets: { totalCount: 1, nodes: [{ state: ChangesetState.OPEN }] },
+                        closedAt: null,
+                        name: 'Super campaign',
+                        status: {
+                            state: BackgroundProcessState.COMPLETED,
+                        },
+                        viewerCanAdminister: true,
+                        publishedAt: new Date().toISOString(),
+                    }}
+                />
+            )
+        ).toMatchSnapshot())
+    test('all changesets not open', () =>
+        expect(
+            createRenderer().render(
+                <CampaignActionsBar
+                    {...PROPS}
+                    mode="viewing"
+                    previewingCampaignPlan={false}
+                    campaign={{
+                        changesets: {
+                            totalCount: 3,
+                            nodes: [
+                                { state: ChangesetState.CLOSED },
+                                { state: ChangesetState.DELETED },
+                                { state: ChangesetState.MERGED },
+                            ],
+                        },
                         closedAt: null,
                         name: 'Super campaign',
                         status: {
