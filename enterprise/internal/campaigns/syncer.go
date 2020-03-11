@@ -28,6 +28,7 @@ type ChangesetSyncer struct {
 
 	// Replaceable fo testing
 	syncFunc func(ctx context.Context, id int64) error
+	clock    func() time.Time
 }
 
 type SyncStore interface {
@@ -47,6 +48,9 @@ func (s *ChangesetSyncer) Run(ctx context.Context) {
 	}
 	if s.syncFunc == nil {
 		s.syncFunc = s.SyncChangesetByID
+	}
+	if s.clock == nil {
+		s.clock = time.Now
 	}
 	if s.priorityNotify == nil {
 		s.priorityNotify = make(chan []int64, 500)
@@ -134,8 +138,14 @@ var (
 )
 
 // nextSync computes the time we want the next sync to happen.
-func nextSync(h campaigns.ChangesetSyncData) time.Time {
+func nextSync(clock func() time.Time, h campaigns.ChangesetSyncData) time.Time {
 	lastSync := h.UpdatedAt
+
+	if lastSync.IsZero() {
+		// Edge case where we've never synced
+		return clock()
+	}
+
 	var lastChange time.Time
 	// When we perform a sync, event timestamps are all updated even if nothing has changed.
 	// We should fall back to h.ExternalUpdated if the diff is small
@@ -149,6 +159,15 @@ func nextSync(h campaigns.ChangesetSyncData) time.Time {
 
 	// Simple linear backoff for now
 	diff := lastSync.Sub(lastChange)
+
+	// If the last change has happened AFTER our last sync this indicates a webhook
+	// has arrived. In this case, we should check again in minSyncDelay after
+	// the hook arrived. If multiple webhooks arrive in close succession this will
+	// cause us to wait for a quiet period of at least minSyncDelay
+	if diff < 0 {
+		return lastChange.Add(minSyncDelay)
+	}
+
 	if diff > maxSyncDelay {
 		diff = maxSyncDelay
 	}
@@ -180,7 +199,7 @@ func (s *ChangesetSyncer) computeSchedule(ctx context.Context) ([]scheduledSync,
 
 	ss := make([]scheduledSync, len(hs))
 	for i := range hs {
-		nextSync := nextSync(hs[i])
+		nextSync := nextSync(s.clock, hs[i])
 
 		ss[i] = scheduledSync{
 			changesetID: hs[i].ChangesetID,
