@@ -4278,7 +4278,7 @@ type LSIFUpload implements Node {
     # The time the upload compelted or errored.
     finishedAt: DateTime
 
-    # Metadata about a upload's failure (not set if state is not ERRORED).
+    # Metadata about an upload's failure (not set if state is not ERRORED).
     failure: LSIFUploadFailureReason
 
     # Whether or not this upload provides intelligence for the tip of the default branch. Find reference
@@ -4286,6 +4286,9 @@ type LSIFUpload implements Node {
     # is updated asynchronously and is eventually consistent with the git data known by the Sourcegraph
     # instance.
     isLatestForRepo: Boolean!
+
+    # The rank of this upload in the queue. The value of this field is null if the upload has been processed.
+    placeInQueue: Int
 }
 
 # Metadata about a LSIF upload failure.

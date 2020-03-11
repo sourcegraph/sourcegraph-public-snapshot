@@ -6,6 +6,10 @@ import { instrumentQuery, withInstrumentedTransaction } from '../database/postgr
 import { PlainObjectToDatabaseEntityTransformer } from 'typeorm/query-builder/transformer/PlainObjectToDatabaseEntityTransformer'
 import { Logger } from 'winston'
 
+export interface LsifUploadWithPlaceInQueue extends pgModels.LsifUpload {
+    placeInQueue: number | null
+}
+
 /**
  * A wrapper around the database tables that control uploads. This class has
  * behaviors to enqueue uploads and dequeue them for the worker to convert
@@ -54,11 +58,26 @@ export class UploadManager {
         visibleAtTip: boolean,
         limit: number,
         offset: number
-    ): Promise<{ uploads: pgModels.LsifUpload[]; totalCount: number }> {
-        const [uploads, totalCount] = await instrumentQuery(() => {
+    ): Promise<{ uploads: LsifUploadWithPlaceInQueue[]; totalCount: number }> {
+        const { uploads, raw, totalCount } = await instrumentQuery<{
+            uploads: pgModels.LsifUpload[]
+            raw: { upload_id: number; rank: string | undefined }[]
+            totalCount: number
+        }>(async () => {
             let queryBuilder = this.connection
                 .getRepository(pgModels.LsifUpload)
                 .createQueryBuilder('upload')
+                .addSelect('ranked.rank', 'rank')
+                .leftJoin(
+                    qb =>
+                        qb
+                            .subQuery()
+                            .select('ranked.id, RANK() OVER (ORDER BY ranked.uploaded_at) as rank')
+                            .from(pgModels.LsifUpload, 'ranked')
+                            .where("ranked.state = 'queued'"),
+                    'ranked',
+                    'ranked.id = upload.id'
+                )
                 .where({ repositoryId })
                 .orderBy('uploaded_at', 'DESC')
                 .limit(limit)
@@ -69,7 +88,7 @@ export class UploadManager {
             }
 
             if (query) {
-                const clauses = ['commit', 'root', 'failure_summary', 'failure_stacktrace'].map(
+                const clauses = ['commit', 'root', 'indexerName', 'failure_summary', 'failure_stacktrace'].map(
                     field => `"${field}" LIKE '%' || :query || '%'`
                 )
 
@@ -84,19 +103,52 @@ export class UploadManager {
                 queryBuilder = queryBuilder.andWhere('visible_at_tip = true')
             }
 
-            return queryBuilder.getManyAndCount()
+            const [{ entities, raw: rawEntities }, count] = await Promise.all([
+                queryBuilder.getRawAndEntities(),
+                queryBuilder.getCount(),
+            ])
+
+            return { uploads: entities, raw: rawEntities, totalCount: count }
         })
 
-        return { uploads, totalCount }
+        const ranks = new Map(raw.map(r => [r.upload_id, parseInt(r.rank || '', 10)]))
+        return { uploads: uploads.map(u => ({ ...u, placeInQueue: ranks.get(u.id) || null })), totalCount }
     }
 
     /**
-     * Get a upload by identifier.
+     * Get an upload by identifier.
      *
      * @param id The upload identifier.
      */
-    public getUpload(id: number): Promise<pgModels.LsifUpload | undefined> {
-        return instrumentQuery(() => this.connection.getRepository(pgModels.LsifUpload).findOne({ id }))
+    public getUpload(id: number): Promise<LsifUploadWithPlaceInQueue | undefined> {
+        return withInstrumentedTransaction(this.connection, async () => {
+            const {
+                entities,
+                raw,
+            }: { entities: pgModels.LsifUpload[]; raw: { rank: string | null }[] } = await this.connection
+                .getRepository(pgModels.LsifUpload)
+                .createQueryBuilder('upload')
+                .addSelect('ranked.rank', 'rank')
+                .leftJoin(
+                    qb =>
+                        qb
+                            .subQuery()
+                            .select('ranked.id, RANK() OVER (ORDER BY ranked.uploaded_at) as rank')
+                            .from(pgModels.LsifUpload, 'ranked')
+                            .where("ranked.state = 'queued'"),
+                    'ranked',
+                    'ranked.id = upload.id'
+                )
+                .where({ id })
+                .limit(1)
+                .getRawAndEntities()
+
+            if (entities.length === 0) {
+                return undefined
+            }
+
+            return { ...entities[0], placeInQueue: parseInt(raw[0].rank || '', 10) || null }
+        })
     }
 
     /**

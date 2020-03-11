@@ -56,6 +56,7 @@ export function fetchLsifUploads({
                                 uploadedAt
                                 startedAt
                                 finishedAt
+                                placeInQueue
                             }
 
                             totalCount
@@ -119,6 +120,7 @@ export function fetchLsifUpload({ id }: { id: string }): Observable<GQL.ILSIFUpl
                         startedAt
                         finishedAt
                         isLatestForRepo
+                        placeInQueue
                     }
                 }
             }

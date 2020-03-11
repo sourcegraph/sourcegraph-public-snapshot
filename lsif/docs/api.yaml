@@ -555,6 +555,10 @@ components:
         visibleAtTip:
           type: boolean
           description: Whether or not this upload can provide global reference code intelligence.
+        placeInQueue:
+          type: number
+          description: The rank of this upload in the queue. The value of this field is null if the upload has been processed.
+          nullable: true
       required:
         - id
         - repositoryId
