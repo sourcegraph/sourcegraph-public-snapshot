@@ -289,10 +289,14 @@ func (s *ChangesetSyncer) SyncChangesetsWithSources(ctx context.Context, bySourc
 // updateExternalState will update the external state fields on cs based on the current
 // state of the changeset and associated events
 func updateExternalState(cs *campaigns.Changeset, events []*campaigns.ChangesetEvent) {
-	if state, err := cs.State(); err == nil {
+	if state, err := cs.State(); err != nil {
+		log15.Warn("Computing changeset state", "err", err)
+	} else {
 		cs.ExternalState = state
 	}
-	if state, err := campaigns.ChangesetEvents(events).ReviewState(); err == nil {
+	if state, err := campaigns.ChangesetEvents(events).ReviewState(); err != nil {
+		log15.Warn("Computing changeset review state", "err", err)
+	} else {
 		cs.ExternalReviewState = state
 	}
 	cs.ExternalCheckState = campaigns.ComputeCheckState(cs, events)

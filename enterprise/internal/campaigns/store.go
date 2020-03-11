@@ -2709,6 +2709,11 @@ func closeErr(c io.Closer, err *error) {
 func scanChangeset(t *campaigns.Changeset, s scanner) error {
 	var metadata json.RawMessage
 
+	var (
+		externalState       string
+		externamReviewState string
+		externalCheckState  string
+	)
 	err := s.Scan(
 		&t.ID,
 		&t.RepoID,
@@ -2721,13 +2726,17 @@ func scanChangeset(t *campaigns.Changeset, s scanner) error {
 		&t.ExternalBranch,
 		&dbutil.NullTime{Time: &t.ExternalDeletedAt},
 		&dbutil.NullTime{Time: &t.ExternalUpdatedAt},
-		&t.ExternalState,
-		&t.ExternalReviewState,
-		&t.ExternalCheckState,
+		&dbutil.NullString{S: &externalState},
+		&dbutil.NullString{S: &externamReviewState},
+		&dbutil.NullString{S: &externalCheckState},
 	)
 	if err != nil {
 		return errors.Wrap(err, "scanning changeset")
 	}
+
+	t.ExternalState = campaigns.ChangesetState(externalState)
+	t.ExternalReviewState = campaigns.ChangesetReviewState(externamReviewState)
+	t.ExternalCheckState = campaigns.ChangesetCheckState(externalCheckState)
 
 	switch t.ExternalServiceType {
 	case github.ServiceType:

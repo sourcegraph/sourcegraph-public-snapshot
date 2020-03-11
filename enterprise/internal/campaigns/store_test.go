@@ -707,8 +707,6 @@ func testStore(db *sql.DB) func(*testing.T) {
 			t.Run("Null changeset state", func(t *testing.T) {
 				cs := &cmpgn.Changeset{
 					RepoID:              42,
-					CreatedAt:           now,
-					UpdatedAt:           now,
 					Metadata:            githubPR,
 					CampaignIDs:         []int64{1},
 					ExternalID:          fmt.Sprintf("foobar-%d", 42),
