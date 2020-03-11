@@ -3,6 +3,7 @@ package campaigns
 import (
 	"container/heap"
 	"context"
+	"sync"
 	"time"
 
 	"github.com/pkg/errors"
@@ -19,6 +20,7 @@ type ChangesetSyncer struct {
 	Store       SyncStore
 	ReposStore  repos.Store
 	HTTPFactory *httpcli.Factory
+	sourceCache sourceCache
 	// ComputeScheduleInterval determines how often a new schedule will be computed.
 	// Note that it involves a DB query but no communication with codehosts
 	ComputeScheduleInterval time.Duration
@@ -354,7 +356,7 @@ func (s *ChangesetSyncer) GroupChangesetsBySource(ctx context.Context, cs ...*ca
 
 	bySource := make(map[int64]*SourceChangesets, len(es))
 	for _, e := range es {
-		src, err := repos.NewSource(e, s.HTTPFactory)
+		src, err := s.sourceCache.Get(e, s.HTTPFactory)
 		if err != nil {
 			return nil, err
 		}
@@ -530,4 +532,33 @@ const (
 type SourceChangesets struct {
 	repos.ChangesetSource
 	Changesets []*repos.Changeset
+}
+
+// sourceCache allows us to reuse sources and their associated
+// rate limiters rather than recreating them on every sync.
+type sourceCache struct {
+	mu    sync.Mutex
+	cache map[int64]repos.Source
+}
+
+func (sc sourceCache) Get(es *repos.ExternalService, cf *httpcli.Factory) (repos.Source, error) {
+	sc.mu.Lock()
+	defer sc.mu.Unlock()
+
+	if sc.cache == nil {
+		sc.cache = make(map[int64]repos.Source)
+	}
+
+	s, ok := sc.cache[es.ID]
+	if ok {
+		return s, nil
+	}
+
+	s, err := repos.NewSource(es, cf)
+	if err != nil {
+		return nil, err
+	}
+
+	sc.cache[es.ID] = s
+	return s, nil
 }
