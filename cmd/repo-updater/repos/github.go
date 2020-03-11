@@ -175,7 +175,9 @@ func (s GithubSource) CreateChangeset(ctx context.Context, c *Changeset) (bool, 
 		exists = true
 	}
 
-	c.SetMetadata(pr)
+	if err := c.SetMetadata(pr); err != nil {
+		return false, errors.Wrap(err, "setting changeset metadata")
+	}
 
 	return exists, nil
 }
@@ -220,7 +222,9 @@ func (s GithubSource) LoadChangesets(ctx context.Context, cs ...*Changeset) erro
 	}
 
 	for i := range cs {
-		cs[i].SetMetadata(prs[i])
+		if err := cs[i].SetMetadata(prs[i]); err != nil {
+			return errors.Wrap(err, "setting changeset metadata")
+		}
 	}
 
 	return nil

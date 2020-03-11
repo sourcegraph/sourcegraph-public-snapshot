@@ -134,10 +134,12 @@ func (s BitbucketServerSource) CreateChangeset(ctx context.Context, c *Changeset
 		}
 	}
 
-	if err := s.loadExternalMetadata(ctx, pr); err != nil {
+	if err := s.loadPullRequestData(ctx, pr); err != nil {
 		return false, errors.Wrap(err, "loading extra metadata")
 	}
-	c.SetMetadata(pr)
+	if err = c.SetMetadata(pr); err != nil {
+		return false, errors.Wrap(err, "setting changeset metadata")
+	}
 
 	return exists, nil
 }
@@ -188,11 +190,13 @@ func (s BitbucketServerSource) LoadChangesets(ctx context.Context, cs ...*Change
 			return err
 		}
 
-		err = s.loadExternalMetadata(ctx, pr)
+		err = s.loadPullRequestData(ctx, pr)
 		if err != nil {
-			return errors.Wrap(err, "loading extra metadata")
+			return errors.Wrap(err, "loading pull request data")
 		}
-		cs[i].SetMetadata(pr)
+		if err = cs[i].SetMetadata(pr); err != nil {
+			return errors.Wrap(err, "setting changeset metadata")
+		}
 	}
 
 	if len(notFound) > 0 {
@@ -202,7 +206,7 @@ func (s BitbucketServerSource) LoadChangesets(ctx context.Context, cs ...*Change
 	return nil
 }
 
-func (s BitbucketServerSource) loadExternalMetadata(ctx context.Context, pr *bitbucketserver.PullRequest) error {
+func (s BitbucketServerSource) loadPullRequestData(ctx context.Context, pr *bitbucketserver.PullRequest) error {
 	if err := s.client.LoadPullRequestActivities(ctx, pr); err != nil {
 		return errors.Wrap(err, "loading pr activities")
 	}

@@ -287,7 +287,7 @@ func (c *Changeset) Clone() *Changeset {
 	return &tt
 }
 
-func (c *Changeset) SetMetadata(meta interface{}) {
+func (c *Changeset) SetMetadata(meta interface{}) error {
 	switch pr := meta.(type) {
 	case *github.PullRequest:
 		c.Metadata = pr
@@ -301,7 +301,10 @@ func (c *Changeset) SetMetadata(meta interface{}) {
 		c.ExternalServiceType = bitbucketserver.ServiceType
 		c.ExternalBranch = git.AbbreviateRef(pr.FromRef.ID)
 		c.ExternalUpdatedAt = unixMilliToTime(int64(pr.UpdatedDate))
+	default:
+		return errors.New("unknown changeset type")
 	}
+	return nil
 }
 
 // RemoveCampaignID removes the given id from the Changesets CampaignIDs slice.
