@@ -17,7 +17,7 @@ func Test_requestQueue_enqueue(t *testing.T) {
 	highRepo2 := &requestMeta{priority: PriorityHigh, typ: requestTypeRepo, id: 2}
 	lowRepo3 := &requestMeta{priority: PriorityLow, typ: requestTypeRepo, id: 3}
 	highRepo3 := &requestMeta{priority: PriorityHigh, typ: requestTypeRepo, id: 3}
-	lowRepo4 := &requestMeta{priority: PriorityLow, typ: requestTypeRepo, id: 3, lastUpdated: time.Now()}
+	lowRepo4 := &requestMeta{priority: PriorityLow, typ: requestTypeRepo, id: 3, nextSyncAt: time.Now()}
 
 	lowUser1 := &requestMeta{priority: PriorityLow, typ: requestTypeUser, id: 1}
 
@@ -157,7 +157,7 @@ func Test_requestQueue_enqueue(t *testing.T) {
 			expNotifications: 2,
 		},
 		{
-			name: "earlier lastUpdated sorted to first",
+			name: "earlier nextSyncAt sorted to first",
 			metas: []*requestMeta{
 				lowRepo4,
 				lowRepo1,
@@ -527,17 +527,17 @@ func Test_requestQueue_Less(t *testing.T) {
 			expVal: false,
 		},
 		{
-			name: "i has older lastUpdated",
+			name: "i has older nextSyncAt",
 			heap: []*syncRequest{
 				{requestMeta: &requestMeta{}},
-				{requestMeta: &requestMeta{lastUpdated: time.Now()}},
+				{requestMeta: &requestMeta{nextSyncAt: time.Now()}},
 			},
 			expVal: true,
 		},
 		{
-			name: "j has older lastUpdated",
+			name: "j has older nextSyncAt",
 			heap: []*syncRequest{
-				{requestMeta: &requestMeta{lastUpdated: time.Now()}},
+				{requestMeta: &requestMeta{nextSyncAt: time.Now()}},
 				{requestMeta: &requestMeta{}},
 			},
 			expVal: false,

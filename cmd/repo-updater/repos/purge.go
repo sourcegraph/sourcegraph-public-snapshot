@@ -27,7 +27,7 @@ func RunRepositoryPurgeWorker(ctx context.Context) {
 
 	for {
 		// We only run in a 1 hour period on the weekend. During normal
-		// working hours a migration or admin could accidently remove all
+		// working hours a migration or admin could accidentally remove all
 		// repositories. Recloning all of them is slow, so we drastically
 		// reduce the chance of this happening by only purging at a weird time
 		// to be configuring Sourcegraph.

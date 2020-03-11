@@ -8,6 +8,7 @@ import { CampaignChangesets } from './changesets/CampaignChangesets'
 import { queryChangesets, queryChangesetPlans } from './backend'
 import { FilteredConnectionQueryArgs } from '../../../components/FilteredConnection'
 import { Subject } from 'rxjs'
+import classNames from 'classnames'
 
 interface Props extends ThemeProps {
     campaign:
@@ -50,10 +51,10 @@ export const CampaignTabs: React.FunctionComponent<Props> = ({
 }) => {
     const queryChangesetsConnection = useCallback(
         (args: FilteredConnectionQueryArgs) =>
-            campaign && campaign.__typename === 'CampaignPlan'
+            campaign.__typename === 'CampaignPlan'
                 ? queryChangesetPlans(campaign.id, args)
                 : queryChangesets(campaign.id, args),
-        [campaign]
+        [campaign.id, campaign.__typename]
     )
 
     const changesets = useMemo(
@@ -69,7 +70,7 @@ export const CampaignTabs: React.FunctionComponent<Props> = ({
     return (
         <TabsWithLocalStorageViewStatePersistence
             storageKey="campaignTab"
-            className={className}
+            className={classNames(className, 'mb-3')}
             tabs={[
                 {
                     id: 'changesets',

@@ -128,7 +128,7 @@ export class SearchPage extends React.Component<Props, State> {
                                                 patternType={this.props.patternType}
                                                 setPatternType={this.props.setPatternType}
                                                 withSearchModeToggle={this.props.splitSearchModes}
-                                            ></QueryInput>
+                                            />
                                         )}
                                         <SearchButton />
                                     </div>

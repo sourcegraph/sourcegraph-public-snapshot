@@ -5,18 +5,12 @@ import { isEqual, pick } from 'lodash'
 import { Logger } from 'winston'
 import delay from 'delay'
 
-/**
- * Service configuration data pulled from the frontend.
- */
+/** Service configuration data pulled from the frontend. */
 export interface Configuration {
-    /**
-     * The connection string for the Postgres database.
-     */
+    /** The connection string for the Postgres database. */
     postgresDSN: string
 
-    /**
-     * Whether or not to enable Jaeger.
-     */
+    /** Whether or not to enable Jaeger. */
     useJaeger: boolean
 }
 
@@ -91,9 +85,7 @@ async function updateConfiguration(logger: Logger, onChange: (configuration: Con
     }
 }
 
-/**
- * Read configuration from the frontend.
- */
+/** Read configuration from the frontend. */
 async function loadConfiguration(): Promise<Configuration> {
     const url = new URL(`http://${settings.SRC_FRONTEND_INTERNAL}/.internal/configuration`).href
     const resp = await got.post(url, { followRedirect: true })

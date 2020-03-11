@@ -86,7 +86,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
     /** Emits with the index of the first visible result on the page */
     private firstVisibleItems = new Subject<number>()
 
-    /** Refrence to the current scrollable list element */
+    /** Reference to the current scrollable list element */
     private scrollableElementRef: HTMLElement | null = null
     private setScrollableElementRef = (ref: HTMLElement | null): void => {
         this.scrollableElementRef = ref
@@ -441,11 +441,12 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                                 results.timedout.length === results.repositoriesCount &&
                                                 /* All repositories timed out. */
                                                 this.renderRecommendations(
-                                                    window.context.deployType !== 'cluster'
+                                                    ['dev', 'docker-container'].includes(window.context.deployType)
                                                         ? [
                                                               <>
                                                                   Upgrade to Sourcegraph Enterprise for a highly
-                                                                  scalable Kubernetes cluster deployment option.
+                                                                  scalable Docker Compose or Kubernetes cluster
+                                                                  deployment option.
                                                               </>,
                                                               window.context.likelyDockerOnMac
                                                                   ? 'Use Docker Machine instead of Docker for Mac for better performance on macOS.'

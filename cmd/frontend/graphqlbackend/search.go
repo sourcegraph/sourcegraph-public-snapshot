@@ -285,9 +285,15 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 
 	forkStr, _ := r.query.StringValue(query.FieldFork)
 	fork := parseYesNoOnly(forkStr)
+	if fork == Invalid {
+		fork = No // fork defaults to No.
+	}
 
 	archivedStr, _ := r.query.StringValue(query.FieldArchived)
 	archived := parseYesNoOnly(archivedStr)
+	if archived == Invalid {
+		archived = No // archived defaults to No.
+	}
 
 	commitAfter, _ := r.query.StringValue(query.FieldRepoHasCommitAfter)
 

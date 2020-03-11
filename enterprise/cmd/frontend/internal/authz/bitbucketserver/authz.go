@@ -1,7 +1,6 @@
 package bitbucketserver
 
 import (
-	"database/sql"
 	"fmt"
 	"net/url"
 
@@ -10,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	iauthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -20,7 +20,7 @@ import (
 // to false. "Warnings" are all other validation problems.
 func NewAuthzProviders(
 	conns []*schema.BitbucketServerConnection,
-	db *sql.DB,
+	db dbutil.DB,
 ) (ps []authz.Provider, problems []string, warnings []string) {
 	// Authorization (i.e., permissions) providers
 	for _, c := range conns {
@@ -43,7 +43,7 @@ func NewAuthzProviders(
 }
 
 func newAuthzProvider(
-	db *sql.DB,
+	db dbutil.DB,
 	a *schema.BitbucketServerAuthorization,
 	instanceURL, username string,
 	pluginPerm bool,

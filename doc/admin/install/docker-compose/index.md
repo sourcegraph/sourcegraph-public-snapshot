@@ -48,6 +48,10 @@ git checkout $SOURCEGRAPH_VERSION -b release
 
 The [Sourcegraph Docker Compose definition](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) uses [Docker volumes](https://docs.docker.com/storage/volumes/) to store its data. These volumes are stored at `/var/lib/docker/volumes` by [default on Linux](https://docs.docker.com/storage/#choose-the-right-type-of-mount). 
 
+## Resource estimator
+
+Use the [resource estimator](../resource_estimator.md) to find a good starting point for your deployment.
+
 ## Cloud installation guides
 
 Cloud specific Sourcegraph installation guides for AWS, Google Cloud and Digital Ocean.

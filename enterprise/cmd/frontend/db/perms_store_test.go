@@ -12,8 +12,10 @@ import (
 
 	"github.com/RoaringBitmap/roaring"
 	"github.com/gitchander/permutation"
+	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -22,12 +24,8 @@ func cleanupPermsTables(t *testing.T, s *PermsStore) {
 		return
 	}
 
-	str := `DELETE FROM user_permissions;
-DELETE FROM repo_permissions;
-DELETE FROM user_pending_permissions;
-DELETE FROM repo_pending_permissions;
-`
-	if err := s.execute(context.Background(), sqlf.Sprintf(str)); err != nil {
+	q := `TRUNCATE TABLE user_permissions, repo_permissions, user_pending_permissions, repo_pending_permissions;`
+	if err := s.execute(context.Background(), sqlf.Sprintf(q)); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -58,20 +56,18 @@ func testPermsStore_LoadUserPermissions(db *sql.DB) func(*testing.T) {
 			defer cleanupPermsTables(t, s)
 
 			rp := &authz.RepoPermissions{
-				RepoID:   1,
-				Perm:     authz.Read,
-				UserIDs:  toBitmap(2),
-				Provider: authz.ProviderSourcegraph,
+				RepoID:  1,
+				Perm:    authz.Read,
+				UserIDs: toBitmap(2),
 			}
 			if err := s.SetRepoPermissions(context.Background(), rp); err != nil {
 				t.Fatal(err)
 			}
 
 			up := &authz.UserPermissions{
-				UserID:   1,
-				Perm:     authz.Read,
-				Type:     authz.PermRepos,
-				Provider: authz.ProviderSourcegraph,
+				UserID: 1,
+				Perm:   authz.Read,
+				Type:   authz.PermRepos,
 			}
 			err := s.LoadUserPermissions(context.Background(), up)
 			if err != authz.ErrPermsNotFound {
@@ -85,20 +81,18 @@ func testPermsStore_LoadUserPermissions(db *sql.DB) func(*testing.T) {
 			defer cleanupPermsTables(t, s)
 
 			rp := &authz.RepoPermissions{
-				RepoID:   1,
-				Perm:     authz.Read,
-				UserIDs:  toBitmap(2),
-				Provider: authz.ProviderSourcegraph,
+				RepoID:  1,
+				Perm:    authz.Read,
+				UserIDs: toBitmap(2),
 			}
 			if err := s.SetRepoPermissions(context.Background(), rp); err != nil {
 				t.Fatal(err)
 			}
 
 			up := &authz.UserPermissions{
-				UserID:   2,
-				Perm:     authz.Read,
-				Type:     authz.PermRepos,
-				Provider: authz.ProviderSourcegraph,
+				UserID: 2,
+				Perm:   authz.Read,
+				Type:   authz.PermRepos,
 			}
 			if err := s.LoadUserPermissions(context.Background(), up); err != nil {
 				t.Fatal(err)
@@ -112,30 +106,27 @@ func testPermsStore_LoadUserPermissions(db *sql.DB) func(*testing.T) {
 			defer cleanupPermsTables(t, s)
 
 			rp := &authz.RepoPermissions{
-				RepoID:   1,
-				Perm:     authz.Read,
-				UserIDs:  toBitmap(1, 2),
-				Provider: authz.ProviderSourcegraph,
+				RepoID:  1,
+				Perm:    authz.Read,
+				UserIDs: toBitmap(1, 2),
 			}
 			if err := s.SetRepoPermissions(context.Background(), rp); err != nil {
 				t.Fatal(err)
 			}
 
 			rp = &authz.RepoPermissions{
-				RepoID:   1,
-				Perm:     authz.Read,
-				UserIDs:  toBitmap(2, 3),
-				Provider: authz.ProviderSourcegraph,
+				RepoID:  1,
+				Perm:    authz.Read,
+				UserIDs: toBitmap(2, 3),
 			}
 			if err := s.SetRepoPermissions(context.Background(), rp); err != nil {
 				t.Fatal(err)
 			}
 
 			up1 := &authz.UserPermissions{
-				UserID:   1,
-				Perm:     authz.Read,
-				Type:     authz.PermRepos,
-				Provider: authz.ProviderSourcegraph,
+				UserID: 1,
+				Perm:   authz.Read,
+				Type:   authz.PermRepos,
 			}
 			if err := s.LoadUserPermissions(context.Background(), up1); err != nil {
 				t.Fatal(err)
@@ -143,10 +134,9 @@ func testPermsStore_LoadUserPermissions(db *sql.DB) func(*testing.T) {
 			equal(t, "IDs", 0, len(bitmapToArray(up1.IDs)))
 
 			up2 := &authz.UserPermissions{
-				UserID:   2,
-				Perm:     authz.Read,
-				Type:     authz.PermRepos,
-				Provider: authz.ProviderSourcegraph,
+				UserID: 2,
+				Perm:   authz.Read,
+				Type:   authz.PermRepos,
 			}
 			if err := s.LoadUserPermissions(context.Background(), up2); err != nil {
 				t.Fatal(err)
@@ -155,10 +145,9 @@ func testPermsStore_LoadUserPermissions(db *sql.DB) func(*testing.T) {
 			equal(t, "UpdatedAt", now, up2.UpdatedAt.UnixNano())
 
 			up3 := &authz.UserPermissions{
-				UserID:   3,
-				Perm:     authz.Read,
-				Type:     authz.PermRepos,
-				Provider: authz.ProviderSourcegraph,
+				UserID: 3,
+				Perm:   authz.Read,
+				Type:   authz.PermRepos,
 			}
 			if err := s.LoadUserPermissions(context.Background(), up3); err != nil {
 				t.Fatal(err)
@@ -176,19 +165,17 @@ func testPermsStore_LoadRepoPermissions(db *sql.DB) func(*testing.T) {
 			defer cleanupPermsTables(t, s)
 
 			rp := &authz.RepoPermissions{
-				RepoID:   1,
-				Perm:     authz.Read,
-				UserIDs:  toBitmap(2),
-				Provider: authz.ProviderSourcegraph,
+				RepoID:  1,
+				Perm:    authz.Read,
+				UserIDs: toBitmap(2),
 			}
 			if err := s.SetRepoPermissions(context.Background(), rp); err != nil {
 				t.Fatal(err)
 			}
 
 			rp = &authz.RepoPermissions{
-				RepoID:   2,
-				Perm:     authz.Read,
-				Provider: authz.ProviderSourcegraph,
+				RepoID: 2,
+				Perm:   authz.Read,
 			}
 			err := s.LoadRepoPermissions(context.Background(), rp)
 			if err != authz.ErrPermsNotFound {
@@ -202,19 +189,17 @@ func testPermsStore_LoadRepoPermissions(db *sql.DB) func(*testing.T) {
 			defer cleanupPermsTables(t, s)
 
 			rp := &authz.RepoPermissions{
-				RepoID:   1,
-				Perm:     authz.Read,
-				UserIDs:  toBitmap(2),
-				Provider: authz.ProviderSourcegraph,
+				RepoID:  1,
+				Perm:    authz.Read,
+				UserIDs: toBitmap(2),
 			}
 			if err := s.SetRepoPermissions(context.Background(), rp); err != nil {
 				t.Fatal(err)
 			}
 
 			rp = &authz.RepoPermissions{
-				RepoID:   1,
-				Perm:     authz.Read,
-				Provider: authz.ProviderSourcegraph,
+				RepoID: 1,
+				Perm:   authz.Read,
 			}
 			if err := s.LoadRepoPermissions(context.Background(), rp); err != nil {
 				t.Fatal(err)
@@ -278,9 +263,8 @@ func testPermsStore_SetUserPermissions(db *sql.DB) func(*testing.T) {
 			name: "empty",
 			updates: []*authz.UserPermissions{
 				{
-					UserID:   1,
-					Perm:     authz.Read,
-					Provider: authz.ProviderSourcegraph,
+					UserID: 1,
+					Perm:   authz.Read,
 				},
 			},
 		},
@@ -288,22 +272,17 @@ func testPermsStore_SetUserPermissions(db *sql.DB) func(*testing.T) {
 			name: "add",
 			updates: []*authz.UserPermissions{
 				{
-					UserID:   1,
-					Perm:     authz.Read,
-					IDs:      toBitmap(1),
-					Provider: authz.ProviderSourcegraph,
-				},
-				{
-					UserID:   2,
-					Perm:     authz.Read,
-					IDs:      toBitmap(1, 2),
-					Provider: authz.ProviderSourcegraph,
-				},
-				{
-					UserID:   3,
-					Perm:     authz.Read,
-					IDs:      toBitmap(3, 4),
-					Provider: authz.ProviderSourcegraph,
+					UserID: 1,
+					Perm:   authz.Read,
+					IDs:    toBitmap(1),
+				}, {
+					UserID: 2,
+					Perm:   authz.Read,
+					IDs:    toBitmap(1, 2),
+				}, {
+					UserID: 3,
+					Perm:   authz.Read,
+					IDs:    toBitmap(3, 4),
 				},
 			},
 			expectUserPerms: map[int32][]uint32{
@@ -322,28 +301,21 @@ func testPermsStore_SetUserPermissions(db *sql.DB) func(*testing.T) {
 			name: "add and update",
 			updates: []*authz.UserPermissions{
 				{
-					UserID:   1,
-					Perm:     authz.Read,
-					IDs:      toBitmap(1),
-					Provider: authz.ProviderSourcegraph,
-				},
-				{
-					UserID:   1,
-					Perm:     authz.Read,
-					IDs:      toBitmap(2, 3),
-					Provider: authz.ProviderSourcegraph,
-				},
-				{
-					UserID:   2,
-					Perm:     authz.Read,
-					IDs:      toBitmap(1, 2),
-					Provider: authz.ProviderSourcegraph,
-				},
-				{
-					UserID:   2,
-					Perm:     authz.Read,
-					IDs:      toBitmap(1, 3),
-					Provider: authz.ProviderSourcegraph,
+					UserID: 1,
+					Perm:   authz.Read,
+					IDs:    toBitmap(1),
+				}, {
+					UserID: 1,
+					Perm:   authz.Read,
+					IDs:    toBitmap(2, 3),
+				}, {
+					UserID: 2,
+					Perm:   authz.Read,
+					IDs:    toBitmap(1, 2),
+				}, {
+					UserID: 2,
+					Perm:   authz.Read,
+					IDs:    toBitmap(1, 3),
 				},
 			},
 			expectUserPerms: map[int32][]uint32{
@@ -360,16 +332,13 @@ func testPermsStore_SetUserPermissions(db *sql.DB) func(*testing.T) {
 			name: "add and clear",
 			updates: []*authz.UserPermissions{
 				{
-					UserID:   1,
-					Perm:     authz.Read,
-					IDs:      toBitmap(1, 2, 3),
-					Provider: authz.ProviderSourcegraph,
-				},
-				{
-					UserID:   1,
-					Perm:     authz.Read,
-					IDs:      toBitmap(),
-					Provider: authz.ProviderSourcegraph,
+					UserID: 1,
+					Perm:   authz.Read,
+					IDs:    toBitmap(1, 2, 3),
+				}, {
+					UserID: 1,
+					Perm:   authz.Read,
+					IDs:    toBitmap(),
 				},
 			},
 			expectUserPerms: map[int32][]uint32{
@@ -397,7 +366,6 @@ func testPermsStore_SetUserPermissions(db *sql.DB) func(*testing.T) {
 							tmp := &authz.UserPermissions{
 								UserID:    p.UserID,
 								Perm:      p.Perm,
-								Provider:  p.Provider,
 								UpdatedAt: p.UpdatedAt,
 							}
 							if p.IDs != nil {
@@ -436,9 +404,8 @@ func testPermsStore_SetRepoPermissions(db *sql.DB) func(*testing.T) {
 			name: "empty",
 			updates: []*authz.RepoPermissions{
 				{
-					RepoID:   1,
-					Perm:     authz.Read,
-					Provider: authz.ProviderSourcegraph,
+					RepoID: 1,
+					Perm:   authz.Read,
 				},
 			},
 		},
@@ -446,22 +413,17 @@ func testPermsStore_SetRepoPermissions(db *sql.DB) func(*testing.T) {
 			name: "add",
 			updates: []*authz.RepoPermissions{
 				{
-					RepoID:   1,
-					Perm:     authz.Read,
-					UserIDs:  toBitmap(1),
-					Provider: authz.ProviderSourcegraph,
-				},
-				{
-					RepoID:   2,
-					Perm:     authz.Read,
-					UserIDs:  toBitmap(1, 2),
-					Provider: authz.ProviderSourcegraph,
-				},
-				{
-					RepoID:   3,
-					Perm:     authz.Read,
-					UserIDs:  toBitmap(3, 4),
-					Provider: authz.ProviderSourcegraph,
+					RepoID:  1,
+					Perm:    authz.Read,
+					UserIDs: toBitmap(1),
+				}, {
+					RepoID:  2,
+					Perm:    authz.Read,
+					UserIDs: toBitmap(1, 2),
+				}, {
+					RepoID:  3,
+					Perm:    authz.Read,
+					UserIDs: toBitmap(3, 4),
 				},
 			},
 			expectUserPerms: map[int32][]uint32{
@@ -480,28 +442,21 @@ func testPermsStore_SetRepoPermissions(db *sql.DB) func(*testing.T) {
 			name: "add and update",
 			updates: []*authz.RepoPermissions{
 				{
-					RepoID:   1,
-					Perm:     authz.Read,
-					UserIDs:  toBitmap(1),
-					Provider: authz.ProviderSourcegraph,
-				},
-				{
-					RepoID:   1,
-					Perm:     authz.Read,
-					UserIDs:  toBitmap(2, 3),
-					Provider: authz.ProviderSourcegraph,
-				},
-				{
-					RepoID:   2,
-					Perm:     authz.Read,
-					UserIDs:  toBitmap(1, 2),
-					Provider: authz.ProviderSourcegraph,
-				},
-				{
-					RepoID:   2,
-					Perm:     authz.Read,
-					UserIDs:  toBitmap(3, 4),
-					Provider: authz.ProviderSourcegraph,
+					RepoID:  1,
+					Perm:    authz.Read,
+					UserIDs: toBitmap(1),
+				}, {
+					RepoID:  1,
+					Perm:    authz.Read,
+					UserIDs: toBitmap(2, 3),
+				}, {
+					RepoID:  2,
+					Perm:    authz.Read,
+					UserIDs: toBitmap(1, 2),
+				}, {
+					RepoID:  2,
+					Perm:    authz.Read,
+					UserIDs: toBitmap(3, 4),
 				},
 			},
 			expectUserPerms: map[int32][]uint32{
@@ -519,16 +474,13 @@ func testPermsStore_SetRepoPermissions(db *sql.DB) func(*testing.T) {
 			name: "add and clear",
 			updates: []*authz.RepoPermissions{
 				{
-					RepoID:   1,
-					Perm:     authz.Read,
-					UserIDs:  toBitmap(1, 2, 3),
-					Provider: authz.ProviderSourcegraph,
-				},
-				{
-					RepoID:   1,
-					Perm:     authz.Read,
-					UserIDs:  toBitmap(),
-					Provider: authz.ProviderSourcegraph,
+					RepoID:  1,
+					Perm:    authz.Read,
+					UserIDs: toBitmap(1, 2, 3),
+				}, {
+					RepoID:  1,
+					Perm:    authz.Read,
+					UserIDs: toBitmap(),
 				},
 			},
 			expectUserPerms: map[int32][]uint32{
@@ -556,7 +508,6 @@ func testPermsStore_SetRepoPermissions(db *sql.DB) func(*testing.T) {
 							tmp := &authz.RepoPermissions{
 								RepoID:    p.RepoID,
 								Perm:      p.Perm,
-								Provider:  p.Provider,
 								UpdatedAt: p.UpdatedAt,
 							}
 							if p.UserIDs != nil {
@@ -590,19 +541,25 @@ func testPermsStore_LoadUserPendingPermissions(db *sql.DB) func(*testing.T) {
 			s := NewPermsStore(db, clock)
 			defer cleanupPermsTables(t, s)
 
-			bindIDs := []string{"bob"}
+			accounts := &extsvc.ExternalAccounts{
+				ServiceType: "sourcegraph",
+				ServiceID:   "https://sourcegraph.com/",
+				AccountIDs:  []string{"bob"},
+			}
 			rp := &authz.RepoPermissions{
 				RepoID: 1,
 				Perm:   authz.Read,
 			}
-			if err := s.SetRepoPendingPermissions(context.Background(), bindIDs, rp); err != nil {
+			if err := s.SetRepoPendingPermissions(context.Background(), accounts, rp); err != nil {
 				t.Fatal(err)
 			}
 
 			up := &authz.UserPendingPermissions{
-				BindID: "alice",
-				Perm:   authz.Read,
-				Type:   authz.PermRepos,
+				ServiceType: "sourcegraph",
+				ServiceID:   "https://sourcegraph.com/",
+				BindID:      "alice",
+				Perm:        authz.Read,
+				Type:        authz.PermRepos,
 			}
 			err := s.LoadUserPendingPermissions(context.Background(), up)
 			if err != authz.ErrPermsNotFound {
@@ -615,19 +572,25 @@ func testPermsStore_LoadUserPendingPermissions(db *sql.DB) func(*testing.T) {
 			s := NewPermsStore(db, clock)
 			defer cleanupPermsTables(t, s)
 
-			bindIDs := []string{"alice"}
+			accounts := &extsvc.ExternalAccounts{
+				ServiceType: "sourcegraph",
+				ServiceID:   "https://sourcegraph.com/",
+				AccountIDs:  []string{"alice"},
+			}
 			rp := &authz.RepoPermissions{
 				RepoID: 1,
 				Perm:   authz.Read,
 			}
-			if err := s.SetRepoPendingPermissions(context.Background(), bindIDs, rp); err != nil {
+			if err := s.SetRepoPendingPermissions(context.Background(), accounts, rp); err != nil {
 				t.Fatal(err)
 			}
 
 			up := &authz.UserPendingPermissions{
-				BindID: "alice",
-				Perm:   authz.Read,
-				Type:   authz.PermRepos,
+				ServiceType: "sourcegraph",
+				ServiceID:   "https://sourcegraph.com/",
+				BindID:      "alice",
+				Perm:        authz.Read,
+				Type:        authz.PermRepos,
 			}
 			if err := s.LoadUserPendingPermissions(context.Background(), up); err != nil {
 				t.Fatal(err)
@@ -640,28 +603,34 @@ func testPermsStore_LoadUserPendingPermissions(db *sql.DB) func(*testing.T) {
 			s := NewPermsStore(db, clock)
 			defer cleanupPermsTables(t, s)
 
-			bindIDs := []string{"alice", "bob"}
+			accounts := &extsvc.ExternalAccounts{
+				ServiceType: "sourcegraph",
+				ServiceID:   "https://sourcegraph.com/",
+				AccountIDs:  []string{"alice", "bob"},
+			}
 			rp := &authz.RepoPermissions{
 				RepoID: 1,
 				Perm:   authz.Read,
 			}
-			if err := s.SetRepoPendingPermissions(context.Background(), bindIDs, rp); err != nil {
+			if err := s.SetRepoPendingPermissions(context.Background(), accounts, rp); err != nil {
 				t.Fatal(err)
 			}
 
-			bindIDs = []string{"bob", "cindy"}
+			accounts.AccountIDs = []string{"bob", "cindy"}
 			rp = &authz.RepoPermissions{
 				RepoID: 1,
 				Perm:   authz.Read,
 			}
-			if err := s.SetRepoPendingPermissions(context.Background(), bindIDs, rp); err != nil {
+			if err := s.SetRepoPendingPermissions(context.Background(), accounts, rp); err != nil {
 				t.Fatal(err)
 			}
 
 			up1 := &authz.UserPendingPermissions{
-				BindID: "alice",
-				Perm:   authz.Read,
-				Type:   authz.PermRepos,
+				ServiceType: "sourcegraph",
+				ServiceID:   "https://sourcegraph.com/",
+				BindID:      "alice",
+				Perm:        authz.Read,
+				Type:        authz.PermRepos,
 			}
 			if err := s.LoadUserPendingPermissions(context.Background(), up1); err != nil {
 				t.Fatal(err)
@@ -669,9 +638,11 @@ func testPermsStore_LoadUserPendingPermissions(db *sql.DB) func(*testing.T) {
 			equal(t, "IDs", 0, len(bitmapToArray(up1.IDs)))
 
 			up2 := &authz.UserPendingPermissions{
-				BindID: "bob",
-				Perm:   authz.Read,
-				Type:   authz.PermRepos,
+				ServiceType: "sourcegraph",
+				ServiceID:   "https://sourcegraph.com/",
+				BindID:      "bob",
+				Perm:        authz.Read,
+				Type:        authz.PermRepos,
 			}
 			if err := s.LoadUserPendingPermissions(context.Background(), up2); err != nil {
 				t.Fatal(err)
@@ -680,9 +651,11 @@ func testPermsStore_LoadUserPendingPermissions(db *sql.DB) func(*testing.T) {
 			equal(t, "UpdatedAt", now, up2.UpdatedAt.UnixNano())
 
 			up3 := &authz.UserPendingPermissions{
-				BindID: "cindy",
-				Perm:   authz.Read,
-				Type:   authz.PermRepos,
+				ServiceType: "sourcegraph",
+				ServiceID:   "https://sourcegraph.com/",
+				BindID:      "cindy",
+				Perm:        authz.Read,
+				Type:        authz.PermRepos,
 			}
 			if err := s.LoadUserPendingPermissions(context.Background(), up3); err != nil {
 				t.Fatal(err)
@@ -794,8 +767,8 @@ func checkRepoPendingPermsTable(ctx context.Context, s *PermsStore, bindIDs map[
 
 func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 	type update struct {
-		bindIDs []string
-		perm    *authz.RepoPermissions
+		accounts *extsvc.ExternalAccounts
+		perm     *authz.RepoPermissions
 	}
 	tests := []struct {
 		name                   string
@@ -807,7 +780,11 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 			name: "empty",
 			updates: []update{
 				{
-					bindIDs: nil,
+					accounts: &extsvc.ExternalAccounts{
+						ServiceType: "sourcegraph",
+						ServiceID:   "https://sourcegraph.com/",
+						AccountIDs:  nil,
+					},
 					perm: &authz.RepoPermissions{
 						RepoID: 1,
 						Perm:   authz.Read,
@@ -819,21 +796,31 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 			name: "add",
 			updates: []update{
 				{
-					bindIDs: []string{"alice"},
+					accounts: &extsvc.ExternalAccounts{
+						ServiceType: "sourcegraph",
+						ServiceID:   "https://sourcegraph.com/",
+						AccountIDs:  []string{"alice"},
+					},
 					perm: &authz.RepoPermissions{
 						RepoID: 1,
 						Perm:   authz.Read,
 					},
-				},
-				{
-					bindIDs: []string{"alice", "bob"},
+				}, {
+					accounts: &extsvc.ExternalAccounts{
+						ServiceType: "sourcegraph",
+						ServiceID:   "https://sourcegraph.com/",
+						AccountIDs:  []string{"alice", "bob"},
+					},
 					perm: &authz.RepoPermissions{
 						RepoID: 2,
 						Perm:   authz.Read,
 					},
-				},
-				{
-					bindIDs: []string{"cindy", "david"},
+				}, {
+					accounts: &extsvc.ExternalAccounts{
+						ServiceType: "sourcegraph",
+						ServiceID:   "https://sourcegraph.com/",
+						AccountIDs:  []string{"cindy", "david"},
+					},
 					perm: &authz.RepoPermissions{
 						RepoID: 3,
 						Perm:   authz.Read,
@@ -856,28 +843,41 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 			name: "add and update",
 			updates: []update{
 				{
-					bindIDs: []string{"alice", "bob"},
+					accounts: &extsvc.ExternalAccounts{
+						ServiceType: "sourcegraph",
+						ServiceID:   "https://sourcegraph.com/",
+						AccountIDs:  []string{"alice", "bob"},
+					},
 					perm: &authz.RepoPermissions{
 						RepoID: 1,
 						Perm:   authz.Read,
 					},
-				},
-				{
-					bindIDs: []string{"bob", "cindy"},
+				}, {
+					accounts: &extsvc.ExternalAccounts{
+						ServiceType: "sourcegraph",
+						ServiceID:   "https://sourcegraph.com/",
+						AccountIDs:  []string{"bob", "cindy"},
+					},
 					perm: &authz.RepoPermissions{
 						RepoID: 1,
 						Perm:   authz.Read,
 					},
-				},
-				{
-					bindIDs: []string{"alice", "bob"},
+				}, {
+					accounts: &extsvc.ExternalAccounts{
+						ServiceType: "sourcegraph",
+						ServiceID:   "https://sourcegraph.com/",
+						AccountIDs:  []string{"alice", "bob"},
+					},
 					perm: &authz.RepoPermissions{
 						RepoID: 2,
 						Perm:   authz.Read,
 					},
-				},
-				{
-					bindIDs: []string{"cindy", "david"},
+				}, {
+					accounts: &extsvc.ExternalAccounts{
+						ServiceType: "sourcegraph",
+						ServiceID:   "https://sourcegraph.com/",
+						AccountIDs:  []string{"cindy", "david"},
+					},
 					perm: &authz.RepoPermissions{
 						RepoID: 2,
 						Perm:   authz.Read,
@@ -899,14 +899,21 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 			name: "add and clear",
 			updates: []update{
 				{
-					bindIDs: []string{"alice", "bob", "cindy"},
+					accounts: &extsvc.ExternalAccounts{
+						ServiceType: "sourcegraph",
+						ServiceID:   "https://sourcegraph.com/",
+						AccountIDs:  []string{"alice", "bob", "cindy"},
+					},
 					perm: &authz.RepoPermissions{
 						RepoID: 1,
 						Perm:   authz.Read,
 					},
-				},
-				{
-					bindIDs: []string{},
+				}, {
+					accounts: &extsvc.ExternalAccounts{
+						ServiceType: "sourcegraph",
+						ServiceID:   "https://sourcegraph.com/",
+						AccountIDs:  []string{},
+					},
 					perm: &authz.RepoPermissions{
 						RepoID: 1,
 						Perm:   authz.Read,
@@ -940,13 +947,12 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 							tmp := &authz.RepoPermissions{
 								RepoID:    update.perm.RepoID,
 								Perm:      update.perm.Perm,
-								Provider:  update.perm.Provider,
 								UpdatedAt: update.perm.UpdatedAt,
 							}
 							if update.perm.UserIDs != nil {
 								tmp.UserIDs = update.perm.UserIDs.Clone()
 							}
-							return s.SetRepoPendingPermissions(ctx, update.bindIDs, tmp)
+							return s.SetRepoPendingPermissions(ctx, update.accounts, tmp)
 						})
 					}
 					if err := g.Wait(); err != nil {
@@ -970,10 +976,10 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 	}
 }
 
-func testPermsStore_ListPendingUsers(db *sql.DB) func(t *testing.T) {
+func testPermsStore_ListPendingUsers(db *sql.DB) func(*testing.T) {
 	type update struct {
-		bindIDs []string
-		perm    *authz.RepoPermissions
+		accounts *extsvc.ExternalAccounts
+		perm     *authz.RepoPermissions
 	}
 	tests := []struct {
 		name               string
@@ -988,7 +994,11 @@ func testPermsStore_ListPendingUsers(db *sql.DB) func(t *testing.T) {
 			name: "has user with pending permissions",
 			updates: []update{
 				{
-					bindIDs: []string{"alice"},
+					accounts: &extsvc.ExternalAccounts{
+						ServiceType: "sourcegraph",
+						ServiceID:   "https://sourcegraph.com/",
+						AccountIDs:  []string{"alice"},
+					},
 					perm: &authz.RepoPermissions{
 						RepoID: 1,
 						Perm:   authz.Read,
@@ -1001,14 +1011,21 @@ func testPermsStore_ListPendingUsers(db *sql.DB) func(t *testing.T) {
 			name: "has user but with empty object_ids",
 			updates: []update{
 				{
-					bindIDs: []string{"bob@example.com"},
+					accounts: &extsvc.ExternalAccounts{
+						ServiceType: "sourcegraph",
+						ServiceID:   "https://sourcegraph.com/",
+						AccountIDs:  []string{"bob@example.com"},
+					},
 					perm: &authz.RepoPermissions{
 						RepoID: 1,
 						Perm:   authz.Read,
 					},
-				},
-				{
-					bindIDs: nil,
+				}, {
+					accounts: &extsvc.ExternalAccounts{
+						ServiceType: "sourcegraph",
+						ServiceID:   "https://sourcegraph.com/",
+						AccountIDs:  nil,
+					},
 					perm: &authz.RepoPermissions{
 						RepoID: 1,
 						Perm:   authz.Read,
@@ -1030,13 +1047,12 @@ func testPermsStore_ListPendingUsers(db *sql.DB) func(t *testing.T) {
 					tmp := &authz.RepoPermissions{
 						RepoID:    update.perm.RepoID,
 						Perm:      update.perm.Perm,
-						Provider:  update.perm.Provider,
 						UpdatedAt: update.perm.UpdatedAt,
 					}
 					if update.perm.UserIDs != nil {
 						tmp.UserIDs = update.perm.UserIDs.Clone()
 					}
-					if err := s.SetRepoPendingPermissions(ctx, update.bindIDs, tmp); err != nil {
+					if err := s.SetRepoPendingPermissions(ctx, update.accounts, tmp); err != nil {
 						t.Fatal(err)
 					}
 				}
@@ -1051,10 +1067,10 @@ func testPermsStore_ListPendingUsers(db *sql.DB) func(t *testing.T) {
 	}
 }
 
-func testPermsStore_GrantPendingPermissions(db *sql.DB) func(t *testing.T) {
+func testPermsStore_GrantPendingPermissions(db *sql.DB) func(*testing.T) {
 	type pending struct {
-		bindIDs []string
-		perm    *authz.RepoPermissions
+		accounts *extsvc.ExternalAccounts
+		perm     *authz.RepoPermissions
 	}
 	type update struct {
 		regulars []*authz.RepoPermissions
@@ -1079,9 +1095,11 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(t *testing.T) {
 				{
 					userID: 1,
 					perm: &authz.UserPendingPermissions{
-						BindID: "alice",
-						Perm:   authz.Read,
-						Type:   authz.PermRepos,
+						ServiceType: "sourcegraph",
+						ServiceID:   "https://sourcegraph.com/",
+						BindID:      "alice",
+						Perm:        authz.Read,
+						Type:        authz.PermRepos,
 					},
 				},
 			},
@@ -1092,28 +1110,32 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(t *testing.T) {
 				{
 					regulars: []*authz.RepoPermissions{
 						{
-							RepoID:   1,
-							Perm:     authz.Read,
-							UserIDs:  toBitmap(1),
-							Provider: authz.ProviderSourcegraph,
-						},
-						{
-							RepoID:   2,
-							Perm:     authz.Read,
-							UserIDs:  toBitmap(1, 2),
-							Provider: authz.ProviderSourcegraph,
+							RepoID:  1,
+							Perm:    authz.Read,
+							UserIDs: toBitmap(1),
+						}, {
+							RepoID:  2,
+							Perm:    authz.Read,
+							UserIDs: toBitmap(1, 2),
 						},
 					},
 					pendings: []pending{
 						{
-							bindIDs: []string{"alice"},
+							accounts: &extsvc.ExternalAccounts{
+								ServiceType: "sourcegraph",
+								ServiceID:   "https://sourcegraph.com/",
+								AccountIDs:  []string{"alice"},
+							},
 							perm: &authz.RepoPermissions{
 								RepoID: 1,
 								Perm:   authz.Read,
 							},
-						},
-						{
-							bindIDs: []string{"bob"},
+						}, {
+							accounts: &extsvc.ExternalAccounts{
+								ServiceType: "sourcegraph",
+								ServiceID:   "https://sourcegraph.com/",
+								AccountIDs:  []string{"bob"},
+							},
 							perm: &authz.RepoPermissions{
 								RepoID: 2,
 								Perm:   authz.Read,
@@ -1126,9 +1148,11 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(t *testing.T) {
 				{
 					userID: 1,
 					perm: &authz.UserPendingPermissions{
-						BindID: "cindy",
-						Perm:   authz.Read,
-						Type:   authz.PermRepos,
+						ServiceType: "sourcegraph",
+						ServiceID:   "https://sourcegraph.com/",
+						BindID:      "cindy",
+						Perm:        authz.Read,
+						Type:        authz.PermRepos,
 					},
 				},
 			},
@@ -1155,28 +1179,32 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(t *testing.T) {
 				{
 					regulars: []*authz.RepoPermissions{
 						{
-							RepoID:   1,
-							Perm:     authz.Read,
-							UserIDs:  toBitmap(1),
-							Provider: authz.ProviderSourcegraph,
-						},
-						{
-							RepoID:   2,
-							Perm:     authz.Read,
-							UserIDs:  toBitmap(1, 2),
-							Provider: authz.ProviderSourcegraph,
+							RepoID:  1,
+							Perm:    authz.Read,
+							UserIDs: toBitmap(1),
+						}, {
+							RepoID:  2,
+							Perm:    authz.Read,
+							UserIDs: toBitmap(1, 2),
 						},
 					},
 					pendings: []pending{
 						{
-							bindIDs: []string{"alice"},
+							accounts: &extsvc.ExternalAccounts{
+								ServiceType: "sourcegraph",
+								ServiceID:   "https://sourcegraph.com/",
+								AccountIDs:  []string{"alice"},
+							},
 							perm: &authz.RepoPermissions{
 								RepoID: 1,
 								Perm:   authz.Read,
 							},
-						},
-						{
-							bindIDs: []string{"bob"},
+						}, {
+							accounts: &extsvc.ExternalAccounts{
+								ServiceType: "sourcegraph",
+								ServiceID:   "https://sourcegraph.com/",
+								AccountIDs:  []string{"bob"},
+							},
 							perm: &authz.RepoPermissions{
 								RepoID: 2,
 								Perm:   authz.Read,
@@ -1189,9 +1217,11 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(t *testing.T) {
 				{
 					userID: 3,
 					perm: &authz.UserPendingPermissions{
-						BindID: "alice",
-						Perm:   authz.Read,
-						Type:   authz.PermRepos,
+						ServiceType: "sourcegraph",
+						ServiceID:   "https://sourcegraph.com/",
+						BindID:      "alice",
+						Perm:        authz.Read,
+						Type:        authz.PermRepos,
 					},
 				},
 			},
@@ -1218,28 +1248,32 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(t *testing.T) {
 				{
 					regulars: []*authz.RepoPermissions{
 						{
-							RepoID:   1,
-							Perm:     authz.Read,
-							UserIDs:  toBitmap(1),
-							Provider: authz.ProviderSourcegraph,
-						},
-						{
-							RepoID:   2,
-							Perm:     authz.Read,
-							UserIDs:  toBitmap(1, 2),
-							Provider: authz.ProviderSourcegraph,
+							RepoID:  1,
+							Perm:    authz.Read,
+							UserIDs: toBitmap(1),
+						}, {
+							RepoID:  2,
+							Perm:    authz.Read,
+							UserIDs: toBitmap(1, 2),
 						},
 					},
 					pendings: []pending{
 						{
-							bindIDs: []string{"alice@example.com"},
+							accounts: &extsvc.ExternalAccounts{
+								ServiceType: "sourcegraph",
+								ServiceID:   "https://sourcegraph.com/",
+								AccountIDs:  []string{"alice@example.com"},
+							},
 							perm: &authz.RepoPermissions{
 								RepoID: 1,
 								Perm:   authz.Read,
 							},
-						},
-						{
-							bindIDs: []string{"alice2@example.com"},
+						}, {
+							accounts: &extsvc.ExternalAccounts{
+								ServiceType: "sourcegraph",
+								ServiceID:   "https://sourcegraph.com/",
+								AccountIDs:  []string{"alice2@example.com"},
+							},
 							perm: &authz.RepoPermissions{
 								RepoID: 2,
 								Perm:   authz.Read,
@@ -1252,17 +1286,20 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(t *testing.T) {
 				{
 					userID: 3,
 					perm: &authz.UserPendingPermissions{
-						BindID: "alice@example.com",
-						Perm:   authz.Read,
-						Type:   authz.PermRepos,
+						ServiceType: "sourcegraph",
+						ServiceID:   "https://sourcegraph.com/",
+						BindID:      "alice@example.com",
+						Perm:        authz.Read,
+						Type:        authz.PermRepos,
 					},
-				},
-				{
+				}, {
 					userID: 3,
 					perm: &authz.UserPendingPermissions{
-						BindID: "alice2@example.com",
-						Perm:   authz.Read,
-						Type:   authz.PermRepos,
+						ServiceType: "sourcegraph",
+						ServiceID:   "https://sourcegraph.com/",
+						BindID:      "alice2@example.com",
+						Perm:        authz.Read,
+						Type:        authz.PermRepos,
 					},
 				},
 			},
@@ -1297,7 +1334,7 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(t *testing.T) {
 						}
 					}
 					for _, p := range update.pendings {
-						if err := s.SetRepoPendingPermissions(ctx, p.bindIDs, p.perm); err != nil {
+						if err := s.SetRepoPendingPermissions(ctx, p.accounts, p.perm); err != nil {
 							t.Fatal(err)
 						}
 					}
@@ -1323,40 +1360,38 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(t *testing.T) {
 				// Query and check rows in "user_pending_permissions" table.
 				bindIDs, err := checkUserPendingPermsTable(ctx, s, test.expectUserPendingPerms)
 				if err != nil {
-					t.Fatal(err)
+					t.Fatal("user_pending_permissions:", err)
 				}
 
 				// Query and check rows in "repo_pending_permissions" table.
 				err = checkRepoPendingPermsTable(ctx, s, bindIDs, test.expectRepoPendingPerms)
 				if err != nil {
-					t.Fatal(err)
+					t.Fatal("repo_pending_permissions:", err)
 				}
 			})
 		}
 	}
 }
 
-func testPermsStore_DeleteAllUserPermissions(db *sql.DB) func(t *testing.T) {
+func testPermsStore_DeleteAllUserPermissions(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		s := NewPermsStore(db, clock)
 		defer cleanupPermsTables(t, s)
 
 		ctx := context.Background()
 
-		// Set permissions with different providers for user 1 and 2
+		// Set permissions for user 1 and 2
 		if err := s.SetRepoPermissions(ctx, &authz.RepoPermissions{
-			RepoID:   1,
-			Perm:     authz.Read,
-			UserIDs:  toBitmap(1, 2),
-			Provider: authz.ProviderSourcegraph,
+			RepoID:  1,
+			Perm:    authz.Read,
+			UserIDs: toBitmap(1, 2),
 		}); err != nil {
 			t.Fatal(err)
 		}
 		if err := s.SetRepoPermissions(ctx, &authz.RepoPermissions{
-			RepoID:   2,
-			Perm:     authz.Read,
-			UserIDs:  toBitmap(1, 2),
-			Provider: authz.ProviderBitbucketServer,
+			RepoID:  2,
+			Perm:    authz.Read,
+			UserIDs: toBitmap(1, 2),
 		}); err != nil {
 			t.Fatal(err)
 		}
@@ -1368,20 +1403,9 @@ func testPermsStore_DeleteAllUserPermissions(db *sql.DB) func(t *testing.T) {
 
 		// Check user=1 should not have any permissions now
 		err := s.LoadUserPermissions(ctx, &authz.UserPermissions{
-			UserID:   1,
-			Perm:     authz.Read,
-			Type:     authz.PermRepos,
-			Provider: authz.ProviderSourcegraph,
-		})
-		if err != authz.ErrPermsNotFound {
-			t.Fatalf("err: want %q but got %v", authz.ErrPermsNotFound, err)
-		}
-
-		err = s.LoadUserPermissions(ctx, &authz.UserPermissions{
-			UserID:   1,
-			Perm:     authz.Read,
-			Type:     authz.PermRepos,
-			Provider: authz.ProviderBitbucketServer,
+			UserID: 1,
+			Perm:   authz.Read,
+			Type:   authz.PermRepos,
 		})
 		if err != authz.ErrPermsNotFound {
 			t.Fatalf("err: want %q but got %v", authz.ErrPermsNotFound, err)
@@ -1389,40 +1413,33 @@ func testPermsStore_DeleteAllUserPermissions(db *sql.DB) func(t *testing.T) {
 
 		// Check user=2 shoud not be affected
 		p := &authz.UserPermissions{
-			UserID:   2,
-			Perm:     authz.Read,
-			Type:     authz.PermRepos,
-			Provider: authz.ProviderSourcegraph,
+			UserID: 2,
+			Perm:   authz.Read,
+			Type:   authz.PermRepos,
 		}
 		err = s.LoadUserPermissions(ctx, p)
 		if err != nil {
 			t.Fatal(err)
 		}
-		equal(t, "p.IDs", []uint32{1}, bitmapToArray(p.IDs))
-
-		p = &authz.UserPermissions{
-			UserID:   2,
-			Perm:     authz.Read,
-			Type:     authz.PermRepos,
-			Provider: authz.ProviderBitbucketServer,
-		}
-		err = s.LoadUserPermissions(ctx, p)
-		if err != nil {
-			t.Fatal(err)
-		}
-		equal(t, "p.IDs", []uint32{2}, bitmapToArray(p.IDs))
+		equal(t, "p.IDs", []uint32{1, 2}, bitmapToArray(p.IDs))
 	}
 }
 
-func testPermsStore_DeleteAllUserPendingPermissions(db *sql.DB) func(t *testing.T) {
+func testPermsStore_DeleteAllUserPendingPermissions(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		s := NewPermsStore(db, clock)
 		defer cleanupPermsTables(t, s)
 
 		ctx := context.Background()
 
+		accounts := &extsvc.ExternalAccounts{
+			ServiceType: "sourcegraph",
+			ServiceID:   "https://sourcegraph.com/",
+			AccountIDs:  []string{"alice", "bob"},
+		}
+
 		// Set pending permissions for alice and bob
-		if err := s.SetRepoPendingPermissions(ctx, []string{"alice", "bob"}, &authz.RepoPermissions{
+		if err := s.SetRepoPendingPermissions(ctx, accounts, &authz.RepoPermissions{
 			RepoID: 1,
 			Perm:   authz.Read,
 		}); err != nil {
@@ -1430,15 +1447,18 @@ func testPermsStore_DeleteAllUserPendingPermissions(db *sql.DB) func(t *testing.
 		}
 
 		// Remove all pending permissions for alice
-		if err := s.DeleteAllUserPendingPermissions(ctx, []string{"alice"}); err != nil {
+		accounts.AccountIDs = []string{"alice"}
+		if err := s.DeleteAllUserPendingPermissions(ctx, accounts); err != nil {
 			t.Fatal(err)
 		}
 
 		// Check alice should not have any pending permissions now
 		err := s.LoadUserPendingPermissions(ctx, &authz.UserPendingPermissions{
-			BindID: "alice",
-			Perm:   authz.Read,
-			Type:   authz.PermRepos,
+			ServiceType: "sourcegraph",
+			ServiceID:   "https://sourcegraph.com/",
+			BindID:      "alice",
+			Perm:        authz.Read,
+			Type:        authz.PermRepos,
 		})
 		if err != authz.ErrPermsNotFound {
 			t.Fatalf("err: want %q but got %v", authz.ErrPermsNotFound, err)
@@ -1446,9 +1466,11 @@ func testPermsStore_DeleteAllUserPendingPermissions(db *sql.DB) func(t *testing.
 
 		// Check bob shoud not be affected
 		p := &authz.UserPendingPermissions{
-			BindID: "bob",
-			Perm:   authz.Read,
-			Type:   authz.PermRepos,
+			ServiceType: "sourcegraph",
+			ServiceID:   "https://sourcegraph.com/",
+			BindID:      "bob",
+			Perm:        authz.Read,
+			Type:        authz.PermRepos,
 		}
 		err = s.LoadUserPendingPermissions(ctx, p)
 		if err != nil {
@@ -1458,7 +1480,7 @@ func testPermsStore_DeleteAllUserPendingPermissions(db *sql.DB) func(t *testing.
 	}
 }
 
-func testPermsStore_DatabaseDeadlocks(db *sql.DB) func(t *testing.T) {
+func testPermsStore_DatabaseDeadlocks(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		s := NewPermsStore(db, time.Now)
 		defer cleanupPermsTables(t, s)
@@ -1467,38 +1489,42 @@ func testPermsStore_DatabaseDeadlocks(db *sql.DB) func(t *testing.T) {
 
 		setUserPermissions := func(ctx context.Context, t *testing.T) {
 			if err := s.SetUserPermissions(ctx, &authz.UserPermissions{
-				UserID:   1,
-				Perm:     authz.Read,
-				IDs:      toBitmap(1),
-				Provider: authz.ProviderSourcegraph,
+				UserID: 1,
+				Perm:   authz.Read,
+				IDs:    toBitmap(1),
 			}); err != nil {
 				t.Fatal(err)
 			}
 		}
 		setRepoPermissions := func(ctx context.Context, t *testing.T) {
 			if err := s.SetRepoPermissions(ctx, &authz.RepoPermissions{
-				RepoID:   1,
-				Perm:     authz.Read,
-				UserIDs:  toBitmap(1),
-				Provider: authz.ProviderSourcegraph,
+				RepoID:  1,
+				Perm:    authz.Read,
+				UserIDs: toBitmap(1),
 			}); err != nil {
 				t.Fatal(err)
 			}
 		}
 		setRepoPendingPermissions := func(ctx context.Context, t *testing.T) {
-			if err := s.SetRepoPendingPermissions(ctx, []string{"alice"}, &authz.RepoPermissions{
-				RepoID:   1,
-				Perm:     authz.Read,
-				Provider: authz.ProviderSourcegraph,
+			accounts := &extsvc.ExternalAccounts{
+				ServiceType: "sourcegraph",
+				ServiceID:   "https://sourcegraph.com/",
+				AccountIDs:  []string{"alice"},
+			}
+			if err := s.SetRepoPendingPermissions(ctx, accounts, &authz.RepoPermissions{
+				RepoID: 1,
+				Perm:   authz.Read,
 			}); err != nil {
 				t.Fatal(err)
 			}
 		}
 		grantPendingPermissions := func(ctx context.Context, t *testing.T) {
 			if err := s.GrantPendingPermissions(ctx, 1, &authz.UserPendingPermissions{
-				BindID: "alice",
-				Perm:   authz.Read,
-				Type:   authz.PermRepos,
+				ServiceType: "sourcegraph",
+				ServiceID:   "https://sourcegraph.com/",
+				BindID:      "alice",
+				Perm:        authz.Read,
+				Type:        authz.PermRepos,
 			}); err != nil {
 				t.Fatal(err)
 			}
@@ -1545,5 +1571,158 @@ func testPermsStore_DatabaseDeadlocks(db *sql.DB) func(t *testing.T) {
 		}()
 
 		wg.Wait()
+	}
+}
+
+func cleanupUsersTable(t *testing.T, s *PermsStore) {
+	if t.Failed() {
+		return
+	}
+
+	q := `TRUNCATE TABLE users RESTART IDENTITY CASCADE;`
+	if err := s.execute(context.Background(), sqlf.Sprintf(q)); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func testPermsStore_ListExternalAccounts(db *sql.DB) func(*testing.T) {
+	return func(t *testing.T) {
+		s := NewPermsStore(db, time.Now)
+		defer cleanupUsersTable(t, s)
+
+		ctx := context.Background()
+
+		// Set up test users and external accounts
+		extSQL := `
+INSERT INTO user_external_accounts(user_id, service_type, service_id, account_id, client_id, created_at, updated_at)
+	VALUES(%s, %s, %s, %s, %s, %s, %s)
+`
+		qs := []*sqlf.Query{
+			sqlf.Sprintf(`INSERT INTO users(username) VALUES('alice')`), // ID=1
+			sqlf.Sprintf(`INSERT INTO users(username) VALUES('bob')`),   // ID=2
+
+			sqlf.Sprintf(extSQL, 1, "gitlab", "https://gitlab.com/", "alice_gitlab", "alice_gitlab_client_id", clock(), clock()), // ID=1
+			sqlf.Sprintf(extSQL, 1, "github", "https://github.com/", "alice_github", "alice_github_client_id", clock(), clock()), // ID=2
+			sqlf.Sprintf(extSQL, 2, "gitlab", "https://gitlab.com/", "bob_gitlab", "bob_gitlab_client_id", clock(), clock()),     // ID=3
+		}
+		for _, q := range qs {
+			if err := s.execute(ctx, q); err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		{
+			// Check external accounts for "alice"
+			accounts, err := s.ListExternalAccounts(ctx, 1)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			expAccounts := []*extsvc.ExternalAccount{
+				{
+					ID:     1,
+					UserID: 1,
+					ExternalAccountSpec: extsvc.ExternalAccountSpec{
+						ServiceType: "gitlab",
+						ServiceID:   "https://gitlab.com/",
+						AccountID:   "alice_gitlab",
+						ClientID:    "alice_gitlab_client_id",
+					},
+					CreatedAt: clock(),
+					UpdatedAt: clock(),
+				},
+				{
+					ID:     2,
+					UserID: 1,
+					ExternalAccountSpec: extsvc.ExternalAccountSpec{
+						ServiceType: "github",
+						ServiceID:   "https://github.com/",
+						AccountID:   "alice_github",
+						ClientID:    "alice_github_client_id",
+					},
+					CreatedAt: clock(),
+					UpdatedAt: clock(),
+				},
+			}
+			if diff := cmp.Diff(expAccounts, accounts); diff != "" {
+				t.Fatalf(diff)
+			}
+		}
+
+		{
+			// Check external accounts for "bob"
+			accounts, err := s.ListExternalAccounts(ctx, 2)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			expAccounts := []*extsvc.ExternalAccount{
+				{
+					ID:     3,
+					UserID: 2,
+					ExternalAccountSpec: extsvc.ExternalAccountSpec{
+						ServiceType: "gitlab",
+						ServiceID:   "https://gitlab.com/",
+						AccountID:   "bob_gitlab",
+						ClientID:    "bob_gitlab_client_id",
+					},
+					CreatedAt: clock(),
+					UpdatedAt: clock(),
+				},
+			}
+			if diff := cmp.Diff(expAccounts, accounts); diff != "" {
+				t.Fatalf(diff)
+			}
+		}
+	}
+}
+
+func testPermsStore_GetUserIDsByExternalAccounts(db *sql.DB) func(t *testing.T) {
+	return func(t *testing.T) {
+		s := NewPermsStore(db, time.Now)
+		defer cleanupUsersTable(t, s)
+
+		ctx := context.Background()
+
+		// Set up test users and external accounts
+		extSQL := `
+INSERT INTO user_external_accounts(user_id, service_type, service_id, account_id, client_id, created_at, updated_at)
+	VALUES(%s, %s, %s, %s, %s, %s, %s)
+`
+		qs := []*sqlf.Query{
+			sqlf.Sprintf(`INSERT INTO users(username) VALUES('alice')`), // ID=1
+			sqlf.Sprintf(`INSERT INTO users(username) VALUES('bob')`),   // ID=2
+			sqlf.Sprintf(`INSERT INTO users(username) VALUES('cindy')`), // ID=3
+
+			sqlf.Sprintf(extSQL, 1, "gitlab", "https://gitlab.com/", "alice_gitlab", "alice_gitlab_client_id", clock(), clock()), // ID=1
+			sqlf.Sprintf(extSQL, 1, "github", "https://github.com/", "alice_github", "alice_github_client_id", clock(), clock()), // ID=2
+			sqlf.Sprintf(extSQL, 2, "gitlab", "https://gitlab.com/", "bob_gitlab", "bob_gitlab_client_id", clock(), clock()),     // ID=3
+			sqlf.Sprintf(extSQL, 3, "gitlab", "https://gitlab.com/", "cindy_gitlab", "cindy_gitlab_client_id", clock(), clock()), // ID=4
+		}
+		for _, q := range qs {
+			if err := s.execute(ctx, q); err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		accounts := &extsvc.ExternalAccounts{
+			ServiceType: "gitlab",
+			ServiceID:   "https://gitlab.com/",
+			AccountIDs:  []string{"alice_gitlab", "bob_gitlab", "david_gitlab"},
+		}
+		userIDs, err := s.GetUserIDsByExternalAccounts(ctx, accounts)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(userIDs) != 2 {
+			t.Fatalf("len(userIDs): want 2 but got %v", userIDs)
+		}
+
+		if userIDs["alice_gitlab"] != 1 {
+			t.Fatalf(`userIDs["alice_gitlab"]: want 1 but got %d`, userIDs["alice_gitlab"])
+		} else if userIDs["bob_gitlab"] != 2 {
+			t.Fatalf(`userIDs["bob_gitlab"]: want 2 but got %d`, userIDs["bob_gitlab"])
+		}
 	}
 }

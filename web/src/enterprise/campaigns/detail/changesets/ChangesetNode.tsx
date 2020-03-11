@@ -97,7 +97,7 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                     : 'text-muted'
             )}
             data-tooltip={changesetStageLabels[changesetState]}
-        ></ChangesetStateIcon>
+        />
     )
 
     const changesetNodeRow = (

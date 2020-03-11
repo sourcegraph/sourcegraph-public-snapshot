@@ -17,9 +17,7 @@ import { TableInserter } from '../../shared/database/inserter'
 import { createSilentLogger } from '../../shared/logging'
 import { PathExistenceChecker } from './existence'
 
-/**
- * The insertion metrics for the database.
- */
+/** The insertion metrics for the database. */
 const inserterMetrics = {
     durationHistogram: databaseInsertionDurationHistogram,
     errorsCounter: databaseInsertionErrorsCounter,
@@ -40,9 +38,7 @@ const INTERNAL_LSIF_VERSION = '0.1.0'
  */
 const RESULTS_PER_RESULT_CHUNK = readEnvInt('RESULTS_PER_RESULT_CHUNK', 500)
 
-/**
- * The maximum number of result chunks that will be created during conversion.
- */
+/** The maximum number of result chunks that will be created during conversion. */
 const MAX_NUM_RESULT_CHUNKS = readEnvInt('MAX_NUM_RESULT_CHUNKS', 1000)
 
 /**

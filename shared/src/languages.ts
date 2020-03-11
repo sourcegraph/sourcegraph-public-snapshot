@@ -219,6 +219,11 @@ function getModeFromExtension(ext: string): string | undefined {
         case 'sublime-workspace':
             return 'json'
 
+        // Jsonnet
+        case 'jsonnet':
+        case 'libsonnet':
+            return 'jsonnet'
+
         // Julia
         case 'jl':
             return 'julia'

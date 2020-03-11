@@ -20,6 +20,11 @@ import {
 } from './cursor'
 import { InternalLocation } from './location'
 
+interface PaginatedInternalLocations {
+    locations: InternalLocation[]
+    newCursor?: ReferencePaginationCursor
+}
+
 /**
  * A wrapper around code intelligence operations. This class deals with logic that spans
  * multiple repositories or commits. For single-dump logic, see the `Database` class.
@@ -173,7 +178,7 @@ export class Backend {
         remoteDumpLimit = DEFAULT_REFERENCES_REMOTE_DUMP_LIMIT,
         dumpId?: number,
         ctx: TracingContext = {}
-    ): Promise<{ locations: InternalLocation[]; newCursor?: ReferencePaginationCursor } | undefined> {
+    ): Promise<PaginatedInternalLocations | undefined> {
         if (paginationContext.cursor) {
             return this.handleReferencePaginationCursor(
                 repositoryId,
@@ -307,7 +312,7 @@ export class Backend {
         limit: number,
         cursor: ReferencePaginationCursor,
         ctx: TracingContext = {}
-    ): Promise<{ locations: InternalLocation[]; newCursor?: ReferencePaginationCursor }> {
+    ): Promise<PaginatedInternalLocations> {
         /**
          * This method takes a handler that executes the current page of results and returns a new
          * cursor for the **same phase** of results. If there are no more results in that phase of
@@ -322,9 +327,9 @@ export class Backend {
          * @param makeCursor A factory that creates a cursor for the next phase of pagination.
          */
         const recur = async (
-            handler: () => Promise<{ locations: InternalLocation[]; newCursor?: ReferencePaginationCursor }>,
+            handler: () => Promise<PaginatedInternalLocations>,
             makeCursor: () => Promise<ReferencePaginationCursor | undefined> | ReferencePaginationCursor | undefined
-        ): Promise<{ locations: InternalLocation[]; newCursor?: ReferencePaginationCursor }> => {
+        ): Promise<PaginatedInternalLocations> => {
             const { locations, newCursor: originalCursor } = await handler()
             const newCursor = originalCursor || (await makeCursor())
             if (!newCursor) {
@@ -456,7 +461,7 @@ export class Backend {
         limit: number,
         cursor: SameDumpReferenceCursor,
         ctx: TracingContext = {}
-    ): Promise<{ locations: InternalLocation[]; newCursor?: ReferencePaginationCursor }> {
+    ): Promise<PaginatedInternalLocations> {
         const dumpAndDatabase = await this.getDumpAndDatabaseById(cursor.dumpId)
         if (!dumpAndDatabase) {
             return { locations: [] }
@@ -509,7 +514,7 @@ export class Backend {
         limit: number,
         cursor: DefinitionMonikersReferenceCursor,
         ctx: TracingContext = {}
-    ): Promise<{ locations: InternalLocation[]; newCursor?: ReferencePaginationCursor }> {
+    ): Promise<PaginatedInternalLocations> {
         const document = await this.getDocumentByPath(cursor.dumpId, cursor.path, ctx)
         if (!document) {
             return { locations: [] }
@@ -564,13 +569,9 @@ export class Backend {
         limit: number,
         cursor: RemoteDumpReferenceCursor,
         ctx: TracingContext = {}
-    ): Promise<{ locations: InternalLocation[]; newCursor?: ReferencePaginationCursor }> {
-        const getReferences = (): Promise<{
-            references: pgModels.ReferenceModel[]
-            totalCount: number
-            newOffset: number
-        }> =>
-            this.dependencyManager.getSameRepoRemoteReferences({
+    ): Promise<PaginatedInternalLocations> {
+        const getPackageReferences = (): ReturnType<DependencyManager['getSameRepoRemotePackageReferences']> =>
+            this.dependencyManager.getSameRepoRemotePackageReferences({
                 repositoryId,
                 commit,
                 scheme: cursor.scheme,
@@ -585,7 +586,7 @@ export class Backend {
         return this.locationsFromRemoteReferences({
             dumpId: cursor.dumpId,
             moniker: { scheme: cursor.scheme, identifier: cursor.identifier },
-            getReferences,
+            getPackageReferences,
             limit,
             cursor,
             ctx,
@@ -611,13 +612,9 @@ export class Backend {
         limit: number,
         cursor: RemoteDumpReferenceCursor,
         ctx: TracingContext = {}
-    ): Promise<{ locations: InternalLocation[]; newCursor?: ReferencePaginationCursor }> {
-        const getReferences = (): Promise<{
-            references: pgModels.ReferenceModel[]
-            totalCount: number
-            newOffset: number
-        }> =>
-            this.dependencyManager.getReferences({
+    ): Promise<PaginatedInternalLocations> {
+        const getPackageReferences = (): ReturnType<DependencyManager['getPackageReferences']> =>
+            this.dependencyManager.getPackageReferences({
                 repositoryId,
                 scheme: cursor.scheme,
                 name: cursor.name,
@@ -631,7 +628,7 @@ export class Backend {
         return this.locationsFromRemoteReferences({
             dumpId: cursor.dumpId,
             moniker: { scheme: cursor.scheme, identifier: cursor.identifier },
-            getReferences,
+            getPackageReferences,
             limit,
             cursor,
             ctx,
@@ -652,7 +649,7 @@ export class Backend {
         cursor: RemoteDumpReferenceCursor,
         ctx: TracingContext = {}
     ): Promise<boolean> {
-        const { totalCount: remoteTotalCount } = await this.dependencyManager.getReferences({
+        const { totalCount: remoteTotalCount } = await this.dependencyManager.getPackageReferences({
             ...cursor,
             repositoryId,
             limit: 1,
@@ -671,7 +668,7 @@ export class Backend {
     private async locationsFromRemoteReferences({
         dumpId,
         moniker,
-        getReferences,
+        getPackageReferences,
         limit,
         cursor,
         ctx = {},
@@ -681,22 +678,26 @@ export class Backend {
         /** The target moniker. */
         moniker: Pick<sqliteModels.MonikerData, 'scheme' | 'identifier'>
         /** A function that retrieves the next batch of references. */
-        getReferences: () => Promise<{ references: pgModels.ReferenceModel[]; newOffset: number; totalCount: number }>
+        getPackageReferences: () => Promise<{
+            packageReferences: pgModels.ReferenceModel[]
+            newOffset: number
+            totalCount: number
+        }>
         /** The maximum number of locations to return on this page. */
         limit: number
         /** The pagination cursor. */
         cursor: RemoteDumpReferenceCursor
         /** The tracing context. */
         ctx: TracingContext
-    }): Promise<{ locations: InternalLocation[]; newCursor?: ReferencePaginationCursor }> {
+    }): Promise<PaginatedInternalLocations> {
         if (cursor.dumpIds.length === 0) {
-            const { references, newOffset, totalCount } = await getReferences()
+            const { packageReferences, newOffset, totalCount } = await getPackageReferences()
 
             logSpan(ctx, 'package_references', {
-                references: references.map(r => ({ repositoryId: r.dump.repositoryId, commit: r.dump.commit })),
+                references: packageReferences.map(r => ({ repositoryId: r.dump.repositoryId, commit: r.dump.commit })),
             })
 
-            cursor.dumpIds = references.map(r => r.dump.id)
+            cursor.dumpIds = packageReferences.map(r => r.dump.id)
             cursor.skipDumpsWhenBatching = newOffset
             cursor.totalDumpsWhenBatching = totalCount
         }
@@ -757,8 +758,8 @@ export class Backend {
     /**
      * Find the locations attached to the target moniker in the dump where it is defined. If
      * the moniker has attached package information, then query Postgres for the target
-     * package. Open that package's database and query its definitions or references
-     * table for the target moniker (depending on the given model).
+     * package. Open that package's database and query its definitions or references table
+     * for the target moniker (depending on the given model).
      *
      * @param document The document containing the definition.
      * @param moniker The target moniker.
