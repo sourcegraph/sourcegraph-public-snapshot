@@ -390,7 +390,7 @@ type scanResult struct {
 
 // TODO(jchen): Move this to authz.PermsStore.
 func (s *PermsSyncer) loadIDsWithTime(ctx context.Context, q *sqlf.Query) ([]scanResult, error) {
-	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args())
+	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
 	}
