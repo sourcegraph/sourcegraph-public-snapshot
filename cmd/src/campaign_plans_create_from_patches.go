@@ -97,6 +97,33 @@ func createCampaignPlanFromPatches(
 	var result struct {
 		CreateCampaignPlanFromPatches CampaignPlan
 	}
+
+	version, err := getSourcegraphVersion()
+	if err != nil {
+		return err
+	}
+	supportsBaseRef, err := sourcegraphVersionCheck(version, ">= 3.14.0", "2020-03-11")
+	if err != nil {
+		return err
+	}
+
+	// If we're on Sourcegraph >=3.14 the GraphQL API is "fixed" and accepts
+	// patches with `BaseRevision` and `BaseRef` fields. <3.14 expects a ref
+	// (e.g. "refs/heads/master") in `BaseRevision`, so we need to copy the
+	// value over.
+	if !supportsBaseRef {
+		patchesWithoutBaseRef := make([]CampaignPlanPatch, len(patches))
+		for i, p := range patches {
+			patchesWithoutBaseRef[i] = CampaignPlanPatch{
+				Repository:   p.Repository,
+				BaseRevision: p.BaseRef,
+				BaseRef:      "IGNORE-THIS",
+				Patch:        p.Patch,
+			}
+		}
+		patches = patchesWithoutBaseRef
+	}
+
 	return (&apiRequest{
 		query:  query,
 		vars:   map[string]interface{}{"patches": patches},

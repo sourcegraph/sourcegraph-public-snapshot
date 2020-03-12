@@ -68,6 +68,7 @@ func (x *actionExecutor) do(ctx context.Context, repo ActionRepo) (err error) {
 		status.Patch = CampaignPlanPatch{
 			Repository:   repo.ID,
 			BaseRevision: repo.Rev,
+			BaseRef:      repo.BaseRef,
 			Patch:        string(patch),
 		}
 	}

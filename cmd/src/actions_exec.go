@@ -40,6 +40,7 @@ type ActionStep struct {
 type CampaignPlanPatch struct {
 	Repository   string `json:"repository"`
 	BaseRevision string `json:"baseRevision"`
+	BaseRef      string `json:"baseRef"`
 	Patch        string `json:"patch"`
 }
 
@@ -349,9 +350,10 @@ func getDockerImageContentDigest(ctx context.Context, image string) (string, err
 }
 
 type ActionRepo struct {
-	ID   string
-	Name string
-	Rev  string
+	ID      string
+	Name    string
+	Rev     string
+	BaseRef string
 }
 
 func actionRepos(ctx context.Context, scopeQuery string) ([]ActionRepo, []string, error) {
@@ -373,13 +375,19 @@ query ActionRepos($query: String!) {
 				... on Repository {
 					id
 					name
-					defaultBranch { name }
+					defaultBranch {
+						name
+						target { oid }
+					}
 				}
 				... on FileMatch {
 					repository {
 						id
 						name
-						defaultBranch { name }
+						defaultBranch {
+							name
+							target { oid }
+						}
 					}
 				}
 			}
@@ -389,7 +397,10 @@ query ActionRepos($query: String!) {
 `
 	type Repository struct {
 		ID, Name      string
-		DefaultBranch struct{ Name string }
+		DefaultBranch struct {
+			Name   string
+			Target struct{ OID string }
+		}
 	}
 	var result struct {
 		Search struct {
@@ -397,8 +408,11 @@ query ActionRepos($query: String!) {
 				Results []struct {
 					Typename      string `json:"__typename"`
 					ID, Name      string
-					DefaultBranch struct{ Name string }
-					Repository    Repository `json:"repository"`
+					DefaultBranch struct {
+						Name   string
+						Target struct{ OID string }
+					}
+					Repository Repository `json:"repository"`
 				}
 			}
 		}
@@ -433,11 +447,17 @@ query ActionRepos($query: String!) {
 			continue
 		}
 
+		if repo.DefaultBranch.Target.OID == "" {
+			skipped = append(skipped, repo.Name)
+			continue
+		}
+
 		if _, ok := reposByID[repo.ID]; !ok {
 			reposByID[repo.ID] = ActionRepo{
-				ID:   repo.ID,
-				Name: repo.Name,
-				Rev:  repo.DefaultBranch.Name,
+				ID:      repo.ID,
+				Name:    repo.Name,
+				Rev:     repo.DefaultBranch.Target.OID,
+				BaseRef: repo.DefaultBranch.Name,
 			}
 		}
 	}
