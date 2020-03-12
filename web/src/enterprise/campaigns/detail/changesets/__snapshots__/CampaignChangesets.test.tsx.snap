@@ -71,6 +71,16 @@ exports[`CampaignChangesets renders 1`] = `
       >
         Pending
       </option>
+      <option
+        value="COMMENTED"
+      >
+        Commented
+      </option>
+      <option
+        value="DISMISSED"
+      >
+        Dismissed
+      </option>
     </select>
     <label
       htmlFor="changeset-check-state-filter"
