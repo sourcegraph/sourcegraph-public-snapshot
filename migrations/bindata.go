@@ -86,6 +86,8 @@
 // 1528395658_perms_table_provider_nullable.up.sql (894B)
 // 1528395659_user_pending_perms_table_add_service_type_and_id.down.sql (499B)
 // 1528395659_user_pending_perms_table_add_service_type_and_id.up.sql (1.289kB)
+// 1528395660_add_state_columns_to_changesets.down.sql (215B)
+// 1528395660_add_state_columns_to_changesets.up.sql (544B)
 
 package migrations
 
@@ -1874,6 +1876,46 @@ func _1528395659_user_pending_perms_table_add_service_type_and_idUpSql() (*asset
 	return a, nil
 }
 
+var __1528395660_add_state_columns_to_changesetsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\xce\x48\xcc\x4b\x4f\x2d\x4e\x2d\x29\xe6\x72\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x48\xad\x28\x49\x2d\xca\x4b\xcc\x89\x2f\x2e\x49\x2c\x49\x25\x5b\x77\x51\x6a\x59\x66\x6a\x39\x85\x86\x24\x67\xa4\x26\x67\xc3\xcd\x70\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\xf9\xf3\x46\x2e\xd7\x00\x00\x00")
+
+func _1528395660_add_state_columns_to_changesetsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395660_add_state_columns_to_changesetsDownSql,
+		"1528395660_add_state_columns_to_changesets.down.sql",
+	)
+}
+
+func _1528395660_add_state_columns_to_changesetsDownSql() (*asset, error) {
+	bytes, err := _1528395660_add_state_columns_to_changesetsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395660_add_state_columns_to_changesets.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x89, 0x97, 0xa7, 0xd1, 0x90, 0x98, 0xdc, 0x63, 0xc6, 0x98, 0x11, 0x6f, 0x1b, 0x44, 0xab, 0xe, 0xcb, 0x6a, 0x74, 0x60, 0x8d, 0x91, 0x89, 0x2, 0xb4, 0x7e, 0xe3, 0xa6, 0xd4, 0x12, 0xcd, 0x7f}}
+	return a, nil
+}
+
+var __1528395660_add_state_columns_to_changesetsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xa4\x90\xcb\x6e\xc2\x30\x14\x44\xf7\xfe\x8a\xd9\x65\x03\xfc\x00\x62\x11\x48\x84\xa2\x82\x83\xda\xa0\x2e\x2b\x37\x99\x90\x08\xd7\xae\xe2\x9b\x84\xfe\x7d\x45\x1f\x2a\x7d\x48\x55\x55\x2f\xad\x99\xa3\x3b\x67\x99\xae\x33\x3d\x57\x2a\xde\x14\xe9\x35\x8a\x78\xb9\x49\x51\x36\xc6\x1d\x18\x28\x41\x01\x40\x9c\x24\x58\xe5\x9b\xfd\x56\x83\x27\x61\xe7\x8c\xbd\x0b\x62\x84\x10\x9e\xe4\xef\xdd\x8e\x43\xcb\xf1\x5f\x88\xb2\x61\x79\xfc\x4c\x98\x4e\x71\x43\x41\xf0\x0f\x44\x30\x8e\xa8\x58\x9b\xde\x4a\x98\x21\xab\xe1\xbc\x4c\x30\x32\xb2\x16\x07\x0a\x6a\xd3\xda\xbe\x63\x80\x77\x90\x86\xa8\x3b\xef\x84\xae\x82\x09\x6f\xa9\xc6\x0c\x44\xeb\x06\x63\xdb\xea\xcc\x1e\x8c\xed\x19\xd0\xbe\xe6\x93\xe5\x0c\x45\xc3\xc0\xf7\xff\xb1\xb5\x16\xfd\x63\x75\x3e\xc8\x3b\x38\x9e\xe4\x63\x07\xc2\x93\x2b\xe1\x3b\x8c\xbc\x6f\xbc\x3f\xce\x94\xda\xef\x92\xb8\xb8\x9c\x8a\x73\xee\x8b\xde\x05\xa2\x7c\x97\xea\x68\xf2\xe2\xe1\xfb\xfb\xd9\xe8\x02\xd1\x2e\xd5\x49\xa6\xd7\xbf\x17\x2f\x3d\x2e\x10\xed\xf5\x95\xce\x6f\x75\x34\x57\x6a\x95\x6f\xb7\x59\x31\x57\xcf\x01\x00\x00\xff\xff\x72\xf4\x5d\xc4\x20\x02\x00\x00")
+
+func _1528395660_add_state_columns_to_changesetsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395660_add_state_columns_to_changesetsUpSql,
+		"1528395660_add_state_columns_to_changesets.up.sql",
+	)
+}
+
+func _1528395660_add_state_columns_to_changesetsUpSql() (*asset, error) {
+	bytes, err := _1528395660_add_state_columns_to_changesetsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395660_add_state_columns_to_changesets.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xd, 0x5, 0x4f, 0x71, 0xce, 0x34, 0x38, 0x8c, 0x20, 0xee, 0xf1, 0xfa, 0x6b, 0xc7, 0x36, 0xe5, 0xbd, 0xe7, 0x66, 0xa8, 0xf9, 0x64, 0x66, 0xc7, 0x39, 0xe6, 0x84, 0x5a, 0xcf, 0x45, 0xaa, 0xf0}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2051,6 +2093,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395658_perms_table_provider_nullable.up.sql":                         _1528395658_perms_table_provider_nullableUpSql,
 	"1528395659_user_pending_perms_table_add_service_type_and_id.down.sql":    _1528395659_user_pending_perms_table_add_service_type_and_idDownSql,
 	"1528395659_user_pending_perms_table_add_service_type_and_id.up.sql":      _1528395659_user_pending_perms_table_add_service_type_and_idUpSql,
+	"1528395660_add_state_columns_to_changesets.down.sql":                     _1528395660_add_state_columns_to_changesetsDownSql,
+	"1528395660_add_state_columns_to_changesets.up.sql":                       _1528395660_add_state_columns_to_changesetsUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -2180,6 +2224,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395658_perms_table_provider_nullable.up.sql":                         {_1528395658_perms_table_provider_nullableUpSql, map[string]*bintree{}},
 	"1528395659_user_pending_perms_table_add_service_type_and_id.down.sql":    {_1528395659_user_pending_perms_table_add_service_type_and_idDownSql, map[string]*bintree{}},
 	"1528395659_user_pending_perms_table_add_service_type_and_id.up.sql":      {_1528395659_user_pending_perms_table_add_service_type_and_idUpSql, map[string]*bintree{}},
+	"1528395660_add_state_columns_to_changesets.down.sql":                     {_1528395660_add_state_columns_to_changesetsDownSql, map[string]*bintree{}},
+	"1528395660_add_state_columns_to_changesets.up.sql":                       {_1528395660_add_state_columns_to_changesetsUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

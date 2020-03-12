@@ -284,7 +284,10 @@ func (s *ChangesetSyncer) SyncChangesetsWithSources(ctx context.Context, bySourc
 				c.Changeset.SetDeleted()
 			}
 
-			events = append(events, c.Events()...)
+			csEvents := c.Events()
+			c.Changeset.SetDerivedState(csEvents)
+
+			events = append(events, csEvents...)
 			cs = append(cs, c.Changeset)
 		}
 	}
