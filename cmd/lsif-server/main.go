@@ -2,7 +2,10 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
+	"os"
+	"path"
 	"strconv"
 	"strings"
 
@@ -11,45 +14,93 @@ import (
 )
 
 var (
-	servers = env.Get("LSIF_NUM_SERVERS", "1", "the number of server instances to run (defaults to one)")
-	workers = env.Get("LSIF_NUM_WORKERS", "1", "the number of worker instances to run (defaults to one)")
+	servers              = env.Get("LSIF_NUM_SERVERS", "1", "the number of server instances to run (defaults to one)")
+	workers              = env.Get("LSIF_NUM_WORKERS", "1", "the number of worker instances to run (defaults to one)")
+	disablePrometheus, _ = strconv.ParseBool(env.Get("DISABLE_PROMETHEUS", "", "do not run a prometheus process"))
+
+	// Set in docker image
+	prometheusStorageDir       = os.Getenv("PROMETHEUS_STORAGE_DIR")
+	prometheusConfigurationDir = os.Getenv("PROMETHEUS_CONFIGURATION_DIR")
+)
+
+const (
+	serverPort = 3186
+	workerPort = 3187
 )
 
 func main() {
-	procfile, err := makeProcfile()
-	if err != nil {
-		log.Fatalf(err.Error())
-	}
-
-	// This mirrors the behavior from cmd/start
-	if err := goreman.Start([]byte(strings.Join(procfile, "\n")), goreman.Options{
-		RPCAddr:        "127.0.0.1:5005",
-		ProcDiedAction: goreman.Shutdown,
-	}); err != nil {
-		log.Fatalf(err.Error())
-	}
-}
-
-func makeProcfile() ([]string, error) {
 	numServers, err := strconv.ParseInt(servers, 10, 64)
 	if err != nil || numServers < 0 || numServers > 1 {
-		return nil, fmt.Errorf("invalid int %q for LSIF_NUM_SERVERS: %s", servers, err)
+		log.Fatalf("invalid int %q for LSIF_NUM_SERVERS: %s", servers, err)
 	}
 
 	numWorkers, err := strconv.ParseInt(workers, 10, 64)
 	if err != nil || numWorkers < 0 {
-		return nil, fmt.Errorf("invalid int %q for LSIF_NUM_WORKERS: %s", workers, err)
+		log.Fatalf("invalid int %q for LSIF_NUM_WORKERS: %s", workers, err)
 	}
 
+	if err := ioutil.WriteFile(
+		path.Join(prometheusConfigurationDir, "targets.yml"),
+		[]byte(makePrometheusTargets(numServers, numWorkers)),
+		0644,
+	); err != nil {
+		log.Fatal(err.Error())
+	}
+
+	// This mirrors the behavior from cmd/start
+	if err := goreman.Start([]byte(makeProcfile(numServers, numWorkers)), goreman.Options{
+		RPCAddr:        "127.0.0.1:5005",
+		ProcDiedAction: goreman.Shutdown,
+	}); err != nil {
+		log.Fatal(err.Error())
+	}
+}
+
+func makeProcfile(numServers, numWorkers int64) string {
 	procfile := []string{}
-
-	for i := int64(0); i < numServers; i++ {
-		procfile = append(procfile, fmt.Sprintf(`lsif-server-%d: node /lsif/out/server/server.js`, i))
+	addProcess := func(name, command string) {
+		procfile = append(procfile, fmt.Sprintf("%s: %s", name, command))
 	}
 
-	for i := int64(0); i < numWorkers; i++ {
-		procfile = append(procfile, fmt.Sprintf(`lsif-worker-%d: env WORKER_METRICS_PORT=%d node /lsif/out/worker/worker.js`, i, 3187+i))
+	if numServers > 0 {
+		addProcess("lsif-server", "node /lsif/out/server/server.js")
 	}
 
-	return procfile, nil
+	for i := 0; i < int(numWorkers); i++ {
+		addProcess(
+			fmt.Sprintf("lsif-worker-%d", i),
+			fmt.Sprintf("env WORKER_METRICS_PORT=%d node /lsif/out/worker/worker.js", workerPort+i),
+		)
+	}
+
+	if !disablePrometheus {
+		addProcess("prometheus", fmt.Sprintf("prometheus --storage.tsdb.path=%s --config.file=%s/prometheus.yml",
+			prometheusStorageDir,
+			prometheusConfigurationDir,
+		))
+	}
+
+	return strings.Join(procfile, "\n") + "\n"
+}
+
+func makePrometheusTargets(numServers, numWorkers int64) string {
+	content := []string{"---"}
+	addTarget := func(job string, port int) {
+		content = append(content,
+			"- labels:",
+			fmt.Sprintf("    job: %s", job),
+			"  targets:",
+			fmt.Sprintf("    - 127.0.0.1:%d", port),
+		)
+	}
+
+	if numServers > 0 {
+		addTarget("lsif-server", serverPort)
+	}
+
+	for i := 0; i < int(numWorkers); i++ {
+		addTarget(fmt.Sprintf("lsif-worker-%d", i), workerPort+i)
+	}
+
+	return strings.Join(content, "\n") + "\n"
 }
