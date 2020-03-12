@@ -1000,13 +1000,21 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 				ctx := context.Background()
 
 				for _, update := range test.updates {
-					update := update // Make local copy to prevent race conditions
-
 					const numOps = 30
 					g, ctx := errgroup.WithContext(ctx)
 					for i := 0; i < numOps; i++ {
+						// Make local copy to prevent race conditions
+						accounts := *update.accounts
+						perm := &authz.RepoPermissions{
+							RepoID:    update.perm.RepoID,
+							Perm:      update.perm.Perm,
+							UpdatedAt: update.perm.UpdatedAt,
+						}
+						if update.perm.UserIDs != nil {
+							perm.UserIDs = update.perm.UserIDs.Clone()
+						}
 						g.Go(func() error {
-							return s.SetRepoPendingPermissions(ctx, update.accounts, update.perm)
+							return s.SetRepoPendingPermissions(ctx, &accounts, perm)
 						})
 					}
 					if err := g.Wait(); err != nil {
