@@ -720,6 +720,7 @@ func (s *Service) CreateChangesetJobForCampaignJob(ctx context.Context, campaign
 		// Already exists
 		return nil
 	}
+
 	changesetJob := &campaigns.ChangesetJob{
 		CampaignID:    campaign.ID,
 		CampaignJobID: job.ID,
