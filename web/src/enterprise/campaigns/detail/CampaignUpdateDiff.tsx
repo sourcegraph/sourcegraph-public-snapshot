@@ -70,7 +70,8 @@ export const CampaignUpdateDiff: React.FunctionComponent<Props> = ({
                     // if the corresponding changeset is already merged, we won't update that anymore
                     (changeset.__typename === 'ExternalChangeset'
                         ? ![GQL.ChangesetState.MERGED, GQL.ChangesetState.CLOSED].includes(changeset.state)
-                        : true)
+                        : // if we look at a changesetPlan, that will definitely be overwritten
+                          true)
             )
         )
         const unmodified = changesets.nodes.filter(
@@ -92,7 +93,7 @@ export const CampaignUpdateDiff: React.FunctionComponent<Props> = ({
             ? changed.length - (campaign.changesets.totalCount - deleted.length) + added.length
             : 0
         return (
-            <>
+            <div className={className}>
                 <h3 className="mt-3">Preview of changes</h3>
                 Campaign currently has {campaign.changesets.totalCount + campaign.changesetPlans.totalCount}{' '}
                 {pluralize('changeset', campaign.changesets.totalCount + campaign.changesetPlans.totalCount)} (
@@ -106,7 +107,6 @@ export const CampaignUpdateDiff: React.FunctionComponent<Props> = ({
                 published, {newDraftCount} {pluralize('draft', newDraftCount)}):
                 <TabsWithLocalStorageViewStatePersistence
                     storageKey="campaignUpdateDiffTabs"
-                    className={classNames(className)}
                     tabs={[
                         {
                             id: 'added',
@@ -204,12 +204,12 @@ export const CampaignUpdateDiff: React.FunctionComponent<Props> = ({
                     <AlertCircleIcon className="icon-inline" /> You are updating an existing campaign. By clicking
                     'Update', all already published changesets will be updated on the codehost.
                 </div>
-            </>
+            </div>
         )
     }
     return (
-        <span>
+        <p>
             <LoadingSpinner className={classNames('icon-inline', className)} /> Loading diff
-        </span>
+        </p>
     )
 }
