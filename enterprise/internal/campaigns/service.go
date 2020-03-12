@@ -1042,9 +1042,7 @@ func computeCampaignUpdateDiff(
 			// if we do want to update it, we _reset_ the ChangesetJob, so it
 			// gets run again when RunChangesetJobs is called after
 			// UpdateCampaign.
-			group.changesetJob.Error = ""
-			group.changesetJob.StartedAt = time.Time{}
-			group.changesetJob.FinishedAt = time.Time{}
+			group.changesetJob.Reset()
 		}
 
 		diff.Update = append(diff.Update, group.changesetJob)

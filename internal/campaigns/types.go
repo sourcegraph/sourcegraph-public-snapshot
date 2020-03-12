@@ -264,6 +264,14 @@ func (c *ChangesetJob) SuccessfullyCompleted() bool {
 	return c.Error == "" && !c.FinishedAt.IsZero() && c.ChangesetID != 0
 }
 
+// Reset sets the Error, StartedAt and FinishedAt fields to their respective
+// zero values, so that the ChangesetJob can be executed again.
+func (c *ChangesetJob) Reset() {
+	c.Error = ""
+	c.StartedAt = time.Time{}
+	c.FinishedAt = time.Time{}
+}
+
 // A Changeset is a changeset on a code host belonging to a Repository and many
 // Campaigns.
 type Changeset struct {
