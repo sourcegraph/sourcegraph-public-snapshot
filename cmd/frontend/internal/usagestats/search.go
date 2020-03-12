@@ -108,26 +108,26 @@ func searchActivity(ctx context.Context, periodType db.PeriodType, periods int, 
 		userCounts, err := db.EventLogs.CountUniqueUsersPerPeriod(ctx, periodType, timeNow().UTC(), periods, &db.CountUniqueUsersOptions{
 			EventFilters: &db.EventFilterOptions{
 				ByEventNameWithArgument: &db.EventArgumentMatch{
-					EventName: eventAndArgNames.eventName, 
-					ArgumentName: eventAndArgNames.argumentName, 
+					EventName:     match.eventName,
+					ArgumentName:  match.argumentName,
 					ArgumentValue: searchMode},
-				},
+			},
 		})
 		if err != nil {
 			return nil, err
 		}
 		for i, uc := range userCounts {
 			activityPeriods[i].StartTime = uc.Start
-			eventAndArgNames.getEventStatistics(activityPeriods[i]).UserCount = int32(uc.Count)
+			match.getEventStatistics(activityPeriods[i]).UserCount = int32(uc.Count)
 		}
 		if includeEventCounts {
-			eventCounts, err := db.EventLogs.CountEventsPerPeriod(ctx, periodType, timeNow().UTC(), periods, &db.EventFilterOptions{ByEventNameWithArgument: &db.EventArgumentMatch{EventName: eventAndArgNames.eventName, ArgumentName: eventAndArgNames.argumentName, ArgumentValue: searchMode}})
+			eventCounts, err := db.EventLogs.CountEventsPerPeriod(ctx, periodType, timeNow().UTC(), periods, &db.EventFilterOptions{ByEventNameWithArgument: &db.EventArgumentMatch{EventName: match.eventName, ArgumentName: match.argumentName, ArgumentValue: searchMode}})
 			if err != nil {
 				return nil, err
 			}
 			for i, ec := range eventCounts {
 				count := int32(ec.Count)
-				eventAndArgNames.getEventStatistics(activityPeriods[i]).EventsCount = &count
+				match.getEventStatistics(activityPeriods[i]).EventsCount = &count
 			}
 		}
 	}
