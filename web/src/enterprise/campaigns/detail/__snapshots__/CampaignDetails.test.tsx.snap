@@ -152,7 +152,6 @@ Array [
       </button>
     </div>
   </form>,
-  "CampaignStatus(state=PROCESSING)",
   <h3
     className="mt-3"
   >

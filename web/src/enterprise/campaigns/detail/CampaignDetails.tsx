@@ -493,7 +493,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         </>
                     )
                 ) : (
-                    <>
+                    <div className="mb-3">
                         <button type="reset" className="btn btn-secondary mr-1" onClick={onCancel}>
                             Cancel
                         </button>
@@ -504,19 +504,22 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         >
                             Update
                         </button>
-                    </>
+                    </div>
                 )}
             </Form>
 
             {/* is already created or a plan is available */}
             {(campaign || campaignPlan) && (
                 <>
-                    <CampaignStatus
-                        campaign={(campaignPlan || campaign)!}
-                        status={(campaignPlan || campaign)!.status}
-                        onPublish={onPublish}
-                        onRetry={onRetry}
-                    />
+                    {/* Only show status for created campaigns and not in update mode */}
+                    {campaign && !campaignPlan && (
+                        <CampaignStatus
+                            campaign={campaign}
+                            status={campaign.status}
+                            onPublish={onPublish}
+                            onRetry={onRetry}
+                        />
+                    )}
 
                     {campaign && !updateMode && (
                         <>
