@@ -222,6 +222,7 @@ type SearchUsageStatistics struct {
 // BigQuery, which requires the input match its schema exactly.
 type SearchUsagePeriod struct {
 	StartTime   time.Time
+	TotalUsers  *SearchEventStatistics
 	Literal     *SearchEventStatistics
 	Regexp      *SearchEventStatistics
 	Structural  *SearchEventStatistics
