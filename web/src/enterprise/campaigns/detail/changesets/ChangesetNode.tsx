@@ -149,12 +149,7 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                             >
                                 {node.repository.name}
                             </Link>
-                            {node.__typename === 'ChangesetPlan' &&
-                                (isPublishing ? (
-                                    <span className="badge badge-secondary ml-2">Publishing</span>
-                                ) : (
-                                    <DraftBadge className="ml-2" />
-                                ))}
+                            {node.__typename === 'ChangesetPlan' && !isPublishing && <DraftBadge className="ml-2" />}
                         </div>
                     </div>
                 </h3>
