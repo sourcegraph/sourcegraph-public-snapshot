@@ -640,6 +640,7 @@ SELECT changesets.id,
 FROM changesets
 LEFT JOIN changeset_events ce ON changesets.id = ce.changeset_id
 GROUP BY changesets.id
+ORDER BY changesets.id ASC
 `)
 }
 

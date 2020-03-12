@@ -1113,13 +1113,13 @@ func testStore(db *sql.DB) func(*testing.T) {
 			}
 			want := []cmpgn.ChangesetSyncData{
 				{
-					ChangesetID:       2,
+					ChangesetID:       1,
 					UpdatedAt:         clock(),
 					LatestEvent:       clock(),
 					ExternalUpdatedAt: externalUpdatedAt,
 				},
 				{
-					ChangesetID:       1,
+					ChangesetID:       2,
 					UpdatedAt:         clock(),
 					LatestEvent:       clock(),
 					ExternalUpdatedAt: externalUpdatedAt,
