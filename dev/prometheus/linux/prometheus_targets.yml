@@ -35,6 +35,16 @@
     # zoekt-indexserver
     - 127.0.0.1:6072
 - labels:
+    job: lsif-server
+  targets:
+    # lsif-server
+    - 127.0.0.1:3186
+- labels:
+    job: lsif-worker
+  targets:
+    # lsif-worker
+    - 127.0.0.1:3187
+- labels:
     job: postgres_exporter
   targets:
     # postgres exporter

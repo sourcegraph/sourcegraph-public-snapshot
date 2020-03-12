@@ -35,6 +35,16 @@
     # zoekt-indexserver
     - host.docker.internal:6072
 - labels:
+    job: lsif-server
+  targets:
+    # lsif-server
+    - host.docker.internal:3186
+- labels:
+    job: lsif-worker
+  targets:
+    # lsif-worker
+    - host.docker.internal:3187
+- labels:
     job: postgres_exporter
   targets:
     # postgres exporter
