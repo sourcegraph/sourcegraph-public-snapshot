@@ -98,7 +98,7 @@ If that still doesn't help, take a screenshot of the console and network activit
 
 Since `v3.14.0+`, the Sourcegraph browser extension can only authenticate with private Sourcegraph instances that have [tls / ssl](../admin/tls_ssl.md) configured.
 
-Previously, the Sourcegraph browser extension was able to authenticate with instances that hadn't enabled tls / ssl. However, modern web browsers have started to adopt and implement [an IETF proposal](https://web.dev/samesite-cookies-explained/) that removes the deprecated logic that allowed this behavior. Please configure [tls / ssl](../admin/tls_ssl.md) in order to continue using the browser extension with your private instance.
+Previously, the Sourcegraph browser extension was able to authenticate with instances that hadn't enabled tls / ssl. However, modern web browsers have started to adopt and implement [an IETF proposal](https://web.dev/samesite-cookies-explained/) that removes the deprecated logic that allowed this behavior. Please configure [HTTPS](../admin/tls_ssl.md) in order to continue using the browser extension with your private instance.
 
 ## Privacy
 
