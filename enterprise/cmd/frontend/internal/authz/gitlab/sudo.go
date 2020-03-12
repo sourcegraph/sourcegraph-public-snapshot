@@ -24,7 +24,7 @@ func (p *SudoProvider) FetchUserPerms(ctx context.Context, account *extsvc.Exter
 	if account == nil {
 		return nil, errors.New("no account provided")
 	} else if !extsvc.IsHostOfAccount(p.codeHost, account) {
-		return nil, fmt.Errorf("not a code host of the account: want %+v but have %+v", account, p.codeHost)
+		return nil, fmt.Errorf("not a code host of the account: want %+v but have %+v", account.ExternalAccountSpec, p.codeHost)
 	}
 
 	user, _, err := gitlab.GetExternalAccountData(&account.ExternalAccountData)
@@ -114,6 +114,11 @@ func listMembers(ctx context.Context, client *gitlab.Client, repoID string) ([]e
 		}
 
 		for i := range members {
+			// Members with access level 20 (i.e. Reporter) has access to project code.
+			if members[i].AccessLevel < 20 {
+				continue
+			}
+
 			userIDs = append(userIDs, extsvc.ExternalAccountID(strconv.Itoa(int(members[i].ID))))
 		}
 
