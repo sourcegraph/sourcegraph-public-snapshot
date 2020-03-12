@@ -83,8 +83,17 @@ const GitHubSchemaJSON = `{
         "type": "object",
         "title": "ExcludedGitHubRepo",
         "additionalProperties": false,
-        "anyOf": [{ "required": ["name"] }, { "required": ["id"] }, { "required": ["pattern"] }],
+        "anyOf": [
+          { "required": ["name"] },
+          { "required": ["id"] },
+          { "required": ["pattern"] },
+          { "required": ["forks"] }
+        ],
         "properties": {
+          "forks": {
+            "description": "If set to true, forks will be excluded.",
+            "type": "boolean"
+          },
           "name": {
             "description": "The name of a GitHub repository (\"owner/name\") to exclude from mirroring.",
             "type": "string",
@@ -103,6 +112,7 @@ const GitHubSchemaJSON = `{
         }
       },
       "examples": [
+        [{ "forks": true }],
         [{ "name": "owner/name" }, { "id": "MDEwOlJlcG9zaXRvcnkxMTczMDM0Mg==" }],
         [{ "name": "vuejs/vue" }, { "name": "php/php-src" }, { "pattern": "^topsecretorg/.*" }]
       ]
