@@ -640,7 +640,7 @@ func (ce ChangesetEvents) ReviewState() (ChangesetReviewState, error) {
 }
 
 // State returns the  state of the changeset to which the events belong and assumes the events
-// are sorted by ChangesetEvent.Timestamp()
+// are sorted by ChangesetEvent.Timestamp().
 func (ce ChangesetEvents) State() ChangesetState {
 	state := ChangesetStateOpen
 	for _, e := range ce {
