@@ -317,11 +317,22 @@ func (c *Client) LoadUser(ctx context.Context, u *User) error {
 // LoadGroup loads the given Group returning an error in case of failure.
 func (c *Client) LoadGroup(ctx context.Context, g *Group) error {
 	qry := url.Values{"filter": {g.Name}}
-	return c.send(ctx, "GET", "rest/api/1.0/admin/groups", qry, nil, &struct {
+	var groups struct {
 		Values []*Group `json:"values"`
-	}{
-		Values: []*Group{g},
-	})
+	}
+
+	err := c.send(ctx, "GET", "rest/api/1.0/admin/groups", qry, nil, &groups)
+	if err != nil {
+		return err
+	}
+
+	if len(groups.Values) != 1 {
+		return errors.New("group not found")
+	}
+
+	*g = *groups.Values[0]
+
+	return nil
 }
 
 // CreateGroup creates the given Group returning an error in case of failure.
