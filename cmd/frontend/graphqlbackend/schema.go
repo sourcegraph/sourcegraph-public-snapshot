@@ -1813,6 +1813,8 @@ type Repository implements Node & GenericSearchResultInterface {
     url: String!
     # The URLs to this repository on external services associated with it.
     externalURLs: [ExternalLink!]!
+    # Whether the repository is a fork.
+    isFork: Boolean!
     # The repository's default Git branch (HEAD symbolic ref). If the repository is currently being cloned or is
     # empty, this field will be null.
     defaultBranch: GitRef
