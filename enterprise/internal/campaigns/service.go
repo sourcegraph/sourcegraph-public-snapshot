@@ -429,6 +429,7 @@ func RunChangesetJob(
 	// with outdated metadata.
 	clone := cs.Changeset.Clone()
 	events := clone.Events()
+	clone.SetDerivedState(events)
 	if err = store.CreateChangesets(ctx, clone); err != nil {
 		if _, ok := err.(AlreadyExistError); !ok {
 			return err
@@ -443,7 +444,6 @@ func RunChangesetJob(
 		if err := clone.SetMetadata(cs.Changeset.Metadata); err != nil {
 			return errors.Wrap(err, "setting changeset metadata")
 		}
-		clone.SetDerivedState(events)
 		if err = store.UpdateChangesets(ctx, clone); err != nil {
 			return err
 		}
