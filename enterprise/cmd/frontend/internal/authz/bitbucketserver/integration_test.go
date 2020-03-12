@@ -25,7 +25,6 @@ func TestIntegration(t *testing.T) {
 	f := newFixtures()
 	f.load(t, cli)
 
-
 	for _, tc := range []struct {
 		name string
 		test func(*testing.T)

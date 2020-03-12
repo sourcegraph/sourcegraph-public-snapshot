@@ -203,12 +203,12 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*exts
 func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.ExternalAccount) ([]extsvc.ExternalRepoID, error) {
 	switch {
 	case account == nil:
-			return nil, errors.New("no account provided")
+		return nil, errors.New("no account provided")
 	case account.AccountData == nil:
 		return nil, errors.New("no account data provided")
 	case !extsvc.IsHostOfAccount(p.codeHost, account):
 		return nil, fmt.Errorf("not a code host of the account: want %s but have %s",
-				 p.codeHost.ServiceID, account.ExternalAccountSpec.ServiceID,)
+			p.codeHost.ServiceID, account.ExternalAccountSpec.ServiceID)
 	}
 
 	var user bitbucketserver.User
@@ -241,7 +241,7 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *api.ExternalRepoSpe
 		return nil, errors.New("no repo provided")
 	case !extsvc.IsHostOfRepo(p.codeHost, repo):
 		return nil, fmt.Errorf("not a code host of the repo: want %s but have %s",
-				p.codeHost.ServiceID, repo.ServiceID)
+			p.codeHost.ServiceID, repo.ServiceID)
 	}
 
 	ids, err := p.userIDs(ctx, repo.ID)
@@ -258,10 +258,11 @@ var errNoResults = errors.New("no results returned by the Bitbucket Server API")
 
 func (p *Provider) repoIDs(ctx context.Context, username string) ([]uint32, error) {
 	if p.pluginPerm {
-			return p.repoIDsFromPlugin(ctx, username)
+		return p.repoIDsFromPlugin(ctx, username)
 	}
 	return p.repoIDsFromAPI(ctx, username)
 }
+
 // repoIDsFromAPI returns all repositories for which the given user has the permission to read from
 // the Bitbucket Server API. when no username is given, only public repos are returned.
 func (p *Provider) repoIDsFromAPI(ctx context.Context, username string) (ids []uint32, err error) {
@@ -330,10 +331,9 @@ func (p *Provider) user(ctx context.Context, username string, fs ...bitbucketser
 func (p *Provider) userIDs(ctx context.Context, repoID string) (ids []int, err error) {
 	t := &bitbucketserver.PageToken{Limit: p.pageSize}
 	f := bitbucketserver.UserFilter{Permission: bitbucketserver.PermissionFilter{
-		Root:           "REPO_READ",
-		RepositoryID:   repoID,
+		Root:         "REPO_READ",
+		RepositoryID: repoID,
 	}}
-
 
 	for t.HasMore() {
 		users, next, err := p.client.Users(ctx, t, f)

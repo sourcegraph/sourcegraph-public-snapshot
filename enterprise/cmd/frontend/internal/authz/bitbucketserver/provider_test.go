@@ -79,7 +79,7 @@ func testProviderRepoPerms(db *sql.DB, f *fixtures, cli *bitbucketserver.Client)
 		for _, r := range f.repos {
 			stored = append(stored, &repos.Repo{
 				Name:         r.Name,
-				Private: !r.Public,
+				Private:      !r.Public,
 				ExternalRepo: h.externalRepo(r),
 				Sources:      map[string]*repos.SourceInfo{},
 			})
@@ -97,7 +97,7 @@ func testProviderRepoPerms(db *sql.DB, f *fixtures, cli *bitbucketserver.Client)
 			repo[r.Name] = &types.Repo{
 				ID:           api.RepoID(r.ID),
 				Name:         api.RepoName(r.Name),
-				Private: r.Private,
+				Private:      r.Private,
 				ExternalRepo: r.ExternalRepo,
 			}
 			toverify = append(toverify, repo[r.Name])
@@ -209,7 +209,7 @@ func testProviderRepoPerms(db *sql.DB, f *fixtures, cli *bitbucketserver.Client)
 }
 
 func testProviderFetchAccount(f *fixtures, cli *bitbucketserver.Client) func(*testing.T) {
-	return func(t *testing.T)	 {
+	return func(t *testing.T) {
 		p := newProvider(cli, nil, 0)
 
 		h := codeHost{CodeHost: p.codeHost}
@@ -280,13 +280,13 @@ func testProviderFetchUserPerms(f *fixtures, cli *bitbucketserver.Client) func(*
 			name string
 			ctx  context.Context
 			acct *extsvc.ExternalAccount
-			ids []extsvc.ExternalRepoID
+			ids  []extsvc.ExternalRepoID
 			err  string
 		}{
 			{
 				name: "no account provided",
 				acct: nil,
-				err: "no account provided",
+				err:  "no account provided",
 			},
 			{
 				name: "no account data provided",
@@ -305,7 +305,7 @@ func testProviderFetchUserPerms(f *fixtures, cli *bitbucketserver.Client) func(*
 						AccountData: new(json.RawMessage),
 					},
 				},
-				err:  "not a code host of the account: want http://127.0.0.1:7990/ but have https://github.com",
+				err: "not a code host of the account: want http://127.0.0.1:7990/ but have https://github.com",
 			},
 			{
 				name: "bad account data",
@@ -319,12 +319,12 @@ func testProviderFetchUserPerms(f *fixtures, cli *bitbucketserver.Client) func(*
 						AccountData: new(json.RawMessage),
 					},
 				},
-				err:  "unmarshaling account data: unexpected end of JSON input",
+				err: "unmarshaling account data: unexpected end of JSON input",
 			},
 			{
 				name: "private repo ids are retrieved",
 				acct: h.externalAccount(0, f.users["ceo"]),
-				ids: repoIDs("private-repo", "secret-repo", "super-secret-repo"),
+				ids:  repoIDs("private-repo", "secret-repo", "super-secret-repo"),
 			},
 		} {
 			t.Run(tc.name, func(t *testing.T) {
@@ -372,21 +372,21 @@ func testProviderFetchRepoPerms(f *fixtures, cli *bitbucketserver.Client) func(*
 			name string
 			ctx  context.Context
 			repo *api.ExternalRepoSpec
-			ids []extsvc.ExternalAccountID
+			ids  []extsvc.ExternalAccountID
 			err  string
 		}{
 			{
 				name: "no repo provided",
 				repo: nil,
-				err: "no repo provided",
+				err:  "no repo provided",
 			},
 			{
 				name: "not a code host of the repo",
 				repo: &api.ExternalRepoSpec{
-						ServiceType: "github",
-						ServiceID:   "https://github.com",
+					ServiceType: "github",
+					ServiceID:   "https://github.com",
 				},
-				err:  "not a code host of the repo: want http://127.0.0.1:7990/ but have https://github.com",
+				err: "not a code host of the repo: want http://127.0.0.1:7990/ but have https://github.com",
 			},
 			{
 				name: "private user ids are retrieved",
