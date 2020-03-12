@@ -60,7 +60,7 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 		config        *schema.PermissionsUserMapping
 		args          *db.GrantPendingPermissionsArgs
 		updates       []update
-		expectRepoIDs []uint32
+		expectRepoIDs []int
 	}{
 		{
 			name: "grant by emails",
@@ -98,7 +98,7 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 					repoID: 3,
 				},
 			},
-			expectRepoIDs: []uint32{1, 2},
+			expectRepoIDs: []int{1, 2},
 		},
 		{
 			name: "grant by username",
@@ -128,7 +128,7 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 					repoID: 2,
 				},
 			},
-			expectRepoIDs: []uint32{1},
+			expectRepoIDs: []int{1},
 		},
 	}
 	for _, test := range tests {

@@ -185,7 +185,7 @@ func (r *Resolver) UsersWithPendingPermissions(ctx context.Context) ([]string, e
 		return nil, err
 	}
 
-	return r.store.ListPendingUsers(ctx)
+	return r.store.ListPendingUsers(ctx, "sourcegraph", "https://sourcegraph.com/")
 }
 
 func (r *Resolver) AuthorizedUsers(ctx context.Context, args *graphqlbackend.RepoAuthorizedUserArgs) (graphqlbackend.UserConnectionResolver, error) {
