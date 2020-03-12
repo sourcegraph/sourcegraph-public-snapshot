@@ -536,6 +536,7 @@ func countChangesetsQuery(opts *CountChangesetsOpts) *sqlf.Query {
 // GetChangesetOpts captures the query options needed for getting a Changeset
 type GetChangesetOpts struct {
 	ID                  int64
+	RepoID              int64
 	ExternalID          string
 	ExternalServiceType string
 }
@@ -590,8 +591,9 @@ func getChangesetQuery(opts *GetChangesetOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("id = %s", opts.ID))
 	}
 
-	if opts.ExternalID != "" && opts.ExternalServiceType != "" {
+	if opts.RepoID != 0 && opts.ExternalID != "" && opts.ExternalServiceType != "" {
 		preds = append(preds,
+			sqlf.Sprintf("repo_id = %d", opts.RepoID),
 			sqlf.Sprintf("external_id = %s", opts.ExternalID),
 			sqlf.Sprintf("external_service_type = %s", opts.ExternalServiceType),
 		)
@@ -2639,11 +2641,12 @@ WHERE %s
 // GetGithubExternalIDForRefs allows us to find the external id for GitHub pull requests based on
 // a slice of head refs. We need this in order to match incoming status webhooks to pull requests as
 // the only information they provide is the remote branch
-func (s *Store) GetGithubExternalIDForRefs(ctx context.Context, refs []string) ([]string, error) {
+func (s *Store) GetGithubExternalIDForRefs(ctx context.Context, repoID int64, refs []string) ([]string, error) {
 	queryFmtString := `
 SELECT external_id FROM changesets
 WHERE external_service_type = 'github'
 AND external_branch IN (%s)
+AND repo_id = %d
 ORDER BY id ASC
 `
 	inClause := make([]*sqlf.Query, 0, len(refs))
@@ -2653,7 +2656,7 @@ ORDER BY id ASC
 		}
 		inClause = append(inClause, sqlf.Sprintf("%s", ref))
 	}
-	q := sqlf.Sprintf(queryFmtString, sqlf.Join(inClause, ","))
+	q := sqlf.Sprintf(queryFmtString, sqlf.Join(inClause, ","), repoID)
 	ids := make([]string, 0, len(refs))
 	_, _, err := s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
 		var s string
