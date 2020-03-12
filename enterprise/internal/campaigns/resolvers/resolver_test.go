@@ -974,7 +974,8 @@ func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
 			Patches: []graphqlbackend.CampaignPlanPatch{
 				{
 					Repository:   graphqlbackend.MarshalRepositoryID(1),
-					BaseRevision: "master",
+					BaseRevision: "f00b4r",
+					BaseRef:      "master",
 					Patch:        "!!! this is not a valid unified diff !!!\n--- x\n+++ y\n@@ 1,1 2,2\na",
 				},
 			},
@@ -1045,7 +1046,7 @@ func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
 
 		mustExec(ctx, t, s, nil, &response, fmt.Sprintf(`
       mutation {
-        createCampaignPlanFromPatches(patches: [{repository: %q, baseRevision: "master", patch: %q}]) {
+		createCampaignPlanFromPatches(patches: [{repository: %q, baseRevision: "f00b4r", baseRef: "master", patch: %q}]) {
           ... on CampaignPlan {
             id
             status {

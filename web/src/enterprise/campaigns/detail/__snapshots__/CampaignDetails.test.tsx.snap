@@ -154,7 +154,7 @@ Array [
   </form>,
   "CampaignStatus(state=PROCESSING)",
   <h3
-    className="mt-3 mb-2"
+    className="mt-3"
   >
     Changesets
   </h3>,
@@ -197,7 +197,7 @@ Array [
         "thrownError": null,
       }
     }
-    className="mt-3"
+    className="mt-2"
     history={
       Object {
         "action": "POP",
@@ -324,7 +324,7 @@ Array [
     </em>
   </p>,
   <h3
-    className="mt-3 mb-2"
+    className="mt-3"
   >
     Changesets
   </h3>,
@@ -10651,7 +10651,7 @@ Array [
         "thrownError": null,
       }
     }
-    className="mt-3"
+    className="mt-2"
     history={
       Object {
         "action": "POP",
@@ -10782,7 +10782,7 @@ Array [
     </em>
   </p>,
   <h3
-    className="mt-3 mb-2"
+    className="mt-3"
   >
     Changesets
   </h3>,
@@ -21109,7 +21109,7 @@ Array [
         "thrownError": null,
       }
     }
-    className="mt-3"
+    className="mt-2"
     history={
       Object {
         "action": "POP",
@@ -21230,23 +21230,6 @@ Array [
                   </strong>
                   ?
                 </p>
-                <div
-                  className="form-group"
-                >
-                  <label>
-                    <input
-                      checked={false}
-                      onChange={[Function]}
-                      type="checkbox"
-                    />
-                     
-                    Close all 
-                    2
-                     
-                    changesets
-                     on code hosts
-                  </label>
-                </div>
                 <button
                   className="btn mr-1 btn-secondary mr-1"
                   disabled={true}
@@ -21287,23 +21270,6 @@ Array [
                   </strong>
                   ?
                 </p>
-                <div
-                  className="form-group"
-                >
-                  <label>
-                    <input
-                      checked={false}
-                      onChange={[Function]}
-                      type="checkbox"
-                    />
-                     
-                    Close all 
-                    2
-                     
-                    changesets
-                     on code hosts
-                  </label>
-                </div>
                 <button
                   className="btn mr-1 btn-danger"
                   disabled={true}
@@ -21364,7 +21330,7 @@ Array [
     </em>
   </p>,
   <h3
-    className="mt-3 mb-2"
+    className="mt-3"
   >
     Changesets
   </h3>,
@@ -31691,7 +31657,7 @@ Array [
         "thrownError": null,
       }
     }
-    className="mt-3"
+    className="mt-2"
     history={
       Object {
         "action": "POP",

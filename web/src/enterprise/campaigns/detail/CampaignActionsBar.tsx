@@ -13,7 +13,9 @@ interface Props {
     previewingCampaignPlan: boolean
 
     campaign?: Pick<GQL.ICampaign, 'name' | 'closedAt' | 'viewerCanAdminister' | 'publishedAt'> & {
-        changesets: Pick<GQL.ICampaign['changesets'], 'totalCount'>
+        changesets: Pick<GQL.ICampaign['changesets'], 'totalCount'> & {
+            nodes: Pick<GQL.IExternalChangeset, 'state'>[]
+        }
         status: Pick<GQL.ICampaign['status'], 'state'>
     }
 
@@ -36,6 +38,9 @@ export const CampaignActionsBar: React.FunctionComponent<Props> = ({
 
     const campaignProcessing = campaign ? campaign.status.state === GQL.BackgroundProcessState.PROCESSING : false
     const actionsDisabled = mode === 'deleting' || mode === 'closing' || campaignProcessing
+
+    const openChangesetsCount =
+        campaign?.changesets.nodes.filter(changeset => changeset.state === GQL.ChangesetState.OPEN).length ?? 0
 
     return (
         <div className="d-flex mb-2">
@@ -86,7 +91,7 @@ export const CampaignActionsBar: React.FunctionComponent<Props> = ({
                                             Close campaign <strong>{campaign.name}</strong>?
                                         </p>
                                     }
-                                    changesetsCount={campaign.changesets.totalCount}
+                                    changesetsCount={openChangesetsCount}
                                     buttonText="Close"
                                     onButtonClick={onClose}
                                     buttonClassName="btn-secondary mr-1"
@@ -100,7 +105,7 @@ export const CampaignActionsBar: React.FunctionComponent<Props> = ({
                                         Delete campaign <strong>{campaign.name}</strong>?
                                     </p>
                                 }
-                                changesetsCount={campaign.changesets.totalCount}
+                                changesetsCount={openChangesetsCount}
                                 buttonText="Delete"
                                 onButtonClick={onDelete}
                                 buttonClassName="btn-danger"

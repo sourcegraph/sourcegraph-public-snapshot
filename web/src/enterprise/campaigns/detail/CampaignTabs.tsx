@@ -104,7 +104,6 @@ export const CampaignTabs: React.FunctionComponent<Props> = ({
                 changesetUpdates={changesetUpdates}
                 history={history}
                 location={location}
-                className="mt-3"
                 isLightTheme={isLightTheme}
             />
             <CampaignDiffs

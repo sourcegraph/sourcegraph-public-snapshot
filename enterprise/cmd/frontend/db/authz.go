@@ -75,8 +75,8 @@ func (s *authzStore) GrantPendingPermissions(ctx context.Context, args *db.Grant
 
 	for _, bindID := range bindIDs {
 		err = txs.GrantPendingPermissions(ctx, args.UserID, &authz.UserPendingPermissions{
-			ServiceType: "sourcegraph",
-			ServiceID:   "https://sourcegraph.com/",
+			ServiceType: authz.SourcegraphServiceType,
+			ServiceID:   authz.SourcegraphServiceID,
 			BindID:      bindID,
 			Perm:        args.Perm,
 			Type:        args.Type,

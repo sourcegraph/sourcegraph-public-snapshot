@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"gopkg.in/inconshreveable/log15.v2"
 )
@@ -64,11 +65,11 @@ type OAuthProviderOp struct {
 	MaxBatchRequests int
 }
 
-func newOAuthProvider(op OAuthProviderOp) *OAuthProvider {
+func newOAuthProvider(op OAuthProviderOp, cli httpcli.Doer) *OAuthProvider {
 	p := &OAuthProvider{
 		token: op.Token,
 
-		clientProvider:    gitlab.NewClientProvider(op.BaseURL, nil),
+		clientProvider:    gitlab.NewClientProvider(op.BaseURL, cli),
 		clientURL:         op.BaseURL,
 		codeHost:          extsvc.NewCodeHost(op.BaseURL, gitlab.ServiceType),
 		cache:             op.MockCache,

@@ -23,6 +23,12 @@ type lsifRequest struct {
 	cursor *string
 	query  queryValues
 	body   io.ReadCloser
+
+	// (Optional) used in routing to select the "hot" lsif-server
+	// that was used in recent requests for similar data. Requests
+	// that are likely to open the same dump should hit the same
+	// server so that the SQLite database is already in the cache.
+	routingKey string
 }
 
 type lsifResponseMeta struct {
@@ -39,7 +45,12 @@ func (c *Client) do(ctx context.Context, lsifRequest *lsifRequest, payload inter
 		method = "GET"
 	}
 
-	url, err := buildURL(c.URL, lsifRequest.path, lsifRequest.cursor, lsifRequest.query)
+	serverURL, err := c.endpoint.Get(lsifRequest.routingKey, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	url, err := buildURL(serverURL, lsifRequest.path, lsifRequest.cursor, lsifRequest.query)
 	if err != nil {
 		return nil, err
 	}
