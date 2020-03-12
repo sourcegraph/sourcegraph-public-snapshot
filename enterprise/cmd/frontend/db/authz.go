@@ -142,6 +142,27 @@ func (s *authzStore) AuthorizedRepos(ctx context.Context, args *db.AuthorizedRep
 // which implements the db.AuthzStore interface. It proactively clean up left-over pending permissions to
 // prevent accidental reuse (i.e. another user with same username or email address(es) but not the same person).
 func (s *authzStore) RevokeUserPermissions(ctx context.Context, args *db.RevokeUserPermissionsArgs) error {
+
+	// Gather external accounts associated to the user.
+	extAccounts, err := s.store.ListExternalAccounts(ctx, args.UserID)
+	if err != nil {
+		return errors.Wrap(err, "list external accounts")
+	}
+
+	toDeleteAccounts := make([]*extsvc.ExternalAccounts, 0, len(extAccounts)+1)
+	for _, acct := range extAccounts {
+		toDeleteAccounts = append(toDeleteAccounts, &extsvc.ExternalAccounts{
+			ServiceType: acct.ServiceType,
+			ServiceID:   acct.ServiceID,
+			AccountIDs:  []string{acct.AccountID},
+		})
+	}
+	toDeleteAccounts = append(toDeleteAccounts, &extsvc.ExternalAccounts{
+		ServiceType: args.ServiceType,
+		ServiceID:   args.ServiceID,
+		AccountIDs:  append([]string{args.Username}, args.VerifiedEmails...),
+	})
+
 	txs, err := s.store.Transact(ctx)
 	if err != nil {
 		return errors.Wrap(err, "start transaction")
@@ -149,16 +170,13 @@ func (s *authzStore) RevokeUserPermissions(ctx context.Context, args *db.RevokeU
 	defer txs.Done(&err)
 
 	if err = txs.DeleteAllUserPermissions(ctx, args.UserID); err != nil {
-		return err
+		return errors.Wrap(err, "delete all user permissions")
 	}
 
-	accounts := &extsvc.ExternalAccounts{
-		ServiceType: args.ServiceType,
-		ServiceID:   args.ServiceID,
-		AccountIDs:  append([]string{args.Username}, args.VerifiedEmails...),
-	}
-	if err := txs.DeleteAllUserPendingPermissions(ctx, accounts); err != nil {
-		return err
+	for i := range toDeleteAccounts {
+		if err := txs.DeleteAllUserPendingPermissions(ctx, toDeleteAccounts[i]); err != nil {
+			return errors.Wrap(err, "delete all user pending permissions")
+		}
 	}
 	return nil
 }
