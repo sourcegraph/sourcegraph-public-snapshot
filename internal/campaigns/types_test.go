@@ -413,7 +413,7 @@ func TestChangesetEventsReviewState(t *testing.T) {
 	}
 
 	for i, tc := range tests {
-		have, err := tc.events.ReviewState()
+		have, err := tc.events.reviewState()
 		if err != nil {
 			t.Fatalf("got error: %s", err)
 		}
