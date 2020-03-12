@@ -16,7 +16,7 @@ import (
 var (
 	servers              = env.Get("LSIF_NUM_SERVERS", "1", "the number of server instances to run (defaults to one)")
 	workers              = env.Get("LSIF_NUM_WORKERS", "1", "the number of worker instances to run (defaults to one)")
-	disablePrometheus, _ = strconv.ParseBool(env.Get("DISABLE_PROMETHEUS", "", "do not run a prometheus process"))
+	disablePrometheus, _ = strconv.ParseBool(env.Get("DISABLE_PROMETHEUS", "false", "do not run a prometheus process"))
 
 	// Set in docker image
 	prometheusStorageDir       = os.Getenv("PROMETHEUS_STORAGE_DIR")
