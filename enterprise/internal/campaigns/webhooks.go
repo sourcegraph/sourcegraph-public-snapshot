@@ -3,6 +3,7 @@ package campaigns
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -12,6 +13,7 @@ import (
 	gh "github.com/google/go-github/v28/github"
 	"github.com/hashicorp/go-multierror"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	bbs "github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -28,9 +30,14 @@ type Webhook struct {
 	Service string
 }
 
+type webhookPR struct {
+	PR     int64
+	RepoID int64
+}
+
 func (h Webhook) upsertChangesetEvent(
 	ctx context.Context,
-	pr int64,
+	pr webhookPR,
 	ev interface{ Key() string },
 ) (err error) {
 	var tx *Store
@@ -40,7 +47,8 @@ func (h Webhook) upsertChangesetEvent(
 	defer tx.Done(&err)
 
 	cs, err := tx.GetChangeset(ctx, GetChangesetOpts{
-		ExternalID:          strconv.FormatInt(pr, 10),
+		RepoID:              pr.RepoID,
+		ExternalID:          strconv.FormatInt(pr.PR, 10),
 		ExternalServiceType: h.Service,
 	})
 	if err != nil {
@@ -125,13 +133,13 @@ func NewBitbucketServerWebhook(store *Store, repos repos.Store, now func() time.
 
 // ServeHTTP implements the http.Handler interface.
 func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	e, err := h.parseEvent(r)
+	e, externalServiceID, err := h.parseEvent(r)
 	if err != nil {
 		respond(w, err.code, err)
 		return
 	}
 
-	prs, ev := h.convertEvent(r.Context(), e)
+	prs, ev := h.convertEvent(r.Context(), externalServiceID, e)
 	if len(prs) == 0 || ev == nil {
 		respond(w, http.StatusOK, nil) // Nothing to do
 		return
@@ -149,10 +157,10 @@ func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *GitHubWebhook) parseEvent(r *http.Request) (interface{}, *httpError) {
+func (h *GitHubWebhook) parseEvent(r *http.Request) (interface{}, int64, *httpError) {
 	payload, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		return nil, &httpError{http.StatusInternalServerError, err}
+		return nil, 0, &httpError{http.StatusInternalServerError, err}
 	}
 
 	// 🚨 SECURITY: Try to authenticate the request with any of the stored secrets
@@ -163,45 +171,69 @@ func (h *GitHubWebhook) parseEvent(r *http.Request) (interface{}, *httpError) {
 	args := repos.StoreListExternalServicesArgs{Kinds: []string{"GITHUB"}}
 	es, err := h.Repos.ListExternalServices(r.Context(), args)
 	if err != nil {
-		return nil, &httpError{http.StatusInternalServerError, err}
-	}
-
-	var secrets [][]byte
-	for _, e := range es {
-		c, _ := e.Configuration()
-		for _, hook := range c.(*schema.GitHubConnection).Webhooks {
-			secrets = append(secrets, []byte(hook.Secret))
-		}
+		return nil, 0, &httpError{http.StatusInternalServerError, err}
 	}
 
 	sig := r.Header.Get("X-Hub-Signature")
-	for _, secret := range secrets {
-		if err = gh.ValidateSignature(sig, payload, secret); err == nil {
+	var externalServiceID int64
+	for _, e := range es {
+		c, _ := e.Configuration()
+		con, ok := c.(*schema.GitHubConnection)
+		if !ok {
+			continue
+		}
+
+		for _, hook := range con.Webhooks {
+			if err = gh.ValidateSignature(sig, payload, []byte(hook.Secret)); err != nil {
+				continue
+			}
+			if externalServiceID != 0 {
+				return nil, 0, &httpError{http.StatusInternalServerError, errors.New("Cannot have 2 external services which use the same secret.")}
+			}
+			externalServiceID = e.ID
 			break
 		}
 	}
+	if err != nil {
+		return nil, 0, &httpError{http.StatusUnauthorized, err}
+	}
 
-	if len(secrets) == 0 || err != nil {
-		return nil, &httpError{http.StatusUnauthorized, err}
+	if externalServiceID == 0 {
+		return nil, 0, &httpError{http.StatusNotFound, errors.New("webhook not found")}
 	}
 
 	e, err := gh.ParseWebHook(gh.WebHookType(r), payload)
 	if err != nil {
-		return nil, &httpError{http.StatusBadRequest, err}
+		return nil, 0, &httpError{http.StatusBadRequest, err}
 	}
-
-	return e, nil
+	return e, externalServiceID, nil
 }
 
-func (h *GitHubWebhook) convertEvent(ctx context.Context, theirs interface{}) (prs []int64, ours interface{ Key() string }) {
+func (h *GitHubWebhook) repoByExternalID(ctx context.Context, externalServiceID, externalID int64) (int64, error) {
+	// fetch all repos for the external ID for this external service
+	repos, _ := h.Repos.ListRepos(ctx, repos.StoreListReposArgs{ExternalRepos: []api.ExternalRepoSpec{
+		api.ExternalRepoSpec{ID: fmt.Sprintf("%d", externalID), ServiceType: "github", ServiceID: fmt.Sprintf("%d", externalServiceID)},
+	}})
+	if len(repos) == 0 {
+		println("repository not found")
+	}
+	// if err != nil {
+	// 	return webhookPR{}, {}, err
+	// }
+	return int64(repos[0].ID), nil
+}
+
+func (h *GitHubWebhook) convertEvent(ctx context.Context, externalServiceID int64, theirs interface{}) (prs []webhookPR, ours interface{ Key() string }) {
 	log15.Debug("GitHub webhook received", "type", fmt.Sprintf("%T", theirs))
 	switch e := theirs.(type) {
 	case *gh.IssueCommentEvent:
-		prs = append(prs, int64(*e.Issue.Number))
+		repoID, _ := h.repoByExternalID(ctx, externalServiceID, e.Issue.GetRepository().GetID())
+		prs = append(prs, webhookPR{PR: int64(*e.Issue.Number), RepoID: repoID})
 		return prs, h.issueComment(e)
 
 	case *gh.PullRequestEvent:
-		prs = append(prs, int64(*e.Number))
+		repoID, _ := h.repoByExternalID(ctx, externalServiceID, e.GetRepo().GetID())
+		prs = append(prs, webhookPR{PR: int64(*e.Number), RepoID: repoID})
 
 		switch *e.Action {
 		case "assigned":
@@ -225,11 +257,13 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, theirs interface{}) (p
 		}
 
 	case *gh.PullRequestReviewEvent:
-		prs = append(prs, int64(*e.PullRequest.Number))
+		repoID, _ := h.repoByExternalID(ctx, externalServiceID, e.GetRepo().GetID())
+		prs = append(prs, webhookPR{PR: int64(*e.PullRequest.Number), RepoID: repoID})
 		ours = h.pullRequestReviewEvent(e)
 
 	case *gh.PullRequestReviewCommentEvent:
-		prs = append(prs, int64(*e.PullRequest.Number))
+		repoID, _ := h.repoByExternalID(ctx, externalServiceID, e.PullRequest.GetBase().GetRepo().GetID())
+		prs = append(prs, webhookPR{PR: int64(*e.PullRequest.Number), RepoID: repoID})
 		switch *e.Action {
 		case "created", "edited":
 			ours = h.pullRequestReviewCommentEvent(e)
@@ -249,7 +283,9 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, theirs interface{}) (p
 			return nil, nil
 		}
 
-		ids, err := h.Store.GetGithubExternalIDForRefs(ctx, refs)
+		repoID, _ := h.repoByExternalID(ctx, externalServiceID, e.GetRepo().GetID())
+
+		ids, err := h.Store.GetGithubExternalIDForRefs(ctx, repoID, refs)
 		if err != nil {
 			log15.Error("Error executing GetGithubExternalIDForRefs", "err", err)
 			return nil, nil
@@ -261,7 +297,7 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, theirs interface{}) (p
 				log15.Error("Error parsing external id", "err", err)
 				continue
 			}
-			prs = append(prs, i)
+			prs = append(prs, webhookPR{RepoID: repoID, PR: i})
 		}
 
 		ours = h.commitStatusEvent(e)
@@ -274,7 +310,8 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, theirs interface{}) (p
 		for _, pr := range cs.PullRequests {
 			n := pr.GetNumber()
 			if n != 0 {
-				prs = append(prs, int64(n))
+				repoID, _ := h.repoByExternalID(ctx, externalServiceID, cs.GetRepository().GetID())
+				prs = append(prs, webhookPR{PR: int64(n), RepoID: repoID})
 			}
 		}
 		ours = h.checkSuiteEvent(cs)
@@ -287,7 +324,8 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, theirs interface{}) (p
 		for _, pr := range cr.PullRequests {
 			n := pr.GetNumber()
 			if n != 0 {
-				prs = append(prs, int64(n))
+				repoID, _ := h.repoByExternalID(ctx, externalServiceID, e.GetRepo().GetID())
+				prs = append(prs, webhookPR{PR: int64(n), RepoID: repoID})
 			}
 		}
 		ours = h.checkRunEvent(cr)
@@ -659,14 +697,14 @@ func (h *BitbucketServerWebhook) Upsert(every time.Duration) {
 }
 
 func (h *BitbucketServerWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	e, err := h.parseEvent(r)
+	e, externalServiceID, err := h.parseEvent(r)
 	if err != nil {
 		respond(w, err.code, err)
 		return
 	}
 
-	pr, ev := h.convertEvent(e)
-	if pr == 0 || ev == nil {
+	pr, ev := h.convertEvent(r.Context(), externalServiceID, e)
+	if pr.PR == 0 || ev == nil {
 		log15.Debug("Dropping Bitbucket Server webhook event", "type", fmt.Sprintf("%T", e))
 		respond(w, http.StatusOK, nil) // Nothing to do
 		return
@@ -677,19 +715,20 @@ func (h *BitbucketServerWebhook) ServeHTTP(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *httpError) {
+func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, int64, *httpError) {
 	payload, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		return nil, &httpError{http.StatusInternalServerError, err}
+		return nil, 0, &httpError{http.StatusInternalServerError, err}
 	}
 
 	args := repos.StoreListExternalServicesArgs{Kinds: []string{"BITBUCKETSERVER"}}
 	es, err := h.Repos.ListExternalServices(r.Context(), args)
 	if err != nil {
-		return nil, &httpError{http.StatusInternalServerError, err}
+		return nil, 0, &httpError{http.StatusInternalServerError, err}
 	}
 
-	var secrets [][]byte
+	sig := r.Header.Get("X-Hub-Signature")
+	var externalServiceID int64
 	for _, e := range es {
 		c, _ := e.Configuration()
 		con, ok := c.(*schema.BitbucketServerConnection)
@@ -697,35 +736,45 @@ func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *http
 			continue
 		}
 
-		if secret := con.WebhookSecret(); secret != "" {
-			secrets = append(secrets, []byte(secret))
+		if s := con.WebhookSecret(); s != "" {
+			if err = gh.ValidateSignature(sig, payload, []byte(s)); err != nil {
+				continue
+			}
+			// if there are 2 external services with the same secret, we cannot safely match to one externalService.
+			if externalServiceID != 0 {
+				return nil, 0, &httpError{http.StatusInternalServerError, errors.New("two webhooks with the same secret found")}
+			}
+			externalServiceID = e.ID
 		}
 	}
-
-	sig := r.Header.Get("X-Hub-Signature")
-	for _, secret := range secrets {
-		if err = gh.ValidateSignature(sig, payload, secret); err == nil {
-			break
-		}
-	}
-
-	if len(secrets) == 0 || err != nil {
-		return nil, &httpError{http.StatusUnauthorized, err}
+	if externalServiceID == 0 {
+		return nil, 0, &httpError{http.StatusUnauthorized, err}
 	}
 
 	e, err := bbs.ParseWebhookEvent(bbs.WebhookEventType(r), payload)
 	if err != nil {
-		return nil, &httpError{http.StatusBadRequest, err}
+		return nil, 0, &httpError{http.StatusBadRequest, err}
 	}
-	return e, nil
+	return e, externalServiceID, nil
 }
 
-func (h *BitbucketServerWebhook) convertEvent(theirs interface{}) (pr int64, ours interface{ Key() string }) {
+func (h *BitbucketServerWebhook) convertEvent(ctx context.Context, externalServiceID int64, theirs interface{}) (pr webhookPR, ours interface{ Key() string }) {
 	log15.Debug("Bitbucket Server webhook received", "type", fmt.Sprintf("%T", theirs))
 
 	switch e := theirs.(type) {
 	case *bbs.PullRequestEvent:
-		return int64(e.PullRequest.ID), e.Activity
+		fmt.Printf("%d", externalServiceID)
+		// fetch all repos for the external ID for this external service
+		repos, _ := h.Repos.ListRepos(ctx, repos.StoreListReposArgs{ExternalRepos: []api.ExternalRepoSpec{
+			api.ExternalRepoSpec{ID: fmt.Sprintf("%d", e.PullRequest.ToRef.Repository.ID), ServiceType: "bitbucketserver", ServiceID: fmt.Sprintf("%d", externalServiceID)},
+		}})
+		if len(repos) == 0 {
+			println("repository not found")
+		}
+		// if err != nil {
+		// 	return webhookPR{}, {}, err
+		// }
+		return webhookPR{PR: int64(e.PullRequest.ID), RepoID: int64(repos[0].ID)}, e.Activity
 	}
 
 	return
