@@ -264,7 +264,7 @@ func (r *campaignJobResolver) PublicationEnqueued(ctx context.Context) (bool, er
 		return r.preloadedChangesetJob != nil, nil
 	}
 
-	_, err := r.store.GetChangesetJob(ctx, ee.GetChangesetJobOpts{CampaignJobID: r.job.ID})
+	cj, err := r.store.GetChangesetJob(ctx, ee.GetChangesetJobOpts{CampaignJobID: r.job.ID})
 	if err != nil && err != ee.ErrNoResults {
 		return false, err
 	}
@@ -272,7 +272,10 @@ func (r *campaignJobResolver) PublicationEnqueued(ctx context.Context) (bool, er
 		return false, nil
 	}
 
-	return true, nil
+	// FinishedAt is always set once the ChangesetJob is finished, even if it
+	// failed. If it's zero, we're still executing the job. If not, we're
+	// done and the "publication" is not "enqueued" anymore.
+	return cj.FinishedAt.IsZero(), nil
 }
 
 type previewFileDiffConnectionResolver struct {

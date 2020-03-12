@@ -59,7 +59,12 @@ func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]graphqlback
 }
 
 func (r *changesetsConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	opts := ee.CountChangesetsOpts{CampaignID: r.opts.CampaignID}
+	opts := ee.CountChangesetsOpts{
+		CampaignID:          r.opts.CampaignID,
+		ExternalState:       r.opts.ExternalState,
+		ExternalCheckState:  r.opts.ExternalCheckState,
+		ExternalReviewState: r.opts.ExternalReviewState,
+	}
 	count, err := r.store.CountChangesets(ctx, opts)
 	return int32(count), err
 }
@@ -230,10 +235,7 @@ func (r *changesetResolver) CheckState(ctx context.Context) (*campaigns.Changese
 	if err != nil {
 		return nil, err
 	}
-	state, err := campaigns.ComputeCheckState(r.Changeset, events), nil
-	if err != nil {
-		return nil, err
-	}
+	state := campaigns.ComputeCheckState(r.Changeset, events)
 	if state == campaigns.ChangesetCheckStateUnknown {
 		return nil, nil
 	}

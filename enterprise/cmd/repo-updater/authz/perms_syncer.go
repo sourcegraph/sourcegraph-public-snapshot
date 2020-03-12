@@ -74,7 +74,7 @@ func NewPermsSyncer(
 		permsStore:       permsStore,
 		db:               db,
 		clock:            clock,
-		scheduleInterval: 10 * time.Minute,
+		scheduleInterval: time.Minute,
 	}
 }
 
@@ -227,6 +227,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32) error {
 		return errors.Wrap(err, "set user permissions")
 	}
 
+	log15.Info("PermsSyncer.syncUserPerms.synced", "userID", userID)
 	return nil
 }
 
@@ -322,6 +323,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID) erro
 		return errors.Wrap(err, "set repository pending permissions")
 	}
 
+	log15.Info("PermsSyncer.syncRepoPerms.synced", "repoID", repo.ID, "name", repo.Name)
 	return nil
 }
 
@@ -419,7 +421,7 @@ func (s *PermsSyncer) loadIDsWithTime(ctx context.Context, q *sqlf.Query) ([]sca
 func (s *PermsSyncer) scheduleUsersWithNoPerms(ctx context.Context) ([]scheduledUser, error) {
 	q := sqlf.Sprintf(`
 -- source: enterprise/cmd/repo-updater/authz/perms_scheduler.go:PermsScheduler.scheduleUsersWithNoPerms
-SELECT users.id, '1970-01-01 00:00:00+00' FROM users
+SELECT users.id, '1970-01-01 00:00:00+00'::timestamptz FROM users
 WHERE users.site_admin = FALSE
 AND users.id NOT IN
 	(SELECT perms.user_id FROM user_permissions AS perms)
@@ -446,7 +448,7 @@ AND users.id NOT IN
 func (s *PermsSyncer) scheduleReposWithNoPerms(ctx context.Context) ([]scheduledRepo, error) {
 	q := sqlf.Sprintf(`
 -- source: enterprise/cmd/repo-updater/authz/perms_scheduler.go:PermsScheduler.scheduleReposWithNoPerms
-SELECT repo.id, '1970-01-01 00:00:00+00' FROM repo
+SELECT repo.id, '1970-01-01 00:00:00+00'::timestamptz FROM repo
 WHERE repo.private = TRUE AND repo.id NOT IN
 	(SELECT perms.repo_id FROM repo_permissions AS perms)
 `)
@@ -569,8 +571,8 @@ func (s *PermsSyncer) schedule(ctx context.Context) (*schedule, error) {
 	//   initial limit  = <predicted from the previous step>
 	//	 consumed by users = <initial limit> / (<total repos> / <page size>)
 	//   consumed by repos = (<initial limit> - <consumed by users>) / (<total users> / <page size>)
-	// Hard coded both to 100 for now.
-	const limit = 100
+	// Hard coded both to 10 for now.
+	const limit = 10
 
 	// TODO(jchen): Use better heuristics for setting NexySyncAt, the initial version
 	// just uses the value of LastUpdatedAt get from the perms tables.

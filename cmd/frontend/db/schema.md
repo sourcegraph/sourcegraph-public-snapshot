@@ -180,6 +180,9 @@ Foreign-key constraints:
  external_deleted_at   | timestamp with time zone | 
  external_branch       | text                     | 
  external_updated_at   | timestamp with time zone | 
+ external_state        | text                     | 
+ external_review_state | text                     | 
+ external_check_state  | text                     | 
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
