@@ -398,6 +398,8 @@ func RunChangesetJob(
 	// We keep a clone because CreateChangesets might overwrite the changeset
 	// with outdated metadata.
 	clone := cs.Changeset.Clone()
+	events := clone.Events()
+	clone.SetDerivedState(events)
 	if err = store.CreateChangesets(ctx, clone); err != nil {
 		if _, ok := err.(AlreadyExistError); !ok {
 			return err
@@ -412,12 +414,14 @@ func RunChangesetJob(
 		if err := clone.SetMetadata(cs.Changeset.Metadata); err != nil {
 			return errors.Wrap(err, "setting changeset metadata")
 		}
+		events = clone.Events()
+		clone.SetDerivedState(events)
 		if err = store.UpdateChangesets(ctx, clone); err != nil {
 			return err
 		}
 	}
 
-	if err := store.UpsertChangesetEvents(ctx, clone.Events()...); err != nil {
+	if err := store.UpsertChangesetEvents(ctx, events...); err != nil {
 		log15.Error("UpsertChangesetEvents", "err", err)
 		return err
 	}

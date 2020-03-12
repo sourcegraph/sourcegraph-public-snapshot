@@ -16,6 +16,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Site-Admin/Instrumentation is now available in the Kubernetes cluster deployment [8805](https://github.com/sourcegraph/sourcegraph/pull/8805).
 - Extensions can now specify a `baseUri` in the `DocumentFilter` when registering providers.
 - Admins can now exclude GitHub forks from the set of repositories being mirrored in Sourcegraph with the `"exclude": [{"forks": true}]` GitHub external service configuration. [#8974](https://github.com/sourcegraph/sourcegraph/pull/8974)
+- Campaign changesets can be filtered by State, Review State and Check State [8848](https://github.com/sourcegraph/sourcegraph/pull/8848)
 
 ### Changed
 

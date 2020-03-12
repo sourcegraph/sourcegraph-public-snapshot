@@ -60,16 +60,19 @@ export const CloseDeleteCampaignPrompt: React.FunctionComponent<Props> = ({
                     <div className="card mt-1">
                         <div className="card-body">
                             {message}
-                            <div className="form-group">
-                                <label>
-                                    <input
-                                        type="checkbox"
-                                        checked={closeChangesets}
-                                        onChange={e => setCloseChangesets(e.target.checked)}
-                                    />{' '}
-                                    Close all {changesetsCount} {pluralize('changeset', changesetsCount)} on code hosts
-                                </label>
-                            </div>
+                            {changesetsCount > 0 && (
+                                <div className="form-group">
+                                    <label>
+                                        <input
+                                            type="checkbox"
+                                            checked={closeChangesets}
+                                            onChange={e => setCloseChangesets(e.target.checked)}
+                                        />{' '}
+                                        Close {changesetsCount} open {pluralize('changeset', changesetsCount)} on code
+                                        hosts
+                                    </label>
+                                </div>
+                            )}
                             <button
                                 type="button"
                                 disabled={disabled}

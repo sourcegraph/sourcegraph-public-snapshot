@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -481,17 +480,51 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 	return csr, nil
 }
 
-func (r *Resolver) Changesets(ctx context.Context, args *graphqlutil.ConnectionArgs) (graphqlbackend.ExternalChangesetsConnectionResolver, error) {
+func (r *Resolver) Changesets(ctx context.Context, args *graphqlbackend.ListChangesetsArgs) (graphqlbackend.ExternalChangesetsConnectionResolver, error) {
 	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access changesets.
 	if err := allowReadAccess(ctx); err != nil {
 		return nil, err
 	}
+	opts, err := listChangesetOptsFromArgs(args)
+	if err != nil {
+		return nil, err
+	}
 	return &changesetsConnectionResolver{
 		store: r.store,
-		opts: ee.ListChangesetsOpts{
-			Limit: int(args.GetFirst()),
-		},
+		opts:  opts,
 	}, nil
+}
+
+func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs) (ee.ListChangesetsOpts, error) {
+	var opts ee.ListChangesetsOpts
+	if args == nil {
+		return opts, nil
+	}
+	if args.First != nil {
+		opts.Limit = int(*args.First)
+	}
+	if args.State != nil {
+		state := campaigns.ChangesetState(*args.State)
+		if !state.Valid() {
+			return opts, errors.New("changeset state not valid")
+		}
+		opts.ExternalState = &state
+	}
+	if args.ReviewState != nil {
+		state := campaigns.ChangesetReviewState(*args.ReviewState)
+		if !state.Valid() {
+			return opts, errors.New("changeset review state not valid")
+		}
+		opts.ExternalReviewState = &state
+	}
+	if args.CheckState != nil {
+		state := campaigns.ChangesetCheckState(*args.CheckState)
+		if !state.Valid() {
+			return opts, errors.New("changeset check state not valid")
+		}
+		opts.ExternalCheckState = &state
+	}
+	return opts, nil
 }
 
 func (r *Resolver) CreateCampaignPlanFromPatches(ctx context.Context, args graphqlbackend.CreateCampaignPlanFromPatchesArgs) (graphqlbackend.CampaignPlanResolver, error) {
