@@ -80,6 +80,11 @@ func (h Webhook) upsertChangesetEvent(
 		event = existing
 	}
 
+	// Add new event
+	if err := tx.UpsertChangesetEvents(ctx, event); err != nil {
+		return err
+	}
+
 	// The webhook may have caused the external state of the changeset to change
 	// so we need to update it. We need all events as we may have received more than just the
 	// event we are currently handling
@@ -87,14 +92,8 @@ func (h Webhook) upsertChangesetEvent(
 		ChangesetIDs: []int64{cs.ID},
 		Limit:        -1,
 	})
-	events = append(events, event)
 	cs.SetDerivedState(events)
-
 	if err := tx.UpdateChangesets(ctx, cs); err != nil {
-		return err
-	}
-
-	if err := tx.UpsertChangesetEvents(ctx, event); err != nil {
 		return err
 	}
 
