@@ -497,9 +497,9 @@ func (s *PermsStore) SetRepoPendingPermissions(ctx context.Context, accounts *ex
 
 	p.UserIDs = roaring.NewBitmap()
 
-	// Insert rows for bindIDs without one in the "user_pending_permissions" table.
+	// Insert rows for AcountIDs without one in the "user_pending_permissions" table.
 	// The insert does not store any permissions data but uses auto-increment key to generate unique ID.
-	// This help guarantees rows of all bindIDs exist when getting user IDs in next load query.
+	// This help guarantees rows of all AcountIDs exist when getting user IDs in next load query.
 	updatedAt := txs.clock()
 	p.UpdatedAt = updatedAt
 	if len(accounts.AccountIDs) > 0 {
@@ -541,12 +541,12 @@ func (s *PermsStore) SetRepoPendingPermissions(ctx context.Context, accounts *ex
 	}
 
 	q = loadUserPendingPermissionsByIDBatchQuery(changedIDs, p.Perm, authz.PermRepos, "FOR UPDATE")
-	bindIDSet, loadedIDs, err := txs.batchLoadUserPendingPermissions(ctx, q)
+	idToSpecs, loadedIDs, err := txs.batchLoadUserPendingPermissions(ctx, q)
 	if err != nil {
 		return errors.Wrap(err, "batch load user pending permissions")
 	}
 
-	updatedPerms := make([]*authz.UserPendingPermissions, 0, len(bindIDSet))
+	updatedPerms := make([]*authz.UserPendingPermissions, 0, len(idToSpecs))
 	for _, id := range changedIDs {
 		userID := int32(id)
 		repoIDs := loadedIDs[userID]
@@ -561,10 +561,11 @@ func (s *PermsStore) SetRepoPendingPermissions(ctx context.Context, accounts *ex
 			repoIDs.Remove(uint32(p.RepoID))
 		}
 
+		spec := idToSpecs[userID]
 		updatedPerms = append(updatedPerms, &authz.UserPendingPermissions{
-			ServiceType: accounts.ServiceType,
-			ServiceID:   accounts.ServiceID,
-			BindID:      bindIDSet[userID],
+			ServiceType: spec.ServiceType,
+			ServiceID:   spec.ServiceID,
+			BindID:      spec.AccountID,
 			Perm:        p.Perm,
 			Type:        authz.PermRepos,
 			IDs:         repoIDs,
@@ -618,7 +619,7 @@ func (s *PermsStore) loadUserPendingPermissionsIDs(ctx context.Context, q *sqlf.
 }
 
 func (s *PermsStore) batchLoadUserPendingPermissions(ctx context.Context, q *sqlf.Query) (
-	bindIDSet map[int32]string,
+	idToSpecs map[int32]extsvc.ExternalAccountSpec,
 	loaded map[int32]*roaring.Bitmap,
 	err error,
 ) {
@@ -636,17 +637,17 @@ func (s *PermsStore) batchLoadUserPendingPermissions(ctx context.Context, q *sql
 	}
 	defer rows.Close()
 
-	bindIDSet = make(map[int32]string)
+	idToSpecs = make(map[int32]extsvc.ExternalAccountSpec)
 	loaded = make(map[int32]*roaring.Bitmap)
 	for rows.Next() {
 		var id int32
-		var bindID string
+		var spec extsvc.ExternalAccountSpec
 		var ids []byte
-		if err = rows.Scan(&id, &bindID, &ids); err != nil {
+		if err = rows.Scan(&id, &spec.ServiceType, &spec.ServiceID, &spec.AccountID, &ids); err != nil {
 			return nil, nil, err
 		}
 
-		bindIDSet[id] = bindID
+		idToSpecs[id] = spec
 
 		if len(ids) == 0 {
 			continue
@@ -662,7 +663,7 @@ func (s *PermsStore) batchLoadUserPendingPermissions(ctx context.Context, q *sql
 		return nil, nil, err
 	}
 
-	return bindIDSet, loaded, nil
+	return idToSpecs, loaded, nil
 }
 
 func insertUserPendingPermissionsBatchQuery(
@@ -723,7 +724,7 @@ AND permission = %s
 func loadUserPendingPermissionsByIDBatchQuery(ids []uint32, perm authz.Perms, typ authz.PermType, lock string) *sqlf.Query {
 	const format = `
 -- source: enterprise/cmd/frontend/db/perms_store.go:loadUserPendingPermissionsByIDBatchQuery
-SELECT id, bind_id, object_ids
+SELECT id, service_type, service_id, bind_id, object_ids
 FROM user_pending_permissions
 WHERE id IN (%s)
 AND permission = %s
@@ -825,14 +826,17 @@ DO UPDATE SET
 	), nil
 }
 
-// GrantPendingPermissions is used to grant pending permissions when the associated bind ID becomes effective
-// for a given user, e.g. username as bind ID when a user is created, email as bind ID when the email
-// address is verified. Because there could be multiple bind IDs that are associated with a single user
-// (i.e. multiple email addresses), it merges data from "repo_pending_permissions" and "user_pending_permissions"
-// tables to "repo_permissions" and "user_permissions" tables for the user, i.e. permissions are unioned
-// not replaced, which is one of the main differences from SetRepoPermissions/SetRepoPendingPermissions.
-// Another main difference is that multiple calls to this method are not idempotent as it conceptually
-// does nothing when there is no data in the pending permissions tables for the user.
+// GrantPendingPermissions is used to grant pending permissions when the associated "ServiceType",
+// "ServiceID" and "BindID" found in p becomes effective for a given user, e.g. username as bind ID when
+// a user is created, email as bind ID when the email address is verified.
+//
+// Because there could be multiple external services and bind IDs that are associated with a single user
+// (e.g. same user on different code hosts, multiple email addresses), it merges data from "repo_pending_permissions"
+// and "user_pending_permissions" tables to "repo_permissions" and "user_permissions" tables for the user.
+// Therefore, permissions are unioned not replaced, which is one of the main differences from SetRepoPermissions
+// and SetRepoPendingPermissions methods. Another main difference is that multiple calls to this method
+// are not idempotent as it conceptually does nothing when there is no data in the pending permissions
+// tables for the user.
 //
 // This method starts its own transaction for update consistency if the caller hasn't started one already.
 //
@@ -1005,21 +1009,26 @@ func deleteUserPendingPermissionsQuery(p *authz.UserPendingPermissions) *sqlf.Qu
 	const format = `
 -- source: enterprise/cmd/frontend/db/perms_store.go:deleteUserPendingPermissionsQuery
 DELETE FROM user_pending_permissions
-WHERE permission = %s
+WHERE service_type = %s
+AND service_id = %s
+AND permission = %s
 AND object_type = %s
 AND bind_id = %s
 `
 
 	return sqlf.Sprintf(
 		format,
+		p.ServiceType,
+		p.ServiceID,
 		p.Perm.String(),
 		p.Type,
 		p.BindID,
 	)
 }
 
-// ListPendingUsers returns a list of bind IDs who have pending permissions.
-func (s *PermsStore) ListPendingUsers(ctx context.Context) (bindIDs []string, err error) {
+// ListPendingUsers returns a list of bind IDs who have pending permissions by given
+// service type and ID.
+func (s *PermsStore) ListPendingUsers(ctx context.Context, serviceType, serviceID string) (bindIDs []string, err error) {
 	if Mocks.Perms.ListPendingUsers != nil {
 		return Mocks.Perms.ListPendingUsers(ctx)
 	}
@@ -1027,7 +1036,12 @@ func (s *PermsStore) ListPendingUsers(ctx context.Context) (bindIDs []string, er
 	ctx, save := s.observe(ctx, "ListPendingUsers", "")
 	defer save(&err)
 
-	q := sqlf.Sprintf(`SELECT bind_id, object_ids FROM user_pending_permissions`)
+	q := sqlf.Sprintf(`
+SELECT bind_id, object_ids
+FROM user_pending_permissions
+WHERE service_type = %s
+AND service_id = %s
+`, serviceType, serviceID)
 
 	var rows *sql.Rows
 	rows, err = s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)

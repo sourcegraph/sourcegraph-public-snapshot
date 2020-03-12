@@ -411,8 +411,13 @@ input CampaignPlanPatch {
     # The repository that this patch is applied to.
     repository: ID!
 
-    # The base revision in the repository that this patch is applied to.
+    # The base revision in the repository that this patch is based on.
+    # Example: "4095572721c6234cd72013fd49dff4fb48f0f8a4"
     baseRevision: String!
+
+    # The reference to the base revision at the time the patch was created.
+    # Example: "refs/heads/master"
+    baseRef: String!
 
     # The patch (in unified diff format) to apply.
     #
@@ -578,7 +583,15 @@ type Campaign implements Node {
     repositoryDiffs(first: Int): RepositoryComparisonConnection!
 
     # The changesets in this campaign, already created on the code host.
-    changesets(first: Int): ExternalChangesetConnection!
+    changesets(
+        first: Int
+        # Only include changesets with the given state
+        state: ChangesetState
+        # Only include changesets with the given review state
+        reviewState: ChangesetReviewState
+        # Only include changesets with the given check state
+        checkState: ChangesetCheckState
+    ): ExternalChangesetConnection!
 
     # The changeset counts over time, in 1 day intervals backwards from the point in time given in 'to'.
     changesetCountsOverTime(
@@ -655,6 +668,8 @@ enum ChangesetReviewState {
     APPROVED
     CHANGES_REQUESTED
     PENDING
+    COMMENTED
+    DISMISSED
 }
 
 # The state of continuous integration checks on a changeset

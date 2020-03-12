@@ -227,8 +227,8 @@ type EventFilterOptions struct {
 }
 
 // CountUniqueUsersPerPeriod provides a count of unique active users in a given time span, broken up into periods of
-// a given type. The value of `now` should be the current time in UTC. Returns an array array of length `periods`,
-// with one entry for each period in the time span.
+// a given type. The value of `now` should be the current time in UTC. Returns an array of length `periods`, with one
+// entry for each period in the time span.
 func (l *eventLogs) CountUniqueUsersPerPeriod(ctx context.Context, periodType PeriodType, now time.Time, periods int, opt *CountUniqueUsersOptions) ([]UsageValue, error) {
 	startDate, ok := calcStartDate(now, periodType, periods)
 	if !ok {

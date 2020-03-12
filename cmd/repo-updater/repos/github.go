@@ -29,6 +29,7 @@ type GithubSource struct {
 	svc             *ExternalService
 	config          *schema.GitHubConnection
 	exclude         map[string]bool
+	excludeForks    bool
 	excludePatterns []*regexp.Regexp
 	githubDotCom    bool
 	baseURL         *url.URL
@@ -80,8 +81,12 @@ func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpc
 		return nil, err
 	}
 
-	exclude := make(map[string]bool, len(c.Exclude))
-	var excludePatterns []*regexp.Regexp
+	var (
+		exclude         = make(map[string]bool, len(c.Exclude))
+		excludeForks    bool
+		excludePatterns []*regexp.Regexp
+	)
+
 	for _, r := range c.Exclude {
 		if r.Name != "" {
 			exclude[strings.ToLower(r.Name)] = true
@@ -98,12 +103,17 @@ func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpc
 			}
 			excludePatterns = append(excludePatterns, re)
 		}
+
+		if r.Forks {
+			excludeForks = true
+		}
 	}
 
 	return &GithubSource{
 		svc:              svc,
 		config:           c,
 		exclude:          exclude,
+		excludeForks:     excludeForks,
 		excludePatterns:  excludePatterns,
 		baseURL:          baseURL,
 		githubDotCom:     githubDotCom,
@@ -316,11 +326,16 @@ func (s *GithubSource) excludes(r *github.Repository) bool {
 		return true
 	}
 
+	if s.excludeForks && r.IsFork {
+		return true
+	}
+
 	for _, re := range s.excludePatterns {
 		if re.MatchString(r.NameWithOwner) {
 			return true
 		}
 	}
+
 	return false
 }
 

@@ -21,12 +21,16 @@ export const changesetReviewStateColors: Record<ChangesetReviewState, string> = 
     [ChangesetReviewState.APPROVED]: 'success',
     [ChangesetReviewState.CHANGES_REQUESTED]: 'danger',
     [ChangesetReviewState.PENDING]: 'warning',
+    [ChangesetReviewState.COMMENTED]: 'warning',
+    [ChangesetReviewState.DISMISSED]: 'warning',
 }
 
 export const changesetReviewStateIcons: Record<ChangesetReviewState, MdiReactIconComponentType> = {
     [ChangesetReviewState.APPROVED]: AccountCheckIcon,
     [ChangesetReviewState.CHANGES_REQUESTED]: AccountAlertIcon,
     [ChangesetReviewState.PENDING]: AccountQuestionIcon,
+    [ChangesetReviewState.COMMENTED]: AccountQuestionIcon,
+    [ChangesetReviewState.DISMISSED]: AccountQuestionIcon,
 }
 
 export const changesetStageLabels: Record<ChangesetReviewState | ChangesetState, string> = {
@@ -37,6 +41,8 @@ export const changesetStageLabels: Record<ChangesetReviewState | ChangesetState,
     [ChangesetReviewState.APPROVED]: 'approved',
     [ChangesetReviewState.CHANGES_REQUESTED]: 'changes requested',
     [ChangesetReviewState.PENDING]: 'pending review',
+    [ChangesetReviewState.COMMENTED]: 'commented',
+    [ChangesetReviewState.DISMISSED]: 'dismissed',
 }
 
 export const changesetStateIcons: Record<ChangesetState, MdiReactIconComponentType> = {
