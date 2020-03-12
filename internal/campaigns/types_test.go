@@ -193,7 +193,7 @@ func TestChangesetEvents(t *testing.T) {
 		user := bitbucketserver.User{Name: "john-doe"}
 		reviewer := bitbucketserver.User{Name: "jane-doe"}
 
-		activities := []bitbucketserver.Activity{{
+		activities := []*bitbucketserver.Activity{{
 			ID:     1,
 			User:   user,
 			Action: bitbucketserver.OpenedActivityAction,
