@@ -114,6 +114,7 @@ func listMembers(ctx context.Context, client *gitlab.Client, repoID string) ([]e
 		}
 
 		for i := range members {
+			// Members with access level 20 (i.e. Reporter) has access to project code.
 			if members[i].AccessLevel < 20 {
 				continue
 			}
