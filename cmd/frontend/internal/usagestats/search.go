@@ -100,8 +100,16 @@ func searchActivity(ctx context.Context, periodType db.PeriodType, periods int, 
 		argumentName       string
 		getEventStatistics func(p *types.SearchUsagePeriod) *types.SearchEventStatistics
 	}{
-		"plain":       {eventName: "SearchResultsQueried", argumentName: "mode", getEventStatistics: func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.SearchModes.PlainText }},
-		"interactive": {eventName: "SearchResultsQueried", argumentName: "mode", getEventStatistics: func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.SearchModes.Interactive }},
+		"plain": {
+			eventName:          "SearchResultsQueried",
+			argumentName:       "mode",
+			getEventStatistics: func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.SearchModes.PlainText },
+		},
+		"interactive": {
+			eventName:          "SearchResultsQueried",
+			argumentName:       "mode",
+			getEventStatistics: func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.SearchModes.Interactive },
+		},
 	}
 
 	for searchMode, match := range searchModeNameToArgumentMatches {
@@ -121,7 +129,13 @@ func searchActivity(ctx context.Context, periodType db.PeriodType, periods int, 
 			match.getEventStatistics(activityPeriods[i]).UserCount = int32(uc.Count)
 		}
 		if includeEventCounts {
-			eventCounts, err := db.EventLogs.CountEventsPerPeriod(ctx, periodType, timeNow().UTC(), periods, &db.EventFilterOptions{ByEventNameWithArgument: &db.EventArgumentMatch{EventName: match.eventName, ArgumentName: match.argumentName, ArgumentValue: searchMode}})
+			eventCounts, err := db.EventLogs.CountEventsPerPeriod(ctx, periodType, timeNow().UTC(), periods, &db.EventFilterOptions{
+				ByEventNameWithArgument: &db.EventArgumentMatch{
+					EventName:     match.eventName,
+					ArgumentName:  match.argumentName,
+					ArgumentValue: searchMode,
+				},
+			})
 			if err != nil {
 				return nil, err
 			}
