@@ -324,7 +324,7 @@ func (c *Changeset) SetMetadata(meta interface{}) error {
 }
 
 // SetDerivedState will update the external state fields on c based on the current
-// state of the changeset and associated events
+// state of the changeset and associated events.
 func (c *Changeset) SetDerivedState(es []*ChangesetEvent) {
 	// Copy so that we can sort without mutating the argument
 	events := make(ChangesetEvents, len(es))
