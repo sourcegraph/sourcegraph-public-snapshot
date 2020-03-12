@@ -147,6 +147,14 @@ func (r *RepositoryResolver) CommitFromID(ctx context.Context, args *RepositoryC
 	return resolver, nil
 }
 
+func (r *RepositoryResolver) IsFork(ctx context.Context) (bool, error) {
+	err := r.hydrate(ctx)
+	if err != nil {
+		return false, err
+	}
+	return r.repo.Fork, nil
+}
+
 func (r *RepositoryResolver) DefaultBranch(ctx context.Context) (*GitRefResolver, error) {
 	cachedRepo, err := backend.CachedGitRepo(ctx, r.repo)
 	if err != nil {
