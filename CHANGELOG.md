@@ -39,6 +39,14 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
+## 3.13.2
+
+### Fixed
+
+- The default timeout of indexed search has been increased. Previously indexed search would always return within 3s. This lead to broken behaviour on new instances which had yet to tune resource allocations. [#8720](https://github.com/sourcegraph/sourcegraph/pull/8720)
+- Bitbucket Server older than 5.13 failed to sync since Sourcegraph 3.12. This was due to us querying for the `archived` label, but Bitbucket Server 5.13 does not support labels. [#8883](https://github.com/sourcegraph/sourcegraph/issues/8883)
+- A regression in repo-updater was fixed that lead to every repository's git clone being updated every time the list of repositories was synced from the code host. [#8501](https://github.com/sourcegraph/sourcegraph/issues/8501)
+
 ## 3.13.1
 
 ### Fixed
@@ -98,6 +106,27 @@ All notable changes to Sourcegraph are documented in this file.
 
 - All repository fields related to `enabled` and `disabled` have been removed from the GraphQL API. These fields have been deprecated since 3.4. [#3971](https://github.com/sourcegraph/sourcegraph/pull/3971)
 - The deprecated extension API `Hover.__backcompatContents` was removed.
+
+## 3.12.10
+
+This release backports the fixes released in `3.13.2` for customers still on `3.12`.
+
+### Fixed
+
+- The default timeout of indexed search has been increased. Previously indexed search would always return within 3s. This lead to broken behaviour on new instances which had yet to tune resource allocations. [#8720](https://github.com/sourcegraph/sourcegraph/pull/8720)
+- Bitbucket Server older than 5.13 failed to sync since Sourcegraph 3.12. This was due to us querying for the `archived` label, but Bitbucket Server 5.13 does not support labels. [#8883](https://github.com/sourcegraph/sourcegraph/issues/8883)
+- A regression in repo-updater was fixed that lead to every repository's git clone being updated every time the list of repositories was synced from the code host. [#8501](https://github.com/sourcegraph/sourcegraph/issues/8501)
+
+## 3.12.9
+
+This is `3.12.8` release with internal infrastructure fixes to publish the docker images.
+
+## 3.12.8
+
+### Fixed
+
+- Extension API showInputBox and other Window methods now work on search results pages [#8519](https://github.com/sourcegraph/sourcegraph/issues/8519)
+- Extension error notification styling is clearer [#8521](https://github.com/sourcegraph/sourcegraph/issues/8521)
 
 ## 3.12.7
 
