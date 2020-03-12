@@ -1590,10 +1590,19 @@ AND
 NOT EXISTS (
   SELECT 1
   FROM
-  campaigns
+    campaigns
   WHERE
-  campaigns.patch_set_id = patch_sets.id
-)
+    campaigns.patch_set_id = patch_sets.id
+  )
+AND
+NOT EXISTS (
+  SELECT 1
+  FROM
+    changeset_jobs
+  JOIN patches ON patches.id = changeset_jobs.patch_id
+  WHERE
+    changeset_jobs.changeset_id IS NOT NULL
+);
 `
 
 // CountPatchSets returns the number of code mods in the database.
