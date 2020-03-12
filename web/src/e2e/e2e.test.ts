@@ -1532,7 +1532,8 @@ describe('e2e test suite', () => {
             const { previewURL } = await driver.createCampaignPlanFromPatches([
                 {
                     repository: repo.id,
-                    baseRevision: 'master',
+                    baseRevision: '339d09ae1ce5907e0678ae5f1f91d9ad38db6107',
+                    baseRef: 'refs/heads/master',
                     patch: `diff --unified file1.txt file1.txt
 --- file1.txt 2020-01-01 01:02:03 -0700
 +++ file1.txt 2020-01-01 03:04:05 -0700
