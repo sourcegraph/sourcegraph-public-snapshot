@@ -262,7 +262,7 @@ func CookieMiddleware(next http.Handler) http.Handler {
 // - The request originates from the same origin. -OR-
 //
 // - The request is cross-origin but passed the CORS preflight check (because otherwise the
-//   preflight OPTIONS reponse from secureHeadersMiddleware would have caused the browser to refuse
+//   preflight OPTIONS response from secureHeadersMiddleware would have caused the browser to refuse
 //   to send this HTTP request).
 //
 // To determine if it's a non-simple CORS request, it checks for the presence of either

@@ -1,4 +1,4 @@
-# Site administration documentation
+# Administration
 
 Site administrators are the admins responsible for deploying, managing, and configuring Sourcegraph for regular users. They have [special privileges](privileges.md) on the Sourcegraph instance.
 
@@ -18,9 +18,7 @@ Site administrators are the admins responsible for deploying, managing, and conf
 - [User authentication](auth/index.md)
 - [Upgrading Sourcegraph](updates.md)
 - [Setting the URL for your instance](url.md)
-- [Monitoring and tracing](monitoring_and_tracing.md)
-    - [Troubleshooting](monitoring_and_tracing.md#troubleshooting)
-    - [Metrics reference](monitoring/metrics_reference.md)
+- [Observability](observability.md)
 - [Repository permissions](repo/permissions.md)
 - [PostgreSQL configuration](postgres-conf.md)
 - [Upgrading PostgreSQL](postgres.md)

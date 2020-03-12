@@ -2,7 +2,7 @@
 
 set -e
 
-# Seperate out time for go mod from go install
+# Separate out time for go mod from go install
 echo "--- go mod download"
 go mod download
 

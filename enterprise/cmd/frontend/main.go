@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/shared"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth"
+	eauthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/authz"
 	authzResolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/resolvers"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
@@ -47,14 +48,14 @@ func main() {
 	clock := func() time.Time {
 		return time.Now().UTC().Truncate(time.Microsecond)
 	}
-	initAuthz(dbconn.Global, clock)
+	eauthz.Init(dbconn.Global, clock)
 
 	ctx := context.Background()
 	go func() {
 		t := time.NewTicker(5 * time.Second)
 		for range t.C {
 			allowAccessByDefault, authzProviders, _, _ :=
-				authzProvidersFromConfig(ctx, conf.Get(), db.ExternalServices, dbconn.Global)
+				eauthz.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices, dbconn.Global)
 			authz.SetProviders(allowAccessByDefault, authzProviders)
 		}
 	}()

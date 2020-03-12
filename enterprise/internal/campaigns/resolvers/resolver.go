@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -258,7 +257,7 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 		return nil, err
 	}
 
-	svc := ee.NewService(r.store, gitserver.DefaultClient, nil, r.httpFactory)
+	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
 	err = svc.CreateCampaign(ctx, campaign, draft)
 	if err != nil {
 		return nil, err
@@ -322,7 +321,7 @@ func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.Dele
 		return nil, err
 	}
 
-	svc := ee.NewService(r.store, gitserver.DefaultClient, nil, r.httpFactory)
+	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
 	err = svc.DeleteCampaign(ctx, campaignID, args.CloseChangesets)
 	return &graphqlbackend.EmptyResponse{}, err
 }
@@ -472,17 +471,51 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 	return csr, nil
 }
 
-func (r *Resolver) Changesets(ctx context.Context, args *graphqlutil.ConnectionArgs) (graphqlbackend.ExternalChangesetsConnectionResolver, error) {
+func (r *Resolver) Changesets(ctx context.Context, args *graphqlbackend.ListChangesetsArgs) (graphqlbackend.ExternalChangesetsConnectionResolver, error) {
 	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access changesets.
 	if err := allowReadAccess(ctx); err != nil {
 		return nil, err
 	}
+	opts, err := listChangesetOptsFromArgs(args)
+	if err != nil {
+		return nil, err
+	}
 	return &changesetsConnectionResolver{
 		store: r.store,
-		opts: ee.ListChangesetsOpts{
-			Limit: int(args.GetFirst()),
-		},
+		opts:  opts,
 	}, nil
+}
+
+func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs) (ee.ListChangesetsOpts, error) {
+	var opts ee.ListChangesetsOpts
+	if args == nil {
+		return opts, nil
+	}
+	if args.First != nil {
+		opts.Limit = int(*args.First)
+	}
+	if args.State != nil {
+		state := campaigns.ChangesetState(*args.State)
+		if !state.Valid() {
+			return opts, errors.New("changeset state not valid")
+		}
+		opts.ExternalState = &state
+	}
+	if args.ReviewState != nil {
+		state := campaigns.ChangesetReviewState(*args.ReviewState)
+		if !state.Valid() {
+			return opts, errors.New("changeset review state not valid")
+		}
+		opts.ExternalReviewState = &state
+	}
+	if args.CheckState != nil {
+		state := campaigns.ChangesetCheckState(*args.CheckState)
+		if !state.Valid() {
+			return opts, errors.New("changeset check state not valid")
+		}
+		opts.ExternalCheckState = &state
+	}
+	return opts, nil
 }
 
 func (r *Resolver) CreateCampaignPlanFromPatches(ctx context.Context, args graphqlbackend.CreateCampaignPlanFromPatchesArgs) (graphqlbackend.CampaignPlanResolver, error) {
@@ -528,11 +561,12 @@ func (r *Resolver) CreateCampaignPlanFromPatches(ctx context.Context, args graph
 		patches[i] = campaigns.CampaignPlanPatch{
 			Repo:         repo,
 			BaseRevision: patch.BaseRevision,
+			BaseRef:      patch.BaseRef,
 			Patch:        patch.Patch,
 		}
 	}
 
-	svc := ee.NewService(r.store, gitserver.DefaultClient, nil, r.httpFactory)
+	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
 	plan, err := svc.CreateCampaignPlanFromPatches(ctx, patches, user.ID, true)
 	if err != nil {
 		return nil, err
@@ -558,7 +592,7 @@ func (r *Resolver) CloseCampaign(ctx context.Context, args *graphqlbackend.Close
 		return nil, errors.Wrap(err, "unmarshaling campaign id")
 	}
 
-	svc := ee.NewService(r.store, gitserver.DefaultClient, nil, r.httpFactory)
+	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
 
 	campaign, err := svc.CloseCampaign(ctx, campaignID, args.CloseChangesets)
 	if err != nil {
@@ -585,7 +619,7 @@ func (r *Resolver) PublishCampaign(ctx context.Context, args *graphqlbackend.Pub
 		return nil, errors.Wrap(err, "unmarshaling campaign id")
 	}
 
-	svc := ee.NewService(r.store, gitserver.DefaultClient, nil, r.httpFactory)
+	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
 	campaign, err := svc.PublishCampaign(ctx, campaignID)
 	if err != nil {
 		return nil, errors.Wrap(err, "publishing campaign")
@@ -611,7 +645,7 @@ func (r *Resolver) PublishChangeset(ctx context.Context, args *graphqlbackend.Pu
 		return nil, err
 	}
 
-	svc := ee.NewService(r.store, gitserver.DefaultClient, nil, r.httpFactory)
+	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
 	err = svc.CreateChangesetJobForCampaignJob(ctx, campaignJobID)
 	if err != nil {
 		return nil, err
@@ -778,7 +812,7 @@ func (r *actionJobConnectionResolver) compute(ctx context.Context) ([]*campaigns
 			}
 			actionJobs, totalCount, err := r.store.ListActionJobs(ctx, ee.ListActionJobsOpts{
 				ExecutionID: executionID,
-				Limit: -1,
+				Limit:       -1,
 			})
 			if err != nil {
 				r.jobs = nil
@@ -1106,7 +1140,7 @@ func (r *Resolver) UpdateActionJob(ctx context.Context, args *graphqlbackend.Upd
 					})
 				}
 			}
-			svc := ee.NewService(tx, gitserver.DefaultClient, nil, r.httpFactory)
+			svc := ee.NewService(tx, gitserver.DefaultClient, r.httpFactory)
 			// important: pass false for useTx, as our transaction will already be committed bu CreateCampaignPlanFromPatches
 			// otherwise, and we cannot update the execution within the tx anymore
 			plan, err := svc.CreateCampaignPlanFromPatches(ctx, patches, user.ID, false)

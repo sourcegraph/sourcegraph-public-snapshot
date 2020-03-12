@@ -1,4 +1,4 @@
-package main
+package authz
 
 import (
 	"context"
@@ -19,7 +19,7 @@ import (
 )
 
 type gitlabAuthzProviderParams struct {
-	OAuthOp gitlab.OAuthAuthzProviderOp
+	OAuthOp gitlab.OAuthProviderOp
 	SudoOp  gitlab.SudoProviderOp
 }
 
@@ -45,7 +45,7 @@ func (m gitlabAuthzProviderParams) ServiceType() string {
 func (m gitlabAuthzProviderParams) Validate() []string { return nil }
 
 func Test_authzProvidersFromConfig(t *testing.T) {
-	gitlab.NewOAuthProvider = func(op gitlab.OAuthAuthzProviderOp) authz.Provider {
+	gitlab.NewOAuthProvider = func(op gitlab.OAuthProviderOp) authz.Provider {
 		op.MockCache = nil // ignore cache value
 		return gitlabAuthzProviderParams{OAuthOp: op}
 	}
@@ -101,8 +101,9 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 			expAuthzAllowAccessByDefault: true,
 			expAuthzProviders: providersEqual(
 				gitlabAuthzProviderParams{
-					OAuthOp: gitlab.OAuthAuthzProviderOp{
+					OAuthOp: gitlab.OAuthProviderOp{
 						BaseURL:           mustURLParse(t, "https://gitlab.mine"),
+						Token:             "asdf",
 						CacheTTL:          48 * time.Hour,
 						MinBatchThreshold: 200,
 						MaxBatchRequests:  300,
@@ -204,16 +205,18 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 			expAuthzAllowAccessByDefault: true,
 			expAuthzProviders: providersEqual(
 				gitlabAuthzProviderParams{
-					OAuthOp: gitlab.OAuthAuthzProviderOp{
+					OAuthOp: gitlab.OAuthProviderOp{
 						BaseURL:           mustURLParse(t, "https://gitlab.mine"),
+						Token:             "asdf",
 						CacheTTL:          3 * time.Hour,
 						MinBatchThreshold: 200,
 						MaxBatchRequests:  300,
 					},
 				},
 				gitlabAuthzProviderParams{
-					OAuthOp: gitlab.OAuthAuthzProviderOp{
+					OAuthOp: gitlab.OAuthProviderOp{
 						BaseURL:           mustURLParse(t, "https://gitlab.com"),
+						Token:             "asdf",
 						CacheTTL:          3 * time.Hour,
 						MinBatchThreshold: 200,
 						MaxBatchRequests:  300,
@@ -518,7 +521,7 @@ func Test_authzProvidersFromConfig(t *testing.T) {
 		}
 
 		allowAccessByDefault, authzProviders, seriousProblems, _ :=
-			authzProvidersFromConfig(context.Background(), &test.cfg, &store, nil)
+			ProvidersFromConfig(context.Background(), &test.cfg, &store, nil)
 		if allowAccessByDefault != test.expAuthzAllowAccessByDefault {
 			t.Errorf("allowAccessByDefault: (actual) %v != (expected) %v", asJSON(t, allowAccessByDefault), asJSON(t, test.expAuthzAllowAccessByDefault))
 		}

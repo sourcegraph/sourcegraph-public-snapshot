@@ -21,6 +21,7 @@ type LSIFUpload struct {
 	FailureSummary    *string    `json:"failureSummary"`
 	FailureStacktrace *string    `json:"failureStacktrace"`
 	VisibleAtTip      bool       `json:"visibleAtTip"`
+	PlaceInQueue      *int32     `json:"placeInQueue"`
 }
 
 type LSIFLocation struct {

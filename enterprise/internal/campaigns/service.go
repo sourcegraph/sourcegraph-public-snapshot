@@ -10,7 +10,6 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -23,23 +22,14 @@ import (
 )
 
 // NewService returns a Service.
-func NewService(store *Store, git GitserverClient, repoResolveRevision repoResolveRevision, cf *httpcli.Factory) *Service {
-	return NewServiceWithClock(store, git, repoResolveRevision, cf, store.Clock())
+func NewService(store *Store, git GitserverClient, cf *httpcli.Factory) *Service {
+	return NewServiceWithClock(store, git, cf, store.Clock())
 }
 
 // NewServiceWithClock returns a Service the given clock used
 // to generate timestamps.
-func NewServiceWithClock(store *Store, git GitserverClient, repoResolveRevision repoResolveRevision, cf *httpcli.Factory, clock func() time.Time) *Service {
-	svc := &Service{
-		store:               store,
-		git:                 git,
-		repoResolveRevision: repoResolveRevision,
-		cf:                  cf,
-		clock:               clock,
-	}
-	if svc.repoResolveRevision == nil {
-		svc.repoResolveRevision = defaultRepoResolveRevision
-	}
+func NewServiceWithClock(store *Store, git GitserverClient, cf *httpcli.Factory, clock func() time.Time) *Service {
+	svc := &Service{store: store, git: git, cf: cf, clock: clock}
 
 	return svc
 }
@@ -49,32 +39,17 @@ type GitserverClient interface {
 }
 
 type Service struct {
-	store               *Store
-	git                 GitserverClient
-	repoResolveRevision repoResolveRevision
-	cf                  *httpcli.Factory
+	store *Store
+	git   GitserverClient
+	cf    *httpcli.Factory
 
 	clock func() time.Time
-}
-
-// repoResolveRevision resolves a Git revspec in a repository and returns the resolved commit ID.
-type repoResolveRevision func(context.Context, *repos.Repo, string) (api.CommitID, error)
-
-// defaultRepoResolveRevision is an implementation of repoResolveRevision that talks to gitserver to
-// resolve a Git revspec.
-var defaultRepoResolveRevision = func(ctx context.Context, repo *repos.Repo, revspec string) (api.CommitID, error) {
-	return backend.Repos.ResolveRev(ctx,
-		&types.Repo{Name: api.RepoName(repo.Name), ExternalRepo: repo.ExternalRepo},
-		revspec,
-	)
 }
 
 // CreateCampaignPlanFromPatches creates a CampaignPlan and its associated CampaignJobs from patches
 // computed by the caller. There is no diff execution or computation performed during creation of
 // the CampaignJobs in this case (unlike when using Runner to create a CampaignPlan from a
 // specification).
-//
-// If resolveRevision is nil, a default implementation is used.
 func (s *Service) CreateCampaignPlanFromPatches(ctx context.Context, patches []campaigns.CampaignPlanPatch, userID int32, useTx bool) (*campaigns.CampaignPlan, error) {
 	if userID == 0 {
 		return nil, backend.ErrNotAuthenticated
@@ -122,16 +97,11 @@ func (s *Service) CreateCampaignPlanFromPatches(ctx context.Context, patches []c
 			continue
 		}
 
-		commit, err := s.repoResolveRevision(ctx, repo, patch.BaseRevision)
-		if err != nil {
-			return nil, errors.Wrapf(err, "repository %q", repo.Name)
-		}
-
 		job := &campaigns.CampaignJob{
 			CampaignPlanID: plan.ID,
 			RepoID:         patch.Repo,
-			BaseRef:        patch.BaseRevision,
-			Rev:            commit,
+			BaseRef:        patch.BaseRef,
+			Rev:            patch.BaseRevision,
 			Diff:           patch.Patch,
 			StartedAt:      s.clock(),
 			FinishedAt:     s.clock(),
@@ -430,6 +400,8 @@ func RunChangesetJob(
 	// We keep a clone because CreateChangesets might overwrite the changeset
 	// with outdated metadata.
 	clone := cs.Changeset.Clone()
+	events := clone.Events()
+	clone.SetDerivedState(events)
 	if err = store.CreateChangesets(ctx, clone); err != nil {
 		if _, ok := err.(AlreadyExistError); !ok {
 			return err
@@ -441,10 +413,19 @@ func RunChangesetJob(
 		// We restore the newest metadata returned by the
 		// `ccs.CreateChangesets` call above and then update the Changeset in
 		// the database.
-		clone.Metadata = cs.Changeset.Metadata
+		if err := clone.SetMetadata(cs.Changeset.Metadata); err != nil {
+			return errors.Wrap(err, "setting changeset metadata")
+		}
+		events = clone.Events()
+		clone.SetDerivedState(events)
 		if err = store.UpdateChangesets(ctx, clone); err != nil {
 			return err
 		}
+	}
+
+	if err := store.UpsertChangesetEvents(ctx, events...); err != nil {
+		log15.Error("UpsertChangesetEvents", "err", err)
+		return err
 	}
 
 	c.ChangesetIDs = append(c.ChangesetIDs, clone.ID)
@@ -715,6 +696,7 @@ func (s *Service) CreateChangesetJobForCampaignJob(ctx context.Context, campaign
 		// Already exists
 		return nil
 	}
+
 	changesetJob := &campaigns.ChangesetJob{
 		CampaignID:    campaign.ID,
 		CampaignJobID: job.ID,
@@ -921,11 +903,13 @@ type campaignUpdateDiff struct {
 	Create []*campaigns.ChangesetJob
 }
 
-// repoJobs is a triplet of jobs that are associated with the same repository.
-type repoJobs struct {
+// repoGroup is a group of entities involved in a Campaign that are associated
+// with the same repository.
+type repoGroup struct {
 	changesetJob   *campaigns.ChangesetJob
 	campaignJob    *campaigns.CampaignJob
 	newCampaignJob *campaigns.CampaignJob
+	changeset      *campaigns.Changeset
 }
 
 func computeCampaignUpdateDiff(
@@ -943,6 +927,14 @@ func computeCampaignUpdateDiff(
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "listing changesets jobs")
+	}
+
+	changesets, _, err := tx.ListChangesets(ctx, ListChangesetsOpts{
+		CampaignID: campaign.ID,
+		Limit:      -1,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "listing changesets")
 	}
 
 	// We need OnlyFinished and OnlyWithDiff because we don't create
@@ -976,14 +968,14 @@ func computeCampaignUpdateDiff(
 	// We can find out which ones we want to keep by looking at the RepoID of
 	// their CampaignJobs.
 
-	jobsByRepoID, err := mergeByRepoID(changesetJobs, campaignJobs)
+	byRepoID, err := mergeByRepoID(changesetJobs, campaignJobs, changesets)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, j := range newCampaignJobs {
-		if jobs, ok := jobsByRepoID[j.RepoID]; ok {
-			jobs.newCampaignJob = j
+		if group, ok := byRepoID[j.RepoID]; ok {
+			group.newCampaignJob = j
 		} else {
 			// If we have new CampaignJobs that don't match an existing
 			// ChangesetJob we need to create new ChangesetJobs.
@@ -994,29 +986,43 @@ func computeCampaignUpdateDiff(
 		}
 	}
 
-	for _, jobs := range jobsByRepoID {
+	for _, group := range byRepoID {
 		// Either we _don't_ have a matching _new_ CampaignJob, then we delete
 		// the ChangesetJob and detach & close Changeset.
-		if jobs.newCampaignJob == nil {
-			diff.Delete = append(diff.Delete, jobs.changesetJob)
+		if group.newCampaignJob == nil {
+			diff.Delete = append(diff.Delete, group.changesetJob)
 			continue
 		}
 
 		// Or we have a matching _new_ CampaignJob, then we keep the
 		// ChangesetJob around, but need to rewire it.
-		jobs.changesetJob.CampaignJobID = jobs.newCampaignJob.ID
+		group.changesetJob.CampaignJobID = group.newCampaignJob.ID
 
 		//  And, if the {Diff,Rev,BaseRef,Description} are different, we  need to
 		// update the Changeset on the codehost...
-		if updateAttributes || campaignJobsDiffer(jobs.newCampaignJob, jobs.campaignJob) {
-			// ... to do that, we _reset_ the ChangesetJob, so it gets run again
-			// when RunChangesetJobs is called after UpdateCampaign.
-			jobs.changesetJob.Error = ""
-			jobs.changesetJob.StartedAt = time.Time{}
-			jobs.changesetJob.FinishedAt = time.Time{}
+		if updateAttributes || campaignJobsDiffer(group.newCampaignJob, group.campaignJob) {
+			// .. but if we already have a Changeset and that is merged, we
+			// don't want to update it...
+			if group.changeset != nil {
+				// TODO: This needs to change based on the outcome of this:
+				// https://github.com/sourcegraph/sourcegraph/pull/8848#discussion_r389000197
+				s, err := group.changeset.State()
+				if err != nil {
+					return nil, errors.Wrap(err, "determining a changeset's state")
+				}
+				if s == campaigns.ChangesetStateMerged || s == campaigns.ChangesetStateClosed {
+					// Note: in the future we want to create a new ChangesetJob here.
+					continue
+				}
+			}
+
+			// if we do want to update it, we _reset_ the ChangesetJob, so it
+			// gets run again when RunChangesetJobs is called after
+			// UpdateCampaign.
+			group.changesetJob.Reset()
 		}
 
-		diff.Update = append(diff.Update, jobs.changesetJob)
+		diff.Update = append(diff.Update, group.changesetJob)
 	}
 
 	return diff, nil
@@ -1074,8 +1080,12 @@ func isOutdated(c *repos.Changeset) (bool, error) {
 	return false, nil
 }
 
-func mergeByRepoID(chs []*campaigns.ChangesetJob, cas []*campaigns.CampaignJob) (map[api.RepoID]*repoJobs, error) {
-	jobs := make(map[api.RepoID]*repoJobs, len(chs))
+func mergeByRepoID(
+	chs []*campaigns.ChangesetJob,
+	cas []*campaigns.CampaignJob,
+	cs []*campaigns.Changeset,
+) (map[api.RepoID]*repoGroup, error) {
+	jobs := make(map[api.RepoID]*repoGroup, len(chs))
 
 	byID := make(map[int64]*campaigns.CampaignJob, len(cas))
 	for _, j := range cas {
@@ -1087,7 +1097,13 @@ func mergeByRepoID(chs []*campaigns.ChangesetJob, cas []*campaigns.CampaignJob) 
 		if !ok {
 			return nil, fmt.Errorf("CampaignJob with ID %d cannot be found for ChangesetJob %d", j.CampaignJobID, j.ID)
 		}
-		jobs[caj.RepoID] = &repoJobs{changesetJob: j, campaignJob: caj}
+		jobs[caj.RepoID] = &repoGroup{changesetJob: j, campaignJob: caj}
+	}
+
+	for _, c := range cs {
+		if j, ok := jobs[c.RepoID]; ok {
+			j.changeset = c
+		}
 	}
 
 	return jobs, nil

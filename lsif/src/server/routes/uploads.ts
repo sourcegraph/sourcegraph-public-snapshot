@@ -5,7 +5,7 @@ import express from 'express'
 import { nextLink } from '../pagination/link'
 import { wrap } from 'async-middleware'
 import { extractLimitOffset } from '../pagination/limit-offset'
-import { UploadManager } from '../../shared/store/uploads'
+import { UploadManager, LsifUploadWithPlaceInQueue } from '../../shared/store/uploads'
 import { DumpManager } from '../../shared/store/dumps'
 import { EntityManager } from 'typeorm'
 import { SRC_FRONTEND_INTERNAL } from '../../shared/config/settings'
@@ -46,7 +46,7 @@ export function createUploadRouter(
         visibleAtTip?: boolean
     }
 
-    type UploadResponse = pgModels.LsifUpload
+    type UploadResponse = LsifUploadWithPlaceInQueue
 
     router.get(
         '/uploads/:id([0-9]+)',
@@ -94,7 +94,7 @@ export function createUploadRouter(
     )
 
     interface UploadsResponse {
-        uploads: pgModels.LsifUpload[]
+        uploads: LsifUploadWithPlaceInQueue[]
         totalCount: number
     }
 

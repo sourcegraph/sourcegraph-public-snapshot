@@ -371,6 +371,12 @@ describe('e2e test suite', () => {
             // Flaky https://github.com/sourcegraph/sourcegraph/issues/2704
             // await percySnapshot(page, 'Search results code')
         })
+
+        test('Site admin overview', async () => {
+            await driver.page.goto(sourcegraphBaseUrl + '/site-admin')
+            await driver.page.waitForSelector('.e2e-site-admin-overview-menu', { visible: true })
+            await percySnapshot(driver.page, 'Site admin overview')
+        })
     })
 
     describe('Theme switcher', () => {
@@ -1485,23 +1491,6 @@ describe('e2e test suite', () => {
             // fill campaign preview form
             await driver.page.type('.e2e-campaign-title', 'E2E campaign')
 
-            // first wait for loader to appear
-            try {
-                await driver.page.waitForSelector('.e2e-preview-loading', { timeout: 500 })
-            } catch (error) {
-                if (error.name === 'TimeoutError') {
-                    // ignore this error as campaign previews can finish at the initial request also, we check below for errors and actual completion
-                } else {
-                    throw error
-                }
-            }
-            // then wait for loader to disappear
-            await driver.page.waitForSelector('.e2e-preview-loading', { timeout: 10000, hidden: true })
-            // check if there have been any errors
-            const errorCount = await driver.page.evaluate(() => document.querySelectorAll('.alert.alert-danger').length)
-            expect(errorCount).toEqual(0)
-            // check if the completion marker is rendered
-            await driver.page.waitForSelector('.e2e-preview-success')
             // ensure diff tab is open
             await driver.page.click('.e2e-campaign-diff-tab')
             await driver.page.waitForSelector('.file-diff-node')
@@ -1526,7 +1515,8 @@ describe('e2e test suite', () => {
             const { previewURL } = await driver.createCampaignPlanFromPatches([
                 {
                     repository: repo.id,
-                    baseRevision: 'master',
+                    baseRevision: '339d09ae1ce5907e0678ae5f1f91d9ad38db6107',
+                    baseRef: 'refs/heads/master',
                     patch: `diff --unified file1.txt file1.txt
 --- file1.txt 2020-01-01 01:02:03 -0700
 +++ file1.txt 2020-01-01 03:04:05 -0700

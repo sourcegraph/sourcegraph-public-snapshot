@@ -259,12 +259,13 @@ func (r *campaignJobResolver) FileDiffs(ctx context.Context, args *graphqlutil.C
 func (r *campaignJobResolver) PublicationEnqueued(ctx context.Context) (bool, error) {
 	// We tried to preload a ChangesetJob for this CampaignJob
 	if r.attemptedPreloadChangesetJob {
-		// If we have a ChangesetJob, that means its PublishedAt is set or its
-		// Campaign.PublishedAt has been set
-		return r.preloadedChangesetJob != nil, nil
+		if r.preloadedChangesetJob == nil {
+			return false, nil
+		}
+		return r.preloadedChangesetJob.FinishedAt.IsZero(), nil
 	}
 
-	_, err := r.store.GetChangesetJob(ctx, ee.GetChangesetJobOpts{CampaignJobID: r.job.ID})
+	cj, err := r.store.GetChangesetJob(ctx, ee.GetChangesetJobOpts{CampaignJobID: r.job.ID})
 	if err != nil && err != ee.ErrNoResults {
 		return false, err
 	}
@@ -272,7 +273,10 @@ func (r *campaignJobResolver) PublicationEnqueued(ctx context.Context) (bool, er
 		return false, nil
 	}
 
-	return true, nil
+	// FinishedAt is always set once the ChangesetJob is finished, even if it
+	// failed. If it's zero, we're still executing the job. If not, we're
+	// done and the "publication" is not "enqueued" anymore.
+	return cj.FinishedAt.IsZero(), nil
 }
 
 type previewFileDiffConnectionResolver struct {

@@ -61,6 +61,31 @@ describe('parseSearchQuery()', () => {
             type: 'success',
         }))
 
+    test('triple quotes', () => {
+        expect(parseSearchQuery('"""')).toMatchObject({
+            range: {
+                end: 3,
+                start: 0,
+            },
+            token: {
+                members: [
+                    {
+                        range: {
+                            end: 3,
+                            start: 0,
+                        },
+                        token: {
+                            type: 'literal',
+                            value: '"""',
+                        },
+                    },
+                ],
+                type: 'sequence',
+            },
+            type: 'success',
+        })
+    })
+
     test('filter', () =>
         expect(parseSearchQuery('a:b')).toMatchObject({
             range: {

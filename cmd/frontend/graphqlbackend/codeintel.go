@@ -68,6 +68,7 @@ type LSIFUploadResolver interface {
 	FinishedAt() *DateTime
 	Failure() LSIFUploadFailureReasonResolver
 	IsLatestForRepo() bool
+	PlaceInQueue() *int32
 }
 
 type LSIFUploadFailureReasonResolver interface {

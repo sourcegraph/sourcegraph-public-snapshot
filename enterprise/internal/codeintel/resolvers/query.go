@@ -94,6 +94,11 @@ func (r *lsifQueryResolver) References(ctx context.Context, args *graphqlbackend
 		}
 		if nextURL, ok := nextURLs[upload.ID]; ok {
 			opts.Cursor = &nextURL
+		} else if len(nextURLs) != 0 {
+			// Result set is exhausted or newer than the first page
+			// of results. Skip anything from this upload as it will
+			// have duplicate results, or it will be out of order.
+			continue
 		}
 
 		locations, nextURL, err := client.DefaultClient.References(ctx, opts)

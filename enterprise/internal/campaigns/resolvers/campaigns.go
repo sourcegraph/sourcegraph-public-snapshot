@@ -158,16 +158,19 @@ func (r *campaignResolver) PublishedAt(ctx context.Context) (*graphqlbackend.Dat
 	return &graphqlbackend.DateTime{Time: createdAt}, nil
 }
 
-func (r *campaignResolver) Changesets(ctx context.Context, args struct {
-	graphqlutil.ConnectionArgs
-}) graphqlbackend.ExternalChangesetsConnectionResolver {
+func (r *campaignResolver) Changesets(
+	ctx context.Context,
+	args *graphqlbackend.ListChangesetsArgs,
+) (graphqlbackend.ExternalChangesetsConnectionResolver, error) {
+	opts, err := listChangesetOptsFromArgs(args)
+	if err != nil {
+		return nil, err
+	}
+	opts.CampaignID = r.Campaign.ID
 	return &changesetsConnectionResolver{
 		store: r.store,
-		opts: ee.ListChangesetsOpts{
-			CampaignID: r.Campaign.ID,
-			Limit:      int(args.ConnectionArgs.GetFirst()),
-		},
-	}
+		opts:  opts,
+	}, nil
 }
 
 func (r *campaignResolver) ChangesetPlans(
@@ -316,7 +319,7 @@ func (r *emptyChangesetPlansConnectionsResolver) PageInfo(ctx context.Context) (
 }
 
 func updateCampaign(ctx context.Context, store *ee.Store, httpFactory *httpcli.Factory, tr *trace.Trace, updateArgs ee.UpdateCampaignArgs) (*campaigns.Campaign, error) {
-	svc := ee.NewService(store, gitserver.DefaultClient, nil, httpFactory)
+	svc := ee.NewService(store, gitserver.DefaultClient, httpFactory)
 	campaign, detachedChangesets, err := svc.UpdateCampaign(ctx, updateArgs)
 	if err != nil {
 		return nil, err

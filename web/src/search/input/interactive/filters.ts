@@ -4,7 +4,10 @@ import { FilterType } from '../../../../../shared/src/search/interactive/util'
 import { resolveFilter } from '../../../../../shared/src/search/parser/filters'
 
 /** FilterTypes which have a finite number of valid options. */
-export type FiniteFilterType = FilterType.archived | FilterType.fork | FilterType.type
+export type FiniteFilterType = FilterType.archived | FilterType.fork | FilterType.type | FilterType.index
+
+const withBooleanSuggestions = (type: FiniteFilterType): Suggestion[] =>
+    ['no', 'only', 'yes'].map(value => ({ type, value }))
 
 export const finiteFilters: Record<
     FiniteFilterType,
@@ -15,19 +18,15 @@ export const finiteFilters: Record<
 > = {
     archived: {
         default: 'yes',
-        values: [{ value: 'no' }, { value: 'only' }, { value: 'yes' }].map(
-            assign({
-                type: FilterType.archived,
-            })
-        ),
+        values: withBooleanSuggestions(FilterType.archived),
     },
     fork: {
         default: 'yes',
-        values: [{ value: 'no' }, { value: 'only' }, { value: 'yes' }].map(
-            assign({
-                type: FilterType.fork,
-            })
-        ),
+        values: withBooleanSuggestions(FilterType.fork),
+    },
+    index: {
+        default: 'yes',
+        values: withBooleanSuggestions(FilterType.index),
     },
     type: {
         default: '',
@@ -47,7 +46,7 @@ export const finiteFilters: Record<
 }
 
 export const isFiniteFilter = (filter: FilterType): filter is FiniteFilterType =>
-    !!resolveFilter(filter) && ['fork', 'archived', 'type'].includes(filter)
+    !!resolveFilter(filter) && ['fork', 'archived', 'type', 'index'].includes(filter)
 
 export function isTextFilter(filter: FilterType): boolean {
     return !!resolveFilter(filter) && !isFiniteFilter(filter)
@@ -80,4 +79,5 @@ export const FilterTypeToProseNames: Record<FilterType, string> = {
     type: 'Type',
     content: 'Content',
     patterntype: 'Pattern type',
+    index: 'Indexed repos',
 }

@@ -11,9 +11,9 @@ import (
 
 	gh "github.com/google/go-github/v28/github"
 	"github.com/hashicorp/go-multierror"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	bbs "github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -71,7 +71,7 @@ func (h Webhook) upsertChangesetEvent(
 	}
 
 	if existing != nil {
-		// Upsert is used to create or update the record in the database,
+		// Update is used to create or update the record in the database,
 		// but we're actually "patching" the record with specific merge semantics
 		// encoded in Update. This is because some webhooks payloads don't contain
 		// all the information that we can get from the API, so we only update the
@@ -80,7 +80,24 @@ func (h Webhook) upsertChangesetEvent(
 		event = existing
 	}
 
-	return tx.UpsertChangesetEvents(ctx, event)
+	// Add new event
+	if err := tx.UpsertChangesetEvents(ctx, event); err != nil {
+		return err
+	}
+
+	// The webhook may have caused the external state of the changeset to change
+	// so we need to update it. We need all events as we may have received more than just the
+	// event we are currently handling
+	events, _, err := tx.ListChangesetEvents(ctx, ListChangesetEventsOpts{
+		ChangesetIDs: []int64{cs.ID},
+		Limit:        -1,
+	})
+	cs.SetDerivedState(events)
+	if err := tx.UpdateChangesets(ctx, cs); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // GitHubWebhook receives GitHub organization webhook events that are
@@ -588,6 +605,12 @@ func (*GitHubWebhook) checkRunEvent(cr *gh.CheckRun) *github.CheckRun {
 // Upsert ensures the creation of the BitbucketServer campaigns webhook.
 // This happens periodically at the specified interval.
 func (h *BitbucketServerWebhook) Upsert(every time.Duration) {
+	externalURL := func() string {
+		return conf.Cached(func() interface{} {
+			return conf.Get().ExternalURL
+		})().(string)
+	}
+
 	for {
 		args := repos.StoreListExternalServicesArgs{Kinds: []string{"BITBUCKETSERVER"}}
 		es, err := h.Repos.ListExternalServices(context.Background(), args)
@@ -615,7 +638,7 @@ func (h *BitbucketServerWebhook) Upsert(every time.Duration) {
 				continue
 			}
 
-			endpoint := globals.ExternalURL().String() + "/.api/bitbucket-server-webhooks"
+			endpoint := externalURL() + "/.api/bitbucket-server-webhooks"
 
 			wh := bbs.Webhook{
 				Name:     h.Name,
