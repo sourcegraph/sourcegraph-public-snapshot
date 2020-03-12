@@ -95,6 +95,19 @@ func searchActivity(ctx context.Context, periodType db.PeriodType, periods int, 
 		}
 	}
 
+	// Count total unique search users per period
+	totalUniqueUsers, err := db.EventLogs.CountUniqueUsersPerPeriod(ctx, periodType, timeNow().UTC(), periods, &db.CountUniqueUsersOptions{
+		EventFilters: &db.EventFilterOptions{ByEventName: "SearchResultsQueried"},
+	})
+	if err != nil {
+		return nil, err
+	}
+	for i, uniqueUserCounts := range totalUniqueUsers {
+		activityPeriods[i].StartTime = uniqueUserCounts.Start
+		activityPeriods[i].TotalUsers.UserCount = int32(uniqueUserCounts.Count)
+	}
+
+	// Count total unique users and events of each search mode per period
 	searchModeNameToArgumentMatches := map[string]struct {
 		eventName          string
 		argumentName       string
@@ -125,7 +138,6 @@ func searchActivity(ctx context.Context, periodType db.PeriodType, periods int, 
 			return nil, err
 		}
 		for i, uc := range userCounts {
-			activityPeriods[i].StartTime = uc.Start
 			match.getEventStatistics(activityPeriods[i]).UserCount = int32(uc.Count)
 		}
 		if includeEventCounts {
@@ -151,6 +163,7 @@ func searchActivity(ctx context.Context, periodType db.PeriodType, periods int, 
 
 func newSearchEventPeriod() *types.SearchUsagePeriod {
 	return &types.SearchUsagePeriod{
+		TotalUsers:  &types.SearchEventStatistics{},
 		Literal:     &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}},
 		Regexp:      &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}},
 		Structural:  &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}},
