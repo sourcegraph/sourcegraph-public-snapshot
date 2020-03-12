@@ -70,6 +70,12 @@ func TestSudoProvider_FetchUserPerms(t *testing.T) {
 					return nil, fmt.Errorf("HTTP Private-Token: want %q but got %q", want, got)
 				}
 
+				want = "999"
+				got = r.Header.Get("Sudo")
+				if got != want {
+					return nil, fmt.Errorf("HTTP Sudo: want %q but got %q", want, got)
+				}
+
 				body := `[{"id": 1}, {"id": 2}, {"id": 3}]`
 				return &http.Response{
 					Status:     http.StatusText(http.StatusOK),
@@ -83,7 +89,6 @@ func TestSudoProvider_FetchUserPerms(t *testing.T) {
 	accountData := json.RawMessage(`{"id": 999}`)
 	repoIDs, err := p.FetchUserPerms(context.Background(),
 		&extsvc.ExternalAccount{
-			UserID: 0,
 			ExternalAccountSpec: extsvc.ExternalAccountSpec{
 				ServiceType: "gitlab",
 				ServiceID:   "https://api.gitlab.com/",

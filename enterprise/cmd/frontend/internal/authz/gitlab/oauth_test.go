@@ -91,7 +91,6 @@ func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 	authData := json.RawMessage(`{"access_token": "my_access_token"}`)
 	repoIDs, err := p.FetchUserPerms(context.Background(),
 		&extsvc.ExternalAccount{
-			UserID: 0,
 			ExternalAccountSpec: extsvc.ExternalAccountSpec{
 				ServiceType: "gitlab",
 				ServiceID:   "https://api.gitlab.com/",
