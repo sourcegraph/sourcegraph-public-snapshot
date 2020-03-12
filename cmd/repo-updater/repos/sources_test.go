@@ -271,7 +271,7 @@ func TestSources_ListRepos(t *testing.T) {
 						if set[r.Name] || set[r.ExternalRepo.ID] {
 							t.Errorf("excluded repo{name=%s, id=%s} was yielded", r.Name, r.ExternalRepo.ID)
 						}
-						
+
 						for _, re := range patterns {
 							if re.MatchString(r.Name) {
 								t.Errorf("excluded repo{name=%s} matching %q was yielded", r.Name, re.String())
