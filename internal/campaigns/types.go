@@ -323,6 +323,27 @@ func (c *Changeset) SetMetadata(meta interface{}) error {
 	return nil
 }
 
+// SetDerivedState will update the external state fields on c based on the current
+// state of the changeset and associated events
+func (c *Changeset) SetDerivedState(es []*ChangesetEvent) {
+	// Copy so that we can sort without mutating the argument
+	events := make(ChangesetEvents, len(es))
+	copy(events, es)
+	sort.Sort(events)
+
+	if state, err := ComputeChangesetState(c, events); err != nil {
+		log15.Warn("Computing changeset state", "err", err)
+	} else {
+		c.ExternalState = state
+	}
+	if state, err := events.ReviewState(); err != nil {
+		log15.Warn("Computing changeset review state", "err", err)
+	} else {
+		c.ExternalReviewState = state
+	}
+	c.ExternalCheckState = ComputeCheckState(c, events)
+}
+
 // RemoveCampaignID removes the given id from the Changesets CampaignIDs slice.
 // If the id is not in CampaignIDs calling this method doesn't have an effect.
 func (c *Changeset) RemoveCampaignID(id int64) {

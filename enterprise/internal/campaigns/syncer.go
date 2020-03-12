@@ -3,7 +3,6 @@ package campaigns
 import (
 	"container/heap"
 	"context"
-	"sort"
 	"time"
 
 	"github.com/pkg/errors"
@@ -286,7 +285,7 @@ func (s *ChangesetSyncer) SyncChangesetsWithSources(ctx context.Context, bySourc
 			}
 
 			csEvents := c.Events()
-			updateExternalState(c.Changeset, csEvents)
+			c.Changeset.SetDerivedState(csEvents)
 
 			events = append(events, csEvents...)
 			cs = append(cs, c.Changeset)
@@ -304,27 +303,6 @@ func (s *ChangesetSyncer) SyncChangesetsWithSources(ctx context.Context, bySourc
 	}
 
 	return tx.UpsertChangesetEvents(ctx, events...)
-}
-
-// updateExternalState will update the external state fields on cs based on the current
-// state of the changeset and associated events
-func updateExternalState(cs *campaigns.Changeset, es []*campaigns.ChangesetEvent) {
-	// Copy so that we can sort without mutating the argument
-	events := make(campaigns.ChangesetEvents, len(es))
-	copy(events, es)
-	sort.Sort(events)
-
-	if state, err := campaigns.ComputeChangesetState(cs, events); err != nil {
-		log15.Warn("Computing changeset state", "err", err)
-	} else {
-		cs.ExternalState = state
-	}
-	if state, err := events.ReviewState(); err != nil {
-		log15.Warn("Computing changeset review state", "err", err)
-	} else {
-		cs.ExternalReviewState = state
-	}
-	cs.ExternalCheckState = campaigns.ComputeCheckState(cs, events)
 }
 
 // GroupChangesetsBySource returns a slice of SourceChangesets in which the
