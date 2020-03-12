@@ -444,6 +444,8 @@ func RunChangesetJob(
 		if err := clone.SetMetadata(cs.Changeset.Metadata); err != nil {
 			return errors.Wrap(err, "setting changeset metadata")
 		}
+		events = clone.Events()
+		clone.SetDerivedState(events)
 		if err = store.UpdateChangesets(ctx, clone); err != nil {
 			return err
 		}
