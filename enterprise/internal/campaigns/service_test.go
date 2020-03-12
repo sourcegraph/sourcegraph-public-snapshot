@@ -337,7 +337,10 @@ func TestService(t *testing.T) {
 						campaignJobsByID := map[int64]*campaigns.CampaignJob{
 							campaignJob.ID: campaignJob,
 						}
-						fakeRunChangesetJobs(ctx, t, store, now, campaign, campaignJobsByID)
+						states := map[int64]campaigns.ChangesetState{
+							campaignJob.ID: campaigns.ChangesetStateOpen,
+						}
+						fakeRunChangesetJobs(ctx, t, store, now, campaign, campaignJobsByID, states)
 					}
 				}
 
@@ -418,6 +421,10 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 		// Repositories for which the ChangesetJob/Changeset have been
 		// individually published while Campaign was in draft mode
 		individuallyPublished repoNames
+
+		// Mapping of repository names to state of changesets after creating the campaign.
+		// Default state is ChangesetStateOpen
+		changesetStates map[string]campaigns.ChangesetState
 
 		updatePlan, updateName, updateDescription bool
 		newCampaignJobs                           []newCampaignJobSpec
@@ -542,6 +549,46 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 			wantModified:   repoNames{"repo-1"},
 			wantDetached:   repoNames{"repo-2"},
 		},
+		{
+			name:            "1 modified diff for already merged changeset",
+			updatePlan:      true,
+			oldCampaignJobs: repoNames{"repo-0"},
+			changesetStates: map[string]campaigns.ChangesetState{"repo-0": campaigns.ChangesetStateMerged},
+			newCampaignJobs: []newCampaignJobSpec{
+				{repo: "repo-0", modifiedDiff: true},
+			},
+			wantUnmodified: repoNames{"repo-0"},
+		},
+		{
+			name:            "1 modified rev for already merged changeset",
+			updatePlan:      true,
+			oldCampaignJobs: repoNames{"repo-0"},
+			changesetStates: map[string]campaigns.ChangesetState{"repo-0": campaigns.ChangesetStateMerged},
+			newCampaignJobs: []newCampaignJobSpec{
+				{repo: "repo-0", modifiedDiff: true},
+			},
+			wantUnmodified: repoNames{"repo-0"},
+		},
+		{
+			name:            "1 modified diff for already closed changeset",
+			updatePlan:      true,
+			oldCampaignJobs: repoNames{"repo-0"},
+			changesetStates: map[string]campaigns.ChangesetState{"repo-0": campaigns.ChangesetStateClosed},
+			newCampaignJobs: []newCampaignJobSpec{
+				{repo: "repo-0", modifiedDiff: true},
+			},
+			wantUnmodified: repoNames{"repo-0"},
+		},
+		{
+			name:            "1 modified rev for already closed changeset",
+			updatePlan:      true,
+			oldCampaignJobs: repoNames{"repo-0"},
+			changesetStates: map[string]campaigns.ChangesetState{"repo-0": campaigns.ChangesetStateClosed},
+			newCampaignJobs: []newCampaignJobSpec{
+				{repo: "repo-0", modifiedDiff: true},
+			},
+			wantUnmodified: repoNames{"repo-0"},
+		},
 	}
 
 	for _, tt := range tests {
@@ -554,6 +601,8 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 				oldCampaignJobs  []*campaigns.CampaignJob
 				newCampaignJobs  []*campaigns.CampaignJob
 				campaignJobsByID map[int64]*campaigns.CampaignJob
+
+				changesetStateByCampaignJobID map[int64]campaigns.ChangesetState
 
 				oldChangesets []*campaigns.Changeset
 			)
@@ -568,6 +617,7 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 				}
 
 				campaignJobsByID = make(map[int64]*campaigns.CampaignJob)
+				changesetStateByCampaignJobID = make(map[int64]campaigns.ChangesetState)
 				for _, repoName := range tt.oldCampaignJobs {
 					repo, ok := reposByName[repoName]
 					if !ok {
@@ -581,6 +631,12 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 					}
 					campaignJobsByID[j.ID] = j
 					oldCampaignJobs = append(oldCampaignJobs, j)
+
+					if s, ok := tt.changesetStates[repoName]; ok {
+						changesetStateByCampaignJobID[j.ID] = s
+					} else {
+						changesetStateByCampaignJobID[j.ID] = campaigns.ChangesetStateOpen
+					}
 				}
 				campaign = testCampaign(user.ID, plan.ID)
 			}
@@ -592,7 +648,7 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 
 			if !tt.campaignIsDraft && !tt.campaignIsManual {
 				// Create Changesets and update ChangesetJobs to look like they ran
-				oldChangesets = fakeRunChangesetJobs(ctx, t, store, now, campaign, campaignJobsByID)
+				oldChangesets = fakeRunChangesetJobs(ctx, t, store, now, campaign, campaignJobsByID, changesetStateByCampaignJobID)
 			}
 
 			if tt.campaignIsDraft && len(tt.individuallyPublished) != 0 {
@@ -614,7 +670,7 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 					}
 				}
 
-				oldChangesets = fakeRunChangesetJobs(ctx, t, store, now, campaign, toPublish)
+				oldChangesets = fakeRunChangesetJobs(ctx, t, store, now, campaign, toPublish, changesetStateByCampaignJobID)
 			}
 
 			oldTime := now
@@ -869,6 +925,7 @@ func fakeRunChangesetJobs(
 	now time.Time,
 	campaign *campaigns.Campaign,
 	campaignJobsByID map[int64]*campaigns.CampaignJob,
+	changesetStatesByCampaignJobID map[int64]campaigns.ChangesetState,
 ) []*campaigns.Changeset {
 	jobs, _, err := store.ListChangesetJobs(ctx, ListChangesetJobsOpts{
 		CampaignID: campaign.ID,
@@ -889,7 +946,11 @@ func fakeRunChangesetJobs(
 			t.Fatal("no CampaignJob found for ChangesetJob")
 		}
 
-		changeset := testChangeset(campaignJob.RepoID, changesetJob.CampaignID, changesetJob.ID)
+		state, ok := changesetStatesByCampaignJobID[campaignJob.ID]
+		if !ok {
+			t.Fatal("no desired state found for Changeset")
+		}
+		changeset := testChangeset(campaignJob.RepoID, changesetJob.CampaignID, changesetJob.ID, state)
 		err = store.CreateChangesets(ctx, changeset)
 		if err != nil {
 			t.Fatal(err)
@@ -955,12 +1016,14 @@ func testCampaign(user int32, plan int64) *campaigns.Campaign {
 	return c
 }
 
-func testChangeset(repoID api.RepoID, campaign int64, changesetJob int64) *campaigns.Changeset {
+func testChangeset(repoID api.RepoID, campaign int64, changesetJob int64, state campaigns.ChangesetState) *campaigns.Changeset {
+	pr := &github.PullRequest{State: string(state)}
 	return &campaigns.Changeset{
 		RepoID:              repoID,
 		CampaignIDs:         []int64{campaign},
 		ExternalServiceType: "github",
 		ExternalID:          fmt.Sprintf("ext-id-%d", changesetJob),
+		Metadata:            pr,
 	}
 }
 

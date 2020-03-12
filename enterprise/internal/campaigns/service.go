@@ -927,11 +927,13 @@ type campaignUpdateDiff struct {
 	Create []*campaigns.ChangesetJob
 }
 
-// repoJobs is a triplet of jobs that are associated with the same repository.
-type repoJobs struct {
+// repoGroup is a group of entities involved in a Campaign that are associated
+// with the same repository.
+type repoGroup struct {
 	changesetJob   *campaigns.ChangesetJob
 	campaignJob    *campaigns.CampaignJob
 	newCampaignJob *campaigns.CampaignJob
+	changeset      *campaigns.Changeset
 }
 
 func computeCampaignUpdateDiff(
@@ -949,6 +951,14 @@ func computeCampaignUpdateDiff(
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "listing changesets jobs")
+	}
+
+	changesets, _, err := tx.ListChangesets(ctx, ListChangesetsOpts{
+		CampaignID: campaign.ID,
+		Limit:      -1,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "listing changesets")
 	}
 
 	// We need OnlyFinished and OnlyWithDiff because we don't create
@@ -982,14 +992,14 @@ func computeCampaignUpdateDiff(
 	// We can find out which ones we want to keep by looking at the RepoID of
 	// their CampaignJobs.
 
-	jobsByRepoID, err := mergeByRepoID(changesetJobs, campaignJobs)
+	byRepoID, err := mergeByRepoID(changesetJobs, campaignJobs, changesets)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, j := range newCampaignJobs {
-		if jobs, ok := jobsByRepoID[j.RepoID]; ok {
-			jobs.newCampaignJob = j
+		if group, ok := byRepoID[j.RepoID]; ok {
+			group.newCampaignJob = j
 		} else {
 			// If we have new CampaignJobs that don't match an existing
 			// ChangesetJob we need to create new ChangesetJobs.
@@ -1000,29 +1010,43 @@ func computeCampaignUpdateDiff(
 		}
 	}
 
-	for _, jobs := range jobsByRepoID {
+	for _, group := range byRepoID {
 		// Either we _don't_ have a matching _new_ CampaignJob, then we delete
 		// the ChangesetJob and detach & close Changeset.
-		if jobs.newCampaignJob == nil {
-			diff.Delete = append(diff.Delete, jobs.changesetJob)
+		if group.newCampaignJob == nil {
+			diff.Delete = append(diff.Delete, group.changesetJob)
 			continue
 		}
 
 		// Or we have a matching _new_ CampaignJob, then we keep the
 		// ChangesetJob around, but need to rewire it.
-		jobs.changesetJob.CampaignJobID = jobs.newCampaignJob.ID
+		group.changesetJob.CampaignJobID = group.newCampaignJob.ID
 
 		//  And, if the {Diff,Rev,BaseRef,Description} are different, we  need to
 		// update the Changeset on the codehost...
-		if updateAttributes || campaignJobsDiffer(jobs.newCampaignJob, jobs.campaignJob) {
-			// ... to do that, we _reset_ the ChangesetJob, so it gets run again
-			// when RunChangesetJobs is called after UpdateCampaign.
-			jobs.changesetJob.Error = ""
-			jobs.changesetJob.StartedAt = time.Time{}
-			jobs.changesetJob.FinishedAt = time.Time{}
+		if updateAttributes || campaignJobsDiffer(group.newCampaignJob, group.campaignJob) {
+			// .. but if we already have a Changeset and that is merged, we
+			// don't want to update it...
+			if group.changeset != nil {
+				// TODO: This needs to change based on the outcome of this:
+				// https://github.com/sourcegraph/sourcegraph/pull/8848#discussion_r389000197
+				s, err := group.changeset.State()
+				if err != nil {
+					return nil, errors.Wrap(err, "determining a changeset's state")
+				}
+				if s == campaigns.ChangesetStateMerged || s == campaigns.ChangesetStateClosed {
+					// Note: in the future we want to create a new ChangesetJob here.
+					continue
+				}
+			}
+
+			// if we do want to update it, we _reset_ the ChangesetJob, so it
+			// gets run again when RunChangesetJobs is called after
+			// UpdateCampaign.
+			group.changesetJob.Reset()
 		}
 
-		diff.Update = append(diff.Update, jobs.changesetJob)
+		diff.Update = append(diff.Update, group.changesetJob)
 	}
 
 	return diff, nil
@@ -1080,8 +1104,12 @@ func isOutdated(c *repos.Changeset) (bool, error) {
 	return false, nil
 }
 
-func mergeByRepoID(chs []*campaigns.ChangesetJob, cas []*campaigns.CampaignJob) (map[api.RepoID]*repoJobs, error) {
-	jobs := make(map[api.RepoID]*repoJobs, len(chs))
+func mergeByRepoID(
+	chs []*campaigns.ChangesetJob,
+	cas []*campaigns.CampaignJob,
+	cs []*campaigns.Changeset,
+) (map[api.RepoID]*repoGroup, error) {
+	jobs := make(map[api.RepoID]*repoGroup, len(chs))
 
 	byID := make(map[int64]*campaigns.CampaignJob, len(cas))
 	for _, j := range cas {
@@ -1093,7 +1121,13 @@ func mergeByRepoID(chs []*campaigns.ChangesetJob, cas []*campaigns.CampaignJob) 
 		if !ok {
 			return nil, fmt.Errorf("CampaignJob with ID %d cannot be found for ChangesetJob %d", j.CampaignJobID, j.ID)
 		}
-		jobs[caj.RepoID] = &repoJobs{changesetJob: j, campaignJob: caj}
+		jobs[caj.RepoID] = &repoGroup{changesetJob: j, campaignJob: caj}
+	}
+
+	for _, c := range cs {
+		if j, ok := jobs[c.RepoID]; ok {
+			j.changeset = c
+		}
 	}
 
 	return jobs, nil
