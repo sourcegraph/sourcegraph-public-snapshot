@@ -9,8 +9,4 @@ These processes are run in a [goreman](https://github.com/mattn/goreman) supervi
 
 ## Prometheus metrics
 
-The lsif-server process exposes an HTTP API on port 3186. This API contains a `/metrics` endpoint to be scraped by prometheus. The lsif-worker process exposes a metrics server (but nothing else interesting) on port 3187. It's possible to run multiple worker processes, but impossible for them all to serve metrics from the same port. Therefore, this container also contains a minimally-configured Prometheus process that will scrape metrics from the server and worker processes.
-
-For non-standard configurations with multiple workers, use [federation](https://prometheus.io/docs/prometheus/latest/federation/) to scrape all of the process metrics at once.
-
-For the default configuration (one server and/or one worker), metrics can be scraped directly from ports 3186 and/or 3187. In this case, the prometheus process can be disabled completely by setting the environment variable `DISABLE_PROMETHEUS` to true.
+The lsif-server process exposes an HTTP API on port 3186. This API contains a `/metrics` endpoint to be scraped by prometheus. The lsif-worker process exposes a metrics server (but nothing else interesting) on port 3187. It's possible to run multiple worker processes, but impossible for them all to serve metrics from the same port. Therefore, this container also contains a minimally-configured Prometheus process that will scrape metrics from the server and worker processes. It is suggested that you use [federation](https://prometheus.io/docs/prometheus/latest/federation/) to scrape all of the process metrics at once instead of scraping the server and worker(s) ports directly. Doing so will ensure that scaling up or down the number of workers will not change the the required Prometheus configuration.

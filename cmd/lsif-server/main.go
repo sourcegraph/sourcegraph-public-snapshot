@@ -14,9 +14,8 @@ import (
 )
 
 var (
-	servers              = env.Get("LSIF_NUM_SERVERS", "1", "the number of server instances to run (defaults to one)")
-	workers              = env.Get("LSIF_NUM_WORKERS", "1", "the number of worker instances to run (defaults to one)")
-	disablePrometheus, _ = strconv.ParseBool(env.Get("DISABLE_PROMETHEUS", "false", "do not run a prometheus process"))
+	servers = env.Get("LSIF_NUM_SERVERS", "1", "the number of server instances to run (defaults to one)")
+	workers = env.Get("LSIF_NUM_WORKERS", "1", "the number of worker instances to run (defaults to one)")
 
 	// Set in docker image
 	prometheusStorageDir       = os.Getenv("PROMETHEUS_STORAGE_DIR")
@@ -73,12 +72,10 @@ func makeProcfile(numServers, numWorkers int64) string {
 		)
 	}
 
-	if !disablePrometheus {
-		addProcess("prometheus", fmt.Sprintf("prometheus --storage.tsdb.path=%s --config.file=%s/prometheus.yml",
-			prometheusStorageDir,
-			prometheusConfigurationDir,
-		))
-	}
+	addProcess("prometheus", fmt.Sprintf("prometheus --storage.tsdb.path=%s --config.file=%s/prometheus.yml",
+		prometheusStorageDir,
+		prometheusConfigurationDir,
+	))
 
 	return strings.Join(procfile, "\n") + "\n"
 }
