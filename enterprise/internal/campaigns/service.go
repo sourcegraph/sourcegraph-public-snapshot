@@ -10,7 +10,6 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -23,23 +22,14 @@ import (
 )
 
 // NewService returns a Service.
-func NewService(store *Store, git GitserverClient, repoResolveRevision repoResolveRevision, cf *httpcli.Factory) *Service {
-	return NewServiceWithClock(store, git, repoResolveRevision, cf, store.Clock())
+func NewService(store *Store, git GitserverClient, cf *httpcli.Factory) *Service {
+	return NewServiceWithClock(store, git, cf, store.Clock())
 }
 
 // NewServiceWithClock returns a Service the given clock used
 // to generate timestamps.
-func NewServiceWithClock(store *Store, git GitserverClient, repoResolveRevision repoResolveRevision, cf *httpcli.Factory, clock func() time.Time) *Service {
-	svc := &Service{
-		store:               store,
-		git:                 git,
-		repoResolveRevision: repoResolveRevision,
-		cf:                  cf,
-		clock:               clock,
-	}
-	if svc.repoResolveRevision == nil {
-		svc.repoResolveRevision = defaultRepoResolveRevision
-	}
+func NewServiceWithClock(store *Store, git GitserverClient, cf *httpcli.Factory, clock func() time.Time) *Service {
+	svc := &Service{store: store, git: git, cf: cf, clock: clock}
 
 	return svc
 }
@@ -49,32 +39,17 @@ type GitserverClient interface {
 }
 
 type Service struct {
-	store               *Store
-	git                 GitserverClient
-	repoResolveRevision repoResolveRevision
-	cf                  *httpcli.Factory
+	store *Store
+	git   GitserverClient
+	cf    *httpcli.Factory
 
 	clock func() time.Time
-}
-
-// repoResolveRevision resolves a Git revspec in a repository and returns the resolved commit ID.
-type repoResolveRevision func(context.Context, *repos.Repo, string) (api.CommitID, error)
-
-// defaultRepoResolveRevision is an implementation of repoResolveRevision that talks to gitserver to
-// resolve a Git revspec.
-var defaultRepoResolveRevision = func(ctx context.Context, repo *repos.Repo, revspec string) (api.CommitID, error) {
-	return backend.Repos.ResolveRev(ctx,
-		&types.Repo{Name: api.RepoName(repo.Name), ExternalRepo: repo.ExternalRepo},
-		revspec,
-	)
 }
 
 // CreateCampaignPlanFromPatches creates a CampaignPlan and its associated CampaignJobs from patches
 // computed by the caller. There is no diff execution or computation performed during creation of
 // the CampaignJobs in this case (unlike when using Runner to create a CampaignPlan from a
 // specification).
-//
-// If resolveRevision is nil, a default implementation is used.
 func (s *Service) CreateCampaignPlanFromPatches(ctx context.Context, patches []campaigns.CampaignPlanPatch, userID int32) (*campaigns.CampaignPlan, error) {
 	if userID == 0 {
 		return nil, backend.ErrNotAuthenticated
@@ -120,16 +95,11 @@ func (s *Service) CreateCampaignPlanFromPatches(ctx context.Context, patches []c
 			continue
 		}
 
-		commit, err := s.repoResolveRevision(ctx, repo, patch.BaseRevision)
-		if err != nil {
-			return nil, errors.Wrapf(err, "repository %q", repo.Name)
-		}
-
 		job := &campaigns.CampaignJob{
 			CampaignPlanID: plan.ID,
 			RepoID:         patch.Repo,
-			BaseRef:        patch.BaseRevision,
-			Rev:            commit,
+			BaseRef:        patch.BaseRef,
+			Rev:            patch.BaseRevision,
 			Diff:           patch.Patch,
 			StartedAt:      s.clock(),
 			FinishedAt:     s.clock(),

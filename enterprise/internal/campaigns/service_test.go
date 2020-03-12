@@ -58,12 +58,7 @@ func TestService(t *testing.T) {
 	}
 
 	t.Run("CreateCampaignPlanFromPatches", func(t *testing.T) {
-		const commit = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-		repoResolveRevision := func(context.Context, *repos.Repo, string) (api.CommitID, error) {
-			return commit, nil
-		}
-
-		svc := NewServiceWithClock(store, nil, repoResolveRevision, nil, clock)
+		svc := NewServiceWithClock(store, nil, nil, clock)
 
 		const patch = `diff f f
 --- f
@@ -73,8 +68,8 @@ func TestService(t *testing.T) {
  y
 `
 		patches := []campaigns.CampaignPlanPatch{
-			{Repo: api.RepoID(rs[0].ID), BaseRevision: "b0", Patch: patch},
-			{Repo: api.RepoID(rs[1].ID), BaseRevision: "b1", Patch: patch},
+			{Repo: api.RepoID(rs[0].ID), BaseRevision: "deadbeef", BaseRef: "refs/heads/master", Patch: patch},
+			{Repo: api.RepoID(rs[1].ID), BaseRevision: "f00b4r", BaseRef: "refs/heads/master", Patch: patch},
 		}
 
 		plan, err := svc.CreateCampaignPlanFromPatches(ctx, patches, user.ID)
@@ -98,8 +93,8 @@ func TestService(t *testing.T) {
 			wantJobs[i] = &campaigns.CampaignJob{
 				CampaignPlanID: plan.ID,
 				RepoID:         patch.Repo,
-				BaseRef:        patch.BaseRevision,
-				Rev:            commit,
+				Rev:            patch.BaseRevision,
+				BaseRef:        patch.BaseRef,
 				Diff:           patch.Patch,
 				StartedAt:      now,
 				FinishedAt:     now,
@@ -120,7 +115,7 @@ func TestService(t *testing.T) {
 		}
 
 		campaign := testCampaign(user.ID, plan.ID)
-		svc := NewServiceWithClock(store, gitClient, nil, cf, clock)
+		svc := NewServiceWithClock(store, gitClient, cf, clock)
 
 		// Without CampaignJobs it should fail
 		err = svc.CreateCampaign(ctx, campaign, false)
@@ -178,7 +173,7 @@ func TestService(t *testing.T) {
 
 		campaign := testCampaign(user.ID, plan.ID)
 
-		svc := NewServiceWithClock(store, gitClient, nil, cf, clock)
+		svc := NewServiceWithClock(store, gitClient, cf, clock)
 		err = svc.CreateCampaign(ctx, campaign, true)
 		if err != nil {
 			t.Fatal(err)
@@ -220,7 +215,7 @@ func TestService(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		svc := NewServiceWithClock(store, gitClient, nil, cf, clock)
+		svc := NewServiceWithClock(store, gitClient, cf, clock)
 		err = svc.CreateChangesetJobForCampaignJob(ctx, campaignJob.ID)
 		if err != nil {
 			t.Fatal(err)
@@ -308,7 +303,7 @@ func TestService(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				svc := NewServiceWithClock(store, gitClient, nil, cf, clock)
+				svc := NewServiceWithClock(store, gitClient, cf, clock)
 				campaign := testCampaign(user.ID, plan.ID)
 
 				err = svc.CreateCampaign(ctx, campaign, tc.draft)
@@ -594,7 +589,7 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			store := NewStoreWithClock(dbconn.Global, clock)
-			svc := NewServiceWithClock(store, gitClient, nil, cf, clock)
+			svc := NewServiceWithClock(store, gitClient, cf, clock)
 
 			var (
 				campaign         *campaigns.Campaign
