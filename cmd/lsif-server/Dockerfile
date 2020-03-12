@@ -39,7 +39,7 @@ USER sourcegraph
 COPY --from=lsif-builder /lsif /lsif
 COPY ./lsif-server /usr/local/bin/lsif-server
 COPY --from=prometheus /bin/prometheus /bin/prometheus
-COPY ./prometheus/prometheus.yml $PROMETHEUS_CONFIGURATION_DIR/prometheus.yml
+COPY ./prometheus.yml $PROMETHEUS_CONFIGURATION_DIR/prometheus.yml
 
 # HTTP server, (first) worker metrics server, prometheus
 EXPOSE 3186 3187 9090
