@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	graphql "github.com/graph-gophers/graphql-go"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 )
@@ -65,8 +66,8 @@ func (*schemaResolver) DeleteUser(ctx context.Context, args *struct {
 	// This call is purely for the purpose of cleanup.
 	if err := db.Authz.RevokeUserPermissions(ctx, &db.RevokeUserPermissionsArgs{
 		UserID:         user.ID,
-		ServiceType:    "sourcegraph",
-		ServiceID:      "https://sourcegraph.com/",
+		ServiceType:    authz.SourcegraphServiceType,
+		ServiceID:      authz.SourcegraphServiceID,
 		Username:       user.Username,
 		VerifiedEmails: emailStrs,
 	}); err != nil {
