@@ -104,7 +104,7 @@ func searchActivity(ctx context.Context, periodType db.PeriodType, periods int, 
 		"interactive": {eventName: "SearchResultsQueried", argumentName: "mode", getEventStatistics: func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.SearchModes.Interactive }},
 	}
 
-	for searchMode, eventAndArgNames := range searchModeNameToArgumentMatches {
+	for searchMode, match := range searchModeNameToArgumentMatches {
 		userCounts, err := db.EventLogs.CountUniqueUsersPerPeriod(ctx, periodType, timeNow().UTC(), periods, &db.CountUniqueUsersOptions{
 			EventFilters: &db.EventFilterOptions{
 				ByEventNameWithArgument: &db.EventArgumentMatch{
