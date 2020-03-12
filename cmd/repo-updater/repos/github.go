@@ -82,8 +82,8 @@ func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpc
 	}
 
 	var (
-		exclude = make(map[string]bool, len(c.Exclude))
-		excludeForks bool
+		exclude         = make(map[string]bool, len(c.Exclude))
+		excludeForks    bool
 		excludePatterns []*regexp.Regexp
 	)
 
