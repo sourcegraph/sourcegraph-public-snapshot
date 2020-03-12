@@ -117,6 +117,39 @@ func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (filte
 		return repos, nil
 	}
 
+	// Perform authorization against permissions tables.
+	if globals.PermissionsBackgroundSync().Enabled {
+		toVerify := repos[:0]
+		filtered := make([]*types.Repo, 0, len(repos))
+
+		// Add public repositories to filtered, otherws to toVerify.
+		for i := range repos {
+			if repos[i].Private {
+				toVerify = append(toVerify, repos[i])
+				continue
+			}
+
+			filtered = append(filtered, repos[i])
+		}
+
+		// Only show public repositories to unauthenticated user.
+		if currentUser == nil {
+			return filtered, nil
+		}
+
+		verified, err := Authz.AuthorizedRepos(ctx, &AuthorizedReposArgs{
+			Repos:  repos,
+			UserID: currentUser.ID,
+			Perm:   p,
+			Type:   authz.PermRepos,
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, "authorize repositories")
+		}
+
+		return append(filtered, verified...), nil
+	}
+
 	if authzAllowByDefault && len(authzProviders) == 0 {
 		return repos, nil
 	}

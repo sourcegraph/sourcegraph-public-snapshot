@@ -82,7 +82,7 @@ func WatchPermissionsUserMapping() {
 	}
 
 	conf.Watch(func() {
-		after := conf.Get().SiteConfiguration.PermissionsUserMapping
+		after := conf.Get().PermissionsUserMapping
 		if after == nil {
 			return
 		} else if after.BindID != "email" && after.BindID != "username" {
@@ -111,6 +111,53 @@ func PermissionsUserMapping() *schema.PermissionsUserMapping {
 // SetPermissionsUserMapping sets a valid value for the permissions user mapping.
 func SetPermissionsUserMapping(u *schema.PermissionsUserMapping) {
 	permissionsUserMapping.Store(u)
+}
+
+// permissionsBackgroundSync mirrors the value of `permissions.backgroundSync` in the site configuration.
+// This variable is used to monitor configuration change via conf.Watch and must be operated atomically.
+var permissionsBackgroundSync = func() atomic.Value {
+	var v atomic.Value
+	v.Store(&schema.PermissionsBackgroundSync{Enabled: false})
+	return v
+}()
+
+var permissionsBackgroundSyncWatchers uint32
+
+// WatchPermissionsUserMapping watches for changes in the `permissions.backgroundSync` site configuration
+// so that changes are reflected in what is returned by the PermissionsBackgroundSync function.
+// This should only be called once and will panic otherwise.
+func WatchPermissionsBackgroundSync() {
+	if atomic.AddUint32(&permissionsBackgroundSyncWatchers, 1) != 1 {
+		panic("WatchPermissionsBackgroundSync called more than once")
+	}
+
+	conf.Watch(func() {
+		after := conf.Get().PermissionsBackgroundSync
+		if after == nil {
+			return
+		}
+
+		if before := PermissionsBackgroundSync(); !reflect.DeepEqual(before, after) {
+			SetPermissionsBackgroundSync(after)
+			log15.Info(
+				"globals.PermissionsBackgroundSync",
+				"updated", true,
+				"before", before,
+				"after", after,
+			)
+		}
+	})
+}
+
+// PermissionsBackgroundSync returns the last valid value of permissions background sync in the site configuration.
+// Callers must not mutate the returned pointer.
+func PermissionsBackgroundSync() *schema.PermissionsBackgroundSync {
+	return permissionsBackgroundSync.Load().(*schema.PermissionsBackgroundSync)
+}
+
+// SetPermissionsUserMapping sets a valid value for the permissions background sync.
+func SetPermissionsBackgroundSync(u *schema.PermissionsBackgroundSync) {
+	permissionsBackgroundSync.Store(u)
 }
 
 // ConfigurationServerFrontendOnly provides the contents of the site configuration
