@@ -26,7 +26,7 @@ func (c *mockDoer) Do(r *http.Request) (*http.Response, error) {
 func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 	t.Run("nil account", func(t *testing.T) {
 		p := newOAuthProvider(OAuthProviderOp{
-			BaseURL: mustURL(t, "https://api.gitlab.com"),
+			BaseURL: mustURL(t, "https://gitlab.com"),
 		}, nil)
 		_, err := p.FetchUserPerms(context.Background(), nil)
 		want := "no account provided"
@@ -38,7 +38,7 @@ func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 
 	t.Run("not the code host of the account", func(t *testing.T) {
 		p := newOAuthProvider(OAuthProviderOp{
-			BaseURL: mustURL(t, "https://api.gitlab.com"),
+			BaseURL: mustURL(t, "https://gitlab.com"),
 		}, nil)
 		_, err := p.FetchUserPerms(context.Background(),
 			&extsvc.ExternalAccount{
@@ -48,7 +48,7 @@ func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 				},
 			},
 		)
-		want := "not a code host of the account: want {ServiceType:github ServiceID:https://github.com/ ClientID: AccountID:} but have &{ServiceID:https://api.gitlab.com/ ServiceType:gitlab BaseURL:https://api.gitlab.com/}"
+		want := "not a code host of the account: want {ServiceType:github ServiceID:https://github.com/ ClientID: AccountID:} but have &{ServiceID:https://gitlab.com/ ServiceType:gitlab BaseURL:https://gitlab.com/}"
 		got := fmt.Sprintf("%v", err)
 		if got != want {
 			t.Fatalf("err: want %q but got %q", want, got)
@@ -62,12 +62,12 @@ func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 
 	p := newOAuthProvider(
 		OAuthProviderOp{
-			BaseURL: mustURL(t, "https://api.gitlab.com"),
+			BaseURL: mustURL(t, "https://gitlab.com"),
 			Token:   "admin_token",
 		},
 		&mockDoer{
 			do: func(r *http.Request) (*http.Response, error) {
-				want := "https://api.gitlab.com/api/v4/projects?min_access_level=20&per_page=100&visibility=private"
+				want := "https://gitlab.com/api/v4/projects?min_access_level=20&per_page=100&visibility=private"
 				if r.URL.String() != want {
 					return nil, fmt.Errorf("URL: want %q but got %q", want, r.URL)
 				}
@@ -93,7 +93,7 @@ func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 		&extsvc.ExternalAccount{
 			ExternalAccountSpec: extsvc.ExternalAccountSpec{
 				ServiceType: "gitlab",
-				ServiceID:   "https://api.gitlab.com/",
+				ServiceID:   "https://gitlab.com/",
 			},
 			ExternalAccountData: extsvc.ExternalAccountData{
 				AuthData: &authData,
@@ -113,7 +113,7 @@ func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 func TestOAuthProvider_FetchRepoPerms(t *testing.T) {
 	t.Run("nil repository", func(t *testing.T) {
 		p := newOAuthProvider(OAuthProviderOp{
-			BaseURL: mustURL(t, "https://api.gitlab.com"),
+			BaseURL: mustURL(t, "https://gitlab.com"),
 		}, nil)
 		_, err := p.FetchRepoPerms(context.Background(), nil)
 		want := "no repository provided"
@@ -125,7 +125,7 @@ func TestOAuthProvider_FetchRepoPerms(t *testing.T) {
 
 	t.Run("not the code host of the repository", func(t *testing.T) {
 		p := newOAuthProvider(OAuthProviderOp{
-			BaseURL: mustURL(t, "https://api.gitlab.com"),
+			BaseURL: mustURL(t, "https://gitlab.com"),
 		}, nil)
 		_, err := p.FetchRepoPerms(context.Background(),
 			&api.ExternalRepoSpec{
@@ -133,7 +133,7 @@ func TestOAuthProvider_FetchRepoPerms(t *testing.T) {
 				ServiceID:   "https://github.com/",
 			},
 		)
-		want := "not a code host of the repository: want ExternalRepoSpec{https://github.com/ github } but have &{ServiceID:https://api.gitlab.com/ ServiceType:gitlab BaseURL:https://api.gitlab.com/}"
+		want := "not a code host of the repository: want ExternalRepoSpec{https://github.com/ github } but have &{ServiceID:https://gitlab.com/ ServiceType:gitlab BaseURL:https://gitlab.com/}"
 		got := fmt.Sprintf("%v", err)
 		if got != want {
 			t.Fatalf("err: want %q but got %q", want, got)
@@ -147,12 +147,12 @@ func TestOAuthProvider_FetchRepoPerms(t *testing.T) {
 
 	p := newOAuthProvider(
 		OAuthProviderOp{
-			BaseURL: mustURL(t, "https://api.gitlab.com"),
+			BaseURL: mustURL(t, "https://gitlab.com"),
 			Token:   "admin_token",
 		},
 		&mockDoer{
 			do: func(r *http.Request) (*http.Response, error) {
-				want := "https://api.gitlab.com/api/v4/projects/gitlab_project_id/members/all?per_page=100"
+				want := "https://gitlab.com/api/v4/projects/gitlab_project_id/members/all?per_page=100"
 				if r.URL.String() != want {
 					return nil, fmt.Errorf("URL: want %q but got %q", want, r.URL)
 				}
@@ -181,7 +181,7 @@ func TestOAuthProvider_FetchRepoPerms(t *testing.T) {
 	accountIDs, err := p.FetchRepoPerms(context.Background(),
 		&api.ExternalRepoSpec{
 			ServiceType: "gitlab",
-			ServiceID:   "https://api.gitlab.com/",
+			ServiceID:   "https://gitlab.com/",
 			ID:          "gitlab_project_id",
 		},
 	)
