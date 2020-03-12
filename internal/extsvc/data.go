@@ -50,9 +50,9 @@ func getJSONOrError(field *json.RawMessage, v interface{}) error {
 		return errors.New("field was nil")
 	}
 
-	if err := json.Unmarshal([]byte(*field), v); err != nil {
+	if err := json.Unmarshal(*field, v); err != nil {
 		var jsonErr jsonError
-		if err := json.Unmarshal([]byte(*field), &jsonErr); err != nil {
+		if err := json.Unmarshal(*field, &jsonErr); err != nil {
 			return fmt.Errorf("could not parse field as JSON: %s", err)
 		}
 		return errors.New(jsonErr.Error)

@@ -341,6 +341,8 @@ type ExcludedBitbucketServerRepo struct {
 	Pattern string `json:"pattern,omitempty"`
 }
 type ExcludedGitHubRepo struct {
+	// Forks description: If set to true, forks will be excluded.
+	Forks bool `json:"forks,omitempty"`
 	// Id description: The node ID of a GitHub repository (as returned by the GitHub instance's API) to exclude from mirroring. Use this to exclude the repository, even if renamed. Note: This is the GraphQL ID, not the GitHub database ID. eg: "curl https://api.github.com/repos/vuejs/vue | jq .node_id"
 	Id string `json:"id,omitempty"`
 	// Name description: The name of a GitHub repository ("owner/name") to exclude from mirroring.

@@ -3,7 +3,7 @@ import { CloseDeleteCampaignPrompt } from './CloseDeleteCampaignPrompt'
 import { createRenderer } from 'react-test-renderer/shallow'
 
 describe('CloseDeleteCampaignPrompt', () => {
-    test('renders', () =>
+    test('some still open', () =>
         expect(
             createRenderer().render(
                 <CloseDeleteCampaignPrompt
@@ -11,6 +11,20 @@ describe('CloseDeleteCampaignPrompt', () => {
                     disabledTooltip="Cannot delete while campaign is processing..."
                     message={<p>message</p>}
                     changesetsCount={2}
+                    buttonText="Delete"
+                    onButtonClick={() => undefined}
+                    buttonClassName="btn-danger"
+                />
+            )
+        ).toMatchSnapshot())
+    test('none still open', () =>
+        expect(
+            createRenderer().render(
+                <CloseDeleteCampaignPrompt
+                    disabled={false}
+                    disabledTooltip="Cannot delete while campaign is processing..."
+                    message={<p>message</p>}
+                    changesetsCount={0}
                     buttonText="Delete"
                     onButtonClick={() => undefined}
                     buttonClassName="btn-danger"

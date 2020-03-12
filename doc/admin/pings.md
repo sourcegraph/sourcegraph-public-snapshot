@@ -17,8 +17,8 @@ Sourcegraph periodically sends a ping to Sourcegraph.com to help our product and
 - Aggregate counts of current daily, weekly, and monthly users
 - Aggregate counts of current users using code host integrations
 - Aggregate counts of current users by product feature (site management, code search and navigation, code review, saved searches, diff searches)
-- Aggregate daily, weekly, and monthly latencies (in ms) of certain events (e.g., hover tooltips)
-- Aggregate daily, weekly, and monthly total counts of certain events (e.g., hover tooltips)
+- Aggregate daily, weekly, and monthly latencies (in ms) of code intelligence events (e.g., hover tooltips) and search queries
+- Aggregate daily, weekly, and monthly total counts of code intelligence events (e.g., hover tooltips)
 - Total count of code campaigns created
 
 To disable pings, please [contact support](https://about.sourcegraph.com/contact/).
