@@ -8,6 +8,7 @@ import (
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 )
 
@@ -46,7 +47,8 @@ type CreateCampaignPlanFromPatchesArgs struct {
 
 type CampaignPlanPatch struct {
 	Repository   graphql.ID
-	BaseRevision string
+	BaseRevision api.CommitID
+	BaseRef      string
 	Patch        string
 }
 

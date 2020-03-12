@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
 // NewAuthzStore returns an OSS db.AuthzStore set with enterprise implementation.
@@ -129,7 +130,7 @@ func (s *authzStore) RevokeUserPermissions(ctx context.Context, args *db.RevokeU
 		return err
 	}
 
-	accounts := &ExternalAccounts{
+	accounts := &extsvc.ExternalAccounts{
 		ServiceType: args.ServiceType,
 		ServiceID:   args.ServiceID,
 		AccountIDs:  append([]string{args.Username}, args.VerifiedEmails...),

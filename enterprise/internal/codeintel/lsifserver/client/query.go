@@ -44,8 +44,6 @@ func (c *Client) Upload(ctx context.Context, args *struct {
 	Commit      graphqlbackend.GitObjectID
 	Root        string
 	IndexerName string
-	Blocking    *bool
-	MaxWait     *int32
 	Body        io.ReadCloser
 }) (int64, bool, error) {
 	query := queryValues{}
@@ -53,8 +51,6 @@ func (c *Client) Upload(ctx context.Context, args *struct {
 	query.Set("commit", string(args.Commit))
 	query.Set("root", args.Root)
 	query.Set("indexerName", args.IndexerName)
-	query.SetOptionalBool("blocking", args.Blocking)
-	query.SetOptionalInt32("maxWait", args.MaxWait)
 
 	req := &lsifRequest{
 		path:   "/upload",

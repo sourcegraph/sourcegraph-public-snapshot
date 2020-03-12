@@ -78,7 +78,7 @@ const LsifUploadNode: FunctionComponent<{ node: GQL.ILSIFUpload; onDelete: () =>
                                 ) : node.state === GQL.LSIFUploadState.ERRORED ? (
                                     <span className="text-danger">Failed to process</span>
                                 ) : (
-                                    <span>Waiting to process</span>
+                                    <span>Waiting to process (#{node.placeInQueue} in line)</span>
                                 )}
                             </Link>
                         </span>

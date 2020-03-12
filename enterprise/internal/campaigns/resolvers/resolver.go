@@ -255,7 +255,7 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 		return nil, err
 	}
 
-	svc := ee.NewService(r.store, gitserver.DefaultClient, nil, r.httpFactory)
+	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
 	err = svc.CreateCampaign(ctx, campaign, draft)
 	if err != nil {
 		return nil, err
@@ -294,7 +294,7 @@ func (r *Resolver) UpdateCampaign(ctx context.Context, args *graphqlbackend.Upda
 		updateArgs.Plan = &campaignPlanID
 	}
 
-	svc := ee.NewService(r.store, gitserver.DefaultClient, nil, r.httpFactory)
+	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
 	campaign, detachedChangesets, err := svc.UpdateCampaign(ctx, updateArgs)
 	if err != nil {
 		return nil, err
@@ -330,7 +330,7 @@ func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.Dele
 		return nil, err
 	}
 
-	svc := ee.NewService(r.store, gitserver.DefaultClient, nil, r.httpFactory)
+	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
 	err = svc.DeleteCampaign(ctx, campaignID, args.CloseChangesets)
 	return &graphqlbackend.EmptyResponse{}, err
 }
@@ -570,11 +570,12 @@ func (r *Resolver) CreateCampaignPlanFromPatches(ctx context.Context, args graph
 		patches[i] = campaigns.CampaignPlanPatch{
 			Repo:         repo,
 			BaseRevision: patch.BaseRevision,
+			BaseRef:      patch.BaseRef,
 			Patch:        patch.Patch,
 		}
 	}
 
-	svc := ee.NewService(r.store, gitserver.DefaultClient, nil, r.httpFactory)
+	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
 	plan, err := svc.CreateCampaignPlanFromPatches(ctx, patches, user.ID)
 	if err != nil {
 		return nil, err
@@ -600,7 +601,7 @@ func (r *Resolver) CloseCampaign(ctx context.Context, args *graphqlbackend.Close
 		return nil, errors.Wrap(err, "unmarshaling campaign id")
 	}
 
-	svc := ee.NewService(r.store, gitserver.DefaultClient, nil, r.httpFactory)
+	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
 
 	campaign, err := svc.CloseCampaign(ctx, campaignID, args.CloseChangesets)
 	if err != nil {
@@ -627,7 +628,7 @@ func (r *Resolver) PublishCampaign(ctx context.Context, args *graphqlbackend.Pub
 		return nil, errors.Wrap(err, "unmarshaling campaign id")
 	}
 
-	svc := ee.NewService(r.store, gitserver.DefaultClient, nil, r.httpFactory)
+	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
 	campaign, err := svc.PublishCampaign(ctx, campaignID)
 	if err != nil {
 		return nil, errors.Wrap(err, "publishing campaign")
@@ -653,7 +654,7 @@ func (r *Resolver) PublishChangeset(ctx context.Context, args *graphqlbackend.Pu
 		return nil, err
 	}
 
-	svc := ee.NewService(r.store, gitserver.DefaultClient, nil, r.httpFactory)
+	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
 	err = svc.CreateChangesetJobForCampaignJob(ctx, campaignJobID)
 	if err != nil {
 		return nil, err

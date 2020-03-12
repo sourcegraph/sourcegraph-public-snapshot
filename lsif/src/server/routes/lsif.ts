@@ -72,8 +72,6 @@ export function createLsifRouter(
         repositoryId: number
         commit: string
         root?: string
-        blocking?: boolean
-        maxWait?: number
         indexerName?: string
     }
 
@@ -88,19 +86,10 @@ export function createLsifRouter(
             validation.validateNonEmptyString('commit').matches(commitPattern),
             validation.validateOptionalString('root'),
             validation.validateOptionalString('indexerName'),
-            validation.validateOptionalBoolean('blocking'),
-            validation.validateOptionalInt('maxWait'),
         ]),
         wrap(
             async (req: express.Request, res: express.Response<UploadResponse>): Promise<void> => {
-                const {
-                    repositoryId,
-                    commit,
-                    root: rootRaw,
-                    indexerName,
-                    blocking,
-                    maxWait,
-                }: UploadQueryArgs = req.query
+                const { repositoryId, commit, root: rootRaw, indexerName }: UploadQueryArgs = req.query
 
                 const root = sanitizeRoot(rootRaw)
                 const ctx = createTracingContext(req, { repositoryId, commit, root })
@@ -119,16 +108,6 @@ export function createLsifRouter(
                     tracer,
                     ctx.span
                 )
-
-                if (blocking) {
-                    logger.debug('Blocking on upload conversion', { repositoryId, commit, root })
-
-                    if (await uploadManager.waitForUploadToConvert(upload.id, maxWait)) {
-                        // Upload converted successfully while blocked, send success
-                        res.status(200).send({ id: upload.id })
-                        return
-                    }
-                }
 
                 // Upload conversion will complete asynchronously, send an accepted response
                 // with the upload id so that the client can continue to track the progress

@@ -17,6 +17,7 @@ import (
 	edb "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
 type Resolver struct {
@@ -103,7 +104,7 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 	}
 	defer txs.Done(&err)
 
-	accounts := &edb.ExternalAccounts{
+	accounts := &extsvc.ExternalAccounts{
 		ServiceType: "sourcegraph",
 		ServiceID:   "https://sourcegraph.com/",
 		AccountIDs:  pendingBindIDs,

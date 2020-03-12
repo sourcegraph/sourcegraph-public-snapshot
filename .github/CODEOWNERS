@@ -192,6 +192,7 @@ tslint.config.js @sourcegraph/web
 /enterprise/cmd/frontend/internal/symbols @sourcegraph/code-intel
 /cmd/symbols/.ctags.d/ @sourcegraph/code-intel
 /cmd/symbols/internal/pkg/ctags/ @sourcegraph/code-intel
+/shared/src/languages* @sourcegraph/code-intel
 
 # Saved searches
 /web/src/SavedQuery.tsx @attfarhan
@@ -252,6 +253,7 @@ Dockerfile @sourcegraph/distribution
 /lsif/ @sourcegraph/code-intel
 /internal/lsif @sourcegraph/code-intel
 /enterprise/internal/codeintel @sourcegraph/code-intel
+/cmd/lsif-server/ @sourcegraph/code-intel
 /cmd/frontend/graphqlbackend/codeintel.go @sourcegraph/code-intel
 
 # Development

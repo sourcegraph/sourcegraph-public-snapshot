@@ -71,6 +71,10 @@ func (r *lsifUploadResolver) IsLatestForRepo() bool {
 	return r.lsifUpload.VisibleAtTip
 }
 
+func (r *lsifUploadResolver) PlaceInQueue() *int32 {
+	return r.lsifUpload.PlaceInQueue
+}
+
 type lsifUploadFailureReasonResolver struct {
 	lsifUpload *lsif.LSIFUpload
 }
