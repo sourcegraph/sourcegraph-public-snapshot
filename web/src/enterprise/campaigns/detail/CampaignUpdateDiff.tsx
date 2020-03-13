@@ -38,6 +38,49 @@ interface Props extends ThemeProps {
     ) => Observable<GQL.IChangesetPlanConnection>
 }
 
+export type ChangesetArray = (GQL.IExternalChangeset | GQL.IChangesetPlan)[]
+
+export interface CampaignDiff {
+    added: ChangesetArray
+    changed: ChangesetArray
+    unmodified: ChangesetArray
+    deleted: ChangesetArray
+}
+
+export function calculateChangesetDiff(changesets: ChangesetArray, changesetPlans: GQL.IChangesetPlan[]): CampaignDiff {
+    const changed = changesetPlans.filter(changesetPlan =>
+        changesets.some(
+            changeset =>
+                changeset.repository.id === changesetPlan.repository.id &&
+                // if the corresponding changeset is already merged, we won't update that anymore
+                (changeset.__typename === 'ExternalChangeset'
+                    ? ![GQL.ChangesetState.MERGED, GQL.ChangesetState.CLOSED].includes(changeset.state)
+                    : // if we look at a changesetPlan, that will definitely be overwritten
+                      true)
+        )
+    )
+    const unmodified = changesets.filter(
+        changeset =>
+            changeset.__typename === 'ExternalChangeset' &&
+            [GQL.ChangesetState.MERGED, GQL.ChangesetState.CLOSED].includes(changeset.state)
+    )
+    const added = changesetPlans.filter(
+        changesetPlan => !changesets.some(changeset => changeset.repository.id === changesetPlan.repository.id)
+    )
+    const deleted = changesets.filter(
+        changeset =>
+            changeset.__typename === 'ExternalChangeset' &&
+            ![GQL.ChangesetState.MERGED, GQL.ChangesetState.CLOSED].includes(changeset.state) &&
+            !changesetPlans.some(changesetPlan => changesetPlan.repository.id === changeset.repository.id)
+    )
+    return {
+        added,
+        changed,
+        unmodified,
+        deleted,
+    }
+}
+
 /**
  * A list of a campaign's changesets changed over a new plan
  */
@@ -63,32 +106,8 @@ export const CampaignUpdateDiff: React.FunctionComponent<Props> = ({
     )
     if (queriedChangesets) {
         const [changesets, changesetPlans] = queriedChangesets
-        const changed = changesetPlans.nodes.filter(changesetPlan =>
-            changesets.nodes.some(
-                changeset =>
-                    changeset.repository.id === changesetPlan.repository.id &&
-                    // if the corresponding changeset is already merged, we won't update that anymore
-                    (changeset.__typename === 'ExternalChangeset'
-                        ? ![GQL.ChangesetState.MERGED, GQL.ChangesetState.CLOSED].includes(changeset.state)
-                        : // if we look at a changesetPlan, that will definitely be overwritten
-                          true)
-            )
-        )
-        const unmodified = changesets.nodes.filter(
-            changeset =>
-                changeset.__typename === 'ExternalChangeset' &&
-                [GQL.ChangesetState.MERGED, GQL.ChangesetState.CLOSED].includes(changeset.state) &&
-                changesetPlans.nodes.some(changesetPlan => changesetPlan.repository.id === changeset.repository.id)
-        )
-        const added = changesetPlans.nodes.filter(
-            changesetPlan =>
-                !changesets.nodes.some(changeset => changeset.repository.id === changesetPlan.repository.id)
-        )
-        const deleted = changesets.nodes.filter(
-            changeset =>
-                changeset.__typename === 'ExternalChangeset' &&
-                !changesetPlans.nodes.some(changesetPlan => changesetPlan.repository.id === changeset.repository.id)
-        )
+        const { added, changed, unmodified, deleted } = calculateChangesetDiff(changesets.nodes, changesetPlans.nodes)
+
         const newDraftCount = !campaign.publishedAt
             ? changed.length - (campaign.changesets.totalCount - deleted.length) + added.length
             : 0
