@@ -37,7 +37,7 @@ type AuthorizedReposArgs struct {
 type RevokeUserPermissionsArgs struct {
 	// The user ID that will be used to revoke effective permissions.
 	UserID int32
-	// The list of external accounts realted to the user. This is list because a user could have
+	// The list of external accounts related to the user. This is list because a user could have
 	// multiple external accounts, including ones from code hosts and/or Sourcegraph authz provider.
 	Accounts []*extsvc.ExternalAccounts
 }
