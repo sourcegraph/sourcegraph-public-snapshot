@@ -16,6 +16,8 @@ import (
 	"github.com/neelance/parallel"
 	"github.com/pkg/errors"
 
+	regexpsyntax "regexp/syntax"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
@@ -256,14 +258,23 @@ func resolveRepoGroups(ctx context.Context) (map[string][]*types.Repo, error) {
 	return groups, nil
 }
 
-// exactlyOneRepo returns whether exactly one repo: field is specified and
+const regexpFlags regexpsyntax.Flags = regexpsyntax.ClassNL | regexpsyntax.PerlX | regexpsyntax.UnicodeGroups
+
+// exactlyOneRepo returns whether exactly one repo: literal field is specified and
 // delineated by regex anchors ^ and $. This function helps determine whether we
 // should return results for a single repo regardless of whether it is a fork or
 // archive.
 func exactlyOneRepo(repoFilters []string) bool {
 	if len(repoFilters) == 1 {
 		filter := repoFilters[0]
-		return strings.HasPrefix(filter, "^") && strings.HasSuffix(filter, "$")
+		if strings.HasPrefix(filter, "^") && strings.HasSuffix(filter, "$") {
+			filter := strings.TrimSuffix(strings.TrimPrefix(filter, "^"), "$")
+			r, err := regexpsyntax.Parse(filter, regexpFlags)
+			if err != nil {
+				return false
+			}
+			return r.Op == regexpsyntax.OpLiteral
+		}
 	}
 	return false
 }
