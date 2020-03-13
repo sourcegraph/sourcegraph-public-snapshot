@@ -51,7 +51,7 @@ func main() {
 		RPCAddr:        "127.0.0.1:5005",
 		ProcDiedAction: goreman.Shutdown,
 	}); err != nil {
-		log.Fatal(err.Error())
+		log.Fatalf("Starting goreman: %v", err)
 	}
 }
 
