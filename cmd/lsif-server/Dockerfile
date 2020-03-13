@@ -1,4 +1,4 @@
-# Keep this in sync with docker-images/prometheus/Dockerfile
+# keep this in sync with docker-images/prometheus/Dockerfile
 FROM prom/prometheus:v2.15.2@sha256:35c52c0c2b76433bbfc44a5a7abc294c2f032ed80250be02b441db5dd91b203a AS prometheus
 
 FROM alpine:3.10@sha256:e4355b66995c96b4b468159fc5c7e3540fcef961189ca13fee877798649f531a AS lsif-builder
@@ -41,7 +41,7 @@ COPY ./lsif-server /usr/local/bin/lsif-server
 COPY --from=prometheus /bin/prometheus /bin/prometheus
 COPY ./prometheus.yml $PROMETHEUS_CONFIGURATION_DIR/prometheus.yml
 
-# HTTP server, (first) worker metrics server, prometheus
+# http server, (first) worker metrics server, prometheus
 EXPOSE 3186 3187 9090
 ENV GO111MODULES=on LANG=en_US.utf8 LOG_LEVEL=debug
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/lsif-server"]

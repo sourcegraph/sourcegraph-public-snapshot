@@ -96,7 +96,7 @@ func makePrometheusTargets(numServers, numWorkers int64) string {
 	}
 
 	for i := 0; i < int(numWorkers); i++ {
-		addTarget(fmt.Sprintf("lsif-worker-%d", i), workerPort+i)
+		addTarget("lsif-worker", workerPort+i)
 	}
 
 	return strings.Join(content, "\n") + "\n"
