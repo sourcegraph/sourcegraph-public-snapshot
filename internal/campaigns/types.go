@@ -567,10 +567,10 @@ func (c *Changeset) Labels() []ChangesetLabel {
 	}
 }
 
-// ReviewState of a Changeset. GitHub doesn't keep the review state on a
-// changeset, so it a GitHub Changeset will always return
+// reviewState of a Changeset. GitHub doesn't keep the review state on a
+// changeset, so a GitHub Changeset will always return
 // ChangesetReviewStatePending.
-// This method should not be called directly. Instead call
+// This method should not be called directly. Use ComputeReviewState instead.
 func (c *Changeset) reviewState() (s ChangesetReviewState, err error) {
 	states := map[ChangesetReviewState]bool{}
 
