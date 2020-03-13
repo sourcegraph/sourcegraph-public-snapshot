@@ -39,7 +39,7 @@ func main() {
 	}
 
 	if err := ioutil.WriteFile(
-		path.Join(prometheusConfigurationDir, "targets.yml"),
+		filepath.Join(prometheusConfigurationDir, "targets.yml"),
 		[]byte(makePrometheusTargets(numServers, numWorkers)),
 		0644,
 	); err != nil {
