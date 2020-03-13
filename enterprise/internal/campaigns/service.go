@@ -133,31 +133,36 @@ func (s *Service) CreateCampaign(ctx context.Context, c *campaigns.Campaign, dra
 		return err
 	}
 	defer tx.Done(&err)
+
 	if c.CampaignPlanID != 0 {
-		_, err = tx.GetCampaign(ctx, GetCampaignOpts{CampaignPlanID: c.CampaignPlanID})
+		_, err := tx.GetCampaign(ctx, GetCampaignOpts{CampaignPlanID: c.CampaignPlanID})
 		if err != nil && err != ErrNoResults {
 			return err
 		}
 		if err != ErrNoResults {
-			return ErrCampaignPlanDuplicate
+			err = ErrCampaignPlanDuplicate
+			return err
 		}
 	}
+
 	c.CreatedAt = s.clock()
 	c.UpdatedAt = c.CreatedAt
 
-	if err := tx.CreateCampaign(ctx, c); err != nil {
+	if err = tx.CreateCampaign(ctx, c); err != nil {
 		return err
 	}
 
 	if c.CampaignPlanID != 0 && c.Branch == "" {
-		return ErrCampaignBranchBlank
+		err = ErrCampaignBranchBlank
+		return err
 	}
 
 	if c.CampaignPlanID == 0 || draft {
 		return nil
 	}
 
-	return s.createChangesetJobsWithStore(ctx, tx, c)
+	err = s.createChangesetJobsWithStore(ctx, tx, c)
+	return err
 }
 
 // ErrNoCampaignJobs is returned by CreateCampaign or UpdateCampaign if a
@@ -782,7 +787,7 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 
 	oldPlanID := campaign.CampaignPlanID
 	if args.Plan != nil && oldPlanID != *args.Plan {
-		// check there is no other campaign attached to the args.Plan.
+		// Check there is no other campaign attached to the args.Plan.
 		_, err = tx.GetCampaign(ctx, GetCampaignOpts{CampaignPlanID: *args.Plan})
 		if err != nil && err != ErrNoResults {
 			return nil, nil, err
