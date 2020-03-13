@@ -192,6 +192,10 @@ func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	m := new(multierror.Error)
 	for _, pr := range prs {
+		if pr == (PR{}) {
+			continue
+		}
+
 		err := h.upsertChangesetEvent(r.Context(), extSvc, pr, ev)
 		if err != nil {
 			m = multierror.Append(m, err)
