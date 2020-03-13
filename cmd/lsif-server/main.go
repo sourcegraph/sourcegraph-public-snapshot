@@ -72,7 +72,7 @@ func makeProcfile(numServers, numWorkers int64) string {
 		)
 	}
 
-	addProcess("prometheus", fmt.Sprintf("prometheus --storage.tsdb.path=%s --config.file=%s/prometheus.yml",
+	addProcess("prometheus", fmt.Sprintf("prometheus '--storage.tsdb.path=%s' '--config.file=%s/prometheus.yml'",
 		prometheusStorageDir,
 		prometheusConfigurationDir,
 	))
