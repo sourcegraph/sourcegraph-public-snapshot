@@ -80,7 +80,7 @@ Array [
           /
         </span>
         <span>
-          New manual campaign
+          New campaign
         </span>
       </h2>
       <span
@@ -152,7 +152,6 @@ Array [
       </button>
     </div>
   </form>,
-  "CampaignStatus(state=PROCESSING)",
   <h3
     className="mt-3"
   >

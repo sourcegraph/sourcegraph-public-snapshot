@@ -259,9 +259,10 @@ func (r *campaignJobResolver) FileDiffs(ctx context.Context, args *graphqlutil.C
 func (r *campaignJobResolver) PublicationEnqueued(ctx context.Context) (bool, error) {
 	// We tried to preload a ChangesetJob for this CampaignJob
 	if r.attemptedPreloadChangesetJob {
-		// If we have a ChangesetJob, that means its PublishedAt is set or its
-		// Campaign.PublishedAt has been set
-		return r.preloadedChangesetJob != nil, nil
+		if r.preloadedChangesetJob == nil {
+			return false, nil
+		}
+		return r.preloadedChangesetJob.FinishedAt.IsZero(), nil
 	}
 
 	cj, err := r.store.GetChangesetJob(ctx, ee.GetChangesetJobOpts{CampaignJobID: r.job.ID})

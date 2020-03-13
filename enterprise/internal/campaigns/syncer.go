@@ -19,6 +19,7 @@ type ChangesetSyncer struct {
 	Store       SyncStore
 	ReposStore  repos.Store
 	HTTPFactory *httpcli.Factory
+
 	// ComputeScheduleInterval determines how often a new schedule will be computed.
 	// Note that it involves a DB query but no communication with codehosts
 	ComputeScheduleInterval time.Duration

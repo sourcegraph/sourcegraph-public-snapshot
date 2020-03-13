@@ -49,8 +49,33 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// Add two external accounts
+	err = db.ExternalAccounts.AssociateUserAndSave(ctx, user.ID,
+		extsvc.ExternalAccountSpec{
+			ServiceType: "gitlab",
+			ServiceID:   "https://gitlab.com/",
+			AccountID:   "alice_gitlab",
+		},
+		extsvc.ExternalAccountData{},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = db.ExternalAccounts.AssociateUserAndSave(ctx, user.ID,
+		extsvc.ExternalAccountSpec{
+			ServiceType: "github",
+			ServiceID:   "https://github.com/",
+			AccountID:   "alice_github",
+		},
+		extsvc.ExternalAccountData{},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	s := NewAuthzStore(dbconn.Global, clock).(*authzStore)
 
+	// Each update corresponds to a SetRepoPendingPermssions call
 	type update struct {
 		accounts *extsvc.ExternalAccounts
 		repoID   int32
@@ -80,16 +105,14 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 						AccountIDs:  []string{"alice@example.com"},
 					},
 					repoID: 1,
-				},
-				{
+				}, {
 					accounts: &extsvc.ExternalAccounts{
 						ServiceType: authz.SourcegraphServiceType,
 						ServiceID:   authz.SourcegraphServiceID,
 						AccountIDs:  []string{"alice2@example.com"},
 					},
 					repoID: 2,
-				},
-				{
+				}, {
 					accounts: &extsvc.ExternalAccounts{
 						ServiceType: authz.SourcegraphServiceType,
 						ServiceID:   authz.SourcegraphServiceID,
@@ -118,8 +141,7 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 						AccountIDs:  []string{"alice"},
 					},
 					repoID: 1,
-				},
-				{
+				}, {
 					accounts: &extsvc.ExternalAccounts{
 						ServiceType: authz.SourcegraphServiceType,
 						ServiceID:   authz.SourcegraphServiceID,
@@ -129,6 +151,42 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 				},
 			},
 			expectRepoIDs: []int{1},
+		},
+		{
+			name: "grant by external accounts",
+			config: &schema.PermissionsUserMapping{
+				BindID: "username",
+			},
+			args: &db.GrantPendingPermissionsArgs{
+				UserID: user.ID,
+				Perm:   authz.Read,
+				Type:   authz.PermRepos,
+			},
+			updates: []update{
+				{
+					accounts: &extsvc.ExternalAccounts{
+						ServiceType: "github",
+						ServiceID:   "https://github.com/",
+						AccountIDs:  []string{"alice_github"},
+					},
+					repoID: 1,
+				}, {
+					accounts: &extsvc.ExternalAccounts{
+						ServiceType: "gitlab",
+						ServiceID:   "https://gitlab.com/",
+						AccountIDs:  []string{"alice_gitlab"},
+					},
+					repoID: 2,
+				}, {
+					accounts: &extsvc.ExternalAccounts{
+						ServiceType: "bitbucketServer",
+						ServiceID:   "https://bitbucketServer.com/",
+						AccountIDs:  []string{"alice_bitbucketServer"},
+					},
+					repoID: 3,
+				},
+			},
+			expectRepoIDs: []int{1, 2},
 		},
 	}
 	for _, test := range tests {
@@ -206,12 +264,10 @@ func TestAuthzStore_AuthorizedRepos(t *testing.T) {
 				{
 					repoID:  1,
 					userIDs: []uint32{1},
-				},
-				{
+				}, {
 					repoID:  2,
 					userIDs: []uint32{1},
-				},
-				{
+				}, {
 					repoID:  3,
 					userIDs: []uint32{1},
 				},
@@ -298,11 +354,8 @@ func TestAuthzStore_RevokeUserPermissions(t *testing.T) {
 
 	// Revoke all of them
 	if err := s.RevokeUserPermissions(ctx, &db.RevokeUserPermissionsArgs{
-		UserID:         1,
-		ServiceType:    authz.SourcegraphServiceType,
-		ServiceID:      authz.SourcegraphServiceID,
-		Username:       "alice",
-		VerifiedEmails: []string{"alice@example.com"},
+		UserID:   1,
+		Accounts: []*extsvc.ExternalAccounts{accounts},
 	}); err != nil {
 		t.Fatal(err)
 	}

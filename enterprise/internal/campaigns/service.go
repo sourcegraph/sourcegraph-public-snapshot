@@ -134,22 +134,35 @@ func (s *Service) CreateCampaign(ctx context.Context, c *campaigns.Campaign, dra
 	}
 	defer tx.Done(&err)
 
+	if c.CampaignPlanID != 0 {
+		_, err := tx.GetCampaign(ctx, GetCampaignOpts{CampaignPlanID: c.CampaignPlanID})
+		if err != nil && err != ErrNoResults {
+			return err
+		}
+		if err != ErrNoResults {
+			err = ErrCampaignPlanDuplicate
+			return err
+		}
+	}
+
 	c.CreatedAt = s.clock()
 	c.UpdatedAt = c.CreatedAt
 
-	if err := tx.CreateCampaign(ctx, c); err != nil {
+	if err = tx.CreateCampaign(ctx, c); err != nil {
 		return err
 	}
 
 	if c.CampaignPlanID != 0 && c.Branch == "" {
-		return ErrCampaignBranchBlank
+		err = ErrCampaignBranchBlank
+		return err
 	}
 
 	if c.CampaignPlanID == 0 || draft {
 		return nil
 	}
 
-	return s.createChangesetJobsWithStore(ctx, tx, c)
+	err = s.createChangesetJobsWithStore(ctx, tx, c)
+	return err
 }
 
 // ErrNoCampaignJobs is returned by CreateCampaign or UpdateCampaign if a
@@ -731,6 +744,10 @@ var ErrCampaignBranchBlank = errors.New("Campaign branch cannot be blank")
 // attempt to change the branch of a published campaign with a plan (or a campaign with individually published changesets).
 var ErrPublishedCampaignBranchChange = errors.New("Published campaign branch cannot be changed")
 
+// ErrCampaignPlanDuplicate is return by CreateCampaign or UpdateCampaign if the specified campaign plan
+// is already attached to another campaign.
+var ErrCampaignPlanDuplicate = errors.New("Campaign cannot use the same plan as another campaign")
+
 // UpdateCampaign updates the Campaign with the given arguments.
 func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (campaign *campaigns.Campaign, detachedChangesets []*campaigns.Changeset, err error) {
 	traceTitle := fmt.Sprintf("campaign: %d", args.Campaign)
@@ -770,6 +787,15 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 
 	oldPlanID := campaign.CampaignPlanID
 	if args.Plan != nil && oldPlanID != *args.Plan {
+		// Check there is no other campaign attached to the args.Plan.
+		_, err = tx.GetCampaign(ctx, GetCampaignOpts{CampaignPlanID: *args.Plan})
+		if err != nil && err != ErrNoResults {
+			return nil, nil, err
+		}
+		if err != ErrNoResults {
+			return nil, nil, ErrCampaignPlanDuplicate
+		}
+
 		campaign.CampaignPlanID = *args.Plan
 		updatePlanID = true
 	}

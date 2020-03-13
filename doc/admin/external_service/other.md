@@ -86,6 +86,8 @@ chmod +x src-expose
 }
 ```
 
+**IMPORTANT:** If you are using a Linux host machine, replace `host.docker.internal` in the above with the IP address of your actual host machine because `host.docker.internal` [does not work on Linux](https://github.com/docker/for-linux/issues/264). You should use the network-accessible IP shown by `ifconfig` (not e.g. 127.0.0.1 or localhost).
+
 Go to Admin > Manage Repositories > Add repositories > Single Git repositories. Input the above configuration. Your directories should now be syncing in Sourcegraph.
 
 ### Advanced configuration

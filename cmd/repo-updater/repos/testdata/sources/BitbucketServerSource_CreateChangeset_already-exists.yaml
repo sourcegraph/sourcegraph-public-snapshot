@@ -3,7 +3,7 @@ version: 1
 interactions:
 - request:
     body: |
-      {"title":"This is a test PR","description":"This is the body of a test PR","state":"OPEN","open":true,"closed":false,"fromRef":{"id":"refs/heads/always-open-pr-bbs","repository":{"slug":"automation-testing","project":{"key":"SOUR"}}},"toRef":{"id":"refs/heads/master","repository":{"slug":"automation-testing","project":{"key":"SOUR"}}},"locked":false}
+      {"title":"This is a test PR","description":"This is the body of a test PR","state":"OPEN","open":true,"closed":false,"fromRef":{"id":"refs/heads/always-open-pr-bbs","repository":{"id":0,"slug":"automation-testing","project":{"key":"SOUR"}}},"toRef":{"id":"refs/heads/master","repository":{"id":0,"slug":"automation-testing","project":{"key":"SOUR"}}},"locked":false}
     form: {}
     headers:
       Content-Type:
@@ -22,11 +22,11 @@ interactions:
       Cf-Cache-Status:
       - DYNAMIC
       Cf-Ray:
-      - 571d1303a8384929-CPT
+      - 573612c70b66c295-FRA
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Tue, 10 Mar 2020 12:35:13 GMT
+      - Fri, 13 Mar 2020 13:24:07 GMT
       Expect-Ct:
       - max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
       Pragma:
@@ -36,11 +36,11 @@ interactions:
       Vary:
       - X-AUSERNAME,Accept-Encoding
       X-Arequestid:
-      - '@2N9MN6x755x170421x0'
+      - '@2N9MN6x804x299454x0'
       X-Asen:
       - SEN-11363689
       X-Asessionid:
-      - pjj6xx
+      - 11h6vhc
       X-Auserid:
       - "1"
       X-Ausername:
@@ -67,11 +67,11 @@ interactions:
       Cf-Cache-Status:
       - DYNAMIC
       Cf-Ray:
-      - 571d13097f954929-CPT
+      - 573612c82f23c295-FRA
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Tue, 10 Mar 2020 12:35:14 GMT
+      - Fri, 13 Mar 2020 13:24:07 GMT
       Expect-Ct:
       - max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
       Pragma:
@@ -81,11 +81,11 @@ interactions:
       Vary:
       - X-AUSERNAME,Accept-Encoding
       X-Arequestid:
-      - '@2N9MN6x755x170422x0'
+      - '@2N9MN6x804x299455x0'
       X-Asen:
       - SEN-11363689
       X-Asessionid:
-      - vrrgau
+      - 13pck6q
       X-Auserid:
       - "1"
       X-Ausername:
@@ -115,11 +115,11 @@ interactions:
       Cf-Cache-Status:
       - DYNAMIC
       Cf-Ray:
-      - 571d130f0f064929-CPT
+      - 573612c94a57c295-FRA
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Tue, 10 Mar 2020 12:35:15 GMT
+      - Fri, 13 Mar 2020 13:24:07 GMT
       Expect-Ct:
       - max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
       Pragma:
@@ -129,11 +129,11 @@ interactions:
       Vary:
       - X-AUSERNAME,Accept-Encoding
       X-Arequestid:
-      - '@2N9MN6x755x170423x0'
+      - '@2N9MN6x804x299456x0'
       X-Asen:
       - SEN-11363689
       X-Asessionid:
-      - 1du7v4x
+      - 1lmb79f
       X-Auserid:
       - "1"
       X-Ausername:
@@ -160,11 +160,11 @@ interactions:
       Cf-Cache-Status:
       - DYNAMIC
       Cf-Ray:
-      - 571d13149eec4929-CPT
+      - 573612cbf9fac295-FRA
       Content-Type:
       - application/json
       Date:
-      - Tue, 10 Mar 2020 12:35:16 GMT
+      - Fri, 13 Mar 2020 13:24:07 GMT
       Expect-Ct:
       - max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
       Pragma:
@@ -174,11 +174,11 @@ interactions:
       Vary:
       - X-AUSERNAME,Accept-Encoding
       X-Arequestid:
-      - '@2N9MN6x755x170425x0'
+      - '@2N9MN6x804x299457x0'
       X-Asen:
       - SEN-11363689
       X-Asessionid:
-      - kxnqgz
+      - 1b6v7np
       X-Auserid:
       - "1"
       X-Ausername:
