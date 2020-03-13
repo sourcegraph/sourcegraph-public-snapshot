@@ -30,7 +30,7 @@ const (
 func main() {
 	numServers, err := strconv.ParseInt(servers, 10, 64)
 	if err != nil || numServers < 0 || numServers > 1 {
-		log.Fatalf("invalid int %q for LSIF_NUM_SERVERS: %s", servers, err)
+		log.Fatalf("Invalid int %q for LSIF_NUM_SERVERS: %s", servers, err)
 	}
 
 	numWorkers, err := strconv.ParseInt(workers, 10, 64)
