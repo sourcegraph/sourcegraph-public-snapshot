@@ -1,0 +1,154 @@
+digraph organization {
+  label="Sourcegraph Org Graph"
+  rankdir=TD
+  ratio=fill
+	concentrate=true
+  ranksep=1.4
+  nodesep=0.4
+
+  graph [
+    fontname="Iosevka"
+    fontsize=12
+    pad=0.2
+  ]
+
+  node [
+    colorscheme="set312"
+    style="filled"
+    fillcolor="white"
+    shape="rectangle"
+    fontname="Iosevka"
+    fontsize=10
+    margin=0.15
+    target="_blank"
+  ]
+
+  // People
+	adam[label="Adam Frankl\nHead of Marketing"]
+	aileen[label="Aileen Agricola\nSenior Digital\nMarketing Manager"]
+	beyang[label="Beyang Liu\nCTO / Co-founder"]
+	christina[label="Christina Forney\nProduct Manager"]
+	dan[label="Dan Adler\nVP Business"]
+	eric[label="Eric Fritz\nSoftware Engineer"]
+	ericbm[label="Eric Brody-Moore\nGrowth & Bizops"]
+	erik[label="Erik Seliger\nSoftware Engineer"]
+	farhan[label="Farhan Attamimi\nSoftware Engineer"]
+	felix[label="Felix Becker\nSoftware Engineer"]
+	geoffrey[label="Geoffrey Gilmore\nSoftware Engineer"]
+	herzog[label="Adam Herzog\nProduct Marketing\nManager"]
+	joe[label="Joe Chen\nSoftware Engineer"]
+	julia[label="Julia Gilinets\nHead of Sales"]
+	kai[label="Kai Passo\nAccount Executive"]
+	keegan[label="Keegan Carruthers-Smith\nSoftware Engineer"]
+	loic[label="Loïc Guychard\nEngineering Manager"]
+	michael[label="Michael Fromberger\nSoftware Engineer"]
+	nick[label="Nick Snyder\nVP Engineering"]
+	noemi[label="Noemi Mercado\nPeople Ops"]
+	rijnard[label="Rijnard van Tonder\nSoftware Engineer"]
+	rslade[label="Ryan Slade\nSoftware Engineer"]
+	ryan[label="Ryan Blunden\nDeveloper Advocate"]
+	sqs[label="Quinn Slack\nCEO / Co-founder"]
+	stephen[label="Stephen Gutekanst\nSoftware Engineer"]
+	thorsten[label="Thorsten Ball\nSoftware Engineer"]
+	tomas[label="Tomás Senart\nEngineering Manager"]
+	tommy[label="Tommy Roberts\nProduct Designer"]
+	uwe[label="Uwe Hoffmann\nSoftware Engineer"]
+	vanesa[label="Vanesa Ortiz\nContent Engineer"]
+
+  // Teams
+	biz_ops[label="Business\nOperations"]
+	campaigns[label="Campaigns"]
+	code_intel[label="Code Intel"]
+	core_services[label="Core Services"]
+	customer_success[label="Customer\nSuccess"]
+	design[label="Design"]
+	distribution[label="Distribution"]
+	eng_manangement[label="Engineering\nManagement"]
+	marketing[label="Marketing"]
+	people_ops[label="People\nOperations"]
+	product[label="Product"]
+	sales[label="Sales"]
+	search[label="Search"]
+	web[label="Web"]
+
+	n18->n1[label="reports to"];
+	n18->n37[label="works on"];
+	n17->n18[label="reports to"];
+	n17->n37[label="works on"];
+	n2->n1[label="reports to"];
+	n2->n36[label="works on"];
+	n2->n44[label="works on"];
+	n3->n1[label="reports to"];
+	n3->n38[label="works on"];
+	n3->n31[label="works on"];
+	n3->n32[label="works on"];
+	n3->n33[label="works on"];
+	n3->n34[label="works on"];
+	n3->n35[label="works on"];
+	n20->n1[label="reports to"];
+	n20->n41[label="works on"];
+	n20->n42[label="works on"];
+	n20->n40[label="works on"];
+	n7->n14[label="reports to"];
+	n7->n33[label="works on"];
+	n8->n20[label="reports to"];
+	n8->n42[label="works on"];
+	n26->n16[label="reports to"];
+	n26->n31[label="works on"];
+	n26->n35[label="works on"];
+	n25->n16[label="reports to"];
+	n25->n32[label="works on"];
+	n25->n35[label="works on"];
+	n30->n16[label="reports to"];
+	n30->n35[label="works on"];
+	n24->n14[label="reports to"];
+	n24->n36[label="works on"];
+	n23->n18[label="reports to"];
+	n23->n37[label="works on"];
+	n11->n21[label="reports to"];
+	n11->n34[label="works on"];
+	n28->n1[label="reports to"];
+	n28->n40[label="works on"];
+	n27->n28[label="reports to"];
+	n27->n40[label="works on"];
+	n9->n21[label="reports to"];
+	n9->n34[label="works on"];
+	n16->n35[label="works on"];
+	n16->n44[label="works on"];
+	n16->n14[label="reports to"];
+	n22->n14[label="reports to"];
+	n22->n33[label="works on"];
+	n14->n1[label="reports to"];
+	n14->n44[label="works on"];
+	n13->n20[label="reports to"];
+	n13->n43[label="works on"];
+	n6->n21[label="reports to"];
+	n6->n32[label="works on"];
+	n6->n34[label="works on"];
+	n5->n21[label="reports to"];
+	n5->n31[label="works on"];
+	n5->n34[label="works on"];
+	n19->n18[label="reports to"];
+	n19->n37[label="works on"];
+	n4->n14[label="reports to"];
+	n4->n36[label="works on"];
+	n15->n21[label="reports to"];
+	n15->n31[label="works on"];
+	n15->n34[label="works on"];
+	n21->n34[label="works on"];
+	n21->n44[label="works on"];
+	n21->n14[label="reports to"];
+	n29->n3[label="reports to"];
+	n29->n39[label="works on"];
+	n29->n31[label="works on"];
+	n29->n32[label="works on"];
+	n29->n33[label="works on"];
+	n29->n34[label="works on"];
+	n29->n35[label="works on"];
+	n10->n14[label="reports to"];
+	n10->n36[label="works on"];
+	n12->n18[label="reports to"];
+	n12->n37[label="works on"];
+
+}
+
