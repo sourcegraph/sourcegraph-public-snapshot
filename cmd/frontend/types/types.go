@@ -222,7 +222,7 @@ type SearchUsageStatistics struct {
 // BigQuery, which requires the input match its schema exactly.
 type SearchUsagePeriod struct {
 	StartTime   time.Time
-	TotalUsers  *SearchEventStatistics
+	TotalUsers  int32
 	Literal     *SearchEventStatistics
 	Regexp      *SearchEventStatistics
 	Structural  *SearchEventStatistics
@@ -235,16 +235,19 @@ type SearchUsagePeriod struct {
 }
 
 type SearchModeUsageStatistics struct {
-	Interactive *SearchEventStatistics
-	PlainText   *SearchEventStatistics
+	Interactive *SearchCountStatistics
+	PlainText   *SearchCountStatistics
+}
+
+type SearchCountStatistics struct {
+	UserCount   *int32
+	EventsCount *int32
 }
 
 // NOTE: DO NOT alter this struct without making a symmetric change
 // to the updatecheck handler. This struct is marshalled and sent to
 // BigQuery, which requires the input match its schema exactly.
 type SearchEventStatistics struct {
-	UserCount      int32
-	EventsCount    *int32
 	EventLatencies *SearchEventLatencies
 }
 

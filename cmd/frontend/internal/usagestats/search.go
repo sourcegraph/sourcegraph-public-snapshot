@@ -104,24 +104,24 @@ func searchActivity(ctx context.Context, periodType db.PeriodType, periods int, 
 	}
 	for i, uniqueUserCounts := range totalUniqueUsers {
 		activityPeriods[i].StartTime = uniqueUserCounts.Start
-		activityPeriods[i].TotalUsers.UserCount = int32(uniqueUserCounts.Count)
+		activityPeriods[i].TotalUsers = int32(uniqueUserCounts.Count)
 	}
 
 	// Count total unique users and events of each search mode per period
 	searchModeNameToArgumentMatches := map[string]struct {
 		eventName          string
 		argumentName       string
-		getEventStatistics func(p *types.SearchUsagePeriod) *types.SearchEventStatistics
+		getEventStatistics func(p *types.SearchUsagePeriod) *types.SearchCountStatistics
 	}{
 		"plain": {
 			eventName:          "SearchResultsQueried",
 			argumentName:       "mode",
-			getEventStatistics: func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.SearchModes.PlainText },
+			getEventStatistics: func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.SearchModes.PlainText },
 		},
 		"interactive": {
 			eventName:          "SearchResultsQueried",
 			argumentName:       "mode",
-			getEventStatistics: func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.SearchModes.Interactive },
+			getEventStatistics: func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.SearchModes.Interactive },
 		},
 	}
 
@@ -138,7 +138,8 @@ func searchActivity(ctx context.Context, periodType db.PeriodType, periods int, 
 			return nil, err
 		}
 		for i, uc := range userCounts {
-			match.getEventStatistics(activityPeriods[i]).UserCount = int32(uc.Count)
+			count := int32(uc.Count)
+			match.getEventStatistics(activityPeriods[i]).UserCount = &count
 		}
 		if includeEventCounts {
 			eventCounts, err := db.EventLogs.CountEventsPerPeriod(ctx, periodType, timeNow().UTC(), periods, &db.EventFilterOptions{
@@ -163,7 +164,7 @@ func searchActivity(ctx context.Context, periodType db.PeriodType, periods int, 
 
 func newSearchEventPeriod() *types.SearchUsagePeriod {
 	return &types.SearchUsagePeriod{
-		TotalUsers:  &types.SearchEventStatistics{},
+		TotalUsers:  0,
 		Literal:     &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}},
 		Regexp:      &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}},
 		Structural:  &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}},
@@ -172,6 +173,6 @@ func newSearchEventPeriod() *types.SearchUsagePeriod {
 		Diff:        &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}},
 		Commit:      &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}},
 		Symbol:      &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}},
-		SearchModes: &types.SearchModeUsageStatistics{Interactive: &types.SearchEventStatistics{EventsCount: nil}, PlainText: &types.SearchEventStatistics{EventsCount: nil}},
+		SearchModes: &types.SearchModeUsageStatistics{Interactive: &types.SearchCountStatistics{}, PlainText: &types.SearchCountStatistics{}},
 	}
 }
