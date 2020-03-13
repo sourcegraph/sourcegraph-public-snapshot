@@ -15,10 +15,10 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Site-Admin/Instrumentation is now available in the Kubernetes cluster deployment [8805](https://github.com/sourcegraph/sourcegraph/pull/8805).
 - Extensions can now specify a `baseUri` in the `DocumentFilter` when registering providers.
-- Counts of users of and searches conducted with interactive and plain text search modes will be sent back in pings, aggregated daily, weekly, and monthly.
-- Aggregated counts of daily, weekly, and monthly active users of search will be sent back in pings.
 - Admins can now exclude GitHub forks from the set of repositories being mirrored in Sourcegraph with the `"exclude": [{"forks": true}]` GitHub external service configuration. [#8974](https://github.com/sourcegraph/sourcegraph/pull/8974)
 - Campaign changesets can be filtered by State, Review State and Check State [8848](https://github.com/sourcegraph/sourcegraph/pull/8848)
+- Counts of users of and searches conducted with interactive and plain text search modes will be sent back in pings, aggregated daily, weekly, and monthly.
+- Aggregated counts of daily, weekly, and monthly active users of search will be sent back in pings.
 
 ### Changed
 
