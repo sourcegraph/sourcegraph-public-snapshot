@@ -488,7 +488,7 @@ func (c *Changeset) Events() (events []*ChangesetEvent) {
 			events = append(events, &ChangesetEvent{
 				ChangesetID: c.ID,
 				Key:         a.Key(),
-				Kind:        ChangesetEventKindFor(&a),
+				Kind:        ChangesetEventKindFor(a),
 				Metadata:    a,
 			})
 		}

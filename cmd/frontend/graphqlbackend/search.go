@@ -256,6 +256,18 @@ func resolveRepoGroups(ctx context.Context) (map[string][]*types.Repo, error) {
 	return groups, nil
 }
 
+// exactlyOneRepo returns whether exactly one repo: field is specified and
+// delineated by regex anchors ^ and $. This function helps determine whether we
+// should return results for a single repo regardless of whether it is a fork or
+// archive.
+func exactlyOneRepo(repoFilters []string) bool {
+	if len(repoFilters) == 1 {
+		filter := repoFilters[0]
+		return strings.HasPrefix(filter, "^") && strings.HasSuffix(filter, "$")
+	}
+	return false
+}
+
 // resolveRepositories calls doResolveRepositories, caching the result for the common
 // case where effectiveRepoFieldValues == nil.
 func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoFieldValues []string) (repoRevs, missingRepoRevs []*search.RepositoryRevisions, overLimit bool, err error) {
@@ -285,14 +297,14 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 
 	forkStr, _ := r.query.StringValue(query.FieldFork)
 	fork := parseYesNoOnly(forkStr)
-	if fork == Invalid {
-		fork = No // fork defaults to No.
+	if fork == Invalid && !exactlyOneRepo(repoFilters) {
+		fork = No // fork defaults to No unless exactly one repo is being searched.
 	}
 
 	archivedStr, _ := r.query.StringValue(query.FieldArchived)
 	archived := parseYesNoOnly(archivedStr)
-	if archived == Invalid {
-		archived = No // archived defaults to No.
+	if archived == Invalid && !exactlyOneRepo(repoFilters) {
+		archived = No // archived defaults to No unless exactly one repo is being searched.
 	}
 
 	commitAfter, _ := r.query.StringValue(query.FieldRepoHasCommitAfter)
