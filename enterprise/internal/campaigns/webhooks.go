@@ -30,7 +30,7 @@ type Webhook struct {
 	Now   func() time.Time
 
 	// ServiceType corresponds to api.ExternalRepoSpec.ServiceType
-	// Example values: bitbucketserver.ServiceTyp, github.ServiceType
+	// Example values: bitbucketserver.ServiceType, github.ServiceType
 	ServiceType string
 }
 
