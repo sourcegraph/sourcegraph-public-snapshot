@@ -305,7 +305,7 @@ func testProviderFetchUserPerms(f *fixtures, cli *bitbucketserver.Client) func(*
 						AccountData: new(json.RawMessage),
 					},
 				},
-				err: "not a code host of the account: want http://127.0.0.1:7990/ but have https://github.com",
+				err: "not a code host of the account: want ${INSTANCEURL} but have https://github.com",
 			},
 			{
 				name: "bad account data",
@@ -335,6 +335,8 @@ func testProviderFetchUserPerms(f *fixtures, cli *bitbucketserver.Client) func(*
 				if tc.err == "" {
 					tc.err = "<nil>"
 				}
+
+				tc.err = strings.ReplaceAll(tc.err, "${INSTANCEURL}", cli.URL.String())
 
 				ids, err := p.FetchUserPerms(tc.ctx, tc.acct)
 
@@ -386,7 +388,7 @@ func testProviderFetchRepoPerms(f *fixtures, cli *bitbucketserver.Client) func(*
 					ServiceType: "github",
 					ServiceID:   "https://github.com",
 				},
-				err: "not a code host of the repo: want http://127.0.0.1:7990/ but have https://github.com",
+				err: "not a code host of the repo: want ${INSTANCEURL} but have https://github.com",
 			},
 			{
 				name: "private user ids are retrieved",
@@ -406,6 +408,8 @@ func testProviderFetchRepoPerms(f *fixtures, cli *bitbucketserver.Client) func(*
 				if tc.err == "" {
 					tc.err = "<nil>"
 				}
+
+				tc.err = strings.ReplaceAll(tc.err, "${INSTANCEURL}", cli.URL.String())
 
 				ids, err := p.FetchRepoPerms(tc.ctx, tc.repo)
 
