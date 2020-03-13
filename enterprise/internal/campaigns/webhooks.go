@@ -13,6 +13,7 @@ import (
 
 	gh "github.com/google/go-github/v28/github"
 	"github.com/hashicorp/go-multierror"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -39,6 +40,55 @@ type PR struct {
 	RepoExternalID string
 }
 
+func (h Webhook) getRepoForPR(
+	ctx context.Context,
+	tx *Store,
+	pr PR,
+	extSvc *repos.ExternalService,
+) (*repos.Repo, error) {
+	c, err := extSvc.Configuration()
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to get external service config")
+	}
+
+	var serviceID string
+	switch c := c.(type) {
+	case *schema.GitHubConnection:
+		serviceID = c.Url
+	case *schema.BitbucketServerConnection:
+		serviceID = c.Url
+	}
+	if serviceID == "" {
+		return nil, errors.New("could not determine service id")
+	}
+
+	u, err := url.Parse(serviceID)
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to parse service ID")
+	}
+
+	normalized := extsvc.NormalizeBaseURL(u)
+	reposTx := repos.NewDBStore(tx.DB(), sql.TxOptions{})
+	rs, err := reposTx.ListRepos(ctx, repos.StoreListReposArgs{
+		ExternalRepos: []api.ExternalRepoSpec{
+			{
+				ID:          pr.RepoExternalID,
+				ServiceType: h.ServiceType,
+				ServiceID:   normalized.String(),
+			},
+		},
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to load repository")
+	}
+
+	if len(rs) != 1 {
+		return nil, fmt.Errorf("Fetched repositories have wrong length: %d", len(rs))
+	}
+
+	return rs[0], nil
+}
+
 func (h Webhook) upsertChangesetEvent(
 	ctx context.Context,
 	extSvc *repos.ExternalService,
@@ -51,48 +101,14 @@ func (h Webhook) upsertChangesetEvent(
 	}
 	defer tx.Done(&err)
 
-	c, err := extSvc.Configuration()
+	r, err := h.getRepoForPR(ctx, tx, pr, extSvc)
 	if err != nil {
-		log15.Debug("Failed to get external service config", "extSvc", extSvc)
-		return nil
-	}
-
-	var serviceID string
-	switch c := c.(type) {
-	case *schema.GitHubConnection:
-		serviceID = c.Url
-	case *schema.BitbucketServerConnection:
-		serviceID = c.Url
-	}
-	if serviceID == "" {
-		log15.Debug("Could not determine service id")
-		return nil
-	}
-
-	u, err := url.Parse(serviceID)
-	if err != nil {
-		log15.Debug("Failed to parse serviceID. err=%s", err)
-		return nil
-	}
-	normalized := extsvc.NormalizeBaseURL(u)
-
-	reposTx := repos.NewDBStore(tx.DB(), sql.TxOptions{})
-	rs, err := reposTx.ListRepos(ctx, repos.StoreListReposArgs{
-		ExternalRepos: []api.ExternalRepoSpec{
-			{
-				ID:          pr.RepoExternalID,
-				ServiceType: h.ServiceType,
-				ServiceID:   normalized.String(),
-			},
-		},
-	})
-	if len(rs) != 1 {
-		log15.Debug("Webhook event could not be matched to repo", "pr", pr)
+		log15.Debug("Webhook event could not be matched to repo", "err", err)
 		return nil
 	}
 
 	cs, err := tx.GetChangeset(ctx, GetChangesetOpts{
-		RepoID:              rs[0].ID,
+		RepoID:              r.ID,
 		ExternalID:          strconv.FormatInt(pr.ID, 10),
 		ExternalServiceType: h.ServiceType,
 	})
