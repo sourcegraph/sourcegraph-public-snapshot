@@ -28,7 +28,7 @@ export function clearOldRedisData(ctx: TracingContext): Promise<void> {
             const evalAsync: (script: string, numArgs: number) => Promise<void> = promisify(client.eval).bind(client)
             await evalAsync(script, 0)
         } catch (err) {
-            logger.warning('Failed to clean old LSIF data from redis-store', { error: err })
+            logger.warn('Failed to clean old LSIF data from redis-store', { error: err })
         }
     })
 }
