@@ -139,8 +139,8 @@ func TestUserPermissions_AuthorizedRepos(t *testing.T) {
 		{
 			name: "candidate list is a subset",
 			repos: []*types.Repo{
-				{ID: 1, Private: true},
-				{ID: 2, Private: true},
+				{ID: 1},
+				{ID: 2},
 			},
 			p: &UserPermissions{
 				Perm: Read,
@@ -148,16 +148,16 @@ func TestUserPermissions_AuthorizedRepos(t *testing.T) {
 				IDs:  bitmap(1, 2, 3, 4),
 			},
 			expPerms: []RepoPerms{
-				{Repo: &types.Repo{ID: 1, Private: true}, Perms: Read},
-				{Repo: &types.Repo{ID: 2, Private: true}, Perms: Read},
+				{Repo: &types.Repo{ID: 1}, Perms: Read},
+				{Repo: &types.Repo{ID: 2}, Perms: Read},
 			},
 		},
 		{
 			name: "candidate list is a superset",
 			repos: []*types.Repo{
-				{ID: 1, Private: true},
-				{ID: 2, Private: true},
-				{ID: 3, Private: true},
+				{ID: 1},
+				{ID: 2},
+				{ID: 3},
 			},
 			p: &UserPermissions{
 				Perm: Read,
@@ -165,16 +165,16 @@ func TestUserPermissions_AuthorizedRepos(t *testing.T) {
 				IDs:  bitmap(1, 2),
 			},
 			expPerms: []RepoPerms{
-				{Repo: &types.Repo{ID: 1, Private: true}, Perms: Read},
-				{Repo: &types.Repo{ID: 2, Private: true}, Perms: Read},
+				{Repo: &types.Repo{ID: 1}, Perms: Read},
+				{Repo: &types.Repo{ID: 2}, Perms: Read},
 			},
 		},
 		{
 			name: "candidate list has intersection",
 			repos: []*types.Repo{
-				{ID: 1, Private: true},
-				{ID: 2, Private: true},
-				{ID: 3, Private: true},
+				{ID: 1},
+				{ID: 2},
+				{ID: 3},
 			},
 			p: &UserPermissions{
 				Perm: Read,
@@ -182,25 +182,8 @@ func TestUserPermissions_AuthorizedRepos(t *testing.T) {
 				IDs:  bitmap(1, 3, 5, 7),
 			},
 			expPerms: []RepoPerms{
-				{Repo: &types.Repo{ID: 1, Private: true}, Perms: Read},
-				{Repo: &types.Repo{ID: 3, Private: true}, Perms: Read},
-			},
-		},
-		{
-			name: "public repos are always authorized",
-			repos: []*types.Repo{
-				{ID: 1, Private: false},
-				{ID: 2, Private: true},
-				{ID: 3, Private: true},
-			},
-			p: &UserPermissions{
-				Perm: Read,
-				Type: PermRepos,
-				IDs:  bitmap(3, 5, 7),
-			},
-			expPerms: []RepoPerms{
-				{Repo: &types.Repo{ID: 1, Private: false}, Perms: Read},
-				{Repo: &types.Repo{ID: 3, Private: true}, Perms: Read},
+				{Repo: &types.Repo{ID: 1}, Perms: Read},
+				{Repo: &types.Repo{ID: 3}, Perms: Read},
 			},
 		},
 	}

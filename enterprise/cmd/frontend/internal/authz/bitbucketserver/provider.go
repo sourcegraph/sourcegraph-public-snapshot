@@ -142,7 +142,7 @@ func (p *Provider) UpdatePermissions(ctx context.Context, u *types.User) error {
 // see.
 func (p *Provider) update(userName string) PermissionsUpdateFunc {
 	return func(ctx context.Context) ([]uint32, *extsvc.CodeHost, error) {
-		visible, err := p.repoIDs(ctx, userName)
+		visible, err := p.repoIDs(ctx, userName, true)
 		if err != nil && err != errNoResults {
 			return nil, p.codeHost, err
 		}
@@ -217,7 +217,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.ExternalA
 		return nil, errors.Wrap(err, "unmarshaling account data")
 	}
 
-	ids, err := p.repoIDs(ctx, user.Name)
+	ids, err := p.repoIDs(ctx, user.Name, false)
 
 	extIDs := make([]extsvc.ExternalRepoID, 0, len(ids))
 	for _, id := range ids {
@@ -257,16 +257,16 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *api.ExternalRepoSpe
 
 var errNoResults = errors.New("no results returned by the Bitbucket Server API")
 
-func (p *Provider) repoIDs(ctx context.Context, username string) ([]uint32, error) {
+func (p *Provider) repoIDs(ctx context.Context, username string, public bool) ([]uint32, error) {
 	if p.pluginPerm {
 		return p.repoIDsFromPlugin(ctx, username)
 	}
-	return p.repoIDsFromAPI(ctx, username)
+	return p.repoIDsFromAPI(ctx, username, public)
 }
 
 // repoIDsFromAPI returns all repositories for which the given user has the permission to read from
 // the Bitbucket Server API. when no username is given, only public repos are returned.
-func (p *Provider) repoIDsFromAPI(ctx context.Context, username string) (ids []uint32, err error) {
+func (p *Provider) repoIDsFromAPI(ctx context.Context, username string, public bool) (ids []uint32, err error) {
 	t := &bitbucketserver.PageToken{Limit: p.pageSize}
 	c := p.client
 
@@ -275,7 +275,7 @@ func (p *Provider) repoIDsFromAPI(ctx context.Context, username string) (ids []u
 		filters = append(filters, "?visibility=public")
 	} else if c, err = c.Sudo(username); err != nil {
 		return nil, err
-	} else {
+	} else if !public {
 		filters = append(filters, "?visibility=private")
 	}
 
@@ -293,10 +293,10 @@ func (p *Provider) repoIDsFromAPI(ctx context.Context, username string) (ids []u
 	}
 
 	if len(ids) == 0 {
-		err = errNoResults
+		return nil, errNoResults
 	}
 
-	return ids, err
+	return ids, nil
 }
 
 func (p *Provider) repoIDsFromPlugin(ctx context.Context, username string) (ids []uint32, err error) {

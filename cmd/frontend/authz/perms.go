@@ -114,7 +114,7 @@ func (p *UserPermissions) AuthorizedRepos(repos []*types.Repo) []RepoPerms {
 
 	perms := make([]RepoPerms, 0, len(repos))
 	for _, r := range repos {
-		if r.ID != 0 && (!r.Private || p.IDs.Contains(uint32(r.ID))) {
+		if r.ID != 0 && p.IDs.Contains(uint32(r.ID)) {
 			perms = append(perms, RepoPerms{Repo: r, Perms: p.Perm})
 		}
 	}

@@ -194,9 +194,9 @@ func TestAuthzStore_AuthorizedRepos(t *testing.T) {
 			name: "has permissions for user=1",
 			args: &db.AuthorizedReposArgs{
 				Repos: []*types.Repo{
-					{ID: 1, Private: true},
-					{ID: 2, Private: true},
-					{ID: 4, Private: true},
+					{ID: 1},
+					{ID: 2},
+					{ID: 4},
 				},
 				UserID: 1,
 				Perm:   authz.Read,
@@ -217,16 +217,16 @@ func TestAuthzStore_AuthorizedRepos(t *testing.T) {
 				},
 			},
 			expectRepos: []*types.Repo{
-				{ID: 1, Private: true},
-				{ID: 2, Private: true},
+				{ID: 1},
+				{ID: 2},
 			},
 		},
 		{
 			name: "no permissions for user=2",
 			args: &db.AuthorizedReposArgs{
 				Repos: []*types.Repo{
-					{ID: 1, Private: true},
-					{ID: 2, Private: true},
+					{ID: 1},
+					{ID: 2},
 				},
 				UserID: 2,
 				Perm:   authz.Read,

@@ -18,11 +18,11 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Thu, 12 Mar 2020 15:49:00 GMT
+      - Fri, 13 Mar 2020 10:51:16 GMT
       Vary:
       - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
       X-Arequestid:
-      - '@T19088x949x956x0'
+      - '@5JDX7Gx651x31x0'
       X-Asen:
       - SEN-L15134145
       X-Auserid:
@@ -51,11 +51,11 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Thu, 12 Mar 2020 15:49:00 GMT
+      - Fri, 13 Mar 2020 10:51:16 GMT
       Vary:
       - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
       X-Arequestid:
-      - '@T19088x949x957x0'
+      - '@5JDX7Gx651x32x0'
       X-Asen:
       - SEN-L15134145
       X-Auserid:
@@ -84,11 +84,11 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Thu, 12 Mar 2020 15:49:00 GMT
+      - Fri, 13 Mar 2020 10:51:16 GMT
       Vary:
       - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
       X-Arequestid:
-      - '@T19088x949x958x0'
+      - '@5JDX7Gx651x33x0'
       X-Asen:
       - SEN-L15134145
       X-Auserid:
@@ -117,11 +117,11 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Thu, 12 Mar 2020 15:49:00 GMT
+      - Fri, 13 Mar 2020 10:51:16 GMT
       Vary:
       - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
       X-Arequestid:
-      - '@T19088x949x959x0'
+      - '@5JDX7Gx651x34x0'
       X-Asen:
       - SEN-L15134145
       X-Auserid:
@@ -149,11 +149,11 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Thu, 12 Mar 2020 15:49:00 GMT
+      - Fri, 13 Mar 2020 10:51:17 GMT
       Vary:
       - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
       X-Arequestid:
-      - '@T19088x949x960x0'
+      - '@5JDX7Gx651x35x0'
       X-Asen:
       - SEN-L15134145
       X-Auserid:
@@ -181,11 +181,11 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Thu, 12 Mar 2020 15:49:00 GMT
+      - Fri, 13 Mar 2020 10:51:17 GMT
       Vary:
       - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
       X-Arequestid:
-      - '@T19088x949x961x0'
+      - '@5JDX7Gx651x36x0'
       X-Asen:
       - SEN-L15134145
       X-Auserid:
@@ -213,11 +213,11 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Thu, 12 Mar 2020 15:49:00 GMT
+      - Fri, 13 Mar 2020 10:51:17 GMT
       Vary:
       - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
       X-Arequestid:
-      - '@T19088x949x962x0'
+      - '@5JDX7Gx651x37x0'
       X-Asen:
       - SEN-L15134145
       X-Auserid:
@@ -245,11 +245,11 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Thu, 12 Mar 2020 15:49:00 GMT
+      - Fri, 13 Mar 2020 10:51:17 GMT
       Vary:
       - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
       X-Arequestid:
-      - '@T19088x949x963x0'
+      - '@5JDX7Gx651x38x0'
       X-Asen:
       - SEN-L15134145
       X-Auserid:
@@ -277,11 +277,11 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Thu, 12 Mar 2020 15:49:00 GMT
+      - Fri, 13 Mar 2020 10:51:17 GMT
       Vary:
       - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
       X-Arequestid:
-      - '@T19088x949x964x0'
+      - '@5JDX7Gx651x39x0'
       X-Asen:
       - SEN-L15134145
       X-Auserid:
@@ -309,11 +309,11 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Thu, 12 Mar 2020 15:49:00 GMT
+      - Fri, 13 Mar 2020 10:51:17 GMT
       Vary:
       - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
       X-Arequestid:
-      - '@T19088x949x965x0'
+      - '@5JDX7Gx651x40x0'
       X-Asen:
       - SEN-L15134145
       X-Auserid:
@@ -341,11 +341,11 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Thu, 12 Mar 2020 15:49:00 GMT
+      - Fri, 13 Mar 2020 10:51:17 GMT
       Vary:
       - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
       X-Arequestid:
-      - '@T19088x949x966x0'
+      - '@5JDX7Gx651x41x0'
       X-Asen:
       - SEN-L15134145
       X-Auserid:
@@ -373,11 +373,43 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Thu, 12 Mar 2020 15:49:00 GMT
+      - Fri, 13 Mar 2020 10:51:17 GMT
       Vary:
       - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
       X-Arequestid:
-      - '@T19088x949x967x0'
+      - '@5JDX7Gx651x42x0'
+      X-Asen:
+      - SEN-L15134145
+      X-Auserid:
+      - "1"
+      X-Ausername:
+      - admin
+      X-Content-Type-Options:
+      - nosniff
+    status: '200 '
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: http://127.0.0.1:7990/rest/api/1.0/projects/PUBLIC/repos/public-repo
+    method: GET
+  response:
+    body: '{"slug":"public-repo","id":3,"name":"public-repo","hierarchyId":"daed7c9238c17db29b57","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":false,"project":{"key":"PUBLIC","id":2,"name":"Public","public":true,"type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/projects/PUBLIC"}]}},"public":true,"links":{"clone":[{"href":"http://127.0.0.1:7990/scm/public/public-repo.git","name":"http"},{"href":"ssh://git@127.0.0.1:7999/public/public-repo.git","name":"ssh"}],"self":[{"href":"http://127.0.0.1:7990/projects/PUBLIC/repos/public-repo/browse"}]}}'
+    headers:
+      Cache-Control:
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Fri, 13 Mar 2020 10:51:17 GMT
+      Vary:
+      - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
+      X-Arequestid:
+      - '@5JDX7Gx651x43x0'
       X-Asen:
       - SEN-L15134145
       X-Auserid:
@@ -405,11 +437,11 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Thu, 12 Mar 2020 15:49:00 GMT
+      - Fri, 13 Mar 2020 10:51:17 GMT
       Vary:
       - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
       X-Arequestid:
-      - '@T19088x949x968x0'
+      - '@5JDX7Gx651x44x0'
       X-Asen:
       - SEN-L15134145
       X-Auserid:
@@ -437,11 +469,11 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Thu, 12 Mar 2020 15:49:00 GMT
+      - Fri, 13 Mar 2020 10:51:17 GMT
       Vary:
       - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
       X-Arequestid:
-      - '@T19088x949x969x0'
+      - '@5JDX7Gx651x45x0'
       X-Asen:
       - SEN-L15134145
       X-Auserid:
@@ -470,43 +502,11 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Thu, 12 Mar 2020 15:49:00 GMT
+      - Fri, 13 Mar 2020 10:51:17 GMT
       Vary:
       - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
       X-Arequestid:
-      - '@T19088x949x970x0'
-      X-Asen:
-      - SEN-L15134145
-      X-Auserid:
-      - "1"
-      X-Ausername:
-      - admin
-      X-Content-Type-Options:
-      - nosniff
-    status: '200 '
-    code: 200
-    duration: ""
-- request:
-    body: ""
-    form: {}
-    headers:
-      Content-Type:
-      - application/json; charset=utf-8
-    url: http://127.0.0.1:7990/rest/api/1.0/projects/PUBLIC/repos/public-repo
-    method: GET
-  response:
-    body: '{"slug":"public-repo","id":3,"name":"public-repo","hierarchyId":"daed7c9238c17db29b57","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":false,"project":{"key":"PUBLIC","id":2,"name":"Public","public":true,"type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/projects/PUBLIC"}]}},"public":true,"links":{"clone":[{"href":"http://127.0.0.1:7990/scm/public/public-repo.git","name":"http"},{"href":"ssh://git@127.0.0.1:7999/public/public-repo.git","name":"ssh"}],"self":[{"href":"http://127.0.0.1:7990/projects/PUBLIC/repos/public-repo/browse"}]}}'
-    headers:
-      Cache-Control:
-      - no-cache, no-transform
-      Content-Type:
-      - application/json;charset=UTF-8
-      Date:
-      - Thu, 12 Mar 2020 15:49:00 GMT
-      Vary:
-      - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
-      X-Arequestid:
-      - '@T19088x949x971x0'
+      - '@5JDX7Gx651x46x0'
       X-Asen:
       - SEN-L15134145
       X-Auserid:
@@ -534,13 +534,13 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Thu, 12 Mar 2020 15:49:00 GMT
+      - Fri, 13 Mar 2020 10:51:17 GMT
       Vary:
       - X-AUSERNAME
       - X-AUSERID
       - Cookie
       X-Arequestid:
-      - '@T19088x949x972x0'
+      - '@5JDX7Gx651x47x0'
       X-Asen:
       - SEN-L15134145
       X-Auserid:
@@ -568,13 +568,13 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Thu, 12 Mar 2020 15:49:00 GMT
+      - Fri, 13 Mar 2020 10:51:17 GMT
       Vary:
       - X-AUSERNAME
       - X-AUSERID
       - Cookie
       X-Arequestid:
-      - '@T19088x949x973x0'
+      - '@5JDX7Gx651x48x0'
       X-Asen:
       - SEN-L15134145
       X-Auserid:
@@ -602,13 +602,13 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Thu, 12 Mar 2020 15:49:00 GMT
+      - Fri, 13 Mar 2020 10:51:17 GMT
       Vary:
       - X-AUSERNAME
       - X-AUSERID
       - Cookie
       X-Arequestid:
-      - '@T19088x949x974x0'
+      - '@5JDX7Gx651x49x0'
       X-Asen:
       - SEN-L15134145
       X-Auserid:
@@ -636,13 +636,13 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Thu, 12 Mar 2020 15:49:00 GMT
+      - Fri, 13 Mar 2020 10:51:17 GMT
       Vary:
       - X-AUSERNAME
       - X-AUSERID
       - Cookie
       X-Arequestid:
-      - '@T19088x949x975x0'
+      - '@5JDX7Gx651x50x0'
       X-Asen:
       - SEN-L15134145
       X-Auserid:
@@ -670,13 +670,13 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Thu, 12 Mar 2020 15:49:00 GMT
+      - Fri, 13 Mar 2020 10:51:17 GMT
       Vary:
       - X-AUSERNAME
       - X-AUSERID
       - Cookie
       X-Arequestid:
-      - '@T19088x949x976x0'
+      - '@5JDX7Gx651x51x0'
       X-Asen:
       - SEN-L15134145
       X-Auserid:
@@ -704,13 +704,13 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Thu, 12 Mar 2020 15:49:00 GMT
+      - Fri, 13 Mar 2020 10:51:17 GMT
       Vary:
       - X-AUSERNAME
       - X-AUSERID
       - Cookie
       X-Arequestid:
-      - '@T19088x949x977x0'
+      - '@5JDX7Gx651x52x0'
       X-Asen:
       - SEN-L15134145
       X-Auserid:
@@ -738,13 +738,13 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Thu, 12 Mar 2020 15:49:00 GMT
+      - Fri, 13 Mar 2020 10:51:17 GMT
       Vary:
       - X-AUSERNAME
       - X-AUSERID
       - Cookie
       X-Arequestid:
-      - '@T19088x949x978x0'
+      - '@5JDX7Gx651x53x0'
       X-Asen:
       - SEN-L15134145
       X-Auserid:
@@ -772,11 +772,11 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Thu, 12 Mar 2020 15:49:02 GMT
+      - Fri, 13 Mar 2020 10:51:18 GMT
       Vary:
       - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
       X-Arequestid:
-      - '@T19088x949x979x0'
+      - '@5JDX7Gx651x54x0'
       X-Asen:
       - SEN-L15134145
       X-Auserid:
@@ -794,7 +794,7 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: http://127.0.0.1:7990/rest/api/1.0/repos?limit=1&user_id=engineer1&visibility=private
+    url: http://127.0.0.1:7990/rest/api/1.0/repos?limit=1&user_id=engineer1
     method: GET
   response:
     body: '{"size":1,"limit":1,"isLastPage":false,"values":[{"slug":"private-repo","id":4,"name":"private-repo","hierarchyId":"42e85f10b27a666d9150","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":false,"project":{"key":"PRIVATE","id":1,"name":"Private","public":false,"type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/projects/PRIVATE"}]}},"public":false,"links":{"clone":[{"href":"ssh://git@127.0.0.1:7999/private/private-repo.git","name":"ssh"},{"href":"http://127.0.0.1:7990/scm/private/private-repo.git","name":"http"}],"self":[{"href":"http://127.0.0.1:7990/projects/PRIVATE/repos/private-repo/browse"}]}}],"start":0,"nextPageStart":1}'
@@ -804,11 +804,11 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Thu, 12 Mar 2020 15:49:02 GMT
+      - Fri, 13 Mar 2020 10:51:18 GMT
       Vary:
       - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
       X-Arequestid:
-      - '@T19088x949x980x0'
+      - '@5JDX7Gx651x55x0'
       X-Asen:
       - SEN-L15134145
       X-Auserid:
@@ -826,21 +826,21 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: http://127.0.0.1:7990/rest/api/1.0/repos?limit=1&start=1&user_id=engineer1&visibility=private
+    url: http://127.0.0.1:7990/rest/api/1.0/repos?limit=1&start=1&user_id=engineer1
     method: GET
   response:
-    body: '{"size":1,"limit":1,"isLastPage":true,"values":[{"slug":"secret-repo","id":1,"name":"secret-repo","hierarchyId":"8aa443bd04ce28a3045d","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":false,"project":{"key":"SECRET","id":3,"name":"Secret","public":false,"type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/projects/SECRET"}]}},"public":false,"links":{"clone":[{"href":"http://127.0.0.1:7990/scm/secret/secret-repo.git","name":"http"},{"href":"ssh://git@127.0.0.1:7999/secret/secret-repo.git","name":"ssh"}],"self":[{"href":"http://127.0.0.1:7990/projects/SECRET/repos/secret-repo/browse"}]}}],"start":1}'
+    body: '{"size":1,"limit":1,"isLastPage":false,"values":[{"slug":"public-repo","id":3,"name":"public-repo","hierarchyId":"daed7c9238c17db29b57","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":false,"project":{"key":"PUBLIC","id":2,"name":"Public","public":true,"type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/projects/PUBLIC"}]}},"public":true,"links":{"clone":[{"href":"http://127.0.0.1:7990/scm/public/public-repo.git","name":"http"},{"href":"ssh://git@127.0.0.1:7999/public/public-repo.git","name":"ssh"}],"self":[{"href":"http://127.0.0.1:7990/projects/PUBLIC/repos/public-repo/browse"}]}}],"start":1,"nextPageStart":2}'
     headers:
       Cache-Control:
       - no-cache, no-transform
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Thu, 12 Mar 2020 15:49:02 GMT
+      - Fri, 13 Mar 2020 10:51:18 GMT
       Vary:
       - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
       X-Arequestid:
-      - '@T19088x949x981x0'
+      - '@5JDX7Gx651x56x0'
       X-Asen:
       - SEN-L15134145
       X-Auserid:
@@ -858,21 +858,53 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: http://127.0.0.1:7990/rest/api/1.0/repos?limit=1&user_id=engineer2&visibility=private
+    url: http://127.0.0.1:7990/rest/api/1.0/repos?limit=1&start=2&user_id=engineer1
     method: GET
   response:
-    body: '{"size":1,"limit":1,"isLastPage":true,"values":[{"slug":"private-repo","id":4,"name":"private-repo","hierarchyId":"42e85f10b27a666d9150","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":false,"project":{"key":"PRIVATE","id":1,"name":"Private","public":false,"type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/projects/PRIVATE"}]}},"public":false,"links":{"clone":[{"href":"ssh://git@127.0.0.1:7999/private/private-repo.git","name":"ssh"},{"href":"http://127.0.0.1:7990/scm/private/private-repo.git","name":"http"}],"self":[{"href":"http://127.0.0.1:7990/projects/PRIVATE/repos/private-repo/browse"}]}}],"start":0}'
+    body: '{"size":1,"limit":1,"isLastPage":true,"values":[{"slug":"secret-repo","id":1,"name":"secret-repo","hierarchyId":"8aa443bd04ce28a3045d","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":false,"project":{"key":"SECRET","id":3,"name":"Secret","public":false,"type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/projects/SECRET"}]}},"public":false,"links":{"clone":[{"href":"http://127.0.0.1:7990/scm/secret/secret-repo.git","name":"http"},{"href":"ssh://git@127.0.0.1:7999/secret/secret-repo.git","name":"ssh"}],"self":[{"href":"http://127.0.0.1:7990/projects/SECRET/repos/secret-repo/browse"}]}}],"start":2}'
     headers:
       Cache-Control:
       - no-cache, no-transform
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Thu, 12 Mar 2020 15:49:02 GMT
+      - Fri, 13 Mar 2020 10:51:18 GMT
       Vary:
       - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
       X-Arequestid:
-      - '@T19088x949x982x0'
+      - '@5JDX7Gx651x57x0'
+      X-Asen:
+      - SEN-L15134145
+      X-Auserid:
+      - "5"
+      X-Ausername:
+      - engineer1
+      X-Content-Type-Options:
+      - nosniff
+    status: '200 '
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: http://127.0.0.1:7990/rest/api/1.0/repos?limit=1&user_id=engineer2
+    method: GET
+  response:
+    body: '{"size":1,"limit":1,"isLastPage":false,"values":[{"slug":"private-repo","id":4,"name":"private-repo","hierarchyId":"42e85f10b27a666d9150","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":false,"project":{"key":"PRIVATE","id":1,"name":"Private","public":false,"type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/projects/PRIVATE"}]}},"public":false,"links":{"clone":[{"href":"ssh://git@127.0.0.1:7999/private/private-repo.git","name":"ssh"},{"href":"http://127.0.0.1:7990/scm/private/private-repo.git","name":"http"}],"self":[{"href":"http://127.0.0.1:7990/projects/PRIVATE/repos/private-repo/browse"}]}}],"start":0,"nextPageStart":1}'
+    headers:
+      Cache-Control:
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Fri, 13 Mar 2020 10:51:18 GMT
+      Vary:
+      - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
+      X-Arequestid:
+      - '@5JDX7Gx651x58x0'
       X-Asen:
       - SEN-L15134145
       X-Auserid:
@@ -890,7 +922,39 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: http://127.0.0.1:7990/rest/api/1.0/repos?limit=1&user_id=scientist&visibility=private
+    url: http://127.0.0.1:7990/rest/api/1.0/repos?limit=1&start=1&user_id=engineer2
+    method: GET
+  response:
+    body: '{"size":1,"limit":1,"isLastPage":true,"values":[{"slug":"public-repo","id":3,"name":"public-repo","hierarchyId":"daed7c9238c17db29b57","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":false,"project":{"key":"PUBLIC","id":2,"name":"Public","public":true,"type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/projects/PUBLIC"}]}},"public":true,"links":{"clone":[{"href":"http://127.0.0.1:7990/scm/public/public-repo.git","name":"http"},{"href":"ssh://git@127.0.0.1:7999/public/public-repo.git","name":"ssh"}],"self":[{"href":"http://127.0.0.1:7990/projects/PUBLIC/repos/public-repo/browse"}]}}],"start":1}'
+    headers:
+      Cache-Control:
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Fri, 13 Mar 2020 10:51:18 GMT
+      Vary:
+      - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
+      X-Arequestid:
+      - '@5JDX7Gx651x59x0'
+      X-Asen:
+      - SEN-L15134145
+      X-Auserid:
+      - "2"
+      X-Ausername:
+      - engineer2
+      X-Content-Type-Options:
+      - nosniff
+    status: '200 '
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: http://127.0.0.1:7990/rest/api/1.0/repos?limit=1&user_id=scientist
     method: GET
   response:
     body: '{"size":1,"limit":1,"isLastPage":false,"values":[{"slug":"private-repo","id":4,"name":"private-repo","hierarchyId":"42e85f10b27a666d9150","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":false,"project":{"key":"PRIVATE","id":1,"name":"Private","public":false,"type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/projects/PRIVATE"}]}},"public":false,"links":{"clone":[{"href":"ssh://git@127.0.0.1:7999/private/private-repo.git","name":"ssh"},{"href":"http://127.0.0.1:7990/scm/private/private-repo.git","name":"http"}],"self":[{"href":"http://127.0.0.1:7990/projects/PRIVATE/repos/private-repo/browse"}]}}],"start":0,"nextPageStart":1}'
@@ -900,11 +964,11 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Thu, 12 Mar 2020 15:49:02 GMT
+      - Fri, 13 Mar 2020 10:51:18 GMT
       Vary:
       - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
       X-Arequestid:
-      - '@T19088x949x983x0'
+      - '@5JDX7Gx651x60x0'
       X-Asen:
       - SEN-L15134145
       X-Auserid:
@@ -922,21 +986,21 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: http://127.0.0.1:7990/rest/api/1.0/repos?limit=1&start=1&user_id=scientist&visibility=private
+    url: http://127.0.0.1:7990/rest/api/1.0/repos?limit=1&start=1&user_id=scientist
     method: GET
   response:
-    body: '{"size":1,"limit":1,"isLastPage":true,"values":[{"slug":"secret-repo","id":1,"name":"secret-repo","hierarchyId":"8aa443bd04ce28a3045d","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":false,"project":{"key":"SECRET","id":3,"name":"Secret","public":false,"type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/projects/SECRET"}]}},"public":false,"links":{"clone":[{"href":"http://127.0.0.1:7990/scm/secret/secret-repo.git","name":"http"},{"href":"ssh://git@127.0.0.1:7999/secret/secret-repo.git","name":"ssh"}],"self":[{"href":"http://127.0.0.1:7990/projects/SECRET/repos/secret-repo/browse"}]}}],"start":1}'
+    body: '{"size":1,"limit":1,"isLastPage":false,"values":[{"slug":"public-repo","id":3,"name":"public-repo","hierarchyId":"daed7c9238c17db29b57","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":false,"project":{"key":"PUBLIC","id":2,"name":"Public","public":true,"type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/projects/PUBLIC"}]}},"public":true,"links":{"clone":[{"href":"http://127.0.0.1:7990/scm/public/public-repo.git","name":"http"},{"href":"ssh://git@127.0.0.1:7999/public/public-repo.git","name":"ssh"}],"self":[{"href":"http://127.0.0.1:7990/projects/PUBLIC/repos/public-repo/browse"}]}}],"start":1,"nextPageStart":2}'
     headers:
       Cache-Control:
       - no-cache, no-transform
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Thu, 12 Mar 2020 15:49:02 GMT
+      - Fri, 13 Mar 2020 10:51:18 GMT
       Vary:
       - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
       X-Arequestid:
-      - '@T19088x949x984x0'
+      - '@5JDX7Gx651x61x0'
       X-Asen:
       - SEN-L15134145
       X-Auserid:
@@ -954,7 +1018,39 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: http://127.0.0.1:7990/rest/api/1.0/repos?limit=1&user_id=ceo&visibility=private
+    url: http://127.0.0.1:7990/rest/api/1.0/repos?limit=1&start=2&user_id=scientist
+    method: GET
+  response:
+    body: '{"size":1,"limit":1,"isLastPage":true,"values":[{"slug":"secret-repo","id":1,"name":"secret-repo","hierarchyId":"8aa443bd04ce28a3045d","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":false,"project":{"key":"SECRET","id":3,"name":"Secret","public":false,"type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/projects/SECRET"}]}},"public":false,"links":{"clone":[{"href":"http://127.0.0.1:7990/scm/secret/secret-repo.git","name":"http"},{"href":"ssh://git@127.0.0.1:7999/secret/secret-repo.git","name":"ssh"}],"self":[{"href":"http://127.0.0.1:7990/projects/SECRET/repos/secret-repo/browse"}]}}],"start":2}'
+    headers:
+      Cache-Control:
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Fri, 13 Mar 2020 10:51:18 GMT
+      Vary:
+      - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
+      X-Arequestid:
+      - '@5JDX7Gx651x62x0'
+      X-Asen:
+      - SEN-L15134145
+      X-Auserid:
+      - "3"
+      X-Ausername:
+      - scientist
+      X-Content-Type-Options:
+      - nosniff
+    status: '200 '
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: http://127.0.0.1:7990/rest/api/1.0/repos?limit=1&user_id=ceo
     method: GET
   response:
     body: '{"size":1,"limit":1,"isLastPage":false,"values":[{"slug":"private-repo","id":4,"name":"private-repo","hierarchyId":"42e85f10b27a666d9150","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":false,"project":{"key":"PRIVATE","id":1,"name":"Private","public":false,"type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/projects/PRIVATE"}]}},"public":false,"links":{"clone":[{"href":"ssh://git@127.0.0.1:7999/private/private-repo.git","name":"ssh"},{"href":"http://127.0.0.1:7990/scm/private/private-repo.git","name":"http"}],"self":[{"href":"http://127.0.0.1:7990/projects/PRIVATE/repos/private-repo/browse"}]}}],"start":0,"nextPageStart":1}'
@@ -964,11 +1060,11 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Thu, 12 Mar 2020 15:49:02 GMT
+      - Fri, 13 Mar 2020 10:51:18 GMT
       Vary:
       - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
       X-Arequestid:
-      - '@T19088x949x985x0'
+      - '@5JDX7Gx651x63x0'
       X-Asen:
       - SEN-L15134145
       X-Auserid:
@@ -986,21 +1082,21 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: http://127.0.0.1:7990/rest/api/1.0/repos?limit=1&start=1&user_id=ceo&visibility=private
+    url: http://127.0.0.1:7990/rest/api/1.0/repos?limit=1&start=1&user_id=ceo
     method: GET
   response:
-    body: '{"size":1,"limit":1,"isLastPage":false,"values":[{"slug":"secret-repo","id":1,"name":"secret-repo","hierarchyId":"8aa443bd04ce28a3045d","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":false,"project":{"key":"SECRET","id":3,"name":"Secret","public":false,"type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/projects/SECRET"}]}},"public":false,"links":{"clone":[{"href":"http://127.0.0.1:7990/scm/secret/secret-repo.git","name":"http"},{"href":"ssh://git@127.0.0.1:7999/secret/secret-repo.git","name":"ssh"}],"self":[{"href":"http://127.0.0.1:7990/projects/SECRET/repos/secret-repo/browse"}]}}],"start":1,"nextPageStart":2}'
+    body: '{"size":1,"limit":1,"isLastPage":false,"values":[{"slug":"public-repo","id":3,"name":"public-repo","hierarchyId":"daed7c9238c17db29b57","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":false,"project":{"key":"PUBLIC","id":2,"name":"Public","public":true,"type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/projects/PUBLIC"}]}},"public":true,"links":{"clone":[{"href":"http://127.0.0.1:7990/scm/public/public-repo.git","name":"http"},{"href":"ssh://git@127.0.0.1:7999/public/public-repo.git","name":"ssh"}],"self":[{"href":"http://127.0.0.1:7990/projects/PUBLIC/repos/public-repo/browse"}]}}],"start":1,"nextPageStart":2}'
     headers:
       Cache-Control:
       - no-cache, no-transform
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Thu, 12 Mar 2020 15:49:02 GMT
+      - Fri, 13 Mar 2020 10:51:18 GMT
       Vary:
       - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
       X-Arequestid:
-      - '@T19088x949x986x0'
+      - '@5JDX7Gx651x64x0'
       X-Asen:
       - SEN-L15134145
       X-Auserid:
@@ -1018,22 +1114,54 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: http://127.0.0.1:7990/rest/api/1.0/repos?limit=1&start=2&user_id=ceo&visibility=private
+    url: http://127.0.0.1:7990/rest/api/1.0/repos?limit=1&start=2&user_id=ceo
+    method: GET
+  response:
+    body: '{"size":1,"limit":1,"isLastPage":false,"values":[{"slug":"secret-repo","id":1,"name":"secret-repo","hierarchyId":"8aa443bd04ce28a3045d","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":false,"project":{"key":"SECRET","id":3,"name":"Secret","public":false,"type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/projects/SECRET"}]}},"public":false,"links":{"clone":[{"href":"http://127.0.0.1:7990/scm/secret/secret-repo.git","name":"http"},{"href":"ssh://git@127.0.0.1:7999/secret/secret-repo.git","name":"ssh"}],"self":[{"href":"http://127.0.0.1:7990/projects/SECRET/repos/secret-repo/browse"}]}}],"start":2,"nextPageStart":3}'
+    headers:
+      Cache-Control:
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Fri, 13 Mar 2020 10:51:18 GMT
+      Vary:
+      - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
+      X-Arequestid:
+      - '@5JDX7Gx651x65x0'
+      X-Asen:
+      - SEN-L15134145
+      X-Auserid:
+      - "4"
+      X-Ausername:
+      - ceo
+      X-Content-Type-Options:
+      - nosniff
+    status: '200 '
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: http://127.0.0.1:7990/rest/api/1.0/repos?limit=1&start=3&user_id=ceo
     method: GET
   response:
     body: '{"size":1,"limit":1,"isLastPage":true,"values":[{"slug":"super-secret-repo","id":2,"name":"super-secret-repo","hierarchyId":"a9a3b0c11dc2ede30237","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":false,"project":{"key":"SUPERSECRET","id":4,"name":"Super
-      Secret","public":false,"type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/projects/SUPERSECRET"}]}},"public":false,"links":{"clone":[{"href":"ssh://git@127.0.0.1:7999/supersecret/super-secret-repo.git","name":"ssh"},{"href":"http://127.0.0.1:7990/scm/supersecret/super-secret-repo.git","name":"http"}],"self":[{"href":"http://127.0.0.1:7990/projects/SUPERSECRET/repos/super-secret-repo/browse"}]}}],"start":2}'
+      Secret","public":false,"type":"NORMAL","links":{"self":[{"href":"http://127.0.0.1:7990/projects/SUPERSECRET"}]}},"public":false,"links":{"clone":[{"href":"ssh://git@127.0.0.1:7999/supersecret/super-secret-repo.git","name":"ssh"},{"href":"http://127.0.0.1:7990/scm/supersecret/super-secret-repo.git","name":"http"}],"self":[{"href":"http://127.0.0.1:7990/projects/SUPERSECRET/repos/super-secret-repo/browse"}]}}],"start":3}'
     headers:
       Cache-Control:
       - no-cache, no-transform
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Thu, 12 Mar 2020 15:49:02 GMT
+      - Fri, 13 Mar 2020 10:51:18 GMT
       Vary:
       - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
       X-Arequestid:
-      - '@T19088x949x987x0'
+      - '@5JDX7Gx651x66x0'
       X-Asen:
       - SEN-L15134145
       X-Auserid:
@@ -1061,11 +1189,11 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Thu, 12 Mar 2020 15:49:02 GMT
+      - Fri, 13 Mar 2020 10:51:18 GMT
       Vary:
       - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
       X-Arequestid:
-      - '@T19088x949x988x0'
+      - '@5JDX7Gx651x67x0'
       X-Asen:
       - SEN-L15134145
       X-Auserid:
@@ -1094,11 +1222,11 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Thu, 12 Mar 2020 15:49:02 GMT
+      - Fri, 13 Mar 2020 10:51:18 GMT
       Vary:
       - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
       X-Arequestid:
-      - '@T19088x949x989x0'
+      - '@5JDX7Gx651x68x0'
       X-Asen:
       - SEN-L15134145
       X-Auserid:
@@ -1126,11 +1254,11 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Thu, 12 Mar 2020 15:49:02 GMT
+      - Fri, 13 Mar 2020 10:51:18 GMT
       Vary:
       - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
       X-Arequestid:
-      - '@T19088x949x990x0'
+      - '@5JDX7Gx651x69x0'
       X-Asen:
       - SEN-L15134145
       X-Auserid:
@@ -1158,11 +1286,11 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Thu, 12 Mar 2020 15:49:02 GMT
+      - Fri, 13 Mar 2020 10:51:18 GMT
       Vary:
       - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
       X-Arequestid:
-      - '@T19088x949x991x0'
+      - '@5JDX7Gx651x70x0'
       X-Asen:
       - SEN-L15134145
       X-Auserid:
@@ -1191,11 +1319,11 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Thu, 12 Mar 2020 15:49:02 GMT
+      - Fri, 13 Mar 2020 10:51:18 GMT
       Vary:
       - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
       X-Arequestid:
-      - '@T19088x949x992x0'
+      - '@5JDX7Gx651x71x0'
       X-Asen:
       - SEN-L15134145
       X-Auserid:
@@ -1223,11 +1351,11 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Thu, 12 Mar 2020 15:49:02 GMT
+      - Fri, 13 Mar 2020 10:51:18 GMT
       Vary:
       - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
       X-Arequestid:
-      - '@T19088x949x993x0'
+      - '@5JDX7Gx651x72x0'
       X-Asen:
       - SEN-L15134145
       X-Auserid:
@@ -1256,11 +1384,11 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Thu, 12 Mar 2020 15:49:02 GMT
+      - Fri, 13 Mar 2020 10:51:18 GMT
       Vary:
       - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
       X-Arequestid:
-      - '@T19088x949x994x0'
+      - '@5JDX7Gx651x73x0'
       X-Asen:
       - SEN-L15134145
       X-Auserid:
