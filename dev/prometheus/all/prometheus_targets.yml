@@ -45,6 +45,11 @@
     # lsif-worker
     - host.docker.internal:3187
 - labels:
+    job: lsif-storage
+  targets:
+    # lsif-storage
+    - host.docker.internal:3188
+- labels:
     job: postgres_exporter
   targets:
     # postgres exporter

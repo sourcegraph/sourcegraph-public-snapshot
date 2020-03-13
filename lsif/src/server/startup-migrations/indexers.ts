@@ -1,11 +1,8 @@
 import { Connection } from 'typeorm'
 import * as pgModels from '../../shared/models/pg'
 import { logAndTraceCall, TracingContext } from '../../shared/tracing'
-import { ConnectionCache, DocumentCache, ResultChunkCache } from '../backend/cache'
-import * as settings from '../settings'
 import { Database } from '../backend/database'
 import { extname } from 'path'
-import { dbFilename } from '../../shared/paths'
 import { createSilentLogger } from '../../shared/logging'
 import { chunk } from 'lodash'
 
@@ -26,18 +23,8 @@ const CONCURRENCY_LEVEL = 20
 export function assignIndexer(connection: Connection, ctx: TracingContext): Promise<void> {
     return logAndTraceCall(ctx, 'Assigning indexers to dumps', async ({ logger = createSilentLogger() }) => {
         const entityManager = connection.createEntityManager()
-        const connectionCache = new ConnectionCache(settings.CONNECTION_CACHE_CAPACITY)
-        const documentCache = new DocumentCache(settings.DOCUMENT_CACHE_CAPACITY)
-        const resultChunkCache = new ResultChunkCache(settings.RESULT_CHUNK_CACHE_CAPACITY)
 
-        const createDatabase = (dump: pgModels.LsifDump): Database =>
-            new Database(
-                connectionCache,
-                documentCache,
-                resultChunkCache,
-                dump,
-                dbFilename(settings.STORAGE_ROOT, dump.id)
-            )
+        const createDatabase = (dump: pgModels.LsifDump): Database => new Database(dump)
 
         const updateDump = async (dump: pgModels.LsifDump): Promise<void> => {
             const indexer = determineIndexer(await createDatabase(dump).documentPaths())
@@ -63,10 +50,6 @@ export function assignIndexer(connection: Connection, ctx: TracingContext): Prom
         await entityManager
             .getRepository(pgModels.LsifDump)
             .query("UPDATE lsif_uploads SET indexer='lsif-tsc' WHERE indexer='lsif-node'")
-
-        await connectionCache.flush()
-        await documentCache.flush()
-        await resultChunkCache.flush()
     })
 }
 

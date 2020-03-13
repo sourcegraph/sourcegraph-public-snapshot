@@ -10,7 +10,6 @@ import { ensureDirectory } from '../shared/paths'
 import { Span, FORMAT_TEXT_MAP, followsFrom } from 'opentracing'
 import { instrument } from '../shared/metrics'
 import { Logger } from 'winston'
-import { startMetricsServer } from './server'
 import { waitForConfiguration } from '../shared/config/config'
 import { UploadManager } from '../shared/store/uploads'
 import * as pgModels from '../shared/models/pg'
@@ -22,6 +21,7 @@ import { DependencyManager } from '../shared/store/dependencies'
 import { EntityManager } from 'typeorm'
 import { SRC_FRONTEND_INTERNAL } from '../shared/config/settings'
 import { updateCommitsAndDumpsVisibleFromTip } from '../shared/visibility'
+import { makeExpressApp } from '../shared/api/init'
 
 /**
  * Runs the worker that converts LSIF uploads.
@@ -51,7 +51,10 @@ async function main(logger: Logger): Promise<void> {
     const dependencyManager = new DependencyManager(connection)
 
     // Start metrics server
-    startMetricsServer(logger)
+    const app = makeExpressApp({ routes: [], logger, tracer })
+    app.listen(settings.WORKER_METRICS_PORT, () =>
+        logger.debug('LSIF Worker metrics server listening', { port: settings.WORKER_METRICS_PORT })
+    )
 
     const convert = async (upload: pgModels.LsifUpload, entityManager: EntityManager): Promise<void> => {
         logger.debug('Selected upload to convert', { uploadId: upload.id })

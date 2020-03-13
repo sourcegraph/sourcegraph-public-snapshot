@@ -1,11 +1,8 @@
 import * as sqliteModels from '../../shared/models/sqlite'
 import * as lsp from 'vscode-languageserver-protocol'
-import * as settings from '../settings'
 import * as pgModels from '../../shared/models/pg'
 import { addTags, logSpan, TracingContext } from '../../shared/tracing'
-import { ConnectionCache, DocumentCache, ResultChunkCache } from './cache'
 import { Database, sortMonikers } from './database'
-import { dbFilename } from '../../shared/paths'
 import { mustGet } from '../../shared/maps'
 import { DumpManager } from '../../shared/store/dumps'
 import { DEFAULT_REFERENCES_REMOTE_DUMP_LIMIT } from '../../shared/constants'
@@ -30,20 +27,14 @@ interface PaginatedInternalLocations {
  * multiple repositories or commits. For single-dump logic, see the `Database` class.
  */
 export class Backend {
-    private connectionCache = new ConnectionCache(settings.CONNECTION_CACHE_CAPACITY)
-    private documentCache = new DocumentCache(settings.DOCUMENT_CACHE_CAPACITY)
-    private resultChunkCache = new ResultChunkCache(settings.RESULT_CHUNK_CACHE_CAPACITY)
-
     /**
      * Create a new `Backend`.
      *
-     * @param storageRoot The path where SQLite databases are stored.
      * @param dumpManager The dumps manager instance.
      * @param dependencyManager The dependency manager instance.
      * @param frontendUrl The url of the frontend internal API.
      */
     constructor(
-        private storageRoot: string,
         private dumpManager: DumpManager,
         private dependencyManager: DependencyManager,
         private frontendUrl: string
@@ -924,13 +915,7 @@ export class Backend {
      * @param dump The dump.
      */
     private createDatabase(dump: pgModels.LsifDump): Database {
-        return new Database(
-            this.connectionCache,
-            this.documentCache,
-            this.resultChunkCache,
-            dump,
-            dbFilename(this.storageRoot, dump.id)
-        )
+        return new Database(dump)
     }
 
     /**
