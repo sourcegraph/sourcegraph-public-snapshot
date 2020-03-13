@@ -35,6 +35,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -331,6 +333,13 @@ func TestCampaigns(t *testing.T) {
 	}
 	defer func() { git.Mocks.ResolveRevision = nil }()
 
+	repoupdater.MockRepoLookup = func(args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
+		return &protocol.RepoLookupResult{
+			Repo: &protocol.RepoInfo{Name: args.Repo},
+		}, nil
+	}
+	defer func() { repoupdater.MockRepoLookup = nil }()
+
 	type GitTarget struct {
 		OID            string
 		AbbreviatedOID string
@@ -482,7 +491,7 @@ func TestCampaigns(t *testing.T) {
 					URL:         "https://bitbucket.sgdev.org/projects/SOUR/repos/vegeta/pull-requests/2",
 					ServiceType: "bitbucketServer",
 				},
-				ReviewState: "APPROVED",
+				ReviewState: "PENDING",
 				CheckState:  "PENDING",
 				Events: ChangesetEventConnection{
 					TotalCount: 9,
@@ -1155,6 +1164,13 @@ func TestCampaignPlanResolver(t *testing.T) {
 		return &git.Commit{ID: testingRev}, nil
 	}
 	defer func() { backend.Mocks.Repos.GetCommit = nil }()
+
+	repoupdater.MockRepoLookup = func(args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
+		return &protocol.RepoLookupResult{
+			Repo: &protocol.RepoInfo{Name: args.Repo},
+		}, nil
+	}
+	defer func() { repoupdater.MockRepoLookup = nil }()
 
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 
