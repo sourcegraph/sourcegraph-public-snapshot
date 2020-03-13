@@ -432,7 +432,7 @@ describe('Search regression test suite', () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 0)
         })
-        test('Single forked repo included if exact', async () => {
+        test('Single archived repo included if exact', async () => {
             const urlQuery = buildSearchURLQuery(
                 'repo:^github\\.com/facebookarchive/httpcontrol$ error',
                 GQL.SearchPatternType.regexp,
