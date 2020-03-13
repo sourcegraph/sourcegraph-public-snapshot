@@ -43,7 +43,7 @@ func main() {
 		[]byte(makePrometheusTargets(numServers, numWorkers)),
 		0644,
 	); err != nil {
-		log.Fatal(err.Error())
+		log.Fatalf("Writing prometheus config: %v", err)
 	}
 
 	// This mirrors the behavior from cmd/start
