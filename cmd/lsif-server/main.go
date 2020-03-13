@@ -35,7 +35,7 @@ func main() {
 
 	numWorkers, err := strconv.ParseInt(workers, 10, 64)
 	if err != nil || numWorkers < 0 {
-		log.Fatalf("invalid int %q for LSIF_NUM_WORKERS: %s", workers, err)
+		log.Fatalf("Invalid int %q for LSIF_NUM_WORKERS: %s", workers, err)
 	}
 
 	if err := ioutil.WriteFile(
