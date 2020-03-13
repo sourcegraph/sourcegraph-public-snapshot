@@ -3,11 +3,14 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"testing"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"testing"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 
 	"github.com/graph-gophers/graphql-go/gqltesting"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
@@ -74,13 +77,36 @@ func TestDeleteUser(t *testing.T) {
 			{Email: "alice@example.com"},
 		}, nil
 	}
+	db.Mocks.ExternalAccounts.List = func(db.ExternalAccountsListOptions) ([]*extsvc.ExternalAccount, error) {
+		return []*extsvc.ExternalAccount{
+			{
+				ExternalAccountSpec: extsvc.ExternalAccountSpec{
+					ServiceType: "gitlab",
+					ServiceID:   "https://gitlab.com/",
+					AccountID:   "alice_gitlab",
+				},
+			},
+		}, nil
+	}
 	db.Mocks.Authz.RevokeUserPermissions = func(_ context.Context, args *db.RevokeUserPermissionsArgs) error {
 		if args.UserID != 6 {
 			return fmt.Errorf("args.UserID: want 6 but got %v", args.UserID)
-		} else if args.Username != "alice" {
-			return fmt.Errorf("args.Username: want %q but got %v", "alice", args.UserID)
-		} else if diff := cmp.Diff([]string{"alice@example.com"}, args.VerifiedEmails); diff != "" {
-			return fmt.Errorf("args.VerifiedEmails: %q", diff)
+		}
+
+		expAccounts := []*extsvc.ExternalAccounts{
+			{
+				ServiceType: "gitlab",
+				ServiceID:   "https://gitlab.com/",
+				AccountIDs:  []string{"alice_gitlab"},
+			},
+			{
+				ServiceType: authz.SourcegraphServiceType,
+				ServiceID:   authz.SourcegraphServiceID,
+				AccountIDs:  []string{"alice@example.com", "alice"},
+			},
+		}
+		if diff := cmp.Diff(expAccounts, args.Accounts); diff != "" {
+			t.Fatalf("args.Accounts: %v", diff)
 		}
 		return nil
 	}
