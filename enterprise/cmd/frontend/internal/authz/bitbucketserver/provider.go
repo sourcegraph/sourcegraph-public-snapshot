@@ -5,9 +5,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"strconv"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/api"
 
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
