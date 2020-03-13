@@ -128,10 +128,11 @@ func searchActivity(ctx context.Context, periodType db.PeriodType, periods int, 
 	for searchMode, match := range searchModeNameToArgumentMatches {
 		userCounts, err := db.EventLogs.CountUniqueUsersPerPeriod(ctx, periodType, timeNow().UTC(), periods, &db.CountUniqueUsersOptions{
 			EventFilters: &db.EventFilterOptions{
+				ByEventName: match.eventName,
 				ByEventNameWithArgument: &db.EventArgumentMatch{
-					EventName:     match.eventName,
 					ArgumentName:  match.argumentName,
-					ArgumentValue: searchMode},
+					ArgumentValue: searchMode,
+				},
 			},
 		})
 		if err != nil {
