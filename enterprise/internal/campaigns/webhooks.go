@@ -385,6 +385,10 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, theirs interface{}) (p
 		cr := e.GetCheckRun()
 
 		cs := cr.GetCheckSuite()
+		if cs == nil {
+			return
+		}
+
 		repo := cs.GetRepository()
 		if repo == nil {
 			return
