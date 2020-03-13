@@ -21,45 +21,6 @@ exports[`CampaignStatus viewerCanAdminister: false campaign errored 1`] = `
 </React.Fragment>
 `;
 
-exports[`CampaignStatus viewerCanAdminister: false campaign plan processing 1`] = `
-<React.Fragment>
-  <div
-    className="mt-3 e2e-preview-loading"
-  >
-    <div
-      className="progress mb-1"
-    >
-      <div
-        className="progress-bar"
-        style={
-          Object {
-            "width": "50%",
-          }
-        }
-      >
-         
-      </div>
-    </div>
-    <p>
-      Computing
-       changes:
-       
-      3
-       / 
-      6
-    </p>
-  </div>
-  <ErrorAlert
-    className="mt-3"
-    error="a"
-  />
-  <ErrorAlert
-    className="mt-3"
-    error="b"
-  />
-</React.Fragment>
-`;
-
 exports[`CampaignStatus viewerCanAdminister: false campaign processing 1`] = `
 <React.Fragment>
   <div
@@ -80,9 +41,7 @@ exports[`CampaignStatus viewerCanAdminister: false campaign processing 1`] = `
       </div>
     </div>
     <p>
-      Creating
-       changes:
-       
+      Creating changes: 
       3
        / 
       6
@@ -134,9 +93,7 @@ exports[`CampaignStatus viewerCanAdminister: false drafted campaign 1`] = `
     <Memo(CheckCircleIcon)
       className="icon-inline text-success mr-1 e2e-preview-success"
     />
-     
-    Creation
-     completed
+     Creation completed
   </div>
 </React.Fragment>
 `;
@@ -163,9 +120,7 @@ exports[`CampaignStatus viewerCanAdminister: false drafted campaign, some publis
     <Memo(CheckCircleIcon)
       className="icon-inline text-success mr-1 e2e-preview-success"
     />
-     
-    Creation
-     completed
+     Creation completed
   </div>
 </React.Fragment>
 `;
@@ -198,45 +153,6 @@ exports[`CampaignStatus viewerCanAdminister: true campaign errored 1`] = `
 </React.Fragment>
 `;
 
-exports[`CampaignStatus viewerCanAdminister: true campaign plan processing 1`] = `
-<React.Fragment>
-  <div
-    className="mt-3 e2e-preview-loading"
-  >
-    <div
-      className="progress mb-1"
-    >
-      <div
-        className="progress-bar"
-        style={
-          Object {
-            "width": "50%",
-          }
-        }
-      >
-         
-      </div>
-    </div>
-    <p>
-      Computing
-       changes:
-       
-      3
-       / 
-      6
-    </p>
-  </div>
-  <ErrorAlert
-    className="mt-3"
-    error="a"
-  />
-  <ErrorAlert
-    className="mt-3"
-    error="b"
-  />
-</React.Fragment>
-`;
-
 exports[`CampaignStatus viewerCanAdminister: true campaign processing 1`] = `
 <React.Fragment>
   <div
@@ -257,9 +173,7 @@ exports[`CampaignStatus viewerCanAdminister: true campaign processing 1`] = `
       </div>
     </div>
     <p>
-      Creating
-       changes:
-       
+      Creating changes: 
       3
        / 
       6
@@ -318,9 +232,7 @@ exports[`CampaignStatus viewerCanAdminister: true drafted campaign 1`] = `
     <Memo(CheckCircleIcon)
       className="icon-inline text-success mr-1 e2e-preview-success"
     />
-     
-    Creation
-     completed
+     Creation completed
   </div>
 </React.Fragment>
 `;
@@ -354,9 +266,7 @@ exports[`CampaignStatus viewerCanAdminister: true drafted campaign, some publish
     <Memo(CheckCircleIcon)
       className="icon-inline text-success mr-1 e2e-preview-success"
     />
-     
-    Creation
-     completed
+     Creation completed
   </div>
 </React.Fragment>
 `;

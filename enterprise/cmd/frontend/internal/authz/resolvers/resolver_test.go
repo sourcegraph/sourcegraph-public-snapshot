@@ -104,8 +104,8 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 			},
 			expUserIDs: []uint32{1},
 			expAccounts: &extsvc.ExternalAccounts{
-				ServiceType: "sourcegraph",
-				ServiceID:   "https://sourcegraph.com/",
+				ServiceType: authz.SourcegraphServiceType,
+				ServiceID:   authz.SourcegraphServiceID,
 				AccountIDs:  []string{"bob"},
 			},
 		},
@@ -143,8 +143,8 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 			},
 			expUserIDs: []uint32{1},
 			expAccounts: &extsvc.ExternalAccounts{
-				ServiceType: "sourcegraph",
-				ServiceID:   "https://sourcegraph.com/",
+				ServiceType: authz.SourcegraphServiceType,
+				ServiceID:   authz.SourcegraphServiceID,
 				AccountIDs:  []string{"bob"},
 			},
 		},

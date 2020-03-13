@@ -18,15 +18,15 @@ interactions:
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Tue, 11 Jun 2019 13:00:11 GMT
+      - Fri, 13 Mar 2020 10:51:16 GMT
       Vary:
       - accept-encoding,x-auserid,cookie,x-ausername,accept-encoding
       Www-Authenticate:
       - OAuth realm="http%3A%2F%2F127.0.0.1%3A7990"
       X-Arequestid:
-      - '@180MHBDx780x572x0'
+      - '@5JDX7Gx651x30x0'
       X-Asen:
-      - SEN-14109642
+      - SEN-L15134145
       X-Content-Type-Options:
       - nosniff
     status: '401 '

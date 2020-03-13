@@ -480,6 +480,70 @@ exports[`CampaignActionsBar mode: saving 1`] = `
 </div>
 `;
 
+exports[`CampaignActionsBar new with plan 1`] = `
+<div
+  className="d-flex mb-2"
+>
+  <h2
+    className="m-0"
+  >
+    <Memo(ImageAutoAdjustIcon)
+      className="icon-inline mr-2 text-muted"
+    />
+    <span>
+      <AnchorLink
+        to="/campaigns"
+      >
+        Campaigns
+      </AnchorLink>
+    </span>
+    <span
+      className="text-muted d-inline-block mx-2"
+    >
+      /
+    </span>
+    <span>
+      New campaign
+    </span>
+  </h2>
+  <span
+    className="flex-grow-1 d-flex justify-content-end align-items-center"
+  />
+</div>
+`;
+
+exports[`CampaignActionsBar new without plan 1`] = `
+<div
+  className="d-flex mb-2"
+>
+  <h2
+    className="m-0"
+  >
+    <Memo(ImageAutoAdjustIcon)
+      className="icon-inline mr-2 text-muted"
+    />
+    <span>
+      <AnchorLink
+        to="/campaigns"
+      >
+        Campaigns
+      </AnchorLink>
+    </span>
+    <span
+      className="text-muted d-inline-block mx-2"
+    >
+      /
+    </span>
+    <span>
+      New manual campaign
+    </span>
+  </h2>
+  <span
+    className="flex-grow-1 d-flex justify-content-end align-items-center"
+  />
+</div>
+`;
+
 exports[`CampaignActionsBar not editable 1`] = `
 <div
   className="d-flex mb-2"
