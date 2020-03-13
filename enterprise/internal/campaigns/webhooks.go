@@ -29,8 +29,8 @@ type Webhook struct {
 }
 
 type PR struct {
-	ID     int64
-	RepoID int64
+	ID             int64
+	RepoExternalID string
 }
 
 func (h Webhook) upsertChangesetEvent(
@@ -207,12 +207,23 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, theirs interface{}) (p
 	log15.Debug("GitHub webhook received", "type", fmt.Sprintf("%T", theirs))
 	switch e := theirs.(type) {
 	case *gh.IssueCommentEvent:
-		pr := PR{ID: int64(*e.Issue.Number), RepoID: e.GetRepo().GetID()}
+		repo := e.GetRepo()
+		if repo == nil {
+			return
+		}
+		repoExternalID := repo.GetNodeID()
+
+		pr := PR{ID: int64(*e.Issue.Number), RepoExternalID: repoExternalID}
 		prs = append(prs, pr)
 		return prs, h.issueComment(e)
 
 	case *gh.PullRequestEvent:
-		pr := PR{ID: int64(*e.Number), RepoID: e.GetRepo().GetID()}
+		repo := e.GetRepo()
+		if repo == nil {
+			return
+		}
+		repoExternalID := repo.GetNodeID()
+		pr := PR{ID: int64(*e.Number), RepoExternalID: repoExternalID}
 		prs = append(prs, pr)
 
 		switch *e.Action {
@@ -237,12 +248,24 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, theirs interface{}) (p
 		}
 
 	case *gh.PullRequestReviewEvent:
-		pr := PR{ID: int64(*e.PullRequest.Number), RepoID: e.GetRepo().GetID()}
+		repo := e.GetRepo()
+		if repo == nil {
+			return
+		}
+		repoExternalID := repo.GetNodeID()
+
+		pr := PR{ID: int64(*e.PullRequest.Number), RepoExternalID: repoExternalID}
 		prs = append(prs, pr)
 		ours = h.pullRequestReviewEvent(e)
 
 	case *gh.PullRequestReviewCommentEvent:
-		pr := PR{ID: int64(*e.PullRequest.Number), RepoID: e.GetRepo().GetID()}
+		repo := e.GetRepo()
+		if repo == nil {
+			return
+		}
+		repoExternalID := repo.GetNodeID()
+
+		pr := PR{ID: int64(*e.PullRequest.Number), RepoExternalID: repoExternalID}
 		prs = append(prs, pr)
 		switch *e.Action {
 		case "created", "edited":
@@ -263,7 +286,11 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, theirs interface{}) (p
 			return nil, nil
 		}
 
-		repoID := e.GetRepo().GetID()
+		repo := e.GetRepo()
+		if repo == nil {
+			return
+		}
+		repoExternalID := repo.GetNodeID()
 
 		// TODO: This is likely a bug, since it doesn't take the external
 		// repo id into account
@@ -279,7 +306,7 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, theirs interface{}) (p
 				log15.Error("Error parsing external id", "err", err)
 				continue
 			}
-			prs = append(prs, PR{ID: i, RepoID: repoID})
+			prs = append(prs, PR{ID: i, RepoExternalID: repoExternalID})
 		}
 
 		ours = h.commitStatusEvent(e)
@@ -295,12 +322,12 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, theirs interface{}) (p
 		if repo == nil {
 			return
 		}
-		repoID := repo.GetID()
+		repoID := repo.GetNodeID()
 
 		for _, pr := range cs.PullRequests {
 			n := pr.GetNumber()
 			if n != 0 {
-				prs = append(prs, PR{ID: int64(n), RepoID: repoID})
+				prs = append(prs, PR{ID: int64(n), RepoExternalID: repoID})
 			}
 		}
 		ours = h.checkSuiteEvent(cs)
@@ -317,12 +344,12 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, theirs interface{}) (p
 		if repo == nil {
 			return
 		}
-		repoID := repo.GetID()
+		repoID := repo.GetNodeID()
 
 		for _, pr := range cr.PullRequests {
 			n := pr.GetNumber()
 			if n != 0 {
-				prs = append(prs, PR{ID: int64(n), RepoID: repoID})
+				prs = append(prs, PR{ID: int64(n), RepoExternalID: repoID})
 			}
 		}
 		ours = h.checkRunEvent(cr)
@@ -761,7 +788,8 @@ func (h *BitbucketServerWebhook) convertEvent(theirs interface{}) (pr PR, ours i
 
 	switch e := theirs.(type) {
 	case *bbs.PullRequestEvent:
-		pr := PR{ID: int64(e.PullRequest.ID), RepoID: int64(e.PullRequest.FromRef.Repository.ID)}
+		repoID := strconv.Itoa(e.PullRequest.FromRef.Repository.ID)
+		pr := PR{ID: int64(e.PullRequest.ID), RepoExternalID: repoID}
 		return pr, e.Activity
 	}
 
