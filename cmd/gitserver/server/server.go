@@ -807,8 +807,18 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, url string, o
 		tmpPath = filepath.Join(tmpPath, ".git")
 		tmp := GitDir(tmpPath)
 
+		configRemoteOpts := true
 		var cmd *exec.Cmd
-		if useRefspecOverrides() {
+		if customCmd := customFetchCmd(ctx, url); customCmd != nil {
+			// We know how to fetch but not clone, so init then fetch
+			if err := exec.CommandContext(ctx, "git", "init", "--bare", tmpPath).Run(); err != nil {
+				return errors.Wrap(err, "failed to git init before running custom fetch")
+			}
+
+			cmd = customCmd
+			cmd.Dir = tmpPath
+			configRemoteOpts = false
+		} else if useRefspecOverrides() {
 			cmd, err = refspecOverridesCloneCmd(ctx, url, tmpPath)
 			if err != nil {
 				return err
@@ -824,7 +834,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, url string, o
 		defer pw.Close()
 		go readCloneProgress(redactor, lock, pr)
 
-		if output, err := runWithRemoteOpts(ctx, cmd, pw); err != nil {
+		if output, err := runWith(ctx, cmd, configRemoteOpts, pw); err != nil {
 			return errors.Wrapf(err, "clone failed. Output: %s", string(output))
 		}
 
