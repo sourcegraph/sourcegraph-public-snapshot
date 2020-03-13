@@ -15,7 +15,7 @@ interface RowProps {
 }
 
 // Filters that are shown as buttons, and not in the dropdown menu.
-export const defaultFilterTypes = [FilterType.repo, FilterType.file]
+export const defaultFilterTypes = [FilterType.repo, FilterType.file, FilterType.content]
 
 /**
  * The row containing the buttons to add new filters in interactive mode.
