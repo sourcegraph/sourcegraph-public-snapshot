@@ -432,13 +432,31 @@ describe('Search regression test suite', () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 0)
         })
+        test('Single archived repo included if exact', async () => {
+            const urlQuery = buildSearchURLQuery(
+                'repo:^github\\.com/facebookarchive/httpcontrol$ error',
+                GQL.SearchPatternType.regexp,
+                false
+            )
+            await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 0)
+        })
         test('Fork repos excluded by default', async () => {
             const urlQuery = buildSearchURLQuery('type:repo sgtest/mux', GQL.SearchPatternType.regexp, false)
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 0)
         })
-        test('Forked repos included by by fork option', async () => {
+        test('Forked repos included by fork option', async () => {
             const urlQuery = buildSearchURLQuery('type:repo sgtest/mux fork:yes', GQL.SearchPatternType.regexp, false)
+            await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 0)
+        })
+        test('Single forked repo included if exact', async () => {
+            const urlQuery = buildSearchURLQuery(
+                'repo:^github\\.com/sgtest/mux$ error',
+                GQL.SearchPatternType.regexp,
+                false
+            )
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 0)
         })

@@ -16,10 +16,6 @@ const CAMPAIGN: Pick<GQL.ICampaign, '__typename' | 'closedAt' | 'publishedAt' | 
     } as GQL.IExternalChangesetConnection,
 }
 
-const CAMPAIGN_PLAN: Pick<GQL.ICampaignPlan, '__typename'> = {
-    __typename: 'CampaignPlan',
-}
-
 describe('CampaignStatus', () => {
     for (const viewerCanAdminister of [true, false]) {
         const campaign = { ...CAMPAIGN, viewerCanAdminister }
@@ -85,23 +81,6 @@ describe('CampaignStatus', () => {
                         <CampaignStatus
                             {...PROPS}
                             campaign={campaign}
-                            status={{
-                                completedCount: 3,
-                                pendingCount: 3,
-                                errors: ['a', 'b'],
-                                state: GQL.BackgroundProcessState.PROCESSING,
-                            }}
-                            onPublish={() => undefined}
-                        />
-                    )
-                ).toMatchSnapshot())
-
-            test('campaign plan processing', () =>
-                expect(
-                    createRenderer().render(
-                        <CampaignStatus
-                            {...PROPS}
-                            campaign={CAMPAIGN_PLAN}
                             status={{
                                 completedCount: 3,
                                 pendingCount: 3,

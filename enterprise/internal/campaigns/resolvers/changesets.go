@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"sort"
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
@@ -205,8 +204,8 @@ func (r *changesetResolver) Body() (string, error) {
 	return r.Changeset.Body()
 }
 
-func (r *changesetResolver) State() (campaigns.ChangesetState, error) {
-	return r.Changeset.State()
+func (r *changesetResolver) State() campaigns.ChangesetState {
+	return r.ExternalState
 }
 
 func (r *changesetResolver) ExternalURL() (*externallink.Resolver, error) {
@@ -217,25 +216,12 @@ func (r *changesetResolver) ExternalURL() (*externallink.Resolver, error) {
 	return externallink.NewResolver(url, r.Changeset.ExternalServiceType), nil
 }
 
-func (r *changesetResolver) ReviewState(ctx context.Context) (campaigns.ChangesetReviewState, error) {
-	es, err := r.computeEvents(ctx)
-	if err != nil {
-		return campaigns.ChangesetReviewStatePending, err
-	}
-
-	// Make a copy of events so that we can safely sort it
-	events := make(campaigns.ChangesetEvents, len(es))
-	copy(events, es)
-	sort.Sort(events)
-	return events.ReviewState()
+func (r *changesetResolver) ReviewState(ctx context.Context) campaigns.ChangesetReviewState {
+	return r.ExternalReviewState
 }
 
 func (r *changesetResolver) CheckState(ctx context.Context) (*campaigns.ChangesetCheckState, error) {
-	events, err := r.computeEvents(ctx)
-	if err != nil {
-		return nil, err
-	}
-	state := campaigns.ComputeCheckState(r.Changeset, events)
+	state := r.ExternalCheckState
 	if state == campaigns.ChangesetCheckStateUnknown {
 		return nil, nil
 	}

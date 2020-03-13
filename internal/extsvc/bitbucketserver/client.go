@@ -317,11 +317,22 @@ func (c *Client) LoadUser(ctx context.Context, u *User) error {
 // LoadGroup loads the given Group returning an error in case of failure.
 func (c *Client) LoadGroup(ctx context.Context, g *Group) error {
 	qry := url.Values{"filter": {g.Name}}
-	return c.send(ctx, "GET", "rest/api/1.0/admin/groups", qry, nil, &struct {
+	var groups struct {
 		Values []*Group `json:"values"`
-	}{
-		Values: []*Group{g},
-	})
+	}
+
+	err := c.send(ctx, "GET", "rest/api/1.0/admin/groups", qry, nil, &groups)
+	if err != nil {
+		return err
+	}
+
+	if len(groups.Values) != 1 {
+		return errors.New("group not found")
+	}
+
+	*g = *groups.Values[0]
+
+	return nil
 }
 
 // CreateGroup creates the given Group returning an error in case of failure.
@@ -552,9 +563,9 @@ func (c *Client) LoadPullRequestActivities(ctx context.Context, pr *PullRequest)
 
 	t := &PageToken{Limit: 1000}
 
-	var activities []Activity
+	var activities []*Activity
 	for t.HasMore() {
-		var page []Activity
+		var page []*Activity
 		if t, err = c.page(ctx, path, nil, t, &page); err != nil {
 			return err
 		}
@@ -583,9 +594,9 @@ func (c *Client) LoadPullRequestCommits(ctx context.Context, pr *PullRequest) (e
 
 	t := &PageToken{Limit: 1000}
 
-	var commits []Commit
+	var commits []*Commit
 	for t.HasMore() {
-		var page []Commit
+		var page []*Commit
 		if t, err = c.page(ctx, path, nil, t, &page); err != nil {
 			return err
 		}
@@ -604,7 +615,7 @@ func (c *Client) LoadPullRequestBuildStatuses(ctx context.Context, pr *PullReque
 	var latestCommit Commit
 	for _, c := range pr.Commits {
 		if latestCommit.CommitterTimestamp < c.CommitterTimestamp {
-			latestCommit = c
+			latestCommit = *c
 		}
 	}
 
@@ -612,9 +623,9 @@ func (c *Client) LoadPullRequestBuildStatuses(ctx context.Context, pr *PullReque
 
 	t := &PageToken{Limit: 1000}
 
-	var statuses []BuildStatus
+	var statuses []*BuildStatus
 	for t.HasMore() {
-		var page []BuildStatus
+		var page []*BuildStatus
 		if t, err = c.page(ctx, path, nil, t, &page); err != nil {
 			return err
 		}
@@ -1056,9 +1067,9 @@ type PullRequest struct {
 		} `json:"self"`
 	} `json:"links"`
 
-	Activities    []Activity    `json:"activities,omitempty"`
-	Commits       []Commit      `json:"commits,omitempty"`
-	BuildStatuses []BuildStatus `json:"buildstatuses,omitempty"`
+	Activities    []*Activity    `json:"activities,omitempty"`
+	Commits       []*Commit      `json:"commits,omitempty"`
+	BuildStatuses []*BuildStatus `json:"buildstatuses,omitempty"`
 }
 
 // Activity is a union type of all supported pull request activity items.
