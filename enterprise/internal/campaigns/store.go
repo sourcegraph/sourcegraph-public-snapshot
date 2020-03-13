@@ -536,6 +536,7 @@ func countChangesetsQuery(opts *CountChangesetsOpts) *sqlf.Query {
 // GetChangesetOpts captures the query options needed for getting a Changeset
 type GetChangesetOpts struct {
 	ID                  int64
+	RepoID              api.RepoID
 	ExternalID          string
 	ExternalServiceType string
 }
@@ -588,6 +589,10 @@ func getChangesetQuery(opts *GetChangesetOpts) *sqlf.Query {
 	var preds []*sqlf.Query
 	if opts.ID != 0 {
 		preds = append(preds, sqlf.Sprintf("id = %s", opts.ID))
+	}
+
+	if opts.RepoID != 0 {
+		preds = append(preds, sqlf.Sprintf("repo_id = %s", opts.RepoID))
 	}
 
 	if opts.ExternalID != "" && opts.ExternalServiceType != "" {

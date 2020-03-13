@@ -1039,6 +1039,7 @@ type Project struct {
 type Ref struct {
 	ID         string `json:"id"`
 	Repository struct {
+		ID      int    `json:"id"`
 		Slug    string `json:"slug"`
 		Project struct {
 			Key string `json:"key"`
