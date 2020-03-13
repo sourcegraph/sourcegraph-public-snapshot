@@ -141,7 +141,7 @@ type PullRequest struct {
 	Participants  []Actor
 	Labels        struct{ Nodes []Label }
 	TimelineItems []TimelineItem
-	Commits       struct{ Nodes []PullRequestCommit }
+	Commits       struct{ Nodes []CommitWithChecks }
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 }
@@ -245,6 +245,16 @@ type PullRequestReviewThread struct {
 }
 
 type PullRequestCommit struct {
+	Commit Commit
+}
+
+func (p PullRequestCommit) Key() string {
+	return p.Commit.OID
+}
+
+// CommitWithChecks represents check / build status of a commit. When we load the PR
+// from GitHub we fetch the most recent commit into this type to check build status
+type CommitWithChecks struct {
 	Commit struct {
 		OID           string
 		CheckSuites   struct{ Nodes []CheckSuite }
@@ -253,7 +263,7 @@ type PullRequestCommit struct {
 	}
 }
 
-func (c PullRequestCommit) Key() string {
+func (c CommitWithChecks) Key() string {
 	return c.Commit.OID
 }
 
@@ -756,12 +766,12 @@ fragment commitWithChecks on Commit {
       description
     }
   }
-  checkSuites(last: 10){
+  checkSuites(last: 20){
     nodes {
       id
       status
       conclusion
-      checkRuns(last: 10){
+      checkRuns(last: 20){
         nodes{
           id
           status
@@ -983,7 +993,9 @@ fragment pr on PullRequest {
         createdAt
       }
       ... on PullRequestCommit {
-        ...prCommit
+        commit {
+          ...commit
+        }
       }
     }
   }
