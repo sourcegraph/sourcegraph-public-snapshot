@@ -105,16 +105,14 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 						AccountIDs:  []string{"alice@example.com"},
 					},
 					repoID: 1,
-				},
-				{
+				}, {
 					accounts: &extsvc.ExternalAccounts{
 						ServiceType: authz.SourcegraphServiceType,
 						ServiceID:   authz.SourcegraphServiceID,
 						AccountIDs:  []string{"alice2@example.com"},
 					},
 					repoID: 2,
-				},
-				{
+				}, {
 					accounts: &extsvc.ExternalAccounts{
 						ServiceType: authz.SourcegraphServiceType,
 						ServiceID:   authz.SourcegraphServiceID,
@@ -143,8 +141,7 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 						AccountIDs:  []string{"alice"},
 					},
 					repoID: 1,
-				},
-				{
+				}, {
 					accounts: &extsvc.ExternalAccounts{
 						ServiceType: authz.SourcegraphServiceType,
 						ServiceID:   authz.SourcegraphServiceID,
@@ -173,16 +170,14 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 						AccountIDs:  []string{"alice_github"},
 					},
 					repoID: 1,
-				},
-				{
+				}, {
 					accounts: &extsvc.ExternalAccounts{
 						ServiceType: "gitlab",
 						ServiceID:   "https://gitlab.com/",
 						AccountIDs:  []string{"alice_gitlab"},
 					},
 					repoID: 2,
-				},
-				{
+				}, {
 					accounts: &extsvc.ExternalAccounts{
 						ServiceType: "bitbucketServer",
 						ServiceID:   "https://bitbucketServer.com/",
@@ -269,12 +264,10 @@ func TestAuthzStore_AuthorizedRepos(t *testing.T) {
 				{
 					repoID:  1,
 					userIDs: []uint32{1},
-				},
-				{
+				}, {
 					repoID:  2,
 					userIDs: []uint32{1},
-				},
-				{
+				}, {
 					repoID:  3,
 					userIDs: []uint32{1},
 				},
@@ -361,11 +354,8 @@ func TestAuthzStore_RevokeUserPermissions(t *testing.T) {
 
 	// Revoke all of them
 	if err := s.RevokeUserPermissions(ctx, &db.RevokeUserPermissionsArgs{
-		UserID:         1,
-		ServiceType:    authz.SourcegraphServiceType,
-		ServiceID:      authz.SourcegraphServiceID,
-		Username:       "alice",
-		VerifiedEmails: []string{"alice@example.com"},
+		UserID:   1,
+		Accounts: []*extsvc.ExternalAccounts{accounts},
 	}); err != nil {
 		t.Fatal(err)
 	}
