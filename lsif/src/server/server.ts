@@ -54,7 +54,7 @@ async function main(logger: Logger): Promise<void> {
     const backend = new Backend(dumpManager, dependencyManager, SRC_FRONTEND_INTERNAL)
 
     // Run any app-level migrations. These migrations usually exist only
-    // for a two-minor-version period in which we clean up old data ande
+    // for a two-minor-version period in which we clean up old data and
     // fix outdated assumptions.
     //
     // These block the process from starting up until completion. Also
