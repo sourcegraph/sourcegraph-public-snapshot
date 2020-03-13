@@ -297,6 +297,18 @@ func TestChangesetEventsReviewState(t *testing.T) {
 		}
 	}
 
+	bbsActivity := func(t time.Time, login string, kind ChangesetEventKind) *ChangesetEvent {
+		return &ChangesetEvent{
+			Kind: kind,
+			Metadata: &bitbucketserver.Activity{
+				CreatedDate: timeToUnixMilli(t),
+				User: bitbucketserver.User{
+					Name: login,
+				},
+			},
+		}
+	}
+
 	tests := []struct {
 		events ChangesetEvents
 		want   ChangesetReviewState
@@ -409,6 +421,56 @@ func TestChangesetEventsReviewState(t *testing.T) {
 				ghReview(daysAgo(0), "user3", "APPROVED"),
 			},
 			want: ChangesetReviewStateApproved,
+		},
+		{
+			events: ChangesetEvents{
+				bbsActivity(daysAgo(2), "user1", ChangesetEventKindBitbucketServerApproved),
+			},
+			want: ChangesetReviewStateApproved,
+		},
+		{
+			events: ChangesetEvents{
+				bbsActivity(daysAgo(2), "user1", ChangesetEventKindBitbucketServerReviewed),
+			},
+			want: ChangesetReviewStateChangesRequested,
+		},
+		{
+			events: ChangesetEvents{
+				bbsActivity(daysAgo(2), "user1", ChangesetEventKindBitbucketServerApproved),
+				bbsActivity(daysAgo(1), "user2", ChangesetEventKindBitbucketServerReviewed),
+			},
+			want: ChangesetReviewStateChangesRequested,
+		},
+		{
+			events: ChangesetEvents{
+				bbsActivity(daysAgo(2), "user1", ChangesetEventKindBitbucketServerApproved),
+				bbsActivity(daysAgo(1), "user2", ChangesetEventKindBitbucketServerReviewed),
+				bbsActivity(daysAgo(0), "user3", ChangesetEventKindBitbucketServerApproved),
+			},
+			want: ChangesetReviewStateChangesRequested,
+		},
+		{
+			events: ChangesetEvents{
+				bbsActivity(daysAgo(2), "user1", ChangesetEventKindBitbucketServerApproved),
+				bbsActivity(daysAgo(1), "user2", ChangesetEventKindBitbucketServerReviewed),
+				bbsActivity(daysAgo(0), "user2", ChangesetEventKindBitbucketServerApproved),
+			},
+			want: ChangesetReviewStateApproved,
+		},
+		{
+			events: ChangesetEvents{
+				bbsActivity(daysAgo(2), "user1", ChangesetEventKindBitbucketServerApproved),
+				bbsActivity(daysAgo(1), "user1", ChangesetEventKindBitbucketServerUnapproved),
+			},
+			want: ChangesetReviewStatePending,
+		},
+		{
+			events: ChangesetEvents{
+				bbsActivity(daysAgo(2), "user1", ChangesetEventKindBitbucketServerApproved),
+				bbsActivity(daysAgo(1), "user1", ChangesetEventKindBitbucketServerUnapproved),
+				bbsActivity(daysAgo(0), "user1", ChangesetEventKindBitbucketServerReviewed),
+			},
+			want: ChangesetReviewStateChangesRequested,
 		},
 	}
 
@@ -614,4 +676,8 @@ func TestChangesetEventsLabels(t *testing.T) {
 			}
 		})
 	}
+}
+
+func timeToUnixMilli(t time.Time) int {
+	return int(t.UnixNano()) / int(time.Millisecond)
 }

@@ -1027,6 +1027,8 @@ func (e *ChangesetEvent) ReviewState() (ChangesetReviewState, error) {
 	case ChangesetEventKindBitbucketServerApproved:
 		return ChangesetReviewStateApproved, nil
 
+	// BitbucketServer's "REVIEWED" activity is created when someone clicks
+	// the "Needs work" button in the UI, which is why we map it to "Changes Requested"
 	case ChangesetEventKindBitbucketServerReviewed:
 		return ChangesetReviewStateChangesRequested, nil
 
@@ -1044,7 +1046,8 @@ func (e *ChangesetEvent) ReviewState() (ChangesetReviewState, error) {
 		}
 		return s, nil
 
-	case ChangesetEventKindGitHubReviewDismissed:
+	case ChangesetEventKindGitHubReviewDismissed,
+		ChangesetEventKindBitbucketServerUnapproved:
 		return ChangesetReviewStateDismissed, nil
 
 	default:
