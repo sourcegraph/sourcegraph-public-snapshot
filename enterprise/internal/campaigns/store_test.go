@@ -779,6 +779,22 @@ func testStore(db *sql.DB) func(*testing.T) {
 					}
 				})
 
+				t.Run("ByRepoID", func(t *testing.T) {
+					want := changesets[0]
+					opts := GetChangesetOpts{
+						RepoID: want.RepoID,
+					}
+
+					have, err := s.GetChangeset(ctx, opts)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					if diff := cmp.Diff(have, want); diff != "" {
+						t.Fatal(diff)
+					}
+				})
+
 				t.Run("NoResults", func(t *testing.T) {
 					opts := GetChangesetOpts{ID: 0xdeadbeef}
 

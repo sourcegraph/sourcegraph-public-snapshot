@@ -2,18 +2,22 @@ package campaigns
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strconv"
 	"time"
 
 	gh "github.com/google/go-github/v28/github"
 	"github.com/hashicorp/go-multierror"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	bbs "github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -25,7 +29,9 @@ type Webhook struct {
 	Repos repos.Store
 	Now   func() time.Time
 
-	Service string
+	// ServiceType corresponds to api.ExternalRepoSpec.ServiceType
+	// Example values: bitbucketserver.ServiceTyp, github.ServiceType
+	ServiceType string
 }
 
 type PR struct {
@@ -45,11 +51,50 @@ func (h Webhook) upsertChangesetEvent(
 	}
 	defer tx.Done(&err)
 
-	// TODO: Find the repos.Repo with external_id = PR.RepoID and external_service_id = extSvc.ID
-	// Getchangeset with RepoID = repos.Repo.ID
+	c, err := extSvc.Configuration()
+	if err != nil {
+		log15.Debug("Failed to get external service config", "extSvc", extSvc)
+		return nil
+	}
+
+	var serviceID string
+	switch c := c.(type) {
+	case *schema.GitHubConnection:
+		serviceID = c.Url
+	case *schema.BitbucketServerConnection:
+		serviceID = c.Url
+	}
+	if serviceID == "" {
+		log15.Debug("Could not determine service id")
+		return nil
+	}
+
+	u, err := url.Parse(serviceID)
+	if err != nil {
+		log15.Debug("Failed to parse serviceID. err=%s", err)
+		return nil
+	}
+	normalized := extsvc.NormalizeBaseURL(u)
+
+	reposTx := repos.NewDBStore(tx.DB(), sql.TxOptions{})
+	rs, err := reposTx.ListRepos(ctx, repos.StoreListReposArgs{
+		ExternalRepos: []api.ExternalRepoSpec{
+			{
+				ID:          pr.RepoExternalID,
+				ServiceType: h.ServiceType,
+				ServiceID:   normalized.String(),
+			},
+		},
+	})
+	if len(rs) != 1 {
+		log15.Debug("Webhook event could not be matched to repo", "pr", pr)
+		return nil
+	}
+
 	cs, err := tx.GetChangeset(ctx, GetChangesetOpts{
+		RepoID:              rs[0].ID,
 		ExternalID:          strconv.FormatInt(pr.ID, 10),
-		ExternalServiceType: h.Service,
+		ExternalServiceType: h.ServiceType,
 	})
 	if err != nil {
 		if err == ErrNoResults {
