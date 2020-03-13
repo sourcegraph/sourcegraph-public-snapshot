@@ -43,36 +43,56 @@ export type ChangesetArray = (GQL.IExternalChangeset | GQL.IChangesetPlan)[]
 export interface CampaignDiff {
     added: ChangesetArray
     changed: ChangesetArray
+    /**
+     * Unmodified are all changesets, that need to be updated via gitserver.
+     * Changing the campaign description will technically update them,
+     * but they will still show up as "unmodified" to reduce confusion
+     */
     unmodified: ChangesetArray
     deleted: ChangesetArray
 }
 
 export function calculateChangesetDiff(changesets: ChangesetArray, changesetPlans: GQL.IChangesetPlan[]): CampaignDiff {
-    const changed = changesetPlans.filter(changesetPlan =>
-        changesets.some(
-            changeset =>
-                changeset.repository.id === changesetPlan.repository.id &&
-                // if the corresponding changeset is already merged, we won't update that anymore
-                (changeset.__typename === 'ExternalChangeset'
-                    ? ![GQL.ChangesetState.MERGED, GQL.ChangesetState.CLOSED].includes(changeset.state)
-                    : // if we look at a changesetPlan, that will definitely be overwritten
-                      true)
-        )
-    )
-    const unmodified = changesets.filter(
-        changeset =>
-            changeset.__typename === 'ExternalChangeset' &&
-            [GQL.ChangesetState.MERGED, GQL.ChangesetState.CLOSED].includes(changeset.state)
-    )
-    const added = changesetPlans.filter(
-        changesetPlan => !changesets.some(changeset => changeset.repository.id === changesetPlan.repository.id)
-    )
-    const deleted = changesets.filter(
-        changeset =>
-            changeset.__typename === 'ExternalChangeset' &&
-            ![GQL.ChangesetState.MERGED, GQL.ChangesetState.CLOSED].includes(changeset.state) &&
-            !changesetPlans.some(changesetPlan => changesetPlan.repository.id === changeset.repository.id)
-    )
+    const added: ChangesetArray = []
+    const changed: ChangesetArray = []
+    const unmodified: ChangesetArray = []
+    const deleted: ChangesetArray = []
+
+    const changesetsByRepoId = new Map<string, GQL.IExternalChangeset | GQL.IChangesetPlan>()
+    for (const changeset of changesets) {
+        changesetsByRepoId.set(changeset.repository.id, changeset)
+    }
+    for (const changesetPlan of changesetPlans) {
+        const key = changesetPlan.repository.id
+        const existingChangeset = changesetsByRepoId.get(key)
+        // if no matching changeset exists yet, it is a new changeset to the campaign
+        if (!existingChangeset) {
+            added.push(changesetPlan)
+            continue
+        }
+        changesetsByRepoId.delete(key)
+        // if the matching changeset has not been published yet, or the existing changeset is still open, it will be updated
+        if (
+            existingChangeset.__typename === 'ChangesetPlan' ||
+            ![GQL.ChangesetState.MERGED, GQL.ChangesetState.CLOSED].includes(existingChangeset.state)
+        ) {
+            changed.push(changesetPlan)
+            continue
+        }
+        unmodified.push(existingChangeset)
+    }
+    for (const changeset of changesetsByRepoId.values()) {
+        if (changeset.__typename === 'ChangesetPlan') {
+            // don't mention any preexisting changesetplans that don't apply anymore
+            continue
+        }
+        if ([GQL.ChangesetState.MERGED, GQL.ChangesetState.CLOSED].includes(changeset.state)) {
+            unmodified.push(changeset)
+        } else {
+            deleted.push(changeset)
+        }
+    }
+
     return {
         added,
         changed,

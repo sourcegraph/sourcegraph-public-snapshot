@@ -11,7 +11,7 @@ import {
 } from '../../../../../shared/src/graphql/schema'
 
 describe('CampaignUpdateDiff', () => {
-    test('renders', () => {
+    test('renders a loader', () => {
         const history = H.createMemoryHistory({ keyLength: 0 })
         const location = H.createLocation('/campaigns/Q2FtcGFpZ25QbGFuOjE4Mw%3D%3D?plan=Q2FtcGFpZ25QbGFuOjE4Mw%3D%3D')
         expect(
@@ -42,6 +42,38 @@ describe('CampaignUpdateDiff', () => {
                 )
                 .toJSON()
         ).toMatchSnapshot()
+    })
+    test('renders', done => {
+        const history = H.createMemoryHistory({ keyLength: 0 })
+        const location = H.createLocation('/campaigns/Q2FtcGFpZ25QbGFuOjE4Mw%3D%3D?plan=Q2FtcGFpZ25QbGFuOjE4Mw%3D%3D')
+        const rendered = renderer.create(
+            <CampaignUpdateDiff
+                isLightTheme={true}
+                history={history}
+                location={location}
+                campaign={{
+                    id: 'somecampaign',
+                    publishedAt: null,
+                    changesets: { totalCount: 1 },
+                    changesetPlans: { totalCount: 1 },
+                }}
+                campaignPlan={{ id: 'someothercampaign', changesetPlans: { totalCount: 1 } }}
+                _queryChangesets={() =>
+                    of({
+                        nodes: [{ __typename: 'ExternalChangeset', repository: { id: 'match1' } }],
+                    }) as any
+                }
+                _queryChangesetPlans={() =>
+                    of({
+                        nodes: [{ __typename: 'ChangesetPlan', repository: { id: 'match1' } }],
+                    }) as any
+                }
+            />
+        )
+        setTimeout(() => {
+            expect(rendered.toJSON()).toMatchSnapshot()
+            done()
+        })
     })
     describe('calculateChangesetDiff', () => {
         type ChangesetPlanInput = Pick<IChangesetPlan, '__typename'> & { repository: Pick<IRepository, 'id'> }
