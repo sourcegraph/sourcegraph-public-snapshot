@@ -244,6 +244,10 @@ func (s *store) load(ctx context.Context, p *authz.UserPermissions) (err error) 
 }
 
 func loadRepoIDsQuery(c *extsvc.CodeHost, externalIDs []uint32) (*sqlf.Query, error) {
+	if externalIDs == nil {
+		externalIDs = []uint32{}
+	}
+
 	ids, err := json.Marshal(externalIDs)
 	if err != nil {
 		return nil, err
