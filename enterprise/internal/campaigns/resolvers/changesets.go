@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"sort"
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
@@ -243,6 +244,9 @@ func (r *changesetResolver) Labels(ctx context.Context) ([]graphqlbackend.Change
 	// have come in via webhooks
 	events := campaigns.ChangesetEvents(es)
 	labels := events.UpdateLabelsSince(r.Changeset)
+	sort.Slice(labels, func(i, j int) bool {
+		return labels[i].Name < labels[j].Name
+	})
 	resolvers := make([]graphqlbackend.ChangesetLabelResolver, 0, len(labels))
 	for _, l := range labels {
 		resolvers = append(resolvers, &changesetLabelResolver{label: l})
