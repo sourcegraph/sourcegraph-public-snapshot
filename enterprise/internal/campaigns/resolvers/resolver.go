@@ -1135,7 +1135,8 @@ func (r *Resolver) UpdateActionJob(ctx context.Context, args *graphqlbackend.Upd
 				if job.Patch != nil {
 					patches = append(patches, campaigns.CampaignPlanPatch{
 						Repo:         api.RepoID(job.RepoID),
-						BaseRevision: job.BaseRevision,
+						BaseRevision: api.CommitID(job.BaseRevision),
+						BaseRef:      job.BaseReference,
 						Patch:        *job.Patch,
 					})
 				}

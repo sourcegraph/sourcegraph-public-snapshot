@@ -1637,6 +1637,7 @@ type ActionJob struct {
 	RepoID         int32
 	ExecutionID    int64
 	BaseRevision   string
+	BaseReference  string
 }
 
 // ActionExecutionInvokationReason defines the possible reasons of an execution to be triggered from.

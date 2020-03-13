@@ -2912,6 +2912,7 @@ func scanActionJob(a *campaigns.ActionJob, s scanner) error {
 		&a.RepoID,
 		&a.ExecutionID,
 		&a.BaseRevision,
+		&a.BaseReference,
 	)
 }
 
@@ -3057,7 +3058,8 @@ RETURNING
 	state,
 	repository,
 	execution,
-	revision
+	base_revision,
+	base_reference
 `
 
 func updateActionJobQuery(opts *UpdateActionJobOpts) *sqlf.Query {
@@ -3173,7 +3175,8 @@ RETURNING
 	state,
 	repository,
 	execution,
-	revision
+	base_revision,
+	base_reference
 `
 
 func pullActionJobQuery() *sqlf.Query {
@@ -3214,7 +3217,8 @@ SELECT
 	action_jobs.state,
 	action_jobs.repository,
 	action_jobs.execution,
-	action_jobs.revision
+	action_jobs.base_revision,
+	action_jobs.base_reference
 FROM
 	action_jobs
 WHERE
@@ -3445,9 +3449,10 @@ func createActionExecutionQuery(opts *CreateActionExecutionOpts) *sqlf.Query {
 }
 
 type CreateActionJobOpts struct {
-	RepositoryID int64
-	ExecutionID  int64
-	BaseRevision string
+	RepositoryID  int64
+	ExecutionID   int64
+	BaseRevision  string
+	BaseReference string
 }
 
 // CreateActionJob resets an action job so it is eventually retried by a runner.
@@ -3471,9 +3476,9 @@ var createActionJobQueryFmtstrSelect = `
 -- source: enterprise/internal/campaigns/store.go:CreateActionJob
 INSERT INTO
 	action_jobs
-	(state, repository, execution, revision)
+	(state, repository, execution, base_revision, base_reference)
 VALUES
-	('PENDING', %d, %d, %s)
+	('PENDING', %d, %d, %s, %s)
 RETURNING
 	action_jobs.id,
 	action_jobs.log,
@@ -3484,12 +3489,13 @@ RETURNING
 	action_jobs.state,
 	action_jobs.repository,
 	action_jobs.execution,
-	action_jobs.revision
+	action_jobs.base_revision,
+	action_jobs.base_reference
 `
 
 func createActionJobQuery(opts *CreateActionJobOpts) *sqlf.Query {
 	queryTemplate := createActionJobQueryFmtstrSelect
-	return sqlf.Sprintf(queryTemplate, opts.RepositoryID, opts.ExecutionID, opts.BaseRevision)
+	return sqlf.Sprintf(queryTemplate, opts.RepositoryID, opts.ExecutionID, opts.BaseRevision, opts.BaseReference)
 }
 
 // ListActionJobsOpts captures the query options needed for
@@ -3547,7 +3553,8 @@ SELECT
 	action_jobs.state,
 	action_jobs.repository,
 	action_jobs.execution,
-	action_jobs.revision
+	action_jobs.base_revision,
+	action_jobs.base_reference
 FROM action_jobs
 `
 

@@ -183,9 +183,10 @@ func createActionExecutionForAction(ctx context.Context, store *ee.Store, action
 		}
 		// todo: caching
 		actionJob, err := tx.CreateActionJob(ctx, ee.CreateActionJobOpts{
-			ExecutionID:  actionExecution.ID,
-			RepositoryID: int64(repoID),
-			BaseRevision: repo.Rev,
+			ExecutionID:   actionExecution.ID,
+			RepositoryID:  int64(repoID),
+			BaseRevision:  repo.Rev,
+			BaseReference: repo.Ref,
 		})
 		if err != nil {
 			return nil, nil, err
@@ -209,6 +210,7 @@ func scopeQueryForSteps(actionFile string) (string, error) {
 type actionRepo struct {
 	ID  string
 	Rev string
+	Ref string
 }
 
 func findRepos(ctx context.Context, scopeQuery string) ([]actionRepo, error) {
@@ -260,6 +262,7 @@ func findRepos(ctx context.Context, scopeQuery string) ([]actionRepo, error) {
 			repos = append(repos, actionRepo{
 				ID:  string(repo.ID()),
 				Rev: string(oid),
+				Ref: string(defaultBranch.Name()),
 			})
 			repoMutex.Unlock()
 		}()
