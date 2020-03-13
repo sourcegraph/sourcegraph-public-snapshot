@@ -119,15 +119,9 @@ func TestChangesetEvents(t *testing.T) {
 			CreatedAt: now,
 		}
 
-		commit := &github.CommitWithChecks{
-			Commit: struct {
-				OID           string
-				CheckSuites   struct{ Nodes []github.CheckSuite }
-				Status        github.Status
-				CommittedDate time.Time
-			}{
-				OID:    "123",
-				Status: github.Status{},
+		commit := &github.PullRequestCommit{
+			Commit: github.Commit{
+				OID: "123",
 			},
 		}
 
