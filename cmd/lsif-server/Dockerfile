@@ -7,9 +7,9 @@ RUN apk add --no-cache nodejs-current=12.4.0-r0 nodejs-npm=10.19.0-r0
 RUN npm install -g yarn@1.17.3
 
 COPY lsif/package.json lsif/yarn.lock lsif/tsconfig.json /lsif/
-COPY lsif/src /lsif/src
-
 RUN yarn --cwd /lsif
+
+COPY lsif/src /lsif/src
 RUN yarn --cwd /lsif run build
 
 FROM sourcegraph/alpine:3.10@sha256:4d05cd5669726fc38823e92320659a6d1ef7879e62268adec5df658a0bacf65c
