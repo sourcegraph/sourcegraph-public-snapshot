@@ -22,12 +22,14 @@ func (p *OAuthProvider) FetchUserPerms(ctx context.Context, account *extsvc.Exte
 	if account == nil {
 		return nil, errors.New("no account provided")
 	} else if !extsvc.IsHostOfAccount(p.codeHost, account) {
-		return nil, fmt.Errorf("not a code host of the account: want %+v but have %+v", account, p.codeHost)
+		return nil, fmt.Errorf("not a code host of the account: want %+v but have %+v", account.ExternalAccountSpec, p.codeHost)
 	}
 
 	_, tok, err := gitlab.GetExternalAccountData(&account.ExternalAccountData)
 	if err != nil {
 		return nil, errors.Wrap(err, "get external account data")
+	} else if tok == nil {
+		return nil, errors.New("no token found in the external account data")
 	}
 
 	client := p.clientProvider.GetOAuthClient(tok.AccessToken)

@@ -10,9 +10,21 @@ import (
 )
 
 func main() {
-	procfile := []string{
-		`lsif-server: node /lsif/out/server/server.js`,
-		`lsif-worker: node /lsif/out/worker/worker.js`,
+	targets, ok := os.LookupEnv("LSIF_RUN_TARGET")
+	if !ok {
+		targets = "server,worker"
+	}
+
+	procfile := []string{}
+	for _, target := range strings.Split(targets, ",") {
+		switch target {
+		case "server":
+			procfile = append(procfile, `lsif-server: node /lsif/out/server/server.js`)
+		case "worker":
+			procfile = append(procfile, `lsif-worker: node /lsif/out/worker/worker.js`)
+		default:
+			log.Fatalf("Unknown value '%s' for LSIF_RUN_TARGET (expected 'server' or 'worker')", target)
+		}
 	}
 
 	// Shutdown if any process dies

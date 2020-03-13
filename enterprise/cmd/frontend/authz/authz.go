@@ -1,8 +1,7 @@
-package main
+package authz
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -26,7 +25,7 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
-func initAuthz(d dbutil.DB, clock func() time.Time) {
+func Init(d dbutil.DB, clock func() time.Time) {
 	db.ExternalServices = edb.NewExternalServicesStore()
 	db.Authz = edb.NewAuthzStore(d, clock)
 
@@ -139,15 +138,15 @@ type ExternalServicesStore interface {
 	ListBitbucketServerConnections(context.Context) ([]*schema.BitbucketServerConnection, error)
 }
 
-// authzProvidersFromConfig returns the set of permission-related providers derived from the site config.
+// ProvidersFromConfig returns the set of permission-related providers derived from the site config.
 // It also returns any validation problems with the config, separating these into "serious problems"
 // and "warnings". "Serious problems" are those that should make Sourcegraph set authz.allowAccessByDefault
 // to false. "Warnings" are all other validation problems.
-func authzProvidersFromConfig(
+func ProvidersFromConfig(
 	ctx context.Context,
 	cfg *conf.Unified,
 	s ExternalServicesStore,
-	db *sql.DB, // Needed by Bitbucket Server authz provider
+	db dbutil.DB, // Needed by Bitbucket Server authz provider
 ) (
 	allowAccessByDefault bool,
 	providers []authz.Provider,
@@ -209,7 +208,7 @@ func init() {
 	// Report any authz provider problems in external configs.
 	conf.ContributeWarning(func(cfg conf.Unified) (problems conf.Problems) {
 		_, _, seriousProblems, warnings :=
-			authzProvidersFromConfig(context.Background(), &cfg, db.ExternalServices, dbconn.Global)
+			ProvidersFromConfig(context.Background(), &cfg, db.ExternalServices, dbconn.Global)
 		problems = append(problems, conf.NewExternalServiceProblems(seriousProblems...)...)
 		problems = append(problems, conf.NewExternalServiceProblems(warnings...)...)
 		return problems

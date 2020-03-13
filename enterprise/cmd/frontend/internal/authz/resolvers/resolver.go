@@ -17,6 +17,7 @@ import (
 	edb "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
 type Resolver struct {
@@ -97,15 +98,22 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 		pendingBindIDs = append(pendingBindIDs, id)
 	}
 
-	// Note: We're not wrapping these two operations in a transaction because PostgreSQL 9.6 (the minimal version
-	// we support) does not support nested transactions. Besides, these two operations will acquire row-level locks
-	// over 4 tables, which could greatly increase chances of causing deadlocks with other methods. Practically,
-	// the result of SetRepoPermissions is much more important because it takes effect immediately. If the call of
-	// the SetRepoPendingPermissions method failed, a retry from client won't hurt.
-	if err = r.store.SetRepoPermissions(ctx, p); err != nil {
-		return nil, err
-	} else if err = r.store.SetRepoPendingPermissions(ctx, pendingBindIDs, p); err != nil {
-		return nil, err
+	txs, err := r.store.Transact(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "start transaction")
+	}
+	defer txs.Done(&err)
+
+	accounts := &extsvc.ExternalAccounts{
+		ServiceType: authz.SourcegraphServiceType,
+		ServiceID:   authz.SourcegraphServiceID,
+		AccountIDs:  pendingBindIDs,
+	}
+
+	if err = txs.SetRepoPermissions(ctx, p); err != nil {
+		return nil, errors.Wrap(err, "set repository permissions")
+	} else if err = txs.SetRepoPendingPermissions(ctx, accounts, p); err != nil {
+		return nil, errors.Wrap(err, "set repository pending permissions")
 	}
 
 	return &graphqlbackend.EmptyResponse{}, nil
@@ -147,9 +155,11 @@ func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphql
 		ids = p.IDs
 	} else {
 		p := &authz.UserPendingPermissions{
-			BindID: bindID,
-			Perm:   authz.Read, // Note: We currently only support read for repository permissions.
-			Type:   authz.PermRepos,
+			ServiceType: authz.SourcegraphServiceType,
+			ServiceID:   authz.SourcegraphServiceID,
+			BindID:      bindID,
+			Perm:        authz.Read, // Note: We currently only support read for repository permissions.
+			Type:        authz.PermRepos,
 		}
 		err = r.store.LoadUserPendingPermissions(ctx, p)
 		ids = p.IDs
@@ -175,7 +185,7 @@ func (r *Resolver) UsersWithPendingPermissions(ctx context.Context) ([]string, e
 		return nil, err
 	}
 
-	return r.store.ListPendingUsers(ctx)
+	return r.store.ListPendingUsers(ctx, authz.SourcegraphServiceType, authz.SourcegraphServiceID)
 }
 
 func (r *Resolver) AuthorizedUsers(ctx context.Context, args *graphqlbackend.RepoAuthorizedUserArgs) (graphqlbackend.UserConnectionResolver, error) {

@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
 // NewAuthzStore returns an OSS db.AuthzStore set with enterprise implementation.
@@ -74,9 +75,11 @@ func (s *authzStore) GrantPendingPermissions(ctx context.Context, args *db.Grant
 
 	for _, bindID := range bindIDs {
 		err = txs.GrantPendingPermissions(ctx, args.UserID, &authz.UserPendingPermissions{
-			BindID: bindID,
-			Perm:   args.Perm,
-			Type:   args.Type,
+			ServiceType: authz.SourcegraphServiceType,
+			ServiceID:   authz.SourcegraphServiceID,
+			BindID:      bindID,
+			Perm:        args.Perm,
+			Type:        args.Type,
 		})
 		if err != nil {
 			return errors.Wrap(err, "grant pending permissions")
@@ -127,8 +130,12 @@ func (s *authzStore) RevokeUserPermissions(ctx context.Context, args *db.RevokeU
 		return err
 	}
 
-	bindIDs := append([]string{args.Username}, args.VerifiedEmails...)
-	if err := txs.DeleteAllUserPendingPermissions(ctx, bindIDs); err != nil {
+	accounts := &extsvc.ExternalAccounts{
+		ServiceType: args.ServiceType,
+		ServiceID:   args.ServiceID,
+		AccountIDs:  append([]string{args.Username}, args.VerifiedEmails...),
+	}
+	if err := txs.DeleteAllUserPendingPermissions(ctx, accounts); err != nil {
 		return err
 	}
 	return nil

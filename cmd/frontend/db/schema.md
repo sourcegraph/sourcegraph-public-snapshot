@@ -180,6 +180,9 @@ Foreign-key constraints:
  external_deleted_at   | timestamp with time zone | 
  external_branch       | text                     | 
  external_updated_at   | timestamp with time zone | 
+ external_state        | text                     | 
+ external_review_state | text                     | 
+ external_check_state  | text                     | 
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
@@ -892,16 +895,18 @@ Foreign-key constraints:
 
 # Table "public.user_pending_permissions"
 ```
-   Column    |           Type           |                               Modifiers                               
--------------+--------------------------+-----------------------------------------------------------------------
- id          | integer                  | not null default nextval('user_pending_permissions_id_seq'::regclass)
- bind_id     | text                     | not null
- permission  | text                     | not null
- object_type | text                     | not null
- object_ids  | bytea                    | not null
- updated_at  | timestamp with time zone | not null
+    Column    |           Type           |                               Modifiers                               
+--------------+--------------------------+-----------------------------------------------------------------------
+ id           | integer                  | not null default nextval('user_pending_permissions_id_seq'::regclass)
+ bind_id      | text                     | not null
+ permission   | text                     | not null
+ object_type  | text                     | not null
+ object_ids   | bytea                    | not null
+ updated_at   | timestamp with time zone | not null
+ service_type | text                     | not null
+ service_id   | text                     | not null
 Indexes:
-    "user_pending_permissions_perm_object_unique" UNIQUE CONSTRAINT, btree (bind_id, permission, object_type)
+    "user_pending_permissions_service_perm_object_unique" UNIQUE CONSTRAINT, btree (service_type, service_id, permission, object_type, bind_id)
 
 ```
 

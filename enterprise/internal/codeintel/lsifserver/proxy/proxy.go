@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/http/httputil"
-	"net/url"
 	"strconv"
 	"strings"
 
@@ -16,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/httpapi"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifserver/client"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -26,19 +23,12 @@ import (
 )
 
 func NewProxy() (*httpapi.LSIFServerProxy, error) {
-	url, err := url.Parse(lsifserver.ServerURLFromEnv)
-	if err != nil {
-		return nil, err
-	}
-
-	proxy := httputil.NewSingleHostReverseProxy(url)
-
 	return &httpapi.LSIFServerProxy{
-		UploadHandler: http.HandlerFunc(uploadProxyHandler(proxy)),
+		UploadHandler: http.HandlerFunc(uploadProxyHandler()),
 	}, nil
 }
 
-func uploadProxyHandler(p *httputil.ReverseProxy) func(http.ResponseWriter, *http.Request) {
+func uploadProxyHandler() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		q := r.URL.Query()
 		repoName := q.Get("repository")
@@ -68,8 +58,6 @@ func uploadProxyHandler(p *httputil.ReverseProxy) func(http.ResponseWriter, *htt
 			Commit      graphqlbackend.GitObjectID
 			Root        string
 			IndexerName string
-			Blocking    *bool
-			MaxWait     *int32
 			Body        io.ReadCloser
 		}{
 			RepoID:      repo.ID,

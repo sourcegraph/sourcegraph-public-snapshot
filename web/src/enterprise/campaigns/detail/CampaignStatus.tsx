@@ -8,11 +8,9 @@ import InformationIcon from 'mdi-react/InformationIcon'
 import { parseISO, isBefore, addMinutes } from 'date-fns'
 
 export interface CampaignStatusProps {
-    campaign:
-        | (Pick<GQL.ICampaign, '__typename' | 'closedAt' | 'viewerCanAdminister' | 'publishedAt'> & {
-              changesets: Pick<GQL.ICampaign['changesets'], 'totalCount'>
-          })
-        | Pick<GQL.ICampaignPlan, '__typename'>
+    campaign: Pick<GQL.ICampaign, 'closedAt' | 'viewerCanAdminister' | 'publishedAt'> & {
+        changesets: Pick<GQL.ICampaign['changesets'], 'totalCount'>
+    }
 
     /** The campaign status. */
     status: Omit<GQL.IBackgroundProcessStatus, '__typename'>
@@ -35,7 +33,6 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({
     /* For completed campaigns that have been published, hide the creation complete status 1 day after the time of publication */
     const creationCompletedLongAgo =
         status.state === GQL.BackgroundProcessState.COMPLETED &&
-        campaign.__typename === 'Campaign' &&
         !!campaign.publishedAt &&
         isBefore(parseISO(campaign.publishedAt), addMinutes(new Date(), 1))
     const progress = (status.completedCount / (status.pendingCount + status.completedCount)) * 100
@@ -51,12 +48,11 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({
                         </div>
                     </div>
                     <p>
-                        {campaign.__typename === 'CampaignPlan' ? 'Computing' : 'Creating'} changes:{' '}
-                        {status.completedCount} / {status.pendingCount + status.completedCount}
+                        Creating changes: {status.completedCount} / {status.pendingCount + status.completedCount}
                     </p>
                 </div>
             )}
-            {campaign.__typename === 'Campaign' && !campaign.closedAt && !campaign.publishedAt && (
+            {!campaign.closedAt && !campaign.publishedAt && (
                 <>
                     <div className="d-flex my-3 alert alert-info">
                         <InformationIcon className="icon-inline mr-1" /> Campaign is a draft.{' '}
@@ -72,7 +68,7 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({
                     )}
                 </>
             )}
-            {campaign.__typename === 'Campaign' && campaign.closedAt ? (
+            {campaign.closedAt ? (
                 <div className="d-flex my-3">
                     <WarningIcon className="icon-inline text-warning mr-1" /> Campaign is closed
                 </div>
@@ -81,8 +77,8 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({
                 status.state === GQL.BackgroundProcessState.COMPLETED &&
                 !creationCompletedLongAgo && (
                     <div className="d-flex my-3">
-                        <CheckCircleIcon className="icon-inline text-success mr-1 e2e-preview-success" />{' '}
-                        {campaign.__typename === 'Campaign' ? 'Creation' : 'Preview'} completed
+                        <CheckCircleIcon className="icon-inline text-success mr-1 e2e-preview-success" /> Creation
+                        completed
                     </div>
                 )
             )}
@@ -97,14 +93,11 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({
                 // eslint-disable-next-line react/no-array-index-key
                 <ErrorAlert error={error} className="mt-3" key={i} />
             ))}
-            {campaign.__typename === 'Campaign' &&
-                status.state === GQL.BackgroundProcessState.ERRORED &&
-                !campaign.closedAt &&
-                campaign.viewerCanAdminister && (
-                    <button type="button" className="btn btn-primary mb-2" onClick={onRetry}>
-                        Retry failed jobs
-                    </button>
-                )}
+            {status.state === GQL.BackgroundProcessState.ERRORED && !campaign.closedAt && campaign.viewerCanAdminister && (
+                <button type="button" className="btn btn-primary mb-2" onClick={onRetry}>
+                    Retry failed jobs
+                </button>
+            )}
         </>
     )
 }

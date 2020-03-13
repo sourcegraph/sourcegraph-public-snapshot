@@ -71,7 +71,7 @@ func (h Webhook) upsertChangesetEvent(
 	}
 
 	if existing != nil {
-		// Upsert is used to create or update the record in the database,
+		// Update is used to create or update the record in the database,
 		// but we're actually "patching" the record with specific merge semantics
 		// encoded in Update. This is because some webhooks payloads don't contain
 		// all the information that we can get from the API, so we only update the
@@ -80,7 +80,24 @@ func (h Webhook) upsertChangesetEvent(
 		event = existing
 	}
 
-	return tx.UpsertChangesetEvents(ctx, event)
+	// Add new event
+	if err := tx.UpsertChangesetEvents(ctx, event); err != nil {
+		return err
+	}
+
+	// The webhook may have caused the external state of the changeset to change
+	// so we need to update it. We need all events as we may have received more than just the
+	// event we are currently handling
+	events, _, err := tx.ListChangesetEvents(ctx, ListChangesetEventsOpts{
+		ChangesetIDs: []int64{cs.ID},
+		Limit:        -1,
+	})
+	cs.SetDerivedState(events)
+	if err := tx.UpdateChangesets(ctx, cs); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // GitHubWebhook receives GitHub organization webhook events that are

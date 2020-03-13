@@ -81,7 +81,20 @@ func searchActivity(ctx context.Context, periodType db.PeriodType, periods int, 
 		"search.latencies.symbol":     func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Symbol },
 	}
 
-	for eventName, getEventStatistics := range latenciesByName {
+	for eventName, getEventStatistic := range latenciesByName {
+		userCounts, err := db.EventLogs.CountUniqueUsersPerPeriod(ctx, periodType, timeNow().UTC(), periods, &db.CountUniqueUsersOptions{
+			EventFilters: &db.EventFilterOptions{
+				ByEventName: eventName,
+			},
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		for i, uc := range userCounts {
+			activityPeriods[i].StartTime = uc.Start
+		}
+
 		percentiles, err := db.EventLogs.PercentilesPerPeriod(ctx, periodType, timeNow().UTC(), periods, sDurationField, sDurationPercentiles, &db.EventFilterOptions{
 			ByEventName: eventName,
 		})
@@ -89,9 +102,9 @@ func searchActivity(ctx context.Context, periodType db.PeriodType, periods int, 
 			return nil, err
 		}
 		for i, p := range percentiles {
-			getEventStatistics(activityPeriods[i]).EventLatencies.P50 = p.Values[0]
-			getEventStatistics(activityPeriods[i]).EventLatencies.P90 = p.Values[1]
-			getEventStatistics(activityPeriods[i]).EventLatencies.P99 = p.Values[2]
+			getEventStatistic(activityPeriods[i]).EventLatencies.P50 = p.Values[0]
+			getEventStatistic(activityPeriods[i]).EventLatencies.P90 = p.Values[1]
+			getEventStatistic(activityPeriods[i]).EventLatencies.P99 = p.Values[2]
 		}
 	}
 
