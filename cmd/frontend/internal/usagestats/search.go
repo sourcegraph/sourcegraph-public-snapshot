@@ -143,8 +143,8 @@ func searchActivity(ctx context.Context, periodType db.PeriodType, periods int, 
 		}
 		if includeEventCounts {
 			eventCounts, err := db.EventLogs.CountEventsPerPeriod(ctx, periodType, timeNow().UTC(), periods, &db.EventFilterOptions{
+				ByEventName: match.eventName,
 				ByEventNameWithArgument: &db.EventArgumentMatch{
-					EventName:     match.eventName,
 					ArgumentName:  match.argumentName,
 					ArgumentValue: searchMode,
 				},

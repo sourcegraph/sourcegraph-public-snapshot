@@ -224,15 +224,15 @@ type EventFilterOptions struct {
 	ByEventName string
 	// If not empty, only include events that matche a list of given event names
 	ByEventNames []string
-	// If not empty, only include events that match a given name, and include an argument matching a given argument value.
+	// Must be used with ByEventName
+	//
+	// Only include events with a given name, and which include a JSON argument matching a given value.
 	ByEventNameWithArgument *EventArgumentMatch
 }
 
 // EventArgumentMatch provides the options for matching an event with
 // a specific JSON value passed as an argument.
 type EventArgumentMatch struct {
-	// Only match events with a given name.
-	EventName string
 	// The name of the JSON key to match against.
 	ArgumentName string
 	// The actual value passed to the JSON key to match.
@@ -269,7 +269,10 @@ func (l *eventLogs) CountUniqueUsersPerPeriod(ctx context.Context, periodType Pe
 				conds = append(conds, sqlf.Sprintf("name = %s", opt.EventFilters.ByEventName))
 			}
 			if opt.EventFilters.ByEventNameWithArgument != nil {
-				conds = append(conds, sqlf.Sprintf("name = %s", opt.EventFilters.ByEventNameWithArgument.EventName))
+				if opt.EventFilters.ByEventName == "" {
+					return nil, fmt.Errorf("The ByEventNameWithArgument option must be used together with the ByEventName option.")
+				}
+				conds = append(conds, sqlf.Sprintf("name = %s", opt.EventFilters.ByEventName))
 				conds = append(conds, sqlf.Sprintf("argument->>%s=%s", opt.EventFilters.ByEventNameWithArgument.ArgumentName, opt.EventFilters.ByEventNameWithArgument.ArgumentValue))
 			}
 			if len(opt.EventFilters.ByEventNames) > 0 {
@@ -307,7 +310,10 @@ func (l *eventLogs) CountEventsPerPeriod(ctx context.Context, periodType PeriodT
 			conds = append(conds, sqlf.Sprintf("name = %s", opt.ByEventName))
 		}
 		if opt.ByEventNameWithArgument != nil {
-			conds = append(conds, sqlf.Sprintf("name = %s", opt.ByEventNameWithArgument.EventName))
+			if opt.ByEventName == "" {
+				return nil, fmt.Errorf("The ByEventNameWithArgument option must be used together with the ByEventName option.")
+			}
+			conds = append(conds, sqlf.Sprintf("name = %s", opt.ByEventName))
 			conds = append(conds, sqlf.Sprintf("argument->>%s=%s", opt.ByEventNameWithArgument.ArgumentName, opt.ByEventNameWithArgument.ArgumentValue))
 		}
 		if len(opt.ByEventNames) > 0 {
