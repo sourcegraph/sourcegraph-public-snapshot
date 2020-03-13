@@ -50,12 +50,6 @@ async function main(logger: Logger): Promise<void> {
     const uploadManager = new UploadManager(connection)
     const dependencyManager = new DependencyManager(connection)
 
-    // Start metrics server
-    const app = makeExpressApp({ routes: [], logger, tracer })
-    app.listen(settings.WORKER_METRICS_PORT, () =>
-        logger.debug('LSIF Worker metrics server listening', { port: settings.WORKER_METRICS_PORT })
-    )
-
     const convert = async (upload: pgModels.LsifUpload, entityManager: EntityManager): Promise<void> => {
         logger.debug('Selected upload to convert', { uploadId: upload.id })
 
@@ -118,6 +112,17 @@ async function main(logger: Logger): Promise<void> {
                 })
         )
     }
+
+    const app = makeExpressApp({
+        routes: [],
+        logger,
+        tracer,
+    })
+
+    // Start metrics server
+    app.listen(settings.WORKER_METRICS_PORT, () =>
+        logger.debug('LSIF Worker metrics server listening', { port: settings.WORKER_METRICS_PORT })
+    )
 
     logger.debug('Worker polling database for unconverted uploads')
 

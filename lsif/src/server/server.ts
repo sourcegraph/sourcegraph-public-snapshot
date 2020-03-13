@@ -35,11 +35,6 @@ async function main(logger: Logger): Promise<void> {
     // Configure distributed tracing
     const tracer = createTracer('lsif-server', fetchConfiguration())
 
-    // Update cache capacities on startup
-    metrics.connectionCacheCapacityGauge.set(settings.CONNECTION_CACHE_CAPACITY)
-    metrics.documentCacheCapacityGauge.set(settings.DOCUMENT_CACHE_CAPACITY)
-    metrics.resultChunkCacheCapacityGauge.set(settings.RESULT_CHUNK_CACHE_CAPACITY)
-
     // Ensure storage roots exist
     await ensureDirectory(settings.STORAGE_ROOT)
     await ensureDirectory(path.join(settings.STORAGE_ROOT, constants.DBS_DIR))
@@ -66,13 +61,17 @@ async function main(logger: Logger): Promise<void> {
     // Start background tasks
     startTasks(connection, dumpManager, uploadManager, logger)
 
-    const routes = [
-        createUploadRouter(dumpManager, uploadManager, logger),
-        createLsifRouter(backend, uploadManager, logger, tracer),
-    ]
-
     // Register middleware and serve
-    const app = makeExpressApp({ routes, logger, tracer, histogramSelector })
+    const app = makeExpressApp({
+        routes: [
+            createUploadRouter(dumpManager, uploadManager, logger),
+            createLsifRouter(backend, uploadManager, logger, tracer),
+        ],
+        logger,
+        tracer,
+        histogramSelector,
+    })
+
     app.listen(settings.HTTP_PORT, () => logger.debug('LSIF API server listening on', { port: settings.HTTP_PORT }))
 }
 
