@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
 
