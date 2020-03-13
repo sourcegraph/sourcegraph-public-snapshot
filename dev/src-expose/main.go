@@ -119,18 +119,37 @@ func main() {
 		return log.New(os.Stderr, prefix, log.LstdFlags)
 	}
 
-	parseSnapshotter := func(args []string) (*Snapshotter, error) {
+	globalSnapshotter := func() (*Snapshotter, error) {
 		var s Snapshotter
 		if *globalConfig != "" {
-			if len(args) != 0 {
-				return nil, &usageError{"does not take arguments if --config is specified"}
-			}
 			b, err := ioutil.ReadFile(*globalConfig)
 			if err != nil {
 				return nil, fmt.Errorf("could read configuration at %s: %w", *globalConfig, err)
 			}
 			if err := yaml.Unmarshal(b, &s); err != nil {
 				return nil, fmt.Errorf("could not parse configuration at %s: %w", *globalConfig, err)
+			}
+		}
+
+		if s.Destination == "" {
+			s.Destination = *globalReposDir
+		}
+		if *globalBefore != "" {
+			s.Before = *globalBefore
+		}
+
+		return &s, nil
+	}
+
+	parseSnapshotter := func(args []string) (*Snapshotter, error) {
+		s, err := globalSnapshotter()
+		if err != nil {
+			return nil, err
+		}
+
+		if *globalConfig != "" {
+			if len(args) != 0 {
+				return nil, &usageError{"does not take arguments if --config is specified"}
 			}
 		} else {
 			if len(args) == 0 {
@@ -140,18 +159,12 @@ func main() {
 				s.Dirs = append(s.Dirs, &SyncDir{Dir: dir})
 			}
 		}
-		if s.Destination == "" {
-			s.Destination = *globalReposDir
-		}
-		if *globalBefore != "" {
-			s.Before = *globalBefore
-		}
 
 		if err := s.SetDefaults(); err != nil {
 			return nil, err
 		}
 
-		return &s, nil
+		return s, nil
 	}
 
 	serve := &ffcli.Command{
@@ -168,8 +181,9 @@ src-expose will default to serving ~/.sourcegraph/src-expose-repos`,
 			var repoDir string
 			switch len(args) {
 			case 0:
-				s := Snapshotter{
-					Destination: *globalReposDir,
+				s, err := globalSnapshotter()
+				if err != nil {
+					return err
 				}
 				if err := s.SetDefaults(); err != nil {
 					return err
