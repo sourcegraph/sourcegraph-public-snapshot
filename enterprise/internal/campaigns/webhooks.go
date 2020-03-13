@@ -288,8 +288,15 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, theirs interface{}) (p
 		if e.CheckSuite == nil {
 			return
 		}
+
 		cs := e.GetCheckSuite()
-		repoID := cs.GetRepository().GetID()
+
+		repo := cs.GetRepository()
+		if repo == nil {
+			return
+		}
+		repoID := repo.GetID()
+
 		for _, pr := range cs.PullRequests {
 			n := pr.GetNumber()
 			if n != 0 {
@@ -302,11 +309,20 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, theirs interface{}) (p
 		if e.CheckRun == nil {
 			return
 		}
+
 		cr := e.GetCheckRun()
+
+		cs := cr.GetCheckSuite()
+		repo := cs.GetRepository()
+		if repo == nil {
+			return
+		}
+		repoID := repo.GetID()
+
 		for _, pr := range cr.PullRequests {
 			n := pr.GetNumber()
 			if n != 0 {
-				prs = append(prs, PR{ID: int64(n)})
+				prs = append(prs, PR{ID: int64(n), RepoID: repoID})
 			}
 		}
 		ours = h.checkRunEvent(cr)
