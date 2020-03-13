@@ -196,6 +196,35 @@ func TestService(t *testing.T) {
 		}
 	})
 
+	t.Run("CreateCampaignWithPlanAttachedToOtherCampaign", func(t *testing.T) {
+		plan := &campaigns.CampaignPlan{CampaignType: "test", Arguments: `{}`, UserID: user.ID}
+		err = store.CreateCampaignPlan(ctx, plan)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		for _, repo := range rs {
+			err := store.CreateCampaignJob(ctx, testCampaignJob(plan.ID, repo.ID, now))
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		campaign := testCampaign(user.ID, plan.ID)
+		svc := NewServiceWithClock(store, gitClient, cf, clock)
+
+		err = svc.CreateCampaign(ctx, campaign, false)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		otherCampaign := testCampaign(user.ID, plan.ID)
+		err = svc.CreateCampaign(ctx, otherCampaign, false)
+		if err != ErrCampaignPlanDuplicate {
+			t.Fatal("no error even though another campaign has same plan")
+		}
+	})
+
 	t.Run("CreateChangesetJobForCampaignJob", func(t *testing.T) {
 		plan := &campaigns.CampaignPlan{CampaignType: "test", Arguments: `{}`, UserID: user.ID}
 		err = store.CreateCampaignPlan(ctx, plan)
@@ -361,6 +390,54 @@ func TestService(t *testing.T) {
 			})
 		}
 	})
+
+	t.Run("UpdateCampaignWithPlanAttachedToOtherCampaign", func(t *testing.T) {
+		svc := NewServiceWithClock(store, gitClient, cf, clock)
+
+		plan := &campaigns.CampaignPlan{CampaignType: "test", Arguments: `{}`, UserID: user.ID}
+		err = store.CreateCampaignPlan(ctx, plan)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		for _, repo := range rs {
+			err := store.CreateCampaignJob(ctx, testCampaignJob(plan.ID, repo.ID, now))
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		campaign := testCampaign(user.ID, plan.ID)
+		err = svc.CreateCampaign(ctx, campaign, false)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		otherPlan := &campaigns.CampaignPlan{CampaignType: "test", Arguments: `{}`, UserID: user.ID}
+		err = store.CreateCampaignPlan(ctx, otherPlan)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		for _, repo := range rs {
+			err := store.CreateCampaignJob(ctx, testCampaignJob(otherPlan.ID, repo.ID, now))
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+		otherCampaign := testCampaign(user.ID, otherPlan.ID)
+		err = svc.CreateCampaign(ctx, otherCampaign, false)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		args := UpdateCampaignArgs{Campaign: otherCampaign.ID, Plan: &plan.ID}
+		_, _, err := svc.UpdateCampaign(ctx, args)
+		if err != ErrCampaignPlanDuplicate {
+			t.Fatal("no error even though another campaign has same plan")
+		}
+	})
+
 }
 
 type repoNames []string
