@@ -53,15 +53,16 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
     location,
     enablePublishing,
 }) => {
-    const [isLoading, setIsLoading] = useState<boolean>()
+    const [isPublishing, setIsPublishing] = useState<boolean>()
+    const publicationEnqueued = node.__typename === 'ChangesetPlan' && node.publicationEnqueued
     useEffect(() => {
-        setIsLoading(node.__typename === 'ChangesetPlan' && node.publicationEnqueued)
-    }, [node])
+        setIsPublishing(publicationEnqueued)
+    }, [publicationEnqueued])
     const [publishError, setPublishError] = useState<Error>()
     const publishChangeset: React.MouseEventHandler = async () => {
         try {
             setPublishError(undefined)
-            setIsLoading(true)
+            setIsPublishing(true)
             await _publishChangeset(node.id)
             if (campaignUpdates) {
                 campaignUpdates.next()
@@ -69,7 +70,7 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
         } catch (error) {
             setPublishError(asError(error))
         } finally {
-            setIsLoading(false)
+            setIsPublishing(false)
         }
     }
     const fileDiffs = node.diff?.fileDiffs
@@ -148,7 +149,7 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                             >
                                 {node.repository.name}
                             </Link>
-                            {node.__typename === 'ChangesetPlan' && <DraftBadge className="ml-2" />}
+                            {node.__typename === 'ChangesetPlan' && !isPublishing && <DraftBadge className="ml-2" />}
                         </div>
                     </div>
                 </h3>
@@ -178,11 +179,11 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                     <button
                         type="button"
                         className="flex-shrink-0 flex-grow-0 btn btn-sm btn-secondary ml-2"
-                        disabled={isLoading}
+                        disabled={isPublishing}
                         onClick={publishChangeset}
                     >
-                        {isLoading && <LoadingSpinner className="mr-1 icon-inline" />}{' '}
-                        {isLoading ? 'Publishing' : 'Publish'}
+                        {isPublishing && <LoadingSpinner className="mr-1 icon-inline" />}{' '}
+                        {isPublishing ? 'Publishing' : 'Publish'}
                     </button>
                 </>
             )}
