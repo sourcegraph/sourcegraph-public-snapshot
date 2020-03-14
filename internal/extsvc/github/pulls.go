@@ -263,10 +263,6 @@ type CommitWithChecks struct {
 	}
 }
 
-func (c CommitWithChecks) Key() string {
-	return c.Commit.OID
-}
-
 // PullRequestReviewComment represents a review comment on a given pull request.
 type PullRequestReviewComment struct {
 	DatabaseID          int64
