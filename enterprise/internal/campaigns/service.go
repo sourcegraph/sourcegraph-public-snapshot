@@ -433,7 +433,10 @@ func RunChangesetJob(
 			return err
 		}
 	}
-
+	// the events don't have the changesetID yet, because it's not known at the point of cloning
+	for _, e := range events {
+		e.ChangesetID = clone.ID
+	}
 	if err := store.UpsertChangesetEvents(ctx, events...); err != nil {
 		log15.Error("UpsertChangesetEvents", "err", err)
 		return err
