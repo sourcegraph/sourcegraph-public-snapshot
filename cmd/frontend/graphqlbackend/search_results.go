@@ -560,8 +560,9 @@ func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, e
 	}
 
 	rr, err := r.resultsWithTimeoutSuggestion(ctx)
-
-	r.logSearchLatency(ctx, rr.ElapsedMilliseconds())
+	if rr != nil {
+		r.logSearchLatency(ctx, rr.ElapsedMilliseconds())
+	}
 
 	// Record what type of response we sent back via Prometheus.
 	var status, alertType string
