@@ -15,6 +15,7 @@ import { applyEdits, parse } from '@sqs/jsonc-parser'
 import { overwriteSettings } from '../../../shared/src/settings/edit'
 import delay from 'delay'
 import { saveScreenshotsUponFailures } from '../../../shared/src/e2e/screenshotReporter'
+import {retry} from "../../../shared/src/e2e/e2e-test-utils";
 
 describe('Core functionality regression test suite', () => {
     const testUsername = 'test-core'
@@ -73,9 +74,11 @@ describe('Core functionality regression test suite', () => {
 
     test('2.2.1 User settings are saved and applied', async () => {
         const getSettings = async () => {
-            await driver.page.waitForSelector('.view-line')
+            await retry(async () => {
+                await driver.page.waitForSelector('.e2e-settings-file * .monaco-editor')
+            })
             return driver.page.evaluate(() => {
-                const editor = document.querySelector('.monaco-editor') as HTMLElement
+                const editor = document.querySelector('.e2e-settings-file * .monaco-editor') as HTMLElement
                 return editor ? editor.innerText : null
             })
         }
@@ -87,7 +90,7 @@ describe('Core functionality regression test suite', () => {
         }
         const newSettings = '{\xa0/*\xa0These\xa0are\xa0new\xa0settings\xa0*/}'
         await driver.replaceText({
-            selector: '.monaco-editor',
+            selector: '.e2e-settings-file * .monaco-editor',
             newText: newSettings,
             selectMethod: 'keyboard',
             enterTextMethod: 'paste',
@@ -104,7 +107,7 @@ describe('Core functionality regression test suite', () => {
         }
 
         await driver.replaceText({
-            selector: '.monaco-editor',
+            selector: '.e2e-settings-file * .monaco-editor',
             newText: newSettings,
             selectMethod: 'keyboard',
             enterTextMethod: 'type',
@@ -124,12 +127,13 @@ describe('Core functionality regression test suite', () => {
             )
         }
 
+        const previousTyping = previousSettings.substring(0, previousSettings.indexOf("\n}"))
         // Restore old settings
         await driver.replaceText({
-            selector: '.monaco-editor',
-            newText: previousSettings,
+            selector: '.e2e-settings-file * .monaco-editor',
+            newText: previousTyping,
             selectMethod: 'keyboard',
-            enterTextMethod: 'paste',
+            enterTextMethod: 'type',
         })
         await driver.findElementWithText('Save changes', { action: 'click' })
         await driver.page.waitForFunction(
