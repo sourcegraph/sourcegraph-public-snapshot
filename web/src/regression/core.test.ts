@@ -15,7 +15,7 @@ import { applyEdits, parse } from '@sqs/jsonc-parser'
 import { overwriteSettings } from '../../../shared/src/settings/edit'
 import delay from 'delay'
 import { saveScreenshotsUponFailures } from '../../../shared/src/e2e/screenshotReporter'
-import {retry} from "../../../shared/src/e2e/e2e-test-utils";
+import { retry } from '../../../shared/src/e2e/e2e-test-utils'
 
 describe('Core functionality regression test suite', () => {
     const testUsername = 'test-core'
@@ -127,7 +127,7 @@ describe('Core functionality regression test suite', () => {
             )
         }
 
-        const previousTyping = previousSettings.substring(0, previousSettings.indexOf("\n}"))
+        const previousTyping = previousSettings.substring(0, previousSettings.indexOf('\n}'))
         // Restore old settings
         await driver.replaceText({
             selector: '.e2e-settings-file * .monaco-editor',
