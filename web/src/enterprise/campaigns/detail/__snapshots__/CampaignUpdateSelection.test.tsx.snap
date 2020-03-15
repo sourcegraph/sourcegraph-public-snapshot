@@ -1,0 +1,33 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`CampaignUpdateSelection renders 1`] = `
+<React.Fragment>
+  <PageTitle
+    title="Update campaign"
+  />
+  <h1>
+    Select campaign to update
+  </h1>
+  <p>
+    Choose a campaign to update from the list below to preview which changes will be made to the code hosts:
+  </p>
+  <FilteredConnection
+    defaultFirst={20}
+    hideSearch={true}
+    nodeComponent={[Function]}
+    nodeComponentProps={
+      Object {
+        "selection": Object {
+          "buttonLabel": "Preview",
+          "enabled": true,
+          "onSelect": [Function],
+        },
+      }
+    }
+    noun="campaign"
+    pluralNoun="campaigns"
+    queryConnection={[Function]}
+    useURLQuery={false}
+  />
+</React.Fragment>
+`;
