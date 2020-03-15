@@ -415,7 +415,8 @@ func (c *Changeset) IsDeleted() bool {
 	return !c.ExternalDeletedAt.IsZero()
 }
 
-// State of a Changeset.
+// State of a Changeset based on the metadata.
+// It does NOT reflect the final calculated state, use `ExternalState` therefore.
 func (c *Changeset) State() (s ChangesetState, err error) {
 	if !c.ExternalDeletedAt.IsZero() {
 		return ChangesetStateDeleted, nil
