@@ -215,25 +215,27 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
 
                 <DropdownMenu right={true} className="status-messages-nav-item__dropdown-menu">
                     <h3>Code host status</h3>
-                    {isErrorLike(this.state.messagesOrError) ? (
-                        <ErrorAlert
+                    <div className="status-messages-nav-item__dropdown-menu-content">
+                        {isErrorLike(this.state.messagesOrError) ? (
+                            <ErrorAlert
                                 className="status-messages-nav-item__entry"
-                            prefix="Failed to load status messages"
-                            error={this.state.messagesOrError}
-                        />
-                    ) : this.state.messagesOrError.length > 0 ? (
+                                prefix="Failed to load status messages"
+                                error={this.state.messagesOrError}
+                            />
+                        ) : this.state.messagesOrError.length > 0 ? (
                             this.state.messagesOrError.map((m, i) => this.renderMessage(m, i))
-                    ) : (
-                        <StatusMessagesNavItemEntry
-                            title="Repositories up to date"
-                            text="All repositories hosted on the configured code hosts are synced."
-                            showLink={this.props.isSiteAdmin}
-                            linkTo="/site-admin/external-services"
-                            linkText="Manage repositories"
-                            linkOnClick={this.toggleIsOpen}
-                            entryType="success"
-                        />
-                    )}
+                        ) : (
+                            <StatusMessagesNavItemEntry
+                                title="Repositories up to date"
+                                text="All repositories hosted on the configured code hosts are synced."
+                                showLink={this.props.isSiteAdmin}
+                                linkTo="/site-admin/external-services"
+                                linkText="Manage repositories"
+                                linkOnClick={this.toggleIsOpen}
+                                entryType="success"
+                            />
+                        )}
+                    </div>
                 </DropdownMenu>
             </ButtonDropdown>
         )
