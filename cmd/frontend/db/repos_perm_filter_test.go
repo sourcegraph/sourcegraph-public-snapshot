@@ -870,7 +870,7 @@ func Test_authzFilter_permissionsBackgroudSync(t *testing.T) {
 	defer globals.SetPermissionsBackgroundSync(before)
 
 	publicRepo := makeRepo("gitlab.mine/user/public", 1, false)
-	privateRepo := makeRepo("gitlab.mine/user/private", 1, true)
+	privateRepo := makeRepo("gitlab.mine/user/private", 2, true)
 
 	t.Run("unauthenticated user should only see public repos", func(t *testing.T) {
 		authz.SetProviders(false,

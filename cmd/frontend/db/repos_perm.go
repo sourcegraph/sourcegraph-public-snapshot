@@ -181,13 +181,13 @@ func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (filte
 				continue
 			}
 
-			// Not a operation failure but the authz provider is unable to determine
+			// Not an operation failure but the authz provider is unable to determine
 			// the external account for the current user.
 			if acct == nil {
 				continue
 			}
 
-			// Save the external account and grant pending permissions for it.
+			// Save the external account and grant pending permissions for it later.
 			err = ExternalAccounts.AssociateUserAndSave(ctx, currentUser.ID, acct.ExternalAccountSpec, acct.ExternalAccountData)
 			if err != nil {
 				return nil, errors.Wrap(err, "associate external account to user")
@@ -213,6 +213,7 @@ func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (filte
 			}
 		}
 
+		// We should have no known pending permissions for the user at this point.
 		verified, err := Authz.AuthorizedRepos(ctx, &AuthorizedReposArgs{
 			Repos:  toVerify,
 			UserID: currentUser.ID,
