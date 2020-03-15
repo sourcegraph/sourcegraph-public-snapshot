@@ -990,7 +990,7 @@ func Test_authzFilter_permissionsBackgroudSync(t *testing.T) {
 						"https://gitlab.mirror/": {},
 					},
 					perms: map[extsvc.ExternalAccount]map[api.RepoName]authz.Perms{
-						extsvc.ExternalAccount{
+						{
 							ExternalAccountSpec: extsvc.ExternalAccountSpec{
 								ServiceType: "gitlab",
 								ServiceID:   "https://gitlab.mine/",
