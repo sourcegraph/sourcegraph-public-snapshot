@@ -62,15 +62,15 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
         setIsPublishing(publicationEnqueued)
     }, [publicationEnqueued])
     const nodeUpdatedAt = node.__typename === 'ExternalChangeset' && node.updatedAt
+    const lastUpdatedAtChanged = lastUpdatedAt && nodeUpdatedAt !== lastUpdatedAt
     useEffect(() => {
-        if (!nodeUpdatedAt) {
-            return
+        if (lastUpdatedAtChanged && nodeUpdatedAt) {
+            if (campaignUpdates) {
+                campaignUpdates.next()
+            }
+            setLastUpdatedAt(null)
         }
-        if (lastUpdatedAt !== nodeUpdatedAt && campaignUpdates) {
-            campaignUpdates.next()
-        }
-        // setLastUpdatedAt(nodeUpdatedAt)
-    }, [nodeUpdatedAt, campaignUpdates, lastUpdatedAt])
+    }, [campaignUpdates, lastUpdatedAtChanged, nodeUpdatedAt])
     const [publishError, setPublishError] = useState<Error>()
     const publishChangeset: React.MouseEventHandler = async () => {
         try {
@@ -90,10 +90,6 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
         if (node.__typename === 'ExternalChangeset') {
             setLastUpdatedAt(node.updatedAt)
             await syncChangeset(node.id)
-            // campaign should be refreshed, in case the burndown chart has changed
-            if (campaignUpdates) {
-                campaignUpdates.next()
-            }
         }
     }
     const fileDiffs = node.diff?.fileDiffs

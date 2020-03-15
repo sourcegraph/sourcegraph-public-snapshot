@@ -58,7 +58,6 @@ export const CampaignTabs: React.FunctionComponent<Props> = ({
                 campaign.__typename === 'CampaignPlan'
                     ? queryChangesetPlans(campaign.id, args)
                     : queryChangesets(campaign.id, args)
-            // todo: why doesn't this unsubscribe properly?
             return queryObservable.pipe(repeatWhen(obs => obs.pipe(delay(5000))))
         },
         [campaign.id, campaign.__typename]
