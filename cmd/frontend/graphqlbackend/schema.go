@@ -413,8 +413,13 @@ input CampaignPlanPatch {
     # The repository that this patch is applied to.
     repository: ID!
 
-    # The base revision in the repository that this patch is applied to.
+    # The base revision in the repository that this patch is based on.
+    # Example: "4095572721c6234cd72013fd49dff4fb48f0f8a4"
     baseRevision: String!
+
+    # The reference to the base revision at the time the patch was created.
+    # Example: "refs/heads/master"
+    baseRef: String!
 
     # The patch (in unified diff format) to apply.
     #
@@ -580,7 +585,15 @@ type Campaign implements Node {
     repositoryDiffs(first: Int): RepositoryComparisonConnection!
 
     # The changesets in this campaign, already created on the code host.
-    changesets(first: Int): ExternalChangesetConnection!
+    changesets(
+        first: Int
+        # Only include changesets with the given state
+        state: ChangesetState
+        # Only include changesets with the given review state
+        reviewState: ChangesetReviewState
+        # Only include changesets with the given check state
+        checkState: ChangesetCheckState
+    ): ExternalChangesetConnection!
 
     # The changeset counts over time, in 1 day intervals backwards from the point in time given in 'to'.
     changesetCountsOverTime(
@@ -657,6 +670,8 @@ enum ChangesetReviewState {
     APPROVED
     CHANGES_REQUESTED
     PENDING
+    COMMENTED
+    DISMISSED
 }
 
 # The state of continuous integration checks on a changeset
@@ -4273,7 +4288,7 @@ type LSIFUpload implements Node {
     # The time the upload compelted or errored.
     finishedAt: DateTime
 
-    # Metadata about a upload's failure (not set if state is not ERRORED).
+    # Metadata about an upload's failure (not set if state is not ERRORED).
     failure: LSIFUploadFailureReason
 
     # Whether or not this upload provides intelligence for the tip of the default branch. Find reference
@@ -4281,6 +4296,9 @@ type LSIFUpload implements Node {
     # is updated asynchronously and is eventually consistent with the git data known by the Sourcegraph
     # instance.
     isLatestForRepo: Boolean!
+
+    # The rank of this upload in the queue. The value of this field is null if the upload has been processed.
+    placeInQueue: Int
 }
 
 # Metadata about a LSIF upload failure.

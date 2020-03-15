@@ -13,7 +13,9 @@ interface Props {
     previewingCampaignPlan: boolean
 
     campaign?: Pick<GQL.ICampaign, 'name' | 'closedAt' | 'viewerCanAdminister' | 'publishedAt'> & {
-        changesets: Pick<GQL.ICampaign['changesets'], 'totalCount'>
+        changesets: Pick<GQL.ICampaign['changesets'], 'totalCount'> & {
+            nodes: Pick<GQL.IExternalChangeset, 'state'>[]
+        }
         status: Pick<GQL.ICampaign['status'], 'state'>
     }
 
@@ -37,6 +39,12 @@ export const CampaignActionsBar: React.FunctionComponent<Props> = ({
     const campaignProcessing = campaign ? campaign.status.state === GQL.BackgroundProcessState.PROCESSING : false
     const actionsDisabled = mode === 'deleting' || mode === 'closing' || campaignProcessing
 
+    const openChangesetsCount =
+        campaign?.changesets.nodes.filter(changeset => changeset.state === GQL.ChangesetState.OPEN).length ?? 0
+
+    const newCampaignHeader = previewingCampaignPlan ? 'New campaign' : 'New manual campaign'
+    const header = campaign?.name ?? newCampaignHeader
+
     return (
         <div className="d-flex mb-2">
             <h2 className="m-0">
@@ -50,7 +58,7 @@ export const CampaignActionsBar: React.FunctionComponent<Props> = ({
                     <Link to="/campaigns">Campaigns</Link>
                 </span>
                 <span className="text-muted d-inline-block mx-2">/</span>
-                <span>{campaign?.name ?? 'New manual campaign'}</span>
+                <span>{header}</span>
                 {campaign && !campaign.publishedAt && <DraftBadge className="ml-2" />}
             </h2>
             <span className="flex-grow-1 d-flex justify-content-end align-items-center">
@@ -86,7 +94,7 @@ export const CampaignActionsBar: React.FunctionComponent<Props> = ({
                                             Close campaign <strong>{campaign.name}</strong>?
                                         </p>
                                     }
-                                    changesetsCount={campaign.changesets.totalCount}
+                                    changesetsCount={openChangesetsCount}
                                     buttonText="Close"
                                     onButtonClick={onClose}
                                     buttonClassName="btn-secondary mr-1"
@@ -100,7 +108,7 @@ export const CampaignActionsBar: React.FunctionComponent<Props> = ({
                                         Delete campaign <strong>{campaign.name}</strong>?
                                     </p>
                                 }
-                                changesetsCount={campaign.changesets.totalCount}
+                                changesetsCount={openChangesetsCount}
                                 buttonText="Delete"
                                 onButtonClick={onDelete}
                                 buttonClassName="btn-danger"

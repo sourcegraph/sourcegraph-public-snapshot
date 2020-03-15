@@ -48,17 +48,25 @@ In order to update the plugin, follow the same steps as for installing it, which
 
 When the Sourcegraph instance connected to the Bitbucket Server plugin is updated, so will the code that's fetched by the plugin to enable native code intelligence. No manual steps required. (See the [Technical Details](#technical-details) section on how this works.)
 
+### Native code intelligence
+
+Once the plugin is installed and the **Sourcegraph URL** is set under **Administration > Add-ons > Sourcegraph**, native code intelligence is enabled when browsing code or pull requests on your Bitbucket Server instance.
+
+To disable native code intelligence, simply set **Sourcegraph URL** to an empty value. Note that this will also disable [Webhooks](#webhooks)!
+
 ### Webhooks
 
 Once the plugin is installed, go to **Administration > Add-ons > Sourcegraph** to see a list of all configured webhooks and to create a new one.
 
 To configure a webhook on the Sourcegraph side, set the [`"plugin.webhooks"` property in the Bitbucket Server configuration](../admin/external_service/bitbucket_server.md#webhooks). Once that is configured Sourcegraph automatically makes sure in the background that a global webhook for usage with [Campaigns](../user/campaigns.md) is created on the Bitbucket Server instance.
 
+Disabling the webhook is as easy as removing the `"plugin.webhooks"` property and deleting the webhook pointing to your Sourcegraph instance under **Administration > Add-ons > Sourcegraph**.
+
 ### Fast permission syncing
 
 The plugin also supports an optional method of faster ACL permissions syncing that aims to improve the speed of fetching a user's permissions from Bitbucket (which can reduce the time a user has to wait to run a search if their permissions data has expired).
 
-You can enable this feature when [configuring the connection to your Bitbucket Server instance on Sourcegraph](../admin/external_service/bitbucket_server.md#repository-permissions).
+You can enable this feature when [configuring the connection to your Bitbucket Server instance on Sourcegraph](../admin/external_service/bitbucket_server.md#repository-permissions). For more information on when permissions are fetched, how long they're cached and how to configure that behavior, see our documentation on [Repository permissions](../admin/repo/permissions.md).
 
 The speed improvements are most important on larger Bitbucket Server instances with thousands of repositories. When connected to these instances, Sourcegraph would have to make many wasteful requests to fetch permission data if the plugin is not installed.
 

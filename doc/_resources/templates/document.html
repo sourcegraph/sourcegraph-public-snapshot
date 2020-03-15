@@ -13,7 +13,7 @@
         </button>
         <details-menu aria-label="Sourcegraph version" class="dropdown-menu m-0 p-0" aria-labelledby="Version Dropdown">
 
-            {{/* Update these after each release. */}} {{$previousReleaseRevspec := "v3.12.7"}} {{$previousReleaseVersion := "3.12"}} {{$currentReleaseRevspec := "v3.13.1"}} {{$currentReleaseVersion := "3.13"}} {{$nextReleaseVersion := "master"}}
+            {{/* Update these after each release. */}} {{$previousReleaseRevspec := "v3.12.10"}} {{$previousReleaseVersion := "3.12"}} {{$currentReleaseRevspec := "v3.13.2"}} {{$currentReleaseVersion := "3.13"}} {{$nextReleaseVersion := "master"}}
             <a rel="nofollow" class="dropdown-item {{if eq .ContentVersion " "}}active{{end}}" href="/{{.ContentPagePath}}">master</a>
             <a rel="nofollow" class=" dropdown-item {{if eq $currentReleaseVersion .ContentVersion " "}}active{{end}}" href="/@{{$currentReleaseVersion}}/{{.ContentPagePath}}">{{$currentReleaseVersion}}<span class="current-branch ml-1">current</span></a>
             <a rel="nofollow" class=" dropdown-item {{if eq $previousReleaseVersion .ContentVersion " "}}active{{end}}" href="/@{{$previousReleaseVersion}}/{{.ContentPagePath}}">{{$previousReleaseVersion}}</a>
@@ -182,7 +182,21 @@
                                     <li><a href="/admin/migration/3_7">v3.7.2+ migration guide</a></li>
                                 </ul>
                             </li>
-                            <li><a href="/admin/monitoring_and_tracing">Monitoring and tracing</a></li>
+                            <li><a href="/admin/observability">Observability</a></li>
+                            <li class="content-nav-no-hover">
+                                <ul class="content-nav-section-subsection">
+                                    <li><a href="/admin/observability/metrics">Metrics</a></li>
+                                    <li class="content-nav-no-hover">
+                                        <ul class="content-nav-section-subsection">
+                                            <li><a href="/admin/observability/metrics_guide">Guide to metrics</a></li>
+                                            <li><a href="/admin/observability/dashboards">Guide to dashboards</a></li>
+                                        </ul>
+                                    </li>
+                                    <li><a href="/admin/observability/alerting">Alerting</a></li>
+                                    <li><a href="/admin/observability/tracing">Tracing</a></li>
+                                    <li><a href="/admin/observability/troubleshooting">Troubleshooting guide</a></li>
+                                </ul>
+                            </li>
                             <li><a href="/admin/sourcegraph-nginx-mermaid">NGINX and Sourcegraph diagram</a></li>
                             <li><a href="/admin/ssl_https_self_signed_cert_nginx">Adding SSL (HTTPS) to Sourcegraph with a self-signed certificate</a></li>
                             <li><a href="/admin/subscriptions">Paid subscriptions for Sourcegraph Enterprise</a></li>

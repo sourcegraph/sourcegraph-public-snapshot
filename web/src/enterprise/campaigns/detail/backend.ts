@@ -53,6 +53,7 @@ const campaignFragment = gql`
                     name
                     url
                 }
+                state
                 diff {
                     fileDiffs {
                         totalCount
@@ -266,15 +267,21 @@ export const fetchCampaignPlanById = (campaignPlan: ID): Observable<ICampaignPla
 
 export const queryChangesets = (
     campaign: ID,
-    { first }: IChangesetsOnCampaignArguments
+    { first, state, reviewState, checkState }: IChangesetsOnCampaignArguments
 ): Observable<Connection<IExternalChangeset | IChangesetPlan>> =>
     queryGraphQL(
         gql`
-            query CampaignChangesets($campaign: ID!, $first: Int) {
+            query CampaignChangesets(
+                $campaign: ID!
+                $first: Int
+                $state: ChangesetState
+                $reviewState: ChangesetReviewState
+                $checkState: ChangesetCheckState
+            ) {
                 node(id: $campaign) {
                     __typename
                     ... on Campaign {
-                        changesets(first: $first) {
+                        changesets(first: $first, state: $state, reviewState: $reviewState, checkState: $checkState) {
                             totalCount
                             nodes {
                                 __typename
@@ -354,7 +361,7 @@ export const queryChangesets = (
 
             ${DiffStatFields}
         `,
-        { campaign, first }
+        { campaign, first, state, reviewState, checkState }
     ).pipe(
         map(dataOrThrowErrors),
         map(({ node }) => {

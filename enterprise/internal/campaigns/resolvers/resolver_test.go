@@ -35,6 +35,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -331,6 +333,13 @@ func TestCampaigns(t *testing.T) {
 	}
 	defer func() { git.Mocks.ResolveRevision = nil }()
 
+	repoupdater.MockRepoLookup = func(args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
+		return &protocol.RepoLookupResult{
+			Repo: &protocol.RepoInfo{Name: args.Repo},
+		}, nil
+	}
+	defer func() { repoupdater.MockRepoLookup = nil }()
+
 	type GitTarget struct {
 		OID            string
 		AbbreviatedOID string
@@ -482,7 +491,7 @@ func TestCampaigns(t *testing.T) {
 					URL:         "https://bitbucket.sgdev.org/projects/SOUR/repos/vegeta/pull-requests/2",
 					ServiceType: "bitbucketServer",
 				},
-				ReviewState: "APPROVED",
+				ReviewState: "PENDING",
 				CheckState:  "PENDING",
 				Events: ChangesetEventConnection{
 					TotalCount: 9,
@@ -974,7 +983,8 @@ func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
 			Patches: []graphqlbackend.CampaignPlanPatch{
 				{
 					Repository:   graphqlbackend.MarshalRepositoryID(1),
-					BaseRevision: "master",
+					BaseRevision: "f00b4r",
+					BaseRef:      "master",
 					Patch:        "!!! this is not a valid unified diff !!!\n--- x\n+++ y\n@@ 1,1 2,2\na",
 				},
 			},
@@ -1045,7 +1055,7 @@ func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
 
 		mustExec(ctx, t, s, nil, &response, fmt.Sprintf(`
       mutation {
-        createCampaignPlanFromPatches(patches: [{repository: %q, baseRevision: "master", patch: %q}]) {
+		createCampaignPlanFromPatches(patches: [{repository: %q, baseRevision: "f00b4r", baseRef: "master", patch: %q}]) {
           ... on CampaignPlan {
             id
             status {
@@ -1154,6 +1164,13 @@ func TestCampaignPlanResolver(t *testing.T) {
 		return &git.Commit{ID: testingRev}, nil
 	}
 	defer func() { backend.Mocks.Repos.GetCommit = nil }()
+
+	repoupdater.MockRepoLookup = func(args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
+		return &protocol.RepoLookupResult{
+			Repo: &protocol.RepoInfo{Name: args.Repo},
+		}, nil
+	}
+	defer func() { repoupdater.MockRepoLookup = nil }()
 
 	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 

@@ -192,7 +192,7 @@ func Test_GitLab_FetchAccount(t *testing.T) {
 			defer func() { providers.MockProviders = nil }()
 
 			ctx := context.Background()
-			authzProvider := newSudoProvider(test.op)
+			authzProvider := newSudoProvider(test.op, nil)
 			for _, c := range test.calls {
 				t.Run(c.description, func(t *testing.T) {
 					acct, err := authzProvider.FetchAccount(ctx, c.user, c.current)
@@ -375,7 +375,7 @@ func Test_SudoProvider_RepoPerms(t *testing.T) {
 				ctx := context.Background()
 				op := test.op
 				op.MockCache = make(mockCache)
-				authzProvider := newSudoProvider(op)
+				authzProvider := newSudoProvider(op, nil)
 
 				for i := 0; i < 2; i++ {
 					t.Logf("iter %d", i)

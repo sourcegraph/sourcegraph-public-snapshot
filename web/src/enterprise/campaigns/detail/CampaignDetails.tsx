@@ -492,7 +492,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         </>
                     )
                 ) : (
-                    <>
+                    <div className="mb-3">
                         <button type="reset" className="btn btn-secondary mr-1" onClick={onCancel}>
                             Cancel
                         </button>
@@ -503,19 +503,22 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         >
                             Update
                         </button>
-                    </>
+                    </div>
                 )}
             </Form>
 
             {/* is already created or a plan is available */}
             {(campaign || campaignPlan) && (
                 <>
-                    <CampaignStatus
-                        campaign={(campaignPlan || campaign)!}
-                        status={(campaignPlan || campaign)!.status}
-                        onPublish={onPublish}
-                        onRetry={onRetry}
-                    />
+                    {/* Only show status for created campaigns and not in update mode */}
+                    {campaign && !campaignPlan && (
+                        <CampaignStatus
+                            campaign={campaign}
+                            status={campaign.status}
+                            onPublish={onPublish}
+                            onRetry={onRetry}
+                        />
+                    )}
 
                     {campaign && !updateMode && (
                         <>
@@ -533,7 +536,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
 
                     {!updateMode && (
                         <>
-                            <h3 className="mt-3 mb-2">Changesets</h3>
+                            <h3 className="mt-3">Changesets</h3>
                             {(campaign?.changesets.totalCount ?? 0) +
                             (campaignPlan || campaign)!.changesetPlans.totalCount ? (
                                 <CampaignTabs
@@ -543,12 +546,12 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                     persistLines={!!campaign}
                                     history={history}
                                     location={location}
-                                    className="mt-3"
+                                    className="mt-2"
                                     isLightTheme={isLightTheme}
                                 />
                             ) : (
                                 (campaignPlan || campaign)!.status.state !== GQL.BackgroundProcessState.PROCESSING && (
-                                    <p className="mt-3 text-muted">No changesets</p>
+                                    <p className="mt-2 text-muted">No changesets</p>
                                 )
                             )}
                         </>

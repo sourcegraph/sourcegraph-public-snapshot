@@ -17,6 +17,7 @@ import (
 	edb "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
 type Resolver struct {
@@ -103,9 +104,9 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 	}
 	defer txs.Done(&err)
 
-	accounts := &edb.ExternalAccounts{
-		ServiceType: "sourcegraph",
-		ServiceID:   "https://sourcegraph.com/",
+	accounts := &extsvc.ExternalAccounts{
+		ServiceType: authz.SourcegraphServiceType,
+		ServiceID:   authz.SourcegraphServiceID,
 		AccountIDs:  pendingBindIDs,
 	}
 
@@ -154,8 +155,8 @@ func (r *Resolver) AuthorizedUserRepositories(ctx context.Context, args *graphql
 		ids = p.IDs
 	} else {
 		p := &authz.UserPendingPermissions{
-			ServiceType: "sourcegraph",
-			ServiceID:   "https://sourcegraph.com/",
+			ServiceType: authz.SourcegraphServiceType,
+			ServiceID:   authz.SourcegraphServiceID,
 			BindID:      bindID,
 			Perm:        authz.Read, // Note: We currently only support read for repository permissions.
 			Type:        authz.PermRepos,
@@ -184,7 +185,7 @@ func (r *Resolver) UsersWithPendingPermissions(ctx context.Context) ([]string, e
 		return nil, err
 	}
 
-	return r.store.ListPendingUsers(ctx)
+	return r.store.ListPendingUsers(ctx, authz.SourcegraphServiceType, authz.SourcegraphServiceID)
 }
 
 func (r *Resolver) AuthorizedUsers(ctx context.Context, args *graphqlbackend.RepoAuthorizedUserArgs) (graphqlbackend.UserConnectionResolver, error) {

@@ -37,10 +37,10 @@ func (t1 requestType) higherPriorityThan(t2 requestType) bool {
 
 // requestMeta contains metadata of a permissions syncing request.
 type requestMeta struct {
-	priority    Priority
-	typ         requestType
-	id          int32
-	lastUpdated time.Time
+	priority   Priority
+	typ        requestType
+	id         int32
+	nextSyncAt time.Time
 }
 
 // syncRequest is a permissions syncing request with its current status in the queue.
@@ -198,8 +198,8 @@ func (q *requestQueue) Less(i, j int) bool {
 		return qi.typ.higherPriorityThan(qj.typ)
 	}
 
-	// Request comes from a more outdated record has higher priority.
-	return qi.lastUpdated.Before(qj.lastUpdated)
+	// Earlier scheduled next sync has higher priority.
+	return qi.nextSyncAt.Before(qj.nextSyncAt)
 }
 
 func (q *requestQueue) Swap(i, j int) {

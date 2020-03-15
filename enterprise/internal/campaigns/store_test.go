@@ -370,6 +370,9 @@ func testStore(db *sql.DB) func(*testing.T) {
 						ExternalServiceType: "github",
 						ExternalBranch:      "campaigns/test",
 						ExternalUpdatedAt:   now,
+						ExternalState:       cmpgn.ChangesetStateOpen,
+						ExternalReviewState: cmpgn.ChangesetReviewStateApproved,
+						ExternalCheckState:  cmpgn.ChangesetCheckStatePassed,
 					}
 
 					changesets = append(changesets, th)
@@ -624,6 +627,124 @@ func testStore(db *sql.DB) func(*testing.T) {
 						t.Fatalf("have %d changesets. want 3", len(have))
 					}
 				}
+
+				stateOpen := cmpgn.ChangesetStateOpen
+				stateClosed := cmpgn.ChangesetStateClosed
+				stateApproved := cmpgn.ChangesetReviewStateApproved
+				stateChangesRequested := cmpgn.ChangesetReviewStateChangesRequested
+				statePassed := cmpgn.ChangesetCheckStatePassed
+				stateFailed := cmpgn.ChangesetCheckStateFailed
+
+				filterCases := []struct {
+					opts      ListChangesetsOpts
+					wantCount int
+				}{
+					{
+						opts: ListChangesetsOpts{
+							ExternalState: &stateOpen,
+						},
+						wantCount: 3,
+					},
+					{
+						opts: ListChangesetsOpts{
+							ExternalState: &stateClosed,
+						},
+						wantCount: 0,
+					},
+					{
+						opts: ListChangesetsOpts{
+							ExternalReviewState: &stateApproved,
+						},
+						wantCount: 3,
+					},
+					{
+						opts: ListChangesetsOpts{
+							ExternalReviewState: &stateChangesRequested,
+						},
+						wantCount: 0,
+					},
+					{
+						opts: ListChangesetsOpts{
+							ExternalCheckState: &statePassed,
+						},
+						wantCount: 3,
+					},
+					{
+						opts: ListChangesetsOpts{
+							ExternalCheckState: &stateFailed,
+						},
+						wantCount: 0,
+					},
+					{
+						opts: ListChangesetsOpts{
+							ExternalState:      &stateOpen,
+							ExternalCheckState: &stateFailed,
+						},
+						wantCount: 0,
+					},
+					{
+						opts: ListChangesetsOpts{
+							ExternalState:       &stateOpen,
+							ExternalReviewState: &stateChangesRequested,
+						},
+						wantCount: 0,
+					},
+				}
+
+				for _, tc := range filterCases {
+					t.Run("", func(t *testing.T) {
+						have, _, err := s.ListChangesets(ctx, tc.opts)
+						if err != nil {
+							t.Fatal(err)
+						}
+						if len(have) != tc.wantCount {
+							t.Fatalf("have %d changesets. want %d", len(have), tc.wantCount)
+						}
+					})
+				}
+			})
+
+			t.Run("Null changeset state", func(t *testing.T) {
+				cs := &cmpgn.Changeset{
+					RepoID:              42,
+					Metadata:            githubPR,
+					CampaignIDs:         []int64{1},
+					ExternalID:          fmt.Sprintf("foobar-%d", 42),
+					ExternalServiceType: "github",
+					ExternalBranch:      "campaigns/test",
+					ExternalUpdatedAt:   now,
+					ExternalState:       "",
+					ExternalReviewState: "",
+					ExternalCheckState:  "",
+				}
+
+				err := s.CreateChangesets(ctx, cs)
+				if err != nil {
+					t.Fatal(err)
+				}
+				defer func() {
+					err := s.DeleteChangeset(ctx, cs.ID)
+					if err != nil {
+						t.Fatal(err)
+					}
+				}()
+
+				fromDB, err := s.GetChangeset(ctx, GetChangesetOpts{
+					ID: cs.ID,
+				})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if diff := cmp.Diff(cs.ExternalState, fromDB.ExternalState); diff != "" {
+					t.Error(diff)
+				}
+				if diff := cmp.Diff(cs.ExternalReviewState, fromDB.ExternalReviewState); diff != "" {
+					t.Error(diff)
+				}
+				if diff := cmp.Diff(cs.ExternalCheckState, fromDB.ExternalCheckState); diff != "" {
+					t.Error(diff)
+				}
 			})
 
 			t.Run("Get", func(t *testing.T) {
@@ -646,6 +767,22 @@ func testStore(db *sql.DB) func(*testing.T) {
 					opts := GetChangesetOpts{
 						ExternalID:          want.ExternalID,
 						ExternalServiceType: want.ExternalServiceType,
+					}
+
+					have, err := s.GetChangeset(ctx, opts)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					if diff := cmp.Diff(have, want); diff != "" {
+						t.Fatal(diff)
+					}
+				})
+
+				t.Run("ByRepoID", func(t *testing.T) {
+					want := changesets[0]
+					opts := GetChangesetOpts{
+						RepoID: want.RepoID,
 					}
 
 					have, err := s.GetChangeset(ctx, opts)
@@ -992,13 +1129,13 @@ func testStore(db *sql.DB) func(*testing.T) {
 			}
 			want := []cmpgn.ChangesetSyncData{
 				{
-					ChangesetID:       2,
+					ChangesetID:       1,
 					UpdatedAt:         clock(),
 					LatestEvent:       clock(),
 					ExternalUpdatedAt: externalUpdatedAt,
 				},
 				{
-					ChangesetID:       1,
+					ChangesetID:       2,
 					UpdatedAt:         clock(),
 					LatestEvent:       clock(),
 					ExternalUpdatedAt: externalUpdatedAt,

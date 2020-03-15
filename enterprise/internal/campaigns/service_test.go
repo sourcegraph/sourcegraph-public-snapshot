@@ -58,12 +58,7 @@ func TestService(t *testing.T) {
 	}
 
 	t.Run("CreateCampaignPlanFromPatches", func(t *testing.T) {
-		const commit = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-		repoResolveRevision := func(context.Context, *repos.Repo, string) (api.CommitID, error) {
-			return commit, nil
-		}
-
-		svc := NewServiceWithClock(store, nil, repoResolveRevision, nil, clock)
+		svc := NewServiceWithClock(store, nil, nil, clock)
 
 		const patch = `diff f f
 --- f
@@ -73,8 +68,8 @@ func TestService(t *testing.T) {
  y
 `
 		patches := []campaigns.CampaignPlanPatch{
-			{Repo: api.RepoID(rs[0].ID), BaseRevision: "b0", Patch: patch},
-			{Repo: api.RepoID(rs[1].ID), BaseRevision: "b1", Patch: patch},
+			{Repo: api.RepoID(rs[0].ID), BaseRevision: "deadbeef", BaseRef: "refs/heads/master", Patch: patch},
+			{Repo: api.RepoID(rs[1].ID), BaseRevision: "f00b4r", BaseRef: "refs/heads/master", Patch: patch},
 		}
 
 		plan, err := svc.CreateCampaignPlanFromPatches(ctx, patches, user.ID)
@@ -98,8 +93,8 @@ func TestService(t *testing.T) {
 			wantJobs[i] = &campaigns.CampaignJob{
 				CampaignPlanID: plan.ID,
 				RepoID:         patch.Repo,
-				BaseRef:        patch.BaseRevision,
-				Rev:            commit,
+				Rev:            patch.BaseRevision,
+				BaseRef:        patch.BaseRef,
 				Diff:           patch.Patch,
 				StartedAt:      now,
 				FinishedAt:     now,
@@ -120,7 +115,7 @@ func TestService(t *testing.T) {
 		}
 
 		campaign := testCampaign(user.ID, plan.ID)
-		svc := NewServiceWithClock(store, gitClient, nil, cf, clock)
+		svc := NewServiceWithClock(store, gitClient, cf, clock)
 
 		// Without CampaignJobs it should fail
 		err = svc.CreateCampaign(ctx, campaign, false)
@@ -178,7 +173,7 @@ func TestService(t *testing.T) {
 
 		campaign := testCampaign(user.ID, plan.ID)
 
-		svc := NewServiceWithClock(store, gitClient, nil, cf, clock)
+		svc := NewServiceWithClock(store, gitClient, cf, clock)
 		err = svc.CreateCampaign(ctx, campaign, true)
 		if err != nil {
 			t.Fatal(err)
@@ -201,6 +196,35 @@ func TestService(t *testing.T) {
 		}
 	})
 
+	t.Run("CreateCampaignWithPlanAttachedToOtherCampaign", func(t *testing.T) {
+		plan := &campaigns.CampaignPlan{CampaignType: "test", Arguments: `{}`, UserID: user.ID}
+		err = store.CreateCampaignPlan(ctx, plan)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		for _, repo := range rs {
+			err := store.CreateCampaignJob(ctx, testCampaignJob(plan.ID, repo.ID, now))
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		campaign := testCampaign(user.ID, plan.ID)
+		svc := NewServiceWithClock(store, gitClient, cf, clock)
+
+		err = svc.CreateCampaign(ctx, campaign, false)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		otherCampaign := testCampaign(user.ID, plan.ID)
+		err = svc.CreateCampaign(ctx, otherCampaign, false)
+		if err != ErrCampaignPlanDuplicate {
+			t.Fatal("no error even though another campaign has same plan")
+		}
+	})
+
 	t.Run("CreateChangesetJobForCampaignJob", func(t *testing.T) {
 		plan := &campaigns.CampaignPlan{CampaignType: "test", Arguments: `{}`, UserID: user.ID}
 		err = store.CreateCampaignPlan(ctx, plan)
@@ -220,7 +244,7 @@ func TestService(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		svc := NewServiceWithClock(store, gitClient, nil, cf, clock)
+		svc := NewServiceWithClock(store, gitClient, cf, clock)
 		err = svc.CreateChangesetJobForCampaignJob(ctx, campaignJob.ID)
 		if err != nil {
 			t.Fatal(err)
@@ -308,7 +332,7 @@ func TestService(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				svc := NewServiceWithClock(store, gitClient, nil, cf, clock)
+				svc := NewServiceWithClock(store, gitClient, cf, clock)
 				campaign := testCampaign(user.ID, plan.ID)
 
 				err = svc.CreateCampaign(ctx, campaign, tc.draft)
@@ -337,7 +361,10 @@ func TestService(t *testing.T) {
 						campaignJobsByID := map[int64]*campaigns.CampaignJob{
 							campaignJob.ID: campaignJob,
 						}
-						fakeRunChangesetJobs(ctx, t, store, now, campaign, campaignJobsByID)
+						states := map[int64]campaigns.ChangesetState{
+							campaignJob.ID: campaigns.ChangesetStateOpen,
+						}
+						fakeRunChangesetJobs(ctx, t, store, now, campaign, campaignJobsByID, states)
 					}
 				}
 
@@ -363,6 +390,54 @@ func TestService(t *testing.T) {
 			})
 		}
 	})
+
+	t.Run("UpdateCampaignWithPlanAttachedToOtherCampaign", func(t *testing.T) {
+		svc := NewServiceWithClock(store, gitClient, cf, clock)
+
+		plan := &campaigns.CampaignPlan{CampaignType: "test", Arguments: `{}`, UserID: user.ID}
+		err = store.CreateCampaignPlan(ctx, plan)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		for _, repo := range rs {
+			err := store.CreateCampaignJob(ctx, testCampaignJob(plan.ID, repo.ID, now))
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		campaign := testCampaign(user.ID, plan.ID)
+		err = svc.CreateCampaign(ctx, campaign, false)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		otherPlan := &campaigns.CampaignPlan{CampaignType: "test", Arguments: `{}`, UserID: user.ID}
+		err = store.CreateCampaignPlan(ctx, otherPlan)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		for _, repo := range rs {
+			err := store.CreateCampaignJob(ctx, testCampaignJob(otherPlan.ID, repo.ID, now))
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+		otherCampaign := testCampaign(user.ID, otherPlan.ID)
+		err = svc.CreateCampaign(ctx, otherCampaign, false)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		args := UpdateCampaignArgs{Campaign: otherCampaign.ID, Plan: &plan.ID}
+		_, _, err := svc.UpdateCampaign(ctx, args)
+		if err != ErrCampaignPlanDuplicate {
+			t.Fatal("no error even though another campaign has same plan")
+		}
+	})
+
 }
 
 type repoNames []string
@@ -418,6 +493,10 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 		// Repositories for which the ChangesetJob/Changeset have been
 		// individually published while Campaign was in draft mode
 		individuallyPublished repoNames
+
+		// Mapping of repository names to state of changesets after creating the campaign.
+		// Default state is ChangesetStateOpen
+		changesetStates map[string]campaigns.ChangesetState
 
 		updatePlan, updateName, updateDescription bool
 		newCampaignJobs                           []newCampaignJobSpec
@@ -542,18 +621,60 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 			wantModified:   repoNames{"repo-1"},
 			wantDetached:   repoNames{"repo-2"},
 		},
+		{
+			name:            "1 modified diff for already merged changeset",
+			updatePlan:      true,
+			oldCampaignJobs: repoNames{"repo-0"},
+			changesetStates: map[string]campaigns.ChangesetState{"repo-0": campaigns.ChangesetStateMerged},
+			newCampaignJobs: []newCampaignJobSpec{
+				{repo: "repo-0", modifiedDiff: true},
+			},
+			wantUnmodified: repoNames{"repo-0"},
+		},
+		{
+			name:            "1 modified rev for already merged changeset",
+			updatePlan:      true,
+			oldCampaignJobs: repoNames{"repo-0"},
+			changesetStates: map[string]campaigns.ChangesetState{"repo-0": campaigns.ChangesetStateMerged},
+			newCampaignJobs: []newCampaignJobSpec{
+				{repo: "repo-0", modifiedDiff: true},
+			},
+			wantUnmodified: repoNames{"repo-0"},
+		},
+		{
+			name:            "1 modified diff for already closed changeset",
+			updatePlan:      true,
+			oldCampaignJobs: repoNames{"repo-0"},
+			changesetStates: map[string]campaigns.ChangesetState{"repo-0": campaigns.ChangesetStateClosed},
+			newCampaignJobs: []newCampaignJobSpec{
+				{repo: "repo-0", modifiedDiff: true},
+			},
+			wantUnmodified: repoNames{"repo-0"},
+		},
+		{
+			name:            "1 modified rev for already closed changeset",
+			updatePlan:      true,
+			oldCampaignJobs: repoNames{"repo-0"},
+			changesetStates: map[string]campaigns.ChangesetState{"repo-0": campaigns.ChangesetStateClosed},
+			newCampaignJobs: []newCampaignJobSpec{
+				{repo: "repo-0", modifiedDiff: true},
+			},
+			wantUnmodified: repoNames{"repo-0"},
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			store := NewStoreWithClock(dbconn.Global, clock)
-			svc := NewServiceWithClock(store, gitClient, nil, cf, clock)
+			svc := NewServiceWithClock(store, gitClient, cf, clock)
 
 			var (
 				campaign         *campaigns.Campaign
 				oldCampaignJobs  []*campaigns.CampaignJob
 				newCampaignJobs  []*campaigns.CampaignJob
 				campaignJobsByID map[int64]*campaigns.CampaignJob
+
+				changesetStateByCampaignJobID map[int64]campaigns.ChangesetState
 
 				oldChangesets []*campaigns.Changeset
 			)
@@ -568,6 +689,7 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 				}
 
 				campaignJobsByID = make(map[int64]*campaigns.CampaignJob)
+				changesetStateByCampaignJobID = make(map[int64]campaigns.ChangesetState)
 				for _, repoName := range tt.oldCampaignJobs {
 					repo, ok := reposByName[repoName]
 					if !ok {
@@ -581,6 +703,12 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 					}
 					campaignJobsByID[j.ID] = j
 					oldCampaignJobs = append(oldCampaignJobs, j)
+
+					if s, ok := tt.changesetStates[repoName]; ok {
+						changesetStateByCampaignJobID[j.ID] = s
+					} else {
+						changesetStateByCampaignJobID[j.ID] = campaigns.ChangesetStateOpen
+					}
 				}
 				campaign = testCampaign(user.ID, plan.ID)
 			}
@@ -592,7 +720,7 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 
 			if !tt.campaignIsDraft && !tt.campaignIsManual {
 				// Create Changesets and update ChangesetJobs to look like they ran
-				oldChangesets = fakeRunChangesetJobs(ctx, t, store, now, campaign, campaignJobsByID)
+				oldChangesets = fakeRunChangesetJobs(ctx, t, store, now, campaign, campaignJobsByID, changesetStateByCampaignJobID)
 			}
 
 			if tt.campaignIsDraft && len(tt.individuallyPublished) != 0 {
@@ -614,7 +742,7 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 					}
 				}
 
-				oldChangesets = fakeRunChangesetJobs(ctx, t, store, now, campaign, toPublish)
+				oldChangesets = fakeRunChangesetJobs(ctx, t, store, now, campaign, toPublish, changesetStateByCampaignJobID)
 			}
 
 			oldTime := now
@@ -869,6 +997,7 @@ func fakeRunChangesetJobs(
 	now time.Time,
 	campaign *campaigns.Campaign,
 	campaignJobsByID map[int64]*campaigns.CampaignJob,
+	changesetStatesByCampaignJobID map[int64]campaigns.ChangesetState,
 ) []*campaigns.Changeset {
 	jobs, _, err := store.ListChangesetJobs(ctx, ListChangesetJobsOpts{
 		CampaignID: campaign.ID,
@@ -889,7 +1018,11 @@ func fakeRunChangesetJobs(
 			t.Fatal("no CampaignJob found for ChangesetJob")
 		}
 
-		changeset := testChangeset(campaignJob.RepoID, changesetJob.CampaignID, changesetJob.ID)
+		state, ok := changesetStatesByCampaignJobID[campaignJob.ID]
+		if !ok {
+			t.Fatal("no desired state found for Changeset")
+		}
+		changeset := testChangeset(campaignJob.RepoID, changesetJob.CampaignID, changesetJob.ID, state)
 		err = store.CreateChangesets(ctx, changeset)
 		if err != nil {
 			t.Fatal(err)
@@ -955,12 +1088,14 @@ func testCampaign(user int32, plan int64) *campaigns.Campaign {
 	return c
 }
 
-func testChangeset(repoID api.RepoID, campaign int64, changesetJob int64) *campaigns.Changeset {
+func testChangeset(repoID api.RepoID, campaign int64, changesetJob int64, state campaigns.ChangesetState) *campaigns.Changeset {
+	pr := &github.PullRequest{State: string(state)}
 	return &campaigns.Changeset{
 		RepoID:              repoID,
 		CampaignIDs:         []int64{campaign},
 		ExternalServiceType: "github",
 		ExternalID:          fmt.Sprintf("ext-id-%d", changesetJob),
+		Metadata:            pr,
 	}
 }
 

@@ -341,6 +341,10 @@ type ExcludedBitbucketServerRepo struct {
 	Pattern string `json:"pattern,omitempty"`
 }
 type ExcludedGitHubRepo struct {
+	// Archived description: If set to true, archived repositories will be excluded.
+	Archived bool `json:"archived,omitempty"`
+	// Forks description: If set to true, forks will be excluded.
+	Forks bool `json:"forks,omitempty"`
 	// Id description: The node ID of a GitHub repository (as returned by the GitHub instance's API) to exclude from mirroring. Use this to exclude the repository, even if renamed. Note: This is the GraphQL ID, not the GitHub database ID. eg: "curl https://api.github.com/repos/vuejs/vue | jq .node_id"
 	Id string `json:"id,omitempty"`
 	// Name description: The name of a GitHub repository ("owner/name") to exclude from mirroring.
@@ -701,6 +705,12 @@ type ParentSourcegraph struct {
 	Url string `json:"url,omitempty"`
 }
 
+// PermissionsBackgroundSync description: Sync code host repository and user permissions in the background.
+type PermissionsBackgroundSync struct {
+	// Enabled description: Whether syncing permissions in the background is enabled.
+	Enabled bool `json:"enabled,omitempty"`
+}
+
 // PermissionsUserMapping description: Settings for Sourcegraph permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This setting cannot be enabled if repository permissions for any specific external service are enabled (i.e., when the external service's `authorization` field is set).
 type PermissionsUserMapping struct {
 	// BindID description: The type of identifier to identify a user. The default is "email", which uses the email address to identify a user. Use "username" to identify a user by their username. Changing this setting will erase any permissions created for users that do not yet exist.
@@ -959,6 +969,8 @@ type SiteConfiguration struct {
 	MaxReposToSearch int `json:"maxReposToSearch,omitempty"`
 	// ParentSourcegraph description: URL to fetch unreachable repository details from. Defaults to "https://sourcegraph.com"
 	ParentSourcegraph *ParentSourcegraph `json:"parentSourcegraph,omitempty"`
+	// PermissionsBackgroundSync description: Sync code host repository and user permissions in the background.
+	PermissionsBackgroundSync *PermissionsBackgroundSync `json:"permissions.backgroundSync,omitempty"`
 	// PermissionsUserMapping description: Settings for Sourcegraph permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This setting cannot be enabled if repository permissions for any specific external service are enabled (i.e., when the external service's `authorization` field is set).
 	PermissionsUserMapping *PermissionsUserMapping `json:"permissions.userMapping,omitempty"`
 	// RepoListUpdateInterval description: Interval (in minutes) for checking code hosts (such as GitHub, Gitolite, etc.) for new repositories.

@@ -17,14 +17,13 @@ export GOOS=linux
 export CGO_ENABLED=0
 
 cp -a ./lsif "$OUTPUT"
-export bindir="$OUTPUT/usr/local/bin"
-mkdir -p "$bindir"
+cp -a ./cmd/lsif-server/prometheus.yml "$OUTPUT"
 
 echo "--- go build"
 go build \
     -trimpath \
     -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION"  \
-    -o "$bindir/lsif-server" github.com/sourcegraph/sourcegraph/cmd/lsif-server
+    -o "$OUTPUT/lsif-server" github.com/sourcegraph/sourcegraph/cmd/lsif-server
 
 echo "--- docker build"
 docker build -f cmd/lsif-server/Dockerfile -t "$IMAGE" "$OUTPUT" \

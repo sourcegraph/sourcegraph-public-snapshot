@@ -9,12 +9,20 @@ import (
 	"sync"
 	"time"
 
+	ossAuthz "github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
+	ossDB "github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/shared"
+	frontendAuthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/authz"
+	frontendDB "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater/authz"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
 func main() {
@@ -54,5 +62,37 @@ func enterpriseInit(db *sql.DB, repoStore repos.Store, cf *httpcli.Factory, serv
 				time.Sleep(2 * time.Minute)
 			}
 		}()
+
+		// TODO(jchen): This is an unfortunate compromise to not rewrite ossDB.ExternalServices for now.
+		dbconn.Global = db
+		go startBackgroundPermsSync(ctx, repoStore, db)
 	})
+}
+
+// startBackgroundPermsSync sets up background permissions syncing.
+func startBackgroundPermsSync(ctx context.Context, repoStore repos.Store, db dbutil.DB) {
+	// Block until config is available, otherwise will always get default value (i.e. false).
+	enabled := conf.Cached(func() interface{} {
+		return conf.PermissionsBackgroundSyncEnabled()
+	})().(bool)
+	if !enabled {
+		log15.Debug("startBackgroundPermsSync.notEnabled")
+		return
+	}
+
+	go func() {
+		t := time.NewTicker(5 * time.Second)
+		for range t.C {
+			allowAccessByDefault, authzProviders, _, _ :=
+				frontendAuthz.ProvidersFromConfig(ctx, conf.Get(), ossDB.ExternalServices, db)
+			ossAuthz.SetProviders(allowAccessByDefault, authzProviders)
+		}
+	}()
+
+	clock := func() time.Time {
+		return time.Now().UTC().Truncate(time.Microsecond)
+	}
+	permsStore := frontendDB.NewPermsStore(db, clock)
+	permsSyncer := authz.NewPermsSyncer(repoStore, permsStore, db, clock)
+	go permsSyncer.Run(ctx)
 }
