@@ -185,9 +185,13 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
             <div className="flex-shrink-0 flex-grow-0 ml-1 d-flex flex-column align-items-end">
                 {node.__typename === 'ExternalChangeset' && (
                     <span
-                        data-tooltip={`Last synced ${formatDistanceToNow(parseISO(node.updatedAt))} ago. ${
-                            node.updatedAt === lastUpdatedAt ? 'Currently refreshing' : 'Click to prioritize refresh'
-                        }`}
+                        data-tooltip={
+                            node.updatedAt === lastUpdatedAt
+                                ? 'Currently refreshing'
+                                : `Last synced ${formatDistanceToNow(
+                                      parseISO(node.updatedAt)
+                                  )} ago. Click to prioritize refresh`
+                        }
                     >
                         <UpdateLoaderIcon
                             className={classNames('icon-inline', node.updatedAt !== lastUpdatedAt && 'cursor-pointer')}
