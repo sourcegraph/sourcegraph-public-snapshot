@@ -87,6 +87,10 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
         }
     }
     const enqueueChangeset: React.MouseEventHandler = async () => {
+        // already enqueued
+        if (lastUpdatedAt) {
+            return
+        }
         if (node.__typename === 'ExternalChangeset') {
             setLastUpdatedAt(node.updatedAt)
             await syncChangeset(node.id)
@@ -194,7 +198,7 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                         }
                     >
                         <UpdateLoaderIcon
-                            className={classNames('icon-inline', node.updatedAt !== lastUpdatedAt && 'cursor-pointer')}
+                            className={classNames('icon-inline', !lastUpdatedAt && 'cursor-pointer')}
                             onClick={enqueueChangeset}
                         />
                     </span>
