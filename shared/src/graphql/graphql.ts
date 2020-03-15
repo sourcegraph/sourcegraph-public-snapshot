@@ -1,10 +1,11 @@
 import { Observable } from 'rxjs'
-import { map, switchMap } from 'rxjs/operators'
+// eslint-disable-next-line no-restricted-imports
+import { ajax } from 'rxjs/ajax'
+import { map } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 import { createAggregateError } from '../util/errors'
-import { checkOk } from '../backend/fetch'
+import { HTTPStatusError } from '../backend/fetch'
 import * as GQL from './schema'
-import { fromFetch } from 'rxjs/fetch'
 
 /**
  * Use this template string tag for all GraphQL queries.
@@ -65,12 +66,19 @@ export function requestGraphQL<T extends GQL.IQuery | GQL.IMutation>({
     variables?: {}
 }): Observable<GraphQLResult<T>> {
     const nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)
-    return fromFetch(`${baseUrl}/.api/graphql${nameMatch ? '?' + nameMatch[1] : ''}`, {
-        ...options,
+    // todo: Revert to fetch when this issue is resolved: https://github.com/ReactiveX/rxjs/issues/4744
+    // the bug described in that issue prevents proper cancellation of the requests
+    return ajax({
+        url: `${baseUrl}/.api/graphql${nameMatch ? '?' + nameMatch[1] : ''}`,
         method: 'POST',
         body: JSON.stringify({ query: request, variables }),
+        ...options,
     }).pipe(
-        map(checkOk),
-        switchMap(response => response.json())
+        map(res => {
+            if (res.status >= 400) {
+                throw new HTTPStatusError(res)
+            }
+            return res.response as GraphQLResult<T>
+        })
     )
 }
