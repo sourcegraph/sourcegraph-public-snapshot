@@ -197,12 +197,11 @@ func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (filte
 		}
 
 		if associated {
-			err = Authz.GrantPendingPermissions(ctx, &GrantPendingPermissionsArgs{
+			if err = Authz.GrantPendingPermissions(ctx, &GrantPendingPermissionsArgs{
 				UserID: currentUser.ID,
 				Perm:   p,
 				Type:   authz.PermRepos,
-			})
-			if err != nil {
+			}); err != nil {
 				tr.LogFields(
 					otlog.String("event", "grant pending permissions failed"),
 					otlog.String("username", currentUser.Username),
