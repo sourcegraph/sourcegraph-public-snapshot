@@ -130,12 +130,12 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
         this.subscriptions.unsubscribe()
     }
 
-    private renderMessage(message: GQL.StatusMessage): JSX.Element | null {
+    private renderMessage(message: GQL.StatusMessage, key: number): JSX.Element | null {
         switch (message.__typename) {
             case 'CloningProgress':
                 return (
                     <StatusMessagesNavItemEntry
-                        key={message.message}
+                        key={key}
                         title="Repositories cloning"
                         text={message.message}
                         showLink={this.props.isSiteAdmin}
@@ -148,7 +148,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
             case 'ExternalServiceSyncError':
                 return (
                     <StatusMessagesNavItemEntry
-                        key={message.message}
+                        key={key}
                         title={`Syncing repositories from external service "${message.externalService.displayName}" failed:`}
                         text={message.message}
                         showLink={this.props.isSiteAdmin}
@@ -161,7 +161,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
             case 'SyncError':
                 return (
                     <StatusMessagesNavItemEntry
-                        key={message.message}
+                        key={key}
                         title="Syncing repositories failed:"
                         text={message.message}
                         showLink={this.props.isSiteAdmin}
@@ -222,7 +222,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                             error={this.state.messagesOrError}
                         />
                     ) : this.state.messagesOrError.length > 0 ? (
-                        this.state.messagesOrError.map(m => this.renderMessage(m))
+                            this.state.messagesOrError.map((m, i) => this.renderMessage(m, i))
                     ) : (
                         <StatusMessagesNavItemEntry
                             title="Repositories up to date"
