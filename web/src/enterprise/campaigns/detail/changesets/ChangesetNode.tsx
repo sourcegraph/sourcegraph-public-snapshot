@@ -61,6 +61,16 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
     useEffect(() => {
         setIsPublishing(publicationEnqueued)
     }, [publicationEnqueued])
+    const nodeUpdatedAt = node.__typename === 'ExternalChangeset' && node.updatedAt
+    useEffect(() => {
+        if (!nodeUpdatedAt) {
+            return
+        }
+        if (lastUpdatedAt !== nodeUpdatedAt && campaignUpdates) {
+            campaignUpdates.next()
+        }
+        // setLastUpdatedAt(nodeUpdatedAt)
+    }, [nodeUpdatedAt, campaignUpdates, lastUpdatedAt])
     const [publishError, setPublishError] = useState<Error>()
     const publishChangeset: React.MouseEventHandler = async () => {
         try {
