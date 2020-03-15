@@ -217,7 +217,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                     <h3>Code host status</h3>
                     {isErrorLike(this.state.messagesOrError) ? (
                         <ErrorAlert
-                            className="status-messages-nav-item__entry mb-0"
+                                className="status-messages-nav-item__entry"
                             prefix="Failed to load status messages"
                             error={this.state.messagesOrError}
                         />
