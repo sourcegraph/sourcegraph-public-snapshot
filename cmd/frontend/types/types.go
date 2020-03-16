@@ -240,6 +240,7 @@ type SearchUsagePeriod struct {
 	Index              *SearchCountStatistics
 	Lang               *SearchCountStatistics
 	Message            *SearchCountStatistics
+	PatternType        *SearchCountStatistics
 	Repo               *SearchEventStatistics
 	Repohascommitafter *SearchCountStatistics
 	Repohasfile        *SearchCountStatistics

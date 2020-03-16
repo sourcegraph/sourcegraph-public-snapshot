@@ -102,6 +102,9 @@ function queryStringTelemetryData(q: string, caseSensitive: boolean): { [key: st
                       count_alias: count(q, /(^|\s)-?m:/g),
                   }
                 : undefined,
+        field_patterntype: {
+            count: count(q, /(^|\s)patterntype:/gi),
+        },
         field_repo:
             q.includes('repo:') || q.includes('r:')
                 ? {
