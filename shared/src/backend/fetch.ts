@@ -1,18 +1,12 @@
 import { isErrorLike } from '../util/errors'
-// eslint-disable-next-line no-restricted-imports
-import { AjaxResponse } from 'rxjs/ajax'
 
 export const EHTTPSTATUS = 'HTTPStatusError'
 
 export class HTTPStatusError extends Error {
     public readonly name = EHTTPSTATUS
     public readonly code = EHTTPSTATUS
-    constructor(public response: Response | AjaxResponse) {
-        super(
-            `Request to ${response instanceof Response ? response.url : response.xhr.responseURL} failed with ${
-                response.status
-            } ${response instanceof Response ? response.statusText : response.xhr.statusText}`
-        )
+    constructor(public response: Response) {
+        super(`Request to ${response.url} failed with ${response.status} ${response.statusText}`)
     }
 }
 export const isHTTPStatusError = (err: unknown): err is HTTPStatusError => isErrorLike(err) && err.code === EHTTPSTATUS
