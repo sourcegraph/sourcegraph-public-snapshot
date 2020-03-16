@@ -17,7 +17,7 @@ import { DatabaseLogger } from './logger'
  * version prior to making use of the DB (which the frontend may still be
  * migrating).
  */
-const MINIMUM_MIGRATION_VERSION = 1528395652
+const MINIMUM_MIGRATION_VERSION = 1528395661
 
 /** How many times to try to check the current database migration version on startup. */
 const MAX_SCHEMA_POLL_RETRIES = readEnvInt('MAX_SCHEMA_POLL_RETRIES', 60)

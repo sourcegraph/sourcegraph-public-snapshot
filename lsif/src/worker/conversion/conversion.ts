@@ -36,7 +36,7 @@ export async function convertDatabase(
     const ctx = { logger, span }
     const uploadFile = path.join(settings.STORAGE_ROOT, constants.TEMP_DIR, uuid.v4())
     const databaseFile = path.join(settings.STORAGE_ROOT, constants.TEMP_DIR, uuid.v4())
-    const uploadUrl = new URL(`http://localhost:3188/${upload.filename}/raw`).href // TODO
+    const uploadUrl = new URL(`http://localhost:3188/${upload.payloadId}/raw`).href // TODO
     const databaseUrl = new URL(`http://localhost:3188/${upload.id}`).href // TODO
 
     try {

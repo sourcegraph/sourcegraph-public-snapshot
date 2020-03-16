@@ -120,7 +120,7 @@ describe('mapRangesToInternalLocations', () => {
             commit: 'deadbeef',
             root: '',
             indexer: '',
-            filename: '',
+            payloadId: '',
             state: 'completed' as pgModels.LsifUploadState,
             uploadedAt: new Date(),
             startedAt: new Date(),

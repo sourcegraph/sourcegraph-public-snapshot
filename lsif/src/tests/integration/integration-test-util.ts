@@ -155,7 +155,7 @@ export async function insertDump(
     upload.commit = commit
     upload.root = root
     upload.indexer = indexer
-    upload.filename = '<test>'
+    upload.payloadId = 'deadbeef'
     upload.uploadedAt = new Date()
     upload.state = 'completed'
     upload.tracingContext = '{}'
