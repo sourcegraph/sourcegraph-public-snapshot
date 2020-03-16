@@ -558,6 +558,7 @@ func (s *PermsSyncer) DebugDump() interface{} {
 	}
 	data := struct {
 		Name  string
+		Size  int
 		Queue []*requestInfo
 	}{
 		Name: "permissions",
@@ -592,6 +593,7 @@ func (s *PermsSyncer) DebugDump() interface{} {
 			Acquired: request.acquired,
 		})
 	}
+	data.Size = len(data.Queue)
 
 	return &data
 }
