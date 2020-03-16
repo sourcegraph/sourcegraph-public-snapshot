@@ -62,7 +62,7 @@ func TestChangesetMetadata(t *testing.T) {
 		t.Errorf("changeset body wrong. want=%q, have=%q", want, have)
 	}
 
-	state, err := changeset.State()
+	state, err := changeset.state()
 	if err != nil {
 		t.Fatal(err)
 	}
