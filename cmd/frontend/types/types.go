@@ -225,29 +225,29 @@ type SearchUsagePeriod struct {
 	TotalUsers         int32
 	Literal            *SearchEventStatistics
 	Regexp             *SearchEventStatistics
-	After              *SearchEventStatistics
-	Archived           *SearchEventStatistics
-	Author             *SearchEventStatistics
-	Before             *SearchEventStatistics
-	Case               *SearchEventStatistics
+	After              *SearchCountStatistics
+	Archived           *SearchCountStatistics
+	Author             *SearchCountStatistics
+	Before             *SearchCountStatistics
+	Case               *SearchCountStatistics
 	Commit             *SearchEventStatistics
-	Committer          *SearchEventStatistics
-	Content            *SearchEventStatistics
-	Count              *SearchEventStatistics
+	Committer          *SearchCountStatistics
+	Content            *SearchCountStatistics
+	Count              *SearchCountStatistics
 	Diff               *SearchEventStatistics
 	File               *SearchEventStatistics
-	Fork               *SearchEventStatistics
-	Index              *SearchEventStatistics
-	Lang               *SearchEventStatistics
-	Message            *SearchEventStatistics
+	Fork               *SearchCountStatistics
+	Index              *SearchCountStatistics
+	Lang               *SearchCountStatistics
+	Message            *SearchCountStatistics
 	Repo               *SearchEventStatistics
-	Repohascommitafter *SearchEventStatistics
-	Repohasfile        *SearchEventStatistics
-	Repogroup          *SearchEventStatistics
+	Repohascommitafter *SearchCountStatistics
+	Repohasfile        *SearchCountStatistics
+	Repogroup          *SearchCountStatistics
 	Structural         *SearchEventStatistics
 	Symbol             *SearchEventStatistics
-	Timeout            *SearchEventStatistics
-	Type               *SearchEventStatistics
+	Timeout            *SearchCountStatistics
+	Type               *SearchCountStatistics
 	SearchModes        *SearchModeUsageStatistics
 }
 

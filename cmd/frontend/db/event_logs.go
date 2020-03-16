@@ -228,6 +228,10 @@ type EventFilterOptions struct {
 	//
 	// Only include events with a given name, and which include a JSON argument matching a given value.
 	ByEventNameWithArgument *EventArgumentMatch
+	// Must be used with ByEventName
+	//
+	// If set, only include events that match a specified condition.
+	ByEventNameWithCondition *sqlf.Query
 }
 
 // EventArgumentMatch provides the options for matching an event with
@@ -275,6 +279,13 @@ func (l *eventLogs) CountUniqueUsersPerPeriod(ctx context.Context, periodType Pe
 				conds = append(conds, sqlf.Sprintf("name = %s", opt.EventFilters.ByEventName))
 				conds = append(conds, sqlf.Sprintf("argument->>%s=%s", opt.EventFilters.ByEventNameWithArgument.ArgumentName, opt.EventFilters.ByEventNameWithArgument.ArgumentValue))
 			}
+			if opt.EventFilters.ByEventNameWithCondition != nil {
+				if opt.EventFilters.ByEventName == "" {
+					return nil, fmt.Errorf("The ByEventNameWithCondition option must be used together with the ByEventName option.")
+				}
+				conds = append(conds, sqlf.Sprintf("name = %s", opt.EventFilters.ByEventName))
+				conds = append(conds, opt.EventFilters.ByEventNameWithCondition)
+			}
 			if len(opt.EventFilters.ByEventNames) > 0 {
 				items := []*sqlf.Query{}
 				for _, v := range opt.EventFilters.ByEventNames {
@@ -315,6 +326,13 @@ func (l *eventLogs) CountEventsPerPeriod(ctx context.Context, periodType PeriodT
 			}
 			conds = append(conds, sqlf.Sprintf("name = %s", opt.ByEventName))
 			conds = append(conds, sqlf.Sprintf("argument->>%s=%s", opt.ByEventNameWithArgument.ArgumentName, opt.ByEventNameWithArgument.ArgumentValue))
+		}
+		if opt.ByEventNameWithCondition != nil {
+			if opt.ByEventName == "" {
+				return nil, fmt.Errorf("The ByEventNameWithCondition option must be used together with the ByEventName option.")
+			}
+			conds = append(conds, sqlf.Sprintf("name = %s", opt.ByEventName))
+			conds = append(conds, opt.ByEventNameWithCondition)
 		}
 		if len(opt.ByEventNames) > 0 {
 			items := []*sqlf.Query{}
@@ -548,8 +566,8 @@ func (l *eventLogs) ListUniqueUsersAll(ctx context.Context, startDate, endDate t
 	return users, nil
 }
 
-// CountUniqueUsersSearchingWithFilterPerPeriod counts the number of unique users who have searched using a each search filter,
-// broken up into periods of a given type.
+// // CountUniqueUsersSearchingWithFilterPerPeriod counts the number of unique users who have searched using a each search filter,
+// // broken up into periods of a given type.
 func (l *eventLogs) CountUniqueUsersSearchingWithFilterPerPeriod(ctx context.Context, periodType PeriodType, now time.Time, periods int, filterFieldName string) ([]UsageValue, error) {
 	startDate, ok := calcStartDate(now, periodType, periods)
 	if !ok {
@@ -568,7 +586,7 @@ func (l *eventLogs) CountUniqueUsersSearchingWithFilterPerPeriod(ctx context.Con
 	return l.countUniqueUsersPerPeriodBySQL(ctx, intervalByPeriodType[periodType], periodByPeriodType[periodType], startDate, endDate, conds)
 }
 
-// CountSearchesWithFilterPerPeriod counts the number of searches containing each search filter, broken up into periods of a given type.
+// // CountSearchesWithFilterPerPeriod counts the number of searches containing each search filter, broken up into periods of a given type.
 func (l *eventLogs) CountSearchesWithFilterPerPeriod(ctx context.Context, periodType PeriodType, now time.Time, periods int, filterFieldName string) ([]UsageValue, error) {
 	startDate, ok := calcStartDate(now, periodType, periods)
 	if !ok {
