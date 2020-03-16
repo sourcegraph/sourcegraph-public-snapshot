@@ -13,7 +13,7 @@ import { logSpan, TracingContext, logAndTraceCall, addTags } from '../../../shar
 import { mustGet } from '../../../shared/maps'
 import { Logger } from 'winston'
 import { createSilentLogger } from '../../../shared/logging'
-import { InternalLocation, OrderedLocationSet } from './location'
+import { InternalLocation, OrderedLocationSet } from '../../../shared/models/location'
 
 /** The maximum number of results in a logSpan value. */
 const MAX_SPAN_ARRAY_LENGTH = 20

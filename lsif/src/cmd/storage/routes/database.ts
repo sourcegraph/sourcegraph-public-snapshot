@@ -9,8 +9,8 @@ import * as validation from '../../../shared/api/middleware/validation'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from '../backend/cache'
 import { Database } from '../backend/database'
 import { dbFilename } from '../../../shared/paths'
-import { InternalLocation } from '../backend/location'
 import * as sqliteModels from '../../../shared/models/sqlite'
+import { InternalLocation } from '../../../shared/models/location'
 
 /**
  * Create a router containing the database endpoints.
