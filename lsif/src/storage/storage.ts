@@ -13,6 +13,7 @@ import { createPostgresConnection } from '../shared/database/postgres'
 import { ensureDirectory } from '../shared/paths'
 import { createDatabaseRouter } from './routes/database'
 import { jsonReplacer } from '../shared/encoding/json'
+import { createUploadRouter } from './routes/uploads'
 
 /**
  * Runs the HTTP server that accepts LSIF dump uploads and responds to LSIF requests.
@@ -46,7 +47,7 @@ async function main(logger: Logger): Promise<void> {
 
     // Register middleware and serve
     const app = makeExpressApp({
-        routes: [createDatabaseRouter(dumpManager, logger)],
+        routes: [createUploadRouter(logger), createDatabaseRouter(dumpManager, logger)],
         logger,
         tracer,
         histogramSelector,
