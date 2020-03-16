@@ -177,6 +177,7 @@ function gitserverExec(
         instrument(metrics.gitserverDurationHistogram, metrics.gitserverErrorsCounter, async () => {
             // Perform request - this may fail with a 404 or 500
             const resp = await got.post(new URL(`http://${frontendUrl}/.internal/git/${repositoryId}/exec`).href, {
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ args }),
             })
 
