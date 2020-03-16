@@ -252,8 +252,8 @@ func (p PullRequestCommit) Key() string {
 	return p.Commit.OID
 }
 
-// CommitWithChecks represents check / build status of a commit. When we load the PR
-// from GitHub we fetch the most recent commit into this type to check build status
+// CommitWithChecks represents check/build status of a commit. When we load the PR
+// from GitHub we fetch the most recent commit into this type to check build status.
 type CommitWithChecks struct {
 	Commit struct {
 		OID           string
