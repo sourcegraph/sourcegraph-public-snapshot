@@ -131,13 +131,13 @@ func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (filte
 		filtered := make([]*types.Repo, 0, len(repos))
 
 		// Add public repositories to filtered, others to toVerify.
-		for i := range repos {
-			if repos[i].Private {
-				toVerify = append(toVerify, repos[i])
+		for _, r := range repos {
+			if r.Private {
+				toVerify = append(toVerify, r)
 				continue
 			}
 
-			filtered = append(filtered, repos[i])
+			filtered = append(filtered, r)
 		}
 
 		// At this point, only show public repositories when:
@@ -155,7 +155,7 @@ func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (filte
 
 		// Check if the user has an external account for every authz provider respectively,
 		// and try to fetch the account when not.
-		associated := false // If any new external account is associated
+		newAccount := false // If any new external account is associated
 	authzLoop:
 		for _, provider := range authzProviders {
 			for _, acct := range extAccounts {
@@ -193,10 +193,10 @@ func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (filte
 				return nil, errors.Wrap(err, "associate external account to user")
 			}
 
-			associated = true
+			newAccount = true
 		}
 
-		if associated {
+		if newAccount {
 			if err = Authz.GrantPendingPermissions(ctx, &GrantPendingPermissionsArgs{
 				UserID: currentUser.ID,
 				Perm:   p,
