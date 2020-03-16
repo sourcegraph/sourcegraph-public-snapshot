@@ -106,9 +106,9 @@ describe('Organizations regression test suite', () => {
             })
             await driver.findElementWithText('Create organization', { action: 'click' })
             resourceManager.add('Organization', testOrg.name, () => deleteOrganizationByName(gqlClient, testOrg.name))
-            await driver.page.waitForSelector('.monaco-editor')
+            await driver.page.waitForSelector('.e2e-settings-file .monaco-editor')
             await driver.replaceText({
-                selector: '.monaco-editor',
+                selector: '.e2e-settings-file .monaco-editor',
                 newText: `{"quicklinks": [${JSON.stringify(quicklink)}]}`,
                 selectMethod: 'keyboard',
                 enterTextMethod: 'paste',
