@@ -1,6 +1,4 @@
-import * as constants from '../shared/constants'
 import * as metrics from './metrics'
-import * as path from 'path'
 import * as settings from './settings'
 import promClient from 'prom-client'
 import { Backend } from './backend/backend'
@@ -9,7 +7,6 @@ import { createLsifRouter } from './routes/lsif'
 import { createPostgresConnection } from '../shared/database/postgres'
 import { createTracer } from '../shared/tracing'
 import { createUploadRouter } from './routes/uploads'
-import { ensureDirectory } from '../shared/paths'
 import { Logger } from 'winston'
 import { startTasks } from './tasks/runner'
 import { UploadManager } from '../shared/store/uploads'
@@ -17,7 +14,6 @@ import { waitForConfiguration } from '../shared/config/config'
 import { DumpManager } from '../shared/store/dumps'
 import { DependencyManager } from '../shared/store/dependencies'
 import { SRC_FRONTEND_INTERNAL } from '../shared/config/settings'
-import { migrate } from './startup-migrations/migration'
 import { makeExpressApp } from '../shared/api/init'
 import { createInternalRouter } from './routes/internal'
 
@@ -36,28 +32,12 @@ async function main(logger: Logger): Promise<void> {
     // Configure distributed tracing
     const tracer = createTracer('lsif-server', fetchConfiguration())
 
-    // Ensure storage roots exist
-    await ensureDirectory(settings.STORAGE_ROOT)
-    await ensureDirectory(path.join(settings.STORAGE_ROOT, constants.DBS_DIR))
-    await ensureDirectory(path.join(settings.STORAGE_ROOT, constants.TEMP_DIR))
-    await ensureDirectory(path.join(settings.STORAGE_ROOT, constants.UPLOADS_DIR))
-
     // Create database connection and entity wrapper classes
     const connection = await createPostgresConnection(fetchConfiguration(), logger)
     const dumpManager = new DumpManager(connection)
     const uploadManager = new UploadManager(connection)
     const dependencyManager = new DependencyManager(connection)
     const backend = new Backend(dumpManager, dependencyManager, SRC_FRONTEND_INTERNAL)
-
-    // Run any app-level migrations. These migrations usually exist only
-    // for a two-minor-version period in which we clean up old data and
-    // fix outdated assumptions.
-    //
-    // These block the process from starting up until completion. Also
-    // note that if the cleanup is handling an assumption from the last
-    // minor version, there may be instances of that version running
-    // after this migration step completes.
-    await migrate(connection, { logger })
 
     // Start background tasks
     startTasks(connection, dumpManager, uploadManager, logger)
