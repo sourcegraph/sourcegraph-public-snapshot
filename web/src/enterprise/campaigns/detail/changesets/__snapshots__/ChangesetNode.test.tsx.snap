@@ -34,7 +34,7 @@ Object {
         </div>
       </div>
       <div
-        className="flex-shrink-0 flex-grow-0 ml-1 d-flex flex-column align-items-end"
+        className="flex-shrink-0 flex-grow-0 ml-1 align-items-end"
       >
         <DiffStat
           added={100}
@@ -44,7 +44,7 @@ Object {
         />
       </div>
       <div
-        className="flex-shrink-0 flex-grow-0 ml-1 d-flex flex-column align-items-end"
+        className="flex-shrink-0 flex-grow-0 ml-1 align-items-end"
       />
     </div>
   </div>,
@@ -86,7 +86,7 @@ Object {
         </div>
       </div>
       <div
-        className="flex-shrink-0 flex-grow-0 ml-1 d-flex flex-column align-items-end"
+        className="flex-shrink-0 flex-grow-0 ml-1 align-items-end"
       >
         <DiffStat
           added={100}
@@ -96,7 +96,7 @@ Object {
         />
       </div>
       <div
-        className="flex-shrink-0 flex-grow-0 ml-1 d-flex flex-column align-items-end"
+        className="flex-shrink-0 flex-grow-0 ml-1 align-items-end"
       />
       <React.Fragment>
         <button
@@ -204,7 +204,7 @@ Object {
           />
         </div>
         <div
-          className="flex-shrink-0 flex-grow-0 ml-1 d-flex flex-column align-items-end"
+          className="flex-shrink-0 flex-grow-0 ml-1 align-items-end"
         >
           <DiffStat
             added={100}
@@ -214,7 +214,7 @@ Object {
           />
         </div>
         <div
-          className="flex-shrink-0 flex-grow-0 ml-1 d-flex flex-column align-items-end"
+          className="flex-shrink-0 flex-grow-0 ml-1 align-items-end"
         >
           <AccountQuestionIcon
             className="text-warning"
