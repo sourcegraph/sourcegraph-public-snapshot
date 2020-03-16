@@ -6,8 +6,8 @@ import { Connection, createConnection as _createConnection, EntityManager } from
 import { instrument } from '../metrics'
 import { Logger } from 'winston'
 import { PostgresConnectionCredentialsOptions } from 'typeorm/driver/postgres/PostgresConnectionCredentialsOptions'
-import { readEnvInt } from '../settings'
 import { TlsOptions } from 'tls'
+import * as settings from './settings'
 import { DatabaseLogger } from './logger'
 
 /**
@@ -18,18 +18,6 @@ import { DatabaseLogger } from './logger'
  * migrating).
  */
 const MINIMUM_MIGRATION_VERSION = 1528395661
-
-/** How many times to try to check the current database migration version on startup. */
-const MAX_SCHEMA_POLL_RETRIES = readEnvInt('MAX_SCHEMA_POLL_RETRIES', 60)
-
-/** How long to wait (in seconds) between queries to check the current database migration version on startup. */
-const SCHEMA_POLL_INTERVAL = readEnvInt('SCHEMA_POLL_INTERVAL', 5)
-
-/** How many times to try to connect to Postgres on startup. */
-const MAX_CONNECTION_RETRIES = readEnvInt('MAX_CONNECTION_RETRIES', 60)
-
-/** How long to wait (in seconds) between Postgres connection attempts. */
-const CONNECTION_RETRY_INTERVAL = readEnvInt('CONNECTION_RETRY_INTERVAL', 5)
 
 /**
  * Create a Postgres connection. This creates a typorm connection pool with
@@ -87,9 +75,9 @@ function connect(connectionOptions: PostgresConnectionCredentialsOptions, logger
         },
         {
             factor: 1,
-            retries: MAX_CONNECTION_RETRIES,
-            minTimeout: CONNECTION_RETRY_INTERVAL * 1000,
-            maxTimeout: CONNECTION_RETRY_INTERVAL * 1000,
+            retries: settings.MAX_CONNECTION_RETRIES,
+            minTimeout: settings.CONNECTION_RETRY_INTERVAL * 1000,
+            maxTimeout: settings.CONNECTION_RETRY_INTERVAL * 1000,
         }
     )
 }
@@ -135,9 +123,9 @@ function waitForMigrations(connection: Connection, logger: Logger): Promise<void
 
     return pRetry(check, {
         factor: 1,
-        retries: MAX_SCHEMA_POLL_RETRIES,
-        minTimeout: SCHEMA_POLL_INTERVAL * 1000,
-        maxTimeout: SCHEMA_POLL_INTERVAL * 1000,
+        retries: settings.MAX_SCHEMA_POLL_RETRIES,
+        minTimeout: settings.SCHEMA_POLL_INTERVAL * 1000,
+        maxTimeout: settings.SCHEMA_POLL_INTERVAL * 1000,
     })
 }
 

@@ -6,6 +6,7 @@ import { InternalLocation, OrderedLocationSet } from './location'
 import { TracingContext } from '../../../shared/tracing'
 import { uniqWith, isEqual } from 'lodash'
 import { parseJSON } from '../../../shared/encoding/json'
+import * as settings from '../settings'
 
 /** A wrapper around operations related to a single SQLite dump. */
 export class Database {
@@ -162,7 +163,7 @@ export class Database {
     }
 
     private async request<T>(method: string, searchParams: URLSearchParams, ctx: TracingContext): Promise<T> {
-        const url = new URL(`http://localhost:3188/${this.dump.id}/${method}`)
+        const url = new URL(`/${this.dump.id}/${method}`, settings.LSIF_STORAGE_URL)
         url.search = searchParams.toString()
         const resp = await got.get(url.href)
         return parseJSON(resp.body)

@@ -3,6 +3,9 @@ import { readEnvInt } from '../../shared/settings'
 /** Which port to run the storage server on. Defaults to 3188. */
 export const HTTP_PORT = readEnvInt('HTTP_PORT', 3188)
 
+/** HTTP address for internal LSIF HTTP API. */
+export const LSIF_SERVER_URL = process.env.LSIF_SERVER_URL || 'http://lsif-server'
+
 /** Where on the file system to store LSIF files. */
 export const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
 
@@ -32,3 +35,9 @@ export const DBS_DIR_MAXIMUM_SIZE_BYTES = readEnvInt('DBS_DIR_MAXIMUM_SIZE_BYTES
 
 /** How many uploads to query at once when determining if a db file is unreferenced. */
 export const DEAD_DUMP_CHUNK_SIZE = readEnvInt('DEAD_DUMP_CHUNK_SIZE', 100)
+
+/** How many times to retry requests to lsif-server in the background. */
+export const MAX_REQUEST_RETRIES = readEnvInt('MAX_REQUSET_RETRIES', 60)
+
+/** How long to wait (in seconds) between lsif-server request attempts. */
+export const REQUEST_RETRY_INTERVAL = readEnvInt('REQUSET_RETRY_INTERVAL', 5)

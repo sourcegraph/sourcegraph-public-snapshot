@@ -3,6 +3,9 @@ import { readEnvInt } from '../../shared/settings'
 /** Which port to run the LSIF server on. Defaults to 3186. */
 export const HTTP_PORT = readEnvInt('HTTP_PORT', 3186)
 
+/** HTTP address for internal LSIF storage server. */
+export const LSIF_STORAGE_URL = process.env.LSIF_STORAGE_URL || 'http://lsif-storage'
+
 /** Where on the file system to store temporary files. */
 export const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
 

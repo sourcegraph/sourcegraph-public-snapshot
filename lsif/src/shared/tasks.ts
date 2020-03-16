@@ -51,9 +51,11 @@ export class TaskRunner {
      * @param intervalMs The interval between invocations.
      */
     private runTask(task: () => Promise<void>, intervalMs: number): void {
-        AsyncPolling(async end => {
+        const f = async (end: () => void): Promise<void> => {
             await task()
             end()
-        }, intervalMs * 1000).run()
+        }
+
+        AsyncPolling(f, intervalMs * 1000).run()
     }
 }

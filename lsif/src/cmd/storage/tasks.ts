@@ -6,11 +6,12 @@ import * as constants from '../../shared/constants'
 import * as fs from 'mz/fs'
 import * as path from 'path'
 import { createSilentLogger } from '../../shared/logging'
-import { TracingContext } from '../../shared/tracing'
+import { TracingContext, logAndTraceCall } from '../../shared/tracing'
 import { dbFilename, idFromFilename } from '../../shared/paths'
 import { chunk } from 'lodash'
 import got from 'got'
 import { parseJSON } from '../../shared/encoding/json'
+import pRetry from 'p-retry'
 
 /**
  * Begin running cleanup tasks on a schedule in the background.
@@ -21,11 +22,7 @@ import { parseJSON } from '../../shared/encoding/json'
 export function startTasks(connection: Connection, logger: Logger): void {
     const runner = new TaskRunner(connection, logger)
     runner.register('Cleaning failed uploads', settings.CLEAN_FAILED_UPLOADS_INTERVAL, ctx => cleanFailedUploads(ctx))
-
-    runner.register('Purging old dumps', settings.PURGE_OLD_DUMPS_INTERVAL, ctx =>
-        purgeOldDumps(settings.STORAGE_ROOT, settings.DBS_DIR_MAXIMUM_SIZE_BYTES, ctx)
-    )
-
+    runner.register('Purging old dumps', settings.PURGE_OLD_DUMPS_INTERVAL, ctx => purgeOldDumps(ctx))
     runner.run()
 }
 
@@ -36,7 +33,7 @@ export function startTasks(connection: Connection, logger: Logger): void {
  *
  * @param ctx The tracing context.
  */
-const cleanFailedUploads = async ({ logger = createSilentLogger() }: TracingContext): Promise<void> => {
+async function cleanFailedUploads({ logger = createSilentLogger() }: TracingContext): Promise<void> {
     let count = 0
     for await (const filename of candidateFiles()) {
         if (await purgeFile(filename)) {
@@ -62,63 +59,47 @@ async function* candidateFiles(): AsyncIterable<string> {
  * Remove dumps until the space occupied by the dbs directory is below
  * the given limit.
  *
- * @param storageRoot The path where SQLite databases are stored.
- * @param maximumSizeBytes The maximum number of bytes.
  * @param ctx The tracing context.
  */
-async function purgeOldDumps(
-    storageRoot: string,
-    maximumSizeBytes: number,
-    { logger = createSilentLogger() }: TracingContext = {}
-): Promise<void> {
-    // First, remove all the files in the DB dir that don't have a corresponding
-    // lsif_upload record in the database. This will happen in the cases where an
-    // upload overlaps existing uploads which are deleted in batch from the db,
-    // but not from disk. This can also happen if the db file is written during
+async function purgeOldDumps({ logger = createSilentLogger(), span }: TracingContext = {}): Promise<void> {
+    // First, remove all the files in the DB dir that don't have a corresponding lsif_upload record in the
+    // database. This will happen in the cases where an upload overlaps existing uploads which are deleted
+    // in batch from the db, but not from disk. This can also happen if the db file is written during
     // processing but fails later while updating commits for that repo.
-    await removeDeadDumps(storageRoot, { logger })
+    await logAndTraceCall({ logger, span }, 'Removing dead dumps', ctx => removeDeadDumps(ctx))
 
-    if (maximumSizeBytes < 0) {
+    if (settings.DBS_DIR_MAXIMUM_SIZE_BYTES < 0) {
         return Promise.resolve()
     }
 
-    let currentSizeBytes = await dirsize(path.join(storageRoot, constants.DBS_DIR))
+    let currentSizeBytes = await dirsize(path.join(settings.STORAGE_ROOT, constants.DBS_DIR))
 
-    while (currentSizeBytes > maximumSizeBytes) {
+    while (currentSizeBytes > settings.DBS_DIR_MAXIMUM_SIZE_BYTES) {
         // While our current data usage is too big, find candidate dumps to delete
-        // TODO
-        const url = new URL('http://localhost:3186/prune').href // TODO
-        const resp = await got.post(url)
-
-        const payload: { id: number } | null = JSON.parse(resp.body)
+        const payload: { id: number } | null = await makeServerRequest('/prune')
         if (!payload) {
             logger.warn(
                 'Unable to reduce disk usage of the DB directory because deleting any single dump would drop in-use code intel for a repository.',
-                { currentSizeBytes, softMaximumSizeBytes: maximumSizeBytes }
+                { currentSizeBytes, softMaximumSizeBytes: settings.DBS_DIR_MAXIMUM_SIZE_BYTES }
             )
 
             break
         }
 
         // Delete this dump and subtract its size from the current dir size
-        const filename = dbFilename(storageRoot, payload.id)
-        currentSizeBytes -= await filesize(filename)
+        currentSizeBytes -= await filesize(dbFilename(settings.STORAGE_ROOT, payload.id))
     }
 }
 
 /**
  * Remove db files that are not reachable from a pending or completed upload record.
  *
- * @param storageRoot The path where SQLite databases are stored.
  * @param ctx The tracing context.
  */
-async function removeDeadDumps(
-    storageRoot: string,
-    { logger = createSilentLogger() }: TracingContext = {}
-): Promise<void> {
+async function removeDeadDumps({ logger = createSilentLogger() }: TracingContext = {}): Promise<void> {
     let count = 0
     for (const basenames of chunk(
-        await fs.readdir(path.join(storageRoot, constants.DBS_DIR)),
+        await fs.readdir(path.join(settings.STORAGE_ROOT, constants.DBS_DIR)),
         settings.DEAD_DUMP_CHUNK_SIZE
     )) {
         const pathsById = new Map<number, string>()
@@ -128,17 +109,10 @@ async function removeDeadDumps(
                 continue
             }
 
-            pathsById.set(id, path.join(storageRoot, constants.DBS_DIR, basename))
+            pathsById.set(id, path.join(settings.STORAGE_ROOT, constants.DBS_DIR, basename))
         }
 
-        // TODO - should retry if ECONNREFUSED
-        const url = new URL('http://localhost:3186/states').href // TODO
-        // TODO
-        const resp = await got.post(url, {
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ids: Array.from(pathsById.keys()) }),
-        })
-        const states: Map<number, string> = parseJSON(resp.body)
+        const states: Map<number, string> = await makeServerRequest('/states', { ids: Array.from(pathsById.keys()) })
 
         for (const [id, dbPath] of pathsById.entries()) {
             if (!states.has(id) || states.get(id) === 'errored') {
@@ -151,6 +125,26 @@ async function removeDeadDumps(
     if (count > 0) {
         logger.debug('Removed dead dumps', { count })
     }
+}
+
+async function makeServerRequest<T, R>(route: string, payload?: T): Promise<R> {
+    return pRetry(
+        async (): Promise<R> =>
+            parseJSON(
+                (
+                    await got.post(new URL(route, settings.LSIF_SERVER_URL).href, {
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload),
+                    })
+                ).body
+            ),
+        {
+            factor: 1,
+            retries: settings.MAX_REQUEST_RETRIES,
+            minTimeout: settings.REQUEST_RETRY_INTERVAL * 1000,
+            maxTimeout: settings.REQUEST_RETRY_INTERVAL * 1000,
+        }
+    )
 }
 
 /**

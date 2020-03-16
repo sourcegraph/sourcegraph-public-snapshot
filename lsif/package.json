@@ -9,9 +9,9 @@
     "test": "jest",
     "tslint": "../node_modules/.bin/tslint -p tsconfig.json",
     "eslint": "../node_modules/.bin/eslint --cache 'src/**/*.ts?(x)'",
-    "run:server": "tsc-watch --onSuccess \"node -r source-map-support/register out/server/server.js\" --noClear",
-    "run:worker": "tsc-watch --onSuccess \"node -r source-map-support/register out/worker/worker.js\" --noClear",
-    "run:storage": "tsc-watch --onSuccess \"node -r source-map-support/register out/storage/storage.js\" --noClear"
+    "run:server": "tsc-watch --onSuccess \"node -r source-map-support/register out/cmd/server/server.js\" --noClear",
+    "run:worker": "tsc-watch --onSuccess \"node -r source-map-support/register out/cmd/worker/worker.js\" --noClear",
+    "run:storage": "tsc-watch --onSuccess \"node -r source-map-support/register out/cmd/storage/storage.js\" --noClear"
   },
   "dependencies": {
     "@types/async-polling": "0.0.3",

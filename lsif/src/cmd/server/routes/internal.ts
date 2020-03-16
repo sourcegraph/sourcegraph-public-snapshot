@@ -8,6 +8,7 @@ import { TracingContext, addTags } from '../../../shared/tracing'
 import { Span } from 'opentracing'
 import { Logger } from 'winston'
 import { updateCommitsAndDumpsVisibleFromTip } from '../../../shared/visibility'
+import { json } from 'body-parser'
 
 /**
  * Create a router containing the upload endpoints.
@@ -39,6 +40,7 @@ export function createInternalRouter(
 
     router.post(
         '/states',
+        json(),
         wrap(
             async (req: express.Request, res: express.Response<StatesResponse>): Promise<void> => {
                 // TODO - trace

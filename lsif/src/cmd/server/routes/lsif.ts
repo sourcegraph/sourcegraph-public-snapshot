@@ -104,12 +104,17 @@ export function createLsifRouter(
                 }
 
                 const payloadId = uuid.v4()
-                const url = new URL(`http://localhost:3188/${payloadId}/raw`).href // TODO
 
                 // Move the temp file where it can be found by the server
                 await logAndTraceCall(ctx, 'Uploading dump to storage server', () =>
-                    pipeline(fs.createReadStream(filename), got.stream.post(url))
+                    pipeline(
+                        fs.createReadStream(filename),
+                        got.stream.post(new URL(`/${payloadId}/raw`, settings.LSIF_STORAGE_URL).href)
+                    )
                 )
+
+                // Remove local file
+                await fs.unlink(filename)
 
                 // Add upload record
                 const upload = await uploadManager.enqueue(
@@ -117,8 +122,6 @@ export function createLsifRouter(
                     tracer,
                     ctx.span
                 )
-
-                // await fs.unlink(filename)
 
                 // Upload conversion will complete asynchronously, send an accepted response
                 // with the upload id so that the client can continue to track the progress
