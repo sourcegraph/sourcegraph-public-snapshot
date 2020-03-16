@@ -10,13 +10,13 @@
   "BaseRefName": "master",
   "Number": 1,
   "Author": {
-   "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
+   "AvatarURL": "https://avatars1.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff\u0026v=4",
    "Login": "mrnugget",
    "URL": "https://github.com/mrnugget"
   },
   "Participants": [
    {
-    "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
+    "AvatarURL": "https://avatars1.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff\u0026v=4",
     "Login": "mrnugget",
     "URL": "https://github.com/mrnugget"
    },
@@ -35,33 +35,21 @@
     "Item": {
      "Commit": {
       "OID": "9d04a0d8733dafbb5d75e594a9ec525c49dfc975",
-      "CheckSuites": {
-       "Nodes": [
-        {
-         "ID": "MDEwOkNoZWNrU3VpdGUzMDY0MDk4NjE=",
-         "Status": "QUEUED",
-         "Conclusion": "",
-         "ReceivedAt": "0001-01-01T00:00:00Z",
-         "CheckRuns": {
-          "Nodes": []
-         }
-        },
-        {
-         "ID": "MDEwOkNoZWNrU3VpdGUzMDY0MDk4NjI=",
-         "Status": "QUEUED",
-         "Conclusion": "",
-         "ReceivedAt": "0001-01-01T00:00:00Z",
-         "CheckRuns": {
-          "Nodes": []
-         }
-        }
-       ]
+      "Message": "Add another file",
+      "MessageHeadline": "Add another file",
+      "URL": "https://github.com/sourcegraph/automation-testing/commit/9d04a0d8733dafbb5d75e594a9ec525c49dfc975",
+      "Committer": {
+       "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
+       "Email": "mrnugget@gmail.com",
+       "Name": "Thorsten Ball",
+       "User": {
+        "AvatarURL": "https://avatars1.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff\u0026v=4",
+        "Login": "mrnugget",
+        "URL": "https://github.com/mrnugget"
+       }
       },
-      "Status": {
-       "State": "",
-       "Contexts": null
-      },
-      "CommittedDate": "2019-11-12T06:38:55Z"
+      "CommittedDate": "2019-11-12T06:38:55Z",
+      "PushedDate": "2019-11-12T06:39:00Z"
      }
     }
    },
@@ -70,33 +58,21 @@
     "Item": {
      "Commit": {
       "OID": "37406e7dfa4466b80d1da183d6477aac16b1e58c",
-      "CheckSuites": {
-       "Nodes": [
-        {
-         "ID": "MDEwOkNoZWNrU3VpdGUzMDY0MTAzODA=",
-         "Status": "QUEUED",
-         "Conclusion": "",
-         "ReceivedAt": "0001-01-01T00:00:00Z",
-         "CheckRuns": {
-          "Nodes": []
-         }
-        },
-        {
-         "ID": "MDEwOkNoZWNrU3VpdGUzMDY0MTAzODM=",
-         "Status": "QUEUED",
-         "Conclusion": "",
-         "ReceivedAt": "0001-01-01T00:00:00Z",
-         "CheckRuns": {
-          "Nodes": []
-         }
-        }
-       ]
+      "Message": "Test commit to always have a open PR",
+      "MessageHeadline": "Test commit to always have a open PR",
+      "URL": "https://github.com/sourcegraph/automation-testing/commit/37406e7dfa4466b80d1da183d6477aac16b1e58c",
+      "Committer": {
+       "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
+       "Email": "mrnugget@gmail.com",
+       "Name": "Thorsten Ball",
+       "User": {
+        "AvatarURL": "https://avatars1.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff\u0026v=4",
+        "Login": "mrnugget",
+        "URL": "https://github.com/mrnugget"
+       }
       },
-      "Status": {
-       "State": "",
-       "Contexts": null
-      },
-      "CommittedDate": "2019-11-12T06:39:23Z"
+      "CommittedDate": "2019-11-12T06:39:23Z",
+      "PushedDate": "2019-11-12T06:39:33Z"
      }
     }
    },
@@ -116,7 +92,7 @@
     "Type": "ReopenedEvent",
     "Item": {
      "Actor": {
-      "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
+      "AvatarURL": "https://avatars1.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff\u0026v=4",
       "Login": "mrnugget",
       "URL": "https://github.com/mrnugget"
      },
@@ -127,7 +103,7 @@
     "Type": "RenamedTitleEvent",
     "Item": {
      "Actor": {
-      "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
+      "AvatarURL": "https://avatars1.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff\u0026v=4",
       "Login": "mrnugget",
       "URL": "https://github.com/mrnugget"
      },
