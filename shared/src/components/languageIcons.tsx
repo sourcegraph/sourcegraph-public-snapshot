@@ -18,7 +18,7 @@ import SassIcon from 'mdi-react/SassIcon'
 import LanguageTypescriptIcon from 'mdi-react/LanguageTypescriptIcon'
 import GraphqlIcon from 'mdi-react/GraphqlIcon'
 import PowershellIcon from 'mdi-react/PowershellIcon'
-import TranslateIcon from 'mdi-react/TranslateIcon'
+import WebIcon from 'mdi-react/WebIcon'
 import MarkdownIcon from 'mdi-react/MarkdownIcon'
 import RubyIcon from 'mdi-react/RubyIcon'
 import JsonIcon from 'mdi-react/JsonIcon'
@@ -34,30 +34,43 @@ interface Props extends IconProps {
 export const languageIcons: Record<string, MdiReactIconComponentType | undefined> = {
     __proto__: null as any,
 
+    bash: undefined,
     c: LanguageCIcon,
+    clojure: undefined,
     cpp: LanguageCppIcon,
     csharp: LanguageCsharpIcon,
     css: LanguageCss3Icon,
+    dart: undefined,
     go: LanguageGoIcon,
     graphql: GraphqlIcon,
+    erlang: undefined,
+    elixir: undefined,
     haskell: LanguageHaskellIcon,
     html: LanguageHtml5Icon,
     java: LanguageJavaIcon,
     javascript: LanguageJavascriptIcon,
     json: JsonIcon,
+    julia: undefined,
+    kotlin: undefined,
     lua: LanguageLuaIcon,
     markdown: MarkdownIcon,
+    ocaml: undefined,
+    objectivec: undefined,
     php: LanguagePhpIcon,
     powershell: PowershellIcon,
     python: LanguagePythonIcon,
     r: LanguageRIcon,
+    rust: undefined,
     ruby: RubyIcon,
     sass: SassIcon,
+    scala: undefined,
+    sql: undefined,
     swift: LanguageSwiftIcon,
     typescript: LanguageTypescriptIcon,
+    webassembly: undefined,
 }
 
 export const LanguageIcon: React.FunctionComponent<Props> = ({ language, size }) => {
-    const LanguageIconComponent = languageIcons[language] || TranslateIcon
+    const LanguageIconComponent = languageIcons[language] || WebIcon
     return <LanguageIconComponent size={size} />
 }
