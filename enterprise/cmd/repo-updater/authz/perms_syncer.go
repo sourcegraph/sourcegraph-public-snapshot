@@ -580,7 +580,7 @@ func (s *PermsSyncer) DebugDump() interface{} {
 	}
 
 	for len(queue.heap) > 0 {
-		// Copy the scheduledRepoUpdate as a value so that the repo pointer
+		// Copy values of the syncRequest so that the requestMeta pointer
 		// won't change concurrently after we release the lock.
 		request := heap.Pop(&queue).(*syncRequest)
 		data.Queue = append(data.Queue, &requestInfo{
