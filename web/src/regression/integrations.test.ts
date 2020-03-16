@@ -1,9 +1,9 @@
 import { describe, test } from 'mocha'
 import { getConfig } from '../../../shared/src/e2e/config'
-import { fromFetch } from 'rxjs/fetch'
 import { map, catchError } from 'rxjs/operators'
 import { checkOk } from '../../../shared/src/backend/fetch'
 import { merge } from 'rxjs'
+import { fromFetch } from '../../../shared/src/graphql/fromFetch'
 
 describe('Native integrations regression test suite', () => {
     const { sourcegraphBaseUrl } = getConfig('sourcegraphBaseUrl')

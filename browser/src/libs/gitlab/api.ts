@@ -4,10 +4,10 @@ import { map, switchMap } from 'rxjs/operators'
 
 import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable'
 import { GitLabInfo } from './scrape'
-import { fromFetch } from 'rxjs/fetch'
 import { checkOk } from '../../../../shared/src/backend/fetch'
 import { FileInfo } from '../code_intelligence'
 import { Omit } from 'utility-types'
+import { fromFetch } from '../../../../shared/src/graphql/fromFetch'
 
 /**
  * Significant revisions for a merge request.

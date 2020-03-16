@@ -14,9 +14,9 @@ import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefaul
 import { isDefined } from '../../../util/types'
 import { SettingsService } from './settings'
 import { ModelService } from './modelService'
-import { fromFetch } from 'rxjs/fetch'
 import { checkOk } from '../../../backend/fetch'
 import { ExtensionManifest } from '../../../schema/extensionSchema'
+import { fromFetch } from '../../../graphql/fromFetch'
 
 /**
  * The information about an extension necessary to execute and activate it.

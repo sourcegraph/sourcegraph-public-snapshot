@@ -5,8 +5,8 @@ import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable
 import { isDefined } from '../../../../shared/src/util/types'
 import { DiffResolvedRevSpec } from '../../shared/repo'
 import { BitbucketRepoInfo } from './scrape'
-import { fromFetch } from 'rxjs/fetch'
 import { checkOk } from '../../../../shared/src/backend/fetch'
+import { fromFetch } from '../../../../shared/src/graphql/fromFetch'
 
 //
 // PR API /rest/api/1.0/projects/SG/repos/go-langserver/pull-requests/1

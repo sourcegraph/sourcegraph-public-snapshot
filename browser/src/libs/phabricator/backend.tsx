@@ -8,11 +8,11 @@ import { storage } from '../../browser/storage'
 import { isExtension } from '../../context'
 import { resolveRepo } from '../../shared/repo/backend'
 import { normalizeRepoName } from './util'
-import { fromFetch } from 'rxjs/fetch'
 import { EREPONOTFOUND } from '../../../../shared/src/backend/errors'
 import { RepoSpec, FileSpec, ResolvedRevSpec } from '../../../../shared/src/util/url'
 import { RevisionSpec, DiffSpec, BaseDiffSpec } from '.'
 import { checkOk } from '../../../../shared/src/backend/fetch'
+import { fromFetch } from '../../../../shared/src/graphql/fromFetch'
 
 interface PhabEntity {
     id: string // e.g. "48"
