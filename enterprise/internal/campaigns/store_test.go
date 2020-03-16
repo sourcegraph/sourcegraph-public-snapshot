@@ -23,8 +23,7 @@ import (
 // Ran in integration_test.go
 func testStore(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
-		tx, done := dbtest.NewTx(t, db)
-		defer done()
+		tx := dbtest.NewTx(t, db)
 
 		now := time.Now().UTC().Truncate(time.Microsecond)
 		clock := func() time.Time {
@@ -2723,8 +2722,7 @@ func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
 		}
 
 		t.Run("GetPendingCampaignJobsWhenNoneAvailable", func(t *testing.T) {
-			tx, done := dbtest.NewTx(t, db)
-			defer done()
+			tx := dbtest.NewTx(t, db)
 			s := NewStoreWithClock(tx, clock)
 
 			process := func(ctx context.Context, s *Store, job cmpgn.CampaignJob) error {
@@ -2741,8 +2739,7 @@ func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
 		})
 
 		t.Run("GetPendingCampaignJobsWhenAvailable", func(t *testing.T) {
-			tx, done := dbtest.NewTx(t, db)
-			defer done()
+			tx := dbtest.NewTx(t, db)
 			s := NewStoreWithClock(tx, clock)
 
 			process := func(ctx context.Context, s *Store, job cmpgn.CampaignJob) error {

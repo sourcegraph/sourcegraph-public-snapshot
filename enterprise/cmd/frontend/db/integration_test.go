@@ -16,8 +16,7 @@ func TestIntegration_PermsStore(t *testing.T) {
 
 	t.Parallel()
 
-	db, cleanup := dbtest.NewDB(t, *dsn)
-	defer cleanup()
+	db := dbtest.NewDB(t, *dsn)
 
 	for _, tc := range []struct {
 		name string
