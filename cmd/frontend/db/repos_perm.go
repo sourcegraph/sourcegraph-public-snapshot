@@ -153,17 +153,18 @@ func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (filte
 			return nil, errors.Wrap(err, "list external accounts")
 		}
 
+		serviceToAccounts := make(map[string]*extsvc.ExternalAccount)
+		for _, acct := range extAccounts {
+			serviceToAccounts[acct.ServiceType+":"+acct.ServiceID] = acct
+		}
+
 		// Check if the user has an external account for every authz provider respectively,
 		// and try to fetch the account when not.
 		newAccount := false // If any new external account is associated
-	authzLoop:
 		for _, provider := range authzProviders {
-			for _, acct := range extAccounts {
-				if acct.ServiceType == provider.ServiceType() && acct.ServiceID == provider.ServiceID() {
-					// Found associated external account for the current authz provider,
-					// continue checking the next authz provider.
-					continue authzLoop
-				}
+			_, ok := serviceToAccounts[provider.ServiceType()+":"+provider.ServiceID()]
+			if ok {
+				continue
 			}
 
 			acct, err := provider.FetchAccount(ctx, currentUser, extAccounts)
