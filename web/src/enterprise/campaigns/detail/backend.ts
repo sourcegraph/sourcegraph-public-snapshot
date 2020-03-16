@@ -479,5 +479,5 @@ export async function syncChangeset(changeset: ID): Promise<void> {
         `,
         { changeset }
     ).toPromise()
-   dataOrThrowErrors(result)
+    dataOrThrowErrors(result)
 }
