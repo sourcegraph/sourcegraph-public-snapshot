@@ -24,8 +24,7 @@ func BenchmarkStore(b *testing.B) {
 	b.StopTimer()
 	b.ResetTimer()
 
-	db, cleanup := dbtest.NewDB(b, *dsn)
-	defer cleanup()
+	db := dbtest.NewDB(b, *dsn)
 
 	ids := make([]uint32, 30000)
 	for i := range ids {

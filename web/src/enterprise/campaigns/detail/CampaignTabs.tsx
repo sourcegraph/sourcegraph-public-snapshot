@@ -6,9 +6,10 @@ import { TabsWithLocalStorageViewStatePersistence } from '../../../../../shared/
 import { CampaignDiffs } from './diffs/CampaignDiffs'
 import { CampaignChangesets } from './changesets/CampaignChangesets'
 import { queryChangesets, queryChangesetPlans } from './backend'
-import { FilteredConnectionQueryArgs } from '../../../components/FilteredConnection'
-import { Subject } from 'rxjs'
+import { FilteredConnectionQueryArgs, Connection } from '../../../components/FilteredConnection'
+import { Subject, Observable } from 'rxjs'
 import classNames from 'classnames'
+import { delay, repeatWhen } from 'rxjs/operators'
 
 interface Props extends ThemeProps {
     campaign:
@@ -50,10 +51,15 @@ export const CampaignTabs: React.FunctionComponent<Props> = ({
     changesetUpdates,
 }) => {
     const queryChangesetsConnection = useCallback(
-        (args: FilteredConnectionQueryArgs) =>
-            campaign.__typename === 'CampaignPlan'
-                ? queryChangesetPlans(campaign.id, args)
-                : queryChangesets(campaign.id, args),
+        (args: FilteredConnectionQueryArgs) => {
+            const queryObservable: Observable<
+                GQL.IChangesetPlanConnection | Connection<GQL.IExternalChangeset | GQL.IChangesetPlan>
+            > =
+                campaign.__typename === 'CampaignPlan'
+                    ? queryChangesetPlans(campaign.id, args)
+                    : queryChangesets(campaign.id, args)
+            return queryObservable.pipe(repeatWhen(obs => obs.pipe(delay(5000))))
+        },
         [campaign.id, campaign.__typename]
     )
 

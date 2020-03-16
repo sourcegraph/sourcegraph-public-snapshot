@@ -33,7 +33,6 @@ import { ThemeProps } from '../../../../../shared/src/theme'
 import { CampaignDescriptionField } from './form/CampaignDescriptionField'
 import { CampaignStatus } from './CampaignStatus'
 import { CampaignTabs } from './CampaignTabs'
-import { DEFAULT_CHANGESET_LIST_COUNT } from './presentation'
 import { CampaignUpdateDiff } from './CampaignUpdateDiff'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import { CampaignUpdateSelection } from './CampaignUpdateSelection'
@@ -195,7 +194,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 (planID ? previewCampaignPlans.pipe(startWith(planID)) : previewCampaignPlans).pipe(
                     switchMap(plan => _fetchCampaignPlanById(plan)),
                     tap(campaignPlan => {
-                        if (campaignPlan && campaignPlan.changesetPlans.totalCount <= DEFAULT_CHANGESET_LIST_COUNT) {
+                        if (campaignPlan) {
                             changesetUpdates.next()
                         }
                     }),

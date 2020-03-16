@@ -6,22 +6,22 @@ Object {
     className="changeset-node__content changeset-node__content--no-collapse flex-fill"
   >
     <div
-      className="d-flex align-items-center m-1 ml-2"
+      className="d-flex align-items-start m-1 ml-2"
     >
       <div
         className="changeset-node__content flex-fill"
       >
-        <h3
-          className="m-0"
+        <div
+          className="d-flex flex-column"
         >
           <div
-            className="d-flex flex-column"
+            className="mt-2"
           >
-            <div>
-              <SourcePullIcon
-                className="mr-1 text-muted"
-                data-tooltip="open"
-              />
+            <SourcePullIcon
+              className="mr-1 icon-inline text-muted"
+              data-tooltip="open"
+            />
+            <strong>
               <AnchorLink
                 className="text-muted"
                 rel="noopener noreferrer"
@@ -30,15 +30,15 @@ Object {
               >
                 sourcegraph
               </AnchorLink>
-              <DraftBadge
-                className="ml-2"
-              />
-            </div>
+            </strong>
+            <DraftBadge
+              className="ml-2"
+            />
           </div>
-        </h3>
+        </div>
       </div>
       <div
-        className="flex-shrink-0 flex-grow-0 ml-1 d-flex flex-column align-items-end"
+        className="flex-shrink-0 flex-grow-0 ml-1 align-items-end"
       >
         <DiffStat
           added={100}
@@ -47,6 +47,9 @@ Object {
           expandedCounts={true}
         />
       </div>
+      <div
+        className="flex-shrink-0 flex-grow-0 ml-1 align-items-end"
+      />
     </div>
   </div>,
   "className": "list-group-item e2e-changeset-node",
@@ -59,22 +62,22 @@ Object {
     className="changeset-node__content changeset-node__content--no-collapse flex-fill"
   >
     <div
-      className="d-flex align-items-center m-1 ml-2"
+      className="d-flex align-items-start m-1 ml-2"
     >
       <div
         className="changeset-node__content flex-fill"
       >
-        <h3
-          className="m-0"
+        <div
+          className="d-flex flex-column"
         >
           <div
-            className="d-flex flex-column"
+            className="mt-2"
           >
-            <div>
-              <SourcePullIcon
-                className="mr-1 text-muted"
-                data-tooltip="open"
-              />
+            <SourcePullIcon
+              className="mr-1 icon-inline text-muted"
+              data-tooltip="open"
+            />
+            <strong>
               <AnchorLink
                 className="text-muted"
                 rel="noopener noreferrer"
@@ -83,15 +86,15 @@ Object {
               >
                 sourcegraph
               </AnchorLink>
-              <DraftBadge
-                className="ml-2"
-              />
-            </div>
+            </strong>
+            <DraftBadge
+              className="ml-2"
+            />
           </div>
-        </h3>
+        </div>
       </div>
       <div
-        className="flex-shrink-0 flex-grow-0 ml-1 d-flex flex-column align-items-end"
+        className="flex-shrink-0 flex-grow-0 ml-1 align-items-end"
       >
         <DiffStat
           added={100}
@@ -100,6 +103,9 @@ Object {
           expandedCounts={true}
         />
       </div>
+      <div
+        className="flex-shrink-0 flex-grow-0 ml-1 align-items-end"
+      />
       <React.Fragment>
         <button
           className="flex-shrink-0 flex-grow-0 btn btn-sm btn-secondary ml-2"
@@ -121,22 +127,24 @@ Object {
   "children": <Collapsible
     title={
       <div
-        className="d-flex align-items-center m-1 ml-2"
+        className="d-flex align-items-start m-1 ml-2"
       >
         <div
           className="changeset-node__content flex-fill"
         >
-          <h3
-            className="m-0"
+          <div
+            className="d-flex flex-column"
           >
             <div
-              className="d-flex flex-column"
+              className="m-0"
             >
-              <div>
-                <SourcePullIcon
-                  className="mr-1 text-success"
-                  data-tooltip="open"
-                />
+              <SourcePullIcon
+                className="mr-1 icon-inline text-success"
+                data-tooltip="open"
+              />
+              <h3
+                className="m-0 d-inline"
+              >
                 <LinkOrSpan
                   rel="noopener noreferrer"
                   target="_blank"
@@ -144,45 +152,67 @@ Object {
                 >
                   Remove lodash
                 </LinkOrSpan>
+              </h3>
+              <small>
                 <Memo(ErrorIcon)
                   className="ml-1 changeset-node__check-state text-danger"
                   data-tooltip="Some checks failed"
                 />
-                <span
-                  className="ml-2"
-                >
-                  <ChangesetLabel
-                    label={
-                      Object {
-                        "__typename": "ChangesetLabel",
-                        "color": "93ba13",
-                        "description": "Something is broken",
-                        "text": "bug",
-                      }
+              </small>
+              <span
+                className="ml-2"
+              >
+                <ChangesetLabel
+                  label={
+                    Object {
+                      "__typename": "ChangesetLabel",
+                      "color": "93ba13",
+                      "description": "Something is broken",
+                      "text": "bug",
                     }
-                  />
-                </span>
-              </div>
-              <div>
+                  }
+                />
+              </span>
+            </div>
+            <div
+              className="mt-2"
+            >
+              <strong>
                 <AnchorLink
-                  className="text-muted"
+                  className=""
                   rel="noopener noreferrer"
                   target="_blank"
                   to="github.com/sourcegraph/sourcegraph"
                 >
                   sourcegraph
                 </AnchorLink>
-              </div>
+              </strong>
+              <small
+                className="text-muted ml-2"
+              >
+                Last synced 
+                17 days
+                 ago.
+                 
+                <span
+                  data-tooltip="Click to prioritize refresh"
+                >
+                  <Memo(SyncIcon)
+                    className="icon-inline cursor-pointer"
+                    onClick={[Function]}
+                  />
+                </span>
+              </small>
             </div>
-          </h3>
+          </div>
           <Markdown
-            className="text-truncate"
+            className="text-truncate mt-2"
             dangerousInnerHTML="We should remove lodash
 "
           />
         </div>
         <div
-          className="flex-shrink-0 flex-grow-0 ml-1 d-flex flex-column align-items-end"
+          className="flex-shrink-0 flex-grow-0 ml-1 align-items-end"
         >
           <DiffStat
             added={100}
@@ -190,6 +220,10 @@ Object {
             deleted={100}
             expandedCounts={true}
           />
+        </div>
+        <div
+          className="flex-shrink-0 flex-grow-0 ml-1 align-items-end"
+        >
           <AccountQuestionIcon
             className="text-warning"
             data-tooltip="pending review"

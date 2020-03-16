@@ -86,6 +86,8 @@ type Mutation {
     # Since this is an asynchronous operation, the Campaign.status field can be
     # used to keep track of progress.
     publishChangeset(changesetPlan: ID!): EmptyResponse!
+    # Enqueues the given changeset for high-priority syncing.
+    syncChangeset(changeset: ID!): EmptyResponse!
 
     # Updates the user profile information for the user with the given ID.
     #

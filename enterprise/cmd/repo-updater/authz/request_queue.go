@@ -24,8 +24,7 @@ type requestType int
 // requestTypeUser had the highest because it is often triggered by a user
 // action (e.g. sign up, log in).
 const (
-	requestTypeUnknown requestType = iota
-	requestTypeRepo
+	requestTypeRepo requestType = iota + 1
 	requestTypeUser
 )
 
