@@ -1,5 +1,4 @@
 import { Observable } from 'rxjs'
-import { map, switchMap } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 import { createAggregateError } from '../util/errors'
 import { checkOk } from '../backend/fetch'
@@ -65,12 +64,13 @@ export function requestGraphQL<T extends GQL.IQuery | GQL.IMutation>({
     variables?: {}
 }): Observable<GraphQLResult<T>> {
     const nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)
-    return fromFetch(`${baseUrl}/.api/graphql${nameMatch ? '?' + nameMatch[1] : ''}`, {
-        ...options,
-        method: 'POST',
-        body: JSON.stringify({ query: request, variables }),
-    }).pipe(
-        map(checkOk),
-        switchMap(response => response.json())
+    return fromFetch(
+        `${baseUrl}/.api/graphql${nameMatch ? '?' + nameMatch[1] : ''}`,
+        {
+            ...options,
+            method: 'POST',
+            body: JSON.stringify({ query: request, variables }),
+        },
+        response => checkOk(response).json()
     )
 }

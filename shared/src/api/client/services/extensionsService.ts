@@ -27,9 +27,7 @@ export interface ExecutableExtension extends Pick<ConfiguredExtension, 'id' | 'm
 }
 
 const getConfiguredSideloadedExtension = (baseUrl: string): Observable<ConfiguredExtension> =>
-    fromFetch(`${baseUrl}/package.json`).pipe(
-        map(checkOk),
-        switchMap(response => response.json()),
+    fromFetch(`${baseUrl}/package.json`, undefined, response => checkOk(response).json()).pipe(
         map(
             (response: ExtensionManifest & { name: string; main: string }): ConfiguredExtension => ({
                 id: response.name,

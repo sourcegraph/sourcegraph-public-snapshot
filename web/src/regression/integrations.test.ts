@@ -1,6 +1,6 @@
 import { describe, test } from 'mocha'
 import { getConfig } from '../../../shared/src/e2e/config'
-import { map, catchError } from 'rxjs/operators'
+import { catchError } from 'rxjs/operators'
 import { checkOk } from '../../../shared/src/backend/fetch'
 import { merge } from 'rxjs'
 import { fromFetch } from '../../../shared/src/graphql/fromFetch'
@@ -17,8 +17,7 @@ describe('Native integrations regression test suite', () => {
         ]
         await merge(
             ...assets.map(asset =>
-                fromFetch(new URL(asset, sourcegraphBaseUrl).href).pipe(
-                    map(checkOk),
+                fromFetch(new URL(asset, sourcegraphBaseUrl).href, undefined, response => [checkOk(response)]).pipe(
                     catchError(() => {
                         throw new Error('Error fetching native integration asset: ' + asset)
                     })
