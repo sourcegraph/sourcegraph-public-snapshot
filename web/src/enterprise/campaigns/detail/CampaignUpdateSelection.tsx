@@ -3,7 +3,7 @@ import * as React from 'react'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { PageTitle } from '../../../components/PageTitle'
 import { FilteredConnection } from '../../../components/FilteredConnection'
-import { CampaignNode, CampaignNodeProps } from '../list/CampaignNode'
+import { CampaignNode, CampaignNodeProps, CampaignNodeCampaign } from '../list/CampaignNode'
 import { queryCampaigns } from '../global/list/backend'
 
 interface Props {
@@ -21,20 +21,7 @@ export const CampaignUpdateSelection: React.FunctionComponent<Props> = ({ histor
         <PageTitle title="Update campaign" />
         <h1>Select campaign to update</h1>
         <p>Choose a campaign to update from the list below to preview which changes will be made to the code hosts:</p>
-        <FilteredConnection<
-            Pick<
-                GQL.ICampaign,
-                | 'id'
-                | 'closedAt'
-                | 'name'
-                | 'description'
-                | 'changesets'
-                | 'changesetPlans'
-                | 'createdAt'
-                | 'publishedAt'
-            >,
-            Omit<CampaignNodeProps, 'node'>
-        >
+        <FilteredConnection<CampaignNodeCampaign, Omit<CampaignNodeProps, 'node'>>
             history={history}
             location={location}
             nodeComponent={CampaignNode}

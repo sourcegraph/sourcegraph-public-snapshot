@@ -270,14 +270,9 @@ func (r *changesetResolver) Events(ctx context.Context, args *struct {
 }
 
 func (r *changesetResolver) Diff(ctx context.Context) (*graphqlbackend.RepositoryComparisonResolver, error) {
-	s, err := r.Changeset.State()
-	if err != nil {
-		return nil, err
-	}
-
 	// Only return diffs for open changesets, otherwise we can't guarantee that
 	// we have the refs on gitserver
-	if s != campaigns.ChangesetStateOpen {
+	if r.ExternalState != campaigns.ChangesetStateOpen {
 		return nil, nil
 	}
 

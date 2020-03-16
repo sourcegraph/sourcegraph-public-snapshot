@@ -115,6 +115,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         if (!campaignID) {
             return
         }
+        // on the very first fetch, a reload of the changesets is not required
+        let isFirstCampaignFetch = true
         // Fetch campaign if ID was given
         const subscription = merge(of(undefined), campaignUpdates)
             .pipe(
@@ -151,7 +153,10 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         setName(fetchedCampaign.name)
                         setDescription(fetchedCampaign.description)
                     }
-                    changesetUpdates.next()
+                    if (!isFirstCampaignFetch) {
+                        changesetUpdates.next()
+                    }
+                    isFirstCampaignFetch = false
                 },
                 error: triggerError,
             })
