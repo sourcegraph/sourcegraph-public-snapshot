@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -28,10 +27,9 @@ import (
 type GithubSource struct {
 	svc             *ExternalService
 	config          *schema.GitHubConnection
-	exclude         *excluder
+	exclude         excluder
 	excludeArchived bool
 	excludeForks    bool
-	excludePatterns []*regexp.Regexp
 	githubDotCom    bool
 	baseURL         *url.URL
 	client          *github.Client
@@ -109,7 +107,7 @@ func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpc
 	return &GithubSource{
 		svc:              svc,
 		config:           c,
-		exclude:          &exclude,
+		exclude:          exclude,
 		excludeArchived:  excludeArchived,
 		excludeForks:     excludeForks,
 		baseURL:          baseURL,
