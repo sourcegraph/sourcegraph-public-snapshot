@@ -686,10 +686,7 @@ func (c *Client) GetOpenPullRequestByRefs(ctx context.Context, owner, name, base
 	q.WriteString(fmt.Sprintf("pullRequests(baseRefName: %q, headRefName: %q, first: 1, states: OPEN) { \n",
 		git.AbbreviateRef(baseRef), git.AbbreviateRef(headRef),
 	))
-	q.WriteString(fmt.Sprintf("nodes{ ... pr }\n"))
-	q.WriteString("}\n")
-	q.WriteString("}\n")
-	q.WriteString("}")
+	q.WriteString("nodes{ ... pr }\n}\n}\n}")
 
 	var results struct {
 		Repository struct {

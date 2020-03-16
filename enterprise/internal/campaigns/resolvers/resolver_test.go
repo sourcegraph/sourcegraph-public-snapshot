@@ -1026,7 +1026,7 @@ func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
 
 		reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 		repo := &repos.Repo{
-			Name: fmt.Sprintf("github.com/sourcegraph/sourcegraph"),
+			Name: "github.com/sourcegraph/sourcegraph",
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "external-id",
 				ServiceType: "github",
