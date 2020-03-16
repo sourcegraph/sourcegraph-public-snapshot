@@ -226,10 +226,6 @@ type EventFilterOptions struct {
 	ByEventNames []string
 	// Must be used with ByEventName
 	//
-	// Only include events with a given name, and which include a JSON argument matching a given value.
-	ByEventNameWithArgument *EventArgumentMatch
-	// Must be used with ByEventName
-	//
 	// If set, only include events that match a specified condition.
 	ByEventNameWithCondition *sqlf.Query
 }
@@ -272,13 +268,6 @@ func (l *eventLogs) CountUniqueUsersPerPeriod(ctx context.Context, periodType Pe
 			if opt.EventFilters.ByEventName != "" {
 				conds = append(conds, sqlf.Sprintf("name = %s", opt.EventFilters.ByEventName))
 			}
-			if opt.EventFilters.ByEventNameWithArgument != nil {
-				if opt.EventFilters.ByEventName == "" {
-					return nil, fmt.Errorf("The ByEventNameWithArgument option must be used together with the ByEventName option.")
-				}
-				conds = append(conds, sqlf.Sprintf("name = %s", opt.EventFilters.ByEventName))
-				conds = append(conds, sqlf.Sprintf("argument->>%s=%s", opt.EventFilters.ByEventNameWithArgument.ArgumentName, opt.EventFilters.ByEventNameWithArgument.ArgumentValue))
-			}
 			if opt.EventFilters.ByEventNameWithCondition != nil {
 				if opt.EventFilters.ByEventName == "" {
 					return nil, fmt.Errorf("The ByEventNameWithCondition option must be used together with the ByEventName option.")
@@ -319,13 +308,6 @@ func (l *eventLogs) CountEventsPerPeriod(ctx context.Context, periodType PeriodT
 		}
 		if opt.ByEventName != "" {
 			conds = append(conds, sqlf.Sprintf("name = %s", opt.ByEventName))
-		}
-		if opt.ByEventNameWithArgument != nil {
-			if opt.ByEventName == "" {
-				return nil, fmt.Errorf("The ByEventNameWithArgument option must be used together with the ByEventName option.")
-			}
-			conds = append(conds, sqlf.Sprintf("name = %s", opt.ByEventName))
-			conds = append(conds, sqlf.Sprintf("argument->>%s=%s", opt.ByEventNameWithArgument.ArgumentName, opt.ByEventNameWithArgument.ArgumentValue))
 		}
 		if opt.ByEventNameWithCondition != nil {
 			if opt.ByEventName == "" {

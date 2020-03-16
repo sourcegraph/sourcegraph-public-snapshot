@@ -143,11 +143,8 @@ func searchActivity(ctx context.Context, periodType db.PeriodType, periods int, 
 	for searchMode, match := range searchModeNameToArgumentMatches {
 		userCounts, err := db.EventLogs.CountUniqueUsersPerPeriod(ctx, periodType, timeNow().UTC(), periods, &db.CountUniqueUsersOptions{
 			EventFilters: &db.EventFilterOptions{
-				ByEventName: match.eventName,
-				ByEventNameWithArgument: &db.EventArgumentMatch{
-					ArgumentName:  match.argumentName,
-					ArgumentValue: searchMode,
-				},
+				ByEventName:              match.eventName,
+				ByEventNameWithCondition: sqlf.Sprintf("argument->>%s=%s", match.argumentName, searchMode),
 			},
 		})
 		if err != nil {
@@ -159,11 +156,8 @@ func searchActivity(ctx context.Context, periodType db.PeriodType, periods int, 
 		}
 		if includeEventCounts {
 			eventCounts, err := db.EventLogs.CountEventsPerPeriod(ctx, periodType, timeNow().UTC(), periods, &db.EventFilterOptions{
-				ByEventName: match.eventName,
-				ByEventNameWithArgument: &db.EventArgumentMatch{
-					ArgumentName:  match.argumentName,
-					ArgumentValue: searchMode,
-				},
+				ByEventName:              match.eventName,
+				ByEventNameWithCondition: sqlf.Sprintf("argument->>%s=%s", match.argumentName, searchMode),
 			})
 			if err != nil {
 				return nil, err
