@@ -221,17 +221,34 @@ type SearchUsageStatistics struct {
 // to the updatecheck handler. This struct is marshalled and sent to
 // BigQuery, which requires the input match its schema exactly.
 type SearchUsagePeriod struct {
-	StartTime   time.Time
-	TotalUsers  int32
-	Literal     *SearchEventStatistics
-	Regexp      *SearchEventStatistics
-	Structural  *SearchEventStatistics
-	File        *SearchEventStatistics
-	Repo        *SearchEventStatistics
-	Diff        *SearchEventStatistics
-	Commit      *SearchEventStatistics
-	Symbol      *SearchEventStatistics
-	SearchModes *SearchModeUsageStatistics
+	StartTime          time.Time
+	TotalUsers         int32
+	Literal            *SearchEventStatistics
+	Regexp             *SearchEventStatistics
+	After              *SearchEventStatistics
+	Archived           *SearchEventStatistics
+	Author             *SearchEventStatistics
+	Before             *SearchEventStatistics
+	Case               *SearchEventStatistics
+	Commit             *SearchEventStatistics
+	Committer          *SearchEventStatistics
+	Content            *SearchEventStatistics
+	Count              *SearchEventStatistics
+	Diff               *SearchEventStatistics
+	File               *SearchEventStatistics
+	Fork               *SearchEventStatistics
+	Index              *SearchEventStatistics
+	Lang               *SearchEventStatistics
+	Message            *SearchEventStatistics
+	Repo               *SearchEventStatistics
+	Repohascommitafter *SearchEventStatistics
+	Repohasfile        *SearchEventStatistics
+	Repogroup          *SearchEventStatistics
+	Structural         *SearchEventStatistics
+	Symbol             *SearchEventStatistics
+	Timeout            *SearchEventStatistics
+	Type               *SearchEventStatistics
+	SearchModes        *SearchModeUsageStatistics
 }
 
 type SearchModeUsageStatistics struct {
@@ -248,6 +265,8 @@ type SearchCountStatistics struct {
 // to the updatecheck handler. This struct is marshalled and sent to
 // BigQuery, which requires the input match its schema exactly.
 type SearchEventStatistics struct {
+	UserCount      *int32
+	EventsCount    *int32
 	EventLatencies *SearchEventLatencies
 }
 

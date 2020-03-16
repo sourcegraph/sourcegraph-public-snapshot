@@ -547,3 +547,42 @@ func (l *eventLogs) ListUniqueUsersAll(ctx context.Context, startDate, endDate t
 	}
 	return users, nil
 }
+
+// CountUniqueUsersSearchingWithFilterPerPeriod counts the number of unique users who have searched using a each search filter,
+// broken up into periods of a given type.
+func (l *eventLogs) CountUniqueUsersSearchingWithFilterPerPeriod(ctx context.Context, periodType PeriodType, now time.Time, periods int, filterFieldName string) ([]UsageValue, error) {
+	startDate, ok := calcStartDate(now, periodType, periods)
+	if !ok {
+		return nil, fmt.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
+	}
+
+	endDate, ok := calcEndDate(startDate, periodType, periods)
+	if !ok {
+		return nil, fmt.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
+	}
+
+	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
+	conds = append(conds, sqlf.Sprintf("name = %s", "SearchResultsQueried"))
+	conds = append(conds, sqlf.Sprintf("argument->'code_search'->'query_data'->'query'->%s IS NOT NULL", filterFieldName))
+
+	return l.countUniqueUsersPerPeriodBySQL(ctx, intervalByPeriodType[periodType], periodByPeriodType[periodType], startDate, endDate, conds)
+}
+
+// CountSearchesWithFilterPerPeriod counts the number of searches containing each search filter, broken up into periods of a given type.
+func (l *eventLogs) CountSearchesWithFilterPerPeriod(ctx context.Context, periodType PeriodType, now time.Time, periods int, filterFieldName string) ([]UsageValue, error) {
+	startDate, ok := calcStartDate(now, periodType, periods)
+	if !ok {
+		return nil, fmt.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
+	}
+
+	endDate, ok := calcEndDate(startDate, periodType, periods)
+	if !ok {
+		return nil, fmt.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
+	}
+
+	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
+	conds = append(conds, sqlf.Sprintf("name = %s", "SearchResultsQueried"))
+	conds = append(conds, sqlf.Sprintf("argument->'code_search'->'query_data'->'query'->%s IS NOT NULL", filterFieldName))
+
+	return l.countEventsPerPeriodBySQL(ctx, intervalByPeriodType[periodType], periodByPeriodType[periodType], startDate, endDate, conds)
+}

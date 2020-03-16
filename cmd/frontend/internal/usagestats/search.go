@@ -2,6 +2,7 @@ package usagestats
 
 import (
 	"context"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -173,20 +174,81 @@ func searchActivity(ctx context.Context, periodType db.PeriodType, periods int, 
 		}
 	}
 
+	filterFieldNames := map[string]func(*types.SearchUsagePeriod) *types.SearchEventStatistics{
+		"field_after":              func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.After },
+		"field_archived":           func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Archived },
+		"field_author":             func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Author },
+		"field_before":             func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Before },
+		"field_case":               func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Case },
+		"field_committer":          func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Committer },
+		"field_content":            func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Content },
+		"field_count":              func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Count },
+		"field_file":               func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.File },
+		"field_fork":               func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Fork },
+		"field_index":              func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Index },
+		"field_lang":               func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Lang },
+		"field_message":            func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Message },
+		"field_repo":               func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Repo },
+		"field_repogroup":          func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Repogroup },
+		"field_repohascommitafter": func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Repohascommitafter }, "field_+repohasfile": func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Repohasfile },
+		"field_repohasfile": func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Repohasfile },
+		"field_timeout":     func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Timeout },
+		"field_type":        func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Type },
+	}
+
+	for filter, getEventCounts := range filterFieldNames {
+		userCounts, err := db.EventLogs.CountUniqueUsersSearchingWithFilterPerPeriod(ctx, periodType, time.Now().UTC(), periods, filter)
+		if err != nil {
+			return nil, err
+		}
+
+		for i, uc := range userCounts {
+			count := int32(uc.Count)
+			getEventCounts(activityPeriods[i]).UserCount = &count
+		}
+
+		filterCounts, err := db.EventLogs.CountSearchesWithFilterPerPeriod(ctx, periodType, time.Now().UTC(), periods, filter)
+		if err != nil {
+			return nil, err
+		}
+
+		for i, fc := range filterCounts {
+			count := int32(fc.Count)
+			getEventCounts(activityPeriods[i]).EventsCount = &count
+		}
+	}
+
 	return activityPeriods, nil
 }
 
 func newSearchEventPeriod() *types.SearchUsagePeriod {
 	return &types.SearchUsagePeriod{
-		TotalUsers:  0,
-		Literal:     &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}},
-		Regexp:      &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}},
-		Structural:  &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}},
-		File:        &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}},
-		Repo:        &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}},
-		Diff:        &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}},
-		Commit:      &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}},
-		Symbol:      &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}},
-		SearchModes: &types.SearchModeUsageStatistics{Interactive: &types.SearchCountStatistics{}, PlainText: &types.SearchCountStatistics{}},
+		TotalUsers:         0,
+		Literal:            &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}},
+		Regexp:             &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}},
+		Structural:         &types.SearchEventStatistics{UserCount: nil, EventsCount: nil, EventLatencies: &types.SearchEventLatencies{}},
+		File:               &types.SearchEventStatistics{UserCount: nil, EventsCount: nil, EventLatencies: &types.SearchEventLatencies{}},
+		Repo:               &types.SearchEventStatistics{UserCount: nil, EventsCount: nil, EventLatencies: &types.SearchEventLatencies{}},
+		Diff:               &types.SearchEventStatistics{UserCount: nil, EventsCount: nil, EventLatencies: &types.SearchEventLatencies{}},
+		Commit:             &types.SearchEventStatistics{UserCount: nil, EventsCount: nil, EventLatencies: &types.SearchEventLatencies{}},
+		Symbol:             &types.SearchEventStatistics{UserCount: nil, EventsCount: nil, EventLatencies: &types.SearchEventLatencies{}},
+		Case:               &types.SearchEventStatistics{UserCount: nil, EventsCount: nil, EventLatencies: &types.SearchEventLatencies{}},
+		Committer:          &types.SearchEventStatistics{UserCount: nil, EventsCount: nil, EventLatencies: &types.SearchEventLatencies{}},
+		Lang:               &types.SearchEventStatistics{UserCount: nil, EventsCount: nil, EventLatencies: &types.SearchEventLatencies{}},
+		Fork:               &types.SearchEventStatistics{UserCount: nil, EventsCount: nil, EventLatencies: &types.SearchEventLatencies{}},
+		Archived:           &types.SearchEventStatistics{UserCount: nil, EventsCount: nil, EventLatencies: &types.SearchEventLatencies{}},
+		Count:              &types.SearchEventStatistics{UserCount: nil, EventsCount: nil, EventLatencies: &types.SearchEventLatencies{}},
+		Timeout:            &types.SearchEventStatistics{UserCount: nil, EventsCount: nil, EventLatencies: &types.SearchEventLatencies{}},
+		Content:            &types.SearchEventStatistics{UserCount: nil, EventsCount: nil, EventLatencies: &types.SearchEventLatencies{}},
+		Before:             &types.SearchEventStatistics{UserCount: nil, EventsCount: nil, EventLatencies: &types.SearchEventLatencies{}},
+		After:              &types.SearchEventStatistics{UserCount: nil, EventsCount: nil, EventLatencies: &types.SearchEventLatencies{}},
+		Author:             &types.SearchEventStatistics{UserCount: nil, EventsCount: nil, EventLatencies: &types.SearchEventLatencies{}},
+		Message:            &types.SearchEventStatistics{UserCount: nil, EventsCount: nil, EventLatencies: &types.SearchEventLatencies{}},
+		Index:              &types.SearchEventStatistics{UserCount: nil, EventsCount: nil, EventLatencies: &types.SearchEventLatencies{}},
+		Repogroup:          &types.SearchEventStatistics{UserCount: nil, EventsCount: nil, EventLatencies: &types.SearchEventLatencies{}},
+		Repohasfile:        &types.SearchEventStatistics{UserCount: nil, EventsCount: nil, EventLatencies: &types.SearchEventLatencies{}},
+		Repohascommitafter: &types.SearchEventStatistics{UserCount: nil, EventsCount: nil, EventLatencies: &types.SearchEventLatencies{}},
+		Type:               &types.SearchEventStatistics{UserCount: nil, EventsCount: nil, EventLatencies: &types.SearchEventLatencies{}},
+		SearchModes:        &types.SearchModeUsageStatistics{Interactive: &types.SearchCountStatistics{}, PlainText: &types.SearchCountStatistics{}},
 	}
 }
