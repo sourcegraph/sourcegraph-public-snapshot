@@ -93,6 +93,6 @@ func startBackgroundPermsSync(ctx context.Context, repoStore repos.Store, db dbu
 		return time.Now().UTC().Truncate(time.Microsecond)
 	}
 	permsStore := frontendDB.NewPermsStore(db, clock)
-	permsSyncer := authz.NewPermsSyncer(repoStore, permsStore, db, clock)
+	permsSyncer := authz.NewPermsSyncer(repoStore, permsStore, clock)
 	go permsSyncer.Run(ctx)
 }
