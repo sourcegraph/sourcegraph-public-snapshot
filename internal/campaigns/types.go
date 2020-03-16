@@ -415,9 +415,9 @@ func (c *Changeset) IsDeleted() bool {
 	return !c.ExternalDeletedAt.IsZero()
 }
 
-// State of a Changeset based on the metadata.
-// It does NOT reflect the final calculated state, use `ExternalState` therefore.
-func (c *Changeset) State() (s ChangesetState, err error) {
+// state of a Changeset based on the metadata.
+// It does NOT reflect the final calculated state, use `ExternalState` instead.
+func (c *Changeset) state() (s ChangesetState, err error) {
 	if !c.ExternalDeletedAt.IsZero() {
 		return ChangesetStateDeleted, nil
 	}
@@ -718,11 +718,11 @@ func ComputeCheckState(c *Changeset, events ChangesetEvents) ChangesetCheckState
 // associated events. The events should be presorted.
 func ComputeChangesetState(c *Changeset, events ChangesetEvents) (ChangesetState, error) {
 	if len(events) == 0 {
-		return c.State()
+		return c.state()
 	}
 	newestEvent := events[len(events)-1]
 	if c.UpdatedAt.After(newestEvent.Timestamp()) {
-		return c.State()
+		return c.state()
 	}
 	return events.State(), nil
 }
