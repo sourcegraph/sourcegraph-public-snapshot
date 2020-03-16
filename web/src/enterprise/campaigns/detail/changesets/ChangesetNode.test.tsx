@@ -50,6 +50,7 @@ describe('ChangesetNode', () => {
                 }
                 campaignUpdates={new Subject<void>()}
                 enablePublishing={enablePublishing}
+                _now={new Date('2019-12-15')}
             />
         )
         const result = renderer.getRenderOutput()
@@ -107,6 +108,7 @@ describe('ChangesetNode', () => {
                 }
                 campaignUpdates={new Subject<void>()}
                 enablePublishing={false}
+                _now={new Date('2019-12-15')}
             />
         )
         const result = renderer.getRenderOutput()

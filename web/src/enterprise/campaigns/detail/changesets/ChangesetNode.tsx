@@ -36,7 +36,7 @@ import { ChangesetLabel } from './ChangesetLabel'
 import classNames from 'classnames'
 import { DraftBadge } from '../../DraftBadge'
 import SyncIcon from 'mdi-react/SyncIcon'
-import { parseISO, formatDistanceToNow } from 'date-fns'
+import { parseISO, formatDistance } from 'date-fns'
 
 export interface ChangesetNodeProps extends ThemeProps {
     node: IExternalChangeset | IChangesetPlan
@@ -45,6 +45,9 @@ export interface ChangesetNodeProps extends ThemeProps {
     location: H.Location
     /** Shows the publish button for ChangesetPlans */
     enablePublishing: boolean
+
+    /** For testing only */
+    _now?: Date
 }
 
 export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
@@ -54,6 +57,7 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
     history,
     location,
     enablePublishing,
+    _now,
 }) => {
     const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null)
     const [isPublishing, setIsPublishing] = useState<boolean>()
@@ -115,7 +119,7 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
     const stateIcon = (
         <ChangesetStateIcon
             className={classNames(
-                'mr-1',
+                'mr-1 icon-inline',
                 node.__typename === 'ExternalChangeset'
                     ? `text-${changesetStatusColorClasses[changesetState]}`
                     : 'text-muted'
@@ -128,13 +132,13 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
         node.__typename === 'ExternalChangeset' && node.updatedAt !== lastUpdatedAt ? SyncIcon : LoadingSpinner
 
     const changesetNodeRow = (
-        <div className="d-flex align-items-center m-1 ml-2">
+        <div className="d-flex align-items-start m-1 ml-2">
             <div className="changeset-node__content flex-fill">
-                <h3 className="m-0">
-                    <div className="d-flex flex-column">
-                        {node.__typename === 'ExternalChangeset' && (
-                            <div>
-                                {stateIcon}
+                <div className="d-flex flex-column">
+                    {node.__typename === 'ExternalChangeset' && (
+                        <div className="m-0">
+                            {stateIcon}
+                            <h3 className="m-0 d-inline">
                                 <LinkOrSpan
                                     /* Deleted changesets most likely don't exist on the codehost anymore and would return 404 pages */
                                     to={
@@ -147,7 +151,9 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                                 >
                                     {node.title}
                                 </LinkOrSpan>
-                                {node.__typename === 'ExternalChangeset' && node.checkState && (
+                            </h3>
+                            {node.checkState && (
+                                <small>
                                     <ChangesetCheckStateIcon
                                         className={classNames(
                                             'ml-1 changeset-node__check-state',
@@ -155,55 +161,59 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                                         )}
                                         data-tooltip={changesetCheckStateTooltips[node.checkState]}
                                     />
-                                )}
-                                {node.labels.length > 0 && (
-                                    <span className="ml-2">
-                                        {node.labels.map(label => (
-                                            <ChangesetLabel label={label} key={label.text} />
-                                        ))}
-                                    </span>
-                                )}
-                            </div>
-                        )}
-                        <div>
-                            {node.__typename === 'ChangesetPlan' && stateIcon}
+                                </small>
+                            )}
+                            {node.labels.length > 0 && (
+                                <span className="ml-2">
+                                    {node.labels.map(label => (
+                                        <ChangesetLabel label={label} key={label.text} />
+                                    ))}
+                                </span>
+                            )}
+                        </div>
+                    )}
+                    <div className="mt-2">
+                        <strong>
                             <Link
                                 to={node.repository.url}
-                                className="text-muted"
+                                className={classNames(node.__typename === 'ChangesetPlan' && 'text-muted')}
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >
                                 {node.repository.name}
                             </Link>
-                            {node.__typename === 'ChangesetPlan' && !isPublishing && <DraftBadge className="ml-2" />}
-                        </div>
+                        </strong>
+                        {node.__typename === 'ExternalChangeset' && (
+                            <small className="text-muted ml-2">
+                                Last synced {formatDistance(parseISO(node.updatedAt), _now ?? new Date())} ago.{' '}
+                                <span
+                                    data-tooltip={
+                                        node.updatedAt === lastUpdatedAt
+                                            ? 'Currently refreshing'
+                                            : 'Click to prioritize refresh'
+                                    }
+                                >
+                                    <UpdateLoaderIcon
+                                        className={classNames('icon-inline', !lastUpdatedAt && 'cursor-pointer')}
+                                        onClick={enqueueChangeset}
+                                    />
+                                </span>
+                            </small>
+                        )}
+                        {node.__typename === 'ChangesetPlan' && !isPublishing && <DraftBadge className="ml-2" />}
                     </div>
-                </h3>
+                </div>
                 {node.__typename === 'ExternalChangeset' && (
                     <Markdown
-                        className="text-truncate"
+                        className="text-truncate mt-2"
                         dangerousInnerHTML={renderMarkdown(node.body, { plainText: true })}
                     />
                 )}
             </div>
-            <div className="flex-shrink-0 flex-grow-0 ml-1 d-flex flex-column align-items-end">
-                {node.__typename === 'ExternalChangeset' && (
-                    <span
-                        data-tooltip={
-                            node.updatedAt === lastUpdatedAt
-                                ? 'Currently refreshing'
-                                : `Last synced ${formatDistanceToNow(
-                                      parseISO(node.updatedAt)
-                                  )} ago. Click to prioritize refresh`
-                        }
-                    >
-                        <UpdateLoaderIcon
-                            className={classNames('icon-inline', !lastUpdatedAt && 'cursor-pointer')}
-                            onClick={enqueueChangeset}
-                        />
-                    </span>
-                )}
+            <div className="flex-shrink-0 flex-grow-0 ml-1 align-items-end">
                 {fileDiffs && <DiffStat {...fileDiffs.diffStat} expandedCounts={true} />}
+            </div>
+            <div className="flex-shrink-0 flex-grow-0 ml-1 align-items-end">
                 {node.__typename === 'ExternalChangeset' && (
                     <ReviewStateIcon
                         className={
