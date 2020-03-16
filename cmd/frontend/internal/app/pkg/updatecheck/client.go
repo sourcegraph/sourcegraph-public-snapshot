@@ -192,7 +192,6 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 	if err != nil {
 		logFunc("externalServicesKinds failed", "error", err)
 	}
-
 	contents, err := json.Marshal(&pingRequest{
 		ClientSiteID:         siteid.Get(),
 		DeployType:           conf.DeployType(),

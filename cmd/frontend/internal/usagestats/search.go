@@ -2,7 +2,9 @@ package usagestats
 
 import (
 	"context"
+	"time"
 
+	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 )
@@ -141,11 +143,8 @@ func searchActivity(ctx context.Context, periodType db.PeriodType, periods int, 
 	for searchMode, match := range searchModeNameToArgumentMatches {
 		userCounts, err := db.EventLogs.CountUniqueUsersPerPeriod(ctx, periodType, timeNow().UTC(), periods, &db.CountUniqueUsersOptions{
 			EventFilters: &db.EventFilterOptions{
-				ByEventName: match.eventName,
-				ByEventNameWithArgument: &db.EventArgumentMatch{
-					ArgumentName:  match.argumentName,
-					ArgumentValue: searchMode,
-				},
+				ByEventName:              match.eventName,
+				ByEventNameWithCondition: sqlf.Sprintf("argument->>%s=%s", match.argumentName, searchMode),
 			},
 		})
 		if err != nil {
@@ -157,11 +156,8 @@ func searchActivity(ctx context.Context, periodType db.PeriodType, periods int, 
 		}
 		if includeEventCounts {
 			eventCounts, err := db.EventLogs.CountEventsPerPeriod(ctx, periodType, timeNow().UTC(), periods, &db.EventFilterOptions{
-				ByEventName: match.eventName,
-				ByEventNameWithArgument: &db.EventArgumentMatch{
-					ArgumentName:  match.argumentName,
-					ArgumentValue: searchMode,
-				},
+				ByEventName:              match.eventName,
+				ByEventNameWithCondition: sqlf.Sprintf("argument->>%s=%s", match.argumentName, searchMode),
 			})
 			if err != nil {
 				return nil, err
@@ -173,20 +169,127 @@ func searchActivity(ctx context.Context, periodType db.PeriodType, periods int, 
 		}
 	}
 
+	filterEventStatistics := map[string]func(*types.SearchUsagePeriod) *types.SearchEventStatistics{
+		"field_file": func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.File },
+		"field_repo": func(p *types.SearchUsagePeriod) *types.SearchEventStatistics { return p.Repo },
+	}
+
+	filterCountStatistics := map[string]func(*types.SearchUsagePeriod) *types.SearchCountStatistics{
+		"field_after":              func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.After },
+		"field_archived":           func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.Archived },
+		"field_author":             func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.Author },
+		"field_before":             func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.Before },
+		"field_case":               func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.Case },
+		"field_committer":          func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.Committer },
+		"field_content":            func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.Content },
+		"field_count":              func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.Count },
+		"field_fork":               func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.Fork },
+		"field_index":              func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.Index },
+		"field_lang":               func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.Lang },
+		"field_message":            func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.Message },
+		"field_patterntype":        func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.PatternType },
+		"field_repogroup":          func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.Repogroup },
+		"field_repohascommitafter": func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.Repohascommitafter },
+		"field_repohasfile":        func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.Repohasfile },
+		"field_timeout":            func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.Timeout },
+		"field_type":               func(p *types.SearchUsagePeriod) *types.SearchCountStatistics { return p.Type },
+	}
+
+	for filter, getCountStatistics := range filterEventStatistics {
+		userCounts, err := countSearchFilterUsersPerPeriod(ctx, periodType, time.Now().UTC(), periods, filter)
+		if err != nil {
+			return nil, err
+		}
+
+		for i, uc := range userCounts {
+			count := int32(uc.Count)
+			getCountStatistics(activityPeriods[i]).UserCount = &count
+		}
+
+		if includeEventCounts {
+			filterCounts, err := countSearchFilterEventsPerPeriod(ctx, periodType, time.Now().UTC(), periods, filter)
+			if err != nil {
+				return nil, err
+			}
+
+			for i, fc := range filterCounts {
+				count := int32(fc.Count)
+				getCountStatistics(activityPeriods[i]).EventsCount = &count
+			}
+		}
+	}
+
+	for filter, getCountStatistics := range filterCountStatistics {
+		userCounts, err := countSearchFilterUsersPerPeriod(ctx, periodType, time.Now().UTC(), periods, filter)
+		if err != nil {
+			return nil, err
+		}
+
+		for i, uc := range userCounts {
+			count := int32(uc.Count)
+			getCountStatistics(activityPeriods[i]).UserCount = &count
+		}
+
+		if includeEventCounts {
+			eventCounts, err := countSearchFilterEventsPerPeriod(ctx, periodType, time.Now().UTC(), periods, filter)
+			if err != nil {
+				return nil, err
+			}
+
+			for i, fc := range eventCounts {
+				count := int32(fc.Count)
+				getCountStatistics(activityPeriods[i]).EventsCount = &count
+			}
+		}
+	}
 	return activityPeriods, nil
+}
+
+func countSearchFilterEventsPerPeriod(ctx context.Context, periodType db.PeriodType, now time.Time, periods int, fieldName string) ([]db.UsageValue, error) {
+	ec, err := db.EventLogs.CountEventsPerPeriod(ctx, periodType, now, periods, &db.EventFilterOptions{ByEventName: "SearchResultsQueried", ByEventNameWithCondition: sqlf.Sprintf("argument->'code_search'->'query_data'->'query'->%s IS NOT NULL", fieldName)})
+	if err != nil {
+		return nil, err
+	}
+	return ec, nil
+}
+
+func countSearchFilterUsersPerPeriod(ctx context.Context, periodType db.PeriodType, now time.Time, periods int, fieldName string) ([]db.UsageValue, error) {
+	ec, err := db.EventLogs.CountUniqueUsersPerPeriod(ctx, periodType, now, periods, &db.CountUniqueUsersOptions{EventFilters: &db.EventFilterOptions{ByEventName: "SearchResultsQueried", ByEventNameWithCondition: sqlf.Sprintf("argument->'code_search'->'query_data'->'query'->%s IS NOT NULL", fieldName)}})
+	if err != nil {
+		return nil, err
+	}
+	return ec, nil
 }
 
 func newSearchEventPeriod() *types.SearchUsagePeriod {
 	return &types.SearchUsagePeriod{
-		TotalUsers:  0,
-		Literal:     &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}},
-		Regexp:      &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}},
-		Structural:  &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}},
-		File:        &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}},
-		Repo:        &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}},
-		Diff:        &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}},
-		Commit:      &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}},
-		Symbol:      &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}},
-		SearchModes: &types.SearchModeUsageStatistics{Interactive: &types.SearchCountStatistics{}, PlainText: &types.SearchCountStatistics{}},
+		TotalUsers:         0,
+		Literal:            &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}},
+		Regexp:             &types.SearchEventStatistics{EventLatencies: &types.SearchEventLatencies{}},
+		Structural:         &types.SearchEventStatistics{UserCount: nil, EventsCount: nil, EventLatencies: &types.SearchEventLatencies{}},
+		File:               &types.SearchEventStatistics{UserCount: nil, EventsCount: nil, EventLatencies: &types.SearchEventLatencies{}},
+		Repo:               &types.SearchEventStatistics{UserCount: nil, EventsCount: nil, EventLatencies: &types.SearchEventLatencies{}},
+		Diff:               &types.SearchEventStatistics{UserCount: nil, EventsCount: nil, EventLatencies: &types.SearchEventLatencies{}},
+		Commit:             &types.SearchEventStatistics{UserCount: nil, EventsCount: nil, EventLatencies: &types.SearchEventLatencies{}},
+		Symbol:             &types.SearchEventStatistics{UserCount: nil, EventsCount: nil, EventLatencies: &types.SearchEventLatencies{}},
+		Case:               &types.SearchCountStatistics{UserCount: nil, EventsCount: nil},
+		Committer:          &types.SearchCountStatistics{UserCount: nil, EventsCount: nil},
+		Lang:               &types.SearchCountStatistics{UserCount: nil, EventsCount: nil},
+		Fork:               &types.SearchCountStatistics{UserCount: nil, EventsCount: nil},
+		Archived:           &types.SearchCountStatistics{UserCount: nil, EventsCount: nil},
+		Count:              &types.SearchCountStatistics{UserCount: nil, EventsCount: nil},
+		Timeout:            &types.SearchCountStatistics{UserCount: nil, EventsCount: nil},
+		Content:            &types.SearchCountStatistics{UserCount: nil, EventsCount: nil},
+		Before:             &types.SearchCountStatistics{UserCount: nil, EventsCount: nil},
+		After:              &types.SearchCountStatistics{UserCount: nil, EventsCount: nil},
+		Author:             &types.SearchCountStatistics{UserCount: nil, EventsCount: nil},
+		Message:            &types.SearchCountStatistics{UserCount: nil, EventsCount: nil},
+		Index:              &types.SearchCountStatistics{UserCount: nil, EventsCount: nil},
+		Repogroup:          &types.SearchCountStatistics{UserCount: nil, EventsCount: nil},
+		Repohasfile:        &types.SearchCountStatistics{UserCount: nil, EventsCount: nil},
+		Repohascommitafter: &types.SearchCountStatistics{UserCount: nil, EventsCount: nil},
+		PatternType:        &types.SearchCountStatistics{UserCount: nil, EventsCount: nil},
+		Type:               &types.SearchCountStatistics{UserCount: nil, EventsCount: nil},
+		SearchModes:        &types.SearchModeUsageStatistics{Interactive: &types.SearchCountStatistics{}, PlainText: &types.SearchCountStatistics{}},
 	}
 }

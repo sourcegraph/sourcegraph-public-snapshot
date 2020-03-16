@@ -19,6 +19,8 @@ All notable changes to Sourcegraph are documented in this file.
 - Campaign changesets can be filtered by State, Review State and Check State [8848](https://github.com/sourcegraph/sourcegraph/pull/8848)
 - Counts of users of and searches conducted with interactive and plain text search modes will be sent back in pings, aggregated daily, weekly, and monthly.
 - Aggregated counts of daily, weekly, and monthly active users of search will be sent back in pings.
+- Counts of number of searches conducted using each filter will be sent back in pings, aggregated daily, weekly, and monthly.
+- Counts of number of users conducting searches containing each filter will be sent back in pings, aggregated daily, weekly, and monthly.
 
 ### Changed
 
