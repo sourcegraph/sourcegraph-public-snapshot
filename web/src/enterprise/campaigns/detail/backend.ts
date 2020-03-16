@@ -468,7 +468,7 @@ export async function publishChangeset(changesetPlan: ID): Promise<IEmptyRespons
     return dataOrThrowErrors(result).publishChangeset
 }
 
-export async function syncChangeset(changeset: ID): Promise<IEmptyResponse> {
+export async function syncChangeset(changeset: ID): Promise<void> {
     const result = await mutateGraphQL(
         gql`
             mutation SyncChangeset($changeset: ID!) {
@@ -479,5 +479,5 @@ export async function syncChangeset(changeset: ID): Promise<IEmptyResponse> {
         `,
         { changeset }
     ).toPromise()
-    return dataOrThrowErrors(result).syncChangeset
+   dataOrThrowErrors(result)
 }

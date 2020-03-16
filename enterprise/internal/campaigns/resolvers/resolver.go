@@ -681,7 +681,7 @@ func (r *Resolver) SyncChangeset(ctx context.Context, args *graphqlbackend.SyncC
 		return nil, err
 	}
 
-	// Check for existance of changeset so we don't swallow that error.
+	// Check for existence of changeset so we don't swallow that error.
 	if _, err = r.store.GetChangeset(ctx, ee.GetChangesetOpts{ID: changesetID}); err != nil {
 		return nil, err
 	}
