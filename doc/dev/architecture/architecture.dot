@@ -110,6 +110,10 @@ digraph architecture {
                 label="lsif\nworker"
                 URL="https://github.com/sourcegraph/sourcegraph/tree/master/lsif/src/worker"
             ]
+            lsif_storage [
+                label="lsif\nstorage"
+                URL="https://github.com/sourcegraph/sourcegraph/tree/master/lsif/src/storage"
+            ]
         }
 
         subgraph cluster_zoekt {
@@ -213,6 +217,7 @@ digraph architecture {
     lsif_server -> {
         frontend
         postgres
+        lsif_storage
     } [
         fillcolor="9"
     ]
@@ -220,6 +225,7 @@ digraph architecture {
     lsif_worker -> {
         frontend
         postgres
+        lsif_storage
     } [
         fillcolor="9"
     ]
