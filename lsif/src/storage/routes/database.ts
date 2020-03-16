@@ -235,9 +235,7 @@ export function createDatabaseRouter(dumpManager: DumpManager, logger: Logger): 
         path: string
     }
 
-    interface GetDocumentByPathResponse {
-        document: sqliteModels.DocumentData | undefined
-    }
+    type GetDocumentByPathResponse = sqliteModels.DocumentData | undefined
 
     router.get(
         '/:id([0-9]+)/getDocumentByPath',
@@ -245,9 +243,7 @@ export function createDatabaseRouter(dumpManager: DumpManager, logger: Logger): 
         wrap(
             async (req: express.Request, res: express.Response<GetDocumentByPathResponse>): Promise<void> => {
                 const { path }: GetDocumentByPathQueryArgs = req.query
-                await onDatabase(req, res, async (database, ctx) => ({
-                    document: await database.getDocumentByPath(path, ctx),
-                }))
+                await onDatabase(req, res, (database, ctx) => database.getDocumentByPath(path, ctx))
             }
         )
     )
