@@ -12,8 +12,8 @@ import { DumpManager } from '../shared/store/dumps'
 import { createPostgresConnection } from '../shared/database/postgres'
 import { ensureDirectory } from '../shared/paths'
 import { createDatabaseRouter } from './routes/database'
-import { jsonReplacer } from '../shared/encoding/json'
 import { createUploadRouter } from './routes/uploads'
+import { startTasks } from './tasks/runner'
 
 /**
  * Runs the HTTP server that accepts LSIF dump uploads and responds to LSIF requests.
@@ -45,6 +45,9 @@ async function main(logger: Logger): Promise<void> {
     const connection = await createPostgresConnection(fetchConfiguration(), logger)
     const dumpManager = new DumpManager(connection)
 
+    // Start background tasks
+    startTasks(connection, logger)
+
     // Register middleware and serve
     const app = makeExpressApp({
         routes: [createUploadRouter(logger), createDatabaseRouter(dumpManager, logger)],
@@ -53,7 +56,6 @@ async function main(logger: Logger): Promise<void> {
         histogramSelector,
     })
 
-    app.set('json replacer', jsonReplacer)
     app.listen(settings.HTTP_PORT, () => logger.debug('LSIF storage server listening on', { port: settings.HTTP_PORT }))
 }
 

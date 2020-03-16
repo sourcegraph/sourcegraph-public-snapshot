@@ -19,6 +19,7 @@ import { DependencyManager } from '../shared/store/dependencies'
 import { SRC_FRONTEND_INTERNAL } from '../shared/config/settings'
 import { migrate } from './startup-migrations/migration'
 import { makeExpressApp } from '../shared/api/init'
+import { createInternalRouter } from './routes/internal'
 
 /**
  * Runs the HTTP server that accepts LSIF dump uploads and responds to LSIF requests.
@@ -66,6 +67,7 @@ async function main(logger: Logger): Promise<void> {
         routes: [
             createUploadRouter(dumpManager, uploadManager, logger),
             createLsifRouter(backend, uploadManager, logger, tracer),
+            createInternalRouter(dumpManager, uploadManager, logger),
         ],
         logger,
         tracer,

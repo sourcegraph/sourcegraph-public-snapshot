@@ -7,6 +7,8 @@ import { Logger } from 'winston'
 import { makeMetricsMiddleware } from './middleware/metrics'
 import { Tracer } from 'opentracing'
 import promClient from 'prom-client'
+import { json, urlencoded } from 'body-parser'
+import { jsonReplacer } from '../encoding/json'
 
 export function makeExpressApp({
     routes,
@@ -32,11 +34,16 @@ export function makeExpressApp({
     app.use(loggingMiddleware(loggingMiddlewareConfig))
     app.use(makeMetricsMiddleware(histogramSelector))
 
+    app.use(json())
+    app.use(urlencoded({ extended: true }))
+
     for (const route of routes) {
         app.use(route)
     }
 
     app.use(createMetaRouter())
     app.use(errorHandler(logger)) // must be last
+
+    app.set('json replacer', jsonReplacer)
     return app
 }
