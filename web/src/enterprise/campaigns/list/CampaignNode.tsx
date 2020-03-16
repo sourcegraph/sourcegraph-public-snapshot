@@ -10,11 +10,18 @@ import formatDistance from 'date-fns/formatDistance'
 import parseISO from 'date-fns/parseISO'
 import { DraftBadge } from '../DraftBadge'
 
+export type CampaignNodeCampaign = Pick<
+    GQL.ICampaign,
+    'id' | 'closedAt' | 'name' | 'description' | 'createdAt' | 'publishedAt'
+> & {
+    changesets: {
+        nodes: Pick<GQL.IExternalChangeset, 'state'>[]
+    }
+    changesetPlans: Pick<GQL.IChangesetPlanConnection, 'totalCount'>
+}
+
 export interface CampaignNodeProps {
-    node: Pick<
-        GQL.ICampaign,
-        'id' | 'closedAt' | 'name' | 'description' | 'changesets' | 'changesetPlans' | 'createdAt' | 'publishedAt'
-    >
+    node: CampaignNodeCampaign
     /** Renders a selection button next to the campaign, used to select a campaign for update */
     selection?: {
         enabled: boolean

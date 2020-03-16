@@ -17,6 +17,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Extensions can now specify a `baseUri` in the `DocumentFilter` when registering providers.
 - Admins can now exclude GitHub forks and/or archived repositories from the set of repositories being mirrored in Sourcegraph with the `"exclude": [{"forks": true}]` or `"exclude": [{"archived": true}]` GitHub external service configuration. [#8974](https://github.com/sourcegraph/sourcegraph/pull/8974)
 - Campaign changesets can be filtered by State, Review State and Check State [8848](https://github.com/sourcegraph/sourcegraph/pull/8848)
+- Added more entries (Bash, Erlang, Julia, OCaml, Scala) to the list of suggested languages for the `lang:` filter.
 
 ### Changed
 
@@ -32,6 +33,7 @@ All notable changes to Sourcegraph are documented in this file.
   This change does not affect the newly-introduced, restricted Kubernetes config files.
 - Archived repositories are excluded from search by default. Adding `archived:yes` includes archived repositories.
 - Forked repositories are excluded from search by default. Adding `fork:yes` includes forked repositories.
+- CSRF and session cookies now set `SameSite=None` when Sourcegraph is running behind HTTPS and `SameSite=Lax` when Sourcegraph is running behind HTTP in order to comply with a [recent IETF proposal](https://web.dev/samesite-cookies-explained/#samesitenone-must-be-secure). As a side effect, the Sourcegraph browser extension and GitLab/Bitbucket native integrations can only connect to private instances that have HTTPS configured. If your private instance is only running behind HTTP, please configure your instance to use HTTPS in order to continue using these.
 
 ### Fixed
 

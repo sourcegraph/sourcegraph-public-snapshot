@@ -2705,7 +2705,7 @@ func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
 		// Create a test repo
 		reposStore := repos.NewDBStore(db, sql.TxOptions{})
 		repo := &repos.Repo{
-			Name: fmt.Sprintf("github.com/sourcegraph/sourcegraph"),
+			Name: "github.com/sourcegraph/sourcegraph",
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "external-id",
 				ServiceType: "github",

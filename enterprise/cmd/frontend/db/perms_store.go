@@ -11,6 +11,7 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -1314,6 +1315,109 @@ AND account_id IN (%s)
 	}
 
 	return userIDs, nil
+}
+
+// UserIDsWithNoPerms returns a list of user IDs with no permissions found in
+// the database.
+func (s *PermsStore) UserIDsWithNoPerms(ctx context.Context) ([]int32, error) {
+	q := sqlf.Sprintf(`
+-- source: enterprise/cmd/frontend/db/perms_store.go:PermsStore.UserIDsWithNoPerms
+SELECT users.id, '1970-01-01 00:00:00+00'::timestamptz FROM users
+WHERE users.site_admin = FALSE
+AND users.id NOT IN
+	(SELECT perms.user_id FROM user_permissions AS perms)
+`)
+	results, err := s.loadIDsWithTime(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+
+	ids := make([]int32, 0, len(results))
+	for id := range results {
+		ids = append(ids, id)
+	}
+	return ids, nil
+}
+
+// UserIDsWithNoPerms returns a list of private repository IDs with no permissions
+// found in the database.
+func (s *PermsStore) RepoIDsWithNoPerms(ctx context.Context) ([]api.RepoID, error) {
+	q := sqlf.Sprintf(`
+-- source: enterprise/cmd/frontend/db/perms_store.go:PermsStore.RepoIDsWithNoPerms
+SELECT repo.id, '1970-01-01 00:00:00+00'::timestamptz FROM repo
+WHERE repo.private = TRUE AND repo.id NOT IN
+	(SELECT perms.repo_id FROM repo_permissions AS perms)
+`)
+
+	results, err := s.loadIDsWithTime(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+
+	ids := make([]api.RepoID, 0, len(results))
+	for id := range results {
+		ids = append(ids, api.RepoID(id))
+	}
+	return ids, nil
+}
+
+// UserIDsWithOldestPerms returns a list of user ID and last updated pairs for users
+// who have oldest permissions in database and capped results by the limit.
+func (s *PermsStore) UserIDsWithOldestPerms(ctx context.Context, limit int) (map[int32]time.Time, error) {
+	q := sqlf.Sprintf(`
+-- source: enterprise/cmd/frontend/db/perms_store.go:PermsStore.UserIDsWithOldestPerms
+SELECT user_id, updated_at FROM user_permissions
+ORDER BY updated_at ASC
+LIMIT %s
+`, limit)
+	return s.loadIDsWithTime(ctx, q)
+}
+
+// ReposIDsWithOldestPerms returns a list of repository ID and last updated pairs for
+// repositories that have oldest permissions in database and capped results by the limit.
+func (s *PermsStore) ReposIDsWithOldestPerms(ctx context.Context, limit int) (map[api.RepoID]time.Time, error) {
+	q := sqlf.Sprintf(`
+-- source: enterprise/cmd/frontend/db/perms_store.go:PermsStore.ReposIDsWithOldestPerms
+SELECT repo_id, updated_at FROM repo_permissions
+ORDER BY updated_at ASC
+LIMIT %s
+`, limit)
+
+	pairs, err := s.loadIDsWithTime(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+
+	results := make(map[api.RepoID]time.Time, len(pairs))
+	for id, t := range pairs {
+		results[api.RepoID(id)] = t
+	}
+	return results, nil
+}
+
+// loadIDsWithTime runs the query and returns a list of ID and time pairs.
+func (s *PermsStore) loadIDsWithTime(ctx context.Context, q *sqlf.Query) (map[int32]time.Time, error) {
+	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	results := make(map[int32]time.Time)
+	for rows.Next() {
+		var id int32
+		var t time.Time
+		if err = rows.Scan(&id, &t); err != nil {
+			return nil, err
+		}
+
+		results[id] = t
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return results, nil
 }
 
 // tx begins a new transaction.

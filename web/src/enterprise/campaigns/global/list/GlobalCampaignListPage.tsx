@@ -4,8 +4,8 @@ import AddIcon from 'mdi-react/AddIcon'
 import { Link } from '../../../../../../shared/src/components/Link'
 import { RouteComponentProps } from 'react-router'
 import { FilteredConnection, FilteredConnectionFilter } from '../../../../components/FilteredConnection'
-import { ICampaign, IUser, CampaignState } from '../../../../../../shared/src/graphql/schema'
-import { CampaignNode } from '../../list/CampaignNode'
+import { IUser, CampaignState } from '../../../../../../shared/src/graphql/schema'
+import { CampaignNode, CampaignNodeCampaign } from '../../list/CampaignNode'
 
 interface Props extends Pick<RouteComponentProps, 'history' | 'location'> {
     authenticatedUser: IUser
@@ -48,19 +48,7 @@ export const GlobalCampaignListPage: React.FunctionComponent<Props> = props => (
             </div>
         )}
 
-        <FilteredConnection<
-            Pick<
-                ICampaign,
-                | 'id'
-                | 'closedAt'
-                | 'name'
-                | 'description'
-                | 'changesets'
-                | 'changesetPlans'
-                | 'createdAt'
-                | 'publishedAt'
-            >
-        >
+        <FilteredConnection<CampaignNodeCampaign>
             {...props}
             nodeComponent={CampaignNode}
             queryConnection={queryCampaigns}

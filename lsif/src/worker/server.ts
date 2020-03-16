@@ -3,13 +3,10 @@ import express from 'express'
 import promClient from 'prom-client'
 import { Logger } from 'winston'
 
-/**
- * Create an express server that only has /healthz and /metric endpoints.
- *
- * @param logger The logger instance.
- */
+/** Create an express server containing health and metrics endpoint. */
 export function startMetricsServer(logger: Logger): void {
     const app = express()
+    app.get('/ping', (_, res) => res.send('ok'))
     app.get('/healthz', (_, res) => res.send('ok'))
     app.get('/metrics', (_, res) => {
         res.writeHead(200, { 'Content-Type': 'text/plain' })

@@ -433,7 +433,10 @@ func RunChangesetJob(
 			return err
 		}
 	}
-
+	// the events don't have the changesetID yet, because it's not known at the point of cloning
+	for _, e := range events {
+		e.ChangesetID = clone.ID
+	}
 	if err := store.UpsertChangesetEvents(ctx, events...); err != nil {
 		log15.Error("UpsertChangesetEvents", "err", err)
 		return err
@@ -623,12 +626,7 @@ func (s *Service) DeleteCampaign(ctx context.Context, id int64, closeChangesets 
 // CloseOpenChangesets closes the given Changesets on their respective codehosts and syncs them.
 func (s *Service) CloseOpenChangesets(ctx context.Context, cs []*campaigns.Changeset) (err error) {
 	cs = selectChangesets(cs, func(c *campaigns.Changeset) bool {
-		s, err := c.State()
-		if err != nil {
-			log15.Warn("could not determine changeset state", "err", err)
-			return false
-		}
-		return s == campaigns.ChangesetStateOpen
+		return c.ExternalState == campaigns.ChangesetStateOpen
 	})
 
 	if len(cs) == 0 {
@@ -1028,12 +1026,7 @@ func computeCampaignUpdateDiff(
 			// .. but if we already have a Changeset and that is merged, we
 			// don't want to update it...
 			if group.changeset != nil {
-				// TODO: This needs to change based on the outcome of this:
-				// https://github.com/sourcegraph/sourcegraph/pull/8848#discussion_r389000197
-				s, err := group.changeset.State()
-				if err != nil {
-					return nil, errors.Wrap(err, "determining a changeset's state")
-				}
+				s := group.changeset.ExternalState
 				if s == campaigns.ChangesetStateMerged || s == campaigns.ChangesetStateClosed {
 					// Note: in the future we want to create a new ChangesetJob here.
 					continue
