@@ -60,7 +60,9 @@ func testPermsStore_LoadUserPermissions(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		t.Run("no matching", func(t *testing.T) {
 			s := NewPermsStore(db, clock)
-			defer cleanupPermsTables(t, s)
+			t.Cleanup(func() {
+				cleanupPermsTables(t, s)
+			})
 
 			rp := &authz.RepoPermissions{
 				RepoID:  1,
@@ -85,7 +87,9 @@ func testPermsStore_LoadUserPermissions(db *sql.DB) func(*testing.T) {
 
 		t.Run("found matching", func(t *testing.T) {
 			s := NewPermsStore(db, clock)
-			defer cleanupPermsTables(t, s)
+			t.Cleanup(func() {
+				cleanupPermsTables(t, s)
+			})
 
 			rp := &authz.RepoPermissions{
 				RepoID:  1,
@@ -110,7 +114,9 @@ func testPermsStore_LoadUserPermissions(db *sql.DB) func(*testing.T) {
 
 		t.Run("add and change", func(t *testing.T) {
 			s := NewPermsStore(db, clock)
-			defer cleanupPermsTables(t, s)
+			t.Cleanup(func() {
+				cleanupPermsTables(t, s)
+			})
 
 			rp := &authz.RepoPermissions{
 				RepoID:  1,
@@ -169,7 +175,9 @@ func testPermsStore_LoadRepoPermissions(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		t.Run("no matching", func(t *testing.T) {
 			s := NewPermsStore(db, time.Now)
-			defer cleanupPermsTables(t, s)
+			t.Cleanup(func() {
+				cleanupPermsTables(t, s)
+			})
 
 			rp := &authz.RepoPermissions{
 				RepoID:  1,
@@ -193,7 +201,9 @@ func testPermsStore_LoadRepoPermissions(db *sql.DB) func(*testing.T) {
 
 		t.Run("found matching", func(t *testing.T) {
 			s := NewPermsStore(db, time.Now)
-			defer cleanupPermsTables(t, s)
+			t.Cleanup(func() {
+				cleanupPermsTables(t, s)
+			})
 
 			rp := &authz.RepoPermissions{
 				RepoID:  1,
@@ -363,7 +373,9 @@ func testPermsStore_SetUserPermissions(db *sql.DB) func(*testing.T) {
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
 				s := NewPermsStore(db, clock)
-				defer cleanupPermsTables(t, s)
+				t.Cleanup(func() {
+					cleanupPermsTables(t, s)
+				})
 
 				for _, p := range test.updates {
 					const numOps = 30
@@ -505,7 +517,9 @@ func testPermsStore_SetRepoPermissions(db *sql.DB) func(*testing.T) {
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
 				s := NewPermsStore(db, clock)
-				defer cleanupPermsTables(t, s)
+				t.Cleanup(func() {
+					cleanupPermsTables(t, s)
+				})
 
 				for _, p := range test.updates {
 					const numOps = 30
@@ -546,7 +560,9 @@ func testPermsStore_LoadUserPendingPermissions(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		t.Run("no matching with different account ID", func(t *testing.T) {
 			s := NewPermsStore(db, clock)
-			defer cleanupPermsTables(t, s)
+			t.Cleanup(func() {
+				cleanupPermsTables(t, s)
+			})
 
 			accounts := &extsvc.ExternalAccounts{
 				ServiceType: authz.SourcegraphServiceType,
@@ -577,7 +593,9 @@ func testPermsStore_LoadUserPendingPermissions(db *sql.DB) func(*testing.T) {
 
 		t.Run("no matching with different service ID", func(t *testing.T) {
 			s := NewPermsStore(db, clock)
-			defer cleanupPermsTables(t, s)
+			t.Cleanup(func() {
+				cleanupPermsTables(t, s)
+			})
 
 			accounts := &extsvc.ExternalAccounts{
 				ServiceType: authz.SourcegraphServiceType,
@@ -608,7 +626,9 @@ func testPermsStore_LoadUserPendingPermissions(db *sql.DB) func(*testing.T) {
 
 		t.Run("found matching", func(t *testing.T) {
 			s := NewPermsStore(db, clock)
-			defer cleanupPermsTables(t, s)
+			t.Cleanup(func() {
+				cleanupPermsTables(t, s)
+			})
 
 			accounts := &extsvc.ExternalAccounts{
 				ServiceType: authz.SourcegraphServiceType,
@@ -639,7 +659,9 @@ func testPermsStore_LoadUserPendingPermissions(db *sql.DB) func(*testing.T) {
 
 		t.Run("add and change", func(t *testing.T) {
 			s := NewPermsStore(db, clock)
-			defer cleanupPermsTables(t, s)
+			t.Cleanup(func() {
+				cleanupPermsTables(t, s)
+			})
 
 			accounts := &extsvc.ExternalAccounts{
 				ServiceType: authz.SourcegraphServiceType,
@@ -996,7 +1018,9 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
 				s := NewPermsStore(db, clock)
-				defer cleanupPermsTables(t, s)
+				t.Cleanup(func() {
+					cleanupPermsTables(t, s)
+				})
 
 				ctx := context.Background()
 
@@ -1119,7 +1143,9 @@ func testPermsStore_ListPendingUsers(db *sql.DB) func(*testing.T) {
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
 				s := NewPermsStore(db, clock)
-				defer cleanupPermsTables(t, s)
+				t.Cleanup(func() {
+					cleanupPermsTables(t, s)
+				})
 
 				ctx := context.Background()
 
@@ -1435,7 +1461,9 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(*testing.T) {
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
 				s := NewPermsStore(db, clock)
-				defer cleanupPermsTables(t, s)
+				t.Cleanup(func() {
+					cleanupPermsTables(t, s)
+				})
 
 				ctx := context.Background()
 
@@ -1488,7 +1516,9 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(*testing.T) {
 func testPermsStore_DeleteAllUserPermissions(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		s := NewPermsStore(db, clock)
-		defer cleanupPermsTables(t, s)
+		t.Cleanup(func() {
+			cleanupPermsTables(t, s)
+		})
 
 		ctx := context.Background()
 
@@ -1540,7 +1570,9 @@ func testPermsStore_DeleteAllUserPermissions(db *sql.DB) func(*testing.T) {
 func testPermsStore_DeleteAllUserPendingPermissions(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		s := NewPermsStore(db, clock)
-		defer cleanupPermsTables(t, s)
+		t.Cleanup(func() {
+			cleanupPermsTables(t, s)
+		})
 
 		ctx := context.Background()
 
@@ -1595,7 +1627,9 @@ func testPermsStore_DeleteAllUserPendingPermissions(db *sql.DB) func(*testing.T)
 func testPermsStore_DatabaseDeadlocks(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		s := NewPermsStore(db, time.Now)
-		defer cleanupPermsTables(t, s)
+		t.Cleanup(func() {
+			cleanupPermsTables(t, s)
+		})
 
 		ctx := context.Background()
 
@@ -1700,7 +1734,9 @@ func cleanupUsersTable(t *testing.T, s *PermsStore) {
 func testPermsStore_ListExternalAccounts(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		s := NewPermsStore(db, time.Now)
-		defer cleanupUsersTable(t, s)
+		t.Cleanup(func() {
+			cleanupUsersTable(t, s)
+		})
 
 		ctx := context.Background()
 
@@ -1792,7 +1828,9 @@ INSERT INTO user_external_accounts(user_id, service_type, service_id, account_id
 func testPermsStore_GetUserIDsByExternalAccounts(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		s := NewPermsStore(db, time.Now)
-		defer cleanupUsersTable(t, s)
+		t.Cleanup(func() {
+			cleanupUsersTable(t, s)
+		})
 
 		ctx := context.Background()
 
@@ -1842,10 +1880,10 @@ INSERT INTO user_external_accounts(user_id, service_type, service_id, account_id
 func testPermsStore_UserIDsWithNoPerms(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		s := NewPermsStore(db, time.Now)
-		defer func() {
+		t.Cleanup(func() {
 			cleanupUsersTable(t, s)
 			cleanupPermsTables(t, s)
-		}()
+		})
 
 		ctx := context.Background()
 
@@ -1909,10 +1947,10 @@ func cleanupReposTable(t *testing.T, s *PermsStore) {
 func testPermsStore_RepoIDsWithNoPerms(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		s := NewPermsStore(db, time.Now)
-		defer func() {
+		t.Cleanup(func() {
 			cleanupReposTable(t, s)
 			cleanupPermsTables(t, s)
-		}()
+		})
 
 		ctx := context.Background()
 
@@ -1964,7 +2002,9 @@ func testPermsStore_RepoIDsWithNoPerms(db *sql.DB) func(*testing.T) {
 func testPermsStore_UserIDsWithOldestPerms(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		s := NewPermsStore(db, clock)
-		defer cleanupPermsTables(t, s)
+		t.Cleanup(func() {
+			cleanupPermsTables(t, s)
+		})
 
 		ctx := context.Background()
 
@@ -2017,7 +2057,9 @@ WHERE user_id = 2`, clock().AddDate(1, 0, 0))
 func testPermsStore_ReposIDsWithOldestPerms(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		s := NewPermsStore(db, clock)
-		defer cleanupPermsTables(t, s)
+		t.Cleanup(func() {
+			cleanupPermsTables(t, s)
+		})
 
 		ctx := context.Background()
 
