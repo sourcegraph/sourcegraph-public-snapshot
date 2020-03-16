@@ -2,12 +2,14 @@ package db
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/url"
 	"reflect"
 	"strconv"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -862,6 +864,199 @@ func Test_authzFilter_permissionsUserMapping(t *testing.T) {
 	})
 }
 
+func Test_authzFilter_permissionsBackgroudSync(t *testing.T) {
+	before := globals.PermissionsBackgroundSync()
+	globals.SetPermissionsBackgroundSync(&schema.PermissionsBackgroundSync{Enabled: true})
+	defer globals.SetPermissionsBackgroundSync(before)
+
+	publicRepo := makeRepo("gitlab.mine/user/public", 1, false)
+	privateRepo := makeRepo("gitlab.mine/user/private", 2, true)
+
+	t.Run("unauthenticated user should only see public repos", func(t *testing.T) {
+		authz.SetProviders(false,
+			[]authz.Provider{
+				&MockAuthzProvider{
+					serviceID:   "https://gitlab.mine/",
+					serviceType: "gitlab",
+				},
+			},
+		)
+		defer authz.SetProviders(true, nil)
+
+		repos, err := authzFilter(context.Background(), []*types.Repo{publicRepo, privateRepo}, authz.Read)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expRepos := []*types.Repo{publicRepo}
+		if diff := cmp.Diff(expRepos, repos); diff != "" {
+			t.Fatal(diff)
+		}
+	})
+
+	t.Run("authenticated user but no authz providers should only see public repos", func(t *testing.T) {
+		authz.SetProviders(false, nil)
+		defer authz.SetProviders(true, nil)
+
+		user := &types.User{ID: 1}
+		Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
+			return user, nil
+		}
+		defer func() {
+			Mocks.Users = MockUsers{}
+		}()
+
+		ctx := context.Background()
+		ctx = actor.WithActor(ctx, &actor.Actor{UID: user.ID})
+
+		repos, err := authzFilter(ctx, []*types.Repo{publicRepo, privateRepo}, authz.Read)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expRepos := []*types.Repo{publicRepo}
+		if diff := cmp.Diff(expRepos, repos); diff != "" {
+			t.Fatal(diff)
+		}
+	})
+
+	t.Run("authenticated user with matching external account should see all repos", func(t *testing.T) {
+		extAccount := extsvc.ExternalAccount{
+			ExternalAccountSpec: extsvc.ExternalAccountSpec{
+				ServiceType: "gitlab",
+				ServiceID:   "https://gitlab.mine/",
+				AccountID:   "alice",
+			},
+		}
+		authz.SetProviders(false,
+			[]authz.Provider{
+				&MockAuthzProvider{
+					serviceID:   "https://gitlab.mine/",
+					serviceType: "gitlab",
+					okServiceIDs: map[string]struct{}{
+						"https://gitlab.mine/": {},
+					},
+					perms: map[extsvc.ExternalAccount]map[api.RepoName]authz.Perms{
+						extAccount: nil,
+					},
+				},
+			},
+		)
+		defer authz.SetProviders(true, nil)
+
+		user := &types.User{ID: 1}
+		Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
+			return user, nil
+		}
+		Mocks.ExternalAccounts.List = func(ExternalAccountsListOptions) ([]*extsvc.ExternalAccount, error) {
+			return []*extsvc.ExternalAccount{&extAccount}, nil
+		}
+		Mocks.ExternalAccounts.AssociateUserAndSave = func(int32, extsvc.ExternalAccountSpec, extsvc.ExternalAccountData) error {
+			return errors.New("AssociateUserAndSave should not be called")
+		}
+		Mocks.Authz.GrantPendingPermissions = func(context.Context, *GrantPendingPermissionsArgs) error {
+			return errors.New("GrantPendingPermissions should not be called")
+		}
+		Mocks.Authz.AuthorizedRepos = func(context.Context, *AuthorizedReposArgs) ([]*types.Repo, error) {
+			return []*types.Repo{privateRepo}, nil
+		}
+		defer func() {
+			Mocks.Users = MockUsers{}
+			Mocks.ExternalAccounts = MockExternalAccounts{}
+			Mocks.Authz = MockAuthz{}
+		}()
+
+		ctx := context.Background()
+		ctx = actor.WithActor(ctx, &actor.Actor{UID: user.ID})
+
+		repos, err := authzFilter(ctx, []*types.Repo{publicRepo, privateRepo}, authz.Read)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expRepos := []*types.Repo{publicRepo, privateRepo}
+		if diff := cmp.Diff(expRepos, repos); diff != "" {
+			t.Fatal(diff)
+		}
+	})
+
+	t.Run("authenticated user without an external account should fetch and grant", func(t *testing.T) {
+		authz.SetProviders(false,
+			[]authz.Provider{
+				&MockAuthzProvider{
+					serviceID:   "https://gitlab.mine/",
+					serviceType: "gitlab",
+					okServiceIDs: map[string]struct{}{
+						"https://gitlab.mirror/": {},
+					},
+					perms: map[extsvc.ExternalAccount]map[api.RepoName]authz.Perms{
+						{
+							ExternalAccountSpec: extsvc.ExternalAccountSpec{
+								ServiceType: "gitlab",
+								ServiceID:   "https://gitlab.mine/",
+								AccountID:   "alice",
+							},
+						}: nil,
+					},
+				},
+			},
+		)
+		defer authz.SetProviders(true, nil)
+
+		user := &types.User{ID: 1}
+		Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
+			return user, nil
+		}
+		Mocks.ExternalAccounts.List = func(ExternalAccountsListOptions) ([]*extsvc.ExternalAccount, error) {
+			return []*extsvc.ExternalAccount{
+				{
+					ExternalAccountSpec: extsvc.ExternalAccountSpec{
+						ServiceType: "gitlab",
+						ServiceID:   "https://gitlab.mirror/",
+						AccountID:   "alice",
+					},
+				},
+			}, nil
+		}
+
+		calledAssociateUserAndSave := false
+		callGrantPendingPermissions := false
+		Mocks.ExternalAccounts.AssociateUserAndSave = func(int32, extsvc.ExternalAccountSpec, extsvc.ExternalAccountData) error {
+			calledAssociateUserAndSave = true
+			return nil
+		}
+		Mocks.Authz.GrantPendingPermissions = func(context.Context, *GrantPendingPermissionsArgs) error {
+			callGrantPendingPermissions = true
+			return nil
+		}
+		Mocks.Authz.AuthorizedRepos = func(context.Context, *AuthorizedReposArgs) ([]*types.Repo, error) {
+			return []*types.Repo{privateRepo}, nil
+		}
+		defer func() {
+			Mocks.Users = MockUsers{}
+			Mocks.ExternalAccounts = MockExternalAccounts{}
+			Mocks.Authz = MockAuthz{}
+		}()
+
+		ctx := context.Background()
+		ctx = actor.WithActor(ctx, &actor.Actor{UID: user.ID})
+
+		repos, err := authzFilter(ctx, []*types.Repo{publicRepo, privateRepo}, authz.Read)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expRepos := []*types.Repo{publicRepo, privateRepo}
+		if diff := cmp.Diff(expRepos, repos); diff != "" {
+			t.Fatal(diff)
+		} else if !calledAssociateUserAndSave {
+			t.Fatal("!calledAssociateUserAndSave")
+		} else if !callGrantPendingPermissions {
+			t.Fatal("!callGrantPendingPermissions")
+		}
+	})
+}
+
 func acct(userID int32, serviceType, serviceID, accountID string) *extsvc.ExternalAccount {
 	return &extsvc.ExternalAccount{
 		UserID: userID,
@@ -931,7 +1126,7 @@ func (m *MockAuthzProvider) ServiceID() string   { return m.serviceID }
 func (m *MockAuthzProvider) ServiceType() string { return m.serviceType }
 func (m *MockAuthzProvider) Validate() []string  { return nil }
 
-func makeRepo(name api.RepoName, id api.RepoID) *types.Repo {
+func makeRepo(name api.RepoName, id api.RepoID, private bool) *types.Repo {
 	extName := string(name)
 	if extName == "" {
 		extName = strconv.Itoa(int(id))
@@ -944,13 +1139,14 @@ func makeRepo(name api.RepoName, id api.RepoID) *types.Repo {
 
 	serviceID.Path = "/"
 	return &types.Repo{
-		ID:   id,
-		Name: name,
+		ID: id,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          extName,
 			ServiceType: "gitlab",
 			ServiceID:   serviceID.String(),
 		},
+		Name:    name,
+		Private: private,
 	}
 
 }
@@ -958,7 +1154,7 @@ func makeRepo(name api.RepoName, id api.RepoID) *types.Repo {
 func makeRepos(names ...api.RepoName) []*types.Repo {
 	repos := make([]*types.Repo, len(names))
 	for i, name := range names {
-		repos[i] = makeRepo(name, api.RepoID(i+1))
+		repos[i] = makeRepo(name, api.RepoID(i+1), false)
 	}
 	return repos
 }
@@ -966,7 +1162,7 @@ func makeRepos(names ...api.RepoName) []*types.Repo {
 func makeReposFromIDs(ids ...api.RepoID) []*types.Repo {
 	repos := make([]*types.Repo, len(ids))
 	for i, id := range ids {
-		repos[i] = makeRepo("", id)
+		repos[i] = makeRepo("", id, false)
 	}
 	return repos
 }
