@@ -173,6 +173,7 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                         </div>
                     )}
                     <div className="mt-2">
+                        {node.__typename === 'ChangesetPlan' && stateIcon}
                         <strong>
                             <Link
                                 to={node.repository.url}

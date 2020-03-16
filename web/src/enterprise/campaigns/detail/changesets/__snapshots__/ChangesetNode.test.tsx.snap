@@ -17,6 +17,10 @@ Object {
           <div
             className="mt-2"
           >
+            <SourcePullIcon
+              className="mr-1 icon-inline text-muted"
+              data-tooltip="open"
+            />
             <strong>
               <AnchorLink
                 className="text-muted"
@@ -69,6 +73,10 @@ Object {
           <div
             className="mt-2"
           >
+            <SourcePullIcon
+              className="mr-1 icon-inline text-muted"
+              data-tooltip="open"
+            />
             <strong>
               <AnchorLink
                 className="text-muted"
