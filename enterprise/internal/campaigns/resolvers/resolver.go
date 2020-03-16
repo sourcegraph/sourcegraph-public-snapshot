@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"gopkg.in/inconshreveable/log15.v2"
 )
@@ -657,6 +658,35 @@ func (r *Resolver) PublishChangeset(ctx context.Context, args *graphqlbackend.Pu
 	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
 	err = svc.CreateChangesetJobForCampaignJob(ctx, campaignJobID)
 	if err != nil {
+		return nil, err
+	}
+
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func (r *Resolver) SyncChangeset(ctx context.Context, args *graphqlbackend.SyncChangesetArgs) (_ *graphqlbackend.EmptyResponse, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.SyncChangeset", fmt.Sprintf("Changeset: %q", args.Changeset))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	// 🚨 SECURITY: Only site admins may update campaigns for now
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, errors.Wrap(err, "checking if user is admin")
+	}
+
+	changesetID, err := unmarshalChangesetID(args.Changeset)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check for existence of changeset so we don't swallow that error.
+	if _, err = r.store.GetChangeset(ctx, ee.GetChangesetOpts{ID: changesetID}); err != nil {
+		return nil, err
+	}
+
+	if err := repoupdater.DefaultClient.EnqueueChangesetSync(ctx, []int64{changesetID}); err != nil {
 		return nil, err
 	}
 
