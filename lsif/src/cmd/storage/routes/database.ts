@@ -9,17 +9,15 @@ import * as validation from '../../../shared/api/middleware/validation'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from '../backend/cache'
 import { Database } from '../backend/database'
 import { dbFilename } from '../../../shared/paths'
-import { DumpManager } from '../../../shared/store/dumps'
 import { InternalLocation } from '../backend/location'
 import * as sqliteModels from '../../../shared/models/sqlite'
 
 /**
  * Create a router containing the database endpoints.
  *
- * @param dumpManager The dumps manager instance.
  * @param logger The logger instance.
  */
-export function createDatabaseRouter(dumpManager: DumpManager, logger: Logger): express.Router {
+export function createDatabaseRouter(logger: Logger): express.Router {
     const router = express.Router()
 
     const connectionCache = new ConnectionCache(settings.CONNECTION_CACHE_CAPACITY)
@@ -45,20 +43,12 @@ export function createDatabaseRouter(dumpManager: DumpManager, logger: Logger): 
     ): Promise<void> => {
         const id = parseInt(req.params.id, 10)
         const ctx = createTracingContext(req, { id })
-        const dump = await dumpManager.getDumpById(id)
-        if (!dump) {
-            throw Object.assign(new Error('Dump not found'), {
-                status: 404,
-            })
-        }
-
-        // TODO - make this stateless
         const database = new Database(
             connectionCache,
             documentCache,
             resultChunkCache,
-            dump,
-            dbFilename(settings.STORAGE_ROOT, dump.id)
+            id,
+            dbFilename(settings.STORAGE_ROOT, id)
         )
 
         const payload = await handler(database, ctx)

@@ -3,7 +3,7 @@ import * as pgModels from '../../../shared/models/pg'
 
 /** A location with the dump that contains it. */
 export interface InternalLocation {
-    dump: pgModels.LsifDump // TODO - can just be an id now?
+    dumpId: pgModels.DumpId
     path: string
     range: lsp.Range
 }
@@ -33,7 +33,7 @@ export class OrderedLocationSet {
 /** Makes a unique string representation of this location. */
 function makeKey(location: InternalLocation): string {
     return [
-        location.dump.id,
+        location.dumpId,
         location.path,
         location.range.start.line,
         location.range.start.character,

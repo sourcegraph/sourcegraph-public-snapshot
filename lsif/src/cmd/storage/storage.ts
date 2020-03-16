@@ -8,7 +8,6 @@ import { createTracer } from '../../shared/tracing'
 import { Logger } from 'winston'
 import { waitForConfiguration } from '../../shared/config/config'
 import { makeExpressApp } from '../../shared/api/init'
-import { DumpManager } from '../../shared/store/dumps'
 import { createPostgresConnection } from '../../shared/database/postgres'
 import { ensureDirectory } from '../../shared/paths'
 import { createDatabaseRouter } from './routes/database'
@@ -43,14 +42,13 @@ async function main(logger: Logger): Promise<void> {
 
     // Create database connection and entity wrapper classes
     const connection = await createPostgresConnection(fetchConfiguration(), logger)
-    const dumpManager = new DumpManager(connection)
 
     // Start background tasks
     startTasks(connection, logger)
 
     // Register middleware and serve
     const app = makeExpressApp({
-        routes: [createUploadRouter(logger), createDatabaseRouter(dumpManager, logger)],
+        routes: [createUploadRouter(logger), createDatabaseRouter(logger)],
         logger,
         tracer,
         histogramSelector,
