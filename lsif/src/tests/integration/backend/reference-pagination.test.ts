@@ -1,7 +1,7 @@
 import * as util from '../integration-test-util'
 import { extractRepos } from './util'
 import { lsp } from 'lsif-protocol'
-import { Backend } from '../../../server/backend/backend'
+import { Backend } from '../../../cmd/server/backend/backend'
 
 describe('Backend', () => {
     const ctx = new util.BackendTestContext()

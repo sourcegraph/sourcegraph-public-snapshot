@@ -69,19 +69,19 @@ func makeProcfile(numServers, numWorkers, numStorages int64) string {
 	}
 
 	if numServers > 0 {
-		addProcess("lsif-server", "node /lsif/out/server/server.js")
+		addProcess("lsif-server", "node /lsif/out/cmd/server/server.js")
 	}
 
 	for i := 0; i < int(numWorkers); i++ {
 		addProcess(
 			fmt.Sprintf("lsif-worker-%d", i),
-			fmt.Sprintf("env WORKER_METRICS_PORT=%d node /lsif/out/worker/worker.js", workerPort+i),
+			fmt.Sprintf("env WORKER_METRICS_PORT=%d node /lsif/out/cmd/worker/worker.js", workerPort+i),
 		)
 	}
 
 	if numStorages > 0 {
 		// TODO - default port won't work with more workers
-		addProcess("lsif-storage", "node /lsif/out/storage/storage.js")
+		addProcess("lsif-storage", "node /lsif/out/cmd/storage/storage.js")
 	}
 
 	addProcess("prometheus", fmt.Sprintf("prometheus '--storage.tsdb.path=%s' '--config.file=%s/prometheus.yml'",

@@ -2,8 +2,8 @@
 
 A small wrapper around the TypeScript/node processes that serve precise LSIF code intelligence data.
 
-- [lsif-server](../../lsif/src/server/server.ts)
-- [lsif-worker](../../lsif/src/worker/worker.ts)
+- [lsif-server](../../lsif/src/cmd/server/server.ts)
+- [lsif-worker](../../lsif/src/cmd/worker/worker.ts)
 
 These processes are run in a [goreman](https://github.com/mattn/goreman) supervisor. By default, there will be one server process and one worker process. The number of replicas per process can be tuned with the environment variables `LSIF_NUM_SERVERS` (zero or one) and `LSIF_NUM_WORKERS` (zero or more).
 
