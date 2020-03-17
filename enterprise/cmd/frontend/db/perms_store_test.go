@@ -2001,7 +2001,7 @@ func testPermsStore_RepoIDsWithNoPerms(db *sql.DB) func(*testing.T) {
 			t.Fatal(err)
 		}
 
-		// No private repository has no permissions at this point
+		// No private repositories have any permissions at this point
 		ids, err = s.RepoIDsWithNoPerms(ctx)
 		if err != nil {
 			t.Fatal(err)
