@@ -1,8 +1,15 @@
 import * as lsp from 'vscode-languageserver-protocol'
 import * as pgModels from '../../shared/models/pg'
 
-/** A location with the dump that contains it. */
+/** A location with the identifier of the dump that contains it. */
 export interface InternalLocation {
+    dumpId: pgModels.DumpId
+    path: string
+    range: lsp.Range
+}
+
+/** A location with the dump that contains it. */
+export interface ResolvedInternalLocation {
     dump: pgModels.LsifDump
     path: string
     range: lsp.Range
@@ -33,7 +40,7 @@ export class OrderedLocationSet {
 /** Makes a unique string representation of this location. */
 function makeKey(location: InternalLocation): string {
     return [
-        location.dump.id,
+        location.dumpId,
         location.path,
         location.range.start.line,
         location.range.start.character,

@@ -34,14 +34,14 @@ export class Database {
      * @param connectionCache The cache of SQLite connections.
      * @param documentCache The cache of loaded documents.
      * @param resultChunkCache The cache of loaded result chunks.
-     * @param dump The dump for which this database answers queries.
+     * @param dumpId The identifier of the dump for which this database answers queries.
      * @param databasePath The path to the database file.
      */
     constructor(
         private connectionCache: cache.ConnectionCache,
         private documentCache: cache.DocumentCache,
         private resultChunkCache: cache.ResultChunkCache,
-        private dump: pgModels.LsifDump,
+        private dumpId: pgModels.DumpId,
         private databasePath: string
     ) {}
 
@@ -269,7 +269,7 @@ export class Database {
             })
 
             const locations = results.map(result => ({
-                dump: this.dump,
+                dumpId: this.dumpId,
                 path: result.documentPath,
                 range: createRange(result),
             }))
@@ -345,7 +345,7 @@ export class Database {
         for (const [documentPath, rangeIds] of groupedResults) {
             if (documentPath === path) {
                 // If the document path is this document, convert the locations directly
-                results = results.concat(mapRangesToInternalLocations(this.dump, document.ranges, path, rangeIds))
+                results = results.concat(mapRangesToInternalLocations(this.dumpId, document.ranges, path, rangeIds))
                 continue
             }
 
@@ -356,7 +356,7 @@ export class Database {
             }
 
             // Then finally convert the locations in the sibling document
-            results = results.concat(mapRangesToInternalLocations(this.dump, sibling.ranges, documentPath, rangeIds))
+            results = results.concat(mapRangesToInternalLocations(this.dumpId, sibling.ranges, documentPath, rangeIds))
         }
 
         return results
@@ -457,7 +457,7 @@ export class Database {
      * @param f  The function to invoke.
      */
     private logAndTraceCall<T>(ctx: TracingContext, name: string, f: (ctx: TracingContext) => Promise<T>): Promise<T> {
-        return logAndTraceCall(addTags(ctx, { dbID: this.dump.id }), name, f)
+        return logAndTraceCall(addTags(ctx, { dbID: this.dumpId }), name, f)
     }
 
     /**
@@ -468,7 +468,7 @@ export class Database {
      * @param pairs The values to log.
      */
     private logSpan(ctx: TracingContext, event: string, pairs: { [name: string]: unknown }): void {
-        logSpan(ctx, event, { ...pairs, dbID: this.dump.id })
+        logSpan(ctx, event, { ...pairs, dbID: this.dumpId })
     }
 }
 
@@ -577,13 +577,13 @@ function createRange(result: {
 /**
  * Convert the given range identifiers into an `InternalLocation` objects.
  *
- * @param dump The dump to which the ranges belong.
+ * @param dumpId The identifier of the dump to which the ranges belong.
  * @param ranges The map of ranges of the document.
  * @param uri The location URI.
  * @param ids The set of range identifiers for each resulting location.
  */
 export function mapRangesToInternalLocations(
-    dump: pgModels.LsifDump,
+    dumpId: pgModels.DumpId,
     ranges: Map<sqliteModels.RangeId, sqliteModels.RangeData>,
     uri: string,
     ids: Set<sqliteModels.RangeId>
@@ -591,7 +591,7 @@ export function mapRangesToInternalLocations(
     const locations = []
     for (const id of ids) {
         locations.push({
-            dump,
+            dumpId,
             path: uri,
             range: createRange(mustGet(ranges, id, 'range')),
         })
