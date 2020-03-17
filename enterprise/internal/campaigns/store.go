@@ -1303,7 +1303,7 @@ func countCampaignsQuery(opts *CountCampaignsOpts) *sqlf.Query {
 	}
 
 	if opts.HasPlan != nil {
-		if *opts.HasPlan == true {
+		if *opts.HasPlan {
 			preds = append(preds, sqlf.Sprintf("campaign_plan_id IS NOT NULL"))
 		} else {
 			preds = append(preds, sqlf.Sprintf("campaign_plan_id IS NULL"))
@@ -1454,7 +1454,7 @@ func listCampaignsQuery(opts *ListCampaignsOpts) *sqlf.Query {
 	}
 
 	if opts.HasPlan != nil {
-		if *opts.HasPlan == true {
+		if *opts.HasPlan {
 			preds = append(preds, sqlf.Sprintf("campaign_plan_id IS NOT NULL"))
 		} else {
 			preds = append(preds, sqlf.Sprintf("campaign_plan_id IS NULL"))
