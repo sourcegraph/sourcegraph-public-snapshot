@@ -9,6 +9,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
+
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -49,6 +51,12 @@ func NewRepositoryComparison(ctx context.Context, r *RepositoryResolver, args *R
 			return nil, nil
 		}
 
+		// Optimistically fetch using revspec
+		commit, err := git.GetCommit(ctx, repo, nil, api.CommitID(revspec))
+		if err == nil {
+			return toGitCommitResolver(r, commit), nil
+		}
+
 		// Call ResolveRevision to trigger fetches from remote (in case base/head commits don't
 		// exist).
 		commitID, err := git.ResolveRevision(ctx, repo, nil, revspec, nil)
@@ -56,7 +64,7 @@ func NewRepositoryComparison(ctx context.Context, r *RepositoryResolver, args *R
 			return nil, err
 		}
 
-		commit, err := git.GetCommit(ctx, repo, nil, commitID)
+		commit, err = git.GetCommit(ctx, repo, nil, commitID)
 		if err != nil {
 			return nil, err
 		}
@@ -67,13 +75,28 @@ func NewRepositoryComparison(ctx context.Context, r *RepositoryResolver, args *R
 	if err != nil {
 		return nil, err
 	}
-	base, err := getCommit(ctx, *grepo, baseRevspec)
-	if err != nil {
-		return nil, err
+
+	var (
+		wg               sync.WaitGroup
+		base, head       *GitCommitResolver
+		baseErr, headErr error
+	)
+
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		base, baseErr = getCommit(ctx, *grepo, baseRevspec)
+	}()
+	go func() {
+		defer wg.Done()
+		head, headErr = getCommit(ctx, *grepo, headRevspec)
+	}()
+	wg.Wait()
+	if baseErr != nil {
+		return nil, baseErr
 	}
-	head, err := getCommit(ctx, *grepo, headRevspec)
-	if err != nil {
-		return nil, err
+	if headErr != nil {
+		return nil, headErr
 	}
 
 	return &RepositoryComparisonResolver{
