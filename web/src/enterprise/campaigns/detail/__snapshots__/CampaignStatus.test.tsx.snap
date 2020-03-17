@@ -2,20 +2,20 @@
 
 exports[`CampaignStatus viewerCanAdminister: false campaign errored 1`] = `
 <React.Fragment>
-  <div
-    className="mt-3"
-  >
-    <Memo(AlertCircleIcon)
-      className="icon-inline text-danger mr-1"
-    />
-    Error creating campaign
+  <div>
+    <React.Fragment>
+      <Memo(AlertCircleIcon)
+        className="icon-inline text-danger mr-1"
+      />
+      Error creating campaign
+    </React.Fragment>
   </div>
   <ErrorAlert
-    className="mt-3"
+    className="mt-2 mb-0"
     error="a"
   />
   <ErrorAlert
-    className="mt-3"
+    className="mt-2 mb-0"
     error="b"
   />
 </React.Fragment>
@@ -23,11 +23,17 @@ exports[`CampaignStatus viewerCanAdminister: false campaign errored 1`] = `
 
 exports[`CampaignStatus viewerCanAdminister: false campaign processing 1`] = `
 <React.Fragment>
-  <div
-    className="mt-3 e2e-preview-loading"
-  >
+  <div>
+    <React.Fragment>
+      <Memo(SyncIcon)
+        className="icon-inline text-info mr-1"
+      />
+      Campaign processing
+    </React.Fragment>
+  </div>
+  <div>
     <div
-      className="progress mb-1"
+      className="progress mt-2 mb-1"
     >
       <div
         className="progress-bar"
@@ -48,11 +54,11 @@ exports[`CampaignStatus viewerCanAdminister: false campaign processing 1`] = `
     </p>
   </div>
   <ErrorAlert
-    className="mt-3"
+    className="mt-2 mb-0"
     error="a"
   />
   <ErrorAlert
-    className="mt-3"
+    className="mt-2 mb-0"
     error="b"
   />
 </React.Fragment>
@@ -60,13 +66,15 @@ exports[`CampaignStatus viewerCanAdminister: false campaign processing 1`] = `
 
 exports[`CampaignStatus viewerCanAdminister: false closed campaign 1`] = `
 <React.Fragment>
-  <div
-    className="d-flex my-3"
-  >
-    <Memo(WarningIcon)
-      className="icon-inline text-warning mr-1"
-    />
-     Campaign is closed
+  <div>
+    <div
+      className="alert alert-info mb-0"
+    >
+      <Memo(WarningIcon)
+        className="icon-inline mr-1"
+      />
+       Campaign is a closed. No changes can be made to this campaign anymore.
+    </div>
   </div>
 </React.Fragment>
 `;
@@ -75,7 +83,7 @@ exports[`CampaignStatus viewerCanAdminister: false drafted campaign 1`] = `
 <React.Fragment>
   <React.Fragment>
     <div
-      className="d-flex my-3 alert alert-info"
+      className="d-flex alert alert-info mb-0 mt-2"
     >
       <Memo(InformationIcon)
         className="icon-inline mr-1"
@@ -88,10 +96,10 @@ exports[`CampaignStatus viewerCanAdminister: false drafted campaign 1`] = `
     </div>
   </React.Fragment>
   <div
-    className="d-flex my-3"
+    className="d-flex"
   >
     <Memo(CheckCircleIcon)
-      className="icon-inline text-success mr-1 e2e-preview-success"
+      className="icon-inline text-success mr-1"
     />
      Creation completed
   </div>
@@ -102,7 +110,7 @@ exports[`CampaignStatus viewerCanAdminister: false drafted campaign, some publis
 <React.Fragment>
   <React.Fragment>
     <div
-      className="d-flex my-3 alert alert-info"
+      className="d-flex alert alert-info mb-0 mt-2"
     >
       <Memo(InformationIcon)
         className="icon-inline mr-1"
@@ -115,10 +123,10 @@ exports[`CampaignStatus viewerCanAdminister: false drafted campaign, some publis
     </div>
   </React.Fragment>
   <div
-    className="d-flex my-3"
+    className="d-flex"
   >
     <Memo(CheckCircleIcon)
-      className="icon-inline text-success mr-1 e2e-preview-success"
+      className="icon-inline text-success mr-1"
     />
      Creation completed
   </div>
@@ -127,24 +135,24 @@ exports[`CampaignStatus viewerCanAdminister: false drafted campaign, some publis
 
 exports[`CampaignStatus viewerCanAdminister: true campaign errored 1`] = `
 <React.Fragment>
-  <div
-    className="mt-3"
-  >
-    <Memo(AlertCircleIcon)
-      className="icon-inline text-danger mr-1"
-    />
-    Error creating campaign
+  <div>
+    <React.Fragment>
+      <Memo(AlertCircleIcon)
+        className="icon-inline text-danger mr-1"
+      />
+      Error creating campaign
+    </React.Fragment>
   </div>
   <ErrorAlert
-    className="mt-3"
+    className="mt-2 mb-0"
     error="a"
   />
   <ErrorAlert
-    className="mt-3"
+    className="mt-2 mb-0"
     error="b"
   />
   <button
-    className="btn btn-primary mb-2"
+    className="btn btn-primary mt-2"
     onClick={[Function]}
     type="button"
   >
@@ -155,11 +163,17 @@ exports[`CampaignStatus viewerCanAdminister: true campaign errored 1`] = `
 
 exports[`CampaignStatus viewerCanAdminister: true campaign processing 1`] = `
 <React.Fragment>
-  <div
-    className="mt-3 e2e-preview-loading"
-  >
+  <div>
+    <React.Fragment>
+      <Memo(SyncIcon)
+        className="icon-inline text-info mr-1"
+      />
+      Campaign processing
+    </React.Fragment>
+  </div>
+  <div>
     <div
-      className="progress mb-1"
+      className="progress mt-2 mb-1"
     >
       <div
         className="progress-bar"
@@ -180,11 +194,11 @@ exports[`CampaignStatus viewerCanAdminister: true campaign processing 1`] = `
     </p>
   </div>
   <ErrorAlert
-    className="mt-3"
+    className="mt-2 mb-0"
     error="a"
   />
   <ErrorAlert
-    className="mt-3"
+    className="mt-2 mb-0"
     error="b"
   />
 </React.Fragment>
@@ -192,13 +206,15 @@ exports[`CampaignStatus viewerCanAdminister: true campaign processing 1`] = `
 
 exports[`CampaignStatus viewerCanAdminister: true closed campaign 1`] = `
 <React.Fragment>
-  <div
-    className="d-flex my-3"
-  >
-    <Memo(WarningIcon)
-      className="icon-inline text-warning mr-1"
-    />
-     Campaign is closed
+  <div>
+    <div
+      className="alert alert-info mb-0"
+    >
+      <Memo(WarningIcon)
+        className="icon-inline mr-1"
+      />
+       Campaign is a closed. No changes can be made to this campaign anymore.
+    </div>
   </div>
 </React.Fragment>
 `;
@@ -207,7 +223,7 @@ exports[`CampaignStatus viewerCanAdminister: true drafted campaign 1`] = `
 <React.Fragment>
   <React.Fragment>
     <div
-      className="d-flex my-3 alert alert-info"
+      className="d-flex alert alert-info mb-0 mt-2"
     >
       <Memo(InformationIcon)
         className="icon-inline mr-1"
@@ -219,7 +235,7 @@ exports[`CampaignStatus viewerCanAdminister: true drafted campaign 1`] = `
       been created on code hosts yet.
     </div>
     <button
-      className="mb-3 btn btn-primary"
+      className="btn btn-primary mt-2"
       onClick={[Function]}
       type="button"
     >
@@ -227,10 +243,10 @@ exports[`CampaignStatus viewerCanAdminister: true drafted campaign 1`] = `
     </button>
   </React.Fragment>
   <div
-    className="d-flex my-3"
+    className="d-flex"
   >
     <Memo(CheckCircleIcon)
-      className="icon-inline text-success mr-1 e2e-preview-success"
+      className="icon-inline text-success mr-1"
     />
      Creation completed
   </div>
@@ -241,7 +257,7 @@ exports[`CampaignStatus viewerCanAdminister: true drafted campaign, some publish
 <React.Fragment>
   <React.Fragment>
     <div
-      className="d-flex my-3 alert alert-info"
+      className="d-flex alert alert-info mb-0 mt-2"
     >
       <Memo(InformationIcon)
         className="icon-inline mr-1"
@@ -253,7 +269,7 @@ exports[`CampaignStatus viewerCanAdminister: true drafted campaign, some publish
       been created on code hosts yet.
     </div>
     <button
-      className="mb-3 btn btn-primary"
+      className="btn btn-primary mt-2"
       onClick={[Function]}
       type="button"
     >
@@ -261,10 +277,10 @@ exports[`CampaignStatus viewerCanAdminister: true drafted campaign, some publish
     </button>
   </React.Fragment>
   <div
-    className="d-flex my-3"
+    className="d-flex"
   >
     <Memo(CheckCircleIcon)
-      className="icon-inline text-success mr-1 e2e-preview-success"
+      className="icon-inline text-success mr-1"
     />
      Creation completed
   </div>

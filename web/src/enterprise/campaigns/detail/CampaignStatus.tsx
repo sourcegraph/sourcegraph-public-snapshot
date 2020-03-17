@@ -90,7 +90,7 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({ c
 
     return (
         <>
-            {statusIndicatorComponent && <div className="d">{statusIndicatorComponent}</div>}
+            {statusIndicatorComponent && <div>{statusIndicatorComponent}</div>}
             {isDraft && state !== 'closed' && (
                 <>
                     <div className="d-flex alert alert-info mb-0 mt-2">
@@ -109,7 +109,7 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({ c
             )}
             {state === 'processing' && (
                 <div>
-                    <div className="progress mb-1">
+                    <div className="progress mt-2 mb-1">
                         {/* we need to set the width to control the progress bar, so: */}
                         {/* eslint-disable-next-line react/forbid-dom-props */}
                         <div className="progress-bar" style={{ width: progress + '%' }}>
@@ -126,19 +126,15 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({ c
                     <CheckCircleIcon className="icon-inline text-success mr-1" /> Creation completed
                 </div>
             )}
-            {state === 'errored' && (
-                <>
-                    {status.errors.map((error, i) => (
-                        // There is no other suitable key, so:
-                        // eslint-disable-next-line react/no-array-index-key
-                        <ErrorAlert error={error} className="mt-2 mb-0" key={i} />
-                    ))}
-                    {campaign.viewerCanAdminister && (
-                        <button type="button" className="btn btn-primary mt-2" onClick={onRetry}>
-                            Retry failed jobs
-                        </button>
-                    )}
-                </>
+            {status.errors.map((error, i) => (
+                // There is no other suitable key, so:
+                // eslint-disable-next-line react/no-array-index-key
+                <ErrorAlert error={error} className="mt-2 mb-0" key={i} />
+            ))}
+            {state === 'errored' && campaign.viewerCanAdminister && (
+                <button type="button" className="btn btn-primary mt-2" onClick={onRetry}>
+                    Retry failed jobs
+                </button>
             )}
         </>
     )

@@ -25,12 +25,15 @@ describe('CampaignStatus', () => {
                     createRenderer().render(
                         <CampaignStatus
                             {...PROPS}
-                            campaign={{ ...campaign, closedAt: '2020-01-01' }}
-                            status={{
-                                completedCount: 1,
-                                pendingCount: 0,
-                                errors: [],
-                                state: GQL.BackgroundProcessState.COMPLETED,
+                            campaign={{
+                                ...campaign,
+                                closedAt: '2020-01-01',
+                                status: {
+                                    completedCount: 1,
+                                    pendingCount: 0,
+                                    errors: [],
+                                    state: GQL.BackgroundProcessState.COMPLETED,
+                                },
                             }}
                             onPublish={() => undefined}
                         />
@@ -42,12 +45,15 @@ describe('CampaignStatus', () => {
                     createRenderer().render(
                         <CampaignStatus
                             {...PROPS}
-                            campaign={{ ...campaign, publishedAt: null }}
-                            status={{
-                                completedCount: 1,
-                                pendingCount: 0,
-                                errors: [],
-                                state: GQL.BackgroundProcessState.COMPLETED,
+                            campaign={{
+                                ...campaign,
+                                publishedAt: null,
+                                status: {
+                                    completedCount: 1,
+                                    pendingCount: 0,
+                                    errors: [],
+                                    state: GQL.BackgroundProcessState.COMPLETED,
+                                },
                             }}
                             onPublish={() => undefined}
                         />
@@ -63,12 +69,12 @@ describe('CampaignStatus', () => {
                                 ...campaign,
                                 publishedAt: null,
                                 changesets: { totalCount: 1 } as GQL.IExternalChangesetConnection,
-                            }}
-                            status={{
-                                completedCount: 1,
-                                pendingCount: 0,
-                                errors: [],
-                                state: GQL.BackgroundProcessState.COMPLETED,
+                                status: {
+                                    completedCount: 1,
+                                    pendingCount: 0,
+                                    errors: [],
+                                    state: GQL.BackgroundProcessState.COMPLETED,
+                                },
                             }}
                             onPublish={() => undefined}
                         />
@@ -80,12 +86,14 @@ describe('CampaignStatus', () => {
                     createRenderer().render(
                         <CampaignStatus
                             {...PROPS}
-                            campaign={campaign}
-                            status={{
-                                completedCount: 3,
-                                pendingCount: 3,
-                                errors: ['a', 'b'],
-                                state: GQL.BackgroundProcessState.PROCESSING,
+                            campaign={{
+                                ...campaign,
+                                status: {
+                                    completedCount: 3,
+                                    pendingCount: 3,
+                                    errors: ['a', 'b'],
+                                    state: GQL.BackgroundProcessState.PROCESSING,
+                                },
                             }}
                             onPublish={() => undefined}
                         />
@@ -97,12 +105,14 @@ describe('CampaignStatus', () => {
                     createRenderer().render(
                         <CampaignStatus
                             {...PROPS}
-                            campaign={campaign}
-                            status={{
-                                completedCount: 3,
-                                pendingCount: 0,
-                                errors: ['a', 'b'],
-                                state: GQL.BackgroundProcessState.ERRORED,
+                            campaign={{
+                                ...campaign,
+                                status: {
+                                    completedCount: 3,
+                                    pendingCount: 0,
+                                    errors: ['a', 'b'],
+                                    state: GQL.BackgroundProcessState.ERRORED,
+                                },
                             }}
                             onPublish={() => undefined}
                         />

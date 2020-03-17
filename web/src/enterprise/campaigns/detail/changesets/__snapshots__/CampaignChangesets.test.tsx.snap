@@ -174,7 +174,7 @@ exports[`CampaignChangesets renders 1`] = `
             "observers": Array [],
             "thrownError": null,
           },
-          "enablePublishing": false,
+          "enablePublishing": true,
           "history": Object {
             "action": "POP",
             "block": [Function],

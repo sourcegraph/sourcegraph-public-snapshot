@@ -153,11 +153,14 @@ Array [
     </div>
   </form>,
   <h3
-    className="mt-3"
+    className="mt-3 d-flex align-items-end mb-0"
   >
+    2
+     
     Changesets
+     
   </h3>,
-  <CampaignTabs
+  <CampaignChangesets
     campaign={
       Object {
         "__typename": "CampaignPlan",
@@ -196,7 +199,6 @@ Array [
         "thrownError": null,
       }
     }
-    className="mt-2"
     history={
       Object {
         "action": "POP",
@@ -239,7 +241,6 @@ Array [
         "state": undefined,
       }
     }
-    persistLines={false}
   />,
 ]
 `;
@@ -311,23 +312,15 @@ Array [
       value="d"
     />
   </form>,
-  "CampaignStatus(state=PROCESSING)",
   <h3
-    className="mb-2"
+    className="mt-3 d-flex align-items-end mb-0"
   >
-    Progress
-  </h3>,
-  <p>
-    <em>
-      Burndown chart will be shown when there is more than 1 day of data.
-    </em>
-  </p>,
-  <h3
-    className="mt-3"
-  >
+    4
+     
     Changesets
+     
   </h3>,
-  <CampaignTabs
+  <CampaignChangesets
     campaign={
       Object {
         "__typename": "Campaign",
@@ -10650,7 +10643,6 @@ Array [
         "thrownError": null,
       }
     }
-    className="mt-2"
     history={
       Object {
         "action": "POP",
@@ -10693,7 +10685,6 @@ Array [
         "state": undefined,
       }
     }
-    persistLines={true}
   />,
 ]
 `;
@@ -10769,9 +10760,8 @@ Array [
       </div>
     </div>
   </form>,
-  "CampaignStatus(state=PROCESSING)",
   <h3
-    className="mb-2"
+    className="mt-3 mb-2"
   >
     Progress
   </h3>,
@@ -10781,11 +10771,20 @@ Array [
     </em>
   </p>,
   <h3
-    className="mt-3"
+    className="mt-3 mb-2"
   >
-    Changesets
+    Status
   </h3>,
-  <CampaignTabs
+  "CampaignStatus(state=PROCESSING)",
+  <h3
+    className="mt-3 d-flex align-items-end mb-0"
+  >
+    4
+     
+    Changesets
+     
+  </h3>,
+  <CampaignChangesets
     campaign={
       Object {
         "__typename": "Campaign",
@@ -21108,7 +21107,6 @@ Array [
         "thrownError": null,
       }
     }
-    className="mt-2"
     history={
       Object {
         "action": "POP",
@@ -21151,7 +21149,6 @@ Array [
         "state": undefined,
       }
     }
-    persistLines={true}
   />,
 ]
 `;
@@ -21317,9 +21314,8 @@ Array [
       </div>
     </div>
   </form>,
-  "CampaignStatus(state=PROCESSING)",
   <h3
-    className="mb-2"
+    className="mt-3 mb-2"
   >
     Progress
   </h3>,
@@ -21329,11 +21325,20 @@ Array [
     </em>
   </p>,
   <h3
-    className="mt-3"
+    className="mt-3 mb-2"
   >
-    Changesets
+    Status
   </h3>,
-  <CampaignTabs
+  "CampaignStatus(state=PROCESSING)",
+  <h3
+    className="mt-3 d-flex align-items-end mb-0"
+  >
+    4
+     
+    Changesets
+     
+  </h3>,
+  <CampaignChangesets
     campaign={
       Object {
         "__typename": "Campaign",
@@ -31656,7 +31661,6 @@ Array [
         "thrownError": null,
       }
     }
-    className="mt-2"
     history={
       Object {
         "action": "POP",
@@ -31699,7 +31703,6 @@ Array [
         "state": undefined,
       }
     }
-    persistLines={true}
   />,
 ]
 `;

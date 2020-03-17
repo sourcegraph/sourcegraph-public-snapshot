@@ -38,7 +38,7 @@ import { CampaignUpdateSelection } from './CampaignUpdateSelection'
 import { CampaignActionsBar } from './CampaignActionsBar'
 import { CampaignTitleField } from './form/CampaignTitleField'
 import { CampaignChangesets } from './changesets/CampaignChangesets'
-import { CampaignDiffstat } from './CampaignDiffstat'
+import { CampaignDiffStat } from './CampaignDiffStat'
 import { pluralize } from '../../../../../shared/src/util/strings'
 
 export type CampaignUIMode = 'viewing' | 'editing' | 'saving' | 'deleting' | 'closing'
@@ -539,7 +539,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
 
                     <h3 className="mt-3 d-flex align-items-end mb-0">
                         {totalChangesetCount} {pluralize('Changeset', totalChangesetCount)}{' '}
-                        <CampaignDiffstat campaign={(campaignPlan || campaign)!} className="ml-2 mb-0" />
+                        <CampaignDiffStat campaign={(campaignPlan || campaign)!} className="ml-2 mb-0" />
                     </h3>
                     {(campaign?.changesets.totalCount ?? 0) + (campaignPlan || campaign)!.changesetPlans.totalCount ? (
                         <CampaignChangesets

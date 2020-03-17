@@ -14,9 +14,7 @@ Object {
         <div
           className="d-flex flex-column"
         >
-          <div
-            className="mt-2"
-          >
+          <div>
             <SourcePullIcon
               className="mr-1 icon-inline text-muted"
               data-tooltip="open"
@@ -70,9 +68,7 @@ Object {
         <div
           className="d-flex flex-column"
         >
-          <div
-            className="mt-2"
-          >
+          <div>
             <SourcePullIcon
               className="mr-1 icon-inline text-muted"
               data-tooltip="open"
@@ -136,7 +132,7 @@ Object {
             className="d-flex flex-column"
           >
             <div
-              className="m-0"
+              className="m-0 mb-2"
             >
               <SourcePullIcon
                 className="mr-1 icon-inline text-success"
@@ -151,6 +147,9 @@ Object {
                   to="https://github.com/sourcegraph/sourcegraph/pull/111111"
                 >
                   Remove lodash
+                   (#
+                  123
+                  )
                 </LinkOrSpan>
               </h3>
               <small>
@@ -174,9 +173,7 @@ Object {
                 />
               </span>
             </div>
-            <div
-              className="mt-2"
-            >
+            <div>
               <strong>
                 <AnchorLink
                   className=""
@@ -205,11 +202,6 @@ Object {
               </small>
             </div>
           </div>
-          <Markdown
-            className="text-truncate mt-2"
-            dangerousInnerHTML="We should remove lodash
-"
-          />
         </div>
         <div
           className="flex-shrink-0 flex-grow-0 ml-1 align-items-end"

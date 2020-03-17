@@ -11,18 +11,17 @@ import { queryChangesetPlans, queryChangesets } from '../backend'
 import { repeatWhen, delay } from 'rxjs/operators'
 
 interface Props extends ThemeProps {
-    campaign:
-        | (Pick<GQL.ICampaign, '__typename' | 'id'> & {
-              changesets: Pick<GQL.ICampaign['changesets'], 'nodes' | 'totalCount'>
-              changesetPlans: Pick<GQL.ICampaign['changesetPlans'], 'nodes' | 'totalCount'>
-          })
-        | (Pick<GQL.ICampaignPlan, '__typename' | 'id'> & {
-              changesetPlans: Pick<GQL.ICampaignPlan['changesetPlans'], 'nodes' | 'totalCount'>
-          })
+    campaign: Pick<GQL.ICampaign | GQL.ICampaignPlan, '__typename' | 'id'>
     history: H.History
     location: H.Location
     campaignUpdates: Subject<void>
     changesetUpdates: Subject<void>
+
+    /** For testing only. */
+    _queryChangesets: (
+        campaignID: GQL.ID,
+        args: FilteredConnectionQueryArgs
+    ) => Observable<Connection<GQL.IExternalChangeset | GQL.IChangesetPlan>>
 }
 
 /**
@@ -35,6 +34,7 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
     isLightTheme,
     changesetUpdates,
     campaignUpdates,
+    _queryChangesets = queryChangesets,
 }) => {
     const [state, setState] = useState<GQL.ChangesetState | undefined>()
     const [reviewState, setReviewState] = useState<GQL.ChangesetReviewState | undefined>()
@@ -47,10 +47,10 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
             > =
                 campaign.__typename === 'CampaignPlan'
                     ? queryChangesetPlans(campaign.id, args)
-                    : queryChangesets(campaign.id, { ...args, state, reviewState, checkState })
+                    : _queryChangesets(campaign.id, { ...args, state, reviewState, checkState })
             return queryObservable.pipe(repeatWhen(obs => obs.pipe(delay(5000))))
         },
-        [campaign.id, campaign.__typename, state, reviewState, checkState]
+        [campaign.id, campaign.__typename, state, reviewState, checkState, _queryChangesets]
     )
 
     const changesetFiltersRow = (

@@ -23,7 +23,7 @@ const sumDiffStat = (
 /**
  * The status of a campaign's jobs, plus its closed state and errors.
  */
-export const CampaignDiffstat: React.FunctionComponent<CampaignDiffstatProps> = ({ campaign, className }) => {
+export const CampaignDiffStat: React.FunctionComponent<CampaignDiffstatProps> = ({ campaign, className }) => {
     const changesets = useMemo(
         () =>
             campaign.__typename === 'Campaign'
