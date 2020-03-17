@@ -171,6 +171,25 @@ func (q *requestQueue) acquireNext() *syncRequest {
 	return request
 }
 
+// release releases the acquired sync request from the queue (i.e. sets the acquired
+// state back to false).
+func (q *requestQueue) release(typ requestType, id int32) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+
+	key := requestQueueKey{
+		typ: typ,
+		id:  id,
+	}
+	request := q.index[key]
+	if request == nil {
+		return
+	}
+
+	request.acquired = false
+	heap.Fix(q, request.index)
+}
+
 // The following methods implement heap.Interface based on the priority queue example:
 // https://golang.org/pkg/container/heap/#example__priorityQueue
 // These methods are not safe for concurrent use. Therefore, it is the caller's

@@ -362,6 +362,7 @@ func (s *PermsSyncer) runSync(ctx context.Context) {
 
 		// Check if it's the time to sync the request
 		if wait := request.NextSyncAt.Sub(s.clock()); wait > 0 {
+			s.queue.release(request.Type, request.ID)
 			time.AfterFunc(wait, func() {
 				notify(s.queue.notifyEnqueue)
 			})
