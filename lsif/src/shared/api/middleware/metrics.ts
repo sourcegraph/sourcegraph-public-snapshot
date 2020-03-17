@@ -3,10 +3,10 @@ import onFinished from 'on-finished'
 import promClient from 'prom-client'
 
 /**
- * Middleware function used to emit HTTP durations for LSIF functions. Originally
- * we used an express bundle, but that did not allow us to have different histogram
- * bucket for different endpoints, which makes half of the metrics useless in the
- * presence of large uploads.
+ * Creates a middleware function used to emit HTTP durations for LSIF functions.
+ * Originally we used an express bundle, but that did not allow us to have different
+ * histogram bucket for different endpoints, which makes half of the metrics useless
+ * in the presence of large uploads.
  */
 export const makeMetricsMiddleware = <T>(
     selectHistogram: (route: string) => promClient.Histogram<string> | undefined
