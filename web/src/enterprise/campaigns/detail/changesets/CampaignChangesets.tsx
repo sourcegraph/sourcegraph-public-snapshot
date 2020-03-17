@@ -18,7 +18,7 @@ interface Props extends ThemeProps {
     changesetUpdates: Subject<void>
 
     /** For testing only. */
-    _queryChangesets: (
+    _queryChangesets?: (
         campaignID: GQL.ID,
         args: FilteredConnectionQueryArgs
     ) => Observable<Connection<GQL.IExternalChangeset | GQL.IChangesetPlan>>
