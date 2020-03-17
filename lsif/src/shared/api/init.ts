@@ -35,7 +35,8 @@ export function makeExpressApp({
         app.use(route)
     }
 
-    // Error handler must be registered last
+    // Error handler must be registered last so its exception handlers
+    // will apply to all routes and other middleware.
     app.use(errorHandler(logger))
 
     return app
