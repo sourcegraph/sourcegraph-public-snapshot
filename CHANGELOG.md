@@ -50,6 +50,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
+- The v3.11 migration to merge critical and site configuration has been removed. If you are still making use of the deprecated `CRITICAL_CONFIG_FILE`, your instance may not start up. See the [migration notes for Sourcegraph 3.11](https://docs.sourcegraph.com/admin/migration/3_11) for more information.
+
 ## 3.13.2
 
 ### Fixed
