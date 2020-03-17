@@ -507,12 +507,7 @@ async function testCodeNavigation(
  * sequence.
  */
 async function collectLinks(driver: Driver): Promise<Set<TestLocation>> {
-    while (true) {
-        // Wait for all tags to load
-        if ((await driver.page.$$('.e2e-loading-spinner')).length === 0) {
-            break
-        }
-    }
+    await driver.page.waitForSelector('.e2e-loading-spinner', { hidden: true })
 
     const panelTabTitles = await getPanelTabTitles(driver)
     if (panelTabTitles.length === 0) {
@@ -776,15 +771,9 @@ async function performUpload(
 async function ensureUpload(driver: Driver, uploadUrl: string): Promise<void> {
     await driver.page.goto(uploadUrl)
 
-    let stateText = ''
-    const pendingStateMessages = ['Upload is queued.', 'Upload is currently being processed...']
-    while (!stateText || pendingStateMessages.includes(stateText || '')) {
-        stateText =
-            (await (await driver.page.waitForSelector('.e2e-upload-state')).evaluate(elem => elem.textContent)) || ''
-    }
-
-    // Ensure upload is successful
-    expect(stateText).toEqual('Upload processed successfully.')
+    await driver.page.waitFor(
+        () => document.querySelector('.e2e-upload-state')?.textContent === 'Upload processed successfully.'
+    )
 
     const isLatestForRepoText = await (await driver.page.waitFor('.e2e-is-latest-for-repo')).evaluate(
         elem => elem.textContent
