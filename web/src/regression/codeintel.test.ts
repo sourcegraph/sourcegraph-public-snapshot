@@ -507,6 +507,13 @@ async function testCodeNavigation(
  * sequence.
  */
 async function collectLinks(driver: Driver): Promise<Set<TestLocation>> {
+    while (true) {
+        // Wait for all tags to load
+        if ((await driver.page.$$('.e2e-loading-spinner')).length === 0) {
+            break
+        }
+    }
+
     const panelTabTitles = await getPanelTabTitles(driver)
     if (panelTabTitles.length === 0) {
         return new Set(await collectVisibleLinks(driver))
@@ -763,26 +770,19 @@ async function performUpload(
 }
 
 /**
- * Refresh the upload page until it has finished processing. Then, navigate to the
- * list of uploads for that repository and ensure that it's visible in the list of
- * uploads visible at the tip of the default branch.
+ * Wait on the upload page until it has finished processing and ensure that it's
+ * visible at the tip of the default branch.
  */
 async function ensureUpload(driver: Driver, uploadUrl: string): Promise<void> {
-    const pendingUploadStateMessages = ['Upload is queued.', 'Upload is currently being processed...']
-
     await driver.page.goto(uploadUrl)
-    while (true) {
-        // Keep reloading upload page until the upload is terminal (not queued, not processed)
-        const text = await (await driver.page.waitForSelector('.e2e-upload-state')).evaluate(elem => elem.textContent)
-        if (!pendingUploadStateMessages.includes(text || '')) {
-            break
-        }
 
-        await driver.page.reload()
+    let stateText: string | null = null
+    const pendingStateMessages = ['Upload is queued.', 'Upload is currently being processed...']
+    while (pendingStateMessages.includes(stateText || '')) {
+        stateText = await (await driver.page.waitForSelector('.e2e-upload-state')).evaluate(elem => elem.textContent)
     }
 
     // Ensure upload is successful
-    const stateText = await (await driver.page.waitForSelector('.e2e-upload-state')).evaluate(elem => elem.textContent)
     expect(stateText).toEqual('Upload processed successfully.')
 
     const isLatestForRepoText = await (await driver.page.waitFor('.e2e-is-latest-for-repo')).evaluate(
