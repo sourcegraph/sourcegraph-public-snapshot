@@ -23,7 +23,6 @@ import { waitForConfiguration } from '../shared/config/config'
 import { DumpManager } from '../shared/store/dumps'
 import { DependencyManager } from '../shared/store/dependencies'
 import { SRC_FRONTEND_INTERNAL } from '../shared/config/settings'
-import { migrate } from './startup-migrations/migration'
 
 /**
  * Runs the HTTP server that accepts LSIF dump uploads and responds to LSIF requests.
@@ -57,16 +56,6 @@ async function main(logger: Logger): Promise<void> {
     const uploadManager = new UploadManager(connection)
     const dependencyManager = new DependencyManager(connection)
     const backend = new Backend(settings.STORAGE_ROOT, dumpManager, dependencyManager, SRC_FRONTEND_INTERNAL)
-
-    // Run any app-level migrations. These migrations usually exist only
-    // for a two-minor-version period in which we clean up old data and
-    // fix outdated assumptions.
-    //
-    // These block the process from starting up until completion. Also
-    // note that if the cleanup is handling an assumption from the last
-    // minor version, there may be instances of that version running
-    // after this migration step completes.
-    await migrate(connection, { logger })
 
     // Start background tasks
     startTasks(connection, dumpManager, uploadManager, logger)
