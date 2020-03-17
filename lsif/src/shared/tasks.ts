@@ -9,8 +9,11 @@ interface Task {
     handler: () => Promise<void>
 }
 
-/** A collection of tasks that are invoked periodically. */
-export class TaskRunner {
+/**
+ * A collection of tasks that are invoked periodically, each holding an
+ * exclusive advisory lock on a Postgres database connection.
+ */
+export class ExclusivePeriodicTaskRunner {
     private tasks: Task[] = []
 
     /**
@@ -28,11 +31,17 @@ export class TaskRunner {
      * @param intervalMs The interval between task invocations.
      * @param task The function to invoke.
      */
-    public register(name: string, intervalMs: number, task: (ctx: TracingContext) => Promise<void>): void {
+    public register(
+        name: string,
+        intervalMs: number,
+        task: ({ connection, ctx }: { connection: Connection; ctx: TracingContext }) => Promise<void>
+    ): void {
         this.tasks.push({
             intervalMs,
             handler: () =>
-                tryWithLock(this.connection, name, () => logAndTraceCall({ logger: this.logger }, name, task)),
+                tryWithLock(this.connection, name, () =>
+                    logAndTraceCall({ logger: this.logger }, name, ctx => task({ connection: this.connection, ctx }))
+                ),
         })
     }
 

@@ -3,7 +3,7 @@ import { Connection, EntityManager } from 'typeorm'
 import { Logger } from 'winston'
 import { UploadManager } from '../shared/store/uploads'
 import { DumpManager } from '../shared/store/dumps'
-import { TaskRunner } from '../shared/tasks'
+import { ExclusivePeriodicTaskRunner } from '../shared/tasks'
 import * as constants from '../shared/constants'
 import * as fs from 'mz/fs'
 import * as metrics from './metrics'
@@ -30,19 +30,19 @@ export function startTasks(
     uploadManager: UploadManager,
     logger: Logger
 ): void {
-    const runner = new TaskRunner(connection, logger)
+    const runner = new ExclusivePeriodicTaskRunner(connection, logger)
 
-    runner.register('Resetting stalled uploads', settings.RESET_STALLED_UPLOADS_INTERVAL, ctx =>
+    runner.register('Resetting stalled uploads', settings.RESET_STALLED_UPLOADS_INTERVAL, ({ ctx }) =>
         resetStalledUploads(uploadManager, ctx)
     )
 
-    runner.register('Cleaning old uploads', settings.CLEAN_OLD_UPLOADS_INTERVAL, ctx =>
+    runner.register('Cleaning old uploads', settings.CLEAN_OLD_UPLOADS_INTERVAL, ({ ctx }) =>
         cleanOldUploads(uploadManager, ctx)
     )
 
-    runner.register('Purging old dumps', settings.PURGE_OLD_DUMPS_INTERVAL, ctx =>
+    runner.register('Purging old dumps', settings.PURGE_OLD_DUMPS_INTERVAL, ({ ctx, connection: taskConnection }) =>
         purgeOldDumps(
-            connection,
+            taskConnection,
             dumpManager,
             uploadManager,
             settings.STORAGE_ROOT,
@@ -51,7 +51,9 @@ export function startTasks(
         )
     )
 
-    runner.register('Cleaning failed uploads', settings.CLEAN_FAILED_UPLOADS_INTERVAL, cleanFailedUploads)
+    runner.register('Cleaning failed uploads', settings.CLEAN_FAILED_UPLOADS_INTERVAL, ({ ctx }) =>
+        cleanFailedUploads(ctx)
+    )
 
     runner.register('Updating metrics', settings.UPDATE_QUEUE_SIZE_GAUGE_INTERVAL, () =>
         updateQueueSizeGauge(uploadManager)
