@@ -224,6 +224,19 @@ type EventFilterOptions struct {
 	ByEventName string
 	// If not empty, only include events that matche a list of given event names
 	ByEventNames []string
+	// Must be used with ByEventName
+	//
+	// If set, only include events that match a specified condition.
+	ByEventNameWithCondition *sqlf.Query
+}
+
+// EventArgumentMatch provides the options for matching an event with
+// a specific JSON value passed as an argument.
+type EventArgumentMatch struct {
+	// The name of the JSON key to match against.
+	ArgumentName string
+	// The actual value passed to the JSON key to match.
+	ArgumentValue string
 }
 
 // CountUniqueUsersPerPeriod provides a count of unique active users in a given time span, broken up into periods of
@@ -254,6 +267,9 @@ func (l *eventLogs) CountUniqueUsersPerPeriod(ctx context.Context, periodType Pe
 			}
 			if opt.EventFilters.ByEventName != "" {
 				conds = append(conds, sqlf.Sprintf("name = %s", opt.EventFilters.ByEventName))
+			}
+			if opt.EventFilters.ByEventNameWithCondition != nil {
+				conds = append(conds, opt.EventFilters.ByEventNameWithCondition)
 			}
 			if len(opt.EventFilters.ByEventNames) > 0 {
 				items := []*sqlf.Query{}
@@ -288,6 +304,13 @@ func (l *eventLogs) CountEventsPerPeriod(ctx context.Context, periodType PeriodT
 		}
 		if opt.ByEventName != "" {
 			conds = append(conds, sqlf.Sprintf("name = %s", opt.ByEventName))
+		}
+		if opt.ByEventNameWithCondition != nil {
+			if opt.ByEventName == "" {
+				return nil, fmt.Errorf("The ByEventNameWithCondition option must be used together with the ByEventName option.")
+			}
+			conds = append(conds, sqlf.Sprintf("name = %s", opt.ByEventName))
+			conds = append(conds, opt.ByEventNameWithCondition)
 		}
 		if len(opt.ByEventNames) > 0 {
 			items := []*sqlf.Query{}

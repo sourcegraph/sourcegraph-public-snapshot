@@ -2,7 +2,6 @@ import * as constants from '../shared/constants'
 import * as metrics from './metrics'
 import * as path from 'path'
 import * as settings from './settings'
-import express from 'express'
 import promClient from 'prom-client'
 import { Backend } from './backend/backend'
 import { createLogger } from '../shared/logging'
@@ -12,18 +11,14 @@ import { createPostgresConnection } from '../shared/database/postgres'
 import { createTracer } from '../shared/tracing'
 import { createUploadRouter } from './routes/uploads'
 import { ensureDirectory } from '../shared/paths'
-import { default as tracingMiddleware } from 'express-opentracing'
-import { errorHandler } from './middleware/errors'
-import { logger as loggingMiddleware } from 'express-winston'
 import { Logger } from 'winston'
-import { metricsMiddleware } from './middleware/metrics'
 import { startTasks } from './tasks/runner'
 import { UploadManager } from '../shared/store/uploads'
 import { waitForConfiguration } from '../shared/config/config'
 import { DumpManager } from '../shared/store/dumps'
 import { DependencyManager } from '../shared/store/dependencies'
 import { SRC_FRONTEND_INTERNAL } from '../shared/config/settings'
-import { migrate } from './startup-migrations/migration'
+import { makeExpressApp } from '../shared/api/init'
 
 /**
  * Runs the HTTP server that accepts LSIF dump uploads and responds to LSIF requests.
@@ -58,45 +53,35 @@ async function main(logger: Logger): Promise<void> {
     const dependencyManager = new DependencyManager(connection)
     const backend = new Backend(settings.STORAGE_ROOT, dumpManager, dependencyManager, SRC_FRONTEND_INTERNAL)
 
-    // Run any app-level migrations. These migrations usually exist only
-    // for a two-minor-version period in which we clean up old data and
-    // fix outdated assumptions.
-    //
-    // These block the process from starting up until completion. Also
-    // note that if the cleanup is handling an assumption from the last
-    // minor version, there may be instances of that version running
-    // after this migration step completes.
-    await migrate(connection, { logger })
-
     // Start background tasks
     startTasks(connection, dumpManager, uploadManager, logger)
 
-    const app = express()
-
-    if (tracer !== undefined) {
-        app.use(tracingMiddleware({ tracer }))
-    }
-
-    app.use(
-        loggingMiddleware({
-            winstonInstance: logger,
-            level: 'debug',
-            ignoredRoutes: ['/ping', '/healthz', '/metrics'],
-            requestWhitelist: ['method', 'url'],
-            msg: 'Handled request',
-        })
-    )
-    app.use(metricsMiddleware)
-
     // Register endpoints
-    app.use(createMetaRouter())
-    app.use(createUploadRouter(dumpManager, uploadManager, logger))
-    app.use(createLsifRouter(backend, uploadManager, logger, tracer))
-
-    // Error handler must be registered last
-    app.use(errorHandler(logger))
+    const app = makeExpressApp({
+        routes: [
+            createMetaRouter(),
+            createUploadRouter(dumpManager, uploadManager, logger),
+            createLsifRouter(backend, uploadManager, logger, tracer),
+        ],
+        logger,
+        tracer,
+        selectHistogram,
+    })
 
     app.listen(settings.HTTP_PORT, () => logger.debug('LSIF API server listening on', { port: settings.HTTP_PORT }))
+}
+
+function selectHistogram(route: string): promClient.Histogram<string> | undefined {
+    switch (route) {
+        case '/upload':
+            return metrics.httpUploadDurationHistogram
+
+        case '/exists':
+        case '/request':
+            return metrics.httpQueryDurationHistogram
+    }
+
+    return undefined
 }
 
 // Initialize logger
