@@ -1,25 +1,31 @@
 import { count } from '../../../shared/src/util/strings'
 
-export function queryTelemetryData(query: string): { [key: string]: any } {
+export function queryTelemetryData(query: string, caseSensitive: boolean): { [key: string]: any } {
     return {
         // 🚨 PRIVACY: never provide any private data in { code_search: { query_data: { query } } }.
-        query: query ? queryStringTelemetryData(query) : undefined,
+        query: query ? queryStringTelemetryData(query, caseSensitive) : undefined,
         combined: query,
         empty: !query,
     }
 }
 
-function queryStringTelemetryData(q: string): { [key: string]: any } {
+function queryStringTelemetryData(q: string, caseSensitive: boolean): { [key: string]: any } {
     // 🚨 PRIVACY: never provide any private data in this function's return value.
     // This only takes ~1.7ms per call, so it does not need to be optimized.
     return {
-        field_type: q.includes('type:')
+        field_archived: {
+            count: count(q, /(^|\s)archived:/g),
+        },
+        field_after: q.includes('after:')
             ? {
-                  count: count(q, /(^|\s)type:/g),
-                  value_file: count(q, /(^|\s)type:file(\s|$)/g),
-                  value_diff: count(q, /(^|\s)type:diff(\s|$)/g),
-                  value_commit: count(q, /(^|\s)type:commit(\s|$)/g),
-                  value_symbol: count(q, /(^|\s)type:symbol(\s|$)/g),
+                  count: count(q, /(^|\s)after:/g),
+                  value_sec: count(q, /(^|\s)after:"[^"]*sec/g),
+                  value_min: count(q, /(^|\s)after:"[^"]*min/g),
+                  value_hour: count(q, /(^|\s)after:"[^"]*h(ou)?r/g),
+                  value_day: count(q, /(^|\s)after:"[^"]*day/g),
+                  value_week: count(q, /(^|\s)after:"[^"]*w(ee)?k/g),
+                  value_month: count(q, /(^|\s)after:"[^"]*m(on|th)/g),
+                  value_year: count(q, /(^|\s)after:"[^"]*y(ea)?r/g),
               }
             : undefined,
         field_author: q.includes('author:')
@@ -27,13 +33,6 @@ function queryStringTelemetryData(q: string): { [key: string]: any } {
                   count: count(q, /(^|\s)author:/g),
                   count_negated: count(q, /(^|\s)-author:/g),
                   value_at_sign: count(q, /(^|\s)-?author:[^s]*@/g),
-              }
-            : undefined,
-        field_committer: q.includes('committer:')
-            ? {
-                  count: count(q, /(^|\s)committer:/g),
-                  count_negated: count(q, /(^|\s)-committer:/g),
-                  value_at_sign: count(q, /(^|\s)-?committer:[^s]*@/g),
               }
             : undefined,
         field_before: q.includes('before:')
@@ -48,26 +47,22 @@ function queryStringTelemetryData(q: string): { [key: string]: any } {
                   value_year: count(q, /(^|\s)before:"[^"]*y(ea)?r/g),
               }
             : undefined,
-        field_after: q.includes('after:')
+        field_case: {
+            count: caseSensitive ? 1 : 0,
+        },
+        field_committer: q.includes('committer:')
             ? {
-                  count: count(q, /(^|\s)after:/g),
-                  value_sec: count(q, /(^|\s)after:"[^"]*sec/g),
-                  value_min: count(q, /(^|\s)after:"[^"]*min/g),
-                  value_hour: count(q, /(^|\s)after:"[^"]*h(ou)?r/g),
-                  value_day: count(q, /(^|\s)after:"[^"]*day/g),
-                  value_week: count(q, /(^|\s)after:"[^"]*w(ee)?k/g),
-                  value_month: count(q, /(^|\s)after:"[^"]*m(on|th)/g),
-                  value_year: count(q, /(^|\s)after:"[^"]*y(ea)?r/g),
+                  count: count(q, /(^|\s)committer:/g),
+                  count_negated: count(q, /(^|\s)-committer:/g),
+                  value_at_sign: count(q, /(^|\s)-?committer:[^s]*@/g),
               }
             : undefined,
-        field_message:
-            q.includes('message:') || q.includes('m:')
-                ? {
-                      count: count(q, /(^|\s)m(essage)?:/g),
-                      count_negated: count(q, /(^|\s)-m(essage)?:/g),
-                      count_alias: count(q, /(^|\s)-?m:/g),
-                  }
-                : undefined,
+        field_content: {
+            count: count(q, /(^|\s)content:/g),
+        },
+        field_count: {
+            count: count(q, /(^|\s)count:/g),
+        },
         field_file:
             q.includes('file:') || q.includes('f:')
                 ? {
@@ -85,16 +80,31 @@ function queryStringTelemetryData(q: string): { [key: string]: any } {
                       value_glob: count(q, /(^|\s)-?f(ile)?:[^\s]*(\*\.|\.\{[a-zA-Z]|\*\*|\/\*)/g),
                   }
                 : undefined,
-        field_repogroup:
-            q.includes('repogroup:') || q.includes('g:')
+        field_fork: {
+            count: count(q, /(^|\s)fork:/g),
+        },
+        field_index: {
+            count: count(q, /(^|\s)index:/g),
+        },
+        field_lang:
+            q.includes('lang:') || q.includes('l:')
                 ? {
-                      count: count(q, /(^|\s)(repogroup|g):/g),
-                      count_negated: count(q, /(^|\s)-(repogroup|g):/g),
-                      count_alias: count(q, /(^|\s)-?g:/g),
-                      value_active: count(q, /(^|\s)-?(repogroup|g):active/g),
-                      value_inactive: count(q, /(^|\s)-?(repogroup|g):active/g),
+                      count: count(q, /(^|\s)l(ang)?:/g),
+                      count_negated: count(q, /(^|\s)-l(ang)?:/g),
+                      count_alias: count(q, /(^|\s)-?l:/g),
                   }
                 : undefined,
+        field_message:
+            q.includes('message:') || q.includes('m:')
+                ? {
+                      count: count(q, /(^|\s)m(essage)?:/g),
+                      count_negated: count(q, /(^|\s)-m(essage)?:/g),
+                      count_alias: count(q, /(^|\s)-?m:/g),
+                  }
+                : undefined,
+        field_patterntype: {
+            count: count(q, /(^|\s)patterntype:/gi),
+        },
         field_repo:
             q.includes('repo:') || q.includes('r:')
                 ? {
@@ -114,20 +124,38 @@ function queryStringTelemetryData(q: string): { [key: string]: any } {
                       value_glob: count(q, /(^|\s)-?r(epo)?:[^\s]*(\*\.|\.\{[a-zA-Z]|\*\*|\/\*)/g),
                   }
                 : undefined,
-        field_lang:
-            q.includes('lang:') || q.includes('l:')
+        field_repogroup:
+            q.includes('repogroup:') || q.includes('g:')
                 ? {
-                      count: count(q, /(^|\s)l(ang)?:/g),
-                      count_negated: count(q, /(^|\s)-l(ang)?:/g),
-                      count_alias: count(q, /(^|\s)-?l:/g),
+                      count: count(q, /(^|\s)(repogroup|g):/g),
+                      count_negated: count(q, /(^|\s)-(repogroup|g):/g),
+                      count_alias: count(q, /(^|\s)-?g:/g),
+                      value_active: count(q, /(^|\s)-?(repogroup|g):active/g),
+                      value_inactive: count(q, /(^|\s)-?(repogroup|g):active/g),
                   }
                 : undefined,
-        field_case: {
-            count: count(q, /(^|\s)case:/g),
-        },
+        field_repohascommitafter: q.includes('repohascommitafter:')
+            ? {
+                  count: count(q, /(^|\s)(repohascommitafter):/g),
+              }
+            : undefined,
+        field_repohasfile: q.includes('repohascommitafter:')
+            ? {
+                  count: count(q, /(^|\s)(repohasfile):/g),
+              }
+            : undefined,
         field_timeout: {
             count: count(q, /(^|\s)timeout:/g),
         },
+        field_type: q.includes('type:')
+            ? {
+                  count: count(q, /(^|\s)type:/g),
+                  value_file: count(q, /(^|\s)type:file(\s|$)/g),
+                  value_diff: count(q, /(^|\s)type:diff(\s|$)/g),
+                  value_commit: count(q, /(^|\s)type:commit(\s|$)/g),
+                  value_symbol: count(q, /(^|\s)type:symbol(\s|$)/g),
+              }
+            : undefined,
         field_default: defaultQueryFieldTelemetryData(q),
         fields: {
             count: count(q, /(^|\s)(\w+:)?([^:"'/\s]+|"[^"]*"|'[^']*'|\/[^/]*\/)/g),

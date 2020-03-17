@@ -77,8 +77,6 @@ export class ActivationDropdown extends React.PureComponent<Props, State> {
             dragFriction: 0.09,
             duration: animationDurationMillis,
             delay: 20,
-            width: 10,
-            height: 10,
             colors: ['#a864fd', '#29cdff', '#78ff44', '#ff718d', '#fdff6a'],
         }
         return (
@@ -94,21 +92,25 @@ export class ActivationDropdown extends React.PureComponent<Props, State> {
                     } activation-dropdown-button__animated-button bg-transparent d-flex align-items-center e2e-activation-nav-item-toggle`}
                     nav={true}
                 >
-                    <Confetti
-                        active={this.state.animate}
-                        config={{
-                            angle: 210,
-                            ...confettiConfig,
-                        }}
-                    />
+                    <div className="activation-dropdown-button__confetti">
+                        <Confetti
+                            active={this.state.animate}
+                            config={{
+                                angle: 210,
+                                ...confettiConfig,
+                            }}
+                        />
+                    </div>
                     Get started
-                    <Confetti
-                        active={this.state.animate}
-                        config={{
-                            angle: 330,
-                            ...confettiConfig,
-                        }}
-                    />
+                    <div className="activation-dropdown-button__confetti">
+                        <Confetti
+                            active={this.state.animate}
+                            config={{
+                                angle: 330,
+                                ...confettiConfig,
+                            }}
+                        />
+                    </div>
                     <span className="activation-dropdown-button__progress-bar-container">
                         <CircularProgressbar
                             className="activation-dropdown-button__circular-progress-bar"

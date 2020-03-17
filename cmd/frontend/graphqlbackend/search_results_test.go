@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/google/zoekt"
 	zoektrpc "github.com/google/zoekt/rpc"
 	"github.com/keegancsmith/sqlf"
@@ -1257,6 +1258,94 @@ func Test_commitAndDiffSearchLimits(t *testing.T) {
 			}
 			t.Fatalf("test %s, have result type: %q, want result type: %q", test.name, haveResultType, wantResultType)
 		}
+	}
+}
+
+func Test_ZoektSingleIndexedRepo(t *testing.T) {
+	repoRev := func(revSpec string) *search.RepositoryRevisions {
+		return &search.RepositoryRevisions{
+			Repo: &types.Repo{ID: api.RepoID(0), Name: "test/repo"},
+			Revs: []search.RevisionSpecifier{
+				{RevSpec: revSpec},
+			},
+		}
+	}
+	zoektRepos := []*zoekt.RepoListEntry{
+		{
+			Repository: zoekt.Repository{
+				Name: "test/repo",
+				Branches: []zoekt.RepositoryBranch{
+					{
+						Name:    "HEAD",
+						Version: "df3f4e499698e48152b39cd655d8901eaf583fa5",
+					},
+					{
+						Name:    "NOT-HEAD",
+						Version: "8ec975423738fe7851676083ebf660a062ed1578",
+					},
+				},
+			},
+		},
+	}
+	z := &searchbackend.Zoekt{
+		Client: &fakeSearcher{
+			repos: &zoekt.RepoList{Repos: zoektRepos},
+		},
+		DisableCache: true,
+	}
+	cases := []struct {
+		rev           *search.RepositoryRevisions
+		wantIndexed   []*search.RepositoryRevisions
+		wantUnindexed []*search.RepositoryRevisions
+	}{
+		{
+			rev:           repoRev(""),
+			wantIndexed:   []*search.RepositoryRevisions{repoRev("")},
+			wantUnindexed: []*search.RepositoryRevisions{},
+		},
+		{
+			rev:           repoRev("HEAD"),
+			wantIndexed:   []*search.RepositoryRevisions{repoRev("HEAD")},
+			wantUnindexed: []*search.RepositoryRevisions{},
+		},
+		{
+			rev:           repoRev("df3f4e499698e48152b39cd655d8901eaf583fa5"),
+			wantIndexed:   []*search.RepositoryRevisions{repoRev("df3f4e499698e48152b39cd655d8901eaf583fa5")},
+			wantUnindexed: []*search.RepositoryRevisions{},
+		},
+		{
+			rev:           repoRev("df3f4e"),
+			wantIndexed:   []*search.RepositoryRevisions{repoRev("df3f4e")},
+			wantUnindexed: []*search.RepositoryRevisions{},
+		},
+		{
+			rev:           repoRev("d"),
+			wantIndexed:   []*search.RepositoryRevisions{},
+			wantUnindexed: []*search.RepositoryRevisions{repoRev("d")},
+		},
+		{
+			rev:           repoRev("HEAD^1"),
+			wantIndexed:   []*search.RepositoryRevisions{},
+			wantUnindexed: []*search.RepositoryRevisions{repoRev("HEAD^1")},
+		},
+		{
+			rev:           repoRev("8ec975423738fe7851676083ebf660a062ed1578"),
+			wantIndexed:   []*search.RepositoryRevisions{},
+			wantUnindexed: []*search.RepositoryRevisions{repoRev("8ec975423738fe7851676083ebf660a062ed1578")},
+		},
+	}
+
+	for _, tt := range cases {
+		t.Run("classify indexed repo by commit", func(t *testing.T) {
+			filter := func(*zoekt.Repository) bool { return true }
+			indexed, unindexed, _ := zoektSingleIndexedRepo(context.Background(), z, tt.rev, filter)
+			if cmp.Diff(indexed, tt.wantIndexed) != "" {
+				t.Errorf("Got indexed repo %v, want %v", indexed, tt.wantIndexed)
+			}
+			if cmp.Diff(unindexed, tt.wantUnindexed) != "" {
+				t.Errorf("Got unindexed repo %v, want %v", unindexed, tt.wantUnindexed)
+			}
+		})
 	}
 }
 

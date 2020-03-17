@@ -96,8 +96,6 @@ func TestService(t *testing.T) {
 				Rev:            patch.BaseRevision,
 				BaseRef:        patch.BaseRef,
 				Diff:           patch.Patch,
-				StartedAt:      now,
-				FinishedAt:     now,
 				CreatedAt:      now,
 				UpdatedAt:      now,
 			}
@@ -1051,14 +1049,25 @@ var testUser = db.NewUser{
 	EmailVerificationCode: "foobar",
 }
 
-func createTestUser(ctx context.Context, t *testing.T) *types.User {
-	t.Helper()
-	user, err := db.Users.Create(ctx, testUser)
-	if err != nil {
-		t.Fatal(err)
+var createTestUser = func() func(context.Context, *testing.T) *types.User {
+	count := 0
+
+	return func(ctx context.Context, t *testing.T) *types.User {
+		t.Helper()
+
+		u := testUser
+		u.Username = fmt.Sprintf("%s-%d", u.Username, count)
+
+		user, err := db.Users.Create(ctx, u)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		count += 1
+
+		return user
 	}
-	return user
-}
+}()
 
 func testCampaignJob(plan int64, repo api.RepoID, t time.Time) *campaigns.CampaignJob {
 	return &campaigns.CampaignJob{
@@ -1067,8 +1076,6 @@ func testCampaignJob(plan int64, repo api.RepoID, t time.Time) *campaigns.Campai
 		Rev:            "deadbeef",
 		BaseRef:        "refs/heads/master",
 		Diff:           "cool diff",
-		StartedAt:      t,
-		FinishedAt:     t,
 	}
 }
 

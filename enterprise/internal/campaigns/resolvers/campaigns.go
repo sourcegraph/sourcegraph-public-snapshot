@@ -182,7 +182,6 @@ func (r *campaignResolver) ChangesetPlans(
 		opts: ee.ListCampaignJobsOpts{
 			CampaignPlanID:            r.Campaign.CampaignPlanID,
 			Limit:                     int(args.GetFirst()),
-			OnlyFinished:              true,
 			OnlyWithDiff:              true,
 			OnlyUnpublishedInCampaign: r.Campaign.ID,
 		},
