@@ -1,6 +1,7 @@
 package authz
 
 import (
+	"container/heap"
 	"context"
 	"fmt"
 	"time"
@@ -100,10 +101,10 @@ func (s *PermsSyncer) scheduleUsers(ctx context.Context, users ...scheduledUser)
 		}
 
 		updated := s.queue.enqueue(&requestMeta{
-			priority:   users[i].Priority,
-			typ:        requestTypeUser,
-			id:         users[i].UserID,
-			nextSyncAt: users[i].NextSyncAt,
+			Priority:   users[i].Priority,
+			Type:       requestTypeUser,
+			ID:         users[i].UserID,
+			NextSyncAt: users[i].NextSyncAt,
 		})
 		log15.Debug("PermsSyncer.queue.enqueued", "userID", users[i].UserID, "updated", updated)
 	}
@@ -137,10 +138,10 @@ func (s *PermsSyncer) scheduleRepos(ctx context.Context, repos ...scheduledRepo)
 		}
 
 		updated := s.queue.enqueue(&requestMeta{
-			priority:   repos[i].Priority,
-			typ:        requestTypeRepo,
-			id:         int32(repos[i].RepoID),
-			nextSyncAt: repos[i].NextSyncAt,
+			Priority:   repos[i].Priority,
+			Type:       requestTypeRepo,
+			ID:         int32(repos[i].RepoID),
+			NextSyncAt: repos[i].NextSyncAt,
 		})
 		log15.Debug("PermsSyncer.queue.enqueued", "repoID", repos[i].RepoID, "updated", updated)
 	}
@@ -324,16 +325,16 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID) erro
 // syncPerms processes the permissions syncing request and remove the request from
 // the queue once it is done (independent of success or failure).
 func (s *PermsSyncer) syncPerms(ctx context.Context, request *syncRequest) error {
-	defer s.queue.remove(request.typ, request.id, true)
+	defer s.queue.remove(request.Type, request.ID, true)
 
 	var err error
-	switch request.typ {
+	switch request.Type {
 	case requestTypeUser:
-		err = s.syncUserPerms(ctx, request.id)
+		err = s.syncUserPerms(ctx, request.ID)
 	case requestTypeRepo:
-		err = s.syncRepoPerms(ctx, api.RepoID(request.id))
+		err = s.syncRepoPerms(ctx, api.RepoID(request.ID))
 	default:
-		err = fmt.Errorf("unexpected request type: %v", request.typ)
+		err = fmt.Errorf("unexpected request type: %v", request.Type)
 	}
 
 	return err
@@ -360,7 +361,7 @@ func (s *PermsSyncer) runSync(ctx context.Context) {
 		}
 
 		// Check if it's the time to sync the request
-		if wait := request.nextSyncAt.Sub(s.clock()); wait > 0 {
+		if wait := request.NextSyncAt.Sub(s.clock()); wait > 0 {
 			time.AfterFunc(wait, func() {
 				notify(s.queue.notifyEnqueue)
 			})
@@ -373,7 +374,7 @@ func (s *PermsSyncer) runSync(ctx context.Context) {
 
 		err := s.syncPerms(ctx, request)
 		if err != nil {
-			log15.Warn("Failed to sync permissions", "type", request.typ, "id", request.id, "err", err)
+			log15.Warn("Failed to sync permissions", "type", request.Type, "id", request.ID, "err", err)
 			continue
 		}
 	}
@@ -547,6 +548,54 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 		s.scheduleUsers(ctx, schedule.Users...)
 		s.scheduleRepos(ctx, schedule.Repos...)
 	}
+}
+
+// DebugDump returns the state of the permissions syncer for debugging.
+func (s *PermsSyncer) DebugDump() interface{} {
+	type requestInfo struct {
+		Meta     *requestMeta
+		Acquired bool
+	}
+	data := struct {
+		Name  string
+		Size  int
+		Queue []*requestInfo
+	}{
+		Name: "permissions",
+	}
+
+	queue := requestQueue{
+		heap: make([]*syncRequest, len(s.queue.heap)),
+	}
+
+	s.queue.mu.RLock()
+	defer s.queue.mu.RUnlock()
+
+	for i, request := range s.queue.heap {
+		// Copy the syncRequest as a value so that poping off the heap here won't
+		// update the index value of the real heap, and we don't do a racy read on
+		// the repo pointer which may change concurrently in the real heap.
+		requestCopy := *request
+		queue.heap[i] = &requestCopy
+	}
+
+	for len(queue.heap) > 0 {
+		// Copy values of the syncRequest so that the requestMeta pointer
+		// won't change concurrently after we release the lock.
+		request := heap.Pop(&queue).(*syncRequest)
+		data.Queue = append(data.Queue, &requestInfo{
+			Meta: &requestMeta{
+				Priority:   request.Priority,
+				Type:       request.Type,
+				ID:         request.ID,
+				NextSyncAt: request.NextSyncAt,
+			},
+			Acquired: request.acquired,
+		})
+	}
+	data.Size = len(data.Queue)
+
+	return &data
 }
 
 // Run kicks off the permissions syncing process, this method is blocking and

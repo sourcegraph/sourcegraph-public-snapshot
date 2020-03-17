@@ -36,10 +36,10 @@ func (t1 requestType) higherPriorityThan(t2 requestType) bool {
 
 // requestMeta contains metadata of a permissions syncing request.
 type requestMeta struct {
-	priority   Priority
-	typ        requestType
-	id         int32
-	nextSyncAt time.Time
+	Priority   Priority
+	Type       requestType
+	ID         int32
+	NextSyncAt time.Time
 }
 
 // syncRequest is a permissions syncing request with its current status in the queue.
@@ -60,7 +60,7 @@ type requestQueueKey struct {
 // Requests with same requestType and id are guaranteed to only have
 // one instance in the queue.
 type requestQueue struct {
-	mu    sync.Mutex
+	mu    sync.RWMutex
 	heap  []*syncRequest
 	index map[requestQueueKey]*syncRequest
 
@@ -103,8 +103,8 @@ func (q *requestQueue) enqueue(meta *requestMeta) (updated bool) {
 	defer q.mu.Unlock()
 
 	key := requestQueueKey{
-		typ: meta.typ,
-		id:  meta.id,
+		typ: meta.Type,
+		id:  meta.ID,
 	}
 	request := q.index[key]
 	if request == nil {
@@ -115,7 +115,7 @@ func (q *requestQueue) enqueue(meta *requestMeta) (updated bool) {
 		return false
 	}
 
-	if request.acquired || request.priority >= meta.priority {
+	if request.acquired || request.Priority >= meta.Priority {
 		// Request is acquired and in processing, or is already in the queue with at least as good priority.
 		return false
 	}
@@ -188,17 +188,17 @@ func (q *requestQueue) Less(i, j int) bool {
 		return qj.acquired
 	}
 
-	if qi.priority != qj.priority {
+	if qi.Priority != qj.Priority {
 		// We want Pop to give us the highest, not lowest, priority so we use greater than here.
-		return qi.priority > qj.priority
+		return qi.Priority > qj.Priority
 	}
 
-	if qi.typ != qj.typ {
-		return qi.typ.higherPriorityThan(qj.typ)
+	if qi.Type != qj.Type {
+		return qi.Type.higherPriorityThan(qj.Type)
 	}
 
 	// Earlier scheduled next sync has higher priority.
-	return qi.nextSyncAt.Before(qj.nextSyncAt)
+	return qi.NextSyncAt.Before(qj.NextSyncAt)
 }
 
 func (q *requestQueue) Swap(i, j int) {
@@ -214,8 +214,8 @@ func (q *requestQueue) Push(x interface{}) {
 	q.heap = append(q.heap, request)
 
 	key := requestQueueKey{
-		typ: request.typ,
-		id:  request.id,
+		typ: request.Type,
+		id:  request.ID,
 	}
 	q.index[key] = request
 }
@@ -227,8 +227,8 @@ func (q *requestQueue) Pop() interface{} {
 	q.heap = q.heap[0 : n-1]
 
 	key := requestQueueKey{
-		typ: request.typ,
-		id:  request.id,
+		typ: request.Type,
+		id:  request.ID,
 	}
 	delete(q.index, key)
 	return request
