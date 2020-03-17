@@ -44,12 +44,6 @@ func campaignPlanFragment(first int) string {
 	return fmt.Sprintf(`
 fragment CampaignPlanFields on CampaignPlan {
     id
-    status {
-        completedCount
-        pendingCount
-        state
-        errors
-    }
     changesets(first: %d) {
         nodes {
             repository {
@@ -145,16 +139,8 @@ type ChangesetPlan struct {
 	} `json:"diff"`
 }
 
-type Status struct {
-	CompletedCount int      `json:"completedCount"`
-	PendingCount   int      `json:"pendingCount"`
-	State          string   `json:"state"`
-	Errors         []string `json:"errors"`
-}
-
 type CampaignPlan struct {
 	ID         string `json:"id"`
-	Status     Status `json:"status"`
 	Changesets struct {
 		Nodes      []ChangesetPlan `json:"nodes"`
 		TotalCount int             `json:"totalCount"`
