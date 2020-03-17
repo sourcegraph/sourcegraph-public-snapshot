@@ -11,7 +11,7 @@ Each section comprehensively describes the changes needed in Docker images, envi
 Confirm that `redis-store-disk` has the correct file permissions:
 
 ```
-sudo chown -R 999:999 ~/sourcegraph-docker/redis-store-disk/ ~/sourcegraph-docker/redis-cache-disk/
+sudo chown -R 999:1000 ~/sourcegraph-docker/redis-store-disk/ ~/sourcegraph-docker/redis-cache-disk/
 ```
 
 ### Update image tags
