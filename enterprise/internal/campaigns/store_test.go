@@ -1695,59 +1695,6 @@ func testStore(db *sql.DB) func(*testing.T) {
 			})
 		})
 
-		t.Run("CampaignPlan BackgroundProcessStatus", func(t *testing.T) {
-			tests := []struct {
-				jobs []*cmpgn.CampaignJob
-				want *cmpgn.BackgroundProcessStatus
-			}{
-				{
-					jobs: []*cmpgn.CampaignJob{}, // no jobs
-					want: &cmpgn.BackgroundProcessStatus{
-						ProcessState: cmpgn.BackgroundProcessStateCompleted,
-					},
-				},
-				{
-					jobs: []*cmpgn.CampaignJob{ // two jobs
-						{},
-						{},
-					},
-					want: &cmpgn.BackgroundProcessStatus{
-						ProcessState: cmpgn.BackgroundProcessStateCompleted,
-						Total:        2,
-						Completed:    2,
-					},
-				},
-			}
-			for _, tc := range tests {
-				plan := &cmpgn.CampaignPlan{}
-				err := s.CreateCampaignPlan(ctx, plan)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				for i, j := range tc.jobs {
-					j.CampaignPlanID = plan.ID
-					j.RepoID = api.RepoID(i)
-					j.Rev = api.CommitID(fmt.Sprintf("deadbeef-%d", i))
-					j.BaseRef = "master"
-
-					err := s.CreateCampaignJob(ctx, j)
-					if err != nil {
-						t.Fatal(err)
-					}
-				}
-
-				status, err := s.GetCampaignPlanStatus(ctx, plan.ID)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				if diff := cmp.Diff(status, tc.want); diff != "" {
-					t.Fatalf("wrong diff: %s", diff)
-				}
-			}
-		})
-
 		t.Run("CampaignPlan DeleteExpired", func(t *testing.T) {
 			tests := []struct {
 				hasCampaign bool
