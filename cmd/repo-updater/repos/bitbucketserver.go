@@ -326,8 +326,8 @@ func (s *BitbucketServerSource) excludes(r *bitbucketserver.Repo) bool {
 		name = r.Project.Key + "/" + name
 	}
 	if r.State != "AVAILABLE" ||
-		s.exclude.Name(name) ||
-		s.exclude.Name(strconv.Itoa(r.ID)) ||
+		s.exclude.Match(name) ||
+		s.exclude.Match(strconv.Itoa(r.ID)) ||
 		(s.config.ExcludePersonalRepositories && r.IsPersonalRepository()) {
 		return true
 	}

@@ -160,7 +160,7 @@ func (s *GitLabSource) authenticatedRemoteURL(proj *gitlab.Project) string {
 }
 
 func (s *GitLabSource) excludes(p *gitlab.Project) bool {
-	return s.exclude.Name(p.PathWithNamespace) || s.exclude.Name(strconv.Itoa(p.ID))
+	return s.exclude.Match(p.PathWithNamespace) || s.exclude.Match(strconv.Itoa(p.ID))
 }
 
 func (s *GitLabSource) listAllProjects(ctx context.Context, results chan SourceResult) {

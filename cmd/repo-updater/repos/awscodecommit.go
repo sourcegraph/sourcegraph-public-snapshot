@@ -179,7 +179,7 @@ func (s *AWSCodeCommitSource) listAllRepositories(ctx context.Context, results c
 }
 
 func (s *AWSCodeCommitSource) excludes(r *awscodecommit.Repository) bool {
-	return s.exclude.Name(r.Name) || s.exclude.Name(r.ID)
+	return s.exclude.Match(r.Name) || s.exclude.Match(r.ID)
 }
 
 // The code below is copied from

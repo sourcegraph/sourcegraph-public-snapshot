@@ -39,7 +39,7 @@ func (e *excluder) Err() error {
 	return e.err
 }
 
-func (e *excluder) Name(name string) bool {
+func (e *excluder) Match(name string) bool {
 	if _, ok := e.exact[strings.ToLower(name)]; ok {
 		return true
 	}

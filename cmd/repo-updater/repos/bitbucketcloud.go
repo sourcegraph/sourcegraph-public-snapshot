@@ -154,7 +154,7 @@ func (s *BitbucketCloudSource) authenticatedRemoteURL(repo *bitbucketcloud.Repo)
 }
 
 func (s *BitbucketCloudSource) excludes(r *bitbucketcloud.Repo) bool {
-	return s.exclude.Name(r.FullName) || s.exclude.Name(r.UUID)
+	return s.exclude.Match(r.FullName) || s.exclude.Match(r.UUID)
 }
 
 func (s *BitbucketCloudSource) listAllRepos(ctx context.Context, results chan SourceResult) {

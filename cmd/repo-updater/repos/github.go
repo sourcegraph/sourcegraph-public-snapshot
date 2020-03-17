@@ -317,7 +317,7 @@ func (s *GithubSource) authenticatedRemoteURL(repo *github.Repository) string {
 }
 
 func (s *GithubSource) excludes(r *github.Repository) bool {
-	if s.exclude.Name(r.NameWithOwner) || s.exclude.Name(r.ID) {
+	if s.exclude.Match(r.NameWithOwner) || s.exclude.Match(r.ID) {
 		return true
 	}
 

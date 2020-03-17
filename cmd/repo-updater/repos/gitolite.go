@@ -94,7 +94,7 @@ func (s GitoliteSource) ExternalServices() ExternalServices {
 }
 
 func (s GitoliteSource) excludes(gr *gitolite.Repo, r *Repo) bool {
-	return s.exclude.Name(gr.Name) ||
+	return s.exclude.Match(gr.Name) ||
 		strings.ContainsAny(r.Name, "\\^$|()[]*?{},") ||
 		(s.blacklist != nil && s.blacklist.MatchString(r.Name))
 }
