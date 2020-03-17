@@ -88,6 +88,8 @@
 // 1528395659_user_pending_perms_table_add_service_type_and_id.up.sql (1.289kB)
 // 1528395660_add_state_columns_to_changesets.down.sql (215B)
 // 1528395660_add_state_columns_to_changesets.up.sql (544B)
+// 1528395661_remove_execution_related_columns_from_campaign_jobs.down.sql (1.019kB)
+// 1528395661_remove_execution_related_columns_from_campaign_jobs.up.sql (395B)
 
 package migrations
 
@@ -1916,6 +1918,46 @@ func _1528395660_add_state_columns_to_changesetsUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395661_remove_execution_related_columns_from_campaign_jobsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xac\x92\x41\x8f\xda\x3e\x14\xc4\xef\xfe\x14\xf3\x97\x58\x2d\xfc\xb5\xaa\x7a\xde\x88\x43\x70\x5e\xc0\x52\xb0\x91\xe3\x08\x6e\x91\xbb\xa4\xe0\x0a\x4c\x9a\x78\xdb\xaa\x55\xbf\x7b\x85\x29\x2c\xbb\xaa\x54\x0e\x3d\xe6\x29\xf3\xf3\xbc\x79\x33\xa1\xa9\x90\x09\x63\x69\x61\x48\xc3\xa4\x93\x82\xf0\x64\xf7\xad\x75\x1b\x5f\x7f\x3a\x7c\xe8\x91\x66\x19\xb8\x2a\xaa\xb9\xc4\xba\xe9\x9f\x3a\xd7\x06\x77\xf0\x08\xcd\xb7\x00\xa9\x0c\x64\x55\x14\xc9\x6d\xfa\x3e\xd8\x2e\x34\xeb\xda\x06\x04\xb7\x6f\xfa\x60\xf7\x2d\xbe\xba\xb0\x8d\x9f\xf8\x7e\xf0\xcd\x8d\xa4\x8f\xce\xbb\x7e\xfb\x4f\x50\x4d\xd7\x1d\xba\xb7\xeb\xb0\x4c\xab\x05\x8c\x16\xd3\x29\x69\x88\x1c\xb4\x12\xa5\x29\x11\x3a\xb7\xa9\xbf\xd8\x9d\x5b\xdb\xd0\xd4\x17\x66\xbb\xb3\xbe\x76\x7d\x7d\xb6\x05\x25\x2f\x0f\xf6\xc9\x09\x96\x57\x92\x1b\xa1\xe4\x15\xed\xef\xa0\xe1\x28\x61\x8c\x6b\x4a\x0d\xbd\x00\x6e\x91\x41\x93\xa9\xb4\x3c\x39\xde\x34\x1d\x03\x80\x22\x95\xd3\x2a\x9d\x12\xda\x5d\xbb\xe9\x3f\xef\xe2\x30\x2d\x31\x18\xb0\x8c\x78\x91\x6a\x62\x40\xf7\xec\xbd\xf3\x1b\x38\x1f\x12\x16\xeb\x71\x35\x7c\x1c\x63\x18\x55\x25\x15\xc4\x0d\xb8\xaa\xa4\x19\xfe\x3f\x42\xae\xd5\xfc\x75\xc6\xf1\xb7\xe5\x8c\xf4\x55\xf6\x27\x9f\x6b\x8c\x21\x69\xf9\xee\xed\xf8\x64\x47\x66\xaf\xae\x2b\xca\x78\x12\x06\x1c\xa3\xc0\x31\xbd\xe1\xd9\xcd\x7f\x63\xbc\x1f\xc1\xcc\x48\x46\xa9\x4e\x45\x49\xa0\x15\xa7\x45\xcc\xe9\x9e\xff\x7e\x60\xb1\xb3\xfe\x87\xc8\x1e\x71\xf7\x13\x5b\xdb\xe3\x0e\xcf\xfe\x72\xaa\xa3\xd7\xfb\x87\x08\xc0\x1f\x6d\x3d\x9c\xb7\x4f\x18\x40\x32\x83\xc8\xa3\x93\x53\xc2\x47\x49\xc2\x48\x66\x09\x1b\x0c\x5e\x8e\x75\xae\xce\xad\x85\x99\x50\xae\x34\x41\xc8\x92\xb4\x81\xd2\xa8\x16\xd9\x91\x73\x5d\x24\xe4\x4a\x83\x52\x3e\x83\x56\x4b\xd0\x8a\x78\x65\x08\x0b\xad\x38\x65\x95\xa6\x9b\xeb\xa4\xe6\x73\x61\x12\xf6\x2b\x00\x00\xff\xff\xd1\xd6\x11\x49\xfb\x03\x00\x00")
+
+func _1528395661_remove_execution_related_columns_from_campaign_jobsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395661_remove_execution_related_columns_from_campaign_jobsDownSql,
+		"1528395661_remove_execution_related_columns_from_campaign_jobs.down.sql",
+	)
+}
+
+func _1528395661_remove_execution_related_columns_from_campaign_jobsDownSql() (*asset, error) {
+	bytes, err := _1528395661_remove_execution_related_columns_from_campaign_jobsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395661_remove_execution_related_columns_from_campaign_jobs.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x37, 0x64, 0x7b, 0xa, 0x20, 0x4, 0x9d, 0xcb, 0x3a, 0x8d, 0x95, 0xfc, 0xad, 0xb5, 0xb4, 0x8b, 0x62, 0xb0, 0x76, 0x7a, 0x70, 0xbb, 0xff, 0xa4, 0xb5, 0xbe, 0x77, 0xa0, 0xfe, 0xcd, 0xc, 0x5c}}
+	return a, nil
+}
+
+var __1528395661_remove_execution_related_columns_from_campaign_jobsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x9c\xce\x41\x6a\x85\x30\x14\x85\xe1\xf9\x5d\xc5\x1d\xb6\x6b\xc8\x48\x6d\x94\x80\x26\x25\x46\xe8\x2c\xa4\x26\xb5\xb7\xd8\x28\x49\xe8\xfa\x0b\x2d\x3e\x9c\x3d\x7c\xe3\xc3\xff\x71\x6a\xde\x09\xc9\x00\x5e\xb4\x7a\x45\xa3\x45\xd7\x71\x8d\xa2\x45\xfe\x26\x46\x33\x62\x49\xb4\xd8\x1f\xb7\x92\x77\x25\xd8\xd9\x7d\xef\x8e\x96\x68\xf7\xd5\x45\x4b\xd9\x7e\x50\xa4\xfc\x19\x3c\x2a\x89\xc7\x98\xd9\x3f\xd6\x4e\xb2\x31\x42\xc9\x93\x76\x1f\x7a\x7a\x66\x00\x55\x6f\xb8\x46\x53\xd5\x3d\xbf\xa9\xf6\x6b\x7b\xcf\xf8\x07\x37\xaa\x9f\x86\x33\x1b\x52\xda\x12\xbb\x9c\xe5\xe2\x52\x09\xde\xba\x72\xbd\x3d\xfe\x3e\x14\xfb\x90\xe7\x44\x7b\xa1\x2d\x32\x00\x68\xd4\x30\x08\xc3\xe0\x37\x00\x00\xff\xff\x0d\x30\xb2\x18\x8b\x01\x00\x00")
+
+func _1528395661_remove_execution_related_columns_from_campaign_jobsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395661_remove_execution_related_columns_from_campaign_jobsUpSql,
+		"1528395661_remove_execution_related_columns_from_campaign_jobs.up.sql",
+	)
+}
+
+func _1528395661_remove_execution_related_columns_from_campaign_jobsUpSql() (*asset, error) {
+	bytes, err := _1528395661_remove_execution_related_columns_from_campaign_jobsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395661_remove_execution_related_columns_from_campaign_jobs.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xfa, 0xa, 0xae, 0x4e, 0xe7, 0x2d, 0xed, 0x4f, 0x2c, 0x48, 0x4e, 0xb8, 0xac, 0x32, 0x91, 0xc6, 0x39, 0x2a, 0xcc, 0xb3, 0x85, 0x16, 0x75, 0xb3, 0xb7, 0x59, 0x99, 0xc9, 0xa9, 0xb1, 0x5a, 0x7c}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2095,6 +2137,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395659_user_pending_perms_table_add_service_type_and_id.up.sql":      _1528395659_user_pending_perms_table_add_service_type_and_idUpSql,
 	"1528395660_add_state_columns_to_changesets.down.sql":                     _1528395660_add_state_columns_to_changesetsDownSql,
 	"1528395660_add_state_columns_to_changesets.up.sql":                       _1528395660_add_state_columns_to_changesetsUpSql,
+	"1528395661_remove_execution_related_columns_from_campaign_jobs.down.sql": _1528395661_remove_execution_related_columns_from_campaign_jobsDownSql,
+	"1528395661_remove_execution_related_columns_from_campaign_jobs.up.sql":   _1528395661_remove_execution_related_columns_from_campaign_jobsUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -2226,6 +2270,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395659_user_pending_perms_table_add_service_type_and_id.up.sql":      {_1528395659_user_pending_perms_table_add_service_type_and_idUpSql, map[string]*bintree{}},
 	"1528395660_add_state_columns_to_changesets.down.sql":                     {_1528395660_add_state_columns_to_changesetsDownSql, map[string]*bintree{}},
 	"1528395660_add_state_columns_to_changesets.up.sql":                       {_1528395660_add_state_columns_to_changesetsUpSql, map[string]*bintree{}},
+	"1528395661_remove_execution_related_columns_from_campaign_jobs.down.sql": {_1528395661_remove_execution_related_columns_from_campaign_jobsDownSql, map[string]*bintree{}},
+	"1528395661_remove_execution_related_columns_from_campaign_jobs.up.sql":   {_1528395661_remove_execution_related_columns_from_campaign_jobsUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

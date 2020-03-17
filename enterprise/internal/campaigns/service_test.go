@@ -96,8 +96,6 @@ func TestService(t *testing.T) {
 				Rev:            patch.BaseRevision,
 				BaseRef:        patch.BaseRef,
 				Diff:           patch.Patch,
-				StartedAt:      now,
-				FinishedAt:     now,
 				CreatedAt:      now,
 				UpdatedAt:      now,
 			}
@@ -1078,8 +1076,6 @@ func testCampaignJob(plan int64, repo api.RepoID, t time.Time) *campaigns.Campai
 		Rev:            "deadbeef",
 		BaseRef:        "refs/heads/master",
 		Diff:           "cool diff",
-		StartedAt:      t,
-		FinishedAt:     t,
 	}
 }
 
