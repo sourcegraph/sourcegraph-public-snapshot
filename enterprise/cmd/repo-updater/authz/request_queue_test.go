@@ -11,15 +11,15 @@ import (
 var cmpOpts = cmp.AllowUnexported(syncRequest{}, requestMeta{}, requestQueueKey{})
 
 func Test_requestQueue_enqueue(t *testing.T) {
-	lowRepo1 := &requestMeta{priority: PriorityLow, typ: requestTypeRepo, id: 1}
-	highRepo1 := &requestMeta{priority: PriorityHigh, typ: requestTypeRepo, id: 1}
-	lowRepo2 := &requestMeta{priority: PriorityLow, typ: requestTypeRepo, id: 2}
-	highRepo2 := &requestMeta{priority: PriorityHigh, typ: requestTypeRepo, id: 2}
-	lowRepo3 := &requestMeta{priority: PriorityLow, typ: requestTypeRepo, id: 3}
-	highRepo3 := &requestMeta{priority: PriorityHigh, typ: requestTypeRepo, id: 3}
-	lowRepo4 := &requestMeta{priority: PriorityLow, typ: requestTypeRepo, id: 3, nextSyncAt: time.Now()}
+	lowRepo1 := &requestMeta{Priority: PriorityLow, Type: requestTypeRepo, ID: 1}
+	highRepo1 := &requestMeta{Priority: PriorityHigh, Type: requestTypeRepo, ID: 1}
+	lowRepo2 := &requestMeta{Priority: PriorityLow, Type: requestTypeRepo, ID: 2}
+	highRepo2 := &requestMeta{Priority: PriorityHigh, Type: requestTypeRepo, ID: 2}
+	lowRepo3 := &requestMeta{Priority: PriorityLow, Type: requestTypeRepo, ID: 3}
+	highRepo3 := &requestMeta{Priority: PriorityHigh, Type: requestTypeRepo, ID: 3}
+	lowRepo4 := &requestMeta{Priority: PriorityLow, Type: requestTypeRepo, ID: 3, NextSyncAt: time.Now()}
 
-	lowUser1 := &requestMeta{priority: PriorityLow, typ: requestTypeUser, id: 1}
+	lowUser1 := &requestMeta{Priority: PriorityLow, Type: requestTypeUser, ID: 1}
 
 	tests := []struct {
 		name             string
@@ -194,8 +194,8 @@ func Test_requestQueue_enqueue(t *testing.T) {
 			for _, meta := range test.metas {
 				if q.enqueue(meta) {
 					updated = append(updated, requestQueueKey{
-						typ: meta.typ,
-						id:  meta.id,
+						typ: meta.Type,
+						id:  meta.ID,
 					})
 				}
 			}
@@ -232,11 +232,11 @@ func Test_requestQueue_enqueue(t *testing.T) {
 }
 
 func Test_requestQueue_remove(t *testing.T) {
-	repo1 := &requestMeta{typ: requestTypeRepo, id: 1}
+	repo1 := &requestMeta{Type: requestTypeRepo, ID: 1}
 	repo1Key := requestQueueKey{typ: requestTypeRepo, id: 1}
-	repo2 := &requestMeta{typ: requestTypeRepo, id: 2}
+	repo2 := &requestMeta{Type: requestTypeRepo, ID: 2}
 	repo2Key := requestQueueKey{typ: requestTypeRepo, id: 2}
-	repo3 := &requestMeta{typ: requestTypeRepo, id: 3}
+	repo3 := &requestMeta{Type: requestTypeRepo, ID: 3}
 	repo3Key := requestQueueKey{typ: requestTypeRepo, id: 3}
 
 	type remove struct {
@@ -383,8 +383,8 @@ func Test_requestQueue_remove(t *testing.T) {
 }
 
 func Test_requestQueue_acquireNext(t *testing.T) {
-	repo1 := &requestMeta{typ: requestTypeRepo, id: 1}
-	repo2 := &requestMeta{typ: requestTypeRepo, id: 2}
+	repo1 := &requestMeta{Type: requestTypeRepo, ID: 1}
+	repo2 := &requestMeta{Type: requestTypeRepo, ID: 2}
 
 	tests := []struct {
 		name        string
@@ -470,6 +470,44 @@ func Test_requestQueue_acquireNext(t *testing.T) {
 	}
 }
 
+func Test_requestQueue_release(t *testing.T) {
+	user1 := &requestMeta{Type: requestTypeUser, ID: 1}
+	repo2 := &requestMeta{Type: requestTypeRepo, ID: 2}
+
+	q := newRequestQueue()
+	q.enqueue(user1)
+	q.enqueue(repo2)
+
+	expHeap := []*syncRequest{
+		{requestMeta: user1, acquired: false, index: 0},
+		{requestMeta: repo2, acquired: false, index: 1},
+	}
+	if diff := cmp.Diff(expHeap, q.heap, cmpOpts); diff != "" {
+		t.Fatalf("heap: %v", diff)
+	}
+
+	// Acquire the next request
+	r := q.acquireNext()
+
+	expHeap = []*syncRequest{
+		{requestMeta: repo2, acquired: false, index: 0},
+		{requestMeta: user1, acquired: true, index: 1},
+	}
+	if diff := cmp.Diff(expHeap, q.heap, cmpOpts); diff != "" {
+		t.Fatalf("heap: %v", diff)
+	}
+
+	// Release the request
+	q.release(r.Type, r.ID)
+	expHeap = []*syncRequest{
+		{requestMeta: user1, acquired: false, index: 0},
+		{requestMeta: repo2, acquired: false, index: 1},
+	}
+	if diff := cmp.Diff(expHeap, q.heap, cmpOpts); diff != "" {
+		t.Fatalf("heap: %v", diff)
+	}
+}
+
 func Test_requestQueue_Less(t *testing.T) {
 	q := newRequestQueue()
 
@@ -497,32 +535,32 @@ func Test_requestQueue_Less(t *testing.T) {
 		{
 			name: "i has high priority",
 			heap: []*syncRequest{
-				{requestMeta: &requestMeta{priority: PriorityHigh}},
-				{requestMeta: &requestMeta{priority: PriorityLow}},
+				{requestMeta: &requestMeta{Priority: PriorityHigh}},
+				{requestMeta: &requestMeta{Priority: PriorityLow}},
 			},
 			expVal: true,
 		},
 		{
 			name: "j has high priority",
 			heap: []*syncRequest{
-				{requestMeta: &requestMeta{priority: PriorityLow}},
-				{requestMeta: &requestMeta{priority: PriorityHigh}},
+				{requestMeta: &requestMeta{Priority: PriorityLow}},
+				{requestMeta: &requestMeta{Priority: PriorityHigh}},
 			},
 			expVal: false,
 		},
 		{
 			name: "i is a user request",
 			heap: []*syncRequest{
-				{requestMeta: &requestMeta{typ: requestTypeUser}},
-				{requestMeta: &requestMeta{typ: requestTypeRepo}},
+				{requestMeta: &requestMeta{Type: requestTypeUser}},
+				{requestMeta: &requestMeta{Type: requestTypeRepo}},
 			},
 			expVal: true,
 		},
 		{
 			name: "j is a user request",
 			heap: []*syncRequest{
-				{requestMeta: &requestMeta{typ: requestTypeRepo}},
-				{requestMeta: &requestMeta{typ: requestTypeUser}},
+				{requestMeta: &requestMeta{Type: requestTypeRepo}},
+				{requestMeta: &requestMeta{Type: requestTypeUser}},
 			},
 			expVal: false,
 		},
@@ -530,14 +568,14 @@ func Test_requestQueue_Less(t *testing.T) {
 			name: "i has older nextSyncAt",
 			heap: []*syncRequest{
 				{requestMeta: &requestMeta{}},
-				{requestMeta: &requestMeta{nextSyncAt: time.Now()}},
+				{requestMeta: &requestMeta{NextSyncAt: time.Now()}},
 			},
 			expVal: true,
 		},
 		{
 			name: "j has older nextSyncAt",
 			heap: []*syncRequest{
-				{requestMeta: &requestMeta{nextSyncAt: time.Now()}},
+				{requestMeta: &requestMeta{NextSyncAt: time.Now()}},
 				{requestMeta: &requestMeta{}},
 			},
 			expVal: false,

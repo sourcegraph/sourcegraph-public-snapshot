@@ -27,7 +27,7 @@ type GitoliteSource struct {
 	// required for authentication.
 	cli       *gitserver.Client
 	blacklist *regexp.Regexp
-	exclude   map[string]bool
+	exclude   excluder
 }
 
 // NewGitoliteSource returns a new GitoliteSource from the given external service.
@@ -54,11 +54,12 @@ func NewGitoliteSource(svc *ExternalService, cf *httpcli.Factory) (*GitoliteSour
 		}
 	}
 
-	exclude := make(map[string]bool, len(c.Exclude))
+	var exclude excluder
 	for _, r := range c.Exclude {
-		if r.Name != "" {
-			exclude[r.Name] = true
-		}
+		exclude.Exact(r.Name)
+	}
+	if err := exclude.Err(); err != nil {
+		return nil, err
 	}
 
 	return &GitoliteSource{
@@ -93,7 +94,7 @@ func (s GitoliteSource) ExternalServices() ExternalServices {
 }
 
 func (s GitoliteSource) excludes(gr *gitolite.Repo, r *Repo) bool {
-	return s.exclude[gr.Name] ||
+	return s.exclude.Match(gr.Name) ||
 		strings.ContainsAny(r.Name, "\\^$|()[]*?{},") ||
 		(s.blacklist != nil && s.blacklist.MatchString(r.Name))
 }

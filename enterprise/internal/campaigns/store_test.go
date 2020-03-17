@@ -2695,8 +2695,10 @@ func testStore(db *sql.DB) func(*testing.T) {
 	}
 }
 
-func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
+func testProcessChangesetJob(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
+		dbtesting.SetupGlobalTestDB(t)
+
 		now := time.Now().UTC().Truncate(time.Microsecond)
 		clock := func() time.Time { return now.UTC().Truncate(time.Microsecond) }
 		ctx := context.Background()
@@ -2721,14 +2723,48 @@ func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
 			t.Fatal(err)
 		}
 
-		t.Run("GetPendingCampaignJobsWhenNoneAvailable", func(t *testing.T) {
+		user := createTestUser(ctx, t)
+
+		s := NewStoreWithClock(db, clock)
+		plan := &cmpgn.CampaignPlan{UserID: user.ID, CampaignType: "test"}
+		err := s.CreateCampaignPlan(context.Background(), plan)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		campaignJob := &cmpgn.CampaignJob{
+			CampaignPlanID: plan.ID,
+			RepoID:         repo.ID,
+			BaseRef:        "abc",
+			StartedAt:      now,
+			FinishedAt:     now,
+		}
+		err = s.CreateCampaignJob(context.Background(), campaignJob)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		campaign := &cmpgn.Campaign{
+			CampaignPlanID:  plan.ID,
+			Name:            "testcampaign",
+			Description:     "testcampaign",
+			AuthorID:        user.ID,
+			NamespaceUserID: user.ID,
+		}
+		err = s.CreateCampaign(context.Background(), campaign)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		t.Run("GetPendingChangesetJobsWhenNoneAvailable", func(t *testing.T) {
 			tx := dbtest.NewTx(t, db)
 			s := NewStoreWithClock(tx, clock)
 
-			process := func(ctx context.Context, s *Store, job cmpgn.CampaignJob) error {
+			process := func(ctx context.Context, s *Store, job cmpgn.ChangesetJob) error {
 				return errors.New("rollback")
 			}
-			ran, err := s.ProcessPendingCampaignJob(ctx, process)
+
+			ran, err := s.ProcessPendingChangesetJobs(ctx, process)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -2738,35 +2774,24 @@ func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
 			}
 		})
 
-		t.Run("GetPendingCampaignJobsWhenAvailable", func(t *testing.T) {
+		t.Run("GetPendingChangesetJobWhenAvailable", func(t *testing.T) {
 			tx := dbtest.NewTx(t, db)
 			s := NewStoreWithClock(tx, clock)
 
-			process := func(ctx context.Context, s *Store, job cmpgn.CampaignJob) error {
+			process := func(ctx context.Context, s *Store, job cmpgn.ChangesetJob) error {
 				return errors.New("rollback")
 			}
-			plan := &cmpgn.CampaignPlan{
-				CampaignType: "test",
+
+			job := &cmpgn.ChangesetJob{
+				CampaignID:    campaign.ID,
+				CampaignJobID: campaignJob.ID,
 			}
-			err := s.CreateCampaignPlan(context.Background(), plan)
+			err := s.CreateChangesetJob(ctx, job)
 			if err != nil {
 				t.Fatal(err)
 			}
-			job := &cmpgn.CampaignJob{
-				ID:             0,
-				CampaignPlanID: plan.ID,
-				RepoID:         repo.ID,
-				Rev:            "",
-				BaseRef:        "abc",
-				Diff:           "",
-				Description:    "",
-				Error:          "",
-			}
-			err = s.CreateCampaignJob(context.Background(), job)
-			if err != nil {
-				t.Fatal(err)
-			}
-			ran, err := s.ProcessPendingCampaignJob(ctx, process)
+
+			ran, err := s.ProcessPendingChangesetJobs(ctx, process)
 			if err != nil && err.Error() != "rollback" {
 				t.Fatal(err)
 			}
@@ -2777,42 +2802,28 @@ func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
 		})
 
 		t.Run("GetPendingCampaignJobsWhenAvailableLocking", func(t *testing.T) {
-			dbtesting.SetupGlobalTestDB(t)
-			user := createTestUser(ctx, t)
 			s := NewStoreWithClock(db, clock)
 
-			process := func(ctx context.Context, s *Store, job cmpgn.CampaignJob) error {
+			process := func(ctx context.Context, s *Store, job cmpgn.ChangesetJob) error {
 				time.Sleep(100 * time.Millisecond)
 				return errors.New("rollback")
 			}
-			plan := &cmpgn.CampaignPlan{
-				CampaignType: "test",
-				UserID:       user.ID,
-			}
-			err := s.CreateCampaignPlan(context.Background(), plan)
-			if err != nil {
-				t.Fatal(err)
-			}
-			err = s.CreateCampaignJob(context.Background(), &cmpgn.CampaignJob{
-				ID:             0,
-				CampaignPlanID: plan.ID,
-				RepoID:         repo.ID,
-				Rev:            "",
-				BaseRef:        "abc",
-				Diff:           "",
-				Description:    "",
-				Error:          "",
-			})
-			if err != nil {
-				t.Fatal(err)
+
+			job := &cmpgn.ChangesetJob{
+				CampaignID:    campaign.ID,
+				CampaignJobID: campaignJob.ID,
 			}
 
+			err := s.CreateChangesetJob(ctx, job)
+			if err != nil {
+				t.Fatal(err)
+			}
 			var runCount int64
 			errChan := make(chan error, 2)
 
 			for i := 0; i < 2; i++ {
 				go func() {
-					ran, err := s.ProcessPendingCampaignJob(ctx, process)
+					ran, err := s.ProcessPendingChangesetJobs(ctx, process)
 					if ran {
 						atomic.AddInt64(&runCount, 1)
 					}

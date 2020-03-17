@@ -33,7 +33,7 @@ const port = "3182"
 
 // EnterpriseInit is a function that allows enterprise code to be triggered when dependencies
 // created in Main are ready for use.
-type EnterpriseInit func(db *sql.DB, store repos.Store, cf *httpcli.Factory, server *repoupdater.Server)
+type EnterpriseInit func(db *sql.DB, store repos.Store, cf *httpcli.Factory, server *repoupdater.Server) []debugserver.Dumper
 
 func Main(enterpriseInit EnterpriseInit) {
 	streamingSyncer, _ := strconv.ParseBool(env.Get("SRC_STREAMING_SYNCER_ENABLED", "true", "Use the new, streaming repo metadata syncer."))
@@ -113,8 +113,9 @@ func Main(enterpriseInit EnterpriseInit) {
 	}
 
 	// All dependencies ready
+	var debugDumpers []debugserver.Dumper
 	if enterpriseInit != nil {
-		enterpriseInit(db, store, cf, server)
+		debugDumpers = enterpriseInit(db, store, cf, server)
 	}
 
 	var handler http.Handler
@@ -215,13 +216,20 @@ func Main(enterpriseInit EnterpriseInit) {
 		Name: "Repo Updater State",
 		Path: "/repo-updater-state",
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			d, err := json.MarshalIndent(scheduler.DebugDump(), "", "  ")
+			dumps := []interface{}{
+				scheduler.DebugDump(),
+			}
+			for _, dumper := range debugDumpers {
+				dumps = append(dumps, dumper.DebugDump())
+			}
+
+			p, err := json.MarshalIndent(dumps, "", "  ")
 			if err != nil {
 				http.Error(w, "failed to marshal snapshot: "+err.Error(), http.StatusInternalServerError)
 				return
 			}
 			w.Header().Set("Content-Type", "application/json")
-			_, _ = w.Write(d)
+			_, _ = w.Write(p)
 		}),
 	})
 

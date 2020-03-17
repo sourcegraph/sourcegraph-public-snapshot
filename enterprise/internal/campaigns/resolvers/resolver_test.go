@@ -446,7 +446,7 @@ func TestCampaigns(t *testing.T) {
 					ServiceType: "github",
 				},
 				ReviewState: "APPROVED",
-				CheckState:  "PENDING",
+				CheckState:  "PASSED",
 				Events: ChangesetEventConnection{
 					TotalCount: 57,
 				},

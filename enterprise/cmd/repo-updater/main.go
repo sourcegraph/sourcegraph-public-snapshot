@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 	"strconv"
-	"sync"
 	"time"
 
 	ossAuthz "github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
@@ -21,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"gopkg.in/inconshreveable/log15.v2"
 )
@@ -33,44 +33,53 @@ func main() {
 	shared.Main(enterpriseInit)
 }
 
-var cbOnce sync.Once
+func enterpriseInit(
+	db *sql.DB,
+	repoStore repos.Store,
+	cf *httpcli.Factory,
+	server *repoupdater.Server,
+) (debugDumpers []debugserver.Dumper) {
+	ctx := context.Background()
+	campaignsStore := campaigns.NewStore(db)
 
-func enterpriseInit(db *sql.DB, repoStore repos.Store, cf *httpcli.Factory, server *repoupdater.Server) {
-	cbOnce.Do(func() {
-		ctx := context.Background()
-		campaignsStore := campaigns.NewStore(db)
+	syncer := &campaigns.ChangesetSyncer{
+		Store:       campaignsStore,
+		ReposStore:  repoStore,
+		HTTPFactory: cf,
+	}
+	if server != nil {
+		server.ChangesetSyncer = syncer
+	}
 
-		syncer := &campaigns.ChangesetSyncer{
-			Store:       campaignsStore,
-			ReposStore:  repoStore,
-			HTTPFactory: cf,
-		}
-		if server != nil {
-			server.ChangesetSyncer = syncer
-		}
+	// Set up syncer
+	go syncer.Run(ctx)
 
-		// Set up syncer
-		go syncer.Run(ctx)
-
-		// Set up expired campaign deletion
-		go func() {
-			for {
-				err := campaignsStore.DeleteExpiredCampaignPlans(ctx)
-				if err != nil {
-					log15.Error("DeleteExpiredCampaignPlans", "error", err)
-				}
-				time.Sleep(2 * time.Minute)
+	// Set up expired campaign deletion
+	go func() {
+		for {
+			err := campaignsStore.DeleteExpiredCampaignPlans(ctx)
+			if err != nil {
+				log15.Error("DeleteExpiredCampaignPlans", "error", err)
 			}
-		}()
+			time.Sleep(2 * time.Minute)
+		}
+	}()
 
-		// TODO(jchen): This is an unfortunate compromise to not rewrite ossDB.ExternalServices for now.
-		dbconn.Global = db
-		go startBackgroundPermsSync(ctx, repoStore, db)
-	})
+	// TODO(jchen): This is an unfortunate compromise to not rewrite ossDB.ExternalServices for now.
+	dbconn.Global = db
+	clock := func() time.Time {
+		return time.Now().UTC().Truncate(time.Microsecond)
+	}
+	permsStore := frontendDB.NewPermsStore(db, clock)
+	permsSyncer := authz.NewPermsSyncer(repoStore, permsStore, clock)
+	go startBackgroundPermsSync(ctx, permsSyncer, db)
+	debugDumpers = append(debugDumpers, permsSyncer)
+
+	return debugDumpers
 }
 
 // startBackgroundPermsSync sets up background permissions syncing.
-func startBackgroundPermsSync(ctx context.Context, repoStore repos.Store, db dbutil.DB) {
+func startBackgroundPermsSync(ctx context.Context, syncer *authz.PermsSyncer, db dbutil.DB) {
 	// Block until config is available, otherwise will always get default value (i.e. false).
 	enabled := conf.Cached(func() interface{} {
 		return conf.PermissionsBackgroundSyncEnabled()
@@ -89,10 +98,5 @@ func startBackgroundPermsSync(ctx context.Context, repoStore repos.Store, db dbu
 		}
 	}()
 
-	clock := func() time.Time {
-		return time.Now().UTC().Truncate(time.Microsecond)
-	}
-	permsStore := frontendDB.NewPermsStore(db, clock)
-	permsSyncer := authz.NewPermsSyncer(repoStore, permsStore, clock)
-	go permsSyncer.Run(ctx)
+	go syncer.Run(ctx)
 }

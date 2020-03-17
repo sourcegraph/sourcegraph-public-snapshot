@@ -1345,8 +1345,11 @@ func (s *PermsStore) RepoIDsWithNoPerms(ctx context.Context) ([]api.RepoID, erro
 	q := sqlf.Sprintf(`
 -- source: enterprise/cmd/frontend/db/perms_store.go:PermsStore.RepoIDsWithNoPerms
 SELECT repo.id, '1970-01-01 00:00:00+00'::timestamptz FROM repo
-WHERE repo.private = TRUE AND repo.id NOT IN
-	(SELECT perms.repo_id FROM repo_permissions AS perms)
+WHERE repo.private = TRUE
+AND repo.id NOT IN
+	(SELECT perms.repo_id FROM repo_permissions AS perms
+	 UNION
+	 SELECT pending.repo_id FROM repo_pending_permissions AS pending)
 `)
 
 	results, err := s.loadIDsWithTime(ctx, q)

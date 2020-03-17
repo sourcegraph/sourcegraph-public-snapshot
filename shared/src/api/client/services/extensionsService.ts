@@ -14,9 +14,9 @@ import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefaul
 import { isDefined } from '../../../util/types'
 import { SettingsService } from './settings'
 import { ModelService } from './modelService'
-import { fromFetch } from 'rxjs/fetch'
 import { checkOk } from '../../../backend/fetch'
 import { ExtensionManifest } from '../../../schema/extensionSchema'
+import { fromFetch } from '../../../graphql/fromFetch'
 
 /**
  * The information about an extension necessary to execute and activate it.
@@ -27,9 +27,7 @@ export interface ExecutableExtension extends Pick<ConfiguredExtension, 'id' | 'm
 }
 
 const getConfiguredSideloadedExtension = (baseUrl: string): Observable<ConfiguredExtension> =>
-    fromFetch(`${baseUrl}/package.json`).pipe(
-        map(checkOk),
-        switchMap(response => response.json()),
+    fromFetch(`${baseUrl}/package.json`, undefined, response => checkOk(response).json()).pipe(
         map(
             (response: ExtensionManifest & { name: string; main: string }): ConfiguredExtension => ({
                 id: response.name,
