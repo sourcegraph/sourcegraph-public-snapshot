@@ -1,4 +1,3 @@
-import * as metrics from '../metrics'
 import express from 'express'
 import onFinished from 'on-finished'
 import promClient from 'prom-client'
@@ -9,21 +8,10 @@ import promClient from 'prom-client'
  * bucket for different endpoints, which makes half of the metrics useless in the
  * presence of large uploads.
  */
-export const metricsMiddleware = <T>(
-    req: express.Request,
-    res: express.Response<T>,
-    next: express.NextFunction
-): void => {
-    let histogram: promClient.Histogram<string> | undefined
-    switch (req.path) {
-        case '/upload':
-            histogram = metrics.httpUploadDurationHistogram
-            break
-
-        case '/exists':
-        case '/request':
-            histogram = metrics.httpQueryDurationHistogram
-    }
+export const makeMetricsMiddleware = <T>(
+    selectHistogram: (route: string) => promClient.Histogram<string> | undefined
+) => (req: express.Request, res: express.Response<T>, next: express.NextFunction): void => {
+    const histogram = selectHistogram(req.path)
 
     if (histogram !== undefined) {
         const labels = { code: 0 }
