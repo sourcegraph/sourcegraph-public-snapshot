@@ -23,5 +23,5 @@ func TestIntegration(t *testing.T) {
 
 	// The following tests need to be separate because testStore above wraps everything in a global transaction
 	t.Run("StoreLocking", testStoreLocking(db))
-	t.Run("ProcessCampaignJob", testProcessCampaignJob(db))
+	t.Run("ProcessChangesetJob", testProcessChangesetJob(db))
 }

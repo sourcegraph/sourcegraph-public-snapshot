@@ -507,6 +507,8 @@ async function testCodeNavigation(
  * sequence.
  */
 async function collectLinks(driver: Driver): Promise<Set<TestLocation>> {
+    await driver.page.waitForSelector('.e2e-loading-spinner', { hidden: true })
+
     const panelTabTitles = await getPanelTabTitles(driver)
     if (panelTabTitles.length === 0) {
         return new Set(await collectVisibleLinks(driver))
@@ -763,27 +765,15 @@ async function performUpload(
 }
 
 /**
- * Refresh the upload page until it has finished processing. Then, navigate to the
- * list of uploads for that repository and ensure that it's visible in the list of
- * uploads visible at the tip of the default branch.
+ * Wait on the upload page until it has finished processing and ensure that it's
+ * visible at the tip of the default branch.
  */
 async function ensureUpload(driver: Driver, uploadUrl: string): Promise<void> {
-    const pendingUploadStateMessages = ['Upload is queued.', 'Upload is currently being processed...']
-
     await driver.page.goto(uploadUrl)
-    while (true) {
-        // Keep reloading upload page until the upload is terminal (not queued, not processed)
-        const text = await (await driver.page.waitForSelector('.e2e-upload-state')).evaluate(elem => elem.textContent)
-        if (!pendingUploadStateMessages.includes(text || '')) {
-            break
-        }
 
-        await driver.page.reload()
-    }
-
-    // Ensure upload is successful
-    const stateText = await (await driver.page.waitForSelector('.e2e-upload-state')).evaluate(elem => elem.textContent)
-    expect(stateText).toEqual('Upload processed successfully.')
+    await driver.page.waitFor(
+        () => document.querySelector('.e2e-upload-state')?.textContent === 'Upload processed successfully.'
+    )
 
     const isLatestForRepoText = await (await driver.page.waitFor('.e2e-is-latest-for-repo')).evaluate(
         elem => elem.textContent
