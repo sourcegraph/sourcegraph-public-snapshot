@@ -1,7 +1,7 @@
 import * as H from 'history'
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 import * as GQL from '../../../shared/src/graphql/schema'
-import { buildSearchURLQuery } from '../../../shared/src/util/url'
+import { buildSearchURLQuery, generateFiltersQuery } from '../../../shared/src/util/url'
 import { eventLogger } from '../tracking/eventLogger'
 import { SearchType } from './results/SearchResults'
 import { SearchFilterSuggestions } from './searchFilterSuggestions'
@@ -27,7 +27,10 @@ export function submitSearch(
 
     // Go to search results page
     const path = '/search?' + searchQueryParam
-    eventLogger.log('SearchSubmitted', { query: navbarQuery, source })
+    eventLogger.log('SearchSubmitted', {
+        query: [navbarQuery, generateFiltersQuery(filtersQuery || {})].filter(query => query.length > 0).join(' '),
+        source,
+    })
     history.push(path, { ...history.location.state, query: navbarQuery })
     if (activation) {
         activation.update({ DidSearch: true })

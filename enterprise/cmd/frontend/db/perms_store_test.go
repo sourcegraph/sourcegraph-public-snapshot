@@ -1954,10 +1954,11 @@ func testPermsStore_RepoIDsWithNoPerms(db *sql.DB) func(*testing.T) {
 
 		ctx := context.Background()
 
-		// Create test repositories "private_repo" and "public_repo"
+		// Create three test repositories
 		qs := []*sqlf.Query{
-			sqlf.Sprintf(`INSERT INTO repo(name, private) VALUES('private_repo', TRUE)`), // ID=1
-			sqlf.Sprintf(`INSERT INTO repo(name) VALUES('public_repo')`),                 // ID=2
+			sqlf.Sprintf(`INSERT INTO repo(name, private) VALUES('private_repo', TRUE)`),   // ID=1
+			sqlf.Sprintf(`INSERT INTO repo(name) VALUES('public_repo')`),                   // ID=2
+			sqlf.Sprintf(`INSERT INTO repo(name, private) VALUES('private_repo_2', TRUE)`), // ID=3
 		}
 		for _, q := range qs {
 			if err := s.execute(ctx, q); err != nil {
@@ -1965,18 +1966,18 @@ func testPermsStore_RepoIDsWithNoPerms(db *sql.DB) func(*testing.T) {
 			}
 		}
 
-		// Should only get back "private_repo"
+		// Should get back two private repos
 		ids, err := s.RepoIDsWithNoPerms(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		expIDs := []api.RepoID{1}
+		expIDs := []api.RepoID{1, 3}
 		if diff := cmp.Diff(expIDs, ids); diff != "" {
 			t.Fatal(diff)
 		}
 
-		// Give "private_repo" some permissions
+		// Give "private_repo" regular permissions and "private_repo_2" pending permissions
 		err = s.SetRepoPermissions(ctx, &authz.RepoPermissions{
 			RepoID:  1,
 			Perm:    authz.Read,
@@ -1985,8 +1986,22 @@ func testPermsStore_RepoIDsWithNoPerms(db *sql.DB) func(*testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		err = s.SetRepoPendingPermissions(ctx,
+			&extsvc.ExternalAccounts{
+				ServiceType: authz.SourcegraphServiceType,
+				ServiceID:   authz.SourcegraphServiceID,
+				AccountIDs:  []string{"alice"},
+			},
+			&authz.RepoPermissions{
+				RepoID: 3,
+				Perm:   authz.Read,
+			},
+		)
+		if err != nil {
+			t.Fatal(err)
+		}
 
-		// No repository has no permissions at this point
+		// No private repositories have any permissions at this point
 		ids, err = s.RepoIDsWithNoPerms(ctx)
 		if err != nil {
 			t.Fatal(err)
