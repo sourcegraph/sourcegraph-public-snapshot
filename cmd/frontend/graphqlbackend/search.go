@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"regexp"
+	regexpsyntax "regexp/syntax"
 	"sort"
 	"strconv"
 	"strings"
@@ -15,8 +16,6 @@ import (
 
 	"github.com/neelance/parallel"
 	"github.com/pkg/errors"
-
-	regexpsyntax "regexp/syntax"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -258,6 +257,7 @@ func resolveRepoGroups(ctx context.Context) (map[string][]*types.Repo, error) {
 	return groups, nil
 }
 
+// Cf. golang/go/src/regexp/syntax/parse.go.
 const regexpFlags regexpsyntax.Flags = regexpsyntax.ClassNL | regexpsyntax.PerlX | regexpsyntax.UnicodeGroups
 
 // exactlyOneRepo returns whether exactly one repo: literal field is specified and
