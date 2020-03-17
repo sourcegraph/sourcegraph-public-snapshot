@@ -776,10 +776,11 @@ async function performUpload(
 async function ensureUpload(driver: Driver, uploadUrl: string): Promise<void> {
     await driver.page.goto(uploadUrl)
 
-    let stateText: string | null = null
+    let stateText = ''
     const pendingStateMessages = ['Upload is queued.', 'Upload is currently being processed...']
-    while (pendingStateMessages.includes(stateText || '')) {
-        stateText = await (await driver.page.waitForSelector('.e2e-upload-state')).evaluate(elem => elem.textContent)
+    while (!stateText || pendingStateMessages.includes(stateText || '')) {
+        stateText =
+            (await (await driver.page.waitForSelector('.e2e-upload-state')).evaluate(elem => elem.textContent)) || ''
     }
 
     // Ensure upload is successful
