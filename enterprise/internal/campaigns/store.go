@@ -1580,8 +1580,7 @@ DELETE FROM campaign_plans WHERE id = %s
 
 const CampaignPlanTTL = 1 * time.Hour
 
-// DeleteExpiredCampaignPlans deletes CampaignPlans that have finished execution
-// but have not been attached to a Campaign within CampaignPlanTTL.
+// DeleteExpiredCampaignPlans deletes CampaignPlans that have not been attached to a Campaign within CampaignPlanTTL.
 func (s *Store) DeleteExpiredCampaignPlans(ctx context.Context) error {
 	expirationTime := s.now().Add(-CampaignPlanTTL)
 	q := sqlf.Sprintf(deleteExpiredCampaignPlansQueryFmtstr, expirationTime)
@@ -1598,6 +1597,8 @@ var deleteExpiredCampaignPlansQueryFmtstr = `
 DELETE FROM
   campaign_plans
 WHERE
+  created_at < %s
+AND
 NOT EXISTS (
   SELECT 1
   FROM
@@ -1605,20 +1606,6 @@ NOT EXISTS (
   WHERE
   campaigns.campaign_plan_id = campaign_plans.id
 )
-AND
-NOT EXISTS (
-  SELECT id
-  FROM
-  campaign_jobs
-  WHERE
-  campaign_jobs.campaign_plan_id = campaign_plans.id
-  AND
-  (
-    campaign_jobs.finished_at IS NULL
-    OR
-    campaign_jobs.finished_at > %s
-  )
-);
 `
 
 // CountCampaignPlans returns the number of code mods in the database.
@@ -1688,7 +1675,8 @@ func getCampaignPlanQuery(opts *GetCampaignPlanOpts) *sqlf.Query {
 	return sqlf.Sprintf(getCampaignPlansQueryFmtstr, sqlf.Join(preds, "\n AND "))
 }
 
-// GetCampaignPlanStatus gets the campaigns.BackgroundProcessStatus for a CampaignPlan
+// DEPRECATED: GetCampaignPlanStatus gets the campaigns.BackgroundProcessStatus for a CampaignPlan.
+// It's deprecated because we don't execute jobs anymore.
 func (s *Store) GetCampaignPlanStatus(ctx context.Context, id int64) (*campaigns.BackgroundProcessStatus, error) {
 	return s.queryBackgroundProcessStatus(ctx, sqlf.Sprintf(
 		getCampaignPlanStatusQueryFmtstr,
@@ -1702,9 +1690,9 @@ var getCampaignPlanStatusQueryFmtstr = `
 SELECT
   (SELECT canceled_at IS NOT NULL FROM campaign_plans WHERE id = %s) AS canceled,
   COUNT(*) AS total,
-  COUNT(*) FILTER (WHERE finished_at IS NULL) AS pending,
-  COUNT(*) FILTER (WHERE finished_at IS NOT NULL) AS completed,
-  array_agg(error) FILTER (WHERE error != '') AS errors
+  0 AS pending,
+  COUNT(*) AS completed,
+  NULL AS errors
 FROM campaign_jobs
 WHERE %s
 LIMIT 1;
@@ -1840,14 +1828,10 @@ INSERT INTO campaign_jobs (
   rev,
   base_ref,
   diff,
-  description,
-  error,
-  started_at,
-  finished_at,
   created_at,
   updated_at
 )
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s, %s)
 RETURNING
   id,
   campaign_plan_id,
@@ -1855,10 +1839,6 @@ RETURNING
   rev,
   base_ref,
   diff,
-  description,
-  error,
-  started_at,
-  finished_at,
   created_at,
   updated_at
 `
@@ -1879,10 +1859,6 @@ func (s *Store) createCampaignJobQuery(c *campaigns.CampaignJob) (*sqlf.Query, e
 		c.Rev,
 		c.BaseRef,
 		c.Diff,
-		c.Description,
-		c.Error,
-		nullTimeColumn(c.StartedAt),
-		nullTimeColumn(c.FinishedAt),
 		c.CreatedAt,
 		c.UpdatedAt,
 	), nil
@@ -1910,12 +1886,8 @@ SET (
   rev,
   base_ref,
   diff,
-  description,
-  error,
-  started_at,
-  finished_at,
   updated_at
-) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+) = (%s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING
   id,
@@ -1924,10 +1896,6 @@ RETURNING
   rev,
   base_ref,
   diff,
-  description,
-  error,
-  started_at,
-  finished_at,
   created_at,
   updated_at
 `
@@ -1942,10 +1910,6 @@ func (s *Store) updateCampaignJobQuery(c *campaigns.CampaignJob) (*sqlf.Query, e
 		c.Rev,
 		c.BaseRef,
 		c.Diff,
-		c.Description,
-		c.Error,
-		c.StartedAt,
-		c.FinishedAt,
 		c.UpdatedAt,
 		c.ID,
 	), nil
@@ -1971,7 +1935,6 @@ DELETE FROM campaign_jobs WHERE id = %s
 // counting campaign jobs
 type CountCampaignJobsOpts struct {
 	CampaignPlanID int64
-	OnlyFinished   bool
 	OnlyWithDiff   bool
 
 	// If this is set to a Campaign ID only the CampaignJobs are returned that
@@ -2000,10 +1963,6 @@ func countCampaignJobsQuery(opts *CountCampaignJobsOpts) *sqlf.Query {
 	var preds []*sqlf.Query
 	if opts.CampaignPlanID != 0 {
 		preds = append(preds, sqlf.Sprintf("campaign_plan_id = %s", opts.CampaignPlanID))
-	}
-
-	if opts.OnlyFinished {
-		preds = append(preds, sqlf.Sprintf("finished_at IS NOT NULL"))
 	}
 
 	if opts.OnlyWithDiff {
@@ -2054,10 +2013,6 @@ SELECT
   rev,
   base_ref,
   diff,
-  description,
-  error,
-  started_at,
-  finished_at,
   created_at,
   updated_at
 FROM campaign_jobs
@@ -2084,7 +2039,6 @@ type ListCampaignJobsOpts struct {
 	CampaignPlanID int64
 	Cursor         int64
 	Limit          int
-	OnlyFinished   bool
 	OnlyWithDiff   bool
 
 	// If this is set to a Campaign ID only the CampaignJobs are returned that
@@ -2124,10 +2078,6 @@ SELECT
   rev,
   base_ref,
   diff,
-  description,
-  error,
-  started_at,
-  finished_at,
   created_at,
   updated_at
 FROM campaign_jobs
@@ -2152,10 +2102,6 @@ func listCampaignJobsQuery(opts *ListCampaignJobsOpts) *sqlf.Query {
 
 	if opts.CampaignPlanID != 0 {
 		preds = append(preds, sqlf.Sprintf("campaign_plan_id = %s", opts.CampaignPlanID))
-	}
-
-	if opts.OnlyFinished {
-		preds = append(preds, sqlf.Sprintf("finished_at IS NOT NULL"))
 	}
 
 	if opts.OnlyWithDiff {
@@ -2778,10 +2724,6 @@ func scanCampaignJob(c *campaigns.CampaignJob, s scanner) error {
 		&c.Rev,
 		&c.BaseRef,
 		&c.Diff,
-		&c.Description,
-		&c.Error,
-		&dbutil.NullTime{Time: &c.StartedAt},
-		&dbutil.NullTime{Time: &c.FinishedAt},
 		&c.CreatedAt,
 		&c.UpdatedAt,
 	)
