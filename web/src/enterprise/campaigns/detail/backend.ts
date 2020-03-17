@@ -284,6 +284,7 @@ export const queryChangesets = (
                                 externalURL {
                                     url
                                 }
+                                externalID
                                 createdAt
                                 updatedAt
                                 diff {

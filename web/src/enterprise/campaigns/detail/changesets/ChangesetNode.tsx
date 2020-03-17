@@ -25,8 +25,6 @@ import { ThemeProps } from '../../../../../../shared/src/theme'
 import { Collapsible } from '../../../../components/Collapsible'
 import { DiffStat } from '../../../../components/diff/DiffStat'
 import { FileDiffNode } from '../../../../components/diff/FileDiffNode'
-import { Markdown } from '../../../../../../shared/src/components/Markdown'
-import { renderMarkdown } from '../../../../../../shared/src/util/markdown'
 import { publishChangeset as _publishChangeset, syncChangeset } from '../backend'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Subject } from 'rxjs'
@@ -136,7 +134,7 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
             <div className="changeset-node__content flex-fill">
                 <div className="d-flex flex-column">
                     {node.__typename === 'ExternalChangeset' && (
-                        <div className="m-0">
+                        <div className="m-0 mb-2">
                             {stateIcon}
                             <h3 className="m-0 d-inline">
                                 <LinkOrSpan
@@ -149,7 +147,7 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                                     target="_blank"
                                     rel="noopener noreferrer"
                                 >
-                                    {node.title}
+                                    {node.title} (#{node.externalID})
                                 </LinkOrSpan>
                             </h3>
                             {node.checkState && (
@@ -172,7 +170,7 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                             )}
                         </div>
                     )}
-                    <div className="mt-2">
+                    <div>
                         {node.__typename === 'ChangesetPlan' && stateIcon}
                         <strong>
                             <Link
@@ -204,12 +202,6 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                         {node.__typename === 'ChangesetPlan' && !isPublishing && <DraftBadge className="ml-2" />}
                     </div>
                 </div>
-                {node.__typename === 'ExternalChangeset' && (
-                    <Markdown
-                        className="text-truncate mt-2"
-                        dangerousInnerHTML={renderMarkdown(node.body, { plainText: true })}
-                    />
-                )}
             </div>
             <div className="flex-shrink-0 flex-grow-0 ml-1 align-items-end">
                 {fileDiffs && <DiffStat {...fileDiffs.diffStat} expandedCounts={true} />}
