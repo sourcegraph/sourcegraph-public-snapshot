@@ -221,13 +221,21 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         )
     }
     // Campaign was not found
-    // todo: never truthy - node resolver returns error, not null
     if (campaign === null) {
         return <HeroPage icon={AlertCircleIcon} title="Campaign not found" />
     }
     // Plan was not found
     if (campaignPlan === null) {
         return <HeroPage icon={AlertCircleIcon} title="Plan not found" />
+    }
+
+    if (updateMode) {
+        if (!campaign?.plan?.id) {
+            return <HeroPage icon={AlertCircleIcon} title="Cannot update a manual campaign with a campaign plan" />
+        }
+        if (campaign?.closedAt) {
+            return <HeroPage icon={AlertCircleIcon} title="Cannot update a closed campaign" />
+        }
     }
 
     // plan is specified, but campaign not yet, so we have to choose

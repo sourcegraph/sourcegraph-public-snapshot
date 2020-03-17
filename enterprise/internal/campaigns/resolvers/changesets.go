@@ -183,6 +183,7 @@ func (r *changesetResolver) Campaigns(ctx context.Context, args *graphqlbackend.
 	if args.First != nil {
 		opts.Limit = int(*args.First)
 	}
+	opts.HasPlan = args.HasPlan
 	return &campaignsConnectionResolver{
 		store: r.store,
 		opts:  opts,

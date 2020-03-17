@@ -735,7 +735,13 @@ type ExternalChangeset implements Node {
     repository: Repository!
 
     # The campaigns that have this changeset in them.
-    campaigns(first: Int, state: CampaignState): CampaignConnection!
+    campaigns(
+        # Returns the first n campaigns from the list.
+        first: Int
+        state: CampaignState
+        # Only return campaigns that have a campaign plan associated
+        hasPlan: Boolean
+    ): CampaignConnection!
 
     # The events belonging to this changeset.
     events(first: Int): ChangesetEventConnection!
@@ -1164,6 +1170,8 @@ type Query {
         # Returns the first n campaigns from the list.
         first: Int
         state: CampaignState
+        # Only return campaigns that have a campaign plan associated
+        hasPlan: Boolean
     ): CampaignConnection!
 
     # Looks up a repository by either name or cloneURL.

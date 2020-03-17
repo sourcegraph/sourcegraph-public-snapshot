@@ -53,8 +53,9 @@ type CampaignPlanPatch struct {
 }
 
 type ListCampaignArgs struct {
-	First *int32
-	State *string
+	First   *int32
+	State   *string
+	HasPlan *bool
 }
 
 type DeleteCampaignArgs struct {

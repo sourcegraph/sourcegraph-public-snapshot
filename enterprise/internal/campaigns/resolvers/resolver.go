@@ -381,6 +381,7 @@ func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampa
 	if args.First != nil {
 		opts.Limit = int(*args.First)
 	}
+	opts.HasPlan = args.HasPlan
 	return &campaignsConnectionResolver{
 		store: r.store,
 		opts:  opts,

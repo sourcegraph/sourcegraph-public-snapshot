@@ -759,6 +759,10 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 		return nil, nil, errors.Wrap(err, "getting campaign")
 	}
 
+	if args.Plan != nil && !campaign.ClosedAt.IsZero() {
+		return nil, nil, errors.New("cannot update closed campaign with a plan")
+	}
+
 	var updateAttributes, updatePlanID, updateBranch bool
 
 	if args.Name != nil && campaign.Name != *args.Name {
@@ -776,6 +780,9 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 	}
 
 	oldPlanID := campaign.CampaignPlanID
+	if oldPlanID == 0 && args.Plan != nil {
+		return nil, nil, errors.New("cannot update a manual campaign with a plan")
+	}
 	if args.Plan != nil && oldPlanID != *args.Plan {
 		// Check there is no other campaign attached to the args.Plan.
 		_, err = tx.GetCampaign(ctx, GetCampaignOpts{CampaignPlanID: *args.Plan})
