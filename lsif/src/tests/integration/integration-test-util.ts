@@ -18,7 +18,7 @@ import { createSilentLogger } from '../../shared/logging'
 import { PathExistenceChecker } from '../../worker/conversion/existence'
 import { ReferencePaginationCursor } from '../../server/backend/cursor'
 import { isEqual, uniqWith } from 'lodash'
-import { InternalLocation } from '../../server/backend/location'
+import { ResolvedInternalLocation } from '../../server/backend/location'
 
 /** Create a temporary directory with a subdirectory for dbs. */
 export async function createStorageRoot(): Promise<string> {
@@ -359,7 +359,7 @@ export function createLocation(
  *
  * @param location The internal location.
  */
-export function mapLocation(location: InternalLocation): lsp.Location {
+export function mapLocation(location: ResolvedInternalLocation): lsp.Location {
     return createLocation(
         location.dump.repositoryId,
         location.dump.commit,
@@ -376,7 +376,7 @@ export function mapLocation(location: InternalLocation): lsp.Location {
  *
  * @param resp The input containing a locations array.
  */
-export function mapLocations<T extends { locations: InternalLocation[] }>(
+export function mapLocations<T extends { locations: ResolvedInternalLocation[] }>(
     resp: T
 ): Omit<T, 'locations'> & { locations: lsp.Location[] } {
     return {
@@ -437,8 +437,8 @@ export async function queryAllReferences(
     position: lsp.Position,
     limit: number,
     remoteDumpLimit?: number
-): Promise<{ locations: InternalLocation[]; pageSizes: number[]; numPages: number }> {
-    let locations: InternalLocation[] = []
+): Promise<{ locations: ResolvedInternalLocation[]; pageSizes: number[]; numPages: number }> {
+    let locations: ResolvedInternalLocation[] = []
     const pageSizes: number[] = []
     let cursor: ReferencePaginationCursor | undefined
 

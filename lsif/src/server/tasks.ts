@@ -1,26 +1,75 @@
-import * as constants from '../../shared/constants'
-import * as fs from 'mz/fs'
-import * as metrics from '../metrics'
-import * as path from 'path'
-import * as settings from '../settings'
-import { chunk } from 'lodash'
-import { createSilentLogger } from '../../shared/logging'
-import { TracingContext } from '../../shared/tracing'
-import { UploadManager } from '../../shared/store/uploads'
-import { withLock } from '../../shared/store/locks'
-import { DumpManager } from '../../shared/store/dumps'
-import { dbFilename, idFromFilename } from '../../shared/paths'
+import * as settings from './settings'
 import { Connection, EntityManager } from 'typeorm'
-import { SRC_FRONTEND_INTERNAL } from '../../shared/config/settings'
-import { updateCommitsAndDumpsVisibleFromTip } from '../../shared/visibility'
+import { Logger } from 'winston'
+import { UploadManager } from '../shared/store/uploads'
+import { DumpManager } from '../shared/store/dumps'
+import { ExclusivePeriodicTaskRunner } from '../shared/tasks'
+import * as constants from '../shared/constants'
+import * as fs from 'mz/fs'
+import * as metrics from './metrics'
+import * as path from 'path'
+import { chunk } from 'lodash'
+import { createSilentLogger } from '../shared/logging'
+import { TracingContext } from '../shared/tracing'
+import { withLock } from '../shared/store/locks'
+import { dbFilename, idFromFilename } from '../shared/paths'
+import { SRC_FRONTEND_INTERNAL } from '../shared/config/settings'
+import { updateCommitsAndDumpsVisibleFromTip } from '../shared/visibility'
+
+/**
+ * Begin running cleanup tasks on a schedule in the background.
+ *
+ * @param connection The Postgres connection.
+ * @param dumpManager The dumps manager instance.
+ * @param uploadManager The uploads manager instance.
+ * @param logger The logger instance.
+ */
+export function startTasks(
+    connection: Connection,
+    dumpManager: DumpManager,
+    uploadManager: UploadManager,
+    logger: Logger
+): void {
+    const runner = new ExclusivePeriodicTaskRunner(connection, logger)
+
+    runner.register('Resetting stalled uploads', settings.RESET_STALLED_UPLOADS_INTERVAL, ({ ctx }) =>
+        resetStalledUploads(uploadManager, ctx)
+    )
+
+    runner.register('Cleaning old uploads', settings.CLEAN_OLD_UPLOADS_INTERVAL, ({ ctx }) =>
+        cleanOldUploads(uploadManager, ctx)
+    )
+
+    runner.register('Purging old dumps', settings.PURGE_OLD_DUMPS_INTERVAL, ({ ctx, connection: taskConnection }) =>
+        purgeOldDumps(
+            taskConnection,
+            dumpManager,
+            uploadManager,
+            settings.STORAGE_ROOT,
+            settings.DBS_DIR_MAXIMUM_SIZE_BYTES,
+            ctx
+        )
+    )
+
+    runner.register('Cleaning failed uploads', settings.CLEAN_FAILED_UPLOADS_INTERVAL, ({ ctx }) =>
+        cleanFailedUploads(ctx)
+    )
+
+    runner.register('Updating metrics', settings.UPDATE_QUEUE_SIZE_GAUGE_INTERVAL, () =>
+        updateQueueSizeGauge(uploadManager)
+    )
+
+    runner.run()
+}
 
 /**
  * Update the value of the unconverted uploads gauge.
  *
  * @param uploadManager The uploads manager instance.
  */
-export const updateQueueSizeGauge = async (uploadManager: UploadManager): Promise<void> =>
+async function updateQueueSizeGauge(uploadManager: UploadManager): Promise<void> {
     metrics.unconvertedUploadSizeGauge.set(await uploadManager.getCount('queued'))
+}
 
 /**
  * Move all unlocked uploads that have been in `processing` state for longer than
@@ -29,10 +78,10 @@ export const updateQueueSizeGauge = async (uploadManager: UploadManager): Promis
  * @param uploadManager The uploads manager instance.
  * @param ctx The tracing context.
  */
-export const resetStalledUploads = async (
+async function resetStalledUploads(
     uploadManager: UploadManager,
     { logger = createSilentLogger() }: TracingContext
-): Promise<void> => {
+): Promise<void> {
     for (const id of await uploadManager.resetStalled(settings.STALLED_UPLOAD_MAX_AGE)) {
         logger.debug('Reset stalled upload conversion', { id })
     }
@@ -44,10 +93,10 @@ export const resetStalledUploads = async (
  * @param uploadManager The uploads manager instance.
  * @param ctx The tracing context.
  */
-export const cleanOldUploads = async (
+async function cleanOldUploads(
     uploadManager: UploadManager,
     { logger = createSilentLogger() }: TracingContext
-): Promise<void> => {
+): Promise<void> {
     const count = await uploadManager.clean(settings.UPLOAD_MAX_AGE)
     if (count > 0) {
         logger.debug('Cleaned old uploads', { count })
@@ -65,7 +114,7 @@ export const cleanOldUploads = async (
  * @param maximumSizeBytes The maximum number of bytes.
  * @param ctx The tracing context.
  */
-export function purgeOldDumps(
+function purgeOldDumps(
     connection: Connection,
     dumpManager: DumpManager,
     uploadManager: UploadManager,
@@ -179,7 +228,7 @@ async function removeDeadDumps(
  *
  * @param ctx The tracing context.
  */
-export const cleanFailedUploads = async ({ logger = createSilentLogger() }: TracingContext): Promise<void> => {
+async function cleanFailedUploads({ logger = createSilentLogger() }: TracingContext): Promise<void> {
     let count = 0
     for await (const filename of candidateFiles()) {
         if (await purgeFile(filename)) {
@@ -193,7 +242,7 @@ export const cleanFailedUploads = async ({ logger = createSilentLogger() }: Trac
 }
 
 /** Return an async iterable that yields the path of all files in the temp and uploads dir. */
-export async function* candidateFiles(): AsyncIterable<string> {
+async function* candidateFiles(): AsyncIterable<string> {
     for (const directory of [constants.TEMP_DIR, constants.UPLOADS_DIR]) {
         for (const basename of await fs.readdir(path.join(settings.STORAGE_ROOT, directory))) {
             yield path.join(settings.STORAGE_ROOT, directory, basename)

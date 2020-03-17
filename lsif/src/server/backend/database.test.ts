@@ -1,4 +1,3 @@
-import * as pgModels from '../../shared/models/pg'
 import * as sqliteModels from '../../shared/models/sqlite'
 import { comparePosition, findRanges, mapRangesToInternalLocations } from './database'
 
@@ -114,24 +113,6 @@ describe('comparePosition', () => {
 
 describe('mapRangesToInternalLocations', () => {
     it('should map ranges to locations', () => {
-        const dump = {
-            id: 42,
-            repositoryId: 1234,
-            commit: 'deadbeef',
-            root: '',
-            indexer: '',
-            filename: '',
-            state: 'completed' as pgModels.LsifUploadState,
-            uploadedAt: new Date(),
-            startedAt: new Date(),
-            finishedAt: new Date(),
-            processedAt: new Date(),
-            failureSummary: null,
-            failureStacktrace: null,
-            tracingContext: '{}',
-            visibleAtTip: false,
-        }
-
         const ranges = new Map<sqliteModels.RangeId, sqliteModels.RangeData>()
         ranges.set(1, {
             startLine: 1,
@@ -156,19 +137,19 @@ describe('mapRangesToInternalLocations', () => {
         })
 
         const path = 'src/position.ts'
-        const locations = mapRangesToInternalLocations(dump, ranges, path, new Set([1, 2, 4]))
+        const locations = mapRangesToInternalLocations(42, ranges, path, new Set([1, 2, 4]))
         expect(locations).toContainEqual({
-            dump,
+            dumpId: 42,
             path,
             range: { start: { line: 1, character: 1 }, end: { line: 1, character: 2 } },
         })
         expect(locations).toContainEqual({
-            dump,
+            dumpId: 42,
             path,
             range: { start: { line: 3, character: 1 }, end: { line: 3, character: 2 } },
         })
         expect(locations).toContainEqual({
-            dump,
+            dumpId: 42,
             path,
             range: { start: { line: 2, character: 1 }, end: { line: 2, character: 2 } },
         })
