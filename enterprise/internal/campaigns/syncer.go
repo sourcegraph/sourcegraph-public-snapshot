@@ -19,6 +19,7 @@ type ChangesetSyncer struct {
 	Store       SyncStore
 	ReposStore  repos.Store
 	HTTPFactory *httpcli.Factory
+
 	// ComputeScheduleInterval determines how often a new schedule will be computed.
 	// Note that it involves a DB query but no communication with codehosts
 	ComputeScheduleInterval time.Duration
@@ -385,23 +386,6 @@ func (s *ChangesetSyncer) GroupChangesetsBySource(ctx context.Context, cs ...*ca
 	}
 
 	return res, nil
-}
-
-func (s *ChangesetSyncer) listAllNonDeletedChangesets(ctx context.Context) (all []*campaigns.Changeset, err error) {
-	for cursor := int64(-1); cursor != 0; {
-		opts := ListChangesetsOpts{
-			Cursor:         cursor,
-			Limit:          1000,
-			WithoutDeleted: true,
-		}
-		cs, next, err := s.Store.ListChangesets(ctx, opts)
-		if err != nil {
-			return nil, err
-		}
-		all, cursor = append(all, cs...), next
-	}
-
-	return all, err
 }
 
 type scheduledSync struct {

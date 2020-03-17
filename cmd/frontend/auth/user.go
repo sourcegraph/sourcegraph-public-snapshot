@@ -149,6 +149,14 @@ func GetAndSaveUser(ctx context.Context, op GetAndSaveUserOp) (userID int32, saf
 		if err != nil {
 			return 0, "Unexpected error associating the external account with your Sourcegraph user. The most likely cause for this problem is that another Sourcegraph user is already linked with this external account. A site admin or the other user can unlink the account to fix this problem.", err
 		}
+
+		if err = db.Authz.GrantPendingPermissions(ctx, &db.GrantPendingPermissionsArgs{
+			UserID: userID,
+			Perm:   authz.Read,
+			Type:   authz.PermRepos,
+		}); err != nil {
+			log15.Error("Failed to grant user pending permissions", "userID", userID, "error", err)
+		}
 	}
 
 	return userID, "", nil

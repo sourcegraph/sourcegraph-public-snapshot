@@ -7,8 +7,8 @@ interactions:
       on Commit {\n  oid\n  message\n  messageHeadline\n  committedDate\n  pushedDate\n  url\n  committer
       {\n    avatarUrl\n    email\n    name\n    user {\n      ...actor\n    }\n  }\n}\n\nfragment
       commitWithChecks on Commit {\n  oid\n  status {\n    state\n    contexts {\n      id\n      context\n      state\n      description\n    }\n  }\n  checkSuites(last:
-      10){\n    nodes {\n      id\n      status\n      conclusion\n      checkRuns(last:
-      10){\n        nodes{\n          id\n          status\n          conclusion\n        }\n      }\n    }\n  }\n  committedDate\n}\n\nfragment
+      20){\n    nodes {\n      id\n      status\n      conclusion\n      checkRuns(last:
+      20){\n        nodes{\n          id\n          status\n          conclusion\n        }\n      }\n    }\n  }\n  committedDate\n}\n\nfragment
       prCommit on PullRequestCommit {\n  commit {\n    ...commitWithChecks\n  }\n}\n\nfragment
       review on PullRequestReview {\n  databaseId\n  author {\n    ...actor\n  }\n  authorAssociation\n  body\n  state\n  url\n  createdAt\n  updatedAt\n  commit
       {\n    ...commit\n  }\n  includesCreatedEdit\n}\n\nfragment pr on PullRequest
@@ -45,7 +45,7 @@ interactions:
       {\n        actor {\n          ...actor\n        }\n        label {\n          ...label\n        }\n        createdAt\n      }\n      ...
       on UnlabeledEvent {\n        actor {\n          ...actor\n        }\n        label
       {\n          ...label\n        }\n        createdAt\n      }\n      ... on PullRequestCommit
-      {\n        ...prCommit\n      }\n    }\n  }\n}\nmutation\tCreatePullRequest($input:CreatePullRequestInput!)
+      {\n        commit {\n          ...commit\n        }\n      }\n    }\n  }\n}\nmutation\tCreatePullRequest($input:CreatePullRequestInput!)
       {\n  createPullRequest(input:$input) {\n    pullRequest {\n      ... pr\n    }\n  }\n}","variables":{"input":{"repositoryId":"MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=","baseRefName":"master","headRefName":"always-open-pr","title":"This
       is a test PR","body":"This is the description of the test PR"}}}'
     form: {}
@@ -57,7 +57,7 @@ interactions:
     url: https://api.github.com/graphql
     method: POST
   response:
-    body: '{"data":{"createPullRequest":{"pullRequest":null}},"errors":[{"type":"UNPROCESSABLE","path":["createPullRequest"],"locations":[{"line":276,"column":3}],"message":"A
+    body: '{"data":{"createPullRequest":{"pullRequest":null}},"errors":[{"type":"UNPROCESSABLE","path":["createPullRequest"],"locations":[{"line":278,"column":3}],"message":"A
       pull request already exists for sourcegraph:always-open-pr."}]}'
     headers:
       Access-Control-Allow-Origin:
@@ -65,7 +65,7 @@ interactions:
       Access-Control-Expose-Headers:
       - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
         X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval,
-        X-GitHub-Media-Type
+        X-GitHub-Media-Type, Deprecation, Sunset
       Cache-Control:
       - no-cache
       Content-Security-Policy:
@@ -73,7 +73,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Mon, 17 Feb 2020 12:19:08 GMT
+      - Fri, 13 Mar 2020 20:02:39 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -93,7 +93,7 @@ interactions:
       X-Github-Media-Type:
       - github.antiope-preview; format=json
       X-Github-Request-Id:
-      - DCAA:3AA51:7618723:8C31FF5:5E4A84BB
+      - C453:6583:4A1011D:57B870F:5E6BE6DE
       X-Oauth-Scopes:
       - read:org, repo
       X-Xss-Protection:
@@ -107,8 +107,8 @@ interactions:
       on Commit {\n  oid\n  message\n  messageHeadline\n  committedDate\n  pushedDate\n  url\n  committer
       {\n    avatarUrl\n    email\n    name\n    user {\n      ...actor\n    }\n  }\n}\n\nfragment
       commitWithChecks on Commit {\n  oid\n  status {\n    state\n    contexts {\n      id\n      context\n      state\n      description\n    }\n  }\n  checkSuites(last:
-      10){\n    nodes {\n      id\n      status\n      conclusion\n      checkRuns(last:
-      10){\n        nodes{\n          id\n          status\n          conclusion\n        }\n      }\n    }\n  }\n  committedDate\n}\n\nfragment
+      20){\n    nodes {\n      id\n      status\n      conclusion\n      checkRuns(last:
+      20){\n        nodes{\n          id\n          status\n          conclusion\n        }\n      }\n    }\n  }\n  committedDate\n}\n\nfragment
       prCommit on PullRequestCommit {\n  commit {\n    ...commitWithChecks\n  }\n}\n\nfragment
       review on PullRequestReview {\n  databaseId\n  author {\n    ...actor\n  }\n  authorAssociation\n  body\n  state\n  url\n  createdAt\n  updatedAt\n  commit
       {\n    ...commit\n  }\n  includesCreatedEdit\n}\n\nfragment pr on PullRequest
@@ -145,9 +145,10 @@ interactions:
       {\n        actor {\n          ...actor\n        }\n        label {\n          ...label\n        }\n        createdAt\n      }\n      ...
       on UnlabeledEvent {\n        actor {\n          ...actor\n        }\n        label
       {\n          ...label\n        }\n        createdAt\n      }\n      ... on PullRequestCommit
-      {\n        ...prCommit\n      }\n    }\n  }\n}\nquery {\nrepository(owner: \"sourcegraph\",
-      name: \"automation-testing\") {\npullRequests(baseRefName: \"master\", headRefName:
-      \"always-open-pr\", first: 1, states: OPEN) { \nnodes{ ... pr }\n}\n}\n}","variables":null}'
+      {\n        commit {\n          ...commit\n        }\n      }\n    }\n  }\n}\nquery
+      {\nrepository(owner: \"sourcegraph\", name: \"automation-testing\") {\npullRequests(baseRefName:
+      \"master\", headRefName: \"always-open-pr\", first: 1, states: OPEN) { \nnodes{
+      ... pr }\n}\n}\n}","variables":null}'
     form: {}
     headers:
       Accept:
@@ -159,7 +160,12 @@ interactions:
   response:
     body: '{"data":{"repository":{"pullRequests":{"nodes":[{"id":"MDExOlB1bGxSZXF1ZXN0MzM5NzUyNDQy","title":"This
       is a test PR that is always open (keep it open!)","body":"Feel free to ignore
-      this. This is a test PR that is always open.","state":"OPEN","url":"https://github.com/sourcegraph/automation-testing/pull/1","number":1,"createdAt":"2019-11-12T06:40:21Z","updatedAt":"2019-12-05T07:09:31Z","headRefOid":"37406e7dfa4466b80d1da183d6477aac16b1e58c","baseRefOid":"c75943274b322ffef2230df8f8049de84ddf12c1","headRefName":"always-open-pr","baseRefName":"master","author":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"participants":{"nodes":[{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},{"avatarUrl":"https://avatars0.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"}]},"labels":{"nodes":[]},"commits":{"nodes":[{"commit":{"oid":"37406e7dfa4466b80d1da183d6477aac16b1e58c","status":null,"checkSuites":{"nodes":[{"id":"MDEwOkNoZWNrU3VpdGUzMDY0MTAzODA=","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}},{"id":"MDEwOkNoZWNrU3VpdGUzMDY0MTAzODM=","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}}]},"committedDate":"2019-11-12T06:39:23Z"}}]},"timelineItems":{"nodes":[{"__typename":"PullRequestCommit","commit":{"oid":"9d04a0d8733dafbb5d75e594a9ec525c49dfc975","status":null,"checkSuites":{"nodes":[{"id":"MDEwOkNoZWNrU3VpdGUzMDY0MDk4NjE=","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}},{"id":"MDEwOkNoZWNrU3VpdGUzMDY0MDk4NjI=","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}}]},"committedDate":"2019-11-12T06:38:55Z"}},{"__typename":"PullRequestCommit","commit":{"oid":"37406e7dfa4466b80d1da183d6477aac16b1e58c","status":null,"checkSuites":{"nodes":[{"id":"MDEwOkNoZWNrU3VpdGUzMDY0MTAzODA=","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}},{"id":"MDEwOkNoZWNrU3VpdGUzMDY0MTAzODM=","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}}]},"committedDate":"2019-11-12T06:39:23Z"}},{"__typename":"ClosedEvent","actor":{"avatarUrl":"https://avatars0.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"},"createdAt":"2019-12-04T23:28:16Z","url":"https://github.com/sourcegraph/automation-testing/pull/1#event-2855920542"},{"__typename":"ReopenedEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"createdAt":"2019-12-05T07:09:21Z"},{"__typename":"RenamedTitleEvent","actor":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"previousTitle":"This
+      this. This is a test PR that is always open.","state":"OPEN","url":"https://github.com/sourcegraph/automation-testing/pull/1","number":1,"createdAt":"2019-11-12T06:40:21Z","updatedAt":"2019-12-05T07:09:31Z","headRefOid":"37406e7dfa4466b80d1da183d6477aac16b1e58c","baseRefOid":"c75943274b322ffef2230df8f8049de84ddf12c1","headRefName":"always-open-pr","baseRefName":"master","author":{"avatarUrl":"https://avatars1.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff&v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"participants":{"nodes":[{"avatarUrl":"https://avatars1.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff&v=4","login":"mrnugget","url":"https://github.com/mrnugget"},{"avatarUrl":"https://avatars0.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"}]},"labels":{"nodes":[]},"commits":{"nodes":[{"commit":{"oid":"37406e7dfa4466b80d1da183d6477aac16b1e58c","status":null,"checkSuites":{"nodes":[{"id":"MDEwOkNoZWNrU3VpdGUzMDY0MTAzODA=","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}},{"id":"MDEwOkNoZWNrU3VpdGUzMDY0MTAzODM=","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}}]},"committedDate":"2019-11-12T06:39:23Z"}}]},"timelineItems":{"nodes":[{"__typename":"PullRequestCommit","commit":{"oid":"9d04a0d8733dafbb5d75e594a9ec525c49dfc975","message":"Add
+      another file","messageHeadline":"Add another file","committedDate":"2019-11-12T06:38:55Z","pushedDate":"2019-11-12T06:39:00Z","url":"https://github.com/sourcegraph/automation-testing/commit/9d04a0d8733dafbb5d75e594a9ec525c49dfc975","committer":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","email":"mrnugget@gmail.com","name":"Thorsten
+      Ball","user":{"avatarUrl":"https://avatars1.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff&v=4","login":"mrnugget","url":"https://github.com/mrnugget"}}}},{"__typename":"PullRequestCommit","commit":{"oid":"37406e7dfa4466b80d1da183d6477aac16b1e58c","message":"Test
+      commit to always have a open PR","messageHeadline":"Test commit to always have
+      a open PR","committedDate":"2019-11-12T06:39:23Z","pushedDate":"2019-11-12T06:39:33Z","url":"https://github.com/sourcegraph/automation-testing/commit/37406e7dfa4466b80d1da183d6477aac16b1e58c","committer":{"avatarUrl":"https://avatars3.githubusercontent.com/u/1185253?v=4","email":"mrnugget@gmail.com","name":"Thorsten
+      Ball","user":{"avatarUrl":"https://avatars1.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff&v=4","login":"mrnugget","url":"https://github.com/mrnugget"}}}},{"__typename":"ClosedEvent","actor":{"avatarUrl":"https://avatars0.githubusercontent.com/u/19534377?v=4","login":"eseliger","url":"https://github.com/eseliger"},"createdAt":"2019-12-04T23:28:16Z","url":"https://github.com/sourcegraph/automation-testing/pull/1#event-2855920542"},{"__typename":"ReopenedEvent","actor":{"avatarUrl":"https://avatars1.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff&v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"createdAt":"2019-12-05T07:09:21Z"},{"__typename":"RenamedTitleEvent","actor":{"avatarUrl":"https://avatars1.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff&v=4","login":"mrnugget","url":"https://github.com/mrnugget"},"previousTitle":"This
       is a test PR that is always open","currentTitle":"This is a test PR that is
       always open (keep it open!)","createdAt":"2019-12-05T07:09:31Z"}]}}]}}}}'
     headers:
@@ -168,7 +174,7 @@ interactions:
       Access-Control-Expose-Headers:
       - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
         X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval,
-        X-GitHub-Media-Type
+        X-GitHub-Media-Type, Deprecation, Sunset
       Cache-Control:
       - no-cache
       Content-Security-Policy:
@@ -176,7 +182,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Mon, 17 Feb 2020 12:19:08 GMT
+      - Fri, 13 Mar 2020 20:02:39 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -196,7 +202,7 @@ interactions:
       X-Github-Media-Type:
       - github.antiope-preview; format=json
       X-Github-Request-Id:
-      - DCAA:3AA51:76188E2:8C32197:5E4A84BC
+      - C453:6583:4A102A4:57B887E:5E6BE6DF
       X-Oauth-Scopes:
       - read:org, repo
       X-Xss-Protection:

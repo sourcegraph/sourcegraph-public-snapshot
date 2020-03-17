@@ -1,27 +1,27 @@
 {
-  "ID": "MDExOlB1bGxSZXF1ZXN0Mzc2MTA0Mzc2",
+  "ID": "MDExOlB1bGxSZXF1ZXN0Mzg3OTQ5NTE3",
   "Title": "This is a test PR, feel free to ignore",
   "Body": "I'm opening this PR to test something. Please ignore.",
   "State": "OPEN",
-  "URL": "https://github.com/sourcegraph/automation-testing/pull/168",
+  "URL": "https://github.com/sourcegraph/automation-testing/pull/277",
   "HeadRefOid": "05e562cc5d8ab50b5fcab8dfd5dfa5db13a48e80",
-  "BaseRefOid": "3b79a5d479d2af9cfe91e0aad4e9dddca7278150",
+  "BaseRefOid": "be64870b4721794dcdada10f49a2741c09f33a69",
   "HeadRefName": "test-pr-3",
   "BaseRefName": "master",
-  "Number": 168,
+  "Number": 277,
   "Author": {
-   "AvatarURL": "https://avatars3.githubusercontent.com/u/25610?v=4",
+   "AvatarURL": "https://avatars3.githubusercontent.com/u/25610?u=416aa7bd7c7a97c714ea0a503c90a0e7e21c5e56\u0026v=4",
    "Login": "ryanslade",
    "URL": "https://github.com/ryanslade"
   },
   "Participants": [
    {
-    "AvatarURL": "https://avatars3.githubusercontent.com/u/25610?v=4",
+    "AvatarURL": "https://avatars3.githubusercontent.com/u/25610?u=416aa7bd7c7a97c714ea0a503c90a0e7e21c5e56\u0026v=4",
     "Login": "ryanslade",
     "URL": "https://github.com/ryanslade"
    },
    {
-    "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
+    "AvatarURL": "https://avatars1.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff\u0026v=4",
     "Login": "mrnugget",
     "URL": "https://github.com/mrnugget"
    }
@@ -35,33 +35,21 @@
     "Item": {
      "Commit": {
       "OID": "05e562cc5d8ab50b5fcab8dfd5dfa5db13a48e80",
-      "CheckSuites": {
-       "Nodes": [
-        {
-         "ID": "MDEwOkNoZWNrU3VpdGUzMDY5MDkzMzM=",
-         "Status": "QUEUED",
-         "Conclusion": "",
-         "ReceivedAt": "0001-01-01T00:00:00Z",
-         "CheckRuns": {
-          "Nodes": []
-         }
-        },
-        {
-         "ID": "MDEwOkNoZWNrU3VpdGUzMDY5MDkzMzY=",
-         "Status": "QUEUED",
-         "Conclusion": "",
-         "ReceivedAt": "0001-01-01T00:00:00Z",
-         "CheckRuns": {
-          "Nodes": []
-         }
-        }
-       ]
+      "Message": "Add foobar.md file",
+      "MessageHeadline": "Add foobar.md file",
+      "URL": "https://github.com/sourcegraph/automation-testing/commit/05e562cc5d8ab50b5fcab8dfd5dfa5db13a48e80",
+      "Committer": {
+       "AvatarURL": "https://avatars3.githubusercontent.com/u/1185253?v=4",
+       "Email": "mrnugget@gmail.com",
+       "Name": "Thorsten Ball",
+       "User": {
+        "AvatarURL": "https://avatars1.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff\u0026v=4",
+        "Login": "mrnugget",
+        "URL": "https://github.com/mrnugget"
+       }
       },
-      "Status": {
-       "State": "",
-       "Contexts": null
-      },
-      "CommittedDate": "2019-11-12T12:57:33Z"
+      "CommittedDate": "2019-11-12T12:57:33Z",
+      "PushedDate": "2019-11-12T13:00:07Z"
      }
     }
    }
@@ -102,6 +90,6 @@
     }
    ]
   },
-  "CreatedAt": "2020-02-17T12:13:03Z",
-  "UpdatedAt": "2020-02-17T12:13:03Z"
+  "CreatedAt": "2020-03-13T19:54:19Z",
+  "UpdatedAt": "2020-03-13T19:54:19Z"
  }

@@ -62,7 +62,7 @@ func TestChangesetMetadata(t *testing.T) {
 		t.Errorf("changeset body wrong. want=%q, have=%q", want, have)
 	}
 
-	state, err := changeset.State()
+	state, err := changeset.state()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -120,14 +120,8 @@ func TestChangesetEvents(t *testing.T) {
 		}
 
 		commit := &github.PullRequestCommit{
-			Commit: struct {
-				OID           string
-				CheckSuites   struct{ Nodes []github.CheckSuite }
-				Status        github.Status
-				CommittedDate time.Time
-			}{
-				OID:    "123",
-				Status: github.Status{},
+			Commit: github.Commit{
+				OID: "123",
 			},
 		}
 
@@ -193,7 +187,7 @@ func TestChangesetEvents(t *testing.T) {
 		user := bitbucketserver.User{Name: "john-doe"}
 		reviewer := bitbucketserver.User{Name: "jane-doe"}
 
-		activities := []bitbucketserver.Activity{{
+		activities := []*bitbucketserver.Activity{{
 			ID:     1,
 			User:   user,
 			Action: bitbucketserver.OpenedActivityAction,
@@ -292,6 +286,18 @@ func TestChangesetEventsReviewState(t *testing.T) {
 					Author: github.Actor{
 						Login: reviewer,
 					},
+				},
+			},
+		}
+	}
+
+	bbsActivity := func(t time.Time, login string, kind ChangesetEventKind) *ChangesetEvent {
+		return &ChangesetEvent{
+			Kind: kind,
+			Metadata: &bitbucketserver.Activity{
+				CreatedDate: timeToUnixMilli(t),
+				User: bitbucketserver.User{
+					Name: login,
 				},
 			},
 		}
@@ -410,10 +416,60 @@ func TestChangesetEventsReviewState(t *testing.T) {
 			},
 			want: ChangesetReviewStateApproved,
 		},
+		{
+			events: ChangesetEvents{
+				bbsActivity(daysAgo(2), "user1", ChangesetEventKindBitbucketServerApproved),
+			},
+			want: ChangesetReviewStateApproved,
+		},
+		{
+			events: ChangesetEvents{
+				bbsActivity(daysAgo(2), "user1", ChangesetEventKindBitbucketServerReviewed),
+			},
+			want: ChangesetReviewStateChangesRequested,
+		},
+		{
+			events: ChangesetEvents{
+				bbsActivity(daysAgo(2), "user1", ChangesetEventKindBitbucketServerApproved),
+				bbsActivity(daysAgo(1), "user2", ChangesetEventKindBitbucketServerReviewed),
+			},
+			want: ChangesetReviewStateChangesRequested,
+		},
+		{
+			events: ChangesetEvents{
+				bbsActivity(daysAgo(2), "user1", ChangesetEventKindBitbucketServerApproved),
+				bbsActivity(daysAgo(1), "user2", ChangesetEventKindBitbucketServerReviewed),
+				bbsActivity(daysAgo(0), "user3", ChangesetEventKindBitbucketServerApproved),
+			},
+			want: ChangesetReviewStateChangesRequested,
+		},
+		{
+			events: ChangesetEvents{
+				bbsActivity(daysAgo(2), "user1", ChangesetEventKindBitbucketServerApproved),
+				bbsActivity(daysAgo(1), "user2", ChangesetEventKindBitbucketServerReviewed),
+				bbsActivity(daysAgo(0), "user2", ChangesetEventKindBitbucketServerApproved),
+			},
+			want: ChangesetReviewStateApproved,
+		},
+		{
+			events: ChangesetEvents{
+				bbsActivity(daysAgo(2), "user1", ChangesetEventKindBitbucketServerApproved),
+				bbsActivity(daysAgo(1), "user1", ChangesetEventKindBitbucketServerUnapproved),
+			},
+			want: ChangesetReviewStatePending,
+		},
+		{
+			events: ChangesetEvents{
+				bbsActivity(daysAgo(2), "user1", ChangesetEventKindBitbucketServerApproved),
+				bbsActivity(daysAgo(1), "user1", ChangesetEventKindBitbucketServerUnapproved),
+				bbsActivity(daysAgo(0), "user1", ChangesetEventKindBitbucketServerReviewed),
+			},
+			want: ChangesetReviewStateChangesRequested,
+		},
 	}
 
 	for i, tc := range tests {
-		have, err := tc.events.ReviewState()
+		have, err := tc.events.reviewState()
 		if err != nil {
 			t.Fatalf("got error: %s", err)
 		}
@@ -614,4 +670,8 @@ func TestChangesetEventsLabels(t *testing.T) {
 			}
 		})
 	}
+}
+
+func timeToUnixMilli(t time.Time) int {
+	return int(t.UnixNano()) / int(time.Millisecond)
 }

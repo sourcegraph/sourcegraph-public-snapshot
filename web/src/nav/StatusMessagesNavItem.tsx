@@ -3,8 +3,8 @@ import CloudCheckIcon from 'mdi-react/CloudCheckIcon'
 import CloudSyncIcon from 'mdi-react/CloudSyncIcon'
 import React from 'react'
 import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
-import { Observable, SchedulerLike, Subscription, timer } from 'rxjs'
-import { catchError, concatMap, map } from 'rxjs/operators'
+import { Observable, Subscription, of } from 'rxjs'
+import { catchError, map, repeatWhen, delay, tap, switchMap } from 'rxjs/operators'
 import { Link } from '../../../shared/src/components/Link'
 import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
@@ -92,11 +92,7 @@ const StatusMessagesNavItemEntry: React.FunctionComponent<StatusMessageEntryProp
 
 interface Props {
     fetchMessages: () => Observable<GQL.StatusMessage[]>
-
-    /** Scheduler for the refresh timer */
-    scheduler?: SchedulerLike
-
-    isSiteAdmin?: boolean
+    isSiteAdmin: boolean
 }
 
 interface State {
@@ -104,7 +100,8 @@ interface State {
     isOpen: boolean
 }
 
-const REFRESH_INTERVAL_MS = 3000
+const REFRESH_INTERVAL_AFTER_ERROR_MS = 3000
+const REFRESH_INTERVAL_MS = 10000
 
 /**
  * Displays a status icon in the navbar reflecting the completion of backend
@@ -119,9 +116,25 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
     private toggleIsOpen = (): void => this.setState(prevState => ({ isOpen: !prevState.isOpen }))
 
     public componentDidMount(): void {
+        let lastWasSuccess = true
         this.subscriptions.add(
-            timer(0, REFRESH_INTERVAL_MS, this.props.scheduler)
-                .pipe(concatMap(() => this.props.fetchMessages().pipe(catchError(err => [asError(err)]))))
+            this.props
+                .fetchMessages()
+                .pipe(
+                    catchError(err => [asError(err) as ErrorLike]),
+                    tap(messagesOrError => {
+                        lastWasSuccess = !isErrorLike(messagesOrError) && messagesOrError.length === 0
+                    }),
+                    repeatWhen(obs =>
+                        obs.pipe(
+                            switchMap(() =>
+                                of(undefined).pipe(
+                                    delay(lastWasSuccess ? REFRESH_INTERVAL_MS : REFRESH_INTERVAL_AFTER_ERROR_MS)
+                                )
+                            )
+                        )
+                    )
+                )
                 .subscribe(messagesOrError => this.setState({ messagesOrError }))
         )
     }
@@ -130,12 +143,12 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
         this.subscriptions.unsubscribe()
     }
 
-    private renderMessage(message: GQL.StatusMessage): JSX.Element | null {
+    private renderMessage(message: GQL.StatusMessage, key: number): JSX.Element | null {
         switch (message.__typename) {
             case 'CloningProgress':
                 return (
                     <StatusMessagesNavItemEntry
-                        key={message.message}
+                        key={key}
                         title="Repositories cloning"
                         text={message.message}
                         showLink={this.props.isSiteAdmin}
@@ -148,7 +161,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
             case 'ExternalServiceSyncError':
                 return (
                     <StatusMessagesNavItemEntry
-                        key={message.message}
+                        key={key}
                         title={`Syncing repositories from external service "${message.externalService.displayName}" failed:`}
                         text={message.message}
                         showLink={this.props.isSiteAdmin}
@@ -161,7 +174,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
             case 'SyncError':
                 return (
                     <StatusMessagesNavItemEntry
-                        key={message.message}
+                        key={key}
                         title="Syncing repositories failed:"
                         text={message.message}
                         showLink={this.props.isSiteAdmin}
@@ -215,25 +228,27 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
 
                 <DropdownMenu right={true} className="status-messages-nav-item__dropdown-menu">
                     <h3>Code host status</h3>
-                    {isErrorLike(this.state.messagesOrError) ? (
-                        <ErrorAlert
-                            className="status-messages-nav-item__entry mb-0"
-                            prefix="Failed to load status messages"
-                            error={this.state.messagesOrError}
-                        />
-                    ) : this.state.messagesOrError.length > 0 ? (
-                        this.state.messagesOrError.map(m => this.renderMessage(m))
-                    ) : (
-                        <StatusMessagesNavItemEntry
-                            title="Repositories up to date"
-                            text="All repositories hosted on the configured code hosts are synced."
-                            showLink={this.props.isSiteAdmin}
-                            linkTo="/site-admin/external-services"
-                            linkText="Manage repositories"
-                            linkOnClick={this.toggleIsOpen}
-                            entryType="success"
-                        />
-                    )}
+                    <div className="status-messages-nav-item__dropdown-menu-content">
+                        {isErrorLike(this.state.messagesOrError) ? (
+                            <ErrorAlert
+                                className="status-messages-nav-item__entry"
+                                prefix="Failed to load status messages"
+                                error={this.state.messagesOrError}
+                            />
+                        ) : this.state.messagesOrError.length > 0 ? (
+                            this.state.messagesOrError.map((m, i) => this.renderMessage(m, i))
+                        ) : (
+                            <StatusMessagesNavItemEntry
+                                title="Repositories up to date"
+                                text="All repositories hosted on the configured code hosts are synced."
+                                showLink={this.props.isSiteAdmin}
+                                linkTo="/site-admin/external-services"
+                                linkText="Manage repositories"
+                                linkOnClick={this.toggleIsOpen}
+                                entryType="success"
+                            />
+                        )}
+                    </div>
                 </DropdownMenu>
             </ButtonDropdown>
         )

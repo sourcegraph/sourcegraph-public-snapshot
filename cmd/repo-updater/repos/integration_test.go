@@ -27,8 +27,7 @@ func TestIntegration(t *testing.T) {
 
 	t.Parallel()
 
-	db, cleanup := dbtest.NewDB(t, *dsn)
-	defer cleanup()
+	db := dbtest.NewDB(t, *dsn)
 
 	dbstore := repos.NewDBStore(db, sql.TxOptions{
 		Isolation: sql.LevelSerializable,

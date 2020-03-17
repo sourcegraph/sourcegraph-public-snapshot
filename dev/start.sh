@@ -65,7 +65,7 @@ export GRAFANA_SERVER_URL=http://localhost:3370
 
 # webpack-dev-server is a proxy running on port 3080 that (1) serves assets, waiting to respond
 # until they are (re)built and (2) otherwise proxies to nginx running on port 3081 (which proxies to
-# Sourcegraph running on port 3082). That is why Sourcegraph listens on 3081 despite the externalURL
+# Sourcegraph running on port 3082). That is why Sourcegraph listens on 3082 despite the externalURL
 # having port 3080.
 export SRC_HTTP_ADDR=":3082"
 export WEBPACK_DEV_SERVER=1

@@ -32,11 +32,12 @@ const MAX_CONNECTION_RETRIES = readEnvInt('MAX_CONNECTION_RETRIES', 60)
 const CONNECTION_RETRY_INTERVAL = readEnvInt('CONNECTION_RETRY_INTERVAL', 5)
 
 /**
- * Create a Postgres connection. This creates a typorm connection pool with the
- * name `lsif`. The connection configuration is constructed by the method
- * `createPostgresConnectionOptions`. This method blocks (failing after a configured
- * time) until the connection is established, then blocks indefinitely while the
- * database migration state is behind the expected minimum, or dirty.
+ * Create a Postgres connection. This creates a typorm connection pool with
+ * the name `lsif`. The connection configuration is constructed by the method
+ * `createPostgresConnectionOptions`. This method blocks until the connection
+ * is established, then blocks indefinitely while the database migration state
+ * is behind the expected minimum, or dirty. If a connection is not made within
+ * a configurable timeout, an exception is thrown.
  *
  * @param configuration The current configuration.
  * @param logger The logger instance.

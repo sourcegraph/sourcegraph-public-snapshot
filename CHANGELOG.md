@@ -15,12 +15,13 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Site-Admin/Instrumentation is now available in the Kubernetes cluster deployment [8805](https://github.com/sourcegraph/sourcegraph/pull/8805).
 - Extensions can now specify a `baseUri` in the `DocumentFilter` when registering providers.
-- Admins can now exclude GitHub forks from the set of repositories being mirrored in Sourcegraph with the `"exclude": [{"forks": true}]` GitHub external service configuration. [#8974](https://github.com/sourcegraph/sourcegraph/pull/8974)
+- Admins can now exclude GitHub forks and/or archived repositories from the set of repositories being mirrored in Sourcegraph with the `"exclude": [{"forks": true}]` or `"exclude": [{"archived": true}]` GitHub external service configuration. [#8974](https://github.com/sourcegraph/sourcegraph/pull/8974)
 - Campaign changesets can be filtered by State, Review State and Check State [8848](https://github.com/sourcegraph/sourcegraph/pull/8848)
 - Counts of users of and searches conducted with interactive and plain text search modes will be sent back in pings, aggregated daily, weekly, and monthly.
 - Aggregated counts of daily, weekly, and monthly active users of search will be sent back in pings.
 - Counts of number of searches conducted using each filter will be sent back in pings, aggregated daily, weekly, and monthly.
 - Counts of number of users conducting searches containing each filter will be sent back in pings, aggregated daily, weekly, and monthly.
+- Added more entries (Bash, Erlang, Julia, OCaml, Scala) to the list of suggested languages for the `lang:` filter.
 
 ### Changed
 
@@ -36,6 +37,8 @@ All notable changes to Sourcegraph are documented in this file.
   This change does not affect the newly-introduced, restricted Kubernetes config files.
 - Archived repositories are excluded from search by default. Adding `archived:yes` includes archived repositories.
 - Forked repositories are excluded from search by default. Adding `fork:yes` includes forked repositories.
+- CSRF and session cookies now set `SameSite=None` when Sourcegraph is running behind HTTPS and `SameSite=Lax` when Sourcegraph is running behind HTTP in order to comply with a [recent IETF proposal](https://web.dev/samesite-cookies-explained/#samesitenone-must-be-secure). As a side effect, the Sourcegraph browser extension and GitLab/Bitbucket native integrations can only connect to private instances that have HTTPS configured. If your private instance is only running behind HTTP, please configure your instance to use HTTPS in order to continue using these.
+- If a single, unambiguous commit SHA is used in a search query (e.g., `repo@c98f56`) and a search index exists at this commit (i.e., it is the `HEAD` commit), then the query is searched using the index. Prior to this change, unindexed search was performed for any query containing an `@commit` specifier.
 
 ### Fixed
 

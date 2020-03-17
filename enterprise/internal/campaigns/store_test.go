@@ -23,8 +23,7 @@ import (
 // Ran in integration_test.go
 func testStore(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
-		tx, done := dbtest.NewTx(t, db)
-		defer done()
+		tx := dbtest.NewTx(t, db)
 
 		now := time.Now().UTC().Truncate(time.Microsecond)
 		clock := func() time.Time {
@@ -767,6 +766,22 @@ func testStore(db *sql.DB) func(*testing.T) {
 					opts := GetChangesetOpts{
 						ExternalID:          want.ExternalID,
 						ExternalServiceType: want.ExternalServiceType,
+					}
+
+					have, err := s.GetChangeset(ctx, opts)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					if diff := cmp.Diff(have, want); diff != "" {
+						t.Fatal(diff)
+					}
+				})
+
+				t.Run("ByRepoID", func(t *testing.T) {
+					want := changesets[0]
+					opts := GetChangesetOpts{
+						RepoID: want.RepoID,
 					}
 
 					have, err := s.GetChangeset(ctx, opts)
@@ -2689,7 +2704,7 @@ func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
 		// Create a test repo
 		reposStore := repos.NewDBStore(db, sql.TxOptions{})
 		repo := &repos.Repo{
-			Name: fmt.Sprintf("github.com/sourcegraph/sourcegraph"),
+			Name: "github.com/sourcegraph/sourcegraph",
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "external-id",
 				ServiceType: "github",
@@ -2707,8 +2722,7 @@ func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
 		}
 
 		t.Run("GetPendingCampaignJobsWhenNoneAvailable", func(t *testing.T) {
-			tx, done := dbtest.NewTx(t, db)
-			defer done()
+			tx := dbtest.NewTx(t, db)
 			s := NewStoreWithClock(tx, clock)
 
 			process := func(ctx context.Context, s *Store, job cmpgn.CampaignJob) error {
@@ -2725,8 +2739,7 @@ func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
 		})
 
 		t.Run("GetPendingCampaignJobsWhenAvailable", func(t *testing.T) {
-			tx, done := dbtest.NewTx(t, db)
-			defer done()
+			tx := dbtest.NewTx(t, db)
 			s := NewStoreWithClock(tx, clock)
 
 			process := func(ctx context.Context, s *Store, job cmpgn.CampaignJob) error {

@@ -69,14 +69,8 @@ func TestProvider_Validate(t *testing.T) {
 	}
 }
 
-func testProviderRepoPerms(db *sql.DB) func(*testing.T) {
+func testProviderRepoPerms(db *sql.DB, f *fixtures, cli *bitbucketserver.Client) func(*testing.T) {
 	return func(t *testing.T) {
-		cli, save := newClient(t, "RepoPerms")
-		defer save()
-
-		f := newFixtures()
-		f.load(t, cli)
-
 		p := newProvider(cli, db, 0)
 
 		h := codeHost{CodeHost: p.codeHost}
@@ -85,6 +79,7 @@ func testProviderRepoPerms(db *sql.DB) func(*testing.T) {
 		for _, r := range f.repos {
 			stored = append(stored, &repos.Repo{
 				Name:         r.Name,
+				Private:      !r.Public,
 				ExternalRepo: h.externalRepo(r),
 				Sources:      map[string]*repos.SourceInfo{},
 			})
@@ -102,6 +97,7 @@ func testProviderRepoPerms(db *sql.DB) func(*testing.T) {
 			repo[r.Name] = &types.Repo{
 				ID:           api.RepoID(r.ID),
 				Name:         api.RepoName(r.Name),
+				Private:      r.Private,
 				ExternalRepo: r.ExternalRepo,
 			}
 			toverify = append(toverify, repo[r.Name])
@@ -212,60 +208,223 @@ func testProviderRepoPerms(db *sql.DB) func(*testing.T) {
 	}
 }
 
-func TestProvider_FetchAccount(t *testing.T) {
-	cli, save := newClient(t, "FetchAccount")
-	defer save()
+func testProviderFetchAccount(f *fixtures, cli *bitbucketserver.Client) func(*testing.T) {
+	return func(t *testing.T) {
+		p := newProvider(cli, nil, 0)
 
-	f := newFixtures()
-	f.load(t, cli)
+		h := codeHost{CodeHost: p.codeHost}
 
-	p := newProvider(cli, nil, 0)
+		for _, tc := range []struct {
+			name string
+			ctx  context.Context
+			user *types.User
+			acct *extsvc.ExternalAccount
+			err  string
+		}{
+			{
+				name: "no user given",
+				user: nil,
+				acct: nil,
+			},
+			{
+				name: "user not found",
+				user: &types.User{Username: "john"},
+				acct: nil,
+				err:  `no results returned by the Bitbucket Server API`,
+			},
+			{
+				name: "user found by exact username match",
+				user: &types.User{ID: 42, Username: "ceo"},
+				acct: h.externalAccount(42, f.users["ceo"]),
+			},
+		} {
+			t.Run(tc.name, func(t *testing.T) {
+				if tc.ctx == nil {
+					tc.ctx = context.Background()
+				}
 
-	h := codeHost{CodeHost: p.codeHost}
+				if tc.err == "" {
+					tc.err = "<nil>"
+				}
 
-	for _, tc := range []struct {
-		name string
-		ctx  context.Context
-		user *types.User
-		acct *extsvc.ExternalAccount
-		err  string
-	}{
-		{
-			name: "no user given",
-			user: nil,
-			acct: nil,
-		},
-		{
-			name: "user not found",
-			user: &types.User{Username: "john"},
-			acct: nil,
-			err:  `no results returned by the Bitbucket Server API`,
-		},
-		{
-			name: "user found by exact username match",
-			user: &types.User{ID: 42, Username: "ceo"},
-			acct: h.externalAccount(42, f.users["ceo"]),
-		},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			if tc.ctx == nil {
-				tc.ctx = context.Background()
+				acct, err := p.FetchAccount(tc.ctx, tc.user, nil)
+
+				if have, want := fmt.Sprint(err), tc.err; have != want {
+					t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+				}
+
+				if have, want := acct, tc.acct; !reflect.DeepEqual(have, want) {
+					t.Error(cmp.Diff(have, want))
+				}
+			})
+		}
+	}
+}
+
+func testProviderFetchUserPerms(f *fixtures, cli *bitbucketserver.Client) func(*testing.T) {
+	return func(t *testing.T) {
+		p := newProvider(cli, nil, 0)
+
+		h := codeHost{CodeHost: p.codeHost}
+
+		repoIDs := func(names ...string) (ids []extsvc.ExternalRepoID) {
+			for _, name := range names {
+				if r, ok := f.repos[name]; ok {
+					ids = append(ids, extsvc.ExternalRepoID(strconv.FormatInt(int64(r.ID), 10)))
+				}
 			}
+			return ids
+		}
 
-			if tc.err == "" {
-				tc.err = "<nil>"
+		for _, tc := range []struct {
+			name string
+			ctx  context.Context
+			acct *extsvc.ExternalAccount
+			ids  []extsvc.ExternalRepoID
+			err  string
+		}{
+			{
+				name: "no account provided",
+				acct: nil,
+				err:  "no account provided",
+			},
+			{
+				name: "no account data provided",
+				acct: &extsvc.ExternalAccount{},
+				err:  "no account data provided",
+			},
+			{
+				name: "not a code host of the account",
+				acct: &extsvc.ExternalAccount{
+					ExternalAccountSpec: extsvc.ExternalAccountSpec{
+						ServiceType: "github",
+						ServiceID:   "https://github.com",
+						AccountID:   "john",
+					},
+					ExternalAccountData: extsvc.ExternalAccountData{
+						AccountData: new(json.RawMessage),
+					},
+				},
+				err: "not a code host of the account: want ${INSTANCEURL} but have https://github.com",
+			},
+			{
+				name: "bad account data",
+				acct: &extsvc.ExternalAccount{
+					ExternalAccountSpec: extsvc.ExternalAccountSpec{
+						ServiceType: h.ServiceType,
+						ServiceID:   h.ServiceID,
+						AccountID:   "john",
+					},
+					ExternalAccountData: extsvc.ExternalAccountData{
+						AccountData: new(json.RawMessage),
+					},
+				},
+				err: "unmarshaling account data: unexpected end of JSON input",
+			},
+			{
+				name: "private repo ids are retrieved",
+				acct: h.externalAccount(0, f.users["ceo"]),
+				ids:  repoIDs("private-repo", "secret-repo", "super-secret-repo"),
+			},
+		} {
+			t.Run(tc.name, func(t *testing.T) {
+				if tc.ctx == nil {
+					tc.ctx = context.Background()
+				}
+
+				if tc.err == "" {
+					tc.err = "<nil>"
+				}
+
+				tc.err = strings.ReplaceAll(tc.err, "${INSTANCEURL}", cli.URL.String())
+
+				ids, err := p.FetchUserPerms(tc.ctx, tc.acct)
+
+				if have, want := fmt.Sprint(err), tc.err; have != want {
+					t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+				}
+
+				sort.Slice(ids, func(i, j int) bool { return ids[i] < ids[j] })
+				sort.Slice(tc.ids, func(i, j int) bool { return tc.ids[i] < tc.ids[j] })
+
+				if have, want := ids, tc.ids; !reflect.DeepEqual(have, want) {
+					t.Error(cmp.Diff(have, want))
+				}
+			})
+		}
+	}
+}
+
+func testProviderFetchRepoPerms(f *fixtures, cli *bitbucketserver.Client) func(*testing.T) {
+	return func(t *testing.T) {
+		p := newProvider(cli, nil, 0)
+
+		h := codeHost{CodeHost: p.codeHost}
+
+		userIDs := func(names ...string) (ids []extsvc.ExternalAccountID) {
+			for _, name := range names {
+				if r, ok := f.users[name]; ok {
+					ids = append(ids, extsvc.ExternalAccountID(strconv.FormatInt(int64(r.ID), 10)))
+				}
 			}
+			return ids
+		}
 
-			acct, err := p.FetchAccount(tc.ctx, tc.user, nil)
+		for _, tc := range []struct {
+			name string
+			ctx  context.Context
+			repo *api.ExternalRepoSpec
+			ids  []extsvc.ExternalAccountID
+			err  string
+		}{
+			{
+				name: "no repo provided",
+				repo: nil,
+				err:  "no repo provided",
+			},
+			{
+				name: "not a code host of the repo",
+				repo: &api.ExternalRepoSpec{
+					ServiceType: "github",
+					ServiceID:   "https://github.com",
+				},
+				err: "not a code host of the repo: want ${INSTANCEURL} but have https://github.com",
+			},
+			{
+				name: "private user ids are retrieved",
+				repo: &api.ExternalRepoSpec{
+					ID:          strconv.Itoa(f.repos["super-secret-repo"].ID),
+					ServiceType: h.ServiceType,
+					ServiceID:   h.ServiceID,
+				},
+				ids: append(userIDs("ceo"), "1"), // admin user
+			},
+		} {
+			t.Run(tc.name, func(t *testing.T) {
+				if tc.ctx == nil {
+					tc.ctx = context.Background()
+				}
 
-			if have, want := fmt.Sprint(err), tc.err; have != want {
-				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
-			}
+				if tc.err == "" {
+					tc.err = "<nil>"
+				}
 
-			if have, want := acct, tc.acct; !reflect.DeepEqual(have, want) {
-				t.Error(cmp.Diff(have, want))
-			}
-		})
+				tc.err = strings.ReplaceAll(tc.err, "${INSTANCEURL}", cli.URL.String())
+
+				ids, err := p.FetchRepoPerms(tc.ctx, tc.repo)
+
+				if have, want := fmt.Sprint(err), tc.err; have != want {
+					t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+				}
+
+				sort.Slice(ids, func(i, j int) bool { return ids[i] < ids[j] })
+				sort.Slice(tc.ids, func(i, j int) bool { return tc.ids[i] < tc.ids[j] })
+
+				if have, want := ids, tc.ids; !reflect.DeepEqual(have, want) {
+					t.Error(cmp.Diff(have, want))
+				}
+			})
+		}
 	}
 }
 
@@ -381,7 +540,7 @@ func newFixtures() *fixtures {
 	repos := map[string]*bitbucketserver.Repo{
 		"secret-repo":       {Slug: "secret-repo", Name: "secret-repo", Project: projects["SECRET"]},
 		"super-secret-repo": {Slug: "super-secret-repo", Name: "super-secret-repo", Project: projects["SUPERSECRET"]},
-		"public-repo":       {Slug: "public-repo", Name: "public-repo", Project: projects["PUBLIC"]},
+		"public-repo":       {Slug: "public-repo", Name: "public-repo", Project: projects["PUBLIC"], Public: true},
 		"private-repo":      {Slug: "private-repo", Name: "private-repo", Project: projects["PRIVATE"]},
 	}
 

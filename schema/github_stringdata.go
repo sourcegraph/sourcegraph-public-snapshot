@@ -87,9 +87,14 @@ const GitHubSchemaJSON = `{
           { "required": ["name"] },
           { "required": ["id"] },
           { "required": ["pattern"] },
-          { "required": ["forks"] }
+          { "required": ["forks"] },
+          { "required": ["archived"] }
         ],
         "properties": {
+          "archived": {
+            "description": "If set to true, archived repositories will be excluded.",
+            "type": "boolean"
+          },
           "forks": {
             "description": "If set to true, forks will be excluded.",
             "type": "boolean"

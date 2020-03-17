@@ -14,6 +14,10 @@
         max-width: 22rem;
         padding: 1rem 1rem 0 1rem;
     }
+    &__dropdown-menu-content {
+        max-height: 50vh;
+        overflow-y: auto;
+    }
     &__entry {
         padding: 0.5rem 1rem;
         word-wrap: break-word;
