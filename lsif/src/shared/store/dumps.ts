@@ -53,6 +53,24 @@ export class DumpManager {
     }
 
     /**
+     * Bulk get dumps by identifier.
+     *
+     * @param ids The dump identifiers.
+     */
+    public async getDumpsByIds(ids: pgModels.DumpId[]): Promise<Map<pgModels.DumpId, pgModels.LsifDump>> {
+        const dumps = await instrumentQuery(() =>
+            this.connection
+                .getRepository(pgModels.LsifDump)
+                .createQueryBuilder()
+                .select()
+                .whereInIds(ids)
+                .getMany()
+        )
+
+        return new Map(dumps.map(d => [d.id, d]))
+    }
+
+    /**
      * Return a map from upload ids to their state.
      *
      * @param ids The upload ids to fetch.

@@ -18,10 +18,10 @@ import {
     RemoteDumpReferenceCursor,
     SameDumpReferenceCursor,
 } from './cursor'
-import { InternalLocation } from './location'
+import { InternalLocation, ResolvedInternalLocation } from './location'
 
 interface PaginatedInternalLocations {
-    locations: InternalLocation[]
+    locations: ResolvedInternalLocation[]
     newCursor?: ReferencePaginationCursor
 }
 
@@ -84,7 +84,7 @@ export class Backend {
         position: lsp.Position,
         dumpId?: number,
         ctx: TracingContext = {}
-    ): Promise<InternalLocation[] | undefined> {
+    ): Promise<ResolvedInternalLocation[] | undefined> {
         const closestDumpAndDatabase = await this.closestDatabase(repositoryId, commit, path, dumpId, ctx)
         if (!closestDumpAndDatabase) {
             if (ctx.logger) {
@@ -102,7 +102,7 @@ export class Backend {
         const dbDefinitions = await database.definitions(pathInDb, position, newCtx)
         const definitions = dbDefinitions.map(loc => locationFromDatabase(dump.root, loc))
         if (definitions.length > 0) {
-            return definitions
+            return this.resolveLocations(definitions)
         }
 
         // Try to find definitions in other dumps
@@ -133,7 +133,7 @@ export class Backend {
                         ctx
                     )
                     if (remoteDefinitions.length > 0) {
-                        return remoteDefinitions
+                        return this.resolveLocations(remoteDefinitions)
                     }
                 } else {
                     // This symbol was not imported from another database. We search the definitions
@@ -148,7 +148,7 @@ export class Backend {
                     )
                     const localDefinitions = monikerResults.map(loc => locationFromDatabase(dump.root, loc))
                     if (localDefinitions.length > 0) {
-                        return localDefinitions
+                        return this.resolveLocations(localDefinitions)
                     }
                 }
             }
@@ -494,7 +494,7 @@ export class Backend {
         const newCursor = { ...cursor, skipResults: cursor.skipResults + limit }
 
         return {
-            locations: slicedLocations.map(loc => locationFromDatabase(dump.root, loc)),
+            locations: await this.resolveLocations(slicedLocations.map(loc => locationFromDatabase(dump.root, loc))),
             newCursor: newOffset < locationSet.locations.length ? newCursor : undefined,
         }
     }
@@ -539,7 +539,7 @@ export class Backend {
                 const newCursor = { ...cursor, skipResults: cursor.skipResults + limit }
 
                 return {
-                    locations,
+                    locations: await this.resolveLocations(locations),
                     newCursor: newOffset < count ? newCursor : undefined,
                 }
             }
@@ -739,7 +739,7 @@ export class Backend {
                 }
 
                 return {
-                    locations: locations.map(loc => locationFromDatabase(dump.root, loc)),
+                    locations: await this.resolveLocations(locations.map(loc => locationFromDatabase(dump.root, loc))),
                     newCursor:
                         newResultOffset < count
                             ? nextCursor
@@ -928,7 +928,7 @@ export class Backend {
             this.connectionCache,
             this.documentCache,
             this.resultChunkCache,
-            dump,
+            dump.id,
             dbFilename(this.storageRoot, dump.id)
         )
     }
@@ -965,6 +965,23 @@ export class Backend {
         const dumpAndDatabase = await this.getDumpAndDatabaseById(dumpId)
         return dumpAndDatabase?.database.getDocumentByPath(path, ctx)
     }
+
+    /** Bulk populate the dump model for internal locations. */
+    private async resolveLocations(locations: InternalLocation[]): Promise<ResolvedInternalLocation[]> {
+        const dumps = await this.dumpManager.getDumpsByIds(Array.from(new Set(locations.map(({ dumpId }) => dumpId))))
+
+        const resolvedLocations: ResolvedInternalLocation[] = []
+        for (const { dumpId, path, range } of locations) {
+            const dump = dumps.get(dumpId)
+            if (!dump) {
+                continue
+            }
+
+            resolvedLocations.push({ dump, path, range })
+        }
+
+        return resolvedLocations
+    }
 }
 
 /**
@@ -979,14 +996,14 @@ function pathToDatabase(root: string, path: string): string {
 }
 
 /**
- * Converts a location in a dump to the corresponding location in the repository.
+ * Converts a location in a dump to the corresponding location in the repository.2
  *
  * @param root The root of all files in the dump.
  * @param location The original location.
  */
-function locationFromDatabase(root: string, { dump, path, range }: InternalLocation): InternalLocation {
+function locationFromDatabase(root: string, { dumpId, path, range }: InternalLocation): InternalLocation {
     return {
-        dump,
+        dumpId,
         path: `${root}${path}`,
         range,
     }
