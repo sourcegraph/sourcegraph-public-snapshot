@@ -114,3 +114,9 @@ func Start(extra ...Endpoint) {
 	}
 	log.Println("warning: could not start debug HTTP server:", http.ListenAndServe(addr, pp))
 }
+
+// Dumper is a service which can dump its state for debugging.
+type Dumper interface {
+	// DebugDump returns a snapshot of the current state.
+	DebugDump() interface{}
+}

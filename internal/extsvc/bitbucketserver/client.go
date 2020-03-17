@@ -36,8 +36,19 @@ var requestCounter = metrics.NewRequestMeter("bitbucket", "Total number of reque
 //
 // See https://godoc.org/golang.org/x/time/rate#Limiter for an explanation of these fields.
 //
+// We chose the limits here based on the fact that Sourcegraph is a heavy consumer of the Bitbucket
+// Server API and that a large customer had reported to us their Bitbucket instance receives
+// ~100 req/s so it seems reasonable for us to (at max) consume ~8 req/s.
+//
+// Note that, for comparison, Bitbucket Cloud restricts "List all repositories" requests (which are
+// a good portion of our requests) to 1,000/hr, and they restrict "List a user or team's repositories"
+// requests (which are roughly equal to our repository lookup requests) to 1,000/hr. We perform a list
+// repositories request for every 1000 repositories on Bitbucket every 1m by default, so for someone
+// with 20,000 Bitbucket repositories we need 20,000/1000 requests per minute (1200/hr) + overhead for
+// repository lookup requests by users, and requests for identifying which repositories a user has
+// access to (if authorization is in use) and requests for campaign synchronization if it is in use.
 const (
-	rateLimitRequestsPerSecond = 8
+	rateLimitRequestsPerSecond = 8 // 480/min or 28,800/hr
 	RateLimitMaxBurstRequests  = 500
 )
 
