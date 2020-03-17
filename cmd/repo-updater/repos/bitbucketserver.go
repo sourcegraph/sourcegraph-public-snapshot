@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -475,8 +474,4 @@ func (s *BitbucketServerSource) listAllLabeledRepos(ctx context.Context, label s
 		next = page
 	}
 	return ids, nil
-}
-
-func unixMilliToTime(ms int64) time.Time {
-	return time.Unix(0, ms*int64(time.Millisecond))
 }
