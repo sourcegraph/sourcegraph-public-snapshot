@@ -14,6 +14,51 @@ import { tryWithLock } from '../../shared/store/locks'
 import { UploadManager } from '../../shared/store/uploads'
 import { DumpManager } from '../../shared/store/dumps'
 
+interface Task {
+    intervalMs: number
+    handler: () => Promise<void>
+}
+
+/** A collection of tasks that are invoked periodically. */
+export class TaskRunner {
+    private tasks: Task[] = []
+
+    /**
+     * Create a new task runner.
+     *
+     * @param connection The Postgres connection.
+     * @param logger The logger instance.
+     */
+    constructor(private connection: Connection, private logger: Logger) {}
+
+    /**
+     * Register a task to be performed while holding an exclusive advisory lock in Postgres.
+     *
+     * @param name The task name.
+     * @param intervalMs The interval between task invocations.
+     * @param task The function to invoke.
+     */
+    public register(name: string, intervalMs: number, task: (ctx: TracingContext) => Promise<void>): void {
+        this.tasks.push({
+            intervalMs,
+            handler: () =>
+                tryWithLock(this.connection, name, () => logAndTraceCall({ logger: this.logger }, name, task)),
+        })
+    }
+
+    /** Start running all registered tasks on the specified interval. */
+    public run(): void {
+        for (const { intervalMs, handler } of this.tasks) {
+            const fn = async (end: () => void): Promise<void> => {
+                await handler()
+                end()
+            }
+
+            AsyncPolling(fn, intervalMs * 1000).run()
+        }
+    }
+}
+
 /**
  * Begin running cleanup tasks on a schedule in the background.
  *
@@ -28,58 +73,32 @@ export function startTasks(
     uploadManager: UploadManager,
     logger: Logger
 ): void {
-    /**
-     * Start invoking the given task on an interval.
-     *
-     * @param task The task to invoke.
-     * @param intervalMs The interval between invocations.
-     */
-    const runTask = (task: () => Promise<void>, intervalMs: number): void => {
-        AsyncPolling(async end => {
-            await task()
-            end()
-        }, intervalMs * 1000).run()
-    }
+    const runner = new TaskRunner(connection, logger)
 
-    /**
-     * Each task is performed with an exclusive advisory lock in Postgres. If another
-     * server is already running this task, then this server instance will skip the
-     * attempt.
-     *
-     * @param name The task name. Used for logging the span and generating the lock id.
-     * @param task The task function.
-     */
-    const wrapTask = (name: string, task: (ctx: TracingContext) => Promise<void>): (() => Promise<void>) => () =>
-        tryWithLock(connection, name, () => logAndTraceCall({ logger }, name, task))
-
-    runTask(
-        wrapTask('Resetting stalled uploads', ctx => resetStalledUploads(uploadManager, ctx)),
-        settings.RESET_STALLED_UPLOADS_INTERVAL
+    runner.register('Resetting stalled uploads', settings.RESET_STALLED_UPLOADS_INTERVAL, ctx =>
+        resetStalledUploads(uploadManager, ctx)
     )
 
-    runTask(
-        wrapTask('Cleaning old uploads', ctx => cleanOldUploads(uploadManager, ctx)),
-        settings.CLEAN_OLD_UPLOADS_INTERVAL
+    runner.register('Cleaning old uploads', settings.CLEAN_OLD_UPLOADS_INTERVAL, ctx =>
+        cleanOldUploads(uploadManager, ctx)
     )
 
-    runTask(
-        wrapTask('Purging old dumps', ctx =>
-            purgeOldDumps(
-                connection,
-                dumpManager,
-                uploadManager,
-                settings.STORAGE_ROOT,
-                settings.DBS_DIR_MAXIMUM_SIZE_BYTES,
-                ctx
-            )
-        ),
-        settings.PURGE_OLD_DUMPS_INTERVAL
+    runner.register('Purging old dumps', settings.PURGE_OLD_DUMPS_INTERVAL, ctx =>
+        purgeOldDumps(
+            connection,
+            dumpManager,
+            uploadManager,
+            settings.STORAGE_ROOT,
+            settings.DBS_DIR_MAXIMUM_SIZE_BYTES,
+            ctx
+        )
     )
 
-    runTask(
-        wrapTask('Cleaning failed uploads', ctx => cleanFailedUploads(ctx)),
-        settings.CLEAN_FAILED_UPLOADS_INTERVAL
+    runner.register('Cleaning failed uploads', settings.CLEAN_FAILED_UPLOADS_INTERVAL, cleanFailedUploads)
+
+    runner.register('Updating metrics', settings.UPDATE_QUEUE_SIZE_GAUGE_INTERVAL, () =>
+        updateQueueSizeGauge(uploadManager)
     )
 
-    runTask((): Promise<void> => updateQueueSizeGauge(uploadManager), settings.UPDATE_QUEUE_SIZE_GAUGE_INTERVAL)
+    runner.run()
 }
