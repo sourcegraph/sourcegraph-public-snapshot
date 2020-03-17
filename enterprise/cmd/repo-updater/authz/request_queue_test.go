@@ -470,6 +470,44 @@ func Test_requestQueue_acquireNext(t *testing.T) {
 	}
 }
 
+func Test_requestQueue_release(t *testing.T) {
+	user1 := &requestMeta{Type: requestTypeUser, ID: 1}
+	repo2 := &requestMeta{Type: requestTypeRepo, ID: 2}
+
+	q := newRequestQueue()
+	q.enqueue(user1)
+	q.enqueue(repo2)
+
+	expHeap := []*syncRequest{
+		{requestMeta: user1, acquired: false, index: 0},
+		{requestMeta: repo2, acquired: false, index: 1},
+	}
+	if diff := cmp.Diff(expHeap, q.heap, cmpOpts); diff != "" {
+		t.Fatalf("heap: %v", diff)
+	}
+
+	// Acquire the next request
+	r := q.acquireNext()
+
+	expHeap = []*syncRequest{
+		{requestMeta: repo2, acquired: false, index: 0},
+		{requestMeta: user1, acquired: true, index: 1},
+	}
+	if diff := cmp.Diff(expHeap, q.heap, cmpOpts); diff != "" {
+		t.Fatalf("heap: %v", diff)
+	}
+
+	// Release the request
+	q.release(r.Type, r.ID)
+	expHeap = []*syncRequest{
+		{requestMeta: user1, acquired: false, index: 0},
+		{requestMeta: repo2, acquired: false, index: 1},
+	}
+	if diff := cmp.Diff(expHeap, q.heap, cmpOpts); diff != "" {
+		t.Fatalf("heap: %v", diff)
+	}
+}
+
 func Test_requestQueue_Less(t *testing.T) {
 	q := newRequestQueue()
 
