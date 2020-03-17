@@ -754,7 +754,7 @@ async function performUpload(
     }
 
     // Extract the status URL
-    const match = out.match(/To check the status, visit (.+).\n$/)
+    const match = out.match(/View processing status at (.+).\n$/)
     if (!match) {
         throw new Error(`Unexpected output from Sourcegraph cli: ${out}`)
     }
