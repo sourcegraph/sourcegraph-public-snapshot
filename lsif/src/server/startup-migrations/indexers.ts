@@ -35,7 +35,7 @@ export function assignIndexer(connection: Connection, ctx: TracingContext): Prom
                 connectionCache,
                 documentCache,
                 resultChunkCache,
-                dump,
+                dump.id,
                 dbFilename(settings.STORAGE_ROOT, dump.id)
             )
 
