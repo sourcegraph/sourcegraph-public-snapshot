@@ -354,6 +354,11 @@ func Test_exactlyOneRepo(t *testing.T) {
 			want:        true,
 		},
 		{
+			repoFilters: []string{`^.*$`},
+			want:        false,
+		},
+
+		{
 			repoFilters: []string{`^github\.com/sourcegraph/zoekt`},
 			want:        false,
 		},
