@@ -101,8 +101,6 @@ func (s *Service) CreateCampaignPlanFromPatches(ctx context.Context, patches []c
 			BaseRef:        patch.BaseRef,
 			Rev:            patch.BaseRevision,
 			Diff:           patch.Patch,
-			StartedAt:      s.clock(),
-			FinishedAt:     s.clock(),
 		}
 		if err := tx.CreateCampaignJob(ctx, job); err != nil {
 			return nil, err
@@ -178,7 +176,6 @@ func (s *Service) createChangesetJobsWithStore(ctx context.Context, store *Store
 	jobs, _, err := store.ListCampaignJobs(ctx, ListCampaignJobsOpts{
 		CampaignPlanID:            c.CampaignPlanID,
 		Limit:                     -1,
-		OnlyFinished:              true,
 		OnlyWithDiff:              true,
 		OnlyUnpublishedInCampaign: c.ID,
 	})
@@ -364,14 +361,9 @@ func RunChangesetJob(
 		baseRef = campaignJob.BaseRef
 	}
 
-	body := c.Description
-	if campaignJob.Description != "" {
-		body += "\n\n---\n\n" + campaignJob.Description
-	}
-
 	cs := repos.Changeset{
 		Title:   c.Name,
-		Body:    body,
+		Body:    c.Description,
 		BaseRef: baseRef,
 		HeadRef: git.EnsureRefPrefix(ref),
 		Repo:    repo,
@@ -959,12 +951,10 @@ func computeCampaignUpdateDiff(
 		return nil, errors.Wrap(err, "listing changesets")
 	}
 
-	// We need OnlyFinished and OnlyWithDiff because we don't create
-	// ChangesetJobs for others.
+	// We need OnlyWithDiff because we don't create ChangesetJobs for others.
 	campaignJobs, _, err := tx.ListCampaignJobs(ctx, ListCampaignJobsOpts{
 		CampaignPlanID: oldPlanID,
 		Limit:          -1,
-		OnlyFinished:   true,
 		OnlyWithDiff:   true,
 	})
 	if err != nil {
@@ -974,7 +964,6 @@ func computeCampaignUpdateDiff(
 	newCampaignJobs, _, err := tx.ListCampaignJobs(ctx, ListCampaignJobsOpts{
 		CampaignPlanID: campaign.CampaignPlanID,
 		Limit:          -1,
-		OnlyFinished:   true,
 		OnlyWithDiff:   true,
 	})
 	if err != nil {
@@ -1050,8 +1039,7 @@ func computeCampaignUpdateDiff(
 func campaignJobsDiffer(a, b *campaigns.CampaignJob) bool {
 	return a.Diff != b.Diff ||
 		a.Rev != b.Rev ||
-		a.BaseRef != b.BaseRef ||
-		a.Description != b.Description
+		a.BaseRef != b.BaseRef
 }
 
 func selectChangesets(cs []*campaigns.Changeset, predicate func(*campaigns.Changeset) bool) []*campaigns.Changeset {

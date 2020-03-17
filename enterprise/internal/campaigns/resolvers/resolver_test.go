@@ -1216,8 +1216,6 @@ func TestCampaignPlanResolver(t *testing.T) {
 	for _, repo := range rs {
 		job := &campaigns.CampaignJob{
 			CampaignPlanID: plan.ID,
-			StartedAt:      now,
-			FinishedAt:     now,
 			RepoID:         repo.ID,
 			Rev:            testingRev,
 			BaseRef:        "master",

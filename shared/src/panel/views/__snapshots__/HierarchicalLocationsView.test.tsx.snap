@@ -478,12 +478,12 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
 
 exports[`<HierarchicalLocationsView /> shows a spinner before any locations emissions 1`] = `
 <div
-  className="loading-spinner icon-inline m-1"
+  className="loading-spinner icon-inline m-1 e2e-loading-spinner"
 />
 `;
 
 exports[`<HierarchicalLocationsView /> shows a spinner if locations emits empty and is not complete 1`] = `
 <div
-  className="loading-spinner icon-inline m-1"
+  className="loading-spinner icon-inline m-1 e2e-loading-spinner"
 />
 `;

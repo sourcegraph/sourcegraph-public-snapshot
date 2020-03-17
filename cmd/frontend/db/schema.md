@@ -30,19 +30,13 @@ Foreign-key constraints:
  repo_id          | bigint                   | not null
  rev              | text                     | not null
  diff             | text                     | not null
- error            | text                     | not null
- started_at       | timestamp with time zone | 
- finished_at      | timestamp with time zone | 
  created_at       | timestamp with time zone | not null default now()
  updated_at       | timestamp with time zone | not null default now()
  base_ref         | text                     | not null
- description      | text                     | not null
 Indexes:
     "campaign_jobs_pkey" PRIMARY KEY, btree (id)
     "campaign_jobs_campaign_plan_repo_rev_unique" UNIQUE CONSTRAINT, btree (campaign_plan_id, repo_id, rev) DEFERRABLE
     "campaign_jobs_campaign_plan_id" btree (campaign_plan_id)
-    "campaign_jobs_finished_at" btree (finished_at)
-    "campaign_jobs_started_at" btree (started_at)
 Check constraints:
     "campaign_jobs_base_ref_check" CHECK (base_ref <> ''::text)
 Foreign-key constraints:
@@ -110,7 +104,6 @@ Referenced by:
     TABLE "changeset_jobs" CONSTRAINT "changeset_jobs_campaign_id_fkey" FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE DEFERRABLE
 Triggers:
     trig_delete_campaign_reference_on_changesets AFTER DELETE ON campaigns FOR EACH ROW EXECUTE PROCEDURE delete_campaign_reference_on_changesets()
-    trig_validate_campaign_plan_is_finished BEFORE INSERT OR UPDATE ON campaigns FOR EACH ROW EXECUTE PROCEDURE validate_campaign_plan_is_finished()
 
 ```
 
