@@ -25,7 +25,7 @@ import (
 type BitbucketServerSource struct {
 	svc     *ExternalService
 	config  *schema.BitbucketServerConnection
-	exclude excluder
+	exclude excludeFunc
 	client  *bitbucketserver.Client
 }
 
@@ -59,13 +59,14 @@ func newBitbucketServerSource(svc *ExternalService, c *schema.BitbucketServerCon
 		return nil, err
 	}
 
-	var exclude excluder
+	var eb excludeBuilder
 	for _, r := range c.Exclude {
-		exclude.Exact(r.Name)
-		exclude.Exact(strconv.Itoa(r.Id))
-		exclude.Pattern(r.Pattern)
+		eb.Exact(r.Name)
+		eb.Exact(strconv.Itoa(r.Id))
+		eb.Pattern(r.Pattern)
 	}
-	if err := exclude.Err(); err != nil {
+	exclude, err := eb.Build()
+	if err != nil {
 		return nil, err
 	}
 
@@ -325,8 +326,8 @@ func (s *BitbucketServerSource) excludes(r *bitbucketserver.Repo) bool {
 		name = r.Project.Key + "/" + name
 	}
 	if r.State != "AVAILABLE" ||
-		s.exclude.Match(name) ||
-		s.exclude.Match(strconv.Itoa(r.ID)) ||
+		s.exclude(name) ||
+		s.exclude(strconv.Itoa(r.ID)) ||
 		(s.config.ExcludePersonalRepositories && r.IsPersonalRepository()) {
 		return true
 	}
