@@ -12,9 +12,7 @@ interface Props extends ThemeProps {
  */
 export const CreateCampaign: React.FunctionComponent<Props> = ({ className }) => (
     <div className={className}>
-        <h1>
-            Create a new campaign
-        </h1>
+        <h1>Create a new campaign</h1>
         <ul className="list-group">
             <li className="list-group-item p-3">
                 <Link to="new" className="text-decoration-none">
@@ -23,11 +21,11 @@ export const CreateCampaign: React.FunctionComponent<Props> = ({ className }) =>
                             <CampaignsIcon className="mr-3" />
                         </h3>
                         <div>
-                            <h3>Manual campaign</h3>
+                            <h3>Create a manual campaign</h3>
                             <p className="mb-0">
-                                Choose manual campaign when you want to track existing changesets with Sourcegraph. All
-                                added changesets can be tracked for their merge status and a burndown chart will give
-                                you an overview on the progress.
+                                Choose manual campaign if you want to track existing changesets (pull requests) with
+                                Sourcegraph. All added changesets can be monitored and a burndown chart will give you an
+                                overview on the progress.
                             </p>
                         </div>
                     </div>
@@ -40,13 +38,14 @@ export const CreateCampaign: React.FunctionComponent<Props> = ({ className }) =>
                             <CampaignsIcon className="mr-3" />
                         </h3>
                         <div>
-                            <h3>Automatic campaign</h3>
+                            <h3>Create a campaign using the src CLI</h3>
                             <p className="mb-0">
-                                Automatic campaigns are a powerful way to perform large-scale code changes through
-                                Sourcegraph. The `src` cli will allow you to generate all those desired changes. Then,
-                                go by the Sourcegraph UI, get an overview of all the changes and gradually or
-                                all-at-once roll out your code changes to hundreds of repositories across different code
-                                hosts.
+                                When a Campaign is created from a set of patches, one per repository, Sourcegraph will
+                                create changesets (pull requests) on the associated code hosts and track their progress
+                                in the newly created campaign, where you can manage them.
+                                <br />
+                                With the src CLI tool, you can not only create the campaign from an existing set of
+                                patches, but you can also generate the patches for a number of repositories.
                             </p>
                         </div>
                     </div>

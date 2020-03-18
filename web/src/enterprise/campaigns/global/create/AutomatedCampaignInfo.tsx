@@ -9,23 +9,23 @@ interface Props extends ThemeProps {
 }
 
 const combySample = `{
-    "scopeQuery": "lang:go fmt.Sprintf",
-    "steps": [
-      {
-        "type": "docker",
-        "image": "comby/comby",
-        "args": ["-in-place", "fmt.Sprintf(\"%d\", :[v])", "strconv.Itoa(:[v])", "-matcher", ".go", "-d", "/work"]
-      },
-      {
-        "type": "docker",
-        "image": "cytopia/goimports",
-        "args": ["-w", "/work"]
-      }
-    ]
-  }`
+  "scopeQuery": "lang:go fmt.Sprintf",
+  "steps": [
+    {
+      "type": "docker",
+      "image": "comby/comby",
+      "args": ["-in-place", "fmt.Sprintf(\\"%d\\", :[v])", "strconv.Itoa(:[v])", "-matcher", ".go", "-d", "/work"]
+    },
+    {
+      "type": "docker",
+      "image": "cytopia/goimports",
+      "args": ["-w", "/work"]
+    }
+  ]
+}`
 
 /**
- * A tutorial and a list of examples for automation
+ * A tutorial and a list of examples for campaigns
  */
 export const AutomatedCampaignInfo: React.FunctionComponent<Props> = ({ className }) => (
     <div className={className}>
@@ -48,7 +48,7 @@ export const AutomatedCampaignInfo: React.FunctionComponent<Props> = ({ classNam
                     <br />
                     <code>
                         export SRC_ENDPOINT={window.location.protocol}//{window.location.hostname}
-                        <br></br>
+                        <br />
                         curl -L ${'{'}SRC_ENDPOINT{'}'}/.api/src-cli/src_dawin_64 -o /usr/local/bin/src
                     </code>
                 </p>
@@ -69,36 +69,40 @@ export const AutomatedCampaignInfo: React.FunctionComponent<Props> = ({ classNam
                         <Collapsible
                             title={
                                 <h3 className="mb-0">
-                                    <LanguageGoIcon className="icon-inline mr-3"></LanguageGoIcon> Add install guide to
-                                    Go repositories
+                                    <LanguageGoIcon className="icon-inline mr-3" /> Add install guide to Go repositories
                                 </h3>
                             }
                         >
-                            <code>{combySample}</code>
+                            <div>
+                                <code>{combySample}</code>
+                            </div>
                         </Collapsible>
                     </li>
                     <li className="list-group-item p-2">
                         <Collapsible
                             title={
                                 <h3 className="mb-0">
-                                    <GithubCircleIcon className="icon-inline mr-3"></GithubCircleIcon> Add a GitHub
-                                    action to upload LSIF data to Sourcegraph
+                                    <GithubCircleIcon className="icon-inline mr-3" /> Add a GitHub action to upload LSIF
+                                    data to Sourcegraph
                                 </h3>
                             }
                         >
-                            <code>{combySample}</code>
+                            <div>
+                                <code>{combySample}</code>
+                            </div>
                         </Collapsible>
                     </li>
                     <li className="list-group-item p-2">
                         <Collapsible
                             title={
                                 <h3 className="mb-0">
-                                    <LanguageGoIcon className="icon-inline mr-3"></LanguageGoIcon> Refactor Go code with
-                                    Comby
+                                    <LanguageGoIcon className="icon-inline mr-3" /> Refactor Go code with Comby
                                 </h3>
                             }
                         >
-                            <code>{combySample}</code>
+                            <div>
+                                <code>{combySample}</code>
+                            </div>
                         </Collapsible>
                     </li>
                 </ul>
