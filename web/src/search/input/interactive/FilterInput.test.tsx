@@ -190,6 +190,6 @@ describe('FilterInput', () => {
         const confirmBtn = container.querySelector('.check-button__btn')
         expect(confirmBtn).toBeTruthy()
         fireEvent.click(confirmBtn!)
-        expect(defaultProps.onFilterEdited.calledWith(['content', '"test query"'])).toBe(true)
+        expect(defaultProps.onFilterEdited.calledWith('content', '"test query"')).toBe(true)
     })
 })
