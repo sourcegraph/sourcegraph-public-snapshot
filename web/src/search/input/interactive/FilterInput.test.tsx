@@ -54,8 +54,7 @@ describe('FilterInput', () => {
         }
         filterHandler(newFiltersInQuery, `${inputValue}`)
     }
-
-    it('filter input for content filters get auto-quoted', () => {
+    it('filter input for content filters get auto-quoted when not editable', () => {
         container = render(
             <FilterInput
                 {...defaultProps}
@@ -86,8 +85,40 @@ describe('FilterInput', () => {
         ).container
         expect(getByText(container, 'content:"test query"')).toBeTruthy()
     })
+    it('filter input for content filters get stripped of quotes when editable', () => {
+        container = render(
+            <FilterInput
+                {...defaultProps}
+                mapKey="content"
+                filterType={FilterType.content}
+                onFilterEdited={onFilterEditedHandler}
+                editable={true}
+            />
+        ).container
 
-    test('filter input for message filters get auto-quoted', () => {
+        const inputEl = container.querySelector('.filter-input__input-field')
+        expect(inputEl).toBeTruthy()
+        fireEvent.click(inputEl!)
+        fireEvent.change(inputEl!, { target: { value: 'test query' } })
+        const confirmBtn = container.querySelector('.check-button__btn')
+        expect(confirmBtn).toBeTruthy()
+        fireEvent.click(confirmBtn!)
+        container = render(
+            <FilterInput
+                {...defaultProps}
+                mapKey="content"
+                filtersInQuery={nextFiltersInQuery}
+                filterType={FilterType.content}
+                value={nextValue}
+                onFilterEdited={onFilterEditedHandler}
+                editable={false}
+            />
+        ).container
+        fireEvent.click(container.querySelector('.filter-input__button-text')!)
+        expect(getByText(container, 'content:test query')).toBeTruthy()
+    })
+
+    test('filter input for message filters do not get auto-quoted when editable', () => {
         container = render(
             <FilterInput
                 {...defaultProps}
@@ -139,5 +170,26 @@ describe('FilterInput', () => {
         expect(confirmBtn).toBeTruthy()
         fireEvent.click(confirmBtn!)
         expect(defaultProps.onFilterEdited.calledOnce).toBe(true)
+    })
+
+    it('filter input for content filters called filter edited handler with quoted value', () => {
+        container = render(
+            <FilterInput
+                {...defaultProps}
+                mapKey="content"
+                filterType={FilterType.content}
+                onFilterEdited={defaultProps.onFilterEdited}
+                editable={true}
+            />
+        ).container
+
+        const inputEl = container.querySelector('.filter-input__input-field')
+        expect(inputEl).toBeTruthy()
+        fireEvent.click(inputEl!)
+        fireEvent.change(inputEl!, { target: { value: 'test query' } })
+        const confirmBtn = container.querySelector('.check-button__btn')
+        expect(confirmBtn).toBeTruthy()
+        fireEvent.click(confirmBtn!)
+        expect(defaultProps.onFilterEdited.calledWith(['content', '"test query"'])).toBe(true)
     })
 })
