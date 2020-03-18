@@ -1,6 +1,5 @@
 import React from 'react'
 import * as GQL from '../../../../../shared/src/graphql/schema'
-import WarningIcon from 'mdi-react/WarningIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { ErrorAlert } from '../../../components/alerts'
@@ -8,6 +7,7 @@ import InformationIcon from 'mdi-react/InformationIcon'
 import { parseISO, isBefore, addMinutes } from 'date-fns'
 import { CampaignsIcon } from '../icons'
 import SyncIcon from 'mdi-react/SyncIcon'
+import { pluralize } from '../../../../../shared/src/util/strings'
 
 export interface CampaignStatusProps {
     campaign: Pick<GQL.ICampaign, 'closedAt' | 'viewerCanAdminister' | 'publishedAt'> & {
@@ -58,7 +58,7 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({ c
             }
             statusIndicatorComponent = (
                 <>
-                    <CampaignsIcon className="icon-inline text-success mr-1" /> Campaign is open
+                    <CampaignsIcon className="icon-inline text-success mr-1" /> Campaign is open.
                 </>
             )
             break
@@ -66,7 +66,8 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({ c
             statusIndicatorComponent = (
                 <>
                     <AlertCircleIcon className="icon-inline text-danger mr-1" />
-                    Error creating campaign
+                    {pluralize('Error', campaign.status.errors.length)} occurred while creating changesets. See below
+                    for details.
                 </>
             )
             break
