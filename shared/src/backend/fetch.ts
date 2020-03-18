@@ -5,8 +5,11 @@ const EHTTPSTATUS = 'HTTPStatusError'
 export class HTTPStatusError extends Error {
     public readonly name = EHTTPSTATUS
     public readonly code = EHTTPSTATUS
-    constructor(public response: Response) {
+    public readonly status: number
+
+    constructor(response: Response) {
         super(`Request to ${response.url} failed with ${response.status} ${response.statusText}`)
+        this.status = response.status
     }
 }
 
