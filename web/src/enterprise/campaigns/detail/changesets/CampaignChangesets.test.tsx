@@ -12,7 +12,7 @@ describe('CampaignChangesets', () => {
         expect(
             createRenderer().render(
                 <CampaignChangesets
-                    _queryChangesets={() =>
+                    queryChangesets={() =>
                         of({ nodes: [{ id: '0' } as GQL.IExternalChangeset] } as GQL.IExternalChangesetConnection)
                     }
                     campaign={{ __typename: 'Campaign', id: '123', closedAt: null }}

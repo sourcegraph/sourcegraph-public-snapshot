@@ -6,8 +6,8 @@ import { ThemeProps } from '../../../../../../shared/src/theme'
 import { FilteredConnection, FilteredConnectionQueryArgs, Connection } from '../../../../components/FilteredConnection'
 import { Observable, Subject } from 'rxjs'
 import { DEFAULT_CHANGESET_LIST_COUNT } from '../presentation'
-import { upperFirst } from 'lodash'
-import { queryChangesetPlans, queryChangesets } from '../backend'
+import { upperFirst, lowerCase } from 'lodash'
+import { queryChangesetPlans, queryChangesets as _queryChangesets } from '../backend'
 import { repeatWhen, delay, withLatestFrom, map, filter } from 'rxjs/operators'
 import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
 import { createHoverifier, HoveredToken, HoverState } from '@sourcegraph/codeintellify'
@@ -39,7 +39,7 @@ interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, Extens
     changesetUpdates: Subject<void>
 
     /** For testing only. */
-    _queryChangesets?: (
+    queryChangesets?: (
         campaignID: GQL.ID,
         args: FilteredConnectionQueryArgs
     ) => Observable<Connection<GQL.IExternalChangeset | GQL.IChangesetPlan>>
@@ -71,7 +71,7 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
     extensionsController,
     platformContext,
     telemetryService,
-    _queryChangesets = queryChangesets,
+    queryChangesets = _queryChangesets,
 }) => {
     const [state, setState] = useState<GQL.ChangesetState | undefined>()
     const [reviewState, setReviewState] = useState<GQL.ChangesetReviewState | undefined>()
@@ -84,10 +84,10 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
             > =
                 campaign.__typename === 'CampaignPlan'
                     ? queryChangesetPlans(campaign.id, args)
-                    : _queryChangesets(campaign.id, { ...args, state, reviewState, checkState })
+                    : queryChangesets(campaign.id, { ...args, state, reviewState, checkState })
             return queryObservable.pipe(repeatWhen(obs => obs.pipe(delay(5000))))
         },
-        [campaign.id, campaign.__typename, state, reviewState, checkState, _queryChangesets]
+        [campaign.id, campaign.__typename, state, reviewState, checkState, queryChangesets]
     )
 
     const containerElements = useMemo(() => new Subject<HTMLElement | null>(), [])
@@ -157,7 +157,7 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
                 <option value="">All</option>
                 {Object.values(GQL.ChangesetState).map(state => (
                     <option value={state} key={state}>
-                        {upperFirst(state.replace(/_/g, ' ').toLocaleLowerCase())}
+                        {upperFirst(lowerCase(state))}
                     </option>
                 ))}
             </select>
@@ -171,7 +171,7 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
                 <option value="">All</option>
                 {Object.values(GQL.ChangesetReviewState).map(state => (
                     <option value={state} key={state}>
-                        {upperFirst(state.replace(/_/g, ' ').toLocaleLowerCase())}
+                        {upperFirst(lowerCase(state))}
                     </option>
                 ))}
             </select>
@@ -185,7 +185,7 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
                 <option value="">All</option>
                 {Object.values(GQL.ChangesetCheckState).map(state => (
                     <option value={state} key={state}>
-                        {upperFirst(state.replace(/_/g, ' ').toLocaleLowerCase())}
+                        {upperFirst(lowerCase(state))}
                     </option>
                 ))}
             </select>
