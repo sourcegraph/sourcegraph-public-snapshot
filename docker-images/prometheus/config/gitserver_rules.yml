@@ -71,7 +71,43 @@ groups:
           src_gitserver_lsremote_queue / 25
           ), 0), 1) OR on() vector(1)
 
-      # Echo duration should never exceed 2s.
+      # Warn if concurrent execs exceed 50.
+      - record: alert_count
+        labels:
+          service_name: gitserver
+          level: critical
+          name: high_concurrent_execs
+          description: 'gitserver: 50+ concurrent command executions (abnormally high load)'
+        expr: >-
+          clamp_max(clamp_min(floor(
+          src_gitserver_exec_running / 50
+          ), 0), 1) OR on() vector(1)
+
+      # Critical if concurrent execs exceed 100.
+      - record: alert_count
+        labels:
+          service_name: gitserver
+          level: critical
+          name: high_concurrent_execs
+          description: 'gitserver: 100+ concurrent command executions (abnormally high load)'
+        expr: >-
+          clamp_max(clamp_min(floor(
+          src_gitserver_exec_running / 100
+          ), 0), 1) OR on() vector(1)
+
+      # Warn if echo duration exceeds 1s.
+      - record: alert_count
+        labels:
+          service_name: gitserver
+          level: critical
+          name: echo_duration_slow
+          description: 'gitserver: echo command execution duration exceeding 1s'
+        expr: >-
+          clamp_max(clamp_min(floor(
+          src_gitserver_echo_duration_seconds / 1
+          ), 0), 1) OR on() vector(1)
+
+      # Critical if echo duration exceeds 2s.
       - record: alert_count
         labels:
           service_name: gitserver

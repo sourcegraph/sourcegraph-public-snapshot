@@ -1,6 +1,28 @@
 groups:
   - name: frontend
     rules:
+      # Critical if there are 20+ hard search errors (timeouts or errors) over 5m.
+      - record: alert_count
+        labels:
+          service_name: frontend
+          level: critical
+          name: hard_search_error_response_high_timeouts
+          description: 'frontend: 20+ hard search errors (timeouts) over 5m'
+        expr: >-
+          clamp_max(clamp_min(floor(
+          ((sum(sum by (status)(increase(src_graphql_search_response{status="timeout"}[5m]))) + sum(sum by (status, alert_type)(increase(src_graphql_search_response{status="alert",alert_type="timed_out"}[5m])))) / 20) or on() vector(0)
+          ), 0), 1) OR on() vector(1)
+      - record: alert_count
+        labels:
+          service_name: frontend
+          level: critical
+          name: hard_search_error_response_high_errors
+          description: 'frontend: 20+ hard search errors (errors) over 5m'
+        expr: >-
+          clamp_max(clamp_min(floor(
+          ((sum by (status)(increase(src_graphql_search_response{status=~"error"}[5m]))) / 20) or on() vector(0)
+          ), 0), 1) OR on() vector(1)
+
       # Warn if there are 5+ hard search errors (timeouts or errors) over 5m.
       - record: alert_count
         labels:
