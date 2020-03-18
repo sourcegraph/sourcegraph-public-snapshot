@@ -6,6 +6,7 @@ import * as H from 'history'
 import { createRenderer } from 'react-test-renderer/shallow'
 import { of } from 'rxjs'
 import { CampaignStatusProps } from './CampaignStatus'
+import { NOOP_TELEMETRY_SERVICE } from '../../../../../shared/src/telemetry/telemetryService'
 
 jest.mock('./form/CampaignTitleField', () => ({ CampaignTitleField: 'CampaignTitleField' }))
 jest.mock('./form/CampaignDescriptionField', () => ({ CampaignDescriptionField: 'CampaignDescriptionField' }))
@@ -28,6 +29,9 @@ describe('CampaignDetails', () => {
                     location={history.location}
                     authenticatedUser={{ id: 'a', username: 'alice', avatarURL: null }}
                     isLightTheme={true}
+                    extensionsController={undefined as any}
+                    platformContext={undefined as any}
+                    telemetryService={NOOP_TELEMETRY_SERVICE}
                 />
             )
         ).toMatchSnapshot())
@@ -40,6 +44,9 @@ describe('CampaignDetails', () => {
                 location={{ ...history.location, search: 'plan=p' }}
                 authenticatedUser={{ id: 'a', username: 'alice', avatarURL: null }}
                 isLightTheme={true}
+                extensionsController={undefined as any}
+                platformContext={undefined as any}
+                telemetryService={NOOP_TELEMETRY_SERVICE}
                 _fetchCampaignPlanById={() =>
                     of({
                         __typename: 'CampaignPlan' as const,
@@ -67,6 +74,9 @@ describe('CampaignDetails', () => {
             location={history.location}
             authenticatedUser={{ id: 'a', username: 'alice', avatarURL: null }}
             isLightTheme={true}
+            extensionsController={undefined as any}
+            platformContext={undefined as any}
+            telemetryService={NOOP_TELEMETRY_SERVICE}
             _fetchCampaignById={() =>
                 of({
                     __typename: 'Campaign' as const,
