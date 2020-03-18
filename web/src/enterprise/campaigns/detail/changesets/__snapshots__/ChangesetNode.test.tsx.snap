@@ -84,9 +84,6 @@ Object {
                 sourcegraph
               </AnchorLink>
             </strong>
-            <DraftBadge
-              className="ml-2"
-            />
           </div>
         </div>
       </div>

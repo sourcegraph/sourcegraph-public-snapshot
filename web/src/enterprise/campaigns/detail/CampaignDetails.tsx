@@ -434,7 +434,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     </>
                 )}
                 {campaign && mode !== 'editing' && mode !== 'saving' && (
-                    <div className="card mt-3">
+                    <div className="card mt-2">
                         <div className="card-header">
                             <strong>
                                 <UserAvatar user={author} className="icon-inline" /> {author.username}
@@ -447,7 +447,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     </div>
                 )}
                 {(mode === 'editing' || mode === 'saving') && specifyingBranchAllowed && (
-                    <div className="form-group mt-3">
+                    <div className="form-group mt-2">
                         <label>
                             Branch name{' '}
                             <small>
@@ -477,13 +477,13 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         history={history}
                         location={location}
                         isLightTheme={isLightTheme}
-                        className="my-3"
+                        className="mt-4"
                     />
                 )}
                 {!updateMode ? (
                     (!campaign || campaignPlan) && (
                         <>
-                            <div className="mt-3">
+                            <div className="mt-2">
                                 {campaignPlan && (
                                     <button
                                         type="submit"
@@ -506,7 +506,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         </>
                     )
                 ) : (
-                    <div className="mb-3">
+                    <div className="mb-0">
                         <button type="reset" className="btn btn-secondary mr-1" onClick={onCancel}>
                             Cancel
                         </button>
@@ -526,7 +526,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 <>
                     {campaign && !['saving', 'editing'].includes(mode) && (
                         <>
-                            <h3 className="mt-3 mb-2">Progress</h3>
+                            <h3 className="mt-4 mb-2">Progress</h3>
                             <CampaignBurndownChart
                                 changesetCountsOverTime={campaign.changesetCountsOverTime}
                                 history={history}
@@ -538,7 +538,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         </>
                     )}
 
-                    <h3 className="mt-3 d-flex align-items-end mb-0">
+                    <h3 className="mt-4 d-flex align-items-end mb-0">
                         {totalChangesetPlanCount > 0 && (
                             <>
                                 {totalChangesetPlanCount} {pluralize('Patch', totalChangesetPlanCount, 'Patches')}

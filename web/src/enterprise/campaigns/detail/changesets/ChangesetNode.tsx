@@ -33,7 +33,6 @@ import ErrorIcon from 'mdi-react/ErrorIcon'
 import { asError } from '../../../../../../shared/src/util/errors'
 import { ChangesetLabel } from './ChangesetLabel'
 import classNames from 'classnames'
-import { DraftBadge } from '../../DraftBadge'
 import SyncIcon from 'mdi-react/SyncIcon'
 import { parseISO, formatDistance } from 'date-fns'
 
@@ -193,9 +192,6 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                                     />
                                 </span>
                             </small>
-                        )}
-                        {node.__typename === 'ChangesetPlan' && !isPublishing && enablePublishing && (
-                            <DraftBadge className="ml-2" />
                         )}
                     </div>
                 </div>

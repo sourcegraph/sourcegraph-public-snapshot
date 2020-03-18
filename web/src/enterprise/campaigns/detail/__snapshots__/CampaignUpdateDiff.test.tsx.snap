@@ -3,7 +3,7 @@
 exports[`CampaignUpdateDiff renders 1`] = `
 <div>
   <h3
-    className="mt-3 mb-2"
+    className="mt-4 mb-2"
   >
     Preview of changes
   </h3>
@@ -114,7 +114,7 @@ exports[`CampaignUpdateDiff renders 1`] = `
     </div>
   </div>
   <div
-    className="alert alert-info mt-3"
+    className="alert alert-info mt-2"
   >
     <svg
       className="mdi-icon icon-inline"

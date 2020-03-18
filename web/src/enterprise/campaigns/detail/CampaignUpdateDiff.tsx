@@ -133,7 +133,7 @@ export const CampaignUpdateDiff: React.FunctionComponent<Props> = ({
             : 0
         return (
             <div className={className}>
-                <h3 className="mt-3 mb-2">Preview of changes</h3>
+                <h3 className="mt-4 mb-2">Preview of changes</h3>
                 <p>
                     Campaign currently has {campaign.changesets.totalCount + campaign.changesetPlans.totalCount}{' '}
                     {pluralize('changeset', campaign.changesets.totalCount + campaign.changesetPlans.totalCount)} (
@@ -241,7 +241,7 @@ export const CampaignUpdateDiff: React.FunctionComponent<Props> = ({
                         {deleted.length === 0 && <span className="text-muted">No changesets</span>}
                     </div>
                 </TabsWithLocalStorageViewStatePersistence>
-                <div className="alert alert-info mt-3">
+                <div className="alert alert-info mt-2">
                     <AlertCircleIcon className="icon-inline" /> You are updating an existing campaign. By clicking
                     'Update', all above changesets that are not 'unmodified' will be updated on the codehost.
                 </div>

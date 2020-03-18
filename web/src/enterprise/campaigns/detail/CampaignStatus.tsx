@@ -1,6 +1,6 @@
 import React from 'react'
 import * as GQL from '../../../../../shared/src/graphql/schema'
-import { ErrorAlert } from '../../../components/alerts'
+import { ErrorMessage } from '../../../components/alerts'
 import SyncIcon from 'mdi-react/SyncIcon'
 import { pluralize } from '../../../../../shared/src/util/strings'
 
@@ -40,27 +40,27 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({ c
 
     let statusIndicatorComponent: JSX.Element | undefined
     switch (state) {
-        case 'completed':
-            // no completion status for drafts
-            if (isDraft) {
-                break
-            }
-            statusIndicatorComponent = <>Campaign is open.</>
-            break
         case 'errored':
             statusIndicatorComponent = (
                 <>
-                    <div className="d-flex align-items-center alert alert-danger mb-0 mt-2">
+                    <div className="alert alert-danger my-4">
+                        <h3 className="alert-heading mb-0">Creating changesets failed</h3>
+                        <ul className="mt-2">
+                            {status.errors.map((error, i) => (
+                                // There is no other suitable key, so:
+                                // eslint-disable-next-line react/no-array-index-key
+                                <li className="mb-2" key={i}>
+                                    <code>
+                                        <ErrorMessage error={error} />
+                                    </code>
+                                </li>
+                            ))}
+                        </ul>
                         {campaign.viewerCanAdminister && (
                             <button type="button" className="btn btn-primary mb-0" onClick={onRetry}>
-                                Retry failed jobs
+                                Retry
                             </button>
                         )}
-                        <p className="mb-0 ml-2">
-                            {campaign.status.errors.length > 1 ? 'Some' : 'An'}{' '}
-                            {pluralize('error', campaign.status.errors.length)} occurred while creating changesets. See
-                            below for details.
-                        </p>
                     </div>
                 </>
             )
@@ -68,13 +68,28 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({ c
         case 'processing':
             statusIndicatorComponent = (
                 <>
-                    <SyncIcon className="icon-inline text-info mr-1" />
-                    Campaign is processing
+                    <div className="alert alert-info mt-4">
+                        <p>
+                            <SyncIcon className="icon-inline" /> Creating {status.pendingCount + status.completedCount}{' '}
+                            {pluralize('changeset', status.pendingCount + status.completedCount)} on code hosts...
+                        </p>
+                        <div className="progress mt-2 mb-1">
+                            {/* we need to set the width to control the progress bar, so: */}
+                            {/* eslint-disable-next-line react/forbid-dom-props */}
+                            <div className="progress-bar" style={{ width: progress + '%' }}>
+                                &nbsp;
+                            </div>
+                        </div>
+                    </div>
                 </>
             )
             break
         case 'closed':
-            statusIndicatorComponent = <>Campaign is closed. No changes can be made to this campaign anymore.</>
+            statusIndicatorComponent = (
+                <div className="alert alert-secondary mt-2">
+                    Campaign is closed. No changes can be made to this campaign anymore.
+                </div>
+            )
             break
     }
 
@@ -83,7 +98,7 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({ c
             {statusIndicatorComponent && <div>{statusIndicatorComponent}</div>}
             {isDraft && state !== 'closed' && (
                 <>
-                    <div className="d-flex align-items-center alert alert-info mb-0 mt-2">
+                    <div className="d-flex align-items-center alert alert-warning my-4">
                         {campaign.viewerCanAdminister && (
                             <button type="button" className="btn btn-primary mb-0" onClick={onPublish}>
                                 Publish campaign
@@ -99,25 +114,6 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({ c
                     </div>
                 </>
             )}
-            {state === 'processing' && (
-                <div>
-                    <div className="progress mt-2 mb-1">
-                        {/* we need to set the width to control the progress bar, so: */}
-                        {/* eslint-disable-next-line react/forbid-dom-props */}
-                        <div className="progress-bar" style={{ width: progress + '%' }}>
-                            &nbsp;
-                        </div>
-                    </div>
-                    <p>
-                        Creating changesets: {status.completedCount} / {status.pendingCount + status.completedCount}
-                    </p>
-                </div>
-            )}
-            {status.errors.map((error, i) => (
-                // There is no other suitable key, so:
-                // eslint-disable-next-line react/no-array-index-key
-                <ErrorAlert error={error} className="mt-2 mb-0" key={i} />
-            ))}
         </>
     )
 }

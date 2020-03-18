@@ -5,27 +5,38 @@ exports[`CampaignStatus viewerCanAdminister: false campaign errored 1`] = `
   <div>
     <React.Fragment>
       <div
-        className="d-flex align-items-center alert alert-danger mb-0 mt-2"
+        className="alert alert-danger my-4"
       >
-        <p
-          className="mb-0 ml-2"
+        <h3
+          className="alert-heading mb-0"
         >
-          Some
-           
-          errors
-           occurred while creating changesets. See below for details.
-        </p>
+          Creating changesets failed
+        </h3>
+        <ul
+          className="mt-2"
+        >
+          <li
+            className="mb-2"
+          >
+            <code>
+              <ErrorMessage
+                error="a"
+              />
+            </code>
+          </li>
+          <li
+            className="mb-2"
+          >
+            <code>
+              <ErrorMessage
+                error="b"
+              />
+            </code>
+          </li>
+        </ul>
       </div>
     </React.Fragment>
   </div>
-  <ErrorAlert
-    className="mt-2 mb-0"
-    error="a"
-  />
-  <ErrorAlert
-    className="mt-2 mb-0"
-    error="b"
-  />
 </React.Fragment>
 `;
 
@@ -33,51 +44,47 @@ exports[`CampaignStatus viewerCanAdminister: false campaign processing 1`] = `
 <React.Fragment>
   <div>
     <React.Fragment>
-      <Memo(SyncIcon)
-        className="icon-inline text-info mr-1"
-      />
-      Campaign is processing
+      <div
+        className="alert alert-info mt-4"
+      >
+        <p>
+          <Memo(SyncIcon)
+            className="icon-inline"
+          />
+           Creating 
+          6
+           
+          changesets
+           on code hosts...
+        </p>
+        <div
+          className="progress mt-2 mb-1"
+        >
+          <div
+            className="progress-bar"
+            style={
+              Object {
+                "width": "50%",
+              }
+            }
+          >
+             
+          </div>
+        </div>
+      </div>
     </React.Fragment>
   </div>
-  <div>
-    <div
-      className="progress mt-2 mb-1"
-    >
-      <div
-        className="progress-bar"
-        style={
-          Object {
-            "width": "50%",
-          }
-        }
-      >
-         
-      </div>
-    </div>
-    <p>
-      Creating changesets: 
-      3
-       / 
-      6
-    </p>
-  </div>
-  <ErrorAlert
-    className="mt-2 mb-0"
-    error="a"
-  />
-  <ErrorAlert
-    className="mt-2 mb-0"
-    error="b"
-  />
 </React.Fragment>
 `;
 
 exports[`CampaignStatus viewerCanAdminister: false closed campaign 1`] = `
 <React.Fragment>
   <div>
-    <React.Fragment>
+    <div
+      className="alert alert-secondary mt-2"
+    >
       Campaign is closed. No changes can be made to this campaign anymore.
-    </React.Fragment>
+    </div>
   </div>
 </React.Fragment>
 `;
@@ -86,7 +93,7 @@ exports[`CampaignStatus viewerCanAdminister: false drafted campaign 1`] = `
 <React.Fragment>
   <React.Fragment>
     <div
-      className="d-flex align-items-center alert alert-info mb-0 mt-2"
+      className="d-flex align-items-center alert alert-warning my-4"
     >
       <p
         className="mb-0 ml-2"
@@ -106,7 +113,7 @@ exports[`CampaignStatus viewerCanAdminister: false drafted campaign, some publis
 <React.Fragment>
   <React.Fragment>
     <div
-      className="d-flex align-items-center alert alert-info mb-0 mt-2"
+      className="d-flex align-items-center alert alert-warning my-4"
     >
       <p
         className="mb-0 ml-2"
@@ -127,34 +134,45 @@ exports[`CampaignStatus viewerCanAdminister: true campaign errored 1`] = `
   <div>
     <React.Fragment>
       <div
-        className="d-flex align-items-center alert alert-danger mb-0 mt-2"
+        className="alert alert-danger my-4"
       >
+        <h3
+          className="alert-heading mb-0"
+        >
+          Creating changesets failed
+        </h3>
+        <ul
+          className="mt-2"
+        >
+          <li
+            className="mb-2"
+          >
+            <code>
+              <ErrorMessage
+                error="a"
+              />
+            </code>
+          </li>
+          <li
+            className="mb-2"
+          >
+            <code>
+              <ErrorMessage
+                error="b"
+              />
+            </code>
+          </li>
+        </ul>
         <button
           className="btn btn-primary mb-0"
           onClick={[Function]}
           type="button"
         >
-          Retry failed jobs
+          Retry
         </button>
-        <p
-          className="mb-0 ml-2"
-        >
-          Some
-           
-          errors
-           occurred while creating changesets. See below for details.
-        </p>
       </div>
     </React.Fragment>
   </div>
-  <ErrorAlert
-    className="mt-2 mb-0"
-    error="a"
-  />
-  <ErrorAlert
-    className="mt-2 mb-0"
-    error="b"
-  />
 </React.Fragment>
 `;
 
@@ -162,51 +180,47 @@ exports[`CampaignStatus viewerCanAdminister: true campaign processing 1`] = `
 <React.Fragment>
   <div>
     <React.Fragment>
-      <Memo(SyncIcon)
-        className="icon-inline text-info mr-1"
-      />
-      Campaign is processing
+      <div
+        className="alert alert-info mt-4"
+      >
+        <p>
+          <Memo(SyncIcon)
+            className="icon-inline"
+          />
+           Creating 
+          6
+           
+          changesets
+           on code hosts...
+        </p>
+        <div
+          className="progress mt-2 mb-1"
+        >
+          <div
+            className="progress-bar"
+            style={
+              Object {
+                "width": "50%",
+              }
+            }
+          >
+             
+          </div>
+        </div>
+      </div>
     </React.Fragment>
   </div>
-  <div>
-    <div
-      className="progress mt-2 mb-1"
-    >
-      <div
-        className="progress-bar"
-        style={
-          Object {
-            "width": "50%",
-          }
-        }
-      >
-         
-      </div>
-    </div>
-    <p>
-      Creating changesets: 
-      3
-       / 
-      6
-    </p>
-  </div>
-  <ErrorAlert
-    className="mt-2 mb-0"
-    error="a"
-  />
-  <ErrorAlert
-    className="mt-2 mb-0"
-    error="b"
-  />
 </React.Fragment>
 `;
 
 exports[`CampaignStatus viewerCanAdminister: true closed campaign 1`] = `
 <React.Fragment>
   <div>
-    <React.Fragment>
+    <div
+      className="alert alert-secondary mt-2"
+    >
       Campaign is closed. No changes can be made to this campaign anymore.
-    </React.Fragment>
+    </div>
   </div>
 </React.Fragment>
 `;
@@ -215,7 +229,7 @@ exports[`CampaignStatus viewerCanAdminister: true drafted campaign 1`] = `
 <React.Fragment>
   <React.Fragment>
     <div
-      className="d-flex align-items-center alert alert-info mb-0 mt-2"
+      className="d-flex align-items-center alert alert-warning my-4"
     >
       <button
         className="btn btn-primary mb-0"
@@ -242,7 +256,7 @@ exports[`CampaignStatus viewerCanAdminister: true drafted campaign, some publish
 <React.Fragment>
   <React.Fragment>
     <div
-      className="d-flex align-items-center alert alert-info mb-0 mt-2"
+      className="d-flex align-items-center alert alert-warning my-4"
     >
       <button
         className="btn btn-primary mb-0"
