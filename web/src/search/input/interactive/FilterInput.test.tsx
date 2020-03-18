@@ -85,7 +85,7 @@ describe('FilterInput', () => {
         ).container
         expect(getByText(container, 'content:"test query"')).toBeTruthy()
     })
-    it('filter input for content filters get stripped of quotes when editable', () => {
+    it('filter input for content filters gets stripped of quotes when editable', () => {
         container = render(
             <FilterInput
                 {...defaultProps}
