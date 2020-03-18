@@ -168,7 +168,7 @@ describe('Code intelligence regression test suite', () => {
                 line: 41,
                 token: 'SamplePair',
                 precise: false,
-                expectedHoverContains: 'SamplePair pairs a SampleValue with a Timestamp.',
+                expectedHoverContains: 'type SamplePair struct ',
                 expectedDefinition: [
                     {
                         url: `/github.com/sourcegraph-testing/prometheus-common@${prometheusCommonHeadCommit}/-/blob/model/value.go#L78:1`,
