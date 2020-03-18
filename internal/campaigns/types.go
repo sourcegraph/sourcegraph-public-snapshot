@@ -42,20 +42,14 @@ type CampaignPlanPatch struct {
 	Patch   string
 }
 
-// A CampaignPlan represents the application of a CampaignType to the Arguments
-// over multiple repositories.
+// A CampaignPlan is a collection of multiple CampaignJobs.
 type CampaignPlan struct {
 	ID int64
 
-	CampaignType string
-	UserID       int32
+	UserID int32
 
-	// Arguments is a JSONC string
-	Arguments string
-
-	CanceledAt time.Time
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 // Clone returns a clone of a CampaignPlan.

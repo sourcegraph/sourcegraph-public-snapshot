@@ -10,6 +10,7 @@ import (
 
 	ossAuthz "github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	ossDB "github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/shared"
@@ -80,15 +81,7 @@ func enterpriseInit(
 
 // startBackgroundPermsSync sets up background permissions syncing.
 func startBackgroundPermsSync(ctx context.Context, syncer *authz.PermsSyncer, db dbutil.DB) {
-	// Block until config is available, otherwise will always get default value (i.e. false).
-	enabled := conf.Cached(func() interface{} {
-		return conf.PermissionsBackgroundSyncEnabled()
-	})().(bool)
-	if !enabled {
-		log15.Debug("startBackgroundPermsSync.notEnabled")
-		return
-	}
-
+	globals.WatchPermissionsBackgroundSync()
 	go func() {
 		t := time.NewTicker(5 * time.Second)
 		for range t.C {

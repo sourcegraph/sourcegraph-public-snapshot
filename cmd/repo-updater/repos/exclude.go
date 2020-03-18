@@ -5,14 +5,20 @@ import (
 	"strings"
 )
 
-type excluder struct {
+// excludeFunc takes a string and returns true if it should be excluded. In
+// the case of repo sourcing it will take a repository name or ID as input.
+type excludeFunc func(string) bool
+
+// excludeBuilder builds an excludeFunc.
+type excludeBuilder struct {
 	exact    map[string]struct{}
 	patterns []*regexp.Regexp
 
 	err error
 }
 
-func (e *excluder) Exact(name string) {
+// Exact will case-insensitively exclude the string name.
+func (e *excludeBuilder) Exact(name string) {
 	if e.exact == nil {
 		e.exact = map[string]struct{}{}
 	}
@@ -22,7 +28,8 @@ func (e *excluder) Exact(name string) {
 	e.exact[strings.ToLower(name)] = struct{}{}
 }
 
-func (e *excluder) Pattern(pattern string) {
+// Pattern will exclude strings matching the regex pattern.
+func (e *excludeBuilder) Pattern(pattern string) {
 	if pattern == "" {
 		return
 	}
@@ -35,20 +42,20 @@ func (e *excluder) Pattern(pattern string) {
 	e.patterns = append(e.patterns, re)
 }
 
-func (e *excluder) Err() error {
-	return e.err
-}
-
-func (e *excluder) Match(name string) bool {
-	if _, ok := e.exact[strings.ToLower(name)]; ok {
-		return true
-	}
-
-	for _, re := range e.patterns {
-		if re.MatchString(name) {
+// Build will return an excludeFunc based on the previous calls to Exact and
+// Pattern.
+func (e *excludeBuilder) Build() (excludeFunc, error) {
+	return func(name string) bool {
+		if _, ok := e.exact[strings.ToLower(name)]; ok {
 			return true
 		}
-	}
 
-	return false
+		for _, re := range e.patterns {
+			if re.MatchString(name) {
+				return true
+			}
+		}
+
+		return false
+	}, e.err
 }
