@@ -84,7 +84,7 @@ import { phabricatorCodeHost } from '../phabricator/code_intelligence'
 import { CodeView, fetchFileContents, trackCodeViews } from './code_views'
 import { ContentView, handleContentViews } from './content_views'
 import { applyDecorations, initializeExtensions, renderCommandPalette, renderGlobalDebug } from './extensions'
-import { renderViewContextOnSourcegraph, ViewOnSourcegraphButtonClassProps } from './external_links'
+import { ViewOnSourcegraphButtonClassProps, ViewOnSourcegraphButton } from './external_links'
 import { ExtensionHoverAlertType, getActiveHoverAlerts, onHoverAlertDismissed } from './hover_alerts'
 import {
     handleNativeTooltips,
@@ -537,6 +537,13 @@ export function observeHoverOverlayMountLocation(
     )
 }
 
+export interface HandleCodeHostOptions extends CodeIntelligenceProps {
+    mutations: Observable<MutationRecordLike[]>
+    sourcegraphURL: string
+    render: typeof reactDOMRender
+    minimalUI: boolean
+}
+
 export function handleCodeHost({
     mutations,
     codeHost,
@@ -547,22 +554,10 @@ export function handleCodeHost({
     telemetryService,
     render,
     minimalUI,
-}: CodeIntelligenceProps & {
-    mutations: Observable<MutationRecordLike[]>
-    sourcegraphURL: string
-    render: typeof reactDOMRender
-    minimalUI?: boolean
-}): Subscription {
+}: HandleCodeHostOptions): Subscription {
     const history = H.createBrowserHistory()
     const subscriptions = new Subscription()
     const { requestGraphQL } = platformContext
-
-    const ensureRepoExists = ({ rawRepoName, rev }: CodeHostContext): Observable<boolean> =>
-        resolveRev({ repoName: rawRepoName, rev, requestGraphQL }).pipe(
-            retryWhenCloneInProgressError(),
-            map(rev => !!rev),
-            catchError(() => [false])
-        )
 
     const openOptionsMenu = (): Promise<void> => browser.runtime.sendMessage({ type: 'openOptionsPage' })
 
@@ -624,18 +619,29 @@ export function handleCodeHost({
     }
 
     // Render view on Sourcegraph button
-    if (codeHost.getViewContextOnSourcegraphMount && codeHost.getContext && !minimalUI) {
+    if (codeHost.getViewContextOnSourcegraphMount && codeHost.getContext) {
         const { getContext, viewOnSourcegraphButtonClassProps } = codeHost
-        subscriptions.add(
-            addedElements.pipe(map(codeHost.getViewContextOnSourcegraphMount), filter(isDefined)).subscribe(
-                renderViewContextOnSourcegraph({
-                    sourcegraphURL,
-                    getContext,
-                    viewOnSourcegraphButtonClassProps,
-                    ensureRepoExists,
-                    onConfigureSourcegraphClick: isInPage ? undefined : openOptionsMenu,
-                })
+
+        const ensureRepoExists = ({ rawRepoName, rev }: CodeHostContext): Observable<boolean> =>
+            resolveRev({ repoName: rawRepoName, rev, requestGraphQL }).pipe(
+                retryWhenCloneInProgressError(),
+                map(rev => !!rev)
             )
+
+        subscriptions.add(
+            addedElements.pipe(map(codeHost.getViewContextOnSourcegraphMount), filter(isDefined)).subscribe(mount => {
+                render(
+                    <ViewOnSourcegraphButton
+                        {...viewOnSourcegraphButtonClassProps}
+                        context={getContext()}
+                        minimalUI={minimalUI}
+                        sourcegraphURL={sourcegraphURL}
+                        ensureRepoExists={ensureRepoExists}
+                        onConfigureSourcegraphClick={isInPage ? undefined : openOptionsMenu}
+                    />,
+                    mount
+                )
+            })
         )
     }
 
@@ -959,10 +965,8 @@ export async function injectCodeIntelligenceToCodeHost(
     const initialSettingsResult = await checkUserLoggedInAndFetchSettings(
         requestGraphQLHelper(isExtension, sourcegraphURL)
     ).toPromise()
-    if (!initialSettingsResult.userLoggedIn) {
-        // Exit early when the user is not logged in to the Sourcegraph instance.
+    if (!initialSettingsResult.userSignedIn) {
         console.warn(`Sourcegraph is disabled: you must be logged in to ${sourcegraphURL} to use Sourcegraph.`)
-        return subscriptions
     }
     const { platformContext, extensionsController } = initializeExtensions(
         codeHost,

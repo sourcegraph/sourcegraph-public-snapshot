@@ -39,7 +39,7 @@ import { NotificationClassNameProps } from '../../../../shared/src/notifications
 export function initializeExtensions(
     { urlToFile, getContext }: Pick<CodeHost, 'urlToFile' | 'getContext'>,
     urls: SourcegraphIntegrationURLs,
-    initialSettings: Pick<ISettingsCascade, 'subjects' | 'final'>,
+    initialSettings: Pick<ISettingsCascade, 'subjects' | 'final'> | undefined,
     isExtension: boolean
 ): PlatformContextProps & ExtensionsControllerProps {
     const platformContext = createPlatformContext({ urlToFile, getContext }, urls, initialSettings, isExtension)

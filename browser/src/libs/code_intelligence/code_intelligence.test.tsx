@@ -14,7 +14,7 @@ import { SuccessGraphQLResult } from '../../../../shared/src/graphql/graphql'
 import { IQuery } from '../../../../shared/src/graphql/schema'
 import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
 import { resetAllMemoizationCaches } from '../../../../shared/src/util/memoizeObservable'
-import { isDefined } from '../../../../shared/src/util/types'
+import { isDefined, subTypeOf } from '../../../../shared/src/util/types'
 import { DEFAULT_SOURCEGRAPH_URL } from '../../shared/util/context'
 import { MutationRecordLike } from '../../shared/util/dom'
 import {
@@ -24,6 +24,7 @@ import {
     FileInfo,
     handleCodeHost,
     observeHoverOverlayMountLocation,
+    HandleCodeHostOptions,
 } from './code_intelligence'
 import { toCodeViewResolver } from './code_views'
 import { DEFAULT_GRAPHQL_RESPONSES, mockRequestGraphQL } from './test_helpers'
@@ -77,6 +78,18 @@ const createMockPlatformContext = (
     ...partialMocks,
 })
 
+const commonArgs = () =>
+    subTypeOf<Partial<HandleCodeHostOptions>>()({
+        mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
+        showGlobalDebug: false,
+        platformContext: createMockPlatformContext(),
+        sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
+        telemetryService: NOOP_TELEMETRY_SERVICE,
+        render: RENDER,
+        userSignedIn: true,
+        minimalUI: false,
+    })
+
 describe('code_intelligence', () => {
     beforeEach(() => {
         document.body.innerHTML = ''
@@ -113,7 +126,7 @@ describe('code_intelligence', () => {
             const { services } = await integrationTestContext()
             subscriptions.add(
                 handleCodeHost({
-                    mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
+                    ...commonArgs(),
                     codeHost: {
                         type: 'github',
                         name: 'GitHub',
@@ -122,11 +135,6 @@ describe('code_intelligence', () => {
                         notificationClassNames,
                     },
                     extensionsController: createMockController(services),
-                    showGlobalDebug: false,
-                    platformContext: createMockPlatformContext(),
-                    sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
-                    telemetryService: NOOP_TELEMETRY_SERVICE,
-                    render: RENDER,
                 })
             )
             const overlayMount = document.body.querySelector('.hover-overlay-mount')
@@ -141,7 +149,7 @@ describe('code_intelligence', () => {
             const commandPaletteMount = createTestElement()
             subscriptions.add(
                 handleCodeHost({
-                    mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
+                    ...commonArgs(),
                     codeHost: {
                         type: 'github',
                         name: 'GitHub',
@@ -151,11 +159,6 @@ describe('code_intelligence', () => {
                         notificationClassNames,
                     },
                     extensionsController: createMockController(services),
-                    showGlobalDebug: false,
-                    platformContext: createMockPlatformContext(),
-                    sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
-                    telemetryService: NOOP_TELEMETRY_SERVICE,
-                    render: RENDER,
                 })
             )
             const renderedCommandPalette = elementRenderedAtMount(commandPaletteMount)
@@ -166,7 +169,7 @@ describe('code_intelligence', () => {
             const { services } = await integrationTestContext()
             subscriptions.add(
                 handleCodeHost({
-                    mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
+                    ...commonArgs(),
                     codeHost: {
                         type: 'github',
                         name: 'GitHub',
@@ -176,10 +179,6 @@ describe('code_intelligence', () => {
                     },
                     extensionsController: createMockController(services),
                     showGlobalDebug: true,
-                    platformContext: createMockPlatformContext(),
-                    sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
-                    telemetryService: NOOP_TELEMETRY_SERVICE,
-                    render: RENDER,
                 })
             )
             const globalDebugMount = document.body.querySelector('.global-debug')
@@ -201,7 +200,7 @@ describe('code_intelligence', () => {
             }
             subscriptions.add(
                 handleCodeHost({
-                    mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
+                    ...commonArgs(),
                     codeHost: {
                         type: 'github',
                         name: 'GitHub',
@@ -238,9 +237,6 @@ describe('code_intelligence', () => {
                                 } as SuccessGraphQLResult<IQuery>),
                         }),
                     }),
-                    sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
-                    telemetryService: NOOP_TELEMETRY_SERVICE,
-                    render: RENDER,
                 })
             )
             await from(services.editor.editorUpdates)
@@ -279,7 +275,7 @@ describe('code_intelligence', () => {
                 codeView.appendChild(line)
                 subscriptions.add(
                     handleCodeHost({
-                        mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
+                        ...commonArgs(),
                         codeHost: {
                             type: 'github',
                             name: 'GitHub',
@@ -299,10 +295,6 @@ describe('code_intelligence', () => {
                         },
                         extensionsController: createMockController(services),
                         showGlobalDebug: true,
-                        platformContext: createMockPlatformContext(),
-                        sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
-                        telemetryService: NOOP_TELEMETRY_SERVICE,
-                        render: RENDER,
                     })
                 )
                 const activeEditor = await from(extensionAPI.app.activeWindowChanges)
@@ -394,7 +386,7 @@ describe('code_intelligence', () => {
                 }
                 subscriptions.add(
                     handleCodeHost({
-                        mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
+                        ...commonArgs(),
                         codeHost: {
                             type: 'github',
                             name: 'GitHub',
@@ -410,9 +402,6 @@ describe('code_intelligence', () => {
                         extensionsController: createMockController(services),
                         showGlobalDebug: true,
                         platformContext: createMockPlatformContext({}),
-                        sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
-                        telemetryService: NOOP_TELEMETRY_SERVICE,
-                        render: RENDER,
                     })
                 )
                 await from(extensionAPI.app.activeWindowChanges)
@@ -537,6 +526,7 @@ describe('code_intelligence', () => {
             ])
             subscriptions.add(
                 handleCodeHost({
+                    ...commonArgs(),
                     mutations,
                     codeHost: {
                         type: 'github',
@@ -558,9 +548,6 @@ describe('code_intelligence', () => {
                     extensionsController: createMockController(services),
                     showGlobalDebug: true,
                     platformContext: createMockPlatformContext(),
-                    sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
-                    telemetryService: NOOP_TELEMETRY_SERVICE,
-                    render: RENDER,
                 })
             )
             await from(services.editor.editorUpdates)
@@ -624,7 +611,7 @@ describe('code_intelligence', () => {
             }
             subscriptions.add(
                 handleCodeHost({
-                    mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
+                    ...commonArgs(),
                     codeHost: {
                         type: 'github',
                         name: 'GitHub',
@@ -644,10 +631,6 @@ describe('code_intelligence', () => {
                     },
                     extensionsController: createMockController(services),
                     showGlobalDebug: true,
-                    platformContext: createMockPlatformContext(),
-                    sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
-                    telemetryService: NOOP_TELEMETRY_SERVICE,
-                    render: RENDER,
                 })
             )
             await from(services.editor.editorUpdates)
@@ -673,7 +656,7 @@ describe('code_intelligence', () => {
             }
             subscriptions.add(
                 handleCodeHost({
-                    mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
+                    ...commonArgs(),
                     codeHost: {
                         type: 'github',
                         name: 'GitHub',
@@ -704,9 +687,6 @@ describe('code_intelligence', () => {
                             },
                         }),
                     },
-                    sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
-                    telemetryService: NOOP_TELEMETRY_SERVICE,
-                    render: RENDER,
                 })
             )
             await from(services.editor.editorUpdates)
@@ -735,7 +715,7 @@ describe('code_intelligence', () => {
             }
             subscriptions.add(
                 handleCodeHost({
-                    mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
+                    ...commonArgs(),
                     codeHost: {
                         type: 'github',
                         name: 'GitHub',
@@ -766,9 +746,6 @@ describe('code_intelligence', () => {
                             },
                         }),
                     },
-                    sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
-                    telemetryService: NOOP_TELEMETRY_SERVICE,
-                    render: RENDER,
                 })
             )
             await from(services.editor.editorUpdates)
@@ -791,7 +768,7 @@ describe('code_intelligence', () => {
             }
             subscriptions.add(
                 handleCodeHost({
-                    mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
+                    ...commonArgs(),
                     codeHost: {
                         type: 'github',
                         name: 'GitHub',
@@ -821,9 +798,6 @@ describe('code_intelligence', () => {
                             ResolveRev: () => throwError(new PrivateRepoPublicSourcegraphComError('ResolveRev')),
                         }),
                     }),
-                    sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
-                    telemetryService: NOOP_TELEMETRY_SERVICE,
-                    render: RENDER,
                 })
             )
             await from(services.editor.editorUpdates)

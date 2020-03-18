@@ -39,7 +39,7 @@ export interface SourcegraphIntegrationURLs {
 export function createPlatformContext(
     { urlToFile, getContext }: Pick<CodeHost, 'urlToFile' | 'getContext'>,
     { sourcegraphURL, assetsURL }: SourcegraphIntegrationURLs,
-    initialSettings: Pick<GQL.ISettingsCascade, 'subjects' | 'final'>,
+    initialSettings: Pick<GQL.ISettingsCascade, 'subjects' | 'final'> | undefined,
     isExtension: boolean
 ): PlatformContext {
     const updatedViewerSettings = new ReplaySubject<Pick<GQL.ISettingsCascade, 'subjects' | 'final'>>(1)
@@ -81,12 +81,14 @@ export function createPlatformContext(
             storageSettingsCascade,
         ]).pipe(
             map(([gqlCascade, storageCascade]) =>
-                mergeCascades(
-                    gqlToCascade(gqlCascade),
-                    gqlCascade.subjects.some(subject => subject.__typename === 'User')
-                        ? EMPTY_SETTINGS_CASCADE
-                        : storageCascade
-                )
+                gqlCascade
+                    ? mergeCascades(
+                          gqlToCascade(gqlCascade),
+                          gqlCascade.subjects.some(subject => subject.__typename === 'User')
+                              ? EMPTY_SETTINGS_CASCADE
+                              : storageCascade
+                      )
+                    : EMPTY_SETTINGS_CASCADE
             )
         ),
         updateSettings: async (subject, edit) => {
