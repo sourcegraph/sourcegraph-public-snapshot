@@ -118,7 +118,7 @@ describe('FilterInput', () => {
         expect(getByText(container, 'content:test query')).toBeTruthy()
     })
 
-    test('filter input for message filters do not get auto-quoted when editable', () => {
+    test('filter input for message filters does not get auto-quoted when editable', () => {
         container = render(
             <FilterInput
                 {...defaultProps}
