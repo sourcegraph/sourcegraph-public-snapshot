@@ -102,22 +102,10 @@ groups:
           description: 'frontend: 5+ non-200 indexed search responses over 5m'
         expr: >-
           clamp_max(clamp_min(floor(
-          (sum by (code)(increase(src_zoekt_request_duration_seconds_count{code!~"2.."}[5m])) / 5) OR on() vector(0)
-          ), 0), 1) OR on() vector(1)
-
-      # Warn if there are 5+ non-200 indexed search responses over 5m
-      - record: alert_count
-        labels:
-          service_name: frontend
-          level: warning
-          name: non_200_indexed_search_responses_high
-          description: 'frontend: 5+ non-200 indexed search responses over 5m'
-        expr: >-
-          clamp_max(clamp_min(floor(
           ((sum by (code)(increase(src_zoekt_request_duration_seconds_count{code!~"2.."}[5m]))) / 5) OR on() vector(0)
           ), 0), 1) OR on() vector(1)
 
-      # Warn if there are 5+ non-200 indexed search responses over 5m
+      # Warn if there are 5+ non-200 unindexed search responses over 5m
       - record: alert_count
         labels:
           service_name: frontend
