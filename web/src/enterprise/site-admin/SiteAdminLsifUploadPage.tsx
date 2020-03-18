@@ -7,7 +7,7 @@ import { fetchLsifUpload } from './backend'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { PageTitle } from '../../components/PageTitle'
 import { RouteComponentProps, Redirect } from 'react-router'
-import { useObservable } from '../../util/useObservable'
+import { useObservable } from '../../../../shared/src/util/useObservable'
 
 interface Props extends RouteComponentProps<{ id: string }> {}
 

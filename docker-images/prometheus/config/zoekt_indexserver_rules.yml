@@ -10,7 +10,7 @@ groups:
         expr: >-
           clamp_max(clamp_min(floor(
           rate(resolve_revisions_seconds_sum[5m]) / 10
-          ), 0), 1)
+          ), 0), 1) OR on() vector(1)
       - record: alert_count
         labels:
           service_name: zoekt-indexserver
@@ -20,4 +20,4 @@ groups:
         expr: >-
           clamp_max(clamp_min(floor(
           rate(resolve_revisions_seconds_sum[5m]) / 1
-          ), 0), 1)
+          ), 0), 1) OR on() vector(1)

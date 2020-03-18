@@ -72,3 +72,9 @@
 /adopt/comp https://about.sourcegraph.com/workflow 308
 /user/automation /user/campaigns 308
 /dev/automation_development /dev/campaigns_development 308
+/admin/monitoring /admin/observability 308
+/admin/monitoring/reporting_search_timeouts /admin/observability/troubleshooting#scenario-search-timeouts 308
+/admin/monitoring/metrics_reference /admin/observability/metrics_guide 308
+/admin/monitoring/slack_alert_channel /admin/observability/alerting#set-up-alerts-in-grafana 308
+/admin/monitoring_and_tracing /admin/observability 308
+/admin/auth/saml_with_microsoft_adfs /admin/auth/saml/microsoft_adfs 308
