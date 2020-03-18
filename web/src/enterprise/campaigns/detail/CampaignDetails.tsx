@@ -414,6 +414,9 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     onDelete={onDelete}
                 />
                 {alertError && <ErrorAlert error={alertError} />}
+                {campaign && !updateMode && !['saving', 'editing'].includes(mode) && (
+                    <CampaignStatus campaign={campaign} onPublish={onPublish} onRetry={onRetry} />
+                )}
                 {(mode === 'editing' || mode === 'saving') && (
                     <>
                         <h3>Details</h3>
@@ -523,8 +526,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 <>
                     {campaign && !['saving', 'editing'].includes(mode) && (
                         <>
-                            <h3 className="mt-3 mb-2">Status</h3>
-                            <CampaignStatus campaign={campaign} onPublish={onPublish} onRetry={onRetry} />
                             <h3 className="mt-3 mb-2">Progress</h3>
                             <CampaignBurndownChart
                                 changesetCountsOverTime={campaign.changesetCountsOverTime}
