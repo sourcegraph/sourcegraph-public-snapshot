@@ -48,8 +48,7 @@ export const resolveRepo = memoizeObservable(
 )
 
 /**
- * @returns Observable that emits the commit ID
- *         Errors with a `CloneInProgressError` if the repo is still being cloned.
+ * @returns Observable that emits the commit ID. Errors with a `CloneInProgressError` if the repo is still being cloned.
  */
 export const resolveRev = memoizeObservable(
     ({

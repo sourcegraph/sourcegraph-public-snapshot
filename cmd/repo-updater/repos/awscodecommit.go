@@ -30,7 +30,7 @@ type AWSCodeCommitSource struct {
 	awsRegion    endpoints.Region
 	client       *awscodecommit.Client
 
-	exclude excluder
+	exclude excludeFunc
 }
 
 // NewAWSCodeCommitSource returns a new AWSCodeCommitSource from the given external service.
@@ -72,12 +72,13 @@ func newAWSCodeCommitSource(svc *ExternalService, c *schema.AWSCodeCommitConnect
 	}
 	awsConfig.HTTPClient = cli
 
-	var exclude excluder
+	var eb excludeBuilder
 	for _, r := range c.Exclude {
-		exclude.Exact(r.Name)
-		exclude.Exact(r.Id)
+		eb.Exact(r.Name)
+		eb.Exact(r.Id)
 	}
-	if err := exclude.Err(); err != nil {
+	exclude, err := eb.Build()
+	if err != nil {
 		return nil, err
 	}
 
@@ -179,7 +180,7 @@ func (s *AWSCodeCommitSource) listAllRepositories(ctx context.Context, results c
 }
 
 func (s *AWSCodeCommitSource) excludes(r *awscodecommit.Repository) bool {
-	return s.exclude.Match(r.Name) || s.exclude.Match(r.ID)
+	return s.exclude(r.Name) || s.exclude(r.ID)
 }
 
 // The code below is copied from

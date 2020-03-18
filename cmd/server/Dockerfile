@@ -61,16 +61,16 @@ RUN apk update && apk add --no-cache \
 # the ENV variables from its Dockerfile (https://github.com/sourcegraph/syntect_server/blob/master/Dockerfile)
 # have been appropriately set in cmd/server/shared/shared.go.
 # hadolint ignore=DL3022
-COPY --from=comby/comby:0.14.0@sha256:730b94c0b42a31ed43632b8a318cee1fa2fe6ce2307b3174f44503c5e826d6a6 /usr/local/bin/comby /usr/local/bin/comby
+COPY --from=comby/comby:0.14.1@sha256:38a70384b551a6ca355c4cc038d0c9fefa82889f2671c8e90aa76af3b4bcbace /usr/local/bin/comby /usr/local/bin/comby
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/syntect_server:c0297a1@sha256:333abb45cfaae9c9d37e576c3853843b00eca33a40a7c71f6b93211ed96528df /syntect_server /usr/local/bin/
 COPY --from=ctags /usr/local/bin/universal-* /usr/local/bin/
 COPY --from=lsif-builder /lsif /lsif
 
 # hadolint ignore=DL3022
-COPY --from=sourcegraph/prometheus:10.0.7@sha256:22d54f27c7df8733a06c7ae8c2e851b61b1ed42f1f5621d493ef58ebd8d815e0 /bin/prometheus /usr/local/bin
+COPY --from=sourcegraph/prometheus:10.0.9@sha256:35a6d00e8291e365ef62a7a656fa674161582040116b9fa0612ce4baa1866bae /bin/prometheus /usr/local/bin
 # hadolint ignore=DL3022
-COPY --from=sourcegraph/prometheus:10.0.7@sha256:22d54f27c7df8733a06c7ae8c2e851b61b1ed42f1f5621d493ef58ebd8d815e0 /usr/share/prometheus /usr/share/prometheus
+COPY --from=sourcegraph/prometheus:10.0.9@sha256:35a6d00e8291e365ef62a7a656fa674161582040116b9fa0612ce4baa1866bae /usr/share/prometheus /usr/share/prometheus
 
 # hadolint ignore=DL3018
 RUN set -ex && \
@@ -79,7 +79,7 @@ RUN set -ex && \
     apk add --no-cache libc6-compat ca-certificates su-exec
 
 # hadolint ignore=DL3022
-COPY --from=sourcegraph/grafana:10.0.10@sha256:a6f9816346c3e38478f4b855eeee199fc91a4f69311f5dd57760bf74c3234715 /usr/share/grafana /usr/share/grafana
+COPY --from=sourcegraph/grafana:10.0.11@sha256:0daf513a09d7f705d56ef8ec4c088723f2fb683d4e92a099606dfa6ba89ec756 /usr/share/grafana /usr/share/grafana
 
 # hadolint ignore=DL3022
 COPY --from=libsqlite3-pcre /sqlite3-pcre/pcre.so /libsqlite3-pcre.so
@@ -87,7 +87,7 @@ ENV LIBSQLITE3_PCRE /libsqlite3-pcre.so
 COPY . /
 
 # hadolint ignore=DL3022
-COPY --from=sourcegraph/grafana:10.0.10@sha256:a6f9816346c3e38478f4b855eeee199fc91a4f69311f5dd57760bf74c3234715 /sg_config_grafana/provisioning/dashboards/sourcegraph/*json /sg_config_grafana/provisioning/dashboards/sourcegraph/
+COPY --from=sourcegraph/grafana:10.0.11@sha256:0daf513a09d7f705d56ef8ec4c088723f2fb683d4e92a099606dfa6ba89ec756 /sg_config_grafana/provisioning/dashboards/sourcegraph/*json /sg_config_grafana/provisioning/dashboards/sourcegraph/
 
 # hadolint ignore=DL3022
 COPY --from=wrouesnel/postgres_exporter:v0.7.0@sha256:785c919627c06f540d515aac88b7966f352403f73e931e70dc2cbf783146a98b /postgres_exporter /usr/local/bin/postgres_exporter

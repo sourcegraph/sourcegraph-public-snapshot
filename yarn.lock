@@ -1849,10 +1849,10 @@
   resolved "https://registry.npmjs.org/@sourcegraph/comlink/-/comlink-3.1.1-fork.3.tgz#1bd76bc74ca8a9b55f1dbf508c703053ee66c961"
   integrity sha512-+vfSCJTS/GU391Hhdh2/s+wy5ok4hi6X+kizRQqQZwZI03Q1rR6SVLNFsbg4dhbX624mqr1UCRhwNnZdWHAR+A==
 
-"@sourcegraph/eslint-config@^0.10.1":
-  version "0.10.1"
-  resolved "https://registry.npmjs.org/@sourcegraph/eslint-config/-/eslint-config-0.10.1.tgz#49e8dc5a1e0fe7f8dd1e1e2e3bac0fc12c44d831"
-  integrity sha512-uCd2pKVmjkV0p6ibor772JltFfj/mNiNp2+Z6gxeSXhVfF4X6Mbe50HudDKA4pQEyBYsdAL8rjdm3uxrGylmXw==
+"@sourcegraph/eslint-config@^0.10.3":
+  version "0.10.3"
+  resolved "https://registry.npmjs.org/@sourcegraph/eslint-config/-/eslint-config-0.10.3.tgz#970f0cb31b8f392e4bec8304e0010c20e406b48f"
+  integrity sha512-OqwCHejyAkWtWpXLpR1k91m7cfJCHPNztGbaCF4c7RCq6wCr2n8oUuPGBMeyLBLBYDU49ZCqzoouWwmKfeTsiQ==
   dependencies:
     "@sourcegraph/prettierrc" "^3.0.2"
     "@typescript-eslint/eslint-plugin" "^2.22.0"
@@ -1887,8 +1887,7 @@
   integrity sha512-KWxkyphmlwam8kfYPSmoitKQRMGQCsr1ZRmNZgijT7ABKaVyk/+I5ezt2J213tM04Hi0vyg4L7iH1VCkNvm2Jw==
 
 "@sourcegraph/extension-api-types@link:packages/@sourcegraph/extension-api-types":
-  version "0.0.0"
-  uid ""
+  version "2.1.0"
 
 "@sourcegraph/prettierrc@^3.0.2":
   version "3.0.2"
@@ -18398,8 +18397,7 @@ source-map@^0.7.3:
   integrity sha512-CkCj6giN3S+n9qrYiBTX5gystlENnRW5jZeNLHpe6aue+SrHcG5VYwujhW9s4dY31mEGsxBDrHR6oI69fTXsaQ==
 
 "sourcegraph@link:packages/sourcegraph-extension-api":
-  version "0.0.0"
-  uid ""
+  version "23.2.0"
 
 space-separated-tokens@^1.0.0:
   version "1.1.2"

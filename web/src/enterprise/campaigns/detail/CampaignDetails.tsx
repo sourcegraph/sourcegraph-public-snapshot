@@ -19,7 +19,7 @@ import {
     closeCampaign,
     publishCampaign,
 } from './backend'
-import { useError, useObservable } from '../../../util/useObservable'
+import { useError, useObservable } from '../../../../../shared/src/util/useObservable'
 import { asError } from '../../../../../shared/src/util/errors'
 import * as H from 'history'
 import { CampaignBurndownChart } from './BurndownChart'
