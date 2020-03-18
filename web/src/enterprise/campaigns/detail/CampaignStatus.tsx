@@ -80,10 +80,10 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({ c
             break
         case 'closed':
             statusIndicatorComponent = (
-                <div className="alert alert-info mb-0">
-                    <WarningIcon className="icon-inline mr-1" /> Campaign is a closed. No changes can be made to this
-                    campaign anymore.
-                </div>
+                <>
+                    <CampaignsIcon className="icon-inline text-danger mr-1" /> Campaign is closed. No changes can be
+                    made to this campaign anymore.
+                </>
             )
             break
     }

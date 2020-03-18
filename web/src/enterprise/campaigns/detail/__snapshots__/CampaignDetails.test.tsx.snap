@@ -19,7 +19,7 @@ exports[`CampaignDetails creation form for empty manual campaign 1`] = `
     />
     <React.Fragment>
       <h3>
-        Campaign details
+        Details
       </h3>
       <CampaignTitleField
         className="e2e-campaign-title"
@@ -88,7 +88,7 @@ Array [
       />
     </div>
     <h3>
-      Campaign details
+      Details
     </h3>
     <CampaignTitleField
       className="e2e-campaign-title"
@@ -298,7 +298,7 @@ Array [
       </span>
     </div>
     <h3>
-      Campaign details
+      Details
     </h3>
     <CampaignTitleField
       className="e2e-campaign-title"
@@ -10763,6 +10763,12 @@ Array [
   <h3
     className="mt-3 mb-2"
   >
+    Status
+  </h3>,
+  "CampaignStatus(state=PROCESSING)",
+  <h3
+    className="mt-3 mb-2"
+  >
     Progress
   </h3>,
   <p>
@@ -10770,12 +10776,6 @@ Array [
       Burndown chart will be shown when there is more than 1 day of data.
     </em>
   </p>,
-  <h3
-    className="mt-3 mb-2"
-  >
-    Status
-  </h3>,
-  "CampaignStatus(state=PROCESSING)",
   <h3
     className="mt-3 d-flex align-items-end mb-0"
   >
@@ -21317,6 +21317,12 @@ Array [
   <h3
     className="mt-3 mb-2"
   >
+    Status
+  </h3>,
+  "CampaignStatus(state=PROCESSING)",
+  <h3
+    className="mt-3 mb-2"
+  >
     Progress
   </h3>,
   <p>
@@ -21324,12 +21330,6 @@ Array [
       Burndown chart will be shown when there is more than 1 day of data.
     </em>
   </p>,
-  <h3
-    className="mt-3 mb-2"
-  >
-    Status
-  </h3>,
-  "CampaignStatus(state=PROCESSING)",
   <h3
     className="mt-3 d-flex align-items-end mb-0"
   >

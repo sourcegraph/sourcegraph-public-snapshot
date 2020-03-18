@@ -67,14 +67,12 @@ exports[`CampaignStatus viewerCanAdminister: false campaign processing 1`] = `
 exports[`CampaignStatus viewerCanAdminister: false closed campaign 1`] = `
 <React.Fragment>
   <div>
-    <div
-      className="alert alert-info mb-0"
-    >
-      <Memo(WarningIcon)
-        className="icon-inline mr-1"
+    <React.Fragment>
+      <Memo(ImageAutoAdjustIcon)
+        className="icon-inline text-danger mr-1"
       />
-       Campaign is a closed. No changes can be made to this campaign anymore.
-    </div>
+       Campaign is closed. No changes can be made to this campaign anymore.
+    </React.Fragment>
   </div>
 </React.Fragment>
 `;
@@ -96,7 +94,7 @@ exports[`CampaignStatus viewerCanAdminister: false drafted campaign 1`] = `
     </div>
   </React.Fragment>
   <div
-    className="d-flex"
+    className="d-flex mt-2"
   >
     <Memo(CheckCircleIcon)
       className="icon-inline text-success mr-1"
@@ -123,7 +121,7 @@ exports[`CampaignStatus viewerCanAdminister: false drafted campaign, some publis
     </div>
   </React.Fragment>
   <div
-    className="d-flex"
+    className="d-flex mt-2"
   >
     <Memo(CheckCircleIcon)
       className="icon-inline text-success mr-1"
@@ -207,14 +205,12 @@ exports[`CampaignStatus viewerCanAdminister: true campaign processing 1`] = `
 exports[`CampaignStatus viewerCanAdminister: true closed campaign 1`] = `
 <React.Fragment>
   <div>
-    <div
-      className="alert alert-info mb-0"
-    >
-      <Memo(WarningIcon)
-        className="icon-inline mr-1"
+    <React.Fragment>
+      <Memo(ImageAutoAdjustIcon)
+        className="icon-inline text-danger mr-1"
       />
-       Campaign is a closed. No changes can be made to this campaign anymore.
-    </div>
+       Campaign is closed. No changes can be made to this campaign anymore.
+    </React.Fragment>
   </div>
 </React.Fragment>
 `;
@@ -243,7 +239,7 @@ exports[`CampaignStatus viewerCanAdminister: true drafted campaign 1`] = `
     </button>
   </React.Fragment>
   <div
-    className="d-flex"
+    className="d-flex mt-2"
   >
     <Memo(CheckCircleIcon)
       className="icon-inline text-success mr-1"
@@ -277,7 +273,7 @@ exports[`CampaignStatus viewerCanAdminister: true drafted campaign, some publish
     </button>
   </React.Fragment>
   <div
-    className="d-flex"
+    className="d-flex mt-2"
   >
     <Memo(CheckCircleIcon)
       className="icon-inline text-success mr-1"

@@ -416,7 +416,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 {alertError && <ErrorAlert error={alertError} />}
                 {(mode === 'editing' || mode === 'saving') && (
                     <>
-                        <h3>Campaign details</h3>
+                        <h3>Details</h3>
                         <CampaignTitleField
                             className="e2e-campaign-title"
                             value={name}
@@ -523,6 +523,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 <>
                     {campaign && !['saving', 'editing'].includes(mode) && (
                         <>
+                            <h3 className="mt-3 mb-2">Status</h3>
+                            <CampaignStatus campaign={campaign} onPublish={onPublish} onRetry={onRetry} />
                             <h3 className="mt-3 mb-2">Progress</h3>
                             <CampaignBurndownChart
                                 changesetCountsOverTime={campaign.changesetCountsOverTime}
@@ -532,8 +534,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                             {!campaign.plan && campaign.viewerCanAdminister && !campaign.closedAt && (
                                 <AddChangesetForm campaignID={campaign.id} onAdd={onAddChangeset} />
                             )}
-                            <h3 className="mt-3 mb-2">Status</h3>
-                            <CampaignStatus campaign={campaign} onPublish={onPublish} onRetry={onRetry} />
                         </>
                     )}
 
@@ -551,9 +551,12 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                             isLightTheme={isLightTheme}
                         />
                     ) : (
-                        (campaignPlan || campaign)!.status.state !== GQL.BackgroundProcessState.PROCESSING && (
+                        campaign?.status.state !== GQL.BackgroundProcessState.PROCESSING &&
+                        (campaign && !campaign.plan ? (
+                            <div className="mt-2 alert alert-info">Add a changeset to get started.</div>
+                        ) : (
                             <p className="mt-2 text-muted">No changesets</p>
-                        )
+                        ))
                     )}
                 </>
             )}
