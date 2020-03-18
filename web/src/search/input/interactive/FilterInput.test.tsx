@@ -54,7 +54,7 @@ describe('FilterInput', () => {
         }
         filterHandler(newFiltersInQuery, `${inputValue}`)
     }
-    it('filter input for content filters get auto-quoted when not editable', () => {
+    it('filter input for content filters gets auto-quoted when not editable', () => {
         container = render(
             <FilterInput
                 {...defaultProps}
