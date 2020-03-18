@@ -72,6 +72,9 @@ const documentWithPackageInformation = {
     packageInformation: new Map([[71, { name: 'pkg2', version: '0.0.1' }]]),
 }
 
+// Dummy ranges used as a return value from getRangeByPosition.
+// This range's monikers correlated to the documentWithMonikers
+// and documentWithPackageInformation values defined above.
 const ranges = [
     {
         startLine: 10,
