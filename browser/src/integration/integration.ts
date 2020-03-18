@@ -9,7 +9,7 @@ const IS_EXTENSION = false
 
 setLinkComponent(AnchorLink)
 
-async function init(): Promise<void> {
+function init(): void {
     console.log('Sourcegraph native integration is running')
     const sourcegraphURL = window.SOURCEGRAPH_URL
     if (!sourcegraphURL) {
@@ -34,7 +34,7 @@ async function init(): Promise<void> {
     window.localStorage.setItem('SOURCEGRAPH_URL', sourcegraphURL)
     window.SOURCEGRAPH_URL = sourcegraphURL
     // TODO handle subscription
-    await injectCodeIntelligence({ sourcegraphURL, assetsURL }, IS_EXTENSION)
+    injectCodeIntelligence({ sourcegraphURL, assetsURL }, IS_EXTENSION)
 }
 
-init().catch(console.error.bind(console))
+init()

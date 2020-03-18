@@ -19,7 +19,7 @@ import {
     closeCampaign,
     publishCampaign,
 } from './backend'
-import { useError, useObservable } from '../../../util/useObservable'
+import { useError, useObservable } from '../../../../../shared/src/util/useObservable'
 import { asError } from '../../../../../shared/src/util/errors'
 import * as H from 'history'
 import { CampaignBurndownChart } from './BurndownChart'
@@ -402,10 +402,10 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         setBranchModified(true)
     }
 
-    const totalChangesetCount =
-        (campaign?.changesets.totalCount ?? 0) +
-        (campaign?.changesetPlans.totalCount ?? 0) +
-        (campaignPlan?.changesetPlans.totalCount ?? 0)
+    const totalChangesetCount = campaign?.changesets.totalCount ?? 0
+
+    const totalChangesetPlanCount =
+        (campaign?.changesetPlans.totalCount ?? 0) + (campaignPlan?.changesetPlans.totalCount ?? 0)
 
     return (
         <>
@@ -420,6 +420,9 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     onDelete={onDelete}
                 />
                 {alertError && <ErrorAlert error={alertError} />}
+                {campaign && !updateMode && !['saving', 'editing'].includes(mode) && (
+                    <CampaignStatus campaign={campaign} onPublish={onPublish} onRetry={onRetry} />
+                )}
                 {(mode === 'editing' || mode === 'saving') && (
                     <>
                         <h3>Details</h3>
@@ -437,7 +440,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     </>
                 )}
                 {campaign && mode !== 'editing' && mode !== 'saving' && (
-                    <div className="card mt-3">
+                    <div className="card mt-2">
                         <div className="card-header">
                             <strong>
                                 <UserAvatar user={author} className="icon-inline" /> {author.username}
@@ -450,7 +453,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     </div>
                 )}
                 {(mode === 'editing' || mode === 'saving') && specifyingBranchAllowed && (
-                    <div className="form-group mt-3">
+                    <div className="form-group mt-2">
                         <label>
                             Branch name{' '}
                             <small>
@@ -480,13 +483,13 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         history={history}
                         location={location}
                         isLightTheme={isLightTheme}
-                        className="my-3"
+                        className="mt-4"
                     />
                 )}
                 {!updateMode ? (
                     (!campaign || campaignPlan) && (
                         <>
-                            <div className="mt-3">
+                            <div className="mt-2">
                                 {campaignPlan && (
                                     <button
                                         type="submit"
@@ -509,7 +512,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         </>
                     )
                 ) : (
-                    <div className="mb-3">
+                    <div className="mb-0">
                         <button type="reset" className="btn btn-secondary mr-1" onClick={onCancel}>
                             Cancel
                         </button>
@@ -529,9 +532,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 <>
                     {campaign && !['saving', 'editing'].includes(mode) && (
                         <>
-                            <h3 className="mt-3 mb-2">Status</h3>
-                            <CampaignStatus campaign={campaign} onPublish={onPublish} onRetry={onRetry} />
-                            <h3 className="mt-3 mb-2">Progress</h3>
+                            <h3 className="mt-4 mb-2">Progress</h3>
                             <CampaignBurndownChart
                                 changesetCountsOverTime={campaign.changesetCountsOverTime}
                                 history={history}
@@ -543,8 +544,20 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         </>
                     )}
 
-                    <h3 className="mt-3 d-flex align-items-end mb-0">
-                        {totalChangesetCount} {pluralize('Changeset', totalChangesetCount)}{' '}
+                    <h3 className="mt-4 d-flex align-items-end mb-0">
+                        {totalChangesetPlanCount > 0 && (
+                            <>
+                                {totalChangesetPlanCount} {pluralize('Patch', totalChangesetPlanCount, 'Patches')}
+                            </>
+                        )}
+                        {(totalChangesetCount > 0 || !!campaign) && totalChangesetPlanCount > 0 && (
+                            <span className="mx-1">/</span>
+                        )}
+                        {(totalChangesetCount > 0 || !!campaign) && (
+                            <>
+                                {totalChangesetCount} {pluralize('Changeset', totalChangesetCount)}
+                            </>
+                        )}{' '}
                         <CampaignDiffStat campaign={(campaignPlan || campaign)!} className="ml-2 mb-0" />
                     </h3>
                     {(campaign?.changesets.totalCount ?? 0) + (campaignPlan || campaign)!.changesetPlans.totalCount ? (

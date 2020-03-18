@@ -19,6 +19,7 @@ import {
     Subject,
     Subscription,
     Unsubscribable,
+    concat,
 } from 'rxjs'
 import {
     catchError,
@@ -34,6 +35,7 @@ import {
     tap,
     startWith,
     distinctUntilChanged,
+    retryWhen,
 } from 'rxjs/operators'
 import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
 import { DecorationMapByLine } from '../../../../shared/src/api/client/services/decoration'
@@ -56,7 +58,7 @@ import {
     HoverOverlayClassProps,
 } from '../../../../shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '../../../../shared/src/languages'
-import { PlatformContextProps, URLToFileContext } from '../../../../shared/src/platform/context'
+import { URLToFileContext } from '../../../../shared/src/platform/context'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { isDefined, isInstanceOf, propertyIsDefined } from '../../../../shared/src/util/types'
 import {
@@ -84,7 +86,7 @@ import { phabricatorCodeHost } from '../phabricator/code_intelligence'
 import { CodeView, fetchFileContents, trackCodeViews } from './code_views'
 import { ContentView, handleContentViews } from './content_views'
 import { applyDecorations, initializeExtensions, renderCommandPalette, renderGlobalDebug } from './extensions'
-import { renderViewContextOnSourcegraph, ViewOnSourcegraphButtonClassProps } from './external_links'
+import { ViewOnSourcegraphButtonClassProps, ViewOnSourcegraphButton } from './external_links'
 import { ExtensionHoverAlertType, getActiveHoverAlerts, onHoverAlertDismissed } from './hover_alerts'
 import {
     handleNativeTooltips,
@@ -96,11 +98,10 @@ import { handleTextFields, TextField } from './text_fields'
 import { resolveRepoNames } from './util/file_info'
 import { ViewResolver } from './views'
 import { observeStorageKey } from '../../browser/storage'
-import { SourcegraphIntegrationURLs } from '../../platform/context'
-import { requestGraphQLHelper } from '../../shared/backend/requestGraphQL'
-import { checkUserLoggedInAndFetchSettings } from '../../platform/settings'
+import { SourcegraphIntegrationURLs, BrowserPlatformContext } from '../../platform/context'
 import { IS_LIGHT_THEME } from './consts'
 import { NotificationType } from 'sourcegraph'
+import { failedWithHTTPStatus } from '../../../../shared/src/backend/fetch'
 
 registerHighlightContributions()
 
@@ -292,11 +293,16 @@ export interface FileInfoWithRepoNames extends FileInfo, RepoSpec {
     baseRepoName?: string
 }
 
-export interface CodeIntelligenceProps
-    extends PlatformContextProps<
-            'forceUpdateTooltip' | 'urlToFile' | 'sideloadedExtensionURL' | 'requestGraphQL' | 'settings'
-        >,
-        TelemetryProps {
+export interface CodeIntelligenceProps extends TelemetryProps {
+    platformContext: Pick<
+        BrowserPlatformContext,
+        | 'forceUpdateTooltip'
+        | 'urlToFile'
+        | 'sideloadedExtensionURL'
+        | 'requestGraphQL'
+        | 'settings'
+        | 'refreshSettings'
+    >
     codeHost: CodeHost
     extensionsController: Controller
     showGlobalDebug?: boolean
@@ -319,8 +325,6 @@ export const createGlobalDebugMount = (): HTMLElement => {
 /**
  * Prepares the page for code intelligence. It creates the hoverifier, injects
  * and mounts the hover overlay and then returns the hoverifier.
- *
- * @param codeHost
  */
 function initCodeIntelligence({
     mutations,
@@ -537,6 +541,13 @@ export function observeHoverOverlayMountLocation(
     )
 }
 
+export interface HandleCodeHostOptions extends CodeIntelligenceProps {
+    mutations: Observable<MutationRecordLike[]>
+    sourcegraphURL: string
+    render: typeof reactDOMRender
+    minimalUI: boolean
+}
+
 export function handleCodeHost({
     mutations,
     codeHost,
@@ -547,22 +558,10 @@ export function handleCodeHost({
     telemetryService,
     render,
     minimalUI,
-}: CodeIntelligenceProps & {
-    mutations: Observable<MutationRecordLike[]>
-    sourcegraphURL: string
-    render: typeof reactDOMRender
-    minimalUI?: boolean
-}): Subscription {
+}: HandleCodeHostOptions): Subscription {
     const history = H.createBrowserHistory()
     const subscriptions = new Subscription()
     const { requestGraphQL } = platformContext
-
-    const ensureRepoExists = ({ rawRepoName, rev }: CodeHostContext): Observable<boolean> =>
-        resolveRev({ repoName: rawRepoName, rev, requestGraphQL }).pipe(
-            retryWhenCloneInProgressError(),
-            map(rev => !!rev),
-            catchError(() => [false])
-        )
 
     const openOptionsMenu = (): Promise<void> => browser.runtime.sendMessage({ type: 'openOptionsPage' })
 
@@ -623,19 +622,50 @@ export function handleCodeHost({
         renderGlobalDebug({ extensionsController, platformContext, history, sourcegraphURL, render })(mount)
     }
 
-    // Render view on Sourcegraph button
-    if (codeHost.getViewContextOnSourcegraphMount && codeHost.getContext && !minimalUI) {
-        const { getContext, viewOnSourcegraphButtonClassProps } = codeHost
-        subscriptions.add(
-            addedElements.pipe(map(codeHost.getViewContextOnSourcegraphMount), filter(isDefined)).subscribe(
-                renderViewContextOnSourcegraph({
-                    sourcegraphURL,
-                    getContext,
-                    viewOnSourcegraphButtonClassProps,
-                    ensureRepoExists,
-                    onConfigureSourcegraphClick: isInPage ? undefined : openOptionsMenu,
-                })
+    const signInCloses = new Subject<void>()
+    const nextSignInClose = signInCloses.next.bind(signInCloses)
+
+    // Try to fetch settings and refresh them when a sign in tab was closed
+    subscriptions.add(
+        concat([null], signInCloses)
+            .pipe(
+                switchMap(() =>
+                    from(platformContext.refreshSettings()).pipe(
+                        catchError(error => {
+                            console.error('Refreshing settings failed', error)
+                            return []
+                        })
+                    )
+                )
             )
+            .subscribe()
+    )
+
+    // Render view on Sourcegraph button
+    if (codeHost.getViewContextOnSourcegraphMount && codeHost.getContext) {
+        const { getContext, viewOnSourcegraphButtonClassProps } = codeHost
+
+        const ensureRepoExists = ({ rawRepoName, rev }: CodeHostContext): Observable<boolean> =>
+            resolveRev({ repoName: rawRepoName, rev, requestGraphQL }).pipe(
+                retryWhenCloneInProgressError(),
+                map(rev => !!rev)
+            )
+
+        subscriptions.add(
+            addedElements.pipe(map(codeHost.getViewContextOnSourcegraphMount), filter(isDefined)).subscribe(mount => {
+                render(
+                    <ViewOnSourcegraphButton
+                        {...viewOnSourcegraphButtonClassProps}
+                        context={getContext()}
+                        minimalUI={minimalUI}
+                        sourcegraphURL={sourcegraphURL}
+                        ensureRepoExists={ensureRepoExists}
+                        onSignInClose={nextSignInClose}
+                        onConfigureSourcegraphClick={isInPage ? undefined : openOptionsMenu}
+                    />,
+                    mount
+                )
+            })
         )
     }
 
@@ -660,15 +690,28 @@ export function handleCodeHost({
                             ...codeViewEvent,
                         }))
                     )
+                ),
+                catchError(err => {
+                    // Ignore PrivateRepoPublicSourcegraph errors (don't initialize those code views)
+                    if (err.name === ERPRIVATEREPOPUBLICSOURCEGRAPHCOM) {
+                        return EMPTY
+                    }
+                    throw err
+                }),
+                // Retry auth errors after the user closed a sign-in tab
+                retryWhen(errors =>
+                    errors.pipe(
+                        // Don't swallow non-auth errors
+                        tap(error => {
+                            if (!failedWithHTTPStatus(error, 401)) {
+                                throw error
+                            }
+                        }),
+                        switchMap(() => signInCloses)
+                    )
                 )
             )
         ),
-        catchError(err => {
-            if (err.name === ERPRIVATEREPOPUBLICSOURCEGRAPHCOM) {
-                return EMPTY
-            }
-            throw err
-        }),
         observeOn(animationFrameScheduler)
     )
 
@@ -948,29 +991,21 @@ const SHOW_DEBUG = (): boolean => localStorage.getItem('debug') !== null
 const CODE_HOSTS: CodeHost[] = [bitbucketServerCodeHost, githubCodeHost, gitlabCodeHost, phabricatorCodeHost]
 export const determineCodeHost = (): CodeHost | undefined => CODE_HOSTS.find(codeHost => codeHost.check())
 
-export async function injectCodeIntelligenceToCodeHost(
+export function injectCodeIntelligenceToCodeHost(
     mutations: Observable<MutationRecordLike[]>,
     codeHost: CodeHost,
     { sourcegraphURL, assetsURL }: SourcegraphIntegrationURLs,
     isExtension: boolean,
     showGlobalDebug = SHOW_DEBUG()
-): Promise<Subscription> {
+): Subscription {
     const subscriptions = new Subscription()
-    const initialSettingsResult = await checkUserLoggedInAndFetchSettings(
-        requestGraphQLHelper(isExtension, sourcegraphURL)
-    ).toPromise()
-    if (!initialSettingsResult.userLoggedIn) {
-        // Exit early when the user is not logged in to the Sourcegraph instance.
-        console.warn(`Sourcegraph is disabled: you must be logged in to ${sourcegraphURL} to use Sourcegraph.`)
-        return subscriptions
-    }
     const { platformContext, extensionsController } = initializeExtensions(
         codeHost,
         { sourcegraphURL, assetsURL },
-        initialSettingsResult.settings,
         isExtension
     )
-    const telemetryService = new EventLogger(isExtension, platformContext.requestGraphQL)
+    const { requestGraphQL } = platformContext
+    const telemetryService = new EventLogger(isExtension, requestGraphQL)
     subscriptions.add(extensionsController)
 
     let codeHostSubscription: Subscription

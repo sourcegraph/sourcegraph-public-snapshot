@@ -14,9 +14,11 @@ Object {
             className="d-flex flex-column"
           >
             <div>
-              <SourcePullIcon
-                className="mr-1 icon-inline text-muted"
-                data-tooltip="open"
+              <Octicon
+                className="icon-inline mr-2"
+                icon={[Function]}
+                size={16}
+                verticalAlign="text-bottom"
               />
               <strong>
                 <AnchorLink
@@ -28,9 +30,6 @@ Object {
                   sourcegraph
                 </AnchorLink>
               </strong>
-              <DraftBadge
-                className="ml-2"
-              />
             </div>
           </div>
         </div>
@@ -167,9 +166,11 @@ Object {
             className="d-flex flex-column"
           >
             <div>
-              <SourcePullIcon
-                className="mr-1 icon-inline text-muted"
-                data-tooltip="open"
+              <Octicon
+                className="icon-inline mr-2"
+                icon={[Function]}
+                size={16}
+                verticalAlign="text-bottom"
               />
               <strong>
                 <AnchorLink
@@ -181,9 +182,6 @@ Object {
                   sourcegraph
                 </AnchorLink>
               </strong>
-              <DraftBadge
-                className="ml-2"
-              />
             </div>
           </div>
         </div>

@@ -106,7 +106,7 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("CreateCampaign", func(t *testing.T) {
-		plan := &campaigns.CampaignPlan{CampaignType: "test", Arguments: `{}`, UserID: user.ID}
+		plan := &campaigns.CampaignPlan{UserID: user.ID}
 		err = store.CreateCampaignPlan(ctx, plan)
 		if err != nil {
 			t.Fatal(err)
@@ -155,7 +155,7 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("CreateCampaignAsDraft", func(t *testing.T) {
-		plan := &campaigns.CampaignPlan{CampaignType: "test", Arguments: `{}`, UserID: user.ID}
+		plan := &campaigns.CampaignPlan{UserID: user.ID}
 		err = store.CreateCampaignPlan(ctx, plan)
 		if err != nil {
 			t.Fatal(err)
@@ -195,7 +195,7 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("CreateCampaignWithPlanAttachedToOtherCampaign", func(t *testing.T) {
-		plan := &campaigns.CampaignPlan{CampaignType: "test", Arguments: `{}`, UserID: user.ID}
+		plan := &campaigns.CampaignPlan{UserID: user.ID}
 		err = store.CreateCampaignPlan(ctx, plan)
 		if err != nil {
 			t.Fatal(err)
@@ -224,7 +224,7 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("CreateChangesetJobForCampaignJob", func(t *testing.T) {
-		plan := &campaigns.CampaignPlan{CampaignType: "test", Arguments: `{}`, UserID: user.ID}
+		plan := &campaigns.CampaignPlan{UserID: user.ID}
 		err = store.CreateCampaignPlan(ctx, plan)
 		if err != nil {
 			t.Fatal(err)
@@ -318,7 +318,7 @@ func TestService(t *testing.T) {
 					tc.err = "<nil>"
 				}
 
-				plan := &campaigns.CampaignPlan{CampaignType: "test", Arguments: `{}`, UserID: user.ID}
+				plan := &campaigns.CampaignPlan{UserID: user.ID}
 				err = store.CreateCampaignPlan(ctx, plan)
 				if err != nil {
 					t.Fatal(err)
@@ -392,7 +392,7 @@ func TestService(t *testing.T) {
 	t.Run("UpdateCampaignWithPlanAttachedToOtherCampaign", func(t *testing.T) {
 		svc := NewServiceWithClock(store, gitClient, cf, clock)
 
-		plan := &campaigns.CampaignPlan{CampaignType: "test", Arguments: `{}`, UserID: user.ID}
+		plan := &campaigns.CampaignPlan{UserID: user.ID}
 		err = store.CreateCampaignPlan(ctx, plan)
 		if err != nil {
 			t.Fatal(err)
@@ -411,7 +411,7 @@ func TestService(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		otherPlan := &campaigns.CampaignPlan{CampaignType: "test", Arguments: `{}`, UserID: user.ID}
+		otherPlan := &campaigns.CampaignPlan{UserID: user.ID}
 		err = store.CreateCampaignPlan(ctx, otherPlan)
 		if err != nil {
 			t.Fatal(err)
@@ -680,7 +680,7 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 			if tt.campaignIsManual {
 				campaign = testCampaign(user.ID, 0)
 			} else {
-				plan := &campaigns.CampaignPlan{CampaignType: "patch", Arguments: `{}`, UserID: user.ID}
+				plan := &campaigns.CampaignPlan{UserID: user.ID}
 				err = store.CreateCampaignPlan(ctx, plan)
 				if err != nil {
 					t.Fatal(err)
@@ -746,7 +746,7 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 			oldTime := now
 			now = now.Add(5 * time.Second)
 
-			newPlan := &campaigns.CampaignPlan{CampaignType: "patch", Arguments: `{}`, UserID: user.ID}
+			newPlan := &campaigns.CampaignPlan{UserID: user.ID}
 			err = store.CreateCampaignPlan(ctx, newPlan)
 			if err != nil {
 				t.Fatal(err)

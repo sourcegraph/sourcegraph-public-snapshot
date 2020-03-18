@@ -28,8 +28,8 @@ import { getHover } from '../../../../backend/features'
 import { PlatformContextProps } from '../../../../../../shared/src/platform/context'
 import { TelemetryProps } from '../../../../../../shared/src/telemetry/telemetryService'
 import { propertyIsDefined } from '../../../../../../shared/src/util/types'
-import { useObservable } from '../../../../util/useObservable'
 import { HoverContext } from '../../../../../../shared/src/hover/HoverOverlay'
+import { useObservable } from '../../../../../../shared/src/util/useObservable'
 
 interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, ExtensionsControllerProps {
     campaign: Pick<GQL.ICampaignPlan, '__typename' | 'id'> | Pick<GQL.ICampaign, '__typename' | 'id' | 'closedAt'>
