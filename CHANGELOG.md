@@ -22,6 +22,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Counts of number of searches conducted using each filter will be sent back in pings, aggregated daily, weekly, and monthly.
 - Counts of number of users conducting searches containing each filter will be sent back in pings, aggregated daily, weekly, and monthly.
 - Added more entries (Bash, Erlang, Julia, OCaml, Scala) to the list of suggested languages for the `lang:` filter.
+- Permissions background sync is now supported for GitLab and Bitbucket Server via site configuration `"permissions.backgroundSync": {"enabled": true}`.
 
 ### Changed
 
