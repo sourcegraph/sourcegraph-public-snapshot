@@ -38,17 +38,15 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({ c
         state = 'completed'
     }
 
-    let statusIndicatorComponent: JSX.Element | undefined
+    let statusIndicator: JSX.Element | undefined
     switch (state) {
         case 'errored':
-            statusIndicatorComponent = (
+            statusIndicator = (
                 <>
                     <div className="alert alert-danger my-4">
                         <h3 className="alert-heading mb-0">Creating changesets failed</h3>
                         <ul className="mt-2">
                             {status.errors.map((error, i) => (
-                                // There is no other suitable key, so:
-                                // eslint-disable-next-line react/no-array-index-key
                                 <li className="mb-2" key={i}>
                                     <code>
                                         <ErrorMessage error={error} />
@@ -66,7 +64,7 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({ c
             )
             break
         case 'processing':
-            statusIndicatorComponent = (
+            statusIndicator = (
                 <>
                     <div className="alert alert-info mt-4">
                         <p>
@@ -85,7 +83,7 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({ c
             )
             break
         case 'closed':
-            statusIndicatorComponent = (
+            statusIndicator = (
                 <div className="alert alert-secondary mt-2">
                     Campaign is closed. No changes can be made to this campaign anymore.
                 </div>
@@ -95,7 +93,7 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({ c
 
     return (
         <>
-            {statusIndicatorComponent && <div>{statusIndicatorComponent}</div>}
+            {statusIndicator && <div>{statusIndicator}</div>}
             {isDraft && state !== 'closed' && (
                 <>
                     <div className="d-flex align-items-center alert alert-warning my-4">
