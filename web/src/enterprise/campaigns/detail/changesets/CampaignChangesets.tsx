@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useMemo, useEffect } from 'react'
 import H from 'history'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { ChangesetNode, ChangesetNodeProps } from './ChangesetNode'
@@ -8,9 +8,30 @@ import { Observable, Subject } from 'rxjs'
 import { DEFAULT_CHANGESET_LIST_COUNT } from '../presentation'
 import { upperFirst } from 'lodash'
 import { queryChangesetPlans, queryChangesets } from '../backend'
-import { repeatWhen, delay } from 'rxjs/operators'
+import { repeatWhen, delay, withLatestFrom, map, filter } from 'rxjs/operators'
+import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
+import { createHoverifier, HoveredToken, HoverState } from '@sourcegraph/codeintellify'
+import {
+    RepoSpec,
+    RevSpec,
+    FileSpec,
+    ResolvedRevSpec,
+    UIPositionSpec,
+    ModeSpec,
+} from '../../../../../../shared/src/util/url'
+import { HoverMerged } from '../../../../../../shared/src/api/client/types/hover'
+import { ActionItemAction } from '../../../../../../shared/src/actions/ActionItem'
+import { getHoverActions } from '../../../../../../shared/src/hover/actions'
+import { WebHoverOverlay } from '../../../../components/shared'
+import { getModeFromPath } from '../../../../../../shared/src/languages'
+import { getHover } from '../../../../backend/features'
+import { PlatformContextProps } from '../../../../../../shared/src/platform/context'
+import { TelemetryProps } from '../../../../../../shared/src/telemetry/telemetryService'
+import { propertyIsDefined } from '../../../../../../shared/src/util/types'
+import { useObservable } from '../../../../util/useObservable'
+import { HoverContext } from '../../../../../../shared/src/hover/HoverOverlay'
 
-interface Props extends ThemeProps {
+interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, ExtensionsControllerProps {
     campaign: Pick<GQL.ICampaignPlan, '__typename' | 'id'> | Pick<GQL.ICampaign, '__typename' | 'id' | 'closedAt'>
     history: H.History
     location: H.Location
@@ -24,6 +45,19 @@ interface Props extends ThemeProps {
     ) => Observable<Connection<GQL.IExternalChangeset | GQL.IChangesetPlan>>
 }
 
+function getLSPTextDocumentPositionParams(
+    hoveredToken: HoveredToken & RepoSpec & RevSpec & FileSpec & ResolvedRevSpec
+): RepoSpec & RevSpec & ResolvedRevSpec & FileSpec & UIPositionSpec & ModeSpec {
+    return {
+        repoName: hoveredToken.repoName,
+        rev: hoveredToken.rev,
+        filePath: hoveredToken.filePath,
+        commitID: hoveredToken.commitID,
+        position: hoveredToken,
+        mode: getModeFromPath(hoveredToken.filePath || ''),
+    }
+}
+
 /**
  * A list of a campaign's or campaign preview's changesets.
  */
@@ -34,6 +68,9 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
     isLightTheme,
     changesetUpdates,
     campaignUpdates,
+    extensionsController,
+    platformContext,
+    telemetryService,
     _queryChangesets = queryChangesets,
 }) => {
     const [state, setState] = useState<GQL.ChangesetState | undefined>()
@@ -52,6 +89,61 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
         },
         [campaign.id, campaign.__typename, state, reviewState, checkState, _queryChangesets]
     )
+
+    const containerElements = useMemo(() => new Subject<HTMLElement | null>(), [])
+    const nextContainerElement = useCallback((element: HTMLElement | null): void => containerElements.next(element), [
+        containerElements,
+    ])
+
+    const hoverOverlayElements = useMemo(() => new Subject<HTMLElement | null>(), [])
+    const nextOverlayElement = useCallback((element: HTMLElement | null): void => hoverOverlayElements.next(element), [
+        hoverOverlayElements,
+    ])
+
+    const closeButtonClicks = useMemo(() => new Subject<MouseEvent>(), [])
+    const nextCloseButtonClick = useCallback((event: MouseEvent): void => closeButtonClicks.next(event), [
+        closeButtonClicks,
+    ])
+
+    const componentRerenders = useMemo(() => new Subject<void>(), [])
+
+    const hoverifier = useMemo(
+        () =>
+            createHoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>({
+                closeButtonClicks,
+                hoverOverlayElements,
+                hoverOverlayRerenders: componentRerenders.pipe(
+                    withLatestFrom(hoverOverlayElements, containerElements),
+                    map(([, hoverOverlayElement, relativeElement]) => ({
+                        hoverOverlayElement,
+                        // The root component element is guaranteed to be rendered after a componentDidUpdate
+                        relativeElement: relativeElement!,
+                    })),
+                    // Can't reposition HoverOverlay if it wasn't rendered
+                    filter(propertyIsDefined('hoverOverlayElement'))
+                ),
+                getHover: hoveredToken =>
+                    getHover(getLSPTextDocumentPositionParams(hoveredToken), { extensionsController }),
+                getActions: context => getHoverActions({ extensionsController, platformContext }, context),
+                pinningEnabled: true,
+            }),
+        [
+            closeButtonClicks,
+            containerElements,
+            extensionsController,
+            hoverOverlayElements,
+            platformContext,
+            componentRerenders,
+        ]
+    )
+    useEffect(() => () => hoverifier.unsubscribe(), [hoverifier])
+
+    const hoverState = useObservable<HoverState<HoverContext, HoverMerged, ActionItemAction>>(
+        useMemo(() => hoverifier.hoverStateUpdates, [hoverifier])
+    )
+    useEffect(() => {
+        componentRerenders.next()
+    }, [componentRerenders, hoverState])
 
     const changesetFiltersRow = (
         <div className="form-inline mb-0 mt-2">
@@ -103,7 +195,7 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
     return (
         <>
             {campaign.__typename === 'Campaign' && changesetFiltersRow}
-            <div className="list-group">
+            <div className="list-group position-relative" ref={nextContainerElement}>
                 <FilteredConnection<GQL.IExternalChangeset | GQL.IChangesetPlan, Omit<ChangesetNodeProps, 'node'>>
                     className="mt-2"
                     updates={changesetUpdates}
@@ -114,6 +206,7 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
                         location,
                         campaignUpdates,
                         enablePublishing: campaign.__typename === 'Campaign' && !campaign.closedAt,
+                        extensionInfo: { extensionsController, hoverifier },
                     }}
                     queryConnection={queryChangesetsConnection}
                     hideSearch={true}
@@ -125,6 +218,18 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
                     noShowLoaderOnSlowLoad={true}
                     useURLQuery={false}
                 />
+                {hoverState?.hoverOverlayProps && (
+                    <WebHoverOverlay
+                        {...hoverState.hoverOverlayProps}
+                        telemetryService={telemetryService}
+                        extensionsController={extensionsController}
+                        isLightTheme={isLightTheme}
+                        location={location}
+                        platformContext={platformContext}
+                        hoverRef={nextOverlayElement}
+                        onCloseButtonClick={nextCloseButtonClick}
+                    />
+                )}
             </div>
         </>
     )

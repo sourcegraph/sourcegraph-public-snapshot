@@ -40,6 +40,9 @@ import { CampaignTitleField } from './form/CampaignTitleField'
 import { CampaignChangesets } from './changesets/CampaignChangesets'
 import { CampaignDiffStat } from './CampaignDiffStat'
 import { pluralize } from '../../../../../shared/src/util/strings'
+import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
+import { PlatformContextProps } from '../../../../../shared/src/platform/context'
+import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 
 export type CampaignUIMode = 'viewing' | 'editing' | 'saving' | 'deleting' | 'closing'
 
@@ -69,7 +72,7 @@ interface CampaignPlan extends Pick<GQL.ICampaignPlan, '__typename' | 'id'> {
     status: Pick<GQL.ICampaignPlan['status'], 'completedCount' | 'pendingCount' | 'errors' | 'state'>
 }
 
-interface Props extends ThemeProps {
+interface Props extends ThemeProps, ExtensionsControllerProps, PlatformContextProps, TelemetryProps {
     /**
      * The campaign ID.
      * If not given, will display a creation form.
@@ -93,6 +96,9 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     location,
     authenticatedUser,
     isLightTheme,
+    extensionsController,
+    platformContext,
+    telemetryService,
     _fetchCampaignById = fetchCampaignById,
     _fetchCampaignPlanById = fetchCampaignPlanById,
 }) => {
@@ -549,6 +555,9 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                             history={history}
                             location={location}
                             isLightTheme={isLightTheme}
+                            extensionsController={extensionsController}
+                            platformContext={platformContext}
+                            telemetryService={telemetryService}
                         />
                     ) : (
                         campaign?.status.state !== GQL.BackgroundProcessState.PROCESSING &&

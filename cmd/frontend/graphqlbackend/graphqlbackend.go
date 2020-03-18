@@ -163,6 +163,11 @@ func (r *NodeResolver) ToExternalChangeset() (ExternalChangesetResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToChangesetPlan() (ChangesetPlanResolver, bool) {
+	n, ok := r.Node.(ChangesetPlanResolver)
+	return n, ok
+}
+
 func (r *NodeResolver) ToChangesetEvent() (ChangesetEventResolver, bool) {
 	n, ok := r.Node.(ChangesetEventResolver)
 	return n, ok

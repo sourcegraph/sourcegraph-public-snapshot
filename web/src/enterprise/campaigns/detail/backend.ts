@@ -14,9 +14,11 @@ import {
     IEmptyResponse,
     IChangesetPlan,
     IExternalChangeset,
+    IFileDiffConnection,
+    IPreviewFileDiffConnection,
 } from '../../../../../shared/src/graphql/schema'
 import { DiffStatFields, FileDiffHunkRangeFields, PreviewFileDiffFields, FileDiffFields } from '../../../backend/diff'
-import { Connection } from '../../../components/FilteredConnection'
+import { Connection, FilteredConnectionQueryArgs } from '../../../components/FilteredConnection'
 
 export type CampaignType = 'comby' | 'credentials' | 'regexSearchReplace'
 
@@ -284,18 +286,23 @@ export const queryChangesets = (
                                 externalURL {
                                     url
                                 }
+                                head {
+                                    abbrevName
+                                    target {
+                                        oid
+                                    }
+                                }
+                                base {
+                                    abbrevName
+                                    target {
+                                        oid
+                                    }
+                                }
                                 externalID
                                 createdAt
                                 updatedAt
                                 diff {
                                     fileDiffs {
-                                        nodes {
-                                            ...FileDiffFields
-                                        }
-                                        totalCount
-                                        pageInfo {
-                                            hasNextPage
-                                        }
                                         diffStat {
                                             ...DiffStatFields
                                         }
@@ -316,13 +323,6 @@ export const queryChangesets = (
                                 publicationEnqueued
                                 diff {
                                     fileDiffs {
-                                        nodes {
-                                            ...PreviewFileDiffFields
-                                        }
-                                        totalCount
-                                        pageInfo {
-                                            hasNextPage
-                                        }
                                         diffStat {
                                             ...DiffStatFields
                                         }
@@ -333,12 +333,6 @@ export const queryChangesets = (
                     }
                 }
             }
-
-            ${PreviewFileDiffFields}
-
-            ${FileDiffFields}
-
-            ${FileDiffHunkRangeFields}
 
             ${DiffStatFields}
         `,
@@ -382,13 +376,6 @@ export const queryChangesetPlans = (
                                 publicationEnqueued
                                 diff {
                                     fileDiffs {
-                                        nodes {
-                                            ...PreviewFileDiffFields
-                                        }
-                                        totalCount
-                                        pageInfo {
-                                            hasNextPage
-                                        }
                                         diffStat {
                                             ...DiffStatFields
                                         }
@@ -399,10 +386,6 @@ export const queryChangesetPlans = (
                     }
                 }
             }
-
-            ${PreviewFileDiffFields}
-
-            ${FileDiffHunkRangeFields}
 
             ${DiffStatFields}
         `,
@@ -462,3 +445,105 @@ export async function syncChangeset(changeset: ID): Promise<void> {
     ).toPromise()
     dataOrThrowErrors(result)
 }
+
+export const queryExternalChangesetFileDiffs = (
+    externalChangeset: ID,
+    { first }: FilteredConnectionQueryArgs
+): Observable<IFileDiffConnection> =>
+    queryGraphQL(
+        gql`
+            query ExternalChangesetFileDiffs($externalChangeset: ID!, $first: Int) {
+                node(id: $externalChangeset) {
+                    __typename
+                    ... on ExternalChangeset {
+                        diff {
+                            fileDiffs(first: $first) {
+                                nodes {
+                                    ...FileDiffFields
+                                }
+                                totalCount
+                                pageInfo {
+                                    hasNextPage
+                                }
+                                diffStat {
+                                    ...DiffStatFields
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            ${FileDiffFields}
+
+            ${FileDiffHunkRangeFields}
+
+            ${DiffStatFields}
+        `,
+        { externalChangeset, first }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(({ node }) => {
+            if (!node) {
+                throw new Error(`Changeset with ID ${externalChangeset} does not exist`)
+            }
+            if (node.__typename !== 'ExternalChangeset') {
+                throw new Error(`The given ID is a ${node.__typename}, not an ExternalChangeset`)
+            }
+            if (!node.diff) {
+                throw new Error('The given Changeset has no diff')
+            }
+            return node.diff.fileDiffs
+        })
+    )
+
+export const queryChangesetPlanFileDiffs = (
+    changesetPlan: ID,
+    { first }: FilteredConnectionQueryArgs
+): Observable<IPreviewFileDiffConnection> =>
+    queryGraphQL(
+        gql`
+            query ChangesetPlanFileDiffs($changesetPlan: ID!, $first: Int) {
+                node(id: $changesetPlan) {
+                    __typename
+                    ... on ChangesetPlan {
+                        diff {
+                            fileDiffs(first: $first) {
+                                nodes {
+                                    ...PreviewFileDiffFields
+                                }
+                                totalCount
+                                pageInfo {
+                                    hasNextPage
+                                }
+                                diffStat {
+                                    ...DiffStatFields
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            ${PreviewFileDiffFields}
+
+            ${FileDiffHunkRangeFields}
+
+            ${DiffStatFields}
+        `,
+        { changesetPlan, first }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(({ node }) => {
+            if (!node) {
+                throw new Error(`ChangesetPlan with ID ${changesetPlan} does not exist`)
+            }
+            if (node.__typename !== 'ChangesetPlan') {
+                throw new Error(`The given ID is a ${node.__typename}, not an ChangesetPlan`)
+            }
+            if (!node.diff) {
+                throw new Error('The given ChangesetPlan has no diff')
+            }
+            return node.diff.fileDiffs
+        })
+    )

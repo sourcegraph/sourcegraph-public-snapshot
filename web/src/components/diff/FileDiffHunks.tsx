@@ -75,21 +75,6 @@ export class FileDiffHunks extends React.Component<FileHunksProps, FileDiffHunks
     private blobElements = new Subject<HTMLElement | null>()
     private nextBlobElement = (element: HTMLElement | null): void => this.blobElements.next(element)
 
-    /** Emits whenever something is hovered in the code */
-    private codeMouseOvers = new Subject<React.MouseEvent<HTMLElement>>()
-    private nextCodeMouseOver = (event: React.MouseEvent<HTMLElement>): void => this.codeMouseOvers.next(event)
-
-    /** Emits whenever something is hovered in the code */
-    private codeMouseMoves = new Subject<React.MouseEvent<HTMLElement>>()
-    private nextCodeMouseMove = (event: React.MouseEvent<HTMLElement>): void => this.codeMouseMoves.next(event)
-
-    /** Emits whenever something is clicked in the code */
-    private codeClicks = new Subject<React.MouseEvent<HTMLElement>>()
-    private nextCodeClick = (event: React.MouseEvent<HTMLElement>): void => {
-        event.persist()
-        this.codeClicks.next(event)
-    }
-
     /** Emits with the latest Props on every componentDidUpdate and on componentDidMount */
     private componentUpdates = new Subject<FileHunksProps>()
 
@@ -185,13 +170,7 @@ export class FileDiffHunks extends React.Component<FileHunksProps, FileDiffHunks
                 {this.props.hunks.length === 0 ? (
                     <div className="text-muted m-2">No changes</div>
                 ) : (
-                    <div
-                        className="file-diff-hunks__container"
-                        ref={this.nextCodeElement}
-                        onMouseOver={this.nextCodeMouseOver}
-                        onMouseMove={this.nextCodeMouseMove}
-                        onClick={this.nextCodeClick}
-                    >
+                    <div className="file-diff-hunks__container" ref={this.nextCodeElement}>
                         <table className="file-diff-hunks__table">
                             {this.props.lineNumbers && (
                                 <colgroup>
