@@ -9,7 +9,7 @@ import { isInPage } from '../../context'
 export type ExtensionHoverAlertType = 'nativeTooltips'
 
 /**
- * Returns an Osbervable of all hover alerts that have not yet
+ * Returns an Observable of all hover alerts that have not yet
  * been dismissed by the user.
  */
 export function getActiveHoverAlerts(

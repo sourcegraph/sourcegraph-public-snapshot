@@ -7,9 +7,14 @@ exports[`CampaignActionsBar all changesets not open 1`] = `
   <h2
     className="m-0"
   >
-    <Memo(ImageAutoAdjustIcon)
-      className="icon-inline mr-2 text-success"
-    />
+    <span
+      className="badge badge-success mr-2"
+    >
+      <Memo(ImageAutoAdjustIcon)
+        className="icon-inline campaign-actions-bar__campaign-icon"
+      />
+       Open
+    </span>
     <span>
       <AnchorLink
         to="/campaigns"
@@ -85,9 +90,14 @@ exports[`CampaignActionsBar edit mode 1`] = `
   <h2
     className="m-0"
   >
-    <Memo(ImageAutoAdjustIcon)
-      className="icon-inline mr-2 text-success"
-    />
+    <span
+      className="badge badge-success mr-2"
+    >
+      <Memo(ImageAutoAdjustIcon)
+        className="icon-inline campaign-actions-bar__campaign-icon"
+      />
+       Open
+    </span>
     <span>
       <AnchorLink
         to="/campaigns"
@@ -134,9 +144,14 @@ exports[`CampaignActionsBar editable 1`] = `
   <h2
     className="m-0"
   >
-    <Memo(ImageAutoAdjustIcon)
-      className="icon-inline mr-2 text-success"
-    />
+    <span
+      className="badge badge-success mr-2"
+    >
+      <Memo(ImageAutoAdjustIcon)
+        className="icon-inline campaign-actions-bar__campaign-icon"
+      />
+       Open
+    </span>
     <span>
       <AnchorLink
         to="/campaigns"
@@ -212,9 +227,14 @@ exports[`CampaignActionsBar editable but closed 1`] = `
   <h2
     className="m-0"
   >
-    <Memo(ImageAutoAdjustIcon)
-      className="icon-inline mr-2 text-danger"
-    />
+    <span
+      className="badge badge-danger mr-2"
+    >
+      <Memo(ImageAutoAdjustIcon)
+        className="icon-inline campaign-actions-bar__campaign-icon"
+      />
+       Closed
+    </span>
     <span>
       <AnchorLink
         to="/campaigns"
@@ -273,9 +293,14 @@ exports[`CampaignActionsBar mode: closing 1`] = `
   <h2
     className="m-0"
   >
-    <Memo(ImageAutoAdjustIcon)
-      className="icon-inline mr-2 text-success"
-    />
+    <span
+      className="badge badge-success mr-2"
+    >
+      <Memo(ImageAutoAdjustIcon)
+        className="icon-inline campaign-actions-bar__campaign-icon"
+      />
+       Open
+    </span>
     <span>
       <AnchorLink
         to="/campaigns"
@@ -354,9 +379,14 @@ exports[`CampaignActionsBar mode: deleting 1`] = `
   <h2
     className="m-0"
   >
-    <Memo(ImageAutoAdjustIcon)
-      className="icon-inline mr-2 text-success"
-    />
+    <span
+      className="badge badge-success mr-2"
+    >
+      <Memo(ImageAutoAdjustIcon)
+        className="icon-inline campaign-actions-bar__campaign-icon"
+      />
+       Open
+    </span>
     <span>
       <AnchorLink
         to="/campaigns"
@@ -435,9 +465,14 @@ exports[`CampaignActionsBar mode: saving 1`] = `
   <h2
     className="m-0"
   >
-    <Memo(ImageAutoAdjustIcon)
-      className="icon-inline mr-2 text-success"
-    />
+    <span
+      className="badge badge-success mr-2"
+    >
+      <Memo(ImageAutoAdjustIcon)
+        className="icon-inline campaign-actions-bar__campaign-icon"
+      />
+       Open
+    </span>
     <span>
       <AnchorLink
         to="/campaigns"
@@ -488,7 +523,7 @@ exports[`CampaignActionsBar new with plan 1`] = `
     className="m-0"
   >
     <Memo(ImageAutoAdjustIcon)
-      className="icon-inline mr-2 text-muted"
+      className="icon-inline campaign-actions-bar__campaign-icon text-muted mr-2"
     />
     <span>
       <AnchorLink
@@ -520,7 +555,7 @@ exports[`CampaignActionsBar new without plan 1`] = `
     className="m-0"
   >
     <Memo(ImageAutoAdjustIcon)
-      className="icon-inline mr-2 text-muted"
+      className="icon-inline campaign-actions-bar__campaign-icon text-muted mr-2"
     />
     <span>
       <AnchorLink
@@ -551,9 +586,14 @@ exports[`CampaignActionsBar not editable 1`] = `
   <h2
     className="m-0"
   >
-    <Memo(ImageAutoAdjustIcon)
-      className="icon-inline mr-2 text-success"
-    />
+    <span
+      className="badge badge-success mr-2"
+    >
+      <Memo(ImageAutoAdjustIcon)
+        className="icon-inline campaign-actions-bar__campaign-icon"
+      />
+       Open
+    </span>
     <span>
       <AnchorLink
         to="/campaigns"
@@ -583,9 +623,14 @@ exports[`CampaignActionsBar processing 1`] = `
   <h2
     className="m-0"
   >
-    <Memo(ImageAutoAdjustIcon)
-      className="icon-inline mr-2 text-success"
-    />
+    <span
+      className="badge badge-success mr-2"
+    >
+      <Memo(ImageAutoAdjustIcon)
+        className="icon-inline campaign-actions-bar__campaign-icon"
+      />
+       Open
+    </span>
     <span>
       <AnchorLink
         to="/campaigns"
@@ -632,9 +677,14 @@ exports[`CampaignActionsBar some changesets still open 1`] = `
   <h2
     className="m-0"
   >
-    <Memo(ImageAutoAdjustIcon)
-      className="icon-inline mr-2 text-success"
-    />
+    <span
+      className="badge badge-success mr-2"
+    >
+      <Memo(ImageAutoAdjustIcon)
+        className="icon-inline campaign-actions-bar__campaign-icon"
+      />
+       Open
+    </span>
     <span>
       <AnchorLink
         to="/campaigns"

@@ -284,6 +284,9 @@ func testPermsStore_SetUserPermissions(db *sql.DB) func(*testing.T) {
 					Perm:   authz.Read,
 				},
 			},
+			expectUserPerms: map[int32][]uint32{
+				1: {},
+			},
 		},
 		{
 			name: "add",
@@ -426,6 +429,9 @@ func testPermsStore_SetRepoPermissions(db *sql.DB) func(*testing.T) {
 					RepoID: 1,
 					Perm:   authz.Read,
 				},
+			},
+			expectRepoPerms: map[int32][]uint32{
+				1: {},
 			},
 		},
 		{
@@ -1956,9 +1962,10 @@ func testPermsStore_RepoIDsWithNoPerms(db *sql.DB) func(*testing.T) {
 
 		// Create three test repositories
 		qs := []*sqlf.Query{
-			sqlf.Sprintf(`INSERT INTO repo(name, private) VALUES('private_repo', TRUE)`),   // ID=1
-			sqlf.Sprintf(`INSERT INTO repo(name) VALUES('public_repo')`),                   // ID=2
-			sqlf.Sprintf(`INSERT INTO repo(name, private) VALUES('private_repo_2', TRUE)`), // ID=3
+			sqlf.Sprintf(`INSERT INTO repo(name, private) VALUES('private_repo', TRUE)`),                      // ID=1
+			sqlf.Sprintf(`INSERT INTO repo(name) VALUES('public_repo')`),                                      // ID=2
+			sqlf.Sprintf(`INSERT INTO repo(name, private) VALUES('private_repo_2', TRUE)`),                    // ID=3
+			sqlf.Sprintf(`INSERT INTO repo(name, private, deleted_at) VALUES('private_repo_3', TRUE, NOW())`), // ID=4
 		}
 		for _, q := range qs {
 			if err := s.execute(ctx, q); err != nil {
@@ -1966,11 +1973,12 @@ func testPermsStore_RepoIDsWithNoPerms(db *sql.DB) func(*testing.T) {
 			}
 		}
 
-		// Should get back two private repos
+		// Should get back two private repos that are not deleted
 		ids, err := s.RepoIDsWithNoPerms(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
+		sort.Slice(ids, func(i, j int) bool { return ids[i] < ids[j] })
 
 		expIDs := []api.RepoID{1, 3}
 		if diff := cmp.Diff(expIDs, ids); diff != "" {
@@ -2095,12 +2103,28 @@ func testPermsStore_ReposIDsWithOldestPerms(db *sql.DB) func(*testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		err = s.SetRepoPermissions(ctx, &authz.RepoPermissions{
+			RepoID:  3,
+			Perm:    authz.Read,
+			UserIDs: toBitmap(1),
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		// Mock user repo 2's permissions to be updated in the future
 		q := sqlf.Sprintf(`
 UPDATE repo_permissions
 SET updated_at = %s
 WHERE repo_id = 2`, clock().AddDate(1, 0, 0))
+		if err := s.execute(ctx, q); err != nil {
+			t.Fatal(err)
+		}
+
+		// Mock repo 3 to be soft-deleted
+		q = sqlf.Sprintf(`
+INSERT INTO repo(id, name, private, deleted_at)
+	VALUES(3, 'private_repo_3', TRUE, NOW())`)
 		if err := s.execute(ctx, q); err != nil {
 			t.Fatal(err)
 		}

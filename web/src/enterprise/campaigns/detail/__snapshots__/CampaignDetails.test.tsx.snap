@@ -19,7 +19,7 @@ exports[`CampaignDetails creation form for empty manual campaign 1`] = `
     />
     <React.Fragment>
       <h3>
-        Campaign details
+        Details
       </h3>
       <CampaignTitleField
         className="e2e-campaign-title"
@@ -35,7 +35,7 @@ exports[`CampaignDetails creation form for empty manual campaign 1`] = `
     </React.Fragment>
     <React.Fragment>
       <div
-        className="mt-3"
+        className="mt-2"
       >
         <button
           className="btn btn-primary"
@@ -65,7 +65,7 @@ Array [
         className="m-0"
       >
         <CampaignsIcon
-          className="icon-inline mr-2 text-muted"
+          className="icon-inline campaign-actions-bar__campaign-icon text-muted mr-2"
         />
         <span>
           <a
@@ -88,7 +88,7 @@ Array [
       />
     </div>
     <h3>
-      Campaign details
+      Details
     </h3>
     <CampaignTitleField
       className="e2e-campaign-title"
@@ -102,7 +102,7 @@ Array [
       value=""
     />
     <div
-      className="form-group mt-3"
+      className="form-group mt-2"
     >
       <label>
         Branch name
@@ -133,7 +133,7 @@ Array [
       />
     </div>
     <div
-      className="mt-3"
+      className="mt-2"
     >
       <button
         className="btn btn-secondary mr-1"
@@ -153,11 +153,14 @@ Array [
     </div>
   </form>,
   <h3
-    className="mt-3"
+    className="mt-4 d-flex align-items-end mb-0"
   >
-    Changesets
+    2
+     
+    Patches
+     
   </h3>,
-  <CampaignTabs
+  <CampaignChangesets
     campaign={
       Object {
         "__typename": "CampaignPlan",
@@ -196,7 +199,6 @@ Array [
         "thrownError": null,
       }
     }
-    className="mt-2"
     history={
       Object {
         "action": "POP",
@@ -239,7 +241,6 @@ Array [
         "state": undefined,
       }
     }
-    persistLines={false}
   />,
 ]
 `;
@@ -258,9 +259,14 @@ Array [
       <h2
         className="m-0"
       >
-        <CampaignsIcon
-          className="icon-inline mr-2 text-success"
-        />
+        <span
+          className="badge badge-success mr-2"
+        >
+          <CampaignsIcon
+            className="icon-inline campaign-actions-bar__campaign-icon"
+          />
+           Open
+        </span>
         <span>
           <a
             href="/campaigns"
@@ -297,7 +303,7 @@ Array [
       </span>
     </div>
     <h3>
-      Campaign details
+      Details
     </h3>
     <CampaignTitleField
       className="e2e-campaign-title"
@@ -311,23 +317,23 @@ Array [
       value="d"
     />
   </form>,
-  "CampaignStatus(state=PROCESSING)",
   <h3
-    className="mb-2"
+    className="mt-4 d-flex align-items-end mb-0"
   >
-    Progress
-  </h3>,
-  <p>
-    <em>
-      Burndown chart will be shown when there is more than 1 day of data.
-    </em>
-  </p>,
-  <h3
-    className="mt-3"
-  >
+    2
+     
+    Patches
+    <span
+      className="mx-1"
+    >
+      /
+    </span>
+    2
+     
     Changesets
+     
   </h3>,
-  <CampaignTabs
+  <CampaignChangesets
     campaign={
       Object {
         "__typename": "Campaign",
@@ -10650,7 +10656,6 @@ Array [
         "thrownError": null,
       }
     }
-    className="mt-2"
     history={
       Object {
         "action": "POP",
@@ -10693,7 +10698,6 @@ Array [
         "state": undefined,
       }
     }
-    persistLines={true}
   />,
 ]
 `;
@@ -10712,9 +10716,14 @@ Array [
       <h2
         className="m-0"
       >
-        <CampaignsIcon
-          className="icon-inline mr-2 text-success"
-        />
+        <span
+          className="badge badge-success mr-2"
+        >
+          <CampaignsIcon
+            className="icon-inline campaign-actions-bar__campaign-icon"
+          />
+           Open
+        </span>
         <span>
           <a
             href="/campaigns"
@@ -10735,8 +10744,9 @@ Array [
         className="flex-grow-1 d-flex justify-content-end align-items-center"
       />
     </div>
+    CampaignStatus(state=PROCESSING)
     <div
-      className="card mt-3"
+      className="card mt-2"
     >
       <div
         className="card-header"
@@ -10769,9 +10779,8 @@ Array [
       </div>
     </div>
   </form>,
-  "CampaignStatus(state=PROCESSING)",
   <h3
-    className="mb-2"
+    className="mt-4 mb-2"
   >
     Progress
   </h3>,
@@ -10781,11 +10790,22 @@ Array [
     </em>
   </p>,
   <h3
-    className="mt-3"
+    className="mt-4 d-flex align-items-end mb-0"
   >
+    2
+     
+    Patches
+    <span
+      className="mx-1"
+    >
+      /
+    </span>
+    2
+     
     Changesets
+     
   </h3>,
-  <CampaignTabs
+  <CampaignChangesets
     campaign={
       Object {
         "__typename": "Campaign",
@@ -21108,7 +21128,6 @@ Array [
         "thrownError": null,
       }
     }
-    className="mt-2"
     history={
       Object {
         "action": "POP",
@@ -21151,7 +21170,6 @@ Array [
         "state": undefined,
       }
     }
-    persistLines={true}
   />,
 ]
 `;
@@ -21170,9 +21188,14 @@ Array [
       <h2
         className="m-0"
       >
-        <CampaignsIcon
-          className="icon-inline mr-2 text-success"
-        />
+        <span
+          className="badge badge-success mr-2"
+        >
+          <CampaignsIcon
+            className="icon-inline campaign-actions-bar__campaign-icon"
+          />
+           Open
+        </span>
         <span>
           <a
             href="/campaigns"
@@ -21283,8 +21306,9 @@ Array [
         </details>
       </span>
     </div>
+    CampaignStatus(state=PROCESSING)
     <div
-      className="card mt-3"
+      className="card mt-2"
     >
       <div
         className="card-header"
@@ -21317,9 +21341,8 @@ Array [
       </div>
     </div>
   </form>,
-  "CampaignStatus(state=PROCESSING)",
   <h3
-    className="mb-2"
+    className="mt-4 mb-2"
   >
     Progress
   </h3>,
@@ -21329,11 +21352,22 @@ Array [
     </em>
   </p>,
   <h3
-    className="mt-3"
+    className="mt-4 d-flex align-items-end mb-0"
   >
+    2
+     
+    Patches
+    <span
+      className="mx-1"
+    >
+      /
+    </span>
+    2
+     
     Changesets
+     
   </h3>,
-  <CampaignTabs
+  <CampaignChangesets
     campaign={
       Object {
         "__typename": "Campaign",
@@ -31656,7 +31690,6 @@ Array [
         "thrownError": null,
       }
     }
-    className="mt-2"
     history={
       Object {
         "action": "POP",
@@ -31699,7 +31732,6 @@ Array [
         "state": undefined,
       }
     }
-    persistLines={true}
   />,
 ]
 `;

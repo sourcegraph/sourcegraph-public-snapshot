@@ -13,20 +13,28 @@ exports[`ActivationDropdown render 0/2 completed 1`] = `
     onClick={[Function]}
   >
     <div
-      style={
-        Object {
-          "position": "relative",
+      className="activation-dropdown-button__confetti"
+    >
+      <div
+        style={
+          Object {
+            "position": "relative",
+          }
         }
-      }
-    />
+      />
+    </div>
     Get started
     <div
-      style={
-        Object {
-          "position": "relative",
+      className="activation-dropdown-button__confetti"
+    >
+      <div
+        style={
+          Object {
+            "position": "relative",
+          }
         }
-      }
-    />
+      />
+    </div>
     <span
       className="activation-dropdown-button__progress-bar-container"
     >
@@ -163,20 +171,28 @@ exports[`ActivationDropdown render 1/2 completed 1`] = `
     onClick={[Function]}
   >
     <div
-      style={
-        Object {
-          "position": "relative",
+      className="activation-dropdown-button__confetti"
+    >
+      <div
+        style={
+          Object {
+            "position": "relative",
+          }
         }
-      }
-    />
+      />
+    </div>
     Get started
     <div
-      style={
-        Object {
-          "position": "relative",
+      className="activation-dropdown-button__confetti"
+    >
+      <div
+        style={
+          Object {
+            "position": "relative",
+          }
         }
-      }
-    />
+      />
+    </div>
     <span
       className="activation-dropdown-button__progress-bar-container"
     >
@@ -313,20 +329,28 @@ exports[`ActivationDropdown render loading 1`] = `
     onClick={[Function]}
   >
     <div
-      style={
-        Object {
-          "position": "relative",
+      className="activation-dropdown-button__confetti"
+    >
+      <div
+        style={
+          Object {
+            "position": "relative",
+          }
         }
-      }
-    />
+      />
+    </div>
     Get started
     <div
-      style={
-        Object {
-          "position": "relative",
+      className="activation-dropdown-button__confetti"
+    >
+      <div
+        style={
+          Object {
+            "position": "relative",
+          }
         }
-      }
-    />
+      />
+    </div>
     <span
       className="activation-dropdown-button__progress-bar-container"
     >

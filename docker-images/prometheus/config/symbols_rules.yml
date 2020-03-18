@@ -10,7 +10,7 @@ groups:
         expr: >-
           clamp_max(clamp_min(floor(
           (increase(symbols_store_fetch_failed[5m]) / 5) OR on() vector(0)
-          ), 0), 1)
+          ), 0), 1) OR on() vector(1)
       - record: alert_count
         labels:
           service_name: symbols
@@ -20,4 +20,4 @@ groups:
         expr: >-
           clamp_max(clamp_min(floor(
           (symbols_store_fetch_queue_size) OR on() vector(0)
-          ), 0), 1)
+          ), 0), 1) OR on() vector(1)
