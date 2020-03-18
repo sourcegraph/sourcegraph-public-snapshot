@@ -24,6 +24,13 @@ All notable changes to Sourcegraph are documented in this file.
 - Added more entries (Bash, Erlang, Julia, OCaml, Scala) to the list of suggested languages for the `lang:` filter.
 - Permissions background sync is now supported for GitLab and Bitbucket Server via site configuration `"permissions.backgroundSync": {"enabled": true}`.
 - Indexed search exports more prometheus metrics and debug logs to aid debugging performance issues. [#9111](https://github.com/sourcegraph/sourcegraph/issues/9111)
+- monitoring: the Frontend dashboard now shows in excellent detail how search is behaving overall and at a glance.
+- monitoring: added alerts for when hard search errors (both timeouts and general errors) are high.
+- monitoring: added alerts for when partial search timeouts are high.
+- monitoring: added alerts for when search 90th and 99th percentile request duration is high.
+- monitoring: added alerts for when users are being shown an abnormally large amount of search alert user suggestions and no results.
+- monitoring: added alerts for when the internal indexed and unindexed search services are returning bad responses.
+- monitoring: added alerts for when gitserver may be under heavy load due to many concurrent command executions or under-provisioning.
 
 ### Changed
 
@@ -49,6 +56,8 @@ All notable changes to Sourcegraph are documented in this file.
 - A regression in repo-updater was fixed that lead to every repository's git clone being updated every time the list of repositories was synced from the code host. [#8501](https://github.com/sourcegraph/sourcegraph/issues/8501)
 - The default timeout of indexed search has been increased. Previously indexed search would always return within 3s. This lead to broken behaviour on new instances which had yet to tune resource allocations. [#8720](https://github.com/sourcegraph/sourcegraph/pull/8720)
 - Bitbucket Server older than 5.13 failed to sync since Sourcegraph 3.12. This was due to us querying for the `archived` label, but Bitbucket Server 5.13 does not support labels. [#8883](https://github.com/sourcegraph/sourcegraph/issues/8883)
+- monitoring: firing alerts are now ordered at the top of the list in dashboards by default for better visibility.
+- monitoring: fixed an issue where some alerts would fail to report in for the "Total alerts defined" panel in the overview dashboard.
 
 ### Removed
 

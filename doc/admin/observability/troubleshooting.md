@@ -24,11 +24,16 @@ issue or generating a high-quality issue report.
 If this is the case, this could indicate high gitserver load. To confirm, take the following steps:
 
 1. [Open Grafana](metrics.md#grafana).
-1. Go to the Sourcegraph Internal > Gitserver rev2 dashboard.
-1. Examine the "Echo Duration Seconds" dashboard (tracks the `src_gitserver_echo_duration_seconds`
-   metric) and "Commands running concurrently" dashboard (tracks the `src_gitserver_exec_running`
-   metric). If either of these is high (> 1s echo duration or 100s simultaneous execs), then this
-   indicates gitserver is under heavy load and likely the bottleneck.
+1. **If using Sourcegraph 3.14**: Simply check if either of these alerts are firing:
+    - `gitserver: 50+ concurrent command executions (abnormally high load)`
+    - `gitserver: echo command execution duration exceeding 1s`
+1. **If using an older version of Sourcegraph:**
+    - Go to the Sourcegraph Internal > Gitserver rev2 dashboard.
+    - Examine the "Echo Duration Seconds" dashboard (tracks the `src_gitserver_echo_duration_seconds`
+      metric) and "Commands running concurrently" dashboard (tracks the `src_gitserver_exec_running`
+      metric). If either of these is high (> 1s echo duration or 100s simultaneous execs), then this
+      indicates gitserver is under heavy load and likely the bottleneck.
+1. Confirm your gitserver is not under-provisioned, by e.g. comparing its allocated resources with what the [resource estimator](../install/resource_estimator.md) shows.
 
 Solution: set `USE_ENHANCED_LANGUAGE_DETECTION=false` in the Sourcegraph runtime
 environment.
