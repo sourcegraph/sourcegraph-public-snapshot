@@ -47,9 +47,9 @@ describe('Database', () => {
 
     describe('exists', () => {
         it('should check document path', async () => {
-            expect(await database.exists('cmd/lsif-go/main.go')).toBeTruthy()
-            expect(await database.exists('internal/index/indexer.go')).toBeTruthy()
-            expect(await database.exists('missing.go')).toBeFalsy()
+            expect(await database.exists('cmd/lsif-go/main.go')).toEqual(true)
+            expect(await database.exists('internal/index/indexer.go')).toEqual(true)
+            expect(await database.exists('missing.go')).toEqual(false)
         })
     })
 
