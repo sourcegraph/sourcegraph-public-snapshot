@@ -1,7 +1,6 @@
 import React from 'react'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { ErrorAlert } from '../../../components/alerts'
-import { CampaignsIcon } from '../icons'
 import SyncIcon from 'mdi-react/SyncIcon'
 import { pluralize } from '../../../../../shared/src/util/strings'
 
@@ -46,11 +45,7 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({ c
             if (isDraft) {
                 break
             }
-            statusIndicatorComponent = (
-                <>
-                    <CampaignsIcon className="icon-inline text-success mr-1" /> Campaign is open.
-                </>
-            )
+            statusIndicatorComponent = <>Campaign is open.</>
             break
         case 'errored':
             statusIndicatorComponent = (
@@ -74,17 +69,12 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({ c
             statusIndicatorComponent = (
                 <>
                     <SyncIcon className="icon-inline text-info mr-1" />
-                    Campaign processing
+                    Campaign is processing
                 </>
             )
             break
         case 'closed':
-            statusIndicatorComponent = (
-                <>
-                    <CampaignsIcon className="icon-inline text-danger mr-1" /> Campaign is closed. No changes can be
-                    made to this campaign anymore.
-                </>
-            )
+            statusIndicatorComponent = <>Campaign is closed. No changes can be made to this campaign anymore.</>
             break
     }
 
@@ -119,7 +109,7 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({ c
                         </div>
                     </div>
                     <p>
-                        Creating changes: {status.completedCount} / {status.pendingCount + status.completedCount}
+                        Creating changesets: {status.completedCount} / {status.pendingCount + status.completedCount}
                     </p>
                 </div>
             )}

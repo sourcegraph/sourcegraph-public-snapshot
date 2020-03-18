@@ -10734,6 +10734,7 @@ Array [
         className="flex-grow-1 d-flex justify-content-end align-items-center"
       />
     </div>
+    CampaignStatus(state=PROCESSING)
     <div
       className="card mt-3"
     >
@@ -10768,12 +10769,6 @@ Array [
       </div>
     </div>
   </form>,
-  <h3
-    className="mt-3 mb-2"
-  >
-    Status
-  </h3>,
-  "CampaignStatus(state=PROCESSING)",
   <h3
     className="mt-3 mb-2"
   >
@@ -21296,6 +21291,7 @@ Array [
         </details>
       </span>
     </div>
+    CampaignStatus(state=PROCESSING)
     <div
       className="card mt-3"
     >
@@ -21330,12 +21326,6 @@ Array [
       </div>
     </div>
   </form>,
-  <h3
-    className="mt-3 mb-2"
-  >
-    Status
-  </h3>,
-  "CampaignStatus(state=PROCESSING)",
   <h3
     className="mt-3 mb-2"
   >
