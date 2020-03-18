@@ -1,12 +1,10 @@
 import React from 'react'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { CampaignsIcon } from '../icons'
-import classNames from 'classnames'
 import { Link } from '../../../../../shared/src/components/Link'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { CloseDeleteCampaignPrompt } from './form/CloseDeleteCampaignPrompt'
 import { CampaignUIMode } from './CampaignDetails'
-import { DraftBadge } from '../DraftBadge'
 
 interface Props {
     mode: CampaignUIMode
@@ -45,21 +43,39 @@ export const CampaignActionsBar: React.FunctionComponent<Props> = ({
     const newCampaignHeader = previewingCampaignPlan ? 'New campaign' : 'New manual campaign'
     const header = campaign?.name ?? newCampaignHeader
 
+    let stateBadge: JSX.Element
+
+    if (!campaign) {
+        stateBadge = <CampaignsIcon className="icon-inline campaign-actions-bar__campaign-icon text-muted mr-2" />
+    } else if (campaign.closedAt) {
+        stateBadge = (
+            <span className="badge badge-danger mr-2">
+                <CampaignsIcon className="icon-inline campaign-actions-bar__campaign-icon" /> Closed
+            </span>
+        )
+    } else if (!campaign.publishedAt) {
+        stateBadge = (
+            <span className="badge badge-info mr-2">
+                <CampaignsIcon className="icon-inline campaign-actions-bar__campaign-icon" /> Draft
+            </span>
+        )
+    } else {
+        stateBadge = (
+            <span className="badge badge-success mr-2">
+                <CampaignsIcon className="icon-inline campaign-actions-bar__campaign-icon" /> Open
+            </span>
+        )
+    }
+
     return (
         <div className="d-flex mb-2">
             <h2 className="m-0">
-                <CampaignsIcon
-                    className={classNames(
-                        'icon-inline mr-2',
-                        !campaign ? 'text-muted' : campaign.closedAt ? 'text-danger' : 'text-success'
-                    )}
-                />
+                {stateBadge}
                 <span>
                     <Link to="/campaigns">Campaigns</Link>
                 </span>
                 <span className="text-muted d-inline-block mx-2">/</span>
                 <span>{header}</span>
-                {campaign && !campaign.publishedAt && <DraftBadge className="ml-2" />}
             </h2>
             <span className="flex-grow-1 d-flex justify-content-end align-items-center">
                 {showSpinner && <LoadingSpinner className="mr-2" />}

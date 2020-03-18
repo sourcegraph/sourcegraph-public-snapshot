@@ -8,6 +8,7 @@ import {
     ChangesetState,
     ChangesetCheckState,
 } from '../../../../../../shared/src/graphql/schema'
+import Octicon, { Diff } from '@primer/octicons-react'
 import React, { useState, useEffect } from 'react'
 import {
     changesetReviewStateColors,
@@ -25,8 +26,6 @@ import { ThemeProps } from '../../../../../../shared/src/theme'
 import { Collapsible } from '../../../../components/Collapsible'
 import { DiffStat } from '../../../../components/diff/DiffStat'
 import { FileDiffNode } from '../../../../components/diff/FileDiffNode'
-import { Markdown } from '../../../../../../shared/src/components/Markdown'
-import { renderMarkdown } from '../../../../../../shared/src/util/markdown'
 import { publishChangeset as _publishChangeset, syncChangeset } from '../backend'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Subject } from 'rxjs'
@@ -34,7 +33,6 @@ import ErrorIcon from 'mdi-react/ErrorIcon'
 import { asError } from '../../../../../../shared/src/util/errors'
 import { ChangesetLabel } from './ChangesetLabel'
 import classNames from 'classnames'
-import { DraftBadge } from '../../DraftBadge'
 import SyncIcon from 'mdi-react/SyncIcon'
 import { parseISO, formatDistance } from 'date-fns'
 
@@ -116,18 +114,6 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
             : changesetCheckStateIcons[ChangesetCheckState.PENDING]
     const changesetState = node.__typename === 'ExternalChangeset' ? node.state : ChangesetState.OPEN
 
-    const stateIcon = (
-        <ChangesetStateIcon
-            className={classNames(
-                'mr-1 icon-inline',
-                node.__typename === 'ExternalChangeset'
-                    ? `text-${changesetStatusColorClasses[changesetState]}`
-                    : 'text-muted'
-            )}
-            data-tooltip={changesetStageLabels[changesetState]}
-        />
-    )
-
     const UpdateLoaderIcon =
         node.__typename === 'ExternalChangeset' && node.updatedAt !== lastUpdatedAt ? SyncIcon : LoadingSpinner
 
@@ -136,8 +122,14 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
             <div className="changeset-node__content flex-fill">
                 <div className="d-flex flex-column">
                     {node.__typename === 'ExternalChangeset' && (
-                        <div className="m-0">
-                            {stateIcon}
+                        <div className="m-0 mb-2">
+                            <ChangesetStateIcon
+                                className={classNames(
+                                    'mr-1 icon-inline',
+                                    `text-${changesetStatusColorClasses[changesetState]}`
+                                )}
+                                data-tooltip={changesetStageLabels[changesetState]}
+                            />
                             <h3 className="m-0 d-inline">
                                 <LinkOrSpan
                                     /* Deleted changesets most likely don't exist on the codehost anymore and would return 404 pages */
@@ -149,7 +141,7 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                                     target="_blank"
                                     rel="noopener noreferrer"
                                 >
-                                    {node.title}
+                                    {node.title} (#{node.externalID})
                                 </LinkOrSpan>
                             </h3>
                             {node.checkState && (
@@ -172,8 +164,8 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                             )}
                         </div>
                     )}
-                    <div className="mt-2">
-                        {node.__typename === 'ChangesetPlan' && stateIcon}
+                    <div>
+                        {node.__typename === 'ChangesetPlan' && <Octicon icon={Diff} className="icon-inline mr-2" />}
                         <strong>
                             <Link
                                 to={node.repository.url}
@@ -201,15 +193,8 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                                 </span>
                             </small>
                         )}
-                        {node.__typename === 'ChangesetPlan' && !isPublishing && <DraftBadge className="ml-2" />}
                     </div>
                 </div>
-                {node.__typename === 'ExternalChangeset' && (
-                    <Markdown
-                        className="text-truncate mt-2"
-                        dangerousInnerHTML={renderMarkdown(node.body, { plainText: true })}
-                    />
-                )}
             </div>
             <div className="flex-shrink-0 flex-grow-0 ml-1 align-items-end">
                 {fileDiffs && <DiffStat {...fileDiffs.diffStat} expandedCounts={true} />}
