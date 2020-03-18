@@ -674,6 +674,12 @@ export function handleCodeHost({
     /** A stream of added or removed code views */
     const codeViews = mutations.pipe(
         trackCodeViews(codeHost),
+        // Limit number of code views for perf reasons.
+        filter(() => codeViewCount < 50),
+        tap(codeViewEvent => {
+            codeViewCount++
+            codeViewEvent.subscriptions.add(() => codeViewCount--)
+        }),
         mergeMap(codeViewEvent =>
             codeViewEvent.resolveFileInfo(codeViewEvent.element, platformContext.requestGraphQL).pipe(
                 mergeMap(fileInfo => resolveRepoNames(fileInfo, platformContext.requestGraphQL)),
@@ -706,12 +712,6 @@ export function handleCodeHost({
                 )
             )
         ),
-        // Limit number of code views for perf reasons.
-        filter(() => codeViewCount < 50),
-        tap(codeViewEvent => {
-            codeViewCount++
-            codeViewEvent.subscriptions.add(() => codeViewCount--)
-        }),
         observeOn(animationFrameScheduler)
     )
 
