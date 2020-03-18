@@ -81,7 +81,10 @@ interface Props extends ThemeProps {
 
     /** For testing only. */
     _fetchCampaignById?: typeof fetchCampaignById | ((campaign: GQL.ID) => Observable<Campaign | null>)
+    /** For testing only. */
     _fetchCampaignPlanById?: typeof fetchCampaignPlanById | ((campaignPlan: GQL.ID) => Observable<CampaignPlan | null>)
+    /** For testing only. */
+    _noSubject?: boolean
 }
 
 /**
@@ -95,6 +98,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     isLightTheme,
     _fetchCampaignById = fetchCampaignById,
     _fetchCampaignPlanById = fetchCampaignPlanById,
+    _noSubject = false,
 }) => {
     // State for the form in editing mode
     const [name, setName] = useState<string>('')
@@ -118,7 +122,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         // on the very first fetch, a reload of the changesets is not required
         let isFirstCampaignFetch = true
         // Fetch campaign if ID was given
-        const subscription = merge(of(undefined), campaignUpdates)
+        const subscription = merge(of(undefined), _noSubject ? new Observable<void>() : campaignUpdates)
             .pipe(
                 switchMap(
                     () =>
@@ -161,7 +165,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 error: triggerError,
             })
         return () => subscription.unsubscribe()
-    }, [campaignID, triggerError, changesetUpdates, campaignUpdates, _fetchCampaignById])
+    }, [campaignID, triggerError, changesetUpdates, campaignUpdates, _fetchCampaignById, _noSubject])
 
     const [mode, setMode] = useState<CampaignUIMode>(campaignID ? 'viewing' : 'editing')
 
