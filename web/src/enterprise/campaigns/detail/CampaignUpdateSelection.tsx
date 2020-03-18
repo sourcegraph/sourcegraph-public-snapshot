@@ -28,7 +28,8 @@ export const CampaignUpdateSelection: React.FunctionComponent<Props> = ({ histor
             <PageTitle title="Update campaign" />
             <h1>Select campaign to update</h1>
             <p>
-                Choose the campaign you want to update and preview which changes will be made to the changesets on the code hosts:
+                Choose the campaign you want to update and preview which changes will be made to the changesets on the
+                code hosts:
             </p>
             <FilteredConnection<CampaignNodeCampaign, Omit<CampaignNodeProps, 'node'>>
                 history={history}
