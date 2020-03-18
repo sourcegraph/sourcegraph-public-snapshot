@@ -113,7 +113,7 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
                         history,
                         location,
                         campaignUpdates,
-                        enablePublishing: campaign.__typename === 'Campaign',
+                        enablePublishing: campaign.__typename === 'Campaign' && !campaign.closedAt,
                     }}
                     queryConnection={queryChangesetsConnection}
                     hideSearch={true}
