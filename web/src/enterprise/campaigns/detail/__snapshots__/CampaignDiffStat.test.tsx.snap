@@ -1,0 +1,31 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`CampaignDiffStat for campaign 1`] = `
+<div
+  className="abc"
+>
+  <DiffStat
+    added={20}
+    changed={20}
+    deleted={20}
+    expandedCounts={true}
+  />
+</div>
+`;
+
+exports[`CampaignDiffStat for campaignplan 1`] = `
+<div
+  className="abc"
+>
+  <DiffStat
+    added={10}
+    changed={10}
+    deleted={10}
+    expandedCounts={true}
+  />
+</div>
+`;
+
+exports[`CampaignDiffStat hidden for empty campaign 1`] = `<React.Fragment />`;
+
+exports[`CampaignDiffStat hidden for empty campaignplan 1`] = `<React.Fragment />`;
