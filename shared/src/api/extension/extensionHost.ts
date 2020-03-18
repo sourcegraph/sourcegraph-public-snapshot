@@ -18,6 +18,7 @@ import { ExtRoots } from './api/roots'
 import { ExtSearch } from './api/search'
 import { ExtViews } from './api/views'
 import { ExtWindows } from './api/windows'
+import { registerComlinkTransferHandlers } from '../util'
 
 /**
  * Required information when initializing an extension host.
@@ -38,7 +39,7 @@ export interface InitData {
  * It expects to receive a message containing {@link InitData} from the client application as the
  * first message.
  *
- * @param transports The message reader and writer to use for communication with the client.
+ * @param endpoints The endpoints to the client.
  * @returns An unsubscribable to terminate the extension host.
  */
 export function startExtensionHost(
@@ -76,7 +77,7 @@ export function startExtensionHost(
  * The extension API is made globally available to all requires/imports of the "sourcegraph" module
  * by other scripts running in the same JavaScript context.
  *
- * @param connection The connection used to communicate with the client.
+ * @param endpoints The endpoints to the client.
  * @param initData The information to initialize this extension host.
  * @returns An unsubscribable to terminate the extension host.
  */
@@ -116,6 +117,8 @@ function createExtensionAPI(
     const subscription = new Subscription()
 
     // EXTENSION HOST WORKER
+
+    registerComlinkTransferHandlers()
 
     /** Proxy to main thread */
     const proxy = comlink.proxy<ClientAPI>(endpoints.proxy)

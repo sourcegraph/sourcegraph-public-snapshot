@@ -14,6 +14,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/RoaringBitmap/roaring"
@@ -35,18 +36,28 @@ var requestCounter = metrics.NewRequestMeter("bitbucket", "Total number of reque
 //
 // See https://godoc.org/golang.org/x/time/rate#Limiter for an explanation of these fields.
 //
-// The limits chosen here are based on the following logic: Bitbucket Cloud restricts
-// "List all repositories" requests (which are a good portion of our requests) to 1,000/hr,
-// and they restrict "List a user or team's repositories" requests (which are roughly equal
-// to our repository lookup requests) to 1,000/hr. We peform a list repositories request
-// for every 1000 repositories on Bitbucket every 1m by default, so for someone with 20,000
-// Bitbucket repositories we need 20,000/1000 requests per minute (1200/hr) + overhead for
-// repository lookup requests by users. So we use a generous 7,200/hr here until we hear
-// from someone that these values do not work well for them.
+// We chose the limits here based on the fact that Sourcegraph is a heavy consumer of the Bitbucket
+// Server API and that a large customer had reported to us their Bitbucket instance receives
+// ~100 req/s so it seems reasonable for us to (at max) consume ~8 req/s.
+//
+// Note that, for comparison, Bitbucket Cloud restricts "List all repositories" requests (which are
+// a good portion of our requests) to 1,000/hr, and they restrict "List a user or team's repositories"
+// requests (which are roughly equal to our repository lookup requests) to 1,000/hr. We perform a list
+// repositories request for every 1000 repositories on Bitbucket every 1m by default, so for someone
+// with 20,000 Bitbucket repositories we need 20,000/1000 requests per minute (1200/hr) + overhead for
+// repository lookup requests by users, and requests for identifying which repositories a user has
+// access to (if authorization is in use) and requests for campaign synchronization if it is in use.
 const (
-	rateLimitRequestsPerSecond = 2 // 120/min or 7200/hr
+	rateLimitRequestsPerSecond = 8 // 480/min or 28,800/hr
 	RateLimitMaxBurstRequests  = 500
 )
+
+// Global limiter cache so that we reuse the same rate limiter for
+// the same code host, even between config changes.
+// The longer term plan is to have a rate limiter that is shared across
+// all services so the below is just a short term solution.
+var limiterMu sync.Mutex
+var limiterCache = make(map[string]*rate.Limiter)
 
 // Client access a Bitbucket Server via the REST API.
 type Client struct {
@@ -85,10 +96,19 @@ func NewClient(url *url.URL, httpClient httpcli.Doer) *Client {
 
 	httpClient = requestCounter.Doer(httpClient, categorize)
 
+	limiterMu.Lock()
+	defer limiterMu.Unlock()
+
+	l, ok := limiterCache[url.String()]
+	if !ok {
+		l = rate.NewLimiter(rateLimitRequestsPerSecond, RateLimitMaxBurstRequests)
+		limiterCache[url.String()] = l
+	}
+
 	return &Client{
 		httpClient: httpClient,
 		URL:        url,
-		RateLimit:  rate.NewLimiter(rateLimitRequestsPerSecond, RateLimitMaxBurstRequests),
+		RateLimit:  l,
 	}
 }
 
@@ -317,11 +337,22 @@ func (c *Client) LoadUser(ctx context.Context, u *User) error {
 // LoadGroup loads the given Group returning an error in case of failure.
 func (c *Client) LoadGroup(ctx context.Context, g *Group) error {
 	qry := url.Values{"filter": {g.Name}}
-	return c.send(ctx, "GET", "rest/api/1.0/admin/groups", qry, nil, &struct {
+	var groups struct {
 		Values []*Group `json:"values"`
-	}{
-		Values: []*Group{g},
-	})
+	}
+
+	err := c.send(ctx, "GET", "rest/api/1.0/admin/groups", qry, nil, &groups)
+	if err != nil {
+		return err
+	}
+
+	if len(groups.Values) != 1 {
+		return errors.New("group not found")
+	}
+
+	*g = *groups.Values[0]
+
+	return nil
 }
 
 // CreateGroup creates the given Group returning an error in case of failure.
@@ -552,9 +583,9 @@ func (c *Client) LoadPullRequestActivities(ctx context.Context, pr *PullRequest)
 
 	t := &PageToken{Limit: 1000}
 
-	var activities []Activity
+	var activities []*Activity
 	for t.HasMore() {
-		var page []Activity
+		var page []*Activity
 		if t, err = c.page(ctx, path, nil, t, &page); err != nil {
 			return err
 		}
@@ -562,6 +593,66 @@ func (c *Client) LoadPullRequestActivities(ctx context.Context, pr *PullRequest)
 	}
 
 	pr.Activities = activities
+	return nil
+}
+
+func (c *Client) LoadPullRequestCommits(ctx context.Context, pr *PullRequest) (err error) {
+	if pr.ToRef.Repository.Slug == "" {
+		return errors.New("repository slug empty")
+	}
+
+	if pr.ToRef.Repository.Project.Key == "" {
+		return errors.New("project key empty")
+	}
+
+	path := fmt.Sprintf(
+		"rest/api/1.0/projects/%s/repos/%s/pull-requests/%d/commits",
+		pr.ToRef.Repository.Project.Key,
+		pr.ToRef.Repository.Slug,
+		pr.ID,
+	)
+
+	t := &PageToken{Limit: 1000}
+
+	var commits []*Commit
+	for t.HasMore() {
+		var page []*Commit
+		if t, err = c.page(ctx, path, nil, t, &page); err != nil {
+			return err
+		}
+		commits = append(commits, page...)
+	}
+
+	pr.Commits = commits
+	return nil
+}
+
+func (c *Client) LoadPullRequestBuildStatuses(ctx context.Context, pr *PullRequest) (err error) {
+	if len(pr.Commits) == 0 {
+		return nil
+	}
+
+	var latestCommit Commit
+	for _, c := range pr.Commits {
+		if latestCommit.CommitterTimestamp < c.CommitterTimestamp {
+			latestCommit = *c
+		}
+	}
+
+	path := fmt.Sprintf("rest/build-status/1.0/commits/%s", latestCommit.ID)
+
+	t := &PageToken{Limit: 1000}
+
+	var statuses []*BuildStatus
+	for t.HasMore() {
+		var page []*BuildStatus
+		if t, err = c.page(ctx, path, nil, t, &page); err != nil {
+			return err
+		}
+		statuses = append(statuses, page...)
+	}
+
+	pr.BuildStatuses = statuses
 	return nil
 }
 
@@ -598,7 +689,7 @@ func (c *Client) LabeledRepos(ctx context.Context, pageToken *PageToken, label s
 	return repos, next, err
 }
 
-// RepoIDs fetches a list of repositories that the user token has permission for.
+// RepoIDs fetches a list of repository IDs that the user token has permission for.
 // Permission: ["admin", "read", "write"]
 func (c *Client) RepoIDs(ctx context.Context, permission string) ([]uint32, error) {
 	u := fmt.Sprintf("rest/sourcegraph-admin/1.0/permissions/repositories?permission=%s", permission)
@@ -721,7 +812,10 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 		})
 	}
 
-	if result != nil {
+	// handle binary response
+	if s, ok := result.(*[]byte); ok {
+		*s = bs
+	} else if result != nil {
 		return json.Unmarshal(bs, result)
 	}
 
@@ -948,6 +1042,7 @@ type Project struct {
 type Ref struct {
 	ID         string `json:"id"`
 	Repository struct {
+		ID      int    `json:"id"`
 		Slug    string `json:"slug"`
 		Project struct {
 			Key string `json:"key"`
@@ -993,7 +1088,9 @@ type PullRequest struct {
 		} `json:"self"`
 	} `json:"links"`
 
-	Activities []Activity `json:"activities,omitempty"`
+	Activities    []*Activity    `json:"activities,omitempty"`
+	Commits       []*Commit      `json:"commits,omitempty"`
+	BuildStatuses []*BuildStatus `json:"buildstatuses,omitempty"`
 }
 
 // Activity is a union type of all supported pull request activity items.
@@ -1018,6 +1115,15 @@ type Activity struct {
 
 // Key is a unique key identifying this activity in the context of its pull request.
 func (a *Activity) Key() string { return strconv.Itoa(a.ID) }
+
+// BuildStatus represents the build status of a commit
+type BuildStatus struct {
+	State       string `json:"state,omitempty"`
+	Key         string `json:"key,omitempty"`
+	Name        string `json:"name,omitempty"`
+	Url         string `json:"url,omitempty"`
+	Description string `json:"description,omitempty"`
+}
 
 // ActivityAction defines the action taken in an Activity.
 type ActivityAction string

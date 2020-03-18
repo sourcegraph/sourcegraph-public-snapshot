@@ -202,7 +202,7 @@ export class APIConsole extends React.PureComponent<Props, State> {
         )
     }
 
-    // Foward GraphiQL prettify/history buttons directly to their original
+    // Forward GraphiQL prettify/history buttons directly to their original
     // implementation. We have to do this because it is impossible to inject
     // children into the GraphiQL toolbar unless you completely specify your
     // own.

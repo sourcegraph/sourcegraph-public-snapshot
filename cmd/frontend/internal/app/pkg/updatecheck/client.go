@@ -66,9 +66,9 @@ var baseURL = &url.URL{
 	Path:   "/.api/updates",
 }
 
-func marshalSiteActivityJSON() (*json.RawMessage, error) {
+func getAndMarshalSiteActivityJSON(ctx context.Context) (json.RawMessage, error) {
 	days, weeks, months := 2, 1, 1
-	siteActivity, err := usagestats.GetSiteUsageStatistics(context.Background(), &usagestats.SiteUsageStatisticsOptions{
+	siteActivity, err := usagestats.GetSiteUsageStatistics(ctx, &usagestats.SiteUsageStatisticsOptions{
 		DayPeriods:   &days,
 		WeekPeriods:  &weeks,
 		MonthPeriods: &months,
@@ -80,8 +80,56 @@ func marshalSiteActivityJSON() (*json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	message := json.RawMessage(contents)
-	return &message, nil
+	return json.RawMessage(contents), nil
+}
+
+func getAndMarshalCampaignsUsageJSON(ctx context.Context) (json.RawMessage, error) {
+	campaignsUsage, err := usagestats.GetCampaignsUsageStatistics(ctx)
+	if err != nil {
+		return nil, err
+	}
+	contents, err := json.Marshal(campaignsUsage)
+	if err != nil {
+		return nil, err
+	}
+	return json.RawMessage(contents), nil
+}
+
+func getAndMarshalCodeIntelUsageJSON(ctx context.Context) (json.RawMessage, error) {
+	days, weeks, months := 2, 1, 1
+	codeIntelUsage, err := usagestats.GetCodeIntelUsageStatistics(ctx, &usagestats.CodeIntelUsageStatisticsOptions{
+		DayPeriods:            &days,
+		WeekPeriods:           &weeks,
+		MonthPeriods:          &months,
+		IncludeEventCounts:    !conf.Get().DisableNonCriticalTelemetry,
+		IncludeEventLatencies: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+	contents, err := json.Marshal(codeIntelUsage)
+	if err != nil {
+		return nil, err
+	}
+	return json.RawMessage(contents), nil
+}
+
+func getAndMarshalSearchUsageJSON(ctx context.Context) (json.RawMessage, error) {
+	days, weeks, months := 2, 1, 1
+	searchUsage, err := usagestats.GetSearchUsageStatistics(ctx, &usagestats.SearchUsageStatisticsOptions{
+		DayPeriods:         &days,
+		WeekPeriods:        &weeks,
+		MonthPeriods:       &months,
+		IncludeEventCounts: !conf.Get().DisableNonCriticalTelemetry,
+	})
+	if err != nil {
+		return nil, err
+	}
+	contents, err := json.Marshal(searchUsage)
+	if err != nil {
+		return nil, err
+	}
+	return json.RawMessage(contents), nil
 }
 
 func updateURL(ctx context.Context) string {
@@ -120,9 +168,21 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 	if err != nil {
 		logFunc("usagestats.HasFindRefsOccurred failed", "error", err)
 	}
-	act, err := marshalSiteActivityJSON()
+	act, err := getAndMarshalSiteActivityJSON(ctx)
 	if err != nil {
-		logFunc("marshalSiteActivityJSON failed", "error", err)
+		logFunc("getAndMarshalSiteActivityJSON failed", "error", err)
+	}
+	campaignsUsage, err := getAndMarshalCampaignsUsageJSON(ctx)
+	if err != nil {
+		logFunc("getAndMarshalCampaignsUsageJSON failed", "error", err)
+	}
+	codeIntelUsage, err := getAndMarshalCodeIntelUsageJSON(ctx)
+	if err != nil {
+		logFunc("getAndMarshalCodeIntelUsageJSON failed", "error", err)
+	}
+	searchUsage, err := getAndMarshalSearchUsageJSON(ctx)
+	if err != nil {
+		logFunc("getAndMarshalSearchUsageJSON failed", "error", err)
 	}
 	initAdminEmail, err := db.UserEmails.GetInitialSiteAdminEmail(ctx)
 	if err != nil {
@@ -132,7 +192,6 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 	if err != nil {
 		logFunc("externalServicesKinds failed", "error", err)
 	}
-
 	contents, err := json.Marshal(&pingRequest{
 		ClientSiteID:         siteid.Get(),
 		DeployType:           conf.DeployType(),
@@ -143,6 +202,9 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 		HasExtURL:            conf.UsingExternalURL(),
 		UniqueUsers:          int32(count),
 		Activity:             act,
+		CampaignsUsage:       campaignsUsage,
+		CodeIntelUsage:       codeIntelUsage,
+		SearchUsage:          searchUsage,
 		InitialAdminEmail:    initAdminEmail,
 		TotalUsers:           int32(totalUsers),
 		HasRepos:             hasRepos,

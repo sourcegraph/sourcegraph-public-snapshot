@@ -13,25 +13,34 @@ exports[`ActivationDropdown render 0/2 completed 1`] = `
     onClick={[Function]}
   >
     <div
-      style={
-        Object {
-          "position": "relative",
+      className="activation-dropdown-button__confetti"
+    >
+      <div
+        style={
+          Object {
+            "position": "relative",
+          }
         }
-      }
-    />
+      />
+    </div>
     Get started
     <div
-      style={
-        Object {
-          "position": "relative",
+      className="activation-dropdown-button__confetti"
+    >
+      <div
+        style={
+          Object {
+            "position": "relative",
+          }
         }
-      }
-    />
+      />
+    </div>
     <span
       className="activation-dropdown-button__progress-bar-container"
     >
       <svg
         className="CircularProgressbar activation-dropdown-button__circular-progress-bar"
+        data-test-id="CircularProgressbar"
         style={Object {}}
         viewBox="0 0 100 100"
       >
@@ -45,7 +54,12 @@ exports[`ActivationDropdown render 0/2 completed 1`] = `
     "
           fillOpacity={0}
           strokeWidth={12}
-          style={Object {}}
+          style={
+            Object {
+              "strokeDasharray": "276.46015351590177px 276.46015351590177px",
+              "strokeDashoffset": "0px",
+            }
+          }
         />
         <path
           className="CircularProgressbar-path"
@@ -157,25 +171,34 @@ exports[`ActivationDropdown render 1/2 completed 1`] = `
     onClick={[Function]}
   >
     <div
-      style={
-        Object {
-          "position": "relative",
+      className="activation-dropdown-button__confetti"
+    >
+      <div
+        style={
+          Object {
+            "position": "relative",
+          }
         }
-      }
-    />
+      />
+    </div>
     Get started
     <div
-      style={
-        Object {
-          "position": "relative",
+      className="activation-dropdown-button__confetti"
+    >
+      <div
+        style={
+          Object {
+            "position": "relative",
+          }
         }
-      }
-    />
+      />
+    </div>
     <span
       className="activation-dropdown-button__progress-bar-container"
     >
       <svg
         className="CircularProgressbar activation-dropdown-button__circular-progress-bar"
+        data-test-id="CircularProgressbar"
         style={Object {}}
         viewBox="0 0 100 100"
       >
@@ -189,7 +212,12 @@ exports[`ActivationDropdown render 1/2 completed 1`] = `
     "
           fillOpacity={0}
           strokeWidth={12}
-          style={Object {}}
+          style={
+            Object {
+              "strokeDasharray": "276.46015351590177px 276.46015351590177px",
+              "strokeDashoffset": "0px",
+            }
+          }
         />
         <path
           className="CircularProgressbar-path"
@@ -301,25 +329,34 @@ exports[`ActivationDropdown render loading 1`] = `
     onClick={[Function]}
   >
     <div
-      style={
-        Object {
-          "position": "relative",
+      className="activation-dropdown-button__confetti"
+    >
+      <div
+        style={
+          Object {
+            "position": "relative",
+          }
         }
-      }
-    />
+      />
+    </div>
     Get started
     <div
-      style={
-        Object {
-          "position": "relative",
+      className="activation-dropdown-button__confetti"
+    >
+      <div
+        style={
+          Object {
+            "position": "relative",
+          }
         }
-      }
-    />
+      />
+    </div>
     <span
       className="activation-dropdown-button__progress-bar-container"
     >
       <svg
         className="CircularProgressbar activation-dropdown-button__circular-progress-bar"
+        data-test-id="CircularProgressbar"
         style={Object {}}
         viewBox="0 0 100 100"
       >
@@ -333,7 +370,12 @@ exports[`ActivationDropdown render loading 1`] = `
     "
           fillOpacity={0}
           strokeWidth={12}
-          style={Object {}}
+          style={
+            Object {
+              "strokeDasharray": "276.46015351590177px 276.46015351590177px",
+              "strokeDashoffset": "0px",
+            }
+          }
         />
         <path
           className="CircularProgressbar-path"

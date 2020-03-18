@@ -16,19 +16,20 @@ func (c *Client) Exists(ctx context.Context, args *struct {
 	RepoID api.RepoID
 	Commit string
 	Path   string
-}) (*lsif.LSIFUpload, error) {
+}) ([]*lsif.LSIFUpload, error) {
 	query := queryValues{}
 	query.SetInt("repositoryId", int64(args.RepoID))
 	query.Set("commit", args.Commit)
 	query.Set("path", args.Path)
 
 	req := &lsifRequest{
-		path:  "/exists",
-		query: query,
+		path:       "/exists",
+		query:      query,
+		routingKey: fmt.Sprintf("%d:%s", args.RepoID, args.Commit),
 	}
 
 	payload := struct {
-		Upload *lsif.LSIFUpload `json:"upload"`
+		Uploads []*lsif.LSIFUpload `json:"uploads"`
 	}{}
 
 	_, err := c.do(ctx, req, &payload)
@@ -36,29 +37,28 @@ func (c *Client) Exists(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	return payload.Upload, nil
+	return payload.Uploads, nil
 }
 
 func (c *Client) Upload(ctx context.Context, args *struct {
-	RepoID   api.RepoID
-	Commit   graphqlbackend.GitObjectID
-	Root     string
-	Blocking *bool
-	MaxWait  *int32
-	Body     io.ReadCloser
+	RepoID      api.RepoID
+	Commit      graphqlbackend.GitObjectID
+	Root        string
+	IndexerName string
+	Body        io.ReadCloser
 }) (int64, bool, error) {
 	query := queryValues{}
 	query.SetInt("repositoryId", int64(args.RepoID))
 	query.Set("commit", string(args.Commit))
 	query.Set("root", args.Root)
-	query.SetOptionalBool("blocking", args.Blocking)
-	query.SetOptionalInt32("maxWait", args.MaxWait)
+	query.Set("indexerName", args.IndexerName)
 
 	req := &lsifRequest{
-		path:   "/upload",
-		method: "POST",
-		query:  query,
-		body:   args.Body,
+		path:       "/upload",
+		method:     "POST",
+		query:      query,
+		body:       args.Body,
+		routingKey: fmt.Sprintf("%d:%s", args.RepoID, args.Commit),
 	}
 
 	payload := struct {
@@ -157,9 +157,10 @@ func (c *Client) locationQuery(ctx context.Context, args *struct {
 	query.SetOptionalInt32("limit", args.Limit)
 
 	req := &lsifRequest{
-		path:   fmt.Sprintf("/%s", args.Operation),
-		cursor: args.Cursor,
-		query:  query,
+		path:       fmt.Sprintf("/%s", args.Operation),
+		cursor:     args.Cursor,
+		query:      query,
+		routingKey: fmt.Sprintf("%d:%s", args.RepoID, args.Commit),
 	}
 
 	payload := struct {
@@ -188,11 +189,12 @@ func (c *Client) Hover(ctx context.Context, args *struct {
 	query.Set("path", args.Path)
 	query.SetInt("line", int64(args.Line))
 	query.SetInt("character", int64(args.Character))
-	query.SetInt("uploadID", int64(args.UploadID))
+	query.SetInt("uploadId", int64(args.UploadID))
 
 	req := &lsifRequest{
-		path:  fmt.Sprintf("/hover"),
-		query: query,
+		path:       "/hover",
+		query:      query,
+		routingKey: fmt.Sprintf("%d:%s", args.RepoID, args.Commit),
 	}
 
 	payload := struct {

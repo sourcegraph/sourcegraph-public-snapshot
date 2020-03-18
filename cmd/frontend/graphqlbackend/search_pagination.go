@@ -161,7 +161,7 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 		return nil, err
 	}
 
-	resultTypes, _ := r.determineResultTypes(args, "")
+	resultTypes := r.determineResultTypes(args, "")
 	tr.LazyPrintf("resultTypes: %v", resultTypes)
 
 	if len(resultTypes) != 1 || resultTypes[0] != "file" {
@@ -192,7 +192,7 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 	var alert *searchAlert
 
 	if len(missingRepoRevs) > 0 {
-		alert = r.alertForMissingRepoRevs(missingRepoRevs)
+		alert = alertForMissingRepoRevs(r.patternType, missingRepoRevs)
 	}
 
 	log15.Info("next cursor for paginated search request",

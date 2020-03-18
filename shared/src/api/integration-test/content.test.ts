@@ -9,7 +9,7 @@ describe('content (integration)', () => {
         // Register the provider and call it.
         extensionAPI.content.registerLinkPreviewProvider('http://example.com', {
             provideLinkPreview: url => ({
-                content: { value: `xyz ${url.toString()}`, kind: MarkupKind.PlainText },
+                content: { value: `xyz ${url.href}`, kind: MarkupKind.PlainText },
             }),
         })
         await extensionAPI.internal.sync()

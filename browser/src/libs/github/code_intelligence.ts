@@ -1,17 +1,9 @@
-import { AdjustmentDirection, DiffPart, PositionAdjuster } from '@sourcegraph/codeintellify'
+import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/codeintellify'
 import { trimStart } from 'lodash'
 import { map } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 import { PlatformContext } from '../../../../shared/src/platform/context'
-import {
-    FileSpec,
-    PositionSpec,
-    RawRepoSpec,
-    RepoSpec,
-    ResolvedRevSpec,
-    RevSpec,
-    ViewStateSpec,
-} from '../../../../shared/src/util/url'
+import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../shared/src/util/url'
 import { fetchBlobContentLines } from '../../shared/repo/backend'
 import { querySelectorOrSelf } from '../../shared/util/dom'
 import { toAbsoluteBlobURL } from '../../shared/util/url'
@@ -324,6 +316,7 @@ export const githubCodeHost: CodeHost = {
         actionItemClassName:
             'command-palette-action-item--github no-underline d-flex flex-auto flex-items-center jump-to-suggestions-path p-2',
         noResultsClassName: 'd-flex flex-auto flex-items-center jump-to-suggestions-path p-2',
+        iconClassName,
     },
     codeViewToolbarClassProps: {
         className: 'code-view-toolbar--github',
@@ -350,59 +343,60 @@ export const githubCodeHost: CodeHost = {
     },
     setElementTooltip,
     linkPreviewContentClass: 'text-small text-gray p-1 mx-1 border rounded-1 bg-gray text-gray-dark',
-    urlToFile: (
-        sourcegraphURL: string,
-        location: Partial<RepoSpec> &
-            RawRepoSpec &
-            RevSpec &
-            FileSpec &
-            Partial<PositionSpec> &
-            Partial<ViewStateSpec> & { part?: DiffPart }
-    ) => {
-        if (location.viewState) {
+    urlToFile: (sourcegraphURL, target, context) => {
+        if (target.viewState) {
             // A view state means that a panel must be shown, and panels are currently only supported on
             // Sourcegraph (not code hosts).
-            return toAbsoluteBlobURL(sourcegraphURL, {
-                ...location,
-                repoName: location.repoName || location.rawRepoName,
-            })
+            return toAbsoluteBlobURL(sourcegraphURL, target)
         }
 
         // Make sure the location is also on this github instance, return an absolute URL otherwise.
-        const sameCodeHost = location.rawRepoName.startsWith(window.location.hostname)
+        const sameCodeHost = target.rawRepoName.startsWith(window.location.hostname)
         if (!sameCodeHost) {
-            return toAbsoluteBlobURL(sourcegraphURL, {
-                ...location,
-                repoName: location.repoName || location.rawRepoName,
-            })
+            return toAbsoluteBlobURL(sourcegraphURL, target)
         }
 
-        const rev = location.rev || 'HEAD'
+        const rev = target.rev || 'HEAD'
         // If we're provided options, we can make the j2d URL more specific.
         const { rawRepoName } = parseURL()
 
-        const sameRepo = rawRepoName === location.rawRepoName
         // Stay on same page in PR if possible.
-        if (sameRepo && location.part) {
+        // TODO to be entirely correct, this would need to compare the rev of the code view with the target rev.
+        const isSameRepo = rawRepoName === target.rawRepoName
+        if (isSameRepo && context.part !== undefined) {
             const containers = getFileContainers()
             for (const container of containers) {
-                const header = container.querySelector('.file-header') as HTMLElement
+                const header = container.querySelector<HTMLElement & { dataset: { path: string; anchor: string } }>(
+                    '.file-header[data-path][data-anchor]'
+                )
+                if (!header) {
+                    // E.g. suggestion snippet
+                    continue
+                }
                 const anchorPath = header.dataset.path
-                if (anchorPath === location.filePath) {
+                if (anchorPath === target.filePath) {
                     const anchorUrl = header.dataset.anchor
-                    const url = `${window.location.origin}${window.location.pathname}#${anchorUrl}${
-                        location.part === 'base' ? 'L' : 'R'
-                    }${location.position ? location.position.line : ''}`
-
-                    return url
+                    const url = new URL(window.location.href)
+                    url.hash = anchorUrl
+                    if (target.position) {
+                        // GitHub uses L for the left side, R for both right side and the unchanged/white parts
+                        url.hash += `${context.part === 'base' ? 'L' : 'R'}${target.position.line}`
+                    }
+                    // Only use URL if it is visible
+                    // TODO: Expand hidden lines to reveal
+                    if (!document.querySelector(url.hash)) {
+                        break
+                    }
+                    return url.href
                 }
             }
         }
 
-        const fragment = location.position
-            ? `#L${location.position.line}${location.position.character ? ':' + location.position.character : ''}`
+        // Go to blob URL
+        const fragment = target.position
+            ? `#L${target.position.line}${target.position.character ? ':' + target.position.character : ''}`
             : ''
-        return `https://${location.rawRepoName}/blob/${rev}/${location.filePath}${fragment}`
+        return `https://${target.rawRepoName}/blob/${rev}/${target.filePath}${fragment}`
     },
     codeViewsRequireTokenization: true,
 }

@@ -1,9 +1,10 @@
 import { DiffPart } from '@sourcegraph/codeintellify'
 import { Range } from '@sourcegraph/extension-api-classes'
-import { uniqueId } from 'lodash'
+import { uniqueId, noop } from 'lodash'
 import renderer from 'react-test-renderer'
 import { BehaviorSubject, from, NEVER, of, Subject, Subscription, throwError } from 'rxjs'
 import { filter, skip, switchMap, take, first } from 'rxjs/operators'
+import { TestScheduler } from 'rxjs/testing'
 import * as sinon from 'sinon'
 import { Services } from '../../../../shared/src/api/client/services'
 import { integrationTestContext } from '../../../../shared/src/api/integration-test/testHelpers'
@@ -22,13 +23,15 @@ import {
     createOverlayMount,
     FileInfo,
     handleCodeHost,
+    observeHoverOverlayMountLocation,
 } from './code_intelligence'
 import { toCodeViewResolver } from './code_views'
 import { DEFAULT_GRAPHQL_RESPONSES, mockRequestGraphQL } from './test_helpers'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { NotificationType } from '../../../../shared/src/api/client/services/notifications'
+import { toPrettyBlobURL } from '../../../../shared/src/util/url'
 
-const RENDER = jest.fn()
+const RENDER = sinon.spy()
 
 const notificationClassNames = {
     [NotificationType.Log]: 'log',
@@ -39,8 +42,17 @@ const notificationClassNames = {
 }
 
 const elementRenderedAtMount = (mount: Element): renderer.ReactTestRendererJSON | undefined => {
-    const call = RENDER.mock.calls.find(call => call[1] === mount)
+    const call = RENDER.args.find(call => call[1] === mount)
     return call?.[0]
+}
+
+const scheduler = (): TestScheduler => new TestScheduler((a, b) => expect(a).toEqual(b))
+
+const createTestElement = (): HTMLElement => {
+    const el = document.createElement('div')
+    el.className = `test test-${uniqueId()}`
+    document.body.appendChild(el)
+    return el
 }
 
 jest.mock('uuid', () => ({
@@ -50,15 +62,15 @@ jest.mock('uuid', () => ({
 const createMockController = (services: Services): Controller => ({
     services,
     notifications: NEVER,
-    executeCommand: jest.fn(),
-    unsubscribe: jest.fn(),
+    executeCommand: () => Promise.resolve(),
+    unsubscribe: noop,
 })
 
 const createMockPlatformContext = (
     partialMocks?: Partial<CodeIntelligenceProps['platformContext']>
 ): CodeIntelligenceProps['platformContext'] => ({
-    forceUpdateTooltip: jest.fn(),
-    urlToFile: jest.fn(),
+    forceUpdateTooltip: noop,
+    urlToFile: toPrettyBlobURL,
     requestGraphQL: mockRequestGraphQL(),
     sideloadedExtensionURL: new Subject<string | null>(),
     settings: NEVER,
@@ -72,7 +84,7 @@ describe('code_intelligence', () => {
 
     describe('createOverlayMount()', () => {
         it('should create the overlay mount', () => {
-            createOverlayMount('some-code-host')
+            createOverlayMount('some-code-host', document.body)
             const mount = document.body.querySelector('.hover-overlay-mount')
             expect(mount).toBeDefined()
             expect(mount!.className).toBe('hover-overlay-mount hover-overlay-mount__some-code-host theme-light')
@@ -91,18 +103,11 @@ describe('code_intelligence', () => {
         let subscriptions = new Subscription()
 
         afterEach(() => {
-            RENDER.mockClear()
+            RENDER.resetHistory()
             resetAllMemoizationCaches()
             subscriptions.unsubscribe()
             subscriptions = new Subscription()
         })
-
-        const createTestElement = (): HTMLElement => {
-            const el = document.createElement('div')
-            el.className = `test test-${uniqueId()}`
-            document.body.appendChild(el)
-            return el
-        }
 
         test('renders the hover overlay mount', async () => {
             const { services } = await integrationTestContext()
@@ -205,10 +210,10 @@ describe('code_intelligence', () => {
                         codeViewResolvers: [
                             toCodeViewResolver('#code', {
                                 dom: {
-                                    getCodeElementFromTarget: jest.fn(),
-                                    getCodeElementFromLineNumber: jest.fn(),
-                                    getLineElementFromLineNumber: jest.fn(),
-                                    getLineNumberFromCodeElement: jest.fn(),
+                                    getCodeElementFromTarget: sinon.spy(),
+                                    getCodeElementFromLineNumber: sinon.spy(),
+                                    getLineElementFromLineNumber: sinon.spy(),
+                                    getLineNumberFromCodeElement: sinon.spy(),
                                 },
                                 resolveFileInfo: codeView => of(fileInfo),
                                 getToolbarMount: () => toolbarMount,
@@ -226,7 +231,7 @@ describe('code_intelligence', () => {
                                 of({
                                     data: {
                                         repository: {
-                                            name: `github/${variables.rawRepoName}`,
+                                            name: `github/${variables.rawRepoName as string}`,
                                         },
                                     },
                                     errors: undefined,
@@ -381,9 +386,9 @@ describe('code_intelligence', () => {
                 const dom = {
                     getCodeElementFromTarget: (target: HTMLElement) => target.closest('.code-element') as HTMLElement,
                     getCodeElementFromLineNumber: (codeView: HTMLElement, line: number, part?: DiffPart) =>
-                        codeView.querySelector<HTMLElement>(`[line="${line}"][part="${part}"] > .code-element`),
+                        codeView.querySelector<HTMLElement>(`[line="${line}"][part="${String(part)}"] > .code-element`),
                     getLineElementFromLineNumber: (codeView: HTMLElement, line: number, part?: DiffPart) =>
-                        codeView.querySelector<HTMLElement>(`[line="${line}"][part="${part}"]`),
+                        codeView.querySelector<HTMLElement>(`[line="${line}"][part="${String(part)}"]`),
                     getLineNumberFromCodeElement: (codeElement: HTMLElement) =>
                         parseInt(codeElement.parentElement!.getAttribute('line')!, 10),
                 }
@@ -541,10 +546,10 @@ describe('code_intelligence', () => {
                         codeViewResolvers: [
                             toCodeViewResolver('.code', {
                                 dom: {
-                                    getCodeElementFromTarget: jest.fn(),
-                                    getCodeElementFromLineNumber: jest.fn(),
-                                    getLineElementFromLineNumber: jest.fn(),
-                                    getLineNumberFromCodeElement: jest.fn(),
+                                    getCodeElementFromTarget: sinon.spy(),
+                                    getCodeElementFromLineNumber: sinon.spy(),
+                                    getLineElementFromLineNumber: sinon.spy(),
+                                    getLineNumberFromCodeElement: sinon.spy(),
                                 },
                                 resolveFileInfo: codeView => of(fileInfo),
                             }),
@@ -795,10 +800,10 @@ describe('code_intelligence', () => {
                         codeViewResolvers: [
                             toCodeViewResolver('#code', {
                                 dom: {
-                                    getCodeElementFromTarget: jest.fn(),
-                                    getCodeElementFromLineNumber: jest.fn(),
-                                    getLineElementFromLineNumber: jest.fn(),
-                                    getLineNumberFromCodeElement: jest.fn(),
+                                    getCodeElementFromTarget: sinon.spy(),
+                                    getCodeElementFromLineNumber: sinon.spy(),
+                                    getLineElementFromLineNumber: sinon.spy(),
+                                    getLineNumberFromCodeElement: sinon.spy(),
                                 },
                                 resolveFileInfo: () => of(fileInfo),
                             }),
@@ -834,6 +839,104 @@ describe('code_intelligence', () => {
                     type: 'CodeEditor',
                 },
             ])
+        })
+    })
+
+    describe('observeHoverOverlayMountLocation()', () => {
+        test('emits document.body if the getMountLocationSelector() returns null', () => {
+            scheduler().run(({ cold, expectObservable }) => {
+                expectObservable(
+                    observeHoverOverlayMountLocation(
+                        () => null,
+                        cold<MutationRecordLike[]>('a', {
+                            a: [
+                                {
+                                    addedNodes: [document.body],
+                                    removedNodes: [],
+                                },
+                            ],
+                        })
+                    )
+                ).toBe('a', {
+                    a: document.body,
+                })
+            })
+        })
+
+        test('emits a custom mount location if a node matching the selector is in addedNodes()', () => {
+            const el = createTestElement()
+            scheduler().run(({ cold, expectObservable }) => {
+                expectObservable(
+                    observeHoverOverlayMountLocation(
+                        () => '.test',
+                        cold<MutationRecordLike[]>('-b', {
+                            b: [
+                                {
+                                    addedNodes: [el],
+                                    removedNodes: [],
+                                },
+                            ],
+                        })
+                    )
+                ).toBe('ab', {
+                    a: document.body,
+                    b: el,
+                })
+            })
+        })
+
+        test('emits a custom mount location if a node matching the selector is nested in an addedNode', () => {
+            const el = createTestElement()
+            const nested = document.createElement('div')
+            nested.classList.add('nested')
+            el.appendChild(nested)
+            scheduler().run(({ cold, expectObservable }) => {
+                expectObservable(
+                    observeHoverOverlayMountLocation(
+                        () => '.nested',
+                        cold<MutationRecordLike[]>('-b', {
+                            b: [
+                                {
+                                    addedNodes: [el],
+                                    removedNodes: [],
+                                },
+                            ],
+                        })
+                    )
+                ).toBe('ab', {
+                    a: document.body,
+                    b: nested,
+                })
+            })
+        })
+
+        test('emits document.body if a node matching the selector is removed', () => {
+            const el = createTestElement()
+            scheduler().run(({ cold, expectObservable }) => {
+                expectObservable(
+                    observeHoverOverlayMountLocation(
+                        () => '.test',
+                        cold<MutationRecordLike[]>('-bc', {
+                            b: [
+                                {
+                                    addedNodes: [el],
+                                    removedNodes: [],
+                                },
+                            ],
+                            c: [
+                                {
+                                    addedNodes: [],
+                                    removedNodes: [el],
+                                },
+                            ],
+                        })
+                    )
+                ).toBe('abc', {
+                    a: document.body,
+                    b: el,
+                    c: document.body,
+                })
+            })
         })
     })
 })

@@ -6,42 +6,35 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/http/httputil"
-	"net/url"
 	"strconv"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/httpapi"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifserver/client"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
 func NewProxy() (*httpapi.LSIFServerProxy, error) {
-	url, err := url.Parse(lsifserver.ServerURLFromEnv)
-	if err != nil {
-		return nil, err
-	}
-
-	proxy := httputil.NewSingleHostReverseProxy(url)
-
 	return &httpapi.LSIFServerProxy{
-		UploadHandler: http.HandlerFunc(uploadProxyHandler(proxy)),
+		UploadHandler: http.HandlerFunc(uploadProxyHandler()),
 	}, nil
 }
 
-func uploadProxyHandler(p *httputil.ReverseProxy) func(http.ResponseWriter, *http.Request) {
+func uploadProxyHandler() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		q := r.URL.Query()
 		repoName := q.Get("repository")
 		commit := q.Get("commit")
 		root := q.Get("root")
+		indexerName := q.Get("indexerName")
 		ctx := r.Context()
 
 		repo, ok := ensureRepoAndCommitExist(ctx, w, repoName, commit)
@@ -52,22 +45,26 @@ func uploadProxyHandler(p *httputil.ReverseProxy) func(http.ResponseWriter, *htt
 		// 🚨 SECURITY: Ensure we return before proxying to the lsif-server upload
 		// endpoint. This endpoint is unprotected, so we need to make sure the user
 		// provides a valid token proving contributor access to the repository.
-		if conf.Get().LsifEnforceAuth && !enforceAuth(ctx, w, r, repoName) {
-			return
+		if conf.Get().LsifEnforceAuth {
+			if canBypassAuth := isSiteAdmin(ctx); !canBypassAuth {
+				if authorized := enforceAuth(ctx, w, r, repoName); !authorized {
+					return
+				}
+			}
 		}
 
 		uploadID, queued, err := client.DefaultClient.Upload(ctx, &struct {
-			RepoID   api.RepoID
-			Commit   graphqlbackend.GitObjectID
-			Root     string
-			Blocking *bool
-			MaxWait  *int32
-			Body     io.ReadCloser
+			RepoID      api.RepoID
+			Commit      graphqlbackend.GitObjectID
+			Root        string
+			IndexerName string
+			Body        io.ReadCloser
 		}{
-			RepoID: repo.ID,
-			Commit: graphqlbackend.GitObjectID(commit),
-			Root:   root,
-			Body:   r.Body,
+			RepoID:      repo.ID,
+			Commit:      graphqlbackend.GitObjectID(commit),
+			Root:        root,
+			IndexerName: indexerName,
+			Body:        r.Body,
 		})
 
 		if err != nil {
@@ -115,6 +112,20 @@ func ensureRepoAndCommitExist(ctx context.Context, w http.ResponseWriter, repoNa
 	}
 
 	return repo, true
+}
+
+func isSiteAdmin(ctx context.Context) bool {
+	user, err := db.Users.GetByCurrentAuthUser(ctx)
+	if err != nil {
+		if errcode.IsNotFound(err) || err == db.ErrNoCurrentUser {
+			return false
+		}
+
+		log15.Error("lsif-server proxy: failed to get up current user", "error", err)
+		return false
+	}
+
+	return user != nil && user.SiteAdmin
 }
 
 func enforceAuth(ctx context.Context, w http.ResponseWriter, r *http.Request, repoName string) bool {

@@ -141,12 +141,13 @@ func addCodeCov(pipeline *bk.Pipeline) {
 
 // Release the browser extension.
 func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
-	for _, browser := range []string{"chrome" /* , "firefox" */} {
+	for _, browser := range []string{"chrome", "firefox"} {
 		// Run e2e tests
 		pipeline.AddStep(fmt.Sprintf(":%s:", browser),
 			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
 			bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
-			bk.Env("E2E_BROWSER", browser),
+			bk.Env("BROWSER", browser),
+			bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
 			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 			bk.Cmd("pushd browser"),
 			bk.Cmd("yarn -s run build"),
@@ -186,7 +187,7 @@ func wait(pipeline *bk.Pipeline) {
 	pipeline.AddWait()
 }
 
-func triggerE2E(c Config) func(*bk.Pipeline) {
+func triggerE2E(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
 	// hardFail if we publish docker images
 	hardFail := c.branch == "master" || c.isMasterDryRun || c.isRenovateBranch || c.releaseBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch
 
@@ -194,11 +195,10 @@ func triggerE2E(c Config) func(*bk.Pipeline) {
 		"BUILDKITE_PULL_REQUEST",
 		"BUILDKITE_PULL_REQUEST_BASE_BRANCH",
 		"BUILDKITE_PULL_REQUEST_REPO",
-
-		"COMMIT_SHA",
-		"DATE",
 	)
-	env["VERSION"] = c.version
+	env["COMMIT_SHA"] = commonEnv["COMMIT_SHA"]
+	env["DATE"] = commonEnv["DATE"]
+	env["VERSION"] = commonEnv["VERSION"]
 	env["TAG"] = candiateImageTag(c)
 
 	return func(pipeline *bk.Pipeline) {

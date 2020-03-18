@@ -9,7 +9,7 @@ import {
     PatternTypeProps,
     InteractiveSearchProps,
     CaseSensitivityProps,
-    searchURLIsCaseSensitive,
+    parseSearchURL,
 } from '..'
 import { Contributions, Evaluated } from '../../../../shared/src/api/protocol'
 import { FetchFileCtx } from '../../../../shared/src/components/CodeExcerpt'
@@ -30,6 +30,7 @@ import { SearchResultsList } from './SearchResultsList'
 import { SearchResultTypeTabs } from './SearchResultTypeTabs'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { FiltersToTypeAndValue } from '../../../../shared/src/search/interactive/util'
+import { convertPlainTextToInteractiveQuery } from '../input/helpers'
 
 export interface SearchResultsProps
     extends ExtensionsControllerProps<'executeCommand' | 'services'>,
@@ -96,14 +97,12 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         if (!patternType) {
             // If the patternType query parameter does not exist in the URL or is invalid, redirect to a URL which
             // has patternType=regexp appended. This is to ensure old URLs before requiring patternType still work.
+
+            const q = parseSearchURLQuery(this.props.location.search) || ''
+            const { navbarQuery, filtersInQuery } = convertPlainTextToInteractiveQuery(q)
             const newLoc =
                 '/search?' +
-                buildSearchURLQuery(
-                    this.props.navbarSearchQueryState.query,
-                    GQL.SearchPatternType.regexp,
-                    this.props.caseSensitive,
-                    this.props.filtersInQuery
-                )
+                buildSearchURLQuery(navbarQuery, GQL.SearchPatternType.regexp, this.props.caseSensitive, filtersInQuery)
             window.location.replace(newLoc)
         }
 
@@ -113,11 +112,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
             this.componentUpdates
                 .pipe(
                     startWith(this.props),
-                    map(props => ({
-                        query: parseSearchURLQuery(props.location.search),
-                        patternType: parseSearchURLPatternType(props.location.search),
-                        caseSensitive: searchURLIsCaseSensitive(props.location.search),
-                    })),
+                    map(props => parseSearchURL(props.location.search)),
                     // Search when a new search query was specified in the URL
                     distinctUntilChanged((a, b) => isEqual(a, b)),
                     filter(
@@ -129,10 +124,13 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                             caseSensitive: boolean
                         } => !!queryAndPatternTypeAndCase.query && !!queryAndPatternTypeAndCase.patternType
                     ),
-                    tap(({ query }) => {
-                        const query_data = queryTelemetryData(query)
+                    tap(({ query, caseSensitive }) => {
+                        const query_data = queryTelemetryData(query, caseSensitive)
                         this.props.telemetryService.log('SearchResultsQueried', {
                             code_search: { query_data },
+                            ...(this.props.splitSearchModes
+                                ? { mode: this.props.interactiveSearchMode ? 'interactive' : 'plain' }
+                                : {}),
                         })
                         if (
                             query_data.query &&
@@ -323,6 +321,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
             query = `${query} count:${count}`
         }
         params.set('q', query)
+        // eslint-disable-next-line @typescript-eslint/no-base-to-string
         this.props.history.replace({ search: params.toString() })
     }
 

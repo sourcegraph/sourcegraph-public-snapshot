@@ -6,8 +6,10 @@ import { TabsWithLocalStorageViewStatePersistence } from '../../../../../shared/
 import { CampaignDiffs } from './diffs/CampaignDiffs'
 import { CampaignChangesets } from './changesets/CampaignChangesets'
 import { queryChangesets, queryChangesetPlans } from './backend'
-import { FilteredConnectionQueryArgs } from '../../../components/FilteredConnection'
-import { Subject } from 'rxjs'
+import { FilteredConnectionQueryArgs, Connection } from '../../../components/FilteredConnection'
+import { Subject, Observable } from 'rxjs'
+import classNames from 'classnames'
+import { delay, repeatWhen } from 'rxjs/operators'
 
 interface Props extends ThemeProps {
     campaign:
@@ -16,7 +18,7 @@ interface Props extends ThemeProps {
               changesetPlans: Pick<GQL.ICampaign['changesetPlans'], 'nodes' | 'totalCount'>
           })
         | (Pick<GQL.ICampaignPlan, '__typename' | 'id'> & {
-              changesets: Pick<GQL.ICampaignPlan['changesets'], 'nodes' | 'totalCount'>
+              changesetPlans: Pick<GQL.ICampaignPlan['changesetPlans'], 'nodes' | 'totalCount'>
           })
     persistLines: boolean
     campaignUpdates: Subject<void>
@@ -49,18 +51,23 @@ export const CampaignTabs: React.FunctionComponent<Props> = ({
     changesetUpdates,
 }) => {
     const queryChangesetsConnection = useCallback(
-        (args: FilteredConnectionQueryArgs) =>
-            campaign && campaign.__typename === 'CampaignPlan'
-                ? queryChangesetPlans(campaign.id, args)
-                : queryChangesets(campaign.id, args),
-        [campaign]
+        (args: FilteredConnectionQueryArgs) => {
+            const queryObservable: Observable<
+                GQL.IChangesetPlanConnection | Connection<GQL.IExternalChangeset | GQL.IChangesetPlan>
+            > =
+                campaign.__typename === 'CampaignPlan'
+                    ? queryChangesetPlans(campaign.id, args)
+                    : queryChangesets(campaign.id, args)
+            return queryObservable.pipe(repeatWhen(obs => obs.pipe(delay(5000))))
+        },
+        [campaign.id, campaign.__typename]
     )
 
     const changesets = useMemo(
         () =>
             campaign.__typename === 'Campaign'
                 ? [...campaign.changesets.nodes, ...campaign.changesetPlans.nodes]
-                : campaign.changesets.nodes,
+                : campaign.changesetPlans.nodes,
         [campaign]
     )
     const totalAdditions = useMemo(() => sumDiffStat(changesets, 'added'), [changesets])
@@ -69,26 +76,26 @@ export const CampaignTabs: React.FunctionComponent<Props> = ({
     return (
         <TabsWithLocalStorageViewStatePersistence
             storageKey="campaignTab"
-            className={className}
+            className={classNames(className, 'mb-3')}
             tabs={[
-                {
-                    id: 'diff',
-                    label: (
-                        <span className="e2e-campaign-diff-tab">
-                            Diff <span className="text-success">+{totalAdditions}</span>{' '}
-                            <span className="text-danger">-{totalDeletions}</span>
-                        </span>
-                    ),
-                },
                 {
                     id: 'changesets',
                     label: (
                         <span className="e2e-campaign-changesets-tab">
                             Changesets{' '}
                             <span className="badge badge-secondary badge-pill">
-                                {campaign.changesets.totalCount +
-                                    (campaign.__typename === 'Campaign' ? campaign.changesetPlans.totalCount : 0)}
+                                {campaign.changesetPlans.totalCount +
+                                    (campaign.__typename === 'Campaign' ? campaign.changesets.totalCount : 0)}
                             </span>
+                        </span>
+                    ),
+                },
+                {
+                    id: 'diff',
+                    label: (
+                        <span className="e2e-campaign-diff-tab">
+                            Diff <span className="text-success">+{totalAdditions}</span>{' '}
+                            <span className="text-danger">-{totalDeletions}</span>
                         </span>
                     ),
                 },
@@ -103,7 +110,6 @@ export const CampaignTabs: React.FunctionComponent<Props> = ({
                 changesetUpdates={changesetUpdates}
                 history={history}
                 location={location}
-                className="mt-3"
                 isLightTheme={isLightTheme}
             />
             <CampaignDiffs

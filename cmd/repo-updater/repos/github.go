@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -28,8 +27,9 @@ import (
 type GithubSource struct {
 	svc             *ExternalService
 	config          *schema.GitHubConnection
-	exclude         map[string]bool
-	excludePatterns []*regexp.Regexp
+	exclude         excluder
+	excludeArchived bool
+	excludeForks    bool
 	githubDotCom    bool
 	baseURL         *url.URL
 	client          *github.Client
@@ -80,31 +80,36 @@ func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpc
 		return nil, err
 	}
 
-	exclude := make(map[string]bool, len(c.Exclude))
-	var excludePatterns []*regexp.Regexp
+	var (
+		exclude         excluder
+		excludeArchived bool
+		excludeForks    bool
+	)
+
 	for _, r := range c.Exclude {
-		if r.Name != "" {
-			exclude[strings.ToLower(r.Name)] = true
+		exclude.Exact(r.Name)
+		exclude.Exact(r.Id)
+		exclude.Pattern(r.Pattern)
+
+		if r.Archived {
+			excludeArchived = true
 		}
 
-		if r.Id != "" {
-			exclude[r.Id] = true
+		if r.Forks {
+			excludeForks = true
 		}
+	}
 
-		if r.Pattern != "" {
-			re, err := regexp.Compile(r.Pattern)
-			if err != nil {
-				return nil, err
-			}
-			excludePatterns = append(excludePatterns, re)
-		}
+	if err := exclude.Err(); err != nil {
+		return nil, err
 	}
 
 	return &GithubSource{
 		svc:              svc,
 		config:           c,
 		exclude:          exclude,
-		excludePatterns:  excludePatterns,
+		excludeArchived:  excludeArchived,
+		excludeForks:     excludeForks,
 		baseURL:          baseURL,
 		githubDotCom:     githubDotCom,
 		client:           github.NewClient(apiURL, c.Token, cli),
@@ -175,15 +180,15 @@ func (s GithubSource) CreateChangeset(ctx context.Context, c *Changeset) (bool, 
 		exists = true
 	}
 
-	c.Changeset.Metadata = pr
-	c.Changeset.ExternalID = strconv.FormatInt(pr.Number, 10)
-	c.Changeset.ExternalServiceType = github.ServiceType
+	if err := c.SetMetadata(pr); err != nil {
+		return false, errors.Wrap(err, "setting changeset metadata")
+	}
 
 	return exists, nil
 }
 
 // CloseChangeset closes the given *Changeset on the code host and updates the
-// Metadata column in the *a8n.Changeset to the newly closed pull request.
+// Metadata column in the *campaigns.Changeset to the newly closed pull request.
 func (s GithubSource) CloseChangeset(ctx context.Context, c *Changeset) error {
 	pr, ok := c.Changeset.Metadata.(*github.PullRequest)
 	if !ok {
@@ -222,7 +227,9 @@ func (s GithubSource) LoadChangesets(ctx context.Context, cs ...*Changeset) erro
 	}
 
 	for i := range cs {
-		cs[i].Changeset.Metadata = prs[i]
+		if err := cs[i].SetMetadata(prs[i]); err != nil {
+			return errors.Wrap(err, "setting changeset metadata")
+		}
 	}
 
 	return nil
@@ -278,6 +285,7 @@ func (s GithubSource) makeRepo(r *github.Repository) *Repo {
 		Description:  r.Description,
 		Fork:         r.IsFork,
 		Archived:     r.IsArchived,
+		Private:      r.IsPrivate,
 		Sources: map[string]*SourceInfo{
 			urn: {
 				ID:       urn,
@@ -309,15 +317,18 @@ func (s *GithubSource) authenticatedRemoteURL(repo *github.Repository) string {
 }
 
 func (s *GithubSource) excludes(r *github.Repository) bool {
-	if s.exclude[strings.ToLower(r.NameWithOwner)] || s.exclude[r.ID] {
+	if s.exclude.Match(r.NameWithOwner) || s.exclude.Match(r.ID) {
 		return true
 	}
 
-	for _, re := range s.excludePatterns {
-		if re.MatchString(r.NameWithOwner) {
-			return true
-		}
+	if s.excludeArchived && r.IsArchived {
+		return true
 	}
+
+	if s.excludeForks && r.IsFork {
+		return true
+	}
+
 	return false
 }
 
@@ -680,7 +691,7 @@ func (s *GithubSource) fetchAllRepositoriesInBatches(ctx context.Context, result
 			return err
 		}
 
-		log15.Debug("github sync: GetGetReposByNameWithOwner", "repos", batch)
+		log15.Debug("github sync: GetReposByNameWithOwner", "repos", batch)
 		for _, r := range repos {
 			results <- &githubResult{repo: r}
 		}

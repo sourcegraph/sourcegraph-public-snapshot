@@ -1,42 +1,98 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`CloseDeleteCampaignPrompt renders 1`] = `
-<div
-  className="c"
->
-  <div
-    className="card mt-1"
+exports[`CloseDeleteCampaignPrompt none still open 1`] = `
+<React.Fragment>
+  <details
+    className="campaign-prompt__details"
   >
-    <div
-      className="card-body"
-    >
-      <p>
-        message
-      </p>
-      <div
-        className="form-group"
-      >
-        <input
-          checked={true}
-          onChange={[Function]}
-          type="checkbox"
-        />
-         
-        Close all 
-        2
-         
-        changesets
-         on code hosts
-      </div>
-      <button
-        className="btn mr-1 btn-danger"
-        disabled={false}
+    <summary>
+      <span
+        className="btn dropdown-toggle btn-danger"
         onClick={[Function]}
-        type="button"
       >
         Delete
-      </button>
+      </span>
+    </summary>
+    <div
+      className="position-absolute campaign-prompt__details-menu"
+    >
+      <div
+        className="card mt-1"
+      >
+        <div
+          className="card-body"
+        >
+          <p>
+            message
+          </p>
+          <button
+            className="btn mr-1 btn-danger"
+            disabled={false}
+            onClick={[Function]}
+            type="button"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
     </div>
-  </div>
-</div>
+  </details>
+</React.Fragment>
+`;
+
+exports[`CloseDeleteCampaignPrompt some still open 1`] = `
+<React.Fragment>
+  <details
+    className="campaign-prompt__details"
+  >
+    <summary>
+      <span
+        className="btn dropdown-toggle btn-danger"
+        onClick={[Function]}
+      >
+        Delete
+      </span>
+    </summary>
+    <div
+      className="position-absolute campaign-prompt__details-menu"
+    >
+      <div
+        className="card mt-1"
+      >
+        <div
+          className="card-body"
+        >
+          <p>
+            message
+          </p>
+          <div
+            className="form-group"
+          >
+            <label>
+              <input
+                checked={false}
+                onChange={[Function]}
+                type="checkbox"
+              />
+               
+              Close 
+              2
+               open 
+              changesets
+               on code hosts
+            </label>
+          </div>
+          <button
+            className="btn mr-1 btn-danger"
+            disabled={false}
+            onClick={[Function]}
+            type="button"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  </details>
+</React.Fragment>
 `;

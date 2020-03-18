@@ -1,9 +1,7 @@
 import * as constants from '../shared/constants'
-import * as fs from 'mz/fs'
 import * as metrics from './metrics'
 import * as path from 'path'
 import * as settings from './settings'
-import express from 'express'
 import promClient from 'prom-client'
 import { Backend } from './backend/backend'
 import { createLogger } from '../shared/logging'
@@ -12,18 +10,15 @@ import { createMetaRouter } from './routes/meta'
 import { createPostgresConnection } from '../shared/database/postgres'
 import { createTracer } from '../shared/tracing'
 import { createUploadRouter } from './routes/uploads'
-import { dbFilename, ensureDirectory, idFromFilename } from '../shared/paths'
-import { default as tracingMiddleware } from 'express-opentracing'
-import { errorHandler } from './middleware/errors'
-import { logger as loggingMiddleware } from 'express-winston'
+import { ensureDirectory } from '../shared/paths'
 import { Logger } from 'winston'
-import { metricsMiddleware } from './middleware/metrics'
-import { startTasks } from './tasks/runner'
+import { startTasks } from './tasks'
 import { UploadManager } from '../shared/store/uploads'
 import { waitForConfiguration } from '../shared/config/config'
 import { DumpManager } from '../shared/store/dumps'
 import { DependencyManager } from '../shared/store/dependencies'
 import { SRC_FRONTEND_INTERNAL } from '../shared/config/settings'
+import { makeExpressApp } from '../shared/api/init'
 
 /**
  * Runs the HTTP server that accepts LSIF dump uploads and responds to LSIF requests.
@@ -58,66 +53,35 @@ async function main(logger: Logger): Promise<void> {
     const dependencyManager = new DependencyManager(connection)
     const backend = new Backend(settings.STORAGE_ROOT, dumpManager, dependencyManager, SRC_FRONTEND_INTERNAL)
 
-    // Temporary migration
-    // TODO - remove after 3.15
-    await migrateFilenames()
-
     // Start background tasks
     startTasks(connection, dumpManager, uploadManager, logger)
 
-    const app = express()
-
-    if (tracer !== undefined) {
-        app.use(tracingMiddleware({ tracer }))
-    }
-
-    app.use(
-        loggingMiddleware({
-            winstonInstance: logger,
-            level: 'debug',
-            ignoredRoutes: ['/ping', '/healthz', '/metrics'],
-            requestWhitelist: ['method', 'url'],
-            msg: 'Handled request',
-        })
-    )
-    app.use(metricsMiddleware)
-
     // Register endpoints
-    app.use(createMetaRouter())
-    app.use(createUploadRouter(uploadManager))
-    app.use(createLsifRouter(backend, uploadManager, logger, tracer))
-
-    // Error handler must be registered last
-    app.use(errorHandler(logger))
+    const app = makeExpressApp({
+        routes: [
+            createMetaRouter(),
+            createUploadRouter(dumpManager, uploadManager, logger),
+            createLsifRouter(backend, uploadManager, logger, tracer),
+        ],
+        logger,
+        tracer,
+        selectHistogram,
+    })
 
     app.listen(settings.HTTP_PORT, () => logger.debug('LSIF API server listening on', { port: settings.HTTP_PORT }))
 }
 
-/**
- * If it hasn't been done already, migrate from the old pre-3.13 filename format
- * `$ID-$REPO@$COMMIT.lsif.db` to the new format `$ID.lsif.db`.
- */
-async function migrateFilenames(): Promise<void> {
-    const doneFile = path.join(settings.STORAGE_ROOT, 'id-only-based-filenames')
-    if (await fs.exists(doneFile)) {
-        // Already migrated.
-        return
+function selectHistogram(route: string): promClient.Histogram<string> | undefined {
+    switch (route) {
+        case '/upload':
+            return metrics.httpUploadDurationHistogram
+
+        case '/exists':
+        case '/request':
+            return metrics.httpQueryDurationHistogram
     }
 
-    for (const basename of await fs.readdir(path.join(settings.STORAGE_ROOT, constants.DBS_DIR))) {
-        const id = idFromFilename(basename)
-        if (!id) {
-            continue
-        }
-
-        await fs.rename(
-            path.join(settings.STORAGE_ROOT, constants.DBS_DIR, basename),
-            dbFilename(settings.STORAGE_ROOT, id)
-        )
-    }
-
-    // Create an empty done file to record that all files have been renamed.
-    await fs.close(await fs.open(doneFile, 'w'))
+    return undefined
 }
 
 // Initialize logger

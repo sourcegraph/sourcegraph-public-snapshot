@@ -35,8 +35,8 @@ export interface LayoutRouteProps<Params extends { [K in keyof Params]?: string 
 export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: '/',
-        render: (props: any) =>
-            window.context.sourcegraphDotComMode && !props.user ? (
+        render: props =>
+            window.context.sourcegraphDotComMode && !props.authenticatedUser ? (
                 <Redirect to="https://about.sourcegraph.com" />
             ) : (
                 <Redirect to="/search" />
@@ -118,7 +118,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     },
     {
         path: '/search/scope/:id',
-        render: lazyComponent(() => import('./search/input/ScopePage'), 'ScopePage'),
+        render: lazyComponent(() => import('./search/ScopePage'), 'ScopePage'),
         exact: true,
     },
     {

@@ -126,7 +126,7 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
             this.state.locationsOrError.loading &&
             (!this.state.locationsOrError.results || this.state.locationsOrError.results.length === 0)
         ) {
-            return <LoadingSpinner className="icon-inline m-1" />
+            return <LoadingSpinner className="icon-inline m-1 e2e-loading-spinner" />
         }
         if (this.state.locationsOrError.results && this.state.locationsOrError.results.length === 0) {
             return <FileLocationsNotFound />
@@ -232,7 +232,7 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                                             ))}
                                             {!isErrorLike(this.state.locationsOrError) &&
                                                 this.state.locationsOrError.loading && (
-                                                    <LoadingSpinner className="icon-inline m-2 flex-shrink-0" />
+                                                    <LoadingSpinner className="icon-inline m-2 flex-shrink-0 e2e-loading-spinner" />
                                                 )}
                                         </div>
                                     }

@@ -5,6 +5,60 @@ import { instrument } from '../metrics'
 import * as metrics from './metrics'
 
 /**
+ * Get the children of a set of directories at a particular commit. This function
+ * returns a list of sets `L` where `L[i]` is the set of children for `dirnames[i]`.
+ *
+ * Except for the root directory, denoted by the empty string, all supplied
+ * directories should be disjoint (one should not contain another).
+ *
+ * @param args Parameter bag.
+ */
+export async function getDirectoryChildren({
+    frontendUrl,
+    repositoryId,
+    commit,
+    dirnames,
+    ctx = {},
+}: {
+    /** The url of the frontend internal API. */
+    frontendUrl: string
+    /** The repository identifier. */
+    repositoryId: number
+    /** The commit from which the gitserver queries should start. */
+    commit: string
+    /** A list of repo-root-relative directories. */
+    dirnames: string[]
+    /** The tracing context. */
+    ctx?: TracingContext
+}): Promise<Map<string, Set<string>>> {
+    const args = ['ls-tree', '--name-only', commit, '--']
+
+    for (const dirname of dirnames) {
+        if (dirname === '') {
+            args.push('.')
+        } else {
+            args.push(dirname.endsWith('/') ? dirname : dirname + '/')
+        }
+    }
+
+    // Retrieve a flat list of children of the dirnames constructed above. This returns a flat
+    // list sorted alphabetically, which we then need to partition by parent directory.
+    const uncategorizedChildren = await gitserverExecLines(frontendUrl, repositoryId, args, ctx)
+
+    const childMap = new Map()
+    for (const dirname of dirnames) {
+        childMap.set(
+            dirname,
+            dirname === ''
+                ? new Set(uncategorizedChildren.filter(line => !line.includes('/')))
+                : new Set(uncategorizedChildren.filter(line => line.startsWith(dirname)))
+        )
+    }
+
+    return childMap
+}
+
+/**
  * Get a list of commits for the given repository with their parent starting at the
  * given commit and returning at most `MAX_COMMITS_PER_UPDATE` commits. The output
  * is a map from commits to a set of parent commits. The set of parents may be empty.
@@ -29,8 +83,8 @@ export async function getCommitsNear(
     try {
         return flattenCommitParents(await gitserverExecLines(frontendUrl, repositoryId, args, ctx))
     } catch (error) {
-        if (error.statusCode === 404) {
-            // repository unknown
+        if (error.response && error.response.statusCode === 404) {
+            // Unknown repository
             return new Map()
         }
 
@@ -122,7 +176,7 @@ function gitserverExec(
     return logAndTraceCall(ctx, 'Executing git command', () =>
         instrument(metrics.gitserverDurationHistogram, metrics.gitserverErrorsCounter, async () => {
             // Perform request - this may fail with a 404 or 500
-            const resp = await got(new URL(`http://${frontendUrl}/.internal/git/${repositoryId}/exec`).href, {
+            const resp = await got.post(new URL(`http://${frontendUrl}/.internal/git/${repositoryId}/exec`).href, {
                 body: JSON.stringify({ args }),
             })
 
@@ -134,7 +188,7 @@ function gitserverExec(
             // in that case. Status will be undefined in some of our tests and
             // will be the process exit code (given as a string) otherwise.
             if (status !== undefined && status !== '0') {
-                throw new Error(`Failed to run git command ${['git', ...args].join(' ')}: ${stderr}`)
+                throw new Error(`Failed to run git command ${['git', ...args].join(' ')}: ${String(stderr)}`)
             }
 
             return resp.body

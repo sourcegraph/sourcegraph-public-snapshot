@@ -37,11 +37,14 @@ type Server struct {
 		GetRepo(ctx context.Context, projectWithNamespace string) (*repos.Repo, error)
 	}
 	Scheduler interface {
-		UpdateOnce(id uint32, name api.RepoName, url string)
-		ScheduleInfo(id uint32) *protocol.RepoUpdateSchedulerInfoResult
+		UpdateOnce(id api.RepoID, name api.RepoName, url string)
+		ScheduleInfo(id api.RepoID) *protocol.RepoUpdateSchedulerInfoResult
 	}
 	GitserverClient interface {
 		ListCloned(context.Context) ([]string, error)
+	}
+	ChangesetSyncer interface {
+		EnqueueChangesetSyncs(ctx context.Context, ids []int64) error
 	}
 
 	notClonedCountMu        sync.Mutex
@@ -59,6 +62,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/exclude-repo", s.handleExcludeRepo)
 	mux.HandleFunc("/sync-external-service", s.handleExternalServiceSync)
 	mux.HandleFunc("/status-messages", s.handleStatusMessages)
+	mux.HandleFunc("/enqueue-changeset-sync", s.handleEnqueueChangesetSync)
 	return mux
 }
 
@@ -71,7 +75,7 @@ func (s *Server) handleRepoExternalServices(w http.ResponseWriter, r *http.Reque
 	}
 
 	rs, err := s.Store.ListRepos(r.Context(), repos.StoreListReposArgs{
-		IDs: []uint32{req.ID},
+		IDs: []api.RepoID{req.ID},
 	})
 	if err != nil {
 		respond(w, http.StatusInternalServerError, err)
@@ -114,7 +118,7 @@ func (s *Server) handleExcludeRepo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	rs, err := s.Store.ListRepos(r.Context(), repos.StoreListReposArgs{
-		IDs: []uint32{req.ID},
+		IDs: []api.RepoID{req.ID},
 	})
 	if err != nil {
 		respond(w, http.StatusInternalServerError, err)
@@ -559,6 +563,31 @@ func (s *Server) computeNotClonedCount(ctx context.Context) (uint64, error) {
 	return notCloned, nil
 }
 
+func (s *Server) handleEnqueueChangesetSync(w http.ResponseWriter, r *http.Request) {
+	if s.ChangesetSyncer == nil {
+		log15.Warn("ChangsetSyncer is nil")
+		respond(w, http.StatusForbidden, nil)
+		return
+	}
+
+	var req protocol.ChangesetSyncRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respond(w, http.StatusBadRequest, err)
+		return
+	}
+	if len(req.IDs) == 0 {
+		respond(w, http.StatusBadRequest, errors.New("no ids provided"))
+		return
+	}
+	err := s.ChangesetSyncer.EnqueueChangesetSyncs(r.Context(), req.IDs)
+	if err != nil {
+		resp := protocol.ChangesetSyncResponse{Error: err.Error()}
+		respond(w, http.StatusInternalServerError, resp)
+		return
+	}
+	respond(w, http.StatusOK, nil)
+}
+
 func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
 	urls := r.CloneURLs()
 	if len(urls) == 0 {
@@ -570,6 +599,7 @@ func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
 		Description:  r.Description,
 		Fork:         r.Fork,
 		Archived:     r.Archived,
+		Private:      r.Private,
 		VCS:          protocol.VCSInfo{URL: urls[0]},
 		ExternalRepo: r.ExternalRepo,
 	}

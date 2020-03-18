@@ -23,7 +23,7 @@ import {
     lprToSelectionsZeroIndexed,
     ModeSpec,
     parseHash,
-    PositionSpec,
+    UIPositionSpec,
     RenderMode,
     RepoSpec,
     ResolvedRevSpec,
@@ -238,7 +238,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                     filter(isDefined),
                     switchMap(codeView => fromEvent<MouseEvent>(codeView, 'click')),
                     // Ignore click events caused by the user selecting text
-                    filter(() => window.getSelection()!.toString() === '')
+                    filter(() => !window.getSelection()?.toString())
                 )
                 .subscribe(event => {
                     // Prevent selecting text on shift click (click+drag to select will still work)
@@ -431,7 +431,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
 
     private getLSPTextDocumentPositionParams(
         position: HoveredToken & RepoSpec & RevSpec & FileSpec & ResolvedRevSpec
-    ): RepoSpec & RevSpec & ResolvedRevSpec & FileSpec & PositionSpec & ModeSpec {
+    ): RepoSpec & RevSpec & ResolvedRevSpec & FileSpec & UIPositionSpec & ModeSpec {
         return {
             repoName: position.repoName,
             filePath: position.filePath,

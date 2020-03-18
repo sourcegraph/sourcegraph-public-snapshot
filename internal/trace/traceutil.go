@@ -41,7 +41,9 @@ func (t Tracer) New(ctx context.Context, family, title string) (*Trace, context.
 	return &Trace{span: span, trace: tr, family: family}, ctx
 }
 
-const traceNameKey = "traceName"
+type traceContextKey string
+
+const traceNameKey = traceContextKey("traceName")
 
 func nameWithParents(ctx context.Context, name string) (string, context.Context) {
 	prefix, _ := ctx.Value(traceNameKey).(string)

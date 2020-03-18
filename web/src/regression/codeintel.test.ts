@@ -18,6 +18,7 @@ import { Config, getConfig } from '../../../shared/src/e2e/config'
 import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import { overwriteSettings } from '../../../shared/src/settings/edit'
 import { saveScreenshotsUponFailures } from '../../../shared/src/e2e/screenshotReporter'
+import { asError } from '../../../shared/src/util/errors'
 
 describe('Code intelligence regression test suite', () => {
     const testUsername = 'test-sg-codeintel'
@@ -251,7 +252,7 @@ describe('Code intelligence regression test suite', () => {
 
             for (const { repository } of repoCommits) {
                 // First, remove all existing uploads for the repository
-                await clearUploads(gqlClient, repository)
+                await clearUploads(gqlClient, `github.com/sourcegraph-testing/${repository}`)
             }
 
             const uploadUrls = []
@@ -270,7 +271,7 @@ describe('Code intelligence regression test suite', () => {
                 )
 
                 innerResourceManager.add('LSIF upload', `${repository} upload`, () =>
-                    clearUploads(gqlClient, repository)
+                    clearUploads(gqlClient, `github.com/sourcegraph-testing/${repository}`)
                 )
             }
 
@@ -506,6 +507,8 @@ async function testCodeNavigation(
  * sequence.
  */
 async function collectLinks(driver: Driver): Promise<Set<TestLocation>> {
+    await driver.page.waitForSelector('.e2e-loading-spinner', { hidden: true })
+
     const panelTabTitles = await getPanelTabTitles(driver)
     if (panelTabTitles.length === 0) {
         return new Set(await collectVisibleLinks(driver))
@@ -676,7 +679,9 @@ async function clearUploads(gqlClient: GraphQLClient, repoName: string): Promise
 
     const indices = range(nodes.length)
     const args: { [k: string]: string } = {}
-    indices.forEach(i => (args[`upload${i}`] = nodes[i].id))
+    for (const i of indices) {
+        args[`upload${i}`] = nodes[i].id
+    }
 
     await gqlClient
         .mutateGraphQL(
@@ -722,7 +727,7 @@ async function performUpload(
         const tarCommand = ['tar', '-xzf', `${path.basename(filename)}.gz`].join(' ')
         await child_process.exec(tarCommand, { cwd })
     } catch (error) {
-        throw new Error(`Failed to untar test data: ${error}`)
+        throw new Error(`Failed to untar test data: ${asError(error).message}`)
     }
 
     let out!: string
@@ -745,11 +750,13 @@ async function performUpload(
             throw new Error('src-cli is not available on PATH')
         }
 
-        throw new Error(`Failed to upload LSIF data: ${error.stderr || error.stdout || '(no output)'}`)
+        throw new Error(
+            `Failed to upload LSIF data: ${(error.stderr as string) || (error.stdout as string) || '(no output)'}`
+        )
     }
 
     // Extract the status URL
-    const match = out.match(/To check the status, visit (.+).\n$/)
+    const match = out.match(/View processing status at (.+).\n$/)
     if (!match) {
         throw new Error(`Unexpected output from Sourcegraph cli: ${out}`)
     }
@@ -758,27 +765,15 @@ async function performUpload(
 }
 
 /**
- * Refresh the upload page until it has finished processing. Then, navigate to the
- * list of uploads for that repository and ensure that it's visible in the list of
- * uploads visible at the tip of the default branch.
+ * Wait on the upload page until it has finished processing and ensure that it's
+ * visible at the tip of the default branch.
  */
 async function ensureUpload(driver: Driver, uploadUrl: string): Promise<void> {
-    const pendingUploadStateMessages = ['Upload is queued.', 'Upload is currently being processed...']
-
     await driver.page.goto(uploadUrl)
-    while (true) {
-        // Keep reloading upload page until the upload is terminal (not queued, not processed)
-        const text = await (await driver.page.waitForSelector('.e2e-upload-state')).evaluate(elem => elem.textContent)
-        if (!pendingUploadStateMessages.includes(text || '')) {
-            break
-        }
 
-        await driver.page.reload()
-    }
-
-    // Ensure upload is successful
-    const stateText = await (await driver.page.waitForSelector('.e2e-upload-state')).evaluate(elem => elem.textContent)
-    expect(stateText).toEqual('Upload processed successfully.')
+    await driver.page.waitFor(
+        () => document.querySelector('.e2e-upload-state')?.textContent === 'Upload processed successfully.'
+    )
 
     const isLatestForRepoText = await (await driver.page.waitFor('.e2e-is-latest-for-repo')).evaluate(
         elem => elem.textContent

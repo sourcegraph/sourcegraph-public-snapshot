@@ -21,7 +21,7 @@ interface ImmutableUser {
     readonly UID: number
 }
 
-type DeployType = 'cluster' | 'docker-container' | 'dev'
+type DeployType = 'kubernetes' | 'docker-container' | 'docker-compose' | 'pure-docker' | 'dev'
 
 /**
  * Defined in cmd/frontend/internal/app/jscontext/jscontext.go JSContext struct
@@ -77,7 +77,7 @@ interface SourcegraphContext
      */
     site: Pick<
         import('./schema/site.schema').SiteConfiguration,
-        'auth.public' | 'update.channel' | 'automation.readAccess.enabled'
+        'auth.public' | 'update.channel' | 'campaigns.readAccess.enabled'
     >
 
     /** Whether access tokens are enabled. */

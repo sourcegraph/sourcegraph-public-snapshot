@@ -1,6 +1,6 @@
 import * as MessageChannelAdapter from '@sourcegraph/comlink/messagechanneladapter'
 import { Observable } from 'rxjs'
-import uuid from 'uuid'
+import * as uuid from 'uuid'
 import { EndpointPair } from '../../../shared/src/platform/context'
 import { isInPage } from '../context'
 import { SourcegraphIntegrationURLs } from './context'
@@ -93,7 +93,7 @@ export function createExtensionHost(urls: Pick<SourcegraphIntegrationURLs, 'asse
  * as a comlink Endpoint to transport messages between the content script and the extension host.
  *
  * It is necessary to wrap the port using MessageChannelAdapter because browser.runtime.Port objects do not support
- * transfering MessagePort objects (see https://github.com/GoogleChromeLabs/comlink/blob/master/messagechanneladapter.md).
+ * transferring MessagePort objects (see https://github.com/GoogleChromeLabs/comlink/blob/master/messagechanneladapter.md).
  *
  */
 function endpointFromPort(port: browser.runtime.Port): MessagePort {

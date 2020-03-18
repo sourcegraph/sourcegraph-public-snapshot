@@ -1,13 +1,13 @@
 import * as H from 'history'
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 import * as GQL from '../../../shared/src/graphql/schema'
-import { buildSearchURLQuery } from '../../../shared/src/util/url'
+import { buildSearchURLQuery, generateFiltersQuery } from '../../../shared/src/util/url'
 import { eventLogger } from '../tracking/eventLogger'
 import { SearchType } from './results/SearchResults'
 import { SearchFilterSuggestions } from './searchFilterSuggestions'
-import { Suggestion, FiltersSuggestionTypes, isolatedFuzzySearchFilters, filterAliases } from './input/Suggestion'
-import { FiltersToTypeAndValue, FilterTypes } from '../../../shared/src/search/interactive/util'
-import { SuggestionTypes } from '../../../shared/src/search/suggestions/util'
+import { Suggestion, FilterSuggestionTypes, isolatedFuzzySearchFilters, filterAliases } from './input/Suggestion'
+import { FiltersToTypeAndValue, FilterType } from '../../../shared/src/search/interactive/util'
+import { NonFilterSuggestionType } from '../../../shared/src/search/suggestions/util'
 import { isolatedFuzzySearchFiltersFilterType } from './input/interactive/filters'
 
 /**
@@ -27,7 +27,10 @@ export function submitSearch(
 
     // Go to search results page
     const path = '/search?' + searchQueryParam
-    eventLogger.log('SearchSubmitted', { query: navbarQuery, source })
+    eventLogger.log('SearchSubmitted', {
+        query: [navbarQuery, generateFiltersQuery(filtersQuery || {})].filter(query => query.length > 0).join(' '),
+        source,
+    })
     history.push(path, { ...history.location.state, query: navbarQuery })
     if (activation) {
         activation.update({ DidSearch: true })
@@ -114,8 +117,8 @@ export function toggleSearchType(query: string, searchType: SearchType): string 
         return searchType ? `${query} type:${searchType}` : query
     }
 
-    if (match[0] === `type:${searchType}`) {
-        /** Query already contains correct search type */
+    if (searchType !== null && match[0] === `type:${searchType}`) {
+        // Query already contains correct search type
         return query
     }
 
@@ -126,8 +129,8 @@ export function toggleSearchType(query: string, searchType: SearchType): string 
 export const isSearchResults = (val: any): val is GQL.ISearchResults =>
     val && typeof val === 'object' && val.__typename === 'SearchResults'
 
-const isValidFilter = (filter: string = ''): filter is FiltersSuggestionTypes =>
-    Object.prototype.hasOwnProperty.call(SuggestionTypes, filter) ||
+const isValidFilter = (filter: string = ''): filter is FilterSuggestionTypes =>
+    Object.prototype.hasOwnProperty.call(FilterType, filter) ||
     Object.prototype.hasOwnProperty.call(filterAliases, filter)
 
 /**
@@ -151,13 +154,13 @@ interface FilterAndValueMatch {
 }
 
 interface ValidFilterAndValueMatch extends FilterAndValueMatch {
-    resolvedFilterType: FiltersSuggestionTypes
+    resolvedFilterType: FilterSuggestionTypes
 }
 
 /**
  * Tries to resolve the given string into a valid filter type.
  */
-export const resolveFilterType = (filter: string = ''): FiltersSuggestionTypes | null => {
+export const resolveFilterType = (filter: string = ''): FilterSuggestionTypes | null => {
     const absoluteFilter = filter.replace(/^-/, '')
     return filterAliases[absoluteFilter] ?? (isValidFilter(absoluteFilter) ? absoluteFilter : null)
 }
@@ -203,7 +206,7 @@ export const filterStaticSuggestions = (queryState: QueryState, suggestions: Sea
     if (
         // suggest values for selected filter
         resolvedFilterType &&
-        resolvedFilterType !== SuggestionTypes.filters &&
+        resolvedFilterType !== NonFilterSuggestionType.filters &&
         (value || filterAndValue.endsWith(':'))
     ) {
         const suggestionsToShow = suggestions[resolvedFilterType] ?? []
@@ -247,7 +250,7 @@ export const insertSuggestionInQuery = (
     cursorPosition: number
 ): QueryState => {
     const { firstPart, lastPart } = splitStringAtPosition(queryToInsertIn, cursorPosition)
-    const isFiltersSuggestion = selectedSuggestion.type === SuggestionTypes.filters
+    const isFiltersSuggestion = selectedSuggestion.type === NonFilterSuggestionType.filters
     // Know where to place the suggestion later on
     const separatorIndex = firstPart.lastIndexOf(!isFiltersSuggestion ? ':' : ' ')
     // If a filter value or separate word suggestion was selected, then append a whitespace
@@ -299,8 +302,8 @@ export const isFuzzyWordSearch = (queryState: QueryState): boolean => {
  * See `./Suggestion.tsx->fuzzySearchFilters`.
  * E.g: `repohasfile` expects a file name as a value, so we should show `file` suggestions
  */
-export const filterAliasForSearch: Record<string, SuggestionTypes | undefined> = {
-    [SuggestionTypes.repohasfile]: SuggestionTypes.file,
+export const filterAliasForSearch: Record<string, FilterType | undefined> = {
+    [FilterType.repohasfile]: FilterType.file,
 }
 
 /**
@@ -351,7 +354,7 @@ export const formatQueryForFuzzySearch = (queryState: QueryState): string => {
  * */
 export const formatInteractiveQueryForFuzzySearch = (
     fullQuery: string,
-    filterType: FilterTypes,
+    filterType: FilterType,
     value: string = ''
 ): string => {
     // `repohasfile:` should be converted to `file:`

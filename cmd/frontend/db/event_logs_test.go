@@ -29,11 +29,6 @@ func TestEventLogs_ValidInfo(t *testing.T) {
 			err:   `INSERT: pq: new row for relation "event_logs" violates check constraint "event_logs_check_name_not_empty"`,
 		},
 		{
-			name:  "EmptyURL",
-			event: &Event{Name: "test_event", UserID: 1, Source: "WEB"},
-			err:   `INSERT: pq: new row for relation "event_logs" violates check constraint "event_logs_check_url_not_empty"`,
-		},
-		{
 			name:  "InvalidUser",
 			event: &Event{Name: "test_event", URL: "http://sourcegraph.com", Source: "WEB"},
 			err:   `INSERT: pq: new row for relation "event_logs" violates check constraint "event_logs_check_has_user"`,
@@ -69,7 +64,7 @@ func TestEventLogs_CountUniqueUsersPerPeriod(t *testing.T) {
 	ctx := context.Background()
 
 	now := time.Now()
-	startDate, _ := calcStartDate(now, Daily, 2)
+	startDate, _ := calcStartDate(now, Daily, 3)
 	secondDay := startDate.Add(time.Hour * 24)
 	thirdDay := startDate.Add(time.Hour * 24 * 2)
 
@@ -96,7 +91,7 @@ func TestEventLogs_CountUniqueUsersPerPeriod(t *testing.T) {
 		}
 	}
 
-	values, err := EventLogs.CountUniqueUsersPerPeriod(ctx, Daily, now, 2, nil)
+	values, err := EventLogs.CountUniqueUsersPerPeriod(ctx, Daily, now, 3, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -114,7 +109,7 @@ func TestEventLogs_CountEventsPerPeriod(t *testing.T) {
 	ctx := context.Background()
 
 	now := time.Now()
-	startDate, _ := calcStartDate(now, Daily, 2)
+	startDate, _ := calcStartDate(now, Daily, 3)
 	secondDay := startDate.Add(time.Hour * 24)
 	thirdDay := startDate.Add(time.Hour * 24 * 2)
 
@@ -142,7 +137,7 @@ func TestEventLogs_CountEventsPerPeriod(t *testing.T) {
 		}
 	}
 
-	values, err := EventLogs.CountEventsPerPeriod(ctx, Daily, now, 2, nil)
+	values, err := EventLogs.CountEventsPerPeriod(ctx, Daily, now, 3, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -160,7 +155,7 @@ func TestEventLogs_PercentilesPerPeriod(t *testing.T) {
 	ctx := context.Background()
 
 	now := time.Now()
-	startDate, _ := calcStartDate(now, Daily, 2)
+	startDate, _ := calcStartDate(now, Daily, 3)
 	secondDay := startDate.Add(time.Hour * 24)
 	thirdDay := startDate.Add(time.Hour * 24 * 2)
 
@@ -190,7 +185,7 @@ func TestEventLogs_PercentilesPerPeriod(t *testing.T) {
 		}
 	}
 
-	values, err := EventLogs.PercentilesPerPeriod(ctx, Daily, now, 2, "durationMs", []float64{0.5, 0.8}, nil)
+	values, err := EventLogs.PercentilesPerPeriod(ctx, Daily, now, 3, "durationMs", []float64{0.5, 0.8}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -2,11 +2,13 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 
-	graphql "github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go"
+	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
 func (*schemaResolver) DeleteUser(ctx context.Context, args *struct {
@@ -31,11 +33,26 @@ func (*schemaResolver) DeleteUser(ctx context.Context, args *struct {
 		return nil, errors.New("unable to delete current user")
 	}
 
-	// Collect username and verified email addresses to be used for revoking user permissions later,
-	// otherwise they will be removed from database if it's a hard delete.
+	// Collect username, verified email addresses, and external accounts to be used
+	// for revoking user permissions later, otherwise they will be removed from database
+	// if it's a hard delete.
 	user, err := db.Users.GetByID(ctx, userID)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "get user by ID")
+	}
+
+	var accounts []*extsvc.ExternalAccounts
+
+	extAccounts, err := db.ExternalAccounts.List(ctx, db.ExternalAccountsListOptions{UserID: userID})
+	if err != nil {
+		return nil, errors.Wrap(err, "list external accounts")
+	}
+	for _, acct := range extAccounts {
+		accounts = append(accounts, &extsvc.ExternalAccounts{
+			ServiceType: acct.ServiceType,
+			ServiceID:   acct.ServiceID,
+			AccountIDs:  []string{acct.AccountID},
+		})
 	}
 
 	verifiedEmails, err := db.UserEmails.ListByUser(ctx, db.UserEmailsListOptions{
@@ -49,6 +66,11 @@ func (*schemaResolver) DeleteUser(ctx context.Context, args *struct {
 	for i := range verifiedEmails {
 		emailStrs[i] = verifiedEmails[i].Email
 	}
+	accounts = append(accounts, &extsvc.ExternalAccounts{
+		ServiceType: authz.SourcegraphServiceType,
+		ServiceID:   authz.SourcegraphServiceID,
+		AccountIDs:  append(emailStrs, user.Username),
+	})
 
 	if args.Hard != nil && *args.Hard {
 		if err := db.Users.HardDelete(ctx, user.ID); err != nil {
@@ -64,9 +86,8 @@ func (*schemaResolver) DeleteUser(ctx context.Context, args *struct {
 	// is possible but highly unlikely. Therefore, there is no need to roll back user deletion even if this step failed.
 	// This call is purely for the purpose of cleanup.
 	if err := db.Authz.RevokeUserPermissions(ctx, &db.RevokeUserPermissionsArgs{
-		UserID:         user.ID,
-		Username:       user.Username,
-		VerifiedEmails: emailStrs,
+		UserID:   user.ID,
+		Accounts: accounts,
 	}); err != nil {
 		return nil, err
 	}

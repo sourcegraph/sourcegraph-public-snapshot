@@ -21,9 +21,9 @@ export const SearchModeToggle: React.FunctionComponent<Props> = props => {
                 aria-label="Toggle search mode"
             >
                 {props.interactiveSearchMode ? (
-                    <ViewQuiltIcon className="icon-inline" size={8}></ViewQuiltIcon>
+                    <ViewQuiltIcon className="icon-inline" size={8} />
                 ) : (
-                    <KeyboardIcon className="icon-inline" size={8}></KeyboardIcon>
+                    <KeyboardIcon className="icon-inline" size={8} />
                 )}
             </DropdownToggle>
             <DropdownMenu>
@@ -32,15 +32,15 @@ export const SearchModeToggle: React.FunctionComponent<Props> = props => {
                     onClick={!props.interactiveSearchMode ? props.toggleSearchMode : undefined}
                     className="e2e-search-mode-toggle__interactive-mode"
                 >
-                    <ViewQuiltIcon className="icon-inline" size={8}></ViewQuiltIcon>
+                    <ViewQuiltIcon className="icon-inline" size={8} />
                     <span className="ml-1">Interactive mode</span>
                 </DropdownItem>
                 <DropdownItem
                     active={!props.interactiveSearchMode}
                     onClick={props.interactiveSearchMode ? props.toggleSearchMode : undefined}
-                    className="e2e-search-mode-text-mode"
+                    className="e2e-search-mode-toggle__plain-text-mode"
                 >
-                    <KeyboardIcon className="icon-inline"></KeyboardIcon>
+                    <KeyboardIcon className="icon-inline" />
                     <span className="ml-1">Plain text mode</span>
                 </DropdownItem>
                 <DropdownItem tag={Link} to="/search/query-builder">

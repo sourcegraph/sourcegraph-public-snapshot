@@ -26,15 +26,15 @@ Sourcegraph server is a collection of smaller binaries. The development server, 
 Sourcegraph has the following dependencies:
 
 - [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) (v2.18 or higher)
-- [Go](https://golang.org/doc/install) (v1.13 or higher)
+- [Go](https://golang.org/doc/install) (v1.14 or higher)
 - [Node JS](https://nodejs.org/en/download/) (see current recommended version in [.nvmrc](https://github.com/sourcegraph/sourcegraph/blob/master/.nvmrc))
 - [make](https://www.gnu.org/software/make/)
 - [Docker](https://docs.docker.com/engine/installation/) (v18 or higher)
   - For macOS we recommend using Docker for Mac instead of `docker-machine`
 - [PostgreSQL](https://wiki.postgresql.org/wiki/Detailed_installation_guides) (v11 or higher)
-- [Redis](http://redis.io/) (v3.0.7 or higher)
+- [Redis](http://redis.io/) (v5.0.7 or higher)
 - [Yarn](https://yarnpkg.com) (v1.10.1 or higher)
-- [nginx](https://docs.nginx.com/nginx/admin-guide/installing-nginx/installing-nginx-open-source/) (v1.14 or higher)
+- [NGINX](https://docs.nginx.com/nginx/admin-guide/installing-nginx/installing-nginx-open-source/) (v1.14 or higher)
 - [SQLite](https://www.sqlite.org/index.html) tools
 - [Golang Migrate](https://github.com/golang-migrate/migrate/) (v4.7.0 or higher)
 - [Comby](https://github.com/comby-tools/comby/) (v0.11.3 or higher)
@@ -52,19 +52,45 @@ The following are two recommendations for installing these dependencies:
     brew cask install docker
     ```
 
-3.  Install Go, Node Version Manager, PostgreSQL, Redis, Git, nginx, golang-migrate, Comby, and SQLite tools with the following command:
+3.  Install Go, Node Version Manager, PostgreSQL, Redis, Git, NGINX, golang-migrate, Comby, and SQLite tools with the following command:
 
     ```bash
-    brew install go nvm yarn redis postgresql git gnu-sed nginx golang-migrate comby sqlite pcre FiloSottile/musl-cross/musl-cross
+    brew install go yarn redis postgresql git gnu-sed nginx golang-migrate comby sqlite pcre FiloSottile/musl-cross/musl-cross
     ```
 
-4. Install the current recommended version of Node JS using:
+4.  Install the Node Version Manager (`nvm`) using:
+
+    ```bash
+    NVM_VERSION="$(curl https://api.github.com/repos/nvm-sh/nvm/releases/latest | jq -r .name)"
+    curl -L https://raw.githubusercontent.com/nvm-sh/nvm/"$NVM_VERSION"/install.sh -o install-nvm.sh
+    sh install-nvm.sh
+    ```
+
+    After the install script is finished, re-source your shell profile (e.g.,
+    `source ~/.zshrc`) or restart your terminal session to pick up the `nvm`
+    definitions. Re-running the install script will update the installation.
+
+    Note: `nvm` is implemented as a shell function, so it may not show up in
+    the output of `which nvm`. Use `type nvm` to verify whether it is set up.
+    There is also a Homebrew package for `nvm`, but it is unsupported by the
+    `nvm` maintainers.
+
+5.  Install the current recommended version of Node JS by running the following
+    from the working directory of a sourcegraph repository clone:
 
     ```bash
     nvm install
+    nvm use --delete-prefix
     ```
 
-5.  Configure PostgreSQL and Redis to start automatically
+    After doing this, `node -v` should show the same version mentioned in
+    `.nvmrc` at the root of the sourcegraph repository.
+
+    Note: Although there is a Homebrew package for Node, we advise using `nvm`
+    instead, to ensure you get a Node version compatible with the current state
+    of the sourcegraph repository.
+
+6.  Configure PostgreSQL and Redis to start automatically
 
     ```bash
     brew services start postgresql
@@ -73,7 +99,7 @@ The following are two recommendations for installing these dependencies:
 
     (You can stop them later by calling `stop` instead of `start` above.)
 
-6.  Ensure `psql`, the PostgreSQL command line client, is on your `$PATH`.
+7.  Ensure `psql`, the PostgreSQL command line client, is on your `$PATH`.
     Homebrew does not put it there by default. Homebrew gives you the command to run to insert `psql` in your path in the "Caveats" section of `brew info postgresql`. Alternatively, you can use the command below. It might need to be adjusted depending on your Homebrew prefix (`/usr/local` below) and shell (bash below).
 
     ```bash
@@ -81,7 +107,7 @@ The following are two recommendations for installing these dependencies:
     source ~/.bash_profile
     ```
 
-7.  Open a new Terminal window to ensure `psql` is now on your `$PATH`.
+8.  Open a new Terminal window to ensure `psql` is now on your `$PATH`.
 
 ### Ubuntu
 

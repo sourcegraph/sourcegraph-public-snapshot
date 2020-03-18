@@ -1,12 +1,12 @@
+import slugify from 'slugify'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import React, { useState, useEffect, useRef, useMemo, useCallback, ChangeEvent } from 'react'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
 import { UserAvatar } from '../../../user/UserAvatar'
 import { Timestamp } from '../../../components/time/Timestamp'
-import { CampaignsIcon } from '../icons'
 import { noop } from 'lodash'
 import { Form } from '../../../components/Form'
 import {
@@ -28,16 +28,18 @@ import { Subject, of, merge, Observable } from 'rxjs'
 import { renderMarkdown } from '../../../../../shared/src/util/markdown'
 import { ErrorAlert } from '../../../components/alerts'
 import { Markdown } from '../../../../../shared/src/components/Markdown'
-import { Link } from '../../../../../shared/src/components/Link'
-import { switchMap, tap, takeWhile, repeatWhen, delay } from 'rxjs/operators'
+import { switchMap, tap, takeWhile, repeatWhen, delay, catchError, startWith } from 'rxjs/operators'
 import { ThemeProps } from '../../../../../shared/src/theme'
-import classNames from 'classnames'
-import { CampaignTitleField } from './form/CampaignTitleField'
 import { CampaignDescriptionField } from './form/CampaignDescriptionField'
-import { CloseDeleteCampaignPrompt } from './form/CloseDeleteCampaignPrompt'
 import { CampaignStatus } from './CampaignStatus'
 import { CampaignTabs } from './CampaignTabs'
-import { DEFAULT_CHANGESET_LIST_COUNT } from './presentation'
+import { CampaignUpdateDiff } from './CampaignUpdateDiff'
+import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
+import { CampaignUpdateSelection } from './CampaignUpdateSelection'
+import { CampaignActionsBar } from './CampaignActionsBar'
+import { CampaignTitleField } from './form/CampaignTitleField'
+
+export type CampaignUIMode = 'viewing' | 'editing' | 'saving' | 'deleting' | 'closing'
 
 interface Campaign
     extends Pick<
@@ -48,6 +50,7 @@ interface Campaign
         | 'description'
         | 'author'
         | 'changesetCountsOverTime'
+        | 'branch'
         | 'createdAt'
         | 'updatedAt'
         | 'publishedAt'
@@ -61,7 +64,7 @@ interface Campaign
 }
 
 interface CampaignPlan extends Pick<GQL.ICampaignPlan, '__typename' | 'id'> {
-    changesets: Pick<GQL.ICampaignPlan['changesets'], 'nodes' | 'totalCount'>
+    changesetPlans: Pick<GQL.ICampaignPlan['changesetPlans'], 'nodes' | 'totalCount'>
     status: Pick<GQL.ICampaignPlan['status'], 'completedCount' | 'pendingCount' | 'errors' | 'state'>
 }
 
@@ -95,21 +98,25 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     // State for the form in editing mode
     const [name, setName] = useState<string>('')
     const [description, setDescription] = useState<string>('')
-
-    const [closeChangesets, setCloseChangesets] = useState<boolean>(false)
+    const [branch, setBranch] = useState<string>('')
+    const [branchModified, setBranchModified] = useState<boolean>(false)
 
     // For errors during fetching
     const triggerError = useError()
 
+    /** Retrigger campaign fetching */
     const campaignUpdates = useMemo(() => new Subject<void>(), [])
+    /** Retrigger changeset fetching */
     const changesetUpdates = useMemo(() => new Subject<void>(), [])
 
-    // Fetch campaign if ID was given
-    const [campaign, setCampaign] = useState<Campaign | CampaignPlan | null>()
+    const [campaign, setCampaign] = useState<Campaign | null>()
     useEffect(() => {
         if (!campaignID) {
             return
         }
+        // on the very first fetch, a reload of the changesets is not required
+        let isFirstCampaignFetch = true
+        // Fetch campaign if ID was given
         const subscription = merge(of(undefined), campaignUpdates)
             .pipe(
                 switchMap(
@@ -141,73 +148,99 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             .subscribe({
                 next: fetchedCampaign => {
                     setCampaign(fetchedCampaign)
-                    changesetUpdates.next()
+                    if (fetchedCampaign) {
+                        setName(fetchedCampaign.name)
+                        setDescription(fetchedCampaign.description)
+                    }
+                    if (!isFirstCampaignFetch) {
+                        changesetUpdates.next()
+                    }
+                    isFirstCampaignFetch = false
                 },
                 error: triggerError,
             })
         return () => subscription.unsubscribe()
     }, [campaignID, triggerError, changesetUpdates, campaignUpdates, _fetchCampaignById])
 
-    const [mode, setMode] = useState<'viewing' | 'editing' | 'saving' | 'deleting' | 'closing'>(
-        campaignID ? 'viewing' : 'editing'
-    )
+    const [mode, setMode] = useState<CampaignUIMode>(campaignID ? 'viewing' : 'editing')
 
     // To report errors from saving or deleting
     const [alertError, setAlertError] = useState<Error>()
 
+    const planID: GQL.ID | null = new URLSearchParams(location.search).get('plan')
+    useEffect(() => {
+        if (planID) {
+            setMode('editing')
+        }
+    }, [planID])
+
     // To unblock the history after leaving edit mode
     const unblockHistoryRef = useRef<H.UnregisterCallback>(noop)
     useEffect(() => {
-        if (!campaignID) {
+        if (!campaignID && planID === null) {
             unblockHistoryRef.current()
             unblockHistoryRef.current = history.block('Do you want to discard this campaign?')
         }
         // Note: the current() method gets dynamically reassigned,
         // therefor we can't return it directly.
         return () => unblockHistoryRef.current()
-    }, [campaignID, history])
+    }, [campaignID, history, planID])
 
+    const updateMode = !!campaignID && !!planID
     const previewCampaignPlans = useMemo(() => new Subject<GQL.ID>(), [])
-    const nextPreviewCampaignPlan = useCallback(previewCampaignPlans.next.bind(previewCampaignPlans), [
-        previewCampaignPlans,
-    ])
-    useObservable(
+    const campaignPlan = useObservable(
         useMemo(
             () =>
-                previewCampaignPlans.pipe(
-                    tap(() => {
-                        setAlertError(undefined)
-                        setCampaign(undefined)
-                    }),
+                (planID ? previewCampaignPlans.pipe(startWith(planID)) : previewCampaignPlans).pipe(
                     switchMap(plan => _fetchCampaignPlanById(plan)),
-                    tap(campaign => {
-                        setCampaign(campaign)
-                        if (campaign && campaign.changesets.totalCount <= DEFAULT_CHANGESET_LIST_COUNT) {
+                    tap(campaignPlan => {
+                        if (campaignPlan) {
                             changesetUpdates.next()
                         }
+                    }),
+                    catchError(error => {
+                        setAlertError(asError(error))
+                        return [null]
                     })
                 ),
-            [previewCampaignPlans, changesetUpdates, _fetchCampaignPlanById]
+            [previewCampaignPlans, planID, _fetchCampaignPlanById, changesetUpdates]
         )
     )
 
-    const planID: GQL.ID | null = new URLSearchParams(location.search).get('plan')
-    useEffect(() => {
-        if (planID) {
-            nextPreviewCampaignPlan(planID)
-        }
-    }, [nextPreviewCampaignPlan, planID])
+    const selectCampaign = useCallback<(campaign: Pick<GQL.ICampaign, 'id'>) => void>(
+        campaign => history.push(`/campaigns/${campaign.id}?plan=${planID!}`),
+        [history, planID]
+    )
 
-    if (campaign === undefined && campaignID) {
+    // Campaign is loading
+    if ((campaignID && campaign === undefined) || (planID && campaignPlan === undefined)) {
         return (
             <div className="text-center">
                 <LoadingSpinner className="icon-inline mx-auto my-4" />
             </div>
         )
     }
+    // Campaign was not found
+    // todo: never truthy - node resolver returns error, not null
     if (campaign === null) {
         return <HeroPage icon={AlertCircleIcon} title="Campaign not found" />
     }
+    // Plan was not found
+    if (campaignPlan === null) {
+        return <HeroPage icon={AlertCircleIcon} title="Plan not found" />
+    }
+
+    // plan is specified, but campaign not yet, so we have to choose
+    if (history.location.pathname.includes('/campaigns/update') && campaignID === undefined && planID !== null) {
+        return <CampaignUpdateSelection history={history} location={location} onSelect={selectCampaign} />
+    }
+
+    const specifyingBranchAllowed =
+        (!campaign && campaignPlan) ||
+        (campaign &&
+            !campaign.publishedAt &&
+            campaign.changesets.totalCount === 0 &&
+            campaign.status.state !== GQL.BackgroundProcessState.PROCESSING)
 
     const onDraft: React.FormEventHandler = async event => {
         event.preventDefault()
@@ -217,7 +250,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 name,
                 description,
                 namespace: authenticatedUser.id,
-                plan: campaign && campaign.__typename === 'CampaignPlan' ? campaign.id : undefined,
+                plan: campaignPlan ? campaignPlan.id : undefined,
+                branch: specifyingBranchAllowed ? branch : undefined,
                 draft: true,
             })
             unblockHistoryRef.current()
@@ -249,20 +283,32 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         setMode('saving')
         try {
             if (campaignID) {
-                setCampaign(await updateCampaign({ id: campaignID, name, description }))
+                const newCampaign = await updateCampaign({
+                    id: campaignID,
+                    name,
+                    description,
+                    plan: planID ?? undefined,
+                    branch: specifyingBranchAllowed ? branch : undefined,
+                })
+                setCampaign(newCampaign)
+                setName(newCampaign.name)
+                setDescription(newCampaign.description)
                 unblockHistoryRef.current()
+                history.push(`/campaigns/${newCampaign.id}`)
             } else {
                 const createdCampaign = await createCampaign({
                     name,
                     description,
                     namespace: authenticatedUser.id,
-                    plan: campaign && campaign.__typename === 'CampaignPlan' ? campaign.id : undefined,
+                    plan: campaignPlan ? campaignPlan.id : undefined,
+                    branch: specifyingBranchAllowed ? branch : undefined,
                 })
                 unblockHistoryRef.current()
                 history.push(`/campaigns/${createdCampaign.id}`)
             }
             setMode('viewing')
             setAlertError(undefined)
+            campaignUpdates.next()
         } catch (err) {
             setMode('editing')
             setAlertError(asError(err))
@@ -274,12 +320,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     const onEdit: React.MouseEventHandler = event => {
         event.preventDefault()
         unblockHistoryRef.current = history.block(discardChangesMessage)
-        {
-            const { name, description } = campaign as Campaign
-            setName(name)
-            setDescription(description)
-            setMode('editing')
-        }
+        setMode('editing')
+        setAlertError(undefined)
     }
 
     const onCancel: React.FormEventHandler = event => {
@@ -288,11 +330,13 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             return
         }
         unblockHistoryRef.current()
+        // clear query params
+        history.replace(location.pathname)
         setMode('viewing')
         setAlertError(undefined)
     }
 
-    const onClose = async (): Promise<void> => {
+    const onClose = async (closeChangesets: boolean): Promise<void> => {
         if (!confirm('Are you sure you want to close the campaign?')) {
             return
         }
@@ -307,7 +351,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         }
     }
 
-    const onDelete = async (): Promise<void> => {
+    const onDelete = async (closeChangesets: boolean): Promise<void> => {
         if (!confirm('Are you sure you want to delete the campaign?')) {
             return
         }
@@ -337,185 +381,153 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         changesetUpdates.next()
     }
 
-    const author = campaign && campaign.__typename === 'Campaign' ? campaign.author : authenticatedUser
+    const author = campaign ? campaign.author : authenticatedUser
+
+    const onNameChange = (newName: string): void => {
+        if (!branchModified) {
+            setBranch(slugify(newName, { lower: true }))
+        }
+        setName(newName)
+    }
+
+    const onBranchChange = (event: ChangeEvent<HTMLInputElement>): void => {
+        setBranch(event.target.value)
+        setBranchModified(true)
+    }
 
     return (
         <>
-            <PageTitle title={campaign && campaign.__typename === 'Campaign' ? campaign.name : 'New campaign'} />
+            <PageTitle title={campaign ? campaign.name : 'New campaign'} />
             <Form onSubmit={onSubmit} onReset={onCancel} className="e2e-campaign-form position-relative">
-                <div className="d-flex mb-2">
-                    <h2 className="m-0">
-                        <CampaignsIcon
-                            className={classNames(
-                                'icon-inline mr-2',
-                                campaign && campaign.__typename === 'Campaign' && !campaign.closedAt
-                                    ? 'text-success'
-                                    : campaignID
-                                    ? 'text-danger'
-                                    : 'text-muted'
-                            )}
-                        />
-                        <span>
-                            <Link to="/campaigns">Campaigns</Link>
-                        </span>
-                        <span className="text-muted d-inline-block mx-2">/</span>
-                        {mode === 'editing' || mode === 'saving' ? (
-                            <CampaignTitleField
-                                className="w-auto d-inline-block e2e-campaign-title"
-                                value={name}
-                                onChange={setName}
-                                disabled={mode === 'saving'}
-                            />
-                        ) : (
-                            <span>{campaign && campaign.__typename === 'Campaign' && campaign.name}</span>
-                        )}
-                    </h2>
-                    <span className="flex-grow-1 d-flex justify-content-end align-items-center">
-                        {(mode === 'saving' || mode === 'deleting' || mode === 'closing') && (
-                            <LoadingSpinner className="mr-2" />
-                        )}
-                        {campaign &&
-                            campaign.__typename === 'Campaign' &&
-                            (mode === 'editing' || mode === 'saving' ? (
-                                <>
-                                    <button type="submit" className="btn btn-primary mr-1" disabled={mode === 'saving'}>
-                                        Save
-                                    </button>
-                                    <button type="reset" className="btn btn-secondary" disabled={mode === 'saving'}>
-                                        Cancel
-                                    </button>
-                                </>
-                            ) : (
-                                campaign.viewerCanAdminister && (
-                                    <>
-                                        <button
-                                            type="button"
-                                            id="e2e-campaign-edit"
-                                            className="btn btn-secondary mr-1"
-                                            onClick={onEdit}
-                                            disabled={mode === 'deleting' || mode === 'closing'}
-                                        >
-                                            Edit
-                                        </button>
-                                        {!campaign.closedAt && (
-                                            <details className="campaign-details__details">
-                                                <summary>
-                                                    <span className="btn btn-secondary mr-1 dropdown-toggle">
-                                                        Close
-                                                    </span>
-                                                </summary>
-                                                <CloseDeleteCampaignPrompt
-                                                    message={
-                                                        <p>
-                                                            Close campaign <b>{campaign.name}</b>?
-                                                        </p>
-                                                    }
-                                                    changesetsCount={campaign.changesets.totalCount}
-                                                    closeChangesets={closeChangesets}
-                                                    onCloseChangesetsToggle={setCloseChangesets}
-                                                    buttonText="Close"
-                                                    onButtonClick={onClose}
-                                                    buttonClassName="btn-secondary"
-                                                    buttonDisabled={mode === 'deleting' || mode === 'closing'}
-                                                    className="position-absolute campaign-details__details-menu"
-                                                />
-                                            </details>
-                                        )}
-                                        <details className="campaign-details__details">
-                                            <summary>
-                                                <span className="btn btn-danger dropdown-toggle">Delete</span>
-                                            </summary>
-                                            <CloseDeleteCampaignPrompt
-                                                message={
-                                                    <p>
-                                                        Delete campaign <strong>{campaign.name}</strong>?
-                                                    </p>
-                                                }
-                                                changesetsCount={campaign.changesets.totalCount}
-                                                closeChangesets={closeChangesets}
-                                                onCloseChangesetsToggle={setCloseChangesets}
-                                                buttonText="Delete"
-                                                onButtonClick={onDelete}
-                                                buttonClassName="btn-danger"
-                                                buttonDisabled={mode === 'deleting' || mode === 'closing'}
-                                                className="position-absolute campaign-details__details-menu"
-                                            />
-                                        </details>
-                                    </>
-                                )
-                            ))}
-                    </span>
-                </div>
+                <CampaignActionsBar
+                    previewingCampaignPlan={!!campaignPlan}
+                    mode={mode}
+                    campaign={campaign}
+                    onEdit={onEdit}
+                    onClose={onClose}
+                    onDelete={onDelete}
+                />
                 {alertError && <ErrorAlert error={alertError} />}
-                <div className="card">
-                    {campaign && campaign.__typename === 'Campaign' && (
+                {(mode === 'editing' || mode === 'saving') && (
+                    <>
+                        <h3>Campaign details</h3>
+                        <CampaignTitleField
+                            className="e2e-campaign-title"
+                            value={name}
+                            onChange={onNameChange}
+                            disabled={mode === 'saving'}
+                        />
+                        <CampaignDescriptionField
+                            value={description}
+                            onChange={setDescription}
+                            disabled={mode === 'saving'}
+                        />
+                    </>
+                )}
+                {campaign && mode !== 'editing' && mode !== 'saving' && (
+                    <div className="card mt-3">
                         <div className="card-header">
                             <strong>
                                 <UserAvatar user={author} className="icon-inline" /> {author.username}
                             </strong>{' '}
                             started <Timestamp date={campaign.createdAt} />
                         </div>
-                    )}
-                    {mode === 'editing' || mode === 'saving' ? (
-                        <CampaignDescriptionField
-                            value={description}
-                            onChange={setDescription}
+                        <div className="card-body">
+                            <Markdown dangerousInnerHTML={renderMarkdown(campaign.description || '_No description_')} />
+                        </div>
+                    </div>
+                )}
+                {campaign && campaignPlan && (
+                    <CampaignUpdateDiff
+                        campaign={campaign}
+                        campaignPlan={campaignPlan}
+                        history={history}
+                        location={location}
+                        isLightTheme={isLightTheme}
+                        className="my-3"
+                    />
+                )}
+                {(mode === 'editing' || mode === 'saving') && specifyingBranchAllowed && (
+                    <div className="form-group mt-3">
+                        <label>
+                            Branch name{' '}
+                            <small>
+                                <InformationOutlineIcon
+                                    className="icon-inline"
+                                    data-tooltip={
+                                        'If a branch with the given name already exists, a fallback name will be created by appending a count. Example: "my-branch-name" becomes "my-branch-name-1".'
+                                    }
+                                />
+                            </small>
+                        </label>
+                        <input
+                            type="text"
+                            className="form-control"
+                            onChange={onBranchChange}
+                            placeholder="my-awesome-campaign"
+                            value={branch}
+                            required={true}
                             disabled={mode === 'saving'}
                         />
-                    ) : (
-                        campaign &&
-                        campaign.__typename === 'Campaign' && (
-                            <div className="card-body">
-                                <Markdown dangerousInnerHTML={renderMarkdown(campaign.description)}></Markdown>
-                            </div>
-                        )
-                    )}
-                </div>
-                {mode === 'editing' && (
-                    <p className="ml-1">
-                        <small>
-                            <a rel="noopener noreferrer" target="_blank" href="/help/user/markdown">
-                                Markdown supported
-                            </a>
-                        </small>
-                    </p>
+                    </div>
                 )}
-                {(!campaign || (campaign && campaign.__typename === 'CampaignPlan')) && mode === 'editing' && (
-                    <>
-                        {campaign && (
-                            <button
-                                type="submit"
-                                className="btn btn-secondary mr-1"
-                                onClick={onDraft}
-                                disabled={mode !== 'editing'}
-                            >
-                                Create draft
-                            </button>
-                        )}
+                {!updateMode ? (
+                    (!campaign || campaignPlan) && (
+                        <>
+                            <div className="mt-3">
+                                {campaignPlan && (
+                                    <button
+                                        type="submit"
+                                        className="btn btn-secondary mr-1"
+                                        // todo: doesn't trigger form validation
+                                        onClick={onDraft}
+                                        disabled={mode !== 'editing'}
+                                    >
+                                        Create draft
+                                    </button>
+                                )}
+                                <button
+                                    type="submit"
+                                    className="btn btn-primary"
+                                    disabled={mode !== 'editing' || campaignPlan?.changesetPlans.totalCount === 0}
+                                >
+                                    Create
+                                </button>
+                            </div>
+                        </>
+                    )
+                ) : (
+                    <div className="mb-3">
+                        <button type="reset" className="btn btn-secondary mr-1" onClick={onCancel}>
+                            Cancel
+                        </button>
                         <button
                             type="submit"
                             className="btn btn-primary"
-                            disabled={mode !== 'editing' || campaign?.changesets.totalCount === 0}
+                            disabled={mode !== 'editing' || campaignPlan?.changesetPlans.totalCount === 0}
                         >
-                            Create
+                            Update
                         </button>
-                    </>
+                    </div>
                 )}
             </Form>
 
             {/* is already created or a plan is available */}
-            {campaign && (
+            {(campaign || campaignPlan) && (
                 <>
-                    <CampaignStatus
-                        campaign={campaign}
-                        status={campaign.status}
-                        onPublish={onPublish}
-                        onRetry={onRetry}
-                    />
+                    {/* Only show status for created campaigns and not in update mode */}
+                    {campaign && !campaignPlan && (
+                        <CampaignStatus
+                            campaign={campaign}
+                            status={campaign.status}
+                            onPublish={onPublish}
+                            onRetry={onRetry}
+                        />
+                    )}
 
-                    {campaign.__typename === 'Campaign' && (
+                    {campaign && !updateMode && (
                         <>
-                            <h3>Progress</h3>
+                            <h3 className="mb-2">Progress</h3>
                             <CampaignBurndownChart
                                 changesetCountsOverTime={campaign.changesetCountsOverTime}
                                 history={history}
@@ -527,23 +539,27 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         </>
                     )}
 
-                    {campaign.changesets.totalCount +
-                        (campaign.__typename === 'Campaign' ? campaign.changesetPlans.totalCount : 0) >
-                    0 ? (
-                        <CampaignTabs
-                            campaign={campaign}
-                            changesetUpdates={changesetUpdates}
-                            campaignUpdates={campaignUpdates}
-                            persistLines={campaign.__typename === 'Campaign'}
-                            history={history}
-                            location={location}
-                            className="mt-3"
-                            isLightTheme={isLightTheme}
-                        />
-                    ) : (
-                        campaign.status.state !== GQL.BackgroundProcessState.PROCESSING && (
-                            <p className="mt-3 text-muted">No changesets</p>
-                        )
+                    {!updateMode && (
+                        <>
+                            <h3 className="mt-3">Changesets</h3>
+                            {(campaign?.changesets.totalCount ?? 0) +
+                            (campaignPlan || campaign)!.changesetPlans.totalCount ? (
+                                <CampaignTabs
+                                    campaign={(campaignPlan || campaign)!}
+                                    changesetUpdates={changesetUpdates}
+                                    campaignUpdates={campaignUpdates}
+                                    persistLines={!!campaign}
+                                    history={history}
+                                    location={location}
+                                    className="mt-2"
+                                    isLightTheme={isLightTheme}
+                                />
+                            ) : (
+                                (campaignPlan || campaign)!.status.state !== GQL.BackgroundProcessState.PROCESSING && (
+                                    <p className="mt-2 text-muted">No changesets</p>
+                                )
+                            )}
+                        </>
                     )}
                 </>
             )}

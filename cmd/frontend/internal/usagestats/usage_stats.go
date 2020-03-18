@@ -11,14 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
-const (
-	defaultDays   = 14
-	defaultWeeks  = 10
-	defaultMonths = 3
-
-	maxStorageDays = 93
-)
-
 var (
 	timeNow = time.Now
 )
@@ -35,7 +27,7 @@ func GetByUserID(ctx context.Context, userID int32) (*types.UserUsageStatistics,
 	if err != nil {
 		return nil, err
 	}
-	searchQueries, err := db.EventLogs.CountByUserIDAndEventName(ctx, userID, "SearchSubmitted")
+	searchQueries, err := db.EventLogs.CountByUserIDAndEventName(ctx, userID, "SearchResultsQueried")
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +138,6 @@ func activeUsers(ctx context.Context, periodType db.PeriodType, periods int) ([]
 	if periods == 0 {
 		return []*types.SiteActivityPeriod{}, nil
 	}
-	periods = periods - 1
 
 	uniqueUsers, err := db.EventLogs.CountUniqueUsersPerPeriod(ctx, periodType, timeNow().UTC(), periods, nil)
 	if err != nil {

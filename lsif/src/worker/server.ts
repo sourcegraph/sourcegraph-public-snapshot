@@ -1,19 +1,12 @@
 import * as settings from './settings'
-import express from 'express'
-import promClient from 'prom-client'
 import { Logger } from 'winston'
+import { makeExpressApp } from '../shared/api/init'
 
-/**
- * Create an express server that only has /healthz and /metric endpoints.
- *
- * @param logger The logger instance.
- */
+/** Create an express server containing health and metrics endpoint. */
 export function startMetricsServer(logger: Logger): void {
-    const app = express()
-    app.get('/healthz', (_, res) => res.send('ok'))
-    app.get('/metrics', (_, res) => {
-        res.writeHead(200, { 'Content-Type': 'text/plain' })
-        res.end(promClient.register.metrics())
+    const app = makeExpressApp({
+        routes: [],
+        logger,
     })
 
     app.listen(settings.WORKER_METRICS_PORT, () =>

@@ -7,7 +7,7 @@ describe('Backend', () => {
 
     beforeAll(async () => {
         await ctx.init()
-        await ctx.convertTestData(repositoryId, commit, '', '/simple/data/main.lsif.gz')
+        await ctx.convertTestData(repositoryId, commit, '', 'test', '/simple/data/main.lsif.gz')
     })
 
     afterAll(async () => {
@@ -49,12 +49,14 @@ describe('Backend', () => {
 
         const { locations } = util.filterNodeModules(
             util.mapLocations(
-                (await ctx.backend.references(repositoryId, commit, 'src/a.ts', {
-                    line: 0,
-                    character: 17,
-                })) || {
-                    locations: [],
-                }
+                await util.queryAllReferences(
+                    ctx.backend,
+                    repositoryId,
+                    commit,
+                    'src/a.ts',
+                    { line: 0, character: 17 },
+                    50
+                )
             )
         )
 

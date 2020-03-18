@@ -130,7 +130,7 @@ func HasCommitAfter(ctx context.Context, repo gitserver.Repo, date string, revsp
 }
 
 func isBadObjectErr(output, obj string) bool {
-	return string(output) == "fatal: bad object "+obj
+	return output == "fatal: bad object "+obj
 }
 
 func isInvalidRevisionRangeError(output, obj string) bool {
@@ -148,7 +148,7 @@ func commitLog(ctx context.Context, repo gitserver.Repo, opt CommitsOptions) (co
 
 	cmd := gitserver.DefaultClient.Command("git", args...)
 	cmd.Repo = repo
-	cmd.EnsureRevision = string(opt.Range)
+	cmd.EnsureRevision = opt.Range
 	retryer := &commandRetryer{
 		cmd:           cmd,
 		remoteURLFunc: opt.RemoteURLFunc,

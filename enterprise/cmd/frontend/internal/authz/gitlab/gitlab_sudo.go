@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -44,7 +45,7 @@ type SudoProvider struct {
 	cacheTTL          time.Duration
 }
 
-var _ authz.Provider = ((*SudoProvider)(nil))
+var _ authz.Provider = (*SudoProvider)(nil)
 
 type SudoProviderOp struct {
 	// BaseURL is the URL of the GitLab instance.
@@ -76,11 +77,11 @@ type SudoProviderOp struct {
 	MockCache pcache
 }
 
-func newSudoProvider(op SudoProviderOp) *SudoProvider {
+func newSudoProvider(op SudoProviderOp, cli httpcli.Doer) *SudoProvider {
 	p := &SudoProvider{
 		sudoToken: op.SudoToken,
 
-		clientProvider:    gitlab.NewClientProvider(op.BaseURL, nil),
+		clientProvider:    gitlab.NewClientProvider(op.BaseURL, cli),
 		clientURL:         op.BaseURL,
 		codeHost:          extsvc.NewCodeHost(op.BaseURL, gitlab.ServiceType),
 		cache:             op.MockCache,

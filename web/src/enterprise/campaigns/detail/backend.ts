@@ -53,6 +53,7 @@ const campaignFragment = gql`
                     name
                     url
                 }
+                state
                 diff {
                     fileDiffs {
                         totalCount
@@ -112,7 +113,7 @@ const campaignPlanFragment = gql`
             state
             errors
         }
-        changesets {
+        changesetPlans {
             totalCount
             nodes {
                 id
@@ -266,15 +267,21 @@ export const fetchCampaignPlanById = (campaignPlan: ID): Observable<ICampaignPla
 
 export const queryChangesets = (
     campaign: ID,
-    { first }: IChangesetsOnCampaignArguments
+    { first, state, reviewState, checkState }: IChangesetsOnCampaignArguments
 ): Observable<Connection<IExternalChangeset | IChangesetPlan>> =>
     queryGraphQL(
         gql`
-            query CampaignChangesets($campaign: ID!, $first: Int) {
+            query CampaignChangesets(
+                $campaign: ID!
+                $first: Int
+                $state: ChangesetState
+                $reviewState: ChangesetReviewState
+                $checkState: ChangesetCheckState
+            ) {
                 node(id: $campaign) {
                     __typename
                     ... on Campaign {
-                        changesets(first: $first) {
+                        changesets(first: $first, state: $state, reviewState: $reviewState, checkState: $checkState) {
                             totalCount
                             nodes {
                                 __typename
@@ -283,7 +290,14 @@ export const queryChangesets = (
                                 body
                                 state
                                 reviewState
+                                checkState
+                                labels {
+                                    text
+                                    description
+                                    color
+                                }
                                 repository {
+                                    id
                                     name
                                     url
                                 }
@@ -291,6 +305,7 @@ export const queryChangesets = (
                                     url
                                 }
                                 createdAt
+                                updatedAt
                                 diff {
                                     fileDiffs {
                                         nodes {
@@ -346,7 +361,7 @@ export const queryChangesets = (
 
             ${DiffStatFields}
         `,
-        { campaign, first }
+        { campaign, first, state, reviewState, checkState }
     ).pipe(
         map(dataOrThrowErrors),
         map(({ node }) => {
@@ -373,7 +388,7 @@ export const queryChangesetPlans = (
                 node(id: $campaignPlan) {
                     __typename
                     ... on CampaignPlan {
-                        changesets(first: $first) {
+                        changesetPlans(first: $first) {
                             totalCount
                             nodes {
                                 __typename
@@ -420,7 +435,7 @@ export const queryChangesetPlans = (
             if (node.__typename !== 'CampaignPlan') {
                 throw new Error(`The given ID is a ${node.__typename}, not a Campaign`)
             }
-            return node.changesets
+            return node.changesetPlans
         })
     )
 
@@ -451,4 +466,18 @@ export async function publishChangeset(changesetPlan: ID): Promise<IEmptyRespons
         { changesetPlan }
     ).toPromise()
     return dataOrThrowErrors(result).publishChangeset
+}
+
+export async function syncChangeset(changeset: ID): Promise<void> {
+    const result = await mutateGraphQL(
+        gql`
+            mutation SyncChangeset($changeset: ID!) {
+                syncChangeset(changeset: $changeset) {
+                    alwaysNil
+                }
+            }
+        `,
+        { changeset }
+    ).toPromise()
+    dataOrThrowErrors(result)
 }

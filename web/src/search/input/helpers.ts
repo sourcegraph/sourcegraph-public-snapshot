@@ -1,12 +1,12 @@
 import {
     FiltersToTypeAndValue,
-    FilterTypes,
+    FilterType,
     isNegatedFilter,
     resolveNegatedFilter,
 } from '../../../../shared/src/search/interactive/util'
 import { parseSearchQuery } from '../../../../shared/src/search/parser/parser'
 import { uniqueId } from 'lodash'
-import { isFiniteFilter } from './interactive/filters'
+import { validateFilter, isSingularFilter } from '../../../../shared/src/search/parser/filters'
 
 /**
  * Converts a plain text query into a an object containing the two components
@@ -26,15 +26,24 @@ export function convertPlainTextToInteractiveQuery(
 
     if (parsedQuery.type === 'success') {
         for (const member of parsedQuery.token.members) {
-            if (member.token.type === 'filter' && member.token.filterValue) {
-                const filterType = member.token.filterType.token.value as FilterTypes
-                newFiltersInQuery[isFiniteFilter(filterType) ? filterType : uniqueId(filterType)] = {
+            if (
+                member.token.type === 'filter' &&
+                member.token.filterValue &&
+                validateFilter(member.token.filterType.token.value, member.token.filterValue).valid
+            ) {
+                const filterType = member.token.filterType.token.value as FilterType
+                newFiltersInQuery[isSingularFilter(filterType) ? filterType : uniqueId(filterType)] = {
                     type: isNegatedFilter(filterType) ? resolveNegatedFilter(filterType) : filterType,
                     value: query.substring(member.token.filterValue.range.start, member.token.filterValue.range.end),
                     editable: false,
                     negated: isNegatedFilter(filterType),
                 }
-            } else if (member.token.type === 'literal' || member.token.type === 'quoted') {
+            } else if (
+                member.token.type === 'literal' ||
+                member.token.type === 'quoted' ||
+                (member.token.type === 'filter' &&
+                    !validateFilter(member.token.filterType.token.value, member.token.filterValue).valid)
+            ) {
                 newNavbarQuery = [newNavbarQuery, query.substring(member.range.start, member.range.end)]
                     .filter(query => query.length > 0)
                     .join(' ')

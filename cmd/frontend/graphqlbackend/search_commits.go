@@ -265,7 +265,7 @@ func searchCommitsInRepo(ctx context.Context, op search.CommitParameters) (resul
 		if !op.Diff {
 			var patString string
 			if len(op.ExtraMessageValues) > 0 {
-				patString = regexpPatternMatchingExprsInOrder(op.ExtraMessageValues)
+				patString = orderedFuzzyRegexp(op.ExtraMessageValues)
 				if !op.Query.IsCaseSensitive() {
 					patString = "(?i:" + patString + ")"
 				}

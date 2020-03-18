@@ -65,7 +65,7 @@ export GRAFANA_SERVER_URL=http://localhost:3370
 
 # webpack-dev-server is a proxy running on port 3080 that (1) serves assets, waiting to respond
 # until they are (re)built and (2) otherwise proxies to nginx running on port 3081 (which proxies to
-# Sourcegraph running on port 3082). That is why Sourcegraph listens on 3081 despite the externalURL
+# Sourcegraph running on port 3082). That is why Sourcegraph listens on 3082 despite the externalURL
 # having port 3080.
 export SRC_HTTP_ADDR=":3082"
 export WEBPACK_DEV_SERVER=1
@@ -100,21 +100,23 @@ if [[ -n "$yarn_pid" ]]; then
     wait "$yarn_pid"
 fi
 
+# Install LSIF dependencies
+pushd ./lsif 1> /dev/null
+yarn --no-progress
+popd 1> /dev/null
+
 # Increase ulimit (not needed on Windows/WSL)
 type ulimit > /dev/null && ulimit -n 10000 || true
 
 # Put .bin:node_modules/.bin onto the $PATH
 export PATH="$PWD/.bin:$PWD/node_modules/.bin:$PATH"
 
-# LSIF server
-[ -n "${OFFLINE-}" ] || {
-    pushd ./lsif && yarn --no-progress && popd
-}
-
-# Build once to make sure editor codeintel works
+# Build once in the background to make sure editor codeintel works
 # This is fast if no changes were made.
 # Don't fail if it errors as this is only for codeintel, not for the build.
-yarn run build-ts || true
+trap 'kill $build_ts_pid; exit' INT
+(yarn run build-ts || true) &
+build_ts_pid="$!"
 
 printf >&2 "\nStarting all binaries...\n\n"
 export GOREMAN="goreman --set-ports=false --exit-on-error -f dev/Procfile"

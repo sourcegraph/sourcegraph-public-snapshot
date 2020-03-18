@@ -5,6 +5,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
 // GrantPendingPermissionsArgs contains required arguments to grant pending permissions for a user
@@ -29,8 +30,6 @@ type AuthorizedReposArgs struct {
 	Perm authz.Perms
 	// The type of permissions to be verified.
 	Type authz.PermType
-	// The type of authz provider to load user permissions.
-	Provider authz.ProviderType
 }
 
 // RevokeUserPermissionsArgs contains required arguments to revoke user permissions, it includes all
@@ -38,11 +37,9 @@ type AuthorizedReposArgs struct {
 type RevokeUserPermissionsArgs struct {
 	// The user ID that will be used to revoke effective permissions.
 	UserID int32
-	// The username that will be used to revoke pending permissions.
-	Username string
-	// The list of verified emails that will be used to revoke pending permissions.
-	// Only provide verified emails because that is the definitive way to ensure the email ownership.
-	VerifiedEmails []string
+	// The list of external accounts related to the user. This is list because a user could have
+	// multiple external accounts, including ones from code hosts and/or Sourcegraph authz provider.
+	Accounts []*extsvc.ExternalAccounts
 }
 
 // AuthzStore contains methods for manipulating user permissions.

@@ -39,6 +39,10 @@ func (r *lsifUploadResolver) InputRoot() string {
 	return r.lsifUpload.Root
 }
 
+func (r *lsifUploadResolver) InputIndexer() string {
+	return r.lsifUpload.Indexer
+}
+
 func (r *lsifUploadResolver) State() string {
 	return strings.ToUpper(r.lsifUpload.State)
 }
@@ -65,6 +69,10 @@ func (r *lsifUploadResolver) FinishedAt() *graphqlbackend.DateTime {
 
 func (r *lsifUploadResolver) IsLatestForRepo() bool {
 	return r.lsifUpload.VisibleAtTip
+}
+
+func (r *lsifUploadResolver) PlaceInQueue() *int32 {
+	return r.lsifUpload.PlaceInQueue
 }
 
 type lsifUploadFailureReasonResolver struct {

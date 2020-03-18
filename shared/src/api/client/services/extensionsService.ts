@@ -14,8 +14,9 @@ import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefaul
 import { isDefined } from '../../../util/types'
 import { SettingsService } from './settings'
 import { ModelService } from './modelService'
-import { fromFetch } from 'rxjs/fetch'
 import { checkOk } from '../../../backend/fetch'
+import { ExtensionManifest } from '../../../schema/extensionSchema'
+import { fromFetch } from '../../../graphql/fromFetch'
 
 /**
  * The information about an extension necessary to execute and activate it.
@@ -26,11 +27,9 @@ export interface ExecutableExtension extends Pick<ConfiguredExtension, 'id' | 'm
 }
 
 const getConfiguredSideloadedExtension = (baseUrl: string): Observable<ConfiguredExtension> =>
-    fromFetch(`${baseUrl}/package.json`).pipe(
-        map(checkOk),
-        switchMap(response => response.json()),
+    fromFetch(`${baseUrl}/package.json`, undefined, response => checkOk(response).json()).pipe(
         map(
-            (response): ConfiguredExtension => ({
+            (response: ExtensionManifest & { name: string; main: string }): ConfiguredExtension => ({
                 id: response.name,
                 manifest: {
                     url: `${baseUrl}/${response.main.replace('dist/', '')}`,
@@ -92,7 +91,7 @@ export class ExtensionsService {
         return from(this.platformContext.sideloadedExtensionURL).pipe(
             switchMap(url => (url ? this.fetchSideloadedExtension(url) : of(null))),
             catchError(err => {
-                console.error(`Error sideloading extension: ${err}`)
+                console.error('Error sideloading extension', err)
                 return of(null)
             })
         )
@@ -109,16 +108,12 @@ export class ExtensionsService {
      *
      * @todo Consider whether extensions should be deactivated if none of their activationEvents are true (or that
      * plus a certain period of inactivity).
-     *
-     * @param extensionActivationFilter A function that returns the set of extensions that should be activated
-     * based on the current model only. It does not need to account for remembering which extensions were
-     * previously activated in prior states.
      */
     public get activeExtensions(): Subscribable<ExecutableExtension[]> {
         // Extensions that have been activated (including extensions with zero "activationEvents" that evaluate to
         // true currently).
         const activatedExtensionIDs = new Set<string>()
-        return combineLatest(from(this.modelService.activeLanguages), this.enabledExtensions).pipe(
+        return combineLatest([from(this.modelService.activeLanguages), this.enabledExtensions]).pipe(
             tap(([activeLanguages, enabledExtensions]) => {
                 const activeExtensions = this.extensionActivationFilter(enabledExtensions, activeLanguages)
                 for (const x of activeExtensions) {

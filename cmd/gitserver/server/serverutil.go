@@ -1,7 +1,6 @@
 package server
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"fmt"
@@ -105,10 +104,16 @@ var tlsExternal = conf.Cached(func() interface{} {
 	}
 })
 
+func runWithRemoteOpts(ctx context.Context, cmd *exec.Cmd, progress io.Writer) ([]byte, error) {
+	return runWith(ctx, cmd, true, progress)
+}
+
 // runWithRemoteOpts runs the command after applying the remote options.
 // If progress is not nil, all output is written to it in a separate goroutine.
-func runWithRemoteOpts(ctx context.Context, cmd *exec.Cmd, progress io.Writer) ([]byte, error) {
-	configureRemoteGitCommand(cmd, tlsExternal().(*tlsConfig))
+func runWith(ctx context.Context, cmd *exec.Cmd, configRemoteOpts bool, progress io.Writer) ([]byte, error) {
+	if configRemoteOpts {
+		configureRemoteGitCommand(cmd, tlsExternal().(*tlsConfig))
+	}
 
 	var b interface {
 		Bytes() []byte
@@ -267,6 +272,49 @@ var repoRemoteURL = func(ctx context.Context, dir GitDir) (string, error) {
 		return "", fmt.Errorf("no remote URL for repo %s", dir)
 	}
 	return remoteURLs[0], nil
+}
+
+// repoRemoteRefs returns a map containing ref + commit pairs from the
+// remote Git repository starting with the specified prefix.
+//
+// The ref prefix `ref/<ref type>/` is stripped away from the returned
+// refs.
+var repoRemoteRefs = func(ctx context.Context, url, prefix string) (map[string]string, error) {
+	// The expected output of this git command is a list of:
+	// <commit hash> <ref name>
+	cmd := exec.Command("git", "ls-remote", url, prefix+"*")
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	_, err := runCommand(ctx, cmd)
+	if err != nil {
+		stderr := stderr.Bytes()
+		if len(stderr) > 200 {
+			stderr = stderr[:200]
+		}
+		return nil, fmt.Errorf("git %s failed: %s (%q)", cmd.Args, err, stderr)
+	}
+
+	refs := make(map[string]string)
+	raw := stdout.String()
+	for _, line := range strings.Split(raw, "\n") {
+		if line == "" {
+			continue
+		}
+
+		fields := strings.Fields(line)
+		if len(fields) != 2 {
+			return nil, fmt.Errorf("git %s failed (invalid output): %s", cmd.Args, line)
+		}
+
+		split := strings.SplitN(fields[1], "/", 3)
+		if len(split) != 3 {
+			return nil, fmt.Errorf("git %s failed (invalid refname): %s", cmd.Args, fields[1])
+		}
+
+		refs[split[2]] = fields[0]
+	}
+	return refs, nil
 }
 
 // writeCounter wraps an io.Writer and keeps track of bytes written.
@@ -514,7 +562,7 @@ func updateFileIfDifferent(path string, content []byte) (bool, error) {
 	}
 
 	// fsync to ensure the disk contents are written. This is important, since
-	// we are not gaurenteed that os.Rename is recorded to disk after f's
+	// we are not guaranteed that os.Rename is recorded to disk after f's
 	// contents.
 	if err := f.Sync(); err != nil {
 		f.Close()
@@ -572,19 +620,4 @@ func bestEffortWalk(root string, walkFn func(path string, info os.FileInfo) erro
 
 		return walkFn(path, info)
 	})
-}
-
-func logErrors(printf func(format string, v ...interface{}), repo api.RepoName, stderr []byte) {
-	for len(stderr) > 0 {
-		advance, line, err := bufio.ScanLines(stderr, true)
-		if err != nil {
-			// bufio.ScanLines should never return an error (go1.13)
-			panic("bufio.ScanLines returned an error: " + err.Error())
-		}
-		stderr = stderr[advance:]
-
-		if bytes.HasPrefix(line, []byte("error: ")) {
-			printf("%s %s\n", repo, line)
-		}
-	}
 }

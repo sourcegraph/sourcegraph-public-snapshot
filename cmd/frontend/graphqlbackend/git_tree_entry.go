@@ -41,7 +41,8 @@ type GitTreeEntryResolver struct {
 	// the root, not the basename.
 	stat os.FileInfo
 
-	isRecursive bool // whether entries is populated recursively (otherwise just current level of hierarchy)
+	isRecursive   bool  // whether entries is populated recursively (otherwise just current level of hierarchy)
+	isSingleChild *bool // whether this is the single entry in its parent. Only set by the (&GitTreeEntryResolver) entries.
 }
 
 func NewGitTreeEntryResolver(commit *GitCommitResolver, stat os.FileInfo) *GitTreeEntryResolver {
@@ -211,6 +212,9 @@ func (r *GitTreeEntryResolver) IsSingleChild(ctx context.Context, args *gitTreeE
 	if !r.IsDirectory() {
 		return false, nil
 	}
+	if r.isSingleChild != nil {
+		return *r.isSingleChild, nil
+	}
 	cachedRepo, err := backend.CachedGitRepo(ctx, r.commit.repo.repo)
 	if err != nil {
 		return false, err
@@ -223,12 +227,7 @@ func (r *GitTreeEntryResolver) IsSingleChild(ctx context.Context, args *gitTreeE
 }
 
 func (r *GitTreeEntryResolver) LSIF(ctx context.Context) (LSIFQueryResolver, error) {
-	if EnterpriseResolvers.codeIntelResolver == nil {
-		return nil, codeIntelOnlyInEnterprise
-	}
-
 	codeIntelRequests.WithLabelValues(trace.RequestOrigin(ctx)).Inc()
-
 	return EnterpriseResolvers.codeIntelResolver.LSIF(ctx, &LSIFQueryArgs{
 		Repository: r.Repository(),
 		Commit:     r.Commit().OID(),

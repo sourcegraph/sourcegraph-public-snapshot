@@ -7,6 +7,7 @@ import {
     ChangesetReviewState,
     ChangesetState,
     IExternalChangeset,
+    ChangesetCheckState,
 } from '../../../../../../shared/src/graphql/schema'
 import { Subject } from 'rxjs'
 
@@ -49,6 +50,7 @@ describe('ChangesetNode', () => {
                 }
                 campaignUpdates={new Subject<void>()}
                 enablePublishing={enablePublishing}
+                _now={new Date('2019-12-15')}
             />
         )
         const result = renderer.getRenderOutput()
@@ -77,6 +79,7 @@ describe('ChangesetNode', () => {
                         },
                         title: 'Remove lodash',
                         body: 'We should remove lodash',
+                        checkState: ChangesetCheckState.FAILED,
                         diff: {
                             fileDiffs: {
                                 diffStat: {
@@ -87,15 +90,25 @@ describe('ChangesetNode', () => {
                                 nodes: [{ __typename: 'FileDiff' }],
                             },
                         },
+                        labels: [
+                            {
+                                __typename: 'ChangesetLabel',
+                                color: '93ba13',
+                                description: 'Something is broken',
+                                text: 'bug',
+                            },
+                        ],
                         repository: {
                             __typename: 'Repository',
                             name: 'sourcegraph',
                             url: 'github.com/sourcegraph/sourcegraph',
                         },
+                        updatedAt: new Date('2020-01-01').toISOString(),
                     } as IExternalChangeset
                 }
                 campaignUpdates={new Subject<void>()}
                 enablePublishing={false}
+                _now={new Date('2019-12-15')}
             />
         )
         const result = renderer.getRenderOutput()

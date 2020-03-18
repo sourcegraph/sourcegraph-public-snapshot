@@ -1,10 +1,13 @@
 import * as pgModels from '../models/pg'
-import pRetry, { AbortError } from 'p-retry'
 import { Brackets, Connection, EntityManager } from 'typeorm'
 import { FORMAT_TEXT_MAP, Span, Tracer } from 'opentracing'
 import { instrumentQuery, withInstrumentedTransaction } from '../database/postgres'
 import { PlainObjectToDatabaseEntityTransformer } from 'typeorm/query-builder/transformer/PlainObjectToDatabaseEntityTransformer'
 import { Logger } from 'winston'
+
+export interface LsifUploadWithPlaceInQueue extends pgModels.LsifUpload {
+    placeInQueue: number | null
+}
 
 /**
  * A wrapper around the database tables that control uploads. This class has
@@ -54,11 +57,26 @@ export class UploadManager {
         visibleAtTip: boolean,
         limit: number,
         offset: number
-    ): Promise<{ uploads: pgModels.LsifUpload[]; totalCount: number }> {
-        const [uploads, totalCount] = await instrumentQuery(() => {
+    ): Promise<{ uploads: LsifUploadWithPlaceInQueue[]; totalCount: number }> {
+        const { uploads, raw, totalCount } = await instrumentQuery<{
+            uploads: pgModels.LsifUpload[]
+            raw: { upload_id: number; rank: string | undefined }[]
+            totalCount: number
+        }>(async () => {
             let queryBuilder = this.connection
                 .getRepository(pgModels.LsifUpload)
                 .createQueryBuilder('upload')
+                .addSelect('ranked.rank', 'rank')
+                .leftJoin(
+                    qb =>
+                        qb
+                            .subQuery()
+                            .select('ranked.id, RANK() OVER (ORDER BY ranked.uploaded_at) as rank')
+                            .from(pgModels.LsifUpload, 'ranked')
+                            .where("ranked.state = 'queued'"),
+                    'ranked',
+                    'ranked.id = upload.id'
+                )
                 .where({ repositoryId })
                 .orderBy('uploaded_at', 'DESC')
                 .limit(limit)
@@ -69,7 +87,7 @@ export class UploadManager {
             }
 
             if (query) {
-                const clauses = ['commit', 'root', 'failure_summary', 'failure_stacktrace'].map(
+                const clauses = ['commit', 'root', 'indexerName', 'failure_summary', 'failure_stacktrace'].map(
                     field => `"${field}" LIKE '%' || :query || '%'`
                 )
 
@@ -84,32 +102,91 @@ export class UploadManager {
                 queryBuilder = queryBuilder.andWhere('visible_at_tip = true')
             }
 
-            return queryBuilder.getManyAndCount()
+            const [{ entities, raw: rawEntities }, count] = await Promise.all([
+                queryBuilder.getRawAndEntities(),
+                queryBuilder.getCount(),
+            ])
+
+            return { uploads: entities, raw: rawEntities, totalCount: count }
         })
 
-        return { uploads, totalCount }
+        const ranks = new Map(raw.map(r => [r.upload_id, parseInt(r.rank || '', 10)]))
+        return { uploads: uploads.map(u => ({ ...u, placeInQueue: ranks.get(u.id) || null })), totalCount }
     }
 
     /**
-     * Get a upload by identifier.
+     * Get an upload by identifier.
      *
      * @param id The upload identifier.
      */
-    public getUpload(id: number): Promise<pgModels.LsifUpload | undefined> {
-        return instrumentQuery(() => this.connection.getRepository(pgModels.LsifUpload).findOne({ id }))
+    public getUpload(id: number): Promise<LsifUploadWithPlaceInQueue | undefined> {
+        return withInstrumentedTransaction(this.connection, async () => {
+            const {
+                entities,
+                raw,
+            }: { entities: pgModels.LsifUpload[]; raw: { rank: string | null }[] } = await this.connection
+                .getRepository(pgModels.LsifUpload)
+                .createQueryBuilder('upload')
+                .addSelect('ranked.rank', 'rank')
+                .leftJoin(
+                    qb =>
+                        qb
+                            .subQuery()
+                            .select('ranked.id, RANK() OVER (ORDER BY ranked.uploaded_at) as rank')
+                            .from(pgModels.LsifUpload, 'ranked')
+                            .where("ranked.state = 'queued'"),
+                    'ranked',
+                    'ranked.id = upload.id'
+                )
+                .where({ id })
+                .limit(1)
+                .getRawAndEntities()
+
+            if (entities.length === 0) {
+                return undefined
+            }
+
+            return { ...entities[0], placeInQueue: parseInt(raw[0].rank || '', 10) || null }
+        })
     }
 
     /**
-     * Delete an upload. This returns true if the upload existed.
+     * Delete an upload. This returns true if the upload existed. Also remove referenced
+     * package and reference rows if the upload was successfully processed.
+     *
+     * Does not delete the file on disk directly. This will be cleaned up later as part
+     * of the `removeDeadDumps` function performed at the start of the `purgeOldDumps`
+     * task that is run on a schedule in the server context.
      *
      * @param id The upload identifier.
+     * @param updateVisibility A function that updates the dumps visible at the tip for
+     *     the given repository. This is called if the deleted dump was visible at tip,
+     *     as a previously non-visible dump may become visible after deletion.
      */
-    public async deleteUpload(id: number): Promise<boolean> {
-        const results: [{ id: number }[]] = await instrumentQuery(() =>
-            this.connection.query('DELETE FROM lsif_uploads WHERE id = $1 RETURNING id', [id])
-        )
+    public async deleteUpload(
+        id: number,
+        updateVisibility: (entityManager: EntityManager, repositoryId: number) => Promise<void>
+    ): Promise<boolean> {
+        return withInstrumentedTransaction(this.connection, async entityManager => {
+            const [affected, numAffected]: [
+                { repository_id: number; visible_at_tip: boolean }[],
+                number
+            ] = await instrumentQuery(() =>
+                entityManager.query('DELETE FROM lsif_uploads WHERE id = $1 RETURNING repository_id, visible_at_tip', [
+                    id,
+                ])
+            )
 
-        return results[0].length > 0
+            if (numAffected === 0) {
+                return false
+            }
+
+            if (affected[0].visible_at_tip) {
+                await updateVisibility(entityManager, affected[0].repository_id)
+            }
+
+            return true
+        })
     }
 
     /**
@@ -170,6 +247,7 @@ export class UploadManager {
             commit,
             root,
             filename,
+            indexer,
         }: {
             /** The repository identifier. */
             repositoryId: number
@@ -179,6 +257,8 @@ export class UploadManager {
             root: string
             /** The filename. */
             filename: string
+            /** The indexer binary name that produced this dump as specified by the metadata. */
+            indexer: string
         },
         tracer?: Tracer,
         span?: Span
@@ -192,69 +272,12 @@ export class UploadManager {
         upload.repositoryId = repositoryId
         upload.commit = commit
         upload.root = root
+        upload.indexer = indexer
         upload.filename = filename
         upload.tracingContext = JSON.stringify(tracing)
         await instrumentQuery(() => this.connection.createEntityManager().save(upload))
 
         return upload
-    }
-
-    /**
-     * Wait for the given upload to be converted. The function resolves to true if the
-     * conversion completed within the given timeout and false otherwise. If the upload
-     * conversion throws an error, that error is thrown in-band. A NaN-valued max wait
-     * will block forever.
-     *
-     * @param uploadId The id of the upload to block on.
-     * @param maxWait The maximum time (in seconds) to wait for the promise to resolve.
-     */
-    public async waitForUploadToConvert(uploadId: number, maxWait: number | undefined): Promise<boolean> {
-        const UPLOADINPROGRESS = 'UploadInProgressError'
-        class UploadInProgressError extends Error {
-            public readonly name = UPLOADINPROGRESS
-            public readonly code = UPLOADINPROGRESS
-            constructor() {
-                super('upload in progress')
-            }
-        }
-
-        const checkUploadState = async (): Promise<void> => {
-            const upload = await instrumentQuery(() =>
-                this.connection.getRepository(pgModels.LsifUpload).findOneOrFail({ id: uploadId })
-            )
-
-            if (upload.state === 'errored') {
-                const error = new Error(upload.failureSummary || '')
-                error.stack = upload.failureStacktrace || ''
-                throw new AbortError(error)
-            }
-
-            if (upload.state !== 'completed') {
-                throw new UploadInProgressError()
-            }
-        }
-
-        const retryConfig =
-            maxWait === undefined
-                ? { forever: true }
-                : {
-                      factor: 1,
-                      retries: maxWait,
-                      minTimeout: 1000,
-                      maxTimeout: 1000,
-                  }
-
-        try {
-            await pRetry(checkUploadState, retryConfig)
-        } catch (error) {
-            if (error && error.code === UPLOADINPROGRESS) {
-                return false
-            }
-
-            throw error
-        }
-
-        return true
     }
 
     /**

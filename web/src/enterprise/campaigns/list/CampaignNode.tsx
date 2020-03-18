@@ -8,12 +8,26 @@ import classNames from 'classnames'
 import { changesetStateIcons, changesetStatusColorClasses } from '../detail/changesets/presentation'
 import formatDistance from 'date-fns/formatDistance'
 import parseISO from 'date-fns/parseISO'
+import { DraftBadge } from '../DraftBadge'
 
-interface Props {
-    node: Pick<
-        GQL.ICampaign,
-        'id' | 'closedAt' | 'name' | 'description' | 'changesets' | 'changesetPlans' | 'createdAt'
-    >
+export type CampaignNodeCampaign = Pick<
+    GQL.ICampaign,
+    'id' | 'closedAt' | 'name' | 'description' | 'createdAt' | 'publishedAt'
+> & {
+    changesets: {
+        nodes: Pick<GQL.IExternalChangeset, 'state'>[]
+    }
+    changesetPlans: Pick<GQL.IChangesetPlanConnection, 'totalCount'>
+}
+
+export interface CampaignNodeProps {
+    node: CampaignNodeCampaign
+    /** Renders a selection button next to the campaign, used to select a campaign for update */
+    selection?: {
+        enabled: boolean
+        buttonLabel: string
+        onSelect: (campaign: Pick<GQL.ICampaign, 'id'>) => void
+    }
     /** Used for testing purposes. Sets the current date */
     now?: Date
 }
@@ -21,7 +35,7 @@ interface Props {
 /**
  * An item in the list of campaigns.
  */
-export const CampaignNode: React.FunctionComponent<Props> = ({ node, now = new Date() }) => {
+export const CampaignNode: React.FunctionComponent<CampaignNodeProps> = ({ node, selection, now = new Date() }) => {
     const campaignIconClass = node.closedAt ? 'text-danger' : 'text-success'
     const OpenChangesetIcon = changesetStateIcons[GQL.ChangesetState.OPEN]
     const MergedChangesetIcon = changesetStateIcons[GQL.ChangesetState.MERGED]
@@ -42,6 +56,7 @@ export const CampaignNode: React.FunctionComponent<Props> = ({ node, now = new D
                         <small className="ml-2 text-muted" data-tooltip={node.createdAt}>
                             created {formatDistance(parseISO(node.createdAt), now)} ago
                         </small>
+                        {!node.publishedAt && <DraftBadge className="ml-2" />}
                     </div>
                     <Markdown
                         className={classNames(
@@ -52,7 +67,7 @@ export const CampaignNode: React.FunctionComponent<Props> = ({ node, now = new D
                         dangerousInnerHTML={
                             node.description ? renderMarkdown(node.description, { plainText: true }) : 'No description'
                         }
-                    ></Markdown>
+                    />
                 </div>
                 <div data-tooltip="Open changesets">
                     {changesetCountByState(GQL.ChangesetState.OPEN) + node.changesetPlans.totalCount}{' '}
@@ -62,6 +77,11 @@ export const CampaignNode: React.FunctionComponent<Props> = ({ node, now = new D
                     {changesetCountByState(GQL.ChangesetState.MERGED)}{' '}
                     <MergedChangesetIcon className={`text-${changesetStatusColorClasses.MERGED} ml-1`} />
                 </div>
+                {selection?.enabled && (
+                    <button type="button" className="btn btn-secondary ml-3" onClick={() => selection.onSelect(node)}>
+                        {selection.buttonLabel}
+                    </button>
+                )}
             </div>
         </li>
     )

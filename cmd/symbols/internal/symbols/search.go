@@ -233,7 +233,7 @@ func filterSymbols(ctx context.Context, db *sqlx.DB, args protocol.SearchArgs) (
 // filenames to prevent a newer version of the symbols service from attempting
 // to read from a database created by an older (and likely incompatible) symbols
 // service. Increment this when you change the database schema.
-const symbolsDBVersion = 2
+const symbolsDBVersion = 3
 
 // symbolInDB is the same as `protocol.Symbol`, but with two additional columns:
 // namelowercase and pathlowercase, which enable indexed case insensitive

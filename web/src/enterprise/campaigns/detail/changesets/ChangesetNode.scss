@@ -1,3 +1,5 @@
+@import './ChangesetLabel';
+
 .changeset-node {
     &__content {
         &--no-collapse {
@@ -5,5 +7,9 @@
         }
         flex: 1;
         min-width: 0;
+    }
+    &__check-state {
+        width: 0.75rem;
+        vertical-align: top;
     }
 }

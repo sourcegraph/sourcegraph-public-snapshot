@@ -8,11 +8,11 @@ import { storage } from '../../browser/storage'
 import { isExtension } from '../../context'
 import { resolveRepo } from '../../shared/repo/backend'
 import { normalizeRepoName } from './util'
-import { fromFetch } from 'rxjs/fetch'
 import { EREPONOTFOUND } from '../../../../shared/src/backend/errors'
 import { RepoSpec, FileSpec, ResolvedRevSpec } from '../../../../shared/src/util/url'
 import { RevisionSpec, DiffSpec, BaseDiffSpec } from '.'
 import { checkOk } from '../../../../shared/src/backend/fetch'
+import { fromFetch } from '../../../../shared/src/graphql/fromFetch'
 
 interface PhabEntity {
     id: string // e.g. "48"
@@ -27,6 +27,7 @@ interface ConduitURI extends PhabEntity {
             display: string // e.g. https://secure.phabricator.com/source/phabricator.git",
             effective: string // e.g. https://secure.phabricator.com/source/phabricator.git",
             normalized: string // e.g. secure.phabricator.com/source/phabricator",
+            disabled: boolean
         }
     }
 }
@@ -105,7 +106,7 @@ function createConduitRequestForm(): FormData {
  * To get around this we fetch the bundled CSS contents and append it to the DOM.
  */
 export async function getPhabricatorCSS(sourcegraphURL: string): Promise<string> {
-    const bundleUID = process.env.BUNDLE_UID
+    const bundleUID = process.env.BUNDLE_UID!
     const resp = await fetch(sourcegraphURL + `/.assets/extension/css/style.bundle.css?v=${bundleUID}`, {
         method: 'GET',
         credentials: 'include',
@@ -128,16 +129,18 @@ export function queryConduitHelper<T>(endpoint: string, params: {}): Observable<
     for (const [key, value] of Object.entries(params)) {
         form.set(`params[${key}]`, JSON.stringify(value))
     }
-    return fromFetch(window.location.origin + endpoint, {
-        method: 'POST',
-        body: form,
-        credentials: 'include',
-        headers: {
-            Accept: 'application/json',
+    return fromFetch(
+        window.location.origin + endpoint,
+        {
+            method: 'POST',
+            body: form,
+            credentials: 'include',
+            headers: {
+                Accept: 'application/json',
+            },
         },
-    }).pipe(
-        map(checkOk),
-        switchMap(response => response.json()),
+        response => checkOk(response).json()
+    ).pipe(
         map((response: ConduitResponse<T>) => {
             if (response.error_code !== null) {
                 throw new Error(`error ${response.error_code}: ${response.error_info}`)
@@ -359,19 +362,18 @@ async function convertConduitRepoToRepoDetails(repo: ConduitRepo): Promise<Phabr
 }
 
 function convertToDetails(repo: ConduitRepo): PhabricatorRepoDetails | null {
-    let uri: ConduitURI | undefined
-    for (const u of repo.attachments.uris.uris) {
-        const normalPath = u.fields.uri.normalized.replace('\\', '')
-        if (normalPath.startsWith(window.location.host + '/')) {
-            continue
-        }
-        uri = u
-        break
-    }
-    if (!uri) {
+    const enabledURIs = repo.attachments.uris.uris
+        // Filter out disabled URIs
+        .filter(({ fields }) => !fields.uri.disabled)
+        .map(({ fields }) => ({
+            isExternalURI: !fields.uri.normalized.replace('\\', '').startsWith(window.location.host + '/'),
+            rawURI: fields.uri.raw,
+        }))
+    if (enabledURIs.length === 0) {
         return null
     }
-    const rawURI = uri.fields.uri.raw
+    // Use the external URI if there is one, otherwise use the first enabled URI.
+    const { rawURI } = enabledURIs.find(({ isExternalURI }) => isExternalURI) ?? enabledURIs[0]
     const rawRepoName = normalizeRepoName(rawURI)
     return { callsign: repo.fields.callsign, rawRepoName }
 }

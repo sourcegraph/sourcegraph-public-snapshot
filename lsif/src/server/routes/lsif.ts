@@ -1,21 +1,26 @@
 import * as constants from '../../shared/constants'
 import * as fs from 'mz/fs'
+import * as lsp from 'vscode-languageserver-protocol'
 import * as nodepath from 'path'
 import * as settings from '../settings'
-import * as validation from '../middleware/validation'
+import * as validation from '../../shared/api/middleware/validation'
 import express from 'express'
-import uuid from 'uuid'
+import * as uuid from 'uuid'
 import { addTags, logAndTraceCall, TracingContext } from '../../shared/tracing'
-import { Backend, ReferencePaginationCursor } from '../backend/backend'
-import { encodeCursor } from '../pagination/cursor'
+import { Backend } from '../backend/backend'
+import { encodeCursor } from '../../shared/api/pagination/cursor'
 import { Logger } from 'winston'
-import { nextLink } from '../pagination/link'
+import { nextLink } from '../../shared/api/pagination/link'
 import { pipeline as _pipeline } from 'stream'
 import { promisify } from 'util'
 import { Span, Tracer } from 'opentracing'
 import { wrap } from 'async-middleware'
-import { extractLimitOffset } from '../pagination/limit-offset'
+import { extractLimitOffset } from '../../shared/api/pagination/limit-offset'
 import { UploadManager } from '../../shared/store/uploads'
+import { readGzippedJsonElementsFromFile } from '../../shared/input'
+import * as lsif from 'lsif-protocol'
+import { ReferencePaginationCursor } from '../backend/cursor'
+import { LsifUpload } from '../../shared/models/pg'
 
 const pipeline = promisify(_pipeline)
 
@@ -67,8 +72,11 @@ export function createLsifRouter(
         repositoryId: number
         commit: string
         root?: string
-        blocking?: boolean
-        maxWait?: number
+        indexerName?: string
+    }
+
+    interface UploadResponse {
+        id: number
     }
 
     router.post(
@@ -77,30 +85,29 @@ export function createLsifRouter(
             validation.validateInt('repositoryId'),
             validation.validateNonEmptyString('commit').matches(commitPattern),
             validation.validateOptionalString('root'),
-            validation.validateOptionalBoolean('blocking'),
-            validation.validateOptionalInt('maxWait'),
+            validation.validateOptionalString('indexerName'),
         ]),
         wrap(
-            async (req: express.Request, res: express.Response): Promise<void> => {
-                const { repositoryId, commit, root: rootRaw, blocking, maxWait }: UploadQueryArgs = req.query
+            async (req: express.Request, res: express.Response<UploadResponse>): Promise<void> => {
+                const { repositoryId, commit, root: rootRaw, indexerName }: UploadQueryArgs = req.query
+
                 const root = sanitizeRoot(rootRaw)
                 const ctx = createTracingContext(req, { repositoryId, commit, root })
                 const filename = nodepath.join(settings.STORAGE_ROOT, constants.UPLOADS_DIR, uuid.v4())
                 const output = fs.createWriteStream(filename)
                 await logAndTraceCall(ctx, 'Uploading dump', () => pipeline(req, output))
 
-                // Add upload record
-                const upload = await uploadManager.enqueue({ repositoryId, commit, root, filename }, tracer, ctx.span)
-
-                if (blocking) {
-                    logger.debug('Blocking on upload conversion', { repositoryId, commit, root })
-
-                    if (await uploadManager.waitForUploadToConvert(upload.id, maxWait)) {
-                        // Upload converted successfully while blocked, send success
-                        res.status(200).send({ id: upload.id })
-                        return
-                    }
+                const indexer = indexerName || (await findIndexer(filename))
+                if (!indexer) {
+                    throw new Error('Could not find tool type in metadata vertex at the start of the dump.')
                 }
+
+                // Add upload record
+                const upload = await uploadManager.enqueue(
+                    { repositoryId, commit, root, filename, indexer },
+                    tracer,
+                    ctx.span
+                )
 
                 // Upload conversion will complete asynchronously, send an accepted response
                 // with the upload id so that the client can continue to track the progress
@@ -116,6 +123,10 @@ export function createLsifRouter(
         path: string
     }
 
+    interface ExistsResponse {
+        uploads: LsifUpload[]
+    }
+
     router.get(
         '/exists',
         validation.validationMiddleware([
@@ -124,11 +135,11 @@ export function createLsifRouter(
             validation.validateNonEmptyString('path'),
         ]),
         wrap(
-            async (req: express.Request, res: express.Response): Promise<void> => {
+            async (req: express.Request, res: express.Response<ExistsResponse>): Promise<void> => {
                 const { repositoryId, commit, path }: ExistsQueryArgs = req.query
                 const ctx = createTracingContext(req, { repositoryId, commit })
-                const upload = await backend.exists(repositoryId, commit, path, undefined, ctx)
-                res.json({ upload })
+                const uploads = await backend.exists(repositoryId, commit, path, ctx)
+                res.json({ uploads })
             }
         )
     )
@@ -142,6 +153,10 @@ export function createLsifRouter(
         uploadId?: number
     }
 
+    interface LocationsResponse {
+        locations: { repositoryId: number; commit: string; path: string; range: lsp.Range }[]
+    }
+
     router.get(
         '/definitions',
         validation.validationMiddleware([
@@ -150,10 +165,10 @@ export function createLsifRouter(
             validation.validateNonEmptyString('path'),
             validation.validateInt('line'),
             validation.validateInt('character'),
-            validation.validateOptionalInt('uploadId'),
+            validation.validateInt('uploadId'),
         ]),
         wrap(
-            async (req: express.Request, res: express.Response): Promise<void> => {
+            async (req: express.Request, res: express.Response<LocationsResponse>): Promise<void> => {
                 const { repositoryId, commit, path, line, character, uploadId }: FilePositionArgs = req.query
                 const ctx = createTracingContext(req, { repositoryId, commit, path })
 
@@ -194,14 +209,14 @@ export function createLsifRouter(
             validation.validateNonEmptyString('path'),
             validation.validateInt('line'),
             validation.validateInt('character'),
-            validation.validateOptionalInt('uploadId'),
+            validation.validateInt('uploadId'),
             validation.validateLimit,
             validation.validateCursor<ReferencePaginationCursor>(),
         ]),
         wrap(
-            async (req: express.Request, res: express.Response): Promise<void> => {
+            async (req: express.Request, res: express.Response<LocationsResponse>): Promise<void> => {
                 const { repositoryId, commit, path, line, character, uploadId, cursor }: ReferencesQueryArgs = req.query
-                const { limit } = extractLimitOffset(req.query, settings.DEFAULT_REFERENCES_NUM_REMOTE_DUMPS)
+                const { limit } = extractLimitOffset(req.query, settings.DEFAULT_REFERENCES_PAGE_SIZE)
                 const ctx = createTracingContext(req, { repositoryId, commit, path })
 
                 const result = await backend.references(
@@ -210,6 +225,7 @@ export function createLsifRouter(
                     path,
                     { line, character },
                     { limit, cursor },
+                    constants.DEFAULT_REFERENCES_REMOTE_DUMP_LIMIT,
                     uploadId,
                     ctx
                 )
@@ -217,8 +233,8 @@ export function createLsifRouter(
                     throw Object.assign(new Error('LSIF upload not found'), { status: 404 })
                 }
 
-                const { locations, cursor: endCursor } = result
-                const encodedCursor = encodeCursor<ReferencePaginationCursor>(endCursor)
+                const { locations, newCursor } = result
+                const encodedCursor = encodeCursor<ReferencePaginationCursor>(newCursor)
                 if (encodedCursor) {
                     res.set('Link', nextLink(req, { limit, cursor: encodedCursor }))
                 }
@@ -235,6 +251,8 @@ export function createLsifRouter(
         )
     )
 
+    type HoverResponse = { text: string; range: lsp.Range } | null
+
     router.get(
         '/hover',
         validation.validationMiddleware([
@@ -243,10 +261,10 @@ export function createLsifRouter(
             validation.validateNonEmptyString('path'),
             validation.validateInt('line'),
             validation.validateInt('character'),
-            validation.validateOptionalInt('uploadId'),
+            validation.validateInt('uploadId'),
         ]),
         wrap(
-            async (req: express.Request, res: express.Response): Promise<void> => {
+            async (req: express.Request, res: express.Response<HoverResponse>): Promise<void> => {
                 const { repositoryId, commit, path, line, character, uploadId }: FilePositionArgs = req.query
                 const ctx = createTracingContext(req, { repositoryId, commit, path })
 
@@ -261,4 +279,21 @@ export function createLsifRouter(
     )
 
     return router
+}
+
+/**
+ * Read and decode the first entry of the dump. If the entry exists, encodes a metadata vertex,
+ * and contains a tool info name field, return the contents of that field; otherwise undefined.
+ *
+ * @param filename The filename to read.
+ */
+async function findIndexer(filename: string): Promise<string | undefined> {
+    for await (const element of readGzippedJsonElementsFromFile(filename) as AsyncIterable<lsif.Vertex | lsif.Edge>) {
+        if (element.type === lsif.ElementTypes.vertex && element.label === lsif.VertexLabels.metaData) {
+            return element.toolInfo?.name
+        }
+        break
+    }
+
+    return undefined
 }

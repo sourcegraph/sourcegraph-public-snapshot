@@ -1,0 +1,116 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`GlobalCampaignListPage renders for non-siteadmin 1`] = `
+<React.Fragment>
+  <h1>
+    Campaigns
+  </h1>
+  <p>
+    Perform and track large-scale code changes
+  </p>
+  <FilteredConnection
+    authenticatedUser={
+      Object {
+        "siteAdmin": false,
+      }
+    }
+    defaultFirst={20}
+    filters={
+      Array [
+        Object {
+          "args": Object {},
+          "id": "all",
+          "label": "All",
+          "tooltip": "Show all campaigns",
+        },
+        Object {
+          "args": Object {
+            "state": "OPEN",
+          },
+          "id": "open",
+          "label": "Open",
+          "tooltip": "Show only campaigns that are open",
+        },
+        Object {
+          "args": Object {
+            "state": "CLOSED",
+          },
+          "id": "closed",
+          "label": "Closed",
+          "tooltip": "Show only campaigns that are closed",
+        },
+      ]
+    }
+    hideSearch={true}
+    nodeComponent={[Function]}
+    noun="campaign"
+    pluralNoun="campaigns"
+    queryConnection={[Function]}
+    useURLQuery={true}
+  />
+</React.Fragment>
+`;
+
+exports[`GlobalCampaignListPage renders for siteadmin 1`] = `
+<React.Fragment>
+  <h1>
+    Campaigns
+  </h1>
+  <p>
+    Perform and track large-scale code changes
+  </p>
+  <div
+    className="text-right mb-1"
+  >
+    <AnchorLink
+      className="btn btn-primary"
+      to="/campaigns/new"
+    >
+      <Memo(AddIcon)
+        className="icon-inline"
+      />
+       New campaign
+    </AnchorLink>
+  </div>
+  <FilteredConnection
+    authenticatedUser={
+      Object {
+        "siteAdmin": true,
+      }
+    }
+    defaultFirst={20}
+    filters={
+      Array [
+        Object {
+          "args": Object {},
+          "id": "all",
+          "label": "All",
+          "tooltip": "Show all campaigns",
+        },
+        Object {
+          "args": Object {
+            "state": "OPEN",
+          },
+          "id": "open",
+          "label": "Open",
+          "tooltip": "Show only campaigns that are open",
+        },
+        Object {
+          "args": Object {
+            "state": "CLOSED",
+          },
+          "id": "closed",
+          "label": "Closed",
+          "tooltip": "Show only campaigns that are closed",
+        },
+      ]
+    }
+    hideSearch={true}
+    nodeComponent={[Function]}
+    noun="campaign"
+    pluralNoun="campaigns"
+    queryConnection={[Function]}
+    useURLQuery={true}
+  />
+</React.Fragment>
+`;

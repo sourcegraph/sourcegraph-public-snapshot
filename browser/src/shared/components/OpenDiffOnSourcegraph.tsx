@@ -7,6 +7,7 @@ import { queryRepositoryComparisonFileDiffs } from '../backend/diffs'
 import { OpenDiffInSourcegraphProps } from '../repo'
 import { getPlatformName } from '../util/context'
 import { SourcegraphIconButton } from './Button'
+import classNames from 'classnames'
 
 interface Props extends PlatformContextProps<'requestGraphQL'> {
     openProps: OpenDiffInSourcegraphProps
@@ -34,7 +35,7 @@ export class OpenDiffOnSourcegraph extends React.Component<Props, State> {
         this.subscriptions.add(
             // Fetch all fileDiffs in a given comparison. We rely on queryRepositoryComparisonFileDiffs
             // being memoized so that there is at most one network request when viewing
-            // a commit/comparison on GitHub to get this information, despite this request occuring in
+            // a commit/comparison on GitHub to get this information, despite this request occurring in
             // this component, which appears for each file in a diff.
             this.componentUpdates
                 .pipe(
@@ -73,7 +74,7 @@ export class OpenDiffOnSourcegraph extends React.Component<Props, State> {
         return (
             <SourcegraphIconButton
                 {...this.props}
-                className={`open-on-sourcegraph ${this.props.className}`}
+                className={classNames('open-on-sourcegraph', this.props.className)}
                 iconClassName={this.props.iconClassName}
                 url={url}
             />
@@ -95,7 +96,7 @@ export class OpenDiffOnSourcegraph extends React.Component<Props, State> {
                     ? `&first=${this.state.fileDiff.totalCount}`
                     : ''
 
-            // Go to the specfic file in the commit diff using the internalID of the matched file diff.
+            // Go to the specific file in the commit diff using the internalID of the matched file diff.
             return `${urlToCommit}${first}#diff-${this.state.fileDiff.nodes[0].internalID}`
         }
         // If the request for fileDiffs fails, and we can't get the internal ID, just go to the comparison page.

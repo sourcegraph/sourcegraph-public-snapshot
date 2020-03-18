@@ -133,11 +133,11 @@ describe('e2e test suite', () => {
             ).jsonValue()
 
             const resp = await got.post('/.api/graphql', {
-                baseUrl: sourcegraphBaseUrl,
+                prefixUrl: sourcegraphBaseUrl,
                 headers: {
                     Authorization: 'token ' + token,
                 },
-                body: {
+                body: JSON.stringify({
                     query: gql`
                         query {
                             currentUser {
@@ -146,11 +146,10 @@ describe('e2e test suite', () => {
                         }
                     `,
                     variables: {},
-                },
-                json: true,
+                }),
             })
 
-            const username = resp.body.data.currentUser.username
+            const username = JSON.parse(resp.body).data.currentUser.username
             expect(username).toBe('test')
 
             await Promise.all([
@@ -164,7 +163,7 @@ describe('e2e test suite', () => {
             ])
 
             await driver.page.waitFor(
-                name => !document.querySelector(`[data-e2e-access-token-description="${name}"]`),
+                (name: string) => !document.querySelector(`[data-e2e-access-token-description="${name}"]`),
                 {},
                 name
             )
@@ -371,6 +370,12 @@ describe('e2e test suite', () => {
             await driver.page.waitForSelector('a[href="/github.com/gorilla/mux"]', { visible: true })
             // Flaky https://github.com/sourcegraph/sourcegraph/issues/2704
             // await percySnapshot(page, 'Search results code')
+        })
+
+        test('Site admin overview', async () => {
+            await driver.page.goto(sourcegraphBaseUrl + '/site-admin')
+            await driver.page.waitForSelector('.e2e-site-admin-overview-menu', { visible: true })
+            await percySnapshot(driver.page, 'Site admin overview')
         })
     })
 
@@ -821,6 +826,8 @@ describe('e2e test suite', () => {
                         waitUntil: 'domcontentloaded',
                     }
                 )
+                await driver.page.waitForSelector('.e2e-tree-page-no-recent-commits')
+                await driver.page.click('.e2e-tree-page-show-all-commits')
                 await driver.page.waitForSelector('.git-commit-node__message', { visible: true })
                 await retry(async () =>
                     expect(
@@ -1391,18 +1398,6 @@ describe('e2e test suite', () => {
         })
     })
 
-    describe('Literal search by default toast', () => {
-        test('Dismiss literal search toast', async () => {
-            await driver.page.goto(sourcegraphBaseUrl + '/search')
-            await driver.page.waitForSelector('.e2e-literal-search-toast')
-            await driver.page.click('.e2e-close-toast')
-            const nodes = await driver.page.evaluate(
-                () => document.querySelectorAll('.e2e-literal-search-toast').length
-            )
-            expect(nodes).toEqual(0)
-        })
-    })
-
     describe('Search statistics', () => {
         beforeEach(async () => {
             await driver.setUserSettings<Settings>({ experimentalFeatures: { searchStats: true } })
@@ -1496,23 +1491,6 @@ describe('e2e test suite', () => {
             // fill campaign preview form
             await driver.page.type('.e2e-campaign-title', 'E2E campaign')
 
-            // first wait for loader to appear
-            try {
-                await driver.page.waitForSelector('.e2e-preview-loading', { timeout: 500 })
-            } catch (error) {
-                if (error.name === 'TimeoutError') {
-                    // ignore this error as campaign previews can finish at the initial request also, we check below for errors and actual completion
-                } else {
-                    throw error
-                }
-            }
-            // then wait for loader to disappear
-            await driver.page.waitForSelector('.e2e-preview-loading', { timeout: 10000, hidden: true })
-            // check if there have been any errors
-            const errorCount = await driver.page.evaluate(() => document.querySelectorAll('.alert.alert-danger').length)
-            expect(errorCount).toEqual(0)
-            // check if the completion marker is rendered
-            await driver.page.waitForSelector('.e2e-preview-success')
             // ensure diff tab is open
             await driver.page.click('.e2e-campaign-diff-tab')
             await driver.page.waitForSelector('.file-diff-node')
@@ -1537,7 +1515,8 @@ describe('e2e test suite', () => {
             const { previewURL } = await driver.createCampaignPlanFromPatches([
                 {
                     repository: repo.id,
-                    baseRevision: 'master',
+                    baseRevision: '339d09ae1ce5907e0678ae5f1f91d9ad38db6107',
+                    baseRef: 'refs/heads/master',
                     patch: `diff --unified file1.txt file1.txt
 --- file1.txt 2020-01-01 01:02:03 -0700
 +++ file1.txt 2020-01-01 03:04:05 -0700
@@ -1682,6 +1661,31 @@ describe('e2e test suite', () => {
             await driver.assertWindowLocation('/search?q=repo:%5Egithub%5C.com/gorilla/mux%24&patternType=literal')
         })
 
+        test('Interactive search mode updates query when on searching from directory page', async () => {
+            await driver.page.goto(sourcegraphBaseUrl + '/github.com/sourcegraph/jsonrpc2')
+            await driver.page.waitForSelector('.tree-page__section-search .e2e-query-input')
+            await driver.page.click('.tree-page__section-search .e2e-query-input')
+            await driver.page.type('.tree-page__section-search .e2e-query-input', 'test')
+            await driver.page.click('.tree-page__section-search .e2e-search-button')
+            await driver.assertWindowLocation(
+                '/search?q=repo:%5Egithub%5C.com/sourcegraph/jsonrpc2%24+test&patternType=literal'
+            )
+            await driver.page.waitForSelector('.e2e-query-input')
+            const queryInputValue = () =>
+                driver.page.evaluate(() => {
+                    const input = document.querySelector<HTMLInputElement>('.e2e-query-input')
+                    return input ? input.value : null
+                })
+            assert.strictEqual(await queryInputValue(), 'test')
+            await driver.page.waitForSelector('.filter-input')
+            const filterInputValue = () =>
+                driver.page.evaluate(() => {
+                    const filterInput = document.querySelector<HTMLButtonElement>('.filter-input__button-text')
+                    return filterInput ? filterInput.textContent : null
+                })
+            assert.strictEqual(await filterInputValue(), 'repo:^github\\.com/sourcegraph/jsonrpc2$')
+        })
+
         test('Interactive search mode filter dropdown and finite-option filter inputs', async () => {
             await driver.page.goto(sourcegraphBaseUrl + '/search')
             await driver.page.waitForSelector('.e2e-query-input', { visible: true })
@@ -1728,6 +1732,32 @@ describe('e2e test suite', () => {
             await driver.page.waitForSelector('.e2e-query-input', { visible: true })
             await driver.page.waitForSelector('.e2e-case-sensitivity-toggle')
             await driver.page.click('.e2e-case-sensitivity-toggle')
+            await driver.assertWindowLocation('/search?q=test&patternType=literal')
+        })
+    })
+
+    describe('Structural search toggle', () => {
+        test('Clicking toggle turns on structural search', async () => {
+            await driver.page.goto(sourcegraphBaseUrl + '/search')
+            await driver.page.waitForSelector('.e2e-query-input', { visible: true })
+            await driver.page.waitForSelector('.e2e-structural-search-toggle')
+            await driver.page.type('.e2e-query-input', 'test')
+            await driver.page.click('.e2e-structural-search-toggle')
+            await driver.assertWindowLocation('/search?q=test&patternType=structural')
+        })
+
+        test('Clicking toggle turns on structural search and removes existing patternType parameter', async () => {
+            await driver.page.goto(sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
+            await driver.page.waitForSelector('.e2e-query-input', { visible: true })
+            await driver.page.waitForSelector('.e2e-structural-search-toggle')
+            await driver.page.click('.e2e-structural-search-toggle')
+            await driver.assertWindowLocation('/search?q=test&patternType=structural')
+        })
+
+        test('Clicking toggle turns off structural saerch and reverts to default pattern type', async () => {
+            await driver.page.waitForSelector('.e2e-query-input', { visible: true })
+            await driver.page.waitForSelector('.e2e-structural-search-toggle')
+            await driver.page.click('.e2e-structural-search-toggle')
             await driver.assertWindowLocation('/search?q=test&patternType=literal')
         })
     })

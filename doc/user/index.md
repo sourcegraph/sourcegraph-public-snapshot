@@ -1,39 +1,6 @@
-# User documentation
+# Using Sourcegraph
 
-Welcome to Sourcegraph! As a developer, you can use Sourcegraph to get help while writing and reviewing code.
-
-- [Tour](tour.md): A walkthrough of Sourcegraph's features, with real-world example use cases.
-- Integrations:
-  - [Browser extension](../integration/browser_extension.md) (adds go-to-definition, hover tooltips, etc., to your code host and review tool)
-  - [Browser search engine](../integration/browser_search_engine.md)
-  - [Editor extension](../integration/editor.md)
-- [Code search](search/index.md)
-  - [Query syntax](search/queries.md): Supported query operators.
-  - [Search examples](search/examples.md)
-  - Types of searches:
-    - Cross-repository search
-    - Full-text search (with regular expression support)
-    - Repository name search
-    - Filename search
-    - Diff search
-    - Commit message search
-    - Multi-branch search
-- [Code intelligence](code_intelligence/index.md)
-  - Hover tooltips (type signatures, docs, etc.)
-  - Jump-to-definition
-  - Find-references
-  - Cross-repository jump-to-definition and find-references
-  - Supports [Go](https://sourcegraph.com/extensions/sourcegraph/go), [TypeScript](https://sourcegraph.com/extensions/sourcegraph/typescript), [Python](https://sourcegraph.com/extensions/sourcegraph/python) - check the [extension registry](https://sourcegraph.com/extensions?query=category%3A%22Programming+languages%22) for more
-- [GraphQL API](../api/graphql/index.md)
-- [Repository badges](repository/badges.md)
-
-All features:
-
-- [Usage statistics](usage_statistics.md)
-- [User surveys](user_surveys.md)
-- [Color themes](themes.md)
-- [Automation preview](automation.md)
-- [Quick links](quick_links.md)
+Welcome to Sourcegraph!
 
 ## What is Sourcegraph?
 

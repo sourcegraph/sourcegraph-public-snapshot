@@ -1,11 +1,10 @@
 .result-container {
     position: relative;
 
-    border-width: 0 0 1px 0;
-    border-style: solid;
-    border-color: var(--border-color);
-    &:first-child {
-        border-top-width: 1px;
+    border: 0 solid var(--border-color);
+    border-top-width: 1px;
+    &:last-child {
+        border-bottom-width: 1px;
     }
 
     &__header {

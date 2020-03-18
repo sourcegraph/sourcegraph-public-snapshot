@@ -1,6 +1,6 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import React, { Suspense } from 'react'
-import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
+import { Redirect, Route, RouteComponentProps, Switch, matchPath } from 'react-router'
 import { Observable } from 'rxjs'
 import { ActivationProps } from '../../shared/src/components/activation/Activation'
 import { FetchFileCtx } from '../../shared/src/components/CodeExcerpt'
@@ -46,7 +46,6 @@ import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
 import { parseBrowserRepoURL } from './util/url'
-import { LiteralSearchToast } from './marketing/LiteralSearchToast'
 import { SurveyToast } from './marketing/SurveyToast'
 import { ThemeProps } from '../../shared/src/theme'
 import { ThemePreferenceProps } from './theme'
@@ -117,6 +116,8 @@ export interface LayoutProps
 }
 
 export const Layout: React.FunctionComponent<LayoutProps> = props => {
+    const routeMatch = props.routes.find(({ path, exact }) => matchPath(props.location.pathname, { path, exact }))?.path
+    const isSearchRelatedPage = (routeMatch === '/:repoRevAndRest+' || routeMatch?.startsWith('/search')) ?? false
     const isSearchHomepage = props.location.pathname === '/search' && !parseSearchURLQuery(props.location.search)
 
     const needsSiteInit = window.context.showOnboarding
@@ -145,10 +146,10 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 <IntegrationsToast history={props.history} />
             )}
             {!isSiteInit && <SurveyToast authenticatedUser={props.authenticatedUser} />}
-            {!isSiteInit && <LiteralSearchToast isSourcegraphDotCom={props.isSourcegraphDotCom} />}
             {!isSiteInit && (
                 <GlobalNavbar
                     {...props}
+                    isSearchRelatedPage={isSearchRelatedPage}
                     lowProfile={isSearchHomepage}
                     hideGlobalSearchInput={hideGlobalSearchInput}
                     hideNavLinks={false}

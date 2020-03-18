@@ -66,7 +66,7 @@ const nextChild = (node: TreeNode, index: number): TreeNode => {
 }
 
 /**
- *  Helper for prevChild, this gets the deepest avialable descendant of a given node.
+ *  Helper for prevChild, this gets the deepest available descendant of a given node.
  *  For a given node, a sibling node can have an arbitrary number of expanded directories.
  *  In order to get the previous item in the tree, we need the absolute last
  *  available descendent of a the previous sibling node.
@@ -268,6 +268,7 @@ export class Tree extends React.PureComponent<Props, State> {
                     // Strip the ?suggestion query param. Handle both when going from ancestor -> child and child -> ancestor.
                     if (queryParams.has('suggestion')) {
                         queryParams.delete('suggestion')
+                        // eslint-disable-next-line @typescript-eslint/no-base-to-string
                         this.props.history.replace({ search: queryParams.toString() })
                     }
                 })

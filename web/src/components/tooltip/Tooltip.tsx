@@ -1,4 +1,5 @@
 import * as React from 'react'
+import * as Popper from 'popper.js'
 import { Tooltip as BootstrapTooltip } from 'reactstrap'
 
 interface Props {}
@@ -8,6 +9,7 @@ interface State {
     subjectSeq: number
     lastEventTarget?: HTMLElement
     content?: string
+    placement?: string
 }
 
 /**
@@ -66,7 +68,7 @@ export class Tooltip extends React.PureComponent<Props, State> {
                 key={this.state.subjectSeq}
                 isOpen={true}
                 target={this.state.subject}
-                placement="auto"
+                placement={(this.state.placement ?? 'auto') as Popper.Placement}
                 // This is a workaround to an issue with tooltips in reactstrap that causes the entire page to freeze.
                 // Remove when https://github.com/reactstrap/reactstrap/issues/1482 is fixed.
                 modifiers={{
@@ -100,6 +102,7 @@ export class Tooltip extends React.PureComponent<Props, State> {
             subject,
             subjectSeq: prevState.subject === subject ? prevState.subjectSeq : prevState.subjectSeq + 1,
             content: subject ? this.getContent(subject) : undefined,
+            placement: subject ? this.getPlacement(subject) : undefined,
         }))
     }
 
@@ -128,6 +131,13 @@ export class Tooltip extends React.PureComponent<Props, State> {
             return undefined
         }
         return subject.getAttribute(Tooltip.SUBJECT_ATTRIBUTE) || undefined
+    }
+
+    private getPlacement = (subject: HTMLElement): string | undefined => {
+        if (!document.body.contains(subject)) {
+            return undefined
+        }
+        return subject.getAttribute('data-placement') || undefined
     }
 }
 

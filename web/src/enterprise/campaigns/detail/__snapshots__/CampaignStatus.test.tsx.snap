@@ -3,54 +3,12 @@
 exports[`CampaignStatus viewerCanAdminister: false campaign errored 1`] = `
 <React.Fragment>
   <div
-    className="d-flex my-3"
+    className="mt-3"
   >
     <Memo(AlertCircleIcon)
       className="icon-inline text-danger mr-1"
     />
-     
-    Creation
-     
-    errored
-  </div>
-  <ErrorAlert
-    className="mt-3"
-    error="a"
-  />
-  <ErrorAlert
-    className="mt-3"
-    error="b"
-  />
-</React.Fragment>
-`;
-
-exports[`CampaignStatus viewerCanAdminister: false campaign plan processing 1`] = `
-<React.Fragment>
-  <div
-    className="mt-3 e2e-preview-loading"
-  >
-    <div
-      className="progress mb-1"
-    >
-      <div
-        className="progress-bar"
-        style={
-          Object {
-            "width": "50%",
-          }
-        }
-      >
-         
-      </div>
-    </div>
-    <p>
-      Computing
-       changes:
-       
-      3
-       / 
-      6
-    </p>
+    Error creating campaign
   </div>
   <ErrorAlert
     className="mt-3"
@@ -83,9 +41,7 @@ exports[`CampaignStatus viewerCanAdminister: false campaign processing 1`] = `
       </div>
     </div>
     <p>
-      Creating
-       changes:
-       
+      Creating changes: 
       3
        / 
       6
@@ -119,10 +75,10 @@ exports[`CampaignStatus viewerCanAdminister: false drafted campaign 1`] = `
 <React.Fragment>
   <React.Fragment>
     <div
-      className="d-flex my-3"
+      className="d-flex my-3 alert alert-info"
     >
       <Memo(InformationIcon)
-        className="icon-inline text-info mr-1"
+        className="icon-inline mr-1"
       />
        Campaign is a draft.
        
@@ -137,10 +93,7 @@ exports[`CampaignStatus viewerCanAdminister: false drafted campaign 1`] = `
     <Memo(CheckCircleIcon)
       className="icon-inline text-success mr-1 e2e-preview-success"
     />
-     
-    Creation
-     
-    completed
+     Creation completed
   </div>
 </React.Fragment>
 `;
@@ -149,10 +102,10 @@ exports[`CampaignStatus viewerCanAdminister: false drafted campaign, some publis
 <React.Fragment>
   <React.Fragment>
     <div
-      className="d-flex my-3"
+      className="d-flex my-3 alert alert-info"
     >
       <Memo(InformationIcon)
-        className="icon-inline text-info mr-1"
+        className="icon-inline mr-1"
       />
        Campaign is a draft.
        
@@ -167,10 +120,7 @@ exports[`CampaignStatus viewerCanAdminister: false drafted campaign, some publis
     <Memo(CheckCircleIcon)
       className="icon-inline text-success mr-1 e2e-preview-success"
     />
-     
-    Creation
-     
-    completed
+     Creation completed
   </div>
 </React.Fragment>
 `;
@@ -178,15 +128,12 @@ exports[`CampaignStatus viewerCanAdminister: false drafted campaign, some publis
 exports[`CampaignStatus viewerCanAdminister: true campaign errored 1`] = `
 <React.Fragment>
   <div
-    className="d-flex my-3"
+    className="mt-3"
   >
     <Memo(AlertCircleIcon)
       className="icon-inline text-danger mr-1"
     />
-     
-    Creation
-     
-    errored
+    Error creating campaign
   </div>
   <ErrorAlert
     className="mt-3"
@@ -203,45 +150,6 @@ exports[`CampaignStatus viewerCanAdminister: true campaign errored 1`] = `
   >
     Retry failed jobs
   </button>
-</React.Fragment>
-`;
-
-exports[`CampaignStatus viewerCanAdminister: true campaign plan processing 1`] = `
-<React.Fragment>
-  <div
-    className="mt-3 e2e-preview-loading"
-  >
-    <div
-      className="progress mb-1"
-    >
-      <div
-        className="progress-bar"
-        style={
-          Object {
-            "width": "50%",
-          }
-        }
-      >
-         
-      </div>
-    </div>
-    <p>
-      Computing
-       changes:
-       
-      3
-       / 
-      6
-    </p>
-  </div>
-  <ErrorAlert
-    className="mt-3"
-    error="a"
-  />
-  <ErrorAlert
-    className="mt-3"
-    error="b"
-  />
 </React.Fragment>
 `;
 
@@ -265,9 +173,7 @@ exports[`CampaignStatus viewerCanAdminister: true campaign processing 1`] = `
       </div>
     </div>
     <p>
-      Creating
-       changes:
-       
+      Creating changes: 
       3
        / 
       6
@@ -301,10 +207,10 @@ exports[`CampaignStatus viewerCanAdminister: true drafted campaign 1`] = `
 <React.Fragment>
   <React.Fragment>
     <div
-      className="d-flex my-3"
+      className="d-flex my-3 alert alert-info"
     >
       <Memo(InformationIcon)
-        className="icon-inline text-info mr-1"
+        className="icon-inline mr-1"
       />
        Campaign is a draft.
        
@@ -326,10 +232,7 @@ exports[`CampaignStatus viewerCanAdminister: true drafted campaign 1`] = `
     <Memo(CheckCircleIcon)
       className="icon-inline text-success mr-1 e2e-preview-success"
     />
-     
-    Creation
-     
-    completed
+     Creation completed
   </div>
 </React.Fragment>
 `;
@@ -338,10 +241,10 @@ exports[`CampaignStatus viewerCanAdminister: true drafted campaign, some publish
 <React.Fragment>
   <React.Fragment>
     <div
-      className="d-flex my-3"
+      className="d-flex my-3 alert alert-info"
     >
       <Memo(InformationIcon)
-        className="icon-inline text-info mr-1"
+        className="icon-inline mr-1"
       />
        Campaign is a draft.
        
@@ -363,10 +266,7 @@ exports[`CampaignStatus viewerCanAdminister: true drafted campaign, some publish
     <Memo(CheckCircleIcon)
       className="icon-inline text-success mr-1 e2e-preview-success"
     />
-     
-    Creation
-     
-    completed
+     Creation completed
   </div>
 </React.Fragment>
 `;

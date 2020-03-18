@@ -10,68 +10,41 @@ exports[`CampaignDetails creation form for empty manual campaign 1`] = `
     onReset={[Function]}
     onSubmit={[Function]}
   >
-    <div
-      className="d-flex mb-2"
-    >
-      <h2
-        className="m-0"
-      >
-        <CampaignsIcon
-          className="icon-inline mr-2 text-muted"
-        />
-        <span>
-          <AnchorLink
-            to="/campaigns"
-          >
-            Campaigns
-          </AnchorLink>
-        </span>
-        <span
-          className="text-muted d-inline-block mx-2"
-        >
-          /
-        </span>
-        <CampaignTitleField
-          className="w-auto d-inline-block e2e-campaign-title"
-          disabled={false}
-          onChange={[Function]}
-          value=""
-        />
-      </h2>
-      <span
-        className="flex-grow-1 d-flex justify-content-end align-items-center"
+    <CampaignActionsBar
+      mode="editing"
+      onClose={[Function]}
+      onDelete={[Function]}
+      onEdit={[Function]}
+      previewingCampaignPlan={false}
+    />
+    <React.Fragment>
+      <h3>
+        Campaign details
+      </h3>
+      <CampaignTitleField
+        className="e2e-campaign-title"
+        disabled={false}
+        onChange={[Function]}
+        value=""
       />
-    </div>
-    <div
-      className="card"
-    >
       <CampaignDescriptionField
         disabled={false}
         onChange={[Function]}
         value=""
       />
-    </div>
-    <p
-      className="ml-1 mb-0"
-    >
-      <small>
-        <a
-          href="/help/user/markdown"
-          rel="noopener noreferrer"
-          target="_blank"
-        >
-          Markdown supported
-        </a>
-      </small>
-    </p>
+    </React.Fragment>
     <React.Fragment>
-      <button
-        className="btn btn-primary"
-        disabled={false}
-        type="submit"
+      <div
+        className="mt-3"
       >
-        Create
-      </button>
+        <button
+          className="btn btn-primary"
+          disabled={false}
+          type="submit"
+        >
+          Create
+        </button>
+      </div>
     </React.Fragment>
   </Form>
 </React.Fragment>
@@ -106,61 +79,89 @@ Array [
         >
           /
         </span>
-        <CampaignTitleField
-          className="w-auto d-inline-block e2e-campaign-title"
-          disabled={false}
-          onChange={[Function]}
-          value=""
-        />
+        <span>
+          New campaign
+        </span>
       </h2>
       <span
         className="flex-grow-1 d-flex justify-content-end align-items-center"
       />
     </div>
+    <h3>
+      Campaign details
+    </h3>
+    <CampaignTitleField
+      className="e2e-campaign-title"
+      disabled={false}
+      onChange={[Function]}
+      value=""
+    />
+    <CampaignDescriptionField
+      disabled={false}
+      onChange={[Function]}
+      value=""
+    />
     <div
-      className="card"
+      className="form-group mt-3"
     >
-      <CampaignDescriptionField
+      <label>
+        Branch name
+         
+        <small>
+          <svg
+            className="mdi-icon icon-inline"
+            data-tooltip="If a branch with the given name already exists, a fallback name will be created by appending a count. Example: \\"my-branch-name\\" becomes \\"my-branch-name-1\\"."
+            fill="currentColor"
+            height={24}
+            viewBox="0 0 24 24"
+            width={24}
+          >
+            <path
+              d="M11,9H13V7H11M12,20C7.59,20 4,16.41 4,12C4,7.59 7.59,4 12,4C16.41,4 20,7.59 20,12C20,16.41 16.41,20 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M11,17H13V11H11V17Z"
+            />
+          </svg>
+        </small>
+      </label>
+      <input
+        className="form-control"
         disabled={false}
         onChange={[Function]}
+        placeholder="my-awesome-campaign"
+        required={true}
+        type="text"
         value=""
       />
     </div>
-    <p
-      className="ml-1 mb-0"
+    <div
+      className="mt-3"
     >
-      <small>
-        <a
-          href="/help/user/markdown"
-          rel="noopener noreferrer"
-          target="_blank"
-        >
-          Markdown supported
-        </a>
-      </small>
-    </p>
-    <button
-      className="btn btn-secondary mr-1"
-      disabled={false}
-      onClick={[Function]}
-      type="submit"
-    >
-      Create draft
-    </button>
-    <button
-      className="btn btn-primary"
-      disabled={false}
-      type="submit"
-    >
-      Create
-    </button>
+      <button
+        className="btn btn-secondary mr-1"
+        disabled={false}
+        onClick={[Function]}
+        type="submit"
+      >
+        Create draft
+      </button>
+      <button
+        className="btn btn-primary"
+        disabled={false}
+        type="submit"
+      >
+        Create
+      </button>
+    </div>
   </form>,
-  "CampaignStatus(state=PROCESSING)",
+  <h3
+    className="mt-3"
+  >
+    Changesets
+  </h3>,
   <CampaignTabs
     campaign={
       Object {
         "__typename": "CampaignPlan",
-        "changesets": Object {
+        "changesetPlans": Object {
           "nodes": Array [],
           "totalCount": 2,
         },
@@ -195,7 +196,7 @@ Array [
         "thrownError": null,
       }
     }
-    className="mt-3"
+    className="mt-2"
     history={
       Object {
         "action": "POP",
@@ -272,12 +273,9 @@ Array [
         >
           /
         </span>
-        <CampaignTitleField
-          className="w-auto d-inline-block e2e-campaign-title"
-          disabled={false}
-          onChange={[Function]}
-          value="n"
-        />
+        <span>
+          n
+        </span>
       </h2>
       <span
         className="flex-grow-1 d-flex justify-content-end align-items-center"
@@ -298,54 +296,37 @@ Array [
         </button>
       </span>
     </div>
-    <div
-      className="card"
-    >
-      <div
-        className="card-header"
-      >
-        <strong>
-           
-          alice
-        </strong>
-         
-        started 
-        <span
-          className="timestamp"
-          data-tooltip="2020-01-01"
-        >
-          in almost 14 years
-        </span>
-      </div>
-      <CampaignDescriptionField
-        disabled={false}
-        onChange={[Function]}
-        value="d"
-      />
-    </div>
-    <p
-      className="ml-1 mb-0"
-    >
-      <small>
-        <a
-          href="/help/user/markdown"
-          rel="noopener noreferrer"
-          target="_blank"
-        >
-          Markdown supported
-        </a>
-      </small>
-    </p>
+    <h3>
+      Campaign details
+    </h3>
+    <CampaignTitleField
+      className="e2e-campaign-title"
+      disabled={false}
+      onChange={[Function]}
+      value="n"
+    />
+    <CampaignDescriptionField
+      disabled={false}
+      onChange={[Function]}
+      value="d"
+    />
   </form>,
   "CampaignStatus(state=PROCESSING)",
-  <h3>
+  <h3
+    className="mb-2"
+  >
     Progress
   </h3>,
-  <div
-    className="alert alert-info"
+  <p>
+    <em>
+      Burndown chart will be shown when there is more than 1 day of data.
+    </em>
+  </p>,
+  <h3
+    className="mt-3"
   >
-    Burndown chart will be shown when there is more than 1 day of data.
-  </div>,
+    Changesets
+  </h3>,
   <CampaignTabs
     campaign={
       Object {
@@ -353,6 +334,7 @@ Array [
         "author": Object {
           "username": "alice",
         },
+        "branch": "awesome-branch",
         "changesetCountsOverTime": Array [],
         "changesetPlans": Object {
           "nodes": Array [],
@@ -2056,7 +2038,7 @@ Array [
                     },
                     "index": 1,
                     "isStopped": false,
-                    "outerIndex": undefined,
+                    "outerIndex": 0,
                     "outerValue": undefined,
                     "parent": [Circular],
                     "syncErrorThrowable": false,
@@ -3760,7 +3742,7 @@ Array [
                     },
                     "index": 1,
                     "isStopped": false,
-                    "outerIndex": undefined,
+                    "outerIndex": 0,
                     "outerValue": undefined,
                     "parent": [Circular],
                     "syncErrorThrowable": false,
@@ -5490,7 +5472,7 @@ Array [
                 },
                 "index": 1,
                 "isStopped": false,
-                "outerIndex": undefined,
+                "outerIndex": 0,
                 "outerValue": undefined,
                 "parent": [Circular],
                 "syncErrorThrowable": false,
@@ -5521,8 +5503,8 @@ Array [
             },
             "index": 0,
             "isStopped": false,
-            "outerIndex": undefined,
-            "outerValue": undefined,
+            "outerIndex": 1,
+            "outerValue": [Circular],
             "parent": MergeMapSubscriber {
               "_parentOrParents": null,
               "_subscriptions": null,
@@ -7195,7 +7177,7 @@ Array [
                       },
                       "index": 1,
                       "isStopped": false,
-                      "outerIndex": undefined,
+                      "outerIndex": 0,
                       "outerValue": undefined,
                       "parent": [Circular],
                       "syncErrorThrowable": false,
@@ -8899,7 +8881,7 @@ Array [
                       },
                       "index": 1,
                       "isStopped": false,
-                      "outerIndex": undefined,
+                      "outerIndex": 0,
                       "outerValue": undefined,
                       "parent": [Circular],
                       "syncErrorThrowable": false,
@@ -10629,7 +10611,7 @@ Array [
                   },
                   "index": 1,
                   "isStopped": false,
-                  "outerIndex": undefined,
+                  "outerIndex": 0,
                   "outerValue": undefined,
                   "parent": [Circular],
                   "syncErrorThrowable": false,
@@ -10668,7 +10650,7 @@ Array [
         "thrownError": null,
       }
     }
-    className="mt-3"
+    className="mt-2"
     history={
       Object {
         "action": "POP",
@@ -10754,7 +10736,7 @@ Array [
       />
     </div>
     <div
-      className="card"
+      className="card mt-3"
     >
       <div
         className="card-header"
@@ -10788,14 +10770,21 @@ Array [
     </div>
   </form>,
   "CampaignStatus(state=PROCESSING)",
-  <h3>
+  <h3
+    className="mb-2"
+  >
     Progress
   </h3>,
-  <div
-    className="alert alert-info"
+  <p>
+    <em>
+      Burndown chart will be shown when there is more than 1 day of data.
+    </em>
+  </p>,
+  <h3
+    className="mt-3"
   >
-    Burndown chart will be shown when there is more than 1 day of data.
-  </div>,
+    Changesets
+  </h3>,
   <CampaignTabs
     campaign={
       Object {
@@ -10803,6 +10792,7 @@ Array [
         "author": Object {
           "username": "alice",
         },
+        "branch": "awesome-branch",
         "changesetCountsOverTime": Array [],
         "changesetPlans": Object {
           "nodes": Array [],
@@ -12506,7 +12496,7 @@ Array [
                     },
                     "index": 1,
                     "isStopped": false,
-                    "outerIndex": undefined,
+                    "outerIndex": 0,
                     "outerValue": undefined,
                     "parent": [Circular],
                     "syncErrorThrowable": false,
@@ -14210,7 +14200,7 @@ Array [
                     },
                     "index": 1,
                     "isStopped": false,
-                    "outerIndex": undefined,
+                    "outerIndex": 0,
                     "outerValue": undefined,
                     "parent": [Circular],
                     "syncErrorThrowable": false,
@@ -15940,7 +15930,7 @@ Array [
                 },
                 "index": 1,
                 "isStopped": false,
-                "outerIndex": undefined,
+                "outerIndex": 0,
                 "outerValue": undefined,
                 "parent": [Circular],
                 "syncErrorThrowable": false,
@@ -15971,8 +15961,8 @@ Array [
             },
             "index": 0,
             "isStopped": false,
-            "outerIndex": undefined,
-            "outerValue": undefined,
+            "outerIndex": 1,
+            "outerValue": [Circular],
             "parent": MergeMapSubscriber {
               "_parentOrParents": null,
               "_subscriptions": null,
@@ -17645,7 +17635,7 @@ Array [
                       },
                       "index": 1,
                       "isStopped": false,
-                      "outerIndex": undefined,
+                      "outerIndex": 0,
                       "outerValue": undefined,
                       "parent": [Circular],
                       "syncErrorThrowable": false,
@@ -19349,7 +19339,7 @@ Array [
                       },
                       "index": 1,
                       "isStopped": false,
-                      "outerIndex": undefined,
+                      "outerIndex": 0,
                       "outerValue": undefined,
                       "parent": [Circular],
                       "syncErrorThrowable": false,
@@ -21079,7 +21069,7 @@ Array [
                   },
                   "index": 1,
                   "isStopped": false,
-                  "outerIndex": undefined,
+                  "outerIndex": 0,
                   "outerValue": undefined,
                   "parent": [Circular],
                   "syncErrorThrowable": false,
@@ -21118,7 +21108,7 @@ Array [
         "thrownError": null,
       }
     }
-    className="mt-3"
+    className="mt-2"
     history={
       Object {
         "action": "POP",
@@ -21204,7 +21194,7 @@ Array [
       >
         <button
           className="btn btn-secondary mr-1"
-          disabled={false}
+          disabled={true}
           id="e2e-campaign-edit"
           onClick={[Function]}
           type="button"
@@ -21212,17 +21202,19 @@ Array [
           Edit
         </button>
         <details
-          className="campaign-details__details"
+          className="campaign-prompt__details"
         >
           <summary>
             <span
-              className="btn btn-secondary mr-1 dropdown-toggle"
+              className="btn dropdown-toggle btn-secondary mr-1 disabled"
+              data-tooltip="Cannot close while campaign is being created"
+              onClick={[Function]}
             >
               Close
             </span>
           </summary>
           <div
-            className="position-absolute campaign-details__details-menu"
+            className="position-absolute campaign-prompt__details-menu"
           >
             <div
               className="card mt-1"
@@ -21232,29 +21224,14 @@ Array [
               >
                 <p>
                   Close campaign 
-                  <b>
+                  <strong>
                     n
-                  </b>
+                  </strong>
                   ?
                 </p>
-                <div
-                  className="form-group"
-                >
-                  <input
-                    checked={false}
-                    onChange={[Function]}
-                    type="checkbox"
-                  />
-                   
-                  Close all 
-                  2
-                   
-                  changesets
-                   on code hosts
-                </div>
                 <button
-                  className="btn mr-1 btn-secondary"
-                  disabled={false}
+                  className="btn mr-1 btn-secondary mr-1"
+                  disabled={true}
                   onClick={[Function]}
                   type="button"
                 >
@@ -21265,17 +21242,19 @@ Array [
           </div>
         </details>
         <details
-          className="campaign-details__details"
+          className="campaign-prompt__details"
         >
           <summary>
             <span
-              className="btn btn-danger dropdown-toggle"
+              className="btn dropdown-toggle btn-danger disabled"
+              data-tooltip="Cannot delete while campaign is being created"
+              onClick={[Function]}
             >
               Delete
             </span>
           </summary>
           <div
-            className="position-absolute campaign-details__details-menu"
+            className="position-absolute campaign-prompt__details-menu"
           >
             <div
               className="card mt-1"
@@ -21290,24 +21269,9 @@ Array [
                   </strong>
                   ?
                 </p>
-                <div
-                  className="form-group"
-                >
-                  <input
-                    checked={false}
-                    onChange={[Function]}
-                    type="checkbox"
-                  />
-                   
-                  Close all 
-                  2
-                   
-                  changesets
-                   on code hosts
-                </div>
                 <button
                   className="btn mr-1 btn-danger"
-                  disabled={false}
+                  disabled={true}
                   onClick={[Function]}
                   type="button"
                 >
@@ -21320,7 +21284,7 @@ Array [
       </span>
     </div>
     <div
-      className="card"
+      className="card mt-3"
     >
       <div
         className="card-header"
@@ -21354,14 +21318,21 @@ Array [
     </div>
   </form>,
   "CampaignStatus(state=PROCESSING)",
-  <h3>
+  <h3
+    className="mb-2"
+  >
     Progress
   </h3>,
-  <div
-    className="alert alert-info"
+  <p>
+    <em>
+      Burndown chart will be shown when there is more than 1 day of data.
+    </em>
+  </p>,
+  <h3
+    className="mt-3"
   >
-    Burndown chart will be shown when there is more than 1 day of data.
-  </div>,
+    Changesets
+  </h3>,
   <CampaignTabs
     campaign={
       Object {
@@ -21369,6 +21340,7 @@ Array [
         "author": Object {
           "username": "alice",
         },
+        "branch": "awesome-branch",
         "changesetCountsOverTime": Array [],
         "changesetPlans": Object {
           "nodes": Array [],
@@ -23072,7 +23044,7 @@ Array [
                     },
                     "index": 1,
                     "isStopped": false,
-                    "outerIndex": undefined,
+                    "outerIndex": 0,
                     "outerValue": undefined,
                     "parent": [Circular],
                     "syncErrorThrowable": false,
@@ -24776,7 +24748,7 @@ Array [
                     },
                     "index": 1,
                     "isStopped": false,
-                    "outerIndex": undefined,
+                    "outerIndex": 0,
                     "outerValue": undefined,
                     "parent": [Circular],
                     "syncErrorThrowable": false,
@@ -26506,7 +26478,7 @@ Array [
                 },
                 "index": 1,
                 "isStopped": false,
-                "outerIndex": undefined,
+                "outerIndex": 0,
                 "outerValue": undefined,
                 "parent": [Circular],
                 "syncErrorThrowable": false,
@@ -26537,8 +26509,8 @@ Array [
             },
             "index": 0,
             "isStopped": false,
-            "outerIndex": undefined,
-            "outerValue": undefined,
+            "outerIndex": 1,
+            "outerValue": [Circular],
             "parent": MergeMapSubscriber {
               "_parentOrParents": null,
               "_subscriptions": null,
@@ -28211,7 +28183,7 @@ Array [
                       },
                       "index": 1,
                       "isStopped": false,
-                      "outerIndex": undefined,
+                      "outerIndex": 0,
                       "outerValue": undefined,
                       "parent": [Circular],
                       "syncErrorThrowable": false,
@@ -29915,7 +29887,7 @@ Array [
                       },
                       "index": 1,
                       "isStopped": false,
-                      "outerIndex": undefined,
+                      "outerIndex": 0,
                       "outerValue": undefined,
                       "parent": [Circular],
                       "syncErrorThrowable": false,
@@ -31645,7 +31617,7 @@ Array [
                   },
                   "index": 1,
                   "isStopped": false,
-                  "outerIndex": undefined,
+                  "outerIndex": 0,
                   "outerValue": undefined,
                   "parent": [Circular],
                   "syncErrorThrowable": false,
@@ -31684,7 +31656,7 @@ Array [
         "thrownError": null,
       }
     }
-    className="mt-3"
+    className="mt-2"
     history={
       Object {
         "action": "POP",

@@ -2,11 +2,25 @@
 
 exports[`CampaignTabs renders 1`] = `
 <TabsWithLocalStorageViewStatePersistence
-  className=""
+  className="mb-3"
   storageKey="campaignTab"
   tabClassName="tab-bar__tab--h5like"
   tabs={
     Array [
+      Object {
+        "id": "changesets",
+        "label": <span
+          className="e2e-campaign-changesets-tab"
+        >
+          Changesets
+           
+          <span
+            className="badge badge-secondary badge-pill"
+          >
+            0
+          </span>
+        </span>,
+      },
       Object {
         "id": "diff",
         "label": <span
@@ -24,20 +38,6 @@ exports[`CampaignTabs renders 1`] = `
             className="text-danger"
           >
             -
-            0
-          </span>
-        </span>,
-      },
-      Object {
-        "id": "changesets",
-        "label": <span
-          className="e2e-campaign-changesets-tab"
-        >
-          Changesets
-           
-          <span
-            className="badge badge-secondary badge-pill"
-          >
             0
           </span>
         </span>,
@@ -66,7 +66,6 @@ exports[`CampaignTabs renders 1`] = `
         "thrownError": null,
       }
     }
-    className="mt-3"
     enablePublishing={false}
     history={
       Object {

@@ -1,32 +1,16 @@
-import { SuggestionTypes } from '../../../../../shared/src/search/suggestions/util'
 import { Suggestion } from '../Suggestion'
 import { assign } from 'lodash/fp'
-import { FilterTypes } from '../../../../../shared/src/search/interactive/util'
+import { FilterType } from '../../../../../shared/src/search/interactive/util'
+import { resolveFilter } from '../../../../../shared/src/search/parser/filters'
 
 /** FilterTypes which have a finite number of valid options. */
-export type FiniteFilterTypes = FilterTypes.archived | FilterTypes.fork
+export type FiniteFilterType = FilterType.archived | FilterType.fork | FilterType.type | FilterType.index
 
-export function isTextFilter(filter: FilterTypes): boolean {
-    const validTextFilters = [
-        'repo',
-        'repogroup',
-        'repohasfile',
-        'repohascommitafter',
-        'file',
-        'lang',
-        'count',
-        'timeout',
-        '-repo',
-        '-repohasfile',
-        '-file',
-        '-lang',
-    ]
-
-    return validTextFilters.includes(filter)
-}
+const withBooleanSuggestions = (type: FiniteFilterType): Suggestion[] =>
+    ['no', 'only', 'yes'].map(value => ({ type, value }))
 
 export const finiteFilters: Record<
-    FiniteFilterTypes,
+    FiniteFilterType,
     {
         default: string
         values: Suggestion[]
@@ -34,24 +18,39 @@ export const finiteFilters: Record<
 > = {
     archived: {
         default: 'yes',
-        values: [{ value: 'no' }, { value: 'only' }, { value: 'yes' }].map(
-            assign({
-                type: SuggestionTypes.fork,
-            })
-        ),
+        values: withBooleanSuggestions(FilterType.archived),
     },
     fork: {
         default: 'yes',
-        values: [{ value: 'no' }, { value: 'only' }, { value: 'yes' }].map(
+        values: withBooleanSuggestions(FilterType.fork),
+    },
+    index: {
+        default: 'yes',
+        values: withBooleanSuggestions(FilterType.index),
+    },
+    type: {
+        default: '',
+        values: [
+            { displayValue: 'code', value: '' },
+            { value: 'commit' },
+            { value: 'diff' },
+            { value: 'repo' },
+            { value: 'path' },
+            { value: 'symbols' },
+        ].map(
             assign({
-                type: SuggestionTypes.fork,
+                type: FilterType.type,
             })
         ),
     },
 }
 
-export const isFiniteFilter = (filter: FilterTypes): filter is FiniteFilterTypes =>
-    ['archived', 'fork'].includes(filter)
+export const isFiniteFilter = (filter: FilterType): filter is FiniteFilterType =>
+    !!resolveFilter(filter) && ['fork', 'archived', 'type', 'index'].includes(filter)
+
+export function isTextFilter(filter: FilterType): boolean {
+    return !!resolveFilter(filter) && !isFiniteFilter(filter)
+}
 
 /**
  * Some filter types should have their suggestions searched without influence
@@ -59,9 +58,9 @@ export const isFiniteFilter = (filter: FilterTypes): filter is FiniteFilterTypes
  *
  * Same as {@link isolatedFuzzySearchFilters} but using FilterTypes rather than SuggestionTypes.
  */
-export const isolatedFuzzySearchFiltersFilterType = [FilterTypes.repo, FilterTypes.repogroup]
+export const isolatedFuzzySearchFiltersFilterType = [FilterType.repo, FilterType.repogroup]
 
-export const FilterTypesToProseNames: Record<FilterTypes, string> = {
+export const FilterTypeToProseNames: Record<FilterType, string> = {
     repo: 'Repository',
     repogroup: 'Repository group',
     repohasfile: 'Repo has file',
@@ -73,4 +72,12 @@ export const FilterTypesToProseNames: Record<FilterTypes, string> = {
     fork: 'Forks',
     archived: 'Archived repos',
     case: 'Case sensitive',
+    after: 'Committed after',
+    before: 'Committed before',
+    message: 'Commit message contains',
+    author: 'Commit author',
+    type: 'Type',
+    content: 'Content',
+    patterntype: 'Pattern type',
+    index: 'Indexed repos',
 }

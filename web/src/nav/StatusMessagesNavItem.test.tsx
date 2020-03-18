@@ -1,6 +1,6 @@
 import React from 'react'
 import renderer from 'react-test-renderer'
-import { of, queueScheduler, Observable } from 'rxjs'
+import { of, Observable } from 'rxjs'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { StatusMessagesNavItem } from './StatusMessagesNavItem'
 
@@ -12,7 +12,7 @@ describe('StatusMessagesNavItem', () => {
     test('no messages', () => {
         const fetchMessages = (): Observable<GQL.StatusMessage[]> => of([])
         expect(
-            renderer.create(<StatusMessagesNavItem scheduler={queueScheduler} fetchMessages={fetchMessages} />).toJSON()
+            renderer.create(<StatusMessagesNavItem fetchMessages={fetchMessages} isSiteAdmin={false} />).toJSON()
         ).toMatchSnapshot()
     })
 
@@ -25,23 +25,13 @@ describe('StatusMessagesNavItem', () => {
         const fetchMessages = (): Observable<GQL.StatusMessage[]> => of([message])
         test('as non-site admin', () => {
             expect(
-                renderer
-                    .create(<StatusMessagesNavItem scheduler={queueScheduler} fetchMessages={fetchMessages} />)
-                    .toJSON()
+                renderer.create(<StatusMessagesNavItem fetchMessages={fetchMessages} isSiteAdmin={false} />).toJSON()
             ).toMatchSnapshot()
         })
 
         test('as site admin', () => {
             expect(
-                renderer
-                    .create(
-                        <StatusMessagesNavItem
-                            scheduler={queueScheduler}
-                            fetchMessages={fetchMessages}
-                            isSiteAdmin={true}
-                        />
-                    )
-                    .toJSON()
+                renderer.create(<StatusMessagesNavItem fetchMessages={fetchMessages} isSiteAdmin={true} />).toJSON()
             ).toMatchSnapshot()
         })
     })
@@ -56,8 +46,8 @@ describe('StatusMessagesNavItem', () => {
                 displayName: 'GitHub.com',
                 kind: GQL.ExternalServiceKind.GITHUB,
                 config: '{}',
-                createdAt: new Date(),
-                updatedAt: new Date(),
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
                 warning: '',
             },
         }
@@ -65,23 +55,13 @@ describe('StatusMessagesNavItem', () => {
         const fetchMessages = () => of([message])
         test('as non-site admin', () => {
             expect(
-                renderer
-                    .create(<StatusMessagesNavItem scheduler={queueScheduler} fetchMessages={fetchMessages} />)
-                    .toJSON()
+                renderer.create(<StatusMessagesNavItem fetchMessages={fetchMessages} isSiteAdmin={false} />).toJSON()
             ).toMatchSnapshot()
         })
 
         test('as site admin', () => {
             expect(
-                renderer
-                    .create(
-                        <StatusMessagesNavItem
-                            scheduler={queueScheduler}
-                            fetchMessages={fetchMessages}
-                            isSiteAdmin={true}
-                        />
-                    )
-                    .toJSON()
+                renderer.create(<StatusMessagesNavItem fetchMessages={fetchMessages} isSiteAdmin={true} />).toJSON()
             ).toMatchSnapshot()
         })
     })
@@ -95,23 +75,13 @@ describe('StatusMessagesNavItem', () => {
         const fetchMessages = () => of([message])
         test('as non-site admin', () => {
             expect(
-                renderer
-                    .create(<StatusMessagesNavItem scheduler={queueScheduler} fetchMessages={fetchMessages} />)
-                    .toJSON()
+                renderer.create(<StatusMessagesNavItem fetchMessages={fetchMessages} isSiteAdmin={false} />).toJSON()
             ).toMatchSnapshot()
         })
 
         test('as site admin', () => {
             expect(
-                renderer
-                    .create(
-                        <StatusMessagesNavItem
-                            scheduler={queueScheduler}
-                            fetchMessages={fetchMessages}
-                            isSiteAdmin={true}
-                        />
-                    )
-                    .toJSON()
+                renderer.create(<StatusMessagesNavItem fetchMessages={fetchMessages} isSiteAdmin={true} />).toJSON()
             ).toMatchSnapshot()
         })
     })

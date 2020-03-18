@@ -12,15 +12,16 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/gqltesting"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/db"
-	iauthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -60,25 +61,14 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 		}
 	})
 
-	db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-		return &types.User{SiteAdmin: true}, nil
-	}
-	db.Mocks.Repos.Get = func(_ context.Context, id api.RepoID) (*types.Repo, error) {
-		return &types.Repo{ID: id}, nil
-	}
-	defer func() {
-		db.Mocks.Users.GetByCurrentAuthUser = nil
-		db.Mocks.Repos.Get = nil
-	}()
-
 	tests := []struct {
-		name                 string
-		config               *schema.PermissionsUserMapping
-		mockVerifiedEmails   []*db.UserEmail
-		mockUsers            []*types.User
-		gqlTests             []*gqltesting.Test
-		expectUserIDs        []uint32
-		expectPendingBindIDs []string
+		name               string
+		config             *schema.PermissionsUserMapping
+		mockVerifiedEmails []*db.UserEmail
+		mockUsers          []*types.User
+		gqlTests           []*gqltesting.Test
+		expUserIDs         []uint32
+		expAccounts        *extsvc.ExternalAccounts
 	}{
 		{
 			name: "set permissions via email",
@@ -112,8 +102,12 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 			`,
 				},
 			},
-			expectUserIDs:        []uint32{1},
-			expectPendingBindIDs: []string{"bob"},
+			expUserIDs: []uint32{1},
+			expAccounts: &extsvc.ExternalAccounts{
+				ServiceType: authz.SourcegraphServiceType,
+				ServiceID:   authz.SourcegraphServiceID,
+				AccountIDs:  []string{"bob"},
+			},
 		},
 		{
 			name: "set permissions via username",
@@ -147,38 +141,51 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 			`,
 				},
 			},
-			expectUserIDs:        []uint32{1},
-			expectPendingBindIDs: []string{"bob"},
+			expUserIDs: []uint32{1},
+			expAccounts: &extsvc.ExternalAccounts{
+				ServiceType: authz.SourcegraphServiceType,
+				ServiceID:   authz.SourcegraphServiceID,
+				AccountIDs:  []string{"bob"},
+			},
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			globals.SetPermissionsUserMapping(test.config)
 
-			db.Mocks.UserEmails.GetVerifiedEmails = func(context.Context, ...string) ([]*db.UserEmail, error) {
-				return test.mockVerifiedEmails, nil
+			db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
+				return &types.User{SiteAdmin: true}, nil
 			}
 			db.Mocks.Users.GetByUsernames = func(context.Context, ...string) ([]*types.User, error) {
 				return test.mockUsers, nil
 			}
-			edb.Mocks.Perms.SetRepoPermissions = func(_ context.Context, p *iauthz.RepoPermissions) error {
+			db.Mocks.UserEmails.GetVerifiedEmails = func(context.Context, ...string) ([]*db.UserEmail, error) {
+				return test.mockVerifiedEmails, nil
+			}
+			db.Mocks.Repos.Get = func(_ context.Context, id api.RepoID) (*types.Repo, error) {
+				return &types.Repo{ID: id}, nil
+			}
+			edb.Mocks.Perms.Transact = func(_ context.Context) (*edb.PermsStore, error) {
+				return &edb.PermsStore{}, nil
+			}
+			edb.Mocks.Perms.SetRepoPermissions = func(_ context.Context, p *authz.RepoPermissions) error {
 				ids := p.UserIDs.ToArray()
-				if diff := cmp.Diff(test.expectUserIDs, ids); diff != "" {
+				if diff := cmp.Diff(test.expUserIDs, ids); diff != "" {
 					return fmt.Errorf("p.UserIDs: %v", diff)
 				}
 				return nil
 			}
-			edb.Mocks.Perms.SetRepoPendingPermissions = func(_ context.Context, bindIDs []string, _ *iauthz.RepoPermissions) error {
-				if diff := cmp.Diff(test.expectPendingBindIDs, bindIDs); diff != "" {
-					return fmt.Errorf("bindIDs: %v", diff)
+			edb.Mocks.Perms.SetRepoPendingPermissions = func(_ context.Context, accounts *extsvc.ExternalAccounts, _ *authz.RepoPermissions) error {
+				if diff := cmp.Diff(test.expAccounts, accounts); diff != "" {
+					return fmt.Errorf("accounts: %v", diff)
 				}
 				return nil
 			}
 			defer func() {
-				db.Mocks.UserEmails.GetVerifiedEmails = nil
-				db.Mocks.Users.GetByUsernames = nil
-				edb.Mocks.Perms.SetRepoPermissions = nil
-				edb.Mocks.Perms.SetRepoPendingPermissions = nil
+				db.Mocks.UserEmails = db.MockUserEmails{}
+				db.Mocks.Users = db.MockUsers{}
+				db.Mocks.Repos = db.MockRepos{}
+				edb.Mocks.Perms = edb.MockPerms{}
 			}()
 
 			gqltesting.RunTests(t, test.gqlTests)
@@ -227,22 +234,19 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 		}
 		return repos, nil
 	}
-	edb.Mocks.Perms.LoadUserPermissions = func(_ context.Context, p *iauthz.UserPermissions) error {
+	edb.Mocks.Perms.LoadUserPermissions = func(_ context.Context, p *authz.UserPermissions) error {
 		p.IDs = roaring.NewBitmap()
 		p.IDs.Add(1)
 		return nil
 	}
-	edb.Mocks.Perms.LoadUserPendingPermissions = func(_ context.Context, p *iauthz.UserPendingPermissions) error {
+	edb.Mocks.Perms.LoadUserPendingPermissions = func(_ context.Context, p *authz.UserPendingPermissions) error {
 		p.IDs = roaring.NewBitmap()
 		p.IDs.Add(2)
 		return nil
 	}
 	defer func() {
-		db.Mocks.Users.GetByCurrentAuthUser = nil
-		db.Mocks.Users.GetByVerifiedEmail = nil
-		db.Mocks.Users.GetByUsername = nil
-		edb.Mocks.Perms.LoadUserPermissions = nil
-		edb.Mocks.Perms.LoadUserPendingPermissions = nil
+		db.Mocks.Users = db.MockUsers{}
+		edb.Mocks.Perms = edb.MockPerms{}
 	}()
 
 	tests := []struct {
@@ -395,8 +399,8 @@ func TestResolver_UsersWithPendingPermissions(t *testing.T) {
 		return []string{"alice", "bob"}, nil
 	}
 	defer func() {
-		db.Mocks.Users.GetByCurrentAuthUser = nil
-		edb.Mocks.Perms.ListPendingUsers = nil
+		db.Mocks.Users = db.MockUsers{}
+		edb.Mocks.Perms = edb.MockPerms{}
 	}()
 
 	tests := []struct {
@@ -467,17 +471,15 @@ func TestResolver_AuthorizedUsers(t *testing.T) {
 	db.Mocks.Repos.Get = func(_ context.Context, id api.RepoID) (*types.Repo, error) {
 		return &types.Repo{ID: id}, nil
 	}
-	edb.Mocks.Perms.LoadRepoPermissions = func(_ context.Context, p *iauthz.RepoPermissions) error {
+	edb.Mocks.Perms.LoadRepoPermissions = func(_ context.Context, p *authz.RepoPermissions) error {
 		p.UserIDs = roaring.NewBitmap()
 		p.UserIDs.Add(1)
 		return nil
 	}
 	defer func() {
-		db.Mocks.Users.GetByCurrentAuthUser = nil
-		db.Mocks.Users.List = nil
-		db.Mocks.Repos.GetByName = nil
-		db.Mocks.Repos.Get = nil
-		edb.Mocks.Perms.LoadRepoPermissions = nil
+		db.Mocks.Users = db.MockUsers{}
+		db.Mocks.Repos = db.MockRepos{}
+		edb.Mocks.Perms = edb.MockPerms{}
 	}()
 
 	tests := []struct {

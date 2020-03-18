@@ -96,6 +96,7 @@ func (r *RepositoryResolver) Description(ctx context.Context) (string, error) {
 	return r.repo.Description, nil
 }
 
+// Deprecated: Use repositoryRedirect query instead.
 func (r *RepositoryResolver) RedirectURL() *string {
 	return r.redirectURL
 }
@@ -265,9 +266,6 @@ func (r *RepositoryResolver) hydrate(ctx context.Context) error {
 }
 
 func (r *RepositoryResolver) LSIFUploads(ctx context.Context, args *LSIFUploadsQueryArgs) (LSIFUploadConnectionResolver, error) {
-	if EnterpriseResolvers.codeIntelResolver == nil {
-		return nil, codeIntelOnlyInEnterprise
-	}
 	return EnterpriseResolvers.codeIntelResolver.LSIFUploads(ctx, &LSIFRepositoryUploadsQueryArgs{
 		LSIFUploadsQueryArgs: args,
 		RepositoryID:         r.ID(),
@@ -287,9 +285,6 @@ type RepoAuthorizedUserArgs struct {
 }
 
 func (r *RepositoryResolver) AuthorizedUsers(ctx context.Context, args *AuthorizedUserArgs) (UserConnectionResolver, error) {
-	if EnterpriseResolvers.authzResolver == nil {
-		return nil, authzInEnterprise
-	}
 	return EnterpriseResolvers.authzResolver.AuthorizedUsers(ctx, &RepoAuthorizedUserArgs{
 		RepositoryID:       r.ID(),
 		AuthorizedUserArgs: args,

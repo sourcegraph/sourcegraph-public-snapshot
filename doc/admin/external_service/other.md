@@ -1,16 +1,13 @@
 # Other Git repository hosts
 
-Site admins can sync Git repositories on any Git repository host (by Git clone URL) with Sourcegraph so that users can search and navigate the repositories. Use this method only when your repository host is not named as a supported [external service](index.md).
+Site admins can sync Git repositories on any Git repository host (by Git clone URL) with Sourcegraph so that users can search and navigate the repositories. Use this method only when your repository host is not named as a supported [code host](index.md).
 
-To add Git repositories from any Git repository host:
+To connect generic Git host to Sourcegraph:
 
-1. Go to **User menu > Site admin**.
-1. Open the **External services** page.
-1. Press **+ Add external service**.
-1. Press **Single Git repositories**.
-1. Enter a **Display name** (such as the human-readable name of the repository host).
-1. Set the `url` and `repos` fields in the JSON editor. Use Cmd/Ctrl+Space for completion, and [see configuration documentation below](#configuration).
-1. Press **Add external service**.
+1. Go to **Site admin > Manage repositories > Add repositories**
+1. Select **Generic Git host**.
+1. Configure the connection to generic Git host the action buttons above the text field, and additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).
+1. Press **Add repositories**.
 
 ## Constructing the `url` for SSH access
 
@@ -64,7 +61,7 @@ Repositories must be listed individually:
 
 Start up a Sourcegraph instance
 
-<pre class="pre-wrap start-sourcegraph-command"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.12.5</code></pre>
+<pre class="pre-wrap start-sourcegraph-command"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.13.2</code></pre>
 
 Pick a directory you want to export from, then run:
 
@@ -89,7 +86,9 @@ chmod +x src-expose
 }
 ```
 
-Go to Admin > External services > Add external service > Single Git repositories. Input the above configuration. Your directories should now be syncing in Sourcegraph.
+**IMPORTANT:** If you are using a Linux host machine, replace `host.docker.internal` in the above with the IP address of your actual host machine because `host.docker.internal` [does not work on Linux](https://github.com/docker/for-linux/issues/264). You should use the network-accessible IP shown by `ifconfig` (not e.g. 127.0.0.1 or localhost).
+
+Go to Admin > Manage Repositories > Add repositories > Single Git repositories. Input the above configuration. Your directories should now be syncing in Sourcegraph.
 
 ### Advanced configuration
 

@@ -3,6 +3,17 @@ import * as clientType from '@sourcegraph/extension-api-types'
 import * as sourcegraph from 'sourcegraph'
 
 /**
+ * Firefox does not like URLs being transmitted, so convert them to strings.
+ *
+ * https://github.com/sourcegraph/sourcegraph/issues/8928
+ */
+export function fromDocumentSelector(selector: sourcegraph.DocumentSelector): sourcegraph.DocumentSelector {
+    return selector.map(filter =>
+        typeof filter === 'string' ? filter : { ...filter, baseUri: filter.baseUri?.toString() }
+    )
+}
+
+/**
  * Converts from a plain object {@link clientType.Position} to an instance of {@link Position}.
  *
  * @internal
@@ -20,7 +31,7 @@ export function fromLocation(
     location: sourcegraph.Badged<sourcegraph.Location>
 ): sourcegraph.Badged<clientType.Location> {
     return {
-        uri: location.uri.toString(),
+        uri: location.uri.href,
         range: fromRange(location.range),
         badge: location.badge,
     }

@@ -42,5 +42,27 @@ describe('Search input helpers', () => {
                         }
             )
         })
+
+        test('converts query with invalid filters, without adding invalid filters to filtersInQuery', () => {
+            const newQuery = convertPlainTextToInteractiveQuery('foo case:yes archived:no asdf:no')
+            expect(
+                newQuery.navbarQuery === 'foo asdf:no' &&
+                    newQuery.filtersInQuery ===
+                        {
+                            case: {
+                                type: 'case' as const,
+                                value: 'yes',
+                                editable: false,
+                                negated: false,
+                            },
+                            archived: {
+                                type: 'archived' as const,
+                                value: 'no',
+                                editable: false,
+                                negated: false,
+                            },
+                        }
+            )
+        })
     })
 })
