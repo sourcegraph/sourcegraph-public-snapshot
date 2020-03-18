@@ -172,7 +172,7 @@ describe('FilterInput', () => {
         expect(defaultProps.onFilterEdited.calledOnce).toBe(true)
     })
 
-    it('filter input for content filters called filter edited handler with quoted value', () => {
+    it('filter input for content filters calls onFilterEdited with quoted value', () => {
         container = render(
             <FilterInput
                 {...defaultProps}
