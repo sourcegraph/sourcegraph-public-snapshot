@@ -650,7 +650,8 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
             this.componentUpdates
                 .pipe(
                     distinctUntilChanged((a, b) => a.updateOnChange === b.updateOnChange),
-                    filter(({ updateOnChange }) => updateOnChange !== undefined)
+                    filter(({ updateOnChange }) => updateOnChange !== undefined),
+                    skip(1)
                 )
                 .subscribe(() => {
                     this.setState({ loading: true, connectionOrError: undefined }, () =>
