@@ -9,6 +9,7 @@ import (
 	"github.com/RoaringBitmap/roaring"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -538,6 +539,10 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 		case <-ticker.C:
 		case <-ctx.Done():
 			return
+		}
+
+		if !globals.PermissionsBackgroundSync().Enabled {
+			continue
 		}
 
 		schedule, err := s.schedule(ctx)
