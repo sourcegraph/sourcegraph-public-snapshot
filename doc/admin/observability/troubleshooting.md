@@ -5,8 +5,10 @@ issue or generating a high-quality issue report.
 
 **How to use this guide:**
 
-1. Scan through [Scenarios](#scenarios) to find which scenario(s) applies to you.
-1. Follow the instructions to update your instance or collect information for the issue report.
+1. Scan through [Specific scenarios](#specific-scenarios) to see if any of these applies to you. If
+   any do, follow the instructions in the subsection.
+1. Scan through [General scenarios](#general-scenarios) to find which scenario(s) applies to you. If any do,
+   follow the instructions to update your instance or collect information for the issue report.
 1. If you cannot resolve the issue on your own, file an issue on the [Sourcegraph issue
    tracker](https://github.com/sourcegraph/sourcegraph/issues) with the collected
    information. Enterprise customers may alternatively file a support ticket or email
@@ -15,7 +17,23 @@ issue or generating a high-quality issue report.
 > NOTE: This guide assumes you have site admin privileges on the Sourcegraph instance. If you are
 > non-admin user, report your error the site admin and have them walk through this guide.
 
-## Scenarios
+## Specific scenarios
+
+#### Scenario: search *and* code pages take a long time to load
+
+If this is the case, this could indicate high gitserver load. To confirm, take the following steps:
+
+1. [Open Grafana](metrics.md#grafana).
+1. Go to the Sourcegraph Internal > Gitserver rev2 dashboard.
+1. Examine the "Echo Duration Seconds" dashboard (tracks the `src_gitserver_echo_duration_seconds`
+   metric) and "Commands running concurrently" dashboard (tracks the `src_gitserver_exec_running`
+   metric). If either of these is high (> 1s echo duration or 100s simultaneous execs), then this
+   indicates gitserver is under heavy load and likely the bottleneck.
+
+Solution: set `USE_ENHANCED_LANGUAGE_DETECTION=false` in the Sourcegraph runtime
+environment.
+
+## General scenarios
 
 This section contains a list of scenarios, each of which contains instructions that include
 [actions](#actions) that are appropriate to the scenario. Note that more than one scenario may apply
@@ -142,7 +160,7 @@ If your users are experiencing search timeouts or search performance issues, ple
 
 This section contains various actions that can be taken to collect information or update Sourcegraph
 in order to resolve an error or performance issue. You should typically not read this section
-directly, but start with the [Scenarios](#scenarios) section to determine which actions are
+directly, but start with the [General scenarios](#general-scenarios) section to determine which actions are
 appropriate.
 
 ### Check browser console
