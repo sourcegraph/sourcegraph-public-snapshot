@@ -46,7 +46,7 @@ export const CampaignActionsBar: React.FunctionComponent<Props> = ({
     let stateBadge: JSX.Element
 
     if (!campaign) {
-        stateBadge = <CampaignsIcon className="icon-inline text-muted" style={{ fontSize: '0.875rem' }} />
+        stateBadge = <CampaignsIcon className="icon-inline campaign-actions-bar__campaign-icon text-muted mr-2" />
     } else if (campaign.closedAt) {
         stateBadge = (
             <span className="badge badge-danger mr-2">

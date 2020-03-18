@@ -65,12 +65,7 @@ Array [
         className="m-0"
       >
         <CampaignsIcon
-          className="icon-inline text-muted"
-          style={
-            Object {
-              "fontSize": "0.875rem",
-            }
-          }
+          className="icon-inline campaign-actions-bar__campaign-icon text-muted mr-2"
         />
         <span>
           <a
