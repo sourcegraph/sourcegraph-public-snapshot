@@ -192,7 +192,7 @@ func (c *Client) Hover(ctx context.Context, args *struct {
 	query.SetInt("uploadId", int64(args.UploadID))
 
 	req := &lsifRequest{
-		path:       fmt.Sprintf("/hover"),
+		path:       "/hover",
 		query:      query,
 		routingKey: fmt.Sprintf("%d:%s", args.RepoID, args.Commit),
 	}

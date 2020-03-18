@@ -103,8 +103,6 @@ func (s *Service) CreateCampaignPlanFromPatches(ctx context.Context, patches []c
 			BaseRef:        patch.BaseRef,
 			Rev:            patch.BaseRevision,
 			Diff:           patch.Patch,
-			StartedAt:      s.clock(),
-			FinishedAt:     s.clock(),
 		}
 		if err := store.CreateCampaignJob(ctx, job); err != nil {
 			return nil, err
@@ -136,22 +134,35 @@ func (s *Service) CreateCampaign(ctx context.Context, c *campaigns.Campaign, dra
 	}
 	defer tx.Done(&err)
 
+	if c.CampaignPlanID != 0 {
+		_, err := tx.GetCampaign(ctx, GetCampaignOpts{CampaignPlanID: c.CampaignPlanID})
+		if err != nil && err != ErrNoResults {
+			return err
+		}
+		if err != ErrNoResults {
+			err = ErrCampaignPlanDuplicate
+			return err
+		}
+	}
+
 	c.CreatedAt = s.clock()
 	c.UpdatedAt = c.CreatedAt
 
-	if err := tx.CreateCampaign(ctx, c); err != nil {
+	if err = tx.CreateCampaign(ctx, c); err != nil {
 		return err
 	}
 
 	if c.CampaignPlanID != 0 && c.Branch == "" {
-		return ErrCampaignBranchBlank
+		err = ErrCampaignBranchBlank
+		return err
 	}
 
 	if c.CampaignPlanID == 0 || draft {
 		return nil
 	}
 
-	return s.createChangesetJobsWithStore(ctx, tx, c)
+	err = s.createChangesetJobsWithStore(ctx, tx, c)
+	return err
 }
 
 // ErrNoCampaignJobs is returned by CreateCampaign or UpdateCampaign if a
@@ -167,7 +178,6 @@ func (s *Service) createChangesetJobsWithStore(ctx context.Context, store *Store
 	jobs, _, err := store.ListCampaignJobs(ctx, ListCampaignJobsOpts{
 		CampaignPlanID:            c.CampaignPlanID,
 		Limit:                     -1,
-		OnlyFinished:              true,
 		OnlyWithDiff:              true,
 		OnlyUnpublishedInCampaign: c.ID,
 	})
@@ -353,14 +363,9 @@ func RunChangesetJob(
 		baseRef = campaignJob.BaseRef
 	}
 
-	body := c.Description
-	if campaignJob.Description != "" {
-		body += "\n\n---\n\n" + campaignJob.Description
-	}
-
 	cs := repos.Changeset{
 		Title:   c.Name,
-		Body:    body,
+		Body:    c.Description,
 		BaseRef: baseRef,
 		HeadRef: git.EnsureRefPrefix(ref),
 		Repo:    repo,
@@ -422,7 +427,10 @@ func RunChangesetJob(
 			return err
 		}
 	}
-
+	// the events don't have the changesetID yet, because it's not known at the point of cloning
+	for _, e := range events {
+		e.ChangesetID = clone.ID
+	}
 	if err := store.UpsertChangesetEvents(ctx, events...); err != nil {
 		log15.Error("UpsertChangesetEvents", "err", err)
 		return err
@@ -612,12 +620,7 @@ func (s *Service) DeleteCampaign(ctx context.Context, id int64, closeChangesets 
 // CloseOpenChangesets closes the given Changesets on their respective codehosts and syncs them.
 func (s *Service) CloseOpenChangesets(ctx context.Context, cs []*campaigns.Changeset) (err error) {
 	cs = selectChangesets(cs, func(c *campaigns.Changeset) bool {
-		s, err := c.State()
-		if err != nil {
-			log15.Warn("could not determine changeset state", "err", err)
-			return false
-		}
-		return s == campaigns.ChangesetStateOpen
+		return c.ExternalState == campaigns.ChangesetStateOpen
 	})
 
 	if len(cs) == 0 {
@@ -733,6 +736,10 @@ var ErrCampaignBranchBlank = errors.New("Campaign branch cannot be blank")
 // attempt to change the branch of a published campaign with a plan (or a campaign with individually published changesets).
 var ErrPublishedCampaignBranchChange = errors.New("Published campaign branch cannot be changed")
 
+// ErrCampaignPlanDuplicate is return by CreateCampaign or UpdateCampaign if the specified campaign plan
+// is already attached to another campaign.
+var ErrCampaignPlanDuplicate = errors.New("Campaign cannot use the same plan as another campaign")
+
 // UpdateCampaign updates the Campaign with the given arguments.
 func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (campaign *campaigns.Campaign, detachedChangesets []*campaigns.Changeset, err error) {
 	traceTitle := fmt.Sprintf("campaign: %d", args.Campaign)
@@ -772,6 +779,15 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 
 	oldPlanID := campaign.CampaignPlanID
 	if args.Plan != nil && oldPlanID != *args.Plan {
+		// Check there is no other campaign attached to the args.Plan.
+		_, err = tx.GetCampaign(ctx, GetCampaignOpts{CampaignPlanID: *args.Plan})
+		if err != nil && err != ErrNoResults {
+			return nil, nil, err
+		}
+		if err != ErrNoResults {
+			return nil, nil, ErrCampaignPlanDuplicate
+		}
+
 		campaign.CampaignPlanID = *args.Plan
 		updatePlanID = true
 	}
@@ -937,12 +953,10 @@ func computeCampaignUpdateDiff(
 		return nil, errors.Wrap(err, "listing changesets")
 	}
 
-	// We need OnlyFinished and OnlyWithDiff because we don't create
-	// ChangesetJobs for others.
+	// We need OnlyWithDiff because we don't create ChangesetJobs for others.
 	campaignJobs, _, err := tx.ListCampaignJobs(ctx, ListCampaignJobsOpts{
 		CampaignPlanID: oldPlanID,
 		Limit:          -1,
-		OnlyFinished:   true,
 		OnlyWithDiff:   true,
 	})
 	if err != nil {
@@ -952,7 +966,6 @@ func computeCampaignUpdateDiff(
 	newCampaignJobs, _, err := tx.ListCampaignJobs(ctx, ListCampaignJobsOpts{
 		CampaignPlanID: campaign.CampaignPlanID,
 		Limit:          -1,
-		OnlyFinished:   true,
 		OnlyWithDiff:   true,
 	})
 	if err != nil {
@@ -1004,12 +1017,7 @@ func computeCampaignUpdateDiff(
 			// .. but if we already have a Changeset and that is merged, we
 			// don't want to update it...
 			if group.changeset != nil {
-				// TODO: This needs to change based on the outcome of this:
-				// https://github.com/sourcegraph/sourcegraph/pull/8848#discussion_r389000197
-				s, err := group.changeset.State()
-				if err != nil {
-					return nil, errors.Wrap(err, "determining a changeset's state")
-				}
+				s := group.changeset.ExternalState
 				if s == campaigns.ChangesetStateMerged || s == campaigns.ChangesetStateClosed {
 					// Note: in the future we want to create a new ChangesetJob here.
 					continue
@@ -1033,8 +1041,7 @@ func computeCampaignUpdateDiff(
 func campaignJobsDiffer(a, b *campaigns.CampaignJob) bool {
 	return a.Diff != b.Diff ||
 		a.Rev != b.Rev ||
-		a.BaseRef != b.BaseRef ||
-		a.Description != b.Description
+		a.BaseRef != b.BaseRef
 }
 
 func selectChangesets(cs []*campaigns.Changeset, predicate func(*campaigns.Changeset) bool) []*campaigns.Changeset {

@@ -202,6 +202,10 @@ type ExternalAccountsListOptions struct {
 }
 
 func (s *userExternalAccounts) List(ctx context.Context, opt ExternalAccountsListOptions) (acct []*extsvc.ExternalAccount, err error) {
+	if Mocks.ExternalAccounts.List != nil {
+		return Mocks.ExternalAccounts.List(opt)
+	}
+
 	tr, ctx := trace.New(ctx, "userExternalAccounts.List", "")
 	defer func() {
 		if err != nil {
@@ -215,10 +219,6 @@ func (s *userExternalAccounts) List(ctx context.Context, opt ExternalAccountsLis
 
 		tr.Finish()
 	}()
-
-	if Mocks.ExternalAccounts.List != nil {
-		return Mocks.ExternalAccounts.List(opt)
-	}
 
 	conds := s.listSQL(opt)
 	return s.listBySQL(ctx, sqlf.Sprintf("WHERE %s ORDER BY id ASC %s", sqlf.Join(conds, "AND"), opt.LimitOffset.SQL()))

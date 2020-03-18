@@ -205,8 +205,8 @@ func (r *changesetResolver) Body() (string, error) {
 	return r.Changeset.Body()
 }
 
-func (r *changesetResolver) State() (campaigns.ChangesetState, error) {
-	return r.Changeset.State()
+func (r *changesetResolver) State() campaigns.ChangesetState {
+	return r.ExternalState
 }
 
 func (r *changesetResolver) ExternalURL() (*externallink.Resolver, error) {
@@ -217,25 +217,12 @@ func (r *changesetResolver) ExternalURL() (*externallink.Resolver, error) {
 	return externallink.NewResolver(url, r.Changeset.ExternalServiceType), nil
 }
 
-func (r *changesetResolver) ReviewState(ctx context.Context) (campaigns.ChangesetReviewState, error) {
-	es, err := r.computeEvents(ctx)
-	if err != nil {
-		return campaigns.ChangesetReviewStatePending, err
-	}
-
-	// Make a copy of events so that we can safely sort it
-	events := make(campaigns.ChangesetEvents, len(es))
-	copy(events, es)
-	sort.Sort(events)
-	return events.ReviewState()
+func (r *changesetResolver) ReviewState(ctx context.Context) campaigns.ChangesetReviewState {
+	return r.ExternalReviewState
 }
 
 func (r *changesetResolver) CheckState(ctx context.Context) (*campaigns.ChangesetCheckState, error) {
-	events, err := r.computeEvents(ctx)
-	if err != nil {
-		return nil, err
-	}
-	state := campaigns.ComputeCheckState(r.Changeset, events)
+	state := r.ExternalCheckState
 	if state == campaigns.ChangesetCheckStateUnknown {
 		return nil, nil
 	}
@@ -257,6 +244,9 @@ func (r *changesetResolver) Labels(ctx context.Context) ([]graphqlbackend.Change
 	// have come in via webhooks
 	events := campaigns.ChangesetEvents(es)
 	labels := events.UpdateLabelsSince(r.Changeset)
+	sort.Slice(labels, func(i, j int) bool {
+		return labels[i].Name < labels[j].Name
+	})
 	resolvers := make([]graphqlbackend.ChangesetLabelResolver, 0, len(labels))
 	for _, l := range labels {
 		resolvers = append(resolvers, &changesetLabelResolver{label: l})
@@ -280,14 +270,9 @@ func (r *changesetResolver) Events(ctx context.Context, args *struct {
 }
 
 func (r *changesetResolver) Diff(ctx context.Context) (*graphqlbackend.RepositoryComparisonResolver, error) {
-	s, err := r.Changeset.State()
-	if err != nil {
-		return nil, err
-	}
-
 	// Only return diffs for open changesets, otherwise we can't guarantee that
 	// we have the refs on gitserver
-	if s != campaigns.ChangesetStateOpen {
+	if r.ExternalState != campaigns.ChangesetStateOpen {
 		return nil, nil
 	}
 

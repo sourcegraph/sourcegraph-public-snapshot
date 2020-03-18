@@ -309,10 +309,12 @@ func (s *updateScheduler) UpdateOnce(id api.RepoID, name api.RepoName, url strin
 // DebugDump returns the state of the update scheduler for debugging.
 func (s *updateScheduler) DebugDump() interface{} {
 	data := struct {
+		Name        string
 		UpdateQueue []*repoUpdate
 		Schedule    []*scheduledRepoUpdate
 		SourceRepos map[string][]configuredRepo2
 	}{
+		Name:        "repos",
 		SourceRepos: map[string][]configuredRepo2{},
 	}
 

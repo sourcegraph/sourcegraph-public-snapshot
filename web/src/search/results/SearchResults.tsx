@@ -124,8 +124,8 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                             caseSensitive: boolean
                         } => !!queryAndPatternTypeAndCase.query && !!queryAndPatternTypeAndCase.patternType
                     ),
-                    tap(({ query }) => {
-                        const query_data = queryTelemetryData(query)
+                    tap(({ query, caseSensitive }) => {
+                        const query_data = queryTelemetryData(query, caseSensitive)
                         this.props.telemetryService.log('SearchResultsQueried', {
                             code_search: { query_data },
                             ...(this.props.splitSearchModes

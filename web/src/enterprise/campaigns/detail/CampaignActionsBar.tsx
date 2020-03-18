@@ -42,6 +42,9 @@ export const CampaignActionsBar: React.FunctionComponent<Props> = ({
     const openChangesetsCount =
         campaign?.changesets.nodes.filter(changeset => changeset.state === GQL.ChangesetState.OPEN).length ?? 0
 
+    const newCampaignHeader = previewingCampaignPlan ? 'New campaign' : 'New manual campaign'
+    const header = campaign?.name ?? newCampaignHeader
+
     return (
         <div className="d-flex mb-2">
             <h2 className="m-0">
@@ -55,7 +58,7 @@ export const CampaignActionsBar: React.FunctionComponent<Props> = ({
                     <Link to="/campaigns">Campaigns</Link>
                 </span>
                 <span className="text-muted d-inline-block mx-2">/</span>
-                <span>{campaign?.name ?? 'New manual campaign'}</span>
+                <span>{header}</span>
                 {campaign && !campaign.publishedAt && <DraftBadge className="ml-2" />}
             </h2>
             <span className="flex-grow-1 d-flex justify-content-end align-items-center">

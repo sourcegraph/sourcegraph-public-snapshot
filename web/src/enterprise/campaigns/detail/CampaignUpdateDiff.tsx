@@ -38,6 +38,69 @@ interface Props extends ThemeProps {
     ) => Observable<GQL.IChangesetPlanConnection>
 }
 
+export type ChangesetArray = (GQL.IExternalChangeset | GQL.IChangesetPlan)[]
+
+export interface CampaignDiff {
+    added: ChangesetArray
+    changed: ChangesetArray
+    /**
+     * Unmodified are all changesets, that need to be updated via gitserver.
+     * Changing the campaign description will technically update them,
+     * but they will still show up as "unmodified" to reduce confusion
+     */
+    unmodified: ChangesetArray
+    deleted: ChangesetArray
+}
+
+export function calculateChangesetDiff(changesets: ChangesetArray, changesetPlans: GQL.IChangesetPlan[]): CampaignDiff {
+    const added: ChangesetArray = []
+    const changed: ChangesetArray = []
+    const unmodified: ChangesetArray = []
+    const deleted: ChangesetArray = []
+
+    const changesetsByRepoId = new Map<string, GQL.IExternalChangeset | GQL.IChangesetPlan>()
+    for (const changeset of changesets) {
+        changesetsByRepoId.set(changeset.repository.id, changeset)
+    }
+    for (const changesetPlan of changesetPlans) {
+        const key = changesetPlan.repository.id
+        const existingChangeset = changesetsByRepoId.get(key)
+        // if no matching changeset exists yet, it is a new changeset to the campaign
+        if (!existingChangeset) {
+            added.push(changesetPlan)
+            continue
+        }
+        changesetsByRepoId.delete(key)
+        // if the matching changeset has not been published yet, or the existing changeset is still open, it will be updated
+        if (
+            existingChangeset.__typename === 'ChangesetPlan' ||
+            ![GQL.ChangesetState.MERGED, GQL.ChangesetState.CLOSED].includes(existingChangeset.state)
+        ) {
+            changed.push(changesetPlan)
+            continue
+        }
+        unmodified.push(existingChangeset)
+    }
+    for (const changeset of changesetsByRepoId.values()) {
+        if (changeset.__typename === 'ChangesetPlan') {
+            // don't mention any preexisting changesetplans that don't apply anymore
+            continue
+        }
+        if ([GQL.ChangesetState.MERGED, GQL.ChangesetState.CLOSED].includes(changeset.state)) {
+            unmodified.push(changeset)
+        } else {
+            deleted.push(changeset)
+        }
+    }
+
+    return {
+        added,
+        changed,
+        unmodified,
+        deleted,
+    }
+}
+
 /**
  * A list of a campaign's changesets changed over a new plan
  */
@@ -63,23 +126,13 @@ export const CampaignUpdateDiff: React.FunctionComponent<Props> = ({
     )
     if (queriedChangesets) {
         const [changesets, changesetPlans] = queriedChangesets
-        const changed = changesetPlans.nodes.filter(changesetPlan =>
-            changesets.nodes.some(changeset => changeset.repository.id === changesetPlan.repository.id)
-        )
-        const added = changesetPlans.nodes.filter(
-            changesetPlan =>
-                !changesets.nodes.some(changeset => changeset.repository.id === changesetPlan.repository.id)
-        )
-        const deleted = changesets.nodes.filter(
-            changeset =>
-                changeset.__typename === 'ExternalChangeset' &&
-                !changesetPlans.nodes.some(changesetPlan => changesetPlan.repository.id === changeset.repository.id)
-        )
+        const { added, changed, unmodified, deleted } = calculateChangesetDiff(changesets.nodes, changesetPlans.nodes)
+
         const newDraftCount = !campaign.publishedAt
             ? changed.length - (campaign.changesets.totalCount - deleted.length) + added.length
             : 0
         return (
-            <>
+            <div className={className}>
                 <h3 className="mt-3">Preview of changes</h3>
                 Campaign currently has {campaign.changesets.totalCount + campaign.changesetPlans.totalCount}{' '}
                 {pluralize('changeset', campaign.changesets.totalCount + campaign.changesetPlans.totalCount)} (
@@ -88,12 +141,11 @@ export const CampaignUpdateDiff: React.FunctionComponent<Props> = ({
                 {campaignPlan.changesetPlans.totalCount}{' '}
                 {pluralize('changeset', campaignPlan.changesetPlans.totalCount)} (
                 {campaign.publishedAt
-                    ? changed.length - deleted.length + added.length
+                    ? unmodified.length + changed.length - deleted.length + added.length
                     : campaign.changesets.totalCount - deleted.length}{' '}
                 published, {newDraftCount} {pluralize('draft', newDraftCount)}):
                 <TabsWithLocalStorageViewStatePersistence
                     storageKey="campaignUpdateDiffTabs"
-                    className={classNames(className)}
                     tabs={[
                         {
                             id: 'added',
@@ -110,6 +162,15 @@ export const CampaignUpdateDiff: React.FunctionComponent<Props> = ({
                                 <span>
                                     To be updated{' '}
                                     <span className="badge badge-secondary badge-pill">{changed.length}</span>
+                                </span>
+                            ),
+                        },
+                        {
+                            id: 'unmodified',
+                            label: (
+                                <span>
+                                    Unmodified{' '}
+                                    <span className="badge badge-secondary badge-pill">{unmodified.length}</span>
                                 </span>
                             ),
                         },
@@ -151,6 +212,19 @@ export const CampaignUpdateDiff: React.FunctionComponent<Props> = ({
                         ))}
                         {changed.length === 0 && <span className="text-muted">No changesets</span>}
                     </div>
+                    <div key="unmodified" className="pt-3">
+                        {unmodified.map(changeset => (
+                            <ChangesetNode
+                                enablePublishing={false}
+                                history={history}
+                                location={location}
+                                node={changeset}
+                                isLightTheme={isLightTheme}
+                                key={changeset.id}
+                            />
+                        ))}
+                        {changed.length === 0 && <span className="text-muted">No changesets</span>}
+                    </div>
                     <div key="deleted" className="pt-3">
                         {deleted.map(changeset => (
                             <ChangesetNode
@@ -169,12 +243,12 @@ export const CampaignUpdateDiff: React.FunctionComponent<Props> = ({
                     <AlertCircleIcon className="icon-inline" /> You are updating an existing campaign. By clicking
                     'Update', all already published changesets will be updated on the codehost.
                 </div>
-            </>
+            </div>
         )
     }
     return (
-        <span>
+        <p>
             <LoadingSpinner className={classNames('icon-inline', className)} /> Loading diff
-        </span>
+        </p>
     )
 }

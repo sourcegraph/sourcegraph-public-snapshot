@@ -12,6 +12,7 @@
    "fromRef": {
     "id": "refs/heads/release-testing-pr",
     "repository": {
+     "id": 2,
      "slug": "vegeta",
      "project": {
       "key": "SOUR"
@@ -21,6 +22,7 @@
    "toRef": {
     "id": "refs/heads/master",
     "repository": {
+     "id": 2,
      "slug": "vegeta",
      "project": {
       "key": "SOUR"
@@ -401,6 +403,7 @@
    "fromRef": {
     "id": "refs/heads/encode-comment",
     "repository": {
+     "id": 2,
      "slug": "vegeta",
      "project": {
       "key": "SOUR"
@@ -410,6 +413,7 @@
    "toRef": {
     "id": "refs/heads/master",
     "repository": {
+     "id": 2,
      "slug": "vegeta",
      "project": {
       "key": "SOUR"

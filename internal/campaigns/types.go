@@ -74,13 +74,7 @@ type CampaignJob struct {
 	Rev     api.CommitID
 	BaseRef string
 
-	Diff        string
-	Description string
-
-	StartedAt  time.Time
-	FinishedAt time.Time
-
-	Error string
+	Diff string
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
@@ -351,7 +345,7 @@ func (c *Changeset) SetDerivedState(es []*ChangesetEvent) {
 	} else {
 		c.ExternalState = state
 	}
-	if state, err := events.ReviewState(); err != nil {
+	if state, err := ComputeReviewState(c, events); err != nil {
 		log15.Warn("Computing changeset review state", "err", err)
 	} else {
 		c.ExternalReviewState = state
@@ -419,8 +413,9 @@ func (c *Changeset) IsDeleted() bool {
 	return !c.ExternalDeletedAt.IsZero()
 }
 
-// State of a Changeset.
-func (c *Changeset) State() (s ChangesetState, err error) {
+// state of a Changeset based on the metadata.
+// It does NOT reflect the final calculated state, use `ExternalState` instead.
+func (c *Changeset) state() (s ChangesetState, err error) {
 	if !c.ExternalDeletedAt.IsZero() {
 		return ChangesetStateDeleted, nil
 	}
@@ -492,7 +487,7 @@ func (c *Changeset) Events() (events []*ChangesetEvent) {
 			events = append(events, &ChangesetEvent{
 				ChangesetID: c.ID,
 				Key:         a.Key(),
-				Kind:        ChangesetEventKindFor(&a),
+				Kind:        ChangesetEventKindFor(a),
 				Metadata:    a,
 			})
 		}
@@ -571,6 +566,37 @@ func (c *Changeset) Labels() []ChangesetLabel {
 	}
 }
 
+// reviewState of a Changeset. GitHub doesn't keep the review state on a
+// changeset, so a GitHub Changeset will always return
+// ChangesetReviewStatePending.
+// This method should not be called directly. Use ComputeReviewState instead.
+func (c *Changeset) reviewState() (s ChangesetReviewState, err error) {
+	states := map[ChangesetReviewState]bool{}
+
+	switch m := c.Metadata.(type) {
+	case *github.PullRequest:
+		// For GitHub we need to use `ChangesetEvents.ReviewState`
+		log15.Warn("Changeset.ReviewState() called, but GitHub review state is calculated through ChangesetEvents.ReviewState", "changeset", c)
+		return ChangesetReviewStatePending, nil
+
+	case *bitbucketserver.PullRequest:
+		for _, r := range m.Reviewers {
+			switch r.Status {
+			case "UNAPPROVED":
+				states[ChangesetReviewStatePending] = true
+			case "NEEDS_WORK":
+				states[ChangesetReviewStateChangesRequested] = true
+			case "APPROVED":
+				states[ChangesetReviewStateApproved] = true
+			}
+		}
+	default:
+		return "", errors.New("unknown changeset type")
+	}
+
+	return SelectReviewState(states), nil
+}
+
 // SelectReviewState computes the single review state for a given set of
 // ChangesetReviewStates. Since a pull request, for example, can have multiple
 // reviews with different states, we need a function to determine what the
@@ -620,9 +646,10 @@ func (ce ChangesetEvents) Less(i, j int) bool {
 	return ce[i].Timestamp().Before(ce[j].Timestamp())
 }
 
-// ReviewState returns the overall review state of the review events in the
-// slice
-func (ce ChangesetEvents) ReviewState() (ChangesetReviewState, error) {
+// reviewState returns the overall review state of the review events in the
+// slice.
+// It should only be called by ComputeChangesetReviewState.
+func (ce ChangesetEvents) reviewState() (ChangesetReviewState, error) {
 	reviewsByAuthor := map[string]ChangesetReviewState{}
 
 	for _, e := range ce {
@@ -685,17 +712,39 @@ func ComputeCheckState(c *Changeset, events ChangesetEvents) ChangesetCheckState
 	return ChangesetCheckStateUnknown
 }
 
-// ComputeChangesetState computes the overall check state for the changeset and its
+// ComputeChangesetState computes the overall state for the changeset and its
 // associated events. The events should be presorted.
 func ComputeChangesetState(c *Changeset, events ChangesetEvents) (ChangesetState, error) {
 	if len(events) == 0 {
-		return c.State()
+		return c.state()
 	}
 	newestEvent := events[len(events)-1]
 	if c.UpdatedAt.After(newestEvent.Timestamp()) {
-		return c.State()
+		return c.state()
 	}
 	return events.State(), nil
+}
+
+// ComputeReviewState computes the review state for the changeset and its
+// associated events. The events should be presorted.
+func ComputeReviewState(c *Changeset, events ChangesetEvents) (ChangesetReviewState, error) {
+	if len(events) == 0 {
+		return c.reviewState()
+	}
+
+	// GitHub only stores the ReviewState in events, we can't look at the
+	// Changeset.
+	if c.ExternalServiceType == github.ServiceType {
+		return events.reviewState()
+	}
+
+	// For other codehosts we check whether the Changeset is newer or the
+	// events and use the newest entity to get the reviewstate.
+	newestEvent := events[len(events)-1]
+	if c.UpdatedAt.After(newestEvent.Timestamp()) {
+		return c.reviewState()
+	}
+	return events.reviewState()
 }
 
 func computeBitbucketBuildStatus(pr *bitbucketserver.PullRequest) ChangesetCheckState {
@@ -738,6 +787,12 @@ func computeGitHubCheckState(lastSynced time.Time, pr *github.PullRequest, event
 			statusPerContext[c.Context] = parseGithubCheckState(c.State)
 		}
 		for _, c := range commit.Commit.CheckSuites.Nodes {
+			if c.Status == "QUEUED" && len(c.CheckRuns.Nodes) == 0 {
+				// Ignore queued suites with no runs.
+				// It is common for suites to be created and then stay in the QUEUED state
+				// forever with zero runs.
+				continue
+			}
 			statusPerCheckSuite[c.ID] = parseGithubCheckSuiteState(c.Status, c.Conclusion)
 			for _, r := range c.CheckRuns.Nodes {
 				statusPerCheckRun[r.ID] = parseGithubCheckSuiteState(r.Status, r.Conclusion)
@@ -763,6 +818,11 @@ func computeGitHubCheckState(lastSynced time.Time, pr *github.PullRequest, event
 				}
 			}
 		case *github.CheckSuite:
+			if m.Status == "QUEUED" && len(m.CheckRuns.Nodes) == 0 {
+				// Ignore suites with no runs.
+				// See previous comment.
+				continue
+			}
 			if m.ReceivedAt.After(lastSynced) {
 				statusPerCheckSuite[m.ID] = parseGithubCheckSuiteState(m.Status, m.Conclusion)
 			}
@@ -977,6 +1037,8 @@ func (e *ChangesetEvent) ReviewState() (ChangesetReviewState, error) {
 	case ChangesetEventKindBitbucketServerApproved:
 		return ChangesetReviewStateApproved, nil
 
+	// BitbucketServer's "REVIEWED" activity is created when someone clicks
+	// the "Needs work" button in the UI, which is why we map it to "Changes Requested"
 	case ChangesetEventKindBitbucketServerReviewed:
 		return ChangesetReviewStateChangesRequested, nil
 
@@ -994,7 +1056,8 @@ func (e *ChangesetEvent) ReviewState() (ChangesetReviewState, error) {
 		}
 		return s, nil
 
-	case ChangesetEventKindGitHubReviewDismissed:
+	case ChangesetEventKindGitHubReviewDismissed,
+		ChangesetEventKindBitbucketServerUnapproved:
 		return ChangesetReviewStateDismissed, nil
 
 	default:

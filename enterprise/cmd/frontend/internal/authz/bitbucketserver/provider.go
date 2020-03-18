@@ -4,8 +4,11 @@ package bitbucketserver
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/api"
 
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
@@ -138,25 +141,12 @@ func (p *Provider) UpdatePermissions(ctx context.Context, u *types.User) error {
 // all the repos the user with the given userName is authorized to
 // see.
 func (p *Provider) update(userName string) PermissionsUpdateFunc {
-	if p.pluginPerm {
-		return func(ctx context.Context) ([]uint32, *extsvc.CodeHost, error) {
-			ids, err := p.repoIDs(ctx, userName)
-			return ids, p.codeHost, err
-		}
-	}
-
 	return func(ctx context.Context) ([]uint32, *extsvc.CodeHost, error) {
-		visible, err := p.repos(ctx, userName)
+		visible, err := p.repoIDs(ctx, userName, true)
 		if err != nil && err != errNoResults {
 			return nil, p.codeHost, err
 		}
-
-		ids := make([]uint32, 0, len(visible))
-		for _, r := range visible {
-			ids = append(ids, uint32(r.ID))
-		}
-
-		return ids, p.codeHost, nil
+		return visible, p.codeHost, nil
 	}
 }
 
@@ -203,11 +193,80 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*exts
 	}, nil
 }
 
+// FetchUserPerms returns a list of repository IDs (on code host) that the given account
+// has read access on the code host. The repository ID has the same value as it would be
+// used as api.ExternalRepoSpec.ID. The returned list only includes private repository IDs.
+//
+// This method may return partial but valid results in case of error, and it is up to
+// callers to decide whether to discard.
+//
+// API docs: https://docs.atlassian.com/bitbucket-server/rest/5.16.0/bitbucket-rest.html#idm8296923984
+func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.ExternalAccount) ([]extsvc.ExternalRepoID, error) {
+	switch {
+	case account == nil:
+		return nil, errors.New("no account provided")
+	case account.AccountData == nil:
+		return nil, errors.New("no account data provided")
+	case !extsvc.IsHostOfAccount(p.codeHost, account):
+		return nil, fmt.Errorf("not a code host of the account: want %s but have %s",
+			p.codeHost.ServiceID, account.ExternalAccountSpec.ServiceID)
+	}
+
+	var user bitbucketserver.User
+	if err := json.Unmarshal(*account.AccountData, &user); err != nil {
+		return nil, errors.Wrap(err, "unmarshaling account data")
+	}
+
+	ids, err := p.repoIDs(ctx, user.Name, false)
+
+	extIDs := make([]extsvc.ExternalRepoID, 0, len(ids))
+	for _, id := range ids {
+		extIDs = append(extIDs, extsvc.ExternalRepoID(strconv.FormatUint(uint64(id), 10)))
+	}
+
+	return extIDs, err
+}
+
+// FetchRepoPerms returns a list of user IDs (on code host) who have read access to
+// the given repo on the code host. The user ID has the same value as it would
+// be used as extsvc.ExternalAccount.AccountID. The returned list includes both
+// direct access and inherited from the group membership.
+//
+// This method may return partial but valid results in case of error, and it is up to
+// callers to decide whether to discard.
+//
+// API docs: https://docs.atlassian.com/bitbucket-server/rest/5.16.0/bitbucket-rest.html#idm8283203728
+func (p *Provider) FetchRepoPerms(ctx context.Context, repo *api.ExternalRepoSpec) ([]extsvc.ExternalAccountID, error) {
+	switch {
+	case repo == nil:
+		return nil, errors.New("no repo provided")
+	case !extsvc.IsHostOfRepo(p.codeHost, repo):
+		return nil, fmt.Errorf("not a code host of the repo: want %s but have %s",
+			p.codeHost.ServiceID, repo.ServiceID)
+	}
+
+	ids, err := p.userIDs(ctx, repo.ID)
+
+	extIDs := make([]extsvc.ExternalAccountID, 0, len(ids))
+	for _, id := range ids {
+		extIDs = append(extIDs, extsvc.ExternalAccountID(strconv.FormatInt(int64(id), 10)))
+	}
+
+	return extIDs, err
+}
+
 var errNoResults = errors.New("no results returned by the Bitbucket Server API")
 
-// repos returns all repositories for which the given user has the permission to read from
+func (p *Provider) repoIDs(ctx context.Context, username string, public bool) ([]uint32, error) {
+	if p.pluginPerm {
+		return p.repoIDsFromPlugin(ctx, username)
+	}
+	return p.repoIDsFromAPI(ctx, username, public)
+}
+
+// repoIDsFromAPI returns all repositories for which the given user has the permission to read from
 // the Bitbucket Server API. when no username is given, only public repos are returned.
-func (p *Provider) repos(ctx context.Context, username string) (all []*bitbucketserver.Repo, err error) {
+func (p *Provider) repoIDsFromAPI(ctx context.Context, username string, public bool) (ids []uint32, err error) {
 	t := &bitbucketserver.PageToken{Limit: p.pageSize}
 	c := p.client
 
@@ -216,25 +275,31 @@ func (p *Provider) repos(ctx context.Context, username string) (all []*bitbucket
 		filters = append(filters, "?visibility=public")
 	} else if c, err = c.Sudo(username); err != nil {
 		return nil, err
+	} else if !public {
+		filters = append(filters, "?visibility=private")
 	}
 
 	for t.HasMore() {
 		repos, next, err := c.Repos(ctx, t, filters...)
 		if err != nil {
-			return nil, err
+			return ids, err
 		}
-		all = append(all, repos...)
+
+		for _, r := range repos {
+			ids = append(ids, uint32(r.ID))
+		}
+
 		t = next
 	}
 
-	if len(all) == 0 {
-		err = errNoResults
+	if len(ids) == 0 {
+		return nil, errNoResults
 	}
 
-	return all, err
+	return ids, nil
 }
 
-func (p *Provider) repoIDs(ctx context.Context, username string) (ids []uint32, err error) {
+func (p *Provider) repoIDsFromPlugin(ctx context.Context, username string) (ids []uint32, err error) {
 	c, err := p.client.Sudo(username)
 	if err != nil {
 		return nil, err
@@ -262,4 +327,27 @@ func (p *Provider) user(ctx context.Context, username string, fs ...bitbucketser
 	}
 
 	return nil, errNoResults
+}
+
+func (p *Provider) userIDs(ctx context.Context, repoID string) (ids []int, err error) {
+	t := &bitbucketserver.PageToken{Limit: p.pageSize}
+	f := bitbucketserver.UserFilter{Permission: bitbucketserver.PermissionFilter{
+		Root:         "REPO_READ",
+		RepositoryID: repoID,
+	}}
+
+	for t.HasMore() {
+		users, next, err := p.client.Users(ctx, t, f)
+		if err != nil {
+			return ids, err
+		}
+
+		for _, u := range users {
+			ids = append(ids, u.ID)
+		}
+
+		t = next
+	}
+
+	return ids, nil
 }

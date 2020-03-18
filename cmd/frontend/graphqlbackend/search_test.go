@@ -344,6 +344,38 @@ func Test_detectSearchType(t *testing.T) {
 	}
 }
 
+func Test_exactlyOneRepo(t *testing.T) {
+	cases := []struct {
+		repoFilters []string
+		want        bool
+	}{
+		{
+			repoFilters: []string{`^github\.com/sourcegraph/zoekt$`},
+			want:        true,
+		},
+		{
+			repoFilters: []string{`^.*$`},
+			want:        false,
+		},
+
+		{
+			repoFilters: []string{`^github\.com/sourcegraph/zoekt`},
+			want:        false,
+		},
+		{
+			repoFilters: []string{`^github\.com/sourcegraph/zoekt$`, `github\.com/sourcegraph/sourcegraph`},
+			want:        false,
+		},
+	}
+	for _, c := range cases {
+		t.Run("exactly one repo", func(t *testing.T) {
+			if got := exactlyOneRepo(c.repoFilters); got != c.want {
+				t.Errorf("got %t, want %t", got, c.want)
+			}
+		})
+	}
+}
+
 func Test_QuoteSuggestions(t *testing.T) {
 	t.Run("regex error", func(t *testing.T) {
 		raw := "*"

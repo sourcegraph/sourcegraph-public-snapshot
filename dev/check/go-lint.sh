@@ -18,4 +18,4 @@ go install -tags=dev -buildmode=archive ${pkgs}
 
 echo "--- lint"
 
-golangci-lint run -e unused ${pkgs}
+golangci-lint run ${pkgs}

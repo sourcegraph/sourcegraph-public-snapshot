@@ -141,6 +141,10 @@ type RetryActionJobArgs struct {
 	ActionJob graphql.ID
 }
 
+type SyncChangesetArgs struct {
+	Changeset graphql.ID
+}
+
 type CampaignsResolver interface {
 	CreateCampaign(ctx context.Context, args *CreateCampaignArgs) (CampaignResolver, error)
 	UpdateCampaign(ctx context.Context, args *UpdateCampaignArgs) (CampaignResolver, error)
@@ -151,6 +155,7 @@ type CampaignsResolver interface {
 	CloseCampaign(ctx context.Context, args *CloseCampaignArgs) (CampaignResolver, error)
 	PublishCampaign(ctx context.Context, args *PublishCampaignArgs) (CampaignResolver, error)
 	PublishChangeset(ctx context.Context, args *PublishChangesetArgs) (*EmptyResponse, error)
+	SyncChangeset(ctx context.Context, args *SyncChangesetArgs) (*EmptyResponse, error)
 
 	ActionByID(ctx context.Context, id graphql.ID) (ActionResolver, error)
 	ActionExecutionByID(ctx context.Context, id graphql.ID) (ActionExecutionResolver, error)
@@ -263,6 +268,10 @@ func (defaultCampaignsResolver) RetryActionJob(ctx context.Context, args *RetryA
 	return nil, campaignsOnlyInEnterprise
 }
 
+func (defaultCampaignsResolver) SyncChangeset(ctx context.Context, args *SyncChangesetArgs) (*EmptyResponse, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
 func (defaultCampaignsResolver) CreateChangesets(ctx context.Context, args *CreateChangesetsArgs) ([]ExternalChangesetResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
@@ -361,9 +370,9 @@ type ExternalChangesetResolver interface {
 	UpdatedAt() DateTime
 	Title() (string, error)
 	Body() (string, error)
-	State() (campaigns.ChangesetState, error)
+	State() campaigns.ChangesetState
 	ExternalURL() (*externallink.Resolver, error)
-	ReviewState(context.Context) (campaigns.ChangesetReviewState, error)
+	ReviewState(context.Context) campaigns.ChangesetReviewState
 	CheckState(context.Context) (*campaigns.ChangesetCheckState, error)
 	Repository(ctx context.Context) (*RepositoryResolver, error)
 	Campaigns(ctx context.Context, args *ListCampaignArgs) (CampaignsConnectionResolver, error)

@@ -46,6 +46,7 @@ var indexHTML = template.Must(template.New("").Parse(`<html>
 </html>`))
 
 func serve(logger *log.Logger, ln net.Listener, reposRoot string) (*http.Server, error) {
+	logger.Printf("serving git repositories from %s", reposRoot)
 	configureRepos(logger, reposRoot)
 
 	// Start the HTTP server.

@@ -1,18 +1,17 @@
 package authz
 
 import (
+	"container/heap"
 	"context"
 	"fmt"
 	"time"
 
 	"github.com/RoaringBitmap/roaring"
-	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"gopkg.in/inconshreveable/log15.v2"
 )
@@ -29,8 +28,6 @@ type PermsSyncer struct {
 	reposStore repos.Store
 	// The database interface for any permissions operations.
 	permsStore *edb.PermsStore
-	// TODO(jchen): Move all DB calls to authz.PermsStore and remove this field.
-	db dbutil.DB
 	// The mockable function to return the current time.
 	clock func() time.Time
 	// The time duration of how often to re-compute schedule for users and repositories.
@@ -65,14 +62,12 @@ type PermsFetcher interface {
 func NewPermsSyncer(
 	reposStore repos.Store,
 	permsStore *edb.PermsStore,
-	db dbutil.DB,
 	clock func() time.Time,
 ) *PermsSyncer {
 	return &PermsSyncer{
 		queue:            newRequestQueue(),
 		reposStore:       reposStore,
 		permsStore:       permsStore,
-		db:               db,
 		clock:            clock,
 		scheduleInterval: time.Minute,
 	}
@@ -106,10 +101,10 @@ func (s *PermsSyncer) scheduleUsers(ctx context.Context, users ...scheduledUser)
 		}
 
 		updated := s.queue.enqueue(&requestMeta{
-			priority:   users[i].Priority,
-			typ:        requestTypeUser,
-			id:         users[i].UserID,
-			nextSyncAt: users[i].NextSyncAt,
+			Priority:   users[i].Priority,
+			Type:       requestTypeUser,
+			ID:         users[i].UserID,
+			NextSyncAt: users[i].NextSyncAt,
 		})
 		log15.Debug("PermsSyncer.queue.enqueued", "userID", users[i].UserID, "updated", updated)
 	}
@@ -143,10 +138,10 @@ func (s *PermsSyncer) scheduleRepos(ctx context.Context, repos ...scheduledRepo)
 		}
 
 		updated := s.queue.enqueue(&requestMeta{
-			priority:   repos[i].Priority,
-			typ:        requestTypeRepo,
-			id:         int32(repos[i].RepoID),
-			nextSyncAt: repos[i].NextSyncAt,
+			Priority:   repos[i].Priority,
+			Type:       requestTypeRepo,
+			ID:         int32(repos[i].RepoID),
+			NextSyncAt: repos[i].NextSyncAt,
 		})
 		log15.Debug("PermsSyncer.queue.enqueued", "repoID", repos[i].RepoID, "updated", updated)
 	}
@@ -328,18 +323,18 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID) erro
 }
 
 // syncPerms processes the permissions syncing request and remove the request from
-// the quque once it is done (independent of success or failure).
+// the queue once it is done (independent of success or failure).
 func (s *PermsSyncer) syncPerms(ctx context.Context, request *syncRequest) error {
-	defer s.queue.remove(request.typ, request.id, true)
+	defer s.queue.remove(request.Type, request.ID, true)
 
 	var err error
-	switch request.typ {
+	switch request.Type {
 	case requestTypeUser:
-		err = s.syncUserPerms(ctx, request.id)
+		err = s.syncUserPerms(ctx, request.ID)
 	case requestTypeRepo:
-		err = s.syncRepoPerms(ctx, api.RepoID(request.id))
+		err = s.syncRepoPerms(ctx, api.RepoID(request.ID))
 	default:
-		err = fmt.Errorf("unexpected request type: %v", request.typ)
+		err = fmt.Errorf("unexpected request type: %v", request.Type)
 	}
 
 	return err
@@ -366,7 +361,8 @@ func (s *PermsSyncer) runSync(ctx context.Context) {
 		}
 
 		// Check if it's the time to sync the request
-		if wait := request.nextSyncAt.Sub(s.clock()); wait > 0 {
+		if wait := request.NextSyncAt.Sub(s.clock()); wait > 0 {
+			s.queue.release(request.Type, request.ID)
 			time.AfterFunc(wait, func() {
 				notify(s.queue.notifyEnqueue)
 			})
@@ -379,63 +375,25 @@ func (s *PermsSyncer) runSync(ctx context.Context) {
 
 		err := s.syncPerms(ctx, request)
 		if err != nil {
-			log15.Warn("Failed to sync permissions", "type", request.typ, "id", request.id, "err", err)
+			log15.Warn("Failed to sync permissions", "type", request.Type, "id", request.ID, "err", err)
 			continue
 		}
 	}
 }
 
-type scanResult struct {
-	id   int32
-	time time.Time
-}
-
-// TODO(jchen): Move this to authz.PermsStore.
-func (s *PermsSyncer) loadIDsWithTime(ctx context.Context, q *sqlf.Query) ([]scanResult, error) {
-	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var results []scanResult
-	for rows.Next() {
-		var id int32
-		var t time.Time
-		if err = rows.Scan(&id, &t); err != nil {
-			return nil, err
-		}
-
-		results = append(results, scanResult{id: id, time: t})
-	}
-	if err = rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return results, nil
-}
-
 // scheduleUsersWithNoPerms returns computed schedules for users who have no permissions
 // found in database.
-// TODO(jchen): Move this to authz.PermsStore.
 func (s *PermsSyncer) scheduleUsersWithNoPerms(ctx context.Context) ([]scheduledUser, error) {
-	q := sqlf.Sprintf(`
--- source: enterprise/cmd/repo-updater/authz/perms_scheduler.go:PermsScheduler.scheduleUsersWithNoPerms
-SELECT users.id, '1970-01-01 00:00:00+00'::timestamptz FROM users
-WHERE users.site_admin = FALSE
-AND users.id NOT IN
-	(SELECT perms.user_id FROM user_permissions AS perms)
-`)
-	results, err := s.loadIDsWithTime(ctx, q)
+	ids, err := s.permsStore.UserIDsWithNoPerms(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	users := make([]scheduledUser, len(results))
-	for i := range results {
+	users := make([]scheduledUser, len(ids))
+	for i, id := range ids {
 		users[i] = scheduledUser{
 			Priority: PriorityLow,
-			UserID:   results[i].id,
+			UserID:   id,
 			// NOTE: Have NextSyncAt with zero value (i.e. not set) gives it higher priority.
 		}
 	}
@@ -444,25 +402,17 @@ AND users.id NOT IN
 
 // scheduleReposWithNoPerms returns computed schedules for private repositories that
 // have no permissions found in database.
-// TODO(jchen): Move this to authz.PermsStore.
 func (s *PermsSyncer) scheduleReposWithNoPerms(ctx context.Context) ([]scheduledRepo, error) {
-	q := sqlf.Sprintf(`
--- source: enterprise/cmd/repo-updater/authz/perms_scheduler.go:PermsScheduler.scheduleReposWithNoPerms
-SELECT repo.id, '1970-01-01 00:00:00+00'::timestamptz FROM repo
-WHERE repo.private = TRUE AND repo.id NOT IN
-	(SELECT perms.repo_id FROM repo_permissions AS perms)
-`)
-
-	results, err := s.loadIDsWithTime(ctx, q)
+	ids, err := s.permsStore.RepoIDsWithNoPerms(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	repos := make([]scheduledRepo, len(results))
-	for i := range results {
+	repos := make([]scheduledRepo, len(ids))
+	for i, id := range ids {
 		repos[i] = scheduledRepo{
 			Priority: PriorityLow,
-			RepoID:   api.RepoID(results[i].id),
+			RepoID:   id,
 			// NOTE: Have NextSyncAt with zero value (i.e. not set) gives it higher priority.
 		}
 	}
@@ -471,54 +421,38 @@ WHERE repo.private = TRUE AND repo.id NOT IN
 
 // scheduleUsersWithOldestPerms returns computed schedules for users who have oldest
 // permissions in database and capped results by the limit.
-// TODO(jchen): Move this to authz.PermsStore.
 func (s *PermsSyncer) scheduleUsersWithOldestPerms(ctx context.Context, limit int) ([]scheduledUser, error) {
-	q := sqlf.Sprintf(`
--- source: enterprise/cmd/repo-updater/authz/perms_scheduler.go:PermsScheduler.scheduleUsersWithOldestPerms
-SELECT user_id, updated_at FROM user_permissions
-ORDER BY updated_at ASC
-LIMIT %s
-`, limit)
-
-	results, err := s.loadIDsWithTime(ctx, q)
+	results, err := s.permsStore.UserIDsWithOldestPerms(ctx, limit)
 	if err != nil {
 		return nil, err
 	}
 
-	users := make([]scheduledUser, len(results))
-	for i := range results {
-		users[i] = scheduledUser{
+	users := make([]scheduledUser, 0, len(results))
+	for id, t := range results {
+		users = append(users, scheduledUser{
 			Priority:   PriorityLow,
-			UserID:     results[i].id,
-			NextSyncAt: results[i].time,
-		}
+			UserID:     id,
+			NextSyncAt: t,
+		})
 	}
 	return users, nil
 }
 
 // scheduleReposWithOldestPerms returns computed schedules for private repositories that
 // have oldest permissions in database.
-// TODO(jchen): Move this to authz.PermsStore.
 func (s *PermsSyncer) scheduleReposWithOldestPerms(ctx context.Context, limit int) ([]scheduledRepo, error) {
-	q := sqlf.Sprintf(`
--- source: enterprise/cmd/repo-updater/authz/perms_scheduler.go:PermsScheduler.scheduleReposWithOldestPerms
-SELECT repo_id, updated_at FROM repo_permissions
-ORDER BY updated_at ASC
-LIMIT %s
-`, limit)
-
-	results, err := s.loadIDsWithTime(ctx, q)
+	results, err := s.permsStore.ReposIDsWithOldestPerms(ctx, limit)
 	if err != nil {
 		return nil, err
 	}
 
-	repos := make([]scheduledRepo, len(results))
-	for i := range results {
-		repos[i] = scheduledRepo{
+	repos := make([]scheduledRepo, 0, len(results))
+	for id, t := range results {
+		repos = append(repos, scheduledRepo{
 			Priority:   PriorityLow,
-			RepoID:     api.RepoID(results[i].id),
-			NextSyncAt: results[i].time,
-		}
+			RepoID:     id,
+			NextSyncAt: t,
+		})
 	}
 	return repos, nil
 }
@@ -615,6 +549,54 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 		s.scheduleUsers(ctx, schedule.Users...)
 		s.scheduleRepos(ctx, schedule.Repos...)
 	}
+}
+
+// DebugDump returns the state of the permissions syncer for debugging.
+func (s *PermsSyncer) DebugDump() interface{} {
+	type requestInfo struct {
+		Meta     *requestMeta
+		Acquired bool
+	}
+	data := struct {
+		Name  string
+		Size  int
+		Queue []*requestInfo
+	}{
+		Name: "permissions",
+	}
+
+	queue := requestQueue{
+		heap: make([]*syncRequest, len(s.queue.heap)),
+	}
+
+	s.queue.mu.RLock()
+	defer s.queue.mu.RUnlock()
+
+	for i, request := range s.queue.heap {
+		// Copy the syncRequest as a value so that poping off the heap here won't
+		// update the index value of the real heap, and we don't do a racy read on
+		// the repo pointer which may change concurrently in the real heap.
+		requestCopy := *request
+		queue.heap[i] = &requestCopy
+	}
+
+	for len(queue.heap) > 0 {
+		// Copy values of the syncRequest so that the requestMeta pointer
+		// won't change concurrently after we release the lock.
+		request := heap.Pop(&queue).(*syncRequest)
+		data.Queue = append(data.Queue, &requestInfo{
+			Meta: &requestMeta{
+				Priority:   request.Priority,
+				Type:       request.Type,
+				ID:         request.ID,
+				NextSyncAt: request.NextSyncAt,
+			},
+			Acquired: request.acquired,
+		})
+	}
+	data.Size = len(data.Queue)
+
+	return &data
 }
 
 // Run kicks off the permissions syncing process, this method is blocking and

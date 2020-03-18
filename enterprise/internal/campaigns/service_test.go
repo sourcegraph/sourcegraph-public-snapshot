@@ -96,8 +96,6 @@ func TestService(t *testing.T) {
 				Rev:            patch.BaseRevision,
 				BaseRef:        patch.BaseRef,
 				Diff:           patch.Patch,
-				StartedAt:      now,
-				FinishedAt:     now,
 				CreatedAt:      now,
 				UpdatedAt:      now,
 			}
@@ -193,6 +191,35 @@ func TestService(t *testing.T) {
 
 		if len(haveJobs) != 0 {
 			t.Errorf("wrong number of ChangesetJobs: %d. want=%d", len(haveJobs), 0)
+		}
+	})
+
+	t.Run("CreateCampaignWithPlanAttachedToOtherCampaign", func(t *testing.T) {
+		plan := &campaigns.CampaignPlan{CampaignType: "test", Arguments: `{}`, UserID: user.ID}
+		err = store.CreateCampaignPlan(ctx, plan)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		for _, repo := range rs {
+			err := store.CreateCampaignJob(ctx, testCampaignJob(plan.ID, repo.ID, now))
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		campaign := testCampaign(user.ID, plan.ID)
+		svc := NewServiceWithClock(store, gitClient, cf, clock)
+
+		err = svc.CreateCampaign(ctx, campaign, false)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		otherCampaign := testCampaign(user.ID, plan.ID)
+		err = svc.CreateCampaign(ctx, otherCampaign, false)
+		if err != ErrCampaignPlanDuplicate {
+			t.Fatal("no error even though another campaign has same plan")
 		}
 	})
 
@@ -361,6 +388,54 @@ func TestService(t *testing.T) {
 			})
 		}
 	})
+
+	t.Run("UpdateCampaignWithPlanAttachedToOtherCampaign", func(t *testing.T) {
+		svc := NewServiceWithClock(store, gitClient, cf, clock)
+
+		plan := &campaigns.CampaignPlan{CampaignType: "test", Arguments: `{}`, UserID: user.ID}
+		err = store.CreateCampaignPlan(ctx, plan)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		for _, repo := range rs {
+			err := store.CreateCampaignJob(ctx, testCampaignJob(plan.ID, repo.ID, now))
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		campaign := testCampaign(user.ID, plan.ID)
+		err = svc.CreateCampaign(ctx, campaign, false)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		otherPlan := &campaigns.CampaignPlan{CampaignType: "test", Arguments: `{}`, UserID: user.ID}
+		err = store.CreateCampaignPlan(ctx, otherPlan)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		for _, repo := range rs {
+			err := store.CreateCampaignJob(ctx, testCampaignJob(otherPlan.ID, repo.ID, now))
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
+		otherCampaign := testCampaign(user.ID, otherPlan.ID)
+		err = svc.CreateCampaign(ctx, otherCampaign, false)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		args := UpdateCampaignArgs{Campaign: otherCampaign.ID, Plan: &plan.ID}
+		_, _, err := svc.UpdateCampaign(ctx, args)
+		if err != ErrCampaignPlanDuplicate {
+			t.Fatal("no error even though another campaign has same plan")
+		}
+	})
+
 }
 
 type repoNames []string
@@ -974,14 +1049,25 @@ var testUser = db.NewUser{
 	EmailVerificationCode: "foobar",
 }
 
-func createTestUser(ctx context.Context, t *testing.T) *types.User {
-	t.Helper()
-	user, err := db.Users.Create(ctx, testUser)
-	if err != nil {
-		t.Fatal(err)
+var createTestUser = func() func(context.Context, *testing.T) *types.User {
+	count := 0
+
+	return func(ctx context.Context, t *testing.T) *types.User {
+		t.Helper()
+
+		u := testUser
+		u.Username = fmt.Sprintf("%s-%d", u.Username, count)
+
+		user, err := db.Users.Create(ctx, u)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		count += 1
+
+		return user
 	}
-	return user
-}
+}()
 
 func testCampaignJob(plan int64, repo api.RepoID, t time.Time) *campaigns.CampaignJob {
 	return &campaigns.CampaignJob{
@@ -990,8 +1076,6 @@ func testCampaignJob(plan int64, repo api.RepoID, t time.Time) *campaigns.Campai
 		Rev:            "deadbeef",
 		BaseRef:        "refs/heads/master",
 		Diff:           "cool diff",
-		StartedAt:      t,
-		FinishedAt:     t,
 	}
 }
 
@@ -1019,6 +1103,7 @@ func testChangeset(repoID api.RepoID, campaign int64, changesetJob int64, state 
 		ExternalServiceType: "github",
 		ExternalID:          fmt.Sprintf("ext-id-%d", changesetJob),
 		Metadata:            pr,
+		ExternalState:       state,
 	}
 }
 
