@@ -3,33 +3,35 @@
 exports[`CampaignUpdateDiff renders 1`] = `
 <div>
   <h3
-    className="mt-3"
+    className="mt-4 mb-2"
   >
     Preview of changes
   </h3>
-  Campaign currently has 
-  2
-   
-  changesets
-   (
-  1
-   published, 
-  1
-   
-  draft
-  ), after update it will have
-   
-  1
-   
-  changeset
-   (
-  1
-   
-  published, 
-  0
-   
-  drafts
-  ):
+  <p>
+    Campaign currently has 
+    2
+     
+    changesets
+     (
+    1
+     published, 
+    1
+     
+    draft
+    ), after update it will have
+     
+    1
+     
+    changeset
+     (
+    1
+     
+    published, 
+    0
+     
+    drafts
+    ):
+  </p>
   <div
     className="tabs "
   >
@@ -112,7 +114,7 @@ exports[`CampaignUpdateDiff renders 1`] = `
     </div>
   </div>
   <div
-    className="alert alert-info mt-3"
+    className="alert alert-info mt-2"
   >
     <svg
       className="mdi-icon icon-inline"
@@ -125,16 +127,16 @@ exports[`CampaignUpdateDiff renders 1`] = `
         d="M13,13H11V7H13M13,17H11V15H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"
       />
     </svg>
-     You are updating an existing campaign. By clicking 'Update', all already published changesets will be updated on the codehost.
+     You are updating an existing campaign. By clicking 'Update', all above changesets that are not 'unmodified' will be updated on the codehost.
   </div>
 </div>
 `;
 
 exports[`CampaignUpdateDiff renders a loader 1`] = `
-<p>
+<div>
   <div
     className="loading-spinner icon-inline"
   />
    Loading diff
-</p>
+</div>
 `;
