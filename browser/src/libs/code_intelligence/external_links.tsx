@@ -117,7 +117,7 @@ export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphB
         )
     }
 
-    const url = `${sourcegraphURL}/${context.rawRepoName}${context.rev ? `@${context.rev}` : ''}`
+    const url = new URL(`/${context.rawRepoName}${context.rev ? `@${context.rev}` : ''}`, sourcegraphURL).href
     return (
         <SourcegraphIconButton
             url={url}
