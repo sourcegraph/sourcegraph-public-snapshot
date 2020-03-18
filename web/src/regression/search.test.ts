@@ -344,7 +344,7 @@ describe('Search regression test suite', () => {
         })
         test('Global symbol search ("type:symbol ^newroute count:100") with a few results', async () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=type:symbol+%5Enewroute+count:100')
-            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 2)
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 0)
         })
         test('Indexed multiline search, many results', async () => {
             const urlQuery = buildSearchURLQuery(
