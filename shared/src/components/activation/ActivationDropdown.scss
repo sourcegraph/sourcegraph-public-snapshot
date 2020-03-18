@@ -30,6 +30,10 @@
     &__loader {
         padding-left: 0.8375rem;
     }
+
+    &__confetti {
+        z-index: 1000;
+    }
 }
 
 .activation-dropdown-header {
