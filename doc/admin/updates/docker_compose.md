@@ -16,12 +16,20 @@ docker run --rm -it -v /var/lib/docker:/docker alpine:latest sh -c 'chown -R 999
 
 ### Upgrade
 
-In your checkout of [the deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker) repository:
+In your fork of [the deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker) repository:
 
 ```sh
 cd docker-compose/
-git pull
+git fetch upstream
+git merge upstream v3.13.2
+# Address any merge conflicts you may have.
+```
+
+Then on your server:
+
+```sh
+cd deploy-sourcegraph-docker/docker-compose/
 docker-compose down
-git checkout v3.13.2
+git pull
 docker-compose up -d
 ```
