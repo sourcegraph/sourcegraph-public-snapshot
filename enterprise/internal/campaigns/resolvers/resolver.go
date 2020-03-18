@@ -372,7 +372,9 @@ func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampa
 	if err := allowReadAccess(ctx); err != nil {
 		return nil, err
 	}
-	var opts ee.ListCampaignsOpts
+	opts := ee.ListCampaignsOpts{
+		HasPlan: args.HasPlan,
+	}
 	state, err := parseCampaignState(args.State)
 	if err != nil {
 		return nil, err
@@ -381,7 +383,6 @@ func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampa
 	if args.First != nil {
 		opts.Limit = int(*args.First)
 	}
-	opts.HasPlan = args.HasPlan
 	return &campaignsConnectionResolver{
 		store: r.store,
 		opts:  opts,

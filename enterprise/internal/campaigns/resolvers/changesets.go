@@ -174,6 +174,7 @@ func (r *changesetResolver) Repository(ctx context.Context) (*graphqlbackend.Rep
 func (r *changesetResolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampaignArgs) (graphqlbackend.CampaignsConnectionResolver, error) {
 	opts := ee.ListCampaignsOpts{
 		ChangesetID: r.Changeset.ID,
+		HasPlan:     args.HasPlan,
 	}
 	state, err := parseCampaignState(args.State)
 	if err != nil {
@@ -183,7 +184,6 @@ func (r *changesetResolver) Campaigns(ctx context.Context, args *graphqlbackend.
 	if args.First != nil {
 		opts.Limit = int(*args.First)
 	}
-	opts.HasPlan = args.HasPlan
 	return &campaignsConnectionResolver{
 		store: r.store,
 		opts:  opts,
