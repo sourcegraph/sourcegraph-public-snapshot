@@ -1,5 +1,5 @@
-import { combineLatest, merge, Observable, ReplaySubject, of } from 'rxjs'
-import { map, publishReplay, refCount, switchMap, take } from 'rxjs/operators'
+import { combineLatest, Observable, ReplaySubject } from 'rxjs'
+import { map, switchMap, take } from 'rxjs/operators'
 import { PrivateRepoPublicSourcegraphComError } from '../../../shared/src/backend/errors'
 import { GraphQLResult } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
@@ -16,6 +16,7 @@ import { DEFAULT_SOURCEGRAPH_URL, observeSourcegraphURL } from '../shared/util/c
 import { createExtensionHost } from './extensionHost'
 import { editClientSettings, fetchViewerSettings, mergeCascades, storageSettingsCascade } from './settings'
 import { requestGraphQLHelper } from '../shared/backend/requestGraphQL'
+import { failedWithHTTPStatus } from '../../../shared/src/backend/fetch'
 
 export interface SourcegraphIntegrationURLs {
     /**
@@ -34,14 +35,23 @@ export interface SourcegraphIntegrationURLs {
 }
 
 /**
+ * The PlatformContext provided in the browser extension and native integrations.
+ */
+export interface BrowserPlatformContext extends PlatformContext {
+    /**
+     * Refetches the settings cascade from the Sourcegraph instance.
+     */
+    refreshSettings(): Promise<void>
+}
+
+/**
  * Creates the {@link PlatformContext} for the browser extension.
  */
 export function createPlatformContext(
     { urlToFile, getContext }: Pick<CodeHost, 'urlToFile' | 'getContext'>,
     { sourcegraphURL, assetsURL }: SourcegraphIntegrationURLs,
-    initialSettings: Pick<GQL.ISettingsCascade, 'subjects' | 'final'>,
     isExtension: boolean
-): PlatformContext {
+): BrowserPlatformContext {
     const updatedViewerSettings = new ReplaySubject<Pick<GQL.ISettingsCascade, 'subjects' | 'final'>>(1)
     const requestGraphQL: PlatformContext['requestGraphQL'] = <T extends GQL.IQuery | GQL.IMutation>({
         request,
@@ -67,7 +77,7 @@ export function createPlatformContext(
             })
         )
 
-    const context: PlatformContext = {
+    const context: BrowserPlatformContext = {
         /**
          * The active settings cascade.
          *
@@ -76,19 +86,34 @@ export function createPlatformContext(
          * - For authenticated users, this is just the GraphQL settings (client settings are ignored to simplify
          *   the UX).
          */
-        settings: combineLatest([
-            merge(of(initialSettings), updatedViewerSettings).pipe(publishReplay(1), refCount()),
-            storageSettingsCascade,
-        ]).pipe(
+        settings: combineLatest([updatedViewerSettings, storageSettingsCascade]).pipe(
             map(([gqlCascade, storageCascade]) =>
-                mergeCascades(
-                    gqlToCascade(gqlCascade),
-                    gqlCascade.subjects.some(subject => subject.__typename === 'User')
-                        ? EMPTY_SETTINGS_CASCADE
-                        : storageCascade
-                )
+                gqlCascade
+                    ? mergeCascades(
+                          gqlToCascade(gqlCascade),
+                          gqlCascade.subjects.some(subject => subject.__typename === 'User')
+                              ? EMPTY_SETTINGS_CASCADE
+                              : storageCascade
+                      )
+                    : EMPTY_SETTINGS_CASCADE
             )
         ),
+        refreshSettings: async () => {
+            try {
+                const settings = await fetchViewerSettings(requestGraphQL).toPromise()
+                updatedViewerSettings.next(settings)
+            } catch (error) {
+                if (failedWithHTTPStatus(error, 401)) {
+                    // User is not signed in
+                    console.warn(
+                        `Could not fetch Sourcegraph settings from ${sourcegraphURL} because user is not signed into Sourcegraph`
+                    )
+                    updatedViewerSettings.next({ final: '{}', subjects: [] })
+                } else {
+                    throw error
+                }
+            }
+        },
         updateSettings: async (subject, edit) => {
             if (subject === 'Client') {
                 // Support storing settings on the client (in the browser extension) so that unauthenticated
@@ -103,13 +128,14 @@ export function createPlatformContext(
                 if ('message' in error && error.message.includes('version mismatch')) {
                     // The user probably edited the settings in another tab, so
                     // try once more.
-                    updatedViewerSettings.next(await fetchViewerSettings(requestGraphQL).toPromise())
+                    await context.refreshSettings()
                     await updateSettings(context, subject, edit, mutateSettings)
                 } else {
                     throw error
                 }
             }
-            updatedViewerSettings.next(await fetchViewerSettings(requestGraphQL).toPromise())
+            // TODO: We shouldn't need to make another HTTP request to get the latest state
+            await context.refreshSettings()
         },
         requestGraphQL,
         forceUpdateTooltip: () => {

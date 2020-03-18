@@ -27,7 +27,7 @@ import (
 type GithubSource struct {
 	svc             *ExternalService
 	config          *schema.GitHubConnection
-	exclude         excluder
+	exclude         excludeFunc
 	excludeArchived bool
 	excludeForks    bool
 	githubDotCom    bool
@@ -81,15 +81,15 @@ func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpc
 	}
 
 	var (
-		exclude         excluder
+		eb              excludeBuilder
 		excludeArchived bool
 		excludeForks    bool
 	)
 
 	for _, r := range c.Exclude {
-		exclude.Exact(r.Name)
-		exclude.Exact(r.Id)
-		exclude.Pattern(r.Pattern)
+		eb.Exact(r.Name)
+		eb.Exact(r.Id)
+		eb.Pattern(r.Pattern)
 
 		if r.Archived {
 			excludeArchived = true
@@ -100,7 +100,8 @@ func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpc
 		}
 	}
 
-	if err := exclude.Err(); err != nil {
+	exclude, err := eb.Build()
+	if err != nil {
 		return nil, err
 	}
 
@@ -317,7 +318,7 @@ func (s *GithubSource) authenticatedRemoteURL(repo *github.Repository) string {
 }
 
 func (s *GithubSource) excludes(r *github.Repository) bool {
-	if s.exclude.Match(r.NameWithOwner) || s.exclude.Match(r.ID) {
+	if s.exclude(r.NameWithOwner) || s.exclude(r.ID) {
 		return true
 	}
 
