@@ -11,7 +11,7 @@ import { queryChangesetPlans, queryChangesets } from '../backend'
 import { repeatWhen, delay } from 'rxjs/operators'
 
 interface Props extends ThemeProps {
-    campaign: Pick<GQL.ICampaign | GQL.ICampaignPlan, '__typename' | 'id'> & Pick<GQL.ICampaign, 'closedAt'>
+    campaign: Pick<GQL.ICampaignPlan, '__typename' | 'id'> | Pick<GQL.ICampaign, '__typename' | 'id' | 'closedAt'>
     history: H.History
     location: H.Location
     campaignUpdates: Subject<void>
