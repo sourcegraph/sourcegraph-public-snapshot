@@ -8,6 +8,7 @@ import {
     ChangesetState,
     ChangesetCheckState,
 } from '../../../../../../shared/src/graphql/schema'
+import Octicon, { Diff } from '@primer/octicons-react'
 import React, { useState, useEffect } from 'react'
 import {
     changesetReviewStateColors,
@@ -114,18 +115,6 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
             : changesetCheckStateIcons[ChangesetCheckState.PENDING]
     const changesetState = node.__typename === 'ExternalChangeset' ? node.state : ChangesetState.OPEN
 
-    const stateIcon = (
-        <ChangesetStateIcon
-            className={classNames(
-                'mr-1 icon-inline',
-                node.__typename === 'ExternalChangeset'
-                    ? `text-${changesetStatusColorClasses[changesetState]}`
-                    : 'text-muted'
-            )}
-            data-tooltip={changesetStageLabels[changesetState]}
-        />
-    )
-
     const UpdateLoaderIcon =
         node.__typename === 'ExternalChangeset' && node.updatedAt !== lastUpdatedAt ? SyncIcon : LoadingSpinner
 
@@ -135,7 +124,13 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                 <div className="d-flex flex-column">
                     {node.__typename === 'ExternalChangeset' && (
                         <div className="m-0 mb-2">
-                            {stateIcon}
+                            <ChangesetStateIcon
+                                className={classNames(
+                                    'mr-1 icon-inline',
+                                    `text-${changesetStatusColorClasses[changesetState]}`
+                                )}
+                                data-tooltip={changesetStageLabels[changesetState]}
+                            />
                             <h3 className="m-0 d-inline">
                                 <LinkOrSpan
                                     /* Deleted changesets most likely don't exist on the codehost anymore and would return 404 pages */
@@ -171,7 +166,7 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                         </div>
                     )}
                     <div>
-                        {node.__typename === 'ChangesetPlan' && stateIcon}
+                        {node.__typename === 'ChangesetPlan' && <Octicon icon={Diff} className="icon-inline mr-2" />}
                         <strong>
                             <Link
                                 to={node.repository.url}
@@ -199,7 +194,9 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                                 </span>
                             </small>
                         )}
-                        {node.__typename === 'ChangesetPlan' && !isPublishing && <DraftBadge className="ml-2" />}
+                        {node.__typename === 'ChangesetPlan' && !isPublishing && enablePublishing && (
+                            <DraftBadge className="ml-2" />
+                        )}
                     </div>
                 </div>
             </div>

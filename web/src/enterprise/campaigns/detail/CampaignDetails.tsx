@@ -396,10 +396,10 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         setBranchModified(true)
     }
 
-    const totalChangesetCount =
-        (campaign?.changesets.totalCount ?? 0) +
-        (campaign?.changesetPlans.totalCount ?? 0) +
-        (campaignPlan?.changesetPlans.totalCount ?? 0)
+    const totalChangesetCount = campaign?.changesets.totalCount ?? 0
+
+    const totalChangesetPlanCount =
+        (campaign?.changesetPlans.totalCount ?? 0) + (campaignPlan?.changesetPlans.totalCount ?? 0)
 
     return (
         <>
@@ -538,7 +538,19 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     )}
 
                     <h3 className="mt-3 d-flex align-items-end mb-0">
-                        {totalChangesetCount} {pluralize('Changeset', totalChangesetCount)}{' '}
+                        {totalChangesetPlanCount > 0 && (
+                            <>
+                                {totalChangesetPlanCount} {pluralize('Patch', totalChangesetPlanCount, 'Patches')}
+                            </>
+                        )}
+                        {(totalChangesetCount > 0 || !!campaign) && totalChangesetPlanCount > 0 && (
+                            <span className="mx-1">/</span>
+                        )}
+                        {(totalChangesetCount > 0 || !!campaign) && (
+                            <>
+                                {totalChangesetCount} {pluralize('Changeset', totalChangesetCount)}
+                            </>
+                        )}{' '}
                         <CampaignDiffStat campaign={(campaignPlan || campaign)!} className="ml-2 mb-0" />
                     </h3>
                     {(campaign?.changesets.totalCount ?? 0) + (campaignPlan || campaign)!.changesetPlans.totalCount ? (

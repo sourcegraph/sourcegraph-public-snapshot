@@ -157,7 +157,7 @@ Array [
   >
     2
      
-    Changesets
+    Patches
      
   </h3>,
   <CampaignChangesets
@@ -315,7 +315,15 @@ Array [
   <h3
     className="mt-3 d-flex align-items-end mb-0"
   >
-    4
+    2
+     
+    Patches
+    <span
+      className="mx-1"
+    >
+      /
+    </span>
+    2
      
     Changesets
      
@@ -10779,7 +10787,15 @@ Array [
   <h3
     className="mt-3 d-flex align-items-end mb-0"
   >
-    4
+    2
+     
+    Patches
+    <span
+      className="mx-1"
+    >
+      /
+    </span>
+    2
      
     Changesets
      
@@ -21333,7 +21349,15 @@ Array [
   <h3
     className="mt-3 d-flex align-items-end mb-0"
   >
-    4
+    2
+     
+    Patches
+    <span
+      className="mx-1"
+    >
+      /
+    </span>
+    2
      
     Changesets
      
