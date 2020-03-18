@@ -122,7 +122,7 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({ c
                 </div>
             )}
             {state === 'completed' && status.pendingCount + status.completedCount > 0 && !creationCompletedLongAgo && (
-                <div className="d-flex">
+                <div className="d-flex mt-2">
                     <CheckCircleIcon className="icon-inline text-success mr-1" /> Creation completed
                 </div>
             )}
