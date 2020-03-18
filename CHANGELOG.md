@@ -16,13 +16,14 @@ All notable changes to Sourcegraph are documented in this file.
 - Site-Admin/Instrumentation is now available in the Kubernetes cluster deployment [8805](https://github.com/sourcegraph/sourcegraph/pull/8805).
 - Extensions can now specify a `baseUri` in the `DocumentFilter` when registering providers.
 - Admins can now exclude GitHub forks and/or archived repositories from the set of repositories being mirrored in Sourcegraph with the `"exclude": [{"forks": true}]` or `"exclude": [{"archived": true}]` GitHub external service configuration. [#8974](https://github.com/sourcegraph/sourcegraph/pull/8974)
-- Campaign changesets can be filtered by State, Review State and Check State [8848](https://github.com/sourcegraph/sourcegraph/pull/8848)
+- Campaign changesets can be filtered by State, Review State and Check State. [#8848](https://github.com/sourcegraph/sourcegraph/pull/8848)
 - Counts of users of and searches conducted with interactive and plain text search modes will be sent back in pings, aggregated daily, weekly, and monthly.
 - Aggregated counts of daily, weekly, and monthly active users of search will be sent back in pings.
 - Counts of number of searches conducted using each filter will be sent back in pings, aggregated daily, weekly, and monthly.
 - Counts of number of users conducting searches containing each filter will be sent back in pings, aggregated daily, weekly, and monthly.
 - Added more entries (Bash, Erlang, Julia, OCaml, Scala) to the list of suggested languages for the `lang:` filter.
 - Permissions background sync is now supported for GitLab and Bitbucket Server via site configuration `"permissions.backgroundSync": {"enabled": true}`.
+- Indexed search exports more prometheus metrics and debug logs to aid debugging performance issues. [#9111](https://github.com/sourcegraph/sourcegraph/issues/9111)
 
 ### Changed
 
