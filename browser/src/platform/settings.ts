@@ -1,7 +1,7 @@
 import { applyEdits, parse as parseJSONC } from '@sqs/jsonc-parser'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import { from, Observable } from 'rxjs'
-import { map, catchError } from 'rxjs/operators'
+import { map } from 'rxjs/operators'
 import { SettingsEdit } from '../../../shared/src/api/client/services/settings'
 import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
@@ -16,7 +16,6 @@ import { isErrorLike } from '../../../shared/src/util/errors'
 import { LocalStorageSubject } from '../../../shared/src/util/LocalStorageSubject'
 import { observeStorageKey, storage } from '../browser/storage'
 import { isInPage } from '../context'
-import { failedWithHTTPStatus } from '../../../shared/src/backend/fetch'
 
 const inPageClientSettingsKey = 'sourcegraphClientSettings'
 
@@ -149,23 +148,6 @@ export function fetchViewerSettings(
         })
     )
 }
-
-/**
- * Fetches initial user settings, checking whether the user is logged in by
- * catching Ajax errors with a 401 status code.
- */
-export const checkUserLoggedInAndFetchSettings = (
-    requestGraphQL: PlatformContext['requestGraphQL']
-): Observable<{ userSignedIn: boolean; settings?: Pick<GQL.ISettingsCascade, 'subjects' | 'final'> }> =>
-    fetchViewerSettings(requestGraphQL).pipe(
-        map(settings => ({ userSignedIn: true, settings })),
-        catchError(err => {
-            if (failedWithHTTPStatus(err, 401)) {
-                return [{ userSignedIn: false }]
-            }
-            throw err
-        })
-    )
 
 /**
  * Applies an edit and persists the result to client settings.
