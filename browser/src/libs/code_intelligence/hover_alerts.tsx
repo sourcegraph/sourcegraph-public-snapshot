@@ -6,7 +6,7 @@ import { observeStorageKey, storage } from '../../browser/storage'
 import { SyncStorageItems } from '../../browser/types'
 import { isInPage } from '../../context'
 
-export type ExtensionHoverAlertType = 'nativeTooltips' | 'signIn'
+export type ExtensionHoverAlertType = 'nativeTooltips'
 
 /**
  * Returns an Observable of all hover alerts that have not yet
