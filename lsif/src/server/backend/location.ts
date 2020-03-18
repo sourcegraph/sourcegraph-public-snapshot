@@ -20,6 +20,22 @@ export class OrderedLocationSet {
     private seen = new Set<string>()
     private order: InternalLocation[] = []
 
+    constructor(locations?: InternalLocation[], sorted = false) {
+        if (!locations) {
+            return
+        }
+
+        if (sorted) {
+            this.order = Array.from(locations)
+            this.seen = new Set(this.order.map(makeKey))
+            return
+        }
+
+        for (const location of locations) {
+            this.push(location)
+        }
+    }
+
     /** The deduplicated locations in insertion order. */
     public get locations(): InternalLocation[] {
         return this.order

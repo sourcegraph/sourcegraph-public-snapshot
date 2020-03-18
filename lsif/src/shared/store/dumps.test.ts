@@ -1,10 +1,10 @@
-import * as util from '../integration-test-util'
-import * as pgModels from '../../../shared/models/pg'
+import * as util from '../test-util'
+import * as pgModels from '../models/pg'
 import nock from 'nock'
 import { Connection } from 'typeorm'
-import { DumpManager } from '../../../shared/store/dumps'
+import { DumpManager } from './dumps'
 import { fail } from 'assert'
-import { MAX_TRAVERSAL_LIMIT } from '../../../shared/constants'
+import { MAX_TRAVERSAL_LIMIT } from '../constants'
 
 describe('DumpManager', () => {
     let connection!: Connection
