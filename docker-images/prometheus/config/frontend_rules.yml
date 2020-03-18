@@ -1,39 +1,121 @@
 groups:
   - name: frontend
     rules:
-      # Warn if there are 5+ search errors, timeouts, or partial-timeouts over 5m.
+      # Critical if there are 20+ hard search errors (timeouts or errors) over 5m.
       - record: alert_count
         labels:
           service_name: frontend
-          level: warning
-          name: search_error_response_high
-          description: 'frontend: 5+ search error responses over 5m'
+          level: critical
+          name: hard_search_error_response_high_timeouts
+          description: 'frontend: 20+ hard search errors (timeouts) over 5m'
         expr: >-
           clamp_max(clamp_min(floor(
-          (increase(src_graphql_search_response{status="error"}[5m]) / 5) OR on() vector(0)
-          ), 0), 1)
+          ((sum(sum by (status)(increase(src_graphql_search_response{status="timeout"}[5m]))) + sum(sum by (status, alert_type)(increase(src_graphql_search_response{status="alert",alert_type="timed_out"}[5m])))) / 20) or on() vector(0)
+          ), 0), 1) OR on() vector(1)
+      - record: alert_count
+        labels:
+          service_name: frontend
+          level: critical
+          name: hard_search_error_response_high_errors
+          description: 'frontend: 20+ hard search errors (errors) over 5m'
+        expr: >-
+          clamp_max(clamp_min(floor(
+          ((sum by (status)(increase(src_graphql_search_response{status=~"error"}[5m]))) / 20) or on() vector(0)
+          ), 0), 1) OR on() vector(1)
 
+      # Warn if there are 5+ hard search errors (timeouts or errors) over 5m.
       - record: alert_count
         labels:
           service_name: frontend
           level: warning
-          name: search_timeout_response_high
-          description: 'frontend: 5+ search full-timeout responses over 5m'
+          name: hard_search_error_response_high_timeouts
+          description: 'frontend: 5+ hard search errors (timeouts) over 5m'
         expr: >-
           clamp_max(clamp_min(floor(
-          (increase(src_graphql_search_response{status="timeout"}[5m]) / 5) OR on() vector(0)
-          ), 0), 1)
+          ((sum(sum by (status)(increase(src_graphql_search_response{status="timeout"}[5m]))) + sum(sum by (status, alert_type)(increase(src_graphql_search_response{status="alert",alert_type="timed_out"}[5m])))) / 5) or on() vector(0)
+          ), 0), 1) OR on() vector(1)
+      - record: alert_count
+        labels:
+          service_name: frontend
+          level: warning
+          name: hard_search_error_response_high_errors
+          description: 'frontend: 5+ hard search errors (errors) over 5m'
+        expr: >-
+          clamp_max(clamp_min(floor(
+          ((sum by (status)(increase(src_graphql_search_response{status=~"error"}[5m]))) / 5) or on() vector(0)
+          ), 0), 1) OR on() vector(1)
 
+      # Warn if there are 5+ partial search timeouts over 5m.
       - record: alert_count
         labels:
           service_name: frontend
           level: warning
-          name: search_partial_timeout_response_high
-          description: 'frontend: 5+ search partial-timeout responses over 5m'
+          name: partial_search_timeouts_high
+          description: 'frontend: 5+ partial search timeouts over 5m'
         expr: >-
           clamp_max(clamp_min(floor(
-          (increase(src_graphql_search_response{status="partial_timeout"}[5m]) / 5) OR on() vector(0)
-          ), 0), 1)
+          ((sum by (status)(increase(src_graphql_search_response{status="partial_timeout"}[5m]))) / 5) or vector(0)
+          ), 0), 1) OR on() vector(1)
+
+      # Warn if 99th percentile search request duration exceeds 3s
+      - record: alert_count
+        labels:
+          service_name: frontend
+          level: warning
+          name: p99_search_request_duration_high
+          description: 'frontend: 3s+ 99th percentile search request duration exceeding over 5m'
+        expr: >-
+          clamp_max(clamp_min(floor(
+          ((avg(histogram_quantile(0.99, rate(src_graphql_field_seconds_bucket{type="Search",field="results",error="false"}[5m])))) / 3) or vector(0)
+          ), 0), 1) OR on() vector(1)
+
+      # Warn if 90th percentile search request duration exceeds 3s
+      - record: alert_count
+        labels:
+          service_name: frontend
+          level: warning
+          name: p90_search_request_duration_high
+          description: 'frontend: 3s+ 90th percentile search request duration over 5m'
+        expr: >-
+          clamp_max(clamp_min(floor(
+          ((avg(histogram_quantile(0.90, rate(src_graphql_field_seconds_bucket{type="Search",field="results",error="false"}[5m])))) / 3) or vector(0)
+          ), 0), 1) OR on() vector(1)
+
+      # Warn if there are 50+ search alert user suggestions shown in 5m
+      - record: alert_count
+        labels:
+          service_name: frontend
+          level: warning
+          name: search_alert_user_suggestions_high
+          description: 'frontend: 50+ search alert user suggestions shown over 5m'
+        expr: >-
+          clamp_max(clamp_min(floor(
+          ((sum by (alert_type)(increase(src_graphql_search_response{status="alert",alert_type!~"timed_out|"}[5m]))) / 50) or vector(0)
+          ), 0), 1) OR on() vector(1)
+
+      # Warn if there are 5+ non-200 indexed search responses over 5m
+      - record: alert_count
+        labels:
+          service_name: frontend
+          level: warning
+          name: non_200_indexed_search_responses_high
+          description: 'frontend: 5+ non-200 indexed search responses over 5m'
+        expr: >-
+          clamp_max(clamp_min(floor(
+          ((sum by (code)(increase(src_zoekt_request_duration_seconds_count{code!~"2.."}[5m]))) / 5) OR on() vector(0)
+          ), 0), 1) OR on() vector(1)
+
+      # Warn if there are 5+ non-200 unindexed search responses over 5m
+      - record: alert_count
+        labels:
+          service_name: frontend
+          level: warning
+          name: non_200_unindexed_search_responses_high
+          description: 'frontend: 5+ non-200 unindexed search responses over 5m'
+        expr: >-
+          clamp_max(clamp_min(floor(
+          ((sum by (code)(increase(searcher_service_request_total{code!~"2.."}[5m]))) / 5) OR on() vector(0)
+          ), 0), 1) OR on() vector(1)
 
       # Warning if 25+ requests to our internal API are failing over 5m.
       - record: alert_count
@@ -44,5 +126,5 @@ groups:
           description: 'frontend: 25+ non-200 responses from the frontend-internal API over 5m'
         expr: >-
           clamp_max(clamp_min(floor(
-          increase(src_frontend_internal_request_duration_seconds_count{code!~"2.."}[5m]) / 25
-          ), 0), 1)
+          (increase(src_frontend_internal_request_duration_seconds_count{code!~"2.."}[5m]) / 25) OR on() vector(0)
+          ), 0), 1) OR on() vector(1)

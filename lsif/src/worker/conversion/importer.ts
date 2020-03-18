@@ -11,11 +11,11 @@ import { isEqual, uniqWith } from 'lodash'
 import { logAndTraceCall, TracingContext } from '../../shared/tracing'
 import { mustGet } from '../../shared/maps'
 import { Package, SymbolReferences } from '../../shared/store/dependencies'
-import { readEnvInt } from '../../shared/settings'
 import { readGzippedJsonElementsFromFile } from '../../shared/input'
 import { TableInserter } from '../../shared/database/inserter'
 import { createSilentLogger } from '../../shared/logging'
 import { PathExistenceChecker } from './existence'
+import * as settings from '../settings'
 
 /** The insertion metrics for the database. */
 const inserterMetrics = {
@@ -30,16 +30,6 @@ const inserterMetrics = {
  * while we update or re-process the already-uploaded data.
  */
 const INTERNAL_LSIF_VERSION = '0.1.0'
-
-/**
- * The target results per result chunk. This is used to determine the number of chunks
- * created during conversion, but does not guarantee that the distribution of hash keys
- * will wbe even. In practice, chunks are fairly evenly filled.
- */
-const RESULTS_PER_RESULT_CHUNK = readEnvInt('RESULTS_PER_RESULT_CHUNK', 500)
-
-/** The maximum number of result chunks that will be created during conversion. */
-const MAX_NUM_RESULT_CHUNKS = readEnvInt('MAX_NUM_RESULT_CHUNKS', 1000)
 
 /**
  * Populate a SQLite database with the given input stream. Returns the
@@ -132,7 +122,10 @@ export async function importLsif(
 
     // Calculate the number of result chunks that we'll attempt to populate
     const numResults = correlator.definitionData.size + correlator.referenceData.size
-    const numResultChunks = Math.min(MAX_NUM_RESULT_CHUNKS, Math.floor(numResults / RESULTS_PER_RESULT_CHUNK) || 1)
+    const numResultChunks = Math.min(
+        settings.MAX_NUM_RESULT_CHUNKS,
+        Math.floor(numResults / settings.RESULTS_PER_RESULT_CHUNK) || 1
+    )
 
     // Insert metadata
     const metaInserter = new TableInserter(

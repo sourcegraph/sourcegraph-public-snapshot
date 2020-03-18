@@ -1,7 +1,20 @@
 #!/usr/bin/env bash
 
 set -eu
-cd $BUILDKITE_BUILD_CHECKOUT_PATH
+pushd $(dirname "${BASH_SOURCE[0]}")/../..
 
-echo "Installing asdf dependencies as defined in '$BUILDKITE_BUILD_CHECKOUT_PATH/.tool-versions':"
-asdf install
+TOOL_VERSION_FILES=()
+mapfile -d $'\0' TOOL_VERSION_FILES < <(fd .tool-versions --hidden --absolute-path --print0)
+
+for file in "${TOOL_VERSION_FILES[@]}"
+do
+    echo "Installing asdf dependencies as defined in ${file}:"
+    parent=$(dirname "${file}")
+    pushd "${parent}"
+
+    asdf install
+
+    popd
+done
+
+popd

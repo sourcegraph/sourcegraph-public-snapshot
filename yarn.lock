@@ -1675,6 +1675,13 @@
   dependencies:
     esquery "^1.0.1"
 
+"@primer/octicons-react@^9.6.0":
+  version "9.6.0"
+  resolved "https://registry.npmjs.org/@primer/octicons-react/-/octicons-react-9.6.0.tgz#996f621cb063757a4985cd6b45e59ed00e3444bf"
+  integrity sha512-FR0fiU1UY1ds5ZMCUY+iVkkm1Eh4yDHf2ui+cxB3VvYX23DAdUAohPGit+qaMFy2caDd7uWYGRZduKS7dW1FZQ==
+  dependencies:
+    prop-types "^15.6.1"
+
 "@reach/router@^1.2.1":
   version "1.2.1"
   resolved "https://registry.npmjs.org/@reach/router/-/router-1.2.1.tgz#34ae3541a5ac44fa7796e5506a5d7274a162be4e"
@@ -1849,10 +1856,10 @@
   resolved "https://registry.npmjs.org/@sourcegraph/comlink/-/comlink-3.1.1-fork.3.tgz#1bd76bc74ca8a9b55f1dbf508c703053ee66c961"
   integrity sha512-+vfSCJTS/GU391Hhdh2/s+wy5ok4hi6X+kizRQqQZwZI03Q1rR6SVLNFsbg4dhbX624mqr1UCRhwNnZdWHAR+A==
 
-"@sourcegraph/eslint-config@^0.10.1":
-  version "0.10.1"
-  resolved "https://registry.npmjs.org/@sourcegraph/eslint-config/-/eslint-config-0.10.1.tgz#49e8dc5a1e0fe7f8dd1e1e2e3bac0fc12c44d831"
-  integrity sha512-uCd2pKVmjkV0p6ibor772JltFfj/mNiNp2+Z6gxeSXhVfF4X6Mbe50HudDKA4pQEyBYsdAL8rjdm3uxrGylmXw==
+"@sourcegraph/eslint-config@^0.10.3":
+  version "0.10.3"
+  resolved "https://registry.npmjs.org/@sourcegraph/eslint-config/-/eslint-config-0.10.3.tgz#970f0cb31b8f392e4bec8304e0010c20e406b48f"
+  integrity sha512-OqwCHejyAkWtWpXLpR1k91m7cfJCHPNztGbaCF4c7RCq6wCr2n8oUuPGBMeyLBLBYDU49ZCqzoouWwmKfeTsiQ==
   dependencies:
     "@sourcegraph/prettierrc" "^3.0.2"
     "@typescript-eslint/eslint-plugin" "^2.22.0"
@@ -1887,8 +1894,7 @@
   integrity sha512-KWxkyphmlwam8kfYPSmoitKQRMGQCsr1ZRmNZgijT7ABKaVyk/+I5ezt2J213tM04Hi0vyg4L7iH1VCkNvm2Jw==
 
 "@sourcegraph/extension-api-types@link:packages/@sourcegraph/extension-api-types":
-  version "0.0.0"
-  uid ""
+  version "2.1.0"
 
 "@sourcegraph/prettierrc@^3.0.2":
   version "3.0.2"
@@ -17603,10 +17609,10 @@ rxjs-tslint-rules@^4.23.0:
     tsutils "^3.0.0"
     tsutils-etc "^1.1.0"
 
-rxjs@^6.3.2, rxjs@^6.3.3, rxjs@^6.4.0, rxjs@^6.5.3:
-  version "6.5.3"
-  resolved "https://registry.npmjs.org/rxjs/-/rxjs-6.5.3.tgz#510e26317f4db91a7eb1de77d9dd9ba0a4899a3a"
-  integrity sha512-wuYsAYYFdWTAnAaPoKGNhfpWwKZbJW+HgAJ+mImp+Epl7BG8oNWBCTyRM8gba9k4lk8BgWdoYm21Mo/RYhhbgA==
+rxjs@^6.3.2, rxjs@^6.3.3, rxjs@^6.4.0, rxjs@^6.5.4:
+  version "6.5.4"
+  resolved "https://registry.npmjs.org/rxjs/-/rxjs-6.5.4.tgz#e0777fe0d184cec7872df147f303572d414e211c"
+  integrity sha512-naMQXcgEo3csAEGvw/NydRA0fuS2nDZJiw1YUWFKU7aPPAPGZEsD4Iimit96qwCieH6y614MCLYwdkrWx7z/7Q==
   dependencies:
     tslib "^1.9.0"
 
@@ -18398,8 +18404,7 @@ source-map@^0.7.3:
   integrity sha512-CkCj6giN3S+n9qrYiBTX5gystlENnRW5jZeNLHpe6aue+SrHcG5VYwujhW9s4dY31mEGsxBDrHR6oI69fTXsaQ==
 
 "sourcegraph@link:packages/sourcegraph-extension-api":
-  version "0.0.0"
-  uid ""
+  version "23.2.0"
 
 space-separated-tokens@^1.0.0:
   version "1.1.2"
@@ -19784,10 +19789,10 @@ typedarray@^0.0.6:
   resolved "https://registry.npmjs.org/typedarray/-/typedarray-0.0.6.tgz#867ac74e3864187b1d3d47d996a78ec5c8830777"
   integrity sha1-hnrHTjhkGHsdPUfZlqeOxciDB3c=
 
-typescript@^3.7.2:
-  version "3.7.2"
-  resolved "https://registry.npmjs.org/typescript/-/typescript-3.7.2.tgz#27e489b95fa5909445e9fef5ee48d81697ad18fb"
-  integrity sha512-ml7V7JfiN2Xwvcer+XAf2csGO1bPBdRbFCkYBczNZggrBZ9c7G3riSUeJmqEU5uOtXNPMhE3n+R4FA/3YOAWOQ==
+typescript@^3.8.3:
+  version "3.8.3"
+  resolved "https://registry.npmjs.org/typescript/-/typescript-3.8.3.tgz#409eb8544ea0335711205869ec458ab109ee1061"
+  integrity sha512-MYlEfn5VrLNsgudQTVJeNaQFUAI7DkhnOjdpAp4T+ku1TfQClewlbSuTVHiA+8skNBgaf02TL/kLOvig4y3G8w==
 
 ua-parser-js@^0.7.18:
   version "0.7.20"

@@ -75,12 +75,7 @@ func (s *Service) CreateCampaignPlanFromPatches(ctx context.Context, patches []c
 	}
 	defer tx.Done(&err)
 
-	plan := &campaigns.CampaignPlan{
-		CampaignType: campaignTypePatch,
-		Arguments:    "", // intentionally empty to avoid needless duplication with CampaignJob diffs
-		UserID:       userID,
-	}
-
+	plan := &campaigns.CampaignPlan{UserID: userID}
 	err = tx.CreateCampaignPlan(ctx, plan)
 	if err != nil {
 		return nil, err
@@ -101,8 +96,6 @@ func (s *Service) CreateCampaignPlanFromPatches(ctx context.Context, patches []c
 			BaseRef:        patch.BaseRef,
 			Rev:            patch.BaseRevision,
 			Diff:           patch.Patch,
-			StartedAt:      s.clock(),
-			FinishedAt:     s.clock(),
 		}
 		if err := tx.CreateCampaignJob(ctx, job); err != nil {
 			return nil, err
@@ -178,7 +171,6 @@ func (s *Service) createChangesetJobsWithStore(ctx context.Context, store *Store
 	jobs, _, err := store.ListCampaignJobs(ctx, ListCampaignJobsOpts{
 		CampaignPlanID:            c.CampaignPlanID,
 		Limit:                     -1,
-		OnlyFinished:              true,
 		OnlyWithDiff:              true,
 		OnlyUnpublishedInCampaign: c.ID,
 	})
@@ -364,14 +356,9 @@ func RunChangesetJob(
 		baseRef = campaignJob.BaseRef
 	}
 
-	body := c.Description
-	if campaignJob.Description != "" {
-		body += "\n\n---\n\n" + campaignJob.Description
-	}
-
 	cs := repos.Changeset{
 		Title:   c.Name,
-		Body:    body,
+		Body:    c.Description,
 		BaseRef: baseRef,
 		HeadRef: git.EnsureRefPrefix(ref),
 		Repo:    repo,
@@ -626,12 +613,7 @@ func (s *Service) DeleteCampaign(ctx context.Context, id int64, closeChangesets 
 // CloseOpenChangesets closes the given Changesets on their respective codehosts and syncs them.
 func (s *Service) CloseOpenChangesets(ctx context.Context, cs []*campaigns.Changeset) (err error) {
 	cs = selectChangesets(cs, func(c *campaigns.Changeset) bool {
-		s, err := c.State()
-		if err != nil {
-			log15.Warn("could not determine changeset state", "err", err)
-			return false
-		}
-		return s == campaigns.ChangesetStateOpen
+		return c.ExternalState == campaigns.ChangesetStateOpen
 	})
 
 	if len(cs) == 0 {
@@ -964,12 +946,10 @@ func computeCampaignUpdateDiff(
 		return nil, errors.Wrap(err, "listing changesets")
 	}
 
-	// We need OnlyFinished and OnlyWithDiff because we don't create
-	// ChangesetJobs for others.
+	// We need OnlyWithDiff because we don't create ChangesetJobs for others.
 	campaignJobs, _, err := tx.ListCampaignJobs(ctx, ListCampaignJobsOpts{
 		CampaignPlanID: oldPlanID,
 		Limit:          -1,
-		OnlyFinished:   true,
 		OnlyWithDiff:   true,
 	})
 	if err != nil {
@@ -979,7 +959,6 @@ func computeCampaignUpdateDiff(
 	newCampaignJobs, _, err := tx.ListCampaignJobs(ctx, ListCampaignJobsOpts{
 		CampaignPlanID: campaign.CampaignPlanID,
 		Limit:          -1,
-		OnlyFinished:   true,
 		OnlyWithDiff:   true,
 	})
 	if err != nil {
@@ -1031,12 +1010,7 @@ func computeCampaignUpdateDiff(
 			// .. but if we already have a Changeset and that is merged, we
 			// don't want to update it...
 			if group.changeset != nil {
-				// TODO: This needs to change based on the outcome of this:
-				// https://github.com/sourcegraph/sourcegraph/pull/8848#discussion_r389000197
-				s, err := group.changeset.State()
-				if err != nil {
-					return nil, errors.Wrap(err, "determining a changeset's state")
-				}
+				s := group.changeset.ExternalState
 				if s == campaigns.ChangesetStateMerged || s == campaigns.ChangesetStateClosed {
 					// Note: in the future we want to create a new ChangesetJob here.
 					continue
@@ -1060,8 +1034,7 @@ func computeCampaignUpdateDiff(
 func campaignJobsDiffer(a, b *campaigns.CampaignJob) bool {
 	return a.Diff != b.Diff ||
 		a.Rev != b.Rev ||
-		a.BaseRef != b.BaseRef ||
-		a.Description != b.Description
+		a.BaseRef != b.BaseRef
 }
 
 func selectChangesets(cs []*campaigns.Changeset, predicate func(*campaigns.Changeset) bool) []*campaigns.Changeset {

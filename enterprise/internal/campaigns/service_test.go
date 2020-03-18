@@ -96,8 +96,6 @@ func TestService(t *testing.T) {
 				Rev:            patch.BaseRevision,
 				BaseRef:        patch.BaseRef,
 				Diff:           patch.Patch,
-				StartedAt:      now,
-				FinishedAt:     now,
 				CreatedAt:      now,
 				UpdatedAt:      now,
 			}
@@ -108,7 +106,7 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("CreateCampaign", func(t *testing.T) {
-		plan := &campaigns.CampaignPlan{CampaignType: "test", Arguments: `{}`, UserID: user.ID}
+		plan := &campaigns.CampaignPlan{UserID: user.ID}
 		err = store.CreateCampaignPlan(ctx, plan)
 		if err != nil {
 			t.Fatal(err)
@@ -157,7 +155,7 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("CreateCampaignAsDraft", func(t *testing.T) {
-		plan := &campaigns.CampaignPlan{CampaignType: "test", Arguments: `{}`, UserID: user.ID}
+		plan := &campaigns.CampaignPlan{UserID: user.ID}
 		err = store.CreateCampaignPlan(ctx, plan)
 		if err != nil {
 			t.Fatal(err)
@@ -197,7 +195,7 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("CreateCampaignWithPlanAttachedToOtherCampaign", func(t *testing.T) {
-		plan := &campaigns.CampaignPlan{CampaignType: "test", Arguments: `{}`, UserID: user.ID}
+		plan := &campaigns.CampaignPlan{UserID: user.ID}
 		err = store.CreateCampaignPlan(ctx, plan)
 		if err != nil {
 			t.Fatal(err)
@@ -226,7 +224,7 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("CreateChangesetJobForCampaignJob", func(t *testing.T) {
-		plan := &campaigns.CampaignPlan{CampaignType: "test", Arguments: `{}`, UserID: user.ID}
+		plan := &campaigns.CampaignPlan{UserID: user.ID}
 		err = store.CreateCampaignPlan(ctx, plan)
 		if err != nil {
 			t.Fatal(err)
@@ -320,7 +318,7 @@ func TestService(t *testing.T) {
 					tc.err = "<nil>"
 				}
 
-				plan := &campaigns.CampaignPlan{CampaignType: "test", Arguments: `{}`, UserID: user.ID}
+				plan := &campaigns.CampaignPlan{UserID: user.ID}
 				err = store.CreateCampaignPlan(ctx, plan)
 				if err != nil {
 					t.Fatal(err)
@@ -394,7 +392,7 @@ func TestService(t *testing.T) {
 	t.Run("UpdateCampaignWithPlanAttachedToOtherCampaign", func(t *testing.T) {
 		svc := NewServiceWithClock(store, gitClient, cf, clock)
 
-		plan := &campaigns.CampaignPlan{CampaignType: "test", Arguments: `{}`, UserID: user.ID}
+		plan := &campaigns.CampaignPlan{UserID: user.ID}
 		err = store.CreateCampaignPlan(ctx, plan)
 		if err != nil {
 			t.Fatal(err)
@@ -413,7 +411,7 @@ func TestService(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		otherPlan := &campaigns.CampaignPlan{CampaignType: "test", Arguments: `{}`, UserID: user.ID}
+		otherPlan := &campaigns.CampaignPlan{UserID: user.ID}
 		err = store.CreateCampaignPlan(ctx, otherPlan)
 		if err != nil {
 			t.Fatal(err)
@@ -682,7 +680,7 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 			if tt.campaignIsManual {
 				campaign = testCampaign(user.ID, 0)
 			} else {
-				plan := &campaigns.CampaignPlan{CampaignType: "patch", Arguments: `{}`, UserID: user.ID}
+				plan := &campaigns.CampaignPlan{UserID: user.ID}
 				err = store.CreateCampaignPlan(ctx, plan)
 				if err != nil {
 					t.Fatal(err)
@@ -748,7 +746,7 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 			oldTime := now
 			now = now.Add(5 * time.Second)
 
-			newPlan := &campaigns.CampaignPlan{CampaignType: "patch", Arguments: `{}`, UserID: user.ID}
+			newPlan := &campaigns.CampaignPlan{UserID: user.ID}
 			err = store.CreateCampaignPlan(ctx, newPlan)
 			if err != nil {
 				t.Fatal(err)
@@ -1051,14 +1049,25 @@ var testUser = db.NewUser{
 	EmailVerificationCode: "foobar",
 }
 
-func createTestUser(ctx context.Context, t *testing.T) *types.User {
-	t.Helper()
-	user, err := db.Users.Create(ctx, testUser)
-	if err != nil {
-		t.Fatal(err)
+var createTestUser = func() func(context.Context, *testing.T) *types.User {
+	count := 0
+
+	return func(ctx context.Context, t *testing.T) *types.User {
+		t.Helper()
+
+		u := testUser
+		u.Username = fmt.Sprintf("%s-%d", u.Username, count)
+
+		user, err := db.Users.Create(ctx, u)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		count += 1
+
+		return user
 	}
-	return user
-}
+}()
 
 func testCampaignJob(plan int64, repo api.RepoID, t time.Time) *campaigns.CampaignJob {
 	return &campaigns.CampaignJob{
@@ -1067,8 +1076,6 @@ func testCampaignJob(plan int64, repo api.RepoID, t time.Time) *campaigns.Campai
 		Rev:            "deadbeef",
 		BaseRef:        "refs/heads/master",
 		Diff:           "cool diff",
-		StartedAt:      t,
-		FinishedAt:     t,
 	}
 }
 
@@ -1096,6 +1103,7 @@ func testChangeset(repoID api.RepoID, campaign int64, changesetJob int64, state 
 		ExternalServiceType: "github",
 		ExternalID:          fmt.Sprintf("ext-id-%d", changesetJob),
 		Metadata:            pr,
+		ExternalState:       state,
 	}
 }
 

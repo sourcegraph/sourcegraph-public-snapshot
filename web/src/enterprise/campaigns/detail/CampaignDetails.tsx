@@ -19,7 +19,7 @@ import {
     closeCampaign,
     publishCampaign,
 } from './backend'
-import { useError, useObservable } from '../../../util/useObservable'
+import { useError, useObservable } from '../../../../../shared/src/util/useObservable'
 import { asError } from '../../../../../shared/src/util/errors'
 import * as H from 'history'
 import { CampaignBurndownChart } from './BurndownChart'
@@ -32,13 +32,14 @@ import { switchMap, tap, takeWhile, repeatWhen, delay, catchError, startWith } f
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { CampaignDescriptionField } from './form/CampaignDescriptionField'
 import { CampaignStatus } from './CampaignStatus'
-import { CampaignTabs } from './CampaignTabs'
-import { DEFAULT_CHANGESET_LIST_COUNT } from './presentation'
 import { CampaignUpdateDiff } from './CampaignUpdateDiff'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import { CampaignUpdateSelection } from './CampaignUpdateSelection'
 import { CampaignActionsBar } from './CampaignActionsBar'
 import { CampaignTitleField } from './form/CampaignTitleField'
+import { CampaignChangesets } from './changesets/CampaignChangesets'
+import { CampaignDiffStat } from './CampaignDiffStat'
+import { pluralize } from '../../../../../shared/src/util/strings'
 
 export type CampaignUIMode = 'viewing' | 'editing' | 'saving' | 'deleting' | 'closing'
 
@@ -51,7 +52,6 @@ interface Campaign
         | 'description'
         | 'author'
         | 'changesetCountsOverTime'
-        | 'branch'
         | 'createdAt'
         | 'updatedAt'
         | 'publishedAt'
@@ -119,6 +119,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         if (!campaignID) {
             return
         }
+        // on the very first fetch, a reload of the changesets is not required
+        let isFirstCampaignFetch = true
         // Fetch campaign if ID was given
         const subscription = merge(of(undefined), _noSubject ? new Observable<void>() : campaignUpdates)
             .pipe(
@@ -155,7 +157,10 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         setName(fetchedCampaign.name)
                         setDescription(fetchedCampaign.description)
                     }
-                    changesetUpdates.next()
+                    if (!isFirstCampaignFetch) {
+                        changesetUpdates.next()
+                    }
+                    isFirstCampaignFetch = false
                 },
                 error: triggerError,
             })
@@ -194,7 +199,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 (planID ? previewCampaignPlans.pipe(startWith(planID)) : previewCampaignPlans).pipe(
                     switchMap(plan => _fetchCampaignPlanById(plan)),
                     tap(campaignPlan => {
-                        if (campaignPlan && campaignPlan.changesetPlans.totalCount <= DEFAULT_CHANGESET_LIST_COUNT) {
+                        if (campaignPlan) {
                             changesetUpdates.next()
                         }
                     }),
@@ -395,6 +400,11 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         setBranchModified(true)
     }
 
+    const totalChangesetCount = campaign?.changesets.totalCount ?? 0
+
+    const totalChangesetPlanCount =
+        (campaign?.changesetPlans.totalCount ?? 0) + (campaignPlan?.changesetPlans.totalCount ?? 0)
+
     return (
         <>
             <PageTitle title={campaign ? campaign.name : 'New campaign'} />
@@ -408,9 +418,12 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     onDelete={onDelete}
                 />
                 {alertError && <ErrorAlert error={alertError} />}
+                {campaign && !updateMode && !['saving', 'editing'].includes(mode) && (
+                    <CampaignStatus campaign={campaign} onPublish={onPublish} onRetry={onRetry} />
+                )}
                 {(mode === 'editing' || mode === 'saving') && (
                     <>
-                        <h3>Campaign details</h3>
+                        <h3>Details</h3>
                         <CampaignTitleField
                             className="e2e-campaign-title"
                             value={name}
@@ -425,7 +438,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     </>
                 )}
                 {campaign && mode !== 'editing' && mode !== 'saving' && (
-                    <div className="card mt-3">
+                    <div className="card mt-2">
                         <div className="card-header">
                             <strong>
                                 <UserAvatar user={author} className="icon-inline" /> {author.username}
@@ -437,18 +450,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         </div>
                     </div>
                 )}
-                {campaign && campaignPlan && (
-                    <CampaignUpdateDiff
-                        campaign={campaign}
-                        campaignPlan={campaignPlan}
-                        history={history}
-                        location={location}
-                        isLightTheme={isLightTheme}
-                        className="my-3"
-                    />
-                )}
                 {(mode === 'editing' || mode === 'saving') && specifyingBranchAllowed && (
-                    <div className="form-group mt-3">
+                    <div className="form-group mt-2">
                         <label>
                             Branch name{' '}
                             <small>
@@ -471,10 +474,20 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         />
                     </div>
                 )}
+                {campaign && campaignPlan && (
+                    <CampaignUpdateDiff
+                        campaign={campaign}
+                        campaignPlan={campaignPlan}
+                        history={history}
+                        location={location}
+                        isLightTheme={isLightTheme}
+                        className="mt-4"
+                    />
+                )}
                 {!updateMode ? (
                     (!campaign || campaignPlan) && (
                         <>
-                            <div className="mt-3">
+                            <div className="mt-2">
                                 {campaignPlan && (
                                     <button
                                         type="submit"
@@ -497,7 +510,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         </>
                     )
                 ) : (
-                    <div className="mb-3">
+                    <div className="mb-0">
                         <button type="reset" className="btn btn-secondary mr-1" onClick={onCancel}>
                             Cancel
                         </button>
@@ -513,53 +526,54 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             </Form>
 
             {/* is already created or a plan is available */}
-            {(campaign || campaignPlan) && (
+            {(campaign || campaignPlan) && !updateMode && (
                 <>
-                    {/* Only show status for created campaigns and not in update mode */}
-                    {campaign && !campaignPlan && (
-                        <CampaignStatus
-                            campaign={campaign}
-                            status={campaign.status}
-                            onPublish={onPublish}
-                            onRetry={onRetry}
-                        />
-                    )}
-
-                    {campaign && !updateMode && (
+                    {campaign && !['saving', 'editing'].includes(mode) && (
                         <>
-                            <h3 className="mb-2">Progress</h3>
+                            <h3 className="mt-4 mb-2">Progress</h3>
                             <CampaignBurndownChart
                                 changesetCountsOverTime={campaign.changesetCountsOverTime}
                                 history={history}
                             />
                             {/* only campaigns that have no plan can add changesets manually */}
-                            {!campaign.plan && campaign.viewerCanAdminister && (
+                            {!campaign.plan && campaign.viewerCanAdminister && !campaign.closedAt && (
                                 <AddChangesetForm campaignID={campaign.id} onAdd={onAddChangeset} />
                             )}
                         </>
                     )}
 
-                    {!updateMode && (
-                        <>
-                            <h3 className="mt-3">Changesets</h3>
-                            {(campaign?.changesets.totalCount ?? 0) +
-                            (campaignPlan || campaign)!.changesetPlans.totalCount ? (
-                                <CampaignTabs
-                                    campaign={(campaignPlan || campaign)!}
-                                    changesetUpdates={changesetUpdates}
-                                    campaignUpdates={campaignUpdates}
-                                    persistLines={!!campaign}
-                                    history={history}
-                                    location={location}
-                                    className="mt-2"
-                                    isLightTheme={isLightTheme}
-                                />
-                            ) : (
-                                (campaignPlan || campaign)!.status.state !== GQL.BackgroundProcessState.PROCESSING && (
-                                    <p className="mt-2 text-muted">No changesets</p>
-                                )
-                            )}
-                        </>
+                    <h3 className="mt-4 d-flex align-items-end mb-0">
+                        {totalChangesetPlanCount > 0 && (
+                            <>
+                                {totalChangesetPlanCount} {pluralize('Patch', totalChangesetPlanCount, 'Patches')}
+                            </>
+                        )}
+                        {(totalChangesetCount > 0 || !!campaign) && totalChangesetPlanCount > 0 && (
+                            <span className="mx-1">/</span>
+                        )}
+                        {(totalChangesetCount > 0 || !!campaign) && (
+                            <>
+                                {totalChangesetCount} {pluralize('Changeset', totalChangesetCount)}
+                            </>
+                        )}{' '}
+                        <CampaignDiffStat campaign={(campaignPlan || campaign)!} className="ml-2 mb-0" />
+                    </h3>
+                    {(campaign?.changesets.totalCount ?? 0) + (campaignPlan || campaign)!.changesetPlans.totalCount ? (
+                        <CampaignChangesets
+                            campaign={(campaignPlan || campaign)!}
+                            changesetUpdates={changesetUpdates}
+                            campaignUpdates={campaignUpdates}
+                            history={history}
+                            location={location}
+                            isLightTheme={isLightTheme}
+                        />
+                    ) : (
+                        campaign?.status.state !== GQL.BackgroundProcessState.PROCESSING &&
+                        (campaign && !campaign.plan ? (
+                            <div className="mt-2 alert alert-info">Add a changeset to get started.</div>
+                        ) : (
+                            <p className="mt-2 text-muted">No changesets</p>
+                        ))
                     )}
                 </>
             )}

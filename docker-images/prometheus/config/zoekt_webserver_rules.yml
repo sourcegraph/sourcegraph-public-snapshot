@@ -11,4 +11,4 @@ groups:
         expr: >-
           clamp_max(clamp_min(floor(
           (increase(src_zoekt_request_duration_seconds_count{code!~"2.."}[5m]) / 5) OR on() vector(0)
-          ), 0), 1)
+          ), 0), 1) OR on() vector(1)

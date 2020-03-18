@@ -4,11 +4,9 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"regexp"
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -25,11 +23,10 @@ import (
 // A BitbucketServerSource yields repositories from a single BitbucketServer connection configured
 // in Sourcegraph via the external services configuration.
 type BitbucketServerSource struct {
-	svc             *ExternalService
-	config          *schema.BitbucketServerConnection
-	exclude         map[string]bool
-	excludePatterns []*regexp.Regexp
-	client          *bitbucketserver.Client
+	svc     *ExternalService
+	config  *schema.BitbucketServerConnection
+	exclude excludeFunc
+	client  *bitbucketserver.Client
 }
 
 // NewBitbucketServerSource returns a new BitbucketServerSource from the given external service.
@@ -62,24 +59,15 @@ func newBitbucketServerSource(svc *ExternalService, c *schema.BitbucketServerCon
 		return nil, err
 	}
 
-	exclude := make(map[string]bool, len(c.Exclude))
-	var excludePatterns []*regexp.Regexp
+	var eb excludeBuilder
 	for _, r := range c.Exclude {
-		if r.Name != "" {
-			exclude[strings.ToLower(r.Name)] = true
-		}
-
-		if r.Id != 0 {
-			exclude[strconv.Itoa(r.Id)] = true
-		}
-
-		if r.Pattern != "" {
-			re, err := regexp.Compile(r.Pattern)
-			if err != nil {
-				return nil, err
-			}
-			excludePatterns = append(excludePatterns, re)
-		}
+		eb.Exact(r.Name)
+		eb.Exact(strconv.Itoa(r.Id))
+		eb.Pattern(r.Pattern)
+	}
+	exclude, err := eb.Build()
+	if err != nil {
+		return nil, err
 	}
 
 	client := bitbucketserver.NewClient(baseURL, cli)
@@ -88,11 +76,10 @@ func newBitbucketServerSource(svc *ExternalService, c *schema.BitbucketServerCon
 	client.Password = c.Password
 
 	return &BitbucketServerSource{
-		svc:             svc,
-		config:          c,
-		exclude:         exclude,
-		excludePatterns: excludePatterns,
-		client:          client,
+		svc:     svc,
+		config:  c,
+		exclude: exclude,
+		client:  client,
 	}, nil
 }
 
@@ -339,17 +326,12 @@ func (s *BitbucketServerSource) excludes(r *bitbucketserver.Repo) bool {
 		name = r.Project.Key + "/" + name
 	}
 	if r.State != "AVAILABLE" ||
-		s.exclude[strings.ToLower(name)] ||
-		s.exclude[strconv.Itoa(r.ID)] ||
+		s.exclude(name) ||
+		s.exclude(strconv.Itoa(r.ID)) ||
 		(s.config.ExcludePersonalRepositories && r.IsPersonalRepository()) {
 		return true
 	}
 
-	for _, re := range s.excludePatterns {
-		if re.MatchString(name) {
-			return true
-		}
-	}
 	return false
 }
 
@@ -475,8 +457,4 @@ func (s *BitbucketServerSource) listAllLabeledRepos(ctx context.Context, label s
 		next = page
 	}
 	return ids, nil
-}
-
-func unixMilliToTime(ms int64) time.Time {
-	return time.Unix(0, ms*int64(time.Millisecond))
 }

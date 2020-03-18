@@ -10,10 +10,7 @@ import { SourcegraphIntegrationURLs } from '../../platform/context'
  *
  * @param isExtension `true` when executing in the browser extension.
  */
-export async function injectCodeIntelligence(
-    urls: SourcegraphIntegrationURLs,
-    isExtension: boolean
-): Promise<Subscription> {
+export function injectCodeIntelligence(urls: SourcegraphIntegrationURLs, isExtension: boolean): Subscription {
     const subscriptions = new Subscription()
     const codeHost = determineCodeHost()
     if (codeHost) {
@@ -22,7 +19,7 @@ export async function injectCodeIntelligence(
             childList: true,
             subtree: true,
         }).pipe(startWith([{ addedNodes: [document.body], removedNodes: [] }]))
-        subscriptions.add(await injectCodeIntelligenceToCodeHost(mutations, codeHost, urls, isExtension))
+        subscriptions.add(injectCodeIntelligenceToCodeHost(mutations, codeHost, urls, isExtension))
     }
     return subscriptions
 }

@@ -10,7 +10,7 @@ groups:
         expr: >-
           clamp_max(clamp_min(floor(
           (sum by (instance)(increase(searcher_service_request_total{code=~"2.."}[5m]))) OR on() vector(0)
-          ), 0), 1)
+          ), 0), 1) OR on() vector(1)
       - record: alert_count
         labels:
           service_name: searcher
@@ -19,5 +19,5 @@ groups:
           description: 'searcher: 5+ non-200 responses from the frontend-internal API over 5m'
         expr: >-
           clamp_max(clamp_min(floor(
-          increase(src_frontend_internal_request_duration_seconds_count{job="searcher",code!~"2.."}[5m]) / 5
-          ), 0), 1)
+          (increase(src_frontend_internal_request_duration_seconds_count{job="searcher",code!~"2.."}[5m]) / 5) OR on() vector(0)
+          ), 0), 1) OR on() vector(1)

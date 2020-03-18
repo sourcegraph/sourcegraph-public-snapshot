@@ -2,71 +2,89 @@
 
 exports[`CampaignStatus viewerCanAdminister: false campaign errored 1`] = `
 <React.Fragment>
-  <div
-    className="mt-3"
-  >
-    <Memo(AlertCircleIcon)
-      className="icon-inline text-danger mr-1"
-    />
-    Error creating campaign
+  <div>
+    <React.Fragment>
+      <div
+        className="alert alert-danger my-4"
+      >
+        <h3
+          className="alert-heading mb-0"
+        >
+          Creating changesets failed
+        </h3>
+        <ul
+          className="mt-2"
+        >
+          <li
+            className="mb-2"
+          >
+            <code>
+              <ErrorMessage
+                error="a"
+              />
+            </code>
+          </li>
+          <li
+            className="mb-2"
+          >
+            <code>
+              <ErrorMessage
+                error="b"
+              />
+            </code>
+          </li>
+        </ul>
+      </div>
+    </React.Fragment>
   </div>
-  <ErrorAlert
-    className="mt-3"
-    error="a"
-  />
-  <ErrorAlert
-    className="mt-3"
-    error="b"
-  />
 </React.Fragment>
 `;
 
 exports[`CampaignStatus viewerCanAdminister: false campaign processing 1`] = `
 <React.Fragment>
-  <div
-    className="mt-3 e2e-preview-loading"
-  >
-    <div
-      className="progress mb-1"
-    >
+  <div>
+    <React.Fragment>
       <div
-        className="progress-bar"
-        style={
-          Object {
-            "width": "50%",
-          }
-        }
+        className="alert alert-info mt-4"
       >
-         
+        <p>
+          <Memo(SyncIcon)
+            className="icon-inline"
+          />
+           Creating 
+          6
+           
+          changesets
+           on code hosts...
+        </p>
+        <div
+          className="progress mt-2 mb-1"
+        >
+          <div
+            className="progress-bar"
+            style={
+              Object {
+                "width": "50%",
+              }
+            }
+          >
+             
+          </div>
+        </div>
       </div>
-    </div>
-    <p>
-      Creating changes: 
-      3
-       / 
-      6
-    </p>
+    </React.Fragment>
   </div>
-  <ErrorAlert
-    className="mt-3"
-    error="a"
-  />
-  <ErrorAlert
-    className="mt-3"
-    error="b"
-  />
 </React.Fragment>
 `;
 
 exports[`CampaignStatus viewerCanAdminister: false closed campaign 1`] = `
 <React.Fragment>
-  <div
-    className="d-flex my-3"
-  >
-    <Memo(WarningIcon)
-      className="icon-inline text-warning mr-1"
-    />
-     Campaign is closed
+  <div>
+    <div
+      className="alert alert-secondary mt-2"
+    >
+      Campaign is closed. No changes can be made to this campaign anymore.
+    </div>
   </div>
 </React.Fragment>
 `;
@@ -75,26 +93,19 @@ exports[`CampaignStatus viewerCanAdminister: false drafted campaign 1`] = `
 <React.Fragment>
   <React.Fragment>
     <div
-      className="d-flex my-3 alert alert-info"
+      className="d-flex align-items-center alert alert-warning my-4"
     >
-      <Memo(InformationIcon)
-        className="icon-inline mr-1"
-      />
-       Campaign is a draft.
-       
-      No changesets have
-       
-      been created on code hosts yet.
+      <p
+        className="mb-0 ml-2"
+      >
+        Campaign is a draft.
+         
+        No changesets have
+         
+        been created on code hosts yet.
+      </p>
     </div>
   </React.Fragment>
-  <div
-    className="d-flex my-3"
-  >
-    <Memo(CheckCircleIcon)
-      className="icon-inline text-success mr-1 e2e-preview-success"
-    />
-     Creation completed
-  </div>
 </React.Fragment>
 `;
 
@@ -102,103 +113,114 @@ exports[`CampaignStatus viewerCanAdminister: false drafted campaign, some publis
 <React.Fragment>
   <React.Fragment>
     <div
-      className="d-flex my-3 alert alert-info"
+      className="d-flex align-items-center alert alert-warning my-4"
     >
-      <Memo(InformationIcon)
-        className="icon-inline mr-1"
-      />
-       Campaign is a draft.
-       
-      Only a subset of changesets has
-       
-      been created on code hosts yet.
+      <p
+        className="mb-0 ml-2"
+      >
+        Campaign is a draft.
+         
+        Only a subset of changesets has
+         
+        been created on code hosts yet.
+      </p>
     </div>
   </React.Fragment>
-  <div
-    className="d-flex my-3"
-  >
-    <Memo(CheckCircleIcon)
-      className="icon-inline text-success mr-1 e2e-preview-success"
-    />
-     Creation completed
-  </div>
 </React.Fragment>
 `;
 
 exports[`CampaignStatus viewerCanAdminister: true campaign errored 1`] = `
 <React.Fragment>
-  <div
-    className="mt-3"
-  >
-    <Memo(AlertCircleIcon)
-      className="icon-inline text-danger mr-1"
-    />
-    Error creating campaign
+  <div>
+    <React.Fragment>
+      <div
+        className="alert alert-danger my-4"
+      >
+        <h3
+          className="alert-heading mb-0"
+        >
+          Creating changesets failed
+        </h3>
+        <ul
+          className="mt-2"
+        >
+          <li
+            className="mb-2"
+          >
+            <code>
+              <ErrorMessage
+                error="a"
+              />
+            </code>
+          </li>
+          <li
+            className="mb-2"
+          >
+            <code>
+              <ErrorMessage
+                error="b"
+              />
+            </code>
+          </li>
+        </ul>
+        <button
+          className="btn btn-primary mb-0"
+          onClick={[Function]}
+          type="button"
+        >
+          Retry
+        </button>
+      </div>
+    </React.Fragment>
   </div>
-  <ErrorAlert
-    className="mt-3"
-    error="a"
-  />
-  <ErrorAlert
-    className="mt-3"
-    error="b"
-  />
-  <button
-    className="btn btn-primary mb-2"
-    onClick={[Function]}
-    type="button"
-  >
-    Retry failed jobs
-  </button>
 </React.Fragment>
 `;
 
 exports[`CampaignStatus viewerCanAdminister: true campaign processing 1`] = `
 <React.Fragment>
-  <div
-    className="mt-3 e2e-preview-loading"
-  >
-    <div
-      className="progress mb-1"
-    >
+  <div>
+    <React.Fragment>
       <div
-        className="progress-bar"
-        style={
-          Object {
-            "width": "50%",
-          }
-        }
+        className="alert alert-info mt-4"
       >
-         
+        <p>
+          <Memo(SyncIcon)
+            className="icon-inline"
+          />
+           Creating 
+          6
+           
+          changesets
+           on code hosts...
+        </p>
+        <div
+          className="progress mt-2 mb-1"
+        >
+          <div
+            className="progress-bar"
+            style={
+              Object {
+                "width": "50%",
+              }
+            }
+          >
+             
+          </div>
+        </div>
       </div>
-    </div>
-    <p>
-      Creating changes: 
-      3
-       / 
-      6
-    </p>
+    </React.Fragment>
   </div>
-  <ErrorAlert
-    className="mt-3"
-    error="a"
-  />
-  <ErrorAlert
-    className="mt-3"
-    error="b"
-  />
 </React.Fragment>
 `;
 
 exports[`CampaignStatus viewerCanAdminister: true closed campaign 1`] = `
 <React.Fragment>
-  <div
-    className="d-flex my-3"
-  >
-    <Memo(WarningIcon)
-      className="icon-inline text-warning mr-1"
-    />
-     Campaign is closed
+  <div>
+    <div
+      className="alert alert-secondary mt-2"
+    >
+      Campaign is closed. No changes can be made to this campaign anymore.
+    </div>
   </div>
 </React.Fragment>
 `;
@@ -207,33 +229,26 @@ exports[`CampaignStatus viewerCanAdminister: true drafted campaign 1`] = `
 <React.Fragment>
   <React.Fragment>
     <div
-      className="d-flex my-3 alert alert-info"
+      className="d-flex align-items-center alert alert-warning my-4"
     >
-      <Memo(InformationIcon)
-        className="icon-inline mr-1"
-      />
-       Campaign is a draft.
-       
-      No changesets have
-       
-      been created on code hosts yet.
+      <button
+        className="btn btn-primary mb-0"
+        onClick={[Function]}
+        type="button"
+      >
+        Publish campaign
+      </button>
+      <p
+        className="mb-0 ml-2"
+      >
+        Campaign is a draft.
+         
+        No changesets have
+         
+        been created on code hosts yet.
+      </p>
     </div>
-    <button
-      className="mb-3 btn btn-primary"
-      onClick={[Function]}
-      type="button"
-    >
-      Publish campaign
-    </button>
   </React.Fragment>
-  <div
-    className="d-flex my-3"
-  >
-    <Memo(CheckCircleIcon)
-      className="icon-inline text-success mr-1 e2e-preview-success"
-    />
-     Creation completed
-  </div>
 </React.Fragment>
 `;
 
@@ -241,32 +256,25 @@ exports[`CampaignStatus viewerCanAdminister: true drafted campaign, some publish
 <React.Fragment>
   <React.Fragment>
     <div
-      className="d-flex my-3 alert alert-info"
+      className="d-flex align-items-center alert alert-warning my-4"
     >
-      <Memo(InformationIcon)
-        className="icon-inline mr-1"
-      />
-       Campaign is a draft.
-       
-      Only a subset of changesets has
-       
-      been created on code hosts yet.
+      <button
+        className="btn btn-primary mb-0"
+        onClick={[Function]}
+        type="button"
+      >
+        Publish campaign
+      </button>
+      <p
+        className="mb-0 ml-2"
+      >
+        Campaign is a draft.
+         
+        Only a subset of changesets has
+         
+        been created on code hosts yet.
+      </p>
     </div>
-    <button
-      className="mb-3 btn btn-primary"
-      onClick={[Function]}
-      type="button"
-    >
-      Publish campaign
-    </button>
   </React.Fragment>
-  <div
-    className="d-flex my-3"
-  >
-    <Memo(CheckCircleIcon)
-      className="icon-inline text-success mr-1 e2e-preview-success"
-    />
-     Creation completed
-  </div>
 </React.Fragment>
 `;

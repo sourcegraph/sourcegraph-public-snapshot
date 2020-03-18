@@ -23,8 +23,7 @@ import (
 // Ran in integration_test.go
 func testStore(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
-		tx, done := dbtest.NewTx(t, db)
-		defer done()
+		tx := dbtest.NewTx(t, db)
 
 		now := time.Now().UTC().Truncate(time.Microsecond)
 		clock := func() time.Time {
@@ -1157,11 +1156,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 			t.Run("Create", func(t *testing.T) {
 				for i := 0; i < cap(campaignPlans); i++ {
-					c := &cmpgn.CampaignPlan{
-						CampaignType: "patch",
-						Arguments:    `{}`,
-						CanceledAt:   now,
-					}
+					c := &cmpgn.CampaignPlan{UserID: 999}
 
 					want := c.Clone()
 					have := c
@@ -1269,9 +1264,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 			t.Run("Update", func(t *testing.T) {
 				for _, c := range campaignPlans {
-					c.CampaignType += "-updated"
-					c.Arguments = `{"updated": true}`
-					c.CanceledAt = now.Add(5 * time.Second)
+					c.UserID += 1234
 
 					now = now.Add(time.Second)
 					want := c
@@ -1348,8 +1341,6 @@ func testStore(db *sql.DB) func(*testing.T) {
 						Rev:            api.CommitID("deadbeef"),
 						BaseRef:        "master",
 						Diff:           "+ foobar - barfoo",
-						Description:    "- Removed 3 instances of foobar\n",
-						Error:          "only set on error",
 					}
 
 					want := c.Clone()
@@ -1510,61 +1501,6 @@ func testStore(db *sql.DB) func(*testing.T) {
 				})
 			})
 
-			t.Run("Listing and Counting OnlyFinished", func(t *testing.T) {
-				listOpts := ListCampaignJobsOpts{OnlyFinished: true}
-				countOpts := CountCampaignJobsOpts{OnlyFinished: true}
-
-				have, _, err := s.ListCampaignJobs(ctx, listOpts)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				if len(have) != 0 {
-					t.Errorf("jobs returned: %d", len(have))
-				}
-
-				count, err := s.CountCampaignJobs(ctx, countOpts)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				if count != 0 {
-					t.Errorf("jobs counted: %d", count)
-				}
-
-				for _, j := range campaignJobs {
-					j.FinishedAt = now
-
-					err := s.UpdateCampaignJob(ctx, j)
-					if err != nil {
-						t.Fatal(err)
-					}
-				}
-
-				have, _, err = s.ListCampaignJobs(ctx, listOpts)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				have, want := have, campaignJobs
-				if len(have) != len(want) {
-					t.Fatalf("listed %d campaignJobs, want: %d", len(have), len(want))
-				}
-
-				if diff := cmp.Diff(have, want); diff != "" {
-					t.Fatalf("opts: %+v, diff: %s", listOpts, diff)
-				}
-
-				count, err = s.CountCampaignJobs(ctx, countOpts)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				if int(count) != len(campaignJobs) {
-					t.Errorf("jobs counted: %d", count)
-				}
-			})
-
 			t.Run("Listing and Counting OnlyWithDiff", func(t *testing.T) {
 				listOpts := ListCampaignJobsOpts{OnlyWithDiff: true}
 				countOpts := CountCampaignJobsOpts{OnlyWithDiff: true}
@@ -1694,11 +1630,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 			t.Run("Update", func(t *testing.T) {
 				for _, c := range campaignJobs {
 					now = now.Add(time.Second)
-					c.StartedAt = now
-					c.FinishedAt = now
 					c.Diff += "-updated"
-					c.Description += "-updated"
-					c.Error += "-updated"
 
 					want := c
 					want.UpdatedAt = now
@@ -1765,142 +1697,29 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 		t.Run("CampaignPlan BackgroundProcessStatus", func(t *testing.T) {
 			tests := []struct {
-				planCanceledAt time.Time
-				jobs           []*cmpgn.CampaignJob
-				want           *cmpgn.BackgroundProcessStatus
+				jobs []*cmpgn.CampaignJob
+				want *cmpgn.BackgroundProcessStatus
 			}{
 				{
 					jobs: []*cmpgn.CampaignJob{}, // no jobs
 					want: &cmpgn.BackgroundProcessStatus{
-						ProcessState:  cmpgn.BackgroundProcessStateCompleted,
-						Total:         0,
-						Completed:     0,
-						Pending:       0,
-						ProcessErrors: nil,
+						ProcessState: cmpgn.BackgroundProcessStateCompleted,
 					},
 				},
 				{
-					jobs: []*cmpgn.CampaignJob{
-						// not started (pending)
+					jobs: []*cmpgn.CampaignJob{ // two jobs
 						{},
-						// started (pending)
-						{StartedAt: now},
-					},
-					want: &cmpgn.BackgroundProcessStatus{
-						ProcessState:  cmpgn.BackgroundProcessStateProcessing,
-						Total:         2,
-						Completed:     0,
-						Pending:       2,
-						ProcessErrors: nil,
-					},
-				},
-				{
-					jobs: []*cmpgn.CampaignJob{
-						// completed, no errors, no diff
-						{StartedAt: now, FinishedAt: now},
-						// completed, no errors, diff
-						{StartedAt: now, FinishedAt: now, Diff: "+foobar\n-barfoo"},
-					},
-					want: &cmpgn.BackgroundProcessStatus{
-						ProcessState:  cmpgn.BackgroundProcessStateCompleted,
-						Total:         2,
-						Completed:     2,
-						Pending:       0,
-						ProcessErrors: nil,
-					},
-				},
-				{
-					jobs: []*cmpgn.CampaignJob{
-						// completed, error
-						{StartedAt: now, FinishedAt: now, Error: "error1"},
-					},
-					want: &cmpgn.BackgroundProcessStatus{
-						ProcessState:  cmpgn.BackgroundProcessStateErrored,
-						Total:         1,
-						Completed:     1,
-						Pending:       0,
-						ProcessErrors: []string{"error1"},
-					},
-				},
-				{
-					jobs: []*cmpgn.CampaignJob{
-						// not started (pending)
 						{},
-						// started (pending)
-						{StartedAt: now},
-						// completed, no errors, no diff
-						{StartedAt: now, FinishedAt: now},
-						// completed, no errors, diff
-						{StartedAt: now, FinishedAt: now, Diff: "+foobar\n-barfoo"},
-						// completed, error
-						{StartedAt: now, FinishedAt: now, Error: "error1"},
-						// completed, another error
-						{StartedAt: now, FinishedAt: now, Error: "error2"},
 					},
 					want: &cmpgn.BackgroundProcessStatus{
-						ProcessState:  cmpgn.BackgroundProcessStateProcessing,
-						Total:         6,
-						Completed:     4,
-						Pending:       2,
-						ProcessErrors: []string{"error1", "error2"},
-					},
-				},
-				{
-					planCanceledAt: now,
-					jobs: []*cmpgn.CampaignJob{
-						// not started (pending)
-						{},
-						// started (pending)
-						{StartedAt: now},
-					},
-					want: &cmpgn.BackgroundProcessStatus{
-						// Instead of "Processing" it's "Canceled"
-						ProcessState:  cmpgn.BackgroundProcessStateCanceled,
-						Canceled:      true,
-						Total:         2,
-						Completed:     0,
-						Pending:       2,
-						ProcessErrors: nil,
-					},
-				},
-				{
-					planCanceledAt: now,
-					jobs: []*cmpgn.CampaignJob{
-						// completed, error
-						{StartedAt: now, FinishedAt: now, Error: "error1"},
-					},
-					want: &cmpgn.BackgroundProcessStatus{
-						// Instead of "Errored" it's "Canceled"
-						ProcessState:  cmpgn.BackgroundProcessStateCanceled,
-						Canceled:      true,
-						Total:         1,
-						Completed:     1,
-						Pending:       0,
-						ProcessErrors: []string{"error1"},
-					},
-				},
-				{
-					planCanceledAt: now,
-					jobs: []*cmpgn.CampaignJob{
-						// completed, no errors
-						{StartedAt: now, FinishedAt: now, Diff: "+foobar\n-foobar"},
-					},
-					want: &cmpgn.BackgroundProcessStatus{
-						// Instead of "Completed" it's "Canceled"
-						ProcessState:  cmpgn.BackgroundProcessStateCanceled,
-						Canceled:      true,
-						Total:         1,
-						Completed:     1,
-						Pending:       0,
-						ProcessErrors: nil,
+						ProcessState: cmpgn.BackgroundProcessStateCompleted,
+						Total:        2,
+						Completed:    2,
 					},
 				},
 			}
 			for _, tc := range tests {
-				plan := &cmpgn.CampaignPlan{
-					CampaignType: "patch",
-					CanceledAt:   tc.planCanceledAt,
-				}
+				plan := &cmpgn.CampaignPlan{}
 				err := s.CreateCampaignPlan(ctx, plan)
 				if err != nil {
 					t.Fatal(err)
@@ -1932,87 +1751,49 @@ func testStore(db *sql.DB) func(*testing.T) {
 		t.Run("CampaignPlan DeleteExpired", func(t *testing.T) {
 			tests := []struct {
 				hasCampaign bool
-				jobs        []*cmpgn.CampaignJob
+				createdAt   time.Time
 				wantDeleted bool
-				want        *cmpgn.BackgroundProcessStatus
 			}{
 				{
 					hasCampaign: false,
-					jobs: []*cmpgn.CampaignJob{
-						// completed more than 1 hour ago
-						{FinishedAt: now.Add(-61 * time.Minute)},
-					},
+					createdAt:   now,
+					wantDeleted: false,
+				},
+				{
+					hasCampaign: false,
+					createdAt:   now.Add(-500 * time.Minute),
 					wantDeleted: true,
 				},
 				{
-					hasCampaign: false,
-					jobs: []*cmpgn.CampaignJob{
-						// completed 30 min ago
-						{FinishedAt: now.Add(30 * time.Minute)},
-					},
+					hasCampaign: true,
+					createdAt:   now,
 					wantDeleted: false,
 				},
 				{
-					hasCampaign: false,
-					jobs: []*cmpgn.CampaignJob{
-						// completed more than 1 hour ago
-						{FinishedAt: now.Add(-61 * time.Minute)},
-						// completed 30 min ago
-						{FinishedAt: now.Add(30 * time.Minute)},
-					},
+					hasCampaign: true,
+					createdAt:   now.Add(-500 * time.Minute),
 					wantDeleted: false,
-				},
-				{
-					hasCampaign: false,
-					jobs: []*cmpgn.CampaignJob{
-						// completed more than 1 hour ago
-						{FinishedAt: now.Add(-61 * time.Minute)},
-						// not completed
-						{},
-					},
-					wantDeleted: false,
-				},
-				{
-					hasCampaign: false,
-					jobs: []*cmpgn.CampaignJob{
-						// completed more than 1 hour ago
-						{FinishedAt: now.Add(-61 * time.Minute)},
-						// completed more than 2 hours ago
-						{FinishedAt: now.Add(-121 * time.Minute)},
-					},
-					wantDeleted: true,
 				},
 			}
 
 			for _, tc := range tests {
-				plan := &cmpgn.CampaignPlan{CampaignType: "patch", Arguments: `{}`}
+				plan := &cmpgn.CampaignPlan{CreatedAt: tc.createdAt}
 
 				err := s.CreateCampaignPlan(ctx, plan)
 				if err != nil {
 					t.Fatal(err)
 				}
-				// Clean up before test
-				existingJobs, _, err := s.ListCampaignJobs(ctx, ListCampaignJobsOpts{CampaignPlanID: plan.ID})
-				if err != nil {
-					t.Fatal(err)
-				}
-				for _, j := range existingJobs {
-					err := s.DeleteCampaignJob(ctx, j.ID)
-					if err != nil {
-						t.Fatal(err)
+
+				if tc.hasCampaign {
+					c := &cmpgn.Campaign{
+						Name:            "test",
+						Description:     "testing",
+						CampaignPlanID:  plan.ID,
+						AuthorID:        4567,
+						NamespaceUserID: 4567,
 					}
-				}
 
-				// TODO(campaigns): Create a Campaign with CampaignPlanID = plan.ID
-
-				for i, j := range tc.jobs {
-					j.StartedAt = now.Add(-2 * time.Hour)
-					j.CampaignPlanID = plan.ID
-					j.RepoID = api.RepoID(i)
-					j.Rev = api.CommitID(fmt.Sprintf("deadbeef-%d", i))
-					j.BaseRef = "master"
-
-					err := s.CreateCampaignJob(ctx, j)
+					err := s.CreateCampaign(ctx, c)
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -2029,11 +1810,11 @@ func testStore(db *sql.DB) func(*testing.T) {
 				}
 
 				if tc.wantDeleted && err == nil {
-					t.Fatalf("want campaign to be deleted. got: %v", havePlan)
+					t.Fatalf("tc=%+v\n\t want campaign plan to be deleted. got: %v", tc, havePlan)
 				}
 
 				if !tc.wantDeleted && err == ErrNoResults {
-					t.Fatalf("want campaign not to be deletedbut got deleted")
+					t.Fatalf("want campaign plan not to be deleted, but got deleted")
 				}
 			}
 		})
@@ -2587,7 +2368,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 			})
 
 			t.Run("GetLatestChangesetJobCreatedAt", func(t *testing.T) {
-				plan := &cmpgn.CampaignPlan{CampaignType: "test", Arguments: `{}`}
+				plan := &cmpgn.CampaignPlan{}
 				err := s.CreateCampaignPlan(ctx, plan)
 				if err != nil {
 					t.Fatal(err)
@@ -2696,8 +2477,10 @@ func testStore(db *sql.DB) func(*testing.T) {
 	}
 }
 
-func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
+func testProcessChangesetJob(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
+		dbtesting.SetupGlobalTestDB(t)
+
 		now := time.Now().UTC().Truncate(time.Microsecond)
 		clock := func() time.Time { return now.UTC().Truncate(time.Microsecond) }
 		ctx := context.Background()
@@ -2705,7 +2488,7 @@ func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
 		// Create a test repo
 		reposStore := repos.NewDBStore(db, sql.TxOptions{})
 		repo := &repos.Repo{
-			Name: fmt.Sprintf("github.com/sourcegraph/sourcegraph"),
+			Name: "github.com/sourcegraph/sourcegraph",
 			ExternalRepo: api.ExternalRepoSpec{
 				ID:          "external-id",
 				ServiceType: "github",
@@ -2722,15 +2505,46 @@ func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
 			t.Fatal(err)
 		}
 
-		t.Run("GetPendingCampaignJobsWhenNoneAvailable", func(t *testing.T) {
-			tx, done := dbtest.NewTx(t, db)
-			defer done()
+		user := createTestUser(ctx, t)
+
+		s := NewStoreWithClock(db, clock)
+		plan := &cmpgn.CampaignPlan{UserID: user.ID}
+		err := s.CreateCampaignPlan(context.Background(), plan)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		campaignJob := &cmpgn.CampaignJob{
+			CampaignPlanID: plan.ID,
+			RepoID:         repo.ID,
+			BaseRef:        "abc",
+		}
+		err = s.CreateCampaignJob(context.Background(), campaignJob)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		campaign := &cmpgn.Campaign{
+			CampaignPlanID:  plan.ID,
+			Name:            "testcampaign",
+			Description:     "testcampaign",
+			AuthorID:        user.ID,
+			NamespaceUserID: user.ID,
+		}
+		err = s.CreateCampaign(context.Background(), campaign)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		t.Run("GetPendingChangesetJobsWhenNoneAvailable", func(t *testing.T) {
+			tx := dbtest.NewTx(t, db)
 			s := NewStoreWithClock(tx, clock)
 
-			process := func(ctx context.Context, s *Store, job cmpgn.CampaignJob) error {
+			process := func(ctx context.Context, s *Store, job cmpgn.ChangesetJob) error {
 				return errors.New("rollback")
 			}
-			ran, err := s.ProcessPendingCampaignJob(ctx, process)
+
+			ran, err := s.ProcessPendingChangesetJobs(ctx, process)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -2740,36 +2554,24 @@ func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
 			}
 		})
 
-		t.Run("GetPendingCampaignJobsWhenAvailable", func(t *testing.T) {
-			tx, done := dbtest.NewTx(t, db)
-			defer done()
+		t.Run("GetPendingChangesetJobWhenAvailable", func(t *testing.T) {
+			tx := dbtest.NewTx(t, db)
 			s := NewStoreWithClock(tx, clock)
 
-			process := func(ctx context.Context, s *Store, job cmpgn.CampaignJob) error {
+			process := func(ctx context.Context, s *Store, job cmpgn.ChangesetJob) error {
 				return errors.New("rollback")
 			}
-			plan := &cmpgn.CampaignPlan{
-				CampaignType: "test",
+
+			job := &cmpgn.ChangesetJob{
+				CampaignID:    campaign.ID,
+				CampaignJobID: campaignJob.ID,
 			}
-			err := s.CreateCampaignPlan(context.Background(), plan)
+			err := s.CreateChangesetJob(ctx, job)
 			if err != nil {
 				t.Fatal(err)
 			}
-			job := &cmpgn.CampaignJob{
-				ID:             0,
-				CampaignPlanID: plan.ID,
-				RepoID:         repo.ID,
-				Rev:            "",
-				BaseRef:        "abc",
-				Diff:           "",
-				Description:    "",
-				Error:          "",
-			}
-			err = s.CreateCampaignJob(context.Background(), job)
-			if err != nil {
-				t.Fatal(err)
-			}
-			ran, err := s.ProcessPendingCampaignJob(ctx, process)
+
+			ran, err := s.ProcessPendingChangesetJobs(ctx, process)
 			if err != nil && err.Error() != "rollback" {
 				t.Fatal(err)
 			}
@@ -2780,42 +2582,28 @@ func testProcessCampaignJob(db *sql.DB) func(*testing.T) {
 		})
 
 		t.Run("GetPendingCampaignJobsWhenAvailableLocking", func(t *testing.T) {
-			dbtesting.SetupGlobalTestDB(t)
-			user := createTestUser(ctx, t)
 			s := NewStoreWithClock(db, clock)
 
-			process := func(ctx context.Context, s *Store, job cmpgn.CampaignJob) error {
+			process := func(ctx context.Context, s *Store, job cmpgn.ChangesetJob) error {
 				time.Sleep(100 * time.Millisecond)
 				return errors.New("rollback")
 			}
-			plan := &cmpgn.CampaignPlan{
-				CampaignType: "test",
-				UserID:       user.ID,
-			}
-			err := s.CreateCampaignPlan(context.Background(), plan)
-			if err != nil {
-				t.Fatal(err)
-			}
-			err = s.CreateCampaignJob(context.Background(), &cmpgn.CampaignJob{
-				ID:             0,
-				CampaignPlanID: plan.ID,
-				RepoID:         repo.ID,
-				Rev:            "",
-				BaseRef:        "abc",
-				Diff:           "",
-				Description:    "",
-				Error:          "",
-			})
-			if err != nil {
-				t.Fatal(err)
+
+			job := &cmpgn.ChangesetJob{
+				CampaignID:    campaign.ID,
+				CampaignJobID: campaignJob.ID,
 			}
 
+			err := s.CreateChangesetJob(ctx, job)
+			if err != nil {
+				t.Fatal(err)
+			}
 			var runCount int64
 			errChan := make(chan error, 2)
 
 			for i := 0; i < 2; i++ {
 				go func() {
-					ran, err := s.ProcessPendingCampaignJob(ctx, process)
+					ran, err := s.ProcessPendingChangesetJobs(ctx, process)
 					if ran {
 						atomic.AddInt64(&runCount, 1)
 					}

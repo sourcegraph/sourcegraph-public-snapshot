@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -28,10 +27,9 @@ import (
 type GithubSource struct {
 	svc             *ExternalService
 	config          *schema.GitHubConnection
-	exclude         map[string]bool
+	exclude         excludeFunc
 	excludeArchived bool
 	excludeForks    bool
-	excludePatterns []*regexp.Regexp
 	githubDotCom    bool
 	baseURL         *url.URL
 	client          *github.Client
@@ -83,28 +81,15 @@ func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpc
 	}
 
 	var (
-		exclude         = make(map[string]bool, len(c.Exclude))
+		eb              excludeBuilder
 		excludeArchived bool
 		excludeForks    bool
-		excludePatterns []*regexp.Regexp
 	)
 
 	for _, r := range c.Exclude {
-		if r.Name != "" {
-			exclude[strings.ToLower(r.Name)] = true
-		}
-
-		if r.Id != "" {
-			exclude[r.Id] = true
-		}
-
-		if r.Pattern != "" {
-			re, err := regexp.Compile(r.Pattern)
-			if err != nil {
-				return nil, err
-			}
-			excludePatterns = append(excludePatterns, re)
-		}
+		eb.Exact(r.Name)
+		eb.Exact(r.Id)
+		eb.Pattern(r.Pattern)
 
 		if r.Archived {
 			excludeArchived = true
@@ -115,13 +100,17 @@ func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpc
 		}
 	}
 
+	exclude, err := eb.Build()
+	if err != nil {
+		return nil, err
+	}
+
 	return &GithubSource{
 		svc:              svc,
 		config:           c,
 		exclude:          exclude,
 		excludeArchived:  excludeArchived,
 		excludeForks:     excludeForks,
-		excludePatterns:  excludePatterns,
 		baseURL:          baseURL,
 		githubDotCom:     githubDotCom,
 		client:           github.NewClient(apiURL, c.Token, cli),
@@ -329,7 +318,7 @@ func (s *GithubSource) authenticatedRemoteURL(repo *github.Repository) string {
 }
 
 func (s *GithubSource) excludes(r *github.Repository) bool {
-	if s.exclude[strings.ToLower(r.NameWithOwner)] || s.exclude[r.ID] {
+	if s.exclude(r.NameWithOwner) || s.exclude(r.ID) {
 		return true
 	}
 
@@ -339,12 +328,6 @@ func (s *GithubSource) excludes(r *github.Repository) bool {
 
 	if s.excludeForks && r.IsFork {
 		return true
-	}
-
-	for _, re := range s.excludePatterns {
-		if re.MatchString(r.NameWithOwner) {
-			return true
-		}
 	}
 
 	return false
@@ -709,7 +692,7 @@ func (s *GithubSource) fetchAllRepositoriesInBatches(ctx context.Context, result
 			return err
 		}
 
-		log15.Debug("github sync: GetGetReposByNameWithOwner", "repos", batch)
+		log15.Debug("github sync: GetReposByNameWithOwner", "repos", batch)
 		for _, r := range repos {
 			results <- &githubResult{repo: r}
 		}

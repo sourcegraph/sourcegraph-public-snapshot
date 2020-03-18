@@ -24,7 +24,7 @@ import (
 type GitLabSource struct {
 	svc                 *ExternalService
 	config              *schema.GitLabConnection
-	exclude             map[string]bool
+	exclude             excludeFunc
 	baseURL             *url.URL // URL with path /api/v4 (no trailing slash)
 	nameTransformations reposource.NameTransformations
 	client              *gitlab.Client
@@ -60,15 +60,14 @@ func newGitLabSource(svc *ExternalService, c *schema.GitLabConnection, cf *httpc
 		return nil, err
 	}
 
-	exclude := make(map[string]bool, len(c.Exclude))
+	var eb excludeBuilder
 	for _, r := range c.Exclude {
-		if r.Name != "" {
-			exclude[r.Name] = true
-		}
-
-		if r.Id != 0 {
-			exclude[strconv.Itoa(r.Id)] = true
-		}
+		eb.Exact(r.Name)
+		eb.Exact(strconv.Itoa(r.Id))
+	}
+	exclude, err := eb.Build()
+	if err != nil {
+		return nil, err
 	}
 
 	// Validate and cache user-defined name transformations.
@@ -162,7 +161,7 @@ func (s *GitLabSource) authenticatedRemoteURL(proj *gitlab.Project) string {
 }
 
 func (s *GitLabSource) excludes(p *gitlab.Project) bool {
-	return s.exclude[p.PathWithNamespace] || s.exclude[strconv.Itoa(p.ID)]
+	return s.exclude(p.PathWithNamespace) || s.exclude(strconv.Itoa(p.ID))
 }
 
 func (s *GitLabSource) listAllProjects(ctx context.Context, results chan SourceResult) {

@@ -116,15 +116,16 @@ func getAndMarshalCodeIntelUsageJSON(ctx context.Context) (json.RawMessage, erro
 
 func getAndMarshalSearchUsageJSON(ctx context.Context) (json.RawMessage, error) {
 	days, weeks, months := 2, 1, 1
-	searchLatency, err := usagestats.GetSearchUsageStatistics(ctx, &usagestats.SearchUsageStatisticsOptions{
-		DayPeriods:   &days,
-		WeekPeriods:  &weeks,
-		MonthPeriods: &months,
+	searchUsage, err := usagestats.GetSearchUsageStatistics(ctx, &usagestats.SearchUsageStatisticsOptions{
+		DayPeriods:         &days,
+		WeekPeriods:        &weeks,
+		MonthPeriods:       &months,
+		IncludeEventCounts: !conf.Get().DisableNonCriticalTelemetry,
 	})
 	if err != nil {
 		return nil, err
 	}
-	contents, err := json.Marshal(searchLatency)
+	contents, err := json.Marshal(searchUsage)
 	if err != nil {
 		return nil, err
 	}
@@ -191,7 +192,6 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 	if err != nil {
 		logFunc("externalServicesKinds failed", "error", err)
 	}
-
 	contents, err := json.Marshal(&pingRequest{
 		ClientSiteID:         siteid.Get(),
 		DeployType:           conf.DeployType(),

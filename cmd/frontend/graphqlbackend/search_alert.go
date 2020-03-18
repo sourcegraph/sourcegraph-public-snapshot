@@ -193,7 +193,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 		}
 		if reposExist(ctx, tryAnyRepo) {
 			proposedQueries = append(proposedQueries, &searchQueryDescription{
-				description: fmt.Sprintf("include repositories satisfying any (not all) of your repo: filters"),
+				description: "include repositories satisfying any (not all) of your repo: filters",
 				query:       withoutRepoFields + fmt.Sprintf(" repo:%s", unionRepoFilter),
 				patternType: r.patternType,
 			})
@@ -253,7 +253,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 		}
 		if reposExist(ctx, tryAnyRepo) {
 			proposedQueries = append(proposedQueries, &searchQueryDescription{
-				description: fmt.Sprintf("include repositories satisfying any (not all) of your repo: filters"),
+				description: "include repositories satisfying any (not all) of your repo: filters",
 				query:       withoutRepoFields + fmt.Sprintf(" repo:%s", unionRepoFilter),
 				patternType: r.patternType,
 			})
@@ -265,7 +265,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 		})
 		return &searchAlert{
 			title:           "Expand your repo: filters to see results",
-			description:     fmt.Sprintf("No repositories satisfied all of your repo: filters."),
+			description:     "No repositories satisfied all of your repo: filters.",
 			proposedQueries: proposedQueries,
 		}
 

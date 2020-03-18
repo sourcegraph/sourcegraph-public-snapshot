@@ -24,6 +24,8 @@ const campaignFragment = gql`
     fragment CampaignFields on Campaign {
         __typename
         id
+        name
+        description
         author {
             username
             avatarURL
@@ -34,29 +36,19 @@ const campaignFragment = gql`
             state
             errors
         }
-        name
-        description
         createdAt
         updatedAt
         publishedAt
         closedAt
-        publishedAt
-        url
         viewerCanAdminister
         changesets {
             totalCount
             nodes {
                 __typename
                 id
-                repository {
-                    id
-                    name
-                    url
-                }
                 state
                 diff {
                     fileDiffs {
-                        totalCount
                         diffStat {
                             ...DiffStatFields
                         }
@@ -69,12 +61,6 @@ const campaignFragment = gql`
             nodes {
                 id
                 __typename
-                id
-                repository {
-                    id
-                    name
-                    url
-                }
                 diff {
                     fileDiffs {
                         totalCount
@@ -118,12 +104,6 @@ const campaignPlanFragment = gql`
             nodes {
                 id
                 __typename
-                id
-                repository {
-                    id
-                    name
-                    url
-                }
                 diff {
                     fileDiffs {
                         totalCount
@@ -304,7 +284,9 @@ export const queryChangesets = (
                                 externalURL {
                                     url
                                 }
+                                externalID
                                 createdAt
+                                updatedAt
                                 diff {
                                     fileDiffs {
                                         nodes {
@@ -465,4 +447,18 @@ export async function publishChangeset(changesetPlan: ID): Promise<IEmptyRespons
         { changesetPlan }
     ).toPromise()
     return dataOrThrowErrors(result).publishChangeset
+}
+
+export async function syncChangeset(changeset: ID): Promise<void> {
+    const result = await mutateGraphQL(
+        gql`
+            mutation SyncChangeset($changeset: ID!) {
+                syncChangeset(changeset: $changeset) {
+                    alwaysNil
+                }
+            }
+        `,
+        { changeset }
+    ).toPromise()
+    dataOrThrowErrors(result)
 }

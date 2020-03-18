@@ -54,6 +54,7 @@ export function useEventObservable<T, R>(
 ): [Observer<T>['next'], R | undefined] {
     const events = useMemo(() => new Subject<T>(), [])
     const observable = useMemo(() => events.pipe(transform), [events, transform])
+    const nextEvent = useMemo(() => events.next.bind(events), [events])
     const value = useObservable(observable)
-    return [events.next.bind(events), value]
+    return [nextEvent, value]
 }

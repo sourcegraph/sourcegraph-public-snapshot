@@ -187,6 +187,7 @@ func Main(githubWebhook, bitbucketServerWebhook http.Handler) error {
 
 	globals.WatchExternalURL(defaultExternalURL(nginxAddr, httpAddr))
 	globals.WatchPermissionsUserMapping()
+	globals.WatchPermissionsBackgroundSync()
 
 	goroutine.Go(func() { bg.MigrateAllSettingsMOTDToNotices(context.Background()) })
 	goroutine.Go(func() { bg.MigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase(context.Background()) })

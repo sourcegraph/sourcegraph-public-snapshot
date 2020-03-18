@@ -50,6 +50,7 @@ describe('ChangesetNode', () => {
                 }
                 campaignUpdates={new Subject<void>()}
                 enablePublishing={enablePublishing}
+                _now={new Date('2019-12-15')}
             />
         )
         const result = renderer.getRenderOutput()
@@ -79,6 +80,7 @@ describe('ChangesetNode', () => {
                         title: 'Remove lodash',
                         body: 'We should remove lodash',
                         checkState: ChangesetCheckState.FAILED,
+                        externalID: '123',
                         diff: {
                             fileDiffs: {
                                 diffStat: {
@@ -102,10 +104,12 @@ describe('ChangesetNode', () => {
                             name: 'sourcegraph',
                             url: 'github.com/sourcegraph/sourcegraph',
                         },
+                        updatedAt: new Date('2020-01-01').toISOString(),
                     } as IExternalChangeset
                 }
                 campaignUpdates={new Subject<void>()}
                 enablePublishing={false}
+                _now={new Date('2019-12-15')}
             />
         )
         const result = renderer.getRenderOutput()

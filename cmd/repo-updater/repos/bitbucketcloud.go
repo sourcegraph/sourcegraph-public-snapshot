@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"regexp"
-	"strings"
 	"sync"
 
 	"github.com/pkg/errors"
@@ -22,11 +20,10 @@ import (
 // A BitbucketCloudSource yields repositories from a single BitbucketCloud connection configured
 // in Sourcegraph via the external services configuration.
 type BitbucketCloudSource struct {
-	svc             *ExternalService
-	config          *schema.BitbucketCloudConnection
-	exclude         map[string]bool
-	excludePatterns []*regexp.Regexp
-	client          *bitbucketcloud.Client
+	svc     *ExternalService
+	config  *schema.BitbucketCloudConnection
+	exclude excludeFunc
+	client  *bitbucketcloud.Client
 }
 
 // NewBitbucketCloudSource returns a new BitbucketCloudSource from the given external service.
@@ -57,24 +54,15 @@ func newBitbucketCloudSource(svc *ExternalService, c *schema.BitbucketCloudConne
 		return nil, err
 	}
 
-	exclude := make(map[string]bool, len(c.Exclude))
-	var excludePatterns []*regexp.Regexp
+	var eb excludeBuilder
 	for _, r := range c.Exclude {
-		if r.Name != "" {
-			exclude[strings.ToLower(r.Name)] = true
-		}
-
-		if r.Uuid != "" {
-			exclude[strings.ToLower(r.Uuid)] = true
-		}
-
-		if r.Pattern != "" {
-			re, err := regexp.Compile(r.Pattern)
-			if err != nil {
-				return nil, err
-			}
-			excludePatterns = append(excludePatterns, re)
-		}
+		eb.Exact(r.Name)
+		eb.Exact(r.Uuid)
+		eb.Pattern(r.Pattern)
+	}
+	exclude, err := eb.Build()
+	if err != nil {
+		return nil, err
 	}
 
 	client := bitbucketcloud.NewClient(apiURL, cli)
@@ -82,11 +70,10 @@ func newBitbucketCloudSource(svc *ExternalService, c *schema.BitbucketCloudConne
 	client.AppPassword = c.AppPassword
 
 	return &BitbucketCloudSource{
-		svc:             svc,
-		config:          c,
-		exclude:         exclude,
-		excludePatterns: excludePatterns,
-		client:          client,
+		svc:     svc,
+		config:  c,
+		exclude: exclude,
+		client:  client,
 	}, nil
 }
 
@@ -168,17 +155,7 @@ func (s *BitbucketCloudSource) authenticatedRemoteURL(repo *bitbucketcloud.Repo)
 }
 
 func (s *BitbucketCloudSource) excludes(r *bitbucketcloud.Repo) bool {
-	if s.exclude[strings.ToLower(r.FullName)] ||
-		s.exclude[strings.ToLower(r.UUID)] {
-		return true
-	}
-
-	for _, re := range s.excludePatterns {
-		if re.MatchString(r.FullName) {
-			return true
-		}
-	}
-	return false
+	return s.exclude(r.FullName) || s.exclude(r.UUID)
 }
 
 func (s *BitbucketCloudSource) listAllRepos(ctx context.Context, results chan SourceResult) {

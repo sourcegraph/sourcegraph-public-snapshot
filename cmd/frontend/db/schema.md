@@ -30,19 +30,13 @@ Foreign-key constraints:
  repo_id          | bigint                   | not null
  rev              | text                     | not null
  diff             | text                     | not null
- error            | text                     | not null
- started_at       | timestamp with time zone | 
- finished_at      | timestamp with time zone | 
  created_at       | timestamp with time zone | not null default now()
  updated_at       | timestamp with time zone | not null default now()
  base_ref         | text                     | not null
- description      | text                     | not null
 Indexes:
     "campaign_jobs_pkey" PRIMARY KEY, btree (id)
     "campaign_jobs_campaign_plan_repo_rev_unique" UNIQUE CONSTRAINT, btree (campaign_plan_id, repo_id, rev) DEFERRABLE
     "campaign_jobs_campaign_plan_id" btree (campaign_plan_id)
-    "campaign_jobs_finished_at" btree (finished_at)
-    "campaign_jobs_started_at" btree (started_at)
 Check constraints:
     "campaign_jobs_base_ref_check" CHECK (base_ref <> ''::text)
 Foreign-key constraints:
@@ -55,19 +49,14 @@ Referenced by:
 
 # Table "public.campaign_plans"
 ```
-    Column     |           Type           |                          Modifiers                          
----------------+--------------------------+-------------------------------------------------------------
- id            | bigint                   | not null default nextval('campaign_plans_id_seq'::regclass)
- campaign_type | text                     | not null
- created_at    | timestamp with time zone | not null default now()
- updated_at    | timestamp with time zone | not null default now()
- arguments     | text                     | not null
- canceled_at   | timestamp with time zone | 
- user_id       | integer                  | not null
+   Column   |           Type           |                          Modifiers                          
+------------+--------------------------+-------------------------------------------------------------
+ id         | bigint                   | not null default nextval('campaign_plans_id_seq'::regclass)
+ created_at | timestamp with time zone | not null default now()
+ updated_at | timestamp with time zone | not null default now()
+ user_id    | integer                  | not null
 Indexes:
     "campaign_plans_pkey" PRIMARY KEY, btree (id)
-Check constraints:
-    "campaign_plans_campaign_type_check" CHECK (campaign_type <> ''::text)
 Foreign-key constraints:
     "campaign_plans_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) DEFERRABLE
 Referenced by:
@@ -110,7 +99,6 @@ Referenced by:
     TABLE "changeset_jobs" CONSTRAINT "changeset_jobs_campaign_id_fkey" FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE DEFERRABLE
 Triggers:
     trig_delete_campaign_reference_on_changesets AFTER DELETE ON campaigns FOR EACH ROW EXECUTE PROCEDURE delete_campaign_reference_on_changesets()
-    trig_validate_campaign_plan_is_finished BEFORE INSERT OR UPDATE ON campaigns FOR EACH ROW EXECUTE PROCEDURE validate_campaign_plan_is_finished()
 
 ```
 

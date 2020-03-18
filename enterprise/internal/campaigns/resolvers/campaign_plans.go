@@ -74,7 +74,6 @@ func (r *campaignPlanResolver) ChangesetPlans(
 		opts: ee.ListCampaignJobsOpts{
 			CampaignPlanID: r.campaignPlan.ID,
 			Limit:          int(args.GetFirst()),
-			OnlyFinished:   true,
 			OnlyWithDiff:   true,
 		},
 	}
@@ -176,7 +175,6 @@ func (r *campaignJobsConnectionResolver) compute(ctx context.Context) ([]*campai
 func (r *campaignJobsConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
 	opts := ee.CountCampaignJobsOpts{
 		CampaignPlanID:            r.opts.CampaignPlanID,
-		OnlyFinished:              r.opts.OnlyFinished,
 		OnlyWithDiff:              r.opts.OnlyWithDiff,
 		OnlyUnpublishedInCampaign: r.opts.OnlyUnpublishedInCampaign,
 	}

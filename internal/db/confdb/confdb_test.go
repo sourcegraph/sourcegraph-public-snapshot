@@ -185,7 +185,7 @@ func TestCriticalCreateIfUpToDate(t *testing.T) {
 				}
 
 				if latest == nil {
-					t.Errorf("got unexpected nil configuration after GetLatest")
+					t.Fatalf("got unexpected nil configuration after GetLatest")
 				}
 
 				if latest.Contents != p.expected.contents {

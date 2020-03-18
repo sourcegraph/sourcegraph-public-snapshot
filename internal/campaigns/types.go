@@ -42,20 +42,14 @@ type CampaignPlanPatch struct {
 	Patch   string
 }
 
-// A CampaignPlan represents the application of a CampaignType to the Arguments
-// over multiple repositories.
+// A CampaignPlan is a collection of multiple CampaignJobs.
 type CampaignPlan struct {
 	ID int64
 
-	CampaignType string
-	UserID       int32
+	UserID int32
 
-	// Arguments is a JSONC string
-	Arguments string
-
-	CanceledAt time.Time
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 // Clone returns a clone of a CampaignPlan.
@@ -74,13 +68,7 @@ type CampaignJob struct {
 	Rev     api.CommitID
 	BaseRef string
 
-	Diff        string
-	Description string
-
-	StartedAt  time.Time
-	FinishedAt time.Time
-
-	Error string
+	Diff string
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
@@ -415,8 +403,9 @@ func (c *Changeset) IsDeleted() bool {
 	return !c.ExternalDeletedAt.IsZero()
 }
 
-// State of a Changeset.
-func (c *Changeset) State() (s ChangesetState, err error) {
+// state of a Changeset based on the metadata.
+// It does NOT reflect the final calculated state, use `ExternalState` instead.
+func (c *Changeset) state() (s ChangesetState, err error) {
 	if !c.ExternalDeletedAt.IsZero() {
 		return ChangesetStateDeleted, nil
 	}
@@ -717,11 +706,11 @@ func ComputeCheckState(c *Changeset, events ChangesetEvents) ChangesetCheckState
 // associated events. The events should be presorted.
 func ComputeChangesetState(c *Changeset, events ChangesetEvents) (ChangesetState, error) {
 	if len(events) == 0 {
-		return c.State()
+		return c.state()
 	}
 	newestEvent := events[len(events)-1]
 	if c.UpdatedAt.After(newestEvent.Timestamp()) {
-		return c.State()
+		return c.state()
 	}
 	return events.State(), nil
 }
@@ -788,6 +777,12 @@ func computeGitHubCheckState(lastSynced time.Time, pr *github.PullRequest, event
 			statusPerContext[c.Context] = parseGithubCheckState(c.State)
 		}
 		for _, c := range commit.Commit.CheckSuites.Nodes {
+			if c.Status == "QUEUED" && len(c.CheckRuns.Nodes) == 0 {
+				// Ignore queued suites with no runs.
+				// It is common for suites to be created and then stay in the QUEUED state
+				// forever with zero runs.
+				continue
+			}
 			statusPerCheckSuite[c.ID] = parseGithubCheckSuiteState(c.Status, c.Conclusion)
 			for _, r := range c.CheckRuns.Nodes {
 				statusPerCheckRun[r.ID] = parseGithubCheckSuiteState(r.Status, r.Conclusion)
@@ -813,6 +808,11 @@ func computeGitHubCheckState(lastSynced time.Time, pr *github.PullRequest, event
 				}
 			}
 		case *github.CheckSuite:
+			if m.Status == "QUEUED" && len(m.CheckRuns.Nodes) == 0 {
+				// Ignore suites with no runs.
+				// See previous comment.
+				continue
+			}
 			if m.ReceivedAt.After(lastSynced) {
 				statusPerCheckSuite[m.ID] = parseGithubCheckSuiteState(m.Status, m.Conclusion)
 			}

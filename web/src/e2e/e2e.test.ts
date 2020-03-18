@@ -1476,12 +1476,10 @@ describe('e2e test suite', () => {
         })
         async function testCampaignPreview({
             previewURL,
-            diffCount,
             changesetCount,
             snapshotName,
         }: {
             previewURL: string
-            diffCount: number
             changesetCount: number
             snapshotName: string
         }): Promise<void> {
@@ -1491,24 +1489,13 @@ describe('e2e test suite', () => {
             // fill campaign preview form
             await driver.page.type('.e2e-campaign-title', 'E2E campaign')
 
-            // ensure diff tab is open
-            await driver.page.click('.e2e-campaign-diff-tab')
-            await driver.page.waitForSelector('.file-diff-node')
-            // check there were exactly as expected diffs generated
-            const generatedDiffCount = await driver.page.evaluate(
-                () => document.querySelectorAll('.file-diff-node').length
-            )
-            expect(generatedDiffCount).toEqual(diffCount)
-            await percySnapshot(driver.page, snapshotName + ' diffs tab')
-            // ensure changesets tab is open
-            await driver.page.click('.e2e-campaign-changesets-tab')
             await driver.page.waitForSelector('.e2e-changeset-node')
             // check there were exactly as expected diffs generated
             const generatedChangesetCount = await driver.page.evaluate(
                 () => document.querySelectorAll('.e2e-changeset-node').length
             )
             expect(generatedChangesetCount).toEqual(changesetCount)
-            await percySnapshot(driver.page, snapshotName + ' changesets tab')
+            await percySnapshot(driver.page, snapshotName)
         }
         test('View campaign preview for plan', async () => {
             const repo = await driver.getRepository('github.com/sourcegraph-testing/automation-e2e-test')
@@ -1528,7 +1515,6 @@ describe('e2e test suite', () => {
             ])
             await testCampaignPreview({
                 previewURL,
-                diffCount: 1,
                 changesetCount: 1,
                 snapshotName: 'Campaign preview page',
             })
