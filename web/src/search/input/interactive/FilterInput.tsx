@@ -308,7 +308,8 @@ export class FilterInput extends React.Component<Props, State> {
         }
         if (this.props.filterType === FilterType.content || this.props.filterType === FilterType.message) {
             // The content and message filters should always be quoted and escaped, but we don't display
-            // the quoted and escaped value to the user. This makes it easier to edit and avoids double quoting.
+            // the quoted and escaped value to the user. This makes it easier to edit and makes sure URLs are always
+            // properly escaped.
             const inputValue = this.state.inputValue
             this.inputValues.next(isQuoted(inputValue) ? JSON.parse(inputValue) : inputValue)
         }
