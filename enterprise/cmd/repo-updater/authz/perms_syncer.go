@@ -4,6 +4,7 @@ import (
 	"container/heap"
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/RoaringBitmap/roaring"
@@ -14,6 +15,7 @@ import (
 	edb "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -167,7 +169,10 @@ func (s *PermsSyncer) fetchers() map[string]PermsFetcher {
 }
 
 // syncUserPerms processes permissions syncing request in user-centric way.
-func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32) error {
+func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32) (err error) {
+	ctx, save := s.observe(ctx, "PermsSyncer.syncUserPerms", strconv.FormatInt(int64(userID), 10))
+	defer save(&err)
+
 	accts, err := s.permsStore.ListExternalAccounts(ctx, userID)
 	if err != nil {
 		return errors.Wrap(err, "list external accounts")
@@ -230,7 +235,10 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32) error {
 // syncRepoPerms processes permissions syncing request in repository-centric way.
 // It discards requests that are made for non-private repositories based on the
 // value of "repo.private" column.
-func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID) error {
+func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID) (err error) {
+	ctx, save := s.observe(ctx, "PermsSyncer.syncRepoPerms", strconv.FormatInt(int64(repoID), 10))
+	defer save(&err)
+
 	rs, err := s.reposStore.ListRepos(ctx, repos.StoreListReposArgs{
 		IDs: []api.RepoID{repoID},
 	})
@@ -389,6 +397,7 @@ func (s *PermsSyncer) scheduleUsersWithNoPerms(ctx context.Context) ([]scheduled
 	if err != nil {
 		return nil, err
 	}
+	usersWithNoPerms.Set(float64(len(ids)))
 
 	users := make([]scheduledUser, len(ids))
 	for i, id := range ids {
@@ -408,6 +417,7 @@ func (s *PermsSyncer) scheduleReposWithNoPerms(ctx context.Context) ([]scheduled
 	if err != nil {
 		return nil, err
 	}
+	reposWithNoPerms.Set(float64(len(ids)))
 
 	repos := make([]scheduledRepo, len(ids))
 	for i, id := range ids {
@@ -602,6 +612,26 @@ func (s *PermsSyncer) DebugDump() interface{} {
 	data.Size = len(data.Queue)
 
 	return &data
+}
+
+func (s *PermsSyncer) observe(ctx context.Context, family, title string) (context.Context, func(*error)) {
+	began := s.clock()
+	tr, ctx := trace.New(ctx, family, title)
+
+	return ctx, func(err *error) {
+		now := s.clock()
+		took := now.Sub(began).Seconds()
+
+		success := err == nil || *err == nil
+		permsSyncDuration.WithLabelValues(strconv.FormatBool(success)).Observe(took)
+
+		if !success {
+			tr.SetError(*err)
+			permsSyncErrors.WithLabelValues().Add(1)
+		}
+
+		tr.Finish()
+	}
 }
 
 // Run kicks off the permissions syncing process, this method is blocking and
