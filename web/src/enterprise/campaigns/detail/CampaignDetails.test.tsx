@@ -28,6 +28,7 @@ describe('CampaignDetails', () => {
                     location={history.location}
                     authenticatedUser={{ id: 'a', username: 'alice', avatarURL: null }}
                     isLightTheme={true}
+                    _noSubject={true}
                 />
             )
         ).toMatchSnapshot())
@@ -53,6 +54,7 @@ describe('CampaignDetails', () => {
                         },
                     })
                 }
+                _noSubject={true}
             />
         )
         // eslint-disable-next-line @typescript-eslint/no-floating-promises
@@ -93,6 +95,7 @@ describe('CampaignDetails', () => {
                     closedAt: null,
                 })
             }
+            _noSubject={true}
         />
     )
 
