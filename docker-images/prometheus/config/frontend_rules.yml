@@ -11,7 +11,7 @@ groups:
         expr: >-
           clamp_max(clamp_min(floor(
           (increase(src_graphql_search_response{status="error"}[5m]) / 5) OR on() vector(0)
-          ), 0), 1)
+          ), 0), 1) OR on() vector(1)
 
       - record: alert_count
         labels:
@@ -22,7 +22,7 @@ groups:
         expr: >-
           clamp_max(clamp_min(floor(
           (increase(src_graphql_search_response{status="timeout"}[5m]) / 5) OR on() vector(0)
-          ), 0), 1)
+          ), 0), 1) OR on() vector(1)
 
       - record: alert_count
         labels:
@@ -33,7 +33,7 @@ groups:
         expr: >-
           clamp_max(clamp_min(floor(
           (increase(src_graphql_search_response{status="partial_timeout"}[5m]) / 5) OR on() vector(0)
-          ), 0), 1)
+          ), 0), 1) OR on() vector(1)
 
       # Warning if 25+ requests to our internal API are failing over 5m.
       - record: alert_count
@@ -45,4 +45,4 @@ groups:
         expr: >-
           clamp_max(clamp_min(floor(
           (increase(src_frontend_internal_request_duration_seconds_count{code!~"2.."}[5m]) / 25) OR on() vector(0)
-          ), 0), 1)
+          ), 0), 1) OR on() vector(1)

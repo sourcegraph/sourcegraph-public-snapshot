@@ -21,7 +21,7 @@ groups:
         expr: >-
           clamp_max(clamp_min(floor(
           gitserver_disk_used_percent + 0.2
-          ), 0), 1)
+          ), 0), 1) OR on() vector(1)
 
       - record: alert_count
         labels:
@@ -32,7 +32,7 @@ groups:
         expr: >-
           clamp_max(clamp_min(floor(
           gitserver_disk_used_percent + 0.05
-          ), 0), 1)
+          ), 0), 1) OR on() vector(1)
 
       # Warning if fetching configuration from frontend is failing.
       - record: alert_count
@@ -44,7 +44,7 @@ groups:
         expr: >-
           clamp_max(clamp_min(floor(
           (increase(src_frontend_internal_request_duration_seconds_count{job="gitserver",code!~"2.."}[5m]) / 5) OR on() vector(0)
-          ), 0), 1)
+          ), 0), 1) OR on() vector(1)
 
       # Clone queue should generally not exceed 25 repositories (except during onboarding,
       # which is why we use a warning and not a critical alert)
@@ -57,7 +57,7 @@ groups:
         expr: >-
           clamp_max(clamp_min(floor(
           src_gitserver_clone_queue / 25
-          ), 0), 1)
+          ), 0), 1) OR on() vector(1)
 
       # Similar to the clone queue, we warn on the lsremote queue.
       - record: alert_count
@@ -69,7 +69,7 @@ groups:
         expr: >-
           clamp_max(clamp_min(floor(
           src_gitserver_lsremote_queue / 25
-          ), 0), 1)
+          ), 0), 1) OR on() vector(1)
 
       # Echo duration should never exceed 2s.
       - record: alert_count
@@ -81,4 +81,4 @@ groups:
         expr: >-
           clamp_max(clamp_min(floor(
           src_gitserver_echo_duration_seconds / 2
-          ), 0), 1)
+          ), 0), 1) OR on() vector(1)
