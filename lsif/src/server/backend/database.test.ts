@@ -1,7 +1,7 @@
 import * as sqliteModels from '../../shared/models/sqlite'
 import { comparePosition, findRanges, mapRangesToInternalLocations, Database } from './database'
 import * as fs from 'mz/fs'
-import * as path from 'path' // TODO - rename if possible
+import * as nodepath from 'path'
 import * as constants from '../../shared/constants'
 import { convertLsif } from '../../worker/conversion/importer'
 import { PathExistenceChecker } from '../../worker/conversion/existence'
@@ -17,8 +17,8 @@ describe('Database', () => {
         // Create a filesystem read stream for the given test file. This will cover
         // the cases where `yarn test` is run from the root or from the lsif directory.
         const root = (await fs.exists('lsif')) ? 'lsif' : ''
-        const sourceFile = path.join(root, 'test-data', filename)
-        const databaseFile = path.join(storageRoot, constants.TEMP_DIR, uuid.v4())
+        const sourceFile = nodepath.join(root, 'test-data', filename)
+        const databaseFile = nodepath.join(storageRoot, constants.TEMP_DIR, uuid.v4())
 
         await convertLsif({
             path: sourceFile,
