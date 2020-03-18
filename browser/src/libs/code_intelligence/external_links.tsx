@@ -1,13 +1,13 @@
 import classNames from 'classnames'
-import React, { useMemo, useCallback } from 'react'
+import React, { useMemo } from 'react'
 import { render } from 'react-dom'
-import { Observable, interval } from 'rxjs'
+import { Observable, interval, Subject, concat } from 'rxjs'
 import { switchMap, catchError, filter, tap, take } from 'rxjs/operators'
 import { SourcegraphIconButton } from '../../shared/components/Button'
 import { DEFAULT_SOURCEGRAPH_URL } from '../../shared/util/context'
 import { CodeHost, CodeHostContext } from './code_intelligence'
 import { asError } from '../../../../shared/src/util/errors'
-import { useObservable, useEventObservable } from '../../../../shared/src/util/useObservable'
+import { useObservable } from '../../../../shared/src/util/useObservable'
 import { failedWithHTTPStatus } from '../../../../shared/src/backend/fetch'
 
 export interface ViewOnSourcegraphButtonClassProps {
@@ -18,9 +18,15 @@ export interface ViewOnSourcegraphButtonClassProps {
 interface ViewOnSourcegraphButtonProps extends ViewOnSourcegraphButtonClassProps {
     context: CodeHostContext
     sourcegraphURL: string
+    minimalUI: boolean
     ensureRepoExists: (context: CodeHostContext, sourcegraphUrl: string) => Observable<boolean>
     onConfigureSourcegraphClick?: () => void
-    minimalUI: boolean
+
+    /**
+     * A callback for when the user finished a sign in flow.
+     * This does not guarantee the sign in was successful.
+     */
+    onSignInClose?: () => void
 }
 
 export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphButtonProps> = ({
@@ -29,38 +35,49 @@ export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphB
     context,
     minimalUI,
     onConfigureSourcegraphClick,
+    onSignInClose,
     className,
     iconClassName,
 }) => {
-    /** Whether or not the repo exists on the configured Sourcegraph instance. */
-    const repoExistsOrError = useObservable(
-        useMemo(() => ensureRepoExists(context, sourcegraphURL).pipe(catchError(error => [asError(error)])), [
-            context,
-            ensureRepoExists,
-            sourcegraphURL,
-        ])
+    const signInUrl = new URL('/sign-in?close=true', sourcegraphURL).href
+
+    /** Clicks on the "Sign in" CTA (if rendered) */
+    const signInClicks = useMemo(() => new Subject<React.MouseEvent>(), [])
+    const nextSignInClick = useMemo(() => signInClicks.next.bind(signInClicks), [signInClicks])
+
+    /**
+     * Emits when the user closed the sign in tab again.
+     * Does not guarantee the sign in was sucessful.
+     */
+    const signInCloses = useMemo(
+        () =>
+            signInClicks.pipe(
+                switchMap(event => {
+                    const tab = window.open(signInUrl, '_blank')
+                    if (!tab) {
+                        return []
+                    }
+                    event.preventDefault()
+                    return interval(300).pipe(
+                        filter(() => tab.closed),
+                        take(1)
+                    )
+                }),
+                tap(onSignInClose)
+            ),
+        [onSignInClose, signInClicks, signInUrl]
     )
 
-    const signInUrl = new URL('/sign-in', sourcegraphURL)
-    signInUrl.searchParams.set('close', 'true')
-    const [nextSignInClick] = useEventObservable(
-        useCallback(
-            (events: Observable<React.MouseEvent>) =>
-                events.pipe(
-                    switchMap(event => {
-                        const tab = window.open(signInUrl.href, '_blank')
-                        if (!tab) {
-                            return []
-                        }
-                        event.preventDefault()
-                        return interval(300).pipe(
-                            filter(() => tab.closed),
-                            take(1)
-                        )
-                    }),
-                    tap(() => location.reload())
+    /** Whether or not the repo exists on the configured Sourcegraph instance. */
+    const repoExistsOrError = useObservable(
+        useMemo(
+            () =>
+                concat([null], signInCloses).pipe(
+                    switchMap(() =>
+                        ensureRepoExists(context, sourcegraphURL).pipe(catchError(error => [asError(error)]))
+                    )
                 ),
-            [signInUrl]
+            [context, ensureRepoExists, signInCloses, sourcegraphURL]
         )
     )
 
@@ -72,7 +89,7 @@ export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphB
     if (failedWithHTTPStatus(repoExistsOrError, 401)) {
         return (
             <SourcegraphIconButton
-                url={signInUrl.href}
+                url={signInUrl}
                 label="Sign in to Sourcegraph"
                 ariaLabel="Sign into Sourcegraph to get hover tooltips, go to definition and more"
                 className={className}

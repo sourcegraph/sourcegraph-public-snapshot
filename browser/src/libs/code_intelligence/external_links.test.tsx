@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-floating-promises */
 import { of, throwError } from 'rxjs'
 import { ViewOnSourcegraphButton } from './external_links'
 import { HTTPStatusError } from '../../../../shared/src/backend/fetch'
@@ -63,7 +62,6 @@ describe('<ViewOnSourcegraphButton />', () => {
         describe(`minimalUI = ${String(minimalUI)}`, () => {
             it('renders a sign in button when authentication failed', () => {
                 let root: ReactTestRenderer
-                // eslint-disable-next-line @typescript-eslint/no-floating-promises
                 renderer.act(() => {
                     root = renderer.create(
                         <ViewOnSourcegraphButton
@@ -86,7 +84,6 @@ describe('<ViewOnSourcegraphButton />', () => {
 
     it('renders configure sourcegraph button when pointing at sourcegraph.com and the repo does not exist', () => {
         let root: ReactTestRenderer
-        // eslint-disable-next-line @typescript-eslint/no-floating-promises
         renderer.act(() => {
             root = renderer.create(
                 <ViewOnSourcegraphButton
@@ -108,7 +105,6 @@ describe('<ViewOnSourcegraphButton />', () => {
 
     it('still renders a button to a private instance if repo does not exist', () => {
         let root: ReactTestRenderer
-        // eslint-disable-next-line @typescript-eslint/no-floating-promises
         renderer.act(() => {
             root = renderer.create(
                 <ViewOnSourcegraphButton
