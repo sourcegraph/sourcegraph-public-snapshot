@@ -55,7 +55,7 @@ export function dumpJSON<T>(value: T): string {
  *
  * @param value The value to unmarshal.
  */
-function parseJSON<T>(value: string): T {
+export function parseJSON<T>(value: string): T {
     return JSON.parse(value, (_, oldValue) => {
         if (typeof oldValue === 'object' && oldValue !== null) {
             if (oldValue.type === 'map') {
