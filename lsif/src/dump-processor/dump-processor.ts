@@ -24,7 +24,7 @@ import { updateCommitsAndDumpsVisibleFromTip } from '../shared/visibility'
 import { startExpressApp } from '../shared/api/init'
 
 /**
- * Runs the worker that converts LSIF uploads.
+ * Runs the processor that converts LSIF uploads.
  *
  * @param logger The logger instance.
  */
@@ -36,7 +36,7 @@ async function main(logger: Logger): Promise<void> {
     const fetchConfiguration = await waitForConfiguration(logger)
 
     // Configure distributed tracing
-    const tracer = createTracer('lsif-worker', fetchConfiguration())
+    const tracer = createTracer('lsif-dump-processor', fetchConfiguration())
 
     // Ensure storage roots exist
     await ensureDirectory(settings.STORAGE_ROOT)
@@ -51,7 +51,7 @@ async function main(logger: Logger): Promise<void> {
     const dependencyManager = new DependencyManager(connection)
 
     // Start metrics server
-    startExpressApp({ routes: [], port: settings.WORKER_METRICS_PORT, logger })
+    startExpressApp({ routes: [], port: settings.METRICS_PORT, logger })
 
     const convert = async (upload: pgModels.LsifUpload, entityManager: EntityManager): Promise<void> => {
         logger.debug('Selected upload to convert', { uploadId: upload.id })
@@ -61,7 +61,7 @@ async function main(logger: Logger): Promise<void> {
             // Extract tracing context from upload
             const publisher = tracer.extract(FORMAT_TEXT_MAP, JSON.parse(upload.tracingContext))
             span = tracer.startSpan(
-                'Upload selected by worker',
+                'Upload selected for conversion',
                 publisher ? { references: [followsFrom(publisher)] } : {}
             )
         }
@@ -86,8 +86,8 @@ async function main(logger: Logger): Promise<void> {
 
                     // Remove overlapping dumps that would cause a unique index error once this upload has
                     // transitioned into the completed state. As this is done in a transaction, we do not
-                    // delete the files on disk right away. These files will be cleaned up by a worker in
-                    // a future cleanup task.
+                    // delete the files on disk right away. These files will be cleaned up by a dump
+                    // processor in a future cleanup task.
                     await dumpManager.deleteOverlappingDumps(
                         upload.repositoryId,
                         upload.commit,
@@ -116,7 +116,7 @@ async function main(logger: Logger): Promise<void> {
         )
     }
 
-    logger.debug('Worker polling database for unconverted uploads')
+    logger.debug('Polling database for unconverted uploads')
 
     AsyncPolling(async end => {
         while (await uploadManager.dequeueAndConvert(convert, logger)) {
@@ -124,11 +124,11 @@ async function main(logger: Logger): Promise<void> {
         }
 
         end()
-    }, settings.WORKER_POLLING_INTERVAL * 1000).run()
+    }, settings.POLLING_INTERVAL * 1000).run()
 }
 
 // Initialize logger
-const appLogger = createLogger('lsif-worker')
+const appLogger = createLogger('lsif-dump-processor')
 
 // Launch!
 main(appLogger).catch(error => {
