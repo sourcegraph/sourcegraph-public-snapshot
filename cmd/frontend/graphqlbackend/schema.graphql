@@ -4731,9 +4731,8 @@ enum RepositoryPermission {
     READ
 }
 
+# A single user event that has been logged.
 type EventLog {
-    # The unique ID of this event log.
-    id: ID!
     # The name of the event.
     name: String!
     # The user who executed the event, if one exists.

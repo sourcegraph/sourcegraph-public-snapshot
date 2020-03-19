@@ -4724,7 +4724,8 @@ enum RepositoryPermission {
     READ
 }
 
-type EventLog implements Node {
+# A single user event that has been logged.
+type EventLog {
     # The name of the event.
     name: String!
     # The user who executed the event, if one exists.

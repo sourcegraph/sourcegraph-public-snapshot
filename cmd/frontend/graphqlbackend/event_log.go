@@ -3,8 +3,6 @@ package graphqlbackend
 import (
 	"context"
 
-	graphql "github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
@@ -13,10 +11,6 @@ const eventLogIDKind = "EventLog"
 
 type userEventLogResolver struct {
 	event *types.Event
-}
-
-func (s *userEventLogResolver) ID() graphql.ID {
-	return relay.MarshalID(eventLogIDKind, s.event.ID)
 }
 
 func (s *userEventLogResolver) User(ctx context.Context) (*UserResolver, error) {
