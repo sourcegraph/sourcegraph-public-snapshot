@@ -28,7 +28,7 @@ local httpPatterns = ['5..', '4..'];
 // Colors to pair to the patterns above (red, yellow)
 local errorColors = ['#bf1b00', '#cca300'];
 
-// The classes of jobs performed by the LSIF worker
+// The classes of jobs performed by the LSIF dump processor
 local jobClasses = ['convert', 'update-tips'];
 
 //

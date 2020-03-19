@@ -4253,13 +4253,13 @@ type Hover {
 
 # The state an LSIF upload can be in.
 enum LSIFUploadState {
-    # The LSIF worker is processing this upload.
+    # This upload is being processed.
     PROCESSING
 
-    # The LSIF worker failed to process this upload.
+    # This upload failed to be processed.
     ERRORED
 
-    # The LSIF worker processed this upload successfully.
+    # This upload was processed successfully.
     COMPLETED
 
     # This upload is queued to be processed later.

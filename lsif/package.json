@@ -1,6 +1,6 @@
 {
   "name": "lsif-server",
-  "description": "LSIF Server with an HTTP API",
+  "description": "LSIF-based precise code intelligence",
   "author": "Sourcegraph",
   "license": "MIT",
   "version": "0.1.0",
@@ -10,7 +10,8 @@
     "tslint": "../node_modules/.bin/tslint -p tsconfig.json",
     "eslint": "../node_modules/.bin/eslint --cache 'src/**/*.ts?(x)'",
     "run:server": "tsc-watch --onSuccess \"node -r source-map-support/register out/server/server.js\" --noClear",
-    "run:worker": "tsc-watch --onSuccess \"node -r source-map-support/register out/worker/worker.js\" --noClear"
+    "run:dump-manager": "tsc-watch --onSuccess \"node -r source-map-support/register out/dump-manager/dump-manager.js\" --noClear",
+    "run:dump-processor": "tsc-watch --onSuccess \"node -r source-map-support/register out/dump-processor/dump-processor.js\" --noClear"
   },
   "dependencies": {
     "async-middleware": "^1.2.1",

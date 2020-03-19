@@ -58,7 +58,7 @@ describe('External services GUI', () => {
 
     saveScreenshotsUponFailures(() => driver.page)
 
-    before(async function() {
+    after(async function() {
         this.timeout(10 * 1000)
         if (!config.noCleanup) {
             await resourceManager.destroyAll()
@@ -250,7 +250,7 @@ describe('External services permissions', () => {
 
     saveScreenshotsUponFailures(() => driver.page)
 
-    before(async function() {
+    after(async function() {
         this.timeout(10 * 1000)
         if (!config.noCleanup) {
             await resourceManager.destroyAll()
