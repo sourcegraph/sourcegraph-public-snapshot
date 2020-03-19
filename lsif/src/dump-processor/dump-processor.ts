@@ -22,6 +22,13 @@ import { EntityManager } from 'typeorm'
 import { SRC_FRONTEND_INTERNAL } from '../shared/config/settings'
 import { updateCommitsAndDumpsVisibleFromTip } from '../shared/visibility'
 import { startExpressApp } from '../shared/api/init'
+import * as uuid from 'uuid'
+import got from 'got'
+import { pipeline as _pipeline } from 'stream'
+import { promisify } from 'util'
+import * as fs from 'mz/fs'
+
+const pipeline = promisify(_pipeline)
 
 /**
  * Runs the processor that converts LSIF uploads.
@@ -74,44 +81,75 @@ async function main(logger: Logger): Promise<void> {
             metrics.uploadConversionDurationErrorsCounter,
             (): Promise<void> =>
                 logAndTraceCall(ctx, 'Converting upload', async (ctx: TracingContext) => {
-                    // Convert the database and populate the cross-dump package data
-                    await convertDatabase(
-                        entityManager,
-                        dumpManager,
-                        dependencyManager,
-                        SRC_FRONTEND_INTERNAL,
-                        upload,
-                        ctx
-                    )
+                    const sourcePath = path.join(settings.STORAGE_ROOT, uuid.v4())
+                    const targetPath = path.join(settings.STORAGE_ROOT, uuid.v4())
 
-                    // Remove overlapping dumps that would cause a unique index error once this upload has
-                    // transitioned into the completed state. As this is done in a transaction, we do not
-                    // delete the files on disk right away. These files will be cleaned up by a dump
-                    // processor in a future cleanup task.
-                    await dumpManager.deleteOverlappingDumps(
-                        upload.repositoryId,
-                        upload.commit,
-                        upload.root,
-                        upload.indexer,
-                        { logger, span },
-                        entityManager
-                    )
+                    try {
+                        await logAndTraceCall(ctx, 'Downloading raw dump from dump manager', () =>
+                            pipeline(
+                                got.stream.get(new URL(`/${upload.filename}/raw`, settings.LSIF_DUMP_MANAGER_URL).href),
+                                fs.createWriteStream(sourcePath)
+                            )
+                        )
 
-                    // Update the conversion state after we've written the dump database file as the
-                    // next step assumes that the processed upload is present in the dumps views. The
-                    // remainder of the task may still fail, in which case the entire transaction is
-                    // rolled back, so we don't want to commit yet.
-                    await uploadManager.markComplete(upload, entityManager)
+                        // Convert the database and populate the cross-dump package data
+                        await convertDatabase(
+                            entityManager,
+                            dependencyManager,
+                            SRC_FRONTEND_INTERNAL,
+                            upload,
+                            sourcePath,
+                            targetPath,
+                            ctx
+                        )
 
-                    // Update visibility flag for this repository.
-                    await updateCommitsAndDumpsVisibleFromTip({
-                        entityManager,
-                        dumpManager,
-                        frontendUrl: SRC_FRONTEND_INTERNAL,
-                        repositoryId: upload.repositoryId,
-                        commit: upload.commit,
-                        ctx,
-                    })
+                        // Move the temp file where it can be found by the server
+                        await logAndTraceCall(ctx, 'Uploading converted dump to dump manager', () =>
+                            pipeline(
+                                fs.createReadStream(targetPath),
+                                got.stream.post(new URL(`/${upload.id}`, settings.LSIF_DUMP_MANAGER_URL).href)
+                            )
+                        )
+
+                        // Remove overlapping dumps that would cause a unique index error once this upload has
+                        // transitioned into the completed state. As this is done in a transaction, we do not
+                        // delete the files on disk right away. These files will be cleaned up by a dump
+                        // processor in a future cleanup task.
+                        await dumpManager.deleteOverlappingDumps(
+                            upload.repositoryId,
+                            upload.commit,
+                            upload.root,
+                            upload.indexer,
+                            { logger, span },
+                            entityManager
+                        )
+
+                        // Update the conversion state after we've written the dump database file as the
+                        // next step assumes that the processed upload is present in the dumps views. The
+                        // remainder of the task may still fail, in which case the entire transaction is
+                        // rolled back, so we don't want to commit yet.
+                        await uploadManager.markComplete(upload, entityManager)
+
+                        // Update visibility flag for this repository.
+                        await updateCommitsAndDumpsVisibleFromTip({
+                            entityManager,
+                            dumpManager,
+                            frontendUrl: SRC_FRONTEND_INTERNAL,
+                            repositoryId: upload.repositoryId,
+                            commit: upload.commit,
+                            ctx,
+                        })
+
+                        logger.info('Converted upload', {
+                            repositoryId: upload.repositoryId,
+                            commit: upload.commit,
+                            root: upload.root,
+                        })
+                    } finally {
+                        // Remove local files
+                        await fs.unlink(sourcePath)
+                        await fs.unlink(targetPath)
+                    }
                 })
         )
     }

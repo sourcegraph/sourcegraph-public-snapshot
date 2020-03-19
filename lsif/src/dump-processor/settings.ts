@@ -3,6 +3,9 @@ import { readEnvInt } from '../shared/settings'
 /** Which port to run the metrics server on. Defaults to 3188. */
 export const METRICS_PORT = readEnvInt('METRICS_PORT', 3188)
 
+/** HTTP address for internal LSIF dump manager server. */
+export const LSIF_DUMP_MANAGER_URL = process.env.LSIF_DUMP_MANAGER_URL || 'http://lsif-dump-manager'
+
 /** The interval (in seconds) to poll the database for unconverted uploads. */
 export const POLLING_INTERVAL = readEnvInt('POLLING_INTERVAL', 1)
 
