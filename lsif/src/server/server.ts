@@ -6,7 +6,6 @@ import promClient from 'prom-client'
 import { Backend } from './backend/backend'
 import { createLogger } from '../shared/logging'
 import { createLsifRouter } from './routes/lsif'
-import { createMetaRouter } from './routes/meta'
 import { createPostgresConnection } from '../shared/database/postgres'
 import { createTracer } from '../shared/tracing'
 import { createUploadRouter } from './routes/uploads'
@@ -18,7 +17,7 @@ import { waitForConfiguration } from '../shared/config/config'
 import { DumpManager } from '../shared/store/dumps'
 import { DependencyManager } from '../shared/store/dependencies'
 import { SRC_FRONTEND_INTERNAL } from '../shared/config/settings'
-import { makeExpressApp } from '../shared/api/init'
+import { startExpressApp } from '../shared/api/init'
 
 /**
  * Runs the HTTP server that accepts LSIF dump uploads and responds to LSIF requests.
@@ -56,19 +55,13 @@ async function main(logger: Logger): Promise<void> {
     // Start background tasks
     startTasks(connection, dumpManager, uploadManager, logger)
 
-    // Register endpoints
-    const app = makeExpressApp({
-        routes: [
-            createMetaRouter(),
-            createUploadRouter(dumpManager, uploadManager, logger),
-            createLsifRouter(backend, uploadManager, logger, tracer),
-        ],
-        logger,
-        tracer,
-        selectHistogram,
-    })
+    const routes = [
+        createUploadRouter(dumpManager, uploadManager, logger),
+        createLsifRouter(backend, uploadManager, logger, tracer),
+    ]
 
-    app.listen(settings.HTTP_PORT, () => logger.debug('LSIF API server listening on', { port: settings.HTTP_PORT }))
+    // Start server
+    startExpressApp({ routes, port: settings.HTTP_PORT, logger, tracer, selectHistogram })
 }
 
 function selectHistogram(route: string): promClient.Histogram<string> | undefined {
