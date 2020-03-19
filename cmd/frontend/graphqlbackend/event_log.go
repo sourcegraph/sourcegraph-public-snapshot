@@ -7,8 +7,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
-const eventLogIDKind = "EventLog"
-
 type userEventLogResolver struct {
 	event *types.Event
 }
