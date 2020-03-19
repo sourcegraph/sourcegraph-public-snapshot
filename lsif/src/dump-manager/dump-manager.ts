@@ -1,5 +1,6 @@
 import * as constants from '../shared/constants'
 import * as path from 'path'
+import * as metrics from './metrics'
 import * as settings from './settings'
 import promClient from 'prom-client'
 import { createLogger } from '../shared/logging'
@@ -10,6 +11,7 @@ import { createDatabaseRouter } from './routes/database'
 import { createPostgresConnection } from '../shared/database/postgres'
 import { waitForConfiguration } from '../shared/config/config'
 import { startTasks } from './tasks'
+import { createUploadRouter } from './routes/uploads'
 
 /**
  * No-op dump-manager process.
@@ -23,10 +25,14 @@ async function main(logger: Logger): Promise<void> {
     // Read configuration from frontend
     const fetchConfiguration = await waitForConfiguration(logger)
 
+    // Update cache capacities on startup
+    metrics.connectionCacheCapacityGauge.set(settings.CONNECTION_CACHE_CAPACITY)
+    metrics.documentCacheCapacityGauge.set(settings.DOCUMENT_CACHE_CAPACITY)
+    metrics.resultChunkCacheCapacityGauge.set(settings.RESULT_CHUNK_CACHE_CAPACITY)
+
     // Ensure storage roots exist
     await ensureDirectory(settings.STORAGE_ROOT)
     await ensureDirectory(path.join(settings.STORAGE_ROOT, constants.DBS_DIR))
-    await ensureDirectory(path.join(settings.STORAGE_ROOT, constants.TEMP_DIR))
     await ensureDirectory(path.join(settings.STORAGE_ROOT, constants.UPLOADS_DIR))
 
     // Create database connection
@@ -35,7 +41,7 @@ async function main(logger: Logger): Promise<void> {
     // Start background tasks
     startTasks(connection, logger)
 
-    const routers = [createDatabaseRouter(logger)]
+    const routers = [createDatabaseRouter(logger), createUploadRouter(logger)]
 
     // Start server
     startExpressApp({ port: settings.HTTP_PORT, routers, logger })

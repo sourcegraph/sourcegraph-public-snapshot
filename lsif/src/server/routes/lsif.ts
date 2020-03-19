@@ -21,6 +21,7 @@ import { readGzippedJsonElementsFromFile } from '../../shared/input'
 import * as lsif from 'lsif-protocol'
 import { ReferencePaginationCursor } from '../backend/cursor'
 import { LsifUpload } from '../../shared/models/pg'
+import got from 'got'
 
 const pipeline = promisify(_pipeline)
 
@@ -93,18 +94,31 @@ export function createLsifRouter(
 
                 const root = sanitizeRoot(rootRaw)
                 const ctx = createTracingContext(req, { repositoryId, commit, root })
-                const filename = nodepath.join(settings.STORAGE_ROOT, constants.UPLOADS_DIR, uuid.v4())
+                const filename = nodepath.join(settings.STORAGE_ROOT, uuid.v4())
                 const output = fs.createWriteStream(filename)
-                await logAndTraceCall(ctx, 'Uploading dump', () => pipeline(req, output))
+                await logAndTraceCall(ctx, 'Receiving dump', () => pipeline(req, output))
 
                 const indexer = indexerName || (await findIndexer(filename))
                 if (!indexer) {
                     throw new Error('Could not find tool type in metadata vertex at the start of the dump.')
                 }
 
+                const payloadId = uuid.v4()
+
+                // Move the temp file where it can be found by the server
+                await logAndTraceCall(ctx, 'Uploading payload to dump manager', () =>
+                    pipeline(
+                        fs.createReadStream(filename),
+                        got.stream.post(new URL(`/${payloadId}/raw`, settings.LSIF_DUMP_MANAGER_URL).href)
+                    )
+                )
+
+                // Remove local file
+                await fs.unlink(filename)
+
                 // Add upload record
                 const upload = await uploadManager.enqueue(
-                    { repositoryId, commit, root, filename, indexer },
+                    { repositoryId, commit, root, filename: payloadId, indexer }, // TODO - rename
                     tracer,
                     ctx.span
                 )

@@ -141,23 +141,14 @@ async function removeDeadDumps(
  */
 async function cleanFailedUploads({ logger = createSilentLogger() }: TracingContext): Promise<void> {
     let count = 0
-    for await (const filename of candidateFiles()) {
-        if (await purgeFile(filename)) {
+    for (const basename of await fs.readdir(path.join(settings.STORAGE_ROOT, constants.UPLOADS_DIR))) {
+        if (await purgeFile(path.join(settings.STORAGE_ROOT, constants.UPLOADS_DIR, basename))) {
             count++
         }
     }
 
     if (count > 0) {
         logger.debug('Removed old files', { count })
-    }
-}
-
-/** Return an async iterable that yields the path of all files in the temp and uploads dir. */
-async function* candidateFiles(): AsyncIterable<string> {
-    for (const directory of [constants.TEMP_DIR, constants.UPLOADS_DIR]) {
-        for (const basename of await fs.readdir(path.join(settings.STORAGE_ROOT, directory))) {
-            yield path.join(settings.STORAGE_ROOT, directory, basename)
-        }
     }
 }
 

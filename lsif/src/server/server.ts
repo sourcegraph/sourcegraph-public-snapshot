@@ -1,6 +1,4 @@
-import * as constants from '../shared/constants'
 import * as metrics from './metrics'
-import * as path from 'path'
 import * as settings from './settings'
 import promClient from 'prom-client'
 import { Backend } from './backend/backend'
@@ -9,7 +7,6 @@ import { createLsifRouter } from './routes/lsif'
 import { createPostgresConnection } from '../shared/database/postgres'
 import { createTracer } from '../shared/tracing'
 import { createUploadRouter } from './routes/uploads'
-import { ensureDirectory } from '../shared/paths'
 import { Logger } from 'winston'
 import { startTasks } from './tasks'
 import { UploadManager } from '../shared/store/uploads'
@@ -34,17 +31,6 @@ async function main(logger: Logger): Promise<void> {
 
     // Configure distributed tracing
     const tracer = createTracer('lsif-server', fetchConfiguration())
-
-    // Update cache capacities on startup
-    metrics.connectionCacheCapacityGauge.set(settings.CONNECTION_CACHE_CAPACITY)
-    metrics.documentCacheCapacityGauge.set(settings.DOCUMENT_CACHE_CAPACITY)
-    metrics.resultChunkCacheCapacityGauge.set(settings.RESULT_CHUNK_CACHE_CAPACITY)
-
-    // Ensure storage roots exist
-    await ensureDirectory(settings.STORAGE_ROOT)
-    await ensureDirectory(path.join(settings.STORAGE_ROOT, constants.DBS_DIR))
-    await ensureDirectory(path.join(settings.STORAGE_ROOT, constants.TEMP_DIR))
-    await ensureDirectory(path.join(settings.STORAGE_ROOT, constants.UPLOADS_DIR))
 
     // Create database connection and entity wrapper classes
     const connection = await createPostgresConnection(fetchConfiguration(), logger)

@@ -1,12 +1,9 @@
-import * as constants from '../shared/constants'
 import * as metrics from './metrics'
-import * as path from 'path'
 import * as settings from './settings'
 import promClient from 'prom-client'
 import { addTags, createTracer, logAndTraceCall, TracingContext } from '../shared/tracing'
 import { createLogger } from '../shared/logging'
 import { createPostgresConnection } from '../shared/database/postgres'
-import { ensureDirectory } from '../shared/paths'
 import { Span, FORMAT_TEXT_MAP, followsFrom } from 'opentracing'
 import { instrument } from '../shared/metrics'
 import { Logger } from 'winston'
@@ -22,6 +19,14 @@ import { EntityManager } from 'typeorm'
 import { SRC_FRONTEND_INTERNAL } from '../shared/config/settings'
 import { updateCommitsAndDumpsVisibleFromTip } from '../shared/visibility'
 import { startExpressApp } from '../shared/api/init'
+import { pipeline as _pipeline } from 'stream'
+import { promisify } from 'util'
+import * as fs from 'mz/fs'
+import * as nodepath from 'path'
+import got from 'got'
+import * as uuid from 'uuid'
+
+const pipeline = promisify(_pipeline)
 
 /**
  * Runs the processor that converts LSIF uploads.
@@ -37,12 +42,6 @@ async function main(logger: Logger): Promise<void> {
 
     // Configure distributed tracing
     const tracer = createTracer('lsif-dump-processor', fetchConfiguration())
-
-    // Ensure storage roots exist
-    await ensureDirectory(settings.STORAGE_ROOT)
-    await ensureDirectory(path.join(settings.STORAGE_ROOT, constants.DBS_DIR))
-    await ensureDirectory(path.join(settings.STORAGE_ROOT, constants.TEMP_DIR))
-    await ensureDirectory(path.join(settings.STORAGE_ROOT, constants.UPLOADS_DIR))
 
     // Create database connection and entity wrapper classes
     const connection = await createPostgresConnection(fetchConfiguration(), logger)
@@ -72,17 +71,43 @@ async function main(logger: Logger): Promise<void> {
         await instrument(
             metrics.uploadConversionDurationHistogram,
             metrics.uploadConversionDurationErrorsCounter,
-            (): Promise<void> =>
-                logAndTraceCall(ctx, 'Converting upload', async (ctx: TracingContext) => {
-                    // Convert the database and populate the cross-dump package data
-                    await convertDatabase(
-                        entityManager,
-                        dumpManager,
-                        dependencyManager,
-                        SRC_FRONTEND_INTERNAL,
-                        upload,
-                        ctx
+            (): Promise<void> => {
+                // TODO - rename these
+                const tempFile1 = nodepath.join(settings.STORAGE_ROOT, uuid.v4())
+                const tempFile2 = nodepath.join(settings.STORAGE_ROOT, uuid.v4())
+
+                return logAndTraceCall(ctx, 'Converting upload', async (ctx: TracingContext) => {
+                    await logAndTraceCall(ctx, 'Downloading raw dump from dump manager', () =>
+                        pipeline(
+                            got.stream.get(new URL(`/${upload.filename}/raw`, settings.LSIF_DUMP_MANAGER_URL).href),
+                            fs.createWriteStream(tempFile1)
+                        )
                     )
+
+                    try {
+                        // Convert the database and populate the cross-dump package data
+                        await convertDatabase(
+                            entityManager,
+                            dependencyManager,
+                            SRC_FRONTEND_INTERNAL,
+                            upload,
+                            tempFile1,
+                            tempFile2,
+                            ctx
+                        )
+
+                        // Move the temp file where it can be found by the server
+                        await logAndTraceCall(ctx, 'Uploading converted dump to dump manager', () =>
+                            pipeline(
+                                fs.createReadStream(tempFile2),
+                                got.stream.post(new URL(`/${upload.id}`, settings.LSIF_DUMP_MANAGER_URL).href)
+                            )
+                        )
+                    } finally {
+                        // Remove local files
+                        await fs.unlink(tempFile1)
+                        await fs.unlink(tempFile2)
+                    }
 
                     // Remove overlapping dumps that would cause a unique index error once this upload has
                     // transitioned into the completed state. As this is done in a transaction, we do not
@@ -113,6 +138,7 @@ async function main(logger: Logger): Promise<void> {
                         ctx,
                     })
                 })
+            }
         )
     }
 
