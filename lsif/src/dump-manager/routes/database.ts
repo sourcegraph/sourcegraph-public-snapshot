@@ -78,7 +78,6 @@ export function createDatabaseRouter(logger: Logger): express.Router {
         validation.validationMiddleware([validation.validateNonEmptyString('path')]),
         wrap(
             async (req: express.Request, res: express.Response<ExistsResponse>): Promise<void> => {
-                console.log('ok nice')
                 const { path }: ExistsQueryArgs = req.query
                 await onDatabase(req, res, (database, ctx) => database.exists(path, ctx))
             }
@@ -239,8 +238,6 @@ export function createDatabaseRouter(logger: Logger): express.Router {
             }
         )
     )
-
-    console.log('YEEHAW')
 
     return router
 }
