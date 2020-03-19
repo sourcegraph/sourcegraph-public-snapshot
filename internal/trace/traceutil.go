@@ -3,6 +3,8 @@ package trace
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/keegancsmith/sqlf"
 	opentracing "github.com/opentracing/opentracing-go"
@@ -76,16 +78,15 @@ type Trace struct {
 // /debug/requests page is rendered. Any memory referenced by a will be
 // pinned until the trace is finished and later discarded.
 func (t *Trace) LazyPrintf(format string, a ...interface{}) {
-	t.LogFields(Printf("log", format, a...))
+	t.span.LogFields(Printf("log", format, a...))
+	t.trace.LazyPrintf(format, a...)
 }
 
 // LogFields logs fields to the opentracing.Span
 // as well as the nettrace.Trace.
 func (t *Trace) LogFields(fields ...log.Field) {
 	t.span.LogFields(fields...)
-	for _, f := range fields {
-		t.trace.LazyLog(f, false)
-	}
+	t.trace.LazyLog(fieldsStringer(fields), false)
 }
 
 // SetError declares that this trace and span resulted in an error.
@@ -133,4 +134,71 @@ func SQL(q *sqlf.Query) log.Field {
 			fv.EmitObject(fmt.Sprintf("arg%d", i+1), arg)
 		}
 	})
+}
+
+// fieldsStringer lazily marshals a slice of log.Field into a string for
+// printing in net/trace.
+type fieldsStringer []log.Field
+
+func (fs fieldsStringer) String() string {
+	var e encoder
+	for _, f := range fs {
+		f.Marshal(&e)
+	}
+	return e.Builder.String()
+}
+
+// encoder is a log.Encoder used by fieldsStringer.
+type encoder struct {
+	strings.Builder
+	prefixNewline bool
+}
+
+func (e *encoder) EmitString(key, value string) {
+	if e.prefixNewline {
+		// most times encoder is used is for one field
+		e.Builder.WriteString("\n")
+	}
+	if !e.prefixNewline {
+		e.prefixNewline = true
+	}
+
+	e.Builder.Grow(len(key) + 1 + len(value))
+	e.Builder.WriteString(key)
+	e.Builder.WriteString(":")
+	e.Builder.WriteString(value)
+}
+
+func (e *encoder) EmitBool(key string, value bool) {
+	e.EmitString(key, strconv.FormatBool(value))
+}
+
+func (e *encoder) EmitInt(key string, value int) {
+	e.EmitString(key, strconv.Itoa(value))
+}
+
+func (e *encoder) EmitInt32(key string, value int32) {
+	e.EmitString(key, strconv.FormatInt(int64(value), 10))
+}
+func (e *encoder) EmitInt64(key string, value int64) {
+	e.EmitString(key, strconv.FormatInt(value, 10))
+}
+func (e *encoder) EmitUint32(key string, value uint32) {
+	e.EmitString(key, strconv.FormatUint(uint64(value), 10))
+}
+func (e *encoder) EmitUint64(key string, value uint64) {
+	e.EmitString(key, strconv.FormatUint(value, 10))
+}
+func (e *encoder) EmitFloat32(key string, value float32) {
+	e.EmitString(key, strconv.FormatFloat(float64(value), 'E', -1, 64))
+}
+func (e *encoder) EmitFloat64(key string, value float64) {
+	e.EmitString(key, strconv.FormatFloat(value, 'E', -1, 64))
+}
+func (e *encoder) EmitObject(key string, value interface{}) {
+	e.EmitString(key, fmt.Sprintf("%+v", value))
+}
+
+func (e *encoder) EmitLazyLogger(value log.LazyLogger) {
+	value(e)
 }
