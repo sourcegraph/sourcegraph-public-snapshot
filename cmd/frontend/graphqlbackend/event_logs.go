@@ -31,7 +31,7 @@ func (r *userEventLogsConnectionResolver) Nodes(ctx context.Context) ([]*userEve
 		return nil, err
 	}
 
-	var eventLogs []*userEventLogResolver
+	eventLogs := make([]*userEventLogResolver, 0, len(events))
 	for _, event := range events {
 		eventLogs = append(eventLogs, &userEventLogResolver{event: event})
 	}
