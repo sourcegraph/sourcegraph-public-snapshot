@@ -32,6 +32,7 @@ describe('CampaignDetails', () => {
                     extensionsController={undefined as any}
                     platformContext={undefined as any}
                     telemetryService={NOOP_TELEMETRY_SERVICE}
+                    _noSubject={true}
                 />
             )
         ).toMatchSnapshot())
@@ -60,6 +61,7 @@ describe('CampaignDetails', () => {
                         },
                     })
                 }
+                _noSubject={true}
             />
         )
         // eslint-disable-next-line @typescript-eslint/no-floating-promises
@@ -103,6 +105,7 @@ describe('CampaignDetails', () => {
                     closedAt: null,
                 })
             }
+            _noSubject={true}
         />
     )
 
