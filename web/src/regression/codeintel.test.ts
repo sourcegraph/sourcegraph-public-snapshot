@@ -6,6 +6,7 @@ import { ElementHandle } from 'puppeteer'
 import { map } from 'rxjs/operators'
 import * as child_process from 'mz/child_process'
 import { applyEdits } from '@sqs/jsonc-parser'
+import { JSONPath } from '@sqs/jsonc-parser/lib/main'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import { getTestTools } from './util/init'
 import { GraphQLClient } from './util/GraphQLClient'
@@ -138,6 +139,8 @@ describe('Code intelligence regression test suite', () => {
             throw new Error(`test user ${testUsername} does not exist`)
         }
         await setUserSiteAdmin(gqlClient, user.id, true)
+
+        outerResourceManager.add('Global setting', 'showBadgeAttachments', await enableBadgeAttachments(gqlClient))
     })
 
     saveScreenshotsUponFailures(() => driver.page)
@@ -620,17 +623,24 @@ function normalizeWhitespace(s: string): string {
 //
 // LSIF utilities
 
+async function enableBadgeAttachments(gqlClient: GraphQLClient): Promise<() => Promise<void>> {
+    return writeSetting(gqlClient, ['experimental', 'showBadgeAttachments'], true)
+}
+
+/** Replace the codeIntel.lsif setting with the given value. */
+async function setGlobalLSIFSetting(gqlClient: GraphQLClient, enabled: boolean): Promise<() => Promise<void>> {
+    return writeSetting(gqlClient, ['codeIntel.lsif'], enabled)
+}
+
 /**
- * Replace the codeIntel.lsif setting with the given value.
- *
  * Return a promise that updates the global settings to their original value. This return value
  * is suitable for use with the resource manager's destroy queue.
  */
-async function setGlobalLSIFSetting(gqlClient: GraphQLClient, enabled: boolean): Promise<() => Promise<void>> {
+async function writeSetting(gqlClient: GraphQLClient, path: JSONPath, value: unknown): Promise<() => Promise<void>> {
     const { subjectID, settingsID, contents: oldContents } = await getGlobalSettings(gqlClient)
     const newContents = applyEdits(
         oldContents,
-        setProperty(oldContents, ['codeIntel.lsif'], enabled, {
+        setProperty(oldContents, path, value, {
             eol: '\n',
             insertSpaces: true,
             tabSize: 2,
