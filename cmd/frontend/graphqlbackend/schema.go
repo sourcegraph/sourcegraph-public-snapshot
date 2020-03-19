@@ -2998,6 +2998,11 @@ type User implements Node & SettingsSubject & Namespace {
     tags: [String!]!
     # The user's usage statistics on Sourcegraph.
     usageStatistics: UserUsageStatistics!
+    # The user's events on Sourcegraph.
+    eventLogs(
+        # Returns the first n event logs from the list.
+        first: Int
+    ): EventLogsConnection!
     # The user's email addresses.
     #
     # Only the user and site admins can access this field.
@@ -4717,5 +4722,35 @@ scalar DateTime
 # Different repository permission levels.
 enum RepositoryPermission {
     READ
+}
+
+type EventLog implements Node {
+    # The name of the event.
+    name: String!
+    # The user who executed the event, if one exists.
+    user: User
+    # The randomly generated unique user ID stored in a browser cookie.
+    anonymousUserID: String!
+    # The URL when the event was logged.
+    url: String!
+    # The source of the event.
+    source: EventSource!
+    # The additional argument information.
+    argument: String
+    # The Sourcegraph version when the event was logged.
+    version: String!
+    # The timestamp when the event was logged.
+    timestamp: DateTime!
+}
+
+# A list of event logs.
+type EventLogsConnection {
+    # A list of event logs.
+    nodes: [EventLog!]!
+    # The total count of event logs in the connection. This total count may be larger than the number of nodes
+    # in this object when the result is paginated.
+    totalCount: Int!
+    # Pagination information.
+    pageInfo: PageInfo!
 }
 `
