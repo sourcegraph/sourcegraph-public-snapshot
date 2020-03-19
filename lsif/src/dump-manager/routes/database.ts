@@ -11,6 +11,7 @@ import { Location } from '../backend/location'
 import { ConnectionCache, DocumentCache, ResultChunkCache } from '../backend/cache'
 import { dbFilename } from '../../shared/paths'
 import * as lsp from 'vscode-languageserver-protocol'
+import * as validation from '../../shared/api/middleware/validation'
 
 /**
  * Create a router containing the SQLite query endpoints.
@@ -74,6 +75,7 @@ export function createDatabaseRouter(logger: Logger): express.Router {
 
     router.get(
         '/:id([0-9]+)/exists',
+        validation.validationMiddleware([validation.validateNonEmptyString('path')]),
         wrap(
             async (req: express.Request, res: express.Response<ExistsResponse>): Promise<void> => {
                 console.log('ok nice')
@@ -93,6 +95,11 @@ export function createDatabaseRouter(logger: Logger): express.Router {
 
     router.get(
         '/:id([0-9]+)/definitions',
+        validation.validationMiddleware([
+            validation.validateNonEmptyString('path'),
+            validation.validateInt('line'),
+            validation.validateInt('character'),
+        ]),
         wrap(
             async (req: express.Request, res: express.Response<DefinitionsResponse>): Promise<void> => {
                 const { path, line, character }: DefinitionsQueryArgs = req.query
@@ -111,6 +118,11 @@ export function createDatabaseRouter(logger: Logger): express.Router {
 
     router.get(
         '/:id([0-9]+)/references',
+        validation.validationMiddleware([
+            validation.validateNonEmptyString('path'),
+            validation.validateInt('line'),
+            validation.validateInt('character'),
+        ]),
         wrap(
             async (req: express.Request, res: express.Response<ReferencesResponse>): Promise<void> => {
                 const { path, line, character }: ReferencesQueryArgs = req.query
@@ -133,6 +145,11 @@ export function createDatabaseRouter(logger: Logger): express.Router {
 
     router.get(
         '/:id([0-9]+)/hover',
+        validation.validationMiddleware([
+            validation.validateNonEmptyString('path'),
+            validation.validateInt('line'),
+            validation.validateInt('character'),
+        ]),
         wrap(
             async (req: express.Request, res: express.Response<HoverResponse>): Promise<void> => {
                 const { path, line, character }: HoverQueryArgs = req.query
@@ -154,6 +171,11 @@ export function createDatabaseRouter(logger: Logger): express.Router {
 
     router.get(
         '/:id([0-9]+)/getRangeByPosition',
+        validation.validationMiddleware([
+            validation.validateNonEmptyString('path'),
+            validation.validateInt('line'),
+            validation.validateInt('character'),
+        ]),
         wrap(
             async (req: express.Request, res: express.Response<GetRangeByPositionResponse>): Promise<void> => {
                 const { path, line, character }: GetRangeByPositionQueryArgs = req.query
@@ -179,6 +201,13 @@ export function createDatabaseRouter(logger: Logger): express.Router {
 
     router.get(
         '/:id([0-9]+)/monikerResults',
+        validation.validationMiddleware([
+            validation.validateNonEmptyString('model'),
+            validation.validateNonEmptyString('scheme'),
+            validation.validateNonEmptyString('identifier'),
+            validation.validateOptionalInt('skip'),
+            validation.validateOptionalInt('take'),
+        ]),
         wrap(
             async (req: express.Request, res: express.Response<MonikerResultsResponse>): Promise<void> => {
                 const { model, scheme, identifier, skip, take }: MonikerResultsQueryArgs = req.query
@@ -202,6 +231,7 @@ export function createDatabaseRouter(logger: Logger): express.Router {
 
     router.get(
         '/:id([0-9]+)/getDocumentByPath',
+        validation.validationMiddleware([validation.validateNonEmptyString('path')]),
         wrap(
             async (req: express.Request, res: express.Response<GetDocumentByPathResponse>): Promise<void> => {
                 const { path }: GetDocumentByPathQueryArgs = req.query
