@@ -50,18 +50,18 @@ async function main(logger: Logger): Promise<void> {
     const dumpManager = new DumpManager(connection)
     const uploadManager = new UploadManager(connection)
     const dependencyManager = new DependencyManager(connection)
-    const backend = new Backend(settings.STORAGE_ROOT, dumpManager, dependencyManager, SRC_FRONTEND_INTERNAL)
+    const backend = new Backend(dumpManager, dependencyManager, SRC_FRONTEND_INTERNAL)
 
     // Start background tasks
     startTasks(connection, dumpManager, uploadManager, logger)
 
-    const routes = [
+    const routers = [
         createUploadRouter(dumpManager, uploadManager, logger),
         createLsifRouter(backend, uploadManager, logger, tracer),
     ]
 
     // Start server
-    startExpressApp({ routes, port: settings.HTTP_PORT, logger, tracer, selectHistogram })
+    startExpressApp({ port: settings.HTTP_PORT, routers, logger, tracer, selectHistogram })
 }
 
 function selectHistogram(route: string): promClient.Histogram<string> | undefined {

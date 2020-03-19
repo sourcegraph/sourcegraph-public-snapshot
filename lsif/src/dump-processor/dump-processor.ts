@@ -51,7 +51,7 @@ async function main(logger: Logger): Promise<void> {
     const dependencyManager = new DependencyManager(connection)
 
     // Start metrics server
-    startExpressApp({ routes: [], port: settings.METRICS_PORT, logger })
+    startExpressApp({ port: settings.METRICS_PORT, logger })
 
     const convert = async (upload: pgModels.LsifUpload, entityManager: EntityManager): Promise<void> => {
         logger.debug('Selected upload to convert', { uploadId: upload.id })

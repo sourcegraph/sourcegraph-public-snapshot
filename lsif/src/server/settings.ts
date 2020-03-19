@@ -57,3 +57,6 @@ export const STALLED_UPLOAD_MAX_AGE = readEnvInt('STALLED_UPLOAD_MAX_AGE', 5)
 
 /** The maximum space (in bytes) that the dbs directory can use. */
 export const DBS_DIR_MAXIMUM_SIZE_BYTES = readEnvInt('DBS_DIR_MAXIMUM_SIZE_BYTES', 1024 * 1024 * 1024 * 10)
+
+/** HTTP address for internal LSIF dump manager server. */
+export const LSIF_DUMP_MANAGER_URL = process.env.LSIF_DUMP_MANAGER_URL || 'http://lsif-dump-manager'
