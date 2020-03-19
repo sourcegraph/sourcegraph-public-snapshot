@@ -44,26 +44,25 @@ interface UserEventLogsPageProps extends UserAreaRouteContext, RouteComponentPro
     isLightTheme: boolean
 }
 
-interface UserEventLogsPageState {}
-
 /**
  * A page displaying usage statistics for the site.
  */
-export class UserEventLogsPage extends React.PureComponent<UserEventLogsPageProps, UserEventLogsPageState> {
+export class UserEventLogsPage extends React.PureComponent<UserEventLogsPageProps> {
     public componentDidMount(): void {
         eventLogger.logViewEvent('UserEventLogPage')
     }
 
     public render(): JSX.Element | null {
         return (
-            <div className="user-event-logs-page">
-                <PageTitle title="User action log" />
+            <div>
+                <PageTitle title="User event log" />
                 <FilteredConnection<GQL.IEventLog, {}>
                     key="chronological"
-                    className="list-group list-group-flush user-event-logs-page"
+                    defaultFirst={50}
+                    className="list-group list-group-flush"
                     hideSearch={true}
-                    noun="survey response"
-                    pluralNoun="survey responses"
+                    noun="user event"
+                    pluralNoun="user events"
                     queryConnection={this.queryUserEventLogs}
                     nodeComponent={UserEventNode}
                     history={this.props.history}

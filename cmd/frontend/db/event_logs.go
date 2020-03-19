@@ -78,14 +78,21 @@ func (*eventLogs) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*typ
 	return events, nil
 }
 
-// GetAll gets all event logs in descending order of timestamp.
-func (l *eventLogs) GetAll(ctx context.Context) ([]*types.Event, error) {
-	return l.getBySQL(ctx, sqlf.Sprintf("ORDER BY timestamp DESC"))
+// EventLogsListOptions specifies the options for listing event logs.
+type EventLogsListOptions struct {
+	// UserID specifies the user whose events should be included.
+	UserID int32
+
+	*LimitOffset
 }
 
-// GetByUserID gets all event logs by a given user in descending order of timestamp.
-func (l *eventLogs) GetAllByUserID(ctx context.Context, userID int32) ([]*types.Event, error) {
-	return l.getBySQL(ctx, sqlf.Sprintf("WHERE user_id = %d ORDER BY timestamp DESC", userID))
+// ListAll gets all event logs in descending order of timestamp.
+func (l *eventLogs) ListAll(ctx context.Context, opt EventLogsListOptions) ([]*types.Event, error) {
+	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
+	if opt.UserID != 0 {
+		conds = append(conds, sqlf.Sprintf("user_id = %d", opt.UserID))
+	}
+	return l.getBySQL(ctx, sqlf.Sprintf("WHERE %s ORDER BY timestamp DESC %s", sqlf.Join(conds, "AND"), opt.LimitOffset.SQL()))
 }
 
 // CountByUserID gets a count of events logged by a given user.
@@ -547,9 +554,4 @@ func (l *eventLogs) ListUniqueUsersAll(ctx context.Context, startDate, endDate t
 		return nil, err
 	}
 	return users, nil
-}
-
-// EventLogsListOptions specifies the options for listing event logs.
-type EventLogsListOptions struct {
-	*LimitOffset
 }

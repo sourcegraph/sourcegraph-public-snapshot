@@ -17,16 +17,16 @@ func (r *UserResolver) EventLogs(ctx context.Context, args *struct {
 	}
 	var opt db.EventLogsListOptions
 	args.ConnectionArgs.Set(&opt.LimitOffset)
-	return &userEventLogsConnectionResolver{opt: opt, userID: r.user.ID}, nil
+	opt.UserID = r.user.ID
+	return &userEventLogsConnectionResolver{opt: opt}, nil
 }
 
 type userEventLogsConnectionResolver struct {
-	opt    db.EventLogsListOptions
-	userID int32
+	opt db.EventLogsListOptions
 }
 
 func (r *userEventLogsConnectionResolver) Nodes(ctx context.Context) ([]*userEventLogResolver, error) {
-	events, err := db.EventLogs.GetAllByUserID(ctx, r.userID)
+	events, err := db.EventLogs.ListAll(ctx, r.opt)
 	if err != nil {
 		return nil, err
 	}
@@ -40,12 +40,12 @@ func (r *userEventLogsConnectionResolver) Nodes(ctx context.Context) ([]*userEve
 }
 
 func (r *userEventLogsConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	count, err := db.EventLogs.CountByUserID(ctx, r.userID)
+	count, err := db.EventLogs.CountByUserID(ctx, r.opt.UserID)
 	return int32(count), err
 }
 
 func (r *userEventLogsConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	count, err := db.EventLogs.CountByUserID(ctx, r.userID)
+	count, err := db.EventLogs.CountByUserID(ctx, r.opt.UserID)
 	if err != nil {
 		return nil, err
 	}
