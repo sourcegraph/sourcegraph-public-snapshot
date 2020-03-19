@@ -22,27 +22,23 @@ interface UserEventNodeProps {
 export const UserEventNode: React.FunctionComponent<UserEventNodeProps> = ({ node }: UserEventNodeProps) => (
     <li className="list-group-item py-2">
         <div className="d-flex align-items-center justify-content-between">
-            <div className="user-event-logs-page__event-name">{node.name}</div>
+            <code>{node.name}</code>
             <div>
                 <Timestamp date={node.timestamp} />
             </div>
         </div>
-        <div className="user-event-logs-page__url">
+        <div className="text-break">
             <small>
                 From: {node.source}{' '}
-                {node.url !== '' ? (
+                {node.url && (
                     <span>
                         (<Link to={node.url}>{node.url}</Link>)
                     </span>
-                ) : (
-                    ''
                 )}
             </small>
         </div>
     </li>
 )
-
-class FilteredUserEventLogsConnection extends FilteredConnection<GQL.IEventLog, {}> {}
 
 interface UserEventLogsPageProps extends UserAreaRouteContext, RouteComponentProps {
     isLightTheme: boolean
@@ -62,7 +58,7 @@ export class UserEventLogsPage extends React.PureComponent<UserEventLogsPageProp
         return (
             <div className="user-event-logs-page">
                 <PageTitle title="User action log" />
-                <FilteredUserEventLogsConnection
+                <FilteredConnection<GQL.IEventLog, {}>
                     key="chronological"
                     className="list-group list-group-flush user-event-logs-page"
                     hideSearch={true}

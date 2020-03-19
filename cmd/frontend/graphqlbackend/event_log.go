@@ -15,7 +15,7 @@ func (s *userEventLogResolver) User(ctx context.Context) (*UserResolver, error) 
 	if s.event.UserID != nil {
 		user, err := UserByIDInt32(ctx, *s.event.UserID)
 		if err != nil && errcode.IsNotFound(err) {
-			// This can happen if the user has been deleted, see issue #4888 and #6454
+			// Don't throw an error if a user has been deleted.
 			return nil, nil
 		}
 		return user, err
