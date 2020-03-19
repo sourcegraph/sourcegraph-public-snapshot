@@ -27,20 +27,32 @@ export class ExclusivePeriodicTaskRunner {
     /**
      * Register a task to be performed while holding an exclusive advisory lock in Postgres.
      *
-     * @param name The task name.
-     * @param intervalMs The interval between task invocations.
-     * @param task The function to invoke.
+     * @param args Parameter bag
      */
-    public register(
-        name: string,
-        intervalMs: number,
+    public register({
+        /** The task name. */
+        name,
+        /** The interval between task invocations. */
+        intervalMs,
+        /** The function to invoke. */
+        task,
+        /** Whether or not to silence logging. */
+        silent = false,
+    }: {
+        name: string
+        intervalMs: number
         task: ({ connection, ctx }: { connection: Connection; ctx: TracingContext }) => Promise<void>
-    ): void {
+        silent?: boolean
+    }): void {
+        const taskArgs = { connection: this.connection, ctx: {} }
+
         this.tasks.push({
             intervalMs,
             handler: () =>
                 tryWithLock(this.connection, name, () =>
-                    logAndTraceCall({ logger: this.logger }, name, ctx => task({ connection: this.connection, ctx }))
+                    silent
+                        ? task(taskArgs)
+                        : logAndTraceCall({ logger: this.logger }, name, ctx => task({ ...taskArgs, ctx }))
                 ),
         })
     }

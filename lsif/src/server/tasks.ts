@@ -32,32 +32,44 @@ export function startTasks(
 ): void {
     const runner = new ExclusivePeriodicTaskRunner(connection, logger)
 
-    runner.register('Resetting stalled uploads', settings.RESET_STALLED_UPLOADS_INTERVAL, ({ ctx }) =>
-        resetStalledUploads(uploadManager, ctx)
-    )
+    runner.register({
+        name: 'Resetting stalled uploads',
+        intervalMs: settings.RESET_STALLED_UPLOADS_INTERVAL,
+        task: ({ ctx }) => resetStalledUploads(uploadManager, ctx),
+    })
 
-    runner.register('Cleaning old uploads', settings.CLEAN_OLD_UPLOADS_INTERVAL, ({ ctx }) =>
-        cleanOldUploads(uploadManager, ctx)
-    )
+    runner.register({
+        name: 'Cleaning old uploads',
+        intervalMs: settings.CLEAN_OLD_UPLOADS_INTERVAL,
+        task: ({ ctx }) => cleanOldUploads(uploadManager, ctx),
+    })
 
-    runner.register('Purging old dumps', settings.PURGE_OLD_DUMPS_INTERVAL, ({ ctx, connection: taskConnection }) =>
-        purgeOldDumps(
-            taskConnection,
-            dumpManager,
-            uploadManager,
-            settings.STORAGE_ROOT,
-            settings.DBS_DIR_MAXIMUM_SIZE_BYTES,
-            ctx
-        )
-    )
+    runner.register({
+        name: 'Purging old dumps',
+        intervalMs: settings.PURGE_OLD_DUMPS_INTERVAL,
+        task: ({ ctx, connection: taskConnection }) =>
+            purgeOldDumps(
+                taskConnection,
+                dumpManager,
+                uploadManager,
+                settings.STORAGE_ROOT,
+                settings.DBS_DIR_MAXIMUM_SIZE_BYTES,
+                ctx
+            ),
+    })
 
-    runner.register('Cleaning failed uploads', settings.CLEAN_FAILED_UPLOADS_INTERVAL, ({ ctx }) =>
-        cleanFailedUploads(ctx)
-    )
+    runner.register({
+        name: 'Cleaning failed uploads',
+        intervalMs: settings.CLEAN_FAILED_UPLOADS_INTERVAL,
+        task: ({ ctx }) => cleanFailedUploads(ctx),
+    })
 
-    runner.register('Updating metrics', settings.UPDATE_QUEUE_SIZE_GAUGE_INTERVAL, () =>
-        updateQueueSizeGauge(uploadManager)
-    )
+    runner.register({
+        name: 'Updating metrics',
+        intervalMs: settings.UPDATE_QUEUE_SIZE_GAUGE_INTERVAL,
+        task: () => updateQueueSizeGauge(uploadManager),
+        silent: true,
+    })
 
     runner.run()
 }

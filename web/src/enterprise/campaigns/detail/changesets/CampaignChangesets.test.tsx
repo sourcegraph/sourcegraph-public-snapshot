@@ -11,15 +11,15 @@ describe('CampaignChangesets', () => {
         expect(
             createRenderer().render(
                 <CampaignChangesets
-                    queryChangesetsConnection={() =>
+                    queryChangesets={() =>
                         of({ nodes: [{ id: '0' } as GQL.IExternalChangeset] } as GQL.IExternalChangesetConnection)
                     }
+                    campaign={{ __typename: 'Campaign', id: '123', closedAt: null }}
                     history={history}
                     location={history.location}
                     isLightTheme={true}
                     campaignUpdates={new Subject<void>()}
                     changesetUpdates={new Subject<void>()}
-                    enablePublishing={false}
                 />
             )
         ).toMatchSnapshot())

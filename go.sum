@@ -351,6 +351,7 @@ github.com/golangci/gocyclo v0.0.0-20180528144436-0a533e8fa43d h1:pXTK/gkVNs7Zyy
 github.com/golangci/gocyclo v0.0.0-20180528144436-0a533e8fa43d/go.mod h1:ozx7R9SIwqmqf5pRP90DhR2Oay2UIjGuKheCBCNwAYU=
 github.com/golangci/gofmt v0.0.0-20190930125516-244bba706f1a h1:iR3fYXUjHCR97qWS8ch1y9zPNsgXThGwjKPrYfqMPks=
 github.com/golangci/gofmt v0.0.0-20190930125516-244bba706f1a/go.mod h1:9qCChq59u/eW8im404Q2WWTrnBUQKjpNYKMbU4M7EFU=
+github.com/golangci/golangci-lint v1.23.8 h1:NlD+Ld2TKH8qVmADy4iEvPxVmXaqPIeQu3d1cGQP4jc=
 github.com/golangci/golangci-lint v1.23.8/go.mod h1:g/38bxfhp4rI7zeWSxcdIeHTQGS58TCak8FYcyCmavQ=
 github.com/golangci/golangci-lint v1.24.0 h1:OcmSTTMPqI/VT4GvN1fKuE9NX15dDXIwolO0l08334U=
 github.com/golangci/golangci-lint v1.24.0/go.mod h1:yIqiAZ2SSQqg+1JeFlAdvEWjGVz4uu5jr4lrciqA1gE=
@@ -853,8 +854,8 @@ github.com/sourcegraph/jsonx v0.0.0-20190114210550-ba8cb36a8614 h1:MrlKMpoGse4bC
 github.com/sourcegraph/jsonx v0.0.0-20190114210550-ba8cb36a8614/go.mod h1:7jkSQ2sdxwXMaIDxKJotTt+hwKnT9b/wbJFU7/ObUEY=
 github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e h1:qpG93cPwA5f7s/ZPBJnGOYQNK/vKsaDaseuKT5Asee8=
 github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e/go.mod h1:HuIsMU8RRBOtsCgI77wP899iHVBQpCmg4ErYMZB+2IA=
-github.com/sourcegraph/zoekt v0.0.0-20200316094253-d68b6426de67 h1:Y2aDkuSJJwYCyVyL7k8N/EOS7o0r061D/rIMuWqj8DM=
-github.com/sourcegraph/zoekt v0.0.0-20200316094253-d68b6426de67/go.mod h1:myt55/e315SlJX+bvPR+Y1wnOijZ+tcoG0gkjexi9F4=
+github.com/sourcegraph/zoekt v0.0.0-20200318141102-0b140b7dc6c9 h1:vUz68uAPzIPdz9ibYgEOvRh33fErNN4LFYnGSCObP28=
+github.com/sourcegraph/zoekt v0.0.0-20200318141102-0b140b7dc6c9/go.mod h1:myt55/e315SlJX+bvPR+Y1wnOijZ+tcoG0gkjexi9F4=
 github.com/spaolacci/murmur3 v0.0.0-20180118202830-f09979ecbc72/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=
 github.com/spf13/afero v0.0.0-20170901052352-ee1bd8ee15a1/go.mod h1:j4pytiNVoe2o6bmDsKpLACNPDBIoEAkihy7loJ1B0CQ=
 github.com/spf13/afero v1.1.2/go.mod h1:j4pytiNVoe2o6bmDsKpLACNPDBIoEAkihy7loJ1B0CQ=

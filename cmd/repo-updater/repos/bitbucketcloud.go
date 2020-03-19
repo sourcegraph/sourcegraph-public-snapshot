@@ -22,7 +22,7 @@ import (
 type BitbucketCloudSource struct {
 	svc     *ExternalService
 	config  *schema.BitbucketCloudConnection
-	exclude excluder
+	exclude excludeFunc
 	client  *bitbucketcloud.Client
 }
 
@@ -54,13 +54,14 @@ func newBitbucketCloudSource(svc *ExternalService, c *schema.BitbucketCloudConne
 		return nil, err
 	}
 
-	var exclude excluder
+	var eb excludeBuilder
 	for _, r := range c.Exclude {
-		exclude.Exact(r.Name)
-		exclude.Exact(r.Uuid)
-		exclude.Pattern(r.Pattern)
+		eb.Exact(r.Name)
+		eb.Exact(r.Uuid)
+		eb.Pattern(r.Pattern)
 	}
-	if err := exclude.Err(); err != nil {
+	exclude, err := eb.Build()
+	if err != nil {
 		return nil, err
 	}
 
@@ -154,7 +155,7 @@ func (s *BitbucketCloudSource) authenticatedRemoteURL(repo *bitbucketcloud.Repo)
 }
 
 func (s *BitbucketCloudSource) excludes(r *bitbucketcloud.Repo) bool {
-	return s.exclude.Match(r.FullName) || s.exclude.Match(r.UUID)
+	return s.exclude(r.FullName) || s.exclude(r.UUID)
 }
 
 func (s *BitbucketCloudSource) listAllRepos(ctx context.Context, results chan SourceResult) {

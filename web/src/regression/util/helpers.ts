@@ -93,7 +93,13 @@ async function createTestUser(
         .pipe(
             map(dataOrThrowErrors),
             catchError(err =>
-                throwError(new Error(`Could not create user ${JSON.stringify(username)}: ${asError(err).message})`))
+                throwError(
+                    new Error(
+                        `Could not create user ${JSON.stringify(
+                            username
+                        )} (you may need to update the sudo access token used by the test): ${asError(err).message})`
+                    )
+                )
             ),
             map(({ createUser }) => createUser.resetPasswordURL)
         )

@@ -75,12 +75,7 @@ func (s *Service) CreateCampaignPlanFromPatches(ctx context.Context, patches []c
 	}
 	defer tx.Done(&err)
 
-	plan := &campaigns.CampaignPlan{
-		CampaignType: campaignTypePatch,
-		Arguments:    "", // intentionally empty to avoid needless duplication with CampaignJob diffs
-		UserID:       userID,
-	}
-
+	plan := &campaigns.CampaignPlan{UserID: userID}
 	err = tx.CreateCampaignPlan(ctx, plan)
 	if err != nil {
 		return nil, err

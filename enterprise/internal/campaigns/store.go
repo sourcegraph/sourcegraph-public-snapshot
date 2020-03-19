@@ -98,9 +98,7 @@ const getPendingChangesetJobQuery = `
 UPDATE changeset_jobs j SET started_at = now() WHERE id = (
 	SELECT j.id FROM changeset_jobs j
 	JOIN campaigns c ON c.id = j.campaign_id
-	JOIN campaign_plans p ON p.id = c.campaign_plan_id
-	WHERE j.started_at IS NULL
-	AND p.canceled_at IS NULL
+	WHERE j.started_at IS NULL AND c.campaign_plan_id IS NOT NULL
 	ORDER BY j.id ASC
 	FOR UPDATE SKIP LOCKED LIMIT 1
 )
@@ -1466,19 +1464,13 @@ func (s *Store) CreateCampaignPlan(ctx context.Context, c *campaigns.CampaignPla
 var createCampaignPlanQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:CreateCampaignPlan
 INSERT INTO campaign_plans (
-  campaign_type,
-  arguments,
-  canceled_at,
   created_at,
   updated_at,
   user_id
 )
-VALUES (%s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s)
 RETURNING
   id,
-  campaign_type,
-  arguments,
-  canceled_at,
   created_at,
   updated_at,
   user_id
@@ -1493,16 +1485,8 @@ func (s *Store) createCampaignPlanQuery(c *campaigns.CampaignPlan) (*sqlf.Query,
 		c.UpdatedAt = c.CreatedAt
 	}
 
-	arguments, err := metadataColumn(c.Arguments)
-	if err != nil {
-		return nil, err
-	}
-
 	return sqlf.Sprintf(
 		createCampaignPlanQueryFmtstr,
-		c.CampaignType,
-		arguments,
-		nullTimeColumn(c.CanceledAt),
 		c.CreatedAt,
 		c.UpdatedAt,
 		c.UserID,
@@ -1526,18 +1510,12 @@ var updateCampaignPlanQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:UpdateCampaignPlan
 UPDATE campaign_plans
 SET (
-  campaign_type,
-  arguments,
-  canceled_at,
   updated_at,
   user_id
-) = (%s, %s, %s, %s, %s)
+) = (%s, %s)
 WHERE id = %s
 RETURNING
   id,
-  campaign_type,
-  arguments,
-  canceled_at,
   created_at,
   updated_at,
   user_id
@@ -1546,16 +1524,8 @@ RETURNING
 func (s *Store) updateCampaignPlanQuery(c *campaigns.CampaignPlan) (*sqlf.Query, error) {
 	c.UpdatedAt = s.now()
 
-	arguments, err := metadataColumn(c.Arguments)
-	if err != nil {
-		return nil, err
-	}
-
 	return sqlf.Sprintf(
 		updateCampaignPlanQueryFmtstr,
-		c.CampaignType,
-		arguments,
-		nullTimeColumn(c.CanceledAt),
 		c.UpdatedAt,
 		c.UserID,
 		c.ID,
@@ -1651,9 +1621,6 @@ var getCampaignPlansQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:GetCampaignPlan
 SELECT
   id,
-  campaign_type,
-  arguments,
-  canceled_at,
   created_at,
   updated_at,
   user_id
@@ -1680,7 +1647,6 @@ func getCampaignPlanQuery(opts *GetCampaignPlanOpts) *sqlf.Query {
 func (s *Store) GetCampaignPlanStatus(ctx context.Context, id int64) (*campaigns.BackgroundProcessStatus, error) {
 	return s.queryBackgroundProcessStatus(ctx, sqlf.Sprintf(
 		getCampaignPlanStatusQueryFmtstr,
-		id,
 		sqlf.Sprintf("campaign_plan_id = %s", id),
 	))
 }
@@ -1688,7 +1654,7 @@ func (s *Store) GetCampaignPlanStatus(ctx context.Context, id int64) (*campaigns
 var getCampaignPlanStatusQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:GetCampaignPlanStatus
 SELECT
-  (SELECT canceled_at IS NOT NULL FROM campaign_plans WHERE id = %s) AS canceled,
+  false AS canceled,
   COUNT(*) AS total,
   0 AS pending,
   COUNT(*) AS completed,
@@ -1776,9 +1742,6 @@ var listCampaignPlansQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:ListCampaignPlans
 SELECT
   id,
-  campaign_type,
-  arguments,
-  canceled_at,
   created_at,
   updated_at,
   user_id
@@ -2705,15 +2668,7 @@ func scanCampaign(c *campaigns.Campaign, s scanner) error {
 }
 
 func scanCampaignPlan(c *campaigns.CampaignPlan, s scanner) error {
-	return s.Scan(
-		&c.ID,
-		&c.CampaignType,
-		&c.Arguments,
-		&dbutil.NullTime{Time: &c.CanceledAt},
-		&c.CreatedAt,
-		&c.UpdatedAt,
-		&c.UserID,
-	)
+	return s.Scan(&c.ID, &c.CreatedAt, &c.UpdatedAt, &c.UserID)
 }
 
 func scanCampaignJob(c *campaigns.CampaignJob, s scanner) error {
