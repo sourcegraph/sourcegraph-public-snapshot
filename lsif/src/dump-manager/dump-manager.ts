@@ -1,6 +1,7 @@
 import * as constants from '../shared/constants'
 import * as path from 'path'
 import * as settings from './settings'
+import * as metrics from './metrics'
 import promClient from 'prom-client'
 import { createLogger } from '../shared/logging'
 import { ensureDirectory } from '../shared/paths'
@@ -15,6 +16,11 @@ import { startExpressApp } from '../shared/api/init'
 async function main(logger: Logger): Promise<void> {
     // Collect process metrics
     promClient.collectDefaultMetrics({ prefix: 'lsif_' })
+
+    // Update cache capacities on startup
+    metrics.connectionCacheCapacityGauge.set(settings.CONNECTION_CACHE_CAPACITY)
+    metrics.documentCacheCapacityGauge.set(settings.DOCUMENT_CACHE_CAPACITY)
+    metrics.resultChunkCacheCapacityGauge.set(settings.RESULT_CHUNK_CACHE_CAPACITY)
 
     // Ensure storage roots exist
     await ensureDirectory(settings.STORAGE_ROOT)

@@ -34,11 +34,6 @@ async function main(logger: Logger): Promise<void> {
     // Configure distributed tracing
     const tracer = createTracer('lsif-server', fetchConfiguration())
 
-    // Update cache capacities on startup
-    metrics.connectionCacheCapacityGauge.set(settings.CONNECTION_CACHE_CAPACITY)
-    metrics.documentCacheCapacityGauge.set(settings.DOCUMENT_CACHE_CAPACITY)
-    metrics.resultChunkCacheCapacityGauge.set(settings.RESULT_CHUNK_CACHE_CAPACITY)
-
     // Ensure storage roots exist
     await ensureDirectory(settings.STORAGE_ROOT)
     await ensureDirectory(path.join(settings.STORAGE_ROOT, constants.DBS_DIR))
@@ -50,7 +45,7 @@ async function main(logger: Logger): Promise<void> {
     const dumpManager = new DumpManager(connection)
     const uploadManager = new UploadManager(connection)
     const dependencyManager = new DependencyManager(connection)
-    const backend = new Backend(settings.STORAGE_ROOT, dumpManager, dependencyManager, SRC_FRONTEND_INTERNAL)
+    const backend = new Backend(dumpManager, dependencyManager, SRC_FRONTEND_INTERNAL)
 
     // Start background tasks
     startTasks(connection, dumpManager, uploadManager, logger)

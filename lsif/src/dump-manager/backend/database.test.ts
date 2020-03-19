@@ -79,7 +79,7 @@ describe('Database', () => {
             // -> `\t\t\trangeID, err = i.w.EmitRange(lspRange(ipos, ident.Name, false))`
             //                              ^^^^^^^^^
 
-            expect((await database.references('protocol/writer.go', { line: 85, character: 20 })).locations).toEqual([
+            expect((await database.references('protocol/writer.go', { line: 85, character: 20 })).values).toEqual([
                 {
                     dumpId: 1,
                     path: 'protocol/writer.go',

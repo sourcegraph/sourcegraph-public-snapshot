@@ -5,7 +5,6 @@ import { Backend, sortMonikers } from './backend'
 import { DependencyManager } from '../../shared/store/dependencies'
 import { DumpManager } from '../../shared/store/dumps'
 import { Database } from './database'
-import { dbFilename } from '../../shared/paths'
 import { createCleanPostgresDatabase, createStorageRoot } from '../../shared/test-util'
 import { Connection } from 'typeorm'
 import { OrderedLocationSet, ResolvedInternalLocation } from './location'
@@ -128,10 +127,10 @@ describe('Backend', () => {
 
     describe('exists', () => {
         it('should return closest dumps with file', async () => {
-            const database1 = new Database(1, dbFilename(storageRoot, 1))
-            const database2 = new Database(2, dbFilename(storageRoot, 2))
-            const database3 = new Database(3, dbFilename(storageRoot, 3))
-            const database4 = new Database(4, dbFilename(storageRoot, 4))
+            const database1 = new Database(1)
+            const database2 = new Database(2)
+            const database3 = new Database(3)
+            const database4 = new Database(4)
 
             // Commit graph traversal
             sinon.stub(dumpManager, 'findClosestDumps').returns(
@@ -150,7 +149,6 @@ describe('Backend', () => {
             const spy4 = sinon.stub(database4, 'exists').returns(Promise.resolve(true))
 
             const dumps = await new Backend(
-                '',
                 dumpManager,
                 dependencyManager,
                 '',
@@ -177,7 +175,7 @@ describe('Backend', () => {
 
     describe('definitions', () => {
         it('should return definitions from database', async () => {
-            const database1 = new Database(1, dbFilename(storageRoot, 1))
+            const database1 = new Database(1)
 
             // Loading source dump
             sinon.stub(dumpManager, 'getDumpById').returns(Promise.resolve({ ...zeroDump, id: 1 }))
@@ -205,7 +203,6 @@ describe('Backend', () => {
             )
 
             const locations = await new Backend(
-                '',
                 dumpManager,
                 dependencyManager,
                 '',
@@ -221,7 +218,7 @@ describe('Backend', () => {
         })
 
         it('should return definitions from local moniker search', async () => {
-            const database1 = new Database(1, dbFilename(storageRoot, 1))
+            const database1 = new Database(1)
 
             // Loading source dump
             sinon.stub(dumpManager, 'getDumpById').returns(Promise.resolve({ ...zeroDump, id: 1 }))
@@ -237,6 +234,9 @@ describe('Backend', () => {
                     ])
                 )
             )
+
+            // In-database definitions
+            sinon.stub(database1, 'definitions').returns(Promise.resolve([]))
 
             // Moniker resolution
             sinon
@@ -257,7 +257,6 @@ describe('Backend', () => {
             )
 
             const locations = await new Backend(
-                '',
                 dumpManager,
                 dependencyManager,
                 '',
@@ -273,8 +272,8 @@ describe('Backend', () => {
         })
 
         it('should return definitions from remote moniker search', async () => {
-            const database1 = new Database(1, dbFilename(storageRoot, 1))
-            const database2 = new Database(2, dbFilename(storageRoot, 2))
+            const database1 = new Database(1)
+            const database2 = new Database(2)
 
             // Loading source dump
             sinon.stub(dumpManager, 'getDumpById').returns(Promise.resolve({ ...zeroDump, id: 1 }))
@@ -290,6 +289,9 @@ describe('Backend', () => {
                     ])
                 )
             )
+
+            // In-database definitions
+            sinon.stub(database1, 'definitions').returns(Promise.resolve([]))
 
             // Moniker resolution
             sinon
@@ -322,7 +324,6 @@ describe('Backend', () => {
             )
 
             const locations = await new Backend(
-                '',
                 dumpManager,
                 dependencyManager,
                 '',
@@ -394,7 +395,7 @@ describe('Backend', () => {
             const numDatabases = 2 + numSameRepoDumps + numRemoteRepoDumps
             const numLocations = numDatabases * locationsPerDump
 
-            const databases = range(0, numDatabases).map(i => new Database(i + 1, dbFilename(storageRoot, i + 1)))
+            const databases = range(0, numDatabases).map(i => new Database(i + 1))
             const dumps = range(0, numLocations).map(i => ({ ...zeroDump, id: i + 1 }))
             const locations = range(0, numLocations).map(i => ({
                 dumpId: i + 1,
@@ -489,6 +490,9 @@ describe('Backend', () => {
                 ReturnType<Database['monikerResults']>
             >[] = []
 
+            // Local moniker results
+            sinon.stub(databases[0], 'monikerResults').returns(Promise.resolve({ locations: [], count: 0 }))
+
             // Remote dump results
             for (let i = 1; i < numDatabases; i++) {
                 monikerStubs.push(
@@ -503,7 +507,7 @@ describe('Backend', () => {
 
             // Read all reference pages
             const { locations: resolvedLocations, pageSizes } = await queryAllReferences(
-                new Backend('', dumpManager, dependencyManager, '', createTestDatabase(databaseMap)),
+                new Backend(dumpManager, dependencyManager, '', createTestDatabase(databaseMap)),
                 42,
                 'deadbeef',
                 '/foo/bar/baz.ts',
@@ -544,12 +548,12 @@ describe('Backend', () => {
 
     describe('hover', () => {
         it('should return hover content from database', async () => {
-            const database1 = new Database(1, dbFilename(storageRoot, 1))
+            const database1 = new Database(1)
 
             // Loading source dump
             sinon.stub(dumpManager, 'getDumpById').returns(Promise.resolve({ ...zeroDump, id: 1 }))
 
-            // In-database hovers
+            // In-database hover
             sinon.stub(database1, 'hover').returns(
                 Promise.resolve({
                     text: 'hover text',
@@ -558,7 +562,6 @@ describe('Backend', () => {
             )
 
             const hover = await new Backend(
-                '',
                 dumpManager,
                 dependencyManager,
                 '',
@@ -572,14 +575,17 @@ describe('Backend', () => {
         })
 
         it('should return hover content from unique definition', async () => {
-            const database1 = new Database(1, dbFilename(storageRoot, 1))
-            const database2 = new Database(2, dbFilename(storageRoot, 2))
+            const database1 = new Database(1)
+            const database2 = new Database(2)
 
             // Loading source dump
             sinon.stub(dumpManager, 'getDumpById').returns(Promise.resolve({ ...zeroDump, id: 1 }))
 
             // Resolving target dumps
             sinon.stub(dumpManager, 'getDumpsByIds').returns(Promise.resolve(new Map([[2, { ...zeroDump, id: 2 }]])))
+
+            // In-database hover
+            sinon.stub(database1, 'hover').returns(Promise.resolve(null))
 
             // In-database definitions
             sinon.stub(database1, 'definitions').returns(
@@ -601,7 +607,6 @@ describe('Backend', () => {
             )
 
             const hover = await new Backend(
-                '',
                 dumpManager,
                 dependencyManager,
                 '',

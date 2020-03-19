@@ -3,7 +3,6 @@ import * as lsp from 'vscode-languageserver-protocol'
 import * as pgModels from '../../shared/models/pg'
 import { addTags, logSpan, TracingContext } from '../../shared/tracing'
 import { Database } from './database'
-import { dbFilename } from '../../shared/paths'
 import { mustGet } from '../../shared/maps'
 import { DumpManager } from '../../shared/store/dumps'
 import { DEFAULT_REFERENCES_REMOTE_DUMP_LIMIT } from '../../shared/constants'
@@ -32,19 +31,16 @@ export class Backend {
     /**
      * Create a new `Backend`.
      *
-     * @param storageRoot The path where SQLite databases are stored.
      * @param dumpManager The dumps manager instance.
      * @param dependencyManager The dependency manager instance.
      * @param frontendUrl The url of the frontend internal API.
      * @param createDatabase Function used to create a database instance from a dump.
      */
     constructor(
-        private storageRoot: string,
         private dumpManager: DumpManager,
         private dependencyManager: DependencyManager,
         private frontendUrl: string,
-        private createDatabase: (dump: pgModels.LsifDump) => Database = dump =>
-            new Database(dump.id, dbFilename(this.storageRoot, dump.id))
+        private createDatabase: (dump: pgModels.LsifDump) => Database = dump => new Database(dump.id)
     ) {}
 
     /**
