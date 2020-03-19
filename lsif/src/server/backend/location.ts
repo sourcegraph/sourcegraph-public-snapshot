@@ -24,7 +24,7 @@ export class OrderedLocationSet {
      * Create a new ordered location set.
      *
      * @param locations A set of locations used to seed the set.
-     * @param sorted Whether the given locations are already deduplicated.
+     * @param trusted Whether the given locations are already deduplicated.
      */
     constructor(locations?: InternalLocation[], trusted = false) {
         if (!locations) {
