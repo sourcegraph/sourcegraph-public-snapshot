@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import { queryCampaigns, queryCampaignsCount as _queryCampaignsCount } from './backend'
 import AddIcon from 'mdi-react/AddIcon'
 import { Link } from '../../../../../../shared/src/components/Link'
@@ -7,6 +7,7 @@ import { FilteredConnection, FilteredConnectionFilter } from '../../../../compon
 import { IUser, CampaignState } from '../../../../../../shared/src/graphql/schema'
 import { CampaignNode, CampaignNodeCampaign, CampaignNodeProps } from '../../list/CampaignNode'
 import { useObservable } from '../../../../../../shared/src/util/useObservable'
+import { eventLogger } from '../../../../tracking/eventLogger'
 import { Observable } from 'rxjs'
 
 interface Props extends Pick<RouteComponentProps, 'history' | 'location'> {
@@ -42,6 +43,8 @@ export const GlobalCampaignListPage: React.FunctionComponent<Props> = ({
     queryCampaignsCount = _queryCampaignsCount,
     ...props
 }) => {
+    useEffect(() => eventLogger.logViewEvent('CampaignsListPage'))
+
     const totalCount = useObservable(useMemo(() => queryCampaignsCount(), [queryCampaignsCount]))
     return (
         <>

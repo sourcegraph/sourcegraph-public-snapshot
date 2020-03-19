@@ -43,6 +43,7 @@ import { CampaignPatches } from './patches/CampaignPatches'
 import { PatchSetPatches } from './patches/PatchSetPatches'
 import { CampaignBranchField } from './form/CampaignBranchField'
 import { repeatUntil } from '../../../../../shared/src/util/rxjs/repeatUntil'
+import { eventLogger } from '../../../tracking/eventLogger'
 
 export type CampaignUIMode = 'viewing' | 'editing' | 'saving' | 'deleting' | 'closing'
 
@@ -119,6 +120,14 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     const changesetUpdates = useMemo(() => new Subject<void>(), [])
 
     const [campaign, setCampaign] = useState<Campaign | null>()
+
+    useEffect(() => {
+        if (campaignID) {
+            return eventLogger.logViewEvent('CampaignDetailsPage')
+        }
+        eventLogger.logViewEvent('NewCampaignPage')
+    }, [campaignID])
+
     useEffect(() => {
         if (!campaignID) {
             return
@@ -190,6 +199,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         // we also check the campaign.changesets.totalCount, so an update to the campaign is required as well
         campaignUpdates.next()
         changesetUpdates.next()
+        eventLogger.log('CampaignChangesetAdded')
     }, [campaignUpdates, changesetUpdates])
 
     const onNameChange = useCallback(
@@ -234,6 +244,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     setBranch(newCampaign.branch ?? '')
                     setBranchModified(false)
                     unblockHistoryReference.current()
+                    eventLogger.log('CampaignUpdated')
                     history.push(`/campaigns/${newCampaign.id}`)
                 } else {
                     const createdCampaign = await createCampaign({
@@ -244,6 +255,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         branch: specifyingBranchAllowed ? branch : undefined,
                     })
                     unblockHistoryReference.current()
+                    eventLogger.log('CampaignCreated')
                     history.push(`/campaigns/${createdCampaign.id}`)
                 }
                 setMode('viewing')
@@ -276,6 +288,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             unblockHistoryReference.current = history.block(discardChangesMessage)
             setMode('editing')
             setAlertError(undefined)
+            eventLogger.logViewEvent('EditCampaignPage')
         },
         [history]
     )
@@ -303,6 +316,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             setMode('closing')
             try {
                 await closeCampaign(campaign!.id, closeChangesets)
+                eventLogger.log('CampaignClosed')
                 campaignUpdates.next()
             } catch (error) {
                 setAlertError(asError(error))
@@ -321,6 +335,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             setMode('deleting')
             try {
                 await deleteCampaign(campaign!.id, closeChangesets)
+                eventLogger.log('CampaignDeleted')
                 history.push('/campaigns')
             } catch (error) {
                 setAlertError(asError(error))
