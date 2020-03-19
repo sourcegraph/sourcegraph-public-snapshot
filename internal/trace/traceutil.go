@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/keegancsmith/sqlf"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/opentracing/opentracing-go/log"
@@ -116,5 +117,16 @@ func Printf(key, f string, args ...interface{}) log.Field {
 func Stringer(key string, v fmt.Stringer) log.Field {
 	return log.Lazy(func(fv log.Encoder) {
 		fv.EmitString(key, v.String())
+	})
+}
+
+// SQL is an opentracing log.Field which is a LazyLogger. It will log the
+// query as well as each argument.
+func SQL(q *sqlf.Query) log.Field {
+	return log.Lazy(func(fv log.Encoder) {
+		fv.EmitString("sql", q.Query(sqlf.PostgresBindVar))
+		for i, arg := range q.Args() {
+			fv.EmitObject(fmt.Sprintf("arg%d", i+1), arg)
+		}
 	})
 }
