@@ -11,9 +11,9 @@ jest.mock('./form/CampaignTitleField', () => ({ CampaignTitleField: 'CampaignTit
 jest.mock('./form/CampaignDescriptionField', () => ({ CampaignDescriptionField: 'CampaignDescriptionField' }))
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 jest.mock('./CampaignStatus', () => ({
-    CampaignStatus: (props: CampaignStatusProps) => `CampaignStatus(state=${props.status.state})`,
+    CampaignStatus: (props: CampaignStatusProps) => `CampaignStatus(state=${props.campaign.status.state})`,
 }))
-jest.mock('./CampaignTabs', () => ({ CampaignTabs: 'CampaignTabs' }))
+jest.mock('./changesets/CampaignChangesets', () => ({ CampaignChangesets: 'CampaignChangesets' }))
 jest.mock('../icons', () => ({ CampaignsIcon: 'CampaignsIcon' }))
 
 const history = H.createMemoryHistory()
@@ -28,6 +28,7 @@ describe('CampaignDetails', () => {
                     location={history.location}
                     authenticatedUser={{ id: 'a', username: 'alice', avatarURL: null }}
                     isLightTheme={true}
+                    _noSubject={true}
                 />
             )
         ).toMatchSnapshot())
@@ -53,6 +54,7 @@ describe('CampaignDetails', () => {
                         },
                     })
                 }
+                _noSubject={true}
             />
         )
         // eslint-disable-next-line @typescript-eslint/no-floating-promises
@@ -93,6 +95,7 @@ describe('CampaignDetails', () => {
                     closedAt: null,
                 })
             }
+            _noSubject={true}
         />
     )
 

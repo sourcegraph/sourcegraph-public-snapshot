@@ -1156,11 +1156,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 			t.Run("Create", func(t *testing.T) {
 				for i := 0; i < cap(campaignPlans); i++ {
-					c := &cmpgn.CampaignPlan{
-						CampaignType: "patch",
-						Arguments:    `{}`,
-						CanceledAt:   now,
-					}
+					c := &cmpgn.CampaignPlan{UserID: 999}
 
 					want := c.Clone()
 					have := c
@@ -1268,9 +1264,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 			t.Run("Update", func(t *testing.T) {
 				for _, c := range campaignPlans {
-					c.CampaignType += "-updated"
-					c.Arguments = `{"updated": true}`
-					c.CanceledAt = now.Add(5 * time.Second)
+					c.UserID += 1234
 
 					now = now.Add(time.Second)
 					want := c
@@ -1703,9 +1697,8 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 		t.Run("CampaignPlan BackgroundProcessStatus", func(t *testing.T) {
 			tests := []struct {
-				planCanceledAt time.Time
-				jobs           []*cmpgn.CampaignJob
-				want           *cmpgn.BackgroundProcessStatus
+				jobs []*cmpgn.CampaignJob
+				want *cmpgn.BackgroundProcessStatus
 			}{
 				{
 					jobs: []*cmpgn.CampaignJob{}, // no jobs
@@ -1726,10 +1719,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 				},
 			}
 			for _, tc := range tests {
-				plan := &cmpgn.CampaignPlan{
-					CampaignType: "patch",
-					CanceledAt:   tc.planCanceledAt,
-				}
+				plan := &cmpgn.CampaignPlan{}
 				err := s.CreateCampaignPlan(ctx, plan)
 				if err != nil {
 					t.Fatal(err)
@@ -1787,11 +1777,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 			}
 
 			for _, tc := range tests {
-				plan := &cmpgn.CampaignPlan{
-					CampaignType: "patch",
-					Arguments:    `{}`,
-					CreatedAt:    tc.createdAt,
-				}
+				plan := &cmpgn.CampaignPlan{CreatedAt: tc.createdAt}
 
 				err := s.CreateCampaignPlan(ctx, plan)
 				if err != nil {
@@ -2382,7 +2368,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 			})
 
 			t.Run("GetLatestChangesetJobCreatedAt", func(t *testing.T) {
-				plan := &cmpgn.CampaignPlan{CampaignType: "test", Arguments: `{}`}
+				plan := &cmpgn.CampaignPlan{}
 				err := s.CreateCampaignPlan(ctx, plan)
 				if err != nil {
 					t.Fatal(err)
@@ -2522,7 +2508,7 @@ func testProcessChangesetJob(db *sql.DB) func(*testing.T) {
 		user := createTestUser(ctx, t)
 
 		s := NewStoreWithClock(db, clock)
-		plan := &cmpgn.CampaignPlan{UserID: user.ID, CampaignType: "test"}
+		plan := &cmpgn.CampaignPlan{UserID: user.ID}
 		err := s.CreateCampaignPlan(context.Background(), plan)
 		if err != nil {
 			t.Fatal(err)

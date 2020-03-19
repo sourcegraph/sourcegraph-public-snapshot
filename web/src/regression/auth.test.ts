@@ -102,7 +102,7 @@ describe('Auth regression test suite', () => {
 
     saveScreenshotsUponFailures(() => driver.page)
 
-    before(async function() {
+    after(async function() {
         this.timeout(10 * 1000)
         if (!config.noCleanup) {
             await resourceManager.destroyAll()

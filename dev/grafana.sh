@@ -9,7 +9,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 GRAFANA_DISK="${HOME}/.sourcegraph-dev/data/grafana"
 
-IMAGE=sourcegraph/grafana:10.0.9
+IMAGE=sourcegraph/grafana:10.0.11
 CONTAINER=grafana
 
 mkdir -p ${GRAFANA_DISK}/logs

@@ -70,19 +70,14 @@ func (s *Service) CreateCampaignPlanFromPatches(ctx context.Context, patches []c
 	}
 	store := s.store
 	if useTx == true {
-		tx, err := s.store.Transact(ctx)
+		store, err := s.store.Transact(ctx)
 		if err != nil {
 			return nil, err
 		}
-		defer tx.Done(&err)
+		defer store.Done(&err)
 	}
 
-	plan := &campaigns.CampaignPlan{
-		CampaignType: campaignTypePatch,
-		Arguments:    "", // intentionally empty to avoid needless duplication with CampaignJob diffs
-		UserID:       userID,
-	}
-
+	plan := &campaigns.CampaignPlan{UserID: userID}
 	err = store.CreateCampaignPlan(ctx, plan)
 	if err != nil {
 		return nil, err

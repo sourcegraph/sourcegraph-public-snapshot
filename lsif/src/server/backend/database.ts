@@ -8,12 +8,12 @@ import { DefaultMap } from '../../shared/datastructures/default-map'
 import { gunzipJSON } from '../../shared/encoding/json'
 import { hashKey } from '../../shared/models/hash'
 import { instrument } from '../../shared/metrics'
-import { isEqual, uniqWith } from 'lodash'
 import { logSpan, TracingContext, logAndTraceCall, addTags } from '../../shared/tracing'
 import { mustGet } from '../../shared/maps'
 import { Logger } from 'winston'
 import { createSilentLogger } from '../../shared/logging'
 import { InternalLocation, OrderedLocationSet } from './location'
+import * as settings from '../settings'
 
 /** The maximum number of results in a logSpan value. */
 const MAX_SPAN_ARRAY_LENGTH = 20
@@ -25,25 +25,18 @@ export class Database {
      * metadata row. This map is populated lazily as the values are needed.
      */
     private static numResultChunks = new Map<string, number>()
+    private static connectionCache = new cache.ConnectionCache(settings.CONNECTION_CACHE_CAPACITY)
+    private static documentCache = new cache.DocumentCache(settings.DOCUMENT_CACHE_CAPACITY)
+    private static resultChunkCache = new cache.ResultChunkCache(settings.RESULT_CHUNK_CACHE_CAPACITY)
 
     /**
-     * Create a new `Database` with the given caches, the dump record, and the
-     * SQLite file on disk that contains data for a particular repository and
-     * commit.
+     * Create a new `Database` with the given dump record, and the SQLite file
+     * on disk that contains data for a particular repository and commit.
      *
-     * @param connectionCache The cache of SQLite connections.
-     * @param documentCache The cache of loaded documents.
-     * @param resultChunkCache The cache of loaded result chunks.
      * @param dumpId The identifier of the dump for which this database answers queries.
      * @param databasePath The path to the database file.
      */
-    constructor(
-        private connectionCache: cache.ConnectionCache,
-        private documentCache: cache.DocumentCache,
-        private resultChunkCache: cache.ResultChunkCache,
-        private dumpId: pgModels.DumpId,
-        private databasePath: string
-    ) {}
+    constructor(private dumpId: pgModels.DumpId, private databasePath: string) {}
 
     /**
      * Retrieve all document paths from the database.
@@ -217,7 +210,7 @@ export class Database {
     public getRangeByPosition(
         path: string,
         position: lsp.Position,
-        ctx: TracingContext
+        ctx: TracingContext = {}
     ): Promise<{ document: sqliteModels.DocumentData | undefined; ranges: sqliteModels.RangeData[] }> {
         return this.logAndTraceCall(ctx, 'Fetching range by position', async ctx => {
             const document = await this.getDocumentByPath(path)
@@ -245,7 +238,7 @@ export class Database {
         model: typeof sqliteModels.DefinitionModel | typeof sqliteModels.ReferenceModel,
         moniker: Pick<sqliteModels.MonikerData, 'scheme' | 'identifier'>,
         pagination: { skip?: number; take?: number },
-        ctx: TracingContext
+        ctx: TracingContext = {}
     ): Promise<{ locations: InternalLocation[]; count: number }> {
         return this.logAndTraceCall(ctx, 'Fetching moniker results', async ctx => {
             const [results, count] = await this.withConnection(
@@ -303,7 +296,7 @@ export class Database {
         }
 
         try {
-            return await this.documentCache.withValue(`${this.databasePath}::${path}`, factory, document =>
+            return await Database.documentCache.withValue(`${this.databasePath}::${path}`, factory, document =>
                 Promise.resolve(document.data)
             )
         } catch (error) {
@@ -406,7 +399,7 @@ export class Database {
             }
         }
 
-        return this.resultChunkCache.withValue(`${this.databasePath}::${index}`, factory, resultChunk =>
+        return Database.resultChunkCache.withValue(`${this.databasePath}::${index}`, factory, resultChunk =>
             Promise.resolve(resultChunk.data)
         )
     }
@@ -442,7 +435,7 @@ export class Database {
         callback: (connection: Connection) => Promise<T>,
         logger: Logger = createSilentLogger()
     ): Promise<T> {
-        return this.connectionCache.withConnection(this.databasePath, sqliteModels.entities, logger, connection =>
+        return Database.connectionCache.withConnection(this.databasePath, sqliteModels.entities, logger, connection =>
             instrument(metrics.databaseQueryDurationHistogram, metrics.databaseQueryErrorsCounter, () =>
                 callback(connection)
             )
@@ -523,41 +516,6 @@ export function comparePosition(range: sqliteModels.RangeData, position: lsp.Pos
     }
 
     return 0
-}
-
-// The order to present monikers in when organized by kinds
-const monikerKindPreferences = ['import', 'local', 'export']
-
-// A map from moniker schemes to schemes that subsume them. The schemes
-// identified by keys should be removed from the sets of monikers that
-// also contain the scheme identified by that key's value.
-const subsumedMonikers = new Map([
-    ['go', 'gomod'],
-    ['tsc', 'npm'],
-])
-
-/**
- * Normalize the set of monikers by filtering, sorting, and removing
- * duplicates from the list based on the moniker kind and scheme values.
- *
- * @param monikers The list of monikers.
- */
-export function sortMonikers(monikers: sqliteModels.MonikerData[]): sqliteModels.MonikerData[] {
-    // Deduplicate monikers. This can happen with long chains of result
-    // sets where monikers are applied several times to an aliased symbol.
-    monikers = uniqWith(monikers, isEqual)
-
-    // Remove monikers subsumed by the presence of another. For example,
-    // if we have an `npm` moniker in this list, we want to remove all
-    // `tsc` monikers as they are duplicate by construction in lsif-tsc.
-    monikers = monikers.filter(a => {
-        const by = subsumedMonikers.get(a.scheme)
-        return !(by && monikers.some(b => b.scheme === by))
-    })
-
-    // Sort monikers by kind
-    monikers.sort((a, b) => monikerKindPreferences.indexOf(a.kind) - monikerKindPreferences.indexOf(b.kind))
-    return monikers
 }
 
 /**

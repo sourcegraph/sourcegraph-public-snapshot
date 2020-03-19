@@ -23,12 +23,11 @@ import {
 } from '../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
-import { createPlatformContext, SourcegraphIntegrationURLs } from '../../platform/context'
+import { createPlatformContext, SourcegraphIntegrationURLs, BrowserPlatformContext } from '../../platform/context'
 import { GlobalDebug } from '../../shared/components/GlobalDebug'
 import { ShortcutProvider } from '../../shared/components/ShortcutProvider'
 import { CodeHost } from './code_intelligence'
 import { DOMFunctions } from './code_views'
-import { ISettingsCascade } from '../../../../shared/src/graphql/schema'
 import { IS_LIGHT_THEME } from './consts'
 import { NotificationClassNameProps } from '../../../../shared/src/notifications/NotificationItem'
 
@@ -39,10 +38,9 @@ import { NotificationClassNameProps } from '../../../../shared/src/notifications
 export function initializeExtensions(
     { urlToFile, getContext }: Pick<CodeHost, 'urlToFile' | 'getContext'>,
     urls: SourcegraphIntegrationURLs,
-    initialSettings: Pick<ISettingsCascade, 'subjects' | 'final'>,
     isExtension: boolean
-): PlatformContextProps & ExtensionsControllerProps {
-    const platformContext = createPlatformContext({ urlToFile, getContext }, urls, initialSettings, isExtension)
+): { platformContext: BrowserPlatformContext } & ExtensionsControllerProps {
+    const platformContext = createPlatformContext({ urlToFile, getContext }, urls, isExtension)
     const extensionsController = createExtensionsController(platformContext)
     return { platformContext, extensionsController }
 }

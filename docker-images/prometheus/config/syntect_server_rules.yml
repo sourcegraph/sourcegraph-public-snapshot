@@ -10,7 +10,7 @@ groups:
         expr: >-
           clamp_max(clamp_min(floor(
           (increase(src_syntax_highlighting_requests{status=~"panic|error|timeout"}[5m]) / 5) OR on() vector(0)
-          ), 0), 1)
+          ), 0), 1) OR on() vector(1)
       - record: alert_count
         labels:
           service_name: syntect-server
@@ -20,4 +20,4 @@ groups:
         expr: >-
           clamp_max(clamp_min(floor(
           (increase(src_syntax_highlighting_requests{status="hss_worker_timeout"}[5m]) / 1) OR on() vector(0)
-          ), 0), 1)
+          ), 0), 1) OR on() vector(1)
