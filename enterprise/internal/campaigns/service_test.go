@@ -735,17 +735,12 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 				campaign = testCampaign(user.ID, plan.ID)
 			}
 
+			if tt.campaignIsClosed {
+				campaign.ClosedAt = now
+			}
 			err = svc.CreateCampaign(ctx, campaign, tt.campaignIsDraft)
 			if err != nil {
 				t.Fatal(err)
-			}
-
-			if tt.campaignIsClosed {
-				campaign.ClosedAt = time.Now()
-				err := store.UpdateCampaign(ctx, campaign)
-				if err != nil {
-					t.Fatal(err)
-				}
 			}
 
 			if !tt.campaignIsDraft && !tt.campaignIsManual {

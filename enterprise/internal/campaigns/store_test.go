@@ -103,8 +103,8 @@ func testStore(db *sql.DB) func(*testing.T) {
 					t.Fatalf("have count: %d, want: %d", have, want)
 				}
 
-				HasPlan := false
-				count, err = s.CountCampaigns(ctx, CountCampaignsOpts{HasPlan: &HasPlan})
+				hasPlan := false
+				count, err = s.CountCampaigns(ctx, CountCampaignsOpts{HasPlan: &hasPlan})
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -113,8 +113,8 @@ func testStore(db *sql.DB) func(*testing.T) {
 					t.Fatalf("have count: %d, want: %d", have, want)
 				}
 
-				HasPlan = true
-				count, err = s.CountCampaigns(ctx, CountCampaignsOpts{HasPlan: &HasPlan})
+				hasPlan = true
+				count, err = s.CountCampaigns(ctx, CountCampaignsOpts{HasPlan: &hasPlan})
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -229,8 +229,8 @@ func testStore(db *sql.DB) func(*testing.T) {
 				}
 
 				t.Run("ListCampaigns HasPlan true", func(t *testing.T) {
-					HasPlan := true
-					have, _, err := s.ListCampaigns(ctx, ListCampaignsOpts{HasPlan: &HasPlan})
+					hasPlan := true
+					have, _, err := s.ListCampaigns(ctx, ListCampaignsOpts{HasPlan: &hasPlan})
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -239,9 +239,9 @@ func testStore(db *sql.DB) func(*testing.T) {
 					}
 				})
 
-				t.Run("ListCampaigns HasPlan true", func(t *testing.T) {
-					HasPlan := false
-					have, _, err := s.ListCampaigns(ctx, ListCampaignsOpts{HasPlan: &HasPlan})
+				t.Run("ListCampaigns HasPlan false", func(t *testing.T) {
+					hasPlan := false
+					have, _, err := s.ListCampaigns(ctx, ListCampaignsOpts{HasPlan: &hasPlan})
 					if err != nil {
 						t.Fatal(err)
 					}
