@@ -11,7 +11,7 @@ import { updateCommitsAndDumpsVisibleFromTip } from '../../shared/visibility'
 import { json } from 'body-parser'
 
 /**
- * Create a router containing the upload endpoints.
+ * Create a router containing the endpoints used by the dump manager.
  *
  * @param dumpManager The dumps manager instance.
  * @param uploadManager The uploads manager instance.
