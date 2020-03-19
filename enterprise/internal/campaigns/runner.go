@@ -26,7 +26,6 @@ func RunChangesetJobs(ctx context.Context, s *Store, clock func() time.Time, git
 		workerCount = defaultWorkerCount
 	}
 	process := func(ctx context.Context, s *Store, job campaigns.ChangesetJob) error {
-		log15.Info("Running Changeset Job", "job", job.ID)
 		c, err := s.GetCampaign(ctx, GetCampaignOpts{
 			ID: job.CampaignID,
 		})
