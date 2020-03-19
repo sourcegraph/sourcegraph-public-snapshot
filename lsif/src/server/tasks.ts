@@ -185,10 +185,10 @@ function purgeOldDumps(
         }
     }
 
-    // Ensure only one worker is doing this at the same time so that we don't
+    // Ensure only one processor is doing this at the same time so that we don't
     // choose more dumps than necessary to purge. This can happen if the directory
     // size check and the selection of a purgeable dump are interleaved between
-    // multiple workers.
+    // multiple processors.
     return withLock(connection, 'retention', purge)
 }
 

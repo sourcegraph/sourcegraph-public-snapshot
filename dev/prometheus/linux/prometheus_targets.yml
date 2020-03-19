@@ -40,10 +40,15 @@
     # lsif-server
     - 127.0.0.1:3186
 - labels:
-    job: lsif-worker
+    job: lsif-dump-manager
   targets:
-    # lsif-worker
+    # lsif-dump-manager
     - 127.0.0.1:3187
+- labels:
+    job: lsif-dump-processor
+  targets:
+    # lsif-dump-processor
+    - 127.0.0.1:3188
 - labels:
     job: postgres_exporter
   targets:
