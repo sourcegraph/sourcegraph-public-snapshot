@@ -141,6 +141,7 @@ describe('Code intelligence regression test suite', () => {
         await setUserSiteAdmin(gqlClient, user.id, true)
 
         outerResourceManager.add('Global setting', 'showBadgeAttachments', await enableBadgeAttachments(gqlClient))
+        outerResourceManager.add('Global setting', 'codeIntel.includeForks', await setIncludeForks(gqlClient, true))
     })
 
     saveScreenshotsUponFailures(() => driver.page)
@@ -623,10 +624,15 @@ function normalizeWhitespace(s: string): string {
 //
 // LSIF utilities
 
+/** Show badge attachments in the UI to distinguish precise and search-based results. */
 async function enableBadgeAttachments(gqlClient: GraphQLClient): Promise<() => Promise<void>> {
-    return writeSetting(gqlClient, ['experimental', 'showBadgeAttachments'], true)
+    return writeSetting(gqlClient, ['experimentalFeatures', 'showBadgeAttachments'], true)
 }
 
+/** Replace the codeIntel.includeForks setting with the given value. */
+async function setIncludeForks(gqlClient: GraphQLClient, enabled: boolean): Promise<() => Promise<void>> {
+    return writeSetting(gqlClient, ['basicCodeIntel.includeForks'], enabled)
+}
 /** Replace the codeIntel.lsif setting with the given value. */
 async function setGlobalLSIFSetting(gqlClient: GraphQLClient, enabled: boolean): Promise<() => Promise<void>> {
     return writeSetting(gqlClient, ['codeIntel.lsif'], enabled)
