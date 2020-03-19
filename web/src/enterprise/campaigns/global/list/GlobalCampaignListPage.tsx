@@ -43,7 +43,7 @@ export const GlobalCampaignListPage: React.FunctionComponent<Props> = ({
     queryCampaignsCount = _queryCampaignsCount,
     ...props
 }) => {
-    useEffect(() => eventLogger.logViewEvent('CampaignsListPage'))
+    useEffect(() => eventLogger.logViewEvent('CampaignsListPage'), [])
 
     const totalCount = useObservable(useMemo(() => queryCampaignsCount(), [queryCampaignsCount]))
     return (
