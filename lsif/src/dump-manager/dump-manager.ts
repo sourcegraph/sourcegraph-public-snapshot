@@ -5,7 +5,7 @@ import promClient from 'prom-client'
 import { createLogger } from '../shared/logging'
 import { ensureDirectory } from '../shared/paths'
 import { Logger } from 'winston'
-import express from 'express'
+import { startExpressApp } from '../shared/api/init'
 
 /**
  * No-op dump-manager process.
@@ -22,15 +22,8 @@ async function main(logger: Logger): Promise<void> {
     await ensureDirectory(path.join(settings.STORAGE_ROOT, constants.TEMP_DIR))
     await ensureDirectory(path.join(settings.STORAGE_ROOT, constants.UPLOADS_DIR))
 
-    const app = express()
-    app.get('/ping', (_, res) => res.send('ok'))
-    app.get('/healthz', (_, res) => res.send('ok'))
-    app.get('/metrics', (_, res) => {
-        res.writeHead(200, { 'Content-Type': 'text/plain' })
-        res.end(promClient.register.metrics())
-    })
-
-    app.listen(settings.HTTP_PORT, () => logger.debug('LSIF dump manager listening on', { port: settings.HTTP_PORT }))
+    // Start server
+    startExpressApp({ routes: [], port: settings.HTTP_PORT, logger })
 }
 
 // Initialize logger
