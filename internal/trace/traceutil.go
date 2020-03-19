@@ -37,27 +37,31 @@ func (t Tracer) New(ctx context.Context, family, title string) (*Trace, context.
 		family,
 		opentracing.Tag{Key: "title", Value: title},
 	)
-	family, ctx = nameWithParents(ctx, family)
+	if parent := TraceFromContext(ctx); parent != nil {
+		family = parent.family + " > " + family
+	}
 	tr := nettrace.New(family, title)
-	return &Trace{span: span, trace: tr, family: family}, ctx
+	trace := &Trace{span: span, trace: tr, family: family}
+	return trace, ContextWithTrace(ctx, trace)
 }
 
 type traceContextKey string
 
-const traceNameKey = traceContextKey("traceName")
-
-func nameWithParents(ctx context.Context, name string) (string, context.Context) {
-	prefix, _ := ctx.Value(traceNameKey).(string)
-	name = prefix + name
-	return name, context.WithValue(ctx, traceNameKey, name+" > ")
-}
+const traceKey = traceContextKey("trace")
 
 // ContextWithTrace returns a new context.Context that holds a reference to
 // trace's SpanContext.
 func ContextWithTrace(ctx context.Context, tr *Trace) context.Context {
 	ctx = opentracing.ContextWithSpan(ctx, tr.span)
-	ctx = context.WithValue(ctx, traceNameKey, tr.family)
+	ctx = context.WithValue(ctx, traceKey, tr)
 	return ctx
+}
+
+// TraceFromContext returns the Trace previously associated with ctx, or
+// nil if no such Trace could be found.
+func TraceFromContext(ctx context.Context) *Trace {
+	tr, _ := ctx.Value(traceKey).(*Trace)
+	return tr
 }
 
 // Trace is a combined version of golang.org/x/net/trace.Trace and
