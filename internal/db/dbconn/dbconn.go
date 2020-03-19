@@ -145,16 +145,14 @@ type hook struct{}
 
 // Before implements sqlhooks.Hooks
 func (h *hook) Before(ctx context.Context, query string, args ...interface{}) (context.Context, error) {
-	tr, ctx := trace.New(ctx, "sql", "")
+	tr, ctx := trace.New(ctx, "sql", query)
 	if span := opentracing.SpanFromContext(ctx); span != nil {
 		ext.SpanKindRPCClient.Set(span)
 		ext.DBType.Set(span, "sql")
-		ext.DBStatement.Set(span, query)
 	}
 	tr.LogFields(otlog.Lazy(func(fv otlog.Encoder) {
-		fv.EmitString("sql", query)
 		for i, arg := range args {
-			fv.EmitObject(fmt.Sprintf("arg%d", i+1), arg)
+			fv.EmitString(strconv.Itoa(i+1), fmt.Sprintf("%q", arg))
 		}
 	}))
 
