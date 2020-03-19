@@ -23,7 +23,7 @@ This table allows us to ues recursive CTEs to find ancestor and descendant commi
 
 **`lsif_uploads` table**
 
-This table contains an entry for each LSIF upload. An upload is inserted with the state `queued` and is processed asynchronously by a worker. The `root` field indicates the directory for which this upload provides code intelligence. The `indexer` field indicates the tool that generated the input. The `visible_at_tip` field indicates whether this a (completed) upload that is closest to the tip of the default branch.
+This table contains an entry for each LSIF upload. An upload is inserted with the state `queued` and is processed asynchronously by a dump processor. The `root` field indicates the directory for which this upload provides code intelligence. The `indexer` field indicates the tool that generated the input. The `visible_at_tip` field indicates whether this a (completed) upload that is closest to the tip of the default branch.
 
 | id  | repository_id | commit    | root | indexer | state     | visible_at_tip |
 | --- | ------------- | --------- | ---- | ------- | --------- | -------------- |

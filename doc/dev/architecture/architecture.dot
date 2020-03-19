@@ -81,11 +81,6 @@ digraph architecture {
             label="syntect\nserver"
             URL="https://github.com/sourcegraph/syntect_server"
         ]
-        management_console [
-            label="management\nconsole"
-            fillcolor="11"
-            URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/management-console"
-        ]
         symbols [
             label="symbols"
             fillcolor="8"
@@ -164,7 +159,6 @@ digraph architecture {
         customer_scripts [label="Customer\nScripts"]
         editor_ext [label="Editor\nExtensions"]
         native_integrations [label="Native\nIntegrations"]
-        management_console_ui [label="Management\nConsole\nUI"]
     }
 
     frontend -> {
@@ -198,8 +192,6 @@ digraph architecture {
     } [
         fillcolor="5"
     ]
-
-    management_console -> postgres [fillcolor="11"]
 
     query_runner -> frontend [fillcolor="6"]
 
@@ -263,6 +255,5 @@ digraph architecture {
         src_cli -> frontend
         editor_ext -> frontend
         customer_scripts -> frontend
-        management_console_ui -> management_console
     }
 }
