@@ -122,10 +122,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     const [campaign, setCampaign] = useState<Campaign | null>()
 
     useEffect(() => {
-        if (campaignID) {
-            return eventLogger.logViewEvent('CampaignDetailsPage')
-        }
-        eventLogger.logViewEvent('NewCampaignPage')
+        eventLogger.logViewEvent(campaignID ? 'CampaignDetailsPage' : 'NewCampaignPage')
     }, [campaignID])
 
     useEffect(() => {
