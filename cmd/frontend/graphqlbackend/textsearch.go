@@ -464,8 +464,10 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	tr.LazyLog(&args.Query.Fields, false)
-	tr.LazyLog(args.PatternInfo, false)
+	tr.LogFields(
+		trace.Stringer("query", &args.Query.Fields),
+		trace.Stringer("info", args.PatternInfo),
+	)
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()

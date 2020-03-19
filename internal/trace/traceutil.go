@@ -67,15 +67,6 @@ type Trace struct {
 	family string
 }
 
-// LazyLog adds x to the net/trace event log. It will be evaluated each time
-// the /debug/requests page is rendered. Any memory referenced by x will be
-// pinned until the trace is finished and later discarded.
-//
-// NOTE: It will not log to the opentracing.Span
-func (t *Trace) LazyLog(x fmt.Stringer, sensitive bool) {
-	t.trace.LazyLog(x, sensitive)
-}
-
 // LazyPrintf evaluates its arguments with fmt.Sprintf each time the
 // /debug/requests page is rendered. Any memory referenced by a will be
 // pinned until the trace is finished and later discarded.
@@ -110,4 +101,13 @@ func (t *Trace) SetError(err error) {
 func (t *Trace) Finish() {
 	t.trace.Finish()
 	t.span.Finish()
+}
+
+// Stringer is an opentracing log.Field which is a LazyLogger. So the String()
+// will only be called if the trace is collected. In the case of net/trace, it
+// will only be evaluated on page load.
+func Stringer(key string, v fmt.Stringer) log.Field {
+	return log.Lazy(func(fv log.Encoder) {
+		fv.EmitString(key, v.String())
+	})
 }
