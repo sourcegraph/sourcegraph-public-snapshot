@@ -651,6 +651,8 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                 .pipe(
                     distinctUntilChanged((a, b) => a.updateOnChange === b.updateOnChange),
                     filter(({ updateOnChange }) => updateOnChange !== undefined),
+                    // Skip the very first emission as the FilteredConnection already fetches on component creation.
+                    // Otherwise, 2 requests would be triggered immediately.
                     skip(1)
                 )
                 .subscribe(() => {

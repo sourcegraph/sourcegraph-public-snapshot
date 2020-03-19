@@ -10,7 +10,7 @@ import { upperFirst, lowerCase } from 'lodash'
 import { queryChangesetPlans, queryChangesets as _queryChangesets } from '../backend'
 import { repeatWhen, delay, withLatestFrom, map, filter } from 'rxjs/operators'
 import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
-import { createHoverifier, HoveredToken, HoverState } from '@sourcegraph/codeintellify'
+import { createHoverifier, HoveredToken } from '@sourcegraph/codeintellify'
 import {
     RepoSpec,
     RevSpec,
@@ -28,7 +28,6 @@ import { getHover } from '../../../../backend/features'
 import { PlatformContextProps } from '../../../../../../shared/src/platform/context'
 import { TelemetryProps } from '../../../../../../shared/src/telemetry/telemetryService'
 import { propertyIsDefined } from '../../../../../../shared/src/util/types'
-import { HoverContext } from '../../../../../../shared/src/hover/HoverOverlay'
 import { useObservable } from '../../../../../../shared/src/util/useObservable'
 
 interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, ExtensionsControllerProps {
@@ -91,9 +90,7 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
     )
 
     const containerElements = useMemo(() => new Subject<HTMLElement | null>(), [])
-    const nextContainerElement = useCallback((element: HTMLElement | null): void => containerElements.next(element), [
-        containerElements,
-    ])
+    const nextContainerElement = useMemo(() => containerElements.next.bind(containerElements), [containerElements])
 
     const hoverOverlayElements = useMemo(() => new Subject<HTMLElement | null>(), [])
     const nextOverlayElement = useCallback((element: HTMLElement | null): void => hoverOverlayElements.next(element), [
@@ -138,9 +135,7 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
     )
     useEffect(() => () => hoverifier.unsubscribe(), [hoverifier])
 
-    const hoverState = useObservable<HoverState<HoverContext, HoverMerged, ActionItemAction>>(
-        useMemo(() => hoverifier.hoverStateUpdates, [hoverifier])
-    )
+    const hoverState = useObservable(useMemo(() => hoverifier.hoverStateUpdates, [hoverifier]))
     useEffect(() => {
         componentRerenders.next()
     }, [componentRerenders, hoverState])
