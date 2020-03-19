@@ -18,6 +18,25 @@ export async function gunzipJSON<T>(value: Buffer): Promise<T> {
     return parseJSON((await gunzip(value)).toString())
 }
 
+/** The replacer used by dumpJSON to encode map and set values. */
+export const jsonReplacer = <T>(key: string, value: T): { type: string; value: unknown } | T => {
+    if (value instanceof Map) {
+        return {
+            type: 'map',
+            value: [...value],
+        }
+    }
+
+    if (value instanceof Set) {
+        return {
+            type: 'set',
+            value: [...value],
+        }
+    }
+
+    return value
+}
+
 /**
  * Return the JSON representation of `value`. This has special logic to
  * convert ES6 map and set structures into a JSON-representable value.
@@ -26,24 +45,8 @@ export async function gunzipJSON<T>(value: Buffer): Promise<T> {
  *
  * @param value The value to jsonify.
  */
-function dumpJSON<T>(value: T): string {
-    return JSON.stringify(value, (_, oldValue) => {
-        if (oldValue instanceof Map) {
-            return {
-                type: 'map',
-                value: [...oldValue],
-            }
-        }
-
-        if (oldValue instanceof Set) {
-            return {
-                type: 'set',
-                value: [...oldValue],
-            }
-        }
-
-        return oldValue
-    })
+export function dumpJSON<T>(value: T): string {
+    return JSON.stringify(value, jsonReplacer)
 }
 
 /**

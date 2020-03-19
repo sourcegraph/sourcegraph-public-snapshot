@@ -6,6 +6,7 @@ import { logger as loggingMiddleware } from 'express-winston'
 import { makeMetricsMiddleware } from './middleware/metrics'
 import { Tracer } from 'opentracing'
 import { Logger } from 'winston'
+import { jsonReplacer } from '../encoding/json'
 
 export function startExpressApp({
     routes,
@@ -41,6 +42,8 @@ export function startExpressApp({
     // Error handler must be registered last so its exception handlers
     // will apply to all routes and other middleware.
     app.use(errorHandler(logger))
+
+    app.set('json replacer', jsonReplacer)
 
     app.listen(port, () => logger.debug('API server listening', { port }))
 }
