@@ -9,14 +9,14 @@ import { Logger } from 'winston'
 import { jsonReplacer } from '../encoding/json'
 
 export function startExpressApp({
-    routes,
     port,
+    routers = [],
     logger,
     tracer,
     selectHistogram = () => undefined,
 }: {
-    routes: express.Router[]
     port: number
+    routers?: express.Router[]
     logger: Logger
     tracer?: Tracer
     selectHistogram?: (route: string) => promClient.Histogram<string> | undefined
@@ -35,7 +35,7 @@ export function startExpressApp({
     app.use(makeMetricsMiddleware(selectHistogram))
     app.use(createMetaRouter())
 
-    for (const route of routes) {
+    for (const route of routers) {
         app.use(route)
     }
 

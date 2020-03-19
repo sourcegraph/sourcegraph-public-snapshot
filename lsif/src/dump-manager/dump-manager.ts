@@ -7,6 +7,7 @@ import { createLogger } from '../shared/logging'
 import { ensureDirectory } from '../shared/paths'
 import { Logger } from 'winston'
 import { startExpressApp } from '../shared/api/init'
+import { createDatabaseRouter } from './routes/database'
 
 /**
  * No-op dump-manager process.
@@ -28,8 +29,10 @@ async function main(logger: Logger): Promise<void> {
     await ensureDirectory(path.join(settings.STORAGE_ROOT, constants.TEMP_DIR))
     await ensureDirectory(path.join(settings.STORAGE_ROOT, constants.UPLOADS_DIR))
 
+    const routers = [createDatabaseRouter(logger)]
+
     // Start server
-    startExpressApp({ routes: [], port: settings.HTTP_PORT, logger })
+    startExpressApp({ port: settings.HTTP_PORT, routers, logger })
 }
 
 // Initialize logger
