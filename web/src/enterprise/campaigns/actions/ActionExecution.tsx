@@ -7,7 +7,6 @@ import classNames from 'classnames'
 import { MonacoSettingsEditor } from '../../../settings/MonacoSettingsEditor'
 import { ActionJob } from './ActionJob'
 import SyncIcon from 'mdi-react/SyncIcon'
-import { useObservable } from '../../../util/useObservable'
 import { fetchActionExecutionByID } from './backend'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { merge, of, Subject } from 'rxjs'
@@ -19,6 +18,7 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { formatDistance, parseISO } from 'date-fns'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import { ErrorAlert } from '../../../components/alerts'
+import { useObservable } from '../../../../../shared/src/util/useObservable'
 
 interface Props extends ThemeProps {
     actionExecutionID: string
@@ -112,7 +112,7 @@ export const ActionExecution: React.FunctionComponent<Props> = ({
                 value={execution.definition.steps}
                 height={200}
                 className="mb-3"
-            ></MonacoSettingsEditor>
+            />
             <h2>Action status</h2>
             <div>
                 <div className="alert alert-info mt-1">

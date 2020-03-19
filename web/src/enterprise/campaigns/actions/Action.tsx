@@ -4,12 +4,12 @@ import { PageTitle } from '../../../components/PageTitle'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import classNames from 'classnames'
 import { MonacoSettingsEditor } from '../../../settings/MonacoSettingsEditor'
-import { useObservable } from '../../../util/useObservable'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { merge, of, Subject } from 'rxjs'
 import { switchMap, filter, tap } from 'rxjs/operators'
 import { fetchActionByID, createActionExecution, createAction, updateAction } from './backend'
 import { ActionExecutionNode } from './list/ActionExecutionNode'
+import { useObservable } from '../../../../../shared/src/util/useObservable'
 
 interface Props extends ThemeProps {
     actionID?: string
@@ -98,7 +98,7 @@ export const Action: React.FunctionComponent<Props> = ({ actionID, isLightTheme,
                 onChange={setSteps}
                 height={200}
                 className="mb-3"
-            ></MonacoSettingsEditor>
+            />
             {!action && (
                 <button className="btn btn-primary mb-3" type="button" onClick={_createAction} disabled={isLoading}>
                     Create action
