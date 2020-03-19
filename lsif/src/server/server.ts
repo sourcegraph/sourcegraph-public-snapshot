@@ -18,6 +18,7 @@ import { DumpManager } from '../shared/store/dumps'
 import { DependencyManager } from '../shared/store/dependencies'
 import { SRC_FRONTEND_INTERNAL } from '../shared/config/settings'
 import { startExpressApp } from '../shared/api/init'
+import { createInternalRouter } from './routes/internal'
 
 /**
  * Runs the HTTP server that accepts LSIF dump uploads and responds to LSIF requests.
@@ -53,11 +54,12 @@ async function main(logger: Logger): Promise<void> {
     const backend = new Backend(dumpManager, dependencyManager, SRC_FRONTEND_INTERNAL)
 
     // Start background tasks
-    startTasks(connection, dumpManager, uploadManager, logger)
+    startTasks(connection, uploadManager, logger)
 
     const routers = [
         createUploadRouter(dumpManager, uploadManager, logger),
         createLsifRouter(backend, uploadManager, logger, tracer),
+        createInternalRouter(dumpManager, uploadManager, logger),
     ]
 
     // Start server
