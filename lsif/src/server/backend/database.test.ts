@@ -1,5 +1,252 @@
 import * as sqliteModels from '../../shared/models/sqlite'
-import { comparePosition, findRanges, mapRangesToInternalLocations } from './database'
+import { comparePosition, findRanges, mapRangesToInternalLocations, Database } from './database'
+import * as fs from 'mz/fs'
+import * as nodepath from 'path'
+import * as constants from '../../shared/constants'
+import { convertLsif } from '../../worker/conversion/importer'
+import { PathExistenceChecker } from '../../worker/conversion/existence'
+import rmfr from 'rmfr'
+import * as uuid from 'uuid'
+import { createStorageRoot } from '../../shared/test-util'
+
+describe('Database', () => {
+    let storageRoot!: string
+    let database!: Database
+
+    const makeDatabase = async (filename: string): Promise<Database> => {
+        // Create a filesystem read stream for the given test file. This will cover
+        // the cases where `yarn test` is run from the root or from the lsif directory.
+        const root = (await fs.exists('lsif')) ? 'lsif' : ''
+        const sourceFile = nodepath.join(root, 'test-data', filename)
+        const databaseFile = nodepath.join(storageRoot, constants.TEMP_DIR, uuid.v4())
+
+        await convertLsif({
+            path: sourceFile,
+            root: '',
+            database: databaseFile,
+            pathExistenceChecker: new PathExistenceChecker({
+                repositoryId: 42,
+                commit: 'ad3507cbeb18d1ed2b8a0f6354dea88a101197f3',
+                root: '',
+            }),
+        })
+
+        return new Database(1, databaseFile)
+    }
+
+    beforeAll(async () => {
+        storageRoot = await createStorageRoot()
+        database = await makeDatabase('lsif-go@ad3507cb.lsif.gz')
+    })
+
+    afterAll(async () => {
+        if (storageRoot) {
+            await rmfr(storageRoot)
+        }
+    })
+
+    describe('exists', () => {
+        it('should check document path', async () => {
+            expect(await database.exists('cmd/lsif-go/main.go')).toEqual(true)
+            expect(await database.exists('internal/index/indexer.go')).toEqual(true)
+            expect(await database.exists('missing.go')).toEqual(false)
+        })
+    })
+
+    describe('definitions', () => {
+        it('should correlate definitions', async () => {
+            // `\ts, err := indexer.Index()` -> `\t Index() (*Stats, error)`
+            //                      ^^^^^           ^^^^^
+
+            expect(await database.definitions('cmd/lsif-go/main.go', { line: 110, character: 22 })).toEqual([
+                {
+                    dumpId: 1,
+                    path: 'internal/index/indexer.go',
+                    range: { start: { line: 20, character: 1 }, end: { line: 20, character: 6 } },
+                },
+            ])
+        })
+    })
+
+    describe('references', () => {
+        it('should correlate references', async () => {
+            // `func (w *Writer) EmitRange(start, end Pos) (string, error) {`
+            //                   ^^^^^^^^^
+            //
+            // -> `\t\trangeID, err := i.w.EmitRange(lspRange(ipos, ident.Name, isQuotedPkgName))`
+            //                             ^^^^^^^^^
+            //
+            // -> `\t\t\trangeID, err = i.w.EmitRange(lspRange(ipos, ident.Name, false))`
+            //                              ^^^^^^^^^
+
+            expect((await database.references('protocol/writer.go', { line: 85, character: 20 })).locations).toEqual([
+                {
+                    dumpId: 1,
+                    path: 'protocol/writer.go',
+                    range: { start: { line: 85, character: 17 }, end: { line: 85, character: 26 } },
+                },
+                {
+                    dumpId: 1,
+                    path: 'internal/index/indexer.go',
+                    range: { start: { line: 529, character: 22 }, end: { line: 529, character: 31 } },
+                },
+                {
+                    dumpId: 1,
+                    path: 'internal/index/indexer.go',
+                    range: { start: { line: 380, character: 22 }, end: { line: 380, character: 31 } },
+                },
+            ])
+        })
+    })
+
+    describe('hover', () => {
+        it('should correlate hover text', async () => {
+            // `\tcontents, err := findContents(pkgs, p, f, obj)`
+            //                     ^^^^^^^^^^^^
+
+            const ticks = '```'
+            const docstring = 'findContents returns contents used as hover info for given object.'
+            const signature =
+                'func findContents(pkgs []*Package, p *Package, f *File, obj Object) ([]MarkedString, error)'
+
+            expect(await database.hover('internal/index/indexer.go', { line: 628, character: 20 })).toEqual({
+                text: `${ticks}go\n${signature}\n${ticks}\n\n---\n\n${docstring}`,
+                range: { start: { line: 628, character: 18 }, end: { line: 628, character: 30 } },
+            })
+        })
+    })
+
+    describe('getRangeByPosition', () => {
+        it('should return correct range and document with monikers', async () => {
+            // `func NewMetaData(id, root string, info ToolInfo) *MetaData {`
+            //       ^^^^^^^^^^^
+
+            const { document, ranges } = await database.getRangeByPosition('protocol/protocol.go', {
+                line: 92,
+                character: 10,
+            })
+
+            expect(ranges).toHaveLength(1)
+            expect(ranges[0].startLine).toEqual(92)
+            expect(ranges[0].startCharacter).toEqual(5)
+            expect(ranges[0].endLine).toEqual(92)
+            expect(ranges[0].endCharacter).toEqual(16)
+
+            const monikers = Array.from(ranges[0].monikerIds).map(id => document?.monikers.get(id))
+            expect(monikers).toHaveLength(1)
+            expect(monikers[0]?.kind).toEqual('export')
+            expect(monikers[0]?.scheme).toEqual('gomod')
+            expect(monikers[0]?.identifier).toEqual('github.com/sourcegraph/lsif-go/protocol:NewMetaData')
+
+            const packageInformation = document?.packageInformation.get(monikers[0]?.packageInformationId || 0)
+            expect(packageInformation?.name).toEqual('github.com/sourcegraph/lsif-go')
+            expect(packageInformation?.version).toEqual('v0.0.0-ad3507cbeb18')
+        })
+    })
+
+    describe('monikerResults', () => {
+        const edgeLocations = [
+            {
+                dumpId: 1,
+                path: 'protocol/protocol.go',
+                range: { start: { line: 600, character: 1 }, end: { line: 600, character: 5 } },
+            },
+            {
+                dumpId: 1,
+                path: 'protocol/protocol.go',
+                range: { start: { line: 644, character: 1 }, end: { line: 644, character: 5 } },
+            },
+            {
+                dumpId: 1,
+                path: 'protocol/protocol.go',
+                range: { start: { line: 507, character: 1 }, end: { line: 507, character: 5 } },
+            },
+            {
+                dumpId: 1,
+                path: 'protocol/protocol.go',
+                range: { start: { line: 553, character: 1 }, end: { line: 553, character: 5 } },
+            },
+            {
+                dumpId: 1,
+                path: 'protocol/protocol.go',
+                range: { start: { line: 462, character: 1 }, end: { line: 462, character: 5 } },
+            },
+            {
+                dumpId: 1,
+                path: 'protocol/protocol.go',
+                range: { start: { line: 484, character: 1 }, end: { line: 484, character: 5 } },
+            },
+            {
+                dumpId: 1,
+                path: 'protocol/protocol.go',
+                range: { start: { line: 410, character: 5 }, end: { line: 410, character: 9 } },
+            },
+            {
+                dumpId: 1,
+                path: 'protocol/protocol.go',
+                range: { start: { line: 622, character: 1 }, end: { line: 622, character: 5 } },
+            },
+            {
+                dumpId: 1,
+                path: 'protocol/protocol.go',
+                range: { start: { line: 440, character: 1 }, end: { line: 440, character: 5 } },
+            },
+            {
+                dumpId: 1,
+                path: 'protocol/protocol.go',
+                range: { start: { line: 530, character: 1 }, end: { line: 530, character: 5 } },
+            },
+        ]
+
+        it('should query definitions table', async () => {
+            const { locations, count } = await database.monikerResults(
+                sqliteModels.DefinitionModel,
+                {
+                    scheme: 'gomod',
+                    identifier: 'github.com/sourcegraph/lsif-go/protocol:Edge',
+                },
+                {}
+            )
+
+            expect(locations).toEqual(edgeLocations)
+            expect(count).toEqual(10)
+        })
+
+        it('should respect pagination', async () => {
+            const { locations, count } = await database.monikerResults(
+                sqliteModels.DefinitionModel,
+                {
+                    scheme: 'gomod',
+                    identifier: 'github.com/sourcegraph/lsif-go/protocol:Edge',
+                },
+                { skip: 3, take: 4 }
+            )
+
+            expect(locations).toEqual(edgeLocations.slice(3, 7))
+            expect(count).toEqual(10)
+        })
+
+        it('should query references table', async () => {
+            const { locations, count } = await database.monikerResults(
+                sqliteModels.ReferenceModel,
+                {
+                    scheme: 'gomod',
+                    identifier: 'github.com/slimsag/godocmd:ToMarkdown',
+                },
+                {}
+            )
+
+            expect(locations).toEqual([
+                {
+                    dumpId: 1,
+                    path: 'internal/index/helper.go',
+                    range: { start: { line: 78, character: 6 }, end: { line: 78, character: 16 } },
+                },
+            ])
+            expect(count).toEqual(1)
+        })
+    })
+})
 
 describe('findRanges', () => {
     it('should return ranges containing position', () => {

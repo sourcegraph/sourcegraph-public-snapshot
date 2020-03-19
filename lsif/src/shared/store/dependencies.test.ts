@@ -1,9 +1,9 @@
-import * as util from '../integration-test-util'
-import * as pgModels from '../../../shared/models/pg'
+import * as util from '../test-util'
+import * as pgModels from '../models/pg'
 import { Connection } from 'typeorm'
 import { fail } from 'assert'
-import { DumpManager } from '../../../shared/store/dumps'
-import { DependencyManager } from '../../../shared/store/dependencies'
+import { DumpManager } from './dumps'
+import { DependencyManager } from './dependencies'
 
 describe('DependencyManager', () => {
     let connection!: Connection
