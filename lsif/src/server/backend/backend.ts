@@ -478,13 +478,13 @@ export class Backend {
         }
 
         // Get the page's slice of results
-        const slicedLocations = locationSet.locations.slice(cursor.skipResults, cursor.skipResults + limit)
+        const slicedLocations = locationSet.values.slice(cursor.skipResults, cursor.skipResults + limit)
         const newOffset = cursor.skipResults + limit
         const newCursor = { ...cursor, skipResults: cursor.skipResults + limit }
 
         return {
             locations: await this.resolveLocations(slicedLocations.map(loc => locationFromDatabase(dump.root, loc))),
-            newCursor: newOffset < locationSet.locations.length ? newCursor : undefined,
+            newCursor: newOffset < locationSet.values.length ? newCursor : undefined,
         }
     }
 
