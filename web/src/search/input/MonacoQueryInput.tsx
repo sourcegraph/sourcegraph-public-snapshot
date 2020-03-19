@@ -126,7 +126,11 @@ function addSouregraphSearchCodeIntelligence(
     return subscriptions
 }
 
-const NOOP_KEYBINDINGS = [Monaco.KeyMod.CtrlCmd | Monaco.KeyCode.KEY_F, Monaco.KeyMod.CtrlCmd | Monaco.KeyCode.Enter]
+const NOOP_KEYBINDINGS = [
+    Monaco.KeyMod.CtrlCmd | Monaco.KeyCode.KEY_F,
+    Monaco.KeyMod.CtrlCmd | Monaco.KeyCode.Enter | Monaco.KeyCode.KEY_L,
+    Monaco.KeyMod.CtrlCmd,
+]
 
 /**
  * A search query input backed by the Monaco editor, allowing it to provide
