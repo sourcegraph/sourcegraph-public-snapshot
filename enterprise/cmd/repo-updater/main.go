@@ -91,5 +91,6 @@ func startBackgroundPermsSync(ctx context.Context, syncer *authz.PermsSyncer, db
 		}
 	}()
 
+	syncer.RegisterMetrics()
 	go syncer.Run(ctx)
 }
