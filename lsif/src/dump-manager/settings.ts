@@ -42,3 +42,15 @@ export const MAX_REQUEST_RETRIES = readEnvInt('MAX_REQUEST_RETRIES', 60)
 
 /** How long to wait (in seconds) between lsif-server request attempts. */
 export const REQUEST_RETRY_INTERVAL = readEnvInt('REQUEST_RETRY_INTERVAL', 5)
+
+/** The maximum rate that the server will send upload payloads. */
+export const MAXIMUM_SERVE_BITS_PER_SECOND = readEnvInt('MAXIMUM_SERVE_BITS_PER_SECOND', 1024 * 1024 * 1024 * 10)
+
+/** The maximum chunksize the server will use to send upload payloads. */
+export const MAXIMUM_SERVE_CHUNKSIZE = readEnvInt('MAXIMUM_SERVE_CHUNKSIZE', 1024 * 1024 * 10)
+
+/** The maximum rate that the server will receive upload payloads. */
+export const MAXIMUM_UPLOAD_BITS_PER_SECOND = readEnvInt('MAXIMUM_UPLOAD_BITS_PER_SECOND', 1024 * 1024 * 1024 * 10)
+
+/** The maximum chunksize the server will use to receive upload payloads. */
+export const MAXIMUM_UPLOAD_CHUNKSIZE = readEnvInt('MAXIMUM_DOWNLOAD_CHUNKSIZE', 1024 * 1024 * 10)
