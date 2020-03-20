@@ -12,8 +12,6 @@ import { createUploadRouter } from './routes/uploads'
 import { startTasks } from './tasks'
 import { createPostgresConnection } from '../shared/database/postgres'
 import { waitForConfiguration } from '../shared/config/config'
-import { DumpManager } from '../shared/store/dumps'
-import { UploadManager } from '../shared/store/uploads'
 
 /**
  * No-op dump-manager process.
@@ -38,13 +36,11 @@ async function main(logger: Logger): Promise<void> {
     await ensureDirectory(path.join(settings.STORAGE_ROOT, constants.TEMP_DIR))
     await ensureDirectory(path.join(settings.STORAGE_ROOT, constants.UPLOADS_DIR))
 
-    // Create database connection and entity wrapper classes
+    // Create database connection
     const connection = await createPostgresConnection(fetchConfiguration(), logger)
-    const dumpManager = new DumpManager(connection)
-    const uploadManager = new UploadManager(connection)
 
     // Start background tasks
-    startTasks(connection, dumpManager, uploadManager, logger)
+    startTasks(connection, logger)
 
     const routers = [createDatabaseRouter(logger), createUploadRouter(logger)]
 

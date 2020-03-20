@@ -3,6 +3,9 @@ import { readEnvInt } from '../shared/settings'
 /** Which port to run the LSIF server on. Defaults to 3187. */
 export const HTTP_PORT = readEnvInt('HTTP_PORT', 3187)
 
+/** HTTP address for internal LSIF HTTP API. */
+export const LSIF_SERVER_URL = process.env.LSIF_SERVER_URL || 'http://lsif-server'
+
 /** Where on the file system to store LSIF files. */
 export const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
 
@@ -33,3 +36,9 @@ export const CLEAN_FAILED_UPLOADS_INTERVAL = readEnvInt('CLEAN_FAILED_UPLOADS_IN
 
 /** The maximum age (in seconds) that the files for an unprocessed upload can remain on disk. */
 export const FAILED_UPLOAD_MAX_AGE = readEnvInt('FAILED_UPLOAD_MAX_AGE', 24 * 60 * 60)
+
+/** How many times to retry requests to lsif-server in the background. */
+export const MAX_REQUEST_RETRIES = readEnvInt('MAX_REQUEST_RETRIES', 60)
+
+/** How long to wait (in seconds) between lsif-server request attempts. */
+export const REQUEST_RETRY_INTERVAL = readEnvInt('REQUEST_RETRY_INTERVAL', 5)
