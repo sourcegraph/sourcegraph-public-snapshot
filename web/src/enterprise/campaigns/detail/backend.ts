@@ -43,7 +43,7 @@ const campaignFragment = gql`
         publishedAt
         closedAt
         viewerCanAdminister
-        changesets {
+        changesets(first: 10000) {
             totalCount
             nodes {
                 __typename
@@ -58,7 +58,7 @@ const campaignFragment = gql`
                 }
             }
         }
-        changesetPlans {
+        changesetPlans(first: 10000) {
             totalCount
             nodes {
                 id
@@ -95,7 +95,7 @@ const campaignPlanFragment = gql`
     fragment CampaignPlanFields on CampaignPlan {
         __typename
         id
-        changesetPlans {
+        changesetPlans(first: 10000) {
             totalCount
             nodes {
                 id
