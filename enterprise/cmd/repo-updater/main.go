@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"gopkg.in/inconshreveable/log15.v2"
 )
@@ -52,6 +53,12 @@ func enterpriseInit(
 		server.ChangesetSyncer = syncer
 	}
 
+	clock := func() time.Time {
+		return time.Now().UTC().Truncate(time.Microsecond)
+	}
+
+	go campaigns.RunChangesetJobs(ctx, campaignsStore, clock, gitserver.DefaultClient, 5*time.Second)
+
 	// Set up syncer
 	go syncer.Run(ctx)
 
@@ -68,9 +75,6 @@ func enterpriseInit(
 
 	// TODO(jchen): This is an unfortunate compromise to not rewrite ossDB.ExternalServices for now.
 	dbconn.Global = db
-	clock := func() time.Time {
-		return time.Now().UTC().Truncate(time.Microsecond)
-	}
 	permsStore := frontendDB.NewPermsStore(db, clock)
 	permsSyncer := authz.NewPermsSyncer(repoStore, permsStore, clock)
 	go startBackgroundPermsSync(ctx, permsSyncer, db)

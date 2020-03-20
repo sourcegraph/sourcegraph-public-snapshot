@@ -7,6 +7,7 @@ import { Observable } from 'rxjs'
 import { SearchSuggestion, IRepository, IFile, ISymbol, ILanguage, SymbolKind } from '../../graphql/schema'
 import { isDefined } from '../../util/types'
 import { FilterType, isNegatableFilter } from '../interactive/util'
+import { first } from 'rxjs/operators'
 
 const repositoryCompletionItemKind = Monaco.languages.CompletionItemKind.Color
 const filterCompletionItemKind = Monaco.languages.CompletionItemKind.Customcolor
@@ -146,10 +147,9 @@ const TRIGGER_SUGGESTIONS: Monaco.languages.Command = {
  * including both static and dynamically fetched suggestions.
  */
 export async function getCompletionItems(
-    rawQuery: string,
     { members }: Pick<Sequence, 'members'>,
     { column }: Pick<Monaco.Position, 'column'>,
-    fetchSuggestions: (query: string) => Observable<SearchSuggestion[]>
+    dynamicSuggestions: Observable<SearchSuggestion[]>
 ): Promise<Monaco.languages.CompletionList | null> {
     const defaultRange = {
         startLineNumber: 1,
@@ -195,18 +195,20 @@ export async function getCompletionItems(
         ) {
             return { suggestions: staticSuggestions }
         }
-        const dynamicSuggestions = (await fetchSuggestions(rawQuery).toPromise())
-            .map(suggestionToCompletionItem)
-            .filter(isDefined)
-            .map(completionItem => ({
-                ...completionItem,
-                range: toMonacoRange(range),
-                // Set a sortText so that dynamic suggestions
-                // are shown after filter type suggestions.
-                sortText: '1',
-            }))
         return {
-            suggestions: [...staticSuggestions, ...dynamicSuggestions],
+            suggestions: [
+                ...staticSuggestions,
+                ...(await dynamicSuggestions.pipe(first()).toPromise())
+                    .map(suggestionToCompletionItem)
+                    .filter(isDefined)
+                    .map(completionItem => ({
+                        ...completionItem,
+                        range: toMonacoRange(range),
+                        // Set a sortText so that dynamic suggestions
+                        // are shown after filter type suggestions.
+                        sortText: '1',
+                    })),
+            ],
         }
     }
     if (token.type === 'filter') {
@@ -232,7 +234,7 @@ export async function getCompletionItems(
             }
             // If the filter definition has an associated suggestion type,
             // use it to filter dynamic suggestions.
-            const suggestions = await fetchSuggestions(rawQuery).toPromise()
+            const suggestions = await dynamicSuggestions.pipe(first()).toPromise()
             return {
                 suggestions: suggestions
                     .filter(({ __typename }) => __typename === resolvedFilter.definition.suggestions)

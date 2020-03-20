@@ -41,7 +41,7 @@ require (
 	github.com/golang-migrate/migrate/v4 v4.10.0
 	github.com/golang/gddo v0.0.0-20200310004957-95ce5a452273
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e
-	github.com/golangci/golangci-lint v1.24.0
+	github.com/golangci/golangci-lint v1.23.8
 	github.com/golangplus/bytes v0.0.0-20160111154220-45c989fe5450 // indirect
 	github.com/golangplus/fmt v0.0.0-20150411045040-2a5d6d7d2995 // indirect
 	github.com/golangplus/testing v0.0.0-20180327235837-af21d9c3145e // indirect
@@ -133,6 +133,7 @@ require (
 	github.com/stripe/stripe-go v70.5.0+incompatible
 	github.com/temoto/robotstxt v1.1.1
 	github.com/tinylib/msgp v1.1.2 // indirect
+	github.com/tommy-muehle/go-mnd v1.3.1-0.20200224220436-e6f9a994e8fa // indirect
 	github.com/tomnomnom/linkheader v0.0.0-20180905144013-02ca5825eb80
 	github.com/uber/gonduit v0.6.1
 	github.com/uber/jaeger-client-go v2.22.1+incompatible
