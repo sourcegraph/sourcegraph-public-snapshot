@@ -428,7 +428,7 @@ export class Driver {
     public async createPatchSetFromPatches(patches: IPatchInput[]): Promise<Pick<IPatchSet, 'previewURL'>> {
         const resp = await this.makeGraphQLRequest<IMutation>({
             request: gql`
-                mutation($patches: [IPatchInput!]!) {
+                mutation($patches: [PatchInput!]!) {
                     createPatchSetFromPatches(patches: $patches) {
                         previewURL
                     }
