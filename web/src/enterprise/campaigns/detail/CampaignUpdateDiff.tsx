@@ -5,7 +5,7 @@ import * as GQL from '../../../../../shared/src/graphql/schema'
 import { ChangesetNode } from './changesets/ChangesetNode'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { queryChangesets, queryChangesetPlans } from './backend'
-import { useObservable } from '../../../util/useObservable'
+import { useObservable } from '../../../../../shared/src/util/useObservable'
 import { TabsWithLocalStorageViewStatePersistence } from '../../../../../shared/src/components/Tabs'
 import classNames from 'classnames'
 import { Connection } from '../../../components/FilteredConnection'
@@ -133,17 +133,19 @@ export const CampaignUpdateDiff: React.FunctionComponent<Props> = ({
             : 0
         return (
             <div className={className}>
-                <h3 className="mt-3">Preview of changes</h3>
-                Campaign currently has {campaign.changesets.totalCount + campaign.changesetPlans.totalCount}{' '}
-                {pluralize('changeset', campaign.changesets.totalCount + campaign.changesetPlans.totalCount)} (
-                {campaign.changesets.totalCount} published, {campaign.changesetPlans.totalCount}{' '}
-                {pluralize('draft', campaign.changesetPlans.totalCount)}), after update it will have{' '}
-                {campaignPlan.changesetPlans.totalCount}{' '}
-                {pluralize('changeset', campaignPlan.changesetPlans.totalCount)} (
-                {campaign.publishedAt
-                    ? unmodified.length + changed.length - deleted.length + added.length
-                    : campaign.changesets.totalCount - deleted.length}{' '}
-                published, {newDraftCount} {pluralize('draft', newDraftCount)}):
+                <h3 className="mt-4 mb-2">Preview of changes</h3>
+                <p>
+                    Campaign currently has {campaign.changesets.totalCount + campaign.changesetPlans.totalCount}{' '}
+                    {pluralize('changeset', campaign.changesets.totalCount + campaign.changesetPlans.totalCount)} (
+                    {campaign.changesets.totalCount} published, {campaign.changesetPlans.totalCount}{' '}
+                    {pluralize('draft', campaign.changesetPlans.totalCount)}), after update it will have{' '}
+                    {campaignPlan.changesetPlans.totalCount}{' '}
+                    {pluralize('changeset', campaignPlan.changesetPlans.totalCount)} (
+                    {campaign.publishedAt
+                        ? unmodified.length + changed.length - deleted.length + added.length
+                        : campaign.changesets.totalCount - deleted.length}{' '}
+                    published, {newDraftCount} {pluralize('draft', newDraftCount)}):
+                </p>
                 <TabsWithLocalStorageViewStatePersistence
                     storageKey="campaignUpdateDiffTabs"
                     tabs={[
@@ -223,7 +225,7 @@ export const CampaignUpdateDiff: React.FunctionComponent<Props> = ({
                                 key={changeset.id}
                             />
                         ))}
-                        {changed.length === 0 && <span className="text-muted">No changesets</span>}
+                        {unmodified.length === 0 && <span className="text-muted">No changesets</span>}
                     </div>
                     <div key="deleted" className="pt-3">
                         {deleted.map(changeset => (
@@ -239,16 +241,16 @@ export const CampaignUpdateDiff: React.FunctionComponent<Props> = ({
                         {deleted.length === 0 && <span className="text-muted">No changesets</span>}
                     </div>
                 </TabsWithLocalStorageViewStatePersistence>
-                <div className="alert alert-info mt-3">
+                <div className="alert alert-info mt-2">
                     <AlertCircleIcon className="icon-inline" /> You are updating an existing campaign. By clicking
-                    'Update', all already published changesets will be updated on the codehost.
+                    'Update', all above changesets that are not 'unmodified' will be updated on the codehost.
                 </div>
             </div>
         )
     }
     return (
-        <p>
+        <div>
             <LoadingSpinner className={classNames('icon-inline', className)} /> Loading diff
-        </p>
+        </div>
     )
 }

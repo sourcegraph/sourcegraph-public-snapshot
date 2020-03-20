@@ -80,6 +80,7 @@ describe('ChangesetNode', () => {
                         title: 'Remove lodash',
                         body: 'We should remove lodash',
                         checkState: ChangesetCheckState.FAILED,
+                        externalID: '123',
                         diff: {
                             fileDiffs: {
                                 diffStat: {

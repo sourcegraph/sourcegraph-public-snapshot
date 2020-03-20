@@ -49,19 +49,14 @@ Referenced by:
 
 # Table "public.campaign_plans"
 ```
-    Column     |           Type           |                          Modifiers                          
----------------+--------------------------+-------------------------------------------------------------
- id            | bigint                   | not null default nextval('campaign_plans_id_seq'::regclass)
- campaign_type | text                     | not null
- created_at    | timestamp with time zone | not null default now()
- updated_at    | timestamp with time zone | not null default now()
- arguments     | text                     | not null
- canceled_at   | timestamp with time zone | 
- user_id       | integer                  | not null
+   Column   |           Type           |                          Modifiers                          
+------------+--------------------------+-------------------------------------------------------------
+ id         | bigint                   | not null default nextval('campaign_plans_id_seq'::regclass)
+ created_at | timestamp with time zone | not null default now()
+ updated_at | timestamp with time zone | not null default now()
+ user_id    | integer                  | not null
 Indexes:
     "campaign_plans_pkey" PRIMARY KEY, btree (id)
-Check constraints:
-    "campaign_plans_campaign_type_check" CHECK (campaign_type <> ''::text)
 Foreign-key constraints:
     "campaign_plans_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) DEFERRABLE
 Referenced by:

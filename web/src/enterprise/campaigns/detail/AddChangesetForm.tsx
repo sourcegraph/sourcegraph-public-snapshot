@@ -90,7 +90,7 @@ export const AddChangesetForm: React.FunctionComponent<{ campaignID: ID; onAdd: 
     )
     return (
         <>
-            <h3>Track changeset</h3>
+            <h3 className="mb-2 mt-4">Track changeset</h3>
             <Form onSubmit={submit}>
                 <div className="d-flex">
                     <div className="form-group mr-3 mb-0">
@@ -131,7 +131,7 @@ export const AddChangesetForm: React.FunctionComponent<{ campaignID: ID; onAdd: 
                     {isLoading && <LoadingSpinner className="ml-2 icon-inline" />}
                 </button>
             </Form>
-            {error && <ErrorAlert error={error} className="mt-3" />}
+            {error && <ErrorAlert error={error} className="mt-2" />}
         </>
     )
 }

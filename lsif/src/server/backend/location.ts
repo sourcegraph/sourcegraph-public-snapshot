@@ -20,6 +20,28 @@ export class OrderedLocationSet {
     private seen = new Set<string>()
     private order: InternalLocation[] = []
 
+    /**
+     * Create a new ordered location set.
+     *
+     * @param locations A set of locations used to seed the set.
+     * @param trusted Whether the given locations are already deduplicated.
+     */
+    constructor(locations?: InternalLocation[], trusted = false) {
+        if (!locations) {
+            return
+        }
+
+        if (trusted) {
+            this.order = Array.from(locations)
+            this.seen = new Set(this.order.map(makeKey))
+            return
+        }
+
+        for (const location of locations) {
+            this.push(location)
+        }
+    }
+
     /** The deduplicated locations in insertion order. */
     public get locations(): InternalLocation[] {
         return this.order

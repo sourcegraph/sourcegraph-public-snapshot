@@ -315,7 +315,7 @@
       "showHeader": true,
       "sort": {
         "col": 4,
-        "desc": false
+        "desc": true
       },
       "styles": [
         {

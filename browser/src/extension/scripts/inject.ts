@@ -94,7 +94,7 @@ async function main(): Promise<void> {
     }
 
     subscriptions.add(
-        await injectCodeIntelligence({ sourcegraphURL, assetsURL: getAssetsURL(DEFAULT_SOURCEGRAPH_URL) }, IS_EXTENSION)
+        injectCodeIntelligence({ sourcegraphURL, assetsURL: getAssetsURL(DEFAULT_SOURCEGRAPH_URL) }, IS_EXTENSION)
     )
 
     // Clean up susbscription if the native integration gets activated
