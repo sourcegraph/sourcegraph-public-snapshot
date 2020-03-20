@@ -83,12 +83,12 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
     }
 
     const toggleRegexp = (): void => {
-        if (props.patternType === SearchPatternType.structural) {
-            return
-        }
-
-        const newPatternType =
+        let newPatternType =
             props.patternType !== SearchPatternType.regexp ? SearchPatternType.regexp : SearchPatternType.literal
+
+        if (props.patternType === SearchPatternType.structural) {
+            newPatternType = SearchPatternType.regexp
+        }
 
         props.setPatternType(newPatternType)
 
@@ -148,8 +148,6 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
                 icon={RegexIcon}
                 className="e2e-regexp-toggle"
                 activeClassName="e2e-regexp-toggle--active"
-                disabledCondition={props.patternType === SearchPatternType.structural}
-                disabledMessage="Structural search uses Comby syntax"
             />
             {!structuralSearchDisabled && (
                 <QueryInputToggle
