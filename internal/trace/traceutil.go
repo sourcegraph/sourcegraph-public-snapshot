@@ -39,11 +39,12 @@ func (t Tracer) New(ctx context.Context, family, title string) (*Trace, context.
 		family,
 		opentracing.Tag{Key: "title", Value: title},
 	)
-	if parent := TraceFromContext(ctx); parent != nil {
-		family = parent.family + " > " + family
-	}
 	tr := nettrace.New(family, title)
 	trace := &Trace{span: span, trace: tr, family: family}
+	if parent := TraceFromContext(ctx); parent != nil {
+		tr.LazyPrintf("parent: %s", parent.family)
+		trace.family = parent.family + " > " + family
+	}
 	return trace, ContextWithTrace(ctx, trace)
 }
 
