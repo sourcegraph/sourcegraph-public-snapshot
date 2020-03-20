@@ -20,13 +20,13 @@ export const DOCUMENT_CACHE_CAPACITY = readEnvInt('DOCUMENT_CACHE_CAPACITY', 102
 export const RESULT_CHUNK_CACHE_CAPACITY = readEnvInt('RESULT_CHUNK_CACHE_CAPACITY', 1024 * 1024 * 1024)
 
 /** The maximum rate that the server will send upload payloads. */
-export const MAXIMUM_SERVE_BITS_PER_SECOND = readEnvInt('MAXIMUM_SERVE_BITS_PER_SECOND', 1024 * 1024 * 1024 * 10)
+export const MAXIMUM_SERVE_BYTES_PER_SECOND = readEnvInt('MAXIMUM_SERVE_BYTES_PER_SECOND', 1024 * 1024 * 1024 * 10) // 10 Gib/sec
 
-/** The maximum chunksize the server will use to send upload payloads. */
-export const MAXIMUM_SERVE_CHUNKSIZE = readEnvInt('MAXIMUM_SERVE_CHUNKSIZE', 1024 * 1024 * 10)
+/** The maximum chunk size the server will use to send upload payloads. */
+export const MAXIMUM_SERVE_CHUNK_BYTES = readEnvInt('MAXIMUM_SERVE_CHUNK_BYTES', 1024 * 1024 * 10) // 10 Mib
 
 /** The maximum rate that the server will receive upload payloads. */
-export const MAXIMUM_UPLOAD_BITS_PER_SECOND = readEnvInt('MAXIMUM_UPLOAD_BITS_PER_SECOND', 1024 * 1024 * 1024 * 10)
+export const MAXIMUM_UPLOAD_BYTES_PER_SECOND = readEnvInt('MAXIMUM_UPLOAD_BYTES_PER_SECOND', 1024 * 1024 * 1024 * 10) // 10 Gib/sec
 
-/** The maximum chunksize the server will use to receive upload payloads. */
-export const MAXIMUM_UPLOAD_CHUNKSIZE = readEnvInt('MAXIMUM_DOWNLOAD_CHUNKSIZE', 1024 * 1024 * 10)
+/** The maximum chunk size the server will use to receive upload payloads. */
+export const MAXIMUM_UPLOAD_CHUNK_BYTES = readEnvInt('MAXIMUM_UPLOAD_CHUNK_BYTES', 1024 * 1024 * 10) // 10 Mib

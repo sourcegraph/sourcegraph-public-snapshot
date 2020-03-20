@@ -21,13 +21,13 @@ export function createUploadRouter(logger: Logger): express.Router {
     const router = express.Router()
 
     const makeServeThrottle = makeThrottleFactory(
-        settings.MAXIMUM_SERVE_BITS_PER_SECOND,
-        settings.MAXIMUM_SERVE_CHUNKSIZE
+        settings.MAXIMUM_SERVE_BYTES_PER_SECOND,
+        settings.MAXIMUM_SERVE_CHUNK_BYTES
     )
 
     const makeUploadThrottle = makeThrottleFactory(
-        settings.MAXIMUM_UPLOAD_BITS_PER_SECOND,
-        settings.MAXIMUM_UPLOAD_CHUNKSIZE
+        settings.MAXIMUM_UPLOAD_BYTES_PER_SECOND,
+        settings.MAXIMUM_UPLOAD_CHUNK_BYTES
     )
 
     /**
