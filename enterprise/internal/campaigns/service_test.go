@@ -824,9 +824,8 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 			if tt.wantErr != nil {
 				if have, want := fmt.Sprint(err), tt.wantErr.Error(); have != want {
 					t.Fatalf("error:\nhave: %q\nwant: %q", have, want)
-				} else {
-					return
 				}
+				return
 			} else if err != nil {
 				t.Fatal(err)
 			}
