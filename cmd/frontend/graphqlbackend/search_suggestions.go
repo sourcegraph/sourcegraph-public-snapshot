@@ -46,7 +46,7 @@ var (
 func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestionsArgs) ([]*searchSuggestionResolver, error) {
 	args.applyDefaultsAndConstraints()
 
-	if len(r.parseTree) == 0 {
+	if len(r.query.ParseTree()) == 0 {
 		return nil, nil
 	}
 
@@ -69,9 +69,9 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		// * If only repo fields (except 1 term in query), show repo suggestions.
 
 		var effectiveRepoFieldValues []string
-		if len(r.query.Values(query.FieldDefault)) == 1 && (len(r.query.Fields) == 1 || (len(r.query.Fields) == 2 && len(r.query.Values(query.FieldRepoGroup)) == 1)) {
+		if len(r.query.Values(query.FieldDefault)) == 1 && (len(r.query.Fields()) == 1 || (len(r.query.Fields()) == 2 && len(r.query.Values(query.FieldRepoGroup)) == 1)) {
 			effectiveRepoFieldValues = append(effectiveRepoFieldValues, r.query.Values(query.FieldDefault)[0].ToString())
-		} else if len(r.query.Values(query.FieldRepo)) > 0 && ((len(r.query.Values(query.FieldRepoGroup)) > 0 && len(r.query.Fields) == 2) || (len(r.query.Values(query.FieldRepoGroup)) == 0 && len(r.query.Fields) == 1)) {
+		} else if len(r.query.Values(query.FieldRepo)) > 0 && ((len(r.query.Values(query.FieldRepoGroup)) > 0 && len(r.query.Fields()) == 2) || (len(r.query.Values(query.FieldRepoGroup)) == 0 && len(r.query.Fields()) == 1)) {
 			effectiveRepoFieldValues, _ = r.query.RegexpPatterns(query.FieldRepo)
 		}
 

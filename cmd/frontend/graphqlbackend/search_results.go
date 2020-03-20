@@ -527,7 +527,7 @@ func (r *searchResolver) logSearchLatency(ctx context.Context, durationMs int32)
 			case r.patternType == query.SearchTypeRegex:
 				types = append(types, "regexp")
 			}
-		} else if len(r.query.Fields["file"]) > 0 {
+		} else if len(r.query.Fields()["file"]) > 0 {
 			// No search pattern specified and file: is specified.
 			types = append(types, "file")
 		} else {
@@ -1369,7 +1369,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	}
 
 	if len(results) == 0 && strings.Contains(r.originalQuery, `"`) && r.patternType == query.SearchTypeLiteral {
-		alert = alertForQuotesInQueryInLiteralMode(r.parseTree)
+		alert = alertForQuotesInQueryInLiteralMode(r.query.ParseTree())
 	}
 
 	// If we have some results, only log the error instead of returning it,
