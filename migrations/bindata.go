@@ -92,6 +92,8 @@
 // 1528395661_remove_execution_related_columns_from_campaign_jobs.up.sql (395B)
 // 1528395662_remove_unused_columns_from_campaign_plans.down.sql (223B)
 // 1528395662_remove_unused_columns_from_campaign_plans.up.sql (203B)
+// 1528395663_rename_campaign_plans_to_patch_sets.down.sql (211B)
+// 1528395663_rename_campaign_plans_to_patch_sets.up.sql (211B)
 
 package migrations
 
@@ -2000,6 +2002,46 @@ func _1528395662_remove_unused_columns_from_campaign_plansUpSql() (*asset, error
 	return a, nil
 }
 
+var __1528395663_rename_campaign_plans_to_patch_setsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x48\x2c\x49\xce\x88\x2f\x4e\x2d\x29\x56\x08\x72\xf5\x73\xf4\x75\x55\x08\xf1\x57\x48\x4e\xcc\x2d\x48\xcc\x4c\xcf\x8b\x2f\xc8\x49\xcc\x2b\x46\xd3\x01\x97\xcc\xca\x4f\x82\x6b\x72\xf6\xf7\x09\xf5\xf5\x43\x98\x16\x9f\x99\x82\x61\x50\x7c\x66\x8a\x35\x56\x93\x48\x37\x85\xcb\xd9\xdf\xd7\xd7\x33\xc4\x9a\x0b\x10\x00\x00\xff\xff\x8e\xf4\x27\x63\xd3\x00\x00\x00")
+
+func _1528395663_rename_campaign_plans_to_patch_setsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395663_rename_campaign_plans_to_patch_setsDownSql,
+		"1528395663_rename_campaign_plans_to_patch_sets.down.sql",
+	)
+}
+
+func _1528395663_rename_campaign_plans_to_patch_setsDownSql() (*asset, error) {
+	bytes, err := _1528395663_rename_campaign_plans_to_patch_setsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395663_rename_campaign_plans_to_patch_sets.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xc2, 0x88, 0xdf, 0x10, 0xa9, 0x1d, 0x4, 0x95, 0xf4, 0x92, 0xf4, 0xc3, 0x17, 0x1e, 0x3d, 0x94, 0x80, 0x50, 0x3, 0x60, 0x5, 0xa2, 0x83, 0xff, 0x63, 0x6e, 0x32, 0x66, 0xde, 0x26, 0xc4, 0x97}}
+	return a, nil
+}
+
+var __1528395663_rename_campaign_plans_to_patch_setsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\x4e\xcc\x2d\x48\xcc\x4c\xcf\x8b\x2f\xc8\x49\xcc\x2b\x56\x08\x72\xf5\x73\xf4\x75\x55\x08\xf1\x57\x28\x48\x2c\x49\xce\x88\x2f\x4e\x2d\x29\xc6\xa5\x23\x2b\x3f\x09\xae\xc1\xd9\xdf\x27\xd4\xd7\x0f\xd5\xb4\xf8\xcc\x14\x14\x83\xe2\x33\x53\xac\xb1\x9a\x44\xba\x29\x5c\xce\xfe\xbe\xbe\x9e\x21\xd6\x5c\x80\x00\x00\x00\xff\xff\x09\x9e\xbd\x6b\xd3\x00\x00\x00")
+
+func _1528395663_rename_campaign_plans_to_patch_setsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395663_rename_campaign_plans_to_patch_setsUpSql,
+		"1528395663_rename_campaign_plans_to_patch_sets.up.sql",
+	)
+}
+
+func _1528395663_rename_campaign_plans_to_patch_setsUpSql() (*asset, error) {
+	bytes, err := _1528395663_rename_campaign_plans_to_patch_setsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395663_rename_campaign_plans_to_patch_sets.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xad, 0x15, 0x97, 0x3a, 0xe4, 0x3, 0x3d, 0xa7, 0x61, 0xc1, 0xa5, 0x1c, 0x49, 0x70, 0x72, 0x9f, 0x9c, 0x8a, 0x91, 0x66, 0x73, 0xe1, 0x8, 0x5b, 0xd2, 0xc2, 0x5f, 0x10, 0xd2, 0x77, 0x8f, 0x4c}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2183,6 +2225,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395661_remove_execution_related_columns_from_campaign_jobs.up.sql":   _1528395661_remove_execution_related_columns_from_campaign_jobsUpSql,
 	"1528395662_remove_unused_columns_from_campaign_plans.down.sql":           _1528395662_remove_unused_columns_from_campaign_plansDownSql,
 	"1528395662_remove_unused_columns_from_campaign_plans.up.sql":             _1528395662_remove_unused_columns_from_campaign_plansUpSql,
+	"1528395663_rename_campaign_plans_to_patch_sets.down.sql":                 _1528395663_rename_campaign_plans_to_patch_setsDownSql,
+	"1528395663_rename_campaign_plans_to_patch_sets.up.sql":                   _1528395663_rename_campaign_plans_to_patch_setsUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -2318,6 +2362,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395661_remove_execution_related_columns_from_campaign_jobs.up.sql":   {_1528395661_remove_execution_related_columns_from_campaign_jobsUpSql, map[string]*bintree{}},
 	"1528395662_remove_unused_columns_from_campaign_plans.down.sql":           {_1528395662_remove_unused_columns_from_campaign_plansDownSql, map[string]*bintree{}},
 	"1528395662_remove_unused_columns_from_campaign_plans.up.sql":             {_1528395662_remove_unused_columns_from_campaign_plansUpSql, map[string]*bintree{}},
+	"1528395663_rename_campaign_plans_to_patch_sets.down.sql":                 {_1528395663_rename_campaign_plans_to_patch_setsDownSql, map[string]*bintree{}},
+	"1528395663_rename_campaign_plans_to_patch_sets.up.sql":                   {_1528395663_rename_campaign_plans_to_patch_setsUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

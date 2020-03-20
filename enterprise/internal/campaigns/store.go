@@ -98,7 +98,7 @@ const getPendingChangesetJobQuery = `
 UPDATE changeset_jobs j SET started_at = now() WHERE id = (
 	SELECT j.id FROM changeset_jobs j
 	JOIN campaigns c ON c.id = j.campaign_id
-	WHERE j.started_at IS NULL AND c.campaign_plan_id IS NOT NULL
+	WHERE j.started_at IS NULL AND c.patch_set_id IS NOT NULL
 	ORDER BY j.id ASC
 	FOR UPDATE SKIP LOCKED LIMIT 1
 )
@@ -1102,7 +1102,7 @@ INSERT INTO campaigns (
   created_at,
   updated_at,
   changeset_ids,
-  campaign_plan_id,
+  patch_set_id,
   closed_at
 )
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
@@ -1117,7 +1117,7 @@ RETURNING
   created_at,
   updated_at,
   changeset_ids,
-  campaign_plan_id,
+  patch_set_id,
   closed_at
 `
 
@@ -1204,7 +1204,7 @@ SET (
   namespace_org_id,
   updated_at,
   changeset_ids,
-  campaign_plan_id,
+  patch_set_id,
   closed_at
 ) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
@@ -1219,7 +1219,7 @@ RETURNING
   created_at,
   updated_at,
   changeset_ids,
-  campaign_plan_id,
+  patch_set_id,
   closed_at
 `
 
@@ -1344,7 +1344,7 @@ SELECT
   created_at,
   updated_at,
   changeset_ids,
-  campaign_plan_id,
+  patch_set_id,
   closed_at
 FROM campaigns
 WHERE %s
@@ -1358,7 +1358,7 @@ func getCampaignQuery(opts *GetCampaignOpts) *sqlf.Query {
 	}
 
 	if opts.CampaignPlanID != 0 {
-		preds = append(preds, sqlf.Sprintf("campaign_plan_id = %s", opts.CampaignPlanID))
+		preds = append(preds, sqlf.Sprintf("patch_set_id = %s", opts.CampaignPlanID))
 	}
 
 	if len(preds) == 0 {
@@ -1412,7 +1412,7 @@ SELECT
   created_at,
   updated_at,
   changeset_ids,
-  campaign_plan_id,
+  patch_set_id,
   closed_at
 FROM campaigns
 WHERE %s
@@ -1463,7 +1463,7 @@ func (s *Store) CreateCampaignPlan(ctx context.Context, c *campaigns.CampaignPla
 
 var createCampaignPlanQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:CreateCampaignPlan
-INSERT INTO campaign_plans (
+INSERT INTO patch_sets (
   created_at,
   updated_at,
   user_id
@@ -1508,7 +1508,7 @@ func (s *Store) UpdateCampaignPlan(ctx context.Context, c *campaigns.CampaignPla
 
 var updateCampaignPlanQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:UpdateCampaignPlan
-UPDATE campaign_plans
+UPDATE patch_sets
 SET (
   updated_at,
   user_id
@@ -1545,7 +1545,7 @@ func (s *Store) DeleteCampaignPlan(ctx context.Context, id int64) error {
 
 var deleteCampaignPlanQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:DeleteCampaignPlan
-DELETE FROM campaign_plans WHERE id = %s
+DELETE FROM patch_sets WHERE id = %s
 `
 
 const CampaignPlanTTL = 1 * time.Hour
@@ -1565,7 +1565,7 @@ func (s *Store) DeleteExpiredCampaignPlans(ctx context.Context) error {
 var deleteExpiredCampaignPlansQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:DeleteExpiredCampaignPlans
 DELETE FROM
-  campaign_plans
+  patch_sets
 WHERE
   created_at < %s
 AND
@@ -1574,7 +1574,7 @@ NOT EXISTS (
   FROM
   campaigns
   WHERE
-  campaigns.campaign_plan_id = campaign_plans.id
+  campaigns.patch_set_id = patch_sets.id
 )
 `
 
@@ -1590,7 +1590,7 @@ func (s *Store) CountCampaignPlans(ctx context.Context) (count int64, _ error) {
 var countCampaignPlansQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:CountCampaignPlans
 SELECT COUNT(id)
-FROM campaign_plans
+FROM patch_sets
 `
 
 // GetCampaignPlanOpts captures the query options needed for getting a CampaignPlan
@@ -1624,7 +1624,7 @@ SELECT
   created_at,
   updated_at,
   user_id
-FROM campaign_plans
+FROM patch_sets
 WHERE %s
 LIMIT 1
 `
@@ -1723,7 +1723,7 @@ SELECT
   created_at,
   updated_at,
   user_id
-FROM campaign_plans
+FROM patch_sets
 WHERE %s
 ORDER BY id ASC
 LIMIT %s
@@ -1764,7 +1764,7 @@ func (s *Store) CreateCampaignJob(ctx context.Context, c *campaigns.CampaignJob)
 var createCampaignJobQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:CreateCampaignJob
 INSERT INTO campaign_jobs (
-  campaign_plan_id,
+  patch_set_id,
   repo_id,
   rev,
   base_ref,
@@ -1775,7 +1775,7 @@ INSERT INTO campaign_jobs (
 VALUES (%s, %s, %s, %s, %s, %s, %s)
 RETURNING
   id,
-  campaign_plan_id,
+  patch_set_id,
   repo_id,
   rev,
   base_ref,
@@ -1822,7 +1822,7 @@ var updateCampaignJobQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:UpdateCampaignJob
 UPDATE campaign_jobs
 SET (
-  campaign_plan_id,
+  patch_set_id,
   repo_id,
   rev,
   base_ref,
@@ -1832,7 +1832,7 @@ SET (
 WHERE id = %s
 RETURNING
   id,
-  campaign_plan_id,
+  patch_set_id,
   repo_id,
   rev,
   base_ref,
@@ -1903,7 +1903,7 @@ WHERE %s
 func countCampaignJobsQuery(opts *CountCampaignJobsOpts) *sqlf.Query {
 	var preds []*sqlf.Query
 	if opts.CampaignPlanID != 0 {
-		preds = append(preds, sqlf.Sprintf("campaign_plan_id = %s", opts.CampaignPlanID))
+		preds = append(preds, sqlf.Sprintf("patch_set_id = %s", opts.CampaignPlanID))
 	}
 
 	if opts.OnlyWithDiff {
@@ -1949,7 +1949,7 @@ var getCampaignJobsQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:GetCampaignJob
 SELECT
   id,
-  campaign_plan_id,
+  patch_set_id,
   repo_id,
   rev,
   base_ref,
@@ -2014,7 +2014,7 @@ var listCampaignJobsQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:ListCampaignJobs
 SELECT
   id,
-  campaign_plan_id,
+  patch_set_id,
   repo_id,
   rev,
   base_ref,
@@ -2042,7 +2042,7 @@ func listCampaignJobsQuery(opts *ListCampaignJobsOpts) *sqlf.Query {
 	}
 
 	if opts.CampaignPlanID != 0 {
-		preds = append(preds, sqlf.Sprintf("campaign_plan_id = %s", opts.CampaignPlanID))
+		preds = append(preds, sqlf.Sprintf("patch_set_id = %s", opts.CampaignPlanID))
 	}
 
 	if opts.OnlyWithDiff {
@@ -2269,7 +2269,7 @@ var getLatestChangesetJobPublishedAtFmtstr = `
 SELECT
   max(changeset_jobs.created_at)
 FROM campaign_jobs
-INNER JOIN campaigns ON campaign_jobs.campaign_plan_id = campaigns.campaign_plan_id
+INNER JOIN campaigns ON campaign_jobs.patch_set_id = campaigns.patch_set_id
 LEFT JOIN changeset_jobs ON changeset_jobs.campaign_job_id = campaign_jobs.id
 WHERE campaigns.id = %s
 HAVING count(*) FILTER (WHERE changeset_jobs.created_at IS NULL) = 0;
@@ -2420,7 +2420,7 @@ func listChangesetJobsQuery(opts *ListChangesetJobsOpts) *sqlf.Query {
 	if opts.CampaignPlanID != 0 {
 		joinClause = "JOIN campaigns ON changeset_jobs.campaign_id = campaigns.id"
 
-		preds = append(preds, sqlf.Sprintf("campaigns.campaign_plan_id = %s", opts.CampaignPlanID))
+		preds = append(preds, sqlf.Sprintf("campaigns.patch_set_id = %s", opts.CampaignPlanID))
 	}
 
 	queryTemplate := listChangesetJobsQueryFmtstrSelect + joinClause +
