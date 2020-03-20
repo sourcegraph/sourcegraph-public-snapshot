@@ -126,20 +126,18 @@ describe('Backend', () => {
             const database4 = new Database(4)
 
             // Commit graph traversal
-            sinon.stub(dumpManager, 'findClosestDumps').returns(
-                Promise.resolve([
-                    { ...zeroDump, id: 1 },
-                    { ...zeroDump, id: 2 },
-                    { ...zeroDump, id: 3 },
-                    { ...zeroDump, id: 4 },
-                ])
-            )
+            sinon.stub(dumpManager, 'findClosestDumps').resolves([
+                { ...zeroDump, id: 1 },
+                { ...zeroDump, id: 2 },
+                { ...zeroDump, id: 3 },
+                { ...zeroDump, id: 4 },
+            ])
 
             // Path existence check
-            const spy1 = sinon.stub(database1, 'exists').returns(Promise.resolve(true))
-            const spy2 = sinon.stub(database2, 'exists').returns(Promise.resolve(false))
-            const spy3 = sinon.stub(database3, 'exists').returns(Promise.resolve(false))
-            const spy4 = sinon.stub(database4, 'exists').returns(Promise.resolve(true))
+            const spy1 = sinon.stub(database1, 'exists').resolves(true)
+            const spy2 = sinon.stub(database2, 'exists').resolves(false)
+            const spy3 = sinon.stub(database3, 'exists').resolves(false)
+            const spy4 = sinon.stub(database4, 'exists').resolves(true)
 
             const dumps = await new Backend(
                 dumpManager,
@@ -171,29 +169,25 @@ describe('Backend', () => {
             const database1 = new Database(1)
 
             // Loading source dump
-            sinon.stub(dumpManager, 'getDumpById').returns(Promise.resolve({ ...zeroDump, id: 1 }))
+            sinon.stub(dumpManager, 'getDumpById').resolves({ ...zeroDump, id: 1 })
 
             // Resolving target dumps
-            sinon.stub(dumpManager, 'getDumpsByIds').returns(
-                Promise.resolve(
-                    new Map([
-                        [1, { ...zeroDump, id: 1 }],
-                        [2, { ...zeroDump, id: 2 }],
-                        [3, { ...zeroDump, id: 3 }],
-                        [4, { ...zeroDump, id: 4 }],
-                    ])
-                )
+            sinon.stub(dumpManager, 'getDumpsByIds').resolves(
+                new Map([
+                    [1, { ...zeroDump, id: 1 }],
+                    [2, { ...zeroDump, id: 2 }],
+                    [3, { ...zeroDump, id: 3 }],
+                    [4, { ...zeroDump, id: 4 }],
+                ])
             )
 
             // In-database definitions
-            sinon.stub(database1, 'definitions').returns(
-                Promise.resolve([
-                    { dumpId: 1, path: '1.ts', range: makeRange(1) },
-                    { dumpId: 2, path: '2.ts', range: makeRange(2) },
-                    { dumpId: 3, path: '3.ts', range: makeRange(3) },
-                    { dumpId: 4, path: '4.ts', range: makeRange(4) },
-                ])
-            )
+            sinon.stub(database1, 'definitions').resolves([
+                { dumpId: 1, path: '1.ts', range: makeRange(1) },
+                { dumpId: 2, path: '2.ts', range: makeRange(2) },
+                { dumpId: 3, path: '3.ts', range: makeRange(3) },
+                { dumpId: 4, path: '4.ts', range: makeRange(4) },
+            ])
 
             const locations = await new Backend(
                 dumpManager,
@@ -214,40 +208,34 @@ describe('Backend', () => {
             const database1 = new Database(1)
 
             // Loading source dump
-            sinon.stub(dumpManager, 'getDumpById').returns(Promise.resolve({ ...zeroDump, id: 1 }))
+            sinon.stub(dumpManager, 'getDumpById').resolves({ ...zeroDump, id: 1 })
 
             // Resolving target dumps
-            sinon.stub(dumpManager, 'getDumpsByIds').returns(
-                Promise.resolve(
-                    new Map([
-                        [1, { ...zeroDump, id: 1 }],
-                        [2, { ...zeroDump, id: 2 }],
-                        [3, { ...zeroDump, id: 3 }],
-                        [4, { ...zeroDump, id: 4 }],
-                    ])
-                )
+            sinon.stub(dumpManager, 'getDumpsByIds').resolves(
+                new Map([
+                    [1, { ...zeroDump, id: 1 }],
+                    [2, { ...zeroDump, id: 2 }],
+                    [3, { ...zeroDump, id: 3 }],
+                    [4, { ...zeroDump, id: 4 }],
+                ])
             )
 
             // In-database definitions
-            sinon.stub(database1, 'definitions').returns(Promise.resolve([]))
+            sinon.stub(database1, 'definitions').resolves([])
 
             // Moniker resolution
-            sinon
-                .stub(database1, 'getRangeByPosition')
-                .returns(Promise.resolve({ document: documentWithMonikers, ranges }))
+            sinon.stub(database1, 'getRangeByPosition').resolves({ document: documentWithMonikers, ranges })
 
             // Moniker search
-            sinon.stub(database1, 'monikerResults').returns(
-                Promise.resolve({
-                    locations: [
-                        { dumpId: 1, path: '1.ts', range: makeRange(1) },
-                        { dumpId: 2, path: '2.ts', range: makeRange(2) },
-                        { dumpId: 3, path: '3.ts', range: makeRange(3) },
-                        { dumpId: 4, path: '4.ts', range: makeRange(4) },
-                    ],
-                    count: 4,
-                })
-            )
+            sinon.stub(database1, 'monikerResults').resolves({
+                locations: [
+                    { dumpId: 1, path: '1.ts', range: makeRange(1) },
+                    { dumpId: 2, path: '2.ts', range: makeRange(2) },
+                    { dumpId: 3, path: '3.ts', range: makeRange(3) },
+                    { dumpId: 4, path: '4.ts', range: makeRange(4) },
+                ],
+                count: 4,
+            })
 
             const locations = await new Backend(
                 dumpManager,
@@ -269,52 +257,44 @@ describe('Backend', () => {
             const database2 = new Database(2)
 
             // Loading source dump
-            sinon.stub(dumpManager, 'getDumpById').returns(Promise.resolve({ ...zeroDump, id: 1 }))
+            sinon.stub(dumpManager, 'getDumpById').resolves({ ...zeroDump, id: 1 })
 
             // Resolving target dumps
-            sinon.stub(dumpManager, 'getDumpsByIds').returns(
-                Promise.resolve(
-                    new Map([
-                        [1, { ...zeroDump, id: 1 }],
-                        [2, { ...zeroDump, id: 2 }],
-                        [3, { ...zeroDump, id: 3 }],
-                        [4, { ...zeroDump, id: 4 }],
-                    ])
-                )
+            sinon.stub(dumpManager, 'getDumpsByIds').resolves(
+                new Map([
+                    [1, { ...zeroDump, id: 1 }],
+                    [2, { ...zeroDump, id: 2 }],
+                    [3, { ...zeroDump, id: 3 }],
+                    [4, { ...zeroDump, id: 4 }],
+                ])
             )
 
             // In-database definitions
-            sinon.stub(database1, 'definitions').returns(Promise.resolve([]))
+            sinon.stub(database1, 'definitions').resolves([])
 
             // Moniker resolution
-            sinon
-                .stub(database1, 'getRangeByPosition')
-                .returns(Promise.resolve({ document: documentWithPackageInformation, ranges }))
+            sinon.stub(database1, 'getRangeByPosition').resolves({ document: documentWithPackageInformation, ranges })
 
             // Package resolution
-            sinon.stub(dependencyManager, 'getPackage').returns(
-                Promise.resolve({
-                    id: 71,
-                    scheme: 'test',
-                    name: 'pkg2',
-                    version: '0.0.1',
-                    dump: { ...zeroDump, id: 2 },
-                    dump_id: 2,
-                })
-            )
+            sinon.stub(dependencyManager, 'getPackage').resolves({
+                id: 71,
+                scheme: 'test',
+                name: 'pkg2',
+                version: '0.0.1',
+                dump: { ...zeroDump, id: 2 },
+                dump_id: 2,
+            })
 
             // Moniker search (remote database)
-            sinon.stub(database2, 'monikerResults').returns(
-                Promise.resolve({
-                    locations: [
-                        { dumpId: 1, path: '1.ts', range: makeRange(1) },
-                        { dumpId: 2, path: '2.ts', range: makeRange(2) },
-                        { dumpId: 3, path: '3.ts', range: makeRange(3) },
-                        { dumpId: 4, path: '4.ts', range: makeRange(4) },
-                    ],
-                    count: 4,
-                })
-            )
+            sinon.stub(database2, 'monikerResults').resolves({
+                locations: [
+                    { dumpId: 1, path: '1.ts', range: makeRange(1) },
+                    { dumpId: 2, path: '2.ts', range: makeRange(2) },
+                    { dumpId: 3, path: '3.ts', range: makeRange(3) },
+                    { dumpId: 4, path: '4.ts', range: makeRange(4) },
+                ],
+                count: 4,
+            })
 
             const locations = await new Backend(
                 dumpManager,
@@ -438,10 +418,10 @@ describe('Backend', () => {
             })
 
             // Resolving target dumps
-            sinon.stub(dumpManager, 'getDumpsByIds').returns(Promise.resolve(dumpMap))
+            sinon.stub(dumpManager, 'getDumpsByIds').resolves(dumpMap)
 
             // Package resolution
-            sinon.stub(dependencyManager, 'getPackage').returns(Promise.resolve(definitionPackage))
+            sinon.stub(dependencyManager, 'getPackage').resolves(definitionPackage)
 
             // Same-repo package references
             const sameRepoStub = sinon
@@ -468,15 +448,15 @@ describe('Backend', () => {
             // Moniker resolution
             sinon
                 .stub(databases[0], 'getRangeByPosition')
-                .returns(Promise.resolve({ document: documentWithPackageInformation, ranges }))
+                .resolves({ document: documentWithPackageInformation, ranges })
 
             // Package information resolution
-            sinon.stub(databases[0], 'getDocumentByPath').returns(Promise.resolve(documentWithPackageInformation))
+            sinon.stub(databases[0], 'getDocumentByPath').resolves(documentWithPackageInformation)
 
             // Same dump results
             const referenceStub = sinon
                 .stub(databases[0], 'references')
-                .returns(Promise.resolve(new OrderedLocationSet(getChunk(0), true)))
+                .resolves(new OrderedLocationSet(getChunk(0), true))
 
             const monikerStubs: sinon.SinonStub<
                 Parameters<Database['monikerResults']>,
@@ -484,7 +464,7 @@ describe('Backend', () => {
             >[] = []
 
             // Local moniker results
-            sinon.stub(databases[0], 'monikerResults').returns(Promise.resolve({ locations: [], count: 0 }))
+            sinon.stub(databases[0], 'monikerResults').resolves({ locations: [], count: 0 })
 
             // Remote dump results
             for (let i = 1; i < numDatabases; i++) {
@@ -544,15 +524,13 @@ describe('Backend', () => {
             const database1 = new Database(1)
 
             // Loading source dump
-            sinon.stub(dumpManager, 'getDumpById').returns(Promise.resolve({ ...zeroDump, id: 1 }))
+            sinon.stub(dumpManager, 'getDumpById').resolves({ ...zeroDump, id: 1 })
 
             // In-database hover
-            sinon.stub(database1, 'hover').returns(
-                Promise.resolve({
-                    text: 'hover text',
-                    range: makeRange(1),
-                })
-            )
+            sinon.stub(database1, 'hover').resolves({
+                text: 'hover text',
+                range: makeRange(1),
+            })
 
             const hover = await new Backend(
                 dumpManager,
@@ -572,32 +550,28 @@ describe('Backend', () => {
             const database2 = new Database(2)
 
             // Loading source dump
-            sinon.stub(dumpManager, 'getDumpById').returns(Promise.resolve({ ...zeroDump, id: 1 }))
+            sinon.stub(dumpManager, 'getDumpById').resolves({ ...zeroDump, id: 1 })
 
             // Resolving target dumps
-            sinon.stub(dumpManager, 'getDumpsByIds').returns(Promise.resolve(new Map([[2, { ...zeroDump, id: 2 }]])))
+            sinon.stub(dumpManager, 'getDumpsByIds').resolves(new Map([[2, { ...zeroDump, id: 2 }]]))
 
             // In-database hover
-            sinon.stub(database1, 'hover').returns(Promise.resolve(null))
+            sinon.stub(database1, 'hover').resolves(null)
 
             // In-database definitions
-            sinon.stub(database1, 'definitions').returns(
-                Promise.resolve([
-                    {
-                        dumpId: 2,
-                        path: '2.ts',
-                        range: makeRange(2),
-                    },
-                ])
-            )
+            sinon.stub(database1, 'definitions').resolves([
+                {
+                    dumpId: 2,
+                    path: '2.ts',
+                    range: makeRange(2),
+                },
+            ])
 
             // Remote-database hover
-            sinon.stub(database2, 'hover').returns(
-                Promise.resolve({
-                    text: 'hover text',
-                    range: makeRange(1),
-                })
-            )
+            sinon.stub(database2, 'hover').resolves({
+                text: 'hover text',
+                range: makeRange(1),
+            })
 
             const hover = await new Backend(
                 dumpManager,

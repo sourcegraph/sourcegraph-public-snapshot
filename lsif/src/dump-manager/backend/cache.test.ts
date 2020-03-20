@@ -39,7 +39,7 @@ describe('GenericCache', () => {
         const factory = sinon.stub<string[], Promise<string>>()
         for (const [i, value] of expectedInstantiations.entries()) {
             // Log the value arg and resolve the cache data immediately
-            factory.onCall(i).returns(Promise.resolve(value))
+            factory.onCall(i).resolves(value)
         }
 
         const cache = new GenericCache<string, string>(
@@ -121,7 +121,7 @@ describe('GenericCache', () => {
 
         const factory = sinon.stub<number[], Promise<number>>()
         for (const [i, value] of expectedInstantiations.entries()) {
-            factory.onCall(i).returns(Promise.resolve(value))
+            factory.onCall(i).resolves(value)
         }
 
         const cache = new GenericCache<number, number>(
@@ -191,7 +191,7 @@ describe('GenericCache', () => {
         const cache = new GenericCache<string, string>(5, () => 1, disposer, testMetrics)
 
         const factory = sinon.stub<string[], Promise<string>>()
-        factory.returns(Promise.resolve('foo'))
+        factory.resolves('foo')
 
         // Construct then bust a same key
         await cache.withValue('foo', factory, () => Promise.resolve())
