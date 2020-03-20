@@ -372,7 +372,9 @@ func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampa
 	if err := allowReadAccess(ctx); err != nil {
 		return nil, err
 	}
-	var opts ee.ListCampaignsOpts
+	opts := ee.ListCampaignsOpts{
+		HasPlan: args.HasPlan,
+	}
 	state, err := parseCampaignState(args.State)
 	if err != nil {
 		return nil, err
