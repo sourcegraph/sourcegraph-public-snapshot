@@ -83,7 +83,7 @@ func (r *commitSearchResultResolver) resultCount() int32 {
 	return 1
 }
 
-func searchCommitLogInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, info *search.CommitPatternInfo, query *query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error) {
+func searchCommitLogInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, info *search.CommitPatternInfo, query query.QueryInfo) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error) {
 	var terms []string
 	if info.Pattern != "" {
 		terms = append(terms, info.Pattern)
