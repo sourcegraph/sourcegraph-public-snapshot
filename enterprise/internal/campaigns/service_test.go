@@ -484,6 +484,7 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 
 		campaignIsDraft  bool
 		campaignIsManual bool
+		campaignIsClosed bool
 
 		// Repositories for which we had Patches attached to the old PatchSet
 		oldPatches repoNames
@@ -507,6 +508,8 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 		wantModified repoNames
 		// Repositories for which we want to create a new ChangesetJob (and thus a Changeset)
 		wantCreated repoNames
+		// An error to be thrown when attempting to do the update
+		wantErr error
 	}{
 		{
 			name:             "manual campaign, no new patch set, name update",
@@ -659,6 +662,26 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 			},
 			wantUnmodified: repoNames{"repo-0"},
 		},
+		{
+			name:             "update plan on manual campaign",
+			updatePatchSet:   true,
+			campaignIsManual: true,
+			newPatches: []newPatchSpec{
+				{repo: "repo-0", modifiedDiff: true},
+			},
+			wantErr: ErrManualCampaignUpdatePatchIllegal,
+		},
+		{
+			name:             "update plan on closed campaign",
+			updatePatchSet:   true,
+			campaignIsClosed: true,
+			oldPatches:       repoNames{"repo-0"},
+			changesetStates:  map[string]campaigns.ChangesetState{"repo-0": campaigns.ChangesetStateOpen},
+			newPatches: []newPatchSpec{
+				{repo: "repo-0", modifiedDiff: true},
+			},
+			wantErr: ErrClosedCampaignUpdatePatchIllegal,
+		},
 	}
 
 	for _, tt := range tests {
@@ -677,6 +700,8 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 				oldChangesets []*campaigns.Changeset
 			)
 
+			patchesByID = make(map[int64]*campaigns.Patch)
+
 			if tt.campaignIsManual {
 				campaign = testCampaign(user.ID, 0)
 			} else {
@@ -685,8 +710,6 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-
-				patchesByID = make(map[int64]*campaigns.Patch)
 				changesetStateByPatchID = make(map[int64]campaigns.ChangesetState)
 				for _, repoName := range tt.oldPatches {
 					repo, ok := reposByName[repoName]
@@ -711,6 +734,9 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 				campaign = testCampaign(user.ID, patchSet.ID)
 			}
 
+			if tt.campaignIsClosed {
+				campaign.ClosedAt = now
+			}
 			err = svc.CreateCampaign(ctx, campaign, tt.campaignIsDraft)
 			if err != nil {
 				t.Fatal(err)
@@ -794,7 +820,13 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 			// We ignore the returned campaign here and load it from the
 			// database again to make sure the changes are persisted
 			_, detachedChangesets, err := svc.UpdateCampaign(ctx, args)
-			if err != nil {
+
+			if tt.wantErr != nil {
+				if have, want := fmt.Sprint(err), tt.wantErr.Error(); have != want {
+					t.Fatalf("error:\nhave: %q\nwant: %q", have, want)
+				}
+				return
+			} else if err != nil {
 				t.Fatal(err)
 			}
 

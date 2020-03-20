@@ -733,6 +733,14 @@ var ErrPublishedCampaignBranchChange = errors.New("Published campaign branch can
 // specified patch set is already attached to another campaign.
 var ErrPatchSetDuplicate = errors.New("Campaign cannot use the same patch set as another campaign")
 
+// ErrClosedCampaignUpdatePatchIllegal is returned by UpdateCampaign if a campaign plan
+// is to be attached to a closed campaign.
+var ErrClosedCampaignUpdatePatchIllegal = errors.New("cannot update the plan of a closed campaign")
+
+// ErrManualCampaignUpdatePatchIllegal is returned by UpdateCampaign if a campaign plan
+// is to be attached to a manual campaign.
+var ErrManualCampaignUpdatePatchIllegal = errors.New("cannot update a manual campaign to have a plan")
+
 // UpdateCampaign updates the Campaign with the given arguments.
 func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (campaign *campaigns.Campaign, detachedChangesets []*campaigns.Changeset, err error) {
 	traceTitle := fmt.Sprintf("campaign: %d", args.Campaign)
@@ -754,6 +762,10 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 		return nil, nil, errors.Wrap(err, "getting campaign")
 	}
 
+	if args.PatchSet != nil && !campaign.ClosedAt.IsZero() {
+		return nil, nil, ErrClosedCampaignUpdatePatchIllegal
+	}
+
 	var updateAttributes, updatePatchSetID, updateBranch bool
 
 	if args.Name != nil && campaign.Name != *args.Name {
@@ -771,8 +783,11 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 	}
 
 	oldPatchSetID := campaign.PatchSetID
+	if oldPatchSetID == 0 && args.PatchSet != nil {
+		return nil, nil, ErrManualCampaignUpdatePatchIllegal
+	}
 	if args.PatchSet != nil && oldPatchSetID != *args.PatchSet {
-		// Check there is no other campaign attached to the args.PatchSet.
+		// Check there is no other campaign attached to the args.Plan.
 		_, err = tx.GetCampaign(ctx, GetCampaignOpts{PatchSetID: *args.PatchSet})
 		if err != nil && err != ErrNoResults {
 			return nil, nil, err

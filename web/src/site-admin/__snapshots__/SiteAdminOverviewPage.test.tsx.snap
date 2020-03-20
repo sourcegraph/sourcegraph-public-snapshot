@@ -64,6 +64,14 @@ exports[`SiteAdminOverviewPage >= 2 users 1`] = `
       <div
         className="d-flex justify-content-between align-items-center position-relative mb-3"
       >
+        <span
+          className="h5 mb-0 font-weight-normal p-2"
+        >
+          10
+           
+          active users
+           last week
+        </span>
         <button
           aria-label="Collapse section"
           className="btn btn-icon collapsible__expand-btn stretched-link"
@@ -83,14 +91,6 @@ exports[`SiteAdminOverviewPage >= 2 users 1`] = `
             />
           </svg>
         </button>
-        <span
-          className="h5 mb-0 font-weight-normal p-2"
-        >
-          10
-           
-          active users
-           last week
-        </span>
       </div>
       <div
         className="site-admin-usage-statistics-page"
@@ -134,6 +134,92 @@ exports[`SiteAdminOverviewPage >= 2 users 1`] = `
         </small>
       </div>
     </div>
+  </div>
+</div>
+`;
+
+exports[`SiteAdminOverviewPage activation in progress 1`] = `
+<div
+  className="site-admin-overview-page"
+>
+  <div
+    className="list-group"
+  >
+    <div
+      className="list-group-item e2e-site-admin-overview-menu"
+    >
+      <div
+        className="d-flex justify-content-between align-items-center position-relative mb-3"
+      >
+        <span
+          className="h4 mb-0 mt-2 font-weight-normal p-2"
+        >
+          Get started with Sourcegraph
+        </span>
+        <button
+          aria-label="Collapse section"
+          className="btn btn-icon collapsible__expand-btn stretched-link"
+          onClick={[Function]}
+          type="button"
+        >
+          <svg
+            aria-label="Close section"
+            className="mdi-icon icon-inline"
+            fill="currentColor"
+            height={24}
+            viewBox="0 0 24 24"
+            width={24}
+          >
+            <path
+              d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
+            />
+          </svg>
+        </button>
+      </div>
+      <div
+        className="list-group list-group-flush "
+      >
+        <div
+          className="list-group-item list-group-item-action"
+        >
+          <div
+            data-tooltip="Configure Sourcegraph to talk to your code host"
+            onClick={[Function]}
+          >
+            <a
+              href="/site-admin/external-services/new"
+            >
+              <div>
+                <svg
+                  className="mdi-icon icon-inline text-muted"
+                  fill="currentColor"
+                  height={24}
+                  viewBox="0 0 24 24"
+                  width={24}
+                >
+                  <path
+                    d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"
+                  />
+                </svg>
+                <span
+                  className="mr-2 ml-2"
+                >
+                  Add repositories
+                </span>
+              </div>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <a
+      className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+      href="/site-admin/repositories"
+    >
+      0
+       
+      repositories
+    </a>
   </div>
 </div>
 `;
