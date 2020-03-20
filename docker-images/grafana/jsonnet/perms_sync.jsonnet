@@ -23,9 +23,9 @@ local bucketColors = ['#96d98d', '#56a64b', '#37872d', '#e0b400', '#f2cc0c', '#f
 // Standard Panels
 
 // Apply defaults defined above to panel constructors
-local makeRequestsPanel(title, metric) = common.makeRequestsPanel(title, metric, timeRange=timeRange, buckets=buckets, colors=bucketColors);
-local makeDurationPercentilesPanel(title, metric) = common.makeDurationPercentilesPanel(title, metric, timeRange=timeRange, percentiles=percentiles, colors=percentileColors);
-local makeErrorRatePanel(title, metric) = common.makeErrorRatePanel(title, metric, timeRange=timeRange);
+local makeRequestsPanel(title, metric, filter) = common.makeRequestsPanel(title, metric, timeRange=timeRange, buckets=buckets, colors=bucketColors, metricFilter=filter);
+local makeDurationPercentilesPanel(title, metric, filter) = common.makeDurationPercentilesPanel(title, metric, timeRange=timeRange, percentiles=percentiles, colors=percentileColors, metricFilter=filter);
+local makeErrorRatePanel(title, metric, filter) = common.makeErrorRatePanel(title, metric, timeRange=timeRange, metricFilter=filter);
 local makeDurationSecondsPanel(title, metric) = common.makePanel(
   title = title,
   extra = {
@@ -42,14 +42,14 @@ local makeDurationSecondsPanel(title, metric) = common.makePanel(
 );
 
 local usersPermsGapPanel = makeDurationSecondsPanel(
-    title = 'The largest time gap between users',
-    metric = 'src_repoupdater_perms_syncer_users_perms_gap_seconds'
+    title = 'Time gap between least and most up to date user permissions',
+    metric = 'src_repoupdater_perms_syncer_perms_gap_seconds{type="user"}'
 );
 local usersWithStalePermsPanel = common.makePanel(
     title = 'Number of users with stale permissions',
     targets = [
         prometheus.target(
-            "src_repoupdater_perms_syncer_users_with_stale_perms",
+            'src_repoupdater_perms_syncer_stale_perms{type="user"}',
             legendFormat = 'Number of users'
         ),
     ]
@@ -58,7 +58,7 @@ local usersWithNoPermsPanel = common.makePanel(
     title = 'Number of users with no permissions',
     targets = [
         prometheus.target(
-            "src_repoupdater_perms_syncer_users_with_no_perms",
+            'src_repoupdater_perms_syncer_no_perms{type="user"}',
             legendFormat = 'Number of users'
         ),
     ]
@@ -66,13 +66,13 @@ local usersWithNoPermsPanel = common.makePanel(
 
 local reposPermsGapPanel = makeDurationSecondsPanel(
     title = 'Time gap between least and most up to date repo permissions',
-    metric = 'src_repoupdater_perms_syncer_repos_perms_gap_seconds'
+    metric = 'src_repoupdater_perms_syncer_perms_gap_seconds{type="repo"}'
 );
 local reposWithStalePermsPanel = common.makePanel(
     title = 'Number of repositories with stale permissions',
     targets = [
         prometheus.target(
-            "src_repoupdater_perms_syncer_repos_with_stale_perms",
+            'src_repoupdater_perms_syncer_stale_perms{type="repo"}',
             legendFormat = 'Number of repositories'
         ),
     ]
@@ -81,7 +81,7 @@ local reposWithNoPermsPanel = common.makePanel(
     title = 'Number of repositories with no permissions',
     targets = [
         prometheus.target(
-            "src_repoupdater_perms_syncer_repos_with_no_perms",
+            'src_repoupdater_perms_syncer_no_perms{type="repo"}',
             legendFormat = 'Number of repositories'
         ),
     ]
@@ -89,28 +89,34 @@ local reposWithNoPermsPanel = common.makePanel(
 
 local usersSyncRequestsPanel = makeRequestsPanel(
     title = 'sync',
-    metric = 'src_repoupdater_perms_syncer_users_sync'
+    metric = 'src_repoupdater_perms_syncer_sync',
+    filter = 'type="user"'
 );
 local usersSyncRequestsDurationPercentilesPanel = makeDurationPercentilesPanel(
     title = 'sync',
-    metric = 'src_repoupdater_perms_syncer_users_sync'
+    metric = 'src_repoupdater_perms_syncer_sync',
+    filter = 'type="user"'
 );
 local usersSyncRequestsErrorRatePanel = makeErrorRatePanel(
     title = 'sync',
-    metric ='src_repoupdater_perms_syncer_users_sync_errors_total'
+    metric ='src_repoupdater_perms_syncer_sync_errors_total',
+    filter = 'type="user"'
 );
 
 local reposSyncRequestsPanel = makeRequestsPanel(
     title = 'sync',
-    metric = 'src_repoupdater_perms_syncer_repos_sync'
+    metric = 'src_repoupdater_perms_syncer_sync',
+    filter = 'type="repo"'
 );
 local reposSyncRequestsDurationPercentilesPanel = makeDurationPercentilesPanel(
     title = 'sync',
-    metric = 'src_repoupdater_perms_syncer_repos_sync'
+    metric = 'src_repoupdater_perms_syncer_sync',
+    filter = 'type="repo"'
 );
 local reposSyncRequestsErrorRatePanel = makeErrorRatePanel(
     title = 'sync',
-    metric ='src_repoupdater_perms_syncer_repos_sync_errors_total'
+    metric ='src_repoupdater_perms_syncer_sync_errors_total',
+    filter = 'type="repo"'
 );
 
 //

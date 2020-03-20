@@ -40,16 +40,11 @@ type PermsSyncer struct {
 	scheduleInterval time.Duration
 	// The metrics that are exposed to Prometheus.
 	metrics struct {
-		usersWithNoPerms    prometheus.Gauge
-		usersWithStalePerms prometheus.Gauge
-		usersPermsGap       prometheus.Gauge
-		usersSyncErrors     prometheus.Counter
-		usersSyncDuration   *prometheus.HistogramVec
-		reposWithNoPerms    prometheus.Gauge
-		reposWithStalePerms prometheus.Gauge
-		reposPermsGap       prometheus.Gauge
-		reposSyncErrors     prometheus.Counter
-		reposSyncDuration   *prometheus.HistogramVec
+		noPerms      *prometheus.GaugeVec
+		stalePerms   *prometheus.GaugeVec
+		permsGap     *prometheus.GaugeVec
+		syncErrors   *prometheus.CounterVec
+		syncDuration *prometheus.HistogramVec
 	}
 }
 
@@ -83,13 +78,15 @@ func NewPermsSyncer(
 	permsStore *edb.PermsStore,
 	clock func() time.Time,
 ) *PermsSyncer {
-	return &PermsSyncer{
+	s := &PermsSyncer{
 		queue:            newRequestQueue(),
 		reposStore:       reposStore,
 		permsStore:       permsStore,
 		clock:            clock,
 		scheduleInterval: time.Minute,
 	}
+	s.registerMetrics()
+	return s
 }
 
 // ScheduleUsers schedules new permissions syncing requests for given users
@@ -413,7 +410,7 @@ func (s *PermsSyncer) scheduleUsersWithNoPerms(ctx context.Context) ([]scheduled
 	if err != nil {
 		return nil, err
 	}
-	s.metrics.usersWithNoPerms.Set(float64(len(ids)))
+	s.metrics.noPerms.WithLabelValues("user").Set(float64(len(ids)))
 
 	users := make([]scheduledUser, len(ids))
 	for i, id := range ids {
@@ -433,7 +430,7 @@ func (s *PermsSyncer) scheduleReposWithNoPerms(ctx context.Context) ([]scheduled
 	if err != nil {
 		return nil, err
 	}
-	s.metrics.reposWithNoPerms.Set(float64(len(ids)))
+	s.metrics.noPerms.WithLabelValues("repo").Set(float64(len(ids)))
 
 	repos := make([]scheduledRepo, len(ids))
 	for i, id := range ids {
@@ -641,128 +638,93 @@ func (s *PermsSyncer) observe(ctx context.Context, family, title string) (contex
 		defer tr.Finish()
 		tr.LogFields(otlog.Int32("id", id))
 
-		var syncDuration *prometheus.HistogramVec
-		var syncErrors prometheus.Counter
+		var typLabel string
 		switch typ {
 		case requestTypeRepo:
-			syncDuration = s.metrics.reposSyncDuration
-			syncErrors = s.metrics.reposSyncErrors
+			typLabel = "repo"
 		case requestTypeUser:
-			syncDuration = s.metrics.usersSyncDuration
-			syncErrors = s.metrics.usersSyncErrors
+			typLabel = "user"
 		default:
 			tr.SetError(fmt.Errorf("unexpected request type: %v", typ))
 			return
 		}
 
 		success := err == nil || *err == nil
-		syncDuration.WithLabelValues(strconv.FormatBool(success)).Observe(took)
+		s.metrics.syncDuration.WithLabelValues(typLabel, strconv.FormatBool(success)).Observe(took)
 
 		if !success {
 			tr.SetError(*err)
-			syncErrors.Add(1)
+			s.metrics.syncErrors.WithLabelValues(typLabel).Add(1)
 		}
 	}
 }
 
-// registerMetrics registers exposed metrics with Prometheus default register,
-// and start a goroutine to calculate metrics values against database periodically.
-func (s *PermsSyncer) registerMetrics(ctx context.Context) {
-	s.metrics.usersWithNoPerms = promauto.NewGauge(prometheus.GaugeOpts{
+// registerMetrics registers exposed metrics with Prometheus default register.
+func (s *PermsSyncer) registerMetrics() {
+	s.metrics.noPerms = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: "src",
 		Subsystem: "repoupdater",
-		Name:      "perms_syncer_users_with_no_perms",
-		Help:      "The number of users who do not have any permissions",
-	})
-	s.metrics.usersWithStalePerms = promauto.NewGauge(prometheus.GaugeOpts{
+		Name:      "perms_syncer_no_perms",
+		Help:      "The number of records that do not have any permissions",
+	}, []string{"type"})
+	s.metrics.stalePerms = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: "src",
 		Subsystem: "repoupdater",
-		Name:      "perms_syncer_users_with_stale_perms",
-		Help:      "The number of users who have stale permissions",
-	})
-	s.metrics.usersPermsGap = promauto.NewGauge(prometheus.GaugeOpts{
+		Name:      "perms_syncer_stale_perms",
+		Help:      "The number of records that have stale permissions",
+	}, []string{"type"})
+	s.metrics.permsGap = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: "src",
 		Subsystem: "repoupdater",
-		Name:      "perms_syncer_users_perms_gap_seconds",
-		Help:      "The time gap between the users with oldest and most up-to-date permissions",
-	})
-	s.metrics.usersSyncDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name:      "perms_syncer_perms_gap_seconds",
+		Help:      "The time gap between least and most up to date permissions",
+	}, []string{"type"})
+	s.metrics.syncDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: "src",
 		Subsystem: "repoupdater",
-		Name:      "perms_syncer_users_sync_duration_seconds",
-		Help:      "Time spent on syncing user permissions",
+		Name:      "perms_syncer_sync_duration_seconds",
+		Help:      "Time spent on syncing permissions",
 		Buckets:   []float64{1, 2, 5, 10, 30, 60, 120},
-	}, []string{"success"})
-	s.metrics.usersSyncErrors = promauto.NewCounter(prometheus.CounterOpts{
+	}, []string{"type", "success"})
+	s.metrics.syncErrors = promauto.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "src",
 		Subsystem: "repoupdater",
-		Name:      "perms_syncer_users_sync_errors_total",
-		Help:      "Total number of sync user permissions errors",
-	})
+		Name:      "perms_syncer_sync_errors_total",
+		Help:      "Total number of permissions sync errors",
+	}, []string{"type"})
+}
 
-	s.metrics.reposWithNoPerms = promauto.NewGauge(prometheus.GaugeOpts{
-		Namespace: "src",
-		Subsystem: "repoupdater",
-		Name:      "perms_syncer_repos_with_no_perms",
-		Help:      "The number of repositories that do not have any permissions",
-	})
-	s.metrics.reposWithStalePerms = promauto.NewGauge(prometheus.GaugeOpts{
-		Namespace: "src",
-		Subsystem: "repoupdater",
-		Name:      "perms_syncer_repos_with_stale_perms",
-		Help:      "The number of repositories that have stale permissions",
-	})
-	s.metrics.reposPermsGap = promauto.NewGauge(prometheus.GaugeOpts{
-		Namespace: "src",
-		Subsystem: "repoupdater",
-		Name:      "perms_syncer_repos_perms_gap_seconds",
-		Help:      "The time gap between the repositories with oldest and most up-to-date permissions",
-	})
-	s.metrics.reposSyncDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Namespace: "src",
-		Subsystem: "repoupdater",
-		Name:      "perms_syncer_repos_sync_duration_seconds",
-		Help:      "Time spent on syncing repository permissions",
-		Buckets:   []float64{1, 2, 5, 10, 30, 60, 120},
-	}, []string{"success"})
-	s.metrics.reposSyncErrors = promauto.NewCounter(prometheus.CounterOpts{
-		Namespace: "src",
-		Subsystem: "repoupdater",
-		Name:      "perms_syncer_repos_sync_errors_total",
-		Help:      "Total number of sync repository permissions errors",
-	})
+// collectMetricsFromDB periodically collecting metrics values against database.
+func (s *PermsSyncer) collectMetricsFromDB(ctx context.Context) {
+	ticker := time.NewTicker(time.Minute)
+	defer ticker.Stop()
 
-	go func() {
-		ticker := time.NewTicker(time.Minute)
-		defer ticker.Stop()
-
-		for {
-			select {
-			case <-ticker.C:
-			case <-ctx.Done():
-				return
-			}
-
-			m, err := s.permsStore.Metrics(ctx, time.Hour)
-			if err != nil {
-				log15.Error("Failed to get metrics from database", "err", err)
-				continue
-			}
-
-			s.metrics.usersWithStalePerms.Set(float64(m.UsersWithStalePerms))
-			s.metrics.usersPermsGap.Set(m.UsersPermsGapSeconds)
-			s.metrics.reposWithStalePerms.Set(float64(m.ReposWithStalePerms))
-			s.metrics.reposPermsGap.Set(m.ReposPermsGapSeconds)
+	for {
+		select {
+		case <-ticker.C:
+		case <-ctx.Done():
+			return
 		}
-	}()
+
+		m, err := s.permsStore.Metrics(ctx, 3*24*time.Hour)
+		if err != nil {
+			log15.Error("Failed to get metrics from database", "err", err)
+			continue
+		}
+
+		s.metrics.stalePerms.WithLabelValues("user").Set(float64(m.UsersWithStalePerms))
+		s.metrics.permsGap.WithLabelValues("user").Set(m.UsersPermsGapSeconds)
+		s.metrics.stalePerms.WithLabelValues("repo").Set(float64(m.ReposWithStalePerms))
+		s.metrics.permsGap.WithLabelValues("repo").Set(m.ReposPermsGapSeconds)
+	}
 }
 
 // Run kicks off the permissions syncing process, this method is blocking and
 // should be called as a goroutine.
 func (s *PermsSyncer) Run(ctx context.Context) {
-	s.registerMetrics(ctx)
 	go s.runSync(ctx)
 	go s.runSchedule(ctx)
+	go s.collectMetricsFromDB(ctx)
 
 	<-ctx.Done()
 }
