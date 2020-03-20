@@ -191,7 +191,7 @@ func Process(queryString string, searchType SearchType) (QueryInfo, error) {
 		return nil, err
 	}
 
-	ordinaryQuery, ok := query.(OrdinaryQuery)
+	ordinaryQuery, ok := query.(*OrdinaryQuery)
 	if !ok {
 		return nil, errors.New("Check failed: Expected Ordinary Query.")
 	}
