@@ -51,7 +51,7 @@ export function createDatabaseRouter(logger: Logger): express.Router {
     type DocumentPathsResponse = string[]
 
     router.get(
-        '/:id([0-9]+)/documentPaths',
+        '/dbs/:id([0-9]+)/documentPaths',
         wrap(
             async (req: express.Request, res: express.Response<DocumentPathsResponse>): Promise<void> => {
                 await withDatabase(req, res, (database, ctx) => database.documentPaths(ctx))
@@ -66,7 +66,7 @@ export function createDatabaseRouter(logger: Logger): express.Router {
     type ExistsResponse = boolean
 
     router.get(
-        '/:id([0-9]+)/exists',
+        '/dbs/:id([0-9]+)/exists',
         validation.validationMiddleware([validation.validateNonEmptyString('path')]),
         wrap(
             async (req: express.Request, res: express.Response<ExistsResponse>): Promise<void> => {
@@ -85,7 +85,7 @@ export function createDatabaseRouter(logger: Logger): express.Router {
     type DefinitionsResponse = InternalLocation[]
 
     router.get(
-        '/:id([0-9]+)/definitions',
+        '/dbs/:id([0-9]+)/definitions',
         validation.validationMiddleware([
             validation.validateNonEmptyString('path'),
             validation.validateInt('line'),
@@ -108,7 +108,7 @@ export function createDatabaseRouter(logger: Logger): express.Router {
     type ReferencesResponse = InternalLocation[]
 
     router.get(
-        '/:id([0-9]+)/references',
+        '/dbs/:id([0-9]+)/references',
         validation.validationMiddleware([
             validation.validateNonEmptyString('path'),
             validation.validateInt('line'),
@@ -135,7 +135,7 @@ export function createDatabaseRouter(logger: Logger): express.Router {
     type HoverResponse = { text: string; range: lsp.Range } | null
 
     router.get(
-        '/:id([0-9]+)/hover',
+        '/dbs/:id([0-9]+)/hover',
         validation.validationMiddleware([
             validation.validateNonEmptyString('path'),
             validation.validateInt('line'),
@@ -161,7 +161,7 @@ export function createDatabaseRouter(logger: Logger): express.Router {
     }
 
     router.get(
-        '/:id([0-9]+)/getRangeByPosition',
+        '/dbs/:id([0-9]+)/getRangeByPosition',
         validation.validationMiddleware([
             validation.validateNonEmptyString('path'),
             validation.validateInt('line'),
@@ -191,7 +191,7 @@ export function createDatabaseRouter(logger: Logger): express.Router {
     }
 
     router.get(
-        '/:id([0-9]+)/monikerResults',
+        '/dbs/:id([0-9]+)/monikerResults',
         validation.validationMiddleware([
             validation.validateNonEmptyString('model'),
             validation.validateNonEmptyString('scheme'),
@@ -221,7 +221,7 @@ export function createDatabaseRouter(logger: Logger): express.Router {
     type GetDocumentByPathResponse = sqliteModels.DocumentData | undefined
 
     router.get(
-        '/:id([0-9]+)/getDocumentByPath',
+        '/dbs/:id([0-9]+)/getDocumentByPath',
         validation.validationMiddleware([validation.validateNonEmptyString('path')]),
         wrap(
             async (req: express.Request, res: express.Response<GetDocumentByPathResponse>): Promise<void> => {
