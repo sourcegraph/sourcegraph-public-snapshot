@@ -6,7 +6,7 @@ export const HTTP_PORT = readEnvInt('HTTP_PORT', 3186)
 /** HTTP address for internal LSIF dump manager server. */
 export const LSIF_DUMP_MANAGER_URL = process.env.LSIF_DUMP_MANAGER_URL || 'http://lsif-dump-manager'
 
-/** Where on the file system to store LSIF files. */
+/** Where on the file system to temporarily store LSIF uploads. This is NOT a persistent volume. */
 export const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
 
 /** The default page size for the upload endpoints. */
