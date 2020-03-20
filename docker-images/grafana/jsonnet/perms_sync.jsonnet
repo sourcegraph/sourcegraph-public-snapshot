@@ -8,10 +8,10 @@ local common = import './common.libsonnet';
 local timeRange = '1m';
 
 // The duration percentiles to display
-local percentiles = ['0.5', '0.9', '0.99'];
+local percentiles = ['0.99'];
 
-// Colors to pair to percentiles above (red, yellow, green)
-local percentileColors = ['#7eb26d', '#cca300', '#bf1b00'];
+// Colors to pair to percentiles above
+local percentileColors = ['#7eb26d'];
 
 // The histogram buckets for sync requests
 local buckets = ['1', '2', '5', '10', '30', '60', '120', '+Inf'];
@@ -23,9 +23,39 @@ local bucketColors = ['#96d98d', '#56a64b', '#37872d', '#e0b400', '#f2cc0c', '#f
 // Standard Panels
 
 // Apply defaults defined above to panel constructors
-local makeRequestsPanel(title, metric, filter) = common.makeRequestsPanel(title, metric, timeRange=timeRange, buckets=buckets, colors=bucketColors, metricFilter=filter);
-local makeDurationPercentilesPanel(title, metric, filter) = common.makeDurationPercentilesPanel(title, metric, timeRange=timeRange, percentiles=percentiles, colors=percentileColors, metricFilter=filter);
-local makeErrorRatePanel(title, metric, filter) = common.makeErrorRatePanel(title, metric, timeRange=timeRange, metricFilter=filter);
+local makeRequestsPanel(title, metric) = common.makePanel(
+    title,
+    extra = {
+        seriesOverrides: common.makeBucketSeriesOverrides(buckets, bucketColors),
+    },
+    targets = [
+        prometheus.target(
+            'rate(%s[%s])' % [
+                metric,
+                timeRange,
+            ],
+            legendFormat='≤ {{le}}s',
+        ),
+    ]
+);
+local makeDurationPercentilesPanel(title, metric) = common.makePanel(
+    title,
+    extra = {
+        yaxes: common.makeYAxes({ format: 's' }),
+    },
+    targets = std.map(
+        function(percentile) prometheus.target(
+            'histogram_quantile(%s, rate(%s[%s]))' % [
+                percentile,
+                metric,
+                timeRange,
+            ],
+            legendFormat = '%sp' % percentile,
+        ),
+        percentiles
+    )
+);
+local makeErrorRatePanel(title, metric, filter) = common.makeErrorRatePanel(title, metric, timeRange, filter);
 local makeDurationSecondsPanel(title, metric) = common.makePanel(
   title = title,
   extra = {
@@ -88,33 +118,29 @@ local reposWithNoPermsPanel = common.makePanel(
 );
 
 local usersSyncRequestsPanel = makeRequestsPanel(
-    title = 'sync',
-    metric = 'src_repoupdater_perms_syncer_sync',
-    filter = 'type="user"'
+    title = 'User permissions synced per minute',
+    metric = 'src_repoupdater_perms_syncer_sync_duration_seconds_bucket{type="user"}',
 );
 local usersSyncRequestsDurationPercentilesPanel = makeDurationPercentilesPanel(
-    title = 'sync',
-    metric = 'src_repoupdater_perms_syncer_sync',
-    filter = 'type="user"'
+    title = 'User permissions sync duration',
+    metric = 'src_repoupdater_perms_syncer_sync_duration_seconds_bucket{type="user"}',
 );
 local usersSyncRequestsErrorRatePanel = makeErrorRatePanel(
-    title = 'sync',
+    title = 'User permissions sync',
     metric ='src_repoupdater_perms_syncer_sync_errors_total',
     filter = 'type="user"'
 );
 
 local reposSyncRequestsPanel = makeRequestsPanel(
-    title = 'sync',
-    metric = 'src_repoupdater_perms_syncer_sync',
-    filter = 'type="repo"'
+    title = 'Repo permissions synced per minute',
+    metric = 'src_repoupdater_perms_syncer_sync_duration_seconds_bucket{type="repo"}',
 );
 local reposSyncRequestsDurationPercentilesPanel = makeDurationPercentilesPanel(
-    title = 'sync',
-    metric = 'src_repoupdater_perms_syncer_sync',
-    filter = 'type="repo"'
+    title = 'Repo permissions sync duration',
+    metric = 'src_repoupdater_perms_syncer_sync_duration_seconds_bucket{type="repo"}',
 );
 local reposSyncRequestsErrorRatePanel = makeErrorRatePanel(
-    title = 'sync',
+    title = 'Repo permissions sync',
     metric ='src_repoupdater_perms_syncer_sync_errors_total',
     filter = 'type="repo"'
 );
