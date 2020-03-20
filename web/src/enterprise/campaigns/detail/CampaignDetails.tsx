@@ -28,7 +28,7 @@ import { Subject, of, merge, Observable } from 'rxjs'
 import { renderMarkdown } from '../../../../../shared/src/util/markdown'
 import { ErrorAlert } from '../../../components/alerts'
 import { Markdown } from '../../../../../shared/src/components/Markdown'
-import { switchMap, tap, takeWhile, repeatWhen, delay, catchError, startWith } from 'rxjs/operators'
+import { switchMap, tap, takeWhile, repeatWhen, delay, startWith } from 'rxjs/operators'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { CampaignDescriptionField } from './form/CampaignDescriptionField'
 import { CampaignStatus } from './CampaignStatus'
@@ -201,10 +201,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         if (campaignPlan) {
                             changesetUpdates.next()
                         }
-                    }),
-                    catchError(error => {
-                        setAlertError(asError(error))
-                        return [null]
                     })
                 ),
             [previewCampaignPlans, planID, _fetchCampaignPlanById, changesetUpdates]
@@ -225,7 +221,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         )
     }
     // Campaign was not found
-    // todo: never truthy - node resolver returns error, not null
     if (campaign === null) {
         return <HeroPage icon={AlertCircleIcon} title="Campaign not found" />
     }
