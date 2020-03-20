@@ -67,7 +67,7 @@ func TestService(t *testing.T) {
 +x
  y
 `
-		patches := []campaigns.PatchSetPatch{
+		patches := []campaigns.PatchInput{
 			{Repo: api.RepoID(rs[0].ID), BaseRevision: "deadbeef", BaseRef: "refs/heads/master", Patch: patch},
 			{Repo: api.RepoID(rs[1].ID), BaseRevision: "f00b4r", BaseRef: "refs/heads/master", Patch: patch},
 		}
@@ -92,12 +92,12 @@ func TestService(t *testing.T) {
 		for i, patch := range patches {
 			wantJobs[i] = &campaigns.CampaignJob{
 				PatchSetID: patchSet.ID,
-				RepoID:         patch.Repo,
-				Rev:            patch.BaseRevision,
-				BaseRef:        patch.BaseRef,
-				Diff:           patch.Patch,
-				CreatedAt:      now,
-				UpdatedAt:      now,
+				RepoID:     patch.Repo,
+				Rev:        patch.BaseRevision,
+				BaseRef:    patch.BaseRef,
+				Diff:       patch.Patch,
+				CreatedAt:  now,
+				UpdatedAt:  now,
 			}
 		}
 		if !cmp.Equal(jobs, wantJobs) {
@@ -1072,10 +1072,10 @@ var createTestUser = func() func(context.Context, *testing.T) *types.User {
 func testCampaignJob(plan int64, repo api.RepoID, t time.Time) *campaigns.CampaignJob {
 	return &campaigns.CampaignJob{
 		PatchSetID: plan,
-		RepoID:         api.RepoID(repo),
-		Rev:            "deadbeef",
-		BaseRef:        "refs/heads/master",
-		Diff:           "cool diff",
+		RepoID:     api.RepoID(repo),
+		Rev:        "deadbeef",
+		BaseRef:    "refs/heads/master",
+		Diff:       "cool diff",
 	}
 }
 
@@ -1085,7 +1085,7 @@ func testCampaign(user int32, plan int64) *campaigns.Campaign {
 		Description:     "Testing Campaign",
 		AuthorID:        user,
 		NamespaceUserID: user,
-		PatchSetID:  plan,
+		PatchSetID:      plan,
 	}
 
 	if plan != 0 {

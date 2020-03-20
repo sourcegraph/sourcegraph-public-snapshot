@@ -549,7 +549,7 @@ func (r *Resolver) CreateCampaignPlanFromPatches(ctx context.Context, args graph
 		return nil, backend.ErrNotAuthenticated
 	}
 
-	patches := make([]campaigns.PatchSetPatch, len(args.Patches))
+	patches := make([]campaigns.PatchInput, len(args.Patches))
 	for i, patch := range args.Patches {
 		repo, err := graphqlbackend.UnmarshalRepositoryID(patch.Repository)
 		if err != nil {
@@ -568,7 +568,7 @@ func (r *Resolver) CreateCampaignPlanFromPatches(ctx context.Context, args graph
 			}
 		}
 
-		patches[i] = campaigns.PatchSetPatch{
+		patches[i] = campaigns.PatchInput{
 			Repo:         repo,
 			BaseRevision: patch.BaseRevision,
 			BaseRef:      patch.BaseRef,

@@ -32,8 +32,8 @@ func IsRepoSupported(spec *api.ExternalRepoSpec) bool {
 	return ok
 }
 
-// PatchSetPatch is a patch applied to a repository (to create a new branch).
-type PatchSetPatch struct {
+// PatchInput is a patch applied to a repository (to create a new branch).
+type PatchInput struct {
 	Repo api.RepoID
 	// The commit SHA this patch is based on (e.g.: "4095572721c6234cd72013fd49dff4fb48f0f8a4").
 	BaseRevision api.CommitID
@@ -61,7 +61,7 @@ func (c *PatchSet) Clone() *PatchSet {
 // A CampaignJob is the application of a CampaignType over PatchSet arguments in
 // a specific repository at a specific revision.
 type CampaignJob struct {
-	ID             int64
+	ID         int64
 	PatchSetID int64
 
 	RepoID  api.RepoID
@@ -92,7 +92,7 @@ type Campaign struct {
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 	ChangesetIDs    []int64
-	PatchSetID  int64
+	PatchSetID      int64
 	ClosedAt        time.Time
 }
 

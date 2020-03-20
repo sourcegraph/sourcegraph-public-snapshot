@@ -50,7 +50,7 @@ type Service struct {
 // computed by the caller. There is no diff execution or computation performed during creation of
 // the CampaignJobs in this case (unlike when using Runner to create a PatchSet from a
 // specification).
-func (s *Service) CreatePatchSetFromPatches(ctx context.Context, patches []campaigns.PatchSetPatch, userID int32) (*campaigns.PatchSet, error) {
+func (s *Service) CreatePatchSetFromPatches(ctx context.Context, patches []campaigns.PatchInput, userID int32) (*campaigns.PatchSet, error) {
 	if userID == 0 {
 		return nil, backend.ErrNotAuthenticated
 	}

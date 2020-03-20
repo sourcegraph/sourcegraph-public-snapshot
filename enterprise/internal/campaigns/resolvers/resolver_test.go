@@ -972,7 +972,7 @@ func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
 
 	t.Run("invalid patch", func(t *testing.T) {
 		args := graphqlbackend.CreateCampaignPlanFromPatchesArgs{
-			Patches: []graphqlbackend.CampaignPlanPatch{
+			Patches: []graphqlbackend.PatchInput{
 				{
 					Repository:   graphqlbackend.MarshalRepositoryID(1),
 					BaseRevision: "f00b4r",

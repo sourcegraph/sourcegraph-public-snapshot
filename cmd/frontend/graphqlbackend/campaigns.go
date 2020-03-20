@@ -42,10 +42,10 @@ type UpdateCampaignArgs struct {
 }
 
 type CreateCampaignPlanFromPatchesArgs struct {
-	Patches []CampaignPlanPatch
+	Patches []PatchInput
 }
 
-type CampaignPlanPatch struct {
+type PatchInput struct {
 	Repository   graphql.ID
 	BaseRevision api.CommitID
 	BaseRef      string
