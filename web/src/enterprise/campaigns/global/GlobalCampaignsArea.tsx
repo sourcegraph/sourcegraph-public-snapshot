@@ -5,8 +5,16 @@ import { CampaignDetails } from '../detail/CampaignDetails'
 import { IUser } from '../../../../../shared/src/graphql/schema'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
 import { ThemeProps } from '../../../../../shared/src/theme'
+import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
+import { PlatformContextProps } from '../../../../../shared/src/platform/context'
+import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 
-interface Props extends RouteComponentProps<{}>, ThemeProps {
+interface Props
+    extends RouteComponentProps<{}>,
+        ThemeProps,
+        ExtensionsControllerProps,
+        TelemetryProps,
+        PlatformContextProps {
     authenticatedUser: IUser
     isSourcegraphDotCom: boolean
 }
