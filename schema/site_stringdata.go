@@ -90,6 +90,12 @@ const SiteSchemaJSON = `{
           "enum": ["enabled", "disabled"],
           "default": "enabled"
         },
+        "andOrQuery": {
+          "description": "Interpret a search input query as an and/or query.",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "disabled"
+        },
         "bitbucketServerFastPerm": {
           "description": "DEPRECATED: Configure in Bitbucket Server config.",
           "type": "string",
