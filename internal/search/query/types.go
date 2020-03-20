@@ -46,25 +46,25 @@ func (q OrdinaryQuery) IsCaseSensitive() bool {
 }
 
 func (AndOrQuery) RegexpPatterns(field string) (values, negatedValues []string) {
-	panic("")
+	return []string{}, []string{}
 }
 func (AndOrQuery) StringValues(field string) (values, negatedValues []string) {
-	panic("")
+	return []string{}, []string{}
 }
 func (AndOrQuery) StringValue(field string) (value, negatedValue string) {
-	panic("")
+	return "", ""
 }
 func (AndOrQuery) Values(field string) []*types.Value {
-	panic("")
+	return []*types.Value{}
 }
 func (AndOrQuery) Fields() map[string][]*types.Value {
-	panic("")
+	return map[string][]*types.Value{}
 }
 func (AndOrQuery) ParseTree() syntax.ParseTree {
-	panic("")
+	return []*syntax.Expr{}
 }
 func (AndOrQuery) IsCaseSensitive() bool {
-	panic("")
+	return false
 }
 
 // An ordinary query, corresponding to a single search operation.
