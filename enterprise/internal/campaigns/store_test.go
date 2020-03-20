@@ -424,7 +424,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 			})
 
 			t.Run("GetGithubExternalIDForRefs", func(t *testing.T) {
-				have, err := s.GetGithubExternalIDForRefs(ctx, "external-id", []string{"campaigns/test"})
+				have, err := s.GetGithubExternalIDForRefs(ctx, "external-id", "https://github.com/", []string{"campaigns/test"})
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -435,7 +435,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 			})
 
 			t.Run("GetGithubExternalIDForRefs no branch", func(t *testing.T) {
-				have, err := s.GetGithubExternalIDForRefs(ctx, "external-id", []string{"foo"})
+				have, err := s.GetGithubExternalIDForRefs(ctx, "external-id", "https://github.com/", []string{"foo"})
 				if err != nil {
 					t.Fatal(err)
 				}
