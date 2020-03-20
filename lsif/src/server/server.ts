@@ -48,7 +48,7 @@ async function main(logger: Logger): Promise<void> {
     const backend = new Backend(dumpManager, dependencyManager, SRC_FRONTEND_INTERNAL)
 
     // Start background tasks
-    startTasks(connection, dumpManager, uploadManager, logger)
+    startTasks(connection, uploadManager, logger)
 
     const routers = [
         createUploadRouter(dumpManager, uploadManager, logger),
