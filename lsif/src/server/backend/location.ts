@@ -2,16 +2,18 @@ import * as lsp from 'vscode-languageserver-protocol'
 import * as pgModels from '../../shared/models/pg'
 import { OrderedSet } from '../../shared/datastructures/orderedset'
 
-/** A location with the identifier of the dump that contains it. */
 export interface InternalLocation {
+    /** The identifier of the dump that contains the location. */
     dumpId: pgModels.DumpId
+    /** The path relative to the dump root. */
     path: string
     range: lsp.Range
 }
 
-/** A location with the dump that contains it. */
 export interface ResolvedInternalLocation {
+    /** The dump that contains the location. */
     dump: pgModels.LsifDump
+    /** The path relative to the dump root. */
     path: string
     range: lsp.Range
 }

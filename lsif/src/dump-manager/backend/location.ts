@@ -1,10 +1,8 @@
 import * as lsp from 'vscode-languageserver-protocol'
-import * as pgModels from '../../shared/models/pg'
 import { OrderedSet } from '../../shared/datastructures/orderedset'
 
-/** A location with the identifier of the dump that contains it. */
 export interface InternalLocation {
-    dumpId: pgModels.DumpId // TODO - can remove in dump manager
+    /** The path relative to the dump root. */
     path: string
     range: lsp.Range
 }
@@ -21,7 +19,6 @@ export class OrderedLocationSet extends OrderedSet<InternalLocation> {
         super(
             (location: InternalLocation): string =>
                 [
-                    location.dumpId,
                     location.path,
                     location.range.start.line,
                     location.range.start.character,

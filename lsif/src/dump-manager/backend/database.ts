@@ -256,7 +256,6 @@ export class Database {
             })
 
             const locations = results.map(result => ({
-                dumpId: this.dumpId,
                 path: result.documentPath,
                 range: createRange(result),
             }))
@@ -332,7 +331,7 @@ export class Database {
         for (const [documentPath, rangeIds] of groupedResults) {
             if (documentPath === path) {
                 // If the document path is this document, convert the locations directly
-                results = results.concat(mapRangesToInternalLocations(this.dumpId, document.ranges, path, rangeIds))
+                results = results.concat(mapRangesToInternalLocations(document.ranges, path, rangeIds))
                 continue
             }
 
@@ -343,7 +342,7 @@ export class Database {
             }
 
             // Then finally convert the locations in the sibling document
-            results = results.concat(mapRangesToInternalLocations(this.dumpId, sibling.ranges, documentPath, rangeIds))
+            results = results.concat(mapRangesToInternalLocations(sibling.ranges, documentPath, rangeIds))
         }
 
         return results
@@ -529,13 +528,11 @@ function createRange(result: {
 /**
  * Convert the given range identifiers into an `InternalLocation` objects.
  *
- * @param dumpId The identifier of the dump to which the ranges belong.
  * @param ranges The map of ranges of the document.
  * @param uri The location URI.
  * @param ids The set of range identifiers for each resulting location.
  */
 export function mapRangesToInternalLocations(
-    dumpId: pgModels.DumpId,
     ranges: Map<sqliteModels.RangeId, sqliteModels.RangeData>,
     uri: string,
     ids: Set<sqliteModels.RangeId>
@@ -543,7 +540,6 @@ export function mapRangesToInternalLocations(
     const locations = []
     for (const id of ids) {
         locations.push({
-            dumpId,
             path: uri,
             range: createRange(mustGet(ranges, id, 'range')),
         })
