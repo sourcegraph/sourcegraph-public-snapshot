@@ -235,6 +235,15 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         return <HeroPage icon={AlertCircleIcon} title="Plan not found" />
     }
 
+    if (updateMode) {
+        if (!campaign?.plan?.id) {
+            return <HeroPage icon={AlertCircleIcon} title="Cannot update a manual campaign with a campaign plan" />
+        }
+        if (campaign?.closedAt) {
+            return <HeroPage icon={AlertCircleIcon} title="Cannot update a closed campaign" />
+        }
+    }
+
     // plan is specified, but campaign not yet, so we have to choose
     if (history.location.pathname.includes('/campaigns/update') && campaignID === undefined && planID !== null) {
         return <CampaignUpdateSelection history={history} location={location} onSelect={selectCampaign} />
