@@ -19,5 +19,6 @@ asdf reshim
 
 echo "--- lint"
 
+echo "go lint is disabled until we can get it to use less resources. https://github.com/sourcegraph/sourcegraph/issues/9193"
 # Disable unused since it uses too much CPU/mem
-golangci-lint run -e unused ${pkgs}
+#golangci-lint run -e unused ${pkgs}
