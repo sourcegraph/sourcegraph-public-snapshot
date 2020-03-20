@@ -30,7 +30,6 @@ export class Services {
             | 'getScriptURLForExtension'
             | 'clientApplication'
             | 'sideloadedExtensionURL'
-            | 'telemetryService'
         >
     ) {}
 
@@ -52,5 +51,4 @@ export class Services {
     public readonly queryTransformer = new QueryTransformerRegistry()
     public readonly views = new ViewProviderRegistry()
     public readonly completionItems = new CompletionItemProviderRegistry()
-    public readonly telemetryService = this.platformContext.telemetryService
 }

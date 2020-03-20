@@ -953,16 +953,8 @@ type ChangesetPlan struct {
 	}
 }
 
-type Status struct {
-	CompletedCount int
-	PendingCount   int
-	State          string
-	Errors         []string
-}
-
 type CampaignPlan struct {
 	ID         string
-	Status     Status
 	Changesets struct {
 		Nodes []ChangesetPlan
 	}
@@ -1058,12 +1050,6 @@ func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
 		createCampaignPlanFromPatches(patches: [{repository: %q, baseRevision: "f00b4r", baseRef: "master", patch: %q}]) {
           ... on CampaignPlan {
             id
-            status {
-              completedCount
-              pendingCount
-              state
-              errors
-            }
             changesets(first: %d) {
               nodes {
                 repository {
@@ -1111,16 +1097,6 @@ func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
 	`, graphqlbackend.MarshalRepositoryID(api.RepoID(repo.ID)), testDiff, 1))
 
 		result := response.CreateCampaignPlanFromPatches
-
-		wantStatus := Status{
-			State:          "COMPLETED",
-			CompletedCount: 1,
-			Errors:         []string{},
-		}
-
-		if diff := cmp.Diff(result.Status, wantStatus); diff != "" {
-			t.Fatalf("wrong Status. diff=%s", diff)
-		}
 
 		wantChangesets := []ChangesetPlan{
 			{
@@ -1242,12 +1218,6 @@ func TestCampaignPlanResolver(t *testing.T) {
         node(id: %q) {
           ... on CampaignPlan {
             id
-            status {
-              completedCount
-              pendingCount
-              state
-              errors
-            }
             changesets(first: %d) {
               nodes {
                 repository {
@@ -1292,16 +1262,6 @@ func TestCampaignPlanResolver(t *testing.T) {
         }
       }
 	`, marshalCampaignPlanID(plan.ID), len(jobs)))
-
-	wantStatus := Status{
-		State:          "COMPLETED",
-		CompletedCount: len(jobs),
-		Errors:         []string{},
-	}
-
-	if diff := cmp.Diff(response.Node.Status, wantStatus); diff != "" {
-		t.Fatalf("wrong Status. diff=%s", diff)
-	}
 
 	if have, want := len(response.Node.Changesets.Nodes), len(jobs); have != want {
 		t.Fatalf("have %d changeset plans, want %d", have, want)
