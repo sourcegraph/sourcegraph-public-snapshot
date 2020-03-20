@@ -24,25 +24,25 @@ type QueryInfo interface {
 }
 
 func (q OrdinaryQuery) RegexpPatterns(field string) (values, negatedValues []string) {
-	return q.query.RegexpPatterns(field)
+	return q.Query.RegexpPatterns(field)
 }
 func (q OrdinaryQuery) StringValues(field string) (values, negatedValues []string) {
-	return q.query.StringValues(field)
+	return q.Query.StringValues(field)
 }
 func (q OrdinaryQuery) StringValue(field string) (value, negatedValue string) {
-	return q.query.StringValue(field)
+	return q.Query.StringValue(field)
 }
 func (q OrdinaryQuery) Values(field string) []*types.Value {
-	return q.query.Values(field)
+	return q.Query.Values(field)
 }
 func (q OrdinaryQuery) Fields() map[string][]*types.Value {
-	return q.query.Fields
+	return q.Query.Fields
 }
 func (q OrdinaryQuery) ParseTree() syntax.ParseTree {
 	return q.parseTree
 }
 func (q OrdinaryQuery) IsCaseSensitive() bool {
-	return q.query.IsCaseSensitive()
+	return q.Query.IsCaseSensitive()
 }
 
 func (AndOrQuery) RegexpPatterns(field string) (values, negatedValues []string) {
@@ -69,7 +69,7 @@ func (AndOrQuery) IsCaseSensitive() bool {
 
 // An ordinary query, corresponding to a single search operation.
 type OrdinaryQuery struct {
-	query     *Query           // the validated search query
+	Query     *Query           // the validated search query
 	parseTree syntax.ParseTree // the parsed search query
 }
 

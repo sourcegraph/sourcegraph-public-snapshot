@@ -98,7 +98,7 @@ type Query struct {
 	types.Fields // the query fields
 }
 
-func parse(input string) (syntax.ParseTree, error) {
+func Parse(input string) (syntax.ParseTree, error) {
 	parseTree, err := syntax.Parse(input)
 	if err != nil {
 		return nil, err
@@ -117,13 +117,13 @@ func Check(parseTree syntax.ParseTree) (QueryInfo, error) {
 		return nil, err
 	}
 	query := &Query{conf: &conf, Fields: *checkedFields}
-	return &OrdinaryQuery{query: query}, nil
+	return &OrdinaryQuery{Query: query}, nil
 }
 
 // ParseAndCheck parses and typechecks a search query using the default
 // query type configuration.
 func ParseAndCheck(input string) (QueryInfo, error) {
-	parseTree, err := parse(input)
+	parseTree, err := Parse(input)
 	if err != nil {
 		return nil, err
 	}
@@ -176,7 +176,7 @@ func Validate(q QueryInfo, searchType SearchType) error {
 // Process is a top level convenience function for processing a raw string into
 // a validated and type checked query, and the parse tree of the raw string.
 func Process(queryString string, searchType SearchType) (QueryInfo, error) {
-	parseTree, err := parse(queryString)
+	parseTree, err := Parse(queryString)
 	if err != nil {
 		return nil, err
 	}
