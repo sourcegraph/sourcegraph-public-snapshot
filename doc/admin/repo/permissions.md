@@ -179,19 +179,47 @@ By installing the [Bitbucket Server plugin](../../../integration/bitbucket_serve
 
 Finally, **save the configuration**. You're done!
 
+## Background permissions syncing
+
+Starting with 3.14, Sourcegraph supports syncing permissions in the background to better handle repository permissions at scale. Rather than syncing a user's permissions when they log in and potentially blocking them from seeing search results, Sourcegraph syncs these permissions asynchronously in the background, opportunistically refreshing them in a timely manner.
+
+Background permissions syncing is currently behind a feature flag in the [site configuration](../config/site_config.md):
+
+```json
+"permissions.backgroundSync": {
+	"enabled": true
+}
+```
+
+>NOTE: Only GitLab and Bitbucket Server are supported at this time. Support for GitHub is coming soon in 3.15.
+
+Background permissions syncing has the following benefits:
+
+1. More predictable load on the code host API due to maintaining a schedule of permission updates.
+1. Permissions are quickly synced for new repositories added to the Sourcegraph instance.
+1. Users who sign up on the Sourcegraph instance can immediately get search results from the repositories they have access to on the code host.
+
+Since the syncing of permissions happens in the background, there are a few things to keep in mind:
+
+1. While the initial sync for all repositories and users is happening, users can gradually see more and more search results from repositories they have access to.
+1. It takes time to complete the first sync. Depending on how many private repositories and users you have on the Sourcegraph instance, it can take from a few minutes to several hours. This is generally not a problem for fresh installations, since admins should only make the instance available after it's ready, but for existing installations, active users may not see the repositories they expect in search results because the initial permissions syncing hasn't finished yet.
+1. More requests to the code host API need to be done during the first sync, but their pace is controlled with rate limiting.
+
+Please contact Sourcegraph support if you have any concerns/questions about enabling this feature for your Sourcegraph instance.
+
 ## Explicit permissions API
 
 Sourcegraph exposes a GraphQL API to explicitly set repository ACLs. This will become the primary
 way to specify permissions in the future and will eventually replace the other repository
 permissions mechanisms.
 
-To enable the permissions API, add the following to the [site config](../config/site_config.md):
+To enable the permissions API, add the following to the [site configuration](../config/site_config.md):
 
 ```json
 "permissions.userMapping": {
     "enabled": true,
     "bindID": "email"
-},
+}
 ```
 
 > The `bindID` value is used to uniquely identify users when setting permissions. Alternatively, it
