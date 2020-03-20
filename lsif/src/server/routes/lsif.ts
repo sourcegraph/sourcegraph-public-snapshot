@@ -116,7 +116,7 @@ export function createLsifRouter(
 
                     // Add upload record
                     const upload = await uploadManager.enqueue(
-                        { repositoryId, commit, root, filename: payloadId, indexer }, // TODO - rename this
+                        { repositoryId, commit, root, payloadId, indexer },
                         tracer,
                         ctx.span
                     )

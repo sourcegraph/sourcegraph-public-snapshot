@@ -83,13 +83,11 @@ async function main(logger: Logger): Promise<void> {
                 logAndTraceCall(ctx, 'Converting upload', async (ctx: TracingContext) => {
                     const sourcePath = path.join(settings.STORAGE_ROOT, uuid.v4())
                     const targetPath = path.join(settings.STORAGE_ROOT, uuid.v4())
+                    const url = new URL(`/${upload.payloadId}/raw`, settings.LSIF_DUMP_MANAGER_URL).href
 
                     try {
                         await logAndTraceCall(ctx, 'Downloading raw dump from dump manager', () =>
-                            pipeline(
-                                got.stream.get(new URL(`/${upload.filename}/raw`, settings.LSIF_DUMP_MANAGER_URL).href),
-                                fs.createWriteStream(sourcePath)
-                            )
+                            pipeline(got.stream.get(url), fs.createWriteStream(sourcePath))
                         )
 
                         // Convert the database and populate the cross-dump package data

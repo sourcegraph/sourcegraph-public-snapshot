@@ -246,7 +246,7 @@ export class UploadManager {
             repositoryId,
             commit,
             root,
-            filename,
+            payloadId,
             indexer,
         }: {
             /** The repository identifier. */
@@ -255,8 +255,8 @@ export class UploadManager {
             commit: string
             /** The root. */
             root: string
-            /** The filename. */
-            filename: string
+            /** The identifier of the payload as known by the dump manager. */
+            payloadId: string
             /** The indexer binary name that produced this dump as specified by the metadata. */
             indexer: string
         },
@@ -273,7 +273,7 @@ export class UploadManager {
         upload.commit = commit
         upload.root = root
         upload.indexer = indexer
-        upload.filename = filename
+        upload.payloadId = payloadId
         upload.tracingContext = JSON.stringify(tracing)
         await instrumentQuery(() => this.connection.createEntityManager().save(upload))
 
