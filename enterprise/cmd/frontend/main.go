@@ -32,7 +32,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/globalstatedb"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
 func main() {
@@ -86,8 +85,6 @@ func main() {
 	)
 
 	go bitbucketServerWebhook.Upsert(30 * time.Second)
-
-	go campaigns.RunChangesetJobs(ctx, campaignsStore, clock, gitserver.DefaultClient, 5*time.Second)
 
 	shared.Main(githubWebhook, bitbucketServerWebhook)
 }
