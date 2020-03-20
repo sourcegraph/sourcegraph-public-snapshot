@@ -26,7 +26,7 @@ import { CampaignBurndownChart } from './BurndownChart'
 import { AddChangesetForm } from './AddChangesetForm'
 import { Subject, of, merge, Observable } from 'rxjs'
 import { renderMarkdown } from '../../../../../shared/src/util/markdown'
-import { ErrorAlert } from '../../../components/alerts'
+import { ErrorAlert, ErrorMessage } from '../../../components/alerts'
 import { Markdown } from '../../../../../shared/src/components/Markdown'
 import { switchMap, tap, takeWhile, repeatWhen, delay, catchError, startWith } from 'rxjs/operators'
 import { ThemeProps } from '../../../../../shared/src/theme'
@@ -224,8 +224,13 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             </div>
         )
     }
+    // error while fetching either campaign or campaignPlan
+    if (!!alertError && (campaign === null || campaignPlan === null)) {
+        return (
+            <HeroPage icon={AlertCircleIcon} title="Error fetching campaign" body={<ErrorAlert error={alertError} />} />
+        )
+    }
     // Campaign was not found
-    // todo: never truthy - node resolver returns error, not null
     if (campaign === null) {
         return <HeroPage icon={AlertCircleIcon} title="Campaign not found" />
     }
