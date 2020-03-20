@@ -48,6 +48,8 @@ func testStore(db *sql.DB) func(*testing.T) {
 						ClosedAt:       now,
 					}
 					if i == 0 {
+						// don't have a plan for the first one
+						c.CampaignPlanID = 0
 						// Don't close the first one
 						c.ClosedAt = time.Time{}
 					}
@@ -98,6 +100,26 @@ func testStore(db *sql.DB) func(*testing.T) {
 				}
 
 				if have, want := count, int64(1); have != want {
+					t.Fatalf("have count: %d, want: %d", have, want)
+				}
+
+				hasPlan := false
+				count, err = s.CountCampaigns(ctx, CountCampaignsOpts{HasPlan: &hasPlan})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if have, want := count, int64(1); have != want {
+					t.Fatalf("have count: %d, want: %d", have, want)
+				}
+
+				hasPlan = true
+				count, err = s.CountCampaigns(ctx, CountCampaignsOpts{HasPlan: &hasPlan})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if have, want := count, int64(2); have != want {
 					t.Fatalf("have count: %d, want: %d", have, want)
 				}
 			})
@@ -205,6 +227,28 @@ func testStore(db *sql.DB) func(*testing.T) {
 						}
 					})
 				}
+
+				t.Run("ListCampaigns HasPlan true", func(t *testing.T) {
+					hasPlan := true
+					have, _, err := s.ListCampaigns(ctx, ListCampaignsOpts{HasPlan: &hasPlan})
+					if err != nil {
+						t.Fatal(err)
+					}
+					if diff := cmp.Diff(have, campaigns[1:]); diff != "" {
+						t.Fatal(diff)
+					}
+				})
+
+				t.Run("ListCampaigns HasPlan false", func(t *testing.T) {
+					hasPlan := false
+					have, _, err := s.ListCampaigns(ctx, ListCampaignsOpts{HasPlan: &hasPlan})
+					if err != nil {
+						t.Fatal(err)
+					}
+					if diff := cmp.Diff(have, campaigns[0:1]); diff != "" {
+						t.Fatal(diff)
+					}
+				})
 			})
 
 			t.Run("Update", func(t *testing.T) {

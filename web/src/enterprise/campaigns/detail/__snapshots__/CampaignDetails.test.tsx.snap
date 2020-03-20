@@ -241,6 +241,11 @@ Array [
         "state": undefined,
       }
     }
+    telemetryService={
+      Object {
+        "log": [Function],
+      }
+    }
   />,
 ]
 `;
@@ -431,6 +436,11 @@ Array [
         "pathname": "/",
         "search": "",
         "state": undefined,
+      }
+    }
+    telemetryService={
+      Object {
+        "log": [Function],
       }
     }
   />,
@@ -638,6 +648,11 @@ Array [
         "pathname": "/",
         "search": "",
         "state": undefined,
+      }
+    }
+    telemetryService={
+      Object {
+        "log": [Function],
       }
     }
   />,
@@ -935,6 +950,11 @@ Array [
         "pathname": "/",
         "search": "",
         "state": undefined,
+      }
+    }
+    telemetryService={
+      Object {
+        "log": [Function],
       }
     }
   />,
