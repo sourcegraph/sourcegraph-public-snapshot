@@ -269,7 +269,7 @@ This is `3.12.8` release with internal infrastructure fixes to publish the docke
 ### Fixed
 
 - The `/.auth/saml/metadata` endpoint has been fixed. Previously it panicked if no encryption key was set.
-- The version updating logic has been fixed for `sourcegraph/server`. Users running `sourcegraph/server:3.14.0` will need to manually modify their `docker run` command to use `sourcegraph/server:3.14.0` or higher. [#7442](https://github.com/sourcegraph/sourcegraph/issues/7442)
+- The version updating logic has been fixed for `sourcegraph/server`. Users running `sourcegraph/server:3.11.1` will need to manually modify their `docker run` command to use `sourcegraph/server:3.11.4` or higher. [#7442](https://github.com/sourcegraph/sourcegraph/issues/7442)
 
 ## 3.11.1
 
