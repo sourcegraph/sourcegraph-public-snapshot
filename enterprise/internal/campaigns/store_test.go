@@ -1330,12 +1330,12 @@ func testStore(db *sql.DB) func(*testing.T) {
 			})
 		})
 
-		t.Run("CampaignJobs", func(t *testing.T) {
-			campaignJobs := make([]*cmpgn.CampaignJob, 0, 3)
+		t.Run("Patches", func(t *testing.T) {
+			patches := make([]*cmpgn.Patch, 0, 3)
 
 			t.Run("Create", func(t *testing.T) {
-				for i := 0; i < cap(campaignJobs); i++ {
-					c := &cmpgn.CampaignJob{
+				for i := 0; i < cap(patches); i++ {
+					p := &cmpgn.Patch{
 						PatchSetID: int64(i + 1),
 						RepoID:     1,
 						Rev:        api.CommitID("deadbeef"),
@@ -1343,10 +1343,10 @@ func testStore(db *sql.DB) func(*testing.T) {
 						Diff:       "+ foobar - barfoo",
 					}
 
-					want := c.Clone()
-					have := c
+					want := p.Clone()
+					have := p
 
-					err := s.CreateCampaignJob(ctx, have)
+					err := s.CreatePatch(ctx, have)
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -1363,21 +1363,21 @@ func testStore(db *sql.DB) func(*testing.T) {
 						t.Fatal(diff)
 					}
 
-					campaignJobs = append(campaignJobs, c)
+					patches = append(patches, p)
 				}
 			})
 
 			t.Run("Count", func(t *testing.T) {
-				count, err := s.CountCampaignJobs(ctx, CountCampaignJobsOpts{})
+				count, err := s.CountPatches(ctx, CountPatchesOpts{})
 				if err != nil {
 					t.Fatal(err)
 				}
 
-				if have, want := count, int64(len(campaignJobs)); have != want {
+				if have, want := count, int64(len(patches)); have != want {
 					t.Fatalf("have count: %d, want: %d", have, want)
 				}
 
-				count, err = s.CountCampaignJobs(ctx, CountCampaignJobsOpts{PatchSetID: 1})
+				count, err = s.CountPatches(ctx, CountPatchesOpts{PatchSetID: 1})
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -1389,10 +1389,10 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 			t.Run("List", func(t *testing.T) {
 				t.Run("WithPatchSetID", func(t *testing.T) {
-					for i := 1; i <= len(campaignJobs); i++ {
-						opts := ListCampaignJobsOpts{PatchSetID: int64(i)}
+					for i := 1; i <= len(patches); i++ {
+						opts := ListPatchesOpts{PatchSetID: int64(i)}
 
-						ts, next, err := s.ListCampaignJobs(ctx, opts)
+						ts, next, err := s.ListPatches(ctx, opts)
 						if err != nil {
 							t.Fatal(err)
 						}
@@ -1401,9 +1401,9 @@ func testStore(db *sql.DB) func(*testing.T) {
 							t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
 						}
 
-						have, want := ts, campaignJobs[i-1:i]
+						have, want := ts, patches[i-1:i]
 						if len(have) != len(want) {
-							t.Fatalf("listed %d campaignJobs, want: %d", len(have), len(want))
+							t.Fatalf("listed %d patches, want: %d", len(have), len(want))
 						}
 
 						if diff := cmp.Diff(have, want); diff != "" {
@@ -1413,16 +1413,16 @@ func testStore(db *sql.DB) func(*testing.T) {
 				})
 
 				t.Run("WithPositiveLimit", func(t *testing.T) {
-					for i := 1; i <= len(campaignJobs); i++ {
-						cs, next, err := s.ListCampaignJobs(ctx, ListCampaignJobsOpts{Limit: i})
+					for i := 1; i <= len(patches); i++ {
+						cs, next, err := s.ListPatches(ctx, ListPatchesOpts{Limit: i})
 						if err != nil {
 							t.Fatal(err)
 						}
 
 						{
 							have, want := next, int64(0)
-							if i < len(campaignJobs) {
-								want = campaignJobs[i].ID
+							if i < len(patches) {
+								want = patches[i].ID
 							}
 
 							if have != want {
@@ -1431,9 +1431,9 @@ func testStore(db *sql.DB) func(*testing.T) {
 						}
 
 						{
-							have, want := cs, campaignJobs[:i]
+							have, want := cs, patches[:i]
 							if len(have) != len(want) {
-								t.Fatalf("listed %d campaignJobs, want: %d", len(have), len(want))
+								t.Fatalf("listed %d patches, want: %d", len(have), len(want))
 							}
 
 							if diff := cmp.Diff(have, want); diff != "" {
@@ -1444,7 +1444,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 				})
 
 				t.Run("WithNegativeLimitToListAll", func(t *testing.T) {
-					cs, next, err := s.ListCampaignJobs(ctx, ListCampaignJobsOpts{Limit: -1})
+					cs, next, err := s.ListPatches(ctx, ListPatchesOpts{Limit: -1})
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -1453,9 +1453,9 @@ func testStore(db *sql.DB) func(*testing.T) {
 						t.Fatalf("have next %v, want %v", have, want)
 					}
 
-					have, want := cs, campaignJobs
+					have, want := cs, patches
 					if len(have) != len(want) {
-						t.Fatalf("listed %d campaignJobs, want: %d", len(have), len(want))
+						t.Fatalf("listed %d patches, want: %d", len(have), len(want))
 					}
 
 					if diff := cmp.Diff(have, want); diff != "" {
@@ -1464,9 +1464,9 @@ func testStore(db *sql.DB) func(*testing.T) {
 				})
 
 				t.Run("EmptyResultListingAll", func(t *testing.T) {
-					opts := ListCampaignJobsOpts{PatchSetID: 99999, Limit: -1}
+					opts := ListPatchesOpts{PatchSetID: 99999, Limit: -1}
 
-					js, next, err := s.ListCampaignJobs(ctx, opts)
+					js, next, err := s.ListPatches(ctx, opts)
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -1483,14 +1483,14 @@ func testStore(db *sql.DB) func(*testing.T) {
 				t.Run("WithCursor", func(t *testing.T) {
 					{
 						var cursor int64
-						for i := 1; i <= len(campaignJobs); i++ {
-							opts := ListCampaignJobsOpts{Cursor: cursor, Limit: 1}
-							have, next, err := s.ListCampaignJobs(ctx, opts)
+						for i := 1; i <= len(patches); i++ {
+							opts := ListPatchesOpts{Cursor: cursor, Limit: 1}
+							have, next, err := s.ListPatches(ctx, opts)
 							if err != nil {
 								t.Fatal(err)
 							}
 
-							want := campaignJobs[i-1 : i]
+							want := patches[i-1 : i]
 							if diff := cmp.Diff(have, want); diff != "" {
 								t.Fatalf("opts: %+v, diff: %s", opts, diff)
 							}
@@ -1502,24 +1502,24 @@ func testStore(db *sql.DB) func(*testing.T) {
 			})
 
 			t.Run("Listing and Counting OnlyWithDiff", func(t *testing.T) {
-				listOpts := ListCampaignJobsOpts{OnlyWithDiff: true}
-				countOpts := CountCampaignJobsOpts{OnlyWithDiff: true}
+				listOpts := ListPatchesOpts{OnlyWithDiff: true}
+				countOpts := CountPatchesOpts{OnlyWithDiff: true}
 
-				have, _, err := s.ListCampaignJobs(ctx, listOpts)
+				have, _, err := s.ListPatches(ctx, listOpts)
 				if err != nil {
 					t.Fatal(err)
 				}
 
-				have, want := have, campaignJobs
+				have, want := have, patches
 				if len(have) != len(want) {
-					t.Fatalf("listed %d campaignJobs, want: %d", len(have), len(want))
+					t.Fatalf("listed %d patches, want: %d", len(have), len(want))
 				}
 
 				if diff := cmp.Diff(have, want); diff != "" {
 					t.Fatalf("opts: %+v, diff: %s", listOpts, diff)
 				}
 
-				count, err := s.CountCampaignJobs(ctx, countOpts)
+				count, err := s.CountPatches(ctx, countOpts)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -1528,16 +1528,16 @@ func testStore(db *sql.DB) func(*testing.T) {
 					t.Errorf("jobs counted: %d", count)
 				}
 
-				for _, j := range campaignJobs {
-					j.Diff = ""
+				for _, p := range patches {
+					p.Diff = ""
 
-					err := s.UpdateCampaignJob(ctx, j)
+					err := s.UpdatePatch(ctx, p)
 					if err != nil {
 						t.Fatal(err)
 					}
 				}
 
-				have, _, err = s.ListCampaignJobs(ctx, listOpts)
+				have, _, err = s.ListPatches(ctx, listOpts)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -1546,7 +1546,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 					t.Errorf("jobs returned: %d", len(have))
 				}
 
-				count, err = s.CountCampaignJobs(ctx, countOpts)
+				count, err = s.CountPatches(ctx, countOpts)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -1559,35 +1559,35 @@ func testStore(db *sql.DB) func(*testing.T) {
 			t.Run("Listing and Counting OnlyUnpublishedInCampaign", func(t *testing.T) {
 				campaignID := int64(999)
 				changesetJob := &cmpgn.ChangesetJob{
-					CampaignJobID: campaignJobs[0].ID,
-					CampaignID:    campaignID,
-					ChangesetID:   789,
-					StartedAt:     now,
-					FinishedAt:    now,
+					PatchID:     patches[0].ID,
+					CampaignID:  campaignID,
+					ChangesetID: 789,
+					StartedAt:   now,
+					FinishedAt:  now,
 				}
 				err := s.CreateChangesetJob(ctx, changesetJob)
 				if err != nil {
 					t.Fatal(err)
 				}
 
-				listOpts := ListCampaignJobsOpts{OnlyUnpublishedInCampaign: campaignID}
-				countOpts := CountCampaignJobsOpts{OnlyUnpublishedInCampaign: campaignID}
+				listOpts := ListPatchesOpts{OnlyUnpublishedInCampaign: campaignID}
+				countOpts := CountPatchesOpts{OnlyUnpublishedInCampaign: campaignID}
 
-				have, _, err := s.ListCampaignJobs(ctx, listOpts)
+				have, _, err := s.ListPatches(ctx, listOpts)
 				if err != nil {
 					t.Fatal(err)
 				}
 
-				have, want := have, campaignJobs[1:] // Except campaignJobs[0]
+				have, want := have, patches[1:] // Except patches[0]
 				if len(have) != len(want) {
-					t.Fatalf("listed %d campaignJobs, want: %d", len(have), len(want))
+					t.Fatalf("listed %d patches, want: %d", len(have), len(want))
 				}
 
 				if diff := cmp.Diff(have, want); diff != "" {
 					t.Fatalf("opts: %+v, diff: %s", listOpts, diff)
 				}
 
-				count, err := s.CountCampaignJobs(ctx, countOpts)
+				count, err := s.CountPatches(ctx, countOpts)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -1603,21 +1603,21 @@ func testStore(db *sql.DB) func(*testing.T) {
 					t.Fatal(err)
 				}
 
-				have, _, err = s.ListCampaignJobs(ctx, listOpts)
+				have, _, err = s.ListPatches(ctx, listOpts)
 				if err != nil {
 					t.Fatal(err)
 				}
 
-				want = campaignJobs // All CampaignJobs
+				want = patches // All Patches
 				if len(have) != len(want) {
-					t.Fatalf("listed %d campaignJobs, want: %d", len(have), len(want))
+					t.Fatalf("listed %d patches, want: %d", len(have), len(want))
 				}
 
 				if diff := cmp.Diff(have, want); diff != "" {
 					t.Fatalf("opts: %+v, diff: %s", listOpts, diff)
 				}
 
-				count, err = s.CountCampaignJobs(ctx, countOpts)
+				count, err = s.CountPatches(ctx, countOpts)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -1628,15 +1628,15 @@ func testStore(db *sql.DB) func(*testing.T) {
 			})
 
 			t.Run("Update", func(t *testing.T) {
-				for _, c := range campaignJobs {
+				for _, p := range patches {
 					now = now.Add(time.Second)
-					c.Diff += "-updated"
+					p.Diff += "-updated"
 
-					want := c
+					want := p
 					want.UpdatedAt = now
 
-					have := c.Clone()
-					if err := s.UpdateCampaignJob(ctx, have); err != nil {
+					have := p.Clone()
+					if err := s.UpdatePatch(ctx, have); err != nil {
 						t.Fatal(err)
 					}
 
@@ -1648,13 +1648,13 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 			t.Run("Get", func(t *testing.T) {
 				t.Run("ByID", func(t *testing.T) {
-					if len(campaignJobs) == 0 {
-						t.Fatal("campaignJobs is empty")
+					if len(patches) == 0 {
+						t.Fatal("patches is empty")
 					}
-					want := campaignJobs[0]
-					opts := GetCampaignJobOpts{ID: want.ID}
+					want := patches[0]
+					opts := GetPatchOpts{ID: want.ID}
 
-					have, err := s.GetCampaignJob(ctx, opts)
+					have, err := s.GetPatch(ctx, opts)
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -1665,9 +1665,9 @@ func testStore(db *sql.DB) func(*testing.T) {
 				})
 
 				t.Run("NoResults", func(t *testing.T) {
-					opts := GetCampaignJobOpts{ID: 0xdeadbeef}
+					opts := GetPatchOpts{ID: 0xdeadbeef}
 
-					_, have := s.GetCampaignJob(ctx, opts)
+					_, have := s.GetPatch(ctx, opts)
 					want := ErrNoResults
 
 					if have != want {
@@ -1677,18 +1677,18 @@ func testStore(db *sql.DB) func(*testing.T) {
 			})
 
 			t.Run("Delete", func(t *testing.T) {
-				for i := range campaignJobs {
-					err := s.DeleteCampaignJob(ctx, campaignJobs[i].ID)
+				for i := range patches {
+					err := s.DeletePatch(ctx, patches[i].ID)
 					if err != nil {
 						t.Fatal(err)
 					}
 
-					count, err := s.CountCampaignJobs(ctx, CountCampaignJobsOpts{})
+					count, err := s.CountPatches(ctx, CountPatchesOpts{})
 					if err != nil {
 						t.Fatal(err)
 					}
 
-					if have, want := count, int64(len(campaignJobs)-(i+1)); have != want {
+					if have, want := count, int64(len(patches)-(i+1)); have != want {
 						t.Fatalf("have count: %d, want: %d", have, want)
 					}
 				}
@@ -1772,13 +1772,13 @@ func testStore(db *sql.DB) func(*testing.T) {
 			t.Run("Create", func(t *testing.T) {
 				for i := 0; i < cap(changesetJobs); i++ {
 					c := &cmpgn.ChangesetJob{
-						CampaignID:    int64(i + 1),
-						CampaignJobID: int64(i + 1),
-						ChangesetID:   int64(i + 1),
-						Branch:        "test-branch",
-						Error:         "only set on error",
-						StartedAt:     now,
-						FinishedAt:    now,
+						CampaignID:  int64(i + 1),
+						PatchID:     int64(i + 1),
+						ChangesetID: int64(i + 1),
+						Branch:      "test-branch",
+						Error:       "only set on error",
+						StartedAt:   now,
+						FinishedAt:  now,
 					}
 
 					want := c.Clone()
@@ -1893,7 +1893,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 					have, want := cs, changesetJobs
 					if len(have) != len(want) {
-						t.Fatalf("listed %d campaignJobs, want: %d", len(have), len(want))
+						t.Fatalf("listed %d patches, want: %d", len(have), len(want))
 					}
 
 					if diff := cmp.Diff(have, want); diff != "" {
@@ -2020,12 +2020,12 @@ func testStore(db *sql.DB) func(*testing.T) {
 					}
 				})
 
-				t.Run("ByCampaignJobID", func(t *testing.T) {
+				t.Run("ByPatchID", func(t *testing.T) {
 					if len(changesetJobs) == 0 {
 						t.Fatal("changesetJobs is empty")
 					}
 					want := changesetJobs[0]
-					opts := GetChangesetJobOpts{CampaignJobID: want.CampaignJobID}
+					opts := GetChangesetJobOpts{PatchID: want.PatchID}
 
 					have, err := s.GetChangesetJob(ctx, opts)
 					if err != nil {
@@ -2185,7 +2185,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 				for campaignID, tc := range tests {
 					for i, j := range tc.jobs {
 						j.CampaignID = int64(campaignID)
-						j.CampaignJobID = int64(i)
+						j.PatchID = int64(i)
 
 						err := s.CreateChangesetJob(ctx, j)
 						if err != nil {
@@ -2217,7 +2217,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 				for i, j := range jobs {
 					j.CampaignID = int64(campaignID)
-					j.CampaignJobID = int64(i)
+					j.PatchID = int64(i)
 
 					err := s.CreateChangesetJob(ctx, j)
 					if err != nil {
@@ -2278,7 +2278,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 				for i, j := range jobs {
 					j.CampaignID = int64(campaignID)
-					j.CampaignJobID = int64(i)
+					j.PatchID = int64(i)
 
 					err := s.CreateChangesetJob(ctx, j)
 					if err != nil {
@@ -2340,17 +2340,17 @@ func testStore(db *sql.DB) func(*testing.T) {
 					}
 				}
 
-				campaignJob := &cmpgn.CampaignJob{
+				patch := &cmpgn.Patch{
 					PatchSetID: patchSet.ID,
 					BaseRef:    "x",
 					RepoID:     api.RepoID(123),
 				}
-				err = s.CreateCampaignJob(ctx, campaignJob)
+				err = s.CreatePatch(ctx, patch)
 				if err != nil {
 					t.Fatal(err)
 				}
 
-				// 0 ChangesetJob, 1 CampaignJobs
+				// 0 ChangesetJob, 1 Patches
 				have, err := s.GetLatestChangesetJobCreatedAt(ctx, campaign.ID)
 				if err != nil {
 					t.Fatal(err)
@@ -2361,15 +2361,15 @@ func testStore(db *sql.DB) func(*testing.T) {
 				}
 
 				changesetJob1 := &cmpgn.ChangesetJob{
-					CampaignID:    campaign.ID,
-					CampaignJobID: campaignJob.ID,
+					CampaignID: campaign.ID,
+					PatchID:    patch.ID,
 				}
 				err = s.CreateChangesetJob(ctx, changesetJob1)
 				if err != nil {
 					t.Fatal(err)
 				}
 
-				// 1 ChangesetJob, 1 CampaignJobs
+				// 1 ChangesetJob, 1 Patches
 				have, err = s.GetLatestChangesetJobCreatedAt(ctx, campaign.ID)
 				if err != nil {
 					t.Fatal(err)
@@ -2393,17 +2393,17 @@ func testStore(db *sql.DB) func(*testing.T) {
 					s = oldStore
 				}()
 				s = NewStoreWithClock(tx, clock)
-				campaignJob = &cmpgn.CampaignJob{
+				patch = &cmpgn.Patch{
 					PatchSetID: patchSet.ID,
 					BaseRef:    "x",
 					RepoID:     api.RepoID(123),
 				}
-				err = s.CreateCampaignJob(ctx, campaignJob)
+				err = s.CreatePatch(ctx, patch)
 				if err != nil {
 					t.Fatal(err)
 				}
 
-				// 1 ChangesetJob, 2 CampaignJobs
+				// 1 ChangesetJob, 2 Patches
 				have, err = s.GetLatestChangesetJobCreatedAt(ctx, campaign.ID)
 				if err != nil {
 					t.Fatal(err)
@@ -2415,15 +2415,15 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 				// Add another changesetjob
 				changesetJob2 := &cmpgn.ChangesetJob{
-					CampaignID:    campaign.ID,
-					CampaignJobID: campaignJob.ID,
+					CampaignID: campaign.ID,
+					PatchID:    patch.ID,
 				}
 				err = s.CreateChangesetJob(ctx, changesetJob2)
 				if err != nil {
 					t.Fatal(err)
 				}
 
-				// 2 ChangesetJob, 2 CampaignJobs
+				// 2 ChangesetJob, 2 Patches
 				have, err = s.GetLatestChangesetJobCreatedAt(ctx, campaign.ID)
 				if err != nil {
 					t.Fatal(err)
@@ -2475,12 +2475,12 @@ func testProcessChangesetJob(db *sql.DB) func(*testing.T) {
 			t.Fatal(err)
 		}
 
-		campaignJob := &cmpgn.CampaignJob{
+		patch := &cmpgn.Patch{
 			PatchSetID: patchSet.ID,
 			RepoID:     repo.ID,
 			BaseRef:    "abc",
 		}
-		err = s.CreateCampaignJob(context.Background(), campaignJob)
+		err = s.CreatePatch(context.Background(), patch)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -2524,8 +2524,8 @@ func testProcessChangesetJob(db *sql.DB) func(*testing.T) {
 			}
 
 			job := &cmpgn.ChangesetJob{
-				CampaignID:    campaign.ID,
-				CampaignJobID: campaignJob.ID,
+				CampaignID: campaign.ID,
+				PatchID:    patch.ID,
 			}
 			err := s.CreateChangesetJob(ctx, job)
 			if err != nil {
@@ -2542,7 +2542,7 @@ func testProcessChangesetJob(db *sql.DB) func(*testing.T) {
 			}
 		})
 
-		t.Run("GetPendingCampaignJobsWhenAvailableLocking", func(t *testing.T) {
+		t.Run("GetPendingChangesetJobsWhenAvailableLocking", func(t *testing.T) {
 			s := NewStoreWithClock(db, clock)
 
 			process := func(ctx context.Context, s *Store, job cmpgn.ChangesetJob) error {
@@ -2551,8 +2551,8 @@ func testProcessChangesetJob(db *sql.DB) func(*testing.T) {
 			}
 
 			job := &cmpgn.ChangesetJob{
-				CampaignID:    campaign.ID,
-				CampaignJobID: campaignJob.ID,
+				CampaignID: campaign.ID,
+				PatchID:    patch.ID,
 			}
 
 			err := s.CreateChangesetJob(ctx, job)

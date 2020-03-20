@@ -1184,9 +1184,9 @@ func TestCampaignPlanResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var jobs []*campaigns.CampaignJob
+	var jobs []*campaigns.Patch
 	for _, repo := range rs {
-		job := &campaigns.CampaignJob{
+		job := &campaigns.Patch{
 			PatchSetID: patchSet.ID,
 			RepoID:     repo.ID,
 			Rev:        testingRev,
@@ -1194,7 +1194,7 @@ func TestCampaignPlanResolver(t *testing.T) {
 			Diff:       testDiff,
 		}
 
-		err := store.CreateCampaignJob(ctx, job)
+		err := store.CreatePatch(ctx, job)
 		if err != nil {
 			t.Fatal(err)
 		}

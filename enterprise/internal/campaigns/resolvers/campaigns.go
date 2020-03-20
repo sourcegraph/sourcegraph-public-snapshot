@@ -177,9 +177,9 @@ func (r *campaignResolver) ChangesetPlans(
 		return &emptyChangesetPlansConnectionsResolver{}
 	}
 
-	return &campaignJobsConnectionResolver{
+	return &patchesConnectionResolver{
 		store: r.store,
-		opts: ee.ListCampaignJobsOpts{
+		opts: ee.ListPatchesOpts{
 			PatchSetID:                r.Campaign.PatchSetID,
 			Limit:                     int(args.GetFirst()),
 			OnlyWithDiff:              true,

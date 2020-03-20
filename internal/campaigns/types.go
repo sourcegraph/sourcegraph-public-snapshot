@@ -42,7 +42,7 @@ type PatchInput struct {
 	Patch   string
 }
 
-// A PatchSet is a collection of multiple CampaignJobs.
+// A PatchSet is a collection of multiple Patchs.
 type PatchSet struct {
 	ID int64
 
@@ -58,9 +58,9 @@ func (c *PatchSet) Clone() *PatchSet {
 	return &cc
 }
 
-// A CampaignJob is the application of a CampaignType over PatchSet arguments in
+// A Patch is the application of a CampaignType over PatchSet arguments in
 // a specific repository at a specific revision.
-type CampaignJob struct {
+type Patch struct {
 	ID         int64
 	PatchSetID int64
 
@@ -74,8 +74,8 @@ type CampaignJob struct {
 	UpdatedAt time.Time
 }
 
-// Clone returns a clone of a CampaignJob.
-func (c *CampaignJob) Clone() *CampaignJob {
+// Clone returns a clone of a Patch.
+func (c *Patch) Clone() *Patch {
 	cc := *c
 	return &cc
 }
@@ -237,11 +237,11 @@ func (s ChangesetCheckState) Valid() bool {
 }
 
 // A ChangesetJob is the creation of a Changeset on an external host from a
-// local CampaignJob for a given Campaign.
+// local Patch for a given Campaign.
 type ChangesetJob struct {
 	ID            int64
 	CampaignID    int64
-	CampaignJobID int64
+	PatchID int64
 
 	// Only set once the ChangesetJob has successfully finished.
 	ChangesetID int64

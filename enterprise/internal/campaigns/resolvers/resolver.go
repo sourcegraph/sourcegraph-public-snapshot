@@ -99,12 +99,12 @@ func (r *Resolver) ChangesetPlanByID(ctx context.Context, id graphql.ID) (graphq
 		return nil, err
 	}
 
-	campaignJobID, err := unmarshalCampaignJobID(id)
+	patchID, err := unmarshalPatchID(id)
 	if err != nil {
 		return nil, err
 	}
 
-	job, err := r.store.GetCampaignJob(ctx, ee.GetCampaignJobOpts{ID: campaignJobID})
+	job, err := r.store.GetPatch(ctx, ee.GetPatchOpts{ID: patchID})
 	if err != nil {
 		if err == ee.ErrNoResults {
 			return nil, nil
@@ -112,7 +112,7 @@ func (r *Resolver) ChangesetPlanByID(ctx context.Context, id graphql.ID) (graphq
 		return nil, err
 	}
 
-	return &campaignJobResolver{store: r.store, job: job}, nil
+	return &patchResolver{store: r.store, job: job}, nil
 }
 
 func (r *Resolver) CampaignPlanByID(ctx context.Context, id graphql.ID) (graphqlbackend.CampaignPlanResolver, error) {
@@ -650,13 +650,13 @@ func (r *Resolver) PublishChangeset(ctx context.Context, args *graphqlbackend.Pu
 		return nil, errors.Wrap(err, "checking if user is admin")
 	}
 
-	campaignJobID, err := unmarshalCampaignJobID(args.ChangesetPlan)
+	patchID, err := unmarshalPatchID(args.ChangesetPlan)
 	if err != nil {
 		return nil, err
 	}
 
 	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
-	err = svc.CreateChangesetJobForCampaignJob(ctx, campaignJobID)
+	err = svc.CreateChangesetJobForPatch(ctx, patchID)
 	if err != nil {
 		return nil, err
 	}
