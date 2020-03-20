@@ -65,7 +65,7 @@ local usersWithNoPermsPanel = common.makePanel(
 );
 
 local reposPermsGapPanel = makeDurationSecondsPanel(
-    title = 'The largest time gap between repos',
+    title = 'Time gap between least and most up to date repo permissions',
     metric = 'src_repoupdater_perms_syncer_repos_perms_gap_seconds'
 );
 local reposWithStalePermsPanel = common.makePanel(
