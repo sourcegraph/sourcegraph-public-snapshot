@@ -29,7 +29,7 @@ If you are using the single Docker container or Docker Compose deployment, you'l
 Jaeger UI (jaeger-query) accessible to site admins.
 
 If you are using Kubernetes and have followed the recommended docs above to run Jaeger in the
-Sourcegraph cluster, you can access the the Jaeger UI with port-forwarding:
+Sourcegraph cluster, you can access the the Jaeger UI with port-forwarding at http://localhost:16686/:
 
 ```
 kubectl port-forward svc/jaeger-query 16686

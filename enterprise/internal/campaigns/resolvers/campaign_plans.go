@@ -54,10 +54,6 @@ func (r *campaignPlanResolver) ID() graphql.ID {
 	return marshalCampaignPlanID(r.campaignPlan.ID)
 }
 
-func (r *campaignPlanResolver) Status(ctx context.Context) (graphqlbackend.BackgroundProcessStatus, error) {
-	return r.store.GetCampaignPlanStatus(ctx, r.campaignPlan.ID)
-}
-
 // DEPRECATED: Remove in 3.15 in favor of ChangesetPlans.
 func (r *campaignPlanResolver) Changesets(
 	ctx context.Context,
