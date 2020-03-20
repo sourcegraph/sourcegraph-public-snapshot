@@ -27,7 +27,12 @@ CHECKS=(
 
 echo "--- 🚨 Buildkite's timing information is misleading! Only consider the job timing that's printed after 'done'"
 
-parallel_run {} ::: "${CHECKS[@]}"
+MAYBE_TIME_PREFIX=""
+if [[ "${CI_DEBUG_PROFILE:-"false"}" == "true" ]]; then
+    MAYBE_TIME_PREFIX="env time -v"
+fi
+
+parallel_run "${MAYBE_TIME_PREFIX}" {} ::: "${CHECKS[@]}"
 
 # TODO(sqs): Reenable this check when about.sourcegraph.com is reliable. Most failures come from its
 # downtime, not from broken URLs.
