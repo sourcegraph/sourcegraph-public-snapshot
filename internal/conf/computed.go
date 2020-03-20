@@ -321,11 +321,11 @@ func StructuralSearchEnabled() bool {
 }
 
 func AndOrQueryEnabled() bool {
-	val := Get().ExperimentalFeatures.AndOrQuery
-	if val == "" {
+	e := Get().ExperimentalFeatures
+	if e == nil || e.AndOrQuery == "" {
 		return false
 	}
-	return val == "enabled"
+	return e.AndOrQuery == "enabled"
 }
 
 func SearchMultipleRevisionsPerRepository() bool {
