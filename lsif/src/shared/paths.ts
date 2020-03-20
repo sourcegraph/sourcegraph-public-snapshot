@@ -18,8 +18,8 @@ export function dbFilename(storageRoot: string, id: number): string {
  * @param storageRoot The path where uploads are stored.
  * @param id The identifier of the upload.
  */
-export function uploadFilename(storageRoot: string, id: string): string {
-    return path.join(storageRoot, constants.UPLOADS_DIR, id)
+export function uploadFilename(storageRoot: string, id: number): string {
+    return path.join(storageRoot, constants.UPLOADS_DIR, `${id}.lsif.gz`)
 }
 
 /**
