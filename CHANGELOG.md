@@ -13,6 +13,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- Users and site administrators can now view a log of their actions/events in the user settings.
+
 ### Changed
 
 ### Fixed
