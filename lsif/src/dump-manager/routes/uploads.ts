@@ -5,11 +5,10 @@ import { wrap } from 'async-middleware'
 import { addTags, TracingContext, logAndTraceCall } from '../../shared/tracing'
 import { pipeline as _pipeline } from 'stream'
 import { promisify } from 'util'
-import * as nodepath from 'path'
 import * as fs from 'mz/fs'
 import * as settings from '../settings'
-import * as constants from '../../shared/constants'
-import { dbFilename } from '../../shared/paths'
+import { dbFilename, uploadFilename } from '../../shared/paths'
+import { ThrottleGroup, Throttle } from 'stream-throttle'
 
 const pipeline = promisify(_pipeline)
 
@@ -20,6 +19,16 @@ const pipeline = promisify(_pipeline)
  */
 export function createUploadRouter(logger: Logger): express.Router {
     const router = express.Router()
+
+    const makeServeThrottle = makeThrottleFactory(
+        settings.MAXIMUM_SERVE_BITS_PER_SECOND,
+        settings.MAXIMUM_SERVE_CHUNKSIZE
+    )
+
+    const makeUploadThrottle = makeThrottleFactory(
+        settings.MAXIMUM_UPLOAD_BITS_PER_SECOND,
+        settings.MAXIMUM_UPLOAD_CHUNKSIZE
+    )
 
     /**
      * Create a tracing context from the request logger and tracing span
@@ -33,48 +42,59 @@ export function createUploadRouter(logger: Logger): express.Router {
         tags: { [K: string]: unknown }
     ): TracingContext => addTags({ logger, span: req.span }, tags)
 
-    router.post(
-        '/:id([0-9]+)',
+    router.get(
+        '/:id([0-9a-fA-F-]+)/raw',
         wrap(
-            async (req: express.Request, res: express.Response<undefined>): Promise<void> => {
-                const id = parseInt(req.params.id, 10)
+            async (req: express.Request, res: express.Response<unknown>): Promise<void> => {
+                const id = req.params.id
                 const ctx = createTracingContext(req, { id })
+                const filename = uploadFilename(settings.STORAGE_ROOT, id)
+                const stream = fs.createReadStream(filename)
+                await logAndTraceCall(ctx, 'Serving payload', () => pipeline(stream, makeServeThrottle(), res))
+            }
+        )
+    )
 
-                const output = fs.createWriteStream(dbFilename(settings.STORAGE_ROOT, id))
-                await logAndTraceCall(ctx, 'Uploading payload', () => pipeline(req, output))
-
+    router.post(
+        '/:id([0-9a-fA-F-]+)/raw',
+        wrap(
+            async (req: express.Request, res: express.Response<unknown>): Promise<void> => {
+                const id = req.params.id
+                const ctx = createTracingContext(req, { id })
+                const filename = uploadFilename(settings.STORAGE_ROOT, id)
+                const stream = fs.createWriteStream(filename)
+                await logAndTraceCall(ctx, 'Uploading payload', () => pipeline(req, makeUploadThrottle(), stream))
                 res.send()
             }
         )
     )
 
-    router.get(
-        '/:id([0-9a-fA-F-]+)/raw',
-        wrap(
-            async (req: express.Request, res: express.Response<undefined>): Promise<void> => {
-                const id = req.params.id
-                const filename = nodepath.join(settings.STORAGE_ROOT, constants.UPLOADS_DIR, id)
-                const output = fs.createReadStream(filename)
-                output.pipe(res) // TODO - does not forward errors
-            }
-        )
-    )
-
     router.post(
-        '/:id([0-9a-fA-F-]+)/raw',
+        '/:id([0-9]+)',
         wrap(
-            async (req: express.Request, res: express.Response<undefined>): Promise<void> => {
-                const id = req.params.id
+            async (req: express.Request, res: express.Response<unknown>): Promise<void> => {
+                const id = parseInt(req.params.id, 10)
                 const ctx = createTracingContext(req, { id })
-
-                const filename = nodepath.join(settings.STORAGE_ROOT, constants.UPLOADS_DIR, id)
-                const output = fs.createWriteStream(filename)
-                await logAndTraceCall(ctx, 'Uploading payload', () => pipeline(req, output))
-
+                const filename = dbFilename(settings.STORAGE_ROOT, id)
+                const stream = fs.createWriteStream(filename)
+                await logAndTraceCall(ctx, 'Uploading payload', () => pipeline(req, makeUploadThrottle(), stream))
                 res.send()
             }
         )
     )
 
     return router
+}
+
+/**
+ * Create a function that will create a throttle that can be used as a stream
+ * transformer. This transformer can limit both readable and writable streams.
+ *
+ * @param rate The maximum bit second of the stream.
+ * @param chunksize The size of chunks used to break down larger slices of data.
+ */
+function makeThrottleFactory(rate: number, chunksize: number): () => Throttle {
+    const opts = { rate, chunksize }
+    const throttleGroup = new ThrottleGroup(opts)
+    return () => throttleGroup.throttle(opts)
 }
