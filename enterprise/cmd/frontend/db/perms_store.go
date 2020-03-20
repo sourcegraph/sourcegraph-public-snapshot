@@ -1455,8 +1455,8 @@ type PermsMetrics struct {
 	ReposPermsGapSeconds float64
 }
 
-// Metrics returns calculated metrics values by querying the database. The "stale" argument
-// indicates how long ago was the last update to be considered as stale.
+// Metrics returns calculated metrics values by querying the database. The "staleDur"
+// argument indicates how long ago was the last update to be considered as stale.
 func (s *PermsStore) Metrics(ctx context.Context, staleDur time.Duration) (*PermsMetrics, error) {
 	m := &PermsMetrics{}
 
