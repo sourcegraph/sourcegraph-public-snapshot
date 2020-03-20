@@ -12,15 +12,6 @@ export class Database {
     constructor(private dumpId: pgModels.DumpId) {}
 
     /**
-     * Retrieve all document paths from the database.
-     *
-     * @param ctx The tracing context.
-     */
-    public documentPaths(ctx: TracingContext = {}): Promise<string[]> {
-        return this.request('documentPaths', new URLSearchParams(), ctx)
-    }
-
-    /**
      * Determine if data exists for a particular document in this database.
      *
      * @param path The path of the document.

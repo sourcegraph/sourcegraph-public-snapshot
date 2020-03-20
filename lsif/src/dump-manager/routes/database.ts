@@ -45,17 +45,6 @@ export function createDatabaseRouter(logger: Logger): express.Router {
         res.json(payload)
     }
 
-    type DocumentPathsResponse = string[]
-
-    router.get(
-        '/:id([0-9]+)/documentPaths',
-        wrap(
-            async (req: express.Request, res: express.Response<DocumentPathsResponse>): Promise<void> => {
-                await onDatabase(req, res, (database, ctx) => database.documentPaths(ctx))
-            }
-        )
-    )
-
     interface ExistsQueryArgs {
         path: string
     }
