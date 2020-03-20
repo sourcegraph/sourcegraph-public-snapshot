@@ -2326,6 +2326,20 @@ func testStore(db *sql.DB) func(*testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
+
+				// Cleanup existing ChangesetJobs so we don't have interference
+				// between the previous tests and this one.
+				chjs, _, err := s.ListChangesetJobs(ctx, ListChangesetJobsOpts{Limit: -1})
+				if err != nil {
+					t.Fatal(err)
+				}
+				for _, j := range chjs {
+					err := s.DeleteChangesetJob(ctx, j.ID)
+					if err != nil {
+						t.Fatal(err)
+					}
+				}
+
 				campaignJob := &cmpgn.CampaignJob{
 					CampaignPlanID: plan.ID,
 					BaseRef:        "x",
