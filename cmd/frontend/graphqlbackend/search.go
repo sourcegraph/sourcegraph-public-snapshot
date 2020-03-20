@@ -30,8 +30,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/query/syntax"
-	searchtypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -87,19 +85,17 @@ func NewSearchImplementer(args *SearchArgs) (SearchImplementer, error) {
 		queryString = args.Query
 	}
 
-	var queryInfo QueryInfo
+	var queryInfo query.QueryInfo
 	if conf.AndOrQueryEnabled() {
-		q, err := search.Parse(args.Query)
+		queryInfo, err = query.ParseAndOr(args.Query)
 		if err != nil {
 			return alertForQuery(args.Query, err), nil
 		}
-		queryInfo = &AndOrQuery{query: q}
 	} else {
-		q, p, err := query.Process(queryString, searchType)
+		queryInfo, err = query.Process(queryString, searchType)
 		if err != nil {
 			return alertForQuery(queryString, err), nil
 		}
-		queryInfo = &OrdinaryQuery{query: q}
 	}
 
 	// If the request is a paginated one, decode those arguments now.
@@ -183,67 +179,9 @@ func detectSearchType(version string, patternType *string, input string) (query.
 	return searchType, nil
 }
 
-type QueryInfo interface {
-	RegexpPatterns(field string) (values, negatedValues []string)
-	StringValues(field string) (values, negatedValues []string)
-	StringValue(field string) (value, negatedValue string)
-	Values(field string) []*searchtypes.Value
-	Fields() map[string][]*searchtypes.Value
-	ParseTree() syntax.ParseTree
-}
-
-func (q OrdinaryQuery) RegexpPatterns(field string) (values, negatedValues []string) {
-	return q.query.RegexpPatterns(field)
-}
-func (q OrdinaryQuery) StringValues(field string) (values, negatedValues []string) {
-	return q.query.StringValues(field)
-}
-func (q OrdinaryQuery) StringValue(field string) (value, negatedValue string) {
-	return q.query.StringValue(field)
-}
-func (q OrdinaryQuery) Values(field string) []*searchtypes.Value {
-	return q.query.Values(field)
-}
-func (q OrdinaryQuery) Fields() map[string][]*searchtypes.Value {
-	return q.query.Fields
-}
-func (q OrdinaryQuery) ParseTree() syntax.ParseTree {
-	return q.parseTree
-}
-
-func (AndOrQuery) RegexpPatterns(field string) (values, negatedValues []string) {
-	panic("")
-}
-func (AndOrQuery) StringValues(field string) (values, negatedValues []string) {
-	panic("")
-}
-func (AndOrQuery) StringValue(field string) (value, negatedValue string) {
-	panic("")
-}
-func (AndOrQuery) Values(field string) []*searchtypes.Value {
-	panic("")
-}
-func (AndOrQuery) Fields() map[string][]*searchtypes.Value {
-	panic("")
-}
-func (AndOrQuery) ParseTree() syntax.ParseTree {
-	panic("")
-}
-
-// An ordinary query, corresponding to a single search operation.
-type OrdinaryQuery struct {
-	query     *query.Query     // the validated search query
-	parseTree syntax.ParseTree // the parsed search query
-}
-
-// A query containing and/or expressions.
-type AndOrQuery struct {
-	query []search.Node
-}
-
 // searchResolver is a resolver for the GraphQL type `Search`
 type searchResolver struct {
-	query         QueryInfo             // the query, whether one containing and/or expressions or not
+	query         query.QueryInfo       // the query, either containing and/or expressions or otherwise ordinary
 	originalQuery string                // the raw string of the original search query
 	pagination    *searchPaginationInfo // pagination information, or nil if the request is not paginated.
 	patternType   query.SearchType
@@ -817,19 +755,18 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]*se
 func SearchRepos(ctx context.Context, plainQuery string) ([]*RepositoryResolver, error) {
 	queryString := query.ConvertToLiteral(plainQuery)
 
-	var queryInfo QueryInfo
+	var queryInfo query.QueryInfo
+	var err error
 	if conf.AndOrQueryEnabled() {
-		q, err := search.Parse(plainQuery)
+		queryInfo, err = query.ParseAndOr(plainQuery)
 		if err != nil {
 			return nil, err
 		}
-		queryInfo = &AndOrQuery{query: q}
 	} else {
-		q, err := query.ParseAndCheck(queryString)
+		queryInfo, err = query.ParseAndCheck(queryString)
 		if err != nil {
 			return nil, err
 		}
-		queryInfo = &OrdinaryQuery{query: q}
 	}
 
 	sr := &searchResolver{

@@ -464,7 +464,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	tr.LazyLog(&args.Query.Fields, false)
+	// FIXME: rvantonder deleted a line to stop a confusing compile error.
 	tr.LazyLog(args.PatternInfo, false)
 
 	ctx, cancel := context.WithCancel(ctx)

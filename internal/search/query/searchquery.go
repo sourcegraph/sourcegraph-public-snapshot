@@ -98,7 +98,7 @@ type Query struct {
 	types.Fields // the query fields
 }
 
-func Parse(input string) (syntax.ParseTree, error) {
+func parse(input string) (syntax.ParseTree, error) {
 	parseTree, err := syntax.Parse(input)
 	if err != nil {
 		return nil, err
@@ -121,8 +121,8 @@ func Check(parseTree syntax.ParseTree) (*Query, error) {
 
 // ParseAndCheck parses and typechecks a search query using the default
 // query type configuration.
-func ParseAndCheck(input string) (*Query, error) {
-	parseTree, err := Parse(input)
+func ParseAndCheck(input string) (QueryInfo, error) {
+	parseTree, err := parse(input)
 	if err != nil {
 		return nil, err
 	}
@@ -132,7 +132,7 @@ func ParseAndCheck(input string) (*Query, error) {
 		return nil, err
 	}
 
-	return checkedQuery, err
+	return &OrdinaryQuery{query: checkedQuery, parseTree: parseTree}, err
 }
 
 func processSearchPattern(q *Query) string {
@@ -169,23 +169,23 @@ func Validate(q *Query, searchType SearchType) error {
 
 // Process is a top level convenience function for processing a raw string into
 // a validated and type checked query, and the parse tree of the raw string.
-func Process(queryString string, searchType SearchType) (*Query, syntax.ParseTree, error) {
-	parseTree, err := Parse(queryString)
+func Process(queryString string, searchType SearchType) (QueryInfo, error) {
+	parseTree, err := parse(queryString)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	query, err := Check(parseTree)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	err = Validate(query, searchType)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	return query, parseTree, nil
+	return &OrdinaryQuery{query: query, parseTree: parseTree}, nil
 }
 
 // parseAndCheck is preserved for testing custom Configs only.
