@@ -32,7 +32,7 @@ export function createDatabaseRouter(logger: Logger): express.Router {
         tags: { [K: string]: unknown }
     ): TracingContext => addTags({ logger, span: req.span }, tags)
 
-    const onDatabase = async <T>(
+    const withDatabase = async <T>(
         req: express.Request,
         res: express.Response<T>,
         handler: (database: Database, ctx?: TracingContext) => Promise<T>
@@ -51,7 +51,7 @@ export function createDatabaseRouter(logger: Logger): express.Router {
         '/:id([0-9]+)/documentPaths',
         wrap(
             async (req: express.Request, res: express.Response<DocumentPathsResponse>): Promise<void> => {
-                await onDatabase(req, res, (database, ctx) => database.documentPaths(ctx))
+                await withDatabase(req, res, (database, ctx) => database.documentPaths(ctx))
             }
         )
     )
@@ -68,7 +68,7 @@ export function createDatabaseRouter(logger: Logger): express.Router {
         wrap(
             async (req: express.Request, res: express.Response<ExistsResponse>): Promise<void> => {
                 const { path }: ExistsQueryArgs = req.query
-                await onDatabase(req, res, (database, ctx) => database.exists(path, ctx))
+                await withDatabase(req, res, (database, ctx) => database.exists(path, ctx))
             }
         )
     )
@@ -91,7 +91,7 @@ export function createDatabaseRouter(logger: Logger): express.Router {
         wrap(
             async (req: express.Request, res: express.Response<DefinitionsResponse>): Promise<void> => {
                 const { path, line, character }: DefinitionsQueryArgs = req.query
-                await onDatabase(req, res, (database, ctx) => database.definitions(path, { line, character }, ctx))
+                await withDatabase(req, res, (database, ctx) => database.definitions(path, { line, character }, ctx))
             }
         )
     )
@@ -114,7 +114,7 @@ export function createDatabaseRouter(logger: Logger): express.Router {
         wrap(
             async (req: express.Request, res: express.Response<ReferencesResponse>): Promise<void> => {
                 const { path, line, character }: ReferencesQueryArgs = req.query
-                await onDatabase(
+                await withDatabase(
                     req,
                     res,
                     async (database, ctx) => (await database.references(path, { line, character }, ctx)).values
@@ -141,7 +141,7 @@ export function createDatabaseRouter(logger: Logger): express.Router {
         wrap(
             async (req: express.Request, res: express.Response<HoverResponse>): Promise<void> => {
                 const { path, line, character }: HoverQueryArgs = req.query
-                await onDatabase(req, res, (database, ctx) => database.hover(path, { line, character }, ctx))
+                await withDatabase(req, res, (database, ctx) => database.hover(path, { line, character }, ctx))
             }
         )
     )
@@ -167,7 +167,7 @@ export function createDatabaseRouter(logger: Logger): express.Router {
         wrap(
             async (req: express.Request, res: express.Response<GetRangeByPositionResponse>): Promise<void> => {
                 const { path, line, character }: GetRangeByPositionQueryArgs = req.query
-                await onDatabase(req, res, (database, ctx) =>
+                await withDatabase(req, res, (database, ctx) =>
                     database.getRangeByPosition(path, { line, character }, ctx)
                 )
             }
@@ -199,7 +199,7 @@ export function createDatabaseRouter(logger: Logger): express.Router {
         wrap(
             async (req: express.Request, res: express.Response<MonikerResultsResponse>): Promise<void> => {
                 const { model, scheme, identifier, skip, take }: MonikerResultsQueryArgs = req.query
-                await onDatabase(req, res, (database, ctx) =>
+                await withDatabase(req, res, (database, ctx) =>
                     database.monikerResults(
                         model === 'definition' ? sqliteModels.DefinitionModel : sqliteModels.ReferenceModel,
                         { scheme, identifier },
@@ -223,7 +223,7 @@ export function createDatabaseRouter(logger: Logger): express.Router {
         wrap(
             async (req: express.Request, res: express.Response<GetDocumentByPathResponse>): Promise<void> => {
                 const { path }: GetDocumentByPathQueryArgs = req.query
-                await onDatabase(req, res, (database, ctx) => database.getDocumentByPath(path, ctx))
+                await withDatabase(req, res, (database, ctx) => database.getDocumentByPath(path, ctx))
             }
         )
     )
