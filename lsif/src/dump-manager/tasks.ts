@@ -76,7 +76,9 @@ async function purgeOldDumps(
         }
 
         // Delete this dump and subtract its size from the current dir size
-        currentSizeBytes -= await filesize(dbFilename(storageRoot, payload.id))
+        const filename = dbFilename(storageRoot, payload.id)
+        currentSizeBytes -= await filesize(filename)
+        await fs.unlink(filename)
     }
 }
 
