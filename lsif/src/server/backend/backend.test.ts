@@ -344,9 +344,9 @@ describe('Backend', () => {
             commit: string,
             path: string,
             position: lsif.lsp.Position,
+            dumpId: number,
             limit: number,
-            remoteDumpLimit?: number,
-            dumpId?: number
+            remoteDumpLimit?: number
         ): Promise<{ locations: ResolvedInternalLocation[]; pageSizes: number[]; numPages: number }> => {
             let locations: ResolvedInternalLocation[] = []
             const pageSizes: number[] = []
@@ -505,9 +505,9 @@ describe('Backend', () => {
                 'deadbeef',
                 '/foo/bar/baz.ts',
                 { line: 5, character: 10 },
+                1,
                 pageLimit,
-                remoteDumpLimit,
-                1
+                remoteDumpLimit
             )
 
             // Ensure we get all locations

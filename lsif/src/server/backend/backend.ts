@@ -68,7 +68,7 @@ export class Backend {
      * @param commit The commit.
      * @param path The path of the document to which the position belongs.
      * @param position The current hover position.
-     * @param dumpId The identifier of the dump to load. If not supplied, the closest dump will be used.
+     * @param dumpId The identifier of the dump to load.
      * @param ctx The tracing context.
      */
     public async definitions(
@@ -76,10 +76,10 @@ export class Backend {
         commit: string,
         path: string,
         position: lsp.Position,
-        dumpId?: number,
+        dumpId: number,
         ctx: TracingContext = {}
     ): Promise<ResolvedInternalLocation[] | undefined> {
-        const closestDumpAndDatabase = await this.closestDatabase(repositoryId, commit, path, dumpId, ctx)
+        const closestDumpAndDatabase = await this.closestDatabase(dumpId, ctx)
         if (!closestDumpAndDatabase) {
             if (ctx.logger) {
                 ctx.logger.warn('No database could be loaded', { repositoryId, commit, path })
@@ -160,7 +160,7 @@ export class Backend {
      * @param position The current hover position.
      * @param paginationContext Context describing the current request for paginated results.
      * @param remoteDumpLimit The maximum number of remote dumps to query in one operation.
-     * @param dumpId The identifier of the dump to load. If not supplied, the closest dump will be used.
+     * @param dumpId The identifier of the dump to load.
      * @param ctx The tracing context.
      */
     public async references(
@@ -170,7 +170,7 @@ export class Backend {
         position: lsp.Position,
         paginationContext: ReferencePaginationContext = { limit: 10 },
         remoteDumpLimit = DEFAULT_REFERENCES_REMOTE_DUMP_LIMIT,
-        dumpId?: number,
+        dumpId: number,
         ctx: TracingContext = {}
     ): Promise<PaginatedInternalLocations | undefined> {
         if (paginationContext.cursor) {
@@ -184,7 +184,7 @@ export class Backend {
             )
         }
 
-        const closestDumpAndDatabase = await this.closestDatabase(repositoryId, commit, path, dumpId, ctx)
+        const closestDumpAndDatabase = await this.closestDatabase(dumpId, ctx)
         if (!closestDumpAndDatabase) {
             if (ctx.logger) {
                 ctx.logger.warn('No database could be loaded', { repositoryId, commit, path })
@@ -238,7 +238,7 @@ export class Backend {
      * @param commit The commit.
      * @param path The path of the document to which the position belongs.
      * @param position The current hover position.
-     * @param dumpId The identifier of the dump to load. If not supplied, the closest dump will be used.
+     * @param dumpId The identifier of the dump to load.
      * @param ctx The tracing context.
      */
     public async hover(
@@ -246,10 +246,10 @@ export class Backend {
         commit: string,
         path: string,
         position: lsp.Position,
-        dumpId?: number,
+        dumpId: number,
         ctx: TracingContext = {}
     ): Promise<{ text: string; range: lsp.Range } | null | undefined> {
-        const closestDumpAndDatabase = await this.closestDatabase(repositoryId, commit, path, dumpId, ctx)
+        const closestDumpAndDatabase = await this.closestDatabase(dumpId, ctx)
         if (!closestDumpAndDatabase) {
             if (ctx.logger) {
                 ctx.logger.warn('No database could be loaded', { repositoryId, commit, path })
@@ -801,30 +801,13 @@ export class Backend {
      * found. This new tracing context should be used in all downstream requests so that the original
      * commit and the effective commit are both known.
      *
-     * If no dumpId is supplied, the first database from `findClosestDatabase` is used. Note that this
-     * functionality does not happen in the application and only in tests, as an uploadId is a required
-     * parameter on all routes into the API.
-     *
-     * TODO - remove test-specific logic
-     *
-     * @param repositoryId The repository identifier.
-     * @param commit The target commit.
-     * @param path One of the files in the dump.
      * @param dumpId The identifier of the dump to load.
      * @param ctx The tracing context.
      */
     private async closestDatabase(
-        repositoryId: number,
-        commit: string,
-        path: string,
-        dumpId?: number,
+        dumpId: number,
         ctx: TracingContext = {}
     ): Promise<{ dump: pgModels.LsifDump; database: Database; ctx: TracingContext } | undefined> {
-        if (!dumpId) {
-            const databases = await this.findClosestDatabases(repositoryId, commit, path)
-            return databases.length > 0 ? databases[0] : undefined
-        }
-
         const dumpAndDatabase = await this.getDumpAndDatabaseById(dumpId)
         if (!dumpAndDatabase) {
             return undefined

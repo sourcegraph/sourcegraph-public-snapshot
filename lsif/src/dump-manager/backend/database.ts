@@ -103,13 +103,7 @@ export class Database {
                     numDefinitionResults: definitionResults.length,
                 })
 
-                // TODO - due to some bugs in tsc... this fixes the tests and some typescript examples
-                // Not sure of a better way to do this right now until we work through how to patch
-                // lsif-tsc to handle node_modules inclusion (or somehow blacklist it on import).
-
-                if (!definitionResults.some(v => v.documentPath.includes('node_modules'))) {
-                    return this.convertRangesToInternalLocations(path, document, definitionResults)
-                }
+                return this.convertRangesToInternalLocations(path, document, definitionResults)
             }
 
             return []

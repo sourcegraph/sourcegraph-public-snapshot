@@ -166,7 +166,7 @@ export function createLsifRouter(
         path: string
         line: number
         character: number
-        uploadId?: number
+        uploadId: number
     }
 
     interface LocationsResponse {
