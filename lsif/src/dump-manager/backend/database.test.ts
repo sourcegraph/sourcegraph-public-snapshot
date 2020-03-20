@@ -110,31 +110,21 @@ describe('Database', () => {
         })
     })
 
-    describe('getRangeByPosition', () => {
+    describe('monikersByPosition', () => {
         it('should return correct range and document with monikers', async () => {
             // `func NewMetaData(id, root string, info ToolInfo) *MetaData {`
             //       ^^^^^^^^^^^
 
-            const { document, ranges } = await database.getRangeByPosition('protocol/protocol.go', {
+            const monikers = await database.monikersByPosition('protocol/protocol.go', {
                 line: 92,
                 character: 10,
             })
 
-            expect(ranges).toHaveLength(1)
-            expect(ranges[0].startLine).toEqual(92)
-            expect(ranges[0].startCharacter).toEqual(5)
-            expect(ranges[0].endLine).toEqual(92)
-            expect(ranges[0].endCharacter).toEqual(16)
-
-            const monikers = Array.from(ranges[0].monikerIds).map(id => document?.monikers.get(id))
             expect(monikers).toHaveLength(1)
-            expect(monikers[0]?.kind).toEqual('export')
-            expect(monikers[0]?.scheme).toEqual('gomod')
-            expect(monikers[0]?.identifier).toEqual('github.com/sourcegraph/lsif-go/protocol:NewMetaData')
-
-            const packageInformation = document?.packageInformation.get(monikers[0]?.packageInformationId || 0)
-            expect(packageInformation?.name).toEqual('github.com/sourcegraph/lsif-go')
-            expect(packageInformation?.version).toEqual('v0.0.0-ad3507cbeb18')
+            expect(monikers[0]).toHaveLength(1)
+            expect(monikers[0][0]?.kind).toEqual('export')
+            expect(monikers[0][0]?.scheme).toEqual('gomod')
+            expect(monikers[0][0]?.identifier).toEqual('github.com/sourcegraph/lsif-go/protocol:NewMetaData')
         })
     })
 

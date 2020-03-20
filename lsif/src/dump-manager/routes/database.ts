@@ -135,29 +135,26 @@ export function createDatabaseRouter(logger: Logger): express.Router {
         )
     )
 
-    interface GetRangeByPositionQueryArgs {
+    interface MonikersByPositionQueryArgs {
         path: string
         line: number
         character: number
     }
 
-    interface GetRangeByPositionResponse {
-        document: sqliteModels.DocumentData | undefined
-        ranges: sqliteModels.RangeData[]
-    }
+    type MonikersByPositionResponse = sqliteModels.MonikerData[][]
 
     router.get(
-        '/:id([0-9]+)/getRangeByPosition',
+        '/:id([0-9]+)/monikersByPosition',
         validation.validationMiddleware([
             validation.validateNonEmptyString('path'),
             validation.validateInt('line'),
             validation.validateInt('character'),
         ]),
         wrap(
-            async (req: express.Request, res: express.Response<GetRangeByPositionResponse>): Promise<void> => {
-                const { path, line, character }: GetRangeByPositionQueryArgs = req.query
+            async (req: express.Request, res: express.Response<MonikersByPositionResponse>): Promise<void> => {
+                const { path, line, character }: MonikersByPositionQueryArgs = req.query
                 await onDatabase(req, res, (database, ctx) =>
-                    database.getRangeByPosition(path, { line, character }, ctx)
+                    database.monikersByPosition(path, { line, character }, ctx)
                 )
             }
         )
@@ -200,19 +197,22 @@ export function createDatabaseRouter(logger: Logger): express.Router {
         )
     )
 
-    interface GetDocumentByPathQueryArgs {
+    interface PackageInformationQueryArgs {
         path: string
+        packageInformationId: number
     }
 
-    type GetDocumentByPathResponse = sqliteModels.DocumentData | undefined
+    type PackageInformationResponse = sqliteModels.PackageInformationData | undefined
 
     router.get(
-        '/:id([0-9]+)/getDocumentByPath',
+        '/:id([0-9]+)/packageInformation',
         validation.validationMiddleware([validation.validateNonEmptyString('path')]),
         wrap(
-            async (req: express.Request, res: express.Response<GetDocumentByPathResponse>): Promise<void> => {
-                const { path }: GetDocumentByPathQueryArgs = req.query
-                await onDatabase(req, res, (database, ctx) => database.getDocumentByPath(path, ctx))
+            async (req: express.Request, res: express.Response<PackageInformationResponse>): Promise<void> => {
+                const { path, packageInformationId }: PackageInformationQueryArgs = req.query
+                await onDatabase(req, res, (database, ctx) =>
+                    database.packageInformation(path, packageInformationId, ctx)
+                )
             }
         )
     )

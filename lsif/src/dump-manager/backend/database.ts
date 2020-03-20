@@ -172,29 +172,27 @@ export class Database {
     }
 
     /**
-     * Return a parsed document that describes the given path as well as the ranges
-     * from that document that contains the given position. If multiple ranges are
-     * returned, then the inner-most ranges will occur before the outer-most ranges.
+     * Return all of the monikers attached to all ranges that contain the given position. The
+     * resulting list is grouped by range. If multiple ranges contain this position, then the
+     * list monikers for the inner-most ranges will occur before the outer-most ranges.
      *
      * @param path The path of the document.
      * @param position The user's hover position.
      * @param ctx The tracing context.
      */
-    public getRangeByPosition(
+    public async monikersByPosition(
         path: string,
         position: lsp.Position,
         ctx: TracingContext = {}
-    ): Promise<{ document: sqliteModels.DocumentData | undefined; ranges: sqliteModels.RangeData[] }> {
-        return this.logAndTraceCall(ctx, 'Fetching range by position', async ctx => {
-            const document = await this.getDocumentByPath(path)
-            if (!document) {
-                return { document: undefined, ranges: [] }
-            }
+    ): Promise<sqliteModels.MonikerData[][]> {
+        const { document, ranges } = await this.getRangeByPosition(path, position, ctx)
+        if (!document) {
+            return []
+        }
 
-            const ranges = findRanges(document.ranges.values(), position)
-            this.logSpan(ctx, 'matching_ranges', { ranges: cleanRanges(ranges) })
-            return { document, ranges }
-        })
+        return ranges.map(range =>
+            Array.from(range.monikerIds).map(monikerId => mustGet(document.monikers, monikerId, 'moniker'))
+        )
     }
 
     /**
@@ -244,6 +242,29 @@ export class Database {
     }
 
     /**
+     * Return the package information data with the given identifier.
+     *
+     * @param path The path of the document.
+     * @param packageInformationId The identifier of the package information data.
+     * @param ctx The tracing context.
+     */
+    public async packageInformation(
+        path: string,
+        packageInformationId: number,
+        ctx: TracingContext = {}
+    ): Promise<sqliteModels.PackageInformationData | undefined> {
+        const document = await this.getDocumentByPath(path, ctx)
+        if (!document) {
+            return undefined
+        }
+
+        return document.packageInformation.get(packageInformationId)
+    }
+
+    //
+    // Helper Functions
+
+    /**
      * Return a parsed document that describes the given path. The result of this
      * method is cached across all database instances. If the document is not found
      * it returns undefined; other errors will throw.
@@ -251,7 +272,7 @@ export class Database {
      * @param path The path of the document.
      * @param ctx The tracing context.
      */
-    public async getDocumentByPath(
+    private async getDocumentByPath(
         path: string,
         ctx: TracingContext = {}
     ): Promise<sqliteModels.DocumentData | undefined> {
@@ -280,8 +301,31 @@ export class Database {
         }
     }
 
-    //
-    // Helper Functions
+    /**
+     * Return a parsed document that describes the given path as well as the ranges
+     * from that document that contains the given position. If multiple ranges are
+     * returned, then the inner-most ranges will occur before the outer-most ranges.
+     *
+     * @param path The path of the document.
+     * @param position The user's hover position.
+     * @param ctx The tracing context.
+     */
+    private getRangeByPosition(
+        path: string,
+        position: lsp.Position,
+        ctx: TracingContext = {}
+    ): Promise<{ document: sqliteModels.DocumentData | undefined; ranges: sqliteModels.RangeData[] }> {
+        return this.logAndTraceCall(ctx, 'Fetching range by position', async ctx => {
+            const document = await this.getDocumentByPath(path)
+            if (!document) {
+                return { document: undefined, ranges: [] }
+            }
+
+            const ranges = findRanges(document.ranges.values(), position)
+            this.logSpan(ctx, 'matching_ranges', { ranges: cleanRanges(ranges) })
+            return { document, ranges }
+        })
+    }
 
     /**
      * Convert a set of range-document pairs (from a definition or reference query) into

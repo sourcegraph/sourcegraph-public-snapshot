@@ -3,7 +3,6 @@ import * as lsp from 'vscode-languageserver-protocol'
 import * as pgModels from '../../shared/models/pg'
 import { addTags, logSpan, TracingContext } from '../../shared/tracing'
 import { Database } from './database'
-import { mustGet } from '../../shared/maps'
 import { DumpManager } from '../../shared/store/dumps'
 import { DEFAULT_REFERENCES_REMOTE_DUMP_LIMIT } from '../../shared/constants'
 import { DependencyManager } from '../../shared/store/dependencies'
@@ -100,8 +99,8 @@ export class Backend {
         }
 
         // Try to find definitions in other dumps
-        const { document, ranges } = await database.getRangeByPosition(pathInDb, position, ctx)
-        if (!document || ranges.length === 0) {
+        const rangeMonikers = await database.monikersByPosition(pathInDb, position, ctx)
+        if (rangeMonikers.length === 0) {
             return []
         }
 
@@ -109,18 +108,15 @@ export class Backend {
         // outermost, such that the set of monikers for reach range is sorted by
         // priority. Then, we perform a search for each moniker, in sequence,
         // until valid results are found.
-        for (const range of ranges) {
-            const monikers = sortMonikers(
-                Array.from(range.monikerIds).map(id => mustGet(document.monikers, id, 'moniker'))
-            )
-
+        for (const monikers of rangeMonikers) {
             for (const moniker of monikers) {
                 if (moniker.kind === 'import') {
                     // This symbol was imported from another database. See if we have
                     // a remote definition for it.
 
                     const { locations: remoteDefinitions } = await this.lookupMoniker(
-                        document,
+                        dumpId,
+                        pathInDb,
                         moniker,
                         sqliteModels.DefinitionModel,
                         {},
@@ -198,24 +194,14 @@ export class Backend {
         const pathInDb = pathToDatabase(dump.root, path)
 
         // Get the ranges of for this position and the document in which they occur
-        const { document, ranges } = await database.getRangeByPosition(pathInDb, position, ctx)
-
-        // Find and normalize the monikers attached to each range
-        const monikers: sqliteModels.MonikerData[] = []
-        if (document) {
-            for (const range of ranges) {
-                for (const monikerId of range.monikerIds) {
-                    monikers.push(mustGet(document.monikers, monikerId, 'monikers'))
-                }
-            }
-        }
+        const rangeMonikers = await database.monikersByPosition(pathInDb, position, ctx)
 
         const cursor: ReferencePaginationCursor = {
             phase: 'same-dump',
             dumpId: dump.id,
             path: pathInDb,
             position,
-            monikers: sortMonikers(monikers),
+            monikers: sortMonikers(rangeMonikers.flatMap(m => m)),
             skipResults: 0,
         }
 
@@ -362,13 +348,13 @@ export class Backend {
                 return recur(
                     () => this.performDefinitionMonikersReferences(limit, cursor, ctx),
                     async (): Promise<ReferencePaginationCursor | undefined> => {
-                        const document = await this.getDocumentByPath(cursor.dumpId, cursor.path, ctx)
-                        if (!document) {
-                            return undefined
-                        }
-
                         for (const moniker of cursor.monikers) {
-                            const packageInformation = this.lookupPackageInformation(document, moniker, ctx)
+                            const packageInformation = await this.lookupPackageInformation(
+                                cursor.dumpId,
+                                cursor.path,
+                                moniker,
+                                ctx
+                            )
                             if (packageInformation) {
                                 return {
                                     dumpId: cursor.dumpId,
@@ -500,11 +486,6 @@ export class Backend {
         cursor: DefinitionMonikersReferenceCursor,
         ctx: TracingContext = {}
     ): Promise<PaginatedInternalLocations> {
-        const document = await this.getDocumentByPath(cursor.dumpId, cursor.path, ctx)
-        if (!document) {
-            return { locations: [] }
-        }
-
         for (const moniker of cursor.monikers) {
             if (moniker.kind !== 'import') {
                 continue
@@ -512,7 +493,8 @@ export class Backend {
 
             // Get locations in the defining package
             const { locations, count } = await this.lookupMoniker(
-                document,
+                cursor.dumpId,
+                cursor.path,
                 moniker,
                 sqliteModels.ReferenceModel,
                 { take: limit, skip: cursor.skipResults },
@@ -721,20 +703,22 @@ export class Backend {
      * package. Open that package's database and query its definitions or references table
      * for the target moniker (depending on the given model).
      *
-     * @param document The document containing the definition.
+     * @param dumpId The identifier of the dump containing the document.
+     * @param path The path of the document.
      * @param moniker The target moniker.
      * @param model The target model.
      * @param pagination A limit and offset to use for the query.
      * @param ctx The tracing context.
      */
     private async lookupMoniker(
-        document: sqliteModels.DocumentData,
+        dumpId: pgModels.DumpId,
+        path: string,
         moniker: sqliteModels.MonikerData,
         model: typeof sqliteModels.DefinitionModel | typeof sqliteModels.ReferenceModel,
         pagination: { skip?: number; take?: number },
         ctx: TracingContext = {}
     ): Promise<{ locations: InternalLocation[]; count: number }> {
-        const packageInformation = this.lookupPackageInformation(document, moniker, ctx)
+        const packageInformation = await this.lookupPackageInformation(dumpId, path, moniker, ctx)
         if (!packageInformation) {
             return { locations: [], count: 0 }
         }
@@ -767,20 +751,25 @@ export class Backend {
     /**
      * Retrieve the package information associated with the given moniker.
      *
-     * @param document The document containing an instance of the moniker.
+     * @param dumpId The identifier of the dump containing the document.
+     * @param path The path of the document.
      * @param moniker The target moniker.
      * @param ctx The tracing context.
      */
-    private lookupPackageInformation(
-        document: sqliteModels.DocumentData,
+    private async lookupPackageInformation(
+        dumpId: number,
+        path: string,
         moniker: sqliteModels.MonikerData,
         ctx: TracingContext = {}
-    ): sqliteModels.PackageInformationData | undefined {
+    ): Promise<sqliteModels.PackageInformationData | undefined> {
         if (!moniker.packageInformationId) {
             return undefined
         }
 
-        const packageInformation = document.packageInformation.get(moniker.packageInformationId)
+        const packageInformation = await this.createDatabase(dumpId).packageInformation(
+            path,
+            moniker.packageInformationId
+        )
         if (!packageInformation) {
             return undefined
         }
@@ -875,23 +864,6 @@ export class Backend {
         }
 
         return { dump, database: this.createDatabase(dump.id) }
-    }
-
-    /**
-     * Create a database for the dump with the given identifier and return the document
-     * with the given path.
-     *
-     * @param dumpId The dump id.
-     * @param path The document path.
-     * @param ctx The tracing context.
-     */
-    private async getDocumentByPath(
-        dumpId: number,
-        path: string,
-        ctx: TracingContext = {}
-    ): Promise<sqliteModels.DocumentData | undefined> {
-        const dumpAndDatabase = await this.getDumpAndDatabaseById(dumpId)
-        return dumpAndDatabase?.database.getDocumentByPath(path, ctx)
     }
 
     /** Bulk populate the dump model for internal locations. */

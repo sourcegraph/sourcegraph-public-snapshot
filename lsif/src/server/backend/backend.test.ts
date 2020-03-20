@@ -34,13 +34,6 @@ const zeroDump: pgModels.LsifDump = {
     processedAt: new Date(),
 }
 
-const zeroDocument = {
-    ranges: new Map(),
-    hoverResults: new Map(),
-    monikers: new Map(),
-    packageInformation: new Map(),
-}
-
 const zeroPackage = {
     id: 0,
     scheme: '',
@@ -51,36 +44,10 @@ const zeroPackage = {
     filter: Buffer.from(''),
 }
 
-const documentWithMonikers = {
-    ...zeroDocument,
-    monikers: new Map([
-        [50, { kind: lsif.MonikerKind.local, scheme: 'test', identifier: 'm1' }],
-        [51, { kind: lsif.MonikerKind.import, scheme: 'test', identifier: 'm2' }],
-        [52, { kind: lsif.MonikerKind.import, scheme: 'test', identifier: 'm3' }],
-    ]),
-}
-
-const documentWithPackageInformation = {
-    ...zeroDocument,
-    monikers: new Map([
-        [50, { kind: lsif.MonikerKind.local, scheme: 'test', identifier: 'm1' }],
-        [51, { kind: lsif.MonikerKind.import, scheme: 'test', identifier: 'm2', packageInformationId: 71 }],
-        [52, { kind: lsif.MonikerKind.import, scheme: 'test', identifier: 'm3' }],
-    ]),
-    packageInformation: new Map([[71, { name: 'pkg2', version: '0.0.1' }]]),
-}
-
-// Dummy ranges used as a return value from getRangeByPosition.
-// This range's monikers correlated to the documentWithMonikers
-// and documentWithPackageInformation values defined above.
-const ranges = [
-    {
-        startLine: 10,
-        startCharacter: 20,
-        endLine: 10,
-        endCharacter: 25,
-        monikerIds: new Set([50, 51, 52]),
-    },
+const monikersWithPackageInformation = [
+    { kind: lsif.MonikerKind.local, scheme: 'test', identifier: 'm1' },
+    { kind: lsif.MonikerKind.import, scheme: 'test', identifier: 'm2', packageInformationId: 71 },
+    { kind: lsif.MonikerKind.import, scheme: 'test', identifier: 'm3' },
 ]
 
 const makeRange = (i: number) => ({
@@ -224,7 +191,7 @@ describe('Backend', () => {
             sinon.stub(database1, 'definitions').resolves([])
 
             // Moniker resolution
-            sinon.stub(database1, 'getRangeByPosition').resolves({ document: documentWithMonikers, ranges })
+            sinon.stub(database1, 'monikersByPosition').resolves([monikersWithPackageInformation])
 
             // Moniker search
             sinon.stub(database1, 'monikerResults').resolves({
@@ -273,7 +240,10 @@ describe('Backend', () => {
             sinon.stub(database1, 'definitions').resolves([])
 
             // Moniker resolution
-            sinon.stub(database1, 'getRangeByPosition').resolves({ document: documentWithPackageInformation, ranges })
+            sinon.stub(database1, 'monikersByPosition').resolves([monikersWithPackageInformation])
+
+            // Package resolution
+            sinon.stub(database1, 'packageInformation').resolves({ name: 'pkg2', version: '0.0.1' })
 
             // Package resolution
             sinon.stub(dependencyManager, 'getPackage').resolves({
@@ -284,6 +254,9 @@ describe('Backend', () => {
                 dump: { ...zeroDump, id: 2 },
                 dump_id: 2,
             })
+
+            // Moniker search (local database)
+            sinon.stub(database1, 'monikerResults').resolves({ locations: [], count: 0 })
 
             // Moniker search (remote database)
             sinon.stub(database2, 'monikerResults').resolves({
@@ -446,12 +419,10 @@ describe('Backend', () => {
                 )
 
             // Moniker resolution
-            sinon
-                .stub(databases[0], 'getRangeByPosition')
-                .resolves({ document: documentWithPackageInformation, ranges })
+            sinon.stub(databases[0], 'monikersByPosition').resolves([monikersWithPackageInformation])
 
-            // Package information resolution
-            sinon.stub(databases[0], 'getDocumentByPath').resolves(documentWithPackageInformation)
+            // Package resolution
+            sinon.stub(databases[0], 'packageInformation').resolves({ name: 'pkg2', version: '0.0.1' })
 
             // Same dump results
             const referenceStub = sinon
