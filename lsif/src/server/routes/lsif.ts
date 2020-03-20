@@ -22,18 +22,21 @@ import * as lsif from 'lsif-protocol'
 import { ReferencePaginationCursor } from '../backend/cursor'
 import { LsifUpload } from '../../shared/models/pg'
 import got from 'got'
+import { Connection } from 'typeorm'
 
 const pipeline = promisify(_pipeline)
 
 /**
  * Create a router containing the LSIF upload and query endpoints.
  *
+ * @param connection The Postgres connection.
  * @param backend The backend instance.
  * @param uploadManager The uploads manager instance.
  * @param logger The logger instance.
  * @param tracer The tracer instance.
  */
 export function createLsifRouter(
+    connection: Connection,
     backend: Backend,
     uploadManager: UploadManager,
     logger: Logger,
