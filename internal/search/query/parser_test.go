@@ -294,7 +294,7 @@ func Test_Parse(t *testing.T) {
 	}
 	for _, tt := range cases {
 		t.Run(tt.Name, func(t *testing.T) {
-			result, err := ParseAndOr(tt.Input)
+			result, err := parseAndOr(tt.Input)
 			if err != nil {
 				if diff := cmp.Diff(tt.Want, err.Error()); diff != "" {
 					t.Fatal(diff)

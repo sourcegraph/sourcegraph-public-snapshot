@@ -111,12 +111,13 @@ func parse(input string) (syntax.ParseTree, error) {
 	return parseTree, nil
 }
 
-func Check(parseTree syntax.ParseTree) (*Query, error) {
+func Check(parseTree syntax.ParseTree) (QueryInfo, error) {
 	checkedFields, err := conf.Check(parseTree)
 	if err != nil {
 		return nil, err
 	}
-	return &Query{conf: &conf, Fields: *checkedFields}, nil
+	query := &Query{conf: &conf, Fields: *checkedFields}
+	return &OrdinaryQuery{query: query}, nil
 }
 
 // ParseAndCheck parses and typechecks a search query using the default
@@ -132,10 +133,15 @@ func ParseAndCheck(input string) (QueryInfo, error) {
 		return nil, err
 	}
 
-	return &OrdinaryQuery{query: checkedQuery, parseTree: parseTree}, err
+	ordinaryQuery, ok := checkedQuery.(OrdinaryQuery)
+	if !ok {
+		return nil, errors.New("Check failed: Expected Ordinary Query.")
+	}
+	ordinaryQuery.parseTree = parseTree
+	return ordinaryQuery, err
 }
 
-func processSearchPattern(q *Query) string {
+func processSearchPattern(q QueryInfo) string {
 	var pieces []string
 	for _, v := range q.Values(FieldDefault) {
 		if piece := v.ToString(); piece != "" {
@@ -155,12 +161,12 @@ func (e *ValidationError) Error() string {
 
 // Validate validates legal combinations of fields and search patterns of a
 // successfully parsed query.
-func Validate(q *Query, searchType SearchType) error {
+func Validate(q QueryInfo, searchType SearchType) error {
 	if searchType == SearchTypeStructural {
-		if q.Fields[FieldCase] != nil {
+		if q.Fields()[FieldCase] != nil {
 			return errors.New(`the parameter "case:" is not valid for structural search, matching is always case-sensitive`)
 		}
-		if q.Fields[FieldType] != nil && processSearchPattern(q) != "" {
+		if q.Fields()[FieldType] != nil && processSearchPattern(q) != "" {
 			return errors.New(`the parameter "type:" is not valid for structural search, search is always performed on file content`)
 		}
 	}
@@ -185,7 +191,13 @@ func Process(queryString string, searchType SearchType) (QueryInfo, error) {
 		return nil, err
 	}
 
-	return &OrdinaryQuery{query: query, parseTree: parseTree}, nil
+	ordinaryQuery, ok := query.(OrdinaryQuery)
+	if !ok {
+		return nil, errors.New("Check failed: Expected Ordinary Query.")
+	}
+	ordinaryQuery.parseTree = parseTree
+
+	return ordinaryQuery, nil
 }
 
 // parseAndCheck is preserved for testing custom Configs only.
