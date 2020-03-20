@@ -66,7 +66,6 @@ interface Campaign
 
 interface CampaignPlan extends Pick<GQL.ICampaignPlan, '__typename' | 'id'> {
     changesetPlans: Pick<GQL.ICampaignPlan['changesetPlans'], 'nodes' | 'totalCount'>
-    status: Pick<GQL.ICampaignPlan['status'], 'completedCount' | 'pendingCount' | 'errors' | 'state'>
 }
 
 interface Props extends ThemeProps {
