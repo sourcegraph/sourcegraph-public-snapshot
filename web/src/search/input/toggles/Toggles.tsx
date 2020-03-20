@@ -83,12 +83,8 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
     }
 
     const toggleRegexp = (): void => {
-        let newPatternType =
+        const newPatternType =
             props.patternType !== SearchPatternType.regexp ? SearchPatternType.regexp : SearchPatternType.literal
-
-        if (props.patternType === SearchPatternType.structural) {
-            newPatternType = SearchPatternType.regexp
-        }
 
         props.setPatternType(newPatternType)
 
