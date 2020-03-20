@@ -15,6 +15,9 @@ import * as validation from '../../shared/api/middleware/validation'
 /**
  * Create a router containing the SQLite query endpoints.
  *
+ * For now, each public method of Database (see sif/src/dump-manager/backend/database.ts) is
+ * exposed at `/<database-id>/<method>`.
+ *
  * @param logger The logger instance.
  */
 export function createDatabaseRouter(logger: Logger): express.Router {
@@ -32,7 +35,7 @@ export function createDatabaseRouter(logger: Logger): express.Router {
         tags: { [K: string]: unknown }
     ): TracingContext => addTags({ logger, span: req.span }, tags)
 
-    const onDatabase = async <T>(
+    const withDatabase = async <T>(
         req: express.Request,
         res: express.Response<T>,
         handler: (database: Database, ctx?: TracingContext) => Promise<T>
@@ -52,12 +55,12 @@ export function createDatabaseRouter(logger: Logger): express.Router {
     type ExistsResponse = boolean
 
     router.get(
-        '/:id([0-9]+)/exists',
+        '/dbs/:id([0-9]+)/exists',
         validation.validationMiddleware([validation.validateNonEmptyString('path')]),
         wrap(
             async (req: express.Request, res: express.Response<ExistsResponse>): Promise<void> => {
                 const { path }: ExistsQueryArgs = req.query
-                await onDatabase(req, res, (database, ctx) => database.exists(path, ctx))
+                await withDatabase(req, res, (database, ctx) => database.exists(path, ctx))
             }
         )
     )
@@ -71,7 +74,7 @@ export function createDatabaseRouter(logger: Logger): express.Router {
     type DefinitionsResponse = InternalLocation[]
 
     router.get(
-        '/:id([0-9]+)/definitions',
+        '/dbs/:id([0-9]+)/definitions',
         validation.validationMiddleware([
             validation.validateNonEmptyString('path'),
             validation.validateInt('line'),
@@ -80,7 +83,7 @@ export function createDatabaseRouter(logger: Logger): express.Router {
         wrap(
             async (req: express.Request, res: express.Response<DefinitionsResponse>): Promise<void> => {
                 const { path, line, character }: DefinitionsQueryArgs = req.query
-                await onDatabase(req, res, (database, ctx) => database.definitions(path, { line, character }, ctx))
+                await withDatabase(req, res, (database, ctx) => database.definitions(path, { line, character }, ctx))
             }
         )
     )
@@ -94,7 +97,7 @@ export function createDatabaseRouter(logger: Logger): express.Router {
     type ReferencesResponse = InternalLocation[]
 
     router.get(
-        '/:id([0-9]+)/references',
+        '/dbs/:id([0-9]+)/references',
         validation.validationMiddleware([
             validation.validateNonEmptyString('path'),
             validation.validateInt('line'),
@@ -103,7 +106,7 @@ export function createDatabaseRouter(logger: Logger): express.Router {
         wrap(
             async (req: express.Request, res: express.Response<ReferencesResponse>): Promise<void> => {
                 const { path, line, character }: ReferencesQueryArgs = req.query
-                await onDatabase(
+                await withDatabase(
                     req,
                     res,
                     async (database, ctx) => (await database.references(path, { line, character }, ctx)).values
@@ -121,7 +124,7 @@ export function createDatabaseRouter(logger: Logger): express.Router {
     type HoverResponse = { text: string; range: lsp.Range } | null
 
     router.get(
-        '/:id([0-9]+)/hover',
+        '/dbs/:id([0-9]+)/hover',
         validation.validationMiddleware([
             validation.validateNonEmptyString('path'),
             validation.validateInt('line'),
@@ -130,7 +133,7 @@ export function createDatabaseRouter(logger: Logger): express.Router {
         wrap(
             async (req: express.Request, res: express.Response<HoverResponse>): Promise<void> => {
                 const { path, line, character }: HoverQueryArgs = req.query
-                await onDatabase(req, res, (database, ctx) => database.hover(path, { line, character }, ctx))
+                await withDatabase(req, res, (database, ctx) => database.hover(path, { line, character }, ctx))
             }
         )
     )
@@ -144,7 +147,7 @@ export function createDatabaseRouter(logger: Logger): express.Router {
     type MonikersByPositionResponse = sqliteModels.MonikerData[][]
 
     router.get(
-        '/:id([0-9]+)/monikersByPosition',
+        '/dbs/:id([0-9]+)/monikersByPosition',
         validation.validationMiddleware([
             validation.validateNonEmptyString('path'),
             validation.validateInt('line'),
@@ -153,7 +156,7 @@ export function createDatabaseRouter(logger: Logger): express.Router {
         wrap(
             async (req: express.Request, res: express.Response<MonikersByPositionResponse>): Promise<void> => {
                 const { path, line, character }: MonikersByPositionQueryArgs = req.query
-                await onDatabase(req, res, (database, ctx) =>
+                await withDatabase(req, res, (database, ctx) =>
                     database.monikersByPosition(path, { line, character }, ctx)
                 )
             }
@@ -174,7 +177,7 @@ export function createDatabaseRouter(logger: Logger): express.Router {
     }
 
     router.get(
-        '/:id([0-9]+)/monikerResults',
+        '/dbs/:id([0-9]+)/monikerResults',
         validation.validationMiddleware([
             validation.validateNonEmptyString('model'),
             validation.validateNonEmptyString('scheme'),
@@ -185,7 +188,7 @@ export function createDatabaseRouter(logger: Logger): express.Router {
         wrap(
             async (req: express.Request, res: express.Response<MonikerResultsResponse>): Promise<void> => {
                 const { model, scheme, identifier, skip, take }: MonikerResultsQueryArgs = req.query
-                await onDatabase(req, res, (database, ctx) =>
+                await withDatabase(req, res, (database, ctx) =>
                     database.monikerResults(
                         model === 'definition' ? sqliteModels.DefinitionModel : sqliteModels.ReferenceModel,
                         { scheme, identifier },
@@ -210,7 +213,7 @@ export function createDatabaseRouter(logger: Logger): express.Router {
         wrap(
             async (req: express.Request, res: express.Response<PackageInformationResponse>): Promise<void> => {
                 const { path, packageInformationId }: PackageInformationQueryArgs = req.query
-                await onDatabase(req, res, (database, ctx) =>
+                await withDatabase(req, res, (database, ctx) =>
                     database.packageInformation(path, packageInformationId, ctx)
                 )
             }
