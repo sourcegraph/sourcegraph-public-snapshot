@@ -122,11 +122,11 @@ common.makeDashboard(
     title = 'Users permissions stats',
     panels = [usersPermsGapPanel, usersWithStalePermsPanel, usersWithNoPermsPanel]
 ).addRow(
-    title = 'Repositories permissions stats',
-    panels = [reposPermsGapPanel, reposWithStalePermsPanel, reposWithNoPermsPanel]
-).addRow(
     title = 'Users permissions sync',
     panels = [usersSyncRequestsPanel, usersSyncRequestsDurationPercentilesPanel, usersSyncRequestsErrorRatePanel]
+).addRow(
+    title = 'Repositories permissions stats',
+    panels = [reposPermsGapPanel, reposWithStalePermsPanel, reposWithNoPermsPanel]
 ).addRow(
     title = 'Repositories permissions sync',
     panels = [reposSyncRequestsPanel, reposSyncRequestsDurationPercentilesPanel, reposSyncRequestsErrorRatePanel]

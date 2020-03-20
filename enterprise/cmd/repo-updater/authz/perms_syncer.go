@@ -665,8 +665,9 @@ func (s *PermsSyncer) observe(ctx context.Context, family, title string) (contex
 	}
 }
 
-// RegisterMetrics registers exposed metrics with Prometheus default register.
-func (s *PermsSyncer) RegisterMetrics() {
+// registerMetrics registers exposed metrics with Prometheus default register,
+// and start a goroutine to calculate metrics values against database periodically.
+func (s *PermsSyncer) registerMetrics(ctx context.Context) {
 	s.metrics.usersWithNoPerms = promauto.NewGauge(prometheus.GaugeOpts{
 		Namespace: "src",
 		Subsystem: "repoupdater",
@@ -730,14 +731,36 @@ func (s *PermsSyncer) RegisterMetrics() {
 		Name:      "perms_syncer_repos_sync_errors_total",
 		Help:      "Total number of sync repository permissions errors",
 	})
+
+	go func() {
+		ticker := time.NewTicker(time.Minute)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ticker.C:
+			case <-ctx.Done():
+				return
+			}
+
+			m, err := s.permsStore.Metrics(ctx, time.Hour)
+			if err != nil {
+				log15.Error("Failed to get metrics from database", "err", err)
+				continue
+			}
+
+			s.metrics.usersWithStalePerms.Set(float64(m.UsersWithStalePerms))
+			s.metrics.usersPermsGap.Set(m.UsersPermsGapSeconds)
+			s.metrics.reposWithStalePerms.Set(float64(m.ReposWithStalePerms))
+			s.metrics.reposPermsGap.Set(m.ReposPermsGapSeconds)
+		}
+	}()
 }
 
 // Run kicks off the permissions syncing process, this method is blocking and
 // should be called as a goroutine.
 func (s *PermsSyncer) Run(ctx context.Context) {
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
+	s.registerMetrics(ctx)
 	go s.runSync(ctx)
 	go s.runSchedule(ctx)
 
