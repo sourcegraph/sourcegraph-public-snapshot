@@ -106,7 +106,7 @@ export function createLsifRouter(
 
                     const payloadId = uuid.v4()
 
-                    // Move the temp file where it can be found by the server
+                    // Upload the payload file where it can be found by the dump processor
                     await logAndTraceCall(ctx, 'Uploading payload to dump manager', () =>
                         pipeline(
                             fs.createReadStream(filename),

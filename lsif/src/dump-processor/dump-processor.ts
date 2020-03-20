@@ -101,7 +101,7 @@ async function main(logger: Logger): Promise<void> {
                             ctx
                         )
 
-                        // Move the temp file where it can be found by the server
+                        // Upload the database where it cna be found by the server
                         await logAndTraceCall(ctx, 'Uploading converted dump to dump manager', () =>
                             pipeline(
                                 fs.createReadStream(targetPath),
