@@ -21,32 +21,6 @@ Foreign-key constraints:
 
 ```
 
-# Table "public.campaign_jobs"
-```
-    Column    |           Type           |                         Modifiers                          
---------------+--------------------------+------------------------------------------------------------
- id           | bigint                   | not null default nextval('campaign_jobs_id_seq'::regclass)
- patch_set_id | bigint                   | not null
- repo_id      | bigint                   | not null
- rev          | text                     | not null
- diff         | text                     | not null
- created_at   | timestamp with time zone | not null default now()
- updated_at   | timestamp with time zone | not null default now()
- base_ref     | text                     | not null
-Indexes:
-    "campaign_jobs_pkey" PRIMARY KEY, btree (id)
-    "campaign_jobs_campaign_plan_repo_rev_unique" UNIQUE CONSTRAINT, btree (patch_set_id, repo_id, rev) DEFERRABLE
-    "campaign_jobs_campaign_plan_id" btree (patch_set_id)
-Check constraints:
-    "campaign_jobs_base_ref_check" CHECK (base_ref <> ''::text)
-Foreign-key constraints:
-    "campaign_jobs_campaign_plan_id_fkey" FOREIGN KEY (patch_set_id) REFERENCES patch_sets(id) ON DELETE CASCADE DEFERRABLE
-    "campaign_jobs_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
-Referenced by:
-    TABLE "changeset_jobs" CONSTRAINT "changeset_jobs_campaign_job_id_fkey" FOREIGN KEY (campaign_job_id) REFERENCES campaign_jobs(id) ON DELETE CASCADE DEFERRABLE
-
-```
-
 # Table "public.campaigns"
 ```
       Column       |           Type           |                       Modifiers                        
@@ -109,28 +83,28 @@ Foreign-key constraints:
 
 # Table "public.changeset_jobs"
 ```
-     Column      |           Type           |                          Modifiers                          
------------------+--------------------------+-------------------------------------------------------------
- id              | bigint                   | not null default nextval('changeset_jobs_id_seq'::regclass)
- campaign_id     | bigint                   | not null
- campaign_job_id | bigint                   | not null
- changeset_id    | bigint                   | 
- error           | text                     | 
- created_at      | timestamp with time zone | not null default now()
- updated_at      | timestamp with time zone | not null default now()
- started_at      | timestamp with time zone | 
- finished_at     | timestamp with time zone | 
- branch          | text                     | 
+    Column    |           Type           |                          Modifiers                          
+--------------+--------------------------+-------------------------------------------------------------
+ id           | bigint                   | not null default nextval('changeset_jobs_id_seq'::regclass)
+ campaign_id  | bigint                   | not null
+ patch_id     | bigint                   | not null
+ changeset_id | bigint                   | 
+ error        | text                     | 
+ created_at   | timestamp with time zone | not null default now()
+ updated_at   | timestamp with time zone | not null default now()
+ started_at   | timestamp with time zone | 
+ finished_at  | timestamp with time zone | 
+ branch       | text                     | 
 Indexes:
     "changeset_jobs_pkey" PRIMARY KEY, btree (id)
-    "changeset_jobs_unique" UNIQUE CONSTRAINT, btree (campaign_id, campaign_job_id)
-    "changeset_jobs_campaign_job_id" btree (campaign_job_id)
+    "changeset_jobs_unique" UNIQUE CONSTRAINT, btree (campaign_id, patch_id)
+    "changeset_jobs_campaign_job_id" btree (patch_id)
     "changeset_jobs_error" btree (error)
     "changeset_jobs_finished_at" btree (finished_at)
     "changeset_jobs_started_at" btree (started_at)
 Foreign-key constraints:
     "changeset_jobs_campaign_id_fkey" FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE DEFERRABLE
-    "changeset_jobs_campaign_job_id_fkey" FOREIGN KEY (campaign_job_id) REFERENCES campaign_jobs(id) ON DELETE CASCADE DEFERRABLE
+    "changeset_jobs_campaign_job_id_fkey" FOREIGN KEY (patch_id) REFERENCES patches(id) ON DELETE CASCADE DEFERRABLE
     "changeset_jobs_changeset_id_fkey" FOREIGN KEY (changeset_id) REFERENCES changesets(id) ON DELETE CASCADE DEFERRABLE
 
 ```
@@ -554,8 +528,34 @@ Indexes:
 Foreign-key constraints:
     "campaign_plans_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) DEFERRABLE
 Referenced by:
-    TABLE "campaign_jobs" CONSTRAINT "campaign_jobs_campaign_plan_id_fkey" FOREIGN KEY (patch_set_id) REFERENCES patch_sets(id) ON DELETE CASCADE DEFERRABLE
+    TABLE "patches" CONSTRAINT "campaign_jobs_campaign_plan_id_fkey" FOREIGN KEY (patch_set_id) REFERENCES patch_sets(id) ON DELETE CASCADE DEFERRABLE
     TABLE "campaigns" CONSTRAINT "campaigns_campaign_plan_id_fkey" FOREIGN KEY (patch_set_id) REFERENCES patch_sets(id) DEFERRABLE
+
+```
+
+# Table "public.patches"
+```
+    Column    |           Type           |                         Modifiers                          
+--------------+--------------------------+------------------------------------------------------------
+ id           | bigint                   | not null default nextval('campaign_jobs_id_seq'::regclass)
+ patch_set_id | bigint                   | not null
+ repo_id      | bigint                   | not null
+ rev          | text                     | not null
+ diff         | text                     | not null
+ created_at   | timestamp with time zone | not null default now()
+ updated_at   | timestamp with time zone | not null default now()
+ base_ref     | text                     | not null
+Indexes:
+    "campaign_jobs_pkey" PRIMARY KEY, btree (id)
+    "campaign_jobs_campaign_plan_repo_rev_unique" UNIQUE CONSTRAINT, btree (patch_set_id, repo_id, rev) DEFERRABLE
+    "campaign_jobs_campaign_plan_id" btree (patch_set_id)
+Check constraints:
+    "campaign_jobs_base_ref_check" CHECK (base_ref <> ''::text)
+Foreign-key constraints:
+    "campaign_jobs_campaign_plan_id_fkey" FOREIGN KEY (patch_set_id) REFERENCES patch_sets(id) ON DELETE CASCADE DEFERRABLE
+    "campaign_jobs_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
+Referenced by:
+    TABLE "changeset_jobs" CONSTRAINT "changeset_jobs_campaign_job_id_fkey" FOREIGN KEY (patch_id) REFERENCES patches(id) ON DELETE CASCADE DEFERRABLE
 
 ```
 
@@ -707,7 +707,7 @@ Check constraints:
     "repo_metadata_check" CHECK (jsonb_typeof(metadata) = 'object'::text)
     "repo_sources_check" CHECK (jsonb_typeof(sources) = 'object'::text)
 Referenced by:
-    TABLE "campaign_jobs" CONSTRAINT "campaign_jobs_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
+    TABLE "patches" CONSTRAINT "campaign_jobs_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
     TABLE "changesets" CONSTRAINT "changesets_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
     TABLE "default_repos" CONSTRAINT "default_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "discussion_threads_target_repo" CONSTRAINT "discussion_threads_target_repo_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE

@@ -104,7 +104,7 @@ UPDATE changeset_jobs j SET started_at = now() WHERE id = (
 )
 RETURNING j.id,
   j.campaign_id,
-  j.campaign_job_id,
+  j.patch_id,
   j.changeset_id,
   j.branch,
   j.error,
@@ -1763,7 +1763,7 @@ func (s *Store) CreateCampaignJob(ctx context.Context, c *campaigns.CampaignJob)
 
 var createCampaignJobQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:CreateCampaignJob
-INSERT INTO campaign_jobs (
+INSERT INTO patches (
   patch_set_id,
   repo_id,
   rev,
@@ -1820,7 +1820,7 @@ func (s *Store) UpdateCampaignJob(ctx context.Context, c *campaigns.CampaignJob)
 
 var updateCampaignJobQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:UpdateCampaignJob
-UPDATE campaign_jobs
+UPDATE patches
 SET (
   patch_set_id,
   repo_id,
@@ -1869,7 +1869,7 @@ func (s *Store) DeleteCampaignJob(ctx context.Context, id int64) error {
 
 var deleteCampaignJobQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:DeleteCampaignJob
-DELETE FROM campaign_jobs WHERE id = %s
+DELETE FROM patches WHERE id = %s
 `
 
 // CountCampaignJobsOpts captures the query options needed for
@@ -1896,7 +1896,7 @@ func (s *Store) CountCampaignJobs(ctx context.Context, opts CountCampaignJobsOpt
 var countCampaignJobsQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:CountCampaignJobs
 SELECT COUNT(id)
-FROM campaign_jobs
+FROM patches
 WHERE %s
 `
 
@@ -1956,7 +1956,7 @@ SELECT
   diff,
   created_at,
   updated_at
-FROM campaign_jobs
+FROM patches
 WHERE %s
 LIMIT 1
 `
@@ -2021,7 +2021,7 @@ SELECT
   diff,
   created_at,
   updated_at
-FROM campaign_jobs
+FROM patches
 WHERE %s
 ORDER BY id ASC
 `
@@ -2064,7 +2064,7 @@ NOT EXISTS (
   SELECT 1
   FROM changeset_jobs
   WHERE
-    campaign_job_id = campaign_jobs.id
+    patch_id = patches.id
   AND
     campaign_id = %s
   AND
@@ -2093,7 +2093,7 @@ var createChangesetJobQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:CreateChangesetJob
 INSERT INTO changeset_jobs (
   campaign_id,
-  campaign_job_id,
+  patch_id,
   changeset_id,
   branch,
   error,
@@ -2106,7 +2106,7 @@ VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING
   id,
   campaign_id,
-  campaign_job_id,
+  patch_id,
   changeset_id,
   branch,
   error,
@@ -2157,7 +2157,7 @@ var updateChangesetJobQueryFmtstr = `
 UPDATE changeset_jobs
 SET (
   campaign_id,
-  campaign_job_id,
+  patch_id,
   changeset_id,
   branch,
   error,
@@ -2169,7 +2169,7 @@ WHERE id = %s
 RETURNING
   id,
   campaign_id,
-  campaign_job_id,
+  patch_id,
   changeset_id,
   branch,
   error,
@@ -2268,9 +2268,9 @@ func (s *Store) GetLatestChangesetJobCreatedAt(ctx context.Context, campaignID i
 var getLatestChangesetJobPublishedAtFmtstr = `
 SELECT
   max(changeset_jobs.created_at)
-FROM campaign_jobs
-INNER JOIN campaigns ON campaign_jobs.patch_set_id = campaigns.patch_set_id
-LEFT JOIN changeset_jobs ON changeset_jobs.campaign_job_id = campaign_jobs.id
+FROM patches
+INNER JOIN campaigns ON patches.patch_set_id = campaigns.patch_set_id
+LEFT JOIN changeset_jobs ON changeset_jobs.patch_id = patches.id
 WHERE campaigns.id = %s
 HAVING count(*) FILTER (WHERE changeset_jobs.created_at IS NULL) = 0;
 `
@@ -2307,7 +2307,7 @@ var getChangesetJobsQueryFmtstr = `
 SELECT
   id,
   campaign_id,
-  campaign_job_id,
+  patch_id,
   changeset_id,
   branch,
   error,
@@ -2331,7 +2331,7 @@ func getChangesetJobQuery(opts *GetChangesetJobOpts) *sqlf.Query {
 	}
 
 	if opts.CampaignJobID != 0 {
-		preds = append(preds, sqlf.Sprintf("campaign_job_id = %s", opts.CampaignJobID))
+		preds = append(preds, sqlf.Sprintf("patch_id = %s", opts.CampaignJobID))
 	}
 
 	if opts.ChangesetID != 0 {
@@ -2381,7 +2381,7 @@ var listChangesetJobsQueryFmtstrSelect = `
 SELECT
   changeset_jobs.id,
   changeset_jobs.campaign_id,
-  changeset_jobs.campaign_job_id,
+  changeset_jobs.patch_id,
   changeset_jobs.changeset_id,
   changeset_jobs.branch,
   changeset_jobs.error,
