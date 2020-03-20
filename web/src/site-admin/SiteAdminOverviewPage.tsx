@@ -141,6 +141,7 @@ export const SiteAdminOverviewPage: React.FunctionComponent<Props> = ({
                                 defaultExpanded={setupPercentage < 100}
                                 className="list-group-item e2e-site-admin-overview-menu"
                                 titleClassName="h4 mb-0 mt-2 font-weight-normal p-2"
+                                titleAtStart={true}
                             >
                                 {activation.completed && (
                                     <ActivationChecklist
