@@ -509,7 +509,7 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 		// Repositories for which we want to create a new ChangesetJob (and thus a Changeset)
 		wantCreated repoNames
 		// An error to be thrown when attempting to do the update
-		wantErr *error
+		wantErr error
 	}{
 		{
 			name:             "manual campaign, no new plan, name update",
@@ -669,7 +669,7 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 			newCampaignJobs: []newCampaignJobSpec{
 				{repo: "repo-0", modifiedDiff: true},
 			},
-			wantErr: &ErrManualCampaignUpdatePlanIllegal,
+			wantErr: ErrManualCampaignUpdatePlanIllegal,
 		},
 		{
 			name:             "update plan on closed campaign",
@@ -680,8 +680,7 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 			newCampaignJobs: []newCampaignJobSpec{
 				{repo: "repo-0", modifiedDiff: true},
 			},
-			wantModified: repoNames{"repo-0"},
-			wantErr:      &ErrClosedCampaignUpdatePlanIllegal,
+			wantErr: ErrClosedCampaignUpdatePlanIllegal,
 		},
 	}
 
@@ -823,8 +822,8 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 			_, detachedChangesets, err := svc.UpdateCampaign(ctx, args)
 
 			if tt.wantErr != nil {
-				if have, want := fmt.Sprint(err), (*tt.wantErr).Error(); have != want {
-					t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+				if have, want := fmt.Sprint(err), tt.wantErr.Error(); have != want {
+					t.Fatalf("error:\nhave: %q\nwant: %q", have, want)
 				} else {
 					return
 				}
