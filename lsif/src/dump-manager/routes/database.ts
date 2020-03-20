@@ -15,6 +15,9 @@ import * as validation from '../../shared/api/middleware/validation'
 /**
  * Create a router containing the SQLite query endpoints.
  *
+ * For now, each public method of Database (see sif/src/dump-manager/backend/database.ts) is
+ * exposed at `/<database-id>/<method>`.
+ *
  * @param logger The logger instance.
  */
 export function createDatabaseRouter(logger: Logger): express.Router {
