@@ -39,18 +39,11 @@ export class LsifUpload {
     @Column('text')
     public indexer!: string
 
-    /**
-     * The temporary file the upload data is stored. As the file is deleted after
-     * it has been converted, this value is only meaningful while the upload has
-     * state `queued` or `processing`.
-     */
-    @Column('text')
-    public filename!: string
+    /** The identifier of the payload as known by the dump manager. */
+    @Column('text', { name: 'payload_id' })
+    public payloadId!: string
 
-    /**
-     * The conversion state of the upload. May be `queued`, `processing`, `completed`,
-     * or `errored`.
-     */
+    /** The conversion state of the upload. May be `queued`, `processing`, `completed`, or `errored`. */
     @Column('text')
     public state!: LsifUploadState
 

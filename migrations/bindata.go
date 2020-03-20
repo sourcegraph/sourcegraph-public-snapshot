@@ -92,6 +92,8 @@
 // 1528395661_remove_execution_related_columns_from_campaign_jobs.up.sql (395B)
 // 1528395662_remove_unused_columns_from_campaign_plans.down.sql (223B)
 // 1528395662_remove_unused_columns_from_campaign_plans.up.sql (203B)
+// 1528395663_lsif_payload_id.down.sql (300B)
+// 1528395663_lsif_payload_id.up.sql (300B)
 
 package migrations
 
@@ -2000,6 +2002,46 @@ func _1528395662_remove_unused_columns_from_campaign_plansUpSql() (*asset, error
 	return a, nil
 }
 
+var __1528395663_lsif_payload_idDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x5c\x8e\xc1\x6a\xc3\x30\x10\x44\xef\xfa\x8a\xb9\x05\x4a\x93\x1f\x30\x3d\x38\xce\xb6\x35\xd8\x71\x51\x44\x73\x34\xc2\x5a\x13\x81\x2d\x09\x4b\x6a\xe8\xdf\x97\xc4\xcd\xa1\x3d\x0e\x3b\xf3\xf6\xed\xe9\xad\x3e\x16\x42\x6c\xb7\x38\x2c\x3e\xe0\xcb\xf2\x15\x86\x03\x3b\xc3\x2e\xc1\x3b\x0c\x7e\xca\xb3\x13\x07\xd9\x7d\xe0\xb3\xa6\x33\xa6\x68\xc7\xde\xe4\x39\xc4\x75\x27\xd9\xe9\x99\x1f\xbd\xb2\x51\x24\xa1\xca\x7d\x43\x6b\x33\x87\xc9\x6b\x13\x21\xe9\x58\xb6\x84\xa0\xbf\x6f\xb9\xb7\x06\xaa\xc3\x68\xa7\xfb\xfa\x41\x1a\x16\xd6\x89\x57\x8b\xab\x4d\x17\x2c\xf7\xb3\xf9\xa5\x47\x51\x49\x2a\x15\xfd\x17\x41\x79\xc2\x89\x1a\xaa\x14\xf2\xee\xe9\x19\x79\x37\x5a\x67\xe3\x85\x4d\xaf\x13\x74\x44\x58\xfc\xc0\x31\xae\xf9\x55\x76\xed\x5f\xb7\x8c\xf3\x3b\x49\x42\x4c\xb7\xef\x2f\xd8\x0c\x7e\x0e\x13\x27\x36\x9b\x42\x88\xaa\x6b\xdb\x5a\x15\xe2\x27\x00\x00\xff\xff\xae\x03\x6f\xad\x2c\x01\x00\x00")
+
+func _1528395663_lsif_payload_idDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395663_lsif_payload_idDownSql,
+		"1528395663_lsif_payload_id.down.sql",
+	)
+}
+
+func _1528395663_lsif_payload_idDownSql() (*asset, error) {
+	bytes, err := _1528395663_lsif_payload_idDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395663_lsif_payload_id.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xbc, 0x16, 0xaa, 0x41, 0xf0, 0x40, 0x37, 0xac, 0x68, 0x71, 0x42, 0xd4, 0x56, 0x46, 0xe, 0xf0, 0x68, 0x2d, 0x11, 0x50, 0x3e, 0xf6, 0x3c, 0x28, 0xc6, 0x3f, 0xeb, 0x6d, 0x67, 0x2d, 0xe6, 0xcf}}
+	return a, nil
+}
+
+var __1528395663_lsif_payload_idUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x5c\x8e\x41\x6a\xc3\x30\x10\x45\xf7\x3a\xc5\xdf\x05\x4a\x93\x0b\x98\x2e\x1c\x67\xda\x1a\xec\xb8\x28\xa2\x59\x1a\x61\x8d\x89\xc0\x96\x84\x25\x35\xf4\xf6\x25\x75\xb3\x68\x96\xc3\xbc\x79\xf3\xf6\xf4\x56\x1f\x0b\x21\xb6\x5b\x1c\x16\x1f\xf0\x65\xf9\x0a\xc3\x81\x9d\x61\x97\xe0\x1d\x06\x3f\xe5\xd9\x89\x83\xec\x3e\xf0\x59\xd3\x19\x53\xb4\x63\x6f\xf2\x1c\xe2\x7a\x27\xd9\xe9\x99\xef\x5c\xd9\x28\x92\x50\xe5\xbe\xa1\x95\xcc\x61\xf2\xda\x44\x48\x3a\x96\x2d\x61\xb4\xd3\xca\xab\x0e\x41\x7f\xdf\x76\xbd\x35\x77\xd3\xb0\xb0\x4e\xbc\x56\x5c\x6d\xba\x60\xf9\x85\xcd\x9f\x3d\x8a\x4a\x52\xa9\xe8\x31\x04\xe5\x09\x27\x6a\xa8\x52\xc8\xbb\xa7\x67\xe4\xdd\x68\x9d\x8d\x17\x36\xbd\x4e\xd0\x11\x61\xf1\x03\xc7\xb8\xce\xaf\xb2\x6b\xff\xb7\x65\x9c\xdf\x49\x12\x62\xba\x7d\x7f\xc1\x66\xf0\x73\x98\x38\xb1\xd9\x14\x42\x54\x5d\xdb\xd6\xaa\x10\x3f\x01\x00\x00\xff\xff\x1c\xfc\xf6\xb2\x2c\x01\x00\x00")
+
+func _1528395663_lsif_payload_idUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395663_lsif_payload_idUpSql,
+		"1528395663_lsif_payload_id.up.sql",
+	)
+}
+
+func _1528395663_lsif_payload_idUpSql() (*asset, error) {
+	bytes, err := _1528395663_lsif_payload_idUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395663_lsif_payload_id.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xda, 0x3e, 0xbe, 0x4b, 0xdb, 0x0, 0xf5, 0x11, 0x2a, 0x7d, 0x18, 0x22, 0xe5, 0xfe, 0x59, 0x28, 0x50, 0xec, 0x95, 0xcd, 0x5e, 0x6f, 0xdc, 0xbc, 0x3d, 0xdb, 0x40, 0xc0, 0x88, 0x2a, 0xbe, 0xd6}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2183,6 +2225,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395661_remove_execution_related_columns_from_campaign_jobs.up.sql":   _1528395661_remove_execution_related_columns_from_campaign_jobsUpSql,
 	"1528395662_remove_unused_columns_from_campaign_plans.down.sql":           _1528395662_remove_unused_columns_from_campaign_plansDownSql,
 	"1528395662_remove_unused_columns_from_campaign_plans.up.sql":             _1528395662_remove_unused_columns_from_campaign_plansUpSql,
+	"1528395663_lsif_payload_id.down.sql":                                     _1528395663_lsif_payload_idDownSql,
+	"1528395663_lsif_payload_id.up.sql":                                       _1528395663_lsif_payload_idUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -2318,6 +2362,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395661_remove_execution_related_columns_from_campaign_jobs.up.sql":   {_1528395661_remove_execution_related_columns_from_campaign_jobsUpSql, map[string]*bintree{}},
 	"1528395662_remove_unused_columns_from_campaign_plans.down.sql":           {_1528395662_remove_unused_columns_from_campaign_plansDownSql, map[string]*bintree{}},
 	"1528395662_remove_unused_columns_from_campaign_plans.up.sql":             {_1528395662_remove_unused_columns_from_campaign_plansUpSql, map[string]*bintree{}},
+	"1528395663_lsif_payload_id.down.sql":                                     {_1528395663_lsif_payload_idDownSql, map[string]*bintree{}},
+	"1528395663_lsif_payload_id.up.sql":                                       {_1528395663_lsif_payload_idUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

@@ -18,7 +18,7 @@ const zeroUpload: pgModels.LsifUpload = {
     commit: '',
     root: '',
     indexer: '',
-    filename: '',
+    payloadId: '',
     state: 'queued',
     uploadedAt: new Date(),
     startedAt: null,
