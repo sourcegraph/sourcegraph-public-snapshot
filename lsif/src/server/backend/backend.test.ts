@@ -5,10 +5,9 @@ import { Backend, sortMonikers } from './backend'
 import { DependencyManager } from '../../shared/store/dependencies'
 import { DumpManager } from '../../shared/store/dumps'
 import { Database } from './database'
-import { createCleanPostgresDatabase, createStorageRoot } from '../../shared/test-util'
+import { createCleanPostgresDatabase } from '../../shared/test-util'
 import { Connection } from 'typeorm'
 import { OrderedLocationSet, ResolvedInternalLocation } from './location'
-import rmfr from 'rmfr'
 import { ReferencePaginationCursor } from './cursor'
 import { range } from 'lodash'
 
@@ -99,22 +98,16 @@ const createTestDatabase = (dbs: Map<pgModels.DumpId, Database>) => (dump: pgMod
 }
 
 describe('Backend', () => {
-    let storageRoot!: string
     let connection!: Connection
     let cleanup!: () => Promise<void>
     let dumpManager!: DumpManager
     let dependencyManager!: DependencyManager
 
     beforeAll(async () => {
-        storageRoot = await createStorageRoot()
         ;({ connection, cleanup } = await createCleanPostgresDatabase())
     })
 
     afterAll(async () => {
-        if (storageRoot) {
-            await rmfr(storageRoot)
-        }
-
         if (cleanup) {
             await cleanup()
         }

@@ -2,12 +2,10 @@ import * as sqliteModels from '../../shared/models/sqlite'
 import { comparePosition, findRanges, mapRangesToInternalLocations, Database } from './database'
 import * as fs from 'mz/fs'
 import * as nodepath from 'path'
-import * as constants from '../../shared/constants'
 import { convertLsif } from '../../dump-processor/conversion/importer'
 import { PathExistenceChecker } from '../../dump-processor/conversion/existence'
 import rmfr from 'rmfr'
 import * as uuid from 'uuid'
-import { createStorageRoot } from '../../shared/test-util'
 
 describe('Database', () => {
     let storageRoot!: string
@@ -18,7 +16,7 @@ describe('Database', () => {
         // the cases where `yarn test` is run from the root or from the lsif directory.
         const root = (await fs.exists('lsif')) ? 'lsif' : ''
         const sourceFile = nodepath.join(root, 'test-data', filename)
-        const databaseFile = nodepath.join(storageRoot, constants.TEMP_DIR, uuid.v4())
+        const databaseFile = nodepath.join(storageRoot, uuid.v4())
 
         await convertLsif({
             path: sourceFile,
@@ -35,7 +33,7 @@ describe('Database', () => {
     }
 
     beforeAll(async () => {
-        storageRoot = await createStorageRoot()
+        storageRoot = await fs.mkdtemp('test-', { encoding: 'utf8' })
         database = await makeDatabase('lsif-go@ad3507cb.lsif.gz')
     })
 

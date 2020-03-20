@@ -1,6 +1,4 @@
-import * as constants from '../shared/constants'
 import * as metrics from './metrics'
-import * as path from 'path'
 import * as settings from './settings'
 import promClient from 'prom-client'
 import { Backend } from './backend/backend'
@@ -37,9 +35,6 @@ async function main(logger: Logger): Promise<void> {
 
     // Ensure storage roots exist
     await ensureDirectory(settings.STORAGE_ROOT)
-    await ensureDirectory(path.join(settings.STORAGE_ROOT, constants.DBS_DIR))
-    await ensureDirectory(path.join(settings.STORAGE_ROOT, constants.TEMP_DIR))
-    await ensureDirectory(path.join(settings.STORAGE_ROOT, constants.UPLOADS_DIR))
 
     // Create database connection and entity wrapper classes
     const connection = await createPostgresConnection(fetchConfiguration(), logger)
