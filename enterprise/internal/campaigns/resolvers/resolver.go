@@ -26,7 +26,7 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
-// Resolver is the GraphQL resolver of all things A8N.
+// Resolver is the GraphQL resolver of all things related to Campaigns.
 type Resolver struct {
 	store       *ee.Store
 	httpFactory *httpcli.Factory
@@ -93,8 +93,8 @@ func (r *Resolver) CampaignByID(ctx context.Context, id graphql.ID) (graphqlback
 	return &campaignResolver{store: r.store, Campaign: campaign}, nil
 }
 
-func (r *Resolver) ChangesetPlanByID(ctx context.Context, id graphql.ID) (graphqlbackend.ChangesetPlanResolver, error) {
-	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access campaign jobs.
+func (r *Resolver) PatchByID(ctx context.Context, id graphql.ID) (graphqlbackend.PatchResolver, error) {
+	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access patches.
 	if err := allowReadAccess(ctx); err != nil {
 		return nil, err
 	}
@@ -115,8 +115,8 @@ func (r *Resolver) ChangesetPlanByID(ctx context.Context, id graphql.ID) (graphq
 	return &patchResolver{store: r.store, job: job}, nil
 }
 
-func (r *Resolver) CampaignPlanByID(ctx context.Context, id graphql.ID) (graphqlbackend.CampaignPlanResolver, error) {
-	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access campaign plans.
+func (r *Resolver) PatchSetByID(ctx context.Context, id graphql.ID) (graphqlbackend.PatchSetResolver, error) {
+	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access patch sets.
 	if err := allowReadAccess(ctx); err != nil {
 		return nil, err
 	}
@@ -230,8 +230,8 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 		campaign.Branch = *args.Input.Branch
 	}
 
-	if args.Input.Plan != nil {
-		patchSetID, err := unmarshalPatchSetID(*args.Input.Plan)
+	if args.Input.PatchSet != nil {
+		patchSetID, err := unmarshalPatchSetID(*args.Input.PatchSet)
 		if err != nil {
 			return nil, err
 		}
@@ -287,12 +287,12 @@ func (r *Resolver) UpdateCampaign(ctx context.Context, args *graphqlbackend.Upda
 	updateArgs.Description = args.Input.Description
 	updateArgs.Branch = args.Input.Branch
 
-	if args.Input.Plan != nil {
-		patchSetID, err := unmarshalPatchSetID(*args.Input.Plan)
+	if args.Input.PatchSet != nil {
+		patchSetID, err := unmarshalPatchSetID(*args.Input.PatchSet)
 		if err != nil {
 			return nil, err
 		}
-		updateArgs.Plan = &patchSetID
+		updateArgs.PatchSet = &patchSetID
 	}
 
 	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
@@ -528,15 +528,15 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs) (ee.List
 	return opts, nil
 }
 
-func (r *Resolver) CreateCampaignPlanFromPatches(ctx context.Context, args graphqlbackend.CreateCampaignPlanFromPatchesArgs) (graphqlbackend.CampaignPlanResolver, error) {
+func (r *Resolver) CreatePatchSetFromPatches(ctx context.Context, args graphqlbackend.CreatePatchSetFromPatchesArgs) (graphqlbackend.PatchSetResolver, error) {
 	var err error
-	tr, ctx := trace.New(ctx, "Resolver.CreateCampaignPlanFromPatches", "")
+	tr, ctx := trace.New(ctx, "Resolver.CreatePatchSetFromPatches", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	// 🚨 SECURITY: Only site admins may create campaign plans for now
+	// 🚨 SECURITY: Only site admins may create patch sets for now.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
@@ -639,7 +639,7 @@ func (r *Resolver) PublishCampaign(ctx context.Context, args *graphqlbackend.Pub
 }
 
 func (r *Resolver) PublishChangeset(ctx context.Context, args *graphqlbackend.PublishChangesetArgs) (_ *graphqlbackend.EmptyResponse, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.PublishChangeset", fmt.Sprintf("ChangesetPlan: %q", args.ChangesetPlan))
+	tr, ctx := trace.New(ctx, "Resolver.PublishChangeset", fmt.Sprintf("Patch: %q", args.Patch))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -650,7 +650,7 @@ func (r *Resolver) PublishChangeset(ctx context.Context, args *graphqlbackend.Pu
 		return nil, errors.Wrap(err, "checking if user is admin")
 	}
 
-	patchID, err := unmarshalPatchID(args.ChangesetPlan)
+	patchID, err := unmarshalPatchID(args.Patch)
 	if err != nil {
 		return nil, err
 	}

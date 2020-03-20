@@ -169,12 +169,12 @@ func (r *campaignResolver) Changesets(
 	}, nil
 }
 
-func (r *campaignResolver) ChangesetPlans(
+func (r *campaignResolver) Patches(
 	ctx context.Context,
 	args *graphqlutil.ConnectionArgs,
-) graphqlbackend.ChangesetPlansConnectionResolver {
+) graphqlbackend.PatchConnectionResolver {
 	if r.Campaign.PatchSetID == 0 {
-		return &emptyChangesetPlansConnectionsResolver{}
+		return &emptyPatchConnectionResolver{}
 	}
 
 	return &patchesConnectionResolver{
@@ -246,7 +246,7 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 	return resolvers, nil
 }
 
-func (r *campaignResolver) Plan(ctx context.Context) (graphqlbackend.CampaignPlanResolver, error) {
+func (r *campaignResolver) PatchSet(ctx context.Context) (graphqlbackend.PatchSetResolver, error) {
 	if r.Campaign.PatchSetID == 0 {
 		return nil, nil
 	}
@@ -299,16 +299,16 @@ func (r *changesetDiffsConnectionResolver) Nodes(ctx context.Context) ([]*graphq
 	return resolvers, nil
 }
 
-type emptyChangesetPlansConnectionsResolver struct{}
+type emptyPatchConnectionResolver struct{}
 
-func (r *emptyChangesetPlansConnectionsResolver) Nodes(ctx context.Context) ([]graphqlbackend.ChangesetPlanResolver, error) {
-	return []graphqlbackend.ChangesetPlanResolver{}, nil
+func (r *emptyPatchConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.PatchResolver, error) {
+	return []graphqlbackend.PatchResolver{}, nil
 }
 
-func (r *emptyChangesetPlansConnectionsResolver) TotalCount(ctx context.Context) (int32, error) {
+func (r *emptyPatchConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
 	return 0, nil
 }
 
-func (r *emptyChangesetPlansConnectionsResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (r *emptyPatchConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
 	return graphqlutil.HasNextPage(false), nil
 }

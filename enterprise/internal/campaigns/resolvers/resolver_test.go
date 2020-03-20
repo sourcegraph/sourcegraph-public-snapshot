@@ -946,22 +946,22 @@ type FileDiffs struct {
 	Nodes    []FileDiff
 }
 
-type ChangesetPlan struct {
+type Patch struct {
 	Repository struct{ Name, URL string }
 	Diff       struct {
 		FileDiffs FileDiffs
 	}
 }
 
-type CampaignPlan struct {
-	ID         string
-	Changesets struct {
-		Nodes []ChangesetPlan
+type PatchSet struct {
+	ID      string
+	Patches struct {
+		Nodes []Patch
 	}
 	PreviewURL string
 }
 
-func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
+func TestCreatePatchSetFromPatchesResolver(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 
 	dbtesting.SetupGlobalTestDB(t)
@@ -971,7 +971,7 @@ func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
 	ctx = actor.WithActor(ctx, act)
 
 	t.Run("invalid patch", func(t *testing.T) {
-		args := graphqlbackend.CreateCampaignPlanFromPatchesArgs{
+		args := graphqlbackend.CreatePatchSetFromPatchesArgs{
 			Patches: []graphqlbackend.PatchInput{
 				{
 					Repository:   graphqlbackend.MarshalRepositoryID(1),
@@ -982,7 +982,7 @@ func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
 			},
 		}
 
-		_, err := (&Resolver{}).CreateCampaignPlanFromPatches(ctx, args)
+		_, err := (&Resolver{}).CreatePatchSetFromPatches(ctx, args)
 		if err == nil {
 			t.Fatal("want error")
 		}
@@ -1043,14 +1043,14 @@ func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		var response struct{ CreateCampaignPlanFromPatches CampaignPlan }
+		var response struct{ CreatePatchSetFromPatches PatchSet }
 
 		mustExec(ctx, t, s, nil, &response, fmt.Sprintf(`
       mutation {
-		createCampaignPlanFromPatches(patches: [{repository: %q, baseRevision: "f00b4r", baseRef: "master", patch: %q}]) {
-          ... on CampaignPlan {
+		createPatchSetFromPatches(patches: [{repository: %q, baseRevision: "f00b4r", baseRef: "master", patch: %q}]) {
+          ... on PatchSet {
             id
-            changesets(first: %d) {
+            patches(first: %d) {
               nodes {
                 repository {
                   name
@@ -1096,25 +1096,25 @@ func TestCreateCampaignPlanFromPatchesResolver(t *testing.T) {
       }
 	`, graphqlbackend.MarshalRepositoryID(api.RepoID(repo.ID)), testDiff, 1))
 
-		result := response.CreateCampaignPlanFromPatches
+		result := response.CreatePatchSetFromPatches
 
-		wantChangesets := []ChangesetPlan{
+		wantPatches := []Patch{
 			{
 				Repository: struct{ Name, URL string }{Name: repo.Name},
 				Diff:       struct{ FileDiffs FileDiffs }{FileDiffs: wantFileDiffs},
 			},
 		}
-		if !cmp.Equal(result.Changesets.Nodes, wantChangesets) {
-			t.Error("wrong changesets", cmp.Diff(result.Changesets.Nodes, wantChangesets))
+		if !cmp.Equal(result.Patches.Nodes, wantPatches) {
+			t.Error("wrong patches", cmp.Diff(result.Patches.Nodes, wantPatches))
 		}
 
-		if have, want := result.PreviewURL, "http://example.com/campaigns/new?plan=Q2FtcGFpZ25QbGFuOjE%3D"; have != want {
+		if have, want := result.PreviewURL, "http://example.com/campaigns/new?patchSet=UGF0Y2hTZXQ6MQ%3D%3D"; have != want {
 			t.Fatalf("have PreviewURL %q, want %q", have, want)
 		}
 	})
 }
 
-func TestCampaignPlanResolver(t *testing.T) {
+func TestPatchSetResolver(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -1202,7 +1202,7 @@ func TestCampaignPlanResolver(t *testing.T) {
 	}
 
 	type Response struct {
-		Node CampaignPlan
+		Node PatchSet
 	}
 
 	sr := &Resolver{store: store}
@@ -1216,9 +1216,9 @@ func TestCampaignPlanResolver(t *testing.T) {
 	mustExec(ctx, t, s, nil, &response, fmt.Sprintf(`
       query {
         node(id: %q) {
-          ... on CampaignPlan {
+          ... on PatchSet {
             id
-            changesets(first: %d) {
+            patches(first: %d) {
               nodes {
                 repository {
                   name
@@ -1263,24 +1263,24 @@ func TestCampaignPlanResolver(t *testing.T) {
       }
 	`, marshalPatchSetID(patchSet.ID), len(jobs)))
 
-	if have, want := len(response.Node.Changesets.Nodes), len(jobs); have != want {
-		t.Fatalf("have %d changeset plans, want %d", have, want)
+	if have, want := len(response.Node.Patches.Nodes), len(jobs); have != want {
+		t.Fatalf("have %d patches, want %d", have, want)
 	}
 
-	for i, changesetPlan := range response.Node.Changesets.Nodes {
-		if have, want := changesetPlan.Repository.Name, rs[i].Name; have != want {
+	for i, patch := range response.Node.Patches.Nodes {
+		if have, want := patch.Repository.Name, rs[i].Name; have != want {
 			t.Fatalf("wrong Repository Name %q. want=%q", have, want)
 		}
 
-		if have, want := changesetPlan.Diff.FileDiffs.RawDiff, testDiff; have != want {
+		if have, want := patch.Diff.FileDiffs.RawDiff, testDiff; have != want {
 			t.Fatalf("wrong RawDiff. diff=%s", cmp.Diff(have, want))
 		}
 
-		if have, want := changesetPlan.Diff.FileDiffs.DiffStat.Changed, 2; have != want {
+		if have, want := patch.Diff.FileDiffs.DiffStat.Changed, 2; have != want {
 			t.Fatalf("wrong DiffStat.Changed %d, want=%d", have, want)
 		}
 
-		haveFileDiffs := changesetPlan.Diff.FileDiffs
+		haveFileDiffs := patch.Diff.FileDiffs
 		if !reflect.DeepEqual(haveFileDiffs, wantFileDiffs) {
 			t.Fatal(cmp.Diff(haveFileDiffs, wantFileDiffs))
 		}

@@ -21,7 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 )
 
-const patchSetIDKind = "CampaignPlan"
+const patchSetIDKind = "PatchSet"
 
 func marshalPatchSetID(id int64) graphql.ID {
 	return relay.MarshalID(patchSetIDKind, id)
@@ -32,7 +32,7 @@ func unmarshalPatchSetID(id graphql.ID) (patchSetID int64, err error) {
 	return
 }
 
-const patchIDKind = "ChangesetPlan"
+const patchIDKind = "Patch"
 
 func marshalPatchID(id int64) graphql.ID {
 	return relay.MarshalID(patchIDKind, id)
@@ -43,7 +43,7 @@ func unmarshalPatchID(id graphql.ID) (cid int64, err error) {
 	return
 }
 
-var _ graphqlbackend.CampaignPlanResolver = &patchSetResolver{}
+var _ graphqlbackend.PatchSetResolver = &patchSetResolver{}
 
 type patchSetResolver struct {
 	store    *ee.Store
@@ -54,17 +54,10 @@ func (r *patchSetResolver) ID() graphql.ID {
 	return marshalPatchSetID(r.patchSet.ID)
 }
 
-// DEPRECATED: Remove in 3.15 in favor of ChangesetPlans.
-func (r *patchSetResolver) Changesets(
+func (r *patchSetResolver) Patches(
 	ctx context.Context,
 	args *graphqlutil.ConnectionArgs,
-) graphqlbackend.ChangesetPlansConnectionResolver {
-	return r.ChangesetPlans(ctx, args)
-}
-func (r *patchSetResolver) ChangesetPlans(
-	ctx context.Context,
-	args *graphqlutil.ConnectionArgs,
-) graphqlbackend.ChangesetPlansConnectionResolver {
+) graphqlbackend.PatchConnectionResolver {
 	return &patchesConnectionResolver{
 		store: r.store,
 		opts: ee.ListPatchesOpts{
@@ -78,7 +71,7 @@ func (r *patchSetResolver) ChangesetPlans(
 func (r *patchSetResolver) PreviewURL() string {
 	u := globals.ExternalURL().ResolveReference(&url.URL{Path: "/campaigns/new"})
 	q := url.Values{}
-	q.Set("plan", string(r.ID()))
+	q.Set("patchSet", string(r.ID()))
 	u.RawQuery = q.Encode()
 	return u.String()
 }
@@ -96,13 +89,13 @@ type patchesConnectionResolver struct {
 	err                    error
 }
 
-func (r *patchesConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.ChangesetPlanResolver, error) {
+func (r *patchesConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.PatchResolver, error) {
 	jobs, reposByID, changesetJobsByPatchID, _, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	resolvers := make([]graphqlbackend.ChangesetPlanResolver, 0, len(jobs))
+	resolvers := make([]graphqlbackend.PatchResolver, 0, len(jobs))
 	for _, j := range jobs {
 		repo, ok := reposByID[j.RepoID]
 		if !ok {
@@ -234,7 +227,7 @@ func (r *patchResolver) BaseRepository(ctx context.Context) (*graphqlbackend.Rep
 	return r.Repository(ctx)
 }
 
-func (r *patchResolver) Diff() graphqlbackend.ChangesetPlanResolver {
+func (r *patchResolver) Diff() graphqlbackend.PatchResolver {
 	return r
 }
 

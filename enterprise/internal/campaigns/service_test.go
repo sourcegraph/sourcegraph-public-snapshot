@@ -194,7 +194,7 @@ func TestService(t *testing.T) {
 		}
 	})
 
-	t.Run("CreateCampaignWithPlanAttachedToOtherCampaign", func(t *testing.T) {
+	t.Run("CreateCampaignWithPatchSetAttachedToOtherCampaign", func(t *testing.T) {
 		patchSet := &campaigns.PatchSet{UserID: user.ID}
 		err = store.CreatePatchSet(ctx, patchSet)
 		if err != nil {
@@ -219,7 +219,7 @@ func TestService(t *testing.T) {
 		otherCampaign := testCampaign(user.ID, patchSet.ID)
 		err = svc.CreateCampaign(ctx, otherCampaign, false)
 		if err != ErrPatchSetDuplicate {
-			t.Fatal("no error even though another campaign has same plan")
+			t.Fatal("no error even though another campaign has same patch set")
 		}
 	})
 
@@ -389,7 +389,7 @@ func TestService(t *testing.T) {
 		}
 	})
 
-	t.Run("UpdateCampaignWithPlanAttachedToOtherCampaign", func(t *testing.T) {
+	t.Run("UpdateCampaignWithPatchSetAttachedToOtherCampaign", func(t *testing.T) {
 		svc := NewServiceWithClock(store, gitClient, cf, clock)
 
 		patchSet := &campaigns.PatchSet{UserID: user.ID}
@@ -411,28 +411,28 @@ func TestService(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		otherPlan := &campaigns.PatchSet{UserID: user.ID}
-		err = store.CreatePatchSet(ctx, otherPlan)
+		otherPatchSet := &campaigns.PatchSet{UserID: user.ID}
+		err = store.CreatePatchSet(ctx, otherPatchSet)
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		for _, repo := range rs {
-			err := store.CreatePatch(ctx, testPatch(otherPlan.ID, repo.ID, now))
+			err := store.CreatePatch(ctx, testPatch(otherPatchSet.ID, repo.ID, now))
 			if err != nil {
 				t.Fatal(err)
 			}
 		}
-		otherCampaign := testCampaign(user.ID, otherPlan.ID)
+		otherCampaign := testCampaign(user.ID, otherPatchSet.ID)
 		err = svc.CreateCampaign(ctx, otherCampaign, false)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		args := UpdateCampaignArgs{Campaign: otherCampaign.ID, Plan: &patchSet.ID}
+		args := UpdateCampaignArgs{Campaign: otherCampaign.ID, PatchSet: &patchSet.ID}
 		_, _, err := svc.UpdateCampaign(ctx, args)
 		if err != ErrPatchSetDuplicate {
-			t.Fatal("no error even though another campaign has same plan")
+			t.Fatal("no error even though another campaign has same patch set")
 		}
 	})
 
@@ -496,8 +496,8 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 		// Default state is ChangesetStateOpen
 		changesetStates map[string]campaigns.ChangesetState
 
-		updatePlan, updateName, updateDescription bool
-		newPatches                                []newPatchSpec
+		updatePatchSet, updateName, updateDescription bool
+		newPatches                                    []newPatchSpec
 
 		// Repositories for which we want no Changeset/ChangesetJob after update
 		wantDetached repoNames
@@ -509,53 +509,53 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 		wantCreated repoNames
 	}{
 		{
-			name:             "manual campaign, no new plan, name update",
+			name:             "manual campaign, no new patch set, name update",
 			campaignIsManual: true,
 			updateName:       true,
 		},
 		{
-			name:       "1 unmodified",
-			updatePlan: true,
-			oldPatches: repoNames{"repo-0"},
+			name:           "1 unmodified",
+			updatePatchSet: true,
+			oldPatches:     repoNames{"repo-0"},
 			newPatches: []newPatchSpec{
 				{repo: "repo-0"},
 			},
 			wantUnmodified: repoNames{"repo-0"},
 		},
 		{
-			name:         "no new plan but name update",
+			name:         "no new patch set but name update",
 			updateName:   true,
 			oldPatches:   repoNames{"repo-0"},
 			wantModified: repoNames{"repo-0"},
 		},
 		{
-			name:              "no new plan but description update",
+			name:              "no new patch set but description update",
 			updateDescription: true,
 			oldPatches:        repoNames{"repo-0"},
 			wantModified:      repoNames{"repo-0"},
 		},
 		{
-			name:       "1 modified diff",
-			updatePlan: true,
-			oldPatches: repoNames{"repo-0"},
+			name:           "1 modified diff",
+			updatePatchSet: true,
+			oldPatches:     repoNames{"repo-0"},
 			newPatches: []newPatchSpec{
 				{repo: "repo-0", modifiedDiff: true},
 			},
 			wantModified: repoNames{"repo-0"},
 		},
 		{
-			name:       "1 modified rev",
-			updatePlan: true,
-			oldPatches: repoNames{"repo-0"},
+			name:           "1 modified rev",
+			updatePatchSet: true,
+			oldPatches:     repoNames{"repo-0"},
 			newPatches: []newPatchSpec{
 				{repo: "repo-0", modifiedRev: true},
 			},
 			wantModified: repoNames{"repo-0"},
 		},
 		{
-			name:       "1 detached, 1 unmodified, 1 modified, 1 new changeset",
-			updatePlan: true,
-			oldPatches: repoNames{"repo-0", "repo-1", "repo-2"},
+			name:           "1 detached, 1 unmodified, 1 modified, 1 new changeset",
+			updatePatchSet: true,
+			oldPatches:     repoNames{"repo-0", "repo-1", "repo-2"},
 			newPatches: []newPatchSpec{
 				{repo: "repo-0"},
 				{repo: "repo-1", modifiedDiff: true},
@@ -569,7 +569,7 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 		{
 			name:            "draft campaign, 1 unmodified, 1 modified, 1 new changeset",
 			campaignIsDraft: true,
-			updatePlan:      true,
+			updatePatchSet:  true,
 			oldPatches:      repoNames{"repo-0", "repo-1", "repo-2"},
 			newPatches: []newPatchSpec{
 				{repo: "repo-0"},
@@ -580,7 +580,7 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 		{
 			name:                  "draft campaign, 1 published unmodified, 1 modified, 1 detached, 1 new changeset",
 			campaignIsDraft:       true,
-			updatePlan:            true,
+			updatePatchSet:        true,
 			oldPatches:            repoNames{"repo-0", "repo-1", "repo-2"},
 			individuallyPublished: repoNames{"repo-0"},
 			newPatches: []newPatchSpec{
@@ -593,7 +593,7 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 		{
 			name:                  "draft campaign, 1 published unmodified, 1 published modified, 1 detached, 1 new changeset",
 			campaignIsDraft:       true,
-			updatePlan:            true,
+			updatePatchSet:        true,
 			oldPatches:            repoNames{"repo-0", "repo-1", "repo-2"},
 			individuallyPublished: repoNames{"repo-0", "repo-1"},
 			newPatches: []newPatchSpec{
@@ -607,7 +607,7 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 		{
 			name:                  "draft campaign, 1 published unmodified, 1 published modified, 1 published detached, 1 new changeset",
 			campaignIsDraft:       true,
-			updatePlan:            true,
+			updatePatchSet:        true,
 			oldPatches:            repoNames{"repo-0", "repo-1", "repo-2"},
 			individuallyPublished: repoNames{"repo-0", "repo-1", "repo-2"},
 			newPatches: []newPatchSpec{
@@ -621,7 +621,7 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 		},
 		{
 			name:            "1 modified diff for already merged changeset",
-			updatePlan:      true,
+			updatePatchSet:  true,
 			oldPatches:      repoNames{"repo-0"},
 			changesetStates: map[string]campaigns.ChangesetState{"repo-0": campaigns.ChangesetStateMerged},
 			newPatches: []newPatchSpec{
@@ -631,7 +631,7 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 		},
 		{
 			name:            "1 modified rev for already merged changeset",
-			updatePlan:      true,
+			updatePatchSet:  true,
 			oldPatches:      repoNames{"repo-0"},
 			changesetStates: map[string]campaigns.ChangesetState{"repo-0": campaigns.ChangesetStateMerged},
 			newPatches: []newPatchSpec{
@@ -641,7 +641,7 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 		},
 		{
 			name:            "1 modified diff for already closed changeset",
-			updatePlan:      true,
+			updatePatchSet:  true,
 			oldPatches:      repoNames{"repo-0"},
 			changesetStates: map[string]campaigns.ChangesetState{"repo-0": campaigns.ChangesetStateClosed},
 			newPatches: []newPatchSpec{
@@ -651,7 +651,7 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 		},
 		{
 			name:            "1 modified rev for already closed changeset",
-			updatePlan:      true,
+			updatePatchSet:  true,
 			oldPatches:      repoNames{"repo-0"},
 			changesetStates: map[string]campaigns.ChangesetState{"repo-0": campaigns.ChangesetStateClosed},
 			newPatches: []newPatchSpec{
@@ -746,8 +746,8 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 			oldTime := now
 			now = now.Add(5 * time.Second)
 
-			newPlan := &campaigns.PatchSet{UserID: user.ID}
-			err = store.CreatePatchSet(ctx, newPlan)
+			newPatchSet := &campaigns.PatchSet{UserID: user.ID}
+			err = store.CreatePatchSet(ctx, newPatchSet)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -758,7 +758,7 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 					t.Fatalf("unrecognized repo name: %s", spec.repo)
 				}
 
-				j := testPatch(newPlan.ID, r.ID, now)
+				j := testPatch(newPatchSet.ID, r.ID, now)
 
 				if spec.modifiedDiff {
 					j.Diff = j.Diff + "-modified"
@@ -787,8 +787,8 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 				newDescription := "new campaign description"
 				args.Description = &newDescription
 			}
-			if tt.updatePlan {
-				args.Plan = &newPlan.ID
+			if tt.updatePatchSet {
+				args.PatchSet = &newPatchSet.ID
 			}
 
 			// We ignore the returned campaign here and load it from the
@@ -810,8 +810,8 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 				t.Fatalf("campaign description not updated. want=%q, have=%q", *args.Description, updatedCampaign.Description)
 			}
 
-			if args.Plan != nil && updatedCampaign.PatchSetID != *args.Plan {
-				t.Fatalf("campaign PatchSetID not updated. want=%q, have=%q", newPlan.ID, updatedCampaign.PatchSetID)
+			if args.PatchSet != nil && updatedCampaign.PatchSetID != *args.PatchSet {
+				t.Fatalf("campaign PatchSetID not updated. want=%q, have=%q", newPatchSet.ID, updatedCampaign.PatchSetID)
 			}
 
 			newChangesetJobs, _, err := store.ListChangesetJobs(ctx, ListChangesetJobsOpts{
@@ -833,7 +833,7 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 			}
 
 			var wantChangesetJobLen int
-			if tt.updatePlan {
+			if tt.updatePatchSet {
 				if len(tt.individuallyPublished) != 0 {
 					wantChangesetJobLen = len(tt.individuallyPublished)
 				} else {
@@ -1069,9 +1069,9 @@ var createTestUser = func() func(context.Context, *testing.T) *types.User {
 	}
 }()
 
-func testPatch(plan int64, repo api.RepoID, t time.Time) *campaigns.Patch {
+func testPatch(patchSet int64, repo api.RepoID, t time.Time) *campaigns.Patch {
 	return &campaigns.Patch{
-		PatchSetID: plan,
+		PatchSetID: patchSet,
 		RepoID:     api.RepoID(repo),
 		Rev:        "deadbeef",
 		BaseRef:    "refs/heads/master",
@@ -1079,16 +1079,16 @@ func testPatch(plan int64, repo api.RepoID, t time.Time) *campaigns.Patch {
 	}
 }
 
-func testCampaign(user int32, plan int64) *campaigns.Campaign {
+func testCampaign(user int32, patchSet int64) *campaigns.Campaign {
 	c := &campaigns.Campaign{
 		Name:            "Testing Campaign",
 		Description:     "Testing Campaign",
 		AuthorID:        user,
 		NamespaceUserID: user,
-		PatchSetID:      plan,
+		PatchSetID:      patchSet,
 	}
 
-	if plan != 0 {
+	if patchSet != 0 {
 		c.Branch = "test-branch"
 	}
 

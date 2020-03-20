@@ -165,7 +165,7 @@ var ErrNoPatches = errors.New("cannot create or update a Campaign without any ch
 
 func (s *Service) createChangesetJobsWithStore(ctx context.Context, store *Store, c *campaigns.Campaign) error {
 	if c.PatchSetID == 0 {
-		return errors.New("cannot create changesets for campaign with no campaign plan")
+		return errors.New("cannot create changesets for campaign with no patch set")
 	}
 
 	jobs, _, err := store.ListPatches(ctx, ListPatchesOpts{
@@ -714,7 +714,7 @@ type UpdateCampaignArgs struct {
 	Name        *string
 	Description *string
 	Branch      *string
-	Plan        *int64
+	PatchSet    *int64
 }
 
 // ErrCampaignNameBlank is returned by CreateCampaign or UpdateCampaign if the
@@ -722,16 +722,16 @@ type UpdateCampaignArgs struct {
 var ErrCampaignNameBlank = errors.New("Campaign title cannot be blank")
 
 // ErrCampaignBranchBlank is returned by CreateCampaign if the specified Campaign's
-// branch is blank. This is only enforced when creating published campaigns with a plan.
+// branch is blank. This is only enforced when creating published campaigns with a patch set.
 var ErrCampaignBranchBlank = errors.New("Campaign branch cannot be blank")
 
 // ErrPublishedCampaignBranchChange is returned by UpdateCampaign if there is an
-// attempt to change the branch of a published campaign with a plan (or a campaign with individually published changesets).
+// attempt to change the branch of a published campaign with a patch set (or a campaign with individually published changesets).
 var ErrPublishedCampaignBranchChange = errors.New("Published campaign branch cannot be changed")
 
-// ErrPatchSetDuplicate is return by CreateCampaign or UpdateCampaign if the specified campaign plan
-// is already attached to another campaign.
-var ErrPatchSetDuplicate = errors.New("Campaign cannot use the same plan as another campaign")
+// ErrPatchSetDuplicate is return by CreateCampaign or UpdateCampaign if the
+// specified patch set is already attached to another campaign.
+var ErrPatchSetDuplicate = errors.New("Campaign cannot use the same patch set as another campaign")
 
 // UpdateCampaign updates the Campaign with the given arguments.
 func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (campaign *campaigns.Campaign, detachedChangesets []*campaigns.Changeset, err error) {
@@ -771,9 +771,9 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 	}
 
 	oldPatchSetID := campaign.PatchSetID
-	if args.Plan != nil && oldPatchSetID != *args.Plan {
-		// Check there is no other campaign attached to the args.Plan.
-		_, err = tx.GetCampaign(ctx, GetCampaignOpts{PatchSetID: *args.Plan})
+	if args.PatchSet != nil && oldPatchSetID != *args.PatchSet {
+		// Check there is no other campaign attached to the args.PatchSet.
+		_, err = tx.GetCampaign(ctx, GetCampaignOpts{PatchSetID: *args.PatchSet})
 		if err != nil && err != ErrNoResults {
 			return nil, nil, err
 		}
@@ -781,7 +781,7 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 			return nil, nil, ErrPatchSetDuplicate
 		}
 
-		campaign.PatchSetID = *args.Plan
+		campaign.PatchSetID = *args.PatchSet
 		updatePatchSetID = true
 	}
 
