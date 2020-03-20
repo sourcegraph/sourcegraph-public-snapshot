@@ -36,6 +36,10 @@ export function createInternalRouter(
         tags: { [K: string]: unknown }
     ): TracingContext => addTags({ logger, span: req.span }, tags)
 
+    interface StatesBody {
+        ids: number[]
+    }
+
     type StatesResponse = Map<number, string>
 
     router.post(
@@ -43,9 +47,8 @@ export function createInternalRouter(
         json(),
         wrap(
             async (req: express.Request, res: express.Response<StatesResponse>): Promise<void> => {
-                // TODO - trace
-                const payload: { ids: number[] } = req.body
-                res.json(await dumpManager.getUploadStates(payload.ids))
+                const { ids }: StatesBody = req.body
+                res.json(await dumpManager.getUploadStates(ids))
             }
         )
     )
