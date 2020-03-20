@@ -21,13 +21,13 @@ export function createUploadRouter(logger: Logger): express.Router {
     const router = express.Router()
 
     const makeServeThrottle = makeThrottleFactory(
-        settings.MAXIMUM_SERVE_BITS_PER_SECOND,
-        settings.MAXIMUM_SERVE_CHUNKSIZE
+        settings.MAXIMUM_SERVE_BYTES_PER_SECOND,
+        settings.MAXIMUM_SERVE_CHUNK_BYTES
     )
 
     const makeUploadThrottle = makeThrottleFactory(
-        settings.MAXIMUM_UPLOAD_BITS_PER_SECOND,
-        settings.MAXIMUM_UPLOAD_CHUNKSIZE
+        settings.MAXIMUM_UPLOAD_BYTES_PER_SECOND,
+        settings.MAXIMUM_UPLOAD_CHUNK_BYTES
     )
 
     /**
@@ -43,10 +43,10 @@ export function createUploadRouter(logger: Logger): express.Router {
     ): TracingContext => addTags({ logger, span: req.span }, tags)
 
     router.get(
-        '/:id([0-9a-fA-F-]+)/raw',
+        '/uploads/:id([0-9]+)',
         wrap(
             async (req: express.Request, res: express.Response<unknown>): Promise<void> => {
-                const id = req.params.id
+                const id = parseInt(req.params.id, 10)
                 const ctx = createTracingContext(req, { id })
                 const filename = uploadFilename(settings.STORAGE_ROOT, id)
                 const stream = fs.createReadStream(filename)
@@ -56,10 +56,10 @@ export function createUploadRouter(logger: Logger): express.Router {
     )
 
     router.post(
-        '/:id([0-9a-fA-F-]+)/raw',
+        '/uploads/:id([0-9]+)',
         wrap(
             async (req: express.Request, res: express.Response<unknown>): Promise<void> => {
-                const id = req.params.id
+                const id = parseInt(req.params.id, 10)
                 const ctx = createTracingContext(req, { id })
                 const filename = uploadFilename(settings.STORAGE_ROOT, id)
                 const stream = fs.createWriteStream(filename)
@@ -70,7 +70,7 @@ export function createUploadRouter(logger: Logger): express.Router {
     )
 
     router.post(
-        '/:id([0-9]+)',
+        '/dbs/:id([0-9]+)',
         wrap(
             async (req: express.Request, res: express.Response<unknown>): Promise<void> => {
                 const id = parseInt(req.params.id, 10)

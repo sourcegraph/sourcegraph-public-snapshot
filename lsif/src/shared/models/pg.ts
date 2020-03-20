@@ -39,10 +39,6 @@ export class LsifUpload {
     @Column('text')
     public indexer!: string
 
-    /** The identifier of the payload as known by the dump manager. */
-    @Column('text', { name: 'payload_id' })
-    public payloadId!: string
-
     /** The conversion state of the upload. May be `queued`, `processing`, `completed`, or `errored`. */
     @Column('text')
     public state!: LsifUploadState
