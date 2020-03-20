@@ -4,6 +4,7 @@ import { CampaignChangesets } from './CampaignChangesets'
 import { createRenderer } from 'react-test-renderer/shallow'
 import * as H from 'history'
 import { of, Subject } from 'rxjs'
+import { NOOP_TELEMETRY_SERVICE } from '../../../../../../shared/src/telemetry/telemetryService'
 
 describe('CampaignChangesets', () => {
     const history = H.createMemoryHistory()
@@ -20,6 +21,9 @@ describe('CampaignChangesets', () => {
                     isLightTheme={true}
                     campaignUpdates={new Subject<void>()}
                     changesetUpdates={new Subject<void>()}
+                    extensionsController={undefined as any}
+                    platformContext={undefined as any}
+                    telemetryService={NOOP_TELEMETRY_SERVICE}
                 />
             )
         ).toMatchSnapshot())

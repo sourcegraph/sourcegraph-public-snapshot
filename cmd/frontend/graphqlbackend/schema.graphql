@@ -695,7 +695,7 @@ input CreateChangesetInput {
 }
 
 # Preview of a changeset planned to be created.
-type ChangesetPlan {
+type ChangesetPlan implements Node {
     # The id of the changeset plan.
     id: ID!
 
