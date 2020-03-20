@@ -88,10 +88,10 @@ const makeRange = (i: number) => ({
     end: { line: i + 1, character: (i + 1) * 10 + 5 },
 })
 
-const createTestDatabase = (dbs: Map<pgModels.DumpId, Database>) => (dump: pgModels.LsifDump) => {
-    const db = dbs.get(dump.id)
+const createTestDatabase = (dbs: Map<pgModels.DumpId, Database>) => (dumpId: pgModels.DumpId) => {
+    const db = dbs.get(dumpId)
     if (!db) {
-        throw new Error(`Unexpected database construction (dumpId=${dump.id})`)
+        throw new Error(`Unexpected database construction (dumpId=${dumpId})`)
     }
 
     return db

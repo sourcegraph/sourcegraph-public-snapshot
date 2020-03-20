@@ -40,7 +40,7 @@ export class Backend {
         private dumpManager: DumpManager,
         private dependencyManager: DependencyManager,
         private frontendUrl: string,
-        private createDatabase: (dump: pgModels.LsifDump) => Database = dump => new Database(dump.id)
+        private createDatabase: (dumpId: pgModels.DumpId) => Database = dumpId => new Database(dumpId)
     ) {}
 
     /**
@@ -275,7 +275,7 @@ export class Backend {
         }
 
         const { dump: definitionDump, path: definitionPath, range } = locations[0]
-        const definitionDatabase = this.createDatabase(definitionDump)
+        const definitionDatabase = this.createDatabase(definitionDump.id)
         return definitionDatabase.hover(pathToDatabase(definitionDump.root, definitionPath), range.start, newCtx)
     }
 
@@ -755,7 +755,7 @@ export class Backend {
             packageCommit: packageEntity.dump.commit,
         })
 
-        const { locations, count } = await this.createDatabase(packageEntity.dump).monikerResults(
+        const { locations, count } = await this.createDatabase(packageEntity.dump.id).monikerResults(
             model,
             moniker,
             pagination,
@@ -850,7 +850,7 @@ export class Backend {
         return (
             await Promise.all(
                 closestDumps.map(async dump => {
-                    const database = this.createDatabase(dump)
+                    const database = this.createDatabase(dump.id)
                     const taggedCtx = addTags(ctx, { closestCommit: dump.commit })
 
                     return (await database.exists(pathToDatabase(dump.root, path), taggedCtx))
@@ -874,7 +874,7 @@ export class Backend {
             return undefined
         }
 
-        return { dump, database: this.createDatabase(dump) }
+        return { dump, database: this.createDatabase(dump.id) }
     }
 
     /**
