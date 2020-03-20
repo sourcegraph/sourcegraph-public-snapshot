@@ -52,7 +52,7 @@ async function main(logger: Logger): Promise<void> {
 
     const routers = [
         createUploadRouter(dumpManager, uploadManager, logger),
-        createLsifRouter(backend, uploadManager, logger, tracer),
+        createLsifRouter(connection, backend, uploadManager, logger, tracer),
     ]
 
     // Start server

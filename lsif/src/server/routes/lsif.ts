@@ -104,27 +104,30 @@ export function createLsifRouter(
                         throw new Error('Could not find tool type in metadata vertex at the start of the dump.')
                     }
 
-                    const payloadId = uuid.v4()
-
-                    // Upload the payload file where it can be found by the dump processor
-                    await logAndTraceCall(ctx, 'Uploading payload to dump manager', () =>
-                        pipeline(
-                            fs.createReadStream(filename),
-                            got.stream.post(new URL(`/${payloadId}/raw`, settings.LSIF_DUMP_MANAGER_URL).href)
+                    const id = await connection.transaction(async entityManager => {
+                        // Add upload record
+                        const uploadId = await uploadManager.enqueue(
+                            { repositoryId, commit, root, indexer },
+                            entityManager,
+                            tracer,
+                            ctx.span
                         )
-                    )
 
-                    // Add upload record
-                    const upload = await uploadManager.enqueue(
-                        { repositoryId, commit, root, payloadId, indexer },
-                        tracer,
-                        ctx.span
-                    )
+                        // Upload the payload file where it can be found by the dump processor
+                        await logAndTraceCall(ctx, 'Uploading payload to dump manager', () =>
+                            pipeline(
+                                fs.createReadStream(filename),
+                                got.stream.post(new URL(`/uploads/${uploadId}`, settings.LSIF_DUMP_MANAGER_URL).href)
+                            )
+                        )
+
+                        return uploadId
+                    })
 
                     // Upload conversion will complete asynchronously, send an accepted response
                     // with the upload id so that the client can continue to track the progress
                     // asynchronously.
-                    res.status(202).send({ id: upload.id })
+                    res.status(202).send({ id })
                 } finally {
                     // Remove local file
                     await fs.unlink(filename)
