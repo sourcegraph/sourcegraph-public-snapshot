@@ -201,6 +201,7 @@ export const SiteAdminOverviewPage: React.FunctionComponent<Props> = ({
                                     defaultExpanded={true}
                                     className="list-group-item"
                                     titleClassName="h5 mb-0 font-weight-normal p-2"
+                                    titleAtStart={true}
                                 >
                                     {stats && (
                                         <UsageChart
