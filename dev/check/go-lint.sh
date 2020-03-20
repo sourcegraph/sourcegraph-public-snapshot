@@ -15,6 +15,7 @@ go install github.com/golangci/golangci-lint/cmd/golangci-lint
 
 echo "--- go install"
 go install -tags=dev -buildmode=archive ${pkgs}
+asdf reshim
 
 echo "--- lint"
 
