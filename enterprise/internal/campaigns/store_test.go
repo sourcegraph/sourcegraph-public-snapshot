@@ -33,6 +33,26 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 		ctx := context.Background()
 
+		// Create a test repo
+		reposStore := repos.NewDBStore(db, sql.TxOptions{})
+		repo := &repos.Repo{
+			Name: "github.com/sourcegraph/sourcegraph",
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "external-id",
+				ServiceType: "github",
+				ServiceID:   "https://github.com/",
+			},
+			Sources: map[string]*repos.SourceInfo{
+				"extsvc:github:4": {
+					ID:       "extsvc:github:4",
+					CloneURL: "https://secrettoken@github.com/sourcegraph/sourcegraph",
+				},
+			},
+		}
+		if err := reposStore.UpsertRepos(context.Background(), repo); err != nil {
+			t.Fatal(err)
+		}
+
 		t.Run("Campaigns", func(t *testing.T) {
 			campaigns := make([]*cmpgn.Campaign, 0, 3)
 
@@ -360,7 +380,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 			t.Run("Create", func(t *testing.T) {
 				for i := 0; i < cap(changesets); i++ {
 					th := &cmpgn.Changeset{
-						RepoID:              42,
+						RepoID:              repo.ID,
 						CreatedAt:           now,
 						UpdatedAt:           now,
 						Metadata:            githubPR,
@@ -404,7 +424,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 			})
 
 			t.Run("GetGithubExternalIDForRefs", func(t *testing.T) {
-				have, err := s.GetGithubExternalIDForRefs(ctx, []string{"campaigns/test"})
+				have, err := s.GetGithubExternalIDForRefs(ctx, "external-id", []string{"campaigns/test"})
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -415,7 +435,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 			})
 
 			t.Run("GetGithubExternalIDForRefs no branch", func(t *testing.T) {
-				have, err := s.GetGithubExternalIDForRefs(ctx, []string{"foo"})
+				have, err := s.GetGithubExternalIDForRefs(ctx, "external-id", []string{"foo"})
 				if err != nil {
 					t.Fatal(err)
 				}

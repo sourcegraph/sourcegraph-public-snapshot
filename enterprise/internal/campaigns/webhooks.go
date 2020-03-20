@@ -357,9 +357,7 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, theirs interface{}) (p
 		}
 		repoExternalID := repo.GetNodeID()
 
-		// TODO: This is likely a bug, since it doesn't take the external
-		// repo id into account
-		ids, err := h.Store.GetGithubExternalIDForRefs(ctx, refs)
+		ids, err := h.Store.GetGithubExternalIDForRefs(ctx, repoExternalID, refs)
 		if err != nil {
 			log15.Error("Error executing GetGithubExternalIDForRefs", "err", err)
 			return nil, nil
