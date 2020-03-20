@@ -16,7 +16,7 @@ import * as validation from '../../shared/api/middleware/validation'
  * Create a router containing the SQLite query endpoints.
  *
  * For now, each public method of Database (see sif/src/dump-manager/backend/database.ts) is
- * exposed at `/<database-id>/<method>`.
+ * exposed at `/<database-id>/<method>`. This interface is likely to change soon.
  *
  * @param logger The logger instance.
  */
