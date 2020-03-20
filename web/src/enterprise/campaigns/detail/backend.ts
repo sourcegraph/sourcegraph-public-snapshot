@@ -93,12 +93,6 @@ const campaignPlanFragment = gql`
     fragment CampaignPlanFields on CampaignPlan {
         __typename
         id
-        status {
-            completedCount
-            pendingCount
-            state
-            errors
-        }
         changesetPlans {
             totalCount
             nodes {
