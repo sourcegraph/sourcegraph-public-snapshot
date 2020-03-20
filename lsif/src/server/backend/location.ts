@@ -26,18 +26,18 @@ export class OrderedLocationSet extends OrderedSet<InternalLocation> {
      * @param values A set of values used to seed the set.
      * @param trusted Whether the given values are already deduplicated.
      */
-    constructor(locations?: InternalLocation[], trusted = false) {
+    constructor(values?: InternalLocation[], trusted = false) {
         super(
-            (location: InternalLocation): string =>
+            (value: InternalLocation): string =>
                 [
-                    location.dumpId,
-                    location.path,
-                    location.range.start.line,
-                    location.range.start.character,
-                    location.range.end.line,
-                    location.range.end.character,
+                    value.dumpId,
+                    value.path,
+                    value.range.start.line,
+                    value.range.start.character,
+                    value.range.end.line,
+                    value.range.end.character,
                 ].join(':'),
-            locations,
+            values,
             trusted
         )
     }
