@@ -98,12 +98,16 @@ digraph architecture {
             ]
 
             lsif_server [
-                label="lsif\nserver"
+                label="server"
                 URL="https://github.com/sourcegraph/sourcegraph/tree/master/lsif/src/server"
             ]
-            lsif_worker [
-                label="lsif\nworker"
-                URL="https://github.com/sourcegraph/sourcegraph/tree/master/lsif/src/worker"
+            lsif_dump_processor [
+                label="dump processor"
+                URL="https://github.com/sourcegraph/sourcegraph/tree/master/lsif/src/dump-processor"
+            ]
+            lsif_dump_manager [
+                label="dump manager"
+                URL="https://github.com/sourcegraph/sourcegraph/tree/master/lsif/src/dump-manager"
             ]
         }
 
@@ -205,13 +209,23 @@ digraph architecture {
     lsif_server -> {
         frontend
         postgres
+        lsif_dump_manager
     } [
         fillcolor="9"
     ]
 
-    lsif_worker -> {
+    lsif_dump_processor -> {
         frontend
         postgres
+        lsif_dump_manager
+    } [
+        fillcolor="9"
+    ]
+
+    lsif_dump_manager -> {
+        frontend
+        postgres
+        lsif_server
     } [
         fillcolor="9"
     ]
