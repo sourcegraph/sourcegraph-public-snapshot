@@ -197,7 +197,7 @@ However, with changing the permissions sync model, there are few things to expec
 
 1. While kicking off the the initial round of syncing for all repositories and users, users are able to gradually see search results from more repositories they have access to.
 1. It takes time to complete the initial round of syncing. Depending on how many private repositoreis and users you have on the Sourcegraph instance, it could take from few minutes to several hours. This is generally not a problem for fresh installations, but for existing installations, users may not see expected repositories to appear in the search results because the permissions syncing hasn't finished yet.
-1. Although we have rate limiting mechanism in place, it consumes more API requests (i.e. more pressure on the code host) during the initial round of syncing.
+1. It has more predictable API consumption to the code host, but it could put more pressure on the code host during the initial round of syncing.
 
 Please contact Sourcegraph support if you have any concerns/questions about enabling this feature for your Sourcegraph instance.
 
