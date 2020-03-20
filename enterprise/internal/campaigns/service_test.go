@@ -249,8 +249,8 @@ func TestService(t *testing.T) {
 		}
 
 		haveJob, err := store.GetChangesetJob(ctx, GetChangesetJobOpts{
-			CampaignID:    campaign.ID,
-			PatchID: patch.ID,
+			CampaignID: campaign.ID,
+			PatchID:    patch.ID,
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -262,8 +262,8 @@ func TestService(t *testing.T) {
 			t.Fatal(err)
 		}
 		haveJob2, err := store.GetChangesetJob(ctx, GetChangesetJobOpts{
-			CampaignID:    campaign.ID,
-			PatchID: patch.ID,
+			CampaignID: campaign.ID,
+			PatchID:    patch.ID,
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -497,7 +497,7 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 		changesetStates map[string]campaigns.ChangesetState
 
 		updatePlan, updateName, updateDescription bool
-		newPatches                           []newPatchSpec
+		newPatches                                []newPatchSpec
 
 		// Repositories for which we want no Changeset/ChangesetJob after update
 		wantDetached repoNames
@@ -514,8 +514,8 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 			updateName:       true,
 		},
 		{
-			name:            "1 unmodified",
-			updatePlan:      true,
+			name:       "1 unmodified",
+			updatePlan: true,
 			oldPatches: repoNames{"repo-0"},
 			newPatches: []newPatchSpec{
 				{repo: "repo-0"},
@@ -523,20 +523,20 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 			wantUnmodified: repoNames{"repo-0"},
 		},
 		{
-			name:            "no new plan but name update",
-			updateName:      true,
-			oldPatches: repoNames{"repo-0"},
-			wantModified:    repoNames{"repo-0"},
+			name:         "no new plan but name update",
+			updateName:   true,
+			oldPatches:   repoNames{"repo-0"},
+			wantModified: repoNames{"repo-0"},
 		},
 		{
 			name:              "no new plan but description update",
 			updateDescription: true,
-			oldPatches:   repoNames{"repo-0"},
+			oldPatches:        repoNames{"repo-0"},
 			wantModified:      repoNames{"repo-0"},
 		},
 		{
-			name:            "1 modified diff",
-			updatePlan:      true,
+			name:       "1 modified diff",
+			updatePlan: true,
 			oldPatches: repoNames{"repo-0"},
 			newPatches: []newPatchSpec{
 				{repo: "repo-0", modifiedDiff: true},
@@ -544,8 +544,8 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 			wantModified: repoNames{"repo-0"},
 		},
 		{
-			name:            "1 modified rev",
-			updatePlan:      true,
+			name:       "1 modified rev",
+			updatePlan: true,
 			oldPatches: repoNames{"repo-0"},
 			newPatches: []newPatchSpec{
 				{repo: "repo-0", modifiedRev: true},
@@ -553,8 +553,8 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 			wantModified: repoNames{"repo-0"},
 		},
 		{
-			name:            "1 detached, 1 unmodified, 1 modified, 1 new changeset",
-			updatePlan:      true,
+			name:       "1 detached, 1 unmodified, 1 modified, 1 new changeset",
+			updatePlan: true,
 			oldPatches: repoNames{"repo-0", "repo-1", "repo-2"},
 			newPatches: []newPatchSpec{
 				{repo: "repo-0"},
@@ -570,7 +570,7 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 			name:            "draft campaign, 1 unmodified, 1 modified, 1 new changeset",
 			campaignIsDraft: true,
 			updatePlan:      true,
-			oldPatches: repoNames{"repo-0", "repo-1", "repo-2"},
+			oldPatches:      repoNames{"repo-0", "repo-1", "repo-2"},
 			newPatches: []newPatchSpec{
 				{repo: "repo-0"},
 				{repo: "repo-1", modifiedDiff: true},
@@ -581,7 +581,7 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 			name:                  "draft campaign, 1 published unmodified, 1 modified, 1 detached, 1 new changeset",
 			campaignIsDraft:       true,
 			updatePlan:            true,
-			oldPatches:       repoNames{"repo-0", "repo-1", "repo-2"},
+			oldPatches:            repoNames{"repo-0", "repo-1", "repo-2"},
 			individuallyPublished: repoNames{"repo-0"},
 			newPatches: []newPatchSpec{
 				{repo: "repo-0"},
@@ -594,7 +594,7 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 			name:                  "draft campaign, 1 published unmodified, 1 published modified, 1 detached, 1 new changeset",
 			campaignIsDraft:       true,
 			updatePlan:            true,
-			oldPatches:       repoNames{"repo-0", "repo-1", "repo-2"},
+			oldPatches:            repoNames{"repo-0", "repo-1", "repo-2"},
 			individuallyPublished: repoNames{"repo-0", "repo-1"},
 			newPatches: []newPatchSpec{
 				{repo: "repo-0"},
@@ -608,7 +608,7 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 			name:                  "draft campaign, 1 published unmodified, 1 published modified, 1 published detached, 1 new changeset",
 			campaignIsDraft:       true,
 			updatePlan:            true,
-			oldPatches:       repoNames{"repo-0", "repo-1", "repo-2"},
+			oldPatches:            repoNames{"repo-0", "repo-1", "repo-2"},
 			individuallyPublished: repoNames{"repo-0", "repo-1", "repo-2"},
 			newPatches: []newPatchSpec{
 				{repo: "repo-0"},
@@ -622,7 +622,7 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 		{
 			name:            "1 modified diff for already merged changeset",
 			updatePlan:      true,
-			oldPatches: repoNames{"repo-0"},
+			oldPatches:      repoNames{"repo-0"},
 			changesetStates: map[string]campaigns.ChangesetState{"repo-0": campaigns.ChangesetStateMerged},
 			newPatches: []newPatchSpec{
 				{repo: "repo-0", modifiedDiff: true},
@@ -632,7 +632,7 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 		{
 			name:            "1 modified rev for already merged changeset",
 			updatePlan:      true,
-			oldPatches: repoNames{"repo-0"},
+			oldPatches:      repoNames{"repo-0"},
 			changesetStates: map[string]campaigns.ChangesetState{"repo-0": campaigns.ChangesetStateMerged},
 			newPatches: []newPatchSpec{
 				{repo: "repo-0", modifiedDiff: true},
@@ -642,7 +642,7 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 		{
 			name:            "1 modified diff for already closed changeset",
 			updatePlan:      true,
-			oldPatches: repoNames{"repo-0"},
+			oldPatches:      repoNames{"repo-0"},
 			changesetStates: map[string]campaigns.ChangesetState{"repo-0": campaigns.ChangesetStateClosed},
 			newPatches: []newPatchSpec{
 				{repo: "repo-0", modifiedDiff: true},
@@ -652,7 +652,7 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 		{
 			name:            "1 modified rev for already closed changeset",
 			updatePlan:      true,
-			oldPatches: repoNames{"repo-0"},
+			oldPatches:      repoNames{"repo-0"},
 			changesetStates: map[string]campaigns.ChangesetState{"repo-0": campaigns.ChangesetStateClosed},
 			newPatches: []newPatchSpec{
 				{repo: "repo-0", modifiedDiff: true},
@@ -667,7 +667,7 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 			svc := NewServiceWithClock(store, gitClient, cf, clock)
 
 			var (
-				campaign         *campaigns.Campaign
+				campaign    *campaigns.Campaign
 				oldPatches  []*campaigns.Patch
 				newPatches  []*campaigns.Patch
 				patchesByID map[int64]*campaigns.Patch

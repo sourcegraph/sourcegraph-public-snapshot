@@ -239,9 +239,9 @@ func (s ChangesetCheckState) Valid() bool {
 // A ChangesetJob is the creation of a Changeset on an external host from a
 // local Patch for a given Campaign.
 type ChangesetJob struct {
-	ID            int64
-	CampaignID    int64
-	PatchID int64
+	ID         int64
+	CampaignID int64
+	PatchID    int64
 
 	// Only set once the ChangesetJob has successfully finished.
 	ChangesetID int64

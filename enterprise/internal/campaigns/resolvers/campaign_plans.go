@@ -88,12 +88,12 @@ type patchesConnectionResolver struct {
 	opts  ee.ListPatchesOpts
 
 	// cache results because they are used by multiple fields
-	once                         sync.Once
-	jobs                         []*campaigns.Patch
-	reposByID                    map[api.RepoID]*repos.Repo
+	once                   sync.Once
+	jobs                   []*campaigns.Patch
+	reposByID              map[api.RepoID]*repos.Repo
 	changesetJobsByPatchID map[int64]*campaigns.ChangesetJob
-	next                         int64
-	err                          error
+	next                   int64
+	err                    error
 }
 
 func (r *patchesConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.ChangesetPlanResolver, error) {
