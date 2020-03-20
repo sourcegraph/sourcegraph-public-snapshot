@@ -19,4 +19,5 @@ asdf reshim
 
 echo "--- lint"
 
-golangci-lint run ${pkgs}
+# Disable unused since it uses too much CPU/mem
+golangci-lint run -e unused ${pkgs}
