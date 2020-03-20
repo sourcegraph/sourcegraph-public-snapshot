@@ -179,19 +179,41 @@ By installing the [Bitbucket Server plugin](../../../integration/bitbucket_serve
 
 Finally, **save the configuration**. You're done!
 
+## Background permissions sync
+
+Starting at 3.14, Sourcegraph supports syncing permissions in the background, it helps better handle repository permissions at scale. Rather than updating a user’s permissions when they log in and potentially blocking them from seeing search results, Sourcegraph now syncs these permissions proactively, and opportunistically refreshing these permissions in a timely manner, as part of a background service.
+
+It is currently behind a feature flag in the [site configuration](../config/site_config.md):
+
+```json
+"permissions.backgroundSync": {
+	"enabled": true
+}
+```
+
+>NOTE: Only GitLab and Bitbucket Server are supported at this time, GitHub and other code hosts are coming soon.
+
+However, with changing the permissions sync model, there are few things to expect:
+
+1. While kicking off the the initial round of syncing for all repositories and users, users are able to gradually see search results from more repositories they have access to.
+1. It takes time to complete the initial round of syncing. Depending on how many private repositoreis and users you have on the Sourcegraph instance, it could take from few minutes to several hours. This is generally not a problem for fresh installations, but for existing installations, users may not see expected repositories to appear in the search results because the permissions syncing hasn't finished yet.
+2. Although we have rate limiting mechanism in place, it consumes more API requests (i.e. more pressure on the code host) during the initial round of syncing.
+
+Please contact Sourcegraph support if you have any concerns/questions about enabling this feature for your Sourcegraph instance.
+
 ## Explicit permissions API
 
 Sourcegraph exposes a GraphQL API to explicitly set repository ACLs. This will become the primary
 way to specify permissions in the future and will eventually replace the other repository
 permissions mechanisms.
 
-To enable the permissions API, add the following to the [site config](../config/site_config.md):
+To enable the permissions API, add the following to the [site configuration](../config/site_config.md):
 
 ```json
 "permissions.userMapping": {
     "enabled": true,
     "bindID": "email"
-},
+}
 ```
 
 > The `bindID` value is used to uniquely identify users when setting permissions. Alternatively, it
