@@ -195,7 +195,7 @@ It is currently behind a feature flag in the [site configuration](../config/site
 
 There are some advantages to sync permissions in the background:
 
-1. It has more predictable API consumption to the code host.
+1. It schedules the syncing, thus it has more predictable API consumption to the code host.
 1. It proactively syncs permissions as soon as new repositories are added to the Sourcegraph instance.
 1. For users who haven't yet created their accounts on the Sourcegraph instance, they are able to instantly get search results from the repositories they have access on the code host after sign up.
 
