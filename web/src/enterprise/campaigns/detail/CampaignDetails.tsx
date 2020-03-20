@@ -28,7 +28,7 @@ import { Subject, of, merge, Observable } from 'rxjs'
 import { renderMarkdown } from '../../../../../shared/src/util/markdown'
 import { ErrorAlert } from '../../../components/alerts'
 import { Markdown } from '../../../../../shared/src/components/Markdown'
-import { switchMap, tap, takeWhile, repeatWhen, delay, catchError, startWith } from 'rxjs/operators'
+import { switchMap, tap, takeWhile, repeatWhen, delay, startWith } from 'rxjs/operators'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { CampaignDescriptionField } from './form/CampaignDescriptionField'
 import { CampaignStatus } from './CampaignStatus'
@@ -201,10 +201,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         if (campaignPlan) {
                             changesetUpdates.next()
                         }
-                    }),
-                    catchError(error => {
-                        setAlertError(asError(error))
-                        return [null]
                     })
                 ),
             [previewCampaignPlans, planID, _fetchCampaignPlanById, changesetUpdates]
@@ -222,12 +218,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             <div className="text-center">
                 <LoadingSpinner className="icon-inline mx-auto my-4" />
             </div>
-        )
-    }
-    // error while fetching either campaign or campaignPlan
-    if (!!alertError && (campaign === null || campaignPlan === null)) {
-        return (
-            <HeroPage icon={AlertCircleIcon} title="Error fetching campaign" body={<ErrorAlert error={alertError} />} />
         )
     }
     // Campaign was not found
