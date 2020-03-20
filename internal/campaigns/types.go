@@ -32,8 +32,8 @@ func IsRepoSupported(spec *api.ExternalRepoSpec) bool {
 	return ok
 }
 
-// CampaignPlanPatch is a patch applied to a repository (to create a new branch).
-type CampaignPlanPatch struct {
+// PatchSetPatch is a patch applied to a repository (to create a new branch).
+type PatchSetPatch struct {
 	Repo api.RepoID
 	// The commit SHA this patch is based on (e.g.: "4095572721c6234cd72013fd49dff4fb48f0f8a4").
 	BaseRevision api.CommitID
@@ -42,8 +42,8 @@ type CampaignPlanPatch struct {
 	Patch   string
 }
 
-// A CampaignPlan is a collection of multiple CampaignJobs.
-type CampaignPlan struct {
+// A PatchSet is a collection of multiple CampaignJobs.
+type PatchSet struct {
 	ID int64
 
 	UserID int32
@@ -52,17 +52,17 @@ type CampaignPlan struct {
 	UpdatedAt time.Time
 }
 
-// Clone returns a clone of a CampaignPlan.
-func (c *CampaignPlan) Clone() *CampaignPlan {
+// Clone returns a clone of a PatchSet.
+func (c *PatchSet) Clone() *PatchSet {
 	cc := *c
 	return &cc
 }
 
-// A CampaignJob is the application of a CampaignType over CampaignPlan arguments in
+// A CampaignJob is the application of a CampaignType over PatchSet arguments in
 // a specific repository at a specific revision.
 type CampaignJob struct {
 	ID             int64
-	CampaignPlanID int64
+	PatchSetID int64
 
 	RepoID  api.RepoID
 	Rev     api.CommitID
@@ -92,7 +92,7 @@ type Campaign struct {
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 	ChangesetIDs    []int64
-	CampaignPlanID  int64
+	PatchSetID  int64
 	ClosedAt        time.Time
 }
 

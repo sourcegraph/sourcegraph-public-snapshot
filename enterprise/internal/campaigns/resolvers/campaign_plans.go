@@ -21,14 +21,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 )
 
-const campaignPlanIDKind = "CampaignPlan"
+const patchSetIDKind = "CampaignPlan"
 
-func marshalCampaignPlanID(id int64) graphql.ID {
-	return relay.MarshalID(campaignPlanIDKind, id)
+func marshalPatchSetID(id int64) graphql.ID {
+	return relay.MarshalID(patchSetIDKind, id)
 }
 
-func unmarshalCampaignPlanID(id graphql.ID) (campaignPlanID int64, err error) {
-	err = relay.UnmarshalSpec(id, &campaignPlanID)
+func unmarshalPatchSetID(id graphql.ID) (patchSetID int64, err error) {
+	err = relay.UnmarshalSpec(id, &patchSetID)
 	return
 }
 
@@ -43,39 +43,39 @@ func unmarshalCampaignJobID(id graphql.ID) (cid int64, err error) {
 	return
 }
 
-var _ graphqlbackend.CampaignPlanResolver = &campaignPlanResolver{}
+var _ graphqlbackend.CampaignPlanResolver = &patchSetResolver{}
 
-type campaignPlanResolver struct {
-	store        *ee.Store
-	campaignPlan *campaigns.CampaignPlan
+type patchSetResolver struct {
+	store    *ee.Store
+	patchSet *campaigns.PatchSet
 }
 
-func (r *campaignPlanResolver) ID() graphql.ID {
-	return marshalCampaignPlanID(r.campaignPlan.ID)
+func (r *patchSetResolver) ID() graphql.ID {
+	return marshalPatchSetID(r.patchSet.ID)
 }
 
 // DEPRECATED: Remove in 3.15 in favor of ChangesetPlans.
-func (r *campaignPlanResolver) Changesets(
+func (r *patchSetResolver) Changesets(
 	ctx context.Context,
 	args *graphqlutil.ConnectionArgs,
 ) graphqlbackend.ChangesetPlansConnectionResolver {
 	return r.ChangesetPlans(ctx, args)
 }
-func (r *campaignPlanResolver) ChangesetPlans(
+func (r *patchSetResolver) ChangesetPlans(
 	ctx context.Context,
 	args *graphqlutil.ConnectionArgs,
 ) graphqlbackend.ChangesetPlansConnectionResolver {
 	return &campaignJobsConnectionResolver{
 		store: r.store,
 		opts: ee.ListCampaignJobsOpts{
-			CampaignPlanID: r.campaignPlan.ID,
-			Limit:          int(args.GetFirst()),
-			OnlyWithDiff:   true,
+			PatchSetID:   r.patchSet.ID,
+			Limit:        int(args.GetFirst()),
+			OnlyWithDiff: true,
 		},
 	}
 }
 
-func (r *campaignPlanResolver) PreviewURL() string {
+func (r *patchSetResolver) PreviewURL() string {
 	u := globals.ExternalURL().ResolveReference(&url.URL{Path: "/campaigns/new"})
 	q := url.Values{}
 	q.Set("plan", string(r.ID()))
@@ -153,8 +153,8 @@ func (r *campaignJobsConnectionResolver) compute(ctx context.Context) ([]*campai
 		}
 
 		cs, _, err := r.store.ListChangesetJobs(ctx, ee.ListChangesetJobsOpts{
-			CampaignPlanID: r.opts.CampaignPlanID,
-			Limit:          -1,
+			PatchSetID: r.opts.PatchSetID,
+			Limit:      -1,
 		})
 		if err != nil {
 			r.err = err
@@ -170,7 +170,7 @@ func (r *campaignJobsConnectionResolver) compute(ctx context.Context) ([]*campai
 
 func (r *campaignJobsConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
 	opts := ee.CountCampaignJobsOpts{
-		CampaignPlanID:            r.opts.CampaignPlanID,
+		PatchSetID:                r.opts.PatchSetID,
 		OnlyWithDiff:              r.opts.OnlyWithDiff,
 		OnlyUnpublishedInCampaign: r.opts.OnlyUnpublishedInCampaign,
 	}

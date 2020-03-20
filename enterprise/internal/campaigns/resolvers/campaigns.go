@@ -140,7 +140,7 @@ func (r *campaignResolver) ClosedAt() *graphqlbackend.DateTime {
 }
 
 func (r *campaignResolver) PublishedAt(ctx context.Context) (*graphqlbackend.DateTime, error) {
-	if r.Campaign.CampaignPlanID == 0 {
+	if r.Campaign.PatchSetID == 0 {
 		return &graphqlbackend.DateTime{Time: r.Campaign.CreatedAt}, nil
 	}
 
@@ -173,14 +173,14 @@ func (r *campaignResolver) ChangesetPlans(
 	ctx context.Context,
 	args *graphqlutil.ConnectionArgs,
 ) graphqlbackend.ChangesetPlansConnectionResolver {
-	if r.Campaign.CampaignPlanID == 0 {
+	if r.Campaign.PatchSetID == 0 {
 		return &emptyChangesetPlansConnectionsResolver{}
 	}
 
 	return &campaignJobsConnectionResolver{
 		store: r.store,
 		opts: ee.ListCampaignJobsOpts{
-			CampaignPlanID:            r.Campaign.CampaignPlanID,
+			PatchSetID:                r.Campaign.PatchSetID,
 			Limit:                     int(args.GetFirst()),
 			OnlyWithDiff:              true,
 			OnlyUnpublishedInCampaign: r.Campaign.ID,
@@ -247,16 +247,16 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 }
 
 func (r *campaignResolver) Plan(ctx context.Context) (graphqlbackend.CampaignPlanResolver, error) {
-	if r.Campaign.CampaignPlanID == 0 {
+	if r.Campaign.PatchSetID == 0 {
 		return nil, nil
 	}
 
-	plan, err := r.store.GetCampaignPlan(ctx, ee.GetCampaignPlanOpts{ID: r.Campaign.CampaignPlanID})
+	patchSet, err := r.store.GetPatchSet(ctx, ee.GetPatchSetOpts{ID: r.Campaign.PatchSetID})
 	if err != nil {
 		return nil, err
 	}
 
-	return &campaignPlanResolver{store: r.store, campaignPlan: plan}, nil
+	return &patchSetResolver{store: r.store, patchSet: patchSet}, nil
 }
 
 func (r *campaignResolver) RepositoryDiffs(

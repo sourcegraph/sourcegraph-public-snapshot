@@ -57,7 +57,7 @@ func TestService(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	t.Run("CreateCampaignPlanFromPatches", func(t *testing.T) {
+	t.Run("CreatePatchSetFromPatches", func(t *testing.T) {
 		svc := NewServiceWithClock(store, nil, nil, clock)
 
 		const patch = `diff f f
@@ -67,21 +67,21 @@ func TestService(t *testing.T) {
 +x
  y
 `
-		patches := []campaigns.CampaignPlanPatch{
+		patches := []campaigns.PatchSetPatch{
 			{Repo: api.RepoID(rs[0].ID), BaseRevision: "deadbeef", BaseRef: "refs/heads/master", Patch: patch},
 			{Repo: api.RepoID(rs[1].ID), BaseRevision: "f00b4r", BaseRef: "refs/heads/master", Patch: patch},
 		}
 
-		plan, err := svc.CreateCampaignPlanFromPatches(ctx, patches, user.ID)
+		patchSet, err := svc.CreatePatchSetFromPatches(ctx, patches, user.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		if _, err := store.GetCampaignPlan(ctx, GetCampaignPlanOpts{ID: plan.ID}); err != nil {
+		if _, err := store.GetPatchSet(ctx, GetPatchSetOpts{ID: patchSet.ID}); err != nil {
 			t.Fatal(err)
 		}
 
-		jobs, _, err := store.ListCampaignJobs(ctx, ListCampaignJobsOpts{CampaignPlanID: plan.ID})
+		jobs, _, err := store.ListCampaignJobs(ctx, ListCampaignJobsOpts{PatchSetID: patchSet.ID})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -91,7 +91,7 @@ func TestService(t *testing.T) {
 		wantJobs := make([]*campaigns.CampaignJob, len(patches))
 		for i, patch := range patches {
 			wantJobs[i] = &campaigns.CampaignJob{
-				CampaignPlanID: plan.ID,
+				PatchSetID: patchSet.ID,
 				RepoID:         patch.Repo,
 				Rev:            patch.BaseRevision,
 				BaseRef:        patch.BaseRef,
@@ -106,13 +106,13 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("CreateCampaign", func(t *testing.T) {
-		plan := &campaigns.CampaignPlan{UserID: user.ID}
-		err = store.CreateCampaignPlan(ctx, plan)
+		patchSet := &campaigns.PatchSet{UserID: user.ID}
+		err = store.CreatePatchSet(ctx, patchSet)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		campaign := testCampaign(user.ID, plan.ID)
+		campaign := testCampaign(user.ID, patchSet.ID)
 		svc := NewServiceWithClock(store, gitClient, cf, clock)
 
 		// Without CampaignJobs it should fail
@@ -123,7 +123,7 @@ func TestService(t *testing.T) {
 
 		campaignJobs := make([]*campaigns.CampaignJob, 0, len(rs))
 		for _, repo := range rs {
-			campaignJob := testCampaignJob(plan.ID, repo.ID, now)
+			campaignJob := testCampaignJob(patchSet.ID, repo.ID, now)
 			err := store.CreateCampaignJob(ctx, campaignJob)
 			if err != nil {
 				t.Fatal(err)
@@ -155,21 +155,21 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("CreateCampaignAsDraft", func(t *testing.T) {
-		plan := &campaigns.CampaignPlan{UserID: user.ID}
-		err = store.CreateCampaignPlan(ctx, plan)
+		patchSet := &campaigns.PatchSet{UserID: user.ID}
+		err = store.CreatePatchSet(ctx, patchSet)
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		for _, repo := range rs {
-			campaignJob := testCampaignJob(plan.ID, repo.ID, now)
+			campaignJob := testCampaignJob(patchSet.ID, repo.ID, now)
 			err := store.CreateCampaignJob(ctx, campaignJob)
 			if err != nil {
 				t.Fatal(err)
 			}
 		}
 
-		campaign := testCampaign(user.ID, plan.ID)
+		campaign := testCampaign(user.ID, patchSet.ID)
 
 		svc := NewServiceWithClock(store, gitClient, cf, clock)
 		err = svc.CreateCampaign(ctx, campaign, true)
@@ -195,20 +195,20 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("CreateCampaignWithPlanAttachedToOtherCampaign", func(t *testing.T) {
-		plan := &campaigns.CampaignPlan{UserID: user.ID}
-		err = store.CreateCampaignPlan(ctx, plan)
+		patchSet := &campaigns.PatchSet{UserID: user.ID}
+		err = store.CreatePatchSet(ctx, patchSet)
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		for _, repo := range rs {
-			err := store.CreateCampaignJob(ctx, testCampaignJob(plan.ID, repo.ID, now))
+			err := store.CreateCampaignJob(ctx, testCampaignJob(patchSet.ID, repo.ID, now))
 			if err != nil {
 				t.Fatal(err)
 			}
 		}
 
-		campaign := testCampaign(user.ID, plan.ID)
+		campaign := testCampaign(user.ID, patchSet.ID)
 		svc := NewServiceWithClock(store, gitClient, cf, clock)
 
 		err = svc.CreateCampaign(ctx, campaign, false)
@@ -216,27 +216,27 @@ func TestService(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		otherCampaign := testCampaign(user.ID, plan.ID)
+		otherCampaign := testCampaign(user.ID, patchSet.ID)
 		err = svc.CreateCampaign(ctx, otherCampaign, false)
-		if err != ErrCampaignPlanDuplicate {
+		if err != ErrPatchSetDuplicate {
 			t.Fatal("no error even though another campaign has same plan")
 		}
 	})
 
 	t.Run("CreateChangesetJobForCampaignJob", func(t *testing.T) {
-		plan := &campaigns.CampaignPlan{UserID: user.ID}
-		err = store.CreateCampaignPlan(ctx, plan)
+		patchSet := &campaigns.PatchSet{UserID: user.ID}
+		err = store.CreatePatchSet(ctx, patchSet)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		campaignJob := testCampaignJob(plan.ID, rs[0].ID, now)
+		campaignJob := testCampaignJob(patchSet.ID, rs[0].ID, now)
 		err := store.CreateCampaignJob(ctx, campaignJob)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		campaign := testCampaign(user.ID, plan.ID)
+		campaign := testCampaign(user.ID, patchSet.ID)
 		err = store.CreateCampaign(ctx, campaign)
 		if err != nil {
 			t.Fatal(err)
@@ -318,20 +318,20 @@ func TestService(t *testing.T) {
 					tc.err = "<nil>"
 				}
 
-				plan := &campaigns.CampaignPlan{UserID: user.ID}
-				err = store.CreateCampaignPlan(ctx, plan)
+				patchSet := &campaigns.PatchSet{UserID: user.ID}
+				err = store.CreatePatchSet(ctx, patchSet)
 				if err != nil {
 					t.Fatal(err)
 				}
 
-				campaignJob := testCampaignJob(plan.ID, rs[0].ID, now)
+				campaignJob := testCampaignJob(patchSet.ID, rs[0].ID, now)
 				err := store.CreateCampaignJob(ctx, campaignJob)
 				if err != nil {
 					t.Fatal(err)
 				}
 
 				svc := NewServiceWithClock(store, gitClient, cf, clock)
-				campaign := testCampaign(user.ID, plan.ID)
+				campaign := testCampaign(user.ID, patchSet.ID)
 
 				err = svc.CreateCampaign(ctx, campaign, tc.draft)
 				if err != nil {
@@ -392,27 +392,27 @@ func TestService(t *testing.T) {
 	t.Run("UpdateCampaignWithPlanAttachedToOtherCampaign", func(t *testing.T) {
 		svc := NewServiceWithClock(store, gitClient, cf, clock)
 
-		plan := &campaigns.CampaignPlan{UserID: user.ID}
-		err = store.CreateCampaignPlan(ctx, plan)
+		patchSet := &campaigns.PatchSet{UserID: user.ID}
+		err = store.CreatePatchSet(ctx, patchSet)
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		for _, repo := range rs {
-			err := store.CreateCampaignJob(ctx, testCampaignJob(plan.ID, repo.ID, now))
+			err := store.CreateCampaignJob(ctx, testCampaignJob(patchSet.ID, repo.ID, now))
 			if err != nil {
 				t.Fatal(err)
 			}
 		}
 
-		campaign := testCampaign(user.ID, plan.ID)
+		campaign := testCampaign(user.ID, patchSet.ID)
 		err = svc.CreateCampaign(ctx, campaign, false)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		otherPlan := &campaigns.CampaignPlan{UserID: user.ID}
-		err = store.CreateCampaignPlan(ctx, otherPlan)
+		otherPlan := &campaigns.PatchSet{UserID: user.ID}
+		err = store.CreatePatchSet(ctx, otherPlan)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -429,9 +429,9 @@ func TestService(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		args := UpdateCampaignArgs{Campaign: otherCampaign.ID, Plan: &plan.ID}
+		args := UpdateCampaignArgs{Campaign: otherCampaign.ID, Plan: &patchSet.ID}
 		_, _, err := svc.UpdateCampaign(ctx, args)
-		if err != ErrCampaignPlanDuplicate {
+		if err != ErrPatchSetDuplicate {
 			t.Fatal("no error even though another campaign has same plan")
 		}
 	})
@@ -447,7 +447,7 @@ type newCampaignJobSpec struct {
 	modifiedRev  bool
 }
 
-func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
+func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 	dbtesting.SetupGlobalTestDB(t)
 
@@ -485,7 +485,7 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 		campaignIsDraft  bool
 		campaignIsManual bool
 
-		// Repositories for which we had CampaignJobs attached to the old CampaignPlan
+		// Repositories for which we had CampaignJobs attached to the old PatchSet
 		oldCampaignJobs repoNames
 
 		// Repositories for which the ChangesetJob/Changeset have been
@@ -680,8 +680,8 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 			if tt.campaignIsManual {
 				campaign = testCampaign(user.ID, 0)
 			} else {
-				plan := &campaigns.CampaignPlan{UserID: user.ID}
-				err = store.CreateCampaignPlan(ctx, plan)
+				patchSet := &campaigns.PatchSet{UserID: user.ID}
+				err = store.CreatePatchSet(ctx, patchSet)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -694,7 +694,7 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 						t.Fatalf("unrecognized repo name: %s", repoName)
 					}
 
-					j := testCampaignJob(plan.ID, repo.ID, now)
+					j := testCampaignJob(patchSet.ID, repo.ID, now)
 					err := store.CreateCampaignJob(ctx, j)
 					if err != nil {
 						t.Fatal(err)
@@ -708,7 +708,7 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 						changesetStateByCampaignJobID[j.ID] = campaigns.ChangesetStateOpen
 					}
 				}
-				campaign = testCampaign(user.ID, plan.ID)
+				campaign = testCampaign(user.ID, patchSet.ID)
 			}
 
 			err = svc.CreateCampaign(ctx, campaign, tt.campaignIsDraft)
@@ -746,8 +746,8 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 			oldTime := now
 			now = now.Add(5 * time.Second)
 
-			newPlan := &campaigns.CampaignPlan{UserID: user.ID}
-			err = store.CreateCampaignPlan(ctx, newPlan)
+			newPlan := &campaigns.PatchSet{UserID: user.ID}
+			err = store.CreatePatchSet(ctx, newPlan)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -810,8 +810,8 @@ func TestService_UpdateCampaignWithNewCampaignPlanID(t *testing.T) {
 				t.Fatalf("campaign description not updated. want=%q, have=%q", *args.Description, updatedCampaign.Description)
 			}
 
-			if args.Plan != nil && updatedCampaign.CampaignPlanID != *args.Plan {
-				t.Fatalf("campaign CampaignPlanID not updated. want=%q, have=%q", newPlan.ID, updatedCampaign.CampaignPlanID)
+			if args.Plan != nil && updatedCampaign.PatchSetID != *args.Plan {
+				t.Fatalf("campaign PatchSetID not updated. want=%q, have=%q", newPlan.ID, updatedCampaign.PatchSetID)
 			}
 
 			newChangesetJobs, _, err := store.ListChangesetJobs(ctx, ListChangesetJobsOpts{
@@ -1071,7 +1071,7 @@ var createTestUser = func() func(context.Context, *testing.T) *types.User {
 
 func testCampaignJob(plan int64, repo api.RepoID, t time.Time) *campaigns.CampaignJob {
 	return &campaigns.CampaignJob{
-		CampaignPlanID: plan,
+		PatchSetID: plan,
 		RepoID:         api.RepoID(repo),
 		Rev:            "deadbeef",
 		BaseRef:        "refs/heads/master",
@@ -1085,7 +1085,7 @@ func testCampaign(user int32, plan int64) *campaigns.Campaign {
 		Description:     "Testing Campaign",
 		AuthorID:        user,
 		NamespaceUserID: user,
-		CampaignPlanID:  plan,
+		PatchSetID:  plan,
 	}
 
 	if plan != 0 {

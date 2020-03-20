@@ -1178,8 +1178,8 @@ func TestCampaignPlanResolver(t *testing.T) {
 	store := ee.NewStoreWithClock(dbconn.Global, clock)
 
 	user := createTestUser(ctx, t)
-	plan := &campaigns.CampaignPlan{UserID: user.ID}
-	err := store.CreateCampaignPlan(ctx, plan)
+	patchSet := &campaigns.PatchSet{UserID: user.ID}
+	err := store.CreatePatchSet(ctx, patchSet)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1187,11 +1187,11 @@ func TestCampaignPlanResolver(t *testing.T) {
 	var jobs []*campaigns.CampaignJob
 	for _, repo := range rs {
 		job := &campaigns.CampaignJob{
-			CampaignPlanID: plan.ID,
-			RepoID:         repo.ID,
-			Rev:            testingRev,
-			BaseRef:        "master",
-			Diff:           testDiff,
+			PatchSetID: patchSet.ID,
+			RepoID:     repo.ID,
+			Rev:        testingRev,
+			BaseRef:    "master",
+			Diff:       testDiff,
 		}
 
 		err := store.CreateCampaignJob(ctx, job)
@@ -1261,7 +1261,7 @@ func TestCampaignPlanResolver(t *testing.T) {
           }
         }
       }
-	`, marshalCampaignPlanID(plan.ID), len(jobs)))
+	`, marshalPatchSetID(patchSet.ID), len(jobs)))
 
 	if have, want := len(response.Node.Changesets.Nodes), len(jobs); have != want {
 		t.Fatalf("have %d changeset plans, want %d", have, want)

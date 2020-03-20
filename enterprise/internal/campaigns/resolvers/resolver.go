@@ -121,12 +121,12 @@ func (r *Resolver) CampaignPlanByID(ctx context.Context, id graphql.ID) (graphql
 		return nil, err
 	}
 
-	planID, err := unmarshalCampaignPlanID(id)
+	patchSetID, err := unmarshalPatchSetID(id)
 	if err != nil {
 		return nil, err
 	}
 
-	plan, err := r.store.GetCampaignPlan(ctx, ee.GetCampaignPlanOpts{ID: planID})
+	patchSet, err := r.store.GetPatchSet(ctx, ee.GetPatchSetOpts{ID: patchSetID})
 	if err != nil {
 		if err == ee.ErrNoResults {
 			return nil, nil
@@ -134,7 +134,7 @@ func (r *Resolver) CampaignPlanByID(ctx context.Context, id graphql.ID) (graphql
 		return nil, err
 	}
 
-	return &campaignPlanResolver{store: r.store, campaignPlan: plan}, nil
+	return &patchSetResolver{store: r.store, patchSet: patchSet}, nil
 }
 
 func (r *Resolver) AddChangesetsToCampaign(ctx context.Context, args *graphqlbackend.AddChangesetsToCampaignArgs) (_ graphqlbackend.CampaignResolver, err error) {
@@ -173,7 +173,7 @@ func (r *Resolver) AddChangesetsToCampaign(ctx context.Context, args *graphqlbac
 		return nil, err
 	}
 
-	if campaign.CampaignPlanID != 0 {
+	if campaign.PatchSetID != 0 {
 		return nil, errors.New("Changesets can only be added to campaigns that don't create their own changesets")
 	}
 
@@ -231,11 +231,11 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 	}
 
 	if args.Input.Plan != nil {
-		planID, err := unmarshalCampaignPlanID(*args.Input.Plan)
+		patchSetID, err := unmarshalPatchSetID(*args.Input.Plan)
 		if err != nil {
 			return nil, err
 		}
-		campaign.CampaignPlanID = planID
+		campaign.PatchSetID = patchSetID
 	}
 
 	var draft bool
@@ -288,11 +288,11 @@ func (r *Resolver) UpdateCampaign(ctx context.Context, args *graphqlbackend.Upda
 	updateArgs.Branch = args.Input.Branch
 
 	if args.Input.Plan != nil {
-		campaignPlanID, err := unmarshalCampaignPlanID(*args.Input.Plan)
+		patchSetID, err := unmarshalPatchSetID(*args.Input.Plan)
 		if err != nil {
 			return nil, err
 		}
-		updateArgs.Plan = &campaignPlanID
+		updateArgs.Plan = &patchSetID
 	}
 
 	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
@@ -549,7 +549,7 @@ func (r *Resolver) CreateCampaignPlanFromPatches(ctx context.Context, args graph
 		return nil, backend.ErrNotAuthenticated
 	}
 
-	patches := make([]campaigns.CampaignPlanPatch, len(args.Patches))
+	patches := make([]campaigns.PatchSetPatch, len(args.Patches))
 	for i, patch := range args.Patches {
 		repo, err := graphqlbackend.UnmarshalRepositoryID(patch.Repository)
 		if err != nil {
@@ -568,7 +568,7 @@ func (r *Resolver) CreateCampaignPlanFromPatches(ctx context.Context, args graph
 			}
 		}
 
-		patches[i] = campaigns.CampaignPlanPatch{
+		patches[i] = campaigns.PatchSetPatch{
 			Repo:         repo,
 			BaseRevision: patch.BaseRevision,
 			BaseRef:      patch.BaseRef,
@@ -577,12 +577,12 @@ func (r *Resolver) CreateCampaignPlanFromPatches(ctx context.Context, args graph
 	}
 
 	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
-	plan, err := svc.CreateCampaignPlanFromPatches(ctx, patches, user.ID)
+	patchSet, err := svc.CreatePatchSetFromPatches(ctx, patches, user.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	return &campaignPlanResolver{store: r.store, campaignPlan: plan}, nil
+	return &patchSetResolver{store: r.store, patchSet: patchSet}, nil
 }
 
 func (r *Resolver) CloseCampaign(ctx context.Context, args *graphqlbackend.CloseCampaignArgs) (_ graphqlbackend.CampaignResolver, err error) {
