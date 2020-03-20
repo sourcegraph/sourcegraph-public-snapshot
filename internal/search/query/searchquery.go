@@ -133,7 +133,7 @@ func ParseAndCheck(input string) (QueryInfo, error) {
 		return nil, err
 	}
 
-	ordinaryQuery, ok := checkedQuery.(OrdinaryQuery)
+	ordinaryQuery, ok := checkedQuery.(*OrdinaryQuery)
 	if !ok {
 		return nil, errors.New("Check failed: Expected Ordinary Query.")
 	}
