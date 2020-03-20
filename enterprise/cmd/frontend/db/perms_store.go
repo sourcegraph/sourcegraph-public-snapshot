@@ -1460,11 +1460,11 @@ type PermsMetrics struct {
 func (s *PermsStore) Metrics(ctx context.Context, staleDur time.Duration) (*PermsMetrics, error) {
 	m := &PermsMetrics{}
 
-	staled := s.clock().Add(-1 * staleDur)
+	stale := s.clock().Add(-1 * staleDur)
 	q := sqlf.Sprintf(`
-SELECT COUNT(user_id) FROM user_permissions
+SELECT COUNT(*) FROM user_permissions
 WHERE updated_at <= %s
-`, staled)
+`, stale)
 	if err := s.execute(ctx, q, &m.UsersWithStalePerms); err != nil {
 		return nil, errors.Wrap(err, "users with stale perms")
 	}
@@ -1480,12 +1480,12 @@ FROM user_permissions
 	m.UsersPermsGapSeconds = seconds.Float64
 
 	q = sqlf.Sprintf(`
-SELECT COUNT(perms.repo_id) FROM repo_permissions AS perms
+SELECT COUNT(*) FROM repo_permissions AS perms
 WHERE perms.repo_id NOT IN
 	(SELECT repo.id FROM repo
 	 WHERE repo.deleted_at IS NOT NULL)
 AND perms.updated_at <= %s
-`, staled)
+`, stale)
 	if err := s.execute(ctx, q, &m.ReposWithStalePerms); err != nil {
 		return nil, errors.Wrap(err, "repos with stale perms")
 	}
