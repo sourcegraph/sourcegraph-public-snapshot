@@ -114,7 +114,7 @@ exports[`ActivationDropdown render 0/2 completed 1`] = `
         onClick={[Function]}
       >
         <button
-          className="btn btn-link text-left w-100 p-0"
+          className="btn btn-link text-left w-100 p-0 border-0"
           type="button"
         >
           <div>
@@ -272,7 +272,7 @@ exports[`ActivationDropdown render 1/2 completed 1`] = `
         onClick={[Function]}
       >
         <button
-          className="btn btn-link text-left w-100 p-0"
+          className="btn btn-link text-left w-100 p-0 border-0"
           type="button"
         >
           <div>

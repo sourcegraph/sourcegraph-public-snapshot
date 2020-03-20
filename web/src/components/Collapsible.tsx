@@ -27,6 +27,11 @@ interface Props {
      * Whether the whole title section should be clickable to expand the content
      */
     wholeTitleClickable?: boolean
+
+    /**
+     * Whether the title should be placed before the chevron icon.
+     */
+    titleAtStart?: true
 }
 
 /**
@@ -36,6 +41,7 @@ interface Props {
 export const Collapsible: React.FunctionComponent<Props> = ({
     title,
     children,
+    titleAtStart = false,
     defaultExpanded = false,
     className = '',
     titleClassName = '',
@@ -50,6 +56,8 @@ export const Collapsible: React.FunctionComponent<Props> = ({
         [isExpanded]
     )
 
+    const titleNode = <span className={titleClassName}>{title}</span>
+
     return (
         <div className={className}>
             <div
@@ -57,6 +65,7 @@ export const Collapsible: React.FunctionComponent<Props> = ({
                     isExpanded ? 'mb-3' : ''
                 }`}
             >
+                {titleAtStart && titleNode}
                 <button
                     type="button"
                     className={classNames(
@@ -72,7 +81,7 @@ export const Collapsible: React.FunctionComponent<Props> = ({
                         <ChevronRightIcon className="icon-inline" aria-label="Expand section" />
                     )}
                 </button>
-                <span className={titleClassName}>{title}</span>
+                {!titleAtStart && titleNode}
             </div>
             {isExpanded && children}
         </div>
