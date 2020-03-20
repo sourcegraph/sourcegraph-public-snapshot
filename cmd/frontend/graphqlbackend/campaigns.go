@@ -295,11 +295,6 @@ type ChangesetCountsResolver interface {
 	OpenPending() int32
 }
 
-type CampaignPlanArgResolver interface {
-	Name() string
-	Value() string
-}
-
 type BackgroundProcessStatus interface {
 	CompletedCount() int32
 	PendingCount() int32
@@ -311,8 +306,6 @@ type BackgroundProcessStatus interface {
 
 type CampaignPlanResolver interface {
 	ID() graphql.ID
-
-	Status(ctx context.Context) (BackgroundProcessStatus, error)
 
 	// DEPRECATED: Remove in 3.15 in favor of ChangesetPlans.
 	Changesets(ctx context.Context, args *graphqlutil.ConnectionArgs) ChangesetPlansConnectionResolver

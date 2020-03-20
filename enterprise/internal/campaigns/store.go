@@ -1642,28 +1642,6 @@ func getCampaignPlanQuery(opts *GetCampaignPlanOpts) *sqlf.Query {
 	return sqlf.Sprintf(getCampaignPlansQueryFmtstr, sqlf.Join(preds, "\n AND "))
 }
 
-// DEPRECATED: GetCampaignPlanStatus gets the campaigns.BackgroundProcessStatus for a CampaignPlan.
-// It's deprecated because we don't execute jobs anymore.
-func (s *Store) GetCampaignPlanStatus(ctx context.Context, id int64) (*campaigns.BackgroundProcessStatus, error) {
-	return s.queryBackgroundProcessStatus(ctx, sqlf.Sprintf(
-		getCampaignPlanStatusQueryFmtstr,
-		sqlf.Sprintf("campaign_plan_id = %s", id),
-	))
-}
-
-var getCampaignPlanStatusQueryFmtstr = `
--- source: enterprise/internal/campaigns/store.go:GetCampaignPlanStatus
-SELECT
-  false AS canceled,
-  COUNT(*) AS total,
-  0 AS pending,
-  COUNT(*) AS completed,
-  NULL AS errors
-FROM campaign_jobs
-WHERE %s
-LIMIT 1;
-`
-
 // GetCampaignStatus gets the campaigns.BackgroundProcessStatus for a Campaign
 func (s *Store) GetCampaignStatus(ctx context.Context, id int64) (*campaigns.BackgroundProcessStatus, error) {
 	return s.queryBackgroundProcessStatus(ctx, sqlf.Sprintf(

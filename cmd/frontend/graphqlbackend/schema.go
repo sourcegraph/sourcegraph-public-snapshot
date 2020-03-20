@@ -487,9 +487,6 @@ type CampaignPlan implements Node {
     # The unique ID of this campaign plan.
     id: ID!
 
-    # The progress status of generating changesets.
-    status: BackgroundProcessStatus!
-
     # DEPRECATED
     # The proposed patches ("plans") for the changesets that will be created by the campaign.
     changesets(first: Int): ChangesetPlanConnection!
