@@ -321,7 +321,7 @@ func StructuralSearchEnabled() bool {
 }
 
 func AndOrQueryEnabled() bool {
-	val := Get().ExperimentalFeatures.Automation
+	val := Get().ExperimentalFeatures.AndOrQuery
 	if val == "" {
 		return false
 	}

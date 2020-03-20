@@ -30,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	querytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"gopkg.in/inconshreveable/log15.v2"
@@ -464,7 +465,8 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	// FIXME: rvantonder deleted a line to stop a confusing compile error.
+	fields := querytypes.Fields(args.Query.Fields())
+	tr.LazyLog(&fields, false)
 	tr.LazyLog(args.PatternInfo, false)
 
 	ctx, cancel := context.WithCancel(ctx)
