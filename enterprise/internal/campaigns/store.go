@@ -1268,7 +1268,7 @@ DELETE FROM campaigns WHERE id = %s
 type CountCampaignsOpts struct {
 	ChangesetID int64
 	State       campaigns.CampaignState
-	HasPlan     *bool
+	HasPatchSet *bool
 }
 
 // CountCampaigns returns the number of campaigns in the database.
@@ -1300,11 +1300,11 @@ func countCampaignsQuery(opts *CountCampaignsOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("closed_at IS NOT NULL"))
 	}
 
-	if opts.HasPlan != nil {
-		if *opts.HasPlan {
-			preds = append(preds, sqlf.Sprintf("campaign_plan_id IS NOT NULL"))
+	if opts.HasPatchSet != nil {
+		if *opts.HasPatchSet {
+			preds = append(preds, sqlf.Sprintf("patch_set_id IS NOT NULL"))
 		} else {
-			preds = append(preds, sqlf.Sprintf("campaign_plan_id IS NULL"))
+			preds = append(preds, sqlf.Sprintf("patch_set_id IS NULL"))
 		}
 	}
 
@@ -1384,7 +1384,7 @@ type ListCampaignsOpts struct {
 	Cursor      int64
 	Limit       int
 	State       campaigns.CampaignState
-	HasPlan     *bool
+	HasPatchSet *bool
 }
 
 // ListCampaigns lists Campaigns with the given filters.
@@ -1451,11 +1451,11 @@ func listCampaignsQuery(opts *ListCampaignsOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("closed_at IS NOT NULL"))
 	}
 
-	if opts.HasPlan != nil {
-		if *opts.HasPlan {
-			preds = append(preds, sqlf.Sprintf("campaign_plan_id IS NOT NULL"))
+	if opts.HasPatchSet != nil {
+		if *opts.HasPatchSet {
+			preds = append(preds, sqlf.Sprintf("patch_set_id IS NOT NULL"))
 		} else {
-			preds = append(preds, sqlf.Sprintf("campaign_plan_id IS NULL"))
+			preds = append(preds, sqlf.Sprintf("patch_set_id IS NULL"))
 		}
 	}
 

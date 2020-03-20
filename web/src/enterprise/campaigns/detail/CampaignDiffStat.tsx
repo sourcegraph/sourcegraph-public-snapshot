@@ -6,19 +6,17 @@ export interface CampaignDiffstatProps {
     campaign:
         | (Pick<GQL.ICampaign, '__typename'> & {
               changesets: Pick<GQL.ICampaign['changesets'], 'nodes'>
-              changesetPlans: Pick<GQL.ICampaign['changesetPlans'], 'nodes'>
+              patches: Pick<GQL.ICampaign['patches'], 'nodes'>
           })
-        | (Pick<GQL.ICampaignPlan, '__typename'> & {
-              changesetPlans: Pick<GQL.ICampaignPlan['changesetPlans'], 'nodes'>
+        | (Pick<GQL.IPatchSet, '__typename'> & {
+              patches: Pick<GQL.IPatchSet['patches'], 'nodes'>
           })
 
     className?: string
 }
 
-const sumDiffStat = (
-    nodes: (GQL.IExternalChangeset | GQL.IChangesetPlan)[],
-    field: 'added' | 'changed' | 'deleted'
-): number => nodes.reduce((prev, next) => prev + (next.diff ? next.diff.fileDiffs.diffStat[field] : 0), 0)
+const sumDiffStat = (nodes: (GQL.IExternalChangeset | GQL.IPatch)[], field: 'added' | 'changed' | 'deleted'): number =>
+    nodes.reduce((prev, next) => prev + (next.diff ? next.diff.fileDiffs.diffStat[field] : 0), 0)
 
 /**
  * The status of a campaign's jobs, plus its closed state and errors.
@@ -27,8 +25,8 @@ export const CampaignDiffStat: React.FunctionComponent<CampaignDiffstatProps> = 
     const changesets = useMemo(
         () =>
             campaign.__typename === 'Campaign'
-                ? [...campaign.changesets.nodes, ...campaign.changesetPlans.nodes]
-                : campaign.changesetPlans.nodes,
+                ? [...campaign.changesets.nodes, ...campaign.patches.nodes]
+                : campaign.patches.nodes,
         [campaign]
     )
     const added = useMemo(() => sumDiffStat(changesets, 'added'), [changesets])

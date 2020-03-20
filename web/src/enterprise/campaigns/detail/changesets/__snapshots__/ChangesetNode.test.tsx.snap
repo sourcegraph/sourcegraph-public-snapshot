@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`ChangesetNode renders a changesetplan with publishing disabled 1`] = `
+exports[`ChangesetNode renders a patch with publishing disabled 1`] = `
 Object {
   "children": <Collapsible
     title={
@@ -152,7 +152,7 @@ Object {
 }
 `;
 
-exports[`ChangesetNode renders a changesetplan with publishing enabled 1`] = `
+exports[`ChangesetNode renders a patch with publishing enabled 1`] = `
 Object {
   "children": <Collapsible
     title={

@@ -373,7 +373,7 @@ func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampa
 		return nil, err
 	}
 	opts := ee.ListCampaignsOpts{
-		HasPlan: args.HasPlan,
+		HasPatchSet: args.HasPatchSet,
 	}
 	state, err := parseCampaignState(args.State)
 	if err != nil {

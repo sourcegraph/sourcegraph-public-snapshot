@@ -727,8 +727,8 @@ type ExternalChangeset implements Node {
         # Returns the first n campaigns from the list.
         first: Int
         state: CampaignState
-        # Only return campaigns that have a campaign plan.
-        hasPlan: Boolean
+        # Only return campaigns that have a patch set.
+        hasPatchSet: Boolean
     ): CampaignConnection!
 
     # The events belonging to this changeset.
@@ -1158,8 +1158,8 @@ type Query {
         # Returns the first n campaigns from the list.
         first: Int
         state: CampaignState
-        # Only return campaigns that have a campaign plan.
-        hasPlan: Boolean
+        # Only return campaigns that have a patch set.
+        hasPatchSet: Boolean
     ): CampaignConnection!
 
     # Looks up a repository by either name or cloneURL.

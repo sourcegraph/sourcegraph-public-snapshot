@@ -48,8 +48,8 @@ func testStore(db *sql.DB) func(*testing.T) {
 						ClosedAt:     now,
 					}
 					if i == 0 {
-						// don't have a plan for the first one
-						c.CampaignPlanID = 0
+						// don't have a patch set for the first one
+						c.PatchSetID = 0
 						// Don't close the first one
 						c.ClosedAt = time.Time{}
 					}
@@ -103,8 +103,8 @@ func testStore(db *sql.DB) func(*testing.T) {
 					t.Fatalf("have count: %d, want: %d", have, want)
 				}
 
-				hasPlan := false
-				count, err = s.CountCampaigns(ctx, CountCampaignsOpts{HasPlan: &hasPlan})
+				hasPatchSet := false
+				count, err = s.CountCampaigns(ctx, CountCampaignsOpts{HasPatchSet: &hasPatchSet})
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -113,8 +113,8 @@ func testStore(db *sql.DB) func(*testing.T) {
 					t.Fatalf("have count: %d, want: %d", have, want)
 				}
 
-				hasPlan = true
-				count, err = s.CountCampaigns(ctx, CountCampaignsOpts{HasPlan: &hasPlan})
+				hasPatchSet = true
+				count, err = s.CountCampaigns(ctx, CountCampaignsOpts{HasPatchSet: &hasPatchSet})
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -228,9 +228,9 @@ func testStore(db *sql.DB) func(*testing.T) {
 					})
 				}
 
-				t.Run("ListCampaigns HasPlan true", func(t *testing.T) {
-					hasPlan := true
-					have, _, err := s.ListCampaigns(ctx, ListCampaignsOpts{HasPlan: &hasPlan})
+				t.Run("ListCampaigns HasPatchSet true", func(t *testing.T) {
+					hasPatchSet := true
+					have, _, err := s.ListCampaigns(ctx, ListCampaignsOpts{HasPatchSet: &hasPatchSet})
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -239,9 +239,9 @@ func testStore(db *sql.DB) func(*testing.T) {
 					}
 				})
 
-				t.Run("ListCampaigns HasPlan false", func(t *testing.T) {
-					hasPlan := false
-					have, _, err := s.ListCampaigns(ctx, ListCampaignsOpts{HasPlan: &hasPlan})
+				t.Run("ListCampaigns HasPatchSet false", func(t *testing.T) {
+					hasPatchSet := false
+					have, _, err := s.ListCampaigns(ctx, ListCampaignsOpts{HasPatchSet: &hasPatchSet})
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -1795,13 +1795,13 @@ func testStore(db *sql.DB) func(*testing.T) {
 					t.Fatal(err)
 				}
 
-				havePlan, err := s.GetPatchSet(ctx, GetPatchSetOpts{ID: patchSet.ID})
+				havePatchSet, err := s.GetPatchSet(ctx, GetPatchSetOpts{ID: patchSet.ID})
 				if err != nil && err != ErrNoResults {
 					t.Fatal(err)
 				}
 
 				if tc.wantDeleted && err == nil {
-					t.Fatalf("tc=%+v\n\t want patch set to be deleted. got: %v", tc, havePlan)
+					t.Fatalf("tc=%+v\n\t want patch set to be deleted. got: %v", tc, havePatchSet)
 				}
 
 				if !tc.wantDeleted && err == ErrNoResults {
