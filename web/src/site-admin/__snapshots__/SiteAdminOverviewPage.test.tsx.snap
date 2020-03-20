@@ -64,6 +64,14 @@ exports[`SiteAdminOverviewPage >= 2 users 1`] = `
       <div
         className="d-flex justify-content-between align-items-center position-relative mb-3"
       >
+        <span
+          className="h5 mb-0 font-weight-normal p-2"
+        >
+          10
+           
+          active users
+           last week
+        </span>
         <button
           aria-label="Collapse section"
           className="btn btn-icon collapsible__expand-btn stretched-link"
@@ -83,14 +91,6 @@ exports[`SiteAdminOverviewPage >= 2 users 1`] = `
             />
           </svg>
         </button>
-        <span
-          className="h5 mb-0 font-weight-normal p-2"
-        >
-          10
-           
-          active users
-           last week
-        </span>
       </div>
       <div
         className="site-admin-usage-statistics-page"
