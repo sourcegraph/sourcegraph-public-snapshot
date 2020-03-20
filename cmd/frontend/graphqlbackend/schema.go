@@ -736,7 +736,7 @@ type ExternalChangeset implements Node {
         # Returns the first n campaigns from the list.
         first: Int
         state: CampaignState
-        # Only return campaigns that have a campaign plan associated.
+        # Only return campaigns that have a campaign plan.
         hasPlan: Boolean
     ): CampaignConnection!
 
@@ -1167,7 +1167,7 @@ type Query {
         # Returns the first n campaigns from the list.
         first: Int
         state: CampaignState
-        # Only return campaigns that have a campaign plan associated.
+        # Only return campaigns that have a campaign plan.
         hasPlan: Boolean
     ): CampaignConnection!
 
