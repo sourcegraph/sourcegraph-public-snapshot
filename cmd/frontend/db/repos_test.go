@@ -47,17 +47,17 @@ func TestParseIncludePattern(t *testing.T) {
 		`github\.com`: {like: []string{`%github.com%`}},
 
 		// https://github.com/sourcegraph/sourcegraph/issues/9146
-		`github.com/.*/ini$`:                {regexp: `github.com/.*/ini$`},
-		`github\.com/.*/ini$`:               {regexp: `github\.com/.*/ini$`},
-		`github\.com/go-ini/ini$`:           {like: []string{`%github.com/go-ini/ini`}},
-		`^github.com/(golang|go-.*)/oauth$`: {regexp: `^github.com/(golang|go-.*)/oauth$`},
-		`^github.com/(go.*lang|go)/oauth$`:  {regexp: `^github.com/(go.*lang|go)/oauth$`},
+		`github.com/.*/ini$`:      {regexp: `github.com/.*/ini$`},
+		`github\.com/.*/ini$`:     {regexp: `github\.com/.*/ini$`},
+		`github\.com/go-ini/ini$`: {like: []string{`%github.com/go-ini/ini`}},
 
 		// https://github.com/sourcegraph/sourcegraph/issues/4166
-		`golang/oauth.*`:       {like: []string{"%golang/oauth%"}},
-		`^golang/oauth.*`:      {like: []string{"golang/oauth%"}},
-		`golang/(oauth.*|bla)`: {like: []string{"%golang/oauth%", "%golang/bla%"}},
-		`golang/(oauth|bla)`:   {like: []string{"%golang/oauth%", "%golang/bla%"}},
+		`golang/oauth.*`:                    {like: []string{"%golang/oauth%"}},
+		`^golang/oauth.*`:                   {like: []string{"golang/oauth%"}},
+		`golang/(oauth.*|bla)`:              {like: []string{"%golang/oauth%", "%golang/bla%"}},
+		`golang/(oauth|bla)`:                {like: []string{"%golang/oauth%", "%golang/bla%"}},
+		`^github.com/(golang|go-.*)/oauth$`: {regexp: `^github.com/(golang|go-.*)/oauth$`},
+		`^github.com/(go.*lang|go)/oauth$`:  {regexp: `^github.com/(go.*lang|go)/oauth$`},
 
 		`(^github\.com/Microsoft/vscode$)|(^github\.com/sourcegraph/go-langserver$)`: {exact: []string{"github.com/Microsoft/vscode", "github.com/sourcegraph/go-langserver"}},
 
