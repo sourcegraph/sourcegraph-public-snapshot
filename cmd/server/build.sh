@@ -31,19 +31,17 @@ export server_pkg=${SERVER_PKG:-github.com/sourcegraph/sourcegraph/cmd/server}
 
 cp -a ./lsif "$OUTPUT"
 cp -a ./cmd/server/rootfs/. "$OUTPUT"
-export bindir="$OUTPUT/usr/local/bin"
-mkdir -p "$bindir"
+export BINDIR="$OUTPUT/usr/local/bin"
+mkdir -p "$BINDIR"
 
 go_build() {
-    package="$1"
+    local package="$1"
 
-    go build \
-      -trimpath \
-      -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION"  \
-      -buildmode exe \
-      -installsuffix netgo \
-      -tags "dist netgo" \
-      -o "$bindir/$(basename "$package")" "$package"
+    if [[ "${CI_DEBUG_PROFILE:-"false"}" == "true" ]]; then
+        env time -v ./cmd/server/go-build.sh $package
+    else
+        ./cmd/server/go-build.sh $package
+    fi
 }
 export -f go_build
 
@@ -73,7 +71,11 @@ export -f build_go_packages
 
 build_symbols() {
     echo "--- build sqlite for symbols"
-    env CTAGS_D_OUTPUT_PATH="$OUTPUT/.ctags.d" SYMBOLS_EXECUTABLE_OUTPUT_PATH="$bindir/symbols" BUILD_TYPE=dist ./cmd/symbols/build.sh buildSymbolsDockerImageDependencies
+    if [[ "${CI_DEBUG_PROFILE:-"false"}" == "true" ]]; then
+        env CTAGS_D_OUTPUT_PATH="$OUTPUT/.ctags.d" SYMBOLS_EXECUTABLE_OUTPUT_PATH="$BINDIR/symbols" BUILD_TYPE=dist env time -v ./cmd/symbols/build.sh buildSymbolsDockerImageDependencies
+    else
+        env CTAGS_D_OUTPUT_PATH="$OUTPUT/.ctags.d" SYMBOLS_EXECUTABLE_OUTPUT_PATH="$BINDIR/symbols" BUILD_TYPE=dist ./cmd/symbols/build.sh buildSymbolsDockerImageDependencies
+    fi
 }
 export -f build_symbols
 
