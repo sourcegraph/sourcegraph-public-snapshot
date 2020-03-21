@@ -22,6 +22,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
+- `.*` in the filter pattern were ignored and led to missing search results. [#9152](https://github.com/sourcegraph/sourcegraph/pull/9152)
+
 ### Removed
 
 ## 3.14.0
