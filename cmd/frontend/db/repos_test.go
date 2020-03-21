@@ -47,9 +47,11 @@ func TestParseIncludePattern(t *testing.T) {
 		`github\.com`: {like: []string{`%github.com%`}},
 
 		// https://github.com/sourcegraph/sourcegraph/issues/9146
-		`github.com/.*/ini$`:      {regexp: `github.com/.*/ini$`},
-		`github\.com/.*/ini$`:     {regexp: `github\.com/.*/ini$`},
-		`github\.com/go-ini/ini$`: {like: []string{`%github.com/go-ini/ini`}},
+		`github.com/.*/ini$`:                {regexp: `github.com/.*/ini$`},
+		`github\.com/.*/ini$`:               {regexp: `github\.com/.*/ini$`},
+		`github\.com/go-ini/ini$`:           {like: []string{`%github.com/go-ini/ini`}},
+		`^github.com/(golang|go-.*)/oauth$`: {regexp: `^github.com/(golang|go-.*)/oauth$`},
+		`^github.com/(go.*lang|go)/oauth$`:  {regexp: `^github.com/(go.*lang|go)/oauth$`},
 
 		// https://github.com/sourcegraph/sourcegraph/issues/4166
 		`golang/oauth.*`:       {like: []string{"%golang/oauth%"}},
