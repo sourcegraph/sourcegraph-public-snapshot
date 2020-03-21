@@ -494,7 +494,8 @@ func parseIncludePattern(pattern string) (exact, like []string, regexp string, e
 }
 
 // allMatchingStrings returns a complete list of the strings that re
-// matches, if it's possible to determine the list.
+// matches, if it's possible to determine the list. The "last" argument
+// indicates if this is the last part of the original regexp.
 func allMatchingStrings(re *regexpsyntax.Regexp, last bool) (exact, contains, prefix, suffix []string, err error) {
 	switch re.Op {
 	case regexpsyntax.OpEmptyMatch:
