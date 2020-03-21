@@ -1268,6 +1268,7 @@ DELETE FROM campaigns WHERE id = %s
 type CountCampaignsOpts struct {
 	ChangesetID int64
 	State       campaigns.CampaignState
+	HasPlan     *bool
 }
 
 // CountCampaigns returns the number of campaigns in the database.
@@ -1297,6 +1298,14 @@ func countCampaignsQuery(opts *CountCampaignsOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("closed_at IS NULL"))
 	case campaigns.CampaignStateClosed:
 		preds = append(preds, sqlf.Sprintf("closed_at IS NOT NULL"))
+	}
+
+	if opts.HasPlan != nil {
+		if *opts.HasPlan {
+			preds = append(preds, sqlf.Sprintf("campaign_plan_id IS NOT NULL"))
+		} else {
+			preds = append(preds, sqlf.Sprintf("campaign_plan_id IS NULL"))
+		}
 	}
 
 	if len(preds) == 0 {
@@ -1375,6 +1384,7 @@ type ListCampaignsOpts struct {
 	Cursor      int64
 	Limit       int
 	State       campaigns.CampaignState
+	HasPlan     *bool
 }
 
 // ListCampaigns lists Campaigns with the given filters.
@@ -1439,6 +1449,14 @@ func listCampaignsQuery(opts *ListCampaignsOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("closed_at IS NULL"))
 	case campaigns.CampaignStateClosed:
 		preds = append(preds, sqlf.Sprintf("closed_at IS NOT NULL"))
+	}
+
+	if opts.HasPlan != nil {
+		if *opts.HasPlan {
+			preds = append(preds, sqlf.Sprintf("campaign_plan_id IS NOT NULL"))
+		} else {
+			preds = append(preds, sqlf.Sprintf("campaign_plan_id IS NULL"))
+		}
 	}
 
 	return sqlf.Sprintf(
@@ -1641,28 +1659,6 @@ func getCampaignPlanQuery(opts *GetCampaignPlanOpts) *sqlf.Query {
 
 	return sqlf.Sprintf(getCampaignPlansQueryFmtstr, sqlf.Join(preds, "\n AND "))
 }
-
-// DEPRECATED: GetCampaignPlanStatus gets the campaigns.BackgroundProcessStatus for a CampaignPlan.
-// It's deprecated because we don't execute jobs anymore.
-func (s *Store) GetCampaignPlanStatus(ctx context.Context, id int64) (*campaigns.BackgroundProcessStatus, error) {
-	return s.queryBackgroundProcessStatus(ctx, sqlf.Sprintf(
-		getCampaignPlanStatusQueryFmtstr,
-		sqlf.Sprintf("campaign_plan_id = %s", id),
-	))
-}
-
-var getCampaignPlanStatusQueryFmtstr = `
--- source: enterprise/internal/campaigns/store.go:GetCampaignPlanStatus
-SELECT
-  false AS canceled,
-  COUNT(*) AS total,
-  0 AS pending,
-  COUNT(*) AS completed,
-  NULL AS errors
-FROM campaign_jobs
-WHERE %s
-LIMIT 1;
-`
 
 // GetCampaignStatus gets the campaigns.BackgroundProcessStatus for a Campaign
 func (s *Store) GetCampaignStatus(ctx context.Context, id int64) (*campaigns.BackgroundProcessStatus, error) {

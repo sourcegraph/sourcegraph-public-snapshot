@@ -48,6 +48,8 @@ func testStore(db *sql.DB) func(*testing.T) {
 						ClosedAt:       now,
 					}
 					if i == 0 {
+						// don't have a plan for the first one
+						c.CampaignPlanID = 0
 						// Don't close the first one
 						c.ClosedAt = time.Time{}
 					}
@@ -98,6 +100,26 @@ func testStore(db *sql.DB) func(*testing.T) {
 				}
 
 				if have, want := count, int64(1); have != want {
+					t.Fatalf("have count: %d, want: %d", have, want)
+				}
+
+				hasPlan := false
+				count, err = s.CountCampaigns(ctx, CountCampaignsOpts{HasPlan: &hasPlan})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if have, want := count, int64(1); have != want {
+					t.Fatalf("have count: %d, want: %d", have, want)
+				}
+
+				hasPlan = true
+				count, err = s.CountCampaigns(ctx, CountCampaignsOpts{HasPlan: &hasPlan})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if have, want := count, int64(2); have != want {
 					t.Fatalf("have count: %d, want: %d", have, want)
 				}
 			})
@@ -205,6 +227,28 @@ func testStore(db *sql.DB) func(*testing.T) {
 						}
 					})
 				}
+
+				t.Run("ListCampaigns HasPlan true", func(t *testing.T) {
+					hasPlan := true
+					have, _, err := s.ListCampaigns(ctx, ListCampaignsOpts{HasPlan: &hasPlan})
+					if err != nil {
+						t.Fatal(err)
+					}
+					if diff := cmp.Diff(have, campaigns[1:]); diff != "" {
+						t.Fatal(diff)
+					}
+				})
+
+				t.Run("ListCampaigns HasPlan false", func(t *testing.T) {
+					hasPlan := false
+					have, _, err := s.ListCampaigns(ctx, ListCampaignsOpts{HasPlan: &hasPlan})
+					if err != nil {
+						t.Fatal(err)
+					}
+					if diff := cmp.Diff(have, campaigns[0:1]); diff != "" {
+						t.Fatal(diff)
+					}
+				})
 			})
 
 			t.Run("Update", func(t *testing.T) {
@@ -1695,59 +1739,6 @@ func testStore(db *sql.DB) func(*testing.T) {
 			})
 		})
 
-		t.Run("CampaignPlan BackgroundProcessStatus", func(t *testing.T) {
-			tests := []struct {
-				jobs []*cmpgn.CampaignJob
-				want *cmpgn.BackgroundProcessStatus
-			}{
-				{
-					jobs: []*cmpgn.CampaignJob{}, // no jobs
-					want: &cmpgn.BackgroundProcessStatus{
-						ProcessState: cmpgn.BackgroundProcessStateCompleted,
-					},
-				},
-				{
-					jobs: []*cmpgn.CampaignJob{ // two jobs
-						{},
-						{},
-					},
-					want: &cmpgn.BackgroundProcessStatus{
-						ProcessState: cmpgn.BackgroundProcessStateCompleted,
-						Total:        2,
-						Completed:    2,
-					},
-				},
-			}
-			for _, tc := range tests {
-				plan := &cmpgn.CampaignPlan{}
-				err := s.CreateCampaignPlan(ctx, plan)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				for i, j := range tc.jobs {
-					j.CampaignPlanID = plan.ID
-					j.RepoID = api.RepoID(i)
-					j.Rev = api.CommitID(fmt.Sprintf("deadbeef-%d", i))
-					j.BaseRef = "master"
-
-					err := s.CreateCampaignJob(ctx, j)
-					if err != nil {
-						t.Fatal(err)
-					}
-				}
-
-				status, err := s.GetCampaignPlanStatus(ctx, plan.ID)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				if diff := cmp.Diff(status, tc.want); diff != "" {
-					t.Fatalf("wrong diff: %s", diff)
-				}
-			}
-		})
-
 		t.Run("CampaignPlan DeleteExpired", func(t *testing.T) {
 			tests := []struct {
 				hasCampaign bool
@@ -2379,6 +2370,20 @@ func testStore(db *sql.DB) func(*testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
+
+				// Cleanup existing ChangesetJobs so we don't have interference
+				// between the previous tests and this one.
+				chjs, _, err := s.ListChangesetJobs(ctx, ListChangesetJobsOpts{Limit: -1})
+				if err != nil {
+					t.Fatal(err)
+				}
+				for _, j := range chjs {
+					err := s.DeleteChangesetJob(ctx, j.ID)
+					if err != nil {
+						t.Fatal(err)
+					}
+				}
+
 				campaignJob := &cmpgn.CampaignJob{
 					CampaignPlanID: plan.ID,
 					BaseRef:        "x",

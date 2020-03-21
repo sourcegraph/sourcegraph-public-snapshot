@@ -136,7 +136,7 @@ export async function createExtensionHostClientConnection(
     const clientSearch = new ClientSearch(services.queryTransformer)
     const clientCommands = new ClientCommands(services.commands)
     subscription.add(new ClientRoots(proxy.roots, services.workspace))
-    subscription.add(new ClientExtensions(proxy.extensions, services.extensions, services.telemetryService))
+    subscription.add(new ClientExtensions(proxy.extensions, services.extensions))
 
     const clientContent = createClientContent(services.linkPreviews)
 

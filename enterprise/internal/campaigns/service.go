@@ -729,9 +729,17 @@ var ErrCampaignBranchBlank = errors.New("Campaign branch cannot be blank")
 // attempt to change the branch of a published campaign with a plan (or a campaign with individually published changesets).
 var ErrPublishedCampaignBranchChange = errors.New("Published campaign branch cannot be changed")
 
-// ErrCampaignPlanDuplicate is return by CreateCampaign or UpdateCampaign if the specified campaign plan
+// ErrCampaignPlanDuplicate is returned by CreateCampaign or UpdateCampaign if the specified campaign plan
 // is already attached to another campaign.
 var ErrCampaignPlanDuplicate = errors.New("Campaign cannot use the same plan as another campaign")
+
+// ErrClosedCampaignUpdatePlanIllegal is returned by UpdateCampaign if a campaign plan
+// is to be attached to a closed campaign.
+var ErrClosedCampaignUpdatePlanIllegal = errors.New("cannot update the plan of a closed campaign")
+
+// ErrManualCampaignUpdatePlanIllegal is returned by UpdateCampaign if a campaign plan
+// is to be attached to a manual campaign.
+var ErrManualCampaignUpdatePlanIllegal = errors.New("cannot update a manual campaign to have a plan")
 
 // UpdateCampaign updates the Campaign with the given arguments.
 func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (campaign *campaigns.Campaign, detachedChangesets []*campaigns.Changeset, err error) {
@@ -754,6 +762,10 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 		return nil, nil, errors.Wrap(err, "getting campaign")
 	}
 
+	if args.Plan != nil && !campaign.ClosedAt.IsZero() {
+		return nil, nil, ErrClosedCampaignUpdatePlanIllegal
+	}
+
 	var updateAttributes, updatePlanID, updateBranch bool
 
 	if args.Name != nil && campaign.Name != *args.Name {
@@ -771,6 +783,9 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 	}
 
 	oldPlanID := campaign.CampaignPlanID
+	if oldPlanID == 0 && args.Plan != nil {
+		return nil, nil, ErrManualCampaignUpdatePlanIllegal
+	}
 	if args.Plan != nil && oldPlanID != *args.Plan {
 		// Check there is no other campaign attached to the args.Plan.
 		_, err = tx.GetCampaign(ctx, GetCampaignOpts{CampaignPlanID: *args.Plan})

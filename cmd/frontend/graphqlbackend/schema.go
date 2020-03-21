@@ -487,9 +487,6 @@ type CampaignPlan implements Node {
     # The unique ID of this campaign plan.
     id: ID!
 
-    # The progress status of generating changesets.
-    status: BackgroundProcessStatus!
-
     # DEPRECATED
     # The proposed patches ("plans") for the changesets that will be created by the campaign.
     changesets(first: Int): ChangesetPlanConnection!
@@ -691,7 +688,7 @@ input CreateChangesetInput {
 }
 
 # Preview of a changeset planned to be created.
-type ChangesetPlan {
+type ChangesetPlan implements Node {
     # The id of the changeset plan.
     id: ID!
 
@@ -735,7 +732,13 @@ type ExternalChangeset implements Node {
     repository: Repository!
 
     # The campaigns that have this changeset in them.
-    campaigns(first: Int, state: CampaignState): CampaignConnection!
+    campaigns(
+        # Returns the first n campaigns from the list.
+        first: Int
+        state: CampaignState
+        # Only return campaigns that have a campaign plan.
+        hasPlan: Boolean
+    ): CampaignConnection!
 
     # The events belonging to this changeset.
     events(first: Int): ChangesetEventConnection!
@@ -1164,6 +1167,8 @@ type Query {
         # Returns the first n campaigns from the list.
         first: Int
         state: CampaignState
+        # Only return campaigns that have a campaign plan.
+        hasPlan: Boolean
     ): CampaignConnection!
 
     # Looks up a repository by either name or cloneURL.
@@ -2998,6 +3003,11 @@ type User implements Node & SettingsSubject & Namespace {
     tags: [String!]!
     # The user's usage statistics on Sourcegraph.
     usageStatistics: UserUsageStatistics!
+    # The user's events on Sourcegraph.
+    eventLogs(
+        # Returns the first n event logs from the list.
+        first: Int
+    ): EventLogsConnection!
     # The user's email addresses.
     #
     # Only the user and site admins can access this field.
@@ -4246,13 +4256,13 @@ type Hover {
 
 # The state an LSIF upload can be in.
 enum LSIFUploadState {
-    # The LSIF worker is processing this upload.
+    # This upload is being processed.
     PROCESSING
 
-    # The LSIF worker failed to process this upload.
+    # This upload failed to be processed.
     ERRORED
 
-    # The LSIF worker processed this upload successfully.
+    # This upload was processed successfully.
     COMPLETED
 
     # This upload is queued to be processed later.
@@ -4717,5 +4727,36 @@ scalar DateTime
 # Different repository permission levels.
 enum RepositoryPermission {
     READ
+}
+
+# A single user event that has been logged.
+type EventLog {
+    # The name of the event.
+    name: String!
+    # The user who executed the event, if one exists.
+    user: User
+    # The randomly generated unique user ID stored in a browser cookie.
+    anonymousUserID: String!
+    # The URL when the event was logged.
+    url: String!
+    # The source of the event.
+    source: EventSource!
+    # The additional argument information.
+    argument: String
+    # The Sourcegraph version when the event was logged.
+    version: String!
+    # The timestamp when the event was logged.
+    timestamp: DateTime!
+}
+
+# A list of event logs.
+type EventLogsConnection {
+    # A list of event logs.
+    nodes: [EventLog!]!
+    # The total count of event logs in the connection. This total count may be larger than the number of nodes
+    # in this object when the result is paginated.
+    totalCount: Int!
+    # Pagination information.
+    pageInfo: PageInfo!
 }
 `

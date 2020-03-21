@@ -28,7 +28,7 @@ import { Subject, of, merge, Observable } from 'rxjs'
 import { renderMarkdown } from '../../../../../shared/src/util/markdown'
 import { ErrorAlert } from '../../../components/alerts'
 import { Markdown } from '../../../../../shared/src/components/Markdown'
-import { switchMap, tap, takeWhile, repeatWhen, delay, catchError, startWith } from 'rxjs/operators'
+import { switchMap, tap, takeWhile, repeatWhen, delay, startWith } from 'rxjs/operators'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { CampaignDescriptionField } from './form/CampaignDescriptionField'
 import { CampaignStatus } from './CampaignStatus'
@@ -40,6 +40,9 @@ import { CampaignTitleField } from './form/CampaignTitleField'
 import { CampaignChangesets } from './changesets/CampaignChangesets'
 import { CampaignDiffStat } from './CampaignDiffStat'
 import { pluralize } from '../../../../../shared/src/util/strings'
+import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
+import { PlatformContextProps } from '../../../../../shared/src/platform/context'
+import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 
 export type CampaignUIMode = 'viewing' | 'editing' | 'saving' | 'deleting' | 'closing'
 
@@ -66,10 +69,9 @@ interface Campaign
 
 interface CampaignPlan extends Pick<GQL.ICampaignPlan, '__typename' | 'id'> {
     changesetPlans: Pick<GQL.ICampaignPlan['changesetPlans'], 'nodes' | 'totalCount'>
-    status: Pick<GQL.ICampaignPlan['status'], 'completedCount' | 'pendingCount' | 'errors' | 'state'>
 }
 
-interface Props extends ThemeProps {
+interface Props extends ThemeProps, ExtensionsControllerProps, PlatformContextProps, TelemetryProps {
     /**
      * The campaign ID.
      * If not given, will display a creation form.
@@ -96,6 +98,9 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     location,
     authenticatedUser,
     isLightTheme,
+    extensionsController,
+    platformContext,
+    telemetryService,
     _fetchCampaignById = fetchCampaignById,
     _fetchCampaignPlanById = fetchCampaignPlanById,
     _noSubject = false,
@@ -202,10 +207,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         if (campaignPlan) {
                             changesetUpdates.next()
                         }
-                    }),
-                    catchError(error => {
-                        setAlertError(asError(error))
-                        return [null]
                     })
                 ),
             [previewCampaignPlans, planID, _fetchCampaignPlanById, changesetUpdates]
@@ -226,13 +227,21 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         )
     }
     // Campaign was not found
-    // todo: never truthy - node resolver returns error, not null
     if (campaign === null) {
         return <HeroPage icon={AlertCircleIcon} title="Campaign not found" />
     }
     // Plan was not found
     if (campaignPlan === null) {
         return <HeroPage icon={AlertCircleIcon} title="Plan not found" />
+    }
+
+    if (updateMode) {
+        if (!campaign?.plan?.id) {
+            return <HeroPage icon={AlertCircleIcon} title="Cannot update a manual campaign with a campaign plan" />
+        }
+        if (campaign?.closedAt) {
+            return <HeroPage icon={AlertCircleIcon} title="Cannot update a closed campaign" />
+        }
     }
 
     // plan is specified, but campaign not yet, so we have to choose
@@ -566,6 +575,9 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                             history={history}
                             location={location}
                             isLightTheme={isLightTheme}
+                            extensionsController={extensionsController}
+                            platformContext={platformContext}
+                            telemetryService={telemetryService}
                         />
                     ) : (
                         campaign?.status.state !== GQL.BackgroundProcessState.PROCESSING &&

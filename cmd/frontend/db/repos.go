@@ -326,7 +326,8 @@ func (s *repos) List(ctx context.Context, opt ReposListOptions) (results []*type
 
 	// fetch matching repos
 	fetchSQL := sqlf.Sprintf("%s %s %s", sqlf.Join(conds, "AND"), opt.OrderBy.SQL(), opt.LimitOffset.SQL())
-	tr.LazyPrintf("SQL query: %s, SQL args: %v", fetchSQL.Query(sqlf.PostgresBindVar), fetchSQL.Args())
+	tr.LogFields(trace.SQL(fetchSQL))
+
 	return s.getReposBySQL(ctx, opt.OnlyRepoIDs, fetchSQL)
 }
 

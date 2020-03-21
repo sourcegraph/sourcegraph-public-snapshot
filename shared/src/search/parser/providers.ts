@@ -1,7 +1,7 @@
 import * as Monaco from 'monaco-editor'
 import { Observable, fromEventPattern, of, combineLatest } from 'rxjs'
 import { parseSearchQuery } from './parser'
-import { map, first, takeUntil, publishReplay, refCount, switchMap } from 'rxjs/operators'
+import { map, first, takeUntil, publishReplay, refCount, switchMap, debounceTime, share } from 'rxjs/operators'
 import { getMonacoTokens } from './tokens'
 import { getDiagnostics } from './diagnostics'
 import { getCompletionItems } from './completion'
@@ -42,6 +42,7 @@ export function getProviders(
         publishReplay(1),
         refCount()
     )
+    const debouncedDynamicSuggestions = searchQueries.pipe(debounceTime(300), switchMap(fetchSuggestions), share())
     return {
         tokens: {
             getInitialState: () => PARSER_STATE,
@@ -73,10 +74,10 @@ export function getProviders(
                 parsedQueries
                     .pipe(
                         first(),
-                        switchMap(({ rawQuery, parsed }) =>
+                        switchMap(({ parsed }) =>
                             parsed.type === 'error'
                                 ? of(null)
-                                : getCompletionItems(rawQuery, parsed.token, position, fetchSuggestions)
+                                : getCompletionItems(parsed.token, position, debouncedDynamicSuggestions)
                         ),
                         takeUntil(fromEventPattern(handler => token.onCancellationRequested(handler)))
                     )
