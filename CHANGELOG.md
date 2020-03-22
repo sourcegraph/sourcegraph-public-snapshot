@@ -19,6 +19,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Multiple backwards-incompatible changes in the parts of the GraphQL API related to Campaigns:
   - `CampaignPlan.status` has been removed, since we don't need it anymore after moving execution of campaigns to src CLI in [#8008](https://github.com/sourcegraph/sourcegraph/pull/8008).
+- Site-Admin/Instrumentation in the Kubernetes cluster deployment now includes indexed-search.
 
 ### Fixed
 
