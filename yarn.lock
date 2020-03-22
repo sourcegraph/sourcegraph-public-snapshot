@@ -1856,15 +1856,15 @@
   resolved "https://registry.npmjs.org/@sourcegraph/comlink/-/comlink-3.1.1-fork.3.tgz#1bd76bc74ca8a9b55f1dbf508c703053ee66c961"
   integrity sha512-+vfSCJTS/GU391Hhdh2/s+wy5ok4hi6X+kizRQqQZwZI03Q1rR6SVLNFsbg4dhbX624mqr1UCRhwNnZdWHAR+A==
 
-"@sourcegraph/eslint-config@^0.10.3":
-  version "0.10.3"
-  resolved "https://registry.npmjs.org/@sourcegraph/eslint-config/-/eslint-config-0.10.3.tgz#970f0cb31b8f392e4bec8304e0010c20e406b48f"
-  integrity sha512-OqwCHejyAkWtWpXLpR1k91m7cfJCHPNztGbaCF4c7RCq6wCr2n8oUuPGBMeyLBLBYDU49ZCqzoouWwmKfeTsiQ==
+"@sourcegraph/eslint-config@^0.10.4":
+  version "0.10.4"
+  resolved "https://registry.npmjs.org/@sourcegraph/eslint-config/-/eslint-config-0.10.4.tgz#4c5bf4b77aa26c91a7290c9486cf113a71efa747"
+  integrity sha512-YdmxpeejhuIY5Lb7Tr/AQtjJlAeG/URdVARIgJ0MREjpcamvZmuyLxO8x02K0Amvx8OOdCwtKvUntPKcbenHUQ==
   dependencies:
-    "@sourcegraph/prettierrc" "^3.0.2"
+    "@sourcegraph/prettierrc" "^3.0.3"
     "@typescript-eslint/eslint-plugin" "^2.22.0"
     "@typescript-eslint/parser" "^2.22.0"
-    eslint-config-prettier "^6.10.0"
+    eslint-config-prettier "^6.10.1"
     eslint-plugin-ban "^1.4.0"
     eslint-plugin-etc "^0.0.1-beta.24"
     eslint-plugin-import "^2.20.1"
@@ -1896,7 +1896,7 @@
 "@sourcegraph/extension-api-types@link:packages/@sourcegraph/extension-api-types":
   version "2.1.0"
 
-"@sourcegraph/prettierrc@^3.0.2", "@sourcegraph/prettierrc@^3.0.3":
+"@sourcegraph/prettierrc@^3.0.3":
   version "3.0.3"
   resolved "https://registry.npmjs.org/@sourcegraph/prettierrc/-/prettierrc-3.0.3.tgz#51bfa9b2588fe35121593fa877143e6373028289"
   integrity sha512-FQ1/Ued4I02R0JkrHHofDN163juVxUnPALzfxPZrDZUHv+c3jHjfZhmTHEz+Wd+g3b7MFk0fkj36nZSnvPyU8A==
@@ -8026,10 +8026,10 @@ escope@^3.6.0:
     esrecurse "^4.1.0"
     estraverse "^4.1.1"
 
-eslint-config-prettier@^6.10.0:
-  version "6.10.0"
-  resolved "https://registry.npmjs.org/eslint-config-prettier/-/eslint-config-prettier-6.10.0.tgz#7b15e303bf9c956875c948f6b21500e48ded6a7f"
-  integrity sha512-AtndijGte1rPILInUdHjvKEGbIV06NuvPrqlIEaEaWtbtvJh464mDeyGMdZEQMsGvC0ZVkiex1fSNcC4HAbRGg==
+eslint-config-prettier@^6.10.1:
+  version "6.10.1"
+  resolved "https://registry.npmjs.org/eslint-config-prettier/-/eslint-config-prettier-6.10.1.tgz#129ef9ec575d5ddc0e269667bf09defcd898642a"
+  integrity sha512-svTy6zh1ecQojvpbJSgH3aei/Rt7C6i090l5f2WQ4aB05lYHeZIR1qL4wZyyILTbtmnbHP5Yn8MrsOJMGa8RkQ==
   dependencies:
     get-stdin "^6.0.0"
 
