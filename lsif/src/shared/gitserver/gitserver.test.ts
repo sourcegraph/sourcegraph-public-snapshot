@@ -43,9 +43,7 @@ describe('getCommitsNear', () => {
     })
 
     it('should handle request for unknown repository', async () => {
-        nock('http://frontend')
-            .post('/.internal/git/42/exec')
-            .reply(404)
+        nock('http://frontend').post('/.internal/git/42/exec').reply(404)
 
         expect(await getCommitsNear('frontend', 42, 'l')).toEqual(new Map())
     })

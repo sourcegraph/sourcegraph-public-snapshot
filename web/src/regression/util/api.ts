@@ -104,8 +104,9 @@ export function waitForRepo(
                                   // Delay retry by 2s.
                                   if (logStatusMessages) {
                                       console.log(
-                                          `Waiting for ${repoName} to be removed (attempt ${retryCount +
-                                              1} of ${numRetries})`
+                                          `Waiting for ${repoName} to be removed (attempt ${
+                                              retryCount + 1
+                                          } of ${numRetries})`
                                       )
                                   }
                                   return timer(retryPeriod)
@@ -141,8 +142,9 @@ export function waitForRepo(
                                   // Delay retry by 2s.
                                   if (logStatusMessages) {
                                       console.log(
-                                          `Waiting for ${repoName} to finish cloning (attempt ${retryCount +
-                                              1} of ${numRetries})`
+                                          `Waiting for ${repoName} to finish cloning (attempt ${
+                                              retryCount + 1
+                                          } of ${numRetries})`
                                       )
                                   }
                                   return timer(retryPeriod)

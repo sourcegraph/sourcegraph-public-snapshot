@@ -107,9 +107,7 @@ export async function integrationTestContext(
     // Wait for initModel to be initialized
     if (initModel.editors.length) {
         await Promise.all([
-            from(extensionAPI.workspace.openedTextDocuments)
-                .pipe(take(initModel.editors.length))
-                .toPromise(),
+            from(extensionAPI.workspace.openedTextDocuments).pipe(take(initModel.editors.length)).toPromise(),
             from(extensionAPI.app.activeWindowChanges)
                 .pipe(
                     first(isDefined),

@@ -38,12 +38,7 @@ describe('TextDocumentLocationProviderRegistry', () => {
             const registry = new TestTextDocumentLocationProviderRegistry(
                 of([{ provider: () => of(null), registrationOptions: { documentSelector: ['*'] } }])
             )
-            expect(
-                await registry
-                    .hasProvidersForActiveTextDocument(undefined)
-                    .pipe(first())
-                    .toPromise()
-            ).toBe(false)
+            expect(await registry.hasProvidersForActiveTextDocument(undefined).pipe(first()).toPromise()).toBe(false)
         })
 
         test('true if matching document', () => {

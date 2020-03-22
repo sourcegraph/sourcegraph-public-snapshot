@@ -18,7 +18,7 @@ const { gitHubToken, sourcegraphBaseUrl } = getConfig('gitHubToken', 'sourcegrap
 describe('e2e test suite', () => {
     let driver: Driver
 
-    before(async function() {
+    before(async function () {
         // Cloning the repositories takes ~1 minute, so give initialization 2
         // minutes instead of 1 (which would be inherited from
         // `jest.setTimeout(1 * 60 * 1000)` above).
@@ -983,7 +983,7 @@ describe('e2e test suite', () => {
                 })
 
                 describe('find references', () => {
-                    test('opens widget and fetches local references', async function() {
+                    test('opens widget and fetches local references', async function () {
                         this.timeout(120000)
 
                         await driver.page.goto(
