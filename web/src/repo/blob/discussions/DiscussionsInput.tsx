@@ -334,11 +334,7 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
         if (this.props.titleMode !== TitleMode.Implicit) {
             return comment
         }
-        return comment
-            .trimLeft()
-            .split('\n')
-            .slice(1)
-            .join('\n')
+        return comment.trimLeft().split('\n').slice(1).join('\n')
     }
 
     private canSubmit = (): boolean => {

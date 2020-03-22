@@ -254,8 +254,9 @@ class ConnectionNodes<C extends Connection<N>, N, NP = {}> extends React.PureCom
                 {!this.props.loading && !this.props.noShowMore && this.props.connection && hasNextPage && (
                     <button
                         type="button"
-                        className={`btn btn-secondary btn-sm filtered-connection__show-more ${this.props
-                            .showMoreClassName || ''}`}
+                        className={`btn btn-secondary btn-sm filtered-connection__show-more ${
+                            this.props.showMoreClassName || ''
+                        }`}
                         onClick={this.onClickShowMore}
                     >
                         Show more
@@ -737,8 +738,9 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         const compactnessClass = `filtered-connection--${this.props.compact ? 'compact' : 'noncompact'}`
         return (
             <div
-                className={`filtered-connection e2e-filtered-connection ${compactnessClass} ${this.props.className ||
-                    ''}`}
+                className={`filtered-connection e2e-filtered-connection ${compactnessClass} ${
+                    this.props.className || ''
+                }`}
             >
                 {(!this.props.hideSearch || this.props.filters) && (
                     <Form className="filtered-connection__form" onSubmit={this.onSubmit}>

@@ -8,7 +8,7 @@ import { afterEach } from 'mocha'
  * the browser when a test fails. It is used by e2e tests.
  */
 export function saveScreenshotsUponFailures(getPage: () => puppeteer.Page): void {
-    afterEach('Save screenshot', async function() {
+    afterEach('Save screenshot', async function () {
         if (this.currentTest && this.currentTest.state === 'failed') {
             await takeScreenshot({
                 page: getPage(),
