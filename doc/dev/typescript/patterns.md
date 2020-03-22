@@ -100,7 +100,7 @@ if (userOrError === undefined) {
   return <Loader />
 }
 if (userOrError instanceof Error) {
-  return <div class="alert alert-danger">{upperFirst(userOrError.message)}</div>
+  return <ErrorAlert error={userOrError} />
 }
 return <div>Username: {userOrError.username}</div>
 ```
