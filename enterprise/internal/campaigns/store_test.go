@@ -49,7 +49,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 				},
 			},
 		}
-		if err := reposStore.UpsertRepos(context.Background(), repo); err != nil {
+		if err := reposStore.UpsertRepos(ctx, repo); err != nil {
 			t.Fatal(err)
 		}
 
