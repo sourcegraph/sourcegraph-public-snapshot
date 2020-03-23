@@ -1215,6 +1215,22 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 					multiErr = multierror.Append(multiErr, errors.Wrap(err, "text search failed"))
 					multiErrMu.Unlock()
 				}
+				if args.PatternInfo.IsStructuralPat && args.PatternInfo.FileMatchLimit == defaultMaxSearchResults && len(fileResults) == 0 {
+					// No results for structural search? Automatically search again and force Zoekt to resolve
+					// more potential file matches by setting a higher FileMatchLimit.
+					args.PatternInfo.FileMatchLimit = 1000
+					fileResults, fileCommon, err = searchFilesInRepos(ctx, &args)
+					if err != nil && !isContextError(ctx, err) {
+						multiErrMu.Lock()
+						multiErr = multierror.Append(multiErr, errors.Wrap(err, "text search failed"))
+						multiErrMu.Unlock()
+					}
+					if len(fileResults) == 0 && fileCommon.limitHit {
+						// Still no results? Give up.
+						log15.Warn("Structural search gives up after more exhaustive attempt. Results may have been missed.")
+						fileCommon.limitHit = false // Ensure we don't display "Show more".
+					}
+				}
 				for _, r := range fileResults {
 					key := r.uri
 					fileMatchesMu.Lock()
