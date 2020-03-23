@@ -36,7 +36,7 @@ async function addChangeset({
     const changeset = dataOrThrowErrors(
         await mutateGraphQL(
             gql`
-                mutation CreateChangeSet($repositoryID: ID!, $externalID: String!) {
+                mutation CreateChangeset($repositoryID: ID!, $externalID: String!) {
                     createChangesets(input: { repository: $repositoryID, externalID: $externalID }) {
                         id
                     }

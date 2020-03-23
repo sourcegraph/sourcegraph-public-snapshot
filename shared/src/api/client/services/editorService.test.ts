@@ -74,9 +74,7 @@ describe('EditorService', () => {
             selections: [],
             isActive: true,
         }
-        const editorAdded = from(editorService.editorUpdates)
-            .pipe(first())
-            .toPromise()
+        const editorAdded = from(editorService.editorUpdates).pipe(first()).toPromise()
         const { editorId } = editorService.addEditor(editorData)
         expect(editorId).toEqual('editor#0')
         expect(await editorAdded).toEqual([
@@ -144,9 +142,7 @@ describe('EditorService', () => {
                 isActive: true,
             }
             const { editorId } = editorService.addEditor(editor)
-            const selectionsSet = from(editorService.editorUpdates)
-                .pipe(first())
-                .toPromise()
+            const selectionsSet = from(editorService.editorUpdates).pipe(first()).toPromise()
             editorService.setSelections({ editorId }, SELECTIONS)
             expect(await selectionsSet).toMatchObject([
                 { type: 'updated', editorId, editorData: { selections: SELECTIONS } },
@@ -207,9 +203,7 @@ describe('EditorService', () => {
         editorService.addEditor(editor)
         editorService.addEditor(editor)
         editorService.addEditor(editor)
-        const editorsRemoved = from(editorService.editorUpdates)
-            .pipe(first())
-            .toPromise()
+        const editorsRemoved = from(editorService.editorUpdates).pipe(first()).toPromise()
         editorService.removeAllEditors()
         expect(await editorsRemoved).toMatchObject([
             { type: 'deleted', editorId: 'editor#0' },

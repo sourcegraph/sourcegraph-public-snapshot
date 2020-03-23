@@ -42,11 +42,11 @@ export const ActionExecution: React.FunctionComponent<Props> = ({
                 merge(of(undefined), executionUpdates).pipe(
                     switchMap(() =>
                         fetchActionExecutionByID(actionExecutionID).pipe(
-                            catchError(error => {
+                            catchError((error) => {
                                 setAlertError(error)
                                 return []
                             }),
-                            repeatWhen(obs => obs.pipe(delay(2000)))
+                            repeatWhen((obs) => obs.pipe(delay(2000)))
                         )
                     )
                 ),
@@ -186,7 +186,7 @@ export const ActionExecution: React.FunctionComponent<Props> = ({
             )}
             <h2>Action jobs</h2>
             <ul className="list-group mb-3">
-                {execution.jobs.nodes.map(actionJob => (
+                {execution.jobs.nodes.map((actionJob) => (
                     <ActionJob
                         isLightTheme={isLightTheme}
                         actionJob={actionJob}
@@ -216,7 +216,7 @@ export const ActionExecution: React.FunctionComponent<Props> = ({
                 {execution.status.state === GQL.BackgroundProcessState.PROCESSING && (
                     <>The action execution is still running.</>
                 )}{' '}
-                <span className="badge badge-secondary">{execution.jobs.nodes.filter(job => job.diff).length}</span>{' '}
+                <span className="badge badge-secondary">{execution.jobs.nodes.filter((job) => job.diff).length}</span>{' '}
                 patches have been created{execution.status.state === GQL.BackgroundProcessState.PROCESSING && ' so far'}
                 .
             </p>
@@ -230,18 +230,18 @@ export const ActionExecution: React.FunctionComponent<Props> = ({
                         . The patches are automatically applied to the campaign upon completion.
                     </p>
                 </>
-            ) : execution.campaignPlan ? (
+            ) : execution.patchSet ? (
                 <div className="mb-3">
-                    <Link to={`/campaigns/new?plan=${execution.campaignPlan.id}`} className="btn btn-primary">
+                    <Link to={`/campaigns/new?plan=${execution.patchSet.id}`} className="btn btn-primary">
                         Create campaign
                     </Link>
-                    <Link to={`/campaigns/update?plan=${execution.campaignPlan.id}`} className="btn btn-primary ml-2">
+                    <Link to={`/campaigns/update?plan=${execution.patchSet.id}`} className="btn btn-primary ml-2">
                         Update existing campaign
                     </Link>
                 </div>
             ) : (
                 <p>
-                    Please stand by as we generate the campaign plan. Creating and updating a campaign will be possible
+                    Please stand by as we generate the patch set. Creating and updating a campaign will be possible
                     soon.
                 </p>
             )}

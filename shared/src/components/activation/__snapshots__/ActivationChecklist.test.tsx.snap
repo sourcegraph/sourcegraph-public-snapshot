@@ -12,7 +12,7 @@ exports[`ActivationChecklist render 0/1 complete 1`] = `
       onClick={[Function]}
     >
       <button
-        className="btn btn-link text-left w-100 p-0"
+        className="btn btn-link text-left w-100 p-0 border-0"
         type="button"
       >
         <div>
@@ -43,7 +43,7 @@ exports[`ActivationChecklist render 0/1 complete 2`] = `
       onClick={[Function]}
     >
       <button
-        className="btn btn-link text-left w-100 p-0"
+        className="btn btn-link text-left w-100 p-0 border-0"
         type="button"
       >
         <div>
@@ -74,7 +74,7 @@ exports[`ActivationChecklist render 1/1 complete 1`] = `
       onClick={[Function]}
     >
       <button
-        className="btn btn-link text-left w-100 p-0"
+        className="btn btn-link text-left w-100 p-0 border-0"
         type="button"
       >
         <div>

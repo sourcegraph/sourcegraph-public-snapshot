@@ -26,7 +26,7 @@ describe('CampaignDiffStat', () => {
                                 } as GQL.IExternalChangeset,
                             ],
                         },
-                        changesetPlans: {
+                        patches: {
                             nodes: [
                                 {
                                     diff: {
@@ -39,7 +39,7 @@ describe('CampaignDiffStat', () => {
                                             },
                                         } as GQL.IPreviewFileDiffConnection,
                                     } as GQL.IPreviewRepositoryComparison,
-                                } as GQL.IChangesetPlan,
+                                } as GQL.IPatch,
                             ],
                         },
                     }}
@@ -69,7 +69,7 @@ describe('CampaignDiffStat', () => {
                                 } as GQL.IExternalChangeset,
                             ],
                         },
-                        changesetPlans: {
+                        patches: {
                             nodes: [
                                 {
                                     diff: {
@@ -82,7 +82,7 @@ describe('CampaignDiffStat', () => {
                                             },
                                         } as GQL.IPreviewFileDiffConnection,
                                     } as GQL.IPreviewRepositoryComparison,
-                                } as GQL.IChangesetPlan,
+                                } as GQL.IPatch,
                             ],
                         },
                     }}
@@ -90,13 +90,13 @@ describe('CampaignDiffStat', () => {
                 />
             )
         ).toMatchSnapshot())
-    test('for campaignplan', () =>
+    test('for patch set', () =>
         expect(
             createRenderer().render(
                 <CampaignDiffStat
                     campaign={{
-                        __typename: 'CampaignPlan' as const,
-                        changesetPlans: {
+                        __typename: 'PatchSet' as const,
+                        patches: {
                             nodes: [
                                 {
                                     diff: {
@@ -109,7 +109,7 @@ describe('CampaignDiffStat', () => {
                                             },
                                         } as GQL.IPreviewFileDiffConnection,
                                     } as GQL.IPreviewRepositoryComparison,
-                                } as GQL.IChangesetPlan,
+                                } as GQL.IPatch,
                             ],
                         },
                     }}
@@ -117,13 +117,13 @@ describe('CampaignDiffStat', () => {
                 />
             )
         ).toMatchSnapshot())
-    test('hidden for empty campaignplan', () =>
+    test('hidden for empty patch set', () =>
         expect(
             createRenderer().render(
                 <CampaignDiffStat
                     campaign={{
-                        __typename: 'CampaignPlan' as const,
-                        changesetPlans: {
+                        __typename: 'PatchSet' as const,
+                        patches: {
                             nodes: [
                                 {
                                     diff: {
@@ -136,7 +136,7 @@ describe('CampaignDiffStat', () => {
                                             },
                                         } as GQL.IPreviewFileDiffConnection,
                                     } as GQL.IPreviewRepositoryComparison,
-                                } as GQL.IChangesetPlan,
+                                } as GQL.IPatch,
                             ],
                         },
                     }}

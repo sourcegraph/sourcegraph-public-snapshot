@@ -14,16 +14,16 @@ const PROPS = {
 }
 
 describe('CampaignActionsBar', () => {
-    test('new with plan', () =>
+    test('new with patch set', () =>
         expect(
             createRenderer().render(
-                <CampaignActionsBar {...PROPS} mode="viewing" previewingCampaignPlan={true} campaign={undefined} />
+                <CampaignActionsBar {...PROPS} mode="viewing" previewingPatchSet={true} campaign={undefined} />
             )
         ).toMatchSnapshot())
-    test('new without plan', () =>
+    test('new without patch set', () =>
         expect(
             createRenderer().render(
-                <CampaignActionsBar {...PROPS} mode="viewing" previewingCampaignPlan={false} campaign={undefined} />
+                <CampaignActionsBar {...PROPS} mode="viewing" previewingPatchSet={false} campaign={undefined} />
             )
         ).toMatchSnapshot())
     test('not editable', () =>
@@ -32,7 +32,7 @@ describe('CampaignActionsBar', () => {
                 <CampaignActionsBar
                     {...PROPS}
                     mode="viewing"
-                    previewingCampaignPlan={false}
+                    previewingPatchSet={false}
                     campaign={{
                         changesets: { totalCount: 0, nodes: [] },
                         closedAt: null,
@@ -52,7 +52,7 @@ describe('CampaignActionsBar', () => {
                 <CampaignActionsBar
                     {...PROPS}
                     mode="viewing"
-                    previewingCampaignPlan={false}
+                    previewingPatchSet={false}
                     campaign={{
                         changesets: { totalCount: 0, nodes: [] },
                         closedAt: null,
@@ -72,7 +72,7 @@ describe('CampaignActionsBar', () => {
                 <CampaignActionsBar
                     {...PROPS}
                     mode="viewing"
-                    previewingCampaignPlan={false}
+                    previewingPatchSet={false}
                     campaign={{
                         changesets: { totalCount: 0, nodes: [] },
                         closedAt: new Date().toISOString(),
@@ -92,7 +92,7 @@ describe('CampaignActionsBar', () => {
                 <CampaignActionsBar
                     {...PROPS}
                     mode="editing"
-                    previewingCampaignPlan={false}
+                    previewingPatchSet={false}
                     campaign={{
                         changesets: { totalCount: 0, nodes: [] },
                         closedAt: null,
@@ -112,7 +112,7 @@ describe('CampaignActionsBar', () => {
                 <CampaignActionsBar
                     {...PROPS}
                     mode="editing"
-                    previewingCampaignPlan={false}
+                    previewingPatchSet={false}
                     campaign={{
                         changesets: { totalCount: 0, nodes: [] },
                         closedAt: null,
@@ -132,7 +132,7 @@ describe('CampaignActionsBar', () => {
                 <CampaignActionsBar
                     {...PROPS}
                     mode="saving"
-                    previewingCampaignPlan={false}
+                    previewingPatchSet={false}
                     campaign={{
                         changesets: { totalCount: 0, nodes: [] },
                         closedAt: null,
@@ -152,7 +152,7 @@ describe('CampaignActionsBar', () => {
                 <CampaignActionsBar
                     {...PROPS}
                     mode="deleting"
-                    previewingCampaignPlan={false}
+                    previewingPatchSet={false}
                     campaign={{
                         changesets: { totalCount: 0, nodes: [] },
                         closedAt: null,
@@ -172,7 +172,7 @@ describe('CampaignActionsBar', () => {
                 <CampaignActionsBar
                     {...PROPS}
                     mode="closing"
-                    previewingCampaignPlan={false}
+                    previewingPatchSet={false}
                     campaign={{
                         changesets: { totalCount: 0, nodes: [] },
                         closedAt: null,
@@ -192,7 +192,7 @@ describe('CampaignActionsBar', () => {
                 <CampaignActionsBar
                     {...PROPS}
                     mode="viewing"
-                    previewingCampaignPlan={false}
+                    previewingPatchSet={false}
                     campaign={{
                         changesets: { totalCount: 1, nodes: [{ state: ChangesetState.OPEN }] },
                         closedAt: null,
@@ -212,7 +212,7 @@ describe('CampaignActionsBar', () => {
                 <CampaignActionsBar
                     {...PROPS}
                     mode="viewing"
-                    previewingCampaignPlan={false}
+                    previewingPatchSet={false}
                     campaign={{
                         changesets: {
                             totalCount: 3,

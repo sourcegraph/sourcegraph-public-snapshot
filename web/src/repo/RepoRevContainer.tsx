@@ -1,4 +1,4 @@
-import { isEqual, upperFirst } from 'lodash'
+import { isEqual } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
@@ -31,6 +31,7 @@ import { RevisionsPopover } from './RevisionsPopover'
 import { PatternTypeProps, CaseSensitivityProps } from '../search'
 import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
 import { RepoSettingsSideBarItem } from './settings/RepoSettingsSidebar'
+import { ErrorMessage } from '../components/alerts'
 
 /** Props passed to sub-routes of {@link RepoRevContainer}. */
 export interface RepoRevContainerContext
@@ -202,7 +203,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                         <HeroPage
                             icon={AlertCircleIcon}
                             title="Error"
-                            subtitle={upperFirst(this.props.resolvedRevOrError.message)}
+                            subtitle={<ErrorMessage error={this.props.resolvedRevOrError} />}
                         />
                     )
             }

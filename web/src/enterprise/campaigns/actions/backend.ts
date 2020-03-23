@@ -67,7 +67,7 @@ export const fetchActionExecutionByID = (actionExecution: ID): Observable<IActio
                         }
                         executionStart
                         executionEnd
-                        campaignPlan {
+                        patchSet {
                             id
                         }
                         jobs {
@@ -151,7 +151,7 @@ export const queryActions = ({ first }: IActionsOnQueryArguments): Observable<IA
                                     pendingCount
                                     completedCount
                                 }
-                                campaignPlan {
+                                patchSet {
                                     id
                                 }
                             }
@@ -163,7 +163,7 @@ export const queryActions = ({ first }: IActionsOnQueryArguments): Observable<IA
         { first }
     ).pipe(
         map(dataOrThrowErrors),
-        map(data => data.actions)
+        map((data) => data.actions)
     )
 
 export const fetchActionByID = (action: ID): Observable<IAction | null> =>
@@ -199,7 +199,7 @@ export const fetchActionByID = (action: ID): Observable<IAction | null> =>
                                     pendingCount
                                     completedCount
                                 }
-                                campaignPlan {
+                                patchSet {
                                     id
                                 }
                             }

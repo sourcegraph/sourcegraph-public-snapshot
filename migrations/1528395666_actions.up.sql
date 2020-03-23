@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS action_executions (
     steps text NOT NULL,
     env json,
     invokation_reason text NOT NULL CHECK (invokation_reason = ANY (ARRAY['MANUAL'::text, 'SAVED_SEARCH'::text, 'SCHEDULE'::text])),
-    campaign_plan integer REFERENCES campaign_plans(id) ON UPDATE CASCADE,
+    patch_set_id integer REFERENCES patch_sets(id) ON UPDATE CASCADE,
     action integer NOT NULL REFERENCES actions(id) ON UPDATE CASCADE
 );
 CREATE UNIQUE INDEX IF NOT EXISTS action_executions_pkey ON action_executions(id int4_ops);

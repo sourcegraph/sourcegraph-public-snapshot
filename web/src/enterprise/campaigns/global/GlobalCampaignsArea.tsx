@@ -9,8 +9,16 @@ import { Runners } from '../actions/Runners'
 import { ActionExecution } from '../actions/ActionExecution'
 import { ActionsList } from '../actions/list/ActionsList'
 import { Action } from '../actions/Action'
+import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
+import { PlatformContextProps } from '../../../../../shared/src/platform/context'
+import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 
-interface Props extends RouteComponentProps<{}>, ThemeProps {
+interface Props
+    extends RouteComponentProps<{}>,
+        ThemeProps,
+        ExtensionsControllerProps,
+        TelemetryProps,
+        PlatformContextProps {
     authenticatedUser: IUser
     isSourcegraphDotCom: boolean
 }
@@ -23,23 +31,23 @@ export const GlobalCampaignsArea = withAuthenticatedUser<Props>(({ match, ...out
         {/* eslint-disable react/jsx-no-bind */}
         <Switch>
             <Route
-                render={props => <GlobalCampaignListPage {...outerProps} {...props} />}
+                render={(props) => <GlobalCampaignListPage {...outerProps} {...props} />}
                 path={match.url}
                 exact={true}
             />
             <Route
                 path={`${match.url}/runners`}
-                render={props => <Runners {...outerProps} {...props} />}
+                render={(props) => <Runners {...outerProps} {...props} />}
                 exact={true}
             />
             <Route
                 path={`${match.url}/actions`}
-                render={props => <ActionsList {...outerProps} {...props} />}
+                render={(props) => <ActionsList {...outerProps} {...props} />}
                 exact={true}
             />
             <Route
                 path={`${match.url}/actions/new`}
-                render={props => <Action {...outerProps} {...props} />}
+                render={(props) => <Action {...outerProps} {...props} />}
                 exact={true}
             />
             <Route
@@ -56,7 +64,7 @@ export const GlobalCampaignsArea = withAuthenticatedUser<Props>(({ match, ...out
             />
             <Route
                 path={`${match.url}/(new|update)`}
-                render={props => <CampaignDetails {...outerProps} {...props} />}
+                render={(props) => <CampaignDetails {...outerProps} {...props} />}
                 exact={true}
             />
             <Route

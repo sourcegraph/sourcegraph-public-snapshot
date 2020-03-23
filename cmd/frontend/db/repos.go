@@ -326,7 +326,8 @@ func (s *repos) List(ctx context.Context, opt ReposListOptions) (results []*type
 
 	// fetch matching repos
 	fetchSQL := sqlf.Sprintf("%s %s %s", sqlf.Join(conds, "AND"), opt.OrderBy.SQL(), opt.LimitOffset.SQL())
-	tr.LazyPrintf("SQL query: %s, SQL args: %v", fetchSQL.Query(sqlf.PostgresBindVar), fetchSQL.Args())
+	tr.LogFields(trace.SQL(fetchSQL))
+
 	return s.getReposBySQL(ctx, opt.OnlyRepoIDs, fetchSQL)
 }
 
@@ -474,7 +475,7 @@ func parseIncludePattern(pattern string) (exact, like []string, regexp string, e
 	if err != nil {
 		return nil, nil, "", err
 	}
-	exact, contains, prefix, suffix, err := allMatchingStrings(re.Simplify())
+	exact, contains, prefix, suffix, err := allMatchingStrings(re.Simplify(), false)
 	if err != nil {
 		return nil, nil, "", err
 	}
@@ -494,8 +495,9 @@ func parseIncludePattern(pattern string) (exact, like []string, regexp string, e
 }
 
 // allMatchingStrings returns a complete list of the strings that re
-// matches, if it's possible to determine the list.
-func allMatchingStrings(re *regexpsyntax.Regexp) (exact, contains, prefix, suffix []string, err error) {
+// matches, if it's possible to determine the list. The "last" argument
+// indicates if this is the last part of the original regexp.
+func allMatchingStrings(re *regexpsyntax.Regexp, last bool) (exact, contains, prefix, suffix []string, err error) {
 	switch re.Op {
 	case regexpsyntax.OpEmptyMatch:
 		return []string{""}, nil, nil, nil, nil
@@ -530,7 +532,10 @@ func allMatchingStrings(re *regexpsyntax.Regexp) (exact, contains, prefix, suffi
 
 	case regexpsyntax.OpStar:
 		if len(re.Sub) == 1 && (re.Sub[0].Op == regexpsyntax.OpAnyCharNotNL || re.Sub[0].Op == regexpsyntax.OpAnyChar) {
-			return nil, []string{""}, nil, nil, nil
+			if last {
+				return nil, []string{""}, nil, nil, nil
+			}
+			return nil, nil, nil, nil, nil
 		}
 
 	case regexpsyntax.OpBeginText:
@@ -540,7 +545,7 @@ func allMatchingStrings(re *regexpsyntax.Regexp) (exact, contains, prefix, suffi
 		return nil, nil, nil, []string{""}, nil
 
 	case regexpsyntax.OpCapture:
-		return allMatchingStrings(re.Sub0[0])
+		return allMatchingStrings(re.Sub0[0], false)
 
 	case regexpsyntax.OpConcat:
 		var begin, end bool
@@ -553,7 +558,7 @@ func allMatchingStrings(re *regexpsyntax.Regexp) (exact, contains, prefix, suffi
 				end = true
 				continue
 			}
-			subexact, subcontains, subprefix, subsuffix, err := allMatchingStrings(sub)
+			subexact, subcontains, subprefix, subsuffix, err := allMatchingStrings(sub, i == len(re.Sub)-1)
 			if err != nil {
 				return nil, nil, nil, nil, err
 			}
@@ -595,7 +600,7 @@ func allMatchingStrings(re *regexpsyntax.Regexp) (exact, contains, prefix, suffi
 
 	case regexpsyntax.OpAlternate:
 		for _, sub := range re.Sub {
-			subexact, subcontains, subprefix, subsuffix, err := allMatchingStrings(sub)
+			subexact, subcontains, subprefix, subsuffix, err := allMatchingStrings(sub, false)
 			if err != nil {
 				return nil, nil, nil, nil, err
 			}

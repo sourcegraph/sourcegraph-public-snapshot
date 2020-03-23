@@ -135,16 +135,16 @@ func (r *actionExecutionResolver) ExecutionEnd() *graphqlbackend.DateTime {
 	return &graphqlbackend.DateTime{Time: r.actionExecution.ExecutionEnd}
 }
 
-func (r *actionExecutionResolver) CampaignPlan(ctx context.Context) (graphqlbackend.CampaignPlanResolver, error) {
-	if r.actionExecution.CampaignPlanID == nil {
+func (r *actionExecutionResolver) PatchSet(ctx context.Context) (graphqlbackend.PatchSetResolver, error) {
+	if r.actionExecution.PatchSetID == nil {
 		return nil, nil
 	}
-	plan, err := r.store.GetCampaignPlan(ctx, ee.GetCampaignPlanOpts{ID: *r.actionExecution.CampaignPlanID})
+	patchSet, err := r.store.GetPatchSet(ctx, ee.GetPatchSetOpts{ID: *r.actionExecution.PatchSetID})
 	if err != nil {
 		return nil, err
 	}
 
-	return &campaignPlanResolver{store: r.store, campaignPlan: plan}, nil
+	return &patchSetResolver{store: r.store, patchSet: patchSet}, nil
 }
 
 func createActionExecutionForAction(ctx context.Context, store *ee.Store, action *campaigns.Action, invokationReason campaigns.ActionExecutionInvokationReason) (*campaigns.ActionExecution, []*campaigns.ActionJob, error) {

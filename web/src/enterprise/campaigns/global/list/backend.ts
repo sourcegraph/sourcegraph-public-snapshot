@@ -4,11 +4,15 @@ import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { queryGraphQL } from '../../../../backend/graphql'
 import { Observable } from 'rxjs'
 
-export const queryCampaigns = ({ first, state }: GQL.ICampaignsOnQueryArguments): Observable<GQL.ICampaignConnection> =>
+export const queryCampaigns = ({
+    first,
+    state,
+    hasPatchSet,
+}: GQL.ICampaignsOnQueryArguments): Observable<GQL.ICampaignConnection> =>
     queryGraphQL(
         gql`
-            query Campaigns($first: Int, $state: CampaignState) {
-                campaigns(first: $first, state: $state) {
+            query Campaigns($first: Int, $state: CampaignState, $hasPatchSet: Boolean) {
+                campaigns(first: $first, state: $state, hasPatchSet: $hasPatchSet) {
                     nodes {
                         id
                         name
@@ -23,7 +27,7 @@ export const queryCampaigns = ({ first, state }: GQL.ICampaignsOnQueryArguments)
                                 state
                             }
                         }
-                        changesetPlans {
+                        patches {
                             totalCount
                         }
                     }
@@ -31,7 +35,7 @@ export const queryCampaigns = ({ first, state }: GQL.ICampaignsOnQueryArguments)
                 }
             }
         `,
-        { first, state }
+        { first, state, hasPatchSet }
     ).pipe(
         map(dataOrThrowErrors),
         map(data => data.campaigns)

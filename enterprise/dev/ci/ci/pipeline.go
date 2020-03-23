@@ -3,7 +3,9 @@
 package ci
 
 import (
+	"fmt"
 	"os"
+	"strconv"
 	"time"
 
 	bk "github.com/sourcegraph/sourcegraph/internal/buildkite"
@@ -30,10 +32,26 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		"CI_REPO_NAME":      "sourcegraph",
 		"CI_COMMIT_SHA":     os.Getenv("BUILDKITE_COMMIT"),
 		"CI_COMMIT_MESSAGE": os.Getenv("BUILDKITE_MESSAGE"),
+
+		// Add debug flags for scripts to consume
+		"CI_DEBUG_PROFILE": strconv.FormatBool(c.profilingEnabled),
 	}
 
 	for k, v := range env {
-		bk.OnEveryStepOpts = append(bk.OnEveryStepOpts, bk.Env(k, v))
+		bk.BeforeEveryStepOpts = append(bk.BeforeEveryStepOpts, bk.Env(k, v))
+	}
+
+	if c.profilingEnabled {
+		bk.AfterEveryStepOpts = append(bk.AfterEveryStepOpts, func(s *bk.Step) {
+			// wrap "time -v" around each command for CPU/RAM utilization information
+
+			var prefixed []string
+			for _, cmd := range s.Command {
+				prefixed = append(prefixed, fmt.Sprintf("env time -v %s", cmd))
+			}
+
+			s.Command = prefixed
+		})
 	}
 
 	// Generate pipeline steps. This statement outlines the pipeline steps for each CI case.

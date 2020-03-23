@@ -7,7 +7,7 @@ import SyncIcon from 'mdi-react/SyncIcon'
 import CollapseAllIcon from 'mdi-react/CollapseAllIcon'
 
 export interface ActionNodeProps {
-    node: Pick<GQL.IActionExecution, 'id' | 'invokationReason' | 'status' | 'campaignPlan'>
+    node: Pick<GQL.IActionExecution, 'id' | 'invokationReason' | 'status' | 'patchSet'>
 }
 
 /**

@@ -248,10 +248,7 @@ describe('HoverOverlay', () => {
                     }
                     // Grab badged content in the grand-child level
                     if (c.props && c.props.className && c.props.className.includes('e2e-tooltip-badged-content')) {
-                        return castArray(c.props.children)
-                            .map(grabContent)
-                            .join('')
-                            .trim()
+                        return castArray(c.props.children).map(grabContent).join('').trim()
                     }
                     return ''
                 })

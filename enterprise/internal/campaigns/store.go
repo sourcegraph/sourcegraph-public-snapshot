@@ -64,7 +64,7 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 }
 
 // ProcessPendingChangesetJobs attempts to fetch one pending changeset job.
-// A pending job is one that has never been started and its plan is not cancelled.
+// A pending job is one that has never been started.
 // If found, 'process' is called. We guarantee that if process is called it will have exclusive global access to
 // the job. All operations on the job should be done using the supplied store as they will run in a transaction.
 // Returning an error will roll back the transaction.
@@ -80,12 +80,12 @@ func (s *Store) ProcessPendingChangesetJobs(ctx context.Context, process func(ct
 	_, count, err := tx.query(ctx, q, func(sc scanner) (last, count int64, err error) {
 		err = scanChangesetJob(&job, sc)
 		if err != nil {
-			return 0, 0, errors.Wrap(err, "scanning campaign job row")
+			return 0, 0, errors.Wrap(err, "scanning changeset job row")
 		}
 		return job.ID, 1, nil
 	})
 	if err != nil {
-		return false, errors.Wrap(err, "querying for pending campaign job")
+		return false, errors.Wrap(err, "querying for pending changeset job")
 	}
 	if count == 0 {
 		return false, nil
@@ -98,13 +98,13 @@ const getPendingChangesetJobQuery = `
 UPDATE changeset_jobs j SET started_at = now() WHERE id = (
 	SELECT j.id FROM changeset_jobs j
 	JOIN campaigns c ON c.id = j.campaign_id
-	WHERE j.started_at IS NULL AND c.campaign_plan_id IS NOT NULL
+	WHERE j.started_at IS NULL AND c.patch_set_id IS NOT NULL
 	ORDER BY j.id ASC
 	FOR UPDATE SKIP LOCKED LIMIT 1
 )
 RETURNING j.id,
   j.campaign_id,
-  j.campaign_job_id,
+  j.patch_id,
   j.changeset_id,
   j.branch,
   j.error,
@@ -1102,7 +1102,7 @@ INSERT INTO campaigns (
   created_at,
   updated_at,
   changeset_ids,
-  campaign_plan_id,
+  patch_set_id,
   closed_at
 )
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
@@ -1117,7 +1117,7 @@ RETURNING
   created_at,
   updated_at,
   changeset_ids,
-  campaign_plan_id,
+  patch_set_id,
   closed_at
 `
 
@@ -1146,7 +1146,7 @@ func (s *Store) createCampaignQuery(c *campaigns.Campaign) (*sqlf.Query, error) 
 		c.CreatedAt,
 		c.UpdatedAt,
 		changesetIDs,
-		nullInt64Column(c.CampaignPlanID),
+		nullInt64Column(c.PatchSetID),
 		nullTimeColumn(c.ClosedAt),
 	), nil
 }
@@ -1204,7 +1204,7 @@ SET (
   namespace_org_id,
   updated_at,
   changeset_ids,
-  campaign_plan_id,
+  patch_set_id,
   closed_at
 ) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
@@ -1219,7 +1219,7 @@ RETURNING
   created_at,
   updated_at,
   changeset_ids,
-  campaign_plan_id,
+  patch_set_id,
   closed_at
 `
 
@@ -1241,7 +1241,7 @@ func (s *Store) updateCampaignQuery(c *campaigns.Campaign) (*sqlf.Query, error) 
 		nullInt32Column(c.NamespaceOrgID),
 		c.UpdatedAt,
 		changesetIDs,
-		nullInt64Column(c.CampaignPlanID),
+		nullInt64Column(c.PatchSetID),
 		nullTimeColumn(c.ClosedAt),
 		c.ID,
 	), nil
@@ -1268,6 +1268,7 @@ DELETE FROM campaigns WHERE id = %s
 type CountCampaignsOpts struct {
 	ChangesetID int64
 	State       campaigns.CampaignState
+	HasPatchSet *bool
 }
 
 // CountCampaigns returns the number of campaigns in the database.
@@ -1299,6 +1300,14 @@ func countCampaignsQuery(opts *CountCampaignsOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("closed_at IS NOT NULL"))
 	}
 
+	if opts.HasPatchSet != nil {
+		if *opts.HasPatchSet {
+			preds = append(preds, sqlf.Sprintf("patch_set_id IS NOT NULL"))
+		} else {
+			preds = append(preds, sqlf.Sprintf("patch_set_id IS NULL"))
+		}
+	}
+
 	if len(preds) == 0 {
 		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
@@ -1308,8 +1317,8 @@ func countCampaignsQuery(opts *CountCampaignsOpts) *sqlf.Query {
 
 // GetCampaignOpts captures the query options needed for getting a Campaign
 type GetCampaignOpts struct {
-	ID             int64
-	CampaignPlanID int64
+	ID         int64
+	PatchSetID int64
 }
 
 // GetCampaign gets a campaign matching the given options.
@@ -1344,7 +1353,7 @@ SELECT
   created_at,
   updated_at,
   changeset_ids,
-  campaign_plan_id,
+  patch_set_id,
   closed_at
 FROM campaigns
 WHERE %s
@@ -1357,8 +1366,8 @@ func getCampaignQuery(opts *GetCampaignOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("id = %s", opts.ID))
 	}
 
-	if opts.CampaignPlanID != 0 {
-		preds = append(preds, sqlf.Sprintf("campaign_plan_id = %s", opts.CampaignPlanID))
+	if opts.PatchSetID != 0 {
+		preds = append(preds, sqlf.Sprintf("patch_set_id = %s", opts.PatchSetID))
 	}
 
 	if len(preds) == 0 {
@@ -1375,6 +1384,7 @@ type ListCampaignsOpts struct {
 	Cursor      int64
 	Limit       int
 	State       campaigns.CampaignState
+	HasPatchSet *bool
 }
 
 // ListCampaigns lists Campaigns with the given filters.
@@ -1412,7 +1422,7 @@ SELECT
   created_at,
   updated_at,
   changeset_ids,
-  campaign_plan_id,
+  patch_set_id,
   closed_at
 FROM campaigns
 WHERE %s
@@ -1441,6 +1451,14 @@ func listCampaignsQuery(opts *ListCampaignsOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("closed_at IS NOT NULL"))
 	}
 
+	if opts.HasPatchSet != nil {
+		if *opts.HasPatchSet {
+			preds = append(preds, sqlf.Sprintf("patch_set_id IS NOT NULL"))
+		} else {
+			preds = append(preds, sqlf.Sprintf("patch_set_id IS NULL"))
+		}
+	}
+
 	return sqlf.Sprintf(
 		listCampaignsQueryFmtstr,
 		sqlf.Join(preds, "\n AND "),
@@ -1448,22 +1466,22 @@ func listCampaignsQuery(opts *ListCampaignsOpts) *sqlf.Query {
 	)
 }
 
-// CreateCampaignPlan creates the given CampaignPlan.
-func (s *Store) CreateCampaignPlan(ctx context.Context, c *campaigns.CampaignPlan) error {
-	q, err := s.createCampaignPlanQuery(c)
+// CreatePatchSet creates the given PatchSet.
+func (s *Store) CreatePatchSet(ctx context.Context, c *campaigns.PatchSet) error {
+	q, err := s.createPatchSetQuery(c)
 	if err != nil {
 		return err
 	}
 
 	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
-		err = scanCampaignPlan(c, sc)
+		err = scanPatchSet(c, sc)
 		return c.ID, 1, err
 	})
 }
 
-var createCampaignPlanQueryFmtstr = `
--- source: enterprise/internal/campaigns/store.go:CreateCampaignPlan
-INSERT INTO campaign_plans (
+var createPatchSetQueryFmtstr = `
+-- source: enterprise/internal/campaigns/store.go:CreatePatchSet
+INSERT INTO patch_sets (
   created_at,
   updated_at,
   user_id
@@ -1476,7 +1494,7 @@ RETURNING
   user_id
 `
 
-func (s *Store) createCampaignPlanQuery(c *campaigns.CampaignPlan) (*sqlf.Query, error) {
+func (s *Store) createPatchSetQuery(c *campaigns.PatchSet) (*sqlf.Query, error) {
 	if c.CreatedAt.IsZero() {
 		c.CreatedAt = s.now()
 	}
@@ -1486,29 +1504,29 @@ func (s *Store) createCampaignPlanQuery(c *campaigns.CampaignPlan) (*sqlf.Query,
 	}
 
 	return sqlf.Sprintf(
-		createCampaignPlanQueryFmtstr,
+		createPatchSetQueryFmtstr,
 		c.CreatedAt,
 		c.UpdatedAt,
 		c.UserID,
 	), nil
 }
 
-// UpdateCampaignPlan updates the given CampaignPlan.
-func (s *Store) UpdateCampaignPlan(ctx context.Context, c *campaigns.CampaignPlan) error {
-	q, err := s.updateCampaignPlanQuery(c)
+// UpdatePatchSet updates the given PatchSet.
+func (s *Store) UpdatePatchSet(ctx context.Context, c *campaigns.PatchSet) error {
+	q, err := s.updatePatchSetQuery(c)
 	if err != nil {
 		return err
 	}
 
 	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
-		err = scanCampaignPlan(c, sc)
+		err = scanPatchSet(c, sc)
 		return c.ID, 1, err
 	})
 }
 
-var updateCampaignPlanQueryFmtstr = `
--- source: enterprise/internal/campaigns/store.go:UpdateCampaignPlan
-UPDATE campaign_plans
+var updatePatchSetQueryFmtstr = `
+-- source: enterprise/internal/campaigns/store.go:UpdatePatchSet
+UPDATE patch_sets
 SET (
   updated_at,
   user_id
@@ -1521,20 +1539,20 @@ RETURNING
   user_id
 `
 
-func (s *Store) updateCampaignPlanQuery(c *campaigns.CampaignPlan) (*sqlf.Query, error) {
+func (s *Store) updatePatchSetQuery(c *campaigns.PatchSet) (*sqlf.Query, error) {
 	c.UpdatedAt = s.now()
 
 	return sqlf.Sprintf(
-		updateCampaignPlanQueryFmtstr,
+		updatePatchSetQueryFmtstr,
 		c.UpdatedAt,
 		c.UserID,
 		c.ID,
 	), nil
 }
 
-// DeleteCampaignPlan deletes the CampaignPlan with the given ID.
-func (s *Store) DeleteCampaignPlan(ctx context.Context, id int64) error {
-	q := sqlf.Sprintf(deleteCampaignPlanQueryFmtstr, id)
+// DeletePatchSet deletes the PatchSet with the given ID.
+func (s *Store) DeletePatchSet(ctx context.Context, id int64) error {
+	q := sqlf.Sprintf(deletePatchSetQueryFmtstr, id)
 
 	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
@@ -1543,17 +1561,17 @@ func (s *Store) DeleteCampaignPlan(ctx context.Context, id int64) error {
 	return rows.Close()
 }
 
-var deleteCampaignPlanQueryFmtstr = `
--- source: enterprise/internal/campaigns/store.go:DeleteCampaignPlan
-DELETE FROM campaign_plans WHERE id = %s
+var deletePatchSetQueryFmtstr = `
+-- source: enterprise/internal/campaigns/store.go:DeletePatchSet
+DELETE FROM patch_sets WHERE id = %s
 `
 
-const CampaignPlanTTL = 1 * time.Hour
+const PatchSetTTL = 1 * time.Hour
 
-// DeleteExpiredCampaignPlans deletes CampaignPlans that have not been attached to a Campaign within CampaignPlanTTL.
-func (s *Store) DeleteExpiredCampaignPlans(ctx context.Context) error {
-	expirationTime := s.now().Add(-CampaignPlanTTL)
-	q := sqlf.Sprintf(deleteExpiredCampaignPlansQueryFmtstr, expirationTime)
+// DeleteExpiredPatchSets deletes PatchSets that have not been attached to a Campaign within PatchSetTTL.
+func (s *Store) DeleteExpiredPatchSets(ctx context.Context) error {
+	expirationTime := s.now().Add(-PatchSetTTL)
+	q := sqlf.Sprintf(deleteExpiredPatchSetsQueryFmtstr, expirationTime)
 
 	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
@@ -1562,10 +1580,10 @@ func (s *Store) DeleteExpiredCampaignPlans(ctx context.Context) error {
 	return rows.Close()
 }
 
-var deleteExpiredCampaignPlansQueryFmtstr = `
--- source: enterprise/internal/campaigns/store.go:DeleteExpiredCampaignPlans
+var deleteExpiredPatchSetsQueryFmtstr = `
+-- source: enterprise/internal/campaigns/store.go:DeleteExpiredPatchSets
 DELETE FROM
-  campaign_plans
+  patch_sets
 WHERE
   created_at < %s
 AND
@@ -1574,7 +1592,7 @@ NOT EXISTS (
   FROM
   campaigns
   WHERE
-  campaigns.campaign_plan_id = campaign_plans.id
+  campaigns.patch_set_id = patch_sets.id
 )
 AND
 -- todo: what is the case we want to handle here?
@@ -1583,37 +1601,37 @@ NOT EXISTS (
 	FROM
 	action_executions
 	WHERE
-	action_executions.campaign_plan = campaign_plans.id
+	action_executions.patch_set_id = patch_sets.id
 )
 `
 
-// CountCampaignPlans returns the number of code mods in the database.
-func (s *Store) CountCampaignPlans(ctx context.Context) (count int64, _ error) {
-	q := sqlf.Sprintf(countCampaignPlansQueryFmtstr)
+// CountPatchSets returns the number of code mods in the database.
+func (s *Store) CountPatchSets(ctx context.Context) (count int64, _ error) {
+	q := sqlf.Sprintf(countPatchSetsQueryFmtstr)
 	return count, s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
 		err = sc.Scan(&count)
 		return 0, count, err
 	})
 }
 
-var countCampaignPlansQueryFmtstr = `
--- source: enterprise/internal/campaigns/store.go:CountCampaignPlans
+var countPatchSetsQueryFmtstr = `
+-- source: enterprise/internal/campaigns/store.go:CountPatchSets
 SELECT COUNT(id)
-FROM campaign_plans
+FROM patch_sets
 `
 
-// GetCampaignPlanOpts captures the query options needed for getting a CampaignPlan
-type GetCampaignPlanOpts struct {
+// GetPatchSetOpts captures the query options needed for getting a PatchSet
+type GetPatchSetOpts struct {
 	ID int64
 }
 
-// GetCampaignPlan gets a code mod matching the given options.
-func (s *Store) GetCampaignPlan(ctx context.Context, opts GetCampaignPlanOpts) (*campaigns.CampaignPlan, error) {
-	q := getCampaignPlanQuery(&opts)
+// GetPatchSet gets a code mod matching the given options.
+func (s *Store) GetPatchSet(ctx context.Context, opts GetPatchSetOpts) (*campaigns.PatchSet, error) {
+	q := getPatchSetQuery(&opts)
 
-	var c campaigns.CampaignPlan
+	var c campaigns.PatchSet
 	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
-		return 0, 0, scanCampaignPlan(&c, sc)
+		return 0, 0, scanPatchSet(&c, sc)
 	})
 	if err != nil {
 		return nil, err
@@ -1626,19 +1644,19 @@ func (s *Store) GetCampaignPlan(ctx context.Context, opts GetCampaignPlanOpts) (
 	return &c, nil
 }
 
-var getCampaignPlansQueryFmtstr = `
--- source: enterprise/internal/campaigns/store.go:GetCampaignPlan
+var getPatchSetsQueryFmtstr = `
+-- source: enterprise/internal/campaigns/store.go:GetPatchSet
 SELECT
   id,
   created_at,
   updated_at,
   user_id
-FROM campaign_plans
+FROM patch_sets
 WHERE %s
 LIMIT 1
 `
 
-func getCampaignPlanQuery(opts *GetCampaignPlanOpts) *sqlf.Query {
+func getPatchSetQuery(opts *GetPatchSetOpts) *sqlf.Query {
 	var preds []*sqlf.Query
 	if opts.ID != 0 {
 		preds = append(preds, sqlf.Sprintf("id = %s", opts.ID))
@@ -1648,30 +1666,8 @@ func getCampaignPlanQuery(opts *GetCampaignPlanOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
 
-	return sqlf.Sprintf(getCampaignPlansQueryFmtstr, sqlf.Join(preds, "\n AND "))
+	return sqlf.Sprintf(getPatchSetsQueryFmtstr, sqlf.Join(preds, "\n AND "))
 }
-
-// DEPRECATED: GetCampaignPlanStatus gets the campaigns.BackgroundProcessStatus for a CampaignPlan.
-// It's deprecated because we don't execute jobs anymore.
-func (s *Store) GetCampaignPlanStatus(ctx context.Context, id int64) (*campaigns.BackgroundProcessStatus, error) {
-	return s.queryBackgroundProcessStatus(ctx, sqlf.Sprintf(
-		getCampaignPlanStatusQueryFmtstr,
-		sqlf.Sprintf("campaign_plan_id = %s", id),
-	))
-}
-
-var getCampaignPlanStatusQueryFmtstr = `
--- source: enterprise/internal/campaigns/store.go:GetCampaignPlanStatus
-SELECT
-  false AS canceled,
-  COUNT(*) AS total,
-  0 AS pending,
-  COUNT(*) AS completed,
-  NULL AS errors
-FROM campaign_jobs
-WHERE %s
-LIMIT 1;
-`
 
 // GetCampaignStatus gets the campaigns.BackgroundProcessStatus for a Campaign
 func (s *Store) GetCampaignStatus(ctx context.Context, id int64) (*campaigns.BackgroundProcessStatus, error) {
@@ -1718,21 +1714,21 @@ WHERE %s
 LIMIT 1
 `
 
-// ListCampaignPlansOpts captures the query options needed for
+// ListPatchSetsOpts captures the query options needed for
 // listing code mods.
-type ListCampaignPlansOpts struct {
+type ListPatchSetsOpts struct {
 	Cursor int64
 	Limit  int
 }
 
-// ListCampaignPlans lists CampaignPlans with the given filters.
-func (s *Store) ListCampaignPlans(ctx context.Context, opts ListCampaignPlansOpts) (cs []*campaigns.CampaignPlan, next int64, err error) {
-	q := listCampaignPlansQuery(&opts)
+// ListPatchSets lists PatchSets with the given filters.
+func (s *Store) ListPatchSets(ctx context.Context, opts ListPatchSetsOpts) (cs []*campaigns.PatchSet, next int64, err error) {
+	q := listPatchSetsQuery(&opts)
 
-	cs = make([]*campaigns.CampaignPlan, 0, opts.Limit)
+	cs = make([]*campaigns.PatchSet, 0, opts.Limit)
 	_, _, err = s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
-		var c campaigns.CampaignPlan
-		if err = scanCampaignPlan(&c, sc); err != nil {
+		var c campaigns.PatchSet
+		if err = scanPatchSet(&c, sc); err != nil {
 			return 0, 0, err
 		}
 		cs = append(cs, &c)
@@ -1747,20 +1743,20 @@ func (s *Store) ListCampaignPlans(ctx context.Context, opts ListCampaignPlansOpt
 	return cs, next, err
 }
 
-var listCampaignPlansQueryFmtstr = `
--- source: enterprise/internal/campaigns/store.go:ListCampaignPlans
+var listPatchSetsQueryFmtstr = `
+-- source: enterprise/internal/campaigns/store.go:ListPatchSets
 SELECT
   id,
   created_at,
   updated_at,
   user_id
-FROM campaign_plans
+FROM patch_sets
 WHERE %s
 ORDER BY id ASC
 LIMIT %s
 `
 
-func listCampaignPlansQuery(opts *ListCampaignPlansOpts) *sqlf.Query {
+func listPatchSetsQuery(opts *ListPatchSetsOpts) *sqlf.Query {
 	if opts.Limit == 0 {
 		opts.Limit = defaultListLimit
 	}
@@ -1771,31 +1767,31 @@ func listCampaignPlansQuery(opts *ListCampaignPlansOpts) *sqlf.Query {
 	}
 
 	return sqlf.Sprintf(
-		listCampaignPlansQueryFmtstr,
+		listPatchSetsQueryFmtstr,
 		sqlf.Join(preds, "\n AND "),
 		opts.Limit,
 	)
 }
 
-// CreateCampaignJob creates the given CampaignJob.
+// CreatePatch creates the given Patch.
 // Due to a unique constraint in the DB it is safe to call this more than once
 // with the same input. Only one job will be added and the other calls will return an error
-func (s *Store) CreateCampaignJob(ctx context.Context, c *campaigns.CampaignJob) error {
-	q, err := s.createCampaignJobQuery(c)
+func (s *Store) CreatePatch(ctx context.Context, c *campaigns.Patch) error {
+	q, err := s.createPatchQuery(c)
 	if err != nil {
 		return err
 	}
 
 	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
-		err = scanCampaignJob(c, sc)
+		err = scanPatch(c, sc)
 		return c.ID, 1, err
 	})
 }
 
-var createCampaignJobQueryFmtstr = `
--- source: enterprise/internal/campaigns/store.go:CreateCampaignJob
-INSERT INTO campaign_jobs (
-  campaign_plan_id,
+var createPatchQueryFmtstr = `
+-- source: enterprise/internal/campaigns/store.go:CreatePatch
+INSERT INTO patches (
+  patch_set_id,
   repo_id,
   rev,
   base_ref,
@@ -1806,7 +1802,7 @@ INSERT INTO campaign_jobs (
 VALUES (%s, %s, %s, %s, %s, %s, %s)
 RETURNING
   id,
-  campaign_plan_id,
+  patch_set_id,
   repo_id,
   rev,
   base_ref,
@@ -1815,7 +1811,7 @@ RETURNING
   updated_at
 `
 
-func (s *Store) createCampaignJobQuery(c *campaigns.CampaignJob) (*sqlf.Query, error) {
+func (s *Store) createPatchQuery(c *campaigns.Patch) (*sqlf.Query, error) {
 	if c.CreatedAt.IsZero() {
 		c.CreatedAt = s.now()
 	}
@@ -1825,8 +1821,8 @@ func (s *Store) createCampaignJobQuery(c *campaigns.CampaignJob) (*sqlf.Query, e
 	}
 
 	return sqlf.Sprintf(
-		createCampaignJobQueryFmtstr,
-		c.CampaignPlanID,
+		createPatchQueryFmtstr,
+		c.PatchSetID,
 		c.RepoID,
 		c.Rev,
 		c.BaseRef,
@@ -1836,24 +1832,24 @@ func (s *Store) createCampaignJobQuery(c *campaigns.CampaignJob) (*sqlf.Query, e
 	), nil
 }
 
-// UpdateCampaignJob updates the given CampaignJob.
-func (s *Store) UpdateCampaignJob(ctx context.Context, c *campaigns.CampaignJob) error {
-	q, err := s.updateCampaignJobQuery(c)
+// UpdatePatch updates the given Patch.
+func (s *Store) UpdatePatch(ctx context.Context, c *campaigns.Patch) error {
+	q, err := s.updatePatchQuery(c)
 	if err != nil {
 		return err
 	}
 
 	return s.exec(ctx, q, func(sc scanner) (last, count int64, err error) {
-		err = scanCampaignJob(c, sc)
+		err = scanPatch(c, sc)
 		return c.ID, 1, err
 	})
 }
 
-var updateCampaignJobQueryFmtstr = `
--- source: enterprise/internal/campaigns/store.go:UpdateCampaignJob
-UPDATE campaign_jobs
+var updatePatchQueryFmtstr = `
+-- source: enterprise/internal/campaigns/store.go:UpdatePatch
+UPDATE patches
 SET (
-  campaign_plan_id,
+  patch_set_id,
   repo_id,
   rev,
   base_ref,
@@ -1863,7 +1859,7 @@ SET (
 WHERE id = %s
 RETURNING
   id,
-  campaign_plan_id,
+  patch_set_id,
   repo_id,
   rev,
   base_ref,
@@ -1872,12 +1868,12 @@ RETURNING
   updated_at
 `
 
-func (s *Store) updateCampaignJobQuery(c *campaigns.CampaignJob) (*sqlf.Query, error) {
+func (s *Store) updatePatchQuery(c *campaigns.Patch) (*sqlf.Query, error) {
 	c.UpdatedAt = s.now()
 
 	return sqlf.Sprintf(
-		updateCampaignJobQueryFmtstr,
-		c.CampaignPlanID,
+		updatePatchQueryFmtstr,
+		c.PatchSetID,
 		c.RepoID,
 		c.Rev,
 		c.BaseRef,
@@ -1887,9 +1883,9 @@ func (s *Store) updateCampaignJobQuery(c *campaigns.CampaignJob) (*sqlf.Query, e
 	), nil
 }
 
-// DeleteCampaignJob deletes the CampaignJob with the given ID.
-func (s *Store) DeleteCampaignJob(ctx context.Context, id int64) error {
-	q := sqlf.Sprintf(deleteCampaignJobQueryFmtstr, id)
+// DeletePatch deletes the Patch with the given ID.
+func (s *Store) DeletePatch(ctx context.Context, id int64) error {
+	q := sqlf.Sprintf(deletePatchQueryFmtstr, id)
 
 	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
@@ -1898,43 +1894,40 @@ func (s *Store) DeleteCampaignJob(ctx context.Context, id int64) error {
 	return rows.Close()
 }
 
-var deleteCampaignJobQueryFmtstr = `
--- source: enterprise/internal/campaigns/store.go:DeleteCampaignJob
-DELETE FROM campaign_jobs WHERE id = %s
+var deletePatchQueryFmtstr = `
+-- source: enterprise/internal/campaigns/store.go:DeletePatch
+DELETE FROM patches WHERE id = %s
 `
 
-// CountCampaignJobsOpts captures the query options needed for
-// counting campaign jobs
-type CountCampaignJobsOpts struct {
-	CampaignPlanID int64
-	OnlyWithDiff   bool
+// CountPatchesOpts captures the query options needed for counting patches.
+type CountPatchesOpts struct {
+	PatchSetID   int64
+	OnlyWithDiff bool
 
-	// If this is set to a Campaign ID only the CampaignJobs are returned that
-	// are _not_ associated with a successfully completed ChangesetJob (meaning
+	// If this is set to a Campaign ID only the Patches are returned that are
+	// _not_ associated with a successfully completed ChangesetJob (meaning
 	// that a Changeset on the codehost was created) for the given Campaign.
 	OnlyUnpublishedInCampaign int64
 }
 
-// CountCampaignJobs returns the number of CampaignJobs in the database.
-func (s *Store) CountCampaignJobs(ctx context.Context, opts CountCampaignJobsOpts) (count int64, _ error) {
-	q := countCampaignJobsQuery(&opts)
+// CountPatches returns the number of Patches in the database.
+func (s *Store) CountPatches(ctx context.Context, opts CountPatchesOpts) (count int64, _ error) {
+	q := countPatchesQuery(&opts)
 	return count, s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
 		err = sc.Scan(&count)
 		return 0, count, err
 	})
 }
 
-var countCampaignJobsQueryFmtstr = `
--- source: enterprise/internal/campaigns/store.go:CountCampaignJobs
-SELECT COUNT(id)
-FROM campaign_jobs
-WHERE %s
+var countPatchesQueryFmtstr = `
+-- source: enterprise/internal/campaigns/store.go:CountPatches
+SELECT COUNT(id) FROM patches WHERE %s
 `
 
-func countCampaignJobsQuery(opts *CountCampaignJobsOpts) *sqlf.Query {
+func countPatchesQuery(opts *CountPatchesOpts) *sqlf.Query {
 	var preds []*sqlf.Query
-	if opts.CampaignPlanID != 0 {
-		preds = append(preds, sqlf.Sprintf("campaign_plan_id = %s", opts.CampaignPlanID))
+	if opts.PatchSetID != 0 {
+		preds = append(preds, sqlf.Sprintf("patch_set_id = %s", opts.PatchSetID))
 	}
 
 	if opts.OnlyWithDiff {
@@ -1949,21 +1942,21 @@ func countCampaignJobsQuery(opts *CountCampaignJobsOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
 
-	return sqlf.Sprintf(countCampaignJobsQueryFmtstr, sqlf.Join(preds, "\n AND "))
+	return sqlf.Sprintf(countPatchesQueryFmtstr, sqlf.Join(preds, "\n AND "))
 }
 
-// GetCampaignJobOpts captures the query options needed for getting a CampaignJob
-type GetCampaignJobOpts struct {
+// GetPatchOpts captures the query options needed for getting a Patch
+type GetPatchOpts struct {
 	ID int64
 }
 
-// GetCampaignJob gets a code mod matching the given options.
-func (s *Store) GetCampaignJob(ctx context.Context, opts GetCampaignJobOpts) (*campaigns.CampaignJob, error) {
-	q := getCampaignJobQuery(&opts)
+// GetPatch gets a code mod matching the given options.
+func (s *Store) GetPatch(ctx context.Context, opts GetPatchOpts) (*campaigns.Patch, error) {
+	q := getPatchQuery(&opts)
 
-	var c campaigns.CampaignJob
+	var c campaigns.Patch
 	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
-		return 0, 0, scanCampaignJob(&c, sc)
+		return 0, 0, scanPatch(&c, sc)
 	})
 	if err != nil {
 		return nil, err
@@ -1976,23 +1969,23 @@ func (s *Store) GetCampaignJob(ctx context.Context, opts GetCampaignJobOpts) (*c
 	return &c, nil
 }
 
-var getCampaignJobsQueryFmtstr = `
--- source: enterprise/internal/campaigns/store.go:GetCampaignJob
+var getPatchesQueryFmtstr = `
+-- source: enterprise/internal/campaigns/store.go:GetPatch
 SELECT
   id,
-  campaign_plan_id,
+  patch_set_id,
   repo_id,
   rev,
   base_ref,
   diff,
   created_at,
   updated_at
-FROM campaign_jobs
+FROM patches
 WHERE %s
 LIMIT 1
 `
 
-func getCampaignJobQuery(opts *GetCampaignJobOpts) *sqlf.Query {
+func getPatchQuery(opts *GetPatchOpts) *sqlf.Query {
 	var preds []*sqlf.Query
 	if opts.ID != 0 {
 		preds = append(preds, sqlf.Sprintf("id = %s", opts.ID))
@@ -2002,31 +1995,31 @@ func getCampaignJobQuery(opts *GetCampaignJobOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
 
-	return sqlf.Sprintf(getCampaignJobsQueryFmtstr, sqlf.Join(preds, "\n AND "))
+	return sqlf.Sprintf(getPatchesQueryFmtstr, sqlf.Join(preds, "\n AND "))
 }
 
-// ListCampaignJobsOpts captures the query options needed for
+// ListPatchesOpts captures the query options needed for
 // listing code mods.
-type ListCampaignJobsOpts struct {
-	CampaignPlanID int64
-	Cursor         int64
-	Limit          int
-	OnlyWithDiff   bool
+type ListPatchesOpts struct {
+	PatchSetID   int64
+	Cursor       int64
+	Limit        int
+	OnlyWithDiff bool
 
-	// If this is set to a Campaign ID only the CampaignJobs are returned that
+	// If this is set to a Campaign ID only the Patches are returned that
 	// are _not_ associated with a successfully completed ChangesetJob (meaning
 	// that a Changeset on the codehost was created) for the given Campaign.
 	OnlyUnpublishedInCampaign int64
 }
 
-// ListCampaignJobs lists CampaignJobs with the given filters.
-func (s *Store) ListCampaignJobs(ctx context.Context, opts ListCampaignJobsOpts) (cs []*campaigns.CampaignJob, next int64, err error) {
-	q := listCampaignJobsQuery(&opts)
+// ListPatches lists Patches with the given filters.
+func (s *Store) ListPatches(ctx context.Context, opts ListPatchesOpts) (cs []*campaigns.Patch, next int64, err error) {
+	q := listPatchesQuery(&opts)
 
-	cs = make([]*campaigns.CampaignJob, 0, opts.Limit)
+	cs = make([]*campaigns.Patch, 0, opts.Limit)
 	_, _, err = s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
-		var c campaigns.CampaignJob
-		if err = scanCampaignJob(&c, sc); err != nil {
+		var c campaigns.Patch
+		if err = scanPatch(&c, sc); err != nil {
 			return 0, 0, err
 		}
 		cs = append(cs, &c)
@@ -2041,23 +2034,23 @@ func (s *Store) ListCampaignJobs(ctx context.Context, opts ListCampaignJobsOpts)
 	return cs, next, err
 }
 
-var listCampaignJobsQueryFmtstr = `
--- source: enterprise/internal/campaigns/store.go:ListCampaignJobs
+var listPatchesQueryFmtstr = `
+-- source: enterprise/internal/campaigns/store.go:ListPatches
 SELECT
   id,
-  campaign_plan_id,
+  patch_set_id,
   repo_id,
   rev,
   base_ref,
   diff,
   created_at,
   updated_at
-FROM campaign_jobs
+FROM patches
 WHERE %s
 ORDER BY id ASC
 `
 
-func listCampaignJobsQuery(opts *ListCampaignJobsOpts) *sqlf.Query {
+func listPatchesQuery(opts *ListPatchesOpts) *sqlf.Query {
 	if opts.Limit == 0 {
 		opts.Limit = defaultListLimit
 	}
@@ -2072,8 +2065,8 @@ func listCampaignJobsQuery(opts *ListCampaignJobsOpts) *sqlf.Query {
 		sqlf.Sprintf("id >= %s", opts.Cursor),
 	}
 
-	if opts.CampaignPlanID != 0 {
-		preds = append(preds, sqlf.Sprintf("campaign_plan_id = %s", opts.CampaignPlanID))
+	if opts.PatchSetID != 0 {
+		preds = append(preds, sqlf.Sprintf("patch_set_id = %s", opts.PatchSetID))
 	}
 
 	if opts.OnlyWithDiff {
@@ -2085,7 +2078,7 @@ func listCampaignJobsQuery(opts *ListCampaignJobsOpts) *sqlf.Query {
 	}
 
 	return sqlf.Sprintf(
-		listCampaignJobsQueryFmtstr+limitClause,
+		listPatchesQueryFmtstr+limitClause,
 		sqlf.Join(preds, "\n AND "),
 	)
 }
@@ -2095,7 +2088,7 @@ NOT EXISTS (
   SELECT 1
   FROM changeset_jobs
   WHERE
-    campaign_job_id = campaign_jobs.id
+    patch_id = patches.id
   AND
     campaign_id = %s
   AND
@@ -2124,7 +2117,7 @@ var createChangesetJobQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:CreateChangesetJob
 INSERT INTO changeset_jobs (
   campaign_id,
-  campaign_job_id,
+  patch_id,
   changeset_id,
   branch,
   error,
@@ -2137,7 +2130,7 @@ VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING
   id,
   campaign_id,
-  campaign_job_id,
+  patch_id,
   changeset_id,
   branch,
   error,
@@ -2159,7 +2152,7 @@ func (s *Store) createChangesetJobQuery(c *campaigns.ChangesetJob) (*sqlf.Query,
 	return sqlf.Sprintf(
 		createChangesetJobQueryFmtstr,
 		c.CampaignID,
-		c.CampaignJobID,
+		c.PatchID,
 		nullInt64Column(c.ChangesetID),
 		c.Branch,
 		nullStringColumn(c.Error),
@@ -2188,7 +2181,7 @@ var updateChangesetJobQueryFmtstr = `
 UPDATE changeset_jobs
 SET (
   campaign_id,
-  campaign_job_id,
+  patch_id,
   changeset_id,
   branch,
   error,
@@ -2200,7 +2193,7 @@ WHERE id = %s
 RETURNING
   id,
   campaign_id,
-  campaign_job_id,
+  patch_id,
   changeset_id,
   branch,
   error,
@@ -2216,7 +2209,7 @@ func (s *Store) updateChangesetJobQuery(c *campaigns.ChangesetJob) (*sqlf.Query,
 	return sqlf.Sprintf(
 		updateChangesetJobQueryFmtstr,
 		c.CampaignID,
-		c.CampaignJobID,
+		c.PatchID,
 		nullInt64Column(c.ChangesetID),
 		c.Branch,
 		nullStringColumn(c.Error),
@@ -2279,7 +2272,7 @@ func countChangesetJobsQuery(opts *CountChangesetJobsOpts) *sqlf.Query {
 }
 
 // GetLatestChangesetJobCreatedAt returns the most recent created_at time for all changeset jobs
-// for a campaign. But only if they have all been created, one for each CampaignJob belonging to the CampaignPlan attached to the Campaign. If not, it returns a zero time.Time.
+// for a campaign. But only if they have all been created, one for each Patch belonging to the PatchSet attached to the Campaign. If not, it returns a zero time.Time.
 func (s *Store) GetLatestChangesetJobCreatedAt(ctx context.Context, campaignID int64) (time.Time, error) {
 	q := sqlf.Sprintf(getLatestChangesetJobPublishedAtFmtstr, campaignID)
 	var createdAt time.Time
@@ -2299,19 +2292,19 @@ func (s *Store) GetLatestChangesetJobCreatedAt(ctx context.Context, campaignID i
 var getLatestChangesetJobPublishedAtFmtstr = `
 SELECT
   max(changeset_jobs.created_at)
-FROM campaign_jobs
-INNER JOIN campaigns ON campaign_jobs.campaign_plan_id = campaigns.campaign_plan_id
-LEFT JOIN changeset_jobs ON changeset_jobs.campaign_job_id = campaign_jobs.id
+FROM patches
+INNER JOIN campaigns ON patches.patch_set_id = campaigns.patch_set_id
+LEFT JOIN changeset_jobs ON changeset_jobs.patch_id = patches.id
 WHERE campaigns.id = %s
 HAVING count(*) FILTER (WHERE changeset_jobs.created_at IS NULL) = 0;
 `
 
 // GetChangesetJobOpts captures the query options needed for getting a ChangesetJob
 type GetChangesetJobOpts struct {
-	ID            int64
-	CampaignJobID int64
-	CampaignID    int64
-	ChangesetID   int64
+	ID          int64
+	PatchID     int64
+	CampaignID  int64
+	ChangesetID int64
 }
 
 // GetChangesetJob gets a ChangesetJob matching the given options.
@@ -2338,7 +2331,7 @@ var getChangesetJobsQueryFmtstr = `
 SELECT
   id,
   campaign_id,
-  campaign_job_id,
+  patch_id,
   changeset_id,
   branch,
   error,
@@ -2361,8 +2354,8 @@ func getChangesetJobQuery(opts *GetChangesetJobOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("campaign_id = %s", opts.CampaignID))
 	}
 
-	if opts.CampaignJobID != 0 {
-		preds = append(preds, sqlf.Sprintf("campaign_job_id = %s", opts.CampaignJobID))
+	if opts.PatchID != 0 {
+		preds = append(preds, sqlf.Sprintf("patch_id = %s", opts.PatchID))
 	}
 
 	if opts.ChangesetID != 0 {
@@ -2379,10 +2372,10 @@ func getChangesetJobQuery(opts *GetChangesetJobOpts) *sqlf.Query {
 // ListChangesetJobsOpts captures the query options needed for
 // listing changeset jobs.
 type ListChangesetJobsOpts struct {
-	CampaignID     int64
-	CampaignPlanID int64
-	Cursor         int64
-	Limit          int
+	CampaignID int64
+	PatchSetID int64
+	Cursor     int64
+	Limit      int
 }
 
 // ListChangesetJobs lists ChangesetJobs with the given filters.
@@ -2412,7 +2405,7 @@ var listChangesetJobsQueryFmtstrSelect = `
 SELECT
   changeset_jobs.id,
   changeset_jobs.campaign_id,
-  changeset_jobs.campaign_job_id,
+  changeset_jobs.patch_id,
   changeset_jobs.changeset_id,
   changeset_jobs.branch,
   changeset_jobs.error,
@@ -2448,10 +2441,10 @@ func listChangesetJobsQuery(opts *ListChangesetJobsOpts) *sqlf.Query {
 	}
 
 	var joinClause string
-	if opts.CampaignPlanID != 0 {
+	if opts.PatchSetID != 0 {
 		joinClause = "JOIN campaigns ON changeset_jobs.campaign_id = campaigns.id"
 
-		preds = append(preds, sqlf.Sprintf("campaigns.campaign_plan_id = %s", opts.CampaignPlanID))
+		preds = append(preds, sqlf.Sprintf("campaigns.patch_set_id = %s", opts.PatchSetID))
 	}
 
 	queryTemplate := listChangesetJobsQueryFmtstrSelect + joinClause +
@@ -2506,16 +2499,21 @@ SET
 WHERE %s
 `
 
-// GetGithubExternalIDForRefs allows us to find the external id for GitHub pull requests based on
-// a slice of head refs. We need this in order to match incoming status webhooks to pull requests as
+// GetChangesetExternalIDs allows us to find the external ids for pull requests based on
+// a slice of head refs. We need this in order to match incoming webhooks to pull requests as
 // the only information they provide is the remote branch
-func (s *Store) GetGithubExternalIDForRefs(ctx context.Context, refs []string) ([]string, error) {
+func (s *Store) GetChangesetExternalIDs(ctx context.Context, spec api.ExternalRepoSpec, refs []string) ([]string, error) {
 	queryFmtString := `
-SELECT external_id FROM changesets
-WHERE external_service_type = 'github'
-AND external_branch IN (%s)
-ORDER BY id ASC
-`
+	SELECT cs.external_id FROM changesets cs
+	JOIN repo r ON cs.repo_id = r.id
+	WHERE cs.external_service_type = %s
+	AND cs.external_branch IN (%s)
+	AND r.external_id = %s
+	AND r.external_service_type = %s
+	AND r.external_service_id = %s
+	ORDER BY cs.id ASC;
+	`
+
 	inClause := make([]*sqlf.Query, 0, len(refs))
 	for _, ref := range refs {
 		if ref == "" {
@@ -2523,7 +2521,7 @@ ORDER BY id ASC
 		}
 		inClause = append(inClause, sqlf.Sprintf("%s", ref))
 	}
-	q := sqlf.Sprintf(queryFmtString, sqlf.Join(inClause, ","))
+	q := sqlf.Sprintf(queryFmtString, spec.ServiceType, sqlf.Join(inClause, ","), spec.ID, spec.ServiceType, spec.ServiceID)
 	ids := make([]string, 0, len(refs))
 	_, _, err := s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
 		var s string
@@ -2671,19 +2669,19 @@ func scanCampaign(c *campaigns.Campaign, s scanner) error {
 		&c.CreatedAt,
 		&c.UpdatedAt,
 		&dbutil.JSONInt64Set{Set: &c.ChangesetIDs},
-		&dbutil.NullInt64{N: &c.CampaignPlanID},
+		&dbutil.NullInt64{N: &c.PatchSetID},
 		&dbutil.NullTime{Time: &c.ClosedAt},
 	)
 }
 
-func scanCampaignPlan(c *campaigns.CampaignPlan, s scanner) error {
+func scanPatchSet(c *campaigns.PatchSet, s scanner) error {
 	return s.Scan(&c.ID, &c.CreatedAt, &c.UpdatedAt, &c.UserID)
 }
 
-func scanCampaignJob(c *campaigns.CampaignJob, s scanner) error {
+func scanPatch(c *campaigns.Patch, s scanner) error {
 	return s.Scan(
 		&c.ID,
-		&c.CampaignPlanID,
+		&c.PatchSetID,
 		&c.RepoID,
 		&c.Rev,
 		&c.BaseRef,
@@ -2697,7 +2695,7 @@ func scanChangesetJob(c *campaigns.ChangesetJob, s scanner) error {
 	return s.Scan(
 		&c.ID,
 		&c.CampaignID,
-		&c.CampaignJobID,
+		&c.PatchID,
 		&dbutil.NullInt64{N: &c.ChangesetID},
 		&c.Branch,
 		&dbutil.NullString{S: &c.Error},
@@ -2736,7 +2734,7 @@ func scanActionExecution(a *campaigns.ActionExecution, s scanner) error {
 		&a.Steps,
 		&a.EnvStr,
 		&a.InvokationReason,
-		&a.CampaignPlanID,
+		&a.PatchSetID,
 		&a.ActionID,
 		&dbutil.NullTime{Time: &a.ExecutionStart},
 		&dbutil.NullTime{Time: &a.ExecutionEnd},
@@ -3149,7 +3147,7 @@ SELECT
 	action_executions.steps,
 	action_executions.env,
 	action_executions.invokation_reason,
-	action_executions.campaign_plan,
+	action_executions.patch_set_id,
 	action_executions.action,
 	(SELECT MIN(action_jobs.execution_start) FROM action_jobs WHERE action_jobs.execution = action_executions.id) AS execution_start,
 	(SELECT MAX(action_jobs.execution_end) FROM action_jobs WHERE action_jobs.execution = action_executions.id) AS execution_end
@@ -3214,7 +3212,7 @@ SELECT
 	action_executions.steps,
 	action_executions.env,
 	action_executions.invokation_reason,
-	action_executions.campaign_plan,
+	action_executions.patch_set_id,
 	action_executions.action,
 	(SELECT MIN(action_jobs.execution_start) FROM action_jobs WHERE action_jobs.execution = action_executions.id) AS execution_start,
 	(SELECT MAX(action_jobs.execution_end) FROM action_jobs WHERE action_jobs.execution = action_executions.id) AS execution_end
@@ -3286,7 +3284,7 @@ RETURNING
 	action_executions.steps,
 	action_executions.env,
 	action_executions.invokation_reason,
-	action_executions.campaign_plan,
+	action_executions.patch_set_id,
 	action_executions.action,
 	(SELECT MIN(action_jobs.execution_start) FROM action_jobs WHERE action_jobs.execution = action_executions.id) AS execution_start,
 	(SELECT MAX(action_jobs.execution_end) FROM action_jobs WHERE action_jobs.execution = action_executions.id) AS execution_end
@@ -3527,8 +3525,8 @@ func updateActionQuery(opts *UpdateActionOpts) *sqlf.Query {
 }
 
 type UpdateActionExecutionOpts struct {
-	ExecutionID    int64
-	CampaignPlanID int64
+	ExecutionID int64
+	PatchSetID  int64
 }
 
 // UpdateActionExecution creates a new action in the database.
@@ -3554,7 +3552,7 @@ var updateActionExecutionQueryFmtstrSelect = `
 UPDATE
 	action_executions
 SET
-	campaign_plan = %s
+	patch_set_id = %s
 WHERE
 	action_executions.id = %d
 RETURNING
@@ -3562,7 +3560,7 @@ RETURNING
 	action_executions.steps,
 	action_executions.env,
 	action_executions.invokation_reason,
-	action_executions.campaign_plan,
+	action_executions.patch_set_id,
 	action_executions.action,
 	(SELECT MIN(action_jobs.execution_start) FROM action_jobs WHERE action_jobs.execution = action_executions.id) AS execution_start,
 	(SELECT MAX(action_jobs.execution_end) FROM action_jobs WHERE action_jobs.execution = action_executions.id) AS execution_end
@@ -3570,7 +3568,7 @@ RETURNING
 
 func updateActionExecutionQuery(opts *UpdateActionExecutionOpts) *sqlf.Query {
 	queryTemplate := updateActionExecutionQueryFmtstrSelect
-	return sqlf.Sprintf(queryTemplate, opts.CampaignPlanID, opts.ExecutionID)
+	return sqlf.Sprintf(queryTemplate, opts.PatchSetID, opts.ExecutionID)
 }
 
 // todo: this can be combined with the generic ListActions store method. This was just quicker for now as the count query needs the new handling as well
