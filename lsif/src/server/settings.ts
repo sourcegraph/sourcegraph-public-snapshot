@@ -9,10 +9,10 @@ export const LSIF_DUMP_MANAGER_URL = process.env.LSIF_DUMP_MANAGER_URL || 'http:
 /** Where on the file system to store LSIF files. */
 export const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
 
-/** The default page size for the upload endpoints. */
+/** The default number of results to return from the upload endpoints. */
 export const DEFAULT_UPLOAD_PAGE_SIZE = readEnvInt('DEFAULT_UPLOAD_PAGE_SIZE', 50)
 
-/** The default page size for the dumps endpoint. */
+/** The default number of results to return from the dumps endpoint. */
 export const DEFAULT_DUMP_PAGE_SIZE = readEnvInt('DEFAULT_DUMP_PAGE_SIZE', 50)
 
 /** The default number of location results to return when performing a find-references operation. */
