@@ -45,6 +45,7 @@ type PermsSyncer struct {
 		permsGap     *prometheus.GaugeVec
 		syncErrors   *prometheus.CounterVec
 		syncDuration *prometheus.HistogramVec
+		queueSize    prometheus.Gauge
 	}
 }
 
@@ -692,10 +693,16 @@ func (s *PermsSyncer) registerMetrics() {
 		Name:      "perms_syncer_sync_errors_total",
 		Help:      "Total number of permissions sync errors",
 	}, []string{"type"})
+	s.metrics.queueSize = promauto.NewGauge(prometheus.GaugeOpts{
+		Namespace: "src",
+		Subsystem: "repoupdater",
+		Name:      "perms_syncer_queue_size",
+		Help:      "The size of the sync request queue",
+	})
 }
 
-// collectMetricsFromDB periodically collecting metrics values against database.
-func (s *PermsSyncer) collectMetricsFromDB(ctx context.Context) {
+// collectMetrics periodically collecting metrics values from both database and memory objects.
+func (s *PermsSyncer) collectMetrics(ctx context.Context) {
 	ticker := time.NewTicker(time.Minute)
 	defer ticker.Stop()
 
@@ -716,6 +723,10 @@ func (s *PermsSyncer) collectMetricsFromDB(ctx context.Context) {
 		s.metrics.permsGap.WithLabelValues("user").Set(m.UsersPermsGapSeconds)
 		s.metrics.stalePerms.WithLabelValues("repo").Set(float64(m.ReposWithStalePerms))
 		s.metrics.permsGap.WithLabelValues("repo").Set(m.ReposPermsGapSeconds)
+
+		s.queue.mu.RLock()
+		s.metrics.queueSize.Set(float64(s.queue.Len()))
+		s.queue.mu.RUnlock()
 	}
 }
 
@@ -724,7 +735,7 @@ func (s *PermsSyncer) collectMetricsFromDB(ctx context.Context) {
 func (s *PermsSyncer) Run(ctx context.Context) {
 	go s.runSync(ctx)
 	go s.runSchedule(ctx)
-	go s.collectMetricsFromDB(ctx)
+	go s.collectMetrics(ctx)
 
 	<-ctx.Done()
 }

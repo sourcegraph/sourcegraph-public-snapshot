@@ -145,21 +145,34 @@ local reposSyncRequestsErrorRatePanel = makeErrorRatePanel(
     filter = 'type="repo"'
 );
 
+local queueSizePanel = common.makePanel(
+    title = 'Request queue size',
+    targets = [
+        prometheus.target(
+            'src_repoupdater_perms_syncer_queue_size',
+            legendFormat = 'Number of sync requests'
+        ),
+    ]
+);
+
 //
 // Dashboard Construction
 
 common.makeDashboard(
-    title = 'Permissions Sync'
+    title = 'Permissions'
 ).addRow(
-    title = 'Users permissions stats',
+    title = 'Users permissions sync stats',
     panels = [usersPermsGapPanel, usersWithStalePermsPanel, usersWithNoPermsPanel]
 ).addRow(
-    title = 'Users permissions sync',
+    title = '',
     panels = [usersSyncRequestsPanel, usersSyncRequestsDurationPercentilesPanel, usersSyncRequestsErrorRatePanel]
 ).addRow(
-    title = 'Repositories permissions stats',
+    title = 'Repositories permissions sync stats',
     panels = [reposPermsGapPanel, reposWithStalePermsPanel, reposWithNoPermsPanel]
 ).addRow(
-    title = 'Repositories permissions sync',
+    title = '',
     panels = [reposSyncRequestsPanel, reposSyncRequestsDurationPercentilesPanel, reposSyncRequestsErrorRatePanel]
+).addRow(
+    title = 'Syncer stats',
+    panels = [queueSizePanel]
 )
