@@ -24,7 +24,7 @@ export const UPDATE_QUEUE_SIZE_GAUGE_INTERVAL = readEnvInt('UPDATE_QUEUE_SIZE_GA
 /** The interval (in seconds) to run the resetStalledUploads task. */
 export const RESET_STALLED_UPLOADS_INTERVAL = readEnvInt('RESET_STALLED_UPLOADS_INTERVAL', 60)
 
-/** The maximum age (in seconds) that the an upload can be unlocked and in the `processing` state. */
+/** The maximum age (in seconds) that an upload can be unlocked and in the `processing` state. */
 export const STALLED_UPLOAD_MAX_AGE = readEnvInt('STALLED_UPLOAD_MAX_AGE', 5)
 
 /** The interval (in seconds) to invoke the cleanOldUploads task. */
