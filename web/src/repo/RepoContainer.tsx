@@ -16,7 +16,6 @@ import { makeRepoURI } from '../../../shared/src/util/url'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
 import { searchQueryForRepoRev, PatternTypeProps, CaseSensitivityProps } from '../search'
-import { queryUpdates } from '../search/input/QueryInput'
 import { EventLoggerProps } from '../tracking/eventLogger'
 import { RouteDescriptor } from '../util/contributions'
 import { parseBrowserRepoURL, ParsedRepoRev, parseRepoRev } from '../util/url'
@@ -29,6 +28,7 @@ import { RepositoryNotFoundPage } from './RepositoryNotFoundPage'
 import { ThemeProps } from '../../../shared/src/theme'
 import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
 import { RepoSettingsSideBarItem } from './settings/RepoSettingsSidebar'
+import { QueryState } from '../search/helpers'
 
 /**
  * Props passed to sub-routes of {@link RepoContainer}.
@@ -78,6 +78,7 @@ interface RepoContainerProps
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarItems: readonly RepoSettingsSideBarItem[]
     authenticatedUser: GQL.IUser | null
+    onNavbarQueryChange: (state: QueryState) => void
 }
 
 interface RepoRevContainerState extends ParsedRepoRev {
@@ -159,12 +160,14 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
         // Update resolved revision in state
         this.subscriptions.add(this.revResolves.subscribe(resolvedRevOrError => this.setState({ resolvedRevOrError })))
 
-        // Update header and other global state.
         this.subscriptions.add(
             parsedRouteChanges.subscribe(({ repoName, rev, rawRev }) => {
                 this.setState({ repoName, rev, rawRev })
-
-                queryUpdates.next(searchQueryForRepoRev(repoName, rev))
+                const query = searchQueryForRepoRev(repoName, rev)
+                this.props.onNavbarQueryChange({
+                    query,
+                    cursorPosition: query.length,
+                })
             })
         )
 
