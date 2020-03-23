@@ -69,7 +69,7 @@ func (x *actionExecutor) updateRepoStatus(repo ActionRepo, status ActionRepoStat
 	if status.FinishedAt.IsZero() {
 		status.FinishedAt = prev.FinishedAt
 	}
-	if status.Patch == (CampaignPlanPatch{}) {
+	if status.Patch == (PatchInput{}) {
 		status.Patch = prev.Patch
 	}
 	if status.Err == nil {
@@ -83,12 +83,12 @@ func (x *actionExecutor) updateRepoStatus(repo ActionRepo, status ActionRepoStat
 	}
 }
 
-func (x *actionExecutor) allPatches() []CampaignPlanPatch {
-	patches := make([]CampaignPlanPatch, 0, len(x.repos))
+func (x *actionExecutor) allPatches() []PatchInput {
+	patches := make([]PatchInput, 0, len(x.repos))
 	x.reposMu.Lock()
 	defer x.reposMu.Unlock()
 	for _, status := range x.repos {
-		if patch := status.Patch; patch != (CampaignPlanPatch{}) && status.Err == nil {
+		if patch := status.Patch; patch != (PatchInput{}) && status.Err == nil {
 			patches = append(patches, status.Patch)
 		}
 	}

@@ -19,7 +19,7 @@ Usage:
 The commands are:
 
 	create            creates campaigns
-	plans             manages campaign plans
+	patchsets         manages patch sets
 	list              lists campaigns
 	add-changesets    adds changesets of a given repository to a campaign
 

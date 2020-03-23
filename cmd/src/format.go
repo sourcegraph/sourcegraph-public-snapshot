@@ -94,14 +94,14 @@ func parseTemplate(text string) (*template.Template, error) {
 		"buildVersionHasNewSearchInterface": searchTemplateFuncs["buildVersionHasNewSearchInterface"],
 		"renderResult":                      searchTemplateFuncs["renderResult"],
 
-		// `src campaign plans create-from-patches`
-		"friendlyCampaignPlanCreatedMessage": func(campaignPlan CampaignPlan) string {
+		// `src campaign patchset create-from-patches`
+		"friendlyPatchSetCreatedMessage": func(patchSet PatchSet) string {
 			var buf bytes.Buffer
 			fmt.Fprintln(&buf)
-			fmt.Fprintln(&buf, color.HiGreenString("✔  Campaign plan saved."), "\n\nPreview and create this campaign on Sourcegraph using one of the following options:")
+			fmt.Fprintln(&buf, color.HiGreenString("✔  Patch set saved."), "\n\nPreview and create a campaign on Sourcegraph using one of the following options:")
 			fmt.Fprintln(&buf)
-			fmt.Fprintln(&buf, " ", color.HiCyanString("▶ Web:"), campaignPlan.PreviewURL, color.HiBlackString("or"))
-			cliCommand := fmt.Sprintf("src campaigns create -plan=%s -branch=DESIRED-BRANCH-NAME", campaignPlan.ID)
+			fmt.Fprintln(&buf, " ", color.HiCyanString("▶ Web:"), patchSet.PreviewURL, color.HiBlackString("or"))
+			cliCommand := fmt.Sprintf("src campaigns create -patchset=%s -branch=DESIRED-BRANCH-NAME", patchSet.ID)
 			fmt.Fprintln(&buf, " ", color.HiCyanString("▶ CLI:"), cliCommand)
 
 			// Hacky to do this in a formatting helper, but better than
@@ -112,14 +112,14 @@ func parseTemplate(text string) (*template.Template, error) {
 				return buf.String()
 			}
 
-			supportsUpdatingPlan, err := sourcegraphVersionCheck(version, ">= 3.13-0", "2020-02-14")
+			supportsUpdatingPatchSet, err := sourcegraphVersionCheck(version, ">= 3.13-0", "2020-02-14")
 			if err != nil {
 				return buf.String()
 			}
 
-			if supportsUpdatingPlan {
-				fmt.Fprintln(&buf, "\nTo update an existing campaign using this campaign plan:")
-				fmt.Fprintln(&buf, "\n ", color.HiCyanString("▶ Web:"), strings.Replace(campaignPlan.PreviewURL, "/new", "/update", 1))
+			if supportsUpdatingPatchSet {
+				fmt.Fprintln(&buf, "\nTo update an existing campaign using this patch set:")
+				fmt.Fprintln(&buf, "\n ", color.HiCyanString("▶ Web:"), strings.Replace(patchSet.PreviewURL, "/new", "/update", 1))
 			}
 
 			return buf.String()

@@ -29,7 +29,7 @@ type ActionRepoStatus struct {
 	StartedAt  time.Time
 	FinishedAt time.Time
 
-	Patch CampaignPlanPatch
+	Patch PatchInput
 	Err   error
 }
 
@@ -41,7 +41,7 @@ func (x *actionExecutor) do(ctx context.Context, repo ActionRepo) (err error) {
 	} else if ok {
 		status := ActionRepoStatus{Cached: true, Patch: result}
 		x.updateRepoStatus(repo, status)
-		x.logger.RepoCacheHit(repo, status.Patch != CampaignPlanPatch{})
+		x.logger.RepoCacheHit(repo, status.Patch != PatchInput{})
 		return nil
 	}
 
@@ -65,7 +65,7 @@ func (x *actionExecutor) do(ctx context.Context, repo ActionRepo) (err error) {
 		FinishedAt: time.Now(),
 	}
 	if len(patch) > 0 {
-		status.Patch = CampaignPlanPatch{
+		status.Patch = PatchInput{
 			Repository:   repo.ID,
 			BaseRevision: repo.Rev,
 			BaseRef:      repo.BaseRef,

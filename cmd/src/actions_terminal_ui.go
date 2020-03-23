@@ -77,7 +77,7 @@ func newTerminalUI(keepLogs bool) func(reposMap map[ActionRepo]ActionRepoStatus)
 					logFileText = "" // don't show twice
 				} else {
 					statusColor = color.GreenString
-					if status.Patch != (CampaignPlanPatch{}) && status.Patch.Patch != "" {
+					if status.Patch != (PatchInput{}) && status.Patch.Patch != "" {
 						fileDiffs, err := diff.ParseMultiFileDiff([]byte(status.Patch.Patch))
 						if err != nil {
 							panic(err)

@@ -37,7 +37,7 @@ type ActionStep struct {
 	ImageContentDigest string
 }
 
-type CampaignPlanPatch struct {
+type PatchInput struct {
 	Repository   string `json:"repository"`
 	BaseRevision string `json:"baseRevision"`
 	BaseRef      string `json:"baseRef"`
@@ -64,17 +64,17 @@ Examples:
 
 	$ src actions exec -f ~/run-gofmt.json
 
-  Execute an action and create a campaign plan from the patches it produced:
+  Execute an action and create a patch set from the produced patches:
 
-	$ src actions exec -f ~/run-gofmt.json -create-plan
+	$ src actions exec -f ~/run-gofmt.json -create-patchset
 
   Verbosely execute an action and keep the logs available for debugging:
 
 	$ src -v actions exec -keep-logs -f ~/run-gofmt.json
 
-  Execute an action and pipe the patches it produced to 'src campaign plan create-from-patches':
+  Execute an action and pipe the patches it produced to 'src campaign patchset create-from-patches':
 
-	$ src actions exec -f ~/run-gofmt.json | src campaign plan create-from-patches
+	$ src actions exec -f ~/run-gofmt.json | src campaign patchset create-from-patches
 
   Read and execute an action definition from standard input:
 
@@ -138,8 +138,8 @@ Format of the action JSON files:
 		keepLogsFlag    = flagSet.Bool("keep-logs", false, "Do not remove execution log files when done.")
 		timeoutFlag     = flagSet.Duration("timeout", defaultTimeout, "The maximum duration a single action run can take (excluding the building of Docker images).")
 
-		createPlanFlag      = flagSet.Bool("create-plan", false, "Create a campaign plan from the produced set of patches. When the execution of the action fails in a single repository a prompt will ask to confirm or reject the campaign plan creation.")
-		forceCreatePlanFlag = flagSet.Bool("force-create-plan", false, "Force creation of campaign plan from the produced set of patches, without asking for confirmation even when the execution of the action failed for a subset of repositories.")
+		createPatchSetFlag      = flagSet.Bool("create-patchset", false, "Create a patch set from the produced set of patches. When the execution of the action fails in a single repository a prompt will ask to confirm or reject the patch set creation.")
+		forceCreatePatchSetFlag = flagSet.Bool("force-create-patchset", false, "Force creation of patch set from the produced set of patches, without asking for confirmation even when the execution of the action failed for a subset of repositories.")
 
 		apiFlags = newAPIFlags(flagSet)
 	)
@@ -238,7 +238,7 @@ Format of the action JSON files:
 			os.Exit(1)
 		}
 
-		if !*createPlanFlag && !*forceCreatePlanFlag {
+		if !*createPatchSetFlag && !*forceCreatePatchSetFlag {
 			if err != nil {
 				logger.ActionFailed(err, patches)
 				os.Exit(1)
@@ -256,13 +256,13 @@ Format of the action JSON files:
 				os.Exit(1)
 			}
 
-			if !*forceCreatePlanFlag {
+			if !*forceCreatePatchSetFlag {
 				canInput := isatty.IsTerminal(os.Stdin.Fd()) || isatty.IsCygwinTerminal(os.Stdin.Fd())
 				if !canInput {
 					return err
 				}
 
-				c, _ := askForConfirmation(fmt.Sprintf("Create a campaign plan for the produced patches anyway?"))
+				c, _ := askForConfirmation(fmt.Sprintf("Create a patch set for the produced patches anyway?"))
 				if !c {
 					return err
 				}
@@ -271,12 +271,12 @@ Format of the action JSON files:
 			logger.ActionSuccess(patches, false)
 		}
 
-		tmpl, err := parseTemplate("{{friendlyCampaignPlanCreatedMessage .}}")
+		tmpl, err := parseTemplate("{{friendlyPatchSetCreatedMessage .}}")
 		if err != nil {
 			return err
 		}
 
-		return createCampaignPlanFromPatches(apiFlags, patches, tmpl, 100)
+		return createPatchSetFromPatches(apiFlags, patches, tmpl, 100)
 	}
 
 	// Register the command.

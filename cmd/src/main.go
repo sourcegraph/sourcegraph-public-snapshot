@@ -34,7 +34,7 @@ The commands are:
 	config          manages global, org, and user settings
 	extsvc          manages external services
 	extensions,ext  manages extensions (experimental)
-	actions         runs actions to generate campaign plans (experimental)
+	actions         runs actions to generate patch sets (experimental)
 	campaigns       manages campaigns (experimental)
 	lsif            manages LSIF data
 	version         display and compare the src-cli version against the recommended version for your instance

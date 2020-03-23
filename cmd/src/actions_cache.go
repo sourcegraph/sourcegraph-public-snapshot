@@ -18,8 +18,8 @@ type actionExecutionCacheKey struct {
 }
 
 type actionExecutionCache interface {
-	get(ctx context.Context, key actionExecutionCacheKey) (result CampaignPlanPatch, ok bool, err error)
-	set(ctx context.Context, key actionExecutionCacheKey, result CampaignPlanPatch) error
+	get(ctx context.Context, key actionExecutionCacheKey) (result PatchInput, ok bool, err error)
+	set(ctx context.Context, key actionExecutionCacheKey, result PatchInput) error
 }
 
 type actionExecutionDiskCache struct {
@@ -38,10 +38,10 @@ func (c actionExecutionDiskCache) cacheFilePath(key actionExecutionCacheKey) (st
 	return filepath.Join(c.dir, keyString+".json"), nil
 }
 
-func (c actionExecutionDiskCache) get(ctx context.Context, key actionExecutionCacheKey) (CampaignPlanPatch, bool, error) {
+func (c actionExecutionDiskCache) get(ctx context.Context, key actionExecutionCacheKey) (PatchInput, bool, error) {
 	path, err := c.cacheFilePath(key)
 	if err != nil {
-		return CampaignPlanPatch{}, false, err
+		return PatchInput{}, false, err
 	}
 
 	data, err := ioutil.ReadFile(path)
@@ -49,22 +49,22 @@ func (c actionExecutionDiskCache) get(ctx context.Context, key actionExecutionCa
 		if os.IsNotExist(err) {
 			err = nil // treat as not-found
 		}
-		return CampaignPlanPatch{}, false, err
+		return PatchInput{}, false, err
 	}
 
-	var result CampaignPlanPatch
+	var result PatchInput
 	if err := json.Unmarshal(data, &result); err != nil {
 		// Delete the invalid data to avoid causing an error for next time.
 		if err := os.Remove(path); err != nil {
-			return CampaignPlanPatch{}, false, errors.Wrap(err, "while deleting cache file with invalid JSON")
+			return PatchInput{}, false, errors.Wrap(err, "while deleting cache file with invalid JSON")
 		}
-		return CampaignPlanPatch{}, false, errors.Wrapf(err, "reading cache file %s", path)
+		return PatchInput{}, false, errors.Wrapf(err, "reading cache file %s", path)
 	}
 
 	return result, true, nil
 }
 
-func (c actionExecutionDiskCache) set(ctx context.Context, key actionExecutionCacheKey, result CampaignPlanPatch) error {
+func (c actionExecutionDiskCache) set(ctx context.Context, key actionExecutionCacheKey, result PatchInput) error {
 	data, err := json.Marshal(result)
 	if err != nil {
 		return err
@@ -86,10 +86,10 @@ func (c actionExecutionDiskCache) set(ctx context.Context, key actionExecutionCa
 // retrieve cache entries.
 type actionExecutionNoOpCache struct{}
 
-func (actionExecutionNoOpCache) get(ctx context.Context, key actionExecutionCacheKey) (result CampaignPlanPatch, ok bool, err error) {
-	return CampaignPlanPatch{}, false, nil
+func (actionExecutionNoOpCache) get(ctx context.Context, key actionExecutionCacheKey) (result PatchInput, ok bool, err error) {
+	return PatchInput{}, false, nil
 }
 
-func (actionExecutionNoOpCache) set(ctx context.Context, key actionExecutionCacheKey, result CampaignPlanPatch) error {
+func (actionExecutionNoOpCache) set(ctx context.Context, key actionExecutionCacheKey, result PatchInput) error {
 	return nil
 }

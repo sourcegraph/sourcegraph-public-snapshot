@@ -62,7 +62,7 @@ func (a *actionLogger) Warnf(format string, args ...interface{}) {
 	}
 }
 
-func (a *actionLogger) ActionFailed(err error, patches []CampaignPlanPatch) {
+func (a *actionLogger) ActionFailed(err error, patches []PatchInput) {
 	if !a.verbose {
 		return
 	}
@@ -84,7 +84,7 @@ func (a *actionLogger) ActionFailed(err error, patches []CampaignPlanPatch) {
 	}
 }
 
-func (a *actionLogger) ActionSuccess(patches []CampaignPlanPatch, newLines bool) {
+func (a *actionLogger) ActionSuccess(patches []PatchInput, newLines bool) {
 	if a.verbose {
 		fmt.Fprintln(os.Stderr)
 		format := "✔  Action produced %d patches."

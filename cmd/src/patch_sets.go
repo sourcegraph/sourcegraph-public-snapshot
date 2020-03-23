@@ -5,34 +5,34 @@ import (
 	"fmt"
 )
 
-var campaignPlansCommands commander
+var campaignPatchSetsCommands commander
 
 func init() {
-	usage := `'src campaigns plans' creates and previews campaign plans (which can be used to create campaigns and changesets).
+	usage := `'src campaigns patchsets' creates and previews patch sets (which can be used to create campaigns and changesets).
 
 EXPERIMENTAL: Campaigns are experimental functionality on Sourcegraph and in the 'src' tool.
 
 Usage:
 
-	src campaigns plans command [command options]
+	src campaigns patchsets command [command options]
 
 The commands are:
 
-	create-from-patches  creates plan from patches to repository branches
+	create-from-patches  creates patch set from patches to repository branches
 
-Use "src campaigns plans [command] -h" for more information about a command.
+Use "src campaigns patchsets [command] -h" for more information about a command.
 `
 
-	flagSet := flag.NewFlagSet("plans", flag.ExitOnError)
+	flagSet := flag.NewFlagSet("patchsets", flag.ExitOnError)
 	handler := func(args []string) error {
-		campaignPlansCommands.run(flagSet, "src campaigns plans", usage, args)
+		campaignPatchSetsCommands.run(flagSet, "src campaigns patchsets", usage, args)
 		return nil
 	}
 
 	// Register the command.
 	campaignsCommands = append(campaignsCommands, &command{
 		flagSet: flagSet,
-		aliases: []string{"plan"},
+		aliases: []string{"patchset"},
 		handler: handler,
 		usageFunc: func() {
 			fmt.Println(usage)
@@ -40,11 +40,11 @@ Use "src campaigns plans [command] -h" for more information about a command.
 	})
 }
 
-func campaignPlanFragment(first int) string {
+func patchSetFragment(first int) string {
 	return fmt.Sprintf(`
-fragment CampaignPlanFields on CampaignPlan {
+fragment PatchSetFields on PatchSet {
     id
-    changesets(first: %d) {
+    patches(first: %d) {
         nodes {
             repository {
                 id
@@ -128,7 +128,7 @@ type FileDiffs struct {
 	Nodes    []FileDiff `json:"nodes"`
 }
 
-type ChangesetPlan struct {
+type Patch struct {
 	Repository struct {
 		ID   string `json:"id"`
 		Name string `json:"name"`
@@ -139,11 +139,11 @@ type ChangesetPlan struct {
 	} `json:"diff"`
 }
 
-type CampaignPlan struct {
-	ID         string `json:"id"`
-	Changesets struct {
-		Nodes      []ChangesetPlan `json:"nodes"`
-		TotalCount int             `json:"totalCount"`
-	} `json:"changesets"`
+type PatchSet struct {
+	ID      string `json:"id"`
+	Patches struct {
+		Nodes      []Patch `json:"nodes"`
+		TotalCount int     `json:"totalCount"`
+	} `json:"patches"`
 	PreviewURL string `json:"previewURL"`
 }
