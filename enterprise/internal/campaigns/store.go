@@ -2475,10 +2475,10 @@ SET
 WHERE %s
 `
 
-// GetChangesetExternalID allows us to find the external id for GitHub pull requests based on
-// a slice of head refs. We need this in order to match incoming status webhooks to pull requests as
+// GetChangesetExternalIDs allows us to find the external ids for pull requests based on
+// a slice of head refs. We need this in order to match incoming webhooks to pull requests as
 // the only information they provide is the remote branch
-func (s *Store) GetChangesetExternalID(ctx context.Context, spec api.ExternalRepoSpec, refs []string) ([]string, error) {
+func (s *Store) GetChangesetExternalIDs(ctx context.Context, spec api.ExternalRepoSpec, refs []string) ([]string, error) {
 	queryFmtString := `
 	SELECT cs.external_id FROM changesets cs
 	JOIN repo r ON cs.repo_id = r.id

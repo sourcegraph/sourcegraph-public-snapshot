@@ -423,13 +423,13 @@ func testStore(db *sql.DB) func(*testing.T) {
 				}
 			})
 
-			t.Run("GetChangesetExternalID", func(t *testing.T) {
+			t.Run("GetChangesetExternalIDs", func(t *testing.T) {
 				spec := api.ExternalRepoSpec{
 					ID:          "external-id",
 					ServiceType: "github",
 					ServiceID:   "https://github.com/",
 				}
-				have, err := s.GetChangesetExternalID(ctx, spec, []string{"campaigns/test"})
+				have, err := s.GetChangesetExternalIDs(ctx, spec, []string{"campaigns/test"})
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -439,13 +439,13 @@ func testStore(db *sql.DB) func(*testing.T) {
 				}
 			})
 
-			t.Run("GetChangesetExternalID no branch", func(t *testing.T) {
+			t.Run("GetChangesetExternalIDs no branch", func(t *testing.T) {
 				spec := api.ExternalRepoSpec{
 					ID:          "external-id",
 					ServiceType: "github",
 					ServiceID:   "https://github.com/",
 				}
-				have, err := s.GetChangesetExternalID(ctx, spec, []string{"foo"})
+				have, err := s.GetChangesetExternalIDs(ctx, spec, []string{"foo"})
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -455,13 +455,13 @@ func testStore(db *sql.DB) func(*testing.T) {
 				}
 			})
 
-			t.Run("GetChangesetExternalID invalid external-id", func(t *testing.T) {
+			t.Run("GetChangesetExternalIDs invalid external-id", func(t *testing.T) {
 				spec := api.ExternalRepoSpec{
 					ID:          "invalid",
 					ServiceType: "github",
 					ServiceID:   "https://github.com/",
 				}
-				have, err := s.GetChangesetExternalID(ctx, spec, []string{"campaigns/test"})
+				have, err := s.GetChangesetExternalIDs(ctx, spec, []string{"campaigns/test"})
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -471,13 +471,13 @@ func testStore(db *sql.DB) func(*testing.T) {
 				}
 			})
 
-			t.Run("GetChangesetExternalID invalid external service id", func(t *testing.T) {
+			t.Run("GetChangesetExternalIDs invalid external service id", func(t *testing.T) {
 				spec := api.ExternalRepoSpec{
 					ID:          "external-id",
 					ServiceType: "github",
 					ServiceID:   "invalid",
 				}
-				have, err := s.GetChangesetExternalID(ctx, spec, []string{"campaigns/test"})
+				have, err := s.GetChangesetExternalIDs(ctx, spec, []string{"campaigns/test"})
 				if err != nil {
 					t.Fatal(err)
 				}

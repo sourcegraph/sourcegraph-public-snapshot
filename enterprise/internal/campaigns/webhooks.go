@@ -372,9 +372,9 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, externalServiceID stri
 			ServiceType: "github",
 		}
 
-		ids, err := h.Store.GetChangesetExternalID(ctx, spec, refs)
+		ids, err := h.Store.GetChangesetExternalIDs(ctx, spec, refs)
 		if err != nil {
-			log15.Error("Error executing GetChangesetExternalID", "err", err)
+			log15.Error("Error executing GetChangesetExternalIDs", "err", err)
 			return nil, nil
 		}
 
