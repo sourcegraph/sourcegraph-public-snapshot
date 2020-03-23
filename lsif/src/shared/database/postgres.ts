@@ -123,10 +123,11 @@ function waitForMigrations(connection: Connection, logger: Logger): Promise<void
     }
 
     return pRetry(check, {
-        factor: 1,
-        retries: settings.MAX_SCHEMA_POLL_RETRIES,
-        minTimeout: settings.SCHEMA_POLL_INTERVAL * 1000,
-        maxTimeout: settings.SCHEMA_POLL_INTERVAL * 1000,
+        factor: 1.5,
+        randomize: true,
+        retries: settings.MAX_SCHEMA_CHECK_RETRIES,
+        minTimeout: settings.MIN_SCHEMA_CHECK_RETRY_TIMEOUT * 1000,
+        maxTimeout: settings.MAX_SCHEMA_CHECK_RETRY_TIMEOUT * 1000,
     })
 }
 

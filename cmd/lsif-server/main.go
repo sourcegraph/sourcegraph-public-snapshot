@@ -69,17 +69,17 @@ func makeProcfile(numServers, numDumpManagers, numDumpProcessors int64) string {
 	}
 
 	if numServers > 0 {
-		addProcess("lsif-server", "node /lsif/out/server/server.js")
+		addProcess("lsif-server", "node /lsif/out/cmd/server/server.js")
 	}
 
 	if numDumpManagers > 0 {
-		addProcess("lsif-dump-manager", "node /lsif/out/dump-manager/dump-manager.js")
+		addProcess("lsif-dump-manager", "node /lsif/out/cmd/dump-manager/dump-manager.js")
 	}
 
 	for i := 0; i < int(numDumpProcessors); i++ {
 		addProcess(
 			fmt.Sprintf("lsif-dump-processor-%d", i),
-			fmt.Sprintf("env METRICS_PORT=%d node /lsif/out/dump-processor/dump-processor.js", dumpProcessorPort+i),
+			fmt.Sprintf("env METRICS_PORT=%d node /lsif/out/cmd/dump-processor/dump-processor.js", dumpProcessorPort+i),
 		)
 	}
 

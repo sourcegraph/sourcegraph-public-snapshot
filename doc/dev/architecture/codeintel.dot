@@ -59,17 +59,17 @@ digraph architecture {
         lsif_server [
             label="server"
             fillcolor="3"
-            URL="https://github.com/sourcegraph/sourcegraph/tree/master/lsif/src/server"
+            URL="https://github.com/sourcegraph/sourcegraph/tree/master/lsif/src/cmd/server"
         ]
         lsif_dump_processor [
             label="dump processor"
             fillcolor="4"
-            URL="https://github.com/sourcegraph/sourcegraph/tree/master/lsif/src/dump-processor"
+            URL="https://github.com/sourcegraph/sourcegraph/tree/master/lsif/src/cmd/dump-processor"
         ]
         lsif_dump_manager [
             label="dump manager"
             fillcolor="5"
-            URL="https://github.com/sourcegraph/sourcegraph/tree/master/lsif/src/dump-manager"
+            URL="https://github.com/sourcegraph/sourcegraph/tree/master/lsif/src/cmd/dump-manager"
         ]
     }
 
