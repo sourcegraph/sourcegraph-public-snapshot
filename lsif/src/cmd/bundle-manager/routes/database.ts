@@ -15,7 +15,7 @@ import * as validation from '../../../shared/api/middleware/validation'
 /**
  * Create a router containing the SQLite query endpoints.
  *
- * For now, each public method of Database (see lsif/src/cmd/dump-manager/backend/database.ts) is
+ * For now, each public method of Database (see lsif/src/cmd/bundle-manager/backend/database.ts) is
  * exposed at `/<database-id>/<method>`.
  *
  * @param logger The logger instance.

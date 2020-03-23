@@ -24,7 +24,7 @@ type lsifRequest struct {
 	query  queryValues
 	body   io.ReadCloser
 
-	// (Optional) used in routing to select the "hot" lsif-server
+	// (Optional) used in routing to select the "hot" lsif-api
 	// that was used in recent requests for similar data. Requests
 	// that are likely to open the same dump should hit the same
 	// server so that the SQLite database is already in the cache.
@@ -36,7 +36,7 @@ type lsifResponseMeta struct {
 	nextURL    string
 }
 
-// do will make a request to LSIF server. This method will return an error if the request
+// do will make a request to LSIF API. This method will return an error if the request
 // cannot be made or the status code is 400 or 500-level. If a non-nil payload is given,
 // the request body will be unmarshalled into it.
 func (c *Client) do(ctx context.Context, lsifRequest *lsifRequest, payload interface{}) (*lsifResponseMeta, error) {

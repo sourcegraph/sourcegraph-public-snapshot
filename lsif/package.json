@@ -1,5 +1,5 @@
 {
-  "name": "lsif-server",
+  "name": "lsif",
   "description": "LSIF-based precise code intelligence",
   "author": "Sourcegraph",
   "license": "MIT",
@@ -9,9 +9,9 @@
     "test": "jest",
     "tslint": "../node_modules/.bin/tslint -p tsconfig.json",
     "eslint": "../node_modules/.bin/eslint --cache 'src/**/*.ts?(x)'",
-    "run:server": "tsc-watch --onSuccess \"node -r source-map-support/register out/cmd/server/server.js\" --noClear",
-    "run:dump-manager": "tsc-watch --onSuccess \"node -r source-map-support/register out/cmd/dump-manager/dump-manager.js\" --noClear",
-    "run:dump-processor": "tsc-watch --onSuccess \"node -r source-map-support/register out/cmd/dump-processor/dump-processor.js\" --noClear"
+    "run:api": "tsc-watch --onSuccess \"node -r source-map-support/register out/cmd/api/api.js\" --noClear",
+    "run:bundle-manager": "tsc-watch --onSuccess \"node -r source-map-support/register out/cmd/bundle-manager/manager.js\" --noClear",
+    "run:worker": "tsc-watch --onSuccess \"node -r source-map-support/register out/cmd/worker/worker.js\" --noClear"
   },
   "dependencies": {
     "async-middleware": "^1.2.1",

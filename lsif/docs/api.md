@@ -1,6 +1,6 @@
-# LSIF server endpoints
+# LSIF API endpoints
 
-The LSIF server endpoints are documented as an [OpenAPI v3](https://swagger.io/docs/specification/about/) document [api.yaml](./api.yaml). This document can be viewed locally via docker by running the following command from this directory (or a parent directory if the host path supplied to `-v` changes accordingly).
+The LSIF API endpoints are documented as an [OpenAPI v3](https://swagger.io/docs/specification/about/) document [api.yaml](./api.yaml). This document can be viewed locally via docker by running the following command from this directory (or a parent directory if the host path supplied to `-v` changes accordingly).
 
 ```bash
 docker run \

@@ -30,7 +30,7 @@ import * as fs from 'mz/fs'
 const pipeline = promisify(_pipeline)
 
 /**
- * Runs the processor that converts LSIF uploads.
+ * Runs the worker that converts LSIF uploads.
  *
  * @param logger The logger instance.
  */
@@ -42,7 +42,7 @@ async function main(logger: Logger): Promise<void> {
     const fetchConfiguration = await waitForConfiguration(logger)
 
     // Configure distributed tracing
-    const tracer = createTracer('lsif-dump-processor', fetchConfiguration())
+    const tracer = createTracer('lsif-worker', fetchConfiguration())
 
     // Ensure storage roots exist
     await ensureDirectory(settings.STORAGE_ROOT)
@@ -79,10 +79,10 @@ async function main(logger: Logger): Promise<void> {
                 logAndTraceCall(ctx, 'Converting upload', async (ctx: TracingContext) => {
                     const sourcePath = path.join(settings.STORAGE_ROOT, uuid.v4())
                     const targetPath = path.join(settings.STORAGE_ROOT, uuid.v4())
-                    const url = new URL(`/uploads/${upload.id}`, settings.LSIF_DUMP_MANAGER_URL).href
+                    const url = new URL(`/uploads/${upload.id}`, settings.LSIF_BUNDLE_MANAGER_URL).href
 
                     try {
-                        await logAndTraceCall(ctx, 'Downloading raw dump from dump manager', () =>
+                        await logAndTraceCall(ctx, 'Downloading raw dump from bundle manager', () =>
                             pipeline(got.stream.get(url), fs.createWriteStream(sourcePath))
                         )
 
@@ -98,17 +98,17 @@ async function main(logger: Logger): Promise<void> {
                         )
 
                         // Upload the database where it cna be found by the server
-                        await logAndTraceCall(ctx, 'Uploading converted dump to dump manager', () =>
+                        await logAndTraceCall(ctx, 'Uploading converted dump to bundle manager', () =>
                             pipeline(
                                 fs.createReadStream(targetPath),
-                                got.stream.post(new URL(`/dbs/${upload.id}`, settings.LSIF_DUMP_MANAGER_URL).href)
+                                got.stream.post(new URL(`/dbs/${upload.id}`, settings.LSIF_BUNDLE_MANAGER_URL).href)
                             )
                         )
 
                         // Remove overlapping dumps that would cause a unique index error once this upload has
                         // transitioned into the completed state. As this is done in a transaction, we do not
-                        // delete the files on disk right away. These files will be cleaned up by a dump
-                        // processor in a future cleanup task.
+                        // delete the files on disk right away. These files will be cleaned up by a worker in
+                        // a future cleanup task.
                         await dumpManager.deleteOverlappingDumps(
                             upload.repositoryId,
                             upload.commit,
@@ -160,7 +160,7 @@ async function main(logger: Logger): Promise<void> {
 }
 
 // Initialize logger
-const appLogger = createLogger('lsif-dump-processor')
+const appLogger = createLogger('lsif-worker')
 
 // Launch!
 main(appLogger).catch(error => {

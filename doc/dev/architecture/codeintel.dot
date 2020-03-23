@@ -56,20 +56,20 @@ digraph architecture {
         graph [style="dotted"]
         node [fillcolor="2"]
 
-        lsif_server [
-            label="server"
+        lsif_api [
+            label="api"
             fillcolor="3"
-            URL="https://github.com/sourcegraph/sourcegraph/tree/master/lsif/src/cmd/server"
+            URL="https://github.com/sourcegraph/sourcegraph/tree/master/lsif/src/cmd/api"
         ]
-        lsif_dump_processor [
-            label="dump processor"
+        lsif_worker [
+            label="worker"
             fillcolor="4"
-            URL="https://github.com/sourcegraph/sourcegraph/tree/master/lsif/src/cmd/dump-processor"
+            URL="https://github.com/sourcegraph/sourcegraph/tree/master/lsif/src/cmd/worker"
         ]
-        lsif_dump_manager [
-            label="dump manager"
+        lsif_bundle_manager [
+            label="bundle manager"
             fillcolor="5"
-            URL="https://github.com/sourcegraph/sourcegraph/tree/master/lsif/src/cmd/dump-manager"
+            URL="https://github.com/sourcegraph/sourcegraph/tree/master/lsif/src/cmd/bundle-manager"
         ]
     }
 
@@ -84,21 +84,21 @@ digraph architecture {
     }
 
     frontend_graphqlbackend -> {
-        lsif_server
+        lsif_api
     } [
         fillcolor="1"
     ]
 
-    lsif_server -> {
-        lsif_dump_manager,
+    lsif_api -> {
+        lsif_bundle_manager,
         postgres,
         frontend_config
     } [
         fillcolor="3"
     ]
 
-    lsif_dump_processor -> {
-        lsif_dump_manager,
+    lsif_worker -> {
+        lsif_bundle_manager,
         postgres,
         frontend_gitserver_proxy,
         frontend_config
@@ -106,8 +106,8 @@ digraph architecture {
         fillcolor="4"
     ]
 
-    lsif_dump_manager -> {
-        lsif_server,
+    lsif_bundle_manager -> {
+        lsif_api,
         volume,
         postgres,
         frontend_config
