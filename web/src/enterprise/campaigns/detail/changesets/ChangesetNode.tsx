@@ -1,15 +1,13 @@
 import * as H from 'history'
 import {
     IExternalChangeset,
-    IChangesetPlan,
     ChangesetReviewState,
-    IFileDiff,
-    IPreviewFileDiff,
     ChangesetState,
     ChangesetCheckState,
+    IPatch,
 } from '../../../../../../shared/src/graphql/schema'
 import Octicon, { Diff } from '@primer/octicons-react'
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import {
     changesetReviewStateColors,
     changesetReviewStateIcons,
@@ -26,7 +24,12 @@ import { ThemeProps } from '../../../../../../shared/src/theme'
 import { Collapsible } from '../../../../components/Collapsible'
 import { DiffStat } from '../../../../components/diff/DiffStat'
 import { FileDiffNode } from '../../../../components/diff/FileDiffNode'
-import { publishChangeset as _publishChangeset, syncChangeset } from '../backend'
+import {
+    publishChangeset as _publishChangeset,
+    syncChangeset,
+    queryExternalChangesetFileDiffs,
+    queryPatchFileDiffs,
+} from '../backend'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Subject } from 'rxjs'
 import ErrorIcon from 'mdi-react/ErrorIcon'
@@ -35,14 +38,24 @@ import { ChangesetLabel } from './ChangesetLabel'
 import classNames from 'classnames'
 import SyncIcon from 'mdi-react/SyncIcon'
 import { parseISO, formatDistance } from 'date-fns'
+import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
+import { Hoverifier } from '@sourcegraph/codeintellify'
+import { RepoSpec, RevSpec, FileSpec, ResolvedRevSpec } from '../../../../../../shared/src/util/url'
+import { HoverMerged } from '../../../../../../shared/src/api/client/types/hover'
+import { ActionItemAction } from '../../../../../../shared/src/actions/ActionItem'
+import { FileDiffConnection } from '../../../../components/diff/FileDiffConnection'
+import { FilteredConnectionQueryArgs } from '../../../../components/FilteredConnection'
 
 export interface ChangesetNodeProps extends ThemeProps {
-    node: IExternalChangeset | IChangesetPlan
+    node: IExternalChangeset | IPatch
     campaignUpdates?: Subject<void>
     history: H.History
     location: H.Location
-    /** Shows the publish button for ChangesetPlans */
+    /** Shows the publish button for patches */
     enablePublishing: boolean
+    extensionInfo?: {
+        hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>
+    } & ExtensionsControllerProps
 
     /** For testing only */
     _now?: Date
@@ -55,11 +68,12 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
     history,
     location,
     enablePublishing,
+    extensionInfo,
     _now,
 }) => {
     const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null)
     const [isPublishing, setIsPublishing] = useState<boolean>()
-    const publicationEnqueued = node.__typename === 'ChangesetPlan' && node.publicationEnqueued
+    const publicationEnqueued = node.__typename === 'Patch' && node.publicationEnqueued
     useEffect(() => {
         setIsPublishing(publicationEnqueued)
     }, [publicationEnqueued])
@@ -99,7 +113,6 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
         }
     }
     const fileDiffs = node.diff?.fileDiffs
-    const fileDiffNodes: (IFileDiff | IPreviewFileDiff)[] | undefined = fileDiffs ? fileDiffs.nodes : undefined
     const ChangesetStateIcon =
         node.__typename === 'ExternalChangeset'
             ? changesetStateIcons[node.state]
@@ -165,11 +178,11 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                         </div>
                     )}
                     <div>
-                        {node.__typename === 'ChangesetPlan' && <Octicon icon={Diff} className="icon-inline mr-2" />}
+                        {node.__typename === 'Patch' && <Octicon icon={Diff} className="icon-inline mr-2" />}
                         <strong>
                             <Link
                                 to={node.repository.url}
-                                className={classNames(node.__typename === 'ChangesetPlan' && 'text-muted')}
+                                className={classNames(node.__typename === 'Patch' && 'text-muted')}
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >
@@ -211,7 +224,7 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                     />
                 )}
             </div>
-            {enablePublishing && node.__typename === 'ChangesetPlan' && (
+            {enablePublishing && node.__typename === 'Patch' && (
                 <>
                     {publishError && <ErrorIcon data-tooltip={publishError.message} className="ml-2" />}
                     <button
@@ -227,26 +240,62 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
             )}
         </div>
     )
+
+    /** Fetches the file diffs for the changeset */
+    const queryFileDiffs = useCallback(
+        (args: FilteredConnectionQueryArgs) =>
+            node.__typename === 'ExternalChangeset'
+                ? queryExternalChangesetFileDiffs(node.id, args)
+                : queryPatchFileDiffs(node.id, args),
+        [node.__typename, node.id]
+    )
+
     return (
         <li className="list-group-item e2e-changeset-node">
-            {fileDiffNodes ? (
+            {fileDiffs ? (
                 <Collapsible
                     titleClassName="changeset-node__content flex-fill"
                     title={changesetNodeRow}
                     wholeTitleClickable={false}
                 >
-                    {fileDiffNodes.map(fileDiffNode => (
-                        <FileDiffNode
-                            isLightTheme={isLightTheme}
-                            node={fileDiffNode}
-                            lineNumbers={true}
-                            location={location}
-                            history={history}
-                            persistLines={node.__typename === 'ExternalChangeset'}
-                            key={fileDiffNode.internalID}
-                            className="mb-1"
-                        />
-                    ))}
+                    <FileDiffConnection
+                        listClassName="list-group list-group-flush"
+                        noun="changed file"
+                        pluralNoun="changed files"
+                        queryConnection={queryFileDiffs}
+                        nodeComponent={FileDiffNode}
+                        nodeComponentProps={{
+                            history,
+                            location,
+                            isLightTheme,
+                            persistLines: node.__typename === 'ExternalChangeset',
+                            extensionInfo:
+                                extensionInfo && node.__typename === 'ExternalChangeset'
+                                    ? {
+                                          ...extensionInfo,
+                                          head: {
+                                              commitID: node.head.target.oid,
+                                              repoID: node.repository.id,
+                                              repoName: node.repository.name,
+                                              rev: node.head.target.oid,
+                                          },
+                                          base: {
+                                              commitID: node.base.target.oid,
+                                              repoID: node.repository.id,
+                                              repoName: node.repository.name,
+                                              rev: node.base.target.oid,
+                                          },
+                                      }
+                                    : undefined,
+                            lineNumbers: true,
+                        }}
+                        updateOnChange={node.repository.id}
+                        defaultFirst={25}
+                        hideSearch={true}
+                        noSummaryIfAllNodesVisible={true}
+                        history={history}
+                        location={location}
+                    />
                 </Collapsible>
             ) : (
                 <div className="changeset-node__content changeset-node__content--no-collapse flex-fill">

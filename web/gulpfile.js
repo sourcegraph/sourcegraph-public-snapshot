@@ -26,7 +26,7 @@ async function webpack() {
   const compiler = createWebpackCompiler(webpackConfig)
   /** @type {import('webpack')} */
   const stats = await new Promise((resolve, reject) => {
-    compiler.run((err, stats) => ((err ? reject(err) : resolve(stats))))
+    compiler.run((err, stats) => (err ? reject(err) : resolve(stats)))
   })
   logWebpackStats(stats)
   if (stats.hasErrors()) {

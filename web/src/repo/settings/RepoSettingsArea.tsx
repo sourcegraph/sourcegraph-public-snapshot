@@ -1,4 +1,3 @@
-import { upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import DoNotDisturbIcon from 'mdi-react/DoNotDisturbIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
@@ -13,6 +12,7 @@ import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
 import { fetchRepository } from './backend'
 import { RepoSettingsSidebar, RepoSettingsSideBarItems } from './RepoSettingsSidebar'
 import { RouteDescriptor } from '../../util/contributions'
+import { ErrorMessage } from '../../components/alerts'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
@@ -78,7 +78,9 @@ export class RepoSettingsArea extends React.Component<Props> {
 
     public render(): JSX.Element | null {
         if (this.state.error) {
-            return <HeroPage icon={AlertCircleIcon} title="Error" subtitle={upperFirst(this.state.error)} />
+            return (
+                <HeroPage icon={AlertCircleIcon} title="Error" subtitle={<ErrorMessage error={this.state.error} />} />
+            )
         }
 
         if (this.state.repo === undefined) {

@@ -17,7 +17,7 @@ describe('CampaignNode', () => {
 - and renders in markdown
         `,
         changesets: { nodes: [{ state: GQL.ChangesetState.OPEN }] },
-        changesetPlans: { totalCount: 2 },
+        patches: { totalCount: 2 },
         createdAt: '2019-12-04T23:15:01Z',
         closedAt: null,
         publishedAt: '2019-12-04T23:17:01Z',

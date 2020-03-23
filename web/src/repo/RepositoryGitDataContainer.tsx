@@ -1,4 +1,3 @@
-import { upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import * as React from 'react'
@@ -11,6 +10,7 @@ import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { HeroPage } from '../components/HeroPage'
 import { resolveRev } from './backend'
 import { DirectImportRepoAlert } from './DirectImportRepoAlert'
+import { ErrorMessage } from '../components/alerts'
 
 export const RepositoryCloningInProgressPage: React.FunctionComponent<{ repoName: string; progress?: string }> = ({
     repoName,
@@ -131,7 +131,7 @@ export class RepositoryGitDataContainer extends React.PureComponent<Props, State
                         <HeroPage
                             icon={AlertCircleIcon}
                             title="Error"
-                            subtitle={upperFirst(this.state.gitDataPresentOrError.message)}
+                            subtitle={<ErrorMessage error={this.state.gitDataPresentOrError} />}
                         />
                     )
             }

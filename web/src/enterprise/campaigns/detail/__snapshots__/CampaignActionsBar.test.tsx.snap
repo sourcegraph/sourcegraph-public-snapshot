@@ -515,7 +515,7 @@ exports[`CampaignActionsBar mode: saving 1`] = `
 </div>
 `;
 
-exports[`CampaignActionsBar new with plan 1`] = `
+exports[`CampaignActionsBar new with patch set 1`] = `
 <div
   className="d-flex mb-2"
 >
@@ -547,7 +547,7 @@ exports[`CampaignActionsBar new with plan 1`] = `
 </div>
 `;
 
-exports[`CampaignActionsBar new without plan 1`] = `
+exports[`CampaignActionsBar new without patch set 1`] = `
 <div
   className="d-flex mb-2"
 >

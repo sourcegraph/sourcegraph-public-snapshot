@@ -6,14 +6,14 @@ import { testSingleFilePage } from './shared'
 import { retry } from '../../../shared/src/e2e/e2e-test-utils'
 import { getConfig } from '../../../shared/src/e2e/config'
 
-describe('Sourcegraph browser extension on github.com', function() {
+describe('Sourcegraph browser extension on github.com', function () {
     this.slow(8000)
 
     const { browser, sourcegraphBaseUrl } = getConfig('browser', 'sourcegraphBaseUrl')
 
     let driver: Driver
 
-    before('Open browser', async function() {
+    before('Open browser', async function () {
         this.timeout(90 * 1000)
         driver = await createDriverForTest({ loadExtension: true, browser, sourcegraphBaseUrl })
         if (sourcegraphBaseUrl !== 'https://sourcegraph.com') {

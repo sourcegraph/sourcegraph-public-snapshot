@@ -45,9 +45,7 @@ describe('Windows (integration)', () => {
                 selections: [],
                 isActive: true,
             })
-            await from(extensionAPI.app.activeWindowChanges)
-                .pipe(filter(isDefined), first())
-                .toPromise()
+            await from(extensionAPI.app.activeWindowChanges).pipe(filter(isDefined), first()).toPromise()
             expect(extensionAPI.app.activeWindow).toBeTruthy()
         })
     })

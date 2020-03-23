@@ -56,12 +56,7 @@ export type Suggestion = SymbolSuggestion | RepoSuggestion | FileSuggestion | Di
  * Returns all but the last element of path, or "." if that would be the empty path.
  */
 function dirname(path: string): string | undefined {
-    return (
-        path
-            .split('/')
-            .slice(0, -1)
-            .join('/') || '.'
-    )
+    return path.split('/').slice(0, -1).join('/') || '.'
 }
 
 /**

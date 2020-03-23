@@ -18,7 +18,7 @@ const { gitHubToken, sourcegraphBaseUrl } = getConfig('gitHubToken', 'sourcegrap
 describe('e2e test suite', () => {
     let driver: Driver
 
-    before(async function() {
+    before(async function () {
         // Cloning the repositories takes ~1 minute, so give initialization 2
         // minutes instead of 1 (which would be inherited from
         // `jest.setTimeout(1 * 60 * 1000)` above).
@@ -983,7 +983,7 @@ describe('e2e test suite', () => {
                 })
 
                 describe('find references', () => {
-                    test('opens widget and fetches local references', async function() {
+                    test('opens widget and fetches local references', async function () {
                         this.timeout(120000)
 
                         await driver.page.goto(
@@ -1497,9 +1497,9 @@ describe('e2e test suite', () => {
             expect(generatedChangesetCount).toEqual(changesetCount)
             await percySnapshot(driver.page, snapshotName)
         }
-        test('View campaign preview for plan', async () => {
+        test('View campaign preview for patch set', async () => {
             const repo = await driver.getRepository('github.com/sourcegraph-testing/automation-e2e-test')
-            const { previewURL } = await driver.createCampaignPlanFromPatches([
+            const { previewURL } = await driver.createPatchSetFromPatches([
                 {
                     repository: repo.id,
                     baseRevision: '339d09ae1ce5907e0678ae5f1f91d9ad38db6107',

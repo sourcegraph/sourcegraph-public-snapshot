@@ -59,12 +59,7 @@ export class DumpManager {
      */
     public async getDumpsByIds(ids: pgModels.DumpId[]): Promise<Map<pgModels.DumpId, pgModels.LsifDump>> {
         const dumps = await instrumentQuery(() =>
-            this.connection
-                .getRepository(pgModels.LsifDump)
-                .createQueryBuilder()
-                .select()
-                .whereInIds(ids)
-                .getMany()
+            this.connection.getRepository(pgModels.LsifDump).createQueryBuilder().select().whereInIds(ids).getMany()
         )
 
         return new Map(dumps.map(d => [d.id, d]))

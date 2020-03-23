@@ -1,5 +1,5 @@
 import * as H from 'history'
-import { isEqual, pick, upperFirst } from 'lodash'
+import { isEqual, pick } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import * as React from 'react'
 import { combineLatest, Observable, Subject, Subscription } from 'rxjs'
@@ -35,6 +35,7 @@ import { BlobPanel } from './panel/BlobPanel'
 import { GoToRawAction } from './GoToRawAction'
 import { RenderedFile } from './RenderedFile'
 import { ThemeProps } from '../../../../shared/src/theme'
+import { ErrorMessage } from '../../components/alerts'
 
 function fetchBlobCacheKey(parsed: ParsedRepoURI & { isLightTheme: boolean; disableTimeout: boolean }): string {
     return makeRepoURI(parsed) + String(parsed.isLightTheme) + String(parsed.disableTimeout)
@@ -268,7 +269,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
                     <HeroPage
                         icon={AlertCircleIcon}
                         title="Error"
-                        subtitle={upperFirst(this.state.blobOrError.message)}
+                        subtitle={<ErrorMessage error={this.state.blobOrError} />}
                     />
                 </>
             )

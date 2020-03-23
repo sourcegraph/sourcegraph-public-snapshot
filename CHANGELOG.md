@@ -17,7 +17,13 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
+- Multiple backwards-incompatible changes in the parts of the GraphQL API related to Campaigns:
+  - `CampaignPlan.status` has been removed, since we don't need it anymore after moving execution of campaigns to src CLI in [#8008](https://github.com/sourcegraph/sourcegraph/pull/8008).
+- Site-Admin/Instrumentation in the Kubernetes cluster deployment now includes indexed-search.
+
 ### Fixed
+
+- `.*` in the filter pattern were ignored and led to missing search results. [#9152](https://github.com/sourcegraph/sourcegraph/pull/9152)
 
 ### Removed
 
@@ -266,7 +272,7 @@ This is `3.12.8` release with internal infrastructure fixes to publish the docke
 ### Fixed
 
 - The `/.auth/saml/metadata` endpoint has been fixed. Previously it panicked if no encryption key was set.
-- The version updating logic has been fixed for `sourcegraph/server`. Users running `sourcegraph/server:3.13.1` will need to manually modify their `docker run` command to use `sourcegraph/server:3.13.1` or higher. [#7442](https://github.com/sourcegraph/sourcegraph/issues/7442)
+- The version updating logic has been fixed for `sourcegraph/server`. Users running `sourcegraph/server:3.11.1` will need to manually modify their `docker run` command to use `sourcegraph/server:3.11.4` or higher. [#7442](https://github.com/sourcegraph/sourcegraph/issues/7442)
 
 ## 3.11.1
 

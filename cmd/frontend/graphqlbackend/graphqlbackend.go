@@ -153,13 +153,18 @@ func (r *NodeResolver) ToCampaign() (CampaignResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToCampaignPlan() (CampaignPlanResolver, bool) {
-	n, ok := r.Node.(CampaignPlanResolver)
+func (r *NodeResolver) ToPatchSet() (PatchSetResolver, bool) {
+	n, ok := r.Node.(PatchSetResolver)
 	return n, ok
 }
 
 func (r *NodeResolver) ToExternalChangeset() (ExternalChangesetResolver, bool) {
 	n, ok := r.Node.(ExternalChangesetResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToPatch() (PatchResolver, bool) {
+	n, ok := r.Node.(PatchResolver)
 	return n, ok
 }
 
@@ -291,12 +296,12 @@ func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, err
 		return accessTokenByID(ctx, id)
 	case "Campaign":
 		return r.CampaignByID(ctx, id)
-	case "CampaignPlan":
-		return r.CampaignPlanByID(ctx, id)
+	case "PatchSet":
+		return r.PatchSetByID(ctx, id)
 	case "ExternalChangeset":
 		return r.ChangesetByID(ctx, id)
-	case "ChangesetPlan":
-		return r.ChangesetPlanByID(ctx, id)
+	case "Patch":
+		return r.PatchByID(ctx, id)
 	case "DiscussionComment":
 		return discussionCommentByID(ctx, id)
 	case "DiscussionThread":
