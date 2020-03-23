@@ -101,7 +101,7 @@ func (r *codemodResultResolver) Commit() *GitCommitResolver { return r.commit }
 
 func (r *codemodResultResolver) RawDiff() string { return r.diff }
 
-func validateQuery(q *query.Query) (*args, error) {
+func validateQuery(q query.QueryInfo) (*args, error) {
 	matchValues := q.Values(query.FieldDefault)
 	var matchTemplates []string
 	for _, v := range matchValues {

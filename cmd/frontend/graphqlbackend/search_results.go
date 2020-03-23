@@ -527,7 +527,7 @@ func (r *searchResolver) logSearchLatency(ctx context.Context, durationMs int32)
 			case r.patternType == query.SearchTypeRegex:
 				types = append(types, "regexp")
 			}
-		} else if len(r.query.Fields["file"]) > 0 {
+		} else if len(r.query.Fields()["file"]) > 0 {
 			// No search pattern specified and file: is specified.
 			types = append(types, "file")
 		} else {
@@ -784,7 +784,7 @@ func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.Te
 
 // processSearchPattern processes the search pattern for a query. It handles the interpretation of search patterns
 // as literal, regex, or structural patterns, and applies fuzzy regex matching if applicable.
-func processSearchPattern(q *query.Query, opts *getPatternInfoOptions) (string, bool, bool) {
+func processSearchPattern(q query.QueryInfo, opts *getPatternInfoOptions) (string, bool, bool) {
 	var pattern string
 	var pieces []string
 	var contentFieldSet bool
@@ -841,7 +841,7 @@ func processSearchPattern(q *query.Query, opts *getPatternInfoOptions) (string, 
 }
 
 // getPatternInfo gets the search pattern info for q
-func getPatternInfo(q *query.Query, opts *getPatternInfoOptions) (*search.TextPatternInfo, error) {
+func getPatternInfo(q query.QueryInfo, opts *getPatternInfoOptions) (*search.TextPatternInfo, error) {
 	pattern, isRegExp, isStructuralPat := processSearchPattern(q, opts)
 
 	// Handle file: and -file: filters.
@@ -1010,10 +1010,10 @@ func alertOnSearchLimit(resultTypes []string, args *search.TextParameters) ([]st
 			resultType := resultTypes[0]
 			switch resultType {
 			case "commit", "diff":
-				if _, afterPresent := args.Query.Fields["after"]; afterPresent {
+				if _, afterPresent := args.Query.Fields()["after"]; afterPresent {
 					break
 				}
-				if _, beforePresent := args.Query.Fields["before"]; beforePresent {
+				if _, beforePresent := args.Query.Fields()["before"]; beforePresent {
 					break
 				}
 				resultTypes = []string{}
@@ -1385,7 +1385,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	}
 
 	if len(results) == 0 && strings.Contains(r.originalQuery, `"`) && r.patternType == query.SearchTypeLiteral {
-		alert = alertForQuotesInQueryInLiteralMode(r.parseTree)
+		alert = alertForQuotesInQueryInLiteralMode(r.query.ParseTree())
 	}
 
 	// If we have some results, only log the error instead of returning it,
@@ -1464,9 +1464,9 @@ func orderedFuzzyRegexp(pieces []string) string {
 }
 
 // Validates usage of the `repohasfile` filter
-func validateRepoHasFileUsage(q *query.Query) error {
+func validateRepoHasFileUsage(q query.QueryInfo) error {
 	// Query only contains "repohasfile:" and "type:symbol"
-	if len(q.Fields) == 2 && q.Fields["repohasfile"] != nil && q.Fields["type"] != nil && len(q.Fields["type"]) == 1 && q.Fields["type"][0].Value() == "symbol" {
+	if len(q.Fields()) == 2 && q.Fields()["repohasfile"] != nil && q.Fields()["type"] != nil && len(q.Fields()["type"]) == 1 && q.Fields()["type"][0].Value() == "symbol" {
 		return errors.New("repohasfile does not currently return symbol results. Support for symbol results is coming soon. Subscribe to https://github.com/sourcegraph/sourcegraph/issues/4610 for updates")
 	}
 	return nil
