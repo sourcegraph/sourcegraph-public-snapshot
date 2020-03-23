@@ -17,8 +17,14 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
-- Multiple backwards-incompatible changes in the parts of the GraphQL API related to Campaigns:
+- Multiple backwards-incompatible changes in the parts of the GraphQL API related to Campaigns [#9106](https://github.com/sourcegraph/sourcegraph/issues/9106):
   - `CampaignPlan.status` has been removed, since we don't need it anymore after moving execution of campaigns to src CLI in [#8008](https://github.com/sourcegraph/sourcegraph/pull/8008).
+  - `CampaignPlan` has been renamed to `PatchSet`.
+  - `ChangesetPlan`/`ChangesetPlanConnection` has been renamed to `Patch`/`PatchConnection`.
+  - `CampaignPlanPatch` has been renamed to `PatchInput`.
+  - `Campaign.plan` has been renamed to `Campaign.patchSet`.
+  - `Campaign.changesetPlans` has been renamed to `campaign.changesetPlan`.
+  - `createCampaignPlanFromPatches` mutation has been renamed to `createPatchSetFromPatches`.
 - Site-Admin/Instrumentation in the Kubernetes cluster deployment now includes indexed-search.
 
 ### Fixed
