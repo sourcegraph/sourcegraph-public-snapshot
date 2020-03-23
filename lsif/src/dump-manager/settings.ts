@@ -40,8 +40,11 @@ export const FAILED_UPLOAD_MAX_AGE = readEnvInt('FAILED_UPLOAD_MAX_AGE', 24 * 60
 /** How many times to retry requests to lsif-server in the background. */
 export const MAX_REQUEST_RETRIES = readEnvInt('MAX_REQUEST_RETRIES', 60)
 
-/** How long to wait (in seconds) between lsif-server request attempts. */
-export const REQUEST_RETRY_INTERVAL = readEnvInt('REQUEST_RETRY_INTERVAL', 5)
+/** How long to wait (minimum, in seconds) between lsif-server request attempts. */
+export const MIN_REQUEST_RETRY_TIMEOUT = readEnvInt('MIN_REQUEST_RETRY_TIMEOUT', 1)
+
+/** How long to wait (maximum, in seconds) between lsif-server request attempts. */
+export const MAX_REQUEST_RETRY_TIMEOUT = readEnvInt('MAX_REQUEST_RETRY_TIMEOUT', 30)
 
 /** The maximum rate that the server will send upload payloads. */
 export const MAXIMUM_SERVE_BYTES_PER_SECOND = readEnvInt('MAXIMUM_SERVE_BYTES_PER_SECOND', 1024 * 1024 * 1024 * 10) // 10 Gib/sec

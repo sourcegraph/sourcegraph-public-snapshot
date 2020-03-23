@@ -196,10 +196,11 @@ async function makeServerRequest<T, R>(route: string, payload?: T): Promise<R> {
                 ).body
             ),
         {
-            factor: 1,
+            factor: 1.5,
+            randomize: true,
             retries: settings.MAX_REQUEST_RETRIES,
-            minTimeout: settings.REQUEST_RETRY_INTERVAL * 1000,
-            maxTimeout: settings.REQUEST_RETRY_INTERVAL * 1000,
+            minTimeout: settings.MIN_REQUEST_RETRY_TIMEOUT * 1000,
+            maxTimeout: settings.MAX_REQUEST_RETRY_TIMEOUT * 1000,
         }
     )
 }

@@ -74,10 +74,11 @@ function connect(connectionOptions: PostgresConnectionCredentialsOptions, logger
             return connectPostgres(connectionOptions, '', logger)
         },
         {
-            factor: 1,
+            factor: 1.5,
+            randomize: true,
             retries: settings.MAX_CONNECTION_RETRIES,
-            minTimeout: settings.CONNECTION_RETRY_INTERVAL * 1000,
-            maxTimeout: settings.CONNECTION_RETRY_INTERVAL * 1000,
+            minTimeout: settings.MIN_CONNECTION_RETRY_TIMEOUT * 1000,
+            maxTimeout: settings.MAX_CONNECTION_RETRY_TIMEOUT * 1000,
         }
     )
 }
