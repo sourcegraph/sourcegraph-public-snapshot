@@ -42,7 +42,7 @@ export function startTasks(connection: Connection, logger: Logger): void {
  * the given limit.
  *
  * @param storageRoot The path where SQLite databases are stored.
- * @param maximumSizeBytes The maximum number of bytes.
+ * @param maximumSizeBytes The maximum number of bytes (< 0 means no limit).
  * @param ctx The tracing context.
  */
 async function purgeOldDumps(
