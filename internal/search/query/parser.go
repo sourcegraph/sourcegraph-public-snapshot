@@ -207,31 +207,48 @@ func (p *parser) ParseParameter() Parameter {
 	return ScanParameter(p.buf[start:p.pos])
 }
 
-func visit(node Node, f func(node Node)) {
+// Visit calls f on all nodes rooted at node.
+func Visit(node Node, f func(node Node)) {
 	switch v := node.(type) {
 	case Parameter:
 		f(v)
 	case Operator:
 		f(v)
 		for _, n := range v.Operands {
-			visit(n, f)
+			Visit(n, f)
 		}
 	}
+}
+
+// VisitParameter calls f on all parameter nodes. f supplies the node's field
+// and value.
+func VisitParameter(node Node, f func(field, value string)) {
+	visitor := func(node Node) {
+		if v, ok := node.(Parameter); ok {
+			f(v.Field, v.Value)
+		}
+	}
+	Visit(node, visitor)
+}
+
+// VisitField calls f on all parameter nodes whose field matches the field
+// argument. f supplies the node's value.
+func VisitField(node Node, field string, f func(value string)) {
+	visitor := func(visitedField, value string) {
+		if field == visitedField {
+			f(value)
+		}
+	}
+	VisitParameter(node, visitor)
 }
 
 // containsPattern returns true if any descendent of node is a search pattern
 // (i.e., a parameter where the field is the empty string).
 func containsPattern(node Node) bool {
 	var result bool
-	f := func(node Node) {
-		switch v := node.(type) {
-		case Parameter:
-			if v.Field == "" {
-				result = true
-			}
-		}
-	}
-	visit(node, f)
+	VisitField(node, "", func(_ string) {
+		result = true
+	})
 	return result
 }
 
