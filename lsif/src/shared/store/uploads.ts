@@ -11,7 +11,7 @@ export interface LsifUploadWithPlaceInQueue extends pgModels.LsifUpload {
 
 /**
  * A wrapper around the database tables that control uploads. This class has
- * behaviors to enqueue uploads and dequeue them for the worker to convert in,
+ * behaviors to enqueue uploads and dequeue them for the worker to convert in
  * a transactional manner.
  */
 export class UploadManager {
