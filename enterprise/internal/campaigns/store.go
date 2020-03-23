@@ -2475,17 +2475,17 @@ SET
 WHERE %s
 `
 
-// GetGithubExternalIDForRefs allows us to find the external id for GitHub pull requests based on
+// GetChangesetExternalID allows us to find the external id for GitHub pull requests based on
 // a slice of head refs. We need this in order to match incoming status webhooks to pull requests as
 // the only information they provide is the remote branch
-func (s *Store) GetGithubExternalIDForRefs(ctx context.Context, externalRepoID string, externalServiceID string, refs []string) ([]string, error) {
+func (s *Store) GetChangesetExternalID(ctx context.Context, spec api.ExternalRepoSpec, refs []string) ([]string, error) {
 	queryFmtString := `
 	SELECT cs.external_id FROM changesets cs
 	JOIN repo r ON cs.repo_id = r.id
-	WHERE cs.external_service_type = 'github'
+	WHERE cs.external_service_type = %s
 	AND cs.external_branch IN (%s)
 	AND r.external_id = %s
-	AND r.external_service_type = 'github'
+	AND r.external_service_type = %s
 	AND r.external_service_id = %s
 	ORDER BY cs.id ASC;
 	`
@@ -2497,7 +2497,7 @@ func (s *Store) GetGithubExternalIDForRefs(ctx context.Context, externalRepoID s
 		}
 		inClause = append(inClause, sqlf.Sprintf("%s", ref))
 	}
-	q := sqlf.Sprintf(queryFmtString, sqlf.Join(inClause, ","), externalRepoID, externalServiceID)
+	q := sqlf.Sprintf(queryFmtString, spec.ServiceType, sqlf.Join(inClause, ","), spec.ID, spec.ServiceType, spec.ServiceID)
 	ids := make([]string, 0, len(refs))
 	_, _, err := s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
 		var s string
