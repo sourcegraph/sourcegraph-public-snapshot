@@ -14,21 +14,21 @@ import {
     updateCampaign,
     deleteCampaign,
     createCampaign,
-    fetchCampaignPlanById,
     retryCampaign,
     closeCampaign,
     publishCampaign,
+    fetchPatchSetById,
 } from './backend'
 import { useError, useObservable } from '../../../../../shared/src/util/useObservable'
 import { asError } from '../../../../../shared/src/util/errors'
 import * as H from 'history'
 import { CampaignBurndownChart } from './BurndownChart'
 import { AddChangesetForm } from './AddChangesetForm'
-import { Subject, of, merge, Observable } from 'rxjs'
+import { Subject, of, merge, Observable, NEVER } from 'rxjs'
 import { renderMarkdown } from '../../../../../shared/src/util/markdown'
 import { ErrorAlert } from '../../../components/alerts'
 import { Markdown } from '../../../../../shared/src/components/Markdown'
-import { switchMap, tap, takeWhile, repeatWhen, delay, startWith } from 'rxjs/operators'
+import { switchMap, tap, takeWhile, repeatWhen, delay } from 'rxjs/operators'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { CampaignDescriptionField } from './form/CampaignDescriptionField'
 import { CampaignStatus } from './CampaignStatus'
@@ -61,14 +61,14 @@ interface Campaign
         | 'closedAt'
         | 'viewerCanAdminister'
     > {
-    plan: Pick<GQL.ICampaignPlan, 'id'> | null
+    patchSet: Pick<GQL.IPatchSet, 'id'> | null
     changesets: Pick<GQL.ICampaign['changesets'], 'nodes' | 'totalCount'>
-    changesetPlans: Pick<GQL.ICampaign['changesetPlans'], 'nodes' | 'totalCount'>
+    patches: Pick<GQL.ICampaign['patches'], 'nodes' | 'totalCount'>
     status: Pick<GQL.ICampaign['status'], 'completedCount' | 'pendingCount' | 'errors' | 'state'>
 }
 
-interface CampaignPlan extends Pick<GQL.ICampaignPlan, '__typename' | 'id'> {
-    changesetPlans: Pick<GQL.ICampaignPlan['changesetPlans'], 'nodes' | 'totalCount'>
+interface PatchSet extends Pick<GQL.IPatchSet, '__typename' | 'id'> {
+    patches: Pick<GQL.IPatchSet['patches'], 'nodes' | 'totalCount'>
 }
 
 interface Props extends ThemeProps, ExtensionsControllerProps, PlatformContextProps, TelemetryProps {
@@ -84,7 +84,7 @@ interface Props extends ThemeProps, ExtensionsControllerProps, PlatformContextPr
     /** For testing only. */
     _fetchCampaignById?: typeof fetchCampaignById | ((campaign: GQL.ID) => Observable<Campaign | null>)
     /** For testing only. */
-    _fetchCampaignPlanById?: typeof fetchCampaignPlanById | ((campaignPlan: GQL.ID) => Observable<CampaignPlan | null>)
+    _fetchPatchSetById?: typeof fetchPatchSetById | ((patchSet: GQL.ID) => Observable<PatchSet | null>)
     /** For testing only. */
     _noSubject?: boolean
 }
@@ -102,7 +102,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     platformContext,
     telemetryService,
     _fetchCampaignById = fetchCampaignById,
-    _fetchCampaignPlanById = fetchCampaignPlanById,
+    _fetchPatchSetById = fetchPatchSetById,
     _noSubject = false,
 }) => {
     // State for the form in editing mode
@@ -177,49 +177,49 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     // To report errors from saving or deleting
     const [alertError, setAlertError] = useState<Error>()
 
-    const planID: GQL.ID | null = new URLSearchParams(location.search).get('plan')
+    const patchSetID: GQL.ID | null = new URLSearchParams(location.search).get('patchSet')
     useEffect(() => {
-        if (planID) {
+        if (patchSetID) {
             setMode('editing')
         }
-    }, [planID])
+    }, [patchSetID])
 
     // To unblock the history after leaving edit mode
     const unblockHistoryRef = useRef<H.UnregisterCallback>(noop)
     useEffect(() => {
-        if (!campaignID && planID === null) {
+        if (!campaignID && patchSetID === null) {
             unblockHistoryRef.current()
             unblockHistoryRef.current = history.block('Do you want to discard this campaign?')
         }
         // Note: the current() method gets dynamically reassigned,
         // therefor we can't return it directly.
         return () => unblockHistoryRef.current()
-    }, [campaignID, history, planID])
+    }, [campaignID, history, patchSetID])
 
-    const updateMode = !!campaignID && !!planID
-    const previewCampaignPlans = useMemo(() => new Subject<GQL.ID>(), [])
-    const campaignPlan = useObservable(
+    const updateMode = !!campaignID && !!patchSetID
+    const patchSet = useObservable(
         useMemo(
             () =>
-                (planID ? previewCampaignPlans.pipe(startWith(planID)) : previewCampaignPlans).pipe(
-                    switchMap(plan => _fetchCampaignPlanById(plan)),
-                    tap(campaignPlan => {
-                        if (campaignPlan) {
-                            changesetUpdates.next()
-                        }
-                    })
-                ),
-            [previewCampaignPlans, planID, _fetchCampaignPlanById, changesetUpdates]
+                !patchSetID
+                    ? NEVER
+                    : _fetchPatchSetById(patchSetID).pipe(
+                          tap(patchSet => {
+                              if (patchSet) {
+                                  changesetUpdates.next()
+                              }
+                          })
+                      ),
+            [patchSetID, _fetchPatchSetById, changesetUpdates]
         )
     )
 
     const selectCampaign = useCallback<(campaign: Pick<GQL.ICampaign, 'id'>) => void>(
-        campaign => history.push(`/campaigns/${campaign.id}?plan=${planID!}`),
-        [history, planID]
+        campaign => history.push(`/campaigns/${campaign.id}?patchSet=${patchSetID!}`),
+        [history, patchSetID]
     )
 
     // Campaign is loading
-    if ((campaignID && campaign === undefined) || (planID && campaignPlan === undefined)) {
+    if ((campaignID && campaign === undefined) || (patchSetID && patchSet === undefined)) {
         return (
             <div className="text-center">
                 <LoadingSpinner className="icon-inline mx-auto my-4" />
@@ -230,27 +230,27 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     if (campaign === null) {
         return <HeroPage icon={AlertCircleIcon} title="Campaign not found" />
     }
-    // Plan was not found
-    if (campaignPlan === null) {
-        return <HeroPage icon={AlertCircleIcon} title="Plan not found" />
+    // Patch set was not found
+    if (patchSet === null) {
+        return <HeroPage icon={AlertCircleIcon} title="Patch set not found" />
     }
 
     if (updateMode) {
-        if (!campaign?.plan?.id) {
-            return <HeroPage icon={AlertCircleIcon} title="Cannot update a manual campaign with a campaign plan" />
+        if (!campaign?.patchSet?.id) {
+            return <HeroPage icon={AlertCircleIcon} title="Cannot update a manual campaign with a patch set" />
         }
         if (campaign?.closedAt) {
             return <HeroPage icon={AlertCircleIcon} title="Cannot update a closed campaign" />
         }
     }
 
-    // plan is specified, but campaign not yet, so we have to choose
-    if (history.location.pathname.includes('/campaigns/update') && campaignID === undefined && planID !== null) {
+    // Patch set is specified, but campaign not yet, so we have to choose
+    if (history.location.pathname.includes('/campaigns/update') && campaignID === undefined && patchSetID !== null) {
         return <CampaignUpdateSelection history={history} location={location} onSelect={selectCampaign} />
     }
 
     const specifyingBranchAllowed =
-        (!campaign && campaignPlan) ||
+        (!campaign && patchSet) ||
         (campaign &&
             !campaign.publishedAt &&
             campaign.changesets.totalCount === 0 &&
@@ -264,7 +264,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 name,
                 description,
                 namespace: authenticatedUser.id,
-                plan: campaignPlan ? campaignPlan.id : undefined,
+                patchSet: patchSet ? patchSet.id : undefined,
                 branch: specifyingBranchAllowed ? branch : undefined,
                 draft: true,
             })
@@ -301,7 +301,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     id: campaignID,
                     name,
                     description,
-                    plan: planID ?? undefined,
+                    patchSet: patchSetID ?? undefined,
                     branch: specifyingBranchAllowed ? branch : undefined,
                 })
                 setCampaign(newCampaign)
@@ -314,7 +314,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     name,
                     description,
                     namespace: authenticatedUser.id,
-                    plan: campaignPlan ? campaignPlan.id : undefined,
+                    patchSet: patchSet ? patchSet.id : undefined,
                     branch: specifyingBranchAllowed ? branch : undefined,
                 })
                 unblockHistoryRef.current()
@@ -411,15 +411,14 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
 
     const totalChangesetCount = campaign?.changesets.totalCount ?? 0
 
-    const totalChangesetPlanCount =
-        (campaign?.changesetPlans.totalCount ?? 0) + (campaignPlan?.changesetPlans.totalCount ?? 0)
+    const totalPatchCount = (campaign?.patches.totalCount ?? 0) + (patchSet?.patches.totalCount ?? 0)
 
     return (
         <>
             <PageTitle title={campaign ? campaign.name : 'New campaign'} />
             <Form onSubmit={onSubmit} onReset={onCancel} className="e2e-campaign-form position-relative">
                 <CampaignActionsBar
-                    previewingCampaignPlan={!!campaignPlan}
+                    previewingPatchSet={!!patchSet}
                     mode={mode}
                     campaign={campaign}
                     onEdit={onEdit}
@@ -483,10 +482,10 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         />
                     </div>
                 )}
-                {campaign && campaignPlan && (
+                {campaign && patchSet && (
                     <CampaignUpdateDiff
                         campaign={campaign}
-                        campaignPlan={campaignPlan}
+                        patchSet={patchSet}
                         history={history}
                         location={location}
                         isLightTheme={isLightTheme}
@@ -494,10 +493,10 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     />
                 )}
                 {!updateMode ? (
-                    (!campaign || campaignPlan) && (
+                    (!campaign || patchSet) && (
                         <>
                             <div className="mt-2">
-                                {campaignPlan && (
+                                {patchSet && (
                                     <button
                                         type="submit"
                                         className="btn btn-secondary mr-1"
@@ -511,7 +510,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                 <button
                                     type="submit"
                                     className="btn btn-primary"
-                                    disabled={mode !== 'editing' || campaignPlan?.changesetPlans.totalCount === 0}
+                                    disabled={mode !== 'editing' || patchSet?.patches.totalCount === 0}
                                 >
                                     Create
                                 </button>
@@ -526,7 +525,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         <button
                             type="submit"
                             className="btn btn-primary"
-                            disabled={mode !== 'editing' || campaignPlan?.changesetPlans.totalCount === 0}
+                            disabled={mode !== 'editing' || patchSet?.patches.totalCount === 0}
                         >
                             Update
                         </button>
@@ -534,8 +533,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 )}
             </Form>
 
-            {/* is already created or a plan is available */}
-            {(campaign || campaignPlan) && !updateMode && (
+            {/* is already created or a patch set is available */}
+            {(campaign || patchSet) && !updateMode && (
                 <>
                     {campaign && !['saving', 'editing'].includes(mode) && (
                         <>
@@ -544,20 +543,20 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                 changesetCountsOverTime={campaign.changesetCountsOverTime}
                                 history={history}
                             />
-                            {/* only campaigns that have no plan can add changesets manually */}
-                            {!campaign.plan && campaign.viewerCanAdminister && !campaign.closedAt && (
+                            {/* only campaigns that have no patch set can add changesets manually */}
+                            {!campaign.patchSet && campaign.viewerCanAdminister && !campaign.closedAt && (
                                 <AddChangesetForm campaignID={campaign.id} onAdd={onAddChangeset} />
                             )}
                         </>
                     )}
 
                     <h3 className="mt-4 d-flex align-items-end mb-0">
-                        {totalChangesetPlanCount > 0 && (
+                        {totalPatchCount > 0 && (
                             <>
-                                {totalChangesetPlanCount} {pluralize('Patch', totalChangesetPlanCount, 'Patches')}
+                                {totalPatchCount} {pluralize('Patch', totalPatchCount, 'Patches')}
                             </>
                         )}
-                        {(totalChangesetCount > 0 || !!campaign) && totalChangesetPlanCount > 0 && (
+                        {(totalChangesetCount > 0 || !!campaign) && totalPatchCount > 0 && (
                             <span className="mx-1">/</span>
                         )}
                         {(totalChangesetCount > 0 || !!campaign) && (
@@ -565,11 +564,11 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                 {totalChangesetCount} {pluralize('Changeset', totalChangesetCount)}
                             </>
                         )}{' '}
-                        <CampaignDiffStat campaign={(campaignPlan || campaign)!} className="ml-2 mb-0" />
+                        <CampaignDiffStat campaign={(patchSet || campaign)!} className="ml-2 mb-0" />
                     </h3>
-                    {(campaign?.changesets.totalCount ?? 0) + (campaignPlan || campaign)!.changesetPlans.totalCount ? (
+                    {(campaign?.changesets.totalCount ?? 0) + (patchSet || campaign)!.patches.totalCount ? (
                         <CampaignChangesets
-                            campaign={(campaignPlan || campaign)!}
+                            campaign={(patchSet || campaign)!}
                             changesetUpdates={changesetUpdates}
                             campaignUpdates={campaignUpdates}
                             history={history}
@@ -581,7 +580,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         />
                     ) : (
                         campaign?.status.state !== GQL.BackgroundProcessState.PROCESSING &&
-                        (campaign && !campaign.plan ? (
+                        (campaign && !campaign.patchSet ? (
                             <div className="mt-2 alert alert-info">Add a changeset to get started.</div>
                         ) : (
                             <p className="mt-2 text-muted">No changesets</p>

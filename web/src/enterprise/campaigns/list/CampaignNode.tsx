@@ -17,7 +17,7 @@ export type CampaignNodeCampaign = Pick<
     changesets: {
         nodes: Pick<GQL.IExternalChangeset, 'state'>[]
     }
-    changesetPlans: Pick<GQL.IChangesetPlanConnection, 'totalCount'>
+    patches: Pick<GQL.IPatchConnection, 'totalCount'>
 }
 
 export interface CampaignNodeProps {
@@ -70,7 +70,7 @@ export const CampaignNode: React.FunctionComponent<CampaignNodeProps> = ({ node,
                     />
                 </div>
                 <div data-tooltip="Open changesets">
-                    {changesetCountByState(GQL.ChangesetState.OPEN) + node.changesetPlans.totalCount}{' '}
+                    {changesetCountByState(GQL.ChangesetState.OPEN) + node.patches.totalCount}{' '}
                     <OpenChangesetIcon className={`text-${changesetStatusColorClasses.OPEN} ml-1 mr-2`} />
                 </div>
                 <div data-tooltip="Merged changesets">

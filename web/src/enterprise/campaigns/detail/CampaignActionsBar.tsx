@@ -8,7 +8,7 @@ import { CampaignUIMode } from './CampaignDetails'
 
 interface Props {
     mode: CampaignUIMode
-    previewingCampaignPlan: boolean
+    previewingPatchSet: boolean
 
     campaign?: Pick<GQL.ICampaign, 'name' | 'closedAt' | 'viewerCanAdminister' | 'publishedAt'> & {
         changesets: Pick<GQL.ICampaign['changesets'], 'totalCount'> & {
@@ -24,13 +24,13 @@ interface Props {
 
 export const CampaignActionsBar: React.FunctionComponent<Props> = ({
     campaign,
-    previewingCampaignPlan,
+    previewingPatchSet,
     mode,
     onClose,
     onDelete,
     onEdit,
 }) => {
-    const showActionButtons = campaign && !previewingCampaignPlan && campaign.viewerCanAdminister
+    const showActionButtons = campaign && !previewingPatchSet && campaign.viewerCanAdminister
     const showSpinner = mode === 'saving' || mode === 'deleting' || mode === 'closing'
     const editingCampaign = mode === 'editing' || mode === 'saving'
 
@@ -40,7 +40,7 @@ export const CampaignActionsBar: React.FunctionComponent<Props> = ({
     const openChangesetsCount =
         campaign?.changesets.nodes.filter(changeset => changeset.state === GQL.ChangesetState.OPEN).length ?? 0
 
-    const newCampaignHeader = previewingCampaignPlan ? 'New campaign' : 'New manual campaign'
+    const newCampaignHeader = previewingPatchSet ? 'New campaign' : 'New manual campaign'
     const header = campaign?.name ?? newCampaignHeader
 
     let stateBadge: JSX.Element
