@@ -1,4 +1,3 @@
-import { upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
@@ -18,6 +17,7 @@ import { ThemeProps } from '../../../shared/src/theme'
 import { eventLogger } from '../tracking/eventLogger'
 import { mergeSettingsSchemas } from './configuration'
 import { SettingsPage } from './SettingsPage'
+import { ErrorMessage } from '../components/alerts'
 
 const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
@@ -117,7 +117,11 @@ export class SettingsArea extends React.Component<Props, State> {
         }
         if (isErrorLike(this.state.dataOrError)) {
             return (
-                <HeroPage icon={AlertCircleIcon} title="Error" subtitle={upperFirst(this.state.dataOrError.message)} />
+                <HeroPage
+                    icon={AlertCircleIcon}
+                    title="Error"
+                    subtitle={<ErrorMessage error={this.state.dataOrError} />}
+                />
             )
         }
 

@@ -69,7 +69,7 @@ var (
 )
 
 func init() {
-	clientStore := NewStore()
+	clientStore := newStore()
 	defaultClient = &client{store: clientStore}
 
 	mode := getMode()

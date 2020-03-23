@@ -1236,7 +1236,7 @@ func Test_commitAndDiffSearchLimits(t *testing.T) {
 
 		haveResultTypes, alert := alertOnSearchLimit(test.resultTypes, &search.TextParameters{
 			Repos: repoRevs,
-			Query: &query.Query{Fields: test.fields},
+			Query: &query.OrdinaryQuery{Query: &query.Query{Fields: test.fields}},
 		})
 
 		haveAlertDescription := ""

@@ -1,5 +1,4 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
@@ -23,6 +22,7 @@ import { UserSettingsAreaRoute } from '../settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from '../settings/UserSettingsSidebar'
 import { UserAreaHeader, UserAreaHeaderNavItem } from './UserAreaHeader'
 import { PatternTypeProps } from '../../search'
+import { ErrorMessage } from '../../components/alerts'
 
 const fetchUser = (args: { username: string }): Observable<GQL.IUser | null> =>
     queryGraphQL(
@@ -187,7 +187,11 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
         }
         if (isErrorLike(this.state.userOrError)) {
             return (
-                <HeroPage icon={AlertCircleIcon} title="Error" subtitle={upperFirst(this.state.userOrError.message)} />
+                <HeroPage
+                    icon={AlertCircleIcon}
+                    title="Error"
+                    subtitle={<ErrorMessage error={this.state.userOrError} />}
+                />
             )
         }
 

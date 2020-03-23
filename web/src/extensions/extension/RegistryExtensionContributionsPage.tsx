@@ -104,9 +104,9 @@ function toContributionsGroups(manifest: ExtensionManifest): ContributionGroup[]
                         }
                     }
                 }
-                const description = `${action.title || ''}${
-                    action.title && action.description ? ': ' : ''
-                }${action.description || ''}`
+                const description = `${action.title || ''}${action.title && action.description ? ': ' : ''}${
+                    action.description || ''
+                }`
                 actionsGroup.rows.push([
                     // eslint-disable-next-line react/jsx-key
                     <code>{action.id}</code>,

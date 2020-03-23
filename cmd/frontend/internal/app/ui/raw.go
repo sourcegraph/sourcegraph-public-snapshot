@@ -15,6 +15,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/golang/gddo/httputil"
 	"github.com/gorilla/mux"
@@ -156,6 +157,7 @@ func serveRaw(w http.ResponseWriter, r *http.Request) error {
 			return err
 		}
 		w.Header().Set("Content-Length", strconv.FormatInt(fi.Size(), 10))
+		log15.Debug("raw endpoint sending archive", "repo", common.Repo.Name, "commit", common.CommitID, "format", format, "path", relativePath, "size", fi.Size())
 
 		_, err = io.Copy(w, f)
 		return err
@@ -207,6 +209,7 @@ func serveRaw(w http.ResponseWriter, r *http.Request) error {
 		fi, err := archiveFS.Lstat(r.Context(), requestedPath)
 		if err != nil {
 			if os.IsNotExist(err) {
+				log15.Debug("raw endpoint sending file", "repo", common.Repo.Name, "commit", common.CommitID, "path", requestedPath, "type", "404")
 				http.Error(w, html.EscapeString(err.Error()), http.StatusNotFound)
 				return nil // request handled
 			}
@@ -226,6 +229,7 @@ func serveRaw(w http.ResponseWriter, r *http.Request) error {
 				names = append(names, name)
 			}
 			result := strings.Join(names, "\n")
+			log15.Debug("raw endpoint sending file", "repo", common.Repo.Name, "commit", common.CommitID, "path", requestedPath, "type", "dir", "size", len(infos))
 			fmt.Fprintf(w, "%s", template.HTMLEscapeString(result))
 			return nil
 		}
@@ -236,6 +240,7 @@ func serveRaw(w http.ResponseWriter, r *http.Request) error {
 			return err
 		}
 		defer f.Close()
+		log15.Debug("raw endpoint sending file", "repo", common.Repo.Name, "commit", common.CommitID, "path", requestedPath, "type", "file", "size", fi.Size())
 		_, err = io.Copy(w, f)
 		return err
 	}

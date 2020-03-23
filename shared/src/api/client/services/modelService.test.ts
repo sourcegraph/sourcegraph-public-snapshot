@@ -55,9 +55,7 @@ describe('ModelService', () => {
     describe('modelUpdates', () => {
         it('emits when a model is added', async () => {
             const modelService = createModelService()
-            const modelAdded = from(modelService.modelUpdates)
-                .pipe(first())
-                .toPromise()
+            const modelAdded = from(modelService.modelUpdates).pipe(first()).toPromise()
             modelService.addModel({ uri: 'u', languageId: 'x', text: 't' })
             expect(await modelAdded).toMatchObject([{ uri: 'u', languageId: 'x', text: 't' }])
         })

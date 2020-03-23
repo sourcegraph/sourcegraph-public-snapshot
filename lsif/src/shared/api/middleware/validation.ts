@@ -7,11 +7,7 @@ import { parseCursor } from '../pagination/cursor'
  *
  * @param key The query string key.
  */
-export const validateNonEmptyString = (key: string): ValidationChain =>
-    query(key)
-        .isString()
-        .not()
-        .isEmpty()
+export const validateNonEmptyString = (key: string): ValidationChain => query(key).isString().not().isEmpty()
 
 /**
  * Create a query string validator for a possibly empty string value.
@@ -28,32 +24,21 @@ export const validateOptionalString = (key: string): ValidationChain =>
  *
  * @param key The query string key.
  */
-export const validateOptionalBoolean = (key: string): ValidationChain =>
-    query(key)
-        .optional()
-        .isBoolean()
-        .toBoolean()
+export const validateOptionalBoolean = (key: string): ValidationChain => query(key).optional().isBoolean().toBoolean()
 
 /**
  * Create a query string validator for an integer value.
  *
  * @param key The query string key.
  */
-export const validateInt = (key: string): ValidationChain =>
-    query(key)
-        .isInt()
-        .toInt()
+export const validateInt = (key: string): ValidationChain => query(key).isInt().toInt()
 
 /**
  * Create a query string validator for a possibly empty integer value.
  *
  * @param key The query string key.
  */
-export const validateOptionalInt = (key: string): ValidationChain =>
-    query(key)
-        .optional()
-        .isInt()
-        .toInt()
+export const validateOptionalInt = (key: string): ValidationChain => query(key).optional().isInt().toInt()
 
 /** A validator used for a string query field. */
 export const validateQuery = validateOptionalString('query')
@@ -63,9 +48,7 @@ export const validateQuery = validateOptionalString('query')
  *
  * @param key The query string key.
  */
-export const validateLsifUploadState = query('state')
-    .optional()
-    .isIn(['queued', 'completed', 'errored', 'processing'])
+export const validateLsifUploadState = query('state').optional().isIn(['queued', 'completed', 'errored', 'processing'])
 
 /** Create a validator for an integer limit field. */
 export const validateLimit = validateOptionalInt('limit')

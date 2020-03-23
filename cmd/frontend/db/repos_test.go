@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
@@ -45,11 +46,18 @@ func TestParseIncludePattern(t *testing.T) {
 		`github.com`:  {regexp: `github.com`},
 		`github\.com`: {like: []string{`%github.com%`}},
 
+		// https://github.com/sourcegraph/sourcegraph/issues/9146
+		`github.com/.*/ini$`:      {regexp: `github.com/.*/ini$`},
+		`github\.com/.*/ini$`:     {regexp: `github\.com/.*/ini$`},
+		`github\.com/go-ini/ini$`: {like: []string{`%github.com/go-ini/ini`}},
+
 		// https://github.com/sourcegraph/sourcegraph/issues/4166
-		`golang/oauth.*`:       {like: []string{"%golang/oauth%"}},
-		`^golang/oauth.*`:      {like: []string{"golang/oauth%"}},
-		`golang/(oauth.*|bla)`: {like: []string{"%golang/oauth%", "%golang/bla%"}},
-		`golang/(oauth|bla)`:   {like: []string{"%golang/oauth%", "%golang/bla%"}},
+		`golang/oauth.*`:                    {like: []string{"%golang/oauth%"}},
+		`^golang/oauth.*`:                   {like: []string{"golang/oauth%"}},
+		`golang/(oauth.*|bla)`:              {like: []string{"%golang/oauth%", "%golang/bla%"}},
+		`golang/(oauth|bla)`:                {like: []string{"%golang/oauth%", "%golang/bla%"}},
+		`^github.com/(golang|go-.*)/oauth$`: {regexp: `^github.com/(golang|go-.*)/oauth$`},
+		`^github.com/(go.*lang|go)/oauth$`:  {regexp: `^github.com/(go.*lang|go)/oauth$`},
 
 		`(^github\.com/Microsoft/vscode$)|(^github\.com/sourcegraph/go-langserver$)`: {exact: []string{"github.com/Microsoft/vscode", "github.com/sourcegraph/go-langserver"}},
 
@@ -58,21 +66,25 @@ func TestParseIncludePattern(t *testing.T) {
 		`^[0-a]$`:                               {regexp: `^[0-a]$`},
 	}
 	for pattern, want := range tests {
-		t.Run(pattern, func(t *testing.T) {
-			exact, like, regexp, err := parseIncludePattern(pattern)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if !reflect.DeepEqual(exact, want.exact) {
-				t.Errorf("got exact %q, want %q", exact, want.exact)
-			}
-			if !reflect.DeepEqual(like, want.like) {
-				t.Errorf("got like %q, want %q", like, want.like)
-			}
-			if regexp != want.regexp {
-				t.Errorf("got regexp %q, want %q", regexp, want.regexp)
-			}
-		})
+		exact, like, regexp, err := parseIncludePattern(pattern)
+		if err != nil {
+			t.Fatal(pattern, err)
+		}
+		if !reflect.DeepEqual(exact, want.exact) {
+			t.Errorf("got exact %q, want %q for %s", exact, want.exact, pattern)
+		}
+		if !reflect.DeepEqual(like, want.like) {
+			t.Errorf("got like %q, want %q for %s", like, want.like, pattern)
+		}
+		if regexp != want.regexp {
+			t.Errorf("got regexp %q, want %q for %s", regexp, want.regexp, pattern)
+		}
+		if qs, err := parsePattern(pattern); err != nil {
+			t.Fatal(pattern, err)
+		} else if testing.Verbose() {
+			q := sqlf.Join(qs, "AND")
+			t.Log(pattern, q.Query(sqlf.PostgresBindVar), q.Args())
+		}
 	}
 }
 

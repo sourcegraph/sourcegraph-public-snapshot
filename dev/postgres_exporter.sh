@@ -16,7 +16,7 @@ PGUSER=${PGUSER-$(get_pg_env USER)}
 PGPORT=${PGPORT-$(get_pg_env PORT)}
 
 ADJUSTED_HOST=${PGHOST:-127.0.0.1}
-if [[ ("$ADJUSTED_HOST" == "localhost" || "$ADJUSTED_HOST" == "127.0.0.1") &&  "$OSTYPE" != "linux-gnu" ]]; then
+if [[ ("$ADJUSTED_HOST" == "localhost" || "$ADJUSTED_HOST" == "127.0.0.1" || -f "$ADJUSTED_HOST") &&  "$OSTYPE" != "linux-gnu" ]]; then
     ADJUSTED_HOST="host.docker.internal"
 fi
 

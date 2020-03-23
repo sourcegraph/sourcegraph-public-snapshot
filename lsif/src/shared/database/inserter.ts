@@ -77,11 +77,7 @@ export class TableInserter<T, M extends new () => T> {
             return
         }
 
-        let query = this.entityManager
-            .createQueryBuilder()
-            .insert()
-            .into(this.model)
-            .values(this.batch)
+        let query = this.entityManager.createQueryBuilder().insert().into(this.model).values(this.batch)
 
         if (this.ignoreConflicts) {
             query = query.onConflict('do nothing')

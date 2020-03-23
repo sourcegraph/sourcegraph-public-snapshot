@@ -2155,3 +2155,60 @@ INSERT INTO repo(id, name, private, deleted_at)
 		}
 	}
 }
+
+func testPermsStore_Metrics(db *sql.DB) func(*testing.T) {
+	return func(t *testing.T) {
+		s := NewPermsStore(db, clock)
+		t.Cleanup(func() {
+			cleanupPermsTables(t, s)
+		})
+
+		ctx := context.Background()
+
+		// Set up some permissions
+		err := s.SetRepoPermissions(ctx, &authz.RepoPermissions{
+			RepoID:  1,
+			Perm:    authz.Read,
+			UserIDs: toBitmap(1, 2),
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		err = s.SetRepoPermissions(ctx, &authz.RepoPermissions{
+			RepoID:  2,
+			Perm:    authz.Read,
+			UserIDs: toBitmap(1, 2),
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Mock rows for testing
+		qs := []*sqlf.Query{
+			sqlf.Sprintf(`UPDATE user_permissions SET updated_at = %s WHERE user_id = 1`, clock().Add(-1*time.Minute)),
+			sqlf.Sprintf(`UPDATE user_permissions SET updated_at = %s WHERE user_id = 2`, clock()),
+			sqlf.Sprintf(`UPDATE repo_permissions SET updated_at = %s WHERE repo_id = 1`, clock().Add(-2*time.Minute)),
+			sqlf.Sprintf(`UPDATE repo_permissions SET updated_at = %s WHERE repo_id = 2`, clock()),
+		}
+		for _, q := range qs {
+			if err := s.execute(ctx, q); err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		m, err := s.Metrics(ctx, time.Minute)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expMetrics := &PermsMetrics{
+			UsersWithStalePerms:  1,
+			UsersPermsGapSeconds: 60,
+			ReposWithStalePerms:  1,
+			ReposPermsGapSeconds: 120,
+		}
+		if diff := cmp.Diff(expMetrics, m); diff != "" {
+			t.Fatal(diff)
+		}
+	}
+}

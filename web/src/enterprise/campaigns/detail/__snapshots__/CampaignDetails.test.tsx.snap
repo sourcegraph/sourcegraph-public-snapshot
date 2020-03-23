@@ -15,7 +15,7 @@ exports[`CampaignDetails creation form for empty manual campaign 1`] = `
       onClose={[Function]}
       onDelete={[Function]}
       onEdit={[Function]}
-      previewingCampaignPlan={false}
+      previewingPatchSet={false}
     />
     <React.Fragment>
       <h3>
@@ -50,7 +50,7 @@ exports[`CampaignDetails creation form for empty manual campaign 1`] = `
 </React.Fragment>
 `;
 
-exports[`CampaignDetails creation form given existing plan 1`] = `
+exports[`CampaignDetails creation form given existing patch set 1`] = `
 Array [
   <form
     className="e2e-campaign-form position-relative "
@@ -163,12 +163,12 @@ Array [
   <CampaignChangesets
     campaign={
       Object {
-        "__typename": "CampaignPlan",
-        "changesetPlans": Object {
+        "__typename": "PatchSet",
+        "id": "c",
+        "patches": Object {
           "nodes": Array [],
           "totalCount": 2,
         },
-        "id": "c",
         "status": Object {
           "completedCount": 3,
           "errors": Array [
@@ -237,7 +237,7 @@ Array [
         "hash": "",
         "key": undefined,
         "pathname": "/",
-        "search": "plan=p",
+        "search": "patchSet=p",
         "state": undefined,
       }
     }
@@ -347,10 +347,6 @@ Array [
         },
         "branch": "awesome-branch",
         "changesetCountsOverTime": Array [],
-        "changesetPlans": Object {
-          "nodes": Array [],
-          "totalCount": 2,
-        },
         "changesets": Object {
           "nodes": Array [],
           "totalCount": 2,
@@ -360,8 +356,12 @@ Array [
         "description": "d",
         "id": "c",
         "name": "n",
-        "plan": Object {
+        "patchSet": Object {
           "id": "p",
+        },
+        "patches": Object {
+          "nodes": Array [],
+          "totalCount": 2,
         },
         "publishedAt": "2020-01-01",
         "status": Object {
@@ -559,10 +559,6 @@ Array [
         },
         "branch": "awesome-branch",
         "changesetCountsOverTime": Array [],
-        "changesetPlans": Object {
-          "nodes": Array [],
-          "totalCount": 2,
-        },
         "changesets": Object {
           "nodes": Array [],
           "totalCount": 2,
@@ -572,8 +568,12 @@ Array [
         "description": "d",
         "id": "c",
         "name": "n",
-        "plan": Object {
+        "patchSet": Object {
           "id": "p",
+        },
+        "patches": Object {
+          "nodes": Array [],
+          "totalCount": 2,
         },
         "publishedAt": "2020-01-01",
         "status": Object {
@@ -861,10 +861,6 @@ Array [
         },
         "branch": "awesome-branch",
         "changesetCountsOverTime": Array [],
-        "changesetPlans": Object {
-          "nodes": Array [],
-          "totalCount": 2,
-        },
         "changesets": Object {
           "nodes": Array [],
           "totalCount": 2,
@@ -874,8 +870,12 @@ Array [
         "description": "d",
         "id": "c",
         "name": "n",
-        "plan": Object {
+        "patchSet": Object {
           "id": "p",
+        },
+        "patches": Object {
+          "nodes": Array [],
+          "totalCount": 2,
         },
         "publishedAt": "2020-01-01",
         "status": Object {
