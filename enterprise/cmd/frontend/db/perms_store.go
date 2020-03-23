@@ -1119,7 +1119,7 @@ AND bind_id IN (%s)`,
 	return nil
 }
 
-func (s *PermsStore) execute(ctx context.Context, q *sqlf.Query) (err error) {
+func (s *PermsStore) execute(ctx context.Context, q *sqlf.Query, vs ...interface{}) (err error) {
 	ctx, save := s.observe(ctx, "execute", "")
 	defer func() { save(&err, otlog.Object("q", q)) }()
 
@@ -1128,6 +1128,22 @@ func (s *PermsStore) execute(ctx context.Context, q *sqlf.Query) (err error) {
 	if err != nil {
 		return err
 	}
+
+	if len(vs) > 0 {
+		if !rows.Next() {
+			// One row is expected, return ErrPermsNotFound if no other errors occurred.
+			err = rows.Err()
+			if err == nil {
+				err = authz.ErrPermsNotFound
+			}
+			return err
+		}
+
+		if err = rows.Scan(vs...); err != nil {
+			return err
+		}
+	}
+
 	return rows.Close()
 }
 
@@ -1425,6 +1441,68 @@ func (s *PermsStore) loadIDsWithTime(ctx context.Context, q *sqlf.Query) (map[in
 	}
 
 	return results, nil
+}
+
+// PermsMetrics contains metrics values calculated by querying the database.
+type PermsMetrics struct {
+	// The number of users with stale permissions.
+	UsersWithStalePerms int64
+	// The seconds between users with oldest and the most up-to-date permissions.
+	UsersPermsGapSeconds float64
+	// The number of repositories with stale permissions.
+	ReposWithStalePerms int64
+	// The seconds between repositories with oldest and the most up-to-date permissions.
+	ReposPermsGapSeconds float64
+}
+
+// Metrics returns calculated metrics values by querying the database. The "staleDur"
+// argument indicates how long ago was the last update to be considered as stale.
+func (s *PermsStore) Metrics(ctx context.Context, staleDur time.Duration) (*PermsMetrics, error) {
+	m := &PermsMetrics{}
+
+	stale := s.clock().Add(-1 * staleDur)
+	q := sqlf.Sprintf(`
+SELECT COUNT(*) FROM user_permissions
+WHERE updated_at <= %s
+`, stale)
+	if err := s.execute(ctx, q, &m.UsersWithStalePerms); err != nil {
+		return nil, errors.Wrap(err, "users with stale perms")
+	}
+
+	var seconds sql.NullFloat64
+	q = sqlf.Sprintf(`
+SELECT EXTRACT(EPOCH FROM (MAX(updated_at) - MIN(updated_at)))
+FROM user_permissions
+`)
+	if err := s.execute(ctx, q, &seconds); err != nil {
+		return nil, errors.Wrap(err, "users perms gap seconds")
+	}
+	m.UsersPermsGapSeconds = seconds.Float64
+
+	q = sqlf.Sprintf(`
+SELECT COUNT(*) FROM repo_permissions AS perms
+WHERE perms.repo_id NOT IN
+	(SELECT repo.id FROM repo
+	 WHERE repo.deleted_at IS NOT NULL)
+AND perms.updated_at <= %s
+`, stale)
+	if err := s.execute(ctx, q, &m.ReposWithStalePerms); err != nil {
+		return nil, errors.Wrap(err, "repos with stale perms")
+	}
+
+	q = sqlf.Sprintf(`
+SELECT EXTRACT(EPOCH FROM (MAX(perms.updated_at) - MIN(perms.updated_at)))
+FROM repo_permissions AS perms
+WHERE perms.repo_id NOT IN
+	(SELECT repo.id FROM repo
+	 WHERE repo.deleted_at IS NOT NULL)
+`)
+	if err := s.execute(ctx, q, &seconds); err != nil {
+		return nil, errors.Wrap(err, "repos perms gap seconds")
+	}
+	m.ReposPermsGapSeconds = seconds.Float64
+
+	return m, nil
 }
 
 // tx begins a new transaction.
