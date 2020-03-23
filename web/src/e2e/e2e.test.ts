@@ -375,6 +375,7 @@ describe('e2e test suite', () => {
         test('Site admin overview', async () => {
             await driver.page.goto(sourcegraphBaseUrl + '/site-admin')
             await driver.page.waitForSelector('.e2e-site-admin-overview-menu', { visible: true })
+            await driver.page.waitForSelector('.e2e-product-certificate', { visible: true })
             await percySnapshot(driver.page, 'Site admin overview')
         })
     })
