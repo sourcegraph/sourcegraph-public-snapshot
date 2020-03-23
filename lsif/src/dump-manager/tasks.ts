@@ -157,7 +157,7 @@ async function purgeFile(filename: string): Promise<boolean> {
 }
 
 /**
- * Calculate the size of a directory.
+ * Calculate the cumulative size of all plain files in a directory, non-recursively.
  *
  * @param directory The directory path.
  */
