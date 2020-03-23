@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react'
+import React, { useEffect, useCallback } from 'react'
 import * as H from 'history'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../../components/FilteredConnection'
@@ -31,8 +31,8 @@ export const RepositoryReleasesTagsPage: React.FunctionComponent<Props> = ({
         eventLogger.logViewEvent('RepositoryReleasesTags')
     }, [])
 
-    const queryTags = useMemo(
-        () => (args: FilteredConnectionQueryArgs): Observable<GQL.IGitRefConnection> =>
+    const queryTags = useCallback(
+        (args: FilteredConnectionQueryArgs): Observable<GQL.IGitRefConnection> =>
             queryGitRefs({ ...args, repo: repo.id, type: GQL.GitRefType.GIT_TAG }),
         [repo.id, queryGitRefs]
     )
