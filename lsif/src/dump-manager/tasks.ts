@@ -95,7 +95,7 @@ async function removeDeadDumps(
     let count = 0
     for (const basenames of chunk(
         await fs.readdir(path.join(storageRoot, constants.DBS_DIR)),
-        settings.DEAD_DUMP_CHUNK_SIZE
+        settings.DEAD_DUMP_BATCH_SIZE
     )) {
         const pathsById = new Map<number, string>()
         for (const basename of basenames) {

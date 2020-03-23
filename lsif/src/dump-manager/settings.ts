@@ -26,7 +26,7 @@ export const RESULT_CHUNK_CACHE_CAPACITY = readEnvInt('RESULT_CHUNK_CACHE_CAPACI
 export const PURGE_OLD_DUMPS_INTERVAL = readEnvInt('PURGE_OLD_DUMPS_INTERVAL', 60 * 30)
 
 /** How many uploads to query at once when determining if a db file is unreferenced. */
-export const DEAD_DUMP_CHUNK_SIZE = readEnvInt('DEAD_DUMP_CHUNK_SIZE', 100)
+export const DEAD_DUMP_BATCH_SIZE = readEnvInt('DEAD_DUMP_BATCH_SIZE', 100)
 
 /** The maximum space (in bytes) that the dbs directory can use. */
 export const DBS_DIR_MAXIMUM_SIZE_BYTES = readEnvInt('DBS_DIR_MAXIMUM_SIZE_BYTES', 1024 * 1024 * 1024 * 10)
