@@ -445,6 +445,28 @@ func testStore(db *sql.DB) func(*testing.T) {
 				}
 			})
 
+			t.Run("GetGithubExternalIDForRefs invalid external-id", func(t *testing.T) {
+				have, err := s.GetGithubExternalIDForRefs(ctx, "invalid", "https://github.com/", []string{"campaigns/test"})
+				if err != nil {
+					t.Fatal(err)
+				}
+				want := []string{}
+				if diff := cmp.Diff(want, have); diff != "" {
+					t.Fatal(diff)
+				}
+			})
+
+			t.Run("GetGithubExternalIDForRefs invalid external service id", func(t *testing.T) {
+				have, err := s.GetGithubExternalIDForRefs(ctx, "external-id", "invalid", []string{"campaigns/test"})
+				if err != nil {
+					t.Fatal(err)
+				}
+				want := []string{}
+				if diff := cmp.Diff(want, have); diff != "" {
+					t.Fatal(diff)
+				}
+			})
+
 			t.Run("CreateAlreadyExistingChangesets", func(t *testing.T) {
 				ids := make([]int64, len(changesets))
 				for i, c := range changesets {
