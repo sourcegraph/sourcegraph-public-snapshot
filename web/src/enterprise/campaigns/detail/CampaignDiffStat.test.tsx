@@ -1,5 +1,4 @@
 import React from 'react'
-import * as GQL from '../../../../../shared/src/graphql/schema'
 import { CampaignDiffStat } from './CampaignDiffStat'
 import { createRenderer } from 'react-test-renderer/shallow'
 
@@ -19,11 +18,10 @@ describe('CampaignDiffStat', () => {
                                                 added: 10,
                                                 changed: 10,
                                                 deleted: 10,
-                                                __typename: 'DiffStat' as const,
                                             },
-                                        } as GQL.IFileDiffConnection,
-                                    } as GQL.IRepositoryComparison,
-                                } as GQL.IExternalChangeset,
+                                        },
+                                    },
+                                },
                             ],
                         },
                         patches: {
@@ -35,11 +33,10 @@ describe('CampaignDiffStat', () => {
                                                 added: 10,
                                                 changed: 10,
                                                 deleted: 10,
-                                                __typename: 'DiffStat' as const,
                                             },
-                                        } as GQL.IPreviewFileDiffConnection,
-                                    } as GQL.IPreviewRepositoryComparison,
-                                } as GQL.IPatch,
+                                        },
+                                    },
+                                },
                             ],
                         },
                     }}
@@ -62,11 +59,10 @@ describe('CampaignDiffStat', () => {
                                                 added: 0,
                                                 changed: 0,
                                                 deleted: 0,
-                                                __typename: 'DiffStat' as const,
                                             },
-                                        } as GQL.IFileDiffConnection,
-                                    } as GQL.IRepositoryComparison,
-                                } as GQL.IExternalChangeset,
+                                        },
+                                    },
+                                },
                             ],
                         },
                         patches: {
@@ -78,11 +74,10 @@ describe('CampaignDiffStat', () => {
                                                 added: 0,
                                                 changed: 0,
                                                 deleted: 0,
-                                                __typename: 'DiffStat' as const,
                                             },
-                                        } as GQL.IPreviewFileDiffConnection,
-                                    } as GQL.IPreviewRepositoryComparison,
-                                } as GQL.IPatch,
+                                        },
+                                    },
+                                },
                             ],
                         },
                     }}
@@ -94,7 +89,7 @@ describe('CampaignDiffStat', () => {
         expect(
             createRenderer().render(
                 <CampaignDiffStat
-                    campaign={{
+                    patchSet={{
                         __typename: 'PatchSet' as const,
                         patches: {
                             nodes: [
@@ -105,11 +100,10 @@ describe('CampaignDiffStat', () => {
                                                 added: 10,
                                                 changed: 10,
                                                 deleted: 10,
-                                                __typename: 'DiffStat' as const,
                                             },
-                                        } as GQL.IPreviewFileDiffConnection,
-                                    } as GQL.IPreviewRepositoryComparison,
-                                } as GQL.IPatch,
+                                        },
+                                    },
+                                },
                             ],
                         },
                     }}
@@ -121,7 +115,7 @@ describe('CampaignDiffStat', () => {
         expect(
             createRenderer().render(
                 <CampaignDiffStat
-                    campaign={{
+                    patchSet={{
                         __typename: 'PatchSet' as const,
                         patches: {
                             nodes: [
@@ -132,11 +126,10 @@ describe('CampaignDiffStat', () => {
                                                 added: 0,
                                                 changed: 0,
                                                 deleted: 0,
-                                                __typename: 'DiffStat' as const,
                                             },
-                                        } as GQL.IPreviewFileDiffConnection,
-                                    } as GQL.IPreviewRepositoryComparison,
-                                } as GQL.IPatch,
+                                        },
+                                    },
+                                },
                             ],
                         },
                     }}
