@@ -2,16 +2,18 @@ import * as lsp from 'vscode-languageserver-protocol'
 import * as pgModels from '../../shared/models/pg'
 import { OrderedSet } from '../../shared/datastructures/orderedset'
 
-/** A location with the identifier of the dump that contains it. */
 export interface InternalLocation {
+    /** The identifier of the dump that contains the location. */
     dumpId: pgModels.DumpId
+    /** The path relative to the dump root. */
     path: string
     range: lsp.Range
 }
 
-/** A location with the dump that contains it. */
 export interface ResolvedInternalLocation {
+    /** The dump that contains the location. */
     dump: pgModels.LsifDump
+    /** The path relative to the dump root. */
     path: string
     range: lsp.Range
 }
@@ -24,18 +26,18 @@ export class OrderedLocationSet extends OrderedSet<InternalLocation> {
      * @param values A set of values used to seed the set.
      * @param trusted Whether the given values are already deduplicated.
      */
-    constructor(locations?: InternalLocation[], trusted = false) {
+    constructor(values?: InternalLocation[], trusted = false) {
         super(
-            (location: InternalLocation): string =>
+            (value: InternalLocation): string =>
                 [
-                    location.dumpId,
-                    location.path,
-                    location.range.start.line,
-                    location.range.start.character,
-                    location.range.end.line,
-                    location.range.end.character,
+                    value.dumpId,
+                    value.path,
+                    value.range.start.line,
+                    value.range.start.character,
+                    value.range.end.line,
+                    value.range.end.character,
                 ].join(':'),
-            locations,
+            values,
             trusted
         )
     }

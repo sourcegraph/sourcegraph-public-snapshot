@@ -238,6 +238,7 @@ export class UploadManager {
      * Create a new uploaded with a state of `queued`.
      *
      * @param args The upload payload.
+     * @param entityManager The EntityManager to use as part of a transaction.
      * @param tracer The tracer instance.
      * @param span The parent span.
      */

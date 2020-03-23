@@ -12,15 +12,6 @@ export class Database {
     constructor(private dumpId: pgModels.DumpId) {}
 
     /**
-     * Retrieve all document paths from the database.
-     *
-     * @param ctx The tracing context.
-     */
-    public documentPaths(ctx: TracingContext = {}): Promise<string[]> {
-        return this.request('documentPaths', new URLSearchParams(), ctx)
-    }
-
-    /**
      * Determine if data exists for a particular document in this database.
      *
      * @param path The path of the document.
@@ -95,21 +86,21 @@ export class Database {
     }
 
     /**
-     * Return a parsed document that describes the given path as well as the ranges
-     * from that document that contains the given position. If multiple ranges are
-     * returned, then the inner-most ranges will occur before the outer-most ranges.
+     * Return all of the monikers attached to all ranges that contain the given position. The
+     * resulting list is grouped by range. If multiple ranges contain this position, then the
+     * list monikers for the inner-most ranges will occur before the outer-most ranges.
      *
      * @param path The path of the document.
      * @param position The user's hover position.
      * @param ctx The tracing context.
      */
-    public getRangeByPosition(
+    public monikersByPosition(
         path: string,
         position: lsp.Position,
         ctx: TracingContext = {}
-    ): Promise<{ document: sqliteModels.DocumentData | undefined; ranges: sqliteModels.RangeData[] }> {
+    ): Promise<sqliteModels.MonikerData[][]> {
         return this.request(
-            'getRangeByPosition',
+            'monikersByPosition',
             new URLSearchParams({ path, line: String(position.line), character: String(position.character) }),
             ctx
         )
@@ -157,15 +148,22 @@ export class Database {
     }
 
     /**
-     * Return a parsed document that describes the given path. The result of this
-     * method is cached across all database instances. If the document is not found
-     * it returns undefined; other errors will throw.
+     * Return the package information data with the given identifier.
      *
      * @param path The path of the document.
+     * @param packageInformationId The identifier of the package information data.
      * @param ctx The tracing context.
      */
-    public getDocumentByPath(path: string, ctx: TracingContext = {}): Promise<sqliteModels.DocumentData | undefined> {
-        return this.request('getDocumentByPath', new URLSearchParams({ path }), ctx)
+    public packageInformation(
+        path: string,
+        packageInformationId: sqliteModels.PackageInformationId,
+        ctx: TracingContext = {}
+    ): Promise<sqliteModels.PackageInformationData | undefined> {
+        return this.request(
+            'packageInformation',
+            new URLSearchParams({ path, packageInformationId: String(packageInformationId) }),
+            ctx
+        )
     }
 
     //
