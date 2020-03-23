@@ -479,7 +479,7 @@ components:
       additionalProperties: false
     Range:
       type: object
-      description: A closed range of positions in a source file.
+      description: A half-open range of positions in a source file.
       properties:
         start:
           $ref: '#/components/schemas/Position'
