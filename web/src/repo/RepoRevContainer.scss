@@ -24,7 +24,7 @@
             position: absolute;
             top: 0;
             left: 0;
-            z-index: 1; // overlay the content when sidebar is closed
+            z-index: $z-index-repo-rev-container-sidebar-toggle;
         }
 
         &-resizable {

@@ -1,3 +1,10 @@
 {
-  "extends": ["@sourcegraph/stylelint-config"]
+  "extends": ["@sourcegraph/stylelint-config"],
+  "tradingview/value-no-numeric-constants": [
+    ["z-index"],
+    {
+      "severity": "error",
+      "message": "z-indexes must be defined in z-indexes.scss and referennced through an SCSS variable"
+    }
+  ]
 }

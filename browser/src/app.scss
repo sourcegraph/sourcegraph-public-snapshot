@@ -39,13 +39,13 @@ $theme-colors-light: (
 @import 'bootstrap/scss/utilities/text';
 @import 'bootstrap/scss/utilities/screenreaders';
 @import '../../shared/src/global-styles/icons';
+@import '../../shared/src/hover/HoverOverlay.scss';
 @import './highlight';
 @import './shared/components/CodeViewToolbar.scss';
 @import './libs/bitbucket/style.scss';
 @import './libs/gitlab/style.scss';
 @import './libs/github/style.scss';
 @import './libs/phabricator/style.scss';
-@import './libs/code_intelligence/HoverOverlay.scss';
 @import './libs/code_intelligence/external_links';
 @import './libs/code_intelligence/native_tooltips';
 @import './shared';

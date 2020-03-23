@@ -20,12 +20,17 @@ if [[ ("$ADJUSTED_HOST" == "localhost" || "$ADJUSTED_HOST" == "127.0.0.1") &&  "
     ADJUSTED_HOST="host.docker.internal"
 fi
 
+# AUTH=""
+# if ! [ -z ${PGPASSWORD+} ]; then
+#     AUTH=":$PGPASSWORD"
+# fi
+
 NET_ARG=""
-DATA_SOURCE_NAME="postgresql://${PGUSER}:${PGPASSWORD}@${ADJUSTED_HOST}:${PGPORT}/postgres?sslmode=${PGSSLMODE:-disable}"
+DATA_SOURCE_NAME="postgresql://${PGUSER}:${PGPASSWORD+}@${ADJUSTED_HOST}:${PGPORT}/postgres?sslmode=${PGSSLMODE:-disable}"
 
 if [[ "$OSTYPE" == "linux-gnu" ]]; then
    NET_ARG="--net=host"
-   DATA_SOURCE_NAME="postgresql://${PGUSER}:${PGPASSWORD}@${ADJUSTED_HOST}:${PGPORT}/postgres?sslmode=${PGSSLMODE:-disable}"
+   DATA_SOURCE_NAME="postgresql://${PGUSER}${PGPASSWORD+}@${ADJUSTED_HOST}:${PGPORT}/postgres?sslmode=${PGSSLMODE:-disable}"
 fi
 
 exec docker run --rm -p9187:9187 ${NET_ARG} --name=postgres_exporter -e DATA_SOURCE_NAME=${DATA_SOURCE_NAME} ${IMAGE}

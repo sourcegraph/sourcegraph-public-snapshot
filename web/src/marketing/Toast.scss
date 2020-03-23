@@ -2,7 +2,7 @@
     position: fixed;
     right: 2rem;
     bottom: 2rem;
-    z-index: 100; // Overlay repository/blob contents and search results
+    z-index: $z-index-toast; // Overlay repository/blob contents and search results
     padding: 1rem;
     display: flex;
     align-items: flex-start;

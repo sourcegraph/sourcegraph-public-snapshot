@@ -1,3 +1,3 @@
 {
-  "extends": ["@sourcegraph/stylelint-config"]
+  "extends": ["../.stylelintrc.json"]
 }

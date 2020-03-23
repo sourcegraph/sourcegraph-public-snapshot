@@ -4,7 +4,7 @@
         height: 1.75rem;
         padding: 0.25rem;
         background: transparent;
-        z-index: 1;
+        z-index: $z-index-badge-decoration-attachment-contents;
         border: none;
         border-radius: 100%;
         background-color: rgba($body-bg-color-dark, 0.8);

@@ -3,7 +3,7 @@
         position: absolute;
         user-select: none;
         pointer-events: none;
-        z-index: 0;
+        z-index: $z-index-product-certificate-bg;
         top: 0;
         bottom: 0;
         left: 0;
@@ -16,13 +16,13 @@
 
     &__logo {
         height: 5rem;
-        z-index: 9;
+        z-index: $z-index-product-certificate-logo;
     }
     .btn {
-        z-index: 9;
+        z-index: $z-index-product-certificate-btn;
     }
     .card-footer {
-        z-index: 9;
+        z-index: $z-index-product-certificate-card-footer;
     }
 }
 

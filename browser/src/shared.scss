@@ -46,7 +46,7 @@ $body-color-dark: #f2f4f8;
 }
 
 .command-list-popover {
-    z-index: 1100; // high enough to prevent most things from obscuring it
+    z-index: $z-index-command-list-popover;
     border: 1px solid var(--dropdown-border-color);
     border-radius: 3px;
 }
@@ -61,7 +61,7 @@ $body-color-dark: #f2f4f8;
     position: fixed;
     right: 0;
     bottom: 0;
-    z-index: 10000;
+    z-index: $z-index-global-debug;
     background-color: var(--body-bg);
 }
 

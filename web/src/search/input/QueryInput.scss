@@ -25,7 +25,7 @@
     &__suggestions {
         position: absolute;
         width: 100%;
-        z-index: 1;
+        z-index: $z-index-query-input-suggestions;
         max-height: 25rem;
         margin: 0;
         overflow-x: hidden;
@@ -63,7 +63,7 @@
 
     &__loading-notifier {
         position: absolute;
-        z-index: 1;
+        z-index: $z-index-query-input-loading-notifier;
         right: 0.5rem;
         padding-left: 0.25rem;
         bottom: 0.375rem;

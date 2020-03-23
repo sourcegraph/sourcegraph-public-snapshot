@@ -11,7 +11,7 @@
         }
     }
     &__details-menu {
-        z-index: 100;
+        z-index: $z-index-close-delete-campaign-prompt-details-menu;
         right: 0;
         > .card {
             max-width: 50vw;

@@ -21,7 +21,7 @@
         width: 1.25rem;
         height: 1.25rem;
         margin-right: -1.25rem;
-        z-index: 1;
+        z-index: $z-index-repo-rev-sidebar-toggle;
 
         .icon {
             width: 1.125rem;

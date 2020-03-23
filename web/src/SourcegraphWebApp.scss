@@ -6,6 +6,8 @@ It should import all component stylesheets
 // Use duplicate selectors for the light-theme
 // stylelint-disable no-duplicate-selectors
 
+@import './global-styles/z-indexes.scss';
+
 // Media breakpoints
 $media-sm: 576px;
 $media-md: 768px;

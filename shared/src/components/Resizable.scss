@@ -16,7 +16,7 @@
 
         opacity: 0;
         user-select: none;
-        z-index: 1;
+        z-index: $z-index-resizable-handle;
 
         &--right,
         &--left {
@@ -57,7 +57,7 @@
         bottom: -100px;
 
         display: none;
-        z-index: 999999;
+        z-index: $z-index-resizable-ghost;
         &--resizing {
             display: block;
         }

@@ -13,7 +13,7 @@
     }
 
     &__toggle {
-        z-index: 1;
+        z-index: $z-index-extension-card-toggle;
     }
 
     &__footer {

@@ -56,7 +56,7 @@ $filter-input-padding: 0.25rem;
         position: absolute;
         width: inherit;
         max-width: 100%;
-        z-index: 1;
+        z-index: $z-index-filter-input-suggestions;
         max-height: 25rem;
         margin: 0;
         overflow-x: hidden;
