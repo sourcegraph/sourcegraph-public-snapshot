@@ -1,10 +1,10 @@
 import * as H from 'history'
 import {
     IExternalChangeset,
-    IChangesetPlan,
     ChangesetReviewState,
     ChangesetState,
     ChangesetCheckState,
+    IPatch,
 } from '../../../../../../shared/src/graphql/schema'
 import Octicon, { Diff } from '@primer/octicons-react'
 import React, { useState, useEffect, useCallback } from 'react'
@@ -28,7 +28,7 @@ import {
     publishChangeset as _publishChangeset,
     syncChangeset,
     queryExternalChangesetFileDiffs,
-    queryChangesetPlanFileDiffs,
+    queryPatchFileDiffs,
 } from '../backend'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Subject } from 'rxjs'
@@ -47,11 +47,11 @@ import { FileDiffConnection } from '../../../../components/diff/FileDiffConnecti
 import { FilteredConnectionQueryArgs } from '../../../../components/FilteredConnection'
 
 export interface ChangesetNodeProps extends ThemeProps {
-    node: IExternalChangeset | IChangesetPlan
+    node: IExternalChangeset | IPatch
     campaignUpdates?: Subject<void>
     history: H.History
     location: H.Location
-    /** Shows the publish button for ChangesetPlans */
+    /** Shows the publish button for patches */
     enablePublishing: boolean
     extensionInfo?: {
         hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>
@@ -73,7 +73,7 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
 }) => {
     const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null)
     const [isPublishing, setIsPublishing] = useState<boolean>()
-    const publicationEnqueued = node.__typename === 'ChangesetPlan' && node.publicationEnqueued
+    const publicationEnqueued = node.__typename === 'Patch' && node.publicationEnqueued
     useEffect(() => {
         setIsPublishing(publicationEnqueued)
     }, [publicationEnqueued])
@@ -178,11 +178,11 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                         </div>
                     )}
                     <div>
-                        {node.__typename === 'ChangesetPlan' && <Octicon icon={Diff} className="icon-inline mr-2" />}
+                        {node.__typename === 'Patch' && <Octicon icon={Diff} className="icon-inline mr-2" />}
                         <strong>
                             <Link
                                 to={node.repository.url}
-                                className={classNames(node.__typename === 'ChangesetPlan' && 'text-muted')}
+                                className={classNames(node.__typename === 'Patch' && 'text-muted')}
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >
@@ -224,7 +224,7 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                     />
                 )}
             </div>
-            {enablePublishing && node.__typename === 'ChangesetPlan' && (
+            {enablePublishing && node.__typename === 'Patch' && (
                 <>
                     {publishError && <ErrorIcon data-tooltip={publishError.message} className="ml-2" />}
                     <button
@@ -246,7 +246,7 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
         (args: FilteredConnectionQueryArgs) =>
             node.__typename === 'ExternalChangeset'
                 ? queryExternalChangesetFileDiffs(node.id, args)
-                : queryChangesetPlanFileDiffs(node.id, args),
+                : queryPatchFileDiffs(node.id, args),
         [node.__typename, node.id]
     )
 

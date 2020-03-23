@@ -7,7 +7,7 @@ import { FilteredConnection, FilteredConnectionQueryArgs, Connection } from '../
 import { Observable, Subject } from 'rxjs'
 import { DEFAULT_CHANGESET_LIST_COUNT } from '../presentation'
 import { upperFirst, lowerCase } from 'lodash'
-import { queryChangesetPlans, queryChangesets as _queryChangesets } from '../backend'
+import { queryChangesets as _queryChangesets, queryPatches } from '../backend'
 import { repeatWhen, delay, withLatestFrom, map, filter } from 'rxjs/operators'
 import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
 import { createHoverifier, HoveredToken } from '@sourcegraph/codeintellify'
@@ -31,7 +31,7 @@ import { propertyIsDefined } from '../../../../../../shared/src/util/types'
 import { useObservable } from '../../../../../../shared/src/util/useObservable'
 
 interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, ExtensionsControllerProps {
-    campaign: Pick<GQL.ICampaignPlan, '__typename' | 'id'> | Pick<GQL.ICampaign, '__typename' | 'id' | 'closedAt'>
+    campaign: Pick<GQL.IPatchSet, '__typename' | 'id'> | Pick<GQL.ICampaign, '__typename' | 'id' | 'closedAt'>
     history: H.History
     location: H.Location
     campaignUpdates: Subject<void>
@@ -41,7 +41,7 @@ interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, Extens
     queryChangesets?: (
         campaignID: GQL.ID,
         args: FilteredConnectionQueryArgs
-    ) => Observable<Connection<GQL.IExternalChangeset | GQL.IChangesetPlan>>
+    ) => Observable<Connection<GQL.IExternalChangeset | GQL.IPatch>>
 }
 
 function getLSPTextDocumentPositionParams(
@@ -78,11 +78,9 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
 
     const queryChangesetsConnection = useCallback(
         (args: FilteredConnectionQueryArgs) => {
-            const queryObservable: Observable<
-                GQL.IChangesetPlanConnection | Connection<GQL.IExternalChangeset | GQL.IChangesetPlan>
-            > =
-                campaign.__typename === 'CampaignPlan'
-                    ? queryChangesetPlans(campaign.id, args)
+            const queryObservable: Observable<GQL.IPatchConnection | Connection<GQL.IExternalChangeset | GQL.IPatch>> =
+                campaign.__typename === 'PatchSet'
+                    ? queryPatches(campaign.id, args)
                     : queryChangesets(campaign.id, { ...args, state, reviewState, checkState })
             return queryObservable.pipe(repeatWhen(obs => obs.pipe(delay(5000))))
         },
@@ -191,7 +189,7 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
         <>
             {campaign.__typename === 'Campaign' && changesetFiltersRow}
             <div className="list-group position-relative" ref={nextContainerElement}>
-                <FilteredConnection<GQL.IExternalChangeset | GQL.IChangesetPlan, Omit<ChangesetNodeProps, 'node'>>
+                <FilteredConnection<GQL.IExternalChangeset | GQL.IPatch, Omit<ChangesetNodeProps, 'node'>>
                     className="mt-2"
                     updates={changesetUpdates}
                     nodeComponent={ChangesetNode}

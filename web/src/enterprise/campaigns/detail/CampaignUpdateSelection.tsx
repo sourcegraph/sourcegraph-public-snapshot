@@ -17,10 +17,10 @@ interface Props {
  * A list of a campaign's to choose from for an update
  */
 export const CampaignUpdateSelection: React.FunctionComponent<Props> = ({ history, location, onSelect }) => {
-    // Only query open campaigns, that are non-manual. Those are the only ones that can be updated with a plan.
+    // Only query open campaigns, that are non-manual. Those are the only ones that can be updated with a patch set.
     const queryConnection = React.useCallback(
         (args: FilteredConnectionQueryArgs) =>
-            queryCampaigns({ ...args, state: GQL.CampaignState.OPEN, hasPlan: true }),
+            queryCampaigns({ ...args, state: GQL.CampaignState.OPEN, hasPatchSet: true }),
         []
     )
     return (

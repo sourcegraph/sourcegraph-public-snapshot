@@ -1497,9 +1497,9 @@ describe('e2e test suite', () => {
             expect(generatedChangesetCount).toEqual(changesetCount)
             await percySnapshot(driver.page, snapshotName)
         }
-        test('View campaign preview for plan', async () => {
+        test('View campaign preview for patch set', async () => {
             const repo = await driver.getRepository('github.com/sourcegraph-testing/automation-e2e-test')
-            const { previewURL } = await driver.createCampaignPlanFromPatches([
+            const { previewURL } = await driver.createPatchSetFromPatches([
                 {
                     repository: repo.id,
                     baseRevision: '339d09ae1ce5907e0678ae5f1f91d9ad38db6107',

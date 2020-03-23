@@ -62,12 +62,12 @@ func enterpriseInit(
 	// Set up syncer
 	go syncer.Run(ctx)
 
-	// Set up expired campaign deletion
+	// Set up expired patch set deletion
 	go func() {
 		for {
-			err := campaignsStore.DeleteExpiredCampaignPlans(ctx)
+			err := campaignsStore.DeleteExpiredPatchSets(ctx)
 			if err != nil {
-				log15.Error("DeleteExpiredCampaignPlans", "error", err)
+				log15.Error("DeleteExpiredPatchSets", "error", err)
 			}
 			time.Sleep(2 * time.Minute)
 		}
