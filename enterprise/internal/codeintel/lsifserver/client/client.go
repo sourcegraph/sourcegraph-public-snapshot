@@ -13,7 +13,7 @@ import (
 
 var (
 	// TODO - rename me
-	lsifServerURL = env.Get("LSIF_API_URL", "k8s+http://lsif-api:3186", "lsif-api URL (or space separated list of lsif-server URLs)")
+	lsifServerURL = env.Get("LSIF_SERVER_URL", "k8s+http://lsif-server:3186", "lsif-server URL (or space separated list of lsif-server URLs)")
 
 	lsifServerURLsOnce sync.Once
 	lsifServerURLs     *endpoint.Map

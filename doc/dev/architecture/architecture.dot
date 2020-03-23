@@ -1,5 +1,5 @@
 digraph architecture {
-    label="Sourcegraph Architecture Overview\n\nBox => horizontally scalable service, Rectangle => singleton service"
+    label="LSIF Server Architecture Overview\n\nBox => horizontally scalable service, Rectangle => singleton service"
     rankdir=TD
     ratio=fill
     concentrate=true
@@ -88,10 +88,10 @@ digraph architecture {
             URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/symbols"
         ]
 
-        code_intel [
-            label="Code intel processes\n(click to expand)"
+        lsif_server [
+            label="lsif server"
             fillcolor="9"
-            URL="https://github.com/sourcegraph/sourcegraph/tree/master/doc/dev/architecture/codeintel.svg"
+            URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/lsif-server"
         ]
 
         subgraph cluster_zoekt {
@@ -160,7 +160,7 @@ digraph architecture {
         redis_cache
         redis_store
         syntect_server
-        code_intel
+        lsif_server
         symbols
     } [
         fillcolor="1"
@@ -189,7 +189,7 @@ digraph architecture {
         fillcolor="8"
     ]
 
-    code_intel -> {
+    lsif_server -> {
         frontend
         postgres
     } [

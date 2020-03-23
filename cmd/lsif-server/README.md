@@ -4,7 +4,7 @@ A small wrapper around the TypeScript/node processes that serve precise LSIF cod
 
 - [lsif-api](../../lsif/src/cmd/api/api.ts)
 - [lsif-bundle-manager](../../lsif/src/cmd/bundle-manager/manager.ts)
-- [lsif-worker](../../lsif/src/cmd/worker`/worker.ts)
+- [lsif-worker](../../lsif/src/cmd/worker/worker.ts)
 
 These processes are run in a [goreman](https://github.com/mattn/goreman) supervisor. By default, there will be one API process and one worker process. The number of replicas per process can be tuned with the environment variables `LSIF_NUM_APIS` (zero or one), `LSIF_NUM_BUNDLE_MANAGERS` (zero or one), and `LSIF_NUM_WORKERS` (zero or more).
 
