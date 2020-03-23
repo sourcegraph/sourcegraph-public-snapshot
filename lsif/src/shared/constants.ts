@@ -1,9 +1,6 @@
 /** The directory relative to the storage where SQLite databases are located. */
 export const DBS_DIR = 'dbs'
 
-/** The directory relative to the storage where scratch SQLite databases create created during processing. */
-export const TEMP_DIR = 'temp'
-
 /** The directory relative to the storage where raw dumps are uploaded. */
 export const UPLOADS_DIR = 'uploads'
 
