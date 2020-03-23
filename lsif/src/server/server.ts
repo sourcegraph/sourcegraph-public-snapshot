@@ -1,6 +1,4 @@
-import * as constants from '../shared/constants'
 import * as metrics from './metrics'
-import * as path from 'path'
 import * as settings from './settings'
 import promClient from 'prom-client'
 import { Backend } from './backend/backend'
@@ -18,6 +16,7 @@ import { DumpManager } from '../shared/store/dumps'
 import { DependencyManager } from '../shared/store/dependencies'
 import { SRC_FRONTEND_INTERNAL } from '../shared/config/settings'
 import { startExpressApp } from '../shared/api/init'
+import { createInternalRouter } from './routes/internal'
 
 /**
  * Runs the HTTP server that accepts LSIF dump uploads and responds to LSIF requests.
@@ -36,9 +35,6 @@ async function main(logger: Logger): Promise<void> {
 
     // Ensure storage roots exist
     await ensureDirectory(settings.STORAGE_ROOT)
-    await ensureDirectory(path.join(settings.STORAGE_ROOT, constants.DBS_DIR))
-    await ensureDirectory(path.join(settings.STORAGE_ROOT, constants.TEMP_DIR))
-    await ensureDirectory(path.join(settings.STORAGE_ROOT, constants.UPLOADS_DIR))
 
     // Create database connection and entity wrapper classes
     const connection = await createPostgresConnection(fetchConfiguration(), logger)
@@ -48,11 +44,12 @@ async function main(logger: Logger): Promise<void> {
     const backend = new Backend(dumpManager, dependencyManager, SRC_FRONTEND_INTERNAL)
 
     // Start background tasks
-    startTasks(connection, dumpManager, uploadManager, logger)
+    startTasks(connection, uploadManager, logger)
 
     const routers = [
         createUploadRouter(dumpManager, uploadManager, logger),
         createLsifRouter(connection, backend, uploadManager, logger, tracer),
+        createInternalRouter(dumpManager, uploadManager, logger),
     ]
 
     // Start server

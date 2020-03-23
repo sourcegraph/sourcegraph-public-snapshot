@@ -39,27 +39,6 @@ export class Database {
     constructor(private dumpId: pgModels.DumpId, private databasePath: string) {}
 
     /**
-     * Retrieve all document paths from the database.
-     *
-     * @param ctx The tracing context.
-     */
-    public documentPaths(ctx: TracingContext = {}): Promise<string[]> {
-        return this.logAndTraceCall(ctx, 'Fetching document paths', async ctx => {
-            const paths: { path: string }[] = await this.withConnection(
-                connection =>
-                    connection
-                        .getRepository(sqliteModels.DocumentModel)
-                        .createQueryBuilder()
-                        .select('path')
-                        .getRawMany(),
-                ctx.logger
-            )
-
-            return paths.map(({ path }) => path)
-        })
-    }
-
-    /**
      * Determine if data exists for a particular document in this database.
      *
      * @param path The path of the document.
@@ -103,13 +82,7 @@ export class Database {
                     numDefinitionResults: definitionResults.length,
                 })
 
-                // TODO - due to some bugs in tsc... this fixes the tests and some typescript examples
-                // Not sure of a better way to do this right now until we work through how to patch
-                // lsif-tsc to handle node_modules inclusion (or somehow blacklist it on import).
-
-                if (!definitionResults.some(v => v.documentPath.includes('node_modules'))) {
-                    return this.convertRangesToInternalLocations(path, document, definitionResults)
-                }
+                return this.convertRangesToInternalLocations(path, document, definitionResults)
             }
 
             return []
@@ -199,29 +172,27 @@ export class Database {
     }
 
     /**
-     * Return a parsed document that describes the given path as well as the ranges
-     * from that document that contains the given position. If multiple ranges are
-     * returned, then the inner-most ranges will occur before the outer-most ranges.
+     * Return all of the monikers attached to all ranges that contain the given position. The
+     * resulting list is grouped by range. If multiple ranges contain this position, then the
+     * list monikers for the inner-most ranges will occur before the outer-most ranges.
      *
      * @param path The path of the document.
      * @param position The user's hover position.
      * @param ctx The tracing context.
      */
-    public getRangeByPosition(
+    public async monikersByPosition(
         path: string,
         position: lsp.Position,
         ctx: TracingContext = {}
-    ): Promise<{ document: sqliteModels.DocumentData | undefined; ranges: sqliteModels.RangeData[] }> {
-        return this.logAndTraceCall(ctx, 'Fetching range by position', async ctx => {
-            const document = await this.getDocumentByPath(path)
-            if (!document) {
-                return { document: undefined, ranges: [] }
-            }
+    ): Promise<sqliteModels.MonikerData[][]> {
+        const { document, ranges } = await this.getRangeByPosition(path, position, ctx)
+        if (!document) {
+            return []
+        }
 
-            const ranges = findRanges(document.ranges.values(), position)
-            this.logSpan(ctx, 'matching_ranges', { ranges: cleanRanges(ranges) })
-            return { document, ranges }
-        })
+        return ranges.map(range =>
+            Array.from(range.monikerIds).map(monikerId => mustGet(document.monikers, monikerId, 'moniker'))
+        )
     }
 
     /**
@@ -262,7 +233,6 @@ export class Database {
             })
 
             const locations = results.map(result => ({
-                dumpId: this.dumpId,
                 path: result.documentPath,
                 range: createRange(result),
             }))
@@ -272,6 +242,29 @@ export class Database {
     }
 
     /**
+     * Return the package information data with the given identifier.
+     *
+     * @param path The path of the document.
+     * @param packageInformationId The identifier of the package information data.
+     * @param ctx The tracing context.
+     */
+    public async packageInformation(
+        path: string,
+        packageInformationId: number,
+        ctx: TracingContext = {}
+    ): Promise<sqliteModels.PackageInformationData | undefined> {
+        const document = await this.getDocumentByPath(path, ctx)
+        if (!document) {
+            return undefined
+        }
+
+        return document.packageInformation.get(packageInformationId)
+    }
+
+    //
+    // Helper Functions
+
+    /**
      * Return a parsed document that describes the given path. The result of this
      * method is cached across all database instances. If the document is not found
      * it returns undefined; other errors will throw.
@@ -279,7 +272,7 @@ export class Database {
      * @param path The path of the document.
      * @param ctx The tracing context.
      */
-    public async getDocumentByPath(
+    private async getDocumentByPath(
         path: string,
         ctx: TracingContext = {}
     ): Promise<sqliteModels.DocumentData | undefined> {
@@ -308,8 +301,31 @@ export class Database {
         }
     }
 
-    //
-    // Helper Functions
+    /**
+     * Return a parsed document that describes the given path as well as the ranges
+     * from that document that contains the given position. If multiple ranges are
+     * returned, then the inner-most ranges will occur before the outer-most ranges.
+     *
+     * @param path The path of the document.
+     * @param position The user's hover position.
+     * @param ctx The tracing context.
+     */
+    private getRangeByPosition(
+        path: string,
+        position: lsp.Position,
+        ctx: TracingContext = {}
+    ): Promise<{ document: sqliteModels.DocumentData | undefined; ranges: sqliteModels.RangeData[] }> {
+        return this.logAndTraceCall(ctx, 'Fetching range by position', async ctx => {
+            const document = await this.getDocumentByPath(path)
+            if (!document) {
+                return { document: undefined, ranges: [] }
+            }
+
+            const ranges = findRanges(document.ranges.values(), position)
+            this.logSpan(ctx, 'matching_ranges', { ranges: cleanRanges(ranges) })
+            return { document, ranges }
+        })
+    }
 
     /**
      * Convert a set of range-document pairs (from a definition or reference query) into
@@ -338,7 +354,7 @@ export class Database {
         for (const [documentPath, rangeIds] of groupedResults) {
             if (documentPath === path) {
                 // If the document path is this document, convert the locations directly
-                results = results.concat(mapRangesToInternalLocations(this.dumpId, document.ranges, path, rangeIds))
+                results = results.concat(mapRangesToInternalLocations(document.ranges, path, rangeIds))
                 continue
             }
 
@@ -349,7 +365,7 @@ export class Database {
             }
 
             // Then finally convert the locations in the sibling document
-            results = results.concat(mapRangesToInternalLocations(this.dumpId, sibling.ranges, documentPath, rangeIds))
+            results = results.concat(mapRangesToInternalLocations(sibling.ranges, documentPath, rangeIds))
         }
 
         return results
@@ -535,13 +551,11 @@ function createRange(result: {
 /**
  * Convert the given range identifiers into an `InternalLocation` objects.
  *
- * @param dumpId The identifier of the dump to which the ranges belong.
  * @param ranges The map of ranges of the document.
  * @param uri The location URI.
  * @param ids The set of range identifiers for each resulting location.
  */
 export function mapRangesToInternalLocations(
-    dumpId: pgModels.DumpId,
     ranges: Map<sqliteModels.RangeId, sqliteModels.RangeData>,
     uri: string,
     ids: Set<sqliteModels.RangeId>
@@ -549,7 +563,6 @@ export function mapRangesToInternalLocations(
     const locations = []
     for (const id of ids) {
         locations.push({
-            dumpId,
             path: uri,
             range: createRange(mustGet(ranges, id, 'range')),
         })
