@@ -33,15 +33,9 @@ export const GitRefNode: React.FunctionComponent<GitRefNodeProps> = ({ node, url
     url = url !== undefined ? url : node.url
 
     return (
-        <LinkOrSpan key={node.id} className="git-ref-node list-group-item" to={url}>
+        <LinkOrSpan key={node.id} className="git-ref-node list-group-item" to={!rootIsLink ? url : undefined}>
             <span>
-                {rootIsLink ? (
-                    <code className="git-ref-tag-2">{node.displayName}</code>
-                ) : (
-                    <Link className="git-ref-tag-2" to={url}>
-                        <code>{node.displayName}</code>
-                    </Link>
-                )}
+                <code className="git-ref-tag-2">{node.displayName}</code>
                 {mostRecentSig && (
                     <small className="text-muted pl-2">
                         Updated <Timestamp date={mostRecentSig.date} />{' '}
