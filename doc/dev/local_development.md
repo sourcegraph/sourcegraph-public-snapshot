@@ -41,7 +41,6 @@ Sourcegraph has the following dependencies:
 - [SQLite](https://www.sqlite.org/index.html) tools
 - [Golang Migrate](https://github.com/golang-migrate/migrate/) (v4.7.0 or higher)
 - [Comby](https://github.com/comby-tools/comby/) (v0.11.3 or higher)
-- [Caddy 2](https://github.com/caddyserver/caddy/) (v2.0.0-beta.19 or higher - see current recommended version in [.tool-versions](https://github.com/sourcegraph/sourcegraph/blob/master/.tool-versions))
 
 The following are two recommendations for installing these dependencies:
 
@@ -218,12 +217,6 @@ legacy_version_file = yes
 asdf plugin add yarn
 ```
 
-- [Caddy 2](https://github.com/salasrod/asdf-caddy)
-
-```bash
-asdf plugin add caddy
-```
-
 ### Usage instructions
 
 [asdf](https://github.com/asdf-vm/asdf) uses versions specified in [.tool-versions](https://github.com/sourcegraph/sourcegraph/blob/master/.tool-versions) whenever a command is run from one of `sourcegraph/sourcegraph`'s subdirectories.
@@ -316,7 +309,7 @@ Sourcegraph's development environment ships with a [Caddy 2](https://caddyserver
 
 ### Prerequisites
 
-In order to configure the HTTPS reverse-proxy, you'll need to edit `/etc/hosts` and install Caddy 2.
+In order to configure the HTTPS reverse-proxy, you'll need to edit `/etc/hosts` and initialize Caddy 2.
 
 #### Add `sourcegraph.test` to `/etc/hosts`
 
@@ -338,23 +331,13 @@ Adding host(s) "sourcegraph.test" to IP address 127.0.0.1
 ...
 ```
 
-#### Configure Caddy 2
+#### Initialize Caddy 2
 
-##### Install Caddy 2
-
-[Caddy 2](https://caddyserver.com/) >= `v2.0.0-beta.19` needs to be installed on your local machine.
-
-1. Manually download the caddy binary from https://github.com/caddyserver/caddy/releases and add it to your path.
-1. (recommended) [Configure asdf](#optional-asdf) and simply run `asdf install`
-<!-- Add Homebrew tab when available -->
-
-##### Configure self-signed certificates
-
-Caddy 2 automatically manages self-signed certificates and configures your system so that your web browser can properly recognize them. The first time that Caddy runs, it needs `root/sudo` permissions to add
+[Caddy 2](https://caddyserver.com/) automatically manages self-signed certificates and configures your system so that your web browser can properly recognize them. The first time that Caddy runs, it needs `root/sudo` permissions to add
 its keys to your system's certificate store. You can get this out the way after installing Caddy 2 by running the following command and entering your password when prompted:
 
 ```bash
-> env SOURCEGRAPH_HTTPS_DOMAIN=sourcegraph.test SOURCEGRAPH_HTTPS_PORT=3443 caddy run --watch --config=dev/Caddyfile
+> env SOURCEGRAPH_HTTPS_DOMAIN=sourcegraph.test SOURCEGRAPH_HTTPS_PORT=3443 ./dev/caddy run --watch --config=dev/Caddyfile
 
 ...
 2020/03/23 12:30:18 [INFO][cache:0xc0007879a0] Started certificate maintenance routine

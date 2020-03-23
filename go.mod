@@ -11,8 +11,8 @@ require (
 	github.com/aws/aws-sdk-go-v2 v0.19.0
 	github.com/beevik/etree v1.1.0
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
+	github.com/caddyserver/caddy/v2 v2.0.0-beta.19
 	github.com/certifi/gocertifi v0.0.0-20200211180108-c7c1fbc02894 // indirect
-	github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd // indirect
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/coreos/go-semver v0.3.0
 	github.com/cosiner/argv v0.0.1 // indirect
@@ -77,7 +77,6 @@ require (
 	github.com/keegancsmith/sqlf v1.1.0
 	github.com/keegancsmith/tmpfriend v0.0.0-20180423180255-86e88902a513
 	github.com/kevinburke/go-bindata v3.18.0+incompatible
-	github.com/klauspost/compress v1.10.3 // indirect
 	github.com/kr/text v0.2.0
 	github.com/kylelemons/godebug v1.1.0
 	github.com/leanovate/gopter v0.2.7
@@ -119,7 +118,6 @@ require (
 	github.com/shurcooL/vfsgen v0.0.0-20181202132449-6a9ea43bcacd
 	github.com/sloonz/go-qprintable v0.0.0-20160203160305-775b3a4592d5 // indirect
 	github.com/smartystreets/assertions v1.0.1 // indirect
-	github.com/sourcegraph/annotate v0.0.0-20160123013949-f4cad6c6324d // indirect
 	github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81
 	github.com/sourcegraph/go-diff v0.5.1
 	github.com/sourcegraph/go-jsonschema v0.0.0-20191222043427-cdbee60427af
@@ -127,7 +125,6 @@ require (
 	github.com/sourcegraph/go-lsp v0.0.0-20200117082640-b19bb38222e2
 	github.com/sourcegraph/gosyntect v0.0.0-20191222043511-084e9c124954
 	github.com/sourcegraph/jsonx v0.0.0-20190114210550-ba8cb36a8614
-	github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e // indirect
 	github.com/sqs/httpgzip v0.0.0-20180622165210-91da61ed4dff
 	github.com/src-d/enry/v2 v2.1.0
 	github.com/stripe/stripe-go v70.5.0+incompatible
@@ -144,11 +141,10 @@ require (
 	github.com/xeipuuv/gojsonschema v1.2.0
 	github.com/xeonx/timeago v1.0.0-rc4
 	go.starlark.net v0.0.0-20200306205701-8dd3e2ee1dd5 // indirect
-	go.uber.org/atomic v1.6.0 // indirect
 	go.uber.org/automaxprocs v1.3.0
 	golang.org/x/arch v0.0.0-20200312215426-ff8b605520f4 // indirect
-	golang.org/x/crypto v0.0.0-20200311171314-f7b00557c8c4
-	golang.org/x/net v0.0.0-20200301022130-244492dfa37a
+	golang.org/x/crypto v0.0.0-20200317142112-1b76d66859c6
+	golang.org/x/net v0.0.0-20200319234117-63522dbf7eec
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e
 	golang.org/x/sys v0.0.0-20200302150141-5c8b2ff67527
@@ -160,7 +156,6 @@ require (
 	gopkg.in/ini.v1 v1.55.0 // indirect
 	gopkg.in/jpoehls/gophermail.v0 v0.0.0-20160410235621-62941eab772c
 	gopkg.in/karlseguin/expect.v1 v1.0.1 // indirect
-	gopkg.in/square/go-jose.v2 v2.4.1 // indirect
 	gopkg.in/src-d/go-git.v4 v4.13.1
 	gopkg.in/yaml.v2 v2.2.8
 	mvdan.cc/unparam v0.0.0-20200314162735-0ac8026f7d06 // indirect
