@@ -96,6 +96,8 @@
 // 1528395663_rename_campaign_plans_to_patch_sets.up.sql (211B)
 // 1528395664_rename_campaign_jobs_to_patches.down.sql (133B)
 // 1528395664_rename_campaign_jobs_to_patches.up.sql (133B)
+// 1528395665_perms_table_drop_provider.down.sql (127B)
+// 1528395665_perms_table_drop_provider.up.sql (150B)
 
 package migrations
 
@@ -2084,6 +2086,46 @@ func _1528395664_rename_campaign_jobs_to_patchesUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395665_perms_table_drop_providerDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x2d\x4e\x2d\x8a\x2f\x48\x2d\xca\xcd\x2c\x2e\xce\xcc\xcf\x2b\x56\x70\x74\x71\x51\x70\xf6\xf7\x09\xf5\xf5\x53\x28\x28\xca\x2f\xcb\x4c\x49\x2d\x52\x08\x71\x8d\x08\xb1\x46\xd1\x56\x94\x5a\x90\x4f\xa4\x36\x2e\x67\x7f\x5f\x5f\xcf\x10\x6b\x2e\x40\x00\x00\x00\xff\xff\x90\x3a\x77\xd5\x7f\x00\x00\x00")
+
+func _1528395665_perms_table_drop_providerDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395665_perms_table_drop_providerDownSql,
+		"1528395665_perms_table_drop_provider.down.sql",
+	)
+}
+
+func _1528395665_perms_table_drop_providerDownSql() (*asset, error) {
+	bytes, err := _1528395665_perms_table_drop_providerDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395665_perms_table_drop_provider.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xfd, 0xb2, 0xe7, 0x3, 0xbe, 0xb3, 0x22, 0x3a, 0x49, 0x7, 0x4d, 0x7b, 0x3b, 0xa6, 0x82, 0xaa, 0x0, 0xd9, 0x12, 0x79, 0xe0, 0x48, 0x66, 0x6c, 0x70, 0x38, 0x4b, 0xa7, 0xe6, 0xee, 0xf8, 0xc4}}
+	return a, nil
+}
+
+var __1528395665_perms_table_drop_providerUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\xd2\xd5\x55\x08\x4a\xcd\xcd\x2f\x4b\x55\x28\xc9\x48\x55\x28\x28\xca\x2f\xcb\x4c\x49\x2d\x52\x48\xce\xcf\x29\xcd\xcd\xd3\xe3\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x2d\x4e\x2d\x8a\x2f\x48\x2d\xca\xcd\x2c\x2e\xce\xcc\xcf\x2b\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x83\xeb\xb4\x46\xd1\x52\x94\x5a\x90\x4f\x84\x16\x2e\x67\x7f\x5f\x5f\xcf\x10\x6b\x2e\x40\x00\x00\x00\xff\xff\x93\x85\x2e\x66\x96\x00\x00\x00")
+
+func _1528395665_perms_table_drop_providerUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395665_perms_table_drop_providerUpSql,
+		"1528395665_perms_table_drop_provider.up.sql",
+	)
+}
+
+func _1528395665_perms_table_drop_providerUpSql() (*asset, error) {
+	bytes, err := _1528395665_perms_table_drop_providerUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395665_perms_table_drop_provider.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x84, 0xb8, 0xd5, 0xd0, 0x9c, 0xce, 0x79, 0xdf, 0x3c, 0x43, 0x9a, 0x2e, 0xf6, 0x17, 0xca, 0x96, 0x72, 0xb, 0xc0, 0x6b, 0x53, 0xb1, 0x57, 0xd6, 0x4d, 0xfe, 0x39, 0xd0, 0xeb, 0xed, 0x48, 0x46}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2271,6 +2313,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395663_rename_campaign_plans_to_patch_sets.up.sql":                   _1528395663_rename_campaign_plans_to_patch_setsUpSql,
 	"1528395664_rename_campaign_jobs_to_patches.down.sql":                     _1528395664_rename_campaign_jobs_to_patchesDownSql,
 	"1528395664_rename_campaign_jobs_to_patches.up.sql":                       _1528395664_rename_campaign_jobs_to_patchesUpSql,
+	"1528395665_perms_table_drop_provider.down.sql":                           _1528395665_perms_table_drop_providerDownSql,
+	"1528395665_perms_table_drop_provider.up.sql":                             _1528395665_perms_table_drop_providerUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -2410,6 +2454,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395663_rename_campaign_plans_to_patch_sets.up.sql":                   {_1528395663_rename_campaign_plans_to_patch_setsUpSql, map[string]*bintree{}},
 	"1528395664_rename_campaign_jobs_to_patches.down.sql":                     {_1528395664_rename_campaign_jobs_to_patchesDownSql, map[string]*bintree{}},
 	"1528395664_rename_campaign_jobs_to_patches.up.sql":                       {_1528395664_rename_campaign_jobs_to_patchesUpSql, map[string]*bintree{}},
+	"1528395665_perms_table_drop_provider.down.sql":                           {_1528395665_perms_table_drop_providerDownSql, map[string]*bintree{}},
+	"1528395665_perms_table_drop_provider.up.sql":                             {_1528395665_perms_table_drop_providerUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
