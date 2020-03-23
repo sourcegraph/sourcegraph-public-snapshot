@@ -28,7 +28,7 @@ export const RESET_STALLED_UPLOADS_INTERVAL = readEnvInt('RESET_STALLED_UPLOADS_
 export const STALLED_UPLOAD_MAX_AGE = readEnvInt('STALLED_UPLOAD_MAX_AGE', 5)
 
 /** The interval (in seconds) to invoke the cleanOldUploads task. */
-export const CLEAN_OLD_UPLOADS_INTERVAL = readEnvInt('CLEAN_OLD_UPLOADS_INTERVAL', 60 * 60 * 8)
+export const CLEAN_OLD_UPLOADS_INTERVAL = readEnvInt('CLEAN_OLD_UPLOADS_INTERVAL', 60 * 60 * 8) // 8 hours
 
 /** The maximum age (in seconds) that an upload (completed or queued) will remain in Postgres. */
-export const UPLOAD_MAX_AGE = readEnvInt('UPLOAD_UPLOAD_AGE', 60 * 60 * 24 * 7)
+export const UPLOAD_MAX_AGE = readEnvInt('UPLOAD_UPLOAD_AGE', 60 * 60 * 24 * 7) // 1 week
