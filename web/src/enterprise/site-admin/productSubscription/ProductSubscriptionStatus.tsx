@@ -13,6 +13,7 @@ import { formatUserCount } from '../../productSubscription/helpers'
 import { ProductCertificate } from '../../productSubscription/ProductCertificate'
 import { TrueUpStatusSummary } from '../../productSubscription/TrueUpStatusSummary'
 import { ErrorAlert } from '../../../components/alerts'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 
 interface Props {
     className?: string
@@ -59,7 +60,11 @@ export class ProductSubscriptionStatus extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         if (this.state.statusOrError === undefined) {
-            return null
+            return (
+                <div className="text-center">
+                    <LoadingSpinner className="icon-inline" />
+                </div>
+            )
         }
         if (isErrorLike(this.state.statusOrError)) {
             return <ErrorAlert error={this.state.statusOrError} prefix="Error checking product license" />
