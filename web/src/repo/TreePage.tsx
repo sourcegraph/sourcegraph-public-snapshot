@@ -157,6 +157,8 @@ interface State {
 }
 
 export class TreePage extends React.PureComponent<Props, State> {
+    public state: State = {}
+
     private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
 
