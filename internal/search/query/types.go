@@ -13,6 +13,9 @@ const (
 	SearchTypeStructural
 )
 
+// QueryInfo is an intermediate type for an interface of both ordinary queries
+// and and/or query processing. The and/or query processing will become the
+// canonical query form and the QueryInfo type will be removed.
 type QueryInfo interface {
 	RegexpPatterns(field string) (values, negatedValues []string)
 	StringValues(field string) (values, negatedValues []string)
@@ -59,22 +62,22 @@ func (q OrdinaryQuery) IsCaseSensitive() bool {
 // AndOrQuery satisfies the interface for QueryInfo with empty values. Its
 // methods are not currently used.
 func (AndOrQuery) RegexpPatterns(field string) (values, negatedValues []string) {
-	return []string{}, []string{}
+	return nil, nil
 }
 func (AndOrQuery) StringValues(field string) (values, negatedValues []string) {
-	return []string{}, []string{}
+	return nil, nil
 }
 func (AndOrQuery) StringValue(field string) (value, negatedValue string) {
 	return "", ""
 }
 func (AndOrQuery) Values(field string) []*types.Value {
-	return []*types.Value{}
+	return nil
 }
 func (AndOrQuery) Fields() map[string][]*types.Value {
-	return map[string][]*types.Value{}
+	return nil
 }
 func (AndOrQuery) ParseTree() syntax.ParseTree {
-	return []*syntax.Expr{}
+	return nil
 }
 func (AndOrQuery) IsCaseSensitive() bool {
 	return false
