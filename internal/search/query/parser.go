@@ -207,46 +207,51 @@ func (p *parser) ParseParameter() Parameter {
 	return ScanParameter(p.buf[start:p.pos])
 }
 
-// Visit calls f on all nodes rooted at node.
-func Visit(node Node, f func(node Node)) {
+// VisitNode calls f on all nodes rooted at node.
+func VisitNode(node Node, f func(node Node)) {
 	switch v := node.(type) {
 	case Parameter:
 		f(v)
 	case Operator:
 		f(v)
-		for _, n := range v.Operands {
-			Visit(n, f)
-		}
+		Visit(v.Operands, f)
+	}
+}
+
+// Visit calls f on all nodes rooted at nodes.
+func Visit(nodes []Node, f func(node Node)) {
+	for _, node := range nodes {
+		VisitNode(node, f)
 	}
 }
 
 // VisitParameter calls f on all parameter nodes. f supplies the node's field
 // and value.
-func VisitParameter(node Node, f func(field, value string)) {
+func VisitParameter(nodes []Node, f func(field, value string)) {
 	visitor := func(node Node) {
 		if v, ok := node.(Parameter); ok {
 			f(v.Field, v.Value)
 		}
 	}
-	Visit(node, visitor)
+	Visit(nodes, visitor)
 }
 
 // VisitField calls f on all parameter nodes whose field matches the field
 // argument. f supplies the node's value.
-func VisitField(node Node, field string, f func(value string)) {
+func VisitField(nodes []Node, field string, f func(value string)) {
 	visitor := func(visitedField, value string) {
 		if field == visitedField {
 			f(value)
 		}
 	}
-	VisitParameter(node, visitor)
+	VisitParameter(nodes, visitor)
 }
 
-// containsPattern returns true if any descendent of node is a search pattern
+// containsPattern returns true if any descendent of nodes is a search pattern
 // (i.e., a parameter where the field is the empty string).
 func containsPattern(node Node) bool {
 	var result bool
-	VisitField(node, "", func(_ string) {
+	VisitField([]Node{node}, "", func(_ string) {
 		result = true
 	})
 	return result
