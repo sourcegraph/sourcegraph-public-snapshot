@@ -107,7 +107,7 @@ async function removeDeadDumps(
             pathsById.set(id, path.join(storageRoot, constants.DBS_DIR, basename))
         }
 
-        const states: Map<number, string> = await makeServerRequest('/states', { ids: Array.from(pathsById.keys()) })
+        const states: Map<number, string> = await makeServerRequest('/uploads', { ids: Array.from(pathsById.keys()) })
         for (const [id, dbPath] of pathsById.entries()) {
             if (!states.has(id) || states.get(id) === 'errored') {
                 count++

@@ -43,7 +43,7 @@ export function createInternalRouter(
     type StatesResponse = Map<number, string>
 
     router.post(
-        '/states',
+        '/uploads',
         json(),
         wrap(
             async (req: express.Request, res: express.Response<StatesResponse>): Promise<void> => {
