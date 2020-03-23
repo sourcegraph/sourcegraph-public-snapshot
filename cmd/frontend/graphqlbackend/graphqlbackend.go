@@ -19,7 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/inconshreveable/log15"
 )
 
 var graphqlFieldHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{

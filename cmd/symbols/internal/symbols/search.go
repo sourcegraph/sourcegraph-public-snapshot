@@ -23,7 +23,7 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 	"golang.org/x/net/trace"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/inconshreveable/log15"
 )
 
 // maxFileSize is the limit on file size in bytes. Only files smaller than this are processed.

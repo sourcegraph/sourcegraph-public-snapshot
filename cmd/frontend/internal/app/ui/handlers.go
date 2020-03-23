@@ -29,7 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/routevar"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/inconshreveable/log15"
 )
 
 type InjectedHTML struct {

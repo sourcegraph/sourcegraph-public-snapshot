@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/inconshreveable/log15"
 )
 
 var openSearchDescription = template.Must(template.New("").Parse(`

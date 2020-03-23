@@ -18,7 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/inconshreveable/log15"
 )
 
 var (

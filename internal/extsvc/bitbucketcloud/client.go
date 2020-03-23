@@ -18,7 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"golang.org/x/time/rate"
-	"gopkg.in/inconshreveable/log15.v2"
+	"github.com/inconshreveable/log15"
 )
 
 var requestCounter = metrics.NewRequestMeter("bitbucket_cloud_requests_count", "Total number of requests sent to the Bitbucket Cloud API.")

@@ -4,7 +4,7 @@ import (
 	"github.com/gomodule/redigo/redis"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
-	"gopkg.in/inconshreveable/log15.v2"
+	"github.com/inconshreveable/log15"
 )
 
 func DeleteOldCacheDataInRedis() {

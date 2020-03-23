@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/openidconnect"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/saml"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/inconshreveable/log15"
 )
 
 func init() {

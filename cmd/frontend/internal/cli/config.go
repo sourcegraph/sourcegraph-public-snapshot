@@ -21,7 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/confdb"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/inconshreveable/log15"
 )
 
 func printConfigValidation() {

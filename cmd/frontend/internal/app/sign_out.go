@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/inconshreveable/log15"
 )
 
 type SignOutURL struct {
