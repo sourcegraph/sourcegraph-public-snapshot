@@ -150,7 +150,7 @@ async function main(logger: Logger): Promise<void> {
 
     logger.debug('Polling database for unconverted uploads')
 
-    AsyncPolling(async (end) => {
+    AsyncPolling(async end => {
         while (await uploadManager.dequeueAndConvert(convert, logger)) {
             // Immediately poll again if we converted an upload
         }
@@ -163,7 +163,7 @@ async function main(logger: Logger): Promise<void> {
 const appLogger = createLogger('lsif-dump-processor')
 
 // Launch!
-main(appLogger).catch((error) => {
+main(appLogger).catch(error => {
     appLogger.error('Failed to start process', { error })
     appLogger.on('finish', () => process.exit(1))
     appLogger.end()

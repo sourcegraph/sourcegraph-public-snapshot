@@ -39,7 +39,7 @@ export class Database {
             ctx
         )
 
-        return locations.map((location) => ({ ...location, dumpId: this.dumpId }))
+        return locations.map(location => ({ ...location, dumpId: this.dumpId }))
     }
 
     /**
@@ -61,7 +61,7 @@ export class Database {
         )
 
         return new OrderedLocationSet(
-            locations.map((location) => ({ ...location, dumpId: this.dumpId })),
+            locations.map(location => ({ ...location, dumpId: this.dumpId })),
             true
         )
     }
@@ -144,7 +144,7 @@ export class Database {
             ctx
         )
 
-        return { locations: locations.map((location) => ({ ...location, dumpId: this.dumpId })), count }
+        return { locations: locations.map(location => ({ ...location, dumpId: this.dumpId })), count }
     }
 
     /**

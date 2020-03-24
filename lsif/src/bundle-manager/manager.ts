@@ -51,7 +51,7 @@ async function main(logger: Logger): Promise<void> {
 const appLogger = createLogger('lsif-bundle-manager')
 
 // Launch!
-main(appLogger).catch((error) => {
+main(appLogger).catch(error => {
     appLogger.error('Failed to start process', { error })
     appLogger.on('finish', () => process.exit(1))
     appLogger.end()
