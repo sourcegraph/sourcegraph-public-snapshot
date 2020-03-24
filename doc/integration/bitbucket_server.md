@@ -60,7 +60,7 @@ Once the plugin is installed, go to **Administration > Add-ons > Sourcegraph** t
 
 To configure a webhook on the Sourcegraph side, set the [`"webhooks"` property in the Bitbucket Server configuration](../admin/external_service/bitbucket_server.md#webhooks). Once that is configured Sourcegraph automatically makes sure in the background that a global webhook for usage with [Campaigns](../user/campaigns.md) is created on the Bitbucket Server instance.
 
-Disabling the webhook is as easy as removing the `"webhooks"` property and deleting the webhook pointing to your Sourcegraph instance under **Administration > Add-ons > Sourcegraph**.
+Disabling the webhook is as easy as removing the `"webhooks"` property from the `"plugin"` section and deleting the webhook pointing to your Sourcegraph instance under **Administration > Add-ons > Sourcegraph**.
 
 ### Fast permission syncing
 
