@@ -412,6 +412,195 @@ type Mutation {
         # The level of repository permission.
         perm: RepositoryPermission = READ
     ): EmptyResponse!
+
+    # Create a new action.
+    createAction(
+        # Arbitrary name of the action.
+        name: String!
+        # TODO: add the following parameter:
+        # env: ActionEnv
+        # The action definition file.
+        definition: JSONCString!
+    ): Action!
+
+    # Update an existing action, can patch the definition and the name.
+    updateAction(action: ID!, name: String, newDefinition: JSONCString): Action!
+
+    # Create a new 'MANUAL' action execution from an action.
+    createActionExecution(action: ID!): ActionExecution!
+    # Called internally by the query-runner to trigger executions.
+    createActionExecutionsForSavedSearch(savedSearchQuery: String!): EmptyResponse
+
+    # Begin a job on a runner, if some are in the backlog. Only to be called by a runner.
+    pullActionJob(runner: ID!): ActionJob
+    # Update the state of an action job. Called regularly by a runner.
+    updateActionJob(
+        # The action job to update.
+        actionJob: ID!
+        # todo; Probably hard-require this if state == completed, otherwise it must be empty
+        patch: String
+        # The optional new state.
+        state: ActionJobState
+    ): ActionJob!
+    # Append a log to a job. Runner-only API. Fails if state != 'RUNNING'. Returns empty if action job was not found.
+    appendLog(actionJob: ID!, content: String!): ActionJob
+    # Will reset the action job to be picked up by a runner again in the future.
+    retryActionJob(actionJob: ID!): EmptyResponse
+}
+
+# An env var set for a action execution.
+type ActionEnvVar {
+    # Name of the env var.
+    key: String!
+    # Content of the env var.
+    value: String!
+}
+
+# List of actions.
+type ActionConnection {
+    # Total number of actions in this connection.
+    totalCount: Int!
+    # The actions in the connection itself.
+    nodes: [Action!]!
+}
+
+# An action definition describes everything required to run the jobs, except for repo and base-rev which are per-job.
+type ActionDefinition {
+    # The actual definition document.
+    steps: JSONCString!
+    # Environment variables to be set during execution.
+    # Caution: never print the envvar.value directly (they should even be REDACTED in the API response),
+    # they can contain sensitive data.
+    env: [ActionEnvVar!]!
+}
+
+# An action is run to create patches for campaigns.
+type Action implements Node {
+    id: ID!
+    # Name of the action.
+    name: String!
+    # The current action definition
+    definition: ActionDefinition!
+    # The saved search this was associated with, cannot be combined with `schedule`.
+    savedSearch: SavedSearch
+    # Cron schedule for repeating executions, cannot be combined with `savedSearch`.
+    schedule: String
+    # Respected when `schedule` or `savedSearch` is set. If `true`, any previous runs are cancelled and superseded on invokation.
+    # Required to be true when `campaign` is set, otherwise race conditions may happen.
+    # todo: we can also handle that gracefully and simply return if a newer execution exists.
+    cancelPreviousScheduledExecution: Boolean!
+    # todo: use this flag to auto update the associated campaign.
+    # If it's false, the plan is retained but the UI shows an 'Apply' button instead of 'Create campaign'.
+    # autoupdate: Boolean
+    # Optional associated campaign to update on completion.
+    # Based on `autoupdate`, this will either automatically update
+    # the campaign or will be used in the UI to redirect to the correct campaign update view.
+    campaign: Campaign
+    # The associated executions to this action.
+    actionExecutions(first: Int): ActionExecutionConnection!
+}
+
+# A list of action executions.
+type ActionExecutionConnection {
+    totalCount: Int!
+    nodes: [ActionExecution!]!
+}
+
+# The reason an execution was triggered.
+enum ActionExecutionInvokationReason {
+    # Triggered through the API or UI.
+    MANUAL
+    # Triggered by a schedule.
+    SCHEDULE
+    # Triggered by a firing saved search.
+    SAVED_SEARCH
+}
+
+# An action execution is one instance of an action.
+type ActionExecution implements Node {
+    id: ID!
+    # The parent action that this execution was derived from.
+    # TODO: Is this legit? It can cause an infinite resolver loop if there is no detection for that
+    action: Action!
+    # Mirrored from the action, but persisted separately, so updating an action is safe.
+    definition: ActionDefinition!
+    # The reason this execution was triggered.
+    invokationReason: ActionExecutionInvokationReason!
+    # All associated jobs that run under this execution.
+    jobs: ActionJobConnection!
+    # Combined status of all jobs.
+    status: BackgroundProcessStatus!
+    # Time when execution started. Set once the first job was accepted by a runner.
+    executionStart: DateTime
+    # Time when execution ended, this can be on timeout, error or completion and allows no assumption on the `state`.
+    executionEnd: DateTime
+    # Set when status is 'COMPLETED' and the parent action had no `campaign` set. Upon reporting the completion,
+    # the patches are used with the API method `createPatchSetFromPatches` to populate this.
+    patchSet: PatchSet
+}
+
+# TODO: Do we actually need 'registered' runners? We can probably just connect our CLI runners without any state for now.
+# enum RunnerState {
+#     ONLINE
+#     OFFLINE
+# }
+
+# # A registered actions runner
+# type Runner implements Node {
+#     id: ID!
+#     # Unique name to identify this runner
+#     name: String!
+#     # Reported information about the runner. This contains OS, Docker version and more.
+#     description: String!
+#     # Set to 'offline' when no heartbeat was received for a log enough period (TBD what long enough might be)
+#     state: RunnerState!
+#     # All currently accepted jobs
+#     runningJobs: ActionJobConnection!
+# }
+
+type ActionJobConnection {
+    totalCount: Int!
+    nodes: [ActionJob!]!
+}
+
+enum ActionJobState {
+    # Not yet picked up by a runner.
+    PENDING
+    # Currently running.
+    RUNNING
+    # Finished successfully. May or may not have a patch.
+    COMPLETED
+    # Completed with errors, cannot have a patch.
+    ERRORED
+    # Did not complete within the given time boundaries. TODO: where does this time boundary come from? Ideally set on the execution(?)
+    TIMEOUT
+    # The job was canceled per user request, or because the runner shut down.
+    CANCELED
+}
+
+# An action job is one run over a single repository within an execution.
+type ActionJob implements Node {
+    # Unique identifier for the job
+    id: ID!
+    # Mirrored from the parent execution, same datasource so they will always be equal. Used for queries that fetch the job directly.
+    definition: ActionDefinition!
+    # The repository that this job is running over.
+    repository: Repository!
+    # The base revision in the repository that this job runs over.
+    # Todo: Make this a GitRef
+    baseRevision: String!
+    # The current state of the action job
+    state: ActionJobState!
+    # Set once accepted by a runner, contains arbitrary information reported by the runner.
+    runner: String # Todo: was: Runner
+    # Set once completed and patches have been uploaded.
+    diff: PreviewRepositoryComparison
+    # Time when execution started. Set once accepted by a runner.
+    executionStart: DateTime
+    # Time when execution ended, this can be on timeout, error or completion and allows no assumption on the `state`.
+    executionEnd: DateTime
+    # The output logged to the runner.
+    log: String
 }
 
 # A patch to apply to a repository (in a new branch) when a campaign is created
@@ -1168,6 +1357,11 @@ type Query {
         # Only return campaigns that have a patch set.
         hasPatchSet: Boolean
     ): CampaignConnection!
+
+    # TODO: Better filtering
+    actions(first: Int): ActionConnection!
+    # Get action jobs by state, used in pending job queue list on runners page
+    actionJobs(first: Int, state: ActionJobState!): ActionJobConnection!
 
     # Looks up a repository by either name or cloneURL.
     repository(
