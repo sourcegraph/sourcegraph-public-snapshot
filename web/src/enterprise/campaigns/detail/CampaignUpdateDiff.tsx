@@ -65,39 +65,38 @@ export function calculateChangesetDiff(
     const unmodified: GQL.IExternalChangeset[] = []
     const deleted: GQL.IExternalChangeset[] = []
 
-    // todo: naming
-    const changesetsByRepoId = new Map<string, GQL.IExternalChangeset | GQL.IPatch>()
+    const patchOrChangesetByRepoId = new Map<string, GQL.IExternalChangeset | GQL.IPatch>()
     for (const changeset of [...changesets, ...campaignPatches]) {
-        changesetsByRepoId.set(changeset.repository.id, changeset)
+        patchOrChangesetByRepoId.set(changeset.repository.id, changeset)
     }
     for (const patch of patches) {
         const key = patch.repository.id
-        const existingChangeset = changesetsByRepoId.get(key)
+        const existing = patchOrChangesetByRepoId.get(key)
         // if no matching changeset exists yet, it is a new changeset to the campaign
-        if (!existingChangeset) {
+        if (!existing) {
             added.push(patch)
             continue
         }
-        changesetsByRepoId.delete(key)
+        patchOrChangesetByRepoId.delete(key)
         // if the matching changeset has not been published yet, or the existing changeset is still open, it will be updated
         if (
-            existingChangeset.__typename === 'Patch' ||
-            ![GQL.ChangesetState.MERGED, GQL.ChangesetState.CLOSED].includes(existingChangeset.state)
+            existing.__typename === 'Patch' ||
+            ![GQL.ChangesetState.MERGED, GQL.ChangesetState.CLOSED].includes(existing.state)
         ) {
             changed.push(patch)
             continue
         }
-        unmodified.push(existingChangeset)
+        unmodified.push(existing)
     }
-    for (const changeset of changesetsByRepoId.values()) {
-        if (changeset.__typename === 'Patch') {
+    for (const patchOrChangeset of patchOrChangesetByRepoId.values()) {
+        if (patchOrChangeset.__typename === 'Patch') {
             // don't mention any preexisting patches that don't apply anymore
             continue
         }
-        if ([GQL.ChangesetState.MERGED, GQL.ChangesetState.CLOSED].includes(changeset.state)) {
-            unmodified.push(changeset)
+        if ([GQL.ChangesetState.MERGED, GQL.ChangesetState.CLOSED].includes(patchOrChangeset.state)) {
+            unmodified.push(patchOrChangeset)
         } else {
-            deleted.push(changeset)
+            deleted.push(patchOrChangeset)
         }
     }
 
