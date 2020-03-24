@@ -29,13 +29,13 @@ const sumDiffStat = (nodes: NodesWithDiffStat['nodes'], field: 'added' | 'change
  * Total diff stat of a campaign or patchset, including all changesets and patches
  */
 export const CampaignDiffStat: React.FunctionComponent<CampaignDiffstatProps> = ({ campaign, patchSet, className }) => {
-    const changesets = useMemo(
+    const nodesWithDiffStat = useMemo(
         () => (campaign ? [...campaign.changesets.nodes, ...campaign.patches.nodes] : patchSet!.patches.nodes),
         [campaign, patchSet]
     )
-    const added = useMemo(() => sumDiffStat(changesets, 'added'), [changesets])
-    const changed = useMemo(() => sumDiffStat(changesets, 'changed'), [changesets])
-    const deleted = useMemo(() => sumDiffStat(changesets, 'deleted'), [changesets])
+    const added = useMemo(() => sumDiffStat(nodesWithDiffStat, 'added'), [nodesWithDiffStat])
+    const changed = useMemo(() => sumDiffStat(nodesWithDiffStat, 'changed'), [nodesWithDiffStat])
+    const deleted = useMemo(() => sumDiffStat(nodesWithDiffStat, 'deleted'), [nodesWithDiffStat])
 
     if (added + changed + deleted === 0) {
         return <></>
