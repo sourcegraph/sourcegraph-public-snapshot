@@ -6,7 +6,12 @@ You can click on each component to jump to its respective code repository or sub
 <object data="/dev/architecture/architecture.svg" type="image/svg+xml" style="width:100%; height: 100%">
 </object>
 
-To re-generate this diagram from the `architecture.dot` file with Graphviz, run: `dot -Tsvg -o architecture.svg architecture.dot`.
+The Code intelligence processes (the LSIF-based code intelligence service) has been extracted into its own diagram.
+
+<object data="/dev/architecture/codeintel.svg" type="image/svg+xml" style="width:100%; height: 100%">
+</object>
+
+To re-generate the architecture diagram from the `architecture.dot` file with Graphviz, run: `dot -Tsvg -o architecture.svg architecture.dot` (and similar for `codeintel.dot`).
 
 ## Clients
 

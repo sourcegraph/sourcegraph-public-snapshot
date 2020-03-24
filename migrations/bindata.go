@@ -98,6 +98,8 @@
 // 1528395664_rename_campaign_jobs_to_patches.up.sql (133B)
 // 1528395665_perms_table_drop_provider.down.sql (127B)
 // 1528395665_perms_table_drop_provider.up.sql (150B)
+// 1528395666_lsif_filename.down.sql (412B)
+// 1528395666_lsif_filename.up.sql (289B)
 
 package migrations
 
@@ -2126,6 +2128,46 @@ func _1528395665_perms_table_drop_providerUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395666_lsif_filenameDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x7c\x8f\xcb\x4e\xc3\x30\x14\x44\xf7\xfe\x8a\xd9\x45\x42\xb4\x3f\x10\x75\x91\x26\x06\x2a\xe5\x51\xa5\x2e\x65\x57\x85\xf8\x56\xb5\x88\x1f\x8a\x6d\x2a\xfe\x1e\xb5\x01\x55\x64\xc1\xd2\xf2\x9c\xb9\x67\xd6\xfc\x79\x53\xa7\x8c\x2d\x16\x28\x46\xeb\xf0\xa9\xe8\x02\x49\x8e\x8c\x24\x13\x60\x0d\x7a\x3b\x44\x6d\x58\xd1\x36\x5b\xbc\x6e\xf8\x01\x83\x57\xa7\xa3\x8c\xda\xf9\x89\xcb\xa4\xc4\x7b\xd7\x7f\x40\x46\xad\xbf\x70\x52\x03\x99\x4e\xd3\x2f\x98\x95\x82\xb7\x10\xd9\xba\xe4\x13\x1a\xdd\x60\x3b\xe9\x91\x15\x05\xf2\xa6\xdc\x57\xf5\x9d\x11\xfc\x4d\xa4\x6c\xbf\x2d\x32\x31\x4b\xef\xb8\xb8\xc7\x56\x48\x92\xf4\x9f\xe6\xdb\xc7\xbc\xfb\xda\x50\x37\x02\xf5\xbe\x2c\x27\xf3\x96\xfa\x91\xba\x40\xd3\xea\x8b\x0a\x67\x8c\xb7\xac\xfc\x91\xf7\x2c\x6f\xf9\x55\x65\x36\x1c\xd9\x0e\x3b\x5e\xf2\x5c\x20\x2e\x1f\x1e\x11\x97\x27\x65\x94\x3f\x93\x3c\x76\x01\x9d\x87\x1b\x6d\x4f\xde\x4f\xef\xa7\xb6\xa9\xfe\x0a\x46\x1c\x5e\x78\xcb\xe1\xc3\xf5\xfa\x0a\x49\x6f\xb5\x1b\x28\x90\x4c\x52\xc6\xf2\xa6\xaa\x36\x22\x65\xdf\x01\x00\x00\xff\xff\xde\x6a\x10\xb2\x9c\x01\x00\x00")
+
+func _1528395666_lsif_filenameDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395666_lsif_filenameDownSql,
+		"1528395666_lsif_filename.down.sql",
+	)
+}
+
+func _1528395666_lsif_filenameDownSql() (*asset, error) {
+	bytes, err := _1528395666_lsif_filenameDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395666_lsif_filename.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xef, 0xcb, 0x29, 0x1f, 0x12, 0xd0, 0xd5, 0x58, 0xbc, 0x13, 0x20, 0x99, 0x8f, 0x9f, 0x3, 0xfe, 0x3, 0x31, 0xda, 0x71, 0xa3, 0x58, 0x74, 0x1e, 0x1e, 0x12, 0xe0, 0x7b, 0xb5, 0x7f, 0x81, 0x8d}}
+	return a, nil
+}
+
+var __1528395666_lsif_filenameUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x5c\x8e\x41\x6a\xf3\x30\x10\x46\xf7\x3a\xc5\xb7\x0b\xfc\xfc\xc9\x05\x4c\x17\x8e\x33\x6d\x0d\x76\x5c\x14\xb5\x59\x06\x61\x8d\x89\x40\x96\x84\x25\x35\xd7\x2f\x8d\xb3\x68\xbb\x1c\xe6\xbd\x79\xb3\xa7\x97\xf6\x58\x09\xb1\xdd\xe2\xb0\x84\x88\x4f\xcb\x37\x18\x8e\xec\x0d\xfb\x8c\xe0\x31\x06\x57\x66\x2f\x0e\x72\x78\xc3\x47\x4b\x67\xb8\x64\xa7\x8b\x29\x73\x4c\x3f\xbc\x07\x55\x77\x8a\x24\x54\xbd\xef\x68\xe5\x4a\x74\x41\x9b\x84\xbb\xde\x0c\xdd\x7b\x7f\xc4\x64\x1d\x7b\x3d\xf3\xaa\x4b\x1e\x17\xd6\x99\xd7\xf4\xcd\xe6\x2b\x96\xfb\xda\x3c\x8e\x26\xd1\x48\xaa\x15\xfd\xad\xa3\x3e\xe1\x44\x1d\x35\x0a\x65\xf7\xef\x3f\xca\x6e\xb2\xde\xa6\x2b\x9b\x8b\xce\xd0\x09\x71\x09\x23\xa7\xb4\xce\xcf\x72\xe8\x7f\xbf\x54\x70\x7e\x25\x49\x48\xf9\xbb\xfe\x84\xcd\x18\xe6\xe8\x38\xb3\xd9\x54\x42\x34\x43\xdf\xb7\xaa\x12\x5f\x01\x00\x00\xff\xff\x51\x71\xbc\xfa\x21\x01\x00\x00")
+
+func _1528395666_lsif_filenameUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395666_lsif_filenameUpSql,
+		"1528395666_lsif_filename.up.sql",
+	)
+}
+
+func _1528395666_lsif_filenameUpSql() (*asset, error) {
+	bytes, err := _1528395666_lsif_filenameUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395666_lsif_filename.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x5, 0x11, 0xc8, 0x7c, 0xd1, 0x8b, 0xf7, 0xd9, 0x59, 0x97, 0x39, 0x2b, 0x5d, 0xef, 0x0, 0x88, 0xb, 0x76, 0xfa, 0xbc, 0x95, 0x99, 0x74, 0x2b, 0x16, 0x41, 0x4, 0x2d, 0x48, 0xc3, 0xd3, 0x34}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2315,6 +2357,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395664_rename_campaign_jobs_to_patches.up.sql":                       _1528395664_rename_campaign_jobs_to_patchesUpSql,
 	"1528395665_perms_table_drop_provider.down.sql":                           _1528395665_perms_table_drop_providerDownSql,
 	"1528395665_perms_table_drop_provider.up.sql":                             _1528395665_perms_table_drop_providerUpSql,
+	"1528395666_lsif_filename.down.sql":                                       _1528395666_lsif_filenameDownSql,
+	"1528395666_lsif_filename.up.sql":                                         _1528395666_lsif_filenameUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -2456,6 +2500,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395664_rename_campaign_jobs_to_patches.up.sql":                       {_1528395664_rename_campaign_jobs_to_patchesUpSql, map[string]*bintree{}},
 	"1528395665_perms_table_drop_provider.down.sql":                           {_1528395665_perms_table_drop_providerDownSql, map[string]*bintree{}},
 	"1528395665_perms_table_drop_provider.up.sql":                             {_1528395665_perms_table_drop_providerUpSql, map[string]*bintree{}},
+	"1528395666_lsif_filename.down.sql":                                       {_1528395666_lsif_filenameDownSql, map[string]*bintree{}},
+	"1528395666_lsif_filename.up.sql":                                         {_1528395666_lsif_filenameUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

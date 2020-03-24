@@ -1,4 +1,3 @@
-import * as constants from './constants'
 import * as fs from 'mz/fs'
 import * as nodepath from 'path'
 import * as uuid from 'uuid'
@@ -6,17 +5,9 @@ import * as pgModels from './models/pg'
 import { child_process } from 'mz'
 import { Connection } from 'typeorm'
 import { connectPostgres } from './database/postgres'
-import { ensureDirectory } from './paths'
 import { userInfo } from 'os'
 import { DumpManager } from './store/dumps'
 import { createSilentLogger } from './logging'
-
-/** Create a temporary directory with a subdirectory for dbs. */
-export async function createStorageRoot(): Promise<string> {
-    const tempPath = await fs.mkdtemp('test-', { encoding: 'utf8' })
-    await ensureDirectory(nodepath.join(tempPath, constants.DBS_DIR))
-    return tempPath
-}
 
 /**
  * Create a new postgres database with a random suffix, apply the frontend
@@ -146,7 +137,6 @@ export async function insertDump(
     upload.commit = commit
     upload.root = root
     upload.indexer = indexer
-    upload.filename = '<test>'
     upload.uploadedAt = new Date()
     upload.state = 'completed'
     upload.tracingContext = '{}'
