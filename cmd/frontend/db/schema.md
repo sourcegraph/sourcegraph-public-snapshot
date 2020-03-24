@@ -386,7 +386,6 @@ Foreign-key constraints:
  root               | text                     | not null default ''::text
  visible_at_tip     | boolean                  | not null default false
  uploaded_at        | timestamp with time zone | not null default now()
- filename           | text                     | not null
  state              | lsif_upload_state        | not null default 'queued'::lsif_upload_state
  failure_summary    | text                     | 
  failure_stacktrace | text                     | 
