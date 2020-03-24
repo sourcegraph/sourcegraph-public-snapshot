@@ -5,7 +5,7 @@ import { ChangesetNode, ChangesetNodeProps } from './ChangesetNode'
 import { ThemeProps } from '../../../../../../shared/src/theme'
 import { FilteredConnection, FilteredConnectionQueryArgs, Connection } from '../../../../components/FilteredConnection'
 import { Observable, Subject, merge } from 'rxjs'
-import { DEFAULT_CHANGESET_LIST_COUNT } from '../presentation'
+import { DEFAULT_CHANGESET_PATCH_LIST_COUNT } from '../presentation'
 import { upperFirst, lowerCase } from 'lodash'
 import { queryChangesets as _queryChangesets } from '../backend'
 import { repeatWhen, delay, withLatestFrom, map, filter } from 'rxjs/operators'
@@ -199,7 +199,7 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
                     }}
                     queryConnection={queryChangesetsConnection}
                     hideSearch={true}
-                    defaultFirst={DEFAULT_CHANGESET_LIST_COUNT}
+                    defaultFirst={DEFAULT_CHANGESET_PATCH_LIST_COUNT}
                     noun="changeset"
                     pluralNoun="changesets"
                     history={history}
