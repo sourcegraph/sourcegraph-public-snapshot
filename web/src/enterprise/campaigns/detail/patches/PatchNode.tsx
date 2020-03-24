@@ -85,7 +85,7 @@ export const PatchNode: React.FunctionComponent<PatchNodeProps> = ({
                         disabled={isPublishing}
                         onClick={publishChangeset}
                     >
-                        {isPublishing && <LoadingSpinner className="mr-1 icon-inline" />}{' '}
+                        {isPublishing && <LoadingSpinner className="icon-inline" />}{' '}
                         {isPublishing ? 'Publishing' : 'Publish'}
                     </button>
                 </>
