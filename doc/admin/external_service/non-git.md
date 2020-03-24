@@ -1,4 +1,4 @@
- # Non-Git code hosts (Perforce, Mercurial, Subversion, raw text, etc.)
+# Non-Git code hosts (Perforce, Mercurial, Subversion, raw text, etc.)
 
 Sourcegraph natively supports all Git-based Version Control Systems (VCSs) and code hosts. For non-Git code hosts, Sourcegraph provides a tool called `src-expose` to periodically sync and continuously serve local directories as Git repositories over HTTP. 
 
@@ -111,4 +111,3 @@ If you have a small enough code base, it is possible to use a tool for convertin
 To achieve this 
 
 **Retaining code change history**
-
