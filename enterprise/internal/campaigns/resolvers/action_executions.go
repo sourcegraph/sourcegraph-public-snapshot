@@ -238,10 +238,16 @@ func findRepos(ctx context.Context, scopeQuery string) ([]actionRepo, error) {
 	var repoMutex sync.Mutex
 	sem := semaphore.NewWeighted(8)
 	// todo: are repositories guaranteed to be unique?
-	// todo: is this correct /cc @mrnugget? I don't think the results are correct
-	for _, _repo := range resultsResolver.Repositories() {
+	for _, _repo := range resultsResolver.Results() {
 		wg.Add(1)
-		repo := _repo
+		repo, ok := _repo.ToRepository()
+		if !ok {
+			fm, ok := _repo.ToFileMatch()
+			if !ok {
+				return []actionRepo{}, errors.New("no valid search result")
+			}
+			repo = fm.Repository()
+		}
 		sem.Acquire(ctx, 1)
 		go func() {
 			defer wg.Done()
