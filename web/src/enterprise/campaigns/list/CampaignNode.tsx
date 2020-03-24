@@ -42,8 +42,8 @@ export const CampaignNode: React.FunctionComponent<CampaignNodeProps> = ({ node,
     const changesetCountByState = (state: GQL.ChangesetState): number =>
         node.changesets.nodes.reduce((prev, next) => prev + (next.state === state ? 1 : 0), 0)
     return (
-        <li className="card p-2 mt-2">
-            <div className="d-flex align-items-center">
+        <li className="list-group-item">
+            <div className="d-flex align-items-center p-2">
                 <CampaignsIcon
                     className={classNames('icon-inline mr-2 flex-shrink-0 align-self-stretch', campaignIconClass)}
                     data-tooltip={node.closedAt ? 'Closed' : 'Open'}
