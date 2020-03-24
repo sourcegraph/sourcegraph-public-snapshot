@@ -5,7 +5,7 @@ Object {
   "children": <Collapsible
     title={
       <div
-        className="d-flex align-items-start m-1 ml-2"
+        className="d-flex align-items-center m-1 ml-2"
       >
         <div
           className="changeset-node__content flex-fill"
@@ -154,7 +154,7 @@ Object {
   "children": <Collapsible
     title={
       <div
-        className="d-flex align-items-start m-1 ml-2"
+        className="d-flex align-items-center m-1 ml-2"
       >
         <div
           className="changeset-node__content flex-fill"
@@ -195,6 +195,7 @@ Object {
         <React.Fragment>
           <button
             className="flex-shrink-0 flex-grow-0 btn btn-sm btn-secondary ml-2"
+            disabled={false}
             onClick={[Function]}
             type="button"
           >

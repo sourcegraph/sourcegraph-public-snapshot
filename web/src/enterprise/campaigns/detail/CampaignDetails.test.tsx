@@ -15,7 +15,8 @@ jest.mock('./CampaignStatus', () => ({
     CampaignStatus: (props: CampaignStatusProps) => `CampaignStatus(state=${props.campaign.status.state})`,
 }))
 jest.mock('./changesets/CampaignChangesets', () => ({ CampaignChangesets: 'CampaignChangesets' }))
-jest.mock('./patches/CampaignPatches', () => ({ PatchSetPatches: 'PatchSetPatches' }))
+jest.mock('./patches/CampaignPatches', () => ({ CampaignPatches: 'CampaignPatches' }))
+jest.mock('./patches/PatchSetPatches', () => ({ PatchSetPatches: 'PatchSetPatches' }))
 jest.mock('../icons', () => ({ CampaignsIcon: 'CampaignsIcon' }))
 
 const history = H.createMemoryHistory()

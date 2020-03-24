@@ -167,6 +167,16 @@ Array [
      
   </h3>,
   <PatchSetPatches
+    campaignUpdates={
+      Subject {
+        "_isScalar": false,
+        "closed": false,
+        "hasError": false,
+        "isStopped": false,
+        "observers": Array [],
+        "thrownError": null,
+      }
+    }
     changesetUpdates={
       Subject {
         "_isScalar": false,
@@ -325,7 +335,54 @@ Array [
     Changesets
      
   </h3>,
-  <PatchSetPatches
+  <CampaignPatches
+    campaign={
+      Object {
+        "__typename": "Campaign",
+        "author": Object {
+          "username": "alice",
+        },
+        "branch": "awesome-branch",
+        "changesetCountsOverTime": Array [],
+        "changesets": Object {
+          "nodes": Array [],
+          "totalCount": 2,
+        },
+        "closedAt": null,
+        "createdAt": "2020-01-01",
+        "description": "d",
+        "id": "c",
+        "name": "n",
+        "patchSet": Object {
+          "id": "p",
+        },
+        "patches": Object {
+          "nodes": Array [],
+          "totalCount": 2,
+        },
+        "publishedAt": "2020-01-01",
+        "status": Object {
+          "completedCount": 3,
+          "errors": Array [
+            "a",
+          ],
+          "pendingCount": 3,
+          "state": "PROCESSING",
+        },
+        "updatedAt": "2020-01-01",
+        "viewerCanAdminister": true,
+      }
+    }
+    campaignUpdates={
+      Subject {
+        "_isScalar": false,
+        "closed": false,
+        "hasError": false,
+        "isStopped": false,
+        "observers": Array [],
+        "thrownError": null,
+      }
+    }
     changesetUpdates={
       Subject {
         "_isScalar": false,
@@ -377,11 +434,6 @@ Array [
         "pathname": "/",
         "search": "",
         "state": undefined,
-      }
-    }
-    patchSet={
-      Object {
-        "id": "p",
       }
     }
   />,
@@ -598,7 +650,54 @@ Array [
     Changesets
      
   </h3>,
-  <PatchSetPatches
+  <CampaignPatches
+    campaign={
+      Object {
+        "__typename": "Campaign",
+        "author": Object {
+          "username": "alice",
+        },
+        "branch": "awesome-branch",
+        "changesetCountsOverTime": Array [],
+        "changesets": Object {
+          "nodes": Array [],
+          "totalCount": 2,
+        },
+        "closedAt": null,
+        "createdAt": "2020-01-01",
+        "description": "d",
+        "id": "c",
+        "name": "n",
+        "patchSet": Object {
+          "id": "p",
+        },
+        "patches": Object {
+          "nodes": Array [],
+          "totalCount": 2,
+        },
+        "publishedAt": "2020-01-01",
+        "status": Object {
+          "completedCount": 3,
+          "errors": Array [
+            "a",
+          ],
+          "pendingCount": 3,
+          "state": "PROCESSING",
+        },
+        "updatedAt": "2020-01-01",
+        "viewerCanAdminister": false,
+      }
+    }
+    campaignUpdates={
+      Subject {
+        "_isScalar": false,
+        "closed": false,
+        "hasError": false,
+        "isStopped": false,
+        "observers": Array [],
+        "thrownError": null,
+      }
+    }
     changesetUpdates={
       Subject {
         "_isScalar": false,
@@ -650,11 +749,6 @@ Array [
         "pathname": "/",
         "search": "",
         "state": undefined,
-      }
-    }
-    patchSet={
-      Object {
-        "id": "p",
       }
     }
   />,
@@ -961,7 +1055,54 @@ Array [
     Changesets
      
   </h3>,
-  <PatchSetPatches
+  <CampaignPatches
+    campaign={
+      Object {
+        "__typename": "Campaign",
+        "author": Object {
+          "username": "alice",
+        },
+        "branch": "awesome-branch",
+        "changesetCountsOverTime": Array [],
+        "changesets": Object {
+          "nodes": Array [],
+          "totalCount": 2,
+        },
+        "closedAt": null,
+        "createdAt": "2020-01-01",
+        "description": "d",
+        "id": "c",
+        "name": "n",
+        "patchSet": Object {
+          "id": "p",
+        },
+        "patches": Object {
+          "nodes": Array [],
+          "totalCount": 2,
+        },
+        "publishedAt": "2020-01-01",
+        "status": Object {
+          "completedCount": 3,
+          "errors": Array [
+            "a",
+          ],
+          "pendingCount": 3,
+          "state": "PROCESSING",
+        },
+        "updatedAt": "2020-01-01",
+        "viewerCanAdminister": true,
+      }
+    }
+    campaignUpdates={
+      Subject {
+        "_isScalar": false,
+        "closed": false,
+        "hasError": false,
+        "isStopped": false,
+        "observers": Array [],
+        "thrownError": null,
+      }
+    }
     changesetUpdates={
       Subject {
         "_isScalar": false,
@@ -1013,11 +1154,6 @@ Array [
         "pathname": "/",
         "search": "",
         "state": undefined,
-      }
-    }
-    patchSet={
-      Object {
-        "id": "p",
       }
     }
   />,
