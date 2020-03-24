@@ -6,7 +6,7 @@ import (
 	"os/exec"
 	"strings"
 
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/inconshreveable/log15"
 )
 
 // Repo is the repository metadata returned by the Gitolite API.

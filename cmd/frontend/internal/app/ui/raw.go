@@ -13,11 +13,11 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/golang/gddo/httputil"
 	"github.com/gorilla/mux"
