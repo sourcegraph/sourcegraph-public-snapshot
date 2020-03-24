@@ -244,7 +244,27 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 }
 
 func TestPermsSyncer_syncPerms(t *testing.T) {
+	request := &syncRequest{
+		requestMeta: &requestMeta{
+			Type: 3,
+			ID:   1,
+		},
+		acquired: true,
+	}
 
+	// Request should be removed from the queue even if error occurred.
+	s := NewPermsSyncer(nil, nil, nil)
+	s.queue.Push(request)
+
+	expErr := "unexpected request type: 3"
+	err := s.syncPerms(context.Background(), request)
+	if err == nil || err.Error() != expErr {
+		t.Fatalf("err: want %q but got %v", expErr, err)
+	}
+
+	if s.queue.Len() != 0 {
+		t.Fatalf("queue length: want 0 but got %d", s.queue.Len())
+	}
 }
 
 func TestPermsSyncer_runSync(t *testing.T) {
