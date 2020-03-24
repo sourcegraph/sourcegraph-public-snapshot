@@ -24,9 +24,8 @@ export class OrderedLocationSet extends OrderedSet<InternalLocation> {
      * Create a new ordered locations set.
      *
      * @param values A set of values used to seed the set.
-     * @param trusted Whether the given values are already deduplicated.
      */
-    constructor(values?: InternalLocation[], trusted = false) {
+    constructor(values?: InternalLocation[]) {
         super(
             (value: InternalLocation): string =>
                 [
@@ -37,8 +36,7 @@ export class OrderedLocationSet extends OrderedSet<InternalLocation> {
                     value.range.end.line,
                     value.range.end.character,
                 ].join(':'),
-            values,
-            trusted
+            values
         )
     }
 }

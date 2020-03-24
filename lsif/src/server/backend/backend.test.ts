@@ -426,7 +426,7 @@ describe('Backend', () => {
             // Same dump results
             const referenceStub = sinon
                 .stub(databases[0], 'references')
-                .resolves(new OrderedLocationSet(getChunk(0), true))
+                .resolves(new OrderedLocationSet(getChunk(0), ))
 
             const monikerStubs: sinon.SinonStub<
                 Parameters<Database['monikerResults']>,
