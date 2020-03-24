@@ -11,7 +11,7 @@ require (
 	github.com/aws/aws-sdk-go-v2 v0.19.0
 	github.com/beevik/etree v1.1.0
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
-	github.com/caddyserver/caddy/v2 v2.0.0-beta.19
+	github.com/caddyserver/caddy/v2 v2.0.0-beta.20
 	github.com/certifi/gocertifi v0.0.0-20200211180108-c7c1fbc02894 // indirect
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/coreos/go-semver v0.3.0
@@ -144,14 +144,13 @@ require (
 	go.starlark.net v0.0.0-20200306205701-8dd3e2ee1dd5 // indirect
 	go.uber.org/automaxprocs v1.3.0
 	golang.org/x/arch v0.0.0-20200312215426-ff8b605520f4 // indirect
-	golang.org/x/crypto v0.0.0-20200317142112-1b76d66859c6
-	golang.org/x/net v0.0.0-20200319234117-63522dbf7eec
+	golang.org/x/crypto v0.0.0-20200323165209-0ec3e9974c59
+	golang.org/x/net v0.0.0-20200324143707-d3edc9973b7e
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e
-	golang.org/x/sys v0.0.0-20200302150141-5c8b2ff67527
+	golang.org/x/sys v0.0.0-20200323222414-85ca7c5b95cd
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0
 	golang.org/x/tools v0.0.0-20200313205530-4303120df7d8
-	google.golang.org/genproto v0.0.0-20200313141609-30c55424f95d // indirect
 	gopkg.in/go-playground/validator.v9 v9.31.0 // indirect
 	gopkg.in/ini.v1 v1.55.0 // indirect
 	gopkg.in/jpoehls/gophermail.v0 v0.0.0-20160410235621-62941eab772c
