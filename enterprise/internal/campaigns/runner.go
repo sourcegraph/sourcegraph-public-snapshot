@@ -5,10 +5,10 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"gopkg.in/inconshreveable/log15.v2"
 )
 
 // maxWorkers defines the maximum number of repository jobs to run in parallel.

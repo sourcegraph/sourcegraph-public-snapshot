@@ -1,72 +1,42 @@
 import * as lsp from 'vscode-languageserver-protocol'
 import * as pgModels from '../../shared/models/pg'
+import { OrderedSet } from '../../shared/datastructures/orderedset'
 
-/** A location with the identifier of the dump that contains it. */
 export interface InternalLocation {
+    /** The identifier of the dump that contains the location. */
     dumpId: pgModels.DumpId
+    /** The path relative to the dump root. */
     path: string
     range: lsp.Range
 }
 
-/** A location with the dump that contains it. */
 export interface ResolvedInternalLocation {
+    /** The dump that contains the location. */
     dump: pgModels.LsifDump
+    /** The path relative to the dump root. */
     path: string
     range: lsp.Range
 }
 
 /** A duplicate-free list of locations ordered by time of insertion. */
-export class OrderedLocationSet {
-    private seen = new Set<string>()
-    private order: InternalLocation[] = []
-
+export class OrderedLocationSet extends OrderedSet<InternalLocation> {
     /**
-     * Create a new ordered location set.
+     * Create a new ordered locations set.
      *
-     * @param locations A set of locations used to seed the set.
-     * @param trusted Whether the given locations are already deduplicated.
+     * @param values A set of values used to seed the set.
      */
-    constructor(locations?: InternalLocation[], trusted = false) {
-        if (!locations) {
-            return
-        }
-
-        if (trusted) {
-            this.order = Array.from(locations)
-            this.seen = new Set(this.order.map(makeKey))
-            return
-        }
-
-        for (const location of locations) {
-            this.push(location)
-        }
+    constructor(values?: InternalLocation[]) {
+        super(
+            (value: InternalLocation): string =>
+                [
+                    value.dumpId,
+                    value.path,
+                    value.range.start.line,
+                    value.range.start.character,
+                    value.range.end.line,
+                    value.range.end.character,
+                ].join(':'),
+            values
+        )
     }
-
-    /** The deduplicated locations in insertion order. */
-    public get locations(): InternalLocation[] {
-        return this.order
-    }
-
-    /** Insert a location into the set if it hasn't been seen before. */
-    public push(location: InternalLocation): void {
-        const key = makeKey(location)
-        if (this.seen.has(key)) {
-            return
-        }
-
-        this.seen.add(key)
-        this.order.push(location)
-    }
-}
-
-/** Makes a unique string representation of this location. */
-function makeKey(location: InternalLocation): string {
-    return [
-        location.dumpId,
-        location.path,
-        location.range.start.line,
-        location.range.start.character,
-        location.range.end.line,
-        location.range.end.character,
-    ].join(':')
 }

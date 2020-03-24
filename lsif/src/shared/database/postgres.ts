@@ -17,7 +17,7 @@ import * as settings from './settings'
  * version prior to making use of the DB (which the frontend may still be
  * migrating).
  */
-const MINIMUM_MIGRATION_VERSION = 1528395652
+const MINIMUM_MIGRATION_VERSION = 1528395666
 
 /**
  * Create a Postgres connection. This creates a typorm connection pool with
@@ -74,10 +74,11 @@ function connect(connectionOptions: PostgresConnectionCredentialsOptions, logger
             return connectPostgres(connectionOptions, '', logger)
         },
         {
-            factor: 1,
+            factor: 1.5,
+            randomize: true,
             retries: settings.MAX_CONNECTION_RETRIES,
-            minTimeout: settings.CONNECTION_RETRY_INTERVAL * 1000,
-            maxTimeout: settings.CONNECTION_RETRY_INTERVAL * 1000,
+            minTimeout: settings.MIN_CONNECTION_RETRY_TIMEOUT * 1000,
+            maxTimeout: settings.MAX_CONNECTION_RETRY_TIMEOUT * 1000,
         }
     )
 }

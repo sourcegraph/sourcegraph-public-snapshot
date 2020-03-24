@@ -2,19 +2,30 @@ package db
 
 import (
 	"context"
+	"strconv"
 	"sync"
+	"time"
 
 	"github.com/RoaringBitmap/roaring"
+	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"gopkg.in/inconshreveable/log15.v2"
 )
+
+var authzFilterDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
+	Namespace: "src",
+	Subsystem: "frontend",
+	Name:      "authz_filter_duration_seconds",
+	Help:      "Time spent on performing authorization",
+}, []string{"success"})
 
 var MockAuthzFilter func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error)
 
@@ -53,9 +64,15 @@ func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (filte
 
 	var currentUser *types.User
 
+	began := time.Now()
 	tr, ctx := trace.New(ctx, "authzFilter", "")
 	defer func() {
-		if err != nil {
+		defer tr.Finish()
+
+		success := err == nil
+		authzFilterDuration.WithLabelValues(strconv.FormatBool(success)).Observe(time.Since(began).Seconds())
+
+		if !success {
 			tr.SetError(err)
 		}
 
@@ -70,8 +87,6 @@ func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (filte
 		}
 
 		tr.LogFields(fields...)
-
-		tr.Finish()
 	}()
 
 	if isInternalActor(ctx) {

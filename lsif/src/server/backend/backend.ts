@@ -3,8 +3,6 @@ import * as lsp from 'vscode-languageserver-protocol'
 import * as pgModels from '../../shared/models/pg'
 import { addTags, logSpan, TracingContext } from '../../shared/tracing'
 import { Database } from './database'
-import { dbFilename } from '../../shared/paths'
-import { mustGet } from '../../shared/maps'
 import { DumpManager } from '../../shared/store/dumps'
 import { DEFAULT_REFERENCES_REMOTE_DUMP_LIMIT } from '../../shared/constants'
 import { DependencyManager } from '../../shared/store/dependencies'
@@ -32,19 +30,16 @@ export class Backend {
     /**
      * Create a new `Backend`.
      *
-     * @param storageRoot The path where SQLite databases are stored.
      * @param dumpManager The dumps manager instance.
      * @param dependencyManager The dependency manager instance.
      * @param frontendUrl The url of the frontend internal API.
      * @param createDatabase Function used to create a database instance from a dump.
      */
     constructor(
-        private storageRoot: string,
         private dumpManager: DumpManager,
         private dependencyManager: DependencyManager,
         private frontendUrl: string,
-        private createDatabase: (dump: pgModels.LsifDump) => Database = dump =>
-            new Database(dump.id, dbFilename(this.storageRoot, dump.id))
+        private createDatabase: (dumpId: pgModels.DumpId) => Database = dumpId => new Database(dumpId)
     ) {}
 
     /**
@@ -72,7 +67,7 @@ export class Backend {
      * @param commit The commit.
      * @param path The path of the document to which the position belongs.
      * @param position The current hover position.
-     * @param dumpId The identifier of the dump to load. If not supplied, the closest dump will be used.
+     * @param dumpId The identifier of the dump to load.
      * @param ctx The tracing context.
      */
     public async definitions(
@@ -80,10 +75,10 @@ export class Backend {
         commit: string,
         path: string,
         position: lsp.Position,
-        dumpId?: number,
+        dumpId: number,
         ctx: TracingContext = {}
     ): Promise<ResolvedInternalLocation[] | undefined> {
-        const closestDumpAndDatabase = await this.closestDatabase(repositoryId, commit, path, dumpId, ctx)
+        const closestDumpAndDatabase = await this.closestDatabase(dumpId, ctx)
         if (!closestDumpAndDatabase) {
             if (ctx.logger) {
                 ctx.logger.warn('No database could be loaded', { repositoryId, commit, path })
@@ -104,8 +99,8 @@ export class Backend {
         }
 
         // Try to find definitions in other dumps
-        const { document, ranges } = await database.getRangeByPosition(pathInDb, position, ctx)
-        if (!document || ranges.length === 0) {
+        const rangeMonikers = await database.monikersByPosition(pathInDb, position, ctx)
+        if (rangeMonikers.length === 0) {
             return []
         }
 
@@ -113,18 +108,15 @@ export class Backend {
         // outermost, such that the set of monikers for reach range is sorted by
         // priority. Then, we perform a search for each moniker, in sequence,
         // until valid results are found.
-        for (const range of ranges) {
-            const monikers = sortMonikers(
-                Array.from(range.monikerIds).map(id => mustGet(document.monikers, id, 'moniker'))
-            )
-
+        for (const monikers of rangeMonikers) {
             for (const moniker of monikers) {
                 if (moniker.kind === 'import') {
                     // This symbol was imported from another database. See if we have
                     // a remote definition for it.
 
                     const { locations: remoteDefinitions } = await this.lookupMoniker(
-                        document,
+                        dumpId,
+                        pathInDb,
                         moniker,
                         sqliteModels.DefinitionModel,
                         {},
@@ -164,7 +156,7 @@ export class Backend {
      * @param position The current hover position.
      * @param paginationContext Context describing the current request for paginated results.
      * @param remoteDumpLimit The maximum number of remote dumps to query in one operation.
-     * @param dumpId The identifier of the dump to load. If not supplied, the closest dump will be used.
+     * @param dumpId The identifier of the dump to load.
      * @param ctx The tracing context.
      */
     public async references(
@@ -174,7 +166,7 @@ export class Backend {
         position: lsp.Position,
         paginationContext: ReferencePaginationContext = { limit: 10 },
         remoteDumpLimit = DEFAULT_REFERENCES_REMOTE_DUMP_LIMIT,
-        dumpId?: number,
+        dumpId: number,
         ctx: TracingContext = {}
     ): Promise<PaginatedInternalLocations | undefined> {
         if (paginationContext.cursor) {
@@ -188,7 +180,7 @@ export class Backend {
             )
         }
 
-        const closestDumpAndDatabase = await this.closestDatabase(repositoryId, commit, path, dumpId, ctx)
+        const closestDumpAndDatabase = await this.closestDatabase(dumpId, ctx)
         if (!closestDumpAndDatabase) {
             if (ctx.logger) {
                 ctx.logger.warn('No database could be loaded', { repositoryId, commit, path })
@@ -202,24 +194,14 @@ export class Backend {
         const pathInDb = pathToDatabase(dump.root, path)
 
         // Get the ranges of for this position and the document in which they occur
-        const { document, ranges } = await database.getRangeByPosition(pathInDb, position, ctx)
-
-        // Find and normalize the monikers attached to each range
-        const monikers: sqliteModels.MonikerData[] = []
-        if (document) {
-            for (const range of ranges) {
-                for (const monikerId of range.monikerIds) {
-                    monikers.push(mustGet(document.monikers, monikerId, 'monikers'))
-                }
-            }
-        }
+        const rangeMonikers = await database.monikersByPosition(pathInDb, position, ctx)
 
         const cursor: ReferencePaginationCursor = {
             phase: 'same-dump',
             dumpId: dump.id,
             path: pathInDb,
             position,
-            monikers: sortMonikers(monikers),
+            monikers: sortMonikers(rangeMonikers.flatMap(m => m)),
             skipResults: 0,
         }
 
@@ -242,7 +224,7 @@ export class Backend {
      * @param commit The commit.
      * @param path The path of the document to which the position belongs.
      * @param position The current hover position.
-     * @param dumpId The identifier of the dump to load. If not supplied, the closest dump will be used.
+     * @param dumpId The identifier of the dump to load.
      * @param ctx The tracing context.
      */
     public async hover(
@@ -250,10 +232,10 @@ export class Backend {
         commit: string,
         path: string,
         position: lsp.Position,
-        dumpId?: number,
+        dumpId: number,
         ctx: TracingContext = {}
     ): Promise<{ text: string; range: lsp.Range } | null | undefined> {
-        const closestDumpAndDatabase = await this.closestDatabase(repositoryId, commit, path, dumpId, ctx)
+        const closestDumpAndDatabase = await this.closestDatabase(dumpId, ctx)
         if (!closestDumpAndDatabase) {
             if (ctx.logger) {
                 ctx.logger.warn('No database could be loaded', { repositoryId, commit, path })
@@ -279,7 +261,7 @@ export class Backend {
         }
 
         const { dump: definitionDump, path: definitionPath, range } = locations[0]
-        const definitionDatabase = this.createDatabase(definitionDump)
+        const definitionDatabase = this.createDatabase(definitionDump.id)
         return definitionDatabase.hover(pathToDatabase(definitionDump.root, definitionPath), range.start, newCtx)
     }
 
@@ -366,13 +348,13 @@ export class Backend {
                 return recur(
                     () => this.performDefinitionMonikersReferences(limit, cursor, ctx),
                     async (): Promise<ReferencePaginationCursor | undefined> => {
-                        const document = await this.getDocumentByPath(cursor.dumpId, cursor.path, ctx)
-                        if (!document) {
-                            return undefined
-                        }
-
                         for (const moniker of cursor.monikers) {
-                            const packageInformation = this.lookupPackageInformation(document, moniker, ctx)
+                            const packageInformation = await this.lookupPackageInformation(
+                                cursor.dumpId,
+                                cursor.path,
+                                moniker,
+                                ctx
+                            )
                             if (packageInformation) {
                                 return {
                                     dumpId: cursor.dumpId,
@@ -478,13 +460,13 @@ export class Backend {
         }
 
         // Get the page's slice of results
-        const slicedLocations = locationSet.locations.slice(cursor.skipResults, cursor.skipResults + limit)
+        const slicedLocations = locationSet.values.slice(cursor.skipResults, cursor.skipResults + limit)
         const newOffset = cursor.skipResults + limit
         const newCursor = { ...cursor, skipResults: cursor.skipResults + limit }
 
         return {
             locations: await this.resolveLocations(slicedLocations.map(loc => locationFromDatabase(dump.root, loc))),
-            newCursor: newOffset < locationSet.locations.length ? newCursor : undefined,
+            newCursor: newOffset < locationSet.values.length ? newCursor : undefined,
         }
     }
 
@@ -504,11 +486,6 @@ export class Backend {
         cursor: DefinitionMonikersReferenceCursor,
         ctx: TracingContext = {}
     ): Promise<PaginatedInternalLocations> {
-        const document = await this.getDocumentByPath(cursor.dumpId, cursor.path, ctx)
-        if (!document) {
-            return { locations: [] }
-        }
-
         for (const moniker of cursor.monikers) {
             if (moniker.kind !== 'import') {
                 continue
@@ -516,7 +493,8 @@ export class Backend {
 
             // Get locations in the defining package
             const { locations, count } = await this.lookupMoniker(
-                document,
+                cursor.dumpId,
+                cursor.path,
                 moniker,
                 sqliteModels.ReferenceModel,
                 { take: limit, skip: cursor.skipResults },
@@ -725,20 +703,22 @@ export class Backend {
      * package. Open that package's database and query its definitions or references table
      * for the target moniker (depending on the given model).
      *
-     * @param document The document containing the definition.
+     * @param dumpId The identifier of the dump containing the document.
+     * @param path The path of the document.
      * @param moniker The target moniker.
      * @param model The target model.
      * @param pagination A limit and offset to use for the query.
      * @param ctx The tracing context.
      */
     private async lookupMoniker(
-        document: sqliteModels.DocumentData,
+        dumpId: pgModels.DumpId,
+        path: string,
         moniker: sqliteModels.MonikerData,
         model: typeof sqliteModels.DefinitionModel | typeof sqliteModels.ReferenceModel,
         pagination: { skip?: number; take?: number },
         ctx: TracingContext = {}
     ): Promise<{ locations: InternalLocation[]; count: number }> {
-        const packageInformation = this.lookupPackageInformation(document, moniker, ctx)
+        const packageInformation = await this.lookupPackageInformation(dumpId, path, moniker, ctx)
         if (!packageInformation) {
             return { locations: [], count: 0 }
         }
@@ -759,7 +739,7 @@ export class Backend {
             packageCommit: packageEntity.dump.commit,
         })
 
-        const { locations, count } = await this.createDatabase(packageEntity.dump).monikerResults(
+        const { locations, count } = await this.createDatabase(packageEntity.dump.id).monikerResults(
             model,
             moniker,
             pagination,
@@ -771,20 +751,25 @@ export class Backend {
     /**
      * Retrieve the package information associated with the given moniker.
      *
-     * @param document The document containing an instance of the moniker.
+     * @param dumpId The identifier of the dump containing the document.
+     * @param path The path of the document.
      * @param moniker The target moniker.
      * @param ctx The tracing context.
      */
-    private lookupPackageInformation(
-        document: sqliteModels.DocumentData,
+    private async lookupPackageInformation(
+        dumpId: number,
+        path: string,
         moniker: sqliteModels.MonikerData,
         ctx: TracingContext = {}
-    ): sqliteModels.PackageInformationData | undefined {
+    ): Promise<sqliteModels.PackageInformationData | undefined> {
         if (!moniker.packageInformationId) {
             return undefined
         }
 
-        const packageInformation = document.packageInformation.get(moniker.packageInformationId)
+        const packageInformation = await this.createDatabase(dumpId).packageInformation(
+            path,
+            moniker.packageInformationId
+        )
         if (!packageInformation) {
             return undefined
         }
@@ -805,30 +790,13 @@ export class Backend {
      * found. This new tracing context should be used in all downstream requests so that the original
      * commit and the effective commit are both known.
      *
-     * If no dumpId is supplied, the first database from `findClosestDatabase` is used. Note that this
-     * functionality does not happen in the application and only in tests, as an uploadId is a required
-     * parameter on all routes into the API.
-     *
-     * TODO - remove test-specific logic
-     *
-     * @param repositoryId The repository identifier.
-     * @param commit The target commit.
-     * @param path One of the files in the dump.
      * @param dumpId The identifier of the dump to load.
      * @param ctx The tracing context.
      */
     private async closestDatabase(
-        repositoryId: number,
-        commit: string,
-        path: string,
-        dumpId?: number,
+        dumpId: number,
         ctx: TracingContext = {}
     ): Promise<{ dump: pgModels.LsifDump; database: Database; ctx: TracingContext } | undefined> {
-        if (!dumpId) {
-            const databases = await this.findClosestDatabases(repositoryId, commit, path)
-            return databases.length > 0 ? databases[0] : undefined
-        }
-
         const dumpAndDatabase = await this.getDumpAndDatabaseById(dumpId)
         if (!dumpAndDatabase) {
             return undefined
@@ -871,7 +839,7 @@ export class Backend {
         return (
             await Promise.all(
                 closestDumps.map(async dump => {
-                    const database = this.createDatabase(dump)
+                    const database = this.createDatabase(dump.id)
                     const taggedCtx = addTags(ctx, { closestCommit: dump.commit })
 
                     return (await database.exists(pathToDatabase(dump.root, path), taggedCtx))
@@ -895,24 +863,7 @@ export class Backend {
             return undefined
         }
 
-        return { dump, database: this.createDatabase(dump) }
-    }
-
-    /**
-     * Create a database for the dump with the given identifier and return the document
-     * with the given path.
-     *
-     * @param dumpId The dump id.
-     * @param path The document path.
-     * @param ctx The tracing context.
-     */
-    private async getDocumentByPath(
-        dumpId: number,
-        path: string,
-        ctx: TracingContext = {}
-    ): Promise<sqliteModels.DocumentData | undefined> {
-        const dumpAndDatabase = await this.getDumpAndDatabaseById(dumpId)
-        return dumpAndDatabase?.database.getDocumentByPath(path, ctx)
+        return { dump, database: this.createDatabase(dump.id) }
     }
 
     /** Bulk populate the dump model for internal locations. */

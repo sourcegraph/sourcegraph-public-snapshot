@@ -6,16 +6,17 @@ import { logger as loggingMiddleware } from 'express-winston'
 import { makeMetricsMiddleware } from './middleware/metrics'
 import { Tracer } from 'opentracing'
 import { Logger } from 'winston'
+import { jsonReplacer } from '../encoding/json'
 
 export function startExpressApp({
-    routes,
     port,
+    routers = [],
     logger,
     tracer,
     selectHistogram = () => undefined,
 }: {
-    routes: express.Router[]
     port: number
+    routers?: express.Router[]
     logger: Logger
     tracer?: Tracer
     selectHistogram?: (route: string) => promClient.Histogram<string> | undefined
@@ -34,13 +35,15 @@ export function startExpressApp({
     app.use(makeMetricsMiddleware(selectHistogram))
     app.use(createMetaRouter())
 
-    for (const route of routes) {
+    for (const route of routers) {
         app.use(route)
     }
 
     // Error handler must be registered last so its exception handlers
     // will apply to all routes and other middleware.
     app.use(errorHandler(logger))
+
+    app.set('json replacer', jsonReplacer)
 
     app.listen(port, () => logger.debug('API server listening', { port }))
 }

@@ -2918,10 +2918,10 @@
   dependencies:
     "@types/node" "*"
 
-"@types/node@*", "@types/node@13.9.0", "@types/node@>= 8", "@types/node@>=8.9.0":
-  version "13.9.0"
-  resolved "https://registry.npmjs.org/@types/node/-/node-13.9.0.tgz#5b6ee7a77faacddd7de719017d0bc12f52f81589"
-  integrity sha512-0ARSQootUG1RljH2HncpsY2TJBfGQIKOOi7kxzUY6z54ePu/ZD+wJA8zI2Q6v8rol2qpG/rvqsReco8zNMPvhQ==
+"@types/node@*", "@types/node@13.9.3", "@types/node@>= 8", "@types/node@>=8.9.0":
+  version "13.9.3"
+  resolved "https://registry.npmjs.org/@types/node/-/node-13.9.3.tgz#6356df2647de9eac569f9a52eda3480fa9e70b4d"
+  integrity sha512-01s+ac4qerwd6RHD+mVbOEsraDHSgUaefQlEdBbUolnQFjKwCr7luvAlEwW1RFojh67u0z4OUTjPn9LEl4zIkA==
 
 "@types/node@^11.10.4":
   version "11.13.21"

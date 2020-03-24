@@ -1,4 +1,4 @@
-package search
+package query
 
 import (
 	"errors"
@@ -406,7 +406,7 @@ func (p *parser) parseOr() ([]Node, error) {
 }
 
 // Parse parses a raw input string into a parse tree comprising Nodes.
-func Parse(in string) ([]Node, error) {
+func parseAndOr(in string) ([]Node, error) {
 	if in == "" {
 		return nil, nil
 	}
@@ -419,4 +419,12 @@ func Parse(in string) ([]Node, error) {
 		return nil, errors.New("unbalanced expression")
 	}
 	return newOperator(nodes, And), nil
+}
+
+func ParseAndOr(in string) (QueryInfo, error) {
+	query, err := parseAndOr(in)
+	if err != nil {
+		return nil, err
+	}
+	return &AndOrQuery{query: query}, nil
 }

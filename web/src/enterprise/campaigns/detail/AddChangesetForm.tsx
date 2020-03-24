@@ -126,7 +126,7 @@ export const AddChangesetForm: React.FunctionComponent<{ campaignID: ID; onAdd: 
                         />
                     </div>
                 </div>
-                <button type="submit" className="btn btn-primary mr-1">
+                <button type="submit" className="btn btn-primary mr-1" disabled={isLoading}>
                     Add changeset
                     {isLoading && <LoadingSpinner className="ml-2 icon-inline" />}
                 </button>

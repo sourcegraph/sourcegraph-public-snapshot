@@ -6,13 +6,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	gitserverprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // schedulerConfig tracks the active scheduler configuration.
@@ -180,13 +180,13 @@ func (s *updateScheduler) runUpdateLoop(ctx context.Context) {
 				return
 			}
 
-			repo := s.updateQueue.acquireNext()
-			if repo == nil {
+			repo, ok := s.updateQueue.acquireNext()
+			if !ok {
 				cancel()
 				break
 			}
 
-			go func(ctx context.Context, repo *configuredRepo2, cancel context.CancelFunc) {
+			go func(ctx context.Context, repo configuredRepo2, cancel context.CancelFunc) {
 				defer cancel()
 				defer s.updateQueue.remove(repo, true)
 
@@ -207,7 +207,7 @@ func (s *updateScheduler) runUpdateLoop(ctx context.Context) {
 }
 
 // requestRepoUpdate sends a request to gitserver to request an update.
-var requestRepoUpdate = func(ctx context.Context, repo *configuredRepo2, since time.Duration) (*gitserverprotocol.RepoUpdateResponse, error) {
+var requestRepoUpdate = func(ctx context.Context, repo configuredRepo2, since time.Duration) (*gitserverprotocol.RepoUpdateResponse, error) {
 	return gitserver.DefaultClient.RequestRepoUpdate(ctx, gitserver.Repo{Name: repo.Name, URL: repo.URL}, since)
 }
 
@@ -281,7 +281,7 @@ func (s *updateScheduler) remove(r *Repo) {
 	}
 }
 
-func configuredRepo2FromRepo(r *Repo) *configuredRepo2 {
+func configuredRepo2FromRepo(r *Repo) configuredRepo2 {
 	repo := configuredRepo2{
 		ID:   r.ID,
 		Name: api.RepoName(r.Name),
@@ -291,13 +291,13 @@ func configuredRepo2FromRepo(r *Repo) *configuredRepo2 {
 		repo.URL = urls[0]
 	}
 
-	return &repo
+	return repo
 }
 
 // UpdateOnce causes a single update of the given repository.
 // It neither adds nor removes the repo from the schedule.
 func (s *updateScheduler) UpdateOnce(id api.RepoID, name api.RepoName, url string) {
-	repo := &configuredRepo2{
+	repo := configuredRepo2{
 		ID:   id,
 		Name: name,
 		URL:  url,
@@ -312,10 +312,8 @@ func (s *updateScheduler) DebugDump() interface{} {
 		Name        string
 		UpdateQueue []*repoUpdate
 		Schedule    []*scheduledRepoUpdate
-		SourceRepos map[string][]configuredRepo2
 	}{
-		Name:        "repos",
-		SourceRepos: map[string][]configuredRepo2{},
+		Name: "repos",
 	}
 
 	s.schedule.mu.Lock()
@@ -412,7 +410,7 @@ const (
 
 // repoUpdate is a repository that has been queued for an update.
 type repoUpdate struct {
-	Repo     *configuredRepo2
+	Repo     configuredRepo2
 	Priority priority
 	Seq      uint64 // the sequence number of the update
 	Updating bool   // whether the repo has been acquired for update
@@ -436,7 +434,7 @@ func (q *updateQueue) reset() {
 //
 // If the given priority is higher than the one in the queue,
 // the repo's position in the queue is updated accordingly.
-func (q *updateQueue) enqueue(repo *configuredRepo2, p priority) (updated bool) {
+func (q *updateQueue) enqueue(repo configuredRepo2, p priority) (updated bool) {
 	if repo.ID == 0 {
 		panic("repo.id is zero")
 	}
@@ -481,7 +479,7 @@ func (q *updateQueue) nextSeq() uint64 {
 }
 
 // remove removes the repo from the queue if the repo.Updating matches the updating argument.
-func (q *updateQueue) remove(repo *configuredRepo2, updating bool) (removed bool) {
+func (q *updateQueue) remove(repo configuredRepo2, updating bool) (removed bool) {
 	if repo.ID == 0 {
 		panic("repo.id is zero")
 	}
@@ -501,20 +499,20 @@ func (q *updateQueue) remove(repo *configuredRepo2, updating bool) (removed bool
 // acquireNext acquires the next repo for update.
 // The acquired repo must be removed from the queue
 // when the update finishes (independent of success or failure).
-func (q *updateQueue) acquireNext() *configuredRepo2 {
+func (q *updateQueue) acquireNext() (configuredRepo2, bool) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 	if len(q.heap) == 0 {
-		return nil
+		return configuredRepo2{}, false
 	}
 	update := q.heap[0]
 	if update.Updating {
 		// Everything in the queue is already updating.
-		return nil
+		return configuredRepo2{}, false
 	}
 	update.Updating = true
 	heap.Fix(q, update.Index)
-	return update.Repo
+	return update.Repo, true
 }
 
 // The following methods implement heap.Interface based on the priority queue example:
@@ -577,14 +575,14 @@ type schedule struct {
 
 // scheduledRepoUpdate is the update schedule for a single repo.
 type scheduledRepoUpdate struct {
-	Repo     *configuredRepo2 // the repo to update
-	Interval time.Duration    // how regularly the repo is updated
-	Due      time.Time        // the next time that the repo will be enqueued for a update
-	Index    int              `json:"-"` // the index in the heap
+	Repo     configuredRepo2 // the repo to update
+	Interval time.Duration   // how regularly the repo is updated
+	Due      time.Time       // the next time that the repo will be enqueued for a update
+	Index    int             `json:"-"` // the index in the heap
 }
 
 // upsert inserts or updates a repo in the schedule.
-func (s *schedule) upsert(repo *configuredRepo2) (updated bool) {
+func (s *schedule) upsert(repo configuredRepo2) (updated bool) {
 	if repo.ID == 0 {
 		panic("repo.id is zero")
 	}
@@ -610,7 +608,7 @@ func (s *schedule) upsert(repo *configuredRepo2) (updated bool) {
 
 // updateInterval updates the update interval of a repo in the schedule.
 // It does nothing if the repo is not in the schedule.
-func (s *schedule) updateInterval(repo *configuredRepo2, interval time.Duration) {
+func (s *schedule) updateInterval(repo configuredRepo2, interval time.Duration) {
 	if repo.ID == 0 {
 		panic("repo.id is zero")
 	}
@@ -634,7 +632,7 @@ func (s *schedule) updateInterval(repo *configuredRepo2, interval time.Duration)
 }
 
 // remove removes a repo from the schedule.
-func (s *schedule) remove(repo *configuredRepo2) (removed bool) {
+func (s *schedule) remove(repo configuredRepo2) (removed bool) {
 	if repo.ID == 0 {
 		panic("repo.id is zero")
 	}

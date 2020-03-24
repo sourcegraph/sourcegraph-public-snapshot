@@ -32,6 +32,7 @@ var defaultEnv = map[string]string{
 	"SYMBOLS_URL":           "http://127.0.0.1:3184",
 	"REPLACER_URL":          "http://127.0.0.1:3185",
 	"LSIF_SERVER_URL":       "http://127.0.0.1:3186",
+	"LSIF_DUMP_MANAGER_URL": "http://127.0.0.1:3187",
 	"SRC_HTTP_ADDR":         ":8080",
 	"SRC_HTTPS_ADDR":        ":8443",
 	"SRC_FRONTEND_INTERNAL": FrontendInternalHost,
