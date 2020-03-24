@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/RoaringBitmap/roaring"
+	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
@@ -19,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"gopkg.in/inconshreveable/log15.v2"
 )
 
 // PermsSyncer is a permissions syncing manager that is in charge of keeping
@@ -633,9 +633,6 @@ func (s *PermsSyncer) observe(ctx context.Context, family, title string) (contex
 	tr, ctx := trace.New(ctx, family, title)
 
 	return ctx, func(typ requestType, id int32, err *error) {
-		now := s.clock()
-		took := now.Sub(began).Seconds()
-
 		defer tr.Finish()
 		tr.LogFields(otlog.Int32("id", id))
 
@@ -651,7 +648,7 @@ func (s *PermsSyncer) observe(ctx context.Context, family, title string) (contex
 		}
 
 		success := err == nil || *err == nil
-		s.metrics.syncDuration.WithLabelValues(typLabel, strconv.FormatBool(success)).Observe(took)
+		s.metrics.syncDuration.WithLabelValues(typLabel, strconv.FormatBool(success)).Observe(time.Since(began).Seconds())
 
 		if !success {
 			tr.SetError(*err)
