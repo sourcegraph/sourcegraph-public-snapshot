@@ -424,9 +424,7 @@ describe('Backend', () => {
             sinon.stub(databases[0], 'packageInformation').resolves({ name: 'pkg2', version: '0.0.1' })
 
             // Same dump results
-            const referenceStub = sinon
-                .stub(databases[0], 'references')
-                .resolves(new OrderedLocationSet(getChunk(0), true))
+            const referenceStub = sinon.stub(databases[0], 'references').resolves(new OrderedLocationSet(getChunk(0)))
 
             const monikerStubs: sinon.SinonStub<
                 Parameters<Database['monikerResults']>,
