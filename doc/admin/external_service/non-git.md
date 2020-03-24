@@ -1,6 +1,6 @@
 # Non-Git code hosts (Perforce, Mercurial, Subversion, raw text, etc.)
 
-Sourcegraph natively supports all Git-based Version Control Systems (VCSs) and code hosts. For non-Git code hosts, Sourcegraph provides a tool called `src-expose` to periodically sync and continuously serve local directories as Git repositories over HTTP. 
+Sourcegraph natively supports all Git-based Version Control Systems (VCSs) and code hosts. For non-Git code hosts, Sourcegraph provides a CLI tool called `src-expose` to periodically sync and continuously serve local directories as Git repositories over HTTP. 
 
 **Guides for specific non-Git code hosts**:
 - [Perforce](../repo/perforce.md)
