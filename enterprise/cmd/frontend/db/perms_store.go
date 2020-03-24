@@ -131,6 +131,10 @@ AND permission = %s
 //         1 |       read | bitmap{1} | <DateTime>
 //         2 |       read | bitmap{1} | <DateTime>
 func (s *PermsStore) SetUserPermissions(ctx context.Context, p *authz.UserPermissions) (err error) {
+	if Mocks.Perms.SetUserPermissions != nil {
+		return Mocks.Perms.SetUserPermissions(ctx, p)
+	}
+
 	ctx, save := s.observe(ctx, "SetUserPermissions", "")
 	defer func() { save(&err, p.TracingFields()...) }()
 
@@ -1252,6 +1256,10 @@ func (s *PermsStore) batchLoadIDs(ctx context.Context, q *sqlf.Query) (map[int32
 
 // ListExternalAccounts returns all external accounts that are associated with given user.
 func (s *PermsStore) ListExternalAccounts(ctx context.Context, userID int32) (accounts []*extsvc.ExternalAccount, err error) {
+	if Mocks.Perms.ListExternalAccounts != nil {
+		return Mocks.Perms.ListExternalAccounts(ctx, userID)
+	}
+
 	ctx, save := s.observe(ctx, "ListExternalAccounts", "")
 	defer func() { save(&err, otlog.Int32("userID", userID)) }()
 
@@ -1295,6 +1303,10 @@ ORDER BY id ASC
 // could be less than the candidate list due to some users are not associated with any external
 // account.
 func (s *PermsStore) GetUserIDsByExternalAccounts(ctx context.Context, accounts *extsvc.ExternalAccounts) (_ map[string]int32, err error) {
+	if Mocks.Perms.GetUserIDsByExternalAccounts != nil {
+		return Mocks.Perms.GetUserIDsByExternalAccounts(ctx, accounts)
+	}
+
 	ctx, save := s.observe(ctx, "ListUsersByExternalAccounts", "")
 	defer func() { save(&err, accounts.TracingFields()...) }()
 

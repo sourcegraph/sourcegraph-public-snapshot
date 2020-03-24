@@ -1,13 +1,13 @@
 import * as H from 'history'
-import * as React from 'react'
+import React, { useCallback, useMemo } from 'react'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { PageTitle } from '../../../components/PageTitle'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../../../components/FilteredConnection'
 import { CampaignNode, CampaignNodeProps, CampaignNodeCampaign } from '../list/CampaignNode'
 import { queryCampaigns } from '../global/list/backend'
+import { Redirect } from 'react-router'
 
 interface Props {
-    onSelect: (campaign: Pick<GQL.ICampaign, 'id'>) => void
     history: H.History
     location: H.Location
     className?: string
@@ -16,13 +16,21 @@ interface Props {
 /**
  * A list of a campaign's to choose from for an update
  */
-export const CampaignUpdateSelection: React.FunctionComponent<Props> = ({ history, location, onSelect }) => {
+export const CampaignUpdateSelection: React.FunctionComponent<Props> = ({ history, location }) => {
+    const patchSetID = useMemo(() => new URLSearchParams(location.search).get('patchSet'), [location.search])
+    const selectCampaign = useCallback(
+        (campaign: Pick<GQL.ICampaign, 'id'>) => history.push(`/campaigns/${campaign.id}?patchSet=${patchSetID!}`),
+        [history, patchSetID]
+    )
     // Only query open campaigns, that are non-manual. Those are the only ones that can be updated with a patch set.
-    const queryConnection = React.useCallback(
+    const queryConnection = useCallback(
         (args: FilteredConnectionQueryArgs) =>
             queryCampaigns({ ...args, state: GQL.CampaignState.OPEN, hasPatchSet: true }),
         []
     )
+    if (!patchSetID) {
+        return <Redirect to="/campaigns" />
+    }
     return (
         <>
             <PageTitle title="Update campaign" />
@@ -36,7 +44,7 @@ export const CampaignUpdateSelection: React.FunctionComponent<Props> = ({ histor
                 location={location}
                 nodeComponent={CampaignNode}
                 nodeComponentProps={{
-                    selection: { buttonLabel: 'Preview', enabled: true, onSelect },
+                    selection: { buttonLabel: 'Preview', enabled: true, onSelect: selectCampaign },
                 }}
                 queryConnection={queryConnection}
                 useURLQuery={false}

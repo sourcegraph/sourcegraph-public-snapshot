@@ -5,11 +5,9 @@ import { Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, distinctUntilKeyChanged, map, startWith } from 'rxjs/operators'
 import jsonSchemaMetaSchema from '../../../schema/json-schema-draft-07.schema.json'
 import settingsSchema from '../../../schema/settings.schema.json'
-import { BuiltinTheme, MonacoEditor } from '../components/MonacoEditor'
+import { MonacoEditor } from '../components/MonacoEditor'
 import { ThemeProps } from '../../../shared/src/theme'
 import { eventLogger } from '../tracking/eventLogger'
-
-const isLightThemeToMonacoTheme = (isLightTheme: boolean): BuiltinTheme => (isLightTheme ? 'vs' : 'sourcegraph-dark')
 
 /**
  * Minimal shape of a JSON Schema. These values are treated as opaque, so more specific types are
@@ -73,20 +71,6 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
         )
 
         this.subscriptions.add(
-            componentUpdates
-                .pipe(
-                    map(props => props.isLightTheme),
-                    distinctUntilChanged(),
-                    map(isLightThemeToMonacoTheme)
-                )
-                .subscribe(monacoTheme => {
-                    if (this.monaco) {
-                        this.monaco.editor.setTheme(monacoTheme)
-                    }
-                })
-        )
-
-        this.subscriptions.add(
             componentUpdates.pipe(distinctUntilKeyChanged('jsonSchema')).subscribe(props => {
                 if (this.monaco) {
                     setDiagnosticsOptions(this.monaco, props.jsonSchema)
@@ -115,7 +99,7 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
                 className={this.props.className}
                 language={this.props.language || 'json'}
                 height={this.props.height || 400}
-                theme={isLightThemeToMonacoTheme(this.props.isLightTheme)}
+                isLightTheme={this.props.isLightTheme}
                 value={this.props.value}
                 editorWillMount={this.editorWillMount}
                 options={{
@@ -160,20 +144,6 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
         }
 
         setDiagnosticsOptions(monaco, this.props)
-
-        monaco.editor.defineTheme('sourcegraph-dark', {
-            base: 'vs-dark',
-            inherit: true,
-            colors: {
-                'editor.background': '#0E121B',
-                'editor.foreground': '#F2F4F8',
-                'editorCursor.foreground': '#A2B0CD',
-                'editor.selectionBackground': '#1C7CD650',
-                'editor.selectionHighlightBackground': '#1C7CD625',
-                'editor.inactiveSelectionBackground': '#1C7CD625',
-            },
-            rules: [],
-        })
 
         // Only listen to 1 event each to avoid receiving events from other Monaco editors on the
         // same page (if there are multiple).

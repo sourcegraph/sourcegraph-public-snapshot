@@ -13,9 +13,11 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/inconshreveable/log15"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/golang/gddo/httputil"
 	"github.com/gorilla/mux"
@@ -158,6 +160,11 @@ func serveRaw(w http.ResponseWriter, r *http.Request) error {
 		}
 		w.Header().Set("Content-Length", strconv.FormatInt(fi.Size(), 10))
 		log15.Debug("raw endpoint sending archive", "repo", common.Repo.Name, "commit", common.CommitID, "format", format, "path", relativePath, "size", fi.Size())
+		if relativePath == "." {
+			metricRawTotal.WithLabelValues("rootarchive").Inc()
+		} else {
+			metricRawTotal.WithLabelValues("patharchive").Inc()
+		}
 
 		_, err = io.Copy(w, f)
 		return err
@@ -210,6 +217,7 @@ func serveRaw(w http.ResponseWriter, r *http.Request) error {
 		if err != nil {
 			if os.IsNotExist(err) {
 				log15.Debug("raw endpoint sending file", "repo", common.Repo.Name, "commit", common.CommitID, "path", requestedPath, "type", "404")
+				metricRawTotal.WithLabelValues("404").Inc()
 				http.Error(w, html.EscapeString(err.Error()), http.StatusNotFound)
 				return nil // request handled
 			}
@@ -230,6 +238,7 @@ func serveRaw(w http.ResponseWriter, r *http.Request) error {
 			}
 			result := strings.Join(names, "\n")
 			log15.Debug("raw endpoint sending file", "repo", common.Repo.Name, "commit", common.CommitID, "path", requestedPath, "type", "dir", "size", len(infos))
+			metricRawTotal.WithLabelValues("dir").Inc()
 			fmt.Fprintf(w, "%s", template.HTMLEscapeString(result))
 			return nil
 		}
@@ -241,7 +250,13 @@ func serveRaw(w http.ResponseWriter, r *http.Request) error {
 		}
 		defer f.Close()
 		log15.Debug("raw endpoint sending file", "repo", common.Repo.Name, "commit", common.CommitID, "path", requestedPath, "type", "file", "size", fi.Size())
+		metricRawTotal.WithLabelValues("file").Inc()
 		_, err = io.Copy(w, f)
 		return err
 	}
 }
+
+var metricRawTotal = promauto.NewCounterVec(prometheus.CounterOpts{
+	Name: "src_http_raw_endpoint_total",
+	Help: "The total number of requests to the raw endpoint API.",
+}, []string{"type"})

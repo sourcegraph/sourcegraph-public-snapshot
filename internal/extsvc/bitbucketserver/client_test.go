@@ -14,8 +14,8 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/inconshreveable/log15"
 	"github.com/sergi/go-diff/diffmatchpatch"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 var update = flag.Bool("update", false, "update testdata")

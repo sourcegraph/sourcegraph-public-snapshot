@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/RoaringBitmap/roaring"
+	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
@@ -19,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"gopkg.in/inconshreveable/log15.v2"
 )
 
 // PermsSyncer is a permissions syncing manager that is in charge of keeping
@@ -30,7 +30,6 @@ type PermsSyncer struct {
 	// The priority queue to maintain the permissions syncing requests.
 	queue *requestQueue
 	// The database interface for any repos and external services operations.
-	// TODO(jchen): Move all DB calls to authz.PermsStore and remove this field.
 	reposStore repos.Store
 	// The database interface for any permissions operations.
 	permsStore *edb.PermsStore
@@ -86,7 +85,6 @@ func NewPermsSyncer(
 		clock:            clock,
 		scheduleInterval: time.Minute,
 	}
-	s.registerMetrics()
 	return s
 }
 
@@ -633,9 +631,6 @@ func (s *PermsSyncer) observe(ctx context.Context, family, title string) (contex
 	tr, ctx := trace.New(ctx, family, title)
 
 	return ctx, func(typ requestType, id int32, err *error) {
-		now := s.clock()
-		took := now.Sub(began).Seconds()
-
 		defer tr.Finish()
 		tr.LogFields(otlog.Int32("id", id))
 
@@ -651,7 +646,7 @@ func (s *PermsSyncer) observe(ctx context.Context, family, title string) (contex
 		}
 
 		success := err == nil || *err == nil
-		s.metrics.syncDuration.WithLabelValues(typLabel, strconv.FormatBool(success)).Observe(took)
+		s.metrics.syncDuration.WithLabelValues(typLabel, strconv.FormatBool(success)).Observe(time.Since(began).Seconds())
 
 		if !success {
 			tr.SetError(*err)
@@ -733,6 +728,7 @@ func (s *PermsSyncer) collectMetrics(ctx context.Context) {
 // Run kicks off the permissions syncing process, this method is blocking and
 // should be called as a goroutine.
 func (s *PermsSyncer) Run(ctx context.Context) {
+	s.registerMetrics()
 	go s.runSync(ctx)
 	go s.runSchedule(ctx)
 	go s.collectMetrics(ctx)
