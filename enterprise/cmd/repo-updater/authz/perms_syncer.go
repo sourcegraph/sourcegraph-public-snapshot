@@ -633,8 +633,7 @@ func (s *PermsSyncer) observe(ctx context.Context, family, title string) (contex
 	tr, ctx := trace.New(ctx, family, title)
 
 	return ctx, func(typ requestType, id int32, err *error) {
-		now := s.clock()
-		took := now.Sub(began).Seconds()
+		took := s.clock().Sub(began).Seconds()
 
 		defer tr.Finish()
 		tr.LogFields(otlog.Int32("id", id))
