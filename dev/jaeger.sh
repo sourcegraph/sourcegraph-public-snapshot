@@ -19,4 +19,4 @@ fi
 
 popd > /dev/null
 
-exec "${target}" --log-level "${JAEGER_LOG_LEVEL:-debug}" "$@"
+exec "${target}" --log-level "${JAEGER_LOG_LEVEL:-info}" "$@"
