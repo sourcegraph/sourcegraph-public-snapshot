@@ -37,7 +37,6 @@ export const PatchSetPatches: React.FunctionComponent<Props> = ({
     ])
 
     return (
-        <>
             <div className="list-group">
                 <FilteredConnection<GQL.IPatch, Omit<PatchNodeProps, 'node'>>
                     className="mt-2"
@@ -59,6 +58,5 @@ export const PatchSetPatches: React.FunctionComponent<Props> = ({
                     useURLQuery={false}
                 />
             </div>
-        </>
     )
 }
