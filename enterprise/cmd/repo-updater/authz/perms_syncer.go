@@ -30,7 +30,6 @@ type PermsSyncer struct {
 	// The priority queue to maintain the permissions syncing requests.
 	queue *requestQueue
 	// The database interface for any repos and external services operations.
-	// TODO(jchen): Move all DB calls to authz.PermsStore and remove this field.
 	reposStore repos.Store
 	// The database interface for any permissions operations.
 	permsStore *edb.PermsStore
@@ -86,7 +85,6 @@ func NewPermsSyncer(
 		clock:            clock,
 		scheduleInterval: time.Minute,
 	}
-	s.registerMetrics()
 	return s
 }
 
@@ -730,6 +728,7 @@ func (s *PermsSyncer) collectMetrics(ctx context.Context) {
 // Run kicks off the permissions syncing process, this method is blocking and
 // should be called as a goroutine.
 func (s *PermsSyncer) Run(ctx context.Context) {
+	s.registerMetrics()
 	go s.runSync(ctx)
 	go s.runSchedule(ctx)
 	go s.collectMetrics(ctx)
