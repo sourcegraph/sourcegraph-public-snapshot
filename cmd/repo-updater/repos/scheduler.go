@@ -336,7 +336,9 @@ func (s *updateScheduler) DebugDump() interface{} {
 		data.Schedule = append(data.Schedule, update)
 	}
 
-	s.updateQueue.mu.Lock()
+	s.updateQueue.mu.RLock()
+	defer s.updateQueue.mu.RUnlock()
+
 	updateQueue := updateQueue{
 		heap: make([]*repoUpdate, len(s.updateQueue.heap)),
 	}
@@ -347,13 +349,21 @@ func (s *updateScheduler) DebugDump() interface{} {
 		updateCopy := *update
 		updateQueue.heap[i] = &updateCopy
 	}
-	s.updateQueue.mu.Unlock()
 
 	for len(updateQueue.heap) > 0 {
-		// Copy the scheduledRepoUpdate as a value so that the repo pointer
+		// Copy values of the repoUpdate so that the repo pointer
 		// won't change concurrently after we release the lock.
 		update := heap.Pop(&updateQueue).(*repoUpdate)
-		data.UpdateQueue = append(data.UpdateQueue, update)
+		data.UpdateQueue = append(data.UpdateQueue, &repoUpdate{
+			Repo: &configuredRepo2{
+				URL:  update.Repo.URL,
+				ID:   update.Repo.ID,
+				Name: update.Repo.Name,
+			},
+			Priority: update.Priority,
+			Seq:      update.Seq,
+			Updating: update.Updating,
+		})
 	}
 
 	return &data
@@ -390,7 +400,7 @@ func (s *updateScheduler) ScheduleInfo(id api.RepoID) *protocol.RepoUpdateSchedu
 // updateQueue is a priority queue of repos to update.
 // A repo can't have more than one location in the queue.
 type updateQueue struct {
-	mu sync.Mutex
+	mu sync.RWMutex
 
 	heap  []*repoUpdate
 	index map[api.RepoID]*repoUpdate
