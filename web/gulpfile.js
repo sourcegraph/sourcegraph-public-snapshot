@@ -7,22 +7,6 @@ const WebpackDevServer = require('webpack-dev-server')
 const { graphQLTypes, schema, watchGraphQLTypes, watchSchema } = require('../shared/gulpfile')
 const webpackConfig = require('./webpack.config')
 
-/**
- * Looks up an environment variable. Throws when not set and no default is
- * provided.
- */
-function readEnvString(variable, defaultValue) {
-  const value = process.env[variable]
-
-  if (!value) {
-    if (defaultValue === undefined) {
-      throw new Error(`Environment variable ${variable} must be set.`)
-    }
-    return defaultValue
-  }
-  return value
-}
-
 const WEBPACK_STATS_OPTIONS = {
   all: false,
   timings: true,
@@ -40,7 +24,7 @@ const logWebpackStats = stats => {
 
 async function webpack() {
   const compiler = createWebpackCompiler(webpackConfig)
-  /** @type {import('webpack')} */
+  /** @type {import('webpack').Stats} */
   const stats = await new Promise((resolve, reject) => {
     compiler.run((err, stats) => (err ? reject(err) : resolve(stats)))
   })
@@ -51,8 +35,8 @@ async function webpack() {
 }
 
 async function webpackDevServer() {
-  const sockHost = readEnvString('SOURCEGRAPH_HTTPS_DOMAIN', 'sourcegraph.test')
-  const sockPort = parseInt(readEnvString('SOURCEGRAPH_HTTPS_PORT', '3443'), 10)
+  const sockHost = process.env.SOURCEGRAPH_HTTPS_DOMAIN || 'sourcegraph.test'
+  const sockPort = Number(process.env.SOURCEGRAPH_HTTPS_PORT || 3443)
 
   /** @type {import('webpack-dev-server').Configuration & { liveReload?: boolean }} */
   const options = {
