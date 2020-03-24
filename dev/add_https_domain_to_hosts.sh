@@ -14,7 +14,6 @@ if [ -x "$(command -v asdf)" ]; then
     asdf reshim golang
 fi
 
-
 SOURCEGRAPH_HTTPS_DOMAIN="${SOURCEGRAPH_HTTPS_DOMAIN:-"sourcegraph.test"}"
 
 echo "--- adding ${SOURCEGRAPH_HTTPS_DOMAIN} to '/etc/hosts' (you may need to enter your password)"
