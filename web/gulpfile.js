@@ -7,6 +7,22 @@ const WebpackDevServer = require('webpack-dev-server')
 const { graphQLTypes, schema, watchGraphQLTypes, watchSchema } = require('../shared/gulpfile')
 const webpackConfig = require('./webpack.config')
 
+/**
+ * Looks up an environment variable. Throws when not set and no default is
+ * provided.
+ */
+function readEnvString(variable, defaultValue) {
+  const value = process.env[variable]
+
+  if (!value) {
+    if (defaultValue === undefined) {
+      throw new Error(`Environment variable ${variable} must be set.`)
+    }
+    return defaultValue
+  }
+  return value
+}
+
 const WEBPACK_STATS_OPTIONS = {
   all: false,
   timings: true,
@@ -35,6 +51,9 @@ async function webpack() {
 }
 
 async function webpackDevServer() {
+  const sockHost = readEnvString('SOURCEGRAPH_HTTPS_DOMAIN', 'sourcegraph.test')
+  const sockPort = parseInt(readEnvString('SOURCEGRAPH_HTTPS_PORT', '3443'), 10)
+
   /** @type {import('webpack-dev-server').Configuration & { liveReload?: boolean }} */
   const options = {
     hot: !process.env.NO_HOT,
@@ -56,6 +75,8 @@ async function webpackDevServer() {
           socket.on('error', err => console.error('WebSocket proxy error:', err)),
       },
     },
+    sockHost,
+    sockPort,
   }
   WebpackDevServer.addDevServerEntrypoints(webpackConfig, options)
   const server = new WebpackDevServer(createWebpackCompiler(webpackConfig), options)
