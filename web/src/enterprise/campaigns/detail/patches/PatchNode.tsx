@@ -18,7 +18,7 @@ import { FilteredConnectionQueryArgs } from '../../../../components/FilteredConn
 
 export interface PatchNodeProps extends ThemeProps {
     node: IPatch
-    campaignUpdates?: Subject<void>
+    campaignUpdates?: Pick<Observer<void>, 'next'>
     history: H.History
     location: H.Location
     /** Shows the publish button */
