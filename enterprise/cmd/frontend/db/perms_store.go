@@ -1303,6 +1303,10 @@ ORDER BY id ASC
 // could be less than the candidate list due to some users are not associated with any external
 // account.
 func (s *PermsStore) GetUserIDsByExternalAccounts(ctx context.Context, accounts *extsvc.ExternalAccounts) (_ map[string]int32, err error) {
+	if Mocks.Perms.GetUserIDsByExternalAccounts != nil {
+		return Mocks.Perms.GetUserIDsByExternalAccounts(ctx, accounts)
+	}
+
 	ctx, save := s.observe(ctx, "ListUsersByExternalAccounts", "")
 	defer func() { save(&err, accounts.TracingFields()...) }()
 

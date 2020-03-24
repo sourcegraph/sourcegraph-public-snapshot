@@ -173,7 +173,74 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 }
 
 func TestPermsSyncer_syncRepoPerms(t *testing.T) {
+	p := &mockProvider{
+		serviceType: gitlab.ServiceType,
+		serviceID:   "https://gitlab.com/",
+	}
+	authz.SetProviders(false, []authz.Provider{p})
+	defer authz.SetProviders(true, nil)
 
+	p.fetchRepoPerms = func(context.Context, *api.ExternalRepoSpec) ([]extsvc.ExternalAccountID, error) {
+		return []extsvc.ExternalAccountID{"user", "pending_user"}, nil
+	}
+
+	edb.Mocks.Perms.Transact = func(context.Context) (*edb.PermsStore, error) {
+		return &edb.PermsStore{}, nil
+	}
+	edb.Mocks.Perms.GetUserIDsByExternalAccounts = func(context.Context, *extsvc.ExternalAccounts) (map[string]int32, error) {
+		return map[string]int32{"user": 1}, nil
+	}
+	edb.Mocks.Perms.SetRepoPermissions = func(_ context.Context, p *authz.RepoPermissions) error {
+		if p.RepoID != 1 {
+			return fmt.Errorf("RepoID: want 1 but got %d", p.RepoID)
+		}
+
+		expUserIDs := []uint32{1}
+		if diff := cmp.Diff(expUserIDs, p.UserIDs.ToArray()); diff != "" {
+			return fmt.Errorf("UserIDs: %v", diff)
+		}
+		return nil
+	}
+	edb.Mocks.Perms.SetRepoPendingPermissions = func(_ context.Context, accounts *extsvc.ExternalAccounts, _ *authz.RepoPermissions) error {
+		expAccounts := &extsvc.ExternalAccounts{
+			ServiceType: p.ServiceType(),
+			ServiceID:   p.ServiceID(),
+			AccountIDs:  []string{"pending_user"},
+		}
+		if diff := cmp.Diff(expAccounts, accounts); diff != "" {
+			return fmt.Errorf("accounts: %v", diff)
+		}
+		return nil
+	}
+	defer func() {
+		edb.Mocks.Perms = edb.MockPerms{}
+	}()
+
+	reposStore := &mockReposStore{
+		listRepos: func(context.Context, repos.StoreListReposArgs) ([]*repos.Repo, error) {
+			return []*repos.Repo{
+				{
+					ID:      1,
+					Private: true,
+					ExternalRepo: api.ExternalRepoSpec{
+						ServiceID: p.ServiceID(),
+					},
+				},
+			}, nil
+		},
+	}
+	clock := func() time.Time {
+		return time.Now().UTC().Truncate(time.Microsecond)
+	}
+	permsStore := edb.NewPermsStore(nil, clock)
+	s := NewPermsSyncer(reposStore, permsStore, clock)
+	s.metrics.syncDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{}, []string{"type", "success"})
+	s.metrics.syncErrors = prometheus.NewCounterVec(prometheus.CounterOpts{}, []string{"type"})
+
+	err := s.syncRepoPerms(context.Background(), 1)
+	if err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestPermsSyncer_syncPerms(t *testing.T) {
