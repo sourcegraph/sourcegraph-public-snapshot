@@ -51,16 +51,16 @@ async function webpack() {
 }
 
 async function webpackDevServer() {
-  const host = readEnvString('SOURCEGRAPH_HTTPS_DOMAIN', 'sourcegraph.test')
-  const port = parseInt(readEnvString('SOURCEGRAPH_HTTPS_PORT', '3443'), 10)
+  const sockHost = readEnvString('SOURCEGRAPH_HTTPS_DOMAIN', 'sourcegraph.test')
+  const sockPort = parseInt(readEnvString('SOURCEGRAPH_HTTPS_PORT', '3443'), 10)
 
   /** @type {import('webpack-dev-server').Configuration & { liveReload?: boolean }} */
   const options = {
     hot: !process.env.NO_HOT,
     inline: !process.env.NO_HOT,
     allowedHosts: ['.host.docker.internal'],
-    host,
-    port,
+    host: 'localhost',
+    port: 3080,
     publicPath: '/.assets/',
     contentBase: './ui/assets',
     stats: WEBPACK_STATS_OPTIONS,
@@ -75,11 +75,13 @@ async function webpackDevServer() {
           socket.on('error', err => console.error('WebSocket proxy error:', err)),
       },
     },
+    sockHost,
+    sockPort,
   }
   WebpackDevServer.addDevServerEntrypoints(webpackConfig, options)
   const server = new WebpackDevServer(createWebpackCompiler(webpackConfig), options)
   await new Promise((resolve, reject) => {
-    server.listen(port, '0.0.0.0', err => (err ? reject(err) : resolve()))
+    server.listen(3080, '0.0.0.0', err => (err ? reject(err) : resolve()))
   })
 }
 
