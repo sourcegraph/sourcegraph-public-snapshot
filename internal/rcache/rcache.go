@@ -7,9 +7,9 @@ import (
 	"unicode/utf8"
 
 	"github.com/gomodule/redigo/redis"
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
-	"gopkg.in/inconshreveable/log15.v2"
 )
 
 // dataVersion is used for releases that change type structure for
