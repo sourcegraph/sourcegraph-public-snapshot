@@ -12,10 +12,9 @@ import * as settings from './settings'
 
 /**
  * The minimum migration version required by this instance of the LSIF process.
- * This should be updated any time a new lsif-server migration is added to the
- * migrations/ directory, as we watch the DB to ensure we're on at least this
- * version prior to making use of the DB (which the frontend may still be
- * migrating).
+ * This should be updated any time a new LSIF migration is added to the migrations/
+ * directory, as we watch the DB to ensure we're on at least this version prior to
+ * making use of the DB (which the frontend may still be migrating).
  */
 const MINIMUM_MIGRATION_VERSION = 1528395666
 

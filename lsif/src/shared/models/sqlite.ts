@@ -39,7 +39,7 @@ export class MetaModel {
     @Column('text')
     public lsifVersion!: string
 
-    /** The internal version of the LSIF server that created this database. */
+    /** The internal version of the LSIF system that created this database. */
     @Column('text')
     public sourcegraphVersion!: string
 

@@ -32,18 +32,18 @@
 <polygon fill="#8dd3c7" stroke="black" points="312.95,-217 217.05,-217 217.05,-181 312.95,-181 312.95,-217"/>
 <text text-anchor="middle" x="265" y="-196" font-family="Iosevka" font-size="10.00">graphql backend</text>
 </g>
-<!-- lsif_server -->
+<!-- lsif_api -->
 <g id="node4" class="node">
-<title>lsif_server</title>
-<g id="a_node4"><a xlink:href="https://github.com/sourcegraph/sourcegraph/tree/master/lsif/src/server" xlink:title="server" target="_blank">
+<title>lsif_api</title>
+<g id="a_node4"><a xlink:href="https://github.com/sourcegraph/sourcegraph/tree/master/lsif/src/server" xlink:title="api" target="_blank">
 <polygon fill="#bebada" stroke="black" points="70,-354 16,-354 16,-318 70,-318 70,-354"/>
-<text text-anchor="middle" x="43" y="-333" font-family="Iosevka" font-size="10.00">server</text>
+<text text-anchor="middle" x="43" y="-333" font-family="Iosevka" font-size="10.00">api</text>
 </a>
 </g>
 </g>
-<!-- frontend_graphqlbackend&#45;&gt;lsif_server -->
+<!-- frontend_graphqlbackend&#45;&gt;lsif_api -->
 <g id="edge1" class="edge">
-<title>frontend_graphqlbackend&#45;&gt;lsif_server</title>
+<title>frontend_graphqlbackend&#45;&gt;lsif_api</title>
 <path fill="none" stroke="black" stroke-width="0.6" d="M245.05,-217.11C234.38,-225.9 220.83,-236.52 208,-245 166.72,-272.27 116.45,-298.81 82.33,-315.92"/>
 <polygon fill="#8dd3c7" stroke="black" stroke-width="0.6" points="80.08,-311.76 70.09,-321.99 84.29,-320.22 80.08,-311.76"/>
 </g>
@@ -59,9 +59,9 @@
 <polygon fill="#8dd3c7" stroke="black" points="396,-217 342,-217 342,-181 396,-181 396,-217"/>
 <text text-anchor="middle" x="369" y="-196" font-family="Iosevka" font-size="10.00">config</text>
 </g>
-<!-- lsif_server&#45;&gt;frontend_config -->
+<!-- lsif_api&#45;&gt;frontend_config -->
 <g id="edge2" class="edge">
-<title>lsif_server&#45;&gt;frontend_config</title>
+<title>lsif_api&#45;&gt;frontend_config</title>
 <path fill="none" stroke="black" stroke-width="0.6" d="M70.42,-323.48C75.25,-321.57 80.25,-319.67 85,-318 190.96,-280.66 231.6,-304.33 327,-245 334.44,-240.37 341.42,-234.09 347.48,-227.69"/>
 <polygon fill="#bebada" stroke="black" stroke-width="0.6" points="351.42,-230.37 356.71,-217.08 344.29,-224.17 351.42,-230.37"/>
 </g>
@@ -74,9 +74,9 @@
 </a>
 </g>
 </g>
-<!-- lsif_server&#45;&gt;lsif_dump_manager -->
+<!-- lsif_api&#45;&gt;lsif_dump_manager -->
 <g id="edge3" class="edge">
-<title>lsif_server&#45;&gt;lsif_dump_manager</title>
+<title>lsif_api&#45;&gt;lsif_dump_manager</title>
 <path fill="none" stroke="black" stroke-width="0.6" d="M63.84,-306.87C80.85,-283.9 104.79,-251.58 121.88,-228.51"/>
 <polygon fill="#bebada" stroke="black" stroke-width="0.6" points="59.9,-304.24 55.67,-317.9 67.5,-309.87 59.9,-304.24"/>
 <polygon fill="#bebada" stroke="black" stroke-width="0.6" points="125.88,-231.05 130.12,-217.39 118.29,-225.42 125.88,-231.05"/>
@@ -88,9 +88,9 @@
 <path fill="none" stroke="black" d="M259.36,-76C259.36,-73.79 245.75,-72 229,-72 212.25,-72 198.64,-73.79 198.64,-76"/>
 <text text-anchor="middle" x="229" y="-55" font-family="Iosevka" font-size="10.00">postgres</text>
 </g>
-<!-- lsif_server&#45;&gt;postgres -->
+<!-- lsif_api&#45;&gt;postgres -->
 <g id="edge4" class="edge">
-<title>lsif_server&#45;&gt;postgres</title>
+<title>lsif_api&#45;&gt;postgres</title>
 <path fill="none" stroke="black" stroke-width="0.6" d="M70.26,-322.95C75.1,-321.11 80.15,-319.36 85,-318 277.1,-264.01 361.18,-354.49 528,-245 547.89,-231.94 555.6,-223.75 557,-200"/>
 <path fill="none" stroke="black" stroke-width="0.6" d="M557,-198C564.22,-75.81 364.24,-59.47 273.11,-58.35"/>
 <polygon fill="#bebada" stroke="black" stroke-width="0.6" points="272.99,-53.62 259.47,-58.29 272.95,-63.07 272.99,-53.62"/>

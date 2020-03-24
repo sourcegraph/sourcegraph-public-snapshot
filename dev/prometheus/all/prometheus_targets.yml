@@ -35,9 +35,9 @@
     # zoekt-indexserver
     - host.docker.internal:6072
 - labels:
-    job: lsif-server
+    job: lsif-api
   targets:
-    # lsif-server
+    # lsif-api
     - host.docker.internal:3186
 - labels:
     job: lsif-dump-manager

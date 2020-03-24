@@ -35,9 +35,9 @@
     # zoekt-indexserver
     - 127.0.0.1:6072
 - labels:
-    job: lsif-server
+    job: lsif-api
   targets:
-    # lsif-server
+    # lsif-api
     - 127.0.0.1:3186
 - labels:
     job: lsif-dump-manager

@@ -42,7 +42,7 @@ func uploadProxyHandler() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		// 🚨 SECURITY: Ensure we return before proxying to the lsif-server upload
+		// 🚨 SECURITY: Ensure we return before proxying to the lsif-api upload
 		// endpoint. This endpoint is unprotected, so we need to make sure the user
 		// provides a valid token proving contributor access to the repository.
 		if conf.Get().LsifEnforceAuth {
