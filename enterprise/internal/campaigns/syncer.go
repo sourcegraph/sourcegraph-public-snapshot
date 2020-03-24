@@ -5,12 +5,12 @@ import (
 	"context"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/inconshreveable/log15"
 )
 
 // A ChangesetSyncer periodically syncs metadata of changesets

@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/gomodule/redigo/redis"
-	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
 
 const recommendedPolicy = "allkeys-lru"

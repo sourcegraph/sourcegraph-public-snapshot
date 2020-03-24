@@ -7,9 +7,9 @@ import (
 	"path"
 	"strings"
 
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"github.com/inconshreveable/log15"
 )
 
 var customGitFetch = conf.Cached(func() interface{} {

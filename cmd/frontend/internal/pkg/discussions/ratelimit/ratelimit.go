@@ -7,9 +7,9 @@ import (
 	"sort"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/discussions/mentions"
-	"github.com/inconshreveable/log15"
 )
 
 type limit struct {

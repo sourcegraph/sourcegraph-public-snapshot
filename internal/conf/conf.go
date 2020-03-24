@@ -10,11 +10,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/jsonx"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"github.com/inconshreveable/log15"
 )
 
 // Unified represents the overall global Sourcegraph configuration from various

@@ -5,9 +5,9 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/inconshreveable/log15"
 )
 
 func init() {

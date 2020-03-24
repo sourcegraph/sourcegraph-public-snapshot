@@ -20,8 +20,8 @@ import (
 	"strconv"
 	"time"
 
-	"golang.org/x/net/trace"
 	"github.com/inconshreveable/log15"
+	"golang.org/x/net/trace"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/store"

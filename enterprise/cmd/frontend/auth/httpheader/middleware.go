@@ -5,11 +5,11 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/inconshreveable/log15"
 )
 
 const providerType = "http-header"

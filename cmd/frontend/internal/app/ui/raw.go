@@ -13,9 +13,9 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/inconshreveable/log15"
 
 	"github.com/golang/gddo/httputil"
 	"github.com/gorilla/mux"

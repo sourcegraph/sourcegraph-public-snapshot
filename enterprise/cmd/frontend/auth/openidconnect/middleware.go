@@ -10,12 +10,12 @@ import (
 	"time"
 
 	"github.com/gorilla/csrf"
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"golang.org/x/oauth2"
-	"github.com/inconshreveable/log15"
 
 	oidc "github.com/coreos/go-oidc"
 )

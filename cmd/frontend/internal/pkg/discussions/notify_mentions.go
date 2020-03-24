@@ -7,6 +7,7 @@ import (
 	"path"
 	"strings"
 
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
@@ -17,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/markdown"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
-	"github.com/inconshreveable/log15"
 )
 
 // NotifyNewThread should be invoked after a new thread (and its first comment)

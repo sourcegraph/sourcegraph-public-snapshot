@@ -6,8 +6,8 @@ import (
 	"io"
 	"strings"
 
-	"github.com/kr/text"
 	"github.com/inconshreveable/log15"
+	"github.com/kr/text"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/sysreq"

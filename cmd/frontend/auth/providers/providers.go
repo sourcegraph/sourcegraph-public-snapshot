@@ -6,8 +6,8 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // A Provider represents a user authentication provider (which provides functionality related to

@@ -5,12 +5,12 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
-	"github.com/inconshreveable/log15"
 )
 
 // HandlerMetrics encapsulates the Prometheus metrics of an http.Handler.

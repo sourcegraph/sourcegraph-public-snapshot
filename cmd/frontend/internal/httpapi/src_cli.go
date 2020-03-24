@@ -6,8 +6,8 @@ import (
 	"path"
 
 	"github.com/gorilla/mux"
-	srccli "github.com/sourcegraph/sourcegraph/internal/src-cli"
 	"github.com/inconshreveable/log15"
+	srccli "github.com/sourcegraph/sourcegraph/internal/src-cli"
 )
 
 var srcCliDownloadsURL = "https://github.com/sourcegraph/src-cli/releases/download"

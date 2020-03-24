@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 )
 
 var (
