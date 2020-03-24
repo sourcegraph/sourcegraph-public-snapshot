@@ -266,11 +266,3 @@ func TestPermsSyncer_syncPerms(t *testing.T) {
 		t.Fatalf("queue length: want 0 but got %d", s.queue.Len())
 	}
 }
-
-func TestPermsSyncer_runSync(t *testing.T) {
-
-}
-
-func TestPermsSyncer_schedule(t *testing.T) {
-
-}
