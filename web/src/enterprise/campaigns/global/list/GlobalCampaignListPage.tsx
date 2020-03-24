@@ -56,6 +56,7 @@ export const GlobalCampaignListPage: React.FunctionComponent<Props> = props => (
             filters={FILTERS}
             noun="campaign"
             pluralNoun="campaigns"
+            className="mb-3"
         />
     </>
 )

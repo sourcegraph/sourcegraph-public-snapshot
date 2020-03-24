@@ -14,6 +14,7 @@ exports[`GlobalCampaignListPage renders for non-siteadmin 1`] = `
         "siteAdmin": false,
       }
     }
+    className="mb-3"
     defaultFirst={20}
     filters={
       Array [
@@ -78,6 +79,7 @@ exports[`GlobalCampaignListPage renders for siteadmin 1`] = `
         "siteAdmin": true,
       }
     }
+    className="mb-3"
     defaultFirst={20}
     filters={
       Array [
