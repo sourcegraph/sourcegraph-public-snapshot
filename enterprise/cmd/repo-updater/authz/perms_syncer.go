@@ -633,8 +633,6 @@ func (s *PermsSyncer) observe(ctx context.Context, family, title string) (contex
 	tr, ctx := trace.New(ctx, family, title)
 
 	return ctx, func(typ requestType, id int32, err *error) {
-		took := s.clock().Sub(began).Seconds()
-
 		defer tr.Finish()
 		tr.LogFields(otlog.Int32("id", id))
 
@@ -650,7 +648,7 @@ func (s *PermsSyncer) observe(ctx context.Context, family, title string) (contex
 		}
 
 		success := err == nil || *err == nil
-		s.metrics.syncDuration.WithLabelValues(typLabel, strconv.FormatBool(success)).Observe(took)
+		s.metrics.syncDuration.WithLabelValues(typLabel, strconv.FormatBool(success)).Observe(time.Since(began).Seconds())
 
 		if !success {
 			tr.SetError(*err)

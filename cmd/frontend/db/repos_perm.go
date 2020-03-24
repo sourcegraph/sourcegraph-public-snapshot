@@ -67,11 +67,10 @@ func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (filte
 	began := time.Now()
 	tr, ctx := trace.New(ctx, "authzFilter", "")
 	defer func() {
-		took := time.Now().Sub(began).Seconds()
 		defer tr.Finish()
 
 		success := err == nil
-		authzFilterDuration.WithLabelValues(strconv.FormatBool(success)).Observe(took)
+		authzFilterDuration.WithLabelValues(strconv.FormatBool(success)).Observe(time.Since(began).Seconds())
 
 		if !success {
 			tr.SetError(err)
