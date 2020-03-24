@@ -18,8 +18,8 @@ interface Props {
  */
 export const CampaignUpdateSelection: React.FunctionComponent<Props> = ({ history, location }) => {
     const patchSetID = useMemo(() => new URLSearchParams(location.search).get('patchSet'), [location.search])
-    const selectCampaign = useCallback<(campaign: Pick<GQL.ICampaign, 'id'>) => void>(
-        campaign => history.push(`/campaigns/${campaign.id}?patchSet=${patchSetID!}`),
+    const selectCampaign = useCallback(
+        (campaign: Pick<GQL.ICampaign, 'id'>) => history.push(`/campaigns/${campaign.id}?patchSet=${patchSetID!}`),
         [history, patchSetID]
     )
     // Only query open campaigns, that are non-manual. Those are the only ones that can be updated with a patch set.
