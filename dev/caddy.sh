@@ -11,4 +11,4 @@ CADDY_PATH="${GOBIN}/caddy"
 
 go build -o "${CADDY_PATH}" "github.com/caddyserver/caddy/v2/cmd/caddy"
 
-"${CADDY_PATH}" $@
+exec "${CADDY_PATH}" $@
