@@ -9,11 +9,11 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // SupportedExternalServices are the external service types currently supported

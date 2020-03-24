@@ -14,8 +14,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"golang.org/x/net/context/ctxhttp"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"

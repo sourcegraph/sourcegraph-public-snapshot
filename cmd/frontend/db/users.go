@@ -9,6 +9,7 @@ import (
 	"unicode/utf8"
 
 	multierror "github.com/hashicorp/go-multierror"
+	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -18,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/globalstatedb"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // users provides access to the `users` table.

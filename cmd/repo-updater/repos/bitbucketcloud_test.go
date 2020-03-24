@@ -12,10 +12,10 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"gopkg.in/inconshreveable/log15.v2"
 )
 
 func TestBitbucketCloudSource_ListRepos(t *testing.T) {

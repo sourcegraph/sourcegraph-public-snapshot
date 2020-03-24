@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/google/zoekt"
+	"github.com/inconshreveable/log15"
 	"github.com/neelance/parallel"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -28,7 +29,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-	"gopkg.in/inconshreveable/log15.v2"
 )
 
 // searchSymbolResult is a result from symbol search.

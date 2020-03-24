@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"gopkg.in/inconshreveable/log15.v2"
 )
 
 var (

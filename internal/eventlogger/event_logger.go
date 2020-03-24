@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"time"
 
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 
