@@ -107,7 +107,7 @@ export function createLsifRouter(
                         throw new Error('Could not find tool type in metadata vertex at the start of the dump.')
                     }
 
-                    const id = await connection.transaction(async entityManager => {
+                    const id = await connection.transaction(async (entityManager) => {
                         // Add upload record
                         const uploadId = await uploadManager.enqueue(
                             { repositoryId, commit, root, indexer },
@@ -116,7 +116,7 @@ export function createLsifRouter(
                             ctx.span
                         )
 
-                        // Upload the payload file where it can be found by the dump processor
+                        // Upload the payload file where it can be found by the worker
                         await logAndTraceCall(ctx, 'Uploading payload to dump manager', () =>
                             pipeline(
                                 fs.createReadStream(filename),
@@ -207,7 +207,7 @@ export function createLsifRouter(
                 }
 
                 res.send({
-                    locations: locations.map(l => ({
+                    locations: locations.map((l) => ({
                         repositoryId: l.dump.repositoryId,
                         commit: l.dump.commit,
                         path: l.path,
@@ -262,7 +262,7 @@ export function createLsifRouter(
                 }
 
                 res.json({
-                    locations: locations.map(l => ({
+                    locations: locations.map((l) => ({
                         repositoryId: l.dump.repositoryId,
                         commit: l.dump.commit,
                         path: l.path,

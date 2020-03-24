@@ -30,7 +30,7 @@ import * as fs from 'mz/fs'
 const pipeline = promisify(_pipeline)
 
 /**
- * Runs the processor that converts LSIF uploads.
+ * Runs the worker process that converts LSIF uploads.
  *
  * @param logger The logger instance.
  */
@@ -42,7 +42,7 @@ async function main(logger: Logger): Promise<void> {
     const fetchConfiguration = await waitForConfiguration(logger)
 
     // Configure distributed tracing
-    const tracer = createTracer('lsif-dump-processor', fetchConfiguration())
+    const tracer = createTracer('lsif-worker', fetchConfiguration())
 
     // Ensure storage roots exist
     await ensureDirectory(settings.STORAGE_ROOT)
@@ -107,8 +107,8 @@ async function main(logger: Logger): Promise<void> {
 
                         // Remove overlapping dumps that would cause a unique index error once this upload has
                         // transitioned into the completed state. As this is done in a transaction, we do not
-                        // delete the files on disk right away. These files will be cleaned up by a dump
-                        // processor in a future cleanup task.
+                        // delete the files on disk right away. These files will be cleaned up by a worker in
+                        // a future cleanup task.
                         await dumpManager.deleteOverlappingDumps(
                             upload.repositoryId,
                             upload.commit,
@@ -150,7 +150,7 @@ async function main(logger: Logger): Promise<void> {
 
     logger.debug('Polling database for unconverted uploads')
 
-    AsyncPolling(async end => {
+    AsyncPolling(async (end) => {
         while (await uploadManager.dequeueAndConvert(convert, logger)) {
             // Immediately poll again if we converted an upload
         }
@@ -160,10 +160,10 @@ async function main(logger: Logger): Promise<void> {
 }
 
 // Initialize logger
-const appLogger = createLogger('lsif-dump-processor')
+const appLogger = createLogger('lsif-worker')
 
 // Launch!
-main(appLogger).catch(error => {
+main(appLogger).catch((error) => {
     appLogger.error('Failed to start process', { error })
     appLogger.on('finish', () => process.exit(1))
     appLogger.end()

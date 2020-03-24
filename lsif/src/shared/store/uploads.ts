@@ -11,8 +11,8 @@ export interface LsifUploadWithPlaceInQueue extends pgModels.LsifUpload {
 
 /**
  * A wrapper around the database tables that control uploads. This class has
- * behaviors to enqueue uploads and dequeue them for the processor to convert
- * in a transactional manner.
+ * behaviors to enqueue uploads and dequeue them for the worker process to
+ * convert in a transactional manner.
  */
 export class UploadManager {
     /**
@@ -68,7 +68,7 @@ export class UploadManager {
                 .createQueryBuilder('upload')
                 .addSelect('ranked.rank', 'rank')
                 .leftJoin(
-                    qb =>
+                    (qb) =>
                         qb
                             .subQuery()
                             .select('ranked.id, RANK() OVER (ORDER BY ranked.uploaded_at) as rank')
@@ -88,11 +88,11 @@ export class UploadManager {
 
             if (query) {
                 const clauses = ['commit', 'root', 'indexerName', 'failure_summary', 'failure_stacktrace'].map(
-                    field => `"${field}" LIKE '%' || :query || '%'`
+                    (field) => `"${field}" LIKE '%' || :query || '%'`
                 )
 
                 queryBuilder = queryBuilder.andWhere(
-                    new Brackets(qb =>
+                    new Brackets((qb) =>
                         clauses.slice(1).reduce((ob, c) => ob.orWhere(c, { query }), qb.where(clauses[0], { query }))
                     )
                 )
@@ -110,8 +110,8 @@ export class UploadManager {
             return { uploads: entities, raw: rawEntities, totalCount: count }
         })
 
-        const ranks = new Map(raw.map(r => [r.upload_id, parseInt(r.rank || '', 10)]))
-        return { uploads: uploads.map(u => ({ ...u, placeInQueue: ranks.get(u.id) || null })), totalCount }
+        const ranks = new Map(raw.map((r) => [r.upload_id, parseInt(r.rank || '', 10)]))
+        return { uploads: uploads.map((u) => ({ ...u, placeInQueue: ranks.get(u.id) || null })), totalCount }
     }
 
     /**
@@ -129,7 +129,7 @@ export class UploadManager {
                 .createQueryBuilder('upload')
                 .addSelect('ranked.rank', 'rank')
                 .leftJoin(
-                    qb =>
+                    (qb) =>
                         qb
                             .subQuery()
                             .select('ranked.id, RANK() OVER (ORDER BY ranked.uploaded_at) as rank')
@@ -167,7 +167,7 @@ export class UploadManager {
         id: number,
         updateVisibility: (entityManager: EntityManager, repositoryId: number) => Promise<void>
     ): Promise<boolean> {
-        return withInstrumentedTransaction(this.connection, async entityManager => {
+        return withInstrumentedTransaction(this.connection, async (entityManager) => {
             const [affected, numAffected]: [
                 { repository_id: number; visible_at_tip: boolean }[],
                 number
@@ -231,7 +231,7 @@ export class UploadManager {
             )
         )
 
-        return results[0].map(r => r.id)
+        return results[0].map((r) => r.id)
     }
 
     /**
@@ -301,7 +301,7 @@ export class UploadManager {
         // First, we select the next oldest upload with a state of `queued` and set
         // its state to `processing`. We do this outside of a transaction so that this
         // state transition is visible to the API. We skip any locked rows as they are
-        // being handled by another dump processor.
+        // being handled by another worker process.
         const lockResult: [{ id: number }[]] = await this.connection.query(`
             UPDATE lsif_uploads u SET state = 'processing', started_at = now() WHERE id = (
                 SELECT id FROM lsif_uploads
@@ -316,7 +316,7 @@ export class UploadManager {
         }
         const uploadId = lockResult[0][0].id
 
-        return withInstrumentedTransaction(this.connection, async entityManager => {
+        return withInstrumentedTransaction(this.connection, async (entityManager) => {
             const results: object[] = await entityManager.query(
                 'SELECT * FROM lsif_uploads WHERE id = $1 FOR UPDATE LIMIT 1',
                 [uploadId]
