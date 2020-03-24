@@ -1831,12 +1831,15 @@ func testStore(db *sql.DB) func(*testing.T) {
 					wantDeleted: false,
 				},
 				{
-					hasCampaign:                    false,
+					hasCampaign: false,
+					createdAt:   now.Add(-500 * time.Minute),
+
 					patchesAttachedToOtherCampaign: true,
 					patches: []*cmpgn.Patch{
 						{Diff: "foobar", Rev: "f00b4r", BaseRef: "refs/heads/master"},
 						{Diff: "barfoo", Rev: "b4rf00", BaseRef: "refs/heads/master"},
 					},
+
 					wantDeleted: false,
 				},
 			}
@@ -1847,6 +1850,14 @@ func testStore(db *sql.DB) func(*testing.T) {
 				err := s.CreatePatchSet(ctx, patchSet)
 				if err != nil {
 					t.Fatal(err)
+				}
+
+				for _, p := range tc.patches {
+					p.PatchSetID = patchSet.ID
+					err := s.CreatePatch(ctx, p)
+					if err != nil {
+						t.Fatal(err)
+					}
 				}
 
 				if tc.hasCampaign {

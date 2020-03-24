@@ -1600,8 +1600,9 @@ NOT EXISTS (
   FROM
     changeset_jobs
   JOIN patches ON patches.id = changeset_jobs.patch_id
+  JOIN changesets ON changesets.id = changeset_jobs.changeset_id
   WHERE
-    changeset_jobs.changeset_id IS NOT NULL
+    (SELECT COUNT(*) FROM jsonb_object_keys(changesets.campaign_ids)) > 0
 );
 `
 
