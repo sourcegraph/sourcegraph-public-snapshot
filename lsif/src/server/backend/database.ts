@@ -39,7 +39,7 @@ export class Database {
             ctx
         )
 
-        return locations.map(location => ({ ...location, dumpId: this.dumpId }))
+        return locations.map((location) => ({ ...location, dumpId: this.dumpId }))
     }
 
     /**
@@ -61,7 +61,7 @@ export class Database {
         )
 
         return new OrderedLocationSet(
-            locations.map(location => ({ ...location, dumpId: this.dumpId })),
+            locations.map((location) => ({ ...location, dumpId: this.dumpId })),
             true
         )
     }
@@ -144,7 +144,7 @@ export class Database {
             ctx
         )
 
-        return { locations: locations.map(location => ({ ...location, dumpId: this.dumpId })), count }
+        return { locations: locations.map((location) => ({ ...location, dumpId: this.dumpId })), count }
     }
 
     /**
@@ -170,7 +170,7 @@ export class Database {
     //
 
     private async request<T>(method: string, searchParams: URLSearchParams, ctx: TracingContext): Promise<T> {
-        const url = new URL(`/dbs/${this.dumpId}/${method}`, settings.LSIF_DUMP_MANAGER_URL)
+        const url = new URL(`/dbs/${this.dumpId}/${method}`, settings.LSIF_BUNDLE_MANAGER_URL)
         url.search = searchParams.toString()
         const resp = await got.get(url.href)
         return parseJSON(resp.body)

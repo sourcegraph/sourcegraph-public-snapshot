@@ -107,7 +107,7 @@ export function createLsifRouter(
                         throw new Error('Could not find tool type in metadata vertex at the start of the dump.')
                     }
 
-                    const id = await connection.transaction(async entityManager => {
+                    const id = await connection.transaction(async (entityManager) => {
                         // Add upload record
                         const uploadId = await uploadManager.enqueue(
                             { repositoryId, commit, root, indexer },
@@ -117,10 +117,10 @@ export function createLsifRouter(
                         )
 
                         // Upload the payload file where it can be found by the dump processor
-                        await logAndTraceCall(ctx, 'Uploading payload to dump manager', () =>
+                        await logAndTraceCall(ctx, 'Uploading payload to bundle manager', () =>
                             pipeline(
                                 fs.createReadStream(filename),
-                                got.stream.post(new URL(`/uploads/${uploadId}`, settings.LSIF_DUMP_MANAGER_URL).href)
+                                got.stream.post(new URL(`/uploads/${uploadId}`, settings.LSIF_BUNDLE_MANAGER_URL).href)
                             )
                         )
 
@@ -207,7 +207,7 @@ export function createLsifRouter(
                 }
 
                 res.send({
-                    locations: locations.map(l => ({
+                    locations: locations.map((l) => ({
                         repositoryId: l.dump.repositoryId,
                         commit: l.dump.commit,
                         path: l.path,
@@ -262,7 +262,7 @@ export function createLsifRouter(
                 }
 
                 res.json({
-                    locations: locations.map(l => ({
+                    locations: locations.map((l) => ({
                         repositoryId: l.dump.repositoryId,
                         commit: l.dump.commit,
                         path: l.path,

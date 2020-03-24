@@ -14,7 +14,7 @@ import { createPostgresConnection } from '../shared/database/postgres'
 import { waitForConfiguration } from '../shared/config/config'
 
 /**
- * No-op dump-manager process.
+ * Runs the HTTP server that stores and queries individual SQLite files.
  *
  * @param logger The logger instance.
  */
@@ -48,10 +48,10 @@ async function main(logger: Logger): Promise<void> {
 }
 
 // Initialize logger
-const appLogger = createLogger('lsif-dump-manager')
+const appLogger = createLogger('lsif-bundle-manager')
 
 // Launch!
-main(appLogger).catch(error => {
+main(appLogger).catch((error) => {
     appLogger.error('Failed to start process', { error })
     appLogger.on('finish', () => process.exit(1))
     appLogger.end()
