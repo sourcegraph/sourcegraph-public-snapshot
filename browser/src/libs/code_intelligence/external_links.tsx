@@ -1,14 +1,11 @@
 import classNames from 'classnames'
-import React, { useMemo } from 'react'
-import { render } from 'react-dom'
-import { Observable, interval, Subject, concat } from 'rxjs'
-import { switchMap, catchError, filter, tap, take } from 'rxjs/operators'
+import React from 'react'
 import { SourcegraphIconButton } from '../../shared/components/Button'
 import { DEFAULT_SOURCEGRAPH_URL } from '../../shared/util/context'
-import { CodeHost, CodeHostContext } from './code_intelligence'
-import { asError } from '../../../../shared/src/util/errors'
-import { useObservable } from '../../../../shared/src/util/useObservable'
+import { CodeHostContext } from './code_intelligence'
+import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { failedWithHTTPStatus } from '../../../../shared/src/backend/fetch'
+import { SignInButton } from './SignInButton'
 
 export interface ViewOnSourcegraphButtonClassProps {
     className?: string
@@ -16,10 +13,11 @@ export interface ViewOnSourcegraphButtonClassProps {
 }
 
 interface ViewOnSourcegraphButtonProps extends ViewOnSourcegraphButtonClassProps {
-    context: CodeHostContext
+    getContext: () => CodeHostContext
     sourcegraphURL: string
     minimalUI: boolean
-    ensureRepoExists: (context: CodeHostContext, sourcegraphUrl: string) => Observable<boolean>
+    repoExistsOrError?: boolean | ErrorLike
+    showSignInButton?: boolean
     onConfigureSourcegraphClick?: () => void
 
     /**
@@ -30,71 +28,44 @@ interface ViewOnSourcegraphButtonProps extends ViewOnSourcegraphButtonClassProps
 }
 
 export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphButtonProps> = ({
-    ensureRepoExists,
+    repoExistsOrError,
     sourcegraphURL,
-    context,
+    getContext,
     minimalUI,
     onConfigureSourcegraphClick,
+    showSignInButton,
     onSignInClose,
     className,
     iconClassName,
 }) => {
-    const signInUrl = new URL('/sign-in?close=true', sourcegraphURL).href
-
-    /** Clicks on the "Sign in" CTA (if rendered) */
-    const signInClicks = useMemo(() => new Subject<React.MouseEvent>(), [])
-    const nextSignInClick = useMemo(() => signInClicks.next.bind(signInClicks), [signInClicks])
-
-    /**
-     * Emits when the user closed the sign in tab again.
-     * Does not guarantee the sign in was sucessful.
-     */
-    const signInCloses = useMemo(
-        () =>
-            signInClicks.pipe(
-                switchMap(event => {
-                    const tab = window.open(signInUrl, '_blank')
-                    if (!tab) {
-                        return []
-                    }
-                    event.preventDefault()
-                    return interval(300).pipe(
-                        filter(() => tab.closed),
-                        take(1)
-                    )
-                }),
-                tap(onSignInClose)
-            ),
-        [onSignInClose, signInClicks, signInUrl]
-    )
-
-    /** Whether or not the repo exists on the configured Sourcegraph instance. */
-    const repoExistsOrError = useObservable(
-        useMemo(
-            () =>
-                concat([null], signInCloses).pipe(
-                    switchMap(() =>
-                        ensureRepoExists(context, sourcegraphURL).pipe(catchError(error => [asError(error)]))
-                    )
-                ),
-            [context, ensureRepoExists, signInCloses, sourcegraphURL]
-        )
-    )
+    className = classNames('open-on-sourcegraph', className)
 
     if (repoExistsOrError === undefined) {
         return null
     }
-    className = classNames('open-on-sourcegraph', className)
-
-    if (failedWithHTTPStatus(repoExistsOrError, 401)) {
+    if (isErrorLike(repoExistsOrError)) {
+        if (failedWithHTTPStatus(repoExistsOrError, 401)) {
+            if (showSignInButton) {
+                return (
+                    <SignInButton
+                        sourcegraphURL={sourcegraphURL}
+                        onSignInClose={onSignInClose}
+                        className={className}
+                        iconClassName={iconClassName}
+                    />
+                )
+            }
+            // Sign in button may already be shown elsewhere on the page
+            return null
+        }
         return (
             <SourcegraphIconButton
-                url={signInUrl}
-                label="Sign in to Sourcegraph"
-                ariaLabel="Sign into Sourcegraph to get hover tooltips, go to definition and more"
+                label="Error"
+                title={repoExistsOrError.message}
+                ariaLabel={repoExistsOrError.message}
                 className={className}
-                iconClassName={iconClassName}
-                onClick={nextSignInClick}
+                iconClassName={classNames('open-on-sourcegraph__icon--muted', iconClassName)}
+                onClick={onConfigureSourcegraphClick}
             />
         )
     }
@@ -109,6 +80,7 @@ export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphB
         return (
             <SourcegraphIconButton
                 label="Configure Sourcegraph"
+                title="Install Sourcegraph for search and code intelligence on private instance"
                 ariaLabel="Install Sourcegraph for search and code intelligence on private instance"
                 className={className}
                 iconClassName={classNames('open-on-sourcegraph__icon--muted', iconClassName)}
@@ -117,39 +89,15 @@ export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphB
         )
     }
 
-    const url = new URL(`/${context.rawRepoName}${context.rev ? `@${context.rev}` : ''}`, sourcegraphURL).href
+    const { rawRepoName, rev } = getContext()
+    const url = new URL(`/${rawRepoName}${rev ? `@${rev}` : ''}`, sourcegraphURL).href
     return (
         <SourcegraphIconButton
             url={url}
+            title="View repository on Sourcegraph"
             ariaLabel="View repository on Sourcegraph"
             className={className}
             iconClassName={iconClassName}
         />
-    )
-}
-
-export const renderViewContextOnSourcegraph = ({
-    sourcegraphURL,
-    getContext,
-    ensureRepoExists,
-    viewOnSourcegraphButtonClassProps,
-    onConfigureSourcegraphClick,
-    minimalUI,
-}: Pick<
-    ViewOnSourcegraphButtonProps,
-    'sourcegraphURL' | 'ensureRepoExists' | 'onConfigureSourcegraphClick' | 'minimalUI'
-> &
-    Required<Pick<CodeHost, 'getContext'>> &
-    Pick<CodeHost, 'viewOnSourcegraphButtonClassProps'>) => (mount: HTMLElement): void => {
-    render(
-        <ViewOnSourcegraphButton
-            {...viewOnSourcegraphButtonClassProps}
-            context={getContext()}
-            minimalUI={minimalUI}
-            sourcegraphURL={sourcegraphURL}
-            ensureRepoExists={ensureRepoExists}
-            onConfigureSourcegraphClick={onConfigureSourcegraphClick}
-        />,
-        mount
     )
 }
