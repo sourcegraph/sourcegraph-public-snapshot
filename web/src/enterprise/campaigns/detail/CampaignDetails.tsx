@@ -42,7 +42,8 @@ import { pluralize } from '../../../../../shared/src/util/strings'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
-import { PatchSetPatches } from './patches/CampaignPatches'
+import { CampaignPatches } from './patches/CampaignPatches'
+import { PatchSetPatches } from './patches/PatchSetPatches'
 
 export type CampaignUIMode = 'viewing' | 'editing' | 'saving' | 'deleting' | 'closing'
 
@@ -139,6 +140,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                     tap(campaign => {
                                         currentCampaign = campaign
                                     }),
+                                    // repeat fetching the campaign as long as the state is still processing
                                     repeatWhen(obs =>
                                         obs.pipe(
                                             takeWhile(
@@ -199,19 +201,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     }, [campaignID, history, patchSetID])
 
     const patchSet = useObservable(
-        useMemo(
-            () =>
-                !patchSetID
-                    ? NEVER
-                    : _fetchPatchSetById(patchSetID).pipe(
-                          tap(patchSet => {
-                              if (patchSet) {
-                                  changesetUpdates.next()
-                              }
-                          })
-                      ),
-            [patchSetID, _fetchPatchSetById, changesetUpdates]
-        )
+        useMemo(() => (!patchSetID ? NEVER : _fetchPatchSetById(patchSetID)), [patchSetID, _fetchPatchSetById])
     )
 
     // Is loading
@@ -580,16 +570,28 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     </h3>
                     {totalChangesetCount + totalPatchCount > 0 ? (
                         <>
-                            {totalPatchCount > 0 && (
-                                <PatchSetPatches
-                                    patchSet={(campaign ? campaign.patchSet : patchSet)!}
-                                    changesetUpdates={changesetUpdates}
-                                    enablePublishing={!!campaign && !campaign.closedAt}
-                                    history={history}
-                                    location={location}
-                                    isLightTheme={isLightTheme}
-                                />
-                            )}
+                            {totalPatchCount > 0 &&
+                                (campaign ? (
+                                    <CampaignPatches
+                                        campaign={campaign}
+                                        campaignUpdates={campaignUpdates}
+                                        changesetUpdates={changesetUpdates}
+                                        enablePublishing={!campaign.closedAt}
+                                        history={history}
+                                        location={location}
+                                        isLightTheme={isLightTheme}
+                                    />
+                                ) : (
+                                    <PatchSetPatches
+                                        patchSet={patchSet!}
+                                        campaignUpdates={campaignUpdates}
+                                        changesetUpdates={changesetUpdates}
+                                        enablePublishing={false}
+                                        history={history}
+                                        location={location}
+                                        isLightTheme={isLightTheme}
+                                    />
+                                ))}
                             {totalChangesetCount > 0 && (
                                 <CampaignChangesets
                                     campaign={campaign!}

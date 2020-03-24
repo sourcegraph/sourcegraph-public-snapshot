@@ -9,12 +9,12 @@ import { DiffStat } from '../../../../components/diff/DiffStat'
 import { FileDiffNode } from '../../../../components/diff/FileDiffNode'
 import { publishChangeset as _publishChangeset, queryPatchFileDiffs } from '../backend'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { Subject } from 'rxjs'
 import ErrorIcon from 'mdi-react/ErrorIcon'
-import { asError } from '../../../../../../shared/src/util/errors'
+import { asError, isErrorLike } from '../../../../../../shared/src/util/errors'
 import classNames from 'classnames'
 import { FileDiffConnection } from '../../../../components/diff/FileDiffConnection'
 import { FilteredConnectionQueryArgs } from '../../../../components/FilteredConnection'
+import { Observer } from 'rxjs'
 
 export interface PatchNodeProps extends ThemeProps {
     node: IPatch
@@ -33,29 +33,27 @@ export const PatchNode: React.FunctionComponent<PatchNodeProps> = ({
     location,
     enablePublishing,
 }) => {
-    const [isPublishing, setIsPublishing] = useState<boolean>()
+    const [isPublishing, setIsPublishing] = useState<boolean | Error>(false)
     useEffect(() => {
         setIsPublishing(node.publicationEnqueued)
     }, [node.publicationEnqueued])
-    const [publishError, setPublishError] = useState<Error>()
+
     const publishChangeset: React.MouseEventHandler = async () => {
         try {
-            setPublishError(undefined)
             setIsPublishing(true)
             await _publishChangeset(node.id)
             if (campaignUpdates) {
+                // trigger campaign update to refetch on new state
                 campaignUpdates.next()
             }
         } catch (error) {
-            setPublishError(asError(error))
-        } finally {
-            setIsPublishing(false)
+            setIsPublishing(asError(error))
         }
     }
     const fileDiffs = node.diff?.fileDiffs
 
     const changesetNodeRow = (
-        <div className="d-flex align-items-start m-1 ml-2">
+        <div className="d-flex align-items-center m-1 ml-2">
             <div className="changeset-node__content flex-fill">
                 <div className="d-flex flex-column">
                     <div>
@@ -78,15 +76,15 @@ export const PatchNode: React.FunctionComponent<PatchNodeProps> = ({
             </div>
             {enablePublishing && (
                 <>
-                    {publishError && <ErrorIcon data-tooltip={publishError.message} className="ml-2" />}
+                    {isErrorLike(isPublishing) && <ErrorIcon data-tooltip={isPublishing.message} className="ml-2" />}
                     <button
                         type="button"
                         className="flex-shrink-0 flex-grow-0 btn btn-sm btn-secondary ml-2"
-                        disabled={isPublishing}
+                        disabled={!isErrorLike(isPublishing) && !!isPublishing}
                         onClick={publishChangeset}
                     >
-                        {isPublishing && <LoadingSpinner className="icon-inline" />}{' '}
-                        {isPublishing ? 'Publishing' : 'Publish'}
+                        {!isErrorLike(isPublishing) && !!isPublishing && <LoadingSpinner className="icon-inline" />}{' '}
+                        {!isErrorLike(isPublishing) && !!isPublishing ? 'Publishing' : 'Publish'}
                     </button>
                 </>
             )}

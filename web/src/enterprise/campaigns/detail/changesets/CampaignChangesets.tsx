@@ -4,7 +4,7 @@ import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { ChangesetNode, ChangesetNodeProps } from './ChangesetNode'
 import { ThemeProps } from '../../../../../../shared/src/theme'
 import { FilteredConnection, FilteredConnectionQueryArgs, Connection } from '../../../../components/FilteredConnection'
-import { Observable, Subject } from 'rxjs'
+import { Observable, Subject, merge } from 'rxjs'
 import { DEFAULT_CHANGESET_LIST_COUNT } from '../presentation'
 import { upperFirst, lowerCase } from 'lodash'
 import { queryChangesets as _queryChangesets } from '../backend'
@@ -79,9 +79,9 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
     const queryChangesetsConnection = useCallback(
         (args: FilteredConnectionQueryArgs) =>
             queryChangesets(campaign.id, { ...args, state, reviewState, checkState }).pipe(
-                repeatWhen(obs => obs.pipe(delay(5000)))
+                repeatWhen(obs => merge(obs, changesetUpdates).pipe(delay(5000)))
             ),
-        [campaign.id, state, reviewState, checkState, queryChangesets]
+        [campaign.id, state, reviewState, checkState, queryChangesets, changesetUpdates]
     )
 
     const containerElements = useMemo(() => new Subject<HTMLElement | null>(), [])
@@ -189,7 +189,6 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
             <div className="list-group position-relative" ref={nextContainerElement}>
                 <FilteredConnection<GQL.IExternalChangeset, Omit<ChangesetNodeProps, 'node'>>
                     className="mt-2"
-                    updates={changesetUpdates}
                     nodeComponent={ChangesetNode}
                     nodeComponentProps={{
                         isLightTheme,

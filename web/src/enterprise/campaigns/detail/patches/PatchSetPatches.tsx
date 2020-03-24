@@ -5,12 +5,11 @@ import { ThemeProps } from '../../../../../../shared/src/theme'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../../../../components/FilteredConnection'
 import { Observable, Subject, Observer } from 'rxjs'
 import { DEFAULT_CHANGESET_LIST_COUNT } from '../presentation'
-import { queryChangesets as _queryChangesets, queryPatchesFromCampaign } from '../backend'
+import { queryChangesets as _queryChangesets, queryPatchesFromPatchSet } from '../backend'
 import { PatchNode, PatchNodeProps } from './PatchNode'
-import { repeatWhen } from 'rxjs/operators'
 
 interface Props extends ThemeProps {
-    campaign: Pick<GQL.ICampaign, 'id'>
+    patchSet: Pick<GQL.IPatchSet, 'id'>
     history: H.History
     location: H.Location
     campaignUpdates: Pick<Observer<void>, 'next'>
@@ -18,31 +17,32 @@ interface Props extends ThemeProps {
     enablePublishing: boolean
 
     /** For testing only. */
-    queryPatches?: (campaignID: GQL.ID, args: FilteredConnectionQueryArgs) => Observable<GQL.IPatchConnection>
+    queryPatches?: (patchSetID: GQL.ID, args: FilteredConnectionQueryArgs) => Observable<GQL.IPatchConnection>
 }
 
 /**
- * A list of a campaign's patches.
+ * A list of a patch set's patches.
  */
-export const CampaignPatches: React.FunctionComponent<Props> = ({
-    campaign,
+export const PatchSetPatches: React.FunctionComponent<Props> = ({
+    patchSet,
     history,
     location,
     isLightTheme,
     campaignUpdates,
     changesetUpdates,
     enablePublishing,
-    queryPatches = queryPatchesFromCampaign,
+    queryPatches = queryPatchesFromPatchSet,
 }) => {
-    const queryPatchesConnection = useCallback(
-        (args: FilteredConnectionQueryArgs) => queryPatches(campaign.id, args).pipe(repeatWhen(() => changesetUpdates)),
-        [campaign.id, queryPatches, changesetUpdates]
-    )
+    const queryPatchesConnection = useCallback((args: FilteredConnectionQueryArgs) => queryPatches(patchSet.id, args), [
+        patchSet.id,
+        queryPatches,
+    ])
 
     return (
         <div className="list-group">
             <FilteredConnection<GQL.IPatch, Omit<PatchNodeProps, 'node'>>
                 className="mt-2"
+                updates={changesetUpdates}
                 nodeComponent={PatchNode}
                 nodeComponentProps={{
                     isLightTheme,
