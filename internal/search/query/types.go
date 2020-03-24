@@ -6,9 +6,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/internal/search/query/syntax"
 	"github.com/sourcegraph/sourcegraph/internal/search/query/types"
-	"gopkg.in/inconshreveable/log15.v2"
 )
 
 type SearchType int
