@@ -60,10 +60,7 @@ export class Database {
             ctx
         )
 
-        return new OrderedLocationSet(
-            locations.map(location => ({ ...location, dumpId: this.dumpId })),
-            true
-        )
+        return new OrderedLocationSet(locations.map(location => ({ ...location, dumpId: this.dumpId })))
     }
 
     /**
