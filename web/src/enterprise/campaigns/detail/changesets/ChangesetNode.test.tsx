@@ -7,7 +7,6 @@ import {
     ChangesetState,
     IExternalChangeset,
     ChangesetCheckState,
-    IPatch,
 } from '../../../../../../shared/src/graphql/schema'
 import { Subject } from 'rxjs'
 
@@ -21,47 +20,6 @@ jest.mock('mdi-react/DeleteIcon', () => 'DeleteIcon')
 describe('ChangesetNode', () => {
     const history = H.createMemoryHistory({ keyLength: 0 })
     const location = H.createLocation('/campaigns')
-    const renderPatch = (enablePublishing: boolean): void => {
-        const renderer = createRenderer()
-        renderer.render(
-            <ChangesetNode
-                isLightTheme={true}
-                history={history}
-                location={location}
-                node={
-                    {
-                        __typename: 'Patch',
-                        diff: {
-                            fileDiffs: {
-                                __typename: 'PreviewFileDiffConnection',
-                                diffStat: {
-                                    added: 100,
-                                    changed: 200,
-                                    deleted: 100,
-                                },
-                            },
-                        },
-                        repository: {
-                            __typename: 'Repository',
-                            name: 'sourcegraph',
-                            url: 'github.com/sourcegraph/sourcegraph',
-                        },
-                    } as IPatch
-                }
-                campaignUpdates={new Subject<void>()}
-                enablePublishing={enablePublishing}
-                _now={new Date('2019-12-15')}
-            />
-        )
-        const result = renderer.getRenderOutput()
-        expect(result.props).toMatchSnapshot()
-    }
-    test('renders a patch with publishing disabled', () => {
-        renderPatch(false)
-    })
-    test('renders a patch with publishing enabled', () => {
-        renderPatch(true)
-    })
     test('renders an externalchangeset', () => {
         const renderer = createRenderer()
         renderer.render(
@@ -108,7 +66,6 @@ describe('ChangesetNode', () => {
                     } as IExternalChangeset
                 }
                 campaignUpdates={new Subject<void>()}
-                enablePublishing={false}
                 _now={new Date('2019-12-15')}
             />
         )

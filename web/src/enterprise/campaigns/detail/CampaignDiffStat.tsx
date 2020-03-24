@@ -2,32 +2,36 @@ import React, { useMemo } from 'react'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { DiffStat } from '../../../components/diff/DiffStat'
 
+interface NodesWithDiffStat {
+    nodes: {
+        diff: {
+            fileDiffs: { diffStat: { added: number; changed: number; deleted: number } }
+        } | null
+    }[]
+}
+
 export interface CampaignDiffstatProps {
-    campaign:
-        | (Pick<GQL.ICampaign, '__typename'> & {
-              changesets: Pick<GQL.ICampaign['changesets'], 'nodes'>
-              patches: Pick<GQL.ICampaign['patches'], 'nodes'>
-          })
-        | (Pick<GQL.IPatchSet, '__typename'> & {
-              patches: Pick<GQL.IPatchSet['patches'], 'nodes'>
-          })
+    campaign?: Pick<GQL.ICampaign, '__typename'> & {
+        changesets: NodesWithDiffStat
+        patches: NodesWithDiffStat
+    }
+    patchSet?: Pick<GQL.IPatchSet, '__typename'> & {
+        patches: NodesWithDiffStat
+    }
 
     className?: string
 }
 
-const sumDiffStat = (nodes: (GQL.IExternalChangeset | GQL.IPatch)[], field: 'added' | 'changed' | 'deleted'): number =>
+const sumDiffStat = (nodes: NodesWithDiffStat['nodes'], field: 'added' | 'changed' | 'deleted'): number =>
     nodes.reduce((prev, next) => prev + (next.diff ? next.diff.fileDiffs.diffStat[field] : 0), 0)
 
 /**
- * The status of a campaign's jobs, plus its closed state and errors.
+ * Total diff stat of a campaign or patchset, including all changesets and patches
  */
-export const CampaignDiffStat: React.FunctionComponent<CampaignDiffstatProps> = ({ campaign, className }) => {
+export const CampaignDiffStat: React.FunctionComponent<CampaignDiffstatProps> = ({ campaign, patchSet, className }) => {
     const changesets = useMemo(
-        () =>
-            campaign.__typename === 'Campaign'
-                ? [...campaign.changesets.nodes, ...campaign.patches.nodes]
-                : campaign.patches.nodes,
-        [campaign]
+        () => (campaign ? [...campaign.changesets.nodes, ...campaign.patches.nodes] : patchSet!.patches.nodes),
+        [campaign, patchSet]
     )
     const added = useMemo(() => sumDiffStat(changesets, 'added'), [changesets])
     const changed = useMemo(() => sumDiffStat(changesets, 'changed'), [changesets])
