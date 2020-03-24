@@ -551,7 +551,7 @@ func (r *Resolver) CreatePatchSetFromPatches(ctx context.Context, args graphqlba
 		return nil, backend.ErrNotAuthenticated
 	}
 
-	patches := make([]campaigns.PatchInput, len(args.Patches))
+	patches := make([]*campaigns.Patch, len(args.Patches))
 	for i, patch := range args.Patches {
 		repo, err := graphqlbackend.UnmarshalRepositoryID(patch.Repository)
 		if err != nil {
@@ -570,11 +570,11 @@ func (r *Resolver) CreatePatchSetFromPatches(ctx context.Context, args graphqlba
 			}
 		}
 
-		patches[i] = campaigns.PatchInput{
-			Repo:         repo,
-			BaseRevision: patch.BaseRevision,
-			BaseRef:      patch.BaseRef,
-			Patch:        patch.Patch,
+		patches[i] = &campaigns.Patch{
+			RepoID:  repo,
+			Rev:     patch.BaseRevision,
+			BaseRef: patch.BaseRef,
+			Diff:    patch.Patch,
 		}
 	}
 

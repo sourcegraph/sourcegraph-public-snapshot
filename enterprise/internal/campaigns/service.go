@@ -50,7 +50,7 @@ type Service struct {
 // computed by the caller. There is no diff execution or computation performed during creation of
 // the Patches in this case (unlike when using Runner to create a PatchSet from a
 // specification).
-func (s *Service) CreatePatchSetFromPatches(ctx context.Context, patches []campaigns.PatchInput, userID int32) (*campaigns.PatchSet, error) {
+func (s *Service) CreatePatchSetFromPatches(ctx context.Context, patches []*campaigns.Patch, userID int32) (*campaigns.PatchSet, error) {
 	if userID == 0 {
 		return nil, backend.ErrNotAuthenticated
 	}
@@ -58,7 +58,7 @@ func (s *Service) CreatePatchSetFromPatches(ctx context.Context, patches []campa
 	reposStore := repos.NewDBStore(s.store.DB(), sql.TxOptions{})
 	repoIDs := make([]api.RepoID, len(patches))
 	for i, patch := range patches {
-		repoIDs[i] = api.RepoID(patch.Repo)
+		repoIDs[i] = api.RepoID(patch.RepoID)
 	}
 	allRepos, err := reposStore.ListRepos(ctx, repos.StoreListReposArgs{IDs: repoIDs})
 	if err != nil {
@@ -82,21 +82,15 @@ func (s *Service) CreatePatchSetFromPatches(ctx context.Context, patches []campa
 	}
 
 	for _, patch := range patches {
-		repo := reposByID[patch.Repo]
+		repo := reposByID[patch.RepoID]
 		if repo == nil {
-			return nil, fmt.Errorf("repository ID %d not found", patch.Repo)
+			return nil, fmt.Errorf("repository ID %d not found", patch.RepoID)
 		}
 		if !campaigns.IsRepoSupported(&repo.ExternalRepo) {
 			continue
 		}
 
-		patch := &campaigns.Patch{
-			PatchSetID: patchSet.ID,
-			RepoID:     patch.Repo,
-			BaseRef:    patch.BaseRef,
-			Rev:        patch.BaseRevision,
-			Diff:       patch.Patch,
-		}
+		patch.PatchSetID = patchSet.ID
 		if err := tx.CreatePatch(ctx, patch); err != nil {
 			return nil, err
 		}
