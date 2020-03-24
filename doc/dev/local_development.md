@@ -182,13 +182,13 @@ The following are two recommendations for installing these dependencies:
 
 We use asdf in buildkite to lock the versions of the tools that we use on a per-commit basis.
 
-### Install
+#### Install
 
-#### asdf binary
+##### asdf binary
 
 See the [installation instructions on the official asdf documentation](https://asdf-vm.com/#/core-manage-asdf-vm?id=install-asdf-vm).
 
-#### Plugins
+##### Plugins
 
 sourcegraph/sourcegraph uses the following plugins:
 
@@ -217,7 +217,7 @@ legacy_version_file = yes
 asdf plugin add yarn
 ```
 
-### Usage instructions
+#### Usage instructions
 
 [asdf](https://github.com/asdf-vm/asdf) uses versions specified in [.tool-versions](https://github.com/sourcegraph/sourcegraph/blob/master/.tool-versions) whenever a command is run from one of `sourcegraph/sourcegraph`'s subdirectories.
 
