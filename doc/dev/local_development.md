@@ -337,7 +337,7 @@ Adding host(s) "sourcegraph.test" to IP address 127.0.0.1
 its keys to your system's certificate store. You can get this out the way after installing Caddy 2 by running the following command and entering your password when prompted:
 
 ```bash
-> env SOURCEGRAPH_HTTPS_DOMAIN=sourcegraph.test SOURCEGRAPH_HTTPS_PORT=3443 ./dev/caddy run --watch --config=dev/Caddyfile
+env SOURCEGRAPH_HTTPS_DOMAIN=sourcegraph.test SOURCEGRAPH_HTTPS_PORT=3443 ./dev/caddy.sh run --watch --config=dev/Caddyfile
 
 ...
 2020/03/23 12:30:18 [INFO][cache:0xc0007879a0] Started certificate maintenance routine
