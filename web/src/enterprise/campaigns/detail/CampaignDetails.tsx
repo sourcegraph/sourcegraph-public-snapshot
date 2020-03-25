@@ -1,7 +1,7 @@
 import slugify from 'slugify'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import React, { useState, useEffect, useRef, useMemo } from 'react'
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
@@ -204,6 +204,27 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         useMemo(() => (!patchSetID ? NEVER : _fetchPatchSetById(patchSetID)), [patchSetID, _fetchPatchSetById])
     )
 
+    const onAddChangeset = useCallback((): void => {
+        // we also check the campaign.changesets.totalCount, so an update to the campaign is required as well
+        campaignUpdates.next()
+        changesetUpdates.next()
+    }, [campaignUpdates, changesetUpdates])
+
+    const onNameChange = useCallback(
+        (newName: string): void => {
+            if (!branchModified) {
+                setBranch(slugify(newName, { lower: true }))
+            }
+            setName(newName)
+        },
+        [branchModified]
+    )
+
+    const onBranchChange = useCallback((newValue: string): void => {
+        setBranch(newValue)
+        setBranchModified(true)
+    }, [])
+
     // Is loading
     if ((campaignID && campaign === undefined) || (patchSetID && patchSet === undefined)) {
         return (
@@ -374,25 +395,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         }
     }
 
-    const onAddChangeset = (): void => {
-        // we also check the campaign.changesets.totalCount, so an update to the campaign is required as well
-        campaignUpdates.next()
-        changesetUpdates.next()
-    }
-
     const author = campaign ? campaign.author : authenticatedUser
-
-    const onNameChange = (newName: string): void => {
-        if (!branchModified) {
-            setBranch(slugify(newName, { lower: true }))
-        }
-        setName(newName)
-    }
-
-    const onBranchChange = (newValue: string): void => {
-        setBranch(newValue)
-        setBranchModified(true)
-    }
 
     const totalChangesetCount = campaign?.changesets.totalCount ?? 0
 
