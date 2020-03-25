@@ -45,7 +45,7 @@ import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetrySer
 import { CampaignPatches } from './patches/CampaignPatches'
 import { PatchSetPatches } from './patches/PatchSetPatches'
 
-export type CampaignUIMode = 'viewing' | 'editing' | 'saving' | 'deleting' | 'closing'
+export type CampaignUIMode = 'viewing' | 'editing' | 'saving' | 'deleting' | 'closing' | 'publishing'
 
 interface Campaign
     extends Pick<
@@ -264,7 +264,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     }
 
     const onPublish = async (): Promise<void> => {
-        setMode('saving')
+        setMode('publishing')
         try {
             await publishCampaign(campaign!.id)
             setAlertError(undefined)
@@ -417,7 +417,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 {campaign && !updateMode && !['saving', 'editing'].includes(mode) && (
                     <CampaignStatus campaign={campaign} onPublish={onPublish} onRetry={onRetry} />
                 )}
-                {(mode === 'editing' || mode === 'saving') && (
+                {['saving', 'editing'].includes(mode) && (
                     <>
                         <h3>Details</h3>
                         <CampaignTitleField

@@ -37,7 +37,7 @@ export const CampaignActionsBar: React.FunctionComponent<Props> = ({
     const editingCampaign = mode === 'editing' || mode === 'saving'
 
     const campaignProcessing = campaign ? campaign.status.state === GQL.BackgroundProcessState.PROCESSING : false
-    const actionsDisabled = mode === 'deleting' || mode === 'closing' || campaignProcessing
+    const actionsDisabled = mode === 'deleting' || mode === 'closing' || mode === 'publishing' || campaignProcessing
 
     const openChangesetsCount =
         campaign?.changesets.nodes.filter(changeset => changeset.state === GQL.ChangesetState.OPEN).length ?? 0
