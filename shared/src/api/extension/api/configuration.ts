@@ -1,5 +1,5 @@
 import { ProxyResult, ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
-import { ReplaySubject, BehaviorSubject, Subscribable } from 'rxjs'
+import { ReplaySubject } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { SettingsCascade } from '../../../settings/settings'
 import { ClientConfigurationAPI } from '../../client/api/configuration'
