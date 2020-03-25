@@ -37,19 +37,20 @@ const FILTERS: FilteredConnectionFilter[] = [
  */
 export const GlobalCampaignListPage: React.FunctionComponent<Props> = props => (
     <>
-        <h1>Campaigns</h1>
-        <p>Perform and track large-scale code changes</p>
-        <Link to="/campaigns/actions" className="btn btn-primary">
-            Manage actions
-        </Link>
-
-        {props.authenticatedUser.siteAdmin && (
-            <div className="text-right mb-1">
-                <Link to="/campaigns/new" className="btn btn-primary">
+        <div className="d-flex justify-content-between align-items-end mb-3">
+            <div>
+                <h1 className="mb-2">Campaigns</h1>
+                <p className="mb-0">Perform and track large-scale code changes</p>
+            </div>
+            <Link to="/campaigns/actions" className="btn btn-primary ml-3">
+                Manage actions
+            </Link>
+            {props.authenticatedUser.siteAdmin && (
+                <Link to="/campaigns/new" className="btn btn-primary ml-3">
                     <AddIcon className="icon-inline" /> New campaign
                 </Link>
-            </div>
-        )}
+            )}
+        </div>
 
         <FilteredConnection<CampaignNodeCampaign>
             {...props}
@@ -59,6 +60,7 @@ export const GlobalCampaignListPage: React.FunctionComponent<Props> = props => (
             filters={FILTERS}
             noun="campaign"
             pluralNoun="campaigns"
+            className="mb-3"
         />
     </>
 )

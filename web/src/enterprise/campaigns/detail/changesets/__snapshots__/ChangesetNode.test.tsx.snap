@@ -65,22 +65,60 @@ Object {
                   sourcegraph
                 </AnchorLink>
               </strong>
-              <small
-                className="text-muted ml-2"
-              >
-                Last synced 
-                17 days
-                 ago.
-                 
-                <span
-                  data-tooltip="Click to prioritize refresh"
-                >
-                  <Memo(SyncIcon)
-                    className="icon-inline cursor-pointer"
-                    onClick={[Function]}
-                  />
-                </span>
-              </small>
+              <ChangesetLastSynced
+                campaignUpdates={
+                  Subject {
+                    "_isScalar": false,
+                    "closed": false,
+                    "hasError": false,
+                    "isStopped": false,
+                    "observers": Array [],
+                    "thrownError": null,
+                  }
+                }
+                changeset={
+                  Object {
+                    "__typename": "ExternalChangeset",
+                    "body": "We should remove lodash",
+                    "checkState": "FAILED",
+                    "diff": Object {
+                      "fileDiffs": Object {
+                        "diffStat": Object {
+                          "added": 100,
+                          "changed": 200,
+                          "deleted": 100,
+                        },
+                        "nodes": Array [
+                          Object {
+                            "__typename": "FileDiff",
+                          },
+                        ],
+                      },
+                    },
+                    "externalID": "123",
+                    "externalURL": Object {
+                      "url": "https://github.com/sourcegraph/sourcegraph/pull/111111",
+                    },
+                    "labels": Array [
+                      Object {
+                        "__typename": "ChangesetLabel",
+                        "color": "93ba13",
+                        "description": "Something is broken",
+                        "text": "bug",
+                      },
+                    ],
+                    "repository": Object {
+                      "__typename": "Repository",
+                      "name": "sourcegraph",
+                      "url": "github.com/sourcegraph/sourcegraph",
+                    },
+                    "reviewState": "PENDING",
+                    "state": "OPEN",
+                    "title": "Remove lodash",
+                    "updatedAt": "2020-01-01T00:00:00.000Z",
+                  }
+                }
+              />
             </div>
           </div>
         </div>

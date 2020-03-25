@@ -66,7 +66,6 @@ describe('ChangesetNode', () => {
                     } as IExternalChangeset
                 }
                 campaignUpdates={new Subject<void>()}
-                _now={new Date('2019-12-15')}
             />
         )
         const result = renderer.getRenderOutput()

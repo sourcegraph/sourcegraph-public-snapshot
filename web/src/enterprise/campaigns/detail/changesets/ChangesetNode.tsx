@@ -1,6 +1,6 @@
 import * as H from 'history'
 import { IExternalChangeset, ChangesetState, ChangesetCheckState } from '../../../../../../shared/src/graphql/schema'
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useCallback } from 'react'
 import {
     changesetReviewStateColors,
     changesetReviewStateIcons,
@@ -17,13 +17,10 @@ import { ThemeProps } from '../../../../../../shared/src/theme'
 import { Collapsible } from '../../../../components/Collapsible'
 import { DiffStat } from '../../../../components/diff/DiffStat'
 import { FileDiffNode } from '../../../../components/diff/FileDiffNode'
-import { publishChangeset as _publishChangeset, syncChangeset, queryExternalChangesetFileDiffs } from '../backend'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { Subject } from 'rxjs'
+import { publishChangeset as _publishChangeset, queryExternalChangesetFileDiffs } from '../backend'
+import { Observer } from 'rxjs'
 import { ChangesetLabel } from './ChangesetLabel'
 import classNames from 'classnames'
-import SyncIcon from 'mdi-react/SyncIcon'
-import { parseISO, formatDistance } from 'date-fns'
 import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
 import { Hoverifier } from '@sourcegraph/codeintellify'
 import { RepoSpec, RevSpec, FileSpec, ResolvedRevSpec } from '../../../../../../shared/src/util/url'
@@ -31,18 +28,16 @@ import { HoverMerged } from '../../../../../../shared/src/api/client/types/hover
 import { ActionItemAction } from '../../../../../../shared/src/actions/ActionItem'
 import { FileDiffConnection } from '../../../../components/diff/FileDiffConnection'
 import { FilteredConnectionQueryArgs } from '../../../../components/FilteredConnection'
+import { ChangesetLastSynced } from './ChangesetLastSynced'
 
 export interface ChangesetNodeProps extends ThemeProps {
     node: IExternalChangeset
-    campaignUpdates?: Subject<void>
+    campaignUpdates?: Pick<Observer<void>, 'next'>
     history: H.History
     location: H.Location
     extensionInfo?: {
         hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>
     } & ExtensionsControllerProps
-
-    /** For testing only */
-    _now?: Date
 }
 
 export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
@@ -52,26 +47,7 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
     history,
     location,
     extensionInfo,
-    _now,
 }) => {
-    const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null)
-    const lastUpdatedAtChanged = lastUpdatedAt && node.updatedAt !== lastUpdatedAt
-    useEffect(() => {
-        if (lastUpdatedAtChanged && node.updatedAt) {
-            if (campaignUpdates) {
-                campaignUpdates.next()
-            }
-            setLastUpdatedAt(null)
-        }
-    }, [campaignUpdates, lastUpdatedAtChanged, node.updatedAt])
-    const enqueueChangeset: React.MouseEventHandler = async () => {
-        // already enqueued
-        if (lastUpdatedAt) {
-            return
-        }
-        setLastUpdatedAt(node.updatedAt)
-        await syncChangeset(node.id)
-    }
     const fileDiffs = node.diff?.fileDiffs
     const ChangesetStateIcon = changesetStateIcons[node.state]
     const ReviewStateIcon = changesetReviewStateIcons[node.reviewState]
@@ -79,8 +55,6 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
         ? changesetCheckStateIcons[node.checkState]
         : changesetCheckStateIcons[ChangesetCheckState.PENDING]
     const changesetState = node.state
-
-    const UpdateLoaderIcon = node.updatedAt !== lastUpdatedAt ? SyncIcon : LoadingSpinner
 
     const changesetNodeRow = (
         <div className="d-flex align-items-start m-1 ml-2">
@@ -133,21 +107,7 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
                                 {node.repository.name}
                             </Link>
                         </strong>
-                        <small className="text-muted ml-2">
-                            Last synced {formatDistance(parseISO(node.updatedAt), _now ?? new Date())} ago.{' '}
-                            <span
-                                data-tooltip={
-                                    node.updatedAt === lastUpdatedAt
-                                        ? 'Currently refreshing'
-                                        : 'Click to prioritize refresh'
-                                }
-                            >
-                                <UpdateLoaderIcon
-                                    className={classNames('icon-inline', !lastUpdatedAt && 'cursor-pointer')}
-                                    onClick={enqueueChangeset}
-                                />
-                            </span>
-                        </small>
+                        <ChangesetLastSynced changeset={node} campaignUpdates={campaignUpdates} />
                     </div>
                 </div>
             </div>

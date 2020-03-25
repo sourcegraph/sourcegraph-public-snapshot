@@ -366,10 +366,10 @@
   resolved "https://registry.npmjs.org/@sinonjs/text-encoding/-/text-encoding-0.7.1.tgz#8da5c6530915653f3a1f38fd5f101d8c3f8079c5"
   integrity sha512-+iTbntw2IZPb/anVDbypzfQa+ay64MW0Zo8aJ8gZPWMMK6/OubMVb6lUPMagqjOPnmtauXnFCACVl3O7ogjeqQ==
 
-"@sourcegraph/tsconfig@^4.0.0":
-  version "4.0.0"
-  resolved "https://registry.npmjs.org/@sourcegraph/tsconfig/-/tsconfig-4.0.0.tgz#dd2a406f90760bb789fd89fde4bd0a8d681f2767"
-  integrity sha512-jxrhKbek4yu1HUDpUhqR9hAGFiUgaJ9NIM+c8JEkAnvpW67ab1AUFWb82aSVfZWX1UVqfR84AMr7xP3E8LlL+A==
+"@sourcegraph/tsconfig@^4.0.1":
+  version "4.0.1"
+  resolved "https://registry.npmjs.org/@sourcegraph/tsconfig/-/tsconfig-4.0.1.tgz#5965ec41771d2ac5b23b6e0d919cee3e70485840"
+  integrity sha512-G/xsejsR84G5dj3kHJ7svKBo9E5tWl96rUHKP94Y2UDtA7BzUhAYbieM+b9ZUpIRt66h3+MlYbG5HK4UI2zDzw==
 
 "@szmarczak/http-timer@^4.0.0":
   version "4.0.5"
@@ -1376,12 +1376,7 @@ combined-stream@^1.0.6, combined-stream@~1.0.6:
   dependencies:
     delayed-stream "~1.0.0"
 
-commander@^2.12.1:
-  version "2.20.1"
-  resolved "https://registry.npmjs.org/commander/-/commander-2.20.1.tgz#3863ce3ca92d0831dcf2a102f5fb4b5926afd0f9"
-  integrity sha512-cCuLsMhJeWQ/ZpsFTbE765kvVfoeSddc4nU3up4fV+fDBcfUXnbITJ+JzhkdjzOqhURjZgujxaioam4RM9yGUg==
-
-commander@^2.2.0:
+commander@^2.12.1, commander@^2.2.0:
   version "2.20.3"
   resolved "https://registry.npmjs.org/commander/-/commander-2.20.3.tgz#fd485e84c03eb4881c20722ba48035e8531aeb33"
   integrity sha512-GpVkmM8vF2vQUkj2LvZmD35JxeJOLCwJ9cUkugyk2nuhbv3+mJvpLYYt+0+USMxE+oj+ey/lJEnhZw75x/OMcQ==

@@ -4,7 +4,7 @@ import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { ThemeProps } from '../../../../../../shared/src/theme'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../../../../components/FilteredConnection'
 import { Observable, Subject, Observer } from 'rxjs'
-import { DEFAULT_CHANGESET_LIST_COUNT } from '../presentation'
+import { DEFAULT_CHANGESET_PATCH_LIST_COUNT } from '../presentation'
 import { queryChangesets as _queryChangesets, queryPatchesFromPatchSet } from '../backend'
 import { PatchNode, PatchNodeProps } from './PatchNode'
 
@@ -53,7 +53,7 @@ export const PatchSetPatches: React.FunctionComponent<Props> = ({
                 }}
                 queryConnection={queryPatchesConnection}
                 hideSearch={true}
-                defaultFirst={DEFAULT_CHANGESET_LIST_COUNT}
+                defaultFirst={DEFAULT_CHANGESET_PATCH_LIST_COUNT}
                 noun="patch"
                 pluralNoun="patches"
                 history={history}

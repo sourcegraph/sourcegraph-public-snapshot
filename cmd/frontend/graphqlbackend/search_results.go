@@ -552,7 +552,9 @@ func (r *searchResolver) logSearchLatency(ctx context.Context, durationMs int32)
 	}
 }
 
-func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, error) {
+// evaluateLeaf performs a single search operation and corresponds to the
+// evaluation of leaf expression in a query.
+func (r *searchResolver) evaluateLeaf(ctx context.Context) (*SearchResultsResolver, error) {
 	// If the request is a paginated one, we handle it separately. See
 	// paginatedResults for more details.
 	if r.pagination != nil {
@@ -584,6 +586,23 @@ func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, e
 	searchResponseCounter.WithLabelValues(status, alertType).Inc()
 
 	return rr, err
+}
+
+// evaluate evaluates all expressions of a search query.
+func (r *searchResolver) evaluate(ctx context.Context, q []query.Node) (*SearchResultsResolver, error) {
+	// For now, fall through to evaluating leaf expressions only.
+	return r.evaluateLeaf(ctx)
+}
+
+func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, error) {
+	switch q := r.query.(type) {
+	case *query.OrdinaryQuery:
+		return r.evaluateLeaf(ctx)
+	case *query.AndOrQuery:
+		return r.evaluate(ctx, q.Query)
+	}
+	// Unreachable, matching is exhaustive.
+	return nil, nil
 }
 
 // resultsWithTimeoutSuggestion calls doResults, and in case of deadline

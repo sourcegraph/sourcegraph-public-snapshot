@@ -18,20 +18,28 @@ exports[`CampaignStatus viewerCanAdminister: false campaign errored 1`] = `
           <li
             className="mb-2"
           >
-            <code>
-              <ErrorMessage
-                error="a"
-              />
-            </code>
+            <p
+              className="mb-0 text-monospace"
+            >
+              <small>
+                <ErrorMessage
+                  error="a"
+                />
+              </small>
+            </p>
           </li>
           <li
             className="mb-2"
           >
-            <code>
-              <ErrorMessage
-                error="b"
-              />
-            </code>
+            <p
+              className="mb-0 text-monospace"
+            >
+              <small>
+                <ErrorMessage
+                  error="b"
+                />
+              </small>
+            </p>
           </li>
         </ul>
       </div>
@@ -52,7 +60,7 @@ exports[`CampaignStatus viewerCanAdminister: false campaign processing 1`] = `
             className="icon-inline"
           />
            Creating 
-          6
+          3
            
           changesets
            on code hosts...
@@ -71,6 +79,41 @@ exports[`CampaignStatus viewerCanAdminister: false campaign processing 1`] = `
              
           </div>
         </div>
+        <h4
+          className="mt-1"
+        >
+          Creating changesets failed
+        </h4>
+        <ul
+          className="mt-2"
+        >
+          <li
+            className="mb-2"
+          >
+            <p
+              className="mb-0 text-monospace"
+            >
+              <small>
+                <ErrorMessage
+                  error="a"
+                />
+              </small>
+            </p>
+          </li>
+          <li
+            className="mb-2"
+          >
+            <p
+              className="mb-0 text-monospace"
+            >
+              <small>
+                <ErrorMessage
+                  error="b"
+                />
+              </small>
+            </p>
+          </li>
+        </ul>
       </div>
     </React.Fragment>
   </div>
@@ -147,20 +190,28 @@ exports[`CampaignStatus viewerCanAdminister: true campaign errored 1`] = `
           <li
             className="mb-2"
           >
-            <code>
-              <ErrorMessage
-                error="a"
-              />
-            </code>
+            <p
+              className="mb-0 text-monospace"
+            >
+              <small>
+                <ErrorMessage
+                  error="a"
+                />
+              </small>
+            </p>
           </li>
           <li
             className="mb-2"
           >
-            <code>
-              <ErrorMessage
-                error="b"
-              />
-            </code>
+            <p
+              className="mb-0 text-monospace"
+            >
+              <small>
+                <ErrorMessage
+                  error="b"
+                />
+              </small>
+            </p>
           </li>
         </ul>
         <button
@@ -188,7 +239,7 @@ exports[`CampaignStatus viewerCanAdminister: true campaign processing 1`] = `
             className="icon-inline"
           />
            Creating 
-          6
+          3
            
           changesets
            on code hosts...
@@ -207,6 +258,41 @@ exports[`CampaignStatus viewerCanAdminister: true campaign processing 1`] = `
              
           </div>
         </div>
+        <h4
+          className="mt-1"
+        >
+          Creating changesets failed
+        </h4>
+        <ul
+          className="mt-2"
+        >
+          <li
+            className="mb-2"
+          >
+            <p
+              className="mb-0 text-monospace"
+            >
+              <small>
+                <ErrorMessage
+                  error="a"
+                />
+              </small>
+            </p>
+          </li>
+          <li
+            className="mb-2"
+          >
+            <p
+              className="mb-0 text-monospace"
+            >
+              <small>
+                <ErrorMessage
+                  error="b"
+                />
+              </small>
+            </p>
+          </li>
+        </ul>
       </div>
     </React.Fragment>
   </div>

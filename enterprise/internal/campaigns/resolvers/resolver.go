@@ -542,7 +542,7 @@ func (r *Resolver) CreatePatchSetFromPatches(ctx context.Context, args graphqlba
 		return nil, backend.ErrNotAuthenticated
 	}
 
-	patches := make([]campaigns.PatchInput, len(args.Patches))
+	patches := make([]*campaigns.Patch, len(args.Patches))
 	for i, patch := range args.Patches {
 		repo, err := graphqlbackend.UnmarshalRepositoryID(patch.Repository)
 		if err != nil {
@@ -561,11 +561,11 @@ func (r *Resolver) CreatePatchSetFromPatches(ctx context.Context, args graphqlba
 			}
 		}
 
-		patches[i] = campaigns.PatchInput{
-			Repo:         repo,
-			BaseRevision: patch.BaseRevision,
-			BaseRef:      patch.BaseRef,
-			Patch:        patch.Patch,
+		patches[i] = &campaigns.Patch{
+			RepoID:  repo,
+			Rev:     patch.BaseRevision,
+			BaseRef: patch.BaseRef,
+			Diff:    patch.Patch,
 		}
 	}
 
@@ -1162,14 +1162,14 @@ func (r *Resolver) UpdateActionJob(ctx context.Context, args *graphqlbackend.Upd
 			}
 		}
 		if allCompleted {
-			var patches []campaigns.PatchInput
+			var patches []*campaigns.Patch
 			for _, job := range actionJobs {
 				if job.Patch != nil {
-					patches = append(patches, campaigns.PatchInput{
-						Repo:         api.RepoID(job.RepoID),
-						BaseRevision: api.CommitID(job.BaseRevision),
-						BaseRef:      job.BaseReference,
-						Patch:        *job.Patch,
+					patches = append(patches, &campaigns.Patch{
+						RepoID:  api.RepoID(job.RepoID),
+						Rev:     api.CommitID(job.BaseRevision),
+						BaseRef: job.BaseReference,
+						Diff:    *job.Patch,
 					})
 				}
 			}
