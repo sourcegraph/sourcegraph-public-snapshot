@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"strings"
 
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/go-lsp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -144,7 +145,7 @@ func adjustPositionFromHunk(hunk *diff.Hunk, pos lsp.Position) (lsp.Position, bo
 		}
 
 		// Keep skipping ahead in the original file until we hit our target line
-		if int(origFileOffset-1) < line {
+		if origFileOffset-1 < line {
 			continue
 		}
 
@@ -171,5 +172,6 @@ func adjustPositionFromHunk(hunk *diff.Hunk, pos lsp.Position) (lsp.Position, bo
 	// This should never happen unless the git diff content is malformed. We know
 	// the target line occurs within the hunk, but iteration of the hunk's body did
 	// not contain enough lines attributed to the original file.
+	log15.Error("Malformed hunk body")
 	return lsp.Position{}, false
 }
