@@ -321,7 +321,6 @@ In order to configure the HTTPS reverse-proxy, you'll need to edit `/etc/hosts` 
 ```bash
 > ./dev/add_https_domain_to_hosts.sh
 
---- go install txeh
 --- adding sourcegraph.test to '/etc/hosts' (you may need to enter your password)
 Password:
 Adding host(s) "sourcegraph.test" to IP address 127.0.0.1
