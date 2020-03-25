@@ -7,11 +7,13 @@ pushd "$(dirname "${BASH_SOURCE[0]}")/.." > /dev/null
 mkdir -p .bin
 
 version=v1.4.0
-binname="docsite_${version}_$(go env GOOS)_$(go env GOARCH)"
-target="$PWD/.bin/${binname}"
+suffix="${version}_$(go env GOOS)_$(go env GOARCH)"
+target="$PWD/.bin/docsite_${suffix}"
+url="https://github.com/sourcegraph/docsite/releases/download/${version}/docsite_${suffix}"
 
 if [ ! -f "${target}" ]; then
-    curl -s -L "https://github.com/sourcegraph/docsite/releases/download/${version}/${binname}" -o "${target}.tmp"
+    echo "downloading ${url}" 1>&2
+    curl -sS -L -f "${url}" -o "${target}.tmp"
     mv "${target}.tmp" "${target}"
 fi
 
