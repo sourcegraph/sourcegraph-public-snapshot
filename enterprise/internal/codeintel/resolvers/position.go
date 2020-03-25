@@ -46,7 +46,7 @@ func newPositionAdjuster(ctx context.Context, repo *types.Repo, sourceCommit, ta
 
 	if len(output) == 0 {
 		// Trivial case, no changes to file
-		return &positionAdjuster{hunks: nil}, nil
+		return &positionAdjuster{}, nil
 	}
 
 	return newPositionAdjusterFromDiffOutput(output)
