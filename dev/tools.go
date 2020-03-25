@@ -28,7 +28,4 @@ import (
 
 	// used in many places
 	_ "golang.org/x/tools/cmd/stringer"
-
-	// Caddy 2 is used to provide a HTTPS reverse proxy
-	_ "github.com/caddyserver/caddy/v2"
 )
