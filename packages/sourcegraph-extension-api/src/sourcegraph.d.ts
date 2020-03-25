@@ -835,6 +835,16 @@ declare module 'sourcegraph' {
         readonly value: Readonly<C>
     }
 
+    interface ConfigurationService extends Subscribable<void> {
+        /**
+         * Returns the full configuration object.
+         *
+         * @template C The configuration schema.
+         * @returns The full configuration object.
+         */
+        get<C extends object = { [key: string]: any }>(): Configuration<C>
+    }
+
     /**
      * The configuration settings.
      *
@@ -850,25 +860,7 @@ declare module 'sourcegraph' {
      * @todo Add a way to get/update configuration for a specific scope or subject.
      * @todo Support applying defaults to the configuration values.
      */
-    export namespace configuration {
-        /**
-         * Returns the full configuration object.
-         *
-         * @template C The configuration schema.
-         * @returns The full configuration object.
-         */
-        export function get<C extends object = { [key: string]: any }>(): Configuration<C>
-
-        /**
-         * Subscribe to changes to the configuration. The {@link next} callback is called when any configuration
-         * value changes (and synchronously immediately). Call {@link get} in the callback to obtain the new
-         * configuration values.
-         *
-         * @template C The configuration schema.
-         * @returns An unsubscribable to stop calling the callback for configuration changes.
-         */
-        export function subscribe(next: () => void): Unsubscribable
-    }
+    export const configuration: ConfigurationService
 
     /**
      * A provider result represents the values that a provider, such as the {@link HoverProvider}, may return. The

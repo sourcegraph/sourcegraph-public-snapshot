@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -154,7 +155,10 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	}()
 
 	reposStore := &mockReposStore{
-		listRepos: func(context.Context, repos.StoreListReposArgs) ([]*repos.Repo, error) {
+		listRepos: func(_ context.Context, args repos.StoreListReposArgs) ([]*repos.Repo, error) {
+			if !args.PrivateOnly {
+				return nil, errors.New("PrivateOnly want true but got false")
+			}
 			return []*repos.Repo{{ID: 1}}, nil
 		},
 	}
