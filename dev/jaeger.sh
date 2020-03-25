@@ -13,7 +13,7 @@ url="https://github.com/jaegertracing/jaeger/releases/download/v${version}/jaege
 
 if [ ! -f "${target}" ]; then
     echo "downloading ${url}" 1>&2
-    curl -sS -L -f "${url}" | tar -x --to-stdout "jaeger-${suffix}/jaeger-all-in-one" > "${target}.tmp"
+    curl -sS -L -f "${url}" | tar -xz --to-stdout "jaeger-${suffix}/jaeger-all-in-one" > "${target}.tmp"
     mv "${target}.tmp" "${target}"
 fi
 
