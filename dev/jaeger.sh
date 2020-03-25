@@ -8,12 +8,13 @@ mkdir -p .bin
 
 version=1.17.1
 url="https://github.com/jaegertracing/jaeger/releases/download/v${version}/jaeger-${version}-$(go env GOOS)-$(go env GOARCH).tar.gz"
-target="$PWD/.bin/jaeger-all-in-one"
+binname="jaeger-all-in-one_${version}_$(go env GOOS)_$(go env GOARCH)"
+target="$PWD/.bin/${binname}"
 
 if [ ! -f "${target}" ]; then
     rm -f jaeger.tar.gz
     curl -s -L "${url}" -o "jaeger.tar.gz"
-    tar -C "$PWD/.bin/" --strip-components=1 -xzvf jaeger.tar.gz jaeger-${version}-$(go env GOOS)-$(go env GOARCH)/jaeger-all-in-one
+    tar -C "$PWD/.bin/" --strip-components=1 -xzvf jaeger.tar.gz "jaeger-${version}-$(go env GOOS)-$(go env GOARCH)/jaeger-all-in-one" --transform="s/jaeger-all-in-one/${binname}/"
     rm -f jaeger.tar.gz
 fi
 
