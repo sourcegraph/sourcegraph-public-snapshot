@@ -31,7 +31,4 @@ import (
 
 	// txeh is used to manage entries in /etc/hosts for dev scripts
 	_ "github.com/txn2/txeh"
-
-	// Caddy 2 is used to provide a HTTPS reverse proxy
-	_ "github.com/caddyserver/caddy/v2"
 )

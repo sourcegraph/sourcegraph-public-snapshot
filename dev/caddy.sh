@@ -1,14 +1,33 @@
 #!/usr/bin/env bash
 
-set -e
-cd "$(dirname "${BASH_SOURCE[0]}")/.."
+set -euf -o pipefail
 
-export GOBIN="$PWD/.bin"
-export PATH=$GOBIN:$PATH
-export GO111MODULE=on
+pushd "$(dirname "${BASH_SOURCE[0]}")/.." > /dev/null
 
-CADDY_PATH="${GOBIN}/caddy"
+mkdir -p .bin
 
-go build -o "${CADDY_PATH}" "github.com/caddyserver/caddy/v2/cmd/caddy"
+beta=20
+version="v2.0.0-beta.${beta}"
+case "$(go env GOOS)" in
+    linux)
+        suffix="linux_$(go env GOARCH)"
+        ;;
+    darwin)
+        suffix="macos"
+        ;;
+esac
+suffix="beta${beta}_${suffix}"
+target="$PWD/.bin/caddy2_${suffix}"
+url="https://github.com/caddyserver/caddy/releases/download/${version}/caddy2_${suffix}"
 
-exec "${CADDY_PATH}" $@
+if [ ! -f "${target}" ]; then
+    echo "downloading ${url}" 1>&2
+    curl -sS -L -f "${url}" -o "${target}.tmp"
+    mv "${target}.tmp" "${target}"
+fi
+
+chmod +x "${target}"
+
+popd > /dev/null
+
+exec "${target}" "$@"

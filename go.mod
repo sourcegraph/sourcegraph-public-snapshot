@@ -11,7 +11,6 @@ require (
 	github.com/aws/aws-sdk-go-v2 v0.19.0
 	github.com/beevik/etree v1.1.0
 	github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff
-	github.com/caddyserver/caddy/v2 v2.0.0-beta.19
 	github.com/certifi/gocertifi v0.0.0-20200211180108-c7c1fbc02894 // indirect
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/coreos/go-semver v0.3.0
