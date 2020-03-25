@@ -20,13 +20,7 @@ type positionAdjuster struct {
 // newPositionAdjuster creates a positionAdjuster by performing a git diff operation on the give
 // path between the source and target commits. If the commits are the same or there are no changes
 // in the given path, then a trivial-case no-op position adjuster is returned.
-func newPositionAdjuster(
-	ctx context.Context,
-	repo *types.Repo,
-	sourceCommit string,
-	targetCommit string,
-	path string,
-) (*positionAdjuster, error) {
+func newPositionAdjuster(ctx context.Context, repo *types.Repo, sourceCommit, targetCommit, path string) (*positionAdjuster, error) {
 	if sourceCommit == targetCommit {
 		// Trivial case, no changes to any file
 		return &positionAdjuster{hunks: nil}, nil
