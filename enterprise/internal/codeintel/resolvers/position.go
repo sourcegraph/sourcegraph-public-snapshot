@@ -31,11 +31,9 @@ func newPositionAdjuster(ctx context.Context, repo *types.Repo, sourceCommit, ta
 		return nil, err
 	}
 
-	reader, err := git.ExecReader(
-		ctx,
-		*cachedRepo,
-		[]string{"diff", sourceCommit, targetCommit, "--", path},
-	)
+	reader, err := git.ExecReader(ctx, *cachedRepo, []string{
+		"diff", sourceCommit, targetCommit, "--", path,
+	})
 	if err != nil {
 		return nil, err
 	}
