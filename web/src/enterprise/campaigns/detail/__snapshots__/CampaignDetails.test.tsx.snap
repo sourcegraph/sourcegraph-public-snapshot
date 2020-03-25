@@ -39,7 +39,7 @@ exports[`CampaignDetails creation form for empty manual campaign 1`] = `
         className="mt-2"
       >
         <button
-          className="btn btn-primary"
+          className="btn btn-primary e2e-campaign-create-btn"
           disabled={false}
           form="campaign-form"
           type="submit"
@@ -149,7 +149,7 @@ Array [
         Create draft
       </button>
       <button
-        className="btn btn-primary"
+        className="btn btn-primary e2e-campaign-create-btn"
         disabled={false}
         form="campaign-form"
         type="submit"

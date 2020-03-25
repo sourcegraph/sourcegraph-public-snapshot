@@ -1520,6 +1520,20 @@ describe('e2e test suite', () => {
                 snapshotName: 'Campaign preview page',
             })
         })
+        test('Manual campaign workflow', async () => {
+            await driver.page.goto(sourcegraphBaseUrl + '/campaigns/new')
+            await driver.page.waitForSelector('.e2e-campaign-form')
+            await percySnapshot(driver.page, 'Create manual campaign form')
+            await driver.page.type('.e2e-campaign-title', 'E2E manual campaign')
+            await driver.page.click('.e2e-campaign-create-btn')
+            await driver.page.waitForSelector('.e2e-campaign-get-started')
+            await percySnapshot(driver.page, 'Create manual campaign empty')
+            await driver.page.type('.e2e-track-changeset-repo', 'github.com/sourcegraph-testing/automation-e2e-test')
+            await driver.page.type('.e2e-track-changeset-id', '1')
+            await driver.page.click('.e2e-track-changeset-btn')
+            await driver.page.waitForSelector('.e2e-changeset-node')
+            await percySnapshot(driver.page, 'Create manual campaign added changeset')
+        })
     })
 
     describe('Interactive search mode (feature flagged)', () => {

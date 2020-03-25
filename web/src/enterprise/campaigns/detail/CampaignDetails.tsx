@@ -490,7 +490,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                             <button
                                 type="submit"
                                 form={campaignFormID}
-                                className="btn btn-primary"
+                                className="btn btn-primary e2e-campaign-create-btn"
                                 disabled={mode !== 'editing' || patchSet?.patches.totalCount === 0}
                             >
                                 Create
@@ -589,7 +589,9 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         campaign?.status.state !== GQL.BackgroundProcessState.PROCESSING &&
                         // Show hint for empty manual campaigns
                         (campaign && !campaign.patchSet ? (
-                            <div className="mt-2 alert alert-info">Add a changeset to get started.</div>
+                            <div className="mt-2 alert alert-info e2e-campaign-get-started">
+                                Add a changeset to get started.
+                            </div>
                         ) : (
                             <p className="mt-2 text-muted">No changesets</p>
                         ))

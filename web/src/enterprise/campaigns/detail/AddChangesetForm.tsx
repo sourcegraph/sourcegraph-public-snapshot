@@ -100,7 +100,7 @@ export const AddChangesetForm: React.FunctionComponent<{ campaignID: ID; onAdd: 
                             id="changeset-repo"
                             type="text"
                             size={35}
-                            className="form-control mr-1"
+                            className="form-control mr-1 e2e-track-changeset-repo"
                             placeholder="Repository name"
                             value={repoName}
                             onChange={event => setRepoName(event.target.value)}
@@ -119,14 +119,14 @@ export const AddChangesetForm: React.FunctionComponent<{ campaignID: ID; onAdd: 
                             min={1}
                             step={1}
                             size={16}
-                            className="form-control mr-1"
+                            className="form-control mr-1 e2e-track-changeset-id"
                             placeholder="Changeset number"
                             value={externalID}
                             onChange={event => setExternalID(event.target.value + '')}
                         />
                     </div>
                 </div>
-                <button type="submit" className="btn btn-primary mr-1" disabled={isLoading}>
+                <button type="submit" className="btn btn-primary mr-1 e2e-track-changeset-btn" disabled={isLoading}>
                     Add changeset
                     {isLoading && <LoadingSpinner className="ml-2 icon-inline" />}
                 </button>
