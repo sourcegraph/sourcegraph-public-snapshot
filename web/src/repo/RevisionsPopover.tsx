@@ -88,7 +88,7 @@ const GitRefPopoverNode: React.FunctionComponent<GitRefPopoverNodeProps> = ({
         <GitRefNode
             node={node}
             url={replaceRevisionInURL(location.pathname + location.search + location.hash, node.abbrevName)}
-            rootIsLink={true}
+            ancestorIsLink={true}
         >
             {isCurrent && (
                 <CircleChevronLeftIcon
@@ -109,11 +109,11 @@ interface GitCommitNodeProps {
 }
 
 const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({ node, currentCommitID, location }) => {
-    const isCurrent = currentCommitID === (node.oid as string)
+    const isCurrent = currentCommitID === node.oid
     return (
         <li key={node.oid} className="connection-popover__node revisions-popover-git-commit-node">
             <Link
-                to={replaceRevisionInURL(location.pathname + location.search + location.hash, node.oid as string)}
+                to={replaceRevisionInURL(location.pathname + location.search + location.hash, node.oid)}
                 className={`connection-popover__node-link ${
                     isCurrent ? 'connection-popover__node-link--active' : ''
                 } revisions-popover-git-commit-node__link`}

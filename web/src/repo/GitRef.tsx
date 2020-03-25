@@ -17,12 +17,12 @@ interface GitRefNodeProps {
     url?: string
 
     /** Whether the top-level element is a link. */
-    rootIsLink?: boolean
+    ancestorIsLink?: boolean
 
     children?: React.ReactNode
 }
 
-export const GitRefNode: React.FunctionComponent<GitRefNodeProps> = ({ node, url, rootIsLink, children }) => {
+export const GitRefNode: React.FunctionComponent<GitRefNodeProps> = ({ node, url, ancestorIsLink, children }) => {
     const mostRecentSig =
         node.target.commit &&
         (node.target.commit.committer && node.target.commit.committer.date > node.target.commit.author.date
@@ -32,7 +32,7 @@ export const GitRefNode: React.FunctionComponent<GitRefNodeProps> = ({ node, url
     url = url !== undefined ? url : node.url
 
     return (
-        <LinkOrSpan key={node.id} className="git-ref-node list-group-item" to={!rootIsLink ? url : undefined}>
+        <LinkOrSpan key={node.id} className="git-ref-node list-group-item" to={!ancestorIsLink ? url : undefined}>
             <span>
                 <code className="git-ref-tag-2">{node.displayName}</code>
                 {mostRecentSig && (
