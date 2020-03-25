@@ -196,7 +196,6 @@ func createActionExecutionForAction(ctx context.Context, store *ee.Store, action
 	return actionExecution, actionJobs, nil
 }
 
-// todo: this is like what we did in src-cli, can we optimize here?
 func scopeQueryForSteps(actionFile string) (string, error) {
 	var action struct {
 		ScopeQuery string `json:"scopeQuery,omitempty"`
@@ -229,17 +228,11 @@ func findRepos(ctx context.Context, scopeQuery string) ([]actionRepo, error) {
 
 	resultsResolver, err := search.Results(ctx)
 	if err != nil {
-		return []actionRepo{}, err
+		return nil, err
 	}
-
-	// todo: is this correct /cc @mrnugget
-	repos := make([]actionRepo, 0)
-	var wg sync.WaitGroup
-	var repoMutex sync.Mutex
-	sem := semaphore.NewWeighted(8)
-	// todo: are repositories guaranteed to be unique?
+	// unique map of all repos that matched the scope query
+	repoMap := make(map[string]*graphqlbackend.RepositoryResolver)
 	for _, _repo := range resultsResolver.Results() {
-		wg.Add(1)
 		repo, ok := _repo.ToRepository()
 		if !ok {
 			fm, ok := _repo.ToFileMatch()
@@ -248,6 +241,14 @@ func findRepos(ctx context.Context, scopeQuery string) ([]actionRepo, error) {
 			}
 			repo = fm.Repository()
 		}
+		repoMap[repo.Name()] = repo
+	}
+	var wg sync.WaitGroup
+	var repoMutex sync.Mutex
+	sem := semaphore.NewWeighted(16)
+	repos := make([]actionRepo, 0)
+	for _, repo := range repoMap {
+		wg.Add(1)
 		sem.Acquire(ctx, 1)
 		go func() {
 			defer wg.Done()
@@ -258,7 +259,6 @@ func findRepos(ctx context.Context, scopeQuery string) ([]actionRepo, error) {
 				return
 			}
 			target := defaultBranch.Target()
-			// todo: this is slow, but it is safer than just "master" as it's reproducible
 			oid, err := target.OID(ctx)
 			if err != nil {
 				fmt.Printf("# Skipping repository %s because we couldn't determine OID.", repo.Name())
