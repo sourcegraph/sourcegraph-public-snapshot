@@ -197,7 +197,7 @@ function createExtensionAPI(
 
         configuration: {
             get: () => configuration.get(),
-            subscribe: (next: () => void) => configuration.subscribe(next),
+            subscribe: configuration.subscribe.bind(configuration),
         },
 
         languages: {

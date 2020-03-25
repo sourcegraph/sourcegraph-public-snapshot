@@ -73,8 +73,23 @@ export class ExtConfiguration<C extends object> implements ExtConfigurationAPI<C
         return Object.freeze(new ExtConfigurationSection<C>(this.proxy, this.getData().value.final))
     }
 
-    public subscribe(observer?: PartialObserver<C>): Unsubscribable
-    public subscribe(next?: (value: C) => void, error?: (error: any) => void, complete?: () => void): Unsubscribable
+    public subscribe(observer?: PartialObserver<void>): Unsubscribable
+    /** @deprecated Use an observer instead of a complete callback */
+    public subscribe(next: null | undefined, error: null | undefined, complete: () => void): Unsubscribable
+    /** @deprecated Use an observer instead of an error callback */
+    public subscribe(
+        next: null | undefined,
+        error: (error: any) => void,
+        complete?: (() => void) | null
+    ): Unsubscribable
+    /** @deprecated Use an observer instead of a complete callback */
+    // eslint-disable-next-line @typescript-eslint/unified-signatures
+    public subscribe(next: (value: void) => void, error: null | undefined, complete: () => void): Unsubscribable
+    public subscribe(
+        next?: ((value: void) => void) | null,
+        error?: ((error: any) => void) | null,
+        complete?: (() => void) | null
+    ): Unsubscribable
     public subscribe(...args: any[]): sourcegraph.Unsubscribable {
         return this.getData().subscribe(...args)
     }
