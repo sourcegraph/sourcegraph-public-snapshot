@@ -584,15 +584,14 @@ Array [
       className="flex-grow-1 d-flex justify-content-end align-items-center"
     />
   </div>,
+  "CampaignStatus(state=PROCESSING)",
   <form
     className="e2e-campaign-form "
     id="campaign-form"
     onInvalid={[Function]}
     onReset={[Function]}
     onSubmit={[Function]}
-  >
-    CampaignStatus(state=PROCESSING)
-  </form>,
+  />,
   <div
     className="card mt-2"
   >
@@ -989,15 +988,14 @@ Array [
       </details>
     </span>
   </div>,
+  "CampaignStatus(state=PROCESSING)",
   <form
     className="e2e-campaign-form "
     id="campaign-form"
     onInvalid={[Function]}
     onReset={[Function]}
     onSubmit={[Function]}
-  >
-    CampaignStatus(state=PROCESSING)
-  </form>,
+  />,
   <div
     className="card mt-2"
   >

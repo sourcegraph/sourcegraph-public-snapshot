@@ -414,10 +414,10 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 formID={campaignFormID}
             />
             {alertError && <ErrorAlert error={alertError} />}
+            {campaign && !updateMode && !['saving', 'editing'].includes(mode) && (
+                <CampaignStatus campaign={campaign} onPublish={onPublish} onRetry={onRetry} />
+            )}
             <Form id={campaignFormID} onSubmit={onSubmit} onReset={onCancel} className="e2e-campaign-form">
-                {campaign && !updateMode && !['saving', 'editing'].includes(mode) && (
-                    <CampaignStatus campaign={campaign} onPublish={onPublish} onRetry={onRetry} />
-                )}
                 {['saving', 'editing'].includes(mode) && (
                     <>
                         <h3>Details</h3>
