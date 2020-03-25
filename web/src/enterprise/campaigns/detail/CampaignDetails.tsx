@@ -149,7 +149,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         )
                     )
                 ),
-                distinctUntilChanged(isEqual)
+                distinctUntilChanged((a, b) => isEqual(a, b))
             )
             .subscribe({
                 next: fetchedCampaign => {
