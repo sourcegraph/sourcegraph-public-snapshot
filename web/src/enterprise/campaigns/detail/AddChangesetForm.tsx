@@ -36,7 +36,7 @@ async function addChangeset({
     const changeset = dataOrThrowErrors(
         await mutateGraphQL(
             gql`
-                mutation CreateChangeSet($repositoryID: ID!, $externalID: String!) {
+                mutation CreateChangeset($repositoryID: ID!, $externalID: String!) {
                     createChangesets(input: { repository: $repositoryID, externalID: $externalID }) {
                         id
                     }
@@ -126,7 +126,7 @@ export const AddChangesetForm: React.FunctionComponent<{ campaignID: ID; onAdd: 
                         />
                     </div>
                 </div>
-                <button type="submit" className="btn btn-primary mr-1 e2e-track-changeset-btn">
+                <button type="submit" className="btn btn-primary mr-1 e2e-track-changeset-btn" disabled={isLoading}>
                     Add changeset
                     {isLoading && <LoadingSpinner className="ml-2 icon-inline" />}
                 </button>

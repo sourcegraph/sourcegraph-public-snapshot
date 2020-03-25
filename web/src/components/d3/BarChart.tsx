@@ -74,15 +74,11 @@ export class BarChart<T extends BarChartSeries> extends React.Component<Props<T>
 
         const columns = xLabels.length
 
-        const x = scaleBand()
-            .domain(xLabels)
-            .rangeRound([0, width])
+        const x = scaleBand().domain(xLabels).rangeRound([0, width])
         const y = scaleLinear()
             .domain([0, Math.max(...yHeights)])
             .range([height, 0])
-        const z = scaleOrdinal<string, string>()
-            .domain(series)
-            .range(barColors)
+        const z = scaleOrdinal<string, string>().domain(series).range(barColors)
         const xAxis = axisBottom(x)
 
         const svg = select(this.svgRef)
@@ -179,12 +175,9 @@ export class BarChart<T extends BarChartSeries> extends React.Component<Props<T>
 
 // Source: Mike Bostock's "Wrapping Long Labels": https://bl.ocks.org/mbostock/7555321
 function wrapLabel(text: Selection<any, any, any, any>, width: number): void {
-    text.each(function(): void {
+    text.each(function (): void {
         const text = select(this)
-        const words = text
-            .text()
-            .split(/\s+/)
-            .reverse()
+        const words = text.text().split(/\s+/).reverse()
         const lineHeight = 1.1
         const y = text.attr('y')
         const dy = parseFloat(text.attr('dy'))

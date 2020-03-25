@@ -9,6 +9,7 @@ import (
 	"github.com/ericchiang/k8s"
 	corev1 "github.com/ericchiang/k8s/apis/core/v1"
 	metav1 "github.com/ericchiang/k8s/apis/meta/v1"
+	"github.com/google/go-cmp/cmp"
 )
 
 type k8sTestClient struct {
@@ -51,6 +52,11 @@ func stringPtr(val string) *string {
 	return &str
 }
 
+func int32Ptr(val int32) *int32 {
+	i := val
+	return &i
+}
+
 func TestClusterScan(t *testing.T) {
 	var eps []Endpoint
 
@@ -72,6 +78,23 @@ func TestClusterScan(t *testing.T) {
 		Subsets: []*corev1.EndpointSubset{{
 			Addresses: []*corev1.EndpointAddress{{
 				Ip: stringPtr("192.168.10.0"),
+			}},
+		}},
+	}
+	ktc.getResponses["no-port"] = &corev1.Endpoints{
+		Subsets: []*corev1.EndpointSubset{{
+			Addresses: []*corev1.EndpointAddress{{
+				Ip: stringPtr("192.168.10.1"),
+			}},
+		}},
+	}
+	ktc.getResponses["no-prom-port"] = &corev1.Endpoints{
+		Subsets: []*corev1.EndpointSubset{{
+			Addresses: []*corev1.EndpointAddress{{
+				Ip: stringPtr("192.168.10.2"),
+			}},
+			Ports: []*corev1.EndpointPort{{
+				Port: int32Ptr(2324),
 			}},
 		}},
 	}
@@ -100,6 +123,15 @@ func TestClusterScan(t *testing.T) {
 			{
 				Metadata: &metav1.ObjectMeta{
 					Namespace: stringPtr("foospace"),
+					Name:      stringPtr("no-prom-port"),
+					Annotations: map[string]string{
+						"sourcegraph.prometheus/scrape": "true",
+					},
+				},
+			},
+			{
+				Metadata: &metav1.ObjectMeta{
+					Namespace: stringPtr("foospace"),
 					Name:      stringPtr("no-port"),
 					Annotations: map[string]string{
 						"sourcegraph.prometheus/scrape": "true",
@@ -111,12 +143,15 @@ func TestClusterScan(t *testing.T) {
 
 	cs.scanCluster()
 
-	if len(eps) != 1 {
-		t.Errorf("expected one found endpoint")
-		return
-	}
+	want := []Endpoint{{
+		Service: "gitserver",
+		Host:    "192.168.10.0:2323",
+	}, {
+		Service: "no-prom-port",
+		Host:    "192.168.10.2:2324",
+	}}
 
-	if eps[0].Service != "gitserver" || eps[0].Host != "192.168.10.0:2323" {
-		t.Errorf("expected gitserver-192.168.10.0:2323, got %+v", eps[0])
+	if !cmp.Equal(want, eps) {
+		t.Errorf("mismatch (-want +got):\n%s", cmp.Diff(want, eps))
 	}
 }

@@ -48,8 +48,7 @@ export function getContext(): CodeHostContext {
     try {
         revSpec = getRevSpecFromRevisionSelector()
     } catch (err) {
-        // RevSpec is optional in CodeHostContext, log the error for debug purposes
-        console.error('Could not determine revSpec from revision selector', err)
+        // RevSpec is optional in CodeHostContext
     }
     return {
         ...repoSpec,

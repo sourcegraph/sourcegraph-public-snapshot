@@ -4,10 +4,10 @@ import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { ChangesetNode, ChangesetNodeProps } from './ChangesetNode'
 import { ThemeProps } from '../../../../../../shared/src/theme'
 import { FilteredConnection, FilteredConnectionQueryArgs, Connection } from '../../../../components/FilteredConnection'
-import { Observable, Subject } from 'rxjs'
-import { DEFAULT_CHANGESET_LIST_COUNT } from '../presentation'
+import { Observable, Subject, merge } from 'rxjs'
+import { DEFAULT_CHANGESET_PATCH_LIST_COUNT } from '../presentation'
 import { upperFirst, lowerCase } from 'lodash'
-import { queryChangesetPlans, queryChangesets as _queryChangesets } from '../backend'
+import { queryChangesets as _queryChangesets } from '../backend'
 import { repeatWhen, delay, withLatestFrom, map, filter } from 'rxjs/operators'
 import { ExtensionsControllerProps } from '../../../../../../shared/src/extensions/controller'
 import { createHoverifier, HoveredToken } from '@sourcegraph/codeintellify'
@@ -31,7 +31,7 @@ import { propertyIsDefined } from '../../../../../../shared/src/util/types'
 import { useObservable } from '../../../../../../shared/src/util/useObservable'
 
 interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, ExtensionsControllerProps {
-    campaign: Pick<GQL.ICampaignPlan, '__typename' | 'id'> | Pick<GQL.ICampaign, '__typename' | 'id' | 'closedAt'>
+    campaign: Pick<GQL.ICampaign, 'id' | 'closedAt'>
     history: H.History
     location: H.Location
     campaignUpdates: Subject<void>
@@ -41,7 +41,7 @@ interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, Extens
     queryChangesets?: (
         campaignID: GQL.ID,
         args: FilteredConnectionQueryArgs
-    ) => Observable<Connection<GQL.IExternalChangeset | GQL.IChangesetPlan>>
+    ) => Observable<Connection<GQL.IExternalChangeset>>
 }
 
 function getLSPTextDocumentPositionParams(
@@ -58,7 +58,7 @@ function getLSPTextDocumentPositionParams(
 }
 
 /**
- * A list of a campaign's or campaign preview's changesets.
+ * A list of a campaign's changesets.
  */
 export const CampaignChangesets: React.FunctionComponent<Props> = ({
     campaign,
@@ -77,16 +77,11 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
     const [checkState, setCheckState] = useState<GQL.ChangesetCheckState | undefined>()
 
     const queryChangesetsConnection = useCallback(
-        (args: FilteredConnectionQueryArgs) => {
-            const queryObservable: Observable<
-                GQL.IChangesetPlanConnection | Connection<GQL.IExternalChangeset | GQL.IChangesetPlan>
-            > =
-                campaign.__typename === 'CampaignPlan'
-                    ? queryChangesetPlans(campaign.id, args)
-                    : queryChangesets(campaign.id, { ...args, state, reviewState, checkState })
-            return queryObservable.pipe(repeatWhen(obs => obs.pipe(delay(5000))))
-        },
-        [campaign.id, campaign.__typename, state, reviewState, checkState, queryChangesets]
+        (args: FilteredConnectionQueryArgs) =>
+            queryChangesets(campaign.id, { ...args, state, reviewState, checkState }).pipe(
+                repeatWhen(obs => merge(obs, changesetUpdates).pipe(delay(5000)))
+            ),
+        [campaign.id, state, reviewState, checkState, queryChangesets, changesetUpdates]
     )
 
     const containerElements = useMemo(() => new Subject<HTMLElement | null>(), [])
@@ -114,6 +109,7 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
                     map(([, hoverOverlayElement, relativeElement]) => ({
                         hoverOverlayElement,
                         // The root component element is guaranteed to be rendered after a componentDidUpdate
+                        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                         relativeElement: relativeElement!,
                     })),
                     // Can't reposition HoverOverlay if it wasn't rendered
@@ -189,28 +185,25 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
 
     return (
         <>
-            {campaign.__typename === 'Campaign' && changesetFiltersRow}
+            {changesetFiltersRow}
             <div className="list-group position-relative" ref={nextContainerElement}>
-                <FilteredConnection<GQL.IExternalChangeset | GQL.IChangesetPlan, Omit<ChangesetNodeProps, 'node'>>
+                <FilteredConnection<GQL.IExternalChangeset, Omit<ChangesetNodeProps, 'node'>>
                     className="mt-2"
-                    updates={changesetUpdates}
                     nodeComponent={ChangesetNode}
                     nodeComponentProps={{
                         isLightTheme,
                         history,
                         location,
                         campaignUpdates,
-                        enablePublishing: campaign.__typename === 'Campaign' && !campaign.closedAt,
                         extensionInfo: { extensionsController, hoverifier },
                     }}
                     queryConnection={queryChangesetsConnection}
                     hideSearch={true}
-                    defaultFirst={DEFAULT_CHANGESET_LIST_COUNT}
+                    defaultFirst={DEFAULT_CHANGESET_PATCH_LIST_COUNT}
                     noun="changeset"
                     pluralNoun="changesets"
                     history={history}
                     location={location}
-                    noShowLoaderOnSlowLoad={true}
                     useURLQuery={false}
                 />
                 {hoverState?.hoverOverlayProps && (

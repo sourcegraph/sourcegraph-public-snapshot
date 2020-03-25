@@ -5,8 +5,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
-	"gopkg.in/inconshreveable/log15.v2"
 )
 
 func (s *Server) RegisterMetrics() {

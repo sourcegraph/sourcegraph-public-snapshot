@@ -9,7 +9,7 @@ import (
 
 	"github.com/ericchiang/k8s"
 	corev1 "github.com/ericchiang/k8s/apis/core/v1"
-	"gopkg.in/inconshreveable/log15.v2"
+	"github.com/inconshreveable/log15"
 )
 
 // Represents an endpoint
@@ -143,14 +143,13 @@ func (cs *clusterScanner) scanCluster() {
 			continue
 		}
 
-		portStr := svc.Metadata.Annotations["prometheus.io/port"]
-		if portStr == "" {
-			continue
-		}
-		port, err := strconv.Atoi(portStr)
-		if err != nil {
-			log15.Debug("k8s prometheus.io/port annotation for service is not an integer", "service", svcName, "port", portStr)
-			continue
+		var port int
+		if portStr := svc.Metadata.Annotations["prometheus.io/port"]; portStr != "" {
+			port, err = strconv.Atoi(portStr)
+			if err != nil {
+				log15.Debug("k8s prometheus.io/port annotation for service is not an integer", "service", svcName, "port", portStr)
+				continue
+			}
 		}
 
 		var endpoints corev1.Endpoints
@@ -161,13 +160,24 @@ func (cs *clusterScanner) scanCluster() {
 		}
 
 		for _, subset := range endpoints.Subsets {
+			var ports []int
+			if port != 0 {
+				ports = []int{port}
+			} else {
+				for _, port := range subset.GetPorts() {
+					ports = append(ports, int(port.GetPort()))
+				}
+			}
+
 			for _, addr := range subset.Addresses {
-				host := addrToHost(addr, port)
-				if host != "" {
-					scanResults = append(scanResults, Endpoint{
-						Service: svcName,
-						Host:    host,
-					})
+				for _, port := range ports {
+					host := addrToHost(addr, port)
+					if host != "" {
+						scanResults = append(scanResults, Endpoint{
+							Service: svcName,
+							Host:    host,
+						})
+					}
 				}
 			}
 		}

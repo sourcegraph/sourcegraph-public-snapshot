@@ -174,7 +174,7 @@ func (r *changesetResolver) Repository(ctx context.Context) (*graphqlbackend.Rep
 func (r *changesetResolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampaignArgs) (graphqlbackend.CampaignsConnectionResolver, error) {
 	opts := ee.ListCampaignsOpts{
 		ChangesetID: r.Changeset.ID,
-		HasPlan:     args.HasPlan,
+		HasPatchSet: args.HasPatchSet,
 	}
 	state, err := parseCampaignState(args.State)
 	if err != nil {

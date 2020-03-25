@@ -7,13 +7,15 @@ const PROPS = {
     onRetry: () => undefined,
 }
 
-const CAMPAIGN: Pick<GQL.ICampaign, '__typename' | 'closedAt' | 'publishedAt' | 'changesets'> = {
-    __typename: 'Campaign',
+const CAMPAIGN: Pick<GQL.ICampaign, 'closedAt' | 'viewerCanAdminister' | 'publishedAt'> & {
+    changesets: Pick<GQL.ICampaign['changesets'], 'totalCount'>
+} = {
     closedAt: null,
+    viewerCanAdminister: true,
     publishedAt: '2020-01-01',
     changesets: {
         totalCount: 0,
-    } as GQL.IExternalChangesetConnection,
+    },
 }
 
 describe('CampaignStatus', () => {
@@ -28,6 +30,7 @@ describe('CampaignStatus', () => {
                             campaign={{
                                 ...campaign,
                                 closedAt: '2020-01-01',
+                                viewerCanAdminister,
                                 status: {
                                     completedCount: 1,
                                     pendingCount: 0,
@@ -68,7 +71,7 @@ describe('CampaignStatus', () => {
                             campaign={{
                                 ...campaign,
                                 publishedAt: null,
-                                changesets: { totalCount: 1 } as GQL.IExternalChangesetConnection,
+                                changesets: { totalCount: 1 },
                                 status: {
                                     completedCount: 1,
                                     pendingCount: 0,

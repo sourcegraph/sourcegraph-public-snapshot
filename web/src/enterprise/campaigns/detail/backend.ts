@@ -7,15 +7,14 @@ import {
     ICampaign,
     IUpdateCampaignInput,
     ICreateCampaignInput,
-    ICampaignPlan,
-    IChangesetPlansOnCampaignArguments,
-    IChangesetPlanConnection,
     IChangesetsOnCampaignArguments,
     IEmptyResponse,
-    IChangesetPlan,
     IExternalChangeset,
     IFileDiffConnection,
     IPreviewFileDiffConnection,
+    IPatchSet,
+    IPatchesOnCampaignArguments,
+    IPatchConnection,
 } from '../../../../../shared/src/graphql/schema'
 import { DiffStatFields, FileDiffHunkRangeFields, PreviewFileDiffFields, FileDiffFields } from '../../../backend/diff'
 import { Connection, FilteredConnectionQueryArgs } from '../../../components/FilteredConnection'
@@ -58,7 +57,7 @@ const campaignFragment = gql`
                 }
             }
         }
-        changesetPlans(first: 10000) {
+        patches(first: 10000) {
             totalCount
             nodes {
                 id
@@ -73,7 +72,7 @@ const campaignFragment = gql`
                 }
             }
         }
-        plan {
+        patchSet {
             id
         }
         # TODO move to separate query and configure from/to
@@ -91,11 +90,11 @@ const campaignFragment = gql`
     ${DiffStatFields}
 `
 
-const campaignPlanFragment = gql`
-    fragment CampaignPlanFields on CampaignPlan {
+const patchSetFragment = gql`
+    fragment PatchSetFields on PatchSet {
         __typename
         id
-        changesetPlans(first: 10000) {
+        patches(first: 10000) {
             totalCount
             nodes {
                 id
@@ -145,18 +144,20 @@ export async function createCampaign(input: ICreateCampaignInput): Promise<ICamp
     return dataOrThrowErrors(result).createCampaign
 }
 
-export async function retryCampaign(campaignID: ID): Promise<void> {
+export async function retryCampaign(campaignID: ID): Promise<ICampaign> {
     const result = await mutateGraphQL(
         gql`
             mutation RetryCampaign($campaign: ID!) {
                 retryCampaign(campaign: $campaign) {
-                    id
+                    ...CampaignFragment
                 }
             }
+
+            ${campaignFragment}
         `,
         { campaign: campaignID }
     ).toPromise()
-    dataOrThrowErrors(result)
+    return dataOrThrowErrors(result).retryCampaign
 }
 
 export async function closeCampaign(campaign: ID, closeChangesets = false): Promise<void> {
@@ -214,28 +215,28 @@ export const fetchCampaignById = (campaign: ID): Observable<ICampaign | null> =>
         })
     )
 
-export const fetchCampaignPlanById = (campaignPlan: ID): Observable<ICampaignPlan | null> =>
+export const fetchPatchSetById = (patchSet: ID): Observable<IPatchSet | null> =>
     queryGraphQL(
         gql`
-            query CampaignPlanByID($campaignPlan: ID!) {
-                node(id: $campaignPlan) {
+            query PatchSetByID($patchSet: ID!) {
+                node(id: $patchSet) {
                     __typename
-                    ... on CampaignPlan {
-                        ...CampaignPlanFields
+                    ... on PatchSet {
+                        ...PatchSetFields
                     }
                 }
             }
-            ${campaignPlanFragment}
+            ${patchSetFragment}
         `,
-        { campaignPlan }
+        { patchSet }
     ).pipe(
         map(dataOrThrowErrors),
         map(({ node }) => {
             if (!node) {
                 return null
             }
-            if (node.__typename !== 'CampaignPlan') {
-                throw new Error(`The given ID is a ${node.__typename}, not a CampaignPlan`)
+            if (node.__typename !== 'PatchSet') {
+                throw new Error(`The given ID is a ${node.__typename}, not a PatchSet`)
             }
             return node
         })
@@ -244,7 +245,7 @@ export const fetchCampaignPlanById = (campaignPlan: ID): Observable<ICampaignPla
 export const queryChangesets = (
     campaign: ID,
     { first, state, reviewState, checkState }: IChangesetsOnCampaignArguments
-): Observable<Connection<IExternalChangeset | IChangesetPlan>> =>
+): Observable<Connection<IExternalChangeset>> =>
     queryGraphQL(
         gql`
             query CampaignChangesets(
@@ -304,26 +305,6 @@ export const queryChangesets = (
                                 }
                             }
                         }
-                        changesetPlans(first: $first) {
-                            totalCount
-                            nodes {
-                                __typename
-                                id
-                                repository {
-                                    id
-                                    name
-                                    url
-                                }
-                                publicationEnqueued
-                                diff {
-                                    fileDiffs {
-                                        diffStat {
-                                            ...DiffStatFields
-                                        }
-                                    }
-                                }
-                            }
-                        }
                     }
                 }
             }
@@ -340,24 +321,20 @@ export const queryChangesets = (
             if (node.__typename !== 'Campaign') {
                 throw new Error(`The given ID is a ${node.__typename}, not a Campaign`)
             }
-            return {
-                totalCount: node.changesetPlans.totalCount + node.changesets.totalCount,
-                nodes: [...node.changesetPlans.nodes, ...node.changesets.nodes],
-            }
+            return node.changesets
         })
     )
-
-export const queryChangesetPlans = (
-    campaignPlan: ID,
-    { first }: IChangesetPlansOnCampaignArguments
-): Observable<IChangesetPlanConnection> =>
+export const queryPatchesFromCampaign = (
+    campaign: ID,
+    { first }: IPatchesOnCampaignArguments
+): Observable<IPatchConnection> =>
     queryGraphQL(
         gql`
-            query CampaignChangesets($campaignPlan: ID!, $first: Int) {
-                node(id: $campaignPlan) {
+            query CampaignPatches($campaign: ID!, $first: Int) {
+                node(id: $campaign) {
                     __typename
-                    ... on CampaignPlan {
-                        changesetPlans(first: $first) {
+                    ... on Campaign {
+                        patches(first: $first) {
                             totalCount
                             nodes {
                                 __typename
@@ -383,17 +360,67 @@ export const queryChangesetPlans = (
 
             ${DiffStatFields}
         `,
-        { campaignPlan, first }
+        { campaign, first }
     ).pipe(
         map(dataOrThrowErrors),
         map(({ node }) => {
             if (!node) {
-                throw new Error(`CampaignPlan with ID ${campaignPlan} does not exist`)
+                throw new Error(`Campaign with ID ${campaign} does not exist`)
             }
-            if (node.__typename !== 'CampaignPlan') {
+            if (node.__typename !== 'Campaign') {
                 throw new Error(`The given ID is a ${node.__typename}, not a Campaign`)
             }
-            return node.changesetPlans
+            return node.patches
+        })
+    )
+
+export const queryPatchesFromPatchSet = (
+    patchSet: ID,
+    { first }: IPatchesOnCampaignArguments
+): Observable<IPatchConnection> =>
+    queryGraphQL(
+        gql`
+            query PatchSetPatches($patchSet: ID!, $first: Int) {
+                node(id: $patchSet) {
+                    __typename
+                    ... on PatchSet {
+                        patches(first: $first) {
+                            totalCount
+                            nodes {
+                                __typename
+                                id
+                                repository {
+                                    id
+                                    name
+                                    url
+                                }
+                                publicationEnqueued
+                                diff {
+                                    fileDiffs {
+                                        diffStat {
+                                            ...DiffStatFields
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            ${DiffStatFields}
+        `,
+        { patchSet, first }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(({ node }) => {
+            if (!node) {
+                throw new Error(`PatchSet with ID ${patchSet} does not exist`)
+            }
+            if (node.__typename !== 'PatchSet') {
+                throw new Error(`The given ID is a ${node.__typename}, not a PatchSet`)
+            }
+            return node.patches
         })
     )
 
@@ -412,16 +439,16 @@ export async function publishCampaign(campaign: ID): Promise<ICampaign> {
     return dataOrThrowErrors(result).publishCampaign
 }
 
-export async function publishChangeset(changesetPlan: ID): Promise<IEmptyResponse> {
+export async function publishChangeset(patch: ID): Promise<IEmptyResponse> {
     const result = await mutateGraphQL(
         gql`
-            mutation PublishChangeset($changesetPlan: ID!) {
-                publishChangeset(changesetPlan: $changesetPlan) {
+            mutation PublishChangeset($patch: ID!) {
+                publishChangeset(patch: $patch) {
                     alwaysNil
                 }
             }
         `,
-        { changesetPlan }
+        { patch }
     ).toPromise()
     return dataOrThrowErrors(result).publishChangeset
 }
@@ -491,16 +518,16 @@ export const queryExternalChangesetFileDiffs = (
         })
     )
 
-export const queryChangesetPlanFileDiffs = (
-    changesetPlan: ID,
+export const queryPatchFileDiffs = (
+    patch: ID,
     { first }: FilteredConnectionQueryArgs
 ): Observable<IPreviewFileDiffConnection> =>
     queryGraphQL(
         gql`
-            query ChangesetPlanFileDiffs($changesetPlan: ID!, $first: Int) {
-                node(id: $changesetPlan) {
+            query PatchFileDiffs($patch: ID!, $first: Int) {
+                node(id: $patch) {
                     __typename
-                    ... on ChangesetPlan {
+                    ... on Patch {
                         diff {
                             fileDiffs(first: $first) {
                                 nodes {
@@ -525,18 +552,18 @@ export const queryChangesetPlanFileDiffs = (
 
             ${DiffStatFields}
         `,
-        { changesetPlan, first }
+        { patch, first }
     ).pipe(
         map(dataOrThrowErrors),
         map(({ node }) => {
             if (!node) {
-                throw new Error(`ChangesetPlan with ID ${changesetPlan} does not exist`)
+                throw new Error(`Patch with ID ${patch} does not exist`)
             }
-            if (node.__typename !== 'ChangesetPlan') {
-                throw new Error(`The given ID is a ${node.__typename}, not an ChangesetPlan`)
+            if (node.__typename !== 'Patch') {
+                throw new Error(`The given ID is a ${node.__typename}, not a Patch`)
             }
             if (!node.diff) {
-                throw new Error('The given ChangesetPlan has no diff')
+                throw new Error('The given Patch has no diff')
             }
             return node.diff.fileDiffs
         })

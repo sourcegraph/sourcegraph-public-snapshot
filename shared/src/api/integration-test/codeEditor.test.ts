@@ -47,10 +47,7 @@ describe('CodeEditor (integration)', () => {
             ])
             await extensionAPI.internal.sync()
             expect(
-                await services.textDocumentDecoration
-                    .getDecorations({ uri: 'file:///f' })
-                    .pipe(take(1))
-                    .toPromise()
+                await services.textDocumentDecoration.getDecorations({ uri: 'file:///f' }).pipe(take(1)).toPromise()
             ).toEqual([
                 {
                     range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } },
@@ -62,10 +59,7 @@ describe('CodeEditor (integration)', () => {
             editor.setDecorations(dt, [])
             await extensionAPI.internal.sync()
             expect(
-                await services.textDocumentDecoration
-                    .getDecorations({ uri: 'file:///f' })
-                    .pipe(take(1))
-                    .toPromise()
+                await services.textDocumentDecoration.getDecorations({ uri: 'file:///f' }).pipe(take(1)).toPromise()
             ).toEqual(null)
         })
 
@@ -92,10 +86,7 @@ describe('CodeEditor (integration)', () => {
             ])
             await extensionAPI.internal.sync()
             expect(
-                await services.textDocumentDecoration
-                    .getDecorations({ uri: 'file:///f' })
-                    .pipe(take(1))
-                    .toPromise()
+                await services.textDocumentDecoration.getDecorations({ uri: 'file:///f' }).pipe(take(1)).toPromise()
             ).toEqual([
                 {
                     range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } },
@@ -122,10 +113,7 @@ describe('CodeEditor (integration)', () => {
             ])
             await extensionAPI.internal.sync()
             expect(
-                await services.textDocumentDecoration
-                    .getDecorations({ uri: 'file:///f' })
-                    .pipe(take(1))
-                    .toPromise()
+                await services.textDocumentDecoration.getDecorations({ uri: 'file:///f' }).pipe(take(1)).toPromise()
             ).toEqual([
                 {
                     range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } },
@@ -145,10 +133,7 @@ describe('CodeEditor (integration)', () => {
             editor.setDecorations(dt2, [])
             await extensionAPI.internal.sync()
             expect(
-                await services.textDocumentDecoration
-                    .getDecorations({ uri: 'file:///f' })
-                    .pipe(take(1))
-                    .toPromise()
+                await services.textDocumentDecoration.getDecorations({ uri: 'file:///f' }).pipe(take(1)).toPromise()
             ).toEqual([
                 {
                     range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } },
@@ -186,10 +171,7 @@ describe('CodeEditor (integration)', () => {
             // Both sets of decorations should be displayed
             await extensionAPI.internal.sync()
             expect(
-                await services.textDocumentDecoration
-                    .getDecorations({ uri: 'file:///f' })
-                    .pipe(take(1))
-                    .toPromise()
+                await services.textDocumentDecoration.getDecorations({ uri: 'file:///f' }).pipe(take(1)).toPromise()
             ).toEqual([
                 {
                     range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } },

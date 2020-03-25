@@ -46,6 +46,8 @@ type StoreListReposArgs struct {
 	Limit int64
 	// PerPage determines the number of repos returned on each page. Zero means it defaults to 10000.
 	PerPage int64
+	// Only include private repositories.
+	PrivateOnly bool
 
 	// UseOr decides between ANDing or ORing the predicates together.
 	UseOr bool
@@ -372,6 +374,10 @@ func listReposQuery(args StoreListReposArgs) paginatedQuery {
 			er = append(er, sqlf.Sprintf("(external_id = %s AND external_service_type = %s AND external_service_id = %s)", spec.ID, spec.ServiceType, spec.ServiceID))
 		}
 		preds = append(preds, sqlf.Sprintf("(%s)", sqlf.Join(er, "\n OR ")))
+	}
+
+	if args.PrivateOnly {
+		preds = append(preds, sqlf.Sprintf("private = TRUE"))
 	}
 
 	if len(preds) == 0 {

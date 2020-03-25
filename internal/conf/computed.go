@@ -320,6 +320,14 @@ func StructuralSearchEnabled() bool {
 	return val == "enabled"
 }
 
+func AndOrQueryEnabled() bool {
+	e := Get().ExperimentalFeatures
+	if e == nil || e.AndOrQuery == "" {
+		return false
+	}
+	return e.AndOrQuery == "enabled"
+}
+
 func SearchMultipleRevisionsPerRepository() bool {
 	x := ExperimentalFeatures()
 	return x.SearchMultipleRevisionsPerRepository != nil && *x.SearchMultipleRevisionsPerRepository

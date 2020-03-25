@@ -49,9 +49,13 @@ type AutomaticRetryOptions struct {
 
 var Plugins = make(map[string]interface{})
 
-// OnEveryStepOpts are e.g. commands that are run on every AddStep, similar to
+// BeforeEveryStepOpts are e.g. commands that are run before every AddStep, similar to
 // Plugins.
-var OnEveryStepOpts []StepOpt
+var BeforeEveryStepOpts []StepOpt
+
+// AfterEveryStepOpts are e.g. that are run at the ende of every AddStep, helpful for
+// post-processing
+var AfterEveryStepOpts []StepOpt
 
 func (p *Pipeline) AddStep(label string, opts ...StepOpt) {
 	step := &Step{
@@ -59,10 +63,13 @@ func (p *Pipeline) AddStep(label string, opts ...StepOpt) {
 		Env:     make(map[string]string),
 		Plugins: Plugins,
 	}
-	for _, opt := range OnEveryStepOpts {
+	for _, opt := range BeforeEveryStepOpts {
 		opt(step)
 	}
 	for _, opt := range opts {
+		opt(step)
+	}
+	for _, opt := range AfterEveryStepOpts {
 		opt(step)
 	}
 	p.Steps = append(p.Steps, step)

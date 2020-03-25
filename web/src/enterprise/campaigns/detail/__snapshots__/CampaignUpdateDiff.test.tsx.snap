@@ -45,8 +45,7 @@ exports[`CampaignUpdateDiff renders 1`] = `
         type="button"
       >
         <span>
-          To be created
-           
+          To be created 
           <span
             className="badge badge-secondary badge-pill"
           >
@@ -61,8 +60,7 @@ exports[`CampaignUpdateDiff renders 1`] = `
         type="button"
       >
         <span>
-          To be updated
-           
+          To be updated 
           <span
             className="badge badge-secondary badge-pill"
           >
@@ -77,8 +75,7 @@ exports[`CampaignUpdateDiff renders 1`] = `
         type="button"
       >
         <span>
-          Unmodified
-           
+          Unmodified 
           <span
             className="badge badge-secondary badge-pill"
           >
@@ -93,8 +90,7 @@ exports[`CampaignUpdateDiff renders 1`] = `
         type="button"
       >
         <span>
-          To be closed
-           
+          To be closed 
           <span
             className="badge badge-secondary badge-pill"
           >

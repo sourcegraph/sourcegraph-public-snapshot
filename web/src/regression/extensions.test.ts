@@ -57,7 +57,7 @@ describe('Sourcegraph extensions regression test suite', () => {
     let driver: Driver
     let graphQLClient: GraphQLClient
     let resourceManager: TestResourceManager
-    before(async function() {
+    before(async function () {
         this.timeout(60 * 1000)
         ;({ driver, gqlClient: graphQLClient, resourceManager } = await getTestTools(config))
         resourceManager.add(
@@ -96,7 +96,7 @@ describe('Sourcegraph extensions regression test suite', () => {
         }
     })
 
-    test('Codecov extension', async function() {
+    test('Codecov extension', async function () {
         this.timeout(30 * 1000)
         await activateAndConfigureExtension(
             {
@@ -140,7 +140,7 @@ describe('Sourcegraph extensions regression test suite', () => {
         )
     })
 
-    test('Datadog extension', async function() {
+    test('Datadog extension', async function () {
         this.timeout(10 * 1000)
         await activateAndConfigureExtension(
             {
@@ -163,7 +163,7 @@ describe('Sourcegraph extensions regression test suite', () => {
         )
     })
 
-    test('Sentry extension', async function() {
+    test('Sentry extension', async function () {
         this.timeout(10 * 1000)
         await activateAndConfigureExtension(
             {

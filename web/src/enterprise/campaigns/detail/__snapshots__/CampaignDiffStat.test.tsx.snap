@@ -13,7 +13,7 @@ exports[`CampaignDiffStat for campaign 1`] = `
 </div>
 `;
 
-exports[`CampaignDiffStat for campaignplan 1`] = `
+exports[`CampaignDiffStat for patch set 1`] = `
 <div
   className="abc"
 >
@@ -28,4 +28,4 @@ exports[`CampaignDiffStat for campaignplan 1`] = `
 
 exports[`CampaignDiffStat hidden for empty campaign 1`] = `<React.Fragment />`;
 
-exports[`CampaignDiffStat hidden for empty campaignplan 1`] = `<React.Fragment />`;
+exports[`CampaignDiffStat hidden for empty patch set 1`] = `<React.Fragment />`;

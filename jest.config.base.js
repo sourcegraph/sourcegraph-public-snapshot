@@ -11,7 +11,7 @@ const config = {
   collectCoverage: !!process.env.CI,
   collectCoverageFrom: ['<rootDir>/src/**/*.{ts,tsx}'],
   coverageDirectory: '<rootDir>/coverage',
-  coveragePathIgnorePatterns: [/\.test\.tsx?$/.source],
+  coveragePathIgnorePatterns: [/\.(test|story)\.tsx?$/.source],
   roots: ['<rootDir>/src'],
 
   // Transform packages that do not distribute CommonJS packages (typically because they only distribute ES6

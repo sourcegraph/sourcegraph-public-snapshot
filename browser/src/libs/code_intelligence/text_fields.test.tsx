@@ -62,9 +62,7 @@ describe('text_fields', () => {
 
             // Add text field.
             mutations.next([{ addedNodes: [document.body], removedNodes: [] }])
-            await from(services.editor.editorUpdates)
-                .pipe(first())
-                .toPromise()
+            await from(services.editor.editorUpdates).pipe(first()).toPromise()
             expect([...services.editor.editors.values()]).toEqual([
                 {
                     editorId: 'editor#0',
@@ -86,9 +84,7 @@ describe('text_fields', () => {
             // Remove text field.
             textFieldElement.remove()
             mutations.next([{ addedNodes: [], removedNodes: [textFieldElement] }])
-            await from(services.editor.editorUpdates)
-                .pipe(first())
-                .toPromise()
+            await from(services.editor.editorUpdates).pipe(first()).toPromise()
             expect(services.editor.editors.size).toEqual(0)
         })
     })

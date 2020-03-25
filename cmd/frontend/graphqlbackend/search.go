@@ -12,7 +12,7 @@ import (
 	"strings"
 	"sync"
 
-	"gopkg.in/inconshreveable/log15.v2"
+	"github.com/inconshreveable/log15"
 
 	"github.com/neelance/parallel"
 	"github.com/pkg/errors"
@@ -30,7 +30,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/query/syntax"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -86,9 +85,17 @@ func NewSearchImplementer(args *SearchArgs) (SearchImplementer, error) {
 		queryString = args.Query
 	}
 
-	q, p, err := query.Process(queryString, searchType)
-	if err != nil {
-		return alertForQuery(queryString, err), nil
+	var queryInfo query.QueryInfo
+	if conf.AndOrQueryEnabled() {
+		queryInfo, err = query.ParseAndOr(args.Query)
+		if err != nil {
+			return alertForQuery(args.Query, err), nil
+		}
+	} else {
+		queryInfo, err = query.Process(queryString, searchType)
+		if err != nil {
+			return alertForQuery(queryString, err), nil
+		}
 	}
 
 	// If the request is a paginated one, decode those arguments now.
@@ -110,8 +117,7 @@ func NewSearchImplementer(args *SearchArgs) (SearchImplementer, error) {
 	}
 
 	return &searchResolver{
-		query:         q,
-		parseTree:     p,
+		query:         queryInfo,
 		originalQuery: args.Query,
 		pagination:    pagination,
 		patternType:   searchType,
@@ -175,8 +181,7 @@ func detectSearchType(version string, patternType *string, input string) (query.
 
 // searchResolver is a resolver for the GraphQL type `Search`
 type searchResolver struct {
-	query         *query.Query          // the validated search query
-	parseTree     syntax.ParseTree      // the parsed search query
+	query         query.QueryInfo       // the query, either containing and/or expressions or otherwise ordinary
 	originalQuery string                // the raw string of the original search query
 	pagination    *searchPaginationInfo // pagination information, or nil if the request is not paginated.
 	patternType   query.SearchType
@@ -750,13 +755,22 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]*se
 func SearchRepos(ctx context.Context, plainQuery string) ([]*RepositoryResolver, error) {
 	queryString := query.ConvertToLiteral(plainQuery)
 
-	q, err := query.ParseAndCheck(queryString)
-	if err != nil {
-		return nil, err
+	var queryInfo query.QueryInfo
+	var err error
+	if conf.AndOrQueryEnabled() {
+		queryInfo, err = query.ParseAndOr(plainQuery)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		queryInfo, err = query.ParseAndCheck(queryString)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	sr := &searchResolver{
-		query:         q,
+		query:         queryInfo,
 		originalQuery: plainQuery,
 		pagination:    nil,
 		patternType:   query.SearchTypeLiteral,

@@ -5,8 +5,8 @@ import (
 	"html/template"
 	"net/http"
 
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 type SignOutURL struct {
