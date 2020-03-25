@@ -3,7 +3,7 @@ package ui
 import (
 	"net/http"
 
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/inconshreveable/log15"
 
 	"github.com/gorilla/mux"
 	opentracing "github.com/opentracing/opentracing-go"

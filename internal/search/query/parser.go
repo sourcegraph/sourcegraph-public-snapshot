@@ -1,4 +1,4 @@
-package search
+package query
 
 import (
 	"errors"
@@ -207,31 +207,53 @@ func (p *parser) ParseParameter() Parameter {
 	return ScanParameter(p.buf[start:p.pos])
 }
 
-func visit(node Node, f func(node Node)) {
+// VisitNode calls f on all nodes rooted at node.
+func VisitNode(node Node, f func(node Node)) {
 	switch v := node.(type) {
 	case Parameter:
 		f(v)
 	case Operator:
 		f(v)
-		for _, n := range v.Operands {
-			visit(n, f)
-		}
+		Visit(v.Operands, f)
 	}
 }
 
-// containsPattern returns true if any descendent of node is a search pattern
+// Visit calls f on all nodes rooted at nodes.
+func Visit(nodes []Node, f func(node Node)) {
+	for _, node := range nodes {
+		VisitNode(node, f)
+	}
+}
+
+// VisitParameter calls f on all parameter nodes. f supplies the node's field,
+// value, and whether the value is negated.
+func VisitParameter(nodes []Node, f func(field, value string, negated bool)) {
+	visitor := func(node Node) {
+		if v, ok := node.(Parameter); ok {
+			f(v.Field, v.Value, v.Negated)
+		}
+	}
+	Visit(nodes, visitor)
+}
+
+// VisitField calls f on all parameter nodes whose field matches the field
+// argument. f supplies the node's value and whether the value is negated.
+func VisitField(nodes []Node, field string, f func(value string, negated bool)) {
+	visitor := func(visitedField, value string, negated bool) {
+		if field == visitedField {
+			f(value, negated)
+		}
+	}
+	VisitParameter(nodes, visitor)
+}
+
+// containsPattern returns true if any descendent of nodes is a search pattern
 // (i.e., a parameter where the field is the empty string).
 func containsPattern(node Node) bool {
 	var result bool
-	f := func(node Node) {
-		switch v := node.(type) {
-		case Parameter:
-			if v.Field == "" {
-				result = true
-			}
-		}
-	}
-	visit(node, f)
+	VisitField([]Node{node}, "", func(_ string, _ bool) {
+		result = true
+	})
 	return result
 }
 
@@ -406,7 +428,7 @@ func (p *parser) parseOr() ([]Node, error) {
 }
 
 // Parse parses a raw input string into a parse tree comprising Nodes.
-func Parse(in string) ([]Node, error) {
+func parseAndOr(in string) ([]Node, error) {
 	if in == "" {
 		return nil, nil
 	}
@@ -419,4 +441,12 @@ func Parse(in string) ([]Node, error) {
 		return nil, errors.New("unbalanced expression")
 	}
 	return newOperator(nodes, And), nil
+}
+
+func ParseAndOr(in string) (QueryInfo, error) {
+	query, err := parseAndOr(in)
+	if err != nil {
+		return nil, err
+	}
+	return &AndOrQuery{query: query}, nil
 }

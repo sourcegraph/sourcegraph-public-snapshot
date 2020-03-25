@@ -71,6 +71,7 @@ Array [
     </div>
     <button
       className="btn btn-primary mr-1"
+      disabled={false}
       type="submit"
     >
       Add changeset

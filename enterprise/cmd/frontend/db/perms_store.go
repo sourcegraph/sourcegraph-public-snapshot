@@ -131,6 +131,10 @@ AND permission = %s
 //         1 |       read | bitmap{1} | <DateTime>
 //         2 |       read | bitmap{1} | <DateTime>
 func (s *PermsStore) SetUserPermissions(ctx context.Context, p *authz.UserPermissions) (err error) {
+	if Mocks.Perms.SetUserPermissions != nil {
+		return Mocks.Perms.SetUserPermissions(ctx, p)
+	}
+
 	ctx, save := s.observe(ctx, "SetUserPermissions", "")
 	defer func() { save(&err, p.TracingFields()...) }()
 
@@ -1252,6 +1256,10 @@ func (s *PermsStore) batchLoadIDs(ctx context.Context, q *sqlf.Query) (map[int32
 
 // ListExternalAccounts returns all external accounts that are associated with given user.
 func (s *PermsStore) ListExternalAccounts(ctx context.Context, userID int32) (accounts []*extsvc.ExternalAccount, err error) {
+	if Mocks.Perms.ListExternalAccounts != nil {
+		return Mocks.Perms.ListExternalAccounts(ctx, userID)
+	}
+
 	ctx, save := s.observe(ctx, "ListExternalAccounts", "")
 	defer func() { save(&err, otlog.Int32("userID", userID)) }()
 
@@ -1295,6 +1303,10 @@ ORDER BY id ASC
 // could be less than the candidate list due to some users are not associated with any external
 // account.
 func (s *PermsStore) GetUserIDsByExternalAccounts(ctx context.Context, accounts *extsvc.ExternalAccounts) (_ map[string]int32, err error) {
+	if Mocks.Perms.GetUserIDsByExternalAccounts != nil {
+		return Mocks.Perms.GetUserIDsByExternalAccounts(ctx, accounts)
+	}
+
 	ctx, save := s.observe(ctx, "ListUsersByExternalAccounts", "")
 	defer func() { save(&err, accounts.TracingFields()...) }()
 
@@ -1340,6 +1352,7 @@ func (s *PermsStore) UserIDsWithNoPerms(ctx context.Context) ([]int32, error) {
 -- source: enterprise/cmd/frontend/db/perms_store.go:PermsStore.UserIDsWithNoPerms
 SELECT users.id, '1970-01-01 00:00:00+00'::timestamptz FROM users
 WHERE users.site_admin = FALSE
+AND users.deleted_at IS NULL
 AND users.id NOT IN
 	(SELECT perms.user_id FROM user_permissions AS perms)
 `)
@@ -1386,8 +1399,11 @@ AND repo.id NOT IN
 func (s *PermsStore) UserIDsWithOldestPerms(ctx context.Context, limit int) (map[int32]time.Time, error) {
 	q := sqlf.Sprintf(`
 -- source: enterprise/cmd/frontend/db/perms_store.go:PermsStore.UserIDsWithOldestPerms
-SELECT user_id, updated_at FROM user_permissions
-ORDER BY updated_at ASC
+SELECT perms.user_id, perms.updated_at FROM user_permissions AS perms
+WHERE perms.user_id NOT IN
+	(SELECT users.id FROM users
+	 WHERE users.deleted_at IS NOT NULL)
+ORDER BY perms.updated_at ASC
 LIMIT %s
 `, limit)
 	return s.loadIDsWithTime(ctx, q)

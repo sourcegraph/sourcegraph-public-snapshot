@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/inconshreveable/log15"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
@@ -25,7 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"golang.org/x/net/context/ctxhttp"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 type rawCodemodResult struct {
@@ -101,7 +101,7 @@ func (r *codemodResultResolver) Commit() *GitCommitResolver { return r.commit }
 
 func (r *codemodResultResolver) RawDiff() string { return r.diff }
 
-func validateQuery(q *query.Query) (*args, error) {
+func validateQuery(q query.QueryInfo) (*args, error) {
 	matchValues := q.Values(query.FieldDefault)
 	var matchTemplates []string
 	for _, v := range matchValues {
