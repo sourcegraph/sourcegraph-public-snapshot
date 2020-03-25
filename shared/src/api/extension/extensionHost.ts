@@ -195,10 +195,7 @@ function createExtensionAPI(
             rootChanges: roots.changes,
         },
 
-        configuration: {
-            get: () => configuration.get(),
-            subscribe: configuration.subscribe.bind(configuration),
-        },
+        configuration,
 
         languages: {
             registerHoverProvider: (selector: sourcegraph.DocumentSelector, provider: sourcegraph.HoverProvider) =>
