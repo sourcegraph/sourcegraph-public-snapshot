@@ -10,36 +10,36 @@ describe('Search input helpers', () => {
             const newQuery = convertPlainTextToInteractiveQuery('foo case:yes')
             expect(
                 newQuery.navbarQuery === 'foo' &&
-                newQuery.filtersInQuery ===
-                {
-                    case: {
-                        type: 'case' as const,
-                        value: 'yes',
-                        editable: false,
-                        negated: false,
-                    },
-                }
+                    newQuery.filtersInQuery ===
+                        {
+                            case: {
+                                type: 'case' as const,
+                                value: 'yes',
+                                editable: false,
+                                negated: false,
+                            },
+                        }
             )
         })
         test('converts query with multiple filters', () => {
             const newQuery = convertPlainTextToInteractiveQuery('foo case:yes archived:no')
             expect(
                 newQuery.navbarQuery === 'foo' &&
-                newQuery.filtersInQuery ===
-                {
-                    case: {
-                        type: 'case' as const,
-                        value: 'yes',
-                        editable: false,
-                        negated: false,
-                    },
-                    archived: {
-                        type: 'archived' as const,
-                        value: 'no',
-                        editable: false,
-                        negated: false,
-                    },
-                }
+                    newQuery.filtersInQuery ===
+                        {
+                            case: {
+                                type: 'case' as const,
+                                value: 'yes',
+                                editable: false,
+                                negated: false,
+                            },
+                            archived: {
+                                type: 'archived' as const,
+                                value: 'no',
+                                editable: false,
+                                negated: false,
+                            },
+                        }
             )
         })
 
@@ -47,21 +47,21 @@ describe('Search input helpers', () => {
             const newQuery = convertPlainTextToInteractiveQuery('foo case:yes archived:no asdf:no')
             expect(
                 newQuery.navbarQuery === 'foo asdf:no' &&
-                newQuery.filtersInQuery ===
-                {
-                    case: {
-                        type: 'case' as const,
-                        value: 'yes',
-                        editable: false,
-                        negated: false,
-                    },
-                    archived: {
-                        type: 'archived' as const,
-                        value: 'no',
-                        editable: false,
-                        negated: false,
-                    },
-                }
+                    newQuery.filtersInQuery ===
+                        {
+                            case: {
+                                type: 'case' as const,
+                                value: 'yes',
+                                editable: false,
+                                negated: false,
+                            },
+                            archived: {
+                                type: 'archived' as const,
+                                value: 'no',
+                                editable: false,
+                                negated: false,
+                            },
+                        }
             )
         })
     })
