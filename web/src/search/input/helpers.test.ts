@@ -1,4 +1,4 @@
-import { convertPlainTextToInteractiveQuery } from './helpers'
+import { convertPlainTextToInteractiveQuery, escapeDoubleQuotes } from './helpers'
 
 describe('Search input helpers', () => {
     describe('convertPlainTextToInteractiveQuery', () => {
@@ -63,6 +63,27 @@ describe('Search input helpers', () => {
                             },
                         }
             )
+        })
+    })
+
+    describe('escapeDoubleQuotes', () => {
+        test('Escapes one double quote input', () => {
+            expect(escapeDoubleQuotes('"') === '"\\""')
+        })
+        test('Escapes quoted input', () => {
+            expect(escapeDoubleQuotes('"test query"') === '"\\"test query\\""')
+        })
+        test('Escapes multiple consecutive double quotes', () => {
+            expect(escapeDoubleQuotes('""') === '"\\"\\""')
+            expect(escapeDoubleQuotes('"""') === '"\\"\\"\\""')
+            expect(escapeDoubleQuotes('""""') === '"\\"\\"\\"\\""')
+        })
+        test('Escapes double quotes within input', () => {
+            expect(escapeDoubleQuotes('test " query') === 'test \\" query')
+        })
+
+        test('Escapes multiple double quotes within input', () => {
+            expect(escapeDoubleQuotes('"test" "query"') === '\\"test\\" \\"query\\"')
         })
     })
 })
