@@ -65,23 +65,28 @@ func newPositionAdjusterFromDiffOutput(output []byte) (*positionAdjuster, error)
 	return &positionAdjuster{hunks: diff.Hunks}, nil
 }
 
-func (pa *positionAdjuster) adjustRange(lspRange lsp.Range) *lsp.Range {
-	start := pa.adjustPosition(lspRange.Start)
-	end := pa.adjustPosition(lspRange.End)
-	if start == nil || end == nil {
-		return nil
+func (pa *positionAdjuster) adjustRange(lspRange lsp.Range) (lsp.Range, bool) {
+	start, ok := pa.adjustPosition(lspRange.Start)
+	if !ok {
+		return lsp.Range{}, false
 	}
 
-	return &lsp.Range{
+	end, ok := pa.adjustPosition(lspRange.End)
+	if !ok {
+		return lsp.Range{}, false
+	}
+
+	return lsp.Range{
 		Start: lsp.Position{Line: int(start.Line), Character: int(start.Character)},
 		End:   lsp.Position{Line: int(end.Line), Character: int(end.Character)},
-	}
+	}, true
 }
 
 // adjustPosition transforms the given position in the source commit to a position in the target
-// commit. This method returns a nil position if that particular line does not exist or has been
-// edited in between the source and target commit. The given position is assumed to be zero-indexed.
-func (pa *positionAdjuster) adjustPosition(pos lsp.Position) *lsp.Position {
+// commit. This method returns second boolean value indicating that the adjustment succeeded. If
+// that particular line does not exist or has been edited in between the source and target commit,
+// then adjustment will fail. The given position is assumed to be zero-indexed.
+func (pa *positionAdjuster) adjustPosition(pos lsp.Position) (lsp.Position, bool) {
 	// Find the index of the first hunk that starts after the target line and use the
 	// previous hunk (if it exists) as the point of reference in `adjustPositionFromHunk`.
 	// Note: LSP Positions are zero-indexed; the output of git diff is one-indexed.
@@ -100,11 +105,11 @@ func (pa *positionAdjuster) adjustPosition(pos lsp.Position) *lsp.Position {
 // adjustPositionFromHunk transforms the given position in the *original file* into a position
 // in the *new file* according to the given git diff hunk. This parameter is expected to be the
 // *last* such hunk in the diff between the original and the new file that does not begin after
-// the given position in the original file. The given position is assumed to be zero-indexed.
-func adjustPositionFromHunk(hunk *diff.Hunk, pos lsp.Position) *lsp.Position {
+// the given position in the original file.
+func adjustPositionFromHunk(hunk *diff.Hunk, pos lsp.Position) (lsp.Position, bool) {
 	if hunk == nil {
 		// No hunk before this line, so no line offset
-		return &pos
+		return pos, true
 	}
 
 	// LSP Positions are zero-indexed; the output of git diff is one-indexed
@@ -113,8 +118,14 @@ func adjustPositionFromHunk(hunk *diff.Hunk, pos lsp.Position) *lsp.Position {
 	if line >= int(hunk.OrigStartLine+hunk.OrigLines) {
 		// Hunk ends before this line, so we can simply adjust the line offset by the
 		// relative difference between the line offsets in each file after this hunk.
-		relativeDifference := int(hunk.NewStartLine+hunk.NewLines) - int(hunk.OrigStartLine+hunk.OrigLines)
-		return &lsp.Position{Line: line + relativeDifference - 1, Character: pos.Character}
+		origEnd := int(hunk.OrigStartLine + hunk.OrigLines)
+		newEnd := int(hunk.NewStartLine + hunk.NewLines)
+		relativeDifference := newEnd - origEnd
+
+		return lsp.Position{
+			Line:      line + relativeDifference - 1,
+			Character: pos.Character,
+		}, true
 	}
 
 	// Create two fingers pointing at the first line of this hunk in each file. Then,
@@ -144,7 +155,10 @@ func adjustPositionFromHunk(hunk *diff.Hunk, pos lsp.Position) *lsp.Position {
 
 		// This line exists in both files
 		if !added && !removed {
-			return &lsp.Position{Line: newFileOffset - 2, Character: pos.Character}
+			return lsp.Position{
+				Line:      newFileOffset - 2,
+				Character: pos.Character,
+			}, true
 		}
 
 		// Fail the position adjustment. This particular line
@@ -156,11 +170,11 @@ func adjustPositionFromHunk(hunk *diff.Hunk, pos lsp.Position) *lsp.Position {
 		// don't have enough information to give a precise result matching
 		// the current query text.
 
-		return nil
+		return lsp.Position{}, false
 	}
 
 	// This should never happen unless the git diff content is malformed. We know
 	// the target line occurs within the hunk, but iteration of the hunk's body did
 	// not contain enough lines attributed to the original file.
-	return nil
+	return lsp.Position{}, false
 }

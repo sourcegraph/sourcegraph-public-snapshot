@@ -26,11 +26,11 @@ var _ graphqlbackend.LSIFQueryResolver = &lsifQueryResolver{}
 func (r *lsifQueryResolver) Definitions(ctx context.Context, args *graphqlbackend.LSIFQueryPositionArgs) (graphqlbackend.LocationConnectionResolver, error) {
 	for _, upload := range r.uploads {
 		// TODO(efritz) - we should also detect renames/copies on position adjustment
-		adjustedPosition, err := r.adjustPosition(ctx, upload.Commit, args.Line, args.Character)
+		adjustedPosition, ok, err := r.adjustPosition(ctx, upload.Commit, args.Line, args.Character)
 		if err != nil {
 			return nil, err
 		}
-		if adjustedPosition == nil {
+		if !ok {
 			continue
 		}
 
@@ -81,11 +81,11 @@ func (r *lsifQueryResolver) References(ctx context.Context, args *graphqlbackend
 
 	var allLocations []*lsif.LSIFLocation
 	for _, upload := range r.uploads {
-		adjustedPosition, err := r.adjustPosition(ctx, upload.Commit, args.Line, args.Character)
+		adjustedPosition, ok, err := r.adjustPosition(ctx, upload.Commit, args.Line, args.Character)
 		if err != nil {
 			return nil, err
 		}
-		if adjustedPosition == nil {
+		if !ok {
 			continue
 		}
 
@@ -140,11 +140,11 @@ func (r *lsifQueryResolver) References(ctx context.Context, args *graphqlbackend
 
 func (r *lsifQueryResolver) Hover(ctx context.Context, args *graphqlbackend.LSIFQueryPositionArgs) (graphqlbackend.HoverResolver, error) {
 	for _, upload := range r.uploads {
-		adjustedPosition, err := r.adjustPosition(ctx, upload.Commit, args.Line, args.Character)
+		adjustedPosition, ok, err := r.adjustPosition(ctx, upload.Commit, args.Line, args.Character)
 		if err != nil {
 			return nil, err
 		}
-		if adjustedPosition == nil {
+		if !ok {
 			continue
 		}
 
@@ -168,18 +168,18 @@ func (r *lsifQueryResolver) Hover(ctx context.Context, args *graphqlbackend.LSIF
 		}
 
 		if text != "" {
-			adjustedRange, err := r.adjustRange(ctx, upload.Commit, lspRange)
+			adjustedRange, ok, err := r.adjustRange(ctx, upload.Commit, lspRange)
 			if err != nil {
 				return nil, err
 			}
-			if adjustedRange == nil {
+			if !ok {
 				// Failed to adjust range. I guess we can fall back to the non-adjusted
 				// range here, in which case the UI will highlight a span on a different
 				// line (but will still usually show the hover text).
-				adjustedRange = &lspRange
+				adjustedRange = lspRange
 			}
 
-			return &hoverResolver{text: text, lspRange: *adjustedRange}, nil
+			return &hoverResolver{text: text, lspRange: adjustedRange}, nil
 		}
 	}
 
@@ -188,24 +188,26 @@ func (r *lsifQueryResolver) Hover(ctx context.Context, args *graphqlbackend.LSIF
 
 // adjustPosition adjusts the position denoted by `line` and `character` in the requested commit into an
 // LSP position in the upload commit. This method returns nil if no equivalent position is found.
-func (r *lsifQueryResolver) adjustPosition(ctx context.Context, uploadCommit string, line, character int32) (*lsp.Position, error) {
+func (r *lsifQueryResolver) adjustPosition(ctx context.Context, uploadCommit string, line, character int32) (lsp.Position, bool, error) {
 	adjuster, err := newPositionAdjuster(ctx, r.repositoryResolver.Type(), string(r.commit), uploadCommit, r.path)
 	if err != nil {
-		return nil, err
+		return lsp.Position{}, false, err
 	}
 
-	return adjuster.adjustPosition(lsp.Position{Line: int(line), Character: int(character)}), nil
+	adjusted, ok := adjuster.adjustPosition(lsp.Position{Line: int(line), Character: int(character)})
+	return adjusted, ok, nil
 }
 
 // adjustPosition adjusts the given range in the upload commit into an equivalent range in the requested
 // commit. This method returns nil if there is not an equivalent position for both endpoints of the range.
-func (r *lsifQueryResolver) adjustRange(ctx context.Context, uploadCommit string, lspRange lsp.Range) (*lsp.Range, error) {
+func (r *lsifQueryResolver) adjustRange(ctx context.Context, uploadCommit string, lspRange lsp.Range) (lsp.Range, bool, error) {
 	adjuster, err := newPositionAdjuster(ctx, r.repositoryResolver.Type(), uploadCommit, string(r.commit), r.path)
 	if err != nil {
-		return nil, err
+		return lsp.Range{}, false, err
 	}
 
-	return adjuster.adjustRange(lspRange), nil
+	adjusted, ok := adjuster.adjustRange(lspRange)
+	return adjusted, ok, nil
 }
 
 // readCursor decodes a cursor into a map from upload ids to URLs that
