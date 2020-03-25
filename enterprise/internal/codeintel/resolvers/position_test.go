@@ -73,52 +73,54 @@ index 49bcbf86b7ba..d135cd54e700 100644
 func TestAdjustPositionFromDiff(t *testing.T) {
 	testCases := []struct {
 		diff         string // The git diff output
+		diffName     string // The git diff output name
+		description  string // The description of the test
 		line         int    // The target line (one-indexed)
 		expectedOk   bool   // Whether the operation should succeed
 		expectedLine int    // The expected adjusted line (one-indexed)
 	}{
 		// Between hunks
-		{hugoDiff, 10, true, 10},   // before first hunk
-		{hugoDiff, 150, true, 149}, // between hunks (1x deletion)
-		{hugoDiff, 250, true, 249}, // between hunks (1x deletion, 1x edit)
-		{hugoDiff, 350, true, 342}, // after last hunk (2x deletions, 1x edit)
+		{hugoDiff, "hugo", "before first hunk", 10, true, 10},
+		{hugoDiff, "hugo", "between hunks (1x deletion)", 150, true, 149},
+		{hugoDiff, "hugo", "between hunks (1x deletion, 1x edit)", 250, true, 249},
+		{hugoDiff, "hugo", "after last hunk (2x deletions, 1x edit)", 350, true, 342},
 
 		// Hunk 1
-		{hugoDiff, 38, true, 38}, // before first hunk deletion
-		{hugoDiff, 39, false, 0}, // on first hunk deletion
-		{hugoDiff, 40, true, 39}, // after first hunk deletion
+		{hugoDiff, "hugo", "before first hunk deletion", 38, true, 38},
+		{hugoDiff, "hugo", "on first hunk deletion", 39, false, 0},
+		{hugoDiff, "hugo", "after first hunk deletion", 40, true, 39},
 
 		// Hunk 1 (lower border)
-		{hugoDiff, 43, true, 42}, // inside first hunk context (last line)
-		{hugoDiff, 44, true, 43}, // directly after first hunk
+		{hugoDiff, "hugo", "inside first hunk context (last line)", 43, true, 42},
+		{hugoDiff, "hugo", "directly after first hunk", 44, true, 43},
 
 		// Hunk 2
-		{hugoDiff, 237, true, 236}, // before second hunk edit
-		{hugoDiff, 238, false, 0},  // on edited hunk edit
-		{hugoDiff, 239, true, 238}, // after second hunk edit
+		{hugoDiff, "hugo", "before second hunk edit", 237, true, 236},
+		{hugoDiff, "hugo", "on edited hunk edit", 238, false, 0},
+		{hugoDiff, "hugo", "after second hunk edit", 239, true, 238},
 
 		// Hunk 3
-		{hugoDiff, 294, true, 293}, // before third hunk deletion
-		{hugoDiff, 295, false, 0},  // on third hunk deletion
-		{hugoDiff, 301, false, 0},  // on third hunk deletion
-		{hugoDiff, 302, true, 294}, // after third hunk deletion
+		{hugoDiff, "hugo", "before third hunk deletion", 294, true, 293},
+		{hugoDiff, "hugo", "on third hunk deletion", 295, false, 0},
+		{hugoDiff, "hugo", "on third hunk deletion", 301, false, 0},
+		{hugoDiff, "hugo", "after third hunk deletion", 302, true, 294},
 
 		// Prometheus
-		{prometheusDiff, 100, true, 100}, // before hunk
-		{prometheusDiff, 295, true, 295}, // before deletion
-		{prometheusDiff, 296, false, 0},  // on deletion
-		{prometheusDiff, 297, false, 0},  // on deletion
-		{prometheusDiff, 298, false, 0},  // on deletion
-		{prometheusDiff, 299, true, 296}, // after deletion
-		{prometheusDiff, 300, true, 297}, // before insertion
-		{prometheusDiff, 301, true, 301}, // after insertion
-		{prometheusDiff, 500, true, 500}, // after hunk
+		{prometheusDiff, "prometheus", "before hunk", 100, true, 100},
+		{prometheusDiff, "prometheus", "before deletion", 295, true, 295},
+		{prometheusDiff, "prometheus", "on deletion 1", 296, false, 0},
+		{prometheusDiff, "prometheus", "on deletion 2", 297, false, 0},
+		{prometheusDiff, "prometheus", "on deletion 3", 298, false, 0},
+		{prometheusDiff, "prometheus", "after deletion", 299, true, 296},
+		{prometheusDiff, "prometheus", "before insertion", 300, true, 297},
+		{prometheusDiff, "prometheus", "after insertion", 301, true, 301},
+		{prometheusDiff, "prometheus", "after hunk", 500, true, 500},
 	}
 
-	for i, testCase := range testCases {
+	for _, testCase := range testCases {
 		adjuster, err := newPositionAdjusterFromDiffOutput([]byte(testCase.diff))
 		if err != nil {
-			t.Errorf("Unexpected error in test case #%d: %s", i+1, err)
+			t.Errorf("Unexpected error in test case %s::%s: %s", testCase.diffName, testCase.description, err)
 		}
 
 		// Adjust from one-index to zero-index
@@ -126,14 +128,14 @@ func TestAdjustPositionFromDiff(t *testing.T) {
 		adjusted, ok := adjuster.adjustPosition(pos)
 
 		if ok != testCase.expectedOk {
-			t.Errorf("Unexpected ok in test case #%d: got %v expected %v", i+1, ok, testCase.expectedOk)
+			t.Errorf("Unexpected ok in test case %s::%s: got %v expected %v", testCase.diffName, testCase.description, ok, testCase.expectedOk)
 		} else if ok {
 			// Adjust from zero-index to one-index
 			if adjusted.Line+1 != testCase.expectedLine {
-				t.Errorf("Unexpected line in test case #%d: got %d expected %d", i+1, adjusted.Line+1, testCase.expectedLine)
+				t.Errorf("Unexpected line in test case %s::%s: got %d expected %d", testCase.diffName, testCase.description, adjusted.Line+1, testCase.expectedLine)
 			}
 			if adjusted.Character != 10 {
-				t.Errorf("Unexpected character in test case #%d: %d", i+1, adjusted.Character)
+				t.Errorf("Unexpected character in test case %s::%s: %d", testCase.diffName, testCase.description, adjusted.Character)
 			}
 		}
 	}
