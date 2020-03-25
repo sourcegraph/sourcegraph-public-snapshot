@@ -13,7 +13,7 @@ url="https://github.com/sourcegraph/docsite/releases/download/${version}/docsite
 
 if [ ! -f "${target}" ]; then
     echo "downloading ${url}" 1>&2
-    curl -s -L "${url}" -o "${target}.tmp"
+    curl -sS -L -f "${url}" -o "${target}.tmp"
     mv "${target}.tmp" "${target}"
 fi
 
