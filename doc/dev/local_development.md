@@ -363,7 +363,7 @@ cd sourcegraph
 
 This will continuously compile your code and live reload your locally running instance of Sourcegraph.
 
-Navigate your browser to http://localhost:3080 (plain HTTP) and https://sourcegraph.test:3443 (HTTPS) to see if everything worked.
+Navigate your browser to https://sourcegraph.test:3443 to see if everything worked.
 
 ## Troubleshooting
 
