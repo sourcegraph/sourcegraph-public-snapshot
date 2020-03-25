@@ -241,9 +241,9 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     if (patchSet === null) {
         return <HeroPage icon={AlertCircleIcon} title="Patch set not found" />
     }
-    const updateMode = !!campaign && !!patchSet
 
-    if (updateMode && campaign) {
+    // On update, check if an update is possible
+    if (!!campaign && !!patchSet) {
         if (!campaign.patchSet?.id) {
             return <HeroPage icon={AlertCircleIcon} title="Cannot update a manual campaign with a patch set" />
         }
@@ -416,7 +416,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 formID={campaignFormID}
             />
             {alertError && <ErrorAlert error={alertError} />}
-            {campaign && !updateMode && !['saving', 'editing'].includes(mode) && (
+            {campaign && !patchSet && !['saving', 'editing'].includes(mode) && (
                 <CampaignStatus campaign={campaign} onPublish={onPublish} onRetry={onRetry} />
             )}
             <Form id={campaignFormID} onSubmit={onSubmit} onReset={onCancel} className="e2e-campaign-form">
@@ -438,12 +438,12 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         )}
                     </>
                 )}
-                {/* If we are in the update mode */}
-                {updateMode && (
+                {/* If we are in the update view */}
+                {campaign && patchSet && (
                     <>
                         <CampaignUpdateDiff
-                            campaign={campaign!}
-                            patchSet={patchSet!}
+                            campaign={campaign}
+                            patchSet={patchSet}
                             history={history}
                             location={location}
                             isLightTheme={isLightTheme}
@@ -500,7 +500,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 )}
             </Form>
 
-            {!updateMode && (campaign || patchSet) && (
+            {/* Iff either campaign XOR patchset are present */}
+            {!(campaign && patchSet) && (campaign || patchSet) && (
                 <>
                     {campaign && !['saving', 'editing'].includes(mode) && (
                         <>
