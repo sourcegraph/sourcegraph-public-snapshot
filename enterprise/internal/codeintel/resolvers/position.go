@@ -100,9 +100,9 @@ func (pa *positionAdjuster) adjustPosition(pos lsp.Position) (lsp.Position, bool
 	return adjustPositionFromHunk(pa.hunks[i-1], pos)
 }
 
-// adjustPositionFromHunk transforms the given position in the *original file* into a position
-// in the *new file* according to the given git diff hunk. This parameter is expected to be the
-// *last* such hunk in the diff between the original and the new file that does not begin after
+// adjustPositionFromHunk transforms the given position in the original file into a position
+// in the new file according to the given git diff hunk. This parameter is expected to be the
+// last such hunk in the diff between the original and the new file that does not begin after
 // the given position in the original file.
 func adjustPositionFromHunk(hunk *diff.Hunk, pos lsp.Position) (lsp.Position, bool) {
 	if hunk == nil {
