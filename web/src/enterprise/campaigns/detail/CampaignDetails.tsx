@@ -505,23 +505,21 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
 
             {!updateMode && (campaign || patchSet) && (
                 <>
-                    {campaign && mode !== 'editing' && mode !== 'saving' && (
-                        <div className="card mt-2">
-                            <div className="card-header">
-                                <strong>
-                                    <UserAvatar user={author} className="icon-inline" /> {author.username}
-                                </strong>{' '}
-                                started <Timestamp date={campaign.createdAt} />
-                            </div>
-                            <div className="card-body">
-                                <Markdown
-                                    dangerousInnerHTML={renderMarkdown(campaign.description || '_No description_')}
-                                />
-                            </div>
-                        </div>
-                    )}
                     {campaign && !['saving', 'editing'].includes(mode) && (
                         <>
+                            <div className="card mt-2">
+                                <div className="card-header">
+                                    <strong>
+                                        <UserAvatar user={author} className="icon-inline" /> {author.username}
+                                    </strong>{' '}
+                                    started <Timestamp date={campaign.createdAt} />
+                                </div>
+                                <div className="card-body">
+                                    <Markdown
+                                        dangerousInnerHTML={renderMarkdown(campaign.description || '_No description_')}
+                                    />
+                                </div>
+                            </div>
                             <h3 className="mt-4 mb-2">Progress</h3>
                             <CampaignBurndownChart
                                 changesetCountsOverTime={campaign.changesetCountsOverTime}
