@@ -199,7 +199,7 @@ function createExtensionAPI(
         },
 
         configuration: Object.assign(
-            new Observable<void>(observer => configuration.changes.subscribe(observer)),
+            configuration.changes.asObservable(),
             {
                 get: () => configuration.get(),
             }
