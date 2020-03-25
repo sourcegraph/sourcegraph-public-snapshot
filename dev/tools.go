@@ -28,7 +28,4 @@ import (
 
 	// used in many places
 	_ "golang.org/x/tools/cmd/stringer"
-
-	// txeh is used to manage entries in /etc/hosts for dev scripts
-	_ "github.com/txn2/txeh"
 )
