@@ -448,5 +448,5 @@ func ParseAndOr(in string) (QueryInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &AndOrQuery{query: query}, nil
+	return &AndOrQuery{Query: query}, nil
 }
