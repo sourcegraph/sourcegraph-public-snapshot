@@ -189,13 +189,23 @@ func (r *lsifQueryResolver) Hover(ctx context.Context, args *graphqlbackend.LSIF
 // adjustPosition adjusts the position denoted by `line` and `character` in the requested commit into an
 // LSP position in the upload commit. This method returns nil if no equivalent position is found.
 func (r *lsifQueryResolver) adjustPosition(ctx context.Context, uploadCommit string, line, character int32) (*lsp.Position, error) {
-	return adjustPosition(ctx, r.repositoryResolver.Type(), string(r.commit), uploadCommit, r.path, lsp.Position{Line: int(line), Character: int(character)})
+	adjuster, err := newPositionAdjuster(ctx, r.repositoryResolver.Type(), string(r.commit), uploadCommit, r.path)
+	if err != nil {
+		return nil, err
+	}
+
+	return adjuster.adjustPosition(lsp.Position{Line: int(line), Character: int(character)}), nil
 }
 
 // adjustPosition adjusts the given range in the upload commit into an equivalent range in the requested
 // commit. This method returns nil if there is not an equivalent position for both endpoints of the range.
 func (r *lsifQueryResolver) adjustRange(ctx context.Context, uploadCommit string, lspRange lsp.Range) (*lsp.Range, error) {
-	return adjustRange(ctx, r.repositoryResolver.Type(), uploadCommit, string(r.commit), r.path, lspRange)
+	adjuster, err := newPositionAdjuster(ctx, r.repositoryResolver.Type(), uploadCommit, string(r.commit), r.path)
+	if err != nil {
+		return nil, err
+	}
+
+	return adjuster.adjustRange(lspRange), nil
 }
 
 // readCursor decodes a cursor into a map from upload ids to URLs that

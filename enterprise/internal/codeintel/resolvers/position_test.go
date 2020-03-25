@@ -116,13 +116,14 @@ func TestAdjustPositionFromDiff(t *testing.T) {
 	}
 
 	for i, testCase := range testCases {
-		// Adjust from one-index to zero-index
-		pos := lsp.Position{Line: testCase.line - 1, Character: 10}
-
-		adjusted, err := adjustPositionFromDiff(bytes.NewReader([]byte(testCase.diff)), pos)
+		adjuster, err := newPositionAdjusterFromReader(bytes.NewReader([]byte(testCase.diff)))
 		if err != nil {
 			t.Errorf("Unexpected error in test case #%d: %s", i+1, err)
 		}
+
+		// Adjust from one-index to zero-index
+		pos := lsp.Position{Line: testCase.line - 1, Character: 10}
+		adjusted := adjuster.adjustPosition(pos)
 
 		if testCase.expectedLine == nil {
 			if adjusted != nil {
