@@ -6,6 +6,8 @@ import { syncChangeset } from '../backend'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import SyncIcon from 'mdi-react/SyncIcon'
 import { Observer } from 'rxjs'
+import ErrorIcon from 'mdi-react/ErrorIcon'
+import { isErrorLike } from '../../../../../../shared/src/util/errors'
 
 interface Props {
     changeset: Pick<IExternalChangeset, 'id' | 'updatedAt'>
@@ -17,9 +19,9 @@ interface Props {
 
 export const ChangesetLastSynced: React.FunctionComponent<Props> = ({ changeset, campaignUpdates, _now }) => {
     // initially, the changeset was never last updated
-    const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null)
+    const [lastUpdatedAt, setLastUpdatedAt] = useState<string | Error | null>(null)
     // .. if it was, and the changesets current updatedAt doesn't match the previous updated at, we know that it has been synced
-    const lastUpdatedAtChanged = lastUpdatedAt && changeset.updatedAt !== lastUpdatedAt
+    const lastUpdatedAtChanged = lastUpdatedAt && !isErrorLike(lastUpdatedAt) && changeset.updatedAt !== lastUpdatedAt
     useEffect(() => {
         if (lastUpdatedAtChanged) {
             if (campaignUpdates) {
@@ -28,28 +30,35 @@ export const ChangesetLastSynced: React.FunctionComponent<Props> = ({ changeset,
             setLastUpdatedAt(null)
         }
     }, [campaignUpdates, lastUpdatedAtChanged, changeset.updatedAt])
-
     const enqueueChangeset: React.MouseEventHandler = async () => {
         // already enqueued
-        if (lastUpdatedAt) {
+        if (typeof lastUpdatedAt === 'string') {
             return
         }
         setLastUpdatedAt(changeset.updatedAt)
-        await syncChangeset(changeset.id)
+        try {
+            await syncChangeset(changeset.id)
+        } catch (error) {
+            setLastUpdatedAt(error)
+        }
     }
 
-    const UpdateLoaderIcon = changeset.updatedAt !== lastUpdatedAt ? SyncIcon : LoadingSpinner
+    const UpdateLoaderIcon =
+        typeof lastUpdatedAt === 'string' && changeset.updatedAt === lastUpdatedAt ? LoadingSpinner : SyncIcon
 
     return (
         <small className="text-muted ml-2">
             Last synced {formatDistance(parseISO(changeset.updatedAt), _now ?? new Date())} ago.{' '}
+            {isErrorLike(lastUpdatedAt) && (
+                <ErrorIcon data-tooltip={lastUpdatedAt.message} className="ml-2 icon-inline small" />
+            )}
             <span
                 data-tooltip={
                     changeset.updatedAt === lastUpdatedAt ? 'Currently refreshing' : 'Click to prioritize refresh'
                 }
             >
                 <UpdateLoaderIcon
-                    className={classNames('icon-inline', !lastUpdatedAt && 'cursor-pointer')}
+                    className={classNames('icon-inline', typeof lastUpdatedAt !== 'string' && 'cursor-pointer')}
                     onClick={enqueueChangeset}
                 />
             </span>
