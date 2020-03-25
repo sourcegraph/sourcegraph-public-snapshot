@@ -1,8 +1,13 @@
 import * as sinon from 'sinon'
 import { ExtConfiguration } from './configuration'
+import { ProxyResult, proxyValueSymbol } from '@sourcegraph/comlink'
+import { ClientConfigurationAPI } from '../../client/api/configuration'
 
 describe('ExtConfiguration', () => {
-    const PROXY: any = {}
+    const PROXY: ProxyResult<ClientConfigurationAPI> = {
+        [proxyValueSymbol]: Promise.resolve(true),
+        $acceptConfigurationUpdate: sinon.stub(),
+    }
     describe('get()', () => {
         test("throws if initial settings haven't been received", () => {
             const configuration = new ExtConfiguration(PROXY)
@@ -15,11 +20,11 @@ describe('ExtConfiguration', () => {
             expect(configuration.get().get('a')).toBe('c')
         })
     })
-    describe('subscribe()', () => {
+    describe('changes', () => {
         test('emits as soon as initial settings are received', () => {
             const configuration = new ExtConfiguration(PROXY)
             const subscriber = sinon.spy()
-            configuration.subscribe(subscriber)
+            configuration.changes.subscribe(subscriber)
             sinon.assert.notCalled(subscriber)
             configuration.$acceptConfigurationData({ subjects: [], final: { a: 'b' } })
             sinon.assert.calledOnce(subscriber)
@@ -28,14 +33,14 @@ describe('ExtConfiguration', () => {
             const configuration = new ExtConfiguration(PROXY)
             configuration.$acceptConfigurationData({ subjects: [], final: { a: 'b' } })
             const subscriber = sinon.spy()
-            configuration.subscribe(subscriber)
+            configuration.changes.subscribe(subscriber)
             sinon.assert.calledOnce(subscriber)
         })
 
         test('emits when settings are updated', () => {
             const configuration = new ExtConfiguration(PROXY)
             const subscriber = sinon.spy()
-            configuration.subscribe(subscriber)
+            configuration.changes.subscribe(subscriber)
             configuration.$acceptConfigurationData({ subjects: [], final: { a: 'b' } })
             configuration.$acceptConfigurationData({ subjects: [], final: { a: 'c' } })
             configuration.$acceptConfigurationData({ subjects: [], final: { a: 'd' } })

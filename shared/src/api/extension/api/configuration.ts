@@ -1,5 +1,5 @@
 import { ProxyResult, ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
-import { ReplaySubject } from 'rxjs'
+import { ReplaySubject, BehaviorSubject, Subscribable } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { SettingsCascade } from '../../../settings/settings'
 import { ClientConfigurationAPI } from '../../client/api/configuration'
@@ -39,14 +39,11 @@ export interface ExtConfigurationAPI<C> extends ProxyValue {
     $acceptConfigurationData(data: Readonly<SettingsCascade<C>>): void
 }
 
-const BUFFER_SIZE = 1
-
 /**
  * @internal
  * @template C - The configuration schema.
  */
-export class ExtConfiguration<C extends object> extends ReplaySubject<void>
-    implements ExtConfigurationAPI<C>, ProxyValue {
+export class ExtConfiguration<C extends object> implements ExtConfigurationAPI<C>, ProxyValue {
     public readonly [proxyValueSymbol] = true
 
     /**
@@ -55,16 +52,16 @@ export class ExtConfiguration<C extends object> extends ReplaySubject<void>
      */
     private data?: Readonly<SettingsCascade<C>>
 
-    constructor(private proxy: ProxyResult<ClientConfigurationAPI>) {
-        // Call super() with a buffer size of 1, so that sourcegraph.configuration:
-        // - doesn't emit until initial settings have been received.
-        // - emits immediately on subscription after initial settings have been received.
-        super(BUFFER_SIZE)
-    }
+    // Buffer size of 1, so that sourcegraph.configuration:
+    // - doesn't emit until initial settings have been received.
+    // - emits immediately on subscription after initial settings have been received.
+    public readonly changes = new ReplaySubject<void>(1)
+
+    constructor(private proxy: ProxyResult<ClientConfigurationAPI>) {}
 
     public $acceptConfigurationData(data: Readonly<SettingsCascade<C>>): void {
         this.data = Object.freeze(data)
-        this.next()
+        this.changes.next()
     }
 
     public get(): sourcegraph.Configuration<C> {

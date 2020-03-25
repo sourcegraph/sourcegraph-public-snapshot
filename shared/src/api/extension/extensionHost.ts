@@ -1,6 +1,6 @@
 import * as comlink from '@sourcegraph/comlink'
 import { Location, MarkupKind, Position, Range, Selection } from '@sourcegraph/extension-api-classes'
-import { Subscription, Unsubscribable } from 'rxjs'
+import { Subscription, Unsubscribable, Observable } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { EndpointPair } from '../../platform/context'
 import { ClientAPI } from '../client/api/api'
@@ -155,6 +155,9 @@ function createExtensionAPI(
     }
 
     // Expose the extension API to extensions
+    // "redefines" everything instead of exposing internal Ext* classes directly so as to:
+    // - Avoid exposing private methods to extensions
+    // - Avoid exposing proxy.* to extensions, which gives access to the main thread
     const extensionAPI: typeof sourcegraph & {
         // Backcompat definitions that were removed from sourcegraph.d.ts but are still defined (as
         // noops with a log message), to avoid completely breaking extensions that use them.
@@ -195,7 +198,12 @@ function createExtensionAPI(
             rootChanges: roots.changes,
         },
 
-        configuration,
+        configuration: Object.assign(
+            new Observable<void>(observer => configuration.changes.subscribe(observer)),
+            {
+                get: () => configuration.get(),
+            }
+        ),
 
         languages: {
             registerHoverProvider: (selector: sourcegraph.DocumentSelector, provider: sourcegraph.HoverProvider) =>
