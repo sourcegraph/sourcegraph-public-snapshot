@@ -134,10 +134,7 @@ export function urlForOpenPanel(viewID: string, urlHash: string): string {
     // In the URL fragment, the 'L1:2-3:4' is treated as a parameter with no value. Undo the escaping of ':'
     // and the addition of the '=' for the empty value, for aesthetic reasons.
     // eslint-disable-next-line @typescript-eslint/no-base-to-string
-    const paramsString = params
-        .toString()
-        .replace(/%3A/g, ':')
-        .replace(/=&/g, '&')
+    const paramsString = params.toString().replace(/%3A/g, ':').replace(/=&/g, '&')
     return `#${paramsString}`
 }
 

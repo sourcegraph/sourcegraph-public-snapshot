@@ -177,7 +177,7 @@ describe('Organizations regression test suite', () => {
             }
         })
 
-        test('auth.userOrgMap', async function() {
+        test('auth.userOrgMap', async function () {
             this.timeout(120 * 1000)
             if (process.env.NODE_TLS_REJECT_UNAUTHORIZED !== '0') {
                 throw new Error(

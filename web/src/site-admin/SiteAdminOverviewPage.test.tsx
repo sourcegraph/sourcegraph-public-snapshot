@@ -26,6 +26,55 @@ describe('SiteAdminOverviewPage', () => {
         }
     })
 
+    test('activation in progress', done => {
+        const component = renderer.create(
+            <SiteAdminOverviewPage
+                {...baseProps}
+                activation={{
+                    steps: [
+                        {
+                            id: 'ConnectedCodeHost' as const,
+                            title: 'Add repositories',
+                            detail: 'Configure Sourcegraph to talk to your code host',
+                            link: {
+                                to: '/site-admin/external-services/new',
+                            },
+                        },
+                    ],
+                    completed: {
+                        ConnectedCodeHost: false,
+                    },
+                    update: sinon.stub(),
+                    refetch: sinon.stub(),
+                }}
+                _fetchOverview={() =>
+                    of({
+                        repositories: 0,
+                        users: 1,
+                        orgs: 1,
+                        surveyResponses: {
+                            totalCount: 0,
+                            averageScore: 0,
+                        },
+                    })
+                }
+                _fetchWeeklyActiveUsers={() =>
+                    of({
+                        __typename: 'SiteUsageStatistics',
+                        daus: [],
+                        waus: [],
+                        maus: [],
+                    })
+                }
+            />
+        )
+        // ensure the hooks ran and the "API response" has been received
+        setTimeout(() => {
+            expect(component.toJSON()).toMatchSnapshot()
+            done()
+        })
+    })
+
     test('< 2 users', done => {
         const component = renderer.create(
             <SiteAdminOverviewPage

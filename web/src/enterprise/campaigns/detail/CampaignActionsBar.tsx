@@ -8,7 +8,7 @@ import { CampaignUIMode } from './CampaignDetails'
 
 interface Props {
     mode: CampaignUIMode
-    previewingCampaignPlan: boolean
+    previewingPatchSet: boolean
 
     campaign?: Pick<GQL.ICampaign, 'name' | 'closedAt' | 'viewerCanAdminister' | 'publishedAt'> & {
         changesets: Pick<GQL.ICampaign['changesets'], 'totalCount'> & {
@@ -20,27 +20,29 @@ interface Props {
     onClose: (closeChangesets: boolean) => Promise<void>
     onDelete: (closeChangesets: boolean) => Promise<void>
     onEdit: React.MouseEventHandler
+    formID: string
 }
 
 export const CampaignActionsBar: React.FunctionComponent<Props> = ({
     campaign,
-    previewingCampaignPlan,
+    previewingPatchSet,
     mode,
     onClose,
     onDelete,
     onEdit,
+    formID,
 }) => {
-    const showActionButtons = campaign && !previewingCampaignPlan && campaign.viewerCanAdminister
+    const showActionButtons = campaign && !previewingPatchSet && campaign.viewerCanAdminister
     const showSpinner = mode === 'saving' || mode === 'deleting' || mode === 'closing'
     const editingCampaign = mode === 'editing' || mode === 'saving'
 
     const campaignProcessing = campaign ? campaign.status.state === GQL.BackgroundProcessState.PROCESSING : false
-    const actionsDisabled = mode === 'deleting' || mode === 'closing' || campaignProcessing
+    const actionsDisabled = mode === 'deleting' || mode === 'closing' || mode === 'publishing' || campaignProcessing
 
     const openChangesetsCount =
         campaign?.changesets.nodes.filter(changeset => changeset.state === GQL.ChangesetState.OPEN).length ?? 0
 
-    const newCampaignHeader = previewingCampaignPlan ? 'New campaign' : 'New manual campaign'
+    const newCampaignHeader = previewingPatchSet ? 'New campaign' : 'New manual campaign'
     const header = campaign?.name ?? newCampaignHeader
 
     let stateBadge: JSX.Element
@@ -68,7 +70,7 @@ export const CampaignActionsBar: React.FunctionComponent<Props> = ({
     }
 
     return (
-        <div className="d-flex mb-2">
+        <div className="d-flex mb-2 position-relative">
             <h2 className="m-0">
                 {stateBadge}
                 <span>
@@ -83,10 +85,20 @@ export const CampaignActionsBar: React.FunctionComponent<Props> = ({
                     showActionButtons &&
                     (editingCampaign ? (
                         <>
-                            <button type="submit" className="btn btn-primary mr-1" disabled={mode === 'saving'}>
+                            <button
+                                type="submit"
+                                form={formID}
+                                className="btn btn-primary mr-1"
+                                disabled={mode === 'saving'}
+                            >
                                 Save
                             </button>
-                            <button type="reset" className="btn btn-secondary" disabled={mode === 'saving'}>
+                            <button
+                                type="reset"
+                                form={formID}
+                                className="btn btn-secondary"
+                                disabled={mode === 'saving'}
+                            >
                                 Cancel
                             </button>
                         </>

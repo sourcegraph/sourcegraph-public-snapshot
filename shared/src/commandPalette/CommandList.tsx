@@ -296,9 +296,9 @@ export function filterAndRankItems(
         .filter((item, i) => {
             let label = labels[i]
             if (label === undefined) {
-                label = `${item.action.category ? `${item.action.category}: ` : ''}${item.action.title ||
-                    item.action.command ||
-                    ''}`
+                label = `${item.action.category ? `${item.action.category}: ` : ''}${
+                    item.action.title || item.action.command || ''
+                }`
                 labels[i] = label
             }
             if (scores[i] === undefined) {

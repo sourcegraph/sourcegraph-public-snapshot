@@ -92,6 +92,14 @@
 // 1528395661_remove_execution_related_columns_from_campaign_jobs.up.sql (395B)
 // 1528395662_remove_unused_columns_from_campaign_plans.down.sql (223B)
 // 1528395662_remove_unused_columns_from_campaign_plans.up.sql (203B)
+// 1528395663_rename_campaign_plans_to_patch_sets.down.sql (211B)
+// 1528395663_rename_campaign_plans_to_patch_sets.up.sql (211B)
+// 1528395664_rename_campaign_jobs_to_patches.down.sql (133B)
+// 1528395664_rename_campaign_jobs_to_patches.up.sql (133B)
+// 1528395665_perms_table_drop_provider.down.sql (127B)
+// 1528395665_perms_table_drop_provider.up.sql (150B)
+// 1528395666_lsif_filename.down.sql (412B)
+// 1528395666_lsif_filename.up.sql (289B)
 
 package migrations
 
@@ -2000,6 +2008,166 @@ func _1528395662_remove_unused_columns_from_campaign_plansUpSql() (*asset, error
 	return a, nil
 }
 
+var __1528395663_rename_campaign_plans_to_patch_setsDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x48\x2c\x49\xce\x88\x2f\x4e\x2d\x29\x56\x08\x72\xf5\x73\xf4\x75\x55\x08\xf1\x57\x48\x4e\xcc\x2d\x48\xcc\x4c\xcf\x8b\x2f\xc8\x49\xcc\x2b\x46\xd3\x01\x97\xcc\xca\x4f\x82\x6b\x72\xf6\xf7\x09\xf5\xf5\x43\x98\x16\x9f\x99\x82\x61\x50\x7c\x66\x8a\x35\x56\x93\x48\x37\x85\xcb\xd9\xdf\xd7\xd7\x33\xc4\x9a\x0b\x10\x00\x00\xff\xff\x8e\xf4\x27\x63\xd3\x00\x00\x00")
+
+func _1528395663_rename_campaign_plans_to_patch_setsDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395663_rename_campaign_plans_to_patch_setsDownSql,
+		"1528395663_rename_campaign_plans_to_patch_sets.down.sql",
+	)
+}
+
+func _1528395663_rename_campaign_plans_to_patch_setsDownSql() (*asset, error) {
+	bytes, err := _1528395663_rename_campaign_plans_to_patch_setsDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395663_rename_campaign_plans_to_patch_sets.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xc2, 0x88, 0xdf, 0x10, 0xa9, 0x1d, 0x4, 0x95, 0xf4, 0x92, 0xf4, 0xc3, 0x17, 0x1e, 0x3d, 0x94, 0x80, 0x50, 0x3, 0x60, 0x5, 0xa2, 0x83, 0xff, 0x63, 0x6e, 0x32, 0x66, 0xde, 0x26, 0xc4, 0x97}}
+	return a, nil
+}
+
+var __1528395663_rename_campaign_plans_to_patch_setsUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\x4e\xcc\x2d\x48\xcc\x4c\xcf\x8b\x2f\xc8\x49\xcc\x2b\x56\x08\x72\xf5\x73\xf4\x75\x55\x08\xf1\x57\x28\x48\x2c\x49\xce\x88\x2f\x4e\x2d\x29\xc6\xa5\x23\x2b\x3f\x09\xae\xc1\xd9\xdf\x27\xd4\xd7\x0f\xd5\xb4\xf8\xcc\x14\x14\x83\xe2\x33\x53\xac\xb1\x9a\x44\xba\x29\x5c\xce\xfe\xbe\xbe\x9e\x21\xd6\x5c\x80\x00\x00\x00\xff\xff\x09\x9e\xbd\x6b\xd3\x00\x00\x00")
+
+func _1528395663_rename_campaign_plans_to_patch_setsUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395663_rename_campaign_plans_to_patch_setsUpSql,
+		"1528395663_rename_campaign_plans_to_patch_sets.up.sql",
+	)
+}
+
+func _1528395663_rename_campaign_plans_to_patch_setsUpSql() (*asset, error) {
+	bytes, err := _1528395663_rename_campaign_plans_to_patch_setsUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395663_rename_campaign_plans_to_patch_sets.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xad, 0x15, 0x97, 0x3a, 0xe4, 0x3, 0x3d, 0xa7, 0x61, 0xc1, 0xa5, 0x1c, 0x49, 0x70, 0x72, 0x9f, 0x9c, 0x8a, 0x91, 0x66, 0x73, 0xe1, 0x8, 0x5b, 0xd2, 0xc2, 0x5f, 0x10, 0xd2, 0x77, 0x8f, 0x4c}}
+	return a, nil
+}
+
+var __1528395664_rename_campaign_jobs_to_patchesDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x48\x2c\x49\xce\x48\x2d\x56\x08\x72\xf5\x73\xf4\x75\x55\x08\xf1\x57\x48\x4e\xcc\x2d\x48\xcc\x4c\xcf\x8b\xcf\xca\x4f\x2a\x46\x53\x9d\x9c\x91\x98\x97\x9e\x5a\x9c\x5a\x02\x96\x84\x69\x72\xf6\xf7\x09\xf5\xf5\x83\x18\x15\x9f\x99\x82\x6e\x48\x7c\x66\x8a\x35\x17\x97\xb3\xbf\xaf\xaf\x67\x88\x35\x17\x20\x00\x00\xff\xff\xa0\x93\x25\x01\x85\x00\x00\x00")
+
+func _1528395664_rename_campaign_jobs_to_patchesDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395664_rename_campaign_jobs_to_patchesDownSql,
+		"1528395664_rename_campaign_jobs_to_patches.down.sql",
+	)
+}
+
+func _1528395664_rename_campaign_jobs_to_patchesDownSql() (*asset, error) {
+	bytes, err := _1528395664_rename_campaign_jobs_to_patchesDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395664_rename_campaign_jobs_to_patches.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x49, 0x84, 0x74, 0x1a, 0xd7, 0x3e, 0xfe, 0xf8, 0x58, 0xf6, 0xbb, 0x1e, 0x51, 0x77, 0x7, 0x98, 0xaf, 0xfd, 0x62, 0x4d, 0x33, 0x2d, 0x3c, 0xe5, 0x17, 0x36, 0x90, 0xa5, 0x74, 0x88, 0x93, 0xc5}}
+	return a, nil
+}
+
+var __1528395664_rename_campaign_jobs_to_patchesUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\x4e\xcc\x2d\x48\xcc\x4c\xcf\x8b\xcf\xca\x4f\x2a\x56\x08\x72\xf5\x73\xf4\x75\x55\x08\xf1\x57\x28\x48\x2c\x49\xce\x48\x2d\x46\x57\x9d\x91\x98\x97\x9e\x5a\x9c\x5a\x82\xa2\xdc\xd9\xdf\x27\xd4\xd7\x0f\xc5\xa8\xf8\xcc\x14\xb8\x29\xf1\x99\x29\xd6\x5c\x5c\xce\xfe\xbe\xbe\x9e\x21\xd6\x5c\x80\x00\x00\x00\xff\xff\x8e\x13\xd6\xae\x85\x00\x00\x00")
+
+func _1528395664_rename_campaign_jobs_to_patchesUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395664_rename_campaign_jobs_to_patchesUpSql,
+		"1528395664_rename_campaign_jobs_to_patches.up.sql",
+	)
+}
+
+func _1528395664_rename_campaign_jobs_to_patchesUpSql() (*asset, error) {
+	bytes, err := _1528395664_rename_campaign_jobs_to_patchesUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395664_rename_campaign_jobs_to_patches.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x6d, 0x64, 0x68, 0xdb, 0xf, 0x3e, 0x83, 0xe9, 0x45, 0x56, 0x5, 0x55, 0xd2, 0xa1, 0x6b, 0x33, 0xed, 0x18, 0xeb, 0xbe, 0xd, 0x79, 0x7f, 0x1a, 0xf8, 0xf9, 0x96, 0xc0, 0xbe, 0x33, 0xcb, 0xe9}}
+	return a, nil
+}
+
+var __1528395665_perms_table_drop_providerDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x2d\x4e\x2d\x8a\x2f\x48\x2d\xca\xcd\x2c\x2e\xce\xcc\xcf\x2b\x56\x70\x74\x71\x51\x70\xf6\xf7\x09\xf5\xf5\x53\x28\x28\xca\x2f\xcb\x4c\x49\x2d\x52\x08\x71\x8d\x08\xb1\x46\xd1\x56\x94\x5a\x90\x4f\xa4\x36\x2e\x67\x7f\x5f\x5f\xcf\x10\x6b\x2e\x40\x00\x00\x00\xff\xff\x90\x3a\x77\xd5\x7f\x00\x00\x00")
+
+func _1528395665_perms_table_drop_providerDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395665_perms_table_drop_providerDownSql,
+		"1528395665_perms_table_drop_provider.down.sql",
+	)
+}
+
+func _1528395665_perms_table_drop_providerDownSql() (*asset, error) {
+	bytes, err := _1528395665_perms_table_drop_providerDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395665_perms_table_drop_provider.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xfd, 0xb2, 0xe7, 0x3, 0xbe, 0xb3, 0x22, 0x3a, 0x49, 0x7, 0x4d, 0x7b, 0x3b, 0xa6, 0x82, 0xaa, 0x0, 0xd9, 0x12, 0x79, 0xe0, 0x48, 0x66, 0x6c, 0x70, 0x38, 0x4b, 0xa7, 0xe6, 0xee, 0xf8, 0xc4}}
+	return a, nil
+}
+
+var __1528395665_perms_table_drop_providerUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\xd2\xd5\x55\x08\x4a\xcd\xcd\x2f\x4b\x55\x28\xc9\x48\x55\x28\x28\xca\x2f\xcb\x4c\x49\x2d\x52\x48\xce\xcf\x29\xcd\xcd\xd3\xe3\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x2d\x4e\x2d\x8a\x2f\x48\x2d\xca\xcd\x2c\x2e\xce\xcc\xcf\x2b\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x83\xeb\xb4\x46\xd1\x52\x94\x5a\x90\x4f\x84\x16\x2e\x67\x7f\x5f\x5f\xcf\x10\x6b\x2e\x40\x00\x00\x00\xff\xff\x93\x85\x2e\x66\x96\x00\x00\x00")
+
+func _1528395665_perms_table_drop_providerUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395665_perms_table_drop_providerUpSql,
+		"1528395665_perms_table_drop_provider.up.sql",
+	)
+}
+
+func _1528395665_perms_table_drop_providerUpSql() (*asset, error) {
+	bytes, err := _1528395665_perms_table_drop_providerUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395665_perms_table_drop_provider.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x84, 0xb8, 0xd5, 0xd0, 0x9c, 0xce, 0x79, 0xdf, 0x3c, 0x43, 0x9a, 0x2e, 0xf6, 0x17, 0xca, 0x96, 0x72, 0xb, 0xc0, 0x6b, 0x53, 0xb1, 0x57, 0xd6, 0x4d, 0xfe, 0x39, 0xd0, 0xeb, 0xed, 0x48, 0x46}}
+	return a, nil
+}
+
+var __1528395666_lsif_filenameDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x7c\x8f\xcb\x4e\xc3\x30\x14\x44\xf7\xfe\x8a\xd9\x45\x42\xb4\x3f\x10\x75\x91\x26\x06\x2a\xe5\x51\xa5\x2e\x65\x57\x85\xf8\x56\xb5\x88\x1f\x8a\x6d\x2a\xfe\x1e\xb5\x01\x55\x64\xc1\xd2\xf2\x9c\xb9\x67\xd6\xfc\x79\x53\xa7\x8c\x2d\x16\x28\x46\xeb\xf0\xa9\xe8\x02\x49\x8e\x8c\x24\x13\x60\x0d\x7a\x3b\x44\x6d\x58\xd1\x36\x5b\xbc\x6e\xf8\x01\x83\x57\xa7\xa3\x8c\xda\xf9\x89\xcb\xa4\xc4\x7b\xd7\x7f\x40\x46\xad\xbf\x70\x52\x03\x99\x4e\xd3\x2f\x98\x95\x82\xb7\x10\xd9\xba\xe4\x13\x1a\xdd\x60\x3b\xe9\x91\x15\x05\xf2\xa6\xdc\x57\xf5\x9d\x11\xfc\x4d\xa4\x6c\xbf\x2d\x32\x31\x4b\xef\xb8\xb8\xc7\x56\x48\x92\xf4\x9f\xe6\xdb\xc7\xbc\xfb\xda\x50\x37\x02\xf5\xbe\x2c\x27\xf3\x96\xfa\x91\xba\x40\xd3\xea\x8b\x0a\x67\x8c\xb7\xac\xfc\x91\xf7\x2c\x6f\xf9\x55\x65\x36\x1c\xd9\x0e\x3b\x5e\xf2\x5c\x20\x2e\x1f\x1e\x11\x97\x27\x65\x94\x3f\x93\x3c\x76\x01\x9d\x87\x1b\x6d\x4f\xde\x4f\xef\xa7\xb6\xa9\xfe\x0a\x46\x1c\x5e\x78\xcb\xe1\xc3\xf5\xfa\x0a\x49\x6f\xb5\x1b\x28\x90\x4c\x52\xc6\xf2\xa6\xaa\x36\x22\x65\xdf\x01\x00\x00\xff\xff\xde\x6a\x10\xb2\x9c\x01\x00\x00")
+
+func _1528395666_lsif_filenameDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395666_lsif_filenameDownSql,
+		"1528395666_lsif_filename.down.sql",
+	)
+}
+
+func _1528395666_lsif_filenameDownSql() (*asset, error) {
+	bytes, err := _1528395666_lsif_filenameDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395666_lsif_filename.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xef, 0xcb, 0x29, 0x1f, 0x12, 0xd0, 0xd5, 0x58, 0xbc, 0x13, 0x20, 0x99, 0x8f, 0x9f, 0x3, 0xfe, 0x3, 0x31, 0xda, 0x71, 0xa3, 0x58, 0x74, 0x1e, 0x1e, 0x12, 0xe0, 0x7b, 0xb5, 0x7f, 0x81, 0x8d}}
+	return a, nil
+}
+
+var __1528395666_lsif_filenameUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x5c\x8e\x41\x6a\xf3\x30\x10\x46\xf7\x3a\xc5\xb7\x0b\xfc\xfc\xc9\x05\x4c\x17\x8e\x33\x6d\x0d\x76\x5c\x14\xb5\x59\x06\x61\x8d\x89\x40\x96\x84\x25\x35\xd7\x2f\x8d\xb3\x68\xbb\x1c\xe6\xbd\x79\xb3\xa7\x97\xf6\x58\x09\xb1\xdd\xe2\xb0\x84\x88\x4f\xcb\x37\x18\x8e\xec\x0d\xfb\x8c\xe0\x31\x06\x57\x66\x2f\x0e\x72\x78\xc3\x47\x4b\x67\xb8\x64\xa7\x8b\x29\x73\x4c\x3f\xbc\x07\x55\x77\x8a\x24\x54\xbd\xef\x68\xe5\x4a\x74\x41\x9b\x84\xbb\xde\x0c\xdd\x7b\x7f\xc4\x64\x1d\x7b\x3d\xf3\xaa\x4b\x1e\x17\xd6\x99\xd7\xf4\xcd\xe6\x2b\x96\xfb\xda\x3c\x8e\x26\xd1\x48\xaa\x15\xfd\xad\xa3\x3e\xe1\x44\x1d\x35\x0a\x65\xf7\xef\x3f\xca\x6e\xb2\xde\xa6\x2b\x9b\x8b\xce\xd0\x09\x71\x09\x23\xa7\xb4\xce\xcf\x72\xe8\x7f\xbf\x54\x70\x7e\x25\x49\x48\xf9\xbb\xfe\x84\xcd\x18\xe6\xe8\x38\xb3\xd9\x54\x42\x34\x43\xdf\xb7\xaa\x12\x5f\x01\x00\x00\xff\xff\x51\x71\xbc\xfa\x21\x01\x00\x00")
+
+func _1528395666_lsif_filenameUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395666_lsif_filenameUpSql,
+		"1528395666_lsif_filename.up.sql",
+	)
+}
+
+func _1528395666_lsif_filenameUpSql() (*asset, error) {
+	bytes, err := _1528395666_lsif_filenameUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395666_lsif_filename.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x5, 0x11, 0xc8, 0x7c, 0xd1, 0x8b, 0xf7, 0xd9, 0x59, 0x97, 0x39, 0x2b, 0x5d, 0xef, 0x0, 0x88, 0xb, 0x76, 0xfa, 0xbc, 0x95, 0x99, 0x74, 0x2b, 0x16, 0x41, 0x4, 0x2d, 0x48, 0xc3, 0xd3, 0x34}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2183,6 +2351,14 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395661_remove_execution_related_columns_from_campaign_jobs.up.sql":   _1528395661_remove_execution_related_columns_from_campaign_jobsUpSql,
 	"1528395662_remove_unused_columns_from_campaign_plans.down.sql":           _1528395662_remove_unused_columns_from_campaign_plansDownSql,
 	"1528395662_remove_unused_columns_from_campaign_plans.up.sql":             _1528395662_remove_unused_columns_from_campaign_plansUpSql,
+	"1528395663_rename_campaign_plans_to_patch_sets.down.sql":                 _1528395663_rename_campaign_plans_to_patch_setsDownSql,
+	"1528395663_rename_campaign_plans_to_patch_sets.up.sql":                   _1528395663_rename_campaign_plans_to_patch_setsUpSql,
+	"1528395664_rename_campaign_jobs_to_patches.down.sql":                     _1528395664_rename_campaign_jobs_to_patchesDownSql,
+	"1528395664_rename_campaign_jobs_to_patches.up.sql":                       _1528395664_rename_campaign_jobs_to_patchesUpSql,
+	"1528395665_perms_table_drop_provider.down.sql":                           _1528395665_perms_table_drop_providerDownSql,
+	"1528395665_perms_table_drop_provider.up.sql":                             _1528395665_perms_table_drop_providerUpSql,
+	"1528395666_lsif_filename.down.sql":                                       _1528395666_lsif_filenameDownSql,
+	"1528395666_lsif_filename.up.sql":                                         _1528395666_lsif_filenameUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -2318,6 +2494,14 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395661_remove_execution_related_columns_from_campaign_jobs.up.sql":   {_1528395661_remove_execution_related_columns_from_campaign_jobsUpSql, map[string]*bintree{}},
 	"1528395662_remove_unused_columns_from_campaign_plans.down.sql":           {_1528395662_remove_unused_columns_from_campaign_plansDownSql, map[string]*bintree{}},
 	"1528395662_remove_unused_columns_from_campaign_plans.up.sql":             {_1528395662_remove_unused_columns_from_campaign_plansUpSql, map[string]*bintree{}},
+	"1528395663_rename_campaign_plans_to_patch_sets.down.sql":                 {_1528395663_rename_campaign_plans_to_patch_setsDownSql, map[string]*bintree{}},
+	"1528395663_rename_campaign_plans_to_patch_sets.up.sql":                   {_1528395663_rename_campaign_plans_to_patch_setsUpSql, map[string]*bintree{}},
+	"1528395664_rename_campaign_jobs_to_patches.down.sql":                     {_1528395664_rename_campaign_jobs_to_patchesDownSql, map[string]*bintree{}},
+	"1528395664_rename_campaign_jobs_to_patches.up.sql":                       {_1528395664_rename_campaign_jobs_to_patchesUpSql, map[string]*bintree{}},
+	"1528395665_perms_table_drop_provider.down.sql":                           {_1528395665_perms_table_drop_providerDownSql, map[string]*bintree{}},
+	"1528395665_perms_table_drop_provider.up.sql":                             {_1528395665_perms_table_drop_providerUpSql, map[string]*bintree{}},
+	"1528395666_lsif_filename.down.sql":                                       {_1528395666_lsif_filenameDownSql, map[string]*bintree{}},
+	"1528395666_lsif_filename.up.sql":                                         {_1528395666_lsif_filenameUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

@@ -102,7 +102,7 @@ describe('Code intelligence regression test suite', () => {
     let driver: Driver
     let gqlClient: GraphQLClient
     let outerResourceManager: TestResourceManager
-    before(async function() {
+    before(async function () {
         // sourcegraph/sourcegraph takes a while to clone
         this.timeout(30 * 1000)
         ;({ driver, gqlClient, resourceManager: outerResourceManager } = await getTestTools(config))
@@ -246,7 +246,7 @@ describe('Code intelligence regression test suite', () => {
 
     describe('Precise code intelligence regression test suite', () => {
         const innerResourceManager = new TestResourceManager()
-        before(async function() {
+        before(async function () {
             this.timeout(30 * 1000)
 
             const repoCommits = [

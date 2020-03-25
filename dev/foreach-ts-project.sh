@@ -21,11 +21,17 @@ DIRS=(
 )
 
 run_command() {
+    local MAYBE_TIME_PREFIX=""
+    if [[ "${CI_DEBUG_PROFILE:-"false"}" == "true" ]]; then
+        MAYBE_TIME_PREFIX="env time -v"
+    fi
+
     dir=$1
     echo "--- $dir: $ARGS"
-    (set -x; cd "$dir" && $ARGS)
+    (set -x; cd "$dir" && eval "${MAYBE_TIME_PREFIX} ${ARGS}")
 }
 export -f run_command
+
 
 if [[ "${CI:-"false"}" == "true" ]]; then
     echo "--- 🚨 Buildkite's timing information is misleading! Only consider the job timing that's printed after 'done'"

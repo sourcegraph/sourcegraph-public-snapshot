@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	ossAuthz "github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	ossDB "github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -22,8 +23,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"gopkg.in/inconshreveable/log15.v2"
 )
 
 func main() {
@@ -52,15 +53,21 @@ func enterpriseInit(
 		server.ChangesetSyncer = syncer
 	}
 
+	clock := func() time.Time {
+		return time.Now().UTC().Truncate(time.Microsecond)
+	}
+
+	go campaigns.RunChangesetJobs(ctx, campaignsStore, clock, gitserver.DefaultClient, 5*time.Second)
+
 	// Set up syncer
 	go syncer.Run(ctx)
 
-	// Set up expired campaign deletion
+	// Set up expired patch set deletion
 	go func() {
 		for {
-			err := campaignsStore.DeleteExpiredCampaignPlans(ctx)
+			err := campaignsStore.DeleteExpiredPatchSets(ctx)
 			if err != nil {
-				log15.Error("DeleteExpiredCampaignPlans", "error", err)
+				log15.Error("DeleteExpiredPatchSets", "error", err)
 			}
 			time.Sleep(2 * time.Minute)
 		}
@@ -68,9 +75,6 @@ func enterpriseInit(
 
 	// TODO(jchen): This is an unfortunate compromise to not rewrite ossDB.ExternalServices for now.
 	dbconn.Global = db
-	clock := func() time.Time {
-		return time.Now().UTC().Truncate(time.Microsecond)
-	}
 	permsStore := frontendDB.NewPermsStore(db, clock)
 	permsSyncer := authz.NewPermsSyncer(repoStore, permsStore, clock)
 	go startBackgroundPermsSync(ctx, permsSyncer, db)

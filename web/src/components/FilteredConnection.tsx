@@ -254,8 +254,9 @@ class ConnectionNodes<C extends Connection<N>, N, NP = {}> extends React.PureCom
                 {!this.props.loading && !this.props.noShowMore && this.props.connection && hasNextPage && (
                     <button
                         type="button"
-                        className={`btn btn-secondary btn-sm filtered-connection__show-more ${this.props
-                            .showMoreClassName || ''}`}
+                        className={`btn btn-secondary btn-sm filtered-connection__show-more ${
+                            this.props.showMoreClassName || ''
+                        }`}
                         onClick={this.onClickShowMore}
                     >
                         Show more
@@ -332,9 +333,6 @@ interface FilteredConnectionProps<C extends Connection<N>, N, NP = {}>
 
     /** Called when the queryConnection Observable emits. */
     onUpdate?: (value: C | ErrorLike | undefined) => void
-
-    /** Don't show a loader on a refreshing table when a delay of 250ms on the request has passed */
-    noShowLoaderOnSlowLoad?: boolean
 }
 
 /**
@@ -558,10 +556,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                             ? merge(
                                   result,
                                   of({
-                                      connectionOrError:
-                                          this.props.noShowLoaderOnSlowLoad === true
-                                              ? this.state.connectionOrError
-                                              : undefined,
+                                      connectionOrError: undefined,
                                       loading: true,
                                   }).pipe(delay(250), takeUntil(result))
                               )
@@ -639,9 +634,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         if (this.props.updates) {
             this.subscriptions.add(
                 this.props.updates.subscribe(() => {
-                    this.setState({ loading: this.props.noShowLoaderOnSlowLoad !== true }, () =>
-                        refreshRequests.next({ forceRefresh: true })
-                    )
+                    this.setState({ loading: true }, () => refreshRequests.next({ forceRefresh: true }))
                 })
             )
         }
@@ -650,7 +643,10 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
             this.componentUpdates
                 .pipe(
                     distinctUntilChanged((a, b) => a.updateOnChange === b.updateOnChange),
-                    filter(({ updateOnChange }) => updateOnChange !== undefined)
+                    filter(({ updateOnChange }) => updateOnChange !== undefined),
+                    // Skip the very first emission as the FilteredConnection already fetches on component creation.
+                    // Otherwise, 2 requests would be triggered immediately.
+                    skip(1)
                 )
                 .subscribe(() => {
                     this.setState({ loading: true, connectionOrError: undefined }, () =>
@@ -734,8 +730,9 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         const compactnessClass = `filtered-connection--${this.props.compact ? 'compact' : 'noncompact'}`
         return (
             <div
-                className={`filtered-connection e2e-filtered-connection ${compactnessClass} ${this.props.className ||
-                    ''}`}
+                className={`filtered-connection e2e-filtered-connection ${compactnessClass} ${
+                    this.props.className || ''
+                }`}
             >
                 {(!this.props.hideSearch || this.props.filters) && (
                     <Form className="filtered-connection__form" onSubmit={this.onSubmit}>

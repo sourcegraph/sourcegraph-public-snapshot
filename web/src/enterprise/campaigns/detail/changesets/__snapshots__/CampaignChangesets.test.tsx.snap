@@ -115,7 +115,7 @@ exports[`CampaignChangesets renders 1`] = `
     </select>
   </div>
   <div
-    className="list-group"
+    className="list-group position-relative"
   >
     <FilteredConnection
       className="mt-2"
@@ -162,7 +162,6 @@ exports[`CampaignChangesets renders 1`] = `
           "state": undefined,
         }
       }
-      noShowLoaderOnSlowLoad={true}
       nodeComponent={[Function]}
       nodeComponentProps={
         Object {
@@ -174,7 +173,88 @@ exports[`CampaignChangesets renders 1`] = `
             "observers": Array [],
             "thrownError": null,
           },
-          "enablePublishing": true,
+          "extensionInfo": Object {
+            "extensionsController": undefined,
+            "hoverifier": Object {
+              "hoverState": Object {
+                "actionsOrError": undefined,
+                "highlightedRange": undefined,
+                "hoverOverlayProps": undefined,
+                "hoveredTokenElement": undefined,
+                "selectedPosition": undefined,
+              },
+              "hoverStateUpdates": AnonymousSubject {
+                "_isScalar": false,
+                "closed": false,
+                "destination": AnonymousSubject {
+                  "_isScalar": false,
+                  "closed": false,
+                  "destination": Subject {
+                    "_isScalar": false,
+                    "closed": false,
+                    "hasError": false,
+                    "isStopped": false,
+                    "observers": Array [],
+                    "thrownError": null,
+                  },
+                  "hasError": false,
+                  "isStopped": false,
+                  "observers": Array [],
+                  "operator": MapOperator {
+                    "project": [Function],
+                    "thisArg": undefined,
+                  },
+                  "source": Subject {
+                    "_isScalar": false,
+                    "closed": false,
+                    "hasError": false,
+                    "isStopped": false,
+                    "observers": Array [],
+                    "thrownError": null,
+                  },
+                  "thrownError": null,
+                },
+                "hasError": false,
+                "isStopped": false,
+                "observers": Array [],
+                "operator": DistinctUntilChangedOperator {
+                  "compare": [Function],
+                  "keySelector": undefined,
+                },
+                "source": AnonymousSubject {
+                  "_isScalar": false,
+                  "closed": false,
+                  "destination": Subject {
+                    "_isScalar": false,
+                    "closed": false,
+                    "hasError": false,
+                    "isStopped": false,
+                    "observers": Array [],
+                    "thrownError": null,
+                  },
+                  "hasError": false,
+                  "isStopped": false,
+                  "observers": Array [],
+                  "operator": MapOperator {
+                    "project": [Function],
+                    "thisArg": undefined,
+                  },
+                  "source": Subject {
+                    "_isScalar": false,
+                    "closed": false,
+                    "hasError": false,
+                    "isStopped": false,
+                    "observers": Array [],
+                    "thrownError": null,
+                  },
+                  "thrownError": null,
+                },
+                "thrownError": null,
+              },
+              "hoverify": [Function],
+              "unsubscribe": [Function],
+            },
+          },
           "history": Object {
             "action": "POP",
             "block": [Function],
@@ -218,16 +298,6 @@ exports[`CampaignChangesets renders 1`] = `
       noun="changeset"
       pluralNoun="changesets"
       queryConnection={[Function]}
-      updates={
-        Subject {
-          "_isScalar": false,
-          "closed": false,
-          "hasError": false,
-          "isStopped": false,
-          "observers": Array [],
-          "thrownError": null,
-        }
-      }
       useURLQuery={false}
     />
   </div>

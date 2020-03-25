@@ -1895,8 +1895,9 @@ func testPermsStore_UserIDsWithNoPerms(db *sql.DB) func(*testing.T) {
 
 		// Create test users "alice" and "bob"
 		qs := []*sqlf.Query{
-			sqlf.Sprintf(`INSERT INTO users(username) VALUES('alice')`), // ID=1
-			sqlf.Sprintf(`INSERT INTO users(username) VALUES('bob')`),   // ID=2
+			sqlf.Sprintf(`INSERT INTO users(username) VALUES('alice')`),                    // ID=1
+			sqlf.Sprintf(`INSERT INTO users(username) VALUES('bob')`),                      // ID=2
+			sqlf.Sprintf(`INSERT INTO users(username, deleted_at) VALUES('cindy', NOW())`), // ID=3
 		}
 		for _, q := range qs {
 			if err := s.execute(ctx, q); err != nil {
@@ -2031,6 +2032,12 @@ func testPermsStore_UserIDsWithOldestPerms(db *sql.DB) func(*testing.T) {
 
 		ctx := context.Background()
 
+		// Create a soft-deleted user
+		q := sqlf.Sprintf(`INSERT INTO users(id, username, deleted_at) VALUES(3, 'cindy', NOW())`)
+		if err := s.execute(ctx, q); err != nil {
+			t.Fatal(err)
+		}
+
 		// Set up some permissions
 		err := s.SetRepoPermissions(ctx, &authz.RepoPermissions{
 			RepoID:  1,
@@ -2042,7 +2049,7 @@ func testPermsStore_UserIDsWithOldestPerms(db *sql.DB) func(*testing.T) {
 		}
 
 		// Mock user user 2's permissions to be updated in the future
-		q := sqlf.Sprintf(`
+		q = sqlf.Sprintf(`
 UPDATE user_permissions
 SET updated_at = %s
 WHERE user_id = 2`, clock().AddDate(1, 0, 0))
@@ -2151,6 +2158,63 @@ INSERT INTO repo(id, name, private, deleted_at)
 			2: clock().AddDate(1, 0, 0),
 		}
 		if diff := cmp.Diff(expResults, results); diff != "" {
+			t.Fatal(diff)
+		}
+	}
+}
+
+func testPermsStore_Metrics(db *sql.DB) func(*testing.T) {
+	return func(t *testing.T) {
+		s := NewPermsStore(db, clock)
+		t.Cleanup(func() {
+			cleanupPermsTables(t, s)
+		})
+
+		ctx := context.Background()
+
+		// Set up some permissions
+		err := s.SetRepoPermissions(ctx, &authz.RepoPermissions{
+			RepoID:  1,
+			Perm:    authz.Read,
+			UserIDs: toBitmap(1, 2),
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		err = s.SetRepoPermissions(ctx, &authz.RepoPermissions{
+			RepoID:  2,
+			Perm:    authz.Read,
+			UserIDs: toBitmap(1, 2),
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Mock rows for testing
+		qs := []*sqlf.Query{
+			sqlf.Sprintf(`UPDATE user_permissions SET updated_at = %s WHERE user_id = 1`, clock().Add(-1*time.Minute)),
+			sqlf.Sprintf(`UPDATE user_permissions SET updated_at = %s WHERE user_id = 2`, clock()),
+			sqlf.Sprintf(`UPDATE repo_permissions SET updated_at = %s WHERE repo_id = 1`, clock().Add(-2*time.Minute)),
+			sqlf.Sprintf(`UPDATE repo_permissions SET updated_at = %s WHERE repo_id = 2`, clock()),
+		}
+		for _, q := range qs {
+			if err := s.execute(ctx, q); err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		m, err := s.Metrics(ctx, time.Minute)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expMetrics := &PermsMetrics{
+			UsersWithStalePerms:  1,
+			UsersPermsGapSeconds: 60,
+			ReposWithStalePerms:  1,
+			ReposPermsGapSeconds: 120,
+		}
+		if diff := cmp.Diff(expMetrics, m); diff != "" {
 			t.Fatal(diff)
 		}
 	}

@@ -32,6 +32,10 @@ type Config struct {
 	patchNoTest         bool
 	isQuick             bool
 	isMasterDryRun      bool
+
+	// profilingEnabled, if true, tells buildkite to print timing and resource utilization information
+	// for each command
+	profilingEnabled bool
 }
 
 func ComputeConfig() Config {
@@ -64,6 +68,8 @@ func ComputeConfig() Config {
 
 	isQuick := strings.HasPrefix(branch, "quick/")
 
+	profilingEnabled := strings.HasPrefix(branch, "enable-profiling/")
+
 	var mustIncludeCommits []string
 	if rawMustIncludeCommit := os.Getenv("MUST_INCLUDE_COMMIT"); rawMustIncludeCommit != "" {
 		mustIncludeCommits = strings.Split(rawMustIncludeCommit, ",")
@@ -86,6 +92,7 @@ func ComputeConfig() Config {
 		patchNoTest:         patchNoTest,
 		isQuick:             isQuick,
 		isMasterDryRun:      isMasterDryRun,
+		profilingEnabled:    profilingEnabled,
 	}
 }
 

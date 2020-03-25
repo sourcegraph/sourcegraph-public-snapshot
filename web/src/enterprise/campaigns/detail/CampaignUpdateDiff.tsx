@@ -4,23 +4,23 @@ import { forkJoin, Observable } from 'rxjs'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { ChangesetNode } from './changesets/ChangesetNode'
 import { ThemeProps } from '../../../../../shared/src/theme'
-import { queryChangesets, queryChangesetPlans } from './backend'
-import { useObservable } from '../../../../../shared/src/util/useObservable'
-import { TabsWithLocalStorageViewStatePersistence } from '../../../../../shared/src/components/Tabs'
-import classNames from 'classnames'
 import { Connection } from '../../../components/FilteredConnection'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { pluralize } from '../../../../../shared/src/util/strings'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import { queryChangesets, queryPatchesFromPatchSet, queryPatchesFromCampaign } from './backend'
+import { useObservable } from '../../../../../shared/src/util/useObservable'
+import { pluralize } from '../../../../../shared/src/util/strings'
+import { TabsWithLocalStorageViewStatePersistence } from '../../../../../shared/src/components/Tabs'
+import classNames from 'classnames'
+import { PatchNode } from './patches/PatchNode'
 
 interface Props extends ThemeProps {
     campaign: Pick<GQL.ICampaign, 'id' | 'publishedAt'> & {
         changesets: Pick<GQL.ICampaign['changesets'], 'totalCount'>
-    } & {
-        changesetPlans: Pick<GQL.ICampaign['changesetPlans'], 'totalCount'>
+        patches: Pick<GQL.ICampaign['patches'], 'totalCount'>
     }
-    campaignPlan: Pick<GQL.ICampaignPlan, 'id'> & {
-        changesetPlans: Pick<GQL.ICampaignPlan['changesetPlans'], 'totalCount'>
+    patchSet: Pick<GQL.IPatchSet, 'id'> & {
+        patches: Pick<GQL.IPatchSet['patches'], 'totalCount'>
     }
     history: H.History
     location: H.Location
@@ -30,66 +30,73 @@ interface Props extends ThemeProps {
     _queryChangesets?: (
         campaign: GQL.ID,
         { first }: GQL.IChangesetsOnCampaignArguments
-    ) => Observable<Connection<GQL.IExternalChangeset | GQL.IChangesetPlan>>
+    ) => Observable<Connection<GQL.IExternalChangeset>>
     /** Only for testing purposes */
-    _queryChangesetPlans?: (
-        campaignPlan: GQL.ID,
-        { first }: GQL.IChangesetPlansOnCampaignArguments
-    ) => Observable<GQL.IChangesetPlanConnection>
+    _queryPatchesFromCampaign?: (
+        patchSet: GQL.ID,
+        { first }: GQL.IPatchesOnCampaignArguments
+    ) => Observable<GQL.IPatchConnection>
+    /** Only for testing purposes */
+    _queryPatchesFromPatchSet?: (
+        patchSet: GQL.ID,
+        { first }: GQL.IPatchesOnPatchSetArguments
+    ) => Observable<GQL.IPatchConnection>
 }
 
-export type ChangesetArray = (GQL.IExternalChangeset | GQL.IChangesetPlan)[]
-
 export interface CampaignDiff {
-    added: ChangesetArray
-    changed: ChangesetArray
+    added: GQL.IPatch[]
+    changed: GQL.IPatch[]
     /**
      * Unmodified are all changesets, that need to be updated via gitserver.
      * Changing the campaign description will technically update them,
      * but they will still show up as "unmodified" to reduce confusion
      */
-    unmodified: ChangesetArray
-    deleted: ChangesetArray
+    unmodified: GQL.IExternalChangeset[]
+    deleted: GQL.IExternalChangeset[]
 }
 
-export function calculateChangesetDiff(changesets: ChangesetArray, changesetPlans: GQL.IChangesetPlan[]): CampaignDiff {
-    const added: ChangesetArray = []
-    const changed: ChangesetArray = []
-    const unmodified: ChangesetArray = []
-    const deleted: ChangesetArray = []
+export function calculateChangesetDiff(
+    changesets: GQL.IExternalChangeset[],
+    campaignPatches: GQL.IPatch[],
+    patches: GQL.IPatch[]
+): CampaignDiff {
+    const added: GQL.IPatch[] = []
+    const changed: GQL.IPatch[] = []
+    const unmodified: GQL.IExternalChangeset[] = []
+    const deleted: GQL.IExternalChangeset[] = []
 
-    const changesetsByRepoId = new Map<string, GQL.IExternalChangeset | GQL.IChangesetPlan>()
-    for (const changeset of changesets) {
-        changesetsByRepoId.set(changeset.repository.id, changeset)
+    const patchOrChangesetByRepoId = new Map<string, GQL.IExternalChangeset | GQL.IPatch>()
+    for (const changeset of [...changesets, ...campaignPatches]) {
+        patchOrChangesetByRepoId.set(changeset.repository.id, changeset)
     }
-    for (const changesetPlan of changesetPlans) {
-        const key = changesetPlan.repository.id
-        const existingChangeset = changesetsByRepoId.get(key)
+    for (const patch of patches) {
+        const key = patch.repository.id
+        const existing = patchOrChangesetByRepoId.get(key)
         // if no matching changeset exists yet, it is a new changeset to the campaign
-        if (!existingChangeset) {
-            added.push(changesetPlan)
+        if (!existing) {
+            added.push(patch)
             continue
         }
-        changesetsByRepoId.delete(key)
+        patchOrChangesetByRepoId.delete(key)
         // if the matching changeset has not been published yet, or the existing changeset is still open, it will be updated
         if (
-            existingChangeset.__typename === 'ChangesetPlan' ||
-            ![GQL.ChangesetState.MERGED, GQL.ChangesetState.CLOSED].includes(existingChangeset.state)
+            existing.__typename === 'Patch' ||
+            ![GQL.ChangesetState.MERGED, GQL.ChangesetState.CLOSED].includes(existing.state)
         ) {
-            changed.push(changesetPlan)
+            changed.push(patch)
             continue
         }
-        unmodified.push(existingChangeset)
+        unmodified.push(existing)
     }
-    for (const changeset of changesetsByRepoId.values()) {
-        if (changeset.__typename === 'ChangesetPlan') {
-            // don't mention any preexisting changesetplans that don't apply anymore
+    for (const patchOrChangeset of patchOrChangesetByRepoId.values()) {
+        if (patchOrChangeset.__typename === 'Patch') {
+            // don't mention any preexisting patches that don't apply anymore
             continue
         }
-        if ([GQL.ChangesetState.MERGED, GQL.ChangesetState.CLOSED].includes(changeset.state)) {
-            unmodified.push(changeset)
+        if ([GQL.ChangesetState.MERGED, GQL.ChangesetState.CLOSED].includes(patchOrChangeset.state)) {
+            unmodified.push(patchOrChangeset)
         } else {
-            deleted.push(changeset)
+            deleted.push(patchOrChangeset)
         }
     }
 
@@ -102,155 +109,160 @@ export function calculateChangesetDiff(changesets: ChangesetArray, changesetPlan
 }
 
 /**
- * A list of a campaign's changesets changed over a new plan
+ * A list of a campaign's changesets changed over a new patch set
  */
 export const CampaignUpdateDiff: React.FunctionComponent<Props> = ({
     campaign,
-    campaignPlan,
+    patchSet,
     isLightTheme,
     history,
     location,
     className,
     _queryChangesets = queryChangesets,
-    _queryChangesetPlans = queryChangesetPlans,
+    _queryPatchesFromCampaign = queryPatchesFromCampaign,
+    _queryPatchesFromPatchSet = queryPatchesFromPatchSet,
 }) => {
     const queriedChangesets = useObservable(
         React.useMemo(
             () =>
                 forkJoin([
                     _queryChangesets(campaign.id, { first: 1000 }),
-                    _queryChangesetPlans(campaignPlan.id, { first: 1000 }),
+                    _queryPatchesFromCampaign(campaign.id, { first: 1000 }),
+                    _queryPatchesFromPatchSet(patchSet.id, { first: 1000 }),
                 ]),
-            [_queryChangesets, campaign.id, _queryChangesetPlans, campaignPlan.id]
+            [_queryChangesets, campaign.id, _queryPatchesFromPatchSet, _queryPatchesFromCampaign, patchSet.id]
         )
     )
-    if (queriedChangesets) {
-        const [changesets, changesetPlans] = queriedChangesets
-        const { added, changed, unmodified, deleted } = calculateChangesetDiff(changesets.nodes, changesetPlans.nodes)
-
-        const newDraftCount = !campaign.publishedAt
-            ? changed.length - (campaign.changesets.totalCount - deleted.length) + added.length
-            : 0
+    if (!queriedChangesets) {
         return (
-            <div className={className}>
-                <h3 className="mt-4 mb-2">Preview of changes</h3>
-                <p>
-                    Campaign currently has {campaign.changesets.totalCount + campaign.changesetPlans.totalCount}{' '}
-                    {pluralize('changeset', campaign.changesets.totalCount + campaign.changesetPlans.totalCount)} (
-                    {campaign.changesets.totalCount} published, {campaign.changesetPlans.totalCount}{' '}
-                    {pluralize('draft', campaign.changesetPlans.totalCount)}), after update it will have{' '}
-                    {campaignPlan.changesetPlans.totalCount}{' '}
-                    {pluralize('changeset', campaignPlan.changesetPlans.totalCount)} (
-                    {campaign.publishedAt
-                        ? unmodified.length + changed.length - deleted.length + added.length
-                        : campaign.changesets.totalCount - deleted.length}{' '}
-                    published, {newDraftCount} {pluralize('draft', newDraftCount)}):
-                </p>
-                <TabsWithLocalStorageViewStatePersistence
-                    storageKey="campaignUpdateDiffTabs"
-                    tabs={[
-                        {
-                            id: 'added',
-                            label: (
-                                <span>
-                                    To be created{' '}
-                                    <span className="badge badge-secondary badge-pill">{added.length}</span>
-                                </span>
-                            ),
-                        },
-                        {
-                            id: 'changed',
-                            label: (
-                                <span>
-                                    To be updated{' '}
-                                    <span className="badge badge-secondary badge-pill">{changed.length}</span>
-                                </span>
-                            ),
-                        },
-                        {
-                            id: 'unmodified',
-                            label: (
-                                <span>
-                                    Unmodified{' '}
-                                    <span className="badge badge-secondary badge-pill">{unmodified.length}</span>
-                                </span>
-                            ),
-                        },
-                        {
-                            id: 'deleted',
-                            label: (
-                                <span>
-                                    To be closed{' '}
-                                    <span className="badge badge-secondary badge-pill">{deleted.length}</span>
-                                </span>
-                            ),
-                        },
-                    ]}
-                    tabClassName="tab-bar__tab--h5like"
-                >
-                    <div key="added" className="pt-3">
-                        {added.map(changeset => (
-                            <ChangesetNode
-                                enablePublishing={false}
-                                history={history}
-                                location={location}
-                                node={changeset}
-                                isLightTheme={isLightTheme}
-                                key={changeset.id}
-                            />
-                        ))}
-                        {added.length === 0 && <span className="text-muted">No changesets</span>}
-                    </div>
-                    <div key="changed" className="pt-3">
-                        {changed.map(changeset => (
-                            <ChangesetNode
-                                enablePublishing={false}
-                                history={history}
-                                location={location}
-                                node={changeset}
-                                isLightTheme={isLightTheme}
-                                key={changeset.id}
-                            />
-                        ))}
-                        {changed.length === 0 && <span className="text-muted">No changesets</span>}
-                    </div>
-                    <div key="unmodified" className="pt-3">
-                        {unmodified.map(changeset => (
-                            <ChangesetNode
-                                enablePublishing={false}
-                                history={history}
-                                location={location}
-                                node={changeset}
-                                isLightTheme={isLightTheme}
-                                key={changeset.id}
-                            />
-                        ))}
-                        {unmodified.length === 0 && <span className="text-muted">No changesets</span>}
-                    </div>
-                    <div key="deleted" className="pt-3">
-                        {deleted.map(changeset => (
-                            <ChangesetNode
-                                enablePublishing={false}
-                                history={history}
-                                location={location}
-                                node={changeset}
-                                isLightTheme={isLightTheme}
-                                key={changeset.id}
-                            />
-                        ))}
-                        {deleted.length === 0 && <span className="text-muted">No changesets</span>}
-                    </div>
-                </TabsWithLocalStorageViewStatePersistence>
-                <div className="alert alert-info mt-2">
-                    <AlertCircleIcon className="icon-inline" /> You are updating an existing campaign. By clicking
-                    'Update', all above changesets that are not 'unmodified' will be updated on the codehost.
-                </div>
+            <div>
+                <LoadingSpinner className={classNames('icon-inline', className)} /> Loading diff
             </div>
         )
     }
+    const [changesets, campaignPatches, patches] = queriedChangesets
+    const { added, changed, unmodified, deleted } = calculateChangesetDiff(
+        changesets.nodes,
+        campaignPatches.nodes,
+        patches.nodes
+    )
+
+    const newDraftCount = !campaign.publishedAt
+        ? changed.length - (campaign.changesets.totalCount - deleted.length) + added.length
+        : 0
     return (
-        <div>
-            <LoadingSpinner className={classNames('icon-inline', className)} /> Loading diff
+        <div className={className}>
+            <h3 className="mt-4 mb-2">Preview of changes</h3>
+            <p>
+                Campaign currently has {campaign.changesets.totalCount + campaign.patches.totalCount}{' '}
+                {pluralize('changeset', campaign.changesets.totalCount + campaign.patches.totalCount)} (
+                {campaign.changesets.totalCount} published, {campaign.patches.totalCount}{' '}
+                {pluralize('draft', campaign.patches.totalCount)}), after update it will have{' '}
+                {patchSet.patches.totalCount} {pluralize('changeset', patchSet.patches.totalCount)} (
+                {campaign.publishedAt
+                    ? unmodified.length + changed.length - deleted.length + added.length
+                    : campaign.changesets.totalCount - deleted.length}{' '}
+                published, {newDraftCount} {pluralize('draft', newDraftCount)}):
+            </p>
+            <TabsWithLocalStorageViewStatePersistence
+                storageKey="campaignUpdateDiffTabs"
+                tabs={[
+                    {
+                        id: 'added',
+                        label: (
+                            <span>
+                                To be created <span className="badge badge-secondary badge-pill">{added.length}</span>
+                            </span>
+                        ),
+                    },
+                    {
+                        id: 'changed',
+                        label: (
+                            <span>
+                                To be updated <span className="badge badge-secondary badge-pill">{changed.length}</span>
+                            </span>
+                        ),
+                    },
+                    {
+                        id: 'unmodified',
+                        label: (
+                            <span>
+                                Unmodified <span className="badge badge-secondary badge-pill">{unmodified.length}</span>
+                            </span>
+                        ),
+                    },
+                    {
+                        id: 'deleted',
+                        label: (
+                            <span>
+                                To be closed <span className="badge badge-secondary badge-pill">{deleted.length}</span>
+                            </span>
+                        ),
+                    },
+                ]}
+                tabClassName="tab-bar__tab--h5like"
+            >
+                <div key="added" className="pt-3">
+                    {added.map(changeset => (
+                        <PatchNode
+                            enablePublishing={false}
+                            history={history}
+                            location={location}
+                            node={changeset}
+                            isLightTheme={isLightTheme}
+                            key={changeset.id}
+                        />
+                    ))}
+                    {added.length === 0 && <span className="text-muted">No changesets</span>}
+                </div>
+                <div key="changed" className="pt-3">
+                    {changed.map(changeset => (
+                        <PatchNode
+                            enablePublishing={false}
+                            history={history}
+                            location={location}
+                            node={changeset}
+                            isLightTheme={isLightTheme}
+                            key={changeset.id}
+                        />
+                    ))}
+                    {changed.length === 0 && <span className="text-muted">No changesets</span>}
+                </div>
+                <div key="unmodified" className="pt-3">
+                    {unmodified.map(changeset => (
+                        <ChangesetNode
+                            history={history}
+                            location={location}
+                            node={changeset}
+                            isLightTheme={isLightTheme}
+                            key={changeset.id}
+                            // todo:
+                            // campaignUpdates={campaignUpdates}
+                            // extensionInfo={extensionInfo}
+                        />
+                    ))}
+                    {unmodified.length === 0 && <span className="text-muted">No changesets</span>}
+                </div>
+                <div key="deleted" className="pt-3">
+                    {deleted.map(changeset => (
+                        <ChangesetNode
+                            history={history}
+                            location={location}
+                            node={changeset}
+                            isLightTheme={isLightTheme}
+                            key={changeset.id}
+                            // todo:
+                            // campaignUpdates={campaignUpdates}
+                            // extensionInfo={extensionInfo}
+                        />
+                    ))}
+                    {deleted.length === 0 && <span className="text-muted">No changesets</span>}
+                </div>
+            </TabsWithLocalStorageViewStatePersistence>
+            <div className="alert alert-info mt-2">
+                <AlertCircleIcon className="icon-inline" /> You are updating an existing campaign. By clicking 'Update',
+                all above changesets that are not 'unmodified' will be updated on the codehost.
+            </div>
         </div>
     )
 }

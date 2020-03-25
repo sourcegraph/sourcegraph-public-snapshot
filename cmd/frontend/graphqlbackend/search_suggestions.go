@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/neelance/parallel"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-lsp"
@@ -18,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"gopkg.in/inconshreveable/log15.v2"
 )
 
 const maxSearchSuggestions = 100
@@ -46,7 +46,7 @@ var (
 func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestionsArgs) ([]*searchSuggestionResolver, error) {
 	args.applyDefaultsAndConstraints()
 
-	if len(r.parseTree) == 0 {
+	if len(r.query.ParseTree()) == 0 {
 		return nil, nil
 	}
 
@@ -69,9 +69,9 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		// * If only repo fields (except 1 term in query), show repo suggestions.
 
 		var effectiveRepoFieldValues []string
-		if len(r.query.Values(query.FieldDefault)) == 1 && (len(r.query.Fields) == 1 || (len(r.query.Fields) == 2 && len(r.query.Values(query.FieldRepoGroup)) == 1)) {
+		if len(r.query.Values(query.FieldDefault)) == 1 && (len(r.query.Fields()) == 1 || (len(r.query.Fields()) == 2 && len(r.query.Values(query.FieldRepoGroup)) == 1)) {
 			effectiveRepoFieldValues = append(effectiveRepoFieldValues, r.query.Values(query.FieldDefault)[0].ToString())
-		} else if len(r.query.Values(query.FieldRepo)) > 0 && ((len(r.query.Values(query.FieldRepoGroup)) > 0 && len(r.query.Fields) == 2) || (len(r.query.Values(query.FieldRepoGroup)) == 0 && len(r.query.Fields) == 1)) {
+		} else if len(r.query.Values(query.FieldRepo)) > 0 && ((len(r.query.Values(query.FieldRepoGroup)) > 0 && len(r.query.Fields()) == 2) || (len(r.query.Values(query.FieldRepoGroup)) == 0 && len(r.query.Fields()) == 1)) {
 			effectiveRepoFieldValues, _ = r.query.RegexpPatterns(query.FieldRepo)
 		}
 
@@ -110,7 +110,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		// If only repos/repogroups and files are specified (and at most 1 term), then show file
 		// suggestions.  If the query has a single term, then consider it to be a `file:` filter (to
 		// make it easy to jump to files by just typing in their name, not `file:<their name>`).
-		hasOnlyEmptyRepoField := len(r.query.Values(query.FieldRepo)) > 0 && allEmptyStrings(r.query.RegexpPatterns(query.FieldRepo)) && len(r.query.Fields) == 1
+		hasOnlyEmptyRepoField := len(r.query.Values(query.FieldRepo)) > 0 && allEmptyStrings(r.query.RegexpPatterns(query.FieldRepo)) && len(r.query.Fields()) == 1
 		hasRepoOrFileFields := len(r.query.Values(query.FieldRepoGroup)) > 0 || len(r.query.Values(query.FieldRepo)) > 0 || len(r.query.Values(query.FieldFile)) > 0
 		if !hasOnlyEmptyRepoField && hasRepoOrFileFields && len(r.query.Values(query.FieldDefault)) <= 1 {
 			ctx, cancel := context.WithTimeout(ctx, 1*time.Second)

@@ -1,7 +1,7 @@
 import slugify from 'slugify'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import React, { useState, useEffect, useRef, useMemo, useCallback, ChangeEvent } from 'react'
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
@@ -14,34 +14,38 @@ import {
     updateCampaign,
     deleteCampaign,
     createCampaign,
-    fetchCampaignPlanById,
     retryCampaign,
     closeCampaign,
     publishCampaign,
+    fetchPatchSetById,
 } from './backend'
 import { useError, useObservable } from '../../../../../shared/src/util/useObservable'
 import { asError } from '../../../../../shared/src/util/errors'
 import * as H from 'history'
 import { CampaignBurndownChart } from './BurndownChart'
 import { AddChangesetForm } from './AddChangesetForm'
-import { Subject, of, merge, Observable } from 'rxjs'
+import { Subject, of, merge, Observable, NEVER } from 'rxjs'
 import { renderMarkdown } from '../../../../../shared/src/util/markdown'
 import { ErrorAlert } from '../../../components/alerts'
 import { Markdown } from '../../../../../shared/src/components/Markdown'
-import { switchMap, tap, takeWhile, repeatWhen, delay, catchError, startWith } from 'rxjs/operators'
+import { switchMap, tap, takeWhile, repeatWhen, delay } from 'rxjs/operators'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { CampaignDescriptionField } from './form/CampaignDescriptionField'
 import { CampaignStatus } from './CampaignStatus'
 import { CampaignUpdateDiff } from './CampaignUpdateDiff'
-import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
-import { CampaignUpdateSelection } from './CampaignUpdateSelection'
 import { CampaignActionsBar } from './CampaignActionsBar'
 import { CampaignTitleField } from './form/CampaignTitleField'
 import { CampaignChangesets } from './changesets/CampaignChangesets'
 import { CampaignDiffStat } from './CampaignDiffStat'
 import { pluralize } from '../../../../../shared/src/util/strings'
+import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
+import { PlatformContextProps } from '../../../../../shared/src/platform/context'
+import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
+import { CampaignPatches } from './patches/CampaignPatches'
+import { PatchSetPatches } from './patches/PatchSetPatches'
+import { CampaignBranchField } from './form/CampaignBranchField'
 
-export type CampaignUIMode = 'viewing' | 'editing' | 'saving' | 'deleting' | 'closing'
+export type CampaignUIMode = 'viewing' | 'editing' | 'saving' | 'deleting' | 'closing' | 'publishing'
 
 interface Campaign
     extends Pick<
@@ -57,19 +61,19 @@ interface Campaign
         | 'publishedAt'
         | 'closedAt'
         | 'viewerCanAdminister'
+        | 'branch'
     > {
-    plan: Pick<GQL.ICampaignPlan, 'id'> | null
+    patchSet: Pick<GQL.IPatchSet, 'id'> | null
     changesets: Pick<GQL.ICampaign['changesets'], 'nodes' | 'totalCount'>
-    changesetPlans: Pick<GQL.ICampaign['changesetPlans'], 'nodes' | 'totalCount'>
+    patches: Pick<GQL.ICampaign['patches'], 'nodes' | 'totalCount'>
     status: Pick<GQL.ICampaign['status'], 'completedCount' | 'pendingCount' | 'errors' | 'state'>
 }
 
-interface CampaignPlan extends Pick<GQL.ICampaignPlan, '__typename' | 'id'> {
-    changesetPlans: Pick<GQL.ICampaignPlan['changesetPlans'], 'nodes' | 'totalCount'>
-    status: Pick<GQL.ICampaignPlan['status'], 'completedCount' | 'pendingCount' | 'errors' | 'state'>
+interface PatchSet extends Pick<GQL.IPatchSet, '__typename' | 'id'> {
+    patches: Pick<GQL.IPatchSet['patches'], 'nodes' | 'totalCount'>
 }
 
-interface Props extends ThemeProps {
+interface Props extends ThemeProps, ExtensionsControllerProps, PlatformContextProps, TelemetryProps {
     /**
      * The campaign ID.
      * If not given, will display a creation form.
@@ -82,7 +86,7 @@ interface Props extends ThemeProps {
     /** For testing only. */
     _fetchCampaignById?: typeof fetchCampaignById | ((campaign: GQL.ID) => Observable<Campaign | null>)
     /** For testing only. */
-    _fetchCampaignPlanById?: typeof fetchCampaignPlanById | ((campaignPlan: GQL.ID) => Observable<CampaignPlan | null>)
+    _fetchPatchSetById?: typeof fetchPatchSetById | ((patchSet: GQL.ID) => Observable<PatchSet | null>)
     /** For testing only. */
     _noSubject?: boolean
 }
@@ -96,8 +100,11 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     location,
     authenticatedUser,
     isLightTheme,
+    extensionsController,
+    platformContext,
+    telemetryService,
     _fetchCampaignById = fetchCampaignById,
-    _fetchCampaignPlanById = fetchCampaignPlanById,
+    _fetchPatchSetById = fetchPatchSetById,
     _noSubject = false,
 }) => {
     // State for the form in editing mode
@@ -133,9 +140,9 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                     tap(campaign => {
                                         currentCampaign = campaign
                                     }),
+                                    // repeat fetching the campaign as long as the state is still processing
                                     repeatWhen(obs =>
                                         obs.pipe(
-                                            // todo(a8n): why does this not unsubscribe when takeWhile is in outer pipe
                                             takeWhile(
                                                 () =>
                                                     currentCampaign?.status?.state ===
@@ -156,6 +163,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     if (fetchedCampaign) {
                         setName(fetchedCampaign.name)
                         setDescription(fetchedCampaign.description)
+                        setBranch(fetchedCampaign.branch ?? '')
+                        setBranchModified(false)
                     }
                     if (!isFirstCampaignFetch) {
                         changesetUpdates.next()
@@ -172,53 +181,52 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     // To report errors from saving or deleting
     const [alertError, setAlertError] = useState<Error>()
 
-    const planID: GQL.ID | null = new URLSearchParams(location.search).get('plan')
+    const patchSetID: GQL.ID | null = new URLSearchParams(location.search).get('patchSet')
     useEffect(() => {
-        if (planID) {
+        if (patchSetID) {
             setMode('editing')
         }
-    }, [planID])
+    }, [patchSetID])
 
     // To unblock the history after leaving edit mode
     const unblockHistoryRef = useRef<H.UnregisterCallback>(noop)
     useEffect(() => {
-        if (!campaignID && planID === null) {
+        if (!campaignID && patchSetID === null) {
             unblockHistoryRef.current()
             unblockHistoryRef.current = history.block('Do you want to discard this campaign?')
         }
         // Note: the current() method gets dynamically reassigned,
         // therefor we can't return it directly.
         return () => unblockHistoryRef.current()
-    }, [campaignID, history, planID])
+    }, [campaignID, history, patchSetID])
 
-    const updateMode = !!campaignID && !!planID
-    const previewCampaignPlans = useMemo(() => new Subject<GQL.ID>(), [])
-    const campaignPlan = useObservable(
-        useMemo(
-            () =>
-                (planID ? previewCampaignPlans.pipe(startWith(planID)) : previewCampaignPlans).pipe(
-                    switchMap(plan => _fetchCampaignPlanById(plan)),
-                    tap(campaignPlan => {
-                        if (campaignPlan) {
-                            changesetUpdates.next()
-                        }
-                    }),
-                    catchError(error => {
-                        setAlertError(asError(error))
-                        return [null]
-                    })
-                ),
-            [previewCampaignPlans, planID, _fetchCampaignPlanById, changesetUpdates]
-        )
+    const patchSet = useObservable(
+        useMemo(() => (!patchSetID ? NEVER : _fetchPatchSetById(patchSetID)), [patchSetID, _fetchPatchSetById])
     )
 
-    const selectCampaign = useCallback<(campaign: Pick<GQL.ICampaign, 'id'>) => void>(
-        campaign => history.push(`/campaigns/${campaign.id}?plan=${planID!}`),
-        [history, planID]
+    const onAddChangeset = useCallback((): void => {
+        // we also check the campaign.changesets.totalCount, so an update to the campaign is required as well
+        campaignUpdates.next()
+        changesetUpdates.next()
+    }, [campaignUpdates, changesetUpdates])
+
+    const onNameChange = useCallback(
+        (newName: string): void => {
+            if (!branchModified) {
+                setBranch(slugify(newName, { lower: true }))
+            }
+            setName(newName)
+        },
+        [branchModified]
     )
 
-    // Campaign is loading
-    if ((campaignID && campaign === undefined) || (planID && campaignPlan === undefined)) {
+    const onBranchChange = useCallback((newValue: string): void => {
+        setBranch(newValue)
+        setBranchModified(true)
+    }, [])
+
+    // Is loading
+    if ((campaignID && campaign === undefined) || (patchSetID && patchSet === undefined)) {
         return (
             <div className="text-center">
                 <LoadingSpinner className="icon-inline mx-auto my-4" />
@@ -226,22 +234,28 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         )
     }
     // Campaign was not found
-    // todo: never truthy - node resolver returns error, not null
     if (campaign === null) {
         return <HeroPage icon={AlertCircleIcon} title="Campaign not found" />
     }
-    // Plan was not found
-    if (campaignPlan === null) {
-        return <HeroPage icon={AlertCircleIcon} title="Plan not found" />
+    // Patch set was not found
+    if (patchSet === null) {
+        return <HeroPage icon={AlertCircleIcon} title="Patch set not found" />
     }
+    const updateMode = !!campaign && !!patchSet
 
-    // plan is specified, but campaign not yet, so we have to choose
-    if (history.location.pathname.includes('/campaigns/update') && campaignID === undefined && planID !== null) {
-        return <CampaignUpdateSelection history={history} location={location} onSelect={selectCampaign} />
+    if (updateMode && campaign) {
+        if (!campaign.patchSet?.id) {
+            return <HeroPage icon={AlertCircleIcon} title="Cannot update a manual campaign with a patch set" />
+        }
+        if (campaign.closedAt) {
+            return <HeroPage icon={AlertCircleIcon} title="Cannot update a closed campaign" />
+        }
     }
 
     const specifyingBranchAllowed =
-        (!campaign && campaignPlan) ||
+        // on campaign creation
+        (!campaign && patchSet) ||
+        // or when it's not yet published and no changesets have been published or are being published as well
         (campaign &&
             !campaign.publishedAt &&
             campaign.changesets.totalCount === 0 &&
@@ -255,7 +269,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 name,
                 description,
                 namespace: authenticatedUser.id,
-                plan: campaignPlan ? campaignPlan.id : undefined,
+                patchSet: patchSet ? patchSet.id : undefined,
                 branch: specifyingBranchAllowed ? branch : undefined,
                 draft: true,
             })
@@ -271,15 +285,15 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     }
 
     const onPublish = async (): Promise<void> => {
-        setMode('saving')
+        setMode('publishing')
         try {
             await publishCampaign(campaign!.id)
-            setMode('viewing')
             setAlertError(undefined)
             campaignUpdates.next()
         } catch (err) {
-            setMode('editing')
             setAlertError(asError(err))
+        } finally {
+            setMode('viewing')
         }
     }
 
@@ -292,12 +306,14 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     id: campaignID,
                     name,
                     description,
-                    plan: planID ?? undefined,
+                    patchSet: patchSetID ?? undefined,
                     branch: specifyingBranchAllowed ? branch : undefined,
                 })
                 setCampaign(newCampaign)
                 setName(newCampaign.name)
                 setDescription(newCampaign.description)
+                setBranch(newCampaign.branch ?? '')
+                setBranchModified(false)
                 unblockHistoryRef.current()
                 history.push(`/campaigns/${newCampaign.id}`)
             } else {
@@ -305,7 +321,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     name,
                     description,
                     namespace: authenticatedUser.id,
-                    plan: campaignPlan ? campaignPlan.id : undefined,
+                    patchSet: patchSet ? patchSet.id : undefined,
                     branch: specifyingBranchAllowed ? branch : undefined,
                 })
                 unblockHistoryRef.current()
@@ -366,189 +382,160 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             history.push('/campaigns')
         } catch (err) {
             setAlertError(asError(err))
-        } finally {
             setMode('viewing')
         }
     }
 
     const onRetry = async (): Promise<void> => {
         try {
-            await retryCampaign(campaign!.id)
-            campaignUpdates.next()
+            setCampaign(await retryCampaign(campaign!.id))
+            changesetUpdates.next()
         } catch (err) {
             setAlertError(asError(err))
         }
     }
 
-    const onAddChangeset = (): void => {
-        // we also check the campaign.changesets.totalCount, so an update to the campaign is required as well
-        campaignUpdates.next()
-        changesetUpdates.next()
-    }
-
     const author = campaign ? campaign.author : authenticatedUser
-
-    const onNameChange = (newName: string): void => {
-        if (!branchModified) {
-            setBranch(slugify(newName, { lower: true }))
-        }
-        setName(newName)
-    }
-
-    const onBranchChange = (event: ChangeEvent<HTMLInputElement>): void => {
-        setBranch(event.target.value)
-        setBranchModified(true)
-    }
 
     const totalChangesetCount = campaign?.changesets.totalCount ?? 0
 
-    const totalChangesetPlanCount =
-        (campaign?.changesetPlans.totalCount ?? 0) + (campaignPlan?.changesetPlans.totalCount ?? 0)
+    const totalPatchCount = (campaign?.patches.totalCount ?? 0) + (patchSet?.patches.totalCount ?? 0)
+
+    const campaignFormID = 'campaign-form'
 
     return (
         <>
             <PageTitle title={campaign ? campaign.name : 'New campaign'} />
-            <Form onSubmit={onSubmit} onReset={onCancel} className="e2e-campaign-form position-relative">
-                <CampaignActionsBar
-                    previewingCampaignPlan={!!campaignPlan}
-                    mode={mode}
-                    campaign={campaign}
-                    onEdit={onEdit}
-                    onClose={onClose}
-                    onDelete={onDelete}
-                />
-                {alertError && <ErrorAlert error={alertError} />}
-                {campaign && !updateMode && !['saving', 'editing'].includes(mode) && (
-                    <CampaignStatus campaign={campaign} onPublish={onPublish} onRetry={onRetry} />
-                )}
-                {(mode === 'editing' || mode === 'saving') && (
+            <CampaignActionsBar
+                previewingPatchSet={!!patchSet}
+                mode={mode}
+                campaign={campaign}
+                onEdit={onEdit}
+                onClose={onClose}
+                onDelete={onDelete}
+                formID={campaignFormID}
+            />
+            {alertError && <ErrorAlert error={alertError} />}
+            {campaign && !updateMode && !['saving', 'editing'].includes(mode) && (
+                <CampaignStatus campaign={campaign} onPublish={onPublish} onRetry={onRetry} />
+            )}
+            <Form id={campaignFormID} onSubmit={onSubmit} onReset={onCancel} className="e2e-campaign-form">
+                {['saving', 'editing'].includes(mode) && (
                     <>
                         <h3>Details</h3>
-                        <CampaignTitleField
-                            className="e2e-campaign-title"
-                            value={name}
-                            onChange={onNameChange}
-                            disabled={mode === 'saving'}
-                        />
+                        <CampaignTitleField value={name} onChange={onNameChange} disabled={mode === 'saving'} />
                         <CampaignDescriptionField
                             value={description}
                             onChange={setDescription}
                             disabled={mode === 'saving'}
                         />
+                        {specifyingBranchAllowed && (
+                            <CampaignBranchField
+                                value={branch}
+                                onChange={onBranchChange}
+                                disabled={mode === 'saving'}
+                            />
+                        )}
                     </>
                 )}
-                {campaign && mode !== 'editing' && mode !== 'saving' && (
-                    <div className="card mt-2">
-                        <div className="card-header">
-                            <strong>
-                                <UserAvatar user={author} className="icon-inline" /> {author.username}
-                            </strong>{' '}
-                            started <Timestamp date={campaign.createdAt} />
-                        </div>
-                        <div className="card-body">
-                            <Markdown dangerousInnerHTML={renderMarkdown(campaign.description || '_No description_')} />
-                        </div>
-                    </div>
-                )}
-                {(mode === 'editing' || mode === 'saving') && specifyingBranchAllowed && (
-                    <div className="form-group mt-2">
-                        <label>
-                            Branch name{' '}
-                            <small>
-                                <InformationOutlineIcon
-                                    className="icon-inline"
-                                    data-tooltip={
-                                        'If a branch with the given name already exists, a fallback name will be created by appending a count. Example: "my-branch-name" becomes "my-branch-name-1".'
-                                    }
-                                />
-                            </small>
-                        </label>
-                        <input
-                            type="text"
-                            className="form-control"
-                            onChange={onBranchChange}
-                            placeholder="my-awesome-campaign"
-                            value={branch}
-                            required={true}
-                            disabled={mode === 'saving'}
+                {/* If we are in the update mode */}
+                {updateMode && (
+                    <>
+                        <CampaignUpdateDiff
+                            campaign={campaign!}
+                            patchSet={patchSet!}
+                            history={history}
+                            location={location}
+                            isLightTheme={isLightTheme}
+                            className="mt-4"
                         />
-                    </div>
+                        <div className="mb-0">
+                            <button
+                                type="reset"
+                                form={campaignFormID}
+                                className="btn btn-secondary mr-1"
+                                onClick={onCancel}
+                                disabled={mode !== 'editing'}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                form={campaignFormID}
+                                className="btn btn-primary"
+                                disabled={mode !== 'editing' || patchSet?.patches.totalCount === 0}
+                            >
+                                Update
+                            </button>
+                        </div>
+                    </>
                 )}
-                {campaign && campaignPlan && (
-                    <CampaignUpdateDiff
-                        campaign={campaign}
-                        campaignPlan={campaignPlan}
-                        history={history}
-                        location={location}
-                        isLightTheme={isLightTheme}
-                        className="mt-4"
-                    />
-                )}
-                {!updateMode ? (
-                    (!campaign || campaignPlan) && (
-                        <>
-                            <div className="mt-2">
-                                {campaignPlan && (
-                                    <button
-                                        type="submit"
-                                        className="btn btn-secondary mr-1"
-                                        // todo: doesn't trigger form validation
-                                        onClick={onDraft}
-                                        disabled={mode !== 'editing'}
-                                    >
-                                        Create draft
-                                    </button>
-                                )}
+                {/* If campaign doesn't yet exist.. */}
+                {!campaign && (
+                    <>
+                        <div className="mt-2">
+                            {/* When creating from a patch set, allow draft campaigns */}
+                            {patchSet && (
                                 <button
                                     type="submit"
-                                    className="btn btn-primary"
-                                    disabled={mode !== 'editing' || campaignPlan?.changesetPlans.totalCount === 0}
+                                    form={campaignFormID}
+                                    className="btn btn-secondary mr-1"
+                                    // todo: doesn't trigger form validation
+                                    onClick={onDraft}
+                                    disabled={mode !== 'editing'}
                                 >
-                                    Create
+                                    Create draft
                                 </button>
-                            </div>
-                        </>
-                    )
-                ) : (
-                    <div className="mb-0">
-                        <button type="reset" className="btn btn-secondary mr-1" onClick={onCancel}>
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            className="btn btn-primary"
-                            disabled={mode !== 'editing' || campaignPlan?.changesetPlans.totalCount === 0}
-                        >
-                            Update
-                        </button>
-                    </div>
+                            )}
+                            <button
+                                type="submit"
+                                form={campaignFormID}
+                                className="btn btn-primary e2e-campaign-create-btn"
+                                disabled={mode !== 'editing' || patchSet?.patches.totalCount === 0}
+                            >
+                                Create
+                            </button>
+                        </div>
+                    </>
                 )}
             </Form>
 
-            {/* is already created or a plan is available */}
-            {(campaign || campaignPlan) && !updateMode && (
+            {!updateMode && (campaign || patchSet) && (
                 <>
                     {campaign && !['saving', 'editing'].includes(mode) && (
                         <>
+                            <div className="card mt-2">
+                                <div className="card-header">
+                                    <strong>
+                                        <UserAvatar user={author} className="icon-inline" /> {author.username}
+                                    </strong>{' '}
+                                    started <Timestamp date={campaign.createdAt} />
+                                </div>
+                                <div className="card-body">
+                                    <Markdown
+                                        dangerousInnerHTML={renderMarkdown(campaign.description || '_No description_')}
+                                    />
+                                </div>
+                            </div>
                             <h3 className="mt-4 mb-2">Progress</h3>
                             <CampaignBurndownChart
                                 changesetCountsOverTime={campaign.changesetCountsOverTime}
                                 history={history}
                             />
-                            {/* only campaigns that have no plan can add changesets manually */}
-                            {!campaign.plan && campaign.viewerCanAdminister && !campaign.closedAt && (
+                            {/* only campaigns that have no patch set can add changesets manually */}
+                            {!campaign.patchSet && campaign.viewerCanAdminister && !campaign.closedAt && (
                                 <AddChangesetForm campaignID={campaign.id} onAdd={onAddChangeset} />
                             )}
                         </>
                     )}
 
                     <h3 className="mt-4 d-flex align-items-end mb-0">
-                        {totalChangesetPlanCount > 0 && (
+                        {totalPatchCount > 0 && (
                             <>
-                                {totalChangesetPlanCount} {pluralize('Patch', totalChangesetPlanCount, 'Patches')}
+                                {totalPatchCount} {pluralize('Patch', totalPatchCount, 'Patches')}
                             </>
                         )}
-                        {(totalChangesetCount > 0 || !!campaign) && totalChangesetPlanCount > 0 && (
+                        {(totalChangesetCount > 0 || !!campaign) && totalPatchCount > 0 && (
                             <span className="mx-1">/</span>
                         )}
                         {(totalChangesetCount > 0 || !!campaign) && (
@@ -556,21 +543,55 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                 {totalChangesetCount} {pluralize('Changeset', totalChangesetCount)}
                             </>
                         )}{' '}
-                        <CampaignDiffStat campaign={(campaignPlan || campaign)!} className="ml-2 mb-0" />
+                        {(patchSet || campaign) && (
+                            <CampaignDiffStat campaign={campaign} patchSet={patchSet} className="ml-2 mb-0" />
+                        )}
                     </h3>
-                    {(campaign?.changesets.totalCount ?? 0) + (campaignPlan || campaign)!.changesetPlans.totalCount ? (
-                        <CampaignChangesets
-                            campaign={(campaignPlan || campaign)!}
-                            changesetUpdates={changesetUpdates}
-                            campaignUpdates={campaignUpdates}
-                            history={history}
-                            location={location}
-                            isLightTheme={isLightTheme}
-                        />
+                    {totalChangesetCount + totalPatchCount > 0 ? (
+                        <>
+                            {totalPatchCount > 0 &&
+                                (campaign ? (
+                                    <CampaignPatches
+                                        campaign={campaign}
+                                        campaignUpdates={campaignUpdates}
+                                        changesetUpdates={changesetUpdates}
+                                        enablePublishing={!campaign.closedAt}
+                                        history={history}
+                                        location={location}
+                                        isLightTheme={isLightTheme}
+                                    />
+                                ) : (
+                                    <PatchSetPatches
+                                        patchSet={patchSet!}
+                                        campaignUpdates={campaignUpdates}
+                                        changesetUpdates={changesetUpdates}
+                                        enablePublishing={false}
+                                        history={history}
+                                        location={location}
+                                        isLightTheme={isLightTheme}
+                                    />
+                                ))}
+                            {totalChangesetCount > 0 && (
+                                <CampaignChangesets
+                                    campaign={campaign!}
+                                    changesetUpdates={changesetUpdates}
+                                    campaignUpdates={campaignUpdates}
+                                    history={history}
+                                    location={location}
+                                    isLightTheme={isLightTheme}
+                                    extensionsController={extensionsController}
+                                    platformContext={platformContext}
+                                    telemetryService={telemetryService}
+                                />
+                            )}
+                        </>
                     ) : (
                         campaign?.status.state !== GQL.BackgroundProcessState.PROCESSING &&
-                        (campaign && !campaign.plan ? (
-                            <div className="mt-2 alert alert-info">Add a changeset to get started.</div>
+                        // Show hint for empty manual campaigns
+                        (campaign && !campaign.patchSet ? (
+                            <div className="mt-2 alert alert-info e2e-campaign-get-started">
+                                Add a changeset to get started.
+                            </div>
                         ) : (
                             <p className="mt-2 text-muted">No changesets</p>
                         ))

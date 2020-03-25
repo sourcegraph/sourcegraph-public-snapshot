@@ -14,6 +14,8 @@ tags:
     description: LSIF operations
   - name: Uploads
     description: Upload operations
+  - name: Internal
+    description: Internal operations
 paths:
   /upload:
     post:
@@ -395,6 +397,70 @@ paths:
           description: No Content
         '404':
           description: Not Found
+  /states:
+    get:
+      description: Retrieve the state of a set of uploads by identifier.
+      tags:
+        - Internal
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ids:
+                  description: The upload identifier list.
+                  type: array
+                  items:
+                    type: number
+              additionalProperties: false
+              required:
+                - ids
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    const: 'map'
+                  values:
+                    description: A list of key/value pairs.
+                    type: array
+                    items:
+                      description: A key/value pair.
+                      type: array
+                      items:
+                        oneOf:
+                          - type: number
+                          - type: string
+                additionalProperties: false
+                required:
+                  - type
+                  - values
+  /prune:
+    post:
+      description: Remove the oldest prunable dump.
+      tags:
+        - Internal
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    description: The identifier of the pruned dump.
+                    type: number
+                additionalProperties: false
+                required:
+                  - id
+                nullable: true
 components:
   schemas:
     Position:
@@ -413,7 +479,7 @@ components:
       additionalProperties: false
     Range:
       type: object
-      description: A closed range of positions in a source file.
+      description: A half-open range of positions in a source file.
       properties:
         start:
           $ref: '#/components/schemas/Position'

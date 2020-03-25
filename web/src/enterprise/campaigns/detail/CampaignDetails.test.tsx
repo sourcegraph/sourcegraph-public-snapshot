@@ -6,6 +6,7 @@ import * as H from 'history'
 import { createRenderer } from 'react-test-renderer/shallow'
 import { of } from 'rxjs'
 import { CampaignStatusProps } from './CampaignStatus'
+import { NOOP_TELEMETRY_SERVICE } from '../../../../../shared/src/telemetry/telemetryService'
 
 jest.mock('./form/CampaignTitleField', () => ({ CampaignTitleField: 'CampaignTitleField' }))
 jest.mock('./form/CampaignDescriptionField', () => ({ CampaignDescriptionField: 'CampaignDescriptionField' }))
@@ -14,6 +15,8 @@ jest.mock('./CampaignStatus', () => ({
     CampaignStatus: (props: CampaignStatusProps) => `CampaignStatus(state=${props.campaign.status.state})`,
 }))
 jest.mock('./changesets/CampaignChangesets', () => ({ CampaignChangesets: 'CampaignChangesets' }))
+jest.mock('./patches/CampaignPatches', () => ({ CampaignPatches: 'CampaignPatches' }))
+jest.mock('./patches/PatchSetPatches', () => ({ PatchSetPatches: 'PatchSetPatches' }))
 jest.mock('../icons', () => ({ CampaignsIcon: 'CampaignsIcon' }))
 
 const history = H.createMemoryHistory()
@@ -28,30 +31,30 @@ describe('CampaignDetails', () => {
                     location={history.location}
                     authenticatedUser={{ id: 'a', username: 'alice', avatarURL: null }}
                     isLightTheme={true}
+                    extensionsController={undefined as any}
+                    platformContext={undefined as any}
+                    telemetryService={NOOP_TELEMETRY_SERVICE}
                     _noSubject={true}
                 />
             )
         ).toMatchSnapshot())
 
-    test('creation form given existing plan', () => {
+    test('creation form given existing patch set', () => {
         const component = renderer.create(
             <CampaignDetails
                 campaignID={undefined}
                 history={history}
-                location={{ ...history.location, search: 'plan=p' }}
+                location={{ ...history.location, search: 'patchSet=p' }}
                 authenticatedUser={{ id: 'a', username: 'alice', avatarURL: null }}
                 isLightTheme={true}
-                _fetchCampaignPlanById={() =>
+                extensionsController={undefined as any}
+                platformContext={undefined as any}
+                telemetryService={NOOP_TELEMETRY_SERVICE}
+                _fetchPatchSetById={() =>
                     of({
-                        __typename: 'CampaignPlan' as const,
+                        __typename: 'PatchSet' as const,
                         id: 'c',
-                        changesetPlans: { nodes: [] as GQL.IChangesetPlan[], totalCount: 2 },
-                        status: {
-                            completedCount: 3,
-                            pendingCount: 3,
-                            errors: ['a'],
-                            state: GQL.BackgroundProcessState.PROCESSING,
-                        },
+                        patches: { nodes: [] as GQL.IPatch[], totalCount: 2 },
                     })
                 }
                 _noSubject={true}
@@ -69,6 +72,9 @@ describe('CampaignDetails', () => {
             location={history.location}
             authenticatedUser={{ id: 'a', username: 'alice', avatarURL: null }}
             isLightTheme={true}
+            extensionsController={undefined as any}
+            platformContext={undefined as any}
+            telemetryService={NOOP_TELEMETRY_SERVICE}
             _fetchCampaignById={() =>
                 of({
                     __typename: 'Campaign' as const,
@@ -77,9 +83,9 @@ describe('CampaignDetails', () => {
                     description: 'd',
                     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
                     author: { username: 'alice' } as GQL.IUser,
-                    plan: { id: 'p' },
+                    patchSet: { id: 'p' },
                     changesets: { nodes: [] as GQL.IExternalChangeset[], totalCount: 2 },
-                    changesetPlans: { nodes: [] as GQL.IChangesetPlan[], totalCount: 2 },
+                    patches: { nodes: [] as GQL.IPatch[], totalCount: 2 },
                     changesetCountsOverTime: [] as GQL.IChangesetCounts[],
                     viewerCanAdminister,
                     branch: 'awesome-branch',

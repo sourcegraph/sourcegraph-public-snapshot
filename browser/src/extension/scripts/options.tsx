@@ -33,10 +33,7 @@ const keyIsFeatureFlag = (key: string): key is keyof FeatureFlags =>
 
 const toggleFeatureFlag = (key: string): void => {
     if (keyIsFeatureFlag(key)) {
-        featureFlags
-            .toggle(key)
-            .then(noop)
-            .catch(noop)
+        featureFlags.toggle(key).then(noop).catch(noop)
     }
 }
 

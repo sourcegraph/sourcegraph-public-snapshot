@@ -77,7 +77,7 @@ describe('Onboarding', () => {
     let gqlClient: GraphQLClient
     let resourceManager: TestResourceManager
     let screenshots: ScreenshotVerifier
-    before(async function() {
+    before(async function () {
         this.timeout(20 * 1000)
         ;({ driver, gqlClient, resourceManager } = await getTestTools(config))
         screenshots = new ScreenshotVerifier(driver)
@@ -112,7 +112,7 @@ describe('Onboarding', () => {
      * This test assumes an instance of Sourcegraph that does not yet have external services.
      */
     const testAdminOnboarding = config.includeAdminOnboarding ? test : test.skip
-    testAdminOnboarding('Site-admin onboarding', async function() {
+    testAdminOnboarding('Site-admin onboarding', async function () {
         this.timeout(30 * 1000)
         // TODO: need to destroy?
         await ensureNoTestExternalServices(gqlClient, {
@@ -159,7 +159,7 @@ describe('Onboarding', () => {
         })
     })
 
-    test('Non-admin user onboarding', async function() {
+    test('Non-admin user onboarding', async function () {
         this.timeout(30 * 1000)
         await ensureTestExternalService(gqlClient, testExternalServiceConfig, config)
         const repoSlugs = testExternalServiceConfig.config.repos

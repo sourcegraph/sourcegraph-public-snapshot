@@ -6,14 +6,7 @@ import * as os from 'os'
 import puppeteer, { PageEventObj, Page, Serializable, LaunchOptions, PageFnOptions, ConsoleMessage } from 'puppeteer'
 import { Key } from 'ts-key-enum'
 import { dataOrThrowErrors, gql, GraphQLResult } from '../graphql/graphql'
-import {
-    IMutation,
-    IQuery,
-    ExternalServiceKind,
-    ICampaignPlanPatch,
-    ICampaignPlan,
-    IRepository,
-} from '../graphql/schema'
+import { IMutation, IQuery, ExternalServiceKind, IRepository, IPatchSet, IPatchInput } from '../graphql/schema'
 import { readEnvBoolean, retry } from './e2e-test-utils'
 import { formatPuppeteerConsoleMessage } from './console'
 import * as path from 'path'
@@ -297,9 +290,10 @@ export class Driver {
             newText: displayName,
         })
 
+        await this.page.waitForSelector('.e2e-external-service-editor .monaco-editor')
         // Type in a new external service configuration.
         await this.replaceText({
-            selector: '.view-line',
+            selector: '.e2e-external-service-editor .monaco-editor .view-line',
             newText: config,
             selectMethod: 'keyboard',
         })
@@ -432,21 +426,19 @@ export class Driver {
         return repository
     }
 
-    public async createCampaignPlanFromPatches(
-        patches: ICampaignPlanPatch[]
-    ): Promise<Pick<ICampaignPlan, 'previewURL'>> {
+    public async createPatchSetFromPatches(patches: IPatchInput[]): Promise<Pick<IPatchSet, 'previewURL'>> {
         const resp = await this.makeGraphQLRequest<IMutation>({
             request: gql`
-                mutation($patches: [CampaignPlanPatch!]!) {
-                    createCampaignPlanFromPatches(patches: $patches) {
+                mutation($patches: [PatchInput!]!) {
+                    createPatchSetFromPatches(patches: $patches) {
                         previewURL
                     }
                 }
             `,
             variables: { patches },
         })
-        const { createCampaignPlanFromPatches } = dataOrThrowErrors(resp)
-        return createCampaignPlanFromPatches
+        const { createPatchSetFromPatches } = dataOrThrowErrors(resp)
+        return createPatchSetFromPatches
     }
 
     public async setConfig(path: jsonc.JSONPath, f: (oldValue: jsonc.Node | undefined) => any): Promise<void> {

@@ -20,6 +20,7 @@ import {
     Subscription,
     Unsubscribable,
     concat,
+    BehaviorSubject,
 } from 'rxjs'
 import {
     catchError,
@@ -102,6 +103,7 @@ import { SourcegraphIntegrationURLs, BrowserPlatformContext } from '../../platfo
 import { IS_LIGHT_THEME } from './consts'
 import { NotificationType } from 'sourcegraph'
 import { failedWithHTTPStatus } from '../../../../shared/src/backend/fetch'
+import { asError } from '../../../../shared/src/util/errors'
 
 registerHighlightContributions()
 
@@ -641,25 +643,45 @@ export function handleCodeHost({
             .subscribe()
     )
 
+    /** The number of code views that were detected on the page (not necessarily initialized) */
+    const codeViewCount = new BehaviorSubject<number>(0)
+
     // Render view on Sourcegraph button
     if (codeHost.getViewContextOnSourcegraphMount && codeHost.getContext) {
         const { getContext, viewOnSourcegraphButtonClassProps } = codeHost
 
-        const ensureRepoExists = ({ rawRepoName, rev }: CodeHostContext): Observable<boolean> =>
-            resolveRev({ repoName: rawRepoName, rev, requestGraphQL }).pipe(
-                retryWhenCloneInProgressError(),
-                map(rev => !!rev)
-            )
+        /** Whether or not the repo exists on the configured Sourcegraph instance. */
+        const repoExistsOrErrors = signInCloses.pipe(
+            startWith(null),
+            switchMap(() => {
+                const { rawRepoName, rev } = getContext()
+                return resolveRev({ repoName: rawRepoName, rev, requestGraphQL }).pipe(
+                    retryWhenCloneInProgressError(),
+                    map(rev => !!rev),
+                    catchError(error => [asError(error)]),
+                    startWith(undefined)
+                )
+            })
+        )
 
         subscriptions.add(
-            addedElements.pipe(map(codeHost.getViewContextOnSourcegraphMount), filter(isDefined)).subscribe(mount => {
+            combineLatest([
+                repoExistsOrErrors,
+                addedElements.pipe(map(codeHost.getViewContextOnSourcegraphMount), filter(isDefined)),
+                // Only show sign in button when there is no other code view on the page that is displaying it
+                codeViewCount.pipe(
+                    map(count => count === 0),
+                    distinctUntilChanged()
+                ),
+            ]).subscribe(([repoExistsOrError, mount, showSignInButton]) => {
                 render(
                     <ViewOnSourcegraphButton
                         {...viewOnSourcegraphButtonClassProps}
-                        context={getContext()}
+                        getContext={getContext}
                         minimalUI={minimalUI}
                         sourcegraphURL={sourcegraphURL}
-                        ensureRepoExists={ensureRepoExists}
+                        repoExistsOrError={repoExistsOrError}
+                        showSignInButton={showSignInButton}
                         onSignInClose={nextSignInClose}
                         onConfigureSourcegraphClick={isInPage ? undefined : openOptionsMenu}
                     />,
@@ -669,16 +691,14 @@ export function handleCodeHost({
         )
     }
 
-    let codeViewCount = 0
-
-    /** A stream of added or removed code views */
+    /** A stream of added or removed code views with the resolved file info */
     const codeViews = mutations.pipe(
         trackCodeViews(codeHost),
         // Limit number of code views for perf reasons.
-        filter(() => codeViewCount < 50),
+        filter(() => codeViewCount.value < 50),
         tap(codeViewEvent => {
-            codeViewCount++
-            codeViewEvent.subscriptions.add(() => codeViewCount--)
+            codeViewCount.next(codeViewCount.value + 1)
+            codeViewEvent.subscriptions.add(() => codeViewCount.next(codeViewCount.value - 1))
         }),
         mergeMap(codeViewEvent =>
             codeViewEvent.resolveFileInfo(codeViewEvent.element, platformContext.requestGraphQL).pipe(
@@ -698,6 +718,27 @@ export function handleCodeHost({
                     }
                     throw err
                 }),
+                tap({
+                    error: error => {
+                        if (codeViewEvent.getToolbarMount) {
+                            const mount = codeViewEvent.getToolbarMount(codeViewEvent.element)
+                            render(
+                                <CodeViewToolbar
+                                    {...codeHost.codeViewToolbarClassProps}
+                                    fileInfoOrError={error}
+                                    sourcegraphURL={sourcegraphURL}
+                                    telemetryService={telemetryService}
+                                    platformContext={platformContext}
+                                    extensionsController={extensionsController}
+                                    buttonProps={codeViewEvent.toolbarButtonProps}
+                                    onSignInClose={nextSignInClose}
+                                    location={H.createLocation(window.location)}
+                                />,
+                                mount
+                            )
+                        }
+                    },
+                }),
                 // Retry auth errors after the user closed a sign-in tab
                 retryWhen(errors =>
                     errors.pipe(
@@ -709,7 +750,12 @@ export function handleCodeHost({
                         }),
                         switchMap(() => signInCloses)
                     )
-                )
+                ),
+                catchError(error => {
+                    // Log errors but don't break the handling of other code views
+                    console.error('Could not resolve file info for code view', error)
+                    return []
+                })
             )
         ),
         observeOn(animationFrameScheduler)
@@ -945,8 +991,8 @@ export function handleCodeHost({
                 const mount = getToolbarMount(element)
                 render(
                     <CodeViewToolbar
-                        {...fileInfo}
                         {...codeHost.codeViewToolbarClassProps}
+                        fileInfoOrError={fileInfo}
                         sourcegraphURL={sourcegraphURL}
                         telemetryService={telemetryService}
                         platformContext={platformContext}
@@ -954,6 +1000,7 @@ export function handleCodeHost({
                         buttonProps={toolbarButtonProps}
                         location={H.createLocation(window.location)}
                         scope={scope}
+                        onSignInClose={nextSignInClose}
                     />,
                     mount
                 )

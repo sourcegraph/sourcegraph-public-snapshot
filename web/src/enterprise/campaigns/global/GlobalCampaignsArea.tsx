@@ -5,8 +5,17 @@ import { CampaignDetails } from '../detail/CampaignDetails'
 import { IUser } from '../../../../../shared/src/graphql/schema'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
 import { ThemeProps } from '../../../../../shared/src/theme'
+import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
+import { PlatformContextProps } from '../../../../../shared/src/platform/context'
+import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
+import { CampaignUpdateSelection } from '../detail/CampaignUpdateSelection'
 
-interface Props extends RouteComponentProps<{}>, ThemeProps {
+interface Props
+    extends RouteComponentProps<{}>,
+        ThemeProps,
+        ExtensionsControllerProps,
+        TelemetryProps,
+        PlatformContextProps {
     authenticatedUser: IUser
     isSourcegraphDotCom: boolean
 }
@@ -24,8 +33,13 @@ export const GlobalCampaignsArea = withAuthenticatedUser<Props>(({ match, ...out
                 exact={true}
             />
             <Route
-                path={`${match.url}/(new|update)`}
+                path={`${match.url}/new`}
                 render={props => <CampaignDetails {...outerProps} {...props} />}
+                exact={true}
+            />
+            <Route
+                path={`${match.url}/update`}
+                render={props => <CampaignUpdateSelection {...outerProps} {...props} />}
                 exact={true}
             />
             <Route

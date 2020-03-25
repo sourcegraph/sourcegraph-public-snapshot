@@ -41,7 +41,7 @@ func (r *campaignsConnectionResolver) Nodes(ctx context.Context) ([]graphqlbacke
 }
 
 func (r *campaignsConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	opts := ee.CountCampaignsOpts{ChangesetID: r.opts.ChangesetID, State: r.opts.State}
+	opts := ee.CountCampaignsOpts{ChangesetID: r.opts.ChangesetID, State: r.opts.State, HasPatchSet: r.opts.HasPatchSet}
 	count, err := r.store.CountCampaigns(ctx, opts)
 	return int32(count), err
 }
@@ -140,7 +140,7 @@ func (r *campaignResolver) ClosedAt() *graphqlbackend.DateTime {
 }
 
 func (r *campaignResolver) PublishedAt(ctx context.Context) (*graphqlbackend.DateTime, error) {
-	if r.Campaign.CampaignPlanID == 0 {
+	if r.Campaign.PatchSetID == 0 {
 		return &graphqlbackend.DateTime{Time: r.Campaign.CreatedAt}, nil
 	}
 
@@ -169,18 +169,18 @@ func (r *campaignResolver) Changesets(
 	}, nil
 }
 
-func (r *campaignResolver) ChangesetPlans(
+func (r *campaignResolver) Patches(
 	ctx context.Context,
 	args *graphqlutil.ConnectionArgs,
-) graphqlbackend.ChangesetPlansConnectionResolver {
-	if r.Campaign.CampaignPlanID == 0 {
-		return &emptyChangesetPlansConnectionsResolver{}
+) graphqlbackend.PatchConnectionResolver {
+	if r.Campaign.PatchSetID == 0 {
+		return &emptyPatchConnectionResolver{}
 	}
 
-	return &campaignJobsConnectionResolver{
+	return &patchesConnectionResolver{
 		store: r.store,
-		opts: ee.ListCampaignJobsOpts{
-			CampaignPlanID:            r.Campaign.CampaignPlanID,
+		opts: ee.ListPatchesOpts{
+			PatchSetID:                r.Campaign.PatchSetID,
 			Limit:                     int(args.GetFirst()),
 			OnlyWithDiff:              true,
 			OnlyUnpublishedInCampaign: r.Campaign.ID,
@@ -246,17 +246,17 @@ func (r *campaignResolver) ChangesetCountsOverTime(
 	return resolvers, nil
 }
 
-func (r *campaignResolver) Plan(ctx context.Context) (graphqlbackend.CampaignPlanResolver, error) {
-	if r.Campaign.CampaignPlanID == 0 {
+func (r *campaignResolver) PatchSet(ctx context.Context) (graphqlbackend.PatchSetResolver, error) {
+	if r.Campaign.PatchSetID == 0 {
 		return nil, nil
 	}
 
-	plan, err := r.store.GetCampaignPlan(ctx, ee.GetCampaignPlanOpts{ID: r.Campaign.CampaignPlanID})
+	patchSet, err := r.store.GetPatchSet(ctx, ee.GetPatchSetOpts{ID: r.Campaign.PatchSetID})
 	if err != nil {
 		return nil, err
 	}
 
-	return &campaignPlanResolver{store: r.store, campaignPlan: plan}, nil
+	return &patchSetResolver{store: r.store, patchSet: patchSet}, nil
 }
 
 func (r *campaignResolver) RepositoryDiffs(
@@ -299,16 +299,16 @@ func (r *changesetDiffsConnectionResolver) Nodes(ctx context.Context) ([]*graphq
 	return resolvers, nil
 }
 
-type emptyChangesetPlansConnectionsResolver struct{}
+type emptyPatchConnectionResolver struct{}
 
-func (r *emptyChangesetPlansConnectionsResolver) Nodes(ctx context.Context) ([]graphqlbackend.ChangesetPlanResolver, error) {
-	return []graphqlbackend.ChangesetPlanResolver{}, nil
+func (r *emptyPatchConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.PatchResolver, error) {
+	return []graphqlbackend.PatchResolver{}, nil
 }
 
-func (r *emptyChangesetPlansConnectionsResolver) TotalCount(ctx context.Context) (int32, error) {
+func (r *emptyPatchConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
 	return 0, nil
 }
 
-func (r *emptyChangesetPlansConnectionsResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (r *emptyPatchConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
 	return graphqlutil.HasNextPage(false), nil
 }

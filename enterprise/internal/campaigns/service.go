@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-multierror"
+	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -18,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // NewService returns a Service.
@@ -46,11 +46,11 @@ type Service struct {
 	clock func() time.Time
 }
 
-// CreateCampaignPlanFromPatches creates a CampaignPlan and its associated CampaignJobs from patches
+// CreatePatchSetFromPatches creates a PatchSet and its associated Patches from patches
 // computed by the caller. There is no diff execution or computation performed during creation of
-// the CampaignJobs in this case (unlike when using Runner to create a CampaignPlan from a
+// the Patches in this case (unlike when using Runner to create a PatchSet from a
 // specification).
-func (s *Service) CreateCampaignPlanFromPatches(ctx context.Context, patches []campaigns.CampaignPlanPatch, userID int32) (*campaigns.CampaignPlan, error) {
+func (s *Service) CreatePatchSetFromPatches(ctx context.Context, patches []*campaigns.Patch, userID int32) (*campaigns.PatchSet, error) {
 	if userID == 0 {
 		return nil, backend.ErrNotAuthenticated
 	}
@@ -58,7 +58,7 @@ func (s *Service) CreateCampaignPlanFromPatches(ctx context.Context, patches []c
 	reposStore := repos.NewDBStore(s.store.DB(), sql.TxOptions{})
 	repoIDs := make([]api.RepoID, len(patches))
 	for i, patch := range patches {
-		repoIDs[i] = api.RepoID(patch.Repo)
+		repoIDs[i] = api.RepoID(patch.RepoID)
 	}
 	allRepos, err := reposStore.ListRepos(ctx, repos.StoreListReposArgs{IDs: repoIDs})
 	if err != nil {
@@ -75,37 +75,31 @@ func (s *Service) CreateCampaignPlanFromPatches(ctx context.Context, patches []c
 	}
 	defer tx.Done(&err)
 
-	plan := &campaigns.CampaignPlan{UserID: userID}
-	err = tx.CreateCampaignPlan(ctx, plan)
+	patchSet := &campaigns.PatchSet{UserID: userID}
+	err = tx.CreatePatchSet(ctx, patchSet)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, patch := range patches {
-		repo := reposByID[patch.Repo]
+		repo := reposByID[patch.RepoID]
 		if repo == nil {
-			return nil, fmt.Errorf("repository ID %d not found", patch.Repo)
+			return nil, fmt.Errorf("repository ID %d not found", patch.RepoID)
 		}
 		if !campaigns.IsRepoSupported(&repo.ExternalRepo) {
 			continue
 		}
 
-		job := &campaigns.CampaignJob{
-			CampaignPlanID: plan.ID,
-			RepoID:         patch.Repo,
-			BaseRef:        patch.BaseRef,
-			Rev:            patch.BaseRevision,
-			Diff:           patch.Patch,
-		}
-		if err := tx.CreateCampaignJob(ctx, job); err != nil {
+		patch.PatchSetID = patchSet.ID
+		if err := tx.CreatePatch(ctx, patch); err != nil {
 			return nil, err
 		}
 	}
 
-	return plan, nil
+	return patchSet, nil
 }
 
-// CreateCampaign creates the Campaign. When a CampaignPlanID is set on the
+// CreateCampaign creates the Campaign. When a PatchSetID is set on the
 // Campaign and the Campaign is not created as a draft, it calls
 // CreateChangesetJobs inside the same transaction in which it creates the
 // Campaign.
@@ -127,13 +121,13 @@ func (s *Service) CreateCampaign(ctx context.Context, c *campaigns.Campaign, dra
 	}
 	defer tx.Done(&err)
 
-	if c.CampaignPlanID != 0 {
-		_, err := tx.GetCampaign(ctx, GetCampaignOpts{CampaignPlanID: c.CampaignPlanID})
+	if c.PatchSetID != 0 {
+		_, err := tx.GetCampaign(ctx, GetCampaignOpts{PatchSetID: c.PatchSetID})
 		if err != nil && err != ErrNoResults {
 			return err
 		}
 		if err != ErrNoResults {
-			err = ErrCampaignPlanDuplicate
+			err = ErrPatchSetDuplicate
 			return err
 		}
 	}
@@ -145,12 +139,12 @@ func (s *Service) CreateCampaign(ctx context.Context, c *campaigns.Campaign, dra
 		return err
 	}
 
-	if c.CampaignPlanID != 0 && c.Branch == "" {
+	if c.PatchSetID != 0 && c.Branch == "" {
 		err = ErrCampaignBranchBlank
 		return err
 	}
 
-	if c.CampaignPlanID == 0 || draft {
+	if c.PatchSetID == 0 || draft {
 		return nil
 	}
 
@@ -158,18 +152,18 @@ func (s *Service) CreateCampaign(ctx context.Context, c *campaigns.Campaign, dra
 	return err
 }
 
-// ErrNoCampaignJobs is returned by CreateCampaign or UpdateCampaign if a
-// CampaignPlanID was specified but the CampaignPlan does not have any
-// (finished) CampaignJobs.
-var ErrNoCampaignJobs = errors.New("cannot create or update a Campaign without any changesets")
+// ErrNoPatches is returned by CreateCampaign or UpdateCampaign if a
+// PatchSetID was specified but the PatchSet does not have any
+// (finished) Patches.
+var ErrNoPatches = errors.New("cannot create or update a Campaign without any changesets")
 
 func (s *Service) createChangesetJobsWithStore(ctx context.Context, store *Store, c *campaigns.Campaign) error {
-	if c.CampaignPlanID == 0 {
-		return errors.New("cannot create changesets for campaign with no campaign plan")
+	if c.PatchSetID == 0 {
+		return errors.New("cannot create changesets for campaign with no patch set")
 	}
 
-	jobs, _, err := store.ListCampaignJobs(ctx, ListCampaignJobsOpts{
-		CampaignPlanID:            c.CampaignPlanID,
+	jobs, _, err := store.ListPatches(ctx, ListPatchesOpts{
+		PatchSetID:                c.PatchSetID,
 		Limit:                     -1,
 		OnlyWithDiff:              true,
 		OnlyUnpublishedInCampaign: c.ID,
@@ -179,13 +173,13 @@ func (s *Service) createChangesetJobsWithStore(ctx context.Context, store *Store
 	}
 
 	if len(jobs) == 0 {
-		return ErrNoCampaignJobs
+		return ErrNoPatches
 	}
 
 	for _, job := range jobs {
 		changesetJob := &campaigns.ChangesetJob{
-			CampaignID:    c.ID,
-			CampaignJobID: job.ID,
+			CampaignID: c.ID,
+			PatchID:    job.ID,
 		}
 		err = store.CreateChangesetJob(ctx, changesetJob)
 		if err != nil {
@@ -252,18 +246,18 @@ func RunChangesetJob(
 
 	job.StartedAt = clock()
 
-	campaignJob, err := store.GetCampaignJob(ctx, GetCampaignJobOpts{ID: job.CampaignJobID})
+	patch, err := store.GetPatch(ctx, GetPatchOpts{ID: job.PatchID})
 	if err != nil {
 		return err
 	}
 
 	reposStore := repos.NewDBStore(store.DB(), sql.TxOptions{})
-	rs, err := reposStore.ListRepos(ctx, repos.StoreListReposArgs{IDs: []api.RepoID{api.RepoID(campaignJob.RepoID)}})
+	rs, err := reposStore.ListRepos(ctx, repos.StoreListReposArgs{IDs: []api.RepoID{api.RepoID(patch.RepoID)}})
 	if err != nil {
 		return err
 	}
 	if len(rs) != 1 {
-		return errors.Errorf("repo not found: %d", campaignJob.RepoID)
+		return errors.Errorf("repo not found: %d", patch.RepoID)
 	}
 	repo := rs[0]
 
@@ -279,10 +273,10 @@ func RunChangesetJob(
 
 	ref, err := gitClient.CreateCommitFromPatch(ctx, protocol.CreateCommitFromPatchRequest{
 		Repo:       api.RepoName(repo.Name),
-		BaseCommit: campaignJob.Rev,
+		BaseCommit: patch.Rev,
 		// IMPORTANT: We add a trailing newline here, otherwise `git apply`
 		// will fail with "corrupt patch at line <N>" where N is the last line.
-		Patch:     campaignJob.Diff + "\n",
+		Patch:     patch.Diff + "\n",
 		TargetRef: branch,
 		UniqueRef: ensureUniqueRef,
 		CommitInfo: protocol.PatchCommitInfo{
@@ -352,8 +346,8 @@ func RunChangesetJob(
 	}
 
 	baseRef := "refs/heads/master"
-	if campaignJob.BaseRef != "" {
-		baseRef = campaignJob.BaseRef
+	if patch.BaseRef != "" {
+		baseRef = patch.BaseRef
 	}
 
 	cs := repos.Changeset{
@@ -513,7 +507,7 @@ func (s *Service) CloseCampaign(ctx context.Context, id int64, closeChangesets b
 }
 
 // PublishCampaign publishes the Campaign with the given ID
-// by turning the CampaignJobs attached to the CampaignPlan of
+// by turning the Patches attached to the PatchSet of
 // the Campaign into ChangesetJobs and enqueuing them
 func (s *Service) PublishCampaign(ctx context.Context, id int64) (campaign *campaigns.Campaign, err error) {
 	traceTitle := fmt.Sprintf("campaign: %d", id)
@@ -654,23 +648,23 @@ func (s *Service) CloseOpenChangesets(ctx context.Context, cs []*campaigns.Chang
 	return syncer.SyncChangesetsWithSources(ctx, bySource)
 }
 
-// CreateChangesetJobForCampaignJob creates a ChangesetJob for the
-// CampaignJob with the given ID. The CampaignJob has to belong to a
-// CampaignPlan that was attached to a Campaign.
-func (s *Service) CreateChangesetJobForCampaignJob(ctx context.Context, campaignJobID int64) (err error) {
-	traceTitle := fmt.Sprintf("campaignJob: %d", campaignJobID)
-	tr, ctx := trace.New(ctx, "service.CreateChangesetJobForCampaignJob", traceTitle)
+// CreateChangesetJobForPatch creates a ChangesetJob for the
+// Patch with the given ID. The Patch has to belong to a
+// PatchSet that was attached to a Campaign.
+func (s *Service) CreateChangesetJobForPatch(ctx context.Context, patchID int64) (err error) {
+	traceTitle := fmt.Sprintf("patch: %d", patchID)
+	tr, ctx := trace.New(ctx, "service.CreateChangesetJobForPatch", traceTitle)
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	job, err := s.store.GetCampaignJob(ctx, GetCampaignJobOpts{ID: campaignJobID})
+	job, err := s.store.GetPatch(ctx, GetPatchOpts{ID: patchID})
 	if err != nil {
 		return err
 	}
 
-	campaign, err := s.store.GetCampaign(ctx, GetCampaignOpts{CampaignPlanID: job.CampaignPlanID})
+	campaign, err := s.store.GetCampaign(ctx, GetCampaignOpts{PatchSetID: job.PatchSetID})
 	if err != nil {
 		return err
 	}
@@ -682,8 +676,8 @@ func (s *Service) CreateChangesetJobForCampaignJob(ctx context.Context, campaign
 	defer tx.Done(&err)
 
 	existing, err := tx.GetChangesetJob(ctx, GetChangesetJobOpts{
-		CampaignID:    campaign.ID,
-		CampaignJobID: job.ID,
+		CampaignID: campaign.ID,
+		PatchID:    job.ID,
 	})
 	if err != nil && err != ErrNoResults {
 		return err
@@ -694,8 +688,8 @@ func (s *Service) CreateChangesetJobForCampaignJob(ctx context.Context, campaign
 	}
 
 	changesetJob := &campaigns.ChangesetJob{
-		CampaignID:    campaign.ID,
-		CampaignJobID: job.ID,
+		CampaignID: campaign.ID,
+		PatchID:    job.ID,
 	}
 	err = tx.CreateChangesetJob(ctx, changesetJob)
 	if err != nil {
@@ -714,7 +708,7 @@ type UpdateCampaignArgs struct {
 	Name        *string
 	Description *string
 	Branch      *string
-	Plan        *int64
+	PatchSet    *int64
 }
 
 // ErrCampaignNameBlank is returned by CreateCampaign or UpdateCampaign if the
@@ -722,16 +716,24 @@ type UpdateCampaignArgs struct {
 var ErrCampaignNameBlank = errors.New("Campaign title cannot be blank")
 
 // ErrCampaignBranchBlank is returned by CreateCampaign if the specified Campaign's
-// branch is blank. This is only enforced when creating published campaigns with a plan.
+// branch is blank. This is only enforced when creating published campaigns with a patch set.
 var ErrCampaignBranchBlank = errors.New("Campaign branch cannot be blank")
 
 // ErrPublishedCampaignBranchChange is returned by UpdateCampaign if there is an
-// attempt to change the branch of a published campaign with a plan (or a campaign with individually published changesets).
+// attempt to change the branch of a published campaign with a patch set (or a campaign with individually published changesets).
 var ErrPublishedCampaignBranchChange = errors.New("Published campaign branch cannot be changed")
 
-// ErrCampaignPlanDuplicate is return by CreateCampaign or UpdateCampaign if the specified campaign plan
-// is already attached to another campaign.
-var ErrCampaignPlanDuplicate = errors.New("Campaign cannot use the same plan as another campaign")
+// ErrPatchSetDuplicate is return by CreateCampaign or UpdateCampaign if the
+// specified patch set is already attached to another campaign.
+var ErrPatchSetDuplicate = errors.New("Campaign cannot use the same patch set as another campaign")
+
+// ErrClosedCampaignUpdatePatchIllegal is returned by UpdateCampaign if a patch set
+// is to be attached to a closed campaign.
+var ErrClosedCampaignUpdatePatchIllegal = errors.New("cannot update the patch set of a closed campaign")
+
+// ErrManualCampaignUpdatePatchIllegal is returned by UpdateCampaign if a patch set
+// is to be attached to a manual campaign.
+var ErrManualCampaignUpdatePatchIllegal = errors.New("cannot update a manual campaign to have a patch set")
 
 // UpdateCampaign updates the Campaign with the given arguments.
 func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (campaign *campaigns.Campaign, detachedChangesets []*campaigns.Changeset, err error) {
@@ -754,7 +756,11 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 		return nil, nil, errors.Wrap(err, "getting campaign")
 	}
 
-	var updateAttributes, updatePlanID, updateBranch bool
+	if args.PatchSet != nil && !campaign.ClosedAt.IsZero() {
+		return nil, nil, ErrClosedCampaignUpdatePatchIllegal
+	}
+
+	var updateAttributes, updatePatchSetID, updateBranch bool
 
 	if args.Name != nil && campaign.Name != *args.Name {
 		if *args.Name == "" {
@@ -770,19 +776,22 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 		updateAttributes = true
 	}
 
-	oldPlanID := campaign.CampaignPlanID
-	if args.Plan != nil && oldPlanID != *args.Plan {
-		// Check there is no other campaign attached to the args.Plan.
-		_, err = tx.GetCampaign(ctx, GetCampaignOpts{CampaignPlanID: *args.Plan})
+	oldPatchSetID := campaign.PatchSetID
+	if oldPatchSetID == 0 && args.PatchSet != nil {
+		return nil, nil, ErrManualCampaignUpdatePatchIllegal
+	}
+	if args.PatchSet != nil && oldPatchSetID != *args.PatchSet {
+		// Check there is no other campaign attached to the args.PatchSet.
+		_, err = tx.GetCampaign(ctx, GetCampaignOpts{PatchSetID: *args.PatchSet})
 		if err != nil && err != ErrNoResults {
 			return nil, nil, err
 		}
 		if err != ErrNoResults {
-			return nil, nil, ErrCampaignPlanDuplicate
+			return nil, nil, ErrPatchSetDuplicate
 		}
 
-		campaign.CampaignPlanID = *args.Plan
-		updatePlanID = true
+		campaign.PatchSetID = *args.PatchSet
+		updatePatchSetID = true
 	}
 
 	if args.Branch != nil && campaign.Branch != *args.Branch {
@@ -794,7 +803,7 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 		updateBranch = true
 	}
 
-	if !updateAttributes && !updatePlanID && !updateBranch {
+	if !updateAttributes && !updatePatchSetID && !updateBranch {
 		return campaign, nil, nil
 	}
 
@@ -813,7 +822,7 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 	}
 	partiallyPublished := !published && status.Total != 0
 
-	if campaign.CampaignPlanID != 0 && updateBranch {
+	if campaign.PatchSetID != 0 && updateBranch {
 		if published || partiallyPublished {
 			return nil, nil, ErrPublishedCampaignBranchChange
 		}
@@ -828,9 +837,9 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 	}
 
 	// If we do have to update ChangesetJobs/Changesets, here's a fast path: if
-	// we don't update the CampaignPlan, we don't need to rewire ChangesetJobs,
+	// we don't update the PatchSet, we don't need to rewire ChangesetJobs,
 	// but only update name/description if they changed.
-	if !updatePlanID && updateAttributes {
+	if !updatePatchSetID && updateAttributes {
 		err := tx.UpdateCampaign(ctx, campaign)
 		if err != nil {
 			return campaign, nil, err
@@ -838,7 +847,7 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 		return campaign, nil, tx.ResetChangesetJobs(ctx, campaign.ID)
 	}
 
-	diff, err := computeCampaignUpdateDiff(ctx, tx, campaign, oldPlanID, updateAttributes)
+	diff, err := computeCampaignUpdateDiff(ctx, tx, campaign, oldPatchSetID, updateAttributes)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -915,17 +924,17 @@ type campaignUpdateDiff struct {
 // repoGroup is a group of entities involved in a Campaign that are associated
 // with the same repository.
 type repoGroup struct {
-	changesetJob   *campaigns.ChangesetJob
-	campaignJob    *campaigns.CampaignJob
-	newCampaignJob *campaigns.CampaignJob
-	changeset      *campaigns.Changeset
+	changesetJob *campaigns.ChangesetJob
+	patch        *campaigns.Patch
+	newPatch     *campaigns.Patch
+	changeset    *campaigns.Changeset
 }
 
 func computeCampaignUpdateDiff(
 	ctx context.Context,
 	tx *Store,
 	campaign *campaigns.Campaign,
-	oldPlanID int64,
+	oldPatchSetID int64,
 	updateAttributes bool,
 ) (*campaignUpdateDiff, error) {
 	diff := &campaignUpdateDiff{}
@@ -947,66 +956,66 @@ func computeCampaignUpdateDiff(
 	}
 
 	// We need OnlyWithDiff because we don't create ChangesetJobs for others.
-	campaignJobs, _, err := tx.ListCampaignJobs(ctx, ListCampaignJobsOpts{
-		CampaignPlanID: oldPlanID,
-		Limit:          -1,
-		OnlyWithDiff:   true,
+	patches, _, err := tx.ListPatches(ctx, ListPatchesOpts{
+		PatchSetID:   oldPatchSetID,
+		Limit:        -1,
+		OnlyWithDiff: true,
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "listing campaign jobs")
+		return nil, errors.Wrap(err, "listing patches")
 	}
 
-	newCampaignJobs, _, err := tx.ListCampaignJobs(ctx, ListCampaignJobsOpts{
-		CampaignPlanID: campaign.CampaignPlanID,
-		Limit:          -1,
-		OnlyWithDiff:   true,
+	newPatches, _, err := tx.ListPatches(ctx, ListPatchesOpts{
+		PatchSetID:   campaign.PatchSetID,
+		Limit:        -1,
+		OnlyWithDiff: true,
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "listing new campaign jobs")
+		return nil, errors.Wrap(err, "listing new patches")
 	}
 
-	if len(newCampaignJobs) == 0 {
-		return nil, ErrNoCampaignJobs
+	if len(newPatches) == 0 {
+		return nil, ErrNoPatches
 	}
 
 	// We need to determine which current ChangesetJobs we want to keep and
 	// which ones we want to delete.
 	// We can find out which ones we want to keep by looking at the RepoID of
-	// their CampaignJobs.
+	// their Patches.
 
-	byRepoID, err := mergeByRepoID(changesetJobs, campaignJobs, changesets)
+	byRepoID, err := mergeByRepoID(changesetJobs, patches, changesets)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, j := range newCampaignJobs {
+	for _, j := range newPatches {
 		if group, ok := byRepoID[j.RepoID]; ok {
-			group.newCampaignJob = j
+			group.newPatch = j
 		} else {
-			// If we have new CampaignJobs that don't match an existing
+			// If we have new Patches that don't match an existing
 			// ChangesetJob we need to create new ChangesetJobs.
 			diff.Create = append(diff.Create, &campaigns.ChangesetJob{
-				CampaignID:    campaign.ID,
-				CampaignJobID: j.ID,
+				CampaignID: campaign.ID,
+				PatchID:    j.ID,
 			})
 		}
 	}
 
 	for _, group := range byRepoID {
-		// Either we _don't_ have a matching _new_ CampaignJob, then we delete
+		// Either we _don't_ have a matching _new_ Patch, then we delete
 		// the ChangesetJob and detach & close Changeset.
-		if group.newCampaignJob == nil {
+		if group.newPatch == nil {
 			diff.Delete = append(diff.Delete, group.changesetJob)
 			continue
 		}
 
-		// Or we have a matching _new_ CampaignJob, then we keep the
+		// Or we have a matching _new_ Patch, then we keep the
 		// ChangesetJob around, but need to rewire it.
-		group.changesetJob.CampaignJobID = group.newCampaignJob.ID
+		group.changesetJob.PatchID = group.newPatch.ID
 
 		//  And, if the {Diff,Rev,BaseRef,Description} are different, we  need to
 		// update the Changeset on the codehost...
-		if updateAttributes || campaignJobsDiffer(group.newCampaignJob, group.campaignJob) {
+		if updateAttributes || patchesDiffer(group.newPatch, group.patch) {
 			// .. but if we already have a Changeset and that is merged, we
 			// don't want to update it...
 			if group.changeset != nil {
@@ -1029,9 +1038,9 @@ func computeCampaignUpdateDiff(
 	return diff, nil
 }
 
-// campaignJobsDiffer returns true if the CampaignJobs differ in a way that
+// patchesDiffer returns true if the Patches differ in a way that
 // requires updating the Changeset on the codehost.
-func campaignJobsDiffer(a, b *campaigns.CampaignJob) bool {
+func patchesDiffer(a, b *campaigns.Patch) bool {
 	return a.Diff != b.Diff ||
 		a.Rev != b.Rev ||
 		a.BaseRef != b.BaseRef
@@ -1082,22 +1091,22 @@ func isOutdated(c *repos.Changeset) (bool, error) {
 
 func mergeByRepoID(
 	chs []*campaigns.ChangesetJob,
-	cas []*campaigns.CampaignJob,
+	cas []*campaigns.Patch,
 	cs []*campaigns.Changeset,
 ) (map[api.RepoID]*repoGroup, error) {
 	jobs := make(map[api.RepoID]*repoGroup, len(chs))
 
-	byID := make(map[int64]*campaigns.CampaignJob, len(cas))
+	byID := make(map[int64]*campaigns.Patch, len(cas))
 	for _, j := range cas {
 		byID[j.ID] = j
 	}
 
 	for _, j := range chs {
-		caj, ok := byID[j.CampaignJobID]
+		caj, ok := byID[j.PatchID]
 		if !ok {
-			return nil, fmt.Errorf("CampaignJob with ID %d cannot be found for ChangesetJob %d", j.CampaignJobID, j.ID)
+			return nil, fmt.Errorf("Patch with ID %d cannot be found for ChangesetJob %d", j.PatchID, j.ID)
 		}
-		jobs[caj.RepoID] = &repoGroup{changesetJob: j, campaignJob: caj}
+		jobs[caj.RepoID] = &repoGroup{changesetJob: j, patch: caj}
 	}
 
 	for _, c := range cs {
