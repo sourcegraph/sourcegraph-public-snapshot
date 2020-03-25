@@ -1352,6 +1352,7 @@ func (s *PermsStore) UserIDsWithNoPerms(ctx context.Context) ([]int32, error) {
 -- source: enterprise/cmd/frontend/db/perms_store.go:PermsStore.UserIDsWithNoPerms
 SELECT users.id, '1970-01-01 00:00:00+00'::timestamptz FROM users
 WHERE users.site_admin = FALSE
+AND users.deleted_at IS NULL
 AND users.id NOT IN
 	(SELECT perms.user_id FROM user_permissions AS perms)
 `)
@@ -1398,8 +1399,11 @@ AND repo.id NOT IN
 func (s *PermsStore) UserIDsWithOldestPerms(ctx context.Context, limit int) (map[int32]time.Time, error) {
 	q := sqlf.Sprintf(`
 -- source: enterprise/cmd/frontend/db/perms_store.go:PermsStore.UserIDsWithOldestPerms
-SELECT user_id, updated_at FROM user_permissions
-ORDER BY updated_at ASC
+SELECT perms.user_id, perms.updated_at FROM user_permissions AS perms
+WHERE perms.user_id NOT IN
+	(SELECT users.id FROM users
+	 WHERE users.deleted_at IS NOT NULL)
+ORDER BY perms.updated_at ASC
 LIMIT %s
 `, limit)
 	return s.loadIDsWithTime(ctx, q)
