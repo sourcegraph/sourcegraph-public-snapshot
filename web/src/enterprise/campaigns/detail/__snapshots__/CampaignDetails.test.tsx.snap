@@ -106,9 +106,11 @@ Array [
       value=""
     />
     <div
-      className="form-group mt-2"
+      className="form-group"
     >
-      <label>
+      <label
+        htmlFor="campaignBranch"
+      >
         Branch name
          
         <small>
@@ -127,10 +129,10 @@ Array [
         </small>
       </label>
       <input
-        className="form-control"
+        className="form-control "
         disabled={false}
+        id="campaignBranch"
         onChange={[Function]}
-        placeholder="my-awesome-campaign"
         required={true}
         type="text"
         value=""

@@ -44,6 +44,7 @@ import { PlatformContextProps } from '../../../../../shared/src/platform/context
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 import { CampaignPatches } from './patches/CampaignPatches'
 import { PatchSetPatches } from './patches/PatchSetPatches'
+import { CampaignBranchField } from './form/CampaignBranchField'
 
 export type CampaignUIMode = 'viewing' | 'editing' | 'saving' | 'deleting' | 'closing' | 'publishing'
 
@@ -389,8 +390,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         setName(newName)
     }
 
-    const onBranchChange = (event: ChangeEvent<HTMLInputElement>): void => {
-        setBranch(event.target.value)
+    const onBranchChange = (newValue: string): void => {
+        setBranch(newValue)
         setBranchModified(true)
     }
 
@@ -432,28 +433,11 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                             disabled={mode === 'saving'}
                         />
                         {specifyingBranchAllowed && (
-                            <div className="form-group mt-2">
-                                <label>
-                                    Branch name{' '}
-                                    <small>
-                                        <InformationOutlineIcon
-                                            className="icon-inline"
-                                            data-tooltip={
-                                                'If a branch with the given name already exists, a fallback name will be created by appending a count. Example: "my-branch-name" becomes "my-branch-name-1".'
-                                            }
-                                        />
-                                    </small>
-                                </label>
-                                <input
-                                    type="text"
-                                    className="form-control"
-                                    onChange={onBranchChange}
-                                    placeholder="my-awesome-campaign"
-                                    value={branch}
-                                    required={true}
-                                    disabled={mode === 'saving'}
-                                />
-                            </div>
+                            <CampaignBranchField
+                                value={branch}
+                                onChange={onBranchChange}
+                                disabled={mode === 'saving'}
+                            />
                         )}
                     </>
                 )}
