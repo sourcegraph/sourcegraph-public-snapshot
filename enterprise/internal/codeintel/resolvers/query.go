@@ -173,10 +173,12 @@ func (r *lsifQueryResolver) Hover(ctx context.Context, args *graphqlbackend.LSIF
 				return nil, err
 			}
 			if !ok {
-				// Failed to adjust range. I guess we can fall back to the non-adjusted
-				// range here, in which case the UI will highlight a span on a different
-				// line (but will still usually show the hover text).
-				adjustedRange = lspRange
+				// Failed to adjust range. This _might_ happen in cases where the LSIF range
+				// spans multiple lines which intersect a diff; the hover position on an earlier
+				// line may not be edited, but the ending line of the expression may have been
+				// edited or removed. This is rare and unfortunate, and we'll skip the result
+				// in this case because we have low confidence that it will be rendered correctly.
+				continue
 			}
 
 			return &hoverResolver{text: text, lspRange: adjustedRange}, nil
