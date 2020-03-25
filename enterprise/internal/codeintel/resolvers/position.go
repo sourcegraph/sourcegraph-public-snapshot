@@ -26,20 +26,7 @@ func newPositionAdjuster(ctx context.Context, repo *types.Repo, sourceCommit, ta
 		return &positionAdjuster{hunks: nil}, nil
 	}
 
-	cachedRepo, err := backend.CachedGitRepo(ctx, repo)
-	if err != nil {
-		return nil, err
-	}
-
-	reader, err := git.ExecReader(ctx, *cachedRepo, []string{
-		"diff", sourceCommit, targetCommit, "--", path,
-	})
-	if err != nil {
-		return nil, err
-	}
-	defer reader.Close()
-
-	output, err := ioutil.ReadAll(reader)
+	output, err := readDiff(ctx, repo, sourceCommit, targetCommit, path)
 	if err != nil {
 		return nil, err
 	}
@@ -50,6 +37,23 @@ func newPositionAdjuster(ctx context.Context, repo *types.Repo, sourceCommit, ta
 	}
 
 	return newPositionAdjusterFromDiffOutput(output)
+}
+
+// readDiff returns the output git diff between the source and target commits for the given path.
+func readDiff(ctx context.Context, repo *types.Repo, sourceCommit, targetCommit, path string) ([]byte, error) {
+	cachedRepo, err := backend.CachedGitRepo(ctx, repo)
+	if err != nil {
+		return nil, err
+	}
+
+	cmd := []string{"diff", sourceCommit, targetCommit, "--", path}
+	reader, err := git.ExecReader(ctx, *cachedRepo, cmd)
+	if err != nil {
+		return nil, err
+	}
+	defer reader.Close()
+
+	return ioutil.ReadAll(reader)
 }
 
 // newPositionAdjusterFromReader creates a positionAdjuster directly from the output of a git diff
@@ -63,21 +67,18 @@ func newPositionAdjusterFromDiffOutput(output []byte) (*positionAdjuster, error)
 	return &positionAdjuster{hunks: diff.Hunks}, nil
 }
 
-func (pa *positionAdjuster) adjustRange(lspRange lsp.Range) (lsp.Range, bool) {
-	start, ok := pa.adjustPosition(lspRange.Start)
+func (pa *positionAdjuster) adjustRange(r lsp.Range) (lsp.Range, bool) {
+	start, ok := pa.adjustPosition(r.Start)
 	if !ok {
 		return lsp.Range{}, false
 	}
 
-	end, ok := pa.adjustPosition(lspRange.End)
+	end, ok := pa.adjustPosition(r.End)
 	if !ok {
 		return lsp.Range{}, false
 	}
 
-	return lsp.Range{
-		Start: lsp.Position{Line: int(start.Line), Character: int(start.Character)},
-		End:   lsp.Position{Line: int(end.Line), Character: int(end.Character)},
-	}, true
+	return lsp.Range{Start: start, End: end}, true
 }
 
 // adjustPosition transforms the given position in the source commit to a position in the target
@@ -95,8 +96,10 @@ func (pa *positionAdjuster) adjustPosition(pos lsp.Position) (lsp.Position, bool
 	}
 
 	if i == 0 {
-		return adjustPositionFromHunk(nil, pos)
+		// Trivial case, no changes before this line
+		return pos, true
 	}
+
 	return adjustPositionFromHunk(pa.hunks[i-1], pos)
 }
 
@@ -105,11 +108,6 @@ func (pa *positionAdjuster) adjustPosition(pos lsp.Position) (lsp.Position, bool
 // *last* such hunk in the diff between the original and the new file that does not begin after
 // the given position in the original file.
 func adjustPositionFromHunk(hunk *diff.Hunk, pos lsp.Position) (lsp.Position, bool) {
-	if hunk == nil {
-		// No hunk before this line, so no line offset
-		return pos, true
-	}
-
 	// LSP Positions are zero-indexed; the output of git diff is one-indexed
 	line := pos.Line + 1
 
@@ -159,7 +157,7 @@ func adjustPositionFromHunk(hunk *diff.Hunk, pos lsp.Position) (lsp.Position, bo
 			}, true
 		}
 
-		// Fail the position adjustment. This particular line
+		// Fail the position adjustment. This particular line was either
 		//   (1) edited;
 		//   (2) removed in which case we can't point to it; or
 		//   (3) added, in which case it hasn't been indexed.
