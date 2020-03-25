@@ -128,14 +128,14 @@ func TestAdjustPositionFromDiff(t *testing.T) {
 		adjusted, ok := adjuster.adjustPosition(pos)
 
 		if ok != testCase.expectedOk {
-			t.Errorf("Unexpected ok in test case %s::%s: got %v expected %v", testCase.diffName, testCase.description, ok, testCase.expectedOk)
+			t.Errorf("Test %s::%s: got %v expected %v", testCase.diffName, testCase.description, ok, testCase.expectedOk)
 		} else if ok {
 			// Adjust from zero-index to one-index
 			if adjusted.Line+1 != testCase.expectedLine {
-				t.Errorf("Unexpected line in test case %s::%s: got %d expected %d", testCase.diffName, testCase.description, adjusted.Line+1, testCase.expectedLine)
+				t.Errorf("Test %s::%s: got %d expected %d", testCase.diffName, testCase.description, adjusted.Line+1, testCase.expectedLine)
 			}
 			if adjusted.Character != 10 {
-				t.Errorf("Unexpected character in test case %s::%s: %d", testCase.diffName, testCase.description, adjusted.Character)
+				t.Errorf("Test %s::%s: got %d expected %d", testCase.diffName, testCase.description, adjusted.Character, 10)
 			}
 		}
 	}
