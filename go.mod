@@ -133,7 +133,6 @@ require (
 	github.com/tinylib/msgp v1.1.2 // indirect
 	github.com/tommy-muehle/go-mnd v1.3.1-0.20200224220436-e6f9a994e8fa // indirect
 	github.com/tomnomnom/linkheader v0.0.0-20180905144013-02ca5825eb80
-	github.com/txn2/txeh v1.3.0
 	github.com/uber/gonduit v0.6.1
 	github.com/uber/jaeger-client-go v2.22.1+incompatible
 	github.com/uber/jaeger-lib v2.2.0+incompatible

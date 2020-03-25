@@ -1,14 +1,24 @@
 #!/usr/bin/env bash
 
-set -ex
+set -euf -o pipefail
+
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
-SOURCEGRAPH_HTTPS_DOMAIN="${SOURCEGRAPH_HTTPS_DOMAIN:-"sourcegraph.test"}"
+hosts=/etc/hosts
+domain="${SOURCEGRAPH_HTTPS_DOMAIN:-"sourcegraph.test"}"
+entry="$(printf "\n127.0.0.1\t%s" "${domain}")"
 
-echo "--- adding ${SOURCEGRAPH_HTTPS_DOMAIN} to '/etc/hosts' (you may need to enter your password)"
+if grep -q -w -F -- "${domain}" "${hosts}"; then
+    echo "--- ${domain} already exists in ${hosts}"
+elif [ -w "${hosts}" ]; then
+    # Don't need sudo
+    echo "--- adding ${domain} to ${hosts}"
+    echo "${entry}" >> "${hosts}"
+else
+    echo "--- adding ${domain} to ${hosts} (you may need to enter your password)"
+    sudo ENTRY="${entry}" HOSTS="${hosts}" bash -c 'echo "${ENTRY}" >> "${HOSTS}"'
+fi
 
-sudo dev/txeh.sh add 127.0.0.1 "${SOURCEGRAPH_HTTPS_DOMAIN}"
+echo "--- printing ${hosts}"
 
-echo "--- printing '/etc/hosts'"
-
-dev/txeh.sh show
+cat "${hosts}"
