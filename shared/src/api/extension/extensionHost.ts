@@ -155,6 +155,9 @@ function createExtensionAPI(
     }
 
     // Expose the extension API to extensions
+    // "redefines" everything instead of exposing internal Ext* classes directly so as to:
+    // - Avoid exposing private methods to extensions
+    // - Avoid exposing proxy.* to extensions, which gives access to the main thread
     const extensionAPI: typeof sourcegraph & {
         // Backcompat definitions that were removed from sourcegraph.d.ts but are still defined (as
         // noops with a log message), to avoid completely breaking extensions that use them.
@@ -195,10 +198,9 @@ function createExtensionAPI(
             rootChanges: roots.changes,
         },
 
-        configuration: {
+        configuration: Object.assign(configuration.changes.asObservable(), {
             get: () => configuration.get(),
-            subscribe: configuration.subscribe.bind(configuration),
-        },
+        }),
 
         languages: {
             registerHoverProvider: (selector: sourcegraph.DocumentSelector, provider: sourcegraph.HoverProvider) =>
