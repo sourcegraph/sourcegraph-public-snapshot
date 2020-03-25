@@ -39,6 +39,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 	for k, v := range env {
 		bk.BeforeEveryStepOpts = append(bk.BeforeEveryStepOpts, bk.Env(k, v))
+		bk.BeforeEveryStepOpts = append(bk.BeforeEveryStepOpts, bk.Agent("queue", "sidecar"))
 	}
 
 	if c.profilingEnabled {
