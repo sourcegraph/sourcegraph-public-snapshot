@@ -1,6 +1,6 @@
 import * as comlink from '@sourcegraph/comlink'
 import { Location, MarkupKind, Position, Range, Selection } from '@sourcegraph/extension-api-classes'
-import { Subscription, Unsubscribable, Observable } from 'rxjs'
+import { Subscription, Unsubscribable } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { EndpointPair } from '../../platform/context'
 import { ClientAPI } from '../client/api/api'
@@ -198,12 +198,9 @@ function createExtensionAPI(
             rootChanges: roots.changes,
         },
 
-        configuration: Object.assign(
-            configuration.changes.asObservable(),
-            {
-                get: () => configuration.get(),
-            }
-        ),
+        configuration: Object.assign(configuration.changes.asObservable(), {
+            get: () => configuration.get(),
+        }),
 
         languages: {
             registerHoverProvider: (selector: sourcegraph.DocumentSelector, provider: sourcegraph.HoverProvider) =>
