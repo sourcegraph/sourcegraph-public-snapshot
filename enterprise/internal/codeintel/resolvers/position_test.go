@@ -1,7 +1,6 @@
 package resolvers
 
 import (
-	"bytes"
 	"testing"
 
 	"github.com/sourcegraph/go-lsp"
@@ -116,7 +115,7 @@ func TestAdjustPositionFromDiff(t *testing.T) {
 	}
 
 	for i, testCase := range testCases {
-		adjuster, err := newPositionAdjusterFromReader(bytes.NewReader([]byte(testCase.diff)))
+		adjuster, err := newPositionAdjusterFromDiffOutput([]byte(testCase.diff))
 		if err != nil {
 			t.Errorf("Unexpected error in test case #%d: %s", i+1, err)
 		}

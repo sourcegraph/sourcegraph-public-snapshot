@@ -1,8 +1,9 @@
 package resolvers
 
 import (
+	"bytes"
 	"context"
-	"io"
+	"io/ioutil"
 	"strings"
 
 	"github.com/sourcegraph/go-diff/diff"
@@ -17,8 +18,8 @@ type positionAdjuster struct {
 }
 
 // newPositionAdjuster creates a positionAdjuster by performing a git diff operation on the give
-// path between the source and target commits. If the commits are the same then a trivial-case
-// no-op position adjuster is returned.
+// path between the source and target commits. If the commits are the same or there are no changes
+// in the given path, then a trivial-case no-op position adjuster is returned.
 func newPositionAdjuster(
 	ctx context.Context,
 	repo *types.Repo,
@@ -27,6 +28,7 @@ func newPositionAdjuster(
 	path string,
 ) (*positionAdjuster, error) {
 	if sourceCommit == targetCommit {
+		// Trivial case, no changes to any file
 		return &positionAdjuster{hunks: nil}, nil
 	}
 
@@ -45,13 +47,23 @@ func newPositionAdjuster(
 	}
 	defer reader.Close()
 
-	return newPositionAdjusterFromReader(reader)
+	output, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(output) == 0 {
+		// Trivial case, no changes to file
+		return &positionAdjuster{hunks: nil}, nil
+	}
+
+	return newPositionAdjusterFromDiffOutput(output)
 }
 
 // newPositionAdjusterFromReader creates a positionAdjuster directly from the output of a git diff
 // command. The diff's original file is the source commit, and the new file is the target commit.
-func newPositionAdjusterFromReader(reader io.Reader) (*positionAdjuster, error) {
-	diff, err := diff.NewFileDiffReader(reader).Read()
+func newPositionAdjusterFromDiffOutput(output []byte) (*positionAdjuster, error) {
+	diff, err := diff.NewFileDiffReader(bytes.NewReader(output)).Read()
 	if err != nil {
 		return nil, err
 	}
