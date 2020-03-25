@@ -37,6 +37,7 @@ import { CheckButton } from './CheckButton'
 import { isTextFilter, finiteFilters, isFiniteFilter, FilterTypeToProseNames } from './filters'
 import classNames from 'classnames'
 import { generateFiltersQuery } from '../../../../../shared/src/util/url'
+import { escapeDoubleQuote } from '../helpers'
 
 interface Props {
     /**
@@ -282,6 +283,8 @@ export class FilterInput extends React.Component<Props, State> {
                 // The content and message filters should always be quoted.
                 inputValue = isQuoted(inputValue) ? inputValue : JSON.stringify(inputValue)
             }
+
+            inputValue = escapeDoubleQuote(inputValue)
 
             // Update the top-level filtersInQueryMap with the new value for this filter.
             this.props.onFilterEdited(this.props.mapKey, inputValue)

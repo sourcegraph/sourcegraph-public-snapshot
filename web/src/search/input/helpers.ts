@@ -53,3 +53,11 @@ export function convertPlainTextToInteractiveQuery(
 
     return { filtersInQuery: newFiltersInQuery, navbarQuery: newNavbarQuery }
 }
+
+// Checks whether an input string is ONLY one double quote. If so, quote and escape it.
+export function escapeDoubleQuote(input: string): string {
+    if (input !== '"') {
+        return input
+    }
+    return JSON.stringify(input)
+}
