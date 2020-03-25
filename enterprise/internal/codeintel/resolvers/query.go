@@ -56,12 +56,20 @@ func (r *lsifQueryResolver) Definitions(ctx context.Context, args *graphqlbacken
 		}
 
 		if len(locations) > 0 {
-			return &locationConnectionResolver{locations: locations}, nil
+			locationsWithSourceCommit := make([]locationWithSourceCommit, len(locations))
+			for i, location := range locations {
+				locationsWithSourceCommit[i] = locationWithSourceCommit{location, upload.Commit}
+			}
+
+			return &locationConnectionResolver{
+				repo:      r.repositoryResolver.Type(),
+				commit:    r.commit,
+				locations: locationsWithSourceCommit,
+			}, nil
 		}
 	}
 
-	// TODO(efritz) - adjust ranges of each result from the upload commit to the requested commit
-	return &locationConnectionResolver{locations: nil}, nil
+	return &locationConnectionResolver{}, nil
 }
 
 func (r *lsifQueryResolver) References(ctx context.Context, args *graphqlbackend.LSIFPagedQueryPositionArgs) (graphqlbackend.LocationConnectionResolver, error) {
@@ -79,7 +87,7 @@ func (r *lsifQueryResolver) References(ctx context.Context, args *graphqlbackend
 	// this request.
 	newCursors := map[int64]string{}
 
-	var allLocations []*lsif.LSIFLocation
+	var allLocations []locationWithSourceCommit
 	for _, upload := range r.uploads {
 		adjustedPosition, ok, err := r.adjustPosition(ctx, upload.Commit, args.Line, args.Character)
 		if err != nil {
@@ -122,7 +130,10 @@ func (r *lsifQueryResolver) References(ctx context.Context, args *graphqlbackend
 		if err != nil {
 			return nil, err
 		}
-		allLocations = append(allLocations, locations...)
+
+		for _, location := range locations {
+			allLocations = append(allLocations, locationWithSourceCommit{location, upload.Commit})
+		}
 
 		if nextURL != "" {
 			newCursors[upload.ID] = nextURL
@@ -134,8 +145,12 @@ func (r *lsifQueryResolver) References(ctx context.Context, args *graphqlbackend
 		return nil, err
 	}
 
-	// TODO(efritz) - adjust ranges of each result from the upload commit to the requested commit
-	return &locationConnectionResolver{locations: allLocations, endCursor: endCursor}, nil
+	return &locationConnectionResolver{
+		repo:      r.repositoryResolver.Type(),
+		commit:    r.commit,
+		locations: allLocations,
+		endCursor: endCursor,
+	}, nil
 }
 
 func (r *lsifQueryResolver) Hover(ctx context.Context, args *graphqlbackend.LSIFQueryPositionArgs) (graphqlbackend.HoverResolver, error) {
