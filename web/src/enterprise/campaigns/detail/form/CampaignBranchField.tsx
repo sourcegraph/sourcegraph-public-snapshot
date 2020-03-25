@@ -5,14 +5,13 @@ interface Props {
     value: string | undefined
     onChange: (newValue: string) => void
 
-    className?: string
     disabled?: boolean
 }
 
 /**
  * A text field for a campaign's branch.
  */
-export const CampaignBranchField: React.FunctionComponent<Props> = ({ value, onChange, className = '', disabled }) => (
+export const CampaignBranchField: React.FunctionComponent<Props> = ({ value, onChange, disabled }) => (
     <div className="form-group">
         <label htmlFor="campaignBranch">
             Branch name{' '}
@@ -28,7 +27,7 @@ export const CampaignBranchField: React.FunctionComponent<Props> = ({ value, onC
         <input
             id="campaignBranch"
             type="text"
-            className={`form-control ${className}`}
+            className="form-control"
             value={value}
             onChange={event => onChange(event.target.value)}
             required={true}

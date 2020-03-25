@@ -6,7 +6,6 @@ interface Props {
     value: string | undefined
     onChange: (newValue: string) => void
 
-    className?: string
     disabled?: boolean
 }
 
@@ -16,7 +15,6 @@ interface Props {
 export const CampaignDescriptionField: React.FunctionComponent<Props> = ({
     value,
     onChange: parentOnChange,
-    className = '',
     disabled,
 }) => {
     const onChange = useCallback<React.ChangeEventHandler<HTMLTextAreaElement>>(
@@ -34,7 +32,7 @@ export const CampaignDescriptionField: React.FunctionComponent<Props> = ({
             </label>
             <TextareaAutosize
                 type="text"
-                className={`form-control ${className}`}
+                className="form-control"
                 value={value}
                 onChange={onChange}
                 minRows={3}

@@ -420,12 +420,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 {['saving', 'editing'].includes(mode) && (
                     <>
                         <h3>Details</h3>
-                        <CampaignTitleField
-                            className="e2e-campaign-title"
-                            value={name}
-                            onChange={onNameChange}
-                            disabled={mode === 'saving'}
-                        />
+                        <CampaignTitleField value={name} onChange={onNameChange} disabled={mode === 'saving'} />
                         <CampaignDescriptionField
                             value={description}
                             onChange={setDescription}
