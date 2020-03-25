@@ -38,6 +38,20 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({ c
         state = 'completed'
     }
 
+    const errorList = (
+        <ul className="mt-2">
+            {status.errors.map((error, i) => (
+                <li className="mb-2" key={i}>
+                    <p className="mb-0 text-monospace">
+                        <small>
+                            <ErrorMessage error={error} />
+                        </small>
+                    </p>
+                </li>
+            ))}
+        </ul>
+    )
+
     let statusIndicator: JSX.Element | undefined
     switch (state) {
         case 'errored':
@@ -45,15 +59,7 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({ c
                 <>
                     <div className="alert alert-danger my-4">
                         <h3 className="alert-heading mb-0">Creating changesets failed</h3>
-                        <ul className="mt-2">
-                            {status.errors.map((error, i) => (
-                                <li className="mb-2" key={i}>
-                                    <code>
-                                        <ErrorMessage error={error} />
-                                    </code>
-                                </li>
-                            ))}
-                        </ul>
+                        {errorList}
                         {campaign.viewerCanAdminister && (
                             <button type="button" className="btn btn-primary mb-0" onClick={onRetry}>
                                 Retry
@@ -78,6 +84,8 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({ c
                                 &nbsp;
                             </div>
                         </div>
+                        {status.errors.length > 0 && <h4 className="mt-1">Creating changesets failed</h4>}
+                        {errorList}
                     </div>
                 </>
             )
