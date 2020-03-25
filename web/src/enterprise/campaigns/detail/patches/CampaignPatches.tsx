@@ -3,11 +3,11 @@ import H from 'history'
 import * as GQL from '../../../../../../shared/src/graphql/schema'
 import { ThemeProps } from '../../../../../../shared/src/theme'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../../../../components/FilteredConnection'
-import { Observable, Subject, Observer } from 'rxjs'
+import { Observable, Subject, Observer, merge, of } from 'rxjs'
 import { DEFAULT_CHANGESET_PATCH_LIST_COUNT } from '../presentation'
 import { queryChangesets as _queryChangesets, queryPatchesFromCampaign } from '../backend'
 import { PatchNode, PatchNodeProps } from './PatchNode'
-import { repeatWhen } from 'rxjs/operators'
+import { switchMap } from 'rxjs/operators'
 
 interface Props extends ThemeProps {
     campaign: Pick<GQL.ICampaign, 'id'>
@@ -35,7 +35,8 @@ export const CampaignPatches: React.FunctionComponent<Props> = ({
     queryPatches = queryPatchesFromCampaign,
 }) => {
     const queryPatchesConnection = useCallback(
-        (args: FilteredConnectionQueryArgs) => queryPatches(campaign.id, args).pipe(repeatWhen(() => changesetUpdates)),
+        (args: FilteredConnectionQueryArgs) =>
+            merge(of(undefined), changesetUpdates).pipe(switchMap(() => queryPatches(campaign.id, args))),
         [campaign.id, queryPatches, changesetUpdates]
     )
 

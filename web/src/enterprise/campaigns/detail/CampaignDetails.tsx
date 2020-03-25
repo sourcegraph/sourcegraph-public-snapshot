@@ -7,7 +7,7 @@ import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
 import { UserAvatar } from '../../../user/UserAvatar'
 import { Timestamp } from '../../../components/time/Timestamp'
-import { noop } from 'lodash'
+import { noop, isEqual } from 'lodash'
 import { Form } from '../../../components/Form'
 import {
     fetchCampaignById,
@@ -28,7 +28,7 @@ import { Subject, of, merge, Observable, NEVER } from 'rxjs'
 import { renderMarkdown } from '../../../../../shared/src/util/markdown'
 import { ErrorAlert } from '../../../components/alerts'
 import { Markdown } from '../../../../../shared/src/components/Markdown'
-import { switchMap, tap, takeWhile, repeatWhen, delay } from 'rxjs/operators'
+import { switchMap, tap, takeWhile, repeatWhen, delay, distinctUntilChanged } from 'rxjs/operators'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { CampaignDescriptionField } from './form/CampaignDescriptionField'
 import { CampaignStatus } from './CampaignStatus'
@@ -128,34 +128,28 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         }
         // on the very first fetch, a reload of the changesets is not required
         let isFirstCampaignFetch = true
+
+        let currentCampaign: Campaign | null
         // Fetch campaign if ID was given
         const subscription = merge(of(undefined), _noSubject ? new Observable<void>() : campaignUpdates)
             .pipe(
-                switchMap(
-                    () =>
-                        new Observable<Campaign | null>(observer => {
-                            let currentCampaign: Campaign | null
-                            const subscription = _fetchCampaignById(campaignID)
-                                .pipe(
-                                    tap(campaign => {
-                                        currentCampaign = campaign
-                                    }),
-                                    // repeat fetching the campaign as long as the state is still processing
-                                    repeatWhen(obs =>
-                                        obs.pipe(
-                                            takeWhile(
-                                                () =>
-                                                    currentCampaign?.status?.state ===
-                                                    GQL.BackgroundProcessState.PROCESSING
-                                            ),
-                                            delay(2000)
-                                        )
-                                    )
-                                )
-                                .subscribe(observer)
-                            return subscription
-                        })
-                )
+                switchMap(() =>
+                    _fetchCampaignById(campaignID).pipe(
+                        tap(campaign => {
+                            currentCampaign = campaign
+                        }),
+                        // repeat fetching the campaign as long as the state is still processing
+                        repeatWhen(obs =>
+                            obs.pipe(
+                                takeWhile(
+                                    () => currentCampaign?.status?.state === GQL.BackgroundProcessState.PROCESSING
+                                ),
+                                delay(2000)
+                            )
+                        )
+                    )
+                ),
+                distinctUntilChanged(isEqual)
             )
             .subscribe({
                 next: fetchedCampaign => {
