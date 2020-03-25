@@ -245,10 +245,6 @@ func (s FakeStore) ListRepos(ctx context.Context, args StoreListReposArgs) ([]*R
 			continue
 		}
 
-		if args.PrivateOnly && r.Private {
-			continue
-		}
-
 		var preds []bool
 		if len(kinds) > 0 {
 			preds = append(preds, kinds[strings.ToLower(r.ExternalRepo.ServiceType)])
@@ -261,6 +257,9 @@ func (s FakeStore) ListRepos(ctx context.Context, args StoreListReposArgs) ([]*R
 		}
 		if len(externalRepos) > 0 {
 			preds = append(preds, externalRepos[r.ExternalRepo])
+		}
+		if args.PrivateOnly {
+			preds = append(preds, r.Private)
 		}
 
 		if (args.UseOr && evalOr(preds...)) || (!args.UseOr && evalAnd(preds...)) {
