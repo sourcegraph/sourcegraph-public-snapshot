@@ -70,7 +70,7 @@ index 49bcbf86b7ba..d135cd54e700 100644
         }
 `
 
-func TestAdjustPositionFromDiff(t *testing.T) {
+func TestAdjustPosition(t *testing.T) {
 	testCases := []struct {
 		diff         string // The git diff output
 		diffName     string // The git diff output name
@@ -138,5 +138,20 @@ func TestAdjustPositionFromDiff(t *testing.T) {
 				t.Errorf("Test %s::%s: got %d expected %d", testCase.diffName, testCase.description, adjusted.Character, 10)
 			}
 		}
+	}
+}
+
+func TestAdjustPositionEmptyDiff(t *testing.T) {
+	adjuster, err := newPositionAdjusterFromDiffOutput(nil)
+	if err != nil {
+		t.Errorf("Unexpected error: %s", err)
+	}
+
+	adjusted, ok := adjuster.adjustPosition(lsp.Position{Line: 25, Character: 10})
+	if !ok {
+		t.Errorf("Unexpected failure adjusting position")
+	}
+	if adjusted.Line != 25 || adjusted.Character != 10 {
+		t.Errorf("Unexpected result: got %d:%d expected %d:%d", adjusted.Line, adjusted.Character, 25, 10)
 	}
 }

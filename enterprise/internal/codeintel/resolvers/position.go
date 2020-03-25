@@ -23,17 +23,12 @@ type positionAdjuster struct {
 func newPositionAdjuster(ctx context.Context, repo *types.Repo, sourceCommit, targetCommit, path string) (*positionAdjuster, error) {
 	if sourceCommit == targetCommit {
 		// Trivial case, no changes to any file
-		return &positionAdjuster{hunks: nil}, nil
+		return &positionAdjuster{}, nil
 	}
 
 	output, err := readDiff(ctx, repo, sourceCommit, targetCommit, path)
 	if err != nil {
 		return nil, err
-	}
-
-	if len(output) == 0 {
-		// Trivial case, no changes to file
-		return &positionAdjuster{hunks: nil}, nil
 	}
 
 	return newPositionAdjusterFromDiffOutput(output)
@@ -58,6 +53,11 @@ func readDiff(ctx context.Context, repo *types.Repo, sourceCommit, targetCommit,
 // newPositionAdjusterFromReader creates a positionAdjuster directly from the output of a git diff
 // command. The diff's original file is the source commit, and the new file is the target commit.
 func newPositionAdjusterFromDiffOutput(output []byte) (*positionAdjuster, error) {
+	if len(output) == 0 {
+		// Trivial case, no changes to file
+		return &positionAdjuster{}, nil
+	}
+
 	diff, err := diff.NewFileDiffReader(bytes.NewReader(output)).Read()
 	if err != nil {
 		return nil, err
