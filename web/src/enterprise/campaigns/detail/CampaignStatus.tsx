@@ -74,8 +74,8 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({ c
                 <>
                     <div className="alert alert-info mt-4">
                         <p>
-                            <SyncIcon className="icon-inline" /> Creating {status.pendingCount + status.completedCount}{' '}
-                            {pluralize('changeset', status.pendingCount + status.completedCount)} on code hosts...
+                            <SyncIcon className="icon-inline" /> Creating {status.pendingCount}{' '}
+                            {pluralize('changeset', status.pendingCount)} on code hosts...
                         </p>
                         <div className="progress mt-2 mb-1">
                             {/* we need to set the width to control the progress bar, so: */}
