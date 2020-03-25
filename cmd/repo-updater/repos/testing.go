@@ -245,6 +245,10 @@ func (s FakeStore) ListRepos(ctx context.Context, args StoreListReposArgs) ([]*R
 			continue
 		}
 
+		if args.PrivateOnly && r.Private {
+			continue
+		}
+
 		var preds []bool
 		if len(kinds) > 0 {
 			preds = append(preds, kinds[strings.ToLower(r.ExternalRepo.ServiceType)])

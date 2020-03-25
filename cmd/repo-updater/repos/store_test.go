@@ -779,7 +779,8 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 	}
 
 	gitlab := repos.Repo{
-		Name: "gitlab.com/bar/foo",
+		Name:    "gitlab.com/bar/foo",
+		Private: true,
 		Sources: map[string]*repos.SourceInfo{
 			"extsvc:123": {
 				ID:       "extsvc:123",
@@ -961,6 +962,17 @@ func testStoreListRepos(store repos.Store) func(*testing.T) {
 			}
 		},
 		repos: repos.Assert.ReposEqual(&github, &gitlab),
+	})
+
+	testCases = append(testCases, testCase{
+		name: "only include private",
+		args: func(repos.Repos) repos.StoreListReposArgs {
+			return repos.StoreListReposArgs{
+				PrivateOnly: true,
+			}
+		},
+		stored: repositories,
+		repos:  repos.Assert.ReposEqual(&gitlab),
 	})
 
 	testCases = append(testCases, testCase{
