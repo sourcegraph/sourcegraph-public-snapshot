@@ -48,7 +48,7 @@
     "yallist": "^4.0.0"
   },
   "devDependencies": {
-    "@sourcegraph/tsconfig": "^4.0.0",
+    "@sourcegraph/tsconfig": "^4.0.1",
     "@types/async-polling": "^0.0.3",
     "@types/bloomfilter": "0.0.0",
     "@types/body-parser": "1.19.0",
