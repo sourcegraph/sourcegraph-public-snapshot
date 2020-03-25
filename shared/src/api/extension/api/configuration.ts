@@ -56,9 +56,9 @@ export class ExtConfiguration<C extends object> extends ReplaySubject<void>
     private data?: Readonly<SettingsCascade<C>>
 
     constructor(private proxy: ProxyResult<ClientConfigurationAPI>) {
-        // Call super() with a buffer size of 1, so that sourcegraph.configuration
-        // doesn't emit until initial settings have been received, but emits immediately
-        // for all subsequent subscribers as soon as initial settings have been received.
+        // Call super() with a buffer size of 1, so that sourcegraph.configuration:
+        // - doesn't emit until initial settings have been received.
+        // - emits immediately on subscription after initial settings have been received.
         super(BUFFER_SIZE)
     }
 
