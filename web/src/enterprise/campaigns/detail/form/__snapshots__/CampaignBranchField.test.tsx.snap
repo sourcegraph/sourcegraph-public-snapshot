@@ -25,7 +25,7 @@ exports[`CampaignBranchField renders 1`] = `
     </small>
   </label>
   <input
-    className="form-control "
+    className="form-control"
     id="campaignBranch"
     onChange={[Function]}
     required={true}
