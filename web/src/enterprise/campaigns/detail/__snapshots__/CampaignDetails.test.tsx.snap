@@ -24,7 +24,6 @@ exports[`CampaignDetails creation form for empty manual campaign 1`] = `
         Details
       </h3>
       <CampaignTitleField
-        className="e2e-campaign-title"
         disabled={false}
         onChange={[Function]}
         value=""
@@ -95,7 +94,6 @@ Array [
       Details
     </h3>
     <CampaignTitleField
-      className="e2e-campaign-title"
       disabled={false}
       onChange={[Function]}
       value=""
@@ -106,9 +104,11 @@ Array [
       value=""
     />
     <div
-      className="form-group mt-2"
+      className="form-group"
     >
-      <label>
+      <label
+        htmlFor="campaignBranch"
+      >
         Branch name
          
         <small>
@@ -129,8 +129,8 @@ Array [
       <input
         className="form-control"
         disabled={false}
+        id="campaignBranch"
         onChange={[Function]}
-        placeholder="my-awesome-campaign"
         required={true}
         type="text"
         value=""
@@ -308,7 +308,6 @@ Array [
       Details
     </h3>
     <CampaignTitleField
-      className="e2e-campaign-title"
       disabled={false}
       onChange={[Function]}
       value="n"
@@ -582,15 +581,14 @@ Array [
       className="flex-grow-1 d-flex justify-content-end align-items-center"
     />
   </div>,
+  "CampaignStatus(state=PROCESSING)",
   <form
     className="e2e-campaign-form "
     id="campaign-form"
     onInvalid={[Function]}
     onReset={[Function]}
     onSubmit={[Function]}
-  >
-    CampaignStatus(state=PROCESSING)
-  </form>,
+  />,
   <div
     className="card mt-2"
   >
@@ -987,15 +985,14 @@ Array [
       </details>
     </span>
   </div>,
+  "CampaignStatus(state=PROCESSING)",
   <form
     className="e2e-campaign-form "
     id="campaign-form"
     onInvalid={[Function]}
     onReset={[Function]}
     onSubmit={[Function]}
-  >
-    CampaignStatus(state=PROCESSING)
-  </form>,
+  />,
   <div
     className="card mt-2"
   >

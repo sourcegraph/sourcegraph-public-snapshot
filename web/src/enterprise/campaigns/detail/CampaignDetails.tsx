@@ -1,7 +1,7 @@
 import slugify from 'slugify'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import React, { useState, useEffect, useRef, useMemo, ChangeEvent } from 'react'
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
@@ -33,7 +33,6 @@ import { ThemeProps } from '../../../../../shared/src/theme'
 import { CampaignDescriptionField } from './form/CampaignDescriptionField'
 import { CampaignStatus } from './CampaignStatus'
 import { CampaignUpdateDiff } from './CampaignUpdateDiff'
-import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import { CampaignActionsBar } from './CampaignActionsBar'
 import { CampaignTitleField } from './form/CampaignTitleField'
 import { CampaignChangesets } from './changesets/CampaignChangesets'
@@ -44,8 +43,9 @@ import { PlatformContextProps } from '../../../../../shared/src/platform/context
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 import { CampaignPatches } from './patches/CampaignPatches'
 import { PatchSetPatches } from './patches/PatchSetPatches'
+import { CampaignBranchField } from './form/CampaignBranchField'
 
-export type CampaignUIMode = 'viewing' | 'editing' | 'saving' | 'deleting' | 'closing'
+export type CampaignUIMode = 'viewing' | 'editing' | 'saving' | 'deleting' | 'closing' | 'publishing'
 
 interface Campaign
     extends Pick<
@@ -204,6 +204,27 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         useMemo(() => (!patchSetID ? NEVER : _fetchPatchSetById(patchSetID)), [patchSetID, _fetchPatchSetById])
     )
 
+    const onAddChangeset = useCallback((): void => {
+        // we also check the campaign.changesets.totalCount, so an update to the campaign is required as well
+        campaignUpdates.next()
+        changesetUpdates.next()
+    }, [campaignUpdates, changesetUpdates])
+
+    const onNameChange = useCallback(
+        (newName: string): void => {
+            if (!branchModified) {
+                setBranch(slugify(newName, { lower: true }))
+            }
+            setName(newName)
+        },
+        [branchModified]
+    )
+
+    const onBranchChange = useCallback((newValue: string): void => {
+        setBranch(newValue)
+        setBranchModified(true)
+    }, [])
+
     // Is loading
     if ((campaignID && campaign === undefined) || (patchSetID && patchSet === undefined)) {
         return (
@@ -264,7 +285,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     }
 
     const onPublish = async (): Promise<void> => {
-        setMode('saving')
+        setMode('publishing')
         try {
             await publishCampaign(campaign!.id)
             setAlertError(undefined)
@@ -374,25 +395,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         }
     }
 
-    const onAddChangeset = (): void => {
-        // we also check the campaign.changesets.totalCount, so an update to the campaign is required as well
-        campaignUpdates.next()
-        changesetUpdates.next()
-    }
-
     const author = campaign ? campaign.author : authenticatedUser
-
-    const onNameChange = (newName: string): void => {
-        if (!branchModified) {
-            setBranch(slugify(newName, { lower: true }))
-        }
-        setName(newName)
-    }
-
-    const onBranchChange = (event: ChangeEvent<HTMLInputElement>): void => {
-        setBranch(event.target.value)
-        setBranchModified(true)
-    }
 
     const totalChangesetCount = campaign?.changesets.totalCount ?? 0
 
@@ -413,47 +416,25 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 formID={campaignFormID}
             />
             {alertError && <ErrorAlert error={alertError} />}
+            {campaign && !updateMode && !['saving', 'editing'].includes(mode) && (
+                <CampaignStatus campaign={campaign} onPublish={onPublish} onRetry={onRetry} />
+            )}
             <Form id={campaignFormID} onSubmit={onSubmit} onReset={onCancel} className="e2e-campaign-form">
-                {campaign && !updateMode && !['saving', 'editing'].includes(mode) && (
-                    <CampaignStatus campaign={campaign} onPublish={onPublish} onRetry={onRetry} />
-                )}
-                {(mode === 'editing' || mode === 'saving') && (
+                {['saving', 'editing'].includes(mode) && (
                     <>
                         <h3>Details</h3>
-                        <CampaignTitleField
-                            className="e2e-campaign-title"
-                            value={name}
-                            onChange={onNameChange}
-                            disabled={mode === 'saving'}
-                        />
+                        <CampaignTitleField value={name} onChange={onNameChange} disabled={mode === 'saving'} />
                         <CampaignDescriptionField
                             value={description}
                             onChange={setDescription}
                             disabled={mode === 'saving'}
                         />
                         {specifyingBranchAllowed && (
-                            <div className="form-group mt-2">
-                                <label>
-                                    Branch name{' '}
-                                    <small>
-                                        <InformationOutlineIcon
-                                            className="icon-inline"
-                                            data-tooltip={
-                                                'If a branch with the given name already exists, a fallback name will be created by appending a count. Example: "my-branch-name" becomes "my-branch-name-1".'
-                                            }
-                                        />
-                                    </small>
-                                </label>
-                                <input
-                                    type="text"
-                                    className="form-control"
-                                    onChange={onBranchChange}
-                                    placeholder="my-awesome-campaign"
-                                    value={branch}
-                                    required={true}
-                                    disabled={mode === 'saving'}
-                                />
-                            </div>
+                            <CampaignBranchField
+                                value={branch}
+                                onChange={onBranchChange}
+                                disabled={mode === 'saving'}
+                            />
                         )}
                     </>
                 )}
@@ -521,23 +502,21 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
 
             {!updateMode && (campaign || patchSet) && (
                 <>
-                    {campaign && mode !== 'editing' && mode !== 'saving' && (
-                        <div className="card mt-2">
-                            <div className="card-header">
-                                <strong>
-                                    <UserAvatar user={author} className="icon-inline" /> {author.username}
-                                </strong>{' '}
-                                started <Timestamp date={campaign.createdAt} />
-                            </div>
-                            <div className="card-body">
-                                <Markdown
-                                    dangerousInnerHTML={renderMarkdown(campaign.description || '_No description_')}
-                                />
-                            </div>
-                        </div>
-                    )}
                     {campaign && !['saving', 'editing'].includes(mode) && (
                         <>
+                            <div className="card mt-2">
+                                <div className="card-header">
+                                    <strong>
+                                        <UserAvatar user={author} className="icon-inline" /> {author.username}
+                                    </strong>{' '}
+                                    started <Timestamp date={campaign.createdAt} />
+                                </div>
+                                <div className="card-body">
+                                    <Markdown
+                                        dangerousInnerHTML={renderMarkdown(campaign.description || '_No description_')}
+                                    />
+                                </div>
+                            </div>
                             <h3 className="mt-4 mb-2">Progress</h3>
                             <CampaignBurndownChart
                                 changesetCountsOverTime={campaign.changesetCountsOverTime}
