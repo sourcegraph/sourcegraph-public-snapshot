@@ -217,7 +217,6 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32) (err erro
 		// Get corresponding internal database IDs
 		rs, err = s.reposStore.ListRepos(ctx, repos.StoreListReposArgs{
 			ExternalRepos: repoSpecs,
-			PerPage:       int64(len(repoSpecs)), // We want to get all repositories in one shot
 			PrivateOnly:   true,
 		})
 		if err != nil {
