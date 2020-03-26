@@ -27,6 +27,13 @@ The code campaigns feature introduces a lot of new names, GraphQL queries and mu
 | -                   | `campaigns.ChangesetJob`   | `changeset_jobs`   | It represents the process of turning a `Patch` (GraphQL)/`campaigns.Patch` (Go) into a `Changeset` on the code host. It is executed asynchronously in the background when a campaign is created with a patch set. |
 | `ChangesetEvent`    | `campaigns.ChangesetEvent` | `changeset_events` | A changeset event is an event on a code host, e.g. a comment or a review on a pull request on GitHub. They are created by syncing the changesets from the code host on a regular basis and by accepting webhook events and turning them into changeset events. |
 
+## Database layout
+
+<object data="/dev/campaigns_database_layout.svg" type="image/svg+xml" style="width:100%; max-width: 800px">
+</object>
+
+(To re-generate the diagram from the `campaigns_database_layout.dot` file with Graphviz, run: `dot -Tsvg -o campaigns_database_layout.svg campaigns_database_layout.dot`.)
+
 ## Diving into the code as a backend developer
 
 1. Read through `./cmd/frontend/graphqlbackend/campaigns.go` to get an overview of the campaigns GraphQL API.
