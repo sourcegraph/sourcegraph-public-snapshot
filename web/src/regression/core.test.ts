@@ -15,7 +15,6 @@ import { applyEdits, parse } from '@sqs/jsonc-parser'
 import { overwriteSettings } from '../../../shared/src/settings/edit'
 import delay from 'delay'
 import { saveScreenshotsUponFailures } from '../../../shared/src/e2e/screenshotReporter'
-import { retry } from '../../../shared/src/e2e/e2e-test-utils'
 
 describe('Core functionality regression test suite', () => {
     const testUsername = 'test-core'
@@ -74,9 +73,7 @@ describe('Core functionality regression test suite', () => {
 
     test('2.2.1 User settings are saved and applied', async () => {
         const getSettings = async () => {
-            await retry(async () => {
-                await driver.page.waitForSelector('.e2e-settings-file .monaco-editor')
-            })
+            await driver.page.waitForSelector('.e2e-settings-file .monaco-editor')
             return driver.page.evaluate(() => {
                 const editor = document.querySelector('.e2e-settings-file .monaco-editor') as HTMLElement
                 return editor ? editor.innerText : null
@@ -127,13 +124,15 @@ describe('Core functionality regression test suite', () => {
             )
         }
 
-        const previousTyping = previousSettings.substring(0, previousSettings.indexOf('\n}'))
+        // When you type (or paste) "{" into the empty user settings editor it adds a "}". That's why
+        // we cannot type all the previous text, because then we would have two "}" at the end.
+        const textToTypeFromPrevious = previousSettings.substring(0, previousSettings.indexOf('\n}'))
         // Restore old settings
         await driver.replaceText({
             selector: '.e2e-settings-file .monaco-editor',
-            newText: previousTyping,
+            newText: textToTypeFromPrevious,
             selectMethod: 'keyboard',
-            enterTextMethod: 'type',
+            enterTextMethod: 'paste',
         })
         await driver.findElementWithText('Save changes', { action: 'click' })
         await driver.page.waitForFunction(
