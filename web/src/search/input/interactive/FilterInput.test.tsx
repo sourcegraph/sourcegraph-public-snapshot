@@ -34,6 +34,7 @@ describe('FilterInput', () => {
     let nextFiltersInQuery: FiltersToTypeAndValue
     let nextValue: string
     beforeEach(() => {
+        defaultProps.onFilterEdited.resetHistory()
         nextFiltersInQuery = {}
         nextValue = ''
     })
@@ -70,16 +71,6 @@ describe('FilterInput', () => {
         nextValue = JSON.parse(nextValue)
     }
 
-    test('Updating filters with an empty value does not work', () => {
-        container = render(<FilterInput {...defaultProps} />).container
-        const inputEl = container.querySelector('.filter-input__input-field')
-        expect(inputEl).toBeTruthy()
-        const confirmBtn = container.querySelector('.check-button__btn')
-        expect(confirmBtn).toBeTruthy()
-        fireEvent.click(confirmBtn!)
-        expect(defaultProps.onFilterEdited.notCalled).toBe(true)
-    })
-
     describe('For type filters', () => {
         it('successfully updates when submitting with an empty value', () => {
             container = render(
@@ -95,8 +86,18 @@ describe('FilterInput', () => {
         })
     })
 
-    describe('For content and message filters', () => {
-        it('gets auto-quoted when not editable', () => {
+    describe('For all other filters', () => {
+        it('Updating filters with an empty value does not work', () => {
+            container = render(<FilterInput {...defaultProps} />).container
+            const inputEl = container.querySelector('.filter-input__input-field')
+            expect(inputEl).toBeTruthy()
+            const confirmBtn = container.querySelector('.check-button__btn')
+            expect(confirmBtn).toBeTruthy()
+            fireEvent.click(confirmBtn!)
+            expect(defaultProps.onFilterEdited.notCalled).toBe(true)
+        })
+
+        it('displays quoted value when uneditable', () => {
             container = render(
                 <FilterInput
                     {...defaultProps}
@@ -127,6 +128,39 @@ describe('FilterInput', () => {
             ).container
             expect(getByText(container, 'content:"test query"')).toBeTruthy()
         })
+
+        it('displays quoted, escaped value when uneditable', () => {
+            container = render(
+                <FilterInput
+                    {...defaultProps}
+                    mapKey="repo"
+                    filterType={FilterType.repo}
+                    onFilterEdited={onFilterEditedHandler}
+                    editable={true}
+                />
+            ).container
+
+            const inputEl = container.querySelector('.filter-input__input-field')
+            expect(inputEl).toBeTruthy()
+            fireEvent.click(inputEl!)
+            fireEvent.change(inputEl!, { target: { value: '"foo' } })
+            const confirmBtn = container.querySelector('.check-button__btn')
+            expect(confirmBtn).toBeTruthy()
+            fireEvent.click(confirmBtn!)
+            container = render(
+                <FilterInput
+                    {...defaultProps}
+                    mapKey="repo"
+                    filtersInQuery={nextFiltersInQuery}
+                    filterType={FilterType.repo}
+                    value={nextValue}
+                    onFilterEdited={onFilterEditedHandler}
+                    editable={false}
+                />
+            ).container
+            expect(getByText(container, 'repo:"\\"foo"')).toBeTruthy()
+        })
+
         it('displays non-quoted value when editable', () => {
             container = render(
                 <FilterInput
@@ -196,50 +230,6 @@ describe('FilterInput', () => {
             fireEvent.click(confirmBtn!)
             expect(defaultProps.onFilterEdited.calledWith('content', '"\\"\\"\\""')).toBe(true)
         })
-    })
-
-    describe('For all other filters, with escaped and quoted inputs', () => {
-        it('does not quote or escape values without a double quote or space', () => {
-            container = render(
-                <FilterInput
-                    {...defaultProps}
-                    mapKey="repo"
-                    filterType={FilterType.repo}
-                    onFilterEdited={defaultProps.onFilterEdited}
-                    editable={true}
-                />
-            ).container
-
-            const inputEl = container.querySelector('.filter-input__input-field')
-            expect(inputEl).toBeTruthy()
-            fireEvent.click(inputEl!)
-            fireEvent.change(inputEl!, { target: { value: 'github.com/sourcegraph/sourcegraph' } })
-            const confirmBtn = container.querySelector('.check-button__btn')
-            expect(confirmBtn).toBeTruthy()
-            fireEvent.click(confirmBtn!)
-            expect(defaultProps.onFilterEdited.calledWith('repo', 'github.com/sourcegraph/sourcegraph')).toBe(true)
-        })
-
-        it('calls onFilterEdited with escaped value', () => {
-            container = render(
-                <FilterInput
-                    {...defaultProps}
-                    mapKey="repo"
-                    filterType={FilterType.repo}
-                    onFilterEdited={defaultProps.onFilterEdited}
-                    editable={true}
-                />
-            ).container
-
-            const inputEl = container.querySelector('.filter-input__input-field')
-            expect(inputEl).toBeTruthy()
-            fireEvent.click(inputEl!)
-            fireEvent.change(inputEl!, { target: { value: '"foo' } })
-            const confirmBtn = container.querySelector('.check-button__btn')
-            expect(confirmBtn).toBeTruthy()
-            fireEvent.click(confirmBtn!)
-            expect(defaultProps.onFilterEdited.calledWith('repo', '"\\"foo"')).toBe(true)
-        })
 
         it('calls onFilterEdited with quoted value', () => {
             container = render(
@@ -260,87 +250,6 @@ describe('FilterInput', () => {
             expect(confirmBtn).toBeTruthy()
             fireEvent.click(confirmBtn!)
             expect(defaultProps.onFilterEdited.calledWith('after', '"2 months ago"')).toBe(true)
-        })
-
-        it('displays quoted, escaped value when uneditable', () => {
-            container = render(
-                <FilterInput
-                    {...defaultProps}
-                    mapKey="repo"
-                    filterType={FilterType.repo}
-                    onFilterEdited={onFilterEditedHandler}
-                    editable={true}
-                />
-            ).container
-
-            const inputEl = container.querySelector('.filter-input__input-field')
-            expect(inputEl).toBeTruthy()
-            fireEvent.click(inputEl!)
-            fireEvent.change(inputEl!, { target: { value: '"foo' } })
-            const confirmBtn = container.querySelector('.check-button__btn')
-            expect(confirmBtn).toBeTruthy()
-            fireEvent.click(confirmBtn!)
-            container = render(
-                <FilterInput
-                    {...defaultProps}
-                    mapKey="repo"
-                    filtersInQuery={nextFiltersInQuery}
-                    filterType={FilterType.repo}
-                    value={nextValue}
-                    onFilterEdited={onFilterEditedHandler}
-                    editable={false}
-                />
-            ).container
-            expect(getByText(container, 'repo:"\\"foo"')).toBeTruthy()
-        })
-
-        it('displays unquoted, unescaped value when editable', () => {
-            container = render(
-                <FilterInput
-                    {...defaultProps}
-                    mapKey="repo"
-                    filterType={FilterType.repo}
-                    onFilterEdited={onFilterEditedHandler}
-                    toggleFilterEditable={toggleFilterEditableTrue}
-                    editable={true}
-                />
-            ).container
-
-            const inputEl = container.querySelector('.filter-input__input-field')
-            expect(inputEl).toBeTruthy()
-            fireEvent.click(inputEl!)
-            fireEvent.change(inputEl!, { target: { value: '"foo' } })
-            const confirmBtn = container.querySelector('.check-button__btn')
-            expect(confirmBtn).toBeTruthy()
-            fireEvent.click(confirmBtn!)
-            container = render(
-                <FilterInput
-                    {...defaultProps}
-                    mapKey="repo"
-                    filtersInQuery={nextFiltersInQuery}
-                    filterType={FilterType.repo}
-                    value={nextValue}
-                    onFilterEdited={onFilterEditedHandler}
-                    toggleFilterEditable={toggleFilterEditableTrue}
-                    editable={false}
-                />
-            ).container
-            const btnText = container.querySelector('.filter-input__button-text')
-            expect(btnText).toBeTruthy()
-            fireEvent.click(btnText!)
-            container = render(
-                <FilterInput
-                    {...defaultProps}
-                    mapKey="repo"
-                    filtersInQuery={nextFiltersInQuery}
-                    filterType={FilterType.repo}
-                    value={nextValue}
-                    onFilterEdited={onFilterEditedHandler}
-                    toggleFilterEditable={toggleFilterEditableTrue}
-                    editable={true}
-                />
-            ).container
-            expect(getByDisplayValue(container, '"foo')).toBeTruthy()
         })
     })
 })

@@ -53,9 +53,3 @@ export function convertPlainTextToInteractiveQuery(
 
     return { filtersInQuery: newFiltersInQuery, navbarQuery: newNavbarQuery }
 }
-
-// Escapes non-escaped double quotes in a string.
-// The regex specifies to match quotes which are not preceded by a backslash.
-// Not all browser support negative lookbehinds, so the regexp works by
-// including all characters, and \" in a negated group.
-export const escapeDoubleQuotes = (input: string): string => input.replace(/([^(?:(?!\\"))\w\W]\s\S)/g, '\\"')

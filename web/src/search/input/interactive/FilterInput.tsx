@@ -258,7 +258,7 @@ export class FilterInput extends React.Component<Props, State> {
     }
 
     public componentDidUpdate(prevProps: Props): void {
-        if (this.props.value !== prevProps.value) {
+        if (isFiniteFilter(this.props.filterType) && this.props.value !== prevProps.value) {
             this.inputValues.next(this.props.value)
         }
     }
@@ -279,16 +279,10 @@ export class FilterInput extends React.Component<Props, State> {
             // Don't allow empty filters, unless it's the type filter.
             let inputValue = this.state.inputValue
 
-            if (this.props.filterType === FilterType.content || this.props.filterType === FilterType.message) {
-                // The content and message filters should always be quoted, with double quotes escaped.
-                inputValue = JSON.stringify(escapeDoubleQuotes(inputValue))
-            } else if (inputValue.includes('"') || inputValue.includes(' ')) {
-                // For other filters, if the value contains a space or double quotes, escape quotes and wrap the input in double quotes.
-                //
-                // Users should never include quotes when entering values into interactive mode filter inputs.
-                inputValue = JSON.stringify(escapeDoubleQuotes(inputValue))
-            }
+            // Filters should always be quoted and escaped before being sent to the backend.
+            inputValue = JSON.stringify(inputValue)
 
+            this.inputValues.next(inputValue)
             // Update the top-level filtersInQueryMap with the new value for this filter.
             this.props.onFilterEdited(this.props.mapKey, inputValue)
         }
@@ -312,9 +306,11 @@ export class FilterInput extends React.Component<Props, State> {
         if (this.inputEl.current) {
             this.inputEl.current.focus()
         }
-        // For filters that are quoted, we don't display the quoted and escaped value to the user when editing.
-        // This makes queries easier to edit and makes sure URLs are always properly escaped.
+        // Filters are always quoted and escaped, but we don't display the quoted and escaped value
+        // to the user when editing. This makes queries easier to edit and makes sure URLs are always
+        // properly escaped.
         const { inputValue } = this.state
+        // Check for isQuoted before parsing to support old URLs that don't have quotes around filters.
         this.inputValues.next(isQuoted(inputValue) ? JSON.parse(inputValue) : inputValue)
         this.props.toggleFilterEditable(this.props.mapKey)
     }
