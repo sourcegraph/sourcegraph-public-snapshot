@@ -20,9 +20,7 @@ Your CI machines will need two command-line tools installed. Depending on your b
 
 ### Recommended upload frequency
 
-Start with a periodic job (e.g. daily) in CI that generates and uploads LSIF data on the default branch for your repository.
-
-If you're noticing a lot of stale code intel between LSIF uploads or your CI doesn't support periodic jobs, you can set up a CI job that runs on every commit (including branches). The downsides to this are: more load on CI, more load on your Sourcegraph instance, and more rapid decrease in free disk space on your Sourcegraph instance.
+Start with a CI job that runs on every commit (including branches). If you see too much load on your CI, your Sourcegraph instance, or a rapid decrease in free disk space on your Sourcegraph instance, you can instead index only the default branch, or set up a periodic job (e.g. daily) in CI that indexes your default branch. You will still receive precise code intelligence on non-indexed commits ([within 100 commits](https://github.com/sourcegraph/sourcegraph/blob/e7803474dbac8021e93ae2af930269045aece079/lsif/src/shared/constants.ts#L25) ahead/behind) on lines that have not been edited since indexing.
 
 ## LSIF on GitHub
 
