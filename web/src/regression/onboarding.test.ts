@@ -183,6 +183,7 @@ describe('Onboarding', () => {
         )
 
         // Do a search
+        await driver.page.waitForSelector('.e2e-query-input')
         await driver.page.type('.e2e-query-input', 'asdf')
         await driver.page.keyboard.press(Key.Enter)
         await delay(500) // allow some time for confetti to play

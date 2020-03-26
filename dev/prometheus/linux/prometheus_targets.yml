@@ -40,14 +40,14 @@
     # lsif-api
     - 127.0.0.1:3186
 - labels:
-    job: lsif-dump-manager
+    job: lsif-bundle-manager
   targets:
-    # lsif-dump-manager
+    # lsif-bundle-manager
     - 127.0.0.1:3187
 - labels:
-    job: lsif-dump-processor
+    job: lsif-worker
   targets:
-    # lsif-dump-processor
+    # lsif-worker
     - 127.0.0.1:3188
 - labels:
     job: postgres_exporter

@@ -333,9 +333,6 @@ interface FilteredConnectionProps<C extends Connection<N>, N, NP = {}>
 
     /** Called when the queryConnection Observable emits. */
     onUpdate?: (value: C | ErrorLike | undefined) => void
-
-    /** Don't show a loader on a refreshing table when a delay of 250ms on the request has passed */
-    noShowLoaderOnSlowLoad?: boolean
 }
 
 /**
@@ -559,10 +556,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                             ? merge(
                                   result,
                                   of({
-                                      connectionOrError:
-                                          this.props.noShowLoaderOnSlowLoad === true
-                                              ? this.state.connectionOrError
-                                              : undefined,
+                                      connectionOrError: undefined,
                                       loading: true,
                                   }).pipe(delay(250), takeUntil(result))
                               )
@@ -640,9 +634,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         if (this.props.updates) {
             this.subscriptions.add(
                 this.props.updates.subscribe(() => {
-                    this.setState({ loading: this.props.noShowLoaderOnSlowLoad !== true }, () =>
-                        refreshRequests.next({ forceRefresh: true })
-                    )
+                    this.setState({ loading: true }, () => refreshRequests.next({ forceRefresh: true }))
                 })
             )
         }

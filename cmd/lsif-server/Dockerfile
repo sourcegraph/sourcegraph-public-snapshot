@@ -34,6 +34,14 @@ RUN apk update && apk add --no-cache \
 USER root
 RUN mkdir -p $PROMETHEUS_STORAGE_DIR && chown -R sourcegraph:sourcegraph $PROMETHEUS_STORAGE_DIR
 RUN mkdir -p $PROMETHEUS_CONFIGURATION_DIR && chown -R sourcegraph:sourcegraph $PROMETHEUS_CONFIGURATION_DIR
+
+# Ensures that a directory with the correct permissions exist in the image.
+# Without this, in Docker Compose deployments the Docker daemon would first
+# create the volume directory and it would be owned by `root` and then
+# lsif-server would be unable to create the `/lsif-storage` because it would
+# be trying to do so in a directory owned by `root` as the user `sourcegraph`.
+# (And no, this is not dumb, this is just Docker. See https://github.com/docker/compose/issues/3270#issuecomment-363478501)
+RUN mkdir -p /lsif-storage && chown -R sourcegraph:sourcegraph /lsif-storage
 USER sourcegraph
 
 COPY --from=lsif-builder /lsif /lsif
@@ -41,7 +49,7 @@ COPY ./lsif-server /usr/local/bin/lsif-server
 COPY --from=prometheus /bin/prometheus /bin/prometheus
 COPY ./prometheus.yml $PROMETHEUS_CONFIGURATION_DIR/prometheus.yml
 
-# http server, dump manager server, (first) worker metrics server, prometheus
+# http server, bundle manager server, (first) worker metrics server, prometheus
 EXPOSE 3186 3187 3188 9090
 ENV GO111MODULES=on LANG=en_US.utf8 LOG_LEVEL=debug
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/lsif-server"]

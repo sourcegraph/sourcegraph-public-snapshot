@@ -116,11 +116,11 @@ export function createLsifRouter(
                             ctx.span
                         )
 
-                        // Upload the payload file where it can be found by the dump processor
-                        await logAndTraceCall(ctx, 'Uploading payload to dump manager', () =>
+                        // Upload the payload file where it can be found by the worker
+                        await logAndTraceCall(ctx, 'Uploading payload to bundle manager', () =>
                             pipeline(
                                 fs.createReadStream(filename),
-                                got.stream.post(new URL(`/uploads/${uploadId}`, settings.LSIF_DUMP_MANAGER_URL).href)
+                                got.stream.post(new URL(`/uploads/${uploadId}`, settings.LSIF_BUNDLE_MANAGER_URL).href)
                             )
                         )
 

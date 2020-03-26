@@ -10,8 +10,8 @@
     "tslint": "../node_modules/.bin/tslint -p tsconfig.json",
     "eslint": "../node_modules/.bin/eslint --cache 'src/**/*.ts?(x)'",
     "run:api": "tsc-watch --onSuccess \"node -r source-map-support/register out/api/api.js\" --noClear",
-    "run:dump-manager": "tsc-watch --onSuccess \"node -r source-map-support/register out/dump-manager/dump-manager.js\" --noClear",
-    "run:dump-processor": "tsc-watch --onSuccess \"node -r source-map-support/register out/dump-processor/dump-processor.js\" --noClear"
+    "run:bundle-manager": "tsc-watch --onSuccess \"node -r source-map-support/register out/bundle-manager/manager.js\" --noClear",
+    "run:worker": "tsc-watch --onSuccess \"node -r source-map-support/register out/worker/worker.js\" --noClear"
   },
   "dependencies": {
     "async-middleware": "^1.2.1",
@@ -48,7 +48,7 @@
     "yallist": "^4.0.0"
   },
   "devDependencies": {
-    "@sourcegraph/tsconfig": "^4.0.0",
+    "@sourcegraph/tsconfig": "^4.0.1",
     "@types/async-polling": "^0.0.3",
     "@types/bloomfilter": "0.0.0",
     "@types/body-parser": "1.19.0",
