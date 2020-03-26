@@ -10,11 +10,11 @@ This project is split into three parts, all currently written in TypeScript. The
 
 - The HTTP [server](./src/server/server.ts) receives LSIF uploads and answers LSP queries.
 - The [dump-manager](./src/dump-manager/dump-manager.ts) answers queries about a particular upload by looking at relevant SQLite databases on-disk.
-- The [dump-processor](./src/dump-processor/dump-processor.ts) dequeues unconverted LSIF uploads from Postgres and converts them into SQLite databases that can be queried by the server.
+- The [worker](./src/worker/worker.ts) dequeues unconverted LSIF uploads from Postgres and converts them into SQLite databases that can be queried by the server.
 
 ### Entrypoint
 
-The docker image for this part of the application is produced by [./cmd/lsif-server](.././cmd/lsif-server), which wraps the server, the dump manager, and the dump processor with a supervisor.
+The docker image for this part of the application is produced by [./cmd/lsif-server](.././cmd/lsif-server), which wraps a server, a dump manager, and a worker with a supervisor.
 
 ### Documentation
 

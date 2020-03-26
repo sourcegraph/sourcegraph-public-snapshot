@@ -45,9 +45,9 @@
     # lsif-dump-manager
     - host.docker.internal:3187
 - labels:
-    job: lsif-dump-processor
+    job: lsif-worker
   targets:
-    # lsif-dump-processor
+    # lsif-worker
     - host.docker.internal:3188
 - labels:
     job: postgres_exporter

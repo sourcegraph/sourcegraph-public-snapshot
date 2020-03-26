@@ -116,7 +116,7 @@ export function createLsifRouter(
                             ctx.span
                         )
 
-                        // Upload the payload file where it can be found by the dump processor
+                        // Upload the payload file where it can be found by the worker
                         await logAndTraceCall(ctx, 'Uploading payload to dump manager', () =>
                             pipeline(
                                 fs.createReadStream(filename),

@@ -61,10 +61,10 @@ digraph architecture {
             fillcolor="3"
             URL="https://github.com/sourcegraph/sourcegraph/tree/master/lsif/src/server"
         ]
-        lsif_dump_processor [
-            label="dump processor"
+        lsif_worker [
+            label="worker"
             fillcolor="4"
-            URL="https://github.com/sourcegraph/sourcegraph/tree/master/lsif/src/dump-processor"
+            URL="https://github.com/sourcegraph/sourcegraph/tree/master/lsif/src/worker"
         ]
         lsif_dump_manager [
             label="dump manager"
@@ -97,7 +97,7 @@ digraph architecture {
         fillcolor="3"
     ]
 
-    lsif_dump_processor -> {
+    lsif_worker -> {
         lsif_dump_manager,
         postgres,
         frontend_gitserver_proxy,
