@@ -11,15 +11,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lsif"
 )
 
-type locationWithSourceCommit struct {
-	*lsif.LSIFLocation
-	uploadCommit string
-}
-
 type locationConnectionResolver struct {
 	repo      *types.Repo
 	commit    graphqlbackend.GitObjectID
-	locations []locationWithSourceCommit
+	locations []*lsif.LSIFLocation
 	endCursor string
 }
 
@@ -59,10 +54,16 @@ func (r *locationConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil
 	return graphqlutil.HasNextPage(false), nil
 }
 
-// locationConnectionResolver transforms the given position in the location's commit into
-// a position in the commit the user original requested. This method will return the given
-// position untouched if the location is not in the repo where the request originated.
-func (r *locationConnectionResolver) adjustLocation(ctx context.Context, location locationWithSourceCommit) (string, lsp.Range, error) {
+// adjustLocation attempts to transform the source range of location into a corresponding
+// range of the same file at the user's requested commit.
+//
+// If location has no corresponding range at the requested commit or is located in a different
+// repository, it returns the location's current commit and range without modification.
+// Otherwise, it returns the user's requested commit along with the transformed range.
+//
+// A non-nil error means the connection resolver was unable to load the diff between
+// the requested commit and location's commit.
+func (r *locationConnectionResolver) adjustLocation(ctx context.Context, location *lsif.LSIFLocation) (string, lsp.Range, error) {
 	if location.RepositoryID != r.repo.ID {
 		return location.Commit, location.Range, nil
 	}

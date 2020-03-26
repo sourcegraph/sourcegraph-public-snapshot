@@ -56,15 +56,10 @@ func (r *lsifQueryResolver) Definitions(ctx context.Context, args *graphqlbacken
 		}
 
 		if len(locations) > 0 {
-			locationsWithSourceCommit := make([]locationWithSourceCommit, len(locations))
-			for i, location := range locations {
-				locationsWithSourceCommit[i] = locationWithSourceCommit{location, upload.Commit}
-			}
-
 			return &locationConnectionResolver{
 				repo:      r.repositoryResolver.Type(),
 				commit:    r.commit,
-				locations: locationsWithSourceCommit,
+				locations: locations,
 			}, nil
 		}
 	}
@@ -87,7 +82,7 @@ func (r *lsifQueryResolver) References(ctx context.Context, args *graphqlbackend
 	// this request.
 	newCursors := map[int64]string{}
 
-	var allLocations []locationWithSourceCommit
+	var allLocations []*lsif.LSIFLocation
 	for _, upload := range r.uploads {
 		adjustedPosition, ok, err := r.adjustPosition(ctx, upload.Commit, args.Line, args.Character)
 		if err != nil {
@@ -130,10 +125,7 @@ func (r *lsifQueryResolver) References(ctx context.Context, args *graphqlbackend
 		if err != nil {
 			return nil, err
 		}
-
-		for _, location := range locations {
-			allLocations = append(allLocations, locationWithSourceCommit{location, upload.Commit})
-		}
+		allLocations = append(allLocations, locations...)
 
 		if nextURL != "" {
 			newCursors[upload.ID] = nextURL
