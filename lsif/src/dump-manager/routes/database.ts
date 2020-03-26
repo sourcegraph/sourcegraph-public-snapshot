@@ -202,14 +202,17 @@ export function createDatabaseRouter(logger: Logger): express.Router {
 
     interface PackageInformationQueryArgs {
         path: string
-        packageInformationId: number
+        packageInformationId: string
     }
 
     type PackageInformationResponse = sqliteModels.PackageInformationData | undefined
 
     router.get(
-        '/:id([0-9]+)/packageInformation',
-        validation.validationMiddleware([validation.validateNonEmptyString('path')]),
+        '/dbs/:id([0-9]+)/packageInformation',
+        validation.validationMiddleware([
+            validation.validateNonEmptyString('path'),
+            validation.validateNonEmptyString('packageInformationId'),
+        ]),
         wrap(
             async (req: express.Request, res: express.Response<PackageInformationResponse>): Promise<void> => {
                 const { path, packageInformationId }: PackageInformationQueryArgs = req.query
