@@ -1645,7 +1645,7 @@ describe('e2e test suite', () => {
             await driver.page.keyboard.press('Enter')
             await driver.page.keyboard.press('Enter')
             await driver.assertWindowLocation(
-                '/search?q=repo:%22%5Egithub%5C.com/gorilla/mux%24%22&patternType=literal'
+                '/search?q=repo:%22%5Egithub%5C%5C.com/gorilla/mux%24%22&patternType=literal'
             )
 
             // Test cancelling editing an input with escape key
@@ -1655,7 +1655,7 @@ describe('e2e test suite', () => {
             await driver.page.keyboard.press('Escape')
             await driver.page.click('.e2e-search-button')
             await driver.assertWindowLocation(
-                '/search?q=repo:%22%5Egithub%5C.com/gorilla/mux%24%22&patternType=literal'
+                '/search?q=repo:%22%5Egithub%5C%5C.com/gorilla/mux%24%22&patternType=literal'
             )
 
             // Test cancelling editing an input by clicking outside close button
@@ -1664,7 +1664,7 @@ describe('e2e test suite', () => {
             await driver.page.keyboard.type('/mux')
             await driver.page.click('.e2e-search-button')
             await driver.assertWindowLocation(
-                '/search?q=repo:%22%5Egithub%5C.com/gorilla/mux%24%22&patternType=literal'
+                '/search?q=repo:%22%5Egithub%5C%5C.com/gorilla/mux%24%22&patternType=literal'
             )
         })
 
@@ -1675,7 +1675,7 @@ describe('e2e test suite', () => {
             await driver.page.type('.tree-page__section-search .e2e-query-input', 'test')
             await driver.page.click('.tree-page__section-search .e2e-search-button')
             await driver.assertWindowLocation(
-                '/search?q=repo:5Egithub%5C.com/sourcegraph/jsonrpc2%24+test&patternType=literal'
+                '/search?q=repo:%5Egithub%5C.com/sourcegraph/jsonrpc2%24+test&patternType=literal'
             )
             await driver.page.waitForSelector('.e2e-query-input')
             const queryInputValue = () =>
