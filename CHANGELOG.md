@@ -25,7 +25,6 @@ All notable changes to Sourcegraph are documented in this file.
   - `Campaign.plan` has been renamed to `Campaign.patchSet`.
   - `Campaign.changesetPlans` has been renamed to `campaign.changesetPlan`.
   - `createCampaignPlanFromPatches` mutation has been renamed to `createPatchSetFromPatches`.
-- Site-Admin/Instrumentation in the Kubernetes cluster deployment now includes indexed-search.
 
 ### Fixed
 
