@@ -65,7 +65,7 @@ We use [Ctags](https://github.com/universal-ctags/ctags) to index the symbols of
 
 ## Code intelligence in action
 
-See how code intelligence adds context to your workflow in the example below.
+Code intelligence adds context to your development workflows. The example below shows how code reviews are improved using code intelligence on a pull request in GitHub.
 
 ### GitHub pull request and file integration (using a language server)
 
