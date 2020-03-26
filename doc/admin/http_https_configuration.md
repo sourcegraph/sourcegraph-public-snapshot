@@ -1,12 +1,14 @@
-# Sourcegraph NGINX HTTP and HTTPS/SSL configuration
+# Sourcegraph HTTP and HTTPS/SSL configuration
 
-In Sourcegraph, [NGINX](https://www.nginx.com/resources/glossary/nginx/) acts as a [reverse proxy](https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/) for the Sourcegraph front-end server, meaning NGINX proxies external HTTP (and [HTTPS](#nginx-ssl-https-configuration)) requests to the Sourcegraph front-end.
+## Sourcegraph single Docker image and Sourcegraph Cluster (Kubernetes): NGINX
+
+Sourcegraph's single Docker image and Kubernetes deployments use [NGINX](https://www.nginx.com/resources/glossary/nginx/) as a [reverse proxy](https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/) for the Sourcegraph front-end server, meaning NGINX proxies external HTTP (and [HTTPS](#nginx-ssl-https-configuration)) requests to the Sourcegraph front-end.
 
 ![NGINX and Sourcegraph architecture](img/sourcegraph-nginx.svg)
 
 **Note**: Non-sighted users can view a [text-representation of this diagram](sourcegraph-nginx-mermaid.md).
 
-## NGINX for Sourcegraph single instance (Docker)
+### Sourcegraph single instance (Docker)
 
 <!-- TODO(ryan): Change heading to ## The default `nginx.conf` file and how to extend/override default configuration and add section
 on how to extend NGINX configuration without (in most cases), editing the `nginx.conf` file. -->
@@ -18,19 +20,13 @@ The first time Sourcegraph is run, it will create an [`nginx.conf`](https://gith
 
 [SSL support requires manual editing](#nginx-ssl-https-configuration) of the NGINX configuration file if using the [quickstart docker run command](../index.md#quickstart) as it presumes local or internal usage.
 
-## NGINX for Sourcegraph Cluster (Kubernetes)
+### Sourcegraph Cluster (Kubernetes)
 
 We use the [ingress-nginx](https://kubernetes.github.io/ingress-nginx/) for Sourcegraph Cluster running on Kubernetes. Refer to the [deploy-sourcegraph Configuration](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/docs/configure.md) documentation for more information.
 
-## NGINX for other Sourcegraph clusters (e.g. pure-Docker)
+### NGINX SSL/HTTPS configuration
 
-NGINX is not included in the ([pure-Docker deployment](https://github.com/sourcegraph/deploy-sourcegraph-docker) as it's designed to be minimal and not tied to any specific reverse proxy.
-
-If NGINX is your preferred reverse proxy, we suggest using [the official NGINX docker images](https://hub.docker.com/_/nginx) and following their instructions for [securing HTTP traffic with a proxied server](https://docs.nginx.com/nginx/admin-guide/security-controls/securing-http-traffic-upstream/).
-
-## NGINX SSL/HTTPS configuration
-
-### If you have a valid SSL certificate
+#### If you have a valid SSL certificate
 
 **1.** Copy your SSL certificate and key to `~/.sourcegraph/config` (where the `nginx.conf` file is).
 
@@ -62,7 +58,7 @@ http {
 }
 ```
 
-### If you need an SSL certificate
+#### If you need an SSL certificate
 
 There are a few options:
 
@@ -103,7 +99,7 @@ can handle the HTTPS connection from the user's browser while allowing the under
 continue serving HTTP (or HTTPS with a self-signed certificate). View your CDN's documentation for
 more details.
 
-## Redirect to external HTTPS URL
+### Redirect to external HTTPS URL
 
 The URL that clients should use to access Sourcegraph is defined in the `externalURL` property in [site configuration](config/site_config.md). To enforce that clients access Sourcegraph via this URL (and not some other URL, such as an IP address or other non-`https` URL), add the following to `nginx.conf` (replacing `https://sourcegraph.example.com` with your external URL):
 
@@ -119,7 +115,7 @@ server {
 }
 ```
 
-## HTTP Strict Transport Security
+### HTTP Strict Transport Security
 
 [HTTP Strict Transport Security](https://en.wikipedia.org/wiki/HTTP_Strict_Transport_Security) instructs web clients to only communicate with the server over HTTPS. To configure it, add the following to `nginx.conf` (in the `server` block):
 
@@ -129,10 +125,26 @@ add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" alway
 
 See [`add_header` documentation](https://nginx.org/en/docs/http/ngx_http_headers_module.html#add_header) and "[Configuring HSTS in nginx](https://www.nginx.com/blog/http-strict-transport-security-hsts-and-nginx/)" for more details.
 
-## Additional NGINX SSL configuration
+### Additional NGINX SSL configuration
 
 See the [NGINX SSL Termination](https://docs.nginx.com/nginx/admin-guide/security-controls/terminating-ssl-http/) guide and [Configuring HTTPS Servers](https://nginx.org/en/docs/http/configuring_https_servers.html).
 
-## Next steps
+### Next steps
 
 You should configure Sourcegraph's `externalURL` in the [site configuration](config/site_config.md) (and restart the frontend instances) so that Sourcegraph knows its URL.
+
+## Sourcegraph via Docker Compose: Caddy 2
+
+Sourcegraph's [Docker Compose deployment](../admin/install/docker-compose/index.md) uses [Caddy 2](https://caddyserver.com/) as its reverse proxy. The Docker Compose deployment ships with a few builtin templates that cover common scenarios for exposing Sourcegraph:
+
+- plain HTTP
+- HTTPS with automatically provisioned Let's Encrypt certificates
+- HTTPS with custom certificates that you provide
+
+Usage instructions are provided via [the `caddy` service's inline comments inside the `docker-compose.yaml` definition](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/3.14/docker-compose/docker-compose.yaml#L3:L58).
+
+## Other Sourcegraph clusters (e.g. pure-Docker)
+
+NGINX is not included in the ([pure-Docker deployment](https://github.com/sourcegraph/deploy-sourcegraph-docker) as it's designed to be minimal and not tied to any specific reverse proxy.
+
+If NGINX is your preferred reverse proxy, we suggest using [the official NGINX docker images](https://hub.docker.com/_/nginx) and following their instructions for [securing HTTP traffic with a proxied server](https://docs.nginx.com/nginx/admin-guide/security-controls/securing-http-traffic-upstream/).
