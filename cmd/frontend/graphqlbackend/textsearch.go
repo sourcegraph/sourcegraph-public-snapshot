@@ -22,6 +22,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
 
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
@@ -33,7 +34,6 @@ import (
 	querytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-	"gopkg.in/inconshreveable/log15.v2"
 )
 
 var (

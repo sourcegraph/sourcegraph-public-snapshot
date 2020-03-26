@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/inconshreveable/log15"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
@@ -18,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // Repository returns the external links for a repository.

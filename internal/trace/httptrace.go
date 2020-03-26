@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/inconshreveable/log15"
 
 	"github.com/felixge/httpsnoop"
 	raven "github.com/getsentry/raven-go"

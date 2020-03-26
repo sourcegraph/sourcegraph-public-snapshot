@@ -15,6 +15,7 @@ Sourcegraph ships with a number of observability tools and capabilities:
 * [Metrics and dashboards](metrics.md) via Prometheus and Grafana
 * [Tracing](tracing.md)
 * [Alerting](alerting.md)
+  * [Alerting: custom consumption](alerting_custom_consumption.md)
 * [Logs](#logs)
 * [Health checks](#health-checks)
 * [Other tools](#other-tools)

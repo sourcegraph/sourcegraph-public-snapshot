@@ -13,6 +13,7 @@ import (
 
 	gh "github.com/google/go-github/v28/github"
 	"github.com/hashicorp/go-multierror"
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -22,7 +23,6 @@ import (
 	bbs "github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"gopkg.in/inconshreveable/log15.v2"
 )
 
 type Webhook struct {

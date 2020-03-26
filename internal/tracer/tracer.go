@@ -10,11 +10,11 @@ import (
 	"time"
 
 	"github.com/fatih/color"
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"go.uber.org/automaxprocs/maxprocs"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	lightstep "github.com/lightstep/lightstep-tracer-go"
 	opentracing "github.com/opentracing/opentracing-go"

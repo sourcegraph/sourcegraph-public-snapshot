@@ -2,7 +2,7 @@
 
 exports[`CampaignActionsBar all changesets not open 1`] = `
 <div
-  className="d-flex mb-2"
+  className="d-flex mb-2 position-relative"
 >
   <h2
     className="m-0"
@@ -85,7 +85,7 @@ exports[`CampaignActionsBar all changesets not open 1`] = `
 
 exports[`CampaignActionsBar edit mode 1`] = `
 <div
-  className="d-flex mb-2"
+  className="d-flex mb-2 position-relative"
 >
   <h2
     className="m-0"
@@ -121,6 +121,7 @@ exports[`CampaignActionsBar edit mode 1`] = `
       <button
         className="btn btn-primary mr-1"
         disabled={false}
+        form="form1"
         type="submit"
       >
         Save
@@ -128,6 +129,7 @@ exports[`CampaignActionsBar edit mode 1`] = `
       <button
         className="btn btn-secondary"
         disabled={false}
+        form="form1"
         type="reset"
       >
         Cancel
@@ -139,7 +141,7 @@ exports[`CampaignActionsBar edit mode 1`] = `
 
 exports[`CampaignActionsBar editable 1`] = `
 <div
-  className="d-flex mb-2"
+  className="d-flex mb-2 position-relative"
 >
   <h2
     className="m-0"
@@ -222,7 +224,7 @@ exports[`CampaignActionsBar editable 1`] = `
 
 exports[`CampaignActionsBar editable but closed 1`] = `
 <div
-  className="d-flex mb-2"
+  className="d-flex mb-2 position-relative"
 >
   <h2
     className="m-0"
@@ -288,7 +290,7 @@ exports[`CampaignActionsBar editable but closed 1`] = `
 
 exports[`CampaignActionsBar mode: closing 1`] = `
 <div
-  className="d-flex mb-2"
+  className="d-flex mb-2 position-relative"
 >
   <h2
     className="m-0"
@@ -374,7 +376,7 @@ exports[`CampaignActionsBar mode: closing 1`] = `
 
 exports[`CampaignActionsBar mode: deleting 1`] = `
 <div
-  className="d-flex mb-2"
+  className="d-flex mb-2 position-relative"
 >
   <h2
     className="m-0"
@@ -460,7 +462,7 @@ exports[`CampaignActionsBar mode: deleting 1`] = `
 
 exports[`CampaignActionsBar mode: saving 1`] = `
 <div
-  className="d-flex mb-2"
+  className="d-flex mb-2 position-relative"
 >
   <h2
     className="m-0"
@@ -499,6 +501,7 @@ exports[`CampaignActionsBar mode: saving 1`] = `
       <button
         className="btn btn-primary mr-1"
         disabled={true}
+        form="form1"
         type="submit"
       >
         Save
@@ -506,6 +509,7 @@ exports[`CampaignActionsBar mode: saving 1`] = `
       <button
         className="btn btn-secondary"
         disabled={true}
+        form="form1"
         type="reset"
       >
         Cancel
@@ -517,7 +521,7 @@ exports[`CampaignActionsBar mode: saving 1`] = `
 
 exports[`CampaignActionsBar new with patch set 1`] = `
 <div
-  className="d-flex mb-2"
+  className="d-flex mb-2 position-relative"
 >
   <h2
     className="m-0"
@@ -549,7 +553,7 @@ exports[`CampaignActionsBar new with patch set 1`] = `
 
 exports[`CampaignActionsBar new without patch set 1`] = `
 <div
-  className="d-flex mb-2"
+  className="d-flex mb-2 position-relative"
 >
   <h2
     className="m-0"
@@ -581,7 +585,7 @@ exports[`CampaignActionsBar new without patch set 1`] = `
 
 exports[`CampaignActionsBar not editable 1`] = `
 <div
-  className="d-flex mb-2"
+  className="d-flex mb-2 position-relative"
 >
   <h2
     className="m-0"
@@ -618,7 +622,7 @@ exports[`CampaignActionsBar not editable 1`] = `
 
 exports[`CampaignActionsBar processing 1`] = `
 <div
-  className="d-flex mb-2"
+  className="d-flex mb-2 position-relative"
 >
   <h2
     className="m-0"
@@ -654,6 +658,7 @@ exports[`CampaignActionsBar processing 1`] = `
       <button
         className="btn btn-primary mr-1"
         disabled={false}
+        form="form1"
         type="submit"
       >
         Save
@@ -661,6 +666,7 @@ exports[`CampaignActionsBar processing 1`] = `
       <button
         className="btn btn-secondary"
         disabled={false}
+        form="form1"
         type="reset"
       >
         Cancel
@@ -672,7 +678,7 @@ exports[`CampaignActionsBar processing 1`] = `
 
 exports[`CampaignActionsBar some changesets still open 1`] = `
 <div
-  className="d-flex mb-2"
+  className="d-flex mb-2 position-relative"
 >
   <h2
     className="m-0"

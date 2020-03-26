@@ -61,6 +61,10 @@ export ZOEKT_HOST=localhost:3070
 export USE_ENHANCED_LANGUAGE_DETECTION=${USE_ENHANCED_LANGUAGE_DETECTION:-1}
 export GRAFANA_SERVER_URL=http://localhost:3370
 
+# Caddy / HTTPS configuration
+export SOURCEGRAPH_HTTPS_DOMAIN="${SOURCEGRAPH_HTTPS_DOMAIN:-"sourcegraph.test"}"
+export SOURCEGRAPH_HTTPS_PORT="${SOURCEGRAPH_HTTPS_PORT:-"3443"}"
+
 # Enable sharded indexed search mode
 [ -n "${DISABLE_SEARCH_SHARDING-}" ] || export INDEXED_SEARCH_SERVERS="localhost:3070 localhost:3071"
 
@@ -115,7 +119,7 @@ export PATH="$PWD/.bin:$PWD/node_modules/.bin:$PATH"
 # Build once in the background to make sure editor codeintel works
 # This is fast if no changes were made.
 # Don't fail if it errors as this is only for codeintel, not for the build.
-trap 'kill $build_ts_pid; exit' INT
+trap 'kill $build_ts_pid; exit' EXIT
 (yarn run build-ts || true) &
 build_ts_pid="$!"
 

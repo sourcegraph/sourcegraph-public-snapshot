@@ -16,11 +16,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // GitDir is an absolute path to a GIT_DIR.

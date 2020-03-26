@@ -2,18 +2,29 @@
 
 exports[`GlobalCampaignListPage renders for non-siteadmin 1`] = `
 <React.Fragment>
-  <h1>
-    Campaigns
-  </h1>
-  <p>
-    Perform and track large-scale code changes
-  </p>
+  <div
+    className="d-flex justify-content-between align-items-end mb-3"
+  >
+    <div>
+      <h1
+        className="mb-2"
+      >
+        Campaigns
+      </h1>
+      <p
+        className="mb-0"
+      >
+        Perform and track large-scale code changes
+      </p>
+    </div>
+  </div>
   <FilteredConnection
     authenticatedUser={
       Object {
         "siteAdmin": false,
       }
     }
+    className="mb-3"
     defaultFirst={20}
     filters={
       Array [
@@ -53,17 +64,23 @@ exports[`GlobalCampaignListPage renders for non-siteadmin 1`] = `
 
 exports[`GlobalCampaignListPage renders for siteadmin 1`] = `
 <React.Fragment>
-  <h1>
-    Campaigns
-  </h1>
-  <p>
-    Perform and track large-scale code changes
-  </p>
   <div
-    className="text-right mb-1"
+    className="d-flex justify-content-between align-items-end mb-3"
   >
+    <div>
+      <h1
+        className="mb-2"
+      >
+        Campaigns
+      </h1>
+      <p
+        className="mb-0"
+      >
+        Perform and track large-scale code changes
+      </p>
+    </div>
     <AnchorLink
-      className="btn btn-primary"
+      className="btn btn-primary ml-3"
       to="/campaigns/new"
     >
       <Memo(AddIcon)
@@ -78,6 +95,7 @@ exports[`GlobalCampaignListPage renders for siteadmin 1`] = `
         "siteAdmin": true,
       }
     }
+    className="mb-3"
     defaultFirst={20}
     filters={
       Array [
