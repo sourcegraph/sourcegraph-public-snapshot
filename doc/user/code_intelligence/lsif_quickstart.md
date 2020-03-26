@@ -65,4 +65,4 @@ To verify that LSIF is correctly enabled, hover over a symbol and ensure that it
 
 ## 5. Productionize the process
 
-Now that you're happy with the code intelligence on your repository, you need to make sure that is stays up to date with your repository. This can be done by periodically generating LSIF data, and pushing it to Sourcegraph. You can either [add a step to your CI](lsif_in_ci.md), or run it as a [GitHub Action](lsif_on_github.md).
+Now that you're happy with the code intelligence on your repository, you need to make sure that is stays up to date with your repository. This can be done by periodically generating LSIF data, and pushing it to Sourcegraph. You can either [add a step to your CI](adding_lsif_to_workflows.md#lsif-in-continuous-integration), or run it as a [GitHub Action](adding_lsif_to_workflows.md#lsif-on-gitgub).
