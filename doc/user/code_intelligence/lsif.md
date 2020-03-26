@@ -28,7 +28,7 @@ You may occasionally see results from [basic code intelligence](basic_code_intel
 
 - The symbol has LSIF data, but it is defined in a repository which does not have LSIF data.
 - The nearest commit that has LSIF data is too far away from your browsing commit. [The limit is 100 commits](https://github.com/sourcegraph/sourcegraph/blob/e7803474dbac8021e93ae2af930269045aece079/lsif/src/shared/constants.ts#L25) ahead/behind.
-- The current file doesn't exist in the nearest LSIF dump or has been changed between the LSIF dump and the browsing commit.
+- The line containing the symbol was created or edited between the nearest indexed commit and the commit being browsed.
 - The _Find references_ panel will always include search-based results, but only after all of the precise results have been displayed. This ensures every symbol has code intelligence.
 
 ## Cross-repository code intelligence
