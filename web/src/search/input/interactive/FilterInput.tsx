@@ -37,7 +37,6 @@ import { CheckButton } from './CheckButton'
 import { isTextFilter, finiteFilters, isFiniteFilter, FilterTypeToProseNames } from './filters'
 import classNames from 'classnames'
 import { generateFiltersQuery } from '../../../../../shared/src/util/url'
-import { escapeDoubleQuotes } from '../helpers'
 
 interface Props {
     /**
