@@ -231,7 +231,7 @@ describe('getCompletionItems()', () => {
                     NEVER
                 )
             )?.suggestions.map(({ label }) => label)
-        ).toStrictEqual(['yes', 'no', '"yes"', '"no"'])
+        ).toStrictEqual(['yes', 'no'])
     })
 
     test('returns completions for filters with static suggestions', async () => {

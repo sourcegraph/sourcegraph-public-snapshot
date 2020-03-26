@@ -48,7 +48,7 @@ describe('validateFilter()', () => {
         {
             description: 'Invalid literal value for case filter',
             filterType: 'case',
-            expected: { valid: false, reason: 'Invalid filter value, expected one of: yes, no, "yes", "no".' },
+            expected: { valid: false, reason: 'Invalid filter value, expected one of: yes, no.' },
             token: { type: 'literal', value: 'yess' },
         },
         {

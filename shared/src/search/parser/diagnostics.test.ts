@@ -28,7 +28,7 @@ describe('getDiagnostics()', () => {
             {
                 endColumn: 5,
                 endLineNumber: 1,
-                message: 'Invalid filter value, expected one of: yes, no, "yes", "no".',
+                message: 'Invalid filter value, expected one of: yes, no.',
                 severity: 8,
                 startColumn: 1,
                 startLineNumber: 1,
