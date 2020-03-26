@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -93,10 +94,7 @@ func TestExecChangesetJob(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	changesetJob := &cmpgn.ChangesetJob{
-		CampaignID: campaign.ID,
-		PatchID:    patch.ID,
-	}
+	changesetJob := &cmpgn.ChangesetJob{CampaignID: campaign.ID, PatchID: patch.ID}
 	if err := s.CreateChangesetJob(ctx, changesetJob); err != nil {
 		t.Fatal(err)
 	}
@@ -114,21 +112,37 @@ func TestExecChangesetJob(t *testing.T) {
 		ID:           "FOOBARID",
 		Title:        campaign.Name,
 		Body:         campaign.Description,
+		HeadRefName:  gitClient.response,
 		URL:          "https://github.com/sourcegraph/sourcegraph/pull/12345",
 		Number:       12345,
 		State:        "OPEN",
 		Author:       githubActor,
 		Participants: []github.Actor{githubActor},
-		CreatedAt:    now,
-		UpdatedAt:    now,
+		TimelineItems: []github.TimelineItem{
+			{Type: "PullRequestCommit", Item: &github.PullRequestCommit{
+				Commit: github.Commit{
+					OID:           "123",
+					PushedDate:    now,
+					CommittedDate: now,
+				},
+			}},
+		},
+		CreatedAt: now,
+		UpdatedAt: now,
 	}
+
+	var (
+		wantHeadRef  = gitClient.response
+		wantBaseRef  = patch.BaseRef
+		wantMetadata = githubPR
+	)
 
 	fakeSource := fakeChangesetSource{
 		svc:          githubExtSvc,
 		err:          nil,
 		exists:       false,
-		wantHeadRef:  gitClient.response,
-		wantBaseRef:  patch.BaseRef,
+		wantHeadRef:  wantHeadRef,
+		wantBaseRef:  wantBaseRef,
 		fakeMetadata: githubPR,
 	}
 
@@ -138,6 +152,44 @@ func TestExecChangesetJob(t *testing.T) {
 	err := ExecChangesetJob(ctx, clock, s, gitClient, sourcer, campaign, changesetJob)
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	// Reload ChangesetJob
+	changesetJob, err = s.GetChangesetJob(ctx, GetChangesetJobOpts{ID: changesetJob.ID})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if changesetJob.ChangesetID == 0 {
+		t.Fatalf("ChangesetJob has not ChangesetID set")
+	}
+
+	// Load newly created Changeset
+	changeset, err := s.GetChangeset(ctx, GetChangesetOpts{ID: changesetJob.ChangesetID})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if want, have := wantHeadRef, changeset.ExternalBranch; have != want {
+		t.Fatalf("wrong changeset.ExternalBranch. want=%s, have=%s", want, have)
+	}
+
+	haveMetadata := changeset.Metadata.(*github.PullRequest)
+	if diff := cmp.Diff(wantMetadata, haveMetadata); diff != "" {
+		t.Fatal(diff)
+	}
+
+	// Load newly created ChangesetEvents
+	events, _, err := s.ListChangesetEvents(ctx, ListChangesetEventsOpts{
+		Limit:        -1,
+		ChangesetIDs: []int64{changeset.ID},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if want, have := 1, len(events); want != have {
+		t.Fatalf("wrong number of ChangesetEvents. want=%d, have=%d", want, have)
 	}
 }
 
