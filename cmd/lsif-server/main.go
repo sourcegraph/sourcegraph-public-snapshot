@@ -69,7 +69,7 @@ func makeProcfile(numAPIs, numBundleManagers, numWorkers int64) string {
 	}
 
 	if numAPIs > 0 {
-		addProcess("lsif-api-server", "node /lsif/out/api/api.js")
+		addProcess("lsif-api-server", "node /lsif/out/api-server/api.js")
 	}
 
 	if numBundleManagers > 0 {
