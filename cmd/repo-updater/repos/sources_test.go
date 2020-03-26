@@ -18,6 +18,7 @@ import (
 	"github.com/dnaeon/go-vcr/cassette"
 	"github.com/dnaeon/go-vcr/recorder"
 	"github.com/google/go-cmp/cmp"
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -25,7 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/schema"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 func TestNewSourcer(t *testing.T) {
@@ -125,11 +125,13 @@ func TestSources_ListRepos(t *testing.T) {
 						"sourcegraph/Sourcegraph",
 						"keegancsmith/sqlf",
 						"tsenart/VEGETA",
+						"tsenart/go-tsz", // fork
 					},
 					Exclude: []*schema.ExcludedGitHubRepo{
 						{Name: "tsenart/Vegeta"},
 						{Id: "MDEwOlJlcG9zaXRvcnkxNTM2NTcyNDU="}, // tsenart/patrol ID
 						{Pattern: "^keegancsmith/.*"},
+						{Forks: true},
 					},
 				}),
 			},
@@ -262,9 +264,14 @@ func TestSources_ListRepos(t *testing.T) {
 					}
 
 					for _, r := range rs {
+						if r.Fork {
+							t.Errorf("excluded fork was yielded: %s", r.Name)
+						}
+
 						if set[r.Name] || set[r.ExternalRepo.ID] {
 							t.Errorf("excluded repo{name=%s, id=%s} was yielded", r.Name, r.ExternalRepo.ID)
 						}
+
 						for _, re := range patterns {
 							if re.MatchString(r.Name) {
 								t.Errorf("excluded repo{name=%s} matching %q was yielded", r.Name, re.String())

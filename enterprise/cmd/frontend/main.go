@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/shared"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth"
+	eauthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/authz"
 	authzResolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/resolvers"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
@@ -31,7 +32,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/globalstatedb"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
 func main() {
@@ -47,14 +47,14 @@ func main() {
 	clock := func() time.Time {
 		return time.Now().UTC().Truncate(time.Microsecond)
 	}
-	initAuthz(dbconn.Global, clock)
+	eauthz.Init(dbconn.Global, clock)
 
 	ctx := context.Background()
 	go func() {
 		t := time.NewTicker(5 * time.Second)
 		for range t.C {
 			allowAccessByDefault, authzProviders, _, _ :=
-				authzProvidersFromConfig(ctx, conf.Get(), db.ExternalServices, dbconn.Global)
+				eauthz.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices, dbconn.Global)
 			authz.SetProviders(allowAccessByDefault, authzProviders)
 		}
 	}()
@@ -85,8 +85,6 @@ func main() {
 	)
 
 	go bitbucketServerWebhook.Upsert(30 * time.Second)
-
-	go campaigns.RunChangesetJobs(ctx, campaignsStore, clock, gitserver.DefaultClient, 5*time.Second)
 
 	shared.Main(githubWebhook, bitbucketServerWebhook)
 }

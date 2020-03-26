@@ -14,9 +14,9 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/inconshreveable/log15"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go"
-	"gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
@@ -57,7 +57,7 @@ func main() {
 	if tmpDir, err := gitserver.SetupAndClearTmp(); err != nil {
 		log.Fatalf("failed to setup temporary directory: %s", err)
 	} else {
-		// Additionally set TMP_DIR so other temporary files we may accidently
+		// Additionally set TMP_DIR so other temporary files we may accidentally
 		// create are on the faster RepoDir mount.
 		os.Setenv("TMP_DIR", tmpDir)
 	}

@@ -71,6 +71,7 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
                         onChange={this.onConfigChange}
                         history={this.props.history}
                         actions={this.props.editorActions}
+                        className="e2e-external-service-editor"
                     />
                     <p className="form-text text-muted">
                         <small>Use Ctrl+Space for completion, and hover over JSON properties for documentation.</small>

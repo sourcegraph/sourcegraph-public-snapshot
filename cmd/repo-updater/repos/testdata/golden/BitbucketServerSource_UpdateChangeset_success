@@ -1,16 +1,17 @@
 {
   "id": 43,
-  "version": 2,
+  "version": 4,
   "title": "This is a new title",
   "description": "This is a new body",
   "state": "OPEN",
   "open": true,
   "closed": false,
   "createdDate": 1580213993810,
-  "updatedDate": 1580217091763,
+  "updatedDate": 1584105395985,
   "fromRef": {
    "id": "refs/heads/milton/file1txt-1580213978330",
    "repository": {
+    "id": 10070,
     "slug": "automation-testing",
     "project": {
      "key": "SOUR"
@@ -20,6 +21,7 @@
   "toRef": {
    "id": "refs/heads/master",
    "repository": {
+    "id": 10070,
     "slug": "automation-testing",
     "project": {
      "key": "SOUR"

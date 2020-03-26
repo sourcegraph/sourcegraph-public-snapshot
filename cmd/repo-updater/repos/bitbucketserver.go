@@ -4,12 +4,11 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"regexp"
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -19,17 +18,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // A BitbucketServerSource yields repositories from a single BitbucketServer connection configured
 // in Sourcegraph via the external services configuration.
 type BitbucketServerSource struct {
-	svc             *ExternalService
-	config          *schema.BitbucketServerConnection
-	exclude         map[string]bool
-	excludePatterns []*regexp.Regexp
-	client          *bitbucketserver.Client
+	svc     *ExternalService
+	config  *schema.BitbucketServerConnection
+	exclude excludeFunc
+	client  *bitbucketserver.Client
 }
 
 // NewBitbucketServerSource returns a new BitbucketServerSource from the given external service.
@@ -62,24 +59,15 @@ func newBitbucketServerSource(svc *ExternalService, c *schema.BitbucketServerCon
 		return nil, err
 	}
 
-	exclude := make(map[string]bool, len(c.Exclude))
-	var excludePatterns []*regexp.Regexp
+	var eb excludeBuilder
 	for _, r := range c.Exclude {
-		if r.Name != "" {
-			exclude[strings.ToLower(r.Name)] = true
-		}
-
-		if r.Id != 0 {
-			exclude[strconv.Itoa(r.Id)] = true
-		}
-
-		if r.Pattern != "" {
-			re, err := regexp.Compile(r.Pattern)
-			if err != nil {
-				return nil, err
-			}
-			excludePatterns = append(excludePatterns, re)
-		}
+		eb.Exact(r.Name)
+		eb.Exact(strconv.Itoa(r.Id))
+		eb.Pattern(r.Pattern)
+	}
+	exclude, err := eb.Build()
+	if err != nil {
+		return nil, err
 	}
 
 	client := bitbucketserver.NewClient(baseURL, cli)
@@ -88,11 +76,10 @@ func newBitbucketServerSource(svc *ExternalService, c *schema.BitbucketServerCon
 	client.Password = c.Password
 
 	return &BitbucketServerSource{
-		svc:             svc,
-		config:          c,
-		exclude:         exclude,
-		excludePatterns: excludePatterns,
-		client:          client,
+		svc:     svc,
+		config:  c,
+		exclude: exclude,
+		client:  client,
 	}, nil
 }
 
@@ -134,9 +121,12 @@ func (s BitbucketServerSource) CreateChangeset(ctx context.Context, c *Changeset
 		}
 	}
 
-	c.Changeset.Metadata = pr
-	c.Changeset.ExternalID = strconv.FormatInt(int64(pr.ID), 10)
-	c.Changeset.ExternalServiceType = bitbucketserver.ServiceType
+	if err := s.loadPullRequestData(ctx, pr); err != nil {
+		return false, errors.Wrap(err, "loading extra metadata")
+	}
+	if err = c.SetMetadata(pr); err != nil {
+		return false, errors.Wrap(err, "setting changeset metadata")
+	}
 
 	return exists, nil
 }
@@ -187,28 +177,33 @@ func (s BitbucketServerSource) LoadChangesets(ctx context.Context, cs ...*Change
 			return err
 		}
 
-		err = s.client.LoadPullRequestActivities(ctx, pr)
+		err = s.loadPullRequestData(ctx, pr)
 		if err != nil {
-			return errors.Wrap(err, "loading pr activities")
+			return errors.Wrap(err, "loading pull request data")
 		}
-
-		err = s.client.LoadPullRequestCommits(ctx, pr)
-		if err != nil {
-			return errors.Wrap(err, "loading pr commits")
+		if err = cs[i].SetMetadata(pr); err != nil {
+			return errors.Wrap(err, "setting changeset metadata")
 		}
-
-		err = s.client.LoadPullRequestBuildStatuses(ctx, pr)
-		if err != nil {
-			return errors.Wrap(err, "loading pr build status")
-		}
-
-		cs[i].Changeset.ExternalBranch = git.AbbreviateRef(pr.FromRef.ID)
-		cs[i].Changeset.ExternalUpdatedAt = unixMilliToTime(int64(pr.UpdatedDate))
-		cs[i].Changeset.Metadata = pr
 	}
 
 	if len(notFound) > 0 {
 		return ChangesetsNotFoundError{Changesets: notFound}
+	}
+
+	return nil
+}
+
+func (s BitbucketServerSource) loadPullRequestData(ctx context.Context, pr *bitbucketserver.PullRequest) error {
+	if err := s.client.LoadPullRequestActivities(ctx, pr); err != nil {
+		return errors.Wrap(err, "loading pr activities")
+	}
+
+	if err := s.client.LoadPullRequestCommits(ctx, pr); err != nil {
+		return errors.Wrap(err, "loading pr commits")
+	}
+
+	if err := s.client.LoadPullRequestBuildStatuses(ctx, pr); err != nil {
+		return errors.Wrap(err, "loading pr build status")
 	}
 
 	return nil
@@ -331,17 +326,12 @@ func (s *BitbucketServerSource) excludes(r *bitbucketserver.Repo) bool {
 		name = r.Project.Key + "/" + name
 	}
 	if r.State != "AVAILABLE" ||
-		s.exclude[strings.ToLower(name)] ||
-		s.exclude[strconv.Itoa(r.ID)] ||
+		s.exclude(name) ||
+		s.exclude(strconv.Itoa(r.ID)) ||
 		(s.config.ExcludePersonalRepositories && r.IsPersonalRepository()) {
 		return true
 	}
 
-	for _, re := range s.excludePatterns {
-		if re.MatchString(name) {
-			return true
-		}
-	}
 	return false
 }
 
@@ -349,7 +339,7 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 	// "archived" label is a convention used at some customers for indicating
 	// a repository is archived (like github's archived state). This is not
 	// returned in the normal repository listing endpoints, so we need to
-	// fetch it seperately.
+	// fetch it separately.
 	archived, err := s.listAllLabeledRepos(ctx, "archived")
 	if err != nil {
 		results <- SourceResult{Source: s, Err: errors.Wrap(err, "failed to list repos with archived label")}
@@ -450,7 +440,10 @@ func (s *BitbucketServerSource) listAllLabeledRepos(ctx context.Context, label s
 	for next.HasMore() {
 		repos, page, err := s.client.LabeledRepos(ctx, next, label)
 		if err != nil {
-			if bitbucketserver.IsNoSuchLabel(err) {
+			// If the instance doesn't have the label then no repos are
+			// labeled. Older versions of bitbucket do not support labels, so
+			// they too have no labelled repos.
+			if bitbucketserver.IsNoSuchLabel(err) || bitbucketserver.IsNotFound(err) {
 				// treat as empty
 				return ids, nil
 			}
@@ -464,8 +457,4 @@ func (s *BitbucketServerSource) listAllLabeledRepos(ctx context.Context, label s
 		next = page
 	}
 	return ids, nil
-}
-
-func unixMilliToTime(ms int64) time.Time {
-	return time.Unix(0, ms*int64(time.Millisecond))
 }

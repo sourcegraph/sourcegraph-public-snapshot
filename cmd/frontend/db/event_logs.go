@@ -78,14 +78,26 @@ func (*eventLogs) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*typ
 	return events, nil
 }
 
-// GetAll gets all event logs in descending order of timestamp.
-func (l *eventLogs) GetAll(ctx context.Context) ([]*types.Event, error) {
-	return l.getBySQL(ctx, sqlf.Sprintf("ORDER BY timestamp DESC"))
+// EventLogsListOptions specifies the options for listing event logs.
+type EventLogsListOptions struct {
+	// UserID specifies the user whose events should be included.
+	UserID int32
+
+	*LimitOffset
 }
 
-// GetByUserID gets all event logs by a given user in descending order of timestamp.
-func (l *eventLogs) GetByUserID(ctx context.Context, userID int32) ([]*types.Event, error) {
-	return l.getBySQL(ctx, sqlf.Sprintf("WHERE user_id = %d ORDER BY timestamp DESC", userID))
+// ListAll gets all event logs in descending order of timestamp.
+func (l *eventLogs) ListAll(ctx context.Context, opt EventLogsListOptions) ([]*types.Event, error) {
+	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
+	if opt.UserID != 0 {
+		conds = append(conds, sqlf.Sprintf("user_id = %d", opt.UserID))
+	}
+	return l.getBySQL(ctx, sqlf.Sprintf("WHERE %s ORDER BY timestamp DESC %s", sqlf.Join(conds, "AND"), opt.LimitOffset.SQL()))
+}
+
+// CountByUserID gets a count of events logged by a given user.
+func (l *eventLogs) CountByUserID(ctx context.Context, userID int32) (int, error) {
+	return l.countBySQL(ctx, sqlf.Sprintf("WHERE user_id = %d", userID))
 }
 
 // CountByUserIDAndEventName gets a count of events logged by a given user and with a given event name.
@@ -224,11 +236,24 @@ type EventFilterOptions struct {
 	ByEventName string
 	// If not empty, only include events that matche a list of given event names
 	ByEventNames []string
+	// Must be used with ByEventName
+	//
+	// If set, only include events that match a specified condition.
+	ByEventNameWithCondition *sqlf.Query
+}
+
+// EventArgumentMatch provides the options for matching an event with
+// a specific JSON value passed as an argument.
+type EventArgumentMatch struct {
+	// The name of the JSON key to match against.
+	ArgumentName string
+	// The actual value passed to the JSON key to match.
+	ArgumentValue string
 }
 
 // CountUniqueUsersPerPeriod provides a count of unique active users in a given time span, broken up into periods of
-// a given type. The value of `now` should be the current time in UTC. Returns an array array of length `periods`,
-// with one entry for each period in the time span.
+// a given type. The value of `now` should be the current time in UTC. Returns an array of length `periods`, with one
+// entry for each period in the time span.
 func (l *eventLogs) CountUniqueUsersPerPeriod(ctx context.Context, periodType PeriodType, now time.Time, periods int, opt *CountUniqueUsersOptions) ([]UsageValue, error) {
 	startDate, ok := calcStartDate(now, periodType, periods)
 	if !ok {
@@ -254,6 +279,9 @@ func (l *eventLogs) CountUniqueUsersPerPeriod(ctx context.Context, periodType Pe
 			}
 			if opt.EventFilters.ByEventName != "" {
 				conds = append(conds, sqlf.Sprintf("name = %s", opt.EventFilters.ByEventName))
+			}
+			if opt.EventFilters.ByEventNameWithCondition != nil {
+				conds = append(conds, opt.EventFilters.ByEventNameWithCondition)
 			}
 			if len(opt.EventFilters.ByEventNames) > 0 {
 				items := []*sqlf.Query{}
@@ -288,6 +316,13 @@ func (l *eventLogs) CountEventsPerPeriod(ctx context.Context, periodType PeriodT
 		}
 		if opt.ByEventName != "" {
 			conds = append(conds, sqlf.Sprintf("name = %s", opt.ByEventName))
+		}
+		if opt.ByEventNameWithCondition != nil {
+			if opt.ByEventName == "" {
+				return nil, fmt.Errorf("The ByEventNameWithCondition option must be used together with the ByEventName option.")
+			}
+			conds = append(conds, sqlf.Sprintf("name = %s", opt.ByEventName))
+			conds = append(conds, opt.ByEventNameWithCondition)
 		}
 		if len(opt.ByEventNames) > 0 {
 			items := []*sqlf.Query{}

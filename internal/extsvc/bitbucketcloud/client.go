@@ -9,15 +9,16 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"golang.org/x/time/rate"
-	"gopkg.in/inconshreveable/log15.v2"
 )
 
 var requestCounter = metrics.NewRequestMeter("bitbucket_cloud_requests_count", "Total number of requests sent to the Bitbucket Cloud API.")
@@ -36,6 +37,13 @@ const (
 	rateLimitRequestsPerSecond = 2 // 120/min or 7200/hr
 	RateLimitMaxBurstRequests  = 500
 )
+
+// Global limiter cache so that we reuse the same rate limiter for
+// the same code host, even between config changes.
+// The longer term plan is to have a rate limiter that is shared across
+// all services so the below is just a short term solution.
+var limiterMu sync.Mutex
+var limiterCache = make(map[string]*rate.Limiter)
 
 // Client access a Bitbucket Cloud via the REST API 2.0.
 type Client struct {
@@ -71,10 +79,19 @@ func NewClient(apiURL *url.URL, httpClient httpcli.Doer) *Client {
 		return category
 	})
 
+	limiterMu.Lock()
+	defer limiterMu.Unlock()
+
+	l, ok := limiterCache[apiURL.String()]
+	if !ok {
+		l = rate.NewLimiter(rateLimitRequestsPerSecond, RateLimitMaxBurstRequests)
+		limiterCache[apiURL.String()] = l
+	}
+
 	return &Client{
 		httpClient: httpClient,
 		URL:        apiURL,
-		RateLimit:  rate.NewLimiter(rateLimitRequestsPerSecond, RateLimitMaxBurstRequests),
+		RateLimit:  l,
 	}
 }
 

@@ -4,6 +4,45 @@ This document describes the exact changes needed to update a [pure-Docker Source
 
 Each section comprehensively describes the changes needed in Docker images, environment variables, and added/removed services.
 
+## v3.12.5 -> v3.13.2 changes
+
+### Confirm file permissions
+
+Confirm that `redis-store-disk` has the correct file permissions:
+
+```
+sudo chown -R 999:1000 ~/sourcegraph-docker/redis-store-disk/ ~/sourcegraph-docker/redis-cache-disk/
+```
+
+### Update image tags
+
+Change 3.12.5 → 3.13.2 for the following containers:
+
+| Container         | New image                                       |
+|-------------------|-------------------------------------------------|
+| frontend          | index.docker.io/sourcegraph/frontend:3.13.2     |
+| frontend-internal | index.docker.io/sourcegraph/frontend:3.13.2     |
+| github-proxy      | index.docker.io/sourcegraph/github-proxy:3.13.2 |
+| gitserver         | index.docker.io/sourcegraph/gitserver:3.13.2    |
+| lsif-server       | index.docker.io/sourcegraph/lsif-server:3.13.2  |
+| query-runner      | index.docker.io/sourcegraph/query-runner:3.13.2 |
+| replacer          | index.docker.io/sourcegraph/replacer:3.13.2     |
+| repo-updater      | index.docker.io/sourcegraph/repo-updater:3.13.2 |
+| searcher          | index.docker.io/sourcegraph/searcher:3.13.2     |
+| symbols           | index.docker.io/sourcegraph/symbols:3.13.2      |
+
+Also change the follow which are not versioned alongside Sourcegraph currently:
+
+| Container         | New image                                       |
+|-------------------|-------------------------------------------------|
+| grafana           | index.docker.io/sourcegraph/grafana:10.0.10@sha256:a6f9816346c3e38478f4b855eeee199fc91a4f69311f5dd57760bf74c3234715 |
+| prometheus        | index.docker.io/sourcegraph/prometheus:10.0.8@sha256:75efaada5a335cda9895f337d8f31b6abb7a082ef3092b7bb24bf31fb78eafe6 |
+| redis-cache       | index.docker.io/sourcegraph/redis-cache:20-02-03_da9d71ca@sha256:7820219195ab3e8fdae5875cd690fed1b2a01fd1063bd94210c0e9d529c38e56 |
+| redis-store       | index.docker.io/sourcegraph/redis-store:20-01-30_c903717e@sha256:e8467a8279832207559bdfbc4a89b68916ecd5b44ab5cf7620c995461c005168 |
+| syntect-server    | index.docker.io/sourcegraph/syntect_server:c0297a1@sha256:333abb45cfaae9c9d37e576c3853843b00eca33a40a7c71f6b93211ed96528df |
+| zoekt-indexserver | index.docker.io/sourcegraph/zoekt-indexserver:0.0.20200302121716-13dbd22@sha256:91643d83223bb72f4aa2b5031ceb774c8e604a227c58ed54375bd341f25e2ef3 |
+| zoekt-webserver   | index.docker.io/sourcegraph/zoekt-webserver:0.0.20200302121635-13dbd22@sha256:0183bd676fe1ba774edcca29f042d8d3594e833e08b6d603af98f74c575eaf69 |
+
 ## v3.12.2 → v3.12.5 changes
 
 ### Confirm file permissions

@@ -1,7 +1,6 @@
 import {
     ContextResolver,
     createHoverifier,
-    DiffPart,
     findPositionsFromEvents,
     Hoverifier,
     HoverState,
@@ -20,6 +19,8 @@ import {
     Subject,
     Subscription,
     Unsubscribable,
+    concat,
+    BehaviorSubject,
 } from 'rxjs'
 import {
     catchError,
@@ -35,6 +36,7 @@ import {
     tap,
     startWith,
     distinctUntilChanged,
+    retryWhen,
 } from 'rxjs/operators'
 import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
 import { DecorationMapByLine } from '../../../../shared/src/api/client/services/decoration'
@@ -57,12 +59,12 @@ import {
     HoverOverlayClassProps,
 } from '../../../../shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '../../../../shared/src/languages'
-import { PlatformContextProps } from '../../../../shared/src/platform/context'
+import { URLToFileContext } from '../../../../shared/src/platform/context'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { isDefined, isInstanceOf, propertyIsDefined } from '../../../../shared/src/util/types'
 import {
     FileSpec,
-    PositionSpec,
+    UIPositionSpec,
     RawRepoSpec,
     RepoSpec,
     ResolvedRevSpec,
@@ -85,7 +87,7 @@ import { phabricatorCodeHost } from '../phabricator/code_intelligence'
 import { CodeView, fetchFileContents, trackCodeViews } from './code_views'
 import { ContentView, handleContentViews } from './content_views'
 import { applyDecorations, initializeExtensions, renderCommandPalette, renderGlobalDebug } from './extensions'
-import { renderViewContextOnSourcegraph, ViewOnSourcegraphButtonClassProps } from './external_links'
+import { ViewOnSourcegraphButtonClassProps, ViewOnSourcegraphButton } from './external_links'
 import { ExtensionHoverAlertType, getActiveHoverAlerts, onHoverAlertDismissed } from './hover_alerts'
 import {
     handleNativeTooltips,
@@ -97,11 +99,11 @@ import { handleTextFields, TextField } from './text_fields'
 import { resolveRepoNames } from './util/file_info'
 import { ViewResolver } from './views'
 import { observeStorageKey } from '../../browser/storage'
-import { SourcegraphIntegrationURLs } from '../../platform/context'
-import { requestGraphQLHelper } from '../../shared/backend/requestGraphQL'
-import { checkUserLoggedInAndFetchSettings } from '../../platform/settings'
+import { SourcegraphIntegrationURLs, BrowserPlatformContext } from '../../platform/context'
 import { IS_LIGHT_THEME } from './consts'
 import { NotificationType } from 'sourcegraph'
+import { failedWithHTTPStatus } from '../../../../shared/src/backend/fetch'
+import { asError } from '../../../../shared/src/util/errors'
 
 registerHighlightContributions()
 
@@ -214,15 +216,17 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
      */
     getHoverOverlayMountLocation?: () => string | null
 
-    /** Construct the URL to the specified file. */
+    /**
+     * Construct the URL to the specified file.
+     *
+     * @param sourcegraphURL The URL of the Sourcegraph instance.
+     * @param target The target to build a URL for.
+     * @param context Context information about this invocation.
+     */
     urlToFile?: (
         sourcegraphURL: string,
-        location: RepoSpec &
-            RawRepoSpec &
-            RevSpec &
-            FileSpec &
-            Partial<PositionSpec> &
-            Partial<ViewStateSpec> & { part?: DiffPart }
+        target: RepoSpec & RawRepoSpec & RevSpec & FileSpec & Partial<UIPositionSpec> & Partial<ViewStateSpec>,
+        context: URLToFileContext
     ) => string
 
     notificationClassNames: Record<NotificationType, string>
@@ -291,11 +295,16 @@ export interface FileInfoWithRepoNames extends FileInfo, RepoSpec {
     baseRepoName?: string
 }
 
-export interface CodeIntelligenceProps
-    extends PlatformContextProps<
-            'forceUpdateTooltip' | 'urlToFile' | 'sideloadedExtensionURL' | 'requestGraphQL' | 'settings'
-        >,
-        TelemetryProps {
+export interface CodeIntelligenceProps extends TelemetryProps {
+    platformContext: Pick<
+        BrowserPlatformContext,
+        | 'forceUpdateTooltip'
+        | 'urlToFile'
+        | 'sideloadedExtensionURL'
+        | 'requestGraphQL'
+        | 'settings'
+        | 'refreshSettings'
+    >
     codeHost: CodeHost
     extensionsController: Controller
     showGlobalDebug?: boolean
@@ -318,8 +327,6 @@ export const createGlobalDebugMount = (): HTMLElement => {
 /**
  * Prepares the page for code intelligence. It creates the hoverifier, injects
  * and mounts the hover overlay and then returns the hoverifier.
- *
- * @param codeHost
  */
 function initCodeIntelligence({
     mutations,
@@ -536,6 +543,13 @@ export function observeHoverOverlayMountLocation(
     )
 }
 
+export interface HandleCodeHostOptions extends CodeIntelligenceProps {
+    mutations: Observable<MutationRecordLike[]>
+    sourcegraphURL: string
+    render: typeof reactDOMRender
+    minimalUI: boolean
+}
+
 export function handleCodeHost({
     mutations,
     codeHost,
@@ -546,22 +560,10 @@ export function handleCodeHost({
     telemetryService,
     render,
     minimalUI,
-}: CodeIntelligenceProps & {
-    mutations: Observable<MutationRecordLike[]>
-    sourcegraphURL: string
-    render: typeof reactDOMRender
-    minimalUI?: boolean
-}): Subscription {
+}: HandleCodeHostOptions): Subscription {
     const history = H.createBrowserHistory()
     const subscriptions = new Subscription()
     const { requestGraphQL } = platformContext
-
-    const ensureRepoExists = ({ rawRepoName, rev }: CodeHostContext): Observable<boolean> =>
-        resolveRev({ repoName: rawRepoName, rev, requestGraphQL }).pipe(
-            retryWhenCloneInProgressError(),
-            map(rev => !!rev),
-            catchError(() => [false])
-        )
 
     const openOptionsMenu = (): Promise<void> => browser.runtime.sendMessage({ type: 'openOptionsPage' })
 
@@ -622,32 +624,81 @@ export function handleCodeHost({
         renderGlobalDebug({ extensionsController, platformContext, history, sourcegraphURL, render })(mount)
     }
 
-    // Render view on Sourcegraph button
-    if (codeHost.getViewContextOnSourcegraphMount && codeHost.getContext && !minimalUI) {
-        const { getContext, viewOnSourcegraphButtonClassProps } = codeHost
-        subscriptions.add(
-            addedElements.pipe(map(codeHost.getViewContextOnSourcegraphMount), filter(isDefined)).subscribe(
-                renderViewContextOnSourcegraph({
-                    sourcegraphURL,
-                    getContext,
-                    viewOnSourcegraphButtonClassProps,
-                    ensureRepoExists,
-                    onConfigureSourcegraphClick: isInPage ? undefined : openOptionsMenu,
-                })
+    const signInCloses = new Subject<void>()
+    const nextSignInClose = signInCloses.next.bind(signInCloses)
+
+    // Try to fetch settings and refresh them when a sign in tab was closed
+    subscriptions.add(
+        concat([null], signInCloses)
+            .pipe(
+                switchMap(() =>
+                    from(platformContext.refreshSettings()).pipe(
+                        catchError(error => {
+                            console.error('Refreshing settings failed', error)
+                            return []
+                        })
+                    )
+                )
             )
+            .subscribe()
+    )
+
+    /** The number of code views that were detected on the page (not necessarily initialized) */
+    const codeViewCount = new BehaviorSubject<number>(0)
+
+    // Render view on Sourcegraph button
+    if (codeHost.getViewContextOnSourcegraphMount && codeHost.getContext) {
+        const { getContext, viewOnSourcegraphButtonClassProps } = codeHost
+
+        /** Whether or not the repo exists on the configured Sourcegraph instance. */
+        const repoExistsOrErrors = signInCloses.pipe(
+            startWith(null),
+            switchMap(() => {
+                const { rawRepoName, rev } = getContext()
+                return resolveRev({ repoName: rawRepoName, rev, requestGraphQL }).pipe(
+                    retryWhenCloneInProgressError(),
+                    map(rev => !!rev),
+                    catchError(error => [asError(error)]),
+                    startWith(undefined)
+                )
+            })
+        )
+
+        subscriptions.add(
+            combineLatest([
+                repoExistsOrErrors,
+                addedElements.pipe(map(codeHost.getViewContextOnSourcegraphMount), filter(isDefined)),
+                // Only show sign in button when there is no other code view on the page that is displaying it
+                codeViewCount.pipe(
+                    map(count => count === 0),
+                    distinctUntilChanged()
+                ),
+            ]).subscribe(([repoExistsOrError, mount, showSignInButton]) => {
+                render(
+                    <ViewOnSourcegraphButton
+                        {...viewOnSourcegraphButtonClassProps}
+                        getContext={getContext}
+                        minimalUI={minimalUI}
+                        sourcegraphURL={sourcegraphURL}
+                        repoExistsOrError={repoExistsOrError}
+                        showSignInButton={showSignInButton}
+                        onSignInClose={nextSignInClose}
+                        onConfigureSourcegraphClick={isInPage ? undefined : openOptionsMenu}
+                    />,
+                    mount
+                )
+            })
         )
     }
 
-    let codeViewCount = 0
-
-    /** A stream of added or removed code views */
+    /** A stream of added or removed code views with the resolved file info */
     const codeViews = mutations.pipe(
         trackCodeViews(codeHost),
         // Limit number of code views for perf reasons.
-        filter(() => codeViewCount < 50),
+        filter(() => codeViewCount.value < 50),
         tap(codeViewEvent => {
-            codeViewCount++
-            codeViewEvent.subscriptions.add(() => codeViewCount--)
+            codeViewCount.next(codeViewCount.value + 1)
+            codeViewEvent.subscriptions.add(() => codeViewCount.next(codeViewCount.value - 1))
         }),
         mergeMap(codeViewEvent =>
             codeViewEvent.resolveFileInfo(codeViewEvent.element, platformContext.requestGraphQL).pipe(
@@ -659,15 +710,54 @@ export function handleCodeHost({
                             ...codeViewEvent,
                         }))
                     )
-                )
+                ),
+                catchError(err => {
+                    // Ignore PrivateRepoPublicSourcegraph errors (don't initialize those code views)
+                    if (err.name === ERPRIVATEREPOPUBLICSOURCEGRAPHCOM) {
+                        return EMPTY
+                    }
+                    throw err
+                }),
+                tap({
+                    error: error => {
+                        if (codeViewEvent.getToolbarMount) {
+                            const mount = codeViewEvent.getToolbarMount(codeViewEvent.element)
+                            render(
+                                <CodeViewToolbar
+                                    {...codeHost.codeViewToolbarClassProps}
+                                    fileInfoOrError={error}
+                                    sourcegraphURL={sourcegraphURL}
+                                    telemetryService={telemetryService}
+                                    platformContext={platformContext}
+                                    extensionsController={extensionsController}
+                                    buttonProps={codeViewEvent.toolbarButtonProps}
+                                    onSignInClose={nextSignInClose}
+                                    location={H.createLocation(window.location)}
+                                />,
+                                mount
+                            )
+                        }
+                    },
+                }),
+                // Retry auth errors after the user closed a sign-in tab
+                retryWhen(errors =>
+                    errors.pipe(
+                        // Don't swallow non-auth errors
+                        tap(error => {
+                            if (!failedWithHTTPStatus(error, 401)) {
+                                throw error
+                            }
+                        }),
+                        switchMap(() => signInCloses)
+                    )
+                ),
+                catchError(error => {
+                    // Log errors but don't break the handling of other code views
+                    console.error('Could not resolve file info for code view', error)
+                    return []
+                })
             )
         ),
-        catchError(err => {
-            if (err.name === ERPRIVATEREPOPUBLICSOURCEGRAPHCOM) {
-                return EMPTY
-            }
-            throw err
-        }),
         observeOn(animationFrameScheduler)
     )
 
@@ -901,8 +991,8 @@ export function handleCodeHost({
                 const mount = getToolbarMount(element)
                 render(
                     <CodeViewToolbar
-                        {...fileInfo}
                         {...codeHost.codeViewToolbarClassProps}
+                        fileInfoOrError={fileInfo}
                         sourcegraphURL={sourcegraphURL}
                         telemetryService={telemetryService}
                         platformContext={platformContext}
@@ -910,6 +1000,7 @@ export function handleCodeHost({
                         buttonProps={toolbarButtonProps}
                         location={H.createLocation(window.location)}
                         scope={scope}
+                        onSignInClose={nextSignInClose}
                     />,
                     mount
                 )
@@ -947,29 +1038,21 @@ const SHOW_DEBUG = (): boolean => localStorage.getItem('debug') !== null
 const CODE_HOSTS: CodeHost[] = [bitbucketServerCodeHost, githubCodeHost, gitlabCodeHost, phabricatorCodeHost]
 export const determineCodeHost = (): CodeHost | undefined => CODE_HOSTS.find(codeHost => codeHost.check())
 
-export async function injectCodeIntelligenceToCodeHost(
+export function injectCodeIntelligenceToCodeHost(
     mutations: Observable<MutationRecordLike[]>,
     codeHost: CodeHost,
     { sourcegraphURL, assetsURL }: SourcegraphIntegrationURLs,
     isExtension: boolean,
     showGlobalDebug = SHOW_DEBUG()
-): Promise<Subscription> {
+): Subscription {
     const subscriptions = new Subscription()
-    const initialSettingsResult = await checkUserLoggedInAndFetchSettings(
-        requestGraphQLHelper(isExtension, sourcegraphURL)
-    ).toPromise()
-    if (!initialSettingsResult.userLoggedIn) {
-        // Exit early when the user is not logged in to the Sourcegraph instance.
-        console.warn(`Sourcegraph is disabled: you must be logged in to ${sourcegraphURL} to use Sourcegraph.`)
-        return subscriptions
-    }
     const { platformContext, extensionsController } = initializeExtensions(
         codeHost,
         { sourcegraphURL, assetsURL },
-        initialSettingsResult.settings,
         isExtension
     )
-    const telemetryService = new EventLogger(isExtension, platformContext.requestGraphQL)
+    const { requestGraphQL } = platformContext
+    const telemetryService = new EventLogger(isExtension, requestGraphQL)
     subscriptions.add(extensionsController)
 
     let codeHostSubscription: Subscription

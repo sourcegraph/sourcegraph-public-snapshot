@@ -1,188 +1,129 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`ChangesetNode renders a changesetplan with publishing disabled 1`] = `
-Object {
-  "children": <div
-    className="changeset-node__content changeset-node__content--no-collapse flex-fill"
-  >
-    <div
-      className="d-flex align-items-center m-1 ml-2"
-    >
-      <div
-        className="changeset-node__content flex-fill"
-      >
-        <h3
-          className="m-0"
-        >
-          <div
-            className="d-flex flex-column"
-          >
-            <div>
-              <SourcePullIcon
-                className="mr-1 text-muted"
-                data-tooltip="open"
-              />
-              <AnchorLink
-                className="text-muted"
-                rel="noopener noreferrer"
-                target="_blank"
-                to="github.com/sourcegraph/sourcegraph"
-              >
-                sourcegraph
-              </AnchorLink>
-              <DraftBadge
-                className="ml-2"
-              />
-            </div>
-          </div>
-        </h3>
-      </div>
-      <div
-        className="flex-shrink-0 flex-grow-0 ml-1 d-flex flex-column align-items-end"
-      >
-        <DiffStat
-          added={100}
-          changed={200}
-          deleted={100}
-          expandedCounts={true}
-        />
-      </div>
-    </div>
-  </div>,
-  "className": "list-group-item e2e-changeset-node",
-}
-`;
-
-exports[`ChangesetNode renders a changesetplan with publishing enabled 1`] = `
-Object {
-  "children": <div
-    className="changeset-node__content changeset-node__content--no-collapse flex-fill"
-  >
-    <div
-      className="d-flex align-items-center m-1 ml-2"
-    >
-      <div
-        className="changeset-node__content flex-fill"
-      >
-        <h3
-          className="m-0"
-        >
-          <div
-            className="d-flex flex-column"
-          >
-            <div>
-              <SourcePullIcon
-                className="mr-1 text-muted"
-                data-tooltip="open"
-              />
-              <AnchorLink
-                className="text-muted"
-                rel="noopener noreferrer"
-                target="_blank"
-                to="github.com/sourcegraph/sourcegraph"
-              >
-                sourcegraph
-              </AnchorLink>
-              <DraftBadge
-                className="ml-2"
-              />
-            </div>
-          </div>
-        </h3>
-      </div>
-      <div
-        className="flex-shrink-0 flex-grow-0 ml-1 d-flex flex-column align-items-end"
-      >
-        <DiffStat
-          added={100}
-          changed={200}
-          deleted={100}
-          expandedCounts={true}
-        />
-      </div>
-      <React.Fragment>
-        <button
-          className="flex-shrink-0 flex-grow-0 btn btn-sm btn-secondary ml-2"
-          onClick={[Function]}
-          type="button"
-        >
-           
-          Publish
-        </button>
-      </React.Fragment>
-    </div>
-  </div>,
-  "className": "list-group-item e2e-changeset-node",
-}
-`;
-
 exports[`ChangesetNode renders an externalchangeset 1`] = `
 Object {
   "children": <Collapsible
     title={
       <div
-        className="d-flex align-items-center m-1 ml-2"
+        className="d-flex align-items-start m-1 ml-2"
       >
         <div
           className="changeset-node__content flex-fill"
         >
-          <h3
-            className="m-0"
+          <div
+            className="d-flex flex-column"
           >
             <div
-              className="d-flex flex-column"
+              className="m-0 mb-2"
             >
-              <div>
-                <SourcePullIcon
-                  className="mr-1 text-success"
-                  data-tooltip="open"
-                />
+              <SourcePullIcon
+                className="mr-1 icon-inline text-success"
+                data-tooltip="open"
+              />
+              <h3
+                className="m-0 d-inline"
+              >
                 <LinkOrSpan
                   rel="noopener noreferrer"
                   target="_blank"
                   to="https://github.com/sourcegraph/sourcegraph/pull/111111"
                 >
                   Remove lodash
+                   (#
+                  123
+                  )
                 </LinkOrSpan>
+              </h3>
+              <small>
                 <Memo(ErrorIcon)
                   className="ml-1 changeset-node__check-state text-danger"
                   data-tooltip="Some checks failed"
                 />
-                <span
-                  className="ml-2"
-                >
-                  <ChangesetLabel
-                    label={
-                      Object {
-                        "__typename": "ChangesetLabel",
-                        "color": "93ba13",
-                        "description": "Something is broken",
-                        "text": "bug",
-                      }
+              </small>
+              <span
+                className="ml-2"
+              >
+                <ChangesetLabel
+                  label={
+                    Object {
+                      "__typename": "ChangesetLabel",
+                      "color": "93ba13",
+                      "description": "Something is broken",
+                      "text": "bug",
                     }
-                  />
-                </span>
-              </div>
-              <div>
+                  }
+                />
+              </span>
+            </div>
+            <div>
+              <strong>
                 <AnchorLink
-                  className="text-muted"
                   rel="noopener noreferrer"
                   target="_blank"
                   to="github.com/sourcegraph/sourcegraph"
                 >
                   sourcegraph
                 </AnchorLink>
-              </div>
+              </strong>
+              <ChangesetLastSynced
+                campaignUpdates={
+                  Subject {
+                    "_isScalar": false,
+                    "closed": false,
+                    "hasError": false,
+                    "isStopped": false,
+                    "observers": Array [],
+                    "thrownError": null,
+                  }
+                }
+                changeset={
+                  Object {
+                    "__typename": "ExternalChangeset",
+                    "body": "We should remove lodash",
+                    "checkState": "FAILED",
+                    "diff": Object {
+                      "fileDiffs": Object {
+                        "diffStat": Object {
+                          "added": 100,
+                          "changed": 200,
+                          "deleted": 100,
+                        },
+                        "nodes": Array [
+                          Object {
+                            "__typename": "FileDiff",
+                          },
+                        ],
+                      },
+                    },
+                    "externalID": "123",
+                    "externalURL": Object {
+                      "url": "https://github.com/sourcegraph/sourcegraph/pull/111111",
+                    },
+                    "labels": Array [
+                      Object {
+                        "__typename": "ChangesetLabel",
+                        "color": "93ba13",
+                        "description": "Something is broken",
+                        "text": "bug",
+                      },
+                    ],
+                    "repository": Object {
+                      "__typename": "Repository",
+                      "name": "sourcegraph",
+                      "url": "github.com/sourcegraph/sourcegraph",
+                    },
+                    "reviewState": "PENDING",
+                    "state": "OPEN",
+                    "title": "Remove lodash",
+                    "updatedAt": "2020-01-01T00:00:00.000Z",
+                  }
+                }
+              />
             </div>
-          </h3>
-          <Markdown
-            className="text-truncate"
-            dangerousInnerHTML="We should remove lodash
-"
-          />
+          </div>
         </div>
         <div
-          className="flex-shrink-0 flex-grow-0 ml-1 d-flex flex-column align-items-end"
+          className="flex-shrink-0 flex-grow-0 ml-1 align-items-end"
         >
           <DiffStat
             added={100}
@@ -190,6 +131,10 @@ Object {
             deleted={100}
             expandedCounts={true}
           />
+        </div>
+        <div
+          className="flex-shrink-0 flex-grow-0 ml-1 align-items-end"
+        >
           <AccountQuestionIcon
             className="text-warning"
             data-tooltip="pending review"
@@ -200,8 +145,9 @@ Object {
     titleClassName="changeset-node__content flex-fill"
     wholeTitleClickable={false}
   >
-    <FileDiffNode
-      className="mb-1"
+    <FileDiffConnection
+      defaultFirst={25}
+      hideSearch={true}
       history={
         Object {
           "action": "POP",
@@ -234,8 +180,7 @@ Object {
           "replace": [Function],
         }
       }
-      isLightTheme={true}
-      lineNumbers={true}
+      listClassName="list-group list-group-flush"
       location={
         Object {
           "hash": "",
@@ -245,12 +190,57 @@ Object {
           "state": undefined,
         }
       }
-      node={
+      noSummaryIfAllNodesVisible={true}
+      nodeComponent={[Function]}
+      nodeComponentProps={
         Object {
-          "__typename": "FileDiff",
+          "extensionInfo": undefined,
+          "history": Object {
+            "action": "POP",
+            "block": [Function],
+            "canGo": [Function],
+            "createHref": [Function],
+            "entries": Array [
+              Object {
+                "hash": "",
+                "key": undefined,
+                "pathname": "/",
+                "search": "",
+                "state": undefined,
+              },
+            ],
+            "go": [Function],
+            "goBack": [Function],
+            "goForward": [Function],
+            "index": 0,
+            "length": 1,
+            "listen": [Function],
+            "location": Object {
+              "hash": "",
+              "key": undefined,
+              "pathname": "/",
+              "search": "",
+              "state": undefined,
+            },
+            "push": [Function],
+            "replace": [Function],
+          },
+          "isLightTheme": true,
+          "lineNumbers": true,
+          "location": Object {
+            "hash": "",
+            "key": undefined,
+            "pathname": "/campaigns",
+            "search": "",
+            "state": undefined,
+          },
+          "persistLines": true,
         }
       }
-      persistLines={true}
+      noun="changed file"
+      pluralNoun="changed files"
+      queryConnection={[Function]}
+      useURLQuery={false}
     />
   </Collapsible>,
   "className": "list-group-item e2e-changeset-node",

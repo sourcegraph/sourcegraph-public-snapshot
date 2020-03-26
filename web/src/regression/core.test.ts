@@ -248,10 +248,7 @@ describe('Core functionality regression test suite', () => {
         })
 
         await expect(
-            gqlClientWithInvalidToken
-                .queryGraphQL(currentUsernameQuery)
-                .pipe(map(dataOrThrowErrors))
-                .toPromise()
+            gqlClientWithInvalidToken.queryGraphQL(currentUsernameQuery).pipe(map(dataOrThrowErrors)).toPromise()
         ).rejects.toThrowError('401 Unauthorized')
     })
 

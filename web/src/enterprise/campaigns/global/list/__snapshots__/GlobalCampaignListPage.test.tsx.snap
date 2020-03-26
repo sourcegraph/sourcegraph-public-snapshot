@@ -1,0 +1,134 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`GlobalCampaignListPage renders for non-siteadmin 1`] = `
+<React.Fragment>
+  <div
+    className="d-flex justify-content-between align-items-end mb-3"
+  >
+    <div>
+      <h1
+        className="mb-2"
+      >
+        Campaigns
+      </h1>
+      <p
+        className="mb-0"
+      >
+        Perform and track large-scale code changes
+      </p>
+    </div>
+  </div>
+  <FilteredConnection
+    authenticatedUser={
+      Object {
+        "siteAdmin": false,
+      }
+    }
+    className="mb-3"
+    defaultFirst={20}
+    filters={
+      Array [
+        Object {
+          "args": Object {},
+          "id": "all",
+          "label": "All",
+          "tooltip": "Show all campaigns",
+        },
+        Object {
+          "args": Object {
+            "state": "OPEN",
+          },
+          "id": "open",
+          "label": "Open",
+          "tooltip": "Show only campaigns that are open",
+        },
+        Object {
+          "args": Object {
+            "state": "CLOSED",
+          },
+          "id": "closed",
+          "label": "Closed",
+          "tooltip": "Show only campaigns that are closed",
+        },
+      ]
+    }
+    hideSearch={true}
+    nodeComponent={[Function]}
+    noun="campaign"
+    pluralNoun="campaigns"
+    queryConnection={[Function]}
+    useURLQuery={true}
+  />
+</React.Fragment>
+`;
+
+exports[`GlobalCampaignListPage renders for siteadmin 1`] = `
+<React.Fragment>
+  <div
+    className="d-flex justify-content-between align-items-end mb-3"
+  >
+    <div>
+      <h1
+        className="mb-2"
+      >
+        Campaigns
+      </h1>
+      <p
+        className="mb-0"
+      >
+        Perform and track large-scale code changes
+      </p>
+    </div>
+    <AnchorLink
+      className="btn btn-primary ml-3"
+      to="/campaigns/new"
+    >
+      <Memo(AddIcon)
+        className="icon-inline"
+      />
+       New campaign
+    </AnchorLink>
+  </div>
+  <FilteredConnection
+    authenticatedUser={
+      Object {
+        "siteAdmin": true,
+      }
+    }
+    className="mb-3"
+    defaultFirst={20}
+    filters={
+      Array [
+        Object {
+          "args": Object {},
+          "id": "all",
+          "label": "All",
+          "tooltip": "Show all campaigns",
+        },
+        Object {
+          "args": Object {
+            "state": "OPEN",
+          },
+          "id": "open",
+          "label": "Open",
+          "tooltip": "Show only campaigns that are open",
+        },
+        Object {
+          "args": Object {
+            "state": "CLOSED",
+          },
+          "id": "closed",
+          "label": "Closed",
+          "tooltip": "Show only campaigns that are closed",
+        },
+      ]
+    }
+    hideSearch={true}
+    nodeComponent={[Function]}
+    noun="campaign"
+    pluralNoun="campaigns"
+    queryConnection={[Function]}
+    useURLQuery={true}
+  />
+</React.Fragment>
+`;

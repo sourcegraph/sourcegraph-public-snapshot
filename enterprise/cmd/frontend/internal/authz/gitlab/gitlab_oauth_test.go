@@ -28,7 +28,7 @@ func Test_GitLab_RepoPerms(t *testing.T) {
 		// Configures the provider. Do NOT set the MaxBatchRequests and MinBatchThreshold fields in
 		// the test struct declarations, as these are set to a range of values in the test logic,
 		// itself.
-		op OAuthAuthzProviderOp
+		op OAuthProviderOp
 
 		calls []call
 	}
@@ -92,7 +92,7 @@ func Test_GitLab_RepoPerms(t *testing.T) {
 	tests := []test{
 		{
 			description: "standard config",
-			op: OAuthAuthzProviderOp{
+			op: OAuthProviderOp{
 				BaseURL: mustURL(t, "https://gitlab.mine"),
 			},
 			calls: []call{
@@ -190,7 +190,7 @@ func Test_GitLab_RepoPerms(t *testing.T) {
 					op := test.op
 					op.MinBatchThreshold, op.MaxBatchRequests = batchingThreshold[0], batchingThreshold[1]
 					op.MockCache = make(mockCache)
-					authzProvider := newOAuthProvider(op)
+					authzProvider := newOAuthProvider(op, nil)
 					for i := 0; i < 2; i++ {
 						t.Logf("iter %d", i)
 						perms, err := authzProvider.RepoPerms(ctx, c.account, c.repos)
@@ -240,11 +240,11 @@ func Test_GitLab_RepoPerms_cache(t *testing.T) {
 	gitlab.MockListTree = gitlabMock.ListTree
 
 	ctx := context.Background()
-	authzProvider := newOAuthProvider(OAuthAuthzProviderOp{
+	authzProvider := newOAuthProvider(OAuthProviderOp{
 		BaseURL:   mustURL(t, "https://gitlab.mine"),
 		MockCache: make(mockCache),
 		CacheTTL:  3 * time.Hour,
-	})
+	}, nil)
 
 	// Initial request for private repo
 	if _, err := authzProvider.RepoPerms(ctx,
@@ -384,13 +384,13 @@ func Test_GitLab_RepoPerms_batchVisibility(t *testing.T) {
 		gitlab.MockListTree = gitlabMock.ListTree
 
 		ctx := context.Background()
-		authzProvider := newOAuthProvider(OAuthAuthzProviderOp{
+		authzProvider := newOAuthProvider(OAuthProviderOp{
 			BaseURL:           mustURL(t, "https://gitlab.mine"),
 			MockCache:         make(mockCache),
 			CacheTTL:          3 * time.Hour,
 			MinBatchThreshold: 1,
 			MaxBatchRequests:  300,
-		})
+		}, nil)
 		expPerms := []authz.RepoPerms{
 			{Repo: repos["u1/repo1"], Perms: authz.Read},
 			{Repo: repos["internal/repo1"], Perms: authz.Read},
@@ -435,13 +435,13 @@ func Test_GitLab_RepoPerms_batchVisibility(t *testing.T) {
 		gitlab.MockListTree = gitlabMock.ListTree
 
 		ctx := context.Background()
-		authzProvider := newOAuthProvider(OAuthAuthzProviderOp{
+		authzProvider := newOAuthProvider(OAuthProviderOp{
 			BaseURL:           mustURL(t, "https://gitlab.mine"),
 			MockCache:         make(mockCache),
 			CacheTTL:          3 * time.Hour,
 			MinBatchThreshold: 200,
 			MaxBatchRequests:  300,
-		})
+		}, nil)
 		expPerms := []authz.RepoPerms{
 			{Repo: repos["u1/repo1"], Perms: authz.Read},
 			{Repo: repos["internal/repo1"], Perms: authz.Read},

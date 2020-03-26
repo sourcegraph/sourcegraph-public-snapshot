@@ -6,12 +6,12 @@ import (
 	"fmt"
 
 	multierror "github.com/hashicorp/go-multierror"
+	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // userExternalAccountNotFoundError is the error that is returned when a user external account is not found.
@@ -202,6 +202,10 @@ type ExternalAccountsListOptions struct {
 }
 
 func (s *userExternalAccounts) List(ctx context.Context, opt ExternalAccountsListOptions) (acct []*extsvc.ExternalAccount, err error) {
+	if Mocks.ExternalAccounts.List != nil {
+		return Mocks.ExternalAccounts.List(opt)
+	}
+
 	tr, ctx := trace.New(ctx, "userExternalAccounts.List", "")
 	defer func() {
 		if err != nil {
@@ -215,10 +219,6 @@ func (s *userExternalAccounts) List(ctx context.Context, opt ExternalAccountsLis
 
 		tr.Finish()
 	}()
-
-	if Mocks.ExternalAccounts.List != nil {
-		return Mocks.ExternalAccounts.List(opt)
-	}
 
 	conds := s.listSQL(opt)
 	return s.listBySQL(ctx, sqlf.Sprintf("WHERE %s ORDER BY id ASC %s", sqlf.Join(conds, "AND"), opt.LimitOffset.SQL()))

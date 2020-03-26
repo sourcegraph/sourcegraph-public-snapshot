@@ -16,6 +16,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/src-d/enry/v2"
 
@@ -27,9 +28,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
-	"gopkg.in/inconshreveable/log15.v2"
+	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -471,7 +473,88 @@ var searchResponseCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 	Help:      "Number of searches that have ended in the given status (success, error, timeout, partial_timeout).",
 }, []string{"status", "alert_type"})
 
-func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, error) {
+// logSearchLatency records search durations in the event database. This
+// function may only be called after a search result is performed, because it
+// relies on the invariant that query and pattern error checking has already
+// been performed.
+func (r *searchResolver) logSearchLatency(ctx context.Context, durationMs int32) {
+	var types []string
+	resultTypes, _ := r.query.StringValues(query.FieldType)
+	for _, typ := range resultTypes {
+		switch typ {
+		case "repo", "symbol", "diff", "commit":
+			types = append(types, typ)
+		case "path":
+			// Map type:path to file
+			types = append(types, "file")
+		case "file":
+			switch {
+			case r.patternType == query.SearchTypeStructural:
+				types = append(types, "structural")
+			case r.patternType == query.SearchTypeLiteral:
+				types = append(types, "literal")
+			case r.patternType == query.SearchTypeRegex:
+				types = append(types, "regexp")
+			}
+		}
+	}
+
+	// Don't record composite searches that specify more than one type:
+	// because we can't break down the search timings into multiple
+	// categories.
+	if len(types) > 1 {
+		return
+	}
+
+	options := &getPatternInfoOptions{}
+	if r.patternType == query.SearchTypeStructural {
+		options = &getPatternInfoOptions{performStructuralSearch: true}
+	}
+	if r.patternType == query.SearchTypeLiteral {
+		options = &getPatternInfoOptions{performLiteralSearch: true}
+	}
+	p, _ := r.getPatternInfo(options)
+
+	// If no type: was explicitly specified, infer the result type.
+	if len(types) == 0 {
+		// If a pattern was specified, a content search happened.
+		if p.Pattern != "" {
+			switch {
+			case r.patternType == query.SearchTypeStructural:
+				types = append(types, "structural")
+			case r.patternType == query.SearchTypeLiteral:
+				types = append(types, "literal")
+			case r.patternType == query.SearchTypeRegex:
+				types = append(types, "regexp")
+			}
+		} else if len(r.query.Fields()["file"]) > 0 {
+			// No search pattern specified and file: is specified.
+			types = append(types, "file")
+		} else {
+			// No search pattern or file: is specified, assume repo.
+			// This includes accounting for searches of fields that
+			// specify repohasfile: and repohascommitafter:.
+			types = append(types, "repo")
+		}
+	}
+
+	// Only log the time if we successfully resolved one search type.
+	if len(types) == 1 {
+		actor := actor.FromContext(ctx)
+		if actor.IsAuthenticated() {
+			value := fmt.Sprintf(`{"durationMs": %d}`, durationMs)
+			eventName := fmt.Sprintf("search.latencies.%s", types[0])
+			err := usagestats.LogBackendEvent(actor.UID, eventName, json.RawMessage(value))
+			if err != nil {
+				log15.Warn("Could not log search latency", "err", err)
+			}
+		}
+	}
+}
+
+// evaluateLeaf performs a single search operation and corresponds to the
+// evaluation of leaf expression in a query.
+func (r *searchResolver) evaluateLeaf(ctx context.Context) (*SearchResultsResolver, error) {
 	// If the request is a paginated one, we handle it separately. See
 	// paginatedResults for more details.
 	if r.pagination != nil {
@@ -479,6 +562,9 @@ func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, e
 	}
 
 	rr, err := r.resultsWithTimeoutSuggestion(ctx)
+	if rr != nil {
+		r.logSearchLatency(ctx, rr.ElapsedMilliseconds())
+	}
 
 	// Record what type of response we sent back via Prometheus.
 	var status, alertType string
@@ -500,6 +586,23 @@ func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, e
 	searchResponseCounter.WithLabelValues(status, alertType).Inc()
 
 	return rr, err
+}
+
+// evaluate evaluates all expressions of a search query.
+func (r *searchResolver) evaluate(ctx context.Context, q []query.Node) (*SearchResultsResolver, error) {
+	// For now, fall through to evaluating leaf expressions only.
+	return r.evaluateLeaf(ctx)
+}
+
+func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, error) {
+	switch q := r.query.(type) {
+	case *query.OrdinaryQuery:
+		return r.evaluateLeaf(ctx)
+	case *query.AndOrQuery:
+		return r.evaluate(ctx, q.Query)
+	}
+	// Unreachable, matching is exhaustive.
+	return nil, nil
 }
 
 // resultsWithTimeoutSuggestion calls doResults, and in case of deadline
@@ -700,7 +803,7 @@ func (r *searchResolver) getPatternInfo(opts *getPatternInfoOptions) (*search.Te
 
 // processSearchPattern processes the search pattern for a query. It handles the interpretation of search patterns
 // as literal, regex, or structural patterns, and applies fuzzy regex matching if applicable.
-func processSearchPattern(q *query.Query, opts *getPatternInfoOptions) (string, bool, bool) {
+func processSearchPattern(q query.QueryInfo, opts *getPatternInfoOptions) (string, bool, bool) {
 	var pattern string
 	var pieces []string
 	var contentFieldSet bool
@@ -757,7 +860,7 @@ func processSearchPattern(q *query.Query, opts *getPatternInfoOptions) (string, 
 }
 
 // getPatternInfo gets the search pattern info for q
-func getPatternInfo(q *query.Query, opts *getPatternInfoOptions) (*search.TextPatternInfo, error) {
+func getPatternInfo(q query.QueryInfo, opts *getPatternInfoOptions) (*search.TextPatternInfo, error) {
 	pattern, isRegExp, isStructuralPat := processSearchPattern(q, opts)
 
 	// Handle file: and -file: filters.
@@ -837,7 +940,7 @@ func langIncludeExcludePatterns(values, negatedValues []string) (includePatterns
 
 var (
 	// The default timeout to use for queries.
-	defaultTimeout = 10 * time.Second
+	defaultTimeout = 20 * time.Second
 	// The max timeout to use for queries.
 	maxTimeout = time.Minute
 )
@@ -857,7 +960,7 @@ func (r *searchResolver) withTimeout(ctx context.Context) (context.Context, cont
 			return nil, nil, errors.WithMessage(err, `invalid "timeout:" value (examples: "timeout:2s", "timeout:200ms")`)
 		}
 	} else if r.countIsSet() {
-		// If `count:` is set but `timeout:` is not explicitely set, use the max timeout
+		// If `count:` is set but `timeout:` is not explicitly set, use the max timeout
 		d = maxTimeout
 	}
 	// don't run queries longer than 1 minute.
@@ -868,7 +971,7 @@ func (r *searchResolver) withTimeout(ctx context.Context) (context.Context, cont
 	return ctx, cancel, nil
 }
 
-func (r *searchResolver) determineResultTypes(args search.TextParameters, forceOnlyResultType string) (resultTypes []string, seenResultTypes map[string]struct{}) {
+func (r *searchResolver) determineResultTypes(args search.TextParameters, forceOnlyResultType string) (resultTypes []string) {
 	// Determine which types of results to return.
 	if forceOnlyResultType != "" {
 		resultTypes = []string{forceOnlyResultType}
@@ -877,10 +980,9 @@ func (r *searchResolver) determineResultTypes(args search.TextParameters, forceO
 	} else {
 		resultTypes, _ = r.query.StringValues(query.FieldType)
 		if len(resultTypes) == 0 {
-			resultTypes = []string{"file", "path", "repo", "ref"}
+			resultTypes = []string{"file", "path", "repo"}
 		}
 	}
-	seenResultTypes = make(map[string]struct{}, len(resultTypes))
 	for _, resultType := range resultTypes {
 		if resultType == "file" {
 			args.PatternInfo.PatternMatchesContent = true
@@ -888,7 +990,7 @@ func (r *searchResolver) determineResultTypes(args search.TextParameters, forceO
 			args.PatternInfo.PatternMatchesPath = true
 		}
 	}
-	return resultTypes, seenResultTypes
+	return resultTypes
 }
 
 func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, start time.Time) (repos, missingRepoRevs []*search.RepositoryRevisions, res *SearchResultsResolver, err error) {
@@ -904,10 +1006,7 @@ func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, st
 
 	tr.LazyPrintf("searching %d repos, %d missing", len(repos), len(missingRepoRevs))
 	if len(repos) == 0 {
-		alert, err := r.alertForNoResolvedRepos(ctx)
-		if err != nil {
-			return nil, nil, nil, err
-		}
+		alert := r.alertForNoResolvedRepos(ctx)
 		return nil, nil, &SearchResultsResolver{alert: alert, start: start}, nil
 	}
 	if overLimit {
@@ -930,10 +1029,10 @@ func alertOnSearchLimit(resultTypes []string, args *search.TextParameters) ([]st
 			resultType := resultTypes[0]
 			switch resultType {
 			case "commit", "diff":
-				if _, afterPresent := args.Query.Fields["after"]; afterPresent {
+				if _, afterPresent := args.Query.Fields()["after"]; afterPresent {
 					break
 				}
-				if _, beforePresent := args.Query.Fields["before"]; beforePresent {
+				if _, beforePresent := args.Query.Fields()["before"]; beforePresent {
 					break
 				}
 				resultTypes = []string{}
@@ -986,6 +1085,9 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		options = &getPatternInfoOptions{performLiteralSearch: true}
 	}
 	p, err := r.getPatternInfo(options)
+	if err != nil {
+		return nil, err
+	}
 
 	// Fallback to literal search for searching repos and files if
 	// the structural search pattern is empty.
@@ -995,9 +1097,6 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		forceOnlyResultType = ""
 	}
 
-	if err != nil {
-		return nil, err
-	}
 	args := search.TextParameters{
 		PatternInfo:     p,
 		Repos:           repos,
@@ -1015,7 +1114,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		return nil, err
 	}
 
-	resultTypes, seenResultTypes := r.determineResultTypes(args, forceOnlyResultType)
+	resultTypes := r.determineResultTypes(args, forceOnlyResultType)
 	tr.LazyPrintf("resultTypes: %v", resultTypes)
 
 	var (
@@ -1032,7 +1131,8 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		fileMatches   = make(map[string]*FileMatchResolver)
 		fileMatchesMu sync.Mutex
 		// Alert is a potential alert shown to the user.
-		alert *searchAlert
+		alert           *searchAlert
+		seenResultTypes = make(map[string]struct{})
 	)
 
 	waitGroup := func(required bool) *sync.WaitGroup {
@@ -1133,6 +1233,22 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 					multiErrMu.Lock()
 					multiErr = multierror.Append(multiErr, errors.Wrap(err, "text search failed"))
 					multiErrMu.Unlock()
+				}
+				if args.PatternInfo.IsStructuralPat && args.PatternInfo.FileMatchLimit == defaultMaxSearchResults && len(fileResults) == 0 {
+					// No results for structural search? Automatically search again and force Zoekt to resolve
+					// more potential file matches by setting a higher FileMatchLimit.
+					args.PatternInfo.FileMatchLimit = 1000
+					fileResults, fileCommon, err = searchFilesInRepos(ctx, &args)
+					if err != nil && !isContextError(ctx, err) {
+						multiErrMu.Lock()
+						multiErr = multierror.Append(multiErr, errors.Wrap(err, "text search failed"))
+						multiErrMu.Unlock()
+					}
+					if len(fileResults) == 0 && fileCommon.limitHit {
+						// Still no results? Give up.
+						log15.Warn("Structural search gives up after more exhaustive attempt. Results may have been missed.")
+						fileCommon.limitHit = false // Ensure we don't display "Show more".
+					}
 				}
 				for _, r := range fileResults {
 					key := r.uri
@@ -1288,7 +1404,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	}
 
 	if len(results) == 0 && strings.Contains(r.originalQuery, `"`) && r.patternType == query.SearchTypeLiteral {
-		alert = alertForQuotesInQueryInLiteralMode(r.parseTree)
+		alert = alertForQuotesInQueryInLiteralMode(r.query.ParseTree())
 	}
 
 	// If we have some results, only log the error instead of returning it,
@@ -1367,9 +1483,9 @@ func orderedFuzzyRegexp(pieces []string) string {
 }
 
 // Validates usage of the `repohasfile` filter
-func validateRepoHasFileUsage(q *query.Query) error {
+func validateRepoHasFileUsage(q query.QueryInfo) error {
 	// Query only contains "repohasfile:" and "type:symbol"
-	if len(q.Fields) == 2 && q.Fields["repohasfile"] != nil && q.Fields["type"] != nil && len(q.Fields["type"]) == 1 && q.Fields["type"][0].Value() == "symbol" {
+	if len(q.Fields()) == 2 && q.Fields()["repohasfile"] != nil && q.Fields()["type"] != nil && len(q.Fields()["type"]) == 1 && q.Fields()["type"][0].Value() == "symbol" {
 		return errors.New("repohasfile does not currently return symbol results. Support for symbol results is coming soon. Subscribe to https://github.com/sourcegraph/sourcegraph/issues/4610 for updates")
 	}
 	return nil

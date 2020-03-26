@@ -3,36 +3,40 @@ import * as fs from 'mz/fs'
 import * as lsp from 'vscode-languageserver-protocol'
 import * as nodepath from 'path'
 import * as settings from '../settings'
-import * as validation from '../middleware/validation'
+import * as validation from '../../shared/api/middleware/validation'
 import express from 'express'
 import * as uuid from 'uuid'
 import { addTags, logAndTraceCall, TracingContext } from '../../shared/tracing'
 import { Backend } from '../backend/backend'
-import { encodeCursor } from '../pagination/cursor'
+import { encodeCursor } from '../../shared/api/pagination/cursor'
 import { Logger } from 'winston'
-import { nextLink } from '../pagination/link'
+import { nextLink } from '../../shared/api/pagination/link'
 import { pipeline as _pipeline } from 'stream'
 import { promisify } from 'util'
 import { Span, Tracer } from 'opentracing'
 import { wrap } from 'async-middleware'
-import { extractLimitOffset } from '../pagination/limit-offset'
+import { extractLimitOffset } from '../../shared/api/pagination/limit-offset'
 import { UploadManager } from '../../shared/store/uploads'
 import { readGzippedJsonElementsFromFile } from '../../shared/input'
 import * as lsif from 'lsif-protocol'
 import { ReferencePaginationCursor } from '../backend/cursor'
 import { LsifUpload } from '../../shared/models/pg'
+import got from 'got'
+import { Connection } from 'typeorm'
 
 const pipeline = promisify(_pipeline)
 
 /**
  * Create a router containing the LSIF upload and query endpoints.
  *
+ * @param connection The Postgres connection.
  * @param backend The backend instance.
  * @param uploadManager The uploads manager instance.
  * @param logger The logger instance.
  * @param tracer The tracer instance.
  */
 export function createLsifRouter(
+    connection: Connection,
     backend: Backend,
     uploadManager: UploadManager,
     logger: Logger,
@@ -72,8 +76,6 @@ export function createLsifRouter(
         repositoryId: number
         commit: string
         root?: string
-        blocking?: boolean
-        maxWait?: number
         indexerName?: string
     }
 
@@ -88,52 +90,51 @@ export function createLsifRouter(
             validation.validateNonEmptyString('commit').matches(commitPattern),
             validation.validateOptionalString('root'),
             validation.validateOptionalString('indexerName'),
-            validation.validateOptionalBoolean('blocking'),
-            validation.validateOptionalInt('maxWait'),
         ]),
         wrap(
             async (req: express.Request, res: express.Response<UploadResponse>): Promise<void> => {
-                const {
-                    repositoryId,
-                    commit,
-                    root: rootRaw,
-                    indexerName,
-                    blocking,
-                    maxWait,
-                }: UploadQueryArgs = req.query
+                const { repositoryId, commit, root: rootRaw, indexerName }: UploadQueryArgs = req.query
 
                 const root = sanitizeRoot(rootRaw)
                 const ctx = createTracingContext(req, { repositoryId, commit, root })
-                const filename = nodepath.join(settings.STORAGE_ROOT, constants.UPLOADS_DIR, uuid.v4())
+                const filename = nodepath.join(settings.STORAGE_ROOT, uuid.v4())
                 const output = fs.createWriteStream(filename)
-                await logAndTraceCall(ctx, 'Uploading dump', () => pipeline(req, output))
+                await logAndTraceCall(ctx, 'Receiving dump', () => pipeline(req, output))
 
-                const indexer = indexerName || (await findIndexer(filename))
-                if (!indexer) {
-                    throw new Error('Could not find tool type in metadata vertex at the start of the dump.')
-                }
-
-                // Add upload record
-                const upload = await uploadManager.enqueue(
-                    { repositoryId, commit, root, filename, indexer },
-                    tracer,
-                    ctx.span
-                )
-
-                if (blocking) {
-                    logger.debug('Blocking on upload conversion', { repositoryId, commit, root })
-
-                    if (await uploadManager.waitForUploadToConvert(upload.id, maxWait)) {
-                        // Upload converted successfully while blocked, send success
-                        res.status(200).send({ id: upload.id })
-                        return
+                try {
+                    const indexer = indexerName || (await findIndexer(filename))
+                    if (!indexer) {
+                        throw new Error('Could not find tool type in metadata vertex at the start of the dump.')
                     }
-                }
 
-                // Upload conversion will complete asynchronously, send an accepted response
-                // with the upload id so that the client can continue to track the progress
-                // asynchronously.
-                res.status(202).send({ id: upload.id })
+                    const id = await connection.transaction(async entityManager => {
+                        // Add upload record
+                        const uploadId = await uploadManager.enqueue(
+                            { repositoryId, commit, root, indexer },
+                            entityManager,
+                            tracer,
+                            ctx.span
+                        )
+
+                        // Upload the payload file where it can be found by the dump processor
+                        await logAndTraceCall(ctx, 'Uploading payload to dump manager', () =>
+                            pipeline(
+                                fs.createReadStream(filename),
+                                got.stream.post(new URL(`/uploads/${uploadId}`, settings.LSIF_DUMP_MANAGER_URL).href)
+                            )
+                        )
+
+                        return uploadId
+                    })
+
+                    // Upload conversion will complete asynchronously, send an accepted response
+                    // with the upload id so that the client can continue to track the progress
+                    // asynchronously.
+                    res.status(202).send({ id })
+                } finally {
+                    // Remove local file
+                    await fs.unlink(filename)
+                }
             }
         )
     )
@@ -171,7 +172,7 @@ export function createLsifRouter(
         path: string
         line: number
         character: number
-        uploadId?: number
+        uploadId: number
     }
 
     interface LocationsResponse {

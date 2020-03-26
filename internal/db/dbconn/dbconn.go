@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/gchaincl/sqlhooks"
+	"github.com/inconshreveable/log15"
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -25,7 +26,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"gopkg.in/inconshreveable/log15.v2"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 var (
@@ -144,38 +145,33 @@ type hook struct{}
 
 // Before implements sqlhooks.Hooks
 func (h *hook) Before(ctx context.Context, query string, args ...interface{}) (context.Context, error) {
-	parent := opentracing.SpanFromContext(ctx)
-	if parent == nil {
-		return ctx, nil
+	tr, ctx := trace.New(ctx, "sql", query)
+	if span := opentracing.SpanFromContext(ctx); span != nil {
+		ext.SpanKindRPCClient.Set(span)
+		ext.DBType.Set(span, "sql")
 	}
-	span := opentracing.StartSpan("sql",
-		opentracing.ChildOf(parent.Context()),
-		ext.SpanKindRPCClient)
-	ext.DBStatement.Set(span, query)
-	ext.DBType.Set(span, "sql")
-	span.LogFields(
-		otlog.Object("args", args),
-	)
+	tr.LogFields(otlog.Lazy(func(fv otlog.Encoder) {
+		for i, arg := range args {
+			fv.EmitString(strconv.Itoa(i+1), fmt.Sprintf("%q", arg))
+		}
+	}))
 
-	return opentracing.ContextWithSpan(ctx, span), nil
+	return ctx, nil
 }
 
 // After implements sqlhooks.Hooks
 func (h *hook) After(ctx context.Context, query string, args ...interface{}) (context.Context, error) {
-	span := opentracing.SpanFromContext(ctx)
-	if span != nil {
-		span.Finish()
+	if tr := trace.TraceFromContext(ctx); tr != nil {
+		tr.Finish()
 	}
 	return ctx, nil
 }
 
 // After implements sqlhooks.OnErroer
 func (h *hook) OnError(ctx context.Context, err error, query string, args ...interface{}) error {
-	span := opentracing.SpanFromContext(ctx)
-	if span != nil {
-		ext.Error.Set(span, true)
-		span.LogFields(otlog.Error(err))
-		span.Finish()
+	if tr := trace.TraceFromContext(ctx); tr != nil {
+		tr.SetError(err)
+		tr.Finish()
 	}
 	return err
 }

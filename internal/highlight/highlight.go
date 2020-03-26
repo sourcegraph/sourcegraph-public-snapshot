@@ -10,6 +10,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
@@ -18,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 var (

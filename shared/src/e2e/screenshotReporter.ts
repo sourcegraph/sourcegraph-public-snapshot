@@ -8,7 +8,7 @@ import { afterEach } from 'mocha'
  * the browser when a test fails. It is used by e2e tests.
  */
 export function saveScreenshotsUponFailures(getPage: () => puppeteer.Page): void {
-    afterEach(async function() {
+    afterEach('Save screenshot', async function () {
         if (this.currentTest && this.currentTest.state === 'failed') {
             await takeScreenshot({
                 page: getPage(),
@@ -32,11 +32,16 @@ async function takeScreenshot({
     testName: string
 }): Promise<void> {
     await mkdirp(screenshotDir)
-    const filePath = path.join(screenshotDir, testName.replace(/\W/g, '_') + '.png')
-    await page.screenshot({ path: filePath })
+    const fileName = testName.replace(/\W/g, '_') + '.png'
+    const filePath = path.join(screenshotDir, fileName)
+    const screenshot = await page.screenshot({ path: filePath })
     if (process.env.CI) {
         // Print image with ANSI escape code for Buildkite: https://buildkite.com/docs/builds/images-in-log-output.
         console.log(`\u001B]1338;url="artifact://${path.relative(repoRootDir, filePath)}";alt="Screenshot"\u0007`)
+    } else if (process.env.TERM_PROGRAM === 'iTerm.app') {
+        // Print image inline for iTerm2
+        const nameBase64 = Buffer.from(fileName).toString('base64')
+        console.log(`\u001B]1337;File=name=${nameBase64};inline=1;width=auto:${screenshot.toString('base64')}\u0007`)
     } else {
         console.log(`📸  Saved screenshot of failure to ${path.relative(process.cwd(), filePath)}`)
     }

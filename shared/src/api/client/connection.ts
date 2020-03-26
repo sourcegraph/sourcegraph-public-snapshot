@@ -26,6 +26,7 @@ import {
 } from './services/notifications'
 import { TextModelUpdate } from './services/modelService'
 import { EditorUpdate } from './services/editorService'
+import { registerComlinkTransferHandlers } from '../util'
 
 export interface ExtensionHostClientConnection {
     /**
@@ -50,7 +51,7 @@ export interface ActivatedExtension {
 }
 
 /**
- * @param endpoint The Worker object to communicate with
+ * @param endpoints The Worker object to communicate with
  */
 export async function createExtensionHostClientConnection(
     endpoints: EndpointPair,
@@ -60,6 +61,8 @@ export async function createExtensionHostClientConnection(
     const subscription = new Subscription()
 
     // MAIN THREAD
+
+    registerComlinkTransferHandlers()
 
     /** Proxy to the exposed extension host API */
     const initializeExtensionHost = comlink.proxy<ExtensionHostAPIFactory>(endpoints.proxy)
@@ -133,7 +136,7 @@ export async function createExtensionHostClientConnection(
     const clientSearch = new ClientSearch(services.queryTransformer)
     const clientCommands = new ClientCommands(services.commands)
     subscription.add(new ClientRoots(proxy.roots, services.workspace))
-    subscription.add(new ClientExtensions(proxy.extensions, services.extensions, services.telemetryService))
+    subscription.add(new ClientExtensions(proxy.extensions, services.extensions))
 
     const clientContent = createClientContent(services.linkPreviews)
 

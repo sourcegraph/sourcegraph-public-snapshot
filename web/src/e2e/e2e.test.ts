@@ -18,7 +18,7 @@ const { gitHubToken, sourcegraphBaseUrl } = getConfig('gitHubToken', 'sourcegrap
 describe('e2e test suite', () => {
     let driver: Driver
 
-    before(async function() {
+    before(async function () {
         // Cloning the repositories takes ~1 minute, so give initialization 2
         // minutes instead of 1 (which would be inherited from
         // `jest.setTimeout(1 * 60 * 1000)` above).
@@ -370,6 +370,13 @@ describe('e2e test suite', () => {
             await driver.page.waitForSelector('a[href="/github.com/gorilla/mux"]', { visible: true })
             // Flaky https://github.com/sourcegraph/sourcegraph/issues/2704
             // await percySnapshot(page, 'Search results code')
+        })
+
+        test('Site admin overview', async () => {
+            await driver.page.goto(sourcegraphBaseUrl + '/site-admin')
+            await driver.page.waitForSelector('.e2e-site-admin-overview-menu', { visible: true })
+            await driver.page.waitForSelector('.e2e-product-certificate', { visible: true })
+            await percySnapshot(driver.page, 'Site admin overview')
         })
     })
 
@@ -977,7 +984,7 @@ describe('e2e test suite', () => {
                 })
 
                 describe('find references', () => {
-                    test('opens widget and fetches local references', async function() {
+                    test('opens widget and fetches local references', async function () {
                         this.timeout(120000)
 
                         await driver.page.goto(
@@ -1470,12 +1477,10 @@ describe('e2e test suite', () => {
         })
         async function testCampaignPreview({
             previewURL,
-            diffCount,
             changesetCount,
             snapshotName,
         }: {
             previewURL: string
-            diffCount: number
             changesetCount: number
             snapshotName: string
         }): Promise<void> {
@@ -1485,48 +1490,21 @@ describe('e2e test suite', () => {
             // fill campaign preview form
             await driver.page.type('.e2e-campaign-title', 'E2E campaign')
 
-            // first wait for loader to appear
-            try {
-                await driver.page.waitForSelector('.e2e-preview-loading', { timeout: 500 })
-            } catch (error) {
-                if (error.name === 'TimeoutError') {
-                    // ignore this error as campaign previews can finish at the initial request also, we check below for errors and actual completion
-                } else {
-                    throw error
-                }
-            }
-            // then wait for loader to disappear
-            await driver.page.waitForSelector('.e2e-preview-loading', { timeout: 10000, hidden: true })
-            // check if there have been any errors
-            const errorCount = await driver.page.evaluate(() => document.querySelectorAll('.alert.alert-danger').length)
-            expect(errorCount).toEqual(0)
-            // check if the completion marker is rendered
-            await driver.page.waitForSelector('.e2e-preview-success')
-            // ensure diff tab is open
-            await driver.page.click('.e2e-campaign-diff-tab')
-            await driver.page.waitForSelector('.file-diff-node')
-            // check there were exactly as expected diffs generated
-            const generatedDiffCount = await driver.page.evaluate(
-                () => document.querySelectorAll('.file-diff-node').length
-            )
-            expect(generatedDiffCount).toEqual(diffCount)
-            await percySnapshot(driver.page, snapshotName + ' diffs tab')
-            // ensure changesets tab is open
-            await driver.page.click('.e2e-campaign-changesets-tab')
             await driver.page.waitForSelector('.e2e-changeset-node')
             // check there were exactly as expected diffs generated
             const generatedChangesetCount = await driver.page.evaluate(
                 () => document.querySelectorAll('.e2e-changeset-node').length
             )
             expect(generatedChangesetCount).toEqual(changesetCount)
-            await percySnapshot(driver.page, snapshotName + ' changesets tab')
+            await percySnapshot(driver.page, snapshotName)
         }
-        test('View campaign preview for plan', async () => {
+        test('View campaign preview for patch set', async () => {
             const repo = await driver.getRepository('github.com/sourcegraph-testing/automation-e2e-test')
-            const { previewURL } = await driver.createCampaignPlanFromPatches([
+            const { previewURL } = await driver.createPatchSetFromPatches([
                 {
                     repository: repo.id,
-                    baseRevision: 'master',
+                    baseRevision: '339d09ae1ce5907e0678ae5f1f91d9ad38db6107',
+                    baseRef: 'refs/heads/master',
                     patch: `diff --unified file1.txt file1.txt
 --- file1.txt 2020-01-01 01:02:03 -0700
 +++ file1.txt 2020-01-01 03:04:05 -0700
@@ -1538,10 +1516,23 @@ describe('e2e test suite', () => {
             ])
             await testCampaignPreview({
                 previewURL,
-                diffCount: 1,
                 changesetCount: 1,
                 snapshotName: 'Campaign preview page',
             })
+        })
+        test('Manual campaign workflow', async () => {
+            await driver.page.goto(sourcegraphBaseUrl + '/campaigns/new')
+            await driver.page.waitForSelector('.e2e-campaign-form')
+            await percySnapshot(driver.page, 'Create manual campaign form')
+            await driver.page.type('.e2e-campaign-title', 'E2E manual campaign')
+            await driver.page.click('.e2e-campaign-create-btn')
+            await driver.page.waitForSelector('.e2e-campaign-get-started')
+            await percySnapshot(driver.page, 'Create manual campaign empty')
+            await driver.page.type('.e2e-track-changeset-repo', 'github.com/sourcegraph-testing/automation-e2e-test')
+            await driver.page.type('.e2e-track-changeset-id', '1')
+            await driver.page.click('.e2e-track-changeset-btn')
+            await driver.page.waitForSelector('.e2e-changeset-node')
+            await percySnapshot(driver.page, 'Create manual campaign added changeset')
         })
     })
 

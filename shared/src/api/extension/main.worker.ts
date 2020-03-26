@@ -45,9 +45,7 @@ const wrapEndpoints = ({ proxy, expose }: InitMessage['endpoints']): EndpointPai
  */
 async function extensionHostMain(): Promise<void> {
     try {
-        const event = await fromEvent<MessageEvent>(self, 'message')
-            .pipe(take(1))
-            .toPromise()
+        const event = await fromEvent<MessageEvent>(self, 'message').pipe(take(1)).toPromise()
         if (!isInitMessage(event.data)) {
             throw new Error('First message event in extension host worker was not a well-formed InitMessage')
         }

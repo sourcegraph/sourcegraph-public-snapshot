@@ -10,11 +10,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/jsonx"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"gopkg.in/inconshreveable/log15.v2"
 )
 
 // Unified represents the overall global Sourcegraph configuration from various
@@ -68,9 +68,9 @@ var (
 	configurationServerFrontendOnlyInitialized = make(chan struct{})
 )
 
-func init() {
-	clientStore := NewStore()
-	defaultClient = &client{store: clientStore}
+func initDefaultClient() *client {
+	clientStore := newStore()
+	defaultClient := &client{store: clientStore}
 
 	mode := getMode()
 
@@ -88,7 +88,7 @@ func init() {
 		if err != nil {
 			log.Fatalf("received error when setting up the store for the default client during test, err :%s", err)
 		}
-		return
+		return defaultClient
 	}
 
 	// The default client is started in InitConfigurationServerFrontendOnly in
@@ -97,6 +97,8 @@ func init() {
 		go defaultClient.continuouslyUpdate(nil)
 		close(configurationServerFrontendOnlyInitialized)
 	}
+
+	return defaultClient
 }
 
 // cachedConfigurationSource caches reads for a specified duration to reduce
@@ -160,9 +162,9 @@ func InitConfigurationServerFrontendOnly(source ConfigurationSource) *Server {
 	// Install the passthrough configuration source for defaultClient. This is
 	// so that the frontend does not request configuration from itself via HTTP
 	// and instead only relies on the DB.
-	defaultClient.passthrough = source
+	defaultClient().passthrough = source
 
-	go defaultClient.continuouslyUpdate(nil)
+	go defaultClient().continuouslyUpdate(nil)
 	close(configurationServerFrontendOnlyInitialized)
 
 	startSiteConfigEscapeHatchWorker(source)

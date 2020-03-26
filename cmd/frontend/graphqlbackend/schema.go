@@ -35,22 +35,22 @@ type Mutation {
     # exists, it's returned instead of a new entry being added to the database.
     createChangesets(input: [CreateChangesetInput!]!): [ExternalChangeset!]!
     # Adds a list of Changesets to a Campaign.
-    # The campaign must not have a campaign plan.
+    # The campaign must not have a PatchSet.
     addChangesetsToCampaign(campaign: ID!, changesets: [ID!]!): Campaign!
     # Create a campaign in a namespace. The newly created campaign is returned.
     createCampaign(input: CreateCampaignInput!): Campaign!
-    # Create a campaign plan from patches (in unified diff format) that are computed by the caller.
+    # Create a patch set from patches (in unified diff format) that are computed by the caller.
     #
-    # To create the campaign, call createCampaign with the returned CampaignPlan.id in the
-    # CreateCampaignInput.plan field.
-    createCampaignPlanFromPatches(
+    # To create the campaign, call createCampaign with the returned PatchSet.id in the
+    # CreateCampaignInput.patchSet field.
+    createPatchSetFromPatches(
         # A list of patches (diffs) to apply to repositories (in new branches) when a campaign is
-        # created from this campaign plan.
-        patches: [CampaignPlanPatch!]!
-    ): CampaignPlan!
+        # created from this PatchSet.
+        patches: [PatchInput!]!
+    ): PatchSet!
     # Updates a campaign.
     updateCampaign(input: UpdateCampaignInput!): Campaign!
-    # Retries creating changesets of the campaign plan that could not be successfully created on the code host.
+    # Retries creating changesets from the patches in the PatchSet that could not be successfully created on the code host.
     # Retrying will clear the errors list of a campaign and change its state back to CREATING_CHANGESETS.
     retryCampaign(campaign: ID!): Campaign!
     # Deletes a campaign.
@@ -72,18 +72,20 @@ type Mutation {
         # on the codehost (e.g. "declined" on Bitbucket Server).
         closeChangesets: Boolean = false
     ): Campaign!
-    # Publishes the Campaign by turning its changesetPlans into changesets on
+    # Publishes the Campaign by turning its patches into changesets on
     # the codehosts.
     # The Campaign.draft field will be set to false and Campaign.status will
-    # update according to the progress of turning the changesetPlans into
+    # update according to the progress of turning the patches into
     # changesets.
     publishCampaign(campaign: ID!): Campaign!
     # Creates an ExternalChangeset on the codehost asynchronously.
-    # The ChangesetPlan has to belong to a CampaignPlan that has been attached
+    # The Patch has to belong to a PatchSet that has been attached
     # to a Campaign. Otherwise an error is returned.
     # Since this is an asynchronous operation, the Campaign.status field can be
     # used to keep track of progress.
-    publishChangeset(changesetPlan: ID!): EmptyResponse!
+    publishChangeset(patch: ID!): EmptyResponse!
+    # Enqueues the given changeset for high-priority syncing.
+    syncChangeset(changeset: ID!): EmptyResponse!
 
     # Updates the user profile information for the user with the given ID.
     #
@@ -405,14 +407,19 @@ type Mutation {
     ): EmptyResponse!
 }
 
-# A patch to apply to a repository (in a new branch) when a campaign is created from the parent
-# campaign plan.
-input CampaignPlanPatch {
+# A patch to apply to a repository (in a new branch) when a campaign is created
+# from the parent patch set.
+input PatchInput {
     # The repository that this patch is applied to.
     repository: ID!
 
-    # The base revision in the repository that this patch is applied to.
+    # The base revision in the repository that this patch is based on.
+    # Example: "4095572721c6234cd72013fd49dff4fb48f0f8a4"
     baseRevision: String!
+
+    # The reference to the base revision at the time the patch was created.
+    # Example: "refs/heads/master"
+    baseRef: String!
 
     # The patch (in unified diff format) to apply.
     #
@@ -432,22 +439,21 @@ input CreateCampaignInput {
     # The description of the campaign as Markdown.
     description: String!
 
-    # The name of the branch that will be created for each changeset on the codehost if the plan attribute is specified.
+    # The name of the branch that will be created for each changeset on the codehost if the patchSet attribute is specified.
     # If a branch with the given name already exists a fallback name will be created by adding a count to the end of the branch name until the name doesn't exist. Example: "my-branch-name" becomes "my-branch-name-1".
-    # This is required if the plan attribute is specified.
+    # This is required if the patchSet attribute is specified.
     branch: String
 
-    # An optional reference to a completed campaign plan that was previewed before this mutation.
+    # An optional reference to a PatchSet that was created before this mutation.
     # If null, existing changesets can be added manually.
     # If set, no changesets can be added manually, they will be created by Sourcegraph
-    # after creating the campaign according to the precomputed campaign plan.
-    # Will error if the plan has been purged already and needs to be recreated.
-    # Will error if the plan is not completed yet.
-    # Using a campaign plan for a campaign will retain it for the lifetime of the campaign and prevents it from being purged.
-    plan: ID
+    # based on the patches belonging to the PatchSet.
+    # Will error if the PatchSet has been purged already and needs to be recreated.
+    # Using a PatchSet for a campaign will retain it for the lifetime of the campaign and prevents it from being purged.
+    patchSet: ID
 
     # Whether or not to create the Campaign in draft mode. Default is false.
-    # When a Campaign is created in draft mode, its changesetPlans are not
+    # When a Campaign is created in draft mode, its patches are not
     # created on the codehost, but only when publishing the Campaign.
     draft: Boolean
 }
@@ -466,32 +472,24 @@ input UpdateCampaignInput {
     # The updated description of the campaign as Markdown (if non-null).
     description: String
 
-    # An optional reference to a completed CampaignPlan that was previewed
+    # An optional reference to a completed PatchSet that was previewed
     # before updating the Campaign.
-    # If set, the Campaign's changesets will be updated to the Changesets of the given CampaignPlan.
+    # If set, the Campaign's changesets will be updated to the Changesets of the given PatchSet.
     # The Campaign's status will be updated accordingly while possibly
     # new ExternalChangesets are created/updated/closed on the codehosts.
-    plan: ID
+    patchSet: ID
 }
 
-# A preview of changes that will be applied by a campaign.
+# A set of Patches that will be turned into changesets by a campaign.
 # It is cached and addressable by its ID for a limited amount of time.
-type CampaignPlan implements Node {
-    # The unique ID of this campaign plan.
+type PatchSet implements Node {
+    # The unique ID of this PatchSet.
     id: ID!
 
-    # The progress status of generating changesets.
-    status: BackgroundProcessStatus!
+    # The proposed patches for the changesets that will be created by the campaign.
+    patches(first: Int): PatchConnection!
 
-    # DEPRECATED
-    # The proposed patches ("plans") for the changesets that will be created by the campaign.
-    changesets(first: Int): ChangesetPlanConnection!
-        @deprecated(reason: "This field will be removed in 3.15. Please use changesetPlans instead.")
-
-    # The proposed patches ("plans") for the changesets that will be created by the campaign.
-    changesetPlans(first: Int): ChangesetPlanConnection!
-
-    # The URL where the plan can be previewed and a campaign can be created from it.
+    # The URL where the PatchSet can be previewed and a campaign can be created from it.
     previewURL: String!
 }
 
@@ -539,9 +537,9 @@ type Campaign implements Node {
     # The unique ID for the campaign.
     id: ID!
 
-    # The campaign plan that was used to create this campaign.
+    # The PatchSet that was used to create this campaign.
     # If null, changesets are added to the campaign manually.
-    plan: CampaignPlan
+    patchSet: PatchSet
 
     # The current status of creating or updating the campaigns changesets on
     # the code host.
@@ -556,7 +554,7 @@ type Campaign implements Node {
     # The description as Markdown.
     description: String!
 
-    # The branch of the changesets created by a campaign plan.
+    # The branch of the changesets.
     branch: String
 
     # The user who authored the campaign.
@@ -578,7 +576,15 @@ type Campaign implements Node {
     repositoryDiffs(first: Int): RepositoryComparisonConnection!
 
     # The changesets in this campaign, already created on the code host.
-    changesets(first: Int): ExternalChangesetConnection!
+    changesets(
+        first: Int
+        # Only include changesets with the given state
+        state: ChangesetState
+        # Only include changesets with the given review state
+        reviewState: ChangesetReviewState
+        # Only include changesets with the given check state
+        checkState: ChangesetCheckState
+    ): ExternalChangesetConnection!
 
     # The changeset counts over time, in 1 day intervals backwards from the point in time given in 'to'.
     changesetCountsOverTime(
@@ -599,15 +605,15 @@ type Campaign implements Node {
     # If the Campaign was never in draft mode the value is the same as createdAt.
     publishedAt: DateTime
 
-    # The changesets that will be created on the code host when publishing the
-    # Campaign.
-    # If the Campaign is a "manual" campaign and doesn't have a CampaignPlan
-    # attached, there won't be any nodes returned by this connection
+    # The patches that will be turned into changesets on the code host when
+    # publishing the Campaign.
+    # If the Campaign is a "manual" campaign and doesn't have a PatchSet
+    # attached, there won't be any nodes returned by this connection.
     # When publishing a Campaign, the number of nodes in changesets will
-    # increase with each decrease in changesetPlans. The Completed count in the
-    # Campaign.status increments with every ChangesetPlan turned into an
+    # increase with each decrease in patches. The Completed count in the
+    # Campaign.status increments with every Patch turned into an
     # ExternalChangeset.
-    changesetPlans(first: Int): ChangesetPlanConnection!
+    patches(first: Int): PatchConnection!
 }
 
 # The counts of changesets in certain states at a specific point in time.
@@ -655,6 +661,8 @@ enum ChangesetReviewState {
     APPROVED
     CHANGES_REQUESTED
     PENDING
+    COMMENTED
+    DISMISSED
 }
 
 # The state of continuous integration checks on a changeset
@@ -673,25 +681,22 @@ input CreateChangesetInput {
     externalID: String!
 }
 
-# Preview of a changeset planned to be created.
-type ChangesetPlan {
-    # The id of the changeset plan.
+# A Patch that can be used to create a changeset on a code host.
+type Patch implements Node {
+    # The id of the patch.
     id: ID!
 
-    # The repository changed by the changeset.
+    # The repository in which the patch is applied.
     repository: Repository!
 
-    # The diff of the changeset.
+    # The actual diff of the patch.
     diff: PreviewRepositoryComparison!
 
-    # Whether the ChangesetPlan is enqueued for publication. Default is false.
+    # Whether the Patch is enqueued for publication. Default is false.
     # It will be true when:
-    # - a Campaign has been created with the CampaignPlan to which this
-    # ChangesetPlan belongs
-    # - when a Campaign with the CampaignPlan has been published after being in
-    # draft mode
-    # - when the ChangesetPlan has been individually published through the
-    # publishChangeset mutation
+    # - a Campaign has been created with the PatchSet to which this Patch belongs.
+    # - when a Campaign with the PatchSet has been published after being in draft mode.
+    # - when the Patch has been individually published through the publishChangeset mutation.
     publicationEnqueued: Boolean!
 }
 
@@ -718,7 +723,13 @@ type ExternalChangeset implements Node {
     repository: Repository!
 
     # The campaigns that have this changeset in them.
-    campaigns(first: Int, state: CampaignState): CampaignConnection!
+    campaigns(
+        # Returns the first n campaigns from the list.
+        first: Int
+        state: CampaignState
+        # Only return campaigns that have a patch set.
+        hasPatchSet: Boolean
+    ): CampaignConnection!
 
     # The events belonging to this changeset.
     events(first: Int): ChangesetEventConnection!
@@ -774,12 +785,12 @@ type ExternalChangesetConnection {
     pageInfo: PageInfo!
 }
 
-# A list of changesets plans.
-type ChangesetPlanConnection {
-    # A list of changeset plans.
-    nodes: [ChangesetPlan!]!
+# A list of patches.
+type PatchConnection {
+    # A list of patches.
+    nodes: [Patch!]!
 
-    # The total number of changeset plans in the connection.
+    # The total number of patches in the connection.
     totalCount: Int!
 
     # Pagination information.
@@ -1147,6 +1158,8 @@ type Query {
         # Returns the first n campaigns from the list.
         first: Int
         state: CampaignState
+        # Only return campaigns that have a patch set.
+        hasPatchSet: Boolean
     ): CampaignConnection!
 
     # Looks up a repository by either name or cloneURL.
@@ -2981,6 +2994,11 @@ type User implements Node & SettingsSubject & Namespace {
     tags: [String!]!
     # The user's usage statistics on Sourcegraph.
     usageStatistics: UserUsageStatistics!
+    # The user's events on Sourcegraph.
+    eventLogs(
+        # Returns the first n event logs from the list.
+        first: Int
+    ): EventLogsConnection!
     # The user's email addresses.
     #
     # Only the user and site admins can access this field.
@@ -4229,13 +4247,13 @@ type Hover {
 
 # The state an LSIF upload can be in.
 enum LSIFUploadState {
-    # The LSIF worker is processing this upload.
+    # This upload is being processed.
     PROCESSING
 
-    # The LSIF worker failed to process this upload.
+    # This upload failed to be processed.
     ERRORED
 
-    # The LSIF worker processed this upload successfully.
+    # This upload was processed successfully.
     COMPLETED
 
     # This upload is queued to be processed later.
@@ -4271,7 +4289,7 @@ type LSIFUpload implements Node {
     # The time the upload compelted or errored.
     finishedAt: DateTime
 
-    # Metadata about a upload's failure (not set if state is not ERRORED).
+    # Metadata about an upload's failure (not set if state is not ERRORED).
     failure: LSIFUploadFailureReason
 
     # Whether or not this upload provides intelligence for the tip of the default branch. Find reference
@@ -4279,6 +4297,9 @@ type LSIFUpload implements Node {
     # is updated asynchronously and is eventually consistent with the git data known by the Sourcegraph
     # instance.
     isLatestForRepo: Boolean!
+
+    # The rank of this upload in the queue. The value of this field is null if the upload has been processed.
+    placeInQueue: Int
 }
 
 # Metadata about a LSIF upload failure.
@@ -4697,5 +4718,36 @@ scalar DateTime
 # Different repository permission levels.
 enum RepositoryPermission {
     READ
+}
+
+# A single user event that has been logged.
+type EventLog {
+    # The name of the event.
+    name: String!
+    # The user who executed the event, if one exists.
+    user: User
+    # The randomly generated unique user ID stored in a browser cookie.
+    anonymousUserID: String!
+    # The URL when the event was logged.
+    url: String!
+    # The source of the event.
+    source: EventSource!
+    # The additional argument information.
+    argument: String
+    # The Sourcegraph version when the event was logged.
+    version: String!
+    # The timestamp when the event was logged.
+    timestamp: DateTime!
+}
+
+# A list of event logs.
+type EventLogsConnection {
+    # A list of event logs.
+    nodes: [EventLog!]!
+    # The total count of event logs in the connection. This total count may be larger than the number of nodes
+    # in this object when the result is paginated.
+    totalCount: Int!
+    # Pagination information.
+    pageInfo: PageInfo!
 }
 `

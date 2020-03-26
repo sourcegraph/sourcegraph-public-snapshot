@@ -15,10 +15,10 @@ import (
 	"time"
 
 	"github.com/gomodule/redigo/redis"
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 var (

@@ -61,7 +61,7 @@ Repositories must be listed individually:
 
 Start up a Sourcegraph instance
 
-<pre class="pre-wrap start-sourcegraph-command"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.13.1</code></pre>
+<pre class="pre-wrap start-sourcegraph-command"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.14.1</code></pre>
 
 Pick a directory you want to export from, then run:
 
@@ -85,6 +85,8 @@ chmod +x src-expose
     "repos": ["src-expose"]
 }
 ```
+
+**IMPORTANT:** If you are using a Linux host machine, replace `host.docker.internal` in the above with the IP address of your actual host machine because `host.docker.internal` [does not work on Linux](https://github.com/docker/for-linux/issues/264). You should use the network-accessible IP shown by `ifconfig` (not e.g. 127.0.0.1 or localhost).
 
 Go to Admin > Manage Repositories > Add repositories > Single Git repositories. Input the above configuration. Your directories should now be syncing in Sourcegraph.
 

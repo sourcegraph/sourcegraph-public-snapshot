@@ -9,7 +9,7 @@ import {
     PatternTypeProps,
     InteractiveSearchProps,
     CaseSensitivityProps,
-    searchURLIsCaseSensitive,
+    parseSearchURL,
 } from '..'
 import { Contributions, Evaluated } from '../../../../shared/src/api/protocol'
 import { FetchFileCtx } from '../../../../shared/src/components/CodeExcerpt'
@@ -112,11 +112,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
             this.componentUpdates
                 .pipe(
                     startWith(this.props),
-                    map(props => ({
-                        query: parseSearchURLQuery(props.location.search),
-                        patternType: parseSearchURLPatternType(props.location.search),
-                        caseSensitive: searchURLIsCaseSensitive(props.location.search),
-                    })),
+                    map(props => parseSearchURL(props.location.search)),
                     // Search when a new search query was specified in the URL
                     distinctUntilChanged((a, b) => isEqual(a, b)),
                     filter(
@@ -128,8 +124,8 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                             caseSensitive: boolean
                         } => !!queryAndPatternTypeAndCase.query && !!queryAndPatternTypeAndCase.patternType
                     ),
-                    tap(({ query }) => {
-                        const query_data = queryTelemetryData(query)
+                    tap(({ query, caseSensitive }) => {
+                        const query_data = queryTelemetryData(query, caseSensitive)
                         this.props.telemetryService.log('SearchResultsQueried', {
                             code_search: { query_data },
                             ...(this.props.splitSearchModes

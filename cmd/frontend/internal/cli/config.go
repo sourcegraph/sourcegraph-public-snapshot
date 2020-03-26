@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -21,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/confdb"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 func printConfigValidation() {

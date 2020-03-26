@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/coreos/go-semver/semver"
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking"
@@ -21,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/hubspot"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/pubsub/pubsubutil"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // pubSubPingsTopicID is the topic ID of the topic that forwards messages to Pings' pub/sub subscribers.
@@ -29,22 +29,31 @@ var pubSubPingsTopicID = env.Get("PUBSUB_TOPIC_ID", "", "Pub/sub pings topic ID 
 
 var (
 	// latestReleaseDockerServerImageBuild is only used by sourcegraph.com to tell existing
-	// non-cluster installations what the latest version is. The version here _must_ be
-	// available at https://hub.docker.com/r/sourcegraph/server/tags/ before
-	// landing in master.
-	latestReleaseDockerServerImageBuild = newBuild("3.13.1")
+	// non-cluster, non-docker-compose, and non-pure-docker installations what the latest
+	//version is. The version here _must_ be available at https://hub.docker.com/r/sourcegraph/server/tags/
+	// before landing in master.
+	latestReleaseDockerServerImageBuild = newBuild("3.14.1")
 
 	// latestReleaseKubernetesBuild is only used by sourcegraph.com to tell existing Sourcegraph
 	// cluster deployments what the latest version is. The version here _must_ be available in
 	// a tag at https://github.com/sourcegraph/deploy-sourcegraph before landing in master.
-	latestReleaseKubernetesBuild = newBuild("3.13.1")
+	latestReleaseKubernetesBuild = newBuild("3.14.1")
+
+	// latestReleaseDockerComposeOrPureDocker is only used by sourcegraph.com to tell existing Sourcegraph
+	// Docker Compose or Pure Docker deployments what the latest version is. The version here _must_ be
+	// available in a tag at https://github.com/sourcegraph/deploy-sourcegraph-docker before landing in master.
+	latestReleaseDockerComposeOrPureDocker = newBuild("3.12.5-1")
 )
 
 func getLatestRelease(deployType string) build {
-	if conf.IsDeployTypeCluster(deployType) {
+	switch {
+	case conf.IsDeployTypeKubernetes(deployType):
 		return latestReleaseKubernetesBuild
+	case conf.IsDeployTypeDockerCompose(deployType), conf.IsDeployTypePureDocker(deployType):
+		return latestReleaseDockerComposeOrPureDocker
+	default:
+		return latestReleaseDockerServerImageBuild
 	}
-	return latestReleaseDockerServerImageBuild
 }
 
 // Handler is an HTTP handler that responds with information about software updates

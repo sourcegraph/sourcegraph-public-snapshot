@@ -344,10 +344,42 @@ func Test_detectSearchType(t *testing.T) {
 	}
 }
 
+func Test_exactlyOneRepo(t *testing.T) {
+	cases := []struct {
+		repoFilters []string
+		want        bool
+	}{
+		{
+			repoFilters: []string{`^github\.com/sourcegraph/zoekt$`},
+			want:        true,
+		},
+		{
+			repoFilters: []string{`^.*$`},
+			want:        false,
+		},
+
+		{
+			repoFilters: []string{`^github\.com/sourcegraph/zoekt`},
+			want:        false,
+		},
+		{
+			repoFilters: []string{`^github\.com/sourcegraph/zoekt$`, `github\.com/sourcegraph/sourcegraph`},
+			want:        false,
+		},
+	}
+	for _, c := range cases {
+		t.Run("exactly one repo", func(t *testing.T) {
+			if got := exactlyOneRepo(c.repoFilters); got != c.want {
+				t.Errorf("got %t, want %t", got, c.want)
+			}
+		})
+	}
+}
+
 func Test_QuoteSuggestions(t *testing.T) {
 	t.Run("regex error", func(t *testing.T) {
 		raw := "*"
-		_, _, err := query.Process(raw, query.SearchTypeRegex)
+		_, err := query.Process(raw, query.SearchTypeRegex)
 		if err == nil {
 			t.Fatalf("error returned from query.Process(%q) is nil", raw)
 		}
@@ -362,7 +394,7 @@ func Test_QuoteSuggestions(t *testing.T) {
 
 	t.Run("type error that is not a regex error should show a suggestion", func(t *testing.T) {
 		raw := "-foobar"
-		_, _, alert := query.Process(raw, query.SearchTypeRegex)
+		_, alert := query.Process(raw, query.SearchTypeRegex)
 		if alert == nil {
 			t.Fatalf("alert returned from query.Process(%q) is nil", raw)
 		}
@@ -370,7 +402,7 @@ func Test_QuoteSuggestions(t *testing.T) {
 
 	t.Run("query parse error", func(t *testing.T) {
 		raw := ":"
-		_, _, err := query.Process(raw, query.SearchTypeRegex)
+		_, err := query.Process(raw, query.SearchTypeRegex)
 		if err == nil {
 			t.Fatalf("error returned from query.Process(%q) is nil", raw)
 		}
@@ -385,7 +417,7 @@ func Test_QuoteSuggestions(t *testing.T) {
 
 	t.Run("negated file field with an invalid regex", func(t *testing.T) {
 		raw := "-f:(a"
-		_, _, err := query.Process(raw, query.SearchTypeRegex)
+		_, err := query.Process(raw, query.SearchTypeRegex)
 		if err == nil {
 			t.Fatal("query.Process failed to detect the invalid regex in the f: field")
 		}

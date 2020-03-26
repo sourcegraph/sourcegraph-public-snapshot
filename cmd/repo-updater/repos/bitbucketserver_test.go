@@ -10,11 +10,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/schema"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 func TestBitbucketServerSource_MakeRepo(t *testing.T) {
@@ -270,7 +270,7 @@ func TestBitbucketServerSource_CreateChangeset(t *testing.T) {
 				Title:     "This is a test PR",
 				Body:      "This is the body of a test PR",
 				BaseRef:   "master",
-				HeadRef:   "test-pr-bbs-9",
+				HeadRef:   "test-pr-bbs-11",
 				Repo:      repo,
 				Changeset: &campaigns.Changeset{},
 			},
@@ -281,7 +281,7 @@ func TestBitbucketServerSource_CreateChangeset(t *testing.T) {
 				Title:     "This is a test PR",
 				Body:      "This is the body of a test PR",
 				BaseRef:   "refs/heads/master",
-				HeadRef:   "refs/heads/test-pr-bbs-10",
+				HeadRef:   "refs/heads/test-pr-bbs-12",
 				Repo:      repo,
 				Changeset: &campaigns.Changeset{},
 			},
@@ -361,7 +361,7 @@ func TestBitbucketServerSource_CloseChangeset(t *testing.T) {
 		instanceURL = "https://bitbucket.sgdev.org"
 	}
 
-	pr := &bitbucketserver.PullRequest{ID: 31, Version: 0}
+	pr := &bitbucketserver.PullRequest{ID: 59, Version: 0}
 	pr.ToRef.Repository.Slug = "automation-testing"
 	pr.ToRef.Repository.Project.Key = "SOUR"
 
@@ -430,7 +430,7 @@ func TestBitbucketServerSource_UpdateChangeset(t *testing.T) {
 		instanceURL = "https://bitbucket.sgdev.org"
 	}
 
-	pr := &bitbucketserver.PullRequest{ID: 43, Version: 1}
+	pr := &bitbucketserver.PullRequest{ID: 43, Version: 3}
 	pr.ToRef.Repository.Slug = "automation-testing"
 	pr.ToRef.Repository.Project.Key = "SOUR"
 

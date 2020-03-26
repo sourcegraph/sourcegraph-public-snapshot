@@ -10,12 +10,7 @@ describe('search (integration)', () => {
             transformQuery: () => 'bar',
         })
         await extensionAPI.internal.sync()
-        expect(
-            await services.queryTransformer
-                .transformQuery('foo')
-                .pipe(take(1))
-                .toPromise()
-        ).toEqual('bar')
+        expect(await services.queryTransformer.transformQuery('foo').pipe(take(1)).toPromise()).toEqual('bar')
     })
 
     test('unregisters a query transformer', async () => {
@@ -29,12 +24,7 @@ describe('search (integration)', () => {
         // Unregister the provider and ensure it's removed.
         subscription.unsubscribe()
         await extensionAPI.internal.sync()
-        expect(
-            await services.queryTransformer
-                .transformQuery('foo')
-                .pipe(take(1))
-                .toPromise()
-        ).toEqual('foo')
+        expect(await services.queryTransformer.transformQuery('foo').pipe(take(1)).toPromise()).toEqual('foo')
     })
 
     test('supports multiple query transformers', async () => {
@@ -44,11 +34,6 @@ describe('search (integration)', () => {
         extensionAPI.search.registerQueryTransformer({ transformQuery: (q: string) => `${q} bar` })
         extensionAPI.search.registerQueryTransformer({ transformQuery: (q: string) => `${q} qux` })
         await extensionAPI.internal.sync()
-        expect(
-            await services.queryTransformer
-                .transformQuery('foo')
-                .pipe(take(1))
-                .toPromise()
-        ).toEqual('foo bar qux')
+        expect(await services.queryTransformer.transformQuery('foo').pipe(take(1)).toPromise()).toEqual('foo bar qux')
     })
 })

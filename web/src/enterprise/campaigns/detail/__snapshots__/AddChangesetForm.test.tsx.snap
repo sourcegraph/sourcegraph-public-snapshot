@@ -2,7 +2,9 @@
 
 exports[`AddChangesetForm renders the form 1`] = `
 Array [
-  <h3>
+  <h3
+    className="mb-2 mt-4"
+  >
     Track changeset
   </h3>,
   <form
@@ -22,7 +24,7 @@ Array [
           Repository name
         </label>
         <input
-          className="form-control mr-1"
+          className="form-control mr-1 e2e-track-changeset-repo"
           id="changeset-repo"
           onChange={[Function]}
           placeholder="Repository name"
@@ -54,7 +56,7 @@ Array [
           Changeset number
         </label>
         <input
-          className="form-control mr-1"
+          className="form-control mr-1 e2e-track-changeset-id"
           id="changeset-number"
           min={1}
           onChange={[Function]}
@@ -68,7 +70,8 @@ Array [
       </div>
     </div>
     <button
-      className="btn btn-primary mr-1"
+      className="btn btn-primary mr-1 e2e-track-changeset-btn"
+      disabled={false}
       type="submit"
     >
       Add changeset

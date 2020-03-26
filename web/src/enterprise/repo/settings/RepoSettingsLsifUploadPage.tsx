@@ -13,7 +13,7 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { PageTitle } from '../../../components/PageTitle'
 import { RouteComponentProps, Redirect } from 'react-router'
 import { Timestamp } from '../../../components/time/Timestamp'
-import { useObservable } from '../../../util/useObservable'
+import { useObservable } from '../../../../../shared/src/util/useObservable'
 import DeleteIcon from 'mdi-react/DeleteIcon'
 import { SchedulerLike, timer } from 'rxjs'
 
@@ -124,7 +124,9 @@ export const RepoSettingsLsifUploadPage: FunctionComponent<Props> = ({
                     ) : (
                         <div className="alert alert-primary mb-4 mt-3">
                             <ClockOutlineIcon className="icon-inline" />{' '}
-                            <span className="e2e-upload-state">Upload is queued.</span>
+                            <span className="e2e-upload-state">
+                                Upload is queued. There are {uploadOrError.placeInQueue} uploads ahead of this one.
+                            </span>
                         </div>
                     )}
 

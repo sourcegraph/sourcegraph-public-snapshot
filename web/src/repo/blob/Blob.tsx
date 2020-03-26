@@ -23,7 +23,7 @@ import {
     lprToSelectionsZeroIndexed,
     ModeSpec,
     parseHash,
-    PositionSpec,
+    UIPositionSpec,
     RenderMode,
     RepoSpec,
     ResolvedRevSpec,
@@ -309,9 +309,9 @@ export class Blob extends React.Component<BlobProps, BlobState> {
         )
 
         /** Emits when the URL's target blob (repository, revision, path, and content) changes. */
-        const modelChanges: Observable<AbsoluteRepoFile &
-            ModeSpec &
-            Pick<BlobProps, 'content' | 'isLightTheme'>> = this.componentUpdates.pipe(
+        const modelChanges: Observable<
+            AbsoluteRepoFile & ModeSpec & Pick<BlobProps, 'content' | 'isLightTheme'>
+        > = this.componentUpdates.pipe(
             map(props => pick(props, 'repoName', 'rev', 'commitID', 'filePath', 'mode', 'content', 'isLightTheme')),
             distinctUntilChanged((a, b) => isEqual(a, b)),
             share()
@@ -431,7 +431,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
 
     private getLSPTextDocumentPositionParams(
         position: HoveredToken & RepoSpec & RevSpec & FileSpec & ResolvedRevSpec
-    ): RepoSpec & RevSpec & ResolvedRevSpec & FileSpec & PositionSpec & ModeSpec {
+    ): RepoSpec & RevSpec & ResolvedRevSpec & FileSpec & UIPositionSpec & ModeSpec {
         return {
             repoName: position.repoName,
             filePath: position.filePath,

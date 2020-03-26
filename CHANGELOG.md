@@ -13,6 +13,58 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- Users and site administrators can now view a log of their actions/events in the user settings.
+
+### Changed
+
+- Multiple backwards-incompatible changes in the parts of the GraphQL API related to Campaigns [#9106](https://github.com/sourcegraph/sourcegraph/issues/9106):
+  - `CampaignPlan.status` has been removed, since we don't need it anymore after moving execution of campaigns to src CLI in [#8008](https://github.com/sourcegraph/sourcegraph/pull/8008).
+  - `CampaignPlan` has been renamed to `PatchSet`.
+  - `ChangesetPlan`/`ChangesetPlanConnection` has been renamed to `Patch`/`PatchConnection`.
+  - `CampaignPlanPatch` has been renamed to `PatchInput`.
+  - `Campaign.plan` has been renamed to `Campaign.patchSet`.
+  - `Campaign.changesetPlans` has been renamed to `campaign.changesetPlan`.
+  - `createCampaignPlanFromPatches` mutation has been renamed to `createPatchSetFromPatches`.
+
+### Fixed
+
+- `.*` in the filter pattern were ignored and led to missing search results. [#9152](https://github.com/sourcegraph/sourcegraph/pull/9152)
+
+### Removed
+
+## 3.14.1
+
+### Added
+
+- monitoring: new Permissions dashboard to show stats of repository permissions.
+
+### Changed
+
+- Site-Admin/Instrumentation in the Kubernetes cluster deployment now includes indexed-search.
+
+## 3.14.0
+
+### Added
+
+- Site-Admin/Instrumentation is now available in the Kubernetes cluster deployment [8805](https://github.com/sourcegraph/sourcegraph/pull/8805).
+- Extensions can now specify a `baseUri` in the `DocumentFilter` when registering providers.
+- Admins can now exclude GitHub forks and/or archived repositories from the set of repositories being mirrored in Sourcegraph with the `"exclude": [{"forks": true}]` or `"exclude": [{"archived": true}]` GitHub external service configuration. [#8974](https://github.com/sourcegraph/sourcegraph/pull/8974)
+- Campaign changesets can be filtered by State, Review State and Check State. [#8848](https://github.com/sourcegraph/sourcegraph/pull/8848)
+- Counts of users of and searches conducted with interactive and plain text search modes will be sent back in pings, aggregated daily, weekly, and monthly.
+- Aggregated counts of daily, weekly, and monthly active users of search will be sent back in pings.
+- Counts of number of searches conducted using each filter will be sent back in pings, aggregated daily, weekly, and monthly.
+- Counts of number of users conducting searches containing each filter will be sent back in pings, aggregated daily, weekly, and monthly.
+- Added more entries (Bash, Erlang, Julia, OCaml, Scala) to the list of suggested languages for the `lang:` filter.
+- Permissions background sync is now supported for GitLab and Bitbucket Server via site configuration `"permissions.backgroundSync": {"enabled": true}`.
+- Indexed search exports more prometheus metrics and debug logs to aid debugging performance issues. [#9111](https://github.com/sourcegraph/sourcegraph/issues/9111)
+- monitoring: the Frontend dashboard now shows in excellent detail how search is behaving overall and at a glance.
+- monitoring: added alerts for when hard search errors (both timeouts and general errors) are high.
+- monitoring: added alerts for when partial search timeouts are high.
+- monitoring: added alerts for when search 90th and 99th percentile request duration is high.
+- monitoring: added alerts for when users are being shown an abnormally large amount of search alert user suggestions and no results.
+- monitoring: added alerts for when the internal indexed and unindexed search services are returning bad responses.
+- monitoring: added alerts for when gitserver may be under heavy load due to many concurrent command executions or under-provisioning.
+
 ### Changed
 
 - The "automation" feature was renamed to "campaigns".
@@ -22,14 +74,35 @@ All notable changes to Sourcegraph are documented in this file.
   [migration step](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/docs/migrate.md) when upgrading
   past commit [821032e2ee45f21f701](https://github.com/sourcegraph/deploy-sourcegraph/commit/821032e2ee45f21f701caac624e4f090c59fd259) or when upgrading to 3.14.
   New installations starting with the mentioned commit or with 3.14 do not need this migration step.
+- Aggregated search latencies (in ms) of search queries are now included in [pings](https://docs.sourcegraph.com/admin/pings).
+- The [Kubernetes deployment](https://github.com/sourcegraph/deploy-sourcegraph) frontend role has added services as a resource to watch/listen/get.
+  This change does not affect the newly-introduced, restricted Kubernetes config files.
+- Archived repositories are excluded from search by default. Adding `archived:yes` includes archived repositories.
+- Forked repositories are excluded from search by default. Adding `fork:yes` includes forked repositories.
+- CSRF and session cookies now set `SameSite=None` when Sourcegraph is running behind HTTPS and `SameSite=Lax` when Sourcegraph is running behind HTTP in order to comply with a [recent IETF proposal](https://web.dev/samesite-cookies-explained/#samesitenone-must-be-secure). As a side effect, the Sourcegraph browser extension and GitLab/Bitbucket native integrations can only connect to private instances that have HTTPS configured. If your private instance is only running behind HTTP, please configure your instance to use HTTPS in order to continue using these.
+- The Bitbucket Server rate limit that Sourcegraph self-imposes has been raised from 120 req/min to 480 req/min to account for Sourcegraph instances that make use of Sourcegraphs' Bitbucket Server repository permissions and campaigns at the same time (which require a larger number of API requests against Bitbucket Server). The new number is based on Sourcegraph consuming roughly 8% the average API request rate of a large customers' Bitbucket Server instance. [#9048](https://github.com/sourcegraph/sourcegraph/pull/9048/files)
+- If a single, unambiguous commit SHA is used in a search query (e.g., `repo@c98f56`) and a search index exists at this commit (i.e., it is the `HEAD` commit), then the query is searched using the index. Prior to this change, unindexed search was performed for any query containing an `@commit` specifier.
 
 ### Fixed
 
 - Zoekt's watchdog ensures the service is down upto 3 times before exiting. The watchdog would misfire on startup on resource constrained systems, with the retries this should make a false positive far less likely. [#7867](https://github.com/sourcegraph/sourcegraph/issues/7867)
 - A regression in repo-updater was fixed that lead to every repository's git clone being updated every time the list of repositories was synced from the code host. [#8501](https://github.com/sourcegraph/sourcegraph/issues/8501)
 - The default timeout of indexed search has been increased. Previously indexed search would always return within 3s. This lead to broken behaviour on new instances which had yet to tune resource allocations. [#8720](https://github.com/sourcegraph/sourcegraph/pull/8720)
+- Bitbucket Server older than 5.13 failed to sync since Sourcegraph 3.12. This was due to us querying for the `archived` label, but Bitbucket Server 5.13 does not support labels. [#8883](https://github.com/sourcegraph/sourcegraph/issues/8883)
+- monitoring: firing alerts are now ordered at the top of the list in dashboards by default for better visibility.
+- monitoring: fixed an issue where some alerts would fail to report in for the "Total alerts defined" panel in the overview dashboard.
 
 ### Removed
+
+- The v3.11 migration to merge critical and site configuration has been removed. If you are still making use of the deprecated `CRITICAL_CONFIG_FILE`, your instance may not start up. See the [migration notes for Sourcegraph 3.11](https://docs.sourcegraph.com/admin/migration/3_11) for more information.
+
+## 3.13.2
+
+### Fixed
+
+- The default timeout of indexed search has been increased. Previously indexed search would always return within 3s. This lead to broken behaviour on new instances which had yet to tune resource allocations. [#8720](https://github.com/sourcegraph/sourcegraph/pull/8720)
+- Bitbucket Server older than 5.13 failed to sync since Sourcegraph 3.12. This was due to us querying for the `archived` label, but Bitbucket Server 5.13 does not support labels. [#8883](https://github.com/sourcegraph/sourcegraph/issues/8883)
+- A regression in repo-updater was fixed that lead to every repository's git clone being updated every time the list of repositories was synced from the code host. [#8501](https://github.com/sourcegraph/sourcegraph/issues/8501)
 
 ## 3.13.1
 
@@ -90,6 +163,27 @@ All notable changes to Sourcegraph are documented in this file.
 
 - All repository fields related to `enabled` and `disabled` have been removed from the GraphQL API. These fields have been deprecated since 3.4. [#3971](https://github.com/sourcegraph/sourcegraph/pull/3971)
 - The deprecated extension API `Hover.__backcompatContents` was removed.
+
+## 3.12.10
+
+This release backports the fixes released in `3.13.2` for customers still on `3.12`.
+
+### Fixed
+
+- The default timeout of indexed search has been increased. Previously indexed search would always return within 3s. This lead to broken behaviour on new instances which had yet to tune resource allocations. [#8720](https://github.com/sourcegraph/sourcegraph/pull/8720)
+- Bitbucket Server older than 5.13 failed to sync since Sourcegraph 3.12. This was due to us querying for the `archived` label, but Bitbucket Server 5.13 does not support labels. [#8883](https://github.com/sourcegraph/sourcegraph/issues/8883)
+- A regression in repo-updater was fixed that lead to every repository's git clone being updated every time the list of repositories was synced from the code host. [#8501](https://github.com/sourcegraph/sourcegraph/issues/8501)
+
+## 3.12.9
+
+This is `3.12.8` release with internal infrastructure fixes to publish the docker images.
+
+## 3.12.8
+
+### Fixed
+
+- Extension API showInputBox and other Window methods now work on search results pages [#8519](https://github.com/sourcegraph/sourcegraph/issues/8519)
+- Extension error notification styling is clearer [#8521](https://github.com/sourcegraph/sourcegraph/issues/8521)
 
 ## 3.12.7
 
@@ -193,7 +287,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - The `/.auth/saml/metadata` endpoint has been fixed. Previously it panicked if no encryption key was set.
-- The version updating logic has been fixed for `sourcegraph/server`. Users running `sourcegraph/server:3.13.1` will need to manually modify their `docker run` command to use `sourcegraph/server:3.13.1` or higher. [#7442](https://github.com/sourcegraph/sourcegraph/issues/7442)
+- The version updating logic has been fixed for `sourcegraph/server`. Users running `sourcegraph/server:3.11.1` will need to manually modify their `docker run` command to use `sourcegraph/server:3.11.4` or higher. [#7442](https://github.com/sourcegraph/sourcegraph/issues/7442)
 
 ## 3.11.1
 

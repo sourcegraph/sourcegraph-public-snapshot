@@ -49,6 +49,7 @@ export REDIS_ENDPOINT=127.0.0.1:6379
 export QUERY_RUNNER_URL=http://localhost:3183
 export SYMBOLS_URL=http://localhost:3184
 export LSIF_SERVER_URL=http://localhost:3186
+export LSIF_DUMP_MANAGER_URL=http://localhost:3187
 export SRC_SYNTECT_SERVER=http://localhost:9238
 export SRC_FRONTEND_INTERNAL=localhost:3090
 export SRC_PROF_HTTP=
@@ -60,12 +61,16 @@ export ZOEKT_HOST=localhost:3070
 export USE_ENHANCED_LANGUAGE_DETECTION=${USE_ENHANCED_LANGUAGE_DETECTION:-1}
 export GRAFANA_SERVER_URL=http://localhost:3370
 
+# Caddy / HTTPS configuration
+export SOURCEGRAPH_HTTPS_DOMAIN="${SOURCEGRAPH_HTTPS_DOMAIN:-"sourcegraph.test"}"
+export SOURCEGRAPH_HTTPS_PORT="${SOURCEGRAPH_HTTPS_PORT:-"3443"}"
+
 # Enable sharded indexed search mode
 [ -n "${DISABLE_SEARCH_SHARDING-}" ] || export INDEXED_SEARCH_SERVERS="localhost:3070 localhost:3071"
 
 # webpack-dev-server is a proxy running on port 3080 that (1) serves assets, waiting to respond
 # until they are (re)built and (2) otherwise proxies to nginx running on port 3081 (which proxies to
-# Sourcegraph running on port 3082). That is why Sourcegraph listens on 3081 despite the externalURL
+# Sourcegraph running on port 3082). That is why Sourcegraph listens on 3082 despite the externalURL
 # having port 3080.
 export SRC_HTTP_ADDR=":3082"
 export WEBPACK_DEV_SERVER=1
@@ -81,15 +86,10 @@ export NODE_OPTIONS="--max_old_space_size=4096"
 
 # Make sure chokidar-cli is installed in the background
 printf >&2 "Concurrently installing Yarn and Go dependencies...\n\n"
-yarn_root_pid=''
-yarn_lsif_pid=''
+yarn_pid=''
 [ -n "${OFFLINE-}" ] || {
     yarn --no-progress &
-    yarn_root_pid="$!"
-    pushd ./lsif 1> /dev/null
-    yarn --no-progress &
-    yarn_lsif_pid="$!"
-    popd 1> /dev/null
+    yarn_pid="$!"
 }
 
 if ! ./dev/go-install.sh; then
@@ -100,13 +100,15 @@ if ! ./dev/go-install.sh; then
 	exit 1
 fi
 
-# Wait for yarns if they are still running
-if [[ -n "$yarn_root_pid" ]]; then
-    wait "$yarn_root_pid"
+# Wait for yarn if it is still running
+if [[ -n "$yarn_pid" ]]; then
+    wait "$yarn_pid"
 fi
-if [[ -n "$yarn_lsif_pid" ]]; then
-    wait "$yarn_lsif_pid"
-fi
+
+# Install LSIF dependencies
+pushd ./lsif 1> /dev/null
+yarn --no-progress
+popd 1> /dev/null
 
 # Increase ulimit (not needed on Windows/WSL)
 type ulimit > /dev/null && ulimit -n 10000 || true
@@ -117,7 +119,7 @@ export PATH="$PWD/.bin:$PWD/node_modules/.bin:$PATH"
 # Build once in the background to make sure editor codeintel works
 # This is fast if no changes were made.
 # Don't fail if it errors as this is only for codeintel, not for the build.
-trap 'kill $build_ts_pid; exit' INT
+trap 'kill $build_ts_pid; exit' EXIT
 (yarn run build-ts || true) &
 build_ts_pid="$!"
 

@@ -1,14 +1,17 @@
 import * as pgModels from '../models/pg'
-import pRetry, { AbortError } from 'p-retry'
 import { Brackets, Connection, EntityManager } from 'typeorm'
 import { FORMAT_TEXT_MAP, Span, Tracer } from 'opentracing'
 import { instrumentQuery, withInstrumentedTransaction } from '../database/postgres'
 import { PlainObjectToDatabaseEntityTransformer } from 'typeorm/query-builder/transformer/PlainObjectToDatabaseEntityTransformer'
 import { Logger } from 'winston'
 
+export interface LsifUploadWithPlaceInQueue extends pgModels.LsifUpload {
+    placeInQueue: number | null
+}
+
 /**
  * A wrapper around the database tables that control uploads. This class has
- * behaviors to enqueue uploads and dequeue them for the worker to convert
+ * behaviors to enqueue uploads and dequeue them for the processor to convert
  * in a transactional manner.
  */
 export class UploadManager {
@@ -54,11 +57,26 @@ export class UploadManager {
         visibleAtTip: boolean,
         limit: number,
         offset: number
-    ): Promise<{ uploads: pgModels.LsifUpload[]; totalCount: number }> {
-        const [uploads, totalCount] = await instrumentQuery(() => {
+    ): Promise<{ uploads: LsifUploadWithPlaceInQueue[]; totalCount: number }> {
+        const { uploads, raw, totalCount } = await instrumentQuery<{
+            uploads: pgModels.LsifUpload[]
+            raw: { upload_id: number; rank: string | undefined }[]
+            totalCount: number
+        }>(async () => {
             let queryBuilder = this.connection
                 .getRepository(pgModels.LsifUpload)
                 .createQueryBuilder('upload')
+                .addSelect('ranked.rank', 'rank')
+                .leftJoin(
+                    qb =>
+                        qb
+                            .subQuery()
+                            .select('ranked.id, RANK() OVER (ORDER BY ranked.uploaded_at) as rank')
+                            .from(pgModels.LsifUpload, 'ranked')
+                            .where("ranked.state = 'queued'"),
+                    'ranked',
+                    'ranked.id = upload.id'
+                )
                 .where({ repositoryId })
                 .orderBy('uploaded_at', 'DESC')
                 .limit(limit)
@@ -69,7 +87,7 @@ export class UploadManager {
             }
 
             if (query) {
-                const clauses = ['commit', 'root', 'failure_summary', 'failure_stacktrace'].map(
+                const clauses = ['commit', 'root', 'indexerName', 'failure_summary', 'failure_stacktrace'].map(
                     field => `"${field}" LIKE '%' || :query || '%'`
                 )
 
@@ -84,19 +102,52 @@ export class UploadManager {
                 queryBuilder = queryBuilder.andWhere('visible_at_tip = true')
             }
 
-            return queryBuilder.getManyAndCount()
+            const [{ entities, raw: rawEntities }, count] = await Promise.all([
+                queryBuilder.getRawAndEntities(),
+                queryBuilder.getCount(),
+            ])
+
+            return { uploads: entities, raw: rawEntities, totalCount: count }
         })
 
-        return { uploads, totalCount }
+        const ranks = new Map(raw.map(r => [r.upload_id, parseInt(r.rank || '', 10)]))
+        return { uploads: uploads.map(u => ({ ...u, placeInQueue: ranks.get(u.id) || null })), totalCount }
     }
 
     /**
-     * Get a upload by identifier.
+     * Get an upload by identifier.
      *
      * @param id The upload identifier.
      */
-    public getUpload(id: number): Promise<pgModels.LsifUpload | undefined> {
-        return instrumentQuery(() => this.connection.getRepository(pgModels.LsifUpload).findOne({ id }))
+    public getUpload(id: number): Promise<LsifUploadWithPlaceInQueue | undefined> {
+        return withInstrumentedTransaction(this.connection, async () => {
+            const {
+                entities,
+                raw,
+            }: { entities: pgModels.LsifUpload[]; raw: { rank: string | null }[] } = await this.connection
+                .getRepository(pgModels.LsifUpload)
+                .createQueryBuilder('upload')
+                .addSelect('ranked.rank', 'rank')
+                .leftJoin(
+                    qb =>
+                        qb
+                            .subQuery()
+                            .select('ranked.id, RANK() OVER (ORDER BY ranked.uploaded_at) as rank')
+                            .from(pgModels.LsifUpload, 'ranked')
+                            .where("ranked.state = 'queued'"),
+                    'ranked',
+                    'ranked.id = upload.id'
+                )
+                .where({ id })
+                .limit(1)
+                .getRawAndEntities()
+
+            if (entities.length === 0) {
+                return undefined
+            }
+
+            return { ...entities[0], placeInQueue: parseInt(raw[0].rank || '', 10) || null }
+        })
     }
 
     /**
@@ -187,6 +238,7 @@ export class UploadManager {
      * Create a new uploaded with a state of `queued`.
      *
      * @param args The upload payload.
+     * @param entityManager The EntityManager to use as part of a transaction.
      * @param tracer The tracer instance.
      * @param span The parent span.
      */
@@ -195,7 +247,6 @@ export class UploadManager {
             repositoryId,
             commit,
             root,
-            filename,
             indexer,
         }: {
             /** The repository identifier. */
@@ -204,87 +255,28 @@ export class UploadManager {
             commit: string
             /** The root. */
             root: string
-            /** The filename. */
-            filename: string
             /** The indexer binary name that produced this dump as specified by the metadata. */
             indexer: string
         },
+        entityManager: EntityManager = this.connection.createEntityManager(),
         tracer?: Tracer,
         span?: Span
-    ): Promise<pgModels.LsifUpload> {
+    ): Promise<number> {
         const tracing = {}
         if (tracer && span) {
             tracer.inject(span, FORMAT_TEXT_MAP, tracing)
         }
 
-        const upload = new pgModels.LsifUpload()
-        upload.repositoryId = repositoryId
-        upload.commit = commit
-        upload.root = root
-        upload.indexer = indexer
-        upload.filename = filename
-        upload.tracingContext = JSON.stringify(tracing)
-        await instrumentQuery(() => this.connection.createEntityManager().save(upload))
+        const { identifiers } = await instrumentQuery(() =>
+            entityManager
+                .createQueryBuilder()
+                .insert()
+                .into(pgModels.LsifUpload)
+                .values({ repositoryId, commit, root, indexer, tracingContext: JSON.stringify(tracing) })
+                .execute()
+        )
 
-        return upload
-    }
-
-    /**
-     * Wait for the given upload to be converted. The function resolves to true if the
-     * conversion completed within the given timeout and false otherwise. If the upload
-     * conversion throws an error, that error is thrown in-band. A NaN-valued max wait
-     * will block forever.
-     *
-     * @param uploadId The id of the upload to block on.
-     * @param maxWait The maximum time (in seconds) to wait for the promise to resolve.
-     */
-    public async waitForUploadToConvert(uploadId: number, maxWait: number | undefined): Promise<boolean> {
-        const UPLOADINPROGRESS = 'UploadInProgressError'
-        class UploadInProgressError extends Error {
-            public readonly name = UPLOADINPROGRESS
-            public readonly code = UPLOADINPROGRESS
-            constructor() {
-                super('upload in progress')
-            }
-        }
-
-        const checkUploadState = async (): Promise<void> => {
-            const upload = await instrumentQuery(() =>
-                this.connection.getRepository(pgModels.LsifUpload).findOneOrFail({ id: uploadId })
-            )
-
-            if (upload.state === 'errored') {
-                const error = new Error(upload.failureSummary || '')
-                error.stack = upload.failureStacktrace || ''
-                throw new AbortError(error)
-            }
-
-            if (upload.state !== 'completed') {
-                throw new UploadInProgressError()
-            }
-        }
-
-        const retryConfig =
-            maxWait === undefined
-                ? { forever: true }
-                : {
-                      factor: 1,
-                      retries: maxWait,
-                      minTimeout: 1000,
-                      maxTimeout: 1000,
-                  }
-
-        try {
-            await pRetry(checkUploadState, retryConfig)
-        } catch (error) {
-            if (error && error.code === UPLOADINPROGRESS) {
-                return false
-            }
-
-            throw error
-        }
-
-        return true
+        return identifiers[0].id
     }
 
     /**
@@ -309,7 +301,7 @@ export class UploadManager {
         // First, we select the next oldest upload with a state of `queued` and set
         // its state to `processing`. We do this outside of a transaction so that this
         // state transition is visible to the API. We skip any locked rows as they are
-        // being handled by another worker process.
+        // being handled by another dump processor.
         const lockResult: [{ id: number }[]] = await this.connection.query(`
             UPDATE lsif_uploads u SET state = 'processing', started_at = now() WHERE id = (
                 SELECT id FROM lsif_uploads

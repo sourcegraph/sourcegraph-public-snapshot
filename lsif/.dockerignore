@@ -1,9 +1,3 @@
-Dockerfile
-.dockerignore
-
-# Build artifacts
 node_modules
 out
-
-# Test data
-src/tests/integration/data
+test-data

@@ -5,10 +5,10 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"gopkg.in/inconshreveable/log15.v2"
 )
 
 // maxWorkers defines the maximum number of repository jobs to run in parallel.
@@ -32,8 +32,10 @@ func RunChangesetJobs(ctx context.Context, s *Store, clock func() time.Time, git
 		if err != nil {
 			return errors.Wrap(err, "getting campaign")
 		}
-		_ = RunChangesetJob(ctx, clock, s, gitClient, nil, c, &job)
-		// We ignore the error here so that we don't roll back the transaction
+		if runErr := RunChangesetJob(ctx, clock, s, gitClient, nil, c, &job); runErr != nil {
+			log15.Error("RunChangesetJob", "jobID", job.ID, "err", err)
+		}
+		// We don't assign to err here so that we don't roll back the transaction
 		// RunChangesetJob will save the error in the job row
 		return nil
 	}

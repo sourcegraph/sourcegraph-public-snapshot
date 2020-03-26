@@ -4,6 +4,7 @@ import { SearchPatternType } from '../graphql/schema'
 import { FiltersToTypeAndValue } from '../search/interactive/util'
 import { isEmpty } from 'lodash'
 import { parseSearchQuery, CharacterRange } from '../search/parser/parser'
+import { replaceRange } from './strings'
 
 export interface RepoSpec {
     /**
@@ -55,18 +56,39 @@ interface ComparisonSpec {
     commitRange: string
 }
 
-export interface PositionSpec {
-    /**
-     * a 1-indexed point in the blob
-     */
-    position: Position
+/**
+ * 1-indexed position in a blob.
+ * Positions in URLs are 1-indexed.
+ */
+interface UIPosition {
+    /** 1-indexed line number */
+    line: number
+
+    /** 1-indexed character number */
+    character: number
 }
 
-interface RangeSpec {
+/**
+ * 1-indexed range in a blob.
+ * Ranges in URLs are 1-indexed.
+ */
+interface UIRange {
+    start: UIPosition
+    end: UIPosition
+}
+
+export interface UIPositionSpec {
     /**
-     * a 1-indexed range in the blob
+     * A 1-indexed point in the blob
      */
-    range: Range
+    position: UIPosition
+}
+
+interface UIRangeSpec {
+    /**
+     * A 1-indexed range in the blob
+     */
+    range: UIRange
 }
 
 /**
@@ -109,8 +131,8 @@ export interface ParsedRepoURI
         Partial<ResolvedRevSpec>,
         Partial<FileSpec>,
         Partial<ComparisonSpec>,
-        Partial<PositionSpec>,
-        Partial<RangeSpec> {}
+        Partial<UIPositionSpec>,
+        Partial<UIRangeSpec> {}
 
 /**
  * RepoURI is a URI identifing a repository resource, like
@@ -151,13 +173,10 @@ export function parseRepoURI(uri: RepoURI): ParsedRepoURI {
     if (rev?.match(/[0-9a-fA-f]{40}/)) {
         commitID = rev
     }
-    const fragmentSplit = parsed.hash
-        .substr('#'.length)
-        .split(':')
-        .map(decodeURIComponent)
+    const fragmentSplit = parsed.hash.substr('#'.length).split(':').map(decodeURIComponent)
     let filePath: string | undefined
-    let position: Position | undefined
-    let range: Range | undefined
+    let position: UIPosition | undefined
+    let range: UIRange | undefined
     if (fragmentSplit.length === 1) {
         filePath = fragmentSplit[0]
     }
@@ -216,7 +235,7 @@ export interface AbsoluteRepoFilePosition
         RevSpec,
         ResolvedRevSpec,
         FileSpec,
-        PositionSpec,
+        UIPositionSpec,
         Partial<ViewStateSpec>,
         Partial<RenderModeSpec> {}
 
@@ -451,7 +470,7 @@ export function encodeRepoRev(repo: string, rev?: string): string {
 }
 
 export function toPrettyBlobURL(
-    ctx: RepoFile & Partial<PositionSpec> & Partial<ViewStateSpec> & Partial<RangeSpec> & Partial<RenderModeSpec>
+    ctx: RepoFile & Partial<UIPositionSpec> & Partial<ViewStateSpec> & Partial<UIRangeSpec> & Partial<RenderModeSpec>
 ): string {
     return `/${encodeRepoRev(ctx.repoName, ctx.rev)}/-/blob/${ctx.filePath}${toRenderModeQuery(
         ctx
@@ -540,13 +559,9 @@ export function buildSearchURLQuery(
 
     const patternTypeInQuery = parsePatternTypeFromQuery(fullQuery)
     if (patternTypeInQuery) {
-        const newQuery = fullQuery.replace(
-            query.substring(patternTypeInQuery.range.start, patternTypeInQuery.range.end),
-            ''
-        )
-        searchParams.set('q', newQuery)
+        fullQuery = replaceRange(fullQuery, patternTypeInQuery.range)
+        searchParams.set('q', fullQuery)
         searchParams.set('patternType', patternTypeInQuery.value)
-        fullQuery = newQuery
     } else {
         searchParams.set('q', fullQuery)
         searchParams.set('patternType', patternType)
@@ -554,10 +569,11 @@ export function buildSearchURLQuery(
 
     const caseInQuery = parseCaseSensitivityFromQuery(fullQuery)
     if (caseInQuery) {
-        const newQuery = fullQuery.replace(query.substring(caseInQuery.range.start, caseInQuery.range.end), '')
-        searchParams.set('q', newQuery)
+        fullQuery = replaceRange(fullQuery, caseInQuery.range)
+        searchParams.set('q', fullQuery)
 
         if (caseInQuery.value === 'yes') {
+            fullQuery = replaceRange(fullQuery, caseInQuery.range)
             searchParams.set('case', caseInQuery.value)
         } else {
             // For now, remove case when case:no, since it's the default behavior. Avoids
@@ -566,8 +582,6 @@ export function buildSearchURLQuery(
             // TODO: just set case=no when https://github.com/sourcegraph/sourcegraph/issues/7671 is fixed.
             searchParams.delete('case')
         }
-
-        fullQuery = newQuery
     } else {
         searchParams.set('q', fullQuery)
         if (caseSensitive) {
@@ -582,10 +596,7 @@ export function buildSearchURLQuery(
     }
 
     // eslint-disable-next-line @typescript-eslint/no-base-to-string
-    return searchParams
-        .toString()
-        .replace(/%2F/g, '/')
-        .replace(/%3A/g, ':')
+    return searchParams.toString().replace(/%2F/g, '/').replace(/%3A/g, ':')
 }
 
 /**
@@ -601,7 +612,7 @@ export function generateFiltersQuery(filtersInQuery: FiltersToTypeAndValue): str
         .join(' ')
 }
 
-function parsePatternTypeFromQuery(query: string): { range: CharacterRange; value: string } | undefined {
+export function parsePatternTypeFromQuery(query: string): { range: CharacterRange; value: string } | undefined {
     const parsedQuery = parseSearchQuery(query)
     if (parsedQuery.type === 'success') {
         for (const member of parsedQuery.token.members) {
@@ -622,7 +633,7 @@ function parsePatternTypeFromQuery(query: string): { range: CharacterRange; valu
     return undefined
 }
 
-function parseCaseSensitivityFromQuery(query: string): { range: CharacterRange; value: string } | undefined {
+export function parseCaseSensitivityFromQuery(query: string): { range: CharacterRange; value: string } | undefined {
     const parsedQuery = parseSearchQuery(query)
     if (parsedQuery.type === 'success') {
         for (const member of parsedQuery.token.members) {

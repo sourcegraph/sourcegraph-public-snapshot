@@ -13,6 +13,16 @@ export function dbFilename(storageRoot: string, id: number): string {
 }
 
 /**
+ * Construct the path of the raw upload file for the given identifier.
+ *
+ * @param storageRoot The path where uploads are stored.
+ * @param id The identifier of the upload.
+ */
+export function uploadFilename(storageRoot: string, id: number): string {
+    return path.join(storageRoot, constants.UPLOADS_DIR, `${id}.lsif.gz`)
+}
+
+/**
  * Returns the identifier of the database file. Handles both of the
  * following formats:
  *

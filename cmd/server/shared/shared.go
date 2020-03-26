@@ -32,6 +32,7 @@ var defaultEnv = map[string]string{
 	"SYMBOLS_URL":           "http://127.0.0.1:3184",
 	"REPLACER_URL":          "http://127.0.0.1:3185",
 	"LSIF_SERVER_URL":       "http://127.0.0.1:3186",
+	"LSIF_DUMP_MANAGER_URL": "http://127.0.0.1:3187",
 	"SRC_HTTP_ADDR":         ":8080",
 	"SRC_HTTPS_ADDR":        ":8443",
 	"SRC_FRONTEND_INTERNAL": FrontendInternalHost,
@@ -136,7 +137,8 @@ func Main() {
 		`query-runner: query-runner`,
 		`symbols: symbols`,
 		`lsif-server: node /lsif/out/server/server.js`,
-		`lsif-worker: node /lsif/out/worker/worker.js`,
+		`lsif-dump-manager: node /lsif/out/dump-manager/dump-manager.js`,
+		`lsif-dump-processor: node /lsif/out/dump-processor/dump-processor.js`,
 		`searcher: searcher`,
 		`replacer: replacer`,
 		`github-proxy: github-proxy`,
@@ -175,9 +177,9 @@ func Main() {
 	procDiedAction := goreman.Shutdown
 	if ignore, _ := strconv.ParseBool(os.Getenv("IGNORE_PROCESS_DEATH")); ignore {
 		// IGNORE_PROCESS_DEATH is an escape hatch so that sourcegraph/server
-		// keeps running in the case of a subprocess dieing on startup. An
+		// keeps running in the case of a subprocess dying on startup. An
 		// example use case is connecting to postgres even though frontend is
-		// dieing due to a bad migration.
+		// dying due to a bad migration.
 		procDiedAction = goreman.Ignore
 	}
 

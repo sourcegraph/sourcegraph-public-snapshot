@@ -90,6 +90,12 @@ const SiteSchemaJSON = `{
           "enum": ["enabled", "disabled"],
           "default": "enabled"
         },
+        "andOrQuery": {
+          "description": "Interpret a search input query as an and/or query.",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "disabled"
+        },
         "bitbucketServerFastPerm": {
           "description": "DEPRECATED: Configure in Bitbucket Server config.",
           "type": "string",
@@ -158,8 +164,21 @@ const SiteSchemaJSON = `{
           ]
         }
       },
-      "group": "Experimental",
-      "hide": true
+      "examples": [
+        {
+          "customGitFetch": [
+            {
+              "domainPath": "somecodehost.com/path/to/repo",
+              "fetch": "customgitbinary someflag"
+            },
+            {
+              "domainPath": "somecodehost.com/path/to/anotherrepo",
+              "fetch": "customgitbinary someflag anotherflag"
+            }
+          ]
+        }
+      ],
+      "group": "Experimental"
     },
     "automation.readAccess.enabled": {
       "description": "DEPRECATED: The automation feature was renamed to campaigns. Use ` + "`" + `campaigns.readAccess.enabled` + "`" + ` instead.",
@@ -312,6 +331,23 @@ const SiteSchemaJSON = `{
         "bindID": "email"
       },
       "examples": [{ "bindID": "email" }, { "bindID": "username" }],
+      "group": "Security"
+    },
+    "permissions.backgroundSync": {
+      "description": "Sync code host repository and user permissions in the background.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "description": "Whether syncing permissions in the background is enabled.",
+          "type": "boolean",
+          "default": false
+        }
+      },
+      "default": {
+        "enabled": true
+      },
+      "examples": [{ "enabled": true }],
       "group": "Security"
     },
     "branding": {

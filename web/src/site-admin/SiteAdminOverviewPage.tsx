@@ -2,7 +2,6 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import H from 'history'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import React, { useEffect, useMemo } from 'react'
-import { Link } from 'react-router-dom'
 import { Observable, of } from 'rxjs'
 import { map, catchError } from 'rxjs/operators'
 import { ActivationProps, percentageDone } from '../../../shared/src/components/activation/Activation'
@@ -16,13 +15,27 @@ import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { UsageChart } from './SiteAdminUsageStatisticsPage'
 import { ErrorAlert } from '../components/alerts'
-import { useObservable } from '../util/useObservable'
+import { useObservable } from '../../../shared/src/util/useObservable'
 import { ErrorLike, asError, isErrorLike } from '../../../shared/src/util/errors'
+import { ThemeProps } from '../../../shared/src/theme'
+import { Link } from '../../../shared/src/components/Link'
 
-interface Props extends ActivationProps {
+interface Props extends ActivationProps, ThemeProps {
     history: H.History
     overviewComponents: readonly React.ComponentType[]
-    isLightTheme: boolean
+
+    /** For testing only */
+    _fetchOverview?: () => Observable<{
+        repositories: number | null
+        users: number
+        orgs: number
+        surveyResponses: {
+            totalCount: number
+            averageScore: number
+        }
+    }>
+    /** For testing only */
+    _fetchWeeklyActiveUsers?: () => Observable<GQL.ISiteUsageStatistics>
 }
 
 const fetchOverview = (): Observable<{
@@ -82,29 +95,38 @@ const fetchWeeklyActiveUsers = (): Observable<GQL.ISiteUsageStatistics> =>
 /**
  * A page displaying an overview of site admin information.
  */
-export const SiteAdminOverviewPage: React.FunctionComponent<Props> = props => {
+export const SiteAdminOverviewPage: React.FunctionComponent<Props> = ({
+    history,
+    isLightTheme,
+    activation,
+    overviewComponents,
+    _fetchOverview = fetchOverview,
+    _fetchWeeklyActiveUsers = fetchWeeklyActiveUsers,
+}) => {
     useEffect(() => {
         eventLogger.logViewEvent('SiteAdminOverview')
     }, [])
 
     const info = useObservable(
-        useMemo(() => fetchOverview().pipe(catchError(error => of<ErrorLike>(asError(error)))), [])
+        useMemo(() => _fetchOverview().pipe(catchError(error => of<ErrorLike>(asError(error)))), [_fetchOverview])
     )
 
     const stats = useObservable(
-        useMemo(() => fetchWeeklyActiveUsers().pipe(catchError(error => of<ErrorLike>(asError(error)))), [])
+        useMemo(() => _fetchWeeklyActiveUsers().pipe(catchError(error => of<ErrorLike>(asError(error)))), [
+            _fetchWeeklyActiveUsers,
+        ])
     )
 
     let setupPercentage = 0
-    if (props.activation) {
-        setupPercentage = percentageDone(props.activation.completed)
+    if (activation) {
+        setupPercentage = percentageDone(activation.completed)
     }
     return (
         <div className="site-admin-overview-page">
             <PageTitle title="Overview - Admin" />
-            {props.overviewComponents.length > 0 && (
+            {overviewComponents.length > 0 && (
                 <div className="mb-4">
-                    {props.overviewComponents.map((C, i) => (
+                    {overviewComponents.map((C, i) => (
                         <C key={i} />
                     ))}
                 </div>
@@ -113,18 +135,19 @@ export const SiteAdminOverviewPage: React.FunctionComponent<Props> = props => {
             <div className="list-group">
                 {info && !isErrorLike(info) && (
                     <>
-                        {props.activation && props.activation.completed && (
+                        {activation?.completed && (
                             <Collapsible
                                 title={<>{setupPercentage < 100 ? 'Get started with Sourcegraph' : 'Setup status'}</>}
                                 defaultExpanded={setupPercentage < 100}
-                                className="list-group-item"
+                                className="list-group-item e2e-site-admin-overview-menu"
                                 titleClassName="h4 mb-0 mt-2 font-weight-normal p-2"
+                                titleAtStart={true}
                             >
-                                {props.activation.completed && (
+                                {activation.completed && (
                                     <ActivationChecklist
-                                        history={props.history}
-                                        steps={props.activation.steps}
-                                        completed={props.activation.completed}
+                                        history={history}
+                                        steps={activation.steps}
+                                        completed={activation.completed}
                                     />
                                 )}
                             </Collapsible>
@@ -132,7 +155,7 @@ export const SiteAdminOverviewPage: React.FunctionComponent<Props> = props => {
                         {info.repositories !== null && (
                             <Link
                                 to="/site-admin/repositories"
-                                className="list-group-item list-group-item-action h5 font-weight-normal py-2 px-3"
+                                className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
                             >
                                 {numberWithCommas(info.repositories)}{' '}
                                 {pluralize('repository', info.repositories, 'repositories')}
@@ -141,7 +164,7 @@ export const SiteAdminOverviewPage: React.FunctionComponent<Props> = props => {
                         {info.users > 1 && (
                             <Link
                                 to="/site-admin/users"
-                                className="list-group-item list-group-item-action h5 font-weight-normal py-2 px-3"
+                                className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
                             >
                                 {numberWithCommas(info.users)} {pluralize('user', info.users)}
                             </Link>
@@ -149,7 +172,7 @@ export const SiteAdminOverviewPage: React.FunctionComponent<Props> = props => {
                         {info.orgs > 1 && (
                             <Link
                                 to="/site-admin/organizations"
-                                className="list-group-item list-group-item-action h5 font-weight-normal py-2 px-3"
+                                className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
                             >
                                 {numberWithCommas(info.orgs)} {pluralize('organization', info.orgs)}
                             </Link>
@@ -157,7 +180,7 @@ export const SiteAdminOverviewPage: React.FunctionComponent<Props> = props => {
                         {info.users > 1 && (
                             <Link
                                 to="/site-admin/surveys"
-                                className="list-group-item list-group-item-action h5 font-weight-normal py-2 px-3"
+                                className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
                             >
                                 {numberWithCommas(info.surveyResponses.totalCount)}{' '}
                                 {pluralize('user survey response', info.surveyResponses.totalCount)}
@@ -178,10 +201,11 @@ export const SiteAdminOverviewPage: React.FunctionComponent<Props> = props => {
                                     defaultExpanded={true}
                                     className="list-group-item"
                                     titleClassName="h5 mb-0 font-weight-normal p-2"
+                                    titleAtStart={true}
                                 >
                                     {stats && (
                                         <UsageChart
-                                            {...props}
+                                            isLightTheme={isLightTheme}
                                             stats={stats}
                                             chartID="waus"
                                             showLegend={false}

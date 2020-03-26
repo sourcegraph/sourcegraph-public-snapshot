@@ -46,6 +46,22 @@ func TestLatestKubernetesVersionPushed(t *testing.T) {
 	}
 }
 
+func TestLatestDockerComposeOrPureDockerVersionPushed(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping due to network request")
+	}
+
+	url := fmt.Sprintf("https://github.com/sourcegraph/deploy-sourcegraph-docker/releases/tag/v%v", latestReleaseDockerComposeOrPureDocker.Version)
+	resp, err := http.Head(url)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if resp.StatusCode != 200 {
+		t.Errorf("Could not find Docker Compose or Pure Docker release %s on GitHub. Response code %s from %s, err: %v", latestReleaseDockerComposeOrPureDocker.Version, resp.Status, url, err)
+	}
+}
+
 func TestCanUpdate(t *testing.T) {
 	tests := []struct {
 		name                string

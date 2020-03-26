@@ -9,12 +9,12 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -22,11 +22,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"gopkg.in/inconshreveable/log15.v2"
 )
 
-// Resolver is the GraphQL resolver of all things A8N.
+// Resolver is the GraphQL resolver of all things related to Campaigns.
 type Resolver struct {
 	store       *ee.Store
 	httpFactory *httpcli.Factory
@@ -93,18 +93,18 @@ func (r *Resolver) CampaignByID(ctx context.Context, id graphql.ID) (graphqlback
 	return &campaignResolver{store: r.store, Campaign: campaign}, nil
 }
 
-func (r *Resolver) ChangesetPlanByID(ctx context.Context, id graphql.ID) (graphqlbackend.ChangesetPlanResolver, error) {
-	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access campaign jobs.
+func (r *Resolver) PatchByID(ctx context.Context, id graphql.ID) (graphqlbackend.PatchResolver, error) {
+	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access patches.
 	if err := allowReadAccess(ctx); err != nil {
 		return nil, err
 	}
 
-	campaignJobID, err := unmarshalCampaignJobID(id)
+	patchID, err := unmarshalPatchID(id)
 	if err != nil {
 		return nil, err
 	}
 
-	job, err := r.store.GetCampaignJob(ctx, ee.GetCampaignJobOpts{ID: campaignJobID})
+	job, err := r.store.GetPatch(ctx, ee.GetPatchOpts{ID: patchID})
 	if err != nil {
 		if err == ee.ErrNoResults {
 			return nil, nil
@@ -112,21 +112,21 @@ func (r *Resolver) ChangesetPlanByID(ctx context.Context, id graphql.ID) (graphq
 		return nil, err
 	}
 
-	return &campaignJobResolver{store: r.store, job: job}, nil
+	return &patchResolver{store: r.store, job: job}, nil
 }
 
-func (r *Resolver) CampaignPlanByID(ctx context.Context, id graphql.ID) (graphqlbackend.CampaignPlanResolver, error) {
-	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access campaign plans.
+func (r *Resolver) PatchSetByID(ctx context.Context, id graphql.ID) (graphqlbackend.PatchSetResolver, error) {
+	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access patch sets.
 	if err := allowReadAccess(ctx); err != nil {
 		return nil, err
 	}
 
-	planID, err := unmarshalCampaignPlanID(id)
+	patchSetID, err := unmarshalPatchSetID(id)
 	if err != nil {
 		return nil, err
 	}
 
-	plan, err := r.store.GetCampaignPlan(ctx, ee.GetCampaignPlanOpts{ID: planID})
+	patchSet, err := r.store.GetPatchSet(ctx, ee.GetPatchSetOpts{ID: patchSetID})
 	if err != nil {
 		if err == ee.ErrNoResults {
 			return nil, nil
@@ -134,7 +134,7 @@ func (r *Resolver) CampaignPlanByID(ctx context.Context, id graphql.ID) (graphql
 		return nil, err
 	}
 
-	return &campaignPlanResolver{store: r.store, campaignPlan: plan}, nil
+	return &patchSetResolver{store: r.store, patchSet: patchSet}, nil
 }
 
 func (r *Resolver) AddChangesetsToCampaign(ctx context.Context, args *graphqlbackend.AddChangesetsToCampaignArgs) (_ graphqlbackend.CampaignResolver, err error) {
@@ -173,7 +173,7 @@ func (r *Resolver) AddChangesetsToCampaign(ctx context.Context, args *graphqlbac
 		return nil, err
 	}
 
-	if campaign.CampaignPlanID != 0 {
+	if campaign.PatchSetID != 0 {
 		return nil, errors.New("Changesets can only be added to campaigns that don't create their own changesets")
 	}
 
@@ -230,12 +230,12 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 		campaign.Branch = *args.Input.Branch
 	}
 
-	if args.Input.Plan != nil {
-		planID, err := unmarshalCampaignPlanID(*args.Input.Plan)
+	if args.Input.PatchSet != nil {
+		patchSetID, err := unmarshalPatchSetID(*args.Input.PatchSet)
 		if err != nil {
 			return nil, err
 		}
-		campaign.CampaignPlanID = planID
+		campaign.PatchSetID = patchSetID
 	}
 
 	var draft bool
@@ -256,7 +256,7 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 		return nil, err
 	}
 
-	svc := ee.NewService(r.store, gitserver.DefaultClient, nil, r.httpFactory)
+	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
 	err = svc.CreateCampaign(ctx, campaign, draft)
 	if err != nil {
 		return nil, err
@@ -287,15 +287,15 @@ func (r *Resolver) UpdateCampaign(ctx context.Context, args *graphqlbackend.Upda
 	updateArgs.Description = args.Input.Description
 	updateArgs.Branch = args.Input.Branch
 
-	if args.Input.Plan != nil {
-		campaignPlanID, err := unmarshalCampaignPlanID(*args.Input.Plan)
+	if args.Input.PatchSet != nil {
+		patchSetID, err := unmarshalPatchSetID(*args.Input.PatchSet)
 		if err != nil {
 			return nil, err
 		}
-		updateArgs.Plan = &campaignPlanID
+		updateArgs.PatchSet = &patchSetID
 	}
 
-	svc := ee.NewService(r.store, gitserver.DefaultClient, nil, r.httpFactory)
+	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
 	campaign, detachedChangesets, err := svc.UpdateCampaign(ctx, updateArgs)
 	if err != nil {
 		return nil, err
@@ -331,7 +331,7 @@ func (r *Resolver) DeleteCampaign(ctx context.Context, args *graphqlbackend.Dele
 		return nil, err
 	}
 
-	svc := ee.NewService(r.store, gitserver.DefaultClient, nil, r.httpFactory)
+	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
 	err = svc.DeleteCampaign(ctx, campaignID, args.CloseChangesets)
 	return &graphqlbackend.EmptyResponse{}, err
 }
@@ -372,7 +372,9 @@ func (r *Resolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampa
 	if err := allowReadAccess(ctx); err != nil {
 		return nil, err
 	}
-	var opts ee.ListCampaignsOpts
+	opts := ee.ListCampaignsOpts{
+		HasPatchSet: args.HasPatchSet,
+	}
 	state, err := parseCampaignState(args.State)
 	if err != nil {
 		return nil, err
@@ -481,28 +483,62 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 	return csr, nil
 }
 
-func (r *Resolver) Changesets(ctx context.Context, args *graphqlutil.ConnectionArgs) (graphqlbackend.ExternalChangesetsConnectionResolver, error) {
+func (r *Resolver) Changesets(ctx context.Context, args *graphqlbackend.ListChangesetsArgs) (graphqlbackend.ExternalChangesetsConnectionResolver, error) {
 	// 🚨 SECURITY: Only site admins or users when read-access is enabled may access changesets.
 	if err := allowReadAccess(ctx); err != nil {
 		return nil, err
 	}
+	opts, err := listChangesetOptsFromArgs(args)
+	if err != nil {
+		return nil, err
+	}
 	return &changesetsConnectionResolver{
 		store: r.store,
-		opts: ee.ListChangesetsOpts{
-			Limit: int(args.GetFirst()),
-		},
+		opts:  opts,
 	}, nil
 }
 
-func (r *Resolver) CreateCampaignPlanFromPatches(ctx context.Context, args graphqlbackend.CreateCampaignPlanFromPatchesArgs) (graphqlbackend.CampaignPlanResolver, error) {
+func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs) (ee.ListChangesetsOpts, error) {
+	var opts ee.ListChangesetsOpts
+	if args == nil {
+		return opts, nil
+	}
+	if args.First != nil {
+		opts.Limit = int(*args.First)
+	}
+	if args.State != nil {
+		state := campaigns.ChangesetState(*args.State)
+		if !state.Valid() {
+			return opts, errors.New("changeset state not valid")
+		}
+		opts.ExternalState = &state
+	}
+	if args.ReviewState != nil {
+		state := campaigns.ChangesetReviewState(*args.ReviewState)
+		if !state.Valid() {
+			return opts, errors.New("changeset review state not valid")
+		}
+		opts.ExternalReviewState = &state
+	}
+	if args.CheckState != nil {
+		state := campaigns.ChangesetCheckState(*args.CheckState)
+		if !state.Valid() {
+			return opts, errors.New("changeset check state not valid")
+		}
+		opts.ExternalCheckState = &state
+	}
+	return opts, nil
+}
+
+func (r *Resolver) CreatePatchSetFromPatches(ctx context.Context, args graphqlbackend.CreatePatchSetFromPatchesArgs) (graphqlbackend.PatchSetResolver, error) {
 	var err error
-	tr, ctx := trace.New(ctx, "Resolver.CreateCampaignPlanFromPatches", "")
+	tr, ctx := trace.New(ctx, "Resolver.CreatePatchSetFromPatches", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	// 🚨 SECURITY: Only site admins may create campaign plans for now
+	// 🚨 SECURITY: Only site admins may create patch sets for now.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
@@ -515,7 +551,7 @@ func (r *Resolver) CreateCampaignPlanFromPatches(ctx context.Context, args graph
 		return nil, backend.ErrNotAuthenticated
 	}
 
-	patches := make([]campaigns.CampaignPlanPatch, len(args.Patches))
+	patches := make([]*campaigns.Patch, len(args.Patches))
 	for i, patch := range args.Patches {
 		repo, err := graphqlbackend.UnmarshalRepositoryID(patch.Repository)
 		if err != nil {
@@ -534,20 +570,21 @@ func (r *Resolver) CreateCampaignPlanFromPatches(ctx context.Context, args graph
 			}
 		}
 
-		patches[i] = campaigns.CampaignPlanPatch{
-			Repo:         repo,
-			BaseRevision: patch.BaseRevision,
-			Patch:        patch.Patch,
+		patches[i] = &campaigns.Patch{
+			RepoID:  repo,
+			Rev:     patch.BaseRevision,
+			BaseRef: patch.BaseRef,
+			Diff:    patch.Patch,
 		}
 	}
 
-	svc := ee.NewService(r.store, gitserver.DefaultClient, nil, r.httpFactory)
-	plan, err := svc.CreateCampaignPlanFromPatches(ctx, patches, user.ID)
+	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
+	patchSet, err := svc.CreatePatchSetFromPatches(ctx, patches, user.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	return &campaignPlanResolver{store: r.store, campaignPlan: plan}, nil
+	return &patchSetResolver{store: r.store, patchSet: patchSet}, nil
 }
 
 func (r *Resolver) CloseCampaign(ctx context.Context, args *graphqlbackend.CloseCampaignArgs) (_ graphqlbackend.CampaignResolver, err error) {
@@ -567,7 +604,7 @@ func (r *Resolver) CloseCampaign(ctx context.Context, args *graphqlbackend.Close
 		return nil, errors.Wrap(err, "unmarshaling campaign id")
 	}
 
-	svc := ee.NewService(r.store, gitserver.DefaultClient, nil, r.httpFactory)
+	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
 
 	campaign, err := svc.CloseCampaign(ctx, campaignID, args.CloseChangesets)
 	if err != nil {
@@ -594,7 +631,7 @@ func (r *Resolver) PublishCampaign(ctx context.Context, args *graphqlbackend.Pub
 		return nil, errors.Wrap(err, "unmarshaling campaign id")
 	}
 
-	svc := ee.NewService(r.store, gitserver.DefaultClient, nil, r.httpFactory)
+	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
 	campaign, err := svc.PublishCampaign(ctx, campaignID)
 	if err != nil {
 		return nil, errors.Wrap(err, "publishing campaign")
@@ -604,7 +641,7 @@ func (r *Resolver) PublishCampaign(ctx context.Context, args *graphqlbackend.Pub
 }
 
 func (r *Resolver) PublishChangeset(ctx context.Context, args *graphqlbackend.PublishChangesetArgs) (_ *graphqlbackend.EmptyResponse, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.PublishChangeset", fmt.Sprintf("ChangesetPlan: %q", args.ChangesetPlan))
+	tr, ctx := trace.New(ctx, "Resolver.PublishChangeset", fmt.Sprintf("Patch: %q", args.Patch))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -615,14 +652,43 @@ func (r *Resolver) PublishChangeset(ctx context.Context, args *graphqlbackend.Pu
 		return nil, errors.Wrap(err, "checking if user is admin")
 	}
 
-	campaignJobID, err := unmarshalCampaignJobID(args.ChangesetPlan)
+	patchID, err := unmarshalPatchID(args.Patch)
 	if err != nil {
 		return nil, err
 	}
 
-	svc := ee.NewService(r.store, gitserver.DefaultClient, nil, r.httpFactory)
-	err = svc.CreateChangesetJobForCampaignJob(ctx, campaignJobID)
+	svc := ee.NewService(r.store, gitserver.DefaultClient, r.httpFactory)
+	err = svc.CreateChangesetJobForPatch(ctx, patchID)
 	if err != nil {
+		return nil, err
+	}
+
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func (r *Resolver) SyncChangeset(ctx context.Context, args *graphqlbackend.SyncChangesetArgs) (_ *graphqlbackend.EmptyResponse, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.SyncChangeset", fmt.Sprintf("Changeset: %q", args.Changeset))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	// 🚨 SECURITY: Only site admins may update campaigns for now
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, errors.Wrap(err, "checking if user is admin")
+	}
+
+	changesetID, err := unmarshalChangesetID(args.Changeset)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check for existence of changeset so we don't swallow that error.
+	if _, err = r.store.GetChangeset(ctx, ee.GetChangesetOpts{ID: changesetID}); err != nil {
+		return nil, err
+	}
+
+	if err := repoupdater.DefaultClient.EnqueueChangesetSync(ctx, []int64{changesetID}); err != nil {
 		return nil, err
 	}
 

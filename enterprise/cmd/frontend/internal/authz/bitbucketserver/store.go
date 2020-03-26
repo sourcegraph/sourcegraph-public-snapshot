@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/RoaringBitmap/roaring"
+	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
@@ -16,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"gopkg.in/inconshreveable/log15.v2"
 )
 
 // A store of UserPermissions safe for concurrent use.
@@ -244,6 +244,10 @@ func (s *store) load(ctx context.Context, p *authz.UserPermissions) (err error) 
 }
 
 func loadRepoIDsQuery(c *extsvc.CodeHost, externalIDs []uint32) (*sqlf.Query, error) {
+	if externalIDs == nil {
+		externalIDs = []uint32{}
+	}
+
 	ids, err := json.Marshal(externalIDs)
 	if err != nil {
 		return nil, err

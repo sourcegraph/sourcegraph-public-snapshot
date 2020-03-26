@@ -149,6 +149,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				expSavedExtAccts: map[int32][]extsvc.ExternalAccountSpec{
 					1: {ext("st1", "s-new", "c1", "s-new/u1")},
 				},
+				expCalledGrantPendingPermissions: true,
 			},
 			{
 				description: "ext acct doesn't exist, user with username exists but email doesn't exist",
@@ -173,6 +174,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				expSavedExtAccts: map[int32][]extsvc.ExternalAccountSpec{
 					1: {ext("st1", "s-new", "c1", "s-new/u1")},
 				},
+				expCalledGrantPendingPermissions: true,
 			},
 			{
 				description: "ext acct doesn't exist, username and email don't exist, should create user",
@@ -212,6 +214,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				expSavedExtAccts: map[int32][]extsvc.ExternalAccountSpec{
 					2: {ext("st1", "s1", "c1", "s1/u2")},
 				},
+				expCalledGrantPendingPermissions: true,
 			},
 			{
 				description: "ext acct doesn't exist, email and username match, authenticated",
@@ -225,6 +228,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				expSavedExtAccts: map[int32][]extsvc.ExternalAccountSpec{
 					1: {ext("st1", "s1", "c1", "s1/u1")},
 				},
+				expCalledGrantPendingPermissions: true,
 			},
 			{
 				description: "ext acct doesn't exist, email matches but username doesn't, authenticated",
@@ -239,6 +243,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				expSavedExtAccts: map[int32][]extsvc.ExternalAccountSpec{
 					1: {ext("st1", "s1", "c1", "s1/u1")},
 				},
+				expCalledGrantPendingPermissions: true,
 			},
 			{
 				description: "ext acct doesn't exist, email doesn't match existing user, authenticated",
@@ -256,6 +261,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				expSavedExtAccts: map[int32][]extsvc.ExternalAccountSpec{
 					1: {ext("st1", "s-new", "c1", "s-new/u1")},
 				},
+				expCalledGrantPendingPermissions: true,
 			},
 			{
 				description: "ext acct doesn't exist, user has same username, lookupByUsername=true",
@@ -269,6 +275,7 @@ func TestGetAndSaveUser(t *testing.T) {
 				expSavedExtAccts: map[int32][]extsvc.ExternalAccountSpec{
 					1: {ext("st1", "s1", "c1", "doesnotexist")},
 				},
+				expCalledGrantPendingPermissions: true,
 			},
 		},
 	}

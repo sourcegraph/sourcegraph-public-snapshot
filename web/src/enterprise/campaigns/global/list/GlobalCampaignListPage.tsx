@@ -4,8 +4,8 @@ import AddIcon from 'mdi-react/AddIcon'
 import { Link } from '../../../../../../shared/src/components/Link'
 import { RouteComponentProps } from 'react-router'
 import { FilteredConnection, FilteredConnectionFilter } from '../../../../components/FilteredConnection'
-import { ICampaign, IUser, CampaignState } from '../../../../../../shared/src/graphql/schema'
-import { CampaignNode } from '../../list/CampaignNode'
+import { IUser, CampaignState } from '../../../../../../shared/src/graphql/schema'
+import { CampaignNode, CampaignNodeCampaign } from '../../list/CampaignNode'
 
 interface Props extends Pick<RouteComponentProps, 'history' | 'location'> {
     authenticatedUser: IUser
@@ -37,30 +37,19 @@ const FILTERS: FilteredConnectionFilter[] = [
  */
 export const GlobalCampaignListPage: React.FunctionComponent<Props> = props => (
     <>
-        <h1>Campaigns</h1>
-        <p>Perform and track large-scale code changes</p>
-
-        {props.authenticatedUser.siteAdmin && (
-            <div className="text-right mb-1">
-                <Link to="/campaigns/new" className="btn btn-primary">
+        <div className="d-flex justify-content-between align-items-end mb-3">
+            <div>
+                <h1 className="mb-2">Campaigns</h1>
+                <p className="mb-0">Perform and track large-scale code changes</p>
+            </div>
+            {props.authenticatedUser.siteAdmin && (
+                <Link to="/campaigns/new" className="btn btn-primary ml-3">
                     <AddIcon className="icon-inline" /> New campaign
                 </Link>
-            </div>
-        )}
+            )}
+        </div>
 
-        <FilteredConnection<
-            Pick<
-                ICampaign,
-                | 'id'
-                | 'closedAt'
-                | 'name'
-                | 'description'
-                | 'changesets'
-                | 'changesetPlans'
-                | 'createdAt'
-                | 'publishedAt'
-            >
-        >
+        <FilteredConnection<CampaignNodeCampaign>
             {...props}
             nodeComponent={CampaignNode}
             queryConnection={queryCampaigns}
@@ -68,6 +57,7 @@ export const GlobalCampaignListPage: React.FunctionComponent<Props> = props => (
             filters={FILTERS}
             noun="campaign"
             pluralNoun="campaigns"
+            className="mb-3"
         />
     </>
 )

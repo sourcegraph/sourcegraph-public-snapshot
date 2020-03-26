@@ -23,6 +23,6 @@ Each upload record has a state which can be one of the following:
 - completed
 - errored
 
-The [lsif-worker](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%22Selected+upload+to+convert%22) process will poll for _queued_ uploads. Once it selects (and locks) an upload for processing, it sets its state temporarily to _processing_, converts the raw LSIF input on disk into a SQLite database that can be used by the lsif-server to answer code intelligence queries. On success, the upload's state is set to _completed_. On failure, the upload's state is set to _errored_ along with an error message and a stacktrace. An upload in the _completed_ is visible to the lsif-server to answer queries.
+The [lsif-dump-processor](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%22Selected+upload+to+convert%22) process will poll for _queued_ uploads. Once it selects (and locks) an upload for processing, it sets its state temporarily to _processing_, converts the raw LSIF input on disk into a SQLite database that can be used by the lsif-server to answer code intelligence queries. On success, the upload's state is set to _completed_. On failure, the upload's state is set to _errored_ along with an error message and a stacktrace. An upload in the _completed_ is visible to the lsif-server to answer queries.
 
 See [life of a code intelligence query](life-of-a-code-intelligence-query.md) for additional documentation on how the SQLite data file is read.

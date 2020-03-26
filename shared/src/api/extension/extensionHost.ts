@@ -18,6 +18,7 @@ import { ExtRoots } from './api/roots'
 import { ExtSearch } from './api/search'
 import { ExtViews } from './api/views'
 import { ExtWindows } from './api/windows'
+import { registerComlinkTransferHandlers } from '../util'
 
 /**
  * Required information when initializing an extension host.
@@ -38,7 +39,7 @@ export interface InitData {
  * It expects to receive a message containing {@link InitData} from the client application as the
  * first message.
  *
- * @param transports The message reader and writer to use for communication with the client.
+ * @param endpoints The endpoints to the client.
  * @returns An unsubscribable to terminate the extension host.
  */
 export function startExtensionHost(
@@ -76,7 +77,7 @@ export function startExtensionHost(
  * The extension API is made globally available to all requires/imports of the "sourcegraph" module
  * by other scripts running in the same JavaScript context.
  *
- * @param connection The connection used to communicate with the client.
+ * @param endpoints The endpoints to the client.
  * @param initData The information to initialize this extension host.
  * @returns An unsubscribable to terminate the extension host.
  */
@@ -117,6 +118,8 @@ function createExtensionAPI(
 
     // EXTENSION HOST WORKER
 
+    registerComlinkTransferHandlers()
+
     /** Proxy to main thread */
     const proxy = comlink.proxy<ClientAPI>(endpoints.proxy)
 
@@ -152,6 +155,9 @@ function createExtensionAPI(
     }
 
     // Expose the extension API to extensions
+    // "redefines" everything instead of exposing internal Ext* classes directly so as to:
+    // - Avoid exposing private methods to extensions
+    // - Avoid exposing proxy.* to extensions, which gives access to the main thread
     const extensionAPI: typeof sourcegraph & {
         // Backcompat definitions that were removed from sourcegraph.d.ts but are still defined (as
         // noops with a log message), to avoid completely breaking extensions that use them.
@@ -192,10 +198,9 @@ function createExtensionAPI(
             rootChanges: roots.changes,
         },
 
-        configuration: {
+        configuration: Object.assign(configuration.changes.asObservable(), {
             get: () => configuration.get(),
-            subscribe: (next: () => void) => configuration.subscribe(next),
-        },
+        }),
 
         languages: {
             registerHoverProvider: (selector: sourcegraph.DocumentSelector, provider: sourcegraph.HoverProvider) =>

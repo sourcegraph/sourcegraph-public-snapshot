@@ -1,5 +1,5 @@
 import { createHoverifier, HoveredToken, Hoverifier, HoverState } from '@sourcegraph/codeintellify'
-import { isEqual, upperFirst } from 'lodash'
+import { isEqual } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
@@ -19,7 +19,7 @@ import {
     escapeRevspecForURL,
     FileSpec,
     ModeSpec,
-    PositionSpec,
+    UIPositionSpec,
     RepoSpec,
     ResolvedRevSpec,
     RevSpec,
@@ -34,6 +34,7 @@ import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
 import { RepositoryCompareHeader } from './RepositoryCompareHeader'
 import { RepositoryCompareOverviewPage } from './RepositoryCompareOverviewPage'
 import { ThemeProps } from '../../../../shared/src/theme'
+import { ErrorMessage } from '../../components/alerts'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
@@ -126,7 +127,7 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
 
     private getLSPTextDocumentPositionParams(
         hoveredToken: HoveredToken & RepoSpec & RevSpec & FileSpec & ResolvedRevSpec
-    ): RepoSpec & RevSpec & ResolvedRevSpec & FileSpec & PositionSpec & ModeSpec {
+    ): RepoSpec & RevSpec & ResolvedRevSpec & FileSpec & UIPositionSpec & ModeSpec {
         return {
             repoName: hoveredToken.repoName,
             rev: hoveredToken.rev,
@@ -155,7 +156,9 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
 
     public render(): JSX.Element | null {
         if (this.state.error) {
-            return <HeroPage icon={AlertCircleIcon} title="Error" subtitle={upperFirst(this.state.error)} />
+            return (
+                <HeroPage icon={AlertCircleIcon} title="Error" subtitle={<ErrorMessage error={this.state.error} />} />
+            )
         }
 
         let spec: { base: string | null; head: string | null } | null | undefined

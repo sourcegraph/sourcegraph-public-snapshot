@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-multierror"
+	"github.com/inconshreveable/log15"
+	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -22,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // Server is a repoupdater server.
@@ -266,7 +267,11 @@ func (s *Server) enqueueRepoUpdate(ctx context.Context, req *protocol.RepoUpdate
 	defer func() {
 		log15.Debug("enqueueRepoUpdate", "httpStatus", httpStatus, "resp", resp, "error", err)
 		if resp != nil {
-			tr.LazyPrintf("response: %s", resp)
+			tr.LogFields(
+				otlog.Int32("resp.id", int32(resp.ID)),
+				otlog.String("resp.name", resp.Name),
+				otlog.String("resp.url", resp.URL),
+			)
 		}
 		tr.SetError(err)
 		tr.Finish()

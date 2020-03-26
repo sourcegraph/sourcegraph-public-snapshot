@@ -38,12 +38,7 @@ describe('TextDocumentLocationProviderRegistry', () => {
             const registry = new TestTextDocumentLocationProviderRegistry(
                 of([{ provider: () => of(null), registrationOptions: { documentSelector: ['*'] } }])
             )
-            expect(
-                await registry
-                    .hasProvidersForActiveTextDocument(undefined)
-                    .pipe(first())
-                    .toPromise()
-            ).toBe(false)
+            expect(await registry.hasProvidersForActiveTextDocument(undefined).pipe(first()).toPromise()).toBe(false)
         })
 
         test('true if matching document', () => {
@@ -59,7 +54,7 @@ describe('TextDocumentLocationProviderRegistry', () => {
                         editorId: 'editor#0',
                         type: 'CodeEditor' as const,
                         selections: [new Selection(1, 2, 3, 4).toPlain()],
-                        resource: 'u',
+                        resource: 'file:///g',
                         model: { languageId: 'l' },
                     })
                 ).toBe('a', {
@@ -81,7 +76,7 @@ describe('TextDocumentLocationProviderRegistry', () => {
                         editorId: 'editor#0',
                         type: 'CodeEditor' as const,
                         selections: [new Selection(1, 2, 3, 4).toPlain()],
-                        resource: 'u',
+                        resource: 'file:///g',
                         model: { languageId: 'l' },
                     })
                 ).toBe('a', {

@@ -141,12 +141,13 @@ func addCodeCov(pipeline *bk.Pipeline) {
 
 // Release the browser extension.
 func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
-	for _, browser := range []string{"chrome" /* , "firefox" */} {
+	for _, browser := range []string{"chrome", "firefox"} {
 		// Run e2e tests
 		pipeline.AddStep(fmt.Sprintf(":%s:", browser),
 			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
 			bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
-			bk.Env("E2E_BROWSER", browser),
+			bk.Env("BROWSER", browser),
+			bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
 			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 			bk.Cmd("pushd browser"),
 			bk.Cmd("yarn -s run build"),
@@ -199,6 +200,7 @@ func triggerE2E(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
 	env["DATE"] = commonEnv["DATE"]
 	env["VERSION"] = commonEnv["VERSION"]
 	env["TAG"] = candiateImageTag(c)
+	env["CI_DEBUG_PROFILE"] = commonEnv["CI_DEBUG_PROFILE"]
 
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddTrigger(":chromium:",

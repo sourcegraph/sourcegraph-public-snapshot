@@ -22,13 +22,9 @@ describe('DefaultMap', () => {
             () => new DefaultMap<string, string[]>(() => [])
         )
 
-        map.getOrDefault('foo')
-            .getOrDefault('bar')
-            .push('baz')
+        map.getOrDefault('foo').getOrDefault('bar').push('baz')
 
-        map.getOrDefault('foo')
-            .getOrDefault('bar')
-            .push('bonk')
+        map.getOrDefault('foo').getOrDefault('bar').push('bonk')
 
         const inner = map.get('foo')
         expect(inner?.get('bar')).toEqual(['baz', 'bonk'])

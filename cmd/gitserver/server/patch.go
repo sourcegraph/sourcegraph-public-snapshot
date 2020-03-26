@@ -13,9 +13,9 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 var patchID uint64
@@ -196,7 +196,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		fmt.Sprintf("GIT_AUTHOR_DATE=%v", req.CommitInfo.Date),
 	}...)
 
-	if out, err := run(cmd, "commiting patch"); err != nil {
+	if out, err := run(cmd, "committing patch"); err != nil {
 		log15.Error("Failed to commit patch.", "ref", ref, "output", out)
 		return http.StatusInternalServerError, resp
 	}

@@ -258,6 +258,9 @@ func (s FakeStore) ListRepos(ctx context.Context, args StoreListReposArgs) ([]*R
 		if len(externalRepos) > 0 {
 			preds = append(preds, externalRepos[r.ExternalRepo])
 		}
+		if args.PrivateOnly {
+			preds = append(preds, r.Private)
+		}
 
 		if (args.UseOr && evalOr(preds...)) || (!args.UseOr && evalAnd(preds...)) {
 			repos = append(repos, r)
@@ -337,7 +340,7 @@ func (s *FakeStore) UpsertRepos(ctx context.Context, upserts ...*Repo) error {
 	for _, r := range updates {
 		repo := s.repoByID[r.ID]
 		if repo == nil {
-			return errors.Errorf("upserting repo with non-existant ID: id=%v", r.ID)
+			return errors.Errorf("upserting repo with non-existent ID: id=%v", r.ID)
 		}
 		s.repoByID[r.ID] = r
 	}
