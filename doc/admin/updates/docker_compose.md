@@ -8,7 +8,14 @@ Each section comprehensively describes the steps needed to upgrade, and any manu
 
 No manual migration is required.
 
-Simply upgrade using the [`v3.14.0` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.14.0/docker-compose) by following the [standard upgrade procedure](#standard-upgrade-procedure).
+Please be sure to upgrade to the [`v3.14.0-1` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.14.0-1/docker-compose) by following the [standard upgrade procedure](#standard-upgrade-procedure).
+
+If you have upgrade to `v3.14.0` already (not the `v3.14.0-1` version) and are experiencing restarts of lsif-server, please run the following on the host machine to correct it:
+
+```sh
+docker run --rm -it -v /var/lib/docker:/docker alpine:latest sh -c 'chown -R 100:101 /docker/volumes/docker-compose_lsif-server'
+docker restart lsif-server
+```
 
 ## v3.12 -> v3.13
 
