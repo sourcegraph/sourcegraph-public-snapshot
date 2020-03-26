@@ -261,7 +261,7 @@ paths:
           required: true
           schema:
             type: number
-        - name: model
+        - name: modelType
           in: query
           description: The type of query.
           required: true
@@ -324,7 +324,9 @@ paths:
           description: The identifier of the target package information data.
           required: true
           schema:
-            type: number
+            oneOf:
+              - type: number
+              - type: string
       responses:
         '200':
           description: OK

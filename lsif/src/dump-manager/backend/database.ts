@@ -250,7 +250,7 @@ export class Database {
      */
     public async packageInformation(
         path: string,
-        packageInformationId: number,
+        packageInformationId: string,
         ctx: TracingContext = {}
     ): Promise<sqliteModels.PackageInformationData | undefined> {
         const document = await this.getDocumentByPath(path, ctx)
@@ -258,7 +258,11 @@ export class Database {
             return undefined
         }
 
-        return document.packageInformation.get(packageInformationId)
+        return (
+            // TODO - normalize ids before we serialize them in the database
+            document.packageInformation.get(parseInt(packageInformationId, 10)) ||
+            document.packageInformation.get(packageInformationId)
+        )
     }
 
     //
