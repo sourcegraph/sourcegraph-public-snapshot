@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -96,7 +97,11 @@ func TestExecChangesetJob(t *testing.T) {
 	}
 
 	// Setup the dependencies
-	gitClient := &dummyGitserverClient{response: "refs/heads/campaigns/TEST-REF", responseErr: nil}
+	createdHeadRef := "refs/heads/" + campaign.Branch
+	gitClient := &dummyGitserverClient{
+		response:    createdHeadRef,
+		responseErr: nil,
+	}
 
 	githubActor := github.Actor{
 		AvatarURL: "https://avatars2.githubusercontent.com/u/1185253",
@@ -108,7 +113,7 @@ func TestExecChangesetJob(t *testing.T) {
 		ID:           "FOOBARID",
 		Title:        campaign.Name,
 		Body:         campaign.Description,
-		HeadRefName:  gitClient.response,
+		HeadRefName:  git.AbbreviateRef(createdHeadRef),
 		URL:          "https://github.com/sourcegraph/sourcegraph/pull/12345",
 		Number:       12345,
 		State:        "OPEN",
@@ -117,7 +122,7 @@ func TestExecChangesetJob(t *testing.T) {
 		TimelineItems: []github.TimelineItem{
 			{Type: "PullRequestCommit", Item: &github.PullRequestCommit{
 				Commit: github.Commit{
-					OID:           "123",
+					OID:           "new-f00bar",
 					PushedDate:    now,
 					CommittedDate: now,
 				},
@@ -128,7 +133,7 @@ func TestExecChangesetJob(t *testing.T) {
 	}
 
 	var (
-		wantHeadRef  = gitClient.response
+		wantHeadRef  = createdHeadRef
 		wantBaseRef  = patch.BaseRef
 		wantMetadata = githubPR
 	)
@@ -166,7 +171,7 @@ func TestExecChangesetJob(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if want, have := wantHeadRef, changeset.ExternalBranch; have != want {
+	if want, have := githubPR.HeadRefName, changeset.ExternalBranch; have != want {
 		t.Fatalf("wrong changeset.ExternalBranch. want=%s, have=%s", want, have)
 	}
 
@@ -183,9 +188,12 @@ func TestExecChangesetJob(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
 	if want, have := 1, len(events); want != have {
 		t.Fatalf("wrong number of ChangesetEvents. want=%d, have=%d", want, have)
+	}
+
+	if want, have := cmpgn.ChangesetEventKindGitHubCommit, events[0].Kind; want != have {
+		t.Fatalf("wrong event. want=%s, have=%s", want, have)
 	}
 }
 
