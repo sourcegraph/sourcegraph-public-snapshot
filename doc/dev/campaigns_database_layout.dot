@@ -63,10 +63,20 @@ digraph campaignsSchema {
         label="PatchSet 1 - First action exec"
         node [fillcolor="3"]
 
-        patchset [label="PatchSet 1", fillcolor="lightskyblue",shape="square"]
-        patchA [label="Patch A", fillcolor="lightblue",shape="egg"]
-        patchB [label="Patch B", fillcolor="lightblue",shape="egg"]
-        patchC [label="Patch C", fillcolor="lightblue",shape="egg"]
+        patchset [label="PatchSet 1", fillcolor="7",shape="square"]
+        patchA [label="Patch A", fillcolor="6",shape="egg"]
+        patchB [label="Patch B", fillcolor="6",shape="egg"]
+        patchC [label="Patch C", fillcolor="6",shape="egg"]
+    }
+
+    subgraph cluster_execution1 {
+        label="Action instance 1"
+        node [fillcolor="3"]
+
+        execution [label="Action Execution 1", fillcolor="9",shape="square"]
+        job1 [label="Action Job 1", fillcolor="8",shape="egg"]
+        job2 [label="Action Job 2", fillcolor="8",shape="egg"]
+        job3 [label="Action Job 3", fillcolor="8",shape="egg"]
     }
 
     subgraph changesetjobs {
@@ -78,9 +88,15 @@ digraph campaignsSchema {
 
     campaign [label="Campaign", shape="circle", fillcolor="6"]
 
-    patchA -> { patchset, repoA } [fillcolor="lightblue"]
-    patchB -> { patchset, repoB } [fillcolor="lightblue"]
-    patchC -> { patchset, repoC } [fillcolor="lightblue"]
+    execution -> { patchset } [fillcolor="9"]
+
+    job1 -> { execution, repoA, patchA } [fillcolor="8"]
+    job2 -> { execution, repoB, patchB } [fillcolor="8"]
+    job3 -> { execution, repoC, patchC } [fillcolor="8"]
+
+    patchA -> { patchset, repoA } [fillcolor="6"]
+    patchB -> { patchset, repoB } [fillcolor="6"]
+    patchC -> { patchset, repoC } [fillcolor="6"]
 
     campaign -> { changesetA, changesetB, changesetC } [ fillcolor="6" ]
 
@@ -97,12 +113,12 @@ digraph campaignsSchema {
     /*     label="PatchSet 2 - Second action exec" */
     /*     node [fillcolor="3"] */
     /*  */
-    /*     patchset2 [label="PatchSet 2", fillcolor="lightskyblue",shape="square"] */
-    /*     patchD [label="Patch D", fillcolor="lightblue",shape="egg"] */
+    /*     patchset2 [label="PatchSet 2", fillcolor="7",shape="square"] */
+    /*     patchD [label="Patch D", fillcolor="6",shape="egg"] */
     /* } */
     /*  */
     /*  */
-    /* patchD -> { patchset2, repoD } [ fillcolor="lightblue" ] */
+    /* patchD -> { patchset2, repoD } [ fillcolor="6" ] */
     /*  */
     /* changesetJobD [label="ChangesetJob D", fillcolor="2"] */
     /* changesetJobD -> { campaign, patchD, changesetD } [ fillcolor="2" ] */
