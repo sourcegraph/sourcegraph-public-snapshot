@@ -59,17 +59,10 @@ If you're uploading to Sourcegraph.com or another Sourcegraph instance with [`ls
 
 Make sure you have [enabled LSIF code intelligence](lsif.md#enabling-lsif-on-your-sourcegraph-instance) on your Sourcegraph instance.
 
-Once the LSIF data is uploaded, navigate to a code file for the targeted language in the repository, or repository sub-directory LSIF was generated from. LSIF data should now be the source of hover-tooltips, definitions, and references for that file (presuming that LSIF data exists for that file).
+Once the LSIF data is uploaded, navigate to a code file for the targeted language in the repository (or sub-directory) the LSIF index was generated from. LSIF data should now be the source of hover-tooltips, definitions, and references for that file.
 
-To verify that code intelligence is coming from LSIF:
-
-1. Open your browser's Developer Tools
-1. Click on the *Network* tab
-1. Reload the page to see all network requests logged
-1. Filter network requests by searching for `lsif`
-
-> NOTE: We are investigating how to make it easier to verify code intelligence is coming from LSIF
+To verify that LSIF is correctly enabled, hover over a symbol and ensure that its hover text is not decorated with a ![tooltip](img/basic-code-intel-tooltip.svg) tooltip. This icon indicates the results are from search-based [basic code intelligence](./basic_code_intelligence.md) and should be absent when results are precise (from an LSIF index or a [Language Server](./language_servers.md)).
 
 ## 5. Productionize the process
 
-Now that you're happy with the code intelligence on your repository, you need to make sure that is stays up to date with your repository. This can be done by periodically generating LSIF data, and pushing it to Sourcegraph. You can either [add a step to your CI](lsif_in_ci.md), or run it as a [GitHub Action](lsif_on_github.md).
+Now that you're happy with the code intelligence on your repository, you need to make sure that is stays up to date with your repository. This can be done by periodically generating LSIF data, and pushing it to Sourcegraph. You can either [add a step to your CI](adding_lsif_to_workflows.md#lsif-in-continuous-integration), or run it as a [GitHub Action](adding_lsif_to_workflows.md#lsif-on-gitgub).
