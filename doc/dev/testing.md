@@ -51,10 +51,10 @@ Retrying the Buildkite step can help determine whether the test is flaky or brok
 
 ### Running locally
 
-To run all e2e tests locally against your dev server, **create a user `test` with password `test`, promote as site admin**, then run:
+To run all e2e tests locally against your dev server, **create a user `test` with password `testtesttest`, promote as site admin**, then run:
 
 ```
-env TEST_USER_PASSWORD=test GITHUB_TOKEN=<token> yarn --cwd web run test-e2e
+env TEST_USER_PASSWORD=testtesttest GITHUB_TOKEN=<token> yarn --cwd web run test-e2e
 ```
 
 There's a GitHub test token in `../dev-private/enterprise/dev/external-services-config.json`.
