@@ -59,7 +59,7 @@ We use [Ctags](https://github.com/universal-ctags/ctags) to index the symbols of
 
 #### Symbol sidebar
 
-We use [Ctags](https://github.com/universal-ctags/ctags) to index the symbols of a repository on-demand. These symbols are also used for the symbol sidebar, which categorizes declarations by type (variable, function, interface, etc). Clicking on a symbol int eh sidebar jumps you to the line where it is defined.
+We use [Ctags](https://github.com/universal-ctags/ctags) to index the symbols of a repository on-demand. These symbols are also used for the symbol sidebar, which categorizes declarations by type (variable, function, interface, etc). Clicking on a symbol in the sidebar jumps you to the line where it is defined.
 
 <img src="img/SymbolSidebar.png" width="500"/>
 
