@@ -52,7 +52,7 @@ Example response:
 }
 ```
 
-This only ever returns a single result, representing the maximum number of critical alerts firing across all Sourcegraph services in the last minute, relative (relative to the time the query executed / the returned unix timestamp `1585250319.243`). The above shows that `"0"` alerts were firing, and if the number was non-zero, it would represent the max number of alerts firing across all services in the last minute.
+This only ever returns a single result, representing the maximum number of critical alerts firing across all Sourcegraph services in the last minute (relative to the time the query executed / the returned unix timestamp `1585250319.243`). The above shows that `"0"` alerts were firing, and if the number was non-zero, it would represent the max number of alerts firing across all services in the last minute.
 
 ## "How many critical alerts were firing in the last minute, per service?"
 
