@@ -12,10 +12,10 @@ import (
 )
 
 var (
-	lsifURL = env.Get("LSIF_API_URL", "k8s+http://lsif-api:3186", "lsif-api URL (or space separated list of lsif-api URLs)")
+	lsifAPIServerURL = env.Get("LSIF_API_URL", "k8s+http://lsif-api-server:3186", "lsif-api-server URL (or space separated list of lsif-api-server URLs)")
 
-	lsifURLsOnce sync.Once
-	lsifURLs     *endpoint.Map
+	lsifAPIServerURLsOnce sync.Once
+	lsifAPIServerURLs     *endpoint.Map
 
 	DefaultClient = &Client{
 		endpoint: LSIFURLs(),
@@ -32,12 +32,12 @@ type Client struct {
 }
 
 func LSIFURLs() *endpoint.Map {
-	lsifURLsOnce.Do(func() {
+	lsifAPIServerURLsOnce.Do(func() {
 		if len(strings.Fields(lsifURL)) == 0 {
-			lsifURLs = endpoint.Empty(errors.New("an lsif-api has not been configured"))
+			lsifAPIServerURLs = endpoint.Empty(errors.New("an lsif-api-server has not been configured"))
 		} else {
-			lsifURLs = endpoint.New(lsifURL)
+			lsifAPIServerURLs = endpoint.New(lsifURL)
 		}
 	})
-	return lsifURLs
+	return lsifAPIServerURLs
 }

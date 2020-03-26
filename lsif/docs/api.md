@@ -1,6 +1,6 @@
-# LSIF API endpoints
+# LSIF API server endpoints
 
-The LSIF API endpoints are documented as an [OpenAPI v3](https://swagger.io/docs/specification/about/) document [api.yaml](./api.yaml). This document can be viewed locally via docker by running the following command from this directory (or a parent directory if the host path supplied to `-v` changes accordingly).
+The LSIF API server endpoints are documented as an [OpenAPI v3](https://swagger.io/docs/specification/about/) document [api.yaml](./api.yaml). This document can be viewed locally via docker by running the following command from this directory (or a parent directory if the host path supplied to `-v` changes accordingly).
 
 ```bash
 docker run \
@@ -10,6 +10,6 @@ docker run \
   swaggerapi/swagger-ui
 ```
 
-The OpenAPI document assumes that the LSIF API is running locally on port 3186 in order to make sample requests.
+The OpenAPI document assumes that the LSIF API server is running locally on port 3186 in order to make sample requests.
 
 This API should **not** be directly accessible outside of development environments. The endpoints of this API are not authenticated and relies on the Sourcegraph frontend to proxy requests via the HTTP or GraphQL server.

@@ -69,7 +69,7 @@ func makeProcfile(numAPIs, numBundleManagers, numWorkers int64) string {
 	}
 
 	if numAPIs > 0 {
-		addProcess("lsif-api", "node /lsif/out/api/api.js")
+		addProcess("lsif-api-server", "node /lsif/out/api/api.js")
 	}
 
 	if numBundleManagers > 0 {
@@ -103,7 +103,7 @@ func makePrometheusTargets(numAPIs, numBundleManagers, numWorkers int64) string 
 	}
 
 	if numAPIs > 0 {
-		addTarget("lsif-api", apiPort)
+		addTarget("lsif-api-server", apiPort)
 	}
 
 	if numBundleManagers > 0 {
