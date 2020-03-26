@@ -164,18 +164,20 @@ const SiteSchemaJSON = `{
           ]
         }
       },
-      "default": {
-        "customGitFetch": [
-          {
-            "domainPath": "somecodehost.com/path/to/repo",
-            "fetch": "customgitbinary someflag"
-          },
-          {
-            "domainPath": "somecodehost.com/path/to/anotherrepo",
-            "fetch": "customgitbinary someflag anotherflag"
-          }
-        ]
-      },
+      "examples": [
+        {
+          "customGitFetch": [
+            {
+              "domainPath": "somecodehost.com/path/to/repo",
+              "fetch": "customgitbinary someflag"
+            },
+            {
+              "domainPath": "somecodehost.com/path/to/anotherrepo",
+              "fetch": "customgitbinary someflag anotherflag"
+            }
+          ]
+        }
+      ],
       "group": "Experimental"
     },
     "automation.readAccess.enabled": {
