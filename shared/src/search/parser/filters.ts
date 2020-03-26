@@ -210,8 +210,9 @@ export const validateFilter = (
     if (
         definition.discreteValues &&
         (!filterValue ||
-            filterValue.token.type !== 'literal' ||
-            !definition.discreteValues.includes(filterValue.token.value))
+            (filterValue.token.type !== 'literal' && filterValue.token.type !== 'quoted') ||
+            (filterValue.token.type === 'literal' && !definition.discreteValues.includes(filterValue.token.value)) ||
+            (filterValue.token.type === 'quoted' && !definition.discreteValues.includes(filterValue.token.quotedValue)))
     ) {
         return {
             valid: false,
