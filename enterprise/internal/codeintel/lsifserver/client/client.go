@@ -33,10 +33,10 @@ type Client struct {
 
 func LSIFURLs() *endpoint.Map {
 	lsifAPIServerURLsOnce.Do(func() {
-		if len(strings.Fields(lsifURL)) == 0 {
+		if len(strings.Fields(lsifAPIServerURL)) == 0 {
 			lsifAPIServerURLs = endpoint.Empty(errors.New("an lsif-api-server has not been configured"))
 		} else {
-			lsifAPIServerURLs = endpoint.New(lsifURL)
+			lsifAPIServerURLs = endpoint.New(lsifAPIServerURL)
 		}
 	})
 	return lsifAPIServerURLs
