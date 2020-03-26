@@ -1690,7 +1690,7 @@ describe('e2e test suite', () => {
                     const filterInput = document.querySelector<HTMLButtonElement>('.filter-input__button-text')
                     return filterInput ? filterInput.textContent : null
                 })
-            assert.strictEqual(await filterInputValue(), 'repo:"^github\\.com/sourcegraph/jsonrpc2$"')
+            assert.strictEqual(await filterInputValue(), 'repo:^github\\.com/sourcegraph/jsonrpc2$')
         })
 
         test('Interactive search mode filter dropdown and finite-option filter inputs', async () => {
