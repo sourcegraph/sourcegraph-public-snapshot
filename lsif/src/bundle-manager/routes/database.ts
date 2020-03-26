@@ -164,7 +164,7 @@ export function createDatabaseRouter(logger: Logger): express.Router {
     )
 
     interface MonikerResultsQueryArgs {
-        model: string
+        modelType: string
         scheme: string
         identifier: string
         skip?: number
@@ -179,7 +179,7 @@ export function createDatabaseRouter(logger: Logger): express.Router {
     router.get(
         '/dbs/:id([0-9]+)/monikerResults',
         validation.validationMiddleware([
-            validation.validateNonEmptyString('model'),
+            validation.validateNonEmptyString('modelType'),
             validation.validateNonEmptyString('scheme'),
             validation.validateNonEmptyString('identifier'),
             validation.validateOptionalInt('skip'),
@@ -187,10 +187,10 @@ export function createDatabaseRouter(logger: Logger): express.Router {
         ]),
         wrap(
             async (req: express.Request, res: express.Response<MonikerResultsResponse>): Promise<void> => {
-                const { model, scheme, identifier, skip, take }: MonikerResultsQueryArgs = req.query
+                const { modelType, scheme, identifier, skip, take }: MonikerResultsQueryArgs = req.query
                 await withDatabase(req, res, (database, ctx) =>
                     database.monikerResults(
-                        model === 'definition' ? sqliteModels.DefinitionModel : sqliteModels.ReferenceModel,
+                        modelType === 'definition' ? sqliteModels.DefinitionModel : sqliteModels.ReferenceModel,
                         { scheme, identifier },
                         { skip, take },
                         ctx
@@ -202,14 +202,17 @@ export function createDatabaseRouter(logger: Logger): express.Router {
 
     interface PackageInformationQueryArgs {
         path: string
-        packageInformationId: number
+        packageInformationId: string
     }
 
     type PackageInformationResponse = sqliteModels.PackageInformationData | undefined
 
     router.get(
-        '/:id([0-9]+)/packageInformation',
-        validation.validationMiddleware([validation.validateNonEmptyString('path')]),
+        '/dbs/:id([0-9]+)/packageInformation',
+        validation.validationMiddleware([
+            validation.validateNonEmptyString('path'),
+            validation.validateNonEmptyString('packageInformationId'),
+        ]),
         wrap(
             async (req: express.Request, res: express.Response<PackageInformationResponse>): Promise<void> => {
                 const { path, packageInformationId }: PackageInformationQueryArgs = req.query

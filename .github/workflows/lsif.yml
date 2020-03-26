@@ -8,8 +8,6 @@ jobs:
       - uses: actions/checkout@v1
       - name: Generate LSIF data
         uses: sourcegraph/lsif-go-action@master
-        with:
-          verbose: "true"
       - name: Upload LSIF data
         uses: sourcegraph/lsif-upload-action@master
         with:

@@ -57,7 +57,7 @@ func enterpriseInit(
 		return time.Now().UTC().Truncate(time.Microsecond)
 	}
 
-	go campaigns.RunChangesetJobs(ctx, campaignsStore, clock, gitserver.DefaultClient, 5*time.Second)
+	go campaigns.RunWorkers(ctx, campaignsStore, clock, gitserver.DefaultClient, 5*time.Second)
 
 	// Set up syncer
 	go syncer.Run(ctx)

@@ -1,4 +1,3 @@
-import { of, throwError } from 'rxjs'
 import { ViewOnSourcegraphButton } from './external_links'
 import { HTTPStatusError } from '../../../../shared/src/backend/fetch'
 import * as React from 'react'
@@ -12,9 +11,9 @@ describe('<ViewOnSourcegraphButton />', () => {
             root = renderer.create(
                 <ViewOnSourcegraphButton
                     sourcegraphURL="https://test.com"
-                    context={{ rawRepoName: 'test', privateRepository: false }}
+                    getContext={() => ({ rawRepoName: 'test', privateRepository: false })}
                     className="test"
-                    ensureRepoExists={() => of(true)}
+                    repoExistsOrError={true}
                     minimalUI={false}
                 />
             )
@@ -28,9 +27,9 @@ describe('<ViewOnSourcegraphButton />', () => {
             root = renderer.create(
                 <ViewOnSourcegraphButton
                     sourcegraphURL="https://test.com"
-                    context={{ rawRepoName: 'test', privateRepository: false }}
+                    getContext={() => ({ rawRepoName: 'test', privateRepository: false })}
                     className="test"
-                    ensureRepoExists={() => of(true)}
+                    repoExistsOrError={true}
                     minimalUI={true}
                 />
             )
@@ -44,13 +43,13 @@ describe('<ViewOnSourcegraphButton />', () => {
             root = renderer.create(
                 <ViewOnSourcegraphButton
                     sourcegraphURL="https://test.com"
-                    context={{
+                    getContext={() => ({
                         rawRepoName: 'test',
                         rev: 'test',
                         privateRepository: false,
-                    }}
+                    })}
                     className="test"
-                    ensureRepoExists={() => of(true)}
+                    repoExistsOrError={true}
                     minimalUI={false}
                 />
             )
@@ -60,19 +59,20 @@ describe('<ViewOnSourcegraphButton />', () => {
 
     for (const minimalUI of [true, false]) {
         describe(`minimalUI = ${String(minimalUI)}`, () => {
-            it('renders a sign in button when authentication failed', () => {
+            it('renders a sign in button when authentication failed and showSignInButton = true', () => {
                 let root: ReactTestRenderer
                 renderer.act(() => {
                     root = renderer.create(
                         <ViewOnSourcegraphButton
                             sourcegraphURL="https://test.com"
-                            context={{
+                            getContext={() => ({
                                 rawRepoName: 'test',
                                 rev: 'test',
                                 privateRepository: false,
-                            }}
+                            })}
+                            showSignInButton={true}
                             className="test"
-                            ensureRepoExists={() => throwError(new HTTPStatusError(new Response('', { status: 401 })))}
+                            repoExistsOrError={new HTTPStatusError(new Response('', { status: 401 }))}
                             minimalUI={minimalUI}
                         />
                     )
@@ -82,19 +82,40 @@ describe('<ViewOnSourcegraphButton />', () => {
         })
     }
 
+    it('renders a button with an error label if the repo exists check failed with an unknown error', () => {
+        let root: ReactTestRenderer
+        renderer.act(() => {
+            root = renderer.create(
+                <ViewOnSourcegraphButton
+                    sourcegraphURL="https://test.com"
+                    getContext={() => ({
+                        rawRepoName: 'test',
+                        rev: 'test',
+                        privateRepository: false,
+                    })}
+                    showSignInButton={true}
+                    className="test"
+                    repoExistsOrError={new Error('Something unknown happened!')}
+                    minimalUI={false}
+                />
+            )
+        })
+        expect(root!).toMatchSnapshot()
+    })
+
     it('renders configure sourcegraph button when pointing at sourcegraph.com and the repo does not exist', () => {
         let root: ReactTestRenderer
         renderer.act(() => {
             root = renderer.create(
                 <ViewOnSourcegraphButton
                     sourcegraphURL="https://sourcegraph.com"
-                    context={{
+                    getContext={() => ({
                         rawRepoName: 'test',
                         rev: 'test',
                         privateRepository: false,
-                    }}
+                    })}
                     className="test"
-                    ensureRepoExists={() => of(false)}
+                    repoExistsOrError={false}
                     onConfigureSourcegraphClick={noop}
                     minimalUI={false}
                 />
@@ -109,13 +130,13 @@ describe('<ViewOnSourcegraphButton />', () => {
             root = renderer.create(
                 <ViewOnSourcegraphButton
                     sourcegraphURL="https://test.com"
-                    context={{
+                    getContext={() => ({
                         rawRepoName: 'test',
                         rev: 'test',
                         privateRepository: false,
-                    }}
+                    })}
                     className="test"
-                    ensureRepoExists={() => of(false)}
+                    repoExistsOrError={false}
                     minimalUI={false}
                 />
             )

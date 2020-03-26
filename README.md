@@ -46,13 +46,14 @@ To use Sourcegraph OSS:
 
 1.  [Ensure Docker is running](doc/dev/local_development.md#step-3-macos-start-docker)
 1.  [Initialize the PostgreSQL database](doc/dev/local_development.md#step-2-initialize-your-database)
+1.  [Configure the HTTPS reverse proxy](doc/dev/local_development.md#step-5-configure-https-reverse-proxy)
 1.  Start the development server
 
     ```
     ./dev/start.sh
     ```
 
-Sourcegraph should now be running at http://localhost:3080.
+Sourcegraph should now be running at https://sourcegraph.test:3443.
 
 For detailed instructions and troubleshooting, see the [local development documentation](./doc/dev/local_development.md).
 

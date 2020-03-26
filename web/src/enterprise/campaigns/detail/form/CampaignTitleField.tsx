@@ -4,18 +4,17 @@ interface Props {
     value: string | undefined
     onChange: (newValue: string) => void
 
-    className?: string
     disabled?: boolean
 }
 
 /**
  * A text field for a campaign's title.
  */
-export const CampaignTitleField: React.FunctionComponent<Props> = ({ value, onChange, className = '', disabled }) => (
+export const CampaignTitleField: React.FunctionComponent<Props> = ({ value, onChange, disabled }) => (
     <div className="form-group">
         <label htmlFor="campaignTitle">Title</label>
         <input
-            className={`form-control ${className}`}
+            className="form-control e2e-campaign-title"
             value={value}
             onChange={event => onChange(event.target.value)}
             disabled={disabled}

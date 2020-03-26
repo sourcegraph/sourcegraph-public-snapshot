@@ -138,7 +138,7 @@ func Main() {
 		`symbols: symbols`,
 		`lsif-server: node /lsif/out/server/server.js`,
 		`lsif-bundle-manager: node /lsif/out/bundle-manager/manager.js`,
-		`lsif-dump-processor: node /lsif/out/dump-processor/dump-processor.js`,
+		`lsif-worker: node /lsif/out/worker/worker.js`,
 		`searcher: searcher`,
 		`replacer: replacer`,
 		`github-proxy: github-proxy`,

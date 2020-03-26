@@ -1,6 +1,12 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`CampaignUpdateSelection renders 1`] = `
+exports[`CampaignUpdateSelection redirects without URL param 1`] = `
+<Redirect
+  to="/campaigns"
+/>
+`;
+
+exports[`CampaignUpdateSelection renders with URL param 1`] = `
 <React.Fragment>
   <PageTitle
     title="Update campaign"
@@ -24,8 +30,8 @@ exports[`CampaignUpdateSelection renders 1`] = `
           Object {
             "hash": "",
             "key": undefined,
-            "pathname": "/",
-            "search": "",
+            "pathname": "/campaigns/update",
+            "search": "?patchSet=123",
             "state": undefined,
           },
         ],
@@ -38,8 +44,8 @@ exports[`CampaignUpdateSelection renders 1`] = `
         "location": Object {
           "hash": "",
           "key": undefined,
-          "pathname": "/",
-          "search": "",
+          "pathname": "/campaigns/update",
+          "search": "?patchSet=123",
           "state": undefined,
         },
         "push": [Function],
@@ -50,8 +56,8 @@ exports[`CampaignUpdateSelection renders 1`] = `
       Object {
         "hash": "",
         "key": undefined,
-        "pathname": "/",
-        "search": "",
+        "pathname": "/campaigns/update",
+        "search": "?patchSet=123",
         "state": undefined,
       }
     }

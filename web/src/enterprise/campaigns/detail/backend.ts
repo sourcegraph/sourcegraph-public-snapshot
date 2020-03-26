@@ -13,7 +13,6 @@ import {
     IFileDiffConnection,
     IPreviewFileDiffConnection,
     IPatchSet,
-    IPatch,
     IPatchesOnCampaignArguments,
     IPatchConnection,
 } from '../../../../../shared/src/graphql/schema'
@@ -145,18 +144,20 @@ export async function createCampaign(input: ICreateCampaignInput): Promise<ICamp
     return dataOrThrowErrors(result).createCampaign
 }
 
-export async function retryCampaign(campaignID: ID): Promise<void> {
+export async function retryCampaign(campaignID: ID): Promise<ICampaign> {
     const result = await mutateGraphQL(
         gql`
             mutation RetryCampaign($campaign: ID!) {
                 retryCampaign(campaign: $campaign) {
-                    id
+                    ...CampaignFragment
                 }
             }
+
+            ${campaignFragment}
         `,
         { campaign: campaignID }
     ).toPromise()
-    dataOrThrowErrors(result)
+    return dataOrThrowErrors(result).retryCampaign
 }
 
 export async function closeCampaign(campaign: ID, closeChangesets = false): Promise<void> {
@@ -244,7 +245,7 @@ export const fetchPatchSetById = (patchSet: ID): Observable<IPatchSet | null> =>
 export const queryChangesets = (
     campaign: ID,
     { first, state, reviewState, checkState }: IChangesetsOnCampaignArguments
-): Observable<Connection<IExternalChangeset | IPatch>> =>
+): Observable<Connection<IExternalChangeset>> =>
     queryGraphQL(
         gql`
             query CampaignChangesets(
@@ -304,6 +305,35 @@ export const queryChangesets = (
                                 }
                             }
                         }
+                    }
+                }
+            }
+
+            ${DiffStatFields}
+        `,
+        { campaign, first, state, reviewState, checkState }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(({ node }) => {
+            if (!node) {
+                throw new Error(`Campaign with ID ${campaign} does not exist`)
+            }
+            if (node.__typename !== 'Campaign') {
+                throw new Error(`The given ID is a ${node.__typename}, not a Campaign`)
+            }
+            return node.changesets
+        })
+    )
+export const queryPatchesFromCampaign = (
+    campaign: ID,
+    { first }: IPatchesOnCampaignArguments
+): Observable<IPatchConnection> =>
+    queryGraphQL(
+        gql`
+            query CampaignPatches($campaign: ID!, $first: Int) {
+                node(id: $campaign) {
+                    __typename
+                    ... on Campaign {
                         patches(first: $first) {
                             totalCount
                             nodes {
@@ -330,7 +360,7 @@ export const queryChangesets = (
 
             ${DiffStatFields}
         `,
-        { campaign, first, state, reviewState, checkState }
+        { campaign, first }
     ).pipe(
         map(dataOrThrowErrors),
         map(({ node }) => {
@@ -340,14 +370,14 @@ export const queryChangesets = (
             if (node.__typename !== 'Campaign') {
                 throw new Error(`The given ID is a ${node.__typename}, not a Campaign`)
             }
-            return {
-                totalCount: node.patches.totalCount + node.changesets.totalCount,
-                nodes: [...node.patches.nodes, ...node.changesets.nodes],
-            }
+            return node.patches
         })
     )
 
-export const queryPatches = (patchSet: ID, { first }: IPatchesOnCampaignArguments): Observable<IPatchConnection> =>
+export const queryPatchesFromPatchSet = (
+    patchSet: ID,
+    { first }: IPatchesOnCampaignArguments
+): Observable<IPatchConnection> =>
     queryGraphQL(
         gql`
             query PatchSetPatches($patchSet: ID!, $first: Int) {
