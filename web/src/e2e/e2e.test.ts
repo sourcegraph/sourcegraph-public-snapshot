@@ -1610,7 +1610,7 @@ describe('e2e test suite', () => {
             await driver.page.keyboard.type('README')
             await driver.page.keyboard.press('Enter')
             await driver.page.keyboard.press('Enter')
-            await driver.assertWindowLocation('/search?q=repo:%22gorilla/mux%22+file:README&patternType=literal')
+            await driver.assertWindowLocation('/search?q=repo:%22gorilla/mux%22+file:%22README%22&patternType=literal')
 
             // Delete filter
             await driver.page.goto(sourcegraphBaseUrl + '/search?q=repo:gorilla/mux&patternType=literal')
@@ -1661,7 +1661,7 @@ describe('e2e test suite', () => {
             await driver.page.type('.tree-page__section-search .e2e-query-input', 'test')
             await driver.page.click('.tree-page__section-search .e2e-search-button')
             await driver.assertWindowLocation(
-                '/search?q=repo:%22%5Egithub%5C.com/sourcegraph/jsonrpc2%24%22+test&patternType=literal'
+                '/search?q=repo:5Egithub%5C.com/sourcegraph/jsonrpc2%24+test&patternType=literal'
             )
             await driver.page.waitForSelector('.e2e-query-input')
             const queryInputValue = () =>

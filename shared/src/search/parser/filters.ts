@@ -68,7 +68,7 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
     },
     [FilterType.case]: {
         description: 'Treat the search pattern as case-sensitive.',
-        discreteValues: ['yes', 'no'],
+        discreteValues: ['yes', 'no', '"yes"', '"no"'],
         default: 'no',
         singular: true,
     },
@@ -89,12 +89,12 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         suggestions: 'File',
     },
     [FilterType.fork]: {
-        discreteValues: ['yes', 'no', 'only'],
+        discreteValues: ['yes', 'no', 'only', '"yes"', '"no"', '"only"'],
         description: 'Include results from forked repositories.',
         singular: true,
     },
     [FilterType.index]: {
-        discreteValues: ['yes', 'no', 'only'],
+        discreteValues: ['yes', 'no', 'only', '"yes"', '"no"', '"only"'],
         description: 'Include results from indexed repositories',
         singular: true,
     },
@@ -137,7 +137,20 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
     },
     [FilterType.type]: {
         description: 'Limit results to the specified type.',
-        discreteValues: ['diff', 'commit', 'symbol', 'repo', 'path', 'file'],
+        discreteValues: [
+            'diff',
+            'commit',
+            'symbol',
+            'repo',
+            'path',
+            'file',
+            '"diff"',
+            '"commit"',
+            '"symbol"',
+            '"repo"',
+            '"path"',
+            '"file"',
+        ],
     },
 }
 
