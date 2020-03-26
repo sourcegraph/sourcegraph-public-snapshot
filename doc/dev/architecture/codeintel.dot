@@ -66,10 +66,10 @@ digraph architecture {
             fillcolor="4"
             URL="https://github.com/sourcegraph/sourcegraph/tree/master/lsif/src/worker"
         ]
-        lsif_dump_manager [
-            label="dump manager"
+        lsif_bundle_manager [
+            label="bundle manager"
             fillcolor="5"
-            URL="https://github.com/sourcegraph/sourcegraph/tree/master/lsif/src/dump-manager"
+            URL="https://github.com/sourcegraph/sourcegraph/tree/master/lsif/src/bundle-manager"
         ]
     }
 
@@ -90,7 +90,7 @@ digraph architecture {
     ]
 
     lsif_server -> {
-        lsif_dump_manager,
+        lsif_bundle_manager,
         postgres,
         frontend_config
     } [
@@ -98,7 +98,7 @@ digraph architecture {
     ]
 
     lsif_worker -> {
-        lsif_dump_manager,
+        lsif_bundle_manager,
         postgres,
         frontend_gitserver_proxy,
         frontend_config
@@ -106,7 +106,7 @@ digraph architecture {
         fillcolor="4"
     ]
 
-    lsif_dump_manager -> {
+    lsif_bundle_manager -> {
         lsif_server,
         volume,
         postgres,

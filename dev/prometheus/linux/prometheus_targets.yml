@@ -40,9 +40,9 @@
     # lsif-server
     - 127.0.0.1:3186
 - labels:
-    job: lsif-dump-manager
+    job: lsif-bundle-manager
   targets:
-    # lsif-dump-manager
+    # lsif-bundle-manager
     - 127.0.0.1:3187
 - labels:
     job: lsif-worker

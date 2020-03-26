@@ -1,6 +1,6 @@
 openapi: 3.0.0
 info:
-  title: LSIF Dump Manager
+  title: LSIF Bundle Manager
   description: An internal Sourcegraph microservice that serves LSIF-powered code intelligence for a single processed dump.
   version: 1.0.0
   contact:

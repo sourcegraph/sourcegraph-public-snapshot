@@ -4,7 +4,7 @@ The LSIF processes store most of their data in SQLite repositories on a shared d
 
 We rely on the Sourcegraph frontend to apply our DB migrations. These live in the `/migrations` folder. This means:
 
-- The server, dump manager, and worker wait for the frontend to apply the migration version it cares about before starting.
+- The server, bundle manager, and worker wait for the frontend to apply the migration version it cares about before starting.
 - We (and more importantly, site admins) only have to care about a single set of DB schema migrations. This is the primary property we benefit from by doing this.
 
 ## Migrations

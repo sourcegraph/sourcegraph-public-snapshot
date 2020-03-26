@@ -6,16 +6,11 @@
  -->
 <!-- Title: architecture Pages: 1 -->
 <svg width="546pt" height="419pt"
- viewBox="0.00 0.00 546.18 418.80" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+ viewBox="0.00 0.00 546.17 418.80" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(14.4 404.4)">
 <title>architecture</title>
-<polygon fill="white" stroke="transparent" points="-14.4,14.4 -14.4,-404.4 531.78,-404.4 531.78,14.4 -14.4,14.4"/>
+<polygon fill="white" stroke="transparent" points="-14.4,14.4 -14.4,-404.4 531.77,-404.4 531.77,14.4 -14.4,14.4"/>
 <text text-anchor="middle" x="258.69" y="-6.4" font-family="Iosevka" font-size="12.00">Sourcegraph Code Intelligence Architecture Overview</text>
-<g id="clust3" class="cluster">
-<title>cluster_databases</title>
-<polygon fill="none" stroke="black" stroke-dasharray="1,5" points="68,-28 68,-108 227,-108 227,-28 68,-28"/>
-<text text-anchor="middle" x="147.5" y="-94.4" font-family="Iosevka" font-size="12.00">Databases</text>
-</g>
 <g id="clust1" class="cluster">
 <title>cluster_frontend</title>
 <polygon fill="none" stroke="black" stroke-dasharray="1,5" points="169,-173 169,-245 481,-245 481,-173 169,-173"/>
@@ -25,6 +20,11 @@
 <title>cluster_services</title>
 <polygon fill="none" stroke="black" stroke-dasharray="1,5" points="8,-173 8,-382 161,-382 161,-173 8,-173"/>
 <text text-anchor="middle" x="84.5" y="-368.4" font-family="Iosevka" font-size="12.00">Code intel processes</text>
+</g>
+<g id="clust3" class="cluster">
+<title>cluster_databases</title>
+<polygon fill="none" stroke="black" stroke-dasharray="1,5" points="66,-28 66,-108 225,-108 225,-28 66,-28"/>
+<text text-anchor="middle" x="145.5" y="-94.4" font-family="Iosevka" font-size="12.00">Databases</text>
 </g>
 <!-- frontend_graphqlbackend -->
 <g id="node1" class="node">
@@ -65,35 +65,35 @@
 <path fill="none" stroke="black" stroke-width="0.6" d="M70.27,-323.48C74.84,-321.61 79.54,-319.72 84,-318 173.42,-283.41 206.93,-297.75 287,-245 294.2,-240.25 301.04,-234.03 307.02,-227.73"/>
 <polygon fill="#bebada" stroke="black" stroke-width="0.6" points="310.83,-230.55 316.21,-217.3 303.74,-224.31 310.83,-230.55"/>
 </g>
-<!-- lsif_dump_manager -->
+<!-- lsif_bundle_manager -->
 <g id="node6" class="node">
-<title>lsif_dump_manager</title>
-<g id="a_node6"><a xlink:href="https://github.com/sourcegraph/sourcegraph/tree/master/lsif/src/dump-manager" xlink:title="dump manager" target="_blank">
-<polygon fill="#80b1d3" stroke="black" points="147.76,-217 58.24,-217 58.24,-181 147.76,-181 147.76,-217"/>
-<text text-anchor="middle" x="103" y="-196" font-family="Iosevka" font-size="10.00">dump manager</text>
+<title>lsif_bundle_manager</title>
+<g id="a_node6"><a xlink:href="https://github.com/sourcegraph/sourcegraph/tree/master/lsif/src/bundle-manager" xlink:title="bundle manager" target="_blank">
+<polygon fill="#80b1d3" stroke="black" points="148.28,-217 53.72,-217 53.72,-181 148.28,-181 148.28,-217"/>
+<text text-anchor="middle" x="101" y="-196" font-family="Iosevka" font-size="10.00">bundle manager</text>
 </a>
 </g>
 </g>
-<!-- lsif_server&#45;&gt;lsif_dump_manager -->
+<!-- lsif_server&#45;&gt;lsif_bundle_manager -->
 <g id="edge3" class="edge">
-<title>lsif_server&#45;&gt;lsif_dump_manager</title>
-<path fill="none" stroke="black" stroke-width="0.6" d="M56.15,-305.41C66.11,-283 79.74,-252.34 89.73,-229.86"/>
-<polygon fill="#bebada" stroke="black" stroke-width="0.6" points="51.76,-303.65 50.6,-317.9 60.4,-307.48 51.76,-303.65"/>
-<polygon fill="#bebada" stroke="black" stroke-width="0.6" points="94.11,-231.64 95.27,-217.39 85.47,-227.8 94.11,-231.64"/>
+<title>lsif_server&#45;&gt;lsif_bundle_manager</title>
+<path fill="none" stroke="black" stroke-width="0.6" d="M55.71,-305.41C65.34,-283 78.51,-252.34 88.17,-229.86"/>
+<polygon fill="#bebada" stroke="black" stroke-width="0.6" points="51.33,-303.63 50.35,-317.9 60.02,-307.36 51.33,-303.63"/>
+<polygon fill="#bebada" stroke="black" stroke-width="0.6" points="92.54,-231.65 93.53,-217.39 83.86,-227.92 92.54,-231.65"/>
 </g>
 <!-- postgres -->
 <g id="node7" class="node">
 <title>postgres</title>
-<path fill="white" stroke="black" d="M219.36,-76C219.36,-78.21 205.75,-80 189,-80 172.25,-80 158.64,-78.21 158.64,-76 158.64,-76 158.64,-40 158.64,-40 158.64,-37.79 172.25,-36 189,-36 205.75,-36 219.36,-37.79 219.36,-40 219.36,-40 219.36,-76 219.36,-76"/>
-<path fill="none" stroke="black" d="M219.36,-76C219.36,-73.79 205.75,-72 189,-72 172.25,-72 158.64,-73.79 158.64,-76"/>
-<text text-anchor="middle" x="189" y="-55" font-family="Iosevka" font-size="10.00">postgres</text>
+<path fill="white" stroke="black" d="M217.36,-76C217.36,-78.21 203.75,-80 187,-80 170.25,-80 156.64,-78.21 156.64,-76 156.64,-76 156.64,-40 156.64,-40 156.64,-37.79 170.25,-36 187,-36 203.75,-36 217.36,-37.79 217.36,-40 217.36,-40 217.36,-76 217.36,-76"/>
+<path fill="none" stroke="black" d="M217.36,-76C217.36,-73.79 203.75,-72 187,-72 170.25,-72 156.64,-73.79 156.64,-76"/>
+<text text-anchor="middle" x="187" y="-55" font-family="Iosevka" font-size="10.00">postgres</text>
 </g>
 <!-- lsif_server&#45;&gt;postgres -->
 <g id="edge4" class="edge">
 <title>lsif_server&#45;&gt;postgres</title>
-<path fill="none" stroke="black" stroke-width="0.6" d="M70.05,-322.83C74.65,-321.04 79.42,-319.35 84,-318 275.37,-261.75 507.11,-399.22 517,-200"/>
-<path fill="none" stroke="black" stroke-width="0.6" d="M517,-198C523.07,-75.75 323.72,-59.44 232.94,-58.34"/>
-<polygon fill="#bebada" stroke="black" stroke-width="0.6" points="232.87,-53.61 219.35,-58.28 232.83,-63.06 232.87,-53.61"/>
+<path fill="none" stroke="black" stroke-width="0.6" d="M70.05,-322.83C74.65,-321.04 79.42,-319.35 84,-318 275.37,-261.75 507.33,-399.23 517,-200"/>
+<path fill="none" stroke="black" stroke-width="0.6" d="M517,-198C522.97,-74.96 321.99,-59.12 230.85,-58.24"/>
+<polygon fill="#bebada" stroke="black" stroke-width="0.6" points="230.73,-53.51 217.22,-58.21 230.71,-62.96 230.73,-53.51"/>
 </g>
 <!-- lsif_worker -->
 <g id="node5" class="node">
@@ -116,41 +116,41 @@
 <path fill="none" stroke="black" stroke-width="0.6" d="M153.21,-323C186.55,-307.59 243.9,-278.78 287,-245 293.68,-239.76 300.26,-233.44 306.16,-227.22"/>
 <polygon fill="#fb8072" stroke="black" stroke-width="0.6" points="309.81,-230.23 315.33,-217.03 302.79,-223.9 309.81,-230.23"/>
 </g>
-<!-- lsif_worker&#45;&gt;lsif_dump_manager -->
+<!-- lsif_worker&#45;&gt;lsif_bundle_manager -->
 <g id="edge7" class="edge">
-<title>lsif_worker&#45;&gt;lsif_dump_manager</title>
-<path fill="none" stroke="black" stroke-width="0.6" d="M123.09,-317.9C119.37,-296.11 112.89,-258.04 108.29,-231.06"/>
-<polygon fill="#fb8072" stroke="black" stroke-width="0.6" points="112.89,-229.9 105.96,-217.39 103.57,-231.49 112.89,-229.9"/>
+<title>lsif_worker&#45;&gt;lsif_bundle_manager</title>
+<path fill="none" stroke="black" stroke-width="0.6" d="M122.83,-317.9C118.78,-296.01 111.68,-257.69 106.68,-230.69"/>
+<polygon fill="#fb8072" stroke="black" stroke-width="0.6" points="111.32,-229.8 104.22,-217.39 102.03,-231.52 111.32,-229.8"/>
 </g>
 <!-- lsif_worker&#45;&gt;postgres -->
 <g id="edge8" class="edge">
 <title>lsif_worker&#45;&gt;postgres</title>
-<path fill="none" stroke="black" stroke-width="0.6" d="M153.32,-334.84C217.73,-333.15 381.61,-321.12 488,-245 507.35,-231.16 515.82,-223.76 517,-200"/>
+<path fill="none" stroke="black" stroke-width="0.6" d="M153.32,-334.84C217.73,-333.15 381.61,-321.12 488,-245 507.35,-231.16 515.85,-223.77 517,-200"/>
 </g>
-<!-- lsif_dump_manager&#45;&gt;frontend_config -->
+<!-- lsif_bundle_manager&#45;&gt;frontend_config -->
 <g id="edge9" class="edge">
-<title>lsif_dump_manager&#45;&gt;frontend_config</title>
-<path fill="none" stroke="black" stroke-width="0.6" d="M112.87,-217.23C124.9,-237.28 147.27,-268.39 176.5,-281.5 215.43,-298.96 234.76,-301.4 272.5,-281.5 293.24,-270.57 307.82,-248.21 316.97,-229.53"/>
+<title>lsif_bundle_manager&#45;&gt;frontend_config</title>
+<path fill="none" stroke="black" stroke-width="0.6" d="M111.27,-217.24C123.74,-237.31 146.83,-268.43 176.5,-281.5 215.55,-298.7 234.76,-301.4 272.5,-281.5 293.24,-270.57 307.82,-248.21 316.97,-229.53"/>
 <polygon fill="#80b1d3" stroke="black" stroke-width="0.6" points="321.34,-231.33 322.56,-217.08 312.72,-227.46 321.34,-231.33"/>
 </g>
-<!-- lsif_dump_manager&#45;&gt;postgres -->
+<!-- lsif_bundle_manager&#45;&gt;postgres -->
 <g id="edge11" class="edge">
-<title>lsif_dump_manager&#45;&gt;postgres</title>
-<path fill="none" stroke="black" stroke-width="0.6" d="M113.55,-180.96C127.22,-158.85 151.36,-119.83 168.66,-91.87"/>
-<polygon fill="#80b1d3" stroke="black" stroke-width="0.6" points="172.75,-94.25 175.83,-80.28 164.71,-89.28 172.75,-94.25"/>
+<title>lsif_bundle_manager&#45;&gt;postgres</title>
+<path fill="none" stroke="black" stroke-width="0.6" d="M111.55,-180.96C125.22,-158.85 149.36,-119.83 166.66,-91.87"/>
+<polygon fill="#80b1d3" stroke="black" stroke-width="0.6" points="170.75,-94.25 173.83,-80.28 162.71,-89.28 170.75,-94.25"/>
 </g>
 <!-- volume -->
 <g id="node8" class="node">
 <title>volume</title>
-<path fill="white" stroke="black" d="M130.24,-76C130.24,-78.21 118.03,-80 103,-80 87.97,-80 75.76,-78.21 75.76,-76 75.76,-76 75.76,-40 75.76,-40 75.76,-37.79 87.97,-36 103,-36 118.03,-36 130.24,-37.79 130.24,-40 130.24,-40 130.24,-76 130.24,-76"/>
-<path fill="none" stroke="black" d="M130.24,-76C130.24,-73.79 118.03,-72 103,-72 87.97,-72 75.76,-73.79 75.76,-76"/>
-<text text-anchor="middle" x="103" y="-55" font-family="Iosevka" font-size="10.00">volume</text>
+<path fill="white" stroke="black" d="M128.24,-76C128.24,-78.21 116.03,-80 101,-80 85.97,-80 73.76,-78.21 73.76,-76 73.76,-76 73.76,-40 73.76,-40 73.76,-37.79 85.97,-36 101,-36 116.03,-36 128.24,-37.79 128.24,-40 128.24,-40 128.24,-76 128.24,-76"/>
+<path fill="none" stroke="black" d="M128.24,-76C128.24,-73.79 116.03,-72 101,-72 85.97,-72 73.76,-73.79 73.76,-76"/>
+<text text-anchor="middle" x="101" y="-55" font-family="Iosevka" font-size="10.00">volume</text>
 </g>
-<!-- lsif_dump_manager&#45;&gt;volume -->
+<!-- lsif_bundle_manager&#45;&gt;volume -->
 <g id="edge12" class="edge">
-<title>lsif_dump_manager&#45;&gt;volume</title>
-<path fill="none" stroke="black" stroke-width="0.6" d="M103,-180.96C103,-159.45 103,-121.92 103,-94.15"/>
-<polygon fill="#80b1d3" stroke="black" stroke-width="0.6" points="107.73,-93.78 103,-80.28 98.28,-93.78 107.73,-93.78"/>
+<title>lsif_bundle_manager&#45;&gt;volume</title>
+<path fill="none" stroke="black" stroke-width="0.6" d="M101,-180.96C101,-159.45 101,-121.92 101,-94.15"/>
+<polygon fill="#80b1d3" stroke="black" stroke-width="0.6" points="105.73,-93.78 101,-80.28 96.28,-93.78 105.73,-93.78"/>
 </g>
 </g>
 </svg>

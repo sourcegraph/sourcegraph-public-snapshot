@@ -40,9 +40,9 @@
     # lsif-server
     - host.docker.internal:3186
 - labels:
-    job: lsif-dump-manager
+    job: lsif-bundle-manager
   targets:
-    # lsif-dump-manager
+    # lsif-bundle-manager
     - host.docker.internal:3187
 - labels:
     job: lsif-worker

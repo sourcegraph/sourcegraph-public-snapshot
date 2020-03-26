@@ -10,7 +10,7 @@
     "tslint": "../node_modules/.bin/tslint -p tsconfig.json",
     "eslint": "../node_modules/.bin/eslint --cache 'src/**/*.ts?(x)'",
     "run:server": "tsc-watch --onSuccess \"node -r source-map-support/register out/server/server.js\" --noClear",
-    "run:dump-manager": "tsc-watch --onSuccess \"node -r source-map-support/register out/dump-manager/dump-manager.js\" --noClear",
+    "run:bundle-manager": "tsc-watch --onSuccess \"node -r source-map-support/register out/bundle-manager/manager.js\" --noClear",
     "run:worker": "tsc-watch --onSuccess \"node -r source-map-support/register out/worker/worker.js\" --noClear"
   },
   "dependencies": {

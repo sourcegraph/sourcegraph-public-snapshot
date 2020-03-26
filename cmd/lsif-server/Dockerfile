@@ -49,7 +49,7 @@ COPY ./lsif-server /usr/local/bin/lsif-server
 COPY --from=prometheus /bin/prometheus /bin/prometheus
 COPY ./prometheus.yml $PROMETHEUS_CONFIGURATION_DIR/prometheus.yml
 
-# http server, dump manager server, (first) worker metrics server, prometheus
+# http server, bundle manager server, (first) worker metrics server, prometheus
 EXPOSE 3186 3187 3188 9090
 ENV GO111MODULES=on LANG=en_US.utf8 LOG_LEVEL=debug
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/lsif-server"]

@@ -3,8 +3,8 @@ import { readEnvInt } from '../shared/settings'
 /** Which port to run the LSIF server on. Defaults to 3186. */
 export const HTTP_PORT = readEnvInt('HTTP_PORT', 3186)
 
-/** HTTP address for internal LSIF dump manager server. */
-export const LSIF_DUMP_MANAGER_URL = process.env.LSIF_DUMP_MANAGER_URL || 'http://localhost:3187'
+/** HTTP address for internal LSIF bundle manager server. */
+export const LSIF_BUNDLE_MANAGER_URL = process.env.LSIF_BUNDLE_MANAGER_URL || 'http://localhost:3187'
 
 /** Where on the file system to temporarily store LSIF uploads. This need not be a persistent volume. */
 export const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'

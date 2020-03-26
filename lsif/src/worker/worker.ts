@@ -79,10 +79,10 @@ async function main(logger: Logger): Promise<void> {
                 logAndTraceCall(ctx, 'Converting upload', async (ctx: TracingContext) => {
                     const sourcePath = path.join(settings.STORAGE_ROOT, uuid.v4())
                     const targetPath = path.join(settings.STORAGE_ROOT, uuid.v4())
-                    const url = new URL(`/uploads/${upload.id}`, settings.LSIF_DUMP_MANAGER_URL).href
+                    const url = new URL(`/uploads/${upload.id}`, settings.LSIF_BUNDLE_MANAGER_URL).href
 
                     try {
-                        await logAndTraceCall(ctx, 'Downloading raw dump from dump manager', () =>
+                        await logAndTraceCall(ctx, 'Downloading raw dump from bundle manager', () =>
                             pipeline(got.stream.get(url), fs.createWriteStream(sourcePath))
                         )
 
@@ -98,10 +98,10 @@ async function main(logger: Logger): Promise<void> {
                         )
 
                         // Upload the database where it cna be found by the server
-                        await logAndTraceCall(ctx, 'Uploading converted dump to dump manager', () =>
+                        await logAndTraceCall(ctx, 'Uploading converted dump to bundle manager', () =>
                             pipeline(
                                 fs.createReadStream(targetPath),
-                                got.stream.post(new URL(`/dbs/${upload.id}`, settings.LSIF_DUMP_MANAGER_URL).href)
+                                got.stream.post(new URL(`/dbs/${upload.id}`, settings.LSIF_BUNDLE_MANAGER_URL).href)
                             )
                         )
 
