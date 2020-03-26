@@ -18,18 +18,18 @@ Please note that there is a key difference between Sourcegraph's "critical" and 
 
 For more information about the differences, see the: [high level alerting metrics](metrics_guide.md#high-level-alerting-metrics)
 
-## Total number of critical alerts firing currently
+## "How many critical alerts were firing in the last minute?"
 
 Prometheus query:
 
 ```prometheus
-sum(alert_count{level="critical"})
+sum(max by (service_name,name,description)(max_over_time(alert_count{level="critical",name!=""}[1m])))
 ```
 
 Example `curl` query:
 
 ```sh
-curl http://$PROMETHEUS_URL/api/v1/query?query=sum%28alert_count%7Blevel%3D%22critical%22%7D%29
+curl 'http://$PROMETHEUS_URL/api/v1/query?query=sum%28max%20by%20%28service_name%2Cname%2Cdescription%29%28max_over_time%28alert_count%7Blevel%3D%22critical%22%2Cname%21%3D%22%22%7D%5B1m%5D%29%29%29
 ```
 
 Example response:
@@ -43,7 +43,7 @@ Example response:
       {
         "metric": {},
         "value": [
-          1585177196.683,
+          1585250319.243,
           "0"
         ]
       }
@@ -52,20 +52,20 @@ Example response:
 }
 ```
 
-This shows that "0" critical alerts are currently firing.
+This only ever returns a single result, representing the maximum number of critical alerts firing across all Sourcegraph services in the last minute (relative to the time the query executed / the returned unix timestamp `1585250319.243`). The above shows that `"0"` alerts were firing, and if the number was non-zero, it would represent the max number of alerts firing across all services in the last minute.
 
-## Total number of warning alerts firing currently
+## "How many critical alerts were firing in the last minute, per service?"
 
 Prometheus query:
 
 ```prometheus
-sum(alert_count{level="warning"})
+sum by (service_name)(max by (service_name,name,description)(max_over_time(alert_count{level="critical",name!=""}[1m])))
 ```
 
 Example `curl` query:
 
 ```sh
-curl http://$PROMETHEUS_URL/api/v1/query?query=sum%28alert_count%7Blevel%3D%22warning%22%7D%29
+curl 'http://$PROMETHEUS_URL/api/v1/query?query=sum%20by%20%28service_name%29%28max%20by%20%28service_name%2Cname%2Cdescription%29%28max_over_time%28alert_count%7Blevel%3D%22critical%22%2Cname%21%3D%22%22%7D%5B1m%5D%29%29%29'
 ```
 
 Example response:
@@ -77,16 +77,84 @@ Example response:
     "resultType": "vector",
     "result": [
       {
-        "metric": {},
+        "metric": {
+          "service_name": "frontend"
+        },
         "value": [
-          1585177540.114,
-          "12"
+          1585250083.874,
+          "0"
         ]
-      }
+      },
+      {
+        "metric": {
+          "service_name": "zoekt-indexserver"
+        },
+        "value": [
+          1585250083.874,
+          "0"
+        ]
+      },
+      ...
     ]
   }
 }
 ```
 
-This shows that "12" warning alerts are currently firing.
+This returns a `result` for each service of Sourcegraph where at least one critical alert is defined and being monitored. For example, the first result (`frontend`) indicates that in the last minute (relative to the time the query executed / the returned unix timestamp `1585250083.874`) that `"0"` alerts for the `frontend` service were firing. If the number was non-zero, it would represent the max number of alerts firing on that service in the last minute.
 
+
+## "How many critical alerts were firing in the last minute, per defined alert?"
+
+Prometheus query:
+
+```prometheus
+max by (service_name,name,description)(max_over_time(alert_count{level="critical",name!=""}[1m]))
+```
+
+Example `curl` query:
+
+```sh
+curl 'http://$PROMETHEUS_URL/api/v1/query?query=max%20by%20%28service_name%2Cname%2Cdescription%29%28max_over_time%28alert_count%7Blevel%3D%22critical%22%2Cname%21%3D%22%22%7D%5B1m%5D%29%29'
+```
+
+Example response:
+
+```json
+{
+  "status": "success",
+  "data": {
+    "resultType": "vector",
+    "result": [
+      {
+        "metric": {
+          "description": "gitserver: 50+ concurrent command executions (abnormally high load)",
+          "name": "high_concurrent_execs",
+          "service_name": "gitserver"
+        },
+        "value": [
+          1585249844.475,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "description": "gitserver: 100+ concurrent command executions (abnormally high load)",
+          "name": "high_concurrent_execs",
+          "service_name": "gitserver"
+        },
+        "value": [
+          1585249844.475,
+          "0"
+        ]
+      },
+      ...
+    ]
+  }
+}
+```
+
+This returns a `result` for each defined critical alert that Sourcegraph is monitoring. For example, the first result (`high_concurrent_execs`) indicates that in the last minute (relative to the time the query executed / the returned unix timestamp `1585249844.475`) that `"0"` alerts were firing. Any value >= 1 here, would indicate that alert has fired in the last minute.
+
+## Warning alerts
+
+If you do wish to query warning alerts, too, then simply replace `critical` with `warning` in any of the above query examples.
