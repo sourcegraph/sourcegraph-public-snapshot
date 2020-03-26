@@ -56,12 +56,15 @@ func (r *lsifQueryResolver) Definitions(ctx context.Context, args *graphqlbacken
 		}
 
 		if len(locations) > 0 {
-			return &locationConnectionResolver{locations: locations}, nil
+			return &locationConnectionResolver{
+				repo:      r.repositoryResolver.Type(),
+				commit:    r.commit,
+				locations: locations,
+			}, nil
 		}
 	}
 
-	// TODO(efritz) - adjust ranges of each result from the upload commit to the requested commit
-	return &locationConnectionResolver{locations: nil}, nil
+	return &locationConnectionResolver{}, nil
 }
 
 func (r *lsifQueryResolver) References(ctx context.Context, args *graphqlbackend.LSIFPagedQueryPositionArgs) (graphqlbackend.LocationConnectionResolver, error) {
@@ -134,8 +137,12 @@ func (r *lsifQueryResolver) References(ctx context.Context, args *graphqlbackend
 		return nil, err
 	}
 
-	// TODO(efritz) - adjust ranges of each result from the upload commit to the requested commit
-	return &locationConnectionResolver{locations: allLocations, endCursor: endCursor}, nil
+	return &locationConnectionResolver{
+		repo:      r.repositoryResolver.Type(),
+		commit:    r.commit,
+		locations: allLocations,
+		endCursor: endCursor,
+	}, nil
 }
 
 func (r *lsifQueryResolver) Hover(ctx context.Context, args *graphqlbackend.LSIFQueryPositionArgs) (graphqlbackend.HoverResolver, error) {
