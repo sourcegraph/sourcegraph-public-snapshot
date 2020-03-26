@@ -386,7 +386,8 @@
      "key": "thekey",
      "name": "thename",
      "url": "http://example.com",
-     "description": "the description"
+     "description": "the description",
+     "dateAdded": 1581595091775
     }
    ]
   },

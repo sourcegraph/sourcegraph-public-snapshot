@@ -787,7 +787,7 @@ func (h *BitbucketServerWebhook) Upsert(every time.Duration) {
 			wh := bbs.Webhook{
 				Name:     h.Name,
 				Scope:    "global",
-				Events:   []string{"pr"},
+				Events:   []string{"pr", "repo"},
 				Endpoint: endpoint,
 				Secret:   secret,
 			}
@@ -872,7 +872,7 @@ func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *repo
 }
 
 func (h *BitbucketServerWebhook) convertEvent(theirs interface{}) (pr PR, ours interface{ Key() string }) {
-	log15.Debug("Bitbucket Server webhook received", "type", fmt.Sprintf("%T", theirs))
+	log15.Info("Bitbucket Server webhook received", "type", fmt.Sprintf("%T", theirs))
 
 	switch e := theirs.(type) {
 	case *bbs.PullRequestEvent:

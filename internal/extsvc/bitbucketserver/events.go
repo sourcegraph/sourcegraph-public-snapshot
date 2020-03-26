@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"time"
+
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
 const (
@@ -17,9 +19,14 @@ func WebhookEventType(r *http.Request) string {
 }
 
 func ParseWebhookEvent(eventType string, payload []byte) (e interface{}, err error) {
+	log15.Info("Parsing webhook", "type", eventType)
 	switch eventType {
 	case "ping":
 		return PingEvent{}, nil
+	case "repo:build_status":
+		log15.Info("payload", "data", string(payload))
+		e = &BuildStatusEvent{}
+		return e, json.Unmarshal(payload, e)
 	default:
 		e = &PullRequestEvent{}
 		return e, json.Unmarshal(payload, e)
@@ -33,6 +40,11 @@ type PullRequestEvent struct {
 	Actor       User        `json:"actor"`
 	PullRequest PullRequest `json:"pullRequest"`
 	Activity    *Activity   `json:"activity"`
+}
+
+type BuildStatusEvent struct {
+	Commit string      `json:"commit"`
+	Status BuildStatus `json:"status"`
 }
 
 // Webhook defines the JSON schema from the BBS Sourcegraph plugin.

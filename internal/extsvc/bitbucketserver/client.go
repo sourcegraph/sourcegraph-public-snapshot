@@ -1123,6 +1123,7 @@ type BuildStatus struct {
 	Name        string `json:"name,omitempty"`
 	Url         string `json:"url,omitempty"`
 	Description string `json:"description,omitempty"`
+	DateAdded   int    `json:"dateAdded,omitempty"`
 }
 
 // ActivityAction defines the action taken in an Activity.
