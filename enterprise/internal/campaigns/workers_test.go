@@ -49,16 +49,12 @@ func TestExecChangesetJob(t *testing.T) {
 		t.Fatal(t)
 	}
 
-	var rs []*repos.Repo
-	for i := 0; i < 4; i++ {
-		r := testRepo(i, github.ServiceType)
-		r.Sources = map[string]*repos.SourceInfo{githubExtSvc.URN(): {
-			ID:       githubExtSvc.URN(),
-			CloneURL: "https://TOKENTOKENTOKEN@github.com/foobar/foobar",
-		}}
-		rs = append(rs, r)
-	}
-	if err := reposStore.UpsertRepos(ctx, rs...); err != nil {
+	repo := testRepo(0, github.ServiceType)
+	repo.Sources = map[string]*repos.SourceInfo{githubExtSvc.URN(): {
+		ID:       githubExtSvc.URN(),
+		CloneURL: "https://TOKENTOKENTOKEN@github.com/foobar/foobar",
+	}}
+	if err := reposStore.UpsertRepos(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
 
@@ -71,7 +67,7 @@ func TestExecChangesetJob(t *testing.T) {
 	}
 
 	patch := &cmpgn.Patch{
-		RepoID:     rs[0].ID,
+		RepoID:     repo.ID,
 		PatchSetID: patchSet.ID,
 		Diff:       testDiff,
 		Rev:        "f00b4r",
