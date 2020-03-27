@@ -29,109 +29,92 @@ func TestExecChangesetJob(t *testing.T) {
 
 	dbtesting.SetupGlobalTestDB(t)
 
-	codehosts := []struct {
+	tests := []struct {
 		name string
 
 		createRepoExtSvc  func(t *testing.T, ctx context.Context, now time.Time, s *Store) (*repos.Repo, *repos.ExternalService)
 		changesetMetadata func(now time.Time, c *cmpgn.Campaign, headRef string) interface{}
 
-		wantChangeset func(now time.Time, r *repos.Repo, c *cmpgn.Campaign, headRef string, metadata interface{}) *cmpgn.Changeset
-		wantEvents    func(now time.Time, changesetID int64, metadata interface{}) []*cmpgn.ChangesetEvent
+		existsOnCodehost bool
 	}{
 		{
-			name:              "GitHub",
+			name:              "GitHubNewChangeset",
 			createRepoExtSvc:  createGitHubRepo,
 			changesetMetadata: buildGithubPR,
-			wantChangeset: func(now time.Time, r *repos.Repo, c *cmpgn.Campaign, headRef string, metadata interface{}) *cmpgn.Changeset {
-				want := &cmpgn.Changeset{
-					RepoID:              r.ID,
-					CampaignIDs:         []int64{c.ID},
-					ExternalBranch:      headRef,
-					ExternalState:       cmpgn.ChangesetStateOpen,
-					ExternalReviewState: cmpgn.ChangesetReviewStatePending,
-					ExternalCheckState:  cmpgn.ChangesetCheckStateUnknown,
-					CreatedAt:           now,
-					UpdatedAt:           now,
-				}
-				want.SetMetadata(metadata)
-				return want
-			},
-			wantEvents: func(now time.Time, changesetID int64, metadata interface{}) []*cmpgn.ChangesetEvent {
-				pr := metadata.(*github.PullRequest)
-
-				return []*cmpgn.ChangesetEvent{
-					{
-						ChangesetID: changesetID,
-						Kind:        cmpgn.ChangesetEventKindGitHubCommit,
-						Key:         pr.TimelineItems[0].Item.(*github.PullRequestCommit).Commit.OID,
-						UpdatedAt:   now,
-						CreatedAt:   now,
-						Metadata:    pr.TimelineItems[0].Item,
-					},
-				}
-			},
+			existsOnCodehost:  false,
+		},
+		{
+			name:              "GitHubChangesetExistsOnCodehost",
+			createRepoExtSvc:  createGitHubRepo,
+			changesetMetadata: buildGithubPR,
+			existsOnCodehost:  true,
 		},
 	}
 
-	for _, codehostTest := range codehosts {
-		subtests := []struct {
-			name          string
-			alreadyExists bool
-		}{
-			{name: "ChangesetAlreadyExists", alreadyExists: true},
-			{name: "NewChangeset", alreadyExists: false},
-		}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			tx := dbtest.NewTx(t, dbconn.Global)
+			s := NewStoreWithClock(tx, clock)
 
-		for _, tc := range subtests {
-			t.Run(codehostTest.name+tc.name, func(t *testing.T) {
-				tx := dbtest.NewTx(t, dbconn.Global)
-				s := NewStoreWithClock(tx, clock)
+			repo, extSvc := tc.createRepoExtSvc(t, ctx, now, s)
+			campaign, patch := createCampaignPatch(t, ctx, now, s, repo)
 
-				repo, extSvc := codehostTest.createRepoExtSvc(t, ctx, now, s)
-				campaign, patch := createCampaignPatch(t, ctx, now, s, repo)
+			headRef := "refs/heads/" + campaign.Branch
+			baseRef := patch.BaseRef
 
-				headRef := "refs/heads/" + campaign.Branch
-				baseRef := patch.BaseRef
+			meta := tc.changesetMetadata(now, campaign, headRef)
 
-				pr := codehostTest.changesetMetadata(now, campaign, headRef)
+			gitClient := &dummyGitserverClient{response: headRef, responseErr: nil}
 
-				gitClient := &dummyGitserverClient{response: headRef, responseErr: nil}
-
-				sourcer := repos.NewFakeSourcer(nil, fakeChangesetSource{
-					svc:          extSvc,
-					err:          nil,
-					exists:       tc.alreadyExists,
-					wantHeadRef:  headRef,
-					wantBaseRef:  baseRef,
-					fakeMetadata: pr,
-				})
-
-				changesetJob := &cmpgn.ChangesetJob{CampaignID: campaign.ID, PatchID: patch.ID}
-				if err := s.CreateChangesetJob(ctx, changesetJob); err != nil {
-					t.Fatal(err)
-				}
-
-				err := ExecChangesetJob(ctx, clock, s, gitClient, sourcer, campaign, changesetJob)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				changesetJob, err = s.GetChangesetJob(ctx, GetChangesetJobOpts{ID: changesetJob.ID})
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				if changesetJob.ChangesetID == 0 {
-					t.Fatalf("ChangesetJob has not ChangesetID set")
-				}
-
-				wantChangeset := codehostTest.wantChangeset(now, repo, campaign, headRef, pr)
-				assertChangesetInDB(t, ctx, s, changesetJob.ChangesetID, wantChangeset)
-
-				wantEvents := codehostTest.wantEvents(now, changesetJob.ChangesetID, pr)
-				assertChangesetEventsInDB(t, ctx, s, changesetJob.ChangesetID, wantEvents)
+			sourcer := repos.NewFakeSourcer(nil, fakeChangesetSource{
+				svc:          extSvc,
+				err:          nil,
+				exists:       tc.existsOnCodehost,
+				wantHeadRef:  headRef,
+				wantBaseRef:  baseRef,
+				fakeMetadata: meta,
 			})
-		}
+
+			changesetJob := &cmpgn.ChangesetJob{CampaignID: campaign.ID, PatchID: patch.ID}
+			if err := s.CreateChangesetJob(ctx, changesetJob); err != nil {
+				t.Fatal(err)
+			}
+
+			err := ExecChangesetJob(ctx, clock, s, gitClient, sourcer, campaign, changesetJob)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			changesetJob, err = s.GetChangesetJob(ctx, GetChangesetJobOpts{ID: changesetJob.ID})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if changesetJob.ChangesetID == 0 {
+				t.Fatalf("ChangesetJob has not ChangesetID set")
+			}
+
+			wantChangeset := &cmpgn.Changeset{
+				RepoID:              repo.ID,
+				CampaignIDs:         []int64{campaign.ID},
+				ExternalBranch:      headRef,
+				ExternalState:       cmpgn.ChangesetStateOpen,
+				ExternalReviewState: cmpgn.ChangesetReviewStatePending,
+				ExternalCheckState:  cmpgn.ChangesetCheckStateUnknown,
+				CreatedAt:           now,
+				UpdatedAt:           now,
+			}
+			wantChangeset.SetMetadata(meta)
+			assertChangesetInDB(t, ctx, s, changesetJob.ChangesetID, wantChangeset)
+
+			wantEvents := wantChangeset.Events()
+			for _, e := range wantEvents {
+				e.ChangesetID = changesetJob.ChangesetID
+				e.UpdatedAt = now
+				e.CreatedAt = now
+			}
+			assertChangesetEventsInDB(t, ctx, s, changesetJob.ChangesetID, wantEvents)
+		})
 	}
 }
 
