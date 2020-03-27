@@ -472,22 +472,20 @@ func (c *Changeset) Events() (events []*ChangesetEvent) {
 		}
 
 	case *bitbucketserver.PullRequest:
-		events = make([]*ChangesetEvent, 0, len(m.Activities))
-		for _, a := range m.Activities {
+		events = make([]*ChangesetEvent, 0, len(m.Activities)+len(m.CommitStatus))
+		addEvent := func(e interface{ Key() string }) {
 			events = append(events, &ChangesetEvent{
 				ChangesetID: c.ID,
-				Key:         a.Key(),
-				Kind:        ChangesetEventKindFor(a),
-				Metadata:    a,
+				Key:         e.Key(),
+				Kind:        ChangesetEventKindFor(e),
+				Metadata:    e,
 			})
 		}
+		for _, a := range m.Activities {
+			addEvent(a)
+		}
 		for _, s := range m.CommitStatus {
-			events = append(events, &ChangesetEvent{
-				ChangesetID: c.ID,
-				Key:         s.Key(),
-				Kind:        ChangesetEventKindFor(s),
-				Metadata:    s,
-			})
+			addEvent(s)
 		}
 
 	}
