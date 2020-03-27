@@ -27,10 +27,9 @@ export async function createCleanPostgresDatabase(): Promise<{ connection: Conne
     const password = process.env.PGPASSWORD || ''
     const database = `sourcegraph-test-lsif-${suffix}`
 
-    // Determine the path of the migrate script. This will cover the case
-    // where `yarn test` is run from within the root or from the lsif directory.
-    // const migrateScriptPath = nodepath.join((await fs.exists('dev')) ? '' : '..', 'dev', 'migrate.sh')
-    const migrationsPath = nodepath.join((await fs.exists('migrations')) ? '' : '..', 'migrations')
+    // Determine the path of the migrate script. This will cover the case where `yarn test` is
+    // run from within the root or from the precise-code-intel directory.
+    const migrationsPath = nodepath.join((await fs.exists('migrations')) ? '' : '../../../migrations')
 
     // Ensure environment gets passed to child commands
     const env = {

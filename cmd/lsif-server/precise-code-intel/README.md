@@ -14,7 +14,7 @@ This project is split into three parts, all currently written in TypeScript. The
 
 ### Entrypoint
 
-The docker image for this part of the application is produced by [./cmd/lsif-server](.././cmd/lsif-server), which wraps a server, a bundle manager, and a worker with a supervisor.
+The docker image for this part of the application is produced by [./cmd/lsif-server](../), which wraps a server, a bundle manager, and a worker with a supervisor.
 
 ### Documentation
 
