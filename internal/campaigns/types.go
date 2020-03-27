@@ -768,6 +768,9 @@ func computeBitbucketBuildStatus(lastSynced time.Time, pr *bitbucketserver.PullR
 	for _, e := range events {
 		switch m := e.Metadata.(type) {
 		case *bitbucketserver.CommitStatus:
+			if m.Commit != latestCommit.ID {
+				continue
+			}
 			dateAdded := unixMilliToTime(m.Status.DateAdded)
 			if !dateAdded.After(lastSynced) {
 				continue
