@@ -35,7 +35,7 @@
 <!-- api_server -->
 <g id="node4" class="node">
 <title>api_server</title>
-<g id="a_node4"><a xlink:href="https://github.com/sourcegraph/sourcegraph/tree/master/precise-code-intel/src/server" xlink:title="api" target="_blank">
+<g id="a_node4"><a xlink:href="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/lsif-server/precise-code-intel/src/server" xlink:title="api" target="_blank">
 <polygon fill="#bebada" stroke="black" points="70,-354 16,-354 16,-318 70,-318 70,-354"/>
 <text text-anchor="middle" x="43" y="-333" font-family="Iosevka" font-size="10.00">api</text>
 </a>
@@ -68,7 +68,7 @@
 <!-- bundle_manager -->
 <g id="node6" class="node">
 <title>bundle_manager</title>
-<g id="a_node6"><a xlink:href="https://github.com/sourcegraph/sourcegraph/tree/master/precise-code-intel/src/bundle-manager" xlink:title="bundle manager" target="_blank">
+<g id="a_node6"><a xlink:href="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/lsif-server/precise-code-intel/src/bundle-manager" xlink:title="bundle manager" target="_blank">
 <polygon fill="#80b1d3" stroke="black" points="148.28,-217 53.72,-217 53.72,-181 148.28,-181 148.28,-217"/>
 <text text-anchor="middle" x="101" y="-196" font-family="Iosevka" font-size="10.00">bundle manager</text>
 </a>
@@ -98,7 +98,7 @@
 <!-- worker -->
 <g id="node5" class="node">
 <title>worker</title>
-<g id="a_node5"><a xlink:href="https://github.com/sourcegraph/sourcegraph/tree/master/precise-code-intel/src/worker" xlink:title="worker" target="_blank">
+<g id="a_node5"><a xlink:href="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/lsif-server/precise-code-intel/src/worker" xlink:title="worker" target="_blank">
 <polygon fill="#fb8072" stroke="black" points="153,-354 99,-354 99,-318 153,-318 153,-354"/>
 <text text-anchor="middle" x="126" y="-333" font-family="Iosevka" font-size="10.00">worker</text>
 </a>

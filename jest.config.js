@@ -10,6 +10,6 @@ module.exports = {
     'browser/jest.config.js',
     'shared/jest.config.js',
     'web/jest.config.js',
-    'precise-code-intel/jest.config.js',
+    'cmd/lsif-server/precise-code-intel/jest.config.js',
   ],
 }
