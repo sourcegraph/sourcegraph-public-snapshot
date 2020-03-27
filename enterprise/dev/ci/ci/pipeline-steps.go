@@ -90,8 +90,8 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 // Tests the precise code intel system.
 func addPreciseCodeIntelSystem(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":jest:",
-		bk.Cmd("dev/ci/yarn-test-separate.sh cmd/lsif-server/precise-code-intel"),
-		bk.ArtifactPaths("cmd/lsif-server/precise-code-intel/coverage/coverage-final.json"))
+		bk.Cmd("dev/ci/yarn-test-separate.sh cmd/lsif-server"),
+		bk.ArtifactPaths("cmd/lsif-server/coverage/coverage-final.json"))
 }
 
 // Adds the shared frontend tests (shared between the web app and browser extension).

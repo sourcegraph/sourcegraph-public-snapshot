@@ -106,7 +106,7 @@ if [[ -n "$yarn_pid" ]]; then
 fi
 
 # Install precise code intel dependencies
-pushd ./cmd/lsif-server/precise-code-intel 1> /dev/null
+pushd ./cmd/lsif-server 1> /dev/null
 yarn --no-progress
 popd 1> /dev/null
 

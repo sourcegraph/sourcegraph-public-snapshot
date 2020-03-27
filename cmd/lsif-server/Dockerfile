@@ -6,12 +6,10 @@ FROM alpine:3.10@sha256:e4355b66995c96b4b468159fc5c7e3540fcef961189ca13fee877798
 RUN apk add --no-cache nodejs-current=12.4.0-r0 nodejs-npm=10.19.0-r0
 RUN npm install -g yarn@1.17.3
 
-# TODO - check if this copies everything
-COPY precise-code-intel/package.json precise-code-intel/yarn.lock precise-code-intel/tsconfig.json /precise-code-intel/
-RUN yarn --cwd /precise-code-intel
-
-COPY precise-code-intel/src /precise-code-intel/src
-RUN yarn --cwd /precise-code-intel run build
+COPY lsif-server/package.json lsif-server/yarn.lock lsif-server/tsconfig.json /pci/
+RUN yarn --cwd /pci
+COPY lsif-server/src /pci/src
+RUN yarn --cwd /pci run build
 
 FROM sourcegraph/alpine:3.10@sha256:4d05cd5669726fc38823e92320659a6d1ef7879e62268adec5df658a0bacf65c
 
@@ -43,8 +41,8 @@ RUN mkdir -p $PROMETHEUS_CONFIGURATION_DIR && chown -R sourcegraph:sourcegraph $
 RUN mkdir -p /lsif-storage && chown -R sourcegraph:sourcegraph /lsif-storage
 USER sourcegraph
 
-COPY --from=pci-builder /precise-code-intel /precise-code-intel
-COPY ./lsif-server /usr/local/bin/lsif-server
+COPY --from=pci-builder /pci /pci
+COPY ./lsif-server/lsif-server /usr/local/bin/lsif-server
 COPY --from=prometheus /bin/prometheus /bin/prometheus
 COPY ./prometheus.yml $PROMETHEUS_CONFIGURATION_DIR/prometheus.yml
 

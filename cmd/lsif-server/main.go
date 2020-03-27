@@ -69,17 +69,17 @@ func makeProcfile(numAPIs, numBundleManagers, numWorkers int64) string {
 	}
 
 	if numAPIs > 0 {
-		addProcess("pci-api-server", "node /precise-code-intel/out/api-server/api.js")
+		addProcess("pci-api-server", "node /pci/out/api-server/api.js")
 	}
 
 	if numBundleManagers > 0 {
-		addProcess("pci-bundle-manager", "node /precise-code-intel/out/bundle-manager/manager.js")
+		addProcess("pci-bundle-manager", "node /pci/out/bundle-manager/manager.js")
 	}
 
 	for i := 0; i < int(numWorkers); i++ {
 		addProcess(
 			fmt.Sprintf("pci-worker-%d", i),
-			fmt.Sprintf("env METRICS_PORT=%d node /precise-code-intel/out/worker/worker.js", workerPort+i),
+			fmt.Sprintf("env METRICS_PORT=%d node /pci/out/worker/worker.js", workerPort+i),
 		)
 	}
 

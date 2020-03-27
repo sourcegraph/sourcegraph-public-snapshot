@@ -57,19 +57,19 @@ digraph architecture {
         node [fillcolor="2"]
 
         api_server [
-            label="api"
+            label="api server"
             fillcolor="3"
-            URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/lsif-server/precise-code-intel/src/server"
+            URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/lsif-server/src/server"
         ]
         worker [
             label="worker"
             fillcolor="4"
-            URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/lsif-server/precise-code-intel/src/worker"
+            URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/lsif-server/src/worker"
         ]
         bundle_manager [
             label="bundle manager"
             fillcolor="5"
-            URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/lsif-server/precise-code-intel/src/bundle-manager"
+            URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/lsif-server/src/bundle-manager"
         ]
     }
 
