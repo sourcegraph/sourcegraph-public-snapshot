@@ -64,7 +64,7 @@ COPY --from=comby/comby:0.14.1@sha256:38a70384b551a6ca355c4cc038d0c9fefa82889f26
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/syntect_server:c0297a1@sha256:333abb45cfaae9c9d37e576c3853843b00eca33a40a7c71f6b93211ed96528df /syntect_server /usr/local/bin/
 COPY --from=ctags /usr/local/bin/universal-* /usr/local/bin/
-COPY --from=pci-builder /precise-code-intel /precise-code-intel
+COPY --from=pci-builder /pci /pci
 
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/prometheus:10.0.10@sha256:4d73d99f3b18d8e4e09f63671c51eabcba956e357ab33d682de8cf1540e3b863 /bin/prometheus /usr/local/bin
