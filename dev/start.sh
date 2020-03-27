@@ -105,8 +105,8 @@ if [[ -n "$yarn_pid" ]]; then
     wait "$yarn_pid"
 fi
 
-# Install LSIF dependencies
-pushd ./lsif 1> /dev/null
+# Install precise code intel dependencies
+pushd ./precise-code-intel 1> /dev/null
 yarn --no-progress
 popd 1> /dev/null
 
