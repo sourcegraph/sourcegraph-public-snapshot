@@ -57,6 +57,10 @@ const repositoriesGroup: SiteAdminSideBarGroup = {
             label: 'Repository status',
             to: '/site-admin/repositories',
         },
+        {
+            label: 'Permissions',
+            to: '/site-admin/repositories-permissions',
+        },
     ],
 }
 

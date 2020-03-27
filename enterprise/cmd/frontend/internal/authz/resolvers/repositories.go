@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
-var _ graphqlbackend.RepositoryConnectionResolver = &repositoryConnectionResolver{}
+var _ graphqlbackend.RepositoryConnectionResolver = (*repositoryConnectionResolver)(nil)
 
 // repositoryConnectionResolver resolves a list of repositories from the roaring bitmap with pagination.
 type repositoryConnectionResolver struct {

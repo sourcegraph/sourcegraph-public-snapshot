@@ -52,7 +52,7 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 		}()
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := (&Resolver{}).SetRepositoryPermissionsForUsers(ctx, &graphqlbackend.RepoPermsArgs{})
+		result, err := (&Resolver{}).SetRepositoryPermissionsForUsers(ctx, &graphqlbackend.SetRepoPermsArgs{})
 		if want := backend.ErrMustBeSiteAdmin; err != want {
 			t.Errorf("err: want %q but got %v", want, err)
 		}

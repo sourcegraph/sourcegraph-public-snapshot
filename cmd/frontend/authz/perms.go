@@ -139,8 +139,7 @@ func (p *UserPermissions) TracingFields() []otlog.Field {
 	return fs
 }
 
-// RepoPermissions declares which users have access to a given repository, as
-// defined by the permissions provider (either Bitbucket Server or Sourcegraph).
+// RepoPermissions declares which users have access to a given repository.
 type RepoPermissions struct {
 	RepoID    int32
 	Perm      Perms

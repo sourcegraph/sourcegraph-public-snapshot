@@ -30,7 +30,7 @@ func NewResolver(db dbutil.DB, clock func() time.Time) graphqlbackend.AuthzResol
 	}
 }
 
-func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *graphqlbackend.RepoPermsArgs) (*graphqlbackend.EmptyResponse, error) {
+func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *graphqlbackend.SetRepoPermsArgs) (*graphqlbackend.EmptyResponse, error) {
 	// 🚨 SECURITY: Only site admins can mutate repository permissions.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
@@ -220,5 +220,44 @@ func (r *Resolver) AuthorizedUsers(ctx context.Context, args *graphqlbackend.Rep
 		ids:   p.UserIDs,
 		first: args.First,
 		after: args.After,
+	}, nil
+}
+
+func (r *Resolver) RepositoriesPermissions(ctx context.Context, args *graphqlbackend.ReposPermsArgs) (graphqlbackend.RepositoryPermissionsConnectionResolver, error) {
+	// 🚨 SECURITY: Only site admins can query repository permissions.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	//var query string
+	//if args.Query != nil {
+	//	query = *args.Query
+	//}
+
+	var orderBy []db.RepoListSort
+	if args.OrderBy == "REPOSITORY_PERMISSIONS_UPDATED_AT" {
+		orderBy = append(orderBy, db.RepoListSort{
+			Field:      "updated_at",
+			Descending: args.Descending,
+		})
+	}
+
+	var limit int
+	if args.First != nil {
+		limit = int(*args.First)
+	}
+
+	perms, totalCount, err := r.store.ListRepoPermissions(ctx, edb.ListRepoPermissionsOptions{
+		OrderBy: orderBy,
+		Limit:   limit,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &repositoryPermissionsConnectionResolver{
+		perms:      perms,
+		totalCount: totalCount,
+		limit:      limit,
 	}, nil
 }

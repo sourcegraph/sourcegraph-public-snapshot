@@ -52,6 +52,14 @@ export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         exact: true,
     },
     {
+        path: '/repositories-permissions',
+        render: lazyComponent(
+            () => import('./SiteAdminRepositoriesPermissionsPage'),
+            'SiteAdminRepositoriesPermissionsPage'
+        ),
+        exact: true,
+    },
+    {
         path: '/organizations',
         render: lazyComponent(() => import('./SiteAdminOrgsPage'), 'SiteAdminOrgsPage'),
         exact: true,

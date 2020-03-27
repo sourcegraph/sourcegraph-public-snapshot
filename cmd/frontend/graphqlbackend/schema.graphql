@@ -1387,6 +1387,49 @@ type Query {
     # Returns a list of usernames or emails that have associated pending permissions.
     # The returned list can be used to query authorizedUserRepositories for pending permissions.
     usersWithPendingPermissions: [String!]!
+
+    # Returns a list of repositories with their permissions information.
+    repositoriesPermissions(
+        # The number of repositories to return.
+        first: Int
+        # Return repositories whose names match the query.
+        query: String
+        # Sort field.
+        orderBy: RepositoryPermissionsOrderBy = REPOSITORY_PERMISSIONS_UPDATED_AT
+        # Sort direction.
+        descending: Boolean = true
+    ): RepositoryPermissionsConnection!
+}
+
+# RepositoryPermissionsOrderBy enumerates the ways a repositories permissions list can be ordered.
+enum RepositoryPermissionsOrderBy {
+    REPOSITORY_PERMISSIONS_UPDATED_AT
+}
+
+# A list of repositories along with their permissions information.
+type RepositoryPermissionsConnection {
+    # The list of nodes that contains actual repositories and their permissions.
+    nodes: [RepositoryPermissions!]!
+    # The total count of repositories in the connection.
+    totalCount: Int!
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# A repository with its permissions.
+type RepositoryPermissions {
+    # The repository itself.
+    repository: Repository!
+    # Permissions of the repository.
+    permissions: RepositoryPermissionsInfo!
+}
+
+# Permissions information of a repository.
+type RepositoryPermissionsInfo {
+    # Permission that users has on the repository.
+    perm: RepositoryPermission!
+    # When the permissions were last updated.
+    updatedAt: DateTime!
 }
 
 # The version of the search syntax.

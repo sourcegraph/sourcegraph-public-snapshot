@@ -168,6 +168,42 @@ export function fetchAllRepositoriesAndPollIfEmptyOrAnyCloning(
     )
 }
 
+interface RepositoriesPermissionsArgs {}
+
+export function fetchAllRepositoriesPermissions(
+    args: RepositoriesPermissionsArgs
+): Observable<GQL.IRepositoryPermissionsConnection> {
+    args = {
+        descending: true,
+        ...args,
+    } // apply defaults
+    return queryGraphQL(
+        gql`
+            query RepositoriesPermissions($first: Int, $query: String, $descending: Boolean) {
+                repositoriesPermissions(first: $first, query: $query, descending: $descending) {
+                    nodes {
+                        repository {
+                            name
+                            url
+                        }
+                        permissions {
+                            updatedAt
+                        }
+                    }
+                    totalCount
+                    pageInfo {
+                        hasNextPage
+                    }
+                }
+            }
+        `,
+        args
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.repositoriesPermissions)
+    )
+}
+
 export function updateMirrorRepository(args: { repository: GQL.ID }): Observable<void> {
     return mutateGraphQL(
         gql`

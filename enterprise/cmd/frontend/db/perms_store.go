@@ -11,6 +11,7 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -105,6 +106,77 @@ AND permission = %s
 		p.RepoID,
 		p.Perm.String(),
 	)
+}
+
+type ListRepoPermissionsOptions struct {
+	// List of fields by which to order the return permissions.
+	OrderBy db.RepoListOrderBy
+	// Limit the number of returned permissions.
+	Limit int
+}
+
+func (s *PermsStore) ListRepoPermissions(ctx context.Context, opt ListRepoPermissionsOptions) (perms []*authz.RepoPermissions, totalCount int, err error) {
+	ctx, save := s.observe(ctx, "ListRepoPermissions", "")
+	defer func() { save(&err, otlog.Object("opt", opt)) }()
+
+	//if opt.Query != "" {
+	//	reposConds = append(reposConds, sqlf.Sprintf("lower(repos.name) LIKE %s", "%"+strings.ToLower(opt.Query)+"%"))
+	//}
+
+	conds := []*sqlf.Query{
+		opt.OrderBy.SQL(),
+	}
+	if opt.Limit > 0 {
+		conds = append(conds, sqlf.Sprintf(`LIMIT %d`, opt.Limit))
+	}
+
+	q := sqlf.Sprintf(`
+-- source: enterprise/cmd/frontend/db/perms_store.go:ListRepoPermissions
+SELECT perms.repo_id, perms.user_ids, perms.updated_at,
+	COUNT(*) OVER() AS total_count
+FROM repo_permissions AS perms
+WHERE perms.repo_id NOT IN
+	(SELECT repo.id FROM repo
+	 WHERE repo.deleted_at IS NOT NULL)
+%s
+`, sqlf.Join(conds, " "))
+	var rows *sql.Rows
+	rows, err = s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	perms = make([]*authz.RepoPermissions, 0, opt.Limit)
+	for rows.Next() {
+		var id int32
+		var ids []byte
+		var updatedAt time.Time
+		if err = rows.Scan(&id, &ids, &updatedAt, &totalCount); err != nil {
+			return nil, 0, err
+		}
+
+		if len(ids) == 0 {
+			continue
+		}
+
+		bm := roaring.NewBitmap()
+		if err = bm.UnmarshalBinary(ids); err != nil {
+			return nil, 0, err
+		}
+
+		perms = append(perms, &authz.RepoPermissions{
+			RepoID:    id,
+			Perm:      authz.Read, // Note: We currently only support read for repository permissions.
+			UserIDs:   bm,
+			UpdatedAt: updatedAt,
+		})
+	}
+	if err = rows.Err(); err != nil {
+		return nil, 0, err
+	}
+
+	return perms, totalCount, nil
 }
 
 // SetUserPermissions performs a full update for p, new object IDs found in p will be upserted
