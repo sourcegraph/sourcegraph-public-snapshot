@@ -17,7 +17,7 @@
       "reviewers": ["beyang"]
     },
     {
-      "paths": ["cmd/lsif-server/precise-code-intel/*"],
+      "paths": ["cmd/lsif-server/*"],
       "reviewers": ["team:code-intel"]
     }
   ]

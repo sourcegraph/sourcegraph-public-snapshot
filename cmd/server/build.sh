@@ -29,7 +29,7 @@ export additional_images=${@:-github.com/sourcegraph/sourcegraph/cmd/frontend gi
 # our enterprise build scripts.
 export server_pkg=${SERVER_PKG:-github.com/sourcegraph/sourcegraph/cmd/server}
 
-cp -a ./cmd/lsif-server/precise-code-intel "$OUTPUT"
+cp -a ./cmd/lsif-server "$OUTPUT"
 cp -a ./cmd/server/rootfs/. "$OUTPUT"
 export BINDIR="$OUTPUT/usr/local/bin"
 mkdir -p "$BINDIR"
