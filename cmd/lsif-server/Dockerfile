@@ -1,7 +1,7 @@
 # keep this in sync with docker-images/prometheus/Dockerfile
 FROM prom/prometheus:v2.15.2@sha256:35c52c0c2b76433bbfc44a5a7abc294c2f032ed80250be02b441db5dd91b203a AS prometheus
 
-FROM alpine:3.10@sha256:e4355b66995c96b4b468159fc5c7e3540fcef961189ca13fee877798649f531a AS lsif-builder
+FROM alpine:3.10@sha256:e4355b66995c96b4b468159fc5c7e3540fcef961189ca13fee877798649f531a AS pci-builder
 
 RUN apk add --no-cache nodejs-current=12.4.0-r0 nodejs-npm=10.19.0-r0
 RUN npm install -g yarn@1.17.3
@@ -43,7 +43,7 @@ RUN mkdir -p $PROMETHEUS_CONFIGURATION_DIR && chown -R sourcegraph:sourcegraph $
 RUN mkdir -p /lsif-storage && chown -R sourcegraph:sourcegraph /lsif-storage
 USER sourcegraph
 
-COPY --from=lsif-builder /precise-code-intel /precise-code-intel
+COPY --from=pci-builder /precise-code-intel /precise-code-intel
 COPY ./lsif-server /usr/local/bin/lsif-server
 COPY --from=prometheus /bin/prometheus /bin/prometheus
 COPY ./prometheus.yml $PROMETHEUS_CONFIGURATION_DIR/prometheus.yml
