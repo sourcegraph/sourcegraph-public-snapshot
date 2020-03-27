@@ -13,7 +13,7 @@ import (
 
 var (
 	// TODO - update this to precise-code-intel-api-server once we split them in k8s
-	lsifAPIServerURL = env.Get("LSIF_API_SERVER_URL", "k8s+http://lsif-server:3186", "precise-code-intel-api-server URL (or space separated list of precise-code-intel-api-server URLs)")
+	lsifAPIServerURL = env.Get("LSIF_API_SERVER_URL", "k8s+http://precise-code-intel:3186", "precise-code-intel-api-server URL (or space separated list of precise-code-intel-api-server URLs)")
 
 	lsifAPIServerURLsOnce sync.Once
 	lsifAPIServerURLs     *endpoint.Map

@@ -20,9 +20,9 @@ FROM alpine:3.10@sha256:e4355b66995c96b4b468159fc5c7e3540fcef961189ca13fee877798
 RUN apk add --no-cache nodejs-current=12.4.0-r0 nodejs-npm=10.19.0-r0
 RUN npm install -g yarn@1.17.3
 
-COPY lsif-server/package.json lsif-server/yarn.lock lsif-server/tsconfig.json /pci/
+COPY precise-code-intel/package.json precise-code-intel/yarn.lock precise-code-intel/tsconfig.json /pci/
 RUN yarn --cwd /pci
-COPY lsif-server/src /pci/src
+COPY precise-code-intel/src /pci/src
 RUN yarn --cwd /pci run build
 
 # TODO: Make this image use our sourcegraph/alpine:3.10 base image

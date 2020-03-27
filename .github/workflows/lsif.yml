@@ -38,15 +38,15 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - name: Install dependencies
-        run: yarn --cwd cmd/lsif-server
+        run: yarn --cwd cmd/precise-code-intel
       - name: Generate LSIF data
         uses: sourcegraph/lsif-node-action@master
         with:
-          project_root: cmd/lsif-server
+          project_root: cmd/precise-code-intel
       - name: Upload LSIF data
         uses: sourcegraph/lsif-upload-action@master
         with:
-          root: cmd/lsif-server
+          root: cmd/precise-code-intel
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
   lsif-shared:
