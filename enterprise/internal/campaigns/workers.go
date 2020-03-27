@@ -297,6 +297,9 @@ func ExecChangesetJob(
 		}
 		events = clone.Events()
 		clone.SetDerivedState(events)
+
+		clone.CampaignIDs = append(clone.CampaignIDs, job.CampaignID)
+
 		if err = store.UpdateChangesets(ctx, clone); err != nil {
 			return err
 		}

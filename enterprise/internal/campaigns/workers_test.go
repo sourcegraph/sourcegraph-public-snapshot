@@ -36,12 +36,12 @@ func TestExecChangesetJob(t *testing.T) {
 		changesetMetadata func(now time.Time, c *cmpgn.Campaign, headRef string) interface{}
 
 		existsOnCodehost bool
+		existsInDB       bool
 	}{
 		{
 			name:              "GitHub_NewChangeset",
 			createRepoExtSvc:  createGitHubRepo,
 			changesetMetadata: buildGithubPR,
-			existsOnCodehost:  false,
 		},
 		{
 			name:              "GitHub_ChangesetExistsOnCodehost",
@@ -50,16 +50,28 @@ func TestExecChangesetJob(t *testing.T) {
 			existsOnCodehost:  true,
 		},
 		{
+			name:              "GitHub_ChangesetExistsInDB",
+			createRepoExtSvc:  createGitHubRepo,
+			changesetMetadata: buildGithubPR,
+			existsInDB:        true,
+		},
+		{
 			name:              "BitbucketServer_NewChangeset",
 			createRepoExtSvc:  createBBSRepo,
 			changesetMetadata: buildBBSPR,
-			existsOnCodehost:  false,
 		},
 		{
 			name:              "BitbucketServer_ChangesetExistsOnCodehost",
 			createRepoExtSvc:  createBBSRepo,
 			changesetMetadata: buildBBSPR,
 			existsOnCodehost:  true,
+		},
+
+		{
+			name:              "BitbucketServer_ChangesetExistsInDB",
+			createRepoExtSvc:  createBBSRepo,
+			changesetMetadata: buildBBSPR,
+			existsInDB:        true,
 		},
 	}
 
@@ -75,6 +87,28 @@ func TestExecChangesetJob(t *testing.T) {
 			baseRef := patch.BaseRef
 
 			meta := tc.changesetMetadata(now, campaign, headRef)
+
+			oldCreatedAt := now.Add(-5 * time.Second)
+			if tc.existsInDB {
+				// We simulate that the Changeset with the same external ID
+				// for the same repository already exists in the DB, but with
+				// empty metadata, so we can later check that it was properly
+				// updated.
+				ch := &cmpgn.Changeset{
+					RepoID:    repo.ID,
+					CreatedAt: oldCreatedAt,
+					UpdatedAt: now.Add(-5 * time.Second),
+				}
+				// This sets ExternalID, which we need to trigger the
+				// AlreadyExistsError.
+				ch.SetMetadata(meta)
+				// Now we can remove metadata.
+				ch.Metadata = nil
+
+				if err := s.CreateChangesets(ctx, ch); err != nil {
+					t.Fatal(err)
+				}
+			}
 
 			gitClient := &dummyGitserverClient{response: headRef, responseErr: nil}
 
@@ -117,6 +151,13 @@ func TestExecChangesetJob(t *testing.T) {
 				UpdatedAt:           now,
 			}
 			wantChangeset.SetMetadata(meta)
+
+			if tc.existsInDB {
+				// If it was already in the DB we want to make sure that all
+				// other fields are updated, but not CreatedAt.
+				wantChangeset.CreatedAt = oldCreatedAt
+			}
+
 			assertChangesetInDB(t, ctx, s, changesetJob.ChangesetID, wantChangeset)
 
 			wantEvents := wantChangeset.Events()
