@@ -44,7 +44,7 @@ USER sourcegraph
 COPY --from=pci-builder /pci /pci
 COPY ./lsif-server/lsif-server /usr/local/bin/lsif-server
 COPY --from=prometheus /bin/prometheus /bin/prometheus
-COPY ./prometheus.yml $PROMETHEUS_CONFIGURATION_DIR/prometheus.yml
+COPY ./lsif-server/prometheus.yml $PROMETHEUS_CONFIGURATION_DIR/prometheus.yml
 
 # http api server, bundle manager server, (first) worker metrics server, prometheus
 EXPOSE 3186 3187 3188 9090
