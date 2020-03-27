@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -23,96 +24,111 @@ import (
 func TestExecChangesetJob(t *testing.T) {
 	ctx := context.Background()
 
-	// Setup global test db in dbconn.Global
-	dbtesting.SetupGlobalTestDB(t)
-	// Wrap test db in transaction that's rolled back at end of test
-	tx := dbtest.NewTx(t, dbconn.Global)
-
 	now := time.Now().UTC().Truncate(time.Microsecond)
 	clock := func() time.Time { return now.UTC().Truncate(time.Microsecond) }
 
-	s := NewStoreWithClock(tx, clock)
-	// Create repositories and external service
-	repo, githubExtSvc := createGitHubRepo(t, ctx, now, s)
-	// Create PatchSet, Patch, Campaign and ChangesetJob
-	campaign, patch := createCampaignPatch(t, ctx, now, s, repo)
-	// Create dummy GitHub PR
-	createdHeadRef := "refs/heads/" + campaign.Branch
-	pr := githubPR(now, campaign.Name, campaign.Description, createdHeadRef)
+	dbtesting.SetupGlobalTestDB(t)
 
-	// Setup the dependencies
-	gitClient := &dummyGitserverClient{
-		response:    createdHeadRef,
-		responseErr: nil,
+	codehosts := []struct {
+		name string
+
+		createRepoExtSvc func(t *testing.T, ctx context.Context, now time.Time, s *Store) (*repos.Repo, *repos.ExternalService)
+		metadata         func(now time.Time, c *cmpgn.Campaign, headRef string) interface{}
+
+		wantChangeset func(now time.Time, r *repos.Repo, c *cmpgn.Campaign, headRef string, metadata interface{}) *cmpgn.Changeset
+		wantEvents    func(now time.Time, changesetID int64, metadata interface{}) []*cmpgn.ChangesetEvent
+	}{
+		{
+			name:             "GitHub",
+			createRepoExtSvc: createGitHubRepo,
+			metadata: func(now time.Time, c *cmpgn.Campaign, headRef string) interface{} {
+				return githubPR(now, c.Name, c.Description, headRef)
+			},
+			wantChangeset: func(now time.Time, r *repos.Repo, c *cmpgn.Campaign, headRef string, metadata interface{}) *cmpgn.Changeset {
+				want := &cmpgn.Changeset{
+					RepoID:              r.ID,
+					CampaignIDs:         []int64{c.ID},
+					ExternalBranch:      headRef,
+					ExternalState:       cmpgn.ChangesetStateOpen,
+					ExternalReviewState: cmpgn.ChangesetReviewStatePending,
+					ExternalCheckState:  cmpgn.ChangesetCheckStateUnknown,
+					CreatedAt:           now,
+					UpdatedAt:           now,
+				}
+				want.SetMetadata(metadata)
+				return want
+			},
+			wantEvents: func(now time.Time, changesetID int64, metadata interface{}) []*cmpgn.ChangesetEvent {
+				pr := metadata.(*github.PullRequest)
+
+				return []*cmpgn.ChangesetEvent{
+					{
+						ChangesetID: changesetID,
+						Kind:        cmpgn.ChangesetEventKindGitHubCommit,
+						Key:         pr.TimelineItems[0].Item.(*github.PullRequestCommit).Commit.OID,
+						UpdatedAt:   now,
+						CreatedAt:   now,
+						Metadata:    pr.TimelineItems[0].Item,
+					},
+				}
+			},
+		},
 	}
 
-	var (
-		wantHeadRef  = createdHeadRef
-		wantBaseRef  = patch.BaseRef
-		wantMetadata = pr
-	)
+	for _, tc := range codehosts {
+		newTest := func(alreadyExists bool) func(t *testing.T) {
+			return func(t *testing.T) {
+				tx := dbtest.NewTx(t, dbconn.Global)
+				s := NewStoreWithClock(tx, clock)
 
-	fakeSource := fakeChangesetSource{
-		svc:          githubExtSvc,
-		err:          nil,
-		exists:       false,
-		wantHeadRef:  wantHeadRef,
-		wantBaseRef:  wantBaseRef,
-		fakeMetadata: pr,
-	}
+				repo, extSvc := tc.createRepoExtSvc(t, ctx, now, s)
+				campaign, patch := createCampaignPatch(t, ctx, now, s, repo)
 
-	sourcer := repos.NewFakeSourcer(nil, fakeSource)
+				headRef := "refs/heads/" + campaign.Branch
+				baseRef := patch.BaseRef
 
-	// Create and execute the ChangesetJob
-	changesetJob := &cmpgn.ChangesetJob{CampaignID: campaign.ID, PatchID: patch.ID}
-	if err := s.CreateChangesetJob(ctx, changesetJob); err != nil {
-		t.Fatal(err)
-	}
+				pr := tc.metadata(now, campaign, headRef)
 
-	err := ExecChangesetJob(ctx, clock, s, gitClient, sourcer, campaign, changesetJob)
-	if err != nil {
-		t.Fatal(err)
-	}
+				gitClient := &dummyGitserverClient{response: headRef, responseErr: nil}
 
-	// Reload ChangesetJob
-	changesetJob, err = s.GetChangesetJob(ctx, GetChangesetJobOpts{ID: changesetJob.ID})
-	if err != nil {
-		t.Fatal(err)
-	}
+				sourcer := repos.NewFakeSourcer(nil, fakeChangesetSource{
+					svc:          extSvc,
+					err:          nil,
+					exists:       alreadyExists,
+					wantHeadRef:  headRef,
+					wantBaseRef:  baseRef,
+					fakeMetadata: pr,
+				})
 
-	if changesetJob.ChangesetID == 0 {
-		t.Fatalf("ChangesetJob has not ChangesetID set")
-	}
+				changesetJob := &cmpgn.ChangesetJob{CampaignID: campaign.ID, PatchID: patch.ID}
+				if err := s.CreateChangesetJob(ctx, changesetJob); err != nil {
+					t.Fatal(err)
+				}
 
-	// Load newly created Changeset
-	changeset, err := s.GetChangeset(ctx, GetChangesetOpts{ID: changesetJob.ChangesetID})
-	if err != nil {
-		t.Fatal(err)
-	}
+				err := ExecChangesetJob(ctx, clock, s, gitClient, sourcer, campaign, changesetJob)
+				if err != nil {
+					t.Fatal(err)
+				}
 
-	if want, have := pr.HeadRefName, changeset.ExternalBranch; have != want {
-		t.Fatalf("wrong changeset.ExternalBranch. want=%s, have=%s", want, have)
-	}
+				changesetJob, err = s.GetChangesetJob(ctx, GetChangesetJobOpts{ID: changesetJob.ID})
+				if err != nil {
+					t.Fatal(err)
+				}
 
-	haveMetadata := changeset.Metadata.(*github.PullRequest)
-	if diff := cmp.Diff(wantMetadata, haveMetadata); diff != "" {
-		t.Fatal(diff)
-	}
+				if changesetJob.ChangesetID == 0 {
+					t.Fatalf("ChangesetJob has not ChangesetID set")
+				}
 
-	// Load newly created ChangesetEvents
-	events, _, err := s.ListChangesetEvents(ctx, ListChangesetEventsOpts{
-		Limit:        -1,
-		ChangesetIDs: []int64{changeset.ID},
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if want, have := 1, len(events); want != have {
-		t.Fatalf("wrong number of ChangesetEvents. want=%d, have=%d", want, have)
-	}
+				wantChangeset := tc.wantChangeset(now, repo, campaign, headRef, pr)
+				assertChangesetInDB(t, ctx, s, changesetJob.ChangesetID, wantChangeset)
 
-	if want, have := cmpgn.ChangesetEventKindGitHubCommit, events[0].Kind; want != have {
-		t.Fatalf("wrong event. want=%s, have=%s", want, have)
+				wantEvents := tc.wantEvents(now, changesetJob.ChangesetID, pr)
+				assertChangesetEventsInDB(t, ctx, s, changesetJob.ChangesetID, wantEvents)
+			}
+		}
+
+		t.Run(tc.name+"NewPullRequest", newTest(false))
+		t.Run(tc.name+"PullRequestAlreadyExists", newTest(true))
 	}
 }
 
@@ -154,6 +170,19 @@ func (s fakeChangesetSource) CreateChangeset(ctx context.Context, c *repos.Chang
 	return s.exists, s.err
 }
 
+func (s fakeChangesetSource) UpdateChangeset(ctx context.Context, c *repos.Changeset) error {
+	if s.err != nil {
+		return s.err
+	}
+
+	if c.BaseRef != s.wantBaseRef {
+		return fmt.Errorf("wrong BaseRef. want=%s, have=%s", s.wantBaseRef, c.BaseRef)
+	}
+
+	c.SetMetadata(s.fakeMetadata)
+	return nil
+}
+
 var fakeNotImplemented = errors.New("not implement in fakeChangesetSource")
 
 func (s fakeChangesetSource) ListRepos(ctx context.Context, results chan repos.SourceResult) {
@@ -167,9 +196,6 @@ func (s fakeChangesetSource) LoadChangesets(ctx context.Context, cs ...*repos.Ch
 	return fakeNotImplemented
 }
 func (s fakeChangesetSource) CloseChangeset(ctx context.Context, c *repos.Changeset) error {
-	return fakeNotImplemented
-}
-func (s fakeChangesetSource) UpdateChangeset(ctx context.Context, c *repos.Changeset) error {
 	return fakeNotImplemented
 }
 
@@ -239,13 +265,13 @@ func createCampaignPatch(t *testing.T, ctx context.Context, now time.Time, s *St
 	return campaign, patch
 }
 
-func githubPR(now time.Time, title, body, headRef string) *github.PullRequest {
-	githubActor := github.Actor{
-		AvatarURL: "https://avatars2.githubusercontent.com/u/1185253",
-		Login:     "mrnugget",
-		URL:       "https://github.com/mrnugget",
-	}
+var githubActor = github.Actor{
+	AvatarURL: "https://avatars2.githubusercontent.com/u/1185253",
+	Login:     "mrnugget",
+	URL:       "https://github.com/mrnugget",
+}
 
+func githubPR(now time.Time, title, body, headRef string) *github.PullRequest {
 	return &github.PullRequest{
 		ID:           "FOOBARID",
 		Title:        title,
@@ -267,5 +293,36 @@ func githubPR(now time.Time, title, body, headRef string) *github.PullRequest {
 		},
 		CreatedAt: now,
 		UpdatedAt: now,
+	}
+}
+
+func assertChangesetInDB(t *testing.T, ctx context.Context, s *Store, id int64, want *cmpgn.Changeset) {
+	t.Helper()
+
+	changeset, err := s.GetChangeset(ctx, GetChangesetOpts{ID: id})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	diff := cmp.Diff(want, changeset, cmpopts.IgnoreFields(cmpgn.Changeset{}, "ID"))
+	if diff != "" {
+		t.Fatal(diff)
+	}
+}
+
+func assertChangesetEventsInDB(t *testing.T, ctx context.Context, s *Store, changesetID int64, want []*cmpgn.ChangesetEvent) {
+	t.Helper()
+
+	events, _, err := s.ListChangesetEvents(ctx, ListChangesetEventsOpts{
+		Limit:        -1,
+		ChangesetIDs: []int64{changesetID},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	diff := cmp.Diff(want, events, cmpopts.IgnoreFields(cmpgn.ChangesetEvent{}, "ID"))
+	if diff != "" {
+		t.Fatal(diff)
 	}
 }
