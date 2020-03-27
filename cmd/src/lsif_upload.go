@@ -59,11 +59,11 @@ Examples:
 		fmt.Println(usage)
 	}
 	var (
-		repoFlag        = flagSet.String("repo", "", `The name of the repository. By default, derived from the origin remote.`)
+		repoFlag        = flagSet.String("repo", "", `The name of the repository (e.g. github.com/gorilla/mux). By default, derived from the origin remote.`)
 		commitFlag      = flagSet.String("commit", "", `The 40-character hash of the commit. Defaults to the currently checked-out commit.`)
 		fileFlag        = flagSet.String("file", "./dump.lsif", `The path to the LSIF dump file.`)
 		githubTokenFlag = flagSet.String("github-token", "", `A GitHub access token with 'public_repo' scope that Sourcegraph uses to verify you have access to the repository.`)
-		rootFlag        = flagSet.String("root", "", `The path in the repository that matches the LSIF projectRoot (e.g. cmd/project1). Defaults to the empty string, which refers to the top level of the repository.`)
+		rootFlag        = flagSet.String("root", "", `The path in the repository that matches the LSIF projectRoot (e.g. cmd/project1). Defaults to the directory where the dump file is located.`)
 		indexerNameFlag = flagSet.String("indexerName", "", `The name of the indexer that generated the dump. This will override the 'toolInfo.name' field in the metadata vertex of the LSIF dump file. This must be supplied if the indexer does not set this field (in which case the upload will fail with an explicit message).`)
 		openFlag        = flagSet.Bool("open", false, `Open the LSIF upload page in your browser.`)
 		apiFlags        = newAPIFlags(flagSet)
@@ -75,7 +75,7 @@ Examples:
 		if repoFlag == nil || *repoFlag == "" {
 			remoteURL, err := exec.Command("git", "remote", "get-url", "origin").Output()
 			if err != nil {
-				fmt.Println(err)
+				fmt.Printf("Failed to invoke git: %v\n", err)
 				fmt.Println("Unable to detect repository from environment.")
 				fmt.Println("Either cd into a git repository or set -repo explicitly.")
 				os.Exit(1)
@@ -92,7 +92,7 @@ Examples:
 		if commitFlag == nil || *commitFlag == "" {
 			commit, err := exec.Command("git", "rev-parse", "HEAD").Output()
 			if err != nil {
-				fmt.Println(err)
+				fmt.Printf("Failed to invoke git: %v\n", err)
 				fmt.Println("Unable to detect commit from environment.")
 				fmt.Println("Either cd into a git repository or set -commit explicitly.")
 				os.Exit(1)
