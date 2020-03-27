@@ -37,13 +37,13 @@ export const CLEAN_FAILED_UPLOADS_INTERVAL = readEnvInt('CLEAN_FAILED_UPLOADS_IN
 /** The maximum age (in seconds) that the files for an unprocessed upload can remain on disk. */
 export const FAILED_UPLOAD_MAX_AGE = readEnvInt('FAILED_UPLOAD_MAX_AGE', 24 * 60 * 60)
 
-/** How many times to retry requests to lsif-api-server in the background. */
+/** How many times to retry requests to precise-code-intel-api-server in the background. */
 export const MAX_REQUEST_RETRIES = readEnvInt('MAX_REQUEST_RETRIES', 60)
 
-/** How long to wait (minimum, in seconds) between lsif-api-server request attempts. */
+/** How long to wait (minimum, in seconds) between precise-code-intel-api-server request attempts. */
 export const MIN_REQUEST_RETRY_TIMEOUT = readEnvInt('MIN_REQUEST_RETRY_TIMEOUT', 1)
 
-/** How long to wait (maximum, in seconds) between lsif-api-server request attempts. */
+/** How long to wait (maximum, in seconds) between precise-code-intel-api-server request attempts. */
 export const MAX_REQUEST_RETRY_TIMEOUT = readEnvInt('MAX_REQUEST_RETRY_TIMEOUT', 30)
 
 /** The maximum rate that the server will send upload payloads. */
