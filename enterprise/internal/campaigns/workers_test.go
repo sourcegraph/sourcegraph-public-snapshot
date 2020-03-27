@@ -32,18 +32,16 @@ func TestExecChangesetJob(t *testing.T) {
 	codehosts := []struct {
 		name string
 
-		createRepoExtSvc func(t *testing.T, ctx context.Context, now time.Time, s *Store) (*repos.Repo, *repos.ExternalService)
-		metadata         func(now time.Time, c *cmpgn.Campaign, headRef string) interface{}
+		createRepoExtSvc  func(t *testing.T, ctx context.Context, now time.Time, s *Store) (*repos.Repo, *repos.ExternalService)
+		changesetMetadata func(now time.Time, c *cmpgn.Campaign, headRef string) interface{}
 
 		wantChangeset func(now time.Time, r *repos.Repo, c *cmpgn.Campaign, headRef string, metadata interface{}) *cmpgn.Changeset
 		wantEvents    func(now time.Time, changesetID int64, metadata interface{}) []*cmpgn.ChangesetEvent
 	}{
 		{
-			name:             "GitHub",
-			createRepoExtSvc: createGitHubRepo,
-			metadata: func(now time.Time, c *cmpgn.Campaign, headRef string) interface{} {
-				return githubPR(now, c.Name, c.Description, headRef)
-			},
+			name:              "GitHub",
+			createRepoExtSvc:  createGitHubRepo,
+			changesetMetadata: buildGithubPR,
 			wantChangeset: func(now time.Time, r *repos.Repo, c *cmpgn.Campaign, headRef string, metadata interface{}) *cmpgn.Changeset {
 				want := &cmpgn.Changeset{
 					RepoID:              r.ID,
@@ -75,26 +73,34 @@ func TestExecChangesetJob(t *testing.T) {
 		},
 	}
 
-	for _, tc := range codehosts {
-		newTest := func(alreadyExists bool) func(t *testing.T) {
-			return func(t *testing.T) {
+	for _, codehostTest := range codehosts {
+		subtests := []struct {
+			name          string
+			alreadyExists bool
+		}{
+			{name: "ChangesetAlreadyExists", alreadyExists: true},
+			{name: "NewChangeset", alreadyExists: false},
+		}
+
+		for _, tc := range subtests {
+			t.Run(codehostTest.name+tc.name, func(t *testing.T) {
 				tx := dbtest.NewTx(t, dbconn.Global)
 				s := NewStoreWithClock(tx, clock)
 
-				repo, extSvc := tc.createRepoExtSvc(t, ctx, now, s)
+				repo, extSvc := codehostTest.createRepoExtSvc(t, ctx, now, s)
 				campaign, patch := createCampaignPatch(t, ctx, now, s, repo)
 
 				headRef := "refs/heads/" + campaign.Branch
 				baseRef := patch.BaseRef
 
-				pr := tc.metadata(now, campaign, headRef)
+				pr := codehostTest.changesetMetadata(now, campaign, headRef)
 
 				gitClient := &dummyGitserverClient{response: headRef, responseErr: nil}
 
 				sourcer := repos.NewFakeSourcer(nil, fakeChangesetSource{
 					svc:          extSvc,
 					err:          nil,
-					exists:       alreadyExists,
+					exists:       tc.alreadyExists,
 					wantHeadRef:  headRef,
 					wantBaseRef:  baseRef,
 					fakeMetadata: pr,
@@ -119,16 +125,13 @@ func TestExecChangesetJob(t *testing.T) {
 					t.Fatalf("ChangesetJob has not ChangesetID set")
 				}
 
-				wantChangeset := tc.wantChangeset(now, repo, campaign, headRef, pr)
+				wantChangeset := codehostTest.wantChangeset(now, repo, campaign, headRef, pr)
 				assertChangesetInDB(t, ctx, s, changesetJob.ChangesetID, wantChangeset)
 
-				wantEvents := tc.wantEvents(now, changesetJob.ChangesetID, pr)
+				wantEvents := codehostTest.wantEvents(now, changesetJob.ChangesetID, pr)
 				assertChangesetEventsInDB(t, ctx, s, changesetJob.ChangesetID, wantEvents)
-			}
+			})
 		}
-
-		t.Run(tc.name+"NewPullRequest", newTest(false))
-		t.Run(tc.name+"PullRequestAlreadyExists", newTest(true))
 	}
 }
 
@@ -271,11 +274,11 @@ var githubActor = github.Actor{
 	URL:       "https://github.com/mrnugget",
 }
 
-func githubPR(now time.Time, title, body, headRef string) *github.PullRequest {
+func buildGithubPR(now time.Time, c *cmpgn.Campaign, headRef string) interface{} {
 	return &github.PullRequest{
 		ID:           "FOOBARID",
-		Title:        title,
-		Body:         body,
+		Title:        c.Name,
+		Body:         c.Description,
 		HeadRefName:  git.AbbreviateRef(headRef),
 		URL:          "https://github.com/sourcegraph/sourcegraph/pull/12345",
 		Number:       12345,
