@@ -12,13 +12,14 @@ import (
 )
 
 var (
-	lsifServerURL = env.Get("LSIF_SERVER_URL", "k8s+http://lsif-server:3186", "lsif-server URL (or space separated list of lsif-server URLs)")
+	// TODO - update this to lsif-api-server once we split them in k8s
+	lsifAPIServerURL = env.Get("LSIF_API_SERVER_URL", "k8s+http://lsif-server:3186", "lsif-api-server URL (or space separated list of lsif-api-server URLs)")
 
-	lsifServerURLsOnce sync.Once
-	lsifServerURLs     *endpoint.Map
+	lsifAPIServerURLsOnce sync.Once
+	lsifAPIServerURLs     *endpoint.Map
 
 	DefaultClient = &Client{
-		endpoint: LSIFServerURLs(),
+		endpoint: LSIFURLs(),
 		HTTPClient: &http.Client{
 			// nethttp.Transport will propagate opentracing spans
 			Transport: &nethttp.Transport{},
@@ -31,13 +32,13 @@ type Client struct {
 	HTTPClient *http.Client
 }
 
-func LSIFServerURLs() *endpoint.Map {
-	lsifServerURLsOnce.Do(func() {
-		if len(strings.Fields(lsifServerURL)) == 0 {
-			lsifServerURLs = endpoint.Empty(errors.New("an lsif-server has not been configured"))
+func LSIFURLs() *endpoint.Map {
+	lsifAPIServerURLsOnce.Do(func() {
+		if len(strings.Fields(lsifAPIServerURL)) == 0 {
+			lsifAPIServerURLs = endpoint.Empty(errors.New("an lsif-api-server has not been configured"))
 		} else {
-			lsifServerURLs = endpoint.New(lsifServerURL)
+			lsifAPIServerURLs = endpoint.New(lsifAPIServerURL)
 		}
 	})
-	return lsifServerURLs
+	return lsifAPIServerURLs
 }

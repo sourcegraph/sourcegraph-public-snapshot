@@ -18,7 +18,7 @@ zoekt-webserver-1: ./dev/zoekt/wrapper webserver 1
 keycloak: ./dev/auth-provider/keycloak.sh
 jaeger: ./dev/jaeger.sh
 docsite: ./dev/docsite.sh -config doc/docsite.json serve -http=localhost:5080
-lsif-server: yarn --cwd lsif run run:server
+lsif-api-server: yarn --cwd lsif run run:api-server
 lsif-bundle-manager: yarn --cwd lsif run run:bundle-manager
 lsif-worker: yarn --cwd lsif run run:worker
 prometheus: ./dev/prometheus.sh

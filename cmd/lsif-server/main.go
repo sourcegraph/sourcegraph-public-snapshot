@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	servers        = env.Get("LSIF_NUM_SERVERS", "1", "the number of server instances to run (defaults to one)")
+	apis           = env.Get("LSIF_NUM_APIS", "1", "the number of API instances to run (defaults to one)")
 	bundleManagers = env.Get("LSIF_NUM_BUNDLE_MANAGERS", "1", "the number of bundle manager instances to run (defaults to one)")
 	workers        = env.Get("LSIF_NUM_WORKERS", "1", "the number of worker instances to run (defaults to one)")
 
@@ -24,15 +24,15 @@ var (
 )
 
 const (
-	serverPort        = 3186
+	apiPort           = 3186
 	bundleManagerPort = 3187
 	workerPort        = 3188
 )
 
 func main() {
-	numServers, err := strconv.ParseInt(servers, 10, 64)
-	if err != nil || numServers < 0 || numServers > 1 {
-		log.Fatalf("Invalid int %q for LSIF_NUM_SERVERS: %s", servers, err)
+	numAPIs, err := strconv.ParseInt(apis, 10, 64)
+	if err != nil || numAPIs < 0 || numAPIs > 1 {
+		log.Fatalf("Invalid int %q for LSIF_NUM_APIS: %s", apis, err)
 	}
 
 	numBundleManagers, err := strconv.ParseInt(bundleManagers, 10, 64)
@@ -47,14 +47,14 @@ func main() {
 
 	if err := ioutil.WriteFile(
 		filepath.Join(prometheusConfigurationDir, "targets.yml"),
-		[]byte(makePrometheusTargets(numServers, numBundleManagers, numWorkers)),
+		[]byte(makePrometheusTargets(numAPIs, numBundleManagers, numWorkers)),
 		0644,
 	); err != nil {
 		log.Fatalf("Writing prometheus config: %v", err)
 	}
 
 	// This mirrors the behavior from cmd/start
-	if err := goreman.Start([]byte(makeProcfile(numServers, numBundleManagers, numWorkers)), goreman.Options{
+	if err := goreman.Start([]byte(makeProcfile(numAPIs, numBundleManagers, numWorkers)), goreman.Options{
 		RPCAddr:        "127.0.0.1:5005",
 		ProcDiedAction: goreman.Shutdown,
 	}); err != nil {
@@ -62,14 +62,14 @@ func main() {
 	}
 }
 
-func makeProcfile(numServers, numBundleManagers, numWorkers int64) string {
+func makeProcfile(numAPIs, numBundleManagers, numWorkers int64) string {
 	procfile := []string{}
 	addProcess := func(name, command string) {
 		procfile = append(procfile, fmt.Sprintf("%s: %s", name, command))
 	}
 
-	if numServers > 0 {
-		addProcess("lsif-server", "node /lsif/out/server/server.js")
+	if numAPIs > 0 {
+		addProcess("lsif-api-server", "node /lsif/out/api-server/api.js")
 	}
 
 	if numBundleManagers > 0 {
@@ -91,7 +91,7 @@ func makeProcfile(numServers, numBundleManagers, numWorkers int64) string {
 	return strings.Join(procfile, "\n") + "\n"
 }
 
-func makePrometheusTargets(numServers, numBundleManagers, numWorkers int64) string {
+func makePrometheusTargets(numAPIs, numBundleManagers, numWorkers int64) string {
 	content := []string{"---"}
 	addTarget := func(job string, port int) {
 		content = append(content,
@@ -102,8 +102,8 @@ func makePrometheusTargets(numServers, numBundleManagers, numWorkers int64) stri
 		)
 	}
 
-	if numServers > 0 {
-		addTarget("lsif-server", serverPort)
+	if numAPIs > 0 {
+		addTarget("lsif-api-server", apiPort)
 	}
 
 	if numBundleManagers > 0 {

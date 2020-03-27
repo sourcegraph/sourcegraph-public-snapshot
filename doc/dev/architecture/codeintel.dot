@@ -56,8 +56,8 @@ digraph architecture {
         graph [style="dotted"]
         node [fillcolor="2"]
 
-        lsif_server [
-            label="server"
+        lsif_api_server [
+            label="api"
             fillcolor="3"
             URL="https://github.com/sourcegraph/sourcegraph/tree/master/lsif/src/server"
         ]
@@ -84,12 +84,12 @@ digraph architecture {
     }
 
     frontend_graphqlbackend -> {
-        lsif_server
+        lsif_api_server
     } [
         fillcolor="1"
     ]
 
-    lsif_server -> {
+    lsif_api_server -> {
         lsif_bundle_manager,
         postgres,
         frontend_config
@@ -107,7 +107,7 @@ digraph architecture {
     ]
 
     lsif_bundle_manager -> {
-        lsif_server,
+        lsif_api_server,
         volume,
         postgres,
         frontend_config

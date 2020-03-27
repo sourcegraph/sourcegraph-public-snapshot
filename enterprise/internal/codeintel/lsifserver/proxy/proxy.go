@@ -42,9 +42,9 @@ func uploadProxyHandler() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		// 🚨 SECURITY: Ensure we return before proxying to the lsif-server upload
-		// endpoint. This endpoint is unprotected, so we need to make sure the user
-		// provides a valid token proving contributor access to the repository.
+		// 🚨 SECURITY: Ensure we return before proxying to the lsif-api-server upload endpoint.
+		// This endpoint is unprotected, so we need to make sure the user provides a valid token
+		// proving contributor access to the repository.
 		if conf.Get().LsifEnforceAuth {
 			if canBypassAuth := isSiteAdmin(ctx); !canBypassAuth {
 				if authorized := enforceAuth(ctx, w, r, repoName); !authorized {

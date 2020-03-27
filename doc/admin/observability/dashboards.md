@@ -43,4 +43,4 @@ Dashboard with indexing repositories and resolving revisions stats.
 
 ### LSIF
 
-Panels related to the LSIF server and workers.
+Panels related to the LSIF API server, bundle manager, and workers.

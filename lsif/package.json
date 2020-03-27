@@ -1,5 +1,5 @@
 {
-  "name": "lsif-server",
+  "name": "lsif",
   "description": "LSIF-based precise code intelligence",
   "author": "Sourcegraph",
   "license": "MIT",
@@ -9,7 +9,7 @@
     "test": "jest",
     "tslint": "../node_modules/.bin/tslint -p tsconfig.json",
     "eslint": "../node_modules/.bin/eslint --cache 'src/**/*.ts?(x)'",
-    "run:server": "tsc-watch --onSuccess \"node -r source-map-support/register out/server/server.js\" --noClear",
+    "run:api-server": "tsc-watch --onSuccess \"node -r source-map-support/register out/api-server/api.js\" --noClear",
     "run:bundle-manager": "tsc-watch --onSuccess \"node -r source-map-support/register out/bundle-manager/manager.js\" --noClear",
     "run:worker": "tsc-watch --onSuccess \"node -r source-map-support/register out/worker/worker.js\" --noClear"
   },
