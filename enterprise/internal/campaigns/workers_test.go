@@ -29,113 +29,27 @@ func TestExecChangesetJob(t *testing.T) {
 	tx := dbtest.NewTx(t, dbconn.Global)
 
 	now := time.Now().UTC().Truncate(time.Microsecond)
-	clock := func() time.Time {
-		return now.UTC().Truncate(time.Microsecond)
-	}
+	clock := func() time.Time { return now.UTC().Truncate(time.Microsecond) }
 
-	// Create repositories and external service
-	reposStore := repos.NewDBStore(tx, sql.TxOptions{})
-
-	githubExtSvc := &repos.ExternalService{
-		Kind:        "GITHUB",
-		DisplayName: "GitHub",
-		Config: marshalJSON(t, &schema.GitHubConnection{
-			Url:   "https://github.com",
-			Token: os.Getenv("GITHUB_TOKEN"),
-			Repos: []string{},
-		}),
-	}
-
-	if err := reposStore.UpsertExternalServices(ctx, githubExtSvc); err != nil {
-		t.Fatal(t)
-	}
-
-	repo := testRepo(0, github.ServiceType)
-	repo.Sources = map[string]*repos.SourceInfo{githubExtSvc.URN(): {
-		ID:       githubExtSvc.URN(),
-		CloneURL: "https://TOKENTOKENTOKEN@github.com/foobar/foobar",
-	}}
-	if err := reposStore.UpsertRepos(ctx, repo); err != nil {
-		t.Fatal(err)
-	}
-
-	// Create PatchSet, Patch, Campaign and ChangesetJob
 	s := NewStoreWithClock(tx, clock)
-
-	patchSet := &cmpgn.PatchSet{}
-	if err := s.CreatePatchSet(ctx, patchSet); err != nil {
-		t.Fatal(err)
-	}
-
-	patch := &cmpgn.Patch{
-		RepoID:     repo.ID,
-		PatchSetID: patchSet.ID,
-		Diff:       testDiff,
-		Rev:        "f00b4r",
-		BaseRef:    "refs/heads/master",
-	}
-	if err := s.CreatePatch(ctx, patch); err != nil {
-		t.Fatal(err)
-	}
-
-	campaign := &cmpgn.Campaign{
-		Name:            "Remove dead code",
-		Description:     "This campaign removes dead code.",
-		Branch:          "dead-code-b-gone",
-		AuthorID:        888,
-		NamespaceUserID: 888,
-		PatchSetID:      patchSet.ID,
-		ClosedAt:        now,
-	}
-	if err := s.CreateCampaign(ctx, campaign); err != nil {
-		t.Fatal(err)
-	}
-
-	changesetJob := &cmpgn.ChangesetJob{CampaignID: campaign.ID, PatchID: patch.ID}
-	if err := s.CreateChangesetJob(ctx, changesetJob); err != nil {
-		t.Fatal(err)
-	}
+	// Create repositories and external service
+	repo, githubExtSvc := createGitHubRepo(t, ctx, now, s)
+	// Create PatchSet, Patch, Campaign and ChangesetJob
+	campaign, patch := createCampaignPatch(t, ctx, now, s, repo)
+	// Create dummy GitHub PR
+	createdHeadRef := "refs/heads/" + campaign.Branch
+	pr := githubPR(now, campaign.Name, campaign.Description, createdHeadRef)
 
 	// Setup the dependencies
-	createdHeadRef := "refs/heads/" + campaign.Branch
 	gitClient := &dummyGitserverClient{
 		response:    createdHeadRef,
 		responseErr: nil,
 	}
 
-	githubActor := github.Actor{
-		AvatarURL: "https://avatars2.githubusercontent.com/u/1185253",
-		Login:     "mrnugget",
-		URL:       "https://github.com/mrnugget",
-	}
-
-	githubPR := &github.PullRequest{
-		ID:           "FOOBARID",
-		Title:        campaign.Name,
-		Body:         campaign.Description,
-		HeadRefName:  git.AbbreviateRef(createdHeadRef),
-		URL:          "https://github.com/sourcegraph/sourcegraph/pull/12345",
-		Number:       12345,
-		State:        "OPEN",
-		Author:       githubActor,
-		Participants: []github.Actor{githubActor},
-		TimelineItems: []github.TimelineItem{
-			{Type: "PullRequestCommit", Item: &github.PullRequestCommit{
-				Commit: github.Commit{
-					OID:           "new-f00bar",
-					PushedDate:    now,
-					CommittedDate: now,
-				},
-			}},
-		},
-		CreatedAt: now,
-		UpdatedAt: now,
-	}
-
 	var (
 		wantHeadRef  = createdHeadRef
 		wantBaseRef  = patch.BaseRef
-		wantMetadata = githubPR
+		wantMetadata = pr
 	)
 
 	fakeSource := fakeChangesetSource{
@@ -144,12 +58,17 @@ func TestExecChangesetJob(t *testing.T) {
 		exists:       false,
 		wantHeadRef:  wantHeadRef,
 		wantBaseRef:  wantBaseRef,
-		fakeMetadata: githubPR,
+		fakeMetadata: pr,
 	}
 
 	sourcer := repos.NewFakeSourcer(nil, fakeSource)
 
-	// Execute the ChangesetJob
+	// Create and execute the ChangesetJob
+	changesetJob := &cmpgn.ChangesetJob{CampaignID: campaign.ID, PatchID: patch.ID}
+	if err := s.CreateChangesetJob(ctx, changesetJob); err != nil {
+		t.Fatal(err)
+	}
+
 	err := ExecChangesetJob(ctx, clock, s, gitClient, sourcer, campaign, changesetJob)
 	if err != nil {
 		t.Fatal(err)
@@ -171,7 +90,7 @@ func TestExecChangesetJob(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if want, have := githubPR.HeadRefName, changeset.ExternalBranch; have != want {
+	if want, have := pr.HeadRefName, changeset.ExternalBranch; have != want {
 		t.Fatalf("wrong changeset.ExternalBranch. want=%s, have=%s", want, have)
 	}
 
@@ -252,4 +171,101 @@ func (s fakeChangesetSource) CloseChangeset(ctx context.Context, c *repos.Change
 }
 func (s fakeChangesetSource) UpdateChangeset(ctx context.Context, c *repos.Changeset) error {
 	return fakeNotImplemented
+}
+
+func createGitHubRepo(t *testing.T, ctx context.Context, now time.Time, s *Store) (*repos.Repo, *repos.ExternalService) {
+	t.Helper()
+
+	reposStore := repos.NewDBStore(s.DB(), sql.TxOptions{})
+
+	githubExtSvc := &repos.ExternalService{
+		Kind:        "GITHUB",
+		DisplayName: "GitHub",
+		Config: marshalJSON(t, &schema.GitHubConnection{
+			Url:   "https://github.com",
+			Token: os.Getenv("GITHUB_TOKEN"),
+			Repos: []string{},
+		}),
+	}
+
+	if err := reposStore.UpsertExternalServices(ctx, githubExtSvc); err != nil {
+		t.Fatal(t)
+	}
+
+	repo := testRepo(0, github.ServiceType)
+	repo.Sources = map[string]*repos.SourceInfo{githubExtSvc.URN(): {
+		ID:       githubExtSvc.URN(),
+		CloneURL: "https://TOKENTOKENTOKEN@github.com/foobar/foobar",
+	}}
+	if err := reposStore.UpsertRepos(ctx, repo); err != nil {
+		t.Fatal(err)
+	}
+
+	return repo, githubExtSvc
+}
+
+func createCampaignPatch(t *testing.T, ctx context.Context, now time.Time, s *Store, repo *repos.Repo) (*cmpgn.Campaign, *cmpgn.Patch) {
+	t.Helper()
+
+	patchSet := &cmpgn.PatchSet{}
+	if err := s.CreatePatchSet(ctx, patchSet); err != nil {
+		t.Fatal(err)
+	}
+
+	patch := &cmpgn.Patch{
+		RepoID:     repo.ID,
+		PatchSetID: patchSet.ID,
+		Diff:       testDiff,
+		Rev:        "f00b4r",
+		BaseRef:    "refs/heads/master",
+	}
+	if err := s.CreatePatch(ctx, patch); err != nil {
+		t.Fatal(err)
+	}
+
+	campaign := &cmpgn.Campaign{
+		Name:            "Remove dead code",
+		Description:     "This campaign removes dead code.",
+		Branch:          "dead-code-b-gone",
+		AuthorID:        888,
+		NamespaceUserID: 888,
+		PatchSetID:      patchSet.ID,
+		ClosedAt:        now,
+	}
+	if err := s.CreateCampaign(ctx, campaign); err != nil {
+		t.Fatal(err)
+	}
+
+	return campaign, patch
+}
+
+func githubPR(now time.Time, title, body, headRef string) *github.PullRequest {
+	githubActor := github.Actor{
+		AvatarURL: "https://avatars2.githubusercontent.com/u/1185253",
+		Login:     "mrnugget",
+		URL:       "https://github.com/mrnugget",
+	}
+
+	return &github.PullRequest{
+		ID:           "FOOBARID",
+		Title:        title,
+		Body:         body,
+		HeadRefName:  git.AbbreviateRef(headRef),
+		URL:          "https://github.com/sourcegraph/sourcegraph/pull/12345",
+		Number:       12345,
+		State:        "OPEN",
+		Author:       githubActor,
+		Participants: []github.Actor{githubActor},
+		TimelineItems: []github.TimelineItem{
+			{Type: "PullRequestCommit", Item: &github.PullRequestCommit{
+				Commit: github.Commit{
+					OID:           "new-f00bar",
+					PushedDate:    now,
+					CommittedDate: now,
+				},
+			}},
+		},
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
 }
