@@ -590,7 +590,16 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (*SearchResultsResolv
 
 // evaluate evaluates all expressions of a search query.
 func (r *searchResolver) evaluate(ctx context.Context, q []query.Node) (*SearchResultsResolver, error) {
-	// For now, fall through to evaluating leaf expressions only.
+	scopeParameters, pattern, err := query.PartitionSearchPattern(q)
+	if err != nil {
+		return nil, err
+	}
+
+	validatedQuery := scopeParameters
+	if pattern != nil {
+		validatedQuery = append(validatedQuery, pattern)
+	}
+	r.query = query.AndOrQuery{Query: validatedQuery}
 	return r.evaluateLeaf(ctx)
 }
 
