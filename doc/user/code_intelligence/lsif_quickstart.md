@@ -39,8 +39,8 @@ Commit: <40-character commit associated with this LSIF upload>
 File: <LSIF data file>
 Root: <subdirectory in the repository where this LSIF dump was generated>
 
-LSIF dump successfully uploaded. It will be converted asynchronously.
-To check the status, visit <link to your Sourcegraph instance LSIF status>
+LSIF dump successfully uploaded for processing.
+View processing status at <link to your Sourcegraph instance LSIF status>.
 ```
 
 Possible errors include:
