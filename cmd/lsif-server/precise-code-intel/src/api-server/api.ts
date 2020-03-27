@@ -31,7 +31,7 @@ async function main(logger: Logger): Promise<void> {
     const fetchConfiguration = await waitForConfiguration(logger)
 
     // Configure distributed tracing
-    const tracer = createTracer('lsif-api-server', fetchConfiguration())
+    const tracer = createTracer('precise-code-intel-api-server', fetchConfiguration())
 
     // Ensure storage roots exist
     await ensureDirectory(settings.STORAGE_ROOT)
@@ -70,7 +70,7 @@ function selectHistogram(route: string): promClient.Histogram<string> | undefine
 }
 
 // Initialize logger
-const appLogger = createLogger('lsif-api-server')
+const appLogger = createLogger('precise-code-intel-api-server')
 
 // Run app!
 main(appLogger).catch(error => {

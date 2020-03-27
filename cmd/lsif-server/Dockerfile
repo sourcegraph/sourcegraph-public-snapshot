@@ -1,16 +1,17 @@
 # keep this in sync with docker-images/prometheus/Dockerfile
 FROM prom/prometheus:v2.15.2@sha256:35c52c0c2b76433bbfc44a5a7abc294c2f032ed80250be02b441db5dd91b203a AS prometheus
 
-FROM alpine:3.10@sha256:e4355b66995c96b4b468159fc5c7e3540fcef961189ca13fee877798649f531a AS lsif-builder
+FROM alpine:3.10@sha256:e4355b66995c96b4b468159fc5c7e3540fcef961189ca13fee877798649f531a AS pci-builder
 
 RUN apk add --no-cache nodejs-current=12.4.0-r0 nodejs-npm=10.19.0-r0
 RUN npm install -g yarn@1.17.3
 
-COPY lsif/package.json lsif/yarn.lock lsif/tsconfig.json /lsif/
-RUN yarn --cwd /lsif
+# TODO - check if this copies everything
+COPY precise-code-intel/package.json precise-code-intel/yarn.lock precise-code-intel/tsconfig.json /precise-code-intel/
+RUN yarn --cwd /precise-code-intel
 
-COPY lsif/src /lsif/src
-RUN yarn --cwd /lsif run build
+COPY precise-code-intel/src /precise-code-intel/src
+RUN yarn --cwd /precise-code-intel run build
 
 FROM sourcegraph/alpine:3.10@sha256:4d05cd5669726fc38823e92320659a6d1ef7879e62268adec5df658a0bacf65c
 
@@ -34,22 +35,20 @@ RUN apk update && apk add --no-cache \
 USER root
 RUN mkdir -p $PROMETHEUS_STORAGE_DIR && chown -R sourcegraph:sourcegraph $PROMETHEUS_STORAGE_DIR
 RUN mkdir -p $PROMETHEUS_CONFIGURATION_DIR && chown -R sourcegraph:sourcegraph $PROMETHEUS_CONFIGURATION_DIR
-
-# Ensures that a directory with the correct permissions exist in the image.
-# Without this, in Docker Compose deployments the Docker daemon would first
-# create the volume directory and it would be owned by `root` and then
-# lsif-server would be unable to create the `/lsif-storage` because it would
-# be trying to do so in a directory owned by `root` as the user `sourcegraph`.
-# (And no, this is not dumb, this is just Docker. See https://github.com/docker/compose/issues/3270#issuecomment-363478501)
+# Ensures that a directory with the correct permissions exist in the image. Without this, in Docker Compose
+# deployments the Docker daemon would first create the volume directory and it would be owned by `root` and
+# then one of the precise-code-intel processes would be unable to create the `/lsif-storage` because it
+# would  be trying to do so in a directory owned by `root` as the user `sourcegraph`. And no, this is not
+# dumb, this is just Docker: https://github.com/docker/compose/issues/3270#issuecomment-363478501.
 RUN mkdir -p /lsif-storage && chown -R sourcegraph:sourcegraph /lsif-storage
 USER sourcegraph
 
-COPY --from=lsif-builder /lsif /lsif
+COPY --from=pci-builder /precise-code-intel /precise-code-intel
 COPY ./lsif-server /usr/local/bin/lsif-server
 COPY --from=prometheus /bin/prometheus /bin/prometheus
 COPY ./prometheus.yml $PROMETHEUS_CONFIGURATION_DIR/prometheus.yml
 
-# http server, bundle manager server, (first) worker metrics server, prometheus
+# http api server, bundle manager server, (first) worker metrics server, prometheus
 EXPOSE 3186 3187 3188 9090
 ENV GO111MODULES=on LANG=en_US.utf8 LOG_LEVEL=debug
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/lsif-server"]

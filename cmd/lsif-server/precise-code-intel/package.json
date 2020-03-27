@@ -1,14 +1,14 @@
 {
-  "name": "lsif",
-  "description": "LSIF-based precise code intelligence",
+  "name": "precise-code-intel",
+  "description": "Precise code intelligence services for Sourcegraph",
   "author": "Sourcegraph",
   "license": "MIT",
-  "version": "0.1.0",
+  "version": "0.0.0-DEVELOPMENT",
   "scripts": {
     "build": "tsc -b .",
     "test": "jest",
-    "tslint": "../node_modules/.bin/tslint -p tsconfig.json",
-    "eslint": "../node_modules/.bin/eslint --cache 'src/**/*.ts?(x)'",
+    "tslint": "../../../node_modules/.bin/tslint -p tsconfig.json",
+    "eslint": "../../../node_modules/.bin/eslint --cache 'src/**/*.ts?(x)'",
     "run:api-server": "tsc-watch --onSuccess \"node -r source-map-support/register out/api-server/api.js\" --noClear",
     "run:bundle-manager": "tsc-watch --onSuccess \"node -r source-map-support/register out/bundle-manager/manager.js\" --noClear",
     "run:worker": "tsc-watch --onSuccess \"node -r source-map-support/register out/worker/worker.js\" --noClear"

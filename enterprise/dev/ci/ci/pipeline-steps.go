@@ -87,11 +87,11 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 		bk.ArtifactPaths("browser/coverage/coverage-final.json"))
 }
 
-// Tests the LSIF server.
-func addLSIFServer(pipeline *bk.Pipeline) {
+// Tests the precise code intel system.
+func addPreciseCodeIntelSystem(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":jest:",
-		bk.Cmd("dev/ci/yarn-test-separate.sh lsif"),
-		bk.ArtifactPaths("lsif/coverage/coverage-final.json"))
+		bk.Cmd("dev/ci/yarn-test-separate.sh cmd/lsif-server/precise-code-intel"),
+		bk.ArtifactPaths("cmd/lsif-server/precise-code-intel/coverage/coverage-final.json"))
 }
 
 // Adds the shared frontend tests (shared between the web app and browser extension).
