@@ -3,8 +3,9 @@ import { readEnvInt } from '../shared/settings'
 /** Which port to run the bundle manager API on. Defaults to 3187. */
 export const HTTP_PORT = readEnvInt('HTTP_PORT', 3187)
 
-/** HTTP address for internal LSIF HTTP API. */
-export const LSIF_API_SERVER_URL = process.env.LSIF_API_SERVER_URL || 'http://localhost:3186'
+/** HTTP address for internal precise code intel API. */
+export const PRECISE_CODE_INTEL_API_SERVER_URL =
+    process.env.PRECISE_CODE_INTEL_API_SERVER_URL || 'http://localhost:3186'
 
 /** Where on the file system to store LSIF files. This should be a persistent volume. */
 export const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'
