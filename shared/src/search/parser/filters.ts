@@ -141,6 +141,12 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
     },
 }
 
+export const discreteValueAliases: { [key: string]: string[] } = {
+    yes: ['yes', 'y', 'Y', 'YES', 'Yes', '1', 't', 'T', 'true', 'TRUE', 'True'],
+    no: ['n', 'N', 'no', 'NO', 'No', '0', 'f', 'F', 'false', 'FALSE', 'False'],
+    only: ['o', 'only', 'ONLY', 'Only'],
+}
+
 /**
  * Returns the {@link FilterDefinition} for the given filterType if it exists, or `undefined` otherwise.
  */
@@ -198,8 +204,14 @@ export const validateFilter = (
         definition.discreteValues &&
         (!filterValue ||
             (filterValue.token.type !== 'literal' && filterValue.token.type !== 'quoted') ||
-            (filterValue.token.type === 'literal' && !definition.discreteValues.includes(filterValue.token.value)) ||
-            (filterValue.token.type === 'quoted' && !definition.discreteValues.includes(filterValue.token.quotedValue)))
+            (filterValue.token.type === 'literal' &&
+                ![...definition.discreteValues, ...discreteValueAliases[filterValue.token.value]].includes(
+                    filterValue.token.value
+                )) ||
+            (filterValue.token.type === 'quoted' &&
+                ![...definition.discreteValues, ...discreteValueAliases[filterValue.token.quotedValue]].includes(
+                    filterValue.token.quotedValue
+                )))
     ) {
         return {
             valid: false,
