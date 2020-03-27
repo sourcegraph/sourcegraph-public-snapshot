@@ -69,17 +69,17 @@ func makeProcfile(numAPIs, numBundleManagers, numWorkers int64) string {
 	}
 
 	if numAPIs > 0 {
-		addProcess("lsif-api-server", "node /lsif/out/api-server/api.js")
+		addProcess("pci-api-server", "node /precise-code-intel/out/api-server/api.js")
 	}
 
 	if numBundleManagers > 0 {
-		addProcess("lsif-bundle-manager", "node /lsif/out/bundle-manager/manager.js")
+		addProcess("pci-bundle-manager", "node /precise-code-intel/out/bundle-manager/manager.js")
 	}
 
 	for i := 0; i < int(numWorkers); i++ {
 		addProcess(
-			fmt.Sprintf("lsif-worker-%d", i),
-			fmt.Sprintf("env METRICS_PORT=%d node /lsif/out/worker/worker.js", workerPort+i),
+			fmt.Sprintf("pci-worker-%d", i),
+			fmt.Sprintf("env METRICS_PORT=%d node /precise-code-intel/out/worker/worker.js", workerPort+i),
 		)
 	}
 
@@ -103,15 +103,15 @@ func makePrometheusTargets(numAPIs, numBundleManagers, numWorkers int64) string 
 	}
 
 	if numAPIs > 0 {
-		addTarget("lsif-api-server", apiPort)
+		addTarget("pci-api-server", apiPort)
 	}
 
 	if numBundleManagers > 0 {
-		addTarget("lsif-bundle-manager", bundleManagerPort)
+		addTarget("pci-bundle-manager", bundleManagerPort)
 	}
 
 	for i := 0; i < int(numWorkers); i++ {
-		addTarget("lsif-worker", workerPort+i)
+		addTarget("pci-worker", workerPort+i)
 	}
 
 	return strings.Join(content, "\n") + "\n"

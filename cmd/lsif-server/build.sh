@@ -16,7 +16,7 @@ export GOARCH=amd64
 export GOOS=linux
 export CGO_ENABLED=0
 
-cp -a ./lsif "$OUTPUT"
+cp -a ./precise-code-intel "$OUTPUT"
 cp -a ./cmd/lsif-server/prometheus.yml "$OUTPUT"
 
 echo "--- go build"
