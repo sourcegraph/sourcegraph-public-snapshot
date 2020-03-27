@@ -29,6 +29,8 @@ $ src \
   -file=<LSIF file (e.g. ./cmd/dump.lsif)>
 ```
 
+The upload command in the Sourcegraph CLI will try to infer the repository and git commit by invoking git commands on your local clone. If git is not installed, is older than version 2.7.0, or you are running on code outside of a git clone, you will need to also specify the `-repo` and `-commit` flags explicitly.
+
 > NOTE: If you're using Sourcegraph.com or have enabled [`lsifEnforceAuth`](https://docs.sourcegraph.com/admin/config/site_config#lsifEnforceAuth), you need to [supply a GitHub token](#proving-ownership-of-a-github-repository) (to confirm you have collaborator access to the repository) supplied via the `-github-token` flag in the command above.
 
 If successful, you'll see the following message:
@@ -43,7 +45,7 @@ LSIF dump successfully uploaded for processing.
 View processing status at <link to your Sourcegraph instance LSIF status>.
 ```
 
-Possible errors include:
+Possible upload errors include:
 
 - Unknown repository (404): check your `-endpoint` and make sure you can view the repository on your Sourcegraph instance
 - Invalid commit (404): try visiting the repository at that commit on your Sourcegraph instance to trigger an update
