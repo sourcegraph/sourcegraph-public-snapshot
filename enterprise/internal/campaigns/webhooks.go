@@ -879,7 +879,7 @@ func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *repo
 }
 
 func (h *BitbucketServerWebhook) convertEvent(theirs interface{}) (prs []PR, ours interface{ Key() string }) {
-	log15.Info("Bitbucket Server webhook received", "type", fmt.Sprintf("%T", theirs))
+	log15.Debug("Bitbucket Server webhook received", "type", fmt.Sprintf("%T", theirs))
 
 	switch e := theirs.(type) {
 	case *bbs.PullRequestEvent:
