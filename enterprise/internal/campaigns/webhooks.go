@@ -893,7 +893,10 @@ func (h *BitbucketServerWebhook) convertEvent(theirs interface{}) (prs []PR, our
 			pr := PR{ID: int64(p.ID), RepoExternalID: repoID}
 			prs = append(prs, pr)
 		}
-		return prs, e
+		return prs, &bbs.CommitStatus{
+			Commit: e.Commit,
+			Status: e.Status,
+		}
 	}
 
 	return

@@ -4,12 +4,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
-	"strconv"
 	"time"
-
-	"github.com/segmentio/fasthash/fnv1"
 )
 
 const (
@@ -46,11 +42,6 @@ type BuildStatusEvent struct {
 	Commit       string        `json:"commit"`
 	Status       BuildStatus   `json:"status"`
 	PullRequests []PullRequest `json:"pullRequests"`
-}
-
-func (b *BuildStatusEvent) Key() string {
-	key := fmt.Sprintf("%s:%s:%s:%s", b.Commit, b.Status.Key, b.Status.Name, b.Status.Url)
-	return strconv.FormatInt(int64(fnv1.HashString64(key)), 16)
 }
 
 // Webhook defines the JSON schema from the BBS Sourcegraph plugin.
