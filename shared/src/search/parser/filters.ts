@@ -189,6 +189,26 @@ export const resolveFilter = (
 }
 
 /**
+ * Checks whether a discrete value is valid for a given filter, accounting for valid aliases.
+ */
+const isValidDiscreteValue = (definition: NegatableFilterDefinition | BaseFilterDefinition, value: string): boolean => {
+    if (!definition.discreteValues || definition.discreteValues.includes(value)) {
+        return true
+    }
+
+    const validDiscreteValuesForDefinition = Object.keys(discreteValueAliases).filter(key =>
+        definition.discreteValues?.includes(key)
+    )
+
+    for (const discreteValue of validDiscreteValuesForDefinition) {
+        if (discreteValueAliases[discreteValue].includes(value)) {
+            return true
+        }
+    }
+    return false
+}
+
+/**
  * Validates a filter given its type and value.
  */
 export const validateFilter = (
@@ -204,14 +224,8 @@ export const validateFilter = (
         definition.discreteValues &&
         (!filterValue ||
             (filterValue.token.type !== 'literal' && filterValue.token.type !== 'quoted') ||
-            (filterValue.token.type === 'literal' &&
-                ![...definition.discreteValues, ...discreteValueAliases[filterValue.token.value]].includes(
-                    filterValue.token.value
-                )) ||
-            (filterValue.token.type === 'quoted' &&
-                ![...definition.discreteValues, ...discreteValueAliases[filterValue.token.quotedValue]].includes(
-                    filterValue.token.quotedValue
-                )))
+            (filterValue.token.type === 'literal' && !isValidDiscreteValue(definition, filterValue.token.value)) ||
+            (filterValue.token.type === 'quoted' && !isValidDiscreteValue(definition, filterValue.token.quotedValue)))
     ) {
         return {
             valid: false,

@@ -79,7 +79,7 @@ export function parseSearchURL(
 
         if (discreteValueAliases.yes.includes(caseInQuery.value)) {
             caseSensitive = true
-        } else if (discreteValueAliases.yes.includes(caseInQuery.value)) {
+        } else if (discreteValueAliases.no.includes(caseInQuery.value)) {
             caseSensitive = false
         }
     }
