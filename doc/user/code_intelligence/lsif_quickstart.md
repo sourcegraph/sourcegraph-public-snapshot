@@ -29,7 +29,7 @@ $ src \
   -file=<LSIF file (e.g. ./cmd/dump.lsif)>
 ```
 
-> NOTE: If you're using Sourcegraph.com or have enabled [`lsifEnforceAuth`](https://docs.sourcegraph.com/admin/config/site_config#lsifEnforceAuth), you need to [supply a GitHub token](#proving-ownership-of-a-github-repository) (to confirm you have collaborator access to the repository) by using the `src lsif upload -github-token` flag.
+> NOTE: If you're using Sourcegraph.com or have enabled [`lsifEnforceAuth`](https://docs.sourcegraph.com/admin/config/site_config#lsifEnforceAuth), you need to [supply a GitHub token](#proving-ownership-of-a-github-repository) (to confirm you have collaborator access to the repository) supplied via the `-github-token` flag in the command above.
 
 If successful, you'll see the following message:
 
