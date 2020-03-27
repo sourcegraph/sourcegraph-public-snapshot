@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"os"
 	"testing"
 	"time"
 
@@ -16,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -38,15 +38,27 @@ func TestExecChangesetJob(t *testing.T) {
 		existsOnCodehost bool
 	}{
 		{
-			name:              "GitHubNewChangeset",
+			name:              "GitHub_NewChangeset",
 			createRepoExtSvc:  createGitHubRepo,
 			changesetMetadata: buildGithubPR,
 			existsOnCodehost:  false,
 		},
 		{
-			name:              "GitHubChangesetExistsOnCodehost",
+			name:              "GitHub_ChangesetExistsOnCodehost",
 			createRepoExtSvc:  createGitHubRepo,
 			changesetMetadata: buildGithubPR,
+			existsOnCodehost:  true,
+		},
+		{
+			name:              "BitbucketServer_NewChangeset",
+			createRepoExtSvc:  createBBSRepo,
+			changesetMetadata: buildBBSPR,
+			existsOnCodehost:  false,
+		},
+		{
+			name:              "BitbucketServer_ChangesetExistsOnCodehost",
+			createRepoExtSvc:  createBBSRepo,
+			changesetMetadata: buildBBSPR,
 			existsOnCodehost:  true,
 		},
 	}
@@ -190,30 +202,57 @@ func createGitHubRepo(t *testing.T, ctx context.Context, now time.Time, s *Store
 
 	reposStore := repos.NewDBStore(s.DB(), sql.TxOptions{})
 
-	githubExtSvc := &repos.ExternalService{
-		Kind:        "GITHUB",
+	ext := &repos.ExternalService{
+		Kind:        github.ServiceType,
 		DisplayName: "GitHub",
 		Config: marshalJSON(t, &schema.GitHubConnection{
 			Url:   "https://github.com",
-			Token: os.Getenv("GITHUB_TOKEN"),
-			Repos: []string{},
+			Token: "SECRETTOKEN",
 		}),
 	}
 
-	if err := reposStore.UpsertExternalServices(ctx, githubExtSvc); err != nil {
-		t.Fatal(t)
+	if err := reposStore.UpsertExternalServices(ctx, ext); err != nil {
+		t.Fatal(err)
 	}
 
 	repo := testRepo(0, github.ServiceType)
-	repo.Sources = map[string]*repos.SourceInfo{githubExtSvc.URN(): {
-		ID:       githubExtSvc.URN(),
-		CloneURL: "https://TOKENTOKENTOKEN@github.com/foobar/foobar",
+	repo.Sources = map[string]*repos.SourceInfo{ext.URN(): {
+		ID: ext.URN(),
 	}}
 	if err := reposStore.UpsertRepos(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
 
-	return repo, githubExtSvc
+	return repo, ext
+}
+
+func createBBSRepo(t *testing.T, ctx context.Context, now time.Time, s *Store) (*repos.Repo, *repos.ExternalService) {
+	t.Helper()
+
+	reposStore := repos.NewDBStore(s.DB(), sql.TxOptions{})
+
+	ext := &repos.ExternalService{
+		Kind:        bitbucketserver.ServiceType,
+		DisplayName: "Bitbucket Server",
+		Config: marshalJSON(t, &schema.BitbucketServerConnection{
+			Url:   "https://bbs.example.com",
+			Token: "SECRETTOKEN",
+		}),
+	}
+
+	if err := reposStore.UpsertExternalServices(ctx, ext); err != nil {
+		t.Fatal(err)
+	}
+
+	repo := testRepo(0, bitbucketserver.ServiceType)
+	repo.Sources = map[string]*repos.SourceInfo{ext.URN(): {
+		ID: ext.URN(),
+	}}
+	if err := reposStore.UpsertRepos(ctx, repo); err != nil {
+		t.Fatal(err)
+	}
+
+	return repo, ext
 }
 
 func createCampaignPatch(t *testing.T, ctx context.Context, now time.Time, s *Store, repo *repos.Repo) (*cmpgn.Campaign, *cmpgn.Patch) {
@@ -259,15 +298,12 @@ var githubActor = github.Actor{
 
 func buildGithubPR(now time.Time, c *cmpgn.Campaign, headRef string) interface{} {
 	return &github.PullRequest{
-		ID:           "FOOBARID",
-		Title:        c.Name,
-		Body:         c.Description,
-		HeadRefName:  git.AbbreviateRef(headRef),
-		URL:          "https://github.com/sourcegraph/sourcegraph/pull/12345",
-		Number:       12345,
-		State:        "OPEN",
-		Author:       githubActor,
-		Participants: []github.Actor{githubActor},
+		ID:          "FOOBARID",
+		Title:       c.Name,
+		Body:        c.Description,
+		HeadRefName: git.AbbreviateRef(headRef),
+		Number:      12345,
+		State:       "OPEN",
 		TimelineItems: []github.TimelineItem{
 			{Type: "PullRequestCommit", Item: &github.PullRequestCommit{
 				Commit: github.Commit{
@@ -279,6 +315,18 @@ func buildGithubPR(now time.Time, c *cmpgn.Campaign, headRef string) interface{}
 		},
 		CreatedAt: now,
 		UpdatedAt: now,
+	}
+}
+
+func buildBBSPR(now time.Time, c *cmpgn.Campaign, headRef string) interface{} {
+	return &bitbucketserver.PullRequest{
+		ID:          999,
+		Title:       c.Name,
+		Description: c.Description,
+		State:       "OPEN",
+		FromRef: bitbucketserver.Ref{
+			ID: git.AbbreviateRef(headRef),
+		},
 	}
 }
 
