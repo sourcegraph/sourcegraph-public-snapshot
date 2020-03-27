@@ -1,13 +1,13 @@
 {
-  "id": 4,
+  "id": 67,
   "version": 0,
   "title": "This is a test PR",
   "description": "This is a test PR. Feel free to ignore.",
   "state": "OPEN",
   "open": true,
   "closed": false,
-  "createdDate": 1573644277085,
-  "updatedDate": 1573644277085,
+  "createdDate": 1585314625810,
+  "updatedDate": 1585314625810,
   "fromRef": {
    "id": "refs/heads/test-pr-bbs-3",
    "repository": {
@@ -48,8 +48,9 @@
   "links": {
    "self": [
     {
-     "href": "https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/pull-requests/4"
+     "href": "https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/pull-requests/67"
     }
    ]
-  }
+  },
+  "commit_status": null
  }

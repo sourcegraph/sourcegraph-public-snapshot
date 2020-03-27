@@ -43,22 +43,28 @@ interactions:
       Cache-Control:
       - private, no-cache
       - no-cache, no-transform
+      Cf-Cache-Status:
+      - DYNAMIC
+      Cf-Ray:
+      - 57a984750c774925-CPT
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Wed, 30 Oct 2019 11:01:40 GMT
+      - Fri, 27 Mar 2020 13:39:25 GMT
+      Expect-Ct:
+      - max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
       Pragma:
       - no-cache
       Server:
-      - Caddy
+      - cloudflare
       Vary:
       - X-AUSERNAME,Accept-Encoding
       X-Arequestid:
-      - '@1IK17DGx661x1760665x0'
+      - '@MWNSEUx819x451444x0'
       X-Asen:
-      - SEN-L13789548
+      - SEN-11363689
       X-Asessionid:
-      - 4w0mag
+      - vx3jrc
       X-Auserid:
       - "1"
       X-Ausername:
