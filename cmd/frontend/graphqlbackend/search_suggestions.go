@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/neelance/parallel"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-lsp"
@@ -18,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"gopkg.in/inconshreveable/log15.v2"
 )
 
 const maxSearchSuggestions = 100

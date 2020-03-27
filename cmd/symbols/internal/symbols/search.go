@@ -15,6 +15,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 
+	"github.com/inconshreveable/log15"
 	"github.com/jmoiron/sqlx"
 	"github.com/keegancsmith/sqlf"
 	sqlite3 "github.com/mattn/go-sqlite3"
@@ -23,7 +24,6 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 	"golang.org/x/net/trace"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // maxFileSize is the limit on file size in bytes. Only files smaller than this are processed.

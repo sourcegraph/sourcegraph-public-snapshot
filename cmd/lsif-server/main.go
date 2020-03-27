@@ -14,9 +14,9 @@ import (
 )
 
 var (
-	servers        = env.Get("LSIF_NUM_SERVERS", "1", "the number of server instances to run (defaults to one)")
-	dumpManagers   = env.Get("LSIF_NUM_DUMP_MANAGERS", "1", "the number of dump manager instances to run (defaults to one)")
-	dumpProcessors = env.Get("LSIF_NUM_DUMP_PROCESSORS", "1", "the number of dump processor instances to run (defaults to one)")
+	apis           = env.Get("LSIF_NUM_APIS", "1", "the number of API instances to run (defaults to one)")
+	bundleManagers = env.Get("LSIF_NUM_BUNDLE_MANAGERS", "1", "the number of bundle manager instances to run (defaults to one)")
+	workers        = env.Get("LSIF_NUM_WORKERS", "1", "the number of worker instances to run (defaults to one)")
 
 	// Set in docker image
 	prometheusStorageDir       = os.Getenv("PROMETHEUS_STORAGE_DIR")
@@ -24,37 +24,37 @@ var (
 )
 
 const (
-	serverPort        = 3186
-	dumpManagerPort   = 3187
-	dumpProcessorPort = 3188
+	apiPort           = 3186
+	bundleManagerPort = 3187
+	workerPort        = 3188
 )
 
 func main() {
-	numServers, err := strconv.ParseInt(servers, 10, 64)
-	if err != nil || numServers < 0 || numServers > 1 {
-		log.Fatalf("Invalid int %q for LSIF_NUM_SERVERS: %s", servers, err)
+	numAPIs, err := strconv.ParseInt(apis, 10, 64)
+	if err != nil || numAPIs < 0 || numAPIs > 1 {
+		log.Fatalf("Invalid int %q for LSIF_NUM_APIS: %s", apis, err)
 	}
 
-	numDumpManagers, err := strconv.ParseInt(dumpManagers, 10, 64)
-	if err != nil || numDumpManagers < 0 || numDumpManagers > 1 {
-		log.Fatalf("Invalid int %q for LSIF_NUM_DUMP_MANAGERS: %s", servers, err)
+	numBundleManagers, err := strconv.ParseInt(bundleManagers, 10, 64)
+	if err != nil || numBundleManagers < 0 || numBundleManagers > 1 {
+		log.Fatalf("Invalid int %q for LSIF_NUM_BUNDLE_MANAGERS: %s", bundleManagers, err)
 	}
 
-	numDumpProcessors, err := strconv.ParseInt(dumpProcessors, 10, 64)
-	if err != nil || numDumpProcessors < 0 {
-		log.Fatalf("Invalid int %q for LSIF_NUM_DUMP_PROCESSORS: %s", numDumpProcessors, err)
+	numWorkers, err := strconv.ParseInt(workers, 10, 64)
+	if err != nil || numWorkers < 0 {
+		log.Fatalf("Invalid int %q for LSIF_NUM_WORKERS: %s", workers, err)
 	}
 
 	if err := ioutil.WriteFile(
 		filepath.Join(prometheusConfigurationDir, "targets.yml"),
-		[]byte(makePrometheusTargets(numServers, numDumpManagers, numDumpProcessors)),
+		[]byte(makePrometheusTargets(numAPIs, numBundleManagers, numWorkers)),
 		0644,
 	); err != nil {
 		log.Fatalf("Writing prometheus config: %v", err)
 	}
 
 	// This mirrors the behavior from cmd/start
-	if err := goreman.Start([]byte(makeProcfile(numServers, numDumpManagers, numDumpProcessors)), goreman.Options{
+	if err := goreman.Start([]byte(makeProcfile(numAPIs, numBundleManagers, numWorkers)), goreman.Options{
 		RPCAddr:        "127.0.0.1:5005",
 		ProcDiedAction: goreman.Shutdown,
 	}); err != nil {
@@ -62,24 +62,24 @@ func main() {
 	}
 }
 
-func makeProcfile(numServers, numDumpManagers, numDumpProcessors int64) string {
+func makeProcfile(numAPIs, numBundleManagers, numWorkers int64) string {
 	procfile := []string{}
 	addProcess := func(name, command string) {
 		procfile = append(procfile, fmt.Sprintf("%s: %s", name, command))
 	}
 
-	if numServers > 0 {
-		addProcess("lsif-server", "node /lsif/out/server/server.js")
+	if numAPIs > 0 {
+		addProcess("lsif-api-server", "node /lsif/out/api-server/api.js")
 	}
 
-	if numDumpManagers > 0 {
-		addProcess("lsif-dump-manager", "node /lsif/out/dump-manager/dump-manager.js")
+	if numBundleManagers > 0 {
+		addProcess("lsif-bundle-manager", "node /lsif/out/bundle-manager/manager.js")
 	}
 
-	for i := 0; i < int(numDumpProcessors); i++ {
+	for i := 0; i < int(numWorkers); i++ {
 		addProcess(
-			fmt.Sprintf("lsif-dump-processor-%d", i),
-			fmt.Sprintf("env METRICS_PORT=%d node /lsif/out/dump-processor/dump-processor.js", dumpProcessorPort+i),
+			fmt.Sprintf("lsif-worker-%d", i),
+			fmt.Sprintf("env METRICS_PORT=%d node /lsif/out/worker/worker.js", workerPort+i),
 		)
 	}
 
@@ -91,7 +91,7 @@ func makeProcfile(numServers, numDumpManagers, numDumpProcessors int64) string {
 	return strings.Join(procfile, "\n") + "\n"
 }
 
-func makePrometheusTargets(numServers, numDumpManagers, numDumpProcessors int64) string {
+func makePrometheusTargets(numAPIs, numBundleManagers, numWorkers int64) string {
 	content := []string{"---"}
 	addTarget := func(job string, port int) {
 		content = append(content,
@@ -102,16 +102,16 @@ func makePrometheusTargets(numServers, numDumpManagers, numDumpProcessors int64)
 		)
 	}
 
-	if numServers > 0 {
-		addTarget("lsif-server", serverPort)
+	if numAPIs > 0 {
+		addTarget("lsif-api-server", apiPort)
 	}
 
-	if numDumpManagers > 0 {
-		addTarget("lsif-dump-manager", dumpManagerPort)
+	if numBundleManagers > 0 {
+		addTarget("lsif-bundle-manager", bundleManagerPort)
 	}
 
-	for i := 0; i < int(numDumpProcessors); i++ {
-		addTarget("lsif-dump-processor", dumpProcessorPort+i)
+	for i := 0; i < int(numWorkers); i++ {
+		addTarget("lsif-worker", workerPort+i)
 	}
 
 	return strings.Join(content, "\n") + "\n"

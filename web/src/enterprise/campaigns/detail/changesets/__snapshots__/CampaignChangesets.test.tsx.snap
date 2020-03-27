@@ -162,7 +162,6 @@ exports[`CampaignChangesets renders 1`] = `
           "state": undefined,
         }
       }
-      noShowLoaderOnSlowLoad={true}
       nodeComponent={[Function]}
       nodeComponentProps={
         Object {
@@ -174,7 +173,6 @@ exports[`CampaignChangesets renders 1`] = `
             "observers": Array [],
             "thrownError": null,
           },
-          "enablePublishing": true,
           "extensionInfo": Object {
             "extensionsController": undefined,
             "hoverifier": Object {
@@ -300,16 +298,6 @@ exports[`CampaignChangesets renders 1`] = `
       noun="changeset"
       pluralNoun="changesets"
       queryConnection={[Function]}
-      updates={
-        Subject {
-          "_isScalar": false,
-          "closed": false,
-          "hasError": false,
-          "isStopped": false,
-          "observers": Array [],
-          "thrownError": null,
-        }
-      }
       useURLQuery={false}
     />
   </div>

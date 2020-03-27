@@ -15,6 +15,8 @@ jest.mock('./CampaignStatus', () => ({
     CampaignStatus: (props: CampaignStatusProps) => `CampaignStatus(state=${props.campaign.status.state})`,
 }))
 jest.mock('./changesets/CampaignChangesets', () => ({ CampaignChangesets: 'CampaignChangesets' }))
+jest.mock('./patches/CampaignPatches', () => ({ CampaignPatches: 'CampaignPatches' }))
+jest.mock('./patches/PatchSetPatches', () => ({ PatchSetPatches: 'PatchSetPatches' }))
 jest.mock('../icons', () => ({ CampaignsIcon: 'CampaignsIcon' }))
 
 const history = H.createMemoryHistory()
@@ -53,12 +55,6 @@ describe('CampaignDetails', () => {
                         __typename: 'PatchSet' as const,
                         id: 'c',
                         patches: { nodes: [] as GQL.IPatch[], totalCount: 2 },
-                        status: {
-                            completedCount: 3,
-                            pendingCount: 3,
-                            errors: ['a'],
-                            state: GQL.BackgroundProcessState.PROCESSING,
-                        },
                     })
                 }
                 _noSubject={true}

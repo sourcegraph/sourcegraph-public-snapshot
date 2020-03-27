@@ -29,7 +29,9 @@ $ src \
   -file=<LSIF file (e.g. ./cmd/dump.lsif)>
 ```
 
-> NOTE: If you're using Sourcegraph.com or have enabled [`lsifEnforceAuth`](https://docs.sourcegraph.com/admin/config/site_config#lsifEnforceAuth), you need to [supply a GitHub token](#proving-ownership-of-a-github-repository) (to confirm you have collaborator access to the repository) by using the `src lsif upload -github-token` flag.
+The upload command in the Sourcegraph CLI will try to infer the repository and git commit by invoking git commands on your local clone. If git is not installed, is older than version 2.7.0, or you are running on code outside of a git clone, you will need to also specify the `-repo` and `-commit` flags explicitly.
+
+> NOTE: If you're using Sourcegraph.com or have enabled [`lsifEnforceAuth`](https://docs.sourcegraph.com/admin/config/site_config#lsifEnforceAuth), you need to [supply a GitHub token](#proving-ownership-of-a-github-repository) (to confirm you have collaborator access to the repository) supplied via the `-github-token` flag in the command above.
 
 If successful, you'll see the following message:
 
@@ -39,17 +41,18 @@ Commit: <40-character commit associated with this LSIF upload>
 File: <LSIF data file>
 Root: <subdirectory in the repository where this LSIF dump was generated>
 
-LSIF dump successfully uploaded. It will be converted asynchronously.
-To check the status, visit <link to your Sourcegraph instance LSIF status>
+LSIF dump successfully uploaded for processing.
+View processing status at <link to your Sourcegraph instance LSIF status>.
 ```
 
-Possible errors include:
+Possible upload errors include:
 
 - Unknown repository (404): check your `-endpoint` and make sure you can view the repository on your Sourcegraph instance
 - Invalid commit (404): try visiting the repository at that commit on your Sourcegraph instance to trigger an update
 - Invalid auth when using Sourcegraph.com or when [`lsifEnforceAuth`](https://docs.sourcegraph.com/admin/config/site_config#lsifEnforceAuth) is `true` (401 for an invalid token or 404 if the repository cannot be found on GitHub.com): make sure your GitHub token is valid and that the repository is correct
 - Unexpected errors (500s): [file an issue](https://github.com/sourcegraph/sourcegraph/issues/new)
-- LSIF processing failures for a repository are listed in **Repository settings > Code intelligence > Activity for this repository**. Failures can occur if the LSIF data is invalid (e.g., malformed indexer output), or problems were encountered during processing (e.g., system-level bug, flaky connections, etc). Try again or [file an issue](https://github.com/sourcegraph/sourcegraph/issues/new) if the problem persists.
+
+LSIF processing failures for a repository are listed in **Repository settings > Code intelligence > Activity for this repository**. Failures can occur if the LSIF data is invalid (e.g., malformed indexer output), or problems were encountered during processing (e.g., system-level bug, flaky connections, etc). Try again or [file an issue](https://github.com/sourcegraph/sourcegraph/issues/new) if the problem persists.
 
 ### Proving ownership of a GitHub repository
 
@@ -59,17 +62,10 @@ If you're uploading to Sourcegraph.com or another Sourcegraph instance with [`ls
 
 Make sure you have [enabled LSIF code intelligence](lsif.md#enabling-lsif-on-your-sourcegraph-instance) on your Sourcegraph instance.
 
-Once the LSIF data is uploaded, navigate to a code file for the targeted language in the repository, or repository sub-directory LSIF was generated from. LSIF data should now be the source of hover-tooltips, definitions, and references for that file (presuming that LSIF data exists for that file).
+Once the LSIF data is uploaded, navigate to a code file for the targeted language in the repository (or sub-directory) the LSIF index was generated from. LSIF data should now be the source of hover-tooltips, definitions, and references for that file.
 
-To verify that code intelligence is coming from LSIF:
-
-1. Open your browser's Developer Tools
-1. Click on the *Network* tab
-1. Reload the page to see all network requests logged
-1. Filter network requests by searching for `lsif`
-
-> NOTE: We are investigating how to make it easier to verify code intelligence is coming from LSIF
+To verify that LSIF is correctly enabled, hover over a symbol and ensure that its hover text is not decorated with a ![tooltip](img/basic-code-intel-tooltip.svg) tooltip. This icon indicates the results are from search-based [basic code intelligence](./basic_code_intelligence.md) and should be absent when results are precise (from an LSIF index or a [Language Server](./language_servers.md)).
 
 ## 5. Productionize the process
 
-Now that you're happy with the code intelligence on your repository, you need to make sure that is stays up to date with your repository. This can be done by periodically generating LSIF data, and pushing it to Sourcegraph. You can either [add a step to your CI](lsif_in_ci.md), or run it as a [GitHub Action](lsif_on_github.md).
+Now that you're happy with the code intelligence on your repository, you need to make sure that is stays up to date with your repository. This can be done by periodically generating LSIF data, and pushing it to Sourcegraph. You can either [add a step to your CI](adding_lsif_to_workflows.md#lsif-in-continuous-integration), or run it as a [GitHub Action](adding_lsif_to_workflows.md#lsif-on-gitgub).

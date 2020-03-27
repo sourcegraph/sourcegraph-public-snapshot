@@ -11,8 +11,8 @@ export interface LsifUploadWithPlaceInQueue extends pgModels.LsifUpload {
 
 /**
  * A wrapper around the database tables that control uploads. This class has
- * behaviors to enqueue uploads and dequeue them for the processor to convert
- * in a transactional manner.
+ * behaviors to enqueue uploads and dequeue them for the worker process to
+ * convert in a transactional manner.
  */
 export class UploadManager {
     /**
@@ -301,7 +301,7 @@ export class UploadManager {
         // First, we select the next oldest upload with a state of `queued` and set
         // its state to `processing`. We do this outside of a transaction so that this
         // state transition is visible to the API. We skip any locked rows as they are
-        // being handled by another dump processor.
+        // being handled by another worker process.
         const lockResult: [{ id: number }[]] = await this.connection.query(`
             UPDATE lsif_uploads u SET state = 'processing', started_at = now() WHERE id = (
                 SELECT id FROM lsif_uploads

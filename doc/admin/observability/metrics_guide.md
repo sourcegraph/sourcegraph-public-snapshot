@@ -41,6 +41,10 @@ Sourcegraph's metrics include a single high-level metric `alert_count` which ind
 - `description`: a human-readable description of the alert
 - `instance`: identifies the Kubernetes pod, Docker container, or host machine from which the alert came.
 
+**Examples:**
+
+To get examples of how you might consume this metric in your own alerting system, see: [Custom consumption of Sourcegraph alerts](alerting_custom_consumption.md).
+
 ## Complete reference
 
 A complete reference of Sourcegraph's vast set of Prometheus metrics is not yet available. If you are interested in this, please reach out by filing an issue or contacting us at support@sourcegraph.com.

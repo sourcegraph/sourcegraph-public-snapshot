@@ -10,11 +10,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/schema"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 func TestBitbucketServerSource_MakeRepo(t *testing.T) {

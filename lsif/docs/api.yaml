@@ -1,6 +1,6 @@
 openapi: 3.0.0
 info:
-  title: LSIF Server
+  title: LSIF API Server
   description: An internal Sourcegraph microservice that serves LSIF-powered code intelligence.
   version: 1.0.0
   contact:

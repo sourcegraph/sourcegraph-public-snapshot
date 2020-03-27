@@ -18,11 +18,11 @@ import (
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	bindata "github.com/golang-migrate/migrate/v4/source/go_bindata"
 	multierror "github.com/hashicorp/go-multierror"
+	"github.com/inconshreveable/log15"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/migrations"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // Transaction calls f within a transaction, rolling back if any error is

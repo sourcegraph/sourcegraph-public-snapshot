@@ -75,7 +75,7 @@ const createMockPlatformContext = (
     requestGraphQL: mockRequestGraphQL(),
     sideloadedExtensionURL: new Subject<string | null>(),
     settings: NEVER,
-    refreshSettings: () => Promise.reject(new Error('Not implemented')),
+    refreshSettings: () => Promise.resolve(),
     ...partialMocks,
 })
 

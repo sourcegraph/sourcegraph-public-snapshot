@@ -67,9 +67,9 @@ func TestService(t *testing.T) {
 +x
  y
 `
-		patches := []campaigns.PatchInput{
-			{Repo: api.RepoID(rs[0].ID), BaseRevision: "deadbeef", BaseRef: "refs/heads/master", Patch: patch},
-			{Repo: api.RepoID(rs[1].ID), BaseRevision: "f00b4r", BaseRef: "refs/heads/master", Patch: patch},
+		patches := []*campaigns.Patch{
+			{RepoID: api.RepoID(rs[0].ID), Rev: "deadbeef", BaseRef: "refs/heads/master", Diff: patch},
+			{RepoID: api.RepoID(rs[1].ID), Rev: "f00b4r", BaseRef: "refs/heads/master", Diff: patch},
 		}
 
 		patchSet, err := svc.CreatePatchSetFromPatches(ctx, patches, user.ID)
@@ -92,10 +92,10 @@ func TestService(t *testing.T) {
 		for i, patch := range patches {
 			wantJobs[i] = &campaigns.Patch{
 				PatchSetID: patchSet.ID,
-				RepoID:     patch.Repo,
-				Rev:        patch.BaseRevision,
+				RepoID:     patch.RepoID,
+				Rev:        patch.Rev,
 				BaseRef:    patch.BaseRef,
-				Diff:       patch.Patch,
+				Diff:       patch.Diff,
 				CreatedAt:  now,
 				UpdatedAt:  now,
 			}

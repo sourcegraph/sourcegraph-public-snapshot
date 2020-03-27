@@ -9,11 +9,11 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // SupportedExternalServices are the external service types currently supported
@@ -30,16 +30,6 @@ var SupportedExternalServices = map[string]struct{}{
 func IsRepoSupported(spec *api.ExternalRepoSpec) bool {
 	_, ok := SupportedExternalServices[spec.ServiceType]
 	return ok
-}
-
-// PatchInput is a patch applied to a repository (to create a new branch).
-type PatchInput struct {
-	Repo api.RepoID
-	// The commit SHA this patch is based on (e.g.: "4095572721c6234cd72013fd49dff4fb48f0f8a4").
-	BaseRevision api.CommitID
-	// The ref name that pointed to the BaseRevision at the time of patch creation (e.g.: "refs/heads/master").
-	BaseRef string
-	Patch   string
 }
 
 // A PatchSet is a collection of multiple Patchs.

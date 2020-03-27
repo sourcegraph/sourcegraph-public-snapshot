@@ -17,6 +17,7 @@ steps:
   - docker push "$IMAGE"
   env:
     PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
+  timeout_in_minutes: 10
   label: ':docker:'
 
 - wait
@@ -27,10 +28,12 @@ steps:
     - ./dev/ci/e2e.sh
   concurrency: 1
   concurrency_group: e2e
+  timeout_in_minutes: 10
   label: ':chromium:'
 
 - wait
 
 - command: docker image rm -f "$IMAGE"
+  timeout_in_minutes: 10
   label: ':sparkles:'
   soft_fail: true
