@@ -597,7 +597,7 @@ func (r *searchResolver) evaluate(ctx context.Context, q []query.Node) (*SearchR
 
 	validatedQuery := scopeParameters
 	if pattern != nil {
-		validatedQuery = append(scopeParameters, pattern)
+		validatedQuery = append(validatedQuery, pattern)
 	}
 	r.query = query.AndOrQuery{Query: validatedQuery}
 	return r.evaluateLeaf(ctx)
