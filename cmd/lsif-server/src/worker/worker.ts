@@ -42,7 +42,7 @@ async function main(logger: Logger): Promise<void> {
     const fetchConfiguration = await waitForConfiguration(logger)
 
     // Configure distributed tracing
-    const tracer = createTracer('lsif-worker', fetchConfiguration())
+    const tracer = createTracer('precise-code-intel-worker', fetchConfiguration())
 
     // Ensure storage roots exist
     await ensureDirectory(settings.STORAGE_ROOT)
@@ -160,7 +160,7 @@ async function main(logger: Logger): Promise<void> {
 }
 
 // Initialize logger
-const appLogger = createLogger('lsif-worker')
+const appLogger = createLogger('precise-code-intel-worker')
 
 // Launch!
 main(appLogger).catch(error => {

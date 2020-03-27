@@ -1,6 +1,6 @@
 import { readEnvInt } from '../shared/settings'
 
-/** Which port to run the LSIF server on. Defaults to 3186. */
+/** Which port to run the LSIF API server on. Defaults to 3186. */
 export const HTTP_PORT = readEnvInt('HTTP_PORT', 3186)
 
 /** HTTP address for internal LSIF bundle manager server. */

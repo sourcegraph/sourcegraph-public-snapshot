@@ -101,3 +101,8 @@ node_modules/
 
 # Extensions
 /packages/sourcegraph-extension-api/dist
+
+# Precise code intel
+./cmd/lsif-server/node_modules
+./cmd/lsif-server/out
+./cmd/lsif-server/test-data
