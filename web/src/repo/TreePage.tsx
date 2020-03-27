@@ -9,10 +9,10 @@ import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import TagIcon from 'mdi-react/TagIcon'
 import UserIcon from 'mdi-react/UserIcon'
-import * as React from 'react'
+import React, { useState, useMemo, useCallback, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Observable, Subject, Subscription } from 'rxjs'
-import { catchError, distinctUntilChanged, map, startWith, switchMap, tap } from 'rxjs/operators'
+import { Observable } from 'rxjs'
+import { catchError, map } from 'rxjs/operators'
 import { ActionItem } from '../../../shared/src/actions/ActionItem'
 import { ActionsContainer } from '../../../shared/src/actions/ActionsContainer'
 import { ContributableMenu } from '../../../shared/src/api/protocol'
@@ -41,6 +41,7 @@ import { ThemeProps } from '../../../shared/src/theme'
 import { ErrorAlert } from '../components/alerts'
 import { subYears, formatISO } from 'date-fns'
 import { pluralize } from '../../../shared/src/util/strings'
+import { useObservable } from '../../../shared/src/util/useObservable'
 
 const TreeEntry: React.FunctionComponent<{
     isDir: boolean
@@ -149,274 +150,235 @@ interface Props
     history: H.History
 }
 
-interface State {
-    /** This tree, or an error. Undefined while loading. */
-    treeOrError?: GQL.IGitTree | ErrorLike
-
-    showOlderCommits?: true
-}
-
-export class TreePage extends React.PureComponent<Props, State> {
-    public state: State = {}
-
-    private componentUpdates = new Subject<Props>()
-    private subscriptions = new Subscription()
-
-    private logViewEvent(props: Props): void {
-        if (props.filePath === '') {
+export const TreePage: React.FunctionComponent<Props> = ({
+    repoName,
+    repoID,
+    repoDescription,
+    commitID,
+    rev,
+    filePath,
+    patternType,
+    caseSensitive,
+    settingsCascade,
+    ...props
+}) => {
+    useEffect(() => {
+        if (filePath === '') {
             eventLogger.logViewEvent('Repository')
         } else {
             eventLogger.logViewEvent('Tree')
         }
-    }
+    }, [filePath])
 
-    public componentDidMount(): void {
-        this.subscriptions.add(
-            this.componentUpdates
-                .pipe(
-                    distinctUntilChanged(
-                        (x, y) =>
-                            x.repoName === y.repoName &&
-                            x.rev === y.rev &&
-                            x.commitID === y.commitID &&
-                            x.filePath === y.filePath
-                    ),
-                    tap(props => this.logViewEvent(props)),
-                    switchMap(props =>
-                        fetchTreeEntries({
-                            repoName: props.repoName,
-                            commitID: props.commitID,
-                            rev: props.rev,
-                            filePath: props.filePath,
-                            first: 2500,
-                        }).pipe(
-                            catchError(err => [asError(err)]),
-                            map(c => ({ treeOrError: c })),
-                            startWith<Pick<State, 'treeOrError'>>({ treeOrError: undefined })
-                        )
-                    )
-                )
-                .subscribe(
-                    stateUpdate => this.setState(stateUpdate),
-                    err => console.error(err)
-                )
+    const [showOlderCommits, setShowOlderCommits] = useState(false)
+
+    const onShowOlderCommitsClicked = useCallback(
+        (e: React.MouseEvent): void => {
+            e.preventDefault()
+            setShowOlderCommits(true)
+        },
+        [setShowOlderCommits]
+    )
+
+    const treeOrError = useObservable(
+        useMemo(
+            () =>
+                fetchTreeEntries({
+                    repoName,
+                    commitID,
+                    rev,
+                    filePath,
+                    first: 2500,
+                }).pipe(catchError((err): [ErrorLike] => [asError(err)])),
+            [repoName, commitID, rev, filePath]
         )
-        this.componentUpdates.next(this.props)
-    }
+    )
 
-    public componentDidUpdate(): void {
-        this.componentUpdates.next(this.props)
-    }
-
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
-    }
-
-    private getQueryPrefix(): string {
-        let queryPrefix = searchQueryForRepoRev(this.props.repoName, this.props.rev)
-        if (this.props.filePath) {
-            queryPrefix += `file:^${escapeRegExp(this.props.filePath)}/ `
-        }
-        return queryPrefix
-    }
-
-    public render(): JSX.Element | null {
-        const emptyElement = this.state.showOlderCommits ? (
-            <>No commits in this tree.</>
-        ) : (
-            <div className="e2e-tree-page-no-recent-commits">
-                No commits in this tree in the past year.
-                <br />
-                <button
-                    type="button"
-                    className="btn btn-secondary btn-sm e2e-tree-page-show-all-commits"
-                    onClick={this.showOlderCommits}
-                >
-                    Show all commits
-                </button>
-            </div>
-        )
-
-        const TotalCountSummary: React.FunctionComponent<{ totalCount: number }> = ({ totalCount }) => (
-            <div className="mt-2">
-                {this.state.showOlderCommits ? (
-                    <>{totalCount} total commits in this tree.</>
-                ) : (
-                    <>
-                        {totalCount} {pluralize('commit', totalCount)} in this tree in the past year.
-                        <br />
-                        <button type="button" className="btn btn-secondary btn-sm mt-1" onClick={this.showOlderCommits}>
-                            Show all commits
-                        </button>
-                    </>
-                )}
-            </div>
-        )
-        return (
-            <div className="tree-page">
-                <PageTitle title={this.getPageTitle()} />
-                {this.state.treeOrError === undefined && (
-                    <div>
-                        <LoadingSpinner className="icon-inline tree-page__entries-loader" /> Loading files and
-                        directories
-                    </div>
-                )}
-                {this.state.treeOrError !== undefined &&
-                    (isErrorLike(this.state.treeOrError) ? (
-                        <ErrorAlert error={this.state.treeOrError} />
-                    ) : (
-                        <>
-                            {this.state.treeOrError.isRoot ? (
-                                <header>
-                                    <h2 className="tree-page__title">
-                                        <SourceRepositoryIcon className="icon-inline" />{' '}
-                                        {displayRepoName(this.props.repoName)}
-                                    </h2>
-                                    {this.props.repoDescription && <p>{this.props.repoDescription}</p>}
-                                    <div className="btn-group mb-3">
-                                        <Link
-                                            className="btn btn-secondary"
-                                            to={`${this.state.treeOrError.url}/-/commits`}
-                                        >
-                                            <SourceCommitIcon className="icon-inline" /> Commits
-                                        </Link>
-                                        <Link className="btn btn-secondary" to={`/${this.props.repoName}/-/branches`}>
-                                            <SourceBranchIcon className="icon-inline" /> Branches
-                                        </Link>
-                                        <Link className="btn btn-secondary" to={`/${this.props.repoName}/-/tags`}>
-                                            <TagIcon className="icon-inline" /> Tags
-                                        </Link>
-                                        <Link
-                                            className="btn btn-secondary"
-                                            to={
-                                                this.props.rev
-                                                    ? `/${this.props.repoName}/-/compare/...${encodeURIComponent(
-                                                          this.props.rev
-                                                      )}`
-                                                    : `/${this.props.repoName}/-/compare`
-                                            }
-                                        >
-                                            <HistoryIcon className="icon-inline" /> Compare
-                                        </Link>
-                                        <Link
-                                            className="btn btn-secondary"
-                                            to={`/${this.props.repoName}/-/stats/contributors`}
-                                        >
-                                            <UserIcon className="icon-inline" /> Contributors
-                                        </Link>
-                                    </div>
-                                </header>
-                            ) : (
-                                <header>
-                                    <h2 className="tree-page__title">
-                                        <FolderIcon className="icon-inline" /> {this.props.filePath}
-                                    </h2>
-                                </header>
-                            )}
-                            <section className="tree-page__section">
-                                <Link
-                                    className="btn btn-primary d-inline-flex align-items-center"
-                                    to={`/search?${buildSearchURLQuery(
-                                        this.getQueryPrefix(),
-                                        this.props.patternType,
-                                        this.props.caseSensitive
-                                    )}`}
-                                >
-                                    <SearchIcon className="icon-inline" />
-                                    Search in this {this.props.filePath ? 'tree' : 'repository'}
-                                </Link>
-                            </section>
-                            <TreeEntriesSection
-                                title="Files and directories"
-                                parentPath={this.props.filePath}
-                                entries={this.state.treeOrError.entries}
-                            />
-                            {isDiscussionsEnabled(this.props.settingsCascade) && (
-                                <div className="tree-page__section mt-2 tree-page__section--discussions">
-                                    <h3 className="tree-page__section-header">Discussions</h3>
-                                    <DiscussionsList
-                                        {...this.props}
-                                        filePath={this.props.filePath + '/**' || undefined}
-                                        noun="discussion in this tree"
-                                        pluralNoun="discussions in this tree"
-                                        defaultFirst={2}
-                                        hideSearch={true}
-                                        compact={false}
-                                    />
-                                </div>
-                            )}
-                            {/* eslint-disable react/jsx-no-bind */}
-                            <ActionsContainer
-                                {...this.props}
-                                menu={ContributableMenu.DirectoryPage}
-                                render={items => (
-                                    <section className="tree-page__section">
-                                        <h3 className="tree-page__section-header">Actions</h3>
-                                        {items.map(item => (
-                                            <ActionItem
-                                                {...this.props}
-                                                key={item.action.id}
-                                                {...item}
-                                                className="btn btn-secondary mr-1 mb-1"
-                                            />
-                                        ))}
-                                    </section>
-                                )}
-                                empty={null}
-                            />
-                            {/* eslint-enable react/jsx-no-bind */}
-                            <div className="tree-page__section">
-                                <h3 className="tree-page__section-header">Changes</h3>
-                                <FilteredConnection<GQL.IGitCommit, Pick<GitCommitNodeProps, 'className' | 'compact'>>
-                                    {...this.props}
-                                    className="mt-2 tree-page__section--commits"
-                                    listClassName="list-group list-group-flush"
-                                    noun="commit in this tree"
-                                    pluralNoun="commits in this tree"
-                                    queryConnection={this.queryCommits}
-                                    nodeComponent={GitCommitNode}
-                                    nodeComponentProps={{
-                                        className: 'list-group-item',
-                                        compact: true,
-                                    }}
-                                    updateOnChange={`${this.props.repoName}:${this.props.rev}:${
-                                        this.props.filePath
-                                    }:${String(this.state.showOlderCommits)}`}
-                                    defaultFirst={7}
-                                    useURLQuery={false}
-                                    hideSearch={true}
-                                    emptyElement={emptyElement}
-                                    // eslint-disable-next-line react/jsx-no-bind
-                                    totalCountSummaryComponent={TotalCountSummary}
-                                />
-                            </div>
-                        </>
-                    ))}
-            </div>
-        )
-    }
-
-    private getPageTitle(): string {
-        const repoStr = displayRepoName(this.props.repoName)
-        if (this.props.filePath) {
-            return `${basename(this.props.filePath)} - ${repoStr}`
+    const getPageTitle = (): string => {
+        const repoStr = displayRepoName(repoName)
+        if (filePath) {
+            return `${basename(filePath)} - ${repoStr}`
         }
         return `${repoStr}`
     }
 
-    private queryCommits = (args: { first?: number }): Observable<GQL.IGitCommitConnection> => {
-        const after: string | undefined = this.state.showOlderCommits ? undefined : formatISO(subYears(Date.now(), 1))
-        return fetchTreeCommits({
-            ...args,
-            repo: this.props.repoID,
-            revspec: this.props.rev || '',
-            filePath: this.props.filePath,
-            after,
-        })
+    const queryCommits = useCallback(
+        (args: { first?: number }): Observable<GQL.IGitCommitConnection> => {
+            const after: string | undefined = showOlderCommits ? undefined : formatISO(subYears(Date.now(), 1))
+            return fetchTreeCommits({
+                ...args,
+                repo: repoID,
+                revspec: rev || '',
+                filePath,
+                after,
+            })
+        },
+        [filePath, repoID, rev, showOlderCommits]
+    )
+
+    const getQueryPrefix = (): string => {
+        let queryPrefix = searchQueryForRepoRev(repoName, rev)
+        if (filePath) {
+            queryPrefix += `file:^${escapeRegExp(filePath)}/ `
+        }
+        return queryPrefix
     }
 
-    private showOlderCommits = (e: React.MouseEvent): void => {
-        e.preventDefault()
-        this.setState({ showOlderCommits: true })
-    }
+    const emptyElement = showOlderCommits ? (
+        <>No commits in this tree.</>
+    ) : (
+        <div className="e2e-tree-page-no-recent-commits">
+            No commits in this tree in the past year.
+            <br />
+            <button
+                type="button"
+                className="btn btn-secondary btn-sm e2e-tree-page-show-all-commits"
+                onClick={onShowOlderCommitsClicked}
+            >
+                Show all commits
+            </button>
+        </div>
+    )
+
+    const TotalCountSummary: React.FunctionComponent<{ totalCount: number }> = ({ totalCount }) => (
+        <div className="mt-2">
+            {showOlderCommits ? (
+                <>{totalCount} total commits in this tree.</>
+            ) : (
+                <>
+                    {totalCount} {pluralize('commit', totalCount)} in this tree in the past year.
+                    <br />
+                    <button type="button" className="btn btn-secondary btn-sm mt-1" onClick={onShowOlderCommitsClicked}>
+                        Show all commits
+                    </button>
+                </>
+            )}
+        </div>
+    )
+    return (
+        <div className="tree-page">
+            <PageTitle title={getPageTitle()} />
+            {treeOrError === undefined ? (
+                <div>
+                    <LoadingSpinner className="icon-inline tree-page__entries-loader" /> Loading files and directories
+                </div>
+            ) : isErrorLike(treeOrError) ? (
+                <ErrorAlert error={treeOrError} />
+            ) : (
+                <>
+                    {treeOrError.isRoot ? (
+                        <header>
+                            <h2 className="tree-page__title">
+                                <SourceRepositoryIcon className="icon-inline" /> {displayRepoName(repoName)}
+                            </h2>
+                            {repoDescription && <p>{repoDescription}</p>}
+                            <div className="btn-group mb-3">
+                                <Link className="btn btn-secondary" to={`${treeOrError.url}/-/commits`}>
+                                    <SourceCommitIcon className="icon-inline" /> Commits
+                                </Link>
+                                <Link className="btn btn-secondary" to={`/${repoName}/-/branches`}>
+                                    <SourceBranchIcon className="icon-inline" /> Branches
+                                </Link>
+                                <Link className="btn btn-secondary" to={`/${repoName}/-/tags`}>
+                                    <TagIcon className="icon-inline" /> Tags
+                                </Link>
+                                <Link
+                                    className="btn btn-secondary"
+                                    to={
+                                        rev
+                                            ? `/${repoName}/-/compare/...${encodeURIComponent(rev)}`
+                                            : `/${repoName}/-/compare`
+                                    }
+                                >
+                                    <HistoryIcon className="icon-inline" /> Compare
+                                </Link>
+                                <Link className="btn btn-secondary" to={`/${repoName}/-/stats/contributors`}>
+                                    <UserIcon className="icon-inline" /> Contributors
+                                </Link>
+                            </div>
+                        </header>
+                    ) : (
+                        <header>
+                            <h2 className="tree-page__title">
+                                <FolderIcon className="icon-inline" /> {filePath}
+                            </h2>
+                        </header>
+                    )}
+                    <section className="tree-page__section">
+                        <Link
+                            className="btn btn-primary d-inline-flex align-items-center"
+                            to={`/search?${buildSearchURLQuery(getQueryPrefix(), patternType, caseSensitive)}`}
+                        >
+                            <SearchIcon className="icon-inline" />
+                            Search in this {filePath ? 'tree' : 'repository'}
+                        </Link>
+                    </section>
+                    <TreeEntriesSection
+                        title="Files and directories"
+                        parentPath={filePath}
+                        entries={treeOrError.entries}
+                    />
+                    {isDiscussionsEnabled(settingsCascade) && (
+                        <div className="tree-page__section mt-2 tree-page__section--discussions">
+                            <h3 className="tree-page__section-header">Discussions</h3>
+                            <DiscussionsList
+                                {...props}
+                                repoID={repoID}
+                                rev={rev}
+                                filePath={filePath + '/**' || undefined}
+                                noun="discussion in this tree"
+                                pluralNoun="discussions in this tree"
+                                defaultFirst={2}
+                                hideSearch={true}
+                                compact={false}
+                            />
+                        </div>
+                    )}
+                    {/* eslint-disable react/jsx-no-bind */}
+                    <ActionsContainer
+                        {...props}
+                        menu={ContributableMenu.DirectoryPage}
+                        render={items => (
+                            <section className="tree-page__section">
+                                <h3 className="tree-page__section-header">Actions</h3>
+                                {items.map(item => (
+                                    <ActionItem
+                                        {...props}
+                                        key={item.action.id}
+                                        {...item}
+                                        className="btn btn-secondary mr-1 mb-1"
+                                    />
+                                ))}
+                            </section>
+                        )}
+                        empty={null}
+                    />
+                    {/* eslint-enable react/jsx-no-bind */}
+                    <div className="tree-page__section">
+                        <h3 className="tree-page__section-header">Changes</h3>
+                        <FilteredConnection<GQL.IGitCommit, Pick<GitCommitNodeProps, 'className' | 'compact'>>
+                            location={props.location}
+                            className="mt-2 tree-page__section--commits"
+                            listClassName="list-group list-group-flush"
+                            noun="commit in this tree"
+                            pluralNoun="commits in this tree"
+                            queryConnection={queryCommits}
+                            nodeComponent={GitCommitNode}
+                            nodeComponentProps={{
+                                className: 'list-group-item',
+                                compact: true,
+                            }}
+                            updateOnChange={`${repoName}:${rev}:${filePath}:${String(showOlderCommits)}`}
+                            defaultFirst={7}
+                            useURLQuery={false}
+                            hideSearch={true}
+                            emptyElement={emptyElement}
+                            // eslint-disable-next-line react/jsx-no-bind
+                            totalCountSummaryComponent={TotalCountSummary}
+                        />
+                    </div>
+                </>
+            )}
+        </div>
+    )
 }
