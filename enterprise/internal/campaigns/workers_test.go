@@ -57,20 +57,20 @@ func TestExecChangesetJob(t *testing.T) {
 		},
 		{
 			name:              "BitbucketServer_NewChangeset",
-			createRepoExtSvc:  createBBSRepo,
-			changesetMetadata: buildBBSPR,
+			createRepoExtSvc:  createBitbucketServerRepo,
+			changesetMetadata: buildBitbucketServerPR,
 		},
 		{
 			name:              "BitbucketServer_ChangesetExistsOnCodehost",
-			createRepoExtSvc:  createBBSRepo,
-			changesetMetadata: buildBBSPR,
+			createRepoExtSvc:  createBitbucketServerRepo,
+			changesetMetadata: buildBitbucketServerPR,
 			existsOnCodehost:  true,
 		},
 
 		{
 			name:              "BitbucketServer_ChangesetExistsInDB",
-			createRepoExtSvc:  createBBSRepo,
-			changesetMetadata: buildBBSPR,
+			createRepoExtSvc:  createBitbucketServerRepo,
+			changesetMetadata: buildBitbucketServerPR,
 			existsInDB:        true,
 		},
 	}
@@ -267,7 +267,7 @@ func createGitHubRepo(t *testing.T, ctx context.Context, now time.Time, s *Store
 	return repo, ext
 }
 
-func createBBSRepo(t *testing.T, ctx context.Context, now time.Time, s *Store) (*repos.Repo, *repos.ExternalService) {
+func createBitbucketServerRepo(t *testing.T, ctx context.Context, now time.Time, s *Store) (*repos.Repo, *repos.ExternalService) {
 	t.Helper()
 
 	reposStore := repos.NewDBStore(s.DB(), sql.TxOptions{})
@@ -359,7 +359,7 @@ func buildGithubPR(now time.Time, c *cmpgn.Campaign, headRef string) interface{}
 	}
 }
 
-func buildBBSPR(now time.Time, c *cmpgn.Campaign, headRef string) interface{} {
+func buildBitbucketServerPR(now time.Time, c *cmpgn.Campaign, headRef string) interface{} {
 	return &bitbucketserver.PullRequest{
 		ID:          999,
 		Title:       c.Name,
