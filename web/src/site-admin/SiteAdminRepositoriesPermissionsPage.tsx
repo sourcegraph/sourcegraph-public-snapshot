@@ -7,7 +7,6 @@ import { RepoLink } from '../../../shared/src/components/RepoLink'
 import * as GQL from '../../../shared/src/graphql/schema'
 import {
     FilteredConnection,
-    // FilteredConnectionFilter,
     FilteredConnectionQueryArgs,
     FilteredConnectionFilter,
 } from '../components/FilteredConnection'
@@ -60,7 +59,7 @@ class FilteredRepositoryPermissionsConnection extends FilteredConnection<
 > {}
 
 /**
- * A page displaying the repositories on this site.
+ * A page displaying the repositories permissions on this site.
  */
 export class SiteAdminRepositoriesPermissionsPage extends React.PureComponent<Props> {
     private static FILTERS: FilteredConnectionFilter[] = [

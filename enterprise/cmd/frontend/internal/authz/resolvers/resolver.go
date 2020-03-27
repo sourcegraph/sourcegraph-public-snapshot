@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -229,10 +230,32 @@ func (r *Resolver) RepositoriesPermissions(ctx context.Context, args *graphqlbac
 		return nil, err
 	}
 
-	//var query string
-	//if args.Query != nil {
-	//	query = *args.Query
-	//}
+	var limit int
+	if args.First != nil {
+		limit = int(*args.First)
+	}
+
+	var repoIDs []api.RepoID
+	if args.Query != nil && *args.Query != "" {
+		repos, err := db.Repos.List(ctx, db.ReposListOptions{
+			Query:       *args.Query,
+			OnlyRepoIDs: true,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		for _, r := range repos {
+			repoIDs = append(repoIDs, r.ID)
+		}
+
+		// Return empty list when no repository matches the query
+		if len(repoIDs) == 0 {
+			return &repositoryPermissionsConnectionResolver{
+				limit: limit,
+			}, nil
+		}
+	}
 
 	var orderBy []db.RepoListSort
 	if args.OrderBy == "REPOSITORY_PERMISSIONS_UPDATED_AT" {
@@ -242,12 +265,8 @@ func (r *Resolver) RepositoriesPermissions(ctx context.Context, args *graphqlbac
 		})
 	}
 
-	var limit int
-	if args.First != nil {
-		limit = int(*args.First)
-	}
-
 	perms, totalCount, err := r.store.ListRepoPermissions(ctx, edb.ListRepoPermissionsOptions{
+		RepoIDs: repoIDs,
 		OrderBy: orderBy,
 		Limit:   limit,
 	})

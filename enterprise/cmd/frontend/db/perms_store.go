@@ -109,6 +109,8 @@ AND permission = %s
 }
 
 type ListRepoPermissionsOptions struct {
+	// Only include repositories from the given list of IDs.
+	RepoIDs []api.RepoID
 	// List of fields by which to order the return permissions.
 	OrderBy db.RepoListOrderBy
 	// Limit the number of returned permissions.
@@ -119,15 +121,22 @@ func (s *PermsStore) ListRepoPermissions(ctx context.Context, opt ListRepoPermis
 	ctx, save := s.observe(ctx, "ListRepoPermissions", "")
 	defer func() { save(&err, otlog.Object("opt", opt)) }()
 
-	//if opt.Query != "" {
-	//	reposConds = append(reposConds, sqlf.Sprintf("lower(repos.name) LIKE %s", "%"+strings.ToLower(opt.Query)+"%"))
-	//}
+	ands := []*sqlf.Query{
+		sqlf.Sprintf(`TRUE`),
+	}
+	if len(opt.RepoIDs) > 0 {
+		items := make([]*sqlf.Query, 0, len(opt.RepoIDs))
+		for _, id := range opt.RepoIDs {
+			items = append(items, sqlf.Sprintf("%d", id))
+		}
+		ands = append(ands, sqlf.Sprintf(`perms.repo_id IN (%s)`, sqlf.Join(items, ",")))
+	}
 
-	conds := []*sqlf.Query{
+	suffixes := []*sqlf.Query{
 		opt.OrderBy.SQL(),
 	}
 	if opt.Limit > 0 {
-		conds = append(conds, sqlf.Sprintf(`LIMIT %d`, opt.Limit))
+		suffixes = append(suffixes, sqlf.Sprintf(`LIMIT %d`, opt.Limit))
 	}
 
 	q := sqlf.Sprintf(`
@@ -138,8 +147,9 @@ FROM repo_permissions AS perms
 WHERE perms.repo_id NOT IN
 	(SELECT repo.id FROM repo
 	 WHERE repo.deleted_at IS NOT NULL)
+AND %s
 %s
-`, sqlf.Join(conds, " "))
+`, sqlf.Join(ands, "AND"), sqlf.Join(suffixes, " "))
 	var rows *sql.Rows
 	rows, err = s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
