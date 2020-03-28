@@ -590,12 +590,18 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (*SearchResultsResolv
 
 // union returns the union of two sets of search results and merges common search data.
 func union(left, right *SearchResultsResolver) (*SearchResultsResolver, error) {
-	if left != nil && left.SearchResults != nil && right.SearchResults != nil {
+	if right == nil {
+		return left, nil
+	}
+	if left == nil {
+		return right, nil
+	}
+	if left.SearchResults != nil && right.SearchResults != nil {
 		left.SearchResults = append(left.SearchResults, right.SearchResults...)
 		// merge common search data.
 		left.searchResultsCommon.update(right.searchResultsCommon)
 		return left, nil
-	} else if right != nil && right.SearchResults != nil {
+	} else if right.SearchResults != nil {
 		return right, nil
 	}
 	return left, nil
@@ -609,18 +615,28 @@ func intersect(left, right *SearchResultsResolver) (*SearchResultsResolver, erro
 		return nil, nil
 	}
 
+	rFileMatches := make(map[string]*FileMatchResolver)
+
+	for _, r := range right.SearchResults {
+		if fileMatch, ok := r.ToFileMatch(); ok {
+			rFileMatches[fileMatch.JPath] = fileMatch
+		}
+	}
+
 	var merged []SearchResultResolver
 	for _, ltmp := range left.SearchResults {
-		for _, rtmp := range right.SearchResults {
-			if ltmpFileMatch, ok := ltmp.ToFileMatch(); ok {
-				if rtmpFileMatch, ok := rtmp.ToFileMatch(); ok {
-					if ltmpFileMatch.JPath == rtmpFileMatch.JPath {
-						ltmpFileMatch.JLineMatches = append(ltmpFileMatch.JLineMatches, rtmpFileMatch.JLineMatches...)
-						merged = append(merged, ltmp)
-					}
-				}
-			}
+		ltmpFileMatch, ok := ltmp.ToFileMatch()
+		if !ok {
+			continue
 		}
+
+		rtmpFileMatch := rFileMatches[ltmpFileMatch.JPath]
+		if rtmpFileMatch == nil {
+			continue
+		}
+
+		ltmpFileMatch.JLineMatches = append(ltmpFileMatch.JLineMatches, rtmpFileMatch.JLineMatches...)
+		merged = append(merged, ltmp)
 	}
 	left.SearchResults = merged
 	// merge common search data.
