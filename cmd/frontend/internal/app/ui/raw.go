@@ -278,7 +278,7 @@ func serveRaw(w http.ResponseWriter, r *http.Request) (err error) {
 }
 
 var metricRawDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-	Name:    "src_http_raw_duration_seconds",
+	Name:    "src_frontend_http_raw_duration_seconds",
 	Help:    "A histogram of latencies for the raw endpoint.",
 	Buckets: prometheus.ExponentialBuckets(.1, 5, 5), // 100ms -> 62s
 }, []string{"content", "type", "error"})
