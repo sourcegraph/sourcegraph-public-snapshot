@@ -34,7 +34,8 @@ var (
 	// Only use this after a call to ConnectToDB.
 	Global *sql.DB
 
-	defaultDataSource = env.Get("PGDATASOURCE", "", "Default dataSource to pass to Postgres. See https://godoc.org/github.com/lib/pq for more information.")
+	defaultDataSource      = env.Get("PGDATASOURCE", "", "Default dataSource to pass to Postgres. See https://godoc.org/github.com/lib/pq for more information.")
+	defaultApplicationName = env.Get("PGAPPLICATIONNAME", "sourcegraph", "The value of application_name appended to dataSource")
 )
 
 // ConnectToDB connects to the given DB and stores the handle globally.
@@ -43,10 +44,6 @@ var (
 // also use the value of PGDATASOURCE if supplied and dataSource is the empty
 // string.
 func ConnectToDB(dataSource string) error {
-	if dataSource == "" {
-		dataSource = defaultDataSource
-	}
-
 	// Force PostgreSQL session timezone to UTC.
 	if v, ok := os.LookupEnv("PGTZ"); ok && v != "UTC" && v != "utc" {
 		log15.Warn("Ignoring PGTZ environment variable; using PGTZ=UTC.", "ignoredPGTZ", v)
@@ -55,8 +52,10 @@ func ConnectToDB(dataSource string) error {
 		return errors.Wrap(err, "Error setting PGTZ=UTC")
 	}
 
+	connectionString := buildConnectionString(dataSource)
+
 	var err error
-	Global, err = openDBWithStartupWait(dataSource)
+	Global, err = openDBWithStartupWait(connectionString)
 	if err != nil {
 		return errors.Wrap(err, "DB not available")
 	}
@@ -85,6 +84,25 @@ var startupTimeout = func() time.Duration {
 	}
 	return d
 }()
+
+// buildConnectionString takes either a Postgres connection string or connection URI,
+// normalizes it, and returns a connection string with parameters appended.
+func buildConnectionString(dataSource string) string {
+	if dataSource == "" {
+		dataSource = defaultDataSource
+	}
+
+	connectionString, err := pq.ParseURL(dataSource)
+	if err != nil {
+		// Assume dataSource is either malformed or a connection string rather than a URI.
+		connectionString = dataSource
+	}
+
+	if strings.Contains(connectionString, "fallback_application_name") {
+		return connectionString
+	}
+	return fmt.Sprintf("%s fallback_application_name=%s", connectionString, defaultApplicationName)
+}
 
 func openDBWithStartupWait(dataSource string) (db *sql.DB, err error) {
 	// Allow the DB to take up to 10s while it reports "pq: the database system is starting up".
