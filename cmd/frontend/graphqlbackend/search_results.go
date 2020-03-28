@@ -588,19 +588,116 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (*SearchResultsResolv
 	return rr, err
 }
 
+// union returns the union of two sets of search results and merges common search data.
+func union(left, right *SearchResultsResolver) (*SearchResultsResolver, error) {
+	if left != nil && left.SearchResults != nil && right.SearchResults != nil {
+		left.SearchResults = append(left.SearchResults, right.SearchResults...)
+		// merge common search data.
+		left.searchResultsCommon.update(right.searchResultsCommon)
+		return left, nil
+	} else if right != nil && right.SearchResults != nil {
+		return right, nil
+	}
+	return left, nil
+}
+
+// intersect returns the intersection of two sets of search result content
+// matches, based on whether a single file path contains content matches in both
+// sets.
+func intersect(left, right *SearchResultsResolver) (*SearchResultsResolver, error) {
+	if left == nil || right == nil {
+		return nil, nil
+	}
+
+	var merged []SearchResultResolver
+	for _, ltmp := range left.SearchResults {
+		for _, rtmp := range right.SearchResults {
+			if ltmpFileMatch, ok := ltmp.ToFileMatch(); ok {
+				if rtmpFileMatch, ok := rtmp.ToFileMatch(); ok {
+					if ltmpFileMatch.JPath == rtmpFileMatch.JPath {
+						ltmpFileMatch.JLineMatches = append(ltmpFileMatch.JLineMatches, rtmpFileMatch.JLineMatches...)
+						merged = append(merged, ltmp)
+					}
+				}
+			}
+		}
+	}
+	left.SearchResults = merged
+	// merge common search data.
+	left.searchResultsCommon.update(right.searchResultsCommon)
+	// for intersect we want the newly computed intersection size.
+	left.searchResultsCommon.resultCount = int32(len(merged))
+	return left, nil
+}
+
+func (r *searchResolver) evaluateOperator(ctx context.Context, scopeParameters []query.Node, operator query.Operator) (*SearchResultsResolver, error) {
+	if len(operator.Operands) == 0 {
+		return nil, nil
+	}
+	var new *SearchResultsResolver
+	var err error
+	result, err := r.evaluatePatternExpression(ctx, scopeParameters, operator.Operands[0])
+	if err != nil {
+		return nil, err
+	}
+	if result == nil {
+		return nil, nil
+	}
+	for _, term := range operator.Operands[1:] {
+		new, err = r.evaluatePatternExpression(ctx, scopeParameters, term)
+		if err != nil {
+			return nil, err
+		}
+		if new == nil && operator.Kind == query.And {
+			// Shortcircuit: intersecting with empty new results is empty.
+			return nil, nil
+		}
+		if new != nil {
+			switch operator.Kind {
+			case query.And:
+				result, err = intersect(result, new)
+			case query.Or:
+				result, err = union(result, new)
+			}
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	return result, nil
+}
+
+// evaluatePatternExpression evaluates a search pattern containing and/or expressions.
+func (r *searchResolver) evaluatePatternExpression(ctx context.Context, scopeParameters []query.Node, node query.Node) (*SearchResultsResolver, error) {
+	switch term := node.(type) {
+	case query.Operator:
+		if term.Kind == query.And || term.Kind == query.Or {
+			return r.evaluateOperator(ctx, scopeParameters, term)
+		} else if term.Kind == query.Concat {
+			q := append(scopeParameters, term)
+			r.query = query.AndOrQuery{Query: q}
+			return r.evaluateLeaf(ctx)
+		}
+	case query.Parameter:
+		q := append(scopeParameters, term)
+		r.query = query.AndOrQuery{Query: q}
+		return r.evaluateLeaf(ctx)
+	}
+	// Unreachable.
+	return nil, nil
+}
+
 // evaluate evaluates all expressions of a search query.
 func (r *searchResolver) evaluate(ctx context.Context, q []query.Node) (*SearchResultsResolver, error) {
 	scopeParameters, pattern, err := query.PartitionSearchPattern(q)
 	if err != nil {
 		return nil, err
 	}
-
-	validatedQuery := scopeParameters
-	if pattern != nil {
-		validatedQuery = append(validatedQuery, pattern)
+	if pattern == nil {
+		r.query = query.AndOrQuery{Query: scopeParameters}
+		return r.evaluateLeaf(ctx)
 	}
-	r.query = query.AndOrQuery{Query: validatedQuery}
-	return r.evaluateLeaf(ctx)
+	return r.evaluatePatternExpression(ctx, scopeParameters, pattern)
 }
 
 func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, error) {
