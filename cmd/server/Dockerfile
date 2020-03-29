@@ -86,7 +86,7 @@ ENV LIBSQLITE3_PCRE /libsqlite3-pcre.so
 COPY . /
 
 # hadolint ignore=DL3022
-COPY --from=sourcegraph/grafana:10.0.12@sha256:2cde7e16fa56e81237fb05e228018015385f6498c4642d4ae073799a02b2b68c /sg_config_grafana/provisioning/dashboards/sourcegraph/*json /sg_config_grafana/provisioning/dashboards/sourcegraph/
+COPY --from=sourcegraph/grafana:10.0.12@sha256:2cde7e16fa56e81237fb05e228018015385f6498c4642d4ae073799a02b2b68c /sg_config_grafana/provisioning/dashboards /sg_config_grafana/provisioning/dashboards
 
 # hadolint ignore=DL3022
 COPY --from=wrouesnel/postgres_exporter:v0.7.0@sha256:785c919627c06f540d515aac88b7966f352403f73e931e70dc2cbf783146a98b /postgres_exporter /usr/local/bin/postgres_exporter
