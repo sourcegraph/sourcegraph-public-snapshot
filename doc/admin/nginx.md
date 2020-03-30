@@ -2,6 +2,6 @@
 ignoreDisconnectedPageCheck: true
 ---
 
-# Sourcegraph Nginx sHTTP and HTTPS/SSL configuration
+# Sourcegraph Nginx HTTP and HTTPS/SSL configuration
 
 This documentation page has been moved to "[Sourcegraph HTTP and HTTPS/SSL configuration](http_https_configuration.md)".

@@ -1,5 +1,12 @@
 # Sourcegraph HTTP and HTTPS/SSL configuration
 
+Overview:
+
+- [Single Docker image (`sourcegraph/server`): NGINX](#sourcegraph-single-instance-docker)
+- [Sourcegraph Cluster (Kubernetes): NGINX](#sourcegraph-cluster-kubernetes)
+- [Docker Compose: Caddy 2](#sourcegraph-via-docker-compose-caddy-2)
+- [Other Sourcegraph clusters (e.g. pure-docker)](#other-sourcegraph-clusters-e-g-pure-docker)
+
 ## Sourcegraph single Docker image and Sourcegraph Cluster (Kubernetes): NGINX
 
 Sourcegraph's single Docker image and Kubernetes deployments use [NGINX](https://www.nginx.com/resources/glossary/nginx/) as a [reverse proxy](https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/) for the Sourcegraph front-end server, meaning NGINX proxies external HTTP (and [HTTPS](#nginx-ssl-https-configuration)) requests to the Sourcegraph front-end.
@@ -9,9 +16,6 @@ Sourcegraph's single Docker image and Kubernetes deployments use [NGINX](https:/
 **Note**: Non-sighted users can view a [text-representation of this diagram](sourcegraph-nginx-mermaid.md).
 
 ### Sourcegraph single instance (Docker)
-
-<!-- TODO(ryan): Change heading to ## The default `nginx.conf` file and how to extend/override default configuration and add section
-on how to extend NGINX configuration without (in most cases), editing the `nginx.conf` file. -->
 
 The first time Sourcegraph is run, it will create an [`nginx.conf`](https://github.com/sourcegraph/sourcegraph/blob/master/cmd/server/shared/assets/nginx.conf) file at:
 
