@@ -44,7 +44,7 @@ USER sourcegraph
 COPY --from=pci-builder /pci /pci
 COPY ./precise-code-intel/precise-code-intel /usr/local/bin/precise-code-intel
 COPY --from=prometheus /bin/prometheus /bin/prometheus
-COPY ./lsif-server/prometheus.yml $PROMETHEUS_CONFIGURATION_DIR/prometheus.yml
+COPY ./precise-code-intel/prometheus.yml $PROMETHEUS_CONFIGURATION_DIR/prometheus.yml
 
 # http api server, bundle manager server, (first) worker metrics server, prometheus
 EXPOSE 3186 3187 3188 9090
