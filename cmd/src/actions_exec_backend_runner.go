@@ -36,13 +36,19 @@ type ActionRepoStatus struct {
 func (x *actionExecutor) do(ctx context.Context, repo ActionRepo) (err error) {
 	// Check if cached.
 	cacheKey := actionExecutionCacheKey{Repo: repo, Runs: x.action.Steps}
-	if result, ok, err := x.opt.cache.get(ctx, cacheKey); err != nil {
-		return errors.Wrapf(err, "checking cache for %s", repo.Name)
-	} else if ok {
-		status := ActionRepoStatus{Cached: true, Patch: result}
-		x.updateRepoStatus(repo, status)
-		x.logger.RepoCacheHit(repo, status.Patch != PatchInput{})
-		return nil
+	if x.opt.clearCache {
+		if err := x.opt.cache.clear(ctx, cacheKey); err != nil {
+			return errors.Wrapf(err, "clearing cache for %s", repo.Name)
+		}
+	} else {
+		if result, ok, err := x.opt.cache.get(ctx, cacheKey); err != nil {
+			return errors.Wrapf(err, "checking cache for %s", repo.Name)
+		} else if ok {
+			status := ActionRepoStatus{Cached: true, Patch: result}
+			x.updateRepoStatus(repo, status)
+			x.logger.RepoCacheHit(repo, status.Patch != PatchInput{})
+			return nil
+		}
 	}
 
 	prefix := "action-" + strings.Replace(strings.Replace(repo.Name, "/", "-", -1), "github.com-", "", -1)

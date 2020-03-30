@@ -134,9 +134,12 @@ Format of the action JSON files:
 	var (
 		fileFlag        = flagSet.String("f", "-", "The action file. If not given or '-' standard input is used. (Required)")
 		parallelismFlag = flagSet.Int("j", runtime.GOMAXPROCS(0), "The number of parallel jobs.")
-		cacheDirFlag    = flagSet.String("cache", displayUserCacheDir, "Directory for caching results.")
-		keepLogsFlag    = flagSet.Bool("keep-logs", false, "Do not remove execution log files when done.")
-		timeoutFlag     = flagSet.Duration("timeout", defaultTimeout, "The maximum duration a single action run can take (excluding the building of Docker images).")
+
+		cacheDirFlag   = flagSet.String("cache", displayUserCacheDir, "Directory for caching results.")
+		clearCacheFlag = flagSet.Bool("clear-cache", false, "Remove possibly cached results for an action before executing it.")
+
+		keepLogsFlag = flagSet.Bool("keep-logs", false, "Do not remove execution log files when done.")
+		timeoutFlag  = flagSet.Duration("timeout", defaultTimeout, "The maximum duration a single action run can take (excluding the building of Docker images).")
 
 		createPatchSetFlag      = flagSet.Bool("create-patchset", false, "Create a patch set from the produced set of patches. When the execution of the action fails in a single repository a prompt will ask to confirm or reject the patch set creation.")
 		forceCreatePatchSetFlag = flagSet.Bool("force-create-patchset", false, "Force creation of patch set from the produced set of patches, without asking for confirmation even when the execution of the action failed for a subset of repositories.")
@@ -196,9 +199,10 @@ Format of the action JSON files:
 		}
 
 		opts := actionExecutorOptions{
-			timeout:  *timeoutFlag,
-			keepLogs: *keepLogsFlag,
-			cache:    actionExecutionDiskCache{dir: *cacheDirFlag},
+			timeout:    *timeoutFlag,
+			keepLogs:   *keepLogsFlag,
+			clearCache: *clearCacheFlag,
+			cache:      actionExecutionDiskCache{dir: *cacheDirFlag},
 		}
 		if !*verbose {
 			opts.onUpdate = newTerminalUI(*keepLogsFlag)
