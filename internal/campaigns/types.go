@@ -746,9 +746,6 @@ func computeBitbucketBuildStatus(lastSynced time.Time, pr *bitbucketserver.PullR
 
 	// States from last sync
 	for _, status := range pr.CommitStatus {
-		if status.Commit != latestCommit.ID {
-			continue
-		}
 		stateMap[status.Key()] = parseBitbucketBuildState(status.Status.State)
 	}
 
