@@ -22,7 +22,8 @@ func (p *OAuthProvider) FetchUserPerms(ctx context.Context, account *extsvc.Exte
 	if account == nil {
 		return nil, errors.New("no account provided")
 	} else if !extsvc.IsHostOfAccount(p.codeHost, account) {
-		return nil, fmt.Errorf("not a code host of the account: want %+v but have %+v", account.ExternalAccountSpec, p.codeHost)
+		return nil, fmt.Errorf("not a code host of the account: want %q but have %q",
+			account.ExternalAccountSpec.ServiceID, p.codeHost.ServiceID)
 	}
 
 	_, tok, err := gitlab.GetExternalAccountData(&account.ExternalAccountData)
@@ -36,7 +37,7 @@ func (p *OAuthProvider) FetchUserPerms(ctx context.Context, account *extsvc.Exte
 	return listProjects(ctx, client)
 }
 
-// FetchRepoPerms returns a list of user IDs (on code host) who have read ccess to
+// FetchRepoPerms returns a list of user IDs (on code host) who have read access to
 // the given project on the code host. The user ID has the same value as it would
 // be used as extsvc.ExternalAccount.AccountID. The returned list includes both
 // direct access and inherited from the group membership.
@@ -49,7 +50,8 @@ func (p *OAuthProvider) FetchRepoPerms(ctx context.Context, repo *api.ExternalRe
 	if repo == nil {
 		return nil, errors.New("no repository provided")
 	} else if !extsvc.IsHostOfRepo(p.codeHost, repo) {
-		return nil, fmt.Errorf("not a code host of the repository: want %+v but have %+v", repo, p.codeHost)
+		return nil, fmt.Errorf("not a code host of the repository: want %q but have %q",
+			repo.ServiceID, p.codeHost.ServiceID)
 	}
 
 	client := p.clientProvider.GetPATClient(p.token, "")

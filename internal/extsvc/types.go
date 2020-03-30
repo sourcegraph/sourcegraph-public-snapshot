@@ -54,11 +54,11 @@ func (s *ExternalAccounts) TracingFields() []otlog.Field {
 }
 
 // ExternalAccountID is a descriptive type for the external identifier of an external account
-// on the code host. It can be the string representation of an integer (e.g. GitLab) or a
-// GraphQL ID (e.g. GitHub) depends on the code host type.
+// on the code host. It can be the string representation of an integer (e.g. GitLab), a GraphQL
+// ID (e.g. GitHub), or a username (e.g. Bitbucket Server) depends on the code host type.
 type ExternalAccountID string
 
 // ExternalRepoID is a descriptive type for the external identifier of an external repository
-// on the code host. It can be the string representation of an integer (e.g. GitLab) or a
-// GraphQL ID (e.g. GitHub) depends on the code host type.
+// on the code host. It can be the string representation of an integer (e.g. GitLab and Bitbucket
+// Server) or a GraphQL ID (e.g. GitHub) depends on the code host type.
 type ExternalRepoID string

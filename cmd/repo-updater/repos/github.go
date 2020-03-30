@@ -536,7 +536,7 @@ func (s *GithubSource) listAffiliated(ctx context.Context, results chan *githubR
 				"retryAfter", retry,
 			)
 		}()
-		return s.client.ListAffiliatedRepositories(ctx, page)
+		return s.client.ListAffiliatedRepositories(ctx, "", page)
 	})
 }
 

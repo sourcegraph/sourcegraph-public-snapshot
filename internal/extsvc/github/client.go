@@ -239,9 +239,9 @@ func (c *Client) do(ctx context.Context, token string, req *http.Request, result
 // - /users/:user/repos
 // - /orgs/:org/repos
 // - /user/repos
-func (c *Client) listRepositories(ctx context.Context, requestURI string) ([]*Repository, error) {
+func (c *Client) listRepositories(ctx context.Context, token, requestURI string) ([]*Repository, error) {
 	var restRepos []restRepository
-	if err := c.requestGet(ctx, "", requestURI, &restRepos); err != nil {
+	if err := c.requestGet(ctx, token, requestURI, &restRepos); err != nil {
 		return nil, err
 	}
 	repos := make([]*Repository, 0, len(restRepos))

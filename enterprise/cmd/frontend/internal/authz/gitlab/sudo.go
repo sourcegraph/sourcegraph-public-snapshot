@@ -58,8 +58,8 @@ func listProjects(ctx context.Context, client *gitlab.Client) ([]extsvc.External
 			return projectIDs, err
 		}
 
-		for i := range projects {
-			projectIDs = append(projectIDs, extsvc.ExternalRepoID(strconv.Itoa(projects[i].ID)))
+		for _, p := range projects {
+			projectIDs = append(projectIDs, extsvc.ExternalRepoID(strconv.Itoa(p.ID)))
 		}
 
 		if next == nil {
@@ -71,7 +71,7 @@ func listProjects(ctx context.Context, client *gitlab.Client) ([]extsvc.External
 	return projectIDs, nil
 }
 
-// FetchRepoPerms returns a list of user IDs (on code host) who have read ccess to
+// FetchRepoPerms returns a list of user IDs (on code host) who have read access to
 // the given project on the code host. The user ID has the same value as it would
 // be used as extsvc.ExternalAccount.AccountID. The returned list includes both
 // direct access and inherited from the group membership.
@@ -113,13 +113,13 @@ func listMembers(ctx context.Context, client *gitlab.Client, repoID string) ([]e
 			return userIDs, err
 		}
 
-		for i := range members {
+		for _, m := range members {
 			// Members with access level 20 (i.e. Reporter) has access to project code.
-			if members[i].AccessLevel < 20 {
+			if m.AccessLevel < 20 {
 				continue
 			}
 
-			userIDs = append(userIDs, extsvc.ExternalAccountID(strconv.Itoa(int(members[i].ID))))
+			userIDs = append(userIDs, extsvc.ExternalAccountID(strconv.Itoa(int(m.ID))))
 		}
 
 		if next == nil {

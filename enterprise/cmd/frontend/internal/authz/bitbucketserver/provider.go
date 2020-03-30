@@ -208,7 +208,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.ExternalA
 	case account.AccountData == nil:
 		return nil, errors.New("no account data provided")
 	case !extsvc.IsHostOfAccount(p.codeHost, account):
-		return nil, fmt.Errorf("not a code host of the account: want %s but have %s",
+		return nil, fmt.Errorf("not a code host of the account: want %q but have %q",
 			p.codeHost.ServiceID, account.ExternalAccountSpec.ServiceID)
 	}
 
@@ -241,7 +241,7 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *api.ExternalRepoSpe
 	case repo == nil:
 		return nil, errors.New("no repo provided")
 	case !extsvc.IsHostOfRepo(p.codeHost, repo):
-		return nil, fmt.Errorf("not a code host of the repo: want %s but have %s",
+		return nil, fmt.Errorf("not a code host of the repo: want %q but have %q",
 			p.codeHost.ServiceID, repo.ServiceID)
 	}
 

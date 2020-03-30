@@ -311,7 +311,7 @@ func (c *Client) getPublicRepositories(ctx context.Context, sinceRepoID int64) (
 	if sinceRepoID > 0 {
 		path += "?per_page=100&since=" + strconv.FormatInt(sinceRepoID, 10)
 	}
-	return c.listRepositories(ctx, path)
+	return c.listRepositories(ctx, "", path)
 }
 
 // getRepositoryByNodeIDFromAPI attempts to fetch a repository by GraphQL node ID from the GitHub
@@ -479,9 +479,9 @@ func (c *Client) ListPublicRepositories(ctx context.Context, sinceRepoID int64) 
 // ListAffiliatedRepositories lists GitHub repositories affiliated with the client
 // token. page is the page of results to return. Pages are 1-indexed (so the
 // first call should be for page 1).
-func (c *Client) ListAffiliatedRepositories(ctx context.Context, page int) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error) {
+func (c *Client) ListAffiliatedRepositories(ctx context.Context, token string, page int) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error) {
 	path := fmt.Sprintf("user/repos?sort=created&page=%d&per_page=100", page)
-	repos, err = c.listRepositories(ctx, path)
+	repos, err = c.listRepositories(ctx, token, path)
 	if err == nil {
 		// 🚨 SECURITY: must forward token here to ensure caching by token
 		c.addRepositoriesToCache("", repos)
@@ -495,7 +495,7 @@ func (c *Client) ListAffiliatedRepositories(ctx context.Context, page int) (repo
 // Pages are 1-indexed (so the first call should be for page 1).
 func (c *Client) ListOrgRepositories(ctx context.Context, org string, page int) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error) {
 	path := fmt.Sprintf("orgs/%s/repos?sort=created&page=%d&per_page=100", org, page)
-	repos, err = c.listRepositories(ctx, path)
+	repos, err = c.listRepositories(ctx, "", path)
 	return repos, len(repos) > 0, 1, err
 }
 
@@ -503,7 +503,7 @@ func (c *Client) ListOrgRepositories(ctx context.Context, org string, page int) 
 // Pages are 1-indexed (so the first call should be for page 1)
 func (c *Client) ListUserRepositories(ctx context.Context, user string, page int) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error) {
 	path := fmt.Sprintf("users/%s/repos?sort=created&type=owner&page=%d&per_page=100", user, page)
-	repos, err = c.listRepositories(ctx, path)
+	repos, err = c.listRepositories(ctx, "", path)
 	return repos, len(repos) > 0, 1, err
 }
 
