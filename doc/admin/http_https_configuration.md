@@ -1,5 +1,12 @@
 # Sourcegraph HTTP and HTTPS/SSL configuration
 
+Overview: 
+
+- [Single Docker image (`sourcegraph/server`): NGINX](#sourcegraph-single-instance-docker)
+- [Sourcegraph Cluster (Kubernetes): NGINX](#sourcegraph-cluster-kubernetes)
+- [Docker Compose: Caddy 2](#sourcegraph-via-docker-compose-caddy-2)
+- [Other Sourcegraph clusters (e.g. pure-docker)](#other-sourcegraph-clusters-e-g-pure-docker)
+
 ## Sourcegraph single Docker image and Sourcegraph Cluster (Kubernetes): NGINX
 
 Sourcegraph's single Docker image and Kubernetes deployments use [NGINX](https://www.nginx.com/resources/glossary/nginx/) as a [reverse proxy](https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/) for the Sourcegraph front-end server, meaning NGINX proxies external HTTP (and [HTTPS](#nginx-ssl-https-configuration)) requests to the Sourcegraph front-end.
