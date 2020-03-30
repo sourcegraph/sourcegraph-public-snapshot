@@ -16,6 +16,7 @@ require (
 	github.com/olekukonko/tablewriter v0.0.4 // indirect
 	github.com/pkg/browser v0.0.0-20180916011732-0a3d74bf9ce4
 	github.com/pkg/errors v0.9.1
+	github.com/segmentio/textio v1.2.0
 	github.com/sourcegraph/go-diff v0.5.1
 	github.com/sourcegraph/jsonx v0.0.0-20190114210550-ba8cb36a8614
 	github.com/ssor/bom v0.0.0-20170718123548-6386211fdfcf // indirect

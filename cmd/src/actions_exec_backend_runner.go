@@ -154,9 +154,9 @@ func runAction(ctx context.Context, prefix, repoID, repoName, rev string, steps 
 			cmd := exec.CommandContext(ctx, step.Args[0], step.Args[1:]...)
 			cmd.Dir = volumeDir
 
-			if w, ok := logger.RepoWriter(repoName); ok {
-				cmd.Stdout = w
-				cmd.Stderr = w
+			if stdout, stderr, ok := logger.RepoStdoutStderr(repoName); ok {
+				cmd.Stdout = stdout
+				cmd.Stderr = stderr
 			}
 
 			if err := cmd.Run(); err != nil {
@@ -217,9 +217,9 @@ func runAction(ctx context.Context, prefix, repoID, repoName, rev string, steps 
 			cmd.Args = append(cmd.Args, step.Args...)
 			cmd.Dir = volumeDir
 
-			if w, ok := logger.RepoWriter(repoName); ok {
-				cmd.Stdout = w
-				cmd.Stderr = w
+			if stdout, stderr, ok := logger.RepoStdoutStderr(repoName); ok {
+				cmd.Stdout = stdout
+				cmd.Stderr = stderr
 			}
 
 			t0 := time.Now()
