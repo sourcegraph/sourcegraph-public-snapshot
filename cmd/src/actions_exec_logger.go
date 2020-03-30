@@ -159,9 +159,9 @@ func (a *actionLogger) RepoFinished(repoName string, patchProduced bool, actionE
 
 	if actionErr != nil {
 		if a.keepLogs {
-			a.write(repoName, boldRed, "Action failed. Logfile: %s\n", f.Name())
+			a.write(repoName, boldRed, "Action failed: %q (Logfile: %s)\n", actionErr, f.Name())
 		} else {
-			a.write(repoName, boldRed, "Action failed.\n")
+			a.write(repoName, boldRed, "Action failed: %q\n", actionErr)
 		}
 	} else if patchProduced {
 		a.write(repoName, boldGreen, "Finished. Patch produced.\n")

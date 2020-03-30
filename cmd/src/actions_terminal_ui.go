@@ -73,7 +73,7 @@ func newTerminalUI(keepLogs bool) func(reposMap map[ActionRepo]ActionRepoStatus)
 			case status.Cached || !status.FinishedAt.IsZero():
 				if status.Err != nil {
 					statusColor = color.RedString
-					statusText = "error: see " + status.LogFile
+					statusText = fmt.Sprintf("error: %q (see %s)", status.Err, status.LogFile)
 					logFileText = "" // don't show twice
 				} else {
 					statusColor = color.GreenString
