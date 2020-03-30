@@ -742,7 +742,7 @@ func ComputeReviewState(c *Changeset, events ChangesetEvents) (ChangesetReviewSt
 func computeBitbucketBuildStatus(lastSynced time.Time, pr *bitbucketserver.PullRequest, events []*ChangesetEvent) ChangesetCheckState {
 	var latestCommit bitbucketserver.Commit
 	for _, c := range pr.Commits {
-		if latestCommit.CommitterTimestamp < c.CommitterTimestamp {
+		if latestCommit.CommitterTimestamp <= c.CommitterTimestamp {
 			latestCommit = *c
 		}
 	}
