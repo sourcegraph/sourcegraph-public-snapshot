@@ -171,6 +171,7 @@ function buildCtagsDockerImage() {
     ctagsDockerBuildContext="$(mktemp -d)"
     trap "rm -rf $ctagsDockerBuildContext" EXIT
 
+    cp -R cmd/symbols/install-ctags-alpine.sh "$ctagsDockerBuildContext"
     cp -R cmd/symbols/.ctags.d "$ctagsDockerBuildContext"
 
     echo "Building the $CTAGS_IMAGE Docker image..."

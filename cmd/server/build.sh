@@ -29,7 +29,6 @@ export additional_images=${@:-github.com/sourcegraph/sourcegraph/cmd/frontend gi
 # our enterprise build scripts.
 export server_pkg=${SERVER_PKG:-github.com/sourcegraph/sourcegraph/cmd/server}
 
-cp -a ./cmd/lsif-server "$OUTPUT"
 cp -a ./cmd/server/rootfs/. "$OUTPUT"
 export BINDIR="$OUTPUT/usr/local/bin"
 mkdir -p "$BINDIR"
@@ -80,6 +79,12 @@ build_symbols() {
 export -f build_symbols
 
 parallel_run {} ::: build_go_packages build_symbols
+
+echo "--- ctags"
+cp -a ./cmd/symbols/install-ctags-alpine.sh "$OUTPUT"
+
+echo "--- lsif server"
+cp -a ./cmd/lsif-server "$OUTPUT"
 
 echo "--- prometheus config"
 cp -r docker-images/prometheus/config "$OUTPUT/sg_config_prometheus"
