@@ -9,7 +9,7 @@
 ## - `./libsqlite3-pcre/build.sh libpath` : output its path
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
-set -eu
+set -ux
 
 OUTPUT=`mktemp -d -t sgdockerbuild_XXXXXXX`
 cleanup() {
@@ -35,8 +35,6 @@ function libpath() {
 }
 
 function build() {
-    set -x
-
     libsqlite3PcrePath=$(libpath)
     if [ -f "$libsqlite3PcrePath" ]; then
         # Already exists
