@@ -71,9 +71,9 @@ export -f build_go_packages
 build_symbols() {
     echo "--- build sqlite for symbols"
     if [[ "${CI_DEBUG_PROFILE:-"false"}" == "true" ]]; then
-        env OUTPUT=BINDIR env time -v ./cmd/symbols/go-build.sh
+        env OUTPUT="$BINDIR" env time -v ./cmd/symbols/go-build.sh
     else
-        env OUTPUT=BINDIR ./cmd/symbols/go-build.sh
+        env OUTPUT="$BINDIR" ./cmd/symbols/go-build.sh
     fi
 }
 export -f build_symbols
