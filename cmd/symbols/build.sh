@@ -118,6 +118,7 @@ function buildExecutable() {
 function execute() {
     buildLibsqlite3Pcre
     buildExecutable
+    buildCtagsDockerImage
     export LIBSQLITE3_PCRE="$libsqlite3PcrePath"
     export CTAGS_COMMAND="${CTAGS_COMMAND:=cmd/symbols/universal-ctags-dev}"
     export CTAGS_PROCESSES="${CTAGS_PROCESSES:=1}"
@@ -144,6 +145,7 @@ function buildSymbolsDockerImageDependencies() {
     export GOOS=linux
     buildExecutable
 
+    buildCtagsDockerImage
     cp -R cmd/symbols/.ctags.d "$CTAGS_D_OUTPUT_PATH"
 }
 
@@ -162,6 +164,18 @@ function buildSymbolsDockerImage() {
         --build-arg DATE \
         --build-arg VERSION
     echo "Building the $IMAGE Docker image... done"
+}
+
+# Builds the ctags docker image, used by universal-ctags-dev and the symbols Docker image.
+function buildCtagsDockerImage() {
+    ctagsDockerBuildContext="$(mktemp -d)"
+    trap "rm -rf $ctagsDockerBuildContext" EXIT
+
+    cp -R cmd/symbols/.ctags.d "$ctagsDockerBuildContext"
+
+    echo "Building the $CTAGS_IMAGE Docker image..."
+    docker build --progress=plain --quiet -f cmd/symbols/Dockerfile --target ctags -t "$CTAGS_IMAGE" "$ctagsDockerBuildContext"
+    echo "Building the $CTAGS_IMAGE Docker image... done"
 }
 
 command="$1"
