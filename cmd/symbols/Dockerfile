@@ -1,23 +1,18 @@
 FROM alpine:3.10@sha256:e4355b66995c96b4b468159fc5c7e3540fcef961189ca13fee877798649f531a as libsqlite3-pcre
 
-# hadolint ignore=DL3003,DL3018,DL4006
-RUN apk --no-cache add --virtual build-deps curl git gcc make libc-dev pcre-dev sqlite-dev && \
-    mkdir /sqlite3-pcre && \
-    curl -fsSL https://codeload.github.com/ralight/sqlite3-pcre/tar.gz/c98da412b431edb4db22d3245c99e6c198d49f7a | tar -C /sqlite3-pcre -xzvf - --strip 1 && \
-    cd /sqlite3-pcre && \
-    make && \
-    apk --no-cache --purge del build-deps
+COPY libsqlite3-pcre-install-alpine.sh /libsqlite3-pcre-install-alpine.sh
+RUN /libsqlite3-pcre-install-alpine.sh
 
 # NOTE: This layer of the docker image is also used in local development as a wrapper around universal-ctags
 FROM alpine:3.10@sha256:e4355b66995c96b4b468159fc5c7e3540fcef961189ca13fee877798649f531a AS ctags
 
-COPY install-ctags-alpine.sh /install-ctags-alpine.sh
-RUN /install-ctags-alpine.sh
+COPY ctags/install-alpine.sh /ctags/install-alpine.sh
+RUN /ctags/install-alpine.sh
 
 # For local development
 COPY .ctags.d /.ctags.d
 
-FROM alpine:3.10@sha256:e4355b66995c96b4b468159fc5c7e3540fcef961189ca13fee877798649f531a
+FROM alpine:3.10@sha256:e4355b66995c96b4b468159fc5c7e3540fcef961189ca13fee877798649f531a AS symbols
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"

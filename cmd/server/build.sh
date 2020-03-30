@@ -46,7 +46,7 @@ export -f go_build
 
 echo "--- build go and symbols concurrently"
 
-build_go_packages(){
+build_go_packages() {
    echo "--- go build"
 
    PACKAGES=(
@@ -71,9 +71,9 @@ export -f build_go_packages
 build_symbols() {
     echo "--- build sqlite for symbols"
     if [[ "${CI_DEBUG_PROFILE:-"false"}" == "true" ]]; then
-        env CTAGS_D_OUTPUT_PATH="$OUTPUT/.ctags.d" SYMBOLS_EXECUTABLE_OUTPUT_PATH="$BINDIR/symbols" BUILD_TYPE=dist env time -v ./cmd/symbols/build.sh buildSymbolsDockerImageDependencies
+        env OUTPUT=BINDIR env time -v ./cmd/symbols/go-build.sh
     else
-        env CTAGS_D_OUTPUT_PATH="$OUTPUT/.ctags.d" SYMBOLS_EXECUTABLE_OUTPUT_PATH="$BINDIR/symbols" BUILD_TYPE=dist ./cmd/symbols/build.sh buildSymbolsDockerImageDependencies
+        env OUTPUT=BINDIR ./cmd/symbols/go-build.sh
     fi
 }
 export -f build_symbols
@@ -81,7 +81,9 @@ export -f build_symbols
 parallel_run {} ::: build_go_packages build_symbols
 
 echo "--- ctags"
-cp -a ./cmd/symbols/install-ctags-alpine.sh "$OUTPUT"
+cp -a ./cmd/symbols/.ctags.d "$OUTPUT"
+cp -a ./cmd/symbols/ctags-install-alpine.sh "$OUTPUT"
+cp -a ./dev/libsqlite3-pcre/install-alpine.sh "$OUTPUT/libsqlite3-pcre-install-alpine.sh"
 
 echo "--- lsif server"
 cp -a ./cmd/lsif-server "$OUTPUT"
