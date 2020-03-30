@@ -29,6 +29,7 @@ echo "--- docker build"
 docker build -f cmd/symbols/Dockerfile -t "$IMAGE" "$OUTPUT" \
     --target="${DOCKER_TARGET}" \
     --progress=plain \
+    ${DOCKER_BUILD_FLAGS} \
     --build-arg COMMIT_SHA \
     --build-arg DATE \
     --build-arg VERSION

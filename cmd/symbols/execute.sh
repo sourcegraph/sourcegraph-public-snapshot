@@ -4,7 +4,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 set -eux
 
 # Build ctags docker image for universal-ctags-dev
-IMAGE=ctags DOCKER_TARGET=ctags ./cmd/symbols/build.sh
+IMAGE=ctags DOCKER_TARGET=ctags DOCKER_BUILD_FLAGS="--quiet" ./cmd/symbols/build.sh
 
 # Build and run symbols binary
 ./dev/libsqlite3-pcre/build.sh
