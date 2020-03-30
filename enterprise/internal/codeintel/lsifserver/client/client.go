@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	preciseCodeIntelAPIServerURL = env.Get("PRECISE_CODE_INTEL_API_SERVER_URL", "k8s+http://precise-code-intel:3186", "precise-code-intel-api-server URL (or space separated list of precise-code-intel-api-server URLs)")
+	preciseCodeIntelAPIServerURL = env.Get("PCI_API_SERVER_URL", "k8s+http://precise-code-intel:3186", "precise-code-intel-api-server URL (or space separated list of precise-code-intel-api-server URLs)")
 
 	preciseCodeIntelAPIServerURLsOnce sync.Once
 	preciseCodeIntelAPIServerURLs     *endpoint.Map
