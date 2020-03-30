@@ -133,7 +133,7 @@ func TestOAuthProvider_FetchRepoPerms(t *testing.T) {
 				ServiceID:   "https://github.com/",
 			},
 		)
-		want := "not a code host of the repository: want ExternalRepoSpec{https://github.com/ github } but have &{ServiceID:https://gitlab.com/ ServiceType:gitlab BaseURL:https://gitlab.com/}"
+		want := `not a code host of the repository: want "https://github.com/" but have "https://gitlab.com/"`
 		got := fmt.Sprintf("%v", err)
 		if got != want {
 			t.Fatalf("err: want %q but got %q", want, got)
