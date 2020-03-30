@@ -436,6 +436,11 @@ func (c *Changeset) URL() (s string, err error) {
 	}
 }
 
+// Keyer represents items that return a unique key
+type Keyer interface {
+	Key() string
+}
+
 // Events returns the list of ChangesetEvents from the Changeset's metadata.
 func (c *Changeset) Events() (events []*ChangesetEvent) {
 	switch m := c.Metadata.(type) {
@@ -454,7 +459,7 @@ func (c *Changeset) Events() (events []*ChangesetEvent) {
 					events = append(events, &ev)
 				}
 			default:
-				ev.Key = ti.Item.(interface{ Key() string }).Key()
+				ev.Key = ti.Item.(Keyer).Key()
 				ev.Kind = ChangesetEventKindFor(ti.Item)
 				ev.Metadata = ti.Item
 				events = append(events, &ev)
@@ -462,15 +467,22 @@ func (c *Changeset) Events() (events []*ChangesetEvent) {
 		}
 
 	case *bitbucketserver.PullRequest:
-		events = make([]*ChangesetEvent, 0, len(m.Activities))
-		for _, a := range m.Activities {
+		events = make([]*ChangesetEvent, 0, len(m.Activities)+len(m.CommitStatus))
+		addEvent := func(e Keyer) {
 			events = append(events, &ChangesetEvent{
 				ChangesetID: c.ID,
-				Key:         a.Key(),
-				Kind:        ChangesetEventKindFor(a),
-				Metadata:    a,
+				Key:         e.Key(),
+				Kind:        ChangesetEventKindFor(e),
+				Metadata:    e,
 			})
 		}
+		for _, a := range m.Activities {
+			addEvent(a)
+		}
+		for _, s := range m.CommitStatus {
+			addEvent(s)
+		}
+
 	}
 	return events
 }
@@ -686,7 +698,7 @@ func ComputeCheckState(c *Changeset, events ChangesetEvents) ChangesetCheckState
 		return computeGitHubCheckState(c.UpdatedAt, m, events)
 
 	case *bitbucketserver.PullRequest:
-		return computeBitbucketBuildStatus(m)
+		return computeBitbucketBuildStatus(c.UpdatedAt, m, events)
 	}
 
 	return ChangesetCheckStateUnknown
@@ -727,11 +739,41 @@ func ComputeReviewState(c *Changeset, events ChangesetEvents) (ChangesetReviewSt
 	return events.reviewState()
 }
 
-func computeBitbucketBuildStatus(pr *bitbucketserver.PullRequest) ChangesetCheckState {
-	var states []ChangesetCheckState
-	for _, status := range pr.BuildStatuses {
-		states = append(states, parseBitbucketBuildState(status.State))
+func computeBitbucketBuildStatus(lastSynced time.Time, pr *bitbucketserver.PullRequest, events []*ChangesetEvent) ChangesetCheckState {
+	var latestCommit bitbucketserver.Commit
+	for _, c := range pr.Commits {
+		if latestCommit.CommitterTimestamp <= c.CommitterTimestamp {
+			latestCommit = *c
+		}
 	}
+
+	stateMap := make(map[string]ChangesetCheckState)
+
+	// States from last sync
+	for _, status := range pr.CommitStatus {
+		stateMap[status.Key()] = parseBitbucketBuildState(status.Status.State)
+	}
+
+	// Add any events we've received since our last sync
+	for _, e := range events {
+		switch m := e.Metadata.(type) {
+		case *bitbucketserver.CommitStatus:
+			if m.Commit != latestCommit.ID {
+				continue
+			}
+			dateAdded := unixMilliToTime(m.Status.DateAdded)
+			if dateAdded.Before(lastSynced) {
+				continue
+			}
+			stateMap[m.Key()] = parseBitbucketBuildState(m.Status.State)
+		}
+	}
+
+	states := make([]ChangesetCheckState, 0, len(stateMap))
+	for _, v := range stateMap {
+		states = append(states, v)
+	}
+
 	return combineCheckStates(states)
 }
 
@@ -1095,6 +1137,8 @@ func (e *ChangesetEvent) Timestamp() time.Time {
 		return e.ReceivedAt
 	case *bitbucketserver.Activity:
 		t = unixMilliToTime(int64(e.CreatedDate))
+	case *bitbucketserver.CommitStatus:
+		t = unixMilliToTime(int64(e.Status.DateAdded))
 	}
 
 	return t
@@ -1397,6 +1441,11 @@ func (e *ChangesetEvent) Update(o *ChangesetEvent) {
 			e.Commit = o.Commit
 		}
 
+	case *bitbucketserver.CommitStatus:
+		o := o.Metadata.(*bitbucketserver.CommitStatus)
+		// We always get the full event, so safe to replace it
+		*e = *o
+
 	case *github.CheckRun:
 		o := o.Metadata.(*github.CheckRun)
 		updateGithubCheckRun(e, o)
@@ -1540,6 +1589,8 @@ func ChangesetEventKindFor(e interface{}) ChangesetEventKind {
 		return ChangesetEventKindCheckRun
 	case *bitbucketserver.Activity:
 		return ChangesetEventKind("bitbucketserver:" + strings.ToLower(string(e.Action)))
+	case *bitbucketserver.CommitStatus:
+		return ChangesetEventKindBitbucketServerCommitStatus
 	default:
 		panic(errors.Errorf("unknown changeset event kind for %T", e))
 	}
@@ -1550,7 +1601,12 @@ func ChangesetEventKindFor(e interface{}) ChangesetEventKind {
 func NewChangesetEventMetadata(k ChangesetEventKind) (interface{}, error) {
 	switch {
 	case strings.HasPrefix(string(k), "bitbucketserver"):
-		return new(bitbucketserver.Activity), nil
+		switch k {
+		case ChangesetEventKindBitbucketServerCommitStatus:
+			return new(bitbucketserver.CommitStatus), nil
+		default:
+			return new(bitbucketserver.Activity), nil
+		}
 	case strings.HasPrefix(string(k), "github"):
 		switch k {
 		case ChangesetEventKindGitHubAssigned:
@@ -1620,16 +1676,17 @@ const (
 	ChangesetEventKindCheckSuite                 ChangesetEventKind = "github:check_suite"
 	ChangesetEventKindCheckRun                   ChangesetEventKind = "github:check_run"
 
-	ChangesetEventKindBitbucketServerApproved   ChangesetEventKind = "bitbucketserver:approved"
-	ChangesetEventKindBitbucketServerUnapproved ChangesetEventKind = "bitbucketserver:unapproved"
-	ChangesetEventKindBitbucketServerDeclined   ChangesetEventKind = "bitbucketserver:declined"
-	ChangesetEventKindBitbucketServerReviewed   ChangesetEventKind = "bitbucketserver:reviewed"
-	ChangesetEventKindBitbucketServerOpened     ChangesetEventKind = "bitbucketserver:opened"
-	ChangesetEventKindBitbucketServerReopened   ChangesetEventKind = "bitbucketserver:reopened"
-	ChangesetEventKindBitbucketServerRescoped   ChangesetEventKind = "bitbucketserver:rescoped"
-	ChangesetEventKindBitbucketServerUpdated    ChangesetEventKind = "bitbucketserver:updated"
-	ChangesetEventKindBitbucketServerCommented  ChangesetEventKind = "bitbucketserver:commented"
-	ChangesetEventKindBitbucketServerMerged     ChangesetEventKind = "bitbucketserver:merged"
+	ChangesetEventKindBitbucketServerApproved     ChangesetEventKind = "bitbucketserver:approved"
+	ChangesetEventKindBitbucketServerUnapproved   ChangesetEventKind = "bitbucketserver:unapproved"
+	ChangesetEventKindBitbucketServerDeclined     ChangesetEventKind = "bitbucketserver:declined"
+	ChangesetEventKindBitbucketServerReviewed     ChangesetEventKind = "bitbucketserver:reviewed"
+	ChangesetEventKindBitbucketServerOpened       ChangesetEventKind = "bitbucketserver:opened"
+	ChangesetEventKindBitbucketServerReopened     ChangesetEventKind = "bitbucketserver:reopened"
+	ChangesetEventKindBitbucketServerRescoped     ChangesetEventKind = "bitbucketserver:rescoped"
+	ChangesetEventKindBitbucketServerUpdated      ChangesetEventKind = "bitbucketserver:updated"
+	ChangesetEventKindBitbucketServerCommented    ChangesetEventKind = "bitbucketserver:commented"
+	ChangesetEventKindBitbucketServerMerged       ChangesetEventKind = "bitbucketserver:merged"
+	ChangesetEventKindBitbucketServerCommitStatus ChangesetEventKind = "bitbucketserver:commit_status"
 )
 
 // ChangesetSyncData represents data about the sync status of a changeset

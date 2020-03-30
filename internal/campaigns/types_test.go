@@ -618,6 +618,117 @@ func TestComputeGithubCheckState(t *testing.T) {
 	}
 }
 
+func TestComputeBitbucketBuildStatus(t *testing.T) {
+	now := time.Now().UTC().Truncate(time.Microsecond)
+	sha := "abcdef"
+	statusEvent := func(minutesSinceSync int, key, state string) *ChangesetEvent {
+		commit := &bitbucketserver.CommitStatus{
+			Commit: sha,
+			Status: bitbucketserver.BuildStatus{
+				State:     state,
+				Key:       key,
+				DateAdded: now.Add(1*time.Second).Unix() * 1000,
+			},
+		}
+		event := &ChangesetEvent{
+			Kind:     ChangesetEventKindBitbucketServerCommitStatus,
+			Metadata: commit,
+		}
+		return event
+	}
+
+	lastSynced := now.Add(-1 * time.Minute)
+	pr := &bitbucketserver.PullRequest{
+		Commits: []*bitbucketserver.Commit{
+			{
+				ID: sha,
+			},
+		},
+	}
+
+	tests := []struct {
+		name   string
+		events []*ChangesetEvent
+		want   ChangesetCheckState
+	}{
+		{
+			name:   "empty slice",
+			events: nil,
+			want:   ChangesetCheckStateUnknown,
+		},
+		{
+			name: "single success",
+			events: []*ChangesetEvent{
+				statusEvent(1, "ctx1", "SUCCESSFUL"),
+			},
+			want: ChangesetCheckStatePassed,
+		},
+		{
+			name: "single pending",
+			events: []*ChangesetEvent{
+				statusEvent(1, "ctx1", "INPROGRESS"),
+			},
+			want: ChangesetCheckStatePending,
+		},
+		{
+			name: "single error",
+			events: []*ChangesetEvent{
+				statusEvent(1, "ctx1", "FAILED"),
+			},
+			want: ChangesetCheckStateFailed,
+		},
+		{
+			name: "pending + error",
+			events: []*ChangesetEvent{
+				statusEvent(1, "ctx1", "INPROGRESS"),
+				statusEvent(1, "ctx2", "FAILED"),
+			},
+			want: ChangesetCheckStatePending,
+		},
+		{
+			name: "pending + success",
+			events: []*ChangesetEvent{
+				statusEvent(1, "ctx1", "INPROGRESS"),
+				statusEvent(1, "ctx2", "SUCCESSFUL"),
+			},
+			want: ChangesetCheckStatePending,
+		},
+		{
+			name: "success + error",
+			events: []*ChangesetEvent{
+				statusEvent(1, "ctx1", "SUCCESSFUL"),
+				statusEvent(1, "ctx2", "FAILED"),
+			},
+			want: ChangesetCheckStateFailed,
+		},
+		{
+			name: "success x2",
+			events: []*ChangesetEvent{
+				statusEvent(1, "ctx1", "SUCCESSFUL"),
+				statusEvent(1, "ctx2", "SUCCESSFUL"),
+			},
+			want: ChangesetCheckStatePassed,
+		},
+		{
+			name: "later events have precedence",
+			events: []*ChangesetEvent{
+				statusEvent(1, "ctx1", "INPROGRESS"),
+				statusEvent(1, "ctx1", "SUCCESSFUL"),
+			},
+			want: ChangesetCheckStatePassed,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			have := computeBitbucketBuildStatus(lastSynced, pr, tc.events)
+			if diff := cmp.Diff(tc.want, have); diff != "" {
+				t.Fatalf(diff)
+			}
+		})
+	}
+}
+
 func TestChangesetEventsLabels(t *testing.T) {
 	now := time.Now()
 	labelEvent := func(name string, kind ChangesetEventKind, when time.Time) *ChangesetEvent {

@@ -361,7 +361,7 @@ func TestBitbucketServerSource_CloseChangeset(t *testing.T) {
 		instanceURL = "https://bitbucket.sgdev.org"
 	}
 
-	pr := &bitbucketserver.PullRequest{ID: 59, Version: 0}
+	pr := &bitbucketserver.PullRequest{ID: 59, Version: 4}
 	pr.ToRef.Repository.Slug = "automation-testing"
 	pr.ToRef.Repository.Project.Key = "SOUR"
 
@@ -430,7 +430,7 @@ func TestBitbucketServerSource_UpdateChangeset(t *testing.T) {
 		instanceURL = "https://bitbucket.sgdev.org"
 	}
 
-	pr := &bitbucketserver.PullRequest{ID: 43, Version: 3}
+	pr := &bitbucketserver.PullRequest{ID: 43, Version: 5}
 	pr.ToRef.Repository.Slug = "automation-testing"
 	pr.ToRef.Repository.Project.Key = "SOUR"
 
