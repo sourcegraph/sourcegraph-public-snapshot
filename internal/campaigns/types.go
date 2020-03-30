@@ -752,7 +752,7 @@ func computeBitbucketBuildStatus(lastSynced time.Time, pr *bitbucketserver.PullR
 		stateMap[status.Key()] = parseBitbucketBuildState(status.Status.State)
 	}
 
-	// Add any we've received via webhooks since our last sync
+	// Add any events we've received since our last sync
 	for _, e := range events {
 		switch m := e.Metadata.(type) {
 		case *bitbucketserver.CommitStatus:
@@ -760,7 +760,7 @@ func computeBitbucketBuildStatus(lastSynced time.Time, pr *bitbucketserver.PullR
 				continue
 			}
 			dateAdded := unixMilliToTime(m.Status.DateAdded)
-			if !dateAdded.After(lastSynced) {
+			if dateAdded.Before(lastSynced) {
 				continue
 			}
 			stateMap[m.Key()] = parseBitbucketBuildState(m.Status.State)
