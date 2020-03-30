@@ -1,13 +1,13 @@
 {
   "id": 63,
-  "version": 1,
+  "version": 3,
   "title": "This is another test",
   "description": "Hey there, testing this.",
   "state": "DECLINED",
   "open": false,
   "closed": true,
   "createdDate": 1585034604332,
-  "updatedDate": 1585314188833,
+  "updatedDate": 1585577702838,
   "fromRef": {
    "id": "refs/heads/this-is-another-test",
    "repository": {
@@ -66,6 +66,5 @@
      "href": "https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/pull-requests/63"
     }
    ]
-  },
-  "commit_status": null
+  }
  }

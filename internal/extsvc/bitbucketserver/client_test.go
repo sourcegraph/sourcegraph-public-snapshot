@@ -604,7 +604,7 @@ func TestClient_DeclinePullRequest(t *testing.T) {
 			pr: func() *PullRequest {
 				pr := *pr
 				pr.ID = 63
-				pr.Version = 0
+				pr.Version = 2
 				return &pr
 			},
 		},

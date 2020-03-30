@@ -7,98 +7,6 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: https://bitbucket.sgdev.org/rest/api/1.0/projects/SOUR/repos/vegeta/pull-requests/9999
-    method: GET
-  response:
-    body: '{"errors":[{"context":null,"message":"Pull request 9999 does not exist
-      in SOUR/vegeta.","exceptionName":"com.atlassian.bitbucket.pull.NoSuchPullRequestException"}]}'
-    headers:
-      Cache-Control:
-      - private, no-cache
-      - no-cache, no-transform
-      Cf-Cache-Status:
-      - DYNAMIC
-      Cf-Ray:
-      - 57a9846408404925-CPT
-      Content-Type:
-      - application/json;charset=UTF-8
-      Date:
-      - Fri, 27 Mar 2020 13:39:23 GMT
-      Expect-Ct:
-      - max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
-      Pragma:
-      - no-cache
-      Server:
-      - cloudflare
-      Vary:
-      - X-AUSERNAME,Accept-Encoding
-      X-Arequestid:
-      - '@MWNSEUx819x451439x0'
-      X-Asen:
-      - SEN-11363689
-      X-Asessionid:
-      - wbipd0
-      X-Auserid:
-      - "1"
-      X-Ausername:
-      - milton
-      X-Content-Type-Options:
-      - nosniff
-    status: 404 Not Found
-    code: 404
-    duration: ""
-- request:
-    body: ""
-    form: {}
-    headers:
-      Content-Type:
-      - application/json; charset=utf-8
-    url: https://bitbucket.sgdev.org/rest/api/1.0/projects/SOUR/repos/invalidslug/pull-requests/9999
-    method: GET
-  response:
-    body: '{"errors":[{"context":null,"message":"Repository SOUR/invalidslug does
-      not exist.","exceptionName":"com.atlassian.bitbucket.repository.NoSuchRepositoryException"}]}'
-    headers:
-      Cache-Control:
-      - private, no-cache
-      - no-cache, no-transform
-      Cf-Cache-Status:
-      - DYNAMIC
-      Cf-Ray:
-      - 57a98469a9474925-CPT
-      Content-Type:
-      - application/json;charset=UTF-8
-      Date:
-      - Fri, 27 Mar 2020 13:39:24 GMT
-      Expect-Ct:
-      - max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
-      Pragma:
-      - no-cache
-      Server:
-      - cloudflare
-      Vary:
-      - X-AUSERNAME,Accept-Encoding
-      X-Arequestid:
-      - '@MWNSEUx819x451440x0'
-      X-Asen:
-      - SEN-11363689
-      X-Asessionid:
-      - he8e54
-      X-Auserid:
-      - "1"
-      X-Ausername:
-      - milton
-      X-Content-Type-Options:
-      - nosniff
-    status: 404 Not Found
-    code: 404
-    duration: ""
-- request:
-    body: ""
-    form: {}
-    headers:
-      Content-Type:
-      - application/json; charset=utf-8
     url: https://bitbucket.sgdev.org/rest/api/1.0/projects/SOUR/repos/vegeta/pull-requests/2
     method: GET
   response:
@@ -113,11 +21,11 @@ interactions:
       Cf-Cache-Status:
       - DYNAMIC
       Cf-Ray:
-      - 57a9846f6bd94925-CPT
+      - 57c2763eaa6e8050-CPT
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Fri, 27 Mar 2020 13:39:25 GMT
+      - Mon, 30 Mar 2020 14:18:47 GMT
       Expect-Ct:
       - max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
       Pragma:
@@ -127,11 +35,11 @@ interactions:
       Vary:
       - X-AUSERNAME,Accept-Encoding
       X-Arequestid:
-      - '@MWNSEUx819x451442x0'
+      - '@MWNSEUx858x614474x0'
       X-Asen:
       - SEN-11363689
       X-Asessionid:
-      - 1n8doqv
+      - 1dkpfex
       X-Auserid:
       - "1"
       X-Ausername:
