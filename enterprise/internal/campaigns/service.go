@@ -760,6 +760,14 @@ func computeCampaignUpdateDiff(
 		// Either we _don't_ have a matching _new_ Patch, then we delete
 		// the ChangesetJob and detach & close Changeset.
 		if group.newPatch == nil {
+			// But if we have already created a changeset for this repo and its
+			// merged or closed, we keep it.
+			if group.changeset != nil {
+				s := group.changeset.ExternalState
+				if s == campaigns.ChangesetStateMerged || s == campaigns.ChangesetStateClosed {
+					continue
+				}
+			}
 			diff.Delete = append(diff.Delete, group.changesetJob)
 			continue
 		}
