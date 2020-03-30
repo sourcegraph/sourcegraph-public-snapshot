@@ -95,7 +95,7 @@ func readConfig() (*config, error) {
 		cfg.AccessToken = envToken
 	}
 	if *endpoint != "" {
-		cfg.Endpoint = strings.TrimSuffix(*endpoint, "/")
+		cfg.Endpoint = *endpoint
 	}
 	if cfg.Endpoint == "" {
 		if endpoint := os.Getenv("SRC_ENDPOINT"); endpoint != "" {
@@ -105,5 +105,8 @@ func readConfig() (*config, error) {
 	if cfg.Endpoint == "" {
 		cfg.Endpoint = "https://sourcegraph.com"
 	}
+
+	cfg.Endpoint = strings.TrimSuffix(cfg.Endpoint, "/")
+
 	return &cfg, nil
 }
