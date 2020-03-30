@@ -1,8 +1,9 @@
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
+import { escapeRegExp, uniqueId } from 'lodash'
 import { Route, RouteComponentProps, Switch } from 'react-router'
-import { Subject, Subscription, concat } from 'rxjs'
+import { Subject, Subscription, concat, combineLatest } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap, tap } from 'rxjs/operators'
 import { redirectToExternalHost } from '.'
 import { EREPONOTFOUND, EREPOSEEOTHER, RepoSeeOtherError } from '../../../shared/src/backend/errors'
@@ -15,7 +16,13 @@ import { ErrorLike, isErrorLike, asError } from '../../../shared/src/util/errors
 import { makeRepoURI } from '../../../shared/src/util/url'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
-import { searchQueryForRepoRev, PatternTypeProps, CaseSensitivityProps } from '../search'
+import {
+    searchQueryForRepoRev,
+    PatternTypeProps,
+    CaseSensitivityProps,
+    InteractiveSearchProps,
+    repoFilterForRepoRev,
+} from '../search'
 import { EventLoggerProps } from '../tracking/eventLogger'
 import { RouteDescriptor } from '../util/contributions'
 import { parseBrowserRepoURL, ParsedRepoRev, parseRepoRev } from '../util/url'
@@ -30,6 +37,7 @@ import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
 import { RepoSettingsSideBarItem } from './settings/RepoSettingsSidebar'
 import { ErrorMessage } from '../components/alerts'
 import { QueryState } from '../search/helpers'
+import { FiltersToTypeAndValue, FilterType } from '../../../shared/src/search/interactive/util'
 
 /**
  * Props passed to sub-routes of {@link RepoContainer}.
@@ -72,7 +80,8 @@ interface RepoContainerProps
         ActivationProps,
         ThemeProps,
         PatternTypeProps,
-        CaseSensitivityProps {
+        CaseSensitivityProps,
+        InteractiveSearchProps {
     repoContainerRoutes: readonly RepoContainerRoute[]
     repoRevContainerRoutes: readonly RepoRevContainerRoute[]
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
@@ -205,6 +214,46 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
         this.subscriptions.add(() => this.props.extensionsController.services.workspace.roots.next([]))
 
         this.componentUpdates.next(this.props)
+
+        // Scope the search query to the current tree or file
+        const parsedFilePathChanges = this.componentUpdates.pipe(
+            map(({ location }) => parseBrowserRepoURL(location.pathname + location.search + location.hash).filePath),
+            distinctUntilChanged()
+        )
+        this.subscriptions.add(
+            combineLatest([parsedRouteChanges, parsedFilePathChanges]).subscribe(([{ repoName, rev }, filePath]) => {
+                if (this.props.splitSearchModes && this.props.interactiveSearchMode) {
+                    const filters: FiltersToTypeAndValue = {
+                        [uniqueId('repo')]: {
+                            type: FilterType.repo,
+                            value: repoFilterForRepoRev(repoName, rev),
+                            editable: false,
+                        },
+                    }
+                    if (filePath) {
+                        filters[uniqueId('file')] = {
+                            type: FilterType.file,
+                            value: `^${escapeRegExp(filePath)}`,
+                            editable: false,
+                        }
+                    }
+                    this.props.onFiltersInQueryChange(filters)
+                    this.props.onNavbarQueryChange({
+                        query: '',
+                        cursorPosition: 0,
+                    })
+                } else {
+                    let query = searchQueryForRepoRev(repoName, rev)
+                    if (filePath) {
+                        query = `${query} file:^${escapeRegExp(filePath)}`
+                    }
+                    this.props.onNavbarQueryChange({
+                        query,
+                        cursorPosition: query.length,
+                    })
+                }
+            })
+        )
     }
 
     public componentDidUpdate(): void {

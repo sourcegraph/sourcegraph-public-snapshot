@@ -216,14 +216,6 @@ export const TreePage: React.FunctionComponent<Props> = ({
         [filePath, repoID, rev, showOlderCommits]
     )
 
-    const getQueryPrefix = (): string => {
-        let queryPrefix = searchQueryForRepoRev(repoName, rev)
-        if (filePath) {
-            queryPrefix += `file:^${escapeRegExp(filePath)}/ `
-        }
-        return queryPrefix
-    }
-
     const emptyElement = showOlderCommits ? (
         <>No commits in this tree.</>
     ) : (
@@ -304,15 +296,6 @@ export const TreePage: React.FunctionComponent<Props> = ({
                             </h2>
                         </header>
                     )}
-                    <section className="tree-page__section">
-                        <Link
-                            className="btn btn-primary d-inline-flex align-items-center"
-                            to={`/search?${buildSearchURLQuery(getQueryPrefix(), patternType, caseSensitive)}`}
-                        >
-                            <SearchIcon className="icon-inline" />
-                            Search in this {filePath ? 'tree' : 'repository'}
-                        </Link>
-                    </section>
                     <TreeEntriesSection
                         title="Files and directories"
                         parentPath={filePath}
