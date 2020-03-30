@@ -53,7 +53,7 @@ func userCacheDir() (string, error) {
 	return filepath.Join(userCacheDir, "sourcegraph-src"), nil
 }
 
-const defaultTimeout = 2 * time.Minute
+const defaultTimeout = 60 * time.Minute
 
 func init() {
 	usage := `
@@ -140,7 +140,7 @@ Format of the action JSON files:
 		clearCacheFlag = flagSet.Bool("clear-cache", false, "Remove possibly cached results for an action before executing it.")
 
 		keepLogsFlag = flagSet.Bool("keep-logs", false, "Do not remove execution log files when done.")
-		timeoutFlag  = flagSet.Duration("timeout", defaultTimeout, "The maximum duration a single action run can take (excluding the building of Docker images).")
+		timeoutFlag  = flagSet.Duration("timeout", defaultTimeout, "The maximum duration a single action run can take.")
 
 		createPatchSetFlag      = flagSet.Bool("create-patchset", false, "Create a patch set from the produced set of patches. When the execution of the action fails in a single repository a prompt will ask to confirm or reject the patch set creation.")
 		forceCreatePatchSetFlag = flagSet.Bool("force-create-patchset", false, "Force creation of patch set from the produced set of patches, without asking for confirmation even when the execution of the action failed for a subset of repositories.")
