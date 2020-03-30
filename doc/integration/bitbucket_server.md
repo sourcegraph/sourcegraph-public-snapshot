@@ -62,6 +62,8 @@ To configure a webhook on the Sourcegraph side, set the [`"webhooks"` property i
 
 Disabling the webhook is as easy as removing the `"webhooks"` property from the `"plugin"` section and deleting the webhook pointing to your Sourcegraph instance under **Administration > Add-ons > Sourcegraph**.
 
+> NOTE: Version 1.3.3 or higher of the plugin is required for Build Status support.
+
 ### Fast permission syncing
 
 The plugin also supports an optional method of faster ACL permissions syncing that aims to improve the speed of fetching a user's permissions from Bitbucket (which can reduce the time a user has to wait to run a search if their permissions data has expired).
