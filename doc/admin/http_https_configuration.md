@@ -1,6 +1,6 @@
 # Sourcegraph HTTP and HTTPS/SSL configuration
 
-Overview: 
+Overview:
 
 - [Single Docker image (`sourcegraph/server`): NGINX](#sourcegraph-single-instance-docker)
 - [Sourcegraph Cluster (Kubernetes): NGINX](#sourcegraph-cluster-kubernetes)
