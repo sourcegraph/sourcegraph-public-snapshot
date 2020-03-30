@@ -14,9 +14,9 @@ import (
 )
 
 var (
-	apis           = env.Get("NUM_APIS", "1", "the number of API instances to run (defaults to one)")
-	bundleManagers = env.Get("NUM_BUNDLE_MANAGERS", "1", "the number of bundle manager instances to run (defaults to one)")
-	workers        = env.Get("NUM_WORKERS", "1", "the number of worker instances to run (defaults to one)")
+	apis           = env.Get("PCI_NUM_APIS", "1", "the number of API instances to run (defaults to one)")
+	bundleManagers = env.Get("PCI_NUM_BUNDLE_MANAGERS", "1", "the number of bundle manager instances to run (defaults to one)")
+	workers        = env.Get("PCI_NUM_WORKERS", "1", "the number of worker instances to run (defaults to one)")
 
 	// Set in docker image
 	prometheusStorageDir       = os.Getenv("PROMETHEUS_STORAGE_DIR")
@@ -32,17 +32,17 @@ const (
 func main() {
 	numAPIs, err := strconv.ParseInt(apis, 10, 64)
 	if err != nil || numAPIs < 0 || numAPIs > 1 {
-		log.Fatalf("Invalid int %q for NUM_APIS: %s", apis, err)
+		log.Fatalf("Invalid int %q for PCI_NUM_APIS: %s", apis, err)
 	}
 
 	numBundleManagers, err := strconv.ParseInt(bundleManagers, 10, 64)
 	if err != nil || numBundleManagers < 0 || numBundleManagers > 1 {
-		log.Fatalf("Invalid int %q for NUM_BUNDLE_MANAGERS: %s", bundleManagers, err)
+		log.Fatalf("Invalid int %q for PCI_NUM_BUNDLE_MANAGERS: %s", bundleManagers, err)
 	}
 
 	numWorkers, err := strconv.ParseInt(workers, 10, 64)
 	if err != nil || numWorkers < 0 {
-		log.Fatalf("Invalid int %q for NUM_WORKERS: %s", workers, err)
+		log.Fatalf("Invalid int %q for PCI_NUM_WORKERS: %s", workers, err)
 	}
 
 	if err := ioutil.WriteFile(
