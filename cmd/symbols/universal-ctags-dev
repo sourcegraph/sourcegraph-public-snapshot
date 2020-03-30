@@ -5,7 +5,7 @@
 # To use your own `universal-ctags` binary instead of this wrapper in your local dev server, use
 # `CTAGS_COMMAND=path/to/ctags dev/start.sh`.
 
-exec docker run --rm -it \
+exec docker run --rm -i \
     -a stdin -a stdout -a stderr \
     --user guest \
     --name=universal-ctags-$$ \
