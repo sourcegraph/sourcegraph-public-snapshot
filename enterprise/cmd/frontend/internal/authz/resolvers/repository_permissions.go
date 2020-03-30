@@ -80,8 +80,14 @@ func (r *repositoryPermissionsConnectionResolver) compute(ctx context.Context) (
 
 		r.repoPerms = make([]graphqlbackend.RepositoryPermissionsResolver, 0, len(r.perms))
 		for _, p := range r.perms {
+			// In case there is no associated repository
+			repo, ok := reposSet[api.RepoID(p.RepoID)]
+			if !ok {
+				continue
+			}
+
 			r.repoPerms = append(r.repoPerms, &repositoryPermissionsResolver{
-				repo:  graphqlbackend.NewRepositoryResolver(reposSet[api.RepoID(p.RepoID)]),
+				repo:  graphqlbackend.NewRepositoryResolver(repo),
 				perms: &repositoryPermissionsInfoResolver{perms: p},
 			})
 		}

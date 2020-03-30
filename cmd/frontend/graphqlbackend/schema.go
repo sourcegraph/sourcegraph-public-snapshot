@@ -1402,7 +1402,7 @@ enum RepositoryPermissionsOrderBy {
 # A list of repositories along with their permissions information.
 type RepositoryPermissionsConnection {
     # The list of nodes that contains actual repositories and their permissions.
-    nodes: [RepositoryPermissionsNode!]!
+    nodes: [RepositoryPermissions!]!
     # The total count of repositories in the connection.
     totalCount: Int!
     # Pagination information.
