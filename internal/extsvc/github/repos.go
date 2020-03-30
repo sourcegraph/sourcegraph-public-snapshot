@@ -487,7 +487,7 @@ func (c *Client) ListAffiliatedRepositories(ctx context.Context, page int) (repo
 		c.addRepositoriesToCache("", repos)
 	}
 
-	return repos, len(repos) > 0, 1, nil
+	return repos, len(repos) > 0, 1, err
 }
 
 // ListOrgRepositories lists GitHub repositories from the specified organization.
