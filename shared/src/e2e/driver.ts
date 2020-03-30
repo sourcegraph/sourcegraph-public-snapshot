@@ -284,7 +284,13 @@ export class Driver {
         await this.page.waitForSelector(`[data-e2e-external-service-card-link="${kind.toUpperCase()}"]`, {
             visible: true,
         })
-        await this.page.click(`[data-e2e-external-service-card-link="${kind.toUpperCase()}"]`)
+        await this.page.evaluate(selector => {
+            const element = document.querySelector<HTMLElement>(selector)
+            if (!element) {
+                throw new Error('Could not find element to click on for selector ' + selector)
+            }
+            element.click()
+        }, `[data-e2e-external-service-card-link="${kind.toUpperCase()}"]`)
         await this.replaceText({
             selector: '#e2e-external-service-form-display-name',
             newText: displayName,
