@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
-set -ux
+set -eu
 
 # Build ctags docker image for universal-ctags-dev
 IMAGE=ctags DOCKER_TARGET=ctags DOCKER_BUILD_FLAGS="--quiet" ./cmd/symbols/build.sh

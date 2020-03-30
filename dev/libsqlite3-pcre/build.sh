@@ -9,7 +9,7 @@
 ## - `./libsqlite3-pcre/build.sh libpath` : output its path
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
-set -ux
+set -eu
 
 OUTPUT=`mktemp -d -t sgdockerbuild_XXXXXXX`
 cleanup() {

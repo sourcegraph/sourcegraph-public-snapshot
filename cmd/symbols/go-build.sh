@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
-set -ux
+set -eu
 
 # Set default empty GOOS
 GOOS="${GOOS:-''}"
