@@ -57,7 +57,8 @@ func enterpriseInit(
 		return time.Now().UTC().Truncate(time.Microsecond)
 	}
 
-	go campaigns.RunWorkers(ctx, campaignsStore, clock, gitserver.DefaultClient, 5*time.Second)
+	sourcer := repos.NewSourcer(cf)
+	go campaigns.RunWorkers(ctx, campaignsStore, clock, gitserver.DefaultClient, sourcer, 5*time.Second)
 
 	// Set up syncer
 	go syncer.Run(ctx)

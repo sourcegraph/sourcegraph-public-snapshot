@@ -12,8 +12,8 @@ import (
 )
 
 var (
-	// TODO - update this to lsif-api-server once we split them in k8s
-	lsifAPIServerURL = env.Get("LSIF_API_SERVER_URL", "k8s+http://lsif-server:3186", "lsif-api-server URL (or space separated list of lsif-api-server URLs)")
+	// TODO - update this to precise-code-intel-api-server once we split them in k8s
+	lsifAPIServerURL = env.Get("LSIF_API_SERVER_URL", "k8s+http://lsif-server:3186", "precise-code-intel-api-server URL (or space separated list of precise-code-intel-api-server URLs)")
 
 	lsifAPIServerURLsOnce sync.Once
 	lsifAPIServerURLs     *endpoint.Map
@@ -35,7 +35,7 @@ type Client struct {
 func LSIFURLs() *endpoint.Map {
 	lsifAPIServerURLsOnce.Do(func() {
 		if len(strings.Fields(lsifAPIServerURL)) == 0 {
-			lsifAPIServerURLs = endpoint.Empty(errors.New("an lsif-api-server has not been configured"))
+			lsifAPIServerURLs = endpoint.Empty(errors.New("an precise-code-intel-api-server has not been configured"))
 		} else {
 			lsifAPIServerURLs = endpoint.New(lsifAPIServerURL)
 		}

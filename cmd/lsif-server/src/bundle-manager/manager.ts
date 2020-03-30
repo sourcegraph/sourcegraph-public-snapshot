@@ -48,7 +48,7 @@ async function main(logger: Logger): Promise<void> {
 }
 
 // Initialize logger
-const appLogger = createLogger('lsif-bundle-manager')
+const appLogger = createLogger('precise-code-intel-bundle-manager')
 
 // Launch!
 main(appLogger).catch(error => {

@@ -35,19 +35,19 @@
     # zoekt-indexserver
     - 127.0.0.1:6072
 - labels:
-    job: lsif-api-server
+    job: precise-code-intel-api-server
   targets:
-    # lsif-api-server
+    # precise-code-intel-api-server
     - 127.0.0.1:3186
 - labels:
-    job: lsif-bundle-manager
+    job: precise-code-intel-bundle-manager
   targets:
-    # lsif-bundle-manager
+    # precise-code-intel-bundle-manager
     - 127.0.0.1:3187
 - labels:
-    job: lsif-worker
+    job: precise-code-intel-worker
   targets:
-    # lsif-worker
+    # precise-code-intel-worker
     - 127.0.0.1:3188
 - labels:
     job: postgres_exporter

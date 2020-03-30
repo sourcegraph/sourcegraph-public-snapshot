@@ -24,9 +24,10 @@ type lsifRequest struct {
 	query  queryValues
 	body   io.ReadCloser
 
-	// (Optional) used in routing to select the "hot" lsif-api-server that was used in
-	// recent requests for similar data. Requests that are likely to open the same dump
-	// should hit the same server so that the SQLite database is already in the cache.
+	// (Optional) used in routing to select the "hot" precise-code-intel-api-server that
+	// was used in recent requests for similar data. Requests that are likely to open the
+	// same dump should hit the same server so that the SQLite database is already in the
+	// cache.
 	routingKey string
 }
 
