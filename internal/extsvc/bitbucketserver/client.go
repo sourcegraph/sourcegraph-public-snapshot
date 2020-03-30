@@ -1097,7 +1097,7 @@ type PullRequest struct {
 
 	Activities   []*Activity     `json:"activities,omitempty"`
 	Commits      []*Commit       `json:"commits,omitempty"`
-	CommitStatus []*CommitStatus `json:"commit_status"`
+	CommitStatus []*CommitStatus `json:"commit_status,omitempty"`
 
 	// Deprecated, use CommitStatus instead. BuildStatus was not tied to individual commits
 	BuildStatuses []*BuildStatus `json:"buildstatuses,omitempty"`
