@@ -436,6 +436,11 @@ func (c *Changeset) URL() (s string, err error) {
 	}
 }
 
+// Keyer represents items that return a unique key
+type Keyer interface {
+	Key() string
+}
+
 // Events returns the list of ChangesetEvents from the Changeset's metadata.
 func (c *Changeset) Events() (events []*ChangesetEvent) {
 	switch m := c.Metadata.(type) {
@@ -454,7 +459,7 @@ func (c *Changeset) Events() (events []*ChangesetEvent) {
 					events = append(events, &ev)
 				}
 			default:
-				ev.Key = ti.Item.(interface{ Key() string }).Key()
+				ev.Key = ti.Item.(Keyer).Key()
 				ev.Kind = ChangesetEventKindFor(ti.Item)
 				ev.Metadata = ti.Item
 				events = append(events, &ev)
@@ -463,7 +468,7 @@ func (c *Changeset) Events() (events []*ChangesetEvent) {
 
 	case *bitbucketserver.PullRequest:
 		events = make([]*ChangesetEvent, 0, len(m.Activities)+len(m.CommitStatus))
-		addEvent := func(e interface{ Key() string }) {
+		addEvent := func(e Keyer) {
 			events = append(events, &ChangesetEvent{
 				ChangesetID: c.ID,
 				Key:         e.Key(),
