@@ -284,6 +284,50 @@ func exactlyOneRepo(repoFilters []string) bool {
 	return false
 }
 
+var re = lazyregexp.New(`@[0-9a-zA-Z-_.:\/]+`)
+
+// strips @commit part of a list of strings.
+func stripAtRevspec(in []string) (result []string) {
+	for _, s := range in {
+		result = append(result, re.ReplaceAllString(s, ""))
+	}
+	return result
+}
+
+// parseMutliRepoSpec parses a particular regex expression that allows to search
+// across different repositories and different revisions. It expects the following form:
+//
+// repo => ^github.com/user/repo@commit
+// expression => repo|repo|repo...
+func parseMultiRepoSpec(includePatterns []string) ([]string, bool) {
+	if len(includePatterns) == 0 {
+		return includePatterns, false
+	}
+	if len(includePatterns) > 1 {
+		return nil, false
+	}
+	repos := strings.Split(includePatterns[0], "|")
+	// validate each repo conforms to "^repo$@alphanum-".
+	validated := true
+	// strip out "@..." suffix in "^repo$" to validate anchors and that these are all literal patterns.
+	strippedRepos := stripAtRevspec(repos)
+	for _, repo := range strippedRepos {
+		if strings.HasPrefix(repo, "^") && strings.HasSuffix(repo, "$") {
+			strippedRepo := strings.TrimSuffix(strings.TrimPrefix(repo, "^"), "$")
+			regexpRepoPattern, err := regexpsyntax.Parse(strippedRepo, regexpFlags)
+			if err != nil {
+				return nil, false
+			}
+			validated = validated && (regexpRepoPattern.Op == regexpsyntax.OpLiteral)
+		} else {
+			return nil, false
+		}
+	}
+	// now we could validate that each repo has specifies a revision explicitly
+	// skipping, don't think it's needed
+	return repos, validated
+}
+
 // resolveRepositories calls doResolveRepositories, caching the result for the common
 // case where effectiveRepoFieldValues == nil.
 func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoFieldValues []string) (repoRevs, missingRepoRevs []*search.RepositoryRevisions, overLimit bool, err error) {
@@ -489,6 +533,9 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 		}
 	}
 
+	originalIncludePatterns := make([]string, len(includePatterns))
+	copy(originalIncludePatterns, includePatterns)
+
 	// note that this mutates the strings in includePatterns, stripping their
 	// revision specs, if they had any.
 	includePatternRevs, err := findPatternRevs(includePatterns)
@@ -515,9 +562,13 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 		}
 	} else {
 		tr.LazyPrintf("Repos.List - start")
+		includePatternsForLookup := includePatterns // preserve existing behavior.
+		if _, ok := parseMultiRepoSpec(originalIncludePatterns); ok {
+			includePatternsForLookup = stripAtRevspec(originalIncludePatterns) // override.
+		}
 		repos, err = db.Repos.List(ctx, db.ReposListOptions{
 			OnlyRepoIDs:     true,
-			IncludePatterns: includePatterns,
+			IncludePatterns: includePatternsForLookup,
 			ExcludePattern:  unionRegExps(excludePatterns),
 			// List N+1 repos so we can see if there are repos omitted due to our repo limit.
 			LimitOffset:  &db.LimitOffset{Limit: maxRepoListSize + 1},
@@ -527,6 +578,13 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 			OnlyArchived: op.onlyArchived,
 		})
 		tr.LazyPrintf("Repos.List - done")
+		if err != nil {
+			return nil, nil, false, err
+		}
+	}
+
+	if patterns, ok := parseMultiRepoSpec(originalIncludePatterns); ok {
+		includePatternRevs, err = findPatternRevs(patterns) // partition on multi repo with multi spec instead.
 		if err != nil {
 			return nil, nil, false, err
 		}
