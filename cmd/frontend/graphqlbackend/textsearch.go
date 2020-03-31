@@ -577,7 +577,7 @@ func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res [
 	// that forces the searcher to only include the file list in the
 	// search. It is currently only set when Zoekt restricts the file list for structural search.
 	callSearcherOverRepos := func(
-		searcherRepos []*search.RepositoryRevisions,
+		searcherRepos []*search.RepositoryRevisions, // XXX add here.
 		searcherReposFilteredFiles map[string][]string,
 	) error {
 		var fetchTimeout time.Duration
