@@ -16,6 +16,11 @@ const ActionSchemaJSON = `{
     "steps"
   ],
   "properties": {
+    "$schema": {
+      "description": "URL of the JSON Schema for an Action Definition.",
+      "type": "string",
+      "minLength": 1
+    },
     "scopeQuery": {
       "description": "A Sourcegraph search query to generate a list of repositories over which to run the action. Use 'src actions scope-query' to see which repositories are matched by the query.",
       "type": "string",
