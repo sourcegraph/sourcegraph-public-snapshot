@@ -554,7 +554,8 @@ func getChangesetQuery(opts *GetChangesetOpts) *sqlf.Query {
 	return sqlf.Sprintf(getChangesetsQueryFmtstr, sqlf.Join(preds, "\n AND "))
 }
 
-// ListChangesetSyncData returns sync timing data on all non-externally-deleted changesets.
+// ListChangesetSyncData returns sync timing data on all non-externally-deleted changesets
+// that are part of at least one open campaign.
 func (s *Store) ListChangesetSyncData(ctx context.Context) ([]campaigns.ChangesetSyncData, error) {
 	q := listChangesetSyncData()
 	results := make([]campaigns.ChangesetSyncData, 0)

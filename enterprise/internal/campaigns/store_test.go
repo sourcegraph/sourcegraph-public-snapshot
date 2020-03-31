@@ -1226,29 +1226,25 @@ func testStore(db *sql.DB) func(*testing.T) {
 		})
 
 		t.Run("ListChangesetSyncData", func(t *testing.T) {
+			changesets, _, err := s.ListChangesets(ctx, ListChangesetsOpts{
+				Limit: 10,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
 			// We need campaigns attached to each changeset
-			for i := 0; i < 3; i++ {
+			for i, cs := range changesets {
 				c := &cmpgn.Campaign{
 					Name:           fmt.Sprintf("ListChangesetSyncData test"),
-					Description:    "All the Javascripts are belong to us",
-					Branch:         "upgrade-es-lint",
-					AuthorID:       23,
-					ChangesetIDs:   []int64{int64(i) + 1},
-					PatchSetID:     42,
+					ChangesetIDs:   []int64{cs.ID},
 					NamespaceOrgID: 23,
 				}
 				err := s.CreateCampaign(ctx, c)
 				if err != nil {
 					t.Fatal(err)
 				}
-				cs, err := s.GetChangeset(ctx, GetChangesetOpts{
-					ID: int64(i) + 1,
-				})
-				if err != nil {
-					t.Fatal(err)
-				}
-				cs.CampaignIDs = []int64{c.ID}
-				if err := s.UpdateChangesets(ctx, cs); err != nil {
+				changesets[i].CampaignIDs = []int64{c.ID}
+				if err := s.UpdateChangesets(ctx, changesets[i]); err != nil {
 					t.Fatal(err)
 				}
 			}
@@ -1285,13 +1281,17 @@ func testStore(db *sql.DB) func(*testing.T) {
 		})
 
 		t.Run("ListChangesetSyncData ignores closed campaign", func(t *testing.T) {
-			cs1, err := s.GetChangeset(ctx, GetChangesetOpts{
-				ID: 1,
+			changesets, _, err := s.ListChangesets(ctx, ListChangesetsOpts{
+				Limit: 10,
 			})
 			if err != nil {
 				t.Fatal(err)
 			}
-			oldCampaign := cs1.CampaignIDs[0]
+			if len(changesets) != 3 {
+				t.Fatalf("Expected 3 changesets, got %d", len(changesets))
+			}
+			oldCampaign := changesets[0].CampaignIDs[0]
+
 			// Close a campaign
 			c, err := s.GetCampaign(ctx, GetCampaignOpts{
 				ID: oldCampaign,
@@ -1338,8 +1338,8 @@ func testStore(db *sql.DB) func(*testing.T) {
 			}
 
 			// Attach cs1 to both an open and closed campaign
-			cs1.CampaignIDs = []int64{oldCampaign, cs2.CampaignIDs[0]}
-			err = s.UpdateChangesets(ctx, cs1)
+			changesets[0].CampaignIDs = []int64{oldCampaign, cs2.CampaignIDs[0]}
+			err = s.UpdateChangesets(ctx, changesets[0])
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1350,7 +1350,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			c1.ChangesetIDs = []int64{cs1.ID, cs2.ID}
+			c1.ChangesetIDs = []int64{changesets[0].ID, cs2.ID}
 			err = s.UpdateCampaign(ctx, c1)
 			if err != nil {
 				t.Fatal(err)
