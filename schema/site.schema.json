@@ -70,6 +70,11 @@
               "description": "Log GitLab API requests.",
               "type": "boolean",
               "default": false
+            },
+            "opentracing": {
+              "description": "Log opentracing client API invocations",
+              "type": "boolean",
+              "default": false
             }
           }
         },
@@ -569,20 +574,40 @@
       "examples": ["https://sourcegraph.example.com"]
     },
     "lightstepAccessToken": {
-      "description": "Access token for sending traces to LightStep.",
+      "description": "DEPRECATED. Use Jaeger (`\"tracing.distributedTracing.type\": \"jaeger\"`), instead.",
       "type": "string",
       "group": "Misc."
     },
     "lightstepProject": {
-      "description": "The project ID on LightStep that corresponds to the `lightstepAccessToken`, only for generating links to traces. For example, if `lightstepProject` is `mycompany-prod`, all HTTP responses from Sourcegraph will include an X-Trace header with the URL to the trace on LightStep, of the form `https://app.lightstep.com/mycompany-prod/trace?span_guid=...&at_micros=...`.",
+      "description": "DEPRECATED. Use Jaeger (`\"tracing.distributedTracing.type\": \"jaeger\"`), instead.",
       "type": "string",
       "examples": ["myproject"],
       "group": "Misc."
     },
     "useJaeger": {
-      "description": "Use local Jaeger instance for tracing. Kubernetes cluster deployments only.\n\nAfter enabling Jaeger and updating your Kubernetes cluster, `kubectl get pods`\nshould display pods prefixed with `jaeger-cassandra`,\n`jaeger-collector`, and `jaeger-query`. `jaeger-collector` will start\ncrashing until you initialize the Cassandra DB. To do so, do the\nfollowing:\n\n1. Install [`cqlsh`](https://pypi.python.org/pypi/cqlsh).\n1. `kubectl port-forward $(kubectl get pods | grep jaeger-cassandra | awk '{ print $1 }') 9042`\n1. `git clone https://github.com/uber/jaeger && cd jaeger && MODE=test ./plugin/storage/cassandra/schema/create.sh | cqlsh`\n1. `kubectl port-forward $(kubectl get pods | grep jaeger-query | awk '{ print $1 }') 16686`\n1. Go to http://localhost:16686 to view the Jaeger dashboard.",
+      "description": "DEPRECATED. Use `\"tracing.distributedTracing.type\": \"jaeger\"` instead. Enables Jaeger tracing.",
       "type": "boolean",
       "group": "Misc."
+    },
+    "tracing.distributedTracing": {
+      "description": "Controls the settings for distributed tracing in Sourcegraph.",
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "description": "The type of distributed tracer to use.",
+          "type": "string",
+          "enum": ["jaeger", "none"],
+          "default": "jaeger"
+        }
+      },
+      "oneOf": [
+          { "$ref": "#/definitions/DistributedTracingJaeger" },
+          { "$ref": "#/definitions/DistributedTracingNone" }
+      ],
+      "!go": {
+        "taggedUnionType": true
+      }
     },
     "htmlHeadTop": {
       "description": "HTML to inject at the top of the `<head>` element on each page, for analytics scripts",
@@ -911,6 +936,44 @@
         "displayName": {
           "description": "The name to use when displaying this authentication provider in the UI. Defaults to an auto-generated name with the type of authentication provider and other relevant identifiers (such as a hostname).",
           "type": "string"
+        }
+      }
+    },
+    "DistributedTracingNone": {
+      "description": "Turns off distributed tracing",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "none"
+        }
+      }
+    },
+    "DistributedTracingJaeger": {
+      "description": "Configures Jaeger tracing behavior",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "jaeger"
+        },
+        "sampling": { "$ref": "#/definitions/DistributedTracingCommon/properties/sampling" }
+      }
+    },
+    "DistributedTracingCommon": {
+      "$comment": "This schema is not used directly. The Distributedtracing* schemas refer to its properties directly.",
+      "description": "Common properties for distributed tracing.",
+      "type": "object",
+      "properties": {
+        "sampling": {
+          "description": "Controls when traces are recorded. \"selective\" (default) records traces whenever `?trace=1` is present in the URL. \"all\" records traces on every request. \"none\" turns off tracing entirely. Note that some tracing systems (e.g., Jaeger) have sampling settings of their own and this is distinct from that.",
+          "type": "string",
+          "enum": ["selective", "all", "none"],
+          "default": "selective"
         }
       }
     }

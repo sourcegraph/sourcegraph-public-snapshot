@@ -309,6 +309,8 @@ type CustomGitFetchMapping struct {
 type DebugLog struct {
 	// ExtsvcGitlab description: Log GitLab API requests.
 	ExtsvcGitlab bool `json:"extsvc.gitlab,omitempty"`
+	// Opentracing description: Log opentracing client API invocations
+	Opentracing bool `json:"opentracing,omitempty"`
 }
 
 // Discussions description: Configures Sourcegraph code discussions.
@@ -317,6 +319,23 @@ type Discussions struct {
 	AbuseEmails []string `json:"abuseEmails,omitempty"`
 	// AbuseProtection description: Enable abuse protection features (for public instances like Sourcegraph.com, not recommended for private instances).
 	AbuseProtection bool `json:"abuseProtection,omitempty"`
+}
+
+// DistributedTracingCommon description: Common properties for distributed tracing.
+type DistributedTracingCommon struct {
+	// Sampling description: Controls when traces are recorded. "selective" (default) records traces whenever `?trace=1` is present in the URL. "all" records traces on every request. "none" turns off tracing entirely. Note that some tracing systems (e.g., Jaeger) have sampling settings of their own and this is distinct from that.
+	Sampling string `json:"sampling,omitempty"`
+}
+
+// DistributedTracingJaeger description: Configures Jaeger tracing behavior
+type DistributedTracingJaeger struct {
+	Sampling string `json:"sampling,omitempty"`
+	Type     string `json:"type"`
+}
+
+// DistributedTracingNone description: Turns off distributed tracing
+type DistributedTracingNone struct {
+	Type string `json:"type"`
 }
 type ExcludedAWSCodeCommitRepo struct {
 	// Id description: The ID of an AWS Code Commit repository (as returned by the AWS API) to exclude from mirroring. Use this to exclude the repository, even if renamed, or to differentiate between repositories with the same name in multiple regions.
@@ -959,9 +978,9 @@ type SiteConfiguration struct {
 	HtmlHeadTop string `json:"htmlHeadTop,omitempty"`
 	// LicenseKey description: The license key associated with a Sourcegraph product subscription, which is necessary to activate Sourcegraph Enterprise functionality. To obtain this value, contact Sourcegraph to purchase a subscription. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.
 	LicenseKey string `json:"licenseKey,omitempty"`
-	// LightstepAccessToken description: Access token for sending traces to LightStep.
+	// LightstepAccessToken description: DEPRECATED. Use Jaeger (`"tracing.distributedTracing.type": "jaeger"`), instead.
 	LightstepAccessToken string `json:"lightstepAccessToken,omitempty"`
-	// LightstepProject description: The project ID on LightStep that corresponds to the `lightstepAccessToken`, only for generating links to traces. For example, if `lightstepProject` is `mycompany-prod`, all HTTP responses from Sourcegraph will include an X-Trace header with the URL to the trace on LightStep, of the form `https://app.lightstep.com/mycompany-prod/trace?span_guid=...&at_micros=...`.
+	// LightstepProject description: DEPRECATED. Use Jaeger (`"tracing.distributedTracing.type": "jaeger"`), instead.
 	LightstepProject string `json:"lightstepProject,omitempty"`
 	// Log description: Configuration for logging and alerting, including to external services.
 	Log *Log `json:"log,omitempty"`
@@ -983,21 +1002,11 @@ type SiteConfiguration struct {
 	SearchIndexSymbolsEnabled *bool `json:"search.index.symbols.enabled,omitempty"`
 	// SearchLargeFiles description: A list of file glob patterns where matching files will be indexed and searched regardless of their size. The glob pattern syntax can be found here: https://golang.org/pkg/path/filepath/#Match.
 	SearchLargeFiles []string `json:"search.largeFiles,omitempty"`
+	// TracingDistributedTracing description: Controls the settings for distributed tracing in Sourcegraph.
+	TracingDistributedTracing *TracingDistributedTracing `json:"tracing.distributedTracing,omitempty"`
 	// UpdateChannel description: The channel on which to automatically check for Sourcegraph updates.
 	UpdateChannel string `json:"update.channel,omitempty"`
-	// UseJaeger description: Use local Jaeger instance for tracing. Kubernetes cluster deployments only.
-	//
-	// After enabling Jaeger and updating your Kubernetes cluster, `kubectl get pods`
-	// should display pods prefixed with `jaeger-cassandra`,
-	// `jaeger-collector`, and `jaeger-query`. `jaeger-collector` will start
-	// crashing until you initialize the Cassandra DB. To do so, do the
-	// following:
-	//
-	// 1. Install [`cqlsh`](https://pypi.python.org/pypi/cqlsh).
-	// 1. `kubectl port-forward $(kubectl get pods | grep jaeger-cassandra | awk '{ print $1 }') 9042`
-	// 1. `git clone https://github.com/uber/jaeger && cd jaeger && MODE=test ./plugin/storage/cassandra/schema/create.sh | cqlsh`
-	// 1. `kubectl port-forward $(kubectl get pods | grep jaeger-query | awk '{ print $1 }') 16686`
-	// 1. Go to http://localhost:16686 to view the Jaeger dashboard.
+	// UseJaeger description: DEPRECATED. Use `"tracing.distributedTracing.type": "jaeger"` instead. Enables Jaeger tracing.
 	UseJaeger bool `json:"useJaeger,omitempty"`
 }
 
@@ -1009,6 +1018,38 @@ type TlsExternal struct {
 	// If InsecureSkipVerify is true, TLS accepts any certificate presented by the server and any host name in that certificate. In this mode, TLS is susceptible to man-in-the-middle attacks.
 	InsecureSkipVerify bool `json:"insecureSkipVerify,omitempty"`
 }
+
+// TracingDistributedTracing description: Controls the settings for distributed tracing in Sourcegraph.
+type TracingDistributedTracing struct {
+	Jaeger *DistributedTracingJaeger
+	None   *DistributedTracingNone
+}
+
+func (v TracingDistributedTracing) MarshalJSON() ([]byte, error) {
+	if v.Jaeger != nil {
+		return json.Marshal(v.Jaeger)
+	}
+	if v.None != nil {
+		return json.Marshal(v.None)
+	}
+	return nil, errors.New("tagged union type must have exactly 1 non-nil field value")
+}
+func (v *TracingDistributedTracing) UnmarshalJSON(data []byte) error {
+	var d struct {
+		DiscriminantProperty string `json:"type"`
+	}
+	if err := json.Unmarshal(data, &d); err != nil {
+		return err
+	}
+	switch d.DiscriminantProperty {
+	case "jaeger":
+		return json.Unmarshal(data, &v.Jaeger)
+	case "none":
+		return json.Unmarshal(data, &v.None)
+	}
+	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"jaeger", "none"})
+}
+
 type UsernameIdentity struct {
 	Type string `json:"type"`
 }
