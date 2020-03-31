@@ -7,6 +7,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
 )
 
 func (s *Server) RegisterMetrics() {
@@ -36,6 +37,12 @@ func (s *Server) RegisterMetrics() {
 		log15.Error("ReposDir is not set, cannot export disk_space_available metric.")
 		return
 	}
+
+	metrics.MustRegisterDiskMonitor(s.ReposDir)
+
+	// TODO(keegan) these are older names for the above disk metric. Keeping
+	// them to prevent breaking dashboards. Can remove once no
+	// alert/dashboards use them.
 	c := prometheus.NewGaugeFunc(prometheus.GaugeOpts{
 		Namespace: "src",
 		Subsystem: "gitserver",
