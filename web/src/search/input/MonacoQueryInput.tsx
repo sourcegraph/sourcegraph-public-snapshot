@@ -108,7 +108,6 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
     }
 
     public render(): JSX.Element {
-        console.log('MonacoQueryInput render filtersInQUery', (this.props as any).filtersInQuery)
         const options: Monaco.editor.IEditorOptions = {
             readOnly: false,
             lineNumbers: 'off',
