@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -30,7 +29,7 @@ const defaultWorkerCount = 8
 // RunWorkers should be executed in a background goroutine and is responsible
 // for finding pending ChangesetJobs and executing them.
 // ctx should be canceled to terminate the function.
-func RunWorkers(ctx context.Context, s *Store, clock func() time.Time, gitClient GitserverClient, backoffDuration time.Duration) {
+func RunWorkers(ctx context.Context, s *Store, clock func() time.Time, gitClient GitserverClient, sourcer repos.Sourcer, backoffDuration time.Duration) {
 	workerCount, err := strconv.Atoi(maxWorkers)
 	if err != nil {
 		log15.Error("Parsing max worker count failed. Falling back to default.", "default", defaultWorkerCount, "err", err)
@@ -43,7 +42,8 @@ func RunWorkers(ctx context.Context, s *Store, clock func() time.Time, gitClient
 		if err != nil {
 			return errors.Wrap(err, "getting campaign")
 		}
-		if runErr := ExecChangesetJob(ctx, clock, s, gitClient, nil, c, &job); runErr != nil {
+
+		if runErr := ExecChangesetJob(ctx, clock, s, gitClient, sourcer, c, &job); runErr != nil {
 			log15.Error("ExecChangesetJob", "jobID", job.ID, "err", err)
 		}
 		// We don't assign to err here so that we don't roll back the transaction
@@ -80,7 +80,7 @@ func ExecChangesetJob(
 	clock func() time.Time,
 	store *Store,
 	gitClient GitserverClient,
-	cf *httpcli.Factory,
+	sourcer repos.Sourcer,
 	c *campaigns.Campaign,
 	job *campaigns.ChangesetJob,
 ) (err error) {
@@ -223,10 +223,14 @@ func ExecChangesetJob(
 		return errors.Errorf("no external services found for repo %q", repo.Name)
 	}
 
-	src, err := repos.NewSource(externalService, cf)
+	sources, err := sourcer(externalService)
 	if err != nil {
 		return err
 	}
+	if len(sources) != 1 {
+		return errors.New("invalid number of sources for external service")
+	}
+	src := sources[0]
 
 	baseRef := "refs/heads/master"
 	if patch.BaseRef != "" {
@@ -293,6 +297,9 @@ func ExecChangesetJob(
 		}
 		events = clone.Events()
 		clone.SetDerivedState(events)
+
+		clone.CampaignIDs = append(clone.CampaignIDs, job.CampaignID)
+
 		if err = store.UpdateChangesets(ctx, clone); err != nil {
 			return err
 		}

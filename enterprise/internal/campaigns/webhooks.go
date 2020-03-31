@@ -787,7 +787,7 @@ func (h *BitbucketServerWebhook) Upsert(every time.Duration) {
 			wh := bbs.Webhook{
 				Name:     h.Name,
 				Scope:    "global",
-				Events:   []string{"pr"},
+				Events:   []string{"pr", "repo"},
 				Endpoint: endpoint,
 				Secret:   secret,
 			}
@@ -809,21 +809,28 @@ func (h *BitbucketServerWebhook) ServeHTTP(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	pr, ev := h.convertEvent(e)
-	if pr == (PR{}) || ev == nil {
-		log15.Debug("Dropping Bitbucket Server webhook event", "type", fmt.Sprintf("%T", e))
-		respond(w, http.StatusOK, nil) // Nothing to do
-		return
-	}
-
 	externalServiceID, err := extractExternalServiceID(extSvc)
 	if err != nil {
 		respond(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	if err := h.upsertChangesetEvent(r.Context(), externalServiceID, pr, ev); err != nil {
-		respond(w, http.StatusInternalServerError, err)
+	prs, ev := h.convertEvent(e)
+
+	m := new(multierror.Error)
+	for _, pr := range prs {
+		if pr == (PR{}) {
+			log15.Warn("Dropping Bitbucket Server webhook event", "type", fmt.Sprintf("%T", e))
+			continue
+		}
+
+		err := h.upsertChangesetEvent(r.Context(), externalServiceID, pr, ev)
+		if err != nil {
+			m = multierror.Append(m, err)
+		}
+	}
+	if m.ErrorOrNil() != nil {
+		respond(w, http.StatusInternalServerError, m)
 	}
 }
 
@@ -871,14 +878,25 @@ func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *repo
 	return e, extSvc, nil
 }
 
-func (h *BitbucketServerWebhook) convertEvent(theirs interface{}) (pr PR, ours interface{ Key() string }) {
+func (h *BitbucketServerWebhook) convertEvent(theirs interface{}) (prs []PR, ours interface{ Key() string }) {
 	log15.Debug("Bitbucket Server webhook received", "type", fmt.Sprintf("%T", theirs))
 
 	switch e := theirs.(type) {
 	case *bbs.PullRequestEvent:
 		repoID := strconv.Itoa(e.PullRequest.FromRef.Repository.ID)
 		pr := PR{ID: int64(e.PullRequest.ID), RepoExternalID: repoID}
-		return pr, e.Activity
+		prs = append(prs, pr)
+		return prs, e.Activity
+	case *bbs.BuildStatusEvent:
+		for _, p := range e.PullRequests {
+			repoID := strconv.Itoa(p.FromRef.Repository.ID)
+			pr := PR{ID: int64(p.ID), RepoExternalID: repoID}
+			prs = append(prs, pr)
+		}
+		return prs, &bbs.CommitStatus{
+			Commit: e.Commit,
+			Status: e.Status,
+		}
 	}
 
 	return

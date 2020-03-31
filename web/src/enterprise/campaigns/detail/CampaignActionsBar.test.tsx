@@ -67,7 +67,7 @@ describe('CampaignActionsBar', () => {
                 />
             )
         ).toMatchSnapshot())
-    test('editable but closed', () =>
+    test('closed', () =>
         expect(
             createRenderer().render(
                 <CampaignActionsBar

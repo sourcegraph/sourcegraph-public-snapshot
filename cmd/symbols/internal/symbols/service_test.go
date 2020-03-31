@@ -36,7 +36,7 @@ func init() {
 			libSqlite3Pcre = path.Join(strings.TrimSpace(string(repositoryRoot)), "libsqlite3-pcre.so")
 		}
 		if _, err := os.Stat(libSqlite3Pcre); os.IsNotExist(err) {
-			panic(fmt.Errorf("can't find the libsqlite3-pcre library because LIBSQLITE3_PCRE was not set and %s doesn't exist at the root of the repository - try building it with `./cmd/symbols/build.sh buildLibsqlite3Pcre`", libSqlite3Pcre))
+			panic(fmt.Errorf("can't find the libsqlite3-pcre library because LIBSQLITE3_PCRE was not set and %s doesn't exist at the root of the repository - try building it with `./dev/build-libsqlite3pcre.sh`", libSqlite3Pcre))
 		}
 	}
 }

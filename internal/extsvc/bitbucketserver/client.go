@@ -23,6 +23,7 @@ import (
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
+	"github.com/segmentio/fasthash/fnv1"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -643,16 +644,22 @@ func (c *Client) LoadPullRequestBuildStatuses(ctx context.Context, pr *PullReque
 
 	t := &PageToken{Limit: 1000}
 
-	var statuses []*BuildStatus
+	var statuses []*CommitStatus
 	for t.HasMore() {
 		var page []*BuildStatus
 		if t, err = c.page(ctx, path, nil, t, &page); err != nil {
 			return err
 		}
-		statuses = append(statuses, page...)
+		for i := range page {
+			status := &CommitStatus{
+				Commit: latestCommit.ID,
+				Status: *page[i],
+			}
+			statuses = append(statuses, status)
+		}
 	}
 
-	pr.BuildStatuses = statuses
+	pr.CommitStatus = statuses
 	return nil
 }
 
@@ -1088,8 +1095,11 @@ type PullRequest struct {
 		} `json:"self"`
 	} `json:"links"`
 
-	Activities    []*Activity    `json:"activities,omitempty"`
-	Commits       []*Commit      `json:"commits,omitempty"`
+	Activities   []*Activity     `json:"activities,omitempty"`
+	Commits      []*Commit       `json:"commits,omitempty"`
+	CommitStatus []*CommitStatus `json:"commit_status,omitempty"`
+
+	// Deprecated, use CommitStatus instead. BuildStatus was not tied to individual commits
 	BuildStatuses []*BuildStatus `json:"buildstatuses,omitempty"`
 }
 
@@ -1123,6 +1133,18 @@ type BuildStatus struct {
 	Name        string `json:"name,omitempty"`
 	Url         string `json:"url,omitempty"`
 	Description string `json:"description,omitempty"`
+	DateAdded   int64  `json:"dateAdded,omitempty"`
+}
+
+// Commit status is the build status for a specific commit
+type CommitStatus struct {
+	Commit string      `json:"commit,omitempty"`
+	Status BuildStatus `json:"status,omitempty"`
+}
+
+func (s *CommitStatus) Key() string {
+	key := fmt.Sprintf("%s:%s:%s:%s", s.Commit, s.Status.Key, s.Status.Name, s.Status.Url)
+	return strconv.FormatInt(int64(fnv1.HashString64(key)), 16)
 }
 
 // ActivityAction defines the action taken in an Activity.
