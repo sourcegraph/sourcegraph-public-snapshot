@@ -16,9 +16,9 @@ if curl --output /dev/null --silent --head --fail $URL; then
     exit 1
 fi
 
-echo "--- Copying $IMAGE to the dedicated e2e testing node..."
+echo "--- Pulling $IMAGE ..."
 docker pull $IMAGE
-echo "Copying $IMAGE to the dedicated e2e testing node... done"
+echo "Pulling $IMAGE ... done"
 
 echo "--- Running a daemonized $IMAGE as the test subject..."
 CONTAINER="$(docker container run -d -e DEPLOY_TYPE=dev $IMAGE)"
