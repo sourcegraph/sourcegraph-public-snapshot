@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	tracepkg "github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
@@ -73,7 +74,8 @@ func newExternalHTTPHandler(schema *graphql.Schema, githubWebhook, bitbucketServ
 	// 🚨 SECURITY: Auth middleware that must run before other auth middlewares.
 	h = internalauth.OverrideAuthMiddleware(h)
 	h = internalauth.ForbidAllRequestsMiddleware(h)
-	h = tracepkg.Middleware(h)
+	h = tracepkg.HTTPTraceMiddleware(h)
+	h = ot.Middleware(h)
 	h = middleware.SourcegraphComGoGetHandler(h)
 	h = middleware.BlackHole(h)
 	h = secureHeadersMiddleware(h)

@@ -12,7 +12,6 @@ import (
 
 	"github.com/neelance/parallel"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
-	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
@@ -21,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"golang.org/x/net/context/ctxhttp"
 )
 
@@ -31,8 +31,8 @@ var symbolsURL = env.Get("SYMBOLS_URL", "k8s+http://symbols:3184", "symbols serv
 var DefaultClient = &Client{
 	URL: symbolsURL,
 	HTTPClient: &http.Client{
-		// nethttp.Transport will propagate opentracing spans
-		Transport: &nethttp.Transport{
+		// ot.Transport will propagate opentracing spans
+		Transport: &ot.Transport{
 			RoundTripper: &http.Transport{
 				// Default is 2, but we can send many concurrent requests
 				MaxIdleConnsPerHost: 500,
@@ -75,7 +75,7 @@ func (c *Client) url(key key) (string, error) {
 
 // Search performs a symbol search on the symbols service.
 func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (result *protocol.SearchResult, err error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "symbols.Client.Search")
+	span, ctx := ot.StartSpanFromContext(ctx, "symbols.Client.Search")
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
@@ -103,7 +103,7 @@ func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (res
 }
 
 func (c *Client) httpPost(ctx context.Context, method string, key key, payload interface{}) (resp *http.Response, err error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "symbols.Client.httpPost")
+	span, ctx := ot.StartSpanFromContext(ctx, "symbols.Client.httpPost")
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)

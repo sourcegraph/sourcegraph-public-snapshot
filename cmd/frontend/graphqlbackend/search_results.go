@@ -39,6 +39,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -360,7 +361,7 @@ func (sf *searchFilterResolver) Kind() string {
 // blameFileMatch blames the specified file match to produce the time at which
 // the first line match inside of it was authored.
 func (sr *SearchResultsResolver) blameFileMatch(ctx context.Context, fm *FileMatchResolver) (t time.Time, err error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "blameFileMatch")
+	span, ctx := ot.StartSpanFromContext(ctx, "blameFileMatch")
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)

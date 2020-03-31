@@ -24,12 +24,10 @@ const (
 	TraceSelective = "selective"
 
 	// Comprehensive turns on tracing for all requests.
-	TraceAll = "comprehensive"
+	TraceAll = "all"
 )
 
-var (
-	TracePolicy tracePolicy = "none"
-)
+var TracePolicy = TraceNone
 
 // Middleware wraps the handler with the following:
 //
@@ -51,11 +49,11 @@ func MiddlewareWithTracer(tr opentracing.Tracer, h http.Handler, opts ...nethttp
 	}, opts...)...)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch TracePolicy {
-		case "selective":
+		case TraceSelective:
 			traceHeaderIsTrue, _ := strconv.ParseBool(r.Header.Get(traceHeader))
 			nethttpMiddleware.ServeHTTP(w, r.WithContext(WithShouldTrace(r.Context(), traceHeaderIsTrue)))
 			return
-		case "comprehensive":
+		case TraceAll:
 			nethttpMiddleware.ServeHTTP(w, r.WithContext(WithShouldTrace(r.Context(), true)))
 			return
 		default:
