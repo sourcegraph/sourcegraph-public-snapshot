@@ -16,7 +16,7 @@ interface GitRefNodeProps {
     /** Link URL; if undefined, node.url is used. */
     url?: string
 
-    /** Whether the top-level element is a link. */
+    /** Whether any ancestor element higher up in the tree is an `<a>` element. */
     ancestorIsLink?: boolean
 
     children?: React.ReactNode
