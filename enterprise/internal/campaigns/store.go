@@ -554,7 +554,8 @@ func getChangesetQuery(opts *GetChangesetOpts) *sqlf.Query {
 	return sqlf.Sprintf(getChangesetsQueryFmtstr, sqlf.Join(preds, "\n AND "))
 }
 
-// ListChangesetSyncData returns sync timing data on all non-externally-deleted changesets.
+// ListChangesetSyncData returns sync timing data on all non-externally-deleted changesets
+// that are part of at least one open campaign.
 func (s *Store) ListChangesetSyncData(ctx context.Context) ([]campaigns.ChangesetSyncData, error) {
 	q := listChangesetSyncData()
 	results := make([]campaigns.ChangesetSyncData, 0)
@@ -585,10 +586,12 @@ func listChangesetSyncData() *sqlf.Query {
 	return sqlf.Sprintf(`
 SELECT changesets.id,
        changesets.updated_at,
-       max(ce.updated_at) as latest_event,
+       max(ce.updated_at) AS latest_event,
        changesets.external_updated_at
 FROM changesets
 LEFT JOIN changeset_events ce ON changesets.id = ce.changeset_id
+JOIN campaigns ON campaigns.changeset_ids ? changesets.id::text
+WHERE campaigns.closed_at IS NULL
 GROUP BY changesets.id
 ORDER BY changesets.id ASC
 `)
