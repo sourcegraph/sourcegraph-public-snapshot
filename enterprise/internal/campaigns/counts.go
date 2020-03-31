@@ -329,11 +329,3 @@ func reviewAuthor(e Event) (string, error) {
 
 	return changesetEvent.ReviewAuthor()
 }
-
-func computeReviewState(statesByAuthor map[string]campaigns.ChangesetReviewState) campaigns.ChangesetReviewState {
-	states := make(map[campaigns.ChangesetReviewState]bool)
-	for _, s := range statesByAuthor {
-		states[s] = true
-	}
-	return campaigns.SelectReviewState(states)
-}
