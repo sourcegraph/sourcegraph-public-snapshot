@@ -585,14 +585,14 @@ func listChangesetSyncData() *sqlf.Query {
 	return sqlf.Sprintf(`
 SELECT changesets.id,
        changesets.updated_at,
-       max(ce.updated_at)  AS latest_event,
+       max(ce.updated_at) AS latest_event,
        changesets.external_updated_at
 FROM changesets
 LEFT JOIN changeset_events ce ON changesets.id = ce.changeset_id
 JOIN campaigns ON campaigns.changeset_ids ? changesets.id::text
 WHERE campaigns.closed_at IS NULL
 GROUP BY changesets.id
-ORDER BY changesets.id ASC;
+ORDER BY changesets.id ASC
 `)
 }
 
