@@ -682,7 +682,8 @@ func (ce ChangesetEvents) State() ChangesetState {
 		case ChangesetEventKindGitHubClosed, ChangesetEventKindBitbucketServerDeclined:
 			state = ChangesetStateClosed
 		case ChangesetEventKindGitHubMerged, ChangesetEventKindBitbucketServerMerged:
-			state = ChangesetStateMerged
+			// Merged is a final state. We can ignore everything after.
+			return ChangesetStateMerged
 		case ChangesetEventKindGitHubReopened, ChangesetEventKindBitbucketServerReopened:
 			state = ChangesetStateOpen
 		}

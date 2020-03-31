@@ -260,6 +260,103 @@ func TestChangesetEvents(t *testing.T) {
 	}
 }
 
+func TestChangesetEventsState(t *testing.T) {
+	tests := []struct {
+		sortedEvents ChangesetEvents
+		want         ChangesetState
+	}{
+		{
+			sortedEvents: ChangesetEvents{},
+			want:         ChangesetStateOpen,
+		},
+		{
+			sortedEvents: ChangesetEvents{
+				{Kind: ChangesetEventKindGitHubClosed},
+			},
+			want: ChangesetStateClosed,
+		},
+		{
+			sortedEvents: ChangesetEvents{
+				{Kind: ChangesetEventKindBitbucketServerDeclined},
+			},
+			want: ChangesetStateClosed,
+		},
+		{
+			sortedEvents: ChangesetEvents{
+				{Kind: ChangesetEventKindGitHubClosed},
+				{Kind: ChangesetEventKindGitHubReopened},
+			},
+			want: ChangesetStateOpen,
+		},
+		{
+			sortedEvents: ChangesetEvents{
+				{Kind: ChangesetEventKindBitbucketServerDeclined},
+				{Kind: ChangesetEventKindBitbucketServerReopened},
+			},
+			want: ChangesetStateOpen,
+		},
+		{
+			sortedEvents: ChangesetEvents{
+				{Kind: ChangesetEventKindGitHubClosed},
+				{Kind: ChangesetEventKindGitHubReopened},
+				{Kind: ChangesetEventKindGitHubClosed},
+			},
+			want: ChangesetStateClosed,
+		},
+		{
+			sortedEvents: ChangesetEvents{
+				{Kind: ChangesetEventKindBitbucketServerDeclined},
+				{Kind: ChangesetEventKindBitbucketServerReopened},
+				{Kind: ChangesetEventKindBitbucketServerDeclined},
+			},
+			want: ChangesetStateClosed,
+		},
+		{
+			sortedEvents: ChangesetEvents{
+				{Kind: ChangesetEventKindGitHubMerged},
+			},
+			want: ChangesetStateMerged,
+		},
+		{
+			sortedEvents: ChangesetEvents{
+				{Kind: ChangesetEventKindBitbucketServerMerged},
+			},
+			want: ChangesetStateMerged,
+		},
+		{
+			sortedEvents: ChangesetEvents{
+				{Kind: ChangesetEventKindGitHubMerged},
+				// Merged is a final state. Events after should be ignored.
+				{Kind: ChangesetEventKindGitHubClosed},
+			},
+			want: ChangesetStateMerged,
+		},
+		{
+			sortedEvents: ChangesetEvents{
+				{Kind: ChangesetEventKindBitbucketServerMerged},
+				// Merged is a final state. Events after should be ignored.
+				{Kind: ChangesetEventKindBitbucketServerDeclined},
+			},
+			want: ChangesetStateMerged,
+		},
+		{
+			sortedEvents: ChangesetEvents{
+				// GitHub emits Closed and Merged events at the same time.
+				// We want to report Merged.
+				{Kind: ChangesetEventKindGitHubClosed},
+				{Kind: ChangesetEventKindGitHubMerged},
+			},
+			want: ChangesetStateMerged,
+		},
+	}
+
+	for i, tc := range tests {
+		if have, want := tc.sortedEvents.State(), tc.want; have != want {
+			t.Errorf("%d: wrong state. have=%s, want=%s", i, have, want)
+		}
+	}
+}
+
 func TestChangesetEventsReviewState(t *testing.T) {
 	now := time.Now().UTC().Truncate(time.Microsecond)
 	daysAgo := func(days int) time.Time { return now.AddDate(0, 0, -days) }
@@ -469,6 +566,7 @@ func TestChangesetEventsReviewState(t *testing.T) {
 	}
 
 	for i, tc := range tests {
+		sort.Sort(tc.events)
 		have, err := tc.events.reviewState()
 		if err != nil {
 			t.Fatalf("got error: %s", err)
