@@ -28,7 +28,7 @@ Sourcegraph's metrics include a single high-level metric `alert_count` which ind
   - `"frontend"`
   - `"github-proxy"`
   - `"gitserver"`
-  - `"lsif-server"`
+  - `"precise-code-intel"`
   - `"query-runner"`
   - `"replacer"`
   - `"repo-updater"`

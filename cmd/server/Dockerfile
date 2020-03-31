@@ -8,15 +8,15 @@ FROM alpine:3.10@sha256:e4355b66995c96b4b468159fc5c7e3540fcef961189ca13fee877798
 COPY ctags-install-alpine.sh /ctags-install-alpine.sh
 RUN /ctags-install-alpine.sh
 
-FROM alpine:3.10@sha256:e4355b66995c96b4b468159fc5c7e3540fcef961189ca13fee877798649f531a AS pci-builder
+FROM alpine:3.10@sha256:e4355b66995c96b4b468159fc5c7e3540fcef961189ca13fee877798649f531a AS precise-code-intel-builder
 
 RUN apk add --no-cache nodejs-current=12.4.0-r0 nodejs-npm=10.19.0-r0
 RUN npm install -g yarn@1.17.3
 
-COPY lsif-server/package.json lsif-server/yarn.lock lsif-server/tsconfig.json /pci/
-RUN yarn --cwd /pci
-COPY lsif-server/src /pci/src
-RUN yarn --cwd /pci run build
+COPY precise-code-intel/package.json precise-code-intel/yarn.lock precise-code-intel/tsconfig.json /precise-code-intel/
+RUN yarn --cwd /precise-code-intel
+COPY precise-code-intel/src /precise-code-intel/src
+RUN yarn --cwd /precise-code-intel run build
 
 # TODO: Make this image use our sourcegraph/alpine:3.10 base image
 FROM alpine:3.10@sha256:e4355b66995c96b4b468159fc5c7e3540fcef961189ca13fee877798649f531a
@@ -57,7 +57,7 @@ COPY --from=comby/comby:0.15.0@sha256:b3b57ed810be1489ccd1ef8fa42210d87d2d396e41
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/syntect_server:c0297a1@sha256:333abb45cfaae9c9d37e576c3853843b00eca33a40a7c71f6b93211ed96528df /syntect_server /usr/local/bin/
 COPY --from=ctags /usr/local/bin/universal-* /usr/local/bin/
-COPY --from=pci-builder /pci /pci
+COPY --from=precise-code-intel-builder /precise-code-intel /precise-code-intel
 
 # hadolint ignore=DL3022
 COPY --from=sourcegraph/prometheus:10.0.10@sha256:4d73d99f3b18d8e4e09f63671c51eabcba956e357ab33d682de8cf1540e3b863 /bin/prometheus /usr/local/bin

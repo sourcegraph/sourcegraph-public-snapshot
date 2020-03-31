@@ -85,8 +85,8 @@ cp -a ./cmd/symbols/.ctags.d "$OUTPUT"
 cp -a ./cmd/symbols/ctags-install-alpine.sh "$OUTPUT"
 cp -a ./dev/libsqlite3-pcre/install-alpine.sh "$OUTPUT/libsqlite3-pcre-install-alpine.sh"
 
-echo "--- lsif server"
-cp -a ./cmd/lsif-server "$OUTPUT"
+echo "--- precise code intel"
+cp -a ./cmd/precise-code-intel "$OUTPUT"
 
 echo "--- prometheus config"
 cp -r docker-images/prometheus/config "$OUTPUT/sg_config_prometheus"

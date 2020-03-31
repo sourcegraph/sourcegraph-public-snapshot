@@ -167,7 +167,7 @@ export class Database {
     //
 
     private async request<T>(method: string, searchParams: URLSearchParams, ctx: TracingContext): Promise<T> {
-        const url = new URL(`/dbs/${this.dumpId}/${method}`, settings.LSIF_BUNDLE_MANAGER_URL)
+        const url = new URL(`/dbs/${this.dumpId}/${method}`, settings.PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL)
         url.search = searchParams.toString()
         const resp = await got.get(url.href)
         return parseJSON(resp.body)

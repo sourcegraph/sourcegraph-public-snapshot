@@ -14,9 +14,9 @@ import (
 )
 
 var (
-	apis           = env.Get("LSIF_NUM_APIS", "1", "the number of API instances to run (defaults to one)")
-	bundleManagers = env.Get("LSIF_NUM_BUNDLE_MANAGERS", "1", "the number of bundle manager instances to run (defaults to one)")
-	workers        = env.Get("LSIF_NUM_WORKERS", "1", "the number of worker instances to run (defaults to one)")
+	apis           = env.Get("PRECISE_CODE_INTEL_NUM_APIS", "1", "the number of API instances to run (defaults to one)")
+	bundleManagers = env.Get("PRECISE_CODE_INTEL_NUM_BUNDLE_MANAGERS", "1", "the number of bundle manager instances to run (defaults to one)")
+	workers        = env.Get("PRECISE_CODE_INTEL_NUM_WORKERS", "1", "the number of worker instances to run (defaults to one)")
 
 	// Set in docker image
 	prometheusStorageDir       = os.Getenv("PROMETHEUS_STORAGE_DIR")
@@ -31,18 +31,18 @@ const (
 
 func main() {
 	numAPIs, err := strconv.ParseInt(apis, 10, 64)
-	if err != nil || numAPIs < 0 || numAPIs > 1 {
-		log.Fatalf("Invalid int %q for LSIF_NUM_APIS: %s", apis, err)
+	if err != nil || numAPIs < 0 {
+		log.Fatalf("Invalid int %q for PRECISE_CODE_INTEL_NUM_APIS: %s", apis, err)
 	}
 
 	numBundleManagers, err := strconv.ParseInt(bundleManagers, 10, 64)
 	if err != nil || numBundleManagers < 0 || numBundleManagers > 1 {
-		log.Fatalf("Invalid int %q for LSIF_NUM_BUNDLE_MANAGERS: %s", bundleManagers, err)
+		log.Fatalf("Invalid int %q for PRECISE_CODE_INTEL_NUM_BUNDLE_MANAGERS: %s", bundleManagers, err)
 	}
 
 	numWorkers, err := strconv.ParseInt(workers, 10, 64)
 	if err != nil || numWorkers < 0 {
-		log.Fatalf("Invalid int %q for LSIF_NUM_WORKERS: %s", workers, err)
+		log.Fatalf("Invalid int %q for PRECISE_CODE_INTEL_NUM_WORKERS: %s", workers, err)
 	}
 
 	if err := ioutil.WriteFile(
@@ -69,17 +69,17 @@ func makeProcfile(numAPIs, numBundleManagers, numWorkers int64) string {
 	}
 
 	if numAPIs > 0 {
-		addProcess("pci-api-server", "node /pci/out/api-server/api.js")
+		addProcess("api-server", "node /precise-code-intel/out/api-server/api.js")
 	}
 
 	if numBundleManagers > 0 {
-		addProcess("pci-bundle-manager", "node /pci/out/bundle-manager/manager.js")
+		addProcess("bundle-manager", "node /precise-code-intel/out/bundle-manager/manager.js")
 	}
 
 	for i := 0; i < int(numWorkers); i++ {
 		addProcess(
-			fmt.Sprintf("pci-worker-%d", i),
-			fmt.Sprintf("env METRICS_PORT=%d node /pci/out/worker/worker.js", workerPort+i),
+			fmt.Sprintf("worker-%d", i),
+			fmt.Sprintf("env METRICS_PORT=%d node /precise-code-intel/out/worker/worker.js", workerPort+i),
 		)
 	}
 
@@ -103,15 +103,15 @@ func makePrometheusTargets(numAPIs, numBundleManagers, numWorkers int64) string 
 	}
 
 	if numAPIs > 0 {
-		addTarget("pci-api-server", apiPort)
+		addTarget("api-server", apiPort)
 	}
 
 	if numBundleManagers > 0 {
-		addTarget("pci-bundle-manager", bundleManagerPort)
+		addTarget("bundle-manager", bundleManagerPort)
 	}
 
 	for i := 0; i < int(numWorkers); i++ {
-		addTarget("pci-worker", workerPort+i)
+		addTarget("worker", workerPort+i)
 	}
 
 	return strings.Join(content, "\n") + "\n"

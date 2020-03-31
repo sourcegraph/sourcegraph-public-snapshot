@@ -15,16 +15,16 @@ export GOARCH=amd64
 export GOOS=linux
 export CGO_ENABLED=0
 
-cp -a ./cmd/lsif-server "$OUTPUT"
+cp -a ./cmd/precise-code-intel "$OUTPUT"
 
 echo "--- go build"
 go build \
     -trimpath \
     -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION"  \
-    -o "$OUTPUT/lsif-server" github.com/sourcegraph/sourcegraph/cmd/lsif-server
+    -o "$OUTPUT/precise-code-intel" github.com/sourcegraph/sourcegraph/cmd/precise-code-intel
 
 echo "--- docker build"
-docker build -f cmd/lsif-server/Dockerfile -t "$IMAGE" "$OUTPUT" \
+docker build -f cmd/precise-code-intel/Dockerfile -t "$IMAGE" "$OUTPUT" \
     --progress=plain \
     --build-arg COMMIT_SHA \
     --build-arg DATE \

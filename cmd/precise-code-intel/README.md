@@ -23,7 +23,7 @@ This project is split into three parts, all currently written in TypeScript. The
 
 ## Entrypoint
 
-The docker image for this part of the application wraps a server, a bundle manager, and a worker in a [goreman](https://github.com/mattn/goreman) supervisor. By default, there will be one API process and one worker process. The number of replicas per process can be tuned with the environment variables `LSIF_NUM_APIS` (zero or one), `LSIF_NUM_BUNDLE_MANAGERS` (zero or one), and `LSIF_NUM_WORKERS` (zero or more).
+The docker image for this part of the application wraps a server, a bundle manager, and a worker in a [goreman](https://github.com/mattn/goreman) supervisor. By default, there will be one API process and one worker process. The number of replicas per process can be tuned with the environment variables `PRECISE_CODE_INTEL_NUM_APIS` (zero or more), `PRECISE_CODE_INTEL_NUM_BUNDLE_MANAGERS` (zero or one), and `PRECISE_CODE_INTEL_NUM_WORKERS` (zero or more).
 
 ### Prometheus metrics
 
