@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# This script builds the symbols go binary.
+
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 set -eu
 

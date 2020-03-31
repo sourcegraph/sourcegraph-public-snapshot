@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 
-## This script will ensure that the libsqlite3-pcre dynamic library exists in the root of this
-## repository (either libsqlite3-pcre.dylib for Darwin or libsqlite3-pcre.so for linux). This
-## script is used by run the symbol service locally, which compiles against the shared library.
-##
-## Invocation:
-## - `./libsqlite3-pcre/build.sh`         : build the library
-## - `./libsqlite3-pcre/build.sh libpath` : output its path
+# This script will ensure that the libsqlite3-pcre dynamic library exists in the root of this
+# repository (either libsqlite3-pcre.dylib for Darwin or libsqlite3-pcre.so for linux). This
+# script is used by run the symbol service locally, which compiles against the shared library.
+#
+# Invocation:
+# - `./libsqlite3-pcre/build.sh`         : build the library
+# - `./libsqlite3-pcre/build.sh libpath` : output its path
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 set -eu
@@ -17,6 +17,8 @@ cleanup() {
 }
 trap cleanup EXIT
 
+# Print the absolute path of the sqlite3 shared library for this platform,
+# or terminate with an error.
 function libpath() {
     case "$OSTYPE" in
         darwin*)
@@ -35,8 +37,8 @@ function libpath() {
 }
 
 function build() {
-    libsqlite3PcrePath=$(libpath)
-    if [ -f "$libsqlite3PcrePath" ]; then
+    local libsqlite_path=$(libpath)
+    if [[ -f "$libsqlite_path" ]]; then
         # Already exists
         exit 0
     fi
@@ -60,20 +62,20 @@ function build() {
         exit 1
     fi
 
-    echo "--- $libsqlite3PcrePath build"
+    echo "--- $libsqlite_path build"
     curl -fsSL https://codeload.github.com/ralight/sqlite3-pcre/tar.gz/c98da412b431edb4db22d3245c99e6c198d49f7a | tar -C "$OUTPUT" -xzvf - --strip 1
     cd "$OUTPUT"
 
     case "$OSTYPE" in
         darwin*)
             # pkg-config spits out multiple arguments and must not be quoted.
-            gcc -fno-common -dynamiclib pcre.c -o "$libsqlite3PcrePath" $(pkg-config --cflags sqlite3 libpcre) $(pkg-config --libs libpcre) -fPIC
+            gcc -fno-common -dynamiclib pcre.c -o "$libsqlite_path" $(pkg-config --cflags sqlite3 libpcre) $(pkg-config --libs libpcre) -fPIC
             exit 0
             ;;
 
         linux*)
             # pkg-config spits out multiple arguments and must not be quoted.
-            gcc -shared -o "$libsqlite3PcrePath" $(pkg-config --cflags sqlite3 libpcre) -fPIC -W -Werror pcre.c $(pkg-config --libs libpcre) -Wl,-z,defs
+            gcc -shared -o "$libsqlite_path" $(pkg-config --cflags sqlite3 libpcre) -fPIC -W -Werror pcre.c $(pkg-config --libs libpcre) -Wl,-z,defs
             exit 0
             ;;
 
@@ -84,4 +86,5 @@ function build() {
     esac
 }
 
+# Execute $1 (build by default)
 "${1:-build}"

@@ -1,17 +1,19 @@
 #!/bin/sh
 
+# This script installs libsqlite3-pcre within an alpine container.
+
 set -eux
 
 # Commit hash of github.com/ralight/sqlite3-pcre
 SQLITE3_PCRE_VERSION=c98da412b431edb4db22d3245c99e6c198d49f7a
 
-apk --no-cache add --virtual \
-    build-deps \
+apk --no-cache add \
+    --virtual build-deps \
     curl \
-    git \
     gcc \
-    make \
+    git \
     libc-dev \
+    make \
     pcre-dev \
     sqlite-dev
 

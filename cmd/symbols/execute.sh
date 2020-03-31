@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# This script builds the ctags image and the symbols go binary, then runs the go binary.
+
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 set -eu
 
