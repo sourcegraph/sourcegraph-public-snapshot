@@ -23,7 +23,7 @@ export type JSONEncoded<T> = Buffer
 export type HashMod<T, U> = number
 
 /**
-n entity within the database describing LSIF data for a single repository
+ * An entity within the database describing LSIF data for a single repository
  * and commit pair. There should be only one metadata entity per database.
  */
 @Entity({ name: 'meta' })
