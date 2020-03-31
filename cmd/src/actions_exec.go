@@ -197,6 +197,8 @@ Format of the action JSON files:
 				cancel()
 			case <-ctx.Done():
 			}
+			<-c // If user hits Ctrl-C second time, we do a hard exit
+			os.Exit(2)
 		}()
 
 		logger := newActionLogger(*verbose, *keepLogsFlag)
