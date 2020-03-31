@@ -29,7 +29,6 @@ import { SearchResultsFilterBars, SearchScopeWithOptionalName } from './SearchRe
 import { SearchResultsList } from './SearchResultsList'
 import { SearchResultTypeTabs } from './SearchResultTypeTabs'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
-import { FiltersToTypeAndValue } from '../../../../shared/src/search/interactive/util'
 import { convertPlainTextToInteractiveQuery } from '../input/helpers'
 
 export interface SearchResultsProps
@@ -55,8 +54,6 @@ export interface SearchResultsProps
     ) => Observable<GQL.ISearchResults | ErrorLike>
     isSourcegraphDotCom: boolean
     deployType: DeployType
-    filtersInQuery: FiltersToTypeAndValue
-    interactiveSearchMode: boolean
 }
 
 interface SearchResultsState {

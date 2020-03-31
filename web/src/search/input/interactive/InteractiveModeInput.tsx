@@ -243,7 +243,7 @@ export class InteractiveModeInput extends React.Component<InteractiveModeProps, 
                                     caseSensitive={this.props.caseSensitive}
                                     setCaseSensitivity={this.props.setCaseSensitivity}
                                     autoFocus={true}
-                                    filterQuery={this.props.filtersInQuery}
+                                    filtersInQuery={this.props.filtersInQuery}
                                     withoutSuggestions={true}
                                     withSearchModeToggle={true}
                                 />
