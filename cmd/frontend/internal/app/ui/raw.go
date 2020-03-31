@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os"
 	"path"
-	"strconv"
 	"strings"
 	"text/template"
 	"time"
@@ -171,7 +170,11 @@ func serveRaw(w http.ResponseWriter, r *http.Request) (err error) {
 			requestType = "patharchive"
 		}
 
-		f, _, err := vfsutil.GitServerFetchArchive(r.Context(), vfsutil.ArchiveOpts{
+		metricRunning := metricRawArchiveRunning.WithLabelValues(string(format))
+		metricRunning.Inc()
+		defer metricRunning.Dec()
+
+		f, err := openArchiveReader(r.Context(), vfsutil.ArchiveOpts{
 			Repo:         common.Repo.Name,
 			Commit:       common.CommitID,
 			Format:       format,
@@ -181,12 +184,6 @@ func serveRaw(w http.ResponseWriter, r *http.Request) (err error) {
 			return err
 		}
 		defer f.Close()
-		fi, err := f.Stat()
-		if err != nil {
-			return err
-		}
-		w.Header().Set("Content-Length", strconv.FormatInt(fi.Size(), 10))
-		size = fi.Size()
 
 		_, err = io.Copy(w, f)
 		return err
@@ -277,8 +274,22 @@ func serveRaw(w http.ResponseWriter, r *http.Request) (err error) {
 	}
 }
 
+// openArchiveReader runs git archive and streams the output. Note: we do not
+// use vfsutil since most archives are just streamed once so caching locally
+// is not useful. Additionally we transfer the output over the internet, so we
+// use default compression levels on zips (instead of no compression).
+func openArchiveReader(ctx context.Context, opts vfsutil.ArchiveOpts) (io.ReadCloser, error) {
+	cmd := gitserver.DefaultClient.Command("git", "archive", "--format="+string(opts.Format), string(opts.Commit), opts.RelativePath)
+	cmd.Repo = gitserver.Repo{Name: opts.Repo}
+	return gitserver.StdoutReader(ctx, cmd)
+}
+
 var metricRawDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 	Name:    "src_frontend_http_raw_duration_seconds",
 	Help:    "A histogram of latencies for the raw endpoint.",
 	Buckets: prometheus.ExponentialBuckets(.1, 5, 5), // 100ms -> 62s
 }, []string{"content", "type", "error"})
+var metricRawArchiveRunning = promauto.NewGaugeVec(prometheus.GaugeOpts{
+	Name: "src_frontend_http_raw_archive_running",
+	Help: "The number of concurrent raw archives being fetched.",
+}, []string{"format"})
