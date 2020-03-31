@@ -15,7 +15,7 @@ import { Toggles, TogglesProps } from './toggles/Toggles'
 import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 
 export interface MonacoQueryInputProps
-    extends Omit<TogglesProps, 'navbarSearchQuery'>,
+    extends Omit<TogglesProps, 'navbarSearchQuery' | 'filtersInQuery'>,
         ThemeProps,
         CaseSensitivityProps,
         PatternTypeProps {
@@ -108,6 +108,7 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
     }
 
     public render(): JSX.Element {
+        console.log('MonacoQueryInput render filtersInQUery', (this.props as any).filtersInQuery)
         const options: Monaco.editor.IEditorOptions = {
             readOnly: false,
             lineNumbers: 'off',
