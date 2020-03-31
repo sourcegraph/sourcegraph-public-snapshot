@@ -141,8 +141,8 @@ async function main(logger: Logger): Promise<void> {
                         })
                     } finally {
                         // Remove local files
-                        await fs.unlink(sourcePath)
-                        await fs.unlink(targetPath)
+                        await unlinkQuiet(sourcePath)
+                        await unlinkQuiet(targetPath)
                     }
                 })
         )
@@ -168,3 +168,18 @@ main(appLogger).catch(error => {
     appLogger.on('finish', () => process.exit(1))
     appLogger.end()
 })
+
+/**
+ * Unlink a file and swallow ENOENT exceptions.
+ *
+ * @param filename The path of the file to unlink.
+ */
+async function unlinkQuiet(filename: string): Promise<void> {
+    try {
+        await fs.unlink(filename)
+    } catch (error) {
+        if (!(error && error.code === 'ENOENT')) {
+            throw error
+        }
+    }
+}
