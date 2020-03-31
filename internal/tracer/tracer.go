@@ -3,20 +3,22 @@ package tracer
 import (
 	"bytes"
 	"fmt"
-	"log"
+	"io"
 	"os"
 	"reflect"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/fatih/color"
 	"github.com/inconshreveable/log15"
+	"github.com/lightstep/lightstep-tracer-go"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"go.uber.org/automaxprocs/maxprocs"
 
-	lightstep "github.com/lightstep/lightstep-tracer-go"
 	opentracing "github.com/opentracing/opentracing-go"
 	jaeger "github.com/uber/jaeger-client-go"
 	jaegercfg "github.com/uber/jaeger-client-go/config"
@@ -127,33 +129,8 @@ func Init(options ...Option) {
 		handler = log15.LvlFilterHandler(lvl, handler)
 	}
 	log15.Root().SetHandler(log15.LvlFilterHandler(lvl, handler))
-	if conf.Get().UseJaeger {
-		log15.Info("Distributed tracing enabled", "tracer", "jaeger")
-		cfg, err := jaegercfg.FromEnv()
-		if err != nil {
-			log.Printf("Could not initialize jaeger tracer from env: %s", err.Error())
-			return
-		}
-		if reflect.DeepEqual(cfg.Sampler, &jaegercfg.SamplerConfig{}) {
-			// Default sampler configuration for when it is not specified via
-			// JAEGER_SAMPLER_* env vars. In most cases, this is sufficient
-			// enough to connect Sourcegraph to Jaeger without any env vars.
-			cfg.Sampler.Type = jaeger.SamplerTypeConst
-			cfg.Sampler.Param = 1
-		}
-		_, err = cfg.InitGlobalTracer(
-			opts.serviceName,
-			jaegercfg.Logger(jaegerlog.StdLogger),
-			jaegercfg.Metrics(jaegermetrics.NullFactory),
-		)
-		if err != nil {
-			log.Printf("Could not initialize jaeger tracer: %s", err.Error())
-			return
-		}
-		trace.SpanURL = jaegerSpanURL
-		return
-	}
 
+	// Legacy Lightstep support
 	lightstepAccessToken := conf.Get().LightstepAccessToken
 	if lightstepAccessToken != "" {
 		log15.Info("Distributed tracing enabled", "tracer", "Lightstep")
@@ -177,8 +154,132 @@ func Init(options ...Option) {
 				defaultHandler(e)
 			}
 		})
+
+		// If Lightstep is used, don't invoke initTracer, as that will conflict with the Lightstep
+		// configuration.
+		return
 	}
+
+	initTracer(opts)
 }
+
+// initTracer is a helper that should be called exactly once (from Init).
+func initTracer(opts *Options) {
+	// Jaeger-related state
+	var jaegerEnabled bool
+	var jaegerCloser io.Closer
+	var jaegerEnabledMu sync.Mutex
+
+	// Watch loop
+	conf.Watch(func() {
+		siteConfig := conf.Get()
+		shouldLog := siteConfig.ExperimentalFeatures != nil && siteConfig.ExperimentalFeatures.DebugLog != nil && siteConfig.ExperimentalFeatures.DebugLog.Opentracing
+
+		// Set sampling strategy
+		samplingStrategy := ot.TraceNone
+		if tracingConfig := siteConfig.TracingDistributedTracing; tracingConfig != nil {
+			if jaegerConfig := tracingConfig.Jaeger; jaegerConfig != nil {
+				switch jaegerConfig.Sampling {
+				case "all":
+					samplingStrategy = ot.TraceAll
+				case "selective":
+					samplingStrategy = ot.TraceSelective
+				}
+			}
+		} else if siteConfig.UseJaeger {
+			samplingStrategy = ot.TraceAll
+		}
+		if ot.TracePolicy != samplingStrategy && shouldLog {
+			log15.Info("opentracing: TracePolicy", "oldValue", ot.TracePolicy, "newValue", samplingStrategy)
+		}
+		ot.TracePolicy = samplingStrategy
+
+		// Set whether Jaeger should be enabled
+		jaegerShouldBeEnabled := false
+		if tracingConfig := siteConfig.TracingDistributedTracing; tracingConfig != nil {
+			if jaegerConfig := tracingConfig.Jaeger; jaegerConfig != nil {
+				jaegerShouldBeEnabled = (jaegerConfig.Sampling == "all" || jaegerConfig.Sampling == "selective")
+			}
+		} else {
+			jaegerShouldBeEnabled = siteConfig.UseJaeger
+		}
+		if jaegerEnabled != jaegerShouldBeEnabled && shouldLog {
+			log15.Info("opentracing: Jaeger enablement change", "old", jaegerEnabled, "newValue", jaegerShouldBeEnabled)
+		}
+
+		// Set global tracer (Jaeger or No-op). Mutex-protected
+		jaegerEnabledMu.Lock()
+		defer jaegerEnabledMu.Unlock()
+		if !jaegerEnabled && jaegerShouldBeEnabled {
+			cfg, err := jaegercfg.FromEnv()
+			cfg.ServiceName = opts.serviceName
+			if err != nil {
+				log15.Warn("Could not initialize jaeger tracer from env", "error", err.Error())
+				return
+			}
+			if reflect.DeepEqual(cfg.Sampler, &jaegercfg.SamplerConfig{}) {
+				// Default sampler configuration for when it is not specified via
+				// JAEGER_SAMPLER_* env vars. In most cases, this is sufficient
+				// enough to connect Sourcegraph to Jaeger without any env vars.
+				cfg.Sampler.Type = jaeger.SamplerTypeConst
+				cfg.Sampler.Param = 1
+			}
+			tracer, closer, err := cfg.NewTracer(
+				jaegercfg.Logger(jaegerlog.StdLogger),
+				jaegercfg.Metrics(jaegermetrics.NullFactory),
+			)
+			if err != nil {
+				log15.Warn("Could not initialize jaeger tracer", "error", err.Error())
+				return
+			}
+			opentracing.SetGlobalTracer(loggingTracer{Tracer: tracer, log: shouldLog})
+			jaegerCloser = closer
+			trace.SpanURL = jaegerSpanURL
+			jaegerEnabled = true
+		} else if jaegerEnabled && !jaegerShouldBeEnabled {
+			if existingJaegerCloser := jaegerCloser; existingJaegerCloser != nil {
+				go func() { // do outside critical region
+					err := existingJaegerCloser.Close()
+					if err != nil {
+						log15.Warn("Unable to close Jaeger client", "error", err)
+					}
+				}()
+			}
+			opentracing.SetGlobalTracer(opentracing.NoopTracer{})
+			jaegerCloser = nil
+			trace.SpanURL = trace.NoopSpanURL
+			jaegerEnabled = false
+		}
+	})
+}
+
+type loggingTracer struct {
+	opentracing.Tracer
+	log bool
+}
+
+func (t loggingTracer) StartSpan(operationName string, opts ...opentracing.StartSpanOption) opentracing.Span {
+	if t.log {
+		log15.Info("opentracing: StartSpan", "tracer", fmt.Sprintf("%T", t.Tracer), "operationName", operationName)
+	}
+	return t.Tracer.StartSpan(operationName, opts...)
+}
+
+func (t loggingTracer) Inject(sm opentracing.SpanContext, format interface{}, carrier interface{}) error {
+	if t.log {
+		log15.Info("opentracing: Inject", "tracer", fmt.Sprintf("%T", t.Tracer))
+	}
+	return t.Tracer.Inject(sm, format, carrier)
+}
+
+func (t loggingTracer) Extract(format interface{}, carrier interface{}) (opentracing.SpanContext, error) {
+	if t.log {
+		log15.Info("opentracing: Extract", "tracer", fmt.Sprintf("%T", t.Tracer))
+	}
+	return t.Tracer.Extract(format, carrier)
+}
+
+const tracingNotEnabledURL = "#tracing_not_enabled_for_this_request_add_?trace=1_to_url_to_enable"
 
 func lightStepSpanURL(span opentracing.Span) string {
 	spanCtx := span.Context().(lightstep.SpanContext)
@@ -189,6 +290,12 @@ func lightStepSpanURL(span opentracing.Span) string {
 }
 
 func jaegerSpanURL(span opentracing.Span) string {
-	spanCtx := span.Context().(jaeger.SpanContext)
+	if span == nil {
+		return tracingNotEnabledURL
+	}
+	spanCtx, ok := span.Context().(jaeger.SpanContext)
+	if !ok {
+		return tracingNotEnabledURL
+	}
 	return spanCtx.TraceID().String()
 }
