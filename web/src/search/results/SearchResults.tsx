@@ -352,6 +352,6 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
 
         const newQuery = toggleSearchFilter(this.props.navbarSearchQueryState.query, value)
 
-        submitSearch(this.props.history, newQuery, 'filter', this.props.patternType, this.props.caseSensitive)
+        submitSearch({ ...this.props, query: newQuery, source: 'filter' })
     }
 }

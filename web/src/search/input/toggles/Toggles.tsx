@@ -45,7 +45,15 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
             // Only submit search on toggle when the query input has global behavior (i.e. it's on the main search page
             // or global navbar). Non-global inputs don't have the canonical query and need more context, making
             // submit on-toggle undesirable. Also, only submit on toggle only when the query is non-empty.
-            submitSearch(history, navbarSearchQuery, source, patternType, caseSensitive, activation, filtersInQuery)
+            submitSearch({
+                history,
+                query: navbarSearchQuery,
+                source,
+                patternType,
+                caseSensitive,
+                activation,
+                filtersInQuery,
+            })
         }
     }
 
