@@ -4,7 +4,7 @@ set -e
 
 # For symbol tests
 echo "--- build libsqlite"
-./cmd/symbols/build.sh buildLibsqlite3Pcre
+./dev/libsqlite3-pcre/build.sh
 
 # For searcher and replacer tests
 echo "--- comby install"
