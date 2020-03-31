@@ -19,6 +19,7 @@
     "steps": {
       "description": "A list of action steps to execute in each repository.",
       "type": "array",
+      "minItems": 1,
       "items": {
         "type": "object",
         "required": ["type"],

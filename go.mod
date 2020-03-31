@@ -18,8 +18,10 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/segmentio/textio v1.2.0
 	github.com/sourcegraph/go-diff v0.5.1
+	github.com/sourcegraph/go-jsonschema v0.0.0-20191222043427-cdbee60427af // indirect
 	github.com/sourcegraph/jsonx v0.0.0-20190114210550-ba8cb36a8614
 	github.com/ssor/bom v0.0.0-20170718123548-6386211fdfcf // indirect
+	github.com/xeipuuv/gojsonschema v1.2.0
 	golang.org/x/net v0.0.0-20200114155413-6afb5195e5aa
 	golang.org/x/sys v0.0.0-20200124204421-9fbb57f87de9 // indirect
 	jaytaylor.com/html2text v0.0.0-20190408195923-01ec452cbe43

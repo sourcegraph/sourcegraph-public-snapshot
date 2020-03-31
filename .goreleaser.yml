@@ -6,6 +6,7 @@ before:
   hooks:
     - go mod download
     - go mod tidy
+    - go generate ./schema
 builds:
 -
   main: ./cmd/src/

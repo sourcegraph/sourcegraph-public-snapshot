@@ -18,9 +18,12 @@ import (
 	"time"
 
 	"github.com/fatih/color"
+	multierror "github.com/hashicorp/go-multierror"
 	"github.com/mattn/go-isatty"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-diff/diff"
+	"github.com/sourcegraph/src-cli/schema"
+	"github.com/xeipuuv/gojsonschema"
 )
 
 type Action struct {
@@ -179,6 +182,11 @@ Format of the action JSON files:
 			return err
 		}
 
+		err = validateActionDefinition(actionFile)
+		if err != nil {
+			return err
+		}
+
 		var action Action
 		if err := jsonxUnmarshal(string(actionFile), &action); err != nil {
 			return errors.Wrap(err, "invalid JSON action file")
@@ -305,6 +313,46 @@ Format of the action JSON files:
 		handler:   handler,
 		usageFunc: usageFunc,
 	})
+}
+
+func formatValidationErrs(es []error) string {
+	points := make([]string, len(es))
+	for i, err := range es {
+		points[i] = fmt.Sprintf("- %s", err)
+	}
+
+	return fmt.Sprintf(
+		"Validating action definition failed:\n%s\n",
+		strings.Join(points, "\n"))
+}
+
+func validateActionDefinition(def []byte) error {
+	sl := gojsonschema.NewSchemaLoader()
+	sc, err := sl.Compile(gojsonschema.NewStringLoader(schema.ActionSchemaJSON))
+	if err != nil {
+		return errors.Wrapf(err, "failed to compile actions schema")
+	}
+
+	normalized, err := jsonxToJSON(string(def))
+	if err != nil {
+		return err
+	}
+
+	res, err := sc.Validate(gojsonschema.NewBytesLoader(normalized))
+	if err != nil {
+		return errors.Wrap(err, "failed to validate config against schema")
+	}
+
+	errs := &multierror.Error{ErrorFormat: formatValidationErrs}
+	for _, err := range res.Errors() {
+		e := err.String()
+		// Remove `(root): ` from error formatting since these errors are
+		// presented to users.
+		e = strings.TrimPrefix(e, "(root): ")
+		errs = multierror.Append(errs, errors.New(e))
+	}
+
+	return errs.ErrorOrNil()
 }
 
 func validateAction(ctx context.Context, action Action) error {
