@@ -619,7 +619,7 @@ func intersect(left, right *SearchResultsResolver) (*SearchResultsResolver, erro
 
 	for _, r := range right.SearchResults {
 		if fileMatch, ok := r.ToFileMatch(); ok {
-			rFileMatches[fileMatch.JPath] = fileMatch
+			rFileMatches[fileMatch.uri] = fileMatch
 		}
 	}
 
@@ -630,7 +630,7 @@ func intersect(left, right *SearchResultsResolver) (*SearchResultsResolver, erro
 			continue
 		}
 
-		rtmpFileMatch := rFileMatches[ltmpFileMatch.JPath]
+		rtmpFileMatch := rFileMatches[ltmpFileMatch.uri]
 		if rtmpFileMatch == nil {
 			continue
 		}
@@ -700,7 +700,7 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, scopePar
 		return r.evaluateLeaf(ctx)
 	}
 	// Unreachable.
-	return nil, nil
+	return nil, fmt.Errorf("unrecognized type %s in evaluatePatternExpression", reflect.TypeOf(node).String())
 }
 
 // evaluate evaluates all expressions of a search query.
@@ -713,7 +713,12 @@ func (r *searchResolver) evaluate(ctx context.Context, q []query.Node) (*SearchR
 		r.query = query.AndOrQuery{Query: scopeParameters}
 		return r.evaluateLeaf(ctx)
 	}
-	return r.evaluatePatternExpression(ctx, scopeParameters, pattern)
+	result, err := r.evaluatePatternExpression(ctx, scopeParameters, pattern)
+	if err != nil {
+		return nil, err
+	}
+	sortResults(result.SearchResults)
+	return result, nil
 }
 
 func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, error) {
@@ -723,8 +728,8 @@ func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, e
 	case *query.AndOrQuery:
 		return r.evaluate(ctx, q.Query)
 	}
-	// Unreachable, matching is exhaustive.
-	return nil, nil
+	// Unreachable.
+	return nil, fmt.Errorf("unrecognized type %s in searchResolver Results", reflect.TypeOf(r.query).String())
 }
 
 // resultsWithTimeoutSuggestion calls doResults, and in case of deadline
