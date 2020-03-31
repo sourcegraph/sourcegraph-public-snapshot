@@ -11,7 +11,6 @@ cleanup() {
 }
 trap cleanup EXIT
 
-
 # Environment for building linux binaries
 export GO111MODULE=on
 export GOARCH=amd64
