@@ -321,6 +321,7 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             this.setState(state => ({
                 interactiveSearchMode: !state.interactiveSearchMode,
                 navbarSearchQueryState: { query: newQuery, cursorPosition: newQuery.length },
+                filtersInQuery: {},
             }))
         } else {
             this.setState(state => ({
