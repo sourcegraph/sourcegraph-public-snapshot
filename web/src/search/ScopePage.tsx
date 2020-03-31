@@ -233,13 +233,11 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
 
     private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
-        submitSearch(
-            this.props.history,
-            `${this.state.value} ${this.state.queryState.query}`,
-            'home',
-            this.props.patternType,
-            this.props.caseSensitive
-        )
+        submitSearch({
+            ...this.props,
+            query: `${this.state.value} ${this.state.queryState.query}`,
+            source: 'home',
+        })
     }
 
     private onShowMore = (): void => {
