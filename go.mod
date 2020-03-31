@@ -125,7 +125,7 @@ require (
 	github.com/sourcegraph/go-jsonschema v0.0.0-20191222043427-cdbee60427af
 	github.com/sourcegraph/go-langserver v2.0.1-0.20181108233942-4a51fa2e1238+incompatible
 	github.com/sourcegraph/go-lsp v0.0.0-20200117082640-b19bb38222e2
-	github.com/sourcegraph/gosyntect v0.0.0-20191222043511-084e9c124954
+	github.com/sourcegraph/gosyntect v0.0.0-20200331033347-c35e64c39373
 	github.com/sourcegraph/jsonx v0.0.0-20190114210550-ba8cb36a8614
 	github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e // indirect
 	github.com/sqs/httpgzip v0.0.0-20180622165210-91da61ed4dff
