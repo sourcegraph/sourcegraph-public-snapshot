@@ -64,7 +64,7 @@
       "changeProcessCWD": true,
     },
     {
-      "directory": "lsif",
+      "directory": "cmd/precise-code-intel",
       "changeProcessCWD": true,
     },
   ],

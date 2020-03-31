@@ -1,13 +1,13 @@
 {
-  "id": 60,
+  "id": 69,
   "version": 0,
   "title": "This is a test PR",
   "description": "This is the body of a test PR",
   "state": "OPEN",
   "open": true,
   "closed": false,
-  "createdDate": 1584105844624,
-  "updatedDate": 1584105844624,
+  "createdDate": 1585316944811,
+  "updatedDate": 1585316944811,
   "fromRef": {
    "id": "refs/heads/test-pr-bbs-11",
    "repository": {
@@ -48,14 +48,14 @@
   "links": {
    "self": [
     {
-     "href": "https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/pull-requests/60"
+     "href": "https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/pull-requests/69"
     }
    ]
   },
   "activities": [
    {
-    "id": 2919,
-    "createdDate": 1584105844643,
+    "id": 2980,
+    "createdDate": 1585316944831,
     "user": {
      "name": "milton",
      "emailAddress": "dev@sourcegraph.com",
@@ -87,13 +87,17 @@
     ]
    }
   ],
-  "buildstatuses": [
+  "commit_status": [
    {
-    "state": "INPROGRESS",
-    "key": "thekey",
-    "name": "thename",
-    "url": "http://example.com",
-    "description": "the description"
+    "commit": "c9324a86ac324cdf48f3db3595d2dd013e43b56c",
+    "status": {
+     "state": "INPROGRESS",
+     "key": "thekey",
+     "name": "thename",
+     "url": "http://example.com",
+     "description": "the description",
+     "dateAdded": 1581510032840
+    }
    }
   ]
  }

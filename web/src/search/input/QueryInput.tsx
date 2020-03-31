@@ -18,7 +18,7 @@ import {
 import { eventLogger } from '../../tracking/eventLogger'
 import { scrollIntoView } from '../../util'
 import { Suggestion, SuggestionItem, createSuggestion, fuzzySearchFilters } from './Suggestion'
-import { PatternTypeProps, CaseSensitivityProps } from '..'
+import { PatternTypeProps, CaseSensitivityProps, InteractiveSearchProps } from '..'
 import Downshift from 'downshift'
 import { searchFilterSuggestions } from '../searchFilterSuggestions'
 import {
@@ -34,7 +34,7 @@ import { isDefined } from '../../../../shared/src/util/types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { once } from 'lodash'
 import { dedupeWhitespace } from '../../../../shared/src/util/strings'
-import { FiltersToTypeAndValue, FilterType } from '../../../../shared/src/search/interactive/util'
+import { FilterType } from '../../../../shared/src/search/interactive/util'
 import { isSettingsValid, SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { Toggles } from './toggles/Toggles'
 
@@ -44,7 +44,11 @@ import { Toggles } from './toggles/Toggles'
  */
 export const queryUpdates = new Subject<string>()
 
-interface Props extends PatternTypeProps, CaseSensitivityProps, SettingsCascadeProps {
+interface Props
+    extends PatternTypeProps,
+        CaseSensitivityProps,
+        SettingsCascadeProps,
+        Partial<Pick<InteractiveSearchProps, 'filtersInQuery'>> {
     location: H.Location
     history: H.History
 
@@ -75,11 +79,6 @@ interface Props extends PatternTypeProps, CaseSensitivityProps, SettingsCascadeP
      * At most one query input per page should have this behavior.
      */
     hasGlobalQueryBehavior?: boolean
-
-    /**
-     * The filters in the query when in interactive search mode.
-     */
-    filterQuery?: FiltersToTypeAndValue
 
     /**
      * Whether to display the query input without any suggestions.
@@ -445,7 +444,6 @@ export class QueryInput extends React.Component<Props, State> {
                                 <Toggles
                                     {...this.props}
                                     navbarSearchQuery={this.props.value.query}
-                                    filtersInQuery={this.props.filterQuery}
                                     className="query-input2__toggle-container"
                                 />
                             </div>

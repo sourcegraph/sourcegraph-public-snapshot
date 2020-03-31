@@ -15,7 +15,7 @@ import { Toggles, TogglesProps } from './toggles/Toggles'
 import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 
 export interface MonacoQueryInputProps
-    extends Omit<TogglesProps, 'navbarSearchQuery'>,
+    extends Omit<TogglesProps, 'navbarSearchQuery' | 'filtersInQuery'>,
         ThemeProps,
         CaseSensitivityProps,
         PatternTypeProps {

@@ -20,6 +20,9 @@ func ParseWebhookEvent(eventType string, payload []byte) (e interface{}, err err
 	switch eventType {
 	case "ping":
 		return PingEvent{}, nil
+	case "repo:build_status":
+		e = &BuildStatusEvent{}
+		return e, json.Unmarshal(payload, e)
 	default:
 		e = &PullRequestEvent{}
 		return e, json.Unmarshal(payload, e)
@@ -33,6 +36,12 @@ type PullRequestEvent struct {
 	Actor       User        `json:"actor"`
 	PullRequest PullRequest `json:"pullRequest"`
 	Activity    *Activity   `json:"activity"`
+}
+
+type BuildStatusEvent struct {
+	Commit       string        `json:"commit"`
+	Status       BuildStatus   `json:"status"`
+	PullRequests []PullRequest `json:"pullRequests"`
 }
 
 // Webhook defines the JSON schema from the BBS Sourcegraph plugin.

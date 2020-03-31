@@ -62,7 +62,6 @@ interface Props
      */
     lowProfile: boolean
 
-    filtersInQuery: FiltersToTypeAndValue
     splitSearchModes: boolean
     interactiveSearchMode: boolean
     toggleSearchMode: (event: React.MouseEvent<HTMLAnchorElement>) => void

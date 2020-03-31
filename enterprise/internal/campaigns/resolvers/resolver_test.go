@@ -494,7 +494,7 @@ func TestCampaigns(t *testing.T) {
 				ReviewState: "PENDING",
 				CheckState:  "PENDING",
 				Events: ChangesetEventConnection{
-					TotalCount: 9,
+					TotalCount: 10,
 				},
 				Head: GitRef{
 					Name:        "refs/heads/release-testing-pr",
