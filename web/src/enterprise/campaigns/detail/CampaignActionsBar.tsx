@@ -106,30 +106,30 @@ export const CampaignActionsBar: React.FunctionComponent<Props> = ({
                     ) : (
                         <>
                             {!campaignClosed && (
-                                <button
-                                    type="button"
-                                    id="e2e-campaign-edit"
-                                    className="btn btn-secondary mr-1"
-                                    onClick={onEdit}
-                                    disabled={actionsDisabled}
-                                >
-                                    Edit
-                                </button>
-                            )}
-                            {!campaignClosed && (
-                                <CloseDeleteCampaignPrompt
-                                    disabled={actionsDisabled}
-                                    disabledTooltip="Cannot close while campaign is being created"
-                                    message={
-                                        <p>
-                                            Close campaign <strong>{campaign.name}</strong>?
-                                        </p>
-                                    }
-                                    changesetsCount={openChangesetsCount}
-                                    buttonText="Close"
-                                    onButtonClick={onClose}
-                                    buttonClassName="btn-secondary mr-1"
-                                />
+                                <>
+                                    <button
+                                        type="button"
+                                        id="e2e-campaign-edit"
+                                        className="btn btn-secondary mr-1"
+                                        onClick={onEdit}
+                                        disabled={actionsDisabled}
+                                    >
+                                        Edit
+                                    </button>
+                                    <CloseDeleteCampaignPrompt
+                                        disabled={actionsDisabled}
+                                        disabledTooltip="Cannot close while campaign is being created"
+                                        message={
+                                            <p>
+                                                Close campaign <strong>{campaign.name}</strong>?
+                                            </p>
+                                        }
+                                        changesetsCount={openChangesetsCount}
+                                        buttonText="Close"
+                                        onButtonClick={onClose}
+                                        buttonClassName="btn-secondary mr-1"
+                                    />
+                                </>
                             )}
                             <CloseDeleteCampaignPrompt
                                 disabled={actionsDisabled}
