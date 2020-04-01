@@ -1,22 +1,15 @@
-import { Observable, merge, EMPTY, timer, of, defer } from 'rxjs'
-import { share, last, switchMap, switchMapTo } from 'rxjs/operators'
+import { Observable } from 'rxjs'
+import { repeatWhen, delay, takeWhile, repeat } from 'rxjs/operators'
 
 /**
  * Mirrors values from the source observable and resubscribes to the source observable when it completes,
- * unless its last emitted value passes the provided condition. Resubscription is optionally delayed.
+ * until an emission matches the provided condition. Resubscription is optionally delayed.
  */
-export const repeatUntil = <T>(shouldComplete: (lastValue: T) => boolean, delay?: number) => (
+export const repeatUntil = <T>(select: (value: T) => boolean, delayTime?: number) => (
     source: Observable<T>
 ): Observable<T> =>
-    defer(() => {
-        const sharedSource = source.pipe(share())
-        const repeatedSource = source.pipe(repeatUntil(shouldComplete, delay))
-        return merge(
-            sharedSource,
-            sharedSource.pipe(
-                last(),
-                switchMap(lastValue => (shouldComplete(lastValue) ? EMPTY : delay ? timer(delay) : of(null))),
-                switchMapTo(repeatedSource)
-            )
-        )
-    })
+    source.pipe(
+        delayTime ? repeatWhen(completions => completions.pipe(delay(delayTime))) : repeat(),
+        // Inclusive takeWhile so that the first value matching `select()` is emitted.
+        takeWhile(value => !select(value), true)
+    )
