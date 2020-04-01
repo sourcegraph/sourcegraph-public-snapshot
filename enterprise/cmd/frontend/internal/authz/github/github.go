@@ -431,7 +431,8 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repoSpec *api.ExternalRep
 	if repoSpec == nil {
 		return nil, errors.New("no repository provided")
 	} else if !extsvc.IsHostOfRepo(p.codeHost, repoSpec) {
-		return nil, fmt.Errorf("not a code host of the repository: want %+v but have %+v", repoSpec, p.codeHost)
+		return nil, fmt.Errorf("not a code host of the repository: want %q but have %q",
+			repoSpec.ServiceID, p.codeHost.ServiceID)
 	}
 
 	repo, err := p.client.GetRepositoryByNodeID(ctx, "", repoSpec.ID)

@@ -24,7 +24,8 @@ func (p *SudoProvider) FetchUserPerms(ctx context.Context, account *extsvc.Exter
 	if account == nil {
 		return nil, errors.New("no account provided")
 	} else if !extsvc.IsHostOfAccount(p.codeHost, account) {
-		return nil, fmt.Errorf("not a code host of the account: want %+v but have %+v", account.ExternalAccountSpec, p.codeHost)
+		return nil, fmt.Errorf("not a code host of the account: want %q but have %q",
+			account.ExternalAccountSpec.ServiceID, p.codeHost.ServiceID)
 	}
 
 	user, _, err := gitlab.GetExternalAccountData(&account.ExternalAccountData)
@@ -84,7 +85,8 @@ func (p *SudoProvider) FetchRepoPerms(ctx context.Context, repo *api.ExternalRep
 	if repo == nil {
 		return nil, errors.New("no repository provided")
 	} else if !extsvc.IsHostOfRepo(p.codeHost, repo) {
-		return nil, fmt.Errorf("not a code host of the repository: want %+v but have %+v", repo, p.codeHost)
+		return nil, fmt.Errorf("not a code host of the repository: want %q but have %q",
+			repo.ServiceID, p.codeHost.ServiceID)
 	}
 
 	client := p.clientProvider.GetPATClient(p.sudoToken, "")
