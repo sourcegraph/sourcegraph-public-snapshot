@@ -1619,13 +1619,6 @@
   dependencies:
     "@percy/agent" "~0"
 
-"@phenomnomnominal/tsquery@^3.0.0":
-  version "3.0.0"
-  resolved "https://registry.npmjs.org/@phenomnomnominal/tsquery/-/tsquery-3.0.0.tgz#6f2f4dbf6304ff52b12cc7a5b979f20c3794a22a"
-  integrity sha512-SW8lKitBHWJ9fAYkJ9kJivuctwNYCh3BUxLdH0+XiR1GPBiu+7qiZzh8p8jqlj1LgVC1TbvfNFroaEsmYlL8Iw==
-  dependencies:
-    esquery "^1.0.1"
-
 "@phenomnomnominal/tsquery@^4.0.0":
   version "4.0.0"
   resolved "https://registry.npmjs.org/@phenomnomnominal/tsquery/-/tsquery-4.0.0.tgz#610e8ac968137e4a0f98c842c919bb8ad0e85718"
@@ -1814,19 +1807,19 @@
   resolved "https://registry.npmjs.org/@sourcegraph/comlink/-/comlink-3.1.1-fork.3.tgz#1bd76bc74ca8a9b55f1dbf508c703053ee66c961"
   integrity sha512-+vfSCJTS/GU391Hhdh2/s+wy5ok4hi6X+kizRQqQZwZI03Q1rR6SVLNFsbg4dhbX624mqr1UCRhwNnZdWHAR+A==
 
-"@sourcegraph/eslint-config@^0.11.2":
-  version "0.11.2"
-  resolved "https://registry.npmjs.org/@sourcegraph/eslint-config/-/eslint-config-0.11.2.tgz#86777e5dc7e00e8cb9c1c1b9b0e546cb6d928222"
-  integrity sha512-BlNUTOp7WoRfvtD2OmsYsg7qlVGuPxIP8VaBuQHJT6OI0M1iGHz52PGpSRoUD5wUJFyhhUB6XsCHsmVdhQkriw==
+"@sourcegraph/eslint-config@^0.11.4":
+  version "0.11.4"
+  resolved "https://registry.npmjs.org/@sourcegraph/eslint-config/-/eslint-config-0.11.4.tgz#6b0b131e914bcc3ef347439abb33129818a9fd8c"
+  integrity sha512-Kyh/HenKwoljZbVofa3GDI0LFbMymwr0Wm5A/PgybRTfa7oUl10CXrmQf0p44pVoICdLDOoQsYSvepn883gyiA==
   dependencies:
     "@sourcegraph/prettierrc" "^3.0.3"
     "@typescript-eslint/eslint-plugin" "^2.26.0"
     "@typescript-eslint/parser" "^2.26.0"
     eslint-config-prettier "^6.10.1"
     eslint-plugin-ban "^1.4.0"
-    eslint-plugin-etc "^0.0.1-beta.24"
+    eslint-plugin-etc "^0.0.1-beta.25"
     eslint-plugin-import "^2.20.2"
-    eslint-plugin-jsdoc "^22.0.0"
+    eslint-plugin-jsdoc "^22.1.0"
     eslint-plugin-react "^7.19.0"
     eslint-plugin-react-hooks "^3.0.0"
     eslint-plugin-rxjs "^0.0.2-beta.16"
@@ -8034,16 +8027,15 @@ eslint-plugin-ban@^1.4.0:
   dependencies:
     requireindex "~1.2.0"
 
-eslint-plugin-etc@^0.0.1-beta.24:
-  version "0.0.1-beta.24"
-  resolved "https://registry.npmjs.org/eslint-plugin-etc/-/eslint-plugin-etc-0.0.1-beta.24.tgz#fc2a1bf39b1a0c1d352fd81c86e8cde0fbd9af78"
-  integrity sha512-NQxsxnMhUJvABk62Y7Tbxzaoq7W9po4D7i8xYAgGr4cYKkNRhgHTTlw8IutJQ1Kfb1zF5pwk/e1O9czo3MtXzg==
+eslint-plugin-etc@^0.0.1-beta.25:
+  version "0.0.1-beta.25"
+  resolved "https://registry.npmjs.org/eslint-plugin-etc/-/eslint-plugin-etc-0.0.1-beta.25.tgz#c97ccb839622b8e3c9d2d2600fdbf0aff8478872"
+  integrity sha512-FYdepWJPNv9qz5eVGw1LgF1TnJKu/vfuSnZ/79wwzXAqAPr4yBozQzRml0FMYpcrV3DYE0Uel+QxQBaKGSuzUA==
   dependencies:
     "@phenomnomnominal/tsquery" "^4.0.0"
     eslint-etc "^0.0.8"
     requireindex "~1.2.0"
     tslib "^1.8.0"
-    tslint-etc "^1.6.0"
     tsutils "^3.0.0"
     tsutils-etc "^1.0.0"
 
@@ -8065,10 +8057,10 @@ eslint-plugin-import@^2.20.2:
     read-pkg-up "^2.0.0"
     resolve "^1.12.0"
 
-eslint-plugin-jsdoc@^22.0.0:
-  version "22.0.0"
-  resolved "https://registry.npmjs.org/eslint-plugin-jsdoc/-/eslint-plugin-jsdoc-22.0.0.tgz#371f1dbf4f61ee6e11c23fa1ea3275962f1bceaf"
-  integrity sha512-dLqUtIL6tvOoV+9IDdP3FqOnQ/sxklzs4hxZa91kt0TGI2o1fSqIuc6wa71oWtWKEyvaQj7m6CnzQxcBC9CEsg==
+eslint-plugin-jsdoc@^22.1.0:
+  version "22.1.0"
+  resolved "https://registry.npmjs.org/eslint-plugin-jsdoc/-/eslint-plugin-jsdoc-22.1.0.tgz#dadfa62653fc0d87f900d810307f5ed07ef6ecd5"
+  integrity sha512-54NdbICM7KrxsGUqQsev9aIMqPXyvyBx2218Qcm0TQ16P9CtBI+YY4hayJR6adrxlq4Ej0JLpgfUXWaQVFqmQg==
   dependencies:
     comment-parser "^0.7.2"
     debug "^4.1.1"
@@ -19670,16 +19662,6 @@ tslib@^1, tslib@^1.11.1, tslib@^1.8.0, tslib@^1.8.1, tslib@^1.9.0, tslib@^1.9.3:
   version "1.11.1"
   resolved "https://registry.npmjs.org/tslib/-/tslib-1.11.1.tgz#eb15d128827fbee2841549e171f45ed338ac7e35"
   integrity sha512-aZW88SY8kQbU7gpV19lN24LtXh/yD4ZZg6qieAJDDg+YBsJcSmLGK9QpnUjAKVG/xefmvJGd1WUmfpT/g6AJGA==
-
-tslint-etc@^1.6.0:
-  version "1.7.0"
-  resolved "https://registry.npmjs.org/tslint-etc/-/tslint-etc-1.7.0.tgz#7cd5b500bca458067c7061aad6f53e352d0872d5"
-  integrity sha512-8NOGfr4zRquMNugz8D9gr0Tz8xxNA1Zrd2OFqURaWNKV779GO4LhqHjFL572m3MusUwSxPkUOMSmsqAwkvu6qQ==
-  dependencies:
-    "@phenomnomnominal/tsquery" "^3.0.0"
-    tslib "^1.8.0"
-    tsutils "^3.0.0"
-    tsutils-etc "^1.0.0"
 
 tsutils-etc@^1.0.0:
   version "1.1.0"
