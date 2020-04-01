@@ -245,7 +245,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                 } else {
                     let query = searchQueryForRepoRev(repoName, rev)
                     if (filePath) {
-                        query = `${query} file:^${escapeRegExp(filePath)}`
+                        query = `${query.trimEnd()} file:^${escapeRegExp(filePath)}`
                     }
                     this.props.onNavbarQueryChange({
                         query,
