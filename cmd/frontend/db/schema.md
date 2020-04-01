@@ -697,8 +697,11 @@ Indexes:
     "repo_pkey" PRIMARY KEY, btree (id)
     "repo_external_unique_idx" UNIQUE, btree (external_service_type, external_service_id, external_id)
     "repo_name_unique" UNIQUE CONSTRAINT, btree (name) DEFERRABLE
+    "repo_archived" btree (archived)
+    "repo_fork" btree (fork)
     "repo_metadata_gin_idx" gin (metadata)
     "repo_name_trgm" gin (lower(name::text) gin_trgm_ops)
+    "repo_private" btree (private)
     "repo_sources_gin_idx" gin (sources)
     "repo_uri_idx" btree (uri)
 Check constraints:
