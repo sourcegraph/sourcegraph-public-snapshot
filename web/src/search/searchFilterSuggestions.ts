@@ -95,6 +95,10 @@ export const searchFilterSuggestions: SearchFilterSuggestions = {
                 value: 'content:',
                 description: 'override the search pattern',
             },
+            {
+                value: 'visibility:',
+                description: 'all | public | private',
+            },
         ].map(
             assign({
                 type: NonFilterSuggestionType.filters,
@@ -129,6 +133,14 @@ export const searchFilterSuggestions: SearchFilterSuggestions = {
         values: [{ value: 'no' }, { value: 'only' }, { value: 'yes' }].map(
             assign({
                 type: FilterType.archived,
+            })
+        ),
+    },
+    visibility: {
+        default: 'all',
+        values: [{ value: 'all' }, { value: 'private' }, { value: 'public' }].map(
+            assign({
+                type: FilterType.visibility,
             })
         ),
     },
