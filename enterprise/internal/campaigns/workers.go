@@ -280,7 +280,7 @@ func ExecChangesetJob(
 	// with outdated metadata.
 	clone := cs.Changeset.Clone()
 	events := clone.Events()
-	clone.SetDerivedState(events)
+	SetDerivedState(clone, events)
 	if err = store.CreateChangesets(ctx, clone); err != nil {
 		if _, ok := err.(AlreadyExistError); !ok {
 			return err
@@ -296,7 +296,7 @@ func ExecChangesetJob(
 			return errors.Wrap(err, "setting changeset metadata")
 		}
 		events = clone.Events()
-		clone.SetDerivedState(events)
+		SetDerivedState(clone, events)
 
 		clone.CampaignIDs = append(clone.CampaignIDs, job.CampaignID)
 
