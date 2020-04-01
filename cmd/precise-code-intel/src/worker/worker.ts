@@ -79,7 +79,7 @@ async function main(logger: Logger): Promise<void> {
                 logAndTraceCall(ctx, 'Converting upload', async (ctx: TracingContext) => {
                     const sourcePath = path.join(settings.STORAGE_ROOT, uuid.v4())
                     const targetPath = path.join(settings.STORAGE_ROOT, uuid.v4())
-                    const url = new URL(`/uploads/${upload.id}`, settings.LSIF_BUNDLE_MANAGER_URL).href
+                    const url = new URL(`/uploads/${upload.id}`, settings.PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL).href
 
                     try {
                         await logAndTraceCall(ctx, 'Downloading raw dump from bundle manager', () =>
@@ -101,7 +101,9 @@ async function main(logger: Logger): Promise<void> {
                         await logAndTraceCall(ctx, 'Uploading converted dump to bundle manager', () =>
                             pipeline(
                                 fs.createReadStream(targetPath),
-                                got.stream.post(new URL(`/dbs/${upload.id}`, settings.LSIF_BUNDLE_MANAGER_URL).href)
+                                got.stream.post(
+                                    new URL(`/dbs/${upload.id}`, settings.PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL).href
+                                )
                             )
                         )
 
@@ -141,8 +143,8 @@ async function main(logger: Logger): Promise<void> {
                         })
                     } finally {
                         // Remove local files
-                        await fs.unlink(sourcePath)
-                        await fs.unlink(targetPath)
+                        await unlinkQuiet(sourcePath)
+                        await unlinkQuiet(targetPath)
                     }
                 })
         )
@@ -168,3 +170,18 @@ main(appLogger).catch(error => {
     appLogger.on('finish', () => process.exit(1))
     appLogger.end()
 })
+
+/**
+ * Unlink a file and swallow ENOENT exceptions.
+ *
+ * @param filename The path of the file to unlink.
+ */
+async function unlinkQuiet(filename: string): Promise<void> {
+    try {
+        await fs.unlink(filename)
+    } catch (error) {
+        if (!(error && error.code === 'ENOENT')) {
+            throw error
+        }
+    }
+}

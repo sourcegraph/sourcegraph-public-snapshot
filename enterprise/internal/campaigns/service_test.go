@@ -280,6 +280,7 @@ func TestService(t *testing.T) {
 			name    string
 			branch  *string
 			draft   bool
+			closed  bool
 			process bool
 			err     string
 		}{
@@ -291,6 +292,12 @@ func TestService(t *testing.T) {
 			{
 				name:  "draft campaign",
 				draft: true,
+			},
+
+			{
+				name:   "closed campaign",
+				closed: true,
+				err:    ErrUpdateClosedCampaign.Error(),
 			},
 			{
 				name:    "change campaign branch",
@@ -332,6 +339,10 @@ func TestService(t *testing.T) {
 
 				svc := NewServiceWithClock(store, gitClient, cf, clock)
 				campaign := testCampaign(user.ID, patchSet.ID)
+
+				if tc.closed {
+					campaign.ClosedAt = now
+				}
 
 				err = svc.CreateCampaign(ctx, campaign, tc.draft)
 				if err != nil {
@@ -680,7 +691,7 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 			newPatches: []newPatchSpec{
 				{repo: "repo-0", modifiedDiff: true},
 			},
-			wantErr: ErrClosedCampaignUpdatePatchIllegal,
+			wantErr: ErrUpdateClosedCampaign,
 		},
 		{
 			name:            "1 unmodified merged, 1 new changeset",

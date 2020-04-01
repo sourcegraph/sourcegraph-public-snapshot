@@ -53,7 +53,7 @@
     {
       "type": "npm",
       "script": "eslint",
-      "path": "cmd/lsif-server/",
+      "path": "cmd/precise-code-intel/",
       "problemMatcher": ["$eslint-stylish"],
     },
     {

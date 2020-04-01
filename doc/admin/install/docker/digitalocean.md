@@ -27,7 +27,7 @@ After initial setup, we recommend you do the following:
 
 * Restrict the accessibility of ports other than `80` and `443` via [Cloud
   Firewalls](https://www.digitalocean.com/docs/networking/firewalls/quickstart/).
-* Set up [TLS/SSL](../../nginx.md#nginx-ssl-https-configuration) in the NGINX configuration.
+* Set up [TLS/SSL](../../http_https_configuration.md#nginx-ssl-https-configuration) in the NGINX configuration.
 
 ---
 

@@ -1226,6 +1226,29 @@ func testStore(db *sql.DB) func(*testing.T) {
 		})
 
 		t.Run("ListChangesetSyncData", func(t *testing.T) {
+			changesets, _, err := s.ListChangesets(ctx, ListChangesetsOpts{
+				Limit: 10,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			// We need campaigns attached to each changeset
+			for i, cs := range changesets {
+				c := &cmpgn.Campaign{
+					Name:           fmt.Sprintf("ListChangesetSyncData test"),
+					ChangesetIDs:   []int64{cs.ID},
+					NamespaceOrgID: 23,
+				}
+				err := s.CreateCampaign(ctx, c)
+				if err != nil {
+					t.Fatal(err)
+				}
+				changesets[i].CampaignIDs = []int64{c.ID}
+				if err := s.UpdateChangesets(ctx, changesets[i]); err != nil {
+					t.Fatal(err)
+				}
+			}
+
 			// Differs from clock() due to updates higher up
 			externalUpdatedAt := clock().Add(-2 * time.Second)
 			hs, err := s.ListChangesetSyncData(ctx)
@@ -1233,6 +1256,111 @@ func testStore(db *sql.DB) func(*testing.T) {
 				t.Fatal(err)
 			}
 			want := []cmpgn.ChangesetSyncData{
+				{
+					ChangesetID:       1,
+					UpdatedAt:         clock(),
+					LatestEvent:       clock(),
+					ExternalUpdatedAt: externalUpdatedAt,
+				},
+				{
+					ChangesetID:       2,
+					UpdatedAt:         clock(),
+					LatestEvent:       clock(),
+					ExternalUpdatedAt: externalUpdatedAt,
+				},
+				{
+					// No events
+					ChangesetID:       3,
+					UpdatedAt:         clock(),
+					ExternalUpdatedAt: externalUpdatedAt,
+				},
+			}
+			if diff := cmp.Diff(want, hs); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+
+		t.Run("ListChangesetSyncData ignores closed campaign", func(t *testing.T) {
+			changesets, _, err := s.ListChangesets(ctx, ListChangesetsOpts{
+				Limit: 10,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(changesets) != 3 {
+				t.Fatalf("Expected 3 changesets, got %d", len(changesets))
+			}
+			oldCampaign := changesets[0].CampaignIDs[0]
+
+			// Close a campaign
+			c, err := s.GetCampaign(ctx, GetCampaignOpts{
+				ID: oldCampaign,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			c.ClosedAt = now
+			err = s.UpdateCampaign(ctx, c)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			// Differs from clock() due to updates higher up
+			externalUpdatedAt := clock().Add(-2 * time.Second)
+			hs, err := s.ListChangesetSyncData(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+			want := []cmpgn.ChangesetSyncData{
+				{
+					ChangesetID:       2,
+					UpdatedAt:         clock(),
+					LatestEvent:       clock(),
+					ExternalUpdatedAt: externalUpdatedAt,
+				},
+				{
+					// No events
+					ChangesetID:       3,
+					UpdatedAt:         clock(),
+					ExternalUpdatedAt: externalUpdatedAt,
+				},
+			}
+			if diff := cmp.Diff(want, hs); diff != "" {
+				t.Fatal(diff)
+			}
+
+			// If a changeset has ANY open campaigns we should list it
+			cs2, err := s.GetChangeset(ctx, GetChangesetOpts{
+				ID: 2,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			// Attach cs1 to both an open and closed campaign
+			changesets[0].CampaignIDs = []int64{oldCampaign, cs2.CampaignIDs[0]}
+			err = s.UpdateChangesets(ctx, changesets[0])
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			c1, err := s.GetCampaign(ctx, GetCampaignOpts{
+				ID: cs2.CampaignIDs[0],
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			c1.ChangesetIDs = []int64{changesets[0].ID, cs2.ID}
+			err = s.UpdateCampaign(ctx, c1)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			hs, err = s.ListChangesetSyncData(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+			want = []cmpgn.ChangesetSyncData{
 				{
 					ChangesetID:       1,
 					UpdatedAt:         clock(),

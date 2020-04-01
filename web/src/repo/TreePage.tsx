@@ -410,14 +410,11 @@ export class TreePage extends React.PureComponent<Props, State> {
 
     private onSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
-        submitSearch(
-            this.props.history,
-            this.getQueryPrefix() + this.state.queryState.query,
-            this.props.filePath ? 'tree' : 'repo',
-            this.props.patternType,
-            this.props.caseSensitive,
-            this.props.activation
-        )
+        submitSearch({
+            ...this.props,
+            query: this.getQueryPrefix() + this.state.queryState.query,
+            source: this.props.filePath ? 'tree' : 'repo',
+        })
     }
 
     private getPageTitle(): string {

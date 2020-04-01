@@ -29,7 +29,7 @@ import {
     filterStaticSuggestions,
 } from '../../helpers'
 import { dedupeWhitespace, isQuoted } from '../../../../../shared/src/util/strings'
-import { FiltersToTypeAndValue, FilterType, isNegatableFilter } from '../../../../../shared/src/search/interactive/util'
+import { FilterType, isNegatableFilter } from '../../../../../shared/src/search/interactive/util'
 import { startCase, isEqual } from 'lodash'
 import { searchFilterSuggestions } from '../../searchFilterSuggestions'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
@@ -37,13 +37,9 @@ import { CheckButton } from './CheckButton'
 import { isTextFilter, finiteFilters, isFiniteFilter, FilterTypeToProseNames } from './filters'
 import classNames from 'classnames'
 import { generateFiltersQuery } from '../../../../../shared/src/util/url'
+import { InteractiveSearchProps } from '../..'
 
-interface Props {
-    /**
-     * The filters currently added to the query.
-     */
-    filtersInQuery: FiltersToTypeAndValue
-
+interface Props extends Pick<InteractiveSearchProps, 'filtersInQuery'> {
     /**
      * The query in the main query input.
      */

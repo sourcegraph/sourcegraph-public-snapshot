@@ -250,7 +250,7 @@ Dockerfile @sourcegraph/distribution
 /cmd/frontend/db/discussion* @slimsag
 
 # LSIF
-/cmd/lsif-server/ @sourcegraph/code-intel
+/cmd/precise-code-intel/ @sourcegraph/code-intel
 /internal/lsif @sourcegraph/code-intel
 /enterprise/internal/codeintel @sourcegraph/code-intel
 /cmd/frontend/graphqlbackend/codeintel.go @sourcegraph/code-intel

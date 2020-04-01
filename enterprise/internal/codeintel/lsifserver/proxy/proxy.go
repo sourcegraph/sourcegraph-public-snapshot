@@ -121,7 +121,7 @@ func isSiteAdmin(ctx context.Context) bool {
 			return false
 		}
 
-		log15.Error("lsif-server proxy: failed to get up current user", "error", err)
+		log15.Error("precise-code-intel proxy: failed to get up current user", "error", err)
 		return false
 	}
 

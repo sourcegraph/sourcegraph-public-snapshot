@@ -120,7 +120,9 @@ export function createLsifRouter(
                         await logAndTraceCall(ctx, 'Uploading payload to bundle manager', () =>
                             pipeline(
                                 fs.createReadStream(filename),
-                                got.stream.post(new URL(`/uploads/${uploadId}`, settings.LSIF_BUNDLE_MANAGER_URL).href)
+                                got.stream.post(
+                                    new URL(`/uploads/${uploadId}`, settings.PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL).href
+                                )
                             )
                         )
 

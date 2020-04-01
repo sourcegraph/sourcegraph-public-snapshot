@@ -3,8 +3,9 @@ import { readEnvInt } from '../shared/settings'
 /** Which port to run the metrics server on. Defaults to 3188. */
 export const METRICS_PORT = readEnvInt('METRICS_PORT', 3188)
 
-/** HTTP address for internal LSIF bundle manager server. */
-export const LSIF_BUNDLE_MANAGER_URL = process.env.LSIF_BUNDLE_MANAGER_URL || 'http://localhost:3187'
+/** HTTP address for internal precise code intel bundle manager server. */
+export const PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL =
+    process.env.PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL || 'http://localhost:3187'
 
 /** Where on the file system to temporarily store LSIF uploads and SQLite files. This is NOT a persistent volume. */
 export const STORAGE_ROOT = process.env.LSIF_STORAGE_ROOT || 'lsif-storage'

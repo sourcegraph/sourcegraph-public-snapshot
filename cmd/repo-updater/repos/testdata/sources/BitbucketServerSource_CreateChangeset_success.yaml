@@ -11,9 +11,9 @@ interactions:
     url: https://bitbucket.sgdev.org/rest/api/1.0/projects/SOUR/repos/automation-testing/pull-requests
     method: POST
   response:
-    body: '{"id":61,"version":0,"title":"This is a test PR","description":"This is
-      the body of a test PR","state":"OPEN","open":true,"closed":false,"createdDate":1584105845925,"updatedDate":1584105845925,"fromRef":{"id":"refs/heads/test-pr-bbs-12","displayId":"test-pr-bbs-12","latestCommit":"c9324a86ac324cdf48f3db3595d2dd013e43b56c","repository":{"slug":"automation-testing","id":10070,"name":"automation-testing","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"SOUR","id":1,"name":"sourcegraph","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR"}]}},"public":false,"links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/sour/automation-testing.git","name":"http"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/browse"}]}}},"toRef":{"id":"refs/heads/master","displayId":"master","latestCommit":"e833db3fe2bdbc28b58cd72def1b0078e77aa171","repository":{"slug":"automation-testing","id":10070,"name":"automation-testing","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"SOUR","id":1,"name":"sourcegraph","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR"}]}},"public":false,"links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/sour/automation-testing.git","name":"http"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/browse"}]}}},"locked":false,"author":{"user":{"name":"milton","emailAddress":"dev@sourcegraph.com","id":1,"displayName":"milton
-      woof","active":true,"slug":"milton","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/milton"}]}},"role":"AUTHOR","approved":false,"status":"UNAPPROVED"},"reviewers":[],"participants":[],"links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/pull-requests/61"}]}}'
+    body: '{"id":68,"version":0,"title":"This is a test PR","description":"This is
+      the body of a test PR","state":"OPEN","open":true,"closed":false,"createdDate":1585316689302,"updatedDate":1585316689302,"fromRef":{"id":"refs/heads/test-pr-bbs-12","displayId":"test-pr-bbs-12","latestCommit":"c9324a86ac324cdf48f3db3595d2dd013e43b56c","repository":{"slug":"automation-testing","id":10070,"name":"automation-testing","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"SOUR","id":1,"name":"sourcegraph","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR"}]}},"public":false,"links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/sour/automation-testing.git","name":"http"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/browse"}]}}},"toRef":{"id":"refs/heads/master","displayId":"master","latestCommit":"e833db3fe2bdbc28b58cd72def1b0078e77aa171","repository":{"slug":"automation-testing","id":10070,"name":"automation-testing","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"SOUR","id":1,"name":"sourcegraph","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR"}]}},"public":false,"links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/sour/automation-testing.git","name":"http"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/browse"}]}}},"locked":false,"author":{"user":{"name":"milton","emailAddress":"dev@sourcegraph.com","id":1,"displayName":"milton
+      woof","active":true,"slug":"milton","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/milton"}]}},"role":"AUTHOR","approved":false,"status":"UNAPPROVED"},"reviewers":[],"participants":[],"links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/pull-requests/68"}]}}'
     headers:
       Cache-Control:
       - private, no-cache
@@ -21,15 +21,15 @@ interactions:
       Cf-Cache-Status:
       - DYNAMIC
       Cf-Ray:
-      - 573612bf1d92c295-FRA
+      - 57a98c5b0843803e-CPT
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Fri, 13 Mar 2020 13:24:06 GMT
+      - Fri, 27 Mar 2020 13:44:49 GMT
       Expect-Ct:
       - max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
       Location:
-      - https://bitbucket.sgdev.org/rest/api/1.0/projects/SOUR/repos/automation-testing/pull-requests/61
+      - https://bitbucket.sgdev.org/rest/api/1.0/projects/SOUR/repos/automation-testing/pull-requests/68
       Pragma:
       - no-cache
       Server:
@@ -37,11 +37,11 @@ interactions:
       Vary:
       - X-AUSERNAME,Accept-Encoding
       X-Arequestid:
-      - '@2N9MN6x804x299450x0'
+      - '@MWNSEUx824x451600x0'
       X-Asen:
       - SEN-11363689
       X-Asessionid:
-      - 1r3edba
+      - 1ls2oer
       X-Auserid:
       - "1"
       X-Ausername:
@@ -57,10 +57,10 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: https://bitbucket.sgdev.org/rest/api/1.0/projects/SOUR/repos/automation-testing/pull-requests/61/activities?limit=1000
+    url: https://bitbucket.sgdev.org/rest/api/1.0/projects/SOUR/repos/automation-testing/pull-requests/68/activities?limit=1000
     method: GET
   response:
-    body: '{"size":1,"limit":500,"isLastPage":true,"values":[{"id":2920,"createdDate":1584105845970,"user":{"name":"milton","emailAddress":"dev@sourcegraph.com","id":1,"displayName":"milton
+    body: '{"size":1,"limit":500,"isLastPage":true,"values":[{"id":2979,"createdDate":1585316689324,"user":{"name":"milton","emailAddress":"dev@sourcegraph.com","id":1,"displayName":"milton
       woof","active":true,"slug":"milton","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/milton"}]}},"action":"OPENED"}],"start":0}'
     headers:
       Cache-Control:
@@ -69,11 +69,11 @@ interactions:
       Cf-Cache-Status:
       - DYNAMIC
       Cf-Ray:
-      - 573612c1dd00c295-FRA
+      - 57a98c5d8969803e-CPT
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Fri, 13 Mar 2020 13:24:06 GMT
+      - Fri, 27 Mar 2020 13:44:49 GMT
       Expect-Ct:
       - max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
       Pragma:
@@ -83,11 +83,11 @@ interactions:
       Vary:
       - X-AUSERNAME,Accept-Encoding
       X-Arequestid:
-      - '@2N9MN6x804x299451x0'
+      - '@MWNSEUx824x451602x0'
       X-Asen:
       - SEN-11363689
       X-Asessionid:
-      - 84e6si
+      - lkge7k
       X-Auserid:
       - "1"
       X-Ausername:
@@ -103,7 +103,7 @@ interactions:
     headers:
       Content-Type:
       - application/json; charset=utf-8
-    url: https://bitbucket.sgdev.org/rest/api/1.0/projects/SOUR/repos/automation-testing/pull-requests/61/commits?limit=1000
+    url: https://bitbucket.sgdev.org/rest/api/1.0/projects/SOUR/repos/automation-testing/pull-requests/68/commits?limit=1000
     method: GET
   response:
     body: '{"values":[{"id":"c9324a86ac324cdf48f3db3595d2dd013e43b56c","displayId":"c9324a86ac3","author":{"name":"Thorsten
@@ -117,11 +117,11 @@ interactions:
       Cf-Cache-Status:
       - DYNAMIC
       Cf-Ray:
-      - 573612c4dd14c295-FRA
+      - 57a98c5faa41803e-CPT
       Content-Type:
       - application/json;charset=UTF-8
       Date:
-      - Fri, 13 Mar 2020 13:24:06 GMT
+      - Fri, 27 Mar 2020 13:44:50 GMT
       Expect-Ct:
       - max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
       Pragma:
@@ -131,11 +131,11 @@ interactions:
       Vary:
       - X-AUSERNAME,Accept-Encoding
       X-Arequestid:
-      - '@2N9MN6x804x299452x0'
+      - '@MWNSEUx824x451603x0'
       X-Asen:
       - SEN-11363689
       X-Asessionid:
-      - jn28o0
+      - 1225eet
       X-Auserid:
       - "1"
       X-Ausername:
@@ -163,11 +163,11 @@ interactions:
       Cf-Cache-Status:
       - DYNAMIC
       Cf-Ray:
-      - 573612c5f818c295-FRA
+      - 57a98c61bb32803e-CPT
       Content-Type:
       - application/json
       Date:
-      - Fri, 13 Mar 2020 13:24:06 GMT
+      - Fri, 27 Mar 2020 13:44:50 GMT
       Expect-Ct:
       - max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
       Pragma:
@@ -177,11 +177,11 @@ interactions:
       Vary:
       - X-AUSERNAME,Accept-Encoding
       X-Arequestid:
-      - '@2N9MN6x804x299453x0'
+      - '@MWNSEUx824x451605x1'
       X-Asen:
       - SEN-11363689
       X-Asessionid:
-      - 432flr
+      - 72gh1r
       X-Auserid:
       - "1"
       X-Ausername:

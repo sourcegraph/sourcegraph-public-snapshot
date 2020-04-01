@@ -49,6 +49,11 @@ type Mutation {
         patches: [PatchInput!]!
     ): PatchSet!
     # Updates a campaign.
+    # Note, updating is not allowed when:
+    # The campaign has already been closed.
+    # A plan is added to a manual campaign.
+    # A non-manual campaign is being published.
+    # The branch of a (partially-) published campaign is changed.
     updateCampaign(input: UpdateCampaignInput!): Campaign!
     # Retries creating changesets from the patches in the PatchSet that could not be successfully created on the code host.
     # Retrying will clear the errors list of a campaign and change its state back to CREATING_CHANGESETS.

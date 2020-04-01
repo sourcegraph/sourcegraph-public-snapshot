@@ -109,18 +109,12 @@ func (dbReleases) GetLatestBatch(ctx context.Context, registryExtensionIDs []int
 	}
 
 	q := sqlf.Sprintf(`
-SELECT rer.id, rer.registry_extension_id, rer.creator_user_id, rer.release_version, rer.release_tag, rer.manifest, CASE WHEN %v::boolean THEN rer.bundle ELSE null END AS bundle, CASE WHEN %v::boolean THEN rer.source_map ELSE null END AS source_map, rer.created_at
+SELECT DISTINCT ON (rer.registry_extension_id)
+	rer.id, rer.registry_extension_id, rer.creator_user_id, rer.release_version, rer.release_tag, rer.manifest, CASE WHEN %v::boolean THEN rer.bundle ELSE null END AS bundle, CASE WHEN %v::boolean THEN rer.source_map ELSE null END AS source_map, rer.created_at
 FROM registry_extension_releases rer
 WHERE rer.registry_extension_id IN (%s) AND rer.release_tag=%s AND rer.deleted_at IS NULL
--- Select only the latest
-AND NOT EXISTS (SELECT 1 FROM registry_extension_releases rer2
-	WHERE rer.registry_extension_id=rer2.registry_extension_id
-					AND rer2.release_tag=%s
-					AND rer2.deleted_at IS NULL
-					AND rer2.created_at > rer.created_at
-  )
-
-`, includeArtifacts, includeArtifacts, sqlf.Join(ids, ","), releaseTag, releaseTag)
+ORDER BY rer.registry_extension_id, rer.created_at DESC
+`, includeArtifacts, includeArtifacts, sqlf.Join(ids, ","), releaseTag)
 
 	rows, err := dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {

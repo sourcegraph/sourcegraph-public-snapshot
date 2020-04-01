@@ -1127,33 +1127,18 @@ func TestCalcCounts(t *testing.T) {
 		},
 		{
 			codehosts: "github",
-			name:      "single changeset with changes-requested then reviewevent by same person with dismissed state",
-			changesets: []*campaigns.Changeset{
-				ghChangeset(1, daysAgo(1)),
-			},
-			start: daysAgo(1),
-			events: []Event{
-				ghReview(1, daysAgo(1), "user1", "CHANGES_REQUESTED"),
-				ghReview(1, daysAgo(0), "user1", "DISMISSED"),
-			},
-			want: []*ChangesetCounts{
-				{Time: daysAgo(1), Total: 1, Open: 1, OpenChangesRequested: 1},
-				{Time: daysAgo(0), Total: 1, Open: 1, OpenPending: 1},
-			},
-		},
-		{
-			codehosts: "github",
 			name:      "single changeset with changes-requested then dismissed event by same person with dismissed state",
 			changesets: []*campaigns.Changeset{
 				ghChangeset(1, daysAgo(1)),
 			},
 			start: daysAgo(1),
 			events: []Event{
-				ghReview(1, daysAgo(1), "user1", "CHANGES_REQUESTED"),
+				// GitHub updates the state of the reviews when they're dismissed
+				ghReview(1, daysAgo(0), "user1", "DISMISSED"),
 				ghReviewDismissed(1, daysAgo(0), "user2", "user1"),
 			},
 			want: []*ChangesetCounts{
-				{Time: daysAgo(1), Total: 1, Open: 1, OpenChangesRequested: 1},
+				{Time: daysAgo(1), Total: 1, Open: 1, OpenPending: 1},
 				{Time: daysAgo(0), Total: 1, Open: 1, OpenPending: 1},
 			},
 		},
@@ -1166,13 +1151,35 @@ func TestCalcCounts(t *testing.T) {
 			start: daysAgo(2),
 			events: []Event{
 				ghReview(1, daysAgo(2), "user1", "APPROVED"),
-				ghReview(1, daysAgo(1), "user2", "CHANGES_REQUESTED"),
-				ghReviewDismissed(1, daysAgo(0), "user3", "user2"),
+				// GitHub updates the state of the changesets when they're dismissed
+				ghReview(1, daysAgo(1), "user2", "DISMISSED"),
+				ghReviewDismissed(1, daysAgo(1), "user3", "user2"),
 			},
 			want: []*ChangesetCounts{
 				{Time: daysAgo(2), Total: 1, Open: 1, OpenApproved: 1},
-				{Time: daysAgo(1), Total: 1, Open: 1, OpenChangesRequested: 1},
+				{Time: daysAgo(1), Total: 1, Open: 1, OpenApproved: 1},
 				{Time: daysAgo(0), Total: 1, Open: 1, OpenApproved: 1},
+			},
+		},
+		{
+			codehosts: "github",
+			name:      "single changeset with changes-requested, then another dismissed review by same person",
+			changesets: []*campaigns.Changeset{
+				ghChangeset(1, daysAgo(1)),
+			},
+			start: daysAgo(1),
+			events: []Event{
+				ghReview(1, daysAgo(1), "user1", "CHANGES_REQUESTED"),
+				// After a dismissal, GitHub removes all of the author's
+				// reviews from the overall review state, which is why we don't
+				// want to fall back to "ChangesRequested" even though _that_
+				// was not dismissed.
+				ghReview(1, daysAgo(0), "user1", "DISMISSED"),
+				ghReviewDismissed(1, daysAgo(0), "user2", "user1"),
+			},
+			want: []*ChangesetCounts{
+				{Time: daysAgo(1), Total: 1, Open: 1, OpenChangesRequested: 1},
+				{Time: daysAgo(0), Total: 1, Open: 1, OpenPending: 1},
 			},
 		},
 	}

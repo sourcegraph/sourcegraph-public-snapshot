@@ -189,7 +189,7 @@ async function makeServerRequest<T, R>(route: string, payload?: T): Promise<R> {
         async (): Promise<R> =>
             parseJSON(
                 (
-                    await got.post(new URL(route, settings.LSIF_API_SERVER_URL).href, {
+                    await got.post(new URL(route, settings.PRECISE_CODE_INTEL_API_SERVER_URL).href, {
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload),
                     })

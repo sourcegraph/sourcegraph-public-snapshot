@@ -482,9 +482,9 @@ var ErrPublishedCampaignBranchChange = errors.New("Published campaign branch can
 // specified patch set is already attached to another campaign.
 var ErrPatchSetDuplicate = errors.New("Campaign cannot use the same patch set as another campaign")
 
-// ErrClosedCampaignUpdatePatchIllegal is returned by UpdateCampaign if a patch set
-// is to be attached to a closed campaign.
-var ErrClosedCampaignUpdatePatchIllegal = errors.New("cannot update the patch set of a closed campaign")
+// ErrUpdateClosedCampaign is returned by UpdateCampaign if the Campaign
+// has been closed.
+var ErrUpdateClosedCampaign = errors.New("cannot update a closed Campaign")
 
 // ErrManualCampaignUpdatePatchIllegal is returned by UpdateCampaign if a patch set
 // is to be attached to a manual campaign.
@@ -511,8 +511,8 @@ func (s *Service) UpdateCampaign(ctx context.Context, args UpdateCampaignArgs) (
 		return nil, nil, errors.Wrap(err, "getting campaign")
 	}
 
-	if args.PatchSet != nil && !campaign.ClosedAt.IsZero() {
-		return nil, nil, ErrClosedCampaignUpdatePatchIllegal
+	if !campaign.ClosedAt.IsZero() {
+		return nil, nil, ErrUpdateClosedCampaign
 	}
 
 	var updateAttributes, updatePatchSetID, updateBranch bool

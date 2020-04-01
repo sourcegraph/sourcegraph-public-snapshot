@@ -38,7 +38,7 @@ This tutorial shows you how to deploy Sourcegraph to a single EC2 instance on AW
 
 - Select **Next: ...** until you get to the **Configure Security Group** page. Then add the following rules:
   - Default **HTTP** rule: port range `80`, source `0.0.0.0/0, ::/0`
-  - Default **HTTPS** rule: port range `443`, source `0.0.0.0/0, ::/0`<br>(NOTE: additional work will be required later on to [configure NGINX to support SSL](../../../admin/nginx.md#nginx-ssl-https-configuration))
+  - Default **HTTPS** rule: port range `443`, source `0.0.0.0/0, ::/0`<br>(NOTE: additional work will be required later on to [configure NGINX to support SSL](../../../admin/http_https_configuration.md#nginx-ssl-https-configuration))
 - Launch your instance, then navigate to its public IP in your browser. (This can be found by navigating to the instance page on EC2 and looking in the "Description" panel for the "IPv4 Public IP" value.) You may have to wait a minute or two for the instance to finish initializing before Sourcegraph becomes accessible. You can monitor the status by SSHing into the EC2 instance and viewing the logs:
 
      ```
