@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/go-multierror"
@@ -178,8 +179,13 @@ func ExecChangesetJob(
 	})
 	if err != nil {
 		if diffErr, ok := err.(*protocol.CreateCommitFromPatchError); ok {
-			return errors.Errorf("creating commit from patch for repo %q: %q (command: %q, output: %q)",
-				diffErr.RepositoryName, diffErr.InternalError, diffErr.Command, diffErr.CombinedOutput)
+			return errors.Errorf(
+				"creating commit from patch for repository %q: %s\n"+
+					"```\n"+
+					"$ %s\n"+
+					"%s\n"+
+					"```",
+				diffErr.RepositoryName, diffErr.InternalError, diffErr.Command, strings.TrimSpace(diffErr.CombinedOutput))
 		}
 		return err
 	}
@@ -280,7 +286,7 @@ func ExecChangesetJob(
 	// with outdated metadata.
 	clone := cs.Changeset.Clone()
 	events := clone.Events()
-	clone.SetDerivedState(events)
+	SetDerivedState(clone, events)
 	if err = store.CreateChangesets(ctx, clone); err != nil {
 		if _, ok := err.(AlreadyExistError); !ok {
 			return err
@@ -296,7 +302,7 @@ func ExecChangesetJob(
 			return errors.Wrap(err, "setting changeset metadata")
 		}
 		events = clone.Events()
-		clone.SetDerivedState(events)
+		SetDerivedState(clone, events)
 
 		clone.CampaignIDs = append(clone.CampaignIDs, job.CampaignID)
 

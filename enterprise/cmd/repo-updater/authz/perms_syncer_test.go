@@ -132,9 +132,6 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 			ServiceID:   p.ServiceID(),
 		},
 	}
-	p.fetchUserPerms = func(context.Context, *extsvc.ExternalAccount) ([]extsvc.ExternalRepoID, error) {
-		return []extsvc.ExternalRepoID{"1"}, nil
-	}
 
 	edb.Mocks.Perms.ListExternalAccounts = func(context.Context, int32) ([]*extsvc.ExternalAccount, error) {
 		return []*extsvc.ExternalAccount{&extAccount}, nil
@@ -170,9 +167,32 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	s.metrics.syncDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{}, []string{"type", "success"})
 	s.metrics.syncErrors = prometheus.NewCounterVec(prometheus.CounterOpts{}, []string{"type"})
 
-	err := s.syncUserPerms(context.Background(), 1)
-	if err != nil {
-		t.Fatal(err)
+	tests := []struct {
+		name     string
+		noPerms  bool
+		fetchErr error
+	}{
+		{
+			name:     "sync for the first time and encounter an error",
+			noPerms:  true,
+			fetchErr: errors.New("random error"),
+		},
+		{
+			name:    "sync for the second time and succeed",
+			noPerms: false,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			p.fetchUserPerms = func(context.Context, *extsvc.ExternalAccount) ([]extsvc.ExternalRepoID, error) {
+				return []extsvc.ExternalRepoID{"1"}, test.fetchErr
+			}
+
+			err := s.syncUserPerms(context.Background(), 1, test.noPerms)
+			if err != nil {
+				t.Fatal(err)
+			}
+		})
 	}
 }
 
@@ -183,10 +203,6 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 	}
 	authz.SetProviders(false, []authz.Provider{p})
 	defer authz.SetProviders(true, nil)
-
-	p.fetchRepoPerms = func(context.Context, *api.ExternalRepoSpec) ([]extsvc.ExternalAccountID, error) {
-		return []extsvc.ExternalAccountID{"user", "pending_user"}, nil
-	}
 
 	edb.Mocks.Perms.Transact = func(context.Context) (*edb.PermsStore, error) {
 		return &edb.PermsStore{}, nil
@@ -241,9 +257,32 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 	s.metrics.syncDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{}, []string{"type", "success"})
 	s.metrics.syncErrors = prometheus.NewCounterVec(prometheus.CounterOpts{}, []string{"type"})
 
-	err := s.syncRepoPerms(context.Background(), 1)
-	if err != nil {
-		t.Fatal(err)
+	tests := []struct {
+		name     string
+		noPerms  bool
+		fetchErr error
+	}{
+		{
+			name:     "sync for the first time and encounter an error",
+			noPerms:  true,
+			fetchErr: errors.New("random error"),
+		},
+		{
+			name:    "sync for the second time and succeed",
+			noPerms: false,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			p.fetchRepoPerms = func(context.Context, *api.ExternalRepoSpec) ([]extsvc.ExternalAccountID, error) {
+				return []extsvc.ExternalAccountID{"user", "pending_user"}, test.fetchErr
+			}
+
+			err := s.syncRepoPerms(context.Background(), 1, test.noPerms)
+			if err != nil {
+				t.Fatal(err)
+			}
+		})
 	}
 }
 

@@ -87,8 +87,12 @@ export function parseSearchURL(
     return { query: finalQuery, patternType, caseSensitive }
 }
 
+export function repoFilterForRepoRev(repoName: string, rev?: string): string {
+    return `${quoteIfNeeded(`^${escapeRegExp(repoName)}$${rev ? `@${abbreviateOID(rev)}` : ''}`)}`
+}
+
 export function searchQueryForRepoRev(repoName: string, rev?: string): string {
-    return `repo:${quoteIfNeeded(`^${escapeRegExp(repoName)}$${rev ? `@${abbreviateOID(rev)}` : ''}`)} `
+    return `repo:${repoFilterForRepoRev(repoName, rev)} `
 }
 
 function abbreviateOID(oid: string): string {

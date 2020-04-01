@@ -42,10 +42,8 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({ c
         <ul className="mt-2">
             {status.errors.map((error, i) => (
                 <li className="mb-2" key={i}>
-                    <p className="mb-0 text-monospace">
-                        <small>
-                            <ErrorMessage error={error} />
-                        </small>
+                    <p className="mb-0">
+                        <ErrorMessage error={error} />
                     </p>
                 </li>
             ))}

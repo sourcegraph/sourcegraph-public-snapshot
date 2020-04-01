@@ -172,21 +172,24 @@ export class DiscussionsComment extends React.PureComponent<Props> {
         if (!reason) {
             return
         }
-        this.props.onReport!(this.props.comment, reason).subscribe(undefined, error =>
-            error ? alert('Error reporting comment: ' + asError(error).message) : undefined
-        )
+        // eslint-disable-next-line rxjs/no-ignored-subscription
+        this.props.onReport!(this.props.comment, reason).subscribe({
+            error: error => alert('Error reporting comment: ' + asError(error).message),
+        })
     }
 
     private onClearReportsClick: React.MouseEventHandler<HTMLElement> = event => {
-        this.props.onClearReports!(this.props.comment).subscribe(undefined, error =>
-            error ? alert('Error clearing comment reports: ' + asError(error).message) : undefined
-        )
+        // eslint-disable-next-line rxjs/no-ignored-subscription
+        this.props.onClearReports!(this.props.comment).subscribe({
+            error: error => alert('Error clearing comment reports: ' + asError(error).message),
+        })
     }
 
     private onDeleteClick: React.MouseEventHandler<HTMLElement> = event => {
-        this.props.onDelete!(this.props.comment).subscribe(undefined, error =>
-            error ? alert('Error deleting comment: ' + asError(error).message) : undefined
-        )
+        // eslint-disable-next-line rxjs/no-ignored-subscription
+        this.props.onDelete!(this.props.comment).subscribe({
+            error: error => alert('Error deleting comment: ' + asError(error).message),
+        })
     }
 
     private setScrollToElement = (ref: HTMLElement | null): void => {

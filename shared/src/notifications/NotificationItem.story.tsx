@@ -21,7 +21,6 @@ const notificationClassNames = {
 const onDismiss = action('onDismiss')
 
 const { add } = storiesOf('NotificationItem', module).addDecorator(story => (
-    // tslint:disable-next-line: jsx-ban-props
     <div style={{ maxWidth: '20rem', margin: '2rem' }}>{story()}</div>
 ))
 

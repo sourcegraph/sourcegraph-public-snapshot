@@ -837,7 +837,7 @@ export function handleCodeHost({
             if (codeViewEvent.observeSelections) {
                 codeViewEvent.subscriptions.add(
                     // This nested subscription is necessary, it is managed correctly through `codeViewEvent.subscriptions`
-                    // tslint:disable-next-line: rxjs-no-nested-subscribe
+                    // eslint-disable-next-line rxjs/no-nested-subscribe
                     codeViewEvent.observeSelections(codeViewEvent.element).subscribe(selections => {
                         extensionsController.services.editor.setSelections(editorId, selections)
                     })
@@ -914,7 +914,7 @@ export function handleCodeHost({
                         .pipe(finalize(update))
                         // The nested subscribe cannot be replaced with a switchMap()
                         // We manage the subscription correctly.
-                        // tslint:disable-next-line: rxjs-no-nested-subscribe
+                        // eslint-disable-next-line rxjs/no-nested-subscribe
                         .subscribe(update)
                 )
             }
@@ -946,7 +946,7 @@ export function handleCodeHost({
                         .pipe(finalize(update))
                         // The nested subscribe cannot be replaced with a switchMap()
                         // We manage the subscription correctly.
-                        // tslint:disable-next-line: rxjs-no-nested-subscribe
+                        // eslint-disable-next-line rxjs/no-nested-subscribe
                         .subscribe(update)
                 )
             }
@@ -961,7 +961,7 @@ export function handleCodeHost({
             const adjustPosition = getPositionAdjuster?.(platformContext.requestGraphQL)
             let hoverSubscription = new Subscription()
             codeViewEvent.subscriptions.add(
-                // tslint:disable-next-line: rxjs-no-nested-subscribe
+                // eslint-disable-next-line rxjs/no-nested-subscribe
                 nativeTooltipsEnabled.subscribe(useNativeTooltips => {
                     hoverSubscription.unsubscribe()
                     if (!useNativeTooltips) {

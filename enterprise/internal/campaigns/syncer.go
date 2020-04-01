@@ -286,7 +286,7 @@ func (s *ChangesetSyncer) SyncChangesetsWithSources(ctx context.Context, bySourc
 			}
 
 			csEvents := c.Events()
-			c.Changeset.SetDerivedState(csEvents)
+			SetDerivedState(c.Changeset, csEvents)
 
 			events = append(events, csEvents...)
 			cs = append(cs, c.Changeset)

@@ -31,8 +31,10 @@ export const logUserEvent = (
         `,
         variables: { event, userCookieID: uid },
         mightContainPrivateInfo: false,
+        // Events are best-effort and non-blocking
+        // eslint-disable-next-line rxjs/no-ignored-subscription
     }).subscribe({
-        error: error => {
+        error: () => {
             // Swallow errors. If a Sourcegraph instance isn't upgraded, this request may fail
             // (e.g., if CODEINTELINTEGRATION user events aren't yet supported).
             // However, end users shouldn't experience this failure, as their admin is
@@ -77,6 +79,7 @@ export const logEvent = (
             argument: event.argument && JSON.stringify(event.argument),
         },
         mightContainPrivateInfo: false,
+        // eslint-disable-next-line rxjs/no-ignored-subscription
     }).subscribe({
         error: error => {
             // Swallow errors. If a Sourcegraph instance isn't upgraded, this request may fail
