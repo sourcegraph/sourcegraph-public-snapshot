@@ -26,6 +26,7 @@ require (
 	github.com/dnaeon/go-vcr v1.0.1
 	github.com/docker/docker v1.4.2-0.20200213202729-31a86c4ab209
 	github.com/emersion/go-imap v1.0.3
+	github.com/emicklei/dot v0.10.2
 	github.com/ericchiang/k8s v1.2.0
 	github.com/facebookgo/clock v0.0.0-20150410010913-600d898af40a // indirect
 	github.com/facebookgo/ensure v0.0.0-20200202191622-63f1cf65ac4c // indirect

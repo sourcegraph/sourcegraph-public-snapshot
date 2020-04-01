@@ -24,6 +24,7 @@ digraph organization {
   ]
 
   // People
+
 	adam[label="Adam Frankl\nHead of Marketing"]
 	aileen[label="Aileen Agricola\nSenior Digital\nMarketing Manager"]
 	beyang[label="Beyang Liu\nCTO / Co-founder"]
@@ -43,7 +44,7 @@ digraph organization {
 	loic[label="Loïc Guychard\nEngineering Manager"]
 	michael[label="Michael Fromberger\nSoftware Engineer"]
 	nick[label="Nick Snyder\nVP Engineering"]
-	noemi[label="Noemi Mercado\nPeople Ops"]
+	noemi[label="Noemi Mercado\nHead of People Ops"]
 	rijnard[label="Rijnard van Tonder\nSoftware Engineer"]
 	rslade[label="Ryan Slade\nSoftware Engineer"]
 	ryan[label="Ryan Blunden\nDeveloper Advocate"]
@@ -56,6 +57,7 @@ digraph organization {
 	vanesa[label="Vanesa Ortiz\nContent Engineer"]
 
   // Teams
+
 	biz_ops[label="Business\nOperations"]
 	campaigns[label="Campaigns"]
 	code_intel[label="Code Intel"]
@@ -71,84 +73,110 @@ digraph organization {
 	search[label="Search"]
 	web[label="Web"]
 
-	n18->n1[label="reports to"];
-	n18->n37[label="works on"];
-	n17->n18[label="reports to"];
-	n17->n37[label="works on"];
-	n2->n1[label="reports to"];
-	n2->n36[label="works on"];
-	n2->n44[label="works on"];
-	n3->n1[label="reports to"];
-	n3->n38[label="works on"];
-	n3->n31[label="works on"];
-	n3->n32[label="works on"];
-	n3->n33[label="works on"];
-	n3->n34[label="works on"];
-	n3->n35[label="works on"];
-	n20->n1[label="reports to"];
-	n20->n41[label="works on"];
-	n20->n42[label="works on"];
-	n20->n40[label="works on"];
-	n7->n14[label="reports to"];
-	n7->n33[label="works on"];
-	n8->n20[label="reports to"];
-	n8->n42[label="works on"];
-	n26->n16[label="reports to"];
-	n26->n31[label="works on"];
-	n26->n35[label="works on"];
-	n25->n16[label="reports to"];
-	n25->n32[label="works on"];
-	n25->n35[label="works on"];
-	n30->n16[label="reports to"];
-	n30->n35[label="works on"];
-	n24->n14[label="reports to"];
-	n24->n36[label="works on"];
-	n23->n18[label="reports to"];
-	n23->n37[label="works on"];
-	n11->n21[label="reports to"];
-	n11->n34[label="works on"];
-	n28->n1[label="reports to"];
-	n28->n40[label="works on"];
-	n27->n28[label="reports to"];
-	n27->n40[label="works on"];
-	n9->n21[label="reports to"];
-	n9->n34[label="works on"];
-	n16->n35[label="works on"];
-	n16->n44[label="works on"];
-	n16->n14[label="reports to"];
-	n22->n14[label="reports to"];
-	n22->n33[label="works on"];
-	n14->n1[label="reports to"];
-	n14->n44[label="works on"];
-	n13->n20[label="reports to"];
-	n13->n43[label="works on"];
-	n6->n21[label="reports to"];
-	n6->n32[label="works on"];
-	n6->n34[label="works on"];
-	n5->n21[label="reports to"];
-	n5->n31[label="works on"];
-	n5->n34[label="works on"];
-	n19->n18[label="reports to"];
-	n19->n37[label="works on"];
-	n4->n14[label="reports to"];
-	n4->n36[label="works on"];
-	n15->n21[label="reports to"];
-	n15->n31[label="works on"];
-	n15->n34[label="works on"];
-	n21->n34[label="works on"];
-	n21->n44[label="works on"];
-	n21->n14[label="reports to"];
-	n29->n3[label="reports to"];
-	n29->n39[label="works on"];
-	n29->n31[label="works on"];
-	n29->n32[label="works on"];
-	n29->n33[label="works on"];
-	n29->n34[label="works on"];
-	n29->n35[label="works on"];
-	n10->n14[label="reports to"];
-	n10->n36[label="works on"];
-	n12->n18[label="reports to"];
-	n12->n37[label="works on"];
+	rijnard -> tomas[label="reportsTo"]
+	rijnard -> search[label="worksOn"]
+	rijnard -> core_services[label="worksOn"]
 
+	thorsten -> tomas[label="reportsTo"]
+	thorsten -> campaigns[label="worksOn"]
+	thorsten -> core_services[label="worksOn"]
+
+	keegan -> tomas[label="reportsTo"]
+	keegan -> core_services[label="worksOn"]
+
+	rslade -> tomas[label="reportsTo"]
+	rslade -> campaigns[label="worksOn"]
+	rslade -> core_services[label="worksOn"]
+
+	joe -> tomas[label="reportsTo"]
+	joe -> core_services[label="worksOn"]
+
+	farhan -> loic[label="reportsTo"]
+	farhan -> search[label="worksOn"]
+	farhan -> web[label="worksOn"]
+
+	felix -> loic[label="reportsTo"]
+	felix -> web[label="worksOn"]
+
+	erik -> loic[label="reportsTo"]
+	erik -> campaigns[label="worksOn"]
+	erik -> web[label="worksOn"]
+
+	eric -> nick[label="reportsTo"]
+	eric -> code_intel[label="worksOn"]
+
+	michael -> nick[label="reportsTo"]
+	michael -> code_intel[label="worksOn"]
+
+	geoffrey -> nick[label="reportsTo"]
+	geoffrey -> distribution[label="worksOn"]
+
+	uwe -> nick[label="reportsTo"]
+	uwe -> distribution[label="worksOn"]
+
+	stephen -> nick[label="reportsTo"]
+	stephen -> distribution[label="worksOn"]
+
+	beyang -> sqs[label="reportsTo"]
+	beyang -> distribution[label="worksOn"]
+	beyang -> eng_management[label="worksOn"]
+
+	tomas -> core_services[label="worksOn"]
+	tomas -> eng_management[label="worksOn"]
+	tomas -> nick[label="reportsTo"]
+
+	loic -> web[label="worksOn"]
+	loic -> eng_management[label="worksOn"]
+	loic -> nick[label="reportsTo"]
+
+	nick -> sqs[label="reportsTo"]
+	nick -> eng_management[label="worksOn"]
+
+	adam -> sqs[label="reportsTo"]
+	adam -> marketing[label="worksOn"]
+
+	herzog -> adam[label="reportsTo"]
+	herzog -> marketing[label="worksOn"]
+
+	aileen -> adam[label="reportsTo"]
+	aileen -> marketing[label="worksOn"]
+
+	vanesa -> adam[label="reportsTo"]
+	vanesa -> marketing[label="worksOn"]
+
+	ryan -> adam[label="reportsTo"]
+	ryan -> marketing[label="worksOn"]
+
+	julia -> sqs[label="reportsTo"]
+	julia -> sales[label="worksOn"]
+
+	kai -> julia[label="reportsTo"]
+	kai -> sales[label="worksOn"]
+
+	dan -> sqs[label="reportsTo"]
+	dan -> customer_success[label="worksOn"]
+	dan -> biz_ops[label="worksOn"]
+	dan -> sales[label="worksOn"]
+
+	ericbm -> dan[label="reportsTo"]
+	ericbm -> biz_ops[label="worksOn"]
+
+	christina -> sqs[label="reportsTo"]
+	christina -> product[label="worksOn"]
+	christina -> campaigns[label="worksOn"]
+	christina -> search[label="worksOn"]
+	christina -> code_intel[label="worksOn"]
+	christina -> core_services[label="worksOn"]
+	christina -> web[label="worksOn"]
+
+	tommy -> christina[label="reportsTo"]
+	tommy -> design[label="worksOn"]
+	tommy -> campaigns[label="worksOn"]
+	tommy -> search[label="worksOn"]
+	tommy -> code_intel[label="worksOn"]
+	tommy -> core_services[label="worksOn"]
+	tommy -> web[label="worksOn"]
+
+	noemi -> dan[label="reportsTo"]
+	noemi -> people_ops[label="worksOn"]
 }
-
