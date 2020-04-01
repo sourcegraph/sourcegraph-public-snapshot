@@ -182,7 +182,11 @@ func initTracer(opts *Options) {
 				switch jaegerConfig.Sampling {
 				case "all":
 					samplingStrategy = ot.TraceAll
+				case "none":
+					samplingStrategy = ot.TraceNone
 				case "selective":
+					fallthrough
+				default:
 					samplingStrategy = ot.TraceSelective
 				}
 			}

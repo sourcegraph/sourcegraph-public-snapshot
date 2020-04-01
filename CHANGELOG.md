@@ -18,7 +18,7 @@ All notable changes to Sourcegraph are documented in this file.
 
   - The site configuration field `"tracing.distributedTracing": { "sampling" }` allows a site admin to control which requests generate tracing data.
     - `"all"` will trace all requests.
-    - `"selective"` will trace all requests initiated from an end-user URL with `?trace=1`. Non-end-user-initiated requests can set a HTTP header `X-Sourcegraph-Should-Trace: true`. This is the recommended setting, as `"all"` can generate large amounts of tracing data that may cause network and memory resource contention in the Sourcegraph instance.
+    - `"selective"` (the default) will trace all requests initiated from an end-user URL with `?trace=1`. Non-end-user-initiated requests can set a HTTP header `X-Sourcegraph-Should-Trace: true`. This is the recommended setting, as `"all"` can generate large amounts of tracing data that may cause network and memory resource contention in the Sourcegraph instance.
     - `"none"` turns off tracing.
   - Jaeger is now the officially supported distributed tracer. The following is the recommended site configuration to connect Sourcegraph to a Jaeger agent (which must be deployed on the same host and listening on the default ports):
 
