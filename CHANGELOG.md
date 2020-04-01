@@ -25,13 +25,23 @@ All notable changes to Sourcegraph are documented in this file.
   - `Campaign.plan` has been renamed to `Campaign.patchSet`.
   - `Campaign.changesetPlans` has been renamed to `campaign.changesetPlan`.
   - `createCampaignPlanFromPatches` mutation has been renamed to `createPatchSetFromPatches`.
-- Site-Admin/Instrumentation in the Kubernetes cluster deployment now includes indexed-search.
+- Removed the scoped search field on tree pages. When browsing code, the global search query will now get scoped to the current tree or file. [#9225](https://github.com/sourcegraph/sourcegraph/pull/9225)
 
 ### Fixed
 
 - `.*` in the filter pattern were ignored and led to missing search results. [#9152](https://github.com/sourcegraph/sourcegraph/pull/9152)
 
 ### Removed
+
+## 3.14.1
+
+### Added
+
+- monitoring: new Permissions dashboard to show stats of repository permissions.
+
+### Changed
+
+- Site-Admin/Instrumentation in the Kubernetes cluster deployment now includes indexed-search.
 
 ## 3.14.0
 

@@ -6,7 +6,12 @@ You can click on each component to jump to its respective code repository or sub
 <object data="/dev/architecture/architecture.svg" type="image/svg+xml" style="width:100%; height: 100%">
 </object>
 
-To re-generate this diagram from the `architecture.dot` file with Graphviz, run: `dot -Tsvg -o architecture.svg architecture.dot`.
+The Code intelligence processes (the LSIF-based code intelligence service) has been extracted into its own diagram.
+
+<object data="/dev/architecture/codeintel.svg" type="image/svg+xml" style="width:100%; height: 100%">
+</object>
+
+To re-generate the architecture diagram from the `architecture.dot` file with Graphviz, run: `dot -Tsvg -o architecture.svg architecture.dot` (and similar for `codeintel.dot`).
 
 ## Clients
 
@@ -29,7 +34,7 @@ Our backend is composed of multiple services:
 
 - Most are Go services found in the [cmd](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/cmd) folder.
 - [Syntect server](https://sourcegraph.com/github.com/sourcegraph/syntect_server) is our syntax highlighting service written in Rust. It is not horizontally scalable so only 1 replica is supported.
-- [LSIF server](https://github.com/sourcegraph/sourcegraph/tree/master/lsif) provide precise code intelligence based on the LSIF data format. It is written in TypeScript.
+- [Precise code intel system](https://github.com/sourcegraph/sourcegraph/tree/master/cmd/precise-code-intel) provides precise code intelligence based on the LSIF data format. It is written in TypeScript.
 - [zoekt-indexserver](https://sourcegraph.com/github.com/sourcegraph/zoekt/-/tree/cmd/zoekt-sourcegraph-indexserver) and [zoekt-webserver](https://sourcegraph.com/github.com/sourcegraph/zoekt/-/tree/cmd/zoekt-webserver) provide indexed search. They are written in Go.
 
 ## Infrastructure

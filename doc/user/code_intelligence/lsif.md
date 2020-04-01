@@ -8,7 +8,7 @@
 
 ## Getting started
 
-Follow our [LSIF quickstart guide](lsif_quickstart.md) to manually generate and upload LSIF data for your repository. After you are satisfied with the result, you can upload LSIF data to a Sourcegraph instance using your existing [continuous integration infrastructure](lsif_in_ci.md), or using [GitHub Actions](lsif_on_github.md).
+Follow our [LSIF quickstart guide](lsif_quickstart.md) to manually generate and upload LSIF data for your repository. After you are satisfied with the result, you can upload LSIF data to a Sourcegraph instance using your existing [continuous integration infrastructure](adding_lsif_to_workflows.md#lsif-in-continuous-integration), or using [GitHub Action](adding_lsif_to_workflows.md#lsif-on-github).
 
 LSIF support is still a relatively new feature. We are currently working on validating that the feature remains responsive even with tens of thousands of repositories. To get started, we recommend you upload a smaller number of key repositories. Once you reach 50 to 100 repositories, we will be able to provide specific recommendations for ensuring stability and performance of your Sourcegraph instance.
 
@@ -28,7 +28,7 @@ You may occasionally see results from [basic code intelligence](basic_code_intel
 
 - The symbol has LSIF data, but it is defined in a repository which does not have LSIF data.
 - The nearest commit that has LSIF data is too far away from your browsing commit. [The limit is 100 commits](https://github.com/sourcegraph/sourcegraph/blob/e7803474dbac8021e93ae2af930269045aece079/lsif/src/shared/constants.ts#L25) ahead/behind.
-- The current file doesn't exist in the nearest LSIF dump or has been changed between the LSIF dump and the browsing commit.
+- The line containing the symbol was created or edited between the nearest indexed commit and the commit being browsed.
 - The _Find references_ panel will always include search-based results, but only after all of the precise results have been displayed. This ensures every symbol has code intelligence.
 
 ## Cross-repository code intelligence

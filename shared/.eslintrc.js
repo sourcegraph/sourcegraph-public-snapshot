@@ -6,6 +6,7 @@ module.exports = {
     project: [__dirname + '/tsconfig.json', __dirname + '/src/e2e/tsconfig.json'],
   },
   rules: {
+    'rxjs/no-async-subscribe': 'off', // https://github.com/cartant/eslint-plugin-rxjs/issues/46
     'no-restricted-imports': [
       'error',
       {

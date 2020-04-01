@@ -330,7 +330,7 @@ Key dates:
                     head: `publish-${parsedVersion.version}`,
                     commitMessage: `Update latest release to ${parsedVersion.version}`,
                     bashEditCommands: [
-                        `${sed} -i -E 's/export SOURCEGRAPH_VERSION=[0-9]+\\.[0-9]+\\.[0-9]+/export SOURCEGRAPH_VERSION=${parsedVersion.version}/g' resources/user-data.sh`,
+                        `${sed} -i -E 's/export SOURCEGRAPH_VERSION=[0-9]+\\.[0-9]+\\.[0-9]+/export SOURCEGRAPH_VERSION=${parsedVersion.version}/g' resources/amazon-linux2.sh`,
                     ],
                     title: `Update latest release to ${parsedVersion.version}`,
                 },

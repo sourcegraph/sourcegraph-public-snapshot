@@ -9,9 +9,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // SplitRepositoryNameWithOwner splits a GitHub repository's "owner/name" string into "owner" and "name", with
@@ -487,7 +487,7 @@ func (c *Client) ListAffiliatedRepositories(ctx context.Context, page int) (repo
 		c.addRepositoriesToCache("", repos)
 	}
 
-	return repos, len(repos) > 0, 1, nil
+	return repos, len(repos) > 0, 1, err
 }
 
 // ListOrgRepositories lists GitHub repositories from the specified organization.

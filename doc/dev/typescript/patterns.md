@@ -15,7 +15,7 @@ and the subscribe callback may still run code operating on invalid state.
 In the case of React components, it may call `setState()` after the component was unmounted,
 which causes React to throw an Error.
 
-If you forgot to handle a Subscription returned by Rx `observable.subscribe()`, the TSLint rule `rxjs-no-ignored-subscription` will warn you.
+If you forgot to handle a Subscription returned by Rx `observable.subscribe()`, the ESLint rule `rxjs/no-ignored-subscription` will warn you.
 
 The easiest way to solve this is to save all Subscriptions in a Subscription bag, and when the instance is disposed, unsubscribe that bag.
 [RxJS Subscriptions](https://rxjs-dev.firebaseapp.com/guide/subscription) have the nice property of being _composable_, meaning they can act as a Subscription bag.

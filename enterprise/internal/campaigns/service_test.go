@@ -67,9 +67,9 @@ func TestService(t *testing.T) {
 +x
  y
 `
-		patches := []campaigns.PatchInput{
-			{Repo: api.RepoID(rs[0].ID), BaseRevision: "deadbeef", BaseRef: "refs/heads/master", Patch: patch},
-			{Repo: api.RepoID(rs[1].ID), BaseRevision: "f00b4r", BaseRef: "refs/heads/master", Patch: patch},
+		patches := []*campaigns.Patch{
+			{RepoID: api.RepoID(rs[0].ID), Rev: "deadbeef", BaseRef: "refs/heads/master", Diff: patch},
+			{RepoID: api.RepoID(rs[1].ID), Rev: "f00b4r", BaseRef: "refs/heads/master", Diff: patch},
 		}
 
 		patchSet, err := svc.CreatePatchSetFromPatches(ctx, patches, user.ID)
@@ -92,10 +92,10 @@ func TestService(t *testing.T) {
 		for i, patch := range patches {
 			wantJobs[i] = &campaigns.Patch{
 				PatchSetID: patchSet.ID,
-				RepoID:     patch.Repo,
-				Rev:        patch.BaseRevision,
+				RepoID:     patch.RepoID,
+				Rev:        patch.Rev,
 				BaseRef:    patch.BaseRef,
-				Diff:       patch.Patch,
+				Diff:       patch.Diff,
 				CreatedAt:  now,
 				UpdatedAt:  now,
 			}
@@ -280,6 +280,7 @@ func TestService(t *testing.T) {
 			name    string
 			branch  *string
 			draft   bool
+			closed  bool
 			process bool
 			err     string
 		}{
@@ -291,6 +292,12 @@ func TestService(t *testing.T) {
 			{
 				name:  "draft campaign",
 				draft: true,
+			},
+
+			{
+				name:   "closed campaign",
+				closed: true,
+				err:    ErrUpdateClosedCampaign.Error(),
 			},
 			{
 				name:    "change campaign branch",
@@ -332,6 +339,10 @@ func TestService(t *testing.T) {
 
 				svc := NewServiceWithClock(store, gitClient, cf, clock)
 				campaign := testCampaign(user.ID, patchSet.ID)
+
+				if tc.closed {
+					campaign.ClosedAt = now
+				}
 
 				err = svc.CreateCampaign(ctx, campaign, tc.draft)
 				if err != nil {
@@ -680,7 +691,29 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 			newPatches: []newPatchSpec{
 				{repo: "repo-0", modifiedDiff: true},
 			},
-			wantErr: ErrClosedCampaignUpdatePatchIllegal,
+			wantErr: ErrUpdateClosedCampaign,
+		},
+		{
+			name:            "1 unmodified merged, 1 new changeset",
+			updatePatchSet:  true,
+			oldPatches:      repoNames{"repo-0"},
+			changesetStates: map[string]campaigns.ChangesetState{"repo-0": campaigns.ChangesetStateMerged},
+			newPatches: []newPatchSpec{
+				{repo: "repo-1"},
+			},
+			wantUnmodified: repoNames{"repo-0"},
+			wantCreated:    repoNames{"repo-1"},
+		},
+		{
+			name:            "1 unmodified closed, 1 new changeset",
+			updatePatchSet:  true,
+			oldPatches:      repoNames{"repo-0"},
+			changesetStates: map[string]campaigns.ChangesetState{"repo-0": campaigns.ChangesetStateClosed},
+			newPatches: []newPatchSpec{
+				{repo: "repo-1"},
+			},
+			wantUnmodified: repoNames{"repo-0"},
+			wantCreated:    repoNames{"repo-1"},
 		},
 	}
 
@@ -869,7 +902,7 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 				if len(tt.individuallyPublished) != 0 {
 					wantChangesetJobLen = len(tt.individuallyPublished)
 				} else {
-					wantChangesetJobLen = len(newPatches)
+					wantChangesetJobLen = len(tt.wantCreated) + len(tt.wantUnmodified) + len(tt.wantModified)
 				}
 			} else {
 				wantChangesetJobLen = len(oldPatches)

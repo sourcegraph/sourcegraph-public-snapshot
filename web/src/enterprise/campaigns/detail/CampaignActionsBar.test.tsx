@@ -5,6 +5,7 @@ import { BackgroundProcessState, ChangesetState } from '../../../../../shared/sr
 
 const PROPS = {
     name: 'Super campaign',
+    formID: 'form1',
     onNameChange: () => undefined,
     onEdit: () => undefined,
     // eslint-disable-next-line @typescript-eslint/require-await
@@ -66,7 +67,7 @@ describe('CampaignActionsBar', () => {
                 />
             )
         ).toMatchSnapshot())
-    test('editable but closed', () =>
+    test('closed', () =>
         expect(
             createRenderer().render(
                 <CampaignActionsBar

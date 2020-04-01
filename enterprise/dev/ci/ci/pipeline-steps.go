@@ -19,7 +19,7 @@ var allDockerImages = []string{
 	"searcher",
 	"server",
 	"symbols",
-	"lsif-server",
+	"precise-code-intel",
 }
 
 // Verifies the docs formatting and builds the `docsite` command.
@@ -45,14 +45,13 @@ func addLint(pipeline *bk.Pipeline) {
 	// - yarn 41s
 	// - eslint 137s
 	// - build-ts 60s
-	// - tslint 45s
 	// - prettier 29s
 	// - stylelint 7s
 	// - graphql-lint 1s
 	pipeline.AddStep(":eslint:",
 		bk.Cmd("dev/ci/yarn-run.sh build-ts all:eslint")) // eslint depends on build-ts
 	pipeline.AddStep(":lipstick: :lint-roller: :stylelint: :graphql:",
-		bk.Cmd("dev/ci/yarn-run.sh prettier-check all:tslint all:stylelint graphql-lint"))
+		bk.Cmd("dev/ci/yarn-run.sh prettier-check all:stylelint graphql-lint"))
 }
 
 // Adds steps for the OSS and Enterprise web app builds. Runs the web app tests.
@@ -87,11 +86,11 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 		bk.ArtifactPaths("browser/coverage/coverage-final.json"))
 }
 
-// Tests the LSIF server.
-func addLSIFServer(pipeline *bk.Pipeline) {
+// Tests the precise code intel system.
+func addPreciseCodeIntelSystem(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":jest:",
-		bk.Cmd("dev/ci/yarn-test-separate.sh lsif"),
-		bk.ArtifactPaths("lsif/coverage/coverage-final.json"))
+		bk.Cmd("dev/ci/yarn-test-separate.sh cmd/precise-code-intel"),
+		bk.ArtifactPaths("cmd/precise-code-intel/coverage/coverage-final.json"))
 }
 
 // Adds the shared frontend tests (shared between the web app and browser extension).

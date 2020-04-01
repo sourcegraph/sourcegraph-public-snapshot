@@ -1,14 +1,15 @@
 import * as React from 'react'
 import * as H from 'history'
 import { SearchResultTabHeader } from './SearchResultTab'
-import { PatternTypeProps, CaseSensitivityProps } from '..'
-import { FiltersToTypeAndValue } from '../../../../shared/src/search/interactive/util'
+import { PatternTypeProps, CaseSensitivityProps, InteractiveSearchProps } from '..'
 
-interface Props extends Omit<PatternTypeProps, 'setPatternType'>, Omit<CaseSensitivityProps, 'setCaseSensitivity'> {
+interface Props
+    extends Omit<PatternTypeProps, 'setPatternType'>,
+        Omit<CaseSensitivityProps, 'setCaseSensitivity'>,
+        Pick<InteractiveSearchProps, 'filtersInQuery'> {
     location: H.Location
     history: H.History
     query: string
-    filtersInQuery: FiltersToTypeAndValue
 }
 
 export const SearchResultTypeTabs: React.FunctionComponent<Props> = props => (

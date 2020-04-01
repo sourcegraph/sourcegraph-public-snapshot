@@ -8,7 +8,7 @@ local common = import './common.libsonnet';
 local timeRange = '1m';
 
 // The duration percentiles to display
-local percentiles = ['0.99'];
+local percentiles = ['0.95'];
 
 // Colors to pair to percentiles above
 local percentileColors = ['#7eb26d'];
@@ -154,6 +154,10 @@ local queueSizePanel = common.makePanel(
         ),
     ]
 );
+local authzFilterDurationPercentilesPanel = makeDurationPercentilesPanel(
+    title = 'Authorization duration',
+    metric = 'src_frontend_authz_filter_duration_seconds_bucket{success="true"}',
+);
 
 //
 // Dashboard Construction
@@ -175,4 +179,7 @@ common.makeDashboard(
 ).addRow(
     title = 'Syncer stats',
     panels = [queueSizePanel]
+).addRow(
+    title = 'General stats',
+    panels = [authzFilterDurationPercentilesPanel]
 )

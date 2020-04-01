@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/dghubble/gologin/github"
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
@@ -19,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	githubsvc "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"golang.org/x/oauth2"
-	"gopkg.in/inconshreveable/log15.v2"
 )
 
 type sessionIssuerHelper struct {

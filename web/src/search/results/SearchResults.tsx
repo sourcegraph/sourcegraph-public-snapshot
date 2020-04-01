@@ -29,7 +29,6 @@ import { SearchResultsFilterBars, SearchScopeWithOptionalName } from './SearchRe
 import { SearchResultsList } from './SearchResultsList'
 import { SearchResultTypeTabs } from './SearchResultTypeTabs'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
-import { FiltersToTypeAndValue } from '../../../../shared/src/search/interactive/util'
 import { convertPlainTextToInteractiveQuery } from '../input/helpers'
 
 export interface SearchResultsProps
@@ -55,8 +54,6 @@ export interface SearchResultsProps
     ) => Observable<GQL.ISearchResults | ErrorLike>
     isSourcegraphDotCom: boolean
     deployType: DeployType
-    filtersInQuery: FiltersToTypeAndValue
-    interactiveSearchMode: boolean
 }
 
 interface SearchResultsState {
@@ -202,9 +199,11 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                 )
         )
 
-        this.props.extensionsController.services.contribution
-            .getContributions()
-            .subscribe(contributions => this.setState({ contributions }))
+        this.subscriptions.add(
+            this.props.extensionsController.services.contribution
+                .getContributions()
+                .subscribe(contributions => this.setState({ contributions }))
+        )
     }
 
     public componentDidUpdate(): void {
@@ -355,6 +354,6 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
 
         const newQuery = toggleSearchFilter(this.props.navbarSearchQueryState.query, value)
 
-        submitSearch(this.props.history, newQuery, 'filter', this.props.patternType, this.props.caseSensitive)
+        submitSearch({ ...this.props, query: newQuery, source: 'filter' })
     }
 }

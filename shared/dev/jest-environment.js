@@ -15,7 +15,6 @@ const { ModuleMocker } = require('jest-mock')
 const { installCommonGlobals } = require('jest-util')
 const { JSDOM, VirtualConsole } = require('jsdom')
 function isWin(globals) {
-  // tslint:disable-next-line: strict-type-predicates
   return globals.document !== undefined
 }
 // A lot of the globals expected by other APIs are `NodeJS.Global` and not

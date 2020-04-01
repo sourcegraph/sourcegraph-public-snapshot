@@ -88,24 +88,11 @@ digraph architecture {
             URL="https://github.com/sourcegraph/sourcegraph/tree/master/cmd/symbols"
         ]
 
-        subgraph cluster_lsif {
-            label="LSIF"
-            rank="same"
-            graph [style="dotted"]
-            node [
-                fillcolor="9"
-                shape="box3d"
-            ]
-
-            lsif_server [
-                label="lsif\nserver"
-                URL="https://github.com/sourcegraph/sourcegraph/tree/master/lsif/src/server"
-            ]
-            lsif_worker [
-                label="lsif\nworker"
-                URL="https://github.com/sourcegraph/sourcegraph/tree/master/lsif/src/worker"
-            ]
-        }
+        code_intel [
+            label="Code intel processes\n(click to expand)"
+            fillcolor="9"
+            URL="https://github.com/sourcegraph/sourcegraph/tree/master/doc/dev/architecture/codeintel.svg"
+        ]
 
         subgraph cluster_zoekt {
             label="Indexed search"
@@ -173,7 +160,7 @@ digraph architecture {
         redis_cache
         redis_store
         syntect_server
-        lsif_server
+        code_intel
         symbols
     } [
         fillcolor="1"
@@ -202,14 +189,7 @@ digraph architecture {
         fillcolor="8"
     ]
 
-    lsif_server -> {
-        frontend
-        postgres
-    } [
-        fillcolor="9"
-    ]
-
-    lsif_worker -> {
+    code_intel -> {
         frontend
         postgres
     } [

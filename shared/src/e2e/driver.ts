@@ -284,15 +284,22 @@ export class Driver {
         await this.page.waitForSelector(`[data-e2e-external-service-card-link="${kind.toUpperCase()}"]`, {
             visible: true,
         })
-        await this.page.click(`[data-e2e-external-service-card-link="${kind.toUpperCase()}"]`)
+        await this.page.evaluate(selector => {
+            const element = document.querySelector<HTMLElement>(selector)
+            if (!element) {
+                throw new Error('Could not find element to click on for selector ' + selector)
+            }
+            element.click()
+        }, `[data-e2e-external-service-card-link="${kind.toUpperCase()}"]`)
         await this.replaceText({
             selector: '#e2e-external-service-form-display-name',
             newText: displayName,
         })
 
+        await this.page.waitForSelector('.e2e-external-service-editor .monaco-editor')
         // Type in a new external service configuration.
         await this.replaceText({
-            selector: '.view-line',
+            selector: '.e2e-external-service-editor .monaco-editor .view-line',
             newText: config,
             selectMethod: 'keyboard',
         })
@@ -709,6 +716,7 @@ export async function createDriverForTest(options: DriverOptions): Promise<Drive
                 map(formatPuppeteerConsoleMessage),
                 concatAll()
             )
+            // eslint-disable-next-line rxjs/no-ignored-subscription
             .subscribe(formattedLine => console.log(formattedLine))
     }
     return new Driver(browser, page, sourcegraphBaseUrl, keepBrowser)

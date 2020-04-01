@@ -98,8 +98,6 @@
 /.mailmap @beyang
 /tsconfig.json @sourcegraph/web
 /.mocharc.json @sourcegraph/web
-tslint.json @sourcegraph/web
-tslint.config.js @sourcegraph/web
 .eslintrc.* @sourcegraph/web
 /enterprise/cmd @beyang
 /enterprise/internal @beyang
@@ -250,10 +248,9 @@ Dockerfile @sourcegraph/distribution
 /cmd/frontend/db/discussion* @slimsag
 
 # LSIF
-/lsif/ @sourcegraph/code-intel
+/cmd/precise-code-intel/ @sourcegraph/code-intel
 /internal/lsif @sourcegraph/code-intel
 /enterprise/internal/codeintel @sourcegraph/code-intel
-/cmd/lsif-server/ @sourcegraph/code-intel
 /cmd/frontend/graphqlbackend/codeintel.go @sourcegraph/code-intel
 
 # Development

@@ -15,6 +15,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/tmpfriend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -36,7 +37,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/internal/vfsutil"
-	"gopkg.in/inconshreveable/log15.v2"
 )
 
 var (

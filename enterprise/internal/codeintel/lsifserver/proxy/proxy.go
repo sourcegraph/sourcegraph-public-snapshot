@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -19,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"gopkg.in/inconshreveable/log15.v2"
 )
 
 func NewProxy() (*httpapi.LSIFServerProxy, error) {
@@ -42,9 +42,9 @@ func uploadProxyHandler() func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		// 🚨 SECURITY: Ensure we return before proxying to the lsif-server upload
-		// endpoint. This endpoint is unprotected, so we need to make sure the user
-		// provides a valid token proving contributor access to the repository.
+		// 🚨 SECURITY: Ensure we return before proxying to the precise-code-intel-api-server upload
+		// endpoint. This endpoint is unprotected, so we need to make sure the user provides a valid
+		// token proving contributor access to the repository.
 		if conf.Get().LsifEnforceAuth {
 			if canBypassAuth := isSiteAdmin(ctx); !canBypassAuth {
 				if authorized := enforceAuth(ctx, w, r, repoName); !authorized {
@@ -121,7 +121,7 @@ func isSiteAdmin(ctx context.Context) bool {
 			return false
 		}
 
-		log15.Error("lsif-server proxy: failed to get up current user", "error", err)
+		log15.Error("precise-code-intel proxy: failed to get up current user", "error", err)
 		return false
 	}
 

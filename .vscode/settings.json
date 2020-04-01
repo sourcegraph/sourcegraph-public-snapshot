@@ -1,5 +1,4 @@
 {
-  "tslint.nodePath": "./node_modules",
   "search.exclude": {
     "**/node_modules": true,
     "**/bower_components": true,
@@ -64,7 +63,7 @@
       "changeProcessCWD": true,
     },
     {
-      "directory": "lsif",
+      "directory": "cmd/precise-code-intel",
       "changeProcessCWD": true,
     },
   ],

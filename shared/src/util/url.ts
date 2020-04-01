@@ -5,6 +5,7 @@ import { FiltersToTypeAndValue } from '../search/interactive/util'
 import { isEmpty } from 'lodash'
 import { parseSearchQuery, CharacterRange } from '../search/parser/parser'
 import { replaceRange } from './strings'
+import { discreteValueAliases } from '../search/parser/filters'
 
 export interface RepoSpec {
     /**
@@ -572,7 +573,7 @@ export function buildSearchURLQuery(
         fullQuery = replaceRange(fullQuery, caseInQuery.range)
         searchParams.set('q', fullQuery)
 
-        if (caseInQuery.value === 'yes') {
+        if (discreteValueAliases.yes.includes(caseInQuery.value)) {
             fullQuery = replaceRange(fullQuery, caseInQuery.range)
             searchParams.set('case', caseInQuery.value)
         } else {

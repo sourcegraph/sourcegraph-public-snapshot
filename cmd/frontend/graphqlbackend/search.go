@@ -12,7 +12,7 @@ import (
 	"strings"
 	"sync"
 
-	"gopkg.in/inconshreveable/log15.v2"
+	"github.com/inconshreveable/log15"
 
 	"github.com/neelance/parallel"
 	"github.com/pkg/errors"

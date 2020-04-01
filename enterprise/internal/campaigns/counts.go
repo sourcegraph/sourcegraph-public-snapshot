@@ -5,9 +5,9 @@ import (
 	"sort"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // ChangesetCounts represents the states in which a given set of Changesets was
@@ -232,6 +232,9 @@ func computeCounts(c *ChangesetCounts, csEvents Events) error {
 			oldReviewState := currentReviewState
 
 			if s == campaigns.ChangesetReviewStateDismissed {
+				// In case of a dismissed review we dismiss _all_ of the
+				// previous reviews by the author, since that is what GitHub
+				// does in its UI.
 				delete(lastReviewByAuthor, author)
 			} else {
 				lastReviewByAuthor[author] = s
@@ -247,8 +250,12 @@ func computeCounts(c *ChangesetCounts, csEvents Events) error {
 				c.AddReviewState(newReviewState, 1)
 			}
 
-		case campaigns.ChangesetEventKindBitbucketServerUnapproved,
-			campaigns.ChangesetEventKindGitHubReviewDismissed:
+		case campaigns.ChangesetEventKindBitbucketServerUnapproved:
+			// We specifically ignore ChangesetEventKindGitHubReviewDismissed
+			// events since GitHub updates the original
+			// ChangesetEventKindGitHubReviewed event when a review has been
+			// dismissed.
+
 			author, err := reviewAuthor(e)
 			if err != nil {
 				return err
@@ -328,12 +335,4 @@ func reviewAuthor(e Event) (string, error) {
 	}
 
 	return changesetEvent.ReviewAuthor()
-}
-
-func computeReviewState(statesByAuthor map[string]campaigns.ChangesetReviewState) campaigns.ChangesetReviewState {
-	states := make(map[campaigns.ChangesetReviewState]bool)
-	for _, s := range statesByAuthor {
-		states[s] = true
-	}
-	return campaigns.SelectReviewState(states)
 }

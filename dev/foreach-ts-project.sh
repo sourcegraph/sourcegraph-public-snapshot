@@ -16,7 +16,7 @@ DIRS=(
    browser \
    packages/sourcegraph-extension-api \
    packages/@sourcegraph/extension-api-types \
-   lsif \
+   cmd/precise-code-intel \
    dev/release
 )
 

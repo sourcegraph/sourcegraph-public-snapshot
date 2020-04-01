@@ -12,7 +12,7 @@ These instructions guide you through configuring Sourcegraph as a relying party 
 
 * Active Directory instance where all users have email and username attributes.
 * An instance of ADFS running on Windows Server, joined to your Active Directory domain.
-* Sourcegraph should be [configured to use HTTPS](../../nginx.md#nginx-ssl-https-configuration).
+* Sourcegraph should be [configured to use HTTPS](../../http_https_configuration.md#nginx-ssl-https-configuration).
 * Ensure that `externalURL` in [site config](../../config/site_config.md) meets the following
   criteria:
   * It is the URL used by end users (no trailing slash).
