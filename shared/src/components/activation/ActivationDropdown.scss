@@ -42,3 +42,21 @@
         text-decoration: none;
     }
 }
+
+[data-reach-accordion-button] {
+    .icon-down {
+        display: none;
+    }
+    .icon-right {
+        display: inline-block;
+    }
+}
+
+[data-reach-accordion-button][aria-expanded='true'] {
+    .icon-right {
+        display: none;
+    }
+    .icon-down {
+        display: inline-block;
+    }
+}

@@ -9,6 +9,7 @@ import { concatMap, delay, filter, map, pairwise, startWith, tap } from 'rxjs/op
 import { Activation, percentageDone } from './Activation'
 import { ActivationChecklistItem } from './ActivationChecklist'
 import { Link } from '../Link'
+import { AccordionItem, Accordion, AccordionButton, AccordionPanel } from '@reach/accordion'
 
 interface Props {
     history: H.History
@@ -29,7 +30,10 @@ const animationDurationMillis = 3260
  */
 export class ActivationDropdown extends React.PureComponent<Props, State> {
     public state: State = { isOpen: false, animate: false, displayEvenIfFullyCompleted: false }
-    private toggleIsOpen = (): void => this.setState(prevState => ({ isOpen: !prevState.isOpen }))
+    private toggleIsOpen = (): void => {
+        console.log('toggleISOpen')
+        this.setState(prevState => ({ isOpen: !prevState.isOpen }))
+    }
     private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
 
@@ -125,28 +129,35 @@ export class ActivationDropdown extends React.PureComponent<Props, State> {
                         <p className="mb-1">Complete the steps below to finish onboarding!</p>
                     </Link>
                     <DropdownItem divider={true} />
-                    {this.props.activation && this.props.activation.completed ? (
-                        this.props.activation.steps.map(step => (
-                            <div
-                                key={step.id}
-                                className="activation-dropdown-item dropdown-item"
-                                onClick={this.toggleIsOpen}
-                            >
-                                <ActivationChecklistItem
-                                    {...step}
-                                    history={this.props.history}
-                                    done={
-                                        (this.props.activation.completed && this.props.activation.completed[step.id]) ||
-                                        false
-                                    }
-                                />
+                    <Accordion collapsible={true}>
+                        {this.props.activation && this.props.activation.completed ? (
+                            this.props.activation.steps.map(step => (
+                                <div
+                                    key={step.id}
+                                    className="activation-dropdown-item dropdown-item"
+                                >
+                                    <AccordionItem key={step.id}>
+                                        <AccordionButton className="activation-dropdown-item dropdown-item">
+                                            <ActivationChecklistItem
+                                                {...step}
+                                                history={this.props.history}
+                                                done={
+                                                    (this.props.activation.completed &&
+                                                        this.props.activation.completed[step.id]) ||
+                                                    false
+                                                }
+                                            />
+                                        </AccordionButton>
+                                        <AccordionPanel>{step.detail}</AccordionPanel>
+                                    </AccordionItem>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="activation-dropdown-button__loader">
+                                <LoadingSpinner className="icon-inline" />
                             </div>
-                        ))
-                    ) : (
-                        <div className="activation-dropdown-button__loader">
-                            <LoadingSpinner className="icon-inline" />
-                        </div>
-                    )}
+                        )}
+                    </Accordion>
                 </DropdownMenu>
             </ButtonDropdown>
         )

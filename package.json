@@ -216,6 +216,8 @@
   "dependencies": {
     "@hot-loader/react-dom": "^16.12.0",
     "@primer/octicons-react": "^9.6.0",
+    "@reach/accordion": "^0.9.1",
+    "@reach/portal": "^0.9.0",
     "@sentry/browser": "^5.13.2",
     "@slimsag/react-shortcuts": "^1.2.1",
     "@sourcegraph/codeintellify": "^6.3.2",
