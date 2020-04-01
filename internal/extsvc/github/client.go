@@ -163,9 +163,7 @@ func NewClient(apiURL *url.URL, defaultToken string, cli httpcli.Doer) *Client {
 
 // WithToken returns a copy of the Client authenticated as the GitHub user with the given token.
 func (c *Client) WithToken(token string) *Client {
-	copy := *c
-	copy.defaultToken = token
-	return &copy
+	return NewClient(c.apiURL, token, c.httpClient)
 }
 
 // cache returns the cache associated with the token (which can be empty, in which case the default

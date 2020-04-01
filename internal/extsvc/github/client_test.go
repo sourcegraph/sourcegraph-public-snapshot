@@ -112,7 +112,15 @@ func update(name string) bool {
 }
 
 func TestClient_WithToken(t *testing.T) {
-	old := &Client{defaultToken: "old_token"}
+	uri, err := url.Parse("https://github.com")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	old := &Client{
+		apiURL:       uri,
+		defaultToken: "old_token",
+	}
 
 	newToken := "new_token"
 	new := old.WithToken(newToken)
