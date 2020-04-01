@@ -16,7 +16,7 @@ import { SearchScope, Settings } from '../schema/settings.schema'
 import { eventLogger } from '../tracking/eventLogger'
 import { fetchReposByQuery } from './backend'
 import { submitSearch, QueryState } from './helpers'
-import { QueryInput, queryUpdates } from './input/QueryInput'
+import { QueryInput } from './input/QueryInput'
 import { SearchButton } from './input/SearchButton'
 import { PatternTypeProps, CaseSensitivityProps } from '.'
 import { ErrorAlert } from '../components/alerts'
@@ -41,6 +41,7 @@ interface ScopePageProps
         PatternTypeProps,
         CaseSensitivityProps {
     authenticatedUser: GQL.IUser | null
+    onNavbarQueryChange: (queryState: QueryState) => void
 }
 
 interface State {
@@ -82,7 +83,10 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
                         const matchedScope = searchScopes.find(o => o.id === props.match.params.id)
                         if (matchedScope) {
                             const markdownDescription = renderMarkdown(matchedScope.description || '')
-                            queryUpdates.next(matchedScope.value)
+                            this.props.onNavbarQueryChange({
+                                query: matchedScope.value,
+                                cursorPosition: matchedScope.value.length,
+                            })
                             if (matchedScope.value.includes('repo:') || matchedScope.value.includes('repogroup:')) {
                                 return concat(
                                     of({ ...matchedScope, markdownDescription }),
@@ -95,7 +99,6 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
                                     )
                                 )
                             }
-                            queryUpdates.next(matchedScope.value)
                             return [
                                 {
                                     ...matchedScope,
