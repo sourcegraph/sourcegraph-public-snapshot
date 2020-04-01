@@ -7,7 +7,6 @@
   "scripts": {
     "build": "tsc -b .",
     "test": "jest",
-    "tslint": "../../node_modules/.bin/tslint -p tsconfig.json",
     "eslint": "../../node_modules/.bin/eslint --cache 'src/**/*.ts?(x)'",
     "run:api-server": "tsc-watch --onSuccess \"node -r source-map-support/register out/api-server/api.js\" --noClear",
     "run:bundle-manager": "tsc-watch --onSuccess \"node -r source-map-support/register out/bundle-manager/manager.js\" --noClear",
@@ -77,7 +76,6 @@
     "sinon": "^9.0.0",
     "source-map-support": "^0.5.16",
     "tsc-watch": "^4.2.3",
-    "tslint": "^5.20.1",
     "typescript": "^3.7.2",
     "typescript-json-schema": "^0.42.0"
   }

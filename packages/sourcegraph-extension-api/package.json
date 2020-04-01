@@ -21,10 +21,9 @@
   ],
   "sideEffects": false,
   "scripts": {
-    "tslint": "../../node_modules/.bin/tslint -t stylish -c tslint.json -p tsconfig.json './src/**/*.{ts,js}'",
     "eslint": "../../node_modules/.bin/eslint 'src/*.[jt]s?(x)'",
     "docs": "typedoc",
-    "prepublishOnly": "yarn run tslint && yarn run eslint && yarn run docs"
+    "prepublishOnly": "yarn run eslint && yarn run docs"
   },
   "devDependencies": {
     "typedoc": "^0.16.11"
