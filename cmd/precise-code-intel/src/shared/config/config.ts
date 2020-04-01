@@ -67,15 +67,21 @@ function requireRestart(oldConfiguration: Configuration, newConfiguration: Confi
  */
 async function updateConfiguration(logger: Logger, onChange: (configuration: Configuration) => void): Promise<never> {
     const start = Date.now()
+    let previousError: Error | undefined
     while (true) {
         try {
             onChange(await loadConfiguration())
+            previousError = undefined
         } catch (error) {
-            // Suppress log messages for errors caused by the frontend being unreachable until we've
-            // given the frontend enough time to initialize (in case other services start up before
-            // the frontend), to reduce log spam.
-            if (Date.now() - start > settings.DELAY_BEFORE_UNREACHABLE_LOG * 1000 || error.code !== 'ECONNREFUSED') {
+            if (
+                error.code !== 'ECONNREFUSED' &&
+                // Do not keep reporting the same error
+                error.message !== previousError?.message &&
+                // Don't spam errors before the frontend starts up
+                Date.now() - start > settings.DELAY_BEFORE_UNREACHABLE_LOG * 1000
+            ) {
                 logger.error('Failed to retrieve configuration from frontend', { error })
+                previousError = error
             }
         }
 
