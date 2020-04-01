@@ -397,6 +397,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.ExternalA
 	if err != nil {
 		return nil, errors.Wrap(err, "get external account data")
 	}
+	client := p.client.WithToken(tok.AccessToken)
 
 	// 100 matches the maximum page size, thus a good default to avoid multiple allocations
 	// when appending the first 100 results to the slice.
@@ -404,7 +405,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.ExternalA
 	hasNextPage := true
 	for page := 1; hasNextPage; page++ {
 		var repos []*github.Repository
-		repos, hasNextPage, _, err = p.client.ListAffiliatedRepositories(ctx, tok.AccessToken, page)
+		repos, hasNextPage, _, err = client.ListAffiliatedRepositories(ctx, page)
 		if err != nil {
 			return repoIDs, err
 		}
