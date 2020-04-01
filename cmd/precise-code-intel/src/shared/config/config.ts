@@ -74,13 +74,12 @@ async function updateConfiguration(logger: Logger, onChange: (configuration: Con
             previousError = undefined
         } catch (error) {
             if (
-                error.code !== 'ECONNREFUSED' &&
                 // Do not keep reporting the same error
                 error.message !== previousError?.message &&
                 // Don't spam errors before the frontend starts up
                 Date.now() - start > settings.DELAY_BEFORE_UNREACHABLE_LOG * 1000
             ) {
-                logger.error('Failed to retrieve configuration from frontend', { error })
+                logger.error('Failed to retrieve configuration from frontend', error.code !== 'ECONNREFUSED' ? { error } : { error: { message: error.message } })
                 previousError = error
             }
         }
