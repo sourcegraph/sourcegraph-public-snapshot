@@ -378,7 +378,7 @@
   dependencies:
     defer-to-connect "^2.0.0"
 
-"@types/async-polling@^0.0.3":
+"@types/async-polling@0.0.3":
   version "0.0.3"
   resolved "https://registry.npmjs.org/@types/async-polling/-/async-polling-0.0.3.tgz#e7a7b1553f6d9a8e6dcb943ae9645d8fb18fbe61"
   integrity sha512-SxW+bavddNMXQfTlp3loXeh1BXc4WJ2CbhN/SIwx1jvJlPDFcifDQ1bJwOLcwlt/D+zjfsEWdxVy4UPPbnLR9A==
@@ -652,7 +652,7 @@
   resolved "https://registry.npmjs.org/@types/stack-utils/-/stack-utils-1.0.1.tgz#0a851d3bd96498fa25c33ab7278ed3bd65f06c3e"
   integrity sha512-l42BggppR6zLmpfU6fq9HEa2oGPEI8yrSPL3GITjfRInppYFahObbIQOQK3UGxEnyQpltZLaPe75046NOZQikw==
 
-"@types/stream-throttle@^0.1.0":
+"@types/stream-throttle@0.1.0":
   version "0.1.0"
   resolved "https://registry.npmjs.org/@types/stream-throttle/-/stream-throttle-0.1.0.tgz#8807746990431b68ec897e86cf14832f3025950e"
   integrity sha512-rwH5ZUkJwOMvy+7VJoz8CoQbBGfTGmhHgYRaSW4iwLfX0sFut07E/8ldszrh7AN4J0vfuGrWvL/tQPPx5o2AkA==
