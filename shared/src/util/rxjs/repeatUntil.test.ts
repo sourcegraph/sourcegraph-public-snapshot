@@ -18,7 +18,7 @@ describe('repeatUntil()', () => {
     it('resubscribes until an emitted value matches select', () => {
         scheduler().run(({ cold, expectObservable }) => {
             let n = 0
-            expectObservable(defer(() => cold('a|', { a: ++n })).pipe(repeatUntil(v => v === 3))).toBe('abc|', {
+            expectObservable(defer(() => cold('a|', { a: ++n })).pipe(repeatUntil(v => v === 3))).toBe('ab(c|)', {
                 a: 1,
                 b: 2,
                 c: 3,
