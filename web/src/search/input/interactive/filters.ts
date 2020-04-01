@@ -80,4 +80,5 @@ export const FilterTypeToProseNames: Record<FilterType, string> = {
     content: 'Content',
     patterntype: 'Pattern type',
     index: 'Indexed repos',
+    visibility: 'Repository visiblity',
 }
