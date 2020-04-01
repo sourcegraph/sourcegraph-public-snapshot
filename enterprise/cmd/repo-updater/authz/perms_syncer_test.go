@@ -274,7 +274,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			p.fetchRepoPerms = func(context.Context, *api.ExternalRepoSpec) ([]extsvc.ExternalAccountID, error) {
+			p.fetchRepoPerms = func(context.Context, *api.ExternalRepoSpec, interface{}) ([]extsvc.ExternalAccountID, error) {
 				return []extsvc.ExternalAccountID{"user", "pending_user"}, test.fetchErr
 			}
 
