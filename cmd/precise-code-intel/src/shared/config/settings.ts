@@ -11,11 +11,5 @@ export const SRC_FRONTEND_INTERNAL = process.env.SRC_FRONTEND_INTERNAL || 'sourc
  */
 export const DELAY_BEFORE_UNREACHABLE_LOG = readEnvInt('DELAY_BEFORE_UNREACHABLE_LOG', 15)
 
-/**
- * How long to wait between emitting error logs when polling config (in seconds). This
- * reduces the chatter in the terminal when services are restarting.
- */
-export const DELAY_BETWEEN_UNREACHABLE_LOG = readEnvInt('DELAY_BETWEEN_UNREACHABLE_LOG', 30)
-
 /** How long to wait between polling config. */
 export const CONFIG_POLL_INTERVAL = 5
