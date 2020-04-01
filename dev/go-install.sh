@@ -115,15 +115,23 @@ do_install() {
     done
     if ( go install -v -gcflags="$GCFLAGS" -tags "$TAGS" -race=$race $cmds ); then
         for cmd in $cmdlist ; do
-            # Check whether the binary of each command has changed
-            if ! cmp -s "${GOBIN}/${cmd}" "${PWD}/.bin/${cmd}" ; then
-                # Binary updated. Move it to correct location.
-                mv "${GOBIN}/${cmd}" "${PWD}/.bin/${cmd}"
-
+            # Symbols is special since it has its own build/install process. So
+            # we don't try to be smart and not compare old/new versions but simply restart.
+            if [ "${cmd}" = "symbols" ]; then
                 # Output name of command so it can be restarted.
                 if $verbose; then
                     echo "$cmd"
                 fi
+            else
+              # Check whether the binary of each command has changed
+              if ! cmp -s "${GOBIN}/${cmd}" "${PWD}/.bin/${cmd}" ; then
+                  # Binary updated. Move it to correct location.
+                  mv "${GOBIN}/${cmd}" "${PWD}/.bin/${cmd}"
+
+                  if $verbose; then
+                      echo "$cmd"
+                  fi
+              fi
             fi
         done
     else
