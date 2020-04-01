@@ -16,12 +16,12 @@ All notable changes to Sourcegraph are documented in this file.
 - Users and site administrators can now view a log of their actions/events in the user settings.
 - Distributed tracing is a powerful tool for investigating performance issues. The following changes
   have been made with the goal of making it easier to use distributed tracing with Sourcegraph:
+
   - The site configuration field `"tracing.distributedTracing": { "sampling" }` allows a site admin to
     control which requests generate tracing data.
     - `"all"` will trace all requests.
     - `"selective"` will trace all requests initiated from an end-user URL with
-      `?trace=1`. Non-end-user-initiated requests can set a HTTP header `X-Sourcegraph-Should-Trace:
-      true`. This is the recommended setting, as `"all"` can generate large amounts of tracing data
+      `?trace=1`. Non-end-user-initiated requests can set a HTTP header `X-Sourcegraph-Should-Trace: true`. This is the recommended setting, as `"all"` can generate large amounts of tracing data
       that may cause network and memory resource contention in the Sourcegraph instance.
     - `"none"` turns off tracing.
   - Jaeger is now the officially supported distributed tracer. The following is the recommended site
@@ -34,6 +34,7 @@ All notable changes to Sourcegraph are documented in this file.
       "sampling": "selective"
     }
     ```
+
   - The site configuration field, `useJaeger`, is deprecated in favor of
     `"tracing.distributedTracing": { "type": "jaeger" }`.
   - The site configuration field `"experimentalFeatures": { "debug.log": { "opentracing" } }`

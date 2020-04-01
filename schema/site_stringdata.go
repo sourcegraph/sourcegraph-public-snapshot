@@ -607,8 +607,8 @@ const SiteSchemaJSON = `{
         }
       },
       "oneOf": [
-          { "$ref": "#/definitions/DistributedTracingJaeger" },
-          { "$ref": "#/definitions/DistributedTracingNone" }
+        { "$ref": "#/definitions/DistributedTracingJaeger" },
+        { "$ref": "#/definitions/DistributedTracingNone" }
       ],
       "!go": {
         "taggedUnionType": true
