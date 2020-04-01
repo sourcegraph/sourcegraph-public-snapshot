@@ -7,7 +7,12 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { UncontrolledPopover } from 'reactstrap'
 import { defer, Subject, Subscription } from 'rxjs'
 import { catchError, delay, distinctUntilChanged, map, retryWhen, switchMap, tap } from 'rxjs/operators'
-import { CloneInProgressError, ECLONEINPROGESS, EREPONOTFOUND, EREVNOTFOUND } from '../../../shared/src/backend/errors'
+import {
+    CloneInProgressError,
+    CLONE_IN_PROGRESS_ERROR_NAME,
+    REPO_NOT_FOUND_ERROR_NAME,
+    REV_NOT_FOUND_ERROR_NAME,
+} from '../../../shared/src/backend/errors'
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
@@ -119,8 +124,8 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                             retryWhen(errors =>
                                 errors.pipe(
                                     tap(error => {
-                                        switch (error.code) {
-                                            case ECLONEINPROGESS:
+                                        switch (error.name) {
+                                            case CLONE_IN_PROGRESS_ERROR_NAME:
                                                 // Display cloning screen to the user and retry
                                                 this.props.onResolvedRevOrError(error)
                                                 return
@@ -170,15 +175,15 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
 
         if (isErrorLike(this.props.resolvedRevOrError)) {
             // Show error page
-            switch (this.props.resolvedRevOrError.code) {
-                case ECLONEINPROGESS:
+            switch (this.props.resolvedRevOrError.name) {
+                case CLONE_IN_PROGRESS_ERROR_NAME:
                     return (
                         <RepositoryCloningInProgressPage
                             repoName={this.props.repo.name}
                             progress={(this.props.resolvedRevOrError as CloneInProgressError).progress}
                         />
                     )
-                case EREPONOTFOUND:
+                case REPO_NOT_FOUND_ERROR_NAME:
                     return (
                         <HeroPage
                             icon={MapSearchIcon}
@@ -186,7 +191,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                             subtitle="The requested repository was not found."
                         />
                     )
-                case EREVNOTFOUND:
+                case REV_NOT_FOUND_ERROR_NAME:
                     if (!this.props.rev) {
                         return <EmptyRepositoryPage />
                     }

@@ -41,7 +41,7 @@ import {
 import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
 import { DecorationMapByLine } from '../../../../shared/src/api/client/services/decoration'
 import { CodeEditorData, CodeEditorWithPartialModel } from '../../../../shared/src/api/client/services/editorService'
-import { ERPRIVATEREPOPUBLICSOURCEGRAPHCOM } from '../../../../shared/src/backend/errors'
+import { PRIVATE_REPO_PUBLIC_SOURCEGRAPH_COM_ERROR_NAME } from '../../../../shared/src/backend/errors'
 import {
     CommandListClassProps,
     CommandListPopoverButtonClassProps,
@@ -713,7 +713,7 @@ export function handleCodeHost({
                 ),
                 catchError(err => {
                     // Ignore PrivateRepoPublicSourcegraph errors (don't initialize those code views)
-                    if (err.name === ERPRIVATEREPOPUBLICSOURCEGRAPHCOM) {
+                    if (err.name === PRIVATE_REPO_PUBLIC_SOURCEGRAPH_COM_ERROR_NAME) {
                         return EMPTY
                     }
                     throw err

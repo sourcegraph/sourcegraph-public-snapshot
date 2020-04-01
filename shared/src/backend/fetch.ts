@@ -4,7 +4,6 @@ const EHTTPSTATUS = 'HTTPStatusError'
 
 export class HTTPStatusError extends Error {
     public readonly name = EHTTPSTATUS
-    public readonly code = EHTTPSTATUS
     public readonly status: number
 
     constructor(response: Response) {
