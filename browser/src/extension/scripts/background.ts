@@ -3,8 +3,8 @@ import '../polyfills'
 
 import { Endpoint } from '@sourcegraph/comlink'
 import { without } from 'lodash'
-import { noop, Observable } from 'rxjs'
-import { bufferCount, filter, groupBy, map, mergeMap, switchMap, take } from 'rxjs/operators'
+import { noop, Observable, Subscription } from 'rxjs'
+import { bufferCount, filter, groupBy, map, mergeMap, switchMap, take, concatMap } from 'rxjs/operators'
 import addDomainPermissionToggle from 'webext-domain-permission-toggle'
 import { createExtensionHostWorker } from '../../../../shared/src/api/extension/worker'
 import { GraphQLResult, requestGraphQL as requestGraphQLCommon } from '../../../../shared/src/graphql/graphql'
@@ -72,17 +72,23 @@ const requestGraphQL = <T extends GQL.IQuery | GQL.IMutation>({
 initializeOmniboxInterface(requestGraphQL)
 
 async function main(): Promise<void> {
+    const subscriptions = new Subscription()
+
     // Mirror the managed sourcegraphURL to sync storage
-    observeStorageKey('managed', 'sourcegraphURL')
-        .pipe(filter(isDefined))
-        // eslint-disable-next-line @typescript-eslint/no-misused-promises
-        .subscribe(async sourcegraphURL => {
-            await storage.sync.set({ sourcegraphURL })
-        })
+    subscriptions.add(
+        observeStorageKey('managed', 'sourcegraphURL')
+            .pipe(
+                filter(isDefined),
+                concatMap(sourcegraphURL => storage.sync.set({ sourcegraphURL }))
+            )
+            .subscribe()
+    )
     // Configure the omnibox when the sourcegraphURL changes.
-    observeSourcegraphURL(IS_EXTENSION).subscribe(sourcegraphURL => {
-        configureOmnibox(sourcegraphURL)
-    })
+    subscriptions.add(
+        observeSourcegraphURL(IS_EXTENSION).subscribe(sourcegraphURL => {
+            configureOmnibox(sourcegraphURL)
+        })
+    )
 
     const permissions = await browser.permissions.getAll()
     if (!permissions.origins) {
@@ -213,47 +219,43 @@ async function main(): Promise<void> {
         )
     )
 
-    /**
-     * Extension Host Connection
-     *
-     * When an Port pair is emitted, create an extension host worker.
-     *
-     * Messages from the ports are forwarded to the endpoints returned by {@link createExtensionHostWorker}, and vice-versa.
-     *
-     * The lifetime of the extension host worker is tied to that of the content script instance:
-     * when a port disconnects, the worker is terminated. This means there should always be exactly one
-     * extension host worker per active instance of the content script.
-     *
-     */
-    endpointPairs.subscribe(
-        ({ proxy, expose }) => {
-            console.log('Extension host client connected')
-            // It's necessary to wrap endpoints because browser.runtime.Port objects do not support transferring MessagePorts.
-            // See https://github.com/GoogleChromeLabs/comlink/blob/master/messagechanneladapter.md
-            const { worker, clientEndpoints } = createExtensionHostWorker({ wrapEndpoints: true })
-            const connectPortAndEndpoint = (
-                port: browser.runtime.Port,
-                endpoint: Endpoint & Pick<MessagePort, 'start'>
-            ): void => {
-                endpoint.start()
-                port.onMessage.addListener(message => {
-                    endpoint.postMessage(message)
-                })
-                endpoint.addEventListener('message', ({ data }) => {
-                    port.postMessage(data)
-                })
+    // Extension Host Connection
+    // When an Port pair is emitted, create an extension host worker.
+    // Messages from the ports are forwarded to the endpoints returned by {@link createExtensionHostWorker}, and vice-versa.
+    // The lifetime of the extension host worker is tied to that of the content script instance:
+    // when a port disconnects, the worker is terminated. This means there should always be exactly one
+    // extension host worker per active instance of the content script.
+    subscriptions.add(
+        endpointPairs.subscribe(
+            ({ proxy, expose }) => {
+                console.log('Extension host client connected')
+                // It's necessary to wrap endpoints because browser.runtime.Port objects do not support transferring MessagePorts.
+                // See https://github.com/GoogleChromeLabs/comlink/blob/master/messagechanneladapter.md
+                const { worker, clientEndpoints } = createExtensionHostWorker({ wrapEndpoints: true })
+                const connectPortAndEndpoint = (
+                    port: browser.runtime.Port,
+                    endpoint: Endpoint & Pick<MessagePort, 'start'>
+                ): void => {
+                    endpoint.start()
+                    port.onMessage.addListener(message => {
+                        endpoint.postMessage(message)
+                    })
+                    endpoint.addEventListener('message', ({ data }) => {
+                        port.postMessage(data)
+                    })
+                }
+                // Connect proxy client endpoint
+                connectPortAndEndpoint(proxy, clientEndpoints.proxy)
+                // Connect expose client endpoint
+                connectPortAndEndpoint(expose, clientEndpoints.expose)
+                // Kill worker when either port disconnects
+                proxy.onDisconnect.addListener(() => worker.terminate())
+                expose.onDisconnect.addListener(() => worker.terminate())
+            },
+            err => {
+                console.error('Error handling extension host client connection', err)
             }
-            // Connect proxy client endpoint
-            connectPortAndEndpoint(proxy, clientEndpoints.proxy)
-            // Connect expose client endpoint
-            connectPortAndEndpoint(expose, clientEndpoints.expose)
-            // Kill worker when either port disconnects
-            proxy.onDisconnect.addListener(() => worker.terminate())
-            expose.onDisconnect.addListener(() => worker.terminate())
-        },
-        err => {
-            console.error('Error handling extension host client connection', err)
-        }
+        )
     )
 
     console.log('Sourcegraph background page initialized')

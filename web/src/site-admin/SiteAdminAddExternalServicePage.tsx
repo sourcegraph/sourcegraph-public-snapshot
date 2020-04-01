@@ -82,7 +82,7 @@ export class SiteAdminAddExternalServicePage extends React.Component<Props, Stat
                     } else {
                         // Refresh site flags so that global site alerts
                         // reflect the latest configuration.
-                        // tslint:disable-next-line: rxjs-no-nested-subscribe
+                        // eslint-disable-next-line rxjs/no-nested-subscribe, rxjs/no-ignored-subscription
                         refreshSiteFlags().subscribe({ error: err => console.error(err) })
                         this.setState({ loading: false })
                         this.props.history.push('/site-admin/external-services')

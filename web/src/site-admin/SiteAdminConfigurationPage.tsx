@@ -258,6 +258,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                         } else {
                             // Refresh site flags so that global site alerts
                             // reflect the latest configuration.
+                            // eslint-disable-next-line rxjs/no-ignored-subscription
                             refreshSiteFlags().subscribe({ error: err => console.error(err) })
                         }
                         this.setState({ restartToApply })

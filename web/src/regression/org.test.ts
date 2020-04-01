@@ -89,6 +89,8 @@ describe('Organizations regression test suite', () => {
                 const rawSettings = await getViewerSettings(userGQLClient)
                 const settingsOrError = parseJSONCOrError<Settings>(rawSettings.final)
                 if (isErrorLike(settingsOrError)) {
+                    // TODO harmonize Error and ErrorLike interfaces
+                    // eslint-disable-next-line rxjs/throw-error
                     throw settingsOrError
                 }
                 return settingsOrError.quicklinks

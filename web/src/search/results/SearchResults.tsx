@@ -199,9 +199,11 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                 )
         )
 
-        this.props.extensionsController.services.contribution
-            .getContributions()
-            .subscribe(contributions => this.setState({ contributions }))
+        this.subscriptions.add(
+            this.props.extensionsController.services.contribution
+                .getContributions()
+                .subscribe(contributions => this.setState({ contributions }))
+        )
     }
 
     public componentDidUpdate(): void {
