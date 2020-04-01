@@ -6,10 +6,12 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
 )
 
 // ArchiveCacheDir is the location on disk that archives are cached. It is
@@ -42,6 +44,7 @@ func (f *cachedFile) Evict() {
 // fetcher will fill the cache first. cachedFetch also performs
 // single-flighting.
 func cachedFetch(ctx context.Context, component, key string, fetcher func(context.Context) (io.ReadCloser, error)) (ff *cachedFile, err error) {
+	initArchiveCacheDir()
 	s := &diskcache.Store{
 		// Dir uses component as a subdir to prevent conflicts between
 		// components with the same key.
@@ -64,6 +67,15 @@ func zipNewFileReader(f *os.File) (*zip.Reader, error) {
 		return nil, err
 	}
 	return zip.NewReader(f, fi.Size())
+}
+
+var initOnce sync.Once
+
+func initArchiveCacheDir() {
+	initOnce.Do(func() {
+		_ = os.MkdirAll(ArchiveCacheDir, 0700)
+		metrics.MustRegisterDiskMonitor(ArchiveCacheDir)
+	})
 }
 
 var cachedFileEvict = prometheus.NewCounter(prometheus.CounterOpts{

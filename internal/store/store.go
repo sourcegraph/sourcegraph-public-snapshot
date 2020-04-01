@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"os"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -19,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 
 	opentracing "github.com/opentracing/opentracing-go"
@@ -102,6 +104,8 @@ func (s *Store) Start() {
 			BackgroundTimeout: 2 * time.Minute,
 			BeforeEvict:       s.ZipCache.delete,
 		}
+		_ = os.MkdirAll(s.Path, 0700)
+		metrics.MustRegisterDiskMonitor(s.Path)
 		go s.watchAndEvict()
 	})
 }
