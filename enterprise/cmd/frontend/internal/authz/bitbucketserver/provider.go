@@ -236,7 +236,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.ExternalA
 // callers to decide whether to discard.
 //
 // API docs: https://docs.atlassian.com/bitbucket-server/rest/5.16.0/bitbucket-rest.html#idm8283203728
-func (p *Provider) FetchRepoPerms(ctx context.Context, repo *api.ExternalRepoSpec) ([]extsvc.ExternalAccountID, error) {
+func (p *Provider) FetchRepoPerms(ctx context.Context, repo *api.ExternalRepoSpec, metadata interface{}) ([]extsvc.ExternalAccountID, error) {
 	switch {
 	case repo == nil:
 		return nil, errors.New("no repo provided")

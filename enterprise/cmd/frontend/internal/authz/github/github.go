@@ -427,22 +427,22 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.ExternalA
 // callers to decide whether to discard.
 //
 // API docs: https://developer.github.com/v4/object/repositorycollaboratorconnection/
-func (p *Provider) FetchRepoPerms(ctx context.Context, repoSpec *api.ExternalRepoSpec) ([]extsvc.ExternalAccountID, error) {
-	if repoSpec == nil {
+func (p *Provider) FetchRepoPerms(ctx context.Context, sepc *api.ExternalRepoSpec, metadata interface{}) ([]extsvc.ExternalAccountID, error) {
+	if sepc == nil {
 		return nil, errors.New("no repository provided")
-	} else if !extsvc.IsHostOfRepo(p.codeHost, repoSpec) {
+	} else if !extsvc.IsHostOfRepo(p.codeHost, sepc) {
 		return nil, fmt.Errorf("not a code host of the repository: want %q but have %q",
-			repoSpec.ServiceID, p.codeHost.ServiceID)
+			sepc.ServiceID, p.codeHost.ServiceID)
 	}
 
-	repo, err := p.client.GetRepositoryByNodeID(ctx, "", repoSpec.ID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "get repository by node ID")
+	repo, ok := metadata.(*github.Repository)
+	if !ok {
+		return nil, errors.Errorf("metadata mismatch: want *github.Repository but got %T", metadata)
 	}
 
 	fields := strings.SplitN(repo.NameWithOwner, "/", 2)
 	if len(fields) != 2 {
-		return nil, errors.Errorf("malformed full name %q: missing '/'", repo.NameWithOwner)
+		return nil, errors.Errorf("malformed NameWithOwner %q: missing '/'", repo.NameWithOwner)
 	}
 	owner := fields[0]
 	repoName := fields[1]
@@ -452,6 +452,7 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repoSpec *api.ExternalRep
 	userIDs := make([]extsvc.ExternalAccountID, 0, 100)
 	hasNextPage := true
 	for page := 1; hasNextPage; page++ {
+		var err error
 		var users []*github.Collaborator
 		users, hasNextPage, err = p.client.ListRepositoryCollaborators(ctx, owner, repoName, page)
 		if err != nil {
