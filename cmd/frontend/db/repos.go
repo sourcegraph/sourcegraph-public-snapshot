@@ -256,7 +256,7 @@ type ReposListOptions struct {
 	// NoPrivate excludes private repositories from the list.
 	NoPrivate bool
 
-	// OnlyPrivate excludes public repositories from the list.
+	// OnlyPrivate excludes non-private repositories from the list.
 	OnlyPrivate bool
 
 	// OnlyRepoIDs skips fetching of RepoFields in each Repo.

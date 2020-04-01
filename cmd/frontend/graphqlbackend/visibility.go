@@ -3,7 +3,7 @@ package graphqlbackend
 type repoVisibility string
 
 const (
-	All     repoVisibility = "all"
+	Any     repoVisibility = "any"
 	Private repoVisibility = "private"
 	Public  repoVisibility = "public"
 )
@@ -15,6 +15,6 @@ func parseVisibility(s string) repoVisibility {
 	case "public":
 		return Public
 	default:
-		return All
+		return Any
 	}
 }

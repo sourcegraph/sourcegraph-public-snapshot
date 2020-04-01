@@ -141,8 +141,8 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
     },
 
     [FilterType.visibility]: {
-        discreteValues: ['all', 'private', 'public'],
-        description: 'Include results from repositories with the matching visibility (private, public, all).',
+        discreteValues: ['any', 'private', 'public'],
+        description: 'Include results from repositories with the matching visibility (private, public, any).',
         singular: true,
     },
 }

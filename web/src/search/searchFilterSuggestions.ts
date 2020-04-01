@@ -97,7 +97,7 @@ export const searchFilterSuggestions: SearchFilterSuggestions = {
             },
             {
                 value: 'visibility:',
-                description: 'all | public | private',
+                description: 'any | public | private',
             },
         ].map(
             assign({
@@ -137,8 +137,8 @@ export const searchFilterSuggestions: SearchFilterSuggestions = {
         ),
     },
     visibility: {
-        default: 'all',
-        values: [{ value: 'all' }, { value: 'private' }, { value: 'public' }].map(
+        default: 'any',
+        values: [{ value: 'any' }, { value: 'private' }, { value: 'public' }].map(
             assign({
                 type: FilterType.visibility,
             })
