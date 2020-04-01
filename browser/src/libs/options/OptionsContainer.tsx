@@ -1,3 +1,5 @@
+/* eslint rxjs/no-async-subscribe: warn */
+/* eslint @typescript-eslint/no-misused-promises: warn */
 import * as React from 'react'
 import { Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, share, switchMap, concatMap } from 'rxjs/operators'
@@ -78,7 +80,6 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
         )
 
         this.subscriptions.add(
-            // eslint-disable-next-line @typescript-eslint/no-misused-promises
             fetchingSite.subscribe(async res => {
                 let url = ''
 
