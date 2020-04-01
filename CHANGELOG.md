@@ -14,19 +14,13 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - Users and site administrators can now view a log of their actions/events in the user settings.
-- Distributed tracing is a powerful tool for investigating performance issues. The following changes
-  have been made with the goal of making it easier to use distributed tracing with Sourcegraph:
+- Distributed tracing is a powerful tool for investigating performance issues. The following changes have been made with the goal of making it easier to use distributed tracing with Sourcegraph:
 
-  - The site configuration field `"tracing.distributedTracing": { "sampling" }` allows a site admin to
-    control which requests generate tracing data.
+  - The site configuration field `"tracing.distributedTracing": { "sampling" }` allows a site admin to control which requests generate tracing data.
     - `"all"` will trace all requests.
-    - `"selective"` will trace all requests initiated from an end-user URL with
-      `?trace=1`. Non-end-user-initiated requests can set a HTTP header `X-Sourcegraph-Should-Trace: true`. This is the recommended setting, as `"all"` can generate large amounts of tracing data
-      that may cause network and memory resource contention in the Sourcegraph instance.
+    - `"selective"` will trace all requests initiated from an end-user URL with `?trace=1`. Non-end-user-initiated requests can set a HTTP header `X-Sourcegraph-Should-Trace: true`. This is the recommended setting, as `"all"` can generate large amounts of tracing data that may cause network and memory resource contention in the Sourcegraph instance.
     - `"none"` turns off tracing.
-  - Jaeger is now the officially supported distributed tracer. The following is the recommended site
-    configuration to connect Sourcegraph to a Jaeger agent (which must be deployed on the same host
-    and listening on the default ports):
+  - Jaeger is now the officially supported distributed tracer. The following is the recommended site configuration to connect Sourcegraph to a Jaeger agent (which must be deployed on the same host and listening on the default ports):
 
     ```
     "tracing.distributedTracing": {
@@ -35,14 +29,9 @@ All notable changes to Sourcegraph are documented in this file.
     }
     ```
 
-  - The site configuration field, `useJaeger`, is deprecated in favor of
-    `"tracing.distributedTracing": { "type": "jaeger" }`.
-  - The site configuration field `"experimentalFeatures": { "debug.log": { "opentracing" } }`
-    toggles debug logging that logs every call initiated from the opentracing (Jaeger) client.
-  - Support for configuring Lightstep as a distributed tracer is deprecated and will be removed in a
-    subsequent release. Because most Sourcegraph instances are deployed on-prem and Lightstep is
-    only available "in the Cloud", usage of Lightstep was very low or non-existent. If you are a
-    paying customer and would like us to maintain support, please email support@sourcegraph.com.
+  - The site configuration field, `useJaeger`, is deprecated in favor of `"tracing.distributedTracing": { "type": "jaeger" }`.
+  - The site configuration field `"experimentalFeatures": { "debug.log": { "opentracing" } }` toggles debug logging that logs every call initiated from the opentracing (Jaeger) client.
+  - Support for configuring Lightstep as a distributed tracer is deprecated and will be removed in a subsequent release. Because most Sourcegraph instances are deployed on-prem and Lightstep is only available "in the Cloud", usage of Lightstep was very low or non-existent. If you are a paying customer and would like us to maintain support, please email support@sourcegraph.com.
 
 ### Changed
 
