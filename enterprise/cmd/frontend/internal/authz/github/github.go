@@ -427,12 +427,12 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.ExternalA
 // callers to decide whether to discard.
 //
 // API docs: https://developer.github.com/v4/object/repositorycollaboratorconnection/
-func (p *Provider) FetchRepoPerms(ctx context.Context, sepc *api.ExternalRepoSpec, metadata interface{}) ([]extsvc.ExternalAccountID, error) {
-	if sepc == nil {
+func (p *Provider) FetchRepoPerms(ctx context.Context, spec *api.ExternalRepoSpec, metadata interface{}) ([]extsvc.ExternalAccountID, error) {
+	if spec == nil {
 		return nil, errors.New("no repository provided")
-	} else if !extsvc.IsHostOfRepo(p.codeHost, sepc) {
+	} else if !extsvc.IsHostOfRepo(p.codeHost, spec) {
 		return nil, fmt.Errorf("not a code host of the repository: want %q but have %q",
-			sepc.ServiceID, p.codeHost.ServiceID)
+			spec.ServiceID, p.codeHost.ServiceID)
 	}
 
 	repo, ok := metadata.(*github.Repository)
