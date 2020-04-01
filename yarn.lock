@@ -2544,17 +2544,18 @@
   resolved "https://registry.npmjs.org/@types/chai/-/chai-4.2.10.tgz#1122da40faabb81795580dc9f06c1e71e2ebbbe4"
   integrity sha512-TlWWgb21+0LdkuFqEqfmy7NEgfB/7Jjux15fWQAh3P93gbmXuwTM/vxEdzW89APIcI2BgKR48yjeAkdeH+4qvQ==
 
+"@types/chrome@0.0.103":
+  version "0.0.103"
+  resolved "https://registry.npmjs.org/@types/chrome/-/chrome-0.0.103.tgz#604f3d94ab4465cc8cde302c4916f4955eb7e8b6"
+  integrity sha512-s8So1IG1fIu2dg2MRV3k6W5OjlVaJriNXIxIWDHi+Rdz5dLeuzPKcWzkVlcaVL4gONfn44JKC0RhW+P0UohLfg==
+  dependencies:
+    "@types/filesystem" "*"
+    "@types/har-format" "*"
+
 "@types/chrome@0.0.86":
   version "0.0.86"
   resolved "https://registry.npmjs.org/@types/chrome/-/chrome-0.0.86.tgz#1026ef8e76db4fde1859cae858d73236fe670d69"
   integrity sha512-7ehebPf/5IR64SYdD2Vig0q0oUCNbWMQ29kASlNJaHVVtA5/J/DnrxnYVPCID70o7LgHdYsav6I4/XdqAxjTLQ==
-  dependencies:
-    "@types/filesystem" "*"
-
-"@types/chrome@0.0.99":
-  version "0.0.99"
-  resolved "https://registry.npmjs.org/@types/chrome/-/chrome-0.0.99.tgz#9453a5082a5291e78a0d24604b69796b16e9342c"
-  integrity sha512-la87+bjtZ6XstGqUdaLT5YfECSPw9Ex9iYQUOMGlBtgqI6FLGewGZtkByX5TcPBHM6XKp6RnR50Ytd+tI2m/6Q==
   dependencies:
     "@types/filesystem" "*"
 
@@ -2715,6 +2716,11 @@
     "@types/undertaker" "*"
     "@types/vinyl-fs" "*"
     chokidar "^2.1.2"
+
+"@types/har-format@*":
+  version "1.2.4"
+  resolved "https://registry.npmjs.org/@types/har-format/-/har-format-1.2.4.tgz#3275842095abb60d14b47fa798cc9ff708dab6d4"
+  integrity sha512-iUxzm1meBm3stxUMzRqgOVHjj4Kgpgu5w9fm4X7kPRfSgVRzythsucEN7/jtOo8SQzm+HfcxWWzJS0mJDH/3DQ==
 
 "@types/he@1.1.0":
   version "1.1.0"
