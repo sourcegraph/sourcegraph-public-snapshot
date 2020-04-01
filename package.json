@@ -164,7 +164,7 @@
     "identity-obj-proxy": "^3.0.0",
     "jest": "^25.1.0",
     "jsdom": "^15.2.1",
-    "json-schema-ref-parser": "^7.1.4",
+    "json-schema-ref-parser": "^8.0.0",
     "json-schema-to-typescript": "^6.1.3",
     "latest-version": "^5.1.0",
     "message-port-polyfill": "^0.2.0",
