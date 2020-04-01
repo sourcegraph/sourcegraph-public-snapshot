@@ -28,7 +28,7 @@ With periodic jobs, you should still receive precise code intelligence on non-in
 
 ## LSIF on GitHub
 
-You can use [GitHub Actions](https://help.github.com/en/github/automating-your-workflow-with-github-actions/about-github-actions) to (1) generate LSIF data and (2) upload it to a Sourcegraph instance, like [Sourcegraph.com](#uploading-lsif-data-to-sourcegraph.com).
+You can use [GitHub Actions](https://help.github.com/en/github/automating-your-workflow-with-github-actions/about-github-actions) to (1) generate LSIF data and (2) upload it to a Sourcegraph instance, like [Sourcegraph.com](#uploading-lsif-data-to-sourcegraph-com).
 
 1. Actions to **Generate LSIF index data** for each language:
 
