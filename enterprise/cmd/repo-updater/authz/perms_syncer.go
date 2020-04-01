@@ -182,7 +182,8 @@ func (s *PermsSyncer) fetchers() map[string]PermsFetcher {
 	return fetchers
 }
 
-// syncUserPerms processes permissions syncing request in user-centric way.
+// syncUserPerms processes permissions syncing request in user-centric way. When noPerms is true,
+// the method will use partial results to update permissions tables when error occurs.
 func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms bool) (err error) {
 	ctx, save := s.observe(ctx, "PermsSyncer.syncUserPerms", "")
 	defer save(requestTypeUser, userID, &err)
@@ -252,7 +253,8 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 
 // syncRepoPerms processes permissions syncing request in repository-centric way.
 // It discards requests that are made for non-private repositories based on the
-// value of "repo.private" column.
+// value of "repo.private" column. When noPerms is true, the method will use partial
+// results to update permissions tables when error occurs.
 func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPerms bool) (err error) {
 	ctx, save := s.observe(ctx, "PermsSyncer.syncRepoPerms", "")
 	defer save(requestTypeRepo, int32(repoID), &err)
