@@ -5,8 +5,9 @@
 This documentation is for **developing** Sourcegraph's observability.
 
 - What type of observability should you add?
-- How to add tracing
--
+- How to add tracing?
+- How to add Prometheus metrics?
+- How to add Grafana dashboards?
 
 ## What type of observability should you add?
 
