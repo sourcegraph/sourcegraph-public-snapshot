@@ -1,9 +1,9 @@
-# keep this in sync with docker-images/prometheus/Dockerfile
-FROM prom/prometheus:v2.15.2@sha256:35c52c0c2b76433bbfc44a5a7abc294c2f032ed80250be02b441db5dd91b203a AS prometheus
-
 FROM alpine:3.10@sha256:e4355b66995c96b4b468159fc5c7e3540fcef961189ca13fee877798649f531a AS precise-code-intel-builder
 
-RUN apk add --no-cache nodejs-current=12.4.0-r0 nodejs-npm=10.19.0-r0
+RUN apk add --no-cache \
+    nodejs-current=12.4.0-r0 \
+    nodejs-npm=10.19.0-r0
+
 RUN npm install -g yarn@1.17.3
 
 COPY precise-code-intel/package.json precise-code-intel/yarn.lock precise-code-intel/tsconfig.json /precise-code-intel/
@@ -22,31 +22,22 @@ LABEL org.opencontainers.image.created=${DATE}
 LABEL org.opencontainers.image.version=${VERSION}
 LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
 
-# environment variables used by startup
-ENV PROMETHEUS_STORAGE_DIR=/prometheus
-ENV PROMETHEUS_CONFIGURATION_DIR=/prometheus_config
-
 # hadolint ignore=DL3018
 RUN apk update && apk add --no-cache \
-    tini nodejs-current=12.4.0-r0
+    nodejs-current=12.4.0-r0 \
+    tini
 
-USER root
-RUN mkdir -p $PROMETHEUS_STORAGE_DIR && chown -R sourcegraph:sourcegraph $PROMETHEUS_STORAGE_DIR
-RUN mkdir -p $PROMETHEUS_CONFIGURATION_DIR && chown -R sourcegraph:sourcegraph $PROMETHEUS_CONFIGURATION_DIR
 # Ensures that a directory with the correct permissions exist in the image. Without this, in Docker Compose
 # deployments the Docker daemon would first create the volume directory and it would be owned by `root` and
 # then one of the precise-code-intel processes would be unable to create the `/lsif-storage` because it
 # would  be trying to do so in a directory owned by `root` as the user `sourcegraph`. And no, this is not
 # dumb, this is just Docker: https://github.com/docker/compose/issues/3270#issuecomment-363478501.
+USER root
 RUN mkdir -p /lsif-storage && chown -R sourcegraph:sourcegraph /lsif-storage
 USER sourcegraph
 
 COPY --from=precise-code-intel-builder /precise-code-intel /precise-code-intel
-COPY ./precise-code-intel/precise-code-intel /usr/local/bin/precise-code-intel
-COPY --from=prometheus /bin/prometheus /bin/prometheus
-COPY ./precise-code-intel/prometheus.yml $PROMETHEUS_CONFIGURATION_DIR/prometheus.yml
 
-# http api server, bundle manager server, (first) worker metrics server, prometheus
-EXPOSE 3186 3187 3188 9090
-ENV GO111MODULES=on LANG=en_US.utf8 LOG_LEVEL=debug
-ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/precise-code-intel"]
+EXPOSE 3186
+ENV LOG_LEVEL=debug
+ENTRYPOINT ["/sbin/tini", "--", "node", "/precise-code-intel/out/bundle-manager/manager.js"]

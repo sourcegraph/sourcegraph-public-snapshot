@@ -185,6 +185,42 @@ func ScanParameter(parameter []byte) Parameter {
 	return Parameter{Field: "", Value: string(parameter)}
 }
 
+// ParseSearchPatternWithParens attempts to parse a search pattern containing
+// parentheses at the current position. There are cases where we want to
+// interpret parentheses as part of a search pattern, rather than an and/or
+// expression group. For example, In the regex foo(a|b)bar, we want to preserve
+// parentheses as part of the pattern.
+func (p *parser) ParseSearchPatternWithParens() (Parameter, bool) {
+	start := p.pos
+	balanced := 0
+	for {
+		if p.expect(`\ `) || p.expect(`\(`) || p.expect(`\)`) {
+			continue
+		}
+		if p.expect(LPAREN) {
+			balanced += 1
+			continue
+		}
+		if p.expect(RPAREN) {
+			balanced -= 1
+			continue
+		}
+		if p.done() {
+			break
+		}
+		if isSpace(p.buf[p.pos]) {
+			break
+		}
+		p.pos++
+	}
+	if balanced != 0 {
+		// Trying to parse the pattern is unbalanced, perhaps it is an and/or expression.
+		p.pos = start // Backtrack.
+		return Parameter{Field: "", Value: ""}, false
+	}
+	return ScanParameter(p.buf[start:p.pos]), true
+}
+
 // ParseParameter returns valid leaf node values for AND/OR queries, taking into
 // account escape sequences for special syntax: whitespace and parentheses.
 func (p *parser) ParseParameter() Parameter {
@@ -304,13 +340,21 @@ loop:
 			break loop
 		}
 		switch {
-		case p.expect(LPAREN):
-			p.balanced++
-			result, err := p.parseOr()
-			if err != nil {
-				return nil, err
+		case p.match(LPAREN):
+			// First try parse a parameter as a search pattern containing parens.
+			if parameter, ok := p.ParseSearchPatternWithParens(); ok {
+				nodes = append(nodes, parameter)
+			} else {
+				// If the above failed, we treat this paren
+				// group as part of an and/or expression.
+				_ = p.expect(LPAREN) // Guaranteed to succeed.
+				p.balanced++
+				result, err := p.parseOr()
+				if err != nil {
+					return nil, err
+				}
+				nodes = append(nodes, result...)
 			}
-			nodes = append(nodes, result...)
 		case p.expect(RPAREN):
 			p.balanced--
 			if len(nodes) == 0 {
@@ -322,8 +366,13 @@ loop:
 			// Caller advances.
 			break loop
 		default:
-			parameter := p.ParseParameter()
-			nodes = append(nodes, parameter)
+			// First try parse a parameter as a search pattern containing parens.
+			if parameter, ok := p.ParseSearchPatternWithParens(); ok {
+				nodes = append(nodes, parameter)
+			} else {
+				parameter := p.ParseParameter()
+				nodes = append(nodes, parameter)
+			}
 		}
 	}
 	return partitionParameters(nodes), nil

@@ -377,7 +377,7 @@ func (m mockAuthnProvider) Refresh(ctx context.Context) error {
 	panic("should not be called")
 }
 
-func acct(t *testing.T, userID int32, serviceType, serviceID, accountID, oauthTok string) *extsvc.ExternalAccount {
+func acct(t *testing.T, userID int32, serviceType, serviceID, accountID, oauthTok string) *extsvc.Account {
 	var data extsvc.ExternalAccountData
 
 	var authData *oauth2.Token
@@ -396,9 +396,9 @@ func acct(t *testing.T, userID int32, serviceType, serviceID, accountID, oauthTo
 		}, authData)
 	}
 
-	return &extsvc.ExternalAccount{
+	return &extsvc.Account{
 		UserID: userID,
-		ExternalAccountSpec: extsvc.ExternalAccountSpec{
+		AccountSpec: extsvc.AccountSpec{
 			ServiceType: serviceType,
 			ServiceID:   serviceID,
 			AccountID:   accountID,

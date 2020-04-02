@@ -3,7 +3,11 @@ import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import * as React from 'react'
 import { defer, Subject, Subscription } from 'rxjs'
 import { catchError, delay, distinctUntilChanged, map, retryWhen, switchMap, tap } from 'rxjs/operators'
-import { CloneInProgressError, ECLONEINPROGESS, EREVNOTFOUND } from '../../../shared/src/backend/errors'
+import {
+    CloneInProgressError,
+    CLONE_IN_PROGRESS_ERROR_NAME,
+    REV_NOT_FOUND_ERROR_NAME,
+} from '../../../shared/src/backend/errors'
 import { RepoQuestionIcon } from '../../../shared/src/components/icons'
 import { displayRepoName } from '../../../shared/src/components/RepoFileLink'
 import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
@@ -71,8 +75,8 @@ export class RepositoryGitDataContainer extends React.PureComponent<Props, State
                             retryWhen(errors =>
                                 errors.pipe(
                                     tap(error => {
-                                        switch (error.code) {
-                                            case ECLONEINPROGESS:
+                                        switch (error.name) {
+                                            case CLONE_IN_PROGRESS_ERROR_NAME:
                                                 // Display cloning screen to the user and retry
                                                 this.setState({ gitDataPresentOrError: error })
                                                 return
@@ -116,15 +120,15 @@ export class RepositoryGitDataContainer extends React.PureComponent<Props, State
 
         if (isErrorLike(this.state.gitDataPresentOrError)) {
             // Show error page
-            switch (this.state.gitDataPresentOrError.code) {
-                case ECLONEINPROGESS:
+            switch (this.state.gitDataPresentOrError.name) {
+                case CLONE_IN_PROGRESS_ERROR_NAME:
                     return (
                         <RepositoryCloningInProgressPage
                             repoName={this.props.repoName}
                             progress={(this.state.gitDataPresentOrError as CloneInProgressError).progress}
                         />
                     )
-                case EREVNOTFOUND:
+                case REV_NOT_FOUND_ERROR_NAME:
                     return <EmptyRepositoryPage />
                 default:
                     return (

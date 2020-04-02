@@ -169,13 +169,13 @@ describe('HoverOverlay', () => {
 
     test('actions error', () => {
         expect(
-            renderShallow(<HoverOverlay {...commonProps} actionsOrError={{ message: 'm', code: 'c' }} />)
+            renderShallow(<HoverOverlay {...commonProps} actionsOrError={{ message: 'm', name: 'c' }} />)
         ).toMatchSnapshot()
     })
 
     test('hover error', () => {
         expect(
-            renderShallow(<HoverOverlay {...commonProps} hoverOrError={{ message: 'm', code: 'c' }} />)
+            renderShallow(<HoverOverlay {...commonProps} hoverOrError={{ message: 'm', name: 'c' }} />)
         ).toMatchSnapshot()
     })
 
@@ -184,8 +184,8 @@ describe('HoverOverlay', () => {
             renderShallow(
                 <HoverOverlay
                     {...commonProps}
-                    actionsOrError={{ message: 'm1', code: 'c1' }}
-                    hoverOrError={{ message: 'm2', code: 'c2' }}
+                    actionsOrError={{ message: 'm1', name: 'c1' }}
+                    hoverOrError={{ message: 'm2', name: 'c2' }}
                 />
             )
         ).toMatchSnapshot()
@@ -196,7 +196,7 @@ describe('HoverOverlay', () => {
             renderShallow(
                 <HoverOverlay
                     {...commonProps}
-                    actionsOrError={{ message: 'm', code: 'c' }}
+                    actionsOrError={{ message: 'm', name: 'c' }}
                     hoverOrError={{ contents: [{ kind: MarkupKind.Markdown, value: 'v' }] }}
                 />
             )
@@ -209,7 +209,7 @@ describe('HoverOverlay', () => {
                 <HoverOverlay
                     {...commonProps}
                     actionsOrError={[{ action: { id: 'a', command: 'c' } }]}
-                    hoverOrError={{ message: 'm', code: 'c' }}
+                    hoverOrError={{ message: 'm', name: 'c' }}
                 />
             )
         ).toMatchSnapshot()

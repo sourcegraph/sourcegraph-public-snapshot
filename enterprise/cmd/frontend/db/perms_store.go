@@ -458,12 +458,12 @@ AND bind_id = %s
 // This method starts its own transaction for update consistency if the caller hasn't started one already.
 //
 // Example input:
-//  &ExternalAccounts{
+//  &extsvc.Accounts{
 //      ServiceType: "sourcegraph",
 //      ServiceID:   "https://sourcegraph.com/",
 //      AccountIDs:  []string{"alice", "bob"},
 //  }
-//  &RepoPermissions{
+//  &authz.RepoPermissions{
 //      RepoID: 1,
 //      Perm: authz.Read,
 //  }
@@ -479,7 +479,7 @@ AND bind_id = %s
 //   repo_id | permission |   user_ids   | updated_at
 //  ---------+------------+--------------+------------
 //         1 |       read | bitmap{1, 2} | <DateTime>
-func (s *PermsStore) SetRepoPendingPermissions(ctx context.Context, accounts *extsvc.ExternalAccounts, p *authz.RepoPermissions) (err error) {
+func (s *PermsStore) SetRepoPendingPermissions(ctx context.Context, accounts *extsvc.Accounts, p *authz.RepoPermissions) (err error) {
 	if Mocks.Perms.SetRepoPendingPermissions != nil {
 		return Mocks.Perms.SetRepoPendingPermissions(ctx, accounts, p)
 	}
@@ -624,7 +624,7 @@ func (s *PermsStore) loadUserPendingPermissionsIDs(ctx context.Context, q *sqlf.
 }
 
 func (s *PermsStore) batchLoadUserPendingPermissions(ctx context.Context, q *sqlf.Query) (
-	idToSpecs map[int32]extsvc.ExternalAccountSpec,
+	idToSpecs map[int32]extsvc.AccountSpec,
 	loaded map[int32]*roaring.Bitmap,
 	err error,
 ) {
@@ -642,11 +642,11 @@ func (s *PermsStore) batchLoadUserPendingPermissions(ctx context.Context, q *sql
 	}
 	defer rows.Close()
 
-	idToSpecs = make(map[int32]extsvc.ExternalAccountSpec)
+	idToSpecs = make(map[int32]extsvc.AccountSpec)
 	loaded = make(map[int32]*roaring.Bitmap)
 	for rows.Next() {
 		var id int32
-		var spec extsvc.ExternalAccountSpec
+		var spec extsvc.AccountSpec
 		var ids []byte
 		if err = rows.Scan(&id, &spec.ServiceType, &spec.ServiceID, &spec.AccountID, &ids); err != nil {
 			return nil, nil, err
@@ -672,7 +672,7 @@ func (s *PermsStore) batchLoadUserPendingPermissions(ctx context.Context, q *sql
 }
 
 func insertUserPendingPermissionsBatchQuery(
-	accounts *extsvc.ExternalAccounts,
+	accounts *extsvc.Accounts,
 	p *authz.RepoPermissions,
 ) (*sqlf.Query, error) {
 	const format = `
@@ -1099,7 +1099,7 @@ func (s *PermsStore) DeleteAllUserPermissions(ctx context.Context, userID int32)
 
 // DeleteAllUserPendingPermissions deletes all rows with given bind IDs from the "user_pending_permissions" table.
 // It accepts list of bind IDs because a user has multiple bind IDs, e.g. username and email addresses.
-func (s *PermsStore) DeleteAllUserPendingPermissions(ctx context.Context, accounts *extsvc.ExternalAccounts) (err error) {
+func (s *PermsStore) DeleteAllUserPendingPermissions(ctx context.Context, accounts *extsvc.Accounts) (err error) {
 	ctx, save := s.observe(ctx, "DeleteAllUserPendingPermissions", "")
 	defer func() { save(&err, accounts.TracingFields()...) }()
 
@@ -1255,7 +1255,7 @@ func (s *PermsStore) batchLoadIDs(ctx context.Context, q *sqlf.Query) (map[int32
 }
 
 // ListExternalAccounts returns all external accounts that are associated with given user.
-func (s *PermsStore) ListExternalAccounts(ctx context.Context, userID int32) (accounts []*extsvc.ExternalAccount, err error) {
+func (s *PermsStore) ListExternalAccounts(ctx context.Context, userID int32) (accounts []*extsvc.Account, err error) {
 	if Mocks.Perms.ListExternalAccounts != nil {
 		return Mocks.Perms.ListExternalAccounts(ctx, userID)
 	}
@@ -1280,7 +1280,7 @@ ORDER BY id ASC
 	defer rows.Close()
 
 	for rows.Next() {
-		var acct extsvc.ExternalAccount
+		var acct extsvc.Account
 		if err := rows.Scan(
 			&acct.ID, &acct.UserID,
 			&acct.ServiceType, &acct.ServiceID, &acct.ClientID, &acct.AccountID,
@@ -1302,7 +1302,7 @@ ORDER BY id ASC
 // The returned set has mapping relation as "account ID -> user ID". The number of results
 // could be less than the candidate list due to some users are not associated with any external
 // account.
-func (s *PermsStore) GetUserIDsByExternalAccounts(ctx context.Context, accounts *extsvc.ExternalAccounts) (_ map[string]int32, err error) {
+func (s *PermsStore) GetUserIDsByExternalAccounts(ctx context.Context, accounts *extsvc.Accounts) (_ map[string]int32, err error) {
 	if Mocks.Perms.GetUserIDsByExternalAccounts != nil {
 		return Mocks.Perms.GetUserIDsByExternalAccounts(ctx, accounts)
 	}

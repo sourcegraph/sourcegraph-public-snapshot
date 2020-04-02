@@ -9,10 +9,9 @@ export interface ExtDocumentsAPI extends ProxyValue {
     $acceptDocumentData(modelUpdates: readonly TextModelUpdate[]): void
 }
 
-const EDOCUMENTNOTFOUND = 'DocumentNotFoundError'
+const DOCUMENT_NOT_FOUND_ERROR_NAME = 'DocumentNotFoundError'
 class DocumentNotFoundError extends Error {
-    public readonly name = EDOCUMENTNOTFOUND
-    public readonly code = EDOCUMENTNOTFOUND
+    public readonly name = DOCUMENT_NOT_FOUND_ERROR_NAME
     constructor(resource: string) {
         super(`document not found: ${resource}`)
     }

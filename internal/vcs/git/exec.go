@@ -257,13 +257,10 @@ func (c *commandRetryer) run() error {
 	// revision we want to ensure exists, etc.
 	tryAgain := func(err error) bool {
 		haveURL := c.cmd.Repo.URL != "" || c.remoteURLFunc != nil
-		if !haveURL || c.cmd.EnsureRevision == "" {
-			// We don't have a repository URL or know the revision in question,
-			// so we cannot retry the request.
-			return false
-		}
 		if vcs.IsRepoNotExist(err) {
-			return true // The repository doesn't exist yet, so retry after pulling.
+			// The repository doesn't exist yet, so retry after pulling if we
+			// know how to clone.
+			return haveURL
 		}
 		if gitserver.IsRevisionNotFound(err) {
 			// If we didn't find HEAD, the repo is empty and there is no reason to retry.
@@ -277,7 +274,7 @@ func (c *commandRetryer) run() error {
 	}
 
 	// Determine the remote URL, if needed, then retry the command.
-	if c.cmd.Repo.URL == "" {
+	if c.cmd.Repo.URL == "" && c.remoteURLFunc != nil {
 		// We do modify c.cmd here because the caller may want to reuse this
 		// information.
 		c.cmd.Repo.URL, err = c.remoteURLFunc()

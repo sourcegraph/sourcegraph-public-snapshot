@@ -19,7 +19,9 @@ var allDockerImages = []string{
 	"searcher",
 	"server",
 	"symbols",
-	"precise-code-intel",
+	"precise-code-intel/api-server",
+	"precise-code-intel/bundle-manager",
+	"precise-code-intel/worker",
 }
 
 // Verifies the docs formatting and builds the `docsite` command.
@@ -271,7 +273,7 @@ func addCanidateDockerImage(c Config, app string) func(*bk.Pipeline) {
 			return
 		}
 
-		baseImage := "sourcegraph/" + app
+		baseImage := "sourcegraph/" + strings.ReplaceAll(app, "/", "-")
 
 		cmds := []bk.StepOpt{
 			bk.Cmd(fmt.Sprintf(`echo "Building candidate %s image..."`, app)),
@@ -296,24 +298,7 @@ func addCanidateDockerImage(c Config, app string) func(*bk.Pipeline) {
 
 		gcrImage := fmt.Sprintf("us.gcr.io/sourcegraph-dev/%s", strings.TrimPrefix(baseImage, "sourcegraph/"))
 
-		getBuildSteps := func() []bk.StepOpt {
-			buildScriptByApp := map[string][]bk.StepOpt{
-				"symbols": {
-					bk.Env("BUILD_TYPE", "dist"),
-					bk.Cmd("./cmd/symbols/build.sh buildSymbolsDockerImage"),
-				},
-			}
-			if buildScript, ok := buildScriptByApp[app]; ok {
-				return buildScript
-			}
-			return []bk.StepOpt{
-				bk.Cmd(cmdDir + "/build.sh"),
-			}
-		}
-
-		cmds = append(cmds,
-			getBuildSteps()...,
-		)
+		cmds = append(cmds, bk.Cmd(cmdDir+"/build.sh"))
 
 		tag := candiateImageTag(c)
 		cmds = append(cmds,
@@ -329,7 +314,7 @@ func addCanidateDockerImage(c Config, app string) func(*bk.Pipeline) {
 // after the e2e tests pass.
 func addFinalDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
-		baseImage := "sourcegraph/" + app
+		baseImage := "sourcegraph/" + strings.ReplaceAll(app, "/", "-")
 
 		cmds := []bk.StepOpt{
 			bk.Cmd(fmt.Sprintf(`echo "Tagging final %s image..."`, app)),
