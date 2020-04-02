@@ -296,7 +296,7 @@ func testProviderFetchUserPerms(f *fixtures, cli *bitbucketserver.Client) func(*
 			{
 				name: "not a code host of the account",
 				acct: &extsvc.Account{
-					ExternalAccountSpec: extsvc.ExternalAccountSpec{
+					AccountSpec: extsvc.AccountSpec{
 						ServiceType: "github",
 						ServiceID:   "https://github.com",
 						AccountID:   "john",
@@ -310,7 +310,7 @@ func testProviderFetchUserPerms(f *fixtures, cli *bitbucketserver.Client) func(*
 			{
 				name: "bad account data",
 				acct: &extsvc.Account{
-					ExternalAccountSpec: extsvc.ExternalAccountSpec{
+					AccountSpec: extsvc.AccountSpec{
 						ServiceType: h.ServiceType,
 						ServiceID:   h.ServiceID,
 						AccountID:   "john",
@@ -617,7 +617,7 @@ func (h codeHost) externalAccount(userID int32, u *bitbucketserver.User) *extsvc
 	bs := marshalJSON(u)
 	return &extsvc.Account{
 		UserID: userID,
-		ExternalAccountSpec: extsvc.ExternalAccountSpec{
+		AccountSpec: extsvc.AccountSpec{
 			ServiceType: h.ServiceType,
 			ServiceID:   h.ServiceID,
 			AccountID:   strconv.Itoa(u.ID),

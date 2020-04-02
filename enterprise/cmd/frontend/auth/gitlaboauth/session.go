@@ -49,7 +49,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 			DisplayName:     gUser.Name,
 			AvatarURL:       gUser.AvatarURL,
 		},
-		ExternalAccount: extsvc.ExternalAccountSpec{
+		ExternalAccount: extsvc.AccountSpec{
 			ServiceType: s.ServiceType,
 			ServiceID:   s.ServiceID,
 			ClientID:    s.clientID,

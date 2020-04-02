@@ -13,16 +13,16 @@ import (
 type Account struct {
 	ID                  int32
 	UserID              int32
-	ExternalAccountSpec // ServiceType, ServiceID, ClientID, AccountID
+	AccountSpec         // ServiceType, ServiceID, ClientID, AccountID
 	ExternalAccountData // AuthData, AccountData
 	CreatedAt           time.Time
 	UpdatedAt           time.Time
 }
 
-// ExternalAccountSpec specifies a user external account by its external identifier (i.e., by
-// the identifier provided by the account's owner service), instead of by our database's serial
+// AccountSpec specifies a user external account by its external identifier (i.e., by the
+// identifier provided by the account's owner service), instead of by our database's serial
 // ID. See the GraphQL API's corresponding fields in "ExternalAccount" for documentation.
-type ExternalAccountSpec struct {
+type AccountSpec struct {
 	ServiceType string
 	ServiceID   string
 	ClientID    string
@@ -44,8 +44,8 @@ type Repository struct {
 }
 
 // ExternalAccounts contains a list of accounts that belong to the same external service.
-// All fields have a same meaning to ExternalAccountSpec. See GraphQL API's corresponding
-// fields in "ExternalAccount" for documentation.
+// All fields have a same meaning to AccountSpec. See GraphQL API's corresponding fields
+// in "ExternalAccount" for documentation.
 type ExternalAccounts struct {
 	ServiceType string
 	ServiceID   string
