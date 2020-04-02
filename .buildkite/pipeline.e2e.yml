@@ -18,8 +18,6 @@ steps:
   env:
     PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
   timeout_in_minutes: 10
-  agents:
-    queue: "sidecar"
   label: ':docker:'
 
 - wait
@@ -29,8 +27,6 @@ steps:
     - yes | gcloud auth configure-docker
     - ./dev/ci/e2e.sh
   timeout_in_minutes: 10
-  agents:
-    queue: "sidecar"
   label: ':chromium:'
 
 - wait
@@ -38,6 +34,4 @@ steps:
 - command: docker image rm -f "$IMAGE"
   timeout_in_minutes: 10
   label: ':sparkles:'
-  agents:
-    queue: "sidecar"
   soft_fail: true
