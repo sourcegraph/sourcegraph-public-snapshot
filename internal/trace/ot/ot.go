@@ -11,6 +11,7 @@ import (
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go"
+	"go.uber.org/atomic"
 )
 
 type tracePolicy string
@@ -27,7 +28,15 @@ const (
 	TraceAll = "all"
 )
 
-var TracePolicy = TraceNone
+var trPolicy = atomic.NewString(string(TraceNone))
+
+func SetTracePolicy(newTracePolicy tracePolicy) {
+	trPolicy.Store(string(newTracePolicy))
+}
+
+func GetTracePolicy() tracePolicy {
+	return tracePolicy(trPolicy.Load())
+}
 
 // Middleware wraps the handler with the following:
 //
@@ -48,7 +57,7 @@ func MiddlewareWithTracer(tr opentracing.Tracer, h http.Handler, opts ...nethttp
 		}),
 	}, opts...)...)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch TracePolicy {
+		switch GetTracePolicy() {
 		case TraceSelective:
 			traceHeaderIsTrue, _ := strconv.ParseBool(r.Header.Get(traceHeader))
 			nethttpMiddleware.ServeHTTP(w, r.WithContext(WithShouldTrace(r.Context(), traceHeaderIsTrue)))

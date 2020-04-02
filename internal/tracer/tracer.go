@@ -193,10 +193,10 @@ func initTracer(opts *Options) {
 		} else if siteConfig.UseJaeger {
 			samplingStrategy = ot.TraceAll
 		}
-		if ot.TracePolicy != samplingStrategy && shouldLog {
-			log15.Info("opentracing: TracePolicy", "oldValue", ot.TracePolicy, "newValue", samplingStrategy)
+		if tracePolicy := ot.GetTracePolicy(); tracePolicy != samplingStrategy && shouldLog {
+			log15.Info("opentracing: TracePolicy", "oldValue", tracePolicy, "newValue", samplingStrategy)
 		}
-		ot.TracePolicy = samplingStrategy
+		ot.SetTracePolicy(samplingStrategy)
 
 		// Set whether Jaeger should be enabled
 		jaegerShouldBeEnabled := false
