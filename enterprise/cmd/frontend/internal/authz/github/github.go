@@ -438,7 +438,7 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) 
 	nameWithOwner := strings.TrimPrefix(repo.URI, p.codeHost.BaseURL.Hostname())
 	fields := strings.SplitN(nameWithOwner, "/", 2)
 	if len(fields) != 2 {
-		return nil, errors.Errorf("malformed NameWithOwner %q: missing '/'", nameWithOwner)
+		return nil, errors.Errorf("malformed nameWithOwner %q: missing '/'", nameWithOwner)
 	}
 	owner := fields[0]
 	repoName := fields[1]
