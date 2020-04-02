@@ -3,7 +3,7 @@ import { Selection } from '@sourcegraph/extension-api-types'
 import { Observable, of, zip, OperatorFunction } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
 import { Omit } from 'utility-types'
-import { ERPRIVATEREPOPUBLICSOURCEGRAPHCOM } from '../../../../shared/src/backend/errors'
+import { PRIVATE_REPO_PUBLIC_SOURCEGRAPH_COM_ERROR_NAME } from '../../../../shared/src/backend/errors'
 import { PlatformContext } from '../../../../shared/src/platform/context'
 import { isErrorLike } from '../../../../shared/src/util/errors'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../shared/src/util/url'
@@ -133,7 +133,7 @@ export const fetchFileContents = (
             )
         }),
         catchError((err: any) => {
-            if (isErrorLike(err) && err.code === ERPRIVATEREPOPUBLICSOURCEGRAPHCOM) {
+            if (isErrorLike(err) && err.name === PRIVATE_REPO_PUBLIC_SOURCEGRAPH_COM_ERROR_NAME) {
                 return [info]
             }
             throw err

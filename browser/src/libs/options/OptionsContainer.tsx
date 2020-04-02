@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, share, switchMap, concatMap } from 'rxjs/operators'
-import { ERAUTHREQUIRED } from '../../../../shared/src/backend/errors'
+import { AUTH_REQUIRED_ERROR_NAME } from '../../../../shared/src/backend/errors'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { getExtensionVersion } from '../../shared/util/context'
 import { OptionsMenu, OptionsMenuProps } from './OptionsMenu'
@@ -87,7 +87,9 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
                     this.setState({
                         status: 'error',
                         connectionError:
-                            res.code === ERAUTHREQUIRED ? ConnectionErrors.AuthError : ConnectionErrors.UnableToConnect,
+                            res.name === AUTH_REQUIRED_ERROR_NAME
+                                ? ConnectionErrors.AuthError
+                                : ConnectionErrors.UnableToConnect,
                     })
                     url = this.state.sourcegraphURL
                 } else {
