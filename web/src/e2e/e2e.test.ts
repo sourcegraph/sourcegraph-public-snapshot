@@ -44,6 +44,7 @@ describe('e2e test suite', () => {
             'sourcegraph/appdash',
             'sourcegraph/sourcegraph-typescript',
             'sourcegraph-testing/automation-e2e-test',
+            'sourcegraph/e2e-test-private-repository',
         ]
         await driver.ensureLoggedIn({ username: 'test', password: config.testUserPassword, email: 'test@test.com' })
         await driver.resetUserSettings()
@@ -360,6 +361,14 @@ describe('e2e test suite', () => {
             await driver.page.waitForSelector('a[href="/github.com/gorilla/mux"]', { visible: true })
             // Flaky https://github.com/sourcegraph/sourcegraph/issues/2704
             // await percySnapshot(page, 'Search results file')
+        })
+
+        test('Search visibility:private|public', async () => {
+            await driver.page.goto(sourcegraphBaseUrl + '/search?q=type:repo+visibility:private')
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 1)
+
+            await driver.page.goto(sourcegraphBaseUrl + '/search?q=type:repo+visibility:public')
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 1)
         })
 
         test('Search results code', async () => {
