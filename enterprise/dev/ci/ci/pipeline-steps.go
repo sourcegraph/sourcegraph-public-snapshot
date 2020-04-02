@@ -314,7 +314,7 @@ func addCanidateDockerImage(c Config, app string) func(*bk.Pipeline) {
 // after the e2e tests pass.
 func addFinalDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
-		baseImage := "sourcegraph/" + app
+		baseImage := "sourcegraph/" + strings.ReplaceAll(app, "/", "-")
 
 		cmds := []bk.StepOpt{
 			bk.Cmd(fmt.Sprintf(`echo "Tagging final %s image..."`, app)),
