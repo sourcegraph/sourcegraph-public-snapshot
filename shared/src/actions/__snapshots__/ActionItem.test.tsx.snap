@@ -12,10 +12,9 @@ exports[`ActionItem actionItem variant 1`] = `
   tabIndex={0}
 >
   <img
-    className="icon-inline"
     src="u"
   />
-   
+   
   g: 
   t
    
@@ -34,10 +33,9 @@ exports[`ActionItem non-actionItem variant 1`] = `
   tabIndex={0}
 >
   <img
-    className="icon-inline"
     src="u"
   />
-   
+   
   g: 
   t
    
@@ -55,6 +53,7 @@ exports[`ActionItem non-pressed actionItem 1`] = `
   role="button"
   tabIndex={0}
 >
+   
   b
    
 </a>
@@ -66,10 +65,9 @@ exports[`ActionItem noop command 1`] = `
   data-tooltip="d"
 >
   <img
-    className="icon-inline"
     src="u"
   />
-   
+   
   g: 
   t
 </span>
@@ -86,6 +84,7 @@ exports[`ActionItem pressed toggle actionItem 1`] = `
   role="button"
   tabIndex={0}
 >
+   
   b
    
 </a>
@@ -99,6 +98,7 @@ exports[`ActionItem render as link for "open" command 1`] = `
   onKeyPress={[Function]}
   tabIndex={0}
 >
+   
   
   t
    
@@ -113,6 +113,7 @@ exports[`ActionItem render as link with icon for "open" command with different o
   onKeyPress={[Function]}
   tabIndex={0}
 >
+   
   
   t
    
@@ -132,10 +133,9 @@ exports[`ActionItem run command 1`] = `
   tabIndex={0}
 >
   <img
-    className="icon-inline"
     src="u"
   />
-   
+   
   g: 
   t
    
@@ -154,10 +154,9 @@ exports[`ActionItem run command 2`] = `
   tabIndex={0}
 >
   <img
-    className="icon-inline"
     src="u"
   />
-   
+   
   g: 
   t
    
@@ -176,10 +175,9 @@ exports[`ActionItem run command with error 1`] = `
   tabIndex={0}
 >
   <img
-    className="icon-inline"
     src="u"
   />
-   
+   
   g: 
   t
    
@@ -198,10 +196,9 @@ exports[`ActionItem run command with error with showInlineError 1`] = `
   tabIndex={0}
 >
   <img
-    className="icon-inline"
     src="u"
   />
-   
+   
   g: 
   t
    
@@ -220,10 +217,9 @@ exports[`ActionItem run command with showLoadingSpinnerDuringExecution 1`] = `
   tabIndex={0}
 >
   <img
-    className="icon-inline"
     src="u"
   />
-   
+   
   g: 
   t
    
@@ -249,10 +245,9 @@ exports[`ActionItem run command with showLoadingSpinnerDuringExecution 2`] = `
   tabIndex={0}
 >
   <img
-    className="icon-inline"
     src="u"
   />
-   
+   
   g: 
   t
    
