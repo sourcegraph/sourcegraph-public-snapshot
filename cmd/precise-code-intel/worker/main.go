@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	workers = env.Get("NUM_WORKERS", "1", "the number of worker instances to run (defaults to one)")
+	workers = env.Get("NUM_WORKERS", "2", "the number of worker instances to run (defaults to one)")
 
 	// Set in docker image
 	prometheusStorageDir       = os.Getenv("PROMETHEUS_STORAGE_DIR")
