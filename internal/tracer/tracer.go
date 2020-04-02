@@ -173,41 +173,29 @@ func initTracer(opts *Options) {
 	// Watch loop
 	conf.Watch(func() {
 		siteConfig := conf.Get()
-		shouldLog := siteConfig.ExperimentalFeatures != nil && siteConfig.ExperimentalFeatures.DebugLog != nil && siteConfig.ExperimentalFeatures.DebugLog.Opentracing
 
 		// Set sampling strategy
 		samplingStrategy := ot.TraceNone
-		if tracingConfig := siteConfig.TracingDistributedTracing; tracingConfig != nil {
-			if jaegerConfig := tracingConfig.Jaeger; jaegerConfig != nil {
-				switch jaegerConfig.Sampling {
-				case "all":
-					samplingStrategy = ot.TraceAll
-				case "none":
-					samplingStrategy = ot.TraceNone
-				case "selective":
-					fallthrough
-				default:
-					samplingStrategy = ot.TraceSelective
-				}
+		shouldLog := false
+		if tracingConfig := siteConfig.ObservabilityTracing; tracingConfig != nil {
+			switch tracingConfig.Sampling {
+			case "all":
+				samplingStrategy = ot.TraceAll
+			case "selective":
+				samplingStrategy = ot.TraceSelective
 			}
+			shouldLog = tracingConfig.Debug
 		} else if siteConfig.UseJaeger {
 			samplingStrategy = ot.TraceAll
 		}
-		if tracePolicy := ot.GetTracePolicy(); tracePolicy != samplingStrategy && shouldLog {
+		if tracePolicy := ot.GetTracePolicy(); tracePolicy != samplingStrategy {
 			log15.Info("opentracing: TracePolicy", "oldValue", tracePolicy, "newValue", samplingStrategy)
 		}
 		ot.SetTracePolicy(samplingStrategy)
 
 		// Set whether Jaeger should be enabled
-		jaegerShouldBeEnabled := false
-		if tracingConfig := siteConfig.TracingDistributedTracing; tracingConfig != nil {
-			if jaegerConfig := tracingConfig.Jaeger; jaegerConfig != nil {
-				jaegerShouldBeEnabled = (jaegerConfig.Sampling == "all" || jaegerConfig.Sampling == "selective")
-			}
-		} else {
-			jaegerShouldBeEnabled = siteConfig.UseJaeger
-		}
-		if jaegerEnabled != jaegerShouldBeEnabled && shouldLog {
+		jaegerShouldBeEnabled := samplingStrategy == ot.TraceAll || samplingStrategy == ot.TraceSelective
+		if jaegerEnabled != jaegerShouldBeEnabled {
 			log15.Info("opentracing: Jaeger enablement change", "old", jaegerEnabled, "newValue", jaegerShouldBeEnabled)
 		}
 

@@ -309,8 +309,6 @@ type CustomGitFetchMapping struct {
 type DebugLog struct {
 	// ExtsvcGitlab description: Log GitLab API requests.
 	ExtsvcGitlab bool `json:"extsvc.gitlab,omitempty"`
-	// Opentracing description: Log opentracing client API invocations
-	Opentracing bool `json:"opentracing,omitempty"`
 }
 
 // Discussions description: Configures Sourcegraph code discussions.
@@ -319,23 +317,6 @@ type Discussions struct {
 	AbuseEmails []string `json:"abuseEmails,omitempty"`
 	// AbuseProtection description: Enable abuse protection features (for public instances like Sourcegraph.com, not recommended for private instances).
 	AbuseProtection bool `json:"abuseProtection,omitempty"`
-}
-
-// DistributedTracingCommon description: Common properties for distributed tracing.
-type DistributedTracingCommon struct {
-	// Sampling description: Controls when traces are recorded. "selective" (default) records traces whenever `?trace=1` is present in the URL. "all" records traces on every request. "none" turns off tracing entirely. Note that some tracing systems (e.g., Jaeger) have sampling settings of their own and this is distinct from that.
-	Sampling string `json:"sampling,omitempty"`
-}
-
-// DistributedTracingJaeger description: Configures Jaeger tracing behavior
-type DistributedTracingJaeger struct {
-	Sampling string `json:"sampling,omitempty"`
-	Type     string `json:"type"`
-}
-
-// DistributedTracingNone description: Turns off distributed tracing
-type DistributedTracingNone struct {
-	Type string `json:"type"`
 }
 type ExcludedAWSCodeCommitRepo struct {
 	// Id description: The ID of an AWS Code Commit repository (as returned by the AWS API) to exclude from mirroring. Use this to exclude the repository, even if renamed, or to differentiate between repositories with the same name in multiple regions.
@@ -687,6 +668,14 @@ type OAuthIdentity struct {
 	Type                 string `json:"type"`
 }
 
+// ObservabilityTracing description: Controls the settings for distributed tracing.
+type ObservabilityTracing struct {
+	// Debug description: Turns on debug logging of opentracing client requests. This can be useful for debugging connectivity issues between the tracing client and the Jaeger agent, the performance overhead of tracing, and other issues related to the use of distributed tracing.
+	Debug bool `json:"debug,omitempty"`
+	// Sampling description: Determines the requests for which distributed traces are recorded. "none" (default) turns off tracing entirely. "selective" sends traces whenever `?trace=1` is present in the URL. "all" sends traces on every request. Note that this only affects the behavior of the distributed tracing client. The Jaeger instance must be running for traces to be collected (as described in the Sourcegraph installation instructions). Additional downsampling can be configured in Jaeger, itself (https://www.jaegertracing.io/docs/1.17/sampling/)
+	Sampling string `json:"sampling,omitempty"`
+}
+
 // OpenIDConnectAuthProvider description: Configures the OpenID Connect authentication provider for SSO.
 type OpenIDConnectAuthProvider struct {
 	// ClientID description: The client ID for the OpenID Connect client for this site.
@@ -978,9 +967,9 @@ type SiteConfiguration struct {
 	HtmlHeadTop string `json:"htmlHeadTop,omitempty"`
 	// LicenseKey description: The license key associated with a Sourcegraph product subscription, which is necessary to activate Sourcegraph Enterprise functionality. To obtain this value, contact Sourcegraph to purchase a subscription. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.
 	LicenseKey string `json:"licenseKey,omitempty"`
-	// LightstepAccessToken description: DEPRECATED. Use Jaeger (`"tracing.distributedTracing.type": "jaeger"`), instead.
+	// LightstepAccessToken description: DEPRECATED. Use Jaeger (`"observability.tracing": { "sampling": "selective" }`), instead.
 	LightstepAccessToken string `json:"lightstepAccessToken,omitempty"`
-	// LightstepProject description: DEPRECATED. Use Jaeger (`"tracing.distributedTracing.type": "jaeger"`), instead.
+	// LightstepProject description: DEPRECATED. Use Jaeger (`"observability.tracing": { "sampling": "selective" }`), instead.
 	LightstepProject string `json:"lightstepProject,omitempty"`
 	// Log description: Configuration for logging and alerting, including to external services.
 	Log *Log `json:"log,omitempty"`
@@ -988,6 +977,8 @@ type SiteConfiguration struct {
 	LsifEnforceAuth bool `json:"lsifEnforceAuth,omitempty"`
 	// MaxReposToSearch description: The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. Any value less than or equal to zero means unlimited.
 	MaxReposToSearch int `json:"maxReposToSearch,omitempty"`
+	// ObservabilityTracing description: Controls the settings for distributed tracing.
+	ObservabilityTracing *ObservabilityTracing `json:"observability.tracing,omitempty"`
 	// ParentSourcegraph description: URL to fetch unreachable repository details from. Defaults to "https://sourcegraph.com"
 	ParentSourcegraph *ParentSourcegraph `json:"parentSourcegraph,omitempty"`
 	// PermissionsBackgroundSync description: Sync code host repository and user permissions in the background.
@@ -1002,11 +993,9 @@ type SiteConfiguration struct {
 	SearchIndexSymbolsEnabled *bool `json:"search.index.symbols.enabled,omitempty"`
 	// SearchLargeFiles description: A list of file glob patterns where matching files will be indexed and searched regardless of their size. The glob pattern syntax can be found here: https://golang.org/pkg/path/filepath/#Match.
 	SearchLargeFiles []string `json:"search.largeFiles,omitempty"`
-	// TracingDistributedTracing description: Controls the settings for distributed tracing in Sourcegraph.
-	TracingDistributedTracing *TracingDistributedTracing `json:"tracing.distributedTracing,omitempty"`
 	// UpdateChannel description: The channel on which to automatically check for Sourcegraph updates.
 	UpdateChannel string `json:"update.channel,omitempty"`
-	// UseJaeger description: DEPRECATED. Use `"tracing.distributedTracing.type": "jaeger"` instead. Enables Jaeger tracing.
+	// UseJaeger description: DEPRECATED. Use `"observability.tracing": { "sampling": "all" }`, instead. Enables Jaeger tracing.
 	UseJaeger bool `json:"useJaeger,omitempty"`
 }
 
@@ -1018,38 +1007,6 @@ type TlsExternal struct {
 	// If InsecureSkipVerify is true, TLS accepts any certificate presented by the server and any host name in that certificate. In this mode, TLS is susceptible to man-in-the-middle attacks.
 	InsecureSkipVerify bool `json:"insecureSkipVerify,omitempty"`
 }
-
-// TracingDistributedTracing description: Controls the settings for distributed tracing in Sourcegraph.
-type TracingDistributedTracing struct {
-	Jaeger *DistributedTracingJaeger
-	None   *DistributedTracingNone
-}
-
-func (v TracingDistributedTracing) MarshalJSON() ([]byte, error) {
-	if v.Jaeger != nil {
-		return json.Marshal(v.Jaeger)
-	}
-	if v.None != nil {
-		return json.Marshal(v.None)
-	}
-	return nil, errors.New("tagged union type must have exactly 1 non-nil field value")
-}
-func (v *TracingDistributedTracing) UnmarshalJSON(data []byte) error {
-	var d struct {
-		DiscriminantProperty string `json:"type"`
-	}
-	if err := json.Unmarshal(data, &d); err != nil {
-		return err
-	}
-	switch d.DiscriminantProperty {
-	case "jaeger":
-		return json.Unmarshal(data, &v.Jaeger)
-	case "none":
-		return json.Unmarshal(data, &v.None)
-	}
-	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"jaeger", "none"})
-}
-
 type UsernameIdentity struct {
 	Type string `json:"type"`
 }

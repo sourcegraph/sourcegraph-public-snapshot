@@ -75,11 +75,6 @@ const SiteSchemaJSON = `{
               "description": "Log GitLab API requests.",
               "type": "boolean",
               "default": false
-            },
-            "opentracing": {
-              "description": "Log opentracing client API invocations",
-              "type": "boolean",
-              "default": false
             }
           }
         },
@@ -579,39 +574,36 @@ const SiteSchemaJSON = `{
       "examples": ["https://sourcegraph.example.com"]
     },
     "lightstepAccessToken": {
-      "description": "DEPRECATED. Use Jaeger (` + "`" + `\"tracing.distributedTracing.type\": \"jaeger\"` + "`" + `), instead.",
+      "description": "DEPRECATED. Use Jaeger (` + "`" + `\"observability.tracing\": { \"sampling\": \"selective\" }` + "`" + `), instead.",
       "type": "string",
       "group": "Misc."
     },
     "lightstepProject": {
-      "description": "DEPRECATED. Use Jaeger (` + "`" + `\"tracing.distributedTracing.type\": \"jaeger\"` + "`" + `), instead.",
+      "description": "DEPRECATED. Use Jaeger (` + "`" + `\"observability.tracing\": { \"sampling\": \"selective\" }` + "`" + `), instead.",
       "type": "string",
       "examples": ["myproject"],
       "group": "Misc."
     },
     "useJaeger": {
-      "description": "DEPRECATED. Use ` + "`" + `\"tracing.distributedTracing.type\": \"jaeger\"` + "`" + ` instead. Enables Jaeger tracing.",
+      "description": "DEPRECATED. Use ` + "`" + `\"observability.tracing\": { \"sampling\": \"all\" }` + "`" + `, instead. Enables Jaeger tracing.",
       "type": "boolean",
       "group": "Misc."
     },
-    "tracing.distributedTracing": {
-      "description": "Controls the settings for distributed tracing in Sourcegraph.",
+    "observability.tracing": {
+      "description": "Controls the settings for distributed tracing.",
       "type": "object",
-      "required": ["type"],
       "properties": {
-        "type": {
-          "description": "The type of distributed tracer to use.",
+        "sampling": {
+          "description": "Determines the requests for which distributed traces are recorded. \"none\" (default) turns off tracing entirely. \"selective\" sends traces whenever ` + "`" + `?trace=1` + "`" + ` is present in the URL. \"all\" sends traces on every request. Note that this only affects the behavior of the distributed tracing client. The Jaeger instance must be running for traces to be collected (as described in the Sourcegraph installation instructions). Additional downsampling can be configured in Jaeger, itself (https://www.jaegertracing.io/docs/1.17/sampling/)",
           "type": "string",
-          "enum": ["jaeger", "none"],
-          "default": "jaeger"
+          "enum": ["selective", "all", "none"],
+          "default": "selective"
+        },
+        "debug": {
+          "description": "Turns on debug logging of opentracing client requests. This can be useful for debugging connectivity issues between the tracing client and the Jaeger agent, the performance overhead of tracing, and other issues related to the use of distributed tracing.",
+          "type": "boolean",
+          "default": false
         }
-      },
-      "oneOf": [
-        { "$ref": "#/definitions/DistributedTracingJaeger" },
-        { "$ref": "#/definitions/DistributedTracingNone" }
-      ],
-      "!go": {
-        "taggedUnionType": true
       }
     },
     "htmlHeadTop": {
@@ -941,44 +933,6 @@ const SiteSchemaJSON = `{
         "displayName": {
           "description": "The name to use when displaying this authentication provider in the UI. Defaults to an auto-generated name with the type of authentication provider and other relevant identifiers (such as a hostname).",
           "type": "string"
-        }
-      }
-    },
-    "DistributedTracingNone": {
-      "description": "Turns off distributed tracing",
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["type"],
-      "properties": {
-        "type": {
-          "type": "string",
-          "const": "none"
-        }
-      }
-    },
-    "DistributedTracingJaeger": {
-      "description": "Configures Jaeger tracing behavior",
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["type"],
-      "properties": {
-        "type": {
-          "type": "string",
-          "const": "jaeger"
-        },
-        "sampling": { "$ref": "#/definitions/DistributedTracingCommon/properties/sampling" }
-      }
-    },
-    "DistributedTracingCommon": {
-      "$comment": "This schema is not used directly. The Distributedtracing* schemas refer to its properties directly.",
-      "description": "Common properties for distributed tracing.",
-      "type": "object",
-      "properties": {
-        "sampling": {
-          "description": "Controls when traces are recorded. \"selective\" (default) records traces whenever ` + "`" + `?trace=1` + "`" + ` is present in the URL. \"all\" records traces on every request. \"none\" turns off tracing entirely. Note that some tracing systems (e.g., Jaeger) have sampling settings of their own and this is distinct from that.",
-          "type": "string",
-          "enum": ["selective", "all", "none"],
-          "default": "selective"
         }
       }
     }
