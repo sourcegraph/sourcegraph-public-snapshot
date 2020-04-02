@@ -44,7 +44,7 @@ func (s *userExternalAccounts) Get(ctx context.Context, id int32) (*extsvc.Accou
 // It looks up the existing user associated with the external account's extsvc.AccountSpec. If
 // found, it updates the account's data and returns the user. It NEVER creates a user; you must call
 // CreateUserAndSave for that.
-func (s *userExternalAccounts) LookupUserAndSave(ctx context.Context, spec extsvc.AccountSpec, data extsvc.ExternalAccountData) (userID int32, err error) {
+func (s *userExternalAccounts) LookupUserAndSave(ctx context.Context, spec extsvc.AccountSpec, data extsvc.Data) (userID int32, err error) {
 	if Mocks.ExternalAccounts.LookupUserAndSave != nil {
 		return Mocks.ExternalAccounts.LookupUserAndSave(spec, data)
 	}
@@ -68,7 +68,7 @@ RETURNING user_id
 //
 // - the same user: it updates the data and returns a nil error; or
 // - a different user: it performs no update and returns a non-nil error
-func (s *userExternalAccounts) AssociateUserAndSave(ctx context.Context, userID int32, spec extsvc.AccountSpec, data extsvc.ExternalAccountData) (err error) {
+func (s *userExternalAccounts) AssociateUserAndSave(ctx context.Context, userID int32, spec extsvc.AccountSpec, data extsvc.Data) (err error) {
 	if Mocks.ExternalAccounts.AssociateUserAndSave != nil {
 		return Mocks.ExternalAccounts.AssociateUserAndSave(userID, spec, data)
 	}
@@ -136,7 +136,7 @@ WHERE service_type=$1 AND service_id=$2 AND client_id=$3 AND account_id=$4 AND u
 //
 // It creates a new user and associates it with the specified external account. If the user to
 // create already exists, it returns an error.
-func (s *userExternalAccounts) CreateUserAndSave(ctx context.Context, newUser NewUser, spec extsvc.AccountSpec, data extsvc.ExternalAccountData) (createdUserID int32, err error) {
+func (s *userExternalAccounts) CreateUserAndSave(ctx context.Context, newUser NewUser, spec extsvc.AccountSpec, data extsvc.Data) (createdUserID int32, err error) {
 	if Mocks.ExternalAccounts.CreateUserAndSave != nil {
 		return Mocks.ExternalAccounts.CreateUserAndSave(newUser, spec, data)
 	}
@@ -166,7 +166,7 @@ func (s *userExternalAccounts) CreateUserAndSave(ctx context.Context, newUser Ne
 	return createdUser.ID, err
 }
 
-func (s *userExternalAccounts) insert(ctx context.Context, tx *sql.Tx, userID int32, spec extsvc.AccountSpec, data extsvc.ExternalAccountData) error {
+func (s *userExternalAccounts) insert(ctx context.Context, tx *sql.Tx, userID int32, spec extsvc.AccountSpec, data extsvc.Data) error {
 	_, err := tx.ExecContext(ctx, `
 INSERT INTO user_external_accounts(user_id, service_type, service_id, client_id, account_id, auth_data, account_data)
 VALUES($1, $2, $3, $4, $5, $6, $7)
@@ -321,9 +321,9 @@ func (*userExternalAccounts) listSQL(opt ExternalAccountsListOptions) (conds []*
 // MockExternalAccounts mocks the Stores.ExternalAccounts DB store.
 type MockExternalAccounts struct {
 	Get                  func(id int32) (*extsvc.Account, error)
-	LookupUserAndSave    func(extsvc.AccountSpec, extsvc.ExternalAccountData) (userID int32, err error)
-	AssociateUserAndSave func(userID int32, spec extsvc.AccountSpec, data extsvc.ExternalAccountData) error
-	CreateUserAndSave    func(NewUser, extsvc.AccountSpec, extsvc.ExternalAccountData) (createdUserID int32, err error)
+	LookupUserAndSave    func(extsvc.AccountSpec, extsvc.Data) (userID int32, err error)
+	AssociateUserAndSave func(userID int32, spec extsvc.AccountSpec, data extsvc.Data) error
+	CreateUserAndSave    func(NewUser, extsvc.AccountSpec, extsvc.Data) (createdUserID int32, err error)
 	Delete               func(id int32) error
 	List                 func(ExternalAccountsListOptions) ([]*extsvc.Account, error)
 	Count                func(ExternalAccountsListOptions) (int, error)

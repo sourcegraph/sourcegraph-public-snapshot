@@ -35,7 +35,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		return nil, fmt.Sprintf("Error normalizing the username %q. See https://docs.sourcegraph.com/admin/auth/#username-normalization.", login), err
 	}
 
-	var data extsvc.ExternalAccountData
+	var data extsvc.Data
 	gitlab.SetExternalAccountData(&data, gUser, token)
 
 	// Unlike with GitHub, we can *only* use the primary email to resolve the user's identity,

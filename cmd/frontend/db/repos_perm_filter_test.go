@@ -65,7 +65,7 @@ func (r authzFilter_Test) run(t *testing.T) {
 			ctx = actor.WithActor(ctx, &actor.Actor{UID: c.user.ID})
 		}
 
-		Mocks.ExternalAccounts.AssociateUserAndSave = func(userID int32, spec extsvc.AccountSpec, data extsvc.ExternalAccountData) error { return nil }
+		Mocks.ExternalAccounts.AssociateUserAndSave = func(userID int32, spec extsvc.AccountSpec, data extsvc.Data) error { return nil }
 		Mocks.ExternalAccounts.List = func(ExternalAccountsListOptions) ([]*extsvc.Account, error) { return c.userAccounts, nil }
 
 		filteredRepos, err := authzFilter(ctx, c.repos, c.perm)
@@ -658,7 +658,7 @@ func Test_authzFilter(t *testing.T) {
 
 func Test_authzFilter_createsNewUsers(t *testing.T) {
 	associateUserAndSaveCount := make(map[int32]map[extsvc.AccountSpec]int)
-	Mocks.ExternalAccounts.AssociateUserAndSave = func(userID int32, spec extsvc.AccountSpec, data extsvc.ExternalAccountData) error {
+	Mocks.ExternalAccounts.AssociateUserAndSave = func(userID int32, spec extsvc.AccountSpec, data extsvc.Data) error {
 		if _, ok := associateUserAndSaveCount[userID]; !ok {
 			associateUserAndSaveCount[userID] = make(map[extsvc.AccountSpec]int)
 		}
@@ -951,7 +951,7 @@ func Test_authzFilter_permissionsBackgroudSync(t *testing.T) {
 		Mocks.ExternalAccounts.List = func(ExternalAccountsListOptions) ([]*extsvc.Account, error) {
 			return []*extsvc.Account{&extAccount}, nil
 		}
-		Mocks.ExternalAccounts.AssociateUserAndSave = func(int32, extsvc.AccountSpec, extsvc.ExternalAccountData) error {
+		Mocks.ExternalAccounts.AssociateUserAndSave = func(int32, extsvc.AccountSpec, extsvc.Data) error {
 			return errors.New("AssociateUserAndSave should not be called")
 		}
 		Mocks.Authz.GrantPendingPermissions = func(context.Context, *GrantPendingPermissionsArgs) error {
@@ -1021,7 +1021,7 @@ func Test_authzFilter_permissionsBackgroudSync(t *testing.T) {
 
 		calledAssociateUserAndSave := false
 		callGrantPendingPermissions := false
-		Mocks.ExternalAccounts.AssociateUserAndSave = func(int32, extsvc.AccountSpec, extsvc.ExternalAccountData) error {
+		Mocks.ExternalAccounts.AssociateUserAndSave = func(int32, extsvc.AccountSpec, extsvc.Data) error {
 			calledAssociateUserAndSave = true
 			return nil
 		}

@@ -271,7 +271,7 @@ func mustURL(t *testing.T, u string) *url.URL {
 func ua(accountID, token string) *extsvc.Account {
 	var a extsvc.Account
 	a.AccountID = accountID
-	github.SetExternalAccountData(&a.ExternalAccountData, nil, &oauth2.Token{
+	github.SetExternalAccountData(&a.Data, nil, &oauth2.Token{
 		AccessToken: token,
 	})
 	return &a

@@ -23,25 +23,25 @@ func setJSONOrError(field **json.RawMessage, value interface{}) {
 
 // SetAccountData sets the AccountData field to the (JSON-encoded) value. If an error occurs during
 // JSON encoding, a JSON object describing the error is written to the field, instead.
-func (d *ExternalAccountData) SetAccountData(v interface{}) {
+func (d *Data) SetAccountData(v interface{}) {
 	setJSONOrError(&d.AccountData, v)
 }
 
 // SetAuthData sets the AuthData field to the (JSON-encoded) value. If an error occurs during JSON
 // encoding, a JSON object describing the error is written to the field, instead.
-func (d *ExternalAccountData) SetAuthData(v interface{}) {
+func (d *Data) SetAuthData(v interface{}) {
 	setJSONOrError(&d.AuthData, v)
 }
 
 // GetAccountData reads the AccountData field into the value. The value should be a pointer type to
 // the type that was passed to SetAccountData.
-func (d *ExternalAccountData) GetAccountData(v interface{}) error {
+func (d *Data) GetAccountData(v interface{}) error {
 	return getJSONOrError(d.AccountData, v)
 }
 
 // GetAuthData reads the AuthData field into the value. The value should be a pointer type to the
 // type that was passed to SetAuthData.
-func (d *ExternalAccountData) GetAuthData(v interface{}) error {
+func (d *Data) GetAuthData(v interface{}) error {
 	return getJSONOrError(d.AuthData, v)
 }
 

@@ -56,7 +56,7 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 			ServiceID:   "https://gitlab.com/",
 			AccountID:   "alice_gitlab",
 		},
-		extsvc.ExternalAccountData{},
+		extsvc.Data{},
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -67,7 +67,7 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 			ServiceID:   "https://github.com/",
 			AccountID:   "alice_github",
 		},
-		extsvc.ExternalAccountData{},
+		extsvc.Data{},
 	)
 	if err != nil {
 		t.Fatal(err)

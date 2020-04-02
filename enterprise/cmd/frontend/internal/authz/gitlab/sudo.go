@@ -27,7 +27,7 @@ func (p *SudoProvider) FetchUserPerms(ctx context.Context, account *extsvc.Accou
 			account.AccountSpec.ServiceID, p.codeHost.ServiceID)
 	}
 
-	user, _, err := gitlab.GetExternalAccountData(&account.ExternalAccountData)
+	user, _, err := gitlab.GetExternalAccountData(&account.Data)
 	if err != nil {
 		return nil, errors.Wrap(err, "get external account data")
 	}

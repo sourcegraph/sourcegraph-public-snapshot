@@ -527,7 +527,7 @@ type mocks struct {
 }
 
 // LookupUserAndSave mocks db.ExternalAccounts.LookupUserAndSave
-func (m *mocks) LookupUserAndSave(spec extsvc.AccountSpec, data extsvc.ExternalAccountData) (userID int32, err error) {
+func (m *mocks) LookupUserAndSave(spec extsvc.AccountSpec, data extsvc.Data) (userID int32, err error) {
 	if m.lookupUserAndSaveErr != nil {
 		return 0, m.lookupUserAndSaveErr
 	}
@@ -544,7 +544,7 @@ func (m *mocks) LookupUserAndSave(spec extsvc.AccountSpec, data extsvc.ExternalA
 }
 
 // CreateUserAndSave mocks db.ExternalAccounts.CreateUserAndSave
-func (m *mocks) CreateUserAndSave(newUser db.NewUser, spec extsvc.AccountSpec, data extsvc.ExternalAccountData) (createdUserID int32, err error) {
+func (m *mocks) CreateUserAndSave(newUser db.NewUser, spec extsvc.AccountSpec, data extsvc.Data) (createdUserID int32, err error) {
 	if m.createUserAndSaveErr != nil {
 		return 0, m.createUserAndSaveErr
 	}
@@ -579,7 +579,7 @@ func (m *mocks) CreateUserAndSave(newUser db.NewUser, spec extsvc.AccountSpec, d
 }
 
 // AssociateUserAndSave mocks db.ExternalAccounts.AssociateUserAndSave
-func (m *mocks) AssociateUserAndSave(userID int32, spec extsvc.AccountSpec, data extsvc.ExternalAccountData) (err error) {
+func (m *mocks) AssociateUserAndSave(userID int32, spec extsvc.AccountSpec, data extsvc.Data) (err error) {
 	if m.associateUserAndSaveErr != nil {
 		return m.associateUserAndSaveErr
 	}
