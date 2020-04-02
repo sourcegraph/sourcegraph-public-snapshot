@@ -28,7 +28,7 @@ type Provider_RepoPerms_Test struct {
 
 type Provider_RepoPerms_call struct {
 	description string
-	userAccount *extsvc.ExternalAccount
+	userAccount *extsvc.Account
 	repos       []*types.Repo
 	wantPerms   []authz.RepoPerms
 	wantErr     error
@@ -268,8 +268,8 @@ func mustURL(t *testing.T, u string) *url.URL {
 	return parsed
 }
 
-func ua(accountID, token string) *extsvc.ExternalAccount {
-	var a extsvc.ExternalAccount
+func ua(accountID, token string) *extsvc.Account {
+	var a extsvc.Account
 	a.AccountID = accountID
 	github.SetExternalAccountData(&a.ExternalAccountData, nil, &oauth2.Token{
 		AccessToken: token,

@@ -19,7 +19,7 @@ import (
 // callers to decide whether to discard.
 //
 // API docs: https://docs.gitlab.com/ee/api/projects.html#list-all-projects
-func (p *SudoProvider) FetchUserPerms(ctx context.Context, account *extsvc.ExternalAccount) ([]extsvc.ExternalRepoID, error) {
+func (p *SudoProvider) FetchUserPerms(ctx context.Context, account *extsvc.Account) ([]extsvc.ExternalRepoID, error) {
 	if account == nil {
 		return nil, errors.New("no account provided")
 	} else if !extsvc.IsHostOfAccount(p.codeHost, account) {
@@ -73,8 +73,8 @@ func listProjects(ctx context.Context, client *gitlab.Client) ([]extsvc.External
 
 // FetchRepoPerms returns a list of user IDs (on code host) who have read access to
 // the given project on the code host. The user ID has the same value as it would
-// be used as extsvc.ExternalAccount.AccountID. The returned list includes both
-// direct access and inherited from the group membership.
+// be used as extsvc.Account.AccountID. The returned list includes both direct access
+// and inherited from the group membership.
 //
 // This method may return partial but valid results in case of error, and it is up to
 // callers to decide whether to discard.

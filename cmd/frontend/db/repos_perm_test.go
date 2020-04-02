@@ -32,7 +32,7 @@ func Benchmark_authzFilter(b *testing.B) {
 			codeHost := extsvc.NewCodeHost(baseURL, "fake")
 			return &fakeProvider{
 				codeHost: codeHost,
-				extAcct: &extsvc.ExternalAccount{
+				extAcct: &extsvc.Account{
 					UserID: user.ID,
 					ExternalAccountSpec: extsvc.ExternalAccountSpec{
 						ServiceType: codeHost.ServiceType,
@@ -48,7 +48,7 @@ func Benchmark_authzFilter(b *testing.B) {
 			codeHost := extsvc.NewCodeHost(baseURL, "github")
 			return &fakeProvider{
 				codeHost: codeHost,
-				extAcct: &extsvc.ExternalAccount{
+				extAcct: &extsvc.Account{
 					UserID: user.ID,
 					ExternalAccountSpec: extsvc.ExternalAccountSpec{
 						ServiceType: codeHost.ServiceType,
@@ -94,7 +94,7 @@ func Benchmark_authzFilter(b *testing.B) {
 	ctx := context.Background()
 
 	Mocks.ExternalAccounts.List = func(opt ExternalAccountsListOptions) (
-		accts []*extsvc.ExternalAccount,
+		accts []*extsvc.Account,
 		err error,
 	) {
 		for _, p := range providers {
@@ -118,12 +118,12 @@ func Benchmark_authzFilter(b *testing.B) {
 
 type fakeProvider struct {
 	codeHost *extsvc.CodeHost
-	extAcct  *extsvc.ExternalAccount
+	extAcct  *extsvc.Account
 }
 
 func (f fakeProvider) RepoPerms(
 	ctx context.Context,
-	userAccount *extsvc.ExternalAccount,
+	userAccount *extsvc.Account,
 	repos []*types.Repo,
 ) ([]authz.RepoPerms, error) {
 	authorized := make([]authz.RepoPerms, 0, len(repos))
@@ -139,8 +139,8 @@ func (f fakeProvider) RepoPerms(
 func (f fakeProvider) FetchAccount(
 	ctx context.Context,
 	user *types.User,
-	current []*extsvc.ExternalAccount,
-) (mine *extsvc.ExternalAccount, err error) {
+	current []*extsvc.Account,
+) (mine *extsvc.Account, err error) {
 	return f.extAcct, nil
 }
 

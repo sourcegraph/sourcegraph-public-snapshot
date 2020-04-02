@@ -168,7 +168,7 @@ func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (filte
 			return nil, errors.Wrap(err, "list external accounts")
 		}
 
-		serviceToAccounts := make(map[string]*extsvc.ExternalAccount)
+		serviceToAccounts := make(map[string]*extsvc.Account)
 		for _, acct := range extAccounts {
 			serviceToAccounts[acct.ServiceType+":"+acct.ServiceID] = acct
 		}
@@ -243,7 +243,7 @@ func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (filte
 		return append(filtered, verified...), nil
 	}
 
-	var accts []*extsvc.ExternalAccount
+	var accts []*extsvc.Account
 	if len(authzProviders) > 0 && currentUser != nil {
 		accts, err = ExternalAccounts.List(ctx, ExternalAccountsListOptions{UserID: currentUser.ID})
 		if err != nil {
@@ -270,7 +270,7 @@ func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (filte
 	verified := roaring.NewBitmap()
 	for _, authzProvider := range authzProviders {
 		// determine external account to use
-		var providerAcct *extsvc.ExternalAccount
+		var providerAcct *extsvc.Account
 		for _, acct := range accts {
 			if acct.ServiceID == authzProvider.ServiceID() && acct.ServiceType == authzProvider.ServiceType() {
 				providerAcct = acct

@@ -41,7 +41,7 @@ func IsHostOfRepo(c *CodeHost, repo *api.ExternalRepoSpec) bool {
 }
 
 // IsHostOfAccount returns true if the account belongs to given code host.
-func IsHostOfAccount(c *CodeHost, account *ExternalAccount) bool {
+func IsHostOfAccount(c *CodeHost, account *Account) bool {
 	return c.ServiceID == account.ServiceID && c.ServiceType == account.ServiceType
 }
 

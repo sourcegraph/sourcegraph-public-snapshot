@@ -55,7 +55,7 @@ var _ authz.Provider = (*Provider)(nil)
 // For each repo in the input set, we look first to see if the above information is cached in Redis.
 // If not, then the info is computed by querying the GitHub API. A separate query is issued for each
 // repository (and for each user for the explicit case).
-func (p *Provider) RepoPerms(ctx context.Context, userAccount *extsvc.ExternalAccount, repos []*types.Repo) ([]authz.RepoPerms, error) {
+func (p *Provider) RepoPerms(ctx context.Context, userAccount *extsvc.Account, repos []*types.Repo) ([]authz.RepoPerms, error) {
 	remaining := repos
 	remainingPublic := remaining
 	if len(remaining) == 0 {
@@ -85,7 +85,7 @@ func (p *Provider) RepoPerms(ctx context.Context, userAccount *extsvc.ExternalAc
 		remainingPublic = nextRemainingPublic
 		return nil
 	}
-	populatePerms := func(checkAccess func(ctx context.Context, userAccount *extsvc.ExternalAccount, repos []*types.Repo) (map[string]bool, error)) error {
+	populatePerms := func(checkAccess func(ctx context.Context, userAccount *extsvc.Account, repos []*types.Repo) (map[string]bool, error)) error {
 		nextRemaining := []*types.Repo{}
 		canAccess, err := checkAccess(ctx, userAccount, remaining)
 		if err != nil {
@@ -224,7 +224,7 @@ func (p *Provider) fetchPublicRepos(ctx context.Context, repos []*types.Repo) (m
 // repo ID is missing from the return map, the user does not have read access to that repo. As a
 // side effect, it caches the fetched repos (whether the given user has access to each and whether
 // each is public).
-func (p *Provider) fetchAndSetUserRepos(ctx context.Context, userAccount *extsvc.ExternalAccount, repos []*types.Repo) (isAllowed map[string]bool, err error) {
+func (p *Provider) fetchAndSetUserRepos(ctx context.Context, userAccount *extsvc.Account, repos []*types.Repo) (isAllowed map[string]bool, err error) {
 	if userAccount == nil {
 		return nil, nil
 	}
@@ -261,7 +261,7 @@ func (p *Provider) fetchAndSetUserRepos(ctx context.Context, userAccount *extsvc
 // ID").
 //
 // Internally, it sets a separate cache key for each user and repo ID.
-func (p *Provider) setCachedUserRepos(ctx context.Context, userAccount *extsvc.ExternalAccount, isAllowed map[string]bool) error {
+func (p *Provider) setCachedUserRepos(ctx context.Context, userAccount *extsvc.Account, isAllowed map[string]bool) error {
 	setArgs := make([][2]string, 0, len(isAllowed))
 	for k, v := range isAllowed {
 		rkey, err := json.Marshal(userRepoCacheKey{User: userAccount.AccountID, Repo: k})
@@ -281,7 +281,7 @@ func (p *Provider) setCachedUserRepos(ctx context.Context, userAccount *extsvc.E
 // getCachedUserRepos accepts a user account and set of repos and returns a map from repo ID to
 // true/false indicating whether the user can access the repo. The returned map may be incomplete
 // (i.e., not every input repo may be represented in the key set) due to cache incompleteness.
-func (p *Provider) getCachedUserRepos(ctx context.Context, userAccount *extsvc.ExternalAccount, repos []*types.Repo) (cachedUserRepos map[string]bool, err error) {
+func (p *Provider) getCachedUserRepos(ctx context.Context, userAccount *extsvc.Account, repos []*types.Repo) (cachedUserRepos map[string]bool, err error) {
 	if userAccount == nil {
 		return nil, nil
 	}
@@ -323,7 +323,7 @@ func (p *Provider) getCachedUserRepos(ctx context.Context, userAccount *extsvc.E
 	return cachedIsAllowed, nil
 }
 
-func (p *Provider) fetchUserRepos(ctx context.Context, userAccount *extsvc.ExternalAccount, repoIDs []string) (canAccess map[string]bool, isPublic map[string]bool, err error) {
+func (p *Provider) fetchUserRepos(ctx context.Context, userAccount *extsvc.Account, repoIDs []string) (canAccess map[string]bool, isPublic map[string]bool, err error) {
 	_, tok, err := github.GetExternalAccountData(&userAccount.ExternalAccountData)
 	if err != nil {
 		return nil, nil, err
@@ -360,7 +360,7 @@ func (p *Provider) fetchUserRepos(ctx context.Context, userAccount *extsvc.Exter
 
 // FetchAccount implements the authz.Provider interface. It always returns nil, because the GitHub
 // API doesn't currently provide a way to fetch user by external SSO account.
-func (p *Provider) FetchAccount(ctx context.Context, user *types.User, current []*extsvc.ExternalAccount) (mine *extsvc.ExternalAccount, err error) {
+func (p *Provider) FetchAccount(ctx context.Context, user *types.User, current []*extsvc.Account) (mine *extsvc.Account, err error) {
 	return nil, nil
 }
 
@@ -384,7 +384,7 @@ func (p *Provider) Validate() (problems []string) {
 // callers to decide whether to discard.
 //
 // API docs: https://developer.github.com/v3/repos/#list-repositories-for-the-authenticated-user
-func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.ExternalAccount) ([]extsvc.ExternalRepoID, error) {
+func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) ([]extsvc.ExternalRepoID, error) {
 	if account == nil {
 		return nil, errors.New("no account provided")
 	} else if !extsvc.IsHostOfAccount(p.codeHost, account) {
@@ -419,8 +419,8 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.ExternalA
 
 // FetchRepoPerms returns a list of user IDs (on code host) who have read access to
 // the given project on the code host. The user ID has the same value as it would
-// be used as extsvc.ExternalAccount.AccountID. The returned list includes both
-// direct access and inherited from the organization membership.
+// be used as extsvc.Account.AccountID. The returned list includes both direct access
+// and inherited from the organization membership.
 //
 // This method may return partial but valid results in case of error, and it is up to
 // callers to decide whether to discard.

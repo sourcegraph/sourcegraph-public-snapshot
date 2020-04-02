@@ -1772,7 +1772,7 @@ INSERT INTO user_external_accounts(user_id, service_type, service_id, account_id
 				t.Fatal(err)
 			}
 
-			expAccounts := []*extsvc.ExternalAccount{
+			expAccounts := []*extsvc.Account{
 				{
 					ID:     1,
 					UserID: 1,
@@ -1810,7 +1810,7 @@ INSERT INTO user_external_accounts(user_id, service_type, service_id, account_id
 				t.Fatal(err)
 			}
 
-			expAccounts := []*extsvc.ExternalAccount{
+			expAccounts := []*extsvc.Account{
 				{
 					ID:     3,
 					UserID: 2,

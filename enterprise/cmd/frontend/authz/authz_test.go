@@ -23,7 +23,7 @@ type gitlabAuthzProviderParams struct {
 	SudoOp  gitlab.SudoProviderOp
 }
 
-func (m gitlabAuthzProviderParams) RepoPerms(ctx context.Context, account *extsvc.ExternalAccount, repos []*types.Repo) ([]authz.RepoPerms, error) {
+func (m gitlabAuthzProviderParams) RepoPerms(ctx context.Context, account *extsvc.Account, repos []*types.Repo) ([]authz.RepoPerms, error) {
 	panic("should never be called")
 }
 
@@ -31,7 +31,7 @@ func (m gitlabAuthzProviderParams) Repos(ctx context.Context, repos []*types.Rep
 	panic("should never be called")
 }
 
-func (m gitlabAuthzProviderParams) FetchAccount(ctx context.Context, user *types.User, current []*extsvc.ExternalAccount) (mine *extsvc.ExternalAccount, err error) {
+func (m gitlabAuthzProviderParams) FetchAccount(ctx context.Context, user *types.User, current []*extsvc.Account) (mine *extsvc.Account, err error) {
 	panic("should never be called")
 }
 

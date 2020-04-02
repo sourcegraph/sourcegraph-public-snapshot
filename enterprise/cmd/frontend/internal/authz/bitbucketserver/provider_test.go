@@ -189,7 +189,7 @@ func testProviderRepoPerms(db *sql.DB, f *fixtures, cli *bitbucketserver.Client)
 					tc.err = "<nil>"
 				}
 
-				var acct *extsvc.ExternalAccount
+				var acct *extsvc.Account
 				if tc.user != nil {
 					acct = h.externalAccount(int32(i), tc.user)
 				}
@@ -218,7 +218,7 @@ func testProviderFetchAccount(f *fixtures, cli *bitbucketserver.Client) func(*te
 			name string
 			ctx  context.Context
 			user *types.User
-			acct *extsvc.ExternalAccount
+			acct *extsvc.Account
 			err  string
 		}{
 			{
@@ -279,7 +279,7 @@ func testProviderFetchUserPerms(f *fixtures, cli *bitbucketserver.Client) func(*
 		for _, tc := range []struct {
 			name string
 			ctx  context.Context
-			acct *extsvc.ExternalAccount
+			acct *extsvc.Account
 			ids  []extsvc.ExternalRepoID
 			err  string
 		}{
@@ -290,12 +290,12 @@ func testProviderFetchUserPerms(f *fixtures, cli *bitbucketserver.Client) func(*
 			},
 			{
 				name: "no account data provided",
-				acct: &extsvc.ExternalAccount{},
+				acct: &extsvc.Account{},
 				err:  "no account data provided",
 			},
 			{
 				name: "not a code host of the account",
-				acct: &extsvc.ExternalAccount{
+				acct: &extsvc.Account{
 					ExternalAccountSpec: extsvc.ExternalAccountSpec{
 						ServiceType: "github",
 						ServiceID:   "https://github.com",
@@ -309,7 +309,7 @@ func testProviderFetchUserPerms(f *fixtures, cli *bitbucketserver.Client) func(*
 			},
 			{
 				name: "bad account data",
-				acct: &extsvc.ExternalAccount{
+				acct: &extsvc.Account{
 					ExternalAccountSpec: extsvc.ExternalAccountSpec{
 						ServiceType: h.ServiceType,
 						ServiceID:   h.ServiceID,
@@ -613,9 +613,9 @@ func (h codeHost) externalRepo(r *bitbucketserver.Repo) api.ExternalRepoSpec {
 	}
 }
 
-func (h codeHost) externalAccount(userID int32, u *bitbucketserver.User) *extsvc.ExternalAccount {
+func (h codeHost) externalAccount(userID int32, u *bitbucketserver.User) *extsvc.Account {
 	bs := marshalJSON(u)
-	return &extsvc.ExternalAccount{
+	return &extsvc.Account{
 		UserID: userID,
 		ExternalAccountSpec: extsvc.ExternalAccountSpec{
 			ServiceType: h.ServiceType,
