@@ -1,4 +1,4 @@
-FROM alpine:3.11@sha256:3983cc12fb9dc20a009340149e382a18de6a8261b0ac0e8f5fcdf11f8dd5937e as builder
+FROM alpine:3.11@sha256:cb8a924afdf0229ef7515d9e5b3024e23b3eb03ddbba287f4a19c6ac90b8d221 as builder
 
 RUN apk add --no-cache bash=5.0.11-r1 git=2.24.1-r0 openssh=8.1_p1-r0 build-base=0.5-r1
 
