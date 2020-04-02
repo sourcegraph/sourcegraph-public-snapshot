@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"math"
 	"net/url"
+	"strings"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -372,4 +374,89 @@ func (p *Provider) ServiceType() string {
 
 func (p *Provider) Validate() (problems []string) {
 	return nil
+}
+
+// FetchUserPerms returns a list of repository IDs (on code host) that the given account
+// has read access on the code host. The repository ID has the same value as it would be
+// used as api.ExternalRepoSpec.ID. The returned list only includes private repository IDs.
+//
+// This method may return partial but valid results in case of error, and it is up to
+// callers to decide whether to discard.
+//
+// API docs: https://developer.github.com/v3/repos/#list-repositories-for-the-authenticated-user
+func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.ExternalAccount) ([]extsvc.ExternalRepoID, error) {
+	if account == nil {
+		return nil, errors.New("no account provided")
+	} else if !extsvc.IsHostOfAccount(p.codeHost, account) {
+		return nil, fmt.Errorf("not a code host of the account: want %q but have %q",
+			account.ExternalAccountSpec.ServiceID, p.codeHost.ServiceID)
+	}
+
+	_, tok, err := github.GetExternalAccountData(&account.ExternalAccountData)
+	if err != nil {
+		return nil, errors.Wrap(err, "get external account data")
+	}
+	client := p.client.WithToken(tok.AccessToken)
+
+	// 100 matches the maximum page size, thus a good default to avoid multiple allocations
+	// when appending the first 100 results to the slice.
+	repoIDs := make([]extsvc.ExternalRepoID, 0, 100)
+	hasNextPage := true
+	for page := 1; hasNextPage; page++ {
+		var repos []*github.Repository
+		repos, hasNextPage, _, err = client.ListAffiliatedRepositories(ctx, page)
+		if err != nil {
+			return repoIDs, err
+		}
+
+		for _, r := range repos {
+			repoIDs = append(repoIDs, extsvc.ExternalRepoID(r.ID))
+		}
+	}
+
+	return repoIDs, nil
+}
+
+// FetchRepoPerms returns a list of user IDs (on code host) who have read access to
+// the given project on the code host. The user ID has the same value as it would
+// be used as extsvc.ExternalAccount.AccountID. The returned list includes both
+// direct access and inherited from the organization membership.
+//
+// This method may return partial but valid results in case of error, and it is up to
+// callers to decide whether to discard.
+//
+// API docs: https://developer.github.com/v4/object/repositorycollaboratorconnection/
+func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) ([]extsvc.ExternalAccountID, error) {
+	if repo == nil {
+		return nil, errors.New("no repository provided")
+	} else if !extsvc.IsHostOfRepo(p.codeHost, &repo.ExternalRepoSpec) {
+		return nil, fmt.Errorf("not a code host of the repository: want %q but have %q",
+			repo.ServiceID, p.codeHost.ServiceID)
+	}
+
+	// NOTE: We do not store port or scheme in our URI, so stripping the hostname alone is enough.
+	nameWithOwner := strings.TrimPrefix(repo.URI, p.codeHost.BaseURL.Hostname())
+	owner, name, err := github.SplitRepositoryNameWithOwner(nameWithOwner)
+	if err != nil {
+		return nil, errors.Wrap(err, "split nameWithOwner")
+	}
+
+	// 100 matches the maximum page size, thus a good default to avoid multiple allocations
+	// when appending the first 100 results to the slice.
+	userIDs := make([]extsvc.ExternalAccountID, 0, 100)
+	hasNextPage := true
+	for page := 1; hasNextPage; page++ {
+		var err error
+		var users []*github.Collaborator
+		users, hasNextPage, err = p.client.ListRepositoryCollaborators(ctx, owner, name, page)
+		if err != nil {
+			return userIDs, err
+		}
+
+		for _, u := range users {
+			userIDs = append(userIDs, extsvc.ExternalAccountID(u.ID))
+		}
+	}
+
+	return userIDs, nil
 }

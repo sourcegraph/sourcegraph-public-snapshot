@@ -7,7 +7,6 @@ import (
 	"strconv"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 )
@@ -24,7 +23,8 @@ func (p *SudoProvider) FetchUserPerms(ctx context.Context, account *extsvc.Exter
 	if account == nil {
 		return nil, errors.New("no account provided")
 	} else if !extsvc.IsHostOfAccount(p.codeHost, account) {
-		return nil, fmt.Errorf("not a code host of the account: want %+v but have %+v", account.ExternalAccountSpec, p.codeHost)
+		return nil, fmt.Errorf("not a code host of the account: want %q but have %q",
+			account.ExternalAccountSpec.ServiceID, p.codeHost.ServiceID)
 	}
 
 	user, _, err := gitlab.GetExternalAccountData(&account.ExternalAccountData)
@@ -58,8 +58,8 @@ func listProjects(ctx context.Context, client *gitlab.Client) ([]extsvc.External
 			return projectIDs, err
 		}
 
-		for i := range projects {
-			projectIDs = append(projectIDs, extsvc.ExternalRepoID(strconv.Itoa(projects[i].ID)))
+		for _, p := range projects {
+			projectIDs = append(projectIDs, extsvc.ExternalRepoID(strconv.Itoa(p.ID)))
 		}
 
 		if next == nil {
@@ -71,7 +71,7 @@ func listProjects(ctx context.Context, client *gitlab.Client) ([]extsvc.External
 	return projectIDs, nil
 }
 
-// FetchRepoPerms returns a list of user IDs (on code host) who have read ccess to
+// FetchRepoPerms returns a list of user IDs (on code host) who have read access to
 // the given project on the code host. The user ID has the same value as it would
 // be used as extsvc.ExternalAccount.AccountID. The returned list includes both
 // direct access and inherited from the group membership.
@@ -80,11 +80,12 @@ func listProjects(ctx context.Context, client *gitlab.Client) ([]extsvc.External
 // callers to decide whether to discard.
 //
 // API docs: https://docs.gitlab.com/ee/api/members.html#list-all-members-of-a-group-or-project-including-inherited-members
-func (p *SudoProvider) FetchRepoPerms(ctx context.Context, repo *api.ExternalRepoSpec) ([]extsvc.ExternalAccountID, error) {
+func (p *SudoProvider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) ([]extsvc.ExternalAccountID, error) {
 	if repo == nil {
 		return nil, errors.New("no repository provided")
-	} else if !extsvc.IsHostOfRepo(p.codeHost, repo) {
-		return nil, fmt.Errorf("not a code host of the repository: want %+v but have %+v", repo, p.codeHost)
+	} else if !extsvc.IsHostOfRepo(p.codeHost, &repo.ExternalRepoSpec) {
+		return nil, fmt.Errorf("not a code host of the repository: want %q but have %q",
+			repo.ServiceID, p.codeHost.ServiceID)
 	}
 
 	client := p.clientProvider.GetPATClient(p.sudoToken, "")
@@ -113,13 +114,13 @@ func listMembers(ctx context.Context, client *gitlab.Client, repoID string) ([]e
 			return userIDs, err
 		}
 
-		for i := range members {
+		for _, m := range members {
 			// Members with access level 20 (i.e. Reporter) has access to project code.
-			if members[i].AccessLevel < 20 {
+			if m.AccessLevel < 20 {
 				continue
 			}
 
-			userIDs = append(userIDs, extsvc.ExternalAccountID(strconv.Itoa(int(members[i].ID))))
+			userIDs = append(userIDs, extsvc.ExternalAccountID(strconv.Itoa(int(m.ID))))
 		}
 
 		if next == nil {

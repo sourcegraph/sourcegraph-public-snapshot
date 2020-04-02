@@ -5,6 +5,7 @@ import (
 	"time"
 
 	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 // ExternalAccount represents a row in the `user_external_accounts` table. See the GraphQL API's
@@ -35,6 +36,13 @@ type ExternalAccountData struct {
 	AccountData *json.RawMessage
 }
 
+// Repository contains necessary information to identify an external repository on the code host.
+type Repository struct {
+	// URI is the full name for this repository, e.g. "github.com/user/repo".
+	URI string
+	api.ExternalRepoSpec
+}
+
 // ExternalAccounts contains a list of accounts that belong to the same external service.
 // All fields have a same meaning to ExternalAccountSpec. See GraphQL API's corresponding
 // fields in "ExternalAccount" for documentation.
@@ -54,11 +62,11 @@ func (s *ExternalAccounts) TracingFields() []otlog.Field {
 }
 
 // ExternalAccountID is a descriptive type for the external identifier of an external account
-// on the code host. It can be the string representation of an integer (e.g. GitLab) or a
-// GraphQL ID (e.g. GitHub) depends on the code host type.
+// on the code host. It can be the string representation of an integer (e.g. GitLab), a GraphQL
+// ID (e.g. GitHub), or a username (e.g. Bitbucket Server) depends on the code host type.
 type ExternalAccountID string
 
 // ExternalRepoID is a descriptive type for the external identifier of an external repository
-// on the code host. It can be the string representation of an integer (e.g. GitLab) or a
-// GraphQL ID (e.g. GitHub) depends on the code host type.
+// on the code host. It can be the string representation of an integer (e.g. GitLab and Bitbucket
+// Server) or a GraphQL ID (e.g. GitHub) depends on the code host type.
 type ExternalRepoID string

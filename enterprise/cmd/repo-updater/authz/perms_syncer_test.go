@@ -50,12 +50,14 @@ func TestPermsSyncer_ScheduleRepos(t *testing.T) {
 	}
 }
 
+var _ PermsFetcher = (*mockProvider)(nil)
+
 type mockProvider struct {
 	serviceType string
 	serviceID   string
 
 	fetchUserPerms func(context.Context, *extsvc.ExternalAccount) ([]extsvc.ExternalRepoID, error)
-	fetchRepoPerms func(ctx context.Context, repo *api.ExternalRepoSpec) ([]extsvc.ExternalAccountID, error)
+	fetchRepoPerms func(ctx context.Context, repo *extsvc.Repository) ([]extsvc.ExternalAccountID, error)
 }
 
 func (*mockProvider) RepoPerms(context.Context, *extsvc.ExternalAccount, []*types.Repo) ([]authz.RepoPerms, error) {
@@ -82,7 +84,7 @@ func (p *mockProvider) FetchUserPerms(ctx context.Context, acct *extsvc.External
 	return p.fetchUserPerms(ctx, acct)
 }
 
-func (p *mockProvider) FetchRepoPerms(ctx context.Context, repo *api.ExternalRepoSpec) ([]extsvc.ExternalAccountID, error) {
+func (p *mockProvider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) ([]extsvc.ExternalAccountID, error) {
 	return p.fetchRepoPerms(ctx, repo)
 }
 
@@ -274,7 +276,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			p.fetchRepoPerms = func(context.Context, *api.ExternalRepoSpec) ([]extsvc.ExternalAccountID, error) {
+			p.fetchRepoPerms = func(context.Context, *extsvc.Repository) ([]extsvc.ExternalAccountID, error) {
 				return []extsvc.ExternalAccountID{"user", "pending_user"}, test.fetchErr
 			}
 
