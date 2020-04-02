@@ -7,7 +7,6 @@ import (
 	"strconv"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 )
@@ -81,10 +80,10 @@ func listProjects(ctx context.Context, client *gitlab.Client) ([]extsvc.External
 // callers to decide whether to discard.
 //
 // API docs: https://docs.gitlab.com/ee/api/members.html#list-all-members-of-a-group-or-project-including-inherited-members
-func (p *SudoProvider) FetchRepoPerms(ctx context.Context, repo *api.ExternalRepoSpec, metadata interface{}) ([]extsvc.ExternalAccountID, error) {
+func (p *SudoProvider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) ([]extsvc.ExternalAccountID, error) {
 	if repo == nil {
 		return nil, errors.New("no repository provided")
-	} else if !extsvc.IsHostOfRepo(p.codeHost, repo) {
+	} else if !extsvc.IsHostOfRepo(p.codeHost, &repo.ExternalRepoSpec) {
 		return nil, fmt.Errorf("not a code host of the repository: want %q but have %q",
 			repo.ServiceID, p.codeHost.ServiceID)
 	}

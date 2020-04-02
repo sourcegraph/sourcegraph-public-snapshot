@@ -66,13 +66,10 @@ type PermsFetcher interface {
 	// as it would be used as extsvc.ExternalAccount.AccountID. The returned list should
 	// include both direct access and inherited from the group/organization/team membership.
 	//
-	// The metadata argument contains the raw code host metadata for the repository. The
-	// implementation should use type assertion to get corresponding concrete type.
-	//
 	// Because permissions fetching APIs are often expensive, the implementation should
 	// try to return partial but valid results in case of error, and it is up to callers
 	// to decide whether to discard.
-	FetchRepoPerms(ctx context.Context, repo *api.ExternalRepoSpec, metadata interface{}) ([]extsvc.ExternalAccountID, error)
+	FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) ([]extsvc.ExternalAccountID, error)
 }
 
 // NewPermsSyncer returns a new permissions syncing manager.
@@ -282,7 +279,10 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		return nil
 	}
 
-	extAccountIDs, err := fetcher.FetchRepoPerms(ctx, &repo.ExternalRepo, repo.Metadata)
+	extAccountIDs, err := fetcher.FetchRepoPerms(ctx, &extsvc.Repository{
+		URI:              repo.URI,
+		ExternalRepoSpec: repo.ExternalRepo,
+	})
 	if err != nil {
 		// Process partial results if this is an initial fetch.
 		if !noPerms {

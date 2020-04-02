@@ -5,6 +5,7 @@ import (
 	"time"
 
 	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 // ExternalAccount represents a row in the `user_external_accounts` table. See the GraphQL API's
@@ -33,6 +34,13 @@ type ExternalAccountSpec struct {
 type ExternalAccountData struct {
 	AuthData    *json.RawMessage
 	AccountData *json.RawMessage
+}
+
+// Repository contains necessary information to identify an external repository on the code host.
+type Repository struct {
+	// URI is the full name for this repository, e.g. "github.com/user/repo".
+	URI string
+	api.ExternalRepoSpec
 }
 
 // ExternalAccounts contains a list of accounts that belong to the same external service.

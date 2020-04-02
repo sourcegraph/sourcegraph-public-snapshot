@@ -12,7 +12,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -427,22 +426,19 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.ExternalA
 // callers to decide whether to discard.
 //
 // API docs: https://developer.github.com/v4/object/repositorycollaboratorconnection/
-func (p *Provider) FetchRepoPerms(ctx context.Context, spec *api.ExternalRepoSpec, metadata interface{}) ([]extsvc.ExternalAccountID, error) {
-	if spec == nil {
+func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) ([]extsvc.ExternalAccountID, error) {
+	if repo == nil {
 		return nil, errors.New("no repository provided")
-	} else if !extsvc.IsHostOfRepo(p.codeHost, spec) {
+	} else if !extsvc.IsHostOfRepo(p.codeHost, &repo.ExternalRepoSpec) {
 		return nil, fmt.Errorf("not a code host of the repository: want %q but have %q",
-			spec.ServiceID, p.codeHost.ServiceID)
+			repo.ServiceID, p.codeHost.ServiceID)
 	}
 
-	repo, ok := metadata.(*github.Repository)
-	if !ok {
-		return nil, errors.Errorf("metadata mismatch: want *github.Repository but got %T", metadata)
-	}
-
-	fields := strings.SplitN(repo.NameWithOwner, "/", 2)
+	// NOTE: We do not store port in our URI, so stripping the hostname alone is enough.
+	nameWithOwner := strings.TrimPrefix(repo.URI, p.codeHost.BaseURL.Hostname())
+	fields := strings.SplitN(nameWithOwner, "/", 2)
 	if len(fields) != 2 {
-		return nil, errors.Errorf("malformed NameWithOwner %q: missing '/'", repo.NameWithOwner)
+		return nil, errors.Errorf("malformed NameWithOwner %q: missing '/'", nameWithOwner)
 	}
 	owner := fields[0]
 	repoName := fields[1]
