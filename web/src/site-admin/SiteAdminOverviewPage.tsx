@@ -132,26 +132,32 @@ export const SiteAdminOverviewPage: React.FunctionComponent<Props> = ({
                 </div>
             )}
             {info === undefined && <LoadingSpinner className="icon-inline" />}
+            <div className="site-admin-overview-page__activation-menu mb-4">
+                {activation?.completed && (
+                    <Collapsible
+                        title={<>{setupPercentage < 100 ? 'Welcome to Sourcegraph' : 'Setup status'}</>}
+                        detail="Complete the steps below to finish onboarding to Sourcegraph"
+                        defaultExpanded={setupPercentage < 100}
+                        className="site-admin-overview-page__activation-list list-group-item e2e-site-admin-overview-menu"
+                        buttonClassName="site-admin-overview-page__activation-list-button p-2"
+                        titleClassName="mb-0 font-weight-bold px-2"
+                        detailClassName="mb-0 font-weight-normal px-2"
+                        titleAtStart={true}
+                    >
+                        {activation.completed && (
+                            <ActivationChecklist
+                                history={history}
+                                steps={activation.steps}
+                                completed={activation.completed}
+                            />
+                        )}
+                    </Collapsible>
+                )}
+            </div>
+
             <div className="list-group">
                 {info && !isErrorLike(info) && (
                     <>
-                        {activation?.completed && (
-                            <Collapsible
-                                title={<>{setupPercentage < 100 ? 'Get started with Sourcegraph' : 'Setup status'}</>}
-                                defaultExpanded={setupPercentage < 100}
-                                className="list-group-item e2e-site-admin-overview-menu"
-                                titleClassName="h4 mb-0 mt-2 font-weight-normal p-2"
-                                titleAtStart={true}
-                            >
-                                {activation.completed && (
-                                    <ActivationChecklist
-                                        history={history}
-                                        steps={activation.steps}
-                                        completed={activation.completed}
-                                    />
-                                )}
-                            </Collapsible>
-                        )}
                         {info.repositories !== null && (
                             <Link
                                 to="/site-admin/repositories"

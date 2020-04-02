@@ -17,42 +17,28 @@ interface ActivationChecklistItemProps extends ActivationStep {
 /**
  * A single item in the activation checklist.
  */
-export class ActivationChecklistItem extends React.PureComponent<ActivationChecklistItemProps, {}> {
-    private onClick = (e: React.MouseEvent<HTMLElement>): void => {
-        if (this.props.onClick) {
-            this.props.onClick(e, this.props.history)
-        }
-    }
-
-    public render(): JSX.Element {
-        const checkboxElem = (
-            <div>
-                <span className="icon-down">
-                    <ChevronDownIcon />
-                </span>
-                <span className="icon-right">
-                    <ChevronRightIcon />
-                </span>
-                {this.props.done ? (
-                    <CheckCircleIcon className="icon-inline text-success" />
-                ) : (
-                    <CheckboxBlankCircleIcon className="icon-inline text-muted" />
-                )}
-                <span className="mr-2 ml-2">{this.props.title}</span>
-            </div>
-        )
-
-        return (
-            <>{checkboxElem}</>
-
-            // <div onClick={this.onClick} data-tooltip={this.props.detail}>
-            //     <button type="button" className="btn btn-link text-left w-100 p-0 border-0">
-            //         {checkboxElem}
-            //     </button>
-            // </div>
-        )
-    }
-}
+export const ActivationChecklistItem: React.FunctionComponent<ActivationChecklistItemProps> = (
+    props: ActivationChecklistItemProps
+) => (
+    <div className="d-flex justify-content-between py-1 px-2">
+        <div>
+            <span className="icon-inline icon-down">
+                <ChevronDownIcon />
+            </span>
+            <span className="icon-inline icon-right">
+                <ChevronRightIcon />
+            </span>
+            <span className="activation-checklist__title mr-2 ml-2">{props.title}</span>
+        </div>
+        <div>
+            {props.done ? (
+                <CheckCircleIcon className="icon-inline text-success" />
+            ) : (
+                <CheckboxBlankCircleIcon className="icon-inline text-muted" />
+            )}
+        </div>
+    </div>
+)
 
 export interface ActivationChecklistProps {
     history: H.History
@@ -70,16 +56,18 @@ export class ActivationChecklist extends React.PureComponent<ActivationChecklist
             <div className={`list-group list-group-flush ${this.props.className || ''}`}>
                 <Accordion collapsible={true}>
                     {this.props.steps.map(step => (
-                        <AccordionItem key={step.id}>
-                            <AccordionButton className="list-group-item list-group-item-action">
+                        <AccordionItem key={step.id} className="list-group-item activation-checklist-item">
+                            <AccordionButton className="activation-checklist-button list-group-item list-group-item-action">
                                 <ActivationChecklistItem
                                     key={step.id}
                                     {...step}
                                     history={this.props.history}
                                     done={(this.props.completed && this.props.completed[step.id]) || false}
                                 />
+                                <AccordionPanel className="px-2">
+                                    <div className="activation-checklist-item__detail pl-2 pb-1">{step.detail}</div>
+                                </AccordionPanel>
                             </AccordionButton>
-                            <AccordionPanel>{step.detail}</AccordionPanel>
                         </AccordionItem>
                     ))}
                 </Accordion>
