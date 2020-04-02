@@ -100,6 +100,10 @@ func Test_Parse(t *testing.T) {
 			Want:  "(and a b c)",
 		},
 		{
+			Input: "(f(x)oo((a|b))bar)",
+			Want:  "(f(x)oo((a|b))bar)",
+		},
+		{
 			Input: "aorb",
 			Want:  "aorb",
 		},
@@ -153,7 +157,7 @@ func Test_Parse(t *testing.T) {
 		},
 		{
 			Input: "(a) repo:foo (b)",
-			Want:  "(and repo:foo (concat a b))",
+			Want:  "(and repo:foo (concat (a) (b)))",
 		},
 		{
 			Input: "a b (repo:foo c d)",
@@ -264,12 +268,22 @@ func Test_Parse(t *testing.T) {
 		{
 			Name:  "empty paren",
 			Input: "()",
-			Want:  "",
+			Want:  "()",
+		},
+		{
+			Name:  "paren inside contiguous string",
+			Input: "foo()bar",
+			Want:  "foo()bar",
+		},
+		{
+			Name:  "paren containing whitespace inside contiguous string",
+			Input: "foo(   )bar",
+			Want:  "(concat foo bar)",
 		},
 		{
 			Name:  "nested empty paren",
 			Input: "(x())",
-			Want:  "x",
+			Want:  "(x())",
 		},
 		{
 			Name:  "interpolated nested empty paren",
@@ -279,17 +293,17 @@ func Test_Parse(t *testing.T) {
 		{
 			Name:  "empty paren on or",
 			Input: "() or ()",
-			Want:  "",
+			Want:  "(or () ())",
 		},
 		{
 			Name:  "empty left paren on or",
 			Input: "() or (x)",
-			Want:  "x",
+			Want:  "(or () (x))",
 		},
 		{
 			Name:  "complex interpolated nested empty paren",
 			Input: "(()x(  )(y or () or (f))())",
-			Want:  "(concat x (or y f))",
+			Want:  "(concat x (or y () f))",
 		},
 	}
 	for _, tt := range cases {
