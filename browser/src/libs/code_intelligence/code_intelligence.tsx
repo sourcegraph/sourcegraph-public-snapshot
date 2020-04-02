@@ -47,6 +47,7 @@ import {
     CommandListPopoverButtonClassProps,
 } from '../../../../shared/src/commandPalette/CommandList'
 import { CompletionWidgetClassProps } from '../../../../shared/src/components/completion/CompletionWidget'
+import { asObservable } from '../../../../shared/src/util/rxjs/asObservable'
 import { ApplyLinkPreviewOptions } from '../../../../shared/src/components/linkPreviews/linkPreviews'
 import { Controller } from '../../../../shared/src/extensions/controller'
 import { registerHighlightContributions } from '../../../../shared/src/highlight/contributions'
@@ -701,7 +702,9 @@ export function handleCodeHost({
             codeViewEvent.subscriptions.add(() => codeViewCount.next(codeViewCount.value - 1))
         }),
         mergeMap(codeViewEvent =>
-            codeViewEvent.resolveFileInfo(codeViewEvent.element, platformContext.requestGraphQL).pipe(
+            asObservable(() =>
+                codeViewEvent.resolveFileInfo(codeViewEvent.element, platformContext.requestGraphQL)
+            ).pipe(
                 mergeMap(fileInfo => resolveRepoNames(fileInfo, platformContext.requestGraphQL)),
                 mergeMap(fileInfo =>
                     fetchFileContents(fileInfo, platformContext.requestGraphQL).pipe(
