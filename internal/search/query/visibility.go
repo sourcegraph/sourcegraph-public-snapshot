@@ -1,4 +1,6 @@
-package graphqlbackend
+package query
+
+import "strings"
 
 type repoVisibility string
 
@@ -8,8 +10,8 @@ const (
 	Public  repoVisibility = "public"
 )
 
-func parseVisibility(s string) repoVisibility {
-	switch s {
+func ParseVisibility(s string) repoVisibility {
+	switch strings.ToLower(s) {
 	case "private":
 		return Private
 	case "public":

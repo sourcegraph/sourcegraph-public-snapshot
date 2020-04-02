@@ -324,7 +324,7 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 	}
 
 	visibilityStr, _ := r.query.StringValue(query.FieldVisibility)
-	visibility := parseVisibility(visibilityStr)
+	visibility := query.ParseVisibility(visibilityStr)
 
 	commitAfter, _ := r.query.StringValue(query.FieldRepoHasCommitAfter)
 
@@ -337,8 +337,8 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 		noForks:          fork == No || fork == False,
 		onlyArchived:     archived == Only || archived == True,
 		noArchived:       archived == No || archived == False,
-		onlyPrivate:      visibility == Private,
-		onlyPublic:       visibility == Public,
+		onlyPrivate:      visibility == query.Private,
+		onlyPublic:       visibility == query.Public,
 		commitAfter:      commitAfter,
 	})
 	tr.LazyPrintf("resolveRepositories - done")
