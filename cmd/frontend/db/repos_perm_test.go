@@ -148,11 +148,11 @@ func (f fakeProvider) ServiceType() string           { return f.codeHost.Service
 func (f fakeProvider) ServiceID() string             { return f.codeHost.ServiceID }
 func (f fakeProvider) Validate() (problems []string) { return nil }
 
-func (f fakeProvider) FetchUserPerms(context.Context, *extsvc.Account) ([]extsvc.ExternalRepoID, error) {
+func (f fakeProvider) FetchUserPerms(context.Context, *extsvc.Account) ([]extsvc.RepoID, error) {
 	return nil, nil
 }
 
-func (f fakeProvider) FetchRepoPerms(context.Context, *extsvc.Repository) ([]extsvc.ExternalAccountID, error) {
+func (f fakeProvider) FetchRepoPerms(context.Context, *extsvc.Repository) ([]extsvc.AccountID, error) {
 	return nil, nil
 }
 

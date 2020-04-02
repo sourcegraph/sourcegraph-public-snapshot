@@ -1126,11 +1126,11 @@ func (m *MockAuthzProvider) ServiceID() string   { return m.serviceID }
 func (m *MockAuthzProvider) ServiceType() string { return m.serviceType }
 func (m *MockAuthzProvider) Validate() []string  { return nil }
 
-func (m *MockAuthzProvider) FetchUserPerms(context.Context, *extsvc.Account) ([]extsvc.ExternalRepoID, error) {
+func (m *MockAuthzProvider) FetchUserPerms(context.Context, *extsvc.Account) ([]extsvc.RepoID, error) {
 	return nil, nil
 }
 
-func (m *MockAuthzProvider) FetchRepoPerms(context.Context, *extsvc.Repository) ([]extsvc.ExternalAccountID, error) {
+func (m *MockAuthzProvider) FetchRepoPerms(context.Context, *extsvc.Repository) ([]extsvc.AccountID, error) {
 	return nil, nil
 }
 

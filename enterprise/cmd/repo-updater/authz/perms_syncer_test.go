@@ -54,8 +54,8 @@ type mockProvider struct {
 	serviceType string
 	serviceID   string
 
-	fetchUserPerms func(context.Context, *extsvc.Account) ([]extsvc.ExternalRepoID, error)
-	fetchRepoPerms func(ctx context.Context, repo *extsvc.Repository) ([]extsvc.ExternalAccountID, error)
+	fetchUserPerms func(context.Context, *extsvc.Account) ([]extsvc.RepoID, error)
+	fetchRepoPerms func(ctx context.Context, repo *extsvc.Repository) ([]extsvc.AccountID, error)
 }
 
 func (*mockProvider) RepoPerms(context.Context, *extsvc.Account, []*types.Repo) ([]authz.RepoPerms, error) {
@@ -78,11 +78,11 @@ func (*mockProvider) Validate() []string {
 	return nil
 }
 
-func (p *mockProvider) FetchUserPerms(ctx context.Context, acct *extsvc.Account) ([]extsvc.ExternalRepoID, error) {
+func (p *mockProvider) FetchUserPerms(ctx context.Context, acct *extsvc.Account) ([]extsvc.RepoID, error) {
 	return p.fetchUserPerms(ctx, acct)
 }
 
-func (p *mockProvider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) ([]extsvc.ExternalAccountID, error) {
+func (p *mockProvider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) ([]extsvc.AccountID, error) {
 	return p.fetchRepoPerms(ctx, repo)
 }
 
@@ -184,8 +184,8 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			p.fetchUserPerms = func(context.Context, *extsvc.Account) ([]extsvc.ExternalRepoID, error) {
-				return []extsvc.ExternalRepoID{"1"}, test.fetchErr
+			p.fetchUserPerms = func(context.Context, *extsvc.Account) ([]extsvc.RepoID, error) {
+				return []extsvc.RepoID{"1"}, test.fetchErr
 			}
 
 			err := s.syncUserPerms(context.Background(), 1, test.noPerms)
@@ -274,8 +274,8 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			p.fetchRepoPerms = func(context.Context, *extsvc.Repository) ([]extsvc.ExternalAccountID, error) {
-				return []extsvc.ExternalAccountID{"user", "pending_user"}, test.fetchErr
+			p.fetchRepoPerms = func(context.Context, *extsvc.Repository) ([]extsvc.AccountID, error) {
+				return []extsvc.AccountID{"user", "pending_user"}, test.fetchErr
 			}
 
 			err := s.syncRepoPerms(context.Background(), 1, test.noPerms)
