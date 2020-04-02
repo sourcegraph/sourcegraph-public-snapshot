@@ -434,7 +434,7 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) 
 			repo.ServiceID, p.codeHost.ServiceID)
 	}
 
-	// NOTE: We do not store port in our URI, so stripping the hostname alone is enough.
+	// NOTE: We do not store port or scheme in our URI, so stripping the hostname alone is enough.
 	nameWithOwner := strings.TrimPrefix(repo.URI, p.codeHost.BaseURL.Hostname())
 	fields := strings.SplitN(nameWithOwner, "/", 2)
 	if len(fields) != 2 {
