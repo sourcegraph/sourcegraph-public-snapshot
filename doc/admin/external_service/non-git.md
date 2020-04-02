@@ -2,8 +2,7 @@
 
 Sourcegraph natively supports all Git-based Version Control Systems (VCSs) and code hosts. For non-Git code hosts, Sourcegraph provides a CLI tool called `src-expose` to periodically sync and continuously serve local directories as Git repositories over HTTP. 
 
-<span class="x x-first x-last">&gt; NOTE: If using Perforce, see the [Perforce repositories with Sourcegraph guide](../repo/perforce.md).</span>
-- [Perforce](../repo/perforce.md)
+>NOTE: If using Perforce, see the [Perforce repositories with Sourcegraph guide](../repo/perforce.md).
 
 ## Installing `src-expose`
 
@@ -12,7 +11,7 @@ Navigate to the directory that contains the Git repositories that you want to se
 For Linux:
 
 ```bash
-# wget https://storage.googleapis.com/sourcegraph-artifacts/src-expose/latest/linux-amd64/src-expose
+wget https://storage.googleapis.com/sourcegraph-artifacts/src-expose/latest/linux-amd64/src-expose
 
 chmod +x src-expose
 ```
@@ -45,7 +44,7 @@ If you wish to serve a local directory without running any syncing commands auto
 
 In order to keep the code in the local repository up to date, you will need to run another command periodically to fetch changes. For example, if you are using Perforce, you can set up a cron job to run `git p4 sync` every few minutes or hours to fetch changes and convert them to Git commits that can then be served. Similar options exist for other non-Git VCSs.
 
-### Syncing and service repositories
+### Syncing and serving repositories
 
 In addition to serving a local directory, `src-expose` can periodically run a command of your choice to fetch changes from a remote and combine them into a single new Git commit.
 
