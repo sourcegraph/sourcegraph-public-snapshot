@@ -7,6 +7,7 @@ import { TelemetryProps } from '../telemetry/telemetryService'
 import { ActionItem, ActionItemProps } from './ActionItem'
 import { ActionsState } from './actions'
 import { ActionsProps } from './ActionsContainer'
+import classNames from 'classnames'
 
 export interface ActionNavItemsClassProps {
     /**
@@ -98,7 +99,7 @@ export class ActionsNavItems extends React.PureComponent<ActionsNavItemsProps, A
                         {...this.props}
                         variant="actionItem"
                         iconClassName={this.props.actionItemIconClass}
-                        className={this.props.actionItemClass}
+                        className={classNames('actions-nav-items__action-item', this.props.actionItemClass)}
                         pressedClassName={this.props.actionItemPressedClass}
                     />
                 </li>
