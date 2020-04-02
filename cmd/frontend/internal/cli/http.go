@@ -167,7 +167,7 @@ func secureHeadersMiddleware(next http.Handler) http.Handler {
 
 			if r.Method == "OPTIONS" {
 				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-				w.Header().Set("Access-Control-Allow-Headers", corsAllowHeader+", X-Sourcegraph-Client, Content-Type, Authorization")
+				w.Header().Set("Access-Control-Allow-Headers", corsAllowHeader+", X-Sourcegraph-Client, Content-Type, Authorization, X-Sourcegraph-Should-Trace")
 				w.WriteHeader(http.StatusOK)
 				return // do not invoke next handler
 			}
