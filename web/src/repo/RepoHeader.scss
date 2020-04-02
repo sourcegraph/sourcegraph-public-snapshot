@@ -18,7 +18,19 @@
         .nav-item {
             display: flex;
             align-items: center;
-            margin-left: 0.125rem;
+
+            // Have a small gap between buttons so they are visually distinct when pressed
+            // stylelint-disable-next-line declaration-property-unit-whitelist
+            margin-left: 1px;
+
+            &:hover {
+                .theme-dark & {
+                    background: $color-bg-1;
+                }
+                .theme-light & {
+                    background: $color-light-bg-2;
+                }
+            }
 
             .nav-link {
                 user-select: none;
@@ -52,24 +64,23 @@
     &__spacer {
         flex: 1 1 0;
     }
-}
 
-.theme-dark {
-    .repo-header {
+    .theme-dark & {
         border-color: #233043;
     }
-    .action-item--pressed {
-        background-color: $color-bg-3;
-        color: $color-text-3;
-    }
-}
 
-.theme-light {
-    .repo-header {
+    .theme-light & {
         border-color: $color-light-border;
     }
+
     .action-item--pressed {
-        background-color: $color-light-bg-3;
-        color: $color-light-text-1;
+        .theme-dark & {
+            background-color: $color-bg-2;
+            color: $color-text-3;
+        }
+        .theme-light & {
+            background-color: $color-light-bg-4;
+            color: $color-light-text-1;
+        }
     }
 }
