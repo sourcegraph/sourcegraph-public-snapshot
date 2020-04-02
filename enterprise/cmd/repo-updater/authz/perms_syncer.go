@@ -269,7 +269,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		}
 
 		// Get corresponding internal database IDs
-		userIDs, err = s.permsStore.GetUserIDsByExternalAccounts(ctx, &extsvc.ExternalAccounts{
+		userIDs, err = s.permsStore.GetUserIDsByExternalAccounts(ctx, &extsvc.Accounts{
 			ServiceType: provider.ServiceType(),
 			ServiceID:   provider.ServiceID(),
 			AccountIDs:  accountIDs,
@@ -311,7 +311,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	}
 	defer txs.Done(&err)
 
-	accounts := &extsvc.ExternalAccounts{
+	accounts := &extsvc.Accounts{
 		ServiceType: provider.ServiceType(),
 		ServiceID:   provider.ServiceID(),
 		AccountIDs:  pendingAccountIDs,

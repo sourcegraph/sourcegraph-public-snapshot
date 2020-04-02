@@ -92,7 +92,7 @@ func TestDeleteUser(t *testing.T) {
 			return fmt.Errorf("args.UserID: want 6 but got %v", args.UserID)
 		}
 
-		expAccounts := []*extsvc.ExternalAccounts{
+		expAccounts := []*extsvc.Accounts{
 			{
 				ServiceType: "gitlab",
 				ServiceID:   "https://gitlab.com/",

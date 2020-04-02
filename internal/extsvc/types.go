@@ -43,21 +43,21 @@ type Repository struct {
 	api.ExternalRepoSpec
 }
 
-// ExternalAccounts contains a list of accounts that belong to the same external service.
+// Accounts contains a list of accounts that belong to the same external service.
 // All fields have a same meaning to AccountSpec. See GraphQL API's corresponding fields
 // in "ExternalAccount" for documentation.
-type ExternalAccounts struct {
+type Accounts struct {
 	ServiceType string
 	ServiceID   string
 	AccountIDs  []string
 }
 
 // TracingFields returns tracing fields for the opentracing log.
-func (s *ExternalAccounts) TracingFields() []otlog.Field {
+func (s *Accounts) TracingFields() []otlog.Field {
 	return []otlog.Field{
-		otlog.String("ExternalAccounts.ServiceType", s.ServiceType),
-		otlog.String("ExternalAccounts.Perm", s.ServiceID),
-		otlog.Int("ExternalAccounts.AccountIDs.Count", len(s.AccountIDs)),
+		otlog.String("Accounts.ServiceType", s.ServiceType),
+		otlog.String("Accounts.Perm", s.ServiceID),
+		otlog.Int("Accounts.AccountIDs.Count", len(s.AccountIDs)),
 	}
 }
 

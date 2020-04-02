@@ -570,7 +570,7 @@ func testPermsStore_LoadUserPendingPermissions(db *sql.DB) func(*testing.T) {
 				cleanupPermsTables(t, s)
 			})
 
-			accounts := &extsvc.ExternalAccounts{
+			accounts := &extsvc.Accounts{
 				ServiceType: authz.SourcegraphServiceType,
 				ServiceID:   authz.SourcegraphServiceID,
 				AccountIDs:  []string{"bob"},
@@ -603,7 +603,7 @@ func testPermsStore_LoadUserPendingPermissions(db *sql.DB) func(*testing.T) {
 				cleanupPermsTables(t, s)
 			})
 
-			accounts := &extsvc.ExternalAccounts{
+			accounts := &extsvc.Accounts{
 				ServiceType: authz.SourcegraphServiceType,
 				ServiceID:   authz.SourcegraphServiceID,
 				AccountIDs:  []string{"alice"},
@@ -636,7 +636,7 @@ func testPermsStore_LoadUserPendingPermissions(db *sql.DB) func(*testing.T) {
 				cleanupPermsTables(t, s)
 			})
 
-			accounts := &extsvc.ExternalAccounts{
+			accounts := &extsvc.Accounts{
 				ServiceType: authz.SourcegraphServiceType,
 				ServiceID:   authz.SourcegraphServiceID,
 				AccountIDs:  []string{"alice"},
@@ -669,7 +669,7 @@ func testPermsStore_LoadUserPendingPermissions(db *sql.DB) func(*testing.T) {
 				cleanupPermsTables(t, s)
 			})
 
-			accounts := &extsvc.ExternalAccounts{
+			accounts := &extsvc.Accounts{
 				ServiceType: authz.SourcegraphServiceType,
 				ServiceID:   authz.SourcegraphServiceID,
 				AccountIDs:  []string{"alice", "bob"},
@@ -867,7 +867,7 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 	}
 
 	type update struct {
-		accounts *extsvc.ExternalAccounts
+		accounts *extsvc.Accounts
 		perm     *authz.RepoPermissions
 	}
 	tests := []struct {
@@ -880,7 +880,7 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 			name: "empty",
 			updates: []update{
 				{
-					accounts: &extsvc.ExternalAccounts{
+					accounts: &extsvc.Accounts{
 						ServiceType: authz.SourcegraphServiceType,
 						ServiceID:   authz.SourcegraphServiceID,
 						AccountIDs:  nil,
@@ -896,7 +896,7 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 			name: "add",
 			updates: []update{
 				{
-					accounts: &extsvc.ExternalAccounts{
+					accounts: &extsvc.Accounts{
 						ServiceType: authz.SourcegraphServiceType,
 						ServiceID:   authz.SourcegraphServiceID,
 						AccountIDs:  []string{"alice"},
@@ -906,7 +906,7 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 						Perm:   authz.Read,
 					},
 				}, {
-					accounts: &extsvc.ExternalAccounts{
+					accounts: &extsvc.Accounts{
 						ServiceType: authz.SourcegraphServiceType,
 						ServiceID:   authz.SourcegraphServiceID,
 						AccountIDs:  []string{"alice", "bob"},
@@ -916,7 +916,7 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 						Perm:   authz.Read,
 					},
 				}, {
-					accounts: &extsvc.ExternalAccounts{
+					accounts: &extsvc.Accounts{
 						ServiceType: "github",
 						ServiceID:   "https://github.com/",
 						AccountIDs:  []string{"cindy"},
@@ -942,7 +942,7 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 			name: "add and update",
 			updates: []update{
 				{
-					accounts: &extsvc.ExternalAccounts{
+					accounts: &extsvc.Accounts{
 						ServiceType: authz.SourcegraphServiceType,
 						ServiceID:   authz.SourcegraphServiceID,
 						AccountIDs:  []string{"alice", "bob"},
@@ -952,7 +952,7 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 						Perm:   authz.Read,
 					},
 				}, {
-					accounts: &extsvc.ExternalAccounts{
+					accounts: &extsvc.Accounts{
 						ServiceType: authz.SourcegraphServiceType,
 						ServiceID:   authz.SourcegraphServiceID,
 						AccountIDs:  []string{"bob", "cindy"},
@@ -962,7 +962,7 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 						Perm:   authz.Read,
 					},
 				}, {
-					accounts: &extsvc.ExternalAccounts{
+					accounts: &extsvc.Accounts{
 						ServiceType: "github",
 						ServiceID:   "https://github.com/",
 						AccountIDs:  []string{"cindy"},
@@ -988,7 +988,7 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 			name: "add and clear",
 			updates: []update{
 				{
-					accounts: &extsvc.ExternalAccounts{
+					accounts: &extsvc.Accounts{
 						ServiceType: authz.SourcegraphServiceType,
 						ServiceID:   authz.SourcegraphServiceID,
 						AccountIDs:  []string{"alice", "bob", "cindy"},
@@ -998,7 +998,7 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 						Perm:   authz.Read,
 					},
 				}, {
-					accounts: &extsvc.ExternalAccounts{
+					accounts: &extsvc.Accounts{
 						ServiceType: authz.SourcegraphServiceType,
 						ServiceID:   authz.SourcegraphServiceID,
 						AccountIDs:  []string{},
@@ -1071,7 +1071,7 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 
 func testPermsStore_ListPendingUsers(db *sql.DB) func(*testing.T) {
 	type update struct {
-		accounts *extsvc.ExternalAccounts
+		accounts *extsvc.Accounts
 		perm     *authz.RepoPermissions
 	}
 	tests := []struct {
@@ -1087,7 +1087,7 @@ func testPermsStore_ListPendingUsers(db *sql.DB) func(*testing.T) {
 			name: "has user with pending permissions",
 			updates: []update{
 				{
-					accounts: &extsvc.ExternalAccounts{
+					accounts: &extsvc.Accounts{
 						ServiceType: authz.SourcegraphServiceType,
 						ServiceID:   authz.SourcegraphServiceID,
 						AccountIDs:  []string{"alice"},
@@ -1104,7 +1104,7 @@ func testPermsStore_ListPendingUsers(db *sql.DB) func(*testing.T) {
 			name: "has user but with empty object_ids",
 			updates: []update{
 				{
-					accounts: &extsvc.ExternalAccounts{
+					accounts: &extsvc.Accounts{
 						ServiceType: authz.SourcegraphServiceType,
 						ServiceID:   authz.SourcegraphServiceID,
 						AccountIDs:  []string{"bob@example.com"},
@@ -1114,7 +1114,7 @@ func testPermsStore_ListPendingUsers(db *sql.DB) func(*testing.T) {
 						Perm:   authz.Read,
 					},
 				}, {
-					accounts: &extsvc.ExternalAccounts{
+					accounts: &extsvc.Accounts{
 						ServiceType: authz.SourcegraphServiceType,
 						ServiceID:   authz.SourcegraphServiceID,
 						AccountIDs:  nil,
@@ -1131,7 +1131,7 @@ func testPermsStore_ListPendingUsers(db *sql.DB) func(*testing.T) {
 			name: "has user but with different service ID",
 			updates: []update{
 				{
-					accounts: &extsvc.ExternalAccounts{
+					accounts: &extsvc.Accounts{
 						ServiceType: "gitlab",
 						ServiceID:   "https://gitlab.com/",
 						AccountIDs:  []string{"bob@example.com"},
@@ -1192,7 +1192,7 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(*testing.T) {
 	}
 
 	type pending struct {
-		accounts *extsvc.ExternalAccounts
+		accounts *extsvc.Accounts
 		perm     *authz.RepoPermissions
 	}
 	type update struct {
@@ -1244,7 +1244,7 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(*testing.T) {
 					},
 					pendings: []pending{
 						{
-							accounts: &extsvc.ExternalAccounts{
+							accounts: &extsvc.Accounts{
 								ServiceType: authz.SourcegraphServiceType,
 								ServiceID:   authz.SourcegraphServiceID,
 								AccountIDs:  []string{"alice"},
@@ -1254,7 +1254,7 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(*testing.T) {
 								Perm:   authz.Read,
 							},
 						}, {
-							accounts: &extsvc.ExternalAccounts{
+							accounts: &extsvc.Accounts{
 								ServiceType: authz.SourcegraphServiceType,
 								ServiceID:   authz.SourcegraphServiceID,
 								AccountIDs:  []string{"bob"},
@@ -1313,7 +1313,7 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(*testing.T) {
 					},
 					pendings: []pending{
 						{
-							accounts: &extsvc.ExternalAccounts{
+							accounts: &extsvc.Accounts{
 								ServiceType: authz.SourcegraphServiceType,
 								ServiceID:   authz.SourcegraphServiceID,
 								AccountIDs:  []string{"alice"},
@@ -1324,7 +1324,7 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(*testing.T) {
 							},
 						},
 						{
-							accounts: &extsvc.ExternalAccounts{
+							accounts: &extsvc.Accounts{
 								ServiceType: "gitlab",
 								ServiceID:   "https://gitlab.com/",
 								AccountIDs:  []string{"alice"},
@@ -1334,7 +1334,7 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(*testing.T) {
 								Perm:   authz.Read,
 							},
 						}, {
-							accounts: &extsvc.ExternalAccounts{
+							accounts: &extsvc.Accounts{
 								ServiceType: authz.SourcegraphServiceType,
 								ServiceID:   authz.SourcegraphServiceID,
 								AccountIDs:  []string{"bob"},
@@ -1403,7 +1403,7 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(*testing.T) {
 					},
 					pendings: []pending{
 						{
-							accounts: &extsvc.ExternalAccounts{
+							accounts: &extsvc.Accounts{
 								ServiceType: authz.SourcegraphServiceType,
 								ServiceID:   authz.SourcegraphServiceID,
 								AccountIDs:  []string{"alice@example.com"},
@@ -1413,7 +1413,7 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(*testing.T) {
 								Perm:   authz.Read,
 							},
 						}, {
-							accounts: &extsvc.ExternalAccounts{
+							accounts: &extsvc.Accounts{
 								ServiceType: authz.SourcegraphServiceType,
 								ServiceID:   authz.SourcegraphServiceID,
 								AccountIDs:  []string{"alice2@example.com"},
@@ -1582,7 +1582,7 @@ func testPermsStore_DeleteAllUserPendingPermissions(db *sql.DB) func(*testing.T)
 
 		ctx := context.Background()
 
-		accounts := &extsvc.ExternalAccounts{
+		accounts := &extsvc.Accounts{
 			ServiceType: authz.SourcegraphServiceType,
 			ServiceID:   authz.SourcegraphServiceID,
 			AccountIDs:  []string{"alice", "bob"},
@@ -1658,7 +1658,7 @@ func testPermsStore_DatabaseDeadlocks(db *sql.DB) func(*testing.T) {
 			}
 		}
 		setRepoPendingPermissions := func(ctx context.Context, t *testing.T) {
-			accounts := &extsvc.ExternalAccounts{
+			accounts := &extsvc.Accounts{
 				ServiceType: authz.SourcegraphServiceType,
 				ServiceID:   authz.SourcegraphServiceID,
 				AccountIDs:  []string{"alice"},
@@ -1861,7 +1861,7 @@ INSERT INTO user_external_accounts(user_id, service_type, service_id, account_id
 			}
 		}
 
-		accounts := &extsvc.ExternalAccounts{
+		accounts := &extsvc.Accounts{
 			ServiceType: "gitlab",
 			ServiceID:   "https://gitlab.com/",
 			AccountIDs:  []string{"alice_gitlab", "bob_gitlab", "david_gitlab"},
@@ -1996,7 +1996,7 @@ func testPermsStore_RepoIDsWithNoPerms(db *sql.DB) func(*testing.T) {
 			t.Fatal(err)
 		}
 		err = s.SetRepoPendingPermissions(ctx,
-			&extsvc.ExternalAccounts{
+			&extsvc.Accounts{
 				ServiceType: authz.SourcegraphServiceType,
 				ServiceID:   authz.SourcegraphServiceID,
 				AccountIDs:  []string{"alice"},

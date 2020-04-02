@@ -207,7 +207,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 	edb.Mocks.Perms.Transact = func(context.Context) (*edb.PermsStore, error) {
 		return &edb.PermsStore{}, nil
 	}
-	edb.Mocks.Perms.GetUserIDsByExternalAccounts = func(context.Context, *extsvc.ExternalAccounts) (map[string]int32, error) {
+	edb.Mocks.Perms.GetUserIDsByExternalAccounts = func(context.Context, *extsvc.Accounts) (map[string]int32, error) {
 		return map[string]int32{"user": 1}, nil
 	}
 	edb.Mocks.Perms.SetRepoPermissions = func(_ context.Context, p *authz.RepoPermissions) error {
@@ -221,8 +221,8 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 		}
 		return nil
 	}
-	edb.Mocks.Perms.SetRepoPendingPermissions = func(_ context.Context, accounts *extsvc.ExternalAccounts, _ *authz.RepoPermissions) error {
-		expAccounts := &extsvc.ExternalAccounts{
+	edb.Mocks.Perms.SetRepoPendingPermissions = func(_ context.Context, accounts *extsvc.Accounts, _ *authz.RepoPermissions) error {
+		expAccounts := &extsvc.Accounts{
 			ServiceType: p.ServiceType(),
 			ServiceID:   p.ServiceID(),
 			AccountIDs:  []string{"pending_user"},
