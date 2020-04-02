@@ -164,13 +164,13 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 
 	var repoSpecs []api.ExternalRepoSpec
 	for _, acct := range accts {
-		fetcher := s.providers()[acct.ServiceID]
-		if fetcher == nil {
+		provider := s.providers()[acct.ServiceID]
+		if provider == nil {
 			// We have no authz provider configured for this external account.
 			continue
 		}
 
-		extIDs, err := fetcher.FetchUserPerms(ctx, acct)
+		extIDs, err := provider.FetchUserPerms(ctx, acct)
 		if err != nil {
 			// Process partial results if this is an initial fetch.
 			if !noPerms {
@@ -182,8 +182,8 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		for i := range extIDs {
 			repoSpecs = append(repoSpecs, api.ExternalRepoSpec{
 				ID:          string(extIDs[i]),
-				ServiceType: fetcher.ServiceType(),
-				ServiceID:   fetcher.ServiceID(),
+				ServiceType: provider.ServiceType(),
+				ServiceID:   provider.ServiceID(),
 			})
 		}
 	}
@@ -242,13 +242,13 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		return nil
 	}
 
-	fetcher := s.providers()[repo.ExternalRepo.ServiceID]
-	if fetcher == nil {
+	provider := s.providers()[repo.ExternalRepo.ServiceID]
+	if provider == nil {
 		// We have no authz provider configured for this repository.
 		return nil
 	}
 
-	extAccountIDs, err := fetcher.FetchRepoPerms(ctx, &extsvc.Repository{
+	extAccountIDs, err := provider.FetchRepoPerms(ctx, &extsvc.Repository{
 		URI:              repo.URI,
 		ExternalRepoSpec: repo.ExternalRepo,
 	})
@@ -270,8 +270,8 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 
 		// Get corresponding internal database IDs
 		userIDs, err = s.permsStore.GetUserIDsByExternalAccounts(ctx, &extsvc.ExternalAccounts{
-			ServiceType: fetcher.ServiceType(),
-			ServiceID:   fetcher.ServiceID(),
+			ServiceType: provider.ServiceType(),
+			ServiceID:   provider.ServiceID(),
 			AccountIDs:  accountIDs,
 		})
 		if err != nil {
@@ -312,8 +312,8 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	defer txs.Done(&err)
 
 	accounts := &extsvc.ExternalAccounts{
-		ServiceType: fetcher.ServiceType(),
-		ServiceID:   fetcher.ServiceID(),
+		ServiceType: provider.ServiceType(),
+		ServiceID:   provider.ServiceID(),
 		AccountIDs:  pendingAccountIDs,
 	}
 
@@ -525,7 +525,7 @@ func (s *PermsSyncer) schedule(ctx context.Context) (*schedule, error) {
 	// Hard coded both to 10 for now.
 	const limit = 10
 
-	// TODO(jchen): Use better heuristics for setting NexySyncAt, the initial version
+	// TODO(jchen): Use better heuristics for setting NextSyncAt, the initial version
 	// just uses the value of LastUpdatedAt get from the perms tables.
 
 	users, err = s.scheduleUsersWithOldestPerms(ctx, limit)
