@@ -2,7 +2,7 @@
 
 Sourcegraph natively supports all Git-based Version Control Systems (VCSs) and code hosts. For non-Git code hosts, Sourcegraph provides a CLI tool called `src-expose` to periodically sync and continuously serve local directories as Git repositories over HTTP. 
 
-**Guides for specific non-Git code hosts**:
+<span class="x x-first x-last">&gt; NOTE: If using Perforce, see the [Perforce repositories with Sourcegraph guide](../repo/perforce.md).</span>
 - [Perforce](../repo/perforce.md)
 
 ## Installing `src-expose`
