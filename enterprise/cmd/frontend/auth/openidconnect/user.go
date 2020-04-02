@@ -63,7 +63,7 @@ func getOrCreateUser(ctx context.Context, p *provider, idToken *oidc.IDToken, us
 			DisplayName:     displayName,
 			AvatarURL:       claims.Picture,
 		},
-		ExternalAccount: extsvc.ExternalAccountSpec{
+		ExternalAccount: extsvc.AccountSpec{
 			ServiceType: providerType,
 			ServiceID:   pi.ServiceID,
 			ClientID:    pi.ClientID,

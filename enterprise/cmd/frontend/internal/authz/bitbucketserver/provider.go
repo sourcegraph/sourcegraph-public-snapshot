@@ -180,7 +180,7 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*exts
 
 	return &extsvc.Account{
 		UserID: user.ID,
-		ExternalAccountSpec: extsvc.ExternalAccountSpec{
+		AccountSpec: extsvc.AccountSpec{
 			ServiceType: p.codeHost.ServiceType,
 			ServiceID:   p.codeHost.ServiceID,
 			AccountID:   strconv.Itoa(bitbucketUser.ID),
@@ -199,7 +199,7 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*exts
 // callers to decide whether to discard.
 //
 // API docs: https://docs.atlassian.com/bitbucket-server/rest/5.16.0/bitbucket-rest.html#idm8296923984
-func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) ([]extsvc.ExternalRepoID, error) {
+func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) ([]extsvc.RepoID, error) {
 	switch {
 	case account == nil:
 		return nil, errors.New("no account provided")
@@ -207,7 +207,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 		return nil, errors.New("no account data provided")
 	case !extsvc.IsHostOfAccount(p.codeHost, account):
 		return nil, fmt.Errorf("not a code host of the account: want %q but have %q",
-			p.codeHost.ServiceID, account.ExternalAccountSpec.ServiceID)
+			p.codeHost.ServiceID, account.AccountSpec.ServiceID)
 	}
 
 	var user bitbucketserver.User
@@ -217,9 +217,9 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 
 	ids, err := p.repoIDs(ctx, user.Name, false)
 
-	extIDs := make([]extsvc.ExternalRepoID, 0, len(ids))
+	extIDs := make([]extsvc.RepoID, 0, len(ids))
 	for _, id := range ids {
-		extIDs = append(extIDs, extsvc.ExternalRepoID(strconv.FormatUint(uint64(id), 10)))
+		extIDs = append(extIDs, extsvc.RepoID(strconv.FormatUint(uint64(id), 10)))
 	}
 
 	return extIDs, err
@@ -234,7 +234,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 // callers to decide whether to discard.
 //
 // API docs: https://docs.atlassian.com/bitbucket-server/rest/5.16.0/bitbucket-rest.html#idm8283203728
-func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) ([]extsvc.ExternalAccountID, error) {
+func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) ([]extsvc.AccountID, error) {
 	switch {
 	case repo == nil:
 		return nil, errors.New("no repo provided")
@@ -245,9 +245,9 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) 
 
 	ids, err := p.userIDs(ctx, repo.ID)
 
-	extIDs := make([]extsvc.ExternalAccountID, 0, len(ids))
+	extIDs := make([]extsvc.AccountID, 0, len(ids))
 	for _, id := range ids {
-		extIDs = append(extIDs, extsvc.ExternalAccountID(strconv.FormatInt(int64(id), 10)))
+		extIDs = append(extIDs, extsvc.AccountID(strconv.FormatInt(int64(id), 10)))
 	}
 
 	return extIDs, err

@@ -398,7 +398,7 @@ func acct(t *testing.T, userID int32, serviceType, serviceID, accountID, oauthTo
 
 	return &extsvc.Account{
 		UserID: userID,
-		ExternalAccountSpec: extsvc.ExternalAccountSpec{
+		AccountSpec: extsvc.AccountSpec{
 			ServiceType: serviceType,
 			ServiceID:   serviceID,
 			AccountID:   accountID,

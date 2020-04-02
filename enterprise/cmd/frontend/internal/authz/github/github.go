@@ -384,12 +384,12 @@ func (p *Provider) Validate() (problems []string) {
 // callers to decide whether to discard.
 //
 // API docs: https://developer.github.com/v3/repos/#list-repositories-for-the-authenticated-user
-func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) ([]extsvc.ExternalRepoID, error) {
+func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) ([]extsvc.RepoID, error) {
 	if account == nil {
 		return nil, errors.New("no account provided")
 	} else if !extsvc.IsHostOfAccount(p.codeHost, account) {
 		return nil, fmt.Errorf("not a code host of the account: want %q but have %q",
-			account.ExternalAccountSpec.ServiceID, p.codeHost.ServiceID)
+			account.AccountSpec.ServiceID, p.codeHost.ServiceID)
 	}
 
 	_, tok, err := github.GetExternalAccountData(&account.ExternalAccountData)
@@ -400,7 +400,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 
 	// 100 matches the maximum page size, thus a good default to avoid multiple allocations
 	// when appending the first 100 results to the slice.
-	repoIDs := make([]extsvc.ExternalRepoID, 0, 100)
+	repoIDs := make([]extsvc.RepoID, 0, 100)
 	hasNextPage := true
 	for page := 1; hasNextPage; page++ {
 		var repos []*github.Repository
@@ -410,7 +410,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 		}
 
 		for _, r := range repos {
-			repoIDs = append(repoIDs, extsvc.ExternalRepoID(r.ID))
+			repoIDs = append(repoIDs, extsvc.RepoID(r.ID))
 		}
 	}
 
@@ -426,7 +426,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 // callers to decide whether to discard.
 //
 // API docs: https://developer.github.com/v4/object/repositorycollaboratorconnection/
-func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) ([]extsvc.ExternalAccountID, error) {
+func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) ([]extsvc.AccountID, error) {
 	if repo == nil {
 		return nil, errors.New("no repository provided")
 	} else if !extsvc.IsHostOfRepo(p.codeHost, &repo.ExternalRepoSpec) {
@@ -443,7 +443,7 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) 
 
 	// 100 matches the maximum page size, thus a good default to avoid multiple allocations
 	// when appending the first 100 results to the slice.
-	userIDs := make([]extsvc.ExternalAccountID, 0, 100)
+	userIDs := make([]extsvc.AccountID, 0, 100)
 	hasNextPage := true
 	for page := 1; hasNextPage; page++ {
 		var err error
@@ -454,7 +454,7 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) 
 		}
 
 		for _, u := range users {
-			userIDs = append(userIDs, extsvc.ExternalAccountID(u.ID))
+			userIDs = append(userIDs, extsvc.AccountID(u.ID))
 		}
 	}
 
