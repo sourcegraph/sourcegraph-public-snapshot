@@ -16667,10 +16667,10 @@ react-smooth@^1.0.5:
     raf "^3.4.0"
     react-transition-group "^2.5.0"
 
-react-stripe-elements@^6.0.1:
-  version "6.0.1"
-  resolved "https://registry.npmjs.org/react-stripe-elements/-/react-stripe-elements-6.0.1.tgz#f2b1e4c132cb18f140668556a5218e3b8e082794"
-  integrity sha512-WVKTunSgsrkm8Tv1+BEehfYrA2CHdlk01ocmbcECliPb1EDybaoUCx2MR212ptRHyitMrHF+ahUTewjaX98kcQ==
+react-stripe-elements@^6.1.1:
+  version "6.1.1"
+  resolved "https://registry.npmjs.org/react-stripe-elements/-/react-stripe-elements-6.1.1.tgz#94fca1afc5d9497d9443020b7aed0527e1174893"
+  integrity sha512-/ZIYuv3bjeDnCSruKL7TMh+C+Ltrz/p0o1jyveLXeG4pSyB5Dv+ybehfx0dIZV4Kd0jXTDc86GU7eCHBzmeLgQ==
   dependencies:
     prop-types "15.7.2"
 
