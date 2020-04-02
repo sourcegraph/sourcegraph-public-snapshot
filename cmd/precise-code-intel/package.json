@@ -23,7 +23,7 @@
     "express-opentracing": "^0.1.1",
     "express-validator": "^6.4.0",
     "express-winston": "^4.0.3",
-    "got": "^10.6.0",
+    "got": "^10.7.0",
     "jaeger-client": "^3.17.2",
     "json5": "^2.1.1",
     "lodash": "^4.17.15",
