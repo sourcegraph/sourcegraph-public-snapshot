@@ -88,7 +88,7 @@ export class ActionsNavItems extends React.PureComponent<ActionsNavItemsProps, A
             return null // loading
         }
 
-        const actionItems = getContributedActionItems(this.state.contributions, this.props.menu).map((item, i) => (
+        const actionItems = getContributedActionItems(this.state.contributions, this.props.menu).map(item => (
             <React.Fragment key={item.action.id}>
                 {' '}
                 <li className={this.props.listItemClass}>
