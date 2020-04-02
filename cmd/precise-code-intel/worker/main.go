@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	workers = env.Get("NUM_PRECISE_CODE_INTEL_WORKERS", "1", "the number of worker instances to run (defaults to one)")
+	workers = env.Get("NUM_WORKERS", "1", "the number of worker instances to run (defaults to one)")
 
 	// Set in docker image
 	prometheusStorageDir       = os.Getenv("PROMETHEUS_STORAGE_DIR")
@@ -26,7 +26,7 @@ const workerPort = 3188
 func main() {
 	numWorkers, err := strconv.ParseInt(workers, 10, 64)
 	if err != nil || numWorkers < 0 {
-		log.Fatalf("Invalid int %q for NUM_PRECISE_CODE_INTEL_WORKERS: %s", workers, err)
+		log.Fatalf("Invalid int %q for NUM_WORKERS: %s", workers, err)
 	}
 
 	if err := ioutil.WriteFile(

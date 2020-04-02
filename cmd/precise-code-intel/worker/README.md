@@ -1,6 +1,6 @@
 # Precise code intelligence worker
 
-The docker image for this part of the application wraps a one or more workers [goreman](https://github.com/mattn/goreman) supervisor. By default, there is only one worker process. The number of workers can be tuned with the environment variable `NUM_PRECISE_CODE_INTEL_WORKERS`.
+The docker image for this part of the application wraps a one or more workers [goreman](https://github.com/mattn/goreman) supervisor. By default, there is only one worker process. The number of workers can be tuned with the environment variable `NUM_WORKERS`.
 
 ### Prometheus metrics
 
