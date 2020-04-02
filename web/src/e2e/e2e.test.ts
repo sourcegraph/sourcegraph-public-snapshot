@@ -364,11 +364,31 @@ describe('e2e test suite', () => {
         })
 
         test('Search visibility:private|public', async () => {
+            const privateRepos = ['github.com/sourcegraph/e2e-test-private-repository']
+
             await driver.page.goto(sourcegraphBaseUrl + '/search?q=type:repo+visibility:private')
-            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 1)
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length >= 1)
+
+            const privateResults = await driver.page.evaluate(() =>
+                Array.from(document.querySelectorAll('.e2e-search-result span')).map(t => (t.textContent || '').trim())
+            )
+            expect(privateResults).toEqual(expect.arrayContaining(privateRepos))
 
             await driver.page.goto(sourcegraphBaseUrl + '/search?q=type:repo+visibility:public')
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 1)
+
+            const publicResults = await driver.page.evaluate(() =>
+                Array.from(document.querySelectorAll('.e2e-search-result span')).map(t => (t.textContent || '').trim())
+            )
+            expect(publicResults).not.toEqual(expect.arrayContaining(privateRepos))
+
+            await driver.page.goto(sourcegraphBaseUrl + '/search?q=type:repo+visibility:any')
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 1)
+
+            const anyResults = await driver.page.evaluate(() =>
+                Array.from(document.querySelectorAll('.e2e-search-result span')).map(t => (t.textContent || '').trim())
+            )
+            expect(anyResults).toEqual(expect.arrayContaining(privateRepos))
         })
 
         test('Search results code', async () => {
