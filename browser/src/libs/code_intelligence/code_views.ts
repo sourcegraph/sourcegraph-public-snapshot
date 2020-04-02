@@ -47,7 +47,10 @@ export interface CodeView {
      * because some code hosts need to resolve this asynchronously. The
      * observable should only emit once.
      */
-    resolveFileInfo: (codeView: HTMLElement, requestGraphQL: PlatformContext['requestGraphQL']) => Observable<FileInfo>
+    resolveFileInfo: (
+        codeView: HTMLElement,
+        requestGraphQL: PlatformContext['requestGraphQL']
+    ) => Observable<FileInfo> | FileInfo
     /**
      * In some situations, we need to be able to adjust the position going into
      * and coming out of codeintellify. For example, Phabricator converts tabs
@@ -132,7 +135,7 @@ export const fetchFileContents = (
                 catchError(() => [info])
             )
         }),
-        catchError((err: any) => {
+        catchError(err => {
             if (isErrorLike(err) && err.name === PRIVATE_REPO_PUBLIC_SOURCEGRAPH_COM_ERROR_NAME) {
                 return [info]
             }

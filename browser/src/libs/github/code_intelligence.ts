@@ -285,8 +285,10 @@ export const githubCodeHost: CodeHost = {
     nativeTooltipResolvers: [nativeTooltipResolver],
     getContext: () => {
         const repoHeaderHasPrivateMarker = !!document.querySelector('.repohead .private')
+        const parsedURL = parseURL()
         return {
-            ...parseURL(),
+            ...parsedURL,
+            rev: parsedURL.pageType === 'blob' || parsedURL.pageType === 'tree' ? resolveFileInfo().rev : undefined,
             privateRepository: window.location.hostname !== 'github.com' || repoHeaderHasPrivateMarker,
         }
     },
