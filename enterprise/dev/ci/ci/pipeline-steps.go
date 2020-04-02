@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	bk "github.com/sourcegraph/sourcegraph/internal/buildkite"
@@ -205,9 +206,7 @@ func triggerE2E(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
 	env["VERSION"] = commonEnv["VERSION"]
 	env["TAG"] = candiateImageTag(c)
 	env["CI_DEBUG_PROFILE"] = commonEnv["CI_DEBUG_PROFILE"]
-	if imageCandidatePush {
-		env["PUSH_CANDIDATE_IMAGE"] = "1"
-	}
+	env["PUSH_CANDIDATE_IMAGE"] = strconv.FormatBool(imageCandidatePush)
 
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddTrigger(":chromium:",

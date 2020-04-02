@@ -15,7 +15,7 @@ steps:
     - ./cmd/server/build.sh
     - popd
     - |
-      if [ -n "$PUSH_CANDIDATE_IMAGE" ]; then
+      if [ "$PUSH_CANDIDATE_IMAGE" == "true" ]; then
         yes | gcloud auth configure-docker
         docker push "$IMAGE"
       fi
