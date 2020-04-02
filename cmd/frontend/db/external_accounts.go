@@ -31,7 +31,7 @@ func (err userExternalAccountNotFoundError) NotFound() bool {
 type userExternalAccounts struct{}
 
 // Get gets information about the user external account.
-func (s *userExternalAccounts) Get(ctx context.Context, id int32) (*extsvc.ExternalAccount, error) {
+func (s *userExternalAccounts) Get(ctx context.Context, id int32) (*extsvc.Account, error) {
 	if Mocks.ExternalAccounts.Get != nil {
 		return Mocks.ExternalAccounts.Get(id)
 	}
@@ -201,7 +201,7 @@ type ExternalAccountsListOptions struct {
 	*LimitOffset
 }
 
-func (s *userExternalAccounts) List(ctx context.Context, opt ExternalAccountsListOptions) (acct []*extsvc.ExternalAccount, err error) {
+func (s *userExternalAccounts) List(ctx context.Context, opt ExternalAccountsListOptions) (acct []*extsvc.Account, err error) {
 	if Mocks.ExternalAccounts.List != nil {
 		return Mocks.ExternalAccounts.List(opt)
 	}
@@ -277,7 +277,7 @@ func (userExternalAccounts) deleteForDeletedUsers(ctx context.Context) error {
 	return err
 }
 
-func (s *userExternalAccounts) getBySQL(ctx context.Context, querySuffix *sqlf.Query) (*extsvc.ExternalAccount, error) {
+func (s *userExternalAccounts) getBySQL(ctx context.Context, querySuffix *sqlf.Query) (*extsvc.Account, error) {
 	results, err := s.listBySQL(ctx, querySuffix)
 	if err != nil {
 		return nil, err
@@ -288,16 +288,16 @@ func (s *userExternalAccounts) getBySQL(ctx context.Context, querySuffix *sqlf.Q
 	return results[0], nil
 }
 
-func (*userExternalAccounts) listBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*extsvc.ExternalAccount, error) {
+func (*userExternalAccounts) listBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*extsvc.Account, error) {
 	q := sqlf.Sprintf(`SELECT t.id, t.user_id, t.service_type, t.service_id, t.client_id, t.account_id, t.auth_data, t.account_data, t.created_at, t.updated_at FROM user_external_accounts t %s`, querySuffix)
 	rows, err := dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
 	}
-	var results []*extsvc.ExternalAccount
+	var results []*extsvc.Account
 	defer rows.Close()
 	for rows.Next() {
-		var o extsvc.ExternalAccount
+		var o extsvc.Account
 		if err := rows.Scan(&o.ID, &o.UserID, &o.ServiceType, &o.ServiceID, &o.ClientID, &o.AccountID, &o.AuthData, &o.AccountData, &o.CreatedAt, &o.UpdatedAt); err != nil {
 			return nil, err
 		}
@@ -320,11 +320,11 @@ func (*userExternalAccounts) listSQL(opt ExternalAccountsListOptions) (conds []*
 
 // MockExternalAccounts mocks the Stores.ExternalAccounts DB store.
 type MockExternalAccounts struct {
-	Get                  func(id int32) (*extsvc.ExternalAccount, error)
+	Get                  func(id int32) (*extsvc.Account, error)
 	LookupUserAndSave    func(extsvc.ExternalAccountSpec, extsvc.ExternalAccountData) (userID int32, err error)
 	AssociateUserAndSave func(userID int32, spec extsvc.ExternalAccountSpec, data extsvc.ExternalAccountData) error
 	CreateUserAndSave    func(NewUser, extsvc.ExternalAccountSpec, extsvc.ExternalAccountData) (createdUserID int32, err error)
 	Delete               func(id int32) error
-	List                 func(ExternalAccountsListOptions) ([]*extsvc.ExternalAccount, error)
+	List                 func(ExternalAccountsListOptions) ([]*extsvc.Account, error)
 	Count                func(ExternalAccountsListOptions) (int, error)
 }

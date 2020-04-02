@@ -74,7 +74,7 @@ func (p *Provider) ServiceType() string { return p.codeHost.ServiceType }
 // RepoPerms returns the permissions the given external account has in relation to the given set of repos.
 // It performs a single HTTP request against the Bitbucket Server API which returns all repositories
 // the authenticated user has permissions to read.
-func (p *Provider) RepoPerms(ctx context.Context, acct *extsvc.ExternalAccount, repos []*types.Repo) (
+func (p *Provider) RepoPerms(ctx context.Context, acct *extsvc.Account, repos []*types.Repo) (
 	perms []authz.RepoPerms,
 	err error,
 ) {
@@ -149,7 +149,7 @@ func (p *Provider) update(userName string) PermissionsUpdateFunc {
 }
 
 // FetchAccount satisfies the authz.Provider interface.
-func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*extsvc.ExternalAccount) (acct *extsvc.ExternalAccount, err error) {
+func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*extsvc.Account) (acct *extsvc.Account, err error) {
 	if user == nil {
 		return nil, nil
 	}
@@ -178,7 +178,7 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*exts
 		return nil, err
 	}
 
-	return &extsvc.ExternalAccount{
+	return &extsvc.Account{
 		UserID: user.ID,
 		ExternalAccountSpec: extsvc.ExternalAccountSpec{
 			ServiceType: p.codeHost.ServiceType,
@@ -199,7 +199,7 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*exts
 // callers to decide whether to discard.
 //
 // API docs: https://docs.atlassian.com/bitbucket-server/rest/5.16.0/bitbucket-rest.html#idm8296923984
-func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.ExternalAccount) ([]extsvc.ExternalRepoID, error) {
+func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) ([]extsvc.ExternalRepoID, error) {
 	switch {
 	case account == nil:
 		return nil, errors.New("no account provided")
@@ -227,8 +227,8 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.ExternalA
 
 // FetchRepoPerms returns a list of user IDs (on code host) who have read access to
 // the given repo on the code host. The user ID has the same value as it would
-// be used as extsvc.ExternalAccount.AccountID. The returned list includes both
-// direct access and inherited from the group membership.
+// be used as extsvc.Account.AccountID. The returned list includes both direct access
+// and inherited from the group membership.
 //
 // This method may return partial but valid results in case of error, and it is up to
 // callers to decide whether to discard.

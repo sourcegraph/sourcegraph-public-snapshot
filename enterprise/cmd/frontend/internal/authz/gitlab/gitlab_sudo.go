@@ -117,7 +117,7 @@ func (p *SudoProvider) ServiceType() string {
 	return p.codeHost.ServiceType
 }
 
-func (p *SudoProvider) RepoPerms(ctx context.Context, account *extsvc.ExternalAccount, repos []*types.Repo) ([]authz.RepoPerms, error) {
+func (p *SudoProvider) RepoPerms(ctx context.Context, account *extsvc.Account, repos []*types.Repo) ([]authz.RepoPerms, error) {
 	accountID := "" // empty means public / unauthenticated to the code host
 	if account != nil && account.ServiceID == p.codeHost.ServiceID && account.ServiceType == p.codeHost.ServiceType {
 		accountID = account.AccountID
@@ -253,7 +253,7 @@ func (p *SudoProvider) fetchProjVis(ctx context.Context, sudo string, projID int
 // FetchAccount satisfies the authz.Provider interface. It iterates through the current list of
 // linked external accounts, find the one (if it exists) that matches the authn provider specified
 // in the SudoProvider struct, and fetches the user account from the GitLab API using that identity.
-func (p *SudoProvider) FetchAccount(ctx context.Context, user *types.User, current []*extsvc.ExternalAccount) (mine *extsvc.ExternalAccount, err error) {
+func (p *SudoProvider) FetchAccount(ctx context.Context, user *types.User, current []*extsvc.Account) (mine *extsvc.Account, err error) {
 	if user == nil {
 		return nil, nil
 	}
@@ -267,7 +267,7 @@ func (p *SudoProvider) FetchAccount(ctx context.Context, user *types.User, curre
 		if authnProvider == nil {
 			return nil, nil
 		}
-		var authnAcct *extsvc.ExternalAccount
+		var authnAcct *extsvc.Account
 		for _, acct := range current {
 			if acct.ServiceID == authnProvider.CachedInfo().ServiceID && acct.ServiceType == authnProvider.ConfigID().Type {
 				authnAcct = acct
@@ -289,7 +289,7 @@ func (p *SudoProvider) FetchAccount(ctx context.Context, user *types.User, curre
 	var accountData extsvc.ExternalAccountData
 	gitlab.SetExternalAccountData(&accountData, glUser, nil)
 
-	glExternalAccount := extsvc.ExternalAccount{
+	glExternalAccount := extsvc.Account{
 		UserID: user.ID,
 		ExternalAccountSpec: extsvc.ExternalAccountSpec{
 			ServiceType: p.codeHost.ServiceType,

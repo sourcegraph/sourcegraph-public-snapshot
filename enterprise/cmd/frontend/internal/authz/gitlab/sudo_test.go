@@ -33,7 +33,7 @@ func TestSudoProvider_FetchUserPerms(t *testing.T) {
 			BaseURL: mustURL(t, "https://gitlab.com"),
 		}, nil)
 		_, err := p.FetchUserPerms(context.Background(),
-			&extsvc.ExternalAccount{
+			&extsvc.Account{
 				ExternalAccountSpec: extsvc.ExternalAccountSpec{
 					ServiceType: "github",
 					ServiceID:   "https://github.com/",
@@ -88,7 +88,7 @@ func TestSudoProvider_FetchUserPerms(t *testing.T) {
 
 	accountData := json.RawMessage(`{"id": 999}`)
 	repoIDs, err := p.FetchUserPerms(context.Background(),
-		&extsvc.ExternalAccount{
+		&extsvc.Account{
 			ExternalAccountSpec: extsvc.ExternalAccountSpec{
 				ServiceType: "gitlab",
 				ServiceID:   "https://gitlab.com/",

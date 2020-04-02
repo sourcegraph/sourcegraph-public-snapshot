@@ -56,15 +56,15 @@ type mockProvider struct {
 	serviceType string
 	serviceID   string
 
-	fetchUserPerms func(context.Context, *extsvc.ExternalAccount) ([]extsvc.ExternalRepoID, error)
+	fetchUserPerms func(context.Context, *extsvc.Account) ([]extsvc.ExternalRepoID, error)
 	fetchRepoPerms func(ctx context.Context, repo *extsvc.Repository) ([]extsvc.ExternalAccountID, error)
 }
 
-func (*mockProvider) RepoPerms(context.Context, *extsvc.ExternalAccount, []*types.Repo) ([]authz.RepoPerms, error) {
+func (*mockProvider) RepoPerms(context.Context, *extsvc.Account, []*types.Repo) ([]authz.RepoPerms, error) {
 	return nil, nil
 }
 
-func (*mockProvider) FetchAccount(context.Context, *types.User, []*extsvc.ExternalAccount) (*extsvc.ExternalAccount, error) {
+func (*mockProvider) FetchAccount(context.Context, *types.User, []*extsvc.Account) (*extsvc.Account, error) {
 	return nil, nil
 }
 
@@ -80,7 +80,7 @@ func (*mockProvider) Validate() []string {
 	return nil
 }
 
-func (p *mockProvider) FetchUserPerms(ctx context.Context, acct *extsvc.ExternalAccount) ([]extsvc.ExternalRepoID, error) {
+func (p *mockProvider) FetchUserPerms(ctx context.Context, acct *extsvc.Account) ([]extsvc.ExternalRepoID, error) {
 	return p.fetchUserPerms(ctx, acct)
 }
 
@@ -113,10 +113,10 @@ func (s *mockReposStore) ListAllRepoNames(context.Context) ([]api.RepoName, erro
 }
 
 type mockPermsStore struct {
-	listExternalAccounts func(context.Context, int32) ([]*extsvc.ExternalAccount, error)
+	listExternalAccounts func(context.Context, int32) ([]*extsvc.Account, error)
 }
 
-func (s *mockPermsStore) ListExternalAccounts(ctx context.Context, userID int32) ([]*extsvc.ExternalAccount, error) {
+func (s *mockPermsStore) ListExternalAccounts(ctx context.Context, userID int32) ([]*extsvc.Account, error) {
 	return s.listExternalAccounts(ctx, userID)
 }
 
@@ -128,15 +128,15 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	authz.SetProviders(false, []authz.Provider{p})
 	defer authz.SetProviders(true, nil)
 
-	extAccount := extsvc.ExternalAccount{
+	extAccount := extsvc.Account{
 		ExternalAccountSpec: extsvc.ExternalAccountSpec{
 			ServiceType: p.ServiceType(),
 			ServiceID:   p.ServiceID(),
 		},
 	}
 
-	edb.Mocks.Perms.ListExternalAccounts = func(context.Context, int32) ([]*extsvc.ExternalAccount, error) {
-		return []*extsvc.ExternalAccount{&extAccount}, nil
+	edb.Mocks.Perms.ListExternalAccounts = func(context.Context, int32) ([]*extsvc.Account, error) {
+		return []*extsvc.Account{&extAccount}, nil
 	}
 	edb.Mocks.Perms.SetUserPermissions = func(_ context.Context, p *authz.UserPermissions) error {
 		if p.UserID != 1 {
@@ -186,7 +186,7 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			p.fetchUserPerms = func(context.Context, *extsvc.ExternalAccount) ([]extsvc.ExternalRepoID, error) {
+			p.fetchUserPerms = func(context.Context, *extsvc.Account) ([]extsvc.ExternalRepoID, error) {
 				return []extsvc.ExternalRepoID{"1"}, test.fetchErr
 			}
 

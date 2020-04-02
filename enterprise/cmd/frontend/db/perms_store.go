@@ -1255,7 +1255,7 @@ func (s *PermsStore) batchLoadIDs(ctx context.Context, q *sqlf.Query) (map[int32
 }
 
 // ListExternalAccounts returns all external accounts that are associated with given user.
-func (s *PermsStore) ListExternalAccounts(ctx context.Context, userID int32) (accounts []*extsvc.ExternalAccount, err error) {
+func (s *PermsStore) ListExternalAccounts(ctx context.Context, userID int32) (accounts []*extsvc.Account, err error) {
 	if Mocks.Perms.ListExternalAccounts != nil {
 		return Mocks.Perms.ListExternalAccounts(ctx, userID)
 	}
@@ -1280,7 +1280,7 @@ ORDER BY id ASC
 	defer rows.Close()
 
 	for rows.Next() {
-		var acct extsvc.ExternalAccount
+		var acct extsvc.Account
 		if err := rows.Scan(
 			&acct.ID, &acct.UserID,
 			&acct.ServiceType, &acct.ServiceID, &acct.ClientID, &acct.AccountID,

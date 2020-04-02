@@ -8,9 +8,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
-// ExternalAccount represents a row in the `user_external_accounts` table. See the GraphQL API's
+// Account represents a row in the `user_external_accounts` table. See the GraphQL API's
 // corresponding fields in "ExternalAccount" for documentation.
-type ExternalAccount struct {
+type Account struct {
 	ID                  int32
 	UserID              int32
 	ExternalAccountSpec // ServiceType, ServiceID, ClientID, AccountID

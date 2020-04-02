@@ -76,8 +76,8 @@ func TestDeleteUser(t *testing.T) {
 			{Email: "alice@example.com"},
 		}, nil
 	}
-	db.Mocks.ExternalAccounts.List = func(db.ExternalAccountsListOptions) ([]*extsvc.ExternalAccount, error) {
-		return []*extsvc.ExternalAccount{
+	db.Mocks.ExternalAccounts.List = func(db.ExternalAccountsListOptions) ([]*extsvc.Account, error) {
+		return []*extsvc.Account{
 			{
 				ExternalAccountSpec: extsvc.ExternalAccountSpec{
 					ServiceType: "gitlab",

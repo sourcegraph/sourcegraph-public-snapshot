@@ -11,7 +11,7 @@ import (
 )
 
 type externalAccountResolver struct {
-	account extsvc.ExternalAccount
+	account extsvc.Account
 }
 
 func externalAccountByID(ctx context.Context, id graphql.ID) (*externalAccountResolver, error) {

@@ -69,7 +69,7 @@ func TestExternalAccounts_AssociateUserAndSave(t *testing.T) {
 	account := *accounts[0]
 	simplifyExternalAccount(&account)
 	account.ID = 0
-	if want := (extsvc.ExternalAccount{UserID: user.ID, ExternalAccountSpec: spec}); !reflect.DeepEqual(account, want) {
+	if want := (extsvc.Account{UserID: user.ID, ExternalAccountSpec: spec}); !reflect.DeepEqual(account, want) {
 		t.Errorf("got %+v, want %+v", account, want)
 	}
 }
@@ -110,12 +110,12 @@ func TestExternalAccounts_CreateUserAndSave(t *testing.T) {
 	account := *accounts[0]
 	simplifyExternalAccount(&account)
 	account.ID = 0
-	if want := (extsvc.ExternalAccount{UserID: userID, ExternalAccountSpec: spec}); !reflect.DeepEqual(account, want) {
+	if want := (extsvc.Account{UserID: userID, ExternalAccountSpec: spec}); !reflect.DeepEqual(account, want) {
 		t.Errorf("got %+v, want %+v", account, want)
 	}
 }
 
-func simplifyExternalAccount(account *extsvc.ExternalAccount) {
+func simplifyExternalAccount(account *extsvc.Account) {
 	account.CreatedAt = time.Time{}
 	account.UpdatedAt = time.Time{}
 }
