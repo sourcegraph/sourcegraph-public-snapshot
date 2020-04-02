@@ -4,7 +4,7 @@ COPY ./src-observability-generator /go/src/
 WORKDIR /go/src/src-observability-generator
 RUN CGO_ENABLED=0 go install .
 RUN mkdir -p /generated/grafana
-RUN PROMETHEUS_DIR= GRAFANA_DIR=/generated/grafana /go/bin/src-observability-generator
+RUN PROMETHEUS_DIR='' GRAFANA_DIR=/generated/grafana /go/bin/src-observability-generator
 
 RUN apk add --no-cache bash=5.0.11-r1 git=2.24.1-r0 openssh=8.1_p1-r0 build-base=0.5-r1
 

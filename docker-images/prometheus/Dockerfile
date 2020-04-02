@@ -4,7 +4,7 @@ COPY ./src-observability-generator /go/src/
 WORKDIR /go/src/src-observability-generator
 RUN CGO_ENABLED=0 go install .
 RUN mkdir -p /generated/prometheus
-RUN PROMETHEUS_DIR=/generated/prometheus GRAFANA_DIR= /go/bin/src-observability-generator
+RUN PROMETHEUS_DIR=/generated/prometheus GRAFANA_DIR='' /go/bin/src-observability-generator
 
 # This Dockerfile is adapted from https://github.com/prometheus/prometheus/blob/v2.15.2/Dockerfile with
 # our own customizations.

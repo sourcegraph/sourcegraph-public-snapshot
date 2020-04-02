@@ -2,7 +2,7 @@ package main
 
 func SyntectServer() *Container {
 	return &Container{
-		Name: "syntect-server",
+		Name:        "syntect-server",
 		Title:       "Syntect Server",
 		Description: "Handles syntax highlighting for code files.",
 		Rows: []Row{
