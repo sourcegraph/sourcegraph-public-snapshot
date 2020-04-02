@@ -40,7 +40,7 @@ func TestSudoProvider_FetchUserPerms(t *testing.T) {
 				},
 			},
 		)
-		want := "not a code host of the account: want {ServiceType:github ServiceID:https://github.com/ ClientID: AccountID:} but have &{ServiceID:https://gitlab.com/ ServiceType:gitlab BaseURL:https://gitlab.com/}"
+		want := `not a code host of the account: want "https://github.com/" but have "https://gitlab.com/"`
 		got := fmt.Sprintf("%v", err)
 		if got != want {
 			t.Fatalf("err: want %q but got %q", want, got)
@@ -126,12 +126,15 @@ func TestSudoProvider_FetchRepoPerms(t *testing.T) {
 			BaseURL: mustURL(t, "https://gitlab.com"),
 		}, nil)
 		_, err := p.FetchRepoPerms(context.Background(),
-			&api.ExternalRepoSpec{
-				ServiceType: "github",
-				ServiceID:   "https://github.com/",
+			&extsvc.Repository{
+				URI: "https://github.com/user/repo",
+				ExternalRepoSpec: api.ExternalRepoSpec{
+					ServiceType: "github",
+					ServiceID:   "https://github.com/",
+				},
 			},
 		)
-		want := "not a code host of the repository: want ExternalRepoSpec{https://github.com/ github } but have &{ServiceID:https://gitlab.com/ ServiceType:gitlab BaseURL:https://gitlab.com/}"
+		want := `not a code host of the repository: want "https://github.com/" but have "https://gitlab.com/"`
 		got := fmt.Sprintf("%v", err)
 		if got != want {
 			t.Fatalf("err: want %q but got %q", want, got)
@@ -177,10 +180,13 @@ func TestSudoProvider_FetchRepoPerms(t *testing.T) {
 	)
 
 	accountIDs, err := p.FetchRepoPerms(context.Background(),
-		&api.ExternalRepoSpec{
-			ServiceType: "gitlab",
-			ServiceID:   "https://gitlab.com/",
-			ID:          "gitlab_project_id",
+		&extsvc.Repository{
+			URI: "https://gitlab.com/user/repo",
+			ExternalRepoSpec: api.ExternalRepoSpec{
+				ServiceType: "gitlab",
+				ServiceID:   "https://gitlab.com/",
+				ID:          "gitlab_project_id",
+			},
 		},
 	)
 	if err != nil {

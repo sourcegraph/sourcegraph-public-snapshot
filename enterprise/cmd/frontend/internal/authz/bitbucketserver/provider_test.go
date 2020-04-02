@@ -305,7 +305,7 @@ func testProviderFetchUserPerms(f *fixtures, cli *bitbucketserver.Client) func(*
 						AccountData: new(json.RawMessage),
 					},
 				},
-				err: "not a code host of the account: want ${INSTANCEURL} but have https://github.com",
+				err: `not a code host of the account: want "${INSTANCEURL}" but have "https://github.com"`,
 			},
 			{
 				name: "bad account data",
@@ -373,7 +373,7 @@ func testProviderFetchRepoPerms(f *fixtures, cli *bitbucketserver.Client) func(*
 		for _, tc := range []struct {
 			name string
 			ctx  context.Context
-			repo *api.ExternalRepoSpec
+			repo *extsvc.Repository
 			ids  []extsvc.ExternalAccountID
 			err  string
 		}{
@@ -384,18 +384,24 @@ func testProviderFetchRepoPerms(f *fixtures, cli *bitbucketserver.Client) func(*
 			},
 			{
 				name: "not a code host of the repo",
-				repo: &api.ExternalRepoSpec{
-					ServiceType: "github",
-					ServiceID:   "https://github.com",
+				repo: &extsvc.Repository{
+					URI: "github.com/user/repo",
+					ExternalRepoSpec: api.ExternalRepoSpec{
+						ServiceType: "github",
+						ServiceID:   "https://github.com",
+					},
 				},
-				err: "not a code host of the repo: want ${INSTANCEURL} but have https://github.com",
+				err: `not a code host of the repo: want "${INSTANCEURL}" but have "https://github.com"`,
 			},
 			{
 				name: "private user ids are retrieved",
-				repo: &api.ExternalRepoSpec{
-					ID:          strconv.Itoa(f.repos["super-secret-repo"].ID),
-					ServiceType: h.ServiceType,
-					ServiceID:   h.ServiceID,
+				repo: &extsvc.Repository{
+					URI: "${INSTANCEURL}/user/repo",
+					ExternalRepoSpec: api.ExternalRepoSpec{
+						ID:          strconv.Itoa(f.repos["super-secret-repo"].ID),
+						ServiceType: h.ServiceType,
+						ServiceID:   h.ServiceID,
+					},
 				},
 				ids: append(userIDs("ceo"), "1"), // admin user
 			},
