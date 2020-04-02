@@ -14,17 +14,11 @@ This project is split into three parts, all currently written in TypeScript. The
 - The [bundle-manager](./src/bundle-manager/manager.ts) answers queries about a particular upload by looking at relevant SQLite databases on-disk.
 - The [worker](./src/worker/worker.ts) dequeues unconverted LSIF uploads from Postgres and converts them into SQLite databases that can be queried by the server.
 
+The `api-server`, `bundle-manager`, and `worker` directories contain only instructions to build Docker images for the three entrypoints.
+
 ## Documentation
 
 - Usage documentation is provided on [Sourcegraph.com](https://docs.sourcegraph.com/user/code_intelligence/lsif).
 - API endpoint documentation is provided in [api.md](./docs/api/api.md).
 - Database configuration and migrations are described in [database.md](./docs/database/database.md).
 - Data models are described in [datamodel.md](./docs/database/datamodel.md) and [datamodel.pg.md](./docs/database/datamodel.pg.md).
-
-## Entrypoint
-
-The docker image for this part of the application wraps a server, a bundle manager, and a worker in a [goreman](https://github.com/mattn/goreman) supervisor. By default, there will be one API process and one worker process. The number of replicas per process can be tuned with the environment variables `PRECISE_CODE_INTEL_NUM_APIS` (zero or more), `PRECISE_CODE_INTEL_NUM_BUNDLE_MANAGERS` (zero or one), and `PRECISE_CODE_INTEL_NUM_WORKERS` (zero or more).
-
-### Prometheus metrics
-
-The precise-code-intel-api-server and precise-code-intel-bundle-manager expose HTTP APIs on ports 3186 and 3187, respectively. These APIs contain a `/metrics` endpoint to be scraped by Prometheus. The precise-code-intel-worker exposes a metrics server (but nothing else interesting) on port 3188. It's possible to run multiple workers, but impossible for them all to serve metrics from the same port. Therefore, this container also includes a minimally-configured Prometheus process that will scrape metrics from all of the processes. It is suggested that you use [federation](https://prometheus.io/docs/prometheus/latest/federation/) to scrape all of the process metrics at once instead of scraping the individual ports directly. Doing so will ensure that scaling up or down the number of workers will not change the the required Prometheus configuration.

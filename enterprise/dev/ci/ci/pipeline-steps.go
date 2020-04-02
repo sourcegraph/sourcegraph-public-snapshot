@@ -19,7 +19,9 @@ var allDockerImages = []string{
 	"searcher",
 	"server",
 	"symbols",
-	"precise-code-intel",
+	"precise-code-intel/api-server",
+	"precise-code-intel/bundle-manager",
+	"precise-code-intel/worker",
 }
 
 // Verifies the docs formatting and builds the `docsite` command.
@@ -271,7 +273,7 @@ func addCanidateDockerImage(c Config, app string) func(*bk.Pipeline) {
 			return
 		}
 
-		baseImage := "sourcegraph/" + app
+		baseImage := "sourcegraph/" + strings.ReplaceAll(app, "/", "-")
 
 		cmds := []bk.StepOpt{
 			bk.Cmd(fmt.Sprintf(`echo "Building candidate %s image..."`, app)),
