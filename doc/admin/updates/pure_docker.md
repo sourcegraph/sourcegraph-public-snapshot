@@ -4,6 +4,20 @@ This document describes the exact changes needed to update a [pure-Docker Source
 
 Each section comprehensively describes the changes needed in Docker images, environment variables, and added/removed services.
 
+## ?? -> v3.15 changes
+
+### Update image tags
+
+The `lsif-server` container has been replaced by the following set of new services.
+
+| Container                         | New image                                                            |
+|-----------------------------------|----------------------------------------------------------------------|
+| precise-code-intel-api-server     | index.docker.io/sourcegraph/precise-code-intel-api-server:3.15.0     |
+| precise-code-intel-bundle-manager | index.docker.io/sourcegraph/precise-code-intel-bundle-manager:3.15.0 |
+| precise-code-intel-worker         | index.docker.io/sourcegraph/precise-code-intel-worker:3.15.0         |
+
+Any data mounted into `lsif-server` should be mounted the same way in `precise-code-intel-bundle-manager`.
+
 ## v3.12.5 -> v3.13.2 changes
 
 ### Confirm file permissions
