@@ -210,7 +210,7 @@
     "yarn-deduplicate": "^2.0.0"
   },
   "dependencies": {
-    "@hot-loader/react-dom": "^16.12.0",
+    "@hot-loader/react-dom": "^16.13.0",
     "@primer/octicons-react": "^9.6.0",
     "@sentry/browser": "^5.13.2",
     "@slimsag/react-shortcuts": "^1.2.1",
