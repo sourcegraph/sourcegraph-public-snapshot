@@ -488,7 +488,7 @@ func main() {
 			}
 			if reload {
 				ctx := context.Background()
-				client := sdk.NewClient("http://localhost:3370", "admin:admin", sdk.DefaultHTTPClient)
+				client := sdk.NewClient("http://127.0.0.1:3370", "admin:admin", sdk.DefaultHTTPClient)
 				_, err := client.SetDashboard(ctx, *board, sdk.SetDashboardParams{Overwrite: true})
 				if err != nil {
 					log.Fatal("updating dashboard:", err)
@@ -508,7 +508,7 @@ func main() {
 	}
 
 	if prometheusDir != "" && reload {
-		resp, err := http.Post("http://localhost:9090/-/reload", "", nil)
+		resp, err := http.Post("http://127.0.0.1:9090/-/reload", "", nil)
 		if err != nil {
 			log.Fatal("reloading Prometheus rules, got error:", err)
 		}

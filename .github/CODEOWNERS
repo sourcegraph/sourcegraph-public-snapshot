@@ -204,6 +204,7 @@
 
 # Deployment and distribution
 Dockerfile @sourcegraph/distribution
+/observability @sourcegraph/distribution
 /docker-images @sourcegraph/distribution
 /enterprise/docs/deployment.md @sourcegraph/distribution
 **/build.sh @sourcegraph/distribution
