@@ -1,5 +1,9 @@
 .action-item {
     height: 100%;
+    max-width: 10rem;
+    text-overflow: ellipsis;
+    overflow: hidden;
+
     &__content {
         display: flex;
         align-items: center;

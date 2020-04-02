@@ -226,7 +226,7 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                     ))}
                 </ul>
                 <div className="repo-header__spacer" />
-                <ul className="navbar-nav navbar-nav__action-items">
+                <ul className="navbar-nav">
                     <WebActionsNavItems {...this.props} menu={ContributableMenu.EditorTitle} />
                 </ul>
                 <ul className="navbar-nav">
