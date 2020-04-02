@@ -1126,6 +1126,14 @@ func (m *MockAuthzProvider) ServiceID() string   { return m.serviceID }
 func (m *MockAuthzProvider) ServiceType() string { return m.serviceType }
 func (m *MockAuthzProvider) Validate() []string  { return nil }
 
+func (m *MockAuthzProvider) FetchUserPerms(context.Context, *extsvc.Account) ([]extsvc.ExternalRepoID, error) {
+	return nil, nil
+}
+
+func (m *MockAuthzProvider) FetchRepoPerms(context.Context, *extsvc.Repository) ([]extsvc.ExternalAccountID, error) {
+	return nil, nil
+}
+
 func makeRepo(name api.RepoName, id api.RepoID, private bool) *types.Repo {
 	extName := string(name)
 	if extName == "" {

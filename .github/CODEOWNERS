@@ -160,6 +160,7 @@
 /cmd/github-proxy/ @sourcegraph/core-services
 /cmd/gitserver/ @sourcegraph/core-services
 /cmd/repo-updater/ @sourcegraph/core-services
+/enterprise/cmd/frontend/authz/ @sourcegraph/core-services
 /enterprise/cmd/frontend/db/ @sourcegraph/core-services
 /enterprise/cmd/frontend/internal/authz/ @sourcegraph/core-services
 /enterprise/cmd/frontend/internal/graphqlbackend/ @sourcegraph/core-services @slimsag

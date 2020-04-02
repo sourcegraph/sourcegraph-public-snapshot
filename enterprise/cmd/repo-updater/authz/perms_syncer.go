@@ -48,30 +48,6 @@ type PermsSyncer struct {
 	}
 }
 
-// PermsFetcher is an authz.Provider that could also fetch permissions in both
-// user-centric and repository-centric ways.
-type PermsFetcher interface {
-	authz.Provider
-	// FetchUserPerms returns a list of repository/project IDs (on code host) that the
-	// given account has read access on the code host. The repository ID should be the
-	// same value as it would be used as api.ExternalRepoSpec.ID. The returned list
-	// should only include private repositories/project IDs.
-	//
-	// Because permissions fetching APIs are often expensive, the implementation should
-	// try to return partial but valid results in case of error, and it is up to callers
-	// to decide whether to discard.
-	FetchUserPerms(ctx context.Context, account *extsvc.Account) ([]extsvc.ExternalRepoID, error)
-	// FetchRepoPerms returns a list of user IDs (on code host) who have read access to
-	// the given repository/project on the code host. The user ID should be the same value
-	// as it would be used as extsvc.Account.AccountID. The returned list should
-	// include both direct access and inherited from the group/organization/team membership.
-	//
-	// Because permissions fetching APIs are often expensive, the implementation should
-	// try to return partial but valid results in case of error, and it is up to callers
-	// to decide whether to discard.
-	FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) ([]extsvc.ExternalAccountID, error)
-}
-
 // NewPermsSyncer returns a new permissions syncing manager.
 func NewPermsSyncer(
 	reposStore repos.Store,
@@ -164,22 +140,15 @@ func (s *PermsSyncer) scheduleRepos(ctx context.Context, repos ...scheduledRepo)
 	}
 }
 
-// fetchers returns a list of authz.Provider that also implemented PermsFetcher.
-// Keys are ServiceID (e.g. https://gitlab.com/). The current approach is to
-// minimize the changes required by keeping the authz.Provider interface as-is,
-// so each authz provider could be opt-in progressively until we fully complete
-// the transition of moving permissions syncing process to the background for
-// all authz providers.
-func (s *PermsSyncer) fetchers() map[string]PermsFetcher {
-	_, providers := authz.GetProviders()
-	fetchers := make(map[string]PermsFetcher, len(providers))
-
-	for i := range providers {
-		if f, ok := providers[i].(PermsFetcher); ok {
-			fetchers[f.ServiceID()] = f
-		}
+// providers returns a list of authz.Provider configured in the external services.
+// Keys are ServiceID, e.g. "https://gitlab.com/".
+func (s *PermsSyncer) providers() map[string]authz.Provider {
+	_, ps := authz.GetProviders()
+	providers := make(map[string]authz.Provider, len(ps))
+	for _, p := range ps {
+		providers[p.ServiceID()] = p
 	}
-	return fetchers
+	return providers
 }
 
 // syncUserPerms processes permissions syncing request in user-centric way. When noPerms is true,
@@ -195,13 +164,13 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 
 	var repoSpecs []api.ExternalRepoSpec
 	for _, acct := range accts {
-		fetcher := s.fetchers()[acct.ServiceID]
-		if fetcher == nil {
+		provider := s.providers()[acct.ServiceID]
+		if provider == nil {
 			// We have no authz provider configured for this external account.
 			continue
 		}
 
-		extIDs, err := fetcher.FetchUserPerms(ctx, acct)
+		extIDs, err := provider.FetchUserPerms(ctx, acct)
 		if err != nil {
 			// Process partial results if this is an initial fetch.
 			if !noPerms {
@@ -213,8 +182,8 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		for i := range extIDs {
 			repoSpecs = append(repoSpecs, api.ExternalRepoSpec{
 				ID:          string(extIDs[i]),
-				ServiceType: fetcher.ServiceType(),
-				ServiceID:   fetcher.ServiceID(),
+				ServiceType: provider.ServiceType(),
+				ServiceID:   provider.ServiceID(),
 			})
 		}
 	}
@@ -273,13 +242,13 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		return nil
 	}
 
-	fetcher := s.fetchers()[repo.ExternalRepo.ServiceID]
-	if fetcher == nil {
+	provider := s.providers()[repo.ExternalRepo.ServiceID]
+	if provider == nil {
 		// We have no authz provider configured for this repository.
 		return nil
 	}
 
-	extAccountIDs, err := fetcher.FetchRepoPerms(ctx, &extsvc.Repository{
+	extAccountIDs, err := provider.FetchRepoPerms(ctx, &extsvc.Repository{
 		URI:              repo.URI,
 		ExternalRepoSpec: repo.ExternalRepo,
 	})
@@ -301,8 +270,8 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 
 		// Get corresponding internal database IDs
 		userIDs, err = s.permsStore.GetUserIDsByExternalAccounts(ctx, &extsvc.ExternalAccounts{
-			ServiceType: fetcher.ServiceType(),
-			ServiceID:   fetcher.ServiceID(),
+			ServiceType: provider.ServiceType(),
+			ServiceID:   provider.ServiceID(),
 			AccountIDs:  accountIDs,
 		})
 		if err != nil {
@@ -343,8 +312,8 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	defer txs.Done(&err)
 
 	accounts := &extsvc.ExternalAccounts{
-		ServiceType: fetcher.ServiceType(),
-		ServiceID:   fetcher.ServiceID(),
+		ServiceType: provider.ServiceType(),
+		ServiceID:   provider.ServiceID(),
 		AccountIDs:  pendingAccountIDs,
 	}
 
@@ -556,7 +525,7 @@ func (s *PermsSyncer) schedule(ctx context.Context) (*schedule, error) {
 	// Hard coded both to 10 for now.
 	const limit = 10
 
-	// TODO(jchen): Use better heuristics for setting NexySyncAt, the initial version
+	// TODO(jchen): Use better heuristics for setting NextSyncAt, the initial version
 	// just uses the value of LastUpdatedAt get from the perms tables.
 
 	users, err = s.scheduleUsersWithOldestPerms(ctx, limit)

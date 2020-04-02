@@ -148,6 +148,14 @@ func (f fakeProvider) ServiceType() string           { return f.codeHost.Service
 func (f fakeProvider) ServiceID() string             { return f.codeHost.ServiceID }
 func (f fakeProvider) Validate() (problems []string) { return nil }
 
+func (f fakeProvider) FetchUserPerms(context.Context, *extsvc.Account) ([]extsvc.ExternalRepoID, error) {
+	return nil, nil
+}
+
+func (f fakeProvider) FetchRepoPerms(context.Context, *extsvc.Repository) ([]extsvc.ExternalAccountID, error) {
+	return nil, nil
+}
+
 // 🚨 SECURITY: test necessary to ensure security
 func Test_getBySQL_permissionsCheck(t *testing.T) {
 	if testing.Short() {
