@@ -436,12 +436,10 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) 
 
 	// NOTE: We do not store port or scheme in our URI, so stripping the hostname alone is enough.
 	nameWithOwner := strings.TrimPrefix(repo.URI, p.codeHost.BaseURL.Hostname())
-	fields := strings.SplitN(nameWithOwner, "/", 2)
-	if len(fields) != 2 {
-		return nil, errors.Errorf("malformed nameWithOwner %q: missing '/'", nameWithOwner)
+	owner, name, err := github.SplitRepositoryNameWithOwner(nameWithOwner)
+	if err != nil {
+		return nil, errors.Wrap(err, "split nameWithOwner")
 	}
-	owner := fields[0]
-	repoName := fields[1]
 
 	// 100 matches the maximum page size, thus a good default to avoid multiple allocations
 	// when appending the first 100 results to the slice.
@@ -450,7 +448,7 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) 
 	for page := 1; hasNextPage; page++ {
 		var err error
 		var users []*github.Collaborator
-		users, hasNextPage, err = p.client.ListRepositoryCollaborators(ctx, owner, repoName, page)
+		users, hasNextPage, err = p.client.ListRepositoryCollaborators(ctx, owner, name, page)
 		if err != nil {
 			return userIDs, err
 		}
