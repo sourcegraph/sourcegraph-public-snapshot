@@ -1,3 +1,8 @@
+// Package tracer initializes distributed tracing and log15 behavior. It also updates distributed
+// tracing behavior in response to changes in site configuration. When the Init function of this
+// package is invoked, opentracing.SetGlobalTracer is called (and subsequently called again after
+// every Sourcegraph site configuration change). Importing programs should not invoke
+// opentracing.SetGlobalTracer anywhere else.
 package tracer
 
 import (
@@ -165,13 +170,16 @@ func Init(options ...Option) {
 
 // initTracer is a helper that should be called exactly once (from Init).
 func initTracer(opts *Options) {
-	// Jaeger-related state
-	var jaegerEnabled bool
-	var jaegerCloser io.Closer
-	var jaegerEnabledMu sync.Mutex
+	globalTracer := newSwitchableTracer()
+	opentracing.SetGlobalTracer(globalTracer)
+	var (
+		jaegerEnabledMu sync.Mutex
+		jaegerEnabled   = false
+	)
 
 	// Watch loop
 	conf.Watch(func() {
+		opentracing.SetGlobalTracer(globalTracer)
 		siteConfig := conf.Get()
 
 		// Set sampling strategy
@@ -193,16 +201,17 @@ func initTracer(opts *Options) {
 		}
 		ot.SetTracePolicy(samplingStrategy)
 
-		// Set whether Jaeger should be enabled
+		// Determine whether Jaeger should be enabled
+		_, lastShouldLog := globalTracer.get()
 		jaegerShouldBeEnabled := samplingStrategy == ot.TraceAll || samplingStrategy == ot.TraceSelective
+
+		// Set global tracer (Jaeger or No-op)
+		jaegerEnabledMu.Lock()
+		defer jaegerEnabledMu.Unlock()
 		if jaegerEnabled != jaegerShouldBeEnabled {
 			log15.Info("opentracing: Jaeger enablement change", "old", jaegerEnabled, "newValue", jaegerShouldBeEnabled)
 		}
-
-		// Set global tracer (Jaeger or No-op). Mutex-protected
-		jaegerEnabledMu.Lock()
-		defer jaegerEnabledMu.Unlock()
-		if !jaegerEnabled && jaegerShouldBeEnabled {
+		if jaegerShouldBeEnabled && (!jaegerEnabled || lastShouldLog != shouldLog) {
 			cfg, err := jaegercfg.FromEnv()
 			cfg.ServiceName = opts.serviceName
 			if err != nil {
@@ -224,51 +233,74 @@ func initTracer(opts *Options) {
 				log15.Warn("Could not initialize jaeger tracer", "error", err.Error())
 				return
 			}
-			opentracing.SetGlobalTracer(loggingTracer{Tracer: tracer, log: shouldLog})
-			jaegerCloser = closer
+			globalTracer.set(tracer, closer, shouldLog)
 			trace.SpanURL = jaegerSpanURL
 			jaegerEnabled = true
-		} else if jaegerEnabled && !jaegerShouldBeEnabled {
-			if existingJaegerCloser := jaegerCloser; existingJaegerCloser != nil {
-				go func() { // do outside critical region
-					err := existingJaegerCloser.Close()
-					if err != nil {
-						log15.Warn("Unable to close Jaeger client", "error", err)
-					}
-				}()
-			}
-			opentracing.SetGlobalTracer(opentracing.NoopTracer{})
-			jaegerCloser = nil
+		} else if !jaegerShouldBeEnabled && jaegerEnabled {
+			globalTracer.set(opentracing.NoopTracer{}, nil, shouldLog)
 			trace.SpanURL = trace.NoopSpanURL
 			jaegerEnabled = false
 		}
 	})
 }
 
-type loggingTracer struct {
-	opentracing.Tracer
-	log bool
+// switchableTracer implements opentracing.Tracer. The underlying tracer used is switchable (set via
+// the `set` method).
+type switchableTracer struct {
+	mu           sync.RWMutex
+	tracer       opentracing.Tracer
+	tracerCloser io.Closer
+	log          bool
 }
 
-func (t loggingTracer) StartSpan(operationName string, opts ...opentracing.StartSpanOption) opentracing.Span {
-	if t.log {
-		log15.Info("opentracing: StartSpan", "tracer", fmt.Sprintf("%T", t.Tracer), "operationName", operationName)
-	}
-	return t.Tracer.StartSpan(operationName, opts...)
+func newSwitchableTracer() *switchableTracer {
+	return &switchableTracer{tracer: opentracing.NoopTracer{}}
 }
 
-func (t loggingTracer) Inject(sm opentracing.SpanContext, format interface{}, carrier interface{}) error {
+func (t *switchableTracer) StartSpan(operationName string, opts ...opentracing.StartSpanOption) opentracing.Span {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
 	if t.log {
-		log15.Info("opentracing: Inject", "tracer", fmt.Sprintf("%T", t.Tracer))
+		log15.Info("opentracing: StartSpan", "operationName", operationName, "tracer", fmt.Sprintf("%T", t.tracer))
 	}
-	return t.Tracer.Inject(sm, format, carrier)
+	return t.tracer.StartSpan(operationName, opts...)
 }
 
-func (t loggingTracer) Extract(format interface{}, carrier interface{}) (opentracing.SpanContext, error) {
+func (t *switchableTracer) Inject(sm opentracing.SpanContext, format interface{}, carrier interface{}) error {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
 	if t.log {
-		log15.Info("opentracing: Extract", "tracer", fmt.Sprintf("%T", t.Tracer))
+		log15.Info("opentracing: Inject", "tracer", fmt.Sprintf("%T", t.tracer))
 	}
-	return t.Tracer.Extract(format, carrier)
+	return t.tracer.Inject(sm, format, carrier)
+}
+
+func (t *switchableTracer) Extract(format interface{}, carrier interface{}) (opentracing.SpanContext, error) {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+	if t.log {
+		log15.Info("opentracing: Extract", "tracer", fmt.Sprintf("%T", t.tracer))
+	}
+	return t.tracer.Extract(format, carrier)
+}
+
+func (t *switchableTracer) set(tracer opentracing.Tracer, tracerCloser io.Closer, log bool) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if tc := t.tracerCloser; tc != nil {
+		// Close the old tracerCloser outside the critical zone
+		go tc.Close()
+	}
+
+	t.tracerCloser = tracerCloser
+	t.tracer = tracer
+	t.log = log
+}
+
+func (t *switchableTracer) get() (tracer opentracing.Tracer, log bool) {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+	return t.tracer, t.log
 }
 
 const tracingNotEnabledURL = "#tracing_not_enabled_for_this_request_add_?trace=1_to_url_to_enable"
