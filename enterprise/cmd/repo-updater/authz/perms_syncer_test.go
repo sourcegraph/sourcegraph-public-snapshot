@@ -50,8 +50,6 @@ func TestPermsSyncer_ScheduleRepos(t *testing.T) {
 	}
 }
 
-var _ PermsFetcher = (*mockProvider)(nil)
-
 type mockProvider struct {
 	serviceType string
 	serviceID   string
