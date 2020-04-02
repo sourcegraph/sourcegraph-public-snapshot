@@ -120,7 +120,7 @@
     "@types/sanitize-html": "1.22.0",
     "@types/semver": "7.1.0",
     "@types/shelljs": "0.8.7",
-    "@types/signale": "1.2.1",
+    "@types/signale": "1.4.1",
     "@types/simmerjs": "0.5.1",
     "@types/sinon": "9.0.0",
     "@types/socket.io": "2.1.4",

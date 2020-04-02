@@ -3138,10 +3138,10 @@
     "@types/glob" "*"
     "@types/node" "*"
 
-"@types/signale@1.2.1":
-  version "1.2.1"
-  resolved "https://registry.npmjs.org/@types/signale/-/signale-1.2.1.tgz#7ff3d477e8d5983b7ecef544f5830c3cb271d1a8"
-  integrity sha512-mV6s2VgcBC16Jb+1EwulgRrrZBT93V4JCILkNPg31rvvSK6LRQQGU8R/SUivgHjDZ5LJZu/yL2kMF8j85YQTnA==
+"@types/signale@1.4.1":
+  version "1.4.1"
+  resolved "https://registry.npmjs.org/@types/signale/-/signale-1.4.1.tgz#6137a6fd7960b48703dd2793c5b795480368b246"
+  integrity sha512-05d9fUDqRnt36rizLgo38SbPTrkMzdhXpvSHSAhxzokgIUPGNUoXHV0zYjPpTd4IryDADJ0mGHpfJ/Yhjyh9JQ==
   dependencies:
     "@types/node" "*"
 
