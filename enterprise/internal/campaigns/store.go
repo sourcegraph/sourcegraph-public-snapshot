@@ -6,6 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"sort"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -554,10 +557,15 @@ func getChangesetQuery(opts *GetChangesetOpts) *sqlf.Query {
 	return sqlf.Sprintf(getChangesetsQueryFmtstr, sqlf.Join(preds, "\n AND "))
 }
 
-// ListChangesetSyncData returns sync timing data on all non-externally-deleted changesets
+type ListChangesetSyncDataOpts struct {
+	// Return only the supplied changesets. If empty, all changesets are returned
+	ChangesetIDs []int64
+}
+
+// ListChangesetSyncData returns sync data on all non-externally-deleted changesets
 // that are part of at least one open campaign.
-func (s *Store) ListChangesetSyncData(ctx context.Context) ([]campaigns.ChangesetSyncData, error) {
-	q := listChangesetSyncData()
+func (s *Store) ListChangesetSyncData(ctx context.Context, opts ListChangesetSyncDataOpts) ([]campaigns.ChangesetSyncData, error) {
+	q := listChangesetSyncData(opts)
 	results := make([]campaigns.ChangesetSyncData, 0)
 	_, _, err := s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
 		var h campaigns.ChangesetSyncData
@@ -574,27 +582,85 @@ func (s *Store) ListChangesetSyncData(ctx context.Context) ([]campaigns.Changese
 }
 
 func scanChangesetSyncData(h *campaigns.ChangesetSyncData, s scanner) error {
-	return s.Scan(
+	var sources json.RawMessage
+	err := s.Scan(
 		&h.ChangesetID,
 		&h.UpdatedAt,
 		&dbutil.NullTime{Time: &h.LatestEvent},
 		&dbutil.NullTime{Time: &h.ExternalUpdatedAt},
+		&sources,
 	)
+	if err != nil {
+		return err
+	}
+
+	infos := make(map[string]*SourceInfo)
+	if err = json.Unmarshal(sources, &infos); err != nil {
+		return errors.Wrap(err, "scanChangesetSyncData: failed to unmarshal sources")
+	}
+	h.ExternalServiceIDs = make([]int64, 0, len(infos))
+	for _, v := range infos {
+		id := v.ExternalServiceID()
+		h.ExternalServiceIDs = append(h.ExternalServiceIDs, id)
+	}
+	sort.Slice(h.ExternalServiceIDs, func(i, j int) bool { return h.ExternalServiceIDs[i] < h.ExternalServiceIDs[j] })
+
+	return nil
 }
 
-func listChangesetSyncData() *sqlf.Query {
-	return sqlf.Sprintf(`
-SELECT changesets.id,
-       changesets.updated_at,
-       max(ce.updated_at) AS latest_event,
-       changesets.external_updated_at
-FROM changesets
-LEFT JOIN changeset_events ce ON changesets.id = ce.changeset_id
-JOIN campaigns ON campaigns.changeset_ids ? changesets.id::text
-WHERE campaigns.closed_at IS NULL
-GROUP BY changesets.id
-ORDER BY changesets.id ASC
-`)
+func listChangesetSyncData(opts ListChangesetSyncDataOpts) *sqlf.Query {
+	fmtString := `
+ SELECT changesets.id,
+        changesets.updated_at,
+        max(ce.updated_at) AS latest_event,
+        changesets.external_updated_at,
+        r.sources
+ FROM changesets
+          LEFT JOIN changeset_events ce ON changesets.id = ce.changeset_id
+          JOIN campaigns ON campaigns.changeset_ids ? changesets.id::TEXT
+          JOIN repo r ON changesets.repo_id = r.id
+ WHERE %S
+ GROUP BY changesets.id, r.id
+ ORDER BY changesets.id ASC
+`
+
+	var preds []*sqlf.Query
+	preds = append(preds, sqlf.Sprintf("campaigns.closed_at IS NULL"))
+	if len(opts.ChangesetIDs) > 0 {
+		ids := make([]*sqlf.Query, 0, len(opts.ChangesetIDs))
+		for _, id := range opts.ChangesetIDs {
+			if id != 0 {
+				ids = append(ids, sqlf.Sprintf("%d", id))
+			}
+		}
+		preds = append(preds, sqlf.Sprintf("changesets.id IN (%s)", sqlf.Join(ids, ",")))
+	}
+
+	return sqlf.Sprintf(fmtString, sqlf.Join(preds, "\n AND"))
+}
+
+// TODO: SourceInfo copied from repo-updater/repos, find a common place for it
+
+// A SourceInfo represents a source a Repo belongs to (such as an external service).
+type SourceInfo struct {
+	ID       string
+	CloneURL string
+}
+
+// ExternalServiceID returns the ID of the external service this
+// SourceInfo refers to.
+func (i SourceInfo) ExternalServiceID() int64 {
+	ps := strings.SplitN(i.ID, ":", 3)
+	if len(ps) != 3 {
+		return -1
+	}
+
+	id, err := strconv.ParseInt(ps[2], 10, 64)
+	if err != nil {
+		return -1
+	}
+
+	return id
 }
 
 // ListChangesetsOpts captures the query options needed for

@@ -177,7 +177,7 @@ func TestSyncerRun(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		now := time.Now()
 		store := MockSyncStore{
-			listChangesetSyncData: func(ctx context.Context) ([]campaigns.ChangesetSyncData, error) {
+			listChangesetSyncData: func(ctx context.Context, opts ListChangesetSyncDataOpts) ([]campaigns.ChangesetSyncData, error) {
 				return []campaigns.ChangesetSyncData{
 					{
 						ChangesetID:       1,
@@ -193,9 +193,9 @@ func TestSyncerRun(t *testing.T) {
 			return nil
 		}
 		syncer := &ChangesetSyncer{
-			Store:                   store,
-			ComputeScheduleInterval: 10 * time.Minute,
-			syncFunc:                syncFunc,
+			Store:            store,
+			scheduleInterval: 10 * time.Minute,
+			syncFunc:         syncFunc,
 		}
 		go syncer.Run(ctx)
 		select {
@@ -210,7 +210,7 @@ func TestSyncerRun(t *testing.T) {
 		defer cancel()
 		now := time.Now()
 		store := MockSyncStore{
-			listChangesetSyncData: func(ctx context.Context) ([]campaigns.ChangesetSyncData, error) {
+			listChangesetSyncData: func(ctx context.Context, opts ListChangesetSyncDataOpts) ([]campaigns.ChangesetSyncData, error) {
 				return []campaigns.ChangesetSyncData{
 					{
 						ChangesetID:       1,
@@ -227,9 +227,9 @@ func TestSyncerRun(t *testing.T) {
 			return nil
 		}
 		syncer := &ChangesetSyncer{
-			Store:                   store,
-			ComputeScheduleInterval: 10 * time.Minute,
-			syncFunc:                syncFunc,
+			Store:            store,
+			scheduleInterval: 10 * time.Minute,
+			syncFunc:         syncFunc,
 		}
 		syncer.Run(ctx)
 		if syncCalled {
@@ -241,7 +241,7 @@ func TestSyncerRun(t *testing.T) {
 		// Empty schedule but then we add an item
 		ctx, cancel := context.WithCancel(context.Background())
 		store := MockSyncStore{
-			listChangesetSyncData: func(ctx context.Context) ([]campaigns.ChangesetSyncData, error) {
+			listChangesetSyncData: func(ctx context.Context, opts ListChangesetSyncDataOpts) ([]campaigns.ChangesetSyncData, error) {
 				return []campaigns.ChangesetSyncData{}, nil
 			},
 		}
@@ -250,10 +250,10 @@ func TestSyncerRun(t *testing.T) {
 			return nil
 		}
 		syncer := &ChangesetSyncer{
-			Store:                   store,
-			ComputeScheduleInterval: 10 * time.Minute,
-			syncFunc:                syncFunc,
-			priorityNotify:          make(chan []int64, 1),
+			Store:            store,
+			scheduleInterval: 10 * time.Minute,
+			syncFunc:         syncFunc,
+			priorityNotify:   make(chan []int64, 1),
 		}
 		syncer.priorityNotify <- []int64{1}
 		go syncer.Run(ctx)
@@ -266,15 +266,96 @@ func TestSyncerRun(t *testing.T) {
 
 }
 
+func TestFilterSyncData(t *testing.T) {
+	testCases := []struct {
+		name      string
+		serviceID int64
+		data      []campaigns.ChangesetSyncData
+		want      []campaigns.ChangesetSyncData
+	}{
+		{
+			name:      "Empty",
+			serviceID: 1,
+			data:      []campaigns.ChangesetSyncData{},
+			want:      []campaigns.ChangesetSyncData{},
+		},
+		{
+			name:      "single item, should match",
+			serviceID: 1,
+			data: []campaigns.ChangesetSyncData{
+				{
+					ChangesetID:        1,
+					ExternalServiceIDs: []int64{1},
+				},
+			},
+			want: []campaigns.ChangesetSyncData{
+				{
+					ChangesetID:        1,
+					ExternalServiceIDs: []int64{1},
+				},
+			},
+		},
+		{
+			name:      "single item, should not match",
+			serviceID: 1,
+			data: []campaigns.ChangesetSyncData{
+				{
+					ChangesetID:        1,
+					ExternalServiceIDs: []int64{2},
+				},
+			},
+			want: []campaigns.ChangesetSyncData{},
+		},
+		{
+			name:      "multiple items, should match",
+			serviceID: 2,
+			data: []campaigns.ChangesetSyncData{
+				{
+					ChangesetID:        1,
+					ExternalServiceIDs: []int64{1, 2},
+				},
+			},
+			want: []campaigns.ChangesetSyncData{
+				{
+					ChangesetID:        1,
+					ExternalServiceIDs: []int64{1, 2},
+				},
+			},
+		},
+		{
+			name:      "multiple items, should not match",
+			serviceID: 1,
+			data: []campaigns.ChangesetSyncData{
+				{
+					ChangesetID:        1,
+					ExternalServiceIDs: []int64{1, 2},
+				},
+			},
+			want: []campaigns.ChangesetSyncData{},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			data := filterSyncData(tc.serviceID, tc.data)
+			if diff := cmp.Diff(tc.want, data); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}
+
 type MockSyncStore struct {
-	listChangesetSyncData func(context.Context) ([]campaigns.ChangesetSyncData, error)
+	listChangesetSyncData func(context.Context, ListChangesetSyncDataOpts) ([]campaigns.ChangesetSyncData, error)
 	getChangeset          func(context.Context, GetChangesetOpts) (*campaigns.Changeset, error)
 	listChangesets        func(context.Context, ListChangesetsOpts) ([]*campaigns.Changeset, int64, error)
+	updateChangesets      func(context.Context, ...*campaigns.Changeset) error
+	upsertChangesetEvents func(context.Context, ...*campaigns.ChangesetEvent) error
 	transact              func(context.Context) (*Store, error)
 }
 
-func (m MockSyncStore) ListChangesetSyncData(ctx context.Context) ([]campaigns.ChangesetSyncData, error) {
-	return m.listChangesetSyncData(ctx)
+func (m MockSyncStore) ListChangesetSyncData(ctx context.Context, opts ListChangesetSyncDataOpts) ([]campaigns.ChangesetSyncData, error) {
+	return m.listChangesetSyncData(ctx, opts)
 }
 
 func (m MockSyncStore) GetChangeset(ctx context.Context, opts GetChangesetOpts) (*campaigns.Changeset, error) {
@@ -283,6 +364,14 @@ func (m MockSyncStore) GetChangeset(ctx context.Context, opts GetChangesetOpts) 
 
 func (m MockSyncStore) ListChangesets(ctx context.Context, opts ListChangesetsOpts) ([]*campaigns.Changeset, int64, error) {
 	return m.listChangesets(ctx, opts)
+}
+
+func (m MockSyncStore) UpdateChangesets(ctx context.Context, cs ...*campaigns.Changeset) error {
+	return m.updateChangesets(ctx, cs...)
+}
+
+func (m MockSyncStore) UpsertChangesetEvents(ctx context.Context, cs ...*campaigns.ChangesetEvent) error {
+	return m.upsertChangesetEvents(ctx, cs...)
 }
 
 func (m MockSyncStore) Transact(ctx context.Context) (*Store, error) {

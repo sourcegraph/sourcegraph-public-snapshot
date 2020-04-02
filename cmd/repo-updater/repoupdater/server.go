@@ -46,6 +46,7 @@ type Server struct {
 	}
 	ChangesetSyncer interface {
 		EnqueueChangesetSyncs(ctx context.Context, ids []int64) error
+		HandleExternalServiceSync(es api.ExternalService)
 	}
 
 	notClonedCountMu        sync.Mutex
@@ -330,6 +331,8 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		respond(w, http.StatusInternalServerError, err)
 		return
 	}
+
+	s.ChangesetSyncer.HandleExternalServiceSync(req.ExternalService)
 
 	log15.Info("server.external-service-sync", "synced", req.ExternalService.Kind)
 	respond(w, http.StatusOK, &protocol.ExternalServiceSyncResult{
