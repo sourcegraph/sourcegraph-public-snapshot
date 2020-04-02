@@ -15,7 +15,7 @@ steps:
     - ./cmd/server/build.sh
     - popd
     - |
-      if [ "$BUILDKITE_BRANCH" == "master" ] || [[ "$BUILDKITE_BRANCH" = master-dry-run/* ]]; then
+      if [ -n "$PUSH_CANDIDATE_IMAGE" ]; then
         yes | gcloud auth configure-docker
         docker push "$IMAGE"
       fi
