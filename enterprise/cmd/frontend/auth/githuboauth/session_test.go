@@ -202,7 +202,7 @@ func TestGetOrCreateUser(t *testing.T) {
 					if gotAuthUserOp != nil {
 						t.Fatal("GetAndSaveUser called more than once")
 					}
-					op.ExternalAccountData = extsvc.ExternalAccountData{} // ignore ExternalAccountData value
+					op.ExternalAccountData = extsvc.Data{} // ignore Data value
 					gotAuthUserOp = &op
 
 					if uid, ok := authSaveableUsers[op.UserProps.Username]; ok {

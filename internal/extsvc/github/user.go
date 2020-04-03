@@ -9,7 +9,7 @@ import (
 	"golang.org/x/oauth2"
 )
 
-func GetExternalAccountData(data *extsvc.ExternalAccountData) (usr *github.User, tok *oauth2.Token, err error) {
+func GetExternalAccountData(data *extsvc.Data) (usr *github.User, tok *oauth2.Token, err error) {
 	var (
 		u github.User
 		t oauth2.Token
@@ -30,7 +30,7 @@ func GetExternalAccountData(data *extsvc.ExternalAccountData) (usr *github.User,
 	return usr, tok, nil
 }
 
-func SetExternalAccountData(data *extsvc.ExternalAccountData, user *github.User, token *oauth2.Token) {
+func SetExternalAccountData(data *extsvc.Data, user *github.User, token *oauth2.Token) {
 	data.SetAccountData(user)
 	data.SetAuthData(token)
 }
