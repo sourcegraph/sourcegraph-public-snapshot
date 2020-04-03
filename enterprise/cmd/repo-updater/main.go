@@ -44,13 +44,9 @@ func enterpriseInit(
 	ctx := context.Background()
 	campaignsStore := campaigns.NewStore(db)
 
-	syncer := &campaigns.ChangesetSyncer{
-		Store:       campaignsStore,
-		ReposStore:  repoStore,
-		HTTPFactory: cf,
-	}
+	syncRegistry := campaigns.NewSyncRegistry(ctx, campaignsStore, repoStore, cf)
 	if server != nil {
-		server.ChangesetSyncer = syncer
+		server.ChangesetSyncRegistry = syncRegistry
 	}
 
 	clock := func() time.Time {
@@ -59,9 +55,6 @@ func enterpriseInit(
 
 	sourcer := repos.NewSourcer(cf)
 	go campaigns.RunWorkers(ctx, campaignsStore, clock, gitserver.DefaultClient, sourcer, 5*time.Second)
-
-	// Set up syncer
-	go syncer.Run(ctx)
 
 	// Set up expired patch set deletion
 	go func() {

@@ -118,7 +118,7 @@ func testGitHubWebhook(db *sql.DB) func(*testing.T) {
 
 		syncer := ChangesetSyncer{
 			ReposStore:  repoStore,
-			Store:       store,
+			SyncStore:   store,
 			HTTPFactory: cf,
 		}
 

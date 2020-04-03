@@ -1263,6 +1263,8 @@ type ChangesetSyncData struct {
 	LatestEvent time.Time
 	// ExternalUpdatedAt is the time the external changeset last changed
 	ExternalUpdatedAt time.Time
+	// ExternalServiceID is the ID of the external service to which the changeset belongs
+	ExternalServiceIDs []int64
 }
 
 func unixMilliToTime(ms int64) time.Time {

@@ -811,7 +811,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 			t.Run("Null changeset state", func(t *testing.T) {
 				cs := &cmpgn.Changeset{
-					RepoID:              42,
+					RepoID:              repo.ID,
 					Metadata:            githubPR,
 					CampaignIDs:         []int64{1},
 					ExternalID:          fmt.Sprintf("foobar-%d", 42),
@@ -1227,11 +1227,22 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 		t.Run("ListChangesetSyncData", func(t *testing.T) {
 			changesets, _, err := s.ListChangesets(ctx, ListChangesetsOpts{
-				Limit: 10,
+				Limit: -1,
 			})
 			if err != nil {
 				t.Fatal(err)
 			}
+
+			// A previous test decreases the repoID, set it back
+			for i := range changesets {
+				changesets[i].RepoID = repo.ID
+			}
+
+			err = s.UpdateChangesets(ctx, changesets...)
+			if err != nil {
+				t.Fatal(err)
+			}
+
 			// We need campaigns attached to each changeset
 			for i, cs := range changesets {
 				c := &cmpgn.Campaign{
@@ -1251,28 +1262,31 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 			// Differs from clock() due to updates higher up
 			externalUpdatedAt := clock().Add(-2 * time.Second)
-			hs, err := s.ListChangesetSyncData(ctx)
+			hs, err := s.ListChangesetSyncData(ctx, ListChangesetSyncDataOpts{})
 			if err != nil {
 				t.Fatal(err)
 			}
 			want := []cmpgn.ChangesetSyncData{
 				{
-					ChangesetID:       1,
-					UpdatedAt:         clock(),
-					LatestEvent:       clock(),
-					ExternalUpdatedAt: externalUpdatedAt,
+					ChangesetID:        1,
+					UpdatedAt:          clock(),
+					LatestEvent:        clock(),
+					ExternalUpdatedAt:  externalUpdatedAt,
+					ExternalServiceIDs: []int64{4},
 				},
 				{
-					ChangesetID:       2,
-					UpdatedAt:         clock(),
-					LatestEvent:       clock(),
-					ExternalUpdatedAt: externalUpdatedAt,
+					ChangesetID:        2,
+					UpdatedAt:          clock(),
+					LatestEvent:        clock(),
+					ExternalUpdatedAt:  externalUpdatedAt,
+					ExternalServiceIDs: []int64{4},
 				},
 				{
 					// No events
-					ChangesetID:       3,
-					UpdatedAt:         clock(),
-					ExternalUpdatedAt: externalUpdatedAt,
+					ChangesetID:        3,
+					UpdatedAt:          clock(),
+					ExternalUpdatedAt:  externalUpdatedAt,
+					ExternalServiceIDs: []int64{4},
 				},
 			}
 			if diff := cmp.Diff(want, hs); diff != "" {
@@ -1307,22 +1321,24 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 			// Differs from clock() due to updates higher up
 			externalUpdatedAt := clock().Add(-2 * time.Second)
-			hs, err := s.ListChangesetSyncData(ctx)
+			hs, err := s.ListChangesetSyncData(ctx, ListChangesetSyncDataOpts{})
 			if err != nil {
 				t.Fatal(err)
 			}
 			want := []cmpgn.ChangesetSyncData{
 				{
-					ChangesetID:       2,
-					UpdatedAt:         clock(),
-					LatestEvent:       clock(),
-					ExternalUpdatedAt: externalUpdatedAt,
+					ChangesetID:        2,
+					UpdatedAt:          clock(),
+					LatestEvent:        clock(),
+					ExternalUpdatedAt:  externalUpdatedAt,
+					ExternalServiceIDs: []int64{4},
 				},
 				{
 					// No events
-					ChangesetID:       3,
-					UpdatedAt:         clock(),
-					ExternalUpdatedAt: externalUpdatedAt,
+					ChangesetID:        3,
+					UpdatedAt:          clock(),
+					ExternalUpdatedAt:  externalUpdatedAt,
+					ExternalServiceIDs: []int64{4},
 				},
 			}
 			if diff := cmp.Diff(want, hs); diff != "" {
@@ -1356,28 +1372,31 @@ func testStore(db *sql.DB) func(*testing.T) {
 				t.Fatal(err)
 			}
 
-			hs, err = s.ListChangesetSyncData(ctx)
+			hs, err = s.ListChangesetSyncData(ctx, ListChangesetSyncDataOpts{})
 			if err != nil {
 				t.Fatal(err)
 			}
 			want = []cmpgn.ChangesetSyncData{
 				{
-					ChangesetID:       1,
-					UpdatedAt:         clock(),
-					LatestEvent:       clock(),
-					ExternalUpdatedAt: externalUpdatedAt,
+					ChangesetID:        1,
+					UpdatedAt:          clock(),
+					LatestEvent:        clock(),
+					ExternalUpdatedAt:  externalUpdatedAt,
+					ExternalServiceIDs: []int64{4},
 				},
 				{
-					ChangesetID:       2,
-					UpdatedAt:         clock(),
-					LatestEvent:       clock(),
-					ExternalUpdatedAt: externalUpdatedAt,
+					ChangesetID:        2,
+					UpdatedAt:          clock(),
+					LatestEvent:        clock(),
+					ExternalUpdatedAt:  externalUpdatedAt,
+					ExternalServiceIDs: []int64{4},
 				},
 				{
 					// No events
-					ChangesetID:       3,
-					UpdatedAt:         clock(),
-					ExternalUpdatedAt: externalUpdatedAt,
+					ChangesetID:        3,
+					UpdatedAt:          clock(),
+					ExternalUpdatedAt:  externalUpdatedAt,
+					ExternalServiceIDs: []int64{4},
 				},
 			}
 			if diff := cmp.Diff(want, hs); diff != "" {

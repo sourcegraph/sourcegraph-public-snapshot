@@ -3,6 +3,7 @@ package campaigns
 import (
 	"container/heap"
 	"context"
+	"sync"
 	"time"
 
 	"github.com/inconshreveable/log15"
@@ -13,29 +14,222 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
+// SyncRegistry manages a ChangesetSyncer per external service.
+type SyncRegistry struct {
+	Ctx         context.Context
+	SyncStore   SyncStore
+	RepoStore   RepoStore
+	HTTPFactory *httpcli.Factory
+
+	priorityNotify chan []int64
+
+	mu      sync.Mutex
+	syncers map[int64]*ChangesetSyncer
+}
+
+type RepoStore interface {
+	ListExternalServices(context.Context, repos.StoreListExternalServicesArgs) ([]*repos.ExternalService, error)
+	ListRepos(context.Context, repos.StoreListReposArgs) ([]*repos.Repo, error)
+}
+
+// NewSycnRegistry creates a new sync registry which starts a syncer for each external service and will update them
+// when external services are changed, added or removed.
+func NewSyncRegistry(ctx context.Context, store SyncStore, repoStore RepoStore, cf *httpcli.Factory) *SyncRegistry {
+	r := &SyncRegistry{
+		Ctx:            ctx,
+		SyncStore:      store,
+		RepoStore:      repoStore,
+		HTTPFactory:    cf,
+		priorityNotify: make(chan []int64, 500),
+		syncers:        make(map[int64]*ChangesetSyncer),
+	}
+
+	services, err := repoStore.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{})
+	if err != nil {
+		log15.Error("Fetching initial external services", "err", err)
+	}
+
+	// Add and start syncers
+	for _, service := range services {
+		r.Add(service.ID)
+	}
+
+	go r.handlePriorityItems()
+
+	return r
+}
+
+// Add adds a syncer for the supplied external service if the syncer hasn't already been added and starts it.
+func (s *SyncRegistry) Add(extServiceID int64) {
+	ctx, cancel := context.WithTimeout(s.Ctx, 10*time.Second)
+	defer cancel()
+	services, err := s.RepoStore.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{
+		IDs: []int64{extServiceID},
+	})
+	if err != nil {
+		log15.Error("Listing external services", "err", err)
+		return
+	}
+	if len(services) < 1 {
+		return
+	}
+
+	service := services[0]
+
+	switch service.Kind {
+	case "GITHUB", "BITBUCKETSERVER":
+	// Supported by campaigns
+	default:
+		log15.Warn("Syncer not started for unsupported code host", "kind", service.Kind)
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if _, ok := s.syncers[extServiceID]; ok {
+		// Already added
+		return
+	}
+
+	// We need to be able to cancel the syncer if the service is removed
+	ctx, cancel = context.WithCancel(s.Ctx)
+
+	syncer := &ChangesetSyncer{
+		SyncStore:         s.SyncStore,
+		ReposStore:        s.RepoStore,
+		HTTPFactory:       s.HTTPFactory,
+		externalServiceID: extServiceID,
+		cancel:            cancel,
+		priorityNotify:    make(chan []int64, 500),
+	}
+
+	s.syncers[extServiceID] = syncer
+
+	go syncer.Run(ctx)
+}
+
+// handlePriorityItems fetches changesets in the priority queue from the db and passes them
+// to the appropriate syncer.
+func (s *SyncRegistry) handlePriorityItems() {
+	fetchSyncData := func(ids []int64) ([]campaigns.ChangesetSyncData, error) {
+		ctx, cancel := context.WithTimeout(s.Ctx, 10*time.Second)
+		defer cancel()
+		return s.SyncStore.ListChangesetSyncData(ctx, ListChangesetSyncDataOpts{ChangesetIDs: ids})
+	}
+	for {
+		select {
+		case <-s.Ctx.Done():
+			return
+		case ids := <-s.priorityNotify:
+			syncData, err := fetchSyncData(ids)
+			if err != nil {
+				log15.Error("Fetching sync data", "err", err)
+				continue
+			}
+
+			// Assign changesets to external services
+			changesetsByService := make(map[int64][]int64)
+			for _, d := range syncData {
+				svcID := shardChangeset(d.ChangesetID, d.ExternalServiceIDs)
+				changesetsByService[svcID] = append(changesetsByService[svcID], d.ChangesetID)
+			}
+
+			// Anonymous func so we can use defer
+			func() {
+				s.mu.Lock()
+				defer s.mu.Unlock()
+				for svcID, changesets := range changesetsByService {
+					syncer, ok := s.syncers[svcID]
+					if !ok {
+						continue
+					}
+
+					select {
+					case syncer.priorityNotify <- changesets:
+					default:
+					}
+				}
+			}()
+		}
+	}
+}
+
+// EnqueueChangesetSyncs will enqueue the changesets with the supplied ids for high priority syncing.
+// An error indicates that no changesets have been enqueued.
+func (s *SyncRegistry) EnqueueChangesetSyncs(ctx context.Context, ids []int64) error {
+	// The channel below is buffered so we'll usually send without blocking.
+	// It is important not to block here as this method is called from the UI
+	select {
+	case s.priorityNotify <- ids:
+	default:
+		return errors.New("high priority sync capacity reached")
+	}
+	return nil
+}
+
+// HandleExternalServiceSync handles changes to external services.
+func (s *SyncRegistry) HandleExternalServiceSync(es api.ExternalService) {
+	// For now we just need to start and stop them.
+	// TODO: Once rate limiters are added we'll need to update those
+	s.mu.Lock()
+	syncer, exists := s.syncers[es.ID]
+	s.mu.Unlock()
+
+	if es.DeletedAt == nil && !exists {
+		s.Add(es.ID)
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if es.DeletedAt != nil && exists {
+		delete(s.syncers, es.ID)
+		syncer.cancel()
+	}
+}
+
+// shardChangeset assigns an external service to the supplied changeset.
+// each changeset can belong to multiple external services but we only want one syncer to be
+// assigned to a changeset.
+// externalServices should be sorted in ascending order.
+func shardChangeset(changesetID int64, externalServices []int64) (externalServiceID int64) {
+	if len(externalServices) == 0 {
+		return 0
+	}
+	// This will consistently return the same index into exteralServices given the same
+	// changeset and list of external services. It's random, but deterministic.
+	i := int(changesetID) % len(externalServices)
+	return externalServices[i]
+}
+
 // A ChangesetSyncer periodically syncs metadata of changesets
 // saved in the database.
 type ChangesetSyncer struct {
-	Store       SyncStore
-	ReposStore  repos.Store
+	SyncStore   SyncStore
+	ReposStore  RepoStore
 	HTTPFactory *httpcli.Factory
 
-	// ComputeScheduleInterval determines how often a new schedule will be computed.
-	// Note that it involves a DB query but no communication with codehosts
-	ComputeScheduleInterval time.Duration
+	externalServiceID int64
+
+	// scheduleInterval determines how often a new schedule will be computed.
+	// NOTE: It involves a DB query but no communication with code hosts.
+	scheduleInterval time.Duration
 
 	queue          *changesetPriorityQueue
 	priorityNotify chan []int64
 
-	// Replaceable fo testing
+	// Replaceable for testing
 	syncFunc func(ctx context.Context, id int64) error
 	clock    func() time.Time
+
+	// cancel should be called to stop this syncer
+	cancel context.CancelFunc
 }
 
 type SyncStore interface {
-	ListChangesetSyncData(context.Context) ([]campaigns.ChangesetSyncData, error)
+	ListChangesetSyncData(context.Context, ListChangesetSyncDataOpts) ([]campaigns.ChangesetSyncData, error)
 	GetChangeset(context.Context, GetChangesetOpts) (*campaigns.Changeset, error)
 	ListChangesets(context.Context, ListChangesetsOpts) ([]*campaigns.Changeset, int64, error)
+	UpdateChangesets(ctx context.Context, cs ...*campaigns.Changeset) error
+	UpsertChangesetEvents(ctx context.Context, cs ...*campaigns.ChangesetEvent) error
 	Transact(context.Context) (*Store, error)
 }
 
@@ -43,7 +237,7 @@ type SyncStore interface {
 // and is expected to be launched once at startup.
 func (s *ChangesetSyncer) Run(ctx context.Context) {
 	// TODO: Setup instrumentation here
-	scheduleInterval := s.ComputeScheduleInterval
+	scheduleInterval := s.scheduleInterval
 	if scheduleInterval == 0 {
 		scheduleInterval = 2 * time.Minute
 	}
@@ -52,9 +246,6 @@ func (s *ChangesetSyncer) Run(ctx context.Context) {
 	}
 	if s.clock == nil {
 		s.clock = time.Now
-	}
-	if s.priorityNotify == nil {
-		s.priorityNotify = make(chan []int64, 500)
 	}
 	s.queue = newChangesetPriorityQueue()
 	// How often to refresh the schedule
@@ -193,17 +384,19 @@ func absDuration(d time.Duration) time.Duration {
 }
 
 func (s *ChangesetSyncer) computeSchedule(ctx context.Context) ([]scheduledSync, error) {
-	hs, err := s.Store.ListChangesetSyncData(ctx)
+	allSyncData, err := s.SyncStore.ListChangesetSyncData(ctx, ListChangesetSyncDataOpts{})
 	if err != nil {
 		return nil, errors.Wrap(err, "listing changeset sync data")
 	}
 
-	ss := make([]scheduledSync, len(hs))
-	for i := range hs {
-		nextSync := nextSync(s.clock, hs[i])
+	syncData := filterSyncData(s.externalServiceID, allSyncData)
+
+	ss := make([]scheduledSync, len(syncData))
+	for i := range syncData {
+		nextSync := nextSync(s.clock, syncData[i])
 
 		ss[i] = scheduledSync{
-			changesetID: hs[i].ChangesetID,
+			changesetID: syncData[i].ChangesetID,
 			nextSync:    nextSync,
 		}
 	}
@@ -211,26 +404,22 @@ func (s *ChangesetSyncer) computeSchedule(ctx context.Context) ([]scheduledSync,
 	return ss, nil
 }
 
-// EnqueueChangesetSyncs will enqueue the changesets with the supplied ids for high priority syncing.
-// An error indicates that no changesets have been enqueued.
-func (s *ChangesetSyncer) EnqueueChangesetSyncs(ctx context.Context, ids []int64) error {
-	if s.queue == nil {
-		return errors.New("background syncing not initialised")
+// filterSyncData filters to changesets that serviceID is responsible for.
+func filterSyncData(serviceID int64, allSyncData []campaigns.ChangesetSyncData) []campaigns.ChangesetSyncData {
+	syncData := make([]campaigns.ChangesetSyncData, 0, len(allSyncData))
+	for _, d := range allSyncData {
+		svcID := shardChangeset(d.ChangesetID, d.ExternalServiceIDs)
+		if svcID == serviceID {
+			syncData = append(syncData, d)
+		}
 	}
-	// The channel below is buffered so we'll usually send without blocking.
-	// It is important not to block here as this method is called from the UI
-	select {
-	case s.priorityNotify <- ids:
-	default:
-		return errors.New("high priority sync capacity reached")
-	}
-	return nil
+	return syncData
 }
 
 // SyncChangesetByID will sync a single changeset given its id.
 func (s *ChangesetSyncer) SyncChangesetByID(ctx context.Context, id int64) error {
 	log15.Debug("SyncChangesetByID", "id", id)
-	cs, err := s.Store.GetChangeset(ctx, GetChangesetOpts{
+	cs, err := s.SyncStore.GetChangeset(ctx, GetChangesetOpts{
 		ID: id,
 	})
 	if err != nil {
@@ -246,17 +435,17 @@ func (s *ChangesetSyncer) SyncChangesets(ctx context.Context, cs ...*campaigns.C
 		return nil
 	}
 
-	bySource, err := s.GroupChangesetsBySource(ctx, cs...)
+	bySource, err := GroupChangesetsBySource(ctx, s.ReposStore, s.HTTPFactory, cs...)
 	if err != nil {
 		return err
 	}
 
-	return s.SyncChangesetsWithSources(ctx, bySource)
+	return SyncChangesetsWithSources(ctx, s.SyncStore, bySource)
 }
 
 // SyncChangesetsWithSources refreshes the metadata of the given changesets
 // with the given ChangesetSources and updates them in the database.
-func (s *ChangesetSyncer) SyncChangesetsWithSources(ctx context.Context, bySource []*SourceChangesets) (err error) {
+func SyncChangesetsWithSources(ctx context.Context, store SyncStore, bySource []*SourceChangesets) (err error) {
 	var (
 		events []*campaigns.ChangesetEvent
 		cs     []*campaigns.Changeset
@@ -293,7 +482,7 @@ func (s *ChangesetSyncer) SyncChangesetsWithSources(ctx context.Context, bySourc
 		}
 	}
 
-	tx, err := s.Store.Transact(ctx)
+	tx, err := store.Transact(ctx)
 	if err != nil {
 		return err
 	}
@@ -309,7 +498,7 @@ func (s *ChangesetSyncer) SyncChangesetsWithSources(ctx context.Context, bySourc
 // GroupChangesetsBySource returns a slice of SourceChangesets in which the
 // given *campaigns.Changesets are grouped together as repos.Changesets with the
 // repos.Source that can modify them.
-func (s *ChangesetSyncer) GroupChangesetsBySource(ctx context.Context, cs ...*campaigns.Changeset) ([]*SourceChangesets, error) {
+func GroupChangesetsBySource(ctx context.Context, reposStore RepoStore, cf *httpcli.Factory, cs ...*campaigns.Changeset) ([]*SourceChangesets, error) {
 	var repoIDs []api.RepoID
 	repoSet := map[api.RepoID]*repos.Repo{}
 
@@ -321,7 +510,7 @@ func (s *ChangesetSyncer) GroupChangesetsBySource(ctx context.Context, cs ...*ca
 		}
 	}
 
-	rs, err := s.ReposStore.ListRepos(ctx, repos.StoreListReposArgs{IDs: repoIDs})
+	rs, err := reposStore.ListRepos(ctx, repos.StoreListReposArgs{IDs: repoIDs})
 	if err != nil {
 		return nil, err
 	}
@@ -337,7 +526,7 @@ func (s *ChangesetSyncer) GroupChangesetsBySource(ctx context.Context, cs ...*ca
 		}
 	}
 
-	es, err := s.ReposStore.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{RepoIDs: repoIDs})
+	es, err := reposStore.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{RepoIDs: repoIDs})
 	if err != nil {
 		return nil, err
 	}
@@ -355,7 +544,7 @@ func (s *ChangesetSyncer) GroupChangesetsBySource(ctx context.Context, cs ...*ca
 
 	bySource := make(map[int64]*SourceChangesets, len(es))
 	for _, e := range es {
-		src, err := repos.NewSource(e, s.HTTPFactory)
+		src, err := repos.NewSource(e, cf)
 		if err != nil {
 			return nil, err
 		}
