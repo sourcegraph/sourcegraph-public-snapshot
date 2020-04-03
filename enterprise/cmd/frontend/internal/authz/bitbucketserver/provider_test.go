@@ -267,10 +267,10 @@ func testProviderFetchUserPerms(f *fixtures, cli *bitbucketserver.Client) func(*
 
 		h := codeHost{CodeHost: p.codeHost}
 
-		repoIDs := func(names ...string) (ids []extsvc.ExternalRepoID) {
+		repoIDs := func(names ...string) (ids []extsvc.RepoID) {
 			for _, name := range names {
 				if r, ok := f.repos[name]; ok {
-					ids = append(ids, extsvc.ExternalRepoID(strconv.FormatInt(int64(r.ID), 10)))
+					ids = append(ids, extsvc.RepoID(strconv.FormatInt(int64(r.ID), 10)))
 				}
 			}
 			return ids
@@ -280,7 +280,7 @@ func testProviderFetchUserPerms(f *fixtures, cli *bitbucketserver.Client) func(*
 			name string
 			ctx  context.Context
 			acct *extsvc.Account
-			ids  []extsvc.ExternalRepoID
+			ids  []extsvc.RepoID
 			err  string
 		}{
 			{
@@ -296,7 +296,7 @@ func testProviderFetchUserPerms(f *fixtures, cli *bitbucketserver.Client) func(*
 			{
 				name: "not a code host of the account",
 				acct: &extsvc.Account{
-					ExternalAccountSpec: extsvc.ExternalAccountSpec{
+					AccountSpec: extsvc.AccountSpec{
 						ServiceType: "github",
 						ServiceID:   "https://github.com",
 						AccountID:   "john",
@@ -310,7 +310,7 @@ func testProviderFetchUserPerms(f *fixtures, cli *bitbucketserver.Client) func(*
 			{
 				name: "bad account data",
 				acct: &extsvc.Account{
-					ExternalAccountSpec: extsvc.ExternalAccountSpec{
+					AccountSpec: extsvc.AccountSpec{
 						ServiceType: h.ServiceType,
 						ServiceID:   h.ServiceID,
 						AccountID:   "john",
@@ -361,10 +361,10 @@ func testProviderFetchRepoPerms(f *fixtures, cli *bitbucketserver.Client) func(*
 
 		h := codeHost{CodeHost: p.codeHost}
 
-		userIDs := func(names ...string) (ids []extsvc.ExternalAccountID) {
+		userIDs := func(names ...string) (ids []extsvc.AccountID) {
 			for _, name := range names {
 				if r, ok := f.users[name]; ok {
-					ids = append(ids, extsvc.ExternalAccountID(strconv.FormatInt(int64(r.ID), 10)))
+					ids = append(ids, extsvc.AccountID(strconv.FormatInt(int64(r.ID), 10)))
 				}
 			}
 			return ids
@@ -374,7 +374,7 @@ func testProviderFetchRepoPerms(f *fixtures, cli *bitbucketserver.Client) func(*
 			name string
 			ctx  context.Context
 			repo *extsvc.Repository
-			ids  []extsvc.ExternalAccountID
+			ids  []extsvc.AccountID
 			err  string
 		}{
 			{
@@ -617,7 +617,7 @@ func (h codeHost) externalAccount(userID int32, u *bitbucketserver.User) *extsvc
 	bs := marshalJSON(u)
 	return &extsvc.Account{
 		UserID: userID,
-		ExternalAccountSpec: extsvc.ExternalAccountSpec{
+		AccountSpec: extsvc.AccountSpec{
 			ServiceType: h.ServiceType,
 			ServiceID:   h.ServiceID,
 			AccountID:   strconv.Itoa(u.ID),

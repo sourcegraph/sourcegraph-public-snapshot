@@ -77,11 +77,7 @@ export async function createExtensionHostClientConnection(
     // Sync models and editors to the extension host
     subscription.add(
         merge(
-            of(
-                [...services.model.models.entries()].map(
-                    ([uri, model]): TextModelUpdate => ({ type: 'added', uri, ...model })
-                )
-            ),
+            of([...services.model.models.entries()].map(([, model]): TextModelUpdate => ({ type: 'added', ...model }))),
             from(services.model.modelUpdates)
         )
             .pipe(concatMap(modelUpdates => proxy.documents.$acceptDocumentData(modelUpdates)))

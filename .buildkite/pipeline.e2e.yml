@@ -26,8 +26,6 @@ steps:
   command:
     - yes | gcloud auth configure-docker
     - ./dev/ci/e2e.sh
-  concurrency: 1
-  concurrency_group: e2e
   timeout_in_minutes: 10
   label: ':chromium:'
 

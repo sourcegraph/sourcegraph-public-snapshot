@@ -6,7 +6,11 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Subject, Subscription, concat, combineLatest } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap, tap } from 'rxjs/operators'
 import { redirectToExternalHost } from '.'
-import { EREPONOTFOUND, EREPOSEEOTHER, RepoSeeOtherError } from '../../../shared/src/backend/errors'
+import {
+    REPO_NOT_FOUND_ERROR_NAME,
+    REPO_SEE_OTHER_ERROR_NAME,
+    RepoSeeOtherError,
+} from '../../../shared/src/backend/errors'
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
@@ -151,8 +155,8 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                             [undefined],
                             fetchRepository({ repoName }).pipe(
                                 catchError(error => {
-                                    switch (error.code) {
-                                        case EREPOSEEOTHER:
+                                    switch (error.name) {
+                                        case REPO_SEE_OTHER_ERROR_NAME:
                                             redirectToExternalHost((error as RepoSeeOtherError).redirectURL)
                                             return []
                                     }
@@ -277,8 +281,8 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
 
         if (isErrorLike(this.state.repoOrError)) {
             // Display error page
-            switch (this.state.repoOrError.code) {
-                case EREPONOTFOUND:
+            switch (this.state.repoOrError.name) {
+                case REPO_NOT_FOUND_ERROR_NAME:
                     return <RepositoryNotFoundPage repo={repoName} viewerCanAdminister={viewerCanAdminister} />
                 default:
                     return (

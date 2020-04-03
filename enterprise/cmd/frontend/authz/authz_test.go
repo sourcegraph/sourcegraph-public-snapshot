@@ -42,7 +42,16 @@ func (m gitlabAuthzProviderParams) ServiceID() string {
 func (m gitlabAuthzProviderParams) ServiceType() string {
 	return "gitlab"
 }
+
 func (m gitlabAuthzProviderParams) Validate() []string { return nil }
+
+func (m gitlabAuthzProviderParams) FetchUserPerms(context.Context, *extsvc.Account) ([]extsvc.RepoID, error) {
+	panic("should never be called")
+}
+
+func (m gitlabAuthzProviderParams) FetchRepoPerms(context.Context, *extsvc.Repository) ([]extsvc.AccountID, error) {
+	panic("should never be called")
+}
 
 func Test_authzProvidersFromConfig(t *testing.T) {
 	gitlab.NewOAuthProvider = func(op gitlab.OAuthProviderOp) authz.Provider {

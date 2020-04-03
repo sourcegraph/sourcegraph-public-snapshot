@@ -34,7 +34,7 @@ func TestSudoProvider_FetchUserPerms(t *testing.T) {
 		}, nil)
 		_, err := p.FetchUserPerms(context.Background(),
 			&extsvc.Account{
-				ExternalAccountSpec: extsvc.ExternalAccountSpec{
+				AccountSpec: extsvc.AccountSpec{
 					ServiceType: "github",
 					ServiceID:   "https://github.com/",
 				},
@@ -89,7 +89,7 @@ func TestSudoProvider_FetchUserPerms(t *testing.T) {
 	accountData := json.RawMessage(`{"id": 999}`)
 	repoIDs, err := p.FetchUserPerms(context.Background(),
 		&extsvc.Account{
-			ExternalAccountSpec: extsvc.ExternalAccountSpec{
+			AccountSpec: extsvc.AccountSpec{
 				ServiceType: "gitlab",
 				ServiceID:   "https://gitlab.com/",
 			},
@@ -102,7 +102,7 @@ func TestSudoProvider_FetchUserPerms(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	expRepoIDs := []extsvc.ExternalRepoID{"1", "2", "3"}
+	expRepoIDs := []extsvc.RepoID{"1", "2", "3"}
 	if diff := cmp.Diff(expRepoIDs, repoIDs); diff != "" {
 		t.Fatal(diff)
 	}
@@ -194,7 +194,7 @@ func TestSudoProvider_FetchRepoPerms(t *testing.T) {
 	}
 
 	// 1 should not be included because of "access_level" < 20
-	expAccountIDs := []extsvc.ExternalAccountID{"2", "3"}
+	expAccountIDs := []extsvc.AccountID{"2", "3"}
 	if diff := cmp.Diff(expAccountIDs, accountIDs); diff != "" {
 		t.Fatal(diff)
 	}

@@ -88,6 +88,9 @@ cp -a ./dev/libsqlite3-pcre/install-alpine.sh "$OUTPUT/libsqlite3-pcre-install-a
 echo "--- precise code intel"
 cp -a ./cmd/precise-code-intel "$OUTPUT"
 
+echo "--- observability generation"
+pushd observability && go generate && popd
+
 echo "--- prometheus config"
 cp -r docker-images/prometheus/config "$OUTPUT/sg_config_prometheus"
 mkdir "$OUTPUT/sg_prometheus_add_ons"

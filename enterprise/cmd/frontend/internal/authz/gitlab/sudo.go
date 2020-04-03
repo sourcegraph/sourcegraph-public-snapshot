@@ -19,12 +19,12 @@ import (
 // callers to decide whether to discard.
 //
 // API docs: https://docs.gitlab.com/ee/api/projects.html#list-all-projects
-func (p *SudoProvider) FetchUserPerms(ctx context.Context, account *extsvc.Account) ([]extsvc.ExternalRepoID, error) {
+func (p *SudoProvider) FetchUserPerms(ctx context.Context, account *extsvc.Account) ([]extsvc.RepoID, error) {
 	if account == nil {
 		return nil, errors.New("no account provided")
 	} else if !extsvc.IsHostOfAccount(p.codeHost, account) {
 		return nil, fmt.Errorf("not a code host of the account: want %q but have %q",
-			account.ExternalAccountSpec.ServiceID, p.codeHost.ServiceID)
+			account.AccountSpec.ServiceID, p.codeHost.ServiceID)
 	}
 
 	user, _, err := gitlab.GetExternalAccountData(&account.ExternalAccountData)
@@ -40,7 +40,7 @@ func (p *SudoProvider) FetchUserPerms(ctx context.Context, account *extsvc.Accou
 // (access level: 20 => Reporter access) by the authenticated or impersonated user in the client.
 // It may return partial but valid results in case of error, and it is up to callers to decide
 // whether to discard.
-func listProjects(ctx context.Context, client *gitlab.Client) ([]extsvc.ExternalRepoID, error) {
+func listProjects(ctx context.Context, client *gitlab.Client) ([]extsvc.RepoID, error) {
 	q := make(url.Values)
 	q.Add("visibility", "private")  // This method is meant to return only private projects
 	q.Add("min_access_level", "20") // 20 => Reporter access (i.e. have access to project code)
@@ -51,7 +51,7 @@ func listProjects(ctx context.Context, client *gitlab.Client) ([]extsvc.External
 
 	// 100 matches the maximum page size, thus a good default to avoid multiple allocations
 	// when appending the first 100 results to the slice.
-	projectIDs := make([]extsvc.ExternalRepoID, 0, 100)
+	projectIDs := make([]extsvc.RepoID, 0, 100)
 	for {
 		projects, next, err := client.ListProjects(ctx, nextURL)
 		if err != nil {
@@ -59,7 +59,7 @@ func listProjects(ctx context.Context, client *gitlab.Client) ([]extsvc.External
 		}
 
 		for _, p := range projects {
-			projectIDs = append(projectIDs, extsvc.ExternalRepoID(strconv.Itoa(p.ID)))
+			projectIDs = append(projectIDs, extsvc.RepoID(strconv.Itoa(p.ID)))
 		}
 
 		if next == nil {
@@ -80,7 +80,7 @@ func listProjects(ctx context.Context, client *gitlab.Client) ([]extsvc.External
 // callers to decide whether to discard.
 //
 // API docs: https://docs.gitlab.com/ee/api/members.html#list-all-members-of-a-group-or-project-including-inherited-members
-func (p *SudoProvider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) ([]extsvc.ExternalAccountID, error) {
+func (p *SudoProvider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) ([]extsvc.AccountID, error) {
 	if repo == nil {
 		return nil, errors.New("no repository provided")
 	} else if !extsvc.IsHostOfRepo(p.codeHost, &repo.ExternalRepoSpec) {
@@ -97,7 +97,7 @@ func (p *SudoProvider) FetchRepoPerms(ctx context.Context, repo *extsvc.Reposito
 // both direct access and inherited from the group membership. It may return partial
 // but valid results in case of error, and it is up to callers to decide whether to
 // discard.
-func listMembers(ctx context.Context, client *gitlab.Client, repoID string) ([]extsvc.ExternalAccountID, error) {
+func listMembers(ctx context.Context, client *gitlab.Client, repoID string) ([]extsvc.AccountID, error) {
 	q := make(url.Values)
 	q.Add("per_page", "100") // 100 is the maximum page size
 
@@ -106,7 +106,7 @@ func listMembers(ctx context.Context, client *gitlab.Client, repoID string) ([]e
 
 	// 100 matches the maximum page size, thus a good default to avoid multiple allocations
 	// when appending the first 100 results to the slice.
-	userIDs := make([]extsvc.ExternalAccountID, 0, 100)
+	userIDs := make([]extsvc.AccountID, 0, 100)
 
 	for {
 		members, next, err := client.ListMembers(ctx, nextURL)
@@ -120,7 +120,7 @@ func listMembers(ctx context.Context, client *gitlab.Client, repoID string) ([]e
 				continue
 			}
 
-			userIDs = append(userIDs, extsvc.ExternalAccountID(strconv.Itoa(int(m.ID))))
+			userIDs = append(userIDs, extsvc.AccountID(strconv.Itoa(int(m.ID))))
 		}
 
 		if next == nil {

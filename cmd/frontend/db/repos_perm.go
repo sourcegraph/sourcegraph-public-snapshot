@@ -204,7 +204,7 @@ func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (filte
 			}
 
 			// Save the external account and grant pending permissions for it later.
-			err = ExternalAccounts.AssociateUserAndSave(ctx, currentUser.ID, acct.ExternalAccountSpec, acct.ExternalAccountData)
+			err = ExternalAccounts.AssociateUserAndSave(ctx, currentUser.ID, acct.AccountSpec, acct.ExternalAccountData)
 			if err != nil {
 				return nil, errors.Wrap(err, "associate external account to user")
 			}
@@ -282,7 +282,7 @@ func authzFilter(ctx context.Context, repos []*types.Repo, p authz.Perms) (filte
 			if pr, err := authzProvider.FetchAccount(ctx, currentUser, accts); err == nil {
 				providerAcct = pr
 				if providerAcct != nil {
-					err := ExternalAccounts.AssociateUserAndSave(ctx, currentUser.ID, providerAcct.ExternalAccountSpec, providerAcct.ExternalAccountData)
+					err := ExternalAccounts.AssociateUserAndSave(ctx, currentUser.ID, providerAcct.AccountSpec, providerAcct.ExternalAccountData)
 					if err != nil {
 						return nil, err
 					}

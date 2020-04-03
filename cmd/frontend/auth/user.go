@@ -16,7 +16,7 @@ var MockGetAndSaveUser func(ctx context.Context, op GetAndSaveUserOp) (userID in
 
 type GetAndSaveUserOp struct {
 	UserProps           db.NewUser
-	ExternalAccount     extsvc.ExternalAccountSpec
+	ExternalAccount     extsvc.AccountSpec
 	ExternalAccountData extsvc.ExternalAccountData
 	CreateIfNotExist    bool
 	LookUpByUsername    bool

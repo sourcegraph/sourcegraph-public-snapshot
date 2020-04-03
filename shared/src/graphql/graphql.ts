@@ -25,14 +25,14 @@ export type GraphQLResult<T extends GQL.IQuery | GQL.IMutation> = SuccessGraphQL
 /**
  * Guarantees that the GraphQL query resulted in an error.
  */
-export function isGraphQLError<T extends GQL.IQuery | GQL.IMutation>(
+export function isErrorGraphQLResult<T extends GQL.IQuery | GQL.IMutation>(
     result: GraphQLResult<T>
 ): result is ErrorGraphQLResult {
     return !!(result as ErrorGraphQLResult).errors && (result as ErrorGraphQLResult).errors.length > 0
 }
 
 export function dataOrThrowErrors<T extends GQL.IQuery | GQL.IMutation>(result: GraphQLResult<T>): T {
-    if (isGraphQLError(result)) {
+    if (isErrorGraphQLResult(result)) {
         throw createAggregateError(result.errors)
     }
     return result.data

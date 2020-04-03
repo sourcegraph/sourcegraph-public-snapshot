@@ -104,7 +104,7 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 	}
 	defer txs.Done(&err)
 
-	accounts := &extsvc.ExternalAccounts{
+	accounts := &extsvc.Accounts{
 		ServiceType: authz.SourcegraphServiceType,
 		ServiceID:   authz.SourcegraphServiceID,
 		AccountIDs:  pendingBindIDs,
