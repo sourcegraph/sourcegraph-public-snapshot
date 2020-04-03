@@ -74,8 +74,9 @@ func ToFileMatch(combyMatches []comby.FileMatch) (matches []protocol.FileMatch) 
 		matches = append(matches,
 			protocol.FileMatch{
 				Path:        m.URI,
-				LimitHit:    false,
 				LineMatches: lineMatches,
+				MatchCount:  len(m.Matches),
+				LimitHit:    false,
 			})
 	}
 	return matches
