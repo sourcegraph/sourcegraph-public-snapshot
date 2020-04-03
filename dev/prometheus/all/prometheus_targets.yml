@@ -45,11 +45,6 @@
     # precise-code-intel-bundle-manager
     - host.docker.internal:3187
 - labels:
-    job: precise-code-intel-worker
-  targets:
-    # precise-code-intel-worker
-    - host.docker.internal:3188
-- labels:
     job: postgres_exporter
   targets:
     # postgres exporter
