@@ -15,12 +15,13 @@ import (
 	"github.com/felixge/httpsnoop"
 	raven "github.com/getsentry/raven-go"
 	"github.com/gorilla/mux"
-	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/repotrackutil"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
@@ -126,11 +127,11 @@ func WithRequestOrigin(ctx context.Context, name string) context.Context {
 //
 // 🚨 SECURITY: This handler is served to all clients, even on private servers to clients who have
 // not authenticated. It must not reveal any sensitive information.
-func Middleware(next http.Handler) http.Handler {
+func HTTPTraceMiddleware(next http.Handler) http.Handler {
 	return raven.Recoverer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		wireContext, err := opentracing.GlobalTracer().Extract(
+		wireContext, err := ot.GetTracer(ctx).Extract(
 			opentracing.HTTPHeaders,
 			opentracing.HTTPHeadersCarrier(r.Header))
 		if err != nil && err != opentracing.ErrSpanContextNotFound {
@@ -138,7 +139,7 @@ func Middleware(next http.Handler) http.Handler {
 		}
 
 		// start new span
-		span := opentracing.StartSpan("", ext.RPCServerOption(wireContext))
+		span, ctx := ot.StartSpanFromContext(ctx, "", ext.RPCServerOption(wireContext))
 		ext.HTTPUrl.Set(span, r.URL.String())
 		ext.HTTPMethod.Set(span, r.Method)
 		span.SetTag("http.referer", r.Header.Get("referer"))

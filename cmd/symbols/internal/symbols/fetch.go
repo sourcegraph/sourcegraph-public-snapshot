@@ -7,11 +7,11 @@ import (
 	"io"
 	"path"
 
-	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 type parseRequest struct {
@@ -25,7 +25,7 @@ func (s *Service) fetchRepositoryArchive(ctx context.Context, repo api.RepoName,
 	fetchQueueSize.Dec()
 
 	fetching.Inc()
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Store.fetch")
+	span, ctx := ot.StartSpanFromContext(ctx, "Store.fetch")
 	ext.Component.Set(span, "store")
 	span.SetTag("repo", repo)
 	span.SetTag("commit", commitID)

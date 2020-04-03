@@ -91,13 +91,6 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 	headers["x-sourcegraph-client"] = globals.ExternalURL().String()
 	headers["X-Requested-With"] = "Sourcegraph" // required for httpapi to use cookie auth
 
-	// -- currently we don't associate XHR calls with the parent page's span --
-	// if span := opentracing.SpanFromContext(req.Context()); span != nil {
-	// 	if err := opentracing.GlobalTracer().Inject(span.Context(), opentracing.HTTPHeaders, opentracing.TextMapCarrier(headers)); err != nil {
-	// 		return JSContext{}, err
-	// 	}
-	// }
-
 	// Propagate Cache-Control no-cache and max-age=0 directives
 	// to the requests made by our client-side JavaScript. This is
 	// not a perfect parser, but it catches the important cases.
