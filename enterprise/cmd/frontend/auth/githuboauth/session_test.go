@@ -249,8 +249,8 @@ func u(username, email string, emailIsVerified bool) db.NewUser {
 	}
 }
 
-func acct(serviceType, serviceID, clientID, accountID string) extsvc.Spec {
-	return extsvc.Spec{
+func acct(serviceType, serviceID, clientID, accountID string) extsvc.AccountSpec {
+	return extsvc.AccountSpec{
 		ServiceType: serviceType,
 		ServiceID:   serviceID,
 		ClientID:    clientID,

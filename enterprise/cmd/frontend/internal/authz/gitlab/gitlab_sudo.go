@@ -291,7 +291,7 @@ func (p *SudoProvider) FetchAccount(ctx context.Context, user *types.User, curre
 
 	glExternalAccount := extsvc.Account{
 		UserID: user.ID,
-		Spec: extsvc.Spec{
+		AccountSpec: extsvc.AccountSpec{
 			ServiceType: p.codeHost.ServiceType,
 			ServiceID:   p.codeHost.ServiceID,
 			AccountID:   strconv.Itoa(int(glUser.ID)),

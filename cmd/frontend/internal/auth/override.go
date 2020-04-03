@@ -41,7 +41,7 @@ func OverrideAuthMiddleware(next http.Handler) http.Handler {
 					Email:           username + "+override@example.com",
 					EmailIsVerified: true,
 				},
-				ExternalAccount: extsvc.Spec{
+				ExternalAccount: extsvc.AccountSpec{
 					ServiceType: "override",
 					AccountID:   username,
 				},
