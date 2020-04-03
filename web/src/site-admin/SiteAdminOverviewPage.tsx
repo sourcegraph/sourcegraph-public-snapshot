@@ -139,9 +139,9 @@ export const SiteAdminOverviewPage: React.FunctionComponent<Props> = ({
                         detail="Complete the steps below to finish onboarding to Sourcegraph"
                         defaultExpanded={setupPercentage < 100}
                         className="site-admin-overview-page__activation-list list-group-item e2e-site-admin-overview-menu"
-                        buttonClassName="site-admin-overview-page__activation-list-button p-2"
-                        titleClassName="mb-0 font-weight-bold px-2"
-                        detailClassName="mb-0 font-weight-normal px-2"
+                        buttonClassName="site-admin-overview-page__activation-list-button"
+                        titleClassName="mb-0 font-weight-bold"
+                        detailClassName="mb-0 font-weight-normal"
                         titleAtStart={true}
                     >
                         {activation.completed && (

@@ -1,10 +1,9 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Accordion, AccordionItem, AccordionButton, AccordionPanel } from '@reach/accordion'
 import H from 'history'
-import CheckboxBlankCircleIcon from 'mdi-react/CheckboxBlankCircleIcon'
+import CheckboxBlankCircleOutlineIcon from 'mdi-react/CheckboxBlankCircleOutlineIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import * as React from 'react'
-import { Link } from '../Link'
 import { ActivationCompletionStatus, ActivationStep } from './Activation'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
@@ -28,13 +27,13 @@ export const ActivationChecklistItem: React.FunctionComponent<ActivationChecklis
             <span className="icon-inline icon-right">
                 <ChevronRightIcon />
             </span>
-            <span className="activation-checklist__title mr-2 ml-2">{props.title}</span>
+            <span className="activation-checklist__title">{props.title}</span>
         </div>
         <div>
             {props.done ? (
                 <CheckCircleIcon className="icon-inline text-success" />
             ) : (
-                <CheckboxBlankCircleIcon className="icon-inline text-muted" />
+                <CheckboxBlankCircleOutlineIcon className="icon-inline text-muted" />
             )}
         </div>
     </div>
@@ -53,11 +52,11 @@ export interface ActivationChecklistProps {
 export class ActivationChecklist extends React.PureComponent<ActivationChecklistProps, {}> {
     public render(): JSX.Element {
         return this.props.completed ? (
-            <div className={`list-group list-group-flush ${this.props.className || ''}`}>
+            <div className={`activation-checklist list-group list-group-flush ${this.props.className || ''}`}>
                 <Accordion collapsible={true}>
                     {this.props.steps.map(step => (
-                        <AccordionItem key={step.id} className="list-group-item activation-checklist-item">
-                            <AccordionButton className="activation-checklist-button list-group-item list-group-item-action">
+                        <AccordionItem key={step.id} className="list-group-item activation-checklist__item">
+                            <AccordionButton className="list-group-item list-group-item-action activation-checklist__button">
                                 <ActivationChecklistItem
                                     key={step.id}
                                     {...step}
@@ -65,7 +64,7 @@ export class ActivationChecklist extends React.PureComponent<ActivationChecklist
                                     done={(this.props.completed && this.props.completed[step.id]) || false}
                                 />
                                 <AccordionPanel className="px-2">
-                                    <div className="activation-checklist-item__detail pl-2 pb-1">{step.detail}</div>
+                                    <div className="activation-checklist__detail pl-2 pb-1">{step.detail}</div>
                                 </AccordionPanel>
                             </AccordionButton>
                         </AccordionItem>
