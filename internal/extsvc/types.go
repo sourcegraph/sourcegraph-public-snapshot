@@ -11,12 +11,12 @@ import (
 // Account represents a row in the `user_external_accounts` table. See the GraphQL API's
 // corresponding fields in "ExternalAccount" for documentation.
 type Account struct {
-	ID                  int32
-	UserID              int32
-	AccountSpec         // ServiceType, ServiceID, ClientID, AccountID
-	ExternalAccountData // AuthData, Data
-	CreatedAt           time.Time
-	UpdatedAt           time.Time
+	ID          int32
+	UserID      int32
+	AccountSpec // ServiceType, ServiceID, ClientID, AccountID
+	AccountData // AuthData, Data
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }
 
 // AccountSpec specifies a user external account by its external identifier (i.e., by the
@@ -29,9 +29,9 @@ type AccountSpec struct {
 	AccountID   string
 }
 
-// ExternalAccountData contains data that can be freely updated in the user external account
-// after it has been created. See the GraphQL API's corresponding fields for documentation.
-type ExternalAccountData struct {
+// AccountData contains data that can be freely updated in the user external account after it
+// has been created. See the GraphQL API's corresponding fields for documentation.
+type AccountData struct {
 	AuthData *json.RawMessage
 	Data     *json.RawMessage
 }
