@@ -15,13 +15,13 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
-	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 var (
@@ -215,7 +215,7 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 
 	var resp *http.Response
 
-	span, ctx := opentracing.StartSpanFromContext(ctx, "GitLab")
+	span, ctx := ot.StartSpanFromContext(ctx, "GitLab")
 	span.SetTag("URL", req.URL.String())
 	defer func() {
 		if err != nil {

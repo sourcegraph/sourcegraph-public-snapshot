@@ -3,10 +3,9 @@ package backend
 import (
 	"context"
 
-	opentracing "github.com/opentracing/opentracing-go"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -24,7 +23,7 @@ func testContext() context.Context {
 
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
-	_, ctx = opentracing.StartSpanFromContext(ctx, "dummy")
+	_, ctx = ot.StartSpanFromContext(ctx, "dummy")
 
 	return ctx
 }

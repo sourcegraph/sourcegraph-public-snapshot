@@ -1,49 +1,30 @@
-import { asError, ErrorLike } from '../util/errors'
-
-export const EAGGREGATE = 'AggregateError'
-/**
- * An Error that aggregates multiple errors
- */
-export class AggregateError extends Error {
-    public readonly name = EAGGREGATE
-    public readonly code = EAGGREGATE
-    constructor(public readonly errors: ErrorLike[] = []) {
-        super(errors.map(({ message }) => message).join('\n'))
-        this.errors = errors.map(asError)
-    }
-}
-
-export const ECLONEINPROGESS = 'CloneInProgressError'
+export const CLONE_IN_PROGRESS_ERROR_NAME = 'CloneInProgressError'
 export class CloneInProgressError extends Error {
-    public readonly name = ECLONEINPROGESS
-    public readonly code = ECLONEINPROGESS
+    public readonly name = CLONE_IN_PROGRESS_ERROR_NAME
     constructor(repoName: string, public readonly progress?: string) {
         super(`${repoName} is clone in progress`)
     }
 }
 
-export const EREPONOTFOUND = 'RepoNotFoundError'
+export const REPO_NOT_FOUND_ERROR_NAME = 'RepoNotFoundError'
 export class RepoNotFoundError extends Error {
-    public readonly name = EREPONOTFOUND
-    public readonly code = EREPONOTFOUND
+    public readonly name = REPO_NOT_FOUND_ERROR_NAME
     constructor(repoName: string) {
         super(`repo ${repoName} not found`)
     }
 }
 
-export const EREVNOTFOUND = 'RevNotFoundError'
+export const REV_NOT_FOUND_ERROR_NAME = 'RevNotFoundError'
 export class RevNotFoundError extends Error {
-    public readonly name = EREVNOTFOUND
-    public readonly code = EREVNOTFOUND
+    public readonly name = REV_NOT_FOUND_ERROR_NAME
     constructor(rev?: string) {
         super(`rev ${String(rev)} not found`)
     }
 }
 
-export const EREPOSEEOTHER = 'ERREPOSEEOTHER'
+export const REPO_SEE_OTHER_ERROR_NAME = 'RepoSeeOtherError'
 export class RepoSeeOtherError extends Error {
-    public readonly name = EREPOSEEOTHER
-    public readonly code = EREPOSEEOTHER
+    public readonly name = REPO_SEE_OTHER_ERROR_NAME
     constructor(public readonly redirectURL: string) {
         super(`Repository not found at this location, but might exist at ${redirectURL}`)
     }
@@ -56,10 +37,9 @@ export class RepoSeeOtherError extends Error {
  * `requestMightContainPrivateInfo` argument to `requestGraphQL` is explicitly
  * set to false (defaults to true to be conservative).
  */
-export const ERPRIVATEREPOPUBLICSOURCEGRAPHCOM = 'PrivateRepoPublicSourcegraph'
+export const PRIVATE_REPO_PUBLIC_SOURCEGRAPH_COM_ERROR_NAME = 'PrivateRepoPublicSourcegraphError'
 export class PrivateRepoPublicSourcegraphComError extends Error {
-    public readonly name = ERPRIVATEREPOPUBLICSOURCEGRAPHCOM
-    public readonly code = ERPRIVATEREPOPUBLICSOURCEGRAPHCOM
+    public readonly name = PRIVATE_REPO_PUBLIC_SOURCEGRAPH_COM_ERROR_NAME
     constructor(graphQLName: string) {
         super(
             `A ${graphQLName} GraphQL request to the public Sourcegraph.com was blocked because the current repository is private.`
@@ -67,4 +47,4 @@ export class PrivateRepoPublicSourcegraphComError extends Error {
     }
 }
 
-export const ERAUTHREQUIRED = 'AuthRequiredError'
+export const AUTH_REQUIRED_ERROR_NAME = 'AuthRequiredError'

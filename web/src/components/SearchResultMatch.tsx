@@ -51,7 +51,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
         // This is a lot of network requests right now, but once extensions can run on the backend we can
         // run results through the renderer and syntax highlighter without network requests.
         this.subscriptions.add(
-            combineLatest(this.propsChanges, this.visibilityChanges)
+            combineLatest([this.propsChanges, this.visibilityChanges])
                 .pipe(
                     filter(([, isVisible]) => isVisible),
                     distinctUntilChanged((a, b) => isEqual(a, b)),
@@ -167,11 +167,11 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                 <>
                     {this.state.HTML !== undefined ? (
                         <Link key={this.props.item.url} to={this.props.item.url} className="search-result-match">
-                            {this.bodyIsCode ? (
+                            {this.bodyIsCode() ? (
                                 <code>
                                     <Markdown
                                         refFn={this.setTableContainerElement}
-                                        className={`search-result-match__markdown ${'search-result-match__code-excerpt'}`}
+                                        className="search-result-match__markdown search-result-match__code-excerpt"
                                         dangerousInnerHTML={this.state.HTML}
                                     />
                                 </code>
