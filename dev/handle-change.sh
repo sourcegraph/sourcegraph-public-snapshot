@@ -27,6 +27,10 @@ for i; do
         [ -n "$GOREMAN" ] && $GOREMAN run restart symbols
         exit
         ;;
+    cmd/precise-code-intel/*)
+        [ -n "$GOREMAN" ] && $GOREMAN run restart precise-code-intel-{api-server,bundle-manager,worker}
+        exit
+        ;;
 	cmd/*)
 		cmd=${i#cmd/}
 		cmd=${cmd%%/*}
