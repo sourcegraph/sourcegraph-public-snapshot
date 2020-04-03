@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	bk "github.com/sourcegraph/sourcegraph/internal/buildkite"
@@ -192,6 +193,9 @@ func triggerE2E(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
 	// hardFail if we publish docker images
 	hardFail := c.branch == "master" || c.isMasterDryRun || c.isRenovateBranch || c.releaseBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch
 
+	// push the server candidate image only if it's required
+	imageCandidatePush := c.branch == "master" || c.isMasterDryRun || c.releaseBranch || c.taggedRelease || c.patch
+
 	env := copyEnv(
 		"BUILDKITE_PULL_REQUEST",
 		"BUILDKITE_PULL_REQUEST_BASE_BRANCH",
@@ -202,6 +206,7 @@ func triggerE2E(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
 	env["VERSION"] = commonEnv["VERSION"]
 	env["TAG"] = candiateImageTag(c)
 	env["CI_DEBUG_PROFILE"] = commonEnv["CI_DEBUG_PROFILE"]
+	env["PUSH_CANDIDATE_IMAGE"] = strconv.FormatBool(imageCandidatePush)
 
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddTrigger(":chromium:",
