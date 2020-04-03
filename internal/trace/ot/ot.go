@@ -22,10 +22,10 @@ const (
 
 	// TraceSelective turns on tracing only for requests with the X-Sourcegraph-Should-Trace header
 	// set to a truthy value.
-	TraceSelective = "selective"
+	TraceSelective tracePolicy = "selective"
 
 	// Comprehensive turns on tracing for all requests.
-	TraceAll = "all"
+	TraceAll tracePolicy = "all"
 )
 
 var trPolicy = atomic.NewString(string(TraceNone))
