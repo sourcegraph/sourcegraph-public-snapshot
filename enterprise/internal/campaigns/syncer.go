@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
-// SyncRegistry manages a ChangesetSyncer per external service
+// SyncRegistry manages a ChangesetSyncer per external service.
 type SyncRegistry struct {
 	Parent      context.Context
 	Store       SyncStore
