@@ -101,7 +101,7 @@ func (s *SyncRegistry) Add(extServiceID int64) {
 }
 
 // handlePriorityItems fetches changesets in the priority queue from the db and passes them
-// to the appropriate syncer
+// to the appropriate syncer.
 func (s *SyncRegistry) handlePriorityItems() {
 	fetchSyncData := func(ids []int64) ([]campaigns.ChangesetSyncData, error) {
 		ctx, cancel := context.WithTimeout(s.Parent, 10*time.Second)
