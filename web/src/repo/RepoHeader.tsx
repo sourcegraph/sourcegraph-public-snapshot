@@ -238,7 +238,7 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                     {this.props.actionButtons.map(
                         ({ condition = () => true, label, tooltip, icon: Icon, to }) =>
                             condition(context) && (
-                                <li className="nav-item" key={label}>
+                                <li className="nav-item repo-header__action-list-item" key={label}>
                                     <LinkOrButton to={to(context)} data-tooltip={tooltip}>
                                         {Icon && <Icon className="icon-inline" />}{' '}
                                         <span className="d-none d-lg-inline">{label}</span>
@@ -247,12 +247,12 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                             )
                     )}
                     {rightActions.map((a, i) => (
-                        <li className="nav-item" key={a.element.key || i}>
+                        <li className="nav-item repo-header__action-list-item" key={a.element.key || i}>
                             {a.element}
                         </li>
                     ))}
                     {this.props.repo.viewerCanAdminister && (
-                        <li className="nav-item">
+                        <li className="nav-item repo-header__action-list-item">
                             <LinkOrButton to={`/${this.props.repo.name}/-/settings`} data-tooltip="Repository settings">
                                 <SettingsIcon className="icon-inline" />{' '}
                                 <span className="d-none d-lg-inline">Settings</span>
