@@ -187,13 +187,16 @@ func (s *SyncRegistry) HandleExternalServiceSync(es api.ExternalService) {
 	}
 }
 
-// shardChangeset returns the external id responsible for syncing the supplied
-// changeset assuming it belongs to all the supplied external services,
+// shardChangeset assigns an external service to the supplied changeset.
+// each changeset can belong to multiple external services but we only want one syncer to be
+// assigned to a changeset.
 // externalServices should be sorted in ascending order.
 func shardChangeset(changesetID int64, externalServices []int64) (externalServiceID int64) {
 	if len(externalServices) == 0 {
 		return 0
 	}
+	// This will consistently return the same index into exteralServices given the same
+	// changeset and list of external services. It's random, but deterministic.
 	i := int(changesetID) % len(externalServices)
 	return externalServices[i]
 }
