@@ -124,6 +124,13 @@ type exitCodeError struct {
 	exitCode int
 }
 
+func (e *exitCodeError) Error() string {
+	if e.error != nil {
+		return fmt.Sprintf("%s (exit code: %d)", e.error, e.exitCode)
+	}
+	return fmt.Sprintf("exit code: %d", e.exitCode)
+}
+
 const (
 	graphqlErrorsExitCode = 2
 )

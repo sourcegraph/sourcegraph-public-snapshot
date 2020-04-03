@@ -465,25 +465,32 @@ query ActionRepos($query: String!) {
 `
 	type Repository struct {
 		ID, Name      string
-		DefaultBranch struct {
+		DefaultBranch *struct {
 			Name   string
 			Target struct{ OID string }
 		}
 	}
 	var result struct {
-		Search struct {
-			Results struct {
-				Results []struct {
-					Typename      string `json:"__typename"`
-					ID, Name      string
-					DefaultBranch struct {
-						Name   string
-						Target struct{ OID string }
+		Data struct {
+			Search struct {
+				Results struct {
+					Results []struct {
+						Typename      string `json:"__typename"`
+						ID, Name      string
+						DefaultBranch *struct {
+							Name   string
+							Target struct{ OID string }
+						}
+						Repository Repository `json:"repository"`
 					}
-					Repository Repository `json:"repository"`
 				}
 			}
-		}
+		} `json:"data,omitempty"`
+
+		Errors []struct {
+			Message string
+			Path    []interface{}
+		} `json:"errors,omitempty"`
 	}
 
 	if err := (&apiRequest{
@@ -491,14 +498,32 @@ query ActionRepos($query: String!) {
 		vars: map[string]interface{}{
 			"query": scopeQuery,
 		},
-		result: &result,
+		// Do not unpack errors and return error. Instead we want to go through
+		// the results and check whether they're complete.
+		// If we don't do this and the query returns an error for _one_
+		// repository because that is still cloning, we don't get any repositories.
+		// Instead we simply want to skip those repositories that are still
+		// being cloned.
+		dontUnpackErrors: true,
+		result:           &result,
 	}).do(); err != nil {
-		return nil, nil, err
+
+		// Ignore exitCodeError with error == nil, because we explicitly set
+		// dontUnpackErrors, which can lead to an empty exitCodeErr being
+		// returned.
+		exitCodeErr, ok := err.(*exitCodeError)
+		if !ok {
+			return nil, nil, err
+		}
+		if exitCodeErr.error != nil {
+			return nil, nil, exitCodeErr
+		}
 	}
 
 	skipped := []string{}
 	reposByID := map[string]ActionRepo{}
-	for _, searchResult := range result.Search.Results.Results {
+	for _, searchResult := range result.Data.Search.Results.Results {
+
 		var repo Repository
 		if searchResult.Repository.ID != "" {
 			repo = searchResult.Repository
@@ -510,8 +535,8 @@ query ActionRepos($query: String!) {
 			}
 		}
 
-		if repo.DefaultBranch.Name == "" {
-			skipped = append(skipped, repo.Name)
+		if repo.DefaultBranch == nil || repo.DefaultBranch.Name == "" {
+			skipped = append(skipped, searchResult.Repository.Name)
 			continue
 		}
 
