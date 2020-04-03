@@ -54,7 +54,7 @@ func NewSyncRegistry(ctx context.Context, store SyncStore, repoStore repos.Store
 	return r
 }
 
-// Add adds a syncer for the supplied external service if it hasn't already been added and starts it.
+// Add adds a syncer for the supplied external service if the syncer hasn't already been added and starts it.
 func (s *SyncRegistry) Add(extServiceID int64) {
 	ctx, cancel := context.WithTimeout(s.Ctx, 10*time.Second)
 	defer cancel()
