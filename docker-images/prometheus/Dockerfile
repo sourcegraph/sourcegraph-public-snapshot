@@ -1,3 +1,11 @@
+FROM golang:1.13-alpine@sha256:ed003971a4809c9ae45afe2d318c24b9e3f6b30864a322877c69a46c504d852c AS builder
+
+COPY ./src-observability-generator /go/src/
+WORKDIR /go/src/src-observability-generator
+RUN CGO_ENABLED=0 go install .
+RUN mkdir -p /generated/prometheus
+RUN PROMETHEUS_DIR=/generated/prometheus GRAFANA_DIR='' /go/bin/src-observability-generator
+
 # This Dockerfile is adapted from https://github.com/prometheus/prometheus/blob/v2.15.2/Dockerfile with
 # our own customizations.
 #
@@ -42,6 +50,7 @@ RUN addgroup -g 101 -S sourcegraph && adduser -u 100 -S -G sourcegraph -h /home/
 RUN mkdir -p /prometheus && chown -R sourcegraph:sourcegraph /prometheus
 USER sourcegraph
 
+COPY --from=builder /generated/prometheus/* /sg_config_prometheus
 COPY config/*_rules.yml /sg_config_prometheus/
 COPY config/prometheus.yml /sg_config_prometheus/
 
