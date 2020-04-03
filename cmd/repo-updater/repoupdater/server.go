@@ -45,7 +45,10 @@ type Server struct {
 		ListCloned(context.Context) ([]string, error)
 	}
 	ChangesetSyncRegistry interface {
+		// EnqueueChangesetSyncs will queue the supplied changesets to sync ASAP.
 		EnqueueChangesetSyncs(ctx context.Context, ids []int64) error
+		// HandleExternalServiceSync should be called when an external service changes so that
+		// the registry can start or stop the syncer associated with the service
 		HandleExternalServiceSync(es api.ExternalService)
 	}
 
