@@ -24,12 +24,7 @@ type SyncRegistry struct {
 	priorityNotify chan []int64
 
 	mu      sync.Mutex
-	syncers map[int64]cancellableSyncer
-}
-
-type cancellableSyncer struct {
-	syncer *ChangesetSyncer
-	cancel context.CancelFunc
+	syncers map[int64]*ChangesetSyncer
 }
 
 // NewSycnRegistry creates a new sync registry which starts a syncer for each external service and will update them
@@ -41,7 +36,7 @@ func NewSyncRegistry(ctx context.Context, store SyncStore, repoStore repos.Store
 		ReposStore:     repoStore,
 		HTTPFactory:    cf,
 		priorityNotify: make(chan []int64, 500),
-		syncers:        make(map[int64]cancellableSyncer),
+		syncers:        make(map[int64]*ChangesetSyncer),
 	}
 
 	services, err := repoStore.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{})
@@ -91,18 +86,15 @@ func (s *SyncRegistry) Add(extServiceID int64) {
 		return
 	}
 
+	// We need to be able to cancel the syncer if the service is removed
+	ctx, cancel = context.WithCancel(s.Parent)
+
 	syncer := &ChangesetSyncer{
 		Store:             s.Store,
 		ReposStore:        s.ReposStore,
 		HTTPFactory:       s.HTTPFactory,
 		externalServiceID: extServiceID,
-	}
-
-	// We need to be able to cancel the syncer if the service is removed
-	ctx, cancel = context.WithCancel(s.Parent)
-	s.syncers[extServiceID] = cancellableSyncer{
-		syncer: syncer,
-		cancel: cancel,
+		cancel:            cancel,
 	}
 
 	go syncer.Run(ctx)
@@ -155,7 +147,7 @@ func (s *SyncRegistry) handlePriorityItems() {
 					}
 
 					select {
-					case syncer.syncer.priorityNotify <- changesets:
+					case syncer.priorityNotify <- changesets:
 					default:
 					}
 				}
@@ -224,6 +216,9 @@ type ChangesetSyncer struct {
 	// Replaceable for testing
 	syncFunc func(ctx context.Context, id int64) error
 	clock    func() time.Time
+
+	// cancel should be called to stop this syncer
+	cancel context.CancelFunc
 }
 
 type SyncStore interface {
