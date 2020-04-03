@@ -61,6 +61,28 @@ func NewSyncRegistry(ctx context.Context, store SyncStore, repoStore repos.Store
 
 // Add adds a syncer for the supplied external service if it hasn't already been added and starts it.
 func (s *SyncRegistry) Add(extServiceID int64) {
+	ctx, cancel := context.WithTimeout(s.Parent, 10*time.Second)
+	defer cancel()
+	services, err := s.ReposStore.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{
+		IDs: []int64{extServiceID},
+	})
+	if err != nil {
+		log15.Error("Listing external services", "err", err)
+		return
+	}
+	if len(services) < 1 {
+		return
+	}
+
+	service := services[0]
+
+	switch service.Kind {
+	case "GITHUB", "BITBUCKETSERVER":
+	// Supported by campaigns
+	default:
+		log15.Warn("Syncer not started for unsupported code host", "kind", service.Kind)
+	}
+
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -77,7 +99,7 @@ func (s *SyncRegistry) Add(extServiceID int64) {
 	}
 
 	// We need to be able to cancel the syncer if the service is removed
-	ctx, cancel := context.WithCancel(s.Parent)
+	ctx, cancel = context.WithCancel(s.Parent)
 	s.syncers[extServiceID] = cancellableSyncer{
 		syncer: syncer,
 		cancel: cancel,
