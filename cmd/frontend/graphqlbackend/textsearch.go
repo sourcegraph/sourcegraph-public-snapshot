@@ -273,9 +273,6 @@ func textSearch(ctx context.Context, searcherURLs *endpoint.Map, repo gitserver.
 		url := searcherURL + "?" + rawQuery
 		tr.LazyPrintf("attempt %d: %s", attempt, url)
 		matches, limitHit, err = textSearchURL(ctx, url)
-		// Useful trace for debugging:
-		//
-		// tr.LazyPrintf("%d matches, limitHit=%v, err=%v, ctx.Err()=%v", len(matches), limitHit, err, ctx.Err())
 		if err == nil || errcode.IsTimeout(err) {
 			return matches, limitHit, err
 		}
@@ -382,10 +379,13 @@ func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo *ty
 		return nil, false, err
 	}
 	if !shouldBeSearched {
-		return matches, false, err
+		return nil, false, err
 	}
 
 	matches, limitHit, err = textSearch(ctx, searcherURLs, gitserverRepo, commit, info, fetchTimeout)
+	if err != nil {
+		return nil, false, err
+	}
 
 	workspace := fileMatchURI(repo.Name, rev, "")
 	for _, fm := range matches {
