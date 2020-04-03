@@ -162,7 +162,7 @@
     "graphql-schema-linter": "^0.2.4",
     "gulp": "^4.0.2",
     "identity-obj-proxy": "^3.0.0",
-    "jest": "^25.2.6",
+    "jest": "^25.2.7",
     "jsdom": "^15.2.1",
     "json-schema-ref-parser": "^8.0.0",
     "json-schema-to-typescript": "^6.1.3",
