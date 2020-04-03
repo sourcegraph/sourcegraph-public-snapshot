@@ -179,6 +179,8 @@ func (s *SyncRegistry) HandleExternalServiceSync(es api.ExternalService) {
 	if es.DeletedAt == nil && !exists {
 		s.Add(es.ID)
 	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	if es.DeletedAt != nil && exists {
 		delete(s.syncers, es.ID)
 		syncer.cancel()
