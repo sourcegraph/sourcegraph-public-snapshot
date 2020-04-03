@@ -30,4 +30,9 @@ chmod +x "${target}"
 
 popd > /dev/null
 
-exec "${target}" "$@"
+if [ ${SOURCEGRAPH_HTTPS_PORT:-"3443"} -lt 1000 ] && ! [ $(id -u) = 0 ] && hash authbind; then
+    # Support using authbind to bind to port 443 as non-root
+    exec authbind "${target}" "$@"
+else
+    exec "${$target}" "$@"
+fi
