@@ -55,7 +55,7 @@
     "@types/express-winston": "3.0.4",
     "@types/got": "9.6.9",
     "@types/jaeger-client": "3.15.3",
-    "@types/jest": "25.1.5",
+    "@types/jest": "25.2.1",
     "@types/json5": "0.0.30",
     "@types/lodash": "4.14.149",
     "@types/logform": "1.2.0",
