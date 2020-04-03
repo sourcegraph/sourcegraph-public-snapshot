@@ -353,6 +353,8 @@ func TestSyncRegistry(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	now := time.Now()
+
 	repoStore := MockRepoStore{
 		listExternalServices: func(ctx context.Context, args repos.StoreListExternalServicesArgs) (services []*repos.ExternalService, err error) {
 			return []*repos.ExternalService{
@@ -370,7 +372,13 @@ func TestSyncRegistry(t *testing.T) {
 
 	syncStore := MockSyncStore{
 		listChangesetSyncData: func(ctx context.Context, opts ListChangesetSyncDataOpts) (data []campaigns.ChangesetSyncData, err error) {
-			return []campaigns.ChangesetSyncData{}, nil
+			return []campaigns.ChangesetSyncData{
+				campaigns.ChangesetSyncData{
+					ChangesetID:        1,
+					UpdatedAt:          now,
+					ExternalServiceIDs: []int64{1},
+				},
+			}, nil
 		},
 	}
 
@@ -391,7 +399,6 @@ func TestSyncRegistry(t *testing.T) {
 	assertSyncerCount(1)
 
 	// Simulate a service being removed
-	now := time.Now()
 	r.HandleExternalServiceSync(api.ExternalService{
 		ID:        1,
 		Kind:      "GITHUB",
@@ -406,6 +413,43 @@ func TestSyncRegistry(t *testing.T) {
 		DeletedAt: nil,
 	})
 	assertSyncerCount(1)
+
+	syncChan := make(chan int64, 1)
+
+	// In order to test that priority items are delivered we'll inject our own syncer
+	// with a custom sync func
+	syncer := &ChangesetSyncer{
+		SyncStore:         syncStore,
+		ReposStore:        repoStore,
+		HTTPFactory:       nil,
+		externalServiceID: 1,
+		syncFunc: func(ctx context.Context, id int64) error {
+			syncChan <- id
+			return nil
+		},
+		priorityNotify: make(chan []int64, 1),
+	}
+	go syncer.Run(ctx)
+
+	// Set the syncer
+	r.mu.Lock()
+	r.syncers[1] = syncer
+	r.mu.Unlock()
+
+	// Send priority items
+	err := r.EnqueueChangesetSyncs(ctx, []int64{1, 2})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	select {
+	case id := <-syncChan:
+		if id != 1 {
+			t.Fatalf("Expected 1, got %d", id)
+		}
+	case <-time.After(1 * time.Second):
+		t.Fatal("Timed out waiting for sync")
+	}
 }
 
 type MockSyncStore struct {

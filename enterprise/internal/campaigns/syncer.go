@@ -100,6 +100,7 @@ func (s *SyncRegistry) Add(extServiceID int64) {
 		HTTPFactory:       s.HTTPFactory,
 		externalServiceID: extServiceID,
 		cancel:            cancel,
+		priorityNotify:    make(chan []int64, 500),
 	}
 
 	s.syncers[extServiceID] = syncer
@@ -245,9 +246,6 @@ func (s *ChangesetSyncer) Run(ctx context.Context) {
 	}
 	if s.clock == nil {
 		s.clock = time.Now
-	}
-	if s.priorityNotify == nil {
-		s.priorityNotify = make(chan []int64, 500)
 	}
 	s.queue = newChangesetPriorityQueue()
 	// How often to refresh the schedule
