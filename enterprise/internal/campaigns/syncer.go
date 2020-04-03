@@ -168,7 +168,7 @@ func (s *SyncRegistry) EnqueueChangesetSyncs(ctx context.Context, ids []int64) e
 	return nil
 }
 
-// HandleExternalServiceSync handles changes to external services
+// HandleExternalServiceSync handles changes to external services.
 func (s *SyncRegistry) HandleExternalServiceSync(es api.ExternalService) {
 	// For now we just need to start and stop them.
 	// TODO: Once rate limiters are added we'll need to update those
