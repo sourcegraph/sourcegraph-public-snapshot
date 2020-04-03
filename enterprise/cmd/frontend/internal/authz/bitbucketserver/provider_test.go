@@ -302,7 +302,7 @@ func testProviderFetchUserPerms(f *fixtures, cli *bitbucketserver.Client) func(*
 						AccountID:   "john",
 					},
 					ExternalAccountData: extsvc.ExternalAccountData{
-						AccountData: new(json.RawMessage),
+						Data: new(json.RawMessage),
 					},
 				},
 				err: `not a code host of the account: want "${INSTANCEURL}" but have "https://github.com"`,
@@ -316,7 +316,7 @@ func testProviderFetchUserPerms(f *fixtures, cli *bitbucketserver.Client) func(*
 						AccountID:   "john",
 					},
 					ExternalAccountData: extsvc.ExternalAccountData{
-						AccountData: new(json.RawMessage),
+						Data: new(json.RawMessage),
 					},
 				},
 				err: "unmarshaling account data: unexpected end of JSON input",
@@ -623,7 +623,7 @@ func (h codeHost) externalAccount(userID int32, u *bitbucketserver.User) *extsvc
 			AccountID:   strconv.Itoa(u.ID),
 		},
 		ExternalAccountData: extsvc.ExternalAccountData{
-			AccountData: (*json.RawMessage)(&bs),
+			Data: (*json.RawMessage)(&bs),
 		},
 	}
 }

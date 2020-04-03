@@ -13,7 +13,7 @@ func GetExternalAccountData(data *extsvc.ExternalAccountData) (usr *User, tok *o
 		t oauth2.Token
 	)
 
-	if data.AccountData != nil {
+	if data.Data != nil {
 		if err := data.GetAccountData(&u); err != nil {
 			return nil, nil, err
 		}

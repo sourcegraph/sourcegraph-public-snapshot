@@ -94,7 +94,7 @@ func TestSudoProvider_FetchUserPerms(t *testing.T) {
 				ServiceID:   "https://gitlab.com/",
 			},
 			ExternalAccountData: extsvc.ExternalAccountData{
-				AccountData: &accountData,
+				Data: &accountData,
 			},
 		},
 	)

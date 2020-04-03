@@ -101,7 +101,7 @@ func (p *Provider) RepoPerms(ctx context.Context, acct *extsvc.Account, repos []
 
 	if acct != nil && acct.ServiceID == p.codeHost.ServiceID && acct.ServiceType == p.codeHost.ServiceType {
 		var user bitbucketserver.User
-		if err := json.Unmarshal(*acct.AccountData, &user); err != nil {
+		if err := json.Unmarshal(*acct.Data, &user); err != nil {
 			return nil, err
 		}
 
@@ -186,7 +186,7 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*exts
 			AccountID:   strconv.Itoa(bitbucketUser.ID),
 		},
 		ExternalAccountData: extsvc.ExternalAccountData{
-			AccountData: (*json.RawMessage)(&accountData),
+			Data: (*json.RawMessage)(&accountData),
 		},
 	}, nil
 }
@@ -203,7 +203,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 	switch {
 	case account == nil:
 		return nil, errors.New("no account provided")
-	case account.AccountData == nil:
+	case account.Data == nil:
 		return nil, errors.New("no account data provided")
 	case !extsvc.IsHostOfAccount(p.codeHost, account):
 		return nil, fmt.Errorf("not a code host of the account: want %q but have %q",
@@ -211,7 +211,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 	}
 
 	var user bitbucketserver.User
-	if err := json.Unmarshal(*account.AccountData, &user); err != nil {
+	if err := json.Unmarshal(*account.Data, &user); err != nil {
 		return nil, errors.Wrap(err, "unmarshaling account data")
 	}
 

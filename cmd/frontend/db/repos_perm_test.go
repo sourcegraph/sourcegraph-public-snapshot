@@ -39,7 +39,7 @@ func Benchmark_authzFilter(b *testing.B) {
 						ServiceID:   codeHost.ServiceID,
 						AccountID:   "42_ext",
 					},
-					ExternalAccountData: extsvc.ExternalAccountData{AccountData: nil},
+					ExternalAccountData: extsvc.ExternalAccountData{Data: nil},
 				},
 			}
 		}(),
@@ -55,7 +55,7 @@ func Benchmark_authzFilter(b *testing.B) {
 						ServiceID:   codeHost.ServiceID,
 						AccountID:   "42_ext",
 					},
-					ExternalAccountData: extsvc.ExternalAccountData{AccountData: nil},
+					ExternalAccountData: extsvc.ExternalAccountData{Data: nil},
 				},
 			}
 		}(),

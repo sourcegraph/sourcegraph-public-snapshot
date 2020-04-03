@@ -14,7 +14,7 @@ type Account struct {
 	ID                  int32
 	UserID              int32
 	AccountSpec         // ServiceType, ServiceID, ClientID, AccountID
-	ExternalAccountData // AuthData, AccountData
+	ExternalAccountData // AuthData, Data
 	CreatedAt           time.Time
 	UpdatedAt           time.Time
 }
@@ -32,8 +32,8 @@ type AccountSpec struct {
 // ExternalAccountData contains data that can be freely updated in the user external account
 // after it has been created. See the GraphQL API's corresponding fields for documentation.
 type ExternalAccountData struct {
-	AuthData    *json.RawMessage
-	AccountData *json.RawMessage
+	AuthData *json.RawMessage
+	Data     *json.RawMessage
 }
 
 // Repository contains necessary information to identify an external repository on the code host.
