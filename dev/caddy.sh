@@ -34,5 +34,5 @@ if [ ${SOURCEGRAPH_HTTPS_PORT:-"3443"} -lt 1000 ] && ! [ $(id -u) = 0 ] && hash 
     # Support using authbind to bind to port 443 as non-root
     exec authbind "${target}" "$@"
 else
-    exec "${$target}" "$@"
+    exec "${target}" "$@"
 fi
