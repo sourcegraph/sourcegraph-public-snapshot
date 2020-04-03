@@ -42,7 +42,7 @@ func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 		}, nil)
 		_, err := p.FetchUserPerms(context.Background(),
 			&extsvc.Account{
-				AccountSpec: extsvc.AccountSpec{
+				Spec: extsvc.Spec{
 					ServiceType: "github",
 					ServiceID:   "https://github.com/",
 				},
@@ -91,7 +91,7 @@ func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 	authData := json.RawMessage(`{"access_token": "my_access_token"}`)
 	repoIDs, err := p.FetchUserPerms(context.Background(),
 		&extsvc.Account{
-			AccountSpec: extsvc.AccountSpec{
+			Spec: extsvc.Spec{
 				ServiceType: "gitlab",
 				ServiceID:   "https://gitlab.com/",
 			},

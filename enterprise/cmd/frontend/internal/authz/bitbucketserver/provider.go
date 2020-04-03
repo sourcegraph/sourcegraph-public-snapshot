@@ -180,7 +180,7 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*exts
 
 	return &extsvc.Account{
 		UserID: user.ID,
-		AccountSpec: extsvc.AccountSpec{
+		Spec: extsvc.Spec{
 			ServiceType: p.codeHost.ServiceType,
 			ServiceID:   p.codeHost.ServiceID,
 			AccountID:   strconv.Itoa(bitbucketUser.ID),
@@ -207,7 +207,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 		return nil, errors.New("no account data provided")
 	case !extsvc.IsHostOfAccount(p.codeHost, account):
 		return nil, fmt.Errorf("not a code host of the account: want %q but have %q",
-			p.codeHost.ServiceID, account.AccountSpec.ServiceID)
+			p.codeHost.ServiceID, account.Spec.ServiceID)
 	}
 
 	var user bitbucketserver.User

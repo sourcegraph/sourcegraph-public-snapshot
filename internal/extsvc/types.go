@@ -11,18 +11,18 @@ import (
 // Account represents a row in the `user_external_accounts` table. See the GraphQL API's
 // corresponding fields in "ExternalAccount" for documentation.
 type Account struct {
-	ID          int32
-	UserID      int32
-	AccountSpec // ServiceType, ServiceID, ClientID, AccountID
-	Data        // AuthData, AccountData
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	ID        int32
+	UserID    int32
+	Spec      // ServiceType, ServiceID, ClientID, AccountID
+	Data      // AuthData, AccountData
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
-// AccountSpec specifies a user external account by its external identifier (i.e., by the
-// identifier provided by the account's owner service), instead of by our database's serial
-// ID. See the GraphQL API's corresponding fields in "ExternalAccount" for documentation.
-type AccountSpec struct {
+// Spec specifies a user external account by its external identifier (i.e. by the identifier
+// provided by the account's owner service), instead of by our database's serial ID. See the
+// GraphQL API's corresponding fields in "ExternalAccount" for documentation.
+type Spec struct {
 	ServiceType string
 	ServiceID   string
 	ClientID    string
@@ -44,7 +44,7 @@ type Repository struct {
 }
 
 // Accounts contains a list of accounts that belong to the same external service.
-// All fields have a same meaning to AccountSpec. See GraphQL API's corresponding fields
+// All fields have a same meaning to Spec. See GraphQL API's corresponding fields
 // in "ExternalAccount" for documentation.
 type Accounts struct {
 	ServiceType string

@@ -389,7 +389,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 		return nil, errors.New("no account provided")
 	} else if !extsvc.IsHostOfAccount(p.codeHost, account) {
 		return nil, fmt.Errorf("not a code host of the account: want %q but have %q",
-			account.AccountSpec.ServiceID, p.codeHost.ServiceID)
+			account.Spec.ServiceID, p.codeHost.ServiceID)
 	}
 
 	_, tok, err := github.GetExternalAccountData(&account.Data)
