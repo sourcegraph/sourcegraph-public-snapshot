@@ -206,7 +206,7 @@ type ChangesetSyncer struct {
 	externalServiceID int64
 
 	// scheduleInterval determines how often a new schedule will be computed.
-	// Note that it involves a DB query but no communication with codehosts
+	// NOTE: It involves a DB query but no communication with code hosts.
 	scheduleInterval time.Duration
 
 	queue          *changesetPriorityQueue
