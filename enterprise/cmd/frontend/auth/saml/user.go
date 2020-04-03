@@ -15,7 +15,7 @@ import (
 )
 
 type authnResponseInfo struct {
-	spec                 extsvc.AccountSpec
+	spec                 extsvc.Spec
 	email, displayName   string
 	unnormalizedUsername string
 	accountData          interface{}
@@ -58,7 +58,7 @@ func readAuthnResponse(p *provider, encodedResp string) (*authnResponseInfo, err
 		email = pn
 	}
 	info := authnResponseInfo{
-		spec: extsvc.AccountSpec{
+		spec: extsvc.Spec{
 			ServiceType: providerType,
 			ServiceID:   pi.ServiceID,
 			ClientID:    pi.ClientID,

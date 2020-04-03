@@ -624,7 +624,7 @@ func (s *PermsStore) loadUserPendingPermissionsIDs(ctx context.Context, q *sqlf.
 }
 
 func (s *PermsStore) batchLoadUserPendingPermissions(ctx context.Context, q *sqlf.Query) (
-	idToSpecs map[int32]extsvc.AccountSpec,
+	idToSpecs map[int32]extsvc.Spec,
 	loaded map[int32]*roaring.Bitmap,
 	err error,
 ) {
@@ -642,11 +642,11 @@ func (s *PermsStore) batchLoadUserPendingPermissions(ctx context.Context, q *sql
 	}
 	defer rows.Close()
 
-	idToSpecs = make(map[int32]extsvc.AccountSpec)
+	idToSpecs = make(map[int32]extsvc.Spec)
 	loaded = make(map[int32]*roaring.Bitmap)
 	for rows.Next() {
 		var id int32
-		var spec extsvc.AccountSpec
+		var spec extsvc.Spec
 		var ids []byte
 		if err = rows.Scan(&id, &spec.ServiceType, &spec.ServiceID, &spec.AccountID, &ids); err != nil {
 			return nil, nil, err

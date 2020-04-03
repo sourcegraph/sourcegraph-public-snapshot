@@ -735,9 +735,9 @@ func testPermsStore_LoadUserPendingPermissions(db *sql.DB) func(*testing.T) {
 func checkUserPendingPermsTable(
 	ctx context.Context,
 	s *PermsStore,
-	expects map[extsvc.AccountSpec][]uint32,
+	expects map[extsvc.Spec][]uint32,
 ) (
-	idToSpecs map[int32]extsvc.AccountSpec,
+	idToSpecs map[int32]extsvc.Spec,
 	err error,
 ) {
 	q := `SELECT id, service_type, service_id, bind_id, object_ids FROM user_pending_permissions`
@@ -747,10 +747,10 @@ func checkUserPendingPermsTable(
 	}
 
 	// Collect id -> account mappings for later used by checkRepoPendingPermsTable.
-	idToSpecs = make(map[int32]extsvc.AccountSpec)
+	idToSpecs = make(map[int32]extsvc.Spec)
 	for rows.Next() {
 		var id int32
-		var spec extsvc.AccountSpec
+		var spec extsvc.Spec
 		var ids []byte
 		if err := rows.Scan(&id, &spec.ServiceType, &spec.ServiceID, &spec.AccountID, &ids); err != nil {
 			return nil, err
@@ -789,8 +789,8 @@ func checkUserPendingPermsTable(
 func checkRepoPendingPermsTable(
 	ctx context.Context,
 	s *PermsStore,
-	idToSpecs map[int32]extsvc.AccountSpec,
-	expects map[int32][]extsvc.AccountSpec,
+	idToSpecs map[int32]extsvc.Spec,
+	expects map[int32][]extsvc.Spec,
 ) error {
 	rows, err := s.db.QueryContext(ctx, `SELECT repo_id, user_ids FROM repo_pending_permissions`)
 	if err != nil {
@@ -815,7 +815,7 @@ func checkRepoPendingPermsTable(
 		}
 		sort.Ints(userIDs)
 
-		haveSpecs := make([]extsvc.AccountSpec, 0, len(userIDs))
+		haveSpecs := make([]extsvc.Spec, 0, len(userIDs))
 		for _, userID := range userIDs {
 			spec, ok := idToSpecs[int32(userID)]
 			if !ok {
@@ -845,22 +845,22 @@ func checkRepoPendingPermsTable(
 }
 
 func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
-	alice := extsvc.AccountSpec{
+	alice := extsvc.Spec{
 		ServiceType: authz.SourcegraphServiceType,
 		ServiceID:   authz.SourcegraphServiceID,
 		AccountID:   "alice",
 	}
-	bob := extsvc.AccountSpec{
+	bob := extsvc.Spec{
 		ServiceType: authz.SourcegraphServiceType,
 		ServiceID:   authz.SourcegraphServiceID,
 		AccountID:   "bob",
 	}
-	cindy := extsvc.AccountSpec{
+	cindy := extsvc.Spec{
 		ServiceType: authz.SourcegraphServiceType,
 		ServiceID:   authz.SourcegraphServiceID,
 		AccountID:   "cindy",
 	}
-	cindyGitHub := extsvc.AccountSpec{
+	cindyGitHub := extsvc.Spec{
 		ServiceType: "github",
 		ServiceID:   "https://github.com/",
 		AccountID:   "cindy",
@@ -873,8 +873,8 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 	tests := []struct {
 		name                   string
 		updates                []update
-		expectUserPendingPerms map[extsvc.AccountSpec][]uint32 // account -> object_ids
-		expectRepoPendingPerms map[int32][]extsvc.AccountSpec  // repo_id -> accounts
+		expectUserPendingPerms map[extsvc.Spec][]uint32 // account -> object_ids
+		expectRepoPendingPerms map[int32][]extsvc.Spec  // repo_id -> accounts
 	}{
 		{
 			name: "empty",
@@ -927,12 +927,12 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 					},
 				},
 			},
-			expectUserPendingPerms: map[extsvc.AccountSpec][]uint32{
+			expectUserPendingPerms: map[extsvc.Spec][]uint32{
 				alice:       {1, 2},
 				bob:         {2},
 				cindyGitHub: {3},
 			},
-			expectRepoPendingPerms: map[int32][]extsvc.AccountSpec{
+			expectRepoPendingPerms: map[int32][]extsvc.Spec{
 				1: {alice},
 				2: {alice, bob},
 				3: {cindyGitHub},
@@ -973,13 +973,13 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 					},
 				},
 			},
-			expectUserPendingPerms: map[extsvc.AccountSpec][]uint32{
+			expectUserPendingPerms: map[extsvc.Spec][]uint32{
 				alice:       {},
 				bob:         {1},
 				cindy:       {1},
 				cindyGitHub: {2},
 			},
-			expectRepoPendingPerms: map[int32][]extsvc.AccountSpec{
+			expectRepoPendingPerms: map[int32][]extsvc.Spec{
 				1: {bob, cindy},
 				2: {cindyGitHub},
 			},
@@ -1009,12 +1009,12 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 					},
 				},
 			},
-			expectUserPendingPerms: map[extsvc.AccountSpec][]uint32{
+			expectUserPendingPerms: map[extsvc.Spec][]uint32{
 				alice: {},
 				bob:   {},
 				cindy: {},
 			},
-			expectRepoPendingPerms: map[int32][]extsvc.AccountSpec{
+			expectRepoPendingPerms: map[int32][]extsvc.Spec{
 				1: {},
 			},
 		},
@@ -1180,12 +1180,12 @@ func testPermsStore_ListPendingUsers(db *sql.DB) func(*testing.T) {
 }
 
 func testPermsStore_GrantPendingPermissions(db *sql.DB) func(*testing.T) {
-	alice := extsvc.AccountSpec{
+	alice := extsvc.Spec{
 		ServiceType: authz.SourcegraphServiceType,
 		ServiceID:   authz.SourcegraphServiceID,
 		AccountID:   "alice",
 	}
-	bob := extsvc.AccountSpec{
+	bob := extsvc.Spec{
 		ServiceType: authz.SourcegraphServiceType,
 		ServiceID:   authz.SourcegraphServiceID,
 		AccountID:   "bob",
@@ -1207,10 +1207,10 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(*testing.T) {
 		name                   string
 		updates                []update
 		grants                 []grant
-		expectUserPerms        map[int32][]uint32              // user_id -> object_ids
-		expectRepoPerms        map[int32][]uint32              // repo_id -> user_ids
-		expectUserPendingPerms map[extsvc.AccountSpec][]uint32 // account -> object_ids
-		expectRepoPendingPerms map[int32][]extsvc.AccountSpec  // repo_id -> accounts
+		expectUserPerms        map[int32][]uint32       // user_id -> object_ids
+		expectRepoPerms        map[int32][]uint32       // repo_id -> user_ids
+		expectUserPendingPerms map[extsvc.Spec][]uint32 // account -> object_ids
+		expectRepoPendingPerms map[int32][]extsvc.Spec  // repo_id -> accounts
 	}{
 		{
 			name: "empty",
@@ -1287,11 +1287,11 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(*testing.T) {
 				1: {1},
 				2: {1, 2},
 			},
-			expectUserPendingPerms: map[extsvc.AccountSpec][]uint32{
+			expectUserPendingPerms: map[extsvc.Spec][]uint32{
 				alice: {1},
 				bob:   {2},
 			},
-			expectRepoPendingPerms: map[int32][]extsvc.AccountSpec{
+			expectRepoPendingPerms: map[int32][]extsvc.Spec{
 				1: {alice},
 				2: {bob},
 			},
@@ -1377,10 +1377,10 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(*testing.T) {
 				1: {1, 3},
 				2: {1, 2, 3},
 			},
-			expectUserPendingPerms: map[extsvc.AccountSpec][]uint32{
+			expectUserPendingPerms: map[extsvc.Spec][]uint32{
 				bob: {3},
 			},
-			expectRepoPendingPerms: map[int32][]extsvc.AccountSpec{
+			expectRepoPendingPerms: map[int32][]extsvc.Spec{
 				1: {},
 				2: {},
 				3: {bob},
@@ -1456,8 +1456,8 @@ func testPermsStore_GrantPendingPermissions(db *sql.DB) func(*testing.T) {
 				1: {1, 3},
 				2: {1, 2, 3},
 			},
-			expectUserPendingPerms: map[extsvc.AccountSpec][]uint32{},
-			expectRepoPendingPerms: map[int32][]extsvc.AccountSpec{
+			expectUserPendingPerms: map[extsvc.Spec][]uint32{},
+			expectRepoPendingPerms: map[int32][]extsvc.Spec{
 				1: {},
 				2: {},
 			},
@@ -1776,7 +1776,7 @@ INSERT INTO user_external_accounts(user_id, service_type, service_id, account_id
 				{
 					ID:     1,
 					UserID: 1,
-					AccountSpec: extsvc.AccountSpec{
+					Spec: extsvc.Spec{
 						ServiceType: "gitlab",
 						ServiceID:   "https://gitlab.com/",
 						AccountID:   "alice_gitlab",
@@ -1788,7 +1788,7 @@ INSERT INTO user_external_accounts(user_id, service_type, service_id, account_id
 				{
 					ID:     2,
 					UserID: 1,
-					AccountSpec: extsvc.AccountSpec{
+					Spec: extsvc.Spec{
 						ServiceType: "github",
 						ServiceID:   "https://github.com/",
 						AccountID:   "alice_github",
@@ -1814,7 +1814,7 @@ INSERT INTO user_external_accounts(user_id, service_type, service_id, account_id
 				{
 					ID:     3,
 					UserID: 2,
-					AccountSpec: extsvc.AccountSpec{
+					Spec: extsvc.Spec{
 						ServiceType: "gitlab",
 						ServiceID:   "https://gitlab.com/",
 						AccountID:   "bob_gitlab",

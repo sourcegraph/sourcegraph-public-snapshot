@@ -34,7 +34,7 @@ func Benchmark_authzFilter(b *testing.B) {
 				codeHost: codeHost,
 				extAcct: &extsvc.Account{
 					UserID: user.ID,
-					AccountSpec: extsvc.AccountSpec{
+					Spec: extsvc.Spec{
 						ServiceType: codeHost.ServiceType,
 						ServiceID:   codeHost.ServiceID,
 						AccountID:   "42_ext",
@@ -50,7 +50,7 @@ func Benchmark_authzFilter(b *testing.B) {
 				codeHost: codeHost,
 				extAcct: &extsvc.Account{
 					UserID: user.ID,
-					AccountSpec: extsvc.AccountSpec{
+					Spec: extsvc.Spec{
 						ServiceType: codeHost.ServiceType,
 						ServiceID:   codeHost.ServiceID,
 						AccountID:   "42_ext",

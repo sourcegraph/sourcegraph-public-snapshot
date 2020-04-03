@@ -74,7 +74,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 				DisplayName:     deref(ghUser.Name),
 				AvatarURL:       deref(ghUser.AvatarURL),
 			},
-			ExternalAccount: extsvc.AccountSpec{
+			ExternalAccount: extsvc.Spec{
 				ServiceType: s.ServiceType,
 				ServiceID:   s.ServiceID,
 				ClientID:    s.clientID,
