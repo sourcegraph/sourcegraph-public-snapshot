@@ -177,10 +177,11 @@ func (sr *SearchResultsResolver) MatchCount() int32 {
 	return totalResults
 }
 
+// Deprecated. Prefer MatchCount.
 func (sr *SearchResultsResolver) ResultCount() int32 { return sr.MatchCount() }
 
 func (sr *SearchResultsResolver) ApproximateResultCount() string {
-	count := sr.ResultCount()
+	count := sr.MatchCount()
 	if sr.LimitHit() || len(sr.cloning) > 0 || len(sr.timedout) > 0 {
 		return fmt.Sprintf("%d+", count)
 	}
@@ -860,7 +861,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 		if err != nil {
 			return nil, err // do not cache errors.
 		}
-		if v.ResultCount() > 0 {
+		if v.MatchCount() > 0 {
 			break
 		}
 
