@@ -16,7 +16,7 @@ import (
 
 // SyncRegistry manages a ChangesetSyncer per external service.
 type SyncRegistry struct {
-	Parent      context.Context
+	Ctx         context.Context
 	Store       SyncStore
 	ReposStore  repos.Store
 	HTTPFactory *httpcli.Factory
@@ -31,7 +31,7 @@ type SyncRegistry struct {
 // when external services are changed, added or removed.
 func NewSyncRegistry(ctx context.Context, store SyncStore, repoStore repos.Store, cf *httpcli.Factory) *SyncRegistry {
 	r := &SyncRegistry{
-		Parent:         ctx,
+		Ctx:            ctx,
 		Store:          store,
 		ReposStore:     repoStore,
 		HTTPFactory:    cf,
@@ -56,7 +56,7 @@ func NewSyncRegistry(ctx context.Context, store SyncStore, repoStore repos.Store
 
 // Add adds a syncer for the supplied external service if it hasn't already been added and starts it.
 func (s *SyncRegistry) Add(extServiceID int64) {
-	ctx, cancel := context.WithTimeout(s.Parent, 10*time.Second)
+	ctx, cancel := context.WithTimeout(s.Ctx, 10*time.Second)
 	defer cancel()
 	services, err := s.ReposStore.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{
 		IDs: []int64{extServiceID},
@@ -87,7 +87,7 @@ func (s *SyncRegistry) Add(extServiceID int64) {
 	}
 
 	// We need to be able to cancel the syncer if the service is removed
-	ctx, cancel = context.WithCancel(s.Parent)
+	ctx, cancel = context.WithCancel(s.Ctx)
 
 	syncer := &ChangesetSyncer{
 		Store:             s.Store,
@@ -104,13 +104,13 @@ func (s *SyncRegistry) Add(extServiceID int64) {
 // to the appropriate syncer.
 func (s *SyncRegistry) handlePriorityItems() {
 	fetchSyncData := func(ids []int64) ([]campaigns.ChangesetSyncData, error) {
-		ctx, cancel := context.WithTimeout(s.Parent, 10*time.Second)
+		ctx, cancel := context.WithTimeout(s.Ctx, 10*time.Second)
 		defer cancel()
 		return s.Store.ListChangesetSyncData(ctx, ListChangesetSyncDataOpts{ChangesetIDs: ids})
 	}
 	for {
 		select {
-		case <-s.Parent.Done():
+		case <-s.Ctx.Done():
 			return
 		case ids := <-s.priorityNotify:
 			syncData, err := fetchSyncData(ids)
