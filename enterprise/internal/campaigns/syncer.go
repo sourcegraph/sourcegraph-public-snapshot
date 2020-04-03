@@ -153,6 +153,7 @@ func (s *SyncRegistry) handlePriorityItems() {
 					if !ok {
 						continue
 					}
+
 					select {
 					case syncer.syncer.priorityNotify <- changesets:
 					default:
@@ -181,9 +182,8 @@ func (s *SyncRegistry) HandleExternalServiceSync(es api.ExternalService) {
 	// For now we just need to start and stop them.
 	// TODO: Once rate limiters are added we'll need to update those
 	s.mu.Lock()
-	defer s.mu.Unlock()
-
 	syncer, exists := s.syncers[es.ID]
+	s.mu.Unlock()
 
 	if es.DeletedAt == nil && !exists {
 		s.Add(es.ID)
@@ -238,20 +238,6 @@ type SyncStore interface {
 // Run will start the process of changeset syncing. It is long running
 // and is expected to be launched once at startup.
 func (s *ChangesetSyncer) Run(ctx context.Context) {
-
-	go func() {
-		ticker := time.NewTicker(10 * time.Second)
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case <-ticker.C:
-				log15.Info("Syncer status", "id", s.externalServiceID, "len", s.queue.Len())
-				log15.Info("==========")
-			}
-		}
-	}()
-
 	// TODO: Setup instrumentation here
 	scheduleInterval := s.scheduleInterval
 	if scheduleInterval == 0 {

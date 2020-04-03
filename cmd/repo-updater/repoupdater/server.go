@@ -332,7 +332,9 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	s.ChangesetSyncer.HandleExternalServiceSync(req.ExternalService)
+	if s.ChangesetSyncer != nil {
+		s.ChangesetSyncer.HandleExternalServiceSync(req.ExternalService)
+	}
 
 	log15.Info("server.external-service-sync", "synced", req.ExternalService.Kind)
 	respond(w, http.StatusOK, &protocol.ExternalServiceSyncResult{
