@@ -17,8 +17,8 @@ import (
 // SyncRegistry manages a ChangesetSyncer per external service.
 type SyncRegistry struct {
 	Ctx         context.Context
-	Store       SyncStore
-	ReposStore  repos.Store
+	SyncStore   SyncStore
+	RepoStore   RepoStore
 	HTTPFactory *httpcli.Factory
 
 	priorityNotify chan []int64
@@ -27,13 +27,18 @@ type SyncRegistry struct {
 	syncers map[int64]*ChangesetSyncer
 }
 
+type RepoStore interface {
+	ListExternalServices(context.Context, repos.StoreListExternalServicesArgs) ([]*repos.ExternalService, error)
+	ListRepos(context.Context, repos.StoreListReposArgs) ([]*repos.Repo, error)
+}
+
 // NewSycnRegistry creates a new sync registry which starts a syncer for each external service and will update them
 // when external services are changed, added or removed.
-func NewSyncRegistry(ctx context.Context, store SyncStore, repoStore repos.Store, cf *httpcli.Factory) *SyncRegistry {
+func NewSyncRegistry(ctx context.Context, store SyncStore, repoStore RepoStore, cf *httpcli.Factory) *SyncRegistry {
 	r := &SyncRegistry{
 		Ctx:            ctx,
-		Store:          store,
-		ReposStore:     repoStore,
+		SyncStore:      store,
+		RepoStore:      repoStore,
 		HTTPFactory:    cf,
 		priorityNotify: make(chan []int64, 500),
 		syncers:        make(map[int64]*ChangesetSyncer),
@@ -58,7 +63,7 @@ func NewSyncRegistry(ctx context.Context, store SyncStore, repoStore repos.Store
 func (s *SyncRegistry) Add(extServiceID int64) {
 	ctx, cancel := context.WithTimeout(s.Ctx, 10*time.Second)
 	defer cancel()
-	services, err := s.ReposStore.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{
+	services, err := s.RepoStore.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{
 		IDs: []int64{extServiceID},
 	})
 	if err != nil {
@@ -90,12 +95,14 @@ func (s *SyncRegistry) Add(extServiceID int64) {
 	ctx, cancel = context.WithCancel(s.Ctx)
 
 	syncer := &ChangesetSyncer{
-		Store:             s.Store,
-		ReposStore:        s.ReposStore,
+		SyncStore:         s.SyncStore,
+		ReposStore:        s.RepoStore,
 		HTTPFactory:       s.HTTPFactory,
 		externalServiceID: extServiceID,
 		cancel:            cancel,
 	}
+
+	s.syncers[extServiceID] = syncer
 
 	go syncer.Run(ctx)
 }
@@ -106,7 +113,7 @@ func (s *SyncRegistry) handlePriorityItems() {
 	fetchSyncData := func(ids []int64) ([]campaigns.ChangesetSyncData, error) {
 		ctx, cancel := context.WithTimeout(s.Ctx, 10*time.Second)
 		defer cancel()
-		return s.Store.ListChangesetSyncData(ctx, ListChangesetSyncDataOpts{ChangesetIDs: ids})
+		return s.SyncStore.ListChangesetSyncData(ctx, ListChangesetSyncDataOpts{ChangesetIDs: ids})
 	}
 	for {
 		select {
@@ -195,8 +202,8 @@ func shardChangeset(changesetID int64, externalServices []int64) (externalServic
 // A ChangesetSyncer periodically syncs metadata of changesets
 // saved in the database.
 type ChangesetSyncer struct {
-	Store       SyncStore
-	ReposStore  repos.Store
+	SyncStore   SyncStore
+	ReposStore  RepoStore
 	HTTPFactory *httpcli.Factory
 
 	externalServiceID int64
@@ -379,7 +386,7 @@ func absDuration(d time.Duration) time.Duration {
 }
 
 func (s *ChangesetSyncer) computeSchedule(ctx context.Context) ([]scheduledSync, error) {
-	allSyncData, err := s.Store.ListChangesetSyncData(ctx, ListChangesetSyncDataOpts{})
+	allSyncData, err := s.SyncStore.ListChangesetSyncData(ctx, ListChangesetSyncDataOpts{})
 	if err != nil {
 		return nil, errors.Wrap(err, "listing changeset sync data")
 	}
@@ -414,7 +421,7 @@ func filterSyncData(serviceID int64, allSyncData []campaigns.ChangesetSyncData) 
 // SyncChangesetByID will sync a single changeset given its id.
 func (s *ChangesetSyncer) SyncChangesetByID(ctx context.Context, id int64) error {
 	log15.Debug("SyncChangesetByID", "id", id)
-	cs, err := s.Store.GetChangeset(ctx, GetChangesetOpts{
+	cs, err := s.SyncStore.GetChangeset(ctx, GetChangesetOpts{
 		ID: id,
 	})
 	if err != nil {
@@ -435,7 +442,7 @@ func (s *ChangesetSyncer) SyncChangesets(ctx context.Context, cs ...*campaigns.C
 		return err
 	}
 
-	return SyncChangesetsWithSources(ctx, s.Store, bySource)
+	return SyncChangesetsWithSources(ctx, s.SyncStore, bySource)
 }
 
 // SyncChangesetsWithSources refreshes the metadata of the given changesets
@@ -493,7 +500,7 @@ func SyncChangesetsWithSources(ctx context.Context, store SyncStore, bySource []
 // GroupChangesetsBySource returns a slice of SourceChangesets in which the
 // given *campaigns.Changesets are grouped together as repos.Changesets with the
 // repos.Source that can modify them.
-func GroupChangesetsBySource(ctx context.Context, reposStore repos.Store, cf *httpcli.Factory, cs ...*campaigns.Changeset) ([]*SourceChangesets, error) {
+func GroupChangesetsBySource(ctx context.Context, reposStore RepoStore, cf *httpcli.Factory, cs ...*campaigns.Changeset) ([]*SourceChangesets, error) {
 	var repoIDs []api.RepoID
 	repoSet := map[api.RepoID]*repos.Repo{}
 

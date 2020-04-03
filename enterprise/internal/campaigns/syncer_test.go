@@ -6,6 +6,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
+
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 
 	"github.com/google/go-cmp/cmp"
@@ -193,7 +197,7 @@ func TestSyncerRun(t *testing.T) {
 			return nil
 		}
 		syncer := &ChangesetSyncer{
-			Store:            store,
+			SyncStore:        store,
 			scheduleInterval: 10 * time.Minute,
 			syncFunc:         syncFunc,
 		}
@@ -227,7 +231,7 @@ func TestSyncerRun(t *testing.T) {
 			return nil
 		}
 		syncer := &ChangesetSyncer{
-			Store:            store,
+			SyncStore:        store,
 			scheduleInterval: 10 * time.Minute,
 			syncFunc:         syncFunc,
 		}
@@ -250,7 +254,7 @@ func TestSyncerRun(t *testing.T) {
 			return nil
 		}
 		syncer := &ChangesetSyncer{
-			Store:            store,
+			SyncStore:        store,
 			scheduleInterval: 10 * time.Minute,
 			syncFunc:         syncFunc,
 			priorityNotify:   make(chan []int64, 1),
@@ -345,6 +349,65 @@ func TestFilterSyncData(t *testing.T) {
 	}
 }
 
+func TestSyncRegistry(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	repoStore := MockRepoStore{
+		listExternalServices: func(ctx context.Context, args repos.StoreListExternalServicesArgs) (services []*repos.ExternalService, err error) {
+			return []*repos.ExternalService{
+				&repos.ExternalService{
+					ID:          1,
+					Kind:        "GITHUB",
+					DisplayName: "",
+					Config:      "",
+					CreatedAt:   time.Time{},
+					UpdatedAt:   time.Time{},
+				},
+			}, nil
+		},
+	}
+
+	syncStore := MockSyncStore{
+		listChangesetSyncData: func(ctx context.Context, opts ListChangesetSyncDataOpts) (data []campaigns.ChangesetSyncData, err error) {
+			return []campaigns.ChangesetSyncData{}, nil
+		},
+	}
+
+	r := NewSyncRegistry(ctx, syncStore, repoStore, nil)
+
+	assertSyncerCount := func(want int) {
+		r.mu.Lock()
+		if len(r.syncers) != want {
+			t.Fatalf("Expected %d syncer, got %d", want, len(r.syncers))
+		}
+		r.mu.Unlock()
+	}
+
+	assertSyncerCount(1)
+
+	// Adding it again should have no effect
+	r.Add(1)
+	assertSyncerCount(1)
+
+	// Simulate a service being removed
+	now := time.Now()
+	r.HandleExternalServiceSync(api.ExternalService{
+		ID:        1,
+		Kind:      "GITHUB",
+		DeletedAt: &now,
+	})
+	assertSyncerCount(0)
+
+	// And added again
+	r.HandleExternalServiceSync(api.ExternalService{
+		ID:        1,
+		Kind:      "GITHUB",
+		DeletedAt: nil,
+	})
+	assertSyncerCount(1)
+}
+
 type MockSyncStore struct {
 	listChangesetSyncData func(context.Context, ListChangesetSyncDataOpts) ([]campaigns.ChangesetSyncData, error)
 	getChangeset          func(context.Context, GetChangesetOpts) (*campaigns.Changeset, error)
@@ -376,4 +439,17 @@ func (m MockSyncStore) UpsertChangesetEvents(ctx context.Context, cs ...*campaig
 
 func (m MockSyncStore) Transact(ctx context.Context) (*Store, error) {
 	return m.transact(ctx)
+}
+
+type MockRepoStore struct {
+	listExternalServices func(context.Context, repos.StoreListExternalServicesArgs) ([]*repos.ExternalService, error)
+	listRepos            func(context.Context, repos.StoreListReposArgs) ([]*repos.Repo, error)
+}
+
+func (m MockRepoStore) ListExternalServices(ctx context.Context, args repos.StoreListExternalServicesArgs) ([]*repos.ExternalService, error) {
+	return m.listExternalServices(ctx, args)
+}
+
+func (m MockRepoStore) ListRepos(ctx context.Context, args repos.StoreListReposArgs) ([]*repos.Repo, error) {
+	return m.listRepos(ctx, args)
 }
