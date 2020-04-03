@@ -185,7 +185,7 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*exts
 			ServiceID:   p.codeHost.ServiceID,
 			AccountID:   strconv.Itoa(bitbucketUser.ID),
 		},
-		Data: extsvc.Data{
+		ExternalAccountData: extsvc.ExternalAccountData{
 			AccountData: (*json.RawMessage)(&accountData),
 		},
 	}, nil

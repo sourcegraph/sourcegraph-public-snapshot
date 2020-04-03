@@ -324,7 +324,7 @@ func (p *Provider) getCachedUserRepos(ctx context.Context, userAccount *extsvc.A
 }
 
 func (p *Provider) fetchUserRepos(ctx context.Context, userAccount *extsvc.Account, repoIDs []string) (canAccess map[string]bool, isPublic map[string]bool, err error) {
-	_, tok, err := github.GetExternalAccountData(&userAccount.Data)
+	_, tok, err := github.GetExternalAccountData(&userAccount.ExternalAccountData)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -392,7 +392,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 			account.AccountSpec.ServiceID, p.codeHost.ServiceID)
 	}
 
-	_, tok, err := github.GetExternalAccountData(&account.Data)
+	_, tok, err := github.GetExternalAccountData(&account.ExternalAccountData)
 	if err != nil {
 		return nil, errors.Wrap(err, "get external account data")
 	}

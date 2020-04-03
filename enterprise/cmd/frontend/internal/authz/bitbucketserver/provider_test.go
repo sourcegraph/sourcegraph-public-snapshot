@@ -301,7 +301,7 @@ func testProviderFetchUserPerms(f *fixtures, cli *bitbucketserver.Client) func(*
 						ServiceID:   "https://github.com",
 						AccountID:   "john",
 					},
-					Data: extsvc.Data{
+					ExternalAccountData: extsvc.ExternalAccountData{
 						AccountData: new(json.RawMessage),
 					},
 				},
@@ -315,7 +315,7 @@ func testProviderFetchUserPerms(f *fixtures, cli *bitbucketserver.Client) func(*
 						ServiceID:   h.ServiceID,
 						AccountID:   "john",
 					},
-					Data: extsvc.Data{
+					ExternalAccountData: extsvc.ExternalAccountData{
 						AccountData: new(json.RawMessage),
 					},
 				},
@@ -622,7 +622,7 @@ func (h codeHost) externalAccount(userID int32, u *bitbucketserver.User) *extsvc
 			ServiceID:   h.ServiceID,
 			AccountID:   strconv.Itoa(u.ID),
 		},
-		Data: extsvc.Data{
+		ExternalAccountData: extsvc.ExternalAccountData{
 			AccountData: (*json.RawMessage)(&bs),
 		},
 	}
