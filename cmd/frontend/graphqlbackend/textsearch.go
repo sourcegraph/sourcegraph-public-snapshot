@@ -67,6 +67,7 @@ type FileMatchResolver struct {
 	JPath        string       `json:"Path"`
 	JLineMatches []*lineMatch `json:"LineMatches"`
 	JLimitHit    bool         `json:"LimitHit"`
+	MatchCount   int          // Number of matches. Different from len(JLineMatches), as multiple lines may correspond to one logical match.
 	symbols      []*searchSymbolResult
 	uri          string
 	Repo         *types.Repo
@@ -147,7 +148,7 @@ func (fm *FileMatchResolver) searchResultURIs() (string, string) {
 }
 
 func (fm *FileMatchResolver) resultCount() int32 {
-	rc := len(fm.symbols) + len(fm.LineMatches())
+	rc := len(fm.symbols) + fm.MatchCount
 	if rc > 0 {
 		return int32(rc)
 	}
