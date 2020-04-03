@@ -5,6 +5,6 @@ coverage:
     patch: off
 comment:
   require_changes: yes
-  layout: 'diff, files'
+  layout: 'diff, flags, files'
 ignore:
   - '**/bindata.go'
