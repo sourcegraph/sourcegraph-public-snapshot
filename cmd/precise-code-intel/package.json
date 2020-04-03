@@ -71,7 +71,7 @@
     "babel-jest": "^25.2.6",
     "copyfiles": "^2.2.0",
     "eslint-plugin-import": "^2.20.2",
-    "jest": "^25.2.6",
+    "jest": "^25.2.7",
     "nock": "^12.0.2",
     "sinon": "^9.0.1",
     "source-map-support": "^0.5.16",
