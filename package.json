@@ -20,6 +20,8 @@
     "graphql-lint": "graphql-schema-linter --old-implements-syntax --comment-descriptions cmd/frontend/graphqlbackend/schema.graphql",
     "prepublish": "gulp generate",
     "test": "jest --testPathIgnorePatterns e2e regression integration",
+    "test-e2e": "TS_NODE_PROJECT=web/src/e2e/tsconfig.json mocha ./web/src/e2e/e2e.test.ts",
+    "cover-e2e": "nyc --hook-require=false yarn test-e2e",
     "storybook": "start-storybook -p 9001 -c .storybook",
     "storybook:build": "build-storybook -c .storybook",
     "storybook:smoke-test": "yarn run storybook --smoke-test",
@@ -33,6 +35,21 @@
     "last 1 Chrome versions",
     "not IE > 0"
   ],
+  "nyc": {
+    "all": true,
+    "extension": [
+      ".tsx",
+      ".ts"
+    ],
+    "include": [
+      "@(web|shared)/src/**/*.ts?(x)"
+    ],
+    "exclude": [
+      "node_modules",
+      "**/*.d.ts",
+      "**/*.@(test|story).ts?(x)"
+    ]
+  },
   "jscpd": {
     "gitignore": true,
     "ignore": [
@@ -176,6 +193,7 @@
     "mz": "^2.7.0",
     "node-fetch": "^2.6.0",
     "node-sass": "^4.13.1",
+    "nyc": "^15.0.0",
     "open": "^7.0.3",
     "optimize-css-assets-webpack-plugin": "^5.0.3",
     "p-retry": "^4.2.0",
