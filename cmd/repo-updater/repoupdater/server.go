@@ -44,7 +44,7 @@ type Server struct {
 	GitserverClient interface {
 		ListCloned(context.Context) ([]string, error)
 	}
-	ChangesetSyncer interface {
+	ChangesetSyncRegistry interface {
 		EnqueueChangesetSyncs(ctx context.Context, ids []int64) error
 		HandleExternalServiceSync(es api.ExternalService)
 	}
@@ -332,8 +332,8 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	if s.ChangesetSyncer != nil {
-		s.ChangesetSyncer.HandleExternalServiceSync(req.ExternalService)
+	if s.ChangesetSyncRegistry != nil {
+		s.ChangesetSyncRegistry.HandleExternalServiceSync(req.ExternalService)
 	}
 
 	log15.Info("server.external-service-sync", "synced", req.ExternalService.Kind)
@@ -574,8 +574,8 @@ func (s *Server) computeNotClonedCount(ctx context.Context) (uint64, error) {
 }
 
 func (s *Server) handleEnqueueChangesetSync(w http.ResponseWriter, r *http.Request) {
-	if s.ChangesetSyncer == nil {
-		log15.Warn("ChangsetSyncer is nil")
+	if s.ChangesetSyncRegistry == nil {
+		log15.Warn("ChangesetSyncer is nil")
 		respond(w, http.StatusForbidden, nil)
 		return
 	}
@@ -589,7 +589,7 @@ func (s *Server) handleEnqueueChangesetSync(w http.ResponseWriter, r *http.Reque
 		respond(w, http.StatusBadRequest, errors.New("no ids provided"))
 		return
 	}
-	err := s.ChangesetSyncer.EnqueueChangesetSyncs(r.Context(), req.IDs)
+	err := s.ChangesetSyncRegistry.EnqueueChangesetSyncs(r.Context(), req.IDs)
 	if err != nil {
 		resp := protocol.ChangesetSyncResponse{Error: err.Error()}
 		respond(w, http.StatusInternalServerError, resp)

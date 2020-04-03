@@ -46,7 +46,7 @@ func enterpriseInit(
 
 	syncRegistry := campaigns.NewSyncRegistry(ctx, campaignsStore, repoStore, cf)
 	if server != nil {
-		server.ChangesetSyncer = syncRegistry
+		server.ChangesetSyncRegistry = syncRegistry
 	}
 
 	clock := func() time.Time {
