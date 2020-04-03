@@ -7,14 +7,13 @@ import (
 	"fmt"
 	"io"
 	"sort"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
 	"github.com/segmentio/fasthash/fnv1"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
@@ -594,7 +593,7 @@ func scanChangesetSyncData(h *campaigns.ChangesetSyncData, s scanner) error {
 		return err
 	}
 
-	infos := make(map[string]*SourceInfo)
+	infos := make(map[string]*repos.SourceInfo)
 	if err = json.Unmarshal(sources, &infos); err != nil {
 		return errors.Wrap(err, "scanChangesetSyncData: failed to unmarshal sources")
 	}
@@ -637,30 +636,6 @@ func listChangesetSyncData(opts ListChangesetSyncDataOpts) *sqlf.Query {
 	}
 
 	return sqlf.Sprintf(fmtString, sqlf.Join(preds, "\n AND"))
-}
-
-// TODO: SourceInfo copied from repo-updater/repos, find a common place for it
-
-// A SourceInfo represents a source a Repo belongs to (such as an external service).
-type SourceInfo struct {
-	ID       string
-	CloneURL string
-}
-
-// ExternalServiceID returns the ID of the external service this
-// SourceInfo refers to.
-func (i SourceInfo) ExternalServiceID() int64 {
-	ps := strings.SplitN(i.ID, ":", 3)
-	if len(ps) != 3 {
-		return -1
-	}
-
-	id, err := strconv.ParseInt(ps[2], 10, 64)
-	if err != nil {
-		return -1
-	}
-
-	return id
 }
 
 // ListChangesetsOpts captures the query options needed for
