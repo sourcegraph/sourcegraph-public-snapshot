@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
-// SyncRegistry manages a ChangesetSyncer per external service
+// SyncRegistry manages a ChangesetSyncer per external service.
 type SyncRegistry struct {
 	Parent      context.Context
 	Store       SyncStore
@@ -101,7 +101,7 @@ func (s *SyncRegistry) Add(extServiceID int64) {
 }
 
 // handlePriorityItems fetches changesets in the priority queue from the db and passes them
-// to the appropriate syncer
+// to the appropriate syncer.
 func (s *SyncRegistry) handlePriorityItems() {
 	fetchSyncData := func(ids []int64) ([]campaigns.ChangesetSyncData, error) {
 		ctx, cancel := context.WithTimeout(s.Parent, 10*time.Second)
@@ -168,7 +168,7 @@ func (s *SyncRegistry) EnqueueChangesetSyncs(ctx context.Context, ids []int64) e
 	return nil
 }
 
-// HandleExternalServiceSync handles changes to external services
+// HandleExternalServiceSync handles changes to external services.
 func (s *SyncRegistry) HandleExternalServiceSync(es api.ExternalService) {
 	// For now we just need to start and stop them.
 	// TODO: Once rate limiters are added we'll need to update those
@@ -188,8 +188,8 @@ func (s *SyncRegistry) HandleExternalServiceSync(es api.ExternalService) {
 }
 
 // shardChangeset returns the external id responsible for syncing the supplied
-// changeset assuming it belongs to all the supplied external services
-// externalServices should be sorted in ascending order
+// changeset assuming it belongs to all the supplied external services,
+// externalServices should be sorted in ascending order.
 func shardChangeset(changesetID int64, externalServices []int64) (externalServiceID int64) {
 	if len(externalServices) == 0 {
 		return 0
@@ -208,7 +208,7 @@ type ChangesetSyncer struct {
 	externalServiceID int64
 
 	// scheduleInterval determines how often a new schedule will be computed.
-	// Note that it involves a DB query but no communication with codehosts
+	// NOTE: It involves a DB query but no communication with code hosts.
 	scheduleInterval time.Duration
 
 	queue          *changesetPriorityQueue
