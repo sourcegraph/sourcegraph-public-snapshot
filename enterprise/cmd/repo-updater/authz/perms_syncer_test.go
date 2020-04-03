@@ -127,7 +127,7 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	defer authz.SetProviders(true, nil)
 
 	extAccount := extsvc.Account{
-		Spec: extsvc.Spec{
+		AccountSpec: extsvc.AccountSpec{
 			ServiceType: p.ServiceType(),
 			ServiceID:   p.ServiceID(),
 		},

@@ -146,7 +146,7 @@ func (p *OAuthProvider) RepoPerms(ctx context.Context, account *extsvc.Account, 
 
 	var oauthToken string
 	if account != nil {
-		_, tok, err := gitlab.GetExternalAccountData(&account.Data)
+		_, tok, err := gitlab.GetExternalAccountData(&account.AccountData)
 		if err != nil {
 			return nil, err
 		}

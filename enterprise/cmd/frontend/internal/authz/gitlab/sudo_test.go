@@ -34,7 +34,7 @@ func TestSudoProvider_FetchUserPerms(t *testing.T) {
 		}, nil)
 		_, err := p.FetchUserPerms(context.Background(),
 			&extsvc.Account{
-				Spec: extsvc.Spec{
+				AccountSpec: extsvc.AccountSpec{
 					ServiceType: "github",
 					ServiceID:   "https://github.com/",
 				},
@@ -89,12 +89,12 @@ func TestSudoProvider_FetchUserPerms(t *testing.T) {
 	accountData := json.RawMessage(`{"id": 999}`)
 	repoIDs, err := p.FetchUserPerms(context.Background(),
 		&extsvc.Account{
-			Spec: extsvc.Spec{
+			AccountSpec: extsvc.AccountSpec{
 				ServiceType: "gitlab",
 				ServiceID:   "https://gitlab.com/",
 			},
-			Data: extsvc.Data{
-				AccountData: &accountData,
+			AccountData: extsvc.AccountData{
+				Data: &accountData,
 			},
 		},
 	)

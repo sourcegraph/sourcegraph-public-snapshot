@@ -79,7 +79,7 @@ func TestDeleteUser(t *testing.T) {
 	db.Mocks.ExternalAccounts.List = func(db.ExternalAccountsListOptions) ([]*extsvc.Account, error) {
 		return []*extsvc.Account{
 			{
-				Spec: extsvc.Spec{
+				AccountSpec: extsvc.AccountSpec{
 					ServiceType: "gitlab",
 					ServiceID:   "https://gitlab.com/",
 					AccountID:   "alice_gitlab",

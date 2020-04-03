@@ -324,7 +324,7 @@ func (p *Provider) getCachedUserRepos(ctx context.Context, userAccount *extsvc.A
 }
 
 func (p *Provider) fetchUserRepos(ctx context.Context, userAccount *extsvc.Account, repoIDs []string) (canAccess map[string]bool, isPublic map[string]bool, err error) {
-	_, tok, err := github.GetExternalAccountData(&userAccount.Data)
+	_, tok, err := github.GetExternalAccountData(&userAccount.AccountData)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -389,10 +389,10 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 		return nil, errors.New("no account provided")
 	} else if !extsvc.IsHostOfAccount(p.codeHost, account) {
 		return nil, fmt.Errorf("not a code host of the account: want %q but have %q",
-			account.Spec.ServiceID, p.codeHost.ServiceID)
+			account.AccountSpec.ServiceID, p.codeHost.ServiceID)
 	}
 
-	_, tok, err := github.GetExternalAccountData(&account.Data)
+	_, tok, err := github.GetExternalAccountData(&account.AccountData)
 	if err != nil {
 		return nil, errors.Wrap(err, "get external account data")
 	}

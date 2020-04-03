@@ -59,7 +59,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	}
 
 	// Try every verified email in succession until the first that succeeds
-	var data extsvc.Data
+	var data extsvc.AccountData
 	githubsvc.SetExternalAccountData(&data, ghUser, token)
 	var (
 		firstSafeErrMsg string
@@ -74,7 +74,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 				DisplayName:     deref(ghUser.Name),
 				AvatarURL:       deref(ghUser.AvatarURL),
 			},
-			ExternalAccount: extsvc.Spec{
+			ExternalAccount: extsvc.AccountSpec{
 				ServiceType: s.ServiceType,
 				ServiceID:   s.ServiceID,
 				ClientID:    s.clientID,

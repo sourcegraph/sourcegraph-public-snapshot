@@ -11,29 +11,29 @@ import (
 // Account represents a row in the `user_external_accounts` table. See the GraphQL API's
 // corresponding fields in "ExternalAccount" for documentation.
 type Account struct {
-	ID        int32
-	UserID    int32
-	Spec      // ServiceType, ServiceID, ClientID, AccountID
-	Data      // AuthData, AccountData
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID          int32
+	UserID      int32
+	AccountSpec // ServiceType, ServiceID, ClientID, AccountID
+	AccountData // AuthData, Data
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }
 
-// Spec specifies a user external account by its external identifier (i.e. by the identifier
-// provided by the account's owner service), instead of by our database's serial ID. See the
-// GraphQL API's corresponding fields in "ExternalAccount" for documentation.
-type Spec struct {
+// AccountSpec specifies a user external account by its external identifier (i.e., by the
+// identifier provided by the account's owner service), instead of by our database's serial
+// ID. See the GraphQL API's corresponding fields in "ExternalAccount" for documentation.
+type AccountSpec struct {
 	ServiceType string
 	ServiceID   string
 	ClientID    string
 	AccountID   string
 }
 
-// Data contains data that can be freely updated in the user external account after it has been
-// created. See the GraphQL API's corresponding fields for documentation.
-type Data struct {
-	AuthData    *json.RawMessage
-	AccountData *json.RawMessage
+// AccountData contains data that can be freely updated in the user external account after it
+// has been created. See the GraphQL API's corresponding fields for documentation.
+type AccountData struct {
+	AuthData *json.RawMessage
+	Data     *json.RawMessage
 }
 
 // Repository contains necessary information to identify an external repository on the code host.
@@ -44,7 +44,7 @@ type Repository struct {
 }
 
 // Accounts contains a list of accounts that belong to the same external service.
-// All fields have a same meaning to Spec. See GraphQL API's corresponding fields
+// All fields have a same meaning to AccountSpec. See GraphQL API's corresponding fields
 // in "ExternalAccount" for documentation.
 type Accounts struct {
 	ServiceType string

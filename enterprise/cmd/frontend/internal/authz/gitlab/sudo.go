@@ -24,10 +24,10 @@ func (p *SudoProvider) FetchUserPerms(ctx context.Context, account *extsvc.Accou
 		return nil, errors.New("no account provided")
 	} else if !extsvc.IsHostOfAccount(p.codeHost, account) {
 		return nil, fmt.Errorf("not a code host of the account: want %q but have %q",
-			account.Spec.ServiceID, p.codeHost.ServiceID)
+			account.AccountSpec.ServiceID, p.codeHost.ServiceID)
 	}
 
-	user, _, err := gitlab.GetExternalAccountData(&account.Data)
+	user, _, err := gitlab.GetExternalAccountData(&account.AccountData)
 	if err != nil {
 		return nil, errors.Wrap(err, "get external account data")
 	}

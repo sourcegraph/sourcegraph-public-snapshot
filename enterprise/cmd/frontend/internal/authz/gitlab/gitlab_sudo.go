@@ -156,7 +156,7 @@ func (p *SudoProvider) RepoPerms(ctx context.Context, account *extsvc.Account, r
 		// API (and update the user repo-visibility and user-can-access-repo permissions, as well)
 		var sudo string
 		if account != nil {
-			usr, _, err := gitlab.GetExternalAccountData(&account.Data)
+			usr, _, err := gitlab.GetExternalAccountData(&account.AccountData)
 			if err != nil {
 				return nil, err
 			}
@@ -286,17 +286,17 @@ func (p *SudoProvider) FetchAccount(ctx context.Context, user *types.User, curre
 		return nil, nil
 	}
 
-	var accountData extsvc.Data
+	var accountData extsvc.AccountData
 	gitlab.SetExternalAccountData(&accountData, glUser, nil)
 
 	glExternalAccount := extsvc.Account{
 		UserID: user.ID,
-		Spec: extsvc.Spec{
+		AccountSpec: extsvc.AccountSpec{
 			ServiceType: p.codeHost.ServiceType,
 			ServiceID:   p.codeHost.ServiceID,
 			AccountID:   strconv.Itoa(int(glUser.ID)),
 		},
-		Data: accountData,
+		AccountData: accountData,
 	}
 	return &glExternalAccount, nil
 }
