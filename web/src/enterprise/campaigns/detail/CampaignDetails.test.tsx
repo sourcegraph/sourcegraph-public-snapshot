@@ -7,6 +7,7 @@ import { createRenderer } from 'react-test-renderer/shallow'
 import { of } from 'rxjs'
 import { CampaignStatusProps } from './CampaignStatus'
 import { NOOP_TELEMETRY_SERVICE } from '../../../../../shared/src/telemetry/telemetryService'
+import { PageTitle } from '../../../components/PageTitle'
 
 jest.mock('./form/CampaignTitleField', () => ({ CampaignTitleField: 'CampaignTitleField' }))
 jest.mock('./form/CampaignDescriptionField', () => ({ CampaignDescriptionField: 'CampaignDescriptionField' }))
@@ -22,6 +23,9 @@ jest.mock('../icons', () => ({ CampaignsIcon: 'CampaignsIcon' }))
 const history = H.createMemoryHistory()
 
 describe('CampaignDetails', () => {
+    afterEach(() => {
+        PageTitle.titleSet = false
+    })
     test('creation form for empty manual campaign', () =>
         expect(
             createRenderer().render(
