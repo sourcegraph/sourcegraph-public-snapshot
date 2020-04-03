@@ -131,7 +131,6 @@ type panelOptions struct {
 	min, max     *float64
 	minAuto      bool
 	legendFormat string
-	defaultValue *float64
 }
 
 // Min sets the minimum value of the Y axis on the panel. The default is zero.
@@ -159,13 +158,6 @@ func (p panelOptions) Max(min float64) panelOptions {
 // labels from the Prometheus query.
 func (p panelOptions) LegendFormat(format string) panelOptions {
 	p.legendFormat = format
-	return p
-}
-
-// DefaultValue sets the panel's default value which is displayed when the query would
-// return no data at all.
-func (p panelOptions) DefaultValue(v float64) panelOptions {
-	p.defaultValue = &v
 	return p
 }
 
@@ -378,12 +370,8 @@ func (c *Container) dashboard() *sdk.Board {
 					Show:    true,
 				},
 			}
-			query := o.Query
-			if opt.defaultValue != nil {
-				query = fmt.Sprintf("(%s) OR on() vector(%v)", query, *opt.defaultValue)
-			}
 			panel.AddTarget(&sdk.Target{
-				Expr:         query,
+				Expr:         o.Query,
 				LegendFormat: opt.legendFormat,
 			})
 			if rowPanel != nil {
