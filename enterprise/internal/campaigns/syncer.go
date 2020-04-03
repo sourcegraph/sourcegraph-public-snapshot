@@ -119,20 +119,11 @@ func (s *SyncRegistry) handlePriorityItems() {
 				continue
 			}
 
-			// Gather all external services requested
+			// Assign changesets to external services
 			changesetsByService := make(map[int64][]int64)
 			for _, d := range syncData {
-				for _, id := range d.ExternalServiceIDs {
-					if _, ok := changesetsByService[id]; !ok {
-						changesetsByService[id] = make([]int64, 0)
-					}
-				}
-			}
-
-			// Spread ids among syncers
-			for _, sd := range syncData {
-				externalService := shardChangeset(sd.ChangesetID, sd.ExternalServiceIDs)
-				changesetsByService[externalService] = append(changesetsByService[externalService], sd.ChangesetID)
+				svcID := shardChangeset(d.ChangesetID, d.ExternalServiceIDs)
+				changesetsByService[svcID] = append(changesetsByService[svcID], d.ChangesetID)
 			}
 
 			// Anonymous func so we can use defer
