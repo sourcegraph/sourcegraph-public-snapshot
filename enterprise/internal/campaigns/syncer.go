@@ -405,8 +405,8 @@ func (s *ChangesetSyncer) computeSchedule(ctx context.Context) ([]scheduledSync,
 	return ss, nil
 }
 
+// filterSyncData filters to changesets that serviceID is responsible for.
 func filterSyncData(serviceID int64, allSyncData []campaigns.ChangesetSyncData) []campaigns.ChangesetSyncData {
-	// Filter to only changesets that serviceID is responsible for
 	syncData := make([]campaigns.ChangesetSyncData, 0, len(allSyncData))
 	for _, d := range allSyncData {
 		svcID := shardChangeset(d.ChangesetID, d.ExternalServiceIDs)
