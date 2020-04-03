@@ -358,7 +358,7 @@ func TestSyncRegistry(t *testing.T) {
 	repoStore := MockRepoStore{
 		listExternalServices: func(ctx context.Context, args repos.StoreListExternalServicesArgs) (services []*repos.ExternalService, err error) {
 			return []*repos.ExternalService{
-				&repos.ExternalService{
+				{
 					ID:          1,
 					Kind:        "GITHUB",
 					DisplayName: "",
@@ -373,7 +373,7 @@ func TestSyncRegistry(t *testing.T) {
 	syncStore := MockSyncStore{
 		listChangesetSyncData: func(ctx context.Context, opts ListChangesetSyncDataOpts) (data []campaigns.ChangesetSyncData, err error) {
 			return []campaigns.ChangesetSyncData{
-				campaigns.ChangesetSyncData{
+				{
 					ChangesetID:        1,
 					UpdatedAt:          now,
 					ExternalServiceIDs: []int64{1},
