@@ -6,23 +6,22 @@ pushd "$(dirname "${BASH_SOURCE[0]}")/.." > /dev/null
 
 mkdir -p .bin
 
-beta=20
-version="v2.0.0-beta.${beta}"
+version="2.0.0-rc.1"
 case "$(go env GOOS)" in
     linux)
-        suffix="linux_$(go env GOARCH)"
+        os="Linux"
         ;;
     darwin)
-        suffix="macos"
+        os="macOS"
         ;;
 esac
-suffix="beta${beta}_${suffix}"
-target="$PWD/.bin/caddy2_${suffix}"
-url="https://github.com/caddyserver/caddy/releases/download/${version}/caddy2_${suffix}"
+name="caddy_${version}_${os}_x86_64"
+target="$PWD/.bin/${name}"
+url="https://github.com/caddyserver/caddy/releases/download/v${version}/${name}.tar.gz"
 
 if [ ! -f "${target}" ]; then
     echo "downloading ${url}" 1>&2
-    curl -sS -L -f "${url}" -o "${target}.tmp"
+    curl -sS -L -f "${url}" | tar -xz --to-stdout "caddy" > "${target}.tmp"
     mv "${target}.tmp" "${target}"
 fi
 
