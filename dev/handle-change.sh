@@ -28,7 +28,7 @@ for i; do
         exit
         ;;
     cmd/precise-code-intel/*)
-        [ -n "$GOREMAN" ] && $GOREMAN run restart precise-code-intel-{api-server,bundle-manager,worker}
+        # noop (uses tsc-watch).
         exit
         ;;
 	cmd/*)
