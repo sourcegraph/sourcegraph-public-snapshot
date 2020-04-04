@@ -163,8 +163,7 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
                   },
                   hash
               )
-            : // eslint-disable-next-line @typescript-eslint/no-base-to-string
-              '#' + hash.toString()
+            : '#' + hash.toString()
     }
 
     private onSubmit = (title: string, contents: string): Observable<void> => {

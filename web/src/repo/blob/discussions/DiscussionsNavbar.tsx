@@ -66,7 +66,6 @@ export class DiscussionsNavbar extends React.PureComponent<Props> {
         } else {
             hash.delete('threadID')
         }
-        // eslint-disable-next-line @typescript-eslint/no-base-to-string
         return location.pathname + location.search + '#' + hash.toString()
     }
 }

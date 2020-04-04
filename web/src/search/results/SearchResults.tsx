@@ -320,7 +320,6 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
             query = `${query} count:${count}`
         }
         params.set('q', query)
-        // eslint-disable-next-line @typescript-eslint/no-base-to-string
         this.props.history.replace({ search: params.toString() })
     }
 

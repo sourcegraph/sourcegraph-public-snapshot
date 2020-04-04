@@ -391,7 +391,6 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                                         key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                         exact={exact}
                                         // RouteProps.render is an exception
-                                        // eslint-disable-next-line react/jsx-no-bind
                                         render={routeComponentProps => render({ ...context, ...routeComponentProps })}
                                     />
                                 )

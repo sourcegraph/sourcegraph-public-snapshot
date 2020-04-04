@@ -29,7 +29,6 @@ export const DiscussionsGutterOverlay: React.FunctionComponent<DiscussionsGutter
         hash.set('tab', 'discussions')
         hash.set('createThread', 'true')
     }
-    // eslint-disable-next-line @typescript-eslint/no-base-to-string
     const newURL = props.location.pathname + props.location.search + '#' + hash.toString()
 
     return (

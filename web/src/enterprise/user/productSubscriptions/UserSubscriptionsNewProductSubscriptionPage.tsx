@@ -144,7 +144,6 @@ export function productSubscriptionInputForLocationHash(value: GQL.IProductSubsc
     const params = new URLSearchParams()
     params.set('plan', value.billingPlanID)
     params.set('userCount', value.userCount.toString())
-    // eslint-disable-next-line @typescript-eslint/no-base-to-string
     return '#' + params.toString()
 }
 
