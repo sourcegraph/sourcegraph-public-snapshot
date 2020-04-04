@@ -314,7 +314,6 @@ export class QueryInput extends React.Component<Props, State> {
                         this.focusInputAndPositionCursorAtEnd()
                         const q = new URLSearchParams(props.location.search)
                         q.delete('focus')
-                        // eslint-disable-next-line @typescript-eslint/no-base-to-string
                         this.props.history.replace({ search: q.toString() })
                     })
             )
