@@ -49,7 +49,6 @@ export const renderMarkdown = (
     markdown: string,
     options: {
         /** Strip off any HTML and return a plain text string, useful for previews */
-
         plainText?: boolean
     } = {}
 ): string => {
