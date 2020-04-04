@@ -243,46 +243,6 @@ func (p *parser) ParseParameter() Parameter {
 	return ScanParameter(p.buf[start:p.pos])
 }
 
-// VisitNode calls f on all nodes rooted at node.
-func VisitNode(node Node, f func(node Node)) {
-	switch v := node.(type) {
-	case Parameter:
-		f(v)
-	case Operator:
-		f(v)
-		Visit(v.Operands, f)
-	}
-}
-
-// Visit calls f on all nodes rooted at nodes.
-func Visit(nodes []Node, f func(node Node)) {
-	for _, node := range nodes {
-		VisitNode(node, f)
-	}
-}
-
-// VisitParameter calls f on all parameter nodes. f supplies the node's field,
-// value, and whether the value is negated.
-func VisitParameter(nodes []Node, f func(field, value string, negated bool)) {
-	visitor := func(node Node) {
-		if v, ok := node.(Parameter); ok {
-			f(v.Field, v.Value, v.Negated)
-		}
-	}
-	Visit(nodes, visitor)
-}
-
-// VisitField calls f on all parameter nodes whose field matches the field
-// argument. f supplies the node's value and whether the value is negated.
-func VisitField(nodes []Node, field string, f func(value string, negated bool)) {
-	visitor := func(visitedField, value string, negated bool) {
-		if field == visitedField {
-			f(value, negated)
-		}
-	}
-	VisitParameter(nodes, visitor)
-}
-
 // containsPattern returns true if any descendent of nodes is a search pattern
 // (i.e., a parameter where the field is the empty string).
 func containsPattern(node Node) bool {
@@ -328,7 +288,7 @@ func partitionParameters(nodes []Node) []Node {
 	return newOperator(append(unorderedParams, patterns...), And)
 }
 
-// scanParameterList scans for consecutive leaf nodes.
+// parseParameterParameterList scans for consecutive leaf nodes.
 func (p *parser) parseParameterList() ([]Node, error) {
 	var nodes []Node
 loop:
@@ -476,7 +436,7 @@ func (p *parser) parseOr() ([]Node, error) {
 	return newOperator(append(left, right...), Or), nil
 }
 
-// Parse parses a raw input string into a parse tree comprising Nodes.
+// parseAndOr a raw input string into a parse tree comprising Nodes.
 func parseAndOr(in string) ([]Node, error) {
 	if in == "" {
 		return nil, nil
