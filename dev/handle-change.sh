@@ -27,6 +27,10 @@ for i; do
         [ -n "$GOREMAN" ] && $GOREMAN run restart symbols
         exit
         ;;
+    cmd/precise-code-intel/*)
+        # noop (uses tsc-watch).
+        exit
+        ;;
 	cmd/*)
 		cmd=${i#cmd/}
 		cmd=${cmd%%/*}
