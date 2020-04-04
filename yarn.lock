@@ -1813,10 +1813,10 @@
   resolved "https://registry.npmjs.org/@sourcegraph/comlink/-/comlink-3.1.1-fork.3.tgz#1bd76bc74ca8a9b55f1dbf508c703053ee66c961"
   integrity sha512-+vfSCJTS/GU391Hhdh2/s+wy5ok4hi6X+kizRQqQZwZI03Q1rR6SVLNFsbg4dhbX624mqr1UCRhwNnZdWHAR+A==
 
-"@sourcegraph/eslint-config@^0.12.0":
-  version "0.12.0"
-  resolved "https://registry.npmjs.org/@sourcegraph/eslint-config/-/eslint-config-0.12.0.tgz#a66bb74526218be4283fe901bc0854ceb27c07e5"
-  integrity sha512-jpmwaYKtvXQoJKKIudbkZDveuoaoB+lpNBjGu5GSbldx42BqwQvD8tv85psaL2v7b2bYa/GnhBkNzjc3iGgOMQ==
+"@sourcegraph/eslint-config@^0.12.1":
+  version "0.12.1"
+  resolved "https://registry.npmjs.org/@sourcegraph/eslint-config/-/eslint-config-0.12.1.tgz#6d76a4097293a77c2bd3f0caa35d1e9cd4db56a5"
+  integrity sha512-7GyLNjq27XPVB4W0wRCzLR475HuFf03Fx71vdEgB21Vb19AThqI1eG4bKLp8j164OkkVYRU1bO/Y4/XnT1wDPw==
   dependencies:
     "@sourcegraph/prettierrc" "^3.0.3"
     "@typescript-eslint/eslint-plugin" "^2.26.0"
@@ -1828,7 +1828,7 @@
     eslint-plugin-jsdoc "^22.1.0"
     eslint-plugin-react "^7.19.0"
     eslint-plugin-react-hooks "^3.0.0"
-    eslint-plugin-rxjs "^0.0.2-beta.16"
+    eslint-plugin-rxjs "^0.0.2-beta.18"
 
 "@sourcegraph/event-positions@^1.0.4":
   version "1.0.4"
@@ -8017,6 +8017,13 @@ eslint-config-prettier@^6.10.1:
   dependencies:
     get-stdin "^6.0.0"
 
+eslint-etc@^0.0.11:
+  version "0.0.11"
+  resolved "https://registry.npmjs.org/eslint-etc/-/eslint-etc-0.0.11.tgz#1f2acd169da1efa66ae8a673fd2da2de6e67fc76"
+  integrity sha512-wSv7iBYMs7st+JZ6aDNDoEPHcePnZWuJcFPNYxxxFJUFrYLT6+b6HI86Wuz37mCv3AXpFNaI5XG/rOP/TJgggA==
+  dependencies:
+    esquery "~1.0.1"
+
 eslint-etc@^0.0.8:
   version "0.0.8"
   resolved "https://registry.npmjs.org/eslint-etc/-/eslint-etc-0.0.8.tgz#598c0d9e21734d5878fa101c9e4864667571412f"
@@ -8120,14 +8127,14 @@ eslint-plugin-react@^7.19.0:
     string.prototype.matchall "^4.0.2"
     xregexp "^4.3.0"
 
-eslint-plugin-rxjs@^0.0.2-beta.16:
-  version "0.0.2-beta.16"
-  resolved "https://registry.npmjs.org/eslint-plugin-rxjs/-/eslint-plugin-rxjs-0.0.2-beta.16.tgz#8b216ac71386362a3569e3d9ad4b67325ad51fdd"
-  integrity sha512-qR7u+DvF2eeZhhO8JX0f6hHn0CRi5nen7O2pJku+AZYJOmA+pXzgG5gv3x0rBBxTuR2busSWGY5YObcup++sYA==
+eslint-plugin-rxjs@^0.0.2-beta.18:
+  version "0.0.2-beta.18"
+  resolved "https://registry.npmjs.org/eslint-plugin-rxjs/-/eslint-plugin-rxjs-0.0.2-beta.18.tgz#6f9723df3af2016047fa182de842cf6c6174728c"
+  integrity sha512-3hA3bv7Moej/71nsGz4zl/StXdxFj99+p9AXwTphglpsjys3oVFjwCD0gLbpDGZ5r2jeRVhVjJClLadolGBzRw==
   dependencies:
     common-tags "^1.8.0"
     decamelize "^3.0.0"
-    eslint-etc "^0.0.8"
+    eslint-etc "^0.0.11"
     requireindex "~1.2.0"
     tslib "^1.8.0"
     tsutils "^3.0.0"
@@ -8325,7 +8332,7 @@ esprima@4.0.1, esprima@^4.0.0, esprima@^4.0.1, esprima@~4.0.0:
   resolved "https://registry.npmjs.org/esprima/-/esprima-4.0.1.tgz#13b04cdb3e6c5d19df91ab6987a8695619b0aa71"
   integrity sha512-eGuFFw7Upda+g4p+QHvnW0RyTX/SVeJBDM/gCtMARO0cLuT2HcEKnTPvhjV6aGeqrCB/sbNop0Kszm0jsaWU4A==
 
-esquery@^1.0.0, esquery@^1.0.1:
+esquery@^1.0.0, esquery@^1.0.1, esquery@~1.0.1:
   version "1.0.1"
   resolved "https://registry.npmjs.org/esquery/-/esquery-1.0.1.tgz#406c51658b1f5991a5f9b62b1dc25b00e3e5c708"
   integrity sha512-SmiyZ5zIWH9VM+SRUReLS5Q8a7GxtRdxEBVZpm98rJM7Sb+A9DVCndXfkeFUd3byderg+EbDkfnevfCwynWaNA==

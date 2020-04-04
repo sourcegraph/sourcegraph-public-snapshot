@@ -6,8 +6,6 @@ module.exports = {
     project: 'tsconfig.json',
   },
   rules: {
-    'rxjs/no-async-subscribe': 'off', // https://github.com/cartant/eslint-plugin-rxjs/issues/46
-
     'no-console': ['error'],
     'import/no-cycle': ['error'],
     'no-return-await': ['error'],
