@@ -56,8 +56,8 @@ export const renderMarkdown = (
               /** Following options apply to non-plaintext output only. */
               plainText?: false
 
-              /** Allow links that download files from data: URIs. */
-              allowDataUriDownloads?: boolean
+              /** Allow links to data: URIs and that download files. */
+              allowDataUriLinksAndDownloads?: boolean
           } = {}
 ): string => {
     const rendered = marked(markdown, {
@@ -89,7 +89,7 @@ export const renderMarkdown = (
                 h6: ['id'],
             },
         }
-        if (options.allowDataUriDownloads) {
+        if (options.allowDataUriLinksAndDownloads) {
             opt.allowedAttributes.a = [...sanitize.defaults.allowedAttributes.a, 'download']
             opt.allowedSchemesByTag = {
                 ...opt.allowedSchemesByTag,

@@ -86,7 +86,7 @@ export class NotificationItem extends React.PureComponent<Props, State> {
                             className="sourcegraph-notification-item__title"
                             dangerouslySetInnerHTML={{
                                 __html: renderMarkdown(this.props.notification.message || '', {
-                                    allowDataUriDownloads: true,
+                                    allowDataUriLinksAndDownloads: true,
                                 }),
                             }}
                         />
