@@ -59,7 +59,7 @@ func TryAcquireMutex(ctx context.Context, name string) (context.Context, func(),
 				return
 			case <-ticker.C:
 				// TODO simple retry
-				if !mu.Extend() {
+				if ok, err := mu.Extend(); !ok || err != nil {
 					cancel()
 				}
 			}
