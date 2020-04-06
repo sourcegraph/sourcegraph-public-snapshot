@@ -16,7 +16,6 @@ require (
 	github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd // indirect
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/coreos/go-semver v0.3.0
-	github.com/cosiner/argv v0.1.0 // indirect
 	github.com/crewjam/saml v0.4.0
 	github.com/davecgh/go-spew v1.1.1
 	github.com/daviddengcn/go-colortext v1.0.0
@@ -35,7 +34,6 @@ require (
 	github.com/gin-gonic/gin v1.6.2 // indirect
 	github.com/gitchander/permutation v0.0.0-20181107151852-9e56b92e9909
 	github.com/glycerine/go-unsnap-stream v0.0.0-20190901134440-81cf024a9e0a // indirect
-	github.com/go-delve/delve v1.4.0
 	github.com/go-redsync/redsync v1.4.1
 	github.com/gobwas/glob v0.2.3
 	github.com/golang-migrate/migrate/v4 v4.10.0
@@ -82,9 +80,7 @@ require (
 	github.com/lib/pq v1.3.0
 	github.com/lightstep/lightstep-tracer-common/golang/gogo v0.0.0-20200310182322-adf4263e074b // indirect
 	github.com/lightstep/lightstep-tracer-go v0.20.0
-	github.com/mattn/go-runewidth v0.0.9 // indirect
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
-	github.com/mattn/goreman v0.3.5
 	github.com/mcuadros/go-version v0.0.0-20190830083331-035f6764e8d2
 	github.com/microcosm-cc/bluemonday v1.0.2
 	github.com/mschoch/smat v0.2.0 // indirect
@@ -92,10 +88,8 @@ require (
 	github.com/opentracing-contrib/go-stdlib v0.0.0-20190519235532-cf7a6c988dc9
 	github.com/opentracing/opentracing-go v1.1.0
 	github.com/peterbourgon/ff v1.7.0
-	github.com/peterh/liner v1.2.0 // indirect
 	github.com/peterhellberg/link v1.1.0
 	github.com/pkg/errors v0.9.1
-	github.com/pkg/profile v1.4.0 // indirect
 	github.com/pquerna/cachecontrol v0.0.0-20180517163645-1555304b9b35 // indirect
 	github.com/prometheus/client_golang v1.5.1
 	github.com/prometheus/procfs v0.0.11 // indirect
@@ -127,7 +121,6 @@ require (
 	github.com/sourcegraph/gosyntect v0.0.0-20200331033347-c35e64c39373
 	github.com/sourcegraph/jsonx v0.0.0-20190114210550-ba8cb36a8614
 	github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e // indirect
-	github.com/spf13/cobra v0.0.7 // indirect
 	github.com/sqs/httpgzip v0.0.0-20180622165210-91da61ed4dff
 	github.com/src-d/enry/v2 v2.1.0
 	github.com/stripe/stripe-go v70.11.0+incompatible
@@ -140,10 +133,8 @@ require (
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0
 	github.com/xeonx/timeago v1.0.0-rc4
-	go.starlark.net v0.0.0-20200330013621-be5394c419b6 // indirect
 	go.uber.org/atomic v1.6.0
 	go.uber.org/automaxprocs v1.3.0
-	golang.org/x/arch v0.0.0-20200312215426-ff8b605520f4 // indirect
 	golang.org/x/crypto v0.0.0-20200403201458-baeed622b8d8
 	golang.org/x/net v0.0.0-20200324143707-d3edc9973b7e
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
