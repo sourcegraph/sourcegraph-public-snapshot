@@ -129,10 +129,20 @@ func NewClientWithConfig(c *schema.BitbucketServerConnection, httpClient httpcli
 		return nil, err
 	}
 
-	client := newClient(u, c, httpClient)
-	client.Username = c.Username
-	client.Password = c.Password
-	client.Token = c.Token
+	if httpClient == nil {
+		httpClient = http.DefaultClient
+	}
+	httpClient = requestCounter.Doer(httpClient, categorize)
+	u = extsvc.NormalizeBaseURL(u)
+
+	client := &Client{
+		httpClient: httpClient,
+		URL:        u,
+		Username:   c.Username,
+		Password:   c.Password,
+		Token:      c.Token,
+		RateLimit:  getLimiter(u, c),
+	}
 
 	if c.Authorization != nil {
 		err := client.SetOAuth(
@@ -145,22 +155,6 @@ func NewClientWithConfig(c *schema.BitbucketServerConnection, httpClient httpcli
 	}
 
 	return client, nil
-}
-
-func newClient(url *url.URL, c *schema.BitbucketServerConnection, httpClient httpcli.Doer) *Client {
-	if httpClient == nil {
-		httpClient = http.DefaultClient
-	}
-
-	httpClient = requestCounter.Doer(httpClient, categorize)
-	url = extsvc.NormalizeBaseURL(url)
-	l := getLimiter(url, c)
-
-	return &Client{
-		httpClient: httpClient,
-		URL:        url,
-		RateLimit:  l,
-	}
 }
 
 // SetOAuth enables OAuth authentication in a Client, using the given consumer
