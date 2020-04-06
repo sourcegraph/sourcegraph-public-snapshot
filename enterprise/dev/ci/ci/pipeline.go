@@ -107,7 +107,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		//
 		// PERF: Try to order steps such that slower steps are first.
 		pipelineOperations = []func(*bk.Pipeline){
-			triggerE2E(c, env),
+			// e2e tests are disabled in CI until we can make them reliable. See RFC 137:
+			// https://docs.google.com/document/d/14f7lwfToeT6t_vxnGsCuXqf3QcB5GRZ2Zoy6kYqBAIQ/edit
+			// triggerE2E(c, env),
+
 			addLint,    // ~5m
 			addWebApp,  // ~3m
 			addGoTests, // ~2m
