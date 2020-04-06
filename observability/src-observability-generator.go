@@ -405,12 +405,8 @@ func (c *Container) dashboard() *sdk.Board {
 					Show:    true,
 				},
 			}
-			query := o.Query
-			if opt.defaultValue != nil {
-				query = fmt.Sprintf("(%s) OR on() vector(%v)", query, *opt.defaultValue)
-			}
 			panel.AddTarget(&sdk.Target{
-				Expr:         query,
+				Expr:         o.Query,
 				LegendFormat: opt.legendFormat,
 			})
 			if rowPanel != nil {
