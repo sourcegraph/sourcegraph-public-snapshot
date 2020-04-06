@@ -194,6 +194,9 @@ func triggerE2E(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
 	// See RFC 137: https://docs.google.com/document/d/14f7lwfToeT6t_vxnGsCuXqf3QcB5GRZ2Zoy6kYqBAIQ/edit
 	hardFail := c.isRenovateBranch || c.releaseBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch
 
+	// Skip e2e tests for non-master branches (except those where hardFail is true)
+	skipE2E := !hardFail && c.branch != "master"
+
 	env := copyEnv(
 		"BUILDKITE_PULL_REQUEST",
 		"BUILDKITE_PULL_REQUEST_BASE_BRANCH",
@@ -205,6 +208,9 @@ func triggerE2E(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
 	env["CI_DEBUG_PROFILE"] = commonEnv["CI_DEBUG_PROFILE"]
 
 	return func(pipeline *bk.Pipeline) {
+		if skipE2E {
+			return
+		}
 		pipeline.AddTrigger(":chromium:",
 			bk.Trigger("sourcegraph-e2e"),
 			bk.Async(!hardFail),
