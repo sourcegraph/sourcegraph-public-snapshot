@@ -101,7 +101,6 @@ export class DiscussionsCreate extends React.PureComponent<Props, State> {
                 hash.set('tab', 'discussions')
                 hash.set('threadID', thread.idWithoutKind)
                 // TODO(slimsag:discussions): ASAP: focus the new thread's range
-                // eslint-disable-next-line @typescript-eslint/no-base-to-string
                 this.props.history.push(location.pathname + location.search + '#' + hash.toString())
             }),
             map(thread => undefined),

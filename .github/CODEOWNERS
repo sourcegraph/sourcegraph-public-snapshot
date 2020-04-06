@@ -58,6 +58,7 @@
 /internal/linkheader @efritz
 /renovate.json @felixfbecker
 /.stylelintrc.json @felixfbecker
+/.stylelintignore @felixfbecker
 /graphql-schema-linter.config.js @felixfbecker
 /.prettierignore @felixfbecker
 /.github @beyang

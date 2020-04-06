@@ -8,26 +8,20 @@ env:
   TEST_USER_PASSWORD: "SuperSecurePassword"
 
 steps:
-- command:
-  - yes | gcloud auth configure-docker
-  - pushd enterprise
-  - ./cmd/server/pre-build.sh
-  - ./cmd/server/build.sh
-  - popd
-  - docker push "$IMAGE"
-  env:
-    PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
-  timeout_in_minutes: 10
-  label: ':docker:'
-
-- wait
-
 - artifact_paths: ./puppeteer/*.png;./web/e2e.mp4;./web/ffmpeg.log
   command:
-    - yes | gcloud auth configure-docker
+    - pushd enterprise
+    - ./cmd/server/pre-build.sh
+    - ./cmd/server/build.sh
+    - popd
+    - |
+      if [ "$PUSH_CANDIDATE_IMAGE" == "true" ]; then
+        yes | gcloud auth configure-docker
+        docker push "$IMAGE"
+      fi
     - ./dev/ci/e2e.sh
-  timeout_in_minutes: 10
-  label: ':chromium:'
+  timeout_in_minutes: 20
+  label: ':docker::arrow_right::chromium:'
 
 - wait
 

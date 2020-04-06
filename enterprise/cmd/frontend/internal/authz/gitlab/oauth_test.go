@@ -95,7 +95,7 @@ func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 				ServiceType: "gitlab",
 				ServiceID:   "https://gitlab.com/",
 			},
-			ExternalAccountData: extsvc.ExternalAccountData{
+			AccountData: extsvc.AccountData{
 				AuthData: &authData,
 			},
 		},

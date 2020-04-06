@@ -199,9 +199,9 @@ func Test_GitLab_FetchAccount(t *testing.T) {
 					if err != nil {
 						t.Fatalf("unexpected error: %v", err)
 					}
-					// ignore AccountData field in comparison
+					// ignore Data field in comparison
 					if acct != nil {
-						acct.AccountData, c.expMine.AccountData = nil, nil
+						acct.Data, c.expMine.Data = nil, nil
 					}
 
 					if !reflect.DeepEqual(acct, c.expMine) {

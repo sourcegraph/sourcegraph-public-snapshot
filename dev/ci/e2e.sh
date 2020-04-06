@@ -16,10 +16,6 @@ if curl --output /dev/null --silent --head --fail $URL; then
     exit 1
 fi
 
-echo "--- Pulling $IMAGE ..."
-docker pull $IMAGE
-echo "Pulling $IMAGE ... done"
-
 echo "--- Running a daemonized $IMAGE as the test subject..."
 CONTAINER="$(docker container run -d -e DEPLOY_TYPE=dev $IMAGE)"
 trap 'kill $(jobs -p -r)'" ; docker logs --timestamps $CONTAINER ; docker container rm -f $CONTAINER ; docker image rm -f $IMAGE" EXIT
@@ -30,6 +26,7 @@ docker exec "$CONTAINER" apk add --no-cache socat
 # docker exec as the transport.
 socat tcp-listen:7080,reuseaddr,fork system:"docker exec -i $CONTAINER socat stdio 'tcp:localhost:7080'" &
 
+echo "--- Waiting for $URL to be up"
 set +e
 timeout 60s bash -c "until curl --output /dev/null --silent --head --fail $URL; do
     echo Waiting 5s for $URL...
@@ -43,10 +40,6 @@ if [ $? -ne 0 ]; then
 fi
 set -e
 echo "Waiting for $URL... done"
-
-echo "--- yarn"
-# mutex is necessary since CI runs various yarn installs in parallel
-yarn --mutex network
 
 echo "--- yarn run test-e2e"
 pushd web

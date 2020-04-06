@@ -67,6 +67,7 @@ type FileMatchResolver struct {
 	JPath        string       `json:"Path"`
 	JLineMatches []*lineMatch `json:"LineMatches"`
 	JLimitHit    bool         `json:"LimitHit"`
+	MatchCount   int          // Number of matches. Different from len(JLineMatches), as multiple lines may correspond to one logical match.
 	symbols      []*searchSymbolResult
 	uri          string
 	Repo         *types.Repo
@@ -147,7 +148,7 @@ func (fm *FileMatchResolver) searchResultURIs() (string, string) {
 }
 
 func (fm *FileMatchResolver) resultCount() int32 {
-	rc := len(fm.symbols) + len(fm.LineMatches())
+	rc := len(fm.symbols) + fm.MatchCount
 	if rc > 0 {
 		return int32(rc)
 	}
@@ -272,9 +273,6 @@ func textSearch(ctx context.Context, searcherURLs *endpoint.Map, repo gitserver.
 		url := searcherURL + "?" + rawQuery
 		tr.LazyPrintf("attempt %d: %s", attempt, url)
 		matches, limitHit, err = textSearchURL(ctx, url)
-		// Useful trace for debugging:
-		//
-		// tr.LazyPrintf("%d matches, limitHit=%v, err=%v, ctx.Err()=%v", len(matches), limitHit, err, ctx.Err())
 		if err == nil || errcode.IsTimeout(err) {
 			return matches, limitHit, err
 		}
@@ -381,10 +379,13 @@ func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo *ty
 		return nil, false, err
 	}
 	if !shouldBeSearched {
-		return matches, false, err
+		return nil, false, err
 	}
 
 	matches, limitHit, err = textSearch(ctx, searcherURLs, gitserverRepo, commit, info, fetchTimeout)
+	if err != nil {
+		return nil, false, err
+	}
 
 	workspace := fileMatchURI(repo.Name, rev, "")
 	for _, fm := range matches {

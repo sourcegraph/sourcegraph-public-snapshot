@@ -370,13 +370,7 @@ func (s *Service) CloseOpenChangesets(ctx context.Context, cs []*campaigns.Chang
 	}
 
 	reposStore := repos.NewDBStore(s.store.DB(), sql.TxOptions{})
-	syncer := ChangesetSyncer{
-		ReposStore:  reposStore,
-		Store:       s.store,
-		HTTPFactory: s.cf,
-	}
-
-	bySource, err := syncer.GroupChangesetsBySource(ctx, cs...)
+	bySource, err := GroupChangesetsBySource(ctx, reposStore, s.cf, cs...)
 	if err != nil {
 		return err
 	}
@@ -400,7 +394,7 @@ func (s *Service) CloseOpenChangesets(ctx context.Context, cs []*campaigns.Chang
 	// to close the Changesets and not update the events (which is what
 	// SyncChangesetsWithSources does) our burndown chart will be outdated
 	// until the next run of campaigns.Syncer.
-	return syncer.SyncChangesetsWithSources(ctx, bySource)
+	return SyncChangesetsWithSources(ctx, s.store, bySource)
 }
 
 // CreateChangesetJobForPatch creates a ChangesetJob for the

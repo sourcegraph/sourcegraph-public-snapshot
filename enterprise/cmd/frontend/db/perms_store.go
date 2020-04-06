@@ -1284,7 +1284,7 @@ ORDER BY id ASC
 		if err := rows.Scan(
 			&acct.ID, &acct.UserID,
 			&acct.ServiceType, &acct.ServiceID, &acct.ClientID, &acct.AccountID,
-			&acct.AuthData, &acct.AccountData,
+			&acct.AuthData, &acct.Data,
 			&acct.CreatedAt, &acct.UpdatedAt,
 		); err != nil {
 			return nil, err

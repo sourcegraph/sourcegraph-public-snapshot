@@ -106,6 +106,5 @@ export function extensionsQuery({
 export function urlToExtensionsQuery(query: string): string {
     const params = new URLSearchParams()
     params.set('query', query)
-    // eslint-disable-next-line @typescript-eslint/no-base-to-string
     return `/extensions?${params.toString()}`
 }

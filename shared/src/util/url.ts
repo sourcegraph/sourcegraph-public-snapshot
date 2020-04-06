@@ -596,7 +596,6 @@ export function buildSearchURLQuery(
         }
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-base-to-string
     return searchParams.toString().replace(/%2F/g, '/').replace(/%3A/g, ':')
 }
 

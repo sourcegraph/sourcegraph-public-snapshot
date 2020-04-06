@@ -35,6 +35,7 @@ func searchRepositories(ctx context.Context, args *search.TextParameters, limit 
 		query.FieldTimeout:            {},
 		query.FieldFork:               {},
 		query.FieldArchived:           {},
+		query.FieldVisibility:         {},
 		query.FieldCase:               {},
 		query.FieldRepoHasFile:        {},
 		query.FieldRepoHasCommitAfter: {},

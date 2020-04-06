@@ -6,8 +6,13 @@ import { SiteAdminOverviewPage } from './SiteAdminOverviewPage'
 import { eventLogger } from '../tracking/eventLogger'
 import sinon from 'sinon'
 import { ISiteUsagePeriod } from '../../../shared/src/graphql/schema'
+import { PageTitle } from '../components/PageTitle'
 
 describe('SiteAdminOverviewPage', () => {
+    afterEach(() => {
+        PageTitle.titleSet = false
+    })
+
     const baseProps = {
         history: H.createMemoryHistory(),
         isLightTheme: true,

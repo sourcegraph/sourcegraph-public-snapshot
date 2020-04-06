@@ -139,6 +139,12 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         description: 'Limit results to the specified type.',
         discreteValues: ['diff', 'commit', 'symbol', 'repo', 'path', 'file'],
     },
+
+    [FilterType.visibility]: {
+        discreteValues: ['any', 'private', 'public'],
+        description: 'Include results from repositories with the matching visibility (private, public, any).',
+        singular: true,
+    },
 }
 
 export const discreteValueAliases: { [key: string]: string[] } = {

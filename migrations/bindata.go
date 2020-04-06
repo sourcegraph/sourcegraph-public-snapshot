@@ -100,6 +100,8 @@
 // 1528395665_perms_table_drop_provider.up.sql (150B)
 // 1528395666_lsif_filename.down.sql (412B)
 // 1528395666_lsif_filename.up.sql (289B)
+// 1528395667_index_boolean_fields_on_repo.down.sql (120B)
+// 1528395667_index_boolean_fields_on_repo.up.sql (187B)
 
 package migrations
 
@@ -2168,6 +2170,46 @@ func _1528395666_lsif_filenameUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395667_index_boolean_fields_on_repoDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x09\xf2\x0f\x50\xf0\xf4\x73\x71\x8d\x50\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\x28\x4a\x2d\xc8\x8f\x2f\x28\xca\x2c\x4b\x2c\x49\xb5\xc6\xa3\x24\x2d\xbf\x28\x1b\x9f\x7c\x62\x51\x72\x46\x66\x59\x6a\x8a\x35\x17\x97\xb3\xbf\xaf\xaf\x67\x88\x35\x17\x20\x00\x00\xff\xff\xa1\x2d\x67\x8d\x78\x00\x00\x00")
+
+func _1528395667_index_boolean_fields_on_repoDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395667_index_boolean_fields_on_repoDownSql,
+		"1528395667_index_boolean_fields_on_repo.down.sql",
+	)
+}
+
+func _1528395667_index_boolean_fields_on_repoDownSql() (*asset, error) {
+	bytes, err := _1528395667_index_boolean_fields_on_repoDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395667_index_boolean_fields_on_repo.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x12, 0x30, 0x5c, 0x53, 0x1c, 0xdf, 0x3d, 0xf6, 0x44, 0x77, 0x81, 0x3b, 0x26, 0xb, 0x6c, 0x13, 0xa7, 0xb0, 0x10, 0x68, 0x79, 0xae, 0x9e, 0xe4, 0x82, 0xe3, 0xe4, 0xbb, 0xc4, 0x7d, 0xc, 0x6d}}
+	return a, nil
+}
+
+var __1528395667_index_boolean_fields_on_repoUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\x0e\x72\x75\x0c\x71\x55\xf0\xf4\x73\x71\x8d\x50\xf0\x74\x53\xf0\xf3\x0f\x51\x70\x8d\xf0\x0c\x0e\x09\x56\x28\x4a\x2d\xc8\x8f\x2f\x28\xca\x2c\x4b\x2c\x49\x55\xf0\xf7\x03\xf3\x35\xa0\x7c\x4d\x6b\x82\x3a\xd3\xf2\x8b\xb2\xe1\xda\x40\x1c\x22\xf4\x24\x16\x25\x67\x64\x96\xa5\xa6\xc0\xf5\xc1\x04\x34\x41\x4e\xf5\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x2d\x25\x7f\xec\xbb\x00\x00\x00")
+
+func _1528395667_index_boolean_fields_on_repoUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395667_index_boolean_fields_on_repoUpSql,
+		"1528395667_index_boolean_fields_on_repo.up.sql",
+	)
+}
+
+func _1528395667_index_boolean_fields_on_repoUpSql() (*asset, error) {
+	bytes, err := _1528395667_index_boolean_fields_on_repoUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395667_index_boolean_fields_on_repo.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x49, 0xd9, 0xd7, 0x7, 0x8a, 0x1c, 0xd3, 0x8b, 0x7d, 0xd, 0x0, 0xb6, 0x8e, 0x6e, 0x19, 0x2e, 0x4, 0xbd, 0x63, 0x9e, 0x49, 0x5, 0xd3, 0x5b, 0xe6, 0xf, 0xef, 0xef, 0x73, 0x1d, 0x22, 0xe1}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2359,6 +2401,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395665_perms_table_drop_provider.up.sql":                             _1528395665_perms_table_drop_providerUpSql,
 	"1528395666_lsif_filename.down.sql":                                       _1528395666_lsif_filenameDownSql,
 	"1528395666_lsif_filename.up.sql":                                         _1528395666_lsif_filenameUpSql,
+	"1528395667_index_boolean_fields_on_repo.down.sql":                        _1528395667_index_boolean_fields_on_repoDownSql,
+	"1528395667_index_boolean_fields_on_repo.up.sql":                          _1528395667_index_boolean_fields_on_repoUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -2502,6 +2546,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395665_perms_table_drop_provider.up.sql":                             {_1528395665_perms_table_drop_providerUpSql, map[string]*bintree{}},
 	"1528395666_lsif_filename.down.sql":                                       {_1528395666_lsif_filenameDownSql, map[string]*bintree{}},
 	"1528395666_lsif_filename.up.sql":                                         {_1528395666_lsif_filenameUpSql, map[string]*bintree{}},
+	"1528395667_index_boolean_fields_on_repo.down.sql":                        {_1528395667_index_boolean_fields_on_repoDownSql, map[string]*bintree{}},
+	"1528395667_index_boolean_fields_on_repo.up.sql":                          {_1528395667_index_boolean_fields_on_repoUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

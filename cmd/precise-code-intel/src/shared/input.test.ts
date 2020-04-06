@@ -127,7 +127,6 @@ async function* generate<T>(values: T[]): AsyncIterable<T> {
 async function consume(iterable: AsyncIterable<unknown>): Promise<void> {
     // We need to consume the iterable but can't make a meaningful
     // binding for each element of the iteration.
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     for await (const _ of iterable) {
         // no-op body, just consume iterable
     }

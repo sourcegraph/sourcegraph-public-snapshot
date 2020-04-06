@@ -54,6 +54,7 @@ describe('getCompletionItems()', () => {
             '-repohasfile',
             'timeout',
             'type',
+            'visibility',
         ])
     })
 
@@ -107,6 +108,7 @@ describe('getCompletionItems()', () => {
             '-repohasfile',
             'timeout',
             'type',
+            'visibility',
             'github.com/sourcegraph/jsonrpc2',
             'RepoRoutes',
         ])
@@ -141,6 +143,7 @@ describe('getCompletionItems()', () => {
             '-repohasfile',
             'timeout',
             'type',
+            'visibility',
         ])
     })
 
@@ -182,6 +185,7 @@ describe('getCompletionItems()', () => {
             '-repohasfile',
             'timeout',
             'type',
+            'visibility',
             'github.com/sourcegraph/jsonrpc2',
         ])
     })
@@ -219,6 +223,7 @@ describe('getCompletionItems()', () => {
             '-repohasfile',
             'timeout',
             'type',
+            'visibility',
         ])
     })
 

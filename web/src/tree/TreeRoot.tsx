@@ -157,7 +157,6 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
                 {isErrorLike(treeOrError) ? (
                     <ErrorAlert
                         // needed because of dynamic styling
-                        // eslint-disable-next-line react/forbid-dom-props
                         style={errorWidth(localStorage.getItem(this.props.sizeKey) ? this.props.sizeKey : undefined)}
                         className="tree__row tree__row-alert"
                         prefix="Error loading tree"

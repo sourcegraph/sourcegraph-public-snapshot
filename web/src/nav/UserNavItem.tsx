@@ -80,8 +80,6 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                     <div className="px-2 py-1">
                         <div className="d-flex align-items-center">
                             <div className="mr-2">Theme</div>
-                            {/* <Select> doesn't support small version */}
-                            {/* eslint-disable-next-line react/forbid-elements */}
                             <select
                                 className="custom-select custom-select-sm e2e-theme-toggle"
                                 onChange={this.onThemeChange}
