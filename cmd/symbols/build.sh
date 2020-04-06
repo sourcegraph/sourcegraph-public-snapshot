@@ -15,8 +15,14 @@ trap cleanup EXIT
 export GO111MODULE=on
 export GOARCH=amd64
 export GOOS=linux
-export OUTPUT # build artifact goes here
-./cmd/symbols/go-build.sh
+
+# Get additional build args
+. ./cmd/symbols/go-build-args.sh
+
+echo "--- go build"
+for pkg in github.com/sourcegraph/sourcegraph/cmd/symbols; do
+    go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION" -buildmode exe -tags dist -o $OUTPUT/$(basename $pkg) $pkg
+done
 
 cp -a ./cmd/symbols/.ctags.d "$OUTPUT"
 cp -a ./cmd/symbols/ctags-install-alpine.sh "$OUTPUT"
