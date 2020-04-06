@@ -147,9 +147,10 @@ func NewClientWithConfig(c *schema.BitbucketServerConnection, httpClient httpcli
 			c.Authorization.Oauth.SigningKey,
 		)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "authorization.oauth.signingKey")
 		}
 	}
+
 	return client, nil
 }
 
