@@ -43,7 +43,7 @@ function build() {
         exit 0
     fi
 
-    echo "--- libsqlite3-pcre building"
+    echo "--- libsqlite3-pcre build"
 
     if ! command -v pkg-config >/dev/null 2>&1 || ! command -v pkg-config --cflags sqlite3 libpcre >/dev/null 2>&1; then
         echo "Missing sqlite dependencies."
