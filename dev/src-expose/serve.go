@@ -20,9 +20,12 @@ func serveRepos(logger *log.Logger, addr, repoDir string) error {
 		return errors.Wrap(err, "listen")
 	}
 	logger.Printf("listening on http://%s", ln.Addr())
-	s, err := serve(logger, ln, repoDir)
+	h, err := reposHandler(logger, ln.Addr().String(), repoDir)
 	if err != nil {
 		return errors.Wrap(err, "configuring server")
+	}
+	s := &http.Server{
+		Handler: h,
 	}
 	if err := s.Serve(ln); err != nil {
 		return errors.Wrap(err, "serving")
@@ -45,7 +48,7 @@ var indexHTML = template.Must(template.New("").Parse(`<html>
 </body>
 </html>`))
 
-func serve(logger *log.Logger, ln net.Listener, reposRoot string) (*http.Server, error) {
+func reposHandler(logger *log.Logger, addr, reposRoot string) (http.Handler, error) {
 	logger.Printf("serving git repositories from %s", reposRoot)
 	configureRepos(logger, reposRoot)
 
@@ -55,7 +58,7 @@ func serve(logger *log.Logger, ln net.Listener, reposRoot string) (*http.Server,
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		err := indexHTML.Execute(w, map[string]interface{}{
-			"Explain": explainAddr(ln.Addr().String()),
+			"Explain": explainAddr(addr),
 			"Links": []string{
 				"/v1/list-repos",
 				"/repos/",
@@ -94,15 +97,12 @@ func serve(logger *log.Logger, ln net.Listener, reposRoot string) (*http.Server,
 
 	mux.Handle("/repos/", http.StripPrefix("/repos/", http.FileServer(httpDir{http.Dir(reposRoot)})))
 
-	s := &http.Server{
-		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if !strings.Contains(r.URL.Path, "/.git/objects/") { // exclude noisy path
-				logger.Printf("%s %s", r.Method, r.URL.Path)
-			}
-			mux.ServeHTTP(w, r)
-		}),
-	}
-	return s, nil
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !strings.Contains(r.URL.Path, "/.git/objects/") { // exclude noisy path
+			logger.Printf("%s %s", r.Method, r.URL.Path)
+		}
+		mux.ServeHTTP(w, r)
+	}), nil
 }
 
 type httpDir struct {
