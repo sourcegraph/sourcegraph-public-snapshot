@@ -84,6 +84,13 @@ export GLOBAL_SETTINGS_ALLOW_EDITS=true
 export NODE_ENV=development
 export NODE_OPTIONS="--max_old_space_size=4096"
 
+# Ensure SQLite for symbols is built
+./dev/libsqlite3-pcre/build.sh
+export LIBSQLITE3_PCRE="$(./dev/libsqlite3-pcre/build.sh libpath)"
+
+# Ensure ctags image is built
+./cmd/symbols/build-ctags.sh
+
 # Make sure chokidar-cli is installed in the background
 printf >&2 "Concurrently installing Yarn and Go dependencies...\n\n"
 yarn_pid=''

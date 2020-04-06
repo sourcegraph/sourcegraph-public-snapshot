@@ -1,44 +1,22 @@
 #!/usr/bin/env bash
 
 # This script builds the symbols go binary.
+# Requires a single argument which is the path to the target bindir.
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 set -eu
 
-# Set default empty GOOS
-GOOS="${GOOS:-''}"
+OUTPUT="${1:?no output path provided}"
 
-if [[ "$GOOS" == "linux" ]]; then
-    case "$OSTYPE" in
-        darwin*)
-            muslGcc="x86_64-linux-musl-gcc"
-            if ! command -v "$muslGcc" >/dev/null 2>&1; then
-                echo "Couldn't find musl C compiler $muslGcc. Run 'brew install FiloSottile/musl-cross/musl-cross'."
-                exit 1
-            fi
-            ;;
+# Environment for building linux binaries
+export GO111MODULE=on
+export GOARCH=amd64
+export GOOS=linux
 
-        linux*)
-            muslGcc="musl-gcc"
-            if ! command -v "$muslGcc" >/dev/null 2>&1; then
-                echo "Couldn't find musl C compiler $muslGcc. Install the musl-tools package (e.g. on Ubuntu, run 'apt-get install musl-tools')."
-                exit 1
-            fi
-            ;;
-
-        *)
-            echo "Unknown platform $OSTYPE"
-            exit 1
-            ;;
-    esac
-
-    # to build the sqlite3 library
-    export CC="$muslGcc"
-    export CGO_ENABLED=1
-fi
+# Get additional build args
+. ./dev/libsqlite3-pcre/go-build-args.sh
 
 echo "--- go build"
-go build \
-    -buildmode exe \
-    -o "$OUTPUT/symbols" \
-    github.com/sourcegraph/sourcegraph/cmd/symbols
+for pkg in github.com/sourcegraph/sourcegraph/cmd/symbols; do
+    go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION" -buildmode exe -tags dist -o $OUTPUT/$(basename $pkg) $pkg
+done
