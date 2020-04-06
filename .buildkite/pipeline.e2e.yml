@@ -5,7 +5,7 @@ env:
   FORCE_COLOR: "3"
   GO111MODULE: "on"
   IMAGE: "server_instrumented"
-  TAG: "latest"
+  TAG: "${BUILDKITE_BUILD_NUMBER}_${BUILDKITE_RETRY_COUNT}"
   COVERAGE_INSTRUMENT: "true"
   TEST_USER_PASSWORD: "SuperSecurePassword"
 
