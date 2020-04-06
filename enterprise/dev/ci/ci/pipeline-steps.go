@@ -189,8 +189,10 @@ func wait(pipeline *bk.Pipeline) {
 }
 
 func triggerE2E(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
-	// hardFail if we publish docker images
-	hardFail := c.branch == "master" || c.isMasterDryRun || c.isRenovateBranch || c.releaseBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch
+	// hardFail for renovate and release branches
+	// Do not block green master builds on e2e tests until we can make them reliable.
+	// See RFC 137: https://docs.google.com/document/d/14f7lwfToeT6t_vxnGsCuXqf3QcB5GRZ2Zoy6kYqBAIQ/edit
+	hardFail := c.isRenovateBranch || c.releaseBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch
 
 	env := copyEnv(
 		"BUILDKITE_PULL_REQUEST",
