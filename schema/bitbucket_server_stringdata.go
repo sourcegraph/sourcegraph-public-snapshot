@@ -40,7 +40,8 @@ const BitbucketServerSchemaJSON = `{
         "requestsPerHour": {
           "description": "Requests per hour permitted. This is an average, calculated per second.",
           "type": "number",
-          "default": 28800
+          "default": 28800,
+          "minimum": 0
         }
       },
       "default": {
