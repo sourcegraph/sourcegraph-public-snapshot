@@ -1,5 +1,6 @@
 import { describe, test, before, beforeEach, after, afterEach } from 'mocha'
 import { saveScreenshotsUponFailures } from '../../../shared/src/e2e/screenshotReporter'
+import { afterEachRecordCoverage } from '../../../shared/src/e2e/coverage'
 import { retry } from '../../../shared/src/e2e/e2e-test-utils'
 import { createDriverForTest, Driver, percySnapshot } from '../../../shared/src/e2e/driver'
 import got from 'got'
@@ -60,15 +61,10 @@ describe('e2e test suite', () => {
         })
     })
 
-    // Close browser.
-    after('Close browser', async () => {
-        if (driver) {
-            await driver.close()
-        }
-    })
+    after('Close browser', () => driver?.close())
 
-    // Take a screenshot when a test fails.
     saveScreenshotsUponFailures(() => driver.page)
+    afterEachRecordCoverage(() => driver)
 
     beforeEach(async () => {
         if (driver) {

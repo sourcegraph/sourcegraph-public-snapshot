@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	bk "github.com/sourcegraph/sourcegraph/internal/buildkite"
@@ -138,7 +137,7 @@ func addCodeCov(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":codecov:",
 		bk.Cmd("buildkite-agent artifact download 'coverage.txt' . || true"), // ignore error when no report exists
 		bk.Cmd("buildkite-agent artifact download '*/coverage-final.json' . || true"),
-		bk.Cmd("bash <(curl -s https://codecov.io/bash) -X gcov -X coveragepy -X xcode"))
+		bk.Cmd("bash <(curl -s https://codecov.io/bash) -X gcov -X coveragepy -X xcode -F unit"))
 }
 
 // Release the browser extension.
@@ -193,9 +192,6 @@ func triggerE2E(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
 	// hardFail if we publish docker images
 	hardFail := c.branch == "master" || c.isMasterDryRun || c.isRenovateBranch || c.releaseBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch
 
-	// push the server candidate image only if it's required
-	imageCandidatePush := c.branch == "master" || c.isMasterDryRun || c.releaseBranch || c.taggedRelease || c.patch
-
 	env := copyEnv(
 		"BUILDKITE_PULL_REQUEST",
 		"BUILDKITE_PULL_REQUEST_BASE_BRANCH",
@@ -204,9 +200,7 @@ func triggerE2E(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
 	env["COMMIT_SHA"] = commonEnv["COMMIT_SHA"]
 	env["DATE"] = commonEnv["DATE"]
 	env["VERSION"] = commonEnv["VERSION"]
-	env["TAG"] = candiateImageTag(c)
 	env["CI_DEBUG_PROFILE"] = commonEnv["CI_DEBUG_PROFILE"]
-	env["PUSH_CANDIDATE_IMAGE"] = strconv.FormatBool(imageCandidatePush)
 
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddTrigger(":chromium:",
@@ -273,10 +267,6 @@ func addDockerImages(c Config, final bool) func(*bk.Pipeline) {
 // tags once the e2e tests pass.
 func addCanidateDockerImage(c Config, app string) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
-		if app == "server" {
-			// The candiate server image is built by the e2e pipeline.
-			return
-		}
 
 		baseImage := "sourcegraph/" + strings.ReplaceAll(app, "/", "-")
 

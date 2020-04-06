@@ -3,7 +3,15 @@ import { percySnapshot as realPercySnapshot } from '@percy/puppeteer'
 import * as jsonc from '@sqs/jsonc-parser'
 import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
 import * as os from 'os'
-import puppeteer, { PageEventObj, Page, Serializable, LaunchOptions, PageFnOptions, ConsoleMessage } from 'puppeteer'
+import puppeteer, {
+    PageEventObj,
+    Page,
+    Serializable,
+    LaunchOptions,
+    PageFnOptions,
+    ConsoleMessage,
+    Target,
+} from 'puppeteer'
 import { Key } from 'ts-key-enum'
 import { dataOrThrowErrors, gql, GraphQLResult } from '../graphql/graphql'
 import { IMutation, IQuery, ExternalServiceKind, IRepository, IPatchSet, IPatchInput } from '../graphql/schema'
@@ -117,12 +125,24 @@ function getDebugExpressionFromRegexp(tag: string, regexp: string): string {
 }
 
 export class Driver {
+    /** The pages that were visited since the creation of the driver. */
+    public visitedPages: Readonly<URL>[] = []
+
     constructor(
         public browser: puppeteer.Browser,
         public page: puppeteer.Page,
         public sourcegraphBaseUrl: string,
         public keepBrowser?: boolean
-    ) {}
+    ) {
+        const recordVisitedPage = (target: Target): void => {
+            if (target.type() !== 'page') {
+                return
+            }
+            this.visitedPages.push(new URL(target.url()))
+        }
+        browser.on('targetchanged', recordVisitedPage)
+        browser.on('targetcreated', recordVisitedPage)
+    }
 
     public async ensureLoggedIn({
         username,
@@ -179,6 +199,16 @@ export class Driver {
         if (!this.keepBrowser) {
             await this.browser.close()
         }
+        console.log(
+            '\nVisited routes:\n' +
+                Array.from(
+                    new Set(
+                        this.visitedPages
+                            .filter(url => url.href.startsWith(this.sourcegraphBaseUrl))
+                            .map(url => url.pathname)
+                    )
+                ).join('\n')
+        )
     }
 
     public async newPage(): Promise<void> {

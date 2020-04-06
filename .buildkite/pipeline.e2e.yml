@@ -4,7 +4,9 @@ env:
   ENTERPRISE: "1"
   FORCE_COLOR: "3"
   GO111MODULE: "on"
-  IMAGE: us.gcr.io/sourcegraph-dev/server:$TAG
+  IMAGE: "server_instrumented"
+  TAG: "${BUILDKITE_BUILD_NUMBER}_${BUILDKITE_RETRY_COUNT}"
+  COVERAGE_INSTRUMENT: "true"
   TEST_USER_PASSWORD: "SuperSecurePassword"
 
 steps:
@@ -14,18 +16,7 @@ steps:
     - ./cmd/server/pre-build.sh
     - ./cmd/server/build.sh
     - popd
-    - |
-      if [ "$PUSH_CANDIDATE_IMAGE" == "true" ]; then
-        yes | gcloud auth configure-docker
-        docker push "$IMAGE"
-      fi
     - ./dev/ci/e2e.sh
+    - docker image rm -f "$IMAGE"
   timeout_in_minutes: 20
   label: ':docker::arrow_right::chromium:'
-
-- wait
-
-- command: docker image rm -f "$IMAGE"
-  timeout_in_minutes: 10
-  label: ':sparkles:'
-  soft_fail: true
