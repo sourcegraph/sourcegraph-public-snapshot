@@ -2,7 +2,9 @@ coverage:
   range: 50...75
   status:
     project: off
-    patch: off
+    patch:
+      default:
+        threshold: 5%
 comment:
   require_changes: yes
   layout: 'diff, flags, files'
