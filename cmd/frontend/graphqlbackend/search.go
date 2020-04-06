@@ -323,6 +323,9 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 		archived = No // archived defaults to No unless exactly one repo is being searched.
 	}
 
+	visibilityStr, _ := r.query.StringValue(query.FieldVisibility)
+	visibility := query.ParseVisibility(visibilityStr)
+
 	commitAfter, _ := r.query.StringValue(query.FieldRepoHasCommitAfter)
 
 	tr.LazyPrintf("resolveRepositories - start")
@@ -334,6 +337,8 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 		noForks:          fork == No || fork == False,
 		onlyArchived:     archived == Only || archived == True,
 		noArchived:       archived == No || archived == False,
+		onlyPrivate:      visibility == query.Private,
+		onlyPublic:       visibility == query.Public,
 		commitAfter:      commitAfter,
 	})
 	tr.LazyPrintf("resolveRepositories - done")
@@ -448,6 +453,8 @@ type resolveRepoOp struct {
 	noArchived       bool
 	onlyArchived     bool
 	commitAfter      string
+	onlyPrivate      bool
+	onlyPublic       bool
 }
 
 func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, missingRepoRevisions []*search.RepositoryRevisions, overLimit bool, err error) {
@@ -525,6 +532,8 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 			OnlyForks:    op.onlyForks,
 			NoArchived:   op.noArchived,
 			OnlyArchived: op.onlyArchived,
+			NoPrivate:    op.onlyPublic,
+			OnlyPrivate:  op.onlyPrivate,
 		})
 		tr.LazyPrintf("Repos.List - done")
 		if err != nil {

@@ -307,6 +307,8 @@ git clone https://github.com/sourcegraph/sourcegraph.git
 
 Sourcegraph's development environment ships with a [Caddy 2](https://caddyserver.com/) HTTPS reverse proxy that allows you to access your local sourcegraph instance via `https://sourcegraph.test:3443` (a fake domain with a self-signed certificate that's added to `/etc/hosts`).
 
+If you'd like Sourcegraph to be accessible under `https://sourcegraph.test` (port 443) instead, you can [set up authbind](https://medium.com/@steve.mu.dev/setup-authbind-on-mac-os-6aee72cb828) and set the environment variable `SOURCEGRAPH_HTTPS_PORT=443`.
+
 ### Prerequisites
 
 In order to configure the HTTPS reverse-proxy, you'll need to edit `/etc/hosts` and initialize Caddy 2.

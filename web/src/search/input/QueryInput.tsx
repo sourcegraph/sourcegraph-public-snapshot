@@ -38,12 +38,6 @@ import { FilterType } from '../../../../shared/src/search/interactive/util'
 import { isSettingsValid, SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { Toggles } from './toggles/Toggles'
 
-/**
- * The query input field is clobbered and updated to contain this subject's values, as
- * they are received. This is used to trigger an update; the source of truth is still the URL.
- */
-export const queryUpdates = new Subject<string>()
-
 interface Props
     extends PatternTypeProps,
         CaseSensitivityProps,
@@ -309,17 +303,6 @@ export class QueryInput extends React.Component<Props, State> {
                     })
             )
 
-            // Allow other components to update the query (e.g., to be relevant to what the user is
-            // currently viewing).
-            this.subscriptions.add(
-                queryUpdates.pipe(distinctUntilChanged()).subscribe(query =>
-                    this.inputValues.next({
-                        query,
-                        cursorPosition: query.length,
-                    })
-                )
-            )
-
             /** Whenever the URL query has a "focus" property, remove it and focus the query input. */
             this.subscriptions.add(
                 this.componentUpdates
@@ -331,7 +314,6 @@ export class QueryInput extends React.Component<Props, State> {
                         this.focusInputAndPositionCursorAtEnd()
                         const q = new URLSearchParams(props.location.search)
                         q.delete('focus')
-                        // eslint-disable-next-line @typescript-eslint/no-base-to-string
                         this.props.history.replace({ search: q.toString() })
                     })
             )

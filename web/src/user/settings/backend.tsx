@@ -112,6 +112,8 @@ export function logUserEvent(event: GQL.UserEvent): void {
                 return
             })
         )
+        // Event logs are best-effort and non-blocking
+        // eslint-disable-next-line rxjs/no-ignored-subscription
         .subscribe()
 }
 
@@ -145,5 +147,7 @@ export function logEvent(event: string, eventProperties?: any): void {
         }
     )
         .pipe(map(dataOrThrowErrors))
+        // Event logs are best-effort and non-blocking
+        // eslint-disable-next-line rxjs/no-ignored-subscription
         .subscribe()
 }

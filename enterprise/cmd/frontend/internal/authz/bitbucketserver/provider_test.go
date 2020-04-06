@@ -189,7 +189,7 @@ func testProviderRepoPerms(db *sql.DB, f *fixtures, cli *bitbucketserver.Client)
 					tc.err = "<nil>"
 				}
 
-				var acct *extsvc.ExternalAccount
+				var acct *extsvc.Account
 				if tc.user != nil {
 					acct = h.externalAccount(int32(i), tc.user)
 				}
@@ -218,7 +218,7 @@ func testProviderFetchAccount(f *fixtures, cli *bitbucketserver.Client) func(*te
 			name string
 			ctx  context.Context
 			user *types.User
-			acct *extsvc.ExternalAccount
+			acct *extsvc.Account
 			err  string
 		}{
 			{
@@ -267,10 +267,10 @@ func testProviderFetchUserPerms(f *fixtures, cli *bitbucketserver.Client) func(*
 
 		h := codeHost{CodeHost: p.codeHost}
 
-		repoIDs := func(names ...string) (ids []extsvc.ExternalRepoID) {
+		repoIDs := func(names ...string) (ids []extsvc.RepoID) {
 			for _, name := range names {
 				if r, ok := f.repos[name]; ok {
-					ids = append(ids, extsvc.ExternalRepoID(strconv.FormatInt(int64(r.ID), 10)))
+					ids = append(ids, extsvc.RepoID(strconv.FormatInt(int64(r.ID), 10)))
 				}
 			}
 			return ids
@@ -279,8 +279,8 @@ func testProviderFetchUserPerms(f *fixtures, cli *bitbucketserver.Client) func(*
 		for _, tc := range []struct {
 			name string
 			ctx  context.Context
-			acct *extsvc.ExternalAccount
-			ids  []extsvc.ExternalRepoID
+			acct *extsvc.Account
+			ids  []extsvc.RepoID
 			err  string
 		}{
 			{
@@ -290,33 +290,33 @@ func testProviderFetchUserPerms(f *fixtures, cli *bitbucketserver.Client) func(*
 			},
 			{
 				name: "no account data provided",
-				acct: &extsvc.ExternalAccount{},
+				acct: &extsvc.Account{},
 				err:  "no account data provided",
 			},
 			{
 				name: "not a code host of the account",
-				acct: &extsvc.ExternalAccount{
-					ExternalAccountSpec: extsvc.ExternalAccountSpec{
+				acct: &extsvc.Account{
+					AccountSpec: extsvc.AccountSpec{
 						ServiceType: "github",
 						ServiceID:   "https://github.com",
 						AccountID:   "john",
 					},
-					ExternalAccountData: extsvc.ExternalAccountData{
-						AccountData: new(json.RawMessage),
+					AccountData: extsvc.AccountData{
+						Data: new(json.RawMessage),
 					},
 				},
-				err: "not a code host of the account: want ${INSTANCEURL} but have https://github.com",
+				err: `not a code host of the account: want "${INSTANCEURL}" but have "https://github.com"`,
 			},
 			{
 				name: "bad account data",
-				acct: &extsvc.ExternalAccount{
-					ExternalAccountSpec: extsvc.ExternalAccountSpec{
+				acct: &extsvc.Account{
+					AccountSpec: extsvc.AccountSpec{
 						ServiceType: h.ServiceType,
 						ServiceID:   h.ServiceID,
 						AccountID:   "john",
 					},
-					ExternalAccountData: extsvc.ExternalAccountData{
-						AccountData: new(json.RawMessage),
+					AccountData: extsvc.AccountData{
+						Data: new(json.RawMessage),
 					},
 				},
 				err: "unmarshaling account data: unexpected end of JSON input",
@@ -361,10 +361,10 @@ func testProviderFetchRepoPerms(f *fixtures, cli *bitbucketserver.Client) func(*
 
 		h := codeHost{CodeHost: p.codeHost}
 
-		userIDs := func(names ...string) (ids []extsvc.ExternalAccountID) {
+		userIDs := func(names ...string) (ids []extsvc.AccountID) {
 			for _, name := range names {
 				if r, ok := f.users[name]; ok {
-					ids = append(ids, extsvc.ExternalAccountID(strconv.FormatInt(int64(r.ID), 10)))
+					ids = append(ids, extsvc.AccountID(strconv.FormatInt(int64(r.ID), 10)))
 				}
 			}
 			return ids
@@ -373,8 +373,8 @@ func testProviderFetchRepoPerms(f *fixtures, cli *bitbucketserver.Client) func(*
 		for _, tc := range []struct {
 			name string
 			ctx  context.Context
-			repo *api.ExternalRepoSpec
-			ids  []extsvc.ExternalAccountID
+			repo *extsvc.Repository
+			ids  []extsvc.AccountID
 			err  string
 		}{
 			{
@@ -384,18 +384,24 @@ func testProviderFetchRepoPerms(f *fixtures, cli *bitbucketserver.Client) func(*
 			},
 			{
 				name: "not a code host of the repo",
-				repo: &api.ExternalRepoSpec{
-					ServiceType: "github",
-					ServiceID:   "https://github.com",
+				repo: &extsvc.Repository{
+					URI: "github.com/user/repo",
+					ExternalRepoSpec: api.ExternalRepoSpec{
+						ServiceType: "github",
+						ServiceID:   "https://github.com",
+					},
 				},
-				err: "not a code host of the repo: want ${INSTANCEURL} but have https://github.com",
+				err: `not a code host of the repo: want "${INSTANCEURL}" but have "https://github.com"`,
 			},
 			{
 				name: "private user ids are retrieved",
-				repo: &api.ExternalRepoSpec{
-					ID:          strconv.Itoa(f.repos["super-secret-repo"].ID),
-					ServiceType: h.ServiceType,
-					ServiceID:   h.ServiceID,
+				repo: &extsvc.Repository{
+					URI: "${INSTANCEURL}/user/repo",
+					ExternalRepoSpec: api.ExternalRepoSpec{
+						ID:          strconv.Itoa(f.repos["super-secret-repo"].ID),
+						ServiceType: h.ServiceType,
+						ServiceID:   h.ServiceID,
+					},
 				},
 				ids: append(userIDs("ceo"), "1"), // admin user
 			},
@@ -607,17 +613,17 @@ func (h codeHost) externalRepo(r *bitbucketserver.Repo) api.ExternalRepoSpec {
 	}
 }
 
-func (h codeHost) externalAccount(userID int32, u *bitbucketserver.User) *extsvc.ExternalAccount {
+func (h codeHost) externalAccount(userID int32, u *bitbucketserver.User) *extsvc.Account {
 	bs := marshalJSON(u)
-	return &extsvc.ExternalAccount{
+	return &extsvc.Account{
 		UserID: userID,
-		ExternalAccountSpec: extsvc.ExternalAccountSpec{
+		AccountSpec: extsvc.AccountSpec{
 			ServiceType: h.ServiceType,
 			ServiceID:   h.ServiceID,
 			AccountID:   strconv.Itoa(u.ID),
 		},
-		ExternalAccountData: extsvc.ExternalAccountData{
-			AccountData: (*json.RawMessage)(&bs),
+		AccountData: extsvc.AccountData{
+			Data: (*json.RawMessage)(&bs),
 		},
 	}
 }

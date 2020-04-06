@@ -41,12 +41,13 @@ import {
 import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
 import { DecorationMapByLine } from '../../../../shared/src/api/client/services/decoration'
 import { CodeEditorData, CodeEditorWithPartialModel } from '../../../../shared/src/api/client/services/editorService'
-import { ERPRIVATEREPOPUBLICSOURCEGRAPHCOM } from '../../../../shared/src/backend/errors'
+import { PRIVATE_REPO_PUBLIC_SOURCEGRAPH_COM_ERROR_NAME } from '../../../../shared/src/backend/errors'
 import {
     CommandListClassProps,
     CommandListPopoverButtonClassProps,
 } from '../../../../shared/src/commandPalette/CommandList'
 import { CompletionWidgetClassProps } from '../../../../shared/src/components/completion/CompletionWidget'
+import { asObservable } from '../../../../shared/src/util/rxjs/asObservable'
 import { ApplyLinkPreviewOptions } from '../../../../shared/src/components/linkPreviews/linkPreviews'
 import { Controller } from '../../../../shared/src/extensions/controller'
 import { registerHighlightContributions } from '../../../../shared/src/highlight/contributions'
@@ -701,7 +702,9 @@ export function handleCodeHost({
             codeViewEvent.subscriptions.add(() => codeViewCount.next(codeViewCount.value - 1))
         }),
         mergeMap(codeViewEvent =>
-            codeViewEvent.resolveFileInfo(codeViewEvent.element, platformContext.requestGraphQL).pipe(
+            asObservable(() =>
+                codeViewEvent.resolveFileInfo(codeViewEvent.element, platformContext.requestGraphQL)
+            ).pipe(
                 mergeMap(fileInfo => resolveRepoNames(fileInfo, platformContext.requestGraphQL)),
                 mergeMap(fileInfo =>
                     fetchFileContents(fileInfo, platformContext.requestGraphQL).pipe(
@@ -713,7 +716,7 @@ export function handleCodeHost({
                 ),
                 catchError(err => {
                     // Ignore PrivateRepoPublicSourcegraph errors (don't initialize those code views)
-                    if (err.name === ERPRIVATEREPOPUBLICSOURCEGRAPHCOM) {
+                    if (err.name === PRIVATE_REPO_PUBLIC_SOURCEGRAPH_COM_ERROR_NAME) {
                         return EMPTY
                     }
                     throw err
@@ -837,7 +840,7 @@ export function handleCodeHost({
             if (codeViewEvent.observeSelections) {
                 codeViewEvent.subscriptions.add(
                     // This nested subscription is necessary, it is managed correctly through `codeViewEvent.subscriptions`
-                    // tslint:disable-next-line: rxjs-no-nested-subscribe
+                    // eslint-disable-next-line rxjs/no-nested-subscribe
                     codeViewEvent.observeSelections(codeViewEvent.element).subscribe(selections => {
                         extensionsController.services.editor.setSelections(editorId, selections)
                     })
@@ -914,7 +917,7 @@ export function handleCodeHost({
                         .pipe(finalize(update))
                         // The nested subscribe cannot be replaced with a switchMap()
                         // We manage the subscription correctly.
-                        // tslint:disable-next-line: rxjs-no-nested-subscribe
+                        // eslint-disable-next-line rxjs/no-nested-subscribe
                         .subscribe(update)
                 )
             }
@@ -946,7 +949,7 @@ export function handleCodeHost({
                         .pipe(finalize(update))
                         // The nested subscribe cannot be replaced with a switchMap()
                         // We manage the subscription correctly.
-                        // tslint:disable-next-line: rxjs-no-nested-subscribe
+                        // eslint-disable-next-line rxjs/no-nested-subscribe
                         .subscribe(update)
                 )
             }
@@ -961,7 +964,7 @@ export function handleCodeHost({
             const adjustPosition = getPositionAdjuster?.(platformContext.requestGraphQL)
             let hoverSubscription = new Subscription()
             codeViewEvent.subscriptions.add(
-                // tslint:disable-next-line: rxjs-no-nested-subscribe
+                // eslint-disable-next-line rxjs/no-nested-subscribe
                 nativeTooltipsEnabled.subscribe(useNativeTooltips => {
                     hoverSubscription.unsubscribe()
                     if (!useNativeTooltips) {

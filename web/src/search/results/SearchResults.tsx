@@ -199,9 +199,11 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                 )
         )
 
-        this.props.extensionsController.services.contribution
-            .getContributions()
-            .subscribe(contributions => this.setState({ contributions }))
+        this.subscriptions.add(
+            this.props.extensionsController.services.contribution
+                .getContributions()
+                .subscribe(contributions => this.setState({ contributions }))
+        )
     }
 
     public componentDidUpdate(): void {
@@ -318,7 +320,6 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
             query = `${query} count:${count}`
         }
         params.set('q', query)
-        // eslint-disable-next-line @typescript-eslint/no-base-to-string
         this.props.history.replace({ search: params.toString() })
     }
 

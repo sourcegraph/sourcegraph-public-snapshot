@@ -126,7 +126,6 @@ export class ExtensionsList extends React.PureComponent<Props, State> {
                 if (query) {
                     const searchParams = new URLSearchParams()
                     searchParams.set(ExtensionsList.URL_QUERY_PARAM, query)
-                    // eslint-disable-next-line @typescript-eslint/no-base-to-string
                     search = searchParams.toString()
                 } else {
                     search = ''

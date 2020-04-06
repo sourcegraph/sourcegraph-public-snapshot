@@ -2,19 +2,20 @@ package github
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/google/go-github/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"golang.org/x/oauth2"
 )
 
-func GetExternalAccountData(data *extsvc.ExternalAccountData) (usr *github.User, tok *oauth2.Token, err error) {
+func GetExternalAccountData(data *extsvc.AccountData) (usr *github.User, tok *oauth2.Token, err error) {
 	var (
 		u github.User
 		t oauth2.Token
 	)
 
-	if data.AccountData != nil {
+	if data.Data != nil {
 		if err := data.GetAccountData(&u); err != nil {
 			return nil, nil, err
 		}
@@ -29,7 +30,7 @@ func GetExternalAccountData(data *extsvc.ExternalAccountData) (usr *github.User,
 	return usr, tok, nil
 }
 
-func SetExternalAccountData(data *extsvc.ExternalAccountData, user *github.User, token *oauth2.Token) {
+func SetExternalAccountData(data *extsvc.AccountData, user *github.User, token *oauth2.Token) {
 	data.SetAccountData(user)
 	data.SetAuthData(token)
 }
@@ -77,4 +78,22 @@ func (c *Client) GetAuthenticatedUserOrgs(ctx context.Context) ([]*Org, error) {
 		return nil, err
 	}
 	return orgs, nil
+}
+
+// Collaborator is a collaborator of a repository.
+type Collaborator struct {
+	ID         string `json:"node_id"` // GraphQL ID
+	DatabaseID int64  `json:"id"`
+}
+
+// ListRepositoryCollaborators lists all GitHub users that has access to the repository.
+// The page is the page of results to return, and is 1-indexed (so the first call should
+// be for page 1).
+func (c *Client) ListRepositoryCollaborators(ctx context.Context, owner, repo string, page int) (users []*Collaborator, hasNextPage bool, _ error) {
+	path := fmt.Sprintf("/repos/%s/%s/collaborators?&page=%d&per_page=100", owner, repo, page)
+	err := c.requestGet(ctx, "", path, &users)
+	if err != nil {
+		return nil, false, err
+	}
+	return users, len(users) > 0, nil
 }

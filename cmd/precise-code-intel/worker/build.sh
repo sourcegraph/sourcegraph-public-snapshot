@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-cd "$(dirname "${BASH_SOURCE[0]}")/../.."
+cd "$(dirname "${BASH_SOURCE[0]}")/../../.."
 set -eux
 
 OUTPUT=`mktemp -d -t sgdockerbuild_XXXXXXX`
@@ -21,10 +21,10 @@ echo "--- go build"
 go build \
     -trimpath \
     -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION"  \
-    -o "$OUTPUT/precise-code-intel" github.com/sourcegraph/sourcegraph/cmd/precise-code-intel
+    -o "$OUTPUT/supervisor" github.com/sourcegraph/sourcegraph/cmd/precise-code-intel/worker
 
 echo "--- docker build"
-docker build -f cmd/precise-code-intel/Dockerfile -t "$IMAGE" "$OUTPUT" \
+docker build -f cmd/precise-code-intel/worker/Dockerfile -t "$IMAGE" "$OUTPUT" \
     --progress=plain \
     --build-arg COMMIT_SHA \
     --build-arg DATE \

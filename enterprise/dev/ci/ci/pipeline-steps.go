@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	bk "github.com/sourcegraph/sourcegraph/internal/buildkite"
@@ -19,7 +20,9 @@ var allDockerImages = []string{
 	"searcher",
 	"server",
 	"symbols",
-	"precise-code-intel",
+	"precise-code-intel/api-server",
+	"precise-code-intel/bundle-manager",
+	"precise-code-intel/worker",
 }
 
 // Verifies the docs formatting and builds the `docsite` command.
@@ -45,14 +48,13 @@ func addLint(pipeline *bk.Pipeline) {
 	// - yarn 41s
 	// - eslint 137s
 	// - build-ts 60s
-	// - tslint 45s
 	// - prettier 29s
 	// - stylelint 7s
 	// - graphql-lint 1s
 	pipeline.AddStep(":eslint:",
 		bk.Cmd("dev/ci/yarn-run.sh build-ts all:eslint")) // eslint depends on build-ts
 	pipeline.AddStep(":lipstick: :lint-roller: :stylelint: :graphql:",
-		bk.Cmd("dev/ci/yarn-run.sh prettier-check all:tslint all:stylelint graphql-lint"))
+		bk.Cmd("dev/ci/yarn-run.sh prettier-check all:stylelint graphql-lint"))
 }
 
 // Adds steps for the OSS and Enterprise web app builds. Runs the web app tests.
@@ -191,6 +193,9 @@ func triggerE2E(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
 	// hardFail if we publish docker images
 	hardFail := c.branch == "master" || c.isMasterDryRun || c.isRenovateBranch || c.releaseBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch
 
+	// push the server candidate image only if it's required
+	imageCandidatePush := c.branch == "master" || c.isMasterDryRun || c.releaseBranch || c.taggedRelease || c.patch
+
 	env := copyEnv(
 		"BUILDKITE_PULL_REQUEST",
 		"BUILDKITE_PULL_REQUEST_BASE_BRANCH",
@@ -201,6 +206,7 @@ func triggerE2E(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
 	env["VERSION"] = commonEnv["VERSION"]
 	env["TAG"] = candiateImageTag(c)
 	env["CI_DEBUG_PROFILE"] = commonEnv["CI_DEBUG_PROFILE"]
+	env["PUSH_CANDIDATE_IMAGE"] = strconv.FormatBool(imageCandidatePush)
 
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddTrigger(":chromium:",
@@ -272,7 +278,7 @@ func addCanidateDockerImage(c Config, app string) func(*bk.Pipeline) {
 			return
 		}
 
-		baseImage := "sourcegraph/" + app
+		baseImage := "sourcegraph/" + strings.ReplaceAll(app, "/", "-")
 
 		cmds := []bk.StepOpt{
 			bk.Cmd(fmt.Sprintf(`echo "Building candidate %s image..."`, app)),
@@ -297,24 +303,7 @@ func addCanidateDockerImage(c Config, app string) func(*bk.Pipeline) {
 
 		gcrImage := fmt.Sprintf("us.gcr.io/sourcegraph-dev/%s", strings.TrimPrefix(baseImage, "sourcegraph/"))
 
-		getBuildSteps := func() []bk.StepOpt {
-			buildScriptByApp := map[string][]bk.StepOpt{
-				"symbols": {
-					bk.Env("BUILD_TYPE", "dist"),
-					bk.Cmd("./cmd/symbols/build.sh buildSymbolsDockerImage"),
-				},
-			}
-			if buildScript, ok := buildScriptByApp[app]; ok {
-				return buildScript
-			}
-			return []bk.StepOpt{
-				bk.Cmd(cmdDir + "/build.sh"),
-			}
-		}
-
-		cmds = append(cmds,
-			getBuildSteps()...,
-		)
+		cmds = append(cmds, bk.Cmd(cmdDir+"/build.sh"))
 
 		tag := candiateImageTag(c)
 		cmds = append(cmds,
@@ -330,7 +319,7 @@ func addCanidateDockerImage(c Config, app string) func(*bk.Pipeline) {
 // after the e2e tests pass.
 func addFinalDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
-		baseImage := "sourcegraph/" + app
+		baseImage := "sourcegraph/" + strings.ReplaceAll(app, "/", "-")
 
 		cmds := []bk.StepOpt{
 			bk.Cmd(fmt.Sprintf(`echo "Tagging final %s image..."`, app)),

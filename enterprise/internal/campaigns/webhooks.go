@@ -164,7 +164,7 @@ func (h Webhook) upsertChangesetEvent(
 		ChangesetIDs: []int64{cs.ID},
 		Limit:        -1,
 	})
-	cs.SetDerivedState(events)
+	SetDerivedState(cs, events)
 	if err := tx.UpdateChangesets(ctx, cs); err != nil {
 		return err
 	}

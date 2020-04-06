@@ -1,5 +1,4 @@
 import { Observable } from 'rxjs'
-// eslint-disable-next-line import/extensions
 import ExtensionHostWorker from 'worker-loader?inline&name=extensionHostWorker.bundle.js!./main.worker.ts'
 import { EndpointPair } from '../../platform/context'
 

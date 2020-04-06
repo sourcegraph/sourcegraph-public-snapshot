@@ -8,6 +8,7 @@ import { filter } from 'rxjs/operators'
  * "storage" event per the Web Storage API specification). To emit for changes in the same window, call
  * {@link LocalStorageSubject#next}.
  */
+// eslint-disable-next-line rxjs/no-subclass
 export class LocalStorageSubject<T> extends Observable<T>
     implements NextObserver<T>, Pick<BehaviorSubject<T>, 'value'> {
     constructor(private key: string, private defaultValue: T) {
@@ -38,8 +39,6 @@ function parseValue<T>(v: string | null, defaultValue: T): T {
         return defaultValue
     }
     try {
-        // False positive https://github.com/typescript-eslint/typescript-eslint/issues/1269
-        // eslint-disable-next-line @typescript-eslint/return-await
         return JSON.parse(v)
     } catch (err) {
         return defaultValue

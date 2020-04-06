@@ -462,7 +462,7 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 	store = repos.NewDBStore(tx.DB(), sql.TxOptions{})
 	syncer := ee.ChangesetSyncer{
 		ReposStore:  store,
-		Store:       tx,
+		SyncStore:   tx,
 		HTTPFactory: r.httpFactory,
 	}
 	// NOTE: We are performing a blocking sync here in order to ensure

@@ -14,6 +14,24 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - Users and site administrators can now view a log of their actions/events in the user settings.
+- With the new `visibility:` filter search results can now be filtered based on a repository's visibility (possible filter values: `any`, `public` or `private`). [#8344](https://github.com/sourcegraph/sourcegraph/issues/8344)
+- observability: Dashboard panels now show an orange/red background color when the defined warning/critical alert threshold has been met, making it even easier to see on a dashboard what is in a bad state.
+- observability: Distributed tracing is a powerful tool for investigating performance issues. The following changes have been made with the goal of making it easier to use distributed tracing with Sourcegraph:
+
+  - The site configuration field `"observability.tracing": { "sampling": "..." }` allows a site admin to control which requests generate tracing data.
+    - `"all"` will trace all requests.
+    - `"selective"` (recommended) will trace all requests initiated from an end-user URL with `?trace=1`. Non-end-user-initiated requests can set a HTTP header `X-Sourcegraph-Should-Trace: true`. This is the recommended setting, as `"all"` can generate large amounts of tracing data that may cause network and memory resource contention in the Sourcegraph instance.
+    - `"none"` (default) turns off tracing.
+  - Jaeger is now the officially supported distributed tracer. The following is the recommended site configuration to connect Sourcegraph to a Jaeger agent (which must be deployed on the same host and listening on the default ports):
+
+    ```
+    "observability.tracing": {
+      "sampling": "selective"
+    }
+    ```
+
+  - The site configuration field, `useJaeger`, is deprecated in favor of `observability.tracing`.
+  - Support for configuring Lightstep as a distributed tracer is deprecated and will be removed in a subsequent release. Instances that use Lightstep with Sourcegraph are encouraged to migrate to Jaeger (directions for running Jaeger alongside Sourcegraph are included in the installation instructions).
 
 ### Changed
 
@@ -25,10 +43,14 @@ All notable changes to Sourcegraph are documented in this file.
   - `Campaign.plan` has been renamed to `Campaign.patchSet`.
   - `Campaign.changesetPlans` has been renamed to `campaign.changesetPlan`.
   - `createCampaignPlanFromPatches` mutation has been renamed to `createPatchSetFromPatches`.
+- Removed the scoped search field on tree pages. When browsing code, the global search query will now get scoped to the current tree or file. [#9225](https://github.com/sourcegraph/sourcegraph/pull/9225)
 
 ### Fixed
 
 - `.*` in the filter pattern were ignored and led to missing search results. [#9152](https://github.com/sourcegraph/sourcegraph/pull/9152)
+- monitoring: the Syntect Server dashboard's "Worker timeouts" can no longer appear to go negative. [#9523](https://github.com/sourcegraph/sourcegraph/issues/9523)
+- monitoring: the Syntect Server dashboard's "Worker timeouts" no longer incorrectly shows multiple values. [#9524](https://github.com/sourcegraph/sourcegraph/issues/9524)
+- monitoring: the Syntect Server dashboard's panels are no longer compacted, for improved visibility. [#9525](https://github.com/sourcegraph/sourcegraph/issues/9525)
 
 ### Removed
 

@@ -76,10 +76,10 @@ func TestDeleteUser(t *testing.T) {
 			{Email: "alice@example.com"},
 		}, nil
 	}
-	db.Mocks.ExternalAccounts.List = func(db.ExternalAccountsListOptions) ([]*extsvc.ExternalAccount, error) {
-		return []*extsvc.ExternalAccount{
+	db.Mocks.ExternalAccounts.List = func(db.ExternalAccountsListOptions) ([]*extsvc.Account, error) {
+		return []*extsvc.Account{
 			{
-				ExternalAccountSpec: extsvc.ExternalAccountSpec{
+				AccountSpec: extsvc.AccountSpec{
 					ServiceType: "gitlab",
 					ServiceID:   "https://gitlab.com/",
 					AccountID:   "alice_gitlab",
@@ -92,7 +92,7 @@ func TestDeleteUser(t *testing.T) {
 			return fmt.Errorf("args.UserID: want 6 but got %v", args.UserID)
 		}
 
-		expAccounts := []*extsvc.ExternalAccounts{
+		expAccounts := []*extsvc.Accounts{
 			{
 				ServiceType: "gitlab",
 				ServiceID:   "https://gitlab.com/",

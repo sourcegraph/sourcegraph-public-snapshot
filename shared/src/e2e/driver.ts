@@ -716,6 +716,7 @@ export async function createDriverForTest(options: DriverOptions): Promise<Drive
                 map(formatPuppeteerConsoleMessage),
                 concatAll()
             )
+            // eslint-disable-next-line rxjs/no-ignored-subscription
             .subscribe(formattedLine => console.log(formattedLine))
     }
     return new Driver(browser, page, sourcegraphBaseUrl, keepBrowser)

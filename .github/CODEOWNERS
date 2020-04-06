@@ -58,6 +58,7 @@
 /internal/linkheader @efritz
 /renovate.json @felixfbecker
 /.stylelintrc.json @felixfbecker
+/.stylelintignore @felixfbecker
 /graphql-schema-linter.config.js @felixfbecker
 /.prettierignore @felixfbecker
 /.github @beyang
@@ -98,8 +99,6 @@
 /.mailmap @beyang
 /tsconfig.json @sourcegraph/web
 /.mocharc.json @sourcegraph/web
-tslint.json @sourcegraph/web
-tslint.config.js @sourcegraph/web
 .eslintrc.* @sourcegraph/web
 /enterprise/cmd @beyang
 /enterprise/internal @beyang
@@ -162,6 +161,7 @@ tslint.config.js @sourcegraph/web
 /cmd/github-proxy/ @sourcegraph/core-services
 /cmd/gitserver/ @sourcegraph/core-services
 /cmd/repo-updater/ @sourcegraph/core-services
+/enterprise/cmd/frontend/authz/ @sourcegraph/core-services
 /enterprise/cmd/frontend/db/ @sourcegraph/core-services
 /enterprise/cmd/frontend/internal/authz/ @sourcegraph/core-services
 /enterprise/cmd/frontend/internal/graphqlbackend/ @sourcegraph/core-services @slimsag
@@ -205,6 +205,7 @@ tslint.config.js @sourcegraph/web
 
 # Deployment and distribution
 Dockerfile @sourcegraph/distribution
+/observability @sourcegraph/distribution
 /docker-images @sourcegraph/distribution
 /enterprise/docs/deployment.md @sourcegraph/distribution
 **/build.sh @sourcegraph/distribution

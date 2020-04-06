@@ -121,10 +121,9 @@ export interface EditorService {
     removeAllEditors(): void
 }
 
-const EEDITORNOTFOUND = 'EditorNotFoundError'
+const EDITOR_NOT_FOUND_ERROR_NAME = 'EditorNotFoundError'
 class EditorNotFoundError extends Error {
-    public readonly name = EEDITORNOTFOUND
-    public readonly code = EEDITORNOTFOUND
+    public readonly name = EDITOR_NOT_FOUND_ERROR_NAME
     constructor(editorId: string) {
         super(`editor not found: ${editorId}`)
     }

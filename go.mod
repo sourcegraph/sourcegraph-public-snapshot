@@ -41,7 +41,6 @@ require (
 	github.com/golang-migrate/migrate/v4 v4.10.0
 	github.com/golang/gddo v0.0.0-20200310004957-95ce5a452273
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e
-	github.com/golangci/golangci-lint v1.23.8
 	github.com/golangplus/bytes v0.0.0-20160111154220-45c989fe5450 // indirect
 	github.com/golangplus/fmt v0.0.0-20150411045040-2a5d6d7d2995 // indirect
 	github.com/golangplus/testing v0.0.0-20180327235837-af21d9c3145e // indirect
@@ -104,7 +103,6 @@ require (
 	github.com/russellhaering/gosaml2 v0.4.0
 	github.com/russellhaering/goxmldsig v0.0.0-20180430223755-7acd5e4a6ef7
 	github.com/russross/blackfriday v2.0.0+incompatible // indirect
-	github.com/securego/gosec v0.0.0-20200316084457-7da9f46445fd // indirect
 	github.com/segmentio/fasthash v1.0.1
 	github.com/sergi/go-diff v1.1.0
 	github.com/shurcooL/github_flavored_markdown v0.0.0-20181002035957-2122de532470
@@ -118,14 +116,13 @@ require (
 	github.com/shurcooL/octicon v0.0.0-20191102190552-cbb32d6a785c // indirect
 	github.com/shurcooL/vfsgen v0.0.0-20181202132449-6a9ea43bcacd
 	github.com/sloonz/go-qprintable v0.0.0-20160203160305-775b3a4592d5 // indirect
-	github.com/smartystreets/assertions v1.0.1 // indirect
 	github.com/sourcegraph/annotate v0.0.0-20160123013949-f4cad6c6324d // indirect
 	github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81
 	github.com/sourcegraph/go-diff v0.5.1
 	github.com/sourcegraph/go-jsonschema v0.0.0-20191222043427-cdbee60427af
 	github.com/sourcegraph/go-langserver v2.0.1-0.20181108233942-4a51fa2e1238+incompatible
 	github.com/sourcegraph/go-lsp v0.0.0-20200117082640-b19bb38222e2
-	github.com/sourcegraph/gosyntect v0.0.0-20191222043511-084e9c124954
+	github.com/sourcegraph/gosyntect v0.0.0-20200331033347-c35e64c39373
 	github.com/sourcegraph/jsonx v0.0.0-20190114210550-ba8cb36a8614
 	github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e // indirect
 	github.com/sqs/httpgzip v0.0.0-20180622165210-91da61ed4dff
@@ -133,7 +130,6 @@ require (
 	github.com/stripe/stripe-go v70.5.0+incompatible
 	github.com/temoto/robotstxt v1.1.1
 	github.com/tinylib/msgp v1.1.2 // indirect
-	github.com/tommy-muehle/go-mnd v1.3.1-0.20200224220436-e6f9a994e8fa // indirect
 	github.com/tomnomnom/linkheader v0.0.0-20180905144013-02ca5825eb80
 	github.com/uber/gonduit v0.6.1
 	github.com/uber/jaeger-client-go v2.22.1+incompatible
@@ -143,6 +139,7 @@ require (
 	github.com/xeipuuv/gojsonschema v1.2.0
 	github.com/xeonx/timeago v1.0.0-rc4
 	go.starlark.net v0.0.0-20200306205701-8dd3e2ee1dd5 // indirect
+	go.uber.org/atomic v1.6.0
 	go.uber.org/automaxprocs v1.3.0
 	golang.org/x/arch v0.0.0-20200312215426-ff8b605520f4 // indirect
 	golang.org/x/crypto v0.0.0-20200317142112-1b76d66859c6
@@ -154,17 +151,15 @@ require (
 	golang.org/x/tools v0.0.0-20200313205530-4303120df7d8
 	google.golang.org/genproto v0.0.0-20200313141609-30c55424f95d // indirect
 	gopkg.in/go-playground/validator.v9 v9.31.0 // indirect
-	gopkg.in/ini.v1 v1.55.0 // indirect
 	gopkg.in/jpoehls/gophermail.v0 v0.0.0-20160410235621-62941eab772c
 	gopkg.in/karlseguin/expect.v1 v1.0.1 // indirect
 	gopkg.in/square/go-jose.v2 v2.4.1 // indirect
 	gopkg.in/src-d/go-git.v4 v4.13.1
 	gopkg.in/yaml.v2 v2.2.8
-	mvdan.cc/unparam v0.0.0-20200314162735-0ac8026f7d06 // indirect
 )
 
 replace (
-	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20200318141102-0b140b7dc6c9
+	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20200401202556-ef3ec2393b46
 	github.com/mattn/goreman => github.com/sourcegraph/goreman v0.1.2-0.20180928223752-6e9a2beb830d
 	github.com/russellhaering/gosaml2 => github.com/sourcegraph/gosaml2 v0.3.2-0.20200109173551-5cfddeb48b17
 	github.com/uber/gonduit => github.com/sourcegraph/gonduit v0.4.0

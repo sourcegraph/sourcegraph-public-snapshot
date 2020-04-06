@@ -668,6 +668,14 @@ type OAuthIdentity struct {
 	Type                 string `json:"type"`
 }
 
+// ObservabilityTracing description: Controls the settings for distributed tracing.
+type ObservabilityTracing struct {
+	// Debug description: Turns on debug logging of opentracing client requests. This can be useful for debugging connectivity issues between the tracing client and the Jaeger agent, the performance overhead of tracing, and other issues related to the use of distributed tracing.
+	Debug bool `json:"debug,omitempty"`
+	// Sampling description: Determines the requests for which distributed traces are recorded. "none" (default) turns off tracing entirely. "selective" sends traces whenever `?trace=1` is present in the URL. "all" sends traces on every request. Note that this only affects the behavior of the distributed tracing client. The Jaeger instance must be running for traces to be collected (as described in the Sourcegraph installation instructions). Additional downsampling can be configured in Jaeger, itself (https://www.jaegertracing.io/docs/1.17/sampling)
+	Sampling string `json:"sampling,omitempty"`
+}
+
 // OpenIDConnectAuthProvider description: Configures the OpenID Connect authentication provider for SSO.
 type OpenIDConnectAuthProvider struct {
 	// ClientID description: The client ID for the OpenID Connect client for this site.
@@ -959,9 +967,9 @@ type SiteConfiguration struct {
 	HtmlHeadTop string `json:"htmlHeadTop,omitempty"`
 	// LicenseKey description: The license key associated with a Sourcegraph product subscription, which is necessary to activate Sourcegraph Enterprise functionality. To obtain this value, contact Sourcegraph to purchase a subscription. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.
 	LicenseKey string `json:"licenseKey,omitempty"`
-	// LightstepAccessToken description: Access token for sending traces to LightStep.
+	// LightstepAccessToken description: DEPRECATED. Use Jaeger (`"observability.tracing": { "sampling": "selective" }`), instead.
 	LightstepAccessToken string `json:"lightstepAccessToken,omitempty"`
-	// LightstepProject description: The project ID on LightStep that corresponds to the `lightstepAccessToken`, only for generating links to traces. For example, if `lightstepProject` is `mycompany-prod`, all HTTP responses from Sourcegraph will include an X-Trace header with the URL to the trace on LightStep, of the form `https://app.lightstep.com/mycompany-prod/trace?span_guid=...&at_micros=...`.
+	// LightstepProject description: DEPRECATED. Use Jaeger (`"observability.tracing": { "sampling": "selective" }`), instead.
 	LightstepProject string `json:"lightstepProject,omitempty"`
 	// Log description: Configuration for logging and alerting, including to external services.
 	Log *Log `json:"log,omitempty"`
@@ -969,6 +977,8 @@ type SiteConfiguration struct {
 	LsifEnforceAuth bool `json:"lsifEnforceAuth,omitempty"`
 	// MaxReposToSearch description: The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. Any value less than or equal to zero means unlimited.
 	MaxReposToSearch int `json:"maxReposToSearch,omitempty"`
+	// ObservabilityTracing description: Controls the settings for distributed tracing.
+	ObservabilityTracing *ObservabilityTracing `json:"observability.tracing,omitempty"`
 	// ParentSourcegraph description: URL to fetch unreachable repository details from. Defaults to "https://sourcegraph.com"
 	ParentSourcegraph *ParentSourcegraph `json:"parentSourcegraph,omitempty"`
 	// PermissionsBackgroundSync description: Sync code host repository and user permissions in the background.
@@ -985,19 +995,7 @@ type SiteConfiguration struct {
 	SearchLargeFiles []string `json:"search.largeFiles,omitempty"`
 	// UpdateChannel description: The channel on which to automatically check for Sourcegraph updates.
 	UpdateChannel string `json:"update.channel,omitempty"`
-	// UseJaeger description: Use local Jaeger instance for tracing. Kubernetes cluster deployments only.
-	//
-	// After enabling Jaeger and updating your Kubernetes cluster, `kubectl get pods`
-	// should display pods prefixed with `jaeger-cassandra`,
-	// `jaeger-collector`, and `jaeger-query`. `jaeger-collector` will start
-	// crashing until you initialize the Cassandra DB. To do so, do the
-	// following:
-	//
-	// 1. Install [`cqlsh`](https://pypi.python.org/pypi/cqlsh).
-	// 1. `kubectl port-forward $(kubectl get pods | grep jaeger-cassandra | awk '{ print $1 }') 9042`
-	// 1. `git clone https://github.com/uber/jaeger && cd jaeger && MODE=test ./plugin/storage/cassandra/schema/create.sh | cqlsh`
-	// 1. `kubectl port-forward $(kubectl get pods | grep jaeger-query | awk '{ print $1 }') 16686`
-	// 1. Go to http://localhost:16686 to view the Jaeger dashboard.
+	// UseJaeger description: DEPRECATED. Use `"observability.tracing": { "sampling": "all" }`, instead. Enables Jaeger tracing.
 	UseJaeger bool `json:"useJaeger,omitempty"`
 }
 

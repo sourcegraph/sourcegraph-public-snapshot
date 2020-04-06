@@ -215,7 +215,7 @@ include:
 
 - all of the Go source files that have tests
 - dev/check/all.sh (gofmt, lint, go generator, no Security TODOs, Bash syntax, others)
-- JS formatting/linting (prettier, tslint, stylelint, graphql-lint)
+- JS formatting/linting (prettier, eslint, stylelint, graphql-lint)
 - Dockerfile linter (hadolint)
 - Check whether the Go module folders are "tidy" (go mod tidy)
 

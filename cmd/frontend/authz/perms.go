@@ -177,10 +177,10 @@ func (p *RepoPermissions) TracingFields() []otlog.Field {
 type UserPendingPermissions struct {
 	// The auto-generated internal database ID.
 	ID int32
-	// The type of the code host as if it would be used as ExternalAccountSpec.ServiceType,
+	// The type of the code host as if it would be used as extsvc.AccountSpec.ServiceType,
 	// e.g. "github", "gitlab", "bitbucketServer" and "sourcegraph".
 	ServiceType string
-	// The ID of the code host as if it would be used as ExternalAccountSpec.ServiceID,
+	// The ID of the code host as if it would be used as extsvc.AccountSpec.ServiceID,
 	// e.g. "https://github.com/", "https://gitlab.com/" and "https://sourcegraph.com/".
 	ServiceID string
 	// The account ID that a code host (and its authz provider) uses to identify a user,

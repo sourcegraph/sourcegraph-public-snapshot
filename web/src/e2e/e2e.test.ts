@@ -44,6 +44,7 @@ describe('e2e test suite', () => {
             'sourcegraph/appdash',
             'sourcegraph/sourcegraph-typescript',
             'sourcegraph-testing/automation-e2e-test',
+            'sourcegraph/e2e-test-private-repository',
         ]
         await driver.ensureLoggedIn({ username: 'test', password: config.testUserPassword, email: 'test@test.com' })
         await driver.resetUserSettings()
@@ -360,6 +361,34 @@ describe('e2e test suite', () => {
             await driver.page.waitForSelector('a[href="/github.com/gorilla/mux"]', { visible: true })
             // Flaky https://github.com/sourcegraph/sourcegraph/issues/2704
             // await percySnapshot(page, 'Search results file')
+        })
+
+        test('Search visibility:private|public', async () => {
+            const privateRepos = ['github.com/sourcegraph/e2e-test-private-repository']
+
+            await driver.page.goto(sourcegraphBaseUrl + '/search?q=type:repo+visibility:private')
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length >= 1)
+
+            const privateResults = await driver.page.evaluate(() =>
+                Array.from(document.querySelectorAll('.e2e-search-result span')).map(t => (t.textContent || '').trim())
+            )
+            expect(privateResults).toEqual(expect.arrayContaining(privateRepos))
+
+            await driver.page.goto(sourcegraphBaseUrl + '/search?q=type:repo+visibility:public')
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 1)
+
+            const publicResults = await driver.page.evaluate(() =>
+                Array.from(document.querySelectorAll('.e2e-search-result span')).map(t => (t.textContent || '').trim())
+            )
+            expect(publicResults).not.toEqual(expect.arrayContaining(privateRepos))
+
+            await driver.page.goto(sourcegraphBaseUrl + '/search?q=type:repo+visibility:any')
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 1)
+
+            const anyResults = await driver.page.evaluate(() =>
+                Array.from(document.querySelectorAll('.e2e-search-result span')).map(t => (t.textContent || '').trim())
+            )
+            expect(anyResults).toEqual(expect.arrayContaining(privateRepos))
         })
 
         test('Search results code', async () => {
@@ -1668,22 +1697,8 @@ describe('e2e test suite', () => {
             )
         })
 
-        test('Interactive search mode updates query when on searching from directory page', async () => {
+        test('Interactive search mode updates query when searching from directory page', async () => {
             await driver.page.goto(sourcegraphBaseUrl + '/github.com/sourcegraph/jsonrpc2')
-            await driver.page.waitForSelector('.tree-page__section-search .e2e-query-input')
-            await driver.page.click('.tree-page__section-search .e2e-query-input')
-            await driver.page.type('.tree-page__section-search .e2e-query-input', 'test')
-            await driver.page.click('.tree-page__section-search .e2e-search-button')
-            await driver.assertWindowLocation(
-                '/search?q=repo:%5Egithub%5C.com/sourcegraph/jsonrpc2%24+test&patternType=literal'
-            )
-            await driver.page.waitForSelector('.e2e-query-input')
-            const queryInputValue = () =>
-                driver.page.evaluate(() => {
-                    const input = document.querySelector<HTMLInputElement>('.e2e-query-input')
-                    return input ? input.value : null
-                })
-            assert.strictEqual(await queryInputValue(), 'test')
             await driver.page.waitForSelector('.filter-input')
             const filterInputValue = () =>
                 driver.page.evaluate(() => {

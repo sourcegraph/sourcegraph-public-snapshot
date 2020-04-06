@@ -68,7 +68,7 @@ export class RepoSettingsArea extends React.Component<Props> {
         this.componentUpdates.next(this.props)
     }
 
-    public componentDidUpdate(prevProps: Props): void {
+    public componentDidUpdate(): void {
         this.componentUpdates.next(this.props)
     }
 
@@ -118,12 +118,7 @@ export class RepoSettingsArea extends React.Component<Props> {
                     }
                     repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
                 />
-                <RepoSettingsSidebar
-                    className="flex-0 mr-3"
-                    repoSettingsSidebarItems={this.props.repoSettingsSidebarItems}
-                    {...this.props}
-                    {...context}
-                />
+                <RepoSettingsSidebar className="flex-0 mr-3" {...this.props} {...context} />
                 <div className="flex-1">
                     <Switch>
                         {this.props.repoSettingsAreaRoutes.map(

@@ -39,6 +39,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -176,10 +177,11 @@ func (sr *SearchResultsResolver) MatchCount() int32 {
 	return totalResults
 }
 
+// Deprecated. Prefer MatchCount.
 func (sr *SearchResultsResolver) ResultCount() int32 { return sr.MatchCount() }
 
 func (sr *SearchResultsResolver) ApproximateResultCount() string {
-	count := sr.ResultCount()
+	count := sr.MatchCount()
 	if sr.LimitHit() || len(sr.cloning) > 0 || len(sr.timedout) > 0 {
 		return fmt.Sprintf("%d+", count)
 	}
@@ -360,7 +362,7 @@ func (sf *searchFilterResolver) Kind() string {
 // blameFileMatch blames the specified file match to produce the time at which
 // the first line match inside of it was authored.
 func (sr *SearchResultsResolver) blameFileMatch(ctx context.Context, fm *FileMatchResolver) (t time.Time, err error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "blameFileMatch")
+	span, ctx := ot.StartSpanFromContext(ctx, "blameFileMatch")
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
@@ -859,7 +861,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 		if err != nil {
 			return nil, err // do not cache errors.
 		}
-		if v.ResultCount() > 0 {
+		if v.MatchCount() > 0 {
 			break
 		}
 

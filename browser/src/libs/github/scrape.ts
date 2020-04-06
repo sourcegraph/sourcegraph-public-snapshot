@@ -6,6 +6,6 @@ import { commitIDFromPermalink } from '../../shared/util/dom'
 export function getCommitIDFromPermalink(): string {
     return commitIDFromPermalink({
         selector: '.js-permalink-shortcut',
-        hrefRegex: /^\/.*?\/.*?\/blob\/([0-9a-f]{40})/,
+        hrefRegex: /^\/.*?\/.*?\/(?:blob|tree)\/([0-9a-f]{40})/,
     })
 }

@@ -13,9 +13,9 @@ import (
 	"strings"
 	"time"
 
-	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 // Store is an on disk cache, with items cached via calls to Open.
@@ -77,7 +77,7 @@ func (s *Store) Open(ctx context.Context, key string, fetcher Fetcher) (file *Fi
 // OpenWithPath will open a file from the local cache with key. If missing, fetcher
 // will fill the cache first. Open also performs single-flighting for fetcher.
 func (s *Store) OpenWithPath(ctx context.Context, key string, fetcher FetcherWithPath) (file *File, err error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Cached Fetch")
+	span, ctx := ot.StartSpanFromContext(ctx, "Cached Fetch")
 	if s.Component != "" {
 		ext.Component.Set(span, s.Component)
 	}

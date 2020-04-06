@@ -1,4 +1,10 @@
-FROM alpine:3.11@sha256:3983cc12fb9dc20a009340149e382a18de6a8261b0ac0e8f5fcdf11f8dd5937e as builder
+FROM golang:1.13-alpine@sha256:ed003971a4809c9ae45afe2d318c24b9e3f6b30864a322877c69a46c504d852c AS builder
+
+COPY ./src-observability-generator /go/src/
+WORKDIR /go/src/src-observability-generator
+RUN CGO_ENABLED=0 go install .
+RUN mkdir -p /generated/grafana
+RUN PROMETHEUS_DIR='' GRAFANA_DIR=/generated/grafana /go/bin/src-observability-generator
 
 RUN apk add --no-cache bash=5.0.11-r1 git=2.24.1-r0 openssh=8.1_p1-r0 build-base=0.5-r1
 
@@ -28,6 +34,7 @@ ADD --chown=grafana:grafana config /sg_config_grafana
 COPY home.json /usr/share/grafana/public/dashboards/home.json
 
 COPY --from=builder /dashboards/*.json /sg_config_grafana/provisioning/dashboards/sourcegraph_internal/
+COPY --from=builder /generated/grafana/* /sg_config_grafana/provisioning/dashboards/sourcegraph/
 
 # hadolint ignore=DL3020
 ADD --chown=grafana:grafana entry.sh /

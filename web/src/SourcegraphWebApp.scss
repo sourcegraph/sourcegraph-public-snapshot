@@ -64,6 +64,10 @@ $alert-padding-x: 0.75rem;
 
 $input-btn-focus-width: 2px;
 $input-focus-border-color: $primary;
+// The default focus ring for buttons is very hard to see, raise opacity.
+// We only show the focus ring when using the keyboard, when the focus ring
+// should be clearly visible.
+$btn-focus-box-shadow: 0 0 0 $input-btn-focus-width rgba($primary, 0.8);
 
 // Forms don't manipulate the colors at compile time,
 // which is why we can use CSS variables for theming here
