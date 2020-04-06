@@ -24,3 +24,4 @@ precise-code-intel-worker: yarn --cwd cmd/precise-code-intel run run:worker
 prometheus: ./dev/prometheus.sh
 grafana: ./dev/grafana.sh
 postgres_exporter: ./dev/postgres_exporter.sh
+minio: ./dev/minio.sh
