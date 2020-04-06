@@ -189,13 +189,10 @@ func wait(pipeline *bk.Pipeline) {
 }
 
 func triggerE2E(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
-	// hardFail for renovate and release branches
-	// Do not block green master builds on e2e tests until we can make them reliable.
+	// Run e2e tests for renovate and release branches
+	// We do not run e2e tests on other branches until we can make them reliable.
 	// See RFC 137: https://docs.google.com/document/d/14f7lwfToeT6t_vxnGsCuXqf3QcB5GRZ2Zoy6kYqBAIQ/edit
-	hardFail := c.isRenovateBranch || c.releaseBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch
-
-	// Skip e2e tests for non-master branches (except those where hardFail is true)
-	skipE2E := !hardFail && c.branch != "master"
+	runE2E := c.isRenovateBranch || c.releaseBranch || c.taggedRelease || c.isBextReleaseBranch || c.patch
 
 	env := copyEnv(
 		"BUILDKITE_PULL_REQUEST",
@@ -208,12 +205,11 @@ func triggerE2E(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
 	env["CI_DEBUG_PROFILE"] = commonEnv["CI_DEBUG_PROFILE"]
 
 	return func(pipeline *bk.Pipeline) {
-		if skipE2E {
+		if !runE2E {
 			return
 		}
 		pipeline.AddTrigger(":chromium:",
 			bk.Trigger("sourcegraph-e2e"),
-			bk.Async(!hardFail),
 			bk.Build(bk.BuildOptions{
 				Message: os.Getenv("BUILDKITE_MESSAGE"),
 				Commit:  c.commit,
