@@ -16,8 +16,7 @@ cp -a ./cmd/symbols/ctags-install-alpine.sh "$OUTPUT"
 cp -a ./dev/libsqlite3-pcre/install-alpine.sh "$OUTPUT/libsqlite3-pcre-install-alpine.sh"
 
 # Build go binary into $OUTPUT
-export OUTPUT
-./cmd/symbols/go-build.sh
+./cmd/symbols/go-build.sh "$OUTPUT"
 
 echo "--- docker build"
 docker build -f cmd/symbols/Dockerfile -t "$IMAGE" "$OUTPUT" \

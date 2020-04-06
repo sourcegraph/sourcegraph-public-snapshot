@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-# This script builds the symbols binary.
+# This script builds the symbols go binary.
+# Requires a single argument which is the path to the target bindir.
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 set -eu
@@ -15,5 +16,5 @@ export GOOS=linux
 
 echo "--- go build"
 for pkg in github.com/sourcegraph/sourcegraph/cmd/symbols; do
-    go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION" -buildmode exe -tags dist -o $OUTPUT/$(basename $pkg) $pkg
+    go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION" -buildmode exe -tags dist -o $1/$(basename $pkg) $pkg
 done

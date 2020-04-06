@@ -5,9 +5,9 @@ set -euxo pipefail
 PACKAGE="$1"
 
 basepkg="$(basename "$PACKAGE")"
-if [[ -f "cmd/$basepkg/go-build.sh" ]]; then
+if [[ "$basepkg" != "server" ]] && [[ -f "cmd/$basepkg/go-build.sh" ]]; then
     # Application builds itself (e.g. requires CGO)
-    bash "cmd/$basepkg/go-build.sh"
+    bash "cmd/$basepkg/go-build.sh" "$BINDIR"
 else
     go build \
         -trimpath \
