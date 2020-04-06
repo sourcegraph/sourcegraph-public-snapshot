@@ -47,6 +47,33 @@ func TestReposHandler(t *testing.T) {
 			}
 			testReposHandler(t, h, want)
 		})
+
+		// Now do the same test, but we root it under a repo we serve. This is
+		// to test we properly serve up the root repo as something other than
+		// "."
+		t.Run("rooted-"+tc.name, func(t *testing.T) {
+			repos := []string{"project-root"}
+			for _, name := range tc.repos {
+				repos = append(repos, filepath.Join("project-root", name))
+			}
+
+			root := gitInitRepos(t, repos...)
+
+			// This is the difference to above, we point our root at the git repo
+			root = filepath.Join(root, "project-root")
+
+			h, err := reposHandler(testLogger(t), testAddress, root)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			// project-root is served from /repos, etc
+			want := []Repo{{Name: "project-root", URI: "/repos"}}
+			for _, name := range tc.repos {
+				want = append(want, Repo{Name: filepath.Join("project-root", name), URI: path.Join("/repos", name)})
+			}
+			testReposHandler(t, h, want)
+		})
 	}
 }
 
