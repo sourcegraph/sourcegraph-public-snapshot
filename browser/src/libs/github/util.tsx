@@ -181,7 +181,7 @@ function getDiffResolvedRevFromPageSource(pageSource: string, isPullRequest: boo
 }
 
 /**
- * Returns the file path for the current page. Must be on a blob page.
+ * Returns the file path for the current page. Must be on a blob or tree page.
  *
  * Implementation details:
  *
@@ -203,7 +203,7 @@ export function getFilePath(): string {
         throw new Error('Unable to determine the file path because no a.js-permalink-shortcut element was found.')
     }
     const url = new URL(permalink.href)
-    // <empty>/<user>/<repo>/blob/<commitID>/<path/to/file>
+    // <empty>/<user>/<repo>/(blob|tree)/<commitID>/<path/to/file>
     const [, , , , , ...path] = url.pathname.split('/')
     if (path.length === 0) {
         throw new Error(
@@ -213,13 +213,15 @@ export function getFilePath(): string {
     return decodeURIComponent(path.join('/'))
 }
 
-type GitHubURL =
-    | ({ pageType: 'tree' | 'commit' | 'pull' | 'compare' | 'other' } & RawRepoSpec)
-    | ({
-          pageType: 'blob'
-          /** rev and file path separated by a slash, URL-decoded. */
-          revAndFilePath: string
-      } & RawRepoSpec)
+type GitHubURL = RawRepoSpec &
+    (
+        | { pageType: 'commit' | 'pull' | 'compare' | 'other' }
+        | {
+              pageType: 'blob' | 'tree'
+              /** rev and file path separated by a slash, URL-decoded. */
+              revAndFilePath: string
+          }
+    )
 
 export function isDiffPageType(pageType: GitHubURL['pageType']): boolean {
     switch (pageType) {
@@ -241,19 +243,16 @@ export function parseURL(loc: Pick<Location, 'host' | 'pathname'> = window.locat
     const rawRepoName = `${host}/${user}/${ghRepoName}`
     switch (pageType) {
         case 'blob':
+        case 'tree':
             return {
                 pageType,
                 rawRepoName,
                 revAndFilePath: decodeURIComponent(rest.join('/')),
             }
-        case 'tree':
         case 'pull':
         case 'commit':
         case 'compare':
-            return {
-                pageType,
-                rawRepoName,
-            }
+            return { pageType, rawRepoName }
         default:
             return { pageType: 'other', rawRepoName }
     }

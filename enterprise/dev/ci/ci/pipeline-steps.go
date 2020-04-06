@@ -19,7 +19,9 @@ var allDockerImages = []string{
 	"searcher",
 	"server",
 	"symbols",
-	"lsif-server",
+	"precise-code-intel/api-server",
+	"precise-code-intel/bundle-manager",
+	"precise-code-intel/worker",
 }
 
 // Verifies the docs formatting and builds the `docsite` command.
@@ -45,14 +47,13 @@ func addLint(pipeline *bk.Pipeline) {
 	// - yarn 41s
 	// - eslint 137s
 	// - build-ts 60s
-	// - tslint 45s
 	// - prettier 29s
 	// - stylelint 7s
 	// - graphql-lint 1s
 	pipeline.AddStep(":eslint:",
 		bk.Cmd("dev/ci/yarn-run.sh build-ts all:eslint")) // eslint depends on build-ts
 	pipeline.AddStep(":lipstick: :lint-roller: :stylelint: :graphql:",
-		bk.Cmd("dev/ci/yarn-run.sh prettier-check all:tslint all:stylelint graphql-lint"))
+		bk.Cmd("dev/ci/yarn-run.sh prettier-check all:stylelint graphql-lint"))
 }
 
 // Adds steps for the OSS and Enterprise web app builds. Runs the web app tests.
@@ -87,11 +88,11 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 		bk.ArtifactPaths("browser/coverage/coverage-final.json"))
 }
 
-// Tests the LSIF server.
-func addLSIFServer(pipeline *bk.Pipeline) {
+// Tests the precise code intel system.
+func addPreciseCodeIntelSystem(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":jest:",
-		bk.Cmd("dev/ci/yarn-test-separate.sh lsif"),
-		bk.ArtifactPaths("lsif/coverage/coverage-final.json"))
+		bk.Cmd("dev/ci/yarn-test-separate.sh cmd/precise-code-intel"),
+		bk.ArtifactPaths("cmd/precise-code-intel/coverage/coverage-final.json"))
 }
 
 // Adds the shared frontend tests (shared between the web app and browser extension).
@@ -136,7 +137,7 @@ func addCodeCov(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":codecov:",
 		bk.Cmd("buildkite-agent artifact download 'coverage.txt' . || true"), // ignore error when no report exists
 		bk.Cmd("buildkite-agent artifact download '*/coverage-final.json' . || true"),
-		bk.Cmd("bash <(curl -s https://codecov.io/bash) -X gcov -X coveragepy -X xcode"))
+		bk.Cmd("bash <(curl -s https://codecov.io/bash) -X gcov -X coveragepy -X xcode -F unit"))
 }
 
 // Release the browser extension.
@@ -199,7 +200,6 @@ func triggerE2E(c Config, commonEnv map[string]string) func(*bk.Pipeline) {
 	env["COMMIT_SHA"] = commonEnv["COMMIT_SHA"]
 	env["DATE"] = commonEnv["DATE"]
 	env["VERSION"] = commonEnv["VERSION"]
-	env["TAG"] = candiateImageTag(c)
 	env["CI_DEBUG_PROFILE"] = commonEnv["CI_DEBUG_PROFILE"]
 
 	return func(pipeline *bk.Pipeline) {
@@ -267,12 +267,8 @@ func addDockerImages(c Config, final bool) func(*bk.Pipeline) {
 // tags once the e2e tests pass.
 func addCanidateDockerImage(c Config, app string) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
-		if app == "server" {
-			// The candiate server image is built by the e2e pipeline.
-			return
-		}
 
-		baseImage := "sourcegraph/" + app
+		baseImage := "sourcegraph/" + strings.ReplaceAll(app, "/", "-")
 
 		cmds := []bk.StepOpt{
 			bk.Cmd(fmt.Sprintf(`echo "Building candidate %s image..."`, app)),
@@ -297,24 +293,7 @@ func addCanidateDockerImage(c Config, app string) func(*bk.Pipeline) {
 
 		gcrImage := fmt.Sprintf("us.gcr.io/sourcegraph-dev/%s", strings.TrimPrefix(baseImage, "sourcegraph/"))
 
-		getBuildSteps := func() []bk.StepOpt {
-			buildScriptByApp := map[string][]bk.StepOpt{
-				"symbols": {
-					bk.Env("BUILD_TYPE", "dist"),
-					bk.Cmd("./cmd/symbols/build.sh buildSymbolsDockerImage"),
-				},
-			}
-			if buildScript, ok := buildScriptByApp[app]; ok {
-				return buildScript
-			}
-			return []bk.StepOpt{
-				bk.Cmd(cmdDir + "/build.sh"),
-			}
-		}
-
-		cmds = append(cmds,
-			getBuildSteps()...,
-		)
+		cmds = append(cmds, bk.Cmd(cmdDir+"/build.sh"))
 
 		tag := candiateImageTag(c)
 		cmds = append(cmds,
@@ -330,7 +309,7 @@ func addCanidateDockerImage(c Config, app string) func(*bk.Pipeline) {
 // after the e2e tests pass.
 func addFinalDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
-		baseImage := "sourcegraph/" + app
+		baseImage := "sourcegraph/" + strings.ReplaceAll(app, "/", "-")
 
 		cmds := []bk.StepOpt{
 			bk.Cmd(fmt.Sprintf(`echo "Tagging final %s image..."`, app)),

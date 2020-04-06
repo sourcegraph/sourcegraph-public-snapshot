@@ -43,7 +43,6 @@ export class ToggleRenderedFileMode extends React.PureComponent<Props> {
         } else {
             q.delete(ToggleRenderedFileMode.URL_QUERY_PARAM)
         }
-        // eslint-disable-next-line @typescript-eslint/no-base-to-string
         return { ...location, search: q.toString() }
     }
 

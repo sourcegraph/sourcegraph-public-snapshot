@@ -8,9 +8,9 @@ import (
 
 	"github.com/gregjones/httpcache"
 	"github.com/hashicorp/go-multierror"
-	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/httputil"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 // A Doer captures the Do method of an http.Client. It faciliates decorating
@@ -241,7 +241,7 @@ func TracedTransportOpt(cli *http.Client) error {
 		cli.Transport = http.DefaultTransport
 	}
 
-	cli.Transport = &nethttp.Transport{RoundTripper: cli.Transport}
+	cli.Transport = &ot.Transport{RoundTripper: cli.Transport}
 	return nil
 }
 

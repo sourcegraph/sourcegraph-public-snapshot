@@ -494,7 +494,7 @@ func TestCampaigns(t *testing.T) {
 				ReviewState: "PENDING",
 				CheckState:  "PENDING",
 				Events: ChangesetEventConnection{
-					TotalCount: 9,
+					TotalCount: 10,
 				},
 				Head: GitRef{
 					Name:        "refs/heads/release-testing-pr",
@@ -809,7 +809,7 @@ func TestChangesetCountsOverTime(t *testing.T) {
 
 	syncer := ee.ChangesetSyncer{
 		ReposStore:  repoStore,
-		Store:       store,
+		SyncStore:   store,
 		HTTPFactory: cf,
 	}
 	err = syncer.SyncChangesets(ctx, changesets...)

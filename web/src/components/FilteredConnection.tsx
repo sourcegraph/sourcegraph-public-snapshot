@@ -702,7 +702,6 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         if (arg.visible !== 0 && arg.visible !== arg.first) {
             q.set('visible', String(arg.visible))
         }
-        // eslint-disable-next-line @typescript-eslint/no-base-to-string
         return q.toString()
     }
 

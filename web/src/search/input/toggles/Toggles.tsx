@@ -3,8 +3,7 @@ import * as H from 'history'
 import RegexIcon from 'mdi-react/RegexIcon'
 import classNames from 'classnames'
 import FormatLetterCaseIcon from 'mdi-react/FormatLetterCaseIcon'
-import { PatternTypeProps, CaseSensitivityProps } from '../..'
-import { FiltersToTypeAndValue } from '../../../../../shared/src/search/interactive/util'
+import { PatternTypeProps, CaseSensitivityProps, InteractiveSearchProps } from '../..'
 import { SettingsCascadeProps } from '../../../../../shared/src/settings/settings'
 import { SearchPatternType } from '../../../../../shared/src/graphql/schema'
 import { isEmpty } from 'lodash'
@@ -12,25 +11,17 @@ import { submitSearch } from '../../helpers'
 import { QueryInputToggle } from './QueryInputToggle'
 import { isErrorLike } from '../../../../../shared/src/util/errors'
 import CodeBracketsIcon from 'mdi-react/CodeBracketsIcon'
-import { ActivationProps } from '../../../../../shared/src/components/activation/Activation'
 
-export interface TogglesProps extends PatternTypeProps, CaseSensitivityProps, SettingsCascadeProps {
+export interface TogglesProps
+    extends PatternTypeProps,
+        CaseSensitivityProps,
+        SettingsCascadeProps,
+        Partial<Pick<InteractiveSearchProps, 'filtersInQuery'>> {
     navbarSearchQuery: string
     history: H.History
     location: H.Location
-    filtersInQuery?: FiltersToTypeAndValue
     hasGlobalQueryBehavior?: boolean
     className?: string
-}
-
-interface SubmitSearchArgs {
-    history: H.History
-    navbarQuery: string
-    source: 'home' | 'nav' | 'repo' | 'tree' | 'filter' | 'type'
-    patternType: SearchPatternType
-    caseSensitive: boolean
-    activation?: ActivationProps['activation']
-    filtersQuery?: FiltersToTypeAndValue
 }
 
 /**
@@ -42,24 +33,27 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
         window.context.experimentalFeatures &&
         window.context.experimentalFeatures.structuralSearch === 'disabled'
 
-    const submitOnToggle = (args: SubmitSearchArgs): void => {
-        const searchQueryNotEmpty =
-            props.navbarSearchQuery !== '' || (props.filtersInQuery && !isEmpty(props.filtersInQuery))
+    const submitOnToggle = (args: { newPatternType: SearchPatternType } | { newCaseSensitivity: boolean }): void => {
+        const { history, navbarSearchQuery, filtersInQuery } = props
+        const searchQueryNotEmpty = navbarSearchQuery !== '' || (filtersInQuery && !isEmpty(filtersInQuery))
         const shouldSubmitSearch = props.hasGlobalQueryBehavior && searchQueryNotEmpty
-
+        const activation = undefined
+        const source = 'filter'
+        const patternType = 'newPatternType' in args ? args.newPatternType : props.patternType
+        const caseSensitive = 'newCaseSensitivity' in args ? args.newCaseSensitivity : props.caseSensitive
         if (shouldSubmitSearch) {
             // Only submit search on toggle when the query input has global behavior (i.e. it's on the main search page
             // or global navbar). Non-global inputs don't have the canonical query and need more context, making
             // submit on-toggle undesirable. Also, only submit on toggle only when the query is non-empty.
-            submitSearch(
-                args.history,
-                args.navbarQuery,
-                args.source,
-                args.patternType,
-                args.caseSensitive,
-                args.activation,
-                args.filtersQuery
-            )
+            submitSearch({
+                history,
+                query: navbarSearchQuery,
+                source,
+                patternType,
+                caseSensitive,
+                activation,
+                filtersInQuery,
+            })
         }
     }
 
@@ -67,19 +61,9 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
         if (props.patternType === SearchPatternType.structural) {
             return
         }
-
         const newCaseSensitivity = !props.caseSensitive
         props.setCaseSensitivity(newCaseSensitivity)
-
-        submitOnToggle({
-            history: props.history,
-            navbarQuery: props.navbarSearchQuery,
-            source: 'filter',
-            patternType: props.patternType,
-            caseSensitive: newCaseSensitivity,
-            activation: undefined,
-            filtersQuery: props.filtersInQuery,
-        })
+        submitOnToggle({ newCaseSensitivity })
     }
 
     const toggleRegexp = (): void => {
@@ -87,16 +71,7 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
             props.patternType !== SearchPatternType.regexp ? SearchPatternType.regexp : SearchPatternType.literal
 
         props.setPatternType(newPatternType)
-
-        submitOnToggle({
-            history: props.history,
-            navbarQuery: props.navbarSearchQuery,
-            source: 'filter',
-            patternType: newPatternType,
-            caseSensitive: props.caseSensitive,
-            activation: undefined,
-            filtersQuery: props.filtersInQuery,
-        })
+        submitOnToggle({ newPatternType })
     }
 
     const toggleStructuralSearch = (): void => {
@@ -111,16 +86,7 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
             props.patternType !== SearchPatternType.structural ? SearchPatternType.structural : defaultPatternType
 
         props.setPatternType(newPatternType)
-
-        submitOnToggle({
-            history: props.history,
-            navbarQuery: props.navbarSearchQuery,
-            source: 'filter',
-            patternType: newPatternType,
-            caseSensitive: props.caseSensitive,
-            activation: undefined,
-            filtersQuery: props.filtersInQuery,
-        })
+        submitOnToggle({ newPatternType })
     }
 
     return (

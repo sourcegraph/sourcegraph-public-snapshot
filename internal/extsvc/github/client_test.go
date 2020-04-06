@@ -111,6 +111,28 @@ func update(name string) bool {
 	return regexp.MustCompile(*updateRegex).MatchString(name)
 }
 
+func TestClient_WithToken(t *testing.T) {
+	uri, err := url.Parse("https://github.com")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	old := &Client{
+		apiURL:       uri,
+		defaultToken: "old_token",
+	}
+
+	newToken := "new_token"
+	new := old.WithToken(newToken)
+	if old == new {
+		t.Fatal("both clients have the same address")
+	}
+
+	if new.defaultToken != newToken {
+		t.Fatalf("defaultToken: want %q but got %q", newToken, new.defaultToken)
+	}
+}
+
 func TestClient_LoadPullRequests(t *testing.T) {
 	cli, save := newClient(t, "LoadPullRequests")
 	defer save()

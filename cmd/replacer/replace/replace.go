@@ -25,16 +25,16 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/net/trace"
+	nettrace "golang.org/x/net/trace"
 
 	"github.com/inconshreveable/log15"
-	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/replacer/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/store"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 
 	"github.com/gorilla/schema"
 )
@@ -132,10 +132,10 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Service) replace(ctx context.Context, p *protocol.Request, w http.ResponseWriter, r *http.Request) (deadlineHit bool, err error) {
-	tr := trace.New("replace", fmt.Sprintf("%s@%s", p.Repo, p.Commit))
+	tr := nettrace.New("replace", fmt.Sprintf("%s@%s", p.Repo, p.Commit))
 	tr.LazyPrintf("%s", p.RewriteSpecification)
 
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Replace")
+	span, ctx := ot.StartSpanFromContext(ctx, "Replace")
 	ext.Component.Set(span, "service")
 	span.SetTag("repo", p.Repo)
 	span.SetTag("url", p.URL)

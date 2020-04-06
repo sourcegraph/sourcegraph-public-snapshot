@@ -32,14 +32,14 @@ func Benchmark_authzFilter(b *testing.B) {
 			codeHost := extsvc.NewCodeHost(baseURL, "fake")
 			return &fakeProvider{
 				codeHost: codeHost,
-				extAcct: &extsvc.ExternalAccount{
+				extAcct: &extsvc.Account{
 					UserID: user.ID,
-					ExternalAccountSpec: extsvc.ExternalAccountSpec{
+					AccountSpec: extsvc.AccountSpec{
 						ServiceType: codeHost.ServiceType,
 						ServiceID:   codeHost.ServiceID,
 						AccountID:   "42_ext",
 					},
-					ExternalAccountData: extsvc.ExternalAccountData{AccountData: nil},
+					AccountData: extsvc.AccountData{Data: nil},
 				},
 			}
 		}(),
@@ -48,14 +48,14 @@ func Benchmark_authzFilter(b *testing.B) {
 			codeHost := extsvc.NewCodeHost(baseURL, "github")
 			return &fakeProvider{
 				codeHost: codeHost,
-				extAcct: &extsvc.ExternalAccount{
+				extAcct: &extsvc.Account{
 					UserID: user.ID,
-					ExternalAccountSpec: extsvc.ExternalAccountSpec{
+					AccountSpec: extsvc.AccountSpec{
 						ServiceType: codeHost.ServiceType,
 						ServiceID:   codeHost.ServiceID,
 						AccountID:   "42_ext",
 					},
-					ExternalAccountData: extsvc.ExternalAccountData{AccountData: nil},
+					AccountData: extsvc.AccountData{Data: nil},
 				},
 			}
 		}(),
@@ -94,7 +94,7 @@ func Benchmark_authzFilter(b *testing.B) {
 	ctx := context.Background()
 
 	Mocks.ExternalAccounts.List = func(opt ExternalAccountsListOptions) (
-		accts []*extsvc.ExternalAccount,
+		accts []*extsvc.Account,
 		err error,
 	) {
 		for _, p := range providers {
@@ -118,12 +118,12 @@ func Benchmark_authzFilter(b *testing.B) {
 
 type fakeProvider struct {
 	codeHost *extsvc.CodeHost
-	extAcct  *extsvc.ExternalAccount
+	extAcct  *extsvc.Account
 }
 
 func (f fakeProvider) RepoPerms(
 	ctx context.Context,
-	userAccount *extsvc.ExternalAccount,
+	userAccount *extsvc.Account,
 	repos []*types.Repo,
 ) ([]authz.RepoPerms, error) {
 	authorized := make([]authz.RepoPerms, 0, len(repos))
@@ -139,14 +139,22 @@ func (f fakeProvider) RepoPerms(
 func (f fakeProvider) FetchAccount(
 	ctx context.Context,
 	user *types.User,
-	current []*extsvc.ExternalAccount,
-) (mine *extsvc.ExternalAccount, err error) {
+	current []*extsvc.Account,
+) (mine *extsvc.Account, err error) {
 	return f.extAcct, nil
 }
 
 func (f fakeProvider) ServiceType() string           { return f.codeHost.ServiceType }
 func (f fakeProvider) ServiceID() string             { return f.codeHost.ServiceID }
 func (f fakeProvider) Validate() (problems []string) { return nil }
+
+func (f fakeProvider) FetchUserPerms(context.Context, *extsvc.Account) ([]extsvc.RepoID, error) {
+	return nil, nil
+}
+
+func (f fakeProvider) FetchRepoPerms(context.Context, *extsvc.Repository) ([]extsvc.AccountID, error) {
+	return nil, nil
+}
 
 // 🚨 SECURITY: test necessary to ensure security
 func Test_getBySQL_permissionsCheck(t *testing.T) {

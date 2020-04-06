@@ -5,15 +5,16 @@ import { NavLink } from 'react-router-dom'
 import { toggleSearchType } from '../helpers'
 import { buildSearchURLQuery, generateFiltersQuery } from '../../../../shared/src/util/url'
 import { constant } from 'lodash'
-import { PatternTypeProps, CaseSensitivityProps, parseSearchURLQuery } from '..'
-import { FiltersToTypeAndValue } from '../../../../shared/src/search/interactive/util'
+import { PatternTypeProps, CaseSensitivityProps, parseSearchURLQuery, InteractiveSearchProps } from '..'
 import { parseSearchQuery } from '../../../../shared/src/search/parser/parser'
 
-interface Props extends Omit<PatternTypeProps, 'setPatternType'>, Omit<CaseSensitivityProps, 'setCaseSensitivity'> {
+interface Props
+    extends Omit<PatternTypeProps, 'setPatternType'>,
+        Omit<CaseSensitivityProps, 'setCaseSensitivity'>,
+        Pick<InteractiveSearchProps, 'filtersInQuery'> {
     location: H.Location
     type: SearchType
     query: string
-    filtersInQuery: FiltersToTypeAndValue
 }
 
 const typeToProse: Record<Exclude<SearchType, null>, string> = {

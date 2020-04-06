@@ -1,3 +1,4 @@
+/* eslint rxjs/no-ignored-subscription: warn */
 import DeleteIcon from 'mdi-react/DeleteIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -125,6 +126,8 @@ class UserEmailNode extends React.PureComponent<UserEmailNodeProps, UserEmailNod
             loading: true,
         })
 
+        // TODO this may call setState() after the component was unmounted
+        // eslint-disable-next-line rxjs/no-ignored-subscription
         setUserEmailVerified(this.props.user.id, this.props.node.email, verified).subscribe(
             () => {
                 this.setState({ loading: false })

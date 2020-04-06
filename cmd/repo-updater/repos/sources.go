@@ -101,7 +101,6 @@ type ChangesetSource interface {
 	// means the appropriate final state on the codehost (e.g. "declined" on
 	// Bitbucket Server).
 	CloseChangeset(context.Context, *Changeset) error
-
 	// UpdateChangeset can update Changesets.
 	UpdateChangeset(context.Context, *Changeset) error
 }

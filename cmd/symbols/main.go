@@ -16,8 +16,6 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
-	"github.com/opentracing-contrib/go-stdlib/nethttp"
-	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/pkg/ctags"
@@ -26,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 )
 
@@ -73,7 +72,7 @@ func main() {
 	if err := service.Start(); err != nil {
 		log.Fatalln("Start:", err)
 	}
-	handler := nethttp.Middleware(opentracing.GlobalTracer(), service.Handler())
+	handler := ot.Middleware(service.Handler())
 
 	host := ""
 	if env.InsecureDev {

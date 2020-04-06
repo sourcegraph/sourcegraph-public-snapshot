@@ -8,7 +8,6 @@ import (
 	"sync"
 
 	"github.com/inconshreveable/log15"
-	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
@@ -16,7 +15,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/pkg/ctags"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
-	"golang.org/x/net/trace"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	nettrace "golang.org/x/net/trace"
 )
 
 // startParsers starts the parser process pool.
@@ -38,7 +38,7 @@ func (s *Service) startParsers() error {
 }
 
 func (s *Service) parseUncached(ctx context.Context, repo api.RepoName, commitID api.CommitID, callback func(symbol protocol.Symbol) error) (err error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "parseUncached")
+	span, ctx := ot.StartSpanFromContext(ctx, "parseUncached")
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
@@ -49,7 +49,7 @@ func (s *Service) parseUncached(ctx context.Context, repo api.RepoName, commitID
 	span.SetTag("repo", string(repo))
 	span.SetTag("commit", string(commitID))
 
-	tr := trace.New("parseUncached", string(repo))
+	tr := nettrace.New("parseUncached", string(repo))
 	tr.LazyPrintf("commitID: %s", commitID)
 
 	totalSymbols := 0

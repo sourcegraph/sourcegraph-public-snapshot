@@ -21,15 +21,15 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
-	"golang.org/x/net/trace"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/store"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	nettrace "golang.org/x/net/trace"
 
 	"github.com/pkg/errors"
 
 	"github.com/gorilla/schema"
-	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
@@ -131,10 +131,10 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []protocol.FileMatch, limitHit, deadlineHit bool, err error) {
-	tr := trace.New("search", fmt.Sprintf("%s@%s", p.Repo, p.Commit))
+	tr := nettrace.New("search", fmt.Sprintf("%s@%s", p.Repo, p.Commit))
 	tr.LazyPrintf("%s", p.Pattern)
 
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Search")
+	span, ctx := ot.StartSpanFromContext(ctx, "Search")
 	ext.Component.Set(span, "service")
 	span.SetTag("repo", p.Repo)
 	span.SetTag("url", p.URL)

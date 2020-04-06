@@ -9,4 +9,6 @@ Sourcegraph can sync repositories from code hosts and other similar services.
 - [Phabricator](phabricator.md)
 - [Gitolite](gitolite.md)
 - [AWS CodeCommit](aws_codecommit.md)
-- [Other repository host (Git URL)](other.md)
+- [Other Git code hosts (using a Git URL)](other.md)
+- [Non-Git code hosts](non-git.md)
+  - [Perforce](../repo/perforce.md)

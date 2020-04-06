@@ -18,7 +18,7 @@ import (
 func Test_GitLab_RepoPerms(t *testing.T) {
 	type call struct {
 		description string
-		account     *extsvc.ExternalAccount
+		account     *extsvc.Account
 		repos       []*types.Repo
 		expPerms    []authz.RepoPerms
 	}

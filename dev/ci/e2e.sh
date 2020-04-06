@@ -16,15 +16,6 @@ if curl --output /dev/null --silent --head --fail $URL; then
     exit 1
 fi
 
-# Switch the default Docker host to the dedicated e2e testing host
-export DOCKER_HOST="$E2E_DOCKER_HOST"
-export DOCKER_PASSWORD="$E2E_DOCKER_PASSWORD"
-export DOCKER_USERNAME="$E2E_DOCKER_USERNAME"
-
-echo "--- Copying $IMAGE to the dedicated e2e testing node..."
-docker pull $IMAGE
-echo "Copying $IMAGE to the dedicated e2e testing node... done"
-
 echo "--- Running a daemonized $IMAGE as the test subject..."
 CONTAINER="$(docker container run -d -e DEPLOY_TYPE=dev $IMAGE)"
 trap 'kill $(jobs -p -r)'" ; docker logs --timestamps $CONTAINER ; docker container rm -f $CONTAINER ; docker image rm -f $IMAGE" EXIT
@@ -35,6 +26,7 @@ docker exec "$CONTAINER" apk add --no-cache socat
 # docker exec as the transport.
 socat tcp-listen:7080,reuseaddr,fork system:"docker exec -i $CONTAINER socat stdio 'tcp:localhost:7080'" &
 
+echo "--- Waiting for $URL to be up"
 set +e
 timeout 60s bash -c "until curl --output /dev/null --silent --head --fail $URL; do
     echo Waiting 5s for $URL...
@@ -49,13 +41,11 @@ fi
 set -e
 echo "Waiting for $URL... done"
 
-echo "--- yarn"
-# mutex is necessary since CI runs various yarn installs in parallel
-yarn --mutex network
-
 echo "--- yarn run test-e2e"
-pushd web
 # `-pix_fmt yuv420p` makes a QuickTime-compatible mp4.
 ffmpeg -y -f x11grab -video_size 1280x1024 -i "$DISPLAY" -pix_fmt yuv420p e2e.mp4 > ffmpeg.log 2>&1 &
-env SOURCEGRAPH_BASE_URL="$URL" PERCY_ON=true ./node_modules/.bin/percy exec -- yarn run test-e2e
-popd
+env SOURCEGRAPH_BASE_URL="$URL" PERCY_ON=true ./node_modules/.bin/percy exec -- yarn run cover-e2e
+
+yarn nyc report -r json
+# Upload the coverage under the "e2e" flag (toggleable in the CodeCov UI)
+bash <(curl -s https://codecov.io/bash) -F e2e

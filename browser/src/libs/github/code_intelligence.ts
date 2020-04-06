@@ -139,7 +139,7 @@ const snippetCodeView: Omit<CodeView, 'element'> = {
 export const createFileLineContainerToolbarMount: NonNullable<CodeView['getToolbarMount']> = (
     codeViewElement: HTMLElement
 ): HTMLElement => {
-    const className = 'sourcegraph-app-annotator'
+    const className = 'sourcegraph-github-file-code-view-toolbar-mount'
     const existingMount = codeViewElement.querySelector(`.${className}`) as HTMLElement
     if (existingMount) {
         return existingMount
@@ -285,8 +285,10 @@ export const githubCodeHost: CodeHost = {
     nativeTooltipResolvers: [nativeTooltipResolver],
     getContext: () => {
         const repoHeaderHasPrivateMarker = !!document.querySelector('.repohead .private')
+        const parsedURL = parseURL()
         return {
-            ...parseURL(),
+            ...parsedURL,
+            rev: parsedURL.pageType === 'blob' || parsedURL.pageType === 'tree' ? resolveFileInfo().rev : undefined,
             privateRepository: window.location.hostname !== 'github.com' || repoHeaderHasPrivateMarker,
         }
     },

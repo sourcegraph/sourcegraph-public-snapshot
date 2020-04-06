@@ -811,7 +811,7 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 			t.Run("Null changeset state", func(t *testing.T) {
 				cs := &cmpgn.Changeset{
-					RepoID:              42,
+					RepoID:              repo.ID,
 					Metadata:            githubPR,
 					CampaignIDs:         []int64{1},
 					ExternalID:          fmt.Sprintf("foobar-%d", 42),
@@ -1226,30 +1226,177 @@ func testStore(db *sql.DB) func(*testing.T) {
 		})
 
 		t.Run("ListChangesetSyncData", func(t *testing.T) {
+			changesets, _, err := s.ListChangesets(ctx, ListChangesetsOpts{
+				Limit: -1,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			// A previous test decreases the repoID, set it back
+			for i := range changesets {
+				changesets[i].RepoID = repo.ID
+			}
+
+			err = s.UpdateChangesets(ctx, changesets...)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			// We need campaigns attached to each changeset
+			for i, cs := range changesets {
+				c := &cmpgn.Campaign{
+					Name:           fmt.Sprintf("ListChangesetSyncData test"),
+					ChangesetIDs:   []int64{cs.ID},
+					NamespaceOrgID: 23,
+				}
+				err := s.CreateCampaign(ctx, c)
+				if err != nil {
+					t.Fatal(err)
+				}
+				changesets[i].CampaignIDs = []int64{c.ID}
+				if err := s.UpdateChangesets(ctx, changesets[i]); err != nil {
+					t.Fatal(err)
+				}
+			}
+
 			// Differs from clock() due to updates higher up
 			externalUpdatedAt := clock().Add(-2 * time.Second)
-			hs, err := s.ListChangesetSyncData(ctx)
+			hs, err := s.ListChangesetSyncData(ctx, ListChangesetSyncDataOpts{})
 			if err != nil {
 				t.Fatal(err)
 			}
 			want := []cmpgn.ChangesetSyncData{
 				{
-					ChangesetID:       1,
-					UpdatedAt:         clock(),
-					LatestEvent:       clock(),
-					ExternalUpdatedAt: externalUpdatedAt,
+					ChangesetID:        1,
+					UpdatedAt:          clock(),
+					LatestEvent:        clock(),
+					ExternalUpdatedAt:  externalUpdatedAt,
+					ExternalServiceIDs: []int64{4},
 				},
 				{
-					ChangesetID:       2,
-					UpdatedAt:         clock(),
-					LatestEvent:       clock(),
-					ExternalUpdatedAt: externalUpdatedAt,
+					ChangesetID:        2,
+					UpdatedAt:          clock(),
+					LatestEvent:        clock(),
+					ExternalUpdatedAt:  externalUpdatedAt,
+					ExternalServiceIDs: []int64{4},
 				},
 				{
 					// No events
-					ChangesetID:       3,
-					UpdatedAt:         clock(),
-					ExternalUpdatedAt: externalUpdatedAt,
+					ChangesetID:        3,
+					UpdatedAt:          clock(),
+					ExternalUpdatedAt:  externalUpdatedAt,
+					ExternalServiceIDs: []int64{4},
+				},
+			}
+			if diff := cmp.Diff(want, hs); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+
+		t.Run("ListChangesetSyncData ignores closed campaign", func(t *testing.T) {
+			changesets, _, err := s.ListChangesets(ctx, ListChangesetsOpts{
+				Limit: 10,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(changesets) != 3 {
+				t.Fatalf("Expected 3 changesets, got %d", len(changesets))
+			}
+			oldCampaign := changesets[0].CampaignIDs[0]
+
+			// Close a campaign
+			c, err := s.GetCampaign(ctx, GetCampaignOpts{
+				ID: oldCampaign,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			c.ClosedAt = now
+			err = s.UpdateCampaign(ctx, c)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			// Differs from clock() due to updates higher up
+			externalUpdatedAt := clock().Add(-2 * time.Second)
+			hs, err := s.ListChangesetSyncData(ctx, ListChangesetSyncDataOpts{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			want := []cmpgn.ChangesetSyncData{
+				{
+					ChangesetID:        2,
+					UpdatedAt:          clock(),
+					LatestEvent:        clock(),
+					ExternalUpdatedAt:  externalUpdatedAt,
+					ExternalServiceIDs: []int64{4},
+				},
+				{
+					// No events
+					ChangesetID:        3,
+					UpdatedAt:          clock(),
+					ExternalUpdatedAt:  externalUpdatedAt,
+					ExternalServiceIDs: []int64{4},
+				},
+			}
+			if diff := cmp.Diff(want, hs); diff != "" {
+				t.Fatal(diff)
+			}
+
+			// If a changeset has ANY open campaigns we should list it
+			cs2, err := s.GetChangeset(ctx, GetChangesetOpts{
+				ID: 2,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			// Attach cs1 to both an open and closed campaign
+			changesets[0].CampaignIDs = []int64{oldCampaign, cs2.CampaignIDs[0]}
+			err = s.UpdateChangesets(ctx, changesets[0])
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			c1, err := s.GetCampaign(ctx, GetCampaignOpts{
+				ID: cs2.CampaignIDs[0],
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			c1.ChangesetIDs = []int64{changesets[0].ID, cs2.ID}
+			err = s.UpdateCampaign(ctx, c1)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			hs, err = s.ListChangesetSyncData(ctx, ListChangesetSyncDataOpts{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			want = []cmpgn.ChangesetSyncData{
+				{
+					ChangesetID:        1,
+					UpdatedAt:          clock(),
+					LatestEvent:        clock(),
+					ExternalUpdatedAt:  externalUpdatedAt,
+					ExternalServiceIDs: []int64{4},
+				},
+				{
+					ChangesetID:        2,
+					UpdatedAt:          clock(),
+					LatestEvent:        clock(),
+					ExternalUpdatedAt:  externalUpdatedAt,
+					ExternalServiceIDs: []int64{4},
+				},
+				{
+					// No events
+					ChangesetID:        3,
+					UpdatedAt:          clock(),
+					ExternalUpdatedAt:  externalUpdatedAt,
+					ExternalServiceIDs: []int64{4},
 				},
 			}
 			if diff := cmp.Diff(want, hs); diff != "" {
@@ -1803,9 +1950,12 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 		t.Run("PatchSet DeleteExpired", func(t *testing.T) {
 			tests := []struct {
-				hasCampaign bool
-				createdAt   time.Time
-				wantDeleted bool
+				createdAt                      time.Time
+				hasCampaign                    bool
+				patchesAttachedToOtherCampaign bool
+				patches                        []*cmpgn.Patch
+				wantDeleted                    bool
+				want                           *cmpgn.BackgroundProcessStatus
 			}{
 				{
 					hasCampaign: false,
@@ -1827,6 +1977,18 @@ func testStore(db *sql.DB) func(*testing.T) {
 					createdAt:   now.Add(-500 * time.Minute),
 					wantDeleted: false,
 				},
+				{
+					hasCampaign: false,
+					createdAt:   now.Add(-500 * time.Minute),
+
+					patchesAttachedToOtherCampaign: true,
+					patches: []*cmpgn.Patch{
+						{Diff: "foobar", Rev: "f00b4r", BaseRef: "refs/heads/master"},
+						{Diff: "barfoo", Rev: "b4rf00", BaseRef: "refs/heads/master"},
+					},
+
+					wantDeleted: false,
+				},
 			}
 
 			for _, tc := range tests {
@@ -1837,18 +1999,78 @@ func testStore(db *sql.DB) func(*testing.T) {
 					t.Fatal(err)
 				}
 
+				for _, p := range tc.patches {
+					p.PatchSetID = patchSet.ID
+					err := s.CreatePatch(ctx, p)
+					if err != nil {
+						t.Fatal(err)
+					}
+				}
+
 				if tc.hasCampaign {
-					c := &cmpgn.Campaign{
-						Name:            "test",
-						Description:     "testing",
+					err = s.CreateCampaign(ctx, &cmpgn.Campaign{
 						PatchSetID:      patchSet.ID,
+						Name:            "Test",
 						AuthorID:        4567,
+						NamespaceUserID: 4567,
+					})
+					if err != nil {
+						t.Fatal(err)
+					}
+				}
+
+				if tc.patchesAttachedToOtherCampaign {
+					otherPatchSet := &cmpgn.PatchSet{}
+					err = s.CreatePatchSet(ctx, otherPatchSet)
+					if err != nil {
+						t.Fatal(err)
+					}
+					otherCampaign := &cmpgn.Campaign{
+						PatchSetID:      otherPatchSet.ID,
+						AuthorID:        4567,
+						Name:            "Other campaign",
 						NamespaceUserID: 4567,
 					}
 
-					err := s.CreateCampaign(ctx, c)
+					err = s.CreateCampaign(ctx, otherCampaign)
 					if err != nil {
 						t.Fatal(err)
+					}
+
+					for i, p := range tc.patches {
+						changeset := &cmpgn.Changeset{
+							RepoID:              api.RepoID(99 + i),
+							CreatedAt:           now,
+							UpdatedAt:           now,
+							Metadata:            &github.PullRequest{},
+							CampaignIDs:         []int64{otherCampaign.ID},
+							ExternalID:          fmt.Sprintf("foobar-%d", i),
+							ExternalServiceType: "github",
+							ExternalBranch:      "campaigns/test",
+							ExternalUpdatedAt:   now,
+							ExternalState:       cmpgn.ChangesetStateOpen,
+							ExternalReviewState: cmpgn.ChangesetReviewStateApproved,
+							ExternalCheckState:  cmpgn.ChangesetCheckStatePassed,
+						}
+						err = s.CreateChangesets(ctx, changeset)
+						if err != nil {
+							t.Fatal(err)
+						}
+						job := &cmpgn.ChangesetJob{
+							CampaignID:  otherCampaign.ID,
+							PatchID:     p.ID,
+							ChangesetID: changeset.ID,
+						}
+						err = s.CreateChangesetJob(ctx, job)
+						if err != nil {
+							t.Fatal(err)
+						}
+						defer func() {
+							err = s.DeleteChangesetJob(ctx, job.ID)
+							if err != nil {
+								t.Fatal(err)
+							}
+						}()
 					}
 				}
 

@@ -48,8 +48,8 @@ export REPO_UPDATER_URL=http://127.0.0.1:3182
 export REDIS_ENDPOINT=127.0.0.1:6379
 export QUERY_RUNNER_URL=http://localhost:3183
 export SYMBOLS_URL=http://localhost:3184
-export LSIF_SERVER_URL=http://localhost:3186
-export LSIF_DUMP_MANAGER_URL=http://localhost:3187
+export PRECISE_CODE_INTEL_API_SERVER_URL=http://localhost:3186
+export PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL=http://localhost:3187
 export SRC_SYNTECT_SERVER=http://localhost:9238
 export SRC_FRONTEND_INTERNAL=localhost:3090
 export SRC_PROF_HTTP=
@@ -84,6 +84,13 @@ export GLOBAL_SETTINGS_ALLOW_EDITS=true
 export NODE_ENV=development
 export NODE_OPTIONS="--max_old_space_size=4096"
 
+# Ensure SQLite for symbols is built
+./dev/libsqlite3-pcre/build.sh
+export LIBSQLITE3_PCRE="$(./dev/libsqlite3-pcre/build.sh libpath)"
+
+# Ensure ctags image is built
+./cmd/symbols/build-ctags.sh
+
 # Make sure chokidar-cli is installed in the background
 printf >&2 "Concurrently installing Yarn and Go dependencies...\n\n"
 yarn_pid=''
@@ -105,8 +112,8 @@ if [[ -n "$yarn_pid" ]]; then
     wait "$yarn_pid"
 fi
 
-# Install LSIF dependencies
-pushd ./lsif 1> /dev/null
+# Install precise code intel dependencies
+pushd ./cmd/precise-code-intel 1> /dev/null
 yarn --no-progress
 popd 1> /dev/null
 

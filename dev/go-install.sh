@@ -120,7 +120,6 @@ do_install() {
                 # Binary updated. Move it to correct location.
                 mv "${GOBIN}/${cmd}" "${PWD}/.bin/${cmd}"
 
-                # Output name of command so it can be restarted.
                 if $verbose; then
                     echo "$cmd"
                 fi

@@ -6,9 +6,10 @@ const OptimizeCssAssetsPlugin = require('optimize-css-assets-webpack-plugin')
 const path = require('path')
 const TerserPlugin = require('terser-webpack-plugin')
 const webpack = require('webpack')
+const logger = require('gulplog')
 
 const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development'
-console.error('Using mode', mode)
+logger.info('Using mode', mode)
 
 const devtool = mode === 'production' ? 'source-map' : 'cheap-module-eval-source-map'
 
@@ -97,6 +98,14 @@ const config = {
   resolve: {
     extensions: ['.mjs', '.ts', '.tsx', '.js'],
     mainFields: ['es2015', 'module', 'browser', 'main'],
+    alias: {
+      // react-visibility-sensor's main field points to a UMD bundle instead of ESM
+      // https://github.com/joshwnj/react-visibility-sensor/issues/148
+      'react-visibility-sensor': path.resolve(
+        __dirname,
+        '../node_modules/react-visibility-sensor/visibility-sensor.js'
+      ),
+    },
   },
   module: {
     rules: [

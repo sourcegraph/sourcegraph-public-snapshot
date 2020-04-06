@@ -1,3 +1,4 @@
+/* eslint-disable rxjs/no-subclass */
 /* eslint-disable @typescript-eslint/no-use-before-define */
 import {
     asyncScheduler,

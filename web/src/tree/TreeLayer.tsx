@@ -273,7 +273,6 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                                                 <ErrorAlert
                                                     className="tree__row-alert"
                                                     // needed because of dynamic styling
-                                                    // eslint-disable-next-line react/forbid-dom-props
                                                     style={treePadding(this.props.depth, true)}
                                                     error={treeOrError}
                                                     prefix="Error loading file tree"

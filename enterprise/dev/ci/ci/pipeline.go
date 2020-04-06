@@ -90,7 +90,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addLint,
 			addBrowserExt,
 			addWebApp,
-			addLSIFServer,
+			addPreciseCodeIntelSystem,
 			addSharedTests,
 			addGoTests,
 			addGoBuild,
@@ -114,7 +114,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addGoBuild, // ~2m
 			addCheck,   // ~2m
 			addBrowserExt,
-			addLSIFServer,
+			addPreciseCodeIntelSystem,
 			addSharedTests,
 			addPostgresBackcompat,
 			addDockerfileLint,

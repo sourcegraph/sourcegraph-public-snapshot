@@ -280,6 +280,7 @@ func TestService(t *testing.T) {
 			name    string
 			branch  *string
 			draft   bool
+			closed  bool
 			process bool
 			err     string
 		}{
@@ -291,6 +292,12 @@ func TestService(t *testing.T) {
 			{
 				name:  "draft campaign",
 				draft: true,
+			},
+
+			{
+				name:   "closed campaign",
+				closed: true,
+				err:    ErrUpdateClosedCampaign.Error(),
 			},
 			{
 				name:    "change campaign branch",
@@ -332,6 +339,10 @@ func TestService(t *testing.T) {
 
 				svc := NewServiceWithClock(store, gitClient, cf, clock)
 				campaign := testCampaign(user.ID, patchSet.ID)
+
+				if tc.closed {
+					campaign.ClosedAt = now
+				}
 
 				err = svc.CreateCampaign(ctx, campaign, tc.draft)
 				if err != nil {
@@ -680,7 +691,29 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 			newPatches: []newPatchSpec{
 				{repo: "repo-0", modifiedDiff: true},
 			},
-			wantErr: ErrClosedCampaignUpdatePatchIllegal,
+			wantErr: ErrUpdateClosedCampaign,
+		},
+		{
+			name:            "1 unmodified merged, 1 new changeset",
+			updatePatchSet:  true,
+			oldPatches:      repoNames{"repo-0"},
+			changesetStates: map[string]campaigns.ChangesetState{"repo-0": campaigns.ChangesetStateMerged},
+			newPatches: []newPatchSpec{
+				{repo: "repo-1"},
+			},
+			wantUnmodified: repoNames{"repo-0"},
+			wantCreated:    repoNames{"repo-1"},
+		},
+		{
+			name:            "1 unmodified closed, 1 new changeset",
+			updatePatchSet:  true,
+			oldPatches:      repoNames{"repo-0"},
+			changesetStates: map[string]campaigns.ChangesetState{"repo-0": campaigns.ChangesetStateClosed},
+			newPatches: []newPatchSpec{
+				{repo: "repo-1"},
+			},
+			wantUnmodified: repoNames{"repo-0"},
+			wantCreated:    repoNames{"repo-1"},
 		},
 	}
 
@@ -869,7 +902,7 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 				if len(tt.individuallyPublished) != 0 {
 					wantChangesetJobLen = len(tt.individuallyPublished)
 				} else {
-					wantChangesetJobLen = len(newPatches)
+					wantChangesetJobLen = len(tt.wantCreated) + len(tt.wantUnmodified) + len(tt.wantModified)
 				}
 			} else {
 				wantChangesetJobLen = len(oldPatches)
