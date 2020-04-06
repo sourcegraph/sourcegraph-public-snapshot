@@ -4,9 +4,10 @@ set -euxo pipefail
 
 PACKAGE="$1"
 
-if [[ -f "cmd/$(basename "$PACKAGE")/go-build.sh" ]]; then
+basepkg="$(basename "$PACKAGE")"
+if [[ -f "cmd/$basepkg/go-build.sh" ]]; then
     # Application builds itself (e.g. requires CGO)
-    bash "cmd/$(basename "$PACKAGE")/go-build.sh"
+    bash "cmd/$basepkg/go-build.sh"
 else
     go build \
         -trimpath \
@@ -14,5 +15,5 @@ else
         -buildmode exe \
         -installsuffix netgo \
         -tags "dist netgo" \
-        -o "$BINDIR/$(basename "$PACKAGE")" "$PACKAGE"
+        -o "$BINDIR/$basepkg" "$PACKAGE"
 fi
