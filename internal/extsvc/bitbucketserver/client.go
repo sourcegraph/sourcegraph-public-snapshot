@@ -23,6 +23,7 @@ import (
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/pkg/errors"
 	"github.com/segmentio/fasthash/fnv1"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -48,17 +49,50 @@ var requestCounter = metrics.NewRequestMeter("bitbucket", "Total number of reque
 // with 20,000 Bitbucket repositories we need 20,000/1000 requests per minute (1200/hr) + overhead for
 // repository lookup requests by users, and requests for identifying which repositories a user has
 // access to (if authorization is in use) and requests for campaign synchronization if it is in use.
+//
+// These are our default values, they can be changed in configuration
 const (
-	rateLimitRequestsPerSecond = 8 // 480/min or 28,800/hr
-	RateLimitMaxBurstRequests  = 500
+	defaultRateLimit      = rate.Limit(8) // 480/min or 28,800/hr
+	defaultRateLimitBurst = 500
 )
 
-// Global limiter cache so that we reuse the same rate limiter for
-// the same code host, even between config changes.
-// The longer term plan is to have a rate limiter that is shared across
-// all services so the below is just a short term solution.
+// Rate limiter cache so that we reuse the rate limiters per
+// external service, even between config changes.
 var limiterMu sync.Mutex
-var limiterCache = make(map[string]*rate.Limiter)
+var limiterCache = make(map[uint32]*rate.Limiter)
+
+func getLimiter(url *url.URL, c *schema.BitbucketServerConnection) *rate.Limiter {
+	// Calculate cache key
+	b := new(strings.Builder)
+	b.WriteString(url.String())
+	if c != nil {
+		b.WriteString(c.Username)
+		b.WriteString(c.Token)
+	}
+	key := fnv1.HashString32(b.String())
+
+	limit := defaultRateLimit
+	if c != nil && c.RateLimit != nil {
+		if c.RateLimit.Enabled {
+			limit = rate.Limit(c.RateLimit.RequestsPerHour / 3600)
+		} else {
+			limit = rate.Inf
+		}
+	}
+
+	limiterMu.Lock()
+	defer limiterMu.Unlock()
+
+	current, ok := limiterCache[key]
+	if !ok {
+		rl := rate.NewLimiter(limit, defaultRateLimitBurst)
+		limiterCache[key] = rl
+		return rl
+	}
+
+	current.SetLimit(limit)
+	return current
+}
 
 // Client access a Bitbucket Server via the REST API.
 type Client struct {
@@ -91,40 +125,22 @@ type Client struct {
 // which require authentication, set the Token or Username/Password fields of
 // the returned client.
 func NewClient(url *url.URL, httpClient httpcli.Doer) *Client {
-	if httpClient == nil {
-		httpClient = http.DefaultClient
-	}
-
-	httpClient = requestCounter.Doer(httpClient, categorize)
-
-	limiterMu.Lock()
-	defer limiterMu.Unlock()
-
-	l, ok := limiterCache[url.String()]
-	if !ok {
-		l = rate.NewLimiter(rateLimitRequestsPerSecond, RateLimitMaxBurstRequests)
-		limiterCache[url.String()] = l
-	}
-
-	return &Client{
-		httpClient: httpClient,
-		URL:        url,
-		RateLimit:  l,
-	}
+	return newClient(url, nil, httpClient)
 }
 
 // NewClientWithConfig returns an authenticated Bitbucket Server API client with
 // the provided configuration.
-func NewClientWithConfig(c *schema.BitbucketServerConnection) (*Client, error) {
+func NewClientWithConfig(c *schema.BitbucketServerConnection, httpClient httpcli.Doer) (*Client, error) {
 	u, err := url.Parse(c.Url)
 	if err != nil {
 		return nil, err
 	}
 
-	client := NewClient(u, nil)
+	client := newClient(u, c, httpClient)
 	client.Username = c.Username
 	client.Password = c.Password
 	client.Token = c.Token
+
 	if c.Authorization != nil {
 		err := client.SetOAuth(
 			c.Authorization.Oauth.ConsumerKey,
@@ -135,6 +151,22 @@ func NewClientWithConfig(c *schema.BitbucketServerConnection) (*Client, error) {
 		}
 	}
 	return client, nil
+}
+
+func newClient(url *url.URL, c *schema.BitbucketServerConnection, httpClient httpcli.Doer) *Client {
+	if httpClient == nil {
+		httpClient = http.DefaultClient
+	}
+
+	httpClient = requestCounter.Doer(httpClient, categorize)
+	url = extsvc.NormalizeBaseURL(url)
+	l := getLimiter(url, c)
+
+	return &Client{
+		httpClient: httpClient,
+		URL:        url,
+		RateLimit:  l,
+	}
 }
 
 // SetOAuth enables OAuth authentication in a Client, using the given consumer
