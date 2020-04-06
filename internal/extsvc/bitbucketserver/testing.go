@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/schema"
+
 	"github.com/dnaeon/go-vcr/cassette"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
@@ -35,13 +37,15 @@ func NewTestClient(t testing.TB, name string, update bool) (*Client, func()) {
 		instanceURL = "https://bitbucket.sgdev.org"
 	}
 
-	u, err := url.Parse(instanceURL)
+	c := &schema.BitbucketServerConnection{
+		Token: os.Getenv("BITBUCKET_SERVER_TOKEN"),
+		Url:   instanceURL,
+	}
+
+	cli, err := NewClientWithConfig(c, hc)
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	cli := NewClient(u, hc)
-	cli.Token = os.Getenv("BITBUCKET_SERVER_TOKEN")
 
 	return cli, func() {
 		if err := rec.Stop(); err != nil {

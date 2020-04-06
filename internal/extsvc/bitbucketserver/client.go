@@ -120,16 +120,9 @@ type Client struct {
 	Oauth *oauth.Client
 }
 
-// NewClient returns a new Bitbucket Server API client at url. If a nil
-// httpClient is provided, http.DefaultClient will be used. To use API methods
-// which require authentication, set the Token or Username/Password fields of
-// the returned client.
-func NewClient(url *url.URL, httpClient httpcli.Doer) *Client {
-	return newClient(url, nil, httpClient)
-}
-
 // NewClientWithConfig returns an authenticated Bitbucket Server API client with
-// the provided configuration.
+// the provided configuration. If a nil httpClient is provided, http.DefaultClient
+// will be used.
 func NewClientWithConfig(c *schema.BitbucketServerConnection, httpClient httpcli.Doer) (*Client, error) {
 	u, err := url.Parse(c.Url)
 	if err != nil {
