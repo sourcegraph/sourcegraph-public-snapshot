@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -77,12 +78,31 @@ func reposHandler(logger *log.Logger, addr, reposRoot string) (http.Handler, err
 
 	mux.HandleFunc("/v1/list-repos", func(w http.ResponseWriter, r *http.Request) {
 		var repos []Repo
-		for _, path := range configureRepos(logger, reposRoot) {
-			uri := "/repos/" + path
+		var reposRootIsRepo bool
+		for _, name := range configureRepos(logger, reposRoot) {
+			if name == "." {
+				reposRootIsRepo = true
+			}
+
 			repos = append(repos, Repo{
-				Name: path,
-				URI:  uri,
+				Name: name,
+				URI:  path.Join("/repos", name),
 			})
+		}
+
+		if reposRootIsRepo {
+			// Update all names to be relative to the parent of
+			// reposRoot. This is to give a better name than "." for repos
+			// root
+			abs, err := filepath.Abs(reposRoot)
+			if err != nil {
+				http.Error(w, "failed to get the absolute path of reposRoot: "+err.Error(), http.StatusInternalServerError)
+				return
+			}
+			rootName := filepath.Base(abs)
+			for i := range repos {
+				repos[i].Name = path.Join(rootName, repos[i].Name)
+			}
 		}
 
 		resp := struct {
@@ -169,7 +189,7 @@ func configureRepos(logger *log.Logger, root string) []string {
 			// subpath). So Rel should always work.
 			logger.Fatalf("filepath.Walk returned %s which is not relative to %s: %v", path, root, err)
 		}
-		gitDirs = append(gitDirs, subpath)
+		gitDirs = append(gitDirs, filepath.ToSlash(subpath))
 
 		// Check whether a repository is a bare repository or not.
 		//
