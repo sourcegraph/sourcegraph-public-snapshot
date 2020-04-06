@@ -12,6 +12,7 @@
 
         &__detail {
             // This is the width of the icon in the row above. This is to get text to line up properly.
+            // stylelint-disable-next-line declaration-property-unit-whitelist
             margin: 0 19.98px;
             padding: 0 0.5rem;
         }
