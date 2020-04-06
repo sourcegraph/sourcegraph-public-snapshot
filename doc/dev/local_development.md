@@ -504,7 +504,9 @@ Install [Delve](https://github.com/derekparker/delve):
 
 ```bash
 xcode-select --install
-go get -u github.com/go-delve/delve/cmd/dlv
+pushd /tmp
+go get github.com/go-delve/delve/cmd/dlv
+popd /tmp
 ```
 
 Then install `pgrep`:
