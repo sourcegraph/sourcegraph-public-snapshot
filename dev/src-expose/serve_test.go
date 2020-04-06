@@ -41,12 +41,16 @@ func TestReposHandler(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			testReposHandler(t, h, tc.repos...)
+			var want []Repo
+			for _, name := range tc.repos {
+				want = append(want, Repo{Name: name, URI: path.Join("/repos", name)})
+			}
+			testReposHandler(t, h, want)
 		})
 	}
 }
 
-func testReposHandler(t *testing.T, h http.Handler, names ...string) {
+func testReposHandler(t *testing.T, h http.Handler, repos []Repo) {
 	ts := httptest.NewServer(h)
 	t.Cleanup(ts.Close)
 
@@ -76,22 +80,19 @@ func testReposHandler(t *testing.T, h http.Handler, names ...string) {
 
 	// repos page will list the top-level dirs
 	list := get("/repos/")
-	for _, name := range names {
-		if !strings.Contains(name, "/") && !strings.Contains(list, name) {
-			t.Errorf("repos page does not contain substring %q", name)
+	for _, repo := range repos {
+		if path.Dir(repo.URI) != "/repos" {
+			continue
+		}
+		if !strings.Contains(repo.Name, "/") && !strings.Contains(list, repo.Name) {
+			t.Errorf("repos page does not contain substring %q", repo.Name)
 		}
 	}
 
 	// check our API response
-	type Repo struct {
-		Name string
-		URI  string
-	}
 	type Response struct{ Items []Repo }
 	var want, got Response
-	for _, name := range names {
-		want.Items = append(want.Items, Repo{Name: name, URI: path.Join("/repos", name)})
-	}
+	want.Items = repos
 	if err := json.Unmarshal([]byte(get("/v1/list-repos")), &got); err != nil {
 		t.Fatal(err)
 	}

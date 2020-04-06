@@ -49,6 +49,11 @@ var indexHTML = template.Must(template.New("").Parse(`<html>
 </body>
 </html>`))
 
+type Repo struct {
+	Name string
+	URI  string
+}
+
 func reposHandler(logger *log.Logger, addr, reposRoot string) (http.Handler, error) {
 	logger.Printf("serving git repositories from %s", reposRoot)
 	configureRepos(logger, reposRoot)
@@ -71,10 +76,6 @@ func reposHandler(logger *log.Logger, addr, reposRoot string) (http.Handler, err
 	})
 
 	mux.HandleFunc("/v1/list-repos", func(w http.ResponseWriter, r *http.Request) {
-		type Repo struct {
-			Name string
-			URI  string
-		}
 		var repos []Repo
 		for _, path := range configureRepos(logger, reposRoot) {
 			uri := "/repos/" + path
