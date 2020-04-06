@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"html/template"
+	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
@@ -193,6 +194,13 @@ func configureRepos(logger *log.Logger, root string) []string {
 	return gitDirs
 }
 
+const postUpdateHook = `#!/bin/sh
+#
+# Added by Sourcegraph src-expose serve
+
+exec git update-server-info
+`
+
 // configureOneRepos tweaks a .git repo such that it can be git cloned.
 // See https://theartofmachinery.com/2016/07/02/git_over_http.html
 // for background.
@@ -203,12 +211,12 @@ func configureOneRepo(logger *log.Logger, gitDir string) error {
 	if err != nil {
 		return errors.Wrapf(err, "updating server info: %s", out)
 	}
-	if _, err := os.Stat(filepath.Join(gitDir, "hooks", "post-update")); err != nil {
-		logger.Printf("setting post-update hook on %s", gitDir)
-		c = exec.Command("mv", "hooks/post-update.sample", "hooks/post-update")
-		c.Dir = gitDir
-		out, err = c.CombinedOutput()
-		if err != nil {
+	postUpdatePath := filepath.Join(gitDir, "hooks", "post-update")
+	if _, err := os.Stat(postUpdatePath); err != nil {
+		if err := os.MkdirAll(filepath.Dir(postUpdatePath), 0755); err != nil {
+			return errors.Wrapf(err, "create git hooks dir: %s", out)
+		}
+		if err := ioutil.WriteFile(postUpdatePath, []byte(postUpdatePath), 0755); err != nil {
 			return errors.Wrapf(err, "setting post-update hook: %s", out)
 		}
 	}
