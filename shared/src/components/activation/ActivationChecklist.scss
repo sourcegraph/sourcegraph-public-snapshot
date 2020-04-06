@@ -15,7 +15,7 @@
     }
 
     &__title {
-        margin: 0 0.5rem;
+        margin-left: 0.25rem;
 
         &:hover {
             text-decoration: underline;
@@ -23,11 +23,26 @@
     }
 
     &__detail {
-        // This is the width of the chevron icon in the row above.
-        // We want our text to line up with the title text, so we need
-        // a margin equal to the icon width.
-        margin-left: 22.84px;
+        // This is the width of the icon in the row above. This is to get text to line up properly.
+        margin: 0 22.84px;
+        padding: 0 0.5rem;
         font-size: 14px;
+    }
+}
+
+.activation-checklist-item {
+    color: var(--link-color);
+
+    &__icon {
+        fill: currentColor;
+    }
+
+    &--dropdown {
+        padding: 0.25rem 0.75rem;
+    }
+
+    &--admin-page {
+        padding: 0.25rem 0.75rem;
     }
 }
 

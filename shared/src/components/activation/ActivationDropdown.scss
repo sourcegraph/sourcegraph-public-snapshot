@@ -1,12 +1,32 @@
 .activation-dropdown {
+    background-color: var(--body-bg);
+    border: 1px solid $dropdown-border-color;
+    border-radius: 0.25rem;
+    color: var(--link-color);
     width: 21rem;
+    z-index: 999;
 
     &-item {
+        padding: 0;
         white-space: normal;
+
+        &__detail {
+            // This is the width of the icon in the row above. This is to get text to line up properly.
+            margin: 0 19.98px;
+            padding: 0 0.5rem;
+        }
+    }
+
+    &__list {
+        padding: 0.25rem 0;
     }
 }
 
 .activation-dropdown-button {
+    display: flex;
+    border: none;
+    color: var(--link-color);
+
     &--hidden {
         display: none;
     }
@@ -38,7 +58,17 @@
 
 .activation-dropdown-header {
     white-space: normal;
+    border-bottom: 1px solid $dropdown-border-color;
+    padding: 0.75rem 0.5rem 0 0.5rem;
+
     &:hover {
         text-decoration: none;
+    }
+}
+
+.theme-light {
+    .activation-dropdown {
+        border: 1px solid $dropdown-border-color;
+        background-color: var(--body-bg);
     }
 }

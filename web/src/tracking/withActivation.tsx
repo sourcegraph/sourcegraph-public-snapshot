@@ -214,7 +214,10 @@ export const withActivation = <P extends ActivationProps>(
             ]).pipe(
                 switchMap(([authenticatedUser]) =>
                     authenticatedUser ? fetchActivationStatus(authenticatedUser.siteAdmin) : []
-                )
+                ),
+                tap(status => {
+                    console.log(status)
+                })
             )
             const localCompletionStatus: Observable<Partial<ActivationCompletionStatus>> = merge(
                 authenticatedUser.pipe(map(() => null)), // reset on new authenticated user

@@ -7,24 +7,27 @@ import * as React from 'react'
 import { ActivationCompletionStatus, ActivationStep } from './Activation'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
+import classNames from 'classnames'
 
 interface ActivationChecklistItemProps extends ActivationStep {
     done: boolean
     history: H.History
+    className?: string
 }
 
 /**
  * A single item in the activation checklist.
  */
-export const ActivationChecklistItem: React.FunctionComponent<ActivationChecklistItemProps> = (
-    props: ActivationChecklistItemProps
-) => (
-    <div className="d-flex justify-content-between py-1 px-2">
+export const ActivationChecklistItem: React.FunctionComponent<ActivationChecklistItemProps> = ({
+    className = '',
+    ...props
+}: ActivationChecklistItemProps) => (
+    <div className={classNames('activation-checklist-item d-flex justify-content-between', className)}>
         <div>
-            <span className="icon-inline icon-down">
+            <span className="activation-checklist-item__icon icon-inline icon-down">
                 <ChevronDownIcon />
             </span>
-            <span className="icon-inline icon-right">
+            <span className="activation-checklist-item__icon icon-inline icon-right">
                 <ChevronRightIcon />
             </span>
             <span className="activation-checklist__title">{props.title}</span>
@@ -60,11 +63,12 @@ export class ActivationChecklist extends React.PureComponent<ActivationChecklist
                                 <ActivationChecklistItem
                                     key={step.id}
                                     {...step}
+                                    className="activation-checklist-item--admin-page"
                                     history={this.props.history}
                                     done={(this.props.completed && this.props.completed[step.id]) || false}
                                 />
                                 <AccordionPanel className="px-2">
-                                    <div className="activation-checklist__detail pl-2 pb-1">{step.detail}</div>
+                                    <div className="activation-checklist__detail pb-1">{step.detail}</div>
                                 </AccordionPanel>
                             </AccordionButton>
                         </AccordionItem>
