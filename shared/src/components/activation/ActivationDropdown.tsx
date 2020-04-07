@@ -14,6 +14,8 @@ import classNames from 'classnames'
 interface Props {
     history: H.History
     activation: Activation
+    // For storybook testing
+    alwaysShow?: boolean
 }
 
 interface State {
@@ -65,6 +67,7 @@ export class ActivationDropdown extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element {
         const show =
+            this.props.alwaysShow ||
             this.state.displayEvenIfFullyCompleted ||
             this.state.animate ||
             (this.props.activation.completed !== undefined && percentageDone(this.props.activation.completed) < 100)
