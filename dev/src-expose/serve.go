@@ -3,11 +3,13 @@ package main
 import (
 	"encoding/json"
 	"html/template"
+	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -20,9 +22,12 @@ func serveRepos(logger *log.Logger, addr, repoDir string) error {
 		return errors.Wrap(err, "listen")
 	}
 	logger.Printf("listening on http://%s", ln.Addr())
-	s, err := serve(logger, ln, repoDir)
+	h, err := reposHandler(logger, ln.Addr().String(), repoDir)
 	if err != nil {
 		return errors.Wrap(err, "configuring server")
+	}
+	s := &http.Server{
+		Handler: h,
 	}
 	if err := s.Serve(ln); err != nil {
 		return errors.Wrap(err, "serving")
@@ -45,7 +50,12 @@ var indexHTML = template.Must(template.New("").Parse(`<html>
 </body>
 </html>`))
 
-func serve(logger *log.Logger, ln net.Listener, reposRoot string) (*http.Server, error) {
+type Repo struct {
+	Name string
+	URI  string
+}
+
+func reposHandler(logger *log.Logger, addr, reposRoot string) (http.Handler, error) {
 	logger.Printf("serving git repositories from %s", reposRoot)
 	configureRepos(logger, reposRoot)
 
@@ -55,7 +65,7 @@ func serve(logger *log.Logger, ln net.Listener, reposRoot string) (*http.Server,
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		err := indexHTML.Execute(w, map[string]interface{}{
-			"Explain": explainAddr(ln.Addr().String()),
+			"Explain": explainAddr(addr),
 			"Links": []string{
 				"/v1/list-repos",
 				"/repos/",
@@ -67,17 +77,32 @@ func serve(logger *log.Logger, ln net.Listener, reposRoot string) (*http.Server,
 	})
 
 	mux.HandleFunc("/v1/list-repos", func(w http.ResponseWriter, r *http.Request) {
-		type Repo struct {
-			Name string
-			URI  string
-		}
 		var repos []Repo
-		for _, path := range configureRepos(logger, reposRoot) {
-			uri := "/repos/" + path
+		var reposRootIsRepo bool
+		for _, name := range configureRepos(logger, reposRoot) {
+			if name == "." {
+				reposRootIsRepo = true
+			}
+
 			repos = append(repos, Repo{
-				Name: path,
-				URI:  uri,
+				Name: name,
+				URI:  path.Join("/repos", name),
 			})
+		}
+
+		if reposRootIsRepo {
+			// Update all names to be relative to the parent of
+			// reposRoot. This is to give a better name than "." for repos
+			// root
+			abs, err := filepath.Abs(reposRoot)
+			if err != nil {
+				http.Error(w, "failed to get the absolute path of reposRoot: "+err.Error(), http.StatusInternalServerError)
+				return
+			}
+			rootName := filepath.Base(abs)
+			for i := range repos {
+				repos[i].Name = path.Join(rootName, repos[i].Name)
+			}
 		}
 
 		resp := struct {
@@ -94,15 +119,12 @@ func serve(logger *log.Logger, ln net.Listener, reposRoot string) (*http.Server,
 
 	mux.Handle("/repos/", http.StripPrefix("/repos/", http.FileServer(httpDir{http.Dir(reposRoot)})))
 
-	s := &http.Server{
-		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if !strings.Contains(r.URL.Path, "/.git/objects/") { // exclude noisy path
-				logger.Printf("%s %s", r.Method, r.URL.Path)
-			}
-			mux.ServeHTTP(w, r)
-		}),
-	}
-	return s, nil
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !strings.Contains(r.URL.Path, "/.git/objects/") { // exclude noisy path
+			logger.Printf("%s %s", r.Method, r.URL.Path)
+		}
+		mux.ServeHTTP(w, r)
+	}), nil
 }
 
 type httpDir struct {
@@ -167,7 +189,7 @@ func configureRepos(logger *log.Logger, root string) []string {
 			// subpath). So Rel should always work.
 			logger.Fatalf("filepath.Walk returned %s which is not relative to %s: %v", path, root, err)
 		}
-		gitDirs = append(gitDirs, subpath)
+		gitDirs = append(gitDirs, filepath.ToSlash(subpath))
 
 		// Check whether a repository is a bare repository or not.
 		//
@@ -193,6 +215,13 @@ func configureRepos(logger *log.Logger, root string) []string {
 	return gitDirs
 }
 
+const postUpdateHook = `#!/bin/sh
+#
+# Added by Sourcegraph src-expose serve
+
+exec git update-server-info
+`
+
 // configureOneRepos tweaks a .git repo such that it can be git cloned.
 // See https://theartofmachinery.com/2016/07/02/git_over_http.html
 // for background.
@@ -203,12 +232,12 @@ func configureOneRepo(logger *log.Logger, gitDir string) error {
 	if err != nil {
 		return errors.Wrapf(err, "updating server info: %s", out)
 	}
-	if _, err := os.Stat(filepath.Join(gitDir, "hooks", "post-update")); err != nil {
-		logger.Printf("setting post-update hook on %s", gitDir)
-		c = exec.Command("mv", "hooks/post-update.sample", "hooks/post-update")
-		c.Dir = gitDir
-		out, err = c.CombinedOutput()
-		if err != nil {
+	postUpdatePath := filepath.Join(gitDir, "hooks", "post-update")
+	if _, err := os.Stat(postUpdatePath); err != nil {
+		if err := os.MkdirAll(filepath.Dir(postUpdatePath), 0755); err != nil {
+			return errors.Wrapf(err, "create git hooks dir: %s", out)
+		}
+		if err := ioutil.WriteFile(postUpdatePath, []byte(postUpdatePath), 0755); err != nil {
 			return errors.Wrapf(err, "setting post-update hook: %s", out)
 		}
 	}

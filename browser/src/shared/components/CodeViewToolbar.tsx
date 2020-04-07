@@ -94,25 +94,27 @@ export const CodeViewToolbar: React.FunctionComponent<CodeViewToolbarProps> = pr
                         />
                     </li>
                 )}{' '}
-                {// Only show the "View file" button if we were able to fetch the file contents
-                // from the Sourcegraph instance
-                !props.fileInfoOrError.baseCommitID &&
-                    (props.fileInfoOrError.content !== undefined ||
-                        props.fileInfoOrError.baseContent !== undefined) && (
-                        <li className={classNames('code-view-toolbar__item', props.listItemClass)}>
-                            <OpenOnSourcegraph
-                                ariaLabel="View file on Sourcegraph"
-                                className={props.actionItemClass}
-                                iconClassName={props.actionItemIconClass}
-                                openProps={{
-                                    sourcegraphURL: props.sourcegraphURL,
-                                    repoName: props.fileInfoOrError.repoName,
-                                    filePath: props.fileInfoOrError.filePath,
-                                    rev: props.fileInfoOrError.rev || props.fileInfoOrError.commitID,
-                                }}
-                            />
-                        </li>
-                    )}
+                {
+                    // Only show the "View file" button if we were able to fetch the file contents
+                    // from the Sourcegraph instance
+                    !props.fileInfoOrError.baseCommitID &&
+                        (props.fileInfoOrError.content !== undefined ||
+                            props.fileInfoOrError.baseContent !== undefined) && (
+                            <li className={classNames('code-view-toolbar__item', props.listItemClass)}>
+                                <OpenOnSourcegraph
+                                    ariaLabel="View file on Sourcegraph"
+                                    className={props.actionItemClass}
+                                    iconClassName={props.actionItemIconClass}
+                                    openProps={{
+                                        sourcegraphURL: props.sourcegraphURL,
+                                        repoName: props.fileInfoOrError.repoName,
+                                        filePath: props.fileInfoOrError.filePath,
+                                        rev: props.fileInfoOrError.rev || props.fileInfoOrError.commitID,
+                                    }}
+                                />
+                            </li>
+                        )
+                }
             </>
         )}
     </ul>

@@ -127,11 +127,35 @@ func (a Alert) isEmpty() bool {
 	return a == Alert{} || a.GreaterOrEqual <= 0
 }
 
+// UnitType for controlling the unit type display on graphs.
+type UnitType string
+
+// From https://sourcegraph.com/github.com/grafana/grafana@b63b82976b3708b082326c0b7d42f38d4bc261fa/-/blob/packages/grafana-data/src/valueFormats/categories.ts#L23
+const (
+	// Number is the default unit type.
+	Number UnitType = "short"
+
+	// Milliseconds for representing time.
+	Milliseconds UnitType = "dtdurationms"
+
+	// Seconds for representing time.
+	Seconds UnitType = "dtdurations"
+
+	// Percentage in the range of 0-100.
+	Percentage UnitType = "percent"
+
+	// Bytes in IEC (1024) format, e.g. for representing storage sizes.
+	Bytes UnitType = "bytes"
+
+	// BitsPerSecond, e.g. for representing network and disk IO.
+	BitsPerSecond UnitType = "bps"
+)
+
 type panelOptions struct {
 	min, max     *float64
 	minAuto      bool
 	legendFormat string
-	defaultValue *float64
+	unitType     UnitType
 }
 
 // Min sets the minimum value of the Y axis on the panel. The default is zero.
@@ -162,10 +186,9 @@ func (p panelOptions) LegendFormat(format string) panelOptions {
 	return p
 }
 
-// DefaultValue sets the panel's default value which is displayed when the query would
-// return no data at all.
-func (p panelOptions) DefaultValue(v float64) panelOptions {
-	p.defaultValue = &v
+// Unit sets the panel's Y axis unit type.
+func (p panelOptions) Unit(t UnitType) panelOptions {
+	p.unitType = t
 	return p
 }
 
@@ -176,6 +199,9 @@ func (p panelOptions) withDefaults() panelOptions {
 	}
 	if p.legendFormat == "" {
 		p.legendFormat = "value"
+	}
+	if p.unitType == "" {
+		p.unitType = Number
 	}
 	return p
 }
@@ -331,9 +357,11 @@ func (c *Container) dashboard() *sdk.Board {
 			panel.GraphPanel.Xaxis = sdk.Axis{
 				Show: true,
 			}
+
+			opt := o.PanelOptions.withDefaults()
 			leftAxis := sdk.Axis{
 				Decimals: 0,
-				Format:   "short",
+				Format:   string(opt.unitType),
 				LogBase:  1,
 				Show:     true,
 			}
@@ -363,7 +391,6 @@ func (c *Container) dashboard() *sdk.Board {
 				})
 			}
 
-			opt := o.PanelOptions.withDefaults()
 			if opt.min != nil {
 				leftAxis.Min = sdk.NewFloatString(*opt.min)
 			}
@@ -378,12 +405,8 @@ func (c *Container) dashboard() *sdk.Board {
 					Show:    true,
 				},
 			}
-			query := o.Query
-			if opt.defaultValue != nil {
-				query = fmt.Sprintf("(%s) OR on() vector(%v)", query, *opt.defaultValue)
-			}
 			panel.AddTarget(&sdk.Target{
-				Expr:         query,
+				Expr:         o.Query,
 				LegendFormat: opt.legendFormat,
 			})
 			if rowPanel != nil {
