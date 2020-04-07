@@ -13,9 +13,11 @@ function queryStringTelemetryData(q: string, caseSensitive: boolean): { [key: st
     // 🚨 PRIVACY: never provide any private data in this function's return value.
     // This only takes ~1.7ms per call, so it does not need to be optimized.
     return {
-        field_archived: {
-            count: count(q, /(^|\s)archived:/g),
-        },
+        field_archived: q.includes('archived:')
+            ? {
+                  count: count(q, /(^|\s)archived:/g),
+              }
+            : undefined,
         field_after: q.includes('after:')
             ? {
                   count: count(q, /(^|\s)after:/g),
@@ -47,9 +49,11 @@ function queryStringTelemetryData(q: string, caseSensitive: boolean): { [key: st
                   value_year: count(q, /(^|\s)before:"[^"]*y(ea)?r/g),
               }
             : undefined,
-        field_case: {
-            count: caseSensitive ? 1 : 0,
-        },
+        field_case: caseSensitive
+            ? {
+                  count: 1,
+              }
+            : undefined,
         field_committer: q.includes('committer:')
             ? {
                   count: count(q, /(^|\s)committer:/g),
@@ -57,12 +61,16 @@ function queryStringTelemetryData(q: string, caseSensitive: boolean): { [key: st
                   value_at_sign: count(q, /(^|\s)-?committer:[^s]*@/g),
               }
             : undefined,
-        field_content: {
-            count: count(q, /(^|\s)content:/g),
-        },
-        field_count: {
-            count: count(q, /(^|\s)count:/g),
-        },
+        field_content: q.includes('content:')
+            ? {
+                  count: count(q, /(^|\s)content:/g),
+              }
+            : undefined,
+        field_count: q.includes('count:')
+            ? {
+                  count: count(q, /(^|\s)count:/g),
+              }
+            : undefined,
         field_file:
             q.includes('file:') || q.includes('f:')
                 ? {
@@ -80,12 +88,16 @@ function queryStringTelemetryData(q: string, caseSensitive: boolean): { [key: st
                       value_glob: count(q, /(^|\s)-?f(ile)?:[^\s]*(\*\.|\.\{[a-zA-Z]|\*\*|\/\*)/g),
                   }
                 : undefined,
-        field_fork: {
-            count: count(q, /(^|\s)fork:/g),
-        },
-        field_index: {
-            count: count(q, /(^|\s)index:/g),
-        },
+        field_fork: q.includes('fork:')
+            ? {
+                  count: count(q, /(^|\s)fork:/g),
+              }
+            : undefined,
+        field_index: q.includes('index:')
+            ? {
+                  count: count(q, /(^|\s)index:/g),
+              }
+            : undefined,
         field_lang:
             q.includes('lang:') || q.includes('l:')
                 ? {
@@ -102,9 +114,11 @@ function queryStringTelemetryData(q: string, caseSensitive: boolean): { [key: st
                       count_alias: count(q, /(^|\s)-?m:/g),
                   }
                 : undefined,
-        field_patterntype: {
-            count: count(q, /(^|\s)patterntype:/gi),
-        },
+        field_patterntype: /patterntype:/gi.test(q)
+            ? {
+                  count: count(q, /(^|\s)patterntype:/gi),
+              }
+            : undefined,
         field_repo:
             q.includes('repo:') || q.includes('r:')
                 ? {
@@ -144,9 +158,11 @@ function queryStringTelemetryData(q: string, caseSensitive: boolean): { [key: st
                   count: count(q, /(^|\s)(repohasfile):/g),
               }
             : undefined,
-        field_timeout: {
-            count: count(q, /(^|\s)timeout:/g),
-        },
+        field_timeout: q.includes('timeout:')
+            ? {
+                  count: count(q, /(^|\s)timeout:/g),
+              }
+            : undefined,
         field_type: q.includes('type:')
             ? {
                   count: count(q, /(^|\s)type:/g),
