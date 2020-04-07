@@ -13,13 +13,11 @@ import (
 	"testing"
 	"time"
 
-	"golang.org/x/time/rate"
-
-	"github.com/sourcegraph/sourcegraph/schema"
-
 	"github.com/google/go-cmp/cmp"
 	"github.com/inconshreveable/log15"
 	"github.com/sergi/go-diff/diffmatchpatch"
+	"github.com/sourcegraph/sourcegraph/schema"
+	"golang.org/x/time/rate"
 )
 
 var update = flag.Bool("update", false, "update testdata")

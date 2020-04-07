@@ -7,12 +7,11 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/schema"
-
 	"github.com/dnaeon/go-vcr/cassette"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // NewTestClient returns a bitbucketserver.Client that records its interactions
