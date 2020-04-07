@@ -30,6 +30,7 @@ const BitbucketServerSchemaJSON = `{
     "rateLimit": {
       "description": "Rate limit applied when making background API requests to BitbucketServer.",
       "type": "object",
+      "title": "BitbucketRateLimit",
       "required": ["enabled", "requestsPerHour"],
       "properties": {
         "enabled": {
