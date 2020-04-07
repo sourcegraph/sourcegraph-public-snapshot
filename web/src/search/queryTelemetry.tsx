@@ -1,6 +1,6 @@
 import { count } from '../../../shared/src/util/strings'
 import { parseSearchQuery } from '../../../shared/src/search/parser/parser'
-import { resolveNegatedFilter, FilterType, isNegatedFilter } from '../../../shared/src/search/interactive/util'
+import { resolveFilter } from '../../../shared/src/search/parser/filters'
 import { resolveFilterType } from './helpers'
 
 export function queryTelemetryData(query: string, caseSensitive: boolean): { [key: string]: any } {
