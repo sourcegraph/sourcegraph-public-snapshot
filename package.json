@@ -73,7 +73,7 @@
     "@gql2ts/language-typescript": "^1.9.0",
     "@octokit/rest": "^16.36.0",
     "@percy/puppeteer": "^1.1.0",
-    "@slack/web-api": "^5.7.0",
+    "@slack/web-api": "^5.8.0",
     "@sourcegraph/babel-plugin-transform-react-hot-loader-wrapper": "^1.0.0",
     "@sourcegraph/eslint-config": "^0.14.0",
     "@sourcegraph/prettierrc": "^3.0.3",
