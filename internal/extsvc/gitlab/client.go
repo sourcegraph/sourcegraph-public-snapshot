@@ -81,6 +81,7 @@ type CommonOp struct {
 
 func NewClientProvider(baseURL *url.URL, cli httpcli.Doer) *ClientProvider {
 	p := newClientProvider(baseURL, cli)
+	// By passing in nil config we'll get a rate limiter with an infinite limit
 	p.RateLimiter = getLimiter(baseURL.String(), nil)
 	return p
 }
@@ -181,7 +182,7 @@ type Client struct {
 	OAuthToken          string // an OAuth bearer token, if set
 	Sudo                string // Sudo user value, if set
 	RateLimiter         *rate.Limiter
-	RateLimitMonitor    *ratelimit.Monitor
+	rateLimitMonitor    *ratelimit.Monitor
 }
 
 // newClient creates a new GitLab API client with an optional personal access token to authenticate requests.
@@ -209,13 +210,24 @@ func (p *ClientProvider) newClient(baseURL *url.URL, op getClientOp, httpClient 
 		OAuthToken:          op.oauthToken,
 		Sudo:                op.sudo,
 		RateLimiter:         rateLimiter,
-		RateLimitMonitor:    rateLimitMonitor,
+		rateLimitMonitor:    rateLimitMonitor,
 	}
 }
 
 func isGitLabDotComURL(baseURL *url.URL) bool {
 	hostname := strings.ToLower(baseURL.Hostname())
 	return hostname == "gitlab.com" || hostname == "www.gitlab.com"
+}
+
+// RecommendedWaitForBackgroundOp returns the length of time we should wait based on both our internal
+// rate limiter and the code host rate limiter. We'll wait for the longer of the two results to be conservative.
+func (c *Client) RecommendedWaitForBackgroundOp(cost int) time.Duration {
+	externalDelay := c.rateLimitMonitor.RecommendedWaitForBackgroundOp(cost)
+	r := c.RateLimiter.ReserveN(time.Now(), cost)
+	if r.Delay() > externalDelay {
+		return r.Delay()
+	}
+	return externalDelay
 }
 
 func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) (responseHeader http.Header, err error) {
@@ -262,7 +274,7 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 	defer resp.Body.Close()
 	trace("GitLab API", "method", req.Method, "url", req.URL.String(), "respCode", resp.StatusCode)
 
-	c.RateLimitMonitor.Update(resp.Header)
+	c.rateLimitMonitor.Update(resp.Header)
 	if resp.StatusCode != http.StatusOK {
 		return nil, errors.Wrap(httpError(resp.StatusCode), fmt.Sprintf("unexpected response from GitLab API (%s)", req.URL))
 	}
