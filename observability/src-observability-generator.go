@@ -43,6 +43,14 @@ type Group struct {
 	// "General" if the group is just about the container in general.
 	Title string
 
+	// Hidden indicates whether or not the group should be hidden by default.
+	//
+	// This should only be used when the dashboard is already full of information
+	// and the information presented in this group is unlikely to be the cause of
+	// issues and should generally only be inspected in the event that an alert
+	// for that information is firing.
+	Hidden bool
+
 	// Rows of observable metrics.
 	Rows []Row
 }
@@ -361,7 +369,7 @@ func (c *Container) dashboard() *sdk.Board {
 			rowPanel.Title = group.Title
 			offsetY++
 			setPanelPos(rowPanel, 0, offsetY)
-			rowPanel.Collapsed = true
+			rowPanel.Collapsed = group.Hidden
 			rowPanel.Panels = []sdk.Panel{} // cannot be null
 			board.Panels = append(board.Panels, rowPanel)
 		}
@@ -437,7 +445,7 @@ func (c *Container) dashboard() *sdk.Board {
 					Expr:         o.Query,
 					LegendFormat: opt.legendFormat,
 				})
-				if rowPanel != nil {
+				if rowPanel != nil && group.Hidden {
 					rowPanel.RowPanel.Panels = append(rowPanel.RowPanel.Panels, *panel)
 				} else {
 					board.Panels = append(board.Panels, panel)
