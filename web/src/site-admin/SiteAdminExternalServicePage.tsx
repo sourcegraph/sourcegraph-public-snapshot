@@ -19,7 +19,7 @@ interface Props extends RouteComponentProps<{ id: GQL.ID }> {
     isLightTheme: boolean
 }
 
-const LOADING: 'loading' = 'loading'
+const LOADING = 'loading' as const
 
 interface State {
     externalServiceOrError: typeof LOADING | GQL.IExternalService | ErrorLike

@@ -18,7 +18,7 @@ import { ThemeProps } from '../theme'
 import { PlatformContextProps } from '../platform/context'
 import { Subscription } from 'rxjs'
 
-const LOADING: 'loading' = 'loading'
+const LOADING = 'loading' as const
 
 const transformMouseEvent = (handler: (event: MouseEvent) => void) => (event: React.MouseEvent<HTMLElement>) =>
     handler(toNativeEvent(event))

@@ -27,7 +27,7 @@ export interface MonacoQueryInputProps
     autoFocus?: boolean
 }
 
-const SOURCEGRAPH_SEARCH: 'sourcegraphSearch' = 'sourcegraphSearch'
+const SOURCEGRAPH_SEARCH = 'sourcegraphSearch' as const
 
 /**
  * Maps a Monaco IDisposable to an rxjs Unsubscribable.

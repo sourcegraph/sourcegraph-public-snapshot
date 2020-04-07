@@ -36,7 +36,7 @@ interface Props {
     onValidityChange: (value: boolean) => void
 }
 
-const LOADING: 'loading' = 'loading'
+const LOADING = 'loading' as const
 
 interface State {
     /**

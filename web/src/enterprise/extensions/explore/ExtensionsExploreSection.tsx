@@ -12,7 +12,7 @@ import { ErrorAlert } from '../../../components/alerts'
 
 interface Props {}
 
-const LOADING: 'loading' = 'loading'
+const LOADING = 'loading' as const
 
 interface State {
     /** The extensions, loading, or an error. */

@@ -21,7 +21,7 @@ interface Props {
     className?: string
 }
 
-const LOADING: 'loading' = 'loading'
+const LOADING = 'loading' as const
 
 interface State {
     /**

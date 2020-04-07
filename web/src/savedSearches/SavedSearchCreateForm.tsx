@@ -13,7 +13,7 @@ interface Props extends RouteComponentProps, NamespaceProps {
     authenticatedUser: GQL.IUser | null
 }
 
-const LOADING: 'loading' = 'loading'
+const LOADING = 'loading' as const
 
 interface State {
     createdOrError: undefined | typeof LOADING | true | ErrorLike

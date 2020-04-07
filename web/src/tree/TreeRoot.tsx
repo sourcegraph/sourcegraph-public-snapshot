@@ -48,7 +48,7 @@ export interface TreeRootProps extends AbsoluteRepo {
     setActiveNode: (node: TreeNode) => void
 }
 
-const LOADING: 'loading' = 'loading'
+const LOADING = 'loading' as const
 interface TreeRootState {
     treeOrError?: typeof LOADING | GQL.IGitTree | ErrorLike
 }

@@ -16,7 +16,7 @@ interface Props {
     onGenerate: () => void
 }
 
-const LOADING: 'loading' = 'loading'
+const LOADING = 'loading' as const
 
 interface State {
     /** Comma-separated license tags. */

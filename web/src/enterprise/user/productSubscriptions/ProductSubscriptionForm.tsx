@@ -28,7 +28,7 @@ export interface ProductSubscriptionFormData {
     paymentToken: string
 }
 
-const LOADING: 'loading' = 'loading'
+const LOADING = 'loading' as const
 
 interface Props extends ThemeProps {
     /**

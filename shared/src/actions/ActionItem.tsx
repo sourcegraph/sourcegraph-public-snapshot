@@ -77,7 +77,7 @@ export interface ActionItemProps extends ActionItemAction, ActionItemComponentPr
     title?: JSX.Element | null
 }
 
-const LOADING: 'loading' = 'loading'
+const LOADING = 'loading' as const
 
 interface State {
     /** The executed action: undefined while loading, null when done or not started, or an error. */
