@@ -1824,6 +1824,10 @@ type Repository implements Node & GenericSearchResultInterface {
     # Information about this repository from the external service that it originates from (such as GitHub, GitLab,
     # Phabricator, etc.).
     externalRepository: ExternalRepository
+    # Whether the repository is a fork.
+    isFork: Boolean!
+    # Whether the repository has been archived.
+    isArchived: Boolean!
     # Lists all external services which yield this repository.
     externalServices(
         # Returns the first n external services from the list.
