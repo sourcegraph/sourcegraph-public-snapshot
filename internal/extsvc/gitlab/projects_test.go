@@ -10,10 +10,9 @@ import (
 	"strings"
 	"testing"
 
-	"golang.org/x/time/rate"
-
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"golang.org/x/time/rate"
 )
 
 type mockHTTPResponseBody struct {
