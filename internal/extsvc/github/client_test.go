@@ -118,8 +118,10 @@ func TestClient_WithToken(t *testing.T) {
 	}
 
 	old := &Client{
-		apiURL:       uri,
-		defaultToken: "old_token",
+		&client{
+			apiURL:       uri,
+			defaultToken: "old_token",
+		},
 	}
 
 	newToken := "new_token"
@@ -134,7 +136,7 @@ func TestClient_WithToken(t *testing.T) {
 }
 
 func TestClient_LoadPullRequests(t *testing.T) {
-	cli, save := newClient(t, "LoadPullRequests")
+	cli, save := newTestClientWithSave(t, "LoadPullRequests")
 	defer save()
 
 	for i, tc := range []struct {
@@ -192,7 +194,7 @@ func TestClient_LoadPullRequests(t *testing.T) {
 }
 
 func TestClient_CreatePullRequest(t *testing.T) {
-	cli, save := newClient(t, "CreatePullRequest")
+	cli, save := newTestClientWithSave(t, "CreatePullRequest")
 	defer save()
 
 	// Repository used: sourcegraph/automation-testing
@@ -267,7 +269,7 @@ func TestClient_CreatePullRequest(t *testing.T) {
 }
 
 func TestClient_ClosePullRequest(t *testing.T) {
-	cli, save := newClient(t, "ClosePullRequest")
+	cli, save := newTestClientWithSave(t, "ClosePullRequest")
 	defer save()
 
 	// Repository used: sourcegraph/automation-testing
@@ -322,7 +324,7 @@ func TestClient_ClosePullRequest(t *testing.T) {
 }
 
 func TestClient_GetAuthenticatedUserOrgs(t *testing.T) {
-	cli, save := newClient(t, "GetAuthenticatedUserOrgs")
+	cli, save := newTestClientWithSave(t, "GetAuthenticatedUserOrgs")
 	defer save()
 
 	ctx := context.Background()
@@ -338,7 +340,7 @@ func TestClient_GetAuthenticatedUserOrgs(t *testing.T) {
 	)
 }
 
-func newClient(t testing.TB, name string) (*Client, func()) {
+func newTestClientWithSave(t testing.TB, name string) (*Client, func()) {
 	t.Helper()
 
 	cassete := filepath.Join("testdata/vcr/", strings.Replace(name, " ", "-", -1))

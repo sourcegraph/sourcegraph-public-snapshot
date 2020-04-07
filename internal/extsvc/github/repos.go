@@ -39,7 +39,7 @@ type Repository struct {
 
 // repositoryFieldsGraphQLFragment returns a GraphQL fragment that contains the fields needed to populate the
 // Repository struct.
-func (c *Client) repositoryFieldsGraphQLFragment() string {
+func (c *client) repositoryFieldsGraphQLFragment() string {
 	if c.githubDotCom {
 		return `
 fragment RepositoryFields on Repository {
@@ -118,7 +118,7 @@ func (c *Client) GetRepositoryByNodeIDNoCache(ctx context.Context, token, id str
 	return c.getRepositoryByNodeID(ctx, token, id, true)
 }
 
-func (c *Client) getRepositoryByNodeID(ctx context.Context, token, id string, nocache bool) (*Repository, error) {
+func (c *client) getRepositoryByNodeID(ctx context.Context, token, id string, nocache bool) (*Repository, error) {
 	if GetRepositoryByNodeIDMock != nil {
 		return GetRepositoryByNodeIDMock(ctx, token, id)
 	}
@@ -137,7 +137,7 @@ func (c *Client) getRepositoryByNodeID(ctx context.Context, token, id string, no
 }
 
 // cachedGetRepository caches the getRepositoryFromAPI call.
-func (c *Client) cachedGetRepository(ctx context.Context, token, key string, getRepositoryFromAPI func(ctx context.Context) (repo *Repository, keys []string, err error), nocache bool) (*Repository, error) {
+func (c *client) cachedGetRepository(ctx context.Context, token, key string, getRepositoryFromAPI func(ctx context.Context) (repo *Repository, keys []string, err error), nocache bool) (*Repository, error) {
 	// 🚨 SECURITY: must forward token here to ensure caching by token
 	if !nocache {
 		if cached := c.getRepositoryFromCache(ctx, token, key); cached != nil {
@@ -189,7 +189,7 @@ type cachedRepo struct {
 
 // getRepositoryFromCache attempts to get a response from the redis cache.
 // It returns nil error for cache-hit condition and non-nil error for cache-miss.
-func (c *Client) getRepositoryFromCache(ctx context.Context, token, key string) *cachedRepo {
+func (c *client) getRepositoryFromCache(ctx context.Context, token, key string) *cachedRepo {
 	// 🚨 SECURITY: must forward token here to ensure caching by token
 	b, ok := c.cache(token).Get(strings.ToLower(key))
 	if !ok {
@@ -216,7 +216,7 @@ func firstNonEmpty(strs ...string) string {
 // addRepositoryToCache will cache the value for repo. The caller can provide multiple cache keys
 // for the multiple ways that this repository can be retrieved (e.g., both "owner/name" and the
 // GraphQL node ID).
-func (c *Client) addRepositoryToCache(token string, keys []string, repo *cachedRepo) {
+func (c *client) addRepositoryToCache(token string, keys []string, repo *cachedRepo) {
 	b, err := json.Marshal(repo)
 	if err != nil {
 		return
@@ -228,7 +228,7 @@ func (c *Client) addRepositoryToCache(token string, keys []string, repo *cachedR
 
 // addRepositoriesToCache will cache repositories that exist
 // under relevant cache keys.
-func (c *Client) addRepositoriesToCache(token string, repos []*Repository) {
+func (c *client) addRepositoriesToCache(token string, repos []*Repository) {
 	for _, repo := range repos {
 		keys := []string{nameWithOwnerCacheKey(repo.NameWithOwner), nodeIDCacheKey(repo.ID)} // cache under multiple
 		// 🚨 SECURITY: must forward token here to ensure caching by token
@@ -316,7 +316,7 @@ func (c *Client) getPublicRepositories(ctx context.Context, sinceRepoID int64) (
 
 // getRepositoryByNodeIDFromAPI attempts to fetch a repository by GraphQL node ID from the GitHub
 // API without use of the redis cache.
-func (c *Client) getRepositoryByNodeIDFromAPI(ctx context.Context, token, id string) (*Repository, error) {
+func (c *client) getRepositoryByNodeIDFromAPI(ctx context.Context, token, id string) (*Repository, error) {
 	var result struct {
 		Node *Repository `json:"node"`
 	}
@@ -448,7 +448,7 @@ func (c *Client) GetReposByNameWithOwner(ctx context.Context, namesWithOwners ..
 	return repos, nil
 }
 
-func (c *Client) buildGetReposBatchQuery(ctx context.Context, namesWithOwners []string) (string, error) {
+func (c *client) buildGetReposBatchQuery(ctx context.Context, namesWithOwners []string) (string, error) {
 	var b strings.Builder
 	b.WriteString(c.repositoryFieldsGraphQLFragment())
 	b.WriteString("query {\n")
@@ -520,7 +520,7 @@ type RepositoryListPage struct {
 	HasNextPage bool
 }
 
-func (c *Client) ListRepositoriesForSearch(ctx context.Context, searchString string, page int) (RepositoryListPage, error) {
+func (c *SearchClient) ListRepositoriesForSearch(ctx context.Context, searchString string, page int) (RepositoryListPage, error) {
 	urlValues := url.Values{
 		"q":        []string{searchString},
 		"page":     []string{strconv.Itoa(page)},

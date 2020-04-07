@@ -47,6 +47,16 @@ var (
 // same Redis cache entries (provided they were computed with the same API URL and access
 // token). The cache keys are agnostic of the http.RoundTripper transport.
 type Client struct {
+	*client
+}
+
+// SearchClient is a caching GitHub API client similar to Client, but only exposing
+// the Search API.
+type SearchClient struct {
+	*client
+}
+
+type client struct {
 	// apiURL is the base URL of a GitHub API. It must point to the base URL of the GitHub API. This
 	// is https://api.github.com for GitHub.com and http[s]://[github-enterprise-hostname]/api for
 	// GitHub Enterprise.
@@ -132,6 +142,32 @@ func NewRepoCache(apiURL *url.URL, token, keyPrefix string, cacheTTL time.Durati
 //
 // apiURL must point to the base URL of the GitHub API. See the docstring for Client.apiURL.
 func NewClient(apiURL *url.URL, defaultToken string, cli httpcli.Doer) *Client {
+	client := newClient(apiURL, defaultToken, cli)
+	return &Client{
+		client,
+	}
+}
+
+// NewSearchClient creates a new GitHub API client with an optional default personal access token
+// that only exposes the search API
+//
+// apiURL must point to the base URL of the GitHub API. See the docstring for Client.apiURL.
+func NewSearchClient(apiURL *url.URL, defaultToken string, cli httpcli.Doer) *SearchClient {
+	client := newClient(apiURL, defaultToken, cli)
+	return &SearchClient{
+		client,
+	}
+}
+
+// WithToken returns a copy of the Client authenticated as the GitHub user with the given token.
+func (c *Client) WithToken(token string) *Client {
+	return NewClient(c.apiURL, token, c.httpClient)
+}
+
+// NewClient creates a new GitHub API client with an optional default personal access token.
+//
+// apiURL must point to the base URL of the GitHub API. See the docstring for Client.apiURL.
+func newClient(apiURL *url.URL, defaultToken string, cli httpcli.Doer) *client {
 	apiURL = canonicalizedURL(apiURL)
 	if gitHubDisable {
 		cli = disabledClient{}
@@ -151,7 +187,7 @@ func NewClient(apiURL *url.URL, defaultToken string, cli httpcli.Doer) *Client {
 		return category
 	})
 
-	return &Client{
+	return &client{
 		apiURL:       apiURL,
 		githubDotCom: urlIsGitHubDotCom(apiURL),
 		defaultToken: defaultToken,
@@ -161,15 +197,10 @@ func NewClient(apiURL *url.URL, defaultToken string, cli httpcli.Doer) *Client {
 	}
 }
 
-// WithToken returns a copy of the Client authenticated as the GitHub user with the given token.
-func (c *Client) WithToken(token string) *Client {
-	return NewClient(c.apiURL, token, c.httpClient)
-}
-
 // cache returns the cache associated with the token (which can be empty, in which case the default
 // token will be used). Accessors of the caches should use this method rather than referencing
 // repoCache directly.
-func (c *Client) cache(explicitToken string) *rcache.Cache {
+func (c *client) cache(explicitToken string) *rcache.Cache {
 	token := firstNonEmpty(explicitToken, c.defaultToken)
 
 	c.repoCacheMu.RLock()
@@ -191,7 +222,7 @@ func (c *Client) cache(explicitToken string) *rcache.Cache {
 	return c.repoCache[token]
 }
 
-func (c *Client) do(ctx context.Context, token string, req *http.Request, result interface{}) (err error) {
+func (c *client) do(ctx context.Context, token string, req *http.Request, result interface{}) (err error) {
 	req.URL.Path = path.Join(c.apiURL.Path, req.URL.Path)
 	req.URL = c.apiURL.ResolveReference(req.URL)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
@@ -244,7 +275,7 @@ func (c *Client) do(ctx context.Context, token string, req *http.Request, result
 // - /users/:user/repos
 // - /orgs/:org/repos
 // - /user/repos
-func (c *Client) listRepositories(ctx context.Context, requestURI string) ([]*Repository, error) {
+func (c *client) listRepositories(ctx context.Context, requestURI string) ([]*Repository, error) {
 	var restRepos []restRepository
 	if err := c.requestGet(ctx, "", requestURI, &restRepos); err != nil {
 		return nil, err
@@ -273,7 +304,7 @@ func (c *Client) ListInstallationRepositories(ctx context.Context) ([]*Repositor
 	return repos, nil
 }
 
-func (c *Client) requestGet(ctx context.Context, token, requestURI string, result interface{}) error {
+func (c *client) requestGet(ctx context.Context, token, requestURI string, result interface{}) error {
 	req, err := http.NewRequest("GET", requestURI, nil)
 	if err != nil {
 		return err
@@ -293,7 +324,7 @@ func (c *Client) requestGet(ctx context.Context, token, requestURI string, resul
 	return c.do(ctx, token, req, result)
 }
 
-func (c *Client) requestGraphQL(ctx context.Context, token, query string, vars map[string]interface{}, result interface{}) (err error) {
+func (c *client) requestGraphQL(ctx context.Context, token, query string, vars map[string]interface{}, result interface{}) (err error) {
 	reqBody, err := json.Marshal(struct {
 		Query     string                 `json:"query"`
 		Variables map[string]interface{} `json:"variables"`

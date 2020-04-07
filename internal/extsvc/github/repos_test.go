@@ -72,12 +72,28 @@ func (s mockHTTPEmptyResponse) Do(req *http.Request) (*http.Response, error) {
 func newTestClient(t *testing.T, cli httpcli.Doer) *Client {
 	rcache.SetupForTest(t)
 	return &Client{
-		apiURL:          &url.URL{Scheme: "https", Host: "example.com", Path: "/"},
-		httpClient:      cli,
-		RateLimit:       &ratelimit.Monitor{},
-		repoCache:       map[string]*rcache.Cache{},
-		repoCachePrefix: "__test__gh_repo",
-		repoCacheTTL:    1000,
+		&client{
+			apiURL:          &url.URL{Scheme: "https", Host: "example.com", Path: "/"},
+			httpClient:      cli,
+			RateLimit:       &ratelimit.Monitor{},
+			repoCache:       map[string]*rcache.Cache{},
+			repoCachePrefix: "__test__gh_repo",
+			repoCacheTTL:    1000,
+		},
+	}
+}
+
+func newTestSearchClient(t *testing.T, cli httpcli.Doer) *SearchClient {
+	rcache.SetupForTest(t)
+	return &SearchClient{
+		&client{
+			apiURL:          &url.URL{Scheme: "https", Host: "example.com", Path: "/"},
+			httpClient:      cli,
+			RateLimit:       &ratelimit.Monitor{},
+			repoCache:       map[string]*rcache.Cache{},
+			repoCachePrefix: "__test__gh_repo",
+			repoCacheTTL:    1000,
+		},
 	}
 }
 
@@ -459,7 +475,7 @@ func TestClient_ListRepositoriesForSearch(t *testing.T) {
 }
 `,
 	}
-	c := newTestClient(t, &mock)
+	c := newTestSearchClient(t, &mock)
 
 	wantRepos := []*Repository{
 		{
@@ -512,7 +528,7 @@ func TestClient_ListRepositoriesForSearch_incomplete(t *testing.T) {
 }
 `,
 	}
-	c := newTestClient(t, &mock)
+	c := newTestSearchClient(t, &mock)
 
 	// If we have incomplete results we want to fail. Our syncer requires all
 	// repositories to be returned, otherwise it will delete the missing

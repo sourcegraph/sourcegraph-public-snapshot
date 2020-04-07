@@ -35,7 +35,7 @@ type GithubSource struct {
 	client          *github.Client
 	// searchClient is for using the GitHub search API, which has an independent
 	// rate limit much lower than non-search API requests.
-	searchClient *github.Client
+	searchClient *github.SearchClient
 
 	// originalHostname is the hostname of config.Url (differs from client APIURL, whose host is api.github.com
 	// for an originalHostname of github.com).
@@ -114,7 +114,7 @@ func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpc
 		baseURL:          baseURL,
 		githubDotCom:     githubDotCom,
 		client:           github.NewClient(apiURL, c.Token, cli),
-		searchClient:     github.NewClient(apiURL, c.Token, cli),
+		searchClient:     github.NewSearchClient(apiURL, c.Token, cli),
 		originalHostname: originalHostname,
 	}, nil
 }
