@@ -106,8 +106,8 @@ More behavior can be controlled with
 
 #### Can I consume Sourcegraph's Prometheus metrics in my own monitoring system (Datadog, New Relic, etc.)?
 
-It is technically possible to consume all of Sourcegraph's Prometheus metrics in any external monitoring system that supports Prometheus scraping (both Datadog and New Relic support this). With that said, we would advise against it because Sourcegraph is a very complex system and defining all of the thresholds and alerting rules that you will need to ensure Sourcegraph is healthy would be tedious and difficult.
+It is technically possible to consume all of Sourcegraph's Prometheus metrics in any external monitoring system that supports Prometheus scraping (both Datadog and New Relic support this). However, we would advise against it because Sourcegraph is a very complex system and defining all of the alerting thresholds and rules that are needed to ensure Sourcegraph is healthy is very tedious and changes with each release of Sourcegraph.
 
-One of the primary benefits of using Sourcegraph's builtin Prometheus and Grafana monitoring is that you get builtin dashboards and alerting thresholds out-of-the-box, and as Sourcegraph's internals change with each update you can rest assured the metrics and information you are monitoring is up-to-date.
+One of the primary benefits of using Sourcegraph's builtin Prometheus and Grafana monitoring is that you get builtin dashboards and alerting thresholds out-of-the-box, and as Sourcegraph's internals change with each update you can rest assured that the metrics and information you are monitoring is up-to-date.
 
-What we usually see people do instead is either [configure Sourcegraph's Grafana monitoring to send alerts to your own PagerDuty, Slack, email, etc.](alerting.md) or sometimes [query Sourcegraph's monitoring via HTTP to find out what alerts are firing in order to pipe that into your own custom monitoring solution](alerting_custom_consumption.md).
+Most commonly [Sourcegraph's monitoring is configured to send alerts to your own PagerDuty, Slack, email, etc.](alerting.md) or, when that is not acceptable, using [the HTTP API to query which alerts are firing in Sourcegraph](alerting_custom_consumption.md) in order to pipe that information into your own monitoring platform.
