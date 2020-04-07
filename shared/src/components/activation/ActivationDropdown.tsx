@@ -122,7 +122,7 @@ export class ActivationDropdown extends React.PureComponent<Props, State> {
                             <h3 className="mb-2">
                                 {percentageDone(this.props.activation.completed) > 0
                                     ? 'Almost there!'
-                                    : 'Welcome to Sourcegraph!'}
+                                    : 'Welcome to Sourcegraph'}
                             </h3>
                             <p className="mb-2">Complete the steps below to finish onboarding!</p>
                         </div>
