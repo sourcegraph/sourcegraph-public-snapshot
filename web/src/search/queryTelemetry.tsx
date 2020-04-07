@@ -1,7 +1,6 @@
 import { count } from '../../../shared/src/util/strings'
-import { parseSearchQuery } from '../../../shared/src/search/parser/parser'
+import { parseSearchQuery, ParserResult, Sequence } from '../../../shared/src/search/parser/parser'
 import { resolveFilter } from '../../../shared/src/search/parser/filters'
-import { resolveFilterType } from './helpers'
 
 export function queryTelemetryData(query: string, caseSensitive: boolean): { [key: string]: any } {
     return {
@@ -11,14 +10,15 @@ export function queryTelemetryData(query: string, caseSensitive: boolean): { [ke
         empty: !query,
     }
 }
-function filterExistsInQuery(query: string, filterToMatch: string): boolean {
-    const parsedQuery = parseSearchQuery(query)
+function filterExistsInQuery(parsedQuery: ParserResult<Sequence>, filterToMatch: string): boolean {
     if (parsedQuery.type === 'success') {
         const members = parsedQuery.token.members
         for (const member of members) {
             if (member.token.type === 'filter') {
                 const resolvedFilter = resolveFilter(member.token.filterType.token.value)
-                return resolvedFilter !== undefined && resolvedFilter.type === filterToMatch
+                if (resolvedFilter !== undefined && resolvedFilter.type === filterToMatch) {
+                    return true
+                }
             }
         }
     }
@@ -27,13 +27,14 @@ function filterExistsInQuery(query: string, filterToMatch: string): boolean {
 function queryStringTelemetryData(q: string, caseSensitive: boolean): { [key: string]: any } {
     // 🚨 PRIVACY: never provide any private data in this function's return value.
     // This only takes ~1.7ms per call, so it does not need to be optimized.
+    const parsedQuery = parseSearchQuery(q)
     return {
-        field_archived: filterExistsInQuery(q, 'archived')
+        field_archived: filterExistsInQuery(parsedQuery, 'archived')
             ? {
                   count: count(q, /(^|\s)archived:/g),
               }
             : undefined,
-        field_after: filterExistsInQuery(q, 'after')
+        field_after: filterExistsInQuery(parsedQuery, 'after')
             ? {
                   count: count(q, /(^|\s)after:/g),
                   value_sec: count(q, /(^|\s)after:"[^"]*sec/g),
@@ -45,14 +46,14 @@ function queryStringTelemetryData(q: string, caseSensitive: boolean): { [key: st
                   value_year: count(q, /(^|\s)after:"[^"]*y(ea)?r/g),
               }
             : undefined,
-        field_author: filterExistsInQuery(q, 'author')
+        field_author: filterExistsInQuery(parsedQuery, 'author')
             ? {
                   count: count(q, /(^|\s)author:/g),
                   count_negated: count(q, /(^|\s)-author:/g),
                   value_at_sign: count(q, /(^|\s)-?author:[^s]*@/g),
               }
             : undefined,
-        field_before: filterExistsInQuery(q, 'before')
+        field_before: filterExistsInQuery(parsedQuery, 'before')
             ? {
                   count: count(q, /(^|\s)before:/g),
                   value_sec: count(q, /(^|\s)before:"[^"]*sec/g),
@@ -69,24 +70,24 @@ function queryStringTelemetryData(q: string, caseSensitive: boolean): { [key: st
                   count: 1,
               }
             : undefined,
-        field_committer: filterExistsInQuery(q, 'committer')
+        field_committer: filterExistsInQuery(parsedQuery, 'committer')
             ? {
                   count: count(q, /(^|\s)committer:/g),
                   count_negated: count(q, /(^|\s)-committer:/g),
                   value_at_sign: count(q, /(^|\s)-?committer:[^s]*@/g),
               }
             : undefined,
-        field_content: filterExistsInQuery(q, 'content')
+        field_content: filterExistsInQuery(parsedQuery, 'content')
             ? {
                   count: count(q, /(^|\s)content:/g),
               }
             : undefined,
-        field_count: filterExistsInQuery(q, 'count')
+        field_count: filterExistsInQuery(parsedQuery, 'count')
             ? {
                   count: count(q, /(^|\s)count:/g),
               }
             : undefined,
-        field_file: filterExistsInQuery(q, 'file')
+        field_file: filterExistsInQuery(parsedQuery, 'file')
             ? {
                   count: count(q, /(^|\s)f(ile)?:/g),
                   count_negated: count(q, /(^|\s)-f(ile?):/g),
@@ -102,36 +103,36 @@ function queryStringTelemetryData(q: string, caseSensitive: boolean): { [key: st
                   value_glob: count(q, /(^|\s)-?f(ile)?:[^\s]*(\*\.|\.\{[a-zA-Z]|\*\*|\/\*)/g),
               }
             : undefined,
-        field_fork: filterExistsInQuery(q, 'fork')
+        field_fork: filterExistsInQuery(parsedQuery, 'fork')
             ? {
                   count: count(q, /(^|\s)fork:/g),
               }
             : undefined,
-        field_index: filterExistsInQuery(q, 'index')
+        field_index: filterExistsInQuery(parsedQuery, 'index')
             ? {
                   count: count(q, /(^|\s)index:/g),
               }
             : undefined,
-        field_lang: filterExistsInQuery(q, 'lang')
+        field_lang: filterExistsInQuery(parsedQuery, 'lang')
             ? {
                   count: count(q, /(^|\s)l(ang)?:/g),
                   count_negated: count(q, /(^|\s)-l(ang)?:/g),
                   count_alias: count(q, /(^|\s)-?l:/g),
               }
             : undefined,
-        field_message: filterExistsInQuery(q, 'message')
+        field_message: filterExistsInQuery(parsedQuery, 'message')
             ? {
                   count: count(q, /(^|\s)m(essage)?:/g),
                   count_negated: count(q, /(^|\s)-m(essage)?:/g),
                   count_alias: count(q, /(^|\s)-?m:/g),
               }
             : undefined,
-        field_patterntype: filterExistsInQuery(q, 'patterntype')
+        field_patterntype: filterExistsInQuery(parsedQuery, 'patterntype')
             ? {
                   count: count(q, /(^|\s)patterntype:/gi),
               }
             : undefined,
-        field_repo: filterExistsInQuery(q, 'repo')
+        field_repo: filterExistsInQuery(parsedQuery, 'repo')
             ? {
                   count: count(q, /(^|\s)r(epo)?:/g),
                   count_negated: count(q, /(^|\s)-r(epo)?:/g),
@@ -149,7 +150,7 @@ function queryStringTelemetryData(q: string, caseSensitive: boolean): { [key: st
                   value_glob: count(q, /(^|\s)-?r(epo)?:[^\s]*(\*\.|\.\{[a-zA-Z]|\*\*|\/\*)/g),
               }
             : undefined,
-        field_repogroup: filterExistsInQuery(q, 'repogroup')
+        field_repogroup: filterExistsInQuery(parsedQuery, 'repogroup')
             ? {
                   count: count(q, /(^|\s)(repogroup|g):/g),
                   count_negated: count(q, /(^|\s)-(repogroup|g):/g),
@@ -158,22 +159,22 @@ function queryStringTelemetryData(q: string, caseSensitive: boolean): { [key: st
                   value_inactive: count(q, /(^|\s)-?(repogroup|g):active/g),
               }
             : undefined,
-        field_repohascommitafter: filterExistsInQuery(q, 'repohascommitafter')
+        field_repohascommitafter: filterExistsInQuery(parsedQuery, 'repohascommitafter')
             ? {
                   count: count(q, /(^|\s)(repohascommitafter):/g),
               }
             : undefined,
-        field_repohasfile: filterExistsInQuery(q, 'repohasfile')
+        field_repohasfile: filterExistsInQuery(parsedQuery, 'repohasfile')
             ? {
                   count: count(q, /(^|\s)(repohasfile):/g),
               }
             : undefined,
-        field_timeout: filterExistsInQuery(q, 'timeout')
+        field_timeout: filterExistsInQuery(parsedQuery, 'timeout')
             ? {
                   count: count(q, /(^|\s)timeout:/g),
               }
             : undefined,
-        field_type: filterExistsInQuery(q, 'type')
+        field_type: filterExistsInQuery(parsedQuery, 'type')
             ? {
                   count: count(q, /(^|\s)type:/g),
                   value_file: count(q, /(^|\s)type:file(\s|$)/g),
