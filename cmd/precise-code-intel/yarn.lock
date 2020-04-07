@@ -5354,10 +5354,15 @@ typescript-json-schema@^0.42.0:
     typescript "^3.5.3"
     yargs "^14.0.0"
 
-typescript@^3.5.3, typescript@^3.7.2:
+typescript@^3.5.3:
   version "3.7.2"
   resolved "https://registry.npmjs.org/typescript/-/typescript-3.7.2.tgz#27e489b95fa5909445e9fef5ee48d81697ad18fb"
   integrity sha512-ml7V7JfiN2Xwvcer+XAf2csGO1bPBdRbFCkYBczNZggrBZ9c7G3riSUeJmqEU5uOtXNPMhE3n+R4FA/3YOAWOQ==
+
+typescript@^3.9.0-dev:
+  version "3.9.0-dev.20200407"
+  resolved "https://registry.npmjs.org/typescript/-/typescript-3.9.0-dev.20200407.tgz#6f11737b42308f601bd6a1f0b9a40be7f8e55714"
+  integrity sha512-DCGwu+3goRNUl9J3kYqs4gAsUIdLIb9vWSoPalapEt8gezvrRChowBCPXApsfpiY91iqcEHFN+afhFe5dX6pWw==
 
 union-value@^1.0.0:
   version "1.0.1"
