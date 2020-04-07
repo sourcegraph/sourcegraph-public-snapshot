@@ -6,9 +6,9 @@ import (
 
 // isPatternExpression returns true if every leaf node in a tree root at node is
 // a search pattern.
-func isPatternExpression(node Node) bool {
+func isPatternExpression(nodes []Node) bool {
 	result := true
-	VisitParameter([]Node{node}, func(field, _ string, _ bool) {
+	VisitParameter(nodes, func(field, _ string, _ bool) {
 		if field != "" && field != "content" {
 			result = false
 		}
@@ -21,9 +21,9 @@ func isPatternExpression(node Node) bool {
 // otherwise for nested parameters.
 func processTopLevel(nodes []Node) ([]Node, error) {
 	if term, ok := nodes[0].(Operator); ok {
-		if term.Kind == And && isPatternExpression(term) {
+		if term.Kind == And && isPatternExpression([]Node{term}) {
 			return nodes, nil
-		} else if term.Kind == Or && isPatternExpression(term) {
+		} else if term.Kind == Or && isPatternExpression([]Node{term}) {
 			return nodes, nil
 		} else if term.Kind == And {
 			return term.Operands, nil
@@ -51,7 +51,7 @@ func PartitionSearchPattern(nodes []Node) (parameters []Node, pattern Node, err 
 
 	var patterns []Node
 	for _, node := range nodes {
-		if isPatternExpression(node) {
+		if isPatternExpression([]Node{node}) {
 			patterns = append(patterns, node)
 		} else if term, ok := node.(Parameter); ok {
 			parameters = append(parameters, term)
@@ -66,4 +66,32 @@ func PartitionSearchPattern(nodes []Node) (parameters []Node, pattern Node, err 
 	}
 
 	return parameters, pattern, nil
+}
+
+// isPureSearchPattern implements a heuristic that returns true if buf, possibly
+// containing whitespace or balanced parentheses, can be treated as a search
+// pattern in the and/or grammar.
+func isPureSearchPattern(buf []byte) bool {
+	// Check if the balanced string we scanned is perhaps an and/or expression by parsing without the heuristic.
+	try := &parser{buf: buf, heuristic: false}
+	result, err := try.parseOr()
+	if err != nil {
+		// This is not an and/or expression, but it is balanced. It
+		// could be, e.g., (foo or). Reject this sort of pattern for now.
+		return false
+	}
+	if try.balanced != 0 {
+		return false
+	}
+	if containsAndOrExpression(result) {
+		// The balanced string is an and/or expression in our grammar,
+		// so it cannot be interpreted as a search pattern.
+		return false
+	}
+	if !isPatternExpression(newOperator(result, Concat)) {
+		// The balanced string contains other parameters, like
+		// "repo:foo", which are not search patterns.
+		return false
+	}
+	return true
 }

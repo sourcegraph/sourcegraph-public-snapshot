@@ -101,9 +101,10 @@ func skipSpace(buf []byte) int {
 }
 
 type parser struct {
-	buf      []byte
-	pos      int
-	balanced int
+	buf       []byte
+	pos       int
+	balanced  int
+	heuristic bool // if true, activates parsing parens as patterns rather than expression groups.
 }
 
 func (p *parser) done() bool {
@@ -185,12 +186,15 @@ func ScanParameter(parameter []byte) Parameter {
 	return Parameter{Field: "", Value: string(parameter)}
 }
 
-// ParseSearchPatternWithParens attempts to parse a search pattern containing
+// ParseSearchPatternHeuristic heuristically parses a search pattern containing
 // parentheses at the current position. There are cases where we want to
 // interpret parentheses as part of a search pattern, rather than an and/or
 // expression group. For example, In the regex foo(a|b)bar, we want to preserve
 // parentheses as part of the pattern.
-func (p *parser) ParseSearchPatternWithParens() (Parameter, bool) {
+func (p *parser) ParseSearchPatternHeuristic() (Node, bool) {
+	if !p.heuristic {
+		return Parameter{Field: "", Value: ""}, false
+	}
 	start := p.pos
 	balanced := 0
 	for {
@@ -208,17 +212,27 @@ func (p *parser) ParseSearchPatternWithParens() (Parameter, bool) {
 		if p.done() {
 			break
 		}
-		if isSpace(p.buf[p.pos]) {
+		if isSpace(p.buf[p.pos]) && balanced == 0 {
+			// Stop scanning a potential pattern when we see whitespace in a balanced state.
 			break
 		}
 		p.pos++
 	}
-	if balanced != 0 {
-		// Trying to parse the pattern is unbalanced, perhaps it is an and/or expression.
+	if len(p.buf[start:p.pos]) == 0 || balanced != 0 || !isPureSearchPattern(p.buf[start:p.pos]) {
+		// We tried validating the pattern but it is either empty, unbalanced, or an invalid and/or expression.
 		p.pos = start // Backtrack.
 		return Parameter{Field: "", Value: ""}, false
 	}
-	return ScanParameter(p.buf[start:p.pos]), true
+	// The heuristic succeeds: we can process the string as a pure search pattern.
+	pieces := strings.Fields(string(p.buf[start:p.pos]))
+	if len(pieces) == 1 {
+		return Parameter{Field: "", Value: pieces[0]}, true
+	}
+	parameters := []Node{}
+	for _, piece := range pieces {
+		parameters = append(parameters, Parameter{Field: "", Value: piece})
+	}
+	return Operator{Kind: Concat, Operands: parameters}, true
 }
 
 // ParseParameter returns valid leaf node values for AND/OR queries, taking into
@@ -249,6 +263,17 @@ func containsPattern(node Node) bool {
 	var result bool
 	VisitField([]Node{node}, "", func(_ string, _ bool) {
 		result = true
+	})
+	return result
+}
+
+// returns true if descendent of node contains and/or expressions.
+func containsAndOrExpression(nodes []Node) bool {
+	var result bool
+	VisitOperator(nodes, func(kind operatorKind, _ []Node) {
+		if kind == And || kind == Or {
+			result = true
+		}
 	})
 	return result
 }
@@ -302,8 +327,8 @@ loop:
 		switch {
 		case p.match(LPAREN):
 			// First try parse a parameter as a search pattern containing parens.
-			if parameter, ok := p.ParseSearchPatternWithParens(); ok {
-				nodes = append(nodes, parameter)
+			if patterns, ok := p.ParseSearchPatternHeuristic(); ok {
+				nodes = append(nodes, patterns)
 			} else {
 				// If the above failed, we treat this paren
 				// group as part of an and/or expression.
@@ -318,8 +343,14 @@ loop:
 		case p.expect(RPAREN):
 			p.balanced--
 			if len(nodes) == 0 {
-				// Return a non-nil node if we parsed "()".
-				nodes = []Node{Parameter{Value: ""}}
+				// We parsed "()".
+				if p.heuristic {
+					// Interpret literally.
+					nodes = []Node{Parameter{Value: "()"}}
+				} else {
+					// Interpret as a group: return an empty non-nil node.
+					nodes = []Node{Parameter{Value: ""}}
+				}
 			}
 			break loop
 		case p.match(AND), p.match(OR):
@@ -327,7 +358,7 @@ loop:
 			break loop
 		default:
 			// First try parse a parameter as a search pattern containing parens.
-			if parameter, ok := p.ParseSearchPatternWithParens(); ok {
+			if parameter, ok := p.ParseSearchPatternHeuristic(); ok {
 				nodes = append(nodes, parameter)
 			} else {
 				parameter := p.ParseParameter()
@@ -441,7 +472,7 @@ func parseAndOr(in string) ([]Node, error) {
 	if in == "" {
 		return nil, nil
 	}
-	parser := &parser{buf: []byte(in)}
+	parser := &parser{buf: []byte(in), heuristic: true}
 	nodes, err := parser.parseOr()
 	if err != nil {
 		return nil, err
