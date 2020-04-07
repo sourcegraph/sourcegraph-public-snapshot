@@ -267,19 +267,6 @@ func (s BitbucketServerSource) makeRepo(repo *bitbucketserver.Repo, isArchived b
 		}
 	}
 
-	// Repo Links
-	// var links *protocol.RepoLinks
-	// for _, l := range repo.Links.Self {
-	// 	root := strings.TrimSuffix(l.Href, "/browse")
-	// 	links = &protocol.RepoLinks{
-	// 		Root:   l.Href,
-	// 		Tree:   root + "/browse/{path}?at={rev}",
-	// 		Blob:   root + "/browse/{path}?at={rev}",
-	// 		Commit: root + "/commits/{commit}",
-	// 	}
-	// 	break
-	// }
-
 	urn := s.svc.URN()
 
 	return &Repo{
