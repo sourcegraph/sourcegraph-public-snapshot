@@ -34,7 +34,7 @@ func Test_PartitionSearchPattern(t *testing.T) {
 		},
 		{
 			input: "file:foo (x y)",
-			want:  "file:foo (concat x y)",
+			want:  "file:foo (concat (x y))",
 		},
 		{
 			input: "(file:foo x) y",

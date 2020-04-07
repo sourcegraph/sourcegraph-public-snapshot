@@ -42,8 +42,10 @@ set -e
 echo "Waiting for $URL... done"
 
 echo "--- yarn run test-e2e"
-pushd web
 # `-pix_fmt yuv420p` makes a QuickTime-compatible mp4.
 ffmpeg -y -f x11grab -video_size 1280x1024 -i "$DISPLAY" -pix_fmt yuv420p e2e.mp4 > ffmpeg.log 2>&1 &
-env SOURCEGRAPH_BASE_URL="$URL" PERCY_ON=true ./node_modules/.bin/percy exec -- yarn run test-e2e
-popd
+env SOURCEGRAPH_BASE_URL="$URL" PERCY_ON=true ./node_modules/.bin/percy exec -- yarn run cover-e2e
+
+yarn nyc report -r json
+# Upload the coverage under the "e2e" flag (toggleable in the CodeCov UI)
+bash <(curl -s https://codecov.io/bash) -F e2e

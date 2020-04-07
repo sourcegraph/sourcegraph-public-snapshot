@@ -44,17 +44,15 @@ go_build() {
 }
 export -f go_build
 
-echo "--- build go and symbols concurrently"
+echo "--- go build"
 
-build_go_packages() {
-   echo "--- go build"
-
-   PACKAGES=(
+PACKAGES=(
     github.com/sourcegraph/sourcegraph/cmd/github-proxy \
     github.com/sourcegraph/sourcegraph/cmd/gitserver \
     github.com/sourcegraph/sourcegraph/cmd/query-runner \
     github.com/sourcegraph/sourcegraph/cmd/replacer \
     github.com/sourcegraph/sourcegraph/cmd/searcher \
+    github.com/sourcegraph/sourcegraph/cmd/symbols \
     $additional_images
     \
     github.com/google/zoekt/cmd/zoekt-archive-index \
@@ -62,23 +60,9 @@ build_go_packages() {
     github.com/google/zoekt/cmd/zoekt-webserver \
     \
     $server_pkg
-   )
+)
 
-   parallel_run go_build {} ::: "${PACKAGES[@]}"
-}
-export -f build_go_packages
-
-build_symbols() {
-    echo "--- build sqlite for symbols"
-    if [[ "${CI_DEBUG_PROFILE:-"false"}" == "true" ]]; then
-        env OUTPUT="$BINDIR" time -v ./cmd/symbols/go-build.sh
-    else
-        env OUTPUT="$BINDIR" ./cmd/symbols/go-build.sh
-    fi
-}
-export -f build_symbols
-
-parallel_run {} ::: build_go_packages build_symbols
+parallel_run go_build {} ::: "${PACKAGES[@]}"
 
 echo "--- ctags"
 cp -a ./cmd/symbols/.ctags.d "$OUTPUT"

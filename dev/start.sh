@@ -30,7 +30,6 @@ if ! psql -wc '\x' >/dev/null; then
     exit 1
 fi
 
-export LIGHTSTEP_INCLUDE_SENSITIVE=true
 export PGSSLMODE=disable
 
 # Default to "info" level debugging, and "condensed" log format (nice for human readers)
@@ -83,6 +82,13 @@ export GLOBAL_SETTINGS_ALLOW_EDITS=true
 # WebApp
 export NODE_ENV=development
 export NODE_OPTIONS="--max_old_space_size=4096"
+
+# Ensure SQLite for symbols is built
+./dev/libsqlite3-pcre/build.sh
+export LIBSQLITE3_PCRE="$(./dev/libsqlite3-pcre/build.sh libpath)"
+
+# Ensure ctags image is built
+./cmd/symbols/build-ctags.sh
 
 # Make sure chokidar-cli is installed in the background
 printf >&2 "Concurrently installing Yarn and Go dependencies...\n\n"
