@@ -10,6 +10,8 @@ import (
 	"strings"
 	"testing"
 
+	"golang.org/x/time/rate"
+
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 )
@@ -46,6 +48,7 @@ func newTestClient(t *testing.T) *Client {
 		baseURL:          &url.URL{Scheme: "https", Host: "example.com", Path: "/"},
 		httpClient:       &http.Client{},
 		RateLimitMonitor: &ratelimit.Monitor{},
+		RateLimiter:      rate.NewLimiter(rate.Inf, 100),
 		projCache:        rcache.NewWithTTL("__test__gl_proj", 1000),
 	}
 }

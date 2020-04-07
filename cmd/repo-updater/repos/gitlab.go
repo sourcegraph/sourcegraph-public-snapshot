@@ -82,7 +82,7 @@ func newGitLabSource(svc *ExternalService, c *schema.GitLabConnection, cf *httpc
 		exclude:             exclude,
 		baseURL:             baseURL,
 		nameTransformations: nts,
-		client:              gitlab.NewClientProvider(baseURL, cli).GetPATClient(c.Token, ""),
+		client:              gitlab.NewClientProviderWithConfig(baseURL, c, cli).GetPATClient(c.Token, ""),
 	}, nil
 }
 

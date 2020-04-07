@@ -16,12 +16,15 @@ import (
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"github.com/segmentio/fasthash/fnv1"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/schema"
+	"golang.org/x/time/rate"
 )
 
 var (
@@ -68,6 +71,7 @@ type ClientProvider struct {
 	gitlabClientsMu sync.Mutex
 
 	RateLimitMonitor *ratelimit.Monitor // the API rate limit monitor
+	RateLimiter      *rate.Limiter
 }
 
 type CommonOp struct {
@@ -76,6 +80,18 @@ type CommonOp struct {
 }
 
 func NewClientProvider(baseURL *url.URL, cli httpcli.Doer) *ClientProvider {
+	p := newClientProvider(baseURL, cli)
+	p.RateLimiter = getLimiter(baseURL.String(), nil)
+	return p
+}
+
+func NewClientProviderWithConfig(baseURL *url.URL, c *schema.GitLabConnection, cli httpcli.Doer) *ClientProvider {
+	p := newClientProvider(baseURL, cli)
+	p.RateLimiter = getLimiter(baseURL.String(), c)
+	return p
+}
+
+func newClientProvider(baseURL *url.URL, cli httpcli.Doer) *ClientProvider {
 	if cli == nil {
 		cli = http.DefaultClient
 	}
@@ -141,7 +157,7 @@ func (p *ClientProvider) getClient(op getClientOp) *Client {
 		return c
 	}
 
-	c := p.newClient(p.baseURL, op, p.httpClient, p.RateLimitMonitor)
+	c := p.newClient(p.baseURL, op, p.httpClient, p.RateLimiter, p.RateLimitMonitor)
 	p.gitlabClients[key] = c
 	return c
 }
@@ -164,6 +180,7 @@ type Client struct {
 	PersonalAccessToken string // a personal access token to authenticate requests, if set
 	OAuthToken          string // an OAuth bearer token, if set
 	Sudo                string // Sudo user value, if set
+	RateLimiter         *rate.Limiter
 	RateLimitMonitor    *ratelimit.Monitor
 }
 
@@ -173,7 +190,7 @@ type Client struct {
 // http[s]://[gitlab-hostname] for self-hosted GitLab instances.
 //
 // See the docstring of Client for the meaning of the parameters.
-func (p *ClientProvider) newClient(baseURL *url.URL, op getClientOp, httpClient httpcli.Doer, rateLimit *ratelimit.Monitor) *Client {
+func (p *ClientProvider) newClient(baseURL *url.URL, op getClientOp, httpClient httpcli.Doer, rateLimiter *rate.Limiter, rateLimitMonitor *ratelimit.Monitor) *Client {
 	// Cache for GitLab project metadata.
 	var cacheTTL time.Duration
 	if isGitLabDotComURL(baseURL) && op.personalAccessToken == "" && op.oauthToken == "" {
@@ -191,7 +208,8 @@ func (p *ClientProvider) newClient(baseURL *url.URL, op getClientOp, httpClient 
 		PersonalAccessToken: op.personalAccessToken,
 		OAuthToken:          op.oauthToken,
 		Sudo:                op.sudo,
-		RateLimitMonitor:    rateLimit,
+		RateLimiter:         rateLimiter,
+		RateLimitMonitor:    rateLimitMonitor,
 	}
 }
 
@@ -227,6 +245,15 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 		span.Finish()
 	}()
 
+	// Check if we are allowed to proceed based on our rate limiter
+	res := c.RateLimiter.Reserve()
+	if !res.OK() {
+		span.SetTag("internalRateLimit", "exceeded")
+		res.Cancel()
+		return nil, errors.New("internal rate limit exceeded")
+	}
+	span.SetTag("internalRateLimit", "allowed")
+
 	resp, err = c.httpClient.Do(req.WithContext(ctx))
 	if err != nil {
 		trace("GitLab API error", "method", req.Method, "url", req.URL.String(), "err", err)
@@ -241,6 +268,43 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 	}
 
 	return resp.Header, json.NewDecoder(resp.Body).Decode(result)
+}
+
+const (
+	defaultRateLimit      = rate.Limit(10) // 36,000 per hour
+	defaultRateLimitBurst = 500
+)
+
+// Rate limiter cache so that we reuse the rate limiters per
+// external service, even between config changes.
+var limiterMu sync.Mutex
+var limiterCache = make(map[uint32]*rate.Limiter)
+
+func getLimiter(url string, c *schema.GitLabConnection) *rate.Limiter {
+	// Calculate cache key
+	key := fnv1.HashString32(url)
+
+	limit := defaultRateLimit
+	if c != nil && c.RateLimit != nil {
+		if c.RateLimit.Enabled {
+			limit = rate.Limit(c.RateLimit.RequestsPerHour / 3600)
+		} else {
+			limit = rate.Inf
+		}
+	}
+
+	limiterMu.Lock()
+	defer limiterMu.Unlock()
+
+	current, ok := limiterCache[key]
+	if !ok {
+		rl := rate.NewLimiter(limit, defaultRateLimitBurst)
+		limiterCache[key] = rl
+		return rl
+	}
+
+	current.SetLimit(limit)
+	return current
 }
 
 type httpError int
