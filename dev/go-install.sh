@@ -50,14 +50,13 @@ github.com/go-delve/delve/cmd/dlv@v1.4.0
 
 # Need to go to a temp directory for tools or we update our go.mod. We use
 # GOPROXY=direct to avoid always consulting a proxy for dlv.
-pushd "${TMPDIR:-/tmp}" || exit 1
-if ! GOPROXY=direct go get -v $INSTALL_GO_TOOLS; then
+pushd "${TMPDIR:-/tmp}" > /dev/null || exit 1
+if ! GOPROXY=direct go get -v $INSTALL_GO_TOOLS 2> go-install.log; then
+    cat go-install.log
     echo >&2 "failed to install prerequisite tools, aborting."
     exit 1
 fi
-popd || exit 1
-
-exit 0
+popd > /dev/null || exit 1
 
 INSTALL_GO_PKGS="github.com/mattn/goreman \
 github.com/google/zoekt/cmd/zoekt-archive-index \
