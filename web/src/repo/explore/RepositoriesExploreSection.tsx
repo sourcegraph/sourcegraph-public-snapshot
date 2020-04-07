@@ -13,7 +13,7 @@ import { queryGraphQL } from '../../backend/graphql'
 import { PatternTypeProps } from '../../search'
 import { ErrorAlert } from '../../components/alerts'
 
-const LOADING: 'loading' = 'loading'
+const LOADING = 'loading' as const
 
 interface State {
     /** The repositories, loading, or an error. */

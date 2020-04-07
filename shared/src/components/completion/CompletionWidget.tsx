@@ -8,7 +8,7 @@ import { Key } from 'ts-key-enum'
 import { ErrorLike, isErrorLike } from '../../util/errors'
 import { CompletionWidgetDropdown } from './CompletionWidgetDropdown'
 
-export const LOADING: 'loading' = 'loading'
+export const LOADING = 'loading' as const
 export type CompletionResult = typeof LOADING | ErrorLike | CompletionList | null
 
 function isSuccessfulFetch(result: CompletionResult): result is CompletionList {

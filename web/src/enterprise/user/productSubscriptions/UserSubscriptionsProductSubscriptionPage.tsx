@@ -23,7 +23,7 @@ interface Props extends RouteComponentProps<{ subscriptionUUID: string }> {
     user: GQL.IUser
 }
 
-const LOADING: 'loading' = 'loading'
+const LOADING = 'loading' as const
 
 interface State {
     /**

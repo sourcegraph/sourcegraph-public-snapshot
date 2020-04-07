@@ -26,7 +26,7 @@ interface Props {
     onDidUpdate: () => void
 }
 
-const LOADING: 'loading' = 'loading'
+const LOADING = 'loading' as const
 
 interface State {
     /** The result of updating this subscription: null for done or not started, loading, or an error. */

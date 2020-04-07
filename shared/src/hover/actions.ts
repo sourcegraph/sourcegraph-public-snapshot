@@ -29,7 +29,7 @@ import { asError, ErrorLike, isErrorLike } from '../util/errors'
 import { makeRepoURI, parseRepoURI, withWorkspaceRootInputRevision } from '../util/url'
 import { HoverContext } from './HoverOverlay'
 
-const LOADING: 'loading' = 'loading'
+const LOADING = 'loading' as const
 
 /**
  * This function is passed to {@link module:@sourcegraph/codeintellify.createHoverifier}, which uses it to fetch
