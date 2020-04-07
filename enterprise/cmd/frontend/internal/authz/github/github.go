@@ -436,6 +436,8 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) 
 
 	// NOTE: We do not store port or scheme in our URI, so stripping the hostname alone is enough.
 	nameWithOwner := strings.TrimPrefix(repo.URI, p.codeHost.BaseURL.Hostname())
+	nameWithOwner = strings.TrimPrefix(nameWithOwner, "/")
+
 	owner, name, err := github.SplitRepositoryNameWithOwner(nameWithOwner)
 	if err != nil {
 		return nil, errors.Wrap(err, "split nameWithOwner")
