@@ -781,11 +781,15 @@ func TestGetLimiter(t *testing.T) {
 	// Changing config should alter the limit
 	c.RateLimit.RequestsPerHour = 7200
 
-	_ = getLimiter(u, c)
+	second := getLimiter(u, c)
 
 	// Note, we're checking the value on the old pointer, it should have been modified
 	if limiter.Limit() != rate.Limit(2) {
 		t.Fatalf("Expected a limit of 2, got %f", limiter.Limit())
+	}
+
+	if limiter != second {
+		t.Fatalf("The same limiter should have been returned")
 	}
 }
 

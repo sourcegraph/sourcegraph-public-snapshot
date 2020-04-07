@@ -63,10 +63,12 @@ var limiterCache = make(map[uint32]*rate.Limiter)
 
 func getLimiter(url *url.URL, c *schema.BitbucketServerConnection) *rate.Limiter {
 	// Calculate cache key
-	b := new(strings.Builder)
+	var b strings.Builder
 	b.WriteString(url.String())
 	if c != nil {
+		b.WriteString(":")
 		b.WriteString(c.Username)
+		b.WriteString(":")
 		b.WriteString(c.Token)
 	}
 	key := fnv1.HashString32(b.String())
