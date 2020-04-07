@@ -395,7 +395,11 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 	_, tok, err := github.GetExternalAccountData(&account.AccountData)
 	if err != nil {
 		return nil, errors.Wrap(err, "get external account data")
+	} else if tok == nil {
+		return nil, errors.New("no token found in the external account data")
 	}
+
+	// 🚨 SECURITY: Use user token is required to only list repositories the user has access to.
 	client := p.client.WithToken(tok.AccessToken)
 
 	// 100 matches the maximum page size, thus a good default to avoid multiple allocations
