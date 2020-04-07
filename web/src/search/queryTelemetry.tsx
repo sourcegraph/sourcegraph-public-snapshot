@@ -17,13 +17,8 @@ function filterExistsInQuery(query: string, filterToMatch: string): boolean {
         const members = parsedQuery.token.members
         for (const member of members) {
             if (member.token.type === 'filter') {
-                const filterType = resolveFilterType(member.token.filterType.token.value) as FilterType
-                if (
-                    filterType === filterToMatch ||
-                    (isNegatedFilter(filterType) && resolveNegatedFilter(filterType) === filterToMatch)
-                ) {
-                    return true
-                }
+                const resolvedFilter = resolveFilter(member.token.filterType.token.value)
+                return resolvedFilter !== undefined && resolvedFilter.type === filterToMatch
             }
         }
     }
