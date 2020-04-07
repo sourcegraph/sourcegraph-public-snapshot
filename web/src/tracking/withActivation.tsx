@@ -119,14 +119,12 @@ const getActivationSteps = (authenticatedUser: GQL.IUser): ActivationStep[] => {
             id: 'ConnectedCodeHost',
             title: 'Add repositories',
             detail: 'Configure Sourcegraph to talk to your code host and fetch a list of your repositories.',
-            link: { to: '/site-admin/external-services' },
             siteAdminOnly: true,
         },
         {
             id: 'DidSearch',
             title: 'Search your code',
             detail: 'Perform a search query on your code.',
-            link: { to: '/search' },
         },
         {
             id: 'FoundReferences',
