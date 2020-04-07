@@ -144,7 +144,7 @@ func Test_Parse(t *testing.T) {
 		{
 			Name:  "Paren reduction over operators",
 			Input: "(((a b c))) and d",
-			Want:  "(and (concat a b c) d)",
+			Want:  "(and (concat (((a b c)))) d)",
 		},
 		// Partition parameters and concatenated patterns.
 		{
@@ -153,7 +153,7 @@ func Test_Parse(t *testing.T) {
 		},
 		{
 			Input: "(a b c) and (d e f) and (g h i)",
-			Want:  "(and (concat a b c) (concat d e f) (concat g h i))",
+			Want:  "(and (concat (a b c)) (concat (d e f)) (concat (g h i)))",
 		},
 		{
 			Input: "(a) repo:foo (b)",
@@ -232,32 +232,32 @@ func Test_Parse(t *testing.T) {
 		{
 			Name:  "nested paren reduction with whitespace",
 			Input: "(((a b c))) d",
-			Want:  "(concat a b c d)",
+			Want:  "(concat (((a b c))) d)",
 		},
 		{
 			Name:  "left paren reduction with whitespace",
 			Input: "(a b) c d",
-			Want:  "(concat a b c d)",
+			Want:  "(concat (a b) c d)",
 		},
 		{
 			Name:  "right paren reduction with whitespace",
 			Input: "a b (c d)",
-			Want:  "(concat a b c d)",
+			Want:  "(concat a b (c d))",
 		},
 		{
 			Name:  "grouped paren reduction with whitespace",
 			Input: "(a b) (c d)",
-			Want:  "(concat a b c d)",
+			Want:  "(concat (a b) (c d))",
 		},
 		{
 			Name:  "multiple grouped paren reduction with whitespace",
 			Input: "(a b) (c d) (e f)",
-			Want:  "(concat a b c d e f)",
+			Want:  "(concat (a b) (c d) (e f))",
 		},
 		{
 			Name:  "interpolated grouped paren reduction",
 			Input: "(a b) c d (e f)",
-			Want:  "(concat a b c d e f)",
+			Want:  "(concat (a b) c d (e f))",
 		},
 		{
 			Name:  "mixed interpolated grouped paren reduction",
@@ -278,7 +278,7 @@ func Test_Parse(t *testing.T) {
 		{
 			Name:  "paren containing whitespace inside contiguous string",
 			Input: "foo(   )bar",
-			Want:  "(concat foo bar)",
+			Want:  "(concat foo( )bar)",
 		},
 		{
 			Name:  "nested empty paren",
@@ -288,7 +288,7 @@ func Test_Parse(t *testing.T) {
 		{
 			Name:  "interpolated nested empty paren",
 			Input: "(()x(  )(())())",
-			Want:  "x",
+			Want:  "(concat (()x( )(())()))",
 		},
 		{
 			Name:  "empty paren on or",
@@ -301,9 +301,14 @@ func Test_Parse(t *testing.T) {
 			Want:  "(or () (x))",
 		},
 		{
+			Name:  "empty left paren on or",
+			Input: "() or (x)",
+			Want:  "(or () (x))",
+		},
+		{
 			Name:  "complex interpolated nested empty paren",
 			Input: "(()x(  )(y or () or (f))())",
-			Want:  "(concat x (or y () f))",
+			Want:  "(concat () x () (or y () f) ())",
 		},
 	}
 	for _, tt := range cases {
