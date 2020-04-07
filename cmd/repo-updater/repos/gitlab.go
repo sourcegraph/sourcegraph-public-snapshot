@@ -198,7 +198,7 @@ func (s *GitLabSource) listAllProjects(ctx context.Context, results chan SourceR
 					ch <- batch{projs: []*gitlab.Project{proj}}
 				}
 
-				time.Sleep(s.client.RateLimit.RecommendedWaitForBackgroundOp(1))
+				time.Sleep(s.client.RateLimitMonitor.RecommendedWaitForBackgroundOp(1))
 			}
 		}()
 	}
@@ -251,7 +251,7 @@ func (s *GitLabSource) listAllProjects(ctx context.Context, results chan SourceR
 				url = *nextPageURL
 
 				// 0-duration sleep unless nearing rate limit exhaustion
-				time.Sleep(s.client.RateLimit.RecommendedWaitForBackgroundOp(1))
+				time.Sleep(s.client.RateLimitMonitor.RecommendedWaitForBackgroundOp(1))
 			}
 		}(projectQuery)
 	}

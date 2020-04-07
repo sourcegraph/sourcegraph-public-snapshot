@@ -67,7 +67,7 @@ type ClientProvider struct {
 	gitlabClients   map[string]*Client
 	gitlabClientsMu sync.Mutex
 
-	RateLimit *ratelimit.Monitor // the API rate limit monitor
+	RateLimitMonitor *ratelimit.Monitor // the API rate limit monitor
 }
 
 type CommonOp struct {
@@ -90,10 +90,10 @@ func NewClientProvider(baseURL *url.URL, cli httpcli.Doer) *ClientProvider {
 	})
 
 	return &ClientProvider{
-		baseURL:       baseURL.ResolveReference(&url.URL{Path: path.Join(baseURL.Path, "api/v4") + "/"}),
-		httpClient:    cli,
-		gitlabClients: make(map[string]*Client),
-		RateLimit:     &ratelimit.Monitor{},
+		baseURL:          baseURL.ResolveReference(&url.URL{Path: path.Join(baseURL.Path, "api/v4") + "/"}),
+		httpClient:       cli,
+		gitlabClients:    make(map[string]*Client),
+		RateLimitMonitor: &ratelimit.Monitor{},
 	}
 }
 
@@ -141,7 +141,7 @@ func (p *ClientProvider) getClient(op getClientOp) *Client {
 		return c
 	}
 
-	c := p.newClient(p.baseURL, op, p.httpClient, p.RateLimit)
+	c := p.newClient(p.baseURL, op, p.httpClient, p.RateLimitMonitor)
 	p.gitlabClients[key] = c
 	return c
 }
@@ -164,7 +164,7 @@ type Client struct {
 	PersonalAccessToken string // a personal access token to authenticate requests, if set
 	OAuthToken          string // an OAuth bearer token, if set
 	Sudo                string // Sudo user value, if set
-	RateLimit           *ratelimit.Monitor
+	RateLimitMonitor    *ratelimit.Monitor
 }
 
 // newClient creates a new GitLab API client with an optional personal access token to authenticate requests.
@@ -191,7 +191,7 @@ func (p *ClientProvider) newClient(baseURL *url.URL, op getClientOp, httpClient 
 		PersonalAccessToken: op.personalAccessToken,
 		OAuthToken:          op.oauthToken,
 		Sudo:                op.sudo,
-		RateLimit:           rateLimit,
+		RateLimitMonitor:    rateLimit,
 	}
 }
 
@@ -235,7 +235,7 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 	defer resp.Body.Close()
 	trace("GitLab API", "method", req.Method, "url", req.URL.String(), "respCode", resp.StatusCode)
 
-	c.RateLimit.Update(resp.Header)
+	c.RateLimitMonitor.Update(resp.Header)
 	if resp.StatusCode != http.StatusOK {
 		return nil, errors.Wrap(httpError(resp.StatusCode), fmt.Sprintf("unexpected response from GitLab API (%s)", req.URL))
 	}
