@@ -23,6 +23,7 @@ import (
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/pkg/errors"
 	"github.com/segmentio/fasthash/fnv1"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -48,17 +49,52 @@ var requestCounter = metrics.NewRequestMeter("bitbucket", "Total number of reque
 // with 20,000 Bitbucket repositories we need 20,000/1000 requests per minute (1200/hr) + overhead for
 // repository lookup requests by users, and requests for identifying which repositories a user has
 // access to (if authorization is in use) and requests for campaign synchronization if it is in use.
+//
+// These are our default values, they can be changed in configuration
 const (
-	rateLimitRequestsPerSecond = 8 // 480/min or 28,800/hr
-	RateLimitMaxBurstRequests  = 500
+	defaultRateLimit      = rate.Limit(8) // 480/min or 28,800/hr
+	defaultRateLimitBurst = 500
 )
 
-// Global limiter cache so that we reuse the same rate limiter for
-// the same code host, even between config changes.
-// The longer term plan is to have a rate limiter that is shared across
-// all services so the below is just a short term solution.
+// Rate limiter cache so that we reuse the rate limiters per
+// external service, even between config changes.
 var limiterMu sync.Mutex
-var limiterCache = make(map[string]*rate.Limiter)
+var limiterCache = make(map[uint32]*rate.Limiter)
+
+func getLimiter(url *url.URL, c *schema.BitbucketServerConnection) *rate.Limiter {
+	// Calculate cache key
+	var b strings.Builder
+	b.WriteString(url.String())
+	if c != nil {
+		b.WriteString(":")
+		b.WriteString(c.Username)
+		b.WriteString(":")
+		b.WriteString(c.Token)
+	}
+	key := fnv1.HashString32(b.String())
+
+	limit := defaultRateLimit
+	if c != nil && c.RateLimit != nil {
+		if c.RateLimit.Enabled {
+			limit = rate.Limit(c.RateLimit.RequestsPerHour / 3600)
+		} else {
+			limit = rate.Inf
+		}
+	}
+
+	limiterMu.Lock()
+	defer limiterMu.Unlock()
+
+	current, ok := limiterCache[key]
+	if !ok {
+		rl := rate.NewLimiter(limit, defaultRateLimitBurst)
+		limiterCache[key] = rl
+		return rl
+	}
+
+	current.SetLimit(limit)
+	return current
+}
 
 // Client access a Bitbucket Server via the REST API.
 type Client struct {
@@ -86,54 +122,40 @@ type Client struct {
 	Oauth *oauth.Client
 }
 
-// NewClient returns a new Bitbucket Server API client at url. If a nil
-// httpClient is provided, http.DefaultClient will be used. To use API methods
-// which require authentication, set the Token or Username/Password fields of
-// the returned client.
-func NewClient(url *url.URL, httpClient httpcli.Doer) *Client {
-	if httpClient == nil {
-		httpClient = http.DefaultClient
-	}
-
-	httpClient = requestCounter.Doer(httpClient, categorize)
-
-	limiterMu.Lock()
-	defer limiterMu.Unlock()
-
-	l, ok := limiterCache[url.String()]
-	if !ok {
-		l = rate.NewLimiter(rateLimitRequestsPerSecond, RateLimitMaxBurstRequests)
-		limiterCache[url.String()] = l
-	}
-
-	return &Client{
-		httpClient: httpClient,
-		URL:        url,
-		RateLimit:  l,
-	}
-}
-
-// NewClientWithConfig returns an authenticated Bitbucket Server API client with
-// the provided configuration.
-func NewClientWithConfig(c *schema.BitbucketServerConnection) (*Client, error) {
+// NewClient returns an authenticated Bitbucket Server API client with
+// the provided configuration. If a nil httpClient is provided, http.DefaultClient
+// will be used.
+func NewClient(c *schema.BitbucketServerConnection, httpClient httpcli.Doer) (*Client, error) {
 	u, err := url.Parse(c.Url)
 	if err != nil {
 		return nil, err
 	}
 
-	client := NewClient(u, nil)
-	client.Username = c.Username
-	client.Password = c.Password
-	client.Token = c.Token
+	if httpClient == nil {
+		httpClient = http.DefaultClient
+	}
+	httpClient = requestCounter.Doer(httpClient, categorize)
+	u = extsvc.NormalizeBaseURL(u)
+
+	client := &Client{
+		httpClient: httpClient,
+		URL:        u,
+		Username:   c.Username,
+		Password:   c.Password,
+		Token:      c.Token,
+		RateLimit:  getLimiter(u, c),
+	}
+
 	if c.Authorization != nil {
 		err := client.SetOAuth(
 			c.Authorization.Oauth.ConsumerKey,
 			c.Authorization.Oauth.SigningKey,
 		)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "authorization.oauth.signingKey")
 		}
 	}
+
 	return client, nil
 }
 
