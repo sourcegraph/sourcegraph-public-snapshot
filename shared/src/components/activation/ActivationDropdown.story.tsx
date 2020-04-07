@@ -3,8 +3,6 @@ import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { noop } from 'rxjs'
 import '../../../../web/src/main.scss'
-// import { action } from '@storybook/addon-actions'
-// import { boolean } from '@storybook/addon-knobs'
 import { ActivationDropdown } from './ActivationDropdown'
 import { Activation } from './Activation'
 
