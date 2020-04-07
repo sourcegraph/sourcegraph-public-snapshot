@@ -41,9 +41,6 @@ describe('SiteAdminOverviewPage', () => {
                             id: 'ConnectedCodeHost' as const,
                             title: 'Add repositories',
                             detail: 'Configure Sourcegraph to talk to your code host',
-                            link: {
-                                to: '/site-admin/external-services/new',
-                            },
                         },
                     ],
                     completed: {

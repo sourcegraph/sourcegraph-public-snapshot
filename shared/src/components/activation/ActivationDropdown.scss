@@ -16,6 +16,10 @@
             margin: 0 19.98px;
             padding: 0 0.5rem;
         }
+
+        &:focus {
+            background-color: $dropdown-link-hover-bg;
+        }
     }
 
     &__list {

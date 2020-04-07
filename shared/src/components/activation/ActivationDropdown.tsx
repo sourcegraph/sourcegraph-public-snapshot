@@ -142,12 +142,13 @@ export class ActivationDropdown extends React.PureComponent<Props, State> {
                                                         false
                                                     }
                                                 />
-                                                <AccordionPanel className="px-2">
-                                                    <div className="activation-dropdown-item__detail pb-1">
-                                                        {step.detail}
-                                                    </div>
-                                                </AccordionPanel>
                                             </AccordionButton>
+                                            <AccordionPanel className="px-2">
+                                                <div
+                                                    className="activation-dropdown-item__detail pb-1"
+                                                    dangerouslySetInnerHTML={{ __html: step.detail }}
+                                                />
+                                            </AccordionPanel>
                                         </AccordionItem>
                                     </div>
                                 ))

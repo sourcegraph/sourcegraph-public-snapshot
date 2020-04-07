@@ -24,11 +24,11 @@ export const ActivationChecklistItem: React.FunctionComponent<ActivationChecklis
 }: ActivationChecklistItemProps) => (
     <div className={classNames('activation-checklist-item d-flex justify-content-between', className)}>
         <div>
-            <span className="activation-checklist-item__icon icon-inline icon-down">
-                <ChevronDownIcon />
+            <span className="icon-inline icon-down">
+                <ChevronDownIcon className="activation-checklist-item__icon" />
             </span>
-            <span className="activation-checklist-item__icon icon-inline icon-right">
-                <ChevronRightIcon />
+            <span className="icon-inline icon-right">
+                <ChevronRightIcon className="activation-checklist-item__icon" />
             </span>
             <span className="activation-checklist__title">{props.title}</span>
         </div>
@@ -67,10 +67,13 @@ export class ActivationChecklist extends React.PureComponent<ActivationChecklist
                                     history={this.props.history}
                                     done={(this.props.completed && this.props.completed[step.id]) || false}
                                 />
-                                <AccordionPanel className="px-2">
-                                    <div className="activation-checklist__detail pb-1">{step.detail}</div>
-                                </AccordionPanel>
                             </AccordionButton>
+                            <AccordionPanel className="px-2">
+                                <div
+                                    className="activation-checklist__detail pb-1"
+                                    dangerouslySetInnerHTML={{ __html: step.detail }}
+                                />
+                            </AccordionPanel>
                         </AccordionItem>
                     ))}
                 </Accordion>
