@@ -26,10 +26,10 @@ exports[`ActivationChecklist render 0/1 complete 1`] = `
         >
           <div>
             <span
-              className="activation-checklist-item__icon icon-inline icon-down"
+              className="icon-inline icon-down"
             >
               <svg
-                className="mdi-icon "
+                className="mdi-icon activation-checklist-item__icon"
                 fill="currentColor"
                 height={24}
                 viewBox="0 0 24 24"
@@ -41,10 +41,10 @@ exports[`ActivationChecklist render 0/1 complete 1`] = `
               </svg>
             </span>
             <span
-              className="activation-checklist-item__icon icon-inline icon-right"
+              className="icon-inline icon-right"
             >
               <svg
-                className="mdi-icon "
+                className="mdi-icon activation-checklist-item__icon"
                 fill="currentColor"
                 height={24}
                 viewBox="0 0 24 24"
@@ -75,23 +75,26 @@ exports[`ActivationChecklist render 0/1 complete 1`] = `
             </svg>
           </div>
         </div>
-        <div
-          aria-labelledby="button--1---1"
-          className="px-2"
-          data-reach-accordion-panel=""
-          data-state="open"
-          hidden={false}
-          id="panel--1---1"
-          role="region"
-          tabIndex={-1}
-        >
-          <div
-            className="activation-checklist__detail pb-1"
-          >
-            detail1
-          </div>
-        </div>
       </button>
+      <div
+        aria-labelledby="button--1---1"
+        className="px-2"
+        data-reach-accordion-panel=""
+        data-state="open"
+        hidden={false}
+        id="panel--1---1"
+        role="region"
+        tabIndex={-1}
+      >
+        <div
+          className="activation-checklist__detail pb-1"
+          dangerouslySetInnerHTML={
+            Object {
+              "__html": "detail1",
+            }
+          }
+        />
+      </div>
     </div>
   </div>
 </div>
@@ -123,10 +126,10 @@ exports[`ActivationChecklist render 0/1 complete 2`] = `
         >
           <div>
             <span
-              className="activation-checklist-item__icon icon-inline icon-down"
+              className="icon-inline icon-down"
             >
               <svg
-                className="mdi-icon "
+                className="mdi-icon activation-checklist-item__icon"
                 fill="currentColor"
                 height={24}
                 viewBox="0 0 24 24"
@@ -138,10 +141,10 @@ exports[`ActivationChecklist render 0/1 complete 2`] = `
               </svg>
             </span>
             <span
-              className="activation-checklist-item__icon icon-inline icon-right"
+              className="icon-inline icon-right"
             >
               <svg
-                className="mdi-icon "
+                className="mdi-icon activation-checklist-item__icon"
                 fill="currentColor"
                 height={24}
                 viewBox="0 0 24 24"
@@ -172,23 +175,26 @@ exports[`ActivationChecklist render 0/1 complete 2`] = `
             </svg>
           </div>
         </div>
-        <div
-          aria-labelledby="button--3---1"
-          className="px-2"
-          data-reach-accordion-panel=""
-          data-state="open"
-          hidden={false}
-          id="panel--3---1"
-          role="region"
-          tabIndex={-1}
-        >
-          <div
-            className="activation-checklist__detail pb-1"
-          >
-            detail1
-          </div>
-        </div>
       </button>
+      <div
+        aria-labelledby="button--3---1"
+        className="px-2"
+        data-reach-accordion-panel=""
+        data-state="open"
+        hidden={false}
+        id="panel--3---1"
+        role="region"
+        tabIndex={-1}
+      >
+        <div
+          className="activation-checklist__detail pb-1"
+          dangerouslySetInnerHTML={
+            Object {
+              "__html": "detail1",
+            }
+          }
+        />
+      </div>
     </div>
   </div>
 </div>
@@ -220,10 +226,10 @@ exports[`ActivationChecklist render 1/1 complete 1`] = `
         >
           <div>
             <span
-              className="activation-checklist-item__icon icon-inline icon-down"
+              className="icon-inline icon-down"
             >
               <svg
-                className="mdi-icon "
+                className="mdi-icon activation-checklist-item__icon"
                 fill="currentColor"
                 height={24}
                 viewBox="0 0 24 24"
@@ -235,10 +241,10 @@ exports[`ActivationChecklist render 1/1 complete 1`] = `
               </svg>
             </span>
             <span
-              className="activation-checklist-item__icon icon-inline icon-right"
+              className="icon-inline icon-right"
             >
               <svg
-                className="mdi-icon "
+                className="mdi-icon activation-checklist-item__icon"
                 fill="currentColor"
                 height={24}
                 viewBox="0 0 24 24"
@@ -269,23 +275,26 @@ exports[`ActivationChecklist render 1/1 complete 1`] = `
             </svg>
           </div>
         </div>
-        <div
-          aria-labelledby="button--4---1"
-          className="px-2"
-          data-reach-accordion-panel=""
-          data-state="open"
-          hidden={false}
-          id="panel--4---1"
-          role="region"
-          tabIndex={-1}
-        >
-          <div
-            className="activation-checklist__detail pb-1"
-          >
-            detail1
-          </div>
-        </div>
       </button>
+      <div
+        aria-labelledby="button--4---1"
+        className="px-2"
+        data-reach-accordion-panel=""
+        data-state="open"
+        hidden={false}
+        id="panel--4---1"
+        role="region"
+        tabIndex={-1}
+      >
+        <div
+          className="activation-checklist__detail pb-1"
+          dangerouslySetInnerHTML={
+            Object {
+              "__html": "detail1",
+            }
+          }
+        />
+      </div>
     </div>
   </div>
 </div>

@@ -216,10 +216,10 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
               >
                 <div>
                   <span
-                    className="activation-checklist-item__icon icon-inline icon-down"
+                    className="icon-inline icon-down"
                   >
                     <svg
-                      className="mdi-icon "
+                      className="mdi-icon activation-checklist-item__icon"
                       fill="currentColor"
                       height={24}
                       viewBox="0 0 24 24"
@@ -231,10 +231,10 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
                     </svg>
                   </span>
                   <span
-                    className="activation-checklist-item__icon icon-inline icon-right"
+                    className="icon-inline icon-right"
                   >
                     <svg
-                      className="mdi-icon "
+                      className="mdi-icon activation-checklist-item__icon"
                       fill="currentColor"
                       height={24}
                       viewBox="0 0 24 24"
@@ -265,23 +265,26 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
                   </svg>
                 </div>
               </div>
-              <div
-                aria-labelledby="button--1---1"
-                className="px-2"
-                data-reach-accordion-panel=""
-                data-state="open"
-                hidden={false}
-                id="panel--1---1"
-                role="region"
-                tabIndex={-1}
-              >
-                <div
-                  className="activation-checklist__detail pb-1"
-                >
-                  Configure Sourcegraph to talk to your code host
-                </div>
-              </div>
             </button>
+            <div
+              aria-labelledby="button--1---1"
+              className="px-2"
+              data-reach-accordion-panel=""
+              data-state="open"
+              hidden={false}
+              id="panel--1---1"
+              role="region"
+              tabIndex={-1}
+            >
+              <div
+                className="activation-checklist__detail pb-1"
+                dangerouslySetInnerHTML={
+                  Object {
+                    "__html": "Configure Sourcegraph to talk to your code host",
+                  }
+                }
+              />
+            </div>
           </div>
         </div>
       </div>
