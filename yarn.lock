@@ -3061,13 +3061,6 @@
   resolved "https://registry.npmjs.org/@types/range-parser/-/range-parser-1.2.2.tgz#fa8e1ad1d474688a757140c91de6dace6f4abc8d"
   integrity sha512-HtKGu+qG1NPvYe1z7ezLsyIaXYyi8SoAVqWDZgDQ8dLrsZvSzUNCwZyfX33uhWxL/SU0ZDQZ3nwZ0nimt507Kw==
 
-"@types/reach__menu-button@^0.1.0":
-  version "0.1.0"
-  resolved "https://registry.npmjs.org/@types/reach__menu-button/-/reach__menu-button-0.1.0.tgz#ee538cea56930459ca8158114ebca1540962e3df"
-  integrity sha512-H62j10TosCIxrA/Qv8zu/K3M8BY15HL2vROgIlqLbn8xXaIyORJtN7ETlFkrly7CyOqMEC+yfWMdNo1h6w6dSg==
-  dependencies:
-    "@types/react" "*"
-
 "@types/reach__router@^1.2.3":
   version "1.2.5"
   resolved "https://registry.npmjs.org/@types/reach__router/-/reach__router-1.2.5.tgz#add874f43b9733175be2b19de59602b91cc90860"
