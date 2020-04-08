@@ -8,7 +8,7 @@ if [[ -e /sg_prometheus_add_ons/prometheus.yml ]]; then
 fi
 
 if [[ "${PURE_DOCKER}" != '' ]]; then
-    CONFIG_FILE=/sg_config_prometheus/prometheus_pure_docker.yml
+    CONFIG_FILE=/sg_config_prometheus/prometheus_pure_docker_or_compose.yml
 fi
 if [[ "${DOCKER_COMPOSE}" != '' ]]; then
     CONFIG_FILE=/sg_config_prometheus/prometheus_pure_docker_or_compose.yml
