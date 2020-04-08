@@ -3,6 +3,7 @@
 exports[`ChangesetNode renders an externalchangeset 1`] = `
 Object {
   "children": <Collapsible
+    expandedButtonClassName="mb-3"
     title={
       <div
         className="d-flex align-items-start m-1 ml-2"
