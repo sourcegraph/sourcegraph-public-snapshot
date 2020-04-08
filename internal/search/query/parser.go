@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
@@ -111,13 +112,30 @@ func (p *parser) done() bool {
 	return p.pos >= len(p.buf)
 }
 
-// peek looks ahead n bytes in the input and returns a string if it succeeds, or
+func (p *parser) next() rune {
+	if p.done() {
+		panic("eof")
+	}
+	r, advance := utf8.DecodeRune(p.buf[p.pos:])
+	p.pos += advance
+	return r
+}
+
+// peek looks ahead n runes in the input and returns a string if it succeeds, or
 // an error if the length exceeds what's available in the buffer.
 func (p *parser) peek(n int) (string, error) {
-	if p.pos+n > len(p.buf) {
-		return "", io.ErrShortBuffer
+	backtrack := p.pos
+	var result []rune
+	for i := 0; i < n; i++ {
+		if p.done() {
+			p.pos = backtrack
+			return "", io.ErrShortBuffer
+		}
+		next := p.next()
+		result = append(result, next)
 	}
-	return string(p.buf[p.pos : p.pos+n]), nil
+	p.pos = backtrack
+	return string(result), nil
 }
 
 // match returns whether it succeeded matching a keyword at the current
@@ -135,7 +153,7 @@ func (p *parser) expect(keyword keyword) bool {
 	if !p.match(keyword) {
 		return false
 	}
-	p.pos += len(string(keyword))
+	p.pos += len(string(keyword)) // FIXME use next?
 	return true
 }
 
