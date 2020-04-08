@@ -1342,6 +1342,12 @@ type Query {
         # how many results to return per page. It must be in the range of 0-5000.
         first: Int
     ): Search
+    parseSearchQuery(
+        # The search query (such as "foo" or "repo:myrepo foo").
+        query: String = ""
+        # The parser to use for this query.
+        patternType: SearchPatternType = literal
+    ): JSONValue
     # All saved searches configured for the current user, merged from all configurations.
     savedSearches: [SavedSearch!]!
     # All repository groups for the current user, merged from all configurations.
