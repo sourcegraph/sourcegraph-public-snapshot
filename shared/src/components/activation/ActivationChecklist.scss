@@ -31,17 +31,10 @@
 
 .activation-checklist-item {
     color: var(--link-color);
+    padding: 0.25rem 0.75rem;
 
     &__icon {
         fill: $body-color !important;
-    }
-
-    &--dropdown {
-        padding: 0.25rem 0.75rem;
-    }
-
-    &--admin-page {
-        padding: 0.25rem 0.75rem;
     }
 }
 

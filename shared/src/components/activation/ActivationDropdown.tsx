@@ -82,84 +82,88 @@ export class ActivationDropdown extends React.PureComponent<Props, State> {
         }
         return (
             <Menu>
-                <MenuButton
-                    className={classNames(
-                        'activation-dropdown-button activation-dropdown-button__animated-button bg-transparent align-items-center e2e-activation-nav-item-toggle',
-                        { animate: this.state.animate },
-                        { 'activation-dropdown-button--hidden': !show }
-                    )}
-                >
-                    <div className="activation-dropdown-button__confetti">
-                        <Confetti
-                            active={this.state.animate}
-                            config={{
-                                angle: 210,
-                                ...confettiConfig,
-                            }}
-                        />
-                    </div>
-                    Get started
-                    <div className="activation-dropdown-button__confetti">
-                        <Confetti
-                            active={this.state.animate}
-                            config={{
-                                angle: 330,
-                                ...confettiConfig,
-                            }}
-                        />
-                    </div>
-                    <span className="activation-dropdown-button__progress-bar-container">
-                        <CircularProgressbar
-                            className="activation-dropdown-button__circular-progress-bar"
-                            strokeWidth={12}
-                            value={percentageDone(this.props.activation.completed)}
-                        />
-                    </span>
-                </MenuButton>
-                <MenuPopover>
-                    <MenuList className="activation-dropdown">
-                        <div className="dropdown-item-text activation-dropdown-header">
-                            <h3 className="mb-2">
-                                {percentageDone(this.props.activation.completed) > 0
-                                    ? 'Almost there!'
-                                    : 'Welcome to Sourcegraph'}
-                            </h3>
-                            <p className="mb-2">Complete the steps below to finish onboarding!</p>
-                        </div>
-                        <Accordion collapsible={true} className="activation-dropdown__list">
-                            {this.props.activation && this.props.activation.completed ? (
-                                this.props.activation.steps.map(step => (
-                                    <div key={step.id}>
-                                        <AccordionItem>
-                                            <AccordionButton className="activation-dropdown-item dropdown-item">
-                                                <ActivationChecklistItem
-                                                    {...step}
-                                                    className="activation-checklist-item--dropdown"
-                                                    history={this.props.history}
-                                                    done={
-                                                        (this.props.activation.completed &&
-                                                            this.props.activation.completed[step.id]) ||
-                                                        false
-                                                    }
-                                                />
-                                            </AccordionButton>
-                                            <AccordionPanel className="px-2">
-                                                <div
-                                                    className="activation-dropdown-item__detail pb-1"
-                                                    dangerouslySetInnerHTML={{ __html: step.detail }}
-                                                />
-                                            </AccordionPanel>
-                                        </AccordionItem>
-                                    </div>
-                                ))
-                            ) : (
-                                <div className="activation-dropdown-button__loader">
-                                    <LoadingSpinner className="icon-inline" />
-                                </div>
+                {({ isOpen }) => (
+                    <>
+                        <MenuButton
+                            className={classNames(
+                                'activation-dropdown-button activation-dropdown-button__animated-button bg-transparent align-items-center e2e-activation-nav-item-toggle',
+                                { animate: this.state.animate },
+                                { 'activation-dropdown-button--hidden': !show }
                             )}
-                        </Accordion>
-                    </MenuList>
-                </MenuPopover>
+                        >
+                            <div className="activation-dropdown-button__confetti">
+                                <Confetti
+                                    active={this.state.animate}
+                                    config={{
+                                        angle: 210,
+                                        ...confettiConfig,
+                                    }}
+                                />
+                            </div>
+                            Get started
+                            <div className="activation-dropdown-button__confetti">
+                                <Confetti
+                                    active={this.state.animate}
+                                    config={{
+                                        angle: 330,
+                                        ...confettiConfig,
+                                    }}
+                                />
+                            </div>
+                            <span className="activation-dropdown-button__progress-bar-container">
+                                <CircularProgressbar
+                                    className="activation-dropdown-button__circular-progress-bar"
+                                    strokeWidth={12}
+                                    value={percentageDone(this.props.activation.completed)}
+                                />
+                            </span>
+                        </MenuButton>
+                        <MenuPopover>
+                            <MenuList className={classNames('activation-dropdown', 'dropdown-menu', { show: isOpen })}>
+                                <div className="dropdown-item-text activation-dropdown-header">
+                                    <h3 className="mb-2">
+                                        {percentageDone(this.props.activation.completed) > 0
+                                            ? 'Almost there!'
+                                            : 'Welcome to Sourcegraph'}
+                                    </h3>
+                                    <p className="mb-2">Complete the steps below to finish onboarding!</p>
+                                </div>
+                                <Accordion collapsible={true} className="activation-dropdown__list">
+                                    {this.props.activation && this.props.activation.completed ? (
+                                        this.props.activation.steps.map(step => (
+                                            <div key={step.id}>
+                                                <AccordionItem>
+                                                    <AccordionButton className="activation-dropdown-item dropdown-item">
+                                                        <ActivationChecklistItem
+                                                            {...step}
+                                                            className="activation-dropdown-item__title"
+                                                            history={this.props.history}
+                                                            done={
+                                                                (this.props.activation.completed &&
+                                                                    this.props.activation.completed[step.id]) ||
+                                                                false
+                                                            }
+                                                        />
+                                                    </AccordionButton>
+                                                    <AccordionPanel className="px-2">
+                                                        <div
+                                                            className="activation-dropdown-item__detail pb-1"
+                                                            dangerouslySetInnerHTML={{ __html: step.detail }}
+                                                        />
+                                                    </AccordionPanel>
+                                                </AccordionItem>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="activation-dropdown-button__loader">
+                                            <LoadingSpinner className="icon-inline" />
+                                        </div>
+                                    )}
+                                </Accordion>
+                            </MenuList>
+                        </MenuPopover>
+                    </>
+                )}
             </Menu>
         )
     }

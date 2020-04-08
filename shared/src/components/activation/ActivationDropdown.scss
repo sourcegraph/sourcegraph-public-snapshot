@@ -1,7 +1,4 @@
 .activation-dropdown {
-    background-color: var(--body-bg);
-    border: 1px solid $dropdown-border-color;
-    border-radius: 0.25rem;
     color: var(--link-color);
     width: 21rem;
     z-index: 999;
@@ -10,11 +7,16 @@
         padding: 0;
         white-space: normal;
 
+        &__title {
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
+        }
+
         &__detail {
             // This is the width of the icon in the row above. This is to get text to line up properly.
             // stylelint-disable-next-line declaration-property-unit-whitelist
             margin: 0 19.98px;
-            padding: 0 0.5rem;
+            padding: 0 0.25rem;
         }
 
         &:focus {
@@ -64,7 +66,7 @@
 .activation-dropdown-header {
     white-space: normal;
     border-bottom: 1px solid $dropdown-border-color;
-    padding: 0.75rem 0.5rem 0 0.5rem;
+    padding: 0.25rem 0.5rem 0 0.5rem;
 
     &:hover {
         text-decoration: none;
