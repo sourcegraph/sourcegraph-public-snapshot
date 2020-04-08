@@ -34,18 +34,18 @@ type Parameter struct {
 	Negated bool   `json:"negated"` // True if the - prefix exists, as in -repo:sourcegraph.
 }
 
-type operatorKind int
+type operatorKind string
 
 const (
-	Or operatorKind = iota
-	And
-	Concat
+	Or     operatorKind = "or"
+	And                 = "and"
+	Concat              = "concat"
 )
 
 // Operator is a nonterminal node of kind Kind with child nodes Operands.
 type Operator struct {
-	Kind     operatorKind
-	Operands []Node
+	Kind     operatorKind `json:"operator"`
+	Operands []Node       `json:"operands"`
 }
 
 func (node Parameter) String() string {

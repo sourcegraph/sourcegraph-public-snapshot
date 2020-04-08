@@ -1,6 +1,7 @@
 package query
 
 import (
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -30,6 +31,7 @@ type QueryInfo interface {
 	Fields() map[string][]*types.Value
 	IsCaseSensitive() bool
 	ParseTree() syntax.ParseTree
+	JSON() ([]byte, error)
 }
 
 // An ordinary query (not containing and/or expressions).
@@ -63,6 +65,10 @@ func (q OrdinaryQuery) ParseTree() syntax.ParseTree {
 }
 func (q OrdinaryQuery) IsCaseSensitive() bool {
 	return q.Query.IsCaseSensitive()
+}
+
+func (q OrdinaryQuery) JSON() ([]byte, error) {
+	return []byte("TODO"), nil
 }
 
 // AndOrQuery satisfies the interface for QueryInfo with unvalidated string
@@ -174,6 +180,11 @@ func parseBoolOrPanic(field, value string) *bool {
 		}
 		return &b
 	}
+}
+
+func (q AndOrQuery) JSON() ([]byte, error) {
+	json, err := json.Marshal(q.Query)
+	return json, err
 }
 
 // valueToTypedValue approximately preserves the field validation for
