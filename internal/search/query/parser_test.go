@@ -91,7 +91,7 @@ func parseAndOrGrammar(in string) ([]Node, error) {
 
 func Test_Parse(t *testing.T) {
 	type relation string         // a relation for comparing test outputs of queries parsed according to grammar and heuristics.
-	const Same relation = "Same" // a constant that ays heuristic output is interpreted the same as the grammar spec.
+	const Same relation = "Same" // a constant that says heuristic output is interpreted the same as the grammar spec.
 	type Spec = relation         // constructor for expected output of the grammar spec without heuristics.
 	type Diff = relation         // constructor for expected heuristic output when different to the grammar spec.
 
