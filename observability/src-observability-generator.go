@@ -23,27 +23,55 @@ import (
 
 // Container describes a Docker container to be observed.
 type Container struct {
-	// Name is the name of the Docker container, e.g. "syntect-server".
+	// Name of the Docker container, e.g. "syntect-server".
 	Name string
 
-	// Title is the title of the Docker container, e.g. "Syntect Server".
+	// Title of the Docker container, e.g. "Syntect Server".
 	Title string
 
-	// Description is the description of the Docker container. It should describe what the
-	// container is responsible for, so that the impact of issues in it is clear.
+	// Description of the Docker container. It should describe what the container
+	// is responsible for, so that the impact of issues in it is clear.
 	Description string
 
-	// Rows
+	// Groups of observable information about the container.
+	Groups []Group
+}
+
+// Group describes a group of observable information about a container.
+type Group struct {
+	// Title of the group, briefly summarizing what this group is about, or
+	// "General" if the group is just about the container in general.
+	Title string
+
+	// Hidden indicates whether or not the group should be hidden by default.
+	//
+	// This should only be used when the dashboard is already full of information
+	// and the information presented in this group is unlikely to be the cause of
+	// issues and should generally only be inspected in the event that an alert
+	// for that information is firing.
+	Hidden bool
+
+	// Rows of observable metrics.
 	Rows []Row
 }
 
-type Row struct {
-	Title       string
-	Observables []Observable
+func (g Group) validate() error {
+	for _, r := range g.Rows {
+		if err := r.validate(); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
+// Row of observable metrics.
+type Row []Observable
+
 func (r Row) validate() error {
-	for _, o := range r.Observables {
+	if len(r) < 1 || len(r) > 4 {
+		return fmt.Errorf("row must have 1 to 4 observables only, found %v", len(r))
+	}
+	for _, o := range r {
 		if err := o.validate(); err != nil {
 			return err
 		}
@@ -215,6 +243,7 @@ func (c *Container) dashboard() *sdk.Board {
 	}
 
 	board := sdk.NewBoard(c.Title)
+	board.Version = uint(rand.Uint32())
 
 	// Note: being able to test edits quickly to dashboards is useful, but without setting this expansion and
 	// unexpansion of rows counts as an "edit" and the site admin would be warned about an unsaved change that
@@ -330,89 +359,98 @@ func (c *Container) dashboard() *sdk.Board {
 	board.Panels = append(board.Panels, alertsFiring)
 
 	baseY := 8
-	for rowIndex, row := range c.Rows {
+	offsetY := baseY
+	for _, group := range c.Groups {
+		// Non-general groups are shown as collapsible panels.
 		var rowPanel *sdk.Panel
-		if row.Title != "General" {
+		if group.Title != "General" {
 			rowPanel = &sdk.Panel{RowPanel: &sdk.RowPanel{}}
 			rowPanel.OfType = sdk.RowType
 			rowPanel.Type = "row"
-			rowPanel.Title = row.Title
-			setPanelPos(rowPanel, 0, baseY+rowIndex)
-			rowPanel.Collapsed = true
+			rowPanel.Title = group.Title
+			offsetY++
+			setPanelPos(rowPanel, 0, offsetY)
+			rowPanel.Collapsed = group.Hidden
+			rowPanel.Panels = []sdk.Panel{} // cannot be null
 			board.Panels = append(board.Panels, rowPanel)
 		}
 
-		panelWidth := 24 / len(row.Observables)
-		for i, o := range row.Observables {
-			panel := sdk.NewGraph(strings.ToTitle(string([]rune(o.Description)[0])) + string([]rune(o.Description)[1:]))
-			setPanelSize(panel, panelWidth, 5)
-			setPanelPos(panel, i*panelWidth, baseY+rowIndex)
-			panel.GraphPanel.Legend.Show = true
-			panel.GraphPanel.Fill = 1
-			panel.GraphPanel.Lines = true
-			panel.GraphPanel.Linewidth = 1
-			panel.GraphPanel.NullPointMode = "connected"
-			panel.GraphPanel.Pointradius = 2
-			panel.GraphPanel.AliasColors = map[string]string{}
-			panel.GraphPanel.Xaxis = sdk.Axis{
-				Show: true,
-			}
+		// Generate a panel for displaying each observable in each row.
+		for _, row := range group.Rows {
+			panelWidth := 24 / len(row)
+			offsetY++
+			for i, o := range row {
+				panelTitle := strings.ToTitle(string([]rune(o.Description)[0])) + string([]rune(o.Description)[1:])
+				panel := sdk.NewGraph(panelTitle)
+				setPanelSize(panel, panelWidth, 5)
+				setPanelPos(panel, i*panelWidth, offsetY)
+				panel.GraphPanel.Legend.Show = true
+				panel.GraphPanel.Fill = 1
+				panel.GraphPanel.Lines = true
+				panel.GraphPanel.Linewidth = 1
+				panel.GraphPanel.NullPointMode = "connected"
+				panel.GraphPanel.Pointradius = 2
+				panel.GraphPanel.AliasColors = map[string]string{}
+				panel.GraphPanel.Xaxis = sdk.Axis{
+					Show: true,
+				}
 
-			opt := o.PanelOptions.withDefaults()
-			leftAxis := sdk.Axis{
-				Decimals: 0,
-				Format:   string(opt.unitType),
-				LogBase:  1,
-				Show:     true,
-			}
+				opt := o.PanelOptions.withDefaults()
+				leftAxis := sdk.Axis{
+					Decimals: 0,
+					Format:   string(opt.unitType),
+					LogBase:  1,
+					Show:     true,
+				}
 
-			if o.Warning.GreaterOrEqual > 0 {
-				// Warning threshold
-				panel.GraphPanel.Thresholds = append(panel.GraphPanel.Thresholds, sdk.Threshold{
-					Value:     float32(o.Warning.GreaterOrEqual),
-					Op:        "gt",
-					ColorMode: "custom",
-					Fill:      true,
-					Line:      true,
-					FillColor: "rgba(255, 152, 48, 0.5)",
-					LineColor: "rgba(31, 96, 196, 0.6)",
+				if o.Warning.GreaterOrEqual > 0 {
+					// Warning threshold
+					panel.GraphPanel.Thresholds = append(panel.GraphPanel.Thresholds, sdk.Threshold{
+						Value:     float32(o.Warning.GreaterOrEqual),
+						Op:        "gt",
+						ColorMode: "custom",
+						Fill:      true,
+						Line:      true,
+						FillColor: "rgba(255, 152, 48, 0.5)",
+						LineColor: "rgba(31, 96, 196, 0.6)",
+					})
+				}
+				if o.Critical.GreaterOrEqual > 0 {
+					// Critical threshold
+					panel.GraphPanel.Thresholds = append(panel.GraphPanel.Thresholds, sdk.Threshold{
+						Value:     float32(o.Critical.GreaterOrEqual),
+						Op:        "gt",
+						ColorMode: "custom",
+						Fill:      true,
+						Line:      true,
+						FillColor: "rgba(242, 73, 92, 0.5)",
+						LineColor: "rgba(31, 96, 196, 0.6)",
+					})
+				}
+
+				if opt.min != nil {
+					leftAxis.Min = sdk.NewFloatString(*opt.min)
+				}
+				if opt.max != nil {
+					leftAxis.Max = sdk.NewFloatString(*opt.max)
+				}
+				panel.GraphPanel.Yaxes = []sdk.Axis{
+					leftAxis,
+					{
+						Format:  "short",
+						LogBase: 1,
+						Show:    true,
+					},
+				}
+				panel.AddTarget(&sdk.Target{
+					Expr:         o.Query,
+					LegendFormat: opt.legendFormat,
 				})
-			}
-			if o.Critical.GreaterOrEqual > 0 {
-				// Critical threshold
-				panel.GraphPanel.Thresholds = append(panel.GraphPanel.Thresholds, sdk.Threshold{
-					Value:     float32(o.Critical.GreaterOrEqual),
-					Op:        "gt",
-					ColorMode: "custom",
-					Fill:      true,
-					Line:      true,
-					FillColor: "rgba(242, 73, 92, 0.5)",
-					LineColor: "rgba(31, 96, 196, 0.6)",
-				})
-			}
-
-			if opt.min != nil {
-				leftAxis.Min = sdk.NewFloatString(*opt.min)
-			}
-			if opt.max != nil {
-				leftAxis.Max = sdk.NewFloatString(*opt.max)
-			}
-			panel.GraphPanel.Yaxes = []sdk.Axis{
-				leftAxis,
-				{
-					Format:  "short",
-					LogBase: 1,
-					Show:    true,
-				},
-			}
-			panel.AddTarget(&sdk.Target{
-				Expr:         o.Query,
-				LegendFormat: opt.legendFormat,
-			})
-			if rowPanel != nil {
-				rowPanel.RowPanel.Panels = append(rowPanel.RowPanel.Panels, *panel)
-			} else {
-				board.Panels = append(board.Panels, panel)
+				if rowPanel != nil && group.Hidden {
+					rowPanel.RowPanel.Panels = append(rowPanel.RowPanel.Panels, *panel)
+				} else {
+					board.Panels = append(board.Panels, panel)
+				}
 			}
 		}
 	}
@@ -428,33 +466,35 @@ func (c *Container) dashboard() *sdk.Board {
 func (c *Container) promAlertsFile() *promRulesFile {
 	f := &promRulesFile{}
 	group := promGroup{Name: c.Name}
-	for _, row := range c.Rows {
-		for _, o := range row.Observables {
-			for level, alert := range map[string]Alert{
-				"warning":  o.Warning,
-				"critical": o.Critical,
-			} {
-				if alert.isEmpty() {
-					continue
-				}
-				labels := map[string]string{}
-				labels["service_name"] = c.Name
-				labels["level"] = level
-				labels["name"] = o.Name
-
-				var alertQuery string
-				if alert.GreaterOrEqual > 0 {
-					labels["description"] = fmt.Sprintf("%s: %v+ %s", c.Name, alert.GreaterOrEqual, o.Description)
-					alertQuery = fmt.Sprintf("(%s) / %v", o.Query, alert.GreaterOrEqual)
-					if o.DataMayNotExist {
-						alertQuery = fmt.Sprintf("(%s) OR on() vector(0)", alertQuery)
+	for _, g := range c.Groups {
+		for _, r := range g.Rows {
+			for _, o := range r {
+				for level, alert := range map[string]Alert{
+					"warning":  o.Warning,
+					"critical": o.Critical,
+				} {
+					if alert.isEmpty() {
+						continue
 					}
+					labels := map[string]string{}
+					labels["service_name"] = c.Name
+					labels["level"] = level
+					labels["name"] = o.Name
+
+					var alertQuery string
+					if alert.GreaterOrEqual > 0 {
+						labels["description"] = fmt.Sprintf("%s: %v+ %s", c.Name, alert.GreaterOrEqual, o.Description)
+						alertQuery = fmt.Sprintf("(%s) / %v", o.Query, alert.GreaterOrEqual)
+						if o.DataMayNotExist {
+							alertQuery = fmt.Sprintf("(%s) OR on() vector(0)", alertQuery)
+						}
+					}
+					group.Rules = append(group.Rules, promRule{
+						Record: "alert_count",
+						Labels: labels,
+						Expr:   "clamp_max(clamp_min(floor(\n" + alertQuery + "\n), 0), 1) OR on() vector(1)",
+					})
 				}
-				group.Rules = append(group.Rules, promRule{
-					Record: "alert_count",
-					Labels: labels,
-					Expr:   "clamp_max(clamp_min(floor(\n" + alertQuery + "\n), 0), 1) OR on() vector(1)",
-				})
 			}
 		}
 	}
