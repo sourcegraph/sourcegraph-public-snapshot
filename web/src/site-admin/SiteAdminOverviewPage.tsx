@@ -132,14 +132,14 @@ export const SiteAdminOverviewPage: React.FunctionComponent<Props> = ({
                 </div>
             )}
             {info === undefined && <LoadingSpinner className="icon-inline" />}
-            <div className="site-admin-overview-page__activation-menu mb-4">
+            <div className="pt-3 mb-4">
                 {activation?.completed && (
                     <Collapsible
                         title={<>{setupPercentage < 100 ? 'Welcome to Sourcegraph' : 'Almost there!'}</>}
                         detail="Complete the steps below to finish onboarding to Sourcegraph"
                         defaultExpanded={setupPercentage < 100}
-                        className="site-admin-overview-page__activation-list list-group-item e2e-site-admin-overview-menu"
-                        buttonClassName="site-admin-overview-page__activation-list-button"
+                        className="p-0 list-group-item e2e-site-admin-overview-menu"
+                        buttonClassName="mb-0 py-3 px-3"
                         titleClassName="mb-0 font-weight-bold"
                         detailClassName="mb-0 font-weight-normal"
                         titleAtStart={true}

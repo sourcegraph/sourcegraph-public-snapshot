@@ -12,30 +12,8 @@
         }
     }
 
-    [data-reach-accordion-button] {
-        color: var(--link-color);
-        .icon-down {
-            display: none;
-        }
-        .icon-right {
-            display: inline-block;
-        }
-    }
-
-    [data-reach-accordion-button][aria-expanded='true'] {
-        background-color: $dropdown-link-hover-bg;
-        color: var(--link-color);
-
-        .icon-right {
-            display: none;
-        }
-        .icon-down {
-            display: inline-block;
-        }
-    }
-
-    [data-reach-accordion-panel][data-state='open'] {
-        background-color: $dropdown-link-hover-bg;
+    &__title {
+        font-size: 16px;
     }
 }
 
@@ -76,7 +54,7 @@
 .activation-dropdown-header {
     white-space: normal;
     border-bottom: 1px solid $dropdown-border-color;
-    padding: 0.25rem 0.5rem 0 0.5rem;
+    padding: 0.25rem 0.75rem 0 0.75rem;
 
     &:hover {
         text-decoration: none;

@@ -28,6 +28,7 @@ interface Props {
     className?: string
     titleClassName?: string
     buttonClassName?: string
+    expandedButtonClassName?: string
     detailClassName?: string
 
     /**
@@ -55,6 +56,7 @@ export const Collapsible: React.FunctionComponent<Props> = ({
     titleClassName = '',
     detailClassName = '',
     buttonClassName = '',
+    expandedButtonClassName = '',
     wholeTitleClickable = true,
 }) => {
     const [isExpanded, setIsExpanded] = useState(defaultExpanded)
@@ -80,7 +82,7 @@ export const Collapsible: React.FunctionComponent<Props> = ({
             <div
                 className={classNames(
                     'd-flex justify-content-between align-items-center position-relative',
-                    isExpanded && 'mb-3',
+                    isExpanded && expandedButtonClassName,
                     buttonClassName
                 )}
             >

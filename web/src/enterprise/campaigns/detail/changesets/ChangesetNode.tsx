@@ -138,6 +138,7 @@ export const ChangesetNode: React.FunctionComponent<ChangesetNodeProps> = ({
             {fileDiffs ? (
                 <Collapsible
                     titleClassName="changeset-node__content flex-fill"
+                    expandedButtonClassName="mb-3"
                     title={changesetNodeRow}
                     wholeTitleClickable={false}
                 >

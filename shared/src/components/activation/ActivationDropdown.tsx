@@ -119,7 +119,7 @@ export class ActivationDropdown extends React.PureComponent<Props, State> {
                         <MenuPopover>
                             <MenuList className={classNames('activation-dropdown', 'dropdown-menu', { show: isOpen })}>
                                 <div className="dropdown-item-text activation-dropdown-header">
-                                    <span className="mb-2">
+                                    <span className="activation-dropdown__title mb-2 font-weight-bold">
                                         {percentageDone(this.props.activation.completed) > 0
                                             ? 'Almost there!'
                                             : 'Welcome to Sourcegraph'}
