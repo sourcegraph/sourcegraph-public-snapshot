@@ -765,7 +765,7 @@ func TestGetLimiter(t *testing.T) {
 		t.Fatal(err)
 	}
 	c := &schema.BitbucketServerConnection{
-		RateLimit: &schema.RateLimit{
+		RateLimit: &schema.BitbucketServerRateLimit{
 			Enabled:         true,
 			RequestsPerHour: 3600,
 		},

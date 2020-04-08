@@ -186,7 +186,7 @@ type BitbucketServerConnection struct {
 	// Plugin description: Configuration for Bitbucket Server Sourcegraph plugin
 	Plugin *BitbucketServerPlugin `json:"plugin,omitempty"`
 	// RateLimit description: Rate limit applied when making background API requests to BitbucketServer.
-	RateLimit *RateLimit `json:"rateLimit,omitempty"`
+	RateLimit *BitbucketServerRateLimit `json:"rateLimit,omitempty"`
 	// Repos description: An array of repository "projectKey/repositorySlug" strings specifying repositories to mirror on Sourcegraph.
 	Repos []string `json:"repos,omitempty"`
 	// RepositoryPathPattern description: The pattern used to generate the corresponding Sourcegraph repository name for a Bitbucket Server repository.
@@ -257,6 +257,14 @@ type BitbucketServerPlugin struct {
 type BitbucketServerPluginWebhooks struct {
 	// Secret description: Secret for authenticating incoming webhook payloads
 	Secret string `json:"secret"`
+}
+
+// BitbucketServerRateLimit description: Rate limit applied when making background API requests to BitbucketServer.
+type BitbucketServerRateLimit struct {
+	// Enabled description: true if rate limiting is enabled.
+	Enabled bool `json:"enabled"`
+	// RequestsPerHour description: Requests per hour permitted. This is an average, calculated per second.
+	RequestsPerHour float64 `json:"requestsPerHour"`
 }
 type BitbucketServerUsernameIdentity struct {
 	Type string `json:"type"`
@@ -549,6 +557,8 @@ type GitLabConnection struct {
 	ProjectQuery []string `json:"projectQuery"`
 	// Projects description: A list of projects to mirror from this GitLab instance. Supports including by name ({"name": "group/name"}) or by ID ({"id": 42}).
 	Projects []*GitLabProject `json:"projects,omitempty"`
+	// RateLimit description: Rate limit applied when making background API requests to GitLab.
+	RateLimit *GitLabRateLimit `json:"rateLimit,omitempty"`
 	// RepositoryPathPattern description: The pattern used to generate a the corresponding Sourcegraph repository name for a GitLab project. In the pattern, the variable "{host}" is replaced with the GitLab URL's host (such as gitlab.example.com), and "{pathWithNamespace}" is replaced with the GitLab project's "namespace/path" (such as "myteam/myproject").
 	//
 	// For example, if your GitLab is https://gitlab.example.com and your Sourcegraph is https://src.example.com, then a repositoryPathPattern of "{host}/{pathWithNamespace}" would mean that a GitLab project at https://gitlab.example.com/myteam/myproject is available on Sourcegraph at https://src.example.com/gitlab.example.com/myteam/myproject.
@@ -571,6 +581,14 @@ type GitLabProject struct {
 	Id int `json:"id,omitempty"`
 	// Name description: The name of a GitLab project ("group/name") to mirror.
 	Name string `json:"name,omitempty"`
+}
+
+// GitLabRateLimit description: Rate limit applied when making background API requests to GitLab.
+type GitLabRateLimit struct {
+	// Enabled description: true if rate limiting is enabled.
+	Enabled bool `json:"enabled"`
+	// RequestsPerHour description: Requests per hour permitted. This is an average, calculated per second.
+	RequestsPerHour float64 `json:"requestsPerHour"`
 }
 
 // GitoliteConnection description: Configuration for a connection to Gitolite.
@@ -755,14 +773,6 @@ type QuickLink struct {
 	Name string `json:"name"`
 	// Url description: The URL of this quick link (absolute or relative)
 	Url string `json:"url"`
-}
-
-// RateLimit description: Rate limit applied when making background API requests to BitbucketServer.
-type RateLimit struct {
-	// Enabled description: true if rate limiting is enabled.
-	Enabled bool `json:"enabled"`
-	// RequestsPerHour description: Requests per hour permitted. This is an average, calculated per second.
-	RequestsPerHour float64 `json:"requestsPerHour"`
 }
 type Repos struct {
 	// Callsign description: The unique Phabricator identifier for the repository, like 'MUX'.
