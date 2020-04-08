@@ -57,6 +57,8 @@ All notable changes to Sourcegraph are documented in this file.
   - **IMPORTANT**: If you have previously configured alerting directly on "hard search errors", you will need to reconfigure it on both panels as it has now been split up ("Hard timeout search responses every 5m" and "Hard error search responses every 5m").
 - observability: the Frontend dashboard's panels no longer show misleading duplicate labels. [#9660](https://github.com/sourcegraph/sourcegraph/issues/9660)
 - observability: "frontend internal errors" are now broken down just by route, which makes reading the graph easier. [#9668](https://github.com/sourcegraph/sourcegraph/issues/9668)
+- observability: Searcher dashboard: "Search errors on unindexed repositories" is now broken down by code instead of instance for improved readability. [#9670](https://github.com/sourcegraph/sourcegraph/issues/9670)
+- observability: Searcher dashboard: "Search errors on unindexed repositories" no longer includes cancelled search requests.
 - The Phabricator integration no longer makes duplicate requests to Phabricator's API on diff views. [#8849](https://github.com/sourcegraph/sourcegraph/issues/8849)
 - Changesets on repositories that aren't available on the instance anymore are now hidden instead of failing. [#9656](https://github.com/sourcegraph/sourcegraph/pull/9656)
 

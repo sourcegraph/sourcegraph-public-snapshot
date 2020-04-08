@@ -542,6 +542,7 @@ func main() {
 		GitHubProxy(),
 		QueryRunner(),
 		RepoUpdater(),
+		Searcher(),
 		SyntectServer(),
 	} {
 		if grafanaDir != "" {
