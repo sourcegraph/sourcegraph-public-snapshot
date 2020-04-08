@@ -993,6 +993,11 @@ func (r *RateLimiterRegistry) updateRateLimiter(svc *ExternalService) error {
 		return errors.Wrap(err, "getting external service configuration")
 	}
 
+	// Rate limit config can be in a few states:
+	// 1. Not defined: We fall back to default specified in code.
+	// 2. Defined and enabled: We use their defined limit.
+	// 3. Defined and disabled: We use an infinite limiter.
+
 	var limit rate.Limit
 	switch c := config.(type) {
 	case *schema.GitLabConnection:
