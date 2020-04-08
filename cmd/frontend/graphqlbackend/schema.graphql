@@ -1349,6 +1349,7 @@ type Query {
         # how many results to return per page. It must be in the range of 0-5000.
         first: Int
     ): Search
+    // Return the parse tree of a search query.
     parseSearchQuery(
         # The search query (such as "foo" or "repo:myrepo foo").
         query: String = ""
