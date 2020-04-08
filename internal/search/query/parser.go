@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"unicode"
 	"unicode/utf8"
 
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -87,18 +88,25 @@ const (
 	RPAREN keyword = ")"
 )
 
-func isSpace(c byte) bool {
-	return (c == ' ') || (c == '\n') || (c == '\r') || (c == '\t')
+func isSpace(buf []byte) bool {
+	r, _ := utf8.DecodeRune(buf)
+	return unicode.IsSpace(r)
 }
 
-// skipSpace returns the number of spaces skipped from the beginning of a buffer buf.
+// skipSpace returns the number of spaces, corresponding to runes, skipped from the beginning of a buffer buf.
 func skipSpace(buf []byte) int {
-	for i, c := range buf {
-		if !isSpace(c) {
-			return i
+	pos := 0
+	for {
+		if pos > len(buf) {
+			break
 		}
+		r, advance := utf8.DecodeRune(buf[pos:])
+		if !unicode.IsSpace(r) {
+			break
+		}
+		pos += advance
 	}
-	return len(buf)
+	return pos
 }
 
 type parser struct {
@@ -153,7 +161,7 @@ func (p *parser) expect(keyword keyword) bool {
 	if !p.match(keyword) {
 		return false
 	}
-	p.pos += len(string(keyword)) // FIXME use next?
+	p.pos += len(string(keyword))
 	return true
 }
 
@@ -230,7 +238,7 @@ func (p *parser) ParseSearchPatternHeuristic() (Node, bool) {
 		if p.done() {
 			break
 		}
-		if isSpace(p.buf[p.pos]) && balanced == 0 {
+		if isSpace(p.buf[p.pos:]) && balanced == 0 {
 			// Stop scanning a potential pattern when we see whitespace in a balanced state.
 			break
 		}
@@ -267,7 +275,7 @@ func (p *parser) ParseParameter() Parameter {
 		if p.done() {
 			break
 		}
-		if isSpace(p.buf[p.pos]) {
+		if isSpace(p.buf[p.pos:]) {
 			break
 		}
 		p.pos++
