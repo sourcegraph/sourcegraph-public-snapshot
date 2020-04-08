@@ -66,7 +66,7 @@ func Frontend() *Container {
 				},
 			},
 			{
-				Title: "Internal service requests",
+				Title:  "Internal service requests",
 				Hidden: true,
 				Rows: []Row{
 					{
