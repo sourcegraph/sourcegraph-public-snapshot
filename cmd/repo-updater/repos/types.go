@@ -933,14 +933,16 @@ type RateLimiterRegistry struct {
 	rateLimiters map[int64]*rate.Limiter
 }
 
+// NewRateLimitRegistry returns a new registry and attempts to populate it. On error, an
+// empty registry is returned which can still to handle syncs.
 func NewRateLimiterRegistry(ctx context.Context, store Store) (*RateLimiterRegistry, error) {
-	svcs, err := store.ListExternalServices(ctx, StoreListExternalServicesArgs{})
-	if err != nil {
-		return nil, errors.Wrap(err, "fetching external services")
-	}
-
 	r := &RateLimiterRegistry{
 		rateLimiters: make(map[int64]*rate.Limiter),
+	}
+
+	svcs, err := store.ListExternalServices(ctx, StoreListExternalServicesArgs{})
+	if err != nil {
+		return r, errors.Wrap(err, "fetching external services")
 	}
 
 	for _, svc := range svcs {
