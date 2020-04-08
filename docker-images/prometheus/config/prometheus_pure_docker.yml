@@ -1,4 +1,4 @@
-# Prometheus global config
+# Prometheus global config for Pure Docker and Docker Compose deployment environments.
 global:
   scrape_interval: 30s # Scrape services for updated metrics every 30s. Default is 1m.
   evaluation_interval: 30s # Evaluate rules every 30s. Default is 1m.
