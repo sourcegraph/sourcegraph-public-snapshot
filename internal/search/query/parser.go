@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strconv"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -49,13 +50,16 @@ type Operator struct {
 }
 
 func (node Parameter) String() string {
-	if node.Field == "" {
-		return node.Value
+	var v string
+	switch {
+	case node.Field == "":
+		v = node.Value
+	case node.Negated:
+		v = fmt.Sprintf("-%s:%s", node.Field, node.Value)
+	default:
+		v = fmt.Sprintf("%s:%s", node.Field, node.Value)
 	}
-	if node.Negated {
-		return fmt.Sprintf("-%s:%s", node.Field, node.Value)
-	}
-	return fmt.Sprintf("%s:%s", node.Field, node.Value)
+	return strconv.Quote(v)
 }
 
 func (node Operator) String() string {
