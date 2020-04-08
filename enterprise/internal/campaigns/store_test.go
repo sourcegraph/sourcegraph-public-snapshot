@@ -33,6 +33,41 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 		ctx := context.Background()
 
+		// Create a test repo
+		reposStore := repos.NewDBStore(db, sql.TxOptions{})
+		repo := &repos.Repo{
+			Name: "github.com/sourcegraph/sourcegraph",
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "external-id",
+				ServiceType: "github",
+				ServiceID:   "https://github.com/",
+			},
+			Sources: map[string]*repos.SourceInfo{
+				"extsvc:github:4": {
+					ID:       "extsvc:github:4",
+					CloneURL: "https://secrettoken@github.com/sourcegraph/sourcegraph",
+				},
+			},
+		}
+		deletedRepo := &repos.Repo{
+			Name: "github.com/sourcegraph/sourcegraph-old",
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "external-id",
+				ServiceType: "github",
+				ServiceID:   "https://github.com/",
+			},
+			Sources: map[string]*repos.SourceInfo{
+				"extsvc:github:4": {
+					ID:       "extsvc:github:4",
+					CloneURL: "https://secrettoken@github.com/sourcegraph/sourcegraph-old",
+				},
+			},
+			DeletedAt: time.Now(),
+		}
+		if err := reposStore.UpsertRepos(ctx, deletedRepo, repo); err != nil {
+			t.Fatal(err)
+		}
+
 		t.Run("Campaigns", func(t *testing.T) {
 			campaigns := make([]*cmpgn.Campaign, 0, 3)
 
@@ -358,9 +393,10 @@ func testStore(db *sql.DB) func(*testing.T) {
 			changesets := make([]*cmpgn.Changeset, 0, 3)
 
 			t.Run("Create", func(t *testing.T) {
-				for i := 0; i < cap(changesets); i++ {
+				var i int
+				for i = 0; i < cap(changesets); i++ {
 					th := &cmpgn.Changeset{
-						RepoID:              42,
+						RepoID:              repo.ID,
 						CreatedAt:           now,
 						UpdatedAt:           now,
 						Metadata:            githubPR,
@@ -378,6 +414,24 @@ func testStore(db *sql.DB) func(*testing.T) {
 				}
 
 				err := s.CreateChangesets(ctx, changesets...)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				err = s.CreateChangesets(ctx, &cmpgn.Changeset{
+					RepoID:              deletedRepo.ID,
+					CreatedAt:           now,
+					UpdatedAt:           now,
+					Metadata:            githubPR,
+					CampaignIDs:         []int64{int64(i) + 1},
+					ExternalID:          fmt.Sprintf("foobar-%d", i),
+					ExternalServiceType: "github",
+					ExternalBranch:      "campaigns/test",
+					ExternalUpdatedAt:   now,
+					ExternalState:       cmpgn.ChangesetStateOpen,
+					ExternalReviewState: cmpgn.ChangesetReviewStateApproved,
+					ExternalCheckState:  cmpgn.ChangesetCheckStatePassed,
+				})
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -814,10 +868,6 @@ func testStore(db *sql.DB) func(*testing.T) {
 				for _, c := range changesets {
 					c.Metadata = &bitbucketserver.PullRequest{ID: 1234}
 					c.ExternalServiceType = bitbucketserver.ServiceType
-
-					if c.RepoID != 0 {
-						c.RepoID++
-					}
 
 					have = append(have, c.Clone())
 

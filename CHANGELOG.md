@@ -24,6 +24,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
+- Changesets on repositories that aren't available on the instance anymore are now hidden instead of failing. [#9656](https://github.com/sourcegraph/sourcegraph/pull/9656)
+
 ### Removed
 
 ## 3.14.0
