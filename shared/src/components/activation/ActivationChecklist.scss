@@ -10,9 +10,8 @@
         }
     }
 
-    &__item {
+    &__container {
         padding: 0;
-        font-size: 16px;
     }
 
     &__title {
@@ -21,8 +20,7 @@
 
     &__detail {
         // This is the width of the icon in the row above. This is to get text to line up properly.
-        // stylelint-disable-next-line declaration-property-unit-whitelist
-        margin: 0 22.84px;
+        margin: 0 1.25rem;
         padding: 0 0.5rem;
         font-size: 14px;
         border-bottom-width: 1px;
@@ -32,6 +30,10 @@
 .activation-checklist-item {
     color: var(--link-color);
     padding: 0.25rem 0.75rem;
+
+    &__icon-container {
+        width: 1.25rem;
+    }
 
     &__icon {
         fill: $body-color !important;
