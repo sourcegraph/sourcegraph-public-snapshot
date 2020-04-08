@@ -10,6 +10,7 @@ import (
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"golang.org/x/time/rate"
 )
 
 // A Sourcer converts the given ExternalServices to Sources
@@ -103,6 +104,12 @@ type ChangesetSource interface {
 	CloseChangeset(context.Context, *Changeset) error
 	// UpdateChangeset can update Changesets.
 	UpdateChangeset(context.Context, *Changeset) error
+}
+
+// RateLimiter source returns a rate limiter that should be used when
+// making external requests.
+type RateLimiter interface {
+	RateLimiter() *rate.Limiter
 }
 
 // ChangesetsNotFoundError is returned by LoadChangesets if any of the passed

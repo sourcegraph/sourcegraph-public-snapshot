@@ -16,10 +16,11 @@ import (
 
 // SyncRegistry manages a ChangesetSyncer per external service.
 type SyncRegistry struct {
-	Ctx         context.Context
-	SyncStore   SyncStore
-	RepoStore   RepoStore
-	HTTPFactory *httpcli.Factory
+	Ctx                 context.Context
+	SyncStore           SyncStore
+	RepoStore           RepoStore
+	HTTPFactory         *httpcli.Factory
+	RateLimiterRegistry *repos.RateLimiterRegistry
 
 	priorityNotify chan []int64
 
@@ -34,14 +35,15 @@ type RepoStore interface {
 
 // NewSycnRegistry creates a new sync registry which starts a syncer for each external service and will update them
 // when external services are changed, added or removed.
-func NewSyncRegistry(ctx context.Context, store SyncStore, repoStore RepoStore, cf *httpcli.Factory) *SyncRegistry {
+func NewSyncRegistry(ctx context.Context, store SyncStore, repoStore RepoStore, cf *httpcli.Factory, rateLimiterRegistry *repos.RateLimiterRegistry) *SyncRegistry {
 	r := &SyncRegistry{
-		Ctx:            ctx,
-		SyncStore:      store,
-		RepoStore:      repoStore,
-		HTTPFactory:    cf,
-		priorityNotify: make(chan []int64, 500),
-		syncers:        make(map[int64]*ChangesetSyncer),
+		Ctx:                 ctx,
+		SyncStore:           store,
+		RepoStore:           repoStore,
+		HTTPFactory:         cf,
+		RateLimiterRegistry: rateLimiterRegistry,
+		priorityNotify:      make(chan []int64, 500),
+		syncers:             make(map[int64]*ChangesetSyncer),
 	}
 
 	services, err := repoStore.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{})
