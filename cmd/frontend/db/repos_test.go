@@ -208,10 +208,6 @@ func TestRepos_Upsert(t *testing.T) {
 	if !reflect.DeepEqual(rp.ExternalRepo, ext) {
 		t.Fatalf("rp.ExternalRepo: %s != %s", rp.ExternalRepo, ext)
 	}
-
-	if err := Repos.Delete(ctx, rp.ID); err != nil {
-		t.Fatal(err)
-	}
 }
 
 func TestRepos_UpsertForkAndArchivedFields(t *testing.T) {
@@ -222,22 +218,17 @@ func TestRepos_UpsertForkAndArchivedFields(t *testing.T) {
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
+	i := 0
 	for _, fork := range []bool{true, false} {
 		for _, archived := range []bool{true, false} {
-			fmt.Printf("%v %v\n", fork, archived)
-			if _, err := Repos.GetByName(ctx, "myrepo"); !errcode.IsNotFound(err) {
-				if err == nil {
-					t.Fatal("myrepo already present")
-				} else {
-					t.Fatal(err)
-				}
-			}
+			i++
+			name := api.RepoName(fmt.Sprintf("myrepo-%d", i))
 
-			if err := Repos.Upsert(ctx, InsertRepoOp{Name: "myrepo", Fork: fork, Archived: archived}); err != nil {
+			if err := Repos.Upsert(ctx, InsertRepoOp{Name: name, Fork: fork, Archived: archived}); err != nil {
 				t.Fatal(err)
 			}
 
-			rp, err := Repos.GetByName(ctx, "myrepo")
+			rp, err := Repos.GetByName(ctx, name)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -247,10 +238,6 @@ func TestRepos_UpsertForkAndArchivedFields(t *testing.T) {
 			}
 			if rp.Archived != archived {
 				t.Fatalf("rp.Archived: %v != %v", rp.Archived, archived)
-			}
-
-			if err := Repos.Delete(ctx, rp.ID); err != nil {
-				t.Fatal(err)
 			}
 		}
 	}
