@@ -401,7 +401,7 @@ func Test_Parse(t *testing.T) {
 			}
 			var result []Node
 			var err error
-			result, err = parseAndOrGrammar(tt.Input) // disable heuristic
+			result, err = parseAndOrGrammar(tt.Input) // Parse without heuristic.
 			check(result, err, string(tt.WantGrammar))
 			result, err = parseAndOr(tt.Input)
 			if tt.WantHeuristic == Same {
