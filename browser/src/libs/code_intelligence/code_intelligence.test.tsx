@@ -29,9 +29,9 @@ import {
 import { toCodeViewResolver } from './code_views'
 import { DEFAULT_GRAPHQL_RESPONSES, mockRequestGraphQL } from './test_helpers'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
-import { IntersectionObserverCallbackLike } from './views'
 import { NotificationType } from '../../../../shared/src/api/client/services/notifications'
 import { toPrettyBlobURL } from '../../../../shared/src/util/url'
+import { MockIntersectionObserver } from './MockIntersectionObserver'
 
 const RENDER = sinon.spy()
 
@@ -96,20 +96,7 @@ describe('code_intelligence', () => {
     // Mock the global IntersectionObserver constructor with an implementation that
     // will immediately signal all observed elements as intersecting.
     beforeAll(() => {
-        window.IntersectionObserver = class MockIntersectionObserver {
-            constructor(private cb: IntersectionObserverCallbackLike) {}
-
-            public observe(target: Element) {
-                this.cb([{ target, isIntersecting: true }], this)
-            }
-
-            public unobserve(): void {
-                // noop
-            }
-            public disconnect(): void {
-                // noop
-            }
-        } as any
+        window.IntersectionObserver = MockIntersectionObserver
     })
 
     beforeEach(() => {
