@@ -243,6 +243,7 @@ func (c *Container) dashboard() *sdk.Board {
 	}
 
 	board := sdk.NewBoard(c.Title)
+	board.Version = uint(rand.Uint32())
 
 	// Note: being able to test edits quickly to dashboards is useful, but without setting this expansion and
 	// unexpansion of rows counts as an "edit" and the site admin would be warned about an unsaved change that
