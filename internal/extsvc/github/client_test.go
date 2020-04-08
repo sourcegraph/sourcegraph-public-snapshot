@@ -123,7 +123,7 @@ func TestClient_WithToken(t *testing.T) {
 	}
 
 	newToken := "new_token"
-	new := old.WithToken(newToken)
+	new := old.WithToken(newToken).(*client)
 	if old == new {
 		t.Fatal("both clients have the same address")
 	}
@@ -365,7 +365,7 @@ func newClient(t testing.TB, name string) (*client, func()) {
 		uri,
 		os.Getenv("GITHUB_TOKEN"),
 		hc,
-	)
+	).(*client)
 
 	return cli, func() {
 		if err := rec.Stop(); err != nil {
