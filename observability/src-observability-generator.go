@@ -540,6 +540,7 @@ func main() {
 	for _, container := range []*Container{
 		SyntectServer(),
 		Frontend(),
+		GitHubProxy(),
 	} {
 		if grafanaDir != "" {
 			board := container.dashboard()
