@@ -95,18 +95,16 @@ func isSpace(buf []byte) bool {
 
 // skipSpace returns the number of whitespace bytes skipped from the beginning of a buffer buf.
 func skipSpace(buf []byte) int {
-	pos := 0
-	for {
-		if pos > len(buf) {
-			break
-		}
-		r, advance := utf8.DecodeRune(buf[pos:])
+	count := 0
+	for len(buf) > 0 {
+		r, advance := utf8.DecodeRune(buf)
 		if !unicode.IsSpace(r) {
 			break
 		}
-		pos += advance
+		count += advance
+		buf = buf[advance:]
 	}
-	return pos
+	return count
 }
 
 type parser struct {
@@ -132,17 +130,19 @@ func (p *parser) next() rune {
 // peek looks ahead n runes in the input and returns a string if it succeeds, or
 // an error if the length exceeds what's available in the buffer.
 func (p *parser) peek(n int) (string, error) {
-	backtrack := p.pos
+	start := p.pos
+	defer func() {
+		p.pos = start // backtrack
+	}()
+
 	var result []rune
 	for i := 0; i < n; i++ {
 		if p.done() {
-			p.pos = backtrack
 			return "", io.ErrShortBuffer
 		}
 		next := p.next()
 		result = append(result, next)
 	}
-	p.pos = backtrack
 	return string(result), nil
 }
 
