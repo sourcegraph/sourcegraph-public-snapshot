@@ -538,8 +538,10 @@ func main() {
 	reload, _ := strconv.ParseBool(reloadValue)
 
 	for _, container := range []*Container{
-		SyntectServer(),
 		Frontend(),
+		GitHubProxy(),
+		RepoUpdater(),
+		SyntectServer(),
 	} {
 		if grafanaDir != "" {
 			board := container.dashboard()
