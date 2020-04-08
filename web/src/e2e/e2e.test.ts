@@ -1545,7 +1545,8 @@ describe('e2e test suite', () => {
                 snapshotName: 'Campaign preview page',
             })
         })
-        test('Manual campaign workflow', async () => {
+        // TODO(eseliger): reenable once the dates of the chart are stable
+        test.skip('Manual campaign workflow', async () => {
             await driver.page.goto(sourcegraphBaseUrl + '/campaigns/new')
             await driver.page.waitForSelector('.e2e-campaign-form')
             await percySnapshot(driver.page, 'Create manual campaign form')
