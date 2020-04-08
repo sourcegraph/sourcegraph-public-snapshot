@@ -14,7 +14,6 @@ import {
     updateCampaign,
     deleteCampaign,
     createCampaign,
-    retryCampaign,
     closeCampaign,
     publishCampaign,
     fetchPatchSetById,
