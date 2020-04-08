@@ -93,7 +93,7 @@ func isSpace(buf []byte) bool {
 	return unicode.IsSpace(r)
 }
 
-// skipSpace returns the number of spaces, corresponding to runes, skipped from the beginning of a buffer buf.
+// skipSpace returns the number of whitespace bytes skipped from the beginning of a buffer buf.
 func skipSpace(buf []byte) int {
 	pos := 0
 	for {
