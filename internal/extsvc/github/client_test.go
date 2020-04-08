@@ -117,7 +117,7 @@ func TestClient_WithToken(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	old := &Client{
+	old := &client{
 		apiURL:       uri,
 		defaultToken: "old_token",
 	}
@@ -338,7 +338,7 @@ func TestClient_GetAuthenticatedUserOrgs(t *testing.T) {
 	)
 }
 
-func newClient(t testing.TB, name string) (*Client, func()) {
+func newClient(t testing.TB, name string) (*client, func()) {
 	t.Helper()
 
 	cassete := filepath.Join("testdata/vcr/", strings.Replace(name, " ", "-", -1))

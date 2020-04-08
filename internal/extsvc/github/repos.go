@@ -39,7 +39,7 @@ type Repository struct {
 
 // repositoryFieldsGraphQLFragment returns a GraphQL fragment that contains the fields needed to populate the
 // Repository struct.
-func (c *Client) repositoryFieldsGraphQLFragment() string {
+func (c *client) repositoryFieldsGraphQLFragment() string {
 	if c.githubDotCom {
 		return `
 fragment RepositoryFields on Repository {
@@ -87,7 +87,7 @@ func MockGetRepository_Return(returns *Repository) {
 }
 
 // GetRepository gets a repository from GitHub by owner and repository name.
-func (c *Client) GetRepository(ctx context.Context, owner, name string) (*Repository, error) {
+func (c *client) GetRepository(ctx context.Context, owner, name string) (*Repository, error) {
 	if GetRepositoryMock != nil {
 		return GetRepositoryMock(ctx, owner, name)
 	}
@@ -107,18 +107,18 @@ func (c *Client) GetRepository(ctx context.Context, owner, name string) (*Reposi
 var GetRepositoryByNodeIDMock func(ctx context.Context, token, id string) (*Repository, error)
 
 // GetRepositoryByNodeID gets a repository from GitHub by its GraphQL node ID using the specified user token.
-func (c *Client) GetRepositoryByNodeID(ctx context.Context, token, id string) (*Repository, error) {
+func (c *client) GetRepositoryByNodeID(ctx context.Context, token, id string) (*Repository, error) {
 	return c.getRepositoryByNodeID(ctx, token, id, false)
 }
 
 // HACK: allows us to bypass the GitHub client cache (used for fetching repositories to determine
 // permissions). TODO(beyang): merge this into a unified GetRepositoryByNodeID with a clean
 // interface.
-func (c *Client) GetRepositoryByNodeIDNoCache(ctx context.Context, token, id string) (*Repository, error) {
+func (c *client) GetRepositoryByNodeIDNoCache(ctx context.Context, token, id string) (*Repository, error) {
 	return c.getRepositoryByNodeID(ctx, token, id, true)
 }
 
-func (c *Client) getRepositoryByNodeID(ctx context.Context, token, id string, nocache bool) (*Repository, error) {
+func (c *client) getRepositoryByNodeID(ctx context.Context, token, id string, nocache bool) (*Repository, error) {
 	if GetRepositoryByNodeIDMock != nil {
 		return GetRepositoryByNodeIDMock(ctx, token, id)
 	}
@@ -137,7 +137,7 @@ func (c *Client) getRepositoryByNodeID(ctx context.Context, token, id string, no
 }
 
 // cachedGetRepository caches the getRepositoryFromAPI call.
-func (c *Client) cachedGetRepository(ctx context.Context, token, key string, getRepositoryFromAPI func(ctx context.Context) (repo *Repository, keys []string, err error), nocache bool) (*Repository, error) {
+func (c *client) cachedGetRepository(ctx context.Context, token, key string, getRepositoryFromAPI func(ctx context.Context) (repo *Repository, keys []string, err error), nocache bool) (*Repository, error) {
 	// 🚨 SECURITY: must forward token here to ensure caching by token
 	if !nocache {
 		if cached := c.getRepositoryFromCache(ctx, token, key); cached != nil {
@@ -189,7 +189,7 @@ type cachedRepo struct {
 
 // getRepositoryFromCache attempts to get a response from the redis cache.
 // It returns nil error for cache-hit condition and non-nil error for cache-miss.
-func (c *Client) getRepositoryFromCache(ctx context.Context, token, key string) *cachedRepo {
+func (c *client) getRepositoryFromCache(ctx context.Context, token, key string) *cachedRepo {
 	// 🚨 SECURITY: must forward token here to ensure caching by token
 	b, ok := c.cache(token).Get(strings.ToLower(key))
 	if !ok {
@@ -216,7 +216,7 @@ func firstNonEmpty(strs ...string) string {
 // addRepositoryToCache will cache the value for repo. The caller can provide multiple cache keys
 // for the multiple ways that this repository can be retrieved (e.g., both "owner/name" and the
 // GraphQL node ID).
-func (c *Client) addRepositoryToCache(token string, keys []string, repo *cachedRepo) {
+func (c *client) addRepositoryToCache(token string, keys []string, repo *cachedRepo) {
 	b, err := json.Marshal(repo)
 	if err != nil {
 		return
@@ -228,7 +228,7 @@ func (c *Client) addRepositoryToCache(token string, keys []string, repo *cachedR
 
 // addRepositoriesToCache will cache repositories that exist
 // under relevant cache keys.
-func (c *Client) addRepositoriesToCache(token string, repos []*Repository) {
+func (c *client) addRepositoriesToCache(token string, repos []*Repository) {
 	for _, repo := range repos {
 		keys := []string{nameWithOwnerCacheKey(repo.NameWithOwner), nodeIDCacheKey(repo.ID)} // cache under multiple
 		// 🚨 SECURITY: must forward token here to ensure caching by token
@@ -255,7 +255,7 @@ type restRepository struct {
 }
 
 // getRepositoryFromAPI attempts to fetch a repository from the GitHub API without use of the redis cache.
-func (c *Client) getRepositoryFromAPI(ctx context.Context, owner, name string) (*Repository, error) {
+func (c *client) getRepositoryFromAPI(ctx context.Context, owner, name string) (*Repository, error) {
 	// If no token, we must use the older REST API, not the GraphQL API. See
 	// https://platform.github.community/t/anonymous-access/2093/2. This situation occurs on (for
 	// example) a server with autoAddRepos and no GitHub connection configured when someone visits
@@ -306,7 +306,7 @@ func convertRestRepoPermissions(restRepoPermissions restRepositoryPermissions) s
 // An empty sinceRepoID returns the first page of results.
 // This is only intended to be called for GitHub Enterprise, so no rate limit information is returned.
 // https://developer.github.com/v3/repos/#list-all-public-repositories
-func (c *Client) getPublicRepositories(ctx context.Context, sinceRepoID int64) ([]*Repository, error) {
+func (c *client) getPublicRepositories(ctx context.Context, sinceRepoID int64) ([]*Repository, error) {
 	path := "repositories"
 	if sinceRepoID > 0 {
 		path += "?per_page=100&since=" + strconv.FormatInt(sinceRepoID, 10)
@@ -316,7 +316,7 @@ func (c *Client) getPublicRepositories(ctx context.Context, sinceRepoID int64) (
 
 // getRepositoryByNodeIDFromAPI attempts to fetch a repository by GraphQL node ID from the GitHub
 // API without use of the redis cache.
-func (c *Client) getRepositoryByNodeIDFromAPI(ctx context.Context, token, id string) (*Repository, error) {
+func (c *client) getRepositoryByNodeIDFromAPI(ctx context.Context, token, id string) (*Repository, error) {
 	var result struct {
 		Node *Repository `json:"node"`
 	}
@@ -358,7 +358,7 @@ var GetRepositoriesByNodeIDFromAPIMock func(ctx context.Context, token string, n
 // return map. The caller should respect the max nodeID count limit of the GitHub API, which at the
 // time of writing, is 100 (if the caller does not respect this match, this method will return an
 // error). This method does not cache.
-func (c *Client) GetRepositoriesByNodeIDFromAPI(ctx context.Context, token string, nodeIDs []string) (map[string]*Repository, error) {
+func (c *client) GetRepositoriesByNodeIDFromAPI(ctx context.Context, token string, nodeIDs []string) (map[string]*Repository, error) {
 	if GetRepositoriesByNodeIDFromAPIMock != nil {
 		return GetRepositoriesByNodeIDFromAPIMock(ctx, token, nodeIDs)
 	}
@@ -413,7 +413,7 @@ var ErrBatchTooLarge = errors.New("requested batch of GitHub repositories too la
 // the conservative step back from 37.
 //
 // This method does not cache.
-func (c *Client) GetReposByNameWithOwner(ctx context.Context, namesWithOwners ...string) ([]*Repository, error) {
+func (c *client) GetReposByNameWithOwner(ctx context.Context, namesWithOwners ...string) ([]*Repository, error) {
 	if len(namesWithOwners) > 30 {
 		return nil, ErrBatchTooLarge
 	}
@@ -448,7 +448,7 @@ func (c *Client) GetReposByNameWithOwner(ctx context.Context, namesWithOwners ..
 	return repos, nil
 }
 
-func (c *Client) buildGetReposBatchQuery(ctx context.Context, namesWithOwners []string) (string, error) {
+func (c *client) buildGetReposBatchQuery(ctx context.Context, namesWithOwners []string) (string, error) {
 	var b strings.Builder
 	b.WriteString(c.repositoryFieldsGraphQLFragment())
 	b.WriteString("query {\n")
@@ -467,7 +467,7 @@ func (c *Client) buildGetReposBatchQuery(ctx context.Context, namesWithOwners []
 	return b.String(), nil
 }
 
-func (c *Client) ListPublicRepositories(ctx context.Context, sinceRepoID int64) ([]*Repository, error) {
+func (c *client) ListPublicRepositories(ctx context.Context, sinceRepoID int64) ([]*Repository, error) {
 	repos, err := c.getPublicRepositories(ctx, sinceRepoID)
 	if err != nil {
 		return nil, err
@@ -476,16 +476,10 @@ func (c *Client) ListPublicRepositories(ctx context.Context, sinceRepoID int64) 
 	return repos, nil
 }
 
-var MockListAffiliatedRepositories func(ctx context.Context, token string, page int) ([]*Repository, bool, int, error)
-
-// ListAffiliatedRepositories lists GitHub repositories affiliated with the client
-// token. page is the page of results to return. Pages are 1-indexed (so the
-// first call should be for page 1).
-func (c *Client) ListAffiliatedRepositories(ctx context.Context, page int) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error) {
-	if MockListAffiliatedRepositories != nil {
-		return MockListAffiliatedRepositories(ctx, c.defaultToken, page)
-	}
-
+// ListAffiliatedRepositories lists GitHub repositories affiliated with the client token.
+// The page is the page of results to return, and is 1-indexed (so the first call should
+// be for page 1).
+func (c *client) ListAffiliatedRepositories(ctx context.Context, page int) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error) {
 	path := fmt.Sprintf("user/repos?sort=created&page=%d&per_page=100", page)
 	repos, err = c.listRepositories(ctx, path)
 	if err == nil {
@@ -499,7 +493,7 @@ func (c *Client) ListAffiliatedRepositories(ctx context.Context, page int) (repo
 // ListOrgRepositories lists GitHub repositories from the specified organization.
 // org is the name of the organization. page is the page of results to return.
 // Pages are 1-indexed (so the first call should be for page 1).
-func (c *Client) ListOrgRepositories(ctx context.Context, org string, page int) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error) {
+func (c *client) ListOrgRepositories(ctx context.Context, org string, page int) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error) {
 	path := fmt.Sprintf("orgs/%s/repos?sort=created&page=%d&per_page=100", org, page)
 	repos, err = c.listRepositories(ctx, path)
 	return repos, len(repos) > 0, 1, err
@@ -507,7 +501,7 @@ func (c *Client) ListOrgRepositories(ctx context.Context, org string, page int) 
 
 // ListUserRepositories lists GitHub repositories from the specified user.
 // Pages are 1-indexed (so the first call should be for page 1)
-func (c *Client) ListUserRepositories(ctx context.Context, user string, page int) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error) {
+func (c *client) ListUserRepositories(ctx context.Context, user string, page int) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error) {
 	path := fmt.Sprintf("users/%s/repos?sort=created&type=owner&page=%d&per_page=100", user, page)
 	repos, err = c.listRepositories(ctx, path)
 	return repos, len(repos) > 0, 1, err
@@ -526,7 +520,7 @@ type RepositoryListPage struct {
 	HasNextPage bool
 }
 
-func (c *Client) ListRepositoriesForSearch(ctx context.Context, searchString string, page int) (RepositoryListPage, error) {
+func (c *client) ListRepositoriesForSearch(ctx context.Context, searchString string, page int) (RepositoryListPage, error) {
 	urlValues := url.Values{
 		"q":        []string{searchString},
 		"page":     []string{strconv.Itoa(page)},
@@ -558,7 +552,7 @@ type restTopicsResponse struct {
 }
 
 // ListTopicsOnRepository lists topics on the given repository.
-func (c *Client) ListTopicsOnRepository(ctx context.Context, ownerAndName string) ([]string, error) {
+func (c *client) ListTopicsOnRepository(ctx context.Context, ownerAndName string) ([]string, error) {
 	owner, name, err := SplitRepositoryNameWithOwner(ownerAndName)
 	if err != nil {
 		return nil, err

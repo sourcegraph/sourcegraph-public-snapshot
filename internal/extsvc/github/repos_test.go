@@ -69,12 +69,12 @@ func (s mockHTTPEmptyResponse) Do(req *http.Request) (*http.Response, error) {
 	}, nil
 }
 
-func newTestClient(t *testing.T, cli httpcli.Doer) *Client {
+func newTestClient(t *testing.T, cli httpcli.Doer) *client {
 	rcache.SetupForTest(t)
-	return &Client{
+	return &client{
 		apiURL:          &url.URL{Scheme: "https", Host: "example.com", Path: "/"},
 		httpClient:      cli,
-		RateLimit:       &ratelimit.Monitor{},
+		rateLimit:       &ratelimit.Monitor{},
 		repoCache:       map[string]*rcache.Cache{},
 		repoCachePrefix: "__test__gh_repo",
 		repoCacheTTL:    1000,

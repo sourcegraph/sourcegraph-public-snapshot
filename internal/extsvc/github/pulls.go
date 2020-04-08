@@ -459,8 +459,8 @@ type CreatePullRequestInput struct {
 	Body string `json:"body"`
 }
 
-// CreatePullRequest creates a PullRequest on Github.
-func (c *Client) CreatePullRequest(ctx context.Context, in *CreatePullRequestInput) (*PullRequest, error) {
+// CreatePullRequest creates a PullRequest on GitHub.
+func (c *client) CreatePullRequest(ctx context.Context, in *CreatePullRequestInput) (*PullRequest, error) {
 	var q strings.Builder
 	q.WriteString(pullRequestFragments)
 	q.WriteString(`mutation	CreatePullRequest($input:CreatePullRequestInput!) {
@@ -511,8 +511,8 @@ type UpdatePullRequestInput struct {
 	Body string `json:"body"`
 }
 
-// UpdatePullRequest creates a PullRequest on Github.
-func (c *Client) UpdatePullRequest(ctx context.Context, in *UpdatePullRequestInput) (*PullRequest, error) {
+// UpdatePullRequest creates a PullRequest on GitHub.
+func (c *client) UpdatePullRequest(ctx context.Context, in *UpdatePullRequestInput) (*PullRequest, error) {
 	var q strings.Builder
 	q.WriteString(pullRequestFragments)
 	q.WriteString(`mutation	UpdatePullRequest($input:UpdatePullRequestInput!) {
@@ -551,8 +551,8 @@ func (c *Client) UpdatePullRequest(ctx context.Context, in *UpdatePullRequestInp
 	return pr, nil
 }
 
-// ClosePullRequest closes the PullRequest on Github.
-func (c *Client) ClosePullRequest(ctx context.Context, pr *PullRequest) error {
+// ClosePullRequest closes the PullRequest on GitHub.
+func (c *client) ClosePullRequest(ctx context.Context, pr *PullRequest) error {
 	var q strings.Builder
 	q.WriteString(pullRequestFragments)
 	q.WriteString(`mutation	ClosePullRequest($input:ClosePullRequestInput!) {
@@ -588,8 +588,8 @@ func (c *Client) ClosePullRequest(ctx context.Context, pr *PullRequest) error {
 	return nil
 }
 
-// LoadPullRequests loads a list of PullRequests from Github.
-func (c *Client) LoadPullRequests(ctx context.Context, prs ...*PullRequest) error {
+// LoadPullRequests loads a list of PullRequests from GitHub.
+func (c *client) LoadPullRequests(ctx context.Context, prs ...*PullRequest) error {
 	const batchSize = 15
 	// We load prs in batches to avoid hitting Github's GraphQL node limit
 	for i := 0; i < len(prs); i += batchSize {
@@ -604,7 +604,7 @@ func (c *Client) LoadPullRequests(ctx context.Context, prs ...*PullRequest) erro
 	return nil
 }
 
-func (c *Client) loadPullRequests(ctx context.Context, prs ...*PullRequest) error {
+func (c *client) loadPullRequests(ctx context.Context, prs ...*PullRequest) error {
 	type repository struct {
 		Owner string
 		Name  string
@@ -674,10 +674,9 @@ func (c *Client) loadPullRequests(ctx context.Context, prs ...*PullRequest) erro
 	return nil
 }
 
-// GetOpenPullRequestByRefs fetches the the pull request associated with the supplied
-// refs. GitHub only allows one open PR by ref at a time.
-// If nothing is found an error is returned.
-func (c *Client) GetOpenPullRequestByRefs(ctx context.Context, owner, name, baseRef, headRef string) (*PullRequest, error) {
+// GetOpenPullRequestByRefs fetches the the pull request associated with the supplied refs.
+// GitHub only allows one open PR by ref at a time. If nothing is found an error is returned.
+func (c *client) GetOpenPullRequestByRefs(ctx context.Context, owner, name, baseRef, headRef string) (*PullRequest, error) {
 	var q strings.Builder
 	q.WriteString(pullRequestFragments)
 	q.WriteString("query {\n")

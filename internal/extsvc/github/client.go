@@ -44,9 +44,62 @@ var (
 //
 // All instances use a map of rcache.Cache instances for caching (see the `repoCache` field). These
 // separate instances have consistent naming prefixes so that different instances will share the
-// same Redis cache entries (provided they were computed with the same API URL and access
-// token). The cache keys are agnostic of the http.RoundTripper transport.
-type Client struct {
+// same Redis cache entries (provided they were computed with the same API URL and access token).
+// The cache keys are agnostic of the http.RoundTripper transport.
+type Client interface {
+	// WithToken returns a copy of the Client authenticated as the GitHub user with the given token.
+	WithToken(token string) Client
+	// RateLimit returns the API rate limit monitor.
+	RateLimit() *ratelimit.Monitor
+	// CreatePullRequest creates a PullRequest on GitHub.
+	CreatePullRequest(ctx context.Context, in *CreatePullRequestInput) (*PullRequest, error)
+	// ClosePullRequest closes the PullRequest on GitHub.
+	ClosePullRequest(ctx context.Context, pr *PullRequest) error
+	// LoadPullRequests loads a list of PullRequests from GitHub.
+	LoadPullRequests(ctx context.Context, prs ...*PullRequest) error
+	// UpdatePullRequest creates a PullRequest on GitHub.
+	UpdatePullRequest(ctx context.Context, in *UpdatePullRequestInput) (*PullRequest, error)
+	// GetOpenPullRequestByRefs fetches the the pull request associated with the supplied refs.
+	// GitHub only allows one open PR by ref at a time. If nothing is found an error is returned.
+	GetOpenPullRequestByRefs(ctx context.Context, owner, name, baseRef, headRef string) (*PullRequest, error)
+	// GetRepository gets a repository from GitHub by owner and repository name.
+	GetRepository(ctx context.Context, owner, name string) (*Repository, error)
+	// GetRepositoryByNodeID gets a repository from GitHub by its GraphQL node ID using the specified user token.
+	GetRepositoryByNodeID(ctx context.Context, token, id string) (*Repository, error)
+	// GetRepositoriesByNodeIDFromAPI fetches the specified repositories (nodeIDs) and returns a map from node ID
+	// to repository metadata. If a repository is not found, it will not be present in the return map.
+	GetRepositoriesByNodeIDFromAPI(ctx context.Context, token string, nodeIDs []string) (map[string]*Repository, error)
+	// GetReposByNameWithOwner fetches the specified repositories (namesWithOwners) from the GitHub GraphQL API
+	// and returns a slice of repositories. If a repository is not found, it will return an error.
+	GetReposByNameWithOwner(ctx context.Context, namesWithOwners ...string) ([]*Repository, error)
+	// GetAuthenticatedUserEmails returns the first 100 emails associated with the currently authenticated user.
+	GetAuthenticatedUserEmails(ctx context.Context) ([]*UserEmail, error)
+	// GetAuthenticatedUserOrgs returns the first 100 organizations associated with the currently authenticated user.
+	GetAuthenticatedUserOrgs(ctx context.Context) ([]*Org, error)
+	// ListPublicRepositories returns public repositories after given repository ID.
+	ListPublicRepositories(ctx context.Context, sinceRepoID int64) ([]*Repository, error)
+	// ListRepositoriesForSearch returns repositories matched by given search string.
+	ListRepositoriesForSearch(ctx context.Context, searchString string, page int) (RepositoryListPage, error)
+	// ListOrgRepositories lists GitHub repositories from the specified organization.
+	// org is the name of the organization. page is the page of results to return.
+	// Pages are 1-indexed (so the first call should be for page 1).
+	ListOrgRepositories(ctx context.Context, org string, page int) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error)
+	// ListUserRepositories lists GitHub repositories from the specified user.
+	// Pages are 1-indexed (so the first call should be for page 1)
+	ListUserRepositories(ctx context.Context, user string, page int) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error)
+	// ListAffiliatedRepositories lists GitHub repositories affiliated with the client token. The page is the page
+	// of results to return, and is 1-indexed (so the first call should be for page 1).
+	ListAffiliatedRepositories(ctx context.Context, page int) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error)
+	// ListInstallationRepositories lists repositories on which the authenticated GitHub App has been installed.
+	ListInstallationRepositories(ctx context.Context) ([]*Repository, error)
+	// ListRepositoryCollaborators lists all GitHub users that has access to the repository. The page is the page
+	// of results to return, and is 1-indexed (so the first call should be for page 1).
+	ListRepositoryCollaborators(ctx context.Context, owner, repo string, page int) (users []*Collaborator, hasNextPage bool, err error)
+}
+
+var _ Client = (*client)(nil)
+
+type client struct {
 	// apiURL is the base URL of a GitHub API. It must point to the base URL of the GitHub API. This
 	// is https://api.github.com for GitHub.com and http[s]://[github-enterprise-hostname]/api for
 	// GitHub Enterprise.
@@ -75,8 +128,8 @@ type Client struct {
 	// repoCacheTTL is the TTL of cache entries.
 	repoCacheTTL time.Duration
 
-	// RateLimit is the API rate limit monitor.
-	RateLimit *ratelimit.Monitor
+	// rateLimit is the API rate limit monitor.
+	rateLimit *ratelimit.Monitor
 }
 
 // APIError is an error type returned by Client when the GitHub API responds with
@@ -131,7 +184,7 @@ func NewRepoCache(apiURL *url.URL, token, keyPrefix string, cacheTTL time.Durati
 // NewClient creates a new GitHub API client with an optional default personal access token.
 //
 // apiURL must point to the base URL of the GitHub API. See the docstring for Client.apiURL.
-func NewClient(apiURL *url.URL, defaultToken string, cli httpcli.Doer) *Client {
+func NewClient(apiURL *url.URL, defaultToken string, cli httpcli.Doer) Client {
 	apiURL = canonicalizedURL(apiURL)
 	if gitHubDisable {
 		cli = disabledClient{}
@@ -151,25 +204,29 @@ func NewClient(apiURL *url.URL, defaultToken string, cli httpcli.Doer) *Client {
 		return category
 	})
 
-	return &Client{
+	return &client{
 		apiURL:       apiURL,
 		githubDotCom: urlIsGitHubDotCom(apiURL),
 		defaultToken: defaultToken,
 		httpClient:   cli,
-		RateLimit:    &ratelimit.Monitor{HeaderPrefix: "X-"},
+		rateLimit:    &ratelimit.Monitor{HeaderPrefix: "X-"},
 		repoCache:    map[string]*rcache.Cache{},
 	}
 }
 
 // WithToken returns a copy of the Client authenticated as the GitHub user with the given token.
-func (c *Client) WithToken(token string) *Client {
+func (c *client) WithToken(token string) Client {
 	return NewClient(c.apiURL, token, c.httpClient)
+}
+
+func (c *client) RateLimit() *ratelimit.Monitor {
+	return c.rateLimit
 }
 
 // cache returns the cache associated with the token (which can be empty, in which case the default
 // token will be used). Accessors of the caches should use this method rather than referencing
 // repoCache directly.
-func (c *Client) cache(explicitToken string) *rcache.Cache {
+func (c *client) cache(explicitToken string) *rcache.Cache {
 	token := firstNonEmpty(explicitToken, c.defaultToken)
 
 	c.repoCacheMu.RLock()
@@ -191,7 +248,7 @@ func (c *Client) cache(explicitToken string) *rcache.Cache {
 	return c.repoCache[token]
 }
 
-func (c *Client) do(ctx context.Context, token string, req *http.Request, result interface{}) (err error) {
+func (c *client) do(ctx context.Context, token string, req *http.Request, result interface{}) (err error) {
 	req.URL.Path = path.Join(c.apiURL.Path, req.URL.Path)
 	req.URL = c.apiURL.ResolveReference(req.URL)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
@@ -221,7 +278,7 @@ func (c *Client) do(ctx context.Context, token string, req *http.Request, result
 	}
 
 	defer resp.Body.Close()
-	c.RateLimit.Update(resp.Header)
+	c.rateLimit.Update(resp.Header)
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
 		var err APIError
 		if body, readErr := ioutil.ReadAll(io.LimitReader(resp.Body, 1<<13)); readErr != nil { // 8kb
@@ -244,7 +301,7 @@ func (c *Client) do(ctx context.Context, token string, req *http.Request, result
 // - /users/:user/repos
 // - /orgs/:org/repos
 // - /user/repos
-func (c *Client) listRepositories(ctx context.Context, requestURI string) ([]*Repository, error) {
+func (c *client) listRepositories(ctx context.Context, requestURI string) ([]*Repository, error) {
 	var restRepos []restRepository
 	if err := c.requestGet(ctx, "", requestURI, &restRepos); err != nil {
 		return nil, err
@@ -258,7 +315,7 @@ func (c *Client) listRepositories(ctx context.Context, requestURI string) ([]*Re
 
 // ListInstallationRepositories lists repositories on which the authenticated
 // GitHub App has been installed.
-func (c *Client) ListInstallationRepositories(ctx context.Context) ([]*Repository, error) {
+func (c *client) ListInstallationRepositories(ctx context.Context) ([]*Repository, error) {
 	type response struct {
 		Repositories []restRepository `json:"repositories"`
 	}
@@ -273,7 +330,7 @@ func (c *Client) ListInstallationRepositories(ctx context.Context) ([]*Repositor
 	return repos, nil
 }
 
-func (c *Client) requestGet(ctx context.Context, token, requestURI string, result interface{}) error {
+func (c *client) requestGet(ctx context.Context, token, requestURI string, result interface{}) error {
 	req, err := http.NewRequest("GET", requestURI, nil)
 	if err != nil {
 		return err
@@ -293,7 +350,7 @@ func (c *Client) requestGet(ctx context.Context, token, requestURI string, resul
 	return c.do(ctx, token, req, result)
 }
 
-func (c *Client) requestGraphQL(ctx context.Context, token, query string, vars map[string]interface{}, result interface{}) (err error) {
+func (c *client) requestGraphQL(ctx context.Context, token, query string, vars map[string]interface{}, result interface{}) (err error) {
 	reqBody, err := json.Marshal(struct {
 		Query     string                 `json:"query"`
 		Variables map[string]interface{} `json:"variables"`

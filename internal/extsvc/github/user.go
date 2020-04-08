@@ -46,7 +46,7 @@ var MockGetAuthenticatedUserEmails func(ctx context.Context) ([]*UserEmail, erro
 
 // GetAuthenticatedUserEmails returns the first 100 emails associated with the currently
 // authenticated user.
-func (c *Client) GetAuthenticatedUserEmails(ctx context.Context) ([]*UserEmail, error) {
+func (c *client) GetAuthenticatedUserEmails(ctx context.Context) ([]*UserEmail, error) {
 	if MockGetAuthenticatedUserEmails != nil {
 		return MockGetAuthenticatedUserEmails(ctx)
 	}
@@ -67,7 +67,7 @@ var MockGetAuthenticatedUserOrgs func(ctx context.Context) ([]*Org, error)
 
 // GetAuthenticatedUserOrgs returns the first 100 organizations associated with the currently
 // authenticated user.
-func (c *Client) GetAuthenticatedUserOrgs(ctx context.Context) ([]*Org, error) {
+func (c *client) GetAuthenticatedUserOrgs(ctx context.Context) ([]*Org, error) {
 	if MockGetAuthenticatedUserOrgs != nil {
 		return MockGetAuthenticatedUserOrgs(ctx)
 	}
@@ -86,16 +86,10 @@ type Collaborator struct {
 	DatabaseID int64  `json:"id"`
 }
 
-var MockListRepositoryCollaborators func(ctx context.Context, owner, repo string, page int) ([]*Collaborator, bool, error)
-
 // ListRepositoryCollaborators lists all GitHub users that has access to the repository.
 // The page is the page of results to return, and is 1-indexed (so the first call should
 // be for page 1).
-func (c *Client) ListRepositoryCollaborators(ctx context.Context, owner, repo string, page int) (users []*Collaborator, hasNextPage bool, _ error) {
-	if MockListRepositoryCollaborators != nil {
-		return MockListRepositoryCollaborators(ctx, owner, repo, page)
-	}
-
+func (c *client) ListRepositoryCollaborators(ctx context.Context, owner, repo string, page int) (users []*Collaborator, hasNextPage bool, _ error) {
 	path := fmt.Sprintf("/repos/%s/%s/collaborators?&page=%d&per_page=100", owner, repo, page)
 	err := c.requestGet(ctx, "", path, &users)
 	if err != nil {
