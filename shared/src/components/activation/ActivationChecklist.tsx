@@ -69,10 +69,7 @@ export class ActivationChecklist extends React.PureComponent<ActivationChecklist
                                 />
                             </AccordionButton>
                             <AccordionPanel className="px-2">
-                                <div
-                                    className="activation-checklist__detail pb-1"
-                                    dangerouslySetInnerHTML={{ __html: step.detail }}
-                                />
+                                <div className="activation-checklist__detail pb-1">{step.detail}</div>
                             </AccordionPanel>
                         </AccordionItem>
                     ))}

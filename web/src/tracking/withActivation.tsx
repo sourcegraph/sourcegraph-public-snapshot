@@ -124,8 +124,12 @@ const getActivationSteps = (authenticatedUser: GQL.IUser): ActivationStep[] => {
         {
             id: 'DidSearch',
             title: 'Search your code',
-            detail:
-                'Head to the <a href="/search">homepage</a> and perform a search query on your code. <strong>Example:</strong> type \'lang:\' and select a language',
+            detail: (
+                <span>
+                    Head to the <a href="/search">homepage</a> and perform a search query on your code.{' '}
+                    <strong>Example:</strong> type 'lang:' and select a language
+                </span>
+            ),
         },
         {
             id: 'FoundReferences',

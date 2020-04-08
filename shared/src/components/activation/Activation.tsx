@@ -56,7 +56,7 @@ export interface ActivationStep {
     /**
      * Description of the step displayed in a popover
      */
-    detail: string
+    detail: React.ReactNode
 
     /**
      * If set, the handler should be invoked when the user attempts
