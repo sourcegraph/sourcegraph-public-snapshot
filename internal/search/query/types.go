@@ -28,7 +28,7 @@ type QueryInfo interface {
 	StringValue(field string) (value, negatedValue string)
 	Values(field string) []*types.Value
 	Fields() map[string][]*types.Value
-	IsCaseSensitive() bool
+	BoolValue(field string) bool
 	ParseTree() syntax.ParseTree
 }
 
@@ -61,8 +61,8 @@ func (q OrdinaryQuery) Fields() map[string][]*types.Value {
 func (q OrdinaryQuery) ParseTree() syntax.ParseTree {
 	return q.parseTree
 }
-func (q OrdinaryQuery) IsCaseSensitive() bool {
-	return q.Query.IsCaseSensitive()
+func (q OrdinaryQuery) BoolValue(field string) bool {
+	return q.Query.BoolValue(field)
 }
 
 // AndOrQuery satisfies the interface for QueryInfo with unvalidated string
@@ -139,13 +139,10 @@ func (q AndOrQuery) ParseTree() syntax.ParseTree {
 	return tree
 }
 
-func (q AndOrQuery) IsCaseSensitive() bool {
+func (q AndOrQuery) BoolValue(field string) bool {
 	var result bool
-	VisitField(q.Query, "case", func(value string, _ bool) {
-		switch strings.ToLower(value) {
-		case "y", "yes", "true":
-			result = true
-		}
+	VisitField(q.Query, field, func(value string, _ bool) {
+		parseBoolOrPanic(field, value)
 	})
 	log15.Info("Query", "IsCaseSensitive", result)
 	return result
