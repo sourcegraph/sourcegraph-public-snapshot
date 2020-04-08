@@ -540,6 +540,7 @@ func main() {
 	for _, container := range []*Container{
 		Frontend(),
 		GitHubProxy(),
+		QueryRunner(),
 		RepoUpdater(),
 		SyntectServer(),
 	} {
