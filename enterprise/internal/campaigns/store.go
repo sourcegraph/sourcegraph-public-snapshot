@@ -452,29 +452,28 @@ func (s *Store) CountChangesets(ctx context.Context, opts CountChangesetsOpts) (
 
 var countChangesetsQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:CountChangesets
-SELECT COUNT(id)
+SELECT COUNT(changesets.id)
 FROM changesets
+INNER JOIN repo ON repo.id = changesets.repo_id
 WHERE %s
 `
 
 func countChangesetsQuery(opts *CountChangesetsOpts) *sqlf.Query {
-	var preds []*sqlf.Query
-	if opts.CampaignID != 0 {
-		preds = append(preds, sqlf.Sprintf("campaign_ids ? %s", opts.CampaignID))
+	preds := []*sqlf.Query{
+		sqlf.Sprintf("repo.deleted_at IS NULL"),
 	}
-
-	if len(preds) == 0 {
-		preds = append(preds, sqlf.Sprintf("TRUE"))
+	if opts.CampaignID != 0 {
+		preds = append(preds, sqlf.Sprintf("changesets.campaign_ids ? %s", opts.CampaignID))
 	}
 
 	if opts.ExternalState != nil {
-		preds = append(preds, sqlf.Sprintf("external_state = %s", *opts.ExternalState))
+		preds = append(preds, sqlf.Sprintf("changesets.external_state = %s", *opts.ExternalState))
 	}
 	if opts.ExternalReviewState != nil {
-		preds = append(preds, sqlf.Sprintf("external_review_state = %s", *opts.ExternalReviewState))
+		preds = append(preds, sqlf.Sprintf("changesets.external_review_state = %s", *opts.ExternalReviewState))
 	}
 	if opts.ExternalCheckState != nil {
-		preds = append(preds, sqlf.Sprintf("external_check_state = %s", *opts.ExternalCheckState))
+		preds = append(preds, sqlf.Sprintf("changesets.external_check_state = %s", *opts.ExternalCheckState))
 	}
 
 	return sqlf.Sprintf(countChangesetsQueryFmtstr, sqlf.Join(preds, "\n AND "))
@@ -623,8 +622,10 @@ func listChangesetSyncData(opts ListChangesetSyncDataOpts) *sqlf.Query {
  ORDER BY changesets.id ASC
 `
 
-	var preds []*sqlf.Query
-	preds = append(preds, sqlf.Sprintf("campaigns.closed_at IS NULL"))
+	preds := []*sqlf.Query{
+		sqlf.Sprintf("campaigns.closed_at IS NULL"),
+		sqlf.Sprintf("r.deleted_at IS NULL"),
+	}
 	if len(opts.ChangesetIDs) > 0 {
 		ids := make([]*sqlf.Query, 0, len(opts.ChangesetIDs))
 		for _, id := range opts.ChangesetIDs {
@@ -676,21 +677,22 @@ func (s *Store) ListChangesets(ctx context.Context, opts ListChangesetsOpts) (cs
 var listChangesetsQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:ListChangesets
 SELECT
-  id,
-  repo_id,
-  created_at,
-  updated_at,
-  metadata,
-  campaign_ids,
-  external_id,
-  external_service_type,
-  external_branch,
-  external_deleted_at,
-  external_updated_at,
-  external_state,
-  external_review_state,
-  external_check_state
+  changesets.id,
+  changesets.repo_id,
+  changesets.created_at,
+  changesets.updated_at,
+  changesets.metadata,
+  changesets.campaign_ids,
+  changesets.external_id,
+  changesets.external_service_type,
+  changesets.external_branch,
+  changesets.external_deleted_at,
+  changesets.external_updated_at,
+  changesets.external_state,
+  changesets.external_review_state,
+  changesets.external_check_state
 FROM changesets
+INNER JOIN repo ON repo.id = changesets.repo_id
 WHERE %s
 ORDER BY id ASC
 `
@@ -709,11 +711,12 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 	}
 
 	preds := []*sqlf.Query{
-		sqlf.Sprintf("id >= %s", opts.Cursor),
+		sqlf.Sprintf("changesets.id >= %s", opts.Cursor),
+		sqlf.Sprintf("repo.deleted_at IS NULL"),
 	}
 
 	if opts.CampaignID != 0 {
-		preds = append(preds, sqlf.Sprintf("campaign_ids ? %s", opts.CampaignID))
+		preds = append(preds, sqlf.Sprintf("changesets.campaign_ids ? %s", opts.CampaignID))
 	}
 
 	if len(opts.IDs) > 0 {
@@ -723,21 +726,21 @@ func listChangesetsQuery(opts *ListChangesetsOpts) *sqlf.Query {
 				ids = append(ids, sqlf.Sprintf("%d", id))
 			}
 		}
-		preds = append(preds, sqlf.Sprintf("id IN (%s)", sqlf.Join(ids, ",")))
+		preds = append(preds, sqlf.Sprintf("changesets.id IN (%s)", sqlf.Join(ids, ",")))
 	}
 
 	if opts.WithoutDeleted {
-		preds = append(preds, sqlf.Sprintf("external_deleted_at IS NULL"))
+		preds = append(preds, sqlf.Sprintf("changesets.external_deleted_at IS NULL"))
 	}
 
 	if opts.ExternalState != nil {
-		preds = append(preds, sqlf.Sprintf("external_state = %s", *opts.ExternalState))
+		preds = append(preds, sqlf.Sprintf("changesets.external_state = %s", *opts.ExternalState))
 	}
 	if opts.ExternalReviewState != nil {
-		preds = append(preds, sqlf.Sprintf("external_review_state = %s", *opts.ExternalReviewState))
+		preds = append(preds, sqlf.Sprintf("changesets.external_review_state = %s", *opts.ExternalReviewState))
 	}
 	if opts.ExternalCheckState != nil {
-		preds = append(preds, sqlf.Sprintf("external_check_state = %s", *opts.ExternalCheckState))
+		preds = append(preds, sqlf.Sprintf("changesets.external_check_state = %s", *opts.ExternalCheckState))
 	}
 
 	return sqlf.Sprintf(
@@ -2556,6 +2559,7 @@ func (s *Store) GetChangesetExternalIDs(ctx context.Context, spec api.ExternalRe
 	AND r.external_id = %s
 	AND r.external_service_type = %s
 	AND r.external_service_id = %s
+	AND r.deleted_at IS NULL
 	ORDER BY cs.id ASC;
 	`
 
