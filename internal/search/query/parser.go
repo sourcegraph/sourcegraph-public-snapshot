@@ -6,6 +6,8 @@ import (
 	"io"
 	"strconv"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
@@ -90,18 +92,23 @@ const (
 	RPAREN keyword = ")"
 )
 
-func isSpace(c byte) bool {
-	return (c == ' ') || (c == '\n') || (c == '\r') || (c == '\t')
+func isSpace(buf []byte) bool {
+	r, _ := utf8.DecodeRune(buf)
+	return unicode.IsSpace(r)
 }
 
-// skipSpace returns the number of spaces skipped from the beginning of a buffer buf.
+// skipSpace returns the number of whitespace bytes skipped from the beginning of a buffer buf.
 func skipSpace(buf []byte) int {
-	for i, c := range buf {
-		if !isSpace(c) {
-			return i
+	count := 0
+	for len(buf) > 0 {
+		r, advance := utf8.DecodeRune(buf)
+		if !unicode.IsSpace(r) {
+			break
 		}
+		count += advance
+		buf = buf[advance:]
 	}
-	return len(buf)
+	return count
 }
 
 type parser struct {
@@ -115,13 +122,32 @@ func (p *parser) done() bool {
 	return p.pos >= len(p.buf)
 }
 
-// peek looks ahead n bytes in the input and returns a string if it succeeds, or
+func (p *parser) next() rune {
+	if p.done() {
+		panic("eof")
+	}
+	r, advance := utf8.DecodeRune(p.buf[p.pos:])
+	p.pos += advance
+	return r
+}
+
+// peek looks ahead n runes in the input and returns a string if it succeeds, or
 // an error if the length exceeds what's available in the buffer.
 func (p *parser) peek(n int) (string, error) {
-	if p.pos+n > len(p.buf) {
-		return "", io.ErrShortBuffer
+	start := p.pos
+	defer func() {
+		p.pos = start // backtrack
+	}()
+
+	var result []rune
+	for i := 0; i < n; i++ {
+		if p.done() {
+			return "", io.ErrShortBuffer
+		}
+		next := p.next()
+		result = append(result, next)
 	}
-	return string(p.buf[p.pos : p.pos+n]), nil
+	return string(result), nil
 }
 
 // match returns whether it succeeded matching a keyword at the current
@@ -216,7 +242,7 @@ func (p *parser) ParseSearchPatternHeuristic() (Node, bool) {
 		if p.done() {
 			break
 		}
-		if isSpace(p.buf[p.pos]) && balanced == 0 {
+		if isSpace(p.buf[p.pos:]) && balanced == 0 {
 			// Stop scanning a potential pattern when we see whitespace in a balanced state.
 			break
 		}
@@ -253,7 +279,7 @@ func (p *parser) ParseParameter() Parameter {
 		if p.done() {
 			break
 		}
-		if isSpace(p.buf[p.pos]) {
+		if isSpace(p.buf[p.pos:]) {
 			break
 		}
 		p.pos++
