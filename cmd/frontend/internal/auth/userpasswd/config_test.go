@@ -3,17 +3,17 @@ package userpasswd
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestValidateCustom(t *testing.T) {
 	tests := map[string]struct {
 		input        conf.Unified
-		wantProblems []string
+		wantProblems conf.Problems
 	}{
 		"single": {
-			input: conf.Unified{Critical: schema.CriticalConfiguration{
+			input: conf.Unified{SiteConfiguration: schema.SiteConfiguration{
 				AuthProviders: []schema.AuthProviders{
 					{Builtin: &schema.BuiltinAuthProvider{Type: "builtin"}},
 				},
@@ -21,13 +21,13 @@ func TestValidateCustom(t *testing.T) {
 			wantProblems: nil,
 		},
 		"multiple": {
-			input: conf.Unified{Critical: schema.CriticalConfiguration{
+			input: conf.Unified{SiteConfiguration: schema.SiteConfiguration{
 				AuthProviders: []schema.AuthProviders{
 					{Builtin: &schema.BuiltinAuthProvider{Type: "builtin"}},
 					{Builtin: &schema.BuiltinAuthProvider{Type: "builtin"}},
 				},
 			}},
-			wantProblems: []string{"at most 1"},
+			wantProblems: conf.NewSiteProblems("at most 1"),
 		},
 	}
 	for name, test := range tests {

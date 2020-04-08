@@ -1,0 +1,225 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`SiteAdminOverviewPage < 2 users 1`] = `
+<div
+  className="site-admin-overview-page"
+>
+  <div
+    className="list-group"
+  >
+    <a
+      className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+      href="/site-admin/repositories"
+    >
+      100
+       
+      repositories
+    </a>
+  </div>
+</div>
+`;
+
+exports[`SiteAdminOverviewPage >= 2 users 1`] = `
+<div
+  className="site-admin-overview-page"
+>
+  <div
+    className="list-group"
+  >
+    <a
+      className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+      href="/site-admin/repositories"
+    >
+      100
+       
+      repositories
+    </a>
+    <a
+      className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+      href="/site-admin/users"
+    >
+      10
+       
+      users
+    </a>
+    <a
+      className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+      href="/site-admin/organizations"
+    >
+      5
+       
+      organizations
+    </a>
+    <a
+      className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+      href="/site-admin/surveys"
+    >
+      100
+       
+      user survey responses
+    </a>
+    <div
+      className="list-group-item"
+    >
+      <div
+        className="d-flex justify-content-between align-items-center position-relative mb-3"
+      >
+        <span
+          className="h5 mb-0 font-weight-normal p-2"
+        >
+          10
+           
+          active users
+           last week
+        </span>
+        <button
+          aria-label="Collapse section"
+          className="btn btn-icon collapsible__expand-btn stretched-link"
+          onClick={[Function]}
+          type="button"
+        >
+          <svg
+            aria-label="Close section"
+            className="mdi-icon icon-inline"
+            fill="currentColor"
+            height={24}
+            viewBox="0 0 24 24"
+            width={24}
+          >
+            <path
+              d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
+            />
+          </svg>
+        </button>
+      </div>
+      <div
+        className="site-admin-usage-statistics-page"
+      >
+        <div
+          className="site-admin-overview-page__detail-header"
+        >
+          <h2>
+            Weekly unique users
+          </h2>
+          <h3>
+            <a
+              className="btn btn-secondary"
+              href="/site-admin/usage-statistics"
+            >
+              View all usage statistics
+               
+              <svg
+                className="mdi-icon icon-inline"
+                fill="currentColor"
+                height={24}
+                viewBox="0 0 24 24"
+                width={24}
+              >
+                <path
+                  d="M14,3V5H17.59L7.76,14.83L9.17,16.24L19,6.41V10H21V3M19,19H5V5H12V3H5C3.89,3 3,3.9 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19V19Z"
+                />
+              </svg>
+            </a>
+          </h3>
+        </div>
+        <svg
+          viewBox="0 0 500 200"
+        />
+        <small
+          className="site-admin-usage-statistics-page__tz-note"
+        >
+          <i>
+            GMT/UTC time
+          </i>
+        </small>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`SiteAdminOverviewPage activation in progress 1`] = `
+<div
+  className="site-admin-overview-page"
+>
+  <div
+    className="list-group"
+  >
+    <div
+      className="list-group-item e2e-site-admin-overview-menu"
+    >
+      <div
+        className="d-flex justify-content-between align-items-center position-relative mb-3"
+      >
+        <span
+          className="h4 mb-0 mt-2 font-weight-normal p-2"
+        >
+          Get started with Sourcegraph
+        </span>
+        <button
+          aria-label="Collapse section"
+          className="btn btn-icon collapsible__expand-btn stretched-link"
+          onClick={[Function]}
+          type="button"
+        >
+          <svg
+            aria-label="Close section"
+            className="mdi-icon icon-inline"
+            fill="currentColor"
+            height={24}
+            viewBox="0 0 24 24"
+            width={24}
+          >
+            <path
+              d="M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z"
+            />
+          </svg>
+        </button>
+      </div>
+      <div
+        className="list-group list-group-flush "
+      >
+        <div
+          className="list-group-item list-group-item-action"
+        >
+          <div
+            data-tooltip="Configure Sourcegraph to talk to your code host"
+            onClick={[Function]}
+          >
+            <a
+              href="/site-admin/external-services/new"
+            >
+              <div>
+                <svg
+                  className="mdi-icon icon-inline text-muted"
+                  fill="currentColor"
+                  height={24}
+                  viewBox="0 0 24 24"
+                  width={24}
+                >
+                  <path
+                    d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"
+                  />
+                </svg>
+                <span
+                  className="mr-2 ml-2"
+                >
+                  Add repositories
+                </span>
+              </div>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <a
+      className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+      href="/site-admin/repositories"
+    >
+      0
+       
+      repositories
+    </a>
+  </div>
+</div>
+`;

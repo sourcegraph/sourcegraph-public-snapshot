@@ -3,14 +3,18 @@ import * as React from 'react'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { SettingsCascadeOrError } from '../../../shared/src/settings/settings'
-import { ThemeProps } from '../theme'
 import { eventLogger } from '../tracking/eventLogger'
 import { ComponentDescriptor } from '../util/contributions'
+import { PatternTypeProps } from '../search'
+import { ThemeProps } from '../../../shared/src/theme'
 
 /**
  * Properties passed to all section components in the explore area.
  */
-export interface ExploreAreaSectionContext extends ExtensionsControllerProps, ThemeProps {
+export interface ExploreAreaSectionContext
+    extends ExtensionsControllerProps,
+        ThemeProps,
+        Omit<PatternTypeProps, 'setPatternType'> {
     /** The currently authenticated user. */
     authenticatedUser: GQL.IUser | null
 
@@ -54,6 +58,7 @@ export class ExploreArea extends React.Component<ExploreAreaProps, ExploreAreaSt
             isLightTheme: this.props.isLightTheme,
             location: this.props.location,
             history: this.props.history,
+            patternType: this.props.patternType,
         }
 
         return (

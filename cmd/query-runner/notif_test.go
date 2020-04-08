@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 func TestGetNotificationRecipients(t *testing.T) {

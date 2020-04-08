@@ -4,7 +4,7 @@ set -e
 unset CDPATH
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 
-eval $(grep 'export OVERRIDE_AUTH_SECRET=' dev/launch.sh)
+eval $(grep 'export OVERRIDE_AUTH_SECRET=' dev/start.sh)
 
 username_to_delete="$1"
 

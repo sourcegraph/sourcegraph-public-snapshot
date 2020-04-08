@@ -2,7 +2,7 @@ import * as H from 'history'
 import * as React from 'react'
 import { fromEvent, Subject, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
-import { ChatIcon } from '../../../../../shared/src/components/icons' // TODO: Switch to mdi icon
+import { ChatIcon } from '../../../../../shared/src/components/icons'
 import { LinkOrButton } from '../../../../../shared/src/components/LinkOrButton'
 import {
     lprToRange,
@@ -81,5 +81,5 @@ export class ToggleDiscussionsPanel extends React.PureComponent<{
         )
     }
 
-    private onClick = () => this.toggles.next()
+    private onClick = (): void => this.toggles.next()
 }

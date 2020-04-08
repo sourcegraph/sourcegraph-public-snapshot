@@ -7,6 +7,7 @@ import CloudDownloadIcon from 'mdi-react/CloudDownloadIcon'
 import DownloadIcon from 'mdi-react/DownloadIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
+import FormatQuoteOpenIcon from 'mdi-react/FormatQuoteOpenIcon'
 import * as React from 'react'
 import { ContributableMenu } from '../../../../shared/src/api/protocol'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
@@ -17,15 +18,18 @@ import { pluralize } from '../../../../shared/src/util/strings'
 import { WebActionsNavItems as ActionsNavItems } from '../../components/shared'
 import { ServerBanner, ServerBannerNoRepo } from '../../marketing/ServerBanner'
 import { PerformanceWarningAlert } from '../../site/PerformanceWarningAlert'
+import { PatternTypeProps } from '..'
 
 interface SearchResultsInfoBarProps
     extends ExtensionsControllerProps<'executeCommand' | 'services'>,
-        PlatformContextProps<'forceUpdateTooltip'>,
-        TelemetryProps {
+        PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
+        TelemetryProps,
+        PatternTypeProps {
     /** The currently authenticated user or null */
     authenticatedUser: GQL.IUser | null
 
     /** The loaded search results and metadata */
+    query?: string
     results: GQL.ISearchResults
     onShowMoreResultsClick: () => void
 
@@ -48,11 +52,44 @@ interface SearchResultsInfoBarProps
 }
 
 /**
+ * A notice for when the user is searching literally and has quotes in their
+ * query, in which case it is possible that they think their query `"foobar"`
+ * will be searching literally for `foobar` (without quotes). This notice
+ * informs them that this may be the case to avoid confusion.
+ */
+const QuotesInterpretedLiterallyNotice: React.FunctionComponent<SearchResultsInfoBarProps> = props =>
+    props.patternType === GQL.SearchPatternType.literal && props.query && props.query.includes('"') ? (
+        <div
+            className={`search-results-info-bar__notice${
+                props.results.results.length === 0 ? ' search-results-info-bar__notice--no-results' : ''
+            }`}
+            data-tooltip="Your search query is interpreted literally, including the quotes. Use the .* toggle to switch between literal and regular expression search."
+        >
+            <span>
+                <FormatQuoteOpenIcon className="icon-inline" />
+                Searching literally <strong>(including quotes)</strong>
+            </span>
+        </div>
+    ) : null
+
+/**
  * The info bar shown over the search results list that displays metadata
  * and a few actions like expand all and save query
  */
 export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarProps> = props => (
     <div className="search-results-info-bar" data-testid="results-info-bar">
+        {/*
+            If there were no results, still show the "quotes are interpreted literally"
+            notice as this is the most common case where a user will make this mistake.
+        */}
+        {props.results.results.length === 0 && (
+            <small className="search-results-info-bar__row">
+                <div className="search-results-info-bar__row-left">
+                    <QuotesInterpretedLiterallyNotice {...props} />
+                </div>
+                <ul className="search-results-info-bar__row-right nav align-items-center justify-content-end" />
+            </small>
+        )}
         {(props.results.timedout.length > 0 ||
             props.results.cloning.length > 0 ||
             props.results.results.length > 0 ||
@@ -60,28 +97,27 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
             <small className="search-results-info-bar__row">
                 <div className="search-results-info-bar__row-left">
                     {/* Time stats */}
-                    {
-                        <div className="search-results-info-bar__notice e2e-search-results-stats">
-                            <span>
-                                <CalculatorIcon className="icon-inline" /> {props.results.approximateResultCount}{' '}
-                                {pluralize('result', props.results.resultCount)} in{' '}
-                                {(props.results.elapsedMilliseconds / 1000).toFixed(2)} seconds
-                                {props.results.indexUnavailable && ' (index unavailable)'}
-                                {/* Nonbreaking space */}
-                                {props.results.limitHit && String.fromCharCode(160)}
-                            </span>
-                            {/* Instantly accessible "show more button" */}
-                            {props.results.limitHit && (
-                                <button
-                                    type="button"
-                                    className="btn btn-link btn-sm p-0"
-                                    onClick={props.onShowMoreResultsClick}
-                                >
-                                    (show more)
-                                </button>
-                            )}
-                        </div>
-                    }
+                    <div className="search-results-info-bar__notice e2e-search-results-stats">
+                        <span>
+                            <CalculatorIcon className="icon-inline" /> {props.results.approximateResultCount}{' '}
+                            {pluralize('result', props.results.matchCount)} in{' '}
+                            {(props.results.elapsedMilliseconds / 1000).toFixed(2)} seconds
+                            {props.results.indexUnavailable && ' (index unavailable)'}
+                            {/* Nonbreaking space */}
+                            {props.results.limitHit && String.fromCharCode(160)}
+                        </span>
+                        {/* Instantly accessible "show more button" */}
+                        {props.results.limitHit && (
+                            <button
+                                type="button"
+                                className="btn btn-link btn-sm p-0"
+                                onClick={props.onShowMoreResultsClick}
+                            >
+                                (show more)
+                            </button>
+                        )}
+                    </div>
+
                     {/* Missing repos */}
                     {props.results.missing.length > 0 && (
                         <div
@@ -120,10 +156,12 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                             </span>
                         </div>
                     )}
+                    <QuotesInterpretedLiterallyNotice {...props} />
                 </div>
                 <ul className="search-results-info-bar__row-right nav align-items-center justify-content-end">
                     <ActionsNavItems
                         {...props}
+                        extraContext={{ searchQuery: props.query }}
                         menu={ContributableMenu.SearchResultsToolbar}
                         wrapInList={false}
                         showLoadingSpinnerDuringExecution={true}

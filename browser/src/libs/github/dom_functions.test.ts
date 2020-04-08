@@ -55,7 +55,7 @@ describe('GitHub DOM functions', () => {
                 'pull-request-discussion': {
                     url: 'https://github.com/sourcegraph/sourcegraph/pull/3221',
                     lineCases: [
-                        { diffPart: 'head', lineNumber: 62 }, // added
+                        { diffPart: 'head', lineNumber: 13 }, // added
                     ],
                 },
             },

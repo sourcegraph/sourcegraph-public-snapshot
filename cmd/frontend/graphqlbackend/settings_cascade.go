@@ -7,7 +7,7 @@ import (
 	"sort"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 )
 
 // settingsCascade implements the GraphQL type SettingsCascade (and the deprecated type ConfigurationCascade).
@@ -95,7 +95,7 @@ func (r *settingsCascade) Final(ctx context.Context) (string, error) {
 	return string(final), err
 }
 
-// DEPRECATED (in the GraphQL API)
+// Deprecated: in the GraphQL API
 func (r *settingsCascade) Merged(ctx context.Context) (*configurationResolver, error) {
 	var messages []string
 	s, err := r.Final(ctx)
@@ -181,7 +181,7 @@ func (schemaResolver) ViewerSettings(ctx context.Context) (*settingsCascade, err
 	return &settingsCascade{subject: &settingsSubject{user: user}}, nil
 }
 
-// DEPRECATED (in the GraphQL API)
+// Deprecated: in the GraphQL API
 func (schemaResolver) ViewerConfiguration(ctx context.Context) (*settingsCascade, error) {
 	return schemaResolver{}.ViewerSettings(ctx)
 }

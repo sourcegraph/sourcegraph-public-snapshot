@@ -1,5 +1,4 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { upperFirst } from 'lodash'
 import AddIcon from 'mdi-react/AddIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -16,6 +15,7 @@ import { PageTitle } from '../../../components/PageTitle'
 import { SiteAdminAlert } from '../../../site-admin/SiteAdminAlert'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { UserAreaRouteContext } from '../../area/UserArea'
+import { ErrorAlert } from '../../../components/alerts'
 
 function createAccessToken(user: GQL.ID, scopes: string[], note: string): Observable<GQL.ICreateAccessTokenResult> {
     return mutateGraphQL(
@@ -89,7 +89,10 @@ export class UserSettingsCreateAccessTokenPage extends React.PureComponent<Props
                         )
                     )
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate as State), err => console.error(err))
+                .subscribe(
+                    stateUpdate => this.setState(stateUpdate as State),
+                    err => console.error(err)
+                )
         )
 
         this.componentUpdates.next(this.props)
@@ -190,15 +193,13 @@ export class UserSettingsCreateAccessTokenPage extends React.PureComponent<Props
                     </button>
                     <Link
                         className="btn btn-secondary ml-1 e2e-create-access-token-cancel"
-                        to={`${this.props.match.url.replace(/\/new$/, '')}}`}
+                        to={this.props.match.url.replace(/\/new$/, '')}
                     >
                         Cancel
                     </Link>
                 </Form>
                 {isErrorLike(this.state.creationOrError) && (
-                    <div className="invite-form__alert alert alert-danger">
-                        Error: {upperFirst(this.state.creationOrError.message)}
-                    </div>
+                    <ErrorAlert className="invite-form__alert" error={this.state.creationOrError} />
                 )}
             </div>
         )

@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
 
 func (r *UserResolver) Session(ctx context.Context) (*sessionResolver, error) {
@@ -19,7 +19,7 @@ func (r *UserResolver) Session(ctx context.Context) (*sessionResolver, error) {
 	var sr sessionResolver
 	if actor.FromSessionCookie {
 		// The http-header auth provider is the only auth provider that a user can't sign out from.
-		for _, p := range conf.Get().Critical.AuthProviders {
+		for _, p := range conf.Get().AuthProviders {
 			if p.HttpHeader == nil {
 				sr.canSignOut = true
 				break

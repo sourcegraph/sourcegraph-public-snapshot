@@ -1,1 +1,0 @@
-DROP TABLE external_services;

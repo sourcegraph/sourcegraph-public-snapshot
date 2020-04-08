@@ -14,7 +14,7 @@ Using Sourcegraph makes you a more effective code reviewer because code intellig
 
 Requirements:
 
-- [Install Sourcegraph](../admin/install.md) and add repositories
+- [Install Sourcegraph](../admin/install/index.md) and add repositories
 - [Install the integration for your code host/review tool](../integration/index.md)
 
 Workflow:
@@ -35,7 +35,7 @@ Viewing cross-references (internal and external) on Sourcegraph is a great way t
 
 Requirements:
 
-- [Install Sourcegraph](../admin/install.md) and add repositories
+- [Install Sourcegraph](../admin/install/index.md) and add repositories
 - [Install the browser extension and editor plugin](../integration/index.md) for a faster way to initiate searches (optional)
 
 Workflow:
@@ -43,7 +43,7 @@ Workflow:
 1.  Search on Sourcegraph for the name of the function you're trying to call. If you've installed any integrations, use those to initiate the search; otherwise use the search box on the homepage of your organization's internal Sourcegraph instance.
 1.  Find and click on a search result that refers to the function you're looking for. (If needed, narrow your search using the suggested search filters below the search box, or by [adding your own filters](search/queries.md).)
 1.  Click on the name of the function in the code file (if it's not already highlighted).
-1.  Click **Find references** to see how the function is called. (If the function is called by other repositories, go to the **External references** tab in the panel to see those calls, too.)
+1.  Click **Find references** to see how the function is called.
 1.  Click through to various function call sites and use the after-line blame's authorship and recency information to gauge the quality of the call site as an example.
 
 To try this on an open-source repository, start by searching for [repo:dgrijalva/jwt-go parsewithclaims](https://sourcegraph.com/search?q=repo:dgrijalva/jwt-go+parsewithclaims) and follow the steps above to view internal and external references for the [`ParseWithClaims`](https://sourcegraph.com/github.com/dgrijalva/jwt-go/-/blob/token.go#L92:6$references) function.
@@ -58,7 +58,7 @@ Navigating your code with code intelligence on Sourcegraph is a great way to und
 
 Requirements:
 
-- [Install Sourcegraph](../admin/install.md) and add repositories
+- [Install Sourcegraph](../admin/install/index.md) and add repositories
 - [Install the browser extension and editor plugin](../integration/index.md) for a faster way to initiate searches (optional)
 
 Workflow:
@@ -80,7 +80,7 @@ Diff search on Sourcegraph is a great starting point for your investigation into
 
 Requirements:
 
-- [Install Sourcegraph](../admin/install.md) and add repositories
+- [Install Sourcegraph](../admin/install/index.md) and add repositories
 - [Install the browser extension and editor plugin](../integration/index.md) for a faster way to initiate searches (optional)
 
 Workflow:

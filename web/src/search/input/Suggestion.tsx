@@ -1,54 +1,87 @@
-import FolderIcon from 'mdi-react/FolderIcon'
 import * as React from 'react'
-import { RepositoryIcon } from '../../../../shared/src/components/icons' // TODO: Switch to mdi icon
 import * as GQL from '../../../../shared/src/graphql/schema'
+import { LanguageIcon } from '../../../../shared/src/components/languageIcons'
+import { dirname, basename } from '../../util/path'
+import FilterIcon from 'mdi-react/FilterIcon'
+import FileIcon from 'mdi-react/FileIcon'
+import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import { SymbolIcon } from '../../../../shared/src/symbols/SymbolIcon'
-import { basename, dirname } from '../../util/path'
+import { SuggestionType, NonFilterSuggestionType } from '../../../../shared/src/search/suggestions/util'
+import { escapeRegExp } from 'lodash'
+import { FilterType } from '../../../../shared/src/search/interactive/util'
 
-interface BaseSuggestion {
-    title: string
+export const filterAliases: Record<string, FilterSuggestionTypes | undefined> = {
+    r: FilterType.repo,
+    g: FilterType.repogroup,
+    f: FilterType.file,
+    l: FilterType.lang,
+    language: FilterType.lang,
+}
+
+/**
+ * Filters which use fuzzy-search for their suggestion values
+ */
+export const fuzzySearchFilters: FilterSuggestionTypes[] = [
+    FilterType.repo,
+    FilterType.repogroup,
+    FilterType.file,
+    FilterType.repohasfile,
+]
+
+/**
+ * Some filter types should have their suggestions searched without influence
+ * from the rest of the query, as they will then influence the scope of other filters.
+ */
+export const isolatedFuzzySearchFilters: FilterSuggestionTypes[] = [FilterType.repo, FilterType.repogroup]
+
+/**
+ * dir and symbol are fetched/suggested by the fuzzy-search
+ * but are not filter types: /web/src/search/searchFilterSuggestions.ts
+ */
+export type FilterSuggestionTypes = FilterType | 'filters'
+
+export interface Suggestion {
+    type: SuggestionType
+    /** The value to be suggested and that will be added to queries */
+    value: string
+    /**
+     * Optional value to use when suggestion is displayed to the user.
+     * Useful for displaying a "human-readable" suggestion value
+     */
+    displayValue?: string
+    /** Description that will be displayed together with suggestion value */
     description?: string
-
-    /**
-     * The URL that is navigated to when the user selects this
-     * suggestion.
-     */
-    url: string
-
-    /**
-     * A label describing the action taken when navigating to
-     * the URL (e.g., "go to repository").
-     */
-    urlLabel: string
+    /** Fuzzy-search suggestions may have a url for redirect when selected */
+    url?: string
+    /** Label informing what will happen when suggestion is selected */
+    label?: string
+    /** For suggestions of type `symbol` */
+    symbolKind?: GQL.SymbolKind
+    /** If the suggestion was loaded from the fuzzy-search */
+    fromFuzzySearch?: true
 }
 
-interface SymbolSuggestion extends BaseSuggestion {
-    type: 'symbol'
-    kind: GQL.SymbolKind
+interface SuggestionIconProps {
+    suggestion: Suggestion
+    className?: string
 }
 
-interface RepoSuggestion extends BaseSuggestion {
-    type: 'repo'
-}
+/**
+ * @returns The given string with escaped special characters and wrapped with regex boundaries
+ */
+const formatRegExp = (value: string): string => '^' + escapeRegExp(value) + '$'
 
-interface FileSuggestion extends BaseSuggestion {
-    type: 'file'
-}
-
-interface DirSuggestion extends BaseSuggestion {
-    type: 'dir'
-}
-
-export type Suggestion = SymbolSuggestion | RepoSuggestion | FileSuggestion | DirSuggestion
-
-export function createSuggestion(item: GQL.SearchSuggestion): Suggestion {
+export function createSuggestion(item: GQL.SearchSuggestion): Suggestion | undefined {
     switch (item.__typename) {
         case 'Repository': {
             return {
-                type: 'repo',
-                title: item.name,
+                type: FilterType.repo,
+                // Add "regex start and end boundaries" to
+                // correctly scope additional suggestions
+                value: formatRegExp(item.name),
+                displayValue: item.name,
                 url: `/${item.name}`,
-                urlLabel: 'go to repository',
+                label: 'go to repository',
             }
         }
         case 'File': {
@@ -60,78 +93,84 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion {
             descriptionParts.push(basename(item.repository.name))
             if (item.isDirectory) {
                 return {
-                    type: 'dir',
-                    title: item.name,
+                    type: NonFilterSuggestionType.dir,
+                    value: '^' + escapeRegExp(item.path),
                     description: descriptionParts.join(' — '),
                     url: `${item.url}?suggestion`,
-                    urlLabel: 'go to dir',
+                    label: 'go to dir',
                 }
             }
             return {
-                type: 'file',
-                title: item.name,
+                type: FilterType.file,
+                value: formatRegExp(item.path),
+                displayValue: item.name,
                 description: descriptionParts.join(' — '),
                 url: `${item.url}?suggestion`,
-                urlLabel: 'go to file',
+                label: 'go to file',
             }
         }
         case 'Symbol': {
             return {
-                type: 'symbol',
-                kind: item.kind,
-                title: item.name,
+                type: NonFilterSuggestionType.symbol,
+                symbolKind: item.kind,
+                value: item.name,
                 description: `${item.containerName || item.location.resource.path} — ${basename(
                     item.location.resource.repository.name
                 )}`,
                 url: item.url,
-                urlLabel: 'go to definition',
+                label: 'go to definition',
             }
         }
+        default:
+            return undefined
     }
 }
 
-interface SuggestionIconProps {
-    suggestion: Suggestion
-    className?: string
-}
-
-const SuggestionIcon: React.FunctionComponent<SuggestionIconProps> = ({ suggestion, ...passThru }) => {
+const SuggestionIcon: React.FunctionComponent<SuggestionIconProps> = ({ suggestion, children, ...props }) => {
     switch (suggestion.type) {
-        case 'repo':
-            return <RepositoryIcon {...passThru} />
-        case 'dir':
-            return <FolderIcon />
-        case 'file':
-            return <SymbolIcon kind={GQL.SymbolKind.FILE} {...passThru} />
-        case 'symbol':
-            return <SymbolIcon kind={suggestion.kind} {...passThru} />
+        case NonFilterSuggestionType.filters:
+            return <FilterIcon {...props} />
+        case FilterType.repo:
+            return <SourceRepositoryIcon {...props} />
+        case FilterType.file:
+            return <FileIcon {...props} />
+        case FilterType.lang:
+            return <LanguageIcon {...props} language={suggestion.value} {...props} />
+        case NonFilterSuggestionType.symbol:
+            if (!suggestion.symbolKind) {
+                return null
+            }
+            return <SymbolIcon kind={suggestion.symbolKind} {...props} />
+        default:
+            return null
     }
 }
 
 interface SuggestionProps {
     suggestion: Suggestion
-
     isSelected?: boolean
-
-    /** Called when the user clicks on the suggestion */
     onClick?: () => void
-
-    /** Get a reference to the HTML element for scroll management */
-    liRef?: (ref: HTMLLIElement | null) => void
+    /** If suggestion.label should be shown, else show defaultLabel  */
+    showUrlLabel: boolean
+    /** Suggestion label to show if(!showUrlLabel || !suggestion.label) */
+    defaultLabel?: string
 }
 
 export const SuggestionItem: React.FunctionComponent<SuggestionProps> = ({
     suggestion,
     isSelected,
-    onClick,
-    liRef,
+    showUrlLabel,
+    defaultLabel,
+    ...props
 }) => (
-    <li className={'suggestion' + (isSelected ? ' suggestion--selected' : '')} onMouseDown={onClick} ref={liRef}>
+    <li className={`suggestion ${isSelected ? ' suggestion--selected' : ''} e2e-suggestion-item`} {...props}>
         <SuggestionIcon className="icon-inline suggestion__icon" suggestion={suggestion} />
-        <div className="suggestion__title">{suggestion.title}</div>
+        <div className="suggestion__title">{suggestion.displayValue ?? suggestion.value}</div>
         <div className="suggestion__description">{suggestion.description}</div>
-        <div className="suggestion__action" hidden={!isSelected}>
-            <kbd>enter</kbd> {suggestion.urlLabel}
-        </div>
+        {(showUrlLabel || defaultLabel) && (
+            <div className="suggestion__action" hidden={!isSelected}>
+                <kbd>enter</kbd> {(showUrlLabel && suggestion?.label) || defaultLabel}
+            </div>
+        )}
     </li>
 )

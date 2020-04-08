@@ -46,9 +46,7 @@ export class SiteAdminProductLicensesPage extends React.Component<Props> {
         return (
             <div className="site-admin-product-subscriptions-page">
                 <PageTitle title="Product subscriptions" />
-                <div className="d-flex justify-content-between align-items-center mt-3 mb-1">
-                    <h2 className="mb-0">License key lookup</h2>
-                </div>
+                <h2>License key lookup</h2>
                 <p>Find matching licenses and their associated product subscriptions.</p>
                 <FilteredProductLicenseConnection
                     className="list-group list-group-flush mt-3"
@@ -68,8 +66,12 @@ export class SiteAdminProductLicensesPage extends React.Component<Props> {
         )
     }
 
-    private queryLicenses = (args: { first?: number; query?: string }): Observable<GQL.IProductLicenseConnection> =>
-        args.query
+    private queryLicenses = (args: { first?: number; query?: string }): Observable<GQL.IProductLicenseConnection> => {
+        const vars: GQL.IProductLicensesOnDotcomQueryArguments = {
+            first: args.first,
+            licenseKeySubstring: args.query,
+        }
+        return args.query
             ? queryGraphQL(
                   gql`
                       query ProductLicenses($first: Int, $licenseKeySubstring: String) {
@@ -87,10 +89,7 @@ export class SiteAdminProductLicensesPage extends React.Component<Props> {
                       }
                       ${siteAdminProductLicenseFragment}
                   `,
-                  {
-                      first: args.first,
-                      licenseKeySubstring: args.query,
-                  } as GQL.IProductLicensesOnDotcomQueryArguments
+                  vars
               ).pipe(
                   map(({ data, errors }) => {
                       if (!data || !data.dotcom || !data.dotcom.productLicenses || (errors && errors.length > 0)) {
@@ -103,8 +102,9 @@ export class SiteAdminProductLicensesPage extends React.Component<Props> {
                   __typename: 'ProductLicenseConnection' as const,
                   nodes: [],
                   totalCount: 0,
-                  pageInfo: { __typename: 'PageInfo' as const, hasNextPage: false },
+                  pageInfo: { __typename: 'PageInfo' as const, hasNextPage: false, endCursor: null },
               })
+    }
 
-    private onDidUpdateProductLicense = () => this.updates.next()
+    private onDidUpdateProductLicense = (): void => this.updates.next()
 }

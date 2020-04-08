@@ -18,8 +18,9 @@ export class ProductSubscriptionUserCountFormControl extends React.Component<Pro
     public render(): JSX.Element | null {
         return (
             <div
-                className={`product-subscription-user-count-control form-group align-items-center ${this.props
-                    .className || ''}`}
+                className={`product-subscription-user-count-control form-group align-items-center ${
+                    this.props.className || ''
+                }`}
             >
                 <label
                     htmlFor="product-subscription-user-count-control__userCount"

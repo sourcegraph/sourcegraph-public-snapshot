@@ -2,12 +2,12 @@ package graphqlbackend
 
 import (
 	"context"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
 
 // Alert implements the GraphQL type Alert.
@@ -50,7 +50,7 @@ type AlertFuncArgs struct {
 func (r *siteResolver) Alerts(ctx context.Context) ([]*Alert, error) {
 	args := AlertFuncArgs{
 		IsAuthenticated: actor.FromContext(ctx).IsAuthenticated(),
-		IsSiteAdmin:     (backend.CheckCurrentUserIsSiteAdmin(ctx) == nil),
+		IsSiteAdmin:     backend.CheckCurrentUserIsSiteAdmin(ctx) == nil,
 	}
 
 	var alerts []*Alert
@@ -61,6 +61,15 @@ func (r *siteResolver) Alerts(ctx context.Context) ([]*Alert, error) {
 }
 
 func init() {
+	conf.ContributeWarning(func(c conf.Unified) (problems conf.Problems) {
+		if c.ExternalURL == "" {
+			problems = append(problems, conf.NewSiteProblem("`externalURL` is required to be set for many features of Sourcegraph to work correctly."))
+		} else if conf.DeployType() != conf.DeployDev && strings.HasPrefix(c.ExternalURL, "http://") {
+			problems = append(problems, conf.NewSiteProblem("Your connection is not private. We recommend [configuring Sourcegraph to use HTTPS/SSL](https://docs.sourcegraph.com/admin/nginx)"))
+		}
+		return problems
+	})
+
 	// Warn about invalid site configuration.
 	AlertFuncs = append(AlertFuncs, func(args AlertFuncArgs) []*Alert {
 		// 🚨 SECURITY: Only the site admin cares about this. Leaking a boolean wouldn't be a
@@ -70,15 +79,59 @@ func init() {
 			return nil
 		}
 
-		messages, err := conf.Validate(globals.ConfigurationServerFrontendOnly.Raw())
-		if len(messages) > 0 || err != nil {
+		problems, err := conf.Validate(globals.ConfigurationServerFrontendOnly.Raw())
+		if err != nil {
 			return []*Alert{
 				{
-					TypeValue:    AlertTypeWarning,
-					MessageValue: "[**Update site configuration**](/site-admin/configuration) to resolve problems.",
+					TypeValue:    AlertTypeError,
+					MessageValue: `Update [**site configuration**](/site-admin/configuration) to resolve problems: ` + err.Error(),
 				},
 			}
 		}
-		return nil
+
+		warnings, err := conf.GetWarnings()
+		if err != nil {
+			return []*Alert{
+				{
+					TypeValue:    AlertTypeError,
+					MessageValue: `Update [**critical configuration**](/help/admin/management_console) to resolve problems: ` + err.Error(),
+				},
+			}
+		}
+		problems = append(problems, warnings...)
+
+		if len(problems) == 0 {
+			return nil
+		}
+
+		alerts := make([]*Alert, 0, 2)
+
+		criticalProblems := problems.Critical()
+		if len(criticalProblems) > 0 {
+			alerts = append(alerts, &Alert{
+				TypeValue: AlertTypeWarning,
+				MessageValue: `[**Update critical configuration**](/help/admin/management_console) to resolve problems:` +
+					"\n* " + strings.Join(criticalProblems.Messages(), "\n* "),
+			})
+		}
+
+		siteProblems := problems.Site()
+		if len(siteProblems) > 0 {
+			alerts = append(alerts, &Alert{
+				TypeValue: AlertTypeWarning,
+				MessageValue: `[**Update site configuration**](/site-admin/configuration) to resolve problems:` +
+					"\n* " + strings.Join(siteProblems.Messages(), "\n* "),
+			})
+		}
+
+		externalServiceProblems := problems.ExternalService()
+		if len(externalServiceProblems) > 0 {
+			alerts = append(alerts, &Alert{
+				TypeValue: AlertTypeWarning,
+				MessageValue: `[**Update external service configuration**](/site-admin/external-services) to resolve problems:` +
+					"\n* " + strings.Join(externalServiceProblems.Messages(), "\n* "),
+			})
+		}
+		return alerts
 	})
 }

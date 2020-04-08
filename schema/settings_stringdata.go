@@ -11,6 +11,39 @@ const SettingsSchemaJSON = `{
   "allowComments": true,
   "type": "object",
   "properties": {
+    "experimentalFeatures": {
+      "title": "SettingsExperimentalFeatures",
+      "description": "Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "splitSearchModes": {
+          "description": "Enables toggling between the current omni search mode, and experimental interactive search mode.",
+          "type": "boolean",
+          "default": true,
+          "!go": { "pointer": true }
+        },
+        "searchStats": {
+          "description": "Enables a new page that shows language statistics about the results for a search query.",
+          "type": "boolean",
+          "default": false,
+          "!go": { "pointer": true }
+        },
+        "showBadgeAttachments": {
+          "description": "Enables the UI indicators for code intelligence precision.",
+          "type": "boolean",
+          "default": true,
+          "!go": { "pointer": true }
+        },
+        "smartSearchField": {
+          "description": "Enables displaying a search field that provides syntax highlighting, hover tooltips and diagnostics for search queries.",
+          "type": "boolean",
+          "default": false,
+          "!go": { "pointer": true }
+        }
+      },
+      "group": "Experimental"
+    },
     "search.savedQueries": {
       "description": "DEPRECATED: Saved search queries",
       "type": "array",
@@ -66,6 +99,11 @@ const SettingsSchemaJSON = `{
       "type": "integer",
       "minimum": 0,
       "default": 1
+    },
+    "search.defaultPatternType": {
+      "description": "The default pattern type (literal or regexp) that search queries will be intepreted as.",
+      "type": "string",
+      "pattern": "literal|regexp"
     },
     "quicklinks": {
       "description": "Links that should be accessible quickly from the home and search pages.",
@@ -171,6 +209,12 @@ const SettingsSchemaJSON = `{
         }
       }
     }
+  },
+  "search.hideSuggestions": {
+    "description": "Disable search suggestions below the search bar when constructing queries. Defaults to false.",
+    "type": "boolean",
+    "default": false,
+    "!go": { "pointer": true }
   }
 }
 `

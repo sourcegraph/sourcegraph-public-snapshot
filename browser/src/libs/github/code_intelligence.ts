@@ -1,17 +1,9 @@
-import { AdjustmentDirection, DiffPart, PositionAdjuster } from '@sourcegraph/codeintellify'
+import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/codeintellify'
 import { trimStart } from 'lodash'
 import { map } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 import { PlatformContext } from '../../../../shared/src/platform/context'
-import {
-    FileSpec,
-    PositionSpec,
-    RawRepoSpec,
-    RepoSpec,
-    ResolvedRevSpec,
-    RevSpec,
-    ViewStateSpec,
-} from '../../../../shared/src/util/url'
+import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../shared/src/util/url'
 import { fetchBlobContentLines } from '../../shared/repo/backend'
 import { querySelectorOrSelf } from '../../shared/util/dom'
 import { toAbsoluteBlobURL } from '../../shared/util/url'
@@ -27,6 +19,7 @@ import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './
 import { commentTextFieldResolver } from './text_fields'
 import { setElementTooltip } from './tooltip'
 import { getFileContainers, parseURL } from './util'
+import { NotificationType } from '../../../../shared/src/api/client/services/notifications'
 
 /**
  * Creates the mount element for the CodeViewToolbar on code views containing
@@ -49,6 +42,10 @@ export function createFileActionsToolbarMount(codeView: HTMLElement): HTMLElemen
         throw new Error('Could not find GitHub file actions with selector .file-actions')
     }
 
+    // Add a class to the .file-actions element, so that we can reliably match it in
+    // stylesheets without bleeding CSS to other code hosts (GitLab also uses .file-actions elements).
+    fileActions.classList.add('sg-github-file-actions')
+
     // Old GitHub Enterprise PR views have a "☑ show comments" text that we want to insert *after*
     const showCommentsElement = codeView.querySelector('.show-file-notes')
     if (showCommentsElement) {
@@ -69,6 +66,13 @@ const diffCodeView: Omit<CodeView, 'element'> = {
     getToolbarMount: createFileActionsToolbarMount,
     resolveFileInfo: resolveDiffFileInfo,
     toolbarButtonProps,
+    getScrollBoundaries: codeView => {
+        const fileHeader = codeView.querySelector<HTMLElement>('.file-header')
+        if (!fileHeader) {
+            throw new Error('Could not find .file-header element in GitHub PR code view')
+        }
+        return [fileHeader]
+    },
 }
 
 const diffConversationCodeView: Omit<CodeView, 'element'> = {
@@ -135,7 +139,7 @@ const snippetCodeView: Omit<CodeView, 'element'> = {
 export const createFileLineContainerToolbarMount: NonNullable<CodeView['getToolbarMount']> = (
     codeViewElement: HTMLElement
 ): HTMLElement => {
-    const className = 'sourcegraph-app-annotator'
+    const className = 'sourcegraph-github-file-code-view-toolbar-mount'
     const existingMount = codeViewElement.querySelector(`.${className}`) as HTMLElement
     if (existingMount) {
         return existingMount
@@ -146,8 +150,8 @@ export const createFileLineContainerToolbarMount: NonNullable<CodeView['getToolb
     mountEl.style.alignItems = 'center'
     mountEl.className = className
     const rawURLLink = codeViewElement.querySelector('#raw-url')
-    const buttonGroup = rawURLLink && rawURLLink.closest('.BtnGroup')
-    if (!buttonGroup || !buttonGroup.parentNode) {
+    const buttonGroup = rawURLLink?.closest('.BtnGroup')
+    if (!buttonGroup?.parentNode) {
         throw new Error('File actions not found')
     }
     buttonGroup.parentNode.insertBefore(mountEl, buttonGroup)
@@ -213,7 +217,8 @@ const genericCodeViewResolver: ViewResolver<CodeView> = {
             return { element: elem, ...singleFileCodeView }
         }
 
-        if (elem.closest('.discussion-item-body')) {
+        if (elem.closest('.discussion-item-body') || elem.classList.contains('js-comment-container')) {
+            // This code view is embedded on a PR conversation page.
             return { element: elem, ...diffConversationCodeView }
         }
 
@@ -269,6 +274,8 @@ const nativeTooltipResolver: ViewResolver<NativeTooltip> = {
     resolveView: element => ({ element }),
 }
 
+const iconClassName = 'action-item__icon--github v-align-text-bottom'
+
 export const githubCodeHost: CodeHost = {
     type: 'github',
     name: checkIsGitHubEnterprise() ? 'GitHub Enterprise' : 'GitHub',
@@ -277,20 +284,28 @@ export const githubCodeHost: CodeHost = {
     textFieldResolvers: [commentTextFieldResolver],
     nativeTooltipResolvers: [nativeTooltipResolver],
     getContext: () => {
-        const header = document.querySelector('.repohead-details-container')
-        const repoHeaderHasPrivateMarker = !!(header && header.querySelector('.private'))
+        const repoHeaderHasPrivateMarker = !!document.querySelector('.repohead .private')
+        const parsedURL = parseURL()
         return {
-            ...parseURL(),
+            ...parsedURL,
+            rev: parsedURL.pageType === 'blob' || parsedURL.pageType === 'tree' ? resolveFileInfo().rev : undefined,
             privateRepository: window.location.hostname !== 'github.com' || repoHeaderHasPrivateMarker,
         }
     },
     getViewContextOnSourcegraphMount: createOpenOnSourcegraphIfNotExists,
     viewOnSourcegraphButtonClassProps: {
         className: 'btn btn-sm tooltipped tooltipped-s',
-        iconClassName: 'action-item__icon--github v-align-text-bottom',
+        iconClassName,
     },
     check: checkIsGitHub,
     getCommandPaletteMount,
+    notificationClassNames: {
+        [NotificationType.Log]: 'flash',
+        [NotificationType.Success]: 'flash flash-success',
+        [NotificationType.Info]: 'flash',
+        [NotificationType.Warning]: 'flash flash-warn',
+        [NotificationType.Error]: 'flash flash-error',
+    },
     commandPaletteClassProps: {
         buttonClassName: 'Header-link',
         popoverClassName: 'Box',
@@ -303,6 +318,7 @@ export const githubCodeHost: CodeHost = {
         actionItemClassName:
             'command-palette-action-item--github no-underline d-flex flex-auto flex-items-center jump-to-suggestions-path p-2',
         noResultsClassName: 'd-flex flex-auto flex-items-center jump-to-suggestions-path p-2',
+        iconClassName,
     },
     codeViewToolbarClassProps: {
         className: 'code-view-toolbar--github',
@@ -323,63 +339,66 @@ export const githubCodeHost: CodeHost = {
         actionItemClassName: 'btn btn-secondary',
         actionItemPressedClassName: 'active',
         closeButtonClassName: 'btn',
-        alertClassName: 'alert-info',
+        infoAlertClassName: 'flash flash-full',
+        errorAlertClassName: 'flash flash-full flash-error',
+        iconClassName,
     },
     setElementTooltip,
     linkPreviewContentClass: 'text-small text-gray p-1 mx-1 border rounded-1 bg-gray text-gray-dark',
-    urlToFile: (
-        sourcegraphURL: string,
-        location: Partial<RepoSpec> &
-            RawRepoSpec &
-            RevSpec &
-            FileSpec &
-            Partial<PositionSpec> &
-            Partial<ViewStateSpec> & { part?: DiffPart }
-    ) => {
-        if (location.viewState) {
+    urlToFile: (sourcegraphURL, target, context) => {
+        if (target.viewState) {
             // A view state means that a panel must be shown, and panels are currently only supported on
             // Sourcegraph (not code hosts).
-            return toAbsoluteBlobURL(sourcegraphURL, {
-                ...location,
-                repoName: location.repoName || location.rawRepoName,
-            })
+            return toAbsoluteBlobURL(sourcegraphURL, target)
         }
 
         // Make sure the location is also on this github instance, return an absolute URL otherwise.
-        const sameCodeHost = location.rawRepoName.startsWith(window.location.hostname)
+        const sameCodeHost = target.rawRepoName.startsWith(window.location.hostname)
         if (!sameCodeHost) {
-            return toAbsoluteBlobURL(sourcegraphURL, {
-                ...location,
-                repoName: location.repoName || location.rawRepoName,
-            })
+            return toAbsoluteBlobURL(sourcegraphURL, target)
         }
 
-        const rev = location.rev || 'HEAD'
+        const rev = target.rev || 'HEAD'
         // If we're provided options, we can make the j2d URL more specific.
         const { rawRepoName } = parseURL()
 
-        const sameRepo = rawRepoName === location.rawRepoName
         // Stay on same page in PR if possible.
-        if (sameRepo && location.part) {
+        // TODO to be entirely correct, this would need to compare the rev of the code view with the target rev.
+        const isSameRepo = rawRepoName === target.rawRepoName
+        if (isSameRepo && context.part !== undefined) {
             const containers = getFileContainers()
             for (const container of containers) {
-                const header = container.querySelector('.file-header') as HTMLElement
+                const header = container.querySelector<HTMLElement & { dataset: { path: string; anchor: string } }>(
+                    '.file-header[data-path][data-anchor]'
+                )
+                if (!header) {
+                    // E.g. suggestion snippet
+                    continue
+                }
                 const anchorPath = header.dataset.path
-                if (anchorPath === location.filePath) {
+                if (anchorPath === target.filePath) {
                     const anchorUrl = header.dataset.anchor
-                    const url = `${window.location.origin}${window.location.pathname}#${anchorUrl}${
-                        location.part === 'base' ? 'L' : 'R'
-                    }${location.position ? location.position.line : ''}`
-
-                    return url
+                    const url = new URL(window.location.href)
+                    url.hash = anchorUrl
+                    if (target.position) {
+                        // GitHub uses L for the left side, R for both right side and the unchanged/white parts
+                        url.hash += `${context.part === 'base' ? 'L' : 'R'}${target.position.line}`
+                    }
+                    // Only use URL if it is visible
+                    // TODO: Expand hidden lines to reveal
+                    if (!document.querySelector(url.hash)) {
+                        break
+                    }
+                    return url.href
                 }
             }
         }
 
-        const fragment = location.position
-            ? `#L${location.position.line}${location.position.character ? ':' + location.position.character : ''}`
+        // Go to blob URL
+        const fragment = target.position
+            ? `#L${target.position.line}${target.position.character ? ':' + target.position.character : ''}`
             : ''
-        return `https://${location.rawRepoName}/blob/${rev}/${location.filePath}${fragment}`
+        return `https://${target.rawRepoName}/blob/${rev}/${target.filePath}${fragment}`
     },
     codeViewsRequireTokenization: true,
 }

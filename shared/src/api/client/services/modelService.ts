@@ -19,9 +19,9 @@ export interface TextModel extends Pick<TextDocument, 'uri' | 'languageId' | 'te
 export interface PartialModel extends Pick<TextModel, 'languageId'> {}
 
 export type TextModelUpdate =
-    | { type: 'added' } & TextModel
-    | { type: 'updated'; text: string } & Pick<TextModel, 'uri'>
-    | { type: 'deleted' } & Pick<TextModel, 'uri'>
+    | ({ type: 'added' } & TextModel)
+    | ({ type: 'updated'; text: string } & Pick<TextModel, 'uri'>)
+    | ({ type: 'deleted' } & Pick<TextModel, 'uri'>)
 
 /**
  * The model service manages document contents and metadata.

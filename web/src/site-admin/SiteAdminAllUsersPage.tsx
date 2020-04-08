@@ -17,6 +17,7 @@ import { eventLogger } from '../tracking/eventLogger'
 import { userURL } from '../user'
 import { setUserEmailVerified } from '../user/settings/backend'
 import { deleteUser, fetchAllUsers, randomizeUserPassword, setUserIsSiteAdmin } from './backend'
+import { ErrorAlert } from '../components/alerts'
 
 interface UserNodeProps {
     /**
@@ -164,9 +165,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                         )}
                     </div>
                 </div>
-                {this.state.errorDescription && (
-                    <div className="alert alert-danger mt-2">{this.state.errorDescription}</div>
-                )}
+                {this.state.errorDescription && <ErrorAlert className="mt-2" error={this.state.errorDescription} />}
                 {this.state.resetPasswordURL && (
                     <div className="alert alert-success mt-2">
                         <p>
@@ -180,8 +179,8 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
         )
     }
 
-    private promoteToSiteAdmin = () => this.setSiteAdmin(true)
-    private demoteFromSiteAdmin = () => this.setSiteAdmin(false)
+    private promoteToSiteAdmin = (): void => this.setSiteAdmin(true)
+    private demoteFromSiteAdmin = (): void => this.setSiteAdmin(false)
 
     private setSiteAdmin(siteAdmin: boolean): void {
         if (
@@ -212,7 +211,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
             )
     }
 
-    private randomizePassword = () => {
+    private randomizePassword = (): void => {
         if (
             !window.confirm(
                 `Reset the password for ${this.props.node.username} to a random password? The user must reset their password to sign in again.`
@@ -240,10 +239,10 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
             )
     }
 
-    private deleteUser = () => this.doDeleteUser(false)
-    private nukeUser = () => this.doDeleteUser(true)
+    private deleteUser = (): void => this.doDeleteUser(false)
+    private nukeUser = (): void => this.doDeleteUser(true)
 
-    private doDeleteUser = (hard: boolean) => {
+    private doDeleteUser = (hard: boolean): void => {
         let message = `Delete the user ${this.props.node.username}?`
         if (hard) {
             message = `Nuke the user ${this.props.node.username}?${nukeDetails}`
@@ -272,7 +271,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
     }
 }
 
-interface Props extends RouteComponentProps<any> {
+interface Props extends RouteComponentProps<{}> {
     authenticatedUser: GQL.IUser
 }
 
@@ -312,7 +311,7 @@ export class SiteAdminAllUsersPage extends React.Component<Props, State> {
         return (
             <div className="site-admin-all-users-page">
                 <PageTitle title="Users - Admin" />
-                <div className="d-flex justify-content-between align-items-center mt-3 mb-3">
+                <div className="d-flex justify-content-between align-items-center mb-3">
                     <h2 className="mb-0">Users</h2>
                     <div>
                         <Link to="/site-admin/users/new" className="btn btn-primary">
@@ -335,5 +334,5 @@ export class SiteAdminAllUsersPage extends React.Component<Props, State> {
         )
     }
 
-    private onDidUpdateUser = () => this.userUpdates.next()
+    private onDidUpdateUser = (): void => this.userUpdates.next()
 }

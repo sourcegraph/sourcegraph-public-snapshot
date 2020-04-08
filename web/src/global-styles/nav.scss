@@ -14,3 +14,8 @@ $nav-tabs-link-active-border-color: var(--border-color) var(--border-color) tran
 .nav-tabs > .nav-item > .nav-link {
     height: 100%;
 }
+
+// Bootstrap's nav base class does not include styles for the active state.
+.nav-link.active {
+    color: var(--link-active-color);
+}

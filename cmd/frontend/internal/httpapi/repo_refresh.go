@@ -6,9 +6,9 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
-	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 )
 
 func serveRepoRefresh(w http.ResponseWriter, r *http.Request) error {

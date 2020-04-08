@@ -10,8 +10,9 @@ import { Form } from '../components/Form'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { createUser } from './backend'
+import { ErrorAlert } from '../components/alerts'
 
-interface Props extends RouteComponentProps<any> {}
+interface Props extends RouteComponentProps<{}> {}
 
 interface State {
     errorDescription?: string
@@ -134,7 +135,7 @@ export class SiteAdminCreateUserPage extends React.Component<Props, State> {
                             />
                             <small className="form-text text-muted">
                                 A username consists of letters, numbers, hyphens (-), dots (.) and may not begin or end
-                                with a hyphen nor a dot.
+                                with a dot, nor begin with a hyphen.
                             </small>
                         </div>
                         <div className="form-group site-admin-create-user-page__form-group">
@@ -151,7 +152,7 @@ export class SiteAdminCreateUserPage extends React.Component<Props, State> {
                             </small>
                         </div>
                         {this.state.errorDescription && (
-                            <div className="alert alert-danger my-2">{this.state.errorDescription}</div>
+                            <ErrorAlert className="my-2" error={this.state.errorDescription} />
                         )}
                         <button className="btn btn-primary" disabled={this.state.loading} type="submit">
                             {window.context.resetPasswordEnabled
@@ -164,11 +165,11 @@ export class SiteAdminCreateUserPage extends React.Component<Props, State> {
         )
     }
 
-    private onEmailFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    private onEmailFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
         this.setState({ email: e.target.value, errorDescription: undefined })
     }
 
-    private onUsernameFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    private onUsernameFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
         this.setState({ username: e.target.value, errorDescription: undefined })
     }
 
@@ -178,7 +179,7 @@ export class SiteAdminCreateUserPage extends React.Component<Props, State> {
         this.submits.next({ username: this.state.username, email: this.state.email })
     }
 
-    private dismissAlert = () =>
+    private dismissAlert = (): void =>
         this.setState({
             createUserResult: undefined,
             errorDescription: undefined,

@@ -11,19 +11,16 @@ export GO111MODULE=on
 
 pkgs=${@:-./...}
 
-go install github.com/golangci/golangci-lint/cmd/golangci-lint
-
 echo "--- go install"
 go install -tags=dev -buildmode=archive ${pkgs}
+asdf reshim
 
 echo "--- lint"
-if [ -n "$BUILDKITE_PULL_REQUEST_BASE_BRANCH" ]; then
-    git fetch origin ${BUILDKITE_PULL_REQUEST_BASE_BRANCH}
-    base="origin/${BUILDKITE_PULL_REQUEST_BASE_BRANCH}"
-else
-    git fetch origin master
-    base="HEAD~"
-fi
 
-rev=$(git merge-base ${base} HEAD)
-golangci-lint run --build-tags=dev -v ${pkgs} --new-from-rev ${rev} --deadline 5m
+# TODO when we add back golangci-lint use the same pattern we use for
+# docsite.sh. We don't want to include its dependencies in our go.mod,
+# especially since it is GPL code.
+
+echo "go lint is disabled until we can get it to use less resources. https://github.com/sourcegraph/sourcegraph/issues/9193"
+# Disable unused since it uses too much CPU/mem
+#golangci-lint run -e unused ${pkgs}

@@ -66,7 +66,7 @@ const nextChild = (node: TreeNode, index: number): TreeNode => {
 }
 
 /**
- *  Helper for prevChild, this gets the deepest avialable descendant of a given node.
+ *  Helper for prevChild, this gets the deepest available descendant of a given node.
  *  For a given node, a sibling node can have an arbitrary number of expanded directories.
  *  In order to get the previous item in the tree, we need the absolute last
  *  available descendent of a the previous sibling node.
@@ -145,7 +145,7 @@ export class Tree extends React.PureComponent<Props, State> {
                 return
             }
             const parent = this.state.selectedNode.parent
-            if (parent !== null && parent.parent !== null) {
+            if (parent?.parent) {
                 this.selectNode(parent)
                 return
             }
@@ -239,10 +239,7 @@ export class Tree extends React.PureComponent<Props, State> {
 
         this.subscriptions.add(
             this.componentUpdates
-                .pipe(
-                    startWith(this.props),
-                    distinctUntilChanged(isEqual)
-                )
+                .pipe(startWith(this.props), distinctUntilChanged(isEqual))
                 .subscribe((props: Props) => {
                     const newParentPath = props.activePathIsDir ? props.activePath : dirname(props.activePath)
                     const queryParams = new URLSearchParams(this.props.history.location.search)
@@ -320,7 +317,7 @@ export class Tree extends React.PureComponent<Props, State> {
         )
     }
 
-    private setChildNode = (node: TreeNode, index: number) => {
+    private setChildNode = (node: TreeNode, index: number): void => {
         this.node.childNodes[index] = node
     }
 

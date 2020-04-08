@@ -6,18 +6,20 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
-	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // A GithubSource yields repositories from a single Github connection configured
@@ -25,8 +27,9 @@ import (
 type GithubSource struct {
 	svc             *ExternalService
 	config          *schema.GitHubConnection
-	exclude         map[string]bool
-	excludePatterns []*regexp.Regexp
+	exclude         excludeFunc
+	excludeArchived bool
+	excludeForks    bool
 	githubDotCom    bool
 	baseURL         *url.URL
 	client          *github.Client
@@ -53,13 +56,13 @@ func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpc
 	if err != nil {
 		return nil, err
 	}
-	baseURL = NormalizeBaseURL(baseURL)
+	baseURL = extsvc.NormalizeBaseURL(baseURL)
 	originalHostname := baseURL.Hostname()
 
 	apiURL, githubDotCom := github.APIRoot(baseURL)
 
 	if cf == nil {
-		cf = NewHTTPClientFactory()
+		cf = httpcli.NewExternalHTTPClientFactory()
 	}
 
 	opts := []httpcli.Opt{
@@ -69,11 +72,7 @@ func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpc
 	}
 
 	if c.Certificate != "" {
-		pool, err := newCertPool(c.Certificate)
-		if err != nil {
-			return nil, err
-		}
-		opts = append(opts, httpcli.NewCertPoolOpt(pool))
+		opts = append(opts, httpcli.NewCertPoolOpt(c.Certificate))
 	}
 
 	cli, err := cf.Doer(opts...)
@@ -81,31 +80,37 @@ func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpc
 		return nil, err
 	}
 
-	exclude := make(map[string]bool, len(c.Exclude))
-	var excludePatterns []*regexp.Regexp
+	var (
+		eb              excludeBuilder
+		excludeArchived bool
+		excludeForks    bool
+	)
+
 	for _, r := range c.Exclude {
-		if r.Name != "" {
-			exclude[strings.ToLower(r.Name)] = true
+		eb.Exact(r.Name)
+		eb.Exact(r.Id)
+		eb.Pattern(r.Pattern)
+
+		if r.Archived {
+			excludeArchived = true
 		}
 
-		if r.Id != "" {
-			exclude[r.Id] = true
+		if r.Forks {
+			excludeForks = true
 		}
+	}
 
-		if r.Pattern != "" {
-			re, err := regexp.Compile(r.Pattern)
-			if err != nil {
-				return nil, err
-			}
-			excludePatterns = append(excludePatterns, re)
-		}
+	exclude, err := eb.Build()
+	if err != nil {
+		return nil, err
 	}
 
 	return &GithubSource{
 		svc:              svc,
 		config:           c,
 		exclude:          exclude,
-		excludePatterns:  excludePatterns,
+		excludeArchived:  excludeArchived,
+		excludeForks:     excludeForks,
 		baseURL:          baseURL,
 		githubDotCom:     githubDotCom,
 		client:           github.NewClient(apiURL, c.Token, cli),
@@ -146,14 +151,69 @@ func (s GithubSource) ExternalServices() ExternalServices {
 	return ExternalServices{s.svc}
 }
 
+var _ ChangesetSource = GithubSource{}
+
+// CreateChangeset creates the given *Changeset in the code host.
+func (s GithubSource) CreateChangeset(ctx context.Context, c *Changeset) (bool, error) {
+	var exists bool
+	repo := c.Repo.Metadata.(*github.Repository)
+
+	pr, err := s.client.CreatePullRequest(ctx, &github.CreatePullRequestInput{
+		RepositoryID: repo.ID,
+		Title:        c.Title,
+		Body:         c.Body,
+		HeadRefName:  git.AbbreviateRef(c.HeadRef),
+		BaseRefName:  git.AbbreviateRef(c.BaseRef),
+	})
+
+	if err != nil {
+		if err != github.ErrPullRequestAlreadyExists {
+			return exists, err
+		}
+		owner, name, err := github.SplitRepositoryNameWithOwner(repo.NameWithOwner)
+		if err != nil {
+			return exists, errors.Wrap(err, "getting repo owner and name")
+		}
+		pr, err = s.client.GetOpenPullRequestByRefs(ctx, owner, name, c.BaseRef, c.HeadRef)
+		if err != nil {
+			return exists, errors.Wrap(err, "fetching existing PR")
+		}
+		exists = true
+	}
+
+	if err := c.SetMetadata(pr); err != nil {
+		return false, errors.Wrap(err, "setting changeset metadata")
+	}
+
+	return exists, nil
+}
+
+// CloseChangeset closes the given *Changeset on the code host and updates the
+// Metadata column in the *campaigns.Changeset to the newly closed pull request.
+func (s GithubSource) CloseChangeset(ctx context.Context, c *Changeset) error {
+	pr, ok := c.Changeset.Metadata.(*github.PullRequest)
+	if !ok {
+		return errors.New("Changeset is not a GitHub pull request")
+	}
+
+	err := s.client.ClosePullRequest(ctx, pr)
+	if err != nil {
+		return err
+	}
+
+	c.Changeset.Metadata = pr
+
+	return nil
+}
+
 // LoadChangesets loads the latest state of the given Changesets from the codehost.
 func (s GithubSource) LoadChangesets(ctx context.Context, cs ...*Changeset) error {
 	prs := make([]*github.PullRequest, len(cs))
 	for i := range cs {
 		repo := cs[i].Repo.Metadata.(*github.Repository)
-		number, err := strconv.Atoi(cs[i].ExternalID)
+		number, err := strconv.ParseInt(cs[i].ExternalID, 10, 64)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "parsing changeset external id")
 		}
 
 		prs[i] = &github.PullRequest{
@@ -168,8 +228,33 @@ func (s GithubSource) LoadChangesets(ctx context.Context, cs ...*Changeset) erro
 	}
 
 	for i := range cs {
-		cs[i].Changeset.Metadata = prs[i]
+		if err := cs[i].SetMetadata(prs[i]); err != nil {
+			return errors.Wrap(err, "setting changeset metadata")
+		}
 	}
+
+	return nil
+}
+
+// UpdateChangeset updates the given *Changeset in the code host.
+func (s GithubSource) UpdateChangeset(ctx context.Context, c *Changeset) error {
+	pr, ok := c.Changeset.Metadata.(*github.PullRequest)
+	if !ok {
+		return errors.New("Changeset is not a GitHub pull request")
+	}
+
+	updated, err := s.client.UpdatePullRequest(ctx, &github.UpdatePullRequestInput{
+		PullRequestID: pr.ID,
+		Title:         c.Title,
+		Body:          c.Body,
+		BaseRefName:   git.AbbreviateRef(c.BaseRef),
+	})
+
+	if err != nil {
+		return err
+	}
+
+	c.Changeset.Metadata = updated
 
 	return nil
 }
@@ -200,8 +285,8 @@ func (s GithubSource) makeRepo(r *github.Repository) *Repo {
 		ExternalRepo: github.ExternalRepoSpec(r, *s.baseURL),
 		Description:  r.Description,
 		Fork:         r.IsFork,
-		Enabled:      true,
 		Archived:     r.IsArchived,
+		Private:      r.IsPrivate,
 		Sources: map[string]*SourceInfo{
 			urn: {
 				ID:       urn,
@@ -233,15 +318,18 @@ func (s *GithubSource) authenticatedRemoteURL(repo *github.Repository) string {
 }
 
 func (s *GithubSource) excludes(r *github.Repository) bool {
-	if s.exclude[strings.ToLower(r.NameWithOwner)] || s.exclude[r.ID] {
+	if s.exclude(r.NameWithOwner) || s.exclude(r.ID) {
 		return true
 	}
 
-	for _, re := range s.excludePatterns {
-		if re.MatchString(r.NameWithOwner) {
-			return true
-		}
+	if s.excludeArchived && r.IsArchived {
+		return true
 	}
+
+	if s.excludeForks && r.IsFork {
+		return true
+	}
+
 	return false
 }
 
@@ -285,9 +373,20 @@ func (s *GithubSource) paginate(ctx context.Context, results chan *githubResult,
 // listOrg handles the `org` config option.
 // It returns all the repositories belonging to the given organization
 // by hitting the /orgs/:org/repos endpoint.
+//
+// It returns an error if the request fails on the first page.
 func (s *GithubSource) listOrg(ctx context.Context, org string, results chan *githubResult) {
+	var oerr error
 	s.paginate(ctx, results, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
 		defer func() {
+			// Catch 404 to handle
+			if page == 1 {
+				if apiErr, ok := err.(*github.APIError); ok && apiErr.Code == 404 {
+					oerr = fmt.Errorf("organisation %q not found", org)
+					err = nil
+				}
+			}
+
 			remaining, reset, retry, _ := s.client.RateLimit.Get()
 			log15.Debug(
 				"github sync: ListOrgRepositories",
@@ -300,6 +399,39 @@ func (s *GithubSource) listOrg(ctx context.Context, org string, results chan *gi
 		}()
 		return s.client.ListOrgRepositories(ctx, org, page)
 	})
+
+	// Handle 404 from org repos endpoint by trying user repos endpoint
+	if oerr != nil && s.listUser(ctx, org, results) != nil {
+		results <- &githubResult{
+			err: oerr,
+		}
+	}
+}
+
+// listUser returns all the repositories belonging to the given user
+// by hitting the /users/:user/repos endpoint.
+//
+// It returns an error if the request fails on the first page.
+func (s *GithubSource) listUser(ctx context.Context, user string, results chan *githubResult) (fail error) {
+	s.paginate(ctx, results, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
+		defer func() {
+			if err != nil && page == 1 {
+				fail, err = err, nil
+			}
+
+			remaining, reset, retry, _ := s.client.RateLimit.Get()
+			log15.Debug(
+				"github sync: ListUserRepositories",
+				"repos", len(repos),
+				"rateLimitCost", cost,
+				"rateLimitRemaining", remaining,
+				"rateLimitReset", reset,
+				"retryAfter", retry,
+			)
+		}()
+		return s.client.ListUserRepositories(ctx, user, page)
+	})
+	return
 }
 
 // listRepos returns the valid repositories from the given list of repository names.
@@ -404,7 +536,7 @@ func (s *GithubSource) listAffiliated(ctx context.Context, results chan *githubR
 				"retryAfter", retry,
 			)
 		}()
-		return s.client.ListUserRepositories(ctx, page)
+		return s.client.ListAffiliatedRepositories(ctx, page)
 	})
 }
 
@@ -459,7 +591,7 @@ func (s *GithubSource) listSearch(ctx context.Context, query string, results cha
 // - only single hyphens and alphanumeric characters allowed.
 // - cannot begin/end with hyphen.
 // - up to 38 characters.
-var regOrg = regexp.MustCompile(`^org:([a-zA-Z0-9](?:-?[a-zA-Z0-9]){0,38})$`)
+var regOrg = lazyregexp.New(`^org:([a-zA-Z0-9](?:-?[a-zA-Z0-9]){0,38})$`)
 
 // matchOrg extracts the org name from the pattern `org:<org-name>` if it exists.
 func matchOrg(q string) string {
@@ -494,6 +626,9 @@ func (s *GithubSource) listRepositoryQuery(ctx context.Context, query string, re
 	// to directly use GitHub's org repo
 	// list API instead of the limited
 	// search API.
+	//
+	// If the org repo list API fails, we
+	// try the user repo list API.
 	if org := matchOrg(query); org != "" {
 		s.listOrg(ctx, org, results)
 		return
@@ -557,7 +692,7 @@ func (s *GithubSource) fetchAllRepositoriesInBatches(ctx context.Context, result
 			return err
 		}
 
-		log15.Debug("github sync: GetGetReposByNameWithOwner", "repos", batch)
+		log15.Debug("github sync: GetReposByNameWithOwner", "repos", batch)
 		for _, r := range repos {
 			results <- &githubResult{repo: r}
 		}

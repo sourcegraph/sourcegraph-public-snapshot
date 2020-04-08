@@ -29,7 +29,6 @@ import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
-import { KeyboardShortcutsProps } from './keyboardShortcuts/keyboardShortcuts'
 import { Layout, LayoutProps } from './Layout'
 import { updateUserSessionStores } from './marketing/util'
 import { OrgAreaRoute } from './org/area/OrgArea'
@@ -50,6 +49,14 @@ import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
+import { parseSearchURLPatternType, searchURLIsCaseSensitive } from './search'
+import { KeyboardShortcutsProps } from './keyboardShortcuts/keyboardShortcuts'
+import { QueryState } from './search/helpers'
+import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
+import { RepoSettingsSideBarItem } from './repo/settings/RepoSettingsSidebar'
+import { FiltersToTypeAndValue } from '../../shared/src/search/interactive/util'
+import { generateFiltersQuery } from '../../shared/src/util/url'
+import { NotificationType } from '../../shared/src/api/client/services/notifications'
 
 export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
     exploreSections: readonly ExploreSectionDescriptor[]
@@ -69,7 +76,9 @@ export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
     repoContainerRoutes: readonly RepoContainerRoute[]
     repoRevContainerRoutes: readonly RepoRevContainerRoute[]
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
-    routes: readonly LayoutRouteProps[]
+    repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
+    repoSettingsSidebarItems: readonly RepoSettingsSideBarItem[]
+    routes: readonly LayoutRouteProps<any>[]
     showCampaigns: boolean
 }
 
@@ -93,10 +102,55 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     /**
      * The current search query in the navbar.
      */
-    navbarSearchQuery: string
+    navbarSearchQueryState: QueryState
+
+    /**
+     * The current search pattern type.
+     */
+    searchPatternType: GQL.SearchPatternType
+
+    /**
+     * Whether the current search is case sensitive.
+     */
+    searchCaseSensitivity: boolean
+
+    /**
+     * filtersInQuery is the source of truth for the filter values currently in the query.
+     *
+     * The data structure is a map, where the key is a uniquely assigned string in the form `repoType-numberOfFilterAdded`.
+     * The value is a data structure containing the fields {`type`, `value`, `editable`}.
+     * `type` is the field type of the filter (repo, file, etc.) `value` is the current value for that particular filter,
+     * and `editable` is whether the corresponding filter input is currently editable in the UI.
+     * */
+    filtersInQuery: FiltersToTypeAndValue
+
+    /**
+     * Whether interactive search mode is activated
+     */
+    interactiveSearchMode: boolean
+
+    /**
+     * Whether to display the option to toggle between interactive and omni search modes.
+     */
+    splitSearchModes: boolean
+
+    /**
+     * Whether to display the MonacoQueryInput search field.
+     */
+    smartSearchField: boolean
+}
+
+const notificationClassNames = {
+    [NotificationType.Log]: 'alert alert-secondary',
+    [NotificationType.Success]: 'alert alert-success',
+    [NotificationType.Info]: 'alert alert-info',
+    [NotificationType.Warning]: 'alert alert-warning',
+    [NotificationType.Error]: 'alert alert-danger',
 }
 
 const LIGHT_THEME_LOCAL_STORAGE_KEY = 'light-theme'
+const SEARCH_MODE_KEY = 'sg-search-mode'
+
 /** Reads the stored theme preference from localStorage */
 const readStoredThemePreference = (): ThemePreference => {
     const value = localStorage.getItem(LIGHT_THEME_LOCAL_STORAGE_KEY)
@@ -138,12 +192,25 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
     constructor(props: SourcegraphWebAppProps) {
         super(props)
         this.subscriptions.add(this.extensionsController)
+
+        // The patternType in the URL query parameter. If none is provided, default to literal.
+        // This will be updated with the default in settings when the web app mounts.
+        const urlPatternType = parseSearchURLPatternType(window.location.search) || GQL.SearchPatternType.literal
+        const urlCase = searchURLIsCaseSensitive(window.location.search)
+        const currentSearchMode = localStorage.getItem(SEARCH_MODE_KEY)
+
         this.state = {
             themePreference: readStoredThemePreference(),
             systemIsLightTheme: !this.darkThemeMediaList.matches,
-            navbarSearchQuery: '',
+            navbarSearchQueryState: { query: '', cursorPosition: 0 },
             settingsCascade: EMPTY_SETTINGS_CASCADE,
             viewerSubject: SITE_SUBJECT_NO_ADMIN,
+            searchPatternType: urlPatternType,
+            searchCaseSensitivity: urlCase,
+            filtersInQuery: {},
+            splitSearchModes: false,
+            interactiveSearchMode: currentSearchMode ? currentSearchMode === 'interactive' : false,
+            smartSearchField: false,
         }
     }
 
@@ -185,6 +252,37 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             from(this.platformContext.settings).subscribe(settingsCascade => this.setState({ settingsCascade }))
         )
 
+        this.subscriptions.add(
+            from(this.platformContext.settings).subscribe(settingsCascade => {
+                if (!parseSearchURLPatternType(window.location.search)) {
+                    // When the web app mounts, if the current page does not have a patternType URL
+                    // parameter, set the search pattern type to the defaultPatternType from settings
+                    // (if it is set), otherwise default to literal.
+                    //
+                    // For search result URLs that have no patternType= query parameter,
+                    // the `SearchResults` component will append &patternType=regexp
+                    // to the URL to ensure legacy search links continue to work.
+                    const defaultPatternType =
+                        settingsCascade.final &&
+                        !isErrorLike(settingsCascade.final) &&
+                        settingsCascade.final['search.defaultPatternType']
+
+                    const searchPatternType = defaultPatternType || 'literal'
+
+                    this.setState({ searchPatternType })
+                }
+            })
+        )
+
+        this.subscriptions.add(
+            from(this.platformContext.settings).subscribe(settingsCascade => {
+                if (settingsCascade.final && !isErrorLike(settingsCascade.final)) {
+                    const { splitSearchModes, smartSearchField } = settingsCascade.final.experimentalFeatures || {}
+                    this.setState({ splitSearchModes: splitSearchModes !== false, smartSearchField })
+                }
+            })
+        )
+
         // React to OS theme change
         this.subscriptions.add(
             fromEventPattern<MediaQueryListEvent>(
@@ -208,6 +306,28 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         localStorage.setItem(LIGHT_THEME_LOCAL_STORAGE_KEY, this.state.themePreference)
         document.body.classList.toggle('theme-light', this.isLightTheme())
         document.body.classList.toggle('theme-dark', !this.isLightTheme())
+    }
+
+    private toggleSearchMode = (event: React.MouseEvent<HTMLAnchorElement>): void => {
+        event.preventDefault()
+        localStorage.setItem(SEARCH_MODE_KEY, this.state.interactiveSearchMode ? 'plain' : 'interactive')
+
+        eventLogger.log('SearchModeToggled', { mode: this.state.interactiveSearchMode ? 'plain' : 'interactive' })
+
+        if (this.state.interactiveSearchMode) {
+            const queries = [this.state.navbarSearchQueryState.query, generateFiltersQuery(this.state.filtersInQuery)]
+            const newQuery = queries.filter(query => query.length > 0).join(' ')
+
+            this.setState(state => ({
+                interactiveSearchMode: !state.interactiveSearchMode,
+                navbarSearchQueryState: { query: newQuery, cursorPosition: newQuery.length },
+                filtersInQuery: {},
+            }))
+        } else {
+            this.setState(state => ({
+                interactiveSearchMode: !state.interactiveSearchMode,
+            }))
+        }
     }
 
     public render(): React.ReactFragment | null {
@@ -261,14 +381,15 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                         window.context.experimentalFeatures.automation === 'enabled' &&
                                         !window.context.sourcegraphDotComMode &&
                                         !!authenticatedUser &&
-                                        authenticatedUser.siteAdmin
+                                        (authenticatedUser.siteAdmin ||
+                                            !!window.context.site['campaigns.readAccess.enabled'])
                                     }
                                     // Theme
                                     isLightTheme={this.isLightTheme()}
                                     themePreference={this.state.themePreference}
                                     onThemePreferenceChange={this.onThemePreferenceChange}
                                     // Search query
-                                    navbarSearchQuery={this.state.navbarSearchQuery}
+                                    navbarSearchQueryState={this.state.navbarSearchQueryState}
                                     onNavbarQueryChange={this.onNavbarQueryChange}
                                     fetchHighlightedFileLines={fetchHighlightedFileLines}
                                     searchRequest={search}
@@ -277,24 +398,54 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                                     extensionsController={this.extensionsController}
                                     telemetryService={eventLogger}
                                     isSourcegraphDotCom={window.context.sourcegraphDotComMode}
+                                    patternType={this.state.searchPatternType}
+                                    caseSensitive={this.state.searchCaseSensitivity}
+                                    splitSearchModes={this.state.splitSearchModes}
+                                    interactiveSearchMode={this.state.interactiveSearchMode}
+                                    toggleSearchMode={this.toggleSearchMode}
+                                    filtersInQuery={this.state.filtersInQuery}
+                                    onFiltersInQueryChange={this.onFiltersInQueryChange}
+                                    setPatternType={this.setPatternType}
+                                    setCaseSensitivity={this.setCaseSensitivity}
+                                    smartSearchField={this.state.smartSearchField}
                                 />
                             )}
                         />
                         {/* eslint-enable react/jsx-no-bind */}
                     </BrowserRouter>
                     <Tooltip key={1} />
-                    <Notifications key={2} extensionsController={this.extensionsController} />
+                    <Notifications
+                        key={2}
+                        extensionsController={this.extensionsController}
+                        notificationClassNames={notificationClassNames}
+                    />
                 </ShortcutProvider>
             </ErrorBoundary>
         )
     }
 
-    private onThemePreferenceChange = (themePreference: ThemePreference) => {
+    private onThemePreferenceChange = (themePreference: ThemePreference): void => {
         this.setState({ themePreference })
     }
 
-    private onNavbarQueryChange = (navbarSearchQuery: string) => {
-        this.setState({ navbarSearchQuery })
+    private onNavbarQueryChange = (navbarSearchQueryState: QueryState): void => {
+        this.setState({ navbarSearchQueryState })
+    }
+
+    private onFiltersInQueryChange = (filtersInQuery: FiltersToTypeAndValue): void => {
+        this.setState({ filtersInQuery })
+    }
+
+    private setPatternType = (patternType: GQL.SearchPatternType): void => {
+        this.setState({
+            searchPatternType: patternType,
+        })
+    }
+
+    private setCaseSensitivity = (caseSensitive: boolean): void => {
+        this.setState({
+            searchCaseSensitivity: caseSensitive,
+        })
     }
 }
 

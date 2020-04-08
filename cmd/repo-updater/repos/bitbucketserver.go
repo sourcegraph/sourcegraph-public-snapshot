@@ -4,29 +4,29 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"regexp"
 	"strconv"
 	"strings"
 	"sync"
 
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
-	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // A BitbucketServerSource yields repositories from a single BitbucketServer connection configured
 // in Sourcegraph via the external services configuration.
 type BitbucketServerSource struct {
-	svc             *ExternalService
-	config          *schema.BitbucketServerConnection
-	exclude         map[string]bool
-	excludePatterns []*regexp.Regexp
-	client          *bitbucketserver.Client
+	svc     *ExternalService
+	config  *schema.BitbucketServerConnection
+	exclude excludeFunc
+	client  *bitbucketserver.Client
 }
 
 // NewBitbucketServerSource returns a new BitbucketServerSource from the given external service.
@@ -39,23 +39,13 @@ func NewBitbucketServerSource(svc *ExternalService, cf *httpcli.Factory) (*Bitbu
 }
 
 func newBitbucketServerSource(svc *ExternalService, c *schema.BitbucketServerConnection, cf *httpcli.Factory) (*BitbucketServerSource, error) {
-	baseURL, err := url.Parse(c.Url)
-	if err != nil {
-		return nil, err
-	}
-	baseURL = NormalizeBaseURL(baseURL)
-
 	if cf == nil {
-		cf = NewHTTPClientFactory()
+		cf = httpcli.NewExternalHTTPClientFactory()
 	}
 
 	var opts []httpcli.Opt
 	if c.Certificate != "" {
-		pool, err := newCertPool(c.Certificate)
-		if err != nil {
-			return nil, err
-		}
-		opts = append(opts, httpcli.NewCertPoolOpt(pool))
+		opts = append(opts, httpcli.NewCertPoolOpt(c.Certificate))
 	}
 
 	cli, err := cf.Doer(opts...)
@@ -63,37 +53,27 @@ func newBitbucketServerSource(svc *ExternalService, c *schema.BitbucketServerCon
 		return nil, err
 	}
 
-	exclude := make(map[string]bool, len(c.Exclude))
-	var excludePatterns []*regexp.Regexp
+	var eb excludeBuilder
 	for _, r := range c.Exclude {
-		if r.Name != "" {
-			exclude[strings.ToLower(r.Name)] = true
-		}
-
-		if r.Id != 0 {
-			exclude[strconv.Itoa(r.Id)] = true
-		}
-
-		if r.Pattern != "" {
-			re, err := regexp.Compile(r.Pattern)
-			if err != nil {
-				return nil, err
-			}
-			excludePatterns = append(excludePatterns, re)
-		}
+		eb.Exact(r.Name)
+		eb.Exact(strconv.Itoa(r.Id))
+		eb.Pattern(r.Pattern)
+	}
+	exclude, err := eb.Build()
+	if err != nil {
+		return nil, err
 	}
 
-	client := bitbucketserver.NewClient(baseURL, cli)
-	client.Token = c.Token
-	client.Username = c.Username
-	client.Password = c.Password
+	client, err := bitbucketserver.NewClient(c, cli)
+	if err != nil {
+		return nil, err
+	}
 
 	return &BitbucketServerSource{
-		svc:             svc,
-		config:          c,
-		exclude:         exclude,
-		excludePatterns: excludePatterns,
-		client:          client,
+		svc:     svc,
+		config:  c,
+		exclude: exclude,
+		client:  client,
 	}, nil
 }
 
@@ -103,18 +83,163 @@ func (s BitbucketServerSource) ListRepos(ctx context.Context, results chan Sourc
 	s.listAllRepos(ctx, results)
 }
 
+var _ ChangesetSource = BitbucketServerSource{}
+
+// CreateChangeset creates the given *Changeset in the code host.
+func (s BitbucketServerSource) CreateChangeset(ctx context.Context, c *Changeset) (bool, error) {
+	var exists bool
+
+	repo := c.Repo.Metadata.(*bitbucketserver.Repo)
+
+	pr := &bitbucketserver.PullRequest{Title: c.Title, Description: c.Body}
+
+	pr.ToRef.Repository.Slug = repo.Slug
+	pr.ToRef.Repository.Project.Key = repo.Project.Key
+	pr.ToRef.ID = git.EnsureRefPrefix(c.BaseRef)
+
+	pr.FromRef.Repository.Slug = repo.Slug
+	pr.FromRef.Repository.Project.Key = repo.Project.Key
+	pr.FromRef.ID = git.EnsureRefPrefix(c.HeadRef)
+
+	err := s.client.CreatePullRequest(ctx, pr)
+	if err != nil {
+		if ae, ok := err.(*bitbucketserver.ErrAlreadyExists); ok && ae != nil {
+			if ae.Existing == nil {
+				return exists, fmt.Errorf("existing PR is nil")
+			}
+			log15.Info("Existing PR extracted", "ID", ae.Existing.ID)
+			pr = ae.Existing
+			exists = true
+		} else {
+			return exists, err
+		}
+	}
+
+	if err := s.loadPullRequestData(ctx, pr); err != nil {
+		return false, errors.Wrap(err, "loading extra metadata")
+	}
+	if err = c.SetMetadata(pr); err != nil {
+		return false, errors.Wrap(err, "setting changeset metadata")
+	}
+
+	return exists, nil
+}
+
+// CloseChangeset closes the given *Changeset on the code host and updates the
+// Metadata column in the *campaigns.Changeset to the newly closed pull request.
+func (s BitbucketServerSource) CloseChangeset(ctx context.Context, c *Changeset) error {
+	pr, ok := c.Changeset.Metadata.(*bitbucketserver.PullRequest)
+	if !ok {
+		return errors.New("Changeset is not a Bitbucket Server pull request")
+	}
+
+	err := s.client.DeclinePullRequest(ctx, pr)
+	if err != nil {
+		return err
+	}
+
+	c.Changeset.Metadata = pr
+
+	return nil
+}
+
+// LoadChangesets loads the latest state of the given Changesets from the codehost.
+func (s BitbucketServerSource) LoadChangesets(ctx context.Context, cs ...*Changeset) error {
+	var notFound []*Changeset
+
+	for i := range cs {
+		repo := cs[i].Repo.Metadata.(*bitbucketserver.Repo)
+		number, err := strconv.Atoi(cs[i].ExternalID)
+		if err != nil {
+			return err
+		}
+
+		pr := &bitbucketserver.PullRequest{ID: number}
+		pr.ToRef.Repository.Slug = repo.Slug
+		pr.ToRef.Repository.Project.Key = repo.Project.Key
+
+		err = s.client.LoadPullRequest(ctx, pr)
+		if err != nil {
+			if bitbucketserver.IsNotFound(err) {
+				notFound = append(notFound, cs[i])
+				if cs[i].Changeset.Metadata == nil {
+					cs[i].Changeset.Metadata = pr
+				}
+				continue
+			}
+
+			return err
+		}
+
+		err = s.loadPullRequestData(ctx, pr)
+		if err != nil {
+			return errors.Wrap(err, "loading pull request data")
+		}
+		if err = cs[i].SetMetadata(pr); err != nil {
+			return errors.Wrap(err, "setting changeset metadata")
+		}
+	}
+
+	if len(notFound) > 0 {
+		return ChangesetsNotFoundError{Changesets: notFound}
+	}
+
+	return nil
+}
+
+func (s BitbucketServerSource) loadPullRequestData(ctx context.Context, pr *bitbucketserver.PullRequest) error {
+	if err := s.client.LoadPullRequestActivities(ctx, pr); err != nil {
+		return errors.Wrap(err, "loading pr activities")
+	}
+
+	if err := s.client.LoadPullRequestCommits(ctx, pr); err != nil {
+		return errors.Wrap(err, "loading pr commits")
+	}
+
+	if err := s.client.LoadPullRequestBuildStatuses(ctx, pr); err != nil {
+		return errors.Wrap(err, "loading pr build status")
+	}
+
+	return nil
+}
+
+func (s BitbucketServerSource) UpdateChangeset(ctx context.Context, c *Changeset) error {
+	pr, ok := c.Changeset.Metadata.(*bitbucketserver.PullRequest)
+	if !ok {
+		return errors.New("Changeset is not a Bitbucket Server pull request")
+	}
+
+	update := &bitbucketserver.UpdatePullRequestInput{
+		PullRequestID: strconv.Itoa(pr.ID),
+		Title:         c.Title,
+		Description:   c.Body,
+		Version:       pr.Version,
+	}
+	update.ToRef.ID = c.BaseRef
+	update.ToRef.Repository.Slug = pr.ToRef.Repository.Slug
+	update.ToRef.Repository.Project.Key = pr.ToRef.Repository.Project.Key
+
+	updated, err := s.client.UpdatePullRequest(ctx, update)
+	if err != nil {
+		return err
+	}
+
+	c.Changeset.Metadata = updated
+	return nil
+}
+
 // ExternalServices returns a singleton slice containing the external service.
 func (s BitbucketServerSource) ExternalServices() ExternalServices {
 	return ExternalServices{s.svc}
 }
 
-func (s BitbucketServerSource) makeRepo(repo *bitbucketserver.Repo) *Repo {
+func (s BitbucketServerSource) makeRepo(repo *bitbucketserver.Repo, isArchived bool) *Repo {
 	host, err := url.Parse(s.config.Url)
 	if err != nil {
 		// This should never happen
 		panic(errors.Errorf("malformed bitbucket config, invalid URL: %q, error: %s", s.config.Url, err))
 	}
-	host = NormalizeBaseURL(host)
+	host = extsvc.NormalizeBaseURL(host)
 
 	// Name
 	project := "UNKNOWN"
@@ -142,19 +267,6 @@ func (s BitbucketServerSource) makeRepo(repo *bitbucketserver.Repo) *Repo {
 		}
 	}
 
-	// Repo Links
-	// var links *protocol.RepoLinks
-	// for _, l := range repo.Links.Self {
-	// 	root := strings.TrimSuffix(l.Href, "/browse")
-	// 	links = &protocol.RepoLinks{
-	// 		Root:   l.Href,
-	// 		Tree:   root + "/browse/{path}?at={rev}",
-	// 		Blob:   root + "/browse/{path}?at={rev}",
-	// 		Commit: root + "/commits/{commit}",
-	// 	}
-	// 	break
-	// }
-
 	urn := s.svc.URN()
 
 	return &Repo{
@@ -177,7 +289,8 @@ func (s BitbucketServerSource) makeRepo(repo *bitbucketserver.Repo) *Repo {
 		},
 		Description: repo.Name,
 		Fork:        repo.Origin != nil,
-		Enabled:     true,
+		Archived:    isArchived,
+		Private:     !repo.Public,
 		Sources: map[string]*SourceInfo{
 			urn: {
 				ID:       urn,
@@ -194,21 +307,26 @@ func (s *BitbucketServerSource) excludes(r *bitbucketserver.Repo) bool {
 		name = r.Project.Key + "/" + name
 	}
 	if r.State != "AVAILABLE" ||
-		s.exclude[strings.ToLower(name)] ||
-		s.exclude[strconv.Itoa(r.ID)] ||
+		s.exclude(name) ||
+		s.exclude(strconv.Itoa(r.ID)) ||
 		(s.config.ExcludePersonalRepositories && r.IsPersonalRepository()) {
 		return true
 	}
 
-	for _, re := range s.excludePatterns {
-		if re.MatchString(name) {
-			return true
-		}
-	}
 	return false
 }
 
 func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan SourceResult) {
+	// "archived" label is a convention used at some customers for indicating
+	// a repository is archived (like github's archived state). This is not
+	// returned in the normal repository listing endpoints, so we need to
+	// fetch it separately.
+	archived, err := s.listAllLabeledRepos(ctx, "archived")
+	if err != nil {
+		results <- SourceResult{Source: s, Err: errors.Wrap(err, "failed to list repos with archived label")}
+		return
+	}
+
 	type batch struct {
 		repos []*bitbucketserver.Repo
 		err   error
@@ -288,10 +406,36 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 
 		for _, repo := range r.repos {
 			if !seen[repo.ID] && !s.excludes(repo) {
-				results <- SourceResult{Source: s, Repo: s.makeRepo(repo)}
+				_, isArchived := archived[repo.ID]
+				results <- SourceResult{Source: s, Repo: s.makeRepo(repo, isArchived)}
 				seen[repo.ID] = true
 			}
 		}
 
 	}
+}
+
+func (s *BitbucketServerSource) listAllLabeledRepos(ctx context.Context, label string) (map[int]struct{}, error) {
+	ids := map[int]struct{}{}
+	next := &bitbucketserver.PageToken{Limit: 1000}
+	for next.HasMore() {
+		repos, page, err := s.client.LabeledRepos(ctx, next, label)
+		if err != nil {
+			// If the instance doesn't have the label then no repos are
+			// labeled. Older versions of bitbucket do not support labels, so
+			// they too have no labelled repos.
+			if bitbucketserver.IsNoSuchLabel(err) || bitbucketserver.IsNotFound(err) {
+				// treat as empty
+				return ids, nil
+			}
+			return nil, err
+		}
+
+		for _, r := range repos {
+			ids[r.ID] = struct{}{}
+		}
+
+		next = page
+	}
+	return ids, nil
 }

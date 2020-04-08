@@ -3,16 +3,20 @@
 package main
 
 import (
-	_ "github.com/go-delve/delve/cmd/dlv"
-	_ "github.com/golangci/golangci-lint/cmd/golangci-lint"
+	// zoekt-* used in sourcegraph/server docker image build
 	_ "github.com/google/zoekt/cmd/zoekt-archive-index"
 	_ "github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver"
 	_ "github.com/google/zoekt/cmd/zoekt-webserver"
-	_ "github.com/kevinburke/differ"
+
+	// go-bindata is used in lots of our gen.go files
 	_ "github.com/kevinburke/go-bindata/go-bindata"
-	_ "github.com/mattn/goreman"
+
+	// vfsgendev is used for packing static assets into .go files.
 	_ "github.com/shurcooL/vfsgen/cmd/vfsgendev"
-	_ "github.com/sourcegraph/docsite/cmd/docsite"
+
+	// used in schema pkg
 	_ "github.com/sourcegraph/go-jsonschema/cmd/go-jsonschema-compiler"
+
+	// used in many places
 	_ "golang.org/x/tools/cmd/stringer"
 )

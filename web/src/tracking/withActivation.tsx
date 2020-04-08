@@ -20,7 +20,7 @@ const fetchActivationStatus = (isSiteAdmin: boolean): Observable<ActivationCompl
     queryGraphQL(
         isSiteAdmin
             ? gql`
-                  query {
+                  query ActivationStatus {
                       externalServices {
                           totalCount
                       }
@@ -43,7 +43,7 @@ const fetchActivationStatus = (isSiteAdmin: boolean): Observable<ActivationCompl
                   }
               `
             : gql`
-                  query {
+                  query ActivationStatus {
                       currentUser {
                           usageStatistics {
                               searchQueries
@@ -117,7 +117,7 @@ const getActivationSteps = (authenticatedUser: GQL.IUser): ActivationStep[] => {
     const sources: (ActivationStep & { siteAdminOnly?: boolean })[] = [
         {
             id: 'ConnectedCodeHost',
-            title: 'Connect your code host',
+            title: 'Add repositories',
             detail: 'Configure Sourcegraph to talk to your code host and fetch a list of your repositories.',
             link: { to: '/site-admin/external-services' },
             siteAdminOnly: true,
@@ -148,7 +148,10 @@ const getActivationSteps = (authenticatedUser: GQL.IUser): ActivationStep[] => {
             id: 'EnabledSharing',
             title: 'Configure SSO or share with teammates',
             detail: 'Configure a single-sign on (SSO) provider or have at least one other teammate sign up.',
-            link: { to: 'https://docs.sourcegraph.com/admin/auth', target: '_blank' },
+            onClick: () => {
+                window.open('https://docs.sourcegraph.com/admin/auth', '_blank', 'height=200,width=200')
+                window.open('/site-admin/configuration', '_self')
+            },
             siteAdminOnly: true,
         },
     ]
@@ -180,8 +183,9 @@ interface WithActivationState {
  * Modifies the input component to return a component that includes the activation status in the
  * `activation` field of its props.
  */
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-export const withActivation = <P extends ActivationProps>(Component: React.ComponentType<P>) =>
+export const withActivation = <P extends ActivationProps>(
+    Component: React.ComponentType<P>
+): React.ComponentType<WithActivationProps & Subtract<P, ActivationProps>> =>
     class WithActivation extends React.Component<
         WithActivationProps & Subtract<P, ActivationProps>,
         WithActivationState
@@ -250,7 +254,7 @@ export const withActivation = <P extends ActivationProps>(Component: React.Compo
             return undefined
         }
 
-        private refetchCompletionStatus = () => this.refetches.next()
+        private refetchCompletionStatus = (): void => this.refetches.next()
 
         private updateCompletionStatus = (update: Partial<ActivationCompletionStatus>): void =>
             this.updates.next(update)

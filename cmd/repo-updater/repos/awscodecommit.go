@@ -9,13 +9,13 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/aws/defaults"
 	"github.com/aws/aws-sdk-go-v2/aws/endpoints"
-	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
-	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
-	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
+	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/net/http2"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // An AWSCodeCommitSource yields repositories from a single AWS Code Commit
@@ -30,7 +30,7 @@ type AWSCodeCommitSource struct {
 	awsRegion    endpoints.Region
 	client       *awscodecommit.Client
 
-	exclude map[string]bool
+	exclude excludeFunc
 }
 
 // NewAWSCodeCommitSource returns a new AWSCodeCommitSource from the given external service.
@@ -54,7 +54,7 @@ func newAWSCodeCommitSource(svc *ExternalService, c *schema.AWSCodeCommitConnect
 	}
 
 	if cf == nil {
-		cf = NewHTTPClientFactory()
+		cf = httpcli.NewExternalHTTPClientFactory()
 	}
 
 	cli, err := cf.Doer(func(c *http.Client) error {
@@ -72,15 +72,14 @@ func newAWSCodeCommitSource(svc *ExternalService, c *schema.AWSCodeCommitConnect
 	}
 	awsConfig.HTTPClient = cli
 
-	exclude := make(map[string]bool, len(c.Exclude))
+	var eb excludeBuilder
 	for _, r := range c.Exclude {
-		if r.Name != "" {
-			exclude[r.Name] = true
-		}
-
-		if r.Id != "" {
-			exclude[r.Id] = true
-		}
+		eb.Exact(r.Name)
+		eb.Exact(r.Id)
+	}
+	exclude, err := eb.Build()
+	if err != nil {
+		return nil, err
 	}
 
 	s := &AWSCodeCommitSource{
@@ -125,7 +124,6 @@ func (s *AWSCodeCommitSource) makeRepo(r *awscodecommit.Repository) (*Repo, erro
 		URI:          string(reposource.AWSRepoName("", r.Name)),
 		ExternalRepo: awscodecommit.ExternalRepoSpec(r, serviceID),
 		Description:  r.Description,
-		Enabled:      true,
 		Sources: map[string]*SourceInfo{
 			urn: {
 				ID:       urn,
@@ -182,7 +180,7 @@ func (s *AWSCodeCommitSource) listAllRepositories(ctx context.Context, results c
 }
 
 func (s *AWSCodeCommitSource) excludes(r *awscodecommit.Repository) bool {
-	return s.exclude[r.Name] || s.exclude[r.ID]
+	return s.exclude(r.Name) || s.exclude(r.ID)
 }
 
 // The code below is copied from
@@ -243,3 +241,9 @@ func (t stubBadHTTPRedirectTransport) RoundTrip(r *http.Request) (*http.Response
 
 	return resp, err
 }
+
+// UnwrappableTransport signals that this transport can't be wrapped. In
+// particular this means we won't respect global external
+// settings. https://github.com/sourcegraph/sourcegraph/issues/71 and
+// https://github.com/sourcegraph/sourcegraph/issues/7738
+func (stubBadHTTPRedirectTransport) UnwrappableTransport() {}

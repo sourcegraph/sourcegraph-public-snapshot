@@ -1,5 +1,4 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
@@ -8,11 +7,12 @@ import * as GQL from '../../../../shared/src/graphql/schema'
 import { ExternalServiceCard } from '../../components/ExternalServiceCard'
 import { Form } from '../../components/Form'
 import { PageTitle } from '../../components/PageTitle'
-import { getExternalService } from '../../site-admin/externalServices'
 import { eventLogger } from '../../tracking/eventLogger'
 import { fetchRepository } from './backend'
+import { ErrorAlert } from '../../components/alerts'
+import { defaultExternalServices } from '../../site-admin/externalServices'
 
-interface Props extends RouteComponentProps<any> {
+interface Props extends RouteComponentProps<{}> {
     repo: GQL.IRepository
     onDidUpdateRepository: (update: Partial<GQL.IRepository>) => void
 }
@@ -47,9 +47,10 @@ export class RepoSettingsOptionsPage extends React.PureComponent<Props, State> {
         eventLogger.logViewEvent('RepoSettings')
 
         this.subscriptions.add(
-            this.repoUpdates
-                .pipe(switchMap(() => fetchRepository(this.props.repo.name)))
-                .subscribe(repo => this.setState({ repo }), err => this.setState({ error: err.message }))
+            this.repoUpdates.pipe(switchMap(() => fetchRepository(this.props.repo.name))).subscribe(
+                repo => this.setState({ repo }),
+                err => this.setState({ error: err.message })
+            )
         )
     }
 
@@ -64,13 +65,13 @@ export class RepoSettingsOptionsPage extends React.PureComponent<Props, State> {
                 <PageTitle title="Repository settings" />
                 <h2>Settings</h2>
                 {this.state.loading && <LoadingSpinner className="icon-inline" />}
-                {this.state.error && <div className="alert alert-danger">{upperFirst(this.state.error)}</div>}
+                {this.state.error && <ErrorAlert error={this.state.error} />}
                 {services.length > 0 && (
                     <div className="mb-4">
                         {services.map(service => (
                             <div className="mb-3" key={service.id}>
                                 <ExternalServiceCard
-                                    {...getExternalService(service.kind)}
+                                    {...defaultExternalServices[service.kind]}
                                     kind={service.kind}
                                     title={service.displayName}
                                     shortDescription="Update this external service configuration to manage repository mirroring."

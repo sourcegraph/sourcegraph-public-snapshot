@@ -1,5 +1,11 @@
 import { Position, Range, Selection } from '@sourcegraph/extension-api-types'
 import { WorkspaceRootWithMetadata } from '../api/client/services/workspaceService'
+import { SearchPatternType } from '../graphql/schema'
+import { FiltersToTypeAndValue } from '../search/interactive/util'
+import { isEmpty } from 'lodash'
+import { parseSearchQuery, CharacterRange } from '../search/parser/parser'
+import { replaceRange } from './strings'
+import { discreteValueAliases } from '../search/parser/filters'
 
 export interface RepoSpec {
     /**
@@ -41,7 +47,7 @@ export interface FileSpec {
     filePath: string
 }
 
-export interface ComparisonSpec {
+interface ComparisonSpec {
     /**
      * a diff specifier with optional base and comparison. Examples:
      * - "master..." (implicitly: "master...HEAD")
@@ -51,18 +57,39 @@ export interface ComparisonSpec {
     commitRange: string
 }
 
-export interface PositionSpec {
-    /**
-     * a 1-indexed point in the blob
-     */
-    position: Position
+/**
+ * 1-indexed position in a blob.
+ * Positions in URLs are 1-indexed.
+ */
+interface UIPosition {
+    /** 1-indexed line number */
+    line: number
+
+    /** 1-indexed character number */
+    character: number
 }
 
-export interface RangeSpec {
+/**
+ * 1-indexed range in a blob.
+ * Ranges in URLs are 1-indexed.
+ */
+interface UIRange {
+    start: UIPosition
+    end: UIPosition
+}
+
+export interface UIPositionSpec {
     /**
-     * a 1-indexed range in the blob
+     * A 1-indexed point in the blob
      */
-    range: Range
+    position: UIPosition
+}
+
+interface UIRangeSpec {
+    /**
+     * A 1-indexed range in the blob
+     */
+    range: UIRange
 }
 
 /**
@@ -73,7 +100,7 @@ export interface ModeSpec {
     mode: string
 }
 
-export type BlobViewState = 'def' | 'references' | 'discussions' | 'impl'
+type BlobViewState = 'def' | 'references' | 'discussions' | 'impl'
 
 export interface ViewStateSpec {
     /**
@@ -89,7 +116,7 @@ export interface ViewStateSpec {
  */
 export type RenderMode = 'code' | 'rendered' | undefined
 
-export interface RenderModeSpec {
+interface RenderModeSpec {
     /**
      * How the file should be rendered.
      */
@@ -105,8 +132,8 @@ export interface ParsedRepoURI
         Partial<ResolvedRevSpec>,
         Partial<FileSpec>,
         Partial<ComparisonSpec>,
-        Partial<PositionSpec>,
-        Partial<RangeSpec> {}
+        Partial<UIPositionSpec>,
+        Partial<UIRangeSpec> {}
 
 /**
  * RepoURI is a URI identifing a repository resource, like
@@ -144,13 +171,13 @@ export function parseRepoURI(uri: RepoURI): ParsedRepoURI {
     const repoName = parsed.hostname + parsed.pathname
     const rev = parsed.search.substr('?'.length) || undefined
     let commitID: string | undefined
-    if (rev && rev.match(/[0-9a-fA-f]{40}/)) {
+    if (rev?.match(/[0-9a-fA-f]{40}/)) {
         commitID = rev
     }
-    const fragmentSplit = parsed.hash.substr('#'.length).split(':')
+    const fragmentSplit = parsed.hash.substr('#'.length).split(':').map(decodeURIComponent)
     let filePath: string | undefined
-    let position: Position | undefined
-    let range: Range | undefined
+    let position: UIPosition | undefined
+    let range: UIRange | undefined
     if (fragmentSplit.length === 1) {
         filePath = fragmentSplit[0]
     }
@@ -202,18 +229,6 @@ export interface RepoFile extends RepoSpec, RevSpec, Partial<ResolvedRevSpec>, F
 export interface AbsoluteRepoFile extends RepoSpec, RevSpec, ResolvedRevSpec, FileSpec {}
 
 /**
- * A position in file
- */
-export interface RepoFilePosition
-    extends RepoSpec,
-        RevSpec,
-        Partial<ResolvedRevSpec>,
-        FileSpec,
-        PositionSpec,
-        Partial<ViewStateSpec>,
-        Partial<RenderModeSpec> {}
-
-/**
  * A position in file at an exact commit
  */
 export interface AbsoluteRepoFilePosition
@@ -221,19 +236,7 @@ export interface AbsoluteRepoFilePosition
         RevSpec,
         ResolvedRevSpec,
         FileSpec,
-        PositionSpec,
-        Partial<ViewStateSpec>,
-        Partial<RenderModeSpec> {}
-
-/**
- * A range in file at an exact commit
- */
-export interface AbsoluteRepoFileRange
-    extends RepoSpec,
-        RevSpec,
-        ResolvedRevSpec,
-        FileSpec,
-        RangeSpec,
+        UIPositionSpec,
         Partial<ViewStateSpec>,
         Partial<RenderModeSpec> {}
 
@@ -468,7 +471,7 @@ export function encodeRepoRev(repo: string, rev?: string): string {
 }
 
 export function toPrettyBlobURL(
-    ctx: RepoFile & Partial<PositionSpec> & Partial<ViewStateSpec> & Partial<RangeSpec> & Partial<RenderModeSpec>
+    ctx: RepoFile & Partial<UIPositionSpec> & Partial<ViewStateSpec> & Partial<UIRangeSpec> & Partial<RenderModeSpec>
 ): string {
     return `/${encodeRepoRev(ctx.repoName, ctx.rev)}/-/blob/${ctx.filePath}${toRenderModeQuery(
         ctx
@@ -525,7 +528,7 @@ export function withWorkspaceRootInputRevision(
         const rootURI = parseRepoURI(root.uri)
         return rootURI.repoName === uri.repoName && rootURI.rev === uri.rev
     })
-    if (inWorkspaceRoot && inWorkspaceRoot.inputRevision !== undefined) {
+    if (inWorkspaceRoot?.inputRevision !== undefined) {
         return { ...uri, commitID: undefined, rev: inWorkspaceRoot.inputRevision }
     }
     return uri // unchanged
@@ -533,12 +536,115 @@ export function withWorkspaceRootInputRevision(
 
 /**
  * Builds a URL query for the given query (without leading `?`).
+ *
+ * @param query the search query
+ * @param patternType the pattern type this query should be interpreted in.
+ * Having a `patternType:` filter in the query overrides this argument.
+ * @param filtersInQuery filters in an interactive mode query. For callers of
+ * this function requiring correct behavior in interactive mode, this param
+ * must be passed.
+ *
  */
-export function buildSearchURLQuery(query: string): string {
+export function buildSearchURLQuery(
+    query: string,
+    patternType: SearchPatternType,
+    caseSensitive: boolean,
+    filtersInQuery?: FiltersToTypeAndValue
+): string {
     const searchParams = new URLSearchParams()
-    searchParams.set('q', query)
-    return searchParams
-        .toString()
-        .replace(/%2F/g, '/')
-        .replace(/%3A/g, ':')
+    let fullQuery = query
+
+    if (filtersInQuery && !isEmpty(filtersInQuery)) {
+        fullQuery = [fullQuery, generateFiltersQuery(filtersInQuery)].filter(query => query.length > 0).join(' ')
+    }
+
+    const patternTypeInQuery = parsePatternTypeFromQuery(fullQuery)
+    if (patternTypeInQuery) {
+        fullQuery = replaceRange(fullQuery, patternTypeInQuery.range)
+        searchParams.set('q', fullQuery)
+        searchParams.set('patternType', patternTypeInQuery.value)
+    } else {
+        searchParams.set('q', fullQuery)
+        searchParams.set('patternType', patternType)
+    }
+
+    const caseInQuery = parseCaseSensitivityFromQuery(fullQuery)
+    if (caseInQuery) {
+        fullQuery = replaceRange(fullQuery, caseInQuery.range)
+        searchParams.set('q', fullQuery)
+
+        if (discreteValueAliases.yes.includes(caseInQuery.value)) {
+            fullQuery = replaceRange(fullQuery, caseInQuery.range)
+            searchParams.set('case', caseInQuery.value)
+        } else {
+            // For now, remove case when case:no, since it's the default behavior. Avoids
+            // queries breaking when only `repo:` filters are specified.
+            //
+            // TODO: just set case=no when https://github.com/sourcegraph/sourcegraph/issues/7671 is fixed.
+            searchParams.delete('case')
+        }
+    } else {
+        searchParams.set('q', fullQuery)
+        if (caseSensitive) {
+            searchParams.set('case', 'yes')
+        } else {
+            // For now, remove case when case:no, since it's the default behavior. Avoids
+            // queries breaking when only `repo:` filters are specified.
+            //
+            // TODO: just set case=no when https://github.com/sourcegraph/sourcegraph/issues/7671 is fixed.
+            searchParams.delete('case')
+        }
+    }
+
+    return searchParams.toString().replace(/%2F/g, '/').replace(/%3A/g, ':')
+}
+
+/**
+ * Creates the raw string representation of the filters currently in the query in interactive mode.
+ *
+ * @param filtersInQuery the map representing the filters currently in an interactive mode query.
+ */
+export function generateFiltersQuery(filtersInQuery: FiltersToTypeAndValue): string {
+    const fieldKeys = Object.keys(filtersInQuery)
+    return fieldKeys
+        .filter(key => filtersInQuery[key].value.trim().length > 0)
+        .map(key => `${filtersInQuery[key].negated ? '-' : ''}${filtersInQuery[key].type}:${filtersInQuery[key].value}`)
+        .join(' ')
+}
+
+export function parsePatternTypeFromQuery(query: string): { range: CharacterRange; value: string } | undefined {
+    const parsedQuery = parseSearchQuery(query)
+    if (parsedQuery.type === 'success') {
+        for (const member of parsedQuery.token.members) {
+            const token = member.token
+            if (
+                token.type === 'filter' &&
+                token.filterType.token.value.toLowerCase() === 'patterntype' &&
+                token.filterValue
+            ) {
+                return {
+                    range: { start: token.filterType.range.start, end: token.filterValue.range.end },
+                    value: query.substring(token.filterValue.range.start, token.filterValue.range.end),
+                }
+            }
+        }
+    }
+
+    return undefined
+}
+
+export function parseCaseSensitivityFromQuery(query: string): { range: CharacterRange; value: string } | undefined {
+    const parsedQuery = parseSearchQuery(query)
+    if (parsedQuery.type === 'success') {
+        for (const member of parsedQuery.token.members) {
+            const token = member.token
+            if (token.type === 'filter' && token.filterType.token.value.toLowerCase() === 'case' && token.filterValue) {
+                return {
+                    range: { start: token.filterType.range.start, end: token.filterValue.range.end },
+                    value: query.substring(token.filterValue.range.start, token.filterValue.range.end),
+                }
+            }
+        }
+    }
+    return undefined
 }

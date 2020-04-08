@@ -59,7 +59,10 @@ export class GoToCodeHostAction extends React.PureComponent<Props, State> {
                         )
                     })
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate), err => console.error(err))
+                .subscribe(
+                    stateUpdate => this.setState(stateUpdate),
+                    err => console.error(err)
+                )
         )
     }
 

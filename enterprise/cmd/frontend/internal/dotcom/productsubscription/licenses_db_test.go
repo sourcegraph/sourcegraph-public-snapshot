@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
 
 func TestProductLicenses_Create(t *testing.T) {

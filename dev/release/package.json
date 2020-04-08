@@ -1,0 +1,11 @@
+{
+  "name": "release",
+  "description": "Scripts for managing release captain duties",
+  "private": true,
+  "scripts": {
+    "release": "node ./out/release.js",
+    "build": "tsc -b .",
+    "watch": "tsc -b . -w",
+    "eslint": "../../node_modules/.bin/eslint 'src/**/*.ts'"
+  }
+}

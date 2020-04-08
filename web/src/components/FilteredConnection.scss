@@ -1,3 +1,9 @@
+.filtered-connection-filter-control {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
 .filtered-connection {
     &__nodes {
         list-style-type: none;

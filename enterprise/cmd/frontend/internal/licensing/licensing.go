@@ -7,9 +7,9 @@ import (
 	"sync"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/enterprise/pkg/license"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -81,7 +81,7 @@ func GetConfiguredProductLicenseInfoWithSignature() (*license.Info, string, erro
 	// don't want to commit a valid license key to dev/config.json in the OSS repo).
 	keyText := os.Getenv("SOURCEGRAPH_LICENSE_KEY")
 	if keyText == "" {
-		keyText = conf.Get().Critical.LicenseKey
+		keyText = conf.Get().LicenseKey
 	}
 
 	if keyText != "" {

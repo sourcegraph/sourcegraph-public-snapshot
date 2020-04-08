@@ -2,18 +2,17 @@ package repos
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/trace"
-	"gopkg.in/inconshreveable/log15.v2"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 // A Syncer periodically synchronizes available repositories from all its given Sources
@@ -30,11 +29,11 @@ type Syncer struct {
 	// Sourcegraph.com
 	FailFullSync bool
 
-	// Synced is sent Repos that were synced by Sync (only if Synced is non-nil)
-	Synced chan Repos
+	// Synced is sent a collection of Repos that were synced by Sync (only if Synced is non-nil)
+	Synced chan Diff
 
-	// SubsetSynced is sent Repos that were synced by SubsetSync (only if SubsetSynced is non-nil)
-	SubsetSynced chan Repos
+	// SubsetSynced is sent a collection of Repos that were synced by SubsetSync (only if SubsetSynced is non-nil)
+	SubsetSynced chan Diff
 
 	// Logger if non-nil is logged to.
 	Logger log15.Logger
@@ -52,23 +51,48 @@ type Syncer struct {
 }
 
 // Run runs the Sync at the specified interval.
-func (s *Syncer) Run(ctx context.Context, interval time.Duration) error {
-	for ctx.Err() == nil {
+func (s *Syncer) Run(pctx context.Context, interval time.Duration) error {
+	for pctx.Err() == nil {
+		ctx, cancel := contextWithSignalCancel(pctx, s.syncSignal.Watch())
+
 		if err := s.Sync(ctx); err != nil && s.Logger != nil {
 			s.Logger.Error("Syncer", "error", err)
 		}
 
-		select {
-		case <-time.After(interval):
-		case <-s.syncSignal.Watch():
-		}
+		sleep(ctx, interval)
+
+		cancel()
 	}
 
-	return ctx.Err()
+	return pctx.Err()
 }
 
-// TriggerSync will run Sync as soon as the current Sync has finished running
-// or if no Sync is running.
+// contextWithSignalCancel will return a context which will be cancelled if
+// signal fires. Callers need to call cancel when done.
+func contextWithSignalCancel(ctx context.Context, signal <-chan struct{}) (context.Context, context.CancelFunc) {
+	ctx, cancel := context.WithCancel(ctx)
+
+	go func() {
+		select {
+		case <-ctx.Done():
+		case <-signal:
+			cancel()
+		}
+	}()
+
+	return ctx, cancel
+}
+
+// sleep is a context aware time.Sleep
+func sleep(ctx context.Context, d time.Duration) {
+	select {
+	case <-ctx.Done():
+	case <-time.After(d):
+	}
+}
+
+// TriggerSync will run Sync now. If a sync is currently running it is
+// cancelled.
 func (s *Syncer) TriggerSync() {
 	s.syncSignal.Trigger()
 }
@@ -123,7 +147,7 @@ func (s *Syncer) Sync(ctx context.Context) (err error) {
 	}
 
 	if s.Synced != nil {
-		s.Synced <- diff.Repos()
+		s.Synced <- diff
 	}
 
 	return nil
@@ -195,7 +219,7 @@ func (s *Syncer) syncSubset(ctx context.Context, insertOnly bool, sourcedSubset 
 	}
 
 	if s.SubsetSynced != nil {
-		s.SubsetSynced <- diff.Repos()
+		s.SubsetSynced <- diff
 	}
 
 	return diff, nil
@@ -208,19 +232,16 @@ func (s *Syncer) upserts(diff Diff) []*Repo {
 	for _, repo := range diff.Deleted {
 		repo.UpdatedAt, repo.DeletedAt = now, now
 		repo.Sources = map[string]*SourceInfo{}
-		repo.Enabled = true
 		upserts = append(upserts, repo)
 	}
 
 	for _, repo := range diff.Modified {
 		repo.UpdatedAt, repo.DeletedAt = now, time.Time{}
-		repo.Enabled = true
 		upserts = append(upserts, repo)
 	}
 
 	for _, repo := range diff.Added {
 		repo.CreatedAt, repo.UpdatedAt, repo.DeletedAt = now, now, time.Time{}
-		repo.Enabled = true
 		upserts = append(upserts, repo)
 	}
 
@@ -273,9 +294,7 @@ func NewDiff(sourced, stored []*Repo) (diff Diff) {
 
 	byID := make(map[api.ExternalRepoSpec]*Repo, len(sourced))
 	for _, r := range sourced {
-		if !r.ExternalRepo.IsSet() {
-			panic(fmt.Errorf("%s has no valid external repo spec: %s", r.Name, r.ExternalRepo))
-		} else if old := byID[r.ExternalRepo]; old != nil {
+		if old := byID[r.ExternalRepo]; old != nil {
 			merge(old, r)
 		} else {
 			byID[r.ExternalRepo] = r
@@ -301,19 +320,8 @@ func NewDiff(sourced, stored []*Repo) (diff Diff) {
 	seenID := make(map[api.ExternalRepoSpec]bool, len(stored))
 	seenName := make(map[string]bool, len(stored))
 
-	// We are unsure if customer repositories can have ExternalRepo unset. We
-	// know it can be unset for Sourcegraph.com. As such, we want to fallback
-	// to associating stored repositories by name with the sourced
-	// repositories.
-	//
-	// We do not want a stored repository without an externalrepo to be set
-	sort.Stable(byExternalRepoSpecSet(stored))
-
 	for _, old := range stored {
 		src := byID[old.ExternalRepo]
-		if src == nil && old.ExternalRepo.ID == "" && !seenName[old.Name] {
-			src = byName[strings.ToLower(old.Name)]
-		}
 
 		if src == nil {
 			diff.Deleted = append(diff.Deleted, old)
@@ -458,19 +466,6 @@ func (s *Syncer) observe(ctx context.Context, family, title string) (context.Con
 
 		tr.Finish()
 	}
-}
-
-type byExternalRepoSpecSet []*Repo
-
-func (rs byExternalRepoSpecSet) Len() int      { return len(rs) }
-func (rs byExternalRepoSpecSet) Swap(i, j int) { rs[i], rs[j] = rs[j], rs[i] }
-func (rs byExternalRepoSpecSet) Less(i, j int) bool {
-	iSet := rs[i].ExternalRepo.IsSet()
-	jSet := rs[j].ExternalRepo.IsSet()
-	if iSet == jSet {
-		return false
-	}
-	return iSet
 }
 
 type signal struct {

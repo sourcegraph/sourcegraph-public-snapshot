@@ -14,8 +14,11 @@ export const WebHoverOverlay: React.FunctionComponent<HoverOverlayProps<never>> 
     <HoverOverlay
         {...props}
         className="card"
+        iconClassName="icon-inline"
         closeButtonClassName="btn btn-icon"
         actionItemClassName="btn btn-secondary"
+        infoAlertClassName="alert alert-info"
+        errorAlertClassName="alert alert-danger"
     />
 )
 WebHoverOverlay.displayName = 'WebHoverOverlay'
@@ -24,6 +27,7 @@ export const WebCommandListPopoverButton: React.FunctionComponent<CommandListPop
     <CommandListPopoverButton
         {...props}
         buttonClassName="btn btn-link"
+        popoverClassName="popover"
         popoverInnerClassName="border rounded overflow-hidden"
         formClassName="form"
         inputClassName="form-control px-2 py-1 rounded-0"

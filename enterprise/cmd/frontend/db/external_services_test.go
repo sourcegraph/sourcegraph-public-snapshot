@@ -6,9 +6,10 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/kylelemons/godebug/pretty"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -22,7 +23,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			t.Helper()
 			sort.Strings(have)
 			if !reflect.DeepEqual(have, want) {
-				t.Error(pretty.Compare(have, want))
+				t.Error(cmp.Diff(have, want))
 			}
 		}
 	}
@@ -290,7 +291,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 				"url": "https://bitbucket.org/",
 				"username": "admin",
 				"appPassword": "app-password",
-				"teams": ["sglocal", "sg_local"]
+				"teams": ["sglocal", "sg_local", "--a-team----name-"]
 			}`,
 			assert: equals("<nil>"),
 		},
@@ -312,18 +313,79 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 		},
 		{
 			kind:   "BITBUCKETCLOUD",
-			desc:   "invalid git url type",
+			desc:   "bad apiURL scheme",
+			config: `{"apiURL": "badscheme://api.bitbucket.org"}`,
+			assert: includes("apiURL: Does not match pattern '^https?://'"),
+		},
+		{
+			kind:   "BITBUCKETCLOUD",
+			desc:   "invalid gitURLType",
 			config: `{"gitURLType": "bad"}`,
 			assert: includes(`gitURLType: gitURLType must be one of the following: "http", "ssh"`),
 		},
 		{
 			kind:   "BITBUCKETCLOUD",
 			desc:   "invalid team name",
-			config: `{"teams": ["sg-local", "sg local"]}`,
+			config: `{"teams": ["sg local"]}`,
 			assert: includes(
-				`teams.0: Does not match pattern '^\w+$'`,
-				`teams.1: Does not match pattern '^\w+$'`,
+				`teams.0: Does not match pattern '^[\w-]+$'`,
 			),
+		},
+		{
+			kind: "BITBUCKETCLOUD",
+			desc: "empty exclude",
+			config: `
+			{
+				"url": "https://bitbucket.org/",
+				"username": "admin",
+				"appPassword": "app-password",
+				"exclude": []
+			}`,
+			assert: equals("<nil>"),
+		},
+		{
+			kind:   "BITBUCKETCLOUD",
+			desc:   "invalid empty exclude item",
+			config: `{"exclude": [{}]}`,
+			assert: includes(`exclude.0: Must validate at least one schema (anyOf)`),
+		},
+		{
+			kind:   "BITBUCKETCLOUD",
+			desc:   "invalid exclude item",
+			config: `{"exclude": [{"foo": "bar"}]}`,
+			assert: includes(`exclude.0: Must validate at least one schema (anyOf)`),
+		},
+		{
+			kind:   "BITBUCKETCLOUD",
+			desc:   "invalid exclude item name",
+			config: `{"exclude": [{"name": "bar"}]}`,
+			assert: includes(`exclude.0.name: Does not match pattern '^[\w-]+/[\w.-]+$'`),
+		},
+		{
+			kind:   "BITBUCKETCLOUD",
+			desc:   "invalid additional exclude item properties",
+			config: `{"exclude": [{"id": 1234, "bar": "baz"}]}`,
+			assert: includes(`exclude.0: Additional property bar is not allowed`),
+		},
+		{
+			kind: "BITBUCKETCLOUD",
+			desc: "both name and uuid can be specified in exclude",
+			config: `
+			{
+				"url": "https://bitbucket.org/",
+				"username": "admin",
+				"appPassword": "app-password",
+				"exclude": [
+					{"name": "foo/bar", "uuid": "{fceb73c7-cef6-4abe-956d-e471281126bc}"}
+				]
+			}`,
+			assert: equals(`<nil>`),
+		},
+		{
+			kind:   "BITBUCKETCLOUD",
+			desc:   "invalid exclude pattern",
+			config: `{"exclude": [{"pattern": "["}]}`,
+			assert: includes(`exclude.0.pattern: Does not match format 'regex'`),
 		},
 		{
 			kind: "BITBUCKETSERVER",
@@ -765,12 +827,6 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 		},
 		{
 			kind:   "GITLAB",
-			desc:   "invalid empty exclude",
-			config: `{"exclude": []}`,
-			assert: includes(`exclude: Array must have at least 1 items`),
-		},
-		{
-			kind:   "GITLAB",
 			desc:   "invalid empty exclude item",
 			config: `{"exclude": [{}]}`,
 			assert: includes(`exclude.0: Must validate at least one schema (anyOf)`),
@@ -829,7 +885,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			kind:   "GITLAB",
 			desc:   "invalid projects item name",
 			config: `{"projects": [{"name": "bar"}]}`,
-			assert: includes(`projects.0.name: Does not match pattern '^[\w-]+/[\w.-]+$'`),
+			assert: includes(`projects.0.name: Does not match pattern '^[\w-]+(/[\w.-]+)+$'`),
 		},
 		{
 			kind:   "GITLAB",
@@ -909,7 +965,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 				"authorization": { "identityProvider": { "type": "oauth" } }
 			}
 			`,
-			assert: includes(`Did not find authentication provider matching "https://gitlab.foo.bar"`),
+			assert: includes("Did not find authentication provider matching \"https://gitlab.foo.bar\". Check the [**site configuration**](/site-admin/configuration) to verify an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) exists for https://gitlab.foo.bar."),
 		},
 		{
 			kind: "GITLAB",
@@ -923,7 +979,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 			ps: []schema.AuthProviders{
 				{Gitlab: &schema.GitLabAuthProvider{Url: "https://gitlab.foo.bar"}},
 			},
-			assert: excludes(`Did not find authentication provider matching "https://gitlab.foo.bar"`),
+			assert: excludes("Did not find authentication provider matching \"https://gitlab.foo.bar\". Check the [**site configuration**](/site-admin/configuration) to verify an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) exists for https://gitlab.foo.bar."),
 		},
 		{
 			kind: "GITLAB",
@@ -941,7 +997,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 				}
 			}
 			`,
-			assert: includes(`Did not find authentication provider matching type bar and configID foo`),
+			assert: includes("Did not find authentication provider matching type bar and configID foo. Check the [**site configuration**](/site-admin/configuration) to verify that an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) matches the type and configID."),
 		},
 		{
 			kind: "GITLAB",
@@ -967,7 +1023,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 					},
 				},
 			},
-			assert: excludes(`Did not find authentication provider matching type bar and configID foo`),
+			assert: excludes("Did not find authentication provider matching type bar and configID foo. Check the [**site configuration**](/site-admin/configuration) to verify that an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) matches the type and configID."),
 		},
 		{
 			kind: "GITLAB",
@@ -993,7 +1049,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 					},
 				},
 			},
-			assert: excludes(`Did not find authentication provider matching type bar and configID foo`),
+			assert: excludes("Did not find authentication provider matching type bar and configID foo. Check the [**site configuration**](/site-admin/configuration) to verify that an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) matches the type and configID."),
 		},
 		{
 			kind: "GITLAB",
@@ -1008,6 +1064,61 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 						"type": "username",
 					}
 				}
+			}
+			`,
+			assert: equals("<nil>"),
+		},
+		{
+			kind: "GITLAB",
+			desc: "missing properties in name transformations",
+			config: `
+			{
+				"nameTransformations": [
+					{
+						"re": "regex",
+						"repl": "replacement"
+					}
+				]
+			}
+			`,
+			assert: includes(
+				`nameTransformations.0: regex is required`,
+				`nameTransformations.0: replacement is required`,
+			),
+		},
+		{
+			kind: "GITLAB",
+			desc: "invalid properties in name transformations",
+			config: `
+			{
+				"nameTransformations": [
+					{
+						"regex": "[",
+						"replacement": ""
+					}
+				]
+			}
+			`,
+			assert: includes(`nameTransformations.0.regex: Does not match format 'regex'`),
+		},
+		{
+			kind: "GITLAB",
+			desc: "valid name transformations",
+			config: `
+			{
+				"url": "https://gitlab.foo.bar",
+				"token": "super-secret-token",
+				"projectQuery": ["none"],
+				"nameTransformations": [
+					{
+						"regex": "\\.d/",
+						"replacement": "/"
+					},
+					{
+						"regex": "-git$",
+						"replacement": ""
+					}
+				]
 			}
 			`,
 			assert: equals("<nil>"),
@@ -1128,7 +1239,7 @@ func TestExternalServices_ValidateConfig(t *testing.T) {
 		t.Run(tc.kind+"/"+tc.desc, func(t *testing.T) {
 			var have []string
 			if tc.ps == nil {
-				tc.ps = conf.Get().Critical.AuthProviders
+				tc.ps = conf.Get().AuthProviders
 			}
 
 			s := NewExternalServicesStore()

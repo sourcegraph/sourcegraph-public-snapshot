@@ -7,7 +7,7 @@ import { distinctUntilChanged, filter, map, startWith } from 'rxjs/operators'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { SaveToolbar } from '../components/SaveToolbar'
 import { settingsActions } from '../site-admin/configHelpers'
-import { ThemeProps } from '../theme'
+import { ThemeProps } from '../../../shared/src/theme'
 import { eventLogger } from '../tracking/eventLogger'
 
 interface Props extends ThemeProps {
@@ -160,23 +160,6 @@ export class SettingsFile extends React.PureComponent<Props, State> {
 
         return (
             <div className="settings-file e2e-settings-file d-flex flex-grow-1 flex-column">
-                <div className="site-admin-configuration-page__action-groups">
-                    <div className="site-admin-configuration-page__action-groups">
-                        <div className="site-admin-configuration-page__action-group-header">Quick configure:</div>
-                        <div className="site-admin-configuration-page__actions">
-                            {settingsActions.map(({ id, label }) => (
-                                <button
-                                    type="button"
-                                    key={id}
-                                    className="btn btn-secondary btn-sm site-admin-configuration-page__action"
-                                    onClick={() => this.runAction(id)}
-                                >
-                                    {label}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                </div>
                 <SaveToolbar
                     dirty={dirty}
                     disabled={this.state.saving || !dirty}
@@ -185,6 +168,20 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                     onSave={this.save}
                     onDiscard={this.discard}
                 />
+                <div className="site-admin-configuration-page__action-groups">
+                    <div className="site-admin-configuration-page__actions">
+                        {settingsActions.map(({ id, label }) => (
+                            <button
+                                type="button"
+                                key={id}
+                                className="btn btn-secondary btn-sm site-admin-configuration-page__action"
+                                onClick={() => this.runAction(id)}
+                            >
+                                {label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
                 <React.Suspense fallback={<LoadingSpinner className="icon-inline mt-2" />}>
                     <MonacoSettingsEditor
                         value={contents}
@@ -200,7 +197,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
         )
     }
 
-    private monacoRef = (monacoValue: typeof _monaco | null) => {
+    private monacoRef = (monacoValue: typeof _monaco | null): void => {
         this.monaco = monacoValue
         if (this.monaco) {
             this.subscriptions.add(
@@ -231,7 +228,10 @@ export class SettingsFile extends React.PureComponent<Props, State> {
     private runAction(id: string): void {
         if (this.editor) {
             const action = this.editor.getAction(id)
-            action.run().then(() => undefined, (err: any) => console.error(err))
+            action.run().then(
+                () => undefined,
+                (err: any) => console.error(err)
+            )
         } else {
             alert('Wait for editor to load before running action.')
         }
@@ -245,7 +245,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
         return this.props.settings ? this.props.settings.id : null
     }
 
-    private discard = () => {
+    private discard = (): void => {
         if (
             this.getPropsSettingsContentsOrEmpty() === this.state.contents ||
             window.confirm('Discard settings edits?')
@@ -261,14 +261,14 @@ export class SettingsFile extends React.PureComponent<Props, State> {
         }
     }
 
-    private onEditorChange = (newValue: string) => {
+    private onEditorChange = (newValue: string): void => {
         if (newValue !== this.getPropsSettingsContentsOrEmpty()) {
             this.setState({ editingLastID: this.getPropsSettingsID() })
         }
         this.setState({ contents: newValue })
     }
 
-    private save = () => {
+    private save = (): void => {
         eventLogger.log('SettingsFileSaved')
         this.setState({ saving: true }, () => {
             this.props.onDidCommit(this.getPropsSettingsID(), this.state.contents!)

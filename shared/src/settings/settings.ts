@@ -38,7 +38,8 @@ export type SettingsSubject = Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdmini
         | Pick<GQL.IUser, '__typename' | 'username' | 'displayName'>
         | Pick<GQL.IOrg, '__typename' | 'name' | 'displayName'>
         | Pick<GQL.ISite, '__typename'>
-        | Pick<GQL.IDefaultSettings, '__typename'>)
+        | Pick<GQL.IDefaultSettings, '__typename'>
+    )
 
 /**
  * A cascade of settings from multiple subjects, from lowest precedence to highest precedence, and the final
@@ -100,7 +101,7 @@ export const EMPTY_SETTINGS_CASCADE: SettingsCascade = { final: {}, subjects: []
  *
  * @template S the settings type
  */
-export interface ConfiguredSubject<S extends Settings = Settings> {
+interface ConfiguredSubject<S extends Settings = Settings> {
     /** The subject. */
     subject: SettingsSubject
 
@@ -208,7 +209,7 @@ export interface CustomMergeFunctions {
 export function merge(base: any, add: any, custom?: CustomMergeFunctions): void {
     for (const key of Object.keys(add)) {
         if (key in base) {
-            const customEntry = custom && custom[key]
+            const customEntry = custom?.[key]
             if (customEntry && isFunction(customEntry)) {
                 base[key] = customEntry(base[key], add[key])
             } else {

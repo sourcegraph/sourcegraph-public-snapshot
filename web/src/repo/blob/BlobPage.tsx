@@ -1,5 +1,5 @@
 import * as H from 'history'
-import { isEqual, pick, upperFirst } from 'lodash'
+import { isEqual, pick } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import * as React from 'react'
 import { combineLatest, Observable, Subject, Subscription } from 'rxjs'
@@ -23,7 +23,6 @@ import { queryGraphQL } from '../../backend/graphql'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
 import { isDiscussionsEnabled } from '../../discussions'
-import { ThemeProps } from '../../theme'
 import { eventLogger, EventLoggerProps } from '../../tracking/eventLogger'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
@@ -33,13 +32,16 @@ import { ToggleLineWrap } from './actions/ToggleLineWrap'
 import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
 import { Blob } from './Blob'
 import { BlobPanel } from './panel/BlobPanel'
+import { GoToRawAction } from './GoToRawAction'
 import { RenderedFile } from './RenderedFile'
+import { ThemeProps } from '../../../../shared/src/theme'
+import { ErrorMessage } from '../../components/alerts'
 
-export function fetchBlobCacheKey(parsed: ParsedRepoURI & { isLightTheme: boolean; disableTimeout: boolean }): string {
-    return makeRepoURI(parsed) + parsed.isLightTheme + parsed.disableTimeout
+function fetchBlobCacheKey(parsed: ParsedRepoURI & { isLightTheme: boolean; disableTimeout: boolean }): string {
+    return makeRepoURI(parsed) + String(parsed.isLightTheme) + String(parsed.disableTimeout)
 }
 
-export const fetchBlob = memoizeObservable(
+const fetchBlob = memoizeObservable(
     (args: {
         repoName: string
         commitID: string
@@ -128,7 +130,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
     }
 
     private logViewEvent(): void {
-        eventLogger.logViewEvent('Blob', { fileShown: true })
+        eventLogger.logViewEvent('Blob')
     }
 
     public componentDidMount(): void {
@@ -141,10 +143,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
                     map(props => pick(props, 'repoName', 'commitID', 'filePath', 'isLightTheme')),
                     distinctUntilChanged((a, b) => isEqual(a, b))
                 ),
-                this.extendHighlightingTimeoutClicks.pipe(
-                    mapTo(true),
-                    startWith(false)
-                ),
+                this.extendHighlightingTimeoutClicks.pipe(mapTo(true), startWith(false)),
             ])
                 .pipe(
                     tap(() => this.setState({ blobOrError: undefined })),
@@ -163,7 +162,10 @@ export class BlobPage extends React.PureComponent<Props, State> {
                         )
                     )
                 )
-                .subscribe(blobOrError => this.setState({ blobOrError }), err => console.error(err))
+                .subscribe(
+                    blobOrError => this.setState({ blobOrError }),
+                    err => console.error(err)
+                )
         )
 
         // Clear the Sourcegraph extensions model's component when the blob is no longer shown.
@@ -192,19 +194,16 @@ export class BlobPage extends React.PureComponent<Props, State> {
     }
 
     public render(): React.ReactNode {
-        if (isErrorLike(this.state.blobOrError)) {
-            return (
-                <HeroPage icon={AlertCircleIcon} title="Error" subtitle={upperFirst(this.state.blobOrError.message)} />
-            )
-        }
-
         let renderMode = ToggleRenderedFileMode.getModeFromURL(this.props.location)
         // If url explicitly asks for a certain rendering mode, renderMode is set to that mode, else it checks:
         // - If file contains richHTML and url does not include a line number: We render in richHTML.
         // - If file does not contain richHTML or the url includes a line number: We render in code view.
         if (!renderMode) {
             renderMode =
-                this.state.blobOrError && this.state.blobOrError.richHTML && !parseHash(this.props.location.hash).line
+                this.state.blobOrError &&
+                !isErrorLike(this.state.blobOrError) &&
+                this.state.blobOrError.richHTML &&
+                !parseHash(this.props.location.hash).line
                     ? 'rendered'
                     : 'code'
         }
@@ -247,8 +246,34 @@ export class BlobPage extends React.PureComponent<Props, State> {
                         repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
                     />
                 )}
+                <RepoHeaderContributionPortal
+                    position="right"
+                    priority={30}
+                    element={
+                        <GoToRawAction
+                            key="raw-action"
+                            repoName={this.props.repoName}
+                            rev={this.props.rev}
+                            filePath={this.props.filePath}
+                        />
+                    }
+                    repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
+                />
             </>
         )
+
+        if (isErrorLike(this.state.blobOrError)) {
+            return (
+                <>
+                    {alwaysRender}
+                    <HeroPage
+                        icon={AlertCircleIcon}
+                        title="Error"
+                        subtitle={<ErrorMessage error={this.state.blobOrError} />}
+                    />
+                </>
+            )
+        }
 
         if (!this.state.blobOrError) {
             // Render placeholder for layout before content is fetched.
@@ -312,15 +337,15 @@ export class BlobPage extends React.PureComponent<Props, State> {
         )
     }
 
-    private onDidUpdateLineWrap = (value: boolean) => this.setState({ wrapCode: value })
+    private onDidUpdateLineWrap = (value: boolean): void => this.setState({ wrapCode: value })
 
-    private onExtendHighlightingTimeoutClick = () => this.extendHighlightingTimeoutClicks.next()
+    private onExtendHighlightingTimeoutClick = (): void => this.extendHighlightingTimeoutClicks.next()
 
     private getPageTitle(): string {
         const repoNameSplit = this.props.repoName.split('/')
         const repoStr = repoNameSplit.length > 2 ? repoNameSplit.slice(1).join('/') : this.props.repoName
         if (this.props.filePath) {
-            const fileOrDir = this.props.filePath.split('/').pop()
+            const fileOrDir = this.props.filePath.split('/').pop()!
             return `${fileOrDir} - ${repoStr}`
         }
         return `${repoStr}`

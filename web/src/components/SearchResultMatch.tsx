@@ -12,8 +12,8 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { highlightNode } from '../../../shared/src/util/dom'
 import { renderMarkdown } from '../discussions/backend'
 import { highlightCode } from '../search/backend'
-import { ThemeProps } from '../theme'
 import { HighlightRange } from './SearchResult'
+import { ThemeProps } from '../../../shared/src/theme'
 
 interface SearchResultMatchProps extends ThemeProps {
     item: GQL.ISearchResultMatch
@@ -51,7 +51,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
         // This is a lot of network requests right now, but once extensions can run on the backend we can
         // run results through the renderer and syntax highlighter without network requests.
         this.subscriptions.add(
-            combineLatest(this.propsChanges, this.visibilityChanges)
+            combineLatest([this.propsChanges, this.visibilityChanges])
                 .pipe(
                     filter(([, isVisible]) => isVisible),
                     distinctUntilChanged((a, b) => isEqual(a, b)),
@@ -89,10 +89,13 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                         }
                         return of(markdownHTML)
                     }),
-                    // Return the raw body if markdown rendering fails, maintaing the text structure.
+                    // Return the raw body if markdown rendering fails, maintaining the text structure.
                     catchError(() => of('<pre>' + sanitizeHtml(props.item.body.text) + '</pre>'))
                 )
-                .subscribe(str => this.setState({ HTML: str }), error => console.error(error))
+                .subscribe(
+                    str => this.setState({ HTML: str }),
+                    error => console.error(error)
+                )
         )
     }
 
@@ -164,11 +167,11 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                 <>
                     {this.state.HTML !== undefined ? (
                         <Link key={this.props.item.url} to={this.props.item.url} className="search-result-match">
-                            {this.bodyIsCode ? (
+                            {this.bodyIsCode() ? (
                                 <code>
                                     <Markdown
                                         refFn={this.setTableContainerElement}
-                                        className={`search-result-match__markdown ${'search-result-match__code-excerpt'}`}
+                                        className="search-result-match__markdown search-result-match__code-excerpt"
                                         dangerousInnerHTML={this.state.HTML}
                                     />
                                 </code>
@@ -203,7 +206,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
         )
     }
 
-    private setTableContainerElement = (ref: HTMLElement | null) => {
+    private setTableContainerElement = (ref: HTMLElement | null): void => {
         this.tableContainerElement = ref
     }
 }

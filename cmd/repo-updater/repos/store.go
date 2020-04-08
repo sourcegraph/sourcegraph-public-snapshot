@@ -10,14 +10,14 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbutil"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketcloud"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitolite"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 )
 
 // A Store exposes methods to read and write repos and external services.
@@ -37,7 +37,7 @@ type StoreListReposArgs struct {
 	// Names of repos to list. When zero-valued, this is omitted from the predicate set.
 	Names []string
 	// IDs of repos to list. When zero-valued, this is omitted from the predicate set.
-	IDs []uint32
+	IDs []api.RepoID
 	// Kinds of repos to list. When zero-valued, this is omitted from the predicate set.
 	Kinds []string
 	// ExternalRepos of repos to list. When zero-valued, this is omitted from the predicate set.
@@ -46,6 +46,8 @@ type StoreListReposArgs struct {
 	Limit int64
 	// PerPage determines the number of repos returned on each page. Zero means it defaults to 10000.
 	PerPage int64
+	// Only include private repositories.
+	PrivateOnly bool
 
 	// UseOr decides between ANDing or ORing the predicates together.
 	UseOr bool
@@ -59,7 +61,7 @@ type StoreListExternalServicesArgs struct {
 	// IDs of external services to list. When zero-valued, this is omitted from the predicate set.
 	IDs []int64
 	// RepoIDs that the listed external services own.
-	RepoIDs []uint32
+	RepoIDs []api.RepoID
 	// Kinds of external services to list. When zero-valued, this is omitted from the predicate set.
 	Kinds []string
 }
@@ -124,7 +126,7 @@ func (s *DBStore) Transact(ctx context.Context) (TxStore, error) {
 // which can only be done via `BeginTxStore`.
 //
 // When the error value pointed to by the first given `err` is nil, or when no error
-// pointer is given, the transaction is commited. Otherwise, it's rolled-back.
+// pointer is given, the transaction is committed. Otherwise, it's rolled-back.
 func (s *DBStore) Done(errs ...*error) {
 	switch tx, ok := s.db.(dbutil.Tx); {
 	case !ok:
@@ -324,9 +326,9 @@ SELECT
   external_service_type,
   external_service_id,
   external_id,
-  enabled,
   archived,
   fork,
+  private,
   sources,
   metadata
 FROM repo
@@ -369,9 +371,13 @@ func listReposQuery(args StoreListReposArgs) paginatedQuery {
 	if len(args.ExternalRepos) > 0 {
 		er := make([]*sqlf.Query, 0, len(args.ExternalRepos))
 		for _, spec := range args.ExternalRepos {
-			er = append(er, sqlf.Sprintf("(external_id = NULLIF(BTRIM(%s), '') AND external_service_type = NULLIF(BTRIM(%s), '') AND external_service_id = NULLIF(BTRIM(%s), ''))", spec.ID, spec.ServiceType, spec.ServiceID))
+			er = append(er, sqlf.Sprintf("(external_id = %s AND external_service_type = %s AND external_service_id = %s)", spec.ID, spec.ServiceType, spec.ServiceID))
 		}
 		preds = append(preds, sqlf.Sprintf("(%s)", sqlf.Join(er, "\n OR ")))
+	}
+
+	if args.PrivateOnly {
+		preds = append(preds, sqlf.Sprintf("private = TRUE"))
 	}
 
 	if len(preds) == 0 {
@@ -485,6 +491,9 @@ func (s *DBStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err error) {
 		case r.ID != 0:
 			updates = append(updates, r)
 		default:
+			// We also update to un-delete soft-deleted repositories. The
+			// insert statement has an on conflict do nothing.
+			updates = append(updates, r)
 			inserts = append(inserts, r)
 		}
 	}
@@ -497,7 +506,12 @@ func (s *DBStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err error) {
 		{"delete", deleteReposQuery, deletes},
 		{"update", updateReposQuery, updates},
 		{"insert", insertReposQuery, inserts},
+		{"list", listRepoIDsQuery, inserts}, // list must run last to pick up inserted IDs
 	} {
+		if len(op.repos) == 0 {
+			continue
+		}
+
 		q, err := batchReposQuery(op.query, op.repos)
 		if err != nil {
 			return errors.Wrap(err, op.name)
@@ -508,7 +522,7 @@ func (s *DBStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err error) {
 			return errors.Wrap(err, op.name)
 		}
 
-		if op.name == "delete" {
+		if op.name != "list" {
 			if err = rows.Close(); err != nil {
 				return errors.Wrap(err, op.name)
 			}
@@ -516,15 +530,29 @@ func (s *DBStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err error) {
 			continue
 		}
 
-		i := -1
 		_, _, err = scanAll(rows, func(sc scanner) (last, count int64, err error) {
-			i++
-			err = scanRepo(op.repos[i], sc)
-			return int64(op.repos[i].ID), 1, err
+			var (
+				i  int
+				id api.RepoID
+			)
+
+			err = sc.Scan(&i, &id)
+			if err != nil {
+				return 0, 0, err
+			}
+			op.repos[i-1].ID = id
+			return int64(id), 1, nil
 		})
 
 		if err != nil {
 			return errors.Wrap(err, op.name)
+		}
+	}
+
+	// Assert we have set ID for all repos.
+	for _, r := range repos {
+		if r.ID == 0 && !r.IsDeleted() {
+			return errors.Errorf("DBStore.UpsertRepos did not set ID for %v", r)
 		}
 	}
 
@@ -533,7 +561,7 @@ func (s *DBStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err error) {
 
 func batchReposQuery(fmtstr string, repos []*Repo) (_ *sqlf.Query, err error) {
 	type record struct {
-		ID                  uint32          `json:"id"`
+		ID                  api.RepoID      `json:"id"`
 		Name                string          `json:"name"`
 		URI                 *string         `json:"uri,omitempty"`
 		Description         string          `json:"description"`
@@ -544,9 +572,9 @@ func batchReposQuery(fmtstr string, repos []*Repo) (_ *sqlf.Query, err error) {
 		ExternalServiceType *string         `json:"external_service_type,omitempty"`
 		ExternalServiceID   *string         `json:"external_service_id,omitempty"`
 		ExternalID          *string         `json:"external_id,omitempty"`
-		Enabled             bool            `json:"enabled"`
 		Archived            bool            `json:"archived"`
 		Fork                bool            `json:"fork"`
+		Private             bool            `json:"private"`
 		Sources             json.RawMessage `json:"sources"`
 		Metadata            json.RawMessage `json:"metadata"`
 	}
@@ -575,9 +603,9 @@ func batchReposQuery(fmtstr string, repos []*Repo) (_ *sqlf.Query, err error) {
 			ExternalServiceType: nullStringColumn(r.ExternalRepo.ServiceType),
 			ExternalServiceID:   nullStringColumn(r.ExternalRepo.ServiceID),
 			ExternalID:          nullStringColumn(r.ExternalRepo.ID),
-			Enabled:             r.Enabled,
 			Archived:            r.Archived,
 			Fork:                r.Fork,
+			Private:             r.Private,
 			Sources:             sources,
 			Metadata:            metadata,
 		})
@@ -619,9 +647,9 @@ WITH batch AS (
       external_service_type text,
       external_service_id   text,
       external_id           text,
-      enabled               boolean,
       archived              boolean,
       fork                  boolean,
+      private               boolean,
       sources               jsonb,
       metadata              jsonb
     )
@@ -629,116 +657,86 @@ WITH batch AS (
   WITH ORDINALITY
 )`
 
-var updateReposQuery = batchReposQueryFmtstr + `,
-updated AS (
-  UPDATE repo
-  SET
-    name                  = batch.name,
-    uri                   = batch.uri,
-    description           = batch.description,
-    language              = batch.language,
-    created_at            = COALESCE(batch.created_at, repo.created_at),
-    updated_at            = COALESCE(batch.updated_at, repo.updated_at),
-    deleted_at            = batch.deleted_at,
-    external_service_type = COALESCE(NULLIF(BTRIM(batch.external_service_type), ''), repo.external_service_type),
-    external_service_id   = COALESCE(NULLIF(BTRIM(batch.external_service_id), ''), repo.external_service_id),
-    external_id           = COALESCE(NULLIF(BTRIM(batch.external_id), ''), repo.external_id),
-    enabled               = batch.enabled,
-    archived              = batch.archived,
-    fork                  = batch.fork,
-    sources               = batch.sources,
-    metadata              = batch.metadata
-  FROM batch
-  WHERE repo.id = batch.id
-  RETURNING repo.*
-)
-SELECT
-  updated.id,
-  updated.name,
-  updated.uri,
-  updated.description,
-  updated.language,
-  updated.created_at,
-  updated.updated_at,
-  updated.deleted_at,
-  updated.external_service_type,
-  updated.external_service_id,
-  updated.external_id,
-  updated.enabled,
-  updated.archived,
-  updated.fork,
-  updated.sources,
-  updated.metadata
-FROM updated
-LEFT JOIN batch ON batch.id = updated.id
-ORDER BY batch.ordinality
+var updateReposQuery = batchReposQueryFmtstr + `
+UPDATE repo
+SET
+  name                  = batch.name,
+  uri                   = batch.uri,
+  description           = batch.description,
+  language              = batch.language,
+  created_at            = batch.created_at,
+  updated_at            = batch.updated_at,
+  deleted_at            = batch.deleted_at,
+  external_service_type = batch.external_service_type,
+  external_service_id   = batch.external_service_id,
+  external_id           = batch.external_id,
+  archived              = batch.archived,
+  fork                  = batch.fork,
+  private               = batch.private,
+  sources               = batch.sources,
+  metadata              = batch.metadata
+FROM batch
+WHERE repo.external_service_type = batch.external_service_type
+AND repo.external_service_id = batch.external_service_id
+AND repo.external_id = batch.external_id
 `
 
+// delete is a soft-delete. name is unique and the syncer ensures we respect
+// that constraint. However, the syncer is unaware of soft-deleted
+// repositories. So we update the name to something unique to prevent
+// violating this constraint between active and soft-deleted names.
 var deleteReposQuery = batchReposQueryFmtstr + `
-DELETE FROM repo USING batch
+UPDATE repo
+SET
+  name = 'DELETED-' || extract(epoch from transaction_timestamp()) || '-' || batch.name,
+  deleted_at = batch.deleted_at
+FROM batch
 WHERE batch.deleted_at IS NOT NULL
-AND repo.id = batch.ID
-RETURNING repo.*
+AND repo.id = batch.id
 `
 
-var insertReposQuery = batchReposQueryFmtstr + `,
-inserted AS (
-  INSERT INTO repo (
-    name,
-    uri,
-    description,
-    language,
-    created_at,
-    updated_at,
-    deleted_at,
-    external_service_type,
-    external_service_id,
-    external_id,
-    enabled,
-    archived,
-    fork,
-    sources,
-    metadata
-  )
-  SELECT
-    name,
-    NULLIF(BTRIM(uri), ''),
-    description,
-    language,
-    created_at,
-    updated_at,
-    deleted_at,
-    NULLIF(BTRIM(external_service_type), ''),
-    NULLIF(BTRIM(external_service_id), ''),
-    NULLIF(BTRIM(external_id), ''),
-    enabled,
-    archived,
-    fork,
-    sources,
-    metadata
-  FROM batch
-  RETURNING repo.*
+var insertReposQuery = batchReposQueryFmtstr + `
+INSERT INTO repo (
+  name,
+  uri,
+  description,
+  language,
+  created_at,
+  updated_at,
+  deleted_at,
+  external_service_type,
+  external_service_id,
+  external_id,
+  archived,
+  fork,
+  private,
+  sources,
+  metadata
 )
 SELECT
-  inserted.id,
-  inserted.name,
-  inserted.uri,
-  inserted.description,
-  inserted.language,
-  inserted.created_at,
-  inserted.updated_at,
-  inserted.deleted_at,
-  inserted.external_service_type,
-  inserted.external_service_id,
-  inserted.external_id,
-  inserted.enabled,
-  inserted.archived,
-  inserted.fork,
-  inserted.sources,
-  inserted.metadata
-FROM inserted
-LEFT JOIN batch ON batch.name = inserted.name
-ORDER BY batch.ordinality
+  name,
+  NULLIF(BTRIM(uri), ''),
+  description,
+  language,
+  created_at,
+  updated_at,
+  deleted_at,
+  external_service_type,
+  external_service_id,
+  external_id,
+  archived,
+  fork,
+  private,
+  sources,
+  metadata
+FROM batch
+ON CONFLICT (external_service_type, external_service_id, external_id) DO NOTHING
+`
+
+var listRepoIDsQuery = batchReposQueryFmtstr + `
+SELECT batch.ordinality, repo.id
+FROM batch
+JOIN repo USING (external_service_type, external_service_id, external_id)
 `
 
 func nullTimeColumn(t time.Time) *time.Time {
@@ -827,9 +825,9 @@ func scanRepo(r *Repo, s scanner) error {
 		&dbutil.NullString{S: &r.ExternalRepo.ServiceType},
 		&dbutil.NullString{S: &r.ExternalRepo.ServiceID},
 		&dbutil.NullString{S: &r.ExternalRepo.ID},
-		&r.Enabled,
 		&r.Archived,
 		&r.Fork,
+		&r.Private,
 		&sources,
 		&metadata,
 	)

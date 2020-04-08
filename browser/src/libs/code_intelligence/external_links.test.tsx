@@ -1,94 +1,146 @@
-import { fireEvent } from '@testing-library/react'
-import { of } from 'rxjs'
-import * as sinon from 'sinon'
-import { renderViewContextOnSourcegraph } from './external_links'
+import { ViewOnSourcegraphButton } from './external_links'
+import { HTTPStatusError } from '../../../../shared/src/backend/fetch'
+import * as React from 'react'
+import renderer, { ReactTestRenderer } from 'react-test-renderer'
+import { noop } from 'lodash'
 
 describe('<ViewOnSourcegraphButton />', () => {
-    let mount: HTMLElement
-    beforeEach(() => {
-        document.body.innerHTML = ''
-        mount = document.createElement('div')
-        document.body.append(mount)
+    it('renders a link to the repository on the Sourcegraph instance', () => {
+        let root: ReactTestRenderer
+        renderer.act(() => {
+            root = renderer.create(
+                <ViewOnSourcegraphButton
+                    sourcegraphURL="https://test.com"
+                    getContext={() => ({ rawRepoName: 'test', privateRepository: false })}
+                    className="test"
+                    repoExistsOrError={true}
+                    minimalUI={false}
+                />
+            )
+        })
+        expect(root!).toMatchSnapshot()
     })
 
-    it('renders a link', () => {
-        renderViewContextOnSourcegraph({
-            sourcegraphURL: 'https://test.com',
-            getContext: () => ({ rawRepoName: 'test', privateRepository: false }),
-            viewOnSourcegraphButtonClassProps: {
-                className: 'test',
-            },
-            ensureRepoExists: () => of(true),
-        })(mount)
-
-        const link = document.querySelector<HTMLAnchorElement>('.test')
-        expect(link).toBeInstanceOf(HTMLAnchorElement)
-        expect(link!.href).toBe('https://test.com/test')
+    it('renders nothing in minimal UI mode', () => {
+        let root: ReactTestRenderer
+        renderer.act(() => {
+            root = renderer.create(
+                <ViewOnSourcegraphButton
+                    sourcegraphURL="https://test.com"
+                    getContext={() => ({ rawRepoName: 'test', privateRepository: false })}
+                    className="test"
+                    repoExistsOrError={true}
+                    minimalUI={true}
+                />
+            )
+        })
+        expect(root!).toMatchSnapshot()
     })
 
     it('renders a link with the rev when provided', () => {
-        renderViewContextOnSourcegraph({
-            sourcegraphURL: 'https://test.com',
-            getContext: () => ({
-                rawRepoName: 'test',
-                rev: 'test',
-                privateRepository: false,
-            }),
-            viewOnSourcegraphButtonClassProps: {
-                className: 'test',
-            },
-            ensureRepoExists: () => of(true),
-        })(mount)
-
-        const link = document.querySelector<HTMLAnchorElement>('.test')
-        expect(link).toBeInstanceOf(HTMLAnchorElement)
-        expect(link!.href).toBe('https://test.com/test@test')
+        let root: ReactTestRenderer
+        renderer.act(() => {
+            root = renderer.create(
+                <ViewOnSourcegraphButton
+                    sourcegraphURL="https://test.com"
+                    getContext={() => ({
+                        rawRepoName: 'test',
+                        rev: 'test',
+                        privateRepository: false,
+                    })}
+                    className="test"
+                    repoExistsOrError={true}
+                    minimalUI={false}
+                />
+            )
+        })
+        expect(root!).toMatchSnapshot()
     })
 
-    it('renders configure sourcegraph button when pointing at sourcegraph.com', () => {
-        const configureClickSpy = sinon.spy()
+    for (const minimalUI of [true, false]) {
+        describe(`minimalUI = ${String(minimalUI)}`, () => {
+            it('renders a sign in button when authentication failed and showSignInButton = true', () => {
+                let root: ReactTestRenderer
+                renderer.act(() => {
+                    root = renderer.create(
+                        <ViewOnSourcegraphButton
+                            sourcegraphURL="https://test.com"
+                            getContext={() => ({
+                                rawRepoName: 'test',
+                                rev: 'test',
+                                privateRepository: false,
+                            })}
+                            showSignInButton={true}
+                            className="test"
+                            repoExistsOrError={new HTTPStatusError(new Response('', { status: 401 }))}
+                            minimalUI={minimalUI}
+                        />
+                    )
+                })
+                expect(root!).toMatchSnapshot()
+            })
+        })
+    }
 
-        renderViewContextOnSourcegraph({
-            sourcegraphURL: 'https://sourcegraph.com',
-            getContext: () => ({
-                rawRepoName: 'test',
-                rev: 'test',
-                privateRepository: false,
-            }),
-            viewOnSourcegraphButtonClassProps: {
-                className: 'test',
-            },
-            ensureRepoExists: () => of(false),
-            onConfigureSourcegraphClick: configureClickSpy,
-        })(mount)
-
-        const link = document.querySelector<HTMLAnchorElement>('.test')
-        expect(link).toBeInstanceOf(HTMLAnchorElement)
-        expect(link!.textContent).toBe(' Configure Sourcegraph')
-
-        fireEvent.click(link!)
-        expect(configureClickSpy.calledOnce).toBe(true)
+    it('renders a button with an error label if the repo exists check failed with an unknown error', () => {
+        let root: ReactTestRenderer
+        renderer.act(() => {
+            root = renderer.create(
+                <ViewOnSourcegraphButton
+                    sourcegraphURL="https://test.com"
+                    getContext={() => ({
+                        rawRepoName: 'test',
+                        rev: 'test',
+                        privateRepository: false,
+                    })}
+                    showSignInButton={true}
+                    className="test"
+                    repoExistsOrError={new Error('Something unknown happened!')}
+                    minimalUI={false}
+                />
+            )
+        })
+        expect(root!).toMatchSnapshot()
     })
 
-    it("still renders if repo doesn't exist and its not pointed at .com", () => {
-        const configureClickSpy = sinon.spy()
+    it('renders configure sourcegraph button when pointing at sourcegraph.com and the repo does not exist', () => {
+        let root: ReactTestRenderer
+        renderer.act(() => {
+            root = renderer.create(
+                <ViewOnSourcegraphButton
+                    sourcegraphURL="https://sourcegraph.com"
+                    getContext={() => ({
+                        rawRepoName: 'test',
+                        rev: 'test',
+                        privateRepository: false,
+                    })}
+                    className="test"
+                    repoExistsOrError={false}
+                    onConfigureSourcegraphClick={noop}
+                    minimalUI={false}
+                />
+            )
+        })
+        expect(root!).toMatchSnapshot()
+    })
 
-        renderViewContextOnSourcegraph({
-            sourcegraphURL: 'https://test.com',
-            getContext: () => ({
-                rawRepoName: 'test',
-                rev: 'test',
-                privateRepository: false,
-            }),
-            viewOnSourcegraphButtonClassProps: {
-                className: 'test',
-            },
-            ensureRepoExists: () => of(false),
-            onConfigureSourcegraphClick: configureClickSpy,
-        })(mount)
-
-        const link = document.querySelector<HTMLAnchorElement>('.test')
-        expect(link).toBeInstanceOf(HTMLAnchorElement)
-        expect(link!.getAttribute('aria-label')).toBe('View repository on Sourcegraph')
+    it('still renders a button to a private instance if repo does not exist', () => {
+        let root: ReactTestRenderer
+        renderer.act(() => {
+            root = renderer.create(
+                <ViewOnSourcegraphButton
+                    sourcegraphURL="https://test.com"
+                    getContext={() => ({
+                        rawRepoName: 'test',
+                        rev: 'test',
+                        privateRepository: false,
+                    })}
+                    className="test"
+                    repoExistsOrError={false}
+                    minimalUI={false}
+                />
+            )
+        })
+        expect(root!).toMatchSnapshot()
     })
 })

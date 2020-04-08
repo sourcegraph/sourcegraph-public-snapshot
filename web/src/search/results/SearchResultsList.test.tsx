@@ -5,7 +5,6 @@ import { BrowserRouter } from 'react-router-dom'
 import { cleanup, getAllByTestId, getByTestId, queryByTestId, render } from '@testing-library/react'
 import _VisibilitySensor from 'react-visibility-sensor'
 import sinon from 'sinon'
-import { setLinkComponent } from '../../../../shared/src/components/Link'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
 import {
@@ -14,8 +13,9 @@ import {
     MULTIPLE_SEARCH_REQUEST,
     RESULT,
     SEARCH_REQUEST,
-} from '../testHelpers'
+} from '../../../../shared/src/util/searchTestHelpers'
 import { SearchResultsList, SearchResultsListProps } from './SearchResultsList'
+import { NEVER } from 'rxjs'
 
 let VISIBILITY_CHANGED_CALLBACKS: ((isVisible: boolean) => void)[] = []
 
@@ -43,8 +43,6 @@ jest.mock('react-visibility-sensor', (): typeof _VisibilitySensor => ({ children
 ))
 
 describe('SearchResultsList', () => {
-    setLinkComponent((props: any) => <a {...props} />)
-
     /**
      * Simulates "scrolling" to the end of the search results,
      * by triggering all the visibility changed callbacks with
@@ -80,10 +78,7 @@ describe('SearchResultsList', () => {
         VISIBILITY_CHANGED_CALLBACKS = []
     })
 
-    afterAll(() => {
-        setLinkComponent(null as any)
-        cleanup()
-    })
+    afterAll(cleanup)
 
     const history = createBrowserHistory()
     history.replace({ search: 'q=r:golang/oauth2+test+f:travis' })
@@ -115,8 +110,18 @@ describe('SearchResultsList', () => {
             final: null,
         },
         extensionsController: { executeCommand: sinon.spy(), services: extensionsController.services },
-        platformContext: { forceUpdateTooltip: sinon.spy() },
+        platformContext: { forceUpdateTooltip: sinon.spy(), settings: NEVER },
         telemetryService: NOOP_TELEMETRY_SERVICE,
+        patternType: GQL.SearchPatternType.regexp,
+        setPatternType: sinon.spy(),
+        caseSensitive: false,
+        setCaseSensitivity: sinon.spy(),
+
+        interactiveSearchMode: false,
+        filtersInQuery: {},
+        toggleSearchMode: sinon.fake(),
+        onFiltersInQueryChange: sinon.fake(),
+        splitSearchModes: false,
     }
 
     it('displays loading text when results is undefined', () => {
@@ -132,7 +137,7 @@ describe('SearchResultsList', () => {
     it('shows error message when the search GraphQL request returns an error', () => {
         const { container } = render(
             <BrowserRouter>
-                <SearchResultsList {...defaultProps} resultsOrError={{ message: 'test error', code: 'error' }} />
+                <SearchResultsList {...defaultProps} resultsOrError={{ message: 'test error', name: 'TestError' }} />
             </BrowserRouter>
         )
         expect(getByTestId(container, 'search-results-list-error')).toBeTruthy()
@@ -221,7 +226,7 @@ describe('SearchResultsList', () => {
         const showMore = sinon.spy()
         const props = {
             ...defaultProps,
-            resultsOrError: mockResults({ resultCount: 31, limitHit: true }),
+            resultsOrError: mockResults({ resultCount: 2, limitHit: true }),
             onShowMoreResultsClick: showMore,
         }
         const { container, rerender } = render(
@@ -244,7 +249,7 @@ describe('SearchResultsList', () => {
             <BrowserRouter>
                 <SearchResultsList
                     {...defaultProps}
-                    resultsOrError={mockResults({ resultCount: 1001, limitHit: false })}
+                    resultsOrError={mockResults({ resultCount: 4, limitHit: false })}
                 />
             </BrowserRouter>
         )

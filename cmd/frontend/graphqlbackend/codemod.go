@@ -8,24 +8,24 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"regexp"
 	"strings"
 	"sync"
 
+	"github.com/inconshreveable/log15"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
-	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-	"github.com/sourcegraph/sourcegraph/pkg/trace"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"golang.org/x/net/context/ctxhttp"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 type rawCodemodResult struct {
@@ -50,7 +50,7 @@ type codemodResultResolver struct {
 }
 
 func (r *codemodResultResolver) ToRepository() (*RepositoryResolver, bool) { return nil, false }
-func (r *codemodResultResolver) ToFileMatch() (*fileMatchResolver, bool)   { return nil, false }
+func (r *codemodResultResolver) ToFileMatch() (*FileMatchResolver, bool)   { return nil, false }
 func (r *codemodResultResolver) ToCommitSearchResult() (*commitSearchResultResolver, bool) {
 	return nil, false
 }
@@ -101,7 +101,7 @@ func (r *codemodResultResolver) Commit() *GitCommitResolver { return r.commit }
 
 func (r *codemodResultResolver) RawDiff() string { return r.diff }
 
-func validateQuery(q *query.Query) (*args, error) {
+func validateQuery(q query.QueryInfo) (*args, error) {
 	matchValues := q.Values(query.FieldDefault)
 	var matchTemplates []string
 	for _, v := range matchValues {
@@ -125,7 +125,7 @@ func validateQuery(q *query.Query) (*args, error) {
 	if len(includeFileFilter) > 0 {
 		includeFileFilterText = includeFileFilter[0]
 		// only file names or files with extensions in the following characterset are allowed
-		IsAlphanumericWithPeriod := regexp.MustCompile(`^[a-zA-Z0-9_.]+$`).MatchString
+		IsAlphanumericWithPeriod := lazyregexp.New(`^[a-zA-Z0-9_.]+$`).MatchString
 		if !IsAlphanumericWithPeriod(includeFileFilterText) {
 			return nil, errors.New("the 'file:' filter cannot contain regex when using the 'replace:' filter currently. Only alphanumeric characters or '.'")
 		}
@@ -134,7 +134,7 @@ func validateQuery(q *query.Query) (*args, error) {
 	var excludeFileFilterText string
 	if len(excludeFileFilter) > 0 {
 		excludeFileFilterText = excludeFileFilter[0]
-		IsAlphanumericWithPeriod := regexp.MustCompile(`^[a-zA-Z_.]+$`).MatchString
+		IsAlphanumericWithPeriod := lazyregexp.New(`^[a-zA-Z_.]+$`).MatchString
 		if !IsAlphanumericWithPeriod(includeFileFilterText) {
 			return nil, errors.New("the '-file:' filter cannot contain regex when using the 'replace:' filter currently. Only alphanumeric characters or '.'")
 		}
@@ -144,7 +144,7 @@ func validateQuery(q *query.Query) (*args, error) {
 }
 
 // Calls the codemod backend replacer service for a set of repository revisions.
-func performCodemod(ctx context.Context, args *search.Args) ([]searchResultResolver, *searchResultsCommon, error) {
+func performCodemod(ctx context.Context, args *search.TextParameters) ([]SearchResultResolver, *searchResultsCommon, error) {
 	cmodArgs, err := validateQuery(args.Query)
 	if err != nil {
 		return nil, nil, err
@@ -197,7 +197,7 @@ func performCodemod(ctx context.Context, args *search.Args) ([]searchResultResol
 		return nil, nil, err
 	}
 
-	var results []searchResultResolver
+	var results []SearchResultResolver
 	for _, ur := range unflattened {
 		for _, resolver := range ur {
 			v := resolver
@@ -208,7 +208,7 @@ func performCodemod(ctx context.Context, args *search.Args) ([]searchResultResol
 	return results, common, nil
 }
 
-var replacerURL = env.Get("REPLACER_URL", "http://replacer:3185", "replacer server URL")
+var ReplacerURL = env.Get("REPLACER_URL", "http://replacer:3185", "replacer server URL")
 
 func toMatchResolver(fileURL string, raw *rawCodemodResult) ([]*searchResultMatchResolver, error) {
 	if !strings.Contains(raw.Diff, "@@") {
@@ -240,7 +240,7 @@ func callCodemodInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions
 		return nil, errors.Wrap(err, "codemod repo lookup failed: it's possible that the repo is not cloned in gitserver. Try force a repo update another way.")
 	}
 
-	u, err := url.Parse(replacerURL)
+	u, err := url.Parse(ReplacerURL)
 	if err != nil {
 		return nil, err
 	}
@@ -259,7 +259,7 @@ func callCodemodInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions
 	}
 	req = req.WithContext(ctx)
 
-	req, ht := nethttp.TraceRequest(opentracing.GlobalTracer(), req,
+	req, ht := nethttp.TraceRequest(ot.GetTracer(ctx), req,
 		nethttp.OperationName("Codemod client"),
 		nethttp.ClientTrace(false))
 	defer ht.Finish()
@@ -267,6 +267,7 @@ func callCodemodInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions
 	// TODO(RVT): Use a separate HTTP client here dedicated to codemod,
 	// not doing so means codemod and searcher share the same HTTP limits
 	// etc. which is fine for now but not if codemod goes in front of users.
+	// Once separated please fix cmd/frontend/graphqlbackend/textsearch:50 in #6586
 	resp, err := ctxhttp.Do(ctx, searchHTTPClient, req)
 	if err != nil {
 		// If we failed due to cancellation or timeout (with no partial results in the response body), return just that.

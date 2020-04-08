@@ -1,7 +1,7 @@
 package httpheader
 
 import (
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -9,7 +9,7 @@ import (
 // site config; if there is more than 1, it returns multiple == true (which the caller should handle
 // by returning an error and refusing to proceed with auth).
 func getProviderConfig() (pc *schema.HTTPHeaderAuthProvider, multiple bool) {
-	for _, p := range conf.Get().Critical.AuthProviders {
+	for _, p := range conf.Get().AuthProviders {
 		if p.HttpHeader != nil {
 			if pc != nil {
 				return pc, true // multiple http-header auth providers
@@ -24,15 +24,15 @@ func init() {
 	conf.ContributeValidator(validateConfig)
 }
 
-func validateConfig(c conf.Unified) (problems []string) {
+func validateConfig(c conf.Unified) (problems conf.Problems) {
 	var httpHeaderAuthProviders int
-	for _, p := range c.Critical.AuthProviders {
+	for _, p := range c.AuthProviders {
 		if p.HttpHeader != nil {
 			httpHeaderAuthProviders++
 		}
 	}
 	if httpHeaderAuthProviders >= 2 {
-		problems = append(problems, `at most 1 http-header auth provider may be used`)
+		problems = append(problems, conf.NewSiteProblem(`at most 1 http-header auth provider may be used`))
 	}
 	return problems
 }

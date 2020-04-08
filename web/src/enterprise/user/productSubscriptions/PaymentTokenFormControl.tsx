@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { CardElement, ReactStripeElements } from 'react-stripe-elements'
-import { ThemeProps } from '../../../theme'
+import { ThemeProps } from '../../../../../shared/src/theme'
 
 interface Props extends ThemeProps {
     disabled?: boolean
@@ -14,9 +14,7 @@ const PatchedCardElement: React.FunctionComponent<PatchedElementProps> = props =
 /**
  * Displays a payment form control for the user to enter payment information to purchase a product subscription.
  */
-export const PaymentTokenFormControl: React.FunctionComponent<
-    Props & ReactStripeElements.InjectedStripeProps
-> = props => {
+export const PaymentTokenFormControl: React.FunctionComponent<Props> = props => {
     const textColor = props.isLightTheme ? '#2b3750' : 'white'
 
     return (
@@ -26,7 +24,6 @@ export const PaymentTokenFormControl: React.FunctionComponent<
                     props.disabled ? 'disabled' : ''
                 }`}
                 disabled={props.disabled}
-                // eslint-disable-next-line react/forbid-dom-props
                 style={{
                     base: {
                         fontFamily:

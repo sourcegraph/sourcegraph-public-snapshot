@@ -7,7 +7,9 @@ import sinon from 'sinon'
 import { DEFAULT_SOURCEGRAPH_URL } from '../../shared/util/context'
 import { OptionsMenu, OptionsMenuProps } from './OptionsMenu'
 
-describe('ServerURLForm', () => {
+jest.mock('mdi-react/SettingsOutlineIcon', () => 'SettingsOutlineIcon')
+
+describe('OptionsMenu', () => {
     afterAll(cleanup)
 
     const stubs: OptionsMenuProps = {
@@ -92,7 +94,10 @@ describe('ServerURLForm', () => {
                 <OptionsMenu
                     {...stubs}
                     isSettingsOpen={true}
-                    featureFlags={[{ key: 'foo', value: true }, { key: 'bar', value: false }]}
+                    featureFlags={[
+                        { key: 'foo', value: true },
+                        { key: 'bar', value: false },
+                    ]}
                 />
             )
         ).toMatchSnapshot()
@@ -104,7 +109,10 @@ describe('ServerURLForm', () => {
             <OptionsMenu
                 {...stubs}
                 isSettingsOpen={true}
-                featureFlags={[{ key: 'foo', value: true }, { key: 'bar', value: false }]}
+                featureFlags={[
+                    { key: 'foo', value: true },
+                    { key: 'bar', value: false },
+                ]}
                 toggleFeatureFlag={toggleFeatureFlag}
             />
         )

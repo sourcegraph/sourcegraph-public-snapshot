@@ -14,7 +14,7 @@ func TestRepositories(t *testing.T) {
 	db.Mocks.Repos.Count = func(context.Context, db.ReposListOptions) (int, error) { return 3, nil }
 	gqltesting.RunTests(t, []*gqltesting.Test{
 		{
-			Schema: mustParseGraphQLSchema(t, nil),
+			Schema: mustParseGraphQLSchema(t),
 			Query: `
 				{
 					repositories {
@@ -39,7 +39,7 @@ func TestRepositories(t *testing.T) {
 			`,
 		},
 		{
-			Schema: mustParseGraphQLSchema(t, nil),
+			Schema: mustParseGraphQLSchema(t),
 			Query: `
 				{
 					repositories(first: 2) {

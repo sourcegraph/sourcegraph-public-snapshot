@@ -10,10 +10,17 @@ import { NotificationItem } from './NotificationItem'
 
 import './NotificationItem.scss'
 
+const notificationClassNames = {
+    [NotificationType.Log]: 'alert alert-secondary',
+    [NotificationType.Success]: 'alert alert-success',
+    [NotificationType.Info]: 'alert alert-info',
+    [NotificationType.Warning]: 'alert alert-warning',
+    [NotificationType.Error]: 'alert alert-danger',
+}
+
 const onDismiss = action('onDismiss')
 
 const { add } = storiesOf('NotificationItem', module).addDecorator(story => (
-    // tslint:disable-next-line: jsx-ban-props
     <div style={{ maxWidth: '20rem', margin: '2rem' }}>{story()}</div>
 ))
 
@@ -29,6 +36,7 @@ for (const [name, type] of Object.entries(NotificationType)) {
                 message: 'Formatted *message*',
                 type: type as NotificationTypeType,
             }}
+            notificationClassNames={notificationClassNames}
             onDismiss={onDismiss}
         />
     ))
@@ -45,6 +53,7 @@ for (const [name, type] of Object.entries(NotificationType)) {
                     }))
                 ),
             }}
+            notificationClassNames={notificationClassNames}
             onDismiss={onDismiss}
         />
     ))
@@ -74,6 +83,7 @@ add('⚙', () => {
                     }))
                 ),
             }}
+            notificationClassNames={notificationClassNames}
             onDismiss={onDismiss}
         />
     )

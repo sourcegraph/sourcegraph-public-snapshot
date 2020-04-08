@@ -6,13 +6,13 @@ import (
 	"time"
 
 	"github.com/goware/urlx"
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/phabricator"
-	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
-	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // A PhabricatorSource yields repositories from a single Phabricator connection configured
@@ -143,7 +143,6 @@ func (s *PhabricatorSource) makeRepo(repo *phabricator.Repo) (*Repo, error) {
 			ServiceType: "phabricator",
 			ServiceID:   serviceID,
 		},
-		Enabled: true,
 		Sources: map[string]*SourceInfo{
 			urn: {
 				ID:       urn,
@@ -181,7 +180,7 @@ func (s *PhabricatorSource) client(ctx context.Context) (*phabricator.Client, er
 
 // RunPhabricatorRepositorySyncWorker runs the worker that syncs repositories from Phabricator to Sourcegraph
 func RunPhabricatorRepositorySyncWorker(ctx context.Context, s Store) {
-	cf := NewHTTPClientFactory()
+	cf := httpcli.NewExternalHTTPClientFactory()
 
 	for {
 		phabs, err := s.ListExternalServices(ctx, StoreListExternalServicesArgs{

@@ -16,20 +16,40 @@ describe('fuzzyMatches', () => {
         { text: '', pattern: 'a', want: [] },
         { text: 'a', pattern: 'a', want: [{ start: 0, end: 1, match: true }] },
         { text: 'a', pattern: 'b', want: [{ start: 0, end: 1, match: false }] },
-        { text: 'aa', pattern: 'a', want: [{ start: 0, end: 1, match: true }, { start: 1, end: 2, match: false }] },
+        {
+            text: 'aa',
+            pattern: 'a',
+            want: [
+                { start: 0, end: 1, match: true },
+                { start: 1, end: 2, match: false },
+            ],
+        },
         {
             text: 'aba',
             pattern: 'a',
-            want: [{ start: 0, end: 1, match: true }, { start: 1, end: 3, match: false }],
+            want: [
+                { start: 0, end: 1, match: true },
+                { start: 1, end: 3, match: false },
+            ],
         },
         {
             text: 'abaa',
             pattern: 'a',
-            want: [{ start: 0, end: 1, match: true }, { start: 1, end: 4, match: false }],
+            want: [
+                { start: 0, end: 1, match: true },
+                { start: 1, end: 4, match: false },
+            ],
         },
         { text: 'a', pattern: 'aa', want: [{ start: 0, end: 1, match: true }] },
         { text: 'aa', pattern: 'aa', want: [{ start: 0, end: 2, match: true }] },
-        { text: 'aaa', pattern: 'aa', want: [{ start: 0, end: 2, match: true }, { start: 2, end: 3, match: false }] },
+        {
+            text: 'aaa',
+            pattern: 'aa',
+            want: [
+                { start: 0, end: 2, match: true },
+                { start: 2, end: 3, match: false },
+            ],
+        },
         {
             text: 'abaa',
             pattern: 'aa',

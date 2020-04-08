@@ -1,15 +1,14 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import * as React from 'react'
-import { Markdown } from '../../../shared/src/components/Markdown'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { ErrorLike } from '../../../shared/src/util/errors'
-import { renderMarkdown } from '../../../shared/src/util/markdown'
 import { Form } from '../components/Form'
 import { DynamicallyImportedMonacoSettingsEditor } from '../settings/DynamicallyImportedMonacoSettingsEditor'
-import { ExternalServiceKindMetadata } from './externalServices'
+import { AddExternalServiceOptions } from './externalServices'
+import { ErrorAlert, ErrorMessage } from '../components/alerts'
 
-interface Props extends Pick<ExternalServiceKindMetadata, 'jsonSchema' | 'editorActions'> {
+interface Props extends Pick<AddExternalServiceOptions, 'jsonSchema' | 'editorActions'> {
     history: H.History
     input: GQL.IAddExternalServiceInput
     isLightTheme: boolean
@@ -17,6 +16,8 @@ interface Props extends Pick<ExternalServiceKindMetadata, 'jsonSchema' | 'editor
     warning?: string
     mode: 'edit' | 'create'
     loading: boolean
+    hideDisplayNameField?: boolean
+    submitName?: string
     onSubmit: (event?: React.FormEvent<HTMLFormElement>) => void
     onChange: (change: GQL.IAddExternalServiceInput) => void
 }
@@ -28,36 +29,33 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
     public render(): JSX.Element | null {
         return (
             <Form className="external-service-form" onSubmit={this.props.onSubmit}>
-                {this.props.error && (
-                    <div className="alert alert-danger">
-                        <p>Error saving configuration:</p>
-                        <Markdown dangerousInnerHTML={renderMarkdown(this.props.error.message.replace(/\t/g, ''))} />
-                    </div>
-                )}
+                {this.props.error && <ErrorAlert error={this.props.error} />}
                 {this.props.warning && (
                     <div className="alert alert-warning">
                         <h4>Warning</h4>
-                        <Markdown dangerousInnerHTML={renderMarkdown(this.props.warning.replace(/\t/g, ''))} />
+                        <ErrorMessage error={this.props.warning} />
                     </div>
                 )}
-                <div className="form-group">
-                    <label className="font-weight-bold" htmlFor="e2e-external-service-form-display-name">
-                        Display name:
-                    </label>
-                    <input
-                        id="e2e-external-service-form-display-name"
-                        type="text"
-                        className="form-control"
-                        required={true}
-                        autoCorrect="off"
-                        autoComplete="off"
-                        autoFocus={true}
-                        spellCheck={false}
-                        value={this.props.input.displayName}
-                        onChange={this.onDisplayNameChange}
-                        disabled={this.props.loading}
-                    />
-                </div>
+                {this.props.hideDisplayNameField || (
+                    <div className="form-group">
+                        <label className="font-weight-bold" htmlFor="e2e-external-service-form-display-name">
+                            Display name:
+                        </label>
+                        <input
+                            id="e2e-external-service-form-display-name"
+                            type="text"
+                            className="form-control"
+                            required={true}
+                            autoCorrect="off"
+                            autoComplete="off"
+                            autoFocus={true}
+                            spellCheck={false}
+                            value={this.props.input.displayName}
+                            onChange={this.onDisplayNameChange}
+                            disabled={this.props.loading}
+                        />
+                    </div>
+                )}
 
                 <div className="form-group">
                     <DynamicallyImportedMonacoSettingsEditor
@@ -73,6 +71,7 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
                         onChange={this.onConfigChange}
                         history={this.props.history}
                         actions={this.props.editorActions}
+                        className="e2e-external-service-editor"
                     />
                     <p className="form-text text-muted">
                         <small>Use Ctrl+Space for completion, and hover over JSON properties for documentation.</small>
@@ -88,7 +87,7 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
                     disabled={this.props.loading}
                 >
                     {this.props.loading && <LoadingSpinner className="icon-inline" />}
-                    {this.props.mode === 'edit' ? 'Update external service' : 'Add external service'}
+                    {this.props.submitName ?? (this.props.mode === 'edit' ? 'Update repositories' : 'Add repositories')}
                 </button>
             </Form>
         )
@@ -98,7 +97,7 @@ export class SiteAdminExternalServiceForm extends React.Component<Props, {}> {
         this.props.onChange({ ...this.props.input, displayName: event.currentTarget.value })
     }
 
-    private onConfigChange = (config: string) => {
+    private onConfigChange = (config: string): void => {
         this.props.onChange({ ...this.props.input, config })
     }
 }

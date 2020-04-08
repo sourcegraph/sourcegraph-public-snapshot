@@ -1,5 +1,4 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
@@ -11,8 +10,9 @@ import { Form } from '../../../components/Form'
 import { PageTitle } from '../../../components/PageTitle'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { updatePassword } from '../backend'
+import { ErrorAlert } from '../../../components/alerts'
 
-interface Props extends RouteComponentProps<any> {
+interface Props extends RouteComponentProps<{}> {
     user: GQL.IUser
     authenticatedUser: GQL.IUser
 }
@@ -37,7 +37,9 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
     private subscriptions = new Subscription()
 
     private newPasswordConfirmationField: HTMLInputElement | null = null
-    private setNewPasswordConfirmationField = (e: HTMLInputElement | null) => (this.newPasswordConfirmationField = e)
+    private setNewPasswordConfirmationField = (e: HTMLInputElement | null): void => {
+        this.newPasswordConfirmationField = e
+    }
 
     public componentDidMount(): void {
         eventLogger.logViewEvent('UserSettingsPassword')
@@ -95,10 +97,8 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
                     </div>
                 ) : (
                     <>
-                        {this.state.error && (
-                            <p className="alert alert-danger">{upperFirst(this.state.error.message)}</p>
-                        )}
-                        {this.state.saved && <p className="alert alert-success">Password changed!</p>}
+                        {this.state.error && <ErrorAlert className="mb-3" error={this.state.error} />}
+                        {this.state.saved && <div className="alert alert-success mb-3">Password changed!</div>}
                         <Form onSubmit={this.handleSubmit}>
                             {/* Include a username field as a hint for password managers to update the saved password. */}
                             <input
@@ -162,15 +162,15 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
         )
     }
 
-    private onOldPasswordFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    private onOldPasswordFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
         this.setState({ oldPassword: e.target.value })
     }
 
-    private onNewPasswordFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    private onNewPasswordFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
         this.setState({ newPassword: e.target.value }, () => this.validateForm())
     }
 
-    private onNewPasswordConfirmationFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    private onNewPasswordConfirmationFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
         this.setState({ newPasswordConfirmation: e.target.value }, () => this.validateForm())
     }
 
@@ -184,11 +184,11 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
         }
     }
 
-    private handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    private handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         this.submits.next(event)
     }
 
-    private handleError = (err: Error) => {
+    private handleError = (err: Error): [] => {
         console.error(err)
         this.setState({ loading: false, saved: false, error: err })
         return []

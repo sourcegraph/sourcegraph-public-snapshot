@@ -4,7 +4,7 @@ package types
 import (
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 // RepoFields are lazy loaded data fields on a Repo (from the DB).
@@ -24,6 +24,9 @@ type RepoFields struct {
 
 	// Fork is whether this repository is a fork of another repository.
 	Fork bool
+
+	// Archived is whether this repository has been archived.
+	Archived bool
 }
 
 // Repo represents a source code repository.
@@ -39,6 +42,9 @@ type Repo struct {
 	//
 	// Previously, this was called RepoURI.
 	Name api.RepoName
+
+	// Private is whether the repository is private on the code host.
+	Private bool
 
 	// RepoFields contains fields that are loaded from the DB only when necessary.
 	// This is to reduce memory usage when loading thousands of repos.
@@ -77,6 +83,7 @@ type User struct {
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 	SiteAdmin   bool
+	BuiltinAuth bool
 	Tags        []string
 }
 
@@ -113,12 +120,18 @@ type UserUsageStatistics struct {
 	LastCodeHostIntegrationTime *time.Time
 }
 
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
 type SiteUsageStatistics struct {
 	DAUs []*SiteActivityPeriod
 	WAUs []*SiteActivityPeriod
 	MAUs []*SiteActivityPeriod
 }
 
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
 type SiteActivityPeriod struct {
 	StartTime            time.Time
 	UserCount            int32
@@ -128,6 +141,9 @@ type SiteActivityPeriod struct {
 	Stages               *Stages
 }
 
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
 type Stages struct {
 	Manage    int32 `json:"mng"`
 	Plan      int32 `json:"plan"`
@@ -142,6 +158,131 @@ type Stages struct {
 	Automate  int32 `json:"auto"`
 }
 
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
+type CampaignsUsageStatistics struct {
+	CampaignsCount int32
+}
+
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
+type CodeIntelUsageStatistics struct {
+	Daily   []*CodeIntelUsagePeriod
+	Weekly  []*CodeIntelUsagePeriod
+	Monthly []*CodeIntelUsagePeriod
+}
+
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
+type CodeIntelUsagePeriod struct {
+	StartTime   time.Time
+	Hover       *CodeIntelEventCategoryStatistics
+	Definitions *CodeIntelEventCategoryStatistics
+	References  *CodeIntelEventCategoryStatistics
+}
+
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
+type CodeIntelEventCategoryStatistics struct {
+	LSIF   *CodeIntelEventStatistics
+	LSP    *CodeIntelEventStatistics
+	Search *CodeIntelEventStatistics
+}
+
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
+type CodeIntelEventStatistics struct {
+	UsersCount     int32
+	EventsCount    *int32
+	EventLatencies *CodeIntelEventLatencies
+}
+
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
+type CodeIntelEventLatencies struct {
+	P50 float64
+	P90 float64
+	P99 float64
+}
+
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
+type SearchUsageStatistics struct {
+	Daily   []*SearchUsagePeriod
+	Weekly  []*SearchUsagePeriod
+	Monthly []*SearchUsagePeriod
+}
+
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
+type SearchUsagePeriod struct {
+	StartTime          time.Time
+	TotalUsers         int32
+	Literal            *SearchEventStatistics
+	Regexp             *SearchEventStatistics
+	After              *SearchCountStatistics
+	Archived           *SearchCountStatistics
+	Author             *SearchCountStatistics
+	Before             *SearchCountStatistics
+	Case               *SearchCountStatistics
+	Commit             *SearchEventStatistics
+	Committer          *SearchCountStatistics
+	Content            *SearchCountStatistics
+	Count              *SearchCountStatistics
+	Diff               *SearchEventStatistics
+	File               *SearchEventStatistics
+	Fork               *SearchCountStatistics
+	Index              *SearchCountStatistics
+	Lang               *SearchCountStatistics
+	Message            *SearchCountStatistics
+	PatternType        *SearchCountStatistics
+	Repo               *SearchEventStatistics
+	Repohascommitafter *SearchCountStatistics
+	Repohasfile        *SearchCountStatistics
+	Repogroup          *SearchCountStatistics
+	Structural         *SearchEventStatistics
+	Symbol             *SearchEventStatistics
+	Timeout            *SearchCountStatistics
+	Type               *SearchCountStatistics
+	SearchModes        *SearchModeUsageStatistics
+}
+
+type SearchModeUsageStatistics struct {
+	Interactive *SearchCountStatistics
+	PlainText   *SearchCountStatistics
+}
+
+type SearchCountStatistics struct {
+	UserCount   *int32
+	EventsCount *int32
+}
+
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
+type SearchEventStatistics struct {
+	UserCount      *int32
+	EventsCount    *int32
+	EventLatencies *SearchEventLatencies
+}
+
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
+type SearchEventLatencies struct {
+	P50 float64
+	P90 float64
+	P99 float64
+}
+
 type SurveyResponse struct {
 	ID        int32
 	UserID    *int32
@@ -150,4 +291,16 @@ type SurveyResponse struct {
 	Reason    *string
 	Better    *string
 	CreatedAt time.Time
+}
+
+type Event struct {
+	ID              int32
+	Name            string
+	URL             string
+	UserID          *int32
+	AnonymousUserID string
+	Argument        string
+	Source          string
+	Version         string
+	Timestamp       time.Time
 }

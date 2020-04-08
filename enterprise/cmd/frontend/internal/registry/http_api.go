@@ -8,14 +8,14 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	frontendregistry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-	"github.com/sourcegraph/sourcegraph/pkg/honey"
-	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
-	"github.com/sourcegraph/sourcegraph/pkg/registry"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/registry"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -31,13 +31,14 @@ var (
 		if err != nil {
 			return nil, err
 		}
-		xs := make([]*registry.Extension, 0, len(vs))
-		for _, v := range vs {
-			x, err := toRegistryAPIExtension(ctx, v)
-			if err != nil {
-				continue
-			}
 
+		xs, err := toRegistryAPIExtensionBatch(ctx, vs)
+		if err != nil {
+			return nil, err
+		}
+
+		ys := make([]*registry.Extension, 0, len(xs))
+		for _, x := range xs {
 			// To be safe, ensure that the JSON can be safely unmarshaled by API clients. If not,
 			// skip this extension.
 			if x.Manifest != nil {
@@ -46,10 +47,9 @@ var (
 					continue
 				}
 			}
-
-			xs = append(xs, x)
+			ys = append(ys, x)
 		}
-		return xs, nil
+		return ys, nil
 	}
 
 	registryGetByUUID = func(ctx context.Context, uuid string) (*registry.Extension, error) {
@@ -70,12 +70,38 @@ var (
 )
 
 func toRegistryAPIExtension(ctx context.Context, v *dbExtension) (*registry.Extension, error) {
-	manifest, publishedAt, err := getExtensionManifestWithBundleURL(ctx, v.NonCanonicalExtensionID, v.ID, "release")
+	release, err := getLatestRelease(ctx, v.NonCanonicalExtensionID, v.ID, "release")
 	if err != nil {
 		return nil, err
 	}
 
-	baseURL := strings.TrimSuffix(conf.Get().Critical.ExternalURL, "/")
+	if release == nil {
+		return newExtension(v, nil, time.Time{}), nil
+	}
+
+	return newExtension(v, &release.Manifest, release.CreatedAt), nil
+}
+
+func toRegistryAPIExtensionBatch(ctx context.Context, vs []*dbExtension) ([]*registry.Extension, error) {
+	releasesByExtensionID, err := getLatestForBatch(ctx, vs)
+	if err != nil {
+		return nil, err
+	}
+
+	var extensions []*registry.Extension
+	for _, v := range vs {
+		release, ok := releasesByExtensionID[v.ID]
+		if !ok {
+			extensions = append(extensions, newExtension(v, nil, time.Time{}))
+		} else {
+			extensions = append(extensions, newExtension(v, &release.Manifest, release.CreatedAt))
+		}
+	}
+	return extensions, nil
+}
+
+func newExtension(v *dbExtension, manifest *string, publishedAt time.Time) *registry.Extension {
+	baseURL := strings.TrimSuffix(conf.Get().ExternalURL, "/")
 	return &registry.Extension{
 		UUID:        v.UUID,
 		ExtensionID: v.NonCanonicalExtensionID,
@@ -89,7 +115,7 @@ func toRegistryAPIExtension(ctx context.Context, v *dbExtension) (*registry.Exte
 		UpdatedAt:   v.UpdatedAt,
 		PublishedAt: publishedAt,
 		URL:         baseURL + frontendregistry.ExtensionURL(v.NonCanonicalExtensionID),
-	}, nil
+	}
 }
 
 // handleRegistry serves the external HTTP API for the extension registry.
@@ -98,21 +124,6 @@ func handleRegistry(w http.ResponseWriter, r *http.Request) (err error) {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
-
-	builder := honey.Builder("registry")
-	builder.AddField("api_version", r.Header.Get("Accept"))
-	builder.AddField("url", r.URL.String())
-	ev := builder.NewEvent()
-	defer func() {
-		ev.AddField("success", err == nil)
-		if err == nil {
-			registryRequestsSuccessCounter.Inc()
-		} else {
-			registryRequestsErrorCounter.Inc()
-			ev.AddField("error", err.Error())
-		}
-		ev.Send()
-	}()
 
 	// Identify this response as coming from the registry API.
 	w.Header().Set(registry.MediaTypeHeaderName, registry.MediaType)
@@ -138,14 +149,12 @@ func handleRegistry(w http.ResponseWriter, r *http.Request) (err error) {
 	switch {
 	case urlPath == extensionsPath:
 		query := r.URL.Query().Get("q")
-		ev.AddField("query", query)
 		var opt dbExtensionsListOptions
 		opt.Query, opt.Category, opt.Tag = parseExtensionQuery(query)
 		xs, err := registryList(r.Context(), opt)
 		if err != nil {
 			return err
 		}
-		ev.AddField("results_count", len(xs))
 		result = xs
 
 	case strings.HasPrefix(urlPath, extensionsPath+"/"):
@@ -171,7 +180,6 @@ func handleRegistry(w http.ResponseWriter, r *http.Request) (err error) {
 			}
 			return err
 		}
-		ev.AddField("extension-id", x.ExtensionID)
 		result = x
 
 	default:
@@ -184,7 +192,7 @@ func handleRegistry(w http.ResponseWriter, r *http.Request) (err error) {
 	if err != nil {
 		return err
 	}
-	w.Write(data)
+	_, _ = w.Write(data)
 	return nil
 }
 

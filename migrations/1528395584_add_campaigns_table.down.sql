@@ -1,6 +1,0 @@
-BEGIN;
-
-DROP TABLE IF EXISTS campaigns;
-
-
-COMMIT;

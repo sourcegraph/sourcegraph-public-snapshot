@@ -9,12 +9,12 @@ import (
 	"strings"
 	"time"
 
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 )
 
 // All SAML endpoints are under this path prefix.
@@ -97,7 +97,7 @@ func samlSPHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			traceLog(fmt.Sprintf("Service Provider metadata: %s", p.ConfigID().ID), string(buf))
 			w.Header().Set("Content-Type", "application/samlmetadata+xml; charset=utf-8")
-			w.Write(buf)
+			_, _ = w.Write(buf)
 			return
 
 		case "/login":

@@ -15,7 +15,7 @@ interface ActivationChecklistItemProps extends ActivationStep {
  * A single item in the activation checklist.
  */
 export class ActivationChecklistItem extends React.PureComponent<ActivationChecklistItemProps, {}> {
-    private onClick = (e: React.MouseEvent<HTMLElement>) => {
+    private onClick = (e: React.MouseEvent<HTMLElement>): void => {
         if (this.props.onClick) {
             this.props.onClick(e, this.props.history)
         }
@@ -23,13 +23,13 @@ export class ActivationChecklistItem extends React.PureComponent<ActivationCheck
 
     public render(): JSX.Element {
         const checkboxElem = (
-            <div className="d-flex justify-content-between">
-                <span className="mr-2">{this.props.title}</span>
+            <div>
                 {this.props.done ? (
                     <CheckIcon className="icon-inline text-success" />
                 ) : (
                     <CheckboxBlankCircleIcon className="icon-inline text-muted" />
                 )}
+                <span className="mr-2 ml-2">{this.props.title}</span>
             </div>
         )
 
@@ -38,7 +38,7 @@ export class ActivationChecklistItem extends React.PureComponent<ActivationCheck
                 {this.props.link ? (
                     <Link {...this.props.link}>{checkboxElem}</Link>
                 ) : (
-                    <button type="button" className="btn btn-link text-left w-100 p-0">
+                    <button type="button" className="btn btn-link text-left w-100 p-0 border-0">
                         {checkboxElem}
                     </button>
                 )}

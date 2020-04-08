@@ -19,11 +19,7 @@ import { eventLogger } from '../tracking/eventLogger'
 export function createPlatformContext(): PlatformContext {
     const updatedSettings = new ReplaySubject<GQL.ISettingsCascade>(1)
     const context: PlatformContext = {
-        settings: concat(fetchViewerSettings(), updatedSettings).pipe(
-            map(gqlToCascade),
-            publishReplay(1),
-            refCount()
-        ),
+        settings: concat(fetchViewerSettings(), updatedSettings).pipe(map(gqlToCascade), publishReplay(1), refCount()),
         updateSettings: async (subject, edit) => {
             // Unauthenticated users can't update settings. (In the browser extension, they can update client
             // settings even when not authenticated. The difference in behavior in the web app vs. browser
@@ -49,6 +45,8 @@ export function createPlatformContext(): PlatformContext {
                     // try once more.
                     updatedSettings.next(await fetchViewerSettings().toPromise())
                     await updateSettings(context, subject, edit, mutateSettings)
+                } else {
+                    throw error
                 }
             }
             updatedSettings.next(await fetchViewerSettings().toPromise())
@@ -118,7 +116,7 @@ function fetchViewerSettings(): Observable<GQL.ISettingsCascade> {
         ${settingsCascadeFragment}
     `).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.viewerSettings) {
+            if (!data?.viewerSettings) {
                 throw createAggregateError(errors)
             }
             return data.viewerSettings

@@ -26,7 +26,7 @@ interface Props {
     onDidUpdate: () => void
 }
 
-const LOADING: 'loading' = 'loading'
+const LOADING = 'loading' as const
 
 interface State {
     /** The result of updating this subscription: null for done or not started, loading, or an error. */
@@ -77,7 +77,10 @@ export class SiteAdminProductSubscriptionBillingLink extends React.PureComponent
                         )
                     )
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate), error => console.error(error))
+                .subscribe(
+                    stateUpdate => this.setState(stateUpdate),
+                    error => console.error(error)
+                )
         )
 
         this.componentUpdates.next(this.props)
@@ -122,7 +125,7 @@ export class SiteAdminProductSubscriptionBillingLink extends React.PureComponent
         )
     }
 
-    private setProductSubscriptionBilling = () => this.updates.next()
+    private setProductSubscriptionBilling = (): void => this.updates.next()
 }
 
 function setProductSubscriptionBilling(

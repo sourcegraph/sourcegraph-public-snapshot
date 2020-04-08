@@ -94,9 +94,6 @@ export function setUserEmailVerified(user: GQL.ID, email: string, verified: bool
  * @deprecated Use logEvent
  */
 export function logUserEvent(event: GQL.UserEvent): void {
-    if (window.context && window.context.sourcegraphDotComMode) {
-        return
-    }
     mutateGraphQL(
         gql`
             mutation logUserEvent($event: UserEvent!, $userCookieID: String!) {
@@ -115,6 +112,8 @@ export function logUserEvent(event: GQL.UserEvent): void {
                 return
             })
         )
+        // Event logs are best-effort and non-blocking
+        // eslint-disable-next-line rxjs/no-ignored-subscription
         .subscribe()
 }
 
@@ -124,17 +123,31 @@ export function logUserEvent(event: GQL.UserEvent): void {
  *
  * Not used at all for public/sourcegraph.com usage.
  */
-export function logEvent(event: string): void {
+export function logEvent(event: string, eventProperties?: any): void {
     mutateGraphQL(
         gql`
-            mutation logEvent($event: String!, $userCookieID: String!, $url: String!, $source: EventSource!) {
-                logEvent(event: $event, userCookieID: $userCookieID, url: $url, source: $source) {
+            mutation logEvent(
+                $event: String!
+                $userCookieID: String!
+                $url: String!
+                $source: EventSource!
+                $argument: String
+            ) {
+                logEvent(event: $event, userCookieID: $userCookieID, url: $url, source: $source, argument: $argument) {
                     alwaysNil
                 }
             }
         `,
-        { event, userCookieID: eventLogger.getAnonUserID(), url: window.location.href, source: GQL.EventSource.WEB }
+        {
+            event,
+            userCookieID: eventLogger.getAnonUserID(),
+            url: window.location.href,
+            source: GQL.EventSource.WEB,
+            argument: eventProperties && JSON.stringify(eventProperties),
+        }
     )
         .pipe(map(dataOrThrowErrors))
+        // Event logs are best-effort and non-blocking
+        // eslint-disable-next-line rxjs/no-ignored-subscription
         .subscribe()
 }

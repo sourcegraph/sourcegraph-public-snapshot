@@ -2,6 +2,7 @@ import * as React from 'react'
 import { OpenInSourcegraphProps } from '../repo'
 import { getPlatformName } from '../util/context'
 import { SourcegraphIconButton } from './Button'
+import classNames from 'classnames'
 
 interface Props {
     openProps: OpenInSourcegraphProps
@@ -18,7 +19,7 @@ export class OpenOnSourcegraph extends React.Component<Props, {}> {
             <SourcegraphIconButton
                 {...this.props}
                 iconClassName={this.props.iconClassName}
-                className={`open-on-sourcegraph ${this.props.className}`}
+                className={classNames('open-on-sourcegraph', this.props.className)}
                 url={url}
             />
         )

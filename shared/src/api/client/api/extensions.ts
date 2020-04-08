@@ -1,9 +1,8 @@
-import { ExecutableExtension, ExtensionsService } from '../services/extensionsService'
 import { ProxyResult } from '@sourcegraph/comlink'
 import { from, Subscription } from 'rxjs'
 import { bufferCount, startWith } from 'rxjs/operators'
 import { ExtExtensionsAPI } from '../../extension/api/extensions'
-import { TelemetryService } from '../../../telemetry/telemetryService'
+import { ExecutableExtension, ExtensionsService } from '../services/extensionsService'
 
 /** @internal */
 export class ClientExtensions {
@@ -16,28 +15,10 @@ export class ClientExtensions {
      * @param extensions An observable that emits the set of extensions that should be activated
      * upon subscription and whenever it changes.
      */
-    constructor(
-        private proxy: ProxyResult<ExtExtensionsAPI>,
-        extensionRegistry: ExtensionsService,
-        telemetryService?: TelemetryService
-    ) {
-        // Anonymously log which external extensions are active on sourcegraph.com.
-        // TODO: Send these logs to the backend to anonymously log active extensions from private instances.
-        if (telemetryService) {
-            this.subscriptions.add(
-                extensionRegistry.activeExtensions.subscribe(extensions => {
-                    const activeExtensions = extensions.map(activeExtension => activeExtension.id)
-                    telemetryService.log('activeExtensions', { activeExtensions })
-                })
-            )
-        }
-
+    constructor(private proxy: ProxyResult<ExtExtensionsAPI>, extensionRegistry: ExtensionsService) {
         this.subscriptions.add(
             from(extensionRegistry.activeExtensions)
-                .pipe(
-                    startWith([] as ExecutableExtension[]),
-                    bufferCount(2, 1)
-                )
+                .pipe(startWith([] as ExecutableExtension[]), bufferCount(2, 1))
                 .subscribe(([oldExtensions, newExtensions]) => {
                     // Diff next state's activated extensions vs. current state's.
                     const toActivate = [...newExtensions] // clone to avoid mutating state stored by bufferCount

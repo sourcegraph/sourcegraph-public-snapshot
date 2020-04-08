@@ -1,7 +1,9 @@
+/* eslint rxjs/no-async-subscribe: warn */
+/* eslint @typescript-eslint/no-misused-promises: warn */
 import * as React from 'react'
 import { Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, share, switchMap, concatMap } from 'rxjs/operators'
-import { ERAUTHREQUIRED } from '../../../../shared/src/backend/errors'
+import { AUTH_REQUIRED_ERROR_NAME } from '../../../../shared/src/backend/errors'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { getExtensionVersion } from '../../shared/util/context'
 import { OptionsMenu, OptionsMenuProps } from './OptionsMenu'
@@ -78,7 +80,6 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
         )
 
         this.subscriptions.add(
-            // eslint-disable-next-line @typescript-eslint/no-misused-promises
             fetchingSite.subscribe(async res => {
                 let url = ''
 
@@ -86,7 +87,9 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
                     this.setState({
                         status: 'error',
                         connectionError:
-                            res.code === ERAUTHREQUIRED ? ConnectionErrors.AuthError : ConnectionErrors.UnableToConnect,
+                            res.name === AUTH_REQUIRED_ERROR_NAME
+                                ? ConnectionErrors.AuthError
+                                : ConnectionErrors.UnableToConnect,
                     })
                     url = this.state.sourcegraphURL
                 } else {
@@ -105,7 +108,7 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
             .fetchCurrentTabStatus()
             .then(currentTabStatus => this.setState(state => ({ ...state, currentTabStatus })))
             .catch(err => {
-                console.log('Error fetching current tab status', err)
+                console.error('Error fetching current tab status', err)
             })
     }
 
@@ -143,19 +146,19 @@ export class OptionsContainer extends React.Component<OptionsContainerProps, Opt
         )
     }
 
-    private handleURLChange = (value: string) => {
+    private handleURLChange = (value: string): void => {
         this.setState({ sourcegraphURL: value })
     }
 
-    private handleURLSubmit = async () => {
+    private handleURLSubmit = async (): Promise<void> => {
         await this.props.setSourcegraphURL(this.state.sourcegraphURL)
     }
 
-    private handleSettingsClick = () => {
+    private handleSettingsClick = (): void => {
         this.setState(state => ({
             isSettingsOpen: !state.isSettingsOpen,
         }))
     }
 
-    private handleToggleActivationClick = (value: boolean) => this.activationClicks.next(value)
+    private handleToggleActivationClick = (value: boolean): void => this.activationClicks.next(value)
 }

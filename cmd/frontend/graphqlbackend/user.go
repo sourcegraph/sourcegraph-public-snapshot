@@ -7,14 +7,15 @@ import (
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/suspiciousnames"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
 func (r *schemaResolver) User(ctx context.Context, args struct {
@@ -53,6 +54,11 @@ type UserResolver struct {
 	user *types.User
 }
 
+// NewUserResolver returns a new UserResolver with given user object.
+func NewUserResolver(user *types.User) *UserResolver {
+	return &UserResolver{user: user}
+}
+
 // UserByID looks up and returns the user with the given GraphQL ID. If no such user exists, it returns a
 // non-nil error.
 func UserByID(ctx context.Context, id graphql.ID) (*UserResolver, error) {
@@ -73,9 +79,9 @@ func UserByIDInt32(ctx context.Context, id int32) (*UserResolver, error) {
 	return &UserResolver{user: user}, nil
 }
 
-func (r *UserResolver) ID() graphql.ID { return marshalUserID(r.user.ID) }
+func (r *UserResolver) ID() graphql.ID { return MarshalUserID(r.user.ID) }
 
-func marshalUserID(id int32) graphql.ID { return relay.MarshalID("User", id) }
+func MarshalUserID(id int32) graphql.ID { return relay.MarshalID("User", id) }
 
 func UnmarshalUserID(id graphql.ID) (userID int32, err error) {
 	err = relay.UnmarshalSpec(id, &userID)
@@ -108,6 +114,10 @@ func (r *UserResolver) DisplayName() *string {
 		return nil
 	}
 	return &r.user.DisplayName
+}
+
+func (r *UserResolver) BuiltinAuth() bool {
+	return r.user.BuiltinAuth && providers.BuiltinAuthEnabled()
 }
 
 func (r *UserResolver) AvatarURL() *string {
@@ -305,7 +315,7 @@ func viewerCanChangeUsername(ctx context.Context, userID int32) bool {
 	if err := backend.CheckSiteAdminOrSameUser(ctx, userID); err != nil {
 		return false
 	}
-	if conf.Get().Critical.AuthEnableUsernameChanges {
+	if conf.Get().AuthEnableUsernameChanges {
 		return true
 	}
 	// 🚨 SECURITY: Only site admins are allowed to change a user's username when auth.enableUsernameChanges == false.

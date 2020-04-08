@@ -1,22 +1,27 @@
-import { upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import * as React from 'react'
 import { defer, Subject, Subscription } from 'rxjs'
 import { catchError, delay, distinctUntilChanged, map, retryWhen, switchMap, tap } from 'rxjs/operators'
-import { CloneInProgressError, ECLONEINPROGESS, EREVNOTFOUND } from '../../../shared/src/backend/errors' // TODO: Switch to mdi icon
-import { RepoQuestionIcon, RepositoryIcon } from '../../../shared/src/components/icons' // TODO: Switch to mdi icon
+import {
+    CloneInProgressError,
+    CLONE_IN_PROGRESS_ERROR_NAME,
+    REV_NOT_FOUND_ERROR_NAME,
+} from '../../../shared/src/backend/errors'
+import { RepoQuestionIcon } from '../../../shared/src/components/icons'
 import { displayRepoName } from '../../../shared/src/components/RepoFileLink'
 import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { HeroPage } from '../components/HeroPage'
 import { resolveRev } from './backend'
 import { DirectImportRepoAlert } from './DirectImportRepoAlert'
+import { ErrorMessage } from '../components/alerts'
 
 export const RepositoryCloningInProgressPage: React.FunctionComponent<{ repoName: string; progress?: string }> = ({
     repoName,
     progress,
 }) => (
     <HeroPage
-        icon={RepositoryIcon}
+        icon={SourceRepositoryIcon}
         title={displayRepoName(repoName)}
         className="repository-cloning-in-progress-page"
         subtitle="Cloning in progress"
@@ -70,8 +75,8 @@ export class RepositoryGitDataContainer extends React.PureComponent<Props, State
                             retryWhen(errors =>
                                 errors.pipe(
                                     tap(error => {
-                                        switch (error.code) {
-                                            case ECLONEINPROGESS:
+                                        switch (error.name) {
+                                            case CLONE_IN_PROGRESS_ERROR_NAME:
                                                 // Display cloning screen to the user and retry
                                                 this.setState({ gitDataPresentOrError: error })
                                                 return
@@ -91,7 +96,10 @@ export class RepositoryGitDataContainer extends React.PureComponent<Props, State
                         )
                     )
                 )
-                .subscribe(resolvedRev => this.setState({ gitDataPresentOrError: true }), error => console.error(error))
+                .subscribe(
+                    resolvedRev => this.setState({ gitDataPresentOrError: true }),
+                    error => console.error(error)
+                )
         )
         this.propsUpdates.next(this.props)
     }
@@ -112,22 +120,22 @@ export class RepositoryGitDataContainer extends React.PureComponent<Props, State
 
         if (isErrorLike(this.state.gitDataPresentOrError)) {
             // Show error page
-            switch (this.state.gitDataPresentOrError.code) {
-                case ECLONEINPROGESS:
+            switch (this.state.gitDataPresentOrError.name) {
+                case CLONE_IN_PROGRESS_ERROR_NAME:
                     return (
                         <RepositoryCloningInProgressPage
                             repoName={this.props.repoName}
                             progress={(this.state.gitDataPresentOrError as CloneInProgressError).progress}
                         />
                     )
-                case EREVNOTFOUND:
+                case REV_NOT_FOUND_ERROR_NAME:
                     return <EmptyRepositoryPage />
                 default:
                     return (
                         <HeroPage
                             icon={AlertCircleIcon}
                             title="Error"
-                            subtitle={upperFirst(this.state.gitDataPresentOrError.message)}
+                            subtitle={<ErrorMessage error={this.state.gitDataPresentOrError} />}
                         />
                     )
             }

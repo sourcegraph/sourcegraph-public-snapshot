@@ -7,21 +7,22 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
 	"reflect"
 	"sort"
 	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
-	"github.com/sergi/go-diff/diffmatchpatch"
-	"github.com/sourcegraph/sourcegraph/pkg/a8n"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
-	"github.com/sourcegraph/sourcegraph/pkg/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/schema"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 func TestExampleRepositoryQuerySplit(t *testing.T) {
@@ -30,6 +31,242 @@ func TestExampleRepositoryQuerySplit(t *testing.T) {
 	have := exampleRepositoryQuerySplit(q)
 	if want != have {
 		t.Errorf("unexpected example query for %s:\nwant: %s\nhave: %s", q, want, have)
+	}
+}
+
+func TestGithubSource_CreateChangeset(t *testing.T) {
+	repo := &Repo{
+		Metadata: &github.Repository{
+			ID:            "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
+			NameWithOwner: "sourcegraph/automation-testing",
+		},
+	}
+
+	testCases := []struct {
+		name   string
+		cs     *Changeset
+		err    string
+		exists bool
+	}{
+		{
+			name: "success",
+			cs: &Changeset{
+				Title:     "This is a test PR",
+				Body:      "This is the description of the test PR",
+				HeadRef:   "refs/heads/test-pr-6",
+				BaseRef:   "refs/heads/master",
+				Repo:      repo,
+				Changeset: &campaigns.Changeset{},
+			},
+		},
+		{
+			name: "already exists",
+			cs: &Changeset{
+				Title:     "This is a test PR",
+				Body:      "This is the description of the test PR",
+				HeadRef:   "refs/heads/always-open-pr",
+				BaseRef:   "refs/heads/master",
+				Repo:      repo,
+				Changeset: &campaigns.Changeset{},
+			},
+			// If PR already exists we'll just return it, no error
+			err:    "",
+			exists: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+
+		tc.name = "GithubSource_CreateChangeset_" + strings.Replace(tc.name, " ", "_", -1)
+
+		t.Run(tc.name, func(t *testing.T) {
+			// The GithubSource uses the github.Client under the hood, which
+			// uses rcache, a caching layer that uses Redis.
+			// We need to clear the cache before we run the tests
+			rcache.SetupForTest(t)
+
+			cf, save := newClientFactory(t, tc.name)
+			defer save(t)
+
+			lg := log15.New()
+			lg.SetHandler(log15.DiscardHandler())
+
+			svc := &ExternalService{
+				Kind: "GITHUB",
+				Config: marshalJSON(t, &schema.GitHubConnection{
+					Url:   "https://github.com",
+					Token: os.Getenv("GITHUB_TOKEN"),
+				}),
+			}
+
+			githubSrc, err := NewGithubSource(svc, cf)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			ctx := context.Background()
+			if tc.err == "" {
+				tc.err = "<nil>"
+			}
+
+			exists, err := githubSrc.CreateChangeset(ctx, tc.cs)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+			}
+
+			if err != nil {
+				return
+			}
+
+			if have, want := exists, tc.exists; have != want {
+				t.Errorf("exists:\nhave: %t\nwant: %t", have, want)
+			}
+
+			pr, ok := tc.cs.Changeset.Metadata.(*github.PullRequest)
+			if !ok {
+				t.Fatal("Metadata does not contain PR")
+			}
+
+			testutil.AssertGolden(t, "testdata/golden/"+tc.name, update(tc.name), pr)
+		})
+	}
+}
+
+func TestGithubSource_CloseChangeset(t *testing.T) {
+	testCases := []struct {
+		name string
+		cs   *Changeset
+		err  string
+	}{
+		{
+			name: "success",
+			cs: &Changeset{
+				Changeset: &campaigns.Changeset{
+					Metadata: &github.PullRequest{
+						ID: "MDExOlB1bGxSZXF1ZXN0MzQ5NTIzMzE0",
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		tc.name = "GithubSource_CloseChangeset_" + strings.Replace(tc.name, " ", "_", -1)
+
+		t.Run(tc.name, func(t *testing.T) {
+			// The GithubSource uses the github.Client under the hood, which
+			// uses rcache, a caching layer that uses Redis.
+			// We need to clear the cache before we run the tests
+			rcache.SetupForTest(t)
+
+			cf, save := newClientFactory(t, tc.name)
+			defer save(t)
+
+			lg := log15.New()
+			lg.SetHandler(log15.DiscardHandler())
+
+			svc := &ExternalService{
+				Kind: "GITHUB",
+				Config: marshalJSON(t, &schema.GitHubConnection{
+					Url:   "https://github.com",
+					Token: os.Getenv("GITHUB_TOKEN"),
+				}),
+			}
+
+			githubSrc, err := NewGithubSource(svc, cf)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			ctx := context.Background()
+			if tc.err == "" {
+				tc.err = "<nil>"
+			}
+
+			err = githubSrc.CloseChangeset(ctx, tc.cs)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+			}
+
+			if err != nil {
+				return
+			}
+
+			pr := tc.cs.Changeset.Metadata.(*github.PullRequest)
+			testutil.AssertGolden(t, "testdata/golden/"+tc.name, update(tc.name), pr)
+		})
+	}
+}
+
+func TestGithubSource_UpdateChangeset(t *testing.T) {
+	testCases := []struct {
+		name string
+		cs   *Changeset
+		err  string
+	}{
+		{
+			name: "success",
+			cs: &Changeset{
+				Title:   "This is a new title",
+				Body:    "This is a new body",
+				BaseRef: "refs/heads/master",
+				Changeset: &campaigns.Changeset{
+					Metadata: &github.PullRequest{
+						ID: "MDExOlB1bGxSZXF1ZXN0MzYwNTI5NzI0",
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		tc.name = "GithubSource_UpdateChangeset_" + strings.Replace(tc.name, " ", "_", -1)
+
+		t.Run(tc.name, func(t *testing.T) {
+			// The GithubSource uses the github.Client under the hood, which
+			// uses rcache, a caching layer that uses Redis.
+			// We need to clear the cache before we run the tests
+			rcache.SetupForTest(t)
+
+			cf, save := newClientFactory(t, tc.name)
+			defer save(t)
+
+			lg := log15.New()
+			lg.SetHandler(log15.DiscardHandler())
+
+			svc := &ExternalService{
+				Kind: "GITHUB",
+				Config: marshalJSON(t, &schema.GitHubConnection{
+					Url:   "https://github.com",
+					Token: os.Getenv("GITHUB_TOKEN"),
+				}),
+			}
+
+			githubSrc, err := NewGithubSource(svc, cf)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			ctx := context.Background()
+			if tc.err == "" {
+				tc.err = "<nil>"
+			}
+
+			err = githubSrc.UpdateChangeset(ctx, tc.cs)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+			}
+
+			if err != nil {
+				return
+			}
+
+			pr := tc.cs.Changeset.Metadata.(*github.PullRequest)
+			testutil.AssertGolden(t, "testdata/golden/"+tc.name, update(tc.name), pr)
+		})
 	}
 }
 
@@ -44,11 +281,15 @@ func TestGithubSource_LoadChangesets(t *testing.T) {
 			cs: []*Changeset{
 				{
 					Repo:      &Repo{Metadata: &github.Repository{NameWithOwner: "sourcegraph/sourcegraph"}},
-					Changeset: &a8n.Changeset{ExternalID: "5550"},
+					Changeset: &campaigns.Changeset{ExternalID: "5550"},
 				},
 				{
 					Repo:      &Repo{Metadata: &github.Repository{NameWithOwner: "tsenart/vegeta"}},
-					Changeset: &a8n.Changeset{ExternalID: "50"},
+					Changeset: &campaigns.Changeset{ExternalID: "50"},
+				},
+				{
+					Repo:      &Repo{Metadata: &github.Repository{NameWithOwner: "sourcegraph/sourcegraph"}},
+					Changeset: &campaigns.Changeset{ExternalID: "5834"},
 				},
 			},
 		},
@@ -102,28 +343,7 @@ func TestGithubSource_LoadChangesets(t *testing.T) {
 				meta = append(meta, cs.Changeset.Metadata.(*github.PullRequest))
 			}
 
-			data, err := json.MarshalIndent(meta, " ", " ")
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			path := "testdata/golden/" + tc.name
-			if update(tc.name) {
-				if err = ioutil.WriteFile(path, data, 0640); err != nil {
-					t.Fatalf("failed to update golden file %q: %s", path, err)
-				}
-			}
-
-			golden, err := ioutil.ReadFile(path)
-			if err != nil {
-				t.Fatalf("failed to read golden file %q: %s", path, err)
-			}
-
-			if have, want := string(data), string(golden); have != want {
-				dmp := diffmatchpatch.New()
-				diffs := dmp.DiffMain(have, want, false)
-				t.Error(dmp.DiffPrettyText(diffs))
-			}
+			testutil.AssertGolden(t, "testdata/golden/"+tc.name, update(tc.name), meta)
 		})
 	}
 }
@@ -154,7 +374,6 @@ func TestGithubSource_GetRepo(t *testing.T) {
 				want := &Repo{
 					Name:        "github.com/sourcegraph/sourcegraph",
 					Description: "Code search and navigation tool (self-hosted)",
-					Enabled:     true,
 					URI:         "github.com/sourcegraph/sourcegraph",
 					ExternalRepo: api.ExternalRepoSpec{
 						ID:          "MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==",
@@ -220,6 +439,62 @@ func TestGithubSource_GetRepo(t *testing.T) {
 			if tc.assert != nil {
 				tc.assert(t, repo)
 			}
+		})
+	}
+}
+
+func TestGithubSource_makeRepo(t *testing.T) {
+	b, err := ioutil.ReadFile(filepath.Join("testdata", "github-repos.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var repos []*github.Repository
+	if err := json.Unmarshal(b, &repos); err != nil {
+		t.Fatal(err)
+	}
+
+	svc := ExternalService{ID: 1, Kind: "GITHUB"}
+
+	tests := []struct {
+		name   string
+		schmea *schema.GitHubConnection
+	}{
+		{
+			name: "simple",
+			schmea: &schema.GitHubConnection{
+				Url: "https://github.com",
+			},
+		}, {
+			name: "ssh",
+			schmea: &schema.GitHubConnection{
+				Url:        "https://github.com",
+				GitURLType: "ssh",
+			},
+		}, {
+			name: "path-pattern",
+			schmea: &schema.GitHubConnection{
+				Url:                   "https://github.com",
+				RepositoryPathPattern: "gh/{nameWithOwner}",
+			},
+		},
+	}
+	for _, test := range tests {
+		test.name = "GithubSource_makeRepo_" + test.name
+		t.Run(test.name, func(t *testing.T) {
+			lg := log15.New()
+			lg.SetHandler(log15.DiscardHandler())
+
+			s, err := newGithubSource(&svc, test.schmea, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			var got []*Repo
+			for _, r := range repos {
+				got = append(got, s.makeRepo(r))
+			}
+
+			testutil.AssertGolden(t, "testdata/golden/"+test.name, update(test.name), got)
 		})
 	}
 }
@@ -326,6 +601,7 @@ func TestGithubSource_ListRepos(t *testing.T) {
 				"github.com/gorilla/muxy",
 				"github.com/gorilla/i18n",
 				"github.com/gorilla/template",
+				"github.com/gorilla/.github",
 			}),
 			conf: &schema.GitHubConnection{
 				Url:   "https://github.com",
@@ -357,7 +633,14 @@ func TestGithubSource_ListRepos(t *testing.T) {
 				"github.com/gorilla/muxy",
 				"github.com/gorilla/i18n",
 				"github.com/gorilla/template",
+				"github.com/gorilla/.github",
 				"github.com/golang-migrate/migrate",
+				"github.com/torvalds/linux",
+				"github.com/torvalds/uemacs",
+				"github.com/torvalds/subsurface-for-dirk",
+				"github.com/torvalds/libdc-for-dirk",
+				"github.com/torvalds/test-tlb",
+				"github.com/torvalds/pesconvert",
 			}),
 			conf: &schema.GitHubConnection{
 				Url:   "https://github.com",
@@ -365,6 +648,7 @@ func TestGithubSource_ListRepos(t *testing.T) {
 				RepositoryQuery: []string{
 					"org:gorilla",
 					"org:golang-migrate",
+					"org:torvalds",
 				},
 			},
 			err: "<nil>",

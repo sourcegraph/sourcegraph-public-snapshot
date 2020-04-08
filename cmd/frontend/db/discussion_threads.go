@@ -10,15 +10,15 @@ import (
 	"time"
 
 	"github.com/felixfbecker/stringscore"
-	"github.com/karrick/tparse"
+	tparse "github.com/karrick/tparse/v2"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/discussions/searchquery"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 // TODO(slimsag:discussions): future: tests for DiscussionThreadsListOptions.TargetRepoID

@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
 
 // TestSurveyResponses_Create_Count tests creation and counting of db survey responses

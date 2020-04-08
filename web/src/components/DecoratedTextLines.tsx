@@ -144,7 +144,7 @@ export class DecoratedTextLines extends React.PureComponent<Props, State> {
         this.setState({ visible: true })
     }
 
-    private setTableContainerElement = (ref: HTMLElement | null) => {
+    private setTableContainerElement = (ref: HTMLElement | null): void => {
         this.tableContainerElement = ref
     }
 }

@@ -1,4 +1,3 @@
-import * as fs from 'fs'
 import { pick } from 'lodash'
 
 /**
@@ -6,19 +5,70 @@ import { pick } from 'lodash'
  * depended on by other modules is not included here.
  */
 export interface Config {
+    browser: 'firefox' | 'chrome'
     sudoToken: string
     sudoUsername: string
+    gitHubClientID: string
+    gitHubClientSecret: string
     gitHubToken: string
+    gitHubUserBobPassword: string
+    gitHubUserBobToken: string
+    gitHubUserAmyPassword: string
+    gitLabToken: string
+    gitLabClientID: string
+    gitLabClientSecret: string
+    gitLabUserAmyPassword: string
+    oktaUserAmyPassword: string
+    oktaMetadataUrl: string
     sourcegraphBaseUrl: string
+    includeAdminOnboarding: boolean
+    init: boolean
+    testUserPassword: string
+    noCleanup: boolean
+    logStatusMessages: boolean
+    logBrowserConsole: boolean
+    slowMo: number
+    headless: boolean
+    keepBrowser: boolean
+    bitbucketCloudUserBobAppPassword: string
 }
 
-export interface ConfigField {
+interface Field<T = string> {
     envVar: string
     description?: string
-    defaultValue?: string
+    defaultValue?: T
 }
 
-const configFields: { [K in keyof Config]: ConfigField } = {
+interface FieldParser<T = string> {
+    parser: (rawValue: string) => T
+}
+
+type ConfigFields = {
+    [K in keyof Config]: Field<Config[K]> & (Config[K] extends string ? Partial<FieldParser> : FieldParser<Config[K]>)
+}
+
+const parseBool = (s: string): boolean => {
+    if (['1', 't', 'true'].some(v => v.toLowerCase() === s)) {
+        return true
+    }
+    if (['0', 'f', 'false'].some(v => v.toLowerCase() === s)) {
+        return false
+    }
+    throw new Error(`could not parse string ${JSON.stringify(s)} to boolean`)
+}
+
+const configFields: ConfigFields = {
+    browser: {
+        envVar: 'BROWSER',
+        description: 'The browser to use.',
+        defaultValue: 'chrome',
+        parser: (value: string) => {
+            if (!['firefox', 'chrome'].includes(value)) {
+                throw new Error('BROWSER must be "chrome" or "firefox"')
+            }
+            return value
+        },
+    },
     sudoToken: {
         envVar: 'SOURCEGRAPH_SUDO_TOKEN',
         description:
@@ -28,40 +78,151 @@ const configFields: { [K in keyof Config]: ConfigField } = {
         envVar: 'SOURCEGRAPH_SUDO_USER',
         description: 'The site-admin-level username that will be impersonated with the sudo access token.',
     },
+    gitHubClientID: {
+        envVar: 'GITHUB_CLIENT_ID',
+        description:
+            'Client ID of the GitHub app to use to authenticate to Sourcegraph. Follow these instructions to obtain: https://developer.github.com/apps/building-oauth-apps/creating-an-oauth-app/',
+        defaultValue: 'cf9491b706c4c3b1f956', // "Local dev sign-in via GitHub" OAuth app from github.com/sourcegraph
+    },
+    gitHubClientSecret: {
+        envVar: 'GITHUB_CLIENT_SECRET',
+        description:
+            'Cilent secret of the GitHub app to use to authenticate to Sourcegraph. Follow these instructions to obtain: https://developer.github.com/apps/building-oauth-apps/creating-an-oauth-app/',
+    },
     gitHubToken: {
         envVar: 'GITHUB_TOKEN',
-        description: 'A GitHub token that will be used to authenticate a GitHub external service.',
+        description:
+            'A GitHub personal access token that will be used to authenticate a GitHub external service. It does not need to have any scopes.',
+    },
+    gitHubUserAmyPassword: {
+        envVar: 'GITHUB_USER_AMY_PASSWORD',
+        description: 'Password of the GitHub user sg-e2e-regression-test-amy, used to log in to Sourcegraph.',
+    },
+    gitHubUserBobPassword: {
+        envVar: 'GITHUB_USER_BOB_PASSWORD',
+        description: 'Password of the GitHub user sg-e2e-regression-test-bob, used to log in to Sourcegraph.',
+    },
+    gitHubUserBobToken: {
+        envVar: 'GITHUB_USER_BOB_TOKEN',
+        description:
+            "GitHub personal access token with repo scope for user sg-e2e-regression-test-bob. Used to clone Bob's repositories to Sourcegraph.",
+    },
+    gitLabToken: {
+        envVar: 'GITLAB_TOKEN',
+        description:
+            'A GitLab access token that will be used to authenticate a GitLab external service. It requires API scope.',
+    },
+    gitLabClientID: {
+        envVar: 'GITLAB_CLIENT_ID',
+        description:
+            'Application ID of the GitLab OAuth app used to authenticate Sourcegraph. Follow these instructions to obtain: https://docs.gitlab.com/ee/integration/oauth_provider.html',
+    },
+    gitLabClientSecret: {
+        envVar: 'GITLAB_CLIENT_SECRET',
+        description:
+            'Secret of the GitLab OAuth app used to authenticate Sourcegraph. Follow these instructions to obtain: https://docs.gitlab.com/ee/integration/oauth_provider.html',
+    },
+    gitLabUserAmyPassword: {
+        envVar: 'GITLAB_USER_AMY_PASSWORD',
+        description: 'Password of the GitLab user sg-e2e-regression-test-amy, used to log in to Sourcegraph.',
+    },
+    oktaMetadataUrl: {
+        envVar: 'OKTA_METADATA_URL',
+        description: 'URL of the Okta SAML IdP metadata.',
+    },
+    oktaUserAmyPassword: {
+        envVar: 'OKTA_USER_AMY_PASSWORD',
+        description: 'Password of the Okta user, beyang+sg-e2e-regression-test-amy@sourcegraph.com',
     },
     sourcegraphBaseUrl: {
         envVar: 'SOURCEGRAPH_BASE_URL',
-        defaultValue: 'http://localhost:3080',
+        defaultValue: 'https://sourcegraph.test:3443',
         description:
-            'The base URL of the Sourcegraph instance, e.g., https://sourcegraph.sgdev.org or http://localhost:3080.',
+            'The base URL of the Sourcegraph instance, e.g., https://sourcegraph.sgdev.org or https://sourcegraph.test:3443.',
+    },
+    includeAdminOnboarding: {
+        envVar: 'INCLUDE_ADMIN_ONBOARDING',
+        parser: parseBool,
+        description:
+            'If true, include admin onboarding tests, which assume none of the admin onboarding steps have yet completed on the instance. If those steps have already been completed, this test will fail.',
+    },
+    init: {
+        envVar: 'E2E_INIT',
+        parser: parseBool,
+        defaultValue: false,
+        description: 'If true, run the test for initializing a brand new instance of Sourcegraph',
+    },
+    testUserPassword: {
+        envVar: 'TEST_USER_PASSWORD',
+        description:
+            'The password to use for any test users that are created. This password should be secure and unguessable when running against production Sourcegraph instances.',
+    },
+    noCleanup: {
+        envVar: 'NO_CLEANUP',
+        parser: parseBool,
+        description:
+            "If true, regression tests will not clean up users, external services, or other resources they create. Set this to true if running against a dev instance (as it'll make test runs faster). Set to false if running against production.",
+    },
+    keepBrowser: {
+        envVar: 'KEEP_BROWSER',
+        parser: parseBool,
+        description: 'If true, browser window will remain open after tests run',
+        defaultValue: false,
+    },
+    logBrowserConsole: {
+        envVar: 'LOG_BROWSER_CONSOLE',
+        parser: parseBool,
+        description: 'If true, log browser console to stdout.',
+        defaultValue: false,
+    },
+    logStatusMessages: {
+        envVar: 'LOG_STATUS_MESSAGES',
+        parser: parseBool,
+        description:
+            'If true, logs status messages to console. This does not log the browser console (use LOG_BROWSER_CONSOLE for that).',
+    },
+    slowMo: {
+        envVar: 'SLOWMO',
+        parser: parseInt,
+        description: 'Slow down puppeteer by the specified number of milliseconds',
+        defaultValue: 0,
+    },
+    headless: {
+        envVar: 'HEADLESS',
+        parser: parseBool,
+        description: 'Run Puppeteer in headless mode',
+        defaultValue: false,
+    },
+    bitbucketCloudUserBobAppPassword: {
+        envVar: 'BITBUCKET_CLOUD_USER_BOB_APP_PASSWORD',
+        description:
+            'A Bitbucket Cloud app password associated with the Bitbucket Cloud user sg-e2e-regression-test-bob, that will be used to sync Bitbucket Cloud repositories.',
     },
 }
 
 /**
- * Reads e2e config from appropriate inputs: the config file defined by $CONFIG_FILE
- * and environment variables. The caller should specify the config fields that it
- * depends on. This method reads the config synchronously from disk.
+ * Reads e2e config from environment variables. The caller should specify the config fields that it
+ * depends on. This should NOT be called from helper packages. Instead, call it near the start of
+ * "test main" function (i.e., Jest `test` blocks). Doing this ensures that all the necessary
+ * environment variables necessary for a test are presented to the user in one go.
  */
-export function getConfig<T extends keyof Config>(required: T[]): Pick<Config, T> {
-    const configFile = process.env.CONFIG_FILE
-    // eslint-disable-next-line no-sync
-    const config = configFile ? JSON.parse(fs.readFileSync(configFile, 'utf-8')) : {}
-
-    // Set defaults and read env vars
-    for (const [fieldName, field] of Object.entries(configFields)) {
-        if (field.defaultValue && config[fieldName] === undefined) {
+export function getConfig<T extends keyof Config>(...required: T[]): Pick<Config, T> {
+    // Read config
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const config: { [key: string]: any } = {}
+    for (const fieldName of required) {
+        const field = configFields[fieldName]
+        if (field.defaultValue !== undefined) {
             config[fieldName] = field.defaultValue
         }
-        if (field.envVar && process.env[field.envVar]) {
-            config[fieldName] = process.env[field.envVar]
+        const envValue = process.env[field.envVar]
+        if (envValue) {
+            config[fieldName] = field.parser ? field.parser(envValue) : envValue
         }
     }
 
     // Check required fields for type safety
-    const missingKeys = required.filter(key => !config[key])
+    const missingKeys = required.filter(key => config[key] === undefined)
     if (missingKeys.length > 0) {
         const fieldInfo = (k: T): string => {
             const field = configFields[k]
@@ -70,7 +231,7 @@ export function getConfig<T extends keyof Config>(required: T[]): Pick<Config, T
             }
             const info = [field.envVar]
             if (field.defaultValue) {
-                info.push(`default value: ${field.defaultValue}`)
+                info.push(`default value: ${String(field.defaultValue)}`)
             }
             if (field.description) {
                 info.push(`description: ${field.description}`)
@@ -83,7 +244,7 @@ ${missingKeys.map(k => `- ${fieldInfo(k)}`).join('\n')}
 
 The recommended way to set them is to install direnv (https://direnv.net) and
 create a .envrc file at the root of this repository.
-`)
+        `)
     }
 
     return pick(config, required)

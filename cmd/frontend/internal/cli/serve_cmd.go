@@ -15,26 +15,28 @@ import (
 	"sync"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/tmpfriend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/httpapi"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/updatecheck"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/loghandlers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/discussions/mailreply"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/pkg/debugserver"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/processrestart"
-	"github.com/sourcegraph/sourcegraph/pkg/sysreq"
-	"github.com/sourcegraph/sourcegraph/pkg/tracer"
-	"github.com/sourcegraph/sourcegraph/pkg/version"
-	"github.com/sourcegraph/sourcegraph/pkg/vfsutil"
-	"gopkg.in/inconshreveable/log15.v2"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/debugserver"
+	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/processrestart"
+	"github.com/sourcegraph/sourcegraph/internal/sysreq"
+	"github.com/sourcegraph/sourcegraph/internal/tracer"
+	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegraph/sourcegraph/internal/vfsutil"
 )
 
 var (
@@ -78,19 +80,53 @@ func defaultExternalURL(nginxAddr, httpAddr string) *url.URL {
 	return &url.URL{Scheme: "http", Host: hostPort}
 }
 
+// InitDB initializes the global database connection and sets the
+// version of the frontend in our versions table.
+func InitDB() error {
+	if err := dbconn.ConnectToDB(""); err != nil {
+		return err
+	}
+
+	ctx := context.Background()
+	migrate := true
+
+	for {
+		// We need this loop so that we handle the missing versions table,
+		// which would be added by running the migrations. Once we detect that
+		// it's missing, we run the migrations and try to update the version again.
+
+		err := backend.UpdateServiceVersion(ctx, "frontend", version.Version())
+		if err != nil && !dbutil.IsPostgresError(err, "undefined_table") {
+			return err
+		}
+
+		if !migrate {
+			return nil
+		}
+
+		if err := dbconn.MigrateDB(dbconn.Global, ""); err != nil {
+			return err
+		}
+
+		migrate = false
+	}
+}
+
 // Main is the main entrypoint for the frontend server program.
-func Main() error {
+func Main(githubWebhook, bitbucketServerWebhook http.Handler) error {
 	log.SetFlags(0)
 	log.SetPrefix("")
 
-	// Connect to the database and start the configuration server.
-	if err := dbconn.ConnectToDB(""); err != nil {
-		log.Fatal(err)
+	if dbconn.Global == nil {
+		if err := InitDB(); err != nil {
+			log.Fatalf("ERROR: %v", err)
+		}
 	}
 
 	if err := handleConfigOverrides(); err != nil {
 		log.Fatal("applying config overrides:", err)
 	}
+
 	globals.ConfigurationServerFrontendOnly = conf.InitConfigurationServerFrontendOnly(&configurationSource{})
 	conf.MustValidateDefaults()
 
@@ -150,18 +186,16 @@ func Main() error {
 	siteid.Init()
 
 	globals.WatchExternalURL(defaultExternalURL(nginxAddr, httpAddr))
+	globals.WatchPermissionsUserMapping()
+	globals.WatchPermissionsBackgroundSync()
 
 	goroutine.Go(func() { bg.MigrateAllSettingsMOTDToNotices(context.Background()) })
 	goroutine.Go(func() { bg.MigrateSavedQueriesAndSlackWebhookURLsFromSettingsToDatabase(context.Background()) })
-	goroutine.Go(func() { bg.LogSearchQueries(context.Background()) })
 	goroutine.Go(func() { bg.CheckRedisCacheEvictionPolicy() })
 	goroutine.Go(func() { bg.DeleteOldCacheDataInRedis() })
 	goroutine.Go(func() { bg.DeleteOldEventLogsInPostgres(context.Background()) })
 	goroutine.Go(mailreply.StartWorker)
 	go updatecheck.Start()
-	if hooks.AfterDBInit != nil {
-		hooks.AfterDBInit()
-	}
 
 	// Parse GraphQL schema and set up resolvers that depend on dbconn.Global
 	// being initialized
@@ -169,18 +203,40 @@ func Main() error {
 		return errors.New("dbconn.Global is nil when trying to parse GraphQL schema")
 	}
 
-	// graphqlbackend.A8NResolver is set by enterprise frontend
-	var a8n graphqlbackend.A8NResolver
-	if graphqlbackend.NewA8NResolver != nil {
-		a8n = graphqlbackend.NewA8NResolver(dbconn.Global)
+	// graphqlbackend.CampaignsResolver is set by enterprise frontend
+	var campaignsResolver graphqlbackend.CampaignsResolver
+	if graphqlbackend.NewCampaignsResolver != nil {
+		campaignsResolver = graphqlbackend.NewCampaignsResolver(dbconn.Global)
 	}
-	schema, err := graphqlbackend.NewSchema(a8n)
+
+	// graphqlbackend.CodeIntelResolver is set by enterprise frontend
+	var codeIntelResolver graphqlbackend.CodeIntelResolver
+	if graphqlbackend.NewCodeIntelResolver != nil {
+		codeIntelResolver = graphqlbackend.NewCodeIntelResolver()
+	}
+
+	// graphqlbackend.AuthzResolver is set by enterprise frontend
+	var authzResolver graphqlbackend.AuthzResolver
+	if graphqlbackend.NewAuthzResolver != nil {
+		authzResolver = graphqlbackend.NewAuthzResolver()
+	}
+
+	schema, err := graphqlbackend.NewSchema(campaignsResolver, codeIntelResolver, authzResolver)
 	if err != nil {
 		return err
 	}
 
+	// httpapi.NewLSIFServerProxy is set by enterprise frontend
+	var lsifServerProxy *httpapi.LSIFServerProxy
+	if httpapi.NewLSIFServerProxy != nil {
+		var err error
+		if lsifServerProxy, err = httpapi.NewLSIFServerProxy(); err != nil {
+			return err
+		}
+	}
+
 	// Create the external HTTP handler.
-	externalHandler, err := newExternalHTTPHandler(context.Background(), schema)
+	externalHandler, err := newExternalHTTPHandler(schema, githubWebhook, bitbucketServerWebhook, lsifServerProxy)
 	if err != nil {
 		return err
 	}
@@ -200,7 +256,7 @@ func Main() error {
 	srv.GoServe(l, &http.Server{
 		Handler:      externalHandler,
 		ReadTimeout:  75 * time.Second,
-		WriteTimeout: 60 * time.Second,
+		WriteTimeout: 10 * time.Minute,
 	})
 
 	if httpAddrInternal != "" {

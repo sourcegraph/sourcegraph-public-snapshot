@@ -1,5 +1,4 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
@@ -17,11 +16,13 @@ import { queryGraphQL } from '../../backend/graphql'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import { NamespaceProps } from '../../namespaces'
-import { ThemeProps } from '../../theme'
+import { ThemeProps } from '../../../../shared/src/theme'
 import { RouteDescriptor } from '../../util/contributions'
 import { UserSettingsAreaRoute } from '../settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from '../settings/UserSettingsSidebar'
 import { UserAreaHeader, UserAreaHeaderNavItem } from './UserAreaHeader'
+import { PatternTypeProps } from '../../search'
+import { ErrorMessage } from '../../components/alerts'
 
 const fetchUser = (args: { username: string }): Observable<GQL.IUser | null> =>
     queryGraphQL(
@@ -37,6 +38,7 @@ const fetchUser = (args: { username: string }): Observable<GQL.IUser | null> =>
                     avatarURL
                     viewerCanAdminister
                     siteAdmin
+                    builtinAuth
                     createdAt
                     emails {
                         email
@@ -74,7 +76,8 @@ interface UserAreaProps
         PlatformContextProps,
         SettingsCascadeProps,
         ThemeProps,
-        ActivationProps {
+        ActivationProps,
+        Omit<PatternTypeProps, 'setPatternType'> {
     userAreaRoutes: readonly UserAreaRoute[]
     userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[]
     userSettingsSideBarItems: UserSettingsSidebarItems
@@ -104,7 +107,8 @@ export interface UserAreaRouteContext
         SettingsCascadeProps,
         ThemeProps,
         ActivationProps,
-        NamespaceProps {
+        NamespaceProps,
+        Omit<PatternTypeProps, 'setPatternType'> {
     /** The user area main URL. */
     url: string
 
@@ -160,7 +164,10 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
                         )
                     })
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate), err => console.error(err))
+                .subscribe(
+                    stateUpdate => this.setState(stateUpdate),
+                    err => console.error(err)
+                )
         )
 
         this.componentUpdates.next(this.props)
@@ -180,7 +187,11 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
         }
         if (isErrorLike(this.state.userOrError)) {
             return (
-                <HeroPage icon={AlertCircleIcon} title="Error" subtitle={upperFirst(this.state.userOrError.message)} />
+                <HeroPage
+                    icon={AlertCircleIcon}
+                    title="Error"
+                    subtitle={<ErrorMessage error={this.state.userOrError} />}
+                />
             )
         }
 
@@ -226,5 +237,7 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
         )
     }
 
-    private onDidUpdateUser = () => this.refreshRequests.next()
+    private onDidUpdateUser = (): void => {
+        this.refreshRequests.next()
+    }
 }

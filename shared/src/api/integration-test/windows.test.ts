@@ -24,7 +24,8 @@ describe('Windows (integration)', () => {
     })
 
     describe('app.activeWindowChanges', () => {
-        test('reflects changes to the active window', async () => {
+        // Skipped, as sourcegraph.app.activeWindow is always defined.
+        test.skip('reflects changes to the active window', async () => {
             const {
                 services: { editor: editorService, model: modelService },
                 extensionAPI,
@@ -44,12 +45,7 @@ describe('Windows (integration)', () => {
                 selections: [],
                 isActive: true,
             })
-            await from(extensionAPI.app.activeWindowChanges)
-                .pipe(
-                    filter(isDefined),
-                    first()
-                )
-                .toPromise()
+            await from(extensionAPI.app.activeWindowChanges).pipe(filter(isDefined), first()).toPromise()
             expect(extensionAPI.app.activeWindow).toBeTruthy()
         })
     })
@@ -174,7 +170,8 @@ describe('Windows (integration)', () => {
         })
 
         describe('Window#activeViewComponentChanges', () => {
-            test('reflects changes to the active window', async () => {
+            // Skipped, as sourcegraph.app.activeWindow is always defined.
+            test.skip('reflects changes to the active window', async () => {
                 const {
                     services: { editor: editorService, model: modelService },
                     extensionAPI,
@@ -204,7 +201,10 @@ describe('Windows (integration)', () => {
                         toArray()
                     )
                     .toPromise()
-                assertToJSON(values.map(c => (c ? c.document.uri : null)), [null, 'foo', null, 'bar'])
+                assertToJSON(
+                    values.map(c => (c ? c.document.uri : null)),
+                    [null, 'foo', null, 'bar']
+                )
             })
         })
 

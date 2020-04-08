@@ -17,7 +17,7 @@ export interface ProxySubscribable<T> extends ProxyValue {
  *
  * @param subscribable A normal Subscribable (from this thread)
  */
-export const proxySubscribable = <T>(subscribable: Subscribable<T>): ProxySubscribable<T> => ({
+const proxySubscribable = <T>(subscribable: Subscribable<T>): ProxySubscribable<T> => ({
     [proxyValueSymbol]: true,
     subscribe(observer): Unsubscribable & ProxyValue {
         return proxyValue(
@@ -32,7 +32,7 @@ export const proxySubscribable = <T>(subscribable: Subscribable<T>): ProxySubscr
                     // Only pass a few well-known Error properties
                     // TODO should pass all properties serialized recursively, best handled on comlink level
                     // eslint-disable-next-line @typescript-eslint/no-floating-promises
-                    observer.error(err && { message: err.message, name: err.name, code: err.code, stack: err.stack })
+                    observer.error(err && { message: err.message, name: err.name, stack: err.stack })
                 },
                 complete: () => {
                     // eslint-disable-next-line @typescript-eslint/no-floating-promises

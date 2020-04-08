@@ -34,16 +34,9 @@ exports[`HoverOverlay actions and hover error 1`] = `
     className="hover-overlay__contents"
   >
     <div
-      className="hover-overlay__row hover-overlay__hover-error alert alert-danger"
+      className="hover-overlay__row hover-overlay__hover-error"
     >
-      <h4>
-        <Memo(AlertCircleOutlineIcon)
-          className="icon-inline"
-        />
-         Error:
-      </h4>
-       
-      m2
+      M2
     </div>
   </div>
 </div>
@@ -91,14 +84,18 @@ exports[`HoverOverlay actions and hover present 1`] = `
     className="hover-overlay__contents"
   >
     <div
-      className="hover-overlay__content hover-overlay__row e2e-tooltip-content"
-      dangerouslySetInnerHTML={
-        Object {
-          "__html": "<p>v</p>
+      className="hover-overlay__row e2e-tooltip-badged-content"
+    >
+      <div
+        className="hover-overlay__content e2e-tooltip-content"
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "<p>v</p>
 ",
+          }
         }
-      }
-    />
+      />
+    </div>
   </div>
   <div
     className="hover-overlay__actions hover-overlay__row"
@@ -129,6 +126,10 @@ exports[`HoverOverlay actions and hover present 1`] = `
       platformContext={
         Object {
           "forceUpdateTooltip": [Function],
+          "settings": Observable {
+            "_isScalar": false,
+            "_subscribe": [Function],
+          },
         }
       }
       showInlineError={true}
@@ -182,14 +183,18 @@ exports[`HoverOverlay actions error, hover present 1`] = `
     className="hover-overlay__contents"
   >
     <div
-      className="hover-overlay__content hover-overlay__row e2e-tooltip-content"
-      dangerouslySetInnerHTML={
-        Object {
-          "__html": "<p>v</p>
+      className="hover-overlay__row e2e-tooltip-badged-content"
+    >
+      <div
+        className="hover-overlay__content e2e-tooltip-content"
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "<p>v</p>
 ",
+          }
         }
-      }
-    />
+      />
+    </div>
   </div>
 </div>
 `;
@@ -257,6 +262,10 @@ exports[`HoverOverlay actions present 1`] = `
       platformContext={
         Object {
           "forceUpdateTooltip": [Function],
+          "settings": Observable {
+            "_isScalar": false,
+            "_subscribe": [Function],
+          },
         }
       }
       showInlineError={true}
@@ -324,6 +333,10 @@ exports[`HoverOverlay actions present, hover loading 1`] = `
       platformContext={
         Object {
           "forceUpdateTooltip": [Function],
+          "settings": Observable {
+            "_isScalar": false,
+            "_subscribe": [Function],
+          },
         }
       }
       showInlineError={true}
@@ -355,14 +368,18 @@ exports[`HoverOverlay actions, hover and alert present 1`] = `
     className="hover-overlay__contents"
   >
     <div
-      className="hover-overlay__content hover-overlay__row e2e-tooltip-content"
-      dangerouslySetInnerHTML={
-        Object {
-          "__html": "<p>v</p>
+      className="hover-overlay__row e2e-tooltip-badged-content"
+    >
+      <div
+        className="hover-overlay__content e2e-tooltip-content"
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "<p>v</p>
 ",
+          }
         }
-      }
-    />
+      />
+    </div>
   </div>
   <div
     className="hover-overlay__alerts"
@@ -373,10 +390,6 @@ exports[`HoverOverlay actions, hover and alert present 1`] = `
       <div
         className="hover-overlay__alert-content"
       >
-        <Memo(HelpCircleIcon)
-          className="icon-inline"
-        />
-         
         <small>
           <React.Fragment>
             b 
@@ -430,6 +443,10 @@ exports[`HoverOverlay actions, hover and alert present 1`] = `
       platformContext={
         Object {
           "forceUpdateTooltip": [Function],
+          "settings": Observable {
+            "_isScalar": false,
+            "_subscribe": [Function],
+          },
         }
       }
       showInlineError={true}
@@ -463,16 +480,9 @@ exports[`HoverOverlay hover error 1`] = `
     className="hover-overlay__contents"
   >
     <div
-      className="hover-overlay__row hover-overlay__hover-error alert alert-danger"
+      className="hover-overlay__row hover-overlay__hover-error"
     >
-      <h4>
-        <Memo(AlertCircleOutlineIcon)
-          className="icon-inline"
-        />
-         Error:
-      </h4>
-       
-      m
+      M
     </div>
   </div>
 </div>
@@ -494,16 +504,9 @@ exports[`HoverOverlay hover error, actions present 1`] = `
     className="hover-overlay__contents"
   >
     <div
-      className="hover-overlay__row hover-overlay__hover-error alert alert-danger"
+      className="hover-overlay__row hover-overlay__hover-error"
     >
-      <h4>
-        <Memo(AlertCircleOutlineIcon)
-          className="icon-inline"
-        />
-         Error:
-      </h4>
-       
-      m
+      M
     </div>
   </div>
   <div
@@ -535,6 +538,10 @@ exports[`HoverOverlay hover error, actions present 1`] = `
       platformContext={
         Object {
           "forceUpdateTooltip": [Function],
+          "settings": Observable {
+            "_isScalar": false,
+            "_subscribe": [Function],
+          },
         }
       }
       showInlineError={true}
@@ -592,14 +599,18 @@ exports[`HoverOverlay hover present 1`] = `
     className="hover-overlay__contents"
   >
     <div
-      className="hover-overlay__content hover-overlay__row e2e-tooltip-content"
-      dangerouslySetInnerHTML={
-        Object {
-          "__html": "<p>v</p>
+      className="hover-overlay__row e2e-tooltip-badged-content"
+    >
+      <div
+        className="hover-overlay__content e2e-tooltip-content"
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "<p>v</p>
 ",
+          }
         }
-      }
-    />
+      />
+    </div>
   </div>
 </div>
 `;
@@ -620,14 +631,18 @@ exports[`HoverOverlay hover present, actions loading 1`] = `
     className="hover-overlay__contents"
   >
     <div
-      className="hover-overlay__content hover-overlay__row e2e-tooltip-content"
-      dangerouslySetInnerHTML={
-        Object {
-          "__html": "<p>v</p>
+      className="hover-overlay__row e2e-tooltip-badged-content"
+    >
+      <div
+        className="hover-overlay__content e2e-tooltip-content"
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "<p>v</p>
 ",
+          }
         }
-      }
-    />
+      />
+    </div>
   </div>
 </div>
 `;
@@ -648,23 +663,31 @@ exports[`HoverOverlay multiple hovers present 1`] = `
     className="hover-overlay__contents"
   >
     <div
-      className="hover-overlay__content hover-overlay__row e2e-tooltip-content"
-      dangerouslySetInnerHTML={
-        Object {
-          "__html": "<p>v</p>
+      className="hover-overlay__row e2e-tooltip-badged-content"
+    >
+      <div
+        className="hover-overlay__content e2e-tooltip-content"
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "<p>v</p>
 ",
+          }
         }
-      }
-    />
+      />
+    </div>
     <div
-      className="hover-overlay__content hover-overlay__row e2e-tooltip-content"
-      dangerouslySetInnerHTML={
-        Object {
-          "__html": "<p>v2</p>
+      className="hover-overlay__row e2e-tooltip-badged-content"
+    >
+      <div
+        className="hover-overlay__content e2e-tooltip-content"
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "<p>v2</p>
 ",
+          }
         }
-      }
-    />
+      />
+    </div>
   </div>
 </div>
 `;

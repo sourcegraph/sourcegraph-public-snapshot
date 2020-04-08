@@ -5,15 +5,15 @@ import (
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/suspiciousnames"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
 func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name string }) (*OrgResolver, error) {
@@ -24,8 +24,8 @@ func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name str
 	return &OrgResolver{org: org}, nil
 }
 
-// Org is DEPRECATED (but still in use by sourcegraph/src). Use Node to look up an org by its
-// graphql.ID instead.
+// Deprecated: Org is only in use by sourcegraph/src. Use Node to look up an
+// org by its graphql.ID instead.
 func (r *schemaResolver) Org(ctx context.Context, args *struct {
 	ID graphql.ID
 }) (*OrgResolver, error) {

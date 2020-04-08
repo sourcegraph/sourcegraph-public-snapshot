@@ -3,8 +3,6 @@ package httpapi
 import (
 	"log"
 	"net/http"
-	"net/http/httputil"
-	"net/url"
 	"reflect"
 	"strconv"
 	"time"
@@ -12,18 +10,19 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
 	"github.com/graph-gophers/graphql-go"
+	"github.com/inconshreveable/log15"
 	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/httpapi"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/updatecheck"
 	apirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/trace"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
-
-var lsifServerURLFromEnv = env.Get("LSIF_SERVER_URL", "http://lsif-server:3186", "URL at which the lsif-server service can be reached")
 
 // NewHandler returns a new API handler that uses the provided API
 // router, which must have been created by httpapi/router.New, or
@@ -31,35 +30,50 @@ var lsifServerURLFromEnv = env.Get("LSIF_SERVER_URL", "http://lsif-server:3186",
 //
 // 🚨 SECURITY: The caller MUST wrap the returned handler in middleware that checks authentication
 // and sets the actor in the request context.
-func NewHandler(m *mux.Router, schema *graphql.Schema) http.Handler {
+func NewHandler(m *mux.Router, schema *graphql.Schema, githubWebhook, bitbucketServerWebhook http.Handler, lsifServerProxy *httpapi.LSIFServerProxy) http.Handler {
 	if m == nil {
 		m = apirouter.New(nil)
 	}
 	m.StrictSlash(true)
+
+	handler := jsonMiddleware(&errorHandler{
+		// Only display error message to admins when in debug mode, since it
+		// may contain sensitive info (like API keys in net/http error
+		// messages).
+		WriteErrBody: env.InsecureDev,
+	})
 
 	// Set handlers for the installed routes.
 	m.Get(apirouter.RepoShield).Handler(trace.TraceRoute(handler(serveRepoShield)))
 
 	m.Get(apirouter.RepoRefresh).Handler(trace.TraceRoute(handler(serveRepoRefresh)))
 
-	m.Get(apirouter.Telemetry).Handler(trace.TraceRoute(telemetryHandler))
+	if githubWebhook != nil {
+		m.Get(apirouter.GitHubWebhooks).Handler(trace.TraceRoute(githubWebhook))
+	}
+
+	if bitbucketServerWebhook != nil {
+		m.Get(apirouter.BitbucketServerWebhooks).Handler(trace.TraceRoute(bitbucketServerWebhook))
+	}
 
 	if envvar.SourcegraphDotComMode() {
-		m.Path("/updates").Methods("GET").Name("updatecheck").Handler(trace.TraceRoute(http.HandlerFunc(updatecheck.Handler)))
+		m.Path("/updates").Methods("GET", "POST").Name("updatecheck").Handler(trace.TraceRoute(http.HandlerFunc(updatecheck.Handler)))
 	}
 
 	m.Get(apirouter.GraphQL).Handler(trace.TraceRoute(handler(serveGraphQL(schema))))
 
-	lsifServerURL, err := url.Parse(lsifServerURLFromEnv)
-	if err != nil {
-		log15.Error("skipping initialization of the LSIF HTTP API because the environment variable LSIF_SERVER_URL is not a valid URL", "parse_error", err, "value", lsifServerURLFromEnv)
+	if lsifServerProxy != nil {
+		m.Get(apirouter.LSIFUpload).Handler(trace.TraceRoute(lsifServerProxy.UploadHandler))
 	} else {
-		proxy := httputil.NewSingleHostReverseProxy(lsifServerURL)
-		m.Get(apirouter.LSIFUpload).Handler(trace.TraceRoute(http.HandlerFunc(lsifUploadProxyHandler(proxy))))
-		m.Get(apirouter.LSIFChallenge).Handler(trace.TraceRoute(http.HandlerFunc(lsifChallengeHandler)))
-		m.Get(apirouter.LSIFVerify).Handler(trace.TraceRoute(http.HandlerFunc(lsifVerifyHandler)))
-		m.Get(apirouter.LSIF).Handler(trace.TraceRoute(http.HandlerFunc(lsifProxyHandler(proxy))))
+		m.Get(apirouter.LSIFUpload).Handler(trace.TraceRoute(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusNotFound)
+			_, _ = w.Write([]byte("lsif upload is only available in enterprise"))
+		})))
 	}
+
+	// Return the minimum src-cli version that's compatible with this instance
+	m.Get(apirouter.SrcCliVersion).Handler(trace.TraceRoute(handler(srcCliVersionServe)))
+	m.Get(apirouter.SrcCliDownload).Handler(trace.TraceRoute(handler(srcCliDownloadServe)))
 
 	m.Get(apirouter.Registry).Handler(trace.TraceRoute(handler(registry.HandleRegistry)))
 
@@ -83,12 +97,21 @@ func NewInternalHandler(m *mux.Router, schema *graphql.Schema) http.Handler {
 	}
 	m.StrictSlash(true)
 
+	handler := jsonMiddleware(&errorHandler{
+		// Internal endpoints can expose sensitive errors
+		WriteErrBody: true,
+	})
+
 	m.Get(apirouter.ExternalServiceConfigs).Handler(trace.TraceRoute(handler(serveExternalServiceConfigs)))
 	m.Get(apirouter.ExternalServicesList).Handler(trace.TraceRoute(handler(serveExternalServicesList)))
 	m.Get(apirouter.PhabricatorRepoCreate).Handler(trace.TraceRoute(handler(servePhabricatorRepoCreate)))
-	m.Get(apirouter.ReposCreateIfNotExists).Handler(trace.TraceRoute(handler(serveReposCreateIfNotExists)))
-	m.Get(apirouter.ReposUpdateMetadata).Handler(trace.TraceRoute(handler(serveReposUpdateMetadata)))
-	m.Get(apirouter.ReposList).Handler(trace.TraceRoute(handler(serveReposList)))
+	reposList := &reposListServer{
+		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
+		Repos:                 backend.Repos,
+		Indexers:              search.Indexers(),
+	}
+	m.Get(apirouter.ReposList).Handler(trace.TraceRoute(handler(reposList.serveList)))
+	m.Get(apirouter.ReposIndex).Handler(trace.TraceRoute(handler(reposList.serveIndex)))
 	m.Get(apirouter.ReposListEnabled).Handler(trace.TraceRoute(handler(serveReposListEnabled)))
 	m.Get(apirouter.ReposGetByName).Handler(trace.TraceRoute(handler(serveReposGetByName)))
 	m.Get(apirouter.SettingsGetForSubject).Handler(trace.TraceRoute(handler(serveSettingsGetForSubject)))
@@ -105,6 +128,7 @@ func NewInternalHandler(m *mux.Router, schema *graphql.Schema) http.Handler {
 	m.Get(apirouter.SendEmail).Handler(trace.TraceRoute(handler(serveSendEmail)))
 	m.Get(apirouter.GitResolveRevision).Handler(trace.TraceRoute(handler(serveGitResolveRevision)))
 	m.Get(apirouter.GitTar).Handler(trace.TraceRoute(handler(serveGitTar)))
+	m.Get(apirouter.GitExec).Handler(trace.TraceRoute(handler(serveGitExec)))
 	m.Get(apirouter.Telemetry).Handler(trace.TraceRoute(telemetryHandler))
 	m.Get(apirouter.GraphQL).Handler(trace.TraceRoute(handler(serveGraphQL(schema))))
 	m.Get(apirouter.Configuration).Handler(trace.TraceRoute(handler(serveConfiguration)))
@@ -117,17 +141,6 @@ func NewInternalHandler(m *mux.Router, schema *graphql.Schema) http.Handler {
 	})
 
 	return m
-}
-
-// handler is a wrapper func for API handlers.
-func handler(h func(http.ResponseWriter, *http.Request) error) http.Handler {
-	return handlerutil.HandlerWithErrorReturn{
-		Handler: func(w http.ResponseWriter, r *http.Request) error {
-			w.Header().Set("Content-Type", "application/json")
-			return h(w, r)
-		},
-		Error: handleError,
-	}
 }
 
 var schemaDecoder = schema.NewDecoder()
@@ -146,7 +159,13 @@ func init() {
 	})
 }
 
-func handleError(w http.ResponseWriter, r *http.Request, status int, err error) {
+type errorHandler struct {
+	WriteErrBody bool
+}
+
+func (h *errorHandler) Handle(w http.ResponseWriter, r *http.Request, status int, err error) {
+	trace.SetRequestErrorCause(r.Context(), err)
+
 	// Handle custom errors
 	if ee, ok := err.(*handlerutil.URLMovedError); ok {
 		err := handlerutil.RedirectToNewRepoName(w, r, ee.NewRepo)
@@ -162,9 +181,7 @@ func handleError(w http.ResponseWriter, r *http.Request, status int, err error) 
 	errBody := err.Error()
 
 	var displayErrBody string
-	if env.InsecureDev {
-		// Only display error message to admins when in debug mode, since it may
-		// contain sensitive info (like API keys in net/http error messages).
+	if h.WriteErrBody {
 		displayErrBody = string(errBody)
 	}
 	http.Error(w, displayErrBody, status)
@@ -175,5 +192,17 @@ func handleError(w http.ResponseWriter, r *http.Request, status int, err error) 
 	}
 	if status < 200 || status >= 500 {
 		log15.Error("API HTTP handler error response", "method", r.Method, "request_uri", r.URL.RequestURI(), "status_code", status, "error", err, "trace", spanURL)
+	}
+}
+
+func jsonMiddleware(errorHandler *errorHandler) func(func(http.ResponseWriter, *http.Request) error) http.Handler {
+	return func(h func(http.ResponseWriter, *http.Request) error) http.Handler {
+		return handlerutil.HandlerWithErrorReturn{
+			Handler: func(w http.ResponseWriter, r *http.Request) error {
+				w.Header().Set("Content-Type", "application/json")
+				return h(w, r)
+			},
+			Error: errorHandler.Handle,
+		}
 	}
 }

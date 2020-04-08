@@ -2,7 +2,7 @@ import WrapIcon from 'mdi-react/WrapIcon'
 import * as React from 'react'
 import { fromEvent, Subject, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
-import { WrapDisabledIcon } from '../../../../../shared/src/components/icons' // TODO: Switch to mdi icon
+import { WrapDisabledIcon } from '../../../../../shared/src/components/icons'
 import { LinkOrButton } from '../../../../../shared/src/components/LinkOrButton'
 import { Tooltip } from '../../../components/tooltip/Tooltip'
 import { eventLogger } from '../../../tracking/eventLogger'
@@ -79,5 +79,5 @@ export class ToggleLineWrap extends React.PureComponent<
         )
     }
 
-    private onClick = () => this.updates.next(!this.state.value)
+    private onClick = (): void => this.updates.next(!this.state.value)
 }

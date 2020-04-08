@@ -3,7 +3,7 @@ import { Selection } from '@sourcegraph/extension-api-types'
 import { Observable, of, zip, OperatorFunction } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
 import { Omit } from 'utility-types'
-import { ERPRIVATEREPOPUBLICSOURCEGRAPHCOM } from '../../../../shared/src/backend/errors'
+import { PRIVATE_REPO_PUBLIC_SOURCEGRAPH_COM_ERROR_NAME } from '../../../../shared/src/backend/errors'
 import { PlatformContext } from '../../../../shared/src/platform/context'
 import { isErrorLike } from '../../../../shared/src/util/errors'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../shared/src/util/url'
@@ -47,7 +47,10 @@ export interface CodeView {
      * because some code hosts need to resolve this asynchronously. The
      * observable should only emit once.
      */
-    resolveFileInfo: (codeView: HTMLElement, requestGraphQL: PlatformContext['requestGraphQL']) => Observable<FileInfo>
+    resolveFileInfo: (
+        codeView: HTMLElement,
+        requestGraphQL: PlatformContext['requestGraphQL']
+    ) => Observable<FileInfo> | FileInfo
     /**
      * In some situations, we need to be able to adjust the position going into
      * and coming out of codeintellify. For example, Phabricator converts tabs
@@ -66,6 +69,12 @@ export interface CodeView {
      * Returns a stream of selections changes for a code view.
      */
     observeSelections?: (codeViewElement: HTMLElement) => Observable<Selection[]>
+
+    /**
+     * Returns the scrollBoundaries of the code view, used by codeintellify.
+     * This is called once per code view, when calling Hoverifier.hoverify().
+     */
+    getScrollBoundaries?: (codeViewElement: HTMLElement) => HTMLElement[]
 }
 
 /**
@@ -126,8 +135,8 @@ export const fetchFileContents = (
                 catchError(() => [info])
             )
         }),
-        catchError((err: any) => {
-            if (isErrorLike(err) && err.code === ERPRIVATEREPOPUBLICSOURCEGRAPHCOM) {
+        catchError(err => {
+            if (isErrorLike(err) && err.name === PRIVATE_REPO_PUBLIC_SOURCEGRAPH_COM_ERROR_NAME) {
                 return [info]
             }
             throw err

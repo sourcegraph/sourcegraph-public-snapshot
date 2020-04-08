@@ -1,11 +1,11 @@
 import { Location } from '@sourcegraph/extension-api-types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import H from 'history'
 import * as React from 'react'
 import { Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, endWith, map, startWith, switchMap, tap } from 'rxjs/operators'
 import { FetchFileCtx } from '../../components/CodeExcerpt'
-import { RepositoryIcon } from '../../components/icons' // TODO: Switch to mdi icon
 import { RepoLink } from '../../components/RepoLink'
 import { Resizable } from '../../components/Resizable'
 import { ExtensionsControllerProps } from '../../extensions/controller'
@@ -126,7 +126,7 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
             this.state.locationsOrError.loading &&
             (!this.state.locationsOrError.results || this.state.locationsOrError.results.length === 0)
         ) {
-            return <LoadingSpinner className="icon-inline m-1" />
+            return <LoadingSpinner className="icon-inline m-1 e2e-loading-spinner" />
         }
         if (this.state.locationsOrError.results && this.state.locationsOrError.results.length === 0) {
             return <FileLocationsNotFound />
@@ -208,7 +208,7 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                                     storageKey={`hierarchical-locations-view-resizable:${g.name}`}
                                     defaultSize={g.defaultSize}
                                     element={
-                                        <div className="list-group list-group-flush hierarchical-locations-view__list">
+                                        <div className="list-group list-group-flush hierarchical-locations-view__list e2e-hierarchical-locations-view-list">
                                             {groups[i].map((group, j) => (
                                                 <span
                                                     key={j}
@@ -232,7 +232,7 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                                             ))}
                                             {!isErrorLike(this.state.locationsOrError) &&
                                                 this.state.locationsOrError.loading && (
-                                                    <LoadingSpinner className="icon-inline m-2 flex-shrink-0" />
+                                                    <LoadingSpinner className="icon-inline m-2 flex-shrink-0 e2e-loading-spinner" />
                                                 )}
                                         </div>
                                     }
@@ -244,7 +244,7 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                     location={this.props.location}
                     locations={of(visibleLocations)}
                     onSelect={this.props.onSelectLocation}
-                    icon={RepositoryIcon}
+                    icon={SourceRepositoryIcon}
                     isLightTheme={this.props.isLightTheme}
                     fetchHighlightedFileLines={this.props.fetchHighlightedFileLines}
                     settingsCascade={this.props.settingsCascade}

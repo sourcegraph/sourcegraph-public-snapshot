@@ -15,7 +15,7 @@ import { PlatformContext } from '../platform/context'
  */
 export function registerBuiltinClientCommands(
     { settings: settingsService, commands: commandRegistry, textDocumentLocations }: Services,
-    context: Pick<PlatformContext, 'requestGraphQL'>
+    context: Pick<PlatformContext, 'requestGraphQL' | 'telemetryService'>
 ): Unsubscribable {
     const subscription = new Subscription()
 
@@ -102,6 +102,21 @@ export function registerBuiltinClientCommands(
         })
     )
 
+    /**
+     * Sends a telemetry event to the Sourcegraph instance with the correct anonymous user id.
+     */
+    subscription.add(
+        commandRegistry.registerCommand({
+            command: 'logTelemetryEvent',
+            run: (eventName: string, eventProperties?: any): Promise<any> => {
+                if (context.telemetryService) {
+                    context.telemetryService.log(eventName, eventProperties)
+                }
+                return Promise.resolve()
+            },
+        })
+    )
+
     return subscription
 }
 
@@ -118,10 +133,7 @@ export function urlForOpenPanel(viewID: string, urlHash: string): string {
     params.set('tab', viewID)
     // In the URL fragment, the 'L1:2-3:4' is treated as a parameter with no value. Undo the escaping of ':'
     // and the addition of the '=' for the empty value, for aesthetic reasons.
-    const paramsString = params
-        .toString()
-        .replace(/%3A/g, ':')
-        .replace(/=&/g, '&')
+    const paramsString = params.toString().replace(/%3A/g, ':').replace(/=&/g, '&')
     return `#${paramsString}`
 }
 

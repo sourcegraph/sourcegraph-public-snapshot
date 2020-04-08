@@ -15,18 +15,31 @@ export function getFileContainers(): HTMLCollectionOf<HTMLElement> {
 }
 
 /**
- * getDeltaFileName returns the path of the file container. It assumes
+ * Returns the path of the file container. It assumes
  * the file container is for a diff (i.e. a commit or pull request view).
  */
-export function getDeltaFileName(container: HTMLElement): { headFilePath: string; baseFilePath: string | undefined } {
-    const info = container.querySelector('.file-info') as HTMLElement
-
-    if (info.title) {
-        // for PR conversation snippets
-        return getPathNamesFromElement(info)
+export function getDiffFileName(container: HTMLElement): { headFilePath: string; baseFilePath?: string } {
+    const fileInfoElement = container.querySelector<HTMLElement>('.file-info')
+    if (fileInfoElement) {
+        if (fileInfoElement.tagName === 'A') {
+            // for PR conversation snippets on GHE, where the .file-info element
+            // is the link containing the file paths.
+            return getPathNamesFromElement(fileInfoElement)
+        }
+        // On commit code views, or code views on a PR's files tab,
+        // find the link contained in the .file-info element.
+        const link = fileInfoElement.querySelector<HTMLElement>('a')
+        if (link) {
+            return getPathNamesFromElement(link)
+        }
     }
-    const link = info.querySelector('a') as HTMLElement
-    return getPathNamesFromElement(link)
+    // If no file info element is present, the code view is probably a PR conversation snippet
+    // on github.com, where a link containing the file path can be found in the .file-header element.
+    const fileHeaderLink = container.querySelector<HTMLLinkElement>('.file-header a')
+    if (fileHeaderLink) {
+        return getPathNamesFromElement(fileHeaderLink)
+    }
+    throw new Error('Could not determine diff file name')
 }
 
 function getPathNamesFromElement(element: HTMLElement): { headFilePath: string; baseFilePath: string | undefined } {
@@ -168,7 +181,7 @@ function getDiffResolvedRevFromPageSource(pageSource: string, isPullRequest: boo
 }
 
 /**
- * Returns the file path for the current page. Must be on a blob page.
+ * Returns the file path for the current page. Must be on a blob or tree page.
  *
  * Implementation details:
  *
@@ -190,19 +203,25 @@ export function getFilePath(): string {
         throw new Error('Unable to determine the file path because no a.js-permalink-shortcut element was found.')
     }
     const url = new URL(permalink.href)
-    // <empty>/<user>/<repo>/blob/<commitID>/<path/to/file>
+    // <empty>/<user>/<repo>/(blob|tree)/<commitID>/<path/to/file>
     const [, , , , , ...path] = url.pathname.split('/')
     if (path.length === 0) {
         throw new Error(
             `Unable to determine the file path because the a.js-permalink-shortcut element's href's path was ${url.pathname} (it is expected to be of the form /<user>/<repo>/blob/<commitID>/<path/to/file>).`
         )
     }
-    return path.join('/')
+    return decodeURIComponent(path.join('/'))
 }
 
-type GitHubURL =
-    | ({ pageType: 'tree' | 'commit' | 'pull' | 'compare' | 'other' } & RawRepoSpec)
-    | ({ pageType: 'blob'; revAndFilePath: string } & RawRepoSpec)
+type GitHubURL = RawRepoSpec &
+    (
+        | { pageType: 'commit' | 'pull' | 'compare' | 'other' }
+        | {
+              pageType: 'blob' | 'tree'
+              /** rev and file path separated by a slash, URL-decoded. */
+              revAndFilePath: string
+          }
+    )
 
 export function isDiffPageType(pageType: GitHubURL['pageType']): boolean {
     switch (pageType) {
@@ -219,24 +238,21 @@ export function parseURL(loc: Pick<Location, 'host' | 'pathname'> = window.locat
     const { host, pathname } = loc
     const [user, ghRepoName, pageType, ...rest] = pathname.slice(1).split('/')
     if (!user || !ghRepoName) {
-        throw new Error(`Could not parse repoName from GitHub url: ${window.location}`)
+        throw new Error(`Could not parse repoName from GitHub url: ${window.location.href}`)
     }
     const rawRepoName = `${host}/${user}/${ghRepoName}`
     switch (pageType) {
         case 'blob':
+        case 'tree':
             return {
                 pageType,
                 rawRepoName,
-                revAndFilePath: rest.join('/'),
+                revAndFilePath: decodeURIComponent(rest.join('/')),
             }
-        case 'tree':
         case 'pull':
         case 'commit':
         case 'compare':
-            return {
-                pageType,
-                rawRepoName,
-            }
+            return { pageType, rawRepoName }
         default:
             return { pageType: 'other', rawRepoName }
     }

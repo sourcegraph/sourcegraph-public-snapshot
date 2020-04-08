@@ -9,9 +9,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/enterprise/pkg/license"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -33,7 +33,7 @@ func TestMiddleware(t *testing.T) {
 	}))
 
 	const headerName = "x-sso-user-header"
-	conf.Mock(&conf.Unified{Critical: schema.CriticalConfiguration{AuthProviders: []schema.AuthProviders{{HttpHeader: &schema.HTTPHeaderAuthProvider{UsernameHeader: headerName}}}}})
+	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{AuthProviders: []schema.AuthProviders{{HttpHeader: &schema.HTTPHeaderAuthProvider{UsernameHeader: headerName}}}}})
 	defer conf.Mock(nil)
 
 	t.Run("not sent", func(t *testing.T) {
@@ -131,7 +131,7 @@ func TestMiddleware_stripPrefix(t *testing.T) {
 	}))
 
 	const headerName = "x-sso-user-header"
-	conf.Mock(&conf.Unified{Critical: schema.CriticalConfiguration{
+	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
 		AuthProviders: []schema.AuthProviders{
 			{
 				HttpHeader: &schema.HTTPHeaderAuthProvider{

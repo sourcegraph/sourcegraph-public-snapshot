@@ -1,5 +1,6 @@
 import { Location } from '@sourcegraph/extension-api-types'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { Badged } from 'sourcegraph'
 import H from 'history'
 import { upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
@@ -47,7 +48,7 @@ interface Props extends SettingsCascadeProps {
     fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
 }
 
-const LOADING: 'loading' = 'loading'
+const LOADING = 'loading' as const
 
 interface State {
     /**
@@ -84,7 +85,10 @@ export class FileLocations extends React.PureComponent<Props, State> {
                     startWith(LOADING),
                     map(result => ({ locationsOrError: result }))
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate), error => console.error(error))
+                .subscribe(
+                    stateUpdate => this.setState(stateUpdate),
+                    error => console.error(error)
+                )
         )
 
         this.componentUpdates.next(this.props)
@@ -162,14 +166,14 @@ export class FileLocations extends React.PureComponent<Props, State> {
     }
 }
 
-function refsToFileMatch(uri: string, refs: Location[]): IFileMatch {
+function refsToFileMatch(uri: string, refs: Badged<Location>[]): IFileMatch {
     const p = parseRepoURI(uri)
     return {
         file: {
             path: p.filePath || '',
             url: toPrettyBlobURL({ repoName: p.repoName, filePath: p.filePath!, rev: p.commitID || '' }),
             commit: {
-                oid: p.commitID || p.rev,
+                oid: (p.commitID || p.rev)!,
             },
         },
         repository: {
@@ -177,8 +181,6 @@ function refsToFileMatch(uri: string, refs: Location[]): IFileMatch {
             // This is the only usage of toRepoURL, and it is arguably simpler than getting the value from the
             // GraphQL API. We will be removing these old-style git: URIs eventually, so it's not worth fixing this
             // deprecated usage.
-            //
-            // tslint:disable-next-line deprecation
             url: toRepoURL(p.repoName),
         },
         limitHit: false,
@@ -188,6 +190,7 @@ function refsToFileMatch(uri: string, refs: Location[]): IFileMatch {
                 limitHit: false,
                 lineNumber: ref.range.start.line,
                 offsetAndLengths: [[ref.range.start.character, ref.range.end.character - ref.range.start.character]],
+                badge: ref.badge,
             })
         ),
     }

@@ -58,9 +58,9 @@ const getLineNumberFromCodeElement = (codeElement: HTMLElement): number => {
  * Gets the `<td>` element for a target that contains the code
  */
 const getCodeCellFromTarget = (target: HTMLElement): HTMLTableCellElement | null => {
-    const cell = target.closest('td.blob-code') as HTMLTableCellElement
+    const cell = target.closest<HTMLTableCellElement>('td.blob-code')
     // Handle rows with the [ ↕ ] button that expands collapsed unchanged lines
-    if (!cell || cell.parentElement!.classList.contains('js-expandable-line')) {
+    if (!cell || cell.parentElement?.classList.contains('js-expandable-line')) {
         return null
     }
     return cell
@@ -162,8 +162,8 @@ export const diffDomFunctions: DOMFunctions = {
 
         // Some versions of GitHub have data-code-marker attributes instead of the first character diff indicator.
         const tr = codeElement.closest('tr')
-        const hasDataCodeMarkerUnified = tr && tr.querySelector('td[data-code-marker]')
-        const hasDataCodeMarkerSplit = blobCodeInner && blobCodeInner.hasAttribute('data-code-marker')
+        const hasDataCodeMarkerUnified = tr?.querySelector('td[data-code-marker]')
+        const hasDataCodeMarkerSplit = blobCodeInner?.hasAttribute('data-code-marker')
         const hasDataCodeMarker = hasDataCodeMarkerUnified || hasDataCodeMarkerSplit
 
         // Refined GitHub used to strip the first character diff indicator.

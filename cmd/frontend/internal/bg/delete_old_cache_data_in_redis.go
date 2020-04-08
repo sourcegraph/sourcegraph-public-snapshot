@@ -2,9 +2,9 @@ package bg
 
 import (
 	"github.com/gomodule/redigo/redis"
-	"github.com/sourcegraph/sourcegraph/pkg/rcache"
-	"github.com/sourcegraph/sourcegraph/pkg/redispool"
-	"gopkg.in/inconshreveable/log15.v2"
+	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
 
 func DeleteOldCacheDataInRedis() {

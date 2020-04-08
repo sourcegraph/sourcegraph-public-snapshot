@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -20,16 +21,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/jscontext"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
-	"github.com/sourcegraph/sourcegraph/pkg/routevar"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/routevar"
+	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
 type InjectedHTML struct {
@@ -98,10 +98,10 @@ func repoShortName(name api.RepoName) string {
 func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError func(w http.ResponseWriter, r *http.Request, err error, statusCode int)) (*Common, error) {
 	common := &Common{
 		Injected: InjectedHTML{
-			HeadTop:    template.HTML(conf.Get().Critical.HtmlHeadTop),
-			HeadBottom: template.HTML(conf.Get().Critical.HtmlHeadBottom),
-			BodyTop:    template.HTML(conf.Get().Critical.HtmlBodyTop),
-			BodyBottom: template.HTML(conf.Get().Critical.HtmlBodyBottom),
+			HeadTop:    template.HTML(conf.Get().HtmlHeadTop),
+			HeadBottom: template.HTML(conf.Get().HtmlHeadBottom),
+			BodyTop:    template.HTML(conf.Get().HtmlBodyTop),
+			BodyBottom: template.HTML(conf.Get().HtmlBodyBottom),
 		},
 		Context:  jscontext.NewJSContextFromRequest(r),
 		AssetURL: assetsutil.URL("").String(),
@@ -147,6 +147,12 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 				return nil, nil
 			}
 			if _, ok := errors.Cause(err).(*gitserver.RepoNotCloneableErr); ok {
+				if errcode.IsNotFound(err) {
+					// Repository is not found.
+					serveError(w, r, err, http.StatusNotFound)
+					return nil, nil
+				}
+
 				// Repository is not clonable.
 				dangerouslyServeError(w, r, errors.New("repository could not be cloned"), http.StatusInternalServerError)
 				return nil, nil
@@ -246,15 +252,6 @@ func serveSignIn(w http.ResponseWriter, r *http.Request) error {
 		return nil // request was handled
 	}
 	common.Title = brandNameSubtitle("Sign in")
-
-	// If we are being redirected to another page after sign in, it means the
-	// user attempted to access something without authorization. Reflect this
-	// in the status code. This is useful when users curl / code which
-	// interacts with the Sourcegraph endpoints. Specifically this is a common
-	// issue facing extension developers interacting with the raw API.
-	if r.URL.Query().Get("returnTo") != "" {
-		w.WriteHeader(http.StatusUnauthorized)
-	}
 
 	return renderTemplate(w, "app.html", common)
 }

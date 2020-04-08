@@ -1,5 +1,4 @@
 import format from 'date-fns/format'
-import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Subscription } from 'rxjs'
@@ -11,6 +10,7 @@ import { RadioButtons } from '../components/RadioButtons'
 import { Timestamp } from '../components/time/Timestamp'
 import { eventLogger } from '../tracking/eventLogger'
 import { fetchSiteUsageStatistics, fetchUserUsageStatistics } from './backend'
+import { ErrorAlert } from '../components/alerts'
 
 interface ChartData {
     label: string
@@ -141,7 +141,7 @@ class UserUsageStatisticsNode extends React.PureComponent<UserUsageStatisticsNod
                     {this.props.node.usageStatistics && this.props.node.usageStatistics.lastActiveTime ? (
                         <Timestamp date={this.props.node.usageStatistics.lastActiveTime} />
                     ) : (
-                        'n/a'
+                        'never'
                     )}
                 </td>
                 <td className="site-admin-usage-statistics-page__date-column">
@@ -149,7 +149,7 @@ class UserUsageStatisticsNode extends React.PureComponent<UserUsageStatisticsNod
                     this.props.node.usageStatistics.lastActiveCodeHostIntegrationTime ? (
                         <Timestamp date={this.props.node.usageStatistics.lastActiveCodeHostIntegrationTime} />
                     ) : (
-                        'n/a'
+                        'never'
                     )}
                 </td>
             </tr>
@@ -185,7 +185,7 @@ export const USER_ACTIVITY_FILTERS: FilteredConnectionFilter[] = [
     },
 ]
 
-interface SiteAdminUsageStatisticsPageProps extends RouteComponentProps<any> {
+interface SiteAdminUsageStatisticsPageProps extends RouteComponentProps<{}> {
     isLightTheme: boolean
 }
 
@@ -218,7 +218,10 @@ export class SiteAdminUsageStatisticsPage extends React.Component<
         eventLogger.logViewEvent('SiteAdminUsageStatistics')
 
         this.subscriptions.add(
-            fetchSiteUsageStatistics().subscribe(stats => this.setState({ stats }), error => this.setState({ error }))
+            fetchSiteUsageStatistics().subscribe(
+                stats => this.setState({ stats }),
+                error => this.setState({ error })
+            )
         )
     }
 
@@ -234,10 +237,8 @@ export class SiteAdminUsageStatisticsPage extends React.Component<
         return (
             <div className="site-admin-usage-statistics-page">
                 <PageTitle title="Usage statistics - Admin" />
-                <div className="d-flex justify-content-between align-items-center mt-3 mb-1">
-                    <h2 className="mb-0">Usage statistics</h2>
-                </div>
-                {this.state.error && <p className="alert alert-danger">{upperFirst(this.state.error.message)}</p>}
+                <h2>Usage statistics</h2>
+                {this.state.error && <ErrorAlert className="mb-3" error={this.state.error} />}
                 {this.state.stats && (
                     <>
                         <RadioButtons
@@ -273,7 +274,7 @@ export class SiteAdminUsageStatisticsPage extends React.Component<
         )
     }
 
-    private onChartIndexChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    private onChartIndexChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
         switch (e.target.value as keyof ChartOptions) {
             case 'daus':
                 eventLogger.log('DAUsChartSelected')

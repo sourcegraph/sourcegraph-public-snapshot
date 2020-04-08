@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
 
 func TestUsers_BuiltinAuth(t *testing.T) {

@@ -12,13 +12,20 @@ import (
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 // 4b825dc642cb6eb9a060e54bf8d69288fbee4904 is `git hash-object -t tree /dev/null`, which is used as the base
 // when computing the `git diff` of the root commit.
 const devNullSHA = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
+
+type RepositoryComparisonConnectionResolver interface {
+	Nodes(ctx context.Context) ([]*RepositoryComparisonResolver, error)
+	TotalCount(ctx context.Context) (int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+}
 
 type RepositoryComparisonInput struct {
 	Base *string
@@ -43,6 +50,12 @@ func NewRepositoryComparison(ctx context.Context, r *RepositoryResolver, args *R
 			return nil, nil
 		}
 
+		// Optimistically fetch using revspec
+		commit, err := git.GetCommit(ctx, repo, nil, api.CommitID(revspec))
+		if err == nil {
+			return toGitCommitResolver(r, commit), nil
+		}
+
 		// Call ResolveRevision to trigger fetches from remote (in case base/head commits don't
 		// exist).
 		commitID, err := git.ResolveRevision(ctx, repo, nil, revspec, nil)
@@ -50,7 +63,7 @@ func NewRepositoryComparison(ctx context.Context, r *RepositoryResolver, args *R
 			return nil, err
 		}
 
-		commit, err := git.GetCommit(ctx, repo, nil, commitID)
+		commit, err = git.GetCommit(ctx, repo, nil, commitID)
 		if err != nil {
 			return nil, err
 		}
@@ -61,13 +74,28 @@ func NewRepositoryComparison(ctx context.Context, r *RepositoryResolver, args *R
 	if err != nil {
 		return nil, err
 	}
-	base, err := getCommit(ctx, *grepo, baseRevspec)
-	if err != nil {
-		return nil, err
+
+	var (
+		wg               sync.WaitGroup
+		base, head       *GitCommitResolver
+		baseErr, headErr error
+	)
+
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		base, baseErr = getCommit(ctx, *grepo, baseRevspec)
+	}()
+	go func() {
+		defer wg.Done()
+		head, headErr = getCommit(ctx, *grepo, headRevspec)
+	}()
+	wg.Wait()
+	if baseErr != nil {
+		return nil, baseErr
 	}
-	head, err := getCommit(ctx, *grepo, headRevspec)
-	if err != nil {
-		return nil, err
+	if headErr != nil {
+		return nil, headErr
 	}
 
 	return &RepositoryComparisonResolver{
@@ -102,9 +130,9 @@ func (r *RepositoryComparisonResolver) Range() *gitRevisionRange {
 	}
 }
 
-func (r *RepositoryComparisonResolver) Commits(args *struct {
-	First *int32
-}) *gitCommitConnectionResolver {
+func (r *RepositoryComparisonResolver) Commits(
+	args *graphqlutil.ConnectionArgs,
+) *gitCommitConnectionResolver {
 	return &gitCommitConnectionResolver{
 		revisionRange: string(r.baseRevspec) + ".." + string(r.headRevspec),
 		first:         args.First,
@@ -112,9 +140,9 @@ func (r *RepositoryComparisonResolver) Commits(args *struct {
 	}
 }
 
-func (r *RepositoryComparisonResolver) FileDiffs(args *struct {
-	First *int32
-}) *fileDiffConnectionResolver {
+func (r *RepositoryComparisonResolver) FileDiffs(
+	args *graphqlutil.ConnectionArgs,
+) *fileDiffConnectionResolver {
 	return &fileDiffConnectionResolver{
 		cmp:   r,
 		first: args.First,
@@ -238,20 +266,18 @@ func (r *fileDiffConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil
 	return graphqlutil.HasNextPage(r.hasNextPage), nil
 }
 
-func (r *fileDiffConnectionResolver) DiffStat(ctx context.Context) (*diffStat, error) {
+func (r *fileDiffConnectionResolver) DiffStat(ctx context.Context) (*DiffStat, error) {
 	fileDiffs, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	var stat diffStat
+	stat := &DiffStat{}
 	for _, fileDiff := range fileDiffs {
 		s := fileDiff.Stat()
-		stat.added += s.Added
-		stat.changed += s.Changed
-		stat.deleted += s.Deleted
+		stat.AddStat(s)
 	}
-	return &stat, nil
+	return stat, nil
 }
 
 func (r *fileDiffConnectionResolver) RawDiff(ctx context.Context) (string, error) {
@@ -270,44 +296,40 @@ type fileDiffResolver struct {
 
 func (r *fileDiffResolver) OldPath() *string { return diffPathOrNull(r.fileDiff.OrigName) }
 func (r *fileDiffResolver) NewPath() *string { return diffPathOrNull(r.fileDiff.NewName) }
-func (r *fileDiffResolver) Hunks() []*diffHunk {
-	hunks := make([]*diffHunk, len(r.fileDiff.Hunks))
+func (r *fileDiffResolver) Hunks() []*DiffHunk {
+	hunks := make([]*DiffHunk, len(r.fileDiff.Hunks))
 	for i, hunk := range r.fileDiff.Hunks {
-		hunks[i] = &diffHunk{hunk: hunk}
+		hunks[i] = NewDiffHunk(hunk)
 	}
 	return hunks
 }
 
-func (r *fileDiffResolver) Stat() *diffStat {
+func (r *fileDiffResolver) Stat() *DiffStat {
 	stat := r.fileDiff.Stat()
-	return &diffStat{
-		added:   stat.Added,
-		changed: stat.Changed,
-		deleted: stat.Deleted,
-	}
+	return NewDiffStat(stat)
 }
 
-func (r *fileDiffResolver) OldFile() *gitTreeEntryResolver {
+func (r *fileDiffResolver) OldFile() *GitTreeEntryResolver {
 	if diffPathOrNull(r.fileDiff.OrigName) == nil {
 		return nil
 	}
-	return &gitTreeEntryResolver{
+	return &GitTreeEntryResolver{
 		commit: r.cmp.base,
-		stat:   createFileInfo(r.fileDiff.OrigName, false),
+		stat:   CreateFileInfo(r.fileDiff.OrigName, false),
 	}
 }
 
-func (r *fileDiffResolver) NewFile() *gitTreeEntryResolver {
+func (r *fileDiffResolver) NewFile() *GitTreeEntryResolver {
 	if diffPathOrNull(r.fileDiff.NewName) == nil {
 		return nil
 	}
-	return &gitTreeEntryResolver{
+	return &GitTreeEntryResolver{
 		commit: r.cmp.head,
-		stat:   createFileInfo(r.fileDiff.NewName, false),
+		stat:   CreateFileInfo(r.fileDiff.NewName, false),
 	}
 }
 
-func (r *fileDiffResolver) MostRelevantFile() *gitTreeEntryResolver {
+func (r *fileDiffResolver) MostRelevantFile() *GitTreeEntryResolver {
 	if newFile := r.NewFile(); newFile != nil {
 		return newFile
 	}
@@ -326,36 +348,59 @@ func diffPathOrNull(path string) *string {
 	return &path
 }
 
-type diffHunk struct {
+func NewDiffHunk(hunk *diff.Hunk) *DiffHunk {
+	return &DiffHunk{hunk: hunk}
+}
+
+type DiffHunk struct {
 	hunk *diff.Hunk
 }
 
-func (r *diffHunk) OldRange() *diffHunkRange {
-	return &diffHunkRange{startLine: r.hunk.OrigStartLine, lines: r.hunk.OrigLines}
+func (r *DiffHunk) OldRange() *DiffHunkRange {
+	return NewDiffHunkRange(r.hunk.OrigStartLine, r.hunk.OrigLines)
 }
-func (r *diffHunk) OldNoNewlineAt() bool { return r.hunk.OrigNoNewlineAt != 0 }
-func (r *diffHunk) NewRange() *diffHunkRange {
-	return &diffHunkRange{startLine: r.hunk.NewStartLine, lines: r.hunk.NewLines}
+func (r *DiffHunk) OldNoNewlineAt() bool { return r.hunk.OrigNoNewlineAt != 0 }
+func (r *DiffHunk) NewRange() *DiffHunkRange {
+	return NewDiffHunkRange(r.hunk.NewStartLine, r.hunk.NewLines)
 }
 
-func (r *diffHunk) Section() *string {
+func (r *DiffHunk) Section() *string {
 	if r.hunk.Section == "" {
 		return nil
 	}
 	return &r.hunk.Section
 }
-func (r *diffHunk) Body() string { return string(r.hunk.Body) }
 
-type diffHunkRange struct {
+func (r *DiffHunk) Body() string { return string(r.hunk.Body) }
+
+func NewDiffHunkRange(startLine, lines int32) *DiffHunkRange {
+	return &DiffHunkRange{startLine: startLine, lines: lines}
+}
+
+type DiffHunkRange struct {
 	startLine int32
 	lines     int32
 }
 
-func (r *diffHunkRange) StartLine() int32 { return r.startLine }
-func (r *diffHunkRange) Lines() int32     { return r.lines }
+func (r *DiffHunkRange) StartLine() int32 { return r.startLine }
+func (r *DiffHunkRange) Lines() int32     { return r.lines }
 
-type diffStat struct{ added, changed, deleted int32 }
+func NewDiffStat(s diff.Stat) *DiffStat {
+	return &DiffStat{
+		added:   s.Added,
+		changed: s.Changed,
+		deleted: s.Deleted,
+	}
+}
 
-func (r *diffStat) Added() int32   { return r.added }
-func (r *diffStat) Changed() int32 { return r.changed }
-func (r *diffStat) Deleted() int32 { return r.deleted }
+type DiffStat struct{ added, changed, deleted int32 }
+
+func (r *DiffStat) AddStat(s diff.Stat) {
+	r.added += s.Added
+	r.changed += s.Changed
+	r.deleted += s.Deleted
+}
+
+func (r *DiffStat) Added() int32   { return r.added }
+func (r *DiffStat) Changed() int32 { return r.changed }
+func (r *DiffStat) Deleted() int32 { return r.deleted }

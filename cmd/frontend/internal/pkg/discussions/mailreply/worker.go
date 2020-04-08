@@ -4,17 +4,17 @@ package mailreply
 
 import (
 	"context"
-	"regexp"
 	"strings"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/discussions"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/rcache"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 )
 
 // StartWorker should be invoked only after the DB has been initialized. It
@@ -91,7 +91,7 @@ func workForever(ctx context.Context) {
 				userID, threadID, err = db.DiscussionMailReplyTokens.Get(ctx, token)
 				if err == db.ErrInvalidToken {
 					log15.Debug("discussions: mailreply worker: ignoring email with invalid authorization token", "subject", msg.Envelope.Subject, "mailbox_name", toAddress.MailboxName)
-					msg.MarkSeenAndDeleted()
+					bestEffortMarkSeenAndDeleted(msg)
 					break // Invalid token / attacker
 				}
 				if err != nil {
@@ -114,7 +114,7 @@ func workForever(ctx context.Context) {
 			contents := strings.TrimSpace(string(trimGmailReplyQuote(textContent)))
 			if contents == "" {
 				log15.Debug("discussions: mailreply worker: ignoring email with no effective content", "subject", msg.Envelope.Subject, "content", string(textContent))
-				msg.MarkSeenAndDeleted()
+				bestEffortMarkSeenAndDeleted(msg)
 				continue // ignore empty replies
 			}
 
@@ -130,7 +130,7 @@ func workForever(ctx context.Context) {
 
 			// Now that we're finished handling this message, mark it as seen
 			// and to be deleted.
-			msg.MarkSeenAndDeleted()
+			bestEffortMarkSeenAndDeleted(msg)
 		}
 		if err := <-done; err != nil {
 			return errors.Wrap(err, "done")
@@ -148,7 +148,14 @@ func workForever(ctx context.Context) {
 	}
 }
 
-var gmailQuoteMatch = regexp.MustCompile(`(\r\n|\n).*On .* at .*, (.|\r\n|\n)*wrote\:(.|\r\n|\n)*(\r\n|\n)+(>.*(\r\n|\n))+(.|\r\n|\n)*`)
+func bestEffortMarkSeenAndDeleted(msg *Message) {
+	err := msg.MarkSeenAndDeleted()
+	if err != nil {
+		log15.Warn("discussions: mailreply worker: error marking message seen and deleted", "error", err)
+	}
+}
+
+var gmailQuoteMatch = lazyregexp.New(`(\r\n|\n).*On .* at .*, (.|\r\n|\n)*wrote\:(.|\r\n|\n)*(\r\n|\n)+(>.*(\r\n|\n))+(.|\r\n|\n)*`)
 
 // trimGmailReplyQuote trims the gmail reply quotation out of the given
 // message. This is a best-effort approach. In specific, it looks for the

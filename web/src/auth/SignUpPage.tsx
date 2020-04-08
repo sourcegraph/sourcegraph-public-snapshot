@@ -17,7 +17,7 @@ interface SignUpPageProps {
 
 export class SignUpPage extends React.Component<SignUpPageProps> {
     public componentDidMount(): void {
-        eventLogger.logViewEvent('SignUp', {}, false)
+        eventLogger.logViewEvent('SignUp', false)
     }
 
     public render(): JSX.Element | null {
@@ -38,13 +38,15 @@ export class SignUpPage extends React.Component<SignUpPageProps> {
                     title={
                         window.context.sourcegraphDotComMode ? 'Sign up for Sourcegraph.com' : 'Sign up for Sourcegraph'
                     }
-                    cta={
-                        <div>
-                            <Link className="signin-signup-form__mode" to={`/sign-in${this.props.location.search}`}>
-                                Already have an account? Sign in.
-                            </Link>
+                    body={
+                        <>
+                            <p>
+                                <Link to={`/sign-in${this.props.location.search}`}>
+                                    Already have an account? Sign in.
+                                </Link>
+                            </p>
                             <SignUpForm {...this.props} doSignUp={this.doSignUp} />
-                        </div>
+                        </>
                     }
                 />
             </div>

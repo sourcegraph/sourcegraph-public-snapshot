@@ -11,10 +11,10 @@ import { asError, createAggregateError, ErrorLike } from '../../../../../shared/
 import { mutateGraphQL } from '../../../backend/graphql'
 import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
-import { ThemeProps } from '../../../theme'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { BackToAllSubscriptionsLink } from './BackToAllSubscriptionsLink'
 import { ProductSubscriptionForm, ProductSubscriptionFormData } from './ProductSubscriptionForm'
+import { ThemeProps } from '../../../../../shared/src/theme'
 
 interface Props extends RouteComponentProps<{}>, ThemeProps {
     /**
@@ -24,7 +24,7 @@ interface Props extends RouteComponentProps<{}>, ThemeProps {
     user: GQL.IUser | null
 }
 
-const LOADING: 'loading' = 'loading'
+const LOADING = 'loading' as const
 
 interface State {
     /**
@@ -110,7 +110,7 @@ export class UserSubscriptionsNewProductSubscriptionPage extends React.Component
         )
     }
 
-    private onSubmit = (args: ProductSubscriptionFormData) => {
+    private onSubmit = (args: ProductSubscriptionFormData): void => {
         this.submits.next(args)
     }
 }
@@ -120,7 +120,7 @@ export class UserSubscriptionsNewProductSubscriptionPage extends React.Component
  *
  * Inverse of {@link productSubscriptionInputForLocationHash}.
  */
-export function parseProductSubscriptionInputFromLocation(location: H.Location): GQL.IProductSubscriptionInput | null {
+function parseProductSubscriptionInputFromLocation(location: H.Location): GQL.IProductSubscriptionInput | null {
     if (location.hash) {
         const params = new URLSearchParams(location.hash.slice('#'.length))
         const billingPlanID = params.get('plan')

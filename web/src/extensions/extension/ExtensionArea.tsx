@@ -1,5 +1,4 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
@@ -15,10 +14,11 @@ import { createAggregateError, ErrorLike, isErrorLike } from '../../../../shared
 import { queryGraphQL } from '../../backend/graphql'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
-import { ThemeProps } from '../../theme'
 import { RouteDescriptor } from '../../util/contributions'
 import { ExtensionsAreaRouteContext } from '../ExtensionsArea'
 import { ExtensionAreaHeader, ExtensionAreaHeaderNavItem } from './ExtensionAreaHeader'
+import { ThemeProps } from '../../../../shared/src/theme'
+import { ErrorMessage } from '../../components/alerts'
 
 export const registryExtensionFragment = gql`
     fragment RegistryExtensionFields on RegistryExtension {
@@ -141,7 +141,10 @@ export class ExtensionArea extends React.Component<ExtensionAreaProps> {
                         )
                     })
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate), err => console.error(err))
+                .subscribe(
+                    stateUpdate => this.setState(stateUpdate),
+                    err => console.error(err)
+                )
         )
 
         this.componentUpdates.next(this.props)
@@ -164,7 +167,7 @@ export class ExtensionArea extends React.Component<ExtensionAreaProps> {
                 <HeroPage
                     icon={AlertCircleIcon}
                     title="Error"
-                    subtitle={upperFirst(this.state.extensionOrError.message)}
+                    subtitle={<ErrorMessage error={this.state.extensionOrError} />}
                 />
             )
         }
@@ -218,7 +221,7 @@ export class ExtensionArea extends React.Component<ExtensionAreaProps> {
         )
     }
 
-    private onDidUpdateExtension = () => this.refreshRequests.next()
+    private onDidUpdateExtension = (): void => this.refreshRequests.next()
 }
 
 function queryExtension(extensionID: string): Observable<ConfiguredRegistryExtension> {

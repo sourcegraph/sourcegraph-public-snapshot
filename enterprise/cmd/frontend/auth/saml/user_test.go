@@ -10,7 +10,7 @@ import (
 
 	saml2 "github.com/russellhaering/gosaml2"
 	dsig "github.com/russellhaering/goxmldsig"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
 func TestReadAuthnResponse(t *testing.T) {
@@ -32,7 +32,7 @@ func TestReadAuthnResponse(t *testing.T) {
 	}
 	info.accountData = nil // skip checking this field
 	if want := (&authnResponseInfo{
-		spec: extsvc.ExternalAccountSpec{
+		spec: extsvc.AccountSpec{
 			ServiceType: "saml",
 			ServiceID:   "http://localhost:3220/auth/realms/master",
 			ClientID:    "http://localhost:3080/.auth/saml/metadata",

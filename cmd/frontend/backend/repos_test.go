@@ -1,22 +1,25 @@
 package backend
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"os"
 	"reflect"
 	"testing"
 
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/rcache"
-	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
-	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/util"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
 )
 
 func TestReposService_Get(t *testing.T) {
@@ -51,7 +54,7 @@ func TestReposService_List(t *testing.T) {
 
 	calledList := db.Mocks.Repos.MockList(t, "r1", "r2")
 
-	repos, err := s.List(ctx, db.ReposListOptions{Enabled: true})
+	repos, err := s.List(ctx, db.ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -81,23 +84,11 @@ func TestRepos_Add(t *testing.T) {
 	}
 	defer func() { repoupdater.MockRepoLookup = nil }()
 
-	calledUpsert := false
-	db.Mocks.Repos.Upsert = func(op api.InsertRepoOp) error {
-		calledUpsert = true
-		if want := (api.InsertRepoOp{Name: repoName, Description: "d"}); !reflect.DeepEqual(op, want) {
-			t.Errorf("got %+v, want %+v", op, want)
-		}
-		return nil
-	}
-
-	if err := s.AddGitHubDotComRepository(ctx, repoName); err != nil {
+	if err := s.Add(ctx, repoName); err != nil {
 		t.Fatal(err)
 	}
 	if !calledRepoLookup {
 		t.Error("!calledRepoLookup")
-	}
-	if !calledUpsert {
-		t.Error("!calledUpsert")
 	}
 }
 
@@ -147,18 +138,20 @@ func TestReposGetInventory(t *testing.T) {
 			panic("unhandled mock ReadDir " + name)
 		}
 	}
-	git.Mocks.ReadFile = func(commit api.CommitID, name string) ([]byte, error) {
+	git.Mocks.NewFileReader = func(commit api.CommitID, name string) (io.ReadCloser, error) {
 		if commit != wantCommitID {
 			t.Errorf("got commit %q, want %q", commit, wantCommitID)
 		}
+		var data []byte
 		switch name {
 		case "b.go":
-			return []byte("package main"), nil
+			data = []byte("package main")
 		case "a/c.m":
-			return []byte("@interface X:NSObject {}"), nil
+			data = []byte("@interface X:NSObject {}")
 		default:
 			panic("unhandled mock ReadFile " + name)
 		}
+		return ioutil.NopCloser(bytes.NewReader(data)), nil
 	}
 	defer git.ResetMocks()
 
@@ -170,8 +163,8 @@ func TestReposGetInventory(t *testing.T) {
 			useEnhancedLanguageDetection: false,
 			want: &inventory.Inventory{
 				Languages: []inventory.Lang{
-					{Name: "MATLAB", TotalBytes: 24}, // obviously incorrect, but this is how the pre-enhanced lang detection worked
-					{Name: "Go", TotalBytes: 12},
+					{Name: "Go", TotalBytes: 0, TotalLines: 0},
+					{Name: "Limbo", TotalBytes: 0, TotalLines: 0}, // obviously incorrect, but this is how the pre-enhanced lang detection worked
 				},
 			},
 		},
@@ -179,8 +172,8 @@ func TestReposGetInventory(t *testing.T) {
 			useEnhancedLanguageDetection: true,
 			want: &inventory.Inventory{
 				Languages: []inventory.Lang{
-					{Name: "Objective-C", TotalBytes: 24},
-					{Name: "Go", TotalBytes: 12},
+					{Name: "Go", TotalBytes: 12, TotalLines: 1},
+					{Name: "Objective-C", TotalBytes: 24, TotalLines: 1},
 				},
 			},
 		},
@@ -192,7 +185,7 @@ func TestReposGetInventory(t *testing.T) {
 			useEnhancedLanguageDetection = test.useEnhancedLanguageDetection
 			defer func() { useEnhancedLanguageDetection = orig }() // reset
 
-			inv, err := s.GetInventory(ctx, &types.Repo{Name: wantRepo}, wantCommitID)
+			inv, err := s.GetInventory(ctx, &types.Repo{Name: wantRepo}, wantCommitID, false)
 			if err != nil {
 				t.Fatal(err)
 			}

@@ -13,6 +13,7 @@ import { PageTitle } from '../components/PageTitle'
 import { orgURL } from '../org'
 import { eventLogger } from '../tracking/eventLogger'
 import { deleteOrganization, fetchAllOrganizations } from './backend'
+import { ErrorAlert } from '../components/alerts'
 
 interface OrgNodeProps {
     /**
@@ -79,14 +80,12 @@ class OrgNode extends React.PureComponent<OrgNodeProps, OrgNodeState> {
                         </button>
                     </div>
                 </div>
-                {this.state.errorDescription && (
-                    <div className="alert alert-danger mt-2">{this.state.errorDescription}</div>
-                )}
+                {this.state.errorDescription && <ErrorAlert className="mt-2" error={this.state.errorDescription} />}
             </li>
         )
     }
 
-    private deleteOrg = () => {
+    private deleteOrg = (): void => {
         if (!window.confirm(`Delete the organization ${this.props.node.name}?`)) {
             return
         }
@@ -110,7 +109,7 @@ class OrgNode extends React.PureComponent<OrgNodeProps, OrgNodeState> {
     }
 }
 
-interface Props extends RouteComponentProps<any> {}
+interface Props extends RouteComponentProps<{}> {}
 
 interface State {
     orgs?: GQL.IOrg[]
@@ -144,7 +143,7 @@ export class SiteAdminOrgsPage extends React.Component<Props, State> {
         return (
             <div className="site-admin-orgs-page">
                 <PageTitle title="Organizations - Admin" />
-                <div className="d-flex justify-content-between align-items-center mt-3 mb-3">
+                <div className="d-flex justify-content-between align-items-center mb-3">
                     <h2 className="mb-0">Organizations</h2>
                     <Link to="/organizations/new" className="btn btn-primary">
                         <AddIcon className="icon-inline" /> Create organization
@@ -170,5 +169,5 @@ export class SiteAdminOrgsPage extends React.Component<Props, State> {
         )
     }
 
-    private onDidUpdateOrg = () => this.orgUpdates.next()
+    private onDidUpdateOrg = (): void => this.orgUpdates.next()
 }

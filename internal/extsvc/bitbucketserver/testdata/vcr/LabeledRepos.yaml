@@ -1,0 +1,81 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://bitbucket.sgdev.org/rest/api/1.0/labels/archived/labeled?REPOSITORY=
+    method: GET
+  response:
+    body: '{"size":1,"limit":25,"isLastPage":true,"values":[{"slug":"archived-repo","id":10073,"name":"archived-repo","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"PUBLIC","id":4,"name":"Public","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/PUBLIC"}]}},"public":false,"labelableType":"REPOSITORY","links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/public/archived-repo.git","name":"http"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/PUBLIC/repos/archived-repo/browse"}]}}],"start":0}'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Wed, 18 Dec 2019 15:07:54 GMT
+      Pragma:
+      - no-cache
+      Server:
+      - Caddy
+      Vary:
+      - X-AUSERNAME,Accept-Encoding
+      X-Arequestid:
+      - '@1JRK3O7x907x470273x0'
+      X-Asen:
+      - SEN-11363689
+      X-Asessionid:
+      - 12pburx
+      X-Auserid:
+      - "107"
+      X-Ausername:
+      - keegan
+      X-Content-Type-Options:
+      - nosniff
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://bitbucket.sgdev.org/rest/api/1.0/labels/doesnotexist/labeled?REPOSITORY=
+    method: GET
+  response:
+    body: '{"errors":[{"context":null,"message":"Label not found.","exceptionName":"com.atlassian.bitbucket.label.NoSuchLabelException"}]}'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Wed, 18 Dec 2019 15:07:54 GMT
+      Pragma:
+      - no-cache
+      Server:
+      - Caddy
+      Vary:
+      - X-AUSERNAME,Accept-Encoding
+      X-Arequestid:
+      - '@1JRK3O7x907x470274x0'
+      X-Asen:
+      - SEN-11363689
+      X-Asessionid:
+      - 1dkjtq1
+      X-Auserid:
+      - "107"
+      X-Ausername:
+      - keegan
+      X-Content-Type-Options:
+      - nosniff
+    status: 404 Not Found
+    code: 404
+    duration: ""

@@ -2,20 +2,20 @@ package ui
 
 import (
 	"net/http"
-	"regexp"
 
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/inconshreveable/log15"
 
 	"github.com/gorilla/mux"
-	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
-var goSymbolReg = regexp.MustCompile("/info/GoPackage/(.+)$")
+var goSymbolReg = lazyregexp.New("/info/GoPackage/(.+)$")
 
 // serveRepoLanding simply redirects the old (sourcegraph.com/<repo>/-/info) repo landing page
 // URLs directly to the repo itself (sourcegraph.com/<repo>).
@@ -34,7 +34,7 @@ func serveRepoLanding(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveDefLanding(w http.ResponseWriter, r *http.Request) (err error) {
-	span, ctx := opentracing.StartSpanFromContext(r.Context(), "serveDefLanding")
+	span, ctx := ot.StartSpanFromContext(r.Context(), "serveDefLanding")
 	r = r.WithContext(ctx)
 	defer func() {
 		if err != nil {

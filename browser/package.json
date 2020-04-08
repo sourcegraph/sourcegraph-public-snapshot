@@ -5,7 +5,6 @@
     "yarn": ">1.10.0"
   },
   "scripts": {
-    "typecheck": "tsc -p .",
     "dev": "NODE_ENV=development NODE_OPTIONS=--max_old_space_size=4096 TS_NODE_COMPILER_OPTIONS=\"{\\\"module\\\":\\\"commonjs\\\"}\" node -r ts-node/register scripts/dev",
     "dev:no-reload": "AUTO_RELOAD=false yarn run dev",
     "dev:firefox": "if type web-ext 2>/dev/null; then web-ext run --source-dir ./build/firefox; else echo 'web-ext not found. Install it with: yarn global add web-ext'; exit 1; fi",
@@ -14,16 +13,33 @@
     "release:chrome": "webstore upload --auto-publish --source build/bundles/chrome-bundle.zip --extension-id dgjhfomjieaadpoljlnidmbgkdffpack --client-id $GOOGLE_CLIENT_ID --client-secret $GOOGLE_CLIENT_SECRET --refresh-token $GOOGLE_REFRESH_TOKEN",
     "release:ff": "./scripts/release-ff.sh",
     "release:npm": "TS_NODE_COMPILER_OPTIONS=\"{\\\"module\\\":\\\"commonjs\\\"}\" ts-node ./scripts/publish-npm.ts",
-    "lint": "yarn run tslint && yarn run eslint && yarn run stylelint",
-    "tslint": "tslint -t stylish -c tslint.json -p tsconfig.json './**/*.ts?(x)'",
-    "eslint": "eslint '**/*.[jt]s?(x)'",
+    "lint": "yarn run eslint && yarn run stylelint",
+    "eslint": "eslint --cache '**/*.[jt]s?(x)'",
     "stylelint": "stylelint 'src/**/*.scss'",
     "clean": "rm -rf build/ dist/ *.zip *.xpi .checksum",
     "test": "jest --testPathIgnorePatterns e2e",
-    "test-e2e": "jest --runInBand --coverage=false ./e2e/"
+    "test-e2e": "mocha './src/e2e/**/*.test.ts'",
+    "bundlesize": "GITHUB_TOKEN= bundlesize"
   },
   "browserslist": [
     "last 3 Chrome versions",
     "last 3 Firefox versions"
+  ],
+  "bundlesize": [
+    {
+      "path": "./build/dist/js/background.bundle.js"
+    },
+    {
+      "path": "./build/dist/js/inject.bundle.js"
+    },
+    {
+      "path": "./build/dist/js/integration.bundle.js"
+    },
+    {
+      "path": "./build/dist/js/phabricator.bundle.js"
+    },
+    {
+      "path": "./build/dist/css/style.bundle.css"
+    }
   ]
 }

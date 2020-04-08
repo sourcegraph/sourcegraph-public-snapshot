@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/pkg/version"
+	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
 func TestServeHelp(t *testing.T) {
@@ -19,7 +19,7 @@ func TestServeHelp(t *testing.T) {
 		}
 		{
 			orig := version.Version()
-			version.Mock("dev")
+			version.Mock("0.0.0+dev")
 			defer version.Mock(orig) // reset
 		}
 

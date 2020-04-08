@@ -6,11 +6,13 @@ This is for external Sourcegraph instances that need a self-signed certificate b
 
 Configuring NGINX with a self-signed certificate to support SSL requires:
 
-1. [Installing mkcert](#1-installing-mkcert).
-1. [Creating the self-signed certificate](#2-creating-the-self-signed-certificate)
-1. [Configuring NGINX for SSL](#3-adding-ssl-support-to-nginx)
-1. [Changing the Sourcegraph container to listen on port 443](#4-changing-the-quickstart-command-to-listen-on-port-for-ssl)
-1. [Getting the self-signed certificate to be trusted (valid) on external instances](#5-getting-the-self-signed-certificate-to-be-trusted-valid-on-external-instances)
+- [Adding SSL (HTTPS) to Sourcegraph with a self-signed certificate](#adding-ssl-https-to-sourcegraph-with-a-self-signed-certificate)
+  - [1. Installing mkcert](#1-installing-mkcert)
+  - [2. Creating the self-signed certificate](#2-creating-the-self-signed-certificate)
+  - [3. Adding SSL support to NGINX](#3-adding-ssl-support-to-nginx)
+  - [4. Changing the Sourcegraph container to listen on port 443](#4-changing-the-sourcegraph-container-to-listen-on-port-443)
+  - [5. Getting the self-signed certificate to be trusted (valid) on external instances](#5-getting-the-self-signed-certificate-to-be-trusted-valid-on-external-instances)
+  - [Next steps](#next-steps)
 
 ## 1. Installing mkcert
 
@@ -25,7 +27,7 @@ To set up mkcert on the Sourcegraph instance:
 1. [Install mkcert](https://github.com/FiloSottile/mkcert#installation)
 1. Create the root [CA](https://en.wikipedia.org/wiki/Certificate_authority) by running:
 
-```shell
+```bash
 sudo CAROOT=~/.sourcegraph/config mkcert -install
 ```
 
@@ -33,7 +35,7 @@ sudo CAROOT=~/.sourcegraph/config mkcert -install
 
 Now that the root CA has been created, mkcert can issue a self-signed certificate (`sourcegraph.crt`) and key (`sourcegraph.key`).
 
-```shell
+```bash
 sudo CAROOT=~/.sourcegraph/config mkcert \
   -cert-file ~/.sourcegraph/config/sourcegraph.crt \
   -key-file ~/.sourcegraph/config/sourcegraph.key \
@@ -44,29 +46,32 @@ Run `sudo ls -la ~/.sourcegraph/config` and you should see the CA and SSL certif
 
 ## 3. Adding SSL support to NGINX
 
-Change the [default `~/.sourcegraph/config/nginx.conf`](https://github.com/sourcegraph/sourcegraph/blob/master/cmd/server/shared/assets/nginx.conf) by:
-
-**1.** Replacing `listen 7080;` with `listen 7080 ssl;`.
-
-**2.** Adding the following two lines below the `listen 7080 ssl;` statement.
-
-```nginx
-ssl_certificate         sourcegraph.crt;
-ssl_certificate_key     sourcegraph.key;
-```
-
-The `nginx.conf` should now look like:
+Edit the [default
+`~/.sourcegraph/config/nginx.conf`](https://github.com/sourcegraph/sourcegraph/blob/master/cmd/server/shared/assets/nginx.conf),
+so that port `7080` redirects to `7443` and `7443` is served with SSL. It should look like this:
 
 ```nginx
 ...
 http {
     ...
     server {
-       ...
-        listen 7080 ssl;
+        listen 7080;
+        return 301 https://$host:7433$request_uri;
+    }
+
+    server {
+        # Do not remove. The contents of sourcegraph_server.conf can change
+        # between versions and may include improvements to the configuration.
+        include nginx/sourcegraph_server.conf;
+
+        listen 7443 ssl;
+        server_name sourcegraph.example.com;  # change to your URL
         ssl_certificate         sourcegraph.crt;
         ssl_certificate_key     sourcegraph.key;
-        ...
+
+        location / {
+            ...
+        }
     }
 }
 ```
@@ -75,18 +80,18 @@ http {
 
 > NOTE: If the Sourcegraph container is still running, stop it before reading on.
 
-Now that NGINX is listening on port 443, we need the Sourcegraph container to listen on port 443 by adding `--publish 443:7080` to the `docker run` command:
+Now that NGINX is listening on port 7443, we need to configure the Sourcegraph container to forward
+443 to 7443 by adding `--publish 443:7443` to the `docker run` command:
 
-```shell
+```bash
 docker container run \
   --rm  \
   --publish 7080:7080 \
-  --publish 2633:2633 \
-  --publish 443:7080 \
+  --publish 443:7443 \
   \
   --volume ~/.sourcegraph/config:/etc/sourcegraph  \
   --volume ~/.sourcegraph/data:/var/opt/sourcegraph  \
-  sourcegraph/server:3.8.0
+  sourcegraph/server:3.14.1
 ```
 
 > NOTE: We recommend removing `--publish 7080:7080` as it's not needed and traffic sent to that port is un-encrypted.
@@ -103,24 +108,24 @@ To have the browser trust the certificate, the root CA on the Sourcegraph instan
 
 **2.** Downloading `rootCA-key.pem` and `rootCA.pem` from `~/.sourcegraph/config/mkcert` on the Sourcegraph instance to the location of `mkcert -CAROOT` on your local machine:
 
-```shell
+```bash
 # Run locally: Ensure directory the root CA files will be downloaded to exists
 mkdir -p "$(mkcert -CAROOT)"
 ```
 
-```shell
+```bash
 # Run on Sourcegraph host: Ensure `scp` user can read (and therefore download) the root CA files
 sudo chown $USER ~/.sourcegraph/config/root*
 ```
 
-```shell
+```bash
 # Run locally: Download the files (change username and hostname)
 scp user@example.com:~/.sourcegraph/config/root* "$(mkcert -CAROOT)"
 ```
 
 **3.** Install the root CA by running:
 
-```shell
+```bash
 mkcert -install
 ```
 
@@ -137,8 +142,8 @@ This is largely the same as step 5, except easier. For other developer machines 
 
 ## Next steps
 
-- [Configure Sourcegraph's `externalURL`](config/critical_config.md)
-- [Redirect to external HTTPS URL](nginx.md#redirect-to-external-https-url)
-- [NGINX HTTP Strict Transport Security](nginx.md#redirect-to-external-https-url)
+- [Configure Sourcegraph's `externalURL`](config/site_config.md)
+- [Redirect to external HTTPS URL](http_https_configuration.md#redirect-to-external-https-url)
+- [NGINX HTTP Strict Transport Security](http_https_configuration.md#redirect-to-external-https-url)
 - [NGINX SSL Termination guide](https://docs.nginx.com/nginx/admin-guide/security-controls/terminating-ssl-http/)
 - [NGINX HTTPS Servers guide](https://nginx.org/en/docs/http/configuring_https_servers.html).

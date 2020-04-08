@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitolite"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -57,7 +57,7 @@ func Test_Gitolite_listRepos(t *testing.T) {
 				t.Errorf("unexpected response body diff:\n%s", diff)
 			}
 			if diff := cmp.Diff(test.expResponseCode, resp.StatusCode); diff != "" {
-				t.Errorf("unexpected repsonse code diff:\n%s", diff)
+				t.Errorf("unexpected response code diff:\n%s", diff)
 			}
 		})
 	}

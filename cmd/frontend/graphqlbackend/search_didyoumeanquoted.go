@@ -1,60 +1,13 @@
 package graphqlbackend
 
 import (
-	"context"
 	"fmt"
-	rxsyntax "regexp/syntax"
 	"sort"
 	"strings"
 	"unicode"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/syntax"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/types"
+	"github.com/sourcegraph/sourcegraph/internal/search/query/syntax"
 )
-
-type didYouMeanQuotedResolver struct {
-	query string
-	err   error
-}
-
-func (r *didYouMeanQuotedResolver) Results(context.Context) (*searchResultsResolver, error) {
-	sqds := proposedQuotedQueries(r.query)
-	switch e := r.err.(type) {
-	case *types.TypeError:
-		switch e := e.Err.(type) {
-		case *rxsyntax.Error:
-			srr := &searchResultsResolver{
-				alert: &searchAlert{
-					title:           capFirst(e.Error()),
-					description:     "Quoting the query may help if you want a literal match instead of a regular expression match.",
-					proposedQueries: sqds,
-				},
-			}
-			return srr, nil
-		default:
-			return nil, r.err
-		}
-	case *syntax.ParseError:
-		srr := &searchResultsResolver{
-			alert: &searchAlert{
-				title:           capFirst(e.Msg),
-				description:     "Quoting the query may help if you want a literal match.",
-				proposedQueries: sqds,
-			},
-		}
-		return srr, nil
-	default:
-		return nil, r.err
-	}
-}
-
-func (r *didYouMeanQuotedResolver) Suggestions(context.Context, *searchSuggestionsArgs) ([]*searchSuggestionResolver, error) {
-	return nil, r.err
-}
-
-func (r *didYouMeanQuotedResolver) Stats(context.Context) (*searchResultsStats, error) {
-	return nil, r.err
-}
 
 // proposedQuotedQueries generates various ways of quoting the given query,
 // with descriptions, removing duplicates.

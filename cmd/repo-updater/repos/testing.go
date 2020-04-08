@@ -11,7 +11,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 // NewFakeSourcer returns a Sourcer which always returns the given error and sources,
@@ -74,9 +74,9 @@ type FakeStore struct {
 	ListAllRepoNamesError       error // error to be returned in ListAllRepoNames
 
 	svcIDSeq  int64
-	repoIDSeq uint32
+	repoIDSeq api.RepoID
 	svcByID   map[int64]*ExternalService
-	repoByID  map[uint32]*Repo
+	repoByID  map[api.RepoID]*Repo
 	parent    *FakeStore
 }
 
@@ -91,7 +91,7 @@ func (s *FakeStore) Transact(ctx context.Context) (TxStore, error) {
 		svcByID[id] = svc.Clone()
 	}
 
-	repoByID := make(map[uint32]*Repo, len(s.repoByID))
+	repoByID := make(map[api.RepoID]*Repo, len(s.repoByID))
 	for _, r := range s.repoByID {
 		clone := r.Clone()
 		repoByID[r.ID] = clone
@@ -197,6 +197,9 @@ func (s FakeStore) GetRepoByName(ctx context.Context, name string) (*Repo, error
 	}
 
 	for _, r := range s.repoByID {
+		if r.IsDeleted() {
+			continue
+		}
 		if r.Name == name {
 			return r, nil
 		}
@@ -221,7 +224,7 @@ func (s FakeStore) ListRepos(ctx context.Context, args StoreListReposArgs) ([]*R
 		names[strings.ToLower(name)] = true
 	}
 
-	ids := make(map[uint32]bool, len(args.IDs))
+	ids := make(map[api.RepoID]bool, len(args.IDs))
 	for _, id := range args.IDs {
 		ids[id] = true
 	}
@@ -238,6 +241,10 @@ func (s FakeStore) ListRepos(ctx context.Context, args StoreListReposArgs) ([]*R
 			continue
 		}
 
+		if r.IsDeleted() {
+			continue
+		}
+
 		var preds []bool
 		if len(kinds) > 0 {
 			preds = append(preds, kinds[strings.ToLower(r.ExternalRepo.ServiceType)])
@@ -250,6 +257,9 @@ func (s FakeStore) ListRepos(ctx context.Context, args StoreListReposArgs) ([]*R
 		}
 		if len(externalRepos) > 0 {
 			preds = append(preds, externalRepos[r.ExternalRepo])
+		}
+		if args.PrivateOnly {
+			preds = append(preds, r.Private)
 		}
 
 		if (args.UseOr && evalOr(preds...)) || (!args.UseOr && evalAnd(preds...)) {
@@ -276,7 +286,9 @@ func (s FakeStore) ListAllRepoNames(ctx context.Context) ([]api.RepoName, error)
 
 	names := make([]api.RepoName, 0, len(s.repoByID))
 	for _, r := range s.repoByID {
-		names = append(names, api.RepoName(r.Name))
+		if !r.IsDeleted() {
+			names = append(names, api.RepoName(r.Name))
+		}
 	}
 
 	return names, nil
@@ -310,31 +322,27 @@ func (s *FakeStore) UpsertRepos(ctx context.Context, upserts ...*Repo) error {
 	}
 
 	if s.repoByID == nil {
-		s.repoByID = make(map[uint32]*Repo, len(upserts))
+		s.repoByID = make(map[api.RepoID]*Repo, len(upserts))
 	}
 
-	var deletes, updates, inserts []*Repo
+	var updates, inserts []*Repo
 	for _, r := range upserts {
-		switch {
-		case r.IsDeleted():
-			deletes = append(deletes, r)
-		case r.ID != 0:
+		if r.ID != 0 {
 			updates = append(updates, r)
-		default:
+		} else if r2, ok := s.byExternalID(r.ExternalRepo); ok {
+			r.ID = r2.ID
+			updates = append(updates, r)
+		} else {
 			inserts = append(inserts, r)
 		}
-	}
-
-	for _, r := range deletes {
-		delete(s.repoByID, r.ID)
 	}
 
 	for _, r := range updates {
 		repo := s.repoByID[r.ID]
 		if repo == nil {
-			return errors.Errorf("upserting repo with non-existant ID: id=%v", r.ID)
+			return errors.Errorf("upserting repo with non-existent ID: id=%v", r.ID)
 		}
-		repo.Update(r)
+		s.repoByID[r.ID] = r
 	}
 
 	for _, r := range inserts {
@@ -344,6 +352,15 @@ func (s *FakeStore) UpsertRepos(ctx context.Context, upserts ...*Repo) error {
 	}
 
 	return s.checkConstraints()
+}
+
+func (s *FakeStore) byExternalID(eid api.ExternalRepoSpec) (*Repo, bool) {
+	for _, r := range s.repoByID {
+		if r.ExternalRepo == eid {
+			return r, true
+		}
+	}
+	return nil, false
 }
 
 // checkConstraints ensures the FakeStore has not violated any constraints we
@@ -356,15 +373,18 @@ func (s *FakeStore) checkConstraints() error {
 	seenName := map[string]bool{}
 	seenExternalRepo := map[api.ExternalRepoSpec]bool{}
 	for _, r := range s.repoByID {
+		if seenExternalRepo[r.ExternalRepo] {
+			return errors.Errorf("duplicate external repo spec: %v", r.ExternalRepo)
+		}
+		seenExternalRepo[r.ExternalRepo] = true
+		if r.IsDeleted() {
+			continue
+		}
 		name := strings.ToLower(r.Name)
 		if seenName[name] {
 			return errors.Errorf("duplicate repo name: %s", name)
 		}
 		seenName[name] = true
-		if r.ExternalRepo.IsSet() && seenExternalRepo[r.ExternalRepo] {
-			return errors.Errorf("duplicate external repo spec: %v", r.ExternalRepo)
-		}
-		seenExternalRepo[r.ExternalRepo] = true
 	}
 	return nil
 }
@@ -394,7 +414,7 @@ var Assert = struct {
 			// Exclude auto-generated IDs from equality tests
 			have = append(Repos{}, have...).With(Opt.RepoID(0))
 			if !reflect.DeepEqual(have, want) {
-				t.Errorf("repos: %s", cmp.Diff(have, want))
+				t.Errorf("repos (-want +got): %s", cmp.Diff(want, have))
 			}
 		}
 	},
@@ -406,7 +426,7 @@ var Assert = struct {
 				return ord(want[i], want[j])
 			})
 			if !reflect.DeepEqual(have, want) {
-				t.Errorf("repos: %s", cmp.Diff(have, want))
+				t.Errorf("repos (-want +got): %s", cmp.Diff(want, have))
 			}
 		}
 	},
@@ -417,7 +437,7 @@ var Assert = struct {
 			// Exclude auto-generated IDs from equality tests
 			have = append(ExternalServices{}, have...).With(Opt.ExternalServiceID(0))
 			if !reflect.DeepEqual(have, want) {
-				t.Errorf("external services: %s", cmp.Diff(have, want))
+				t.Errorf("external services (-want +got): %s", cmp.Diff(want, have))
 			}
 		}
 	},
@@ -429,7 +449,7 @@ var Assert = struct {
 				return ord(want[i], want[j])
 			})
 			if !reflect.DeepEqual(have, want) {
-				t.Errorf("external services: %s", cmp.Diff(have, want))
+				t.Errorf("external services (-want +got): %s", cmp.Diff(want, have))
 			}
 		}
 	},
@@ -444,12 +464,11 @@ var Opt = struct {
 	ExternalServiceID         func(int64) func(*ExternalService)
 	ExternalServiceModifiedAt func(time.Time) func(*ExternalService)
 	ExternalServiceDeletedAt  func(time.Time) func(*ExternalService)
-	RepoID                    func(uint32) func(*Repo)
+	RepoID                    func(api.RepoID) func(*Repo)
 	RepoName                  func(string) func(*Repo)
 	RepoCreatedAt             func(time.Time) func(*Repo)
 	RepoModifiedAt            func(time.Time) func(*Repo)
 	RepoDeletedAt             func(time.Time) func(*Repo)
-	RepoEnabled               func(bool) func(*Repo)
 	RepoSources               func(...string) func(*Repo)
 	RepoMetadata              func(interface{}) func(*Repo)
 	RepoExternalID            func(string) func(*Repo)
@@ -471,7 +490,7 @@ var Opt = struct {
 			e.DeletedAt = ts
 		}
 	},
-	RepoID: func(n uint32) func(*Repo) {
+	RepoID: func(n api.RepoID) func(*Repo) {
 		return func(r *Repo) {
 			r.ID = n
 		}
@@ -486,14 +505,12 @@ var Opt = struct {
 			r.CreatedAt = ts
 			r.UpdatedAt = ts
 			r.DeletedAt = time.Time{}
-			r.Enabled = true
 		}
 	},
 	RepoModifiedAt: func(ts time.Time) func(*Repo) {
 		return func(r *Repo) {
 			r.UpdatedAt = ts
 			r.DeletedAt = time.Time{}
-			r.Enabled = true
 		}
 	},
 	RepoDeletedAt: func(ts time.Time) func(*Repo) {
@@ -501,11 +518,6 @@ var Opt = struct {
 			r.UpdatedAt = ts
 			r.DeletedAt = ts
 			r.Sources = map[string]*SourceInfo{}
-		}
-	},
-	RepoEnabled: func(enabled bool) func(*Repo) {
-		return func(r *Repo) {
-			r.Enabled = enabled
 		}
 	},
 	RepoSources: func(srcs ...string) func(*Repo) {

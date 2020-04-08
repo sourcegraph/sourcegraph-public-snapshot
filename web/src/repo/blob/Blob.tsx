@@ -23,7 +23,7 @@ import {
     lprToSelectionsZeroIndexed,
     ModeSpec,
     parseHash,
-    PositionSpec,
+    UIPositionSpec,
     RenderMode,
     RepoSpec,
     ResolvedRevSpec,
@@ -33,7 +33,7 @@ import {
 import { getHover } from '../../backend/features'
 import { WebHoverOverlay } from '../../components/shared'
 import { isDiscussionsEnabled } from '../../discussions'
-import { ThemeProps } from '../../theme'
+import { ThemeProps } from '../../../../shared/src/theme'
 import { EventLoggerProps } from '../../tracking/eventLogger'
 import { DiscussionsGutterOverlay } from './discussions/DiscussionsGutterOverlay'
 import { LineDecorationAttachment } from './LineDecorationAttachment'
@@ -122,19 +122,19 @@ export class Blob extends React.Component<BlobProps, BlobState> {
 
     /** Emits whenever the ref callback for the code element is called */
     private codeViewElements = new Subject<HTMLElement | null>()
-    private nextCodeViewElement = (element: HTMLElement | null) => this.codeViewElements.next(element)
+    private nextCodeViewElement = (element: HTMLElement | null): void => this.codeViewElements.next(element)
 
     /** Emits whenever the ref callback for the blob element is called */
     private blobElements = new Subject<HTMLElement | null>()
-    private nextBlobElement = (element: HTMLElement | null) => this.blobElements.next(element)
+    private nextBlobElement = (element: HTMLElement | null): void => this.blobElements.next(element)
 
     /** Emits whenever the ref callback for the hover element is called */
     private hoverOverlayElements = new Subject<HTMLElement | null>()
-    private nextOverlayElement = (element: HTMLElement | null) => this.hoverOverlayElements.next(element)
+    private nextOverlayElement = (element: HTMLElement | null): void => this.hoverOverlayElements.next(element)
 
     /** Emits when the close button was clicked */
     private closeButtonClicks = new Subject<MouseEvent>()
-    private nextCloseButtonClick = (event: MouseEvent) => this.closeButtonClicks.next(event)
+    private nextCloseButtonClick = (event: MouseEvent): void => this.closeButtonClicks.next(event)
 
     /** Subscriptions to be disposed on unmout */
     private subscriptions = new Subscription()
@@ -238,7 +238,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                     filter(isDefined),
                     switchMap(codeView => fromEvent<MouseEvent>(codeView, 'click')),
                     // Ignore click events caused by the user selecting text
-                    filter(() => window.getSelection()!.toString() === '')
+                    filter(() => !window.getSelection()?.toString())
                 )
                 .subscribe(event => {
                     // Prevent selecting text on shift click (click+drag to select will still work)
@@ -381,10 +381,10 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                     if (decoratedElements) {
                         // Clear previous decorations.
                         for (const element of decoratedElements) {
-                            element.style.backgroundColor = null
-                            element.style.border = null
-                            element.style.borderColor = null
-                            element.style.borderWidth = null
+                            element.style.backgroundColor = ''
+                            element.style.border = ''
+                            element.style.borderColor = ''
+                            element.style.borderWidth = ''
                         }
                     }
 
@@ -431,7 +431,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
 
     private getLSPTextDocumentPositionParams(
         position: HoveredToken & RepoSpec & RevSpec & FileSpec & ResolvedRevSpec
-    ): RepoSpec & RevSpec & ResolvedRevSpec & FileSpec & PositionSpec & ModeSpec {
+    ): RepoSpec & RevSpec & ResolvedRevSpec & FileSpec & UIPositionSpec & ModeSpec {
         return {
             repoName: position.repoName,
             filePath: position.filePath,

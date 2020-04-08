@@ -5,52 +5,56 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"math"
 	"net/http"
 	"net/url"
-	"regexp/syntax"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
-	"unicode/utf8"
 
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
-	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
 
-	"github.com/google/zoekt"
-	zoektquery "github.com/google/zoekt/query"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/endpoint"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/gituri"
-	"github.com/sourcegraph/sourcegraph/pkg/mutablelimiter"
-	searchbackend "github.com/sourcegraph/sourcegraph/pkg/search/backend"
-	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
-	"github.com/sourcegraph/sourcegraph/pkg/trace"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
-	"gopkg.in/inconshreveable/log15.v2"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/endpoint"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
+	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	querytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 var (
 	// A global limiter on number of concurrent searcher searches.
 	textSearchLimiter = mutablelimiter.New(32)
 
+	requestCounter = metrics.NewRequestMeter("textsearch", "Total number of requests sent to the textsearch API.")
+
 	searchHTTPClient = &http.Client{
-		// nethttp.Transport will propagate opentracing spans
-		Transport: &nethttp.Transport{
-			RoundTripper: &http.Transport{
+		// ot.Transport will propagate opentracing spans
+		Transport: &ot.Transport{
+			RoundTripper: requestCounter.Transport(&http.Transport{
 				// Default is 2, but we can send many concurrent requests
 				MaxIdleConnsPerHost: 500,
-			},
+			}, func(u *url.URL) string {
+				// TODO(uwedeportivo): remove once codemod has its own client
+				if strings.Contains(u.String(), "replacer") {
+					return "replace"
+				}
+				return "search"
+			}),
 		},
 	}
 )
@@ -58,48 +62,62 @@ var (
 // A light wrapper around the search service. We implement the service here so
 // that we can unmarshal the result directly into graphql resolvers.
 
-// fileMatchResolver is a resolver for the GraphQL type `FileMatch`
-type fileMatchResolver struct {
+// FileMatchResolver is a resolver for the GraphQL type `FileMatch`
+type FileMatchResolver struct {
 	JPath        string       `json:"Path"`
 	JLineMatches []*lineMatch `json:"LineMatches"`
 	JLimitHit    bool         `json:"LimitHit"`
+	MatchCount   int          // Number of matches. Different from len(JLineMatches), as multiple lines may correspond to one logical match.
 	symbols      []*searchSymbolResult
 	uri          string
-	repo         *types.Repo
-	commitID     api.CommitID
-	// inputRev is the Git revspec that the user originally requested to search. It is used to
+	Repo         *types.Repo
+	CommitID     api.CommitID
+	// InputRev is the Git revspec that the user originally requested to search. It is used to
 	// preserve the original revision specifier from the user instead of navigating them to the
 	// absolute commit ID when they select a result.
-	inputRev *string
+	InputRev *string
 }
 
-func (fm *fileMatchResolver) Key() string {
+func (fm *FileMatchResolver) Equal(other *FileMatchResolver) bool {
+	return reflect.DeepEqual(fm, other)
+}
+
+func (fm *FileMatchResolver) Key() string {
 	return fm.uri
 }
 
-func (fm *fileMatchResolver) File() *gitTreeEntryResolver {
+func (fm *FileMatchResolver) File() *GitTreeEntryResolver {
 	// NOTE(sqs): Omits other commit fields to avoid needing to fetch them
 	// (which would make it slow). This GitCommitResolver will return empty
 	// values for all other fields.
-	return &gitTreeEntryResolver{
+	return &GitTreeEntryResolver{
 		commit: &GitCommitResolver{
-			repo:     &RepositoryResolver{repo: fm.repo},
-			oid:      GitObjectID(fm.commitID),
-			inputRev: fm.inputRev,
+			repo:     &RepositoryResolver{repo: fm.Repo},
+			oid:      GitObjectID(fm.CommitID),
+			inputRev: fm.InputRev,
 		},
-		stat: createFileInfo(fm.JPath, false),
+		stat: CreateFileInfo(fm.JPath, false),
 	}
 }
 
-func (fm *fileMatchResolver) Repository() *RepositoryResolver {
-	return &RepositoryResolver{repo: fm.repo}
+func (fm *FileMatchResolver) Repository() *RepositoryResolver {
+	return &RepositoryResolver{repo: fm.Repo}
 }
 
-func (fm *fileMatchResolver) Resource() string {
+func (fm *FileMatchResolver) RevSpec() *gitRevSpec {
+	if fm.InputRev == nil || *fm.InputRev == "" {
+		return nil // default branch
+	}
+	return &gitRevSpec{
+		expr: &gitRevSpecExpr{expr: *fm.InputRev, repo: fm.Repository()},
+	}
+}
+
+func (fm *FileMatchResolver) Resource() string {
 	return fm.uri
 }
 
-func (fm *fileMatchResolver) Symbols() []*symbolResolver {
+func (fm *FileMatchResolver) Symbols() []*symbolResolver {
 	symbols := make([]*symbolResolver, len(fm.symbols))
 	for i, s := range fm.symbols {
 		symbols[i] = toSymbolResolver(s.symbol, s.baseURI, s.lang, s.commit)
@@ -107,37 +125,37 @@ func (fm *fileMatchResolver) Symbols() []*symbolResolver {
 	return symbols
 }
 
-func (fm *fileMatchResolver) LineMatches() []*lineMatch {
+func (fm *FileMatchResolver) LineMatches() []*lineMatch {
 	return fm.JLineMatches
 }
 
-func (fm *fileMatchResolver) LimitHit() bool {
+func (fm *FileMatchResolver) LimitHit() bool {
 	return fm.JLimitHit
 }
 
-func (fm *fileMatchResolver) ToRepository() (*RepositoryResolver, bool) { return nil, false }
-func (fm *fileMatchResolver) ToFileMatch() (*fileMatchResolver, bool)   { return fm, true }
-func (fm *fileMatchResolver) ToCommitSearchResult() (*commitSearchResultResolver, bool) {
+func (fm *FileMatchResolver) ToRepository() (*RepositoryResolver, bool) { return nil, false }
+func (fm *FileMatchResolver) ToFileMatch() (*FileMatchResolver, bool)   { return fm, true }
+func (fm *FileMatchResolver) ToCommitSearchResult() (*commitSearchResultResolver, bool) {
 	return nil, false
 }
 
-func (r *fileMatchResolver) ToCodemodResult() (*codemodResultResolver, bool) {
+func (r *FileMatchResolver) ToCodemodResult() (*codemodResultResolver, bool) {
 	return nil, false
 }
 
-func (fm *fileMatchResolver) searchResultURIs() (string, string) {
-	return string(fm.repo.Name), fm.JPath
+func (fm *FileMatchResolver) searchResultURIs() (string, string) {
+	return string(fm.Repo.Name), fm.JPath
 }
 
-func (fm *fileMatchResolver) resultCount() int32 {
-	rc := len(fm.symbols) + len(fm.LineMatches())
+func (fm *FileMatchResolver) resultCount() int32 {
+	rc := len(fm.symbols) + fm.MatchCount
 	if rc > 0 {
 		return int32(rc)
 	}
 	return 1 // 1 to count "empty" results like type:path results
 }
 
-// LineMatch is the struct used by vscode to receive search results for a line
+// lineMatch is the struct used by vscode to receive search results for a line
 type lineMatch struct {
 	JPreview          string     `json:"Preview"`
 	JOffsetAndLengths [][2]int32 `json:"OffsetAndLengths"`
@@ -165,11 +183,11 @@ func (lm *lineMatch) LimitHit() bool {
 	return lm.JLimitHit
 }
 
-var mockTextSearch func(ctx context.Context, repo gitserver.Repo, commit api.CommitID, p *search.PatternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error)
+var mockTextSearch func(ctx context.Context, repo gitserver.Repo, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error)
 
 // textSearch searches repo@commit with p.
 // Note: the returned matches do not set fileMatch.uri
-func textSearch(ctx context.Context, searcherURLs *endpoint.Map, repo gitserver.Repo, commit api.CommitID, p *search.PatternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error) {
+func textSearch(ctx context.Context, searcherURLs *endpoint.Map, repo gitserver.Repo, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error) {
 	if mockTextSearch != nil {
 		return mockTextSearch(ctx, repo, commit, p, fetchTimeout)
 	}
@@ -188,6 +206,8 @@ func textSearch(ctx context.Context, searcherURLs *endpoint.Map, repo gitserver.
 		"ExcludePattern":  []string{p.ExcludePattern},
 		"IncludePatterns": p.IncludePatterns,
 		"FetchTimeout":    []string{fetchTimeout.String()},
+		"Languages":       p.Languages,
+		"CombyRule":       []string{p.CombyRule},
 	}
 	if deadline, ok := ctx.Deadline(); ok {
 		t, err := deadline.MarshalText()
@@ -199,6 +219,9 @@ func textSearch(ctx context.Context, searcherURLs *endpoint.Map, repo gitserver.
 	q.Set("FileMatchLimit", strconv.FormatInt(int64(p.FileMatchLimit), 10))
 	if p.IsRegExp {
 		q.Set("IsRegExp", "true")
+	}
+	if p.IsStructuralPat {
+		q.Set("IsStructuralPat", "true")
 	}
 	if p.IsWordMatch {
 		q.Set("IsWordMatch", "true")
@@ -250,9 +273,6 @@ func textSearch(ctx context.Context, searcherURLs *endpoint.Map, repo gitserver.
 		url := searcherURL + "?" + rawQuery
 		tr.LazyPrintf("attempt %d: %s", attempt, url)
 		matches, limitHit, err = textSearchURL(ctx, url)
-		// Useful trace for debugging:
-		//
-		// tr.LazyPrintf("%d matches, limitHit=%v, err=%v, ctx.Err()=%v", len(matches), limitHit, err, ctx.Err())
 		if err == nil || errcode.IsTimeout(err) {
 			return matches, limitHit, err
 		}
@@ -273,14 +293,14 @@ func textSearch(ctx context.Context, searcherURLs *endpoint.Map, repo gitserver.
 	}
 }
 
-func textSearchURL(ctx context.Context, url string) ([]*fileMatchResolver, bool, error) {
+func textSearchURL(ctx context.Context, url string) ([]*FileMatchResolver, bool, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, false, err
 	}
 	req = req.WithContext(ctx)
 
-	req, ht := nethttp.TraceRequest(opentracing.GlobalTracer(), req,
+	req, ht := nethttp.TraceRequest(ot.GetTracer(ctx), req,
 		nethttp.OperationName("Searcher Client"),
 		nethttp.ClientTrace(false))
 	defer ht.Finish()
@@ -307,7 +327,7 @@ func textSearchURL(ctx context.Context, url string) ([]*fileMatchResolver, bool,
 	}
 
 	r := struct {
-		Matches     []*fileMatchResolver
+		Matches     []*FileMatchResolver
 		LimitHit    bool
 		DeadlineHit bool
 	}{}
@@ -338,9 +358,9 @@ func (e *searcherError) Error() string {
 	return e.Message
 }
 
-var mockSearchFilesInRepo func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *search.PatternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error)
+var mockSearchFilesInRepo func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error)
 
-func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *search.PatternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error) {
+func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*FileMatchResolver, limitHit bool, err error) {
 	if mockSearchFilesInRepo != nil {
 		return mockSearchFilesInRepo(ctx, repo, gitserverRepo, rev, info, fetchTimeout)
 	}
@@ -359,17 +379,20 @@ func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo *ty
 		return nil, false, err
 	}
 	if !shouldBeSearched {
-		return matches, false, err
+		return nil, false, err
 	}
 
 	matches, limitHit, err = textSearch(ctx, searcherURLs, gitserverRepo, commit, info, fetchTimeout)
+	if err != nil {
+		return nil, false, err
+	}
 
 	workspace := fileMatchURI(repo.Name, rev, "")
 	for _, fm := range matches {
 		fm.uri = workspace + fm.JPath
-		fm.repo = repo
-		fm.commitID = commit
-		fm.inputRev = &rev
+		fm.Repo = repo
+		fm.CommitID = commit
+		fm.InputRev = &rev
 	}
 
 	return matches, limitHit, err
@@ -377,7 +400,7 @@ func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo *ty
 
 // repoShouldBeSearched determines whether a repository should be searched in, based on whether the repository
 // fits in the subset of repositories specified in the query's `repohasfile` and `-repohasfile` flags if they exist.
-func repoShouldBeSearched(ctx context.Context, searcherURLs *endpoint.Map, searchPattern *search.PatternInfo, gitserverRepo gitserver.Repo, commit api.CommitID, fetchTimeout time.Duration) (shouldBeSearched bool, err error) {
+func repoShouldBeSearched(ctx context.Context, searcherURLs *endpoint.Map, searchPattern *search.TextPatternInfo, gitserverRepo gitserver.Repo, commit api.CommitID, fetchTimeout time.Duration) (shouldBeSearched bool, err error) {
 	shouldBeSearched = true
 	flagInQuery := len(searchPattern.FilePatternsReposMustInclude) > 0
 	if flagInQuery {
@@ -400,7 +423,7 @@ func repoShouldBeSearched(ctx context.Context, searcherURLs *endpoint.Map, searc
 // whether or not the repoShouldBeSearched in or not, based on whether matches were returned.
 func repoHasFilesWithNamesMatching(ctx context.Context, searcherURLs *endpoint.Map, include bool, repoHasFileFlag []string, gitserverRepo gitserver.Repo, commit api.CommitID, fetchTimeout time.Duration) (bool, error) {
 	for _, pattern := range repoHasFileFlag {
-		p := search.PatternInfo{IsRegExp: true, FileMatchLimit: 1, IncludePatterns: []string{pattern}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
+		p := search.TextPatternInfo{IsRegExp: true, FileMatchLimit: 1, IncludePatterns: []string{pattern}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
 		matches, _, err := textSearch(ctx, searcherURLs, gitserverRepo, commit, &p, fetchTimeout)
 		if err != nil {
 			return false, err
@@ -430,483 +453,24 @@ func fileMatchURI(name api.RepoName, ref, path string) string {
 	return b.String()
 }
 
-func zoektResultCountFactor(numRepos int, query *search.PatternInfo) int {
-	// If we're only searching a small number of repositories, return more comprehensive results. This is
-	// arbitrary.
-	k := 1
-	switch {
-	case numRepos <= 500:
-		k = 2
-	case numRepos <= 100:
-		k = 3
-	case numRepos <= 50:
-		k = 5
-	case numRepos <= 25:
-		k = 8
-	case numRepos <= 10:
-		k = 10
-	case numRepos <= 5:
-		k = 100
-	}
-	if query.FileMatchLimit > defaultMaxSearchResults {
-		k = int(float64(k) * 3 * float64(query.FileMatchLimit) / float64(defaultMaxSearchResults))
-	}
-	return k
-}
-
-func zoektSearchOpts(k int, query *search.PatternInfo) zoekt.SearchOptions {
-	searchOpts := zoekt.SearchOptions{
-		MaxWallTime:            1500 * time.Millisecond,
-		ShardMaxMatchCount:     100 * k,
-		TotalMaxMatchCount:     100 * k,
-		ShardMaxImportantMatch: 15 * k,
-		TotalMaxImportantMatch: 25 * k,
-		MaxDocDisplayCount:     2 * defaultMaxSearchResults,
-	}
-
-	// We want zoekt to return more than FileMatchLimit results since we use
-	// the extra results to populate reposLimitHit. Additionally the defaults
-	// are very low, so we always want to return at least 2000.
-	if query.FileMatchLimit > defaultMaxSearchResults {
-		searchOpts.MaxDocDisplayCount = 2 * int(query.FileMatchLimit)
-	}
-	if searchOpts.MaxDocDisplayCount < 2000 {
-		searchOpts.MaxDocDisplayCount = 2000
-	}
-
-	if userProbablyWantsToWaitLonger := query.FileMatchLimit > defaultMaxSearchResults; userProbablyWantsToWaitLonger {
-		searchOpts.MaxWallTime *= time.Duration(3 * float64(query.FileMatchLimit) / float64(defaultMaxSearchResults))
-	}
-
-	return searchOpts
-}
-
-func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*search.RepositoryRevisions, useFullDeadline bool, searcher zoekt.Searcher, searchOpts zoekt.SearchOptions, isSymbol bool, since func(t time.Time) time.Duration) (fm []*fileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
-	if len(repos) == 0 {
-		return nil, false, nil, nil
-	}
-
-	// Tell zoekt which repos to search
-	repoSet := &zoektquery.RepoSet{Set: make(map[string]bool, len(repos))}
-	repoMap := make(map[api.RepoName]*search.RepositoryRevisions, len(repos))
-	for _, repoRev := range repos {
-		repoSet.Set[string(repoRev.Repo.Name)] = true
-		repoMap[api.RepoName(strings.ToLower(string(repoRev.Repo.Name)))] = repoRev
-	}
-
-	queryExceptRepos, err := queryToZoektQuery(query, isSymbol)
-	if err != nil {
-		return nil, false, nil, err
-	}
-	finalQuery := zoektquery.NewAnd(repoSet, queryExceptRepos)
-
-	tr, ctx := trace.New(ctx, "zoekt.Search", fmt.Sprintf("%d %+v", len(repoSet.Set), finalQuery.String()))
-	defer func() {
-		tr.SetError(err)
-		if len(fm) > 0 {
-			tr.LazyPrintf("%d file matches", len(fm))
-		}
-		tr.Finish()
-	}()
-
-	if useFullDeadline {
-		// If the user manually specified a timeout, allow zoekt to use all of the remaining timeout.
-		deadline, _ := ctx.Deadline()
-		searchOpts.MaxWallTime = time.Until(deadline)
-
-		// We don't want our context's deadline to cut off zoekt so that we can get the results
-		// found before the deadline.
-		//
-		// We'll create a new context that gets cancelled if the other context is cancelled for any
-		// reason other than the deadline being exceeded. This essentially means the deadline for the new context
-		// will be `deadline + time for zoekt to cancel + network latency`.
-		cNew, cancel := context.WithCancel(context.Background())
-		go func(cOld context.Context) {
-			<-cOld.Done()
-			// cancel the new context if the old one is done for some reason other than the deadline passing.
-			if cOld.Err() != context.DeadlineExceeded {
-				cancel()
-			}
-		}(ctx)
-		ctx = cNew
-		defer cancel()
-	}
-
-	// If the query has a `repohasfile` or `-repohasfile` flag, we want to construct a new reposet based
-	// on the values passed in to the flag.
-	newRepoSet, err := createNewRepoSetWithRepoHasFileInputs(ctx, query, searcher, *repoSet)
-	if err != nil {
-		return nil, false, nil, err
-	}
-	finalQuery = zoektquery.NewAnd(newRepoSet, queryExceptRepos)
-	tr.LazyPrintf("after repohasfile filters: nRepos=%d query=%v", len(newRepoSet.Set), finalQuery)
-
-	t0 := time.Now()
-	resp, err := searcher.Search(ctx, finalQuery, &searchOpts)
-	if err != nil {
-		return nil, false, nil, err
-	}
-	if resp.FileCount == 0 && resp.MatchCount == 0 && since(t0) >= searchOpts.MaxWallTime {
-		timeoutToTry := longer(2, searchOpts.MaxWallTime)
-		err2 := errors.Errorf("no results found before timeout in index search (try timeout:%v)", timeoutToTry)
-		return nil, false, nil, err2
-	}
-	limitHit = resp.FilesSkipped+resp.ShardsSkipped > 0
-	// Repositories that weren't fully evaluated because they hit the Zoekt or Sourcegraph file match limits.
-	reposLimitHit = make(map[string]struct{})
-	if limitHit {
-		// Zoekt either did not evaluate some files in repositories, or ignored some repositories altogether.
-		// In this case, we can't be sure that we have exhaustive results for _any_ repository. So, all file
-		// matches are from repos with potentially skipped matches.
-		for _, file := range resp.Files {
-			if _, ok := reposLimitHit[file.Repository]; !ok {
-				reposLimitHit[file.Repository] = struct{}{}
-			}
-		}
-	}
-
-	if len(resp.Files) == 0 {
-		return nil, false, nil, nil
-	}
-
-	k := zoektResultCountFactor(len(repos), query)
-	maxLineMatches := 25 + k
-	maxLineFragmentMatches := 3 + k
-	if len(resp.Files) > int(query.FileMatchLimit) {
-		// List of files we cut out from the Zoekt response because they exceed the file match limit on the Sourcegraph end.
-		// We use this to get a list of repositories that do not have complete results.
-		fileMatchesInSkippedRepos := resp.Files[int(query.FileMatchLimit):]
-		resp.Files = resp.Files[:int(query.FileMatchLimit)]
-
-		if !limitHit {
-			// Zoekt evaluated all files and repositories, but Zoekt returned more file matches
-			// than the limit we set on Sourcegraph, so we cut out more results.
-
-			// Generate a list of repositories that had results cut because they exceeded the file match limit set on Sourcegraph.
-			for _, file := range fileMatchesInSkippedRepos {
-				if _, ok := reposLimitHit[file.Repository]; !ok {
-					reposLimitHit[file.Repository] = struct{}{}
-				}
-			}
-		}
-
-		limitHit = true
-	}
-
-	matches := make([]*fileMatchResolver, len(resp.Files))
-	for i, file := range resp.Files {
-		fileLimitHit := false
-		if len(file.LineMatches) > maxLineMatches {
-			file.LineMatches = file.LineMatches[:maxLineMatches]
-			fileLimitHit = true
-			limitHit = true
-		}
-		repoRev := repoMap[api.RepoName(strings.ToLower(string(file.Repository)))]
-		inputRev := repoRev.RevSpecs()[0]
-		baseURI := &gituri.URI{URL: url.URL{Scheme: "git://", Host: string(repoRev.Repo.Name), RawQuery: "?" + url.QueryEscape(inputRev)}}
-		lines := make([]*lineMatch, 0, len(file.LineMatches))
-		symbols := []*searchSymbolResult{}
-		for _, l := range file.LineMatches {
-			if !l.FileName {
-				if len(l.LineFragments) > maxLineFragmentMatches {
-					l.LineFragments = l.LineFragments[:maxLineFragmentMatches]
-				}
-				offsets := make([][2]int32, len(l.LineFragments))
-				for k, m := range l.LineFragments {
-					offset := utf8.RuneCount(l.Line[:m.LineOffset])
-					length := utf8.RuneCount(l.Line[m.LineOffset : m.LineOffset+m.MatchLength])
-					offsets[k] = [2]int32{int32(offset), int32(length)}
-					if isSymbol && m.SymbolInfo != nil {
-						commit := &GitCommitResolver{
-							repo:     &RepositoryResolver{repo: repoRev.Repo},
-							oid:      GitObjectID(repoRev.IndexedHEADCommit()),
-							inputRev: &inputRev,
-						}
-
-						symbols = append(symbols, &searchSymbolResult{
-							symbol: protocol.Symbol{
-								Name:       m.SymbolInfo.Sym,
-								Kind:       m.SymbolInfo.Kind,
-								Parent:     m.SymbolInfo.Parent,
-								ParentKind: m.SymbolInfo.ParentKind,
-								Path:       file.FileName,
-								Line:       l.LineNumber,
-							},
-							lang:    strings.ToLower(file.Language),
-							baseURI: baseURI,
-							commit:  commit,
-						})
-					}
-				}
-				if !isSymbol {
-					lines = append(lines, &lineMatch{
-						JPreview:          string(l.Line),
-						JLineNumber:       int32(l.LineNumber - 1),
-						JOffsetAndLengths: offsets,
-					})
-				}
-			}
-		}
-		matches[i] = &fileMatchResolver{
-			JPath:        file.FileName,
-			JLineMatches: lines,
-			JLimitHit:    fileLimitHit,
-			uri:          fileMatchURI(repoRev.Repo.Name, "", file.FileName),
-			symbols:      symbols,
-			repo:         repoRev.Repo,
-			commitID:     repoRev.IndexedHEADCommit(),
-		}
-	}
-
-	return matches, limitHit, reposLimitHit, nil
-}
-
-// Returns a new repoSet which accounts for the `repohasfile` and `-repohasfile` flags that may have been passed in the query.
-func createNewRepoSetWithRepoHasFileInputs(ctx context.Context, query *search.PatternInfo, searcher zoekt.Searcher, repoSet zoektquery.RepoSet) (*zoektquery.RepoSet, error) {
-	newRepoSet := repoSet.Set
-	flagIsInQuery := len(query.FilePatternsReposMustInclude) > 0
-	negatedFlagIsInQuery := len(query.FilePatternsReposMustExclude) > 0
-
-	// Construct queries which search for repos containing the files passed into `repohasfile`
-	filesToIncludeQueries, err := queryToZoektFileOnlyQueries(query, query.FilePatternsReposMustInclude)
-	if err != nil {
-		return nil, err
-	}
-
-	newSearchOpts := zoekt.SearchOptions{
-		ShardMaxMatchCount: 1,
-		TotalMaxMatchCount: math.MaxInt32,
-		MaxDocDisplayCount: 0,
-	}
-	newSearchOpts.SetDefaults()
-
-	if flagIsInQuery {
-		// Set newRepoSet to an empty map if the `repohasflag` exists.
-		newRepoSet = make(map[string]bool)
-
-		for i, q := range filesToIncludeQueries {
-			// Execute a new Zoekt search for each file passed in to a `repohasfile` flag.
-			includeResp, err := searcher.Search(ctx, q, &newSearchOpts)
-			if err != nil {
-				return nil, errors.Wrapf(err, "searching for %v", q.String())
-			}
-
-			for repoURL := range includeResp.RepoURLs {
-				if i == 0 {
-					// For the results from the first file query, add each repo that is in the result set to newRepoSet.
-					//
-					// Only add repoURLs that exist in the original repoSet, since
-					// repoSet is already filtered down to repositories that adhere to
-					// fit the `repo` filters in the query.
-					if repoSet.Set[repoURL] {
-						newRepoSet[repoURL] = true
-					}
-				} else {
-					// Then, for all following file queries, if there are repositories already existing in newRepoSet that do not appear in
-					// the result set for the current file query, remove them so that we only include repos that have at least
-					// one match for each `repohasfile` value in newRepoSet.
-					for existing := range newRepoSet {
-						if _, ok := includeResp.RepoURLs[existing]; !ok {
-							delete(newRepoSet, existing)
-						}
-					}
-				}
-			}
-		}
-	}
-
-	// Construct queries which search for repos containing the files passed into `-repohasfile`
-	filesToExcludeQueries, err := queryToZoektFileOnlyQueries(query, query.FilePatternsReposMustExclude)
-	if err != nil {
-		return nil, err
-	}
-
-	if negatedFlagIsInQuery {
-		for _, q := range filesToExcludeQueries {
-			excludeResp, err := searcher.Search(ctx, q, &newSearchOpts)
-			if err != nil {
-				return nil, err
-			}
-			for repoURL := range excludeResp.RepoURLs {
-				// For each repo that had a result in the exclude set, if it exists in the repoSet, set the value to false so we don't search over it.
-				if newRepoSet[repoURL] {
-					delete(newRepoSet, repoURL)
-				}
-			}
-		}
-	}
-
-	return &zoektquery.RepoSet{Set: newRepoSet}, nil
-}
-
-func noOpAnyChar(re *syntax.Regexp) {
-	if re.Op == syntax.OpAnyChar {
-		re.Op = syntax.OpAnyCharNotNL
-	}
-	for _, s := range re.Sub {
-		noOpAnyChar(s)
-	}
-}
-
-func parseRe(pattern string, filenameOnly bool, queryIsCaseSensitive bool) (zoektquery.Q, error) {
-	// these are the flags used by zoekt, which differ to searcher.
-	re, err := syntax.Parse(pattern, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
-	if err != nil {
-		return nil, err
-	}
-	noOpAnyChar(re)
-	// zoekt decides to use its literal optimization at the query parser
-	// level, so we check if our regex can just be a literal.
-	if re.Op == syntax.OpLiteral {
-		return &zoektquery.Substring{
-			Pattern:       string(re.Rune),
-			CaseSensitive: queryIsCaseSensitive,
-
-			FileName: filenameOnly,
-		}, nil
-	}
-	return &zoektquery.Regexp{
-		Regexp:        re,
-		CaseSensitive: queryIsCaseSensitive,
-
-		FileName: filenameOnly,
-	}, nil
-}
-
-func fileRe(pattern string, queryIsCaseSensitive bool) (zoektquery.Q, error) {
-	return parseRe(pattern, true, queryIsCaseSensitive)
-}
-
-func queryToZoektQuery(query *search.PatternInfo, isSymbol bool) (zoektquery.Q, error) {
-	var and []zoektquery.Q
-
-	var q zoektquery.Q
-	if query.IsRegExp {
-		var err error
-		q, err = parseRe(query.Pattern, false, query.IsCaseSensitive)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		q = &zoektquery.Substring{
-			Pattern:       query.Pattern,
-			CaseSensitive: query.IsCaseSensitive,
-
-			FileName: true,
-			Content:  true,
-		}
-	}
-
-	if isSymbol {
-		q = &zoektquery.Symbol{
-			Expr: q,
-		}
-	}
-
-	and = append(and, q)
-
-	// zoekt also uses regular expressions for file paths
-	// TODO PathPatternsAreCaseSensitive
-	// TODO whitespace in file path patterns?
-	if !query.PathPatternsAreRegExps {
-		return nil, errors.New("zoekt only supports regex path patterns")
-	}
-	for _, p := range query.IncludePatterns {
-		q, err := fileRe(p, query.IsCaseSensitive)
-		if err != nil {
-			return nil, err
-		}
-		and = append(and, q)
-	}
-	if query.ExcludePattern != "" {
-		q, err := fileRe(query.ExcludePattern, query.IsCaseSensitive)
-		if err != nil {
-			return nil, err
-		}
-		and = append(and, &zoektquery.Not{Child: q})
-	}
-
-	return zoektquery.Simplify(zoektquery.NewAnd(and...)), nil
-}
-
-// queryToZoektFileOnlyQueries constructs a list of Zoekt queries that search for a file pattern(s).
-// `listOfFilePaths` specifies which field on `query` should be the list of file patterns to look for.
-//  A separate zoekt query is created for each file path that should be searched.
-func queryToZoektFileOnlyQueries(query *search.PatternInfo, listOfFilePaths []string) ([]zoektquery.Q, error) {
-	var zoektQueries []zoektquery.Q
-	if !query.PathPatternsAreRegExps {
-		return nil, errors.New("zoekt only supports regex path patterns")
-	}
-	for _, p := range listOfFilePaths {
-		q, err := fileRe(p, query.IsCaseSensitive)
-		if err != nil {
-			return nil, err
-		}
-		zoektQueries = append(zoektQueries, zoektquery.Simplify(q))
-	}
-
-	return zoektQueries, nil
-}
-
-// zoektIndexedRepos splits the input repo list into two parts: (1) the
-// repositories `indexed` by Zoekt and (2) the repositories that are
-// `unindexed`.
-func zoektIndexedRepos(ctx context.Context, z *searchbackend.Zoekt, revs []*search.RepositoryRevisions, filter func(*zoekt.Repository) bool) (indexed, unindexed []*search.RepositoryRevisions, err error) {
-	count := 0
-	for _, r := range revs {
-		if len(r.Revs) > 0 && r.Revs[0].RevSpec == "" {
-			count++
-		}
-	}
-
-	// Return early if we don't need to querying zoekt
-	if count == 0 {
-		return nil, revs, nil
-	}
-
-	ctx, cancel := context.WithTimeout(ctx, time.Second)
-	defer cancel()
-	set, err := z.ListAll(ctx)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	indexed = make([]*search.RepositoryRevisions, 0, count)
-	unindexed = make([]*search.RepositoryRevisions, 0, len(revs)-count)
-
-	for _, rev := range revs {
-		repo, ok := set[strings.ToLower(string(rev.Repo.Name))]
-		if !ok || (filter != nil && !filter(repo)) {
-			unindexed = append(unindexed, rev)
-			continue
-		}
-
-		for _, branch := range repo.Branches {
-			if branch.Name == "HEAD" {
-				rev.SetIndexedHEADCommit(api.CommitID(branch.Version))
-				break
-			}
-		}
-
-		indexed = append(indexed, rev)
-	}
-
-	return indexed, unindexed, nil
-}
-
-var mockSearchFilesInRepos func(args *search.Args) ([]*fileMatchResolver, *searchResultsCommon, error)
+var mockSearchFilesInRepos func(args *search.TextParameters) ([]*FileMatchResolver, *searchResultsCommon, error)
 
 // searchFilesInRepos searches a set of repos for a pattern.
-func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatchResolver, common *searchResultsCommon, err error) {
+func searchFilesInRepos(ctx context.Context, args *search.TextParameters) (res []*FileMatchResolver, common *searchResultsCommon, err error) {
 	if mockSearchFilesInRepos != nil {
 		return mockSearchFilesInRepos(args)
 	}
 
-	tr, ctx := trace.New(ctx, "searchFilesInRepos", fmt.Sprintf("query: %+v, numRepoRevs: %d", args.Pattern, len(args.Repos)))
+	tr, ctx := trace.New(ctx, "searchFilesInRepos", fmt.Sprintf("query: %s, numRepoRevs: %d", args.PatternInfo.Pattern, len(args.Repos)))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
+	fields := querytypes.Fields(args.Query.Fields())
+	tr.LogFields(
+		trace.Stringer("query", &fields),
+		trace.Stringer("info", args.PatternInfo),
+	)
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -931,12 +495,18 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 		}
 	}
 
+	// if there are no indexed repos and this is a structural search
+	// query, there will be no results. Raise a friendly alert.
+	if len(zoektRepos) == 0 && args.PatternInfo.IsStructuralPat {
+		return nil, nil, errors.New("no indexed repositories for structural search")
+	}
+
 	common.repos = make([]*types.Repo, len(args.Repos))
 	for i, repo := range args.Repos {
 		common.repos[i] = repo.Repo
 	}
 
-	if args.Pattern.IsEmpty() {
+	if args.PatternInfo.IsEmpty() {
 		// Empty query isn't an error, but it has no results.
 		return nil, common, nil
 	}
@@ -974,13 +544,14 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 		// TODO: convert wg to an errgroup
 		wg                sync.WaitGroup
 		mu                sync.Mutex
-		unflattened       [][]*fileMatchResolver
+		searchErr         error
+		unflattened       [][]*FileMatchResolver
 		flattenedSize     int
 		overLimitCanceled bool // canceled because we were over the limit
 	)
 
 	// addMatches assumes the caller holds mu.
-	addMatches := func(matches []*fileMatchResolver) {
+	addMatches := func(matches []*FileMatchResolver) {
 		if len(matches) > 0 {
 			common.resultCount += int32(len(matches))
 			sort.Slice(matches, func(i, j int) bool {
@@ -993,8 +564,8 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 			// Stop searching once we have found enough matches. This does
 			// lead to potentially unstable result ordering, but is worth
 			// it for the performance benefit.
-			if flattenedSize > int(args.Pattern.FileMatchLimit) {
-				tr.LazyPrintf("cancel due to result size: %d > %d", flattenedSize, args.Pattern.FileMatchLimit)
+			if flattenedSize > int(args.PatternInfo.FileMatchLimit) {
+				tr.LazyPrintf("cancel due to result size: %d > %d", flattenedSize, args.PatternInfo.FileMatchLimit)
 				overLimitCanceled = true
 				common.limitHit = true
 				cancel()
@@ -1002,14 +573,133 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 		}
 	}
 
+	// callSearcherOverRepos calls searcher on a set of repos.
+	// searcherReposFilteredFiles is an optional map of {repo name => file list}
+	// that forces the searcher to only include the file list in the
+	// search. It is currently only set when Zoekt restricts the file list for structural search.
+	callSearcherOverRepos := func(
+		searcherRepos []*search.RepositoryRevisions,
+		searcherReposFilteredFiles map[string][]string,
+	) error {
+		var fetchTimeout time.Duration
+		if len(searcherRepos) == 1 || args.UseFullDeadline {
+			// When searching a single repo or when an explicit timeout was specified, give it the remaining deadline to fetch the archive.
+			deadline, ok := ctx.Deadline()
+			if ok {
+				fetchTimeout = time.Until(deadline)
+			} else {
+				// In practice, this case should not happen because a deadline should always be set
+				// but if it does happen just set a long but finite timeout.
+				fetchTimeout = time.Minute
+			}
+		} else {
+			// When searching many repos, don't wait long for any single repo to fetch.
+			fetchTimeout = 500 * time.Millisecond
+		}
+
+		if len(searcherRepos) > 0 {
+			// The number of searcher endpoints can change over time. Inform our
+			// limiter of the new limit, which is a multiple of the number of
+			// searchers.
+			eps, err := args.SearcherURLs.Endpoints()
+			if err != nil {
+				return err
+			}
+			textSearchLimiter.SetLimit(len(eps) * 32)
+		}
+
+	outer:
+		for _, repoAllRevs := range searcherRepos {
+			if len(repoAllRevs.Revs) == 0 {
+				continue
+			}
+
+			revSpecs, err := repoAllRevs.ExpandedRevSpecs(ctx)
+			if err != nil {
+				return err
+			}
+
+			if len(revSpecs) >= 2 && !conf.SearchMultipleRevisionsPerRepository() {
+				return errMultipleRevsNotSupported
+			}
+
+			for _, rev := range revSpecs {
+				// Only reason acquire can fail is if ctx is cancelled. So we can stop
+				// looping through searcherRepos.
+				limitCtx, limitDone, acquireErr := textSearchLimiter.Acquire(ctx)
+				if acquireErr != nil {
+					break outer
+				}
+
+				// Make a new repoRev for just the operation of searching this revspec.
+				repoRev := &search.RepositoryRevisions{Repo: repoAllRevs.Repo, Revs: []search.RevisionSpecifier{{RevSpec: rev}}}
+
+				args := *args
+				if args.PatternInfo.IsStructuralPat && searcherReposFilteredFiles != nil {
+					// Modify the search query to only run for the filtered files
+					if v, ok := searcherReposFilteredFiles[string(repoRev.Repo.Name)]; ok {
+						patternCopy := *args.PatternInfo
+						args.PatternInfo = &patternCopy
+						includePatternsCopy := []string{}
+						args.PatternInfo.IncludePatterns = append(includePatternsCopy, v...)
+					}
+				}
+
+				wg.Add(1)
+				go func(ctx context.Context, done context.CancelFunc) {
+					defer wg.Done()
+					defer done()
+
+					matches, repoLimitHit, err := searchFilesInRepo(ctx, args.SearcherURLs, repoRev.Repo, repoRev.GitserverRepo(), repoRev.RevSpecs()[0], args.PatternInfo, fetchTimeout)
+					if err != nil {
+						tr.LogFields(otlog.String("repo", string(repoRev.Repo.Name)), otlog.Error(err), otlog.Bool("timeout", errcode.IsTimeout(err)), otlog.Bool("temporary", errcode.IsTemporary(err)))
+						log15.Warn("searchFilesInRepo failed", "error", err, "repo", repoRev.Repo.Name)
+					}
+					mu.Lock()
+					defer mu.Unlock()
+					if ctx.Err() == nil {
+						common.searched = append(common.searched, repoRev.Repo)
+					}
+					if repoLimitHit {
+						// We did not return all results in this repository.
+						common.partial[repoRev.Repo.Name] = struct{}{}
+					}
+					// non-diff search reports timeout through err, so pass false for timedOut
+					if fatalErr := handleRepoSearchResult(common, repoRev, repoLimitHit, false, err); fatalErr != nil {
+						if ctx.Err() == context.Canceled {
+							// Our request has been canceled (either because another one of searcherRepos
+							// had a fatal error, or otherwise), so we can just ignore these results. We
+							// handle this here, not in handleRepoSearchResult, because different callers of
+							// handleRepoSearchResult (for different result types) currently all need to
+							// handle cancellations differently.
+							return
+						}
+						if searchErr == nil {
+							searchErr = errors.Wrapf(err, "failed to search %s", repoRev.String())
+							tr.LazyPrintf("cancel due to error: %v", searchErr)
+							cancel()
+						}
+					}
+					addMatches(matches)
+				}(limitCtx, limitDone) // ends the Go routine for a call to searcher for a repo
+			} // ends the for loop iterating over repo's revs
+		} // ends the for loop iterating over repos
+		return nil
+	} // ends callSearcherOverRepos
+
 	wg.Add(1)
 	go func() {
 		// TODO limitHit, handleRepoSearchResult
 		defer wg.Done()
-		query := args.Pattern
-		k := zoektResultCountFactor(len(zoektRepos), query)
-		opts := zoektSearchOpts(k, query)
-		matches, limitHit, reposLimitHit, searchErr := zoektSearchHEAD(ctx, query, zoektRepos, args.UseFullDeadline, args.Zoekt.Client, opts, false, time.Since)
+		var matches []*FileMatchResolver
+		var reposLimitHit map[string]struct{}
+		var limitHit bool
+		var err error
+		if !args.PatternInfo.IsStructuralPat {
+			matches, limitHit, reposLimitHit, err = zoektSearchHEAD(ctx, args, zoektRepos, false, time.Since)
+		} else {
+			matches, limitHit, reposLimitHit, err = zoektSearchHEADOnlyFiles(ctx, args, zoektRepos, false, time.Since)
+		}
 		mu.Lock()
 		defer mu.Unlock()
 		if ctx.Err() == nil {
@@ -1028,105 +718,76 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 		if limitHit {
 			common.limitHit = true
 		}
-		tr.LogFields(otlog.Object("searchErr", searchErr), otlog.Error(err), otlog.Bool("overLimitCanceled", overLimitCanceled))
-		if searchErr != nil && err == nil && !overLimitCanceled {
-			err = searchErr
+		if err == errNoResultsInTimeout {
+			// Effectively, all repositories have timed out.
+			for _, repo := range zoektRepos {
+				common.timedout = append(common.timedout, repo.Repo)
+			}
+		}
+		tr.LogFields(otlog.Error(err), otlog.Bool("overLimitCanceled", overLimitCanceled))
+		if err != nil && err != errNoResultsInTimeout && searchErr == nil && !overLimitCanceled {
+			searchErr = err
 			tr.LazyPrintf("cancel indexed search due to error: %v", err)
 			cancel()
 		}
-		addMatches(matches)
+
+		if args.PatternInfo.IsStructuralPat {
+			// A partition of {repo name => file list} that we will build from Zoekt matches
+			partition := make(map[string][]string)
+			var repos []*search.RepositoryRevisions
+
+			for _, m := range matches {
+				name := string(m.Repo.Name)
+				partition[name] = append(partition[name], m.JPath)
+			}
+
+			// Filter Zoekt repos that didn't contain matches
+			for _, repo := range zoektRepos {
+				for key := range partition {
+					if string(repo.Repo.Name) == key {
+						repos = append(repos, repo)
+					}
+				}
+			}
+
+			// For structural search, we run callSearcherOverRepos
+			// over the set of repos and files known to contain
+			// parts of the pattern as determined by Zoekt.
+			// callSearcherOverRepos must acquire the lock, so we
+			// must release the lock held by Zoekt at this point.
+			// The Zoekt part of the search is done here as far as
+			// structural search is concerned, so the lock can be
+			// freely released.
+			mu.Unlock()
+			err := callSearcherOverRepos(repos, partition)
+			mu.Lock()
+			if err != nil {
+				searchErr = err
+			}
+		} else {
+			addMatches(matches)
+		}
 	}()
 
-	var fetchTimeout time.Duration
-	if len(searcherRepos) == 1 || args.UseFullDeadline {
-		// When searching a single repo or when an explicit timeout was specified, give it the remaining deadline to fetch the archive.
-		deadline, ok := ctx.Deadline()
-		if ok {
-			fetchTimeout = time.Until(deadline)
-		} else {
-			// In practice, this case should not happen because a deadline should always be set
-			// but if it does happen just set a long but finite timeout.
-			fetchTimeout = time.Minute
-		}
-	} else {
-		// When searching many repos, don't wait long for any single repo to fetch.
-		fetchTimeout = 500 * time.Millisecond
-	}
-
-	if len(searcherRepos) > 0 {
-		// The number of searcher endpoints can change over time. Inform our
-		// limiter of the new limit, which is a multiple of the number of
-		// searchers.
-		eps, err := args.SearcherURLs.Endpoints()
-		if err != nil {
-			return nil, common, err
-		}
-		textSearchLimiter.SetLimit(len(eps) * 32)
-	}
-
-	for _, repoRev := range searcherRepos {
-		if len(repoRev.Revs) == 0 {
-			continue
-		}
-		if len(repoRev.Revs) >= 2 {
-			return nil, common, errMultipleRevsNotSupported
-		}
-
-		// Only reason acquire can fail is if ctx is cancelled. So we can stop
-		// looping through searcherRepos.
-		limitCtx, limitDone, acquireErr := textSearchLimiter.Acquire(ctx)
-		if acquireErr != nil {
-			break
-		}
-
-		wg.Add(1)
-		go func(ctx context.Context, done context.CancelFunc, repoRev *search.RepositoryRevisions) {
-			defer wg.Done()
-			defer done()
-
-			rev := repoRev.RevSpecs()[0] // TODO(sqs): search multiple revs
-			matches, repoLimitHit, searchErr := searchFilesInRepo(ctx, args.SearcherURLs, repoRev.Repo, repoRev.GitserverRepo(), rev, args.Pattern, fetchTimeout)
-			if searchErr != nil {
-				tr.LogFields(otlog.String("repo", string(repoRev.Repo.Name)), otlog.String("searchErr", searchErr.Error()), otlog.Bool("timeout", errcode.IsTimeout(searchErr)), otlog.Bool("temporary", errcode.IsTemporary(searchErr)))
-				log15.Warn("searchFilesInRepo failed", "error", searchErr, "repo", repoRev.Repo.Name)
-			}
+	// This guard disables unindexed structural search for now.
+	if !args.PatternInfo.IsStructuralPat {
+		if err := callSearcherOverRepos(searcherRepos, nil); err != nil {
 			mu.Lock()
-			defer mu.Unlock()
-			if ctx.Err() == nil {
-				common.searched = append(common.searched, repoRev.Repo)
-			}
-			if repoLimitHit {
-				// We did not return all results in this repository.
-				common.partial[repoRev.Repo.Name] = struct{}{}
-			}
-			// non-diff search reports timeout through searchErr, so pass false for timedOut
-			if fatalErr := handleRepoSearchResult(common, repoRev, repoLimitHit, false, searchErr); fatalErr != nil {
-				if ctx.Err() == context.Canceled {
-					// Our request has been canceled (either because another one of searcherRepos
-					// had a fatal error, or otherwise), so we can just ignore these results. We
-					// handle this here, not in handleRepoSearchResult, because different callers of
-					// handleRepoSearchResult (for different result types) currently all need to
-					// handle cancellations differently.
-					return
-				}
-				err = errors.Wrapf(searchErr, "failed to search %s", repoRev.String())
-				tr.LazyPrintf("cancel due to error: %v", err)
-				cancel()
-			}
-			addMatches(matches)
-		}(limitCtx, limitDone, repoRev)
+			searchErr = err
+			mu.Unlock()
+		}
 	}
 
 	wg.Wait()
-	if err != nil {
-		return nil, common, err
+	if searchErr != nil {
+		return nil, common, searchErr
 	}
 
-	flattened := flattenFileMatches(unflattened, int(args.Pattern.FileMatchLimit))
+	flattened := flattenFileMatches(unflattened, int(args.PatternInfo.FileMatchLimit))
 	return flattened, common, nil
 }
 
-func flattenFileMatches(unflattened [][]*fileMatchResolver, fileMatchLimit int) []*fileMatchResolver {
+func flattenFileMatches(unflattened [][]*FileMatchResolver, fileMatchLimit int) []*FileMatchResolver {
 	// Return early so we don't have to worry about empty lists in later
 	// calculations.
 	if len(unflattened) == 0 {
@@ -1142,7 +803,7 @@ func flattenFileMatches(unflattened [][]*fileMatchResolver, fileMatchLimit int) 
 		a, b := unflattened[i][0].uri, unflattened[j][0].uri
 		return a > b
 	})
-	var flattened []*fileMatchResolver
+	var flattened []*FileMatchResolver
 	initialPortion := fileMatchLimit / len(unflattened)
 	for _, matches := range unflattened {
 		if initialPortion < len(matches) {

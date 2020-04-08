@@ -1,5 +1,4 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { concat, of, Subject, Subscription } from 'rxjs'
@@ -10,6 +9,7 @@ import { PageTitle } from '../../../components/PageTitle'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { OrgAreaPageProps } from '../../area/OrgArea'
 import { updateOrganization } from '../../backend'
+import { ErrorAlert } from '../../../components/alerts'
 
 interface Props extends OrgAreaPageProps, RouteComponentProps<{}> {}
 
@@ -46,7 +46,7 @@ export class OrgSettingsProfilePage extends React.PureComponent<Props, State> {
                     distinctUntilKeyChanged('id')
                 )
                 .subscribe(org => {
-                    eventLogger.logViewEvent('OrgSettingsProfile', { organization: { org_name: org.name } })
+                    eventLogger.logViewEvent('OrgSettingsProfile')
                 })
         )
 
@@ -119,17 +119,17 @@ export class OrgSettingsProfilePage extends React.PureComponent<Props, State> {
                     >
                         <small>Updated!</small>
                     </div>
-                    {this.state.error && <div className="alert alert-danger">{upperFirst(this.state.error)}</div>}
+                    {this.state.error && <ErrorAlert error={this.state.error} />}
                 </Form>
             </div>
         )
     }
 
-    private onDisplayNameFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    private onDisplayNameFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
         this.setState({ displayName: e.target.value })
     }
 
-    private onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    private onSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
         e.preventDefault()
         this.submits.next()
     }

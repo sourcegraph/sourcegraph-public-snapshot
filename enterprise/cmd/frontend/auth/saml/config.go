@@ -12,11 +12,11 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/schema"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 var mockGetProviderValue *provider
@@ -66,20 +66,20 @@ func init() {
 	conf.ContributeValidator(validateConfig)
 }
 
-func validateConfig(c conf.Unified) (problems []string) {
+func validateConfig(c conf.Unified) (problems conf.Problems) {
 	var loggedNeedsExternalURL bool
-	for _, p := range c.Critical.AuthProviders {
-		if p.Saml != nil && c.Critical.ExternalURL == "" && !loggedNeedsExternalURL {
-			problems = append(problems, `saml auth provider requires externalURL to be set to the external URL of your site (example: https://sourcegraph.example.com)`)
+	for _, p := range c.AuthProviders {
+		if p.Saml != nil && c.ExternalURL == "" && !loggedNeedsExternalURL {
+			problems = append(problems, conf.NewSiteProblem("saml auth provider requires `externalURL` to be set to the external URL of your site (example: https://sourcegraph.example.com)"))
 			loggedNeedsExternalURL = true
 		}
 	}
 
 	seen := map[schema.SAMLAuthProvider]int{}
-	for i, p := range c.Critical.AuthProviders {
+	for i, p := range c.AuthProviders {
 		if p.Saml != nil {
 			if j, ok := seen[*p.Saml]; ok {
-				problems = append(problems, fmt.Sprintf("SAML auth provider at index %d is duplicate of index %d, ignoring", i, j))
+				problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("SAML auth provider at index %d is duplicate of index %d, ignoring", i, j)))
 			} else {
 				seen[*p.Saml] = i
 			}
@@ -91,7 +91,7 @@ func validateConfig(c conf.Unified) (problems []string) {
 
 func withConfigDefaults(pc *schema.SAMLAuthProvider) *schema.SAMLAuthProvider {
 	if pc.ServiceProviderIssuer == "" {
-		externalURL := conf.Get().Critical.ExternalURL
+		externalURL := conf.Get().ExternalURL
 		if externalURL == "" {
 			// An empty issuer will be detected as an error later.
 			return pc
@@ -99,7 +99,7 @@ func withConfigDefaults(pc *schema.SAMLAuthProvider) *schema.SAMLAuthProvider {
 
 		// Derive default issuer from externalURL.
 		tmp := *pc
-		tmp.ServiceProviderIssuer = strings.TrimSuffix(conf.Get().Critical.ExternalURL, "/") + path.Join(authPrefix, "metadata")
+		tmp.ServiceProviderIssuer = strings.TrimSuffix(conf.Get().ExternalURL, "/") + path.Join(authPrefix, "metadata")
 		return &tmp
 	}
 	return pc

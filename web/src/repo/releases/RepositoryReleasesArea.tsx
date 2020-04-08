@@ -1,4 +1,3 @@
-import { upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
@@ -10,6 +9,7 @@ import { RepoContainerContext } from '../RepoContainer'
 import { RepoHeaderBreadcrumbNavItem } from '../RepoHeaderBreadcrumbNavItem'
 import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
 import { RepositoryReleasesTagsPage } from './RepositoryReleasesTagsPage'
+import { ErrorMessage } from '../../components/alerts'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
@@ -53,7 +53,9 @@ export class RepositoryReleasesArea extends React.Component<Props> {
 
     public render(): JSX.Element | null {
         if (this.state.error) {
-            return <HeroPage icon={AlertCircleIcon} title="Error" subtitle={upperFirst(this.state.error)} />
+            return (
+                <HeroPage icon={AlertCircleIcon} title="Error" subtitle={<ErrorMessage error={this.state.error} />} />
+            )
         }
 
         const transferProps: { repo: GQL.IRepository } = {

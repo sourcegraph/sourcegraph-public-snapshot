@@ -12,8 +12,10 @@ import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors
 import { buildSearchURLQuery } from '../../../shared/src/util/url'
 import { NamespaceProps } from '../namespaces'
 import { deleteSavedSearch, fetchSavedSearches } from '../search/backend'
+import { PatternTypeProps } from '../search'
+import { ErrorAlert } from '../components/alerts'
 
-interface NodeProps extends RouteComponentProps {
+interface NodeProps extends RouteComponentProps, Omit<PatternTypeProps, 'setPatternType'> {
     savedSearch: GQL.ISavedSearch
     onDelete: () => void
 }
@@ -56,7 +58,12 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
             <div className="saved-search-list-page__row list-group-item e2e-saved-search-list-page-row">
                 <div className="d-flex">
                     <MessageTextOutlineIcon className="saved-search-list-page__row--icon icon-inline" />
-                    <Link to={'/search?' + buildSearchURLQuery(this.props.savedSearch.query)}>
+                    <Link
+                        to={
+                            '/search?' +
+                            buildSearchURLQuery(this.props.savedSearch.query, this.props.patternType, false)
+                        }
+                    >
                         <div className="e2e-saved-search-list-page-row-title">{this.props.savedSearch.description}</div>
                     </Link>
                 </div>
@@ -82,7 +89,7 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
         )
     }
 
-    private onDelete = () => {
+    private onDelete = (): void => {
         if (!window.confirm(`Delete the external service ${this.props.savedSearch.description}?`)) {
             return
         }
@@ -95,16 +102,13 @@ interface State {
     savedSearchesOrError?: GQL.ISavedSearch[] | ErrorLike
 }
 
-interface Props extends RouteComponentProps<{}>, NamespaceProps {}
+interface Props extends RouteComponentProps<{}>, NamespaceProps, Omit<PatternTypeProps, 'setPatternType'> {}
 
 export class SavedSearchListPage extends React.Component<Props, State> {
     public subscriptions = new Subscription()
     private refreshRequests = new Subject<void>()
 
     public state: State = {}
-    constructor(props: Props) {
-        super(props)
-    }
 
     public componentDidMount(): void {
         this.subscriptions.add(
@@ -143,9 +147,7 @@ export class SavedSearchListPage extends React.Component<Props, State> {
                     </div>
                 </div>
                 {this.state.savedSearchesOrError && isErrorLike(this.state.savedSearchesOrError) && (
-                    <div className="alert alert-danger mb-3">
-                        <strong>Error:</strong> {this.state.savedSearchesOrError.message}
-                    </div>
+                    <ErrorAlert className="mb-3" error={this.state.savedSearchesOrError} />
                 )}
                 <div className="list-group list-group-flush">
                     {this.state.savedSearchesOrError &&
@@ -170,7 +172,7 @@ export class SavedSearchListPage extends React.Component<Props, State> {
         )
     }
 
-    private onDelete = () => {
+    private onDelete = (): void => {
         this.refreshRequests.next()
     }
 }

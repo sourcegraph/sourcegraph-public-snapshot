@@ -1,12 +1,17 @@
 import * as React from 'react'
 import * as H from 'history'
 import { SearchResultTabHeader } from './SearchResultTab'
+import { PatternTypeProps, CaseSensitivityProps, InteractiveSearchProps } from '..'
 
-interface Props {
+interface Props
+    extends Omit<PatternTypeProps, 'setPatternType'>,
+        Omit<CaseSensitivityProps, 'setCaseSensitivity'>,
+        Pick<InteractiveSearchProps, 'filtersInQuery'> {
     location: H.Location
     history: H.History
     query: string
 }
+
 export const SearchResultTypeTabs: React.FunctionComponent<Props> = props => (
     <div className="search-result-type-tabs e2e-search-result-type-tabs border-bottom">
         <ul className="nav nav-tabs border-bottom-0">
@@ -15,6 +20,7 @@ export const SearchResultTypeTabs: React.FunctionComponent<Props> = props => (
             <SearchResultTabHeader {...props} type="commit" />
             <SearchResultTabHeader {...props} type="symbol" />
             <SearchResultTabHeader {...props} type="repo" />
+            <SearchResultTabHeader {...props} type="path" />
         </ul>
     </div>
 )

@@ -4,7 +4,7 @@
 
 ## Quickstart guide
 
-It takes less than 5 minutes to run and install [Sourcegraph Core](https://about.sourcegraph.com/pricing) for free using Docker:
+It takes less than 5 minutes to run and install Sourcegraph using Docker:
 
 <!--
   DO NOT CHANGE THIS TO A CODEBLOCK.
@@ -12,7 +12,7 @@ It takes less than 5 minutes to run and install [Sourcegraph Core](https://about
   This uses line breaks that are rendered but not copy-pasted to the clipboard.
 -->
 
-<pre class="pre-wrap"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 2633:2633 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.8.0</code></pre>
+<pre class="pre-wrap start-sourcegraph-command"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.14.1</code></pre>
 
 Once the server is ready (logo is displayed in the terminal), navigate to the hostname or IP address on port `7080`.  Create the admin account, then you'll be guided through setting up Sourcegraph for code searching and navigation.
 
@@ -44,11 +44,12 @@ to access `~/.sourcegraph/config` and `~/.sourcegraph/data`. In that case, you w
 
 All you need to do to upgrade Sourcegraph is to restart your Docker server with a new image tag.
 
-We actively maintain the two most recent [monthly releases of Sourcegraph](dev/releases.md) and we support upgrading from the two previous monthly releases.
+We actively maintain the two most recent monthly releases of Sourcegraph.
 
-For example, if you are running Sourcegraph 3.1, then you can upgrade directly to 3.2 and 3.3. If you want to upgrade to 3.4, then you first need to upgrade to 3.3 before you can upgrade to 3.4.
+Upgrades should happen across consecutive minor versions of Sourcegraph. For example, if you are
+running Sourcegraph 3.1 and want to upgrade to 3.3, you should upgrade to 3.2 and then 3.3.
 
-> The Docker server image tags follow SemVer semantics, so version 3.8 can be found at `sourcegraph/server:3.8.0`. You can see the full list of tags on our [Docker Hub page](https://hub.docker.com/r/sourcegraph/server/tags).
+> The Docker server image tags follow SemVer semantics, so version 3.13.2 can be found at `sourcegraph/server:3.14.1`. You can see the full list of tags on our [Docker Hub page](https://hub.docker.com/r/sourcegraph/server/tags).
 
 ## Documentation
 
@@ -60,7 +61,7 @@ Sourcegraph development is open source at [github.com/sourcegraph/sourcegraph](h
 - [**Administrator documentation**](admin/index.md)
 - [Install Sourcegraph](admin/install/index.md) or [update Sourcegraph](admin/updates.md)
 - [Sourcegraph extensions](extensions/index.md)
-- [Roadmap](dev/roadmap.md)
+- [Product direction (roadmap)](https://about.sourcegraph.com/direction)
 
 ### Features and tutorials
 
@@ -73,8 +74,6 @@ Sourcegraph development is open source at [github.com/sourcegraph/sourcegraph](h
 - [GraphQL API](api/graphql/index.md)
 - [Sourcegraph Enterprise](admin/subscriptions/index.md)
 
-<!-- TODO(sqs): Add link to ./graphbook when it has more content. -->
-
 ## Sourcegraph subscriptions
 
 You can use Sourcegraph in 2 ways:
@@ -82,12 +81,13 @@ You can use Sourcegraph in 2 ways:
 - [Self-hosted Sourcegraph](admin/install/index.md): Deploy and manage your own Sourcegraph instance.
 - [Sourcegraph.com](https://sourcegraph.com): For public code only. No signup or installation required.
 
-For self-hosted Sourcegraph instances, you run a Docker image or Kubernetes cluster on-premises or on your preferred cloud provider. There are [2 tiers](https://about.sourcegraph.com/pricing): Core (free) and Enterprise. Enterprise features require a [Sourcegraph subscription](https://sourcegraph.com/subscriptions/new).
+For self-hosted Sourcegraph instances, you run a Docker image or Kubernetes cluster on-premises or on your preferred cloud provider. There are [2 tiers](https://about.sourcegraph.com/pricing): Core (free) and Enterprise. Enterprise features require a [Sourcegraph subscription](https://about.sourcegraph.com/contact/sales).
 
 ## Other links
 
 - [Sourcegraph open-source repository](https://github.com/sourcegraph/sourcegraph)
 - [Contributing to Sourcegraph](dev/index.md)
+- [Sourcegraph handbook](https://about.sourcegraph.com/handbook)
 - [Sourcegraph blog](https://about.sourcegraph.com/blog/)
 - [Issue tracker](https://github.com/sourcegraph/sourcegraph/issues)
 - [about.sourcegraph.com](https://about.sourcegraph.com) (general information about Sourcegraph)

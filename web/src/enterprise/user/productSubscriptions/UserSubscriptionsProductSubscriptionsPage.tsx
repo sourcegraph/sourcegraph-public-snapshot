@@ -79,8 +79,12 @@ export class UserSubscriptionsProductSubscriptionsPage extends React.Component<P
         )
     }
 
-    private queryLicenses = (args: { first?: number }): Observable<GQL.IProductSubscriptionConnection> =>
-        queryGraphQL(
+    private queryLicenses = (args: { first?: number }): Observable<GQL.IProductSubscriptionConnection> => {
+        const vars: GQL.IProductSubscriptionsOnDotcomQueryArguments = {
+            first: args.first,
+            account: this.props.user.id,
+        }
+        return queryGraphQL(
             gql`
                 query ProductSubscriptions($first: Int, $account: ID) {
                     dotcom {
@@ -97,10 +101,7 @@ export class UserSubscriptionsProductSubscriptionsPage extends React.Component<P
                 }
                 ${productSubscriptionFragment}
             `,
-            {
-                first: args.first,
-                account: this.props.user.id,
-            } as GQL.IProductSubscriptionsOnDotcomQueryArguments
+            vars
         ).pipe(
             map(({ data, errors }) => {
                 if (!data || !data.dotcom || !data.dotcom.productSubscriptions || (errors && errors.length > 0)) {
@@ -109,6 +110,7 @@ export class UserSubscriptionsProductSubscriptionsPage extends React.Component<P
                 return data.dotcom.productSubscriptions
             })
         )
+    }
 
-    private onDidUpdateProductSubscription = () => this.updates.next()
+    private onDidUpdateProductSubscription = (): void => this.updates.next()
 }

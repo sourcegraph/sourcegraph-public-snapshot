@@ -115,7 +115,7 @@ export function getPhabricatorState(
             if (comparison) {
                 // urls that looks like this: http://phabricator.aws.sgdev.org/D3?vs=on&id=8&whitespace=ignore-most#toc
                 const comparisonMatch = COMPARISON_REGEX.exec(comparison)
-                const comparisonBase = comparisonMatch && comparisonMatch[1]
+                const comparisonBase = comparisonMatch?.[1]
                 if (comparisonBase && comparisonBase !== 'on') {
                     baseDiffID = parseInt(comparisonBase, 10)
                     console.log(`comparison diffID ${diffID} baseDiffID ${baseDiffID}`)

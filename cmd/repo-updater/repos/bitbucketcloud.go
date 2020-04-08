@@ -6,23 +6,24 @@ import (
 	"net/url"
 	"sync"
 
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketcloud"
-	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
-	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"gopkg.in/inconshreveable/log15.v2"
 )
 
 // A BitbucketCloudSource yields repositories from a single BitbucketCloud connection configured
 // in Sourcegraph via the external services configuration.
 type BitbucketCloudSource struct {
-	svc    *ExternalService
-	config *schema.BitbucketCloudConnection
-	client *bitbucketcloud.Client
+	svc     *ExternalService
+	config  *schema.BitbucketCloudConnection
+	exclude excludeFunc
+	client  *bitbucketcloud.Client
 }
 
 // NewBitbucketCloudSource returns a new BitbucketCloudSource from the given external service.
@@ -35,8 +36,17 @@ func NewBitbucketCloudSource(svc *ExternalService, cf *httpcli.Factory) (*Bitbuc
 }
 
 func newBitbucketCloudSource(svc *ExternalService, c *schema.BitbucketCloudConnection, cf *httpcli.Factory) (*BitbucketCloudSource, error) {
+	if c.ApiURL == "" {
+		c.ApiURL = "https://api.bitbucket.org"
+	}
+	apiURL, err := url.Parse(c.ApiURL)
+	if err != nil {
+		return nil, err
+	}
+	apiURL = extsvc.NormalizeBaseURL(apiURL)
+
 	if cf == nil {
-		cf = NewHTTPClientFactory()
+		cf = httpcli.NewExternalHTTPClientFactory()
 	}
 
 	cli, err := cf.Doer()
@@ -44,14 +54,26 @@ func newBitbucketCloudSource(svc *ExternalService, c *schema.BitbucketCloudConne
 		return nil, err
 	}
 
-	client := bitbucketcloud.NewClient(cli)
+	var eb excludeBuilder
+	for _, r := range c.Exclude {
+		eb.Exact(r.Name)
+		eb.Exact(r.Uuid)
+		eb.Pattern(r.Pattern)
+	}
+	exclude, err := eb.Build()
+	if err != nil {
+		return nil, err
+	}
+
+	client := bitbucketcloud.NewClient(apiURL, cli)
 	client.Username = c.Username
 	client.AppPassword = c.AppPassword
 
 	return &BitbucketCloudSource{
-		svc:    svc,
-		config: c,
-		client: client,
+		svc:     svc,
+		config:  c,
+		exclude: exclude,
+		client:  client,
 	}, nil
 }
 
@@ -93,7 +115,7 @@ func (s BitbucketCloudSource) makeRepo(r *bitbucketcloud.Repo) *Repo {
 		},
 		Description: r.Description,
 		Fork:        r.Parent != nil,
-		Enabled:     true,
+		Private:     r.IsPrivate,
 		Sources: map[string]*SourceInfo{
 			urn: {
 				ID:       urn,
@@ -130,6 +152,10 @@ func (s *BitbucketCloudSource) authenticatedRemoteURL(repo *bitbucketcloud.Repo)
 
 	u.User = url.UserPassword(s.config.Username, s.config.AppPassword)
 	return u.String()
+}
+
+func (s *BitbucketCloudSource) excludes(r *bitbucketcloud.Repo) bool {
+	return s.exclude(r.FullName) || s.exclude(r.UUID)
 }
 
 func (s *BitbucketCloudSource) listAllRepos(ctx context.Context, results chan SourceResult) {
@@ -198,7 +224,7 @@ func (s *BitbucketCloudSource) listAllRepos(ctx context.Context, results chan So
 				continue
 			}
 
-			if !seen[repo.UUID] {
+			if !seen[repo.UUID] && !s.excludes(repo) {
 				results <- SourceResult{Source: s, Repo: s.makeRepo(repo)}
 				seen[repo.UUID] = true
 			}

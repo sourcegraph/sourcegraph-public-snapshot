@@ -13,7 +13,7 @@ interface Props {
  * UserAvatar displays the avatar of a user.
  */
 export const UserAvatar: React.FunctionComponent<Props> = ({ size, user, className, ...otherProps }) => {
-    if (user && user.avatarURL) {
+    if (user?.avatarURL) {
         let url = user.avatarURL
         try {
             const urlObj = new URL(user.avatarURL)

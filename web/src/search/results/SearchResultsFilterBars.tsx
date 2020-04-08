@@ -35,18 +35,17 @@ export const SearchResultsFilterBars: React.FunctionComponent<{
             <div className="search-results-filter-bars__row" data-testid="filters-bar">
                 Filters:
                 <div className="search-results-filter-bars__filters">
-                    {extensionFilters &&
-                        extensionFilters
-                            .filter(filter => filter.value !== '')
-                            .map((filter, i) => (
-                                <FilterChip
-                                    query={navbarSearchQuery}
-                                    onFilterChosen={onFilterClick}
-                                    key={filter.name + filter.value}
-                                    value={filter.value}
-                                    name={filter.name}
-                                />
-                            ))}
+                    {extensionFilters
+                        ?.filter(filter => filter.value !== '')
+                        .map(filter => (
+                            <FilterChip
+                                query={navbarSearchQuery}
+                                onFilterChosen={onFilterClick}
+                                key={filter.name + filter.value}
+                                value={filter.value}
+                                name={filter.name}
+                            />
+                        ))}
                     {filters
                         .filter(filter => filter.value !== '')
                         .map((filter, i) => (

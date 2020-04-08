@@ -66,31 +66,137 @@ const SiteSchemaJSON = `{
           "enum": ["enabled", "disabled"],
           "default": "enabled"
         },
+        "debug.log": {
+          "description": "Turns on debug logging for specific debugging scenarios.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "extsvc.gitlab": {
+              "description": "Log GitLab API requests.",
+              "type": "boolean",
+              "default": false
+            }
+          }
+        },
         "automation": {
-          "description": "Enables the experimental code automation features.",
+          "description": "Enables the experimental code change management campaigns feature. NOTE: The automation feature was renamed to campaigns, but this experimental feature flag name was not changed (because the feature flag will go away soon anyway).",
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "disabled"
+        },
+        "structuralSearch": {
+          "description": "Enables structural search.",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "enabled"
+        },
+        "andOrQuery": {
+          "description": "Interpret a search input query as an and/or query.",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "disabled"
+        },
+        "bitbucketServerFastPerm": {
+          "description": "DEPRECATED: Configure in Bitbucket Server config.",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "disabled"
+        },
+        "searchMultipleRevisionsPerRepository": {
+          "description": "Enables searching multiple revisions of the same repository (using ` + "`" + `repo:myrepo@branch1:branch2` + "`" + `).",
+          "type": "boolean",
+          "default": false,
+          "!go": { "pointer": true }
+        },
+        "tls.external": {
+          "description": "Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "insecureSkipVerify": {
+              "description": "insecureSkipVerify controls whether a client verifies the server's certificate chain and host name.\nIf InsecureSkipVerify is true, TLS accepts any certificate presented by the server and any host name in that certificate. In this mode, TLS is susceptible to man-in-the-middle attacks.",
+              "type": "boolean",
+              "default": false
+            },
+            "certificates": {
+              "description": "TLS certificates to accept. This is only necessary if you are using self-signed certificates or an internal CA. Can be an internal CA certificate or a self-signed certificate. To get the certificate of a webserver run ` + "`" + `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM` + "`" + `. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^-----BEGIN CERTIFICATE-----\n",
+                "examples": ["-----BEGIN CERTIFICATE-----\n..."]
+              }
+            }
+          }
+        },
+        "customGitFetch": {
+          "description": "JSON array of configuration that maps from Git clone URL domain/path to custom git fetch command.",
+          "type": "array",
+          "items": {
+            "title": "CustomGitFetchMapping",
+            "description": "Mapping from Git clone URl domain/path to git fetch command. The ` + "`" + `domainPath` + "`" + ` field contains the Git clone URL domain/path part. The ` + "`" + `fetch` + "`" + ` field contains the custom git fetch command.",
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["domainPath", "fetch"],
+            "properties": {
+              "domainPath": {
+                "description": "Git clone URL domain/path",
+                "type": "string"
+              },
+              "fetch": {
+                "description": "Git fetch command",
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          "examples": [
+            [
+              {
+                "domainPath": "somecodehost.com/path/to/repo",
+                "fetch": "customgitbinary someflag"
+              },
+              {
+                "domainPath": "somecodehost.com/path/to/anotherrepo",
+                "fetch": "customgitbinary someflag anotherflag"
+              }
+            ]
+          ]
         }
       },
-      "group": "Experimental",
-      "hide": true
+      "examples": [
+        {
+          "customGitFetch": [
+            {
+              "domainPath": "somecodehost.com/path/to/repo",
+              "fetch": "customgitbinary someflag"
+            },
+            {
+              "domainPath": "somecodehost.com/path/to/anotherrepo",
+              "fetch": "customgitbinary someflag anotherflag"
+            }
+          ]
+        }
+      ],
+      "group": "Experimental"
+    },
+    "automation.readAccess.enabled": {
+      "description": "DEPRECATED: The automation feature was renamed to campaigns. Use ` + "`" + `campaigns.readAccess.enabled` + "`" + ` instead.",
+      "type": "boolean",
+      "!go": { "pointer": true },
+      "group": "Campaigns"
+    },
+    "campaigns.readAccess.enabled": {
+      "description": "Enables read-only access to campaigns for non-site-admin users. This is a setting for the experimental campaigns feature. These will only have an effect when campaigns is enabled with ` + "`" + `{\"experimentalFeatures\": {\"automation\": \"enabled\"}}` + "`" + `.",
+      "type": "boolean",
+      "!go": { "pointer": true },
+      "group": "Campaigns"
     },
     "corsOrigin": {
-      "description": "Only required when using the Phabricator integration or Bitbucket Server plugin. This value is the space-separated list of allowed origins for cross-origin HTTP requests to Sourcegraph. Usually it contains the base URL for your Phabricator or Bitbucket Server instance.\n\nPreviously, this value was also used for the GitHub, GitLab, etc., integrations using the browser extension. It is no longer necessary for those. You may remove this setting if you are not using the Phabricator integration or Bitbucket Server plugin. eg \"https://my-phabricator.example.com https://my-bitbucket.example.com\"",
+      "description": "Required when using any of the native code host integrations for Phabricator, GitLab, or Bitbucket Server. It is a space-separated list of allowed origins for cross-origin HTTP requests which should be the base URL for your Phabricator, GitLab, or Bitbucket Server instance.",
       "type": "string",
-      "examples": ["https://my-phabricator.example.com https://my-bitbucket.example.com"],
+      "examples": ["https://my-phabricator.example.com https://my-bitbucket.example.com https://my-gitlab.example.com"],
       "pattern": "^((https?:\\/\\/[\\w-\\.]+)( https?:\\/\\/[\\w-\\.]+)*)|\\*$",
-      "group": "Security"
-    },
-    "lsifVerificationGithubToken": {
-      "description": "The GitHub token that is used to verify that a user owns a repository.",
-      "type": "string",
-      "group": "Security"
-    },
-    "lsifUploadSecret": {
-      "description": "Used to generate LSIF upload tokens. Must be long (20+ bytes) to make offline brute-force attacks difficult.",
-      "type": "string",
       "group": "Security"
     },
     "lsifEnforceAuth": {
@@ -98,6 +204,12 @@ const SiteSchemaJSON = `{
       "type": "boolean",
       "default": false,
       "group": "Security"
+    },
+    "disableNonCriticalTelemetry": {
+      "description": "Disable aggregated event counts from being sent to Sourcegraph.com via pings.",
+      "type": "boolean",
+      "default": false,
+      "group": "Misc."
     },
     "disableAutoGitUpdates": {
       "description": "Disable periodically fetching git contents for existing repositories.",
@@ -133,13 +245,13 @@ const SiteSchemaJSON = `{
       "group": "External services"
     },
     "githubClientID": {
-      "description": "Client ID for GitHub.",
+      "description": "Client ID for GitHub. (DEPRECATED)",
       "type": "string",
       "group": "Internal",
       "hide": true
     },
     "githubClientSecret": {
-      "description": "Client secret for GitHub.",
+      "description": "Client secret for GitHub. (DEPRECATED)",
       "type": "string",
       "group": "Internal",
       "hide": true
@@ -195,6 +307,47 @@ const SiteSchemaJSON = `{
         },
         { "allow": "none" }
       ],
+      "group": "Security"
+    },
+    "permissions.userMapping": {
+      "description": "Settings for Sourcegraph permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This setting cannot be enabled if repository permissions for any specific external service are enabled (i.e., when the external service's ` + "`" + `authorization` + "`" + ` field is set).",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "description": "Whether permissions user mapping is enabled. There must be no ` + "`" + `authorization` + "`" + ` field in any external service configuration before enabling this.",
+          "type": "boolean",
+          "default": false
+        },
+        "bindID": {
+          "description": "The type of identifier to identify a user. The default is \"email\", which uses the email address to identify a user. Use \"username\" to identify a user by their username. Changing this setting will erase any permissions created for users that do not yet exist.",
+          "type": "string",
+          "enum": ["email", "username"],
+          "default": "email"
+        }
+      },
+      "default": {
+        "enabled": true,
+        "bindID": "email"
+      },
+      "examples": [{ "bindID": "email" }, { "bindID": "username" }],
+      "group": "Security"
+    },
+    "permissions.backgroundSync": {
+      "description": "Sync code host repository and user permissions in the background.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "description": "Whether syncing permissions in the background is enabled.",
+          "type": "boolean",
+          "default": false
+        }
+      },
+      "default": {
+        "enabled": true
+      },
+      "examples": [{ "enabled": true }],
       "group": "Security"
     },
     "branding": {
@@ -339,7 +492,10 @@ const SiteSchemaJSON = `{
         },
         "remoteRegistry": {
           "description": "The remote extension registry URL, or ` + "`" + `false` + "`" + ` to not use a remote extension registry. If not set, the default remote extension registry URL is used.",
-          "oneOf": [{ "type": "string", "format": "uri" }, { "type": "boolean", "const": false }]
+          "oneOf": [
+            { "type": "string", "format": "uri" },
+            { "type": "boolean", "const": false }
+          ]
         },
         "allowRemoteExtensions": {
           "description": "Allow only the explicitly listed remote extensions (by extension ID, such as \"alice/myextension\") from the remote registry. If not set, all remote extensions may be used from the remote registry. To completely disable the remote registry, set ` + "`" + `remoteRegistry` + "`" + ` to ` + "`" + `false` + "`" + `.\n\nOnly available in Sourcegraph Enterprise.",
@@ -378,6 +534,161 @@ const SiteSchemaJSON = `{
       },
       "group": "Experimental",
       "hide": true
+    },
+    "auth.userOrgMap": {
+      "description": "Ensure that matching users are members of the specified orgs (auto-joining users to the orgs if they are not already a member). Provide a JSON object of the form ` + "`" + `{\"*\": [\"org1\", \"org2\"]}` + "`" + `, where org1 and org2 are orgs that all users are automatically joined to. Currently the only supported key is ` + "`" + `\"*\"` + "`" + `.",
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "examples": [{ "*": ["myorg1"] }],
+      "hide": true
+    },
+    "log": {
+      "description": "Configuration for logging and alerting, including to external services.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sentry": {
+          "description": "Configuration for Sentry",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "dsn": {
+              "description": "Sentry Data Source Name (DSN). Per the Sentry docs (https://docs.sentry.io/quickstart/#about-the-dsn), it should match the following pattern: '{PROTOCOL}://{PUBLIC_KEY}@{HOST}/{PATH}{PROJECT_ID}'.",
+              "type": "string",
+              "pattern": "^https?://"
+            }
+          }
+        }
+      },
+      "examples": [{ "sentry": { "dsn": "https://mykey@sentry.io/myproject" } }],
+      "group": "Misc."
+    },
+    "externalURL": {
+      "description": "The externally accessible URL for Sourcegraph (i.e., what you type into your browser). Previously called ` + "`" + `appURL` + "`" + `.",
+      "type": "string",
+      "examples": ["https://sourcegraph.example.com"]
+    },
+    "lightstepAccessToken": {
+      "description": "DEPRECATED. Use Jaeger (` + "`" + `\"observability.tracing\": { \"sampling\": \"selective\" }` + "`" + `), instead.",
+      "type": "string",
+      "group": "Misc."
+    },
+    "lightstepProject": {
+      "description": "DEPRECATED. Use Jaeger (` + "`" + `\"observability.tracing\": { \"sampling\": \"selective\" }` + "`" + `), instead.",
+      "type": "string",
+      "examples": ["myproject"],
+      "group": "Misc."
+    },
+    "useJaeger": {
+      "description": "DEPRECATED. Use ` + "`" + `\"observability.tracing\": { \"sampling\": \"all\" }` + "`" + `, instead. Enables Jaeger tracing.",
+      "type": "boolean",
+      "group": "Misc."
+    },
+    "observability.tracing": {
+      "description": "Controls the settings for distributed tracing.",
+      "type": "object",
+      "properties": {
+        "sampling": {
+          "description": "Determines the requests for which distributed traces are recorded. \"none\" (default) turns off tracing entirely. \"selective\" sends traces whenever ` + "`" + `?trace=1` + "`" + ` is present in the URL. \"all\" sends traces on every request. Note that this only affects the behavior of the distributed tracing client. The Jaeger instance must be running for traces to be collected (as described in the Sourcegraph installation instructions). Additional downsampling can be configured in Jaeger, itself (https://www.jaegertracing.io/docs/1.17/sampling)",
+          "type": "string",
+          "enum": ["selective", "all", "none"],
+          "default": "selective"
+        },
+        "debug": {
+          "description": "Turns on debug logging of opentracing client requests. This can be useful for debugging connectivity issues between the tracing client and the Jaeger agent, the performance overhead of tracing, and other issues related to the use of distributed tracing.",
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "htmlHeadTop": {
+      "description": "HTML to inject at the top of the ` + "`" + `<head>` + "`" + ` element on each page, for analytics scripts",
+      "type": "string",
+      "group": "Misc."
+    },
+    "htmlHeadBottom": {
+      "description": "HTML to inject at the bottom of the ` + "`" + `<head>` + "`" + ` element on each page, for analytics scripts",
+      "type": "string",
+      "group": "Misc."
+    },
+    "htmlBodyTop": {
+      "description": "HTML to inject at the top of the ` + "`" + `<body>` + "`" + ` element on each page, for analytics scripts",
+      "type": "string",
+      "group": "Misc."
+    },
+    "htmlBodyBottom": {
+      "description": "HTML to inject at the bottom of the ` + "`" + `<body>` + "`" + ` element on each page, for analytics scripts",
+      "type": "string",
+      "group": "Misc."
+    },
+    "licenseKey": {
+      "description": "The license key associated with a Sourcegraph product subscription, which is necessary to activate Sourcegraph Enterprise functionality. To obtain this value, contact Sourcegraph to purchase a subscription. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.",
+      "type": "string",
+      "group": "Sourcegraph Enterprise license"
+    },
+    "auth.providers": {
+      "description": "The authentication providers to use for identifying and signing in users. See instructions below for configuring SAML, OpenID Connect (including G Suite), and HTTP authentication proxies. Multiple authentication providers are supported (by specifying multiple elements in this array).",
+      "type": "array",
+      "items": {
+        "required": ["type"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["builtin", "saml", "openidconnect", "http-header", "github", "gitlab"]
+          }
+        },
+        "oneOf": [
+          { "$ref": "#/definitions/BuiltinAuthProvider" },
+          { "$ref": "#/definitions/SAMLAuthProvider" },
+          { "$ref": "#/definitions/OpenIDConnectAuthProvider" },
+          { "$ref": "#/definitions/HTTPHeaderAuthProvider" },
+          { "$ref": "#/definitions/GitHubAuthProvider" },
+          { "$ref": "#/definitions/GitLabAuthProvider" }
+        ],
+        "!go": {
+          "taggedUnionType": true
+        }
+      },
+      "group": "Authentication",
+      "default": [{ "type": "builtin", "allowSignup": true }]
+    },
+    "auth.public": {
+      "description": "WARNING: This option has been removed as of 3.8.",
+      "type": "boolean",
+      "default": false,
+      "group": "Authentication"
+    },
+    "auth.sessionExpiry": {
+      "type": "string",
+      "description": "The duration of a user session, after which it expires and the user is required to re-authenticate. The default is 90 days. There is typically no need to set this, but some users may have specific internal security requirements.\n\nThe string format is that of the Duration type in the Go time package (https://golang.org/pkg/time/#ParseDuration). E.g., \"720h\", \"43200m\", \"2592000s\" all indicate a timespan of 30 days.\n\nNote: changing this field does not affect the expiration of existing sessions. If you would like to enforce this limit for existing sessions, you must log out currently signed-in users. You can force this by removing all keys beginning with \"session_\" from the Redis store:\n\n* For deployments using ` + "`" + `sourcegraph/server` + "`" + `: ` + "`" + `docker exec $CONTAINER_ID redis-cli --raw keys 'session_*' | xargs docker exec $CONTAINER_ID redis-cli del` + "`" + `\n* For cluster deployments: \n  ` + "`" + `` + "`" + `` + "`" + `\n  REDIS_POD=\"$(kubectl get pods -l app=redis-store -o jsonpath={.items[0].metadata.name})\";\n  kubectl exec \"$REDIS_POD\" -- redis-cli --raw keys 'session_*' | xargs kubectl exec \"$REDIS_POD\" -- redis-cli --raw del;\n  ` + "`" + `` + "`" + `` + "`" + `\n",
+      "default": "2160h",
+      "examples": ["168h"],
+      "group": "Authentication"
+    },
+    "auth.enableUsernameChanges": {
+      "description": "Enables users to change their username after account creation. Warning: setting this to be true has security implications if you have enabled (or will at any point in the future enable) repository permissions with an option that relies on username equivalency between Sourcegraph and an external service or authentication provider. Do NOT set this to true if you are using non-built-in authentication OR rely on username equivalency for repository permissions.",
+      "type": "boolean",
+      "default": false,
+      "group": "Authentication"
+    },
+    "auth.minPasswordLength": {
+      "description": "The minimum number of Unicode code points that a password must contain.",
+      "type": "integer",
+      "default": 12,
+      "group": "Authentication"
+    },
+    "update.channel": {
+      "description": "The channel on which to automatically check for Sourcegraph updates.",
+      "type": ["string"],
+      "enum": ["release", "none"],
+      "default": "release",
+      "examples": ["none"],
+      "group": "Misc."
     }
   },
   "definitions": {
@@ -393,6 +704,235 @@ const SiteSchemaJSON = `{
           "description": "The URL to the symbol used as the search icon. Recommended size: 24x24px. We recommend using the following file formats: SVG, PNG, ICO",
           "type": "string",
           "format": "uri"
+        }
+      }
+    },
+    "BuiltinAuthProvider": {
+      "description": "Configures the builtin username-password authentication provider.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "builtin"
+        },
+        "allowSignup": {
+          "description": "Allows new visitors to sign up for accounts. The sign-up page will be enabled and accessible to all visitors.\n\nSECURITY: If the site has no users (i.e., during initial setup), it will always allow the first user to sign up and become site admin **without any approval** (first user to sign up becomes the admin).",
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "OpenIDConnectAuthProvider": {
+      "description": "Configures the OpenID Connect authentication provider for SSO.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "issuer", "clientID", "clientSecret"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "openidconnect"
+        },
+        "displayName": { "$ref": "#/definitions/AuthProviderCommon/properties/displayName" },
+        "configID": {
+          "description": "An identifier that can be used to reference this authentication provider in other parts of the config. For example, in configuration for a code host, you may want to designate this authentication provider as the identity provider for the code host.",
+          "type": "string"
+        },
+        "issuer": {
+          "description": "The URL of the OpenID Connect issuer.\n\nFor Google Apps: https://accounts.google.com",
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https?://"
+        },
+        "clientID": {
+          "description": "The client ID for the OpenID Connect client for this site.\n\nFor Google Apps: obtain this value from the API console (https://console.developers.google.com), as described at https://developers.google.com/identity/protocols/OpenIDConnect#getcredentials",
+          "type": "string",
+          "pattern": "^[^<]"
+        },
+        "clientSecret": {
+          "description": "The client secret for the OpenID Connect client for this site.\n\nFor Google Apps: obtain this value from the API console (https://console.developers.google.com), as described at https://developers.google.com/identity/protocols/OpenIDConnect#getcredentials",
+          "type": "string",
+          "pattern": "^[^<]"
+        },
+        "requireEmailDomain": {
+          "description": "Only allow users to authenticate if their email domain is equal to this value (example: mycompany.com). Do not include a leading \"@\". If not set, all users on this OpenID Connect provider can authenticate to Sourcegraph.",
+          "type": "string",
+          "pattern": "^[^<@]"
+        }
+      }
+    },
+    "SAMLAuthProvider": {
+      "description": "Configures the SAML authentication provider for SSO.\n\nNote: if you are using IdP-initiated login, you must have *at most one* SAMLAuthProvider in the ` + "`" + `auth.providers` + "`" + ` array.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "dependencies": {
+        "serviceProviderCertificate": ["serviceProviderPrivateKey"],
+        "serviceProviderPrivateKey": ["serviceProviderCertificate"],
+        "signRequests": ["serviceProviderCertificate", "serviceProviderPrivateKey"]
+      },
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "saml"
+        },
+        "configID": {
+          "description": "An identifier that can be used to reference this authentication provider in other parts of the config. For example, in configuration for a code host, you may want to designate this authentication provider as the identity provider for the code host.",
+          "type": "string"
+        },
+        "displayName": { "$ref": "#/definitions/AuthProviderCommon/properties/displayName" },
+        "serviceProviderIssuer": {
+          "description": "The SAML Service Provider name, used to identify this Service Provider. This is required if the \"externalURL\" field is not set (as the SAML metadata endpoint is computed as \"<externalURL>.auth/saml/metadata\"), or when using multiple SAML authentication providers.",
+          "type": "string"
+        },
+        "identityProviderMetadataURL": {
+          "description": "The SAML Identity Provider metadata URL (for dynamic configuration of the SAML Service Provider).",
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https?://"
+        },
+        "identityProviderMetadata": {
+          "description": "The SAML Identity Provider metadata XML contents (for static configuration of the SAML Service Provider). The value of this field should be an XML document whose root element is ` + "`" + `<EntityDescriptor>` + "`" + ` or ` + "`" + `<EntityDescriptors>` + "`" + `. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.",
+          "type": "string"
+        },
+        "serviceProviderCertificate": {
+          "description": "The SAML Service Provider certificate in X.509 encoding (begins with \"-----BEGIN CERTIFICATE-----\"). This certificate is used by the Identity Provider to validate the Service Provider's AuthnRequests and LogoutRequests. It corresponds to the Service Provider's private key (` + "`" + `serviceProviderPrivateKey` + "`" + `). To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.",
+          "type": "string",
+          "$comment": "The pattern matches either X.509 encoding or an env var.",
+          "pattern": "^(-----BEGIN CERTIFICATE-----\n|\\$)",
+          "minLength": 1
+        },
+        "serviceProviderPrivateKey": {
+          "description": "The SAML Service Provider private key in PKCS#8 encoding (begins with \"-----BEGIN PRIVATE KEY-----\"). This private key is used to sign AuthnRequests and LogoutRequests. It corresponds to the Service Provider's certificate (` + "`" + `serviceProviderCertificate` + "`" + `). To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.",
+          "type": "string",
+          "$comment": "The pattern matches either PKCS#8 encoding or an env var.",
+          "pattern": "^(-----BEGIN PRIVATE KEY-----\n|\\$)",
+          "minLength": 1
+        },
+        "nameIDFormat": {
+          "description": "The SAML NameID format to use when performing user authentication.",
+          "type": "string",
+          "pattern": "^urn:",
+          "default": "urn:oasis:names:tc:SAML:2.0:nameid-format:persistent",
+          "examples": [
+            "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress",
+            "urn:oasis:names:tc:SAML:1.1:nameid-format:persistent",
+            "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified",
+            "urn:oasis:names:tc:SAML:2.0:nameid-format:emailAddress",
+            "urn:oasis:names:tc:SAML:2.0:nameid-format:persistent",
+            "urn:oasis:names:tc:SAML:2.0:nameid-format:transient",
+            "urn:oasis:names:tc:SAML:2.0:nameid-format:unspecified"
+          ]
+        },
+        "signRequests": {
+          "description": "Sign AuthnRequests and LogoutRequests sent to the Identity Provider using the Service Provider's private key (` + "`" + `serviceProviderPrivateKey` + "`" + `). It defaults to true if the ` + "`" + `serviceProviderPrivateKey` + "`" + ` and ` + "`" + `serviceProviderCertificate` + "`" + ` are set, and false otherwise.",
+          "type": "boolean",
+          "!go": { "pointer": true }
+        },
+        "insecureSkipAssertionSignatureValidation": {
+          "description": "Whether the Service Provider should (insecurely) accept assertions from the Identity Provider without a valid signature.",
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "HTTPHeaderAuthProvider": {
+      "description": "Configures the HTTP header authentication provider (which authenticates users by consulting an HTTP request header set by an authentication proxy such as https://github.com/bitly/oauth2_proxy).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "usernameHeader"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "http-header"
+        },
+        "usernameHeader": {
+          "description": "The name (case-insensitive) of an HTTP header whose value is taken to be the username of the client requesting the page. Set this value when using an HTTP proxy that authenticates requests, and you don't want the extra configurability of the other authentication methods.",
+          "type": "string",
+          "examples": ["X-Forwarded-User"]
+        },
+        "stripUsernameHeaderPrefix": {
+          "description": "The prefix that precedes the username portion of the HTTP header specified in ` + "`" + `usernameHeader` + "`" + `. If specified, the prefix will be stripped from the header value and the remainder will be used as the username. For example, if using Google Identity-Aware Proxy (IAP) with Google Sign-In, set this value to ` + "`" + `accounts.google.com:` + "`" + `.",
+          "type": "string",
+          "examples": ["accounts.google.com:"]
+        }
+      }
+    },
+    "GitHubAuthProvider": {
+      "description": "Configures the GitHub (or GitHub Enterprise) OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create a OAuth App on your GitHub instance: https://developer.github.com/apps/building-oauth-apps/creating-an-oauth-app/. When a user signs into Sourcegraph or links their GitHub account to their existing Sourcegraph account, GitHub will prompt the user for the repo scope.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "clientID", "clientSecret"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "github"
+        },
+        "url": {
+          "type": "string",
+          "description": "URL of the GitHub instance, such as https://github.com or https://github-enterprise.example.com.",
+          "default": "https://github.com/"
+        },
+        "clientID": {
+          "type": "string",
+          "description": "The Client ID of the GitHub OAuth app, accessible from https://github.com/settings/developers (or the same path on GitHub Enterprise)."
+        },
+        "clientSecret": {
+          "type": "string",
+          "description": "The Client Secret of the GitHub OAuth app, accessible from https://github.com/settings/developers (or the same path on GitHub Enterprise)."
+        },
+        "displayName": { "$ref": "#/definitions/AuthProviderCommon/properties/displayName" },
+        "allowSignup": {
+          "description": "Allows new visitors to sign up for accounts via GitHub authentication. If false, users signing in via GitHub must have an existing Sourcegraph account, which will be linked to their GitHub identity after sign-in.",
+          "default": false,
+          "type": "boolean"
+        },
+        "allowOrgs": {
+          "description": "Restricts new logins to members of these GitHub organizations. Existing sessions won't be invalidated. Leave empty or unset for no org restrictions.",
+          "default": [],
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "GitLabAuthProvider": {
+      "description": "Configures the GitLab OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create a OAuth App on your GitLab instance: https://docs.gitlab.com/ee/integration/oauth_provider.html. The application should have ` + "`" + `api` + "`" + ` and ` + "`" + `read_user` + "`" + ` scopes and the callback URL set to the concatenation of your Sourcegraph instance URL and \"/.auth/gitlab/callback\".",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "clientID", "clientSecret"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "gitlab"
+        },
+        "url": {
+          "type": "string",
+          "description": "URL of the GitLab instance, such as https://gitlab.com or https://gitlab.example.com.",
+          "default": "https://gitlab.com/"
+        },
+        "clientID": {
+          "type": "string",
+          "description": "The Client ID of the GitLab OAuth app, accessible from https://gitlab.com/oauth/applications (or the same path on your private GitLab instance)."
+        },
+        "clientSecret": {
+          "type": "string",
+          "description": "The Client Secret of the GitLab OAuth app, accessible from https://gitlab.com/oauth/applications (or the same path on your private GitLab instance)."
+        },
+        "displayName": { "$ref": "#/definitions/AuthProviderCommon/properties/displayName" }
+      }
+    },
+    "AuthProviderCommon": {
+      "$comment": "This schema is not used directly. The *AuthProvider schemas refer to its properties directly.",
+      "description": "Common properties for authentication providers.",
+      "type": "object",
+      "properties": {
+        "displayName": {
+          "description": "The name to use when displaying this authentication provider in the UI. Defaults to an auto-generated name with the type of authentication provider and other relevant identifiers (such as a hostname).",
+          "type": "string"
         }
       }
     }

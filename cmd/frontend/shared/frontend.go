@@ -3,10 +3,11 @@ package shared
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 
 	_ "github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
 )
@@ -16,11 +17,19 @@ import (
 // It is exposed as function in a package so that it can be called by other
 // main package implementations such as Sourcegraph Enterprise, which import
 // proprietary/private code.
-func Main() {
+func Main(githubWebhook, bitbucketServerWebhook http.Handler) {
 	env.Lock()
-	err := cli.Main()
+	err := cli.Main(githubWebhook, bitbucketServerWebhook)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "fatal:", err)
 		os.Exit(1)
 	}
 }
+
+// InitDB initializes the global frontend database connection and sets the
+// version of the frontend in our versions table.
+//
+// It is exposed as function in a package so that it can be called by other
+// main package implementations such as Sourcegraph Enterprise, which import
+// proprietary/private code.
+func InitDB() error { return cli.InitDB() }

@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/txemail"
-	"github.com/sourcegraph/sourcegraph/pkg/txemail/txtypes"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/txemail"
+	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 )
 
 func canSendEmail(ctx context.Context) error {
@@ -141,7 +141,7 @@ func sendEmail(ctx context.Context, userID int32, eventType string, template txt
 	}); err != nil {
 		return errors.Wrap(err, fmt.Sprintf("InternalClient.SendEmail to email=%q userID=%d", *email, userID))
 	}
-	logEvent(userID, *email, "SavedSearchEmailNotificationSent", eventType)
+	logEvent(userID, "SavedSearchEmailNotificationSent", eventType)
 	return nil
 }
 

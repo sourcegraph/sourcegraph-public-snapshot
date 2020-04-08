@@ -1,11 +1,16 @@
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
+import { escapeRegExp, uniqueId } from 'lodash'
 import { Route, RouteComponentProps, Switch } from 'react-router'
-import { Subject, Subscription, concat } from 'rxjs'
+import { Subject, Subscription, concat, combineLatest } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap, tap } from 'rxjs/operators'
 import { redirectToExternalHost } from '.'
-import { EREPONOTFOUND, EREPOSEEOTHER, RepoSeeOtherError } from '../../../shared/src/backend/errors'
+import {
+    REPO_NOT_FOUND_ERROR_NAME,
+    REPO_SEE_OTHER_ERROR_NAME,
+    RepoSeeOtherError,
+} from '../../../shared/src/backend/errors'
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
@@ -15,9 +20,13 @@ import { ErrorLike, isErrorLike, asError } from '../../../shared/src/util/errors
 import { makeRepoURI } from '../../../shared/src/util/url'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
-import { searchQueryForRepoRev } from '../search'
-import { queryUpdates } from '../search/input/QueryInput'
-import { ThemeProps } from '../theme'
+import {
+    searchQueryForRepoRev,
+    PatternTypeProps,
+    CaseSensitivityProps,
+    InteractiveSearchProps,
+    repoFilterForRepoRev,
+} from '../search'
 import { EventLoggerProps } from '../tracking/eventLogger'
 import { RouteDescriptor } from '../util/contributions'
 import { parseBrowserRepoURL, ParsedRepoRev, parseRepoRev } from '../util/url'
@@ -27,6 +36,12 @@ import { RepoHeader, RepoHeaderActionButton, RepoHeaderContributionsLifecyclePro
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
 import { RepoRevContainer, RepoRevContainerRoute } from './RepoRevContainer'
 import { RepositoryNotFoundPage } from './RepositoryNotFoundPage'
+import { ThemeProps } from '../../../shared/src/theme'
+import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
+import { RepoSettingsSideBarItem } from './settings/RepoSettingsSidebar'
+import { ErrorMessage } from '../components/alerts'
+import { QueryState } from '../search/helpers'
+import { FiltersToTypeAndValue, FilterType } from '../../../shared/src/search/interactive/util'
 
 /**
  * Props passed to sub-routes of {@link RepoContainer}.
@@ -38,9 +53,13 @@ export interface RepoContainerContext
         PlatformContextProps,
         ThemeProps,
         EventLoggerProps,
-        ActivationProps {
+        ActivationProps,
+        PatternTypeProps,
+        CaseSensitivityProps {
     repo: GQL.IRepository
     authenticatedUser: GQL.IUser | null
+    repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
+    repoSettingsSidebarItems: readonly RepoSettingsSideBarItem[]
 
     /** The URL route match for {@link RepoContainer}. */
     routePrefix: string
@@ -63,11 +82,17 @@ interface RepoContainerProps
         EventLoggerProps,
         ExtensionsControllerProps,
         ActivationProps,
-        ThemeProps {
+        ThemeProps,
+        PatternTypeProps,
+        CaseSensitivityProps,
+        InteractiveSearchProps {
     repoContainerRoutes: readonly RepoContainerRoute[]
     repoRevContainerRoutes: readonly RepoRevContainerRoute[]
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
+    repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
+    repoSettingsSidebarItems: readonly RepoSettingsSideBarItem[]
     authenticatedUser: GQL.IUser | null
+    onNavbarQueryChange: (state: QueryState) => void
 }
 
 interface RepoRevContainerState extends ParsedRepoRev {
@@ -130,8 +155,8 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                             [undefined],
                             fetchRepository({ repoName }).pipe(
                                 catchError(error => {
-                                    switch (error.code) {
-                                        case EREPOSEEOTHER:
+                                    switch (error.name) {
+                                        case REPO_SEE_OTHER_ERROR_NAME:
                                             redirectToExternalHost((error as RepoSeeOtherError).redirectURL)
                                             return []
                                     }
@@ -149,12 +174,14 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
         // Update resolved revision in state
         this.subscriptions.add(this.revResolves.subscribe(resolvedRevOrError => this.setState({ resolvedRevOrError })))
 
-        // Update header and other global state.
         this.subscriptions.add(
             parsedRouteChanges.subscribe(({ repoName, rev, rawRev }) => {
                 this.setState({ repoName, rev, rawRev })
-
-                queryUpdates.next(searchQueryForRepoRev(repoName, rev))
+                const query = searchQueryForRepoRev(repoName, rev)
+                this.props.onNavbarQueryChange({
+                    query,
+                    cursorPosition: query.length,
+                })
             })
         )
 
@@ -191,6 +218,46 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
         this.subscriptions.add(() => this.props.extensionsController.services.workspace.roots.next([]))
 
         this.componentUpdates.next(this.props)
+
+        // Scope the search query to the current tree or file
+        const parsedFilePathChanges = this.componentUpdates.pipe(
+            map(({ location }) => parseBrowserRepoURL(location.pathname + location.search + location.hash).filePath),
+            distinctUntilChanged()
+        )
+        this.subscriptions.add(
+            combineLatest([parsedRouteChanges, parsedFilePathChanges]).subscribe(([{ repoName, rev }, filePath]) => {
+                if (this.props.splitSearchModes && this.props.interactiveSearchMode) {
+                    const filters: FiltersToTypeAndValue = {
+                        [uniqueId('repo')]: {
+                            type: FilterType.repo,
+                            value: repoFilterForRepoRev(repoName, rev),
+                            editable: false,
+                        },
+                    }
+                    if (filePath) {
+                        filters[uniqueId('file')] = {
+                            type: FilterType.file,
+                            value: `^${escapeRegExp(filePath)}`,
+                            editable: false,
+                        }
+                    }
+                    this.props.onFiltersInQueryChange(filters)
+                    this.props.onNavbarQueryChange({
+                        query: '',
+                        cursorPosition: 0,
+                    })
+                } else {
+                    let query = searchQueryForRepoRev(repoName, rev)
+                    if (filePath) {
+                        query = `${query.trimEnd()} file:^${escapeRegExp(filePath)}`
+                    }
+                    this.props.onNavbarQueryChange({
+                        query,
+                        cursorPosition: query.length,
+                    })
+                }
+            })
+        )
     }
 
     public componentDidUpdate(): void {
@@ -214,11 +281,17 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
 
         if (isErrorLike(this.state.repoOrError)) {
             // Display error page
-            switch (this.state.repoOrError.code) {
-                case EREPONOTFOUND:
+            switch (this.state.repoOrError.name) {
+                case REPO_NOT_FOUND_ERROR_NAME:
                     return <RepositoryNotFoundPage repo={repoName} viewerCanAdminister={viewerCanAdminister} />
                 default:
-                    return <HeroPage icon={AlertCircleIcon} title="Error" subtitle={this.state.repoOrError.message} />
+                    return (
+                        <HeroPage
+                            icon={AlertCircleIcon}
+                            title="Error"
+                            subtitle={<ErrorMessage error={this.state.repoOrError} />}
+                        />
+                    )
             }
         }
 
@@ -237,10 +310,16 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
             ...this.state.repoHeaderContributionsLifecycleProps,
             onDidUpdateExternalLinks: this.onDidUpdateExternalLinks,
             onDidUpdateRepository: this.onDidUpdateRepository,
+            patternType: this.props.patternType,
+            setPatternType: this.props.setPatternType,
+            caseSensitive: this.props.caseSensitive,
+            setCaseSensitivity: this.props.setCaseSensitivity,
+            repoSettingsAreaRoutes: this.props.repoSettingsAreaRoutes,
+            repoSettingsSidebarItems: this.props.repoSettingsSidebarItems,
         }
 
         return (
-            <div className="repo-container w-100 d-flex flex-column">
+            <div className="repo-container e2e-repo-container w-100 d-flex flex-column">
                 <RepoHeader
                     {...this.props}
                     actionButtons={this.props.repoHeaderActionButtons}
@@ -279,7 +358,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                         {/* eslint-disable react/jsx-no-bind */}
                         {[
                             '',
-                            `@${this.state.rawRev}`, // must exactly match how the rev was encoded in the URL
+                            ...(this.state.rawRev ? [`@${this.state.rawRev}`] : []), // must exactly match how the rev was encoded in the URL
                             '/-/blob',
                             '/-/tree',
                             '/-/commits',
@@ -311,7 +390,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                                         path={context.routePrefix + path}
                                         key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                         exact={exact}
-                                        // eslint-disable-next-line react/jsx-no-bind RouteProps.render is an exception
+                                        // RouteProps.render is an exception
                                         render={routeComponentProps => render({ ...context, ...routeComponentProps })}
                                     />
                                 )
@@ -324,15 +403,16 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
         )
     }
 
-    private onDidUpdateRepository = (update: Partial<GQL.IRepository>) => this.repositoryUpdates.next(update)
+    private onDidUpdateRepository = (update: Partial<GQL.IRepository>): void => this.repositoryUpdates.next(update)
 
     private onDidUpdateExternalLinks = (externalLinks: GQL.IExternalLink[] | undefined): void =>
         this.setState({ externalLinks })
 
     private onResolvedRevOrError = (v: ResolvedRev | ErrorLike | undefined): void => this.revResolves.next(v)
 
-    private onRepoHeaderContributionsLifecyclePropsChange = (lifecycleProps: RepoHeaderContributionsLifecycleProps) =>
-        this.setState({ repoHeaderContributionsLifecycleProps: lifecycleProps })
+    private onRepoHeaderContributionsLifecyclePropsChange = (
+        lifecycleProps: RepoHeaderContributionsLifecycleProps
+    ): void => this.setState({ repoHeaderContributionsLifecycleProps: lifecycleProps })
 }
 
 /**

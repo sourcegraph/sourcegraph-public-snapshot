@@ -1,5 +1,4 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { upperFirst } from 'lodash'
 import KeyIcon from 'mdi-react/KeyIcon'
 import * as React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
@@ -10,6 +9,7 @@ import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { PasswordInput } from './SignInSignUpCommon'
+import { ErrorAlert } from '../components/alerts'
 
 interface ResetPasswordInitFormState {
     /** The user's email input value. */
@@ -67,17 +67,17 @@ class ResetPasswordInitForm extends React.PureComponent<{}, ResetPasswordInitFor
                 </button>
                 {this.state.submitOrError === 'loading' && <LoadingSpinner className="icon-inline mt-2" />}
                 {isErrorLike(this.state.submitOrError) && (
-                    <div className="alert alert-danger mt-2">{upperFirst(this.state.submitOrError.message)}</div>
+                    <ErrorAlert className="mt-2" error={this.state.submitOrError} />
                 )}
             </Form>
         )
     }
 
-    private onEmailFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    private onEmailFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
         this.setState({ email: e.target.value })
     }
 
-    private handleSubmitResetPasswordInit = (e: React.FormEvent<HTMLFormElement>) => {
+    private handleSubmitResetPasswordInit = (e: React.FormEvent<HTMLFormElement>): void => {
         e.preventDefault()
         this.setState({ submitOrError: 'loading' })
         fetch('/-/reset-password-init', {
@@ -163,17 +163,17 @@ class ResetPasswordCodeForm extends React.PureComponent<ResetPasswordCodeFormPro
                 </button>
                 {this.state.submitOrError === 'loading' && <LoadingSpinner className="icon-inline mt-2" />}
                 {isErrorLike(this.state.submitOrError) && (
-                    <div className="alert alert-danger mt-2">{upperFirst(this.state.submitOrError.message)}</div>
+                    <ErrorAlert className="mt-2" error={this.state.submitOrError} />
                 )}
             </Form>
         )
     }
 
-    private onPasswordFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    private onPasswordFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
         this.setState({ password: e.target.value })
     }
 
-    private handleSubmitResetPassword = (e: React.FormEvent<HTMLFormElement>) => {
+    private handleSubmitResetPassword = (e: React.FormEvent<HTMLFormElement>): void => {
         e.preventDefault()
         this.setState({ submitOrError: 'loading' })
         fetch('/-/reset-password-code', {
@@ -212,7 +212,7 @@ interface ResetPasswordPageProps extends RouteComponentProps<{}> {
  */
 export class ResetPasswordPage extends React.PureComponent<ResetPasswordPageProps> {
     public componentDidMount(): void {
-        eventLogger.logViewEvent('ResetPassword', {}, false)
+        eventLogger.logViewEvent('ResetPassword', false)
     }
 
     public render(): JSX.Element | null {

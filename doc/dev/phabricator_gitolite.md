@@ -111,9 +111,9 @@ dev/phabricator/stop.sh
 
 #### Add repositories
 
-1. Click the link to [Diffusion](http://127.0.0.1/diffusion/)
+1. Click the link to [Diffusion](http://localhost/diffusion/)
 
-2. [Create a repository](http://127.0.0.1/diffusion/edit) and
+2. [Create a repository](http://localhost/diffusion/edit) and
     select git as the vcs
 
     Give the repository a name and a callsign with only
@@ -183,7 +183,7 @@ will be `/opt/bitnami/phabricator`.
 #### Browser Extension
 
 1. Verify [`sourcegraph.enabled`](https://phabricator.sgdev.org/config/edit/sourcegraph.enabled/) is set to `true`
-2. Point your browser extension to a Sourcegraph instance with the following external service:
+2. Point your browser extension to a Sourcegraph instance with the following code host:
     ```
     {
       "prefix": "gitolite.sgdev.org/",
@@ -202,7 +202,7 @@ will be `/opt/bitnami/phabricator`.
 
 1. Run a local Sourcegraph dev instance tunnelled through ngrok
 2. Set `corsOrigin` to `"https://phabricator.sgdev.org"` in your site config
-3. Add the following Gitolite external service:
+3. Add the following Gitolite code host:
     ```
     {
       "prefix": "gitolite.sgdev.org/",

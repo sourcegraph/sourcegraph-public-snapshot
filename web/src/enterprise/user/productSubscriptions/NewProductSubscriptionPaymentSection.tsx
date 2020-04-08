@@ -4,7 +4,6 @@ import formatDistanceStrict from 'date-fns/formatDistanceStrict'
 import { isEqual } from 'lodash'
 import ErrorIcon from 'mdi-react/ErrorIcon'
 import * as React from 'react'
-import { ReactStripeElements } from 'react-stripe-elements'
 import { Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap, tap } from 'rxjs/operators'
 import { gql } from '../../../../../shared/src/graphql/graphql'
@@ -37,7 +36,7 @@ interface Props {
     onValidityChange: (value: boolean) => void
 }
 
-const LOADING: 'loading' = 'loading'
+const LOADING = 'loading' as const
 
 interface State {
     /**
@@ -50,10 +49,7 @@ interface State {
 /**
  * Displays the payment section of the new product subscription form.
  */
-export class NewProductSubscriptionPaymentSection extends React.PureComponent<
-    Props & ReactStripeElements.InjectedStripeProps,
-    State
-> {
+export class NewProductSubscriptionPaymentSection extends React.PureComponent<Props, State> {
     public state: State = {
         previewInvoiceOrError: LOADING,
     }
@@ -147,7 +143,7 @@ export class NewProductSubscriptionPaymentSection extends React.PureComponent<
                                     Self-service downgrades are not yet supported.{' '}
                                     <a
                                         href={mailtoSales({
-                                            subject: `Downgrade subscription ${this.props.subscriptionID}`,
+                                            subject: `Downgrade subscription ${this.props.subscriptionID!}`,
                                         })}
                                     >
                                         Contact sales

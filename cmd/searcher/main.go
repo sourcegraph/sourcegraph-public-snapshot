@@ -14,17 +14,16 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/opentracing-contrib/go-stdlib/nethttp"
-	opentracing "github.com/opentracing/opentracing-go"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/search"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/debugserver"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/store"
-	"github.com/sourcegraph/sourcegraph/pkg/tracer"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/debugserver"
+	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/store"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/tracer"
 )
 
 var cacheDir = env.Get("CACHE_DIR", "/tmp", "directory to store cached archives.")
@@ -59,7 +58,7 @@ func main() {
 	}
 	service.Store.SetMaxConcurrentFetchTar(10)
 	service.Store.Start()
-	handler := nethttp.Middleware(opentracing.GlobalTracer(), service)
+	handler := ot.Middleware(service)
 
 	host := ""
 	if env.InsecureDev {
@@ -72,7 +71,7 @@ func main() {
 			// For cluster liveness and readiness probes
 			if r.URL.Path == "/healthz" {
 				w.WriteHeader(200)
-				w.Write([]byte("ok"))
+				_, _ = w.Write([]byte("ok"))
 				return
 			}
 			handler.ServeHTTP(w, r)

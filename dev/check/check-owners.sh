@@ -1,5 +1,7 @@
 #!/bin/bash
 
+echo "--- check codeowners"
+
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 
 OWNERS_OUT="$(./dev/owners)"

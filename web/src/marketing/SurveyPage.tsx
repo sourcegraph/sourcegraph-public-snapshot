@@ -8,11 +8,11 @@ import { FeedbackText } from '../components/FeedbackText'
 import { Form } from '../components/Form'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
-import { ThemeProps } from '../theme'
 import { eventLogger } from '../tracking/eventLogger'
 import { submitSurvey } from './backend'
 import { SurveyCTA } from './SurveyToast'
 import { Subscription } from 'rxjs'
+import { ThemeProps } from '../../../shared/src/theme'
 interface SurveyFormProps {
     location: H.Location
     history: H.History
@@ -111,26 +111,26 @@ class SurveyForm extends React.Component<SurveyFormProps, SurveyFormState> {
         )
     }
 
-    private onScoreChange = (score: number) => {
+    private onScoreChange = (score: number): void => {
         if (this.props.onScoreChange) {
             this.props.onScoreChange(score)
         }
         this.setState({ error: undefined })
     }
 
-    private onEmailFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    private onEmailFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
         this.setState({ email: e.target.value })
     }
 
-    private onReasonFieldChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    private onReasonFieldChange = (e: React.ChangeEvent<HTMLTextAreaElement>): void => {
         this.setState({ reason: e.target.value })
     }
 
-    private onBetterProductFieldChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    private onBetterProductFieldChange = (e: React.ChangeEvent<HTMLTextAreaElement>): void => {
         this.setState({ betterProduct: e.target.value })
     }
 
-    private handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    private handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
         if (this.state.loading) {
             return
@@ -172,10 +172,6 @@ interface SurveyPageProps extends RouteComponentProps<{ score?: string }>, Theme
 }
 
 export class SurveyPage extends React.Component<SurveyPageProps> {
-    constructor(props: SurveyPageProps) {
-        super(props)
-    }
-
     public componentDidMount(): void {
         eventLogger.logViewEvent('Survey')
     }
@@ -203,5 +199,6 @@ export class SurveyPage extends React.Component<SurveyPageProps> {
         )
     }
 
-    private intScore = (score?: string) => (score ? Math.max(0, Math.min(10, Math.round(+score))) : undefined)
+    private intScore = (score?: string): number | undefined =>
+        score ? Math.max(0, Math.min(10, Math.round(+score))) : undefined
 }

@@ -9,8 +9,8 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assets"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sqs/httpgzip"
 )
 

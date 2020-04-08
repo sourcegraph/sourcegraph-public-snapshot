@@ -14,8 +14,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	uirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
 func init() {
@@ -167,13 +167,6 @@ func TestRouter(t *testing.T) {
 		{
 			path:      "/site-admin/config",
 			wantRoute: routeSiteAdmin,
-			wantVars:  map[string]string{},
-		},
-
-		// legacy editor auth
-		{
-			path:      "/editor-auth",
-			wantRoute: routeLegacyEditorAuth,
 			wantVars:  map[string]string{},
 		},
 

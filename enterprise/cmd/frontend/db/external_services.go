@@ -2,7 +2,9 @@ package db
 
 import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/github"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/gitlab"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -11,13 +13,13 @@ import (
 func NewExternalServicesStore() *db.ExternalServicesStore {
 	return &db.ExternalServicesStore{
 		GitHubValidators: []func(*schema.GitHubConnection) error{
-			authz.ValidateGitHubAuthz,
+			github.ValidateAuthz,
 		},
 		GitLabValidators: []func(*schema.GitLabConnection, []schema.AuthProviders) error{
-			authz.ValidateGitLabAuthz,
+			gitlab.ValidateAuthz,
 		},
-		BitbucketServerValidators: []func(*schema.BitbucketServerConnection, []schema.AuthProviders) error{
-			authz.ValidateBitbucketServerAuthz,
+		BitbucketServerValidators: []func(*schema.BitbucketServerConnection) error{
+			bitbucketserver.ValidateAuthz,
 		},
 	}
 }

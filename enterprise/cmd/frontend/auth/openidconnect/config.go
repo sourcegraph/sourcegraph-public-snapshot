@@ -8,10 +8,10 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 var mockGetProviderValue *provider
@@ -41,7 +41,7 @@ func handleGetProvider(ctx context.Context, w http.ResponseWriter, id string) (p
 	}
 	if err := p.Refresh(ctx); err != nil {
 		log15.Error("Error refreshing OpenID Connect auth provider.", "id", p.ConfigID(), "error", err)
-		http.Error(w, "Unexpected error refreshing OpenID Connect authentication provider.", http.StatusInternalServerError)
+		http.Error(w, "Unexpected error refreshing OpenID Connect authentication provider. This may be due to an incorrect issuer URL. Check the logs for more details.", http.StatusInternalServerError)
 		return nil, true
 	}
 	return p, false
@@ -51,20 +51,20 @@ func init() {
 	conf.ContributeValidator(validateConfig)
 }
 
-func validateConfig(c conf.Unified) (problems []string) {
+func validateConfig(c conf.Unified) (problems conf.Problems) {
 	var loggedNeedsExternalURL bool
-	for _, p := range c.Critical.AuthProviders {
-		if p.Openidconnect != nil && c.Critical.ExternalURL == "" && !loggedNeedsExternalURL {
-			problems = append(problems, `openidconnect auth provider requires externalURL to be set to the external URL of your site (example: https://sourcegraph.example.com)`)
+	for _, p := range c.AuthProviders {
+		if p.Openidconnect != nil && c.ExternalURL == "" && !loggedNeedsExternalURL {
+			problems = append(problems, conf.NewSiteProblem("openidconnect auth provider requires `externalURL` to be set to the external URL of your site (example: https://sourcegraph.example.com)"))
 			loggedNeedsExternalURL = true
 		}
 	}
 
 	seen := map[schema.OpenIDConnectAuthProvider]int{}
-	for i, p := range c.Critical.AuthProviders {
+	for i, p := range c.AuthProviders {
 		if p.Openidconnect != nil {
 			if j, ok := seen[*p.Openidconnect]; ok {
-				problems = append(problems, fmt.Sprintf("OpenID Connect auth provider at index %d is duplicate of index %d, ignoring", i, j))
+				problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("OpenID Connect auth provider at index %d is duplicate of index %d, ignoring", i, j)))
 			} else {
 				seen[*p.Openidconnect] = i
 			}

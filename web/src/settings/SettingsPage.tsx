@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { overwriteSettings } from '../../../shared/src/settings/edit'
-import { ThemeProps } from '../theme'
+import { ThemeProps } from '../../../shared/src/theme'
 import { SettingsAreaPageProps } from './SettingsArea'
 import { SettingsFile } from './SettingsFile'
 
@@ -34,7 +34,7 @@ export class SettingsPage extends React.PureComponent<Props, State> {
         )
     }
 
-    private onDidCommit = async (lastID: number | null, contents: string) => {
+    private onDidCommit = async (lastID: number | null, contents: string): Promise<void> => {
         this.setState({ commitError: undefined })
 
         // When updating settings for a settings subject that is in the viewer's settings cascade (i.e., if the

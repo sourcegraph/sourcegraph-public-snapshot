@@ -15,18 +15,17 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/opentracing-contrib/go-stdlib/nethttp"
-	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/pkg/ctags"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/symbols"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/debugserver"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/tracer"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/debugserver"
+	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/tracer"
 )
 
 const port = "3184"
@@ -73,7 +72,7 @@ func main() {
 	if err := service.Start(); err != nil {
 		log.Fatalln("Start:", err)
 	}
-	handler := nethttp.Middleware(opentracing.GlobalTracer(), service.Handler())
+	handler := ot.Middleware(service.Handler())
 
 	host := ""
 	if env.InsecureDev {

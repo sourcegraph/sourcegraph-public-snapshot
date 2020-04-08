@@ -9,8 +9,9 @@ import { createRenderer } from 'react-test-renderer/shallow'
 import { HoverMerged } from '../api/client/types/hover'
 import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 import { HoverOverlay, HoverOverlayProps } from './HoverOverlay'
+import { NEVER } from 'rxjs'
 
-const renderShallow = (element: React.ReactElement<HoverOverlayProps<string>>): React.ReactElement<any> => {
+const renderShallow = (element: React.ReactElement<HoverOverlayProps<string>>): React.ReactElement => {
     const renderer = createRenderer()
     renderer.render(element)
     return renderer.getRenderOutput()
@@ -18,7 +19,7 @@ const renderShallow = (element: React.ReactElement<HoverOverlayProps<string>>): 
 
 describe('HoverOverlay', () => {
     const NOOP_EXTENSIONS_CONTROLLER = { executeCommand: () => Promise.resolve() }
-    const NOOP_PLATFORM_CONTEXT = { forceUpdateTooltip: () => undefined }
+    const NOOP_PLATFORM_CONTEXT = { forceUpdateTooltip: () => undefined, settings: NEVER }
     const history = H.createMemoryHistory({ keyLength: 0 })
     const commonProps = {
         location: history.location,
@@ -28,6 +29,7 @@ describe('HoverOverlay', () => {
         showCloseButton: false,
         hoveredToken: { repoName: 'r', commitID: 'c', rev: 'v', filePath: 'f', line: 1, character: 2 },
         overlayPosition: { left: 0, top: 0 },
+        isLightTheme: false,
     }
 
     test('actions and hover undefined', () => {
@@ -167,13 +169,13 @@ describe('HoverOverlay', () => {
 
     test('actions error', () => {
         expect(
-            renderShallow(<HoverOverlay {...commonProps} actionsOrError={{ message: 'm', code: 'c' }} />)
+            renderShallow(<HoverOverlay {...commonProps} actionsOrError={{ message: 'm', name: 'c' }} />)
         ).toMatchSnapshot()
     })
 
     test('hover error', () => {
         expect(
-            renderShallow(<HoverOverlay {...commonProps} hoverOrError={{ message: 'm', code: 'c' }} />)
+            renderShallow(<HoverOverlay {...commonProps} hoverOrError={{ message: 'm', name: 'c' }} />)
         ).toMatchSnapshot()
     })
 
@@ -182,8 +184,8 @@ describe('HoverOverlay', () => {
             renderShallow(
                 <HoverOverlay
                     {...commonProps}
-                    actionsOrError={{ message: 'm1', code: 'c1' }}
-                    hoverOrError={{ message: 'm2', code: 'c2' }}
+                    actionsOrError={{ message: 'm1', name: 'c1' }}
+                    hoverOrError={{ message: 'm2', name: 'c2' }}
                 />
             )
         ).toMatchSnapshot()
@@ -194,7 +196,7 @@ describe('HoverOverlay', () => {
             renderShallow(
                 <HoverOverlay
                     {...commonProps}
-                    actionsOrError={{ message: 'm', code: 'c' }}
+                    actionsOrError={{ message: 'm', name: 'c' }}
                     hoverOrError={{ contents: [{ kind: MarkupKind.Markdown, value: 'v' }] }}
                 />
             )
@@ -207,7 +209,7 @@ describe('HoverOverlay', () => {
                 <HoverOverlay
                     {...commonProps}
                     actionsOrError={[{ action: { id: 'a', command: 'c' } }]}
-                    hoverOrError={{ message: 'm', code: 'c' }}
+                    hoverOrError={{ message: 'm', name: 'c' }}
                 />
             )
         ).toMatchSnapshot()
@@ -220,23 +222,33 @@ describe('HoverOverlay', () => {
             // extract the markdown rendering into another small component
             // and unit test that in isolation
             const r = renderShallow(<HoverOverlay {...commonProps} hoverOrError={hover} />)
-            const contents = castArray(r.props.children).find(
-                element =>
-                    element &&
-                    element.props &&
-                    element.props.className &&
-                    element.props.className.includes('hover-overlay__contents')
+            const contents = castArray(r.props.children).find(element =>
+                element?.props?.className?.includes('hover-overlay__contents')
             )
             if (!contents) {
                 return null
             }
+
+            const grabContent = (c: any) => {
+                if (c.props && c.props.className && c.props.className.includes('hover-overlay__content')) {
+                    if (typeof c.props.children === 'string') {
+                        return c.props.children
+                    }
+                    return c.props.dangerouslySetInnerHTML.__html
+                }
+                return ''
+            }
+
             return castArray(contents.props.children)
                 .map(c => {
-                    if (c.props && c.props.className && c.props.className.includes('hover-overlay__content')) {
-                        if (typeof c.props.children === 'string') {
-                            return c.props.children
-                        }
-                        return c.props.dangerouslySetInnerHTML.__html
+                    // Grab un-badged content
+                    const content = grabContent(c)
+                    if (content !== '') {
+                        return content
+                    }
+                    // Grab badged content in the grand-child level
+                    if (c.props && c.props.className && c.props.className.includes('e2e-tooltip-badged-content')) {
+                        return castArray(c.props.children).map(grabContent).join('').trim()
                     }
                     return ''
                 })

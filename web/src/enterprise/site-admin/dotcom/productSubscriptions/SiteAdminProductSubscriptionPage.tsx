@@ -1,5 +1,4 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { upperFirst } from 'lodash'
 import AddIcon from 'mdi-react/AddIcon'
 import ArrowLeftIcon from 'mdi-react/ArrowLeftIcon'
 import * as React from 'react'
@@ -37,6 +36,7 @@ import {
     SiteAdminProductLicenseNodeProps,
 } from './SiteAdminProductLicenseNode'
 import { SiteAdminProductSubscriptionBillingLink } from './SiteAdminProductSubscriptionBillingLink'
+import { ErrorAlert } from '../../../../components/alerts'
 
 interface Props extends RouteComponentProps<{ subscriptionUUID: string }> {}
 
@@ -45,7 +45,7 @@ class FilteredSiteAdminProductLicenseConnection extends FilteredConnection<
     Pick<SiteAdminProductLicenseNodeProps, 'onDidUpdate' | 'showSubscription'>
 > {}
 
-const LOADING: 'loading' = 'loading'
+const LOADING = 'loading' as const
 
 interface State {
     showGenerate: boolean
@@ -124,7 +124,10 @@ export class SiteAdminProductSubscriptionPage extends React.Component<Props, Sta
                         )
                     )
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate), error => console.error(error))
+                .subscribe(
+                    stateUpdate => this.setState(stateUpdate),
+                    error => console.error(error)
+                )
         )
 
         this.componentUpdates.next(this.props)
@@ -155,9 +158,7 @@ export class SiteAdminProductSubscriptionPage extends React.Component<Props, Sta
                 {this.state.productSubscriptionOrError === LOADING ? (
                     <LoadingSpinner className="icon-inline" />
                 ) : isErrorLike(this.state.productSubscriptionOrError) ? (
-                    <div className="alert alert-danger my-2">
-                        Error: {this.state.productSubscriptionOrError.message}
-                    </div>
+                    <ErrorAlert className="my-2" error={this.state.productSubscriptionOrError} />
                 ) : (
                     <>
                         <h2>Product subscription {this.state.productSubscriptionOrError.name}</h2>
@@ -171,9 +172,7 @@ export class SiteAdminProductSubscriptionPage extends React.Component<Props, Sta
                                 Archive
                             </button>
                             {isErrorLike(this.state.archivalOrError) && (
-                                <div className="alert alert-danger mt-2">
-                                    Error: {upperFirst(this.state.archivalOrError.message)}
-                                </div>
+                                <ErrorAlert className="mt-2" error={this.state.archivalOrError} />
                             )}
                         </div>
                         <div className="card mt-3">
@@ -283,7 +282,7 @@ export class SiteAdminProductSubscriptionPage extends React.Component<Props, Sta
         )
     }
 
-    private toggleShowGenerate = () => this.setState(prevState => ({ showGenerate: !prevState.showGenerate }))
+    private toggleShowGenerate = (): void => this.setState(prevState => ({ showGenerate: !prevState.showGenerate }))
 
     private queryProductSubscription = (uuid: string): Observable<GQL.IProductSubscription> =>
         queryGraphQL(
@@ -392,14 +391,14 @@ export class SiteAdminProductSubscriptionPage extends React.Component<Props, Sta
             })
         )
 
-    private archiveProductSubscription = () => this.archivals.next()
+    private archiveProductSubscription = (): void => this.archivals.next()
 
-    private onDidUpdateProductLicense = () => {
+    private onDidUpdateProductLicense = (): void => {
         this.licenseUpdates.next()
         this.toggleShowGenerate()
     }
 
-    private onDidUpdate = () => this.updates.next()
+    private onDidUpdate = (): void => this.updates.next()
 }
 
 function archiveProductSubscription(args: GQL.IArchiveProductSubscriptionOnDotcomMutationArguments): Observable<void> {

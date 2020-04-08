@@ -57,24 +57,25 @@ export function refreshAuthenticatedUser(): Observable<never> {
     )
 }
 
-const initialSiteConfigAuthPublic = window.context ? window.context.critical['auth.public'] : false // default to false in tests
-
 /**
  * Whether auth is required to perform any action.
  *
- * If an HTTP request might be triggered by an unauthenticated user on a server with auth.public ==
- * false, the caller must first check authRequired. If authRequired is true, then the component must
+ * If an HTTP request might be triggered by an unauthenticated user on a server that is not Sourcegraph.com
+ * the caller must first check authRequired. If authRequired is true, then the component must
  * not initiate the HTTP request. This prevents the browser's devtools console from showing HTTP 401
  * errors, which mislead the user into thinking there is a problem (and make debugging any actual
  * issue much harder).
  */
-export const authRequired = authenticatedUser.pipe(map(user => user === null && !initialSiteConfigAuthPublic))
+export const authRequired = authenticatedUser.pipe(map(user => user === null && !window.context?.sourcegraphDotComMode))
 
 // Populate authenticatedUser.
 if (window.context && window.context.isAuthenticatedUser) {
     refreshAuthenticatedUser()
         .toPromise()
-        .then(() => undefined, err => console.error(err))
+        .then(
+            () => undefined,
+            err => console.error(err)
+        )
 } else {
     authenticatedUser.next(null)
 }

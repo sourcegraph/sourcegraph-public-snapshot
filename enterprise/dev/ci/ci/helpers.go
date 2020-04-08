@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/hashicorp/go-multierror"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
 // Config is the set of configuration parameters that determine the structure of the CI build. These
@@ -27,8 +27,15 @@ type Config struct {
 	taggedRelease       bool
 	releaseBranch       bool
 	isBextReleaseBranch bool
+	isRenovateBranch    bool
 	patch               bool
 	patchNoTest         bool
+	isQuick             bool
+	isMasterDryRun      bool
+
+	// profilingEnabled, if true, tells buildkite to print timing and resource utilization information
+	// for each command
+	profilingEnabled bool
 }
 
 func ComputeConfig() Config {
@@ -57,6 +64,12 @@ func ComputeConfig() Config {
 		version = version + "_patch"
 	}
 
+	isMasterDryRun := strings.HasPrefix(branch, "master-dry-run/")
+
+	isQuick := strings.HasPrefix(branch, "quick/")
+
+	profilingEnabled := strings.HasPrefix(branch, "enable-profiling/")
+
 	var mustIncludeCommits []string
 	if rawMustIncludeCommit := os.Getenv("MUST_INCLUDE_COMMIT"); rawMustIncludeCommit != "" {
 		mustIncludeCommits = strings.Split(rawMustIncludeCommit, ",")
@@ -72,10 +85,14 @@ func ComputeConfig() Config {
 		mustIncludeCommit: mustIncludeCommits,
 
 		taggedRelease:       taggedRelease,
-		releaseBranch:       regexp.MustCompile(`^[0-9]+\.[0-9]+$`).MatchString(branch),
+		releaseBranch:       lazyregexp.New(`^[0-9]+\.[0-9]+$`).MatchString(branch),
 		isBextReleaseBranch: branch == "bext/release",
+		isRenovateBranch:    strings.HasPrefix(branch, "renovate/"),
 		patch:               patch,
 		patchNoTest:         patchNoTest,
+		isQuick:             isQuick,
+		isMasterDryRun:      isMasterDryRun,
+		profilingEnabled:    profilingEnabled,
 	}
 }
 

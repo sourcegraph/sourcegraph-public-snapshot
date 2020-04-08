@@ -12,6 +12,7 @@ import { isExtensionAdded } from './extension/extension'
 import { ExtensionConfigurationState } from './extension/ExtensionConfigurationState'
 import { WorkInProgressBadge } from './extension/WorkInProgressBadge'
 import { ExtensionToggle } from './ExtensionToggle'
+import { isEncodedImage } from '../../../shared/src/util/icon'
 
 interface Props extends SettingsCascadeProps, PlatformContextProps<'updateSettings'> {
     node: Pick<
@@ -38,7 +39,7 @@ export class ExtensionCard extends React.PureComponent<Props> {
             node.manifest && !isErrorLike(node.manifest) ? node.manifest : undefined
         let iconURL: URL | undefined
         try {
-            if (manifest && manifest.icon) {
+            if (manifest?.icon) {
                 iconURL = new URL(manifest.icon)
             }
         } catch (e) {
@@ -55,11 +56,10 @@ export class ExtensionCard extends React.PureComponent<Props> {
                         onClick={stopPropagation}
                     >
                         <div className="d-flex">
-                            {manifest &&
-                                manifest.icon &&
+                            {manifest?.icon &&
                                 iconURL &&
                                 iconURL.protocol === 'data:' &&
-                                /^data:image\/png(;base64)?,/.test(manifest.icon) && (
+                                isEncodedImage(manifest.icon) && (
                                     <img className="extension-card__icon mr-2" src={manifest.icon} />
                                 )}
                             <div className="text-truncate w-100">

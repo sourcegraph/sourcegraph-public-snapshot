@@ -64,7 +64,10 @@ export class RepositoryNotFoundPage extends React.PureComponent<Props, State> {
                         )
                     })
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate), error => console.error(error))
+                .subscribe(
+                    stateUpdate => this.setState(stateUpdate),
+                    error => console.error(error)
+                )
         )
 
         this.componentUpdates.next(this.props)

@@ -101,5 +101,5 @@ export class ChromeExtensionToast extends React.Component {
         )
     }
 
-    private onClickInstall = () => eventLogger.log('BrowserExtInstallClicked', { marketing: { browser: 'Chrome' } })
+    private onClickInstall = (): void => eventLogger.log('BrowserExtInstallClicked')
 }

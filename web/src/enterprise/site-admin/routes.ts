@@ -70,4 +70,9 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         render: lazyComponent(() => import('./SiteAdminRegistryExtensionsPage'), 'SiteAdminRegistryExtensionsPage'),
         exact: true,
     },
+    {
+        path: '/lsif-uploads/:id',
+        exact: true,
+        render: lazyComponent(() => import('./SiteAdminLsifUploadPage'), 'SiteAdminLsifUploadPage'),
+    },
 ]

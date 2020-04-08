@@ -13,7 +13,7 @@ interface Props extends RouteComponentProps<{ id: GQL.ID }>, NamespaceProps {
     authenticatedUser: GQL.IUser | null
 }
 
-const LOADING: 'loading' = 'loading'
+const LOADING = 'loading' as const
 
 interface State {
     savedSearchOrError: typeof LOADING | GQL.ISavedSearch | ErrorLike
@@ -124,7 +124,7 @@ export class SavedSearchUpdateForm extends React.Component<Props, State> {
         )
     }
 
-    private onSubmit = (fields: SavedQueryFields) => {
+    private onSubmit = (fields: SavedQueryFields): void => {
         this.submits.next(fields)
     }
 }

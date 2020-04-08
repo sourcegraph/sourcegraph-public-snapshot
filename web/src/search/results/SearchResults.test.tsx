@@ -1,43 +1,47 @@
 import { createBrowserHistory } from 'history'
 import React from 'react'
 import { BrowserRouter } from 'react-router-dom'
-import { cleanup, getAllByTestId, getByTestId, render, waitForElement } from '@testing-library/react'
-import { noop } from 'rxjs'
+import { cleanup, getAllByTestId, getByTestId, render, waitFor } from '@testing-library/react'
+import { noop, NEVER } from 'rxjs'
 import sinon from 'sinon'
-import { setLinkComponent } from '../../../../shared/src/components/Link'
 import {
     extensionsController,
     HIGHLIGHTED_FILE_LINES_REQUEST,
     NOOP_SETTINGS_CASCADE,
     OBSERVABLE_SEARCH_REQUEST,
-} from '../testHelpers'
+} from '../../../../shared/src/util/searchTestHelpers'
 import { SearchResults, SearchResultsProps } from './SearchResults'
+import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 
 describe('SearchResults', () => {
-    setLinkComponent((props: any) => <a {...props} />)
-
-    afterAll(() => {
-        setLinkComponent(null as any)
-        cleanup()
-    })
+    afterAll(cleanup)
 
     const history = createBrowserHistory()
-    history.replace({ search: 'q=r:golang/oauth2+test+f:travis' })
+    history.replace({ search: 'q=r:golang/oauth2+test+f:travis&patternType=regexp' })
 
     const defaultProps: SearchResultsProps = {
         authenticatedUser: null,
         location: history.location,
         history,
-        navbarSearchQuery: '',
+        navbarSearchQueryState: { query: '', cursorPosition: 0 },
         fetchHighlightedFileLines: HIGHLIGHTED_FILE_LINES_REQUEST,
         searchRequest: OBSERVABLE_SEARCH_REQUEST,
         isLightTheme: true,
         settingsCascade: NOOP_SETTINGS_CASCADE,
         extensionsController,
         isSourcegraphDotCom: false,
-        platformContext: { forceUpdateTooltip: sinon.spy() },
+        platformContext: { forceUpdateTooltip: sinon.spy(), settings: NEVER },
         telemetryService: { log: noop, logViewEvent: noop },
         deployType: 'dev',
+        patternType: SearchPatternType.regexp,
+        caseSensitive: false,
+        interactiveSearchMode: false,
+        filtersInQuery: {},
+        toggleSearchMode: sinon.fake(),
+        onFiltersInQueryChange: sinon.fake(),
+        splitSearchModes: false,
+        setPatternType: sinon.spy(),
+        setCaseSensitivity: sinon.spy(),
     }
 
     it('calls the search request once', () => {
@@ -55,7 +59,7 @@ describe('SearchResults', () => {
                 <SearchResults {...defaultProps} />
             </BrowserRouter>
         )
-        await waitForElement(() => getByTestId(container, 'filters-bar'))
+        await waitFor(() => getByTestId(container, 'filters-bar'))
         expect(getAllByTestId(container, 'filters-bar').length).toBe(1)
         expect(getAllByTestId(container, 'repo-filters-bar').length).toBe(1)
     })

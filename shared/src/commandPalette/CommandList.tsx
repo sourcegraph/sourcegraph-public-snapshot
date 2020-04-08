@@ -6,12 +6,13 @@ import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import MenuIcon from 'mdi-react/MenuIcon'
 import MenuUpIcon from 'mdi-react/MenuUpIcon'
 import React, { useCallback, useMemo, useState } from 'react'
+// eslint-disable-next-line @typescript-eslint/ban-ts-ignore
 // @ts-ignore
 import TooltipPopoverWrapper from 'reactstrap/lib/TooltipPopoverWrapper'
 import { Subscription } from 'rxjs'
 import stringScore from 'string-score'
 import { Key } from 'ts-key-enum'
-import { KeyboardShortcut } from '../../../web/src/keyboardShortcuts/keyboardShortcuts'
+import { KeyboardShortcut } from '../keyboardShortcuts'
 import { ActionItem, ActionItemAction } from '../actions/ActionItem'
 import { ContributableMenu, Contributions, Evaluated } from '../api/protocol'
 import { HighlightedMatches } from '../components/HighlightedMatches'
@@ -47,12 +48,13 @@ export interface CommandListClassProps {
     resultsContainerClassName?: string
     actionItemClassName?: string
     noResultsClassName?: string
+    iconClassName?: string
 }
 
 export interface CommandListProps
     extends CommandListClassProps,
         ExtensionsControllerProps<'services' | 'executeCommand'>,
-        PlatformContextProps<'forceUpdateTooltip'>,
+        PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         TelemetryProps {
     /** The menu whose commands to display. */
     menu: ContributableMenu
@@ -115,7 +117,9 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
     private subscriptions = new Subscription()
 
     private selectedItem: ActionItem | null = null
-    private setSelectedItem = (e: ActionItem | null) => (this.selectedItem = e)
+    private setSelectedItem = (e: ActionItem | null): void => {
+        this.selectedItem = e
+    }
 
     public componentDidMount(): void {
         this.subscriptions.add(
@@ -199,8 +203,9 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
                                         ref={i === selectedIndex ? this.setSelectedItem : undefined}
                                         title={
                                             <HighlightedMatches
-                                                text={`${item.action.category ? `${item.action.category}: ` : ''}${item
-                                                    .action.title || item.action.command}`}
+                                                text={[item.action.category, item.action.title || item.action.command]
+                                                    .filter(Boolean)
+                                                    .join(': ')}
                                                 pattern={query}
                                             />
                                         }
@@ -248,7 +253,7 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
         this.setState(prevState => ({ selectedIndex: prevState.selectedIndex + delta }))
     }
 
-    private onActionDidExecute = (actionID: string) => {
+    private onActionDidExecute = (actionID: string): void => {
         const KEEP_RECENT_ACTIONS = 10
         this.setState(prevState => {
             const { recentActions } = prevState
@@ -291,8 +296,9 @@ export function filterAndRankItems(
         .filter((item, i) => {
             let label = labels[i]
             if (label === undefined) {
-                label = `${item.action.category ? `${item.action.category}: ` : ''}${item.action.title ||
-                    item.action.command}`
+                label = `${item.action.category ? `${item.action.category}: ` : ''}${
+                    item.action.title || item.action.command || ''
+                }`
                 labels[i] = label
             }
             if (scores[i] === undefined) {
@@ -301,7 +307,7 @@ export function filterAndRankItems(
             return scores[i] > 0
         })
         .map((item, i) => {
-            const index = recentActions && recentActions.indexOf(item.action.id)
+            const index = recentActions?.indexOf(item.action.id)
             return { item, score: scores[i], recentIndex: index === -1 ? null : index }
         })
     return sortBy(scoredItems, 'recentIndex', 'score', ({ item }) => item.action.id).map(({ item }) => item)
@@ -319,8 +325,8 @@ export const CommandListPopoverButton: React.FunctionComponent<CommandListPopove
     buttonElement: ButtonElement = 'span',
     buttonOpenClassName = '',
     showCaret = true,
-    popoverClassName = '',
-    popoverInnerClassName = '',
+    popoverClassName,
+    popoverInnerClassName,
     keyboardShortcutForShow,
     ...props
 }) => {
@@ -343,8 +349,8 @@ export const CommandListPopoverButton: React.FunctionComponent<CommandListPopove
             <TooltipPopoverWrapper
                 isOpen={isOpen}
                 toggle={toggleIsOpen}
-                popperClassName={`popover show ${popoverClassName}`}
-                innerClassName={`popover-inner ${popoverInnerClassName}`}
+                popperClassName={classNames('show', popoverClassName)}
+                innerClassName={classNames('popover-inner', popoverInnerClassName)}
                 placement="bottom-end"
                 target={id}
                 trigger="legacy"
@@ -353,10 +359,9 @@ export const CommandListPopoverButton: React.FunctionComponent<CommandListPopove
             >
                 <CommandList {...props} onSelect={close} />
             </TooltipPopoverWrapper>
-            {keyboardShortcutForShow &&
-                keyboardShortcutForShow.keybindings.map((keybinding, i) => (
-                    <Shortcut key={i} {...keybinding} onMatch={toggleIsOpen} />
-                ))}
+            {keyboardShortcutForShow?.keybindings.map((keybinding, i) => (
+                <Shortcut key={i} {...keybinding} onMatch={toggleIsOpen} />
+            ))}
         </ButtonElement>
     )
 }

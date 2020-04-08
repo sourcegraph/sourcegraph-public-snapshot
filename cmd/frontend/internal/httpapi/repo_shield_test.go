@@ -2,13 +2,13 @@ package httpapi
 
 import (
 	"context"
-	"fmt"
 	"reflect"
+	"strconv"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 func TestRepoShieldFmt(t *testing.T) {
@@ -21,7 +21,7 @@ func TestRepoShieldFmt(t *testing.T) {
 		15410: " 15.4k projects",
 	}
 	for input, want := range want {
-		t.Run(fmt.Sprintf("%d", input), func(t *testing.T) {
+		t.Run(strconv.Itoa(input), func(t *testing.T) {
 			got := badgeValueFmt(input)
 			if got != want {
 				t.Fatalf("input %d got %q want %q", input, got, want)

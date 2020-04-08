@@ -1,52 +1,65 @@
 import * as H from 'history'
-import React, { useCallback } from 'react'
+import React from 'react'
 import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
 import { Form } from '../../components/Form'
-import { submitSearch } from '../helpers'
-import { QueryInput } from './QueryInput'
+import { submitSearch, QueryState } from '../helpers'
 import { SearchButton } from './SearchButton'
+import { PatternTypeProps, CaseSensitivityProps, SmartSearchFieldProps } from '..'
+import { LazyMonacoQueryInput } from './LazyMonacoQueryInput'
+import { QueryInput } from './QueryInput'
+import { ThemeProps } from '../../../../shared/src/theme'
+import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 
-interface Props extends ActivationProps {
+interface Props
+    extends ActivationProps,
+        PatternTypeProps,
+        CaseSensitivityProps,
+        SmartSearchFieldProps,
+        SettingsCascadeProps,
+        ThemeProps {
     location: H.Location
     history: H.History
-    navbarSearchQuery: string
-    onChange: (newValue: string) => void
+    navbarSearchState: QueryState
+    onChange: (newValue: QueryState) => void
 }
 
 /**
  * The search item in the navbar
  */
-export const SearchNavbarItem: React.FunctionComponent<Props> = ({
-    navbarSearchQuery,
-    onChange,
-    activation,
-    location,
-    history,
-}) => {
-    // Only autofocus the query input on search result pages (otherwise we
-    // capture down-arrow keypresses that the user probably intends to scroll down
-    // in the page).
-    const autoFocus = location.pathname === '/search'
+export class SearchNavbarItem extends React.PureComponent<Props> {
+    private onSubmit = (): void => {
+        submitSearch({ ...this.props, query: this.props.navbarSearchState.query, source: 'nav' })
+    }
 
-    const onSubmit = useCallback(
-        (e: React.FormEvent<HTMLFormElement>): void => {
-            e.preventDefault()
-            submitSearch(history, navbarSearchQuery, 'nav', activation)
-        },
-        [history, navbarSearchQuery, activation]
-    )
+    private onFormSubmit = (e: React.FormEvent): void => {
+        e.preventDefault()
+        this.onSubmit()
+    }
 
-    return (
-        <Form className="search search--navbar-item d-flex align-items-start" onSubmit={onSubmit}>
-            <QueryInput
-                value={navbarSearchQuery}
-                onChange={onChange}
-                autoFocus={autoFocus ? 'cursor-at-end' : undefined}
-                hasGlobalQueryBehavior={true}
-                location={location}
-                history={history}
-            />
-            <SearchButton />
-        </Form>
-    )
+    public render(): React.ReactNode {
+        return (
+            <Form
+                className="search search--navbar-item d-flex align-items-flex-start flex-grow-1"
+                onSubmit={this.onFormSubmit}
+            >
+                {this.props.smartSearchField ? (
+                    <LazyMonacoQueryInput
+                        {...this.props}
+                        hasGlobalQueryBehavior={true}
+                        queryState={this.props.navbarSearchState}
+                        onSubmit={this.onSubmit}
+                        autoFocus={true}
+                    />
+                ) : (
+                    <QueryInput
+                        {...this.props}
+                        value={this.props.navbarSearchState}
+                        autoFocus={this.props.location.pathname === '/search' ? 'cursor-at-end' : undefined}
+                        hasGlobalQueryBehavior={true}
+                    />
+                )}
+                <SearchButton />
+            </Form>
+        )
+    }
 }

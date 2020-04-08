@@ -1,8 +1,0 @@
-steps:
-  - command: |
-      GO111MODULE=on go run ./enterprise/dev/ci/gen-pipeline.go | tee ./pipeline.yml
-      buildkite-agent pipeline upload ./pipeline.yml
-    label: ':pipeline:'
-    plugins:
-      gopath-checkout#v1.0.1:
-        import: github.com/sourcegraph/sourcegraph

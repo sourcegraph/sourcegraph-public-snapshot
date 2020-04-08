@@ -4,10 +4,11 @@ import { ContributableMenu } from '../../../../shared/src/api/protocol'
 import { ExtensionManifest } from '../../../../shared/src/schema/extensionSchema'
 import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { PageTitle } from '../../components/PageTitle'
-import { ThemeProps } from '../../theme'
 import { eventLogger } from '../../tracking/eventLogger'
 import { ExtensionAreaRouteContext } from './ExtensionArea'
 import { ExtensionNoManifestAlert } from './RegistryExtensionManifestPage'
+import { ThemeProps } from '../../../../shared/src/theme'
+import { ErrorAlert } from '../../components/alerts'
 
 interface Props extends ExtensionAreaRouteContext, RouteComponentProps<{}>, ThemeProps {}
 
@@ -32,7 +33,7 @@ const ContributionsTable: React.FunctionComponent<{ contributionGroups: Contribu
                         <h3>
                             {group.title} ({group.rows.length})
                         </h3>
-                        {group.error && <div className="alert alert-danger mt-1">Error: {group.error.message}</div>}
+                        {group.error && <ErrorAlert className="mt-1" error={group.error} />}
                         <table className="table mb-5">
                             <thead>
                                 <tr>
@@ -103,9 +104,9 @@ function toContributionsGroups(manifest: ExtensionManifest): ContributionGroup[]
                         }
                     }
                 }
-                const description = `${action.title || ''}${
-                    action.title && action.description ? ': ' : ''
-                }${action.description || ''}`
+                const description = `${action.title || ''}${action.title && action.description ? ': ' : ''}${
+                    action.description || ''
+                }`
                 actionsGroup.rows.push([
                     // eslint-disable-next-line react/jsx-key
                     <code>{action.id}</code>,
@@ -148,9 +149,7 @@ export class RegistryExtensionContributionsPage extends React.PureComponent<Prop
                     {this.props.extension.manifest === null ? (
                         <ExtensionNoManifestAlert extension={this.props.extension} />
                     ) : isErrorLike(this.props.extension.manifest) ? (
-                        <div className="alert alert-danger">
-                            Error parsing extension manifest: {this.props.extension.manifest.message}
-                        </div>
+                        <ErrorAlert error={this.props.extension.manifest} prefix="Error parsing extension manifest" />
                     ) : (
                         <ContributionsTable contributionGroups={toContributionsGroups(this.props.extension.manifest)} />
                     )}

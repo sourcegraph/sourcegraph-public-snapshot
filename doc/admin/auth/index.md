@@ -1,6 +1,6 @@
 # User authentication (SSO)
 
-> NOTE: User authentication is part of the [**critical configuration**](../config/critical_config.md), which means it must be edited from the [management console](../management_console.md).
+> NOTE: In versions before v3.11, user authentication was part of the [**critical configuration**](../config/critical_config.md), which meant it must be edited from the [management console](../management_console.md). It is now in the [site configuration](../config/site_config.md).
 
 Sourcegraph supports the following ways for users to sign in:
 
@@ -8,7 +8,7 @@ Sourcegraph supports the following ways for users to sign in:
 - [GitHub OAuth](#github)
 - [GitLab OAuth](#gitlab)
 - [OpenID Connect](#openid-connect) (including [Google accounts on G Suite](#g-suite-google-accounts))
-- [SAML](#saml)
+- [SAML](saml/index.md)
 - [HTTP authentication proxies](#http-authentication-proxies)
 
 The authentication provider is configured in the [`auth.providers`](../config/critical_config.md#authentication-providers) critical configuration option.
@@ -59,7 +59,7 @@ Site configuration example:
 
 ## GitHub
 
-> Note: GitHub authentication is currently beta.
+> NOTE: GitHub authentication is currently beta.
 
 [Create a GitHub OAuth
 application](https://developer.github.com/apps/building-oauth-apps/creating-an-oauth-app/) (if using
@@ -69,7 +69,7 @@ GitHub Enterprise, create one on your instance, not GitHub.com). Set the followi
 - Homepage URL: `https://sourcegraph.example.com`
 - Authorization callback URL: `https://sourcegraph.example.com/.auth/github/callback`
 
-> Note: If you want to enable repository permissions, you should grant your OAuth app permission to
+> NOTE: If you want to enable repository permissions, you should grant your OAuth app permission to
 > your GitHub organization(s). You can do that either by creating the OAuth app under your GitHub
 > organization (rather than your personal account) or by [following these
 > instructions](https://help.github.com/articles/approving-oauth-apps-for-your-organization/).
@@ -86,7 +86,8 @@ Then add the following lines to your critical configuration:
       "displayName": "GitHub",
       "clientID": "replace-with-the-oauth-client-id",
       "clientSecret": "replace-with-the-oauth-client-secret",
-      "allowSignup": false  // Set to true to enable anyone with a GitHub account to sign up without invitation
+      "allowSignup": false,  // Set to true to enable anyone with a GitHub account to sign up without invitation
+      "allowOrgs": ["your-org-name"] // Restrict logins to members of these orgs.
     }
   ]
 }
@@ -102,11 +103,13 @@ Set `allowSignup` to `true` to enable anyone with a GitHub account to sign up wi
 GitHub only if an account with the same verified email already exists. If none exists, a site admin
 must create one explicitly.
 
+The `allowOrgs` fields restricts logins to members of the specified GitHub organizations. Existing user sessions are **not invalidated**. Only new logins after this setting is changed are affected.
+
 Once you've configured GitHub as a sign-on provider, you may also want to [add GitHub repositories to Sourcegraph](../external_service/github.md#repository-syncing).
 
 ## GitLab
 
-> Note: GitLab authentication is currently beta.
+> NOTE: GitLab authentication is currently beta.
 
 [Create a GitLab OAuth application](https://docs.gitlab.com/ee/integration/oauth_provider.html). Set
 the following values, replacing `sourcegraph.example.com` with the IP or hostname of your
@@ -152,10 +155,10 @@ The [`openidconnect` auth provider](../config/critical_config.md#openid-connect-
 
 To configure Sourcegraph to authenticate users via OpenID Connect:
 
-1.  Create a new OpenID Connect client in the external service (such as one of those listed above).
+1. Create a new OpenID Connect client in the external service (such as one of those listed above).
     - **Redirect/callback URI:** `https://sourcegraph.example.com/.auth/callback` (replace `https://sourcegraph.example.com` with the value of the `externalURL` property in your config)
-1.  Provide the OpenID Connect client's issuer, client ID, and client secret in the Sourcegraph critical configuration shown below.
-1.  (Optional) Require users to have a specific email domain name to authenticate (e.g., to limit users to only those from your organization).
+1. Provide the OpenID Connect client's issuer, client ID, and client secret in the Sourcegraph critical configuration shown below.
+1. (Optional) Require users to have a specific email domain name to authenticate (e.g., to limit users to only those from your organization).
 
 Example [`openidconnect` auth provider](../config/critical_config.md#openid-connect-including-g-suite) configuration:
 
@@ -183,13 +186,13 @@ See the [`openid` auth provider documentation](../config/critical_config.md#open
 
 Google's G Suite supports OpenID Connect, which is the best way to enable Sourcegraph authentication using Google accounts. To set it up:
 
-1.  Create an **OAuth client ID** and client secret in the [Google API credentials console](https://console.developers.google.com/apis/credentials). [Google's interactive OpenID Connect documentation page](https://developers.google.com/identity/protocols/OpenIDConnect#getcredentials):
+1. Create an **OAuth client ID** and client secret in the [Google API credentials console](https://console.developers.google.com/apis/credentials). [Google's interactive OpenID Connect documentation page](https://developers.google.com/identity/protocols/OpenIDConnect#getcredentials):
     - **Application type:** Web application
     - **Name:** Sourcegraph (or any other name your users will recognize)
     - **Authorized JavaScript origins:** (leave blank)
     - **Authorized redirect URIs:** `https://sourcegraph.example.com/.auth/callback` (replace `https://sourcegraph.example.com` with the value of the `externalURL` property in your config)
-1.  Use the **client ID** and **client secret** values in Sourcegraph critical configuration (as shown in the example below).
-1.  Set your G Suite domain in `requireEmailDomain` to prevent users outside your organization from signing in.
+1. Use the **client ID** and **client secret** values in Sourcegraph critical configuration (as shown in the example below).
+1. Set your G Suite domain in `requireEmailDomain` to prevent users outside your organization from signing in.
 
 Example [`openidconnect` auth provider](../config/critical_config.md#openid-connect-including-g-suite) configuration for G Suite:
 
@@ -207,66 +210,6 @@ Example [`openidconnect` auth provider](../config/critical_config.md#openid-conn
     }
   ]
 }
-```
-
-## SAML
-
-The [`saml` auth provider](../config/critical_config.md#saml) authenticates users via SAML 2.0, which is supported by many external services, including:
-
-- [Okta](https://developer.okta.com/standards/SAML/index) - _Admin > Classic UI > Applications > Add Application > Create New App > Web / SAML 2.0_
-- [OneLogin](https://www.onelogin.com/saml) - _Administration > Apps > Add Apps > SAML Test Connector (SP)_
-- [Ping Identity](https://www.pingidentity.com/en/resources/client-library/articles/saml.html)
-- [Auth0](https://auth0.com/docs/protocols/saml)
-- [Salesforce Identity](https://help.salesforce.com/articleView?id=sso_saml_setting_up.htm&type=0)
-- [Microsoft Azure Active Directory](https://docs.microsoft.com/en-us/azure/active-directory/develop/active-directory-single-sign-on-protocol-reference)
-
-To configure Sourcegraph to authenticate users via SAML:
-
-1.  Register Sourcegraph as a SAML Service Provider in the external SAML Identity Provider (such as one of those listed above). Use the following settings (the exact names and labels vary across services).
-    - **Assertion Consumer Service URL, Recipient URL, Destination URL, Single sign-on URL:** `https://sourcegraph.example.com/.auth/saml/acs` (substituting the `externalURL` from your [critical configuration](../config/critical_config.md))
-    - **Service Provider (issuer, entity ID, audience URI, metadata URL):** `https://sourcegraph.example.com/.auth/saml/metadata` (substituting the `externalURL` from your [critical configuration](../config/critical_config.md))
-    - **Attribute statements:**
-      - `email` (required): the user's email
-      - `login` (optional): the user's username
-      - `displayName` (optional): the full name of the user
-1.  Obtain the SAML identity provider metadata URL and use it in Sourcegraph critical configuration as shown below.
-
-Example [`saml` auth provider](../config/critical_config.md#saml) configuration:
-
-```json
-{
-  // ...
-  "externalURL": "https://sourcegraph.example.com",
-  "auth.providers": [
-    {
-      "type": "saml",
-      // Find this listed in your SAML Identity Provider's admin interface after you've added your SAML app.
-      // It's sometimes called the "Identity Provider metadata URL" or "SAML metadata".
-      "identityProviderMetadataURL": "https://example.com/saml-metadata"
-    }
-  ]
-}
-```
-
-See the [`saml` auth provider documentation](../config/critical_config.md#saml) for the full set of configuration options.
-
-> WARNING: When using SAML identity provider-initiated authentication, only 1 SAML auth provider is currently supported.
-
-### SAML troubleshooting
-
-Setting the env var `INSECURE_SAML_LOG_TRACES=1` on the `sourcegraph/server` Docker container (or the `sourcegraph-frontend` pod if Sourcegraph is deployed to a Kubernetes cluster) causes all SAML requests and responses to be logged.
-
-### Vendor-specific SAML instructions
-
-- [Configuring SAML with OneLogin](saml_with_onelogin.md)
-- [Configuring SAML with Microsoft Active Directory Federation Services (ADFS)](saml_with_microsoft_adfs.md)
-
-### SAML Service Provider metadata
-
-To make it easier to register Sourcegraph as a SAML Service Provider with your SAML Identity Provider, Sourcegraph exposes SAML Service Provider metadata at the URL path `/.auth/saml/metadata`. For example:
-
-```
-https://sourcegraph.example.com/.auth/saml/metadata
 ```
 
 ## HTTP authentication proxies
@@ -314,10 +257,12 @@ Some proxies add a prefix to the username header value. For example, Google IAP 
 
 Usernames on Sourcegraph are normalized according to the following rules.
 
-- Any portion of the username after a '@' character is removed
 - Any characters not in `[a-zA-Z0-9-.]` are replaced with `-`
-- Usernames with consecutive '-' or '.' characters are not allowed
-- Usernames that start or end with '-' or '.' are not allowed
+- Usernames with exactly one `@` character are interpreted as an email address, so the username will be extracted by truncating at the `@` character.
+- Usernames with two or more `@` characters are not considered an email address, so the `@` will be treated as a non-standard character and be replaced with `-`
+- Usernames with consecutive `-` or `.` characters are not allowed
+- Usernames that start or end with `.` are not allowed
+- Usernames that start with `-` are not allowed
 
 Usernames from authentication providers are normalized before being used in Sourcegraph. Usernames chosen by users are rejected if they do not meet these criteria.
 

@@ -26,6 +26,7 @@ import {
 } from './services/notifications'
 import { TextModelUpdate } from './services/modelService'
 import { EditorUpdate } from './services/editorService'
+import { registerComlinkTransferHandlers } from '../util'
 
 export interface ExtensionHostClientConnection {
     /**
@@ -50,7 +51,7 @@ export interface ActivatedExtension {
 }
 
 /**
- * @param endpoint The Worker object to communicate with
+ * @param endpoints The Worker object to communicate with
  */
 export async function createExtensionHostClientConnection(
     endpoints: EndpointPair,
@@ -60,6 +61,8 @@ export async function createExtensionHostClientConnection(
     const subscription = new Subscription()
 
     // MAIN THREAD
+
+    registerComlinkTransferHandlers()
 
     /** Proxy to the exposed extension host API */
     const initializeExtensionHost = comlink.proxy<ExtensionHostAPIFactory>(endpoints.proxy)
@@ -74,11 +77,7 @@ export async function createExtensionHostClientConnection(
     // Sync models and editors to the extension host
     subscription.add(
         merge(
-            of(
-                [...services.model.models.entries()].map(
-                    ([uri, model]): TextModelUpdate => ({ type: 'added', uri, ...model })
-                )
-            ),
+            of([...services.model.models.entries()].map(([, model]): TextModelUpdate => ({ type: 'added', ...model }))),
             from(services.model.modelUpdates)
         )
             .pipe(concatMap(modelUpdates => proxy.documents.$acceptDocumentData(modelUpdates)))
@@ -133,7 +132,7 @@ export async function createExtensionHostClientConnection(
     const clientSearch = new ClientSearch(services.queryTransformer)
     const clientCommands = new ClientCommands(services.commands)
     subscription.add(new ClientRoots(proxy.roots, services.workspace))
-    subscription.add(new ClientExtensions(proxy.extensions, services.extensions, services.telemetryService))
+    subscription.add(new ClientExtensions(proxy.extensions, services.extensions))
 
     const clientContent = createClientContent(services.linkPreviews)
 

@@ -1,7 +1,6 @@
 package repos
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -13,9 +12,10 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketcloud"
+	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
+	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"gopkg.in/inconshreveable/log15.v2"
 )
 
 func TestBitbucketCloudSource_ListRepos(t *testing.T) {
@@ -108,7 +108,66 @@ func TestBitbucketCloudSource_ListRepos(t *testing.T) {
 	}
 }
 
-func TestBitbucketCloudSource_MakeRepo(t *testing.T) {
+func TestBitbucketCloudSource_makeRepo(t *testing.T) {
+	b, err := ioutil.ReadFile(filepath.Join("testdata", "bitbucketcloud-repos.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var repos []*bitbucketcloud.Repo
+	if err := json.Unmarshal(b, &repos); err != nil {
+		t.Fatal(err)
+	}
+
+	svc := ExternalService{ID: 1, Kind: "BITBUCKETCLOUD"}
+
+	tests := []struct {
+		name   string
+		schmea *schema.BitbucketCloudConnection
+	}{
+		{
+			name: "simple",
+			schmea: &schema.BitbucketCloudConnection{
+				Url:         "https://bitbucket.org",
+				Username:    "alice",
+				AppPassword: "secret",
+			},
+		}, {
+			name: "ssh",
+			schmea: &schema.BitbucketCloudConnection{
+				Url:         "https://bitbucket.org",
+				Username:    "alice",
+				AppPassword: "secret",
+				GitURLType:  "ssh",
+			},
+		}, {
+			name: "path-pattern",
+			schmea: &schema.BitbucketCloudConnection{
+				Url:                   "https://bitbucket.org",
+				Username:              "alice",
+				AppPassword:           "secret",
+				RepositoryPathPattern: "bb/{nameWithOwner}",
+			},
+		},
+	}
+	for _, test := range tests {
+		test.name = "BitbucketCloudSource_makeRepo_" + test.name
+		t.Run(test.name, func(t *testing.T) {
+			s, err := newBitbucketCloudSource(&svc, test.schmea, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			var got []*Repo
+			for _, r := range repos {
+				got = append(got, s.makeRepo(r))
+			}
+
+			testutil.AssertGolden(t, "testdata/golden/"+test.name, update(test.name), got)
+		})
+	}
+}
+
+func TestBitbucketCloudSource_Exclude(t *testing.T) {
 	b, err := ioutil.ReadFile(filepath.Join("testdata", "bitbucketcloud-repos.json"))
 	if err != nil {
 		t.Fatal(err)
@@ -119,22 +178,44 @@ func TestBitbucketCloudSource_MakeRepo(t *testing.T) {
 	}
 
 	cases := map[string]*schema.BitbucketCloudConnection{
-		"simple": {
+		"none": {
 			Url:         "https://bitbucket.org",
 			Username:    "alice",
 			AppPassword: "secret",
 		},
-		"ssh": {
+		"name": {
 			Url:         "https://bitbucket.org",
 			Username:    "alice",
 			AppPassword: "secret",
-			GitURLType:  "ssh",
+			Exclude: []*schema.ExcludedBitbucketCloudRepo{
+				{Name: "SG/go-langserver"},
+			},
 		},
-		"path-pattern": {
-			Url:                   "https://bitbucket.org",
-			Username:              "alice",
-			AppPassword:           "secret",
-			RepositoryPathPattern: "bb/{nameWithOwner}",
+		"uuid": {
+			Url:         "https://bitbucket.org",
+			Username:    "alice",
+			AppPassword: "secret",
+			Exclude: []*schema.ExcludedBitbucketCloudRepo{
+				{Uuid: "{fceb73c7-cef6-4abe-956d-e471281126bd}"},
+			},
+		},
+		"pattern": {
+			Url:         "https://bitbucket.org",
+			Username:    "alice",
+			AppPassword: "secret",
+			Exclude: []*schema.ExcludedBitbucketCloudRepo{
+				{Pattern: ".*-fork$"},
+			},
+		},
+		"all": {
+			Url:         "https://bitbucket.org",
+			Username:    "alice",
+			AppPassword: "secret",
+			Exclude: []*schema.ExcludedBitbucketCloudRepo{
+				{Name: "SG/go-LanGserVer"},
+				{Uuid: "{fceb73c7-cef6-4abe-956d-e471281126bd}"},
+				{Pattern: ".*-fork$"},
+			},
 		},
 	}
 
@@ -147,34 +228,21 @@ func TestBitbucketCloudSource_MakeRepo(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			var got []*Repo
+			type output struct {
+				Include []string
+				Exclude []string
+			}
+			var got output
 			for _, r := range repos {
-				got = append(got, s.makeRepo(r))
-			}
-			actual, err := json.MarshalIndent(got, "", "  ")
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			golden := filepath.Join("testdata", "bitbucketcloud-repos-"+name+".golden")
-			if update(name) {
-				err := ioutil.WriteFile(golden, actual, 0644)
-				if err != nil {
-					t.Fatal(err)
+				if s.excludes(r) {
+					got.Exclude = append(got.Exclude, r.FullName)
+				} else {
+					got.Include = append(got.Include, r.FullName)
 				}
 			}
 
-			expect, err := ioutil.ReadFile(golden)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if !bytes.Equal(actual, expect) {
-				d, err := diff(actual, expect)
-				if err != nil {
-					t.Fatal(err)
-				}
-				t.Error(d)
-			}
+			path := filepath.Join("testdata", "bitbucketcloud-repos-exclude-"+name+".golden")
+			testutil.AssertGolden(t, path, update(name), got)
 		})
 	}
 }

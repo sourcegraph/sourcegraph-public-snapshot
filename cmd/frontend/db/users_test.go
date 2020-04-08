@@ -2,17 +2,20 @@ package db
 
 import (
 	"context"
+	"fmt"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
-	"github.com/sourcegraph/sourcegraph/pkg/db/globalstatedb"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/db/globalstatedb"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
 // usernamesForTests is a list of test cases containing valid and invalid usernames and org names.
@@ -33,13 +36,13 @@ var usernamesForTests = []struct {
 	{"nick.com", true},
 	{"nick.com.uk", true},
 	{"nick.com-put-er", true},
+	{"nick-", true},
 	{"777", true},
 	{"7-7", true},
 	{"long-butnotquitelongenoughtoreachlimit", true},
 
 	{".nick", false},
 	{"-nick", false},
-	{"nick-", false},
 	{"nick.", false},
 	{"nick--s", false},
 	{"nick--sny", false},
@@ -83,6 +86,81 @@ func TestUsers_ValidUsernames(t *testing.T) {
 			}
 			if valid != test.wantValid {
 				t.Errorf("%q: got valid %v, want %v", test.name, valid, test.wantValid)
+			}
+		})
+	}
+}
+
+func TestUsers_Create_checkPasswordLength(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+
+	minPasswordRunes := conf.AuthMinPasswordLength()
+	expErr := fmt.Sprintf("Passwords may not be less than %d or be more than %d characters.", minPasswordRunes, maxPasswordRunes)
+	tests := []struct {
+		name     string
+		username string
+		password string
+		enforce  bool
+		expErr   string
+	}{
+		{
+			name:     "below minimum",
+			username: "user1",
+			password: strings.Repeat("x", minPasswordRunes-1),
+			enforce:  true,
+			expErr:   expErr,
+		},
+		{
+			name:     "exceeds maximum",
+			username: "user2",
+			password: strings.Repeat("x", maxPasswordRunes+1),
+			enforce:  true,
+			expErr:   expErr,
+		},
+
+		{
+			name:     "no problem at exact minimum",
+			username: "user3",
+			password: strings.Repeat("x", minPasswordRunes),
+			enforce:  true,
+			expErr:   "",
+		},
+		{
+			name:     "no problem at exact maximum",
+			username: "user4",
+			password: strings.Repeat("x", maxPasswordRunes),
+			enforce:  true,
+			expErr:   "",
+		},
+
+		{
+			name:     "does not enforce and below minimum",
+			username: "user5",
+			password: strings.Repeat("x", minPasswordRunes-1),
+			enforce:  false,
+			expErr:   "",
+		},
+		{
+			name:     "does not enforce and exceeds maximum",
+			username: "user6",
+			password: strings.Repeat("x", maxPasswordRunes+1),
+			enforce:  false,
+			expErr:   "",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			_, err := Users.Create(ctx, NewUser{
+				Username:              test.username,
+				Password:              test.password,
+				EnforcePasswordLength: test.enforce,
+			})
+			if pm := errcode.PresentationMessage(err); pm != test.expErr {
+				t.Fatalf("err: want %q but got %q", test.expErr, pm)
 			}
 		})
 	}
@@ -392,6 +470,47 @@ func TestUsers_GetByVerifiedEmail(t *testing.T) {
 	}
 }
 
+func TestUsers_GetByUsernames(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+
+	newUsers := []NewUser{
+		{
+			Email:           "alice@example.com",
+			Username:        "alice",
+			EmailIsVerified: true,
+		},
+		{
+			Email:           "bob@example.com",
+			Username:        "bob",
+			EmailIsVerified: true,
+		},
+	}
+
+	for _, newUser := range newUsers {
+		_, err := Users.Create(ctx, newUser)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	users, err := Users.GetByUsernames(ctx, "alice", "bob", "cindy")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(users) != 2 {
+		t.Fatalf("got %d users, but want 2", len(users))
+	}
+	for i := range users {
+		if users[i].Username != newUsers[i].Username {
+			t.Errorf("got %s, but want %s", users[i].Username, newUsers[i].Username)
+		}
+	}
+}
+
 func TestUsers_Delete(t *testing.T) {
 	for name, hard := range map[string]bool{"": false, "_Hard": true} {
 		t.Run("TestUsers_Delete"+name, func(t *testing.T) {
@@ -426,7 +545,7 @@ func TestUsers_Delete(t *testing.T) {
 			}
 
 			// Create a repository to comply with the postgres repo constraint.
-			if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
+			if err := Repos.Upsert(ctx, InsertRepoOp{Name: "myrepo", Description: "", Fork: false}); err != nil {
 				t.Fatal(err)
 			}
 			repo, err := Repos.GetByName(ctx, "myrepo")

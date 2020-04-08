@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"io/ioutil"
 	"net/http"
-	"regexp"
 	"strings"
 
 	"github.com/gorilla/csrf"
@@ -17,11 +16,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/db/globalstatedb"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/version"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/db/globalstatedb"
+	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -60,10 +60,10 @@ type JSContext struct {
 	ShowOnboarding bool    `json:"showOnboarding"`
 	EmailEnabled   bool    `json:"emailEnabled"`
 
-	Critical          schema.CriticalConfiguration `json:"critical"` // public subset of critical configuration
-	LikelyDockerOnMac bool                         `json:"likelyDockerOnMac"`
-	NeedServerRestart bool                         `json:"needServerRestart"`
-	DeployType        string                       `json:"deployType"`
+	Site              schema.SiteConfiguration `json:"site"` // public subset of site configuration
+	LikelyDockerOnMac bool                     `json:"likelyDockerOnMac"`
+	NeedServerRestart bool                     `json:"needServerRestart"`
+	DeployType        string                   `json:"deployType"`
 
 	SourcegraphDotComMode bool `json:"sourcegraphDotComMode"`
 
@@ -90,13 +90,6 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 	headers := make(map[string]string)
 	headers["x-sourcegraph-client"] = globals.ExternalURL().String()
 	headers["X-Requested-With"] = "Sourcegraph" // required for httpapi to use cookie auth
-
-	// -- currently we don't associate XHR calls with the parent page's span --
-	// if span := opentracing.SpanFromContext(req.Context()); span != nil {
-	// 	if err := opentracing.GlobalTracer().Inject(span.Context(), opentracing.HTTPHeaders, opentracing.TextMapCarrier(headers)); err != nil {
-	// 		return JSContext{}, err
-	// 	}
-	// }
 
 	// Propagate Cache-Control no-cache and max-age=0 directives
 	// to the requests made by our client-side JavaScript. This is
@@ -128,9 +121,9 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 	}
 
 	var sentryDSN *string
-	criticalConfig := conf.Get().Critical
-	if criticalConfig.Log != nil && criticalConfig.Log.Sentry != nil && criticalConfig.Log.Sentry.Dsn != "" {
-		sentryDSN = &criticalConfig.Log.Sentry.Dsn
+	siteConfig := conf.Get().SiteConfiguration
+	if siteConfig.Log != nil && siteConfig.Log.Sentry != nil && siteConfig.Log.Sentry.Dsn != "" {
+		sentryDSN = &siteConfig.Log.Sentry.Dsn
 	}
 
 	// 🚨 SECURITY: This struct is sent to all users regardless of whether or
@@ -154,7 +147,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 
 		ShowOnboarding:    showOnboarding,
 		EmailEnabled:      conf.CanSendEmail(),
-		Critical:          publicCriticalConfiguration(),
+		Site:              publicSiteConfiguration(),
 		LikelyDockerOnMac: likelyDockerOnMac(),
 		NeedServerRestart: globals.ConfigurationServerFrontendOnly.NeedServerRestart(),
 		DeployType:        conf.DeployType(),
@@ -179,21 +172,22 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 	}
 }
 
-// publicCriticalConfiguration is the subset of the critical.schema.json critical
+// publicSiteConfiguration is the subset of the site.schema.json site
 // configuration that is necessary for the web app and is not sensitive/secret.
-func publicCriticalConfiguration() schema.CriticalConfiguration {
+func publicSiteConfiguration() schema.SiteConfiguration {
 	c := conf.Get()
-	updateChannel := c.Critical.UpdateChannel
+	updateChannel := c.UpdateChannel
 	if updateChannel == "" {
 		updateChannel = "release"
 	}
-	return schema.CriticalConfiguration{
-		AuthPublic:    c.Critical.AuthPublic,
-		UpdateChannel: updateChannel,
+	return schema.SiteConfiguration{
+		CampaignsReadAccessEnabled: c.CampaignsReadAccessEnabled,
+		AuthPublic:                 c.AuthPublic,
+		UpdateChannel:              updateChannel,
 	}
 }
 
-var isBotPat = regexp.MustCompile(`(?i:googlecloudmonitoring|pingdom.com|go .* package http|sourcegraph e2etest|bot|crawl|slurp|spider|feed|rss|camo asset proxy|http-client|sourcegraph-client)`)
+var isBotPat = lazyregexp.New(`(?i:googlecloudmonitoring|pingdom.com|go .* package http|sourcegraph e2etest|bot|crawl|slurp|spider|feed|rss|camo asset proxy|http-client|sourcegraph-client)`)
 
 func isBot(userAgent string) bool {
 	return isBotPat.MatchString(userAgent)

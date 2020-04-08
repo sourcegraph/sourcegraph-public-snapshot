@@ -52,24 +52,39 @@ type execer struct {
 
 // Command creates an exec.Command connected to stdout/stderr and runs it.
 func (e *execer) Command(name string, arg ...string) {
+	e.Run(exec.Command(name, arg...))
+}
+
+func (e *execer) Run(cmd *exec.Cmd) {
 	if e.err != nil {
 		return
 	}
 
-	cmd := exec.Command(name, arg...)
-	cmd.Dir = e.Dir
+	if cmd.Dir == "" {
+		cmd.Dir = e.Dir
+	}
 
 	if verbose {
-		log.Printf("$ %s %s", name, strings.Join(arg, " "))
+		log.Printf("$ %s %s", cmd.Path, strings.Join(cmd.Args, " "))
 	}
 
 	if e.Out != nil {
-		e.Out.Write([]byte(fmt.Sprintf("\n$ %s %s\n", name, strings.Join(arg, " "))))
-		cmd.Stdout = e.Out
-		cmd.Stderr = e.Out
-	} else {
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
+		_, _ = e.Out.Write([]byte(fmt.Sprintf("\n$ %s %s\n", cmd.Path, strings.Join(cmd.Args, " "))))
+	}
+
+	if cmd.Stdout == nil {
+		if e.Out != nil {
+			cmd.Stdout = e.Out
+		} else {
+			cmd.Stdout = os.Stdout
+		}
+	}
+	if cmd.Stderr == nil {
+		if e.Out != nil {
+			cmd.Stderr = e.Out
+		} else {
+			cmd.Stderr = os.Stderr
+		}
 	}
 
 	e.err = cmd.Run()

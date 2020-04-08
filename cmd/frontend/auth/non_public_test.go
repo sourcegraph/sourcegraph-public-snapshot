@@ -8,17 +8,18 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	_ "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/schema" // Import for side effects so that the UI router gets created and is accessible in the
+	// Import for side effects so that the UI router gets created and is accessible in the
 	// ../app/ui/router package's Router var.
+	_ "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestAllowAnonymousRequest(t *testing.T) {
 	// Ensure auth.public is false (be robust against some other tests having side effects that
 	// change it, or changed defaults).
-	conf.Mock(&conf.Unified{Critical: schema.CriticalConfiguration{AuthPublic: false, AuthProviders: []schema.AuthProviders{{Builtin: &schema.BuiltinAuthProvider{}}}}})
+	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{AuthPublic: false, AuthProviders: []schema.AuthProviders{{Builtin: &schema.BuiltinAuthProvider{}}}}})
 	defer conf.Mock(nil)
 
 	req := func(method, urlStr string) *http.Request {
@@ -41,7 +42,6 @@ func TestAllowAnonymousRequest(t *testing.T) {
 		{req: req("POST", "/doesntexist"), want: false},
 		{req: req("GET", "/doesnt/exist"), want: false},
 		{req: req("POST", "/doesnt/exist"), want: false},
-		{req: req("POST", "/.api/telemetry/log/v1/production"), want: true},
 	}
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("%s %s", test.req.Method, test.req.URL), func(t *testing.T) {
@@ -56,7 +56,7 @@ func TestAllowAnonymousRequest(t *testing.T) {
 func TestNewUserRequiredAuthzMiddleware(t *testing.T) {
 	// Ensure auth.public is false (be robust against some other tests having side effects that
 	// change it, or changed defaults).
-	conf.Mock(&conf.Unified{Critical: schema.CriticalConfiguration{AuthPublic: false, AuthProviders: []schema.AuthProviders{{Builtin: &schema.BuiltinAuthProvider{}}}}})
+	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{AuthPublic: false, AuthProviders: []schema.AuthProviders{{Builtin: &schema.BuiltinAuthProvider{}}}}})
 	defer conf.Mock(nil)
 
 	withAuth := func(r *http.Request) *http.Request {
@@ -76,6 +76,13 @@ func TestNewUserRequiredAuthzMiddleware(t *testing.T) {
 			allowed:    false,
 			wantStatus: http.StatusFound,
 			location:   "/sign-in?returnTo=%2F",
+		},
+		{
+			name:       "no_auth__raw_route",
+			req:        httptest.NewRequest("GET", "/test-repo/-/raw/README.md", nil),
+			allowed:    false,
+			wantStatus: http.StatusUnauthorized,
+			location:   "/sign-in?returnTo=%2Ftest-repo%2F-%2Fraw%2FREADME.md",
 		},
 		{
 			name:       "no_auth__api_route",

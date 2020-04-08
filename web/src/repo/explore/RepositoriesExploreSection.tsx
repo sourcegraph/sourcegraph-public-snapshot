@@ -10,10 +10,10 @@ import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../
 import { pluralize } from '../../../../shared/src/util/strings'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { queryGraphQL } from '../../backend/graphql'
+import { PatternTypeProps } from '../../search'
+import { ErrorAlert } from '../../components/alerts'
 
-interface Props {}
-
-const LOADING: 'loading' = 'loading'
+const LOADING = 'loading' as const
 
 interface State {
     /** The repositories, loading, or an error. */
@@ -23,7 +23,7 @@ interface State {
 /**
  * An explore section that shows a few repositories and a link to all.
  */
-export class RepositoriesExploreSection extends React.PureComponent<Props, State> {
+export class RepositoriesExploreSection extends React.PureComponent<Omit<PatternTypeProps, 'setPatternType'>, State> {
     private static QUERY_REPOSITORIES_ARGS: { first: number } & Pick<GQL.IRepositoriesOnQueryArguments, 'names'> = {
         // Show sample repositories on Sourcegraph.com.
         names: window.context.sourcegraphDotComMode
@@ -78,7 +78,7 @@ export class RepositoriesExploreSection extends React.PureComponent<Props, State
                 <h3 className="card-header">Repositories</h3>
                 <div className="list-group list-group-flush">
                     {isErrorLike(repositoriesOrError) ? (
-                        <div className="alert alert-danger">Error: {repositoriesOrError.message}</div>
+                        <ErrorAlert error={repositoriesOrError} />
                     ) : repositoriesOrError.length === 0 ? (
                         <p>No repositories.</p>
                     ) : (
@@ -104,7 +104,7 @@ export class RepositoriesExploreSection extends React.PureComponent<Props, State
                 </div>
                 {typeof totalCount === 'number' && totalCount > 0 && (
                     <div className="card-footer">
-                        <Link to={`/search?${buildSearchURLQuery('repo:')}`}>
+                        <Link to={`/search?${buildSearchURLQuery('repo:', this.props.patternType, false)}`}>
                             View all {totalCount} {pluralize('repository', totalCount, 'repositories')}
                             <ChevronRightIcon className="icon-inline" />
                         </Link>

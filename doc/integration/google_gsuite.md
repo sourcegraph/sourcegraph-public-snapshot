@@ -2,24 +2,21 @@
 
 > NOTE: Company-wide deployment via G Suite is a [paid upgrade](https://about.sourcegraph.com/pricing)
 
-You can now install and preconfigure the Sourcegraph Chrome extension for all users in your G Suite organization.
+You can install and preconfigure the Sourcegraph Chrome extension for all members of a G Suite organization or organizational unit, so that they can get code intelligence on files and diffs.
 
-This means that everyone in your organization will get code intelligence in
-files, diffs, and PRs on GitHub.com, GitHub Enterprise, GitLab, and Phabricator. After
-the admin configures G Suite automatic installation of the Chrome extension,
-each user's Chrome browser will install and configure the Sourcegraph Chrome
-extension automatically. (It may take a few hours to fully propagate the Chrome
-settings.) Then all users will see code intelligence like this:
+By default, the browser extension only has access to github.com. Access to additional sites is granted by the user, on a site-by-site basis.
 
-<img src="img/GitHubGSuiteDemo.png" style="border: 1px solid #ccc"/>
+The Sourcegraph browser extension is open source and never sends any logs, pings, usage statistics or telemetry to Sourcegraph.com. Read more about browser extension privacy [here](browser_extension.md#privacy).
 
 ## Automatically install with G Suite
 
-1.  Open the [G Suite admin settings page for the Sourcegraph Chrome extension](https://admin.google.com/AdminHome#ChromeAppDetails:appId=dgjhfomjieaadpoljlnidmbgkdffpack&appType=CHROME&flyout=reg). (Check that the link opens the correct G Suite account, if you're signed in with multiple accounts.)
-2.  Click **User settings**.
-3.  Click the name of the organization in the list.
-4.  Enable **Force installation**.
-5.  Configure the extension by replacing `https://sourcegraph.example.com` in the following code block with your Sourcegraph instance's URL:
+Using the Google Admin Console, you can [automatically install](https://support.google.com/chrome/a/answer/6306504?hl=en) the Sourcegraph browser extension for all users in your organization. To do so:
+
+1. Visit the Google Admin Console [Chrome management](https://admin.google.com/u/2/ac/chrome/apps/user) page, and click "Apps and extensions".
+2. Select the desired organizational unit in the left-hand menu.
+3. Click the **+** button to add an extension, select "Add Chrome app or extension by ID", and paste in the ID of the Sourcegraph browser extension: `dgjhfomjieaadpoljlnidmbgkdffpack`.
+4. In "Installation Policy", select "Force install".
+5. In the "Policy for extensions" field, fill in a JSON value containing the URL of your self-hosted Sourcegraph instance:
 
 ```
 {
@@ -28,5 +25,17 @@ settings.) Then all users will see code intelligence like this:
     }
 }
 ```
+6. Click "Save".
 
-For more information, see "[Configuring Apps and Extensions by Policy](http://www.chromium.org/administrators/configuring-policy-for-extensions)".
+The Sourcegraph browser extension will then be rolled out to all managed browsers in your organization, preconfigured to point to your self-hosted Sourcegraph instance. The roll-out may take some time.
+
+Users will need to have valid accounts and be signed in to your Sourcegraph instance for the browser extension to provide code intelligence.
+
+Users may also need to grant additional permissions to the Sourcegraph browser extension in order for it to provide code intelligence on your code host. To check if Sourcegraph is properly configured, navigate to any page on your code host, and click the Sourcegraph icon in the browser toolbar. The popup will prompt you to grant additional permissions if needed:
+
+![](img/permissions.png)
+
+
+Users can disable Sourcegraph at any time by using the toggle in the extension settings:
+
+<img src="img/disable_extension.png" width="400">

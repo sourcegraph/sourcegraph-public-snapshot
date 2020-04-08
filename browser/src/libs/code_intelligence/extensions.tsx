@@ -7,7 +7,7 @@ import {
     CommandListPopoverButtonProps,
 } from '../../../../shared/src/commandPalette/CommandList'
 import { Notifications } from '../../../../shared/src/notifications/Notifications'
-
+import classNames from 'classnames'
 import { DiffPart } from '@sourcegraph/codeintellify'
 import * as H from 'history'
 import { isEqual } from 'lodash'
@@ -23,11 +23,13 @@ import {
 } from '../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
-import { createPlatformContext, SourcegraphIntegrationURLs } from '../../platform/context'
+import { createPlatformContext, SourcegraphIntegrationURLs, BrowserPlatformContext } from '../../platform/context'
 import { GlobalDebug } from '../../shared/components/GlobalDebug'
 import { ShortcutProvider } from '../../shared/components/ShortcutProvider'
 import { CodeHost } from './code_intelligence'
 import { DOMFunctions } from './code_views'
+import { IS_LIGHT_THEME } from './consts'
+import { NotificationClassNameProps } from '../../../../shared/src/notifications/NotificationItem'
 
 /**
  * Initializes extensions for a page. It creates the {@link PlatformContext} and extensions controller.
@@ -37,14 +39,14 @@ export function initializeExtensions(
     { urlToFile, getContext }: Pick<CodeHost, 'urlToFile' | 'getContext'>,
     urls: SourcegraphIntegrationURLs,
     isExtension: boolean
-): PlatformContextProps & ExtensionsControllerProps {
+): { platformContext: BrowserPlatformContext } & ExtensionsControllerProps {
     const platformContext = createPlatformContext({ urlToFile, getContext }, urls, isExtension)
     const extensionsController = createExtensionsController(platformContext)
     return { platformContext, extensionsController }
 }
 
 interface InjectProps
-    extends PlatformContextProps<'forceUpdateTooltip' | 'sideloadedExtensionURL'>,
+    extends PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sideloadedExtensionURL'>,
         ExtensionsControllerProps {
     history: H.History
     render: typeof render
@@ -57,20 +59,22 @@ export const renderCommandPalette = ({
     ...props
 }: TelemetryProps &
     InjectProps &
-    Pick<CommandListPopoverButtonProps, 'inputClassName' | 'popoverClassName' | 'popoverInnerClassName'>) => (
-    mount: HTMLElement
-): void => {
+    Pick<CommandListPopoverButtonProps, 'inputClassName' | 'popoverClassName' | 'popoverInnerClassName'> &
+    NotificationClassNameProps) => (mount: HTMLElement): void => {
     render(
         <ShortcutProvider>
             <CommandListPopoverButton
                 {...props}
-                popoverClassName={`command-list-popover ${props.popoverClassName}`}
+                popoverClassName={classNames('command-list-popover', props.popoverClassName)}
                 popoverInnerClassName={props.popoverInnerClassName}
                 menu={ContributableMenu.CommandPalette}
                 extensionsController={extensionsController}
                 location={history.location}
             />
-            <Notifications extensionsController={extensionsController} />
+            <Notifications
+                extensionsController={extensionsController}
+                notificationClassNames={props.notificationClassNames}
+            />
         </ShortcutProvider>,
         mount
     )
@@ -94,18 +98,16 @@ export const renderGlobalDebug = ({
     )
 }
 
-const IS_LIGHT_THEME = true // assume all code hosts have a light theme (correct for now)
-
 const cleanupDecorationsForCodeElement = (codeElement: HTMLElement, part: DiffPart | undefined): void => {
-    codeElement.style.backgroundColor = null
-    const previousAttachments = codeElement.querySelectorAll(`.line-decoration-attachment[data-part=${part}]`)
+    codeElement.style.backgroundColor = ''
+    const previousAttachments = codeElement.querySelectorAll(`.line-decoration-attachment[data-part=${String(part)}]`)
     for (const attachment of previousAttachments) {
         attachment.remove()
     }
 }
 
 const cleanupDecorationsForLineElement = (lineElement: HTMLElement): void => {
-    lineElement.style.backgroundColor = null
+    lineElement.style.backgroundColor = ''
 }
 
 /**
@@ -191,14 +193,14 @@ export const applyDecorations = (
                     // Avoid leaking referrer URLs (which contain repository and path names, etc.) to external sites.
                     link.setAttribute('rel', 'noreferrer noopener')
 
-                    link.style.color = style.color || null
+                    link.style.color = style.color || ''
                     link.appendChild(e)
                     return link
                 }
 
                 const after = document.createElement('span')
-                after.style.color = style.color || null
-                after.style.backgroundColor = style.backgroundColor || null
+                after.style.color = style.color || ''
+                after.style.backgroundColor = style.backgroundColor || ''
                 after.textContent = decoration.after.contentText || null
                 if (decoration.after.hoverMessage) {
                     after.title = decoration.after.hoverMessage

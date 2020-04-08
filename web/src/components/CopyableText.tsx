@@ -62,7 +62,7 @@ export class CopyableText extends React.PureComponent<Props, State> {
         this.copyToClipboard()
     }
 
-    private onClickButton = () => this.copyToClipboard()
+    private onClickButton = (): void => this.copyToClipboard()
 
     private copyToClipboard(): void {
         copy(this.props.text)

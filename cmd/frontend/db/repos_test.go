@@ -2,13 +2,15 @@ package db
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/keegancsmith/sqlf"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
 func TestParseIncludePattern(t *testing.T) {
@@ -45,11 +47,18 @@ func TestParseIncludePattern(t *testing.T) {
 		`github.com`:  {regexp: `github.com`},
 		`github\.com`: {like: []string{`%github.com%`}},
 
+		// https://github.com/sourcegraph/sourcegraph/issues/9146
+		`github.com/.*/ini$`:      {regexp: `github.com/.*/ini$`},
+		`github\.com/.*/ini$`:     {regexp: `github\.com/.*/ini$`},
+		`github\.com/go-ini/ini$`: {like: []string{`%github.com/go-ini/ini`}},
+
 		// https://github.com/sourcegraph/sourcegraph/issues/4166
-		`golang/oauth.*`:       {like: []string{"%golang/oauth%"}},
-		`^golang/oauth.*`:      {like: []string{"golang/oauth%"}},
-		`golang/(oauth.*|bla)`: {like: []string{"%golang/oauth%", "%golang/bla%"}},
-		`golang/(oauth|bla)`:   {like: []string{"%golang/oauth%", "%golang/bla%"}},
+		`golang/oauth.*`:                    {like: []string{"%golang/oauth%"}},
+		`^golang/oauth.*`:                   {like: []string{"golang/oauth%"}},
+		`golang/(oauth.*|bla)`:              {like: []string{"%golang/oauth%", "%golang/bla%"}},
+		`golang/(oauth|bla)`:                {like: []string{"%golang/oauth%", "%golang/bla%"}},
+		`^github.com/(golang|go-.*)/oauth$`: {regexp: `^github.com/(golang|go-.*)/oauth$`},
+		`^github.com/(go.*lang|go)/oauth$`:  {regexp: `^github.com/(go.*lang|go)/oauth$`},
 
 		`(^github\.com/Microsoft/vscode$)|(^github\.com/sourcegraph/go-langserver$)`: {exact: []string{"github.com/Microsoft/vscode", "github.com/sourcegraph/go-langserver"}},
 
@@ -58,48 +67,25 @@ func TestParseIncludePattern(t *testing.T) {
 		`^[0-a]$`:                               {regexp: `^[0-a]$`},
 	}
 	for pattern, want := range tests {
-		t.Run(pattern, func(t *testing.T) {
-			exact, like, regexp, err := parseIncludePattern(pattern)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if !reflect.DeepEqual(exact, want.exact) {
-				t.Errorf("got exact %q, want %q", exact, want.exact)
-			}
-			if !reflect.DeepEqual(like, want.like) {
-				t.Errorf("got like %q, want %q", like, want.like)
-			}
-			if regexp != want.regexp {
-				t.Errorf("got regexp %q, want %q", regexp, want.regexp)
-			}
-		})
-	}
-}
-
-func TestRepos_Delete(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	dbtesting.SetupGlobalTestDB(t)
-	ctx := context.Background()
-	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
-
-	if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
-		t.Fatal(err)
-	}
-
-	rp, err := Repos.GetByName(ctx, "myrepo")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if err := Repos.Delete(ctx, rp.ID); err != nil {
-		t.Fatal(err)
-	}
-
-	rp2, err := Repos.Get(ctx, rp.ID)
-	if !errcode.IsNotFound(err) {
-		t.Errorf("expected repo not found, but got error %q with repo %v", err, rp2)
+		exact, like, regexp, err := parseIncludePattern(pattern)
+		if err != nil {
+			t.Fatal(pattern, err)
+		}
+		if !reflect.DeepEqual(exact, want.exact) {
+			t.Errorf("got exact %q, want %q for %s", exact, want.exact, pattern)
+		}
+		if !reflect.DeepEqual(like, want.like) {
+			t.Errorf("got like %q, want %q for %s", like, want.like, pattern)
+		}
+		if regexp != want.regexp {
+			t.Errorf("got regexp %q, want %q for %s", regexp, want.regexp, pattern)
+		}
+		if qs, err := parsePattern(pattern); err != nil {
+			t.Fatal(pattern, err)
+		} else if testing.Verbose() {
+			q := sqlf.Join(qs, "AND")
+			t.Log(pattern, q.Query(sqlf.PostgresBindVar), q.Args())
+		}
 	}
 }
 
@@ -111,23 +97,23 @@ func TestRepos_Count(t *testing.T) {
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
-	if count, err := Repos.Count(ctx, ReposListOptions{Enabled: true}); err != nil {
+	if count, err := Repos.Count(ctx, ReposListOptions{}); err != nil {
 		t.Fatal(err)
 	} else if want := 0; count != want {
 		t.Errorf("got %d, want %d", count, want)
 	}
 
-	if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
+	if err := Repos.Upsert(ctx, InsertRepoOp{Name: "myrepo", Description: "", Fork: false}); err != nil {
 		t.Fatal(err)
 	}
 
-	if count, err := Repos.Count(ctx, ReposListOptions{Enabled: true}); err != nil {
+	if count, err := Repos.Count(ctx, ReposListOptions{}); err != nil {
 		t.Fatal(err)
 	} else if want := 1; count != want {
 		t.Errorf("got %d, want %d", count, want)
 	}
 
-	repos, err := Repos.List(ctx, ReposListOptions{Enabled: true})
+	repos, err := Repos.List(ctx, ReposListOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -135,7 +121,7 @@ func TestRepos_Count(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if count, err := Repos.Count(ctx, ReposListOptions{Enabled: true}); err != nil {
+	if count, err := Repos.Count(ctx, ReposListOptions{}); err != nil {
 		t.Fatal(err)
 	} else if want := 0; count != want {
 		t.Errorf("got %d, want %d", count, want)
@@ -158,7 +144,7 @@ func TestRepos_Upsert(t *testing.T) {
 		}
 	}
 
-	if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
+	if err := Repos.Upsert(ctx, InsertRepoOp{Name: "myrepo", Description: "", Fork: false}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -177,7 +163,7 @@ func TestRepos_Upsert(t *testing.T) {
 		ServiceID:   "ext:test",
 	}
 
-	if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo", Description: "asdfasdf", Fork: false, Enabled: true, ExternalRepo: ext}); err != nil {
+	if err := Repos.Upsert(ctx, InsertRepoOp{Name: "myrepo", Description: "asdfasdf", Fork: false, ExternalRepo: ext}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -197,7 +183,7 @@ func TestRepos_Upsert(t *testing.T) {
 	}
 
 	// Rename. Detected by external repo
-	if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo/renamed", Description: "asdfasdf", Fork: false, Enabled: true, ExternalRepo: ext}); err != nil {
+	if err := Repos.Upsert(ctx, InsertRepoOp{Name: "myrepo/renamed", Description: "asdfasdf", Fork: false, ExternalRepo: ext}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -221,5 +207,51 @@ func TestRepos_Upsert(t *testing.T) {
 	}
 	if !reflect.DeepEqual(rp.ExternalRepo, ext) {
 		t.Fatalf("rp.ExternalRepo: %s != %s", rp.ExternalRepo, ext)
+	}
+
+	if err := Repos.Delete(ctx, rp.ID); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestRepos_UpsertForkAndArchivedFields(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
+	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
+
+	for _, fork := range []bool{true, false} {
+		for _, archived := range []bool{true, false} {
+			fmt.Printf("%v %v\n", fork, archived)
+			if _, err := Repos.GetByName(ctx, "myrepo"); !errcode.IsNotFound(err) {
+				if err == nil {
+					t.Fatal("myrepo already present")
+				} else {
+					t.Fatal(err)
+				}
+			}
+
+			if err := Repos.Upsert(ctx, InsertRepoOp{Name: "myrepo", Fork: fork, Archived: archived}); err != nil {
+				t.Fatal(err)
+			}
+
+			rp, err := Repos.GetByName(ctx, "myrepo")
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if rp.Fork != fork {
+				t.Fatalf("rp.Fork: %v != %v", rp.Fork, fork)
+			}
+			if rp.Archived != archived {
+				t.Fatalf("rp.Archived: %v != %v", rp.Archived, archived)
+			}
+
+			if err := Repos.Delete(ctx, rp.ID); err != nil {
+				t.Fatal(err)
+			}
+		}
 	}
 }

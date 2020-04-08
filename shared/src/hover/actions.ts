@@ -20,16 +20,16 @@ import { parse, parseTemplate } from '../api/client/context/expr/evaluator'
 import { Services } from '../api/client/services'
 import { WorkspaceRootWithMetadata } from '../api/client/services/workspaceService'
 import { ContributableMenu, TextDocumentPositionParams } from '../api/protocol'
-import { ERPRIVATEREPOPUBLICSOURCEGRAPHCOM } from '../backend/errors'
+import { PRIVATE_REPO_PUBLIC_SOURCEGRAPH_COM_ERROR_NAME } from '../backend/errors'
 import { resolveRawRepoName } from '../backend/repo'
 import { getContributedActionItems } from '../contributions/contributions'
 import { ExtensionsControllerProps } from '../extensions/controller'
-import { PlatformContext, PlatformContextProps } from '../platform/context'
+import { PlatformContext, PlatformContextProps, URLToFileContext } from '../platform/context'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
 import { makeRepoURI, parseRepoURI, withWorkspaceRootInputRevision } from '../util/url'
 import { HoverContext } from './HoverOverlay'
 
-const LOADING: 'loading' = 'loading'
+const LOADING = 'loading' as const
 
 /**
  * This function is passed to {@link module:@sourcegraph/codeintellify.createHoverifier}, which uses it to fetch
@@ -64,7 +64,7 @@ export interface HoverActionsContext extends Context<TextDocumentPositionParams>
     ['goToDefinition.notFound']: boolean
     ['goToDefinition.error']: boolean
     ['findReferences.url']: string | null
-    hoverPosition: TextDocumentPositionParams
+    hoverPosition: TextDocumentPositionParams & URLToFileContext
 }
 
 /**
@@ -92,9 +92,10 @@ export function getHoverActionsContext(
           },
     hoverContext: HoveredToken & HoverContext
 ): Observable<Context<TextDocumentPositionParams>> {
-    const params: TextDocumentPositionParams = {
+    const params: TextDocumentPositionParams & URLToFileContext = {
         textDocument: { uri: makeRepoURI(hoverContext) },
         position: { line: hoverContext.line - 1, character: hoverContext.character - 1 },
+        part: hoverContext.part,
     }
     const definitionURLOrError = getDefinitionURL(
         { urlToFile, requestGraphQL },
@@ -110,10 +111,7 @@ export function getHoverActionsContext(
         // the fairly long LOADER_DELAY has elapsed.
         merge(
             [undefined], // don't block on the first emission
-            of(LOADING).pipe(
-                delay(LOADER_DELAY),
-                takeUntil(definitionURLOrError)
-            ),
+            of(LOADING).pipe(delay(LOADER_DELAY), takeUntil(definitionURLOrError)),
             definitionURLOrError
         ),
 
@@ -128,10 +126,7 @@ export function getHoverActionsContext(
         // quickly determined that there is no definition. TODO(sqs): Allow reference providers to register
         // "trigger characters" or have a "hasReferences" method to opt-out of being called for certain tokens.
         merge(
-            of(true).pipe(
-                delay(LOADER_DELAY),
-                takeUntil(definitionURLOrError.pipe(filter(v => !!v)))
-            ),
+            of(true).pipe(delay(LOADER_DELAY), takeUntil(definitionURLOrError.pipe(filter(v => !!v)))),
             definitionURLOrError.pipe(
                 filter(v => !!v),
                 map(v => !!v)
@@ -152,7 +147,10 @@ export function getHoverActionsContext(
 
                 'findReferences.url':
                     hasReferenceProvider && showFindReferences
-                        ? urlToFile({ ...hoverContext, position: hoverContext, viewState: 'references' })
+                        ? urlToFile(
+                              { ...hoverContext, position: hoverContext, viewState: 'references' },
+                              { part: hoverContext.part }
+                          )
                         : null,
 
                 // Store hoverPosition for the goToDefinition action's commandArguments to refer to.
@@ -180,7 +178,7 @@ export function getDefinitionURL(
         }
         textDocumentDefinition: Pick<Services['textDocumentDefinition'], 'getLocations'>
     },
-    params: TextDocumentPositionParams
+    params: TextDocumentPositionParams & URLToFileContext
 ): Observable<{ url: string; multiple: boolean } | null> {
     return textDocumentDefinition.getLocations(params).pipe(
         switchMap(locations => locations),
@@ -199,13 +197,16 @@ export function getDefinitionURL(
                     parseRepoURI(params.textDocument.uri)
                 )
                 return of({
-                    url: urlToFile({
-                        ...uri,
-                        rev: uri.rev || '',
-                        filePath: uri.filePath || '',
-                        position: { line: params.position.line + 1, character: params.position.character + 1 },
-                        viewState: 'def',
-                    }),
+                    url: urlToFile(
+                        {
+                            ...uri,
+                            rev: uri.rev || '',
+                            filePath: uri.filePath || '',
+                            position: { line: params.position.line + 1, character: params.position.character + 1 },
+                            viewState: 'def',
+                        },
+                        { part: params.part }
+                    ),
                     multiple: true,
                 })
             }
@@ -230,18 +231,21 @@ export function getDefinitionURL(
                 // we're executing in a browser extension pointed to the public sourcegraph.com,
                 // in which case repoName === rawRepoName.
                 catchError(err => {
-                    if (isErrorLike(err) && err.code === ERPRIVATEREPOPUBLICSOURCEGRAPHCOM) {
+                    if (isErrorLike(err) && err.name === PRIVATE_REPO_PUBLIC_SOURCEGRAPH_COM_ERROR_NAME) {
                         return [uri.repoName]
                     }
                     throw err
                 }),
                 map(rawRepoName => ({
-                    url: urlToFile({
-                        ...uri,
-                        rev: uri.rev || '',
-                        filePath: uri.filePath || '',
-                        rawRepoName,
-                    }),
+                    url: urlToFile(
+                        {
+                            ...uri,
+                            rev: uri.rev || '',
+                            filePath: uri.filePath || '',
+                            rawRepoName,
+                        },
+                        { part: params.part }
+                    ),
                     multiple: false,
                 }))
             )
@@ -268,7 +272,8 @@ export function registerHoverContributions({
               }
           }
           platformContext: Pick<PlatformContext, 'urlToFile' | 'requestGraphQL'>
-      }) & {
+      }
+) & {
     history: H.History
 }): Unsubscribable {
     const subscriptions = new Subscription()
@@ -337,7 +342,7 @@ export function registerHoverContributions({
         extensionsController.services.commands.registerCommand({
             command: 'goToDefinition',
             run: async (paramsStr: string) => {
-                const params: TextDocumentPositionParams = JSON.parse(paramsStr)
+                const params: TextDocumentPositionParams & URLToFileContext = JSON.parse(paramsStr)
                 const result = await getDefinitionURL(
                     { urlToFile, requestGraphQL },
                     extensionsController.services,

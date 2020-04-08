@@ -13,9 +13,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/oauth"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"golang.org/x/oauth2"
 )
 
@@ -35,7 +35,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		return nil, fmt.Sprintf("Error normalizing the username %q. See https://docs.sourcegraph.com/admin/auth/#username-normalization.", login), err
 	}
 
-	var data extsvc.ExternalAccountData
+	var data extsvc.AccountData
 	gitlab.SetExternalAccountData(&data, gUser, token)
 
 	// Unlike with GitHub, we can *only* use the primary email to resolve the user's identity,
@@ -49,7 +49,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 			DisplayName:     gUser.Name,
 			AvatarURL:       gUser.AvatarURL,
 		},
-		ExternalAccount: extsvc.ExternalAccountSpec{
+		ExternalAccount: extsvc.AccountSpec{
 			ServiceType: s.ServiceType,
 			ServiceID:   s.ServiceID,
 			ClientID:    s.clientID,

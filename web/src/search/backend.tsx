@@ -34,6 +34,8 @@ const genericSearchResultInterfaceFields = gql`
 
 export function search(
     query: string,
+    version: string,
+    patternType: GQL.SearchPatternType,
     { extensionsController }: ExtensionsControllerProps<'services'>
 ): Observable<GQL.ISearchResults | ErrorLike> {
     /**
@@ -48,12 +50,12 @@ export function search(
                 : ''
             return queryGraphQL(
                 gql`
-                    query Search($query: String!) {
-                        search(query: $query) {
+                    query Search($query: String!, $version: SearchVersion!, $patternType: SearchPatternType!) {
+                        search(query: $query, version: $version, patternType: $patternType) {
                             results {
                                 __typename
                                 limitHit
-                                resultCount
+                                matchCount
                                 approximateResultCount
                                 missing {
                                     name
@@ -61,6 +63,7 @@ export function search(
                                 cloning {
                                     name
                                 }
+                                repositoriesCount
                                 timedout {
                                     name
                                 }
@@ -90,6 +93,23 @@ export function search(
                                         repository {
                                             name
                                             url
+                                        }
+                                        revSpec {
+                                            __typename
+                                            ... on GitRef {
+                                                displayName
+                                                url
+                                            }
+                                            ... on GitRevSpecExpr {
+                                                expr
+                                                object { commit { url } }
+                                            }
+                                            ... on GitObject {
+                                                abbreviatedOID
+                                                commit {
+                                                    url
+                                                }
+                                            }
                                         }
                                         limitHit
                                         symbols {
@@ -122,7 +142,7 @@ export function search(
                         }
                     }
                 `,
-                { query }
+                { query, version, patternType }
             ).pipe(
                 map(({ data, errors }) => {
                     if (!data || !data.search || !data.search.results) {
@@ -132,29 +152,6 @@ export function search(
                 }),
                 catchError(error => [asError(error)])
             )
-        })
-    )
-}
-
-export function fetchSearchResultStats(query: string): Observable<GQL.ISearchResultsStats> {
-    return queryGraphQL(
-        gql`
-            query SearchResultsStats($query: String!) {
-                search(query: $query) {
-                    stats {
-                        approximateResultCount
-                        sparkline
-                    }
-                }
-            }
-        `,
-        { query }
-    ).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.search || !data.search.stats) {
-                throw createAggregateError(errors)
-            }
-            return data.search.stats
         })
     )
 }
@@ -430,7 +427,7 @@ export const highlightCode = memoizeObservable(
                 return data.highlightCode
             })
         ),
-    ctx => `${ctx.code}:${ctx.fuzzyLanguage}:${ctx.disableTimeout}:${ctx.isLightTheme}`
+    ctx => `${ctx.code}:${ctx.fuzzyLanguage}:${String(ctx.disableTimeout)}:${String(ctx.isLightTheme)}`
 )
 
 /**

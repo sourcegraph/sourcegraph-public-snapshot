@@ -57,7 +57,7 @@ export class RepoRevSidebarCommits extends React.PureComponent<Props> {
                 nodeComponentProps={{ location: this.props.location } as Pick<CommitNodeProps, 'location'>}
                 defaultFirst={100}
                 hideSearch={true}
-                shouldUpdateURLQuery={false}
+                useURLQuery={false}
                 history={this.props.history}
                 location={this.props.location}
             />

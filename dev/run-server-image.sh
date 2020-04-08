@@ -28,7 +28,7 @@ docker pull $IMAGE
 
 echo "starting server..."
 docker run "$@" \
- --publish 7080:7080 --publish 2633:2633 \
+ --publish 7080:7080 \
  --rm \
  -e SRC_LOG_LEVEL=dbug \
  -e DEBUG=t \

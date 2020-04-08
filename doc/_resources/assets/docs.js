@@ -1,18 +1,16 @@
 window.sgdocs = (() => {
   let VERSION_SELECT_BUTTON,
-    SEARCH_FORMS,
     CONTENT_NAV,
     BREADCRUMBS,
     BREADCRUMBS_DATA = [],
-    MOBILE_NAV_BUTTON
+    MOBILE_NAV_BUTTON,
+    START_SOURCEGRAPH_COMMAND_SNIPPET
 
   return {
     init: breadcrumbs => {
       BREADCRUMBS_DATA = breadcrumbs ? breadcrumbs : []
       BREADCRUMBS = document.querySelector('#breadcrumbs')
       BREADCRUMBS_MOBILE = document.querySelector('#breadcrumbs-mobile')
-
-      SEARCH_FORMS = document.querySelectorAll('.search-form')
 
       VERSION_SELECTOR = document.querySelector('#version-selector')
       VERSION_SELECT_BUTTON = VERSION_SELECTOR.querySelector('#version-selector button')
@@ -22,13 +20,18 @@ window.sgdocs = (() => {
 
       MOBILE_NAV_BUTTON = BREADCRUMBS_MOBILE.querySelector('input[type="button"]')
 
-      searchInit()
+      START_SOURCEGRAPH_COMMAND_SNIPPET = document.querySelector('.start-sourcegraph-command') // Assumes only one per page
+
       versionSelectorInit()
       mobileNavInit()
       navInit()
-      breadcrumbsInit()
+      scrollNavToSelected()
+      docsVersionLinks()
+      startSourcegraphCommandInit()
       setTimeout(schemaLinkCheck, 0) // Browser scrolls straight to element without this
     },
+
+    scrollToElement: scrollToElement
   }
 
   /**
@@ -37,26 +40,15 @@ window.sgdocs = (() => {
    * @param {HTMLElement} element Element to scroll to
    * @param {number} elementOffsetTop Optionally reduce vertical scroll distance
    */
-  function scrollToElement(element, elementOffsetTop = 0) {
+  function scrollToElement(parent = document.body, element, elementOffsetTop = 0) {
     if (!element) {
       return
     }
 
-    document.body.scrollTo({
+    parent.scrollTo({
       top: element.offsetTop - elementOffsetTop,
       left: 0,
       behavior: 'smooth',
-    })
-  }
-
-  function searchInit() {
-    SEARCH_FORMS.forEach(form => {
-      form.addEventListener('submit', e => {
-        const search = e.srcElement.querySelector('input[name="search"]').value
-        e.preventDefault()
-        window.location.href =
-          'https://www.google.com/search?ie=UTF-8&q=site%3Adocs.sourcegraph.com+' + encodeURIComponent(search)
-      })
     })
   }
 
@@ -113,14 +105,27 @@ window.sgdocs = (() => {
     document.querySelectorAll('.content-nav a').forEach(el => (el.title = el.text.trim()))
   }
 
-  function breadcrumbsInit() {
-    document.querySelectorAll('.breadcrumb-links a').forEach((el, index) => {
-      if (index > 0) {
-        let text = el.text.replace(/_/g, ' ')
-        text = text.charAt(0).toUpperCase() + text.slice(1)
-        el.text = text
-      }
-    })
+  function scrollNavToSelected() {
+    setTimeout(() => scrollToElement(CONTENT_NAV, CONTENT_NAV.querySelector('.selected')), 50)
+  }
+
+  /**
+   * Make the docs nav branch aware by dynamically adding the branch prefix if non-master.
+   *
+   * NOTE: This will cause 404s in instances where the nav has been updated in master to
+   * point to a new file which doesn't exist in a previous branch, but there is no easy fix
+   * as the document.html template always reflects master because only the docs content is
+   * loaded dynamically.
+   */
+  function docsVersionLinks() {
+    let urlPath = window.location.pathname
+
+    if (urlPath.indexOf('@') === -1) {
+      return
+    }
+
+    let branchPrefix = urlPath.match(/(@[\d\w\.]+)/)[0]
+    document.querySelectorAll('#content-nav a').forEach(e => e.setAttribute('href', `/${branchPrefix}${e.getAttribute('href')}`))
   }
 
   /**
@@ -169,4 +174,21 @@ window.sgdocs = (() => {
       scrollToElement(targetKey, offsetTop)
     }
   }
+
+  function gaConversionOnStartSourcegraphCommands() {
+    if (window && window.gtag) {
+      window.gtag('event', 'conversion', {
+        'send_to': 'AW-868484203/vOYoCOCUj7EBEOuIkJ4D',
+      });
+    }
+  }
+
+  function startSourcegraphCommandInit() {
+    if (!START_SOURCEGRAPH_COMMAND_SNIPPET) {
+      return
+    }
+
+    START_SOURCEGRAPH_COMMAND_SNIPPET.addEventListener('click', gaConversionOnStartSourcegraphCommands)
+  }
+
 })()
