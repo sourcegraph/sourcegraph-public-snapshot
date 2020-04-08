@@ -929,7 +929,7 @@ func (es ExternalServices) With(opts ...func(*ExternalService)) ExternalServices
 
 type RateLimiterRegistry struct {
 	mu sync.Mutex
-	// Rate limiter per external service
+	// Rate limiter per external service, keys are database ID of external services.
 	rateLimiters map[int64]*rate.Limiter
 }
 
