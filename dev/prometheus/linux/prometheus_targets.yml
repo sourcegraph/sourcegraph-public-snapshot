@@ -45,6 +45,11 @@
     # precise-code-intel-bundle-manager
     - 127.0.0.1:3187
 - labels:
+    job: precise-code-intel-worker
+  targets:
+    # precise-code-intel-worker
+    - 127.0.0.1:3188
+- labels:
     job: postgres_exporter
   targets:
     # postgres exporter

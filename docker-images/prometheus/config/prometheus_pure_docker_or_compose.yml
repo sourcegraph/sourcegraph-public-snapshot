@@ -4,14 +4,6 @@ global:
   evaluation_interval: 30s # Evaluate rules every 30s. Default is 1m.
   # scrape_timeout is set to the global default (10s).
 
-# Alertmanager configuration
-alerting:
-  alertmanagers:
-    - static_configs:
-        - targets:
-          # deploy-sourcegraph-docker does not yet use prometheus alerts
-          # - alertmanager:9093
-
 # Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
 rule_files:
   - '*_rules.yml'
