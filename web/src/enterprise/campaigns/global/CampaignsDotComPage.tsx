@@ -9,11 +9,12 @@ export interface CampaignsDotComPageProps {}
 export const CampaignsDotComPage: React.FunctionComponent<CampaignsDotComPageProps> = () => (
     <>
         <section className="mt-3 text-center">
-            <h1 className="display-1 font-weight-bold mb-6 mt-n3">
+            <h1 className="display-1 font-weight-bold">
                 Large scale
                 <br />
                 code changes
             </h1>
+            <h1 className="mb-6">Perform and track large-scale campaigns all your repositories.</h1>
             <img src="/.assets/img/campaigns-splash.png" className="w-100" />
 
             <a href="https://www.vimeo.com" target="_blank" rel="noopener noreferrer" className="btn btn-primary">
@@ -21,9 +22,7 @@ export const CampaignsDotComPage: React.FunctionComponent<CampaignsDotComPagePro
             </a>
         </section>
 
-        <section className="pt-5 text-center">
-            <h1>Manage large-scale campaigns across all your repositories and code hosts.</h1>
-
+        <section className="pt-3 text-center">
             <p className="lead">
                 Create and track pull requests across all your repositories, all in one place. Including build and
                 review status, burndown charts, and more. Include existing pull requests and create your patches for
