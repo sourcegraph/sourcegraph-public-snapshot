@@ -9,7 +9,9 @@ import {
     IntersectionObserverCallbackLike,
     delayUntilIntersecting,
     ViewWithSubscriptions,
+    IntersectionObserverLike,
 } from './views'
+import { noop } from 'lodash'
 
 const FIXTURE_HTML = `
     <div id="parent">
@@ -108,7 +110,7 @@ describe('trackViews()', () => {
 
     test('detects views added later', async () => {
         const selector = '.test-code-view'
-        const subscriber = sinon.spy()
+        const subscriber = sinon.spy((view: ViewWithSubscriptions<{ element: HTMLElement }>) => undefined)
         const mutations = new Subject<MutationRecordLike[]>()
         const { wait, done } = createBarrier()
         subscriptions.add(
@@ -141,7 +143,7 @@ describe('trackViews()', () => {
 
     test('detects nested views added later', async () => {
         const selector = '.test-code-view'
-        const subscriber = sinon.spy()
+        const subscriber = sinon.spy((view: ViewWithSubscriptions<{ element: HTMLElement }>) => undefined)
         const mutations = new Subject<MutationRecordLike[]>()
         const { wait, done } = createBarrier()
         subscriptions.add(
@@ -184,7 +186,7 @@ describe('trackViews()', () => {
                 trackViews([{ selector: '.view', resolveView: element => ({ element }) }]),
                 bufferCount(3),
                 switchMap(async ([v1, v2, v3]) => {
-                    const v2Removed = sinon.spy()
+                    const v2Removed = sinon.spy(() => undefined)
                     v2.subscriptions.add(v2Removed)
                     const v1Removed = new Promise(resolve => v1.subscriptions.add(resolve))
                     const v3Removed = new Promise(resolve => v3.subscriptions.add(resolve))
@@ -213,7 +215,7 @@ describe('trackViews()', () => {
 
     test('removes a view without depending on its resolver', async () => {
         const selector = '.test-code-view'
-        const subscriber = sinon.spy()
+        const subscriber = sinon.spy((view: ViewWithSubscriptions<{ element: HTMLElement }>) => undefined)
         const mutations = new Subject<MutationRecordLike[]>()
         const { wait, done } = createBarrier()
 
@@ -268,7 +270,7 @@ describe('delayUntilIntersecting()', () => {
     })
 
     test('delays emitting views until they intersect and stops observing views as soon as they intersect', () => {
-        let observerCallback: IntersectionObserverCallbackLike = jest.fn()
+        let observerCallback: IntersectionObserverCallbackLike = noop
         const views = ['1', '2', '3'].map(
             (id: string): ViewWithSubscriptions<{ element: HTMLElement }> => ({
                 element: document.getElementById(id)!,
@@ -276,8 +278,8 @@ describe('delayUntilIntersecting()', () => {
             })
         )
         const emittedViews: string[] = []
-        const observe = sinon.spy()
-        const unobserve = sinon.spy()
+        const observe = sinon.spy<IntersectionObserverLike['observe']>(noop)
+        const unobserve = sinon.spy<IntersectionObserverLike['unobserve']>(noop)
         subscriptions.add(
             from(views)
                 .pipe(
@@ -286,7 +288,7 @@ describe('delayUntilIntersecting()', () => {
                         return {
                             observe,
                             unobserve,
-                            disconnect: sinon.spy(),
+                            disconnect: noop,
                         }
                     })
                 )
@@ -310,12 +312,12 @@ describe('delayUntilIntersecting()', () => {
     })
 
     test('disconnects from the intersection observer on unsubscription', () => {
-        const disconnect = sinon.spy()
+        const disconnect = sinon.spy<IntersectionObserverLike['disconnect']>(noop)
         subscriptions.add(
             NEVER.pipe(
                 delayUntilIntersecting({}, () => ({
-                    observe: sinon.spy(),
-                    unobserve: sinon.spy(),
+                    observe: noop,
+                    unobserve: noop,
                     disconnect,
                 }))
             ).subscribe()
@@ -325,16 +327,16 @@ describe('delayUntilIntersecting()', () => {
     })
 
     test('stops observing a view when its subscriptions are unsubscribed from', () => {
-        const unobserve = sinon.spy((target: HTMLElement) => {})
+        const unobserve = sinon.spy((target: HTMLElement) => undefined)
         const element = document.getElementById('1')!
         const view = { element, subscriptions: new Subscription() }
         subscriptions.add(
             of(view)
                 .pipe(
                     delayUntilIntersecting({}, () => ({
-                        observe: sinon.spy(),
+                        observe: noop,
                         unobserve,
-                        disconnect: sinon.spy(),
+                        disconnect: noop,
                     }))
                 )
                 .subscribe()
