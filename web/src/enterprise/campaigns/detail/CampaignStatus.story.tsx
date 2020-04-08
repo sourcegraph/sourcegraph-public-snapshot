@@ -13,6 +13,7 @@ const { add } = storiesOf('CampaignStatus', module).addDecorator(story => (
 add('Errored', () => (
     <CampaignStatus
         campaign={{
+            id: 'Q2FtcGFpZ246MQ==',
             viewerCanAdminister: boolean('Viewer can administer', true),
             status: {
                 state: BackgroundProcessState.ERRORED,
@@ -35,6 +36,6 @@ add('Errored', () => (
             closedAt: null,
         }}
         onPublish={action('Publish')}
-        onRetry={action('Retry')}
+        afterRetry={action('Retry')}
     />
 ))

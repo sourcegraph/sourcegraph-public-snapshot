@@ -1,11 +1,15 @@
-import React from 'react'
+import React, { useState } from 'react'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { ErrorMessage } from '../../../components/alerts'
 import SyncIcon from 'mdi-react/SyncIcon'
 import { pluralize } from '../../../../../shared/src/util/strings'
+import { retryCampaign } from './backend'
+import { asError, isErrorLike } from '../../../../../shared/src/util/errors'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import ErrorIcon from 'mdi-react/ErrorIcon'
 
 export interface CampaignStatusProps {
-    campaign: Pick<GQL.ICampaign, 'closedAt' | 'viewerCanAdminister' | 'publishedAt'> & {
+    campaign: Pick<GQL.ICampaign, 'id' | 'closedAt' | 'viewerCanAdminister' | 'publishedAt'> & {
         changesets: Pick<GQL.ICampaign['changesets'], 'totalCount'>
         status: Pick<GQL.ICampaign['status'], 'completedCount' | 'pendingCount' | 'errors' | 'state'>
     }
@@ -13,7 +17,7 @@ export interface CampaignStatusProps {
     /** Called when the "Publish campaign" button is clicked. */
     onPublish: () => void
     /** Called when the "Retry failed jobs" button is clicked. */
-    onRetry: () => void
+    afterRetry: (updatedCampaign: GQL.ICampaign) => void
 }
 
 type CampaignState = 'closed' | 'errored' | 'processing' | 'completed'
@@ -21,7 +25,7 @@ type CampaignState = 'closed' | 'errored' | 'processing' | 'completed'
 /**
  * The status of a campaign's jobs, plus its closed state and errors.
  */
-export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({ campaign, onPublish, onRetry }) => {
+export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({ campaign, onPublish, afterRetry }) => {
     const { status } = campaign
 
     const progress = (status.completedCount / (status.pendingCount + status.completedCount)) * 100
@@ -50,6 +54,19 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({ c
         </ul>
     )
 
+    const [isRetrying, setIsRetrying] = useState<boolean | Error>(false)
+
+    const onRetry: React.MouseEventHandler = async (): Promise<void> => {
+        setIsRetrying(true)
+        try {
+            const c = await retryCampaign(campaign.id)
+            setIsRetrying(false)
+            afterRetry(c)
+        } catch (error) {
+            setIsRetrying(asError(error))
+        }
+    }
+
     let statusIndicator: JSX.Element | undefined
     switch (state) {
         case 'errored':
@@ -59,7 +76,16 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({ c
                         <h3 className="alert-heading mb-0">Creating changesets failed</h3>
                         {errorList}
                         {campaign.viewerCanAdminister && (
-                            <button type="button" className="btn btn-primary mb-0" onClick={onRetry}>
+                            <button
+                                type="button"
+                                className="btn btn-primary mb-0"
+                                onClick={onRetry}
+                                disabled={isRetrying === true}
+                            >
+                                {isErrorLike(isRetrying) && (
+                                    <ErrorIcon data-tooltip={isRetrying.message} className="mr-2" />
+                                )}
+                                {isRetrying === true && <LoadingSpinner className="icon-inline" />}
                                 Retry
                             </button>
                         )}
