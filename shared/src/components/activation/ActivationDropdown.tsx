@@ -1,4 +1,3 @@
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import H from 'history'
 import React from 'react'
 import { CircularProgressbar } from 'react-circular-progressbar'
@@ -6,8 +5,7 @@ import Confetti from 'react-dom-confetti'
 import { concat, of, Subject, Subscription } from 'rxjs'
 import { concatMap, delay, filter, map, pairwise, startWith, tap } from 'rxjs/operators'
 import { Activation, percentageDone } from './Activation'
-import { ActivationChecklistItem } from './ActivationChecklist'
-import { AccordionItem, Accordion, AccordionButton, AccordionPanel } from '@reach/accordion'
+import { ActivationChecklist } from './ActivationChecklist'
 import { Menu, MenuButton, MenuPopover, MenuList } from '@reach/menu-button'
 import classNames from 'classnames'
 
@@ -128,37 +126,12 @@ export class ActivationDropdown extends React.PureComponent<Props, State> {
                                     </span>
                                     <p className="mb-2">Complete the steps below to finish onboarding!</p>
                                 </div>
-                                <Accordion collapsible={true} className="activation-dropdown__list">
-                                    {this.props.activation && this.props.activation.completed ? (
-                                        this.props.activation.steps.map(step => (
-                                            <div key={step.id}>
-                                                <AccordionItem>
-                                                    <AccordionButton className="activation-dropdown-item dropdown-item">
-                                                        <ActivationChecklistItem
-                                                            {...step}
-                                                            className="activation-dropdown-item__title"
-                                                            history={this.props.history}
-                                                            done={
-                                                                (this.props.activation.completed &&
-                                                                    this.props.activation.completed[step.id]) ||
-                                                                false
-                                                            }
-                                                        />
-                                                    </AccordionButton>
-                                                    <AccordionPanel className="px-2">
-                                                        <div className="activation-dropdown-item__detail pb-1">
-                                                            {step.detail}
-                                                        </div>
-                                                    </AccordionPanel>
-                                                </AccordionItem>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <div className="activation-dropdown-button__loader">
-                                            <LoadingSpinner className="icon-inline" />
-                                        </div>
-                                    )}
-                                </Accordion>
+                                <ActivationChecklist
+                                    {...this.props}
+                                    steps={this.props.activation.steps}
+                                    completed={this.props.activation.completed}
+                                    className="activation-dropdown__checklist"
+                                />
                             </MenuList>
                         </MenuPopover>
                     </>

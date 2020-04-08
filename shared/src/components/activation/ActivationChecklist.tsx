@@ -24,7 +24,7 @@ export const ActivationChecklistItem: React.FunctionComponent<ActivationChecklis
 }: ActivationChecklistItemProps) => (
     <div className={classNames('activation-checklist-item d-flex justify-content-between', className)}>
         <div>
-            <span className="activation-checklist-item__icon-container activation-checklist-item__icon icon-inline icon-down">
+            <span className="activation-checklist-item__icon-container icon-inline icon-down">
                 <ChevronDownIcon className="activation-checklist-item__icon" />
             </span>
             <span className="activation-checklist-item__icon-container icon-inline icon-right">
@@ -58,12 +58,11 @@ export class ActivationChecklist extends React.PureComponent<ActivationChecklist
             <div className={`activation-checklist list-group list-group-flush ${this.props.className || ''}`}>
                 <Accordion collapsible={true}>
                     {this.props.steps.map(step => (
-                        <AccordionItem key={step.id} className="list-group-item activation-checklist__container">
-                            <AccordionButton className="list-group-item list-group-item-action activation-checklist__button">
+                        <AccordionItem key={step.id} className="activation-checklist__container list-group-item ">
+                            <AccordionButton className="activation-checklist__button list-group-item list-group-item-action">
                                 <ActivationChecklistItem
                                     key={step.id}
                                     {...step}
-                                    className="activation-checklist-item--admin-page"
                                     history={this.props.history}
                                     done={(this.props.completed && this.props.completed[step.id]) || false}
                                 />

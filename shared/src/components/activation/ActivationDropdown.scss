@@ -1,30 +1,41 @@
 .activation-dropdown {
-    color: var(--link-color);
     width: 21rem;
     z-index: 999;
 
-    &-item {
-        padding: 0;
-        white-space: normal;
-
-        &__title {
-            padding-left: 0.5rem;
-            padding-right: 0.5rem;
+    &__checklist {
+        .list-group-item {
+            border: 0;
         }
 
-        &__detail {
-            // This is the width of the icon in the row above. This is to get text to line up properly.
-            margin: 0 1.25rem;
-            padding: 0 0.25rem;
-        }
-
-        &:focus {
-            background-color: $dropdown-link-hover-bg;
+        .activation-dropdown-header {
+            border: 0;
         }
     }
 
-    &__list {
-        padding: 0.25rem 0;
+    [data-reach-accordion-button] {
+        color: var(--link-color);
+        .icon-down {
+            display: none;
+        }
+        .icon-right {
+            display: inline-block;
+        }
+    }
+
+    [data-reach-accordion-button][aria-expanded='true'] {
+        background-color: $dropdown-link-hover-bg;
+        color: var(--link-color);
+
+        .icon-right {
+            display: none;
+        }
+        .icon-down {
+            display: inline-block;
+        }
+    }
+
+    [data-reach-accordion-panel][data-state='open'] {
+        background-color: $dropdown-link-hover-bg;
     }
 }
 
@@ -69,12 +80,5 @@
 
     &:hover {
         text-decoration: none;
-    }
-}
-
-.theme-light {
-    .activation-dropdown {
-        border: 1px solid $dropdown-border-color;
-        background-color: var(--body-bg);
     }
 }
