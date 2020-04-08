@@ -4,8 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"golang.org/x/time/rate"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -13,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"golang.org/x/time/rate"
 )
 
 func TestExternalService_Exclude(t *testing.T) {

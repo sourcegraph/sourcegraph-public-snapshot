@@ -11,10 +11,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/goware/urlx"
 	"github.com/hashicorp/go-multierror"
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -930,7 +929,7 @@ func (es ExternalServices) With(opts ...func(*ExternalService)) ExternalServices
 
 type RateLimiterRegistry struct {
 	mu sync.Mutex
-	// Rate limiters per external service
+	// Rate limiter per external service
 	rateLimiters map[int64]*rate.Limiter
 }
 
