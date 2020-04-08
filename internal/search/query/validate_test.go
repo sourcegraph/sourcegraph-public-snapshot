@@ -14,27 +14,27 @@ func Test_PartitionSearchPattern(t *testing.T) {
 	}{
 		{
 			input: "x",
-			want:  "x",
+			want:  `"x"`,
 		},
 		{
 			input: "x y",
-			want:  "(concat x y)",
+			want:  `(concat "x" "y")`,
 		},
 		{
 			input: "x or y",
-			want:  "(or x y)",
+			want:  `(or "x" "y")`,
 		},
 		{
 			input: "x and y",
-			want:  "(and x y)",
+			want:  `(and "x" "y")`,
 		},
 		{
 			input: "file:foo x y",
-			want:  "file:foo (concat x y)",
+			want:  `"file:foo" (concat "x" "y")`,
 		},
 		{
 			input: "file:foo (x y)",
-			want:  "file:foo (concat (x y))",
+			want:  `"file:foo" (concat "(x" "y)")`,
 		},
 		{
 			input: "(file:foo x) y",
@@ -42,15 +42,15 @@ func Test_PartitionSearchPattern(t *testing.T) {
 		},
 		{
 			input: "file:foo (x and y)",
-			want:  "file:foo (and x y)",
+			want:  `"file:foo" (and "x" "y")`,
 		},
 		{
 			input: "file:foo x and y",
-			want:  "file:foo (and x y)",
+			want:  `"file:foo" (and "x" "y")`,
 		},
 		{
 			input: "file:foo (x or y)",
-			want:  "file:foo (or x y)",
+			want:  `"file:foo" (or "x" "y")`,
 		},
 		{
 			input: "file:foo x or y",
@@ -62,11 +62,11 @@ func Test_PartitionSearchPattern(t *testing.T) {
 		},
 		{
 			input: "file:foo and content:x",
-			want:  "file:foo content:x",
+			want:  `"file:foo" "content:x"`,
 		},
 		{
 			input: "repo:foo and file:bar and x",
-			want:  "repo:foo file:bar x",
+			want:  `"repo:foo" "file:bar" "x"`,
 		},
 		{
 			input: "repo:foo and (file:bar or file:baz) and x",
