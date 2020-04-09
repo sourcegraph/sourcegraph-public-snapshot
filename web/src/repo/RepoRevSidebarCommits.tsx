@@ -77,6 +77,7 @@ function fetchCommits(
         gql`
             query FetchCommits($repo: ID!, $rev: String!, $first: Int, $currentPath: String, $query: String) {
                 node(id: $repo) {
+                    __typename
                     ... on Repository {
                         commit(rev: $rev) {
                             ancestors(first: $first, query: $query, path: $currentPath) {

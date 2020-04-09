@@ -20,6 +20,7 @@ const fetchRepositoryCommits = memoizeObservable(
             gql`
                 query RepositoryGitCommit($repo: ID!, $first: Int, $rev: String!, $query: String) {
                     node(id: $repo) {
+                        __typename
                         ... on Repository {
                             commit(rev: $rev) {
                                 ancestors(first: $first, query: $query) {
