@@ -1,3 +1,4 @@
+import * as util from 'util'
 import * as React from 'react'
 import renderer from 'react-test-renderer'
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
@@ -6,7 +7,11 @@ import { withActivation } from './withActivation'
 
 const Component: React.FunctionComponent<ActivationProps & { authenticatedUser: GQL.IUser | null }> = (
     props: ActivationProps & { authenticatedUser: GQL.IUser | null }
-) => <div>activation JSON: {props.activation ? JSON.stringify(props.activation, null, 2) : 'undefined'}</div>
+) => (
+    <div>
+        activation JSON: {props.activation ? JSON.stringify(util.inspect(props.activation), null, 2) : 'undefined'}
+    </div>
+)
 
 describe('withActivation', () => {
     const ComponentWithActivation = withActivation(Component)
