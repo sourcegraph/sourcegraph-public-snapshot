@@ -93,6 +93,9 @@ type ChangesetSource interface {
 	// them. If a Changeset could not be found on the source, it's included in
 	// the returned slice.
 	LoadChangesets(context.Context, ...*Changeset) error
+	// LoadChangesetCost return estimated cost of loading one changeset. It
+	// can be used to inform rate limiters
+	LoadChangesetCost() int
 	// CreateChangeset will create the Changeset on the source. If it already
 	// exists, *Changeset will be populated and the return value will be
 	// true.

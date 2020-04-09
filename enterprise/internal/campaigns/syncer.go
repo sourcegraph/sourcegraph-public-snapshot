@@ -424,12 +424,16 @@ func (s *ChangesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 	if err != nil {
 		return err
 	}
-	return SyncChangesets(ctx, s.ReposStore, s.SyncStore, s.HTTPFactory, cs)
+	return syncChangesets(ctx, s.ReposStore, s.SyncStore, s.HTTPFactory, s.rateLimiter, cs)
 }
 
 // SyncChangesets refreshes the metadata of the given changesets and
 // updates them in the database.
 func SyncChangesets(ctx context.Context, repoStore RepoStore, syncStore SyncStore, cf *httpcli.Factory, cs ...*campaigns.Changeset) (err error) {
+	return syncChangesets(ctx, repoStore, syncStore, cf, nil, cs...)
+}
+
+func syncChangesets(ctx context.Context, repoStore RepoStore, syncStore SyncStore, cf *httpcli.Factory, rl *rate.Limiter, cs ...*campaigns.Changeset) (err error) {
 	if len(cs) == 0 {
 		return nil
 	}
@@ -439,12 +443,16 @@ func SyncChangesets(ctx context.Context, repoStore RepoStore, syncStore SyncStor
 		return err
 	}
 
-	return SyncChangesetsWithSources(ctx, syncStore, bySource)
+	return syncChangesetsWithSources(ctx, syncStore, bySource, rl)
 }
 
 // SyncChangesetsWithSources refreshes the metadata of the given changesets
 // with the given ChangesetSources and updates them in the database.
 func SyncChangesetsWithSources(ctx context.Context, store SyncStore, bySource []*SourceChangesets) (err error) {
+	return syncChangesetsWithSources(ctx, store, bySource, nil)
+}
+
+func syncChangesetsWithSources(ctx context.Context, store SyncStore, bySource []*SourceChangesets, rl *rate.Limiter) (err error) {
 	var (
 		events []*campaigns.ChangesetEvent
 		cs     []*campaigns.Changeset
@@ -452,6 +460,14 @@ func SyncChangesetsWithSources(ctx context.Context, store SyncStore, bySource []
 
 	for _, s := range bySource {
 		var notFound []*repos.Changeset
+
+		if rl != nil {
+			cost := s.LoadChangesetCost() * len(s.Changesets)
+			err = rl.WaitN(ctx, cost)
+			if err != nil {
+				return err
+			}
+		}
 
 		err := s.LoadChangesets(ctx, s.Changesets...)
 		if err != nil {

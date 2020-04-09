@@ -236,6 +236,13 @@ func (s GithubSource) LoadChangesets(ctx context.Context, cs ...*Changeset) erro
 	return nil
 }
 
+// LoadChangesetCost returns the API cost of loading a changeset
+func (s GithubSource) LoadChangesetCost() int {
+	// The cost can be requested from the GitHub API here:
+	// https://developer.github.com/v4/guides/resource-limitations/#returning-a-calls-rate-limit-status
+	return 3
+}
+
 // UpdateChangeset updates the given *Changeset in the code host.
 func (s GithubSource) UpdateChangeset(ctx context.Context, c *Changeset) error {
 	pr, ok := c.Changeset.Metadata.(*github.PullRequest)

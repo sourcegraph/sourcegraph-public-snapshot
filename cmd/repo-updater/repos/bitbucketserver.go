@@ -187,6 +187,12 @@ func (s BitbucketServerSource) LoadChangesets(ctx context.Context, cs ...*Change
 	return nil
 }
 
+// LoadChangesetCost returns the API cost of loading a changeset
+func (s BitbucketServerSource) LoadChangesetCost() int {
+	// We make 4 api calls
+	return 4
+}
+
 func (s BitbucketServerSource) loadPullRequestData(ctx context.Context, pr *bitbucketserver.PullRequest) error {
 	if err := s.client.LoadPullRequestActivities(ctx, pr); err != nil {
 		return errors.Wrap(err, "loading pr activities")
