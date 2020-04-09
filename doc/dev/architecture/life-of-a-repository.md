@@ -12,17 +12,17 @@ This document describes how our backend systems clone and update repositories fr
 
 Our guiding principle is to ensure all repositories configured by a site administrator are cloned and up to date. However, we need to avoid overloading a code host with API and Git requests.
 
-Note: Sourcegraph.com is different since it isn't feasible to maintain a clone of all open source repositories. It works via on-demand requests from users.
+>NOTE: Sourcegraph.com is different since it isn't feasible to maintain a clone of all open source repositories. It works via on-demand requests from users.
 
-Note: There is one other way repositories are fetched. A new commit may not be on Sourcegraph yet, but a user is browsing it via our browser extension. `gitserver` supports a ["EnsureRevision"](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.14.0/-/blob/cmd/gitserver/server/server.go#L645) use-case which will do a "git fetch" for the missing revision.
+>NOTE: There is one other way repositories are fetched. A new commit may not be on Sourcegraph yet, but a user is browsing it via our browser extension. `gitserver` supports a ["EnsureRevision"](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.14.0/-/blob/cmd/gitserver/server/server.go#L645) use-case which will do a "git fetch" for the missing revision.
 
 ## Services
 
-`repo-updater` is responsible for communicating with Code Host APIs and co-ordinating the state we synchronise from them. It is a singleton service. It is responsible for maintaining the `repo` table which other services read. It is also responsible for scheduling clones/fetches on `gitserver`. It is also responsible for anything which communicates with a Code Host API. So our campaigns and background permissions syncers also live in `repo-updater`.
+`repo-updater` is responsible for communicating with code host APIs and co-ordinating the state we synchronise from them. It is a singleton service. It is responsible for maintaining the `repo` table which other services read. It is also responsible for scheduling clones/fetches on `gitserver`. It is also responsible for anything which communicates with a code host API. So our campaigns and background permissions syncers also live in `repo-updater`.
 
 `gitserver` is a scaleable stateful service which clones git repositories and can run git commands against them. All data maintained on this service is from cloning an upstream repository. We shard the set of repositories across the gitserver replicas. The main RPC gitserver supports is `exec` which returns the output of the specified git command.
 
-Note: The name `repo-updater` does not accurately capture what the service does. This is a historical artifact. We have not updated it due to the unneccessary operational burden it would put on our customers.
+>NOTE: The name `repo-updater` does not accurately capture what the service does. This is a historical artifact. We have not updated it due to the unneccessary operational burden it would put on our customers.
 
 ## Discovery
 
@@ -67,3 +67,5 @@ The scheduler is divided into two parts:
 Repositories can also placed onto the `updateQueue` if we receive a webhook indicating the repository has changed. (We don't by default setup webhooks when integrating into a code host). When a user directly visits a repository on Sourcegraph we also enqueue it for update.
 
 The [update scheduler](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.14.0/-/blob/cmd/repo-updater/repos/scheduler.go#L165:27) has [`conf.GitMaxConcurrentClones`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.14.0/-/blob/schema/site.schema.json#L235-240) workers processing the `updateQueue` and issuing git clone/fetch commands.
+
+>NOTE: gitserver also enforces `GitMaxConcurrentClones` per shard. So it is possible to have `GitMaxConcurrentClones * GITSERVER_REPLICA_COUNT` clone/fetch running, although uncommon.
