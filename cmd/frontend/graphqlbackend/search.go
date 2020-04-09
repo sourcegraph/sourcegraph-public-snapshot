@@ -174,7 +174,7 @@ func processPaginationRequest(args *SearchArgs, queryInfo query.QueryInfo) (*sea
 			limit:  *args.First,
 		}
 	} else if args.After != nil {
-		return nil, errors.New("Search: paginated requests providing a 'after' but no 'first' is forbidden")
+		return nil, errors.New("search: paginated requests providing an 'after' cursor but no 'first' value is forbidden")
 	}
 	return pagination, nil
 }
