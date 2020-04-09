@@ -35,6 +35,29 @@ const BitbucketCloudSchemaJSON = `{
       "format": "uri",
       "examples": ["https://api.bitbucket.org"]
     },
+    "rateLimit": {
+      "description": "Rate limit applied when making background API requests to Bitbucket Cloud.",
+      "title": "BitbucketCloudRateLimit",
+      "type": "object",
+      "required": ["enabled", "requestsPerHour"],
+      "properties": {
+        "enabled": {
+          "description": "true if rate limiting is enabled.",
+          "type": "boolean",
+          "default": true
+        },
+        "requestsPerHour": {
+          "description": "Requests per hour permitted. This is an average, calculated per second.",
+          "type": "number",
+          "default": 7200,
+          "minimum": 0
+        }
+      },
+      "default": {
+        "enabled": true,
+        "requestsPerHour": 7200
+      }
+    },
     "username": {
       "description": "The username to use when authenticating to the Bitbucket Cloud. Also set the corresponding \"appPassword\" field.",
       "type": "string"

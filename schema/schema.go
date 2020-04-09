@@ -127,6 +127,8 @@ type BitbucketCloudConnection struct {
 	//
 	// If "ssh", Sourcegraph will access Bitbucket Cloud repositories using Git URLs of the form git@bitbucket.org:myteam/myproject.git. See the documentation for how to provide SSH private keys and known_hosts: https://docs.sourcegraph.com/admin/repo/auth#repositories-that-need-http-s-or-ssh-authentication.
 	GitURLType string `json:"gitURLType,omitempty"`
+	// RateLimit description: Rate limit applied when making background API requests to Bitbucket Cloud.
+	RateLimit *BitbucketCloudRateLimit `json:"rateLimit,omitempty"`
 	// RepositoryPathPattern description: The pattern used to generate the corresponding Sourcegraph repository name for a Bitbucket Cloud repository.
 	//
 	//  - "{host}" is replaced with the Bitbucket Cloud URL's host (such as bitbucket.org),  and "{nameWithOwner}" is replaced with the Bitbucket Cloud repository's "owner/path" (such as "myorg/myrepo").
@@ -141,6 +143,14 @@ type BitbucketCloudConnection struct {
 	Url string `json:"url"`
 	// Username description: The username to use when authenticating to the Bitbucket Cloud. Also set the corresponding "appPassword" field.
 	Username string `json:"username"`
+}
+
+// BitbucketCloudRateLimit description: Rate limit applied when making background API requests to Bitbucket Cloud.
+type BitbucketCloudRateLimit struct {
+	// Enabled description: true if rate limiting is enabled.
+	Enabled bool `json:"enabled"`
+	// RequestsPerHour description: Requests per hour permitted. This is an average, calculated per second.
+	RequestsPerHour float64 `json:"requestsPerHour"`
 }
 
 // BitbucketServerAuthorization description: If non-null, enforces Bitbucket Server repository permissions.

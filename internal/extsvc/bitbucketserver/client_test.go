@@ -16,8 +16,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/inconshreveable/log15"
 	"github.com/sergi/go-diff/diffmatchpatch"
-	"github.com/sourcegraph/sourcegraph/schema"
-	"golang.org/x/time/rate"
 )
 
 var update = flag.Bool("update", false, "update testdata")
@@ -756,40 +754,6 @@ func checkGolden(t *testing.T, name string, got interface{}) {
 		dmp := diffmatchpatch.New()
 		diffs := dmp.DiffMain(have, want, false)
 		t.Error(dmp.DiffPrettyText(diffs))
-	}
-}
-
-func TestGetLimiter(t *testing.T) {
-	u, err := url.Parse("http://bitbucket.example.com")
-	if err != nil {
-		t.Fatal(err)
-	}
-	c := &schema.BitbucketServerConnection{
-		RateLimit: &schema.BitbucketServerRateLimit{
-			Enabled:         true,
-			RequestsPerHour: 3600,
-		},
-		Url:      u.String(),
-		Username: "user",
-	}
-	limiter := getLimiter(u, c)
-
-	if limiter.Limit() != rate.Limit(1) {
-		t.Fatalf("Expected a limit of 1, got %f", limiter.Limit())
-	}
-
-	// Changing config should alter the limit
-	c.RateLimit.RequestsPerHour = 7200
-
-	second := getLimiter(u, c)
-
-	// Note, we're checking the value on the old pointer, it should have been modified
-	if limiter.Limit() != rate.Limit(2) {
-		t.Fatalf("Expected a limit of 2, got %f", limiter.Limit())
-	}
-
-	if limiter != second {
-		t.Fatalf("The same limiter should have been returned")
 	}
 }
 
