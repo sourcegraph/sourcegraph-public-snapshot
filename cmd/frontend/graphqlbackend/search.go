@@ -142,8 +142,8 @@ func queryForStableResults(args *SearchArgs, queryInfo query.QueryInfo) (*Search
 				return nil, nil, err
 			}
 			stableResultCount = int32(count64)
-			if stableResultCount > maxSearchResultsPerPaginationRequest {
-				return nil, nil, fmt.Errorf("Stable searches are limited to at max count:%d results. Consider removing 'stable:', narrowing the search with 'repo:'., or using the paginated search API.", maxSearchResultsPerPaginationRequest)
+			if stableResultCount > maxSearchResultsPerPaginatedRequest {
+				return nil, nil, fmt.Errorf("Stable searches are limited to at max count:%d results. Consider removing 'stable:', narrowing the search with 'repo:', or using the paginated search API.", maxSearchResultsPerPaginatedRequest)
 			}
 		} else {
 			stableResultCount = defaultMaxSearchResults
@@ -166,8 +166,8 @@ func processPaginationRequest(args *SearchArgs, queryInfo query.QueryInfo) (*sea
 		if err != nil {
 			return nil, err
 		}
-		if *args.First < 0 || *args.First > maxSearchResultsPerPaginationRequest {
-			return nil, fmt.Errorf("search: requested pagination 'first' value outside allowed range (0 - %d)", maxSearchResultsPerPaginationRequest)
+		if *args.First < 0 || *args.First > maxSearchResultsPerPaginatedRequest {
+			return nil, fmt.Errorf("search: requested pagination 'first' value outside allowed range (0 - %d)", maxSearchResultsPerPaginatedRequest)
 		}
 		pagination = &searchPaginationInfo{
 			cursor: cursor,
@@ -257,7 +257,7 @@ func (r *searchResolver) countIsSet() bool {
 }
 
 const defaultMaxSearchResults = 30
-const maxSearchResultsPerPaginationRequest = 5000
+const maxSearchResultsPerPaginatedRequest = 5000
 
 func (r *searchResolver) maxResults() int32 {
 	if r.pagination != nil {

@@ -447,7 +447,7 @@ func Test_queryForStableResults(t *testing.T) {
 		},
 		{
 			query:     "foo stable:yes count:5001",
-			wantError: fmt.Errorf("At most count:%d results can be requested when 'stable:' is specified. Consider removing 'stable:' or narrowing search with 'repo:'.", maxSearchResultsPerPaginationRequest),
+			wantError: fmt.Errorf("Stable searches are limited to at max count:%d results. Consider removing 'stable:', narrowing the search with 'repo:', or using the paginated search API.", maxSearchResultsPerPaginatedRequest),
 		},
 	}
 	for _, c := range cases {

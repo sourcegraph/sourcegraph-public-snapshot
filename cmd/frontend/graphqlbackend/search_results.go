@@ -557,6 +557,17 @@ func (r *searchResolver) logSearchLatency(ctx context.Context, durationMs int32)
 // evaluateLeaf performs a single search operation and corresponds to the
 // evaluation of leaf expression in a query.
 func (r *searchResolver) evaluateLeaf(ctx context.Context) (*SearchResultsResolver, error) {
+	// If the request specifies stable:truthy, use pagination to return a stable ordering.
+	if r.query.BoolValue("stable") {
+		result, err := r.paginatedResults(ctx)
+		if err == nil && !result.cursor.Finished {
+			// For stable result queries limitHit = true implies
+			// there is a next cursor, and more results may exist.
+			result.searchResultsCommon.limitHit = true
+		}
+		return result, err
+	}
+
 	// If the request is a paginated one, we handle it separately. See
 	// paginatedResults for more details.
 	if r.pagination != nil {
