@@ -1,4 +1,4 @@
-name: LSIF
+name: Check
 on:
   - push
 jobs:
@@ -20,7 +20,5 @@ jobs:
       - name: '[setup] (asdf) install tools'
         run: >
           asdf install
-      - name: '[setup] install GNU parallel'
-        run: sudo apt-get install parallel
       - name: 'dev/check/all.sh'
         run: dev/check/all.sh
