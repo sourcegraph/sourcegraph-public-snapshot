@@ -1,16 +1,19 @@
 package repos
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 	"reflect"
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/goware/urlx"
 	"github.com/hashicorp/go-multierror"
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -22,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/xeipuuv/gojsonschema"
+	"golang.org/x/time/rate"
 )
 
 // A Changeset of an existing Repo.
@@ -921,4 +925,97 @@ func (es ExternalServices) With(opts ...func(*ExternalService)) ExternalServices
 	clone := es.Clone()
 	clone.Apply(opts...)
 	return clone
+}
+
+type RateLimiterRegistry struct {
+	mu sync.Mutex
+	// Rate limiter per external service, keys are database ID of external services.
+	rateLimiters map[int64]*rate.Limiter
+}
+
+// NewRateLimitRegistry returns a new registry and attempts to populate it. On error, an
+// empty registry is returned which can still to handle syncs.
+func NewRateLimiterRegistry(ctx context.Context, store Store) (*RateLimiterRegistry, error) {
+	r := &RateLimiterRegistry{
+		rateLimiters: make(map[int64]*rate.Limiter),
+	}
+
+	svcs, err := store.ListExternalServices(ctx, StoreListExternalServicesArgs{})
+	if err != nil {
+		return r, errors.Wrap(err, "fetching external services")
+	}
+
+	for _, svc := range svcs {
+		err = r.updateRateLimiter(svc)
+		if err != nil {
+			// Errors here are not fatal
+			log15.Warn("Updating rate limiter", "kind", svc.Kind, "err", err)
+		}
+	}
+
+	return r, nil
+}
+
+// GetRateLimiter fetches the rate limiter associated with the given external service. If none has been
+// configured an infinite limiter is returned.
+func (r *RateLimiterRegistry) GetRateLimiter(externalServiceID int64) *rate.Limiter {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	l := r.rateLimiters[externalServiceID]
+	if l == nil {
+		l = rate.NewLimiter(rate.Inf, 100)
+		r.rateLimiters[externalServiceID] = l
+	}
+	return l
+}
+
+// HandleExternalServiceSync will update the rate limiter associated with the supplied external service
+// so that it's settings match the service config.
+func (r *RateLimiterRegistry) HandleExternalServiceSync(apiService api.ExternalService) error {
+	svc := &ExternalService{
+		ID:          apiService.ID,
+		Kind:        apiService.Kind,
+		DisplayName: apiService.DisplayName,
+		Config:      apiService.Config,
+		CreatedAt:   apiService.CreatedAt,
+		UpdatedAt:   apiService.UpdatedAt,
+		DeletedAt:   time.Time{},
+	}
+	if apiService.DeletedAt != nil {
+		svc.DeletedAt = *apiService.DeletedAt
+	}
+	return r.updateRateLimiter(svc)
+}
+
+func (r *RateLimiterRegistry) updateRateLimiter(svc *ExternalService) error {
+	config, err := svc.Configuration()
+	if err != nil {
+		return errors.Wrap(err, "getting external service configuration")
+	}
+
+	// Rate limit config can be in a few states:
+	// 1. Not defined: We fall back to default specified in code.
+	// 2. Defined and enabled: We use their defined limit.
+	// 3. Defined and disabled: We use an infinite limiter.
+
+	var limit rate.Limit
+	switch c := config.(type) {
+	case *schema.GitLabConnection:
+		// 10/s is the default enforced by GitLab on their end
+		limit = rate.Limit(10)
+		if c != nil && c.RateLimit != nil {
+			if c.RateLimit.Enabled {
+				limit = rate.Limit(c.RateLimit.RequestsPerHour / 3600)
+			} else {
+				limit = rate.Inf
+			}
+		}
+	default:
+		return fmt.Errorf("internal rate limiting not support for %s", svc.Kind)
+	}
+
+	l := r.GetRateLimiter(svc.ID)
+	l.SetLimit(limit)
+
+	return nil
 }
