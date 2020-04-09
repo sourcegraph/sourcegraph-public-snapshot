@@ -36,7 +36,7 @@ const BitbucketCloudSchemaJSON = `{
       "examples": ["https://api.bitbucket.org"]
     },
     "rateLimit": {
-      "description": "Rate limit applied when making background API requests to BitbucketCloud.",
+      "description": "Rate limit applied when making background API requests to Bitbucket Cloud.",
       "title": "BitbucketCloudRateLimit",
       "type": "object",
       "required": ["enabled", "requestsPerHour"],
