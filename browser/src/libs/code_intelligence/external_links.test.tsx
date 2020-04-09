@@ -10,6 +10,7 @@ describe('<ViewOnSourcegraphButton />', () => {
         renderer.act(() => {
             root = renderer.create(
                 <ViewOnSourcegraphButton
+                    codeHostType="test-codehost"
                     sourcegraphURL="https://test.com"
                     getContext={() => ({ rawRepoName: 'test', privateRepository: false })}
                     className="test"
@@ -26,6 +27,7 @@ describe('<ViewOnSourcegraphButton />', () => {
         renderer.act(() => {
             root = renderer.create(
                 <ViewOnSourcegraphButton
+                    codeHostType="test-codehost"
                     sourcegraphURL="https://test.com"
                     getContext={() => ({ rawRepoName: 'test', privateRepository: false })}
                     className="test"
@@ -42,6 +44,7 @@ describe('<ViewOnSourcegraphButton />', () => {
         renderer.act(() => {
             root = renderer.create(
                 <ViewOnSourcegraphButton
+                    codeHostType="test-codehost"
                     sourcegraphURL="https://test.com"
                     getContext={() => ({
                         rawRepoName: 'test',
@@ -64,6 +67,7 @@ describe('<ViewOnSourcegraphButton />', () => {
                 renderer.act(() => {
                     root = renderer.create(
                         <ViewOnSourcegraphButton
+                            codeHostType="test-codehost"
                             sourcegraphURL="https://test.com"
                             getContext={() => ({
                                 rawRepoName: 'test',
@@ -87,6 +91,7 @@ describe('<ViewOnSourcegraphButton />', () => {
         renderer.act(() => {
             root = renderer.create(
                 <ViewOnSourcegraphButton
+                    codeHostType="test-codehost"
                     sourcegraphURL="https://test.com"
                     getContext={() => ({
                         rawRepoName: 'test',
@@ -108,7 +113,30 @@ describe('<ViewOnSourcegraphButton />', () => {
         renderer.act(() => {
             root = renderer.create(
                 <ViewOnSourcegraphButton
+                    codeHostType="test-codehost"
                     sourcegraphURL="https://sourcegraph.com"
+                    getContext={() => ({
+                        rawRepoName: 'test',
+                        rev: 'test',
+                        privateRepository: false,
+                    })}
+                    className="test"
+                    repoExistsOrError={false}
+                    onConfigureSourcegraphClick={noop}
+                    minimalUI={false}
+                />
+            )
+        })
+        expect(root!).toMatchSnapshot()
+    })
+
+    it('renders a repository not found message if the repository does not exist on the instance and not pointing at sourcegraph.com', () => {
+        let root: ReactTestRenderer
+        renderer.act(() => {
+            root = renderer.create(
+                <ViewOnSourcegraphButton
+                    codeHostType="test-codehost"
+                    sourcegraphURL="https://sourcegraph.test"
                     getContext={() => ({
                         rawRepoName: 'test',
                         rev: 'test',
@@ -129,6 +157,7 @@ describe('<ViewOnSourcegraphButton />', () => {
         renderer.act(() => {
             root = renderer.create(
                 <ViewOnSourcegraphButton
+                    codeHostType="test-codehost"
                     sourcegraphURL="https://test.com"
                     getContext={() => ({
                         rawRepoName: 'test',

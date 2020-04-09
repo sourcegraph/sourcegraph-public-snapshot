@@ -571,8 +571,6 @@ export function handleCodeHost({
     const subscriptions = new Subscription()
     const { requestGraphQL } = platformContext
 
-    const openOptionsMenu = (): Promise<void> => browser.runtime.sendMessage({ type: 'openOptionsPage' })
-
     const addedElements = mutations.pipe(
         concatAll(),
         concatMap(mutation => mutation.addedNodes),
@@ -674,6 +672,10 @@ export function handleCodeHost({
                 )
             })
         )
+        const onConfigureSourcegraphClick: React.MouseEventHandler<HTMLAnchorElement> = async event => {
+            event.preventDefault()
+            await browser.runtime.sendMessage({ type: 'openOptionsPage' })
+        }
 
         subscriptions.add(
             combineLatest([
@@ -688,13 +690,14 @@ export function handleCodeHost({
                 render(
                     <ViewOnSourcegraphButton
                         {...viewOnSourcegraphButtonClassProps}
+                        codeHostType={codeHost.type}
                         getContext={getContext}
                         minimalUI={minimalUI}
                         sourcegraphURL={sourcegraphURL}
                         repoExistsOrError={repoExistsOrError}
                         showSignInButton={showSignInButton}
                         onSignInClose={nextSignInClose}
-                        onConfigureSourcegraphClick={isInPage ? undefined : openOptionsMenu}
+                        onConfigureSourcegraphClick={isInPage ? undefined : onConfigureSourcegraphClick}
                     />,
                     mount
                 )
