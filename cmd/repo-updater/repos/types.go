@@ -1010,6 +1010,16 @@ func (r *RateLimiterRegistry) updateRateLimiter(svc *ExternalService) error {
 				limit = rate.Inf
 			}
 		}
+	case *schema.GitHubConnection:
+		// 5000 per hour is the default enforced by GitHub on their end
+		limit = rate.Limit(5000.0 / 3600.0)
+		if c != nil && c.RateLimit != nil {
+			if c.RateLimit.Enabled {
+				limit = rate.Limit(c.RateLimit.RequestsPerHour / 3600)
+			} else {
+				limit = rate.Inf
+			}
+		}
 	default:
 		return fmt.Errorf("internal rate limiting not support for %s", svc.Kind)
 	}
