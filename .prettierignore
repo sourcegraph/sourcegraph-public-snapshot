@@ -17,7 +17,7 @@ shared/src/graphqlschema.ts
 web/src/schema/
 ts-node-*
 testdata
-.github/*
+.github/*.md
 doc/
 **/.cache
 shared/dev/**/*.js

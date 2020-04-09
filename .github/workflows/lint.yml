@@ -6,11 +6,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: asdf_install
-        uses: asdf-vm/actions/install@v1.0.0
-        with:
-          before_install: "bash ~/.asdf/plugins/nodejs/bin/import-release-team-keyring"
-      - name: Install GNU parallel
+      - uses: asdf-vm/actions/setup@v1.0.0
+      - name: '[setup] (asdf) configure .nvmrc'
+        run: >
+          bash -c "echo 'legacy_version_file = yes' > ~/.asdfrc"
+      - name: '[setup] (asdf) install nodejs plugin'
+        run: asdf plugin-add nodejs
+      - name: '[setup] (asdf) import nodejs keyring'
+        run: >
+          bash ~/.asdf/plugins/nodejs/bin/import-release-team-keyring
+      - name: '[setup] (asdf) add plugins'
+        uses: asdf-vm/actions/plugins-add@v1.0.0
+      - name: '[setup] (asdf) install tools'
+        run: >
+          asdf install
+      - name: '[setup] install GNU parallel'
         run: sudo apt-get install parallel
-      - name: "dev/check/all.sh"
+      - name: 'dev/check/all.sh'
         run: dev/check/all.sh

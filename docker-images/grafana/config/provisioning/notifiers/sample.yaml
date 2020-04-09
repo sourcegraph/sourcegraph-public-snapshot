@@ -1,6 +1,5 @@
 # # config file version
 apiVersion: 1
-
 # notifiers:
 #   - name: default-slack-temp
 #     type: slack
@@ -16,7 +15,7 @@ apiVersion: 1
 #     type: email
 #     org_id: 1
 #     uid: notifier2
-#     is_default: false  
+#     is_default: false
 #     settings:
 #       addresses: example11111@example.com
 # delete_notifiers:
