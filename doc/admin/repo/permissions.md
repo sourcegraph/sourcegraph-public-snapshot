@@ -191,7 +191,7 @@ Background permissions syncing is currently behind a feature flag in the [site c
 }
 ```
 
->NOTE: Only GitLab and Bitbucket Server are supported at this time. Support for GitHub is coming soon in 3.15.
+>NOTE: Support for GitHub is added in 3.15.
 
 Background permissions syncing has the following benefits:
 
