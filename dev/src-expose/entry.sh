@@ -2,4 +2,4 @@
 
 # Feed every directory in /app/data to src-expose
 codedirs=$(cd /app/data && ls -d * | xargs)
-/usr/local/bin/src-expose $codedirs
+exec /usr/local/bin/src-expose $codedirs
