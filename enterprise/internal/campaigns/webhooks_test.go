@@ -116,13 +116,7 @@ func testGitHubWebhook(db *sql.DB) func(*testing.T) {
 			t.Fatal(err)
 		}
 
-		syncer := ChangesetSyncer{
-			ReposStore:  repoStore,
-			SyncStore:   store,
-			HTTPFactory: cf,
-		}
-
-		err = syncer.SyncChangesets(ctx, changesets...)
+		err = SyncChangesets(ctx, repoStore, store, cf, changesets...)
 		if err != nil {
 			t.Fatal(err)
 		}

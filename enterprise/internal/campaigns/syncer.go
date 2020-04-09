@@ -415,18 +415,6 @@ func (s *ChangesetSyncer) computeSchedule(ctx context.Context) ([]scheduledSync,
 	return ss, nil
 }
 
-// filterSyncData filters to changesets that serviceID is responsible for.
-func filterSyncData(serviceID int64, allSyncData []campaigns.ChangesetSyncData) []campaigns.ChangesetSyncData {
-	syncData := make([]campaigns.ChangesetSyncData, 0, len(allSyncData))
-	for _, d := range allSyncData {
-		svcID := shardChangeset(d.ChangesetID, d.ExternalServiceIDs)
-		if svcID == serviceID {
-			syncData = append(syncData, d)
-		}
-	}
-	return syncData
-}
-
 // SyncChangeset will sync a single changeset given its id.
 func (s *ChangesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 	log15.Debug("SyncChangeset", "id", id)
@@ -436,27 +424,26 @@ func (s *ChangesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 	if err != nil {
 		return err
 	}
-	return s.SyncChangesets(ctx, cs)
+	return SyncChangesets(ctx, s.ReposStore, s.SyncStore, s.HTTPFactory, cs)
 }
 
 // SyncChangesets refreshes the metadata of the given changesets and
 // updates them in the database.
-func (s *ChangesetSyncer) SyncChangesets(ctx context.Context, cs ...*campaigns.Changeset) (err error) {
+func SyncChangesets(ctx context.Context, repoStore RepoStore, syncStore SyncStore, cf *httpcli.Factory, cs ...*campaigns.Changeset) (err error) {
 	if len(cs) == 0 {
 		return nil
 	}
 
-	bySource, err := GroupChangesetsBySource(ctx, s.ReposStore, s.HTTPFactory, cs...)
+	bySource, err := GroupChangesetsBySource(ctx, repoStore, cf, cs...)
 	if err != nil {
 		return err
 	}
 
-	return SyncChangesetsWithSources(ctx, s.SyncStore, bySource)
+	return SyncChangesetsWithSources(ctx, syncStore, bySource)
 }
 
 // SyncChangesetsWithSources refreshes the metadata of the given changesets
 // with the given ChangesetSources and updates them in the database.
-// An optional rate limiter can be provided
 func SyncChangesetsWithSources(ctx context.Context, store SyncStore, bySource []*SourceChangesets) (err error) {
 	var (
 		events []*campaigns.ChangesetEvent
@@ -587,6 +574,18 @@ func GroupChangesetsBySource(ctx context.Context, reposStore RepoStore, cf *http
 	}
 
 	return res, nil
+}
+
+// filterSyncData filters to changesets that serviceID is responsible for.
+func filterSyncData(serviceID int64, allSyncData []campaigns.ChangesetSyncData) []campaigns.ChangesetSyncData {
+	syncData := make([]campaigns.ChangesetSyncData, 0, len(allSyncData))
+	for _, d := range allSyncData {
+		svcID := shardChangeset(d.ChangesetID, d.ExternalServiceIDs)
+		if svcID == serviceID {
+			syncData = append(syncData, d)
+		}
+	}
+	return syncData
 }
 
 type scheduledSync struct {

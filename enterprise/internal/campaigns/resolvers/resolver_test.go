@@ -807,12 +807,7 @@ func TestChangesetCountsOverTime(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	syncer := ee.ChangesetSyncer{
-		ReposStore:  repoStore,
-		SyncStore:   store,
-		HTTPFactory: cf,
-	}
-	err = syncer.SyncChangesets(ctx, changesets...)
+	err = ee.SyncChangesets(ctx, repoStore, store, cf, changesets...)
 	if err != nil {
 		t.Fatal(err)
 	}
