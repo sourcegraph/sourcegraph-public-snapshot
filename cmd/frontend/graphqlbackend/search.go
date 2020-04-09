@@ -143,7 +143,7 @@ func queryForStableResults(args *SearchArgs, queryInfo query.QueryInfo) (*Search
 			}
 			stableResultCount = int32(count64)
 			if stableResultCount > maxSearchResultsPerPaginationRequest {
-				return nil, nil, fmt.Errorf("At most count:%d results can be requested when 'stable:' is specified. Consider removing 'stable:' or narrowing search with 'repo:'.", maxSearchResultsPerPaginationRequest)
+				return nil, nil, fmt.Errorf("Stable searches are limited to at max count:%d results. Consider removing 'stable:', narrowing the search with 'repo:'., or using the paginated search API.", maxSearchResultsPerPaginationRequest)
 			}
 		} else {
 			stableResultCount = defaultMaxSearchResults
