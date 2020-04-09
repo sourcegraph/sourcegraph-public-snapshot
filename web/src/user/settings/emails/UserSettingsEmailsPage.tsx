@@ -6,7 +6,7 @@ import { Observable, Subject, Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { gql } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
-import { createAggregateError } from '../../../../../shared/src/util/errors'
+import { createAggregateError, asError } from '../../../../../shared/src/util/errors'
 import { mutateGraphQL, queryGraphQL } from '../../../backend/graphql'
 import { FilteredConnection } from '../../../components/FilteredConnection'
 import { PageTitle } from '../../../components/PageTitle'
@@ -113,7 +113,7 @@ class UserEmailNode extends React.PureComponent<UserEmailNodeProps, UserEmailNod
                         this.props.onDidUpdate()
                     }
                 },
-                error => this.setState({ loading: false, errorDescription: error.message })
+                error => this.setState({ loading: false, errorDescription: asError(error).message })
             )
     }
 
@@ -140,7 +140,7 @@ class UserEmailNode extends React.PureComponent<UserEmailNodeProps, UserEmailNod
                     this.props.onDidUpdate()
                 }
             },
-            error => this.setState({ loading: false, errorDescription: error.message })
+            error => this.setState({ loading: false, errorDescription: asError(error).message })
         )
     }
 }

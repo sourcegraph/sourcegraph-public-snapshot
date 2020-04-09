@@ -5,6 +5,7 @@ import { fromEvent } from 'rxjs'
 import { take } from 'rxjs/operators'
 import { EndpointPair, isEndpointPair } from '../../platform/context'
 import { startExtensionHost } from './extensionHost'
+import { hasProperty } from '../../util/types'
 
 interface InitMessage {
     endpoints: {
@@ -20,7 +21,8 @@ interface InitMessage {
     wrapEndpoints: boolean
 }
 
-const isInitMessage = (value: any): value is InitMessage => value.endpoints && isEndpointPair(value.endpoints)
+const isInitMessage = (value: unknown): value is InitMessage =>
+    typeof value === 'object' && value !== null && hasProperty('endpoints')(value) && isEndpointPair(value.endpoints)
 
 const wrapMessagePort = (port: MessagePort): MessagePort =>
     MessageChannelAdapter.wrap({

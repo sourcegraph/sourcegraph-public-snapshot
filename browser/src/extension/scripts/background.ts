@@ -154,8 +154,8 @@ async function main(): Promise<void> {
     }
 
     // Handle calls from other scripts
-    browser.runtime.onMessage.addListener(async message => {
-        const method = message.type as keyof typeof handlers
+    browser.runtime.onMessage.addListener(async (message: { type: keyof BackgroundMessageHandlers; payload: any }) => {
+        const method = message.type
         if (!handlers[method]) {
             throw new Error(`Invalid RPC call for "${method}"`)
         }

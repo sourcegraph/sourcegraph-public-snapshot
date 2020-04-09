@@ -91,20 +91,20 @@ function initializeExtensionHost(
     subscription.add(apiSubscription)
 
     // Make `import 'sourcegraph'` or `require('sourcegraph')` return the extension API.
-    ;(global as any).require = (modulePath: string): any => {
+    globalThis.require = ((modulePath: string): any => {
         if (modulePath === 'sourcegraph') {
             return extensionAPI
         }
         // All other requires/imports in the extension's code should not reach here because their JS
         // bundler should have resolved them locally.
         throw new Error(`require: module not found: ${modulePath}`)
-    }
+    }) as any
     subscription.add(() => {
-        ;(global as any).require = () => {
+        globalThis.require = (() => {
             // Prevent callers from attempting to access the extension API after it was
             // unsubscribed.
             throw new Error('require: Sourcegraph extension API was unsubscribed')
-        }
+        }) as any
     })
 
     return { subscription, extensionAPI, extensionHostAPI }

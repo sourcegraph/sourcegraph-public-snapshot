@@ -39,7 +39,7 @@ function parseValue<T>(v: string | null, defaultValue: T): T {
         return defaultValue
     }
     try {
-        return JSON.parse(v)
+        return JSON.parse(v) as T
     } catch (err) {
         return defaultValue
     }
