@@ -72,7 +72,7 @@ exports[`<ViewOnSourcegraphButton /> existence could not be determined  because 
 <a
   aria-label="Something unknown happened!"
   className="open-on-sourcegraph test"
-  href="https://docs.sourcegraph.com/integration/test_codehost"
+  href="https://test.com/test@test"
   rel="noopener noreferrer"
   target="_blank"
   title="Something unknown happened!"

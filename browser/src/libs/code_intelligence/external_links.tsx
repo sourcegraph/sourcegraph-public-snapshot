@@ -54,6 +54,9 @@ export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphB
         return null
     }
 
+    const { rawRepoName, rev } = getContext()
+    const url = new URL(`/${rawRepoName}${rev ? `@${rev}` : ''}`, sourcegraphURL).href
+
     if (isErrorLike(repoExistsOrError)) {
         // If the problem is the user is not signed in, show a sign in CTA (if not shown elsewhere)
         if (failedWithHTTPStatus(repoExistsOrError, 401)) {
@@ -90,19 +93,20 @@ export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphB
             )
         }
 
-        // If there was an unexpected error, show it in the tooltip
+        // If there was an unexpected error, show it in the tooltip.
+        // Still link to the Sourcegraph instance in native integrations
+        // as that might explain the error (e.g. not reachable).
+        // In the browser extension, let the onConfigureSourcegraphClick handler can handle this.
         return (
             <SourcegraphIconButton
                 {...commonErrorCaseProps}
+                href={url}
                 label="Error"
                 title={repoExistsOrError.message}
                 aria-label={repoExistsOrError.message}
             />
         )
     }
-
-    const { rawRepoName, rev } = getContext()
-    const url = new URL(`/${rawRepoName}${rev ? `@${rev}` : ''}`, sourcegraphURL).href
 
     // If the repository does not exist, communicate that to explain why e.g. code intelligence does not work
     if (!repoExistsOrError) {
