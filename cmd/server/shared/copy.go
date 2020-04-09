@@ -13,18 +13,30 @@ import (
 	"github.com/pkg/errors"
 )
 
-// copyNetrc will copy the file at /etc/sourcegraph/netrc to /etc/netrc for
-// authenticated HTTP(S) cloning.
-func copyNetrc() error {
-	src := filepath.Join(os.Getenv("CONFIG_DIR"), "netrc")
-	dst := os.ExpandEnv("$HOME/.netrc")
+// copyConfigs will copy /etc/sourcegraph/{netrc,gitconfig} to locations read
+// by other tools.
+func copyConfigs() error {
+	paths := map[string]string{
+		"netrc":     "$HOME/.netrc",
+		"gitconfig": "$HOME/.gitconfig",
+	}
+	for src, dst := range paths {
+		src = filepath.Join(os.Getenv("CONFIG_DIR"), src)
+		dst = os.ExpandEnv(dst)
 
-	data, err := ioutil.ReadFile(src)
-	if err != nil && !os.IsNotExist(err) {
-		return err
+		data, err := ioutil.ReadFile(src)
+		if os.IsNotExist(err) {
+			continue
+		} else if err != nil {
+			return errors.Wrapf(err, "failed to copy %s -> %s", src, dst)
+		}
+
+		if err := ioutil.WriteFile(dst, data, 0600); err != nil {
+			return errors.Wrapf(err, "failed to copy %s -> %s", src, dst)
+		}
 	}
 
-	return ioutil.WriteFile(dst, data, 0600)
+	return nil
 }
 
 // copySSH will copy the files at /etc/sourcegraph/ssh and put them into
