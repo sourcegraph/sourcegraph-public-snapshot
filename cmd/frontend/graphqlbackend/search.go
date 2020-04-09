@@ -30,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	querytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -98,23 +99,64 @@ func NewSearchImplementer(args *SearchArgs) (SearchImplementer, error) {
 		}
 	}
 
-	// If stable:truthy is specified, execute a pagination to return a stable ordering.
+	// If stable:truthy is specified, make the query return a stable result ordering.
+	if queryInfo.BoolValue(query.FieldStable) {
+		args, queryInfo, err = queryForStableResults(args, queryInfo)
+		if err != nil {
+			return alertForQuery(queryString, err), nil
+		}
+	}
+
+	// If the request is a paginated one, decode those arguments now.
+	var pagination *searchPaginationInfo
+	if args.First != nil {
+		pagination, err = processPaginationRequest(args, queryInfo)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return &searchResolver{
+		query:         queryInfo,
+		originalQuery: args.Query,
+		pagination:    pagination,
+		patternType:   searchType,
+		zoekt:         search.Indexed(),
+		searcherURLs:  search.SearcherURLs(),
+	}, nil
+}
+
+func (r *schemaResolver) Search(args *SearchArgs) (SearchImplementer, error) {
+	return NewSearchImplementer(args)
+}
+
+// queryForStableResults transforms a query that returns a stable result
+// ordering. The transformed query uses pagination underneath the hood.
+func queryForStableResults(args *SearchArgs, queryInfo query.QueryInfo) (*SearchArgs, query.QueryInfo, error) {
 	if queryInfo.BoolValue(query.FieldStable) {
 		var stableResultCount int32
 		if _, countPresent := queryInfo.Fields()["count"]; countPresent {
 			count, _ := queryInfo.StringValue(query.FieldCount)
 			count64, err := strconv.ParseInt(count, 10, 32)
 			if err != nil {
-				return alertForQuery(queryString, err), nil
+				return nil, nil, err
 			}
 			stableResultCount = int32(count64)
 		} else {
 			stableResultCount = defaultMaxSearchResults
 		}
 		args.First = &stableResultCount
+		fileValue := "file"
+		// Pagination only works for file content searches, and will
+		// raise an error otherwise. If stable is explicitly set, this
+		// is implied. So, force this query to only return file content
+		// results.
+		queryInfo.Fields()["type"] = []*querytypes.Value{{String: &fileValue}}
 	}
+	return args, queryInfo, nil
+}
 
-	// If the request is a paginated one, decode those arguments now.
+func processPaginationRequest(args *SearchArgs, queryInfo query.QueryInfo) (*searchPaginationInfo, error) {
 	var pagination *searchPaginationInfo
 	if args.First != nil {
 		cursor, err := unmarshalSearchCursor(args.After)
@@ -131,19 +173,7 @@ func NewSearchImplementer(args *SearchArgs) (SearchImplementer, error) {
 	} else if args.After != nil {
 		return nil, errors.New("Search: paginated requests providing a 'after' but no 'first' is forbidden")
 	}
-
-	return &searchResolver{
-		query:         queryInfo,
-		originalQuery: args.Query,
-		pagination:    pagination,
-		patternType:   searchType,
-		zoekt:         search.Indexed(),
-		searcherURLs:  search.SearcherURLs(),
-	}, nil
-}
-
-func (r *schemaResolver) Search(args *SearchArgs) (SearchImplementer, error) {
-	return NewSearchImplementer(args)
+	return pagination, nil
 }
 
 // detectSearchType returns the search type to perfrom ("regexp", or

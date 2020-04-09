@@ -202,6 +202,13 @@ func (r *searchResolver) paginatedResults(ctx context.Context) (result *SearchRe
 		"Finished", cursor.Finished,
 	)
 
+	if !cursor.Finished {
+		// Clients may use limitHit to indicate partial results. For
+		// paginated requests, limitHit = true implies there is a next
+		// cursor, and more results may exist.
+		common.limitHit = true
+	}
+
 	return &SearchResultsResolver{
 		start:               start,
 		searchResultsCommon: common,
@@ -530,7 +537,6 @@ func sliceSearchResultsCommon(common *searchResultsCommon, firstResultRepo, last
 		panic("never here: partial results should never be present in paginated search")
 	}
 	final := &searchResultsCommon{
-		limitHit:         false, // irrelevant in paginated search
 		indexUnavailable: common.indexUnavailable,
 		partial:          make(map[api.RepoName]struct{}),
 		resultCount:      common.resultCount,
