@@ -209,7 +209,7 @@ export class UserSettingsEmailsPage extends React.Component<Props, State> {
         )
     }
 
-    private queryUserEmails = (args: {}): Observable<UserEmailConnection> =>
+    private queryUserEmails = (): Observable<UserEmailConnection> =>
         queryGraphQL(
             gql`
                 query UserEmails($user: ID!) {

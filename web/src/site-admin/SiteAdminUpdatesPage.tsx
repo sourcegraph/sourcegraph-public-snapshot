@@ -39,7 +39,7 @@ export class SiteAdminUpdatesPage extends React.Component<Props, State> {
             fetchSite()
                 .pipe(withLatestFrom(fetchSiteUpdateCheck()))
                 .subscribe(
-                    ([site, { buildVersion, productVersion, updateCheck }]) =>
+                    ([, { buildVersion, productVersion, updateCheck }]) =>
                         this.setState({
                             buildVersion,
                             productVersion,

@@ -140,7 +140,7 @@ export class DecoratedTextLines extends React.PureComponent<Props, State> {
         )
     }
 
-    public onChangeVisibility = (isVisible: boolean): void => {
+    public onChangeVisibility = (): void => {
         this.setState({ visible: true })
     }
 

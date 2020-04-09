@@ -40,7 +40,7 @@ export class AddUserEmailForm extends React.PureComponent<Props, State> {
                             of<Pick<State, 'error'>>({ error: undefined }),
                             this.addUserEmail(this.state.email).pipe(
                                 tap(() => this.props.onDidAdd()),
-                                map(c => ({ error: null, email: '' })),
+                                map(() => ({ error: null, email: '' })),
                                 catchError(error => [{ error, email: this.state.email }])
                             )
                         )

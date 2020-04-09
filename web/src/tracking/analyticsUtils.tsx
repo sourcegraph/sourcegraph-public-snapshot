@@ -39,7 +39,7 @@ export const browserExtensionInstalled = browserExtensionMessageReceived.pipe(
     //     }
     //     throw err
     // }),
-    catchError(err => [false]),
+    catchError(() => [false]),
     // Replay the same latest value for every subscriber
     publishReplay(1),
     refCount()

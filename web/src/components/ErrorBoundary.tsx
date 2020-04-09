@@ -94,7 +94,7 @@ export class ErrorBoundary extends React.PureComponent<Props, State> {
         return this.props.children
     }
 
-    private onReloadClick: React.MouseEventHandler<HTMLElement> = e => {
+    private onReloadClick: React.MouseEventHandler<HTMLElement> = () => {
         window.location.reload(true) // hard page reload
     }
 }

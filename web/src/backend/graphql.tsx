@@ -29,7 +29,7 @@ export const requestGraphQL = <T extends GQL.IQuery | GQL.IMutation>(
 /**
  * Does a GraphQL query to the Sourcegraph GraphQL API running under `/.api/graphql`
  *
- * @param query The GraphQL query
+ * @param request The GraphQL query
  * @param variables A key/value object with variable values
  * @returns Observable That emits the result or errors if the HTTP request failed
  */
@@ -43,7 +43,7 @@ export const queryGraphQL = (request: string, variables?: {}): Observable<GraphQ
 /**
  * Does a GraphQL mutation to the Sourcegraph GraphQL API running under `/.api/graphql`
  *
- * @param mutation The GraphQL mutation
+ * @param request The GraphQL mutation
  * @param variables A key/value object with variable values
  * @returns Observable That emits the result or errors if the HTTP request failed
  */

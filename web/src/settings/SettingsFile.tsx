@@ -230,7 +230,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
             const action = this.editor.getAction(id)
             action.run().then(
                 () => undefined,
-                (err: any) => console.error(err)
+                err => console.error(err)
             )
         } else {
             alert('Wait for editor to load before running action.')

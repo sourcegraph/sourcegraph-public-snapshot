@@ -37,7 +37,7 @@ export class IntegrationsToast extends React.Component<Props, State> {
         }
     }
 
-    private updateToastVisibility(query: string): void {
+    private updateToastVisibility(): void {
         const canShow = localStorage.getItem(HAS_DISMISSED_TOAST_KEY) !== 'true' && !showDotComMarketing
         if (!canShow) {
             return
@@ -60,9 +60,9 @@ export class IntegrationsToast extends React.Component<Props, State> {
 
     public componentDidMount(): void {
         this.subscriptions.add(siteFlags.subscribe(siteFlags => this.setState({ siteFlags })))
-        this.updateToastVisibility(this.props.history.location.search)
-        this.unlisten = this.props.history.listen(location => {
-            this.updateToastVisibility(location.search)
+        this.updateToastVisibility()
+        this.unlisten = this.props.history.listen(() => {
+            this.updateToastVisibility()
         })
     }
 
