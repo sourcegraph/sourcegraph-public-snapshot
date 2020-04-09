@@ -74,14 +74,26 @@ export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphB
         return null
     }
 
-    // If repo doesn't exist and the instance is sourcegraph.com, prompt
-    // user to configure Sourcegraph.
-    if (!repoExistsOrError && sourcegraphURL === DEFAULT_SOURCEGRAPH_URL && onConfigureSourcegraphClick) {
+    if (!repoExistsOrError) {
+        // If repo doesn't exist and the instance is sourcegraph.com, prompt
+        // user to configure Sourcegraph.
+        if (sourcegraphURL === DEFAULT_SOURCEGRAPH_URL && onConfigureSourcegraphClick) {
+            return (
+                <SourcegraphIconButton
+                    label="Configure Sourcegraph"
+                    title="Install Sourcegraph for search and code intelligence on private instance"
+                    ariaLabel="Install Sourcegraph for search and code intelligence on private instance"
+                    className={className}
+                    iconClassName={classNames('open-on-sourcegraph__icon--muted', iconClassName)}
+                    onClick={onConfigureSourcegraphClick}
+                />
+            )
+        }
         return (
             <SourcegraphIconButton
-                label="Configure Sourcegraph"
-                title="Install Sourcegraph for search and code intelligence on private instance"
-                ariaLabel="Install Sourcegraph for search and code intelligence on private instance"
+                label="Repository not found"
+                title={`The repository does not exist on the configured Sourcegraph instance ${sourcegraphURL}`}
+                ariaLabel={`The repository does not exist on the configured Sourcegraph instance ${sourcegraphURL}`}
                 className={className}
                 iconClassName={classNames('open-on-sourcegraph__icon--muted', iconClassName)}
                 onClick={onConfigureSourcegraphClick}

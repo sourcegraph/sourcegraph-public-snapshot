@@ -5,8 +5,8 @@ import { defer, Subject, Subscription } from 'rxjs'
 import { catchError, delay, distinctUntilChanged, map, retryWhen, switchMap, tap } from 'rxjs/operators'
 import {
     CloneInProgressError,
-    CLONE_IN_PROGRESS_ERROR_NAME,
-    REV_NOT_FOUND_ERROR_NAME,
+    isCloneInProgressErrorLike,
+    isRevNotFoundErrorLike,
 } from '../../../shared/src/backend/errors'
 import { RepoQuestionIcon } from '../../../shared/src/components/icons'
 import { displayRepoName } from '../../../shared/src/components/RepoFileLink'
@@ -75,15 +75,13 @@ export class RepositoryGitDataContainer extends React.PureComponent<Props, State
                             retryWhen(errors =>
                                 errors.pipe(
                                     tap(error => {
-                                        switch (error.name) {
-                                            case CLONE_IN_PROGRESS_ERROR_NAME:
-                                                // Display cloning screen to the user and retry
-                                                this.setState({ gitDataPresentOrError: error })
-                                                return
-                                            default:
-                                                // Display error to the user and do not retry
-                                                throw error
+                                        if (isCloneInProgressErrorLike(error)) {
+                                            // Display cloning screen to the user and retry
+                                            this.setState({ gitDataPresentOrError: error })
+                                            return
                                         }
+                                        // Display error to the user and do not retry
+                                        throw error
                                     }),
                                     delay(1000)
                                 )
@@ -120,25 +118,24 @@ export class RepositoryGitDataContainer extends React.PureComponent<Props, State
 
         if (isErrorLike(this.state.gitDataPresentOrError)) {
             // Show error page
-            switch (this.state.gitDataPresentOrError.name) {
-                case CLONE_IN_PROGRESS_ERROR_NAME:
-                    return (
-                        <RepositoryCloningInProgressPage
-                            repoName={this.props.repoName}
-                            progress={(this.state.gitDataPresentOrError as CloneInProgressError).progress}
-                        />
-                    )
-                case REV_NOT_FOUND_ERROR_NAME:
-                    return <EmptyRepositoryPage />
-                default:
-                    return (
-                        <HeroPage
-                            icon={AlertCircleIcon}
-                            title="Error"
-                            subtitle={<ErrorMessage error={this.state.gitDataPresentOrError} />}
-                        />
-                    )
+            if (isCloneInProgressErrorLike(this.state.gitDataPresentOrError)) {
+                return (
+                    <RepositoryCloningInProgressPage
+                        repoName={this.props.repoName}
+                        progress={(this.state.gitDataPresentOrError as CloneInProgressError).progress}
+                    />
+                )
             }
+            if (isRevNotFoundErrorLike(this.state.gitDataPresentOrError)) {
+                return <EmptyRepositoryPage />
+            }
+            return (
+                <HeroPage
+                    icon={AlertCircleIcon}
+                    title="Error"
+                    subtitle={<ErrorMessage error={this.state.gitDataPresentOrError} />}
+                />
+            )
         }
 
         return this.props.children

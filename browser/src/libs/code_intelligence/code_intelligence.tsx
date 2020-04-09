@@ -37,11 +37,15 @@ import {
     startWith,
     distinctUntilChanged,
     retryWhen,
+    mapTo,
 } from 'rxjs/operators'
 import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
 import { DecorationMapByLine } from '../../../../shared/src/api/client/services/decoration'
 import { CodeEditorData, CodeEditorWithPartialModel } from '../../../../shared/src/api/client/services/editorService'
-import { PRIVATE_REPO_PUBLIC_SOURCEGRAPH_COM_ERROR_NAME } from '../../../../shared/src/backend/errors'
+import {
+    isPrivateRepoPublicSourcegraphComErrorLike,
+    isRepoNotFoundErrorLike,
+} from '../../../../shared/src/backend/errors'
 import {
     CommandListClassProps,
     CommandListPopoverButtonClassProps,
@@ -659,8 +663,13 @@ export function handleCodeHost({
                 const { rawRepoName, rev } = getContext()
                 return resolveRev({ repoName: rawRepoName, rev, requestGraphQL }).pipe(
                     retryWhenCloneInProgressError(),
-                    map(rev => !!rev),
-                    catchError(error => [asError(error)]),
+                    mapTo(true),
+                    catchError(error => {
+                        if (isRepoNotFoundErrorLike(error)) {
+                            return [false]
+                        }
+                        return [asError(error)]
+                    }),
                     startWith(undefined)
                 )
             })
@@ -718,7 +727,7 @@ export function handleCodeHost({
                 ),
                 catchError(err => {
                     // Ignore PrivateRepoPublicSourcegraph errors (don't initialize those code views)
-                    if (err.name === PRIVATE_REPO_PUBLIC_SOURCEGRAPH_COM_ERROR_NAME) {
+                    if (isPrivateRepoPublicSourcegraphComErrorLike(err)) {
                         return EMPTY
                     }
                     throw err

@@ -8,7 +8,7 @@ import { storage } from '../../browser/storage'
 import { isExtension } from '../../context'
 import { resolveRepo } from '../../shared/repo/backend'
 import { normalizeRepoName } from './util'
-import { REPO_NOT_FOUND_ERROR_NAME } from '../../../../shared/src/backend/errors'
+import { isRepoNotFoundErrorLike } from '../../../../shared/src/backend/errors'
 import { RepoSpec, FileSpec, ResolvedRevSpec } from '../../../../shared/src/util/url'
 import { RevisionSpec, DiffSpec, BaseDiffSpec } from '.'
 import { checkOk } from '../../../../shared/src/backend/fetch'
@@ -595,7 +595,7 @@ export function resolveDiffRev(
                 // Otherwise, create a one-off commit containing the patch on the Sourcegraph instance,
                 // and resolve to the commit ID returned by the Sourcegraph instance.
                 catchError(error => {
-                    if (error.name !== REPO_NOT_FOUND_ERROR_NAME) {
+                    if (!isRepoNotFoundErrorLike(error)) {
                         throw error
                     }
                     return getRawDiffFromConduit({ diffID: props.diffID, queryConduit }).pipe(
