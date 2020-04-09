@@ -24,9 +24,11 @@ import { pluralize } from '../../../shared/src/util/strings'
 import { Form } from './Form'
 import { RadioButtons } from './RadioButtons'
 import { ErrorMessage } from './alerts'
+import { hasProperty } from '../../../shared/src/util/types'
 
 /** Checks if the passed value satisfies the GraphQL Node interface */
-const hasID = (obj: any): obj is { id: GQL.ID } => obj && typeof obj.id === 'string'
+const hasID = (value: unknown): value is { id: GQL.ID } =>
+    typeof value === 'object' && value !== null && hasProperty('id')(value) && typeof value.id === 'string'
 
 interface FilterProps {
     /** All filters. */

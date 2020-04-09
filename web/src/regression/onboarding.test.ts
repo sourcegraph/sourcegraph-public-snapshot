@@ -228,7 +228,7 @@ describe('Onboarding', () => {
         // Wait for status bar to appear but it should be invisible
         await driver.page.waitForFunction(
             statusBarSelector => {
-                const element = document.querySelector(statusBarSelector)
+                const element = document.querySelector<Element>(statusBarSelector)
                 if (!element) {
                     return false
                 }

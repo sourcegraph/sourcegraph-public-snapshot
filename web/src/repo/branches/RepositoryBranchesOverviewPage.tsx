@@ -6,7 +6,7 @@ import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
-import { createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
+import { createAggregateError, ErrorLike, isErrorLike, asError } from '../../../../shared/src/util/errors'
 import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable'
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
@@ -91,7 +91,7 @@ export class RepositoryBranchesOverviewPage extends React.PureComponent<Props, S
                     switchMap(({ repo }) => {
                         type PartialStateUpdate = Pick<State, 'dataOrError'>
                         return queryGitBranches({ repo: repo.id, first: 10 }).pipe(
-                            catchError(error => [error]),
+                            catchError((error): [ErrorLike] => [asError(error)]),
                             map((c): PartialStateUpdate => ({ dataOrError: c })),
                             startWith<PartialStateUpdate>({ dataOrError: undefined })
                         )

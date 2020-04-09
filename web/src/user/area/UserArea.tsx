@@ -7,11 +7,11 @@ import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxj
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap, filter } from 'rxjs/operators'
 import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
-import { gql } from '../../../../shared/src/graphql/graphql'
+import { gql, dataOrThrowErrors } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
-import { createAggregateError, isErrorLike, asError } from '../../../../shared/src/util/errors'
+import { isErrorLike, asError } from '../../../../shared/src/util/errors'
 import { queryGraphQL } from '../../backend/graphql'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
@@ -25,7 +25,7 @@ import { PatternTypeProps } from '../../search'
 import { ErrorMessage } from '../../components/alerts'
 import { isDefined } from '../../../../shared/src/util/types'
 
-const fetchUser = (args: { username: string }): Observable<GQL.IUser | null> =>
+const fetchUser = (args: { username: string }): Observable<GQL.IUser> =>
     queryGraphQL(
         gql`
             query User($username: String!) {
@@ -57,9 +57,10 @@ const fetchUser = (args: { username: string }): Observable<GQL.IUser | null> =>
         `,
         args
     ).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.user) {
-                throw createAggregateError(errors)
+        map(dataOrThrowErrors),
+        map(data => {
+            if (!data.user) {
+                throw new Error(`User not found: ${JSON.stringify(args.username)}`)
             }
             return data.user
         })

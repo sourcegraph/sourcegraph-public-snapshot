@@ -349,12 +349,9 @@ export class Driver {
     }
 
     public async paste(value: string): Promise<void> {
-        await this.page.evaluate(
-            async d => {
-                await navigator.clipboard.writeText(d.value)
-            },
-            { value }
-        )
+        await this.page.evaluate(async (value: string) => {
+            await navigator.clipboard.writeText(value)
+        }, value)
         const modifier = os.platform() === 'darwin' ? Key.Meta : Key.Control
         await this.page.keyboard.down(modifier)
         await this.page.keyboard.press('v')
@@ -412,7 +409,7 @@ export class Driver {
 
     private async makeRequest<T = void>({ url, init }: { url: string; init: RequestInit & Serializable }): Promise<T> {
         const handle = await this.page.evaluateHandle((url, init) => fetch(url, init).then(r => r.json()), url, init)
-        return handle.jsonValue()
+        return (await handle.jsonValue()) as T
     }
 
     private async makeGraphQLRequest<T extends IQuery | IMutation>({
@@ -509,7 +506,7 @@ export class Driver {
 
     public async ensureHasCORSOrigin({ corsOriginURL }: { corsOriginURL: string }): Promise<void> {
         await this.setConfig(['corsOrigin'], oldCorsOrigin => {
-            const urls = oldCorsOrigin ? oldCorsOrigin.value.split(' ') : []
+            const urls = oldCorsOrigin ? (oldCorsOrigin.value as string).split(' ') : []
             return (urls.includes(corsOriginURL) ? urls : [...urls, corsOriginURL]).join(' ')
         })
     }
@@ -720,7 +717,9 @@ export async function createDriverForTest(options: DriverOptions): Promise<Drive
         }
         if (loadExtension) {
             const chromeExtensionPath = path.resolve(__dirname, '..', '..', '..', 'browser', 'build', 'chrome')
-            const manifest = JSON.parse(await readFile(path.resolve(chromeExtensionPath, 'manifest.json'), 'utf-8'))
+            const manifest = JSON.parse(
+                await readFile(path.resolve(chromeExtensionPath, 'manifest.json'), 'utf-8')
+            ) as { permissions: string[] }
             if (!manifest.permissions.includes('<all_urls>')) {
                 throw new Error(
                     'Browser extension was not built with permissions for all URLs.\nThis is necessary because permissions cannot be granted by e2e tests.\nTo fix, run `EXTENSION_PERMISSIONS_ALL_URLS=true yarn run dev` inside the browser/ directory.'

@@ -26,6 +26,15 @@ export const isNot = <TInput, TExclude extends TInput>(isType: (val: TInput) => 
  * Returns a function that returns `true` if the given `key` of the object passes the given type guard.
  *
  * @param key The key of the property to check.
+ */
+export const hasProperty = <O extends object, K extends string | number | symbol>(key: K) => (
+    object: O
+): object is O & { [k in K]: unknown } => key in object
+
+/**
+ * Returns a function that returns `true` if the given `key` of the object passes the given type guard.
+ *
+ * @param key The key of the property to check.
  * @param isType The type guard to evalute on the property value.
  */
 export const property = <O extends object, K extends keyof O, T extends O[K]>(

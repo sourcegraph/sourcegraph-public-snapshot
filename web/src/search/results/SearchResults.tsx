@@ -18,7 +18,7 @@ import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { isSettingsValid, SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
-import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
+import { ErrorLike, isErrorLike, asError } from '../../../../shared/src/util/errors'
 import { PageTitle } from '../../components/PageTitle'
 import { Settings } from '../../schema/settings.schema'
 import { ThemeProps } from '../../../../shared/src/theme'
@@ -181,7 +181,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                         },
                                         error => {
                                             this.props.telemetryService.log('SearchResultsFetchFailed', {
-                                                code_search: { error_message: error.message },
+                                                code_search: { error_message: asError(error).message },
                                             })
                                             console.error(error)
                                         }

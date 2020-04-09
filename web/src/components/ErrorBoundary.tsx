@@ -3,7 +3,7 @@ import H from 'history'
 import ErrorIcon from 'mdi-react/ErrorIcon'
 import ReloadIcon from 'mdi-react/ReloadIcon'
 import React from 'react'
-import { asError } from '../../../shared/src/util/errors'
+import { asError, isErrorLike } from '../../../shared/src/util/errors'
 import { HeroPage } from './HeroPage'
 
 interface Props {
@@ -99,6 +99,6 @@ export class ErrorBoundary extends React.PureComponent<Props, State> {
     }
 }
 
-function isWebpackChunkError(err: any): boolean {
-    return typeof err.request === 'string' && err.message.startsWith('Loading chunk')
+function isWebpackChunkError(value: unknown): boolean {
+    return isErrorLike(value) && value.name === 'ChunkLoadError'
 }

@@ -88,9 +88,9 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
             return null
         }
         try {
-            const recentActions = JSON.parse(value)
+            const recentActions: unknown = JSON.parse(value)
             if (Array.isArray(recentActions) && recentActions.every(a => typeof a === 'string')) {
-                return recentActions
+                return recentActions as string[]
             }
             return null
         } catch (err) {

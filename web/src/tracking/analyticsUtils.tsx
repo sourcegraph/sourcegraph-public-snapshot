@@ -1,6 +1,7 @@
 import { fromEvent, of } from 'rxjs'
 import { catchError, mapTo, publishReplay, refCount, take, timeout } from 'rxjs/operators'
 import { eventLogger } from './eventLogger'
+import { asError } from '../../../shared/src/util/errors'
 
 interface EventQueryParameters {
     utm_campaign?: string
@@ -32,13 +33,12 @@ export const browserExtensionMessageReceived = (document.getElementById('sourceg
  */
 export const browserExtensionInstalled = browserExtensionMessageReceived.pipe(
     timeout(500),
-    // Replace with code below when https://github.com/ReactiveX/rxjs/issues/3602 is fixed
-    // catchError(err => {
-    //     if (err.name === 'TimeoutError') {
-    //         return [false]
-    //     }
-    //     throw err
-    // }),
+    catchError(err => {
+        if (asError(err).name === 'TimeoutError') {
+            return [false]
+        }
+        throw err
+    }),
     catchError(() => [false]),
     // Replay the same latest value for every subscriber
     publishReplay(1),

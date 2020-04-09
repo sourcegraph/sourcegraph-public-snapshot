@@ -11,6 +11,7 @@ import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { createUser } from './backend'
 import { ErrorAlert } from '../components/alerts'
+import { asError } from '../../../shared/src/util/errors'
 
 interface Props extends RouteComponentProps<{}> {}
 
@@ -61,7 +62,7 @@ export class SiteAdminCreateUserPage extends React.Component<Props, State> {
                                 this.setState({
                                     createUserResult: undefined,
                                     loading: false,
-                                    errorDescription: error.message,
+                                    errorDescription: asError(error).message,
                                 })
                                 return []
                             })
