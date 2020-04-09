@@ -45,7 +45,6 @@ export GOBIN="${PWD}/.bin"
 export GO111MODULE=on
 
 INSTALL_GO_TOOLS="github.com/mattn/goreman@v0.3.4 \
-github.com/go-delve/delve/cmd/dlv@v1.4.0
 "
 
 # Need to go to a temp directory for tools or we update our go.mod. We use

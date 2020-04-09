@@ -24,6 +24,9 @@ type RepoFields struct {
 
 	// Fork is whether this repository is a fork of another repository.
 	Fork bool
+
+	// Archived is whether this repository has been archived.
+	Archived bool
 }
 
 // Repo represents a source code repository.

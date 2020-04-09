@@ -62,7 +62,7 @@ import {
 import { getModeFromPath } from '../../../../shared/src/languages'
 import { URLToFileContext } from '../../../../shared/src/platform/context'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
-import { isDefined, isInstanceOf, propertyIsDefined } from '../../../../shared/src/util/types'
+import { isDefined, isInstanceOf, property } from '../../../../shared/src/util/types'
 import {
     FileSpec,
     UIPositionSpec,
@@ -74,7 +74,9 @@ import {
     toURIWithPath,
     ViewStateSpec,
 } from '../../../../shared/src/util/url'
+import { observeStorageKey } from '../../browser/storage'
 import { isInPage } from '../../context'
+import { SourcegraphIntegrationURLs, BrowserPlatformContext } from '../../platform/context'
 import { createLSPFromExtensions, toTextDocumentIdentifier } from '../../shared/backend/lsp'
 import { CodeViewToolbar, CodeViewToolbarClassProps } from '../../shared/components/CodeViewToolbar'
 import { resolveRev, retryWhenCloneInProgressError } from '../../shared/repo/backend'
@@ -98,9 +100,8 @@ import {
 } from './native_tooltips'
 import { handleTextFields, TextField } from './text_fields'
 import { resolveRepoNames } from './util/file_info'
-import { ViewResolver } from './views'
-import { observeStorageKey } from '../../browser/storage'
-import { SourcegraphIntegrationURLs, BrowserPlatformContext } from '../../platform/context'
+import { delayUntilIntersecting, ViewResolver } from './views'
+
 import { IS_LIGHT_THEME } from './consts'
 import { NotificationType } from 'sourcegraph'
 import { failedWithHTTPStatus } from '../../../../shared/src/backend/fetch'
@@ -380,7 +381,7 @@ function initCodeIntelligence({
         hoverOverlayRerenders: containerComponentUpdates.pipe(
             withLatestFrom(hoverOverlayElements),
             map(([, hoverOverlayElement]) => ({ hoverOverlayElement, relativeElement })),
-            filter(propertyIsDefined('hoverOverlayElement'))
+            filter(property('hoverOverlayElement', isDefined))
         ),
         getHover: ({ line, character, part, ...rest }) =>
             combineLatest([
@@ -695,12 +696,13 @@ export function handleCodeHost({
     /** A stream of added or removed code views with the resolved file info */
     const codeViews = mutations.pipe(
         trackCodeViews(codeHost),
-        // Limit number of code views for perf reasons.
-        filter(() => codeViewCount.value < 50),
         tap(codeViewEvent => {
             codeViewCount.next(codeViewCount.value + 1)
             codeViewEvent.subscriptions.add(() => codeViewCount.next(codeViewCount.value - 1))
         }),
+        // Delay emitting code views until they are in the viewport, or within 4000 vertical
+        // pixels of the viewport's top or bottom edges.
+        delayUntilIntersecting({ rootMargin: '4000px 0px' }),
         mergeMap(codeViewEvent =>
             asObservable(() =>
                 codeViewEvent.resolveFileInfo(codeViewEvent.element, platformContext.requestGraphQL)

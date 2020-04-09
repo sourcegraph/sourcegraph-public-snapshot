@@ -31,6 +31,7 @@ import { DEFAULT_GRAPHQL_RESPONSES, mockRequestGraphQL } from './test_helpers'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { NotificationType } from '../../../../shared/src/api/client/services/notifications'
 import { toPrettyBlobURL } from '../../../../shared/src/util/url'
+import { MockIntersectionObserver } from './MockIntersectionObserver'
 
 const RENDER = sinon.spy()
 
@@ -92,6 +93,12 @@ const commonArgs = () =>
     })
 
 describe('code_intelligence', () => {
+    // Mock the global IntersectionObserver constructor with an implementation that
+    // will immediately signal all observed elements as intersecting.
+    beforeAll(() => {
+        window.IntersectionObserver = MockIntersectionObserver
+    })
+
     beforeEach(() => {
         document.body.innerHTML = ''
     })

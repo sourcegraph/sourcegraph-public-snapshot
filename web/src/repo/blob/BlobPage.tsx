@@ -9,7 +9,7 @@ import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
-import { createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
+import { createAggregateError, ErrorLike, isErrorLike, asError } from '../../../../shared/src/util/errors'
 import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable'
 import {
     AbsoluteRepoFile,
@@ -155,9 +155,9 @@ export class BlobPage extends React.PureComponent<Props, State> {
                             isLightTheme,
                             disableTimeout: extendHighlightingTimeout,
                         }).pipe(
-                            catchError(error => {
+                            catchError((error): [ErrorLike] => {
                                 console.error(error)
-                                return [error]
+                                return [asError(error)]
                             })
                         )
                     )

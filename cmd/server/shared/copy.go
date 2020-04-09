@@ -3,6 +3,7 @@ package shared
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -11,6 +12,32 @@ import (
 
 	"github.com/pkg/errors"
 )
+
+// copyConfigs will copy /etc/sourcegraph/{netrc,gitconfig} to locations read
+// by other tools.
+func copyConfigs() error {
+	paths := map[string]string{
+		"netrc":     "$HOME/.netrc",
+		"gitconfig": "$HOME/.gitconfig",
+	}
+	for src, dst := range paths {
+		src = filepath.Join(os.Getenv("CONFIG_DIR"), src)
+		dst = os.ExpandEnv(dst)
+
+		data, err := ioutil.ReadFile(src)
+		if os.IsNotExist(err) {
+			continue
+		} else if err != nil {
+			return errors.Wrapf(err, "failed to copy %s -> %s", src, dst)
+		}
+
+		if err := ioutil.WriteFile(dst, data, 0600); err != nil {
+			return errors.Wrapf(err, "failed to copy %s -> %s", src, dst)
+		}
+	}
+
+	return nil
+}
 
 // copySSH will copy the files at /etc/sourcegraph/ssh and put them into
 // ~/.ssh

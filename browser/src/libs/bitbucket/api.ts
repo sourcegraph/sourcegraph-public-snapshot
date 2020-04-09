@@ -25,7 +25,8 @@ const buildURL = (project: string, repoSlug: string, path: string): string =>
         project
     )}/repos/${repoSlug}${path}`
 
-const get = <T>(url: string): Observable<T> => fromFetch(url, undefined, response => checkOk(response).json())
+const get = <T>(url: string): Observable<T> =>
+    fromFetch(url, undefined, response => checkOk(response).json() as Promise<T>)
 
 interface Repo {
     project: { key: string }

@@ -56,45 +56,12 @@ const (
 	defaultRateLimitBurst = 500
 )
 
-// Rate limiter cache so that we reuse the rate limiters per
-// external service, even between config changes.
+// Global limiter cache so that we reuse the same rate limiter for
+// the same code host, even between config changes.
+// This is a failsafe to protect bitbucket as they do not impose their own
+// rate limiting.
 var limiterMu sync.Mutex
-var limiterCache = make(map[uint32]*rate.Limiter)
-
-func getLimiter(url *url.URL, c *schema.BitbucketServerConnection) *rate.Limiter {
-	// Calculate cache key
-	var b strings.Builder
-	b.WriteString(url.String())
-	if c != nil {
-		b.WriteString(":")
-		b.WriteString(c.Username)
-		b.WriteString(":")
-		b.WriteString(c.Token)
-	}
-	key := fnv1.HashString32(b.String())
-
-	limit := defaultRateLimit
-	if c != nil && c.RateLimit != nil {
-		if c.RateLimit.Enabled {
-			limit = rate.Limit(c.RateLimit.RequestsPerHour / 3600)
-		} else {
-			limit = rate.Inf
-		}
-	}
-
-	limiterMu.Lock()
-	defer limiterMu.Unlock()
-
-	current, ok := limiterCache[key]
-	if !ok {
-		rl := rate.NewLimiter(limit, defaultRateLimitBurst)
-		limiterCache[key] = rl
-		return rl
-	}
-
-	current.SetLimit(limit)
-	return current
-}
+var limiterCache = make(map[string]*rate.Limiter)
 
 // Client access a Bitbucket Server via the REST API.
 type Client struct {
@@ -137,13 +104,22 @@ func NewClient(c *schema.BitbucketServerConnection, httpClient httpcli.Doer) (*C
 	httpClient = requestCounter.Doer(httpClient, categorize)
 	u = extsvc.NormalizeBaseURL(u)
 
+	limiterMu.Lock()
+	defer limiterMu.Unlock()
+
+	l, ok := limiterCache[u.String()]
+	if !ok {
+		l = rate.NewLimiter(defaultRateLimit, defaultRateLimitBurst)
+		limiterCache[u.String()] = l
+	}
+
 	client := &Client{
 		httpClient: httpClient,
 		URL:        u,
 		Username:   c.Username,
 		Password:   c.Password,
 		Token:      c.Token,
-		RateLimit:  getLimiter(u, c),
+		RateLimit:  l,
 	}
 
 	if c.Authorization != nil {

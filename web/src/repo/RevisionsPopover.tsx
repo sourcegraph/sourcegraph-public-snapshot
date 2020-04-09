@@ -5,9 +5,8 @@ import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { CircleChevronLeftIcon } from '../../../shared/src/components/icons'
 import { TabsWithLocalStorageViewStatePersistence } from '../../../shared/src/components/Tabs'
-import { gql } from '../../../shared/src/graphql/graphql'
+import { gql, dataOrThrowErrors } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
-import { createAggregateError } from '../../../shared/src/util/errors'
 import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
 import { queryGraphQL } from '../backend/graphql'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../components/FilteredConnection'
@@ -48,16 +47,18 @@ const fetchRepositoryCommits = memoizeObservable(
             `,
             args
         ).pipe(
-            map(({ data, errors }) => {
-                if (
-                    !data ||
-                    !data.node ||
-                    !(data.node as GQL.IRepository).commit ||
-                    !(data.node as GQL.IRepository).commit!.ancestors
-                ) {
-                    throw createAggregateError(errors)
+            map(dataOrThrowErrors),
+            map(({ node }) => {
+                if (!node) {
+                    throw new Error(`Repository ${args.repo} not found`)
                 }
-                return (data.node as GQL.IRepository).commit!.ancestors
+                if (node.__typename !== 'Repository') {
+                    throw new Error(`Node is a ${node.__typename}, not a Repository`)
+                }
+                if (!node.commit?.ancestors) {
+                    throw new Error(`Cannot load ancestors for repository ${args.repo}`)
+                }
+                return node.commit.ancestors
             })
         ),
     x => JSON.stringify(x)
@@ -109,11 +110,11 @@ interface GitCommitNodeProps {
 }
 
 const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({ node, currentCommitID, location }) => {
-    const isCurrent = currentCommitID === (node.oid as string)
+    const isCurrent = currentCommitID === node.oid
     return (
         <li key={node.oid} className="connection-popover__node revisions-popover-git-commit-node">
             <Link
-                to={replaceRevisionInURL(location.pathname + location.search + location.hash, node.oid as string)}
+                to={replaceRevisionInURL(location.pathname + location.search + location.hash, node.oid)}
                 className={`connection-popover__node-link ${
                     isCurrent ? 'connection-popover__node-link--active' : ''
                 } revisions-popover-git-commit-node__link`}
@@ -192,7 +193,7 @@ export class RevisionsPopover extends React.PureComponent<Props> {
                     storageKey={RevisionsPopover.LAST_TAB_STORAGE_KEY}
                     className="revisions-popover__tabs"
                 >
-                    {RevisionsPopover.TABS.map((tab, i) =>
+                    {RevisionsPopover.TABS.map(tab =>
                         tab.type ? (
                             <FilteredGitRefConnection
                                 key={tab.id}

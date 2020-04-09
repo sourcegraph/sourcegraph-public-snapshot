@@ -204,6 +204,7 @@ exports[`CampaignStatus viewerCanAdminister: true campaign errored 1`] = `
         </ul>
         <button
           className="btn btn-primary mb-0"
+          disabled={false}
           onClick={[Function]}
           type="button"
         >

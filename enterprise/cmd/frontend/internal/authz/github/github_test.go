@@ -2,6 +2,7 @@ package github
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"reflect"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/google/go-cmp/cmp"
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -369,4 +371,176 @@ func (m *mockGitHub) GetRepositoriesByNodeIDFromAPI(ctx context.Context, token s
 		repos[rid] = m.Repos[rid]
 	}
 	return repos, nil
+}
+
+func TestProvider_FetchUserPerms(t *testing.T) {
+	t.Run("nil account", func(t *testing.T) {
+		p := NewProvider(mustURL(t, "https://github.com"), "admin_token", 3*time.Hour, nil)
+		_, err := p.FetchUserPerms(context.Background(), nil)
+		want := "no account provided"
+		got := fmt.Sprintf("%v", err)
+		if got != want {
+			t.Fatalf("err: want %q but got %q", want, got)
+		}
+	})
+
+	t.Run("not the code host of the account", func(t *testing.T) {
+		p := NewProvider(mustURL(t, "https://github.com"), "admin_token", 3*time.Hour, nil)
+		_, err := p.FetchUserPerms(context.Background(),
+			&extsvc.Account{
+				AccountSpec: extsvc.AccountSpec{
+					ServiceType: "gitlab",
+					ServiceID:   "https://gitlab.com/",
+				},
+			},
+		)
+		want := `not a code host of the account: want "https://gitlab.com/" but have "https://github.com/"`
+		got := fmt.Sprintf("%v", err)
+		if got != want {
+			t.Fatalf("err: want %q but got %q", want, got)
+		}
+	})
+
+	t.Run("no token found in account data", func(t *testing.T) {
+		p := NewProvider(mustURL(t, "https://github.com"), "admin_token", 3*time.Hour, nil)
+		_, err := p.FetchUserPerms(context.Background(),
+			&extsvc.Account{
+				AccountSpec: extsvc.AccountSpec{
+					ServiceType: "github",
+					ServiceID:   "https://github.com/",
+				},
+				AccountData: extsvc.AccountData{},
+			},
+		)
+		want := `no token found in the external account data`
+		got := fmt.Sprintf("%v", err)
+		if got != want {
+			t.Fatalf("err: want %q but got %q", want, got)
+		}
+	})
+
+	github.MockListAffiliatedRepositories = func(ctx context.Context, token string, page int) ([]*github.Repository, bool, int, error) {
+		want := "my_access_token"
+		if token != want {
+			return nil, false, 0, fmt.Errorf("token: want %q but got %q", want, token)
+		}
+
+		switch page {
+		case 1:
+			return []*github.Repository{
+				{ID: "MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE="},
+				{ID: "MDEwOlJlcG9zaXRvcnkyNDQ1MTc1MzY="},
+			}, true, 1, nil
+		case 2:
+			return []*github.Repository{
+				{ID: "MDEwOlJlcG9zaXRvcnkyNDI2NTEwMDA="},
+			}, false, 1, nil
+		}
+
+		return []*github.Repository{}, false, 1, nil
+	}
+	t.Cleanup(func() {
+		github.MockListAffiliatedRepositories = nil
+	})
+
+	p := NewProvider(mustURL(t, "https://github.com"), "admin_token", 3*time.Hour, nil)
+
+	authData := json.RawMessage(`{"access_token": "my_access_token"}`)
+	repoIDs, err := p.FetchUserPerms(context.Background(),
+		&extsvc.Account{
+			AccountSpec: extsvc.AccountSpec{
+				ServiceType: "github",
+				ServiceID:   "https://github.com/",
+			},
+			AccountData: extsvc.AccountData{
+				AuthData: &authData,
+			},
+		},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expRepoIDs := []extsvc.RepoID{
+		"MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE=",
+		"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1MzY=",
+		"MDEwOlJlcG9zaXRvcnkyNDI2NTEwMDA=",
+	}
+	if diff := cmp.Diff(expRepoIDs, repoIDs); diff != "" {
+		t.Fatal(diff)
+	}
+}
+
+func TestProvider_FetchRepoPerms(t *testing.T) {
+	t.Run("nil repository", func(t *testing.T) {
+		p := NewProvider(mustURL(t, "https://github.com"), "admin_token", 3*time.Hour, nil)
+		_, err := p.FetchRepoPerms(context.Background(), nil)
+		want := "no repository provided"
+		got := fmt.Sprintf("%v", err)
+		if got != want {
+			t.Fatalf("err: want %q but got %q", want, got)
+		}
+	})
+
+	t.Run("not the code host of the repository", func(t *testing.T) {
+		p := NewProvider(mustURL(t, "https://github.com"), "admin_token", 3*time.Hour, nil)
+		_, err := p.FetchRepoPerms(context.Background(),
+			&extsvc.Repository{
+				URI: "gitlab.com/user/repo",
+				ExternalRepoSpec: api.ExternalRepoSpec{
+					ServiceType: "gitlab",
+					ServiceID:   "https://gitlab.com/",
+				},
+			},
+		)
+		want := `not a code host of the repository: want "https://gitlab.com/" but have "https://github.com/"`
+		got := fmt.Sprintf("%v", err)
+		if got != want {
+			t.Fatalf("err: want %q but got %q", want, got)
+		}
+	})
+
+	github.MockListRepositoryCollaborators = func(ctx context.Context, owner, repo string, page int) ([]*github.Collaborator, bool, error) {
+		switch page {
+		case 1:
+			return []*github.Collaborator{
+				{ID: "MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE="},
+				{ID: "MDEwOlJlcG9zaXRvcnkyNDQ1MTc1MzY="},
+			}, true, nil
+		case 2:
+			return []*github.Collaborator{
+				{ID: "MDEwOlJlcG9zaXRvcnkyNDI2NTEwMDA="},
+			}, false, nil
+		}
+
+		return []*github.Collaborator{}, false, nil
+	}
+	t.Cleanup(func() {
+		github.MockListRepositoryCollaborators = nil
+	})
+
+	p := NewProvider(mustURL(t, "https://github.com"), "admin_token", 3*time.Hour, nil)
+
+	accountIDs, err := p.FetchRepoPerms(context.Background(),
+		&extsvc.Repository{
+			URI: "github.com/user/repo",
+			ExternalRepoSpec: api.ExternalRepoSpec{
+				ID:          "github_project_id",
+				ServiceType: "github",
+				ServiceID:   "https://github.com/",
+			},
+		},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expAccountIDs := []extsvc.AccountID{
+		"MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE=",
+		"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1MzY=",
+		"MDEwOlJlcG9zaXRvcnkyNDI2NTEwMDA=",
+	}
+	if diff := cmp.Diff(expAccountIDs, accountIDs); diff != "" {
+		t.Fatal(diff)
+	}
 }

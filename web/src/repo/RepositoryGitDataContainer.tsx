@@ -97,7 +97,7 @@ export class RepositoryGitDataContainer extends React.PureComponent<Props, State
                     )
                 )
                 .subscribe(
-                    resolvedRev => this.setState({ gitDataPresentOrError: true }),
+                    () => this.setState({ gitDataPresentOrError: true }),
                     error => console.error(error)
                 )
         )

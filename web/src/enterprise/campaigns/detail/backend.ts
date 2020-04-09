@@ -149,7 +149,7 @@ export async function retryCampaign(campaignID: ID): Promise<ICampaign> {
         gql`
             mutation RetryCampaign($campaign: ID!) {
                 retryCampaign(campaign: $campaign) {
-                    ...CampaignFragment
+                    ...CampaignFields
                 }
             }
 

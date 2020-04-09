@@ -188,7 +188,7 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                                     return [
                                         state => ({
                                             ...state,
-                                            error: new Error('Error rendering Markdown: ' + error.message),
+                                            error: new Error('Error rendering Markdown: ' + asError(error).message),
                                             previewLoading: false,
                                         }),
                                     ]

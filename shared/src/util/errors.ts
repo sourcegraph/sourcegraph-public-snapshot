@@ -4,21 +4,21 @@ export interface ErrorLike {
 }
 
 export const isErrorLike = (val: unknown): val is ErrorLike =>
-    typeof val === 'object' && !!val && ('stack' in val || 'message' in val) && !('__typename' in val)
+    typeof val === 'object' && val !== null && ('stack' in val || 'message' in val) && !('__typename' in val)
 
 /**
  * Converts an ErrorLike to a proper Error if needed, copying all properties
  *
- * @param errorLike An Error or object with ErrorLike properties
+ * @param value An Error, object with ErrorLike properties, or other value.
  */
-export const asError = (err: any): Error => {
-    if (err instanceof Error) {
-        return err
+export const asError = (value: unknown): Error => {
+    if (value instanceof Error) {
+        return value
     }
-    if (typeof err === 'object' && err !== null) {
-        return Object.assign(new Error(err.message), err)
+    if (isErrorLike(value)) {
+        return Object.assign(new Error(value.message), value)
     }
-    return new Error(err)
+    return new Error(String(value))
 }
 
 /**
