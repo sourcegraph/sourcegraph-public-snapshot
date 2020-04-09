@@ -55,7 +55,7 @@ const SiteSchemaJSON = `{
       "additionalProperties": false,
       "properties": {
         "discussions": {
-          "description": "Enables the code discussions experiment.",
+          "description": "DEPRECATED. Will be removed in 3.16. https://github.com/sourcegraph/sourcegraph/issues/9649. Enables the code discussions experiment.",
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "disabled"
@@ -517,7 +517,7 @@ const SiteSchemaJSON = `{
       "group": "Extensions"
     },
     "discussions": {
-      "description": "Configures Sourcegraph code discussions.",
+      "description": "DEPRECATED. Will be removed in 3.16. https://github.com/sourcegraph/sourcegraph/issues/9649. Configures Sourcegraph code discussions.",
       "type": "object",
       "properties": {
         "abuseProtection": {
