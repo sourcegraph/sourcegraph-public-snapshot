@@ -68,7 +68,7 @@ interface Props {
 export class RepoRevSidebarSymbols extends React.PureComponent<Props> {
     private componentUpdates = new Subject<Props>()
 
-    public componentDidUpdate(prevProps: Props): void {
+    public componentDidUpdate(): void {
         this.componentUpdates.next(this.props)
     }
 
@@ -81,7 +81,7 @@ export class RepoRevSidebarSymbols extends React.PureComponent<Props> {
                 pluralNoun="symbols"
                 queryConnection={this.fetchSymbols}
                 nodeComponent={SymbolNode}
-                nodeComponentProps={{ location: this.props.location } as Pick<SymbolNodeProps, 'location'>}
+                nodeComponentProps={{ location: this.props.location }}
                 defaultFirst={100}
                 useURLQuery={false}
                 history={this.props.history}

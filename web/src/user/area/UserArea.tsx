@@ -4,14 +4,14 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
-import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } from 'rxjs/operators'
+import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap, filter } from 'rxjs/operators'
 import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
 import { gql, dataOrThrowErrors } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
-import { ErrorLike, isErrorLike, asError } from '../../../../shared/src/util/errors'
+import { isErrorLike, asError } from '../../../../shared/src/util/errors'
 import { queryGraphQL } from '../../backend/graphql'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
@@ -23,6 +23,7 @@ import { UserSettingsSidebarItems } from '../settings/UserSettingsSidebar'
 import { UserAreaHeader, UserAreaHeaderNavItem } from './UserAreaHeader'
 import { PatternTypeProps } from '../../search'
 import { ErrorMessage } from '../../components/alerts'
+import { isDefined } from '../../../../shared/src/util/types'
 
 const fetchUser = (args: { username: string }): Observable<GQL.IUser> =>
     queryGraphQL(
@@ -96,7 +97,7 @@ interface UserAreaState {
      * The fetched user (who is the subject of the page), or an error if an error occurred; undefined while
      * loading.
      */
-    userOrError?: GQL.IUser | ErrorLike
+    userOrError?: GQL.IUser | Error
 }
 
 /**
@@ -156,7 +157,8 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
                     switchMap(([username, forceRefresh]) => {
                         type PartialStateUpdate = Pick<UserAreaState, 'userOrError'>
                         return fetchUser({ username }).pipe(
-                            catchError((error): [ErrorLike] => [asError(error)]),
+                            filter(isDefined),
+                            catchError(error => [asError(error)]),
                             map((c): PartialStateUpdate => ({ userOrError: c })),
 
                             // Don't clear old user data while we reload, to avoid unmounting all components during
@@ -174,7 +176,7 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
         this.componentUpdates.next(this.props)
     }
 
-    public componentDidUpdate(props: UserAreaProps): void {
+    public componentDidUpdate(): void {
         this.componentUpdates.next(this.props)
     }
 

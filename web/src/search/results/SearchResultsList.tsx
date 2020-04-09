@@ -120,7 +120,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
         this.subscriptions.add(
             this.visibleItemChanges
                 .pipe(filter(({ isVisible, index }) => isVisible && !this.state.visibleItems.has(index)))
-                .subscribe(({ isVisible, index }) => {
+                .subscribe(({ index }) => {
                     this.setState(({ visibleItems }) => {
                         visibleItems.add(index)
 
@@ -373,7 +373,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                         onShowMoreItems={this.onBottomHit(results.results.length)}
                                         onVisibilityChange={this.nextItemVisibilityChange}
                                         items={results.results
-                                            .map((result, i) => this.renderResult(result, i <= 15))
+                                            .map(result => this.renderResult(result))
                                             .filter(isDefined)}
                                         containment={this.scrollableElementRef || undefined}
                                         onRef={this.nextVirtualListContainerElement}
@@ -500,10 +500,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
         )
     }
 
-    private renderResult(
-        result: GQL.GenericSearchResultInterface | GQL.IFileMatch,
-        expanded: boolean
-    ): JSX.Element | undefined {
+    private renderResult(result: GQL.GenericSearchResultInterface | GQL.IFileMatch): JSX.Element | undefined {
         switch (result.__typename) {
             case 'FileMatch':
                 return (

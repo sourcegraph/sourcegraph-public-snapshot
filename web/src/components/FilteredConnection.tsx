@@ -162,7 +162,7 @@ interface ConnectionNodesProps<C extends Connection<N>, N, NP = {}>
 class ConnectionNodes<C extends Connection<N>, N, NP = {}> extends React.PureComponent<ConnectionNodesProps<C, N, NP>> {
     public render(): JSX.Element | null {
         const NodeComponent = this.props.nodeComponent
-        const ListComponent: any = this.props.listComponent || 'ul' // TODO: remove cast when https://github.com/Microsoft/TypeScript/issues/28768 is fixed
+        const ListComponent = this.props.listComponent || 'ul'
         const HeadComponent = this.props.headComponent
         const FootComponent = this.props.footComponent
         const TotalCountSummaryComponent = this.props.totalCountSummaryComponent

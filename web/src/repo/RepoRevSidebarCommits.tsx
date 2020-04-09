@@ -25,7 +25,7 @@ const CommitNode: React.FunctionComponent<CommitNodeProps> = ({ node, location }
             hideExpandCommitMessageBody={true}
             afterElement={
                 <Link
-                    to={replaceRevisionInURL(location.pathname + location.search + location.hash, node.oid as string)}
+                    to={replaceRevisionInURL(location.pathname + location.search + location.hash, node.oid)}
                     className="ml-2"
                     title="View current file at this commit"
                 >
@@ -54,7 +54,7 @@ export class RepoRevSidebarCommits extends React.PureComponent<Props> {
                 pluralNoun="commits"
                 queryConnection={this.fetchCommits}
                 nodeComponent={CommitNode}
-                nodeComponentProps={{ location: this.props.location } as Pick<CommitNodeProps, 'location'>}
+                nodeComponentProps={{ location: this.props.location }}
                 defaultFirst={100}
                 hideSearch={true}
                 useURLQuery={false}
@@ -94,10 +94,10 @@ function fetchCommits(
     ).pipe(
         map(dataOrThrowErrors),
         map(data => {
-            if (!data.node || !(data.node as GQL.IRepository).commit) {
+            if (!data.node || data.node.__typename !== 'Repository' || !data.node.commit) {
                 throw createInvalidGraphQLQueryResponseError('FetchCommits')
             }
-            return (data.node as GQL.IRepository).commit!.ancestors
+            return data.node.commit.ancestors
         })
     )
 }

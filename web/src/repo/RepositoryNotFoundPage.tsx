@@ -59,7 +59,7 @@ export class RepositoryNotFoundPage extends React.PureComponent<Props, State> {
                             checkMirrorRepositoryConnection({ name: repo }).pipe(
                                 map(c => c.error === null),
                                 catchError(error => [asError(error)]),
-                                map(c => ({ canAddOrError: c } as PartialStateUpdate))
+                                map((c): PartialStateUpdate => ({ showAdd: true, canAddOrError: c }))
                             )
                         )
                     })
