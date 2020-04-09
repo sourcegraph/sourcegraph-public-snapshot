@@ -141,9 +141,4 @@ export class ActivationDropdown extends React.PureComponent<Props, State> {
             </Menu>
         )
     }
-
-    private noop: () => void = () => (e: React.UIEvent) => {
-        e.preventDefault()
-        console.log('E', e)
-    }
 }
