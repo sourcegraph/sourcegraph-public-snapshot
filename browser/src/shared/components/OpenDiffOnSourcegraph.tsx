@@ -76,7 +76,7 @@ export class OpenDiffOnSourcegraph extends React.Component<Props, State> {
                 {...this.props}
                 className={classNames('open-on-sourcegraph', this.props.className)}
                 iconClassName={this.props.iconClassName}
-                aria-label={url}
+                ariaLabel={url}
             />
         )
     }

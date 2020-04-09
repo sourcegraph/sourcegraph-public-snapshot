@@ -20,7 +20,7 @@ export class OpenOnSourcegraph extends React.Component<Props, {}> {
                 {...this.props}
                 iconClassName={this.props.iconClassName}
                 className={classNames('open-on-sourcegraph', this.props.className)}
-                aria-label={url}
+                ariaLabel={url}
             />
         )
     }

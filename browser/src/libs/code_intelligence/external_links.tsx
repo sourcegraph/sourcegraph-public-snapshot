@@ -88,7 +88,7 @@ export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphB
                     {...commonErrorCaseProps}
                     label="Configure Sourcegraph"
                     title="Setup Sourcegraph for search and code intelligence on private repositories"
-                    aria-label="Setup Sourcegraph for search and code intelligence on private repositories"
+                    ariaLabel="Setup Sourcegraph for search and code intelligence on private repositories"
                 />
             )
         }

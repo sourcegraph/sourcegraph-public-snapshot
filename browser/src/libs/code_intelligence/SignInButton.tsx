@@ -42,7 +42,7 @@ export const SignInButton: React.FunctionComponent<{
             href={signInUrl}
             label="Sign in to Sourcegraph"
             title="Sign into Sourcegraph to get hover tooltips, go to definition and more"
-            aria-label="Sign into Sourcegraph to get hover tooltips, go to definition and more"
+            ariaLabel="Sign into Sourcegraph to get hover tooltips, go to definition and more"
             className={className}
             iconClassName={iconClassName}
             onClick={nextSignInClick}
