@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"golang.org/x/time/rate"
 )
 
 // SyncRegistry manages a ChangesetSyncer per external service.
@@ -96,6 +97,10 @@ func (s *SyncRegistry) Add(extServiceID int64) {
 	// We need to be able to cancel the syncer if the service is removed
 	ctx, cancel = context.WithCancel(s.Ctx)
 
+	var rateLimiter *rate.Limiter
+	if s.RateLimiterRegistry != nil {
+		rateLimiter = s.RateLimiterRegistry.GetRateLimiter(service.ID)
+	}
 	syncer := &ChangesetSyncer{
 		SyncStore:         s.SyncStore,
 		ReposStore:        s.RepoStore,
@@ -103,6 +108,7 @@ func (s *SyncRegistry) Add(extServiceID int64) {
 		externalServiceID: extServiceID,
 		cancel:            cancel,
 		priorityNotify:    make(chan []int64, 500),
+		rateLimiter:       rateLimiter,
 	}
 
 	s.syncers[extServiceID] = syncer
@@ -224,6 +230,9 @@ type ChangesetSyncer struct {
 
 	// cancel should be called to stop this syncer
 	cancel context.CancelFunc
+
+	// rateLimiter should be checked before making requests to code hosts
+	rateLimiter *rate.Limiter
 }
 
 type SyncStore interface {
@@ -244,7 +253,7 @@ func (s *ChangesetSyncer) Run(ctx context.Context) {
 		scheduleInterval = 2 * time.Minute
 	}
 	if s.syncFunc == nil {
-		s.syncFunc = s.SyncChangesetByID
+		s.syncFunc = s.SyncChangeset
 	}
 	if s.clock == nil {
 		s.clock = time.Now
@@ -418,9 +427,9 @@ func filterSyncData(serviceID int64, allSyncData []campaigns.ChangesetSyncData) 
 	return syncData
 }
 
-// SyncChangesetByID will sync a single changeset given its id.
-func (s *ChangesetSyncer) SyncChangesetByID(ctx context.Context, id int64) error {
-	log15.Debug("SyncChangesetByID", "id", id)
+// SyncChangeset will sync a single changeset given its id.
+func (s *ChangesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
+	log15.Debug("SyncChangeset", "id", id)
 	cs, err := s.SyncStore.GetChangeset(ctx, GetChangesetOpts{
 		ID: id,
 	})
@@ -447,6 +456,7 @@ func (s *ChangesetSyncer) SyncChangesets(ctx context.Context, cs ...*campaigns.C
 
 // SyncChangesetsWithSources refreshes the metadata of the given changesets
 // with the given ChangesetSources and updates them in the database.
+// An optional rate limiter can be provided
 func SyncChangesetsWithSources(ctx context.Context, store SyncStore, bySource []*SourceChangesets) (err error) {
 	var (
 		events []*campaigns.ChangesetEvent
