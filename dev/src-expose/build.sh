@@ -20,7 +20,7 @@ export CGO_ENABLED=0
 
 # Entrypoint script and src-expose binary
 cp -a ./dev/src-expose/entry.sh "$OUTPUT"
-go build -trimpath -o $OUTPUT/$(basename src-expose) github.com/sourcegraph/sourcegraph/dev/src-expose
+go build -trimpath -o "$OUTPUT/src-expose" github.com/sourcegraph/sourcegraph/dev/src-expose
 
 docker build -f dev/src-expose/Dockerfile -t $IMAGE $OUTPUT \
     --progress=plain \
