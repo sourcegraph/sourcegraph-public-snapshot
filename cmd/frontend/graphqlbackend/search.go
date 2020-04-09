@@ -98,6 +98,22 @@ func NewSearchImplementer(args *SearchArgs) (SearchImplementer, error) {
 		}
 	}
 
+	// If stable:truthy is specified, execute a pagination to return a stable ordering.
+	if queryInfo.BoolValue(query.FieldStable) {
+		var stableResultCount int32
+		if _, countPresent := queryInfo.Fields()["count"]; countPresent {
+			count, _ := queryInfo.StringValue(query.FieldCount)
+			count64, err := strconv.ParseInt(count, 10, 32)
+			if err != nil {
+				return alertForQuery(queryString, err), nil
+			}
+			stableResultCount = int32(count64)
+		} else {
+			stableResultCount = defaultMaxSearchResults
+		}
+		args.First = &stableResultCount
+	}
+
 	// If the request is a paginated one, decode those arguments now.
 	var pagination *searchPaginationInfo
 	if args.First != nil {
