@@ -540,6 +540,9 @@ func main() {
 	for _, container := range []*Container{
 		Frontend(),
 		GitHubProxy(),
+		PreciseCodeIntelAPIServer(),
+		PreciseCodeIntelBundleManager(),
+		PreciseCodeIntelWorker(),
 		QueryRunner(),
 		RepoUpdater(),
 		Searcher(),
