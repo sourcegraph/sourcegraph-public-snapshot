@@ -103,7 +103,7 @@ export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphB
                 href={url}
                 label="Error"
                 title={repoExistsOrError.message}
-                aria-label={repoExistsOrError.message}
+                ariaLabel={repoExistsOrError.message}
             />
         )
     }
@@ -117,7 +117,7 @@ export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphB
                 iconClassName={mutedIconClassName}
                 label="Repository not found"
                 title={`The repository does not exist on the configured Sourcegraph instance ${sourcegraphURL}`}
-                aria-label={`The repository does not exist on the configured Sourcegraph instance ${sourcegraphURL}`}
+                ariaLabel={`The repository does not exist on the configured Sourcegraph instance ${sourcegraphURL}`}
             />
         )
     }
@@ -133,7 +133,7 @@ export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphB
             {...commonProps}
             href={url}
             title="View repository on Sourcegraph"
-            aria-label="View repository on Sourcegraph"
+            ariaLabel="View repository on Sourcegraph"
         />
     )
 }
