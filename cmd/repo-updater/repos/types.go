@@ -1020,6 +1020,16 @@ func (r *RateLimiterRegistry) updateRateLimiter(svc *ExternalService) error {
 				limit = rate.Inf
 			}
 		}
+	case *schema.BitbucketServerConnection:
+		// 8/s is the default limit we enforce
+		limit = rate.Limit(8)
+		if c != nil && c.RateLimit != nil {
+			if c.RateLimit.Enabled {
+				limit = rate.Limit(c.RateLimit.RequestsPerHour / 3600)
+			} else {
+				limit = rate.Inf
+			}
+		}
 	default:
 		return fmt.Errorf("internal rate limiting not support for %s", svc.Kind)
 	}
