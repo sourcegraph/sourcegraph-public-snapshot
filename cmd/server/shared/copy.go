@@ -3,6 +3,7 @@ package shared
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -11,6 +12,20 @@ import (
 
 	"github.com/pkg/errors"
 )
+
+// copyNetrc will copy the file at /etc/sourcegraph/netrc to /etc/netrc for
+// authenticated HTTP(S) cloning.
+func copyNetrc() error {
+	src := filepath.Join(os.Getenv("CONFIG_DIR"), "netrc")
+	dst := os.ExpandEnv("$HOME/.netrc")
+
+	data, err := ioutil.ReadFile(src)
+	if err != nil && !os.IsNotExist(err) {
+		return err
+	}
+
+	return ioutil.WriteFile(dst, data, 0600)
+}
 
 // copySSH will copy the files at /etc/sourcegraph/ssh and put them into
 // ~/.ssh
