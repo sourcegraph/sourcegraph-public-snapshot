@@ -7,11 +7,11 @@ import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxj
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
-import { gql } from '../../../../shared/src/graphql/graphql'
+import { gql, dataOrThrowErrors } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
-import { createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
+import { ErrorLike, isErrorLike, asError } from '../../../../shared/src/util/errors'
 import { queryGraphQL } from '../../backend/graphql'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
@@ -24,7 +24,7 @@ import { UserAreaHeader, UserAreaHeaderNavItem } from './UserAreaHeader'
 import { PatternTypeProps } from '../../search'
 import { ErrorMessage } from '../../components/alerts'
 
-const fetchUser = (args: { username: string }): Observable<GQL.IUser | null> =>
+const fetchUser = (args: { username: string }): Observable<GQL.IUser> =>
     queryGraphQL(
         gql`
             query User($username: String!) {
@@ -56,9 +56,10 @@ const fetchUser = (args: { username: string }): Observable<GQL.IUser | null> =>
         `,
         args
     ).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.user) {
-                throw createAggregateError(errors)
+        map(dataOrThrowErrors),
+        map(data => {
+            if (!data.user) {
+                throw new Error(`User not found: ${JSON.stringify(args.username)}`)
             }
             return data.user
         })
@@ -155,7 +156,7 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
                     switchMap(([username, forceRefresh]) => {
                         type PartialStateUpdate = Pick<UserAreaState, 'userOrError'>
                         return fetchUser({ username }).pipe(
-                            catchError(error => [error]),
+                            catchError((error): [ErrorLike] => [asError(error)]),
                             map((c): PartialStateUpdate => ({ userOrError: c })),
 
                             // Don't clear old user data while we reload, to avoid unmounting all components during

@@ -14,6 +14,7 @@ import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { fetchSite, fetchSiteUpdateCheck } from './backend'
 import { ErrorAlert } from '../components/alerts'
+import { asError } from '../../../shared/src/util/errors'
 
 interface Props extends RouteComponentProps<{}> {}
 
@@ -46,7 +47,7 @@ export class SiteAdminUpdatesPage extends React.Component<Props, State> {
                             updateCheck,
                             error: undefined,
                         }),
-                    error => this.setState({ error: error.message })
+                    error => this.setState({ error: asError(error).message })
                 )
         )
     }

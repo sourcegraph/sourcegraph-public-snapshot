@@ -20,7 +20,7 @@ import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
-import { isDefined } from '../../../../shared/src/util/types'
+import { isDefined, hasProperty } from '../../../../shared/src/util/types'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { ModalContainer } from '../../components/ModalContainer'
 import { SearchResult } from '../../components/SearchResult'
@@ -31,7 +31,8 @@ import { shouldDisplayPerformanceWarning } from '../backend'
 import { SearchResultsInfoBar } from './SearchResultsInfoBar'
 import { ErrorAlert } from '../../components/alerts'
 
-const isSearchResults = (val: any): val is GQL.ISearchResults => val && val.__typename === 'SearchResults'
+const isSearchResults = (val: unknown): val is GQL.ISearchResults =>
+    typeof val === 'object' && val !== null && hasProperty('__typename')(val) && val.__typename === 'SearchResults'
 
 export interface SearchResultsListProps
     extends ExtensionsControllerProps<'executeCommand' | 'services'>,

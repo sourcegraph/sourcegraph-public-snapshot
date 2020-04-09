@@ -20,6 +20,7 @@ import { QueryInput } from './input/QueryInput'
 import { SearchButton } from './input/SearchButton'
 import { PatternTypeProps, CaseSensitivityProps } from '.'
 import { ErrorAlert } from '../components/alerts'
+import { asError } from '../../../shared/src/util/errors'
 
 const ScopeNotFound: React.FunctionComponent = () => (
     <HeroPage
@@ -94,7 +95,7 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
                                         map(repositories => ({ repositories, errorMessage: undefined })),
                                         catchError(err => {
                                             console.error(err)
-                                            return [{ errorMessage: err.message, repositories: [], first: 0 }]
+                                            return [{ errorMessage: asError(err).message, repositories: [], first: 0 }]
                                         })
                                     )
                                 )
