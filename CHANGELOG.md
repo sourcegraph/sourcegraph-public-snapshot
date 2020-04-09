@@ -64,6 +64,12 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
+## 3.14.2
+
+### Fixed
+
+- campaigns: Ignore changesets where repo does not exist anymore. [#9656](https://github.com/sourcegraph/sourcegraph/pull/9656)
+
 ## 3.14.1
 
 ### Added
