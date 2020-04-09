@@ -162,7 +162,6 @@ export class SettingsFile extends React.PureComponent<Props, State> {
             <div className="settings-file e2e-settings-file d-flex flex-grow-1 flex-column">
                 <SaveToolbar
                     dirty={dirty}
-                    disabled={this.state.saving || !dirty}
                     error={this.props.commitError}
                     saving={this.state.saving}
                     onSave={this.save}
