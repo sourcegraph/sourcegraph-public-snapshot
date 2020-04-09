@@ -43,7 +43,7 @@ jobs:
   distribution:
     runs-on: ubuntu-latest
     steps:
-      - uses: docker://sourcegraph/tracking-issue:latest
+      - uses: docker://sourcegraph/tracking-issue:prs
         with:
           args: -milestone 3.15 -labels team/distribution -update
         env:
