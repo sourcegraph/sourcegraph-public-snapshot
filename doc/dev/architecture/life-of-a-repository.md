@@ -2,15 +2,15 @@
 
 This document describes how our backend systems clone and update repositories from a code host.
 
-## High Level
+## High level
 
 1. An admin configures a [code host configuration](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%40v3.14.0+file:%5Eschema/%28aws%7Cbit%7Cgit%7Cother%29.*schema%5C.json%24&patternType=literal).
-2. `repo-updater` periodically [syncs](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.14.0/-/blob/cmd/repo-updater/repos/syncer.go#L101) all repository metadata from configured codehosts
+2. `repo-updater` periodically [syncs](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.14.0/-/blob/cmd/repo-updater/repos/syncer.go#L101) all repository metadata from configured code hosts.
   1. We [poll](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.14.0/-/blob/cmd/repo-updater/repos/syncer.go#L354:18) the code host's API based on the configuration.
-  2. We [add/update/remove](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.14.0/-/blob/cmd/repo-updater/repos/syncer.go#L142-147) entries in our [`repos` table](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.14.0/-/blob/cmd/frontend/db/schema.md#table-public-repo).
-3. All repositories in our `repos` table are in a [scheduler](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.14.0/-/blob/cmd/repo-updater/repos/scheduler.go#L82-95) on `repo-updater` which ensures they are cloned and updated on [`gitserver`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.14.0/-/blob/cmd/gitserver/server/server.go#L385:18).
+  2. We [add/update/remove](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.14.0/-/blob/cmd/repo-updater/repos/syncer.go#L142-147) entries in our [`repo` table](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.14.0/-/blob/cmd/frontend/db/schema.md#table-public-repo).
+3. All repositories in our `repo` table are in a [scheduler](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.14.0/-/blob/cmd/repo-updater/repos/scheduler.go#L82-95) on `repo-updater` which ensures they are cloned and updated on [`gitserver`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.14.0/-/blob/cmd/gitserver/server/server.go#L385:18).
 
-Our guiding principle is to ensure all repositories configured by an administrator are cloned and up to date. However, we need to avoid overloading a code host with API and Git requests.
+Our guiding principle is to ensure all repositories configured by a site administrator are cloned and up to date. However, we need to avoid overloading a code host with API and Git requests.
 
 Note: Sourcegraph.com is different since it isn't feasible to maintain a clone of all open source repositories. It works via on-demand requests from users.
 
@@ -18,7 +18,7 @@ Note: There is one other way repositories are fetched. A new commit may not be o
 
 ## Services
 
-`repo-updater` is responsible for communicating with Code Host APIs and co-ordinating the state we synchronise from them. It is a singleton service. It is responsible for maintaining the `repos` table which other services read. It is also responsible for scheduling clones/fetches on `gitserver`. It is also responsible for anything which communicates with a Code Host API. So our campaigns syncer also lives in `repo-updater`.
+`repo-updater` is responsible for communicating with Code Host APIs and co-ordinating the state we synchronise from them. It is a singleton service. It is responsible for maintaining the `repo` table which other services read. It is also responsible for scheduling clones/fetches on `gitserver`. It is also responsible for anything which communicates with a Code Host API. So our campaigns and background permissions syncers also live in `repo-updater`.
 
 `gitserver` is a scaleable stateful service which clones git repositories and can run git commands against them. All data maintained on this service is from cloning an upstream repository. We shard the set of repositories across the gitserver replicas. The main RPC gitserver supports is `exec` which returns the output of the specified git command.
 
@@ -26,7 +26,7 @@ Note: The name `repo-updater` does not accurately capture what the service does.
 
 ## Discovery
 
-Before we can clone a repository, we first must discover that is exists. This is configured by an administrator setting code host configuration. Typically a code host will have an API as well as git endpoints. A code host configuration typically will specify how to communicate with the API and which repositories to ask the API for. For example:
+Before we can clone a repository, we first must discover that is exists. This is configured by a site administrator setting code host configuration. Typically a code host will have an API as well as git endpoints. A code host configuration typically will specify how to communicate with the API and which repositories to ask the API for. For example:
 
 ``` json
 {
@@ -54,7 +54,7 @@ type Source interface {
 
 ## Syncing
 
-We keep a list of all repositories on Sourcegraph in the [`repos` table](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.14.0/-/blob/cmd/frontend/db/schema.md#table-public-repo). This is so to provide a code host independent list of repositories on Sourcegraph that we can quickly query. `repo-updater` will periodically list all repositories from all sources and update the table. We need to list everything so we can detect which repositories to delete. See [`Syncer.Sync`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.14.0/-/blob/cmd/repo-updater/repos/syncer.go#L101) for details.
+We keep a list of all repositories on Sourcegraph in the [`repo` table](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.14.0/-/blob/cmd/frontend/db/schema.md#table-public-repo). This is so to provide a code host independent list of repositories on Sourcegraph that we can quickly query. `repo-updater` will periodically list all repositories from all sources and update the table. We need to list everything so we can detect which repositories to delete. See [`Syncer.Sync`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@v3.14.0/-/blob/cmd/repo-updater/repos/syncer.go#L101) for details.
 
 ## Git Update Scheduler
 
