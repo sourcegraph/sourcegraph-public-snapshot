@@ -55,8 +55,8 @@ const fetchRepositoryCommits = memoizeObservable(
                 if (node.__typename !== 'Repository') {
                     throw new Error(`Node is a ${node.__typename}, not a Repository`)
                 }
-                if (!node.commit || !node.commit.ancestors) {
-                    throw new Error('Cannot load ancestors for commit')
+                if (!node.commit?.ancestors) {
+                    throw new Error(`Cannot load ancestors for repository ${args.repo}`)
                 }
                 return node.commit.ancestors
             })

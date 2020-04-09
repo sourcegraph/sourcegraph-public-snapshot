@@ -60,7 +60,7 @@ export function fetchSymbols(
             if (node.__typename !== 'Repository') {
                 throw new Error(`Node is a ${node.__typename}, not a Repository`)
             }
-            if (!node.commit || !node.commit.symbols || !node.commit.symbols.nodes) {
+            if (!node.commit?.symbols?.nodes) {
                 throw new Error('Could not resolve commit symbols for repository')
             }
             return node.commit.symbols

@@ -234,7 +234,6 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                 // only emits events when the "Jump to Top" anchor tag is clicked, which can
                 // never occur before that element is rendered (the 'ref' callback for
                 // 'search-results-list' would have already been called at this point).
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 const scrollable = this.scrollableElementRef!
 
                 scrollable.scrollTop = 0
