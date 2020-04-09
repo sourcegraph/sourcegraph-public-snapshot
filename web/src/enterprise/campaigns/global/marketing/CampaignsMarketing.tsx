@@ -4,6 +4,7 @@ import GithubCircleIcon from 'mdi-react/GithubCircleIcon'
 import GitlabIcon from 'mdi-react/GitlabIcon'
 import BitbucketIcon from 'mdi-react/BitbucketIcon'
 import { logEvent } from '../../../../user/settings/backend'
+import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 
 export const CampaignsMarketing: React.FunctionComponent<{}> = () => {
     const [wasSubmitted, setWasSubmitted] = useState<boolean>(false)
@@ -70,20 +71,42 @@ export const CampaignsMarketing: React.FunctionComponent<{}> = () => {
                         <div className="text-center">
                             <GithubCircleIcon size="4rem" />
                             <h3>GitHub.com / Enterprise</h3>
-                            <p className="mb-0">Bla bla bla</p>
+                            <p className="mb-1 text-left">
+                                <CheckCircleIcon className="icon-inline text-success" /> Create and track pull requests
+                            </p>
+                            <p className="mb-1 text-left">
+                                <CheckCircleIcon className="icon-inline text-success" /> Review status on pull requests
+                            </p>
+                            <p className="mb-1 text-left">
+                                <CheckCircleIcon className="icon-inline text-success" /> CI status on pull requests
+                            </p>
+                            <p className="mb-1 text-left">
+                                <CheckCircleIcon className="icon-inline text-success" /> Webhook support
+                            </p>
                         </div>
                     </div>
                     <div className="flex-grow-0">
                         <div className="text-center">
                             <BitbucketIcon size="4rem" />
                             <h3>Bitbucket Server</h3>
-                            <p className="mb-0">Bla bla bla</p>
+                            <p className="mb-1 text-left">
+                                <CheckCircleIcon className="icon-inline text-success" /> Create and track pull requests
+                            </p>
+                            <p className="mb-1 text-left">
+                                <CheckCircleIcon className="icon-inline text-success" /> Review status on pull requests
+                            </p>
+                            <p className="mb-1 text-left">
+                                <CheckCircleIcon className="icon-inline text-success" /> CI status on pull requests
+                            </p>
+                            <p className="mb-1 text-left">
+                                <CheckCircleIcon className="icon-inline text-success" /> Webhook support
+                            </p>
                         </div>
                     </div>
                     <div className="flex-grow-0">
                         <div className="text-center">
                             <GitlabIcon size="4rem" />
-                            <h3>Gitlab.com / Exterprise</h3>
+                            <h3>Gitlab.com / Enterprise</h3>
                             <p className="mb-0 text-muted">Coming soon!</p>
                         </div>
                     </div>
