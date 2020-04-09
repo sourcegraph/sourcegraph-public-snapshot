@@ -5,7 +5,6 @@ exports[`<ViewOnSourcegraphButton /> minimalUI = false renders a sign in button 
   aria-label="Sign into Sourcegraph to get hover tooltips, go to definition and more"
   className="open-on-sourcegraph test"
   href="https://test.com/sign-in?close=true"
-  label="Sign in to Sourcegraph"
   onClick={[Function]}
   title="Sign into Sourcegraph to get hover tooltips, go to definition and more"
 >
@@ -40,7 +39,6 @@ exports[`<ViewOnSourcegraphButton /> minimalUI = true renders a sign in button w
   aria-label="Sign into Sourcegraph to get hover tooltips, go to definition and more"
   className="open-on-sourcegraph test"
   href="https://test.com/sign-in?close=true"
-  label="Sign in to Sourcegraph"
   onClick={[Function]}
   title="Sign into Sourcegraph to get hover tooltips, go to definition and more"
 >
@@ -75,8 +73,6 @@ exports[`<ViewOnSourcegraphButton /> renders a button with an error label if the
   aria-label="Something unknown happened!"
   className="open-on-sourcegraph test"
   href="https://docs.sourcegraph.com/integration/test_codehost"
-  iconClassName="open-on-sourcegraph__icon--muted"
-  label="Error"
   rel="noopener noreferrer"
   target="_blank"
   title="Something unknown happened!"
@@ -113,6 +109,8 @@ exports[`<ViewOnSourcegraphButton /> renders a link to the repository on the Sou
   aria-label="View repository on Sourcegraph"
   className="open-on-sourcegraph test"
   href="https://test.com/test"
+  rel="noopener noreferrer"
+  target="_blank"
   title="View repository on Sourcegraph"
 >
   <svg
@@ -145,6 +143,8 @@ exports[`<ViewOnSourcegraphButton /> renders a link with the rev when provided 1
   aria-label="View repository on Sourcegraph"
   className="open-on-sourcegraph test"
   href="https://test.com/test@test"
+  rel="noopener noreferrer"
+  target="_blank"
   title="View repository on Sourcegraph"
 >
   <svg
@@ -175,9 +175,10 @@ exports[`<ViewOnSourcegraphButton /> renders a link with the rev when provided 1
 exports[`<ViewOnSourcegraphButton /> renders a repository not found message if the repository does not exist on the instance and not pointing at sourcegraph.com 1`] = `
 <a
   aria-label="The repository does not exist on the configured Sourcegraph instance https://sourcegraph.test"
+  className="open-on-sourcegraph test"
   href="https://sourcegraph.test/test@test"
-  iconClassName="open-on-sourcegraph__icon--muted"
-  label="Repository not found"
+  rel="noopener noreferrer"
+  target="_blank"
   title="The repository does not exist on the configured Sourcegraph instance https://sourcegraph.test"
 >
   <svg
@@ -210,9 +211,10 @@ exports[`<ViewOnSourcegraphButton /> renders a repository not found message if t
 exports[`<ViewOnSourcegraphButton /> renders configure sourcegraph button when pointing at sourcegraph.com and the repo does not exist 1`] = `
 <a
   aria-label="The repository does not exist on the configured Sourcegraph instance https://sourcegraph.com"
+  className="open-on-sourcegraph test"
   href="https://sourcegraph.com/test@test"
-  iconClassName="open-on-sourcegraph__icon--muted"
-  label="Repository not found"
+  rel="noopener noreferrer"
+  target="_blank"
   title="The repository does not exist on the configured Sourcegraph instance https://sourcegraph.com"
 >
   <svg
@@ -247,9 +249,10 @@ exports[`<ViewOnSourcegraphButton /> renders nothing in minimal UI mode 1`] = `n
 exports[`<ViewOnSourcegraphButton /> still renders a button to a private instance if repo does not exist 1`] = `
 <a
   aria-label="The repository does not exist on the configured Sourcegraph instance https://test.com"
+  className="open-on-sourcegraph test"
   href="https://test.com/test@test"
-  iconClassName="open-on-sourcegraph__icon--muted"
-  label="Repository not found"
+  rel="noopener noreferrer"
+  target="_blank"
   title="The repository does not exist on the configured Sourcegraph instance https://test.com"
 >
   <svg

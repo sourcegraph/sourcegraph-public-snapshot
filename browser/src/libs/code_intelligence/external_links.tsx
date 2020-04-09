@@ -43,6 +43,11 @@ export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphB
 }) => {
     className = classNames('open-on-sourcegraph', className)
     const mutedIconClassName = classNames('open-on-sourcegraph__icon--muted', iconClassName)
+    const commonProps: Partial<SourcegraphIconButtonProps> = {
+        className,
+        target: '_blank',
+        rel: 'noopener noreferrer',
+    }
 
     // Show nothing while loading
     if (repoExistsOrError === undefined) {
@@ -53,27 +58,18 @@ export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphB
         // If the problem is the user is not signed in, show a sign in CTA (if not shown elsewhere)
         if (failedWithHTTPStatus(repoExistsOrError, 401)) {
             if (showSignInButton) {
-                return (
-                    <SignInButton
-                        sourcegraphURL={sourcegraphURL}
-                        onSignInClose={onSignInClose}
-                        className={className}
-                        iconClassName={iconClassName}
-                    />
-                )
+                return <SignInButton {...commonProps} sourcegraphURL={sourcegraphURL} onSignInClose={onSignInClose} />
             }
             // Sign in button may already be shown elsewhere on the page
             return null
         }
 
         const commonErrorCaseProps: Partial<SourcegraphIconButtonProps> = {
-            className,
+            ...commonProps,
             iconClassName: mutedIconClassName,
             // If we are not running in the browser extension where we can open the options menu,
             // open the documentation for how to configure the code host we are on.
             href: new URL(snakeCase(codeHostType), 'https://docs.sourcegraph.com/integration/').href,
-            target: '_blank',
-            rel: 'noopener noreferrer',
             // onClick can call preventDefault() to prevent that and take a different action (opening the options menu).
             onClick: onConfigureSourcegraphClick,
         }
@@ -112,8 +108,8 @@ export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphB
     if (!repoExistsOrError) {
         return (
             <SourcegraphIconButton
+                {...commonProps}
                 href={url} // Still link to the repository (which will show a not found page, and can link to further actions)
-                className={className}
                 iconClassName={mutedIconClassName}
                 label="Repository not found"
                 title={`The repository does not exist on the configured Sourcegraph instance ${sourcegraphURL}`}
@@ -130,11 +126,10 @@ export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphB
     // Render a "View on Sourcegraph" button
     return (
         <SourcegraphIconButton
+            {...commonProps}
             href={url}
             title="View repository on Sourcegraph"
             aria-label="View repository on Sourcegraph"
-            className={className}
-            iconClassName={iconClassName}
         />
     )
 }
