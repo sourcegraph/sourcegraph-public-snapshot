@@ -6,7 +6,7 @@ import { concat, of, Subject, Subscription } from 'rxjs'
 import { concatMap, delay, filter, map, pairwise, startWith, tap } from 'rxjs/operators'
 import { Activation, percentageDone } from './Activation'
 import { ActivationChecklist } from './ActivationChecklist'
-import { Menu, MenuButton, MenuPopover, MenuList } from '@reach/menu-button'
+import { Menu, MenuButton, MenuPopover } from '@reach/menu-button'
 import classNames from 'classnames'
 
 interface Props {
@@ -80,7 +80,7 @@ export class ActivationDropdown extends React.PureComponent<Props, State> {
         }
         return (
             <Menu>
-                {({ isOpen }) => (
+                {({ isExpanded }) => (
                     <>
                         <MenuButton
                             className={classNames(
@@ -116,27 +116,34 @@ export class ActivationDropdown extends React.PureComponent<Props, State> {
                                 />
                             </span>
                         </MenuButton>
-                        <MenuPopover>
-                            <MenuList className={classNames('activation-dropdown', 'dropdown-menu', { show: isOpen })}>
-                                <div className="dropdown-item-text activation-dropdown-header">
-                                    <span className="activation-dropdown__title mb-2 font-weight-bold">
-                                        {percentageDone(this.props.activation.completed) > 0
-                                            ? 'Almost there!'
-                                            : 'Welcome to Sourcegraph'}
-                                    </span>
-                                    <p className="mb-2">Complete the steps below to finish onboarding!</p>
-                                </div>
-                                <ActivationChecklist
-                                    {...this.props}
-                                    steps={this.props.activation.steps}
-                                    completed={this.props.activation.completed}
-                                    className="activation-dropdown__checklist"
-                                />
-                            </MenuList>
+                        <MenuPopover
+                            className={classNames('activation-dropdown', 'dropdown-menu', { show: isExpanded })}
+                        >
+                            {/* <MenuItem onSelect={this.noop}> */}
+                            <div className="dropdown-item-text activation-dropdown-header">
+                                <span className="activation-dropdown__title mb-2 font-weight-bold">
+                                    {percentageDone(this.props.activation.completed) > 0
+                                        ? 'Almost there!'
+                                        : 'Welcome to Sourcegraph'}
+                                </span>
+                                <p className="mb-2">Complete the steps below to finish onboarding!</p>
+                            </div>
+                            <ActivationChecklist
+                                {...this.props}
+                                steps={this.props.activation.steps}
+                                completed={this.props.activation.completed}
+                                className="activation-dropdown__checklist"
+                            />
+                            {/* </MenuItem> */}
                         </MenuPopover>
                     </>
                 )}
             </Menu>
         )
+    }
+
+    private noop: () => void = () => (e: React.UIEvent) => {
+        e.preventDefault()
+        console.log('E', e)
     }
 }
