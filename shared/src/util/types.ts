@@ -23,13 +23,15 @@ export const isNot = <TInput, TExclude extends TInput>(isType: (val: TInput) => 
 ): value is Exclude<TInput, TExclude> => !isType(value)
 
 /**
- * Returns a function that returns `true` if the given `key` of the object is not `null` or `undefined`.
+ * Returns a function that returns `true` if the given `key` of the object passes the given type guard.
  *
- * I ❤️ TypeScript.
+ * @param key The key of the property to check.
+ * @param isType The type guard to evalute on the property value.
  */
-export const propertyIsDefined = <T extends object, K extends keyof T>(key: K) => (
-    val: T
-): val is T & { [k in K]-?: NonNullable<T[k]> } => isDefined(val[key])
+export const property = <O extends object, K extends keyof O, T extends O[K]>(
+    key: K,
+    isType: (value: O[K]) => value is T
+) => (object: O): object is O & { [k in K]: T } => isType(object[key])
 
 /**
  * Returns a function that returns `true` if the given value is an instance of the given class.
