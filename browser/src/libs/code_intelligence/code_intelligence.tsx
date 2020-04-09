@@ -62,7 +62,7 @@ import {
 import { getModeFromPath } from '../../../../shared/src/languages'
 import { URLToFileContext } from '../../../../shared/src/platform/context'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
-import { isDefined, isInstanceOf, propertyIsDefined } from '../../../../shared/src/util/types'
+import { isDefined, isInstanceOf, property } from '../../../../shared/src/util/types'
 import {
     FileSpec,
     UIPositionSpec,
@@ -381,7 +381,7 @@ function initCodeIntelligence({
         hoverOverlayRerenders: containerComponentUpdates.pipe(
             withLatestFrom(hoverOverlayElements),
             map(([, hoverOverlayElement]) => ({ hoverOverlayElement, relativeElement })),
-            filter(propertyIsDefined('hoverOverlayElement'))
+            filter(property('hoverOverlayElement', isDefined))
         ),
         getHover: ({ line, character, part, ...rest }) =>
             combineLatest([

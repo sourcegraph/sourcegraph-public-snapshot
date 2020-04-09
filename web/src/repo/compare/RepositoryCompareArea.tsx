@@ -14,7 +14,7 @@ import { getHoverActions } from '../../../../shared/src/hover/actions'
 import { HoverContext } from '../../../../shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '../../../../shared/src/languages'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
-import { propertyIsDefined } from '../../../../shared/src/util/types'
+import { property, isDefined } from '../../../../shared/src/util/types'
 import {
     escapeRevspecForURL,
     FileSpec,
@@ -114,7 +114,7 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
                     relativeElement: repositoryCompareAreaElement!,
                 })),
                 // Can't reposition HoverOverlay if it wasn't rendered
-                filter(propertyIsDefined('hoverOverlayElement'))
+                filter(property('hoverOverlayElement', isDefined))
             ),
             getHover: hoveredToken => getHover(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
             getActions: context => getHoverActions(this.props, context),

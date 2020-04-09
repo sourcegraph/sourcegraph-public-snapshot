@@ -13,7 +13,7 @@ import { FileMatch, IFileMatch, ILineMatch } from '../../components/FileMatch'
 import { VirtualList } from '../../components/VirtualList'
 import { SettingsCascadeProps } from '../../settings/settings'
 import { asError, ErrorLike, isErrorLike } from '../../util/errors'
-import { propertyIsDefined } from '../../util/types'
+import { property, isDefined } from '../../util/types'
 import { parseRepoURI, toPrettyBlobURL } from '../../util/url'
 
 export const FileLocationsError: React.FunctionComponent<{ error: ErrorLike }> = ({ error }) => (
@@ -184,7 +184,7 @@ function refsToFileMatch(uri: string, refs: Badged<Location>[]): IFileMatch {
             url: toRepoURL(p.repoName),
         },
         limitHit: false,
-        lineMatches: refs.filter(propertyIsDefined('range')).map(
+        lineMatches: refs.filter(property('range', isDefined)).map(
             (ref): ILineMatch => ({
                 preview: '',
                 limitHit: false,
