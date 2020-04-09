@@ -261,7 +261,8 @@ func generate(workloads map[string]*Workload, milestone string) string {
 		}
 
 		// Put all PRs that aren't linked to issues top-level
-		for pr, issues := range w.PullRequestIssues {
+		for _, pr := range w.PullRequests {
+			issues := w.PullRequestIssues[pr]
 			if len(issues) == 0 {
 				printIssue((*Issue)(pr))
 			}
