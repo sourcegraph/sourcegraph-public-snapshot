@@ -11,24 +11,23 @@
 - [x] Support internal CA or self-signed TLS certificates for all external communication [#71](https://github.com/sourcegraph/sourcegraph/issues/71) __2d__ 👩
 - [ ] ~zoekt: support indexing multiple branches in zoekt-archive-index~ [#7930](https://github.com/sourcegraph/sourcegraph/issues/7930) __2d__ [👩](https://app.hubspot.com/contacts/2762526/company/554338610)🕵️
 - [ ] ~Ref glob search perf followups~ [#7642](https://github.com/sourcegraph/sourcegraph/issues/7642) __2d__ 🧶
-- [ ] ~Code host fingerprinter~ [#7464](https://github.com/sourcegraph/sourcegraph/issues/7464) __1d__ 🕵️
+- [x] ~Code host fingerprinter~ [#7464](https://github.com/sourcegraph/sourcegraph/issues/7464) __1d__ 🕵️
 - [ ] ~Exclude directories from search results~ [#6870](https://github.com/sourcegraph/sourcegraph/issues/6870) __2d__ [👩](https://app.hubspot.com/contacts/2762526/company/464956351)
 - [ ] ~Gitlab OAuth certificate signed by unknown authority~ [#4652](https://github.com/sourcegraph/sourcegraph/issues/4652) __0.5d__ 🐛👩
 - [ ] ~Support SSH key credentials directly in external service configs~ [#3924](https://github.com/sourcegraph/sourcegraph/issues/3924) __2d__ 👩
-- [ ] ~docs: Ensure new arch for repo-updater is reflected in dev docs~ [#3911](https://github.com/sourcegraph/sourcegraph/issues/3911) __0.5d__ 🧶
+- [x] ~docs: Ensure new arch for repo-updater is reflected in dev docs~ [#3911](https://github.com/sourcegraph/sourcegraph/issues/3911) __0.5d__ 🧶
 - [ ] ~docs: Document using an alternate clone URL for repos~ [#658](https://github.com/sourcegraph/sourcegraph/issues/658) __0.5d__ 🧶
 
 @kzh: __6.50d__
 
 - [x] Add BitBucket build status support in bitbucket-server-plugin [#8386](https://github.com/sourcegraph/sourcegraph/issues/8386) __?d__ 👩
+  - [x] Support build status event webhook [#18](https://github.com/sourcegraph/bitbucket-server-plugin/pull/18) 
 - [x] a8n/core: Support updating changesets on BitbucketServer [#7762](https://github.com/sourcegraph/sourcegraph/issues/7762) __1d__ 🛠️
 - [x] a8n: Move "default branch" check to execution of CampaignJob [#7725](https://github.com/sourcegraph/sourcegraph/issues/7725) __2d__ 🛠️
 - [x] a8n/core: Extend CreateCampaignInput to accept Branch and persist it [#7687](https://github.com/sourcegraph/sourcegraph/issues/7687) __2d__ 🛠️
 - [x] Password-reset link not rendered for non-admin users [#7520](https://github.com/sourcegraph/sourcegraph/issues/7520) __0.5d__ 🐛
 - [x] Error fetching commit author info from GraphQL API [#5335](https://github.com/sourcegraph/sourcegraph/issues/5335) __1d__ [👩](https://app.hubspot.com/contacts/2762526/company/814799425)🐛
-- [ ] ~Simplify Bitbucket Server plugin interaction with Sourcegraph~ [#7824](https://github.com/sourcegraph/sourcegraph/issues/7824) __3d__ 
-- [ ] ~Forbidden - CSRF token invalid~ [#7368](https://github.com/sourcegraph/sourcegraph/issues/7368) __2d__ 🐛
-- [ ] ~Address repohascommitafter search filter performance bottleneck~ [#6745](https://github.com/sourcegraph/sourcegraph/issues/6745) __0.5d__ 
+- [x] ~Simplify Bitbucket Server plugin interaction with Sourcegraph~ [#7824](https://github.com/sourcegraph/sourcegraph/issues/7824) __3d__ 
 
 @mrnugget: __10.00d__
 
@@ -41,16 +40,16 @@
 - [ ] ~Write C# LSIF indexer~ [#7760](https://github.com/sourcegraph/sourcegraph/issues/7760) __?d__ 🛠️
 - [x] ~a8n Spike: Add ability to "stack diffs" (RFC 92)~ [#7721](https://github.com/sourcegraph/sourcegraph/issues/7721) __3d__ 🛠️
 
-@rvantonder: __6.00d__
+@rvantonder: __10.00d__
 
+- [x] search: design proposals for AND / OR / NOT expressions [#8346](https://github.com/sourcegraph/sourcegraph/issues/8346) __4d__ 
 - [x] Trailing backslash at end of expression: `` when searching for valid regexp [#7604](https://github.com/sourcegraph/sourcegraph/issues/7604) __1d__ 🐛👩
 - [x] Enforce warnings for unsupported parameters and filters in structural search [#7293](https://github.com/sourcegraph/sourcegraph/issues/7293) __1d__ 🧶
 - [x] Backend returns invalid filter chip with space "lang:ignore list" [#6498](https://github.com/sourcegraph/sourcegraph/issues/6498) __2d__ [👩](https://app.hubspot.com/contacts/2762526/company/419771425)🐛
 - [x] Impossible to search for colons in literal search [#6490](https://github.com/sourcegraph/sourcegraph/issues/6490) __2d__ 🐛
-- [ ] ~search: design proposals for AND / OR / NOT expressions~ [#8346](https://github.com/sourcegraph/sourcegraph/issues/8346) __4d__ 
-- [ ] ~Extract and dump type information for Dart LSIF~ [#7908](https://github.com/sourcegraph/sourcegraph/issues/7908) __4d__ 🛠️
-- [ ] ~search: Implement AND / OR / NOT for file contents~ [#7823](https://github.com/sourcegraph/sourcegraph/issues/7823) __?d__ 
+- [ ] ~search: Support AND / OR / NOT predicate language in search queries~ [#7823](https://github.com/sourcegraph/sourcegraph/issues/7823) __?d__ 👩🛠️
 - [ ] ~search filter `archived`/`fork` "yes/no/only" values are confusing~ [#7003](https://github.com/sourcegraph/sourcegraph/issues/7003) __4d__ [👩](https://app.hubspot.com/contacts/2762526/company/1749284052)🛠️
+- [ ] ~Address repohascommitafter search filter performance bottleneck~ [#6745](https://github.com/sourcegraph/sourcegraph/issues/6745) __1d__ 👩🕵️
 
 @ryanslade: __8.00d__
 
@@ -65,13 +64,13 @@
 - [x] a8n/core: Expose CI status on changesets [#7093](https://github.com/sourcegraph/sourcegraph/issues/7093) __2d__ 🛠️
 - [ ] ~a8n/core: Extend GraphQL API to include participant users involved in the campaign~ [#7552](https://github.com/sourcegraph/sourcegraph/issues/7552) __1d__ 🛠️
 - [ ] ~a8n/core: Expose comments of all changesets in campaign in GraphQL API~ [#7548](https://github.com/sourcegraph/sourcegraph/issues/7548) __2d__ 🛠️
-- [ ] ~Diagnose and fix slow /.api/registry/extensions endpoint~ [#7544](https://github.com/sourcegraph/sourcegraph/issues/7544) __1d__ 🧶
-- [ ] ~a8n: Heuristic syncing of Changesets and ChangesetEvents~ [#6388](https://github.com/sourcegraph/sourcegraph/issues/6388) __3d__ 🧶
+- [x] ~Diagnose and fix slow /.api/registry/extensions endpoint~ [#7544](https://github.com/sourcegraph/sourcegraph/issues/7544) __1d__ 🧶
+- [x] ~campaigns: Heuristic syncing of Changesets and ChangesetEvents~ [#6388](https://github.com/sourcegraph/sourcegraph/issues/6388) __4d__ 🧶
 
 @tsenart: __3.50d__
 
 - [x] Use basic auth instead of query params for auth in github-proxy  [#8310](https://github.com/sourcegraph/sourcegraph/issues/8310) __0.5d__ 🧶
-- [ ] Core Services: 3.13 Tracking Issue [#7719](https://github.com/sourcegraph/sourcegraph/issues/7719) __?d__ 
+- [x] Core Services: 3.13 Tracking Issue [#7719](https://github.com/sourcegraph/sourcegraph/issues/7719) __?d__ 
 - [x] Prevent upgrading more than one minor version at a time [#7702](https://github.com/sourcegraph/sourcegraph/issues/7702) __1d__ 🐛
 - [x] Redis AOF file grows unbounded due to frequent container restarts [#3300](https://github.com/sourcegraph/sourcegraph/issues/3300) __2d__ 
 - [x] redis: Log spam warning when redis is loading the dataset in memory [#2904](https://github.com/sourcegraph/sourcegraph/issues/2904) __?d__ 🐛👩
@@ -99,4 +98,5 @@
 - [ ] ~Make new pricing tiers reflected in feature access~ [#7927](https://github.com/sourcegraph/sourcegraph/issues/7927) __1d__ 🐛
 - [x] ~RFC 40: Add Prometheus metrics~ [#7827](https://github.com/sourcegraph/sourcegraph/issues/7827) __1d__ 🛠️
 - [x] ~sourcegraph/security-issues~ [#53](https://github.com/sourcegraph/security-issues/issues/53) __?d__ 🔒
+- [ ] ~Forbidden - CSRF token invalid~ [#7368](https://github.com/sourcegraph/sourcegraph/issues/7368) __2d__ 🐛
 - [ ] ~Auth: explicit session invalidation~ [#1126](https://github.com/sourcegraph/sourcegraph/issues/1126) __2d__ 🔒

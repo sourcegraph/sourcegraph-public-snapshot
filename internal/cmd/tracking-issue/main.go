@@ -9,14 +9,12 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"reflect"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
-	"time"
 
-	"github.com/shurcooL/githubv4"
+	"github.com/machinebox/graphql"
 	"golang.org/x/oauth2"
 )
 
@@ -48,13 +46,13 @@ func run(token, org, milestone, labels string, update bool) (err error) {
 	}
 
 	ctx := context.Background()
-	cli := githubv4.NewClient(
+	cli := graphql.NewClient("https://api.github.com/graphql", graphql.WithHTTPClient(
 		oauth2.NewClient(ctx, oauth2.StaticTokenSource(
 			&oauth2.Token{AccessToken: token},
-		)),
+		))),
 	)
 
-	issues, err := listIssues(ctx, cli, org, milestone, strings.Split(labels, ","))
+	issues, prs, err := listIssuesAndPullRequests(ctx, cli, org, milestone, strings.Split(labels, ","))
 	if err != nil {
 		return err
 	}
@@ -64,7 +62,8 @@ func run(token, org, milestone, labels string, update bool) (err error) {
 		return err
 	}
 
-	work := generate(issues, milestone)
+	workloads := workloads(issues, prs, milestone)
+	work := generate(workloads, milestone)
 
 	body, err := patchIssueBody(tracking, work)
 	if err != nil {
@@ -125,22 +124,23 @@ func patchIssueBody(issue *Issue, work string) (body string, err error) {
 	return patch(issue.Body, work, openingMarker, closingMarker)
 }
 
-func updateIssue(cli *githubv4.Client, issue *Issue) (err error) {
-	var m struct {
-		UpdateIssue struct {
-			Issue struct {
-				UpdatedAt time.Time
-			}
-		} `graphql:"updateIssue(input: $input)"`
+func updateIssue(cli *graphql.Client, issue *Issue) (err error) {
+	r := graphql.NewRequest(`mutation($input: UpdateIssueInput!) {
+		updateIssue(input: $input) { issue { updatedAt } }
+	}`)
+
+	type UpdateIssueInput struct {
+		ID   string `json:"id"`
+		Body string `json:"body"`
 	}
 
-	input := githubv4.UpdateIssueInput{
+	r.Var("input", &UpdateIssueInput{
 		ID:   issue.ID,
-		Body: githubv4.NewString(githubv4.String(issue.Body)),
-	}
+		Body: issue.Body,
+	})
 
 	ctx := context.Background()
-	return cli.Mutate(ctx, &m, input, nil)
+	return cli.Run(ctx, r, nil)
 }
 
 func patch(s, replacement, opening, closing string) (string, error) {
@@ -157,21 +157,77 @@ func patch(s, replacement, opening, closing string) (string, error) {
 	return s[:start+len(opening)] + replacement + s[end:], nil
 }
 
-func generate(issues []*Issue, milestone string) string {
-	var (
-		assignees []string
-		workloads = map[string]float64{}
-		items     = map[string][]string{}
-	)
+type Workload struct {
+	Assignee          string
+	Days              float64
+	Issues            []*Issue
+	PullRequests      []*PullRequest
+	IssuePullRequests map[*Issue][]*PullRequest
+	PullRequestIssues map[*PullRequest][]*Issue
+}
+
+func workloads(issues []*Issue, prs []*PullRequest, milestone string) map[string]*Workload {
+	workloads := map[string]*Workload{}
+
+	workload := func(assignee string) *Workload {
+		w := workloads[assignee]
+		if w == nil {
+			w = &Workload{Assignee: assignee}
+			workloads[assignee] = w
+		}
+		return w
+	}
+
+	for _, pr := range prs {
+		w := workload(pr.Author)
+		w.PullRequests = append(w.PullRequests, pr)
+	}
 
 	for _, issue := range issues {
+		w := workload(assignee(issue.Assignees))
+
+		w.Issues = append(w.Issues, issue)
+		if w.IssuePullRequests == nil {
+			w.IssuePullRequests = make(map[*Issue][]*PullRequest)
+		}
+
+		if w.PullRequestIssues == nil {
+			w.PullRequestIssues = make(map[*PullRequest][]*Issue)
+		}
+
+		prs := linkedPullRequests(issue, prs)
+
+		w.IssuePullRequests[issue] = prs
+		for _, pr := range prs {
+			w.PullRequestIssues[pr] = append(w.PullRequestIssues[pr], issue)
+		}
+
+		if issue.Milestone == milestone {
+			estimate := estimate(issue.Labels)
+			w.Days += days(estimate)
+		}
+	}
+
+	return workloads
+}
+
+func generate(workloads map[string]*Workload, milestone string) string {
+	assignees := make([]string, 0, len(workloads))
+	for assignee := range workloads {
+		assignees = append(assignees, assignee)
+	}
+
+	sort.Strings(assignees)
+
+	var b strings.Builder
+
+	printIssue := func(issue *Issue) {
 		state := state(issue.State)
 		estimate := estimate(issue.Labels)
 		categories := categories(issue)
-		assignee := assignee(issue.Assignees)
 		title := title(issue, milestone)
 
-		item := fmt.Sprintf("- [%s] %s [#%d](%s) __%s__ %s\n",
+		fmt.Fprintf(&b, "- [%s] %s [#%d](%s) __%s__ %s\n",
 			state,
 			title,
 			issue.Number,
@@ -179,31 +235,49 @@ func generate(issues []*Issue, milestone string) string {
 			estimate,
 			emojis(categories),
 		)
-
-		if len(items[assignee]) == 0 {
-			assignees = append(assignees, assignee)
-		}
-
-		items[assignee] = append(items[assignee], item)
-
-		// Exclude work that is no longer planned
-		if issue.Milestone == milestone {
-			workloads[assignee] += days(estimate)
-		}
 	}
 
-	sort.Strings(assignees)
-
-	var w strings.Builder
 	for _, assignee := range assignees {
-		fmt.Fprintf(&w, "\n%s: __%.2fd__\n\n", assignee, workloads[assignee])
+		w := workloads[assignee]
 
-		for _, item := range items[assignee] {
-			fmt.Fprint(&w, item)
+		fmt.Fprintf(&b, "\n@%s: __%.2fd__\n\n", assignee, w.Days)
+
+		for _, issue := range w.Issues {
+			printIssue(issue)
+
+			for _, pr := range w.IssuePullRequests[issue] {
+				state := state(pr.State)
+				categories := categories((*Issue)(pr))
+				title := title((*Issue)(pr), milestone)
+
+				fmt.Fprintf(&b, "  - [%s] %s [#%d](%s) %s\n",
+					state,
+					title,
+					pr.Number,
+					pr.URL,
+					emojis(categories),
+				)
+			}
+		}
+
+		// Put all PRs that aren't linked to issues top-level
+		for pr, issues := range w.PullRequestIssues {
+			if len(issues) == 0 {
+				printIssue((*Issue)(pr))
+			}
 		}
 	}
 
-	return w.String()
+	return b.String()
+}
+
+func linkedPullRequests(issue *Issue, prs []*PullRequest) (linked []*PullRequest) {
+	for _, pr := range prs {
+		if strings.Contains(pr.Body, "#"+strconv.Itoa(issue.Number)) {
+			linked = append(linked, pr)
+		}
+	}
+	return linked
 }
 
 func title(issue *Issue, milestone string) string {
@@ -240,10 +314,12 @@ func estimate(labels []string) string {
 }
 
 func state(state string) string {
-	if strings.EqualFold(state, "closed") {
+	switch strings.ToLower(state) {
+	case "closed", "merged":
 		return "x"
+	default:
+		return " "
 	}
-	return " "
 }
 
 func categories(issue *Issue) map[string]string {
@@ -317,7 +393,7 @@ func assignee(assignees []string) string {
 	if len(assignees) == 0 {
 		return "Unassigned"
 	}
-	return "@" + assignees[0]
+	return assignees[0]
 }
 
 type Issue struct {
@@ -332,10 +408,15 @@ type Issue struct {
 	Labels     []string
 	Assignees  []string
 	Milestone  string
+	Author     string
 }
 
-func listIssues(ctx context.Context, cli *githubv4.Client, org, milestone string, labels []string) (issues []*Issue, _ error) {
-	type issue struct {
+type PullRequest Issue
+
+// listIssuesAndPullRequests lists issues and pull requests containing the given labels and belonging to the given org and milestone.
+func listIssuesAndPullRequests(ctx context.Context, cli *graphql.Client, org, milestone string, labels []string) (issues []*Issue, prs []*PullRequest, _ error) {
+	type searchNode struct {
+		Typename   string `json:"__typename"`
 		ID         string
 		Title      string
 		Body       string
@@ -346,91 +427,115 @@ func listIssues(ctx context.Context, cli *githubv4.Client, org, milestone string
 			NameWithOwner string
 			IsPrivate     bool
 		}
-		Assignees struct{ Nodes []struct{ Login string } } `graphql:"assignees(first: 25)"`
-		Labels    struct{ Nodes []struct{ Name string } }  `graphql:"labels(first:25)"`
+		Author    struct{ Login string }
+		Assignees struct{ Nodes []struct{ Login string } }
+		Labels    struct{ Nodes []struct{ Name string } }
 		Milestone struct{ Title string }
 	}
 
 	type search struct {
 		PageInfo struct {
-			EndCursor   githubv4.String
+			EndCursor   string
 			HasNextPage bool
 		}
-		Nodes []struct {
-			issue `graphql:"... on Issue"`
-		}
+		Nodes []searchNode
 	}
 
-	var q struct {
-		Milestoned   search `graphql:"milestoned: search(first: $milestonedCount, type: ISSUE, after: $milestonedCursor, query: $milestonedQuery)"`
-		Demilestoned search `graphql:"demilestoned: search(first: $demilestonedCount, type: ISSUE, after: $demilestonedCursor, query: $demilestonedQuery)"`
-	}
-
-	variables := map[string]interface{}{
-		"milestonedCount":    githubv4.Int(100),
-		"demilestonedCount":  githubv4.Int(100),
-		"milestonedCursor":   (*githubv4.String)(nil),
-		"demilestonedCursor": (*githubv4.String)(nil),
-		"milestonedQuery":    githubv4.String(listIssuesSearchQuery(org, milestone, labels, false)),
-		"demilestonedQuery":  githubv4.String(listIssuesSearchQuery(org, milestone, labels, true)),
-	}
-
-	var emptyIssue issue
+	var (
+		milestonedCount    = 100
+		demilestonedCount  = 100
+		milestonedCursor   string
+		demilestonedCursor string
+		milestonedQuery    = listIssuesSearchQuery(org, milestone, labels, false)
+		demilestonedQuery  = listIssuesSearchQuery(org, milestone, labels, true)
+	)
 
 	for {
-		err := cli.Query(ctx, &q, variables)
-		if err != nil {
-			return nil, err
+		var data struct {
+			Milestoned, Demilestoned search
 		}
 
-		nodes := append(q.Milestoned.Nodes, q.Demilestoned.Nodes...)
+		var q strings.Builder
+		q.WriteString("query(" +
+			"$demilestonedCount: Int!," +
+			"$demilestonedCursor: String," +
+			"$demilestonedQuery: String!," +
+			"$milestonedCount: Int!," +
+			"$milestonedCursor: String," +
+			"$milestonedQuery: String!) {\n")
+
+		q.WriteString(listIssuesGraphQLQuery("milestoned"))
+		q.WriteString(listIssuesGraphQLQuery("demilestoned"))
+
+		q.WriteString("}")
+
+		r := graphql.NewRequest(q.String())
+		r.Var("milestonedCount", milestonedCount)
+		r.Var("demilestonedCount", demilestonedCount)
+
+		if milestonedCursor != "" {
+			r.Var("milestonedCursor", milestonedCursor)
+		}
+
+		if demilestonedCursor != "" {
+			r.Var("demilestonedCursor", demilestonedCursor)
+		}
+
+		r.Var("milestonedQuery", milestonedQuery)
+		r.Var("demilestonedQuery", demilestonedQuery)
+
+		err := cli.Run(ctx, r, &data)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		nodes := append(data.Milestoned.Nodes, data.Demilestoned.Nodes...)
 
 		for _, n := range nodes {
-			// GitHub's GraphQL API sometimes sends empty issue nodes.
-			if reflect.DeepEqual(n.issue, emptyIssue) {
-				continue
-			}
-
-			i := n.issue
-
 			issue := &Issue{
-				ID:         i.ID,
-				Title:      i.Title,
-				Body:       i.Body,
-				State:      i.State,
-				Number:     i.Number,
-				URL:        i.URL,
-				Repository: i.Repository.NameWithOwner,
-				Private:    i.Repository.IsPrivate,
-				Assignees:  make([]string, 0, len(i.Assignees.Nodes)),
-				Labels:     make([]string, 0, len(i.Labels.Nodes)),
-				Milestone:  i.Milestone.Title,
+				ID:         n.ID,
+				Title:      n.Title,
+				Body:       n.Body,
+				State:      n.State,
+				Number:     n.Number,
+				URL:        n.URL,
+				Repository: n.Repository.NameWithOwner,
+				Private:    n.Repository.IsPrivate,
+				Assignees:  make([]string, 0, len(n.Assignees.Nodes)),
+				Labels:     make([]string, 0, len(n.Labels.Nodes)),
+				Milestone:  n.Milestone.Title,
+				Author:     n.Author.Login,
 			}
 
-			for _, assignee := range i.Assignees.Nodes {
+			for _, assignee := range n.Assignees.Nodes {
 				issue.Assignees = append(issue.Assignees, assignee.Login)
 			}
 
-			for _, label := range i.Labels.Nodes {
+			for _, label := range n.Labels.Nodes {
 				issue.Labels = append(issue.Labels, label.Name)
 			}
 
-			issues = append(issues, issue)
+			switch n.Typename {
+			case "PullRequest":
+				prs = append(prs, (*PullRequest)(issue))
+			case "Issue":
+				issues = append(issues, issue)
+			}
 		}
 
 		var hasNextPage bool
-		if q.Milestoned.PageInfo.HasNextPage {
+		if data.Milestoned.PageInfo.HasNextPage {
 			hasNextPage = true
-			variables["milestonedCursor"] = githubv4.NewString(q.Milestoned.PageInfo.EndCursor)
+			milestonedCursor = data.Milestoned.PageInfo.EndCursor
 		} else {
-			variables["milestonedCount"] = githubv4.Int(0)
+			milestonedCount = 0
 		}
 
-		if q.Demilestoned.PageInfo.HasNextPage {
+		if data.Demilestoned.PageInfo.HasNextPage {
 			hasNextPage = true
-			variables["demilestonedCursor"] = githubv4.NewString(q.Demilestoned.PageInfo.EndCursor)
+			demilestonedCursor = data.Demilestoned.PageInfo.EndCursor
 		} else {
-			variables["demilestonedCount"] = githubv4.Int(0)
+			demilestonedCount = 0
 		}
 
 		if !hasNextPage {
@@ -438,7 +543,43 @@ func listIssues(ctx context.Context, cli *githubv4.Client, org, milestone string
 		}
 	}
 
-	return issues, nil
+	return issues, prs, nil
+}
+
+func listIssuesGraphQLQuery(alias string) string {
+	const searchNodeFields = `
+		__typename
+		id, title, body, state, number, url
+		repository { nameWithOwner, isPrivate }
+		author { login }
+		assignees(first: 25) { nodes { login } }
+		labels(first: 25) { nodes { name } }
+		milestone { title }
+	`
+
+	const searchQuery = `%s: search(first: $%sCount, type: ISSUE, after: $%sCursor query: $%sQuery) {
+		pageInfo {
+			endCursor
+			hasNextPage
+		}
+		nodes {
+			... on Issue {
+				%s
+			}
+			... on PullRequest {
+				%s
+			}
+		}
+	}`
+
+	return fmt.Sprintf(searchQuery,
+		alias,
+		alias,
+		alias,
+		alias,
+		searchNodeFields,
+		searchNodeFields,
+	)
 }
 
 func listIssuesSearchQuery(org, milestone string, labels []string, demilestoned bool) string {
