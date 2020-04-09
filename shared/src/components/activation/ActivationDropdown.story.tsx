@@ -2,9 +2,9 @@ import * as H from 'history'
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { noop } from 'rxjs'
-import '../../../../web/src/main.scss'
 import { ActivationDropdown } from './ActivationDropdown'
 import { Activation } from './Activation'
+import { boolean } from '@storybook/addon-knobs'
 
 const { add } = storiesOf('ActivationDropdown', module).addDecorator(story => (
     <div className="theme-light container">{story()}</div>
@@ -14,14 +14,30 @@ const baseActivation: Activation = {
     steps: [
         {
             id: 'ConnectedCodeHost',
-            title: 'title1',
-            detail: 'detail1',
+            title: 'Add repositories',
+            detail: 'Configure Sourcegraph to talk to your code host and fetch a list of your repositories.',
             onClick: noop,
         },
         {
-            id: 'EnabledRepository',
-            title: 'title2',
-            detail: 'detail2',
+            id: 'DidSearch',
+            title: 'Search your code',
+            detail: (
+                <span>
+                    Head to the <a href="/search">homepage</a> and perform a search query on your code.{' '}
+                    <strong>Example:</strong> type 'lang:' and select a language
+                </span>
+            ),
+        },
+        {
+            id: 'FoundReferences',
+            title: 'Find some references',
+            detail:
+                'To find references of a token, navigate to a code file in one of your repositories, hover over a token to activate the tooltip, and then click "Find references".',
+        },
+        {
+            id: 'EnabledSharing',
+            title: 'Configure SSO or share with teammates',
+            detail: 'Configure a single-sign on (SSO) provider or have at least one other teammate sign up.',
         },
     ],
     refetch: noop,
@@ -31,23 +47,33 @@ const baseActivation: Activation = {
 const history = H.createMemoryHistory({ keyLength: 0 })
 
 add('Loading', () => <ActivationDropdown alwaysShow={true} history={history} activation={baseActivation} />)
-add('0/2 completed', () => (
+add('0/4 completed', () => (
     <ActivationDropdown
         alwaysShow={true}
         history={history}
         activation={{
             ...baseActivation,
             completed: {
-                ConnectedCodeHost: false,
-                EnabledRepository: false,
+                ConnectedCodeHost: boolean('ConnectedCodeHost', false),
+                DidSearch: boolean('DidSearch', false),
+                FoundReferences: boolean('FoundReferences', false),
+                EnabledRepository: boolean('EnabledRepository', false),
             },
         }}
     />
 ))
-add('1/2 completed', () => (
+add('1/4 completed', () => (
     <ActivationDropdown
         alwaysShow={true}
         history={history}
-        activation={{ ...baseActivation, completed: { ConnectedCodeHost: true, EnabledRepository: false } }}
+        activation={{
+            ...baseActivation,
+            completed: {
+                ConnectedCodeHost: boolean('ConnectedCodeHost', true),
+                DidSearch: boolean('DidSearch', false),
+                FoundReferences: boolean('FoundReferences', false),
+                EnabledRepository: boolean('EnabledRepository', false),
+            },
+        }}
     />
 ))
