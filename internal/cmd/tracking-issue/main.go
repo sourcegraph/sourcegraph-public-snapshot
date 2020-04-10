@@ -432,17 +432,11 @@ func (pr *PullRequest) PrintTo(w io.Writer) error {
 		state = "x"
 	}
 
-	var duration string
-	if state == "x" {
-		duration = "__" + pr.Duration() + "__ "
-	}
-
-	_, err := fmt.Fprintf(w, "  - [%s] %s [#%d](%s) %s%s\n",
+	_, err := fmt.Fprintf(w, "  - [%s] %s [#%d](%s) %s\n",
 		state,
 		pr.title(),
 		pr.Number,
 		pr.URL,
-		duration,
 		pr.Emojis(),
 	)
 
@@ -469,38 +463,6 @@ func (pr *PullRequest) title() string {
 	}
 
 	return title
-}
-
-func (pr *PullRequest) Duration() string {
-	if d := pr.ClosedAt.Sub(pr.BeganAt); d > 0 {
-		return duration(d)
-	}
-	return ""
-}
-
-const (
-	day  = time.Minute * 60 * 24
-	year = 365 * day
-)
-
-func duration(d time.Duration) string {
-	if d < day {
-		return d.String()
-	}
-
-	var b strings.Builder
-
-	if d >= year {
-		years := d / year
-		fmt.Fprintf(&b, "%dy", years)
-		d -= years * year
-	}
-
-	days := d / day
-	d -= days * day
-	fmt.Fprintf(&b, "%dd%s", days, d)
-
-	return b.String()
 }
 
 func (pr *PullRequest) Redact() {
