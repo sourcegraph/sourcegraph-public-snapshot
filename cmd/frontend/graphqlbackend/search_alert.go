@@ -354,9 +354,26 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) (*searchAler
 	//
 	// TODO(sqs): this logic can be significantly improved, but it's better than
 	// nothing for now.
-	var proposedQueries []*searchQueryDescription
-	repos, _, _, _ := r.resolveRepositories(ctx, nil)
 
+	var proposedQueries []*searchQueryDescription
+	description := "Use a 'repo:' or 'repogroup:' filter to narrow your search and see results."
+	if envvar.SourcegraphDotComMode() {
+		description = "Use a 'repo:' or 'repogroup:' filter to narrow your search and see results or set up a self-hosted Sourcegraph instance to search an unlimited number of repositories."
+	}
+	if backend.CheckCurrentUserIsSiteAdmin(ctx) == nil {
+		description += " As a site admin, you can increase the limit by changing maxReposToSearch in site config."
+	}
+
+	buildAlert := func(proposedQueries []*searchQueryDescription, description string) *searchAlert {
+		return &searchAlert{
+			prometheusType: "over_repo_limit",
+			title:          "Too many matching repositories",
+			proposedQueries: proposedQueries,
+			description: 	 description,
+		}
+	}
+
+	repos, _, _, _ := r.resolveRepositories(ctx, nil)
 	if len(repos) > 0 {
 		paths := make([]string, len(repos))
 		pathPatterns := make([]string, len(repos))
@@ -391,12 +408,12 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) (*searchAler
 			if ctx.Err() != nil {
 				continue
 			} else if err != nil {
-				return nil
+				return buildAlert([]*searchQueryDescription{}, description)
 			}
 
 			var more string
 			if overLimit {
-				more = " (further filtering required)"
+				more = "(further filtering required)"
 			}
 			// We found a more specific repo: filter that may be narrow enough. Now
 			// add it to the user's query, but be smart. For example, if the user's
@@ -404,7 +421,7 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) (*searchAler
 			// not "repo:foo repo:foobar/" (which are equivalent, but shorter is better).
 			newExpr := addRegexpField(r.query.ParseTree(), query.FieldRepo, repoParentPattern)
 			proposedQueries = append(proposedQueries, &searchQueryDescription{
-				description: "in repositories under " + repoParent + more,
+				description: fmt.Sprintf("in repositories under %s %s", repoParent, more),
 				query:       newExpr,
 				patternType: r.patternType,
 			})
@@ -423,28 +440,14 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) (*searchAler
 				}
 				newExpr := addRegexpField(r.query.ParseTree(), query.FieldRepo, "^"+regexp.QuoteMeta(pathToPropose)+"$")
 				proposedQueries = append(proposedQueries, &searchQueryDescription{
-					description: "in the repository " + strings.TrimPrefix(pathToPropose, "github.com/"),
+					description: fmt.Sprintf("in the repository %s", strings.TrimPrefix(pathToPropose, "github.com/")),
 					query:       newExpr,
 					patternType: r.patternType,
 				})
 			}
 		}
 	}
-
-	description := "Use a 'repo:' or 'repogroup:' filter to narrow your search and see results."
-	if envvar.SourcegraphDotComMode() {
-		description = "Use a 'repo:' or 'repogroup:' filter to narrow your search and see results or set up a self-hosted Sourcegraph instance to search an unlimited number of repositories."
-	}
-	if backend.CheckCurrentUserIsSiteAdmin(ctx) == nil {
-		description += " As a site admin, you can increase the limit by changing maxReposToSearch in site config."
-	}
-
-	return &searchAlert{
-		prometheusType: "over_repo_limit",
-		title:          "Too many matching repositories",
-		proposedQueries: proposedQueries,
-		description: 	 description,
-	}
+	return buildAlert(proposedQueries, description)
 }
 
 // alertForStructuralSearch filters certain errors from multiErr and converts
