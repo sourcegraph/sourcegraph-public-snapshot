@@ -184,7 +184,7 @@ export interface TweetFeedbackProps {
     feedback: string
 }
 
-const SCORE_TO_TWEET = 8
+const SCORE_TO_TWEET = 9
 class TweetFeedback extends React.Component<TweetFeedbackProps> {
     private getMessage(): string {
         return `After using @srcgraph: ${encodeURIComponent(this.props.feedback)}`
