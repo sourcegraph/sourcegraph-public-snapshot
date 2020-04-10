@@ -380,6 +380,27 @@ func Test_Parse(t *testing.T) {
 			WantGrammar:   Spec(`(concat "x" (or "y" "f"))`),
 			WantHeuristic: Diff(`(concat "()" "x" "()" (or "y" "()" "f") "()")`),
 		},
+		// Escaping.
+		{
+			Input:         `\(\)`,
+			WantGrammar:   `"\\(\\)"`,
+			WantHeuristic: Same,
+		},
+		{
+			Input:         `\( \) ()`,
+			WantGrammar:   Spec(`(concat "\\(" "\\)")`),
+			WantHeuristic: Diff(`(concat "\\(" "\\)" "()")`),
+		},
+		{
+			Input:         `\ `,
+			WantGrammar:   `"\\ "`,
+			WantHeuristic: Same,
+		},
+		{
+			Input:         `\  \ `,
+			WantGrammar:   `(concat "\\ " "\\ ")`,
+			WantHeuristic: `(concat "\\ " "\\ ")`,
+		},
 	}
 	for _, tt := range cases {
 		t.Run(tt.Name, func(t *testing.T) {
