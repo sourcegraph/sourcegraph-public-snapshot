@@ -190,10 +190,20 @@ const TweetFeedback: React.FunctionComponent<TweetFeedbackProps> = ({ feedback, 
         const url = new URL('https://twitter.com/intent/tweet')
         url.searchParams.set('text', `After using @srcgraph: ${feedback}`)
         return (
-            <a className="btn btn-primary mt-3" href={url.href} target="_blank" rel="noreferrer noopener">
-                <TwitterIcon className="icon-inline mr-2" />
-                Tweet feedback
-            </a>
+            <>
+                <p className="mt-2">
+                    One more favor, could you share your feedback on Twitter? We'd really appreciate it!
+                </p>
+                <a
+                    className="d-inline-block mt-2 btn btn-primary"
+                    href={url.href}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                >
+                    <TwitterIcon className="icon-inline mr-2" />
+                    Tweet feedback
+                </a>
+            </>
         )
     }
     return null
@@ -210,7 +220,7 @@ export class SurveyPage extends React.Component<SurveyPageProps> {
                 <div className="survey-page">
                     <PageTitle title="Thanks" />
                     <HeroPage
-                        title="Thank you for sending feedback."
+                        title="Thanks for the feedback!"
                         body={
                             <TweetFeedback
                                 score={this.props.location.state.score}
