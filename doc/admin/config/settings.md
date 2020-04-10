@@ -20,4 +20,6 @@ Global settings are found in **Site admin > Global settings** while links to org
 
 Settings options and their default values are shown below.
 
+[Sourcegraph extensions](../../extensions/index.md) can also define new settings properties. Check the documentation of an extension to see what settings it defines.
+
 <div markdown-func=jsonschemadoc jsonschemadoc:path="admin/config/settings.schema.json">[View page on docs.sourcegraph.com](https://docs.sourcegraph.com/doc/admin/config/settings) to see rendered content.</div>
