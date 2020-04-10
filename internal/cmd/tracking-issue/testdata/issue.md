@@ -21,7 +21,7 @@
 @kzh: __6.50d__
 
 - [x] Add BitBucket build status support in bitbucket-server-plugin [#8386](https://github.com/sourcegraph/sourcegraph/issues/8386) 👩
-  - [x] Support build status event webhook [#18](https://github.com/sourcegraph/bitbucket-server-plugin/pull/18) __20h25m21s__ :shipit:
+  - [x] Support build status event webhook [#18](https://github.com/sourcegraph/bitbucket-server-plugin/pull/18) :shipit:
 - [x] a8n/core: Support updating changesets on BitbucketServer [#7762](https://github.com/sourcegraph/sourcegraph/issues/7762) __1d__ 🛠️
 - [x] a8n: Move "default branch" check to execution of CampaignJob [#7725](https://github.com/sourcegraph/sourcegraph/issues/7725) __2d__ 🛠️
 - [x] a8n/core: Extend CreateCampaignInput to accept Branch and persist it [#7687](https://github.com/sourcegraph/sourcegraph/issues/7687) __2d__ 🛠️
