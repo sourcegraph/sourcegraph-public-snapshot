@@ -9,14 +9,14 @@
 - [x] gitserver should auto-recover from corrupt repository clones [#6676](https://github.com/sourcegraph/sourcegraph/issues/6676) __1d__ [👩](https://app.hubspot.com/contacts/2762526/company/407948923)🐛🕵️
 - [x] repos: Stop reading repo.enabled [#3971](https://github.com/sourcegraph/sourcegraph/issues/3971) __0.5d__ 🧶
 - [x] Support internal CA or self-signed TLS certificates for all external communication [#71](https://github.com/sourcegraph/sourcegraph/issues/71) __2d__ 👩
-- [] ~zoekt: support indexing multiple branches in zoekt-archive-index~ [#7930](https://github.com/sourcegraph/sourcegraph/issues/7930) __2d__ [👩](https://app.hubspot.com/contacts/2762526/company/554338610)🕵️
-- [] ~Ref glob search perf followups~ [#7642](https://github.com/sourcegraph/sourcegraph/issues/7642) __2d__ 🧶
+- [ ] ~zoekt: support indexing multiple branches in zoekt-archive-index~ [#7930](https://github.com/sourcegraph/sourcegraph/issues/7930) __2d__ [👩](https://app.hubspot.com/contacts/2762526/company/554338610)🕵️
+- [ ] ~Ref glob search perf followups~ [#7642](https://github.com/sourcegraph/sourcegraph/issues/7642) __2d__ 🧶
 - [x] ~Code host fingerprinter~ [#7464](https://github.com/sourcegraph/sourcegraph/issues/7464) __1d__ 🕵️
-- [] ~Exclude directories from search results~ [#6870](https://github.com/sourcegraph/sourcegraph/issues/6870) __2d__ [👩](https://app.hubspot.com/contacts/2762526/company/464956351)
-- [] ~Gitlab OAuth certificate signed by unknown authority~ [#4652](https://github.com/sourcegraph/sourcegraph/issues/4652) __0.5d__ 🐛👩
-- [] ~Support SSH key credentials directly in external service configs~ [#3924](https://github.com/sourcegraph/sourcegraph/issues/3924) __2d__ 👩
+- [ ] ~Exclude directories from search results~ [#6870](https://github.com/sourcegraph/sourcegraph/issues/6870) __2d__ [👩](https://app.hubspot.com/contacts/2762526/company/464956351)
+- [ ] ~Gitlab OAuth certificate signed by unknown authority~ [#4652](https://github.com/sourcegraph/sourcegraph/issues/4652) __0.5d__ 🐛👩
+- [ ] ~Support SSH key credentials directly in external service configs~ [#3924](https://github.com/sourcegraph/sourcegraph/issues/3924) __2d__ 👩
 - [x] ~docs: Ensure new arch for repo-updater is reflected in dev docs~ [#3911](https://github.com/sourcegraph/sourcegraph/issues/3911) __0.5d__ 🧶
-- [] ~docs: Document using an alternate clone URL for repos~ [#658](https://github.com/sourcegraph/sourcegraph/issues/658) __0.5d__ 🧶
+- [ ] ~docs: Document using an alternate clone URL for repos~ [#658](https://github.com/sourcegraph/sourcegraph/issues/658) __0.5d__ 🧶
 
 @kzh: __6.50d__
 
@@ -37,7 +37,7 @@
 - [x] Automation should never miss search results [#7861](https://github.com/sourcegraph/sourcegraph/issues/7861) __3d__ 🐛🧶
 - [x] a8n: Finish implementation of `src actions exec` [#7850](https://github.com/sourcegraph/sourcegraph/issues/7850) __3d__ 🛠️
 - [x] Send pings about Automation usage to Sourcegraph [#7711](https://github.com/sourcegraph/sourcegraph/issues/7711) __1d__ 
-- [] ~Write C# LSIF indexer~ [#7760](https://github.com/sourcegraph/sourcegraph/issues/7760) 🛠️
+- [ ] ~Write C# LSIF indexer~ [#7760](https://github.com/sourcegraph/sourcegraph/issues/7760) 🛠️
 - [x] ~a8n Spike: Add ability to "stack diffs" (RFC 92)~ [#7721](https://github.com/sourcegraph/sourcegraph/issues/7721) __3d__ 🛠️
 
 @rvantonder: __10.00d__
@@ -47,9 +47,9 @@
 - [x] Enforce warnings for unsupported parameters and filters in structural search [#7293](https://github.com/sourcegraph/sourcegraph/issues/7293) __1d__ 🧶
 - [x] Backend returns invalid filter chip with space "lang:ignore list" [#6498](https://github.com/sourcegraph/sourcegraph/issues/6498) __2d__ [👩](https://app.hubspot.com/contacts/2762526/company/419771425)🐛
 - [x] Impossible to search for colons in literal search [#6490](https://github.com/sourcegraph/sourcegraph/issues/6490) __2d__ 🐛
-- [] ~search: Support AND / OR / NOT predicate language in search queries~ [#7823](https://github.com/sourcegraph/sourcegraph/issues/7823) 👩🛠️
-- [] ~search filter `archived`/`fork` "yes/no/only" values are confusing~ [#7003](https://github.com/sourcegraph/sourcegraph/issues/7003) __4d__ [👩](https://app.hubspot.com/contacts/2762526/company/1749284052)🛠️
-- [] ~Address repohascommitafter search filter performance bottleneck~ [#6745](https://github.com/sourcegraph/sourcegraph/issues/6745) __1d__ 👩🕵️
+- [ ] ~search: Support AND / OR / NOT predicate language in search queries~ [#7823](https://github.com/sourcegraph/sourcegraph/issues/7823) 👩🛠️
+- [ ] ~search filter `archived`/`fork` "yes/no/only" values are confusing~ [#7003](https://github.com/sourcegraph/sourcegraph/issues/7003) __4d__ [👩](https://app.hubspot.com/contacts/2762526/company/1749284052)🛠️
+- [ ] ~Address repohascommitafter search filter performance bottleneck~ [#6745](https://github.com/sourcegraph/sourcegraph/issues/6745) __1d__ 👩🕵️
 
 @ryanslade: __8.00d__
 
@@ -62,8 +62,8 @@
 - [x] a8n/core: GraphQL API for an extended campaign list view [#7553](https://github.com/sourcegraph/sourcegraph/issues/7553) __2d__ 🛠️
 - [x] a8n/core: Expose labels of all changesets in campaign in GraphQL API [#7549](https://github.com/sourcegraph/sourcegraph/issues/7549) __1d__ 
 - [x] a8n/core: Expose CI status on changesets [#7093](https://github.com/sourcegraph/sourcegraph/issues/7093) __2d__ 🛠️
-- [] ~a8n/core: Extend GraphQL API to include participant users involved in the campaign~ [#7552](https://github.com/sourcegraph/sourcegraph/issues/7552) __1d__ 🛠️
-- [] ~a8n/core: Expose comments of all changesets in campaign in GraphQL API~ [#7548](https://github.com/sourcegraph/sourcegraph/issues/7548) __2d__ 🛠️
+- [ ] ~a8n/core: Extend GraphQL API to include participant users involved in the campaign~ [#7552](https://github.com/sourcegraph/sourcegraph/issues/7552) __1d__ 🛠️
+- [ ] ~a8n/core: Expose comments of all changesets in campaign in GraphQL API~ [#7548](https://github.com/sourcegraph/sourcegraph/issues/7548) __2d__ 🛠️
 - [x] ~Diagnose and fix slow /.api/registry/extensions endpoint~ [#7544](https://github.com/sourcegraph/sourcegraph/issues/7544) __1d__ 🧶
 - [x] ~campaigns: Heuristic syncing of Changesets and ChangesetEvents~ [#6388](https://github.com/sourcegraph/sourcegraph/issues/6388) __4d__ 🧶
 
@@ -74,7 +74,7 @@
 - [x] Prevent upgrading more than one minor version at a time [#7702](https://github.com/sourcegraph/sourcegraph/issues/7702) __1d__ 🐛
 - [x] Redis AOF file grows unbounded due to frequent container restarts [#3300](https://github.com/sourcegraph/sourcegraph/issues/3300) __2d__ 
 - [x] redis: Log spam warning when redis is loading the dataset in memory [#2904](https://github.com/sourcegraph/sourcegraph/issues/2904) 🐛👩
-- [] ~Reject invalid externalURL with non-/ path~ [#7884](https://github.com/sourcegraph/sourcegraph/issues/7884) __0.5d__ 🐛
+- [ ] ~Reject invalid externalURL with non-/ path~ [#7884](https://github.com/sourcegraph/sourcegraph/issues/7884) __0.5d__ 🐛
 
 @unknwon: __16.00d__
 
@@ -95,8 +95,8 @@
 - [x] Querying repository by name with github.com prefix always returns empty string for name [#5125](https://github.com/sourcegraph/sourcegraph/issues/5125) __1.5d__ 🐛
 - [x] unused site setting git.cloneURLToRepositoryName [#3768](https://github.com/sourcegraph/sourcegraph/issues/3768) __0.5d__ 🧶
 - [x] postgresql: (Auto)tune DB pool sizes based on max_connections [#3473](https://github.com/sourcegraph/sourcegraph/issues/3473) __3d__ [👩](https://app.hubspot.com/contacts/2762526/company/419771425)
-- [] ~Make new pricing tiers reflected in feature access~ [#7927](https://github.com/sourcegraph/sourcegraph/issues/7927) __1d__ 🐛
+- [ ] ~Make new pricing tiers reflected in feature access~ [#7927](https://github.com/sourcegraph/sourcegraph/issues/7927) __1d__ 🐛
 - [x] ~RFC 40: Add Prometheus metrics~ [#7827](https://github.com/sourcegraph/sourcegraph/issues/7827) __1d__ 🛠️
 - [x] ~sourcegraph/security-issues~ [#53](https://github.com/sourcegraph/security-issues/issues/53) 
-- [] ~Forbidden - CSRF token invalid~ [#7368](https://github.com/sourcegraph/sourcegraph/issues/7368) __2d__ 🐛
-- [] ~Auth: explicit session invalidation~ [#1126](https://github.com/sourcegraph/sourcegraph/issues/1126) __2d__ 🔒
+- [ ] ~Forbidden - CSRF token invalid~ [#7368](https://github.com/sourcegraph/sourcegraph/issues/7368) __2d__ 🐛
+- [ ] ~Auth: explicit session invalidation~ [#1126](https://github.com/sourcegraph/sourcegraph/issues/1126) __2d__ 🔒
