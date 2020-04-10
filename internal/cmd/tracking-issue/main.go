@@ -152,7 +152,12 @@ type Workload struct {
 }
 
 func (wl *Workload) PrintTo(w io.Writer) error {
-	_, err := fmt.Fprintf(w, "\n@%s: __%.2fd__\n\n", wl.Assignee, wl.Days)
+	var days string
+	if wl.Days > 0 {
+		days = fmt.Sprintf(": __%.2fd__", wl.Days)
+	}
+
+	_, err := fmt.Fprintf(w, "\n@%s%s\n\n", wl.Assignee, days)
 	if err != nil {
 		return err
 	}
