@@ -546,6 +546,7 @@ func main() {
 		QueryRunner(),
 		RepoUpdater(),
 		Searcher(),
+		Symbols(),
 		SyntectServer(),
 	} {
 		if grafanaDir != "" {
