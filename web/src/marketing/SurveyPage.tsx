@@ -185,27 +185,18 @@ export interface TweetFeedbackProps {
 }
 
 const SCORE_TO_TWEET = 9
-class TweetFeedback extends React.Component<TweetFeedbackProps> {
-    private getMessage(): string {
-        return `After using @srcgraph: ${encodeURIComponent(this.props.feedback)}`
+const TweetFeedback: React.FunctionComponent<TweetFeedbackProps> = ({ feedback, score }) => {
+    if (score >= SCORE_TO_TWEET) {
+        const url = new URL('https://twitter.com/intent/tweet')
+        url.searchParams.set('text', `After using @srcgraph: ${feedback}`)
+        return (
+            <a className="btn btn-primary mt-3" href={url.href} target="_blank" rel="noreferrer noopener">
+                <TwitterIcon className="icon-inline mr-2" />
+                Tweet feedback
+            </a>
+        )
     }
-
-    public render(): JSX.Element | null {
-        if (this.props.score >= SCORE_TO_TWEET) {
-            return (
-                <a
-                    className="btn btn-primary mt-3"
-                    href={`https://twitter.com/intent/tweet?text=${this.getMessage()}`}
-                    target="_blank"
-                    rel="noreferrer noopener"
-                >
-                    <TwitterIcon className="icon-inline mr-2" />
-                    Tweet feedback
-                </a>
-            )
-        }
-        return null
-    }
+    return null
 }
 
 export class SurveyPage extends React.Component<SurveyPageProps> {
