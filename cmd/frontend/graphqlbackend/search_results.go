@@ -560,7 +560,20 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (*SearchResultsResolv
 	// If the request specifies stable:truthy, use pagination to return a stable ordering.
 	if r.query.BoolValue("stable") {
 		result, err := r.paginatedResults(ctx)
-		if err == nil && !result.cursor.Finished {
+		if err != nil {
+			return nil, err
+		}
+		if result == nil {
+			// paginatedResults should be ensuring that result is
+			// non-nil, but the possibility that this changes at a
+			// later stage is too scary to entertain.
+			return &SearchResultsResolver{}, nil
+		}
+		if result.cursor == nil {
+			// Perhaps an alert was raised.
+			return result, err
+		}
+		if !result.cursor.Finished {
 			// For stable result queries limitHit = true implies
 			// there is a next cursor, and more results may exist.
 			result.searchResultsCommon.limitHit = true
