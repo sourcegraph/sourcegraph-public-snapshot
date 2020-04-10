@@ -52,11 +52,12 @@
 // Diff views
 .diff-view {
     .file-header {
+        flex-wrap: wrap;
         .file-info {
             flex: 0 2 auto !important;
         }
         .file-actions {
-            flex: 1 1 50%;
+            flex: 1 1 auto;
             margin-left: 1rem;
             display: flex;
             align-items: center;
