@@ -1,3 +1,5 @@
 golang 1.14.1
 yarn 1.22.4
 fd 7.4.0
+dhall 15.0.0
+cue 0.1.0
