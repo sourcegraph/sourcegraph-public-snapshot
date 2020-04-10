@@ -7,12 +7,14 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/machinebox/graphql"
 	"golang.org/x/oauth2"
@@ -63,9 +65,7 @@ func run(token, org, milestone, labels string, update bool) (err error) {
 	}
 
 	workloads := workloads(issues, prs, milestone)
-	work := generate(workloads, milestone)
-
-	body, err := patchIssueBody(tracking, work)
+	body, err := patchIssueBody(tracking, generate(workloads))
 	if err != nil {
 		return err
 	}
@@ -86,7 +86,7 @@ func run(token, org, milestone, labels string, update bool) (err error) {
 func trackingIssue(org, milestone string, issues []*Issue) (*Issue, error) {
 	var tracking []*Issue
 	for _, issue := range issues {
-		if isTrackingIssue(issue, org, milestone) {
+		if issue.IsTrackingIssue(org, milestone) {
 			tracking = append(tracking, issue)
 		}
 	}
@@ -99,21 +99,6 @@ func trackingIssue(org, milestone string, issues []*Issue) (*Issue, error) {
 	default:
 		return nil, errors.New("more than one tracking issue found")
 	}
-}
-
-func isTrackingIssue(issue *Issue, org, milestone string) bool {
-	return has("tracking", issue.Labels) &&
-		strings.HasPrefix(issue.Repository, org) &&
-		issue.Milestone == milestone
-}
-
-func has(label string, labels []string) bool {
-	for _, l := range labels {
-		if label == l {
-			return true
-		}
-	}
-	return false
 }
 
 func patchIssueBody(issue *Issue, work string) (body string, err error) {
@@ -166,6 +151,36 @@ type Workload struct {
 	PullRequestIssues map[*PullRequest][]*Issue
 }
 
+func (wl *Workload) WriteTo(w io.Writer) error {
+	_, err := fmt.Fprintf(w, "\n@%s: __%.2fd__\n\n", wl.Assignee, wl.Days)
+	if err != nil {
+		return err
+	}
+
+	for _, issue := range wl.Issues {
+		if err = issue.WriteTo(w); err != nil {
+			return err
+		}
+
+		for _, pr := range wl.IssuePullRequests[issue] {
+			if err = pr.WriteTo(w); err != nil {
+				return err
+			}
+		}
+	}
+
+	// Put all PRs that aren't linked to issues top-level
+	for _, pr := range wl.PullRequests {
+		if issues := wl.PullRequestIssues[pr]; len(issues) == 0 {
+			if err = pr.WriteTo(w); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
 func workloads(issues []*Issue, prs []*PullRequest, milestone string) map[string]*Workload {
 	workloads := map[string]*Workload{}
 
@@ -184,7 +199,7 @@ func workloads(issues []*Issue, prs []*PullRequest, milestone string) map[string
 	}
 
 	for _, issue := range issues {
-		w := workload(assignee(issue.Assignees))
+		w := workload(Assignee(issue.Assignees))
 
 		w.Issues = append(w.Issues, issue)
 		if w.IssuePullRequests == nil {
@@ -195,23 +210,25 @@ func workloads(issues []*Issue, prs []*PullRequest, milestone string) map[string
 			w.PullRequestIssues = make(map[*PullRequest][]*Issue)
 		}
 
-		prs := linkedPullRequests(issue, prs)
+		linked := issue.LinkedPullRequests(prs)
 
-		w.IssuePullRequests[issue] = prs
+		w.IssuePullRequests[issue] = linked
 		for _, pr := range prs {
 			w.PullRequestIssues[pr] = append(w.PullRequestIssues[pr], issue)
 		}
 
 		if issue.Milestone == milestone {
-			estimate := estimate(issue.Labels)
-			w.Days += days(estimate)
+			estimate := Estimate(issue.Labels)
+			w.Days += Days(estimate)
+		} else {
+			issue.Deprioritised = true
 		}
 	}
 
 	return workloads
 }
 
-func generate(workloads map[string]*Workload, milestone string) string {
+func generate(workloads map[string]*Workload) string {
 	assignees := make([]string, 0, len(workloads))
 	for assignee := range workloads {
 		assignees = append(assignees, assignee)
@@ -220,177 +237,38 @@ func generate(workloads map[string]*Workload, milestone string) string {
 	sort.Strings(assignees)
 
 	var b strings.Builder
-
-	printIssue := func(issue *Issue) {
-		state := state(issue.State)
-		estimate := estimate(issue.Labels)
-		categories := categories(issue)
-		title := title(issue, milestone)
-
-		fmt.Fprintf(&b, "- [%s] %s [#%d](%s) __%s__ %s\n",
-			state,
-			title,
-			issue.Number,
-			issue.URL,
-			estimate,
-			emojis(categories),
-		)
-	}
-
 	for _, assignee := range assignees {
-		w := workloads[assignee]
-
-		fmt.Fprintf(&b, "\n@%s: __%.2fd__\n\n", assignee, w.Days)
-
-		for _, issue := range w.Issues {
-			printIssue(issue)
-
-			for _, pr := range w.IssuePullRequests[issue] {
-				state := state(pr.State)
-				categories := categories((*Issue)(pr))
-				title := title((*Issue)(pr), milestone)
-
-				fmt.Fprintf(&b, "  - [%s] %s [#%d](%s) %s\n",
-					state,
-					title,
-					pr.Number,
-					pr.URL,
-					emojis(categories),
-				)
-			}
-		}
-
-		// Put all PRs that aren't linked to issues top-level
-		for _, pr := range w.PullRequests {
-			issues := w.PullRequestIssues[pr]
-			if len(issues) == 0 {
-				printIssue((*Issue)(pr))
-			}
-		}
+		_ = workloads[assignee].WriteTo(&b)
 	}
-
 	return b.String()
 }
 
-func linkedPullRequests(issue *Issue, prs []*PullRequest) (linked []*PullRequest) {
-	for _, pr := range prs {
-		if strings.Contains(pr.Body, "#"+strconv.Itoa(issue.Number)) {
-			linked = append(linked, pr)
-		}
-	}
-	return linked
-}
-
-func title(issue *Issue, milestone string) string {
-	var title string
-
-	if issue.Private {
-		title = issue.Repository
-	} else {
-		title = issue.Title
-	}
-
-	// Cross off issues that were originally planned
-	// for the milestone but are no longer in it.
-	if issue.Milestone != milestone {
-		title = "~" + strings.TrimSpace(title) + "~"
-	}
-
-	return title
-}
-
-func days(estimate string) float64 {
+func Days(estimate string) float64 {
 	d, _ := strconv.ParseFloat(strings.TrimSuffix(estimate, "d"), 64)
 	return d
 }
 
-func estimate(labels []string) string {
+func Estimate(labels []string) string {
 	const prefix = "estimate/"
 	for _, label := range labels {
 		if strings.HasPrefix(label, prefix) {
 			return label[len(prefix):]
 		}
 	}
-	return "?d"
-}
-
-func state(state string) string {
-	switch strings.ToLower(state) {
-	case "closed", "merged":
-		return "x"
-	default:
-		return " "
-	}
-}
-
-func categories(issue *Issue) map[string]string {
-	categories := make(map[string]string, len(issue.Labels))
-
-	switch issue.Repository {
-	case "sourcegraph/customer":
-		categories["customer"] = emoji("customer", issue)
-	case "sourcegraph/security-issues":
-		categories["security"] = emoji("security", issue)
-	}
-
-	for _, label := range issue.Labels {
-		if emoji := emoji(label, issue); emoji != "" {
-			categories[label] = emoji
-		}
-	}
-
-	return categories
-}
-
-func emoji(category string, issue *Issue) string {
-	switch category {
-	case "customer":
-		return customer(issue)
-	case "roadmap":
-		return "🛠️"
-	case "debt":
-		return "🧶"
-	case "spike":
-		return "🕵️"
-	case "bug":
-		return "🐛"
-	case "security":
-		return "🔒"
-	default:
-		return ""
-	}
-}
-
-func emojis(categories map[string]string) string {
-	sorted := make([]string, 0, len(categories))
-	length := 0
-
-	for _, emoji := range categories {
-		sorted = append(sorted, emoji)
-		length += len(emoji)
-	}
-
-	sort.Strings(sorted)
-
-	s := make([]byte, 0, length)
-	for _, emoji := range sorted {
-		s = append(s, emoji...)
-	}
-
-	return string(s)
+	return ""
 }
 
 var matcher = regexp.MustCompile(`https://app\.hubspot\.com/contacts/2762526/company/\d+`)
 
-func customer(issue *Issue) string {
-	customer := matcher.FindString(issue.Body)
+func Customer(body string) string {
+	customer := matcher.FindString(body)
 	if customer == "" {
 		return "👩"
 	}
 	return "[👩](" + customer + ")"
 }
 
-func assignee(assignees []string) string {
+func Assignee(assignees []string) string {
 	if len(assignees) == 0 {
 		return "Unassigned"
 	}
@@ -410,11 +288,261 @@ type Issue struct {
 	Assignees  []string
 	Milestone  string
 	Author     string
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
+	ClosedAt   time.Time
+
+	Deprioritised bool
 }
 
-type PullRequest Issue
+func (issue *Issue) WriteTo(w io.Writer) error {
+	var state string
+	if strings.EqualFold(issue.State, "closed") {
+		state = "x"
+	}
 
-// listIssuesAndPullRequests lists issues and pull requests containing the given labels and belonging to the given org and milestone.
+	estimate := Estimate(issue.Labels)
+
+	if estimate != "" {
+		estimate = "__" + estimate + "__ "
+	}
+
+	_, err := fmt.Fprintf(w, "- [%s] %s [#%d](%s) %s%s\n",
+		state,
+		issue.title(),
+		issue.Number,
+		issue.URL,
+		estimate,
+		issue.Emojis(),
+	)
+
+	return err
+}
+
+func (issue *Issue) Emojis() string {
+	categories := Categories(issue.Labels, issue.Repository, issue.Body)
+	return Emojis(categories)
+}
+
+func (issue *Issue) IsTrackingIssue(org, milestone string) bool {
+	return has("tracking", issue.Labels) &&
+		strings.HasPrefix(issue.Repository, org) &&
+		issue.Milestone == milestone
+}
+
+func Emojis(categories map[string]string) string {
+	sorted := make([]string, 0, len(categories))
+	length := 0
+
+	for _, emoji := range categories {
+		sorted = append(sorted, emoji)
+		length += len(emoji)
+	}
+
+	sort.Strings(sorted)
+
+	s := make([]byte, 0, length)
+	for _, emoji := range sorted {
+		s = append(s, emoji...)
+	}
+
+	return string(s)
+}
+
+func has(label string, labels []string) bool {
+	for _, l := range labels {
+		if label == l {
+			return true
+		}
+	}
+	return false
+}
+
+func (issue *Issue) title() string {
+	var title string
+
+	if issue.Private {
+		title = issue.Repository
+	} else {
+		title = issue.Title
+	}
+
+	// Cross off issues that were originally planned
+	// for the milestone but are no longer in it.
+	if issue.Deprioritised {
+		title = "~" + strings.TrimSpace(title) + "~"
+	}
+
+	return title
+}
+
+func (issue *Issue) LinkedPullRequests(prs []*PullRequest) (linked []*PullRequest) {
+	for _, pr := range prs {
+		if strings.Contains(pr.Body, "#"+strconv.Itoa(issue.Number)) {
+			linked = append(linked, pr)
+		}
+	}
+	return linked
+}
+
+func (issue *Issue) Redact() {
+	if issue.Private {
+		issue.Title = "REDACTED"
+		issue.Labels = RedactLabels(issue.Labels)
+	}
+}
+
+func RedactLabels(labels []string) []string {
+	redacted := labels[:0]
+	for _, label := range labels {
+		if strings.HasPrefix(label, "estimate/") || strings.HasPrefix(label, "planned/") {
+			redacted = append(redacted, label)
+		}
+	}
+	return redacted
+}
+
+type PullRequest struct {
+	ID         string
+	Title      string
+	Body       string
+	Number     int
+	URL        string
+	State      string
+	Repository string
+	Private    bool
+	Labels     []string
+	Assignees  []string
+	Milestone  string
+	Author     string
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
+	ClosedAt   time.Time
+	BeganAt    time.Time // Time of the first authored commit
+}
+
+func (pr *PullRequest) WriteTo(w io.Writer) error {
+	var state string
+	if strings.EqualFold(pr.State, "merged") {
+		state = "x"
+	}
+
+	var duration string
+	if state == "x" {
+		duration = "__" + pr.Duration() + "__ "
+	}
+
+	_, err := fmt.Fprintf(w, "  - [%s] %s [#%d](%s) %s%s\n",
+		state,
+		pr.title(),
+		pr.Number,
+		pr.URL,
+		duration,
+		pr.Emojis(),
+	)
+
+	return err
+}
+
+func (pr *PullRequest) Emojis() string {
+	categories := Categories(pr.Labels, pr.Repository, pr.Body)
+	categories["pull-request"] = ":shipit:"
+	return Emojis(categories)
+}
+
+func (pr *PullRequest) title() string {
+	var title string
+
+	if pr.Private {
+		title = pr.Repository
+	} else {
+		title = pr.Title
+	}
+
+	if strings.EqualFold(pr.State, "closed") {
+		title = "~" + strings.TrimSpace(title) + "~"
+	}
+
+	return title
+}
+
+func (pr *PullRequest) Duration() string {
+	if d := pr.ClosedAt.Sub(pr.BeganAt); d > 0 {
+		return duration(d)
+	}
+	return ""
+}
+
+const (
+	day  = time.Minute * 60 * 24
+	year = 365 * day
+)
+
+func duration(d time.Duration) string {
+	if d < day {
+		return d.String()
+	}
+
+	var b strings.Builder
+
+	if d >= year {
+		years := d / year
+		fmt.Fprintf(&b, "%dy", years)
+		d -= years * year
+	}
+
+	days := d / day
+	d -= days * day
+	fmt.Fprintf(&b, "%dd%s", days, d)
+
+	return b.String()
+}
+
+func (pr *PullRequest) Redact() {
+	if pr.Private {
+		pr.Title = "REDACTED"
+		pr.Labels = RedactLabels(pr.Labels)
+	}
+}
+
+func Categories(labels []string, repository, body string) map[string]string {
+	categories := make(map[string]string, len(labels))
+
+	switch repository {
+	case "sourcegraph/customer":
+		categories["customer"] = Customer(body)
+	case "sourcegraph/security-prs":
+		categories["security"] = Emoji("security")
+	}
+
+	for _, label := range labels {
+		if label == "customer" {
+			categories[label] = Customer(body)
+		} else if emoji := Emoji(label); emoji != "" {
+			categories[label] = emoji
+		}
+	}
+
+	return categories
+}
+
+func Emoji(category string) string {
+	switch category {
+	case "roadmap":
+		return "🛠️"
+	case "debt":
+		return "🧶"
+	case "spike":
+		return "🕵️"
+	case "bug":
+		return "🐛"
+	case "security":
+		return "🔒"
+	default:
+		return ""
+	}
+}
+
 func listIssuesAndPullRequests(ctx context.Context, cli *graphql.Client, org, milestone string, labels []string) (issues []*Issue, prs []*PullRequest, _ error) {
 	type searchNode struct {
 		Typename   string `json:"__typename"`
@@ -432,6 +560,14 @@ func listIssuesAndPullRequests(ctx context.Context, cli *graphql.Client, org, mi
 		Assignees struct{ Nodes []struct{ Login string } }
 		Labels    struct{ Nodes []struct{ Name string } }
 		Milestone struct{ Title string }
+		Commits   struct {
+			Nodes []struct {
+				Commit struct{ AuthoredDate time.Time }
+			}
+		}
+		CreatedAt time.Time
+		UpdatedAt time.Time
+		ClosedAt  time.Time
 	}
 
 	type search struct {
@@ -493,33 +629,64 @@ func listIssuesAndPullRequests(ctx context.Context, cli *graphql.Client, org, mi
 		nodes := append(data.Milestoned.Nodes, data.Demilestoned.Nodes...)
 
 		for _, n := range nodes {
-			issue := &Issue{
-				ID:         n.ID,
-				Title:      n.Title,
-				Body:       n.Body,
-				State:      n.State,
-				Number:     n.Number,
-				URL:        n.URL,
-				Repository: n.Repository.NameWithOwner,
-				Private:    n.Repository.IsPrivate,
-				Assignees:  make([]string, 0, len(n.Assignees.Nodes)),
-				Labels:     make([]string, 0, len(n.Labels.Nodes)),
-				Milestone:  n.Milestone.Title,
-				Author:     n.Author.Login,
-			}
-
-			for _, assignee := range n.Assignees.Nodes {
-				issue.Assignees = append(issue.Assignees, assignee.Login)
-			}
-
-			for _, label := range n.Labels.Nodes {
-				issue.Labels = append(issue.Labels, label.Name)
-			}
-
 			switch n.Typename {
 			case "PullRequest":
-				prs = append(prs, (*PullRequest)(issue))
+				pr := &PullRequest{
+					ID:         n.ID,
+					Title:      n.Title,
+					Body:       n.Body,
+					State:      n.State,
+					Number:     n.Number,
+					URL:        n.URL,
+					Repository: n.Repository.NameWithOwner,
+					Private:    n.Repository.IsPrivate,
+					Assignees:  make([]string, 0, len(n.Assignees.Nodes)),
+					Labels:     make([]string, 0, len(n.Labels.Nodes)),
+					Milestone:  n.Milestone.Title,
+					Author:     n.Author.Login,
+					CreatedAt:  n.CreatedAt,
+					UpdatedAt:  n.UpdatedAt,
+					ClosedAt:   n.ClosedAt,
+					BeganAt:    n.Commits.Nodes[0].Commit.AuthoredDate,
+				}
+
+				for _, assignee := range n.Assignees.Nodes {
+					pr.Assignees = append(pr.Assignees, assignee.Login)
+				}
+
+				for _, label := range n.Labels.Nodes {
+					pr.Labels = append(pr.Labels, label.Name)
+				}
+
+				prs = append(prs, pr)
+
 			case "Issue":
+				issue := &Issue{
+					ID:         n.ID,
+					Title:      n.Title,
+					Body:       n.Body,
+					State:      n.State,
+					Number:     n.Number,
+					URL:        n.URL,
+					Repository: n.Repository.NameWithOwner,
+					Private:    n.Repository.IsPrivate,
+					Assignees:  make([]string, 0, len(n.Assignees.Nodes)),
+					Labels:     make([]string, 0, len(n.Labels.Nodes)),
+					Milestone:  n.Milestone.Title,
+					Author:     n.Author.Login,
+					CreatedAt:  n.CreatedAt,
+					UpdatedAt:  n.UpdatedAt,
+					ClosedAt:   n.ClosedAt,
+				}
+
+				for _, assignee := range n.Assignees.Nodes {
+					issue.Assignees = append(issue.Assignees, assignee.Login)
+				}
+
+				for _, label := range n.Labels.Nodes {
+					issue.Labels = append(issue.Labels, label.Name)
+				}
+
 				issues = append(issues, issue)
 			}
 		}
@@ -548,16 +715,6 @@ func listIssuesAndPullRequests(ctx context.Context, cli *graphql.Client, org, mi
 }
 
 func listIssuesGraphQLQuery(alias string) string {
-	const searchNodeFields = `
-		__typename
-		id, title, body, state, number, url
-		repository { nameWithOwner, isPrivate }
-		author { login }
-		assignees(first: 25) { nodes { login } }
-		labels(first: 25) { nodes { name } }
-		milestone { title }
-	`
-
 	const searchQuery = `%s: search(first: $%sCount, type: ISSUE, after: $%sCursor query: $%sQuery) {
 		pageInfo {
 			endCursor
@@ -578,9 +735,30 @@ func listIssuesGraphQLQuery(alias string) string {
 		alias,
 		alias,
 		alias,
-		searchNodeFields,
-		searchNodeFields,
+		searchNodeFields(false),
+		searchNodeFields(true),
 	)
+}
+
+func searchNodeFields(isPR bool) string {
+	fields := `
+		__typename
+		id, title, body, state, number, url
+		createdAt, closedAt
+		repository { nameWithOwner, isPrivate }
+		author { login }
+		assignees(first: 25) { nodes { login } }
+		labels(first: 25) { nodes { name } }
+		milestone { title }
+	`
+
+	if isPR {
+		fields += `
+			commits(first: 1) { nodes { commit { authoredDate } } }
+		`
+	}
+
+	return fields
 }
 
 func listIssuesSearchQuery(org, milestone string, labels []string, demilestoned bool) string {

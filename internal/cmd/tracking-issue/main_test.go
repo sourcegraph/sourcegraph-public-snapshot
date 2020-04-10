@@ -6,7 +6,6 @@ import (
 	"flag"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/machinebox/graphql"
@@ -23,7 +22,7 @@ var (
 func TestGenerate(t *testing.T) {
 	milestone := "3.13"
 	issues, prs := getIssuesAndPullRequestsFixtures(t, "sourcegraph", milestone, []string{"team/core-services"})
-	got := generate(workloads(issues, prs, milestone), milestone)
+	got := generate(workloads(issues, prs, milestone))
 	path := filepath.Join("testdata", "issue.md")
 	testutil.AssertGolden(t, path, *update, got)
 }
@@ -49,28 +48,12 @@ func getIssuesAndPullRequestsFixtures(t testing.TB, org, milestone string, label
 			t.Fatal(err)
 		}
 
-		redact := func(issue *Issue) {
-			if !issue.Private {
-				return
-			}
-
-			// Whitelist of fields to prevent leaking data in fixture.
-			labels := issue.Labels[:0]
-			for _, label := range issue.Labels {
-				if strings.HasPrefix(label, "estimate/") || strings.HasPrefix(label, "planned/") {
-					labels = append(labels, label)
-				}
-			}
-			issue.Title = "REDACTED"
-			issue.Labels = labels
-		}
-
 		for _, issue := range issues {
-			redact(issue)
+			issue.Redact()
 		}
 
 		for _, pr := range prs {
-			redact((*Issue)(pr))
+			pr.Redact()
 		}
 
 		testutil.AssertGolden(t, path, true, fixtures{issues, prs})
