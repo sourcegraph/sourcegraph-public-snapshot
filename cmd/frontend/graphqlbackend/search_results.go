@@ -564,9 +564,7 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (*SearchResultsResolv
 			return nil, err
 		}
 		if result == nil {
-			// paginatedResults should be ensuring that result is
-			// non-nil, but the possibility that this changes at a
-			// later stage is too scary to entertain.
+			// Panic if paginatedResults does not ensure a non-nil search result.
 			panic("stable search: paginated search returned nil results")
 		}
 		if result.cursor == nil {
