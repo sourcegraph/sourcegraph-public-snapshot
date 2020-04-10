@@ -412,3 +412,94 @@ func Test_Parse(t *testing.T) {
 		})
 	}
 }
+
+func Test_ScanDelimited(t *testing.T) {
+	type result struct {
+		Value  string
+		Count  int
+		ErrMsg string
+	}
+
+	cases := []struct {
+		name      string
+		input     string
+		delimiter rune
+		want      result
+	}{
+		{
+			input:     `""`,
+			delimiter: '"',
+			want:      result{Value: "", Count: 2, ErrMsg: ""},
+		},
+		{
+			input:     `"a"`,
+			delimiter: '"',
+			want:      result{Value: `a`, Count: 3, ErrMsg: ""},
+		},
+		{
+			input:     `"\""`,
+			delimiter: '"',
+			want:      result{Value: `"`, Count: 4, ErrMsg: ""},
+		},
+		{
+			input:     `"\\""`,
+			delimiter: '"',
+			want:      result{Value: `\`, Count: 4, ErrMsg: ""},
+		},
+		{
+			input:     `"\\\"`,
+			delimiter: '"',
+			want:      result{Value: "", Count: 4, ErrMsg: "unterminated escape sequence"},
+		},
+		{
+			input:     `"\\\""`,
+			delimiter: '"',
+			want:      result{Value: `\"`, Count: 6, ErrMsg: ""},
+		},
+		{
+			input:     `"a`,
+			delimiter: '"',
+			want:      result{Value: "", Count: 2, ErrMsg: `unterminated literal: expected "`},
+		},
+		{
+			input:     `"\?"`,
+			delimiter: '"',
+			want:      result{Value: "", Count: 3, ErrMsg: `unrecognized escape sequence`},
+		},
+		{
+			name:      "panic",
+			input:     `a"`,
+			delimiter: '"',
+			want:      result{},
+		},
+		{
+			input:     `/\//`,
+			delimiter: '/',
+			want:      result{Value: "/", Count: 4, ErrMsg: ""},
+		},
+	}
+
+	for _, tt := range cases {
+		if tt.name == "panic" {
+			defer func() {
+				if r := recover(); r == nil {
+					t.Errorf("expected panic for ScanDelimited")
+				}
+			}()
+			_, _, _ = ScanDelimited([]byte(tt.input), tt.delimiter)
+		}
+
+		t.Run(tt.name, func(t *testing.T) {
+			value, count, err := ScanDelimited([]byte(tt.input), tt.delimiter)
+			var errMsg string
+			if err != nil {
+				errMsg = err.Error()
+			}
+			got := result{value, count, errMsg}
+			if diff := cmp.Diff(tt.want, got); diff != "" {
+				t.Error(diff)
+			}
+
+		})
+	}
+}
