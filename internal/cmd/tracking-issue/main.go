@@ -151,19 +151,19 @@ type Workload struct {
 	PullRequestIssues map[*PullRequest][]*Issue
 }
 
-func (wl *Workload) WriteTo(w io.Writer) error {
+func (wl *Workload) PrintTo(w io.Writer) error {
 	_, err := fmt.Fprintf(w, "\n@%s: __%.2fd__\n\n", wl.Assignee, wl.Days)
 	if err != nil {
 		return err
 	}
 
 	for _, issue := range wl.Issues {
-		if err = issue.WriteTo(w); err != nil {
+		if err = issue.PrintTo(w); err != nil {
 			return err
 		}
 
 		for _, pr := range wl.IssuePullRequests[issue] {
-			if err = pr.WriteTo(w); err != nil {
+			if err = pr.PrintTo(w); err != nil {
 				return err
 			}
 		}
@@ -172,7 +172,7 @@ func (wl *Workload) WriteTo(w io.Writer) error {
 	// Put all PRs that aren't linked to issues top-level
 	for _, pr := range wl.PullRequests {
 		if issues := wl.PullRequestIssues[pr]; len(issues) == 0 {
-			if err = pr.WriteTo(w); err != nil {
+			if err = pr.PrintTo(w); err != nil {
 				return err
 			}
 		}
@@ -238,7 +238,7 @@ func generate(workloads map[string]*Workload) string {
 
 	var b strings.Builder
 	for _, assignee := range assignees {
-		_ = workloads[assignee].WriteTo(&b)
+		_ = workloads[assignee].PrintTo(&b)
 	}
 	return b.String()
 }
@@ -295,8 +295,8 @@ type Issue struct {
 	Deprioritised bool
 }
 
-func (issue *Issue) WriteTo(w io.Writer) error {
-	var state string
+func (issue *Issue) PrintTo(w io.Writer) error {
+	state := " "
 	if strings.EqualFold(issue.State, "closed") {
 		state = "x"
 	}
@@ -421,8 +421,8 @@ type PullRequest struct {
 	BeganAt    time.Time // Time of the first authored commit
 }
 
-func (pr *PullRequest) WriteTo(w io.Writer) error {
-	var state string
+func (pr *PullRequest) PrintTo(w io.Writer) error {
+	state := " "
 	if strings.EqualFold(pr.State, "merged") {
 		state = "x"
 	}
