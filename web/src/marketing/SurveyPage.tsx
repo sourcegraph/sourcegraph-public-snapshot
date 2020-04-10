@@ -13,6 +13,8 @@ import { submitSurvey } from './backend'
 import { SurveyCTA } from './SurveyToast'
 import { Subscription } from 'rxjs'
 import { ThemeProps } from '../../../shared/src/theme'
+import TwitterIcon from 'mdi-react/TwitterIcon'
+
 interface SurveyFormProps {
     location: H.Location
     history: H.History
@@ -161,7 +163,13 @@ class SurveyForm extends React.Component<SurveyFormProps, SurveyFormState> {
                     if (this.props.onSubmit) {
                         this.props.onSubmit()
                     }
-                    this.props.history.push('/survey/thanks')
+                    this.props.history.push({
+                        pathname: '/survey/thanks',
+                        state: {
+                            score: this.props.score,
+                            feedback: this.state.reason,
+                        },
+                    })
                 })
         )
     }
@@ -169,6 +177,35 @@ class SurveyForm extends React.Component<SurveyFormProps, SurveyFormState> {
 
 interface SurveyPageProps extends RouteComponentProps<{ score?: string }>, ThemeProps {
     authenticatedUser: GQL.IUser | null
+}
+
+export interface TweetFeedbackProps {
+    score: number
+    feedback: string
+}
+
+const SCORE_TO_TWEET = 8
+class TweetFeedback extends React.Component<TweetFeedbackProps> {
+    private getMessage(): string {
+        return `After using @srcgraph: ${encodeURIComponent(this.props.feedback)}`
+    }
+
+    public render(): JSX.Element | null {
+        if (this.props.score >= SCORE_TO_TWEET) {
+            return (
+                <a
+                    className="btn btn-primary mt-3"
+                    href={`https://twitter.com/intent/tweet?text=${this.getMessage()}`}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                >
+                    <TwitterIcon className="icon-inline mr-2" />
+                    Tweet feedback
+                </a>
+            )
+        }
+        return null
+    }
 }
 
 export class SurveyPage extends React.Component<SurveyPageProps> {
@@ -183,6 +220,12 @@ export class SurveyPage extends React.Component<SurveyPageProps> {
                     <PageTitle title="Thanks" />
                     <HeroPage
                         title="Thank you for sending feedback."
+                        body={
+                            <TweetFeedback
+                                score={this.props.location.state.score}
+                                feedback={this.props.location.state.feedback}
+                            />
+                        }
                         cta={<FeedbackText headerText="Anything else?" />}
                     />
                 </div>
