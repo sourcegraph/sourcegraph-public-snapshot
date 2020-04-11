@@ -362,7 +362,7 @@ goLint: check_job
 goLint: name: "./dev/check/go-lint.sh"
 
 goFmt: check_job
-goFmt: name: "./dev/check/go-fmt.sh"
+goFmt: name: "./dev/check/gofmt.sh"
 
 noLocalhostGuard: check_job
 noLocalhostGuard: name: "./dev/check/no-localhost-guard.sh"

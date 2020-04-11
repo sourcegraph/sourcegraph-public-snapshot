@@ -147,7 +147,7 @@ jobs:
       - name: ./dev/check/go-lint.sh
         run: ./dev/check/go-lint.sh
   goFmt:
-    name: ./dev/check/go-fmt.sh
+    name: ./dev/check/gofmt.sh
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -162,8 +162,8 @@ jobs:
         uses: asdf-vm/actions/plugins-add@v1.0.0
       - name: '[setup] (asdf) install tools'
         run: asdf install
-      - name: ./dev/check/go-fmt.sh
-        run: ./dev/check/go-fmt.sh
+      - name: ./dev/check/gofmt.sh
+        run: ./dev/check/gofmt.sh
   noLocalhostGuard:
     name: ./dev/check/no-localhost-guard.sh
     runs-on: ubuntu-latest
