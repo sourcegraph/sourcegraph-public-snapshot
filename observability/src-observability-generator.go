@@ -544,6 +544,7 @@ func main() {
 		PreciseCodeIntelBundleManager(),
 		PreciseCodeIntelWorker(),
 		QueryRunner(),
+		Replacer(),
 		RepoUpdater(),
 		Searcher(),
 		Symbols(),
