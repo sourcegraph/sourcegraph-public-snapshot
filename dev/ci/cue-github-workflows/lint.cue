@@ -218,7 +218,7 @@ Schema :: {
 	} & struct.MinFields(1)
 }
 
-def: step :: {
+def: step :: close({
 	// A name for your step to display on GitHub.
 	name?: string
 
@@ -263,40 +263,7 @@ def: step :: {
 
 	// The maximum number of minutes to run the step before killing the process.
 	"timeout-minutes"?: number
-}
-
-def: path :: def.globs
-
-def: name :: =~"^[_a-zA-Z][a-zA-Z0-9_-]*$"
-
-def: env :: [string]: string | number | bool & struct.MinFields(1)
-
-def: architecture :: "ARM32" | "x64" | "x86"
-
-def: branch :: def.globs
-
-def: configuration :: string | number | {
-	[string]: def.configuration
-} | [...def.configuration]
-
-def: container :: {
-	// Sets an array of environment variables in the container.
-	env?: def.env
-
-	// The Docker image to use as the container to run the action. The value can be the Docker Hub image name or a public docker registry name.
-	image: string
-
-	// Sets an array of ports to expose on the container.
-	ports?: [...number | string] & list.MinItems(1)
-
-	// Sets an array of volumes for the container to use. You can use volumes to share data between services or other steps in a job. You can specify named Docker volumes, anonymous Docker volumes, or bind mounts on the host.
-	// To specify a volume, you specify the source and destination path: <source>:<destinationPath>
-	// The <source> is a volume name or an absolute path on the host machine, and <destinationPath> is an absolute path in the container.
-	volumes?: [...=~"^[^:]+:[^:]+$"] & list.MinItems(1)
-
-	// Additional Docker container resource options. For a list of options, see https://docs.docker.com/engine/reference/commandline/create/#options.
-	options?: string
-}
+})
 
 def: event :: "check_run" | "check_suite" | "create" | "delete" | "deployment" | "deployment_status" | "fork" | "gollum" | "issue_comment" | "issues" | "label" | "member" | "milestone" | "page_build" | "project" | "project_card" | "project_column" | "public" | "pull_request" | "pull_request_review" | "pull_request_review_comment" | "push" | "release" | "status" | "watch" | "repository_dispatch"
 
@@ -322,47 +289,113 @@ def: ref :: ({
 
 def: types :: list.MinItems(1)
 
-workflow: Schema
+setup: [
+	{
+		uses: "actions/checkout@v2"
+	},
+	{
+		uses: "asdf-vm/actions/setup@v1.0.0"
+	},
+	{
+		name: "[setup] (asdf) configure .nvmrc"
+		run: """
+		bash -c \"echo 'legacy_version_file = yes' > ~/.asdfrc\"
+		"""
+	},
+	{
+		name: "[setup] (asdf) install nodejs plugin"
+		run:  "asdf plugin-add nodejs"
+	}, {
+		name: "[setup] (asdf) import nodejs keyring"
+		run: """
+		bash ~/.asdf/plugins/nodejs/bin/import-release-team-keyring
+		"""
+	}, {
+		name: "[setup] (asdf) add plugins"
+		uses: "asdf-vm/actions/plugins-add@v1.0.0"
+	}, {
 
+		name: "[setup] (asdf) install tools"
+		run: """
+		asdf install
+		"""
+	},
+]
+
+check_job :: {
+	Name = name
+	name:      string
+	"runs-on": "ubuntu-latest"
+	steps:     setup + [
+			{
+			name: Name
+			run:  Name
+		},
+	]
+}
+
+bashSyntax: check_job
+bashSyntax: name: "./dev/check/bash-syntax.sh"
+
+build: check_job
+build: name: "./dev/check/build.sh"
+
+docsite: check_job
+docsite: name: "./dev/check/docsite.sh"
+
+goDBConnImport: check_job
+goDBConnImport: name: "./dev/check/go-dbconn-import.sh"
+
+brokenURLs: check_job
+brokenURLs: name: "./dev/check/broken-urls.bash"
+
+checkOwners: check_job
+checkOwners: name: "./dev/check/check-owners.sh"
+
+goEnterpriseImport: check_job
+goEnterpriseImport: name: "./dev/check/go-enterprise-import.sh"
+
+goGenerate: check_job
+goGenerate: name: "./dev/check/go-generate.sh"
+
+goLint: check_job
+goLint: name: "./dev/check/go-lint.sh"
+
+goFmt: check_job
+goFmt: name: "./dev/check/go-fmt.sh"
+
+noLocalhostGuard: check_job
+noLocalhostGuard: name: "./dev/check/no-localhost-guard.sh"
+
+templateInlines: check_job
+templateInlines: name: "./dev/check/template-inlines.sh"
+
+todoSecurity: check_job
+todoSecurity: name: "./dev/check/todo-security.sh"
+
+yarnDeduplicate: check_job
+yarnDeduplicate: name: "./dev/check/yarn-deduplicate.sh"
+
+workflow: Schema
 workflow: {
 	name: "Check"
 	on: [
 		"push",
 	]
-	jobs: lint: {
-		"runs-on": "ubuntu-latest"
-		steps: [{
-			uses: "actions/checkout@v2"
-		}, {
-			uses: "asdf-vm/actions/setup@v1.0.0"
-		}, {
-			name: "[setup] (asdf) configure .nvmrc"
-			run: """
-		bash -c \"echo 'legacy_version_file = yes' > ~/.asdfrc\"
-
-		"""
-		}, {
-			name: "[setup] (asdf) install nodejs plugin"
-			run:  "asdf plugin-add nodejs"
-		}, {
-			name: "[setup] (asdf) import nodejs keyring"
-			run: """
-		bash ~/.asdf/plugins/nodejs/bin/import-release-team-keyring
-
-		"""
-		}, {
-			name: "[setup] (asdf) add plugins"
-			uses: "asdf-vm/actions/plugins-add@v1.0.0"
-		}, {
-			name: "[setup] (asdf) install tools"
-			run: """
-		asdf install
-
-		"""
-		}, {
-			name: "dev/check/all.sh"
-			run:  "dev/check/all.sh"
-		}]
+	jobs: {
+		"bash-syntax":        bashSyntax
+		"build":              build
+		"docsite":            docsite
+		"goDBConnImport":     goDBConnImport
+		"brokenURLs":         brokenURLs
+		"checkOwners":        checkOwners
+		"goEnterpriseImport": goEnterpriseImport
+		"goGenerate":         goGenerate
+		"goLint":             goLint
+		"goFmt":              goFmt
+		"noLocalhostGuard":   noLocalhostGuard
+		"templateInlines":    templateInlines
+		"todoSecurity":       todoSecurity
+		"yarnDeduplicate":    yarnDeduplicate
 	}
-
 }
