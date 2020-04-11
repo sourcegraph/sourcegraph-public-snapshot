@@ -38,204 +38,6 @@ jobs:
         run: asdf install
       - name: ./dev/check/docsite.sh
         run: ./dev/check/docsite.sh
-  goDBConnImport:
-    name: ./dev/check/go-dbconn-import.sh
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: asdf-vm/actions/setup@v1.0.0
-      - name: '[setup] (asdf) configure .nvmrc'
-        run: bash -c "echo 'legacy_version_file = yes' > ~/.asdfrc"
-      - name: '[setup] (asdf) install nodejs plugin'
-        run: asdf plugin-add nodejs
-      - name: '[setup] (asdf) import nodejs keyring'
-        run: bash ~/.asdf/plugins/nodejs/bin/import-release-team-keyring
-      - name: '[setup] (asdf) add plugins'
-        uses: asdf-vm/actions/plugins-add@v1.0.0
-      - name: '[setup] (asdf) install tools'
-        run: asdf install
-      - name: ./dev/check/go-dbconn-import.sh
-        run: ./dev/check/go-dbconn-import.sh
-  brokenURLs:
-    name: ./dev/check/broken-urls.bash
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: asdf-vm/actions/setup@v1.0.0
-      - name: '[setup] (asdf) configure .nvmrc'
-        run: bash -c "echo 'legacy_version_file = yes' > ~/.asdfrc"
-      - name: '[setup] (asdf) install nodejs plugin'
-        run: asdf plugin-add nodejs
-      - name: '[setup] (asdf) import nodejs keyring'
-        run: bash ~/.asdf/plugins/nodejs/bin/import-release-team-keyring
-      - name: '[setup] (asdf) add plugins'
-        uses: asdf-vm/actions/plugins-add@v1.0.0
-      - name: '[setup] (asdf) install tools'
-        run: asdf install
-      - name: ./dev/check/broken-urls.bash
-        run: ./dev/check/broken-urls.bash
-  checkOwners:
-    name: ./dev/check/check-owners.sh
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: asdf-vm/actions/setup@v1.0.0
-      - name: '[setup] (asdf) configure .nvmrc'
-        run: bash -c "echo 'legacy_version_file = yes' > ~/.asdfrc"
-      - name: '[setup] (asdf) install nodejs plugin'
-        run: asdf plugin-add nodejs
-      - name: '[setup] (asdf) import nodejs keyring'
-        run: bash ~/.asdf/plugins/nodejs/bin/import-release-team-keyring
-      - name: '[setup] (asdf) add plugins'
-        uses: asdf-vm/actions/plugins-add@v1.0.0
-      - name: '[setup] (asdf) install tools'
-        run: asdf install
-      - name: ./dev/check/check-owners.sh
-        run: ./dev/check/check-owners.sh
-  goEnterpriseImport:
-    name: ./dev/check/go-enterprise-import.sh
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: asdf-vm/actions/setup@v1.0.0
-      - name: '[setup] (asdf) configure .nvmrc'
-        run: bash -c "echo 'legacy_version_file = yes' > ~/.asdfrc"
-      - name: '[setup] (asdf) install nodejs plugin'
-        run: asdf plugin-add nodejs
-      - name: '[setup] (asdf) import nodejs keyring'
-        run: bash ~/.asdf/plugins/nodejs/bin/import-release-team-keyring
-      - name: '[setup] (asdf) add plugins'
-        uses: asdf-vm/actions/plugins-add@v1.0.0
-      - name: '[setup] (asdf) install tools'
-        run: asdf install
-      - name: ./dev/check/go-enterprise-import.sh
-        run: ./dev/check/go-enterprise-import.sh
-  goGenerate:
-    name: ./dev/check/go-generate.sh
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: asdf-vm/actions/setup@v1.0.0
-      - name: '[setup] (asdf) configure .nvmrc'
-        run: bash -c "echo 'legacy_version_file = yes' > ~/.asdfrc"
-      - name: '[setup] (asdf) install nodejs plugin'
-        run: asdf plugin-add nodejs
-      - name: '[setup] (asdf) import nodejs keyring'
-        run: bash ~/.asdf/plugins/nodejs/bin/import-release-team-keyring
-      - name: '[setup] (asdf) add plugins'
-        uses: asdf-vm/actions/plugins-add@v1.0.0
-      - name: '[setup] (asdf) install tools'
-        run: asdf install
-      - name: ./dev/check/go-generate.sh
-        run: ./dev/check/go-generate.sh
-  goLint:
-    name: ./dev/check/go-lint.sh
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: asdf-vm/actions/setup@v1.0.0
-      - name: '[setup] (asdf) configure .nvmrc'
-        run: bash -c "echo 'legacy_version_file = yes' > ~/.asdfrc"
-      - name: '[setup] (asdf) install nodejs plugin'
-        run: asdf plugin-add nodejs
-      - name: '[setup] (asdf) import nodejs keyring'
-        run: bash ~/.asdf/plugins/nodejs/bin/import-release-team-keyring
-      - name: '[setup] (asdf) add plugins'
-        uses: asdf-vm/actions/plugins-add@v1.0.0
-      - name: '[setup] (asdf) install tools'
-        run: asdf install
-      - name: ./dev/check/go-lint.sh
-        run: ./dev/check/go-lint.sh
-  goFmt:
-    name: ./dev/check/gofmt.sh
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: asdf-vm/actions/setup@v1.0.0
-      - name: '[setup] (asdf) configure .nvmrc'
-        run: bash -c "echo 'legacy_version_file = yes' > ~/.asdfrc"
-      - name: '[setup] (asdf) install nodejs plugin'
-        run: asdf plugin-add nodejs
-      - name: '[setup] (asdf) import nodejs keyring'
-        run: bash ~/.asdf/plugins/nodejs/bin/import-release-team-keyring
-      - name: '[setup] (asdf) add plugins'
-        uses: asdf-vm/actions/plugins-add@v1.0.0
-      - name: '[setup] (asdf) install tools'
-        run: asdf install
-      - name: ./dev/check/gofmt.sh
-        run: ./dev/check/gofmt.sh
-  noLocalhostGuard:
-    name: ./dev/check/no-localhost-guard.sh
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: asdf-vm/actions/setup@v1.0.0
-      - name: '[setup] (asdf) configure .nvmrc'
-        run: bash -c "echo 'legacy_version_file = yes' > ~/.asdfrc"
-      - name: '[setup] (asdf) install nodejs plugin'
-        run: asdf plugin-add nodejs
-      - name: '[setup] (asdf) import nodejs keyring'
-        run: bash ~/.asdf/plugins/nodejs/bin/import-release-team-keyring
-      - name: '[setup] (asdf) add plugins'
-        uses: asdf-vm/actions/plugins-add@v1.0.0
-      - name: '[setup] (asdf) install tools'
-        run: asdf install
-      - name: ./dev/check/no-localhost-guard.sh
-        run: ./dev/check/no-localhost-guard.sh
-  templateInlines:
-    name: ./dev/check/template-inlines.sh
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: asdf-vm/actions/setup@v1.0.0
-      - name: '[setup] (asdf) configure .nvmrc'
-        run: bash -c "echo 'legacy_version_file = yes' > ~/.asdfrc"
-      - name: '[setup] (asdf) install nodejs plugin'
-        run: asdf plugin-add nodejs
-      - name: '[setup] (asdf) import nodejs keyring'
-        run: bash ~/.asdf/plugins/nodejs/bin/import-release-team-keyring
-      - name: '[setup] (asdf) add plugins'
-        uses: asdf-vm/actions/plugins-add@v1.0.0
-      - name: '[setup] (asdf) install tools'
-        run: asdf install
-      - name: ./dev/check/template-inlines.sh
-        run: ./dev/check/template-inlines.sh
-  todoSecurity:
-    name: ./dev/check/todo-security.sh
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: asdf-vm/actions/setup@v1.0.0
-      - name: '[setup] (asdf) configure .nvmrc'
-        run: bash -c "echo 'legacy_version_file = yes' > ~/.asdfrc"
-      - name: '[setup] (asdf) install nodejs plugin'
-        run: asdf plugin-add nodejs
-      - name: '[setup] (asdf) import nodejs keyring'
-        run: bash ~/.asdf/plugins/nodejs/bin/import-release-team-keyring
-      - name: '[setup] (asdf) add plugins'
-        uses: asdf-vm/actions/plugins-add@v1.0.0
-      - name: '[setup] (asdf) install tools'
-        run: asdf install
-      - name: ./dev/check/todo-security.sh
-        run: ./dev/check/todo-security.sh
-  yarnDeduplicate:
-    name: ./dev/check/yarn-deduplicate.sh
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: asdf-vm/actions/setup@v1.0.0
-      - name: '[setup] (asdf) configure .nvmrc'
-        run: bash -c "echo 'legacy_version_file = yes' > ~/.asdfrc"
-      - name: '[setup] (asdf) install nodejs plugin'
-        run: asdf plugin-add nodejs
-      - name: '[setup] (asdf) import nodejs keyring'
-        run: bash ~/.asdf/plugins/nodejs/bin/import-release-team-keyring
-      - name: '[setup] (asdf) add plugins'
-        uses: asdf-vm/actions/plugins-add@v1.0.0
-      - name: '[setup] (asdf) install tools'
-        run: asdf install
-      - name: ./dev/check/yarn-deduplicate.sh
-        run: ./dev/check/yarn-deduplicate.sh
   bash-syntax:
     name: ./dev/check/bash-syntax.sh
     runs-on: ubuntu-latest
@@ -254,3 +56,201 @@ jobs:
         run: asdf install
       - name: ./dev/check/bash-syntax.sh
         run: ./dev/check/bash-syntax.sh
+  go-db-conn-import:
+    name: ./dev/check/go-dbconn-import.sh
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: asdf-vm/actions/setup@v1.0.0
+      - name: '[setup] (asdf) configure .nvmrc'
+        run: bash -c "echo 'legacy_version_file = yes' > ~/.asdfrc"
+      - name: '[setup] (asdf) install nodejs plugin'
+        run: asdf plugin-add nodejs
+      - name: '[setup] (asdf) import nodejs keyring'
+        run: bash ~/.asdf/plugins/nodejs/bin/import-release-team-keyring
+      - name: '[setup] (asdf) add plugins'
+        uses: asdf-vm/actions/plugins-add@v1.0.0
+      - name: '[setup] (asdf) install tools'
+        run: asdf install
+      - name: ./dev/check/go-dbconn-import.sh
+        run: ./dev/check/go-dbconn-import.sh
+  broken-urls:
+    name: ./dev/check/broken-urls.bash
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: asdf-vm/actions/setup@v1.0.0
+      - name: '[setup] (asdf) configure .nvmrc'
+        run: bash -c "echo 'legacy_version_file = yes' > ~/.asdfrc"
+      - name: '[setup] (asdf) install nodejs plugin'
+        run: asdf plugin-add nodejs
+      - name: '[setup] (asdf) import nodejs keyring'
+        run: bash ~/.asdf/plugins/nodejs/bin/import-release-team-keyring
+      - name: '[setup] (asdf) add plugins'
+        uses: asdf-vm/actions/plugins-add@v1.0.0
+      - name: '[setup] (asdf) install tools'
+        run: asdf install
+      - name: ./dev/check/broken-urls.bash
+        run: ./dev/check/broken-urls.bash
+  check-owners:
+    name: ./dev/check/check-owners.sh
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: asdf-vm/actions/setup@v1.0.0
+      - name: '[setup] (asdf) configure .nvmrc'
+        run: bash -c "echo 'legacy_version_file = yes' > ~/.asdfrc"
+      - name: '[setup] (asdf) install nodejs plugin'
+        run: asdf plugin-add nodejs
+      - name: '[setup] (asdf) import nodejs keyring'
+        run: bash ~/.asdf/plugins/nodejs/bin/import-release-team-keyring
+      - name: '[setup] (asdf) add plugins'
+        uses: asdf-vm/actions/plugins-add@v1.0.0
+      - name: '[setup] (asdf) install tools'
+        run: asdf install
+      - name: ./dev/check/check-owners.sh
+        run: ./dev/check/check-owners.sh
+  go-enterprise-import:
+    name: ./dev/check/go-enterprise-import.sh
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: asdf-vm/actions/setup@v1.0.0
+      - name: '[setup] (asdf) configure .nvmrc'
+        run: bash -c "echo 'legacy_version_file = yes' > ~/.asdfrc"
+      - name: '[setup] (asdf) install nodejs plugin'
+        run: asdf plugin-add nodejs
+      - name: '[setup] (asdf) import nodejs keyring'
+        run: bash ~/.asdf/plugins/nodejs/bin/import-release-team-keyring
+      - name: '[setup] (asdf) add plugins'
+        uses: asdf-vm/actions/plugins-add@v1.0.0
+      - name: '[setup] (asdf) install tools'
+        run: asdf install
+      - name: ./dev/check/go-enterprise-import.sh
+        run: ./dev/check/go-enterprise-import.sh
+  go-generate:
+    name: ./dev/check/go-generate.sh
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: asdf-vm/actions/setup@v1.0.0
+      - name: '[setup] (asdf) configure .nvmrc'
+        run: bash -c "echo 'legacy_version_file = yes' > ~/.asdfrc"
+      - name: '[setup] (asdf) install nodejs plugin'
+        run: asdf plugin-add nodejs
+      - name: '[setup] (asdf) import nodejs keyring'
+        run: bash ~/.asdf/plugins/nodejs/bin/import-release-team-keyring
+      - name: '[setup] (asdf) add plugins'
+        uses: asdf-vm/actions/plugins-add@v1.0.0
+      - name: '[setup] (asdf) install tools'
+        run: asdf install
+      - name: ./dev/check/go-generate.sh
+        run: ./dev/check/go-generate.sh
+  go-lint:
+    name: ./dev/check/go-lint.sh
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: asdf-vm/actions/setup@v1.0.0
+      - name: '[setup] (asdf) configure .nvmrc'
+        run: bash -c "echo 'legacy_version_file = yes' > ~/.asdfrc"
+      - name: '[setup] (asdf) install nodejs plugin'
+        run: asdf plugin-add nodejs
+      - name: '[setup] (asdf) import nodejs keyring'
+        run: bash ~/.asdf/plugins/nodejs/bin/import-release-team-keyring
+      - name: '[setup] (asdf) add plugins'
+        uses: asdf-vm/actions/plugins-add@v1.0.0
+      - name: '[setup] (asdf) install tools'
+        run: asdf install
+      - name: ./dev/check/go-lint.sh
+        run: ./dev/check/go-lint.sh
+  gofmt:
+    name: ./dev/check/gofmt.sh
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: asdf-vm/actions/setup@v1.0.0
+      - name: '[setup] (asdf) configure .nvmrc'
+        run: bash -c "echo 'legacy_version_file = yes' > ~/.asdfrc"
+      - name: '[setup] (asdf) install nodejs plugin'
+        run: asdf plugin-add nodejs
+      - name: '[setup] (asdf) import nodejs keyring'
+        run: bash ~/.asdf/plugins/nodejs/bin/import-release-team-keyring
+      - name: '[setup] (asdf) add plugins'
+        uses: asdf-vm/actions/plugins-add@v1.0.0
+      - name: '[setup] (asdf) install tools'
+        run: asdf install
+      - name: ./dev/check/gofmt.sh
+        run: ./dev/check/gofmt.sh
+  no-localhost-guard:
+    name: ./dev/check/no-localhost-guard.sh
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: asdf-vm/actions/setup@v1.0.0
+      - name: '[setup] (asdf) configure .nvmrc'
+        run: bash -c "echo 'legacy_version_file = yes' > ~/.asdfrc"
+      - name: '[setup] (asdf) install nodejs plugin'
+        run: asdf plugin-add nodejs
+      - name: '[setup] (asdf) import nodejs keyring'
+        run: bash ~/.asdf/plugins/nodejs/bin/import-release-team-keyring
+      - name: '[setup] (asdf) add plugins'
+        uses: asdf-vm/actions/plugins-add@v1.0.0
+      - name: '[setup] (asdf) install tools'
+        run: asdf install
+      - name: ./dev/check/no-localhost-guard.sh
+        run: ./dev/check/no-localhost-guard.sh
+  template-inlines:
+    name: ./dev/check/template-inlines.sh
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: asdf-vm/actions/setup@v1.0.0
+      - name: '[setup] (asdf) configure .nvmrc'
+        run: bash -c "echo 'legacy_version_file = yes' > ~/.asdfrc"
+      - name: '[setup] (asdf) install nodejs plugin'
+        run: asdf plugin-add nodejs
+      - name: '[setup] (asdf) import nodejs keyring'
+        run: bash ~/.asdf/plugins/nodejs/bin/import-release-team-keyring
+      - name: '[setup] (asdf) add plugins'
+        uses: asdf-vm/actions/plugins-add@v1.0.0
+      - name: '[setup] (asdf) install tools'
+        run: asdf install
+      - name: ./dev/check/template-inlines.sh
+        run: ./dev/check/template-inlines.sh
+  todo-security:
+    name: ./dev/check/todo-security.sh
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: asdf-vm/actions/setup@v1.0.0
+      - name: '[setup] (asdf) configure .nvmrc'
+        run: bash -c "echo 'legacy_version_file = yes' > ~/.asdfrc"
+      - name: '[setup] (asdf) install nodejs plugin'
+        run: asdf plugin-add nodejs
+      - name: '[setup] (asdf) import nodejs keyring'
+        run: bash ~/.asdf/plugins/nodejs/bin/import-release-team-keyring
+      - name: '[setup] (asdf) add plugins'
+        uses: asdf-vm/actions/plugins-add@v1.0.0
+      - name: '[setup] (asdf) install tools'
+        run: asdf install
+      - name: ./dev/check/todo-security.sh
+        run: ./dev/check/todo-security.sh
+  yarn-deduplicate:
+    name: ./dev/check/yarn-deduplicate.sh
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: asdf-vm/actions/setup@v1.0.0
+      - name: '[setup] (asdf) configure .nvmrc'
+        run: bash -c "echo 'legacy_version_file = yes' > ~/.asdfrc"
+      - name: '[setup] (asdf) install nodejs plugin'
+        run: asdf plugin-add nodejs
+      - name: '[setup] (asdf) import nodejs keyring'
+        run: bash ~/.asdf/plugins/nodejs/bin/import-release-team-keyring
+      - name: '[setup] (asdf) add plugins'
+        uses: asdf-vm/actions/plugins-add@v1.0.0
+      - name: '[setup] (asdf) install tools'
+        run: asdf install
+      - name: ./dev/check/yarn-deduplicate.sh
+        run: ./dev/check/yarn-deduplicate.sh

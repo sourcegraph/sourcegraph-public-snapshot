@@ -383,19 +383,19 @@ workflow: {
 		"push",
 	]
 	jobs: {
-		"bash-syntax":        bashSyntax
-		"build":              build
-		"docsite":            docsite
-		"goDBConnImport":     goDBConnImport
-		"brokenURLs":         brokenURLs
-		"checkOwners":        checkOwners
-		"goEnterpriseImport": goEnterpriseImport
-		"goGenerate":         goGenerate
-		"goLint":             goLint
-		"goFmt":              goFmt
-		"noLocalhostGuard":   noLocalhostGuard
-		"templateInlines":    templateInlines
-		"todoSecurity":       todoSecurity
-		"yarnDeduplicate":    yarnDeduplicate
+		"bash-syntax":          bashSyntax
+		"build":                build
+		"docsite":              docsite
+		"go-db-conn-import":    goDBConnImport
+		"broken-urls":          brokenURLs
+		"check-owners":         checkOwners
+		"go-enterprise-import": goEnterpriseImport
+		"go-generate":          goGenerate
+		"go-lint":              goLint
+		"gofmt":                goFmt
+		"no-localhost-guard":   noLocalhostGuard
+		"template-inlines":     templateInlines
+		"todo-security":        todoSecurity
+		"yarn-deduplicate":     yarnDeduplicate
 	}
 }
