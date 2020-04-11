@@ -45,6 +45,7 @@ export const ViewOnSourcegraphButton: React.FunctionComponent<ViewOnSourcegraphB
     const mutedIconClassName = classNames('open-on-sourcegraph__icon--muted', iconClassName)
     const commonProps: Partial<SourcegraphIconButtonProps> = {
         className,
+        iconClassName,
         target: '_blank',
         rel: 'noopener noreferrer',
     }
