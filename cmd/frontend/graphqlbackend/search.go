@@ -88,7 +88,7 @@ func NewSearchImplementer(args *SearchArgs) (SearchImplementer, error) {
 
 	var queryInfo query.QueryInfo
 	if conf.AndOrQueryEnabled() {
-		queryInfo, err = query.ParseAndOr(args.Query)
+		queryInfo, err = query.ProcessAndOr(args.Query)
 		if err != nil {
 			return alertForQuery(args.Query, err), nil
 		}
@@ -817,10 +817,11 @@ func SearchRepos(ctx context.Context, plainQuery string) ([]*RepositoryResolver,
 	var queryInfo query.QueryInfo
 	var err error
 	if conf.AndOrQueryEnabled() {
-		queryInfo, err = query.ParseAndOr(plainQuery)
+		andOrQuery, err := query.ParseAndOr(plainQuery)
 		if err != nil {
 			return nil, err
 		}
+		queryInfo = &query.AndOrQuery{Query: andOrQuery}
 	} else {
 		queryInfo, err = query.ParseAndCheck(queryString)
 		if err != nil {

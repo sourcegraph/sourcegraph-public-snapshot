@@ -5,7 +5,147 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/internal/search/query/types"
 )
+
+func TestAndOrQuery_Validation(t *testing.T) {
+	cases := []struct {
+		input string
+		want  string
+	}{
+		{
+			input: "case:yes case:no",
+			want:  `field "case" may not be used more than once`,
+		},
+		{
+			input: "repo:[",
+			want:  "error parsing regexp: missing closing ]: `[`",
+		},
+		{
+			input: "-index:yes",
+			want:  `field "index" does not support negation`,
+		},
+		{
+			input: "lang:c lang:go lang:stephenhas9cats",
+			want:  `unknown language: "stephenhas9cats"`,
+		},
+		{
+			input: "stable:???",
+			want:  `invalid boolean "???"`,
+		},
+		{
+			input: "mr:potato",
+			want:  `unrecognized field "mr"`,
+		},
+	}
+	for _, c := range cases {
+		t.Run("validate and/or query", func(t *testing.T) {
+			_, err := ProcessAndOr(c.input)
+			if err == nil {
+				t.Fatal("expected test to fail")
+			}
+			if diff := cmp.Diff(c.want, err.Error()); diff != "" {
+				t.Fatal(diff)
+			}
+
+		})
+
+	}
+}
+
+func TestAndOrQuery_IsCaseSensitive(t *testing.T) {
+	cases := []struct {
+		name  string
+		input string
+		want  bool
+	}{
+		{
+			name:  "yes",
+			input: "case:yes",
+			want:  true,
+		},
+		{
+			name:  "no (explicit)",
+			input: "case:no",
+			want:  false,
+		},
+		{
+			name:  "no (default)",
+			input: "case:no",
+			want:  false,
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			query, err := ProcessAndOr(c.input)
+			if err != nil {
+				t.Fatal(err)
+			}
+			got := query.IsCaseSensitive()
+			if got != c.want {
+				t.Errorf("got %v, want %v", got, c.want)
+			}
+		})
+	}
+}
+
+func TestAndOrQuery_RegexpPatterns(t *testing.T) {
+	type want struct {
+		values        []string
+		negatedValues []string
+	}
+	c := struct {
+		query string
+		field string
+		want
+	}{
+		query: "r:a r:b -r:c",
+		field: "r",
+		want: want{
+			values:        []string{"a", "b"},
+			negatedValues: []string{"c"},
+		},
+	}
+	t.Run("for regexp field", func(t *testing.T) {
+		query, err := ProcessAndOr(c.query)
+		if err != nil {
+			t.Fatal(err)
+		}
+		gotValues, gotNegatedValues := query.RegexpPatterns(c.field)
+		if diff := cmp.Diff(c.want.values, gotValues); diff != "" {
+			t.Error(diff)
+		}
+		if diff := cmp.Diff(c.want.negatedValues, gotNegatedValues); diff != "" {
+			t.Error(diff)
+		}
+	})
+	t.Run("for unrecognized field", func(t *testing.T) {
+		query, err := ProcessAndOr("")
+		if err != nil {
+			t.Fatal(err)
+		}
+		checkPanic(t, "no such field: z", func() {
+			query.RegexpPatterns("z")
+		})
+	})
+}
+
+func TestAndOrQuery_CaseInsensitiveFields(t *testing.T) {
+	query, err := ProcessAndOr("repoHasFile:foo")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	values, _ := query.RegexpPatterns(FieldRepoHasFile)
+	if len(values) != 1 || values[0] != "foo" {
+		t.Errorf("unexpected values: want {\"foo\"}, got %v", values)
+	}
+
+	fields := types.Fields(query.Fields())
+	if got, want := fields.String(), `repohasfile~"foo"`; got != want {
+		t.Errorf("unexpected parsed query:\ngot:  %s\nwant: %s", got, want)
+	}
+}
 
 func Test_PartitionSearchPattern(t *testing.T) {
 	cases := []struct {
@@ -76,8 +216,7 @@ func Test_PartitionSearchPattern(t *testing.T) {
 	for _, tt := range cases {
 		t.Run("partition search pattern", func(t *testing.T) {
 			q, _ := ParseAndOr(tt.input)
-			andOrQuery, _ := q.(*AndOrQuery)
-			scopeParameters, pattern, err := PartitionSearchPattern(andOrQuery.Query)
+			scopeParameters, pattern, err := PartitionSearchPattern(q)
 			if err != nil {
 				if diff := cmp.Diff(tt.want, err.Error()); diff != "" {
 					t.Fatal(diff)

@@ -595,8 +595,8 @@ func (p *parser) parseOr() ([]Node, error) {
 	return newOperator(append(left, right...), Or), nil
 }
 
-// parseAndOr a raw input string into a parse tree comprising Nodes.
-func parseAndOr(in string) ([]Node, error) {
+// ParseAndOr a raw input string into a parse tree comprising Nodes.
+func ParseAndOr(in string) ([]Node, error) {
 	if in == "" {
 		return nil, nil
 	}
@@ -611,8 +611,14 @@ func parseAndOr(in string) ([]Node, error) {
 	return newOperator(nodes, And), nil
 }
 
-func ParseAndOr(in string) (QueryInfo, error) {
-	query, err := parseAndOr(in)
+// ProcessAndOr query parses and validates an and/or query for a given search type.
+func ProcessAndOr(in string) (QueryInfo, error) {
+	query, err := ParseAndOr(in)
+	if err != nil {
+		return nil, err
+	}
+	query = LowercaseFieldNames(query)
+	err = validate(query)
 	if err != nil {
 		return nil, err
 	}
