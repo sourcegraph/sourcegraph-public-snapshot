@@ -38,6 +38,24 @@ type Container struct {
 	Groups []Group
 }
 
+func (c *Container) validate() error {
+	if !isValidUID(c.Name) {
+		return fmt.Errorf("Container.Name must be lowercase alphanumeric + dashes; found \"%s\"", c.Name)
+	}
+	if c.Title != strings.Title(c.Title) {
+		return fmt.Errorf("Container.Title must be in Title Case; found \"%s\" want \"%s\"", c.Title, strings.Title(c.Title))
+	}
+	if c.Description != withPeriod(c.Description) || c.Description != upperFirst(c.Description) {
+		return fmt.Errorf("Container.Description must be sentence starting with an uppercas eletter and ending with period; found \"%s\"", c.Description)
+	}
+	for _, g := range c.Groups {
+		if err := g.validate(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // Group describes a group of observable information about a container.
 type Group struct {
 	// Title of the group, briefly summarizing what this group is about, or
@@ -57,6 +75,9 @@ type Group struct {
 }
 
 func (g Group) validate() error {
+	if g.Title != upperFirst(g.Title) || g.Title == withPeriod(g.Title) {
+		return fmt.Errorf("Group.Title must start with an uppercase letter and not end with a period; found \"%s\"", g.Title)
+	}
 	for _, r := range g.Rows {
 		if err := r.validate(); err != nil {
 			return err
@@ -138,7 +159,10 @@ type Observable struct {
 
 func (o Observable) validate() error {
 	if strings.Contains(o.Name, " ") || strings.ToLower(o.Name) != o.Name {
-		return fmt.Errorf("Observable names should be in lower_snake_case: %q", o.Name)
+		return fmt.Errorf("Observable.Name must be in lower_snake_case; found \"%s\"", o.Name)
+	}
+	if v := string([]rune(o.Description)[0]); v != strings.ToLower(v) {
+		return fmt.Errorf("Observable.Description must be lowercase; found \"%s\"", o.Description)
 	}
 	if o.Warning.isEmpty() && o.Critical.isEmpty() {
 		return fmt.Errorf("%s: a Warning or Critical alert MUST be defined", o.Name)
@@ -239,10 +263,6 @@ func PanelOptions() panelOptions { return panelOptions{} }
 
 // dashboard generates the Grafana dashboard for this container.
 func (c *Container) dashboard() *sdk.Board {
-	if !isValidUID(c.Name) {
-		panic(fmt.Sprintf("expected Name to be alphanumeric + dashes: found \"%s\"", c.Name))
-	}
-
 	board := sdk.NewBoard(c.Title)
 	board.Version = uint(rand.Uint32())
 	board.UID = c.Name
@@ -505,12 +525,28 @@ func (c *Container) promAlertsFile() *promRulesFile {
 //
 // Instead of having to describe all the steps to navigate there because the UID is random.
 func isValidUID(s string) bool {
+	if s != strings.ToLower(s) {
+		return false
+	}
 	for _, r := range s {
 		if !(unicode.IsLetter(r) || unicode.IsNumber(r) || r == '-') {
 			return false
 		}
 	}
 	return true
+}
+
+// upperFirst returns s with an uppercase first rune.
+func upperFirst(s string) string {
+	return strings.ToUpper(string([]rune(s)[0])) + string([]rune(s)[1:])
+}
+
+// withPeriod returns s ending with a period.
+func withPeriod(s string) string {
+	if !strings.HasSuffix(s, ".") {
+		return s + "."
+	}
+	return s
 }
 
 var isDev, _ = strconv.ParseBool(os.Getenv("DEV"))
@@ -546,6 +582,9 @@ func main() {
 		ZoektIndexServer(),
 		ZoektWebServer(),
 	} {
+		if err := container.validate(); err != nil {
+			log.Fatal(err)
+		}
 		if grafanaDir != "" {
 			board := container.dashboard()
 			data, err := json.MarshalIndent(board, "", "  ")
