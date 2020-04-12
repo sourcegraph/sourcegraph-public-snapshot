@@ -33,7 +33,7 @@ func LowercaseFieldNames(nodes []Node) []Node {
 // repo:foo a or b or repo:bar c => (repo:foo a) or (b) or (repo:bar c)
 func HoistOr(nodes []Node) ([]Node, error) {
 	if len(nodes) != 1 {
-		return nil, fmt.Errorf("heuristic requires one top-level")
+		return nil, fmt.Errorf("heuristic requires one top-level expression")
 	}
 
 	expression, ok := nodes[0].(Operator)
