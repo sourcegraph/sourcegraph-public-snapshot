@@ -22,6 +22,5 @@ func Test_LowercaseFieldNames(t *testing.T) {
 	got := prettyPrint(LowercaseFieldNames(query))
 	if diff := cmp.Diff(got, want); diff != "" {
 		t.Fatal(diff)
-
 	}
 }
