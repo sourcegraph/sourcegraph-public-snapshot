@@ -42,7 +42,7 @@ interface Props extends RouteComponentProps<{ subscriptionUUID: string }> {}
 
 class FilteredSiteAdminProductLicenseConnection extends FilteredConnection<
     GQL.IProductLicense,
-    Pick<SiteAdminProductLicenseNodeProps, 'onDidUpdate' | 'showSubscription'>
+    Pick<SiteAdminProductLicenseNodeProps, 'showSubscription'>
 > {}
 
 const LOADING = 'loading' as const
@@ -142,8 +142,7 @@ export class SiteAdminProductSubscriptionPage extends React.Component<Props, Sta
     }
 
     public render(): JSX.Element | null {
-        const nodeProps: Pick<SiteAdminProductLicenseNodeProps, 'onDidUpdate' | 'showSubscription'> = {
-            onDidUpdate: this.onDidUpdateProductLicense,
+        const nodeProps: Pick<SiteAdminProductLicenseNodeProps, 'showSubscription'> = {
             showSubscription: false,
         }
 
