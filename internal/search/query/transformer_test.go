@@ -18,7 +18,7 @@ func prettyPrint(nodes []Node) string {
 func Test_LowercaseFieldNames(t *testing.T) {
 	input := "rEpO:foo PATTERN"
 	want := `(and "repo:foo" "PATTERN")`
-	query, _ := parseAndOr(input)
+	query, _ := ParseAndOr(input)
 	got := prettyPrint(LowercaseFieldNames(query))
 	if diff := cmp.Diff(got, want); diff != "" {
 		t.Fatal(diff)
