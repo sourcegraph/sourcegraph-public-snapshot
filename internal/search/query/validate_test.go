@@ -198,7 +198,7 @@ func Test_PartitionSearchPattern(t *testing.T) {
 		},
 		{
 			input: "file:foo x or y",
-			want:  "cannot evaluate: unable to partition pure search pattern",
+			want:  `"file:foo" (or "x" "y")`,
 		},
 		{
 			input: "(file:foo x) or y",
