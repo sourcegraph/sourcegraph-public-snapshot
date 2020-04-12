@@ -544,6 +544,7 @@ func main() {
 		Symbols(),
 		SyntectServer(),
 		ZoektIndexServer(),
+		ZoektWebServer(),
 	} {
 		if grafanaDir != "" {
 			board := container.dashboard()

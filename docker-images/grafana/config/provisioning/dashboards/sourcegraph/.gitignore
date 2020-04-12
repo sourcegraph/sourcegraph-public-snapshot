@@ -8,3 +8,4 @@ precise-code-intel*.json
 symbols.json
 replacer.json
 zoekt-indexserver.json
+zoekt-webserver.json
