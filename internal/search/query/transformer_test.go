@@ -85,7 +85,10 @@ func Test_HoistOr(t *testing.T) {
 			// To test HoistOr, Use a simplified parse function that
 			// does not perform the heuristic.
 			parse := func(in string) []Node {
-				parser := &parser{buf: []byte(in), heuristic: true}
+				parser := &parser{
+					buf:       []byte(in),
+					heuristic: heuristic{parensAsPatterns: true},
+				}
 				nodes, _ := parser.parseOr()
 				return newOperator(nodes, And)
 			}

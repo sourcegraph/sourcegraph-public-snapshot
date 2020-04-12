@@ -111,11 +111,16 @@ func skipSpace(buf []byte) int {
 	return count
 }
 
+type heuristic struct {
+	parensAsPatterns    bool // if true, parses parens as patterns rather than expression groups.
+	allowDanglingParens bool // if true, disables parsing parentheses as expression groups.
+}
+
 type parser struct {
 	buf          []byte
 	pos          int
 	balanced     int
-	heuristic    bool // if true, activates parsing parens as patterns rather than expression groups.
+	heuristic    heuristic
 	unambiguated bool // if true, this signal implies that at least one expression was unambiguated by explicit parentheses.
 
 }
@@ -342,7 +347,7 @@ loop:
 // expression group. For example, In the regex foo(a|b)bar, we want to preserve
 // parentheses as part of the pattern.
 func (p *parser) ParseSearchPatternHeuristic() (Node, bool) {
-	if !p.heuristic {
+	if !p.heuristic.parensAsPatterns || p.heuristic.allowDanglingParens {
 		return Parameter{Field: "", Value: ""}, false
 	}
 	start := p.pos
@@ -374,6 +379,10 @@ func (p *parser) ParseParameter() Parameter {
 			continue
 		}
 		if p.match(LPAREN) || p.match(RPAREN) {
+			if p.heuristic.allowDanglingParens {
+				p.pos++ // consume the parenthesis.
+				continue
+			}
 			break
 		}
 		if p.done() {
@@ -455,7 +464,7 @@ loop:
 			break loop
 		}
 		switch {
-		case p.match(LPAREN):
+		case p.match(LPAREN) && !p.heuristic.allowDanglingParens:
 			// First try parse a parameter as a search pattern containing parens.
 			if patterns, ok := p.ParseSearchPatternHeuristic(); ok {
 				nodes = append(nodes, patterns)
@@ -471,12 +480,12 @@ loop:
 				}
 				nodes = append(nodes, result...)
 			}
-		case p.expect(RPAREN):
+		case p.expect(RPAREN) && !p.heuristic.allowDanglingParens:
 			p.balanced--
 			p.unambiguated = true
 			if len(nodes) == 0 {
 				// We parsed "()".
-				if p.heuristic {
+				if p.heuristic.parensAsPatterns {
 					// Interpret literally.
 					nodes = []Node{Parameter{Value: "()"}}
 				} else {
@@ -599,17 +608,42 @@ func (p *parser) parseOr() ([]Node, error) {
 	return newOperator(append(left, right...), Or), nil
 }
 
+func tryFallbackParser(in string) ([]Node, error) {
+	parser := &parser{
+		buf:       []byte(in),
+		heuristic: heuristic{allowDanglingParens: true},
+	}
+	nodes, err := parser.parseOr()
+	if err != nil {
+		return nil, err
+	}
+	if hoistedNodes, err := HoistOr(nodes); err == nil {
+		return newOperator(hoistedNodes, And), nil
+	}
+	return newOperator(nodes, And), nil
+}
+
 // ParseAndOr a raw input string into a parse tree comprising Nodes.
 func ParseAndOr(in string) ([]Node, error) {
 	if in == "" {
 		return nil, nil
 	}
-	parser := &parser{buf: []byte(in), heuristic: true}
+	parser := &parser{
+		buf:       []byte(in),
+		heuristic: heuristic{parensAsPatterns: true},
+	}
+
 	nodes, err := parser.parseOr()
 	if err != nil {
+		if nodes, err := tryFallbackParser(in); err == nil {
+			return nodes, nil
+		}
 		return nil, err
 	}
 	if parser.balanced != 0 {
+		if nodes, err := tryFallbackParser(in); err == nil {
+			return nodes, nil
+		}
 		return nil, errors.New("unbalanced expression")
 	}
 	if !parser.unambiguated {

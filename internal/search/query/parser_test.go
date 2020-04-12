@@ -78,7 +78,10 @@ func parseAndOrGrammar(in string) ([]Node, error) {
 	if in == "" {
 		return nil, nil
 	}
-	parser := &parser{buf: []byte(in), heuristic: false}
+	parser := &parser{
+		buf:       []byte(in),
+		heuristic: heuristic{parensAsPatterns: false},
+	}
 	nodes, err := parser.parseOr()
 	if err != nil {
 		return nil, err
@@ -237,8 +240,8 @@ func Test_Parse(t *testing.T) {
 		{
 			Name:          "Unbalanced",
 			Input:         "(foo) (bar",
-			WantGrammar:   "unbalanced expression",
-			WantHeuristic: Same,
+			WantGrammar:   Spec("unbalanced expression"),
+			WantHeuristic: Diff(`(concat "(foo)" "(bar")`),
 		},
 		{
 			Name:          "Incomplete expression",
@@ -398,8 +401,34 @@ func Test_Parse(t *testing.T) {
 		},
 		{
 			Input:         `\  \ `,
-			WantGrammar:   `(concat "\\ " "\\ ")`,
-			WantHeuristic: `(concat "\\ " "\\ ")`,
+			WantGrammar:   Spec(`(concat "\\ " "\\ ")`),
+			WantHeuristic: Diff(`(concat "\\ " "\\ ")`),
+		},
+		// Dangling parentheses heuristic.
+		{
+			Input:         `(`,
+			WantGrammar:   Spec(`expected operand at 1`),
+			WantHeuristic: Diff(`"("`),
+		},
+		{
+			Input:         `)(())(`,
+			WantGrammar:   Spec(`unbalanced expression`),
+			WantHeuristic: Diff(`"(())("`),
+		},
+		{
+			Input:         `foo( and bar(`,
+			WantGrammar:   Spec(`expected operand at 5`),
+			WantHeuristic: Diff(`(and "foo(" "bar(")`),
+		},
+		{
+			Input:         `repo:foo foo( or bar(`,
+			WantGrammar:   Spec(`expected operand at 14`),
+			WantHeuristic: Diff(`(and "repo:foo" (or "foo(" "bar("))`),
+		},
+		{
+			Input:         `(a or (b and )) or d)`,
+			WantGrammar:   Spec(`unbalanced expression`),
+			WantHeuristic: Diff(`(or "(a" (and "(b" ")") "d)")`),
 		},
 	}
 	for _, tt := range cases {
