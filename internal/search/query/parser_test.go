@@ -449,7 +449,7 @@ func Test_ScanDelimited(t *testing.T) {
 		{
 			input:     `"\\\"`,
 			delimiter: '"',
-			want:      result{Value: "", Count: 4, ErrMsg: "unterminated escape sequence"},
+			want:      result{Value: "", Count: 5, ErrMsg: `unterminated literal: expected "`},
 		},
 		{
 			input:     `"\\\""`,

@@ -191,34 +191,38 @@ func (p *parser) skipSpaces() error {
 func ScanDelimited(buf []byte, delimiter rune) (string, int, error) {
 	var count, advance int
 	var r rune
-	result := []rune{}
+	var result []rune
 
-	next := func() {
-		r, advance = utf8.DecodeRune(buf)
+	next := func() rune {
+		r, advance := utf8.DecodeRune(buf)
 		count += advance
 		buf = buf[advance:]
+		return r
 	}
 
-	next()
+	r = next()
 	if r != delimiter {
 		panic(fmt.Sprintf("ScanDelimited expects the input buffer to start with delimiter %s, but it starts with %s.", string(delimiter), string(r)))
 	}
 
 loop:
 	for len(buf) > 0 {
-		next()
+		r = next()
 		switch {
 		case r == delimiter:
 			break loop
 		case r == '\\':
 			// Handle escape sequence.
 			if len(buf[advance:]) > 0 {
-				next()
+				r = next()
 				switch r {
 				case 'a', 'b', 'f', 'n', 'r', 't', 'v', '\\', delimiter:
 					result = append(result, r)
 				default:
 					return "", count, errors.New("unrecognized escape sequence")
+				}
+				if len(buf) <= 0 {
+					return "", count, errors.New("unterminated literal: expected " + string(delimiter))
 				}
 			} else {
 				return "", count, errors.New("unterminated escape sequence")
