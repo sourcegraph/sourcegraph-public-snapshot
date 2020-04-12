@@ -82,7 +82,14 @@ func Test_HoistOr(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run("hoist or", func(t *testing.T) {
-			query, _ := ParseAndOr(c.input)
+			// To test HoistOr, Use a simplified parse function that
+			// does not perform the heuristic.
+			parse := func(in string) []Node {
+				parser := &parser{buf: []byte(in), heuristic: true}
+				nodes, _ := parser.parseOr()
+				return newOperator(nodes, And)
+			}
+			query := parse(c.input)
 			hoistedQuery, err := HoistOr(query)
 			if err != nil {
 				if diff := cmp.Diff(c.wantErrMsg, err.Error()); diff != "" {

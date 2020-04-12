@@ -112,10 +112,12 @@ func skipSpace(buf []byte) int {
 }
 
 type parser struct {
-	buf       []byte
-	pos       int
-	balanced  int
-	heuristic bool // if true, activates parsing parens as patterns rather than expression groups.
+	buf          []byte
+	pos          int
+	balanced     int
+	heuristic    bool // if true, activates parsing parens as patterns rather than expression groups.
+	unambiguated bool // if true, this signal implies that at least one expression was unambiguated by explicit parentheses.
+
 }
 
 func (p *parser) done() bool {
@@ -462,6 +464,7 @@ loop:
 				// group as part of an and/or expression.
 				_ = p.expect(LPAREN) // Guaranteed to succeed.
 				p.balanced++
+				p.unambiguated = true
 				result, err := p.parseOr()
 				if err != nil {
 					return nil, err
@@ -470,6 +473,7 @@ loop:
 			}
 		case p.expect(RPAREN):
 			p.balanced--
+			p.unambiguated = true
 			if len(nodes) == 0 {
 				// We parsed "()".
 				if p.heuristic {
@@ -607,6 +611,12 @@ func ParseAndOr(in string) ([]Node, error) {
 	}
 	if parser.balanced != 0 {
 		return nil, errors.New("unbalanced expression")
+	}
+	if !parser.unambiguated {
+		// Hoist or expressions if this query is potential ambiguous.
+		if hoistedNodes, err := HoistOr(nodes); err == nil {
+			nodes = hoistedNodes
+		}
 	}
 	return newOperator(nodes, And), nil
 }
