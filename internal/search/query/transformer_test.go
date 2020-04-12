@@ -77,7 +77,7 @@ func Test_HoistOr(t *testing.T) {
 		},
 		{
 			input:      "repo:foo a or repo:foobar b or c file:bar",
-			wantErrMsg: "inner expression is not a pure pattern expression",
+			wantErrMsg: `inner expression (and "repo:foobar" "b") is not a pure pattern expression`,
 		},
 	}
 	for _, c := range cases {

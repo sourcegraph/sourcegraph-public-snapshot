@@ -33,11 +33,11 @@ func LowercaseFieldNames(nodes []Node) []Node {
 // repo:foo a or b or repo:bar c => (repo:foo a) or (b) or (repo:bar c)
 func HoistOr(nodes []Node) ([]Node, error) {
 	if len(nodes) != 1 {
-		return nil, fmt.Errorf("heuristic requires top-level or-expression")
+		return nil, fmt.Errorf("heuristic requires one top-level")
 	}
 
 	expression, ok := nodes[0].(Operator)
-	if !ok || expression.Kind == And || expression.Kind == Concat {
+	if !ok || expression.Kind != Or {
 		return nil, fmt.Errorf("heuristic requires top-level or-expression")
 	}
 
@@ -55,7 +55,7 @@ func HoistOr(nodes []Node) ([]Node, error) {
 			continue
 		}
 		if !isPatternExpression([]Node{node}) {
-			return nil, errors.New("inner expression is not a pure pattern expression")
+			return nil, fmt.Errorf("inner expression %s is not a pure pattern expression", node.String())
 		}
 		pattern = append(pattern, node)
 	}
