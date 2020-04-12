@@ -66,6 +66,7 @@ All notable changes to Sourcegraph are documented in this file.
 - observability: Symbols dashboard: "Store fetch queue size" can no longer appear to go negative. [#9731](https://github.com/sourcegraph/sourcegraph/issues/9731)
 - observability: Symbols dashboard: metrics are now aggregated instead of per-instance, for improved visibility. [#9730](https://github.com/sourcegraph/sourcegraph/issues/9730)
 - observability: The "resolve_revision_duration_slow" alert is no longer flaky / non-deterministic. [#9751](https://github.com/sourcegraph/sourcegraph/issues/9751)
+- observability: Firing alerts are now correctly sorted at the top of dashboards by default. [#9766](https://github.com/sourcegraph/sourcegraph/issues/9766)
 - The Phabricator integration no longer makes duplicate requests to Phabricator's API on diff views. [#8849](https://github.com/sourcegraph/sourcegraph/issues/8849)
 - Changesets on repositories that aren't available on the instance anymore are now hidden instead of failing. [#9656](https://github.com/sourcegraph/sourcegraph/pull/9656)
 
