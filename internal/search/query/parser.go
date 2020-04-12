@@ -183,6 +183,61 @@ func (p *parser) skipSpaces() error {
 	return nil
 }
 
+// ScanDelimited takes a delimited (e.g., quoted) value for some arbitrary
+// delimiter, returning the undelimited value, and the end position of the
+// original delimited value (i.e., including quotes). `\` is treated as an
+// escape character for the delimiter and traditional string escape sequences.
+// The input buffer must start with the chosen delimiter.
+func ScanDelimited(buf []byte, delimiter rune) (string, int, error) {
+	var count, advance int
+	var r rune
+	var result []rune
+
+	next := func() rune {
+		r, advance := utf8.DecodeRune(buf)
+		count += advance
+		buf = buf[advance:]
+		return r
+	}
+
+	r = next()
+	if r != delimiter {
+		panic(fmt.Sprintf("ScanDelimited expects the input buffer to start with delimiter %s, but it starts with %s.", string(delimiter), string(r)))
+	}
+
+loop:
+	for len(buf) > 0 {
+		r = next()
+		switch {
+		case r == delimiter:
+			break loop
+		case r == '\\':
+			// Handle escape sequence.
+			if len(buf[advance:]) > 0 {
+				r = next()
+				switch r {
+				case 'a', 'b', 'f', 'n', 'r', 't', 'v', '\\', delimiter:
+					result = append(result, r)
+				default:
+					return "", count, errors.New("unrecognized escape sequence")
+				}
+				if len(buf) <= 0 {
+					return "", count, errors.New("unterminated literal: expected " + string(delimiter))
+				}
+			} else {
+				return "", count, errors.New("unterminated escape sequence")
+			}
+		default:
+			result = append(result, r)
+		}
+	}
+
+	if r != delimiter {
+		return "", count, errors.New("unterminated literal: expected " + string(delimiter))
+	}
+	return string(result), count, nil
+}
+
 var fieldValuePattern = lazyregexp.New("(^-?[a-zA-Z0-9]+):(.*)")
 
 // ScanParameter returns a leaf node value usable by _any_ kind of search (e.g.,
