@@ -157,6 +157,10 @@ func Test_PartitionSearchPattern(t *testing.T) {
 			want:  `"x"`,
 		},
 		{
+			input: "file:foo",
+			want:  `"file:foo"`,
+		},
+		{
 			input: "x y",
 			want:  `(concat "x" "y")`,
 		},
@@ -223,7 +227,10 @@ func Test_PartitionSearchPattern(t *testing.T) {
 				}
 				return
 			}
-			result := append(scopeParameters, pattern)
+			result := scopeParameters
+			if pattern != nil {
+				result = append(scopeParameters, pattern)
+			}
 			var resultStr []string
 			for _, node := range result {
 				resultStr = append(resultStr, node.String())
