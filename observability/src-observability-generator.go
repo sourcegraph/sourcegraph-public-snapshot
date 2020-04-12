@@ -285,7 +285,7 @@ func (c *Container) dashboard() *sdk.Board {
 	alertsDefined := sdk.NewTable("Alerts defined")
 	setPanelSize(alertsDefined, 9, 5)
 	setPanelPos(alertsDefined, 0, 3)
-	alertsDefined.TablePanel.Sort = &sdk.Sort{Desc: true}
+	alertsDefined.TablePanel.Sort = &sdk.Sort{Desc: true, Col: 4}
 	alertsDefined.TablePanel.Styles = []sdk.ColumnStyle{
 		{
 			Pattern: "Time",
