@@ -118,7 +118,7 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                     }),
                     filter(event => event.currentTarget.checkValidity()),
                     tap(() => this.setState({ loading: true })),
-                    mergeMap(event =>
+                    mergeMap(() =>
                         updateUser(this.props.user.id, {
                             username: this.state.username === undefined ? null : this.state.username,
                             displayName: this.state.displayName === undefined ? null : this.state.displayName,

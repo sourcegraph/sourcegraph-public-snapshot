@@ -2,7 +2,7 @@ import { ProxyResult, ProxyValue, proxyValue, proxyValueSymbol, UnproxyOrClone }
 import { from, isObservable, Observable, Observer, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { ProviderResult, Subscribable, Unsubscribable } from 'sourcegraph'
-import { isPromise, isSubscribable } from '../../util'
+import { isPromiseLike, isSubscribable } from '../../util'
 
 /**
  * A Subscribable that can be exposed by comlink to the other thread.
@@ -54,7 +54,7 @@ export function toProxyableSubscribable<T, R>(
     mapFunc: (value: T | undefined | null) => R
 ): ProxySubscribable<R> {
     let observable: Observable<R>
-    if (result && (isPromise(result) || isObservable<T>(result) || isSubscribable(result))) {
+    if (result && (isPromiseLike(result) || isObservable<T>(result) || isSubscribable(result))) {
         observable = from(result).pipe(map(mapFunc))
     } else {
         observable = of(mapFunc(result))

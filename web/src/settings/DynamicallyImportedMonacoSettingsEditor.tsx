@@ -86,7 +86,6 @@ export class DynamicallyImportedMonacoSettingsEditor extends React.PureComponent
                 {this.props.canEdit && (
                     <SaveToolbar
                         dirty={isDirty}
-                        disabled={this.props.loading || this.props.saving || !isDirty}
                         saving={this.props.saving}
                         onSave={this.onSave}
                         onDiscard={this.discard}
@@ -186,7 +185,7 @@ export class DynamicallyImportedMonacoSettingsEditor extends React.PureComponent
             const action = editor.getAction(id)
             action.run().then(
                 () => undefined,
-                (err: any) => console.error(err)
+                err => console.error(err)
             )
         } else {
             alert('Wait for editor to load before running action.')

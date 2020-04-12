@@ -27,7 +27,7 @@ import { getModeFromPath } from '../../../../../../shared/src/languages'
 import { getHover } from '../../../../backend/features'
 import { PlatformContextProps } from '../../../../../../shared/src/platform/context'
 import { TelemetryProps } from '../../../../../../shared/src/telemetry/telemetryService'
-import { propertyIsDefined } from '../../../../../../shared/src/util/types'
+import { property, isDefined } from '../../../../../../shared/src/util/types'
 import { useObservable } from '../../../../../../shared/src/util/useObservable'
 
 interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, ExtensionsControllerProps {
@@ -117,7 +117,7 @@ export const CampaignChangesets: React.FunctionComponent<Props> = ({
                         relativeElement: relativeElement!,
                     })),
                     // Can't reposition HoverOverlay if it wasn't rendered
-                    filter(propertyIsDefined('hoverOverlayElement'))
+                    filter(property('hoverOverlayElement', isDefined))
                 ),
                 getHover: hoveredToken =>
                     getHover(getLSPTextDocumentPositionParams(hoveredToken), { extensionsController }),

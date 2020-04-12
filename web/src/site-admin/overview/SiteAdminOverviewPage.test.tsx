@@ -3,10 +3,10 @@ import React from 'react'
 import renderer from 'react-test-renderer'
 import { of } from 'rxjs'
 import { SiteAdminOverviewPage } from './SiteAdminOverviewPage'
-import { eventLogger } from '../tracking/eventLogger'
+import { eventLogger } from '../../tracking/eventLogger'
 import sinon from 'sinon'
-import { ISiteUsagePeriod } from '../../../shared/src/graphql/schema'
-import { PageTitle } from '../components/PageTitle'
+import { ISiteUsagePeriod } from '../../../../shared/src/graphql/schema'
+import { PageTitle } from '../../components/PageTitle'
 
 describe('SiteAdminOverviewPage', () => {
     afterEach(() => {

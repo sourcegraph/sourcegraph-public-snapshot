@@ -14,6 +14,7 @@ import { ExternalServiceCard } from '../components/ExternalServiceCard'
 import { SiteAdminExternalServiceForm } from './SiteAdminExternalServiceForm'
 import { ErrorAlert } from '../components/alerts'
 import { defaultExternalServices, codeHostExternalServices } from './externalServices'
+import { hasProperty } from '../../../shared/src/util/types'
 
 interface Props extends RouteComponentProps<{ id: GQL.ID }> {
     isLightTheme: boolean
@@ -112,12 +113,14 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
 
         let externalServiceCategory = externalService && defaultExternalServices[externalService.kind]
         if (externalService && externalService.kind === GQL.ExternalServiceKind.GITHUB) {
-            const parsedConfig = parseJSONC(externalService.config)
+            const parsedConfig: unknown = parseJSONC(externalService.config)
             // we have no way of finding out whether a externalservice of kind GITHUB is GitHub.com or GitHub enterprise, so we need to guess based on the url
             if (
-                parsedConfig?.url &&
+                typeof parsedConfig === 'object' &&
+                parsedConfig !== null &&
+                hasProperty('url')(parsedConfig) &&
                 typeof parsedConfig.url === 'string' &&
-                !parsedConfig.url.match(/^https:\/\/github\.com/)
+                !parsedConfig.url.startsWith('https://github.com/')
             ) {
                 externalServiceCategory = codeHostExternalServices.ghe
             }

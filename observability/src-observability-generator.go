@@ -544,9 +544,12 @@ func main() {
 		PreciseCodeIntelBundleManager(),
 		PreciseCodeIntelWorker(),
 		QueryRunner(),
+		Replacer(),
 		RepoUpdater(),
 		Searcher(),
+		Symbols(),
 		SyntectServer(),
+		ZoektIndexServer(),
 	} {
 		if grafanaDir != "" {
 			board := container.dashboard()

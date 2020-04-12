@@ -132,7 +132,7 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
         this.componentUpdates.next(this.props)
     }
 
-    public componentDidUpdate(prevProps: TreeRootProps): void {
+    public componentDidUpdate(): void {
         this.componentUpdates.next(this.props)
     }
     public componentWillUnmount(): void {
