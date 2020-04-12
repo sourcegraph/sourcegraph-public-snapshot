@@ -216,34 +216,35 @@ func ScanParameter(parameter []byte) Parameter {
 	return Parameter{Field: "", Value: string(parameter)}
 }
 
-// ScanSearchPattern scans for a pattern using a heuristic that allows it to
+// ScanSearchPatternHeuristic scans for a pattern using a heuristic that allows it to
 // contain parentheses, if balanced, with appropriate lexical handling for
 // traditional escape sequences, escaped parentheses, and escaped whitespace.
 func ScanSearchPatternHeuristic(buf []byte) ([]string, int, bool) {
 	var count, advance, balanced int
 	var r rune
-	piece := []rune{}
-	pieces := []string{}
+	var piece []rune
+	var pieces []string
 
-	next := func() {
-		r, advance = utf8.DecodeRune(buf)
+	next := func() rune {
+		r, advance := utf8.DecodeRune(buf)
 		count += advance
 		buf = buf[advance:]
+		return r
 	}
 
 loop:
 	for len(buf) > 0 {
-		next()
+		r = next()
 		switch {
 		case unicode.IsSpace(r) && balanced == 0:
 			// Stop scanning a potential pattern when we see
 			// whitespace in a balanced state.
 			break loop
 		case r == '(':
-			balanced += 1
+			balanced++
 			piece = append(piece, r)
 		case r == ')':
-			balanced -= 1
+			balanced--
 			piece = append(piece, r)
 		case unicode.IsSpace(r):
 			// We see a space and the pattern is unbalanced, so assume this
@@ -251,11 +252,11 @@ loop:
 			if len(piece) > 0 {
 				pieces = append(pieces, string(piece))
 			}
-			piece = []rune{}
+			piece = piece[:0]
 		case r == '\\':
 			// Handle escape sequence.
 			if len(buf[advance:]) > 0 {
-				next()
+				r = next()
 				switch r {
 				case 'a', 'b', 'f', 'n', 'r', 't', 'v', '\\', '"', '\'', '(', ')':
 					piece = append(piece, '\\', r)
