@@ -29,7 +29,6 @@
       },
       "id": 9,
       "mode": "html",
-      "options": {},
       "timeFrom": null,
       "timeShift": null,
       "title": "",
@@ -49,6 +48,7 @@
         "x": 0,
         "y": 6
       },
+      "hiddenSeries": false,
       "id": 5,
       "legend": {
         "avg": false,
@@ -136,6 +136,7 @@
         "x": 0,
         "y": 11
       },
+      "hiddenSeries": false,
       "id": 4,
       "legend": {
         "avg": false,
@@ -246,7 +247,6 @@
       "maxDataPoints": 100,
       "nullPointMode": "connected",
       "nullText": null,
-      "options": {},
       "pluginVersion": "6.4.4",
       "postfix": "",
       "postfixFontSize": "50%",
@@ -302,14 +302,13 @@
       "description": "",
       "fontSize": "100%",
       "gridPos": {
-        "h": 5,
+        "h": 6,
         "w": 19,
         "x": 5,
         "y": 16
       },
       "id": 11,
       "links": [],
-      "options": {},
       "pageSize": null,
       "pluginVersion": "6.4.4",
       "showHeader": true,
@@ -320,6 +319,7 @@
       "styles": [
         {
           "alias": "",
+          "align": "auto",
           "colorMode": null,
           "colors": ["rgba(245, 54, 54, 0.9)", "rgba(237, 129, 40, 0.89)", "rgba(50, 172, 45, 0.97)"],
           "dateFormat": "YYYY-MM-DD HH:mm:ss",
@@ -332,6 +332,7 @@
         },
         {
           "alias": "firing?",
+          "align": "auto",
           "colorMode": "row",
           "colors": ["rgba(50, 172, 45, 0.97)", "rgba(237, 129, 40, 0.89)", "rgba(245, 54, 54, 0.9)"],
           "dateFormat": "YYYY-MM-DD HH:mm:ss",
@@ -354,6 +355,7 @@
         },
         {
           "alias": "",
+          "align": "auto",
           "colorMode": null,
           "colors": ["rgba(245, 54, 54, 0.9)", "rgba(237, 129, 40, 0.89)", "rgba(50, 172, 45, 0.97)"],
           "dateFormat": "YYYY-MM-DD HH:mm:ss",
@@ -366,6 +368,7 @@
         },
         {
           "alias": "level",
+          "align": "auto",
           "colorMode": null,
           "colors": ["rgba(245, 54, 54, 0.9)", "rgba(237, 129, 40, 0.89)", "rgba(50, 172, 45, 0.97)"],
           "dateFormat": "YYYY-MM-DD HH:mm:ss",
@@ -407,7 +410,7 @@
         "thresholdMarkers": true
       },
       "gridPos": {
-        "h": 2,
+        "h": 3,
         "w": 5,
         "x": 0,
         "y": 19
@@ -429,7 +432,6 @@
       "maxDataPoints": 100,
       "nullPointMode": "connected",
       "nullText": null,
-      "options": {},
       "postfix": "",
       "postfixFontSize": "50%",
       "prefix": "",
@@ -473,7 +475,7 @@
       "valueName": "avg"
     }
   ],
-  "schemaVersion": 20,
+  "schemaVersion": 22,
   "style": "dark",
   "tags": [],
   "templating": {
@@ -489,5 +491,8 @@
   "timezone": "utc",
   "title": "Overview",
   "uid": "overview",
+  "variables": {
+    "list": []
+  },
   "version": 1
 }
