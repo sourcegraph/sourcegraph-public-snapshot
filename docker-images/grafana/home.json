@@ -302,7 +302,7 @@
       "description": "",
       "fontSize": "100%",
       "gridPos": {
-        "h": 5,
+        "h": 6,
         "w": 19,
         "x": 5,
         "y": 16
@@ -410,7 +410,7 @@
         "thresholdMarkers": true
       },
       "gridPos": {
-        "h": 2,
+        "h": 3,
         "w": 5,
         "x": 0,
         "y": 19
