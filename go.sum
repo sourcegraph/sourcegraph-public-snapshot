@@ -615,6 +615,7 @@ github.com/matoous/godox v0.0.0-20190911065817-5d6d842e92eb h1:RHba4YImhrUVQDHUC
 github.com/matoous/godox v0.0.0-20190911065817-5d6d842e92eb/go.mod h1:1BELzlh859Sh1c6+90blK8lbYy0kwQf1bYlBhBysy1s=
 github.com/matryer/is v1.3.0 h1:9qiso3jaJrOe6qBRJRBt2Ldht05qDiFP9le0JOIhRSI=
 github.com/matryer/is v1.3.0/go.mod h1:2fLPjFQM9rhQ15aVEtbuwhJinnOqrmgXPNdZsdwlWXA=
+github.com/mattn/go-colorable v0.0.9/go.mod h1:9vuHe8Xs5qXnSaW/c/ABM9alt+Vo+STaOChaDxuIBZU=
 github.com/mattn/go-colorable v0.0.10-0.20170816031813-ad5389df28cd/go.mod h1:9vuHe8Xs5qXnSaW/c/ABM9alt+Vo+STaOChaDxuIBZU=
 github.com/mattn/go-colorable v0.1.1/go.mod h1:FuOcm+DKB9mbwrcAfNl7/TZVBZ6rcnceauSikq3lYCQ=
 github.com/mattn/go-colorable v0.1.4 h1:snbPLB8fVfU9iwbbo30TPtbLRzwWu6aJS6Xh4eaaviA=
@@ -622,6 +623,7 @@ github.com/mattn/go-colorable v0.1.4/go.mod h1:U0ppj6V5qS13XJ6of8GYAs25YV2eR4EVc
 github.com/mattn/go-colorable v0.1.6 h1:6Su7aK7lXmJ/U79bYtBjLNaha4Fs1Rg9plHpcH+vvnE=
 github.com/mattn/go-colorable v0.1.6/go.mod h1:u6P/XSegPjTcexA+o6vUJrdnUu04hMope9wVRipJSqc=
 github.com/mattn/go-isatty v0.0.2/go.mod h1:M+lRXTBqGeGNdLjl/ufCoiOlB5xdOkqRJdNxMWT7Zi4=
+github.com/mattn/go-isatty v0.0.4/go.mod h1:M+lRXTBqGeGNdLjl/ufCoiOlB5xdOkqRJdNxMWT7Zi4=
 github.com/mattn/go-isatty v0.0.5/go.mod h1:Iq45c/XA43vh69/j3iqttzPXn0bhXyGjM0Hdxcsrc5s=
 github.com/mattn/go-isatty v0.0.7/go.mod h1:Iq45c/XA43vh69/j3iqttzPXn0bhXyGjM0Hdxcsrc5s=
 github.com/mattn/go-isatty v0.0.8 h1:HLtExJ+uU2HOZ+wI0Tt5DtUDrx8yhUqDcp7fYERX4CE=
@@ -840,6 +842,8 @@ github.com/sourcegraph/gologin v1.0.2-0.20181110030308-c6f1b62954d8 h1:K7hzuWsJG
 github.com/sourcegraph/gologin v1.0.2-0.20181110030308-c6f1b62954d8/go.mod h1:0VfoEApmSPgPhnePllwhrB4vwCUkI0K0w8aueOgoJQI=
 github.com/sourcegraph/gonduit v0.4.0 h1:0BTiXaxNto/Jm0uvd/LdnZZr6JOkZz+VqPulU+YoB34=
 github.com/sourcegraph/gonduit v0.4.0/go.mod h1:NEbCUR5u7J+UF4B5ohjOH36WMnEQ3YNS9n32MZqfOZc=
+github.com/sourcegraph/goreman v0.1.2-0.20180928223752-6e9a2beb830d h1:FxF0pen6r1WOqbm4kVDR3JV078HfPz65inWcMh1aVQI=
+github.com/sourcegraph/goreman v0.1.2-0.20180928223752-6e9a2beb830d/go.mod h1:8HCyYaC38XwX0AOu0+fuY02Y5Z7CkITW0oVJavbna4Q=
 github.com/sourcegraph/gosaml2 v0.3.2-0.20200109173551-5cfddeb48b17 h1:9kV7BLsB6gGUXFr7GqNb6VKlUz1WQvh8kkMb1uKEk9Y=
 github.com/sourcegraph/gosaml2 v0.3.2-0.20200109173551-5cfddeb48b17/go.mod h1:ZqB/uu1WtCDmlwK8c+TO8+QSfDkJsWx9LYjQBgGxxtk=
 github.com/sourcegraph/gosyntect v0.0.0-20200331033347-c35e64c39373 h1:0POmXzeymYlitNlTePPtUdEIKi1ac8jhiq1oK5xQtos=
@@ -1112,6 +1116,7 @@ golang.org/x/sync v0.0.0-20200317015054-43a5402ce75a/go.mod h1:RxMgew5VJxzue5/jJ
 golang.org/x/sys v0.0.0-20180830151530-49385e6e1522/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
 golang.org/x/sys v0.0.0-20180905080454-ebe1bf3edb33/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
 golang.org/x/sys v0.0.0-20180909124046-d0be0721c37e/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
+golang.org/x/sys v0.0.0-20180925112736-b09afc3d579e/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
 golang.org/x/sys v0.0.0-20181107165924-66b7b1311ac8/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
 golang.org/x/sys v0.0.0-20181116152217-5ac8a444bdc5/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
 golang.org/x/sys v0.0.0-20181122145206-62eef0e2fa9b/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
