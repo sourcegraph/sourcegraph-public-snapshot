@@ -167,7 +167,7 @@ func (p *parser) match(keyword keyword) bool {
 	if err != nil {
 		return false
 	}
-	return strings.ToLower(v) == string(keyword)
+	return strings.EqualFold(v, string(keyword))
 }
 
 // expect returns the result of match, and advances the position if it succeeds.
