@@ -16,8 +16,7 @@ Enterprise, GitLab, Phabricator, and Bitbucket Server.
   </a>
 </p>
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; The Firefox extension may need to be manually enabled from about:addons, 
-[more info](firefox_security.md).
+>NOTE: The Firefox extension may need to be manually enabled from `about:addons`, you can find more information in [Firefox add-on security](firefox_security.md).
 
 ![Sourcegraph browser extension](https://storage.googleapis.com/sourcegraph-assets/BrowserExtension.gif)
 
