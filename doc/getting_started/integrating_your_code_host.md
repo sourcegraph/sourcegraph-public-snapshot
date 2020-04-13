@@ -1,46 +1,30 @@
-# Integrating your code host
+# Integrating your code host with Sourcegraph (WIP)
 
-Sourcegraph Universal Code Search means we support every major Git code host with flexible hosting options for generic and non-Git code hosts.
+Sourcegraph Universal Code Search means we integrate with every major Git code host with flexible hosting options for generic and non-Git code hosts. It also means Sourcegraph can index and search across repositories from different code hosts, e.g., GitHub.com and GitLab CE, on the same instance.
 
-## GitHub
+Sourcegraph can also search across every branch, every commit diff, and even commit messages for every code host. This is why regardless of how many repositories developers may sync to their local machines, Sourcegraph's search capabilities outweigh those of any editor, IDE, and existing code search tool. See our [detailed feature comparison chart](https://about.sourcegraph.com/workflow) for more details.
 
-## Managing repositories
+## Code host integration beyond repository search
 
-This screencast walks you through (with accompanying audio) how to connect and configure Sourcegraph Universal Code Search for public and private repositories on GitHub.com and GitHub Enterprise instances.
+Code host integration may also include:
 
-<div style="padding:56.25% 0 0 0;position:relative;">
-    <iframe src="https://www.youtube.com/embed/dhpmPa0kG90" style="position:absolute;top:0;left:0;width:100%;height:100%;" frameborder="0" webkitallowfullscreen="" mozallowfullscreen="" allowfullscreen=""></iframe>
-  </div>
+- **User authentication**<br/>
+Log-in via your code host (requires oAuth application or similar)<br/><br/>
+- **Repository permission syncing**<br/>
+Only display search results for repositories you have access to (requires code host authentication).<br/><br/>
+- **Code intelligence**<br/>
+Decorate code views with IDE quality code intelligence, either through a native application/integration (BitBucket Server, GitLab, Phabricator) or browser extension (GitHub)
+
+## Code host integrations
+
+- [GitHub](github.md)
+- [GitLab](gitlab.md)
+- [Bitbucket Cloud](integration/bitbucket_cloud.md)
+- [Bitbucket Server](integration/bitbucket_server.md)
+- [Phabricator](integration/phabricator.md)
+- [AWS CodeCommit](integration/aws_codecommit.md)
+- [Gitolite](integration/gitolite.md.md)
 
 ---
 
-View the [GitHub integration docs](../admin/external_service/github.md) for full configuration options, including [webhooks](../admin/external_service/github.md#webhooks) and [supporting repository permissions](../admin/external_service/github.md).
-
-## GitLab
-
-### Managing repositories
-
-This screencast (with accompanying audio) shows how to connect and configure Sourcegraph Universal Code Search for public and private repositories on GitLab CE/EE instances.
-
-<div style="padding:56.25% 0 0 0;position:relative;">
-    <iframe src="https://www.youtube.com/embed/dhpmPa0kG90" style="position:absolute;top:0;left:0;width:100%;height:100%;" frameborder="0" webkitallowfullscreen="" mozallowfullscreen="" allowfullscreen=""></iframe>
-  </div>
-
----
-
-See the [GitLab integration docs](../admin/external_service/gitlab.md) for full configuration options, including [enabling repository permissions](../admin/external_service/gitlab.md#repository-permissions).
-
-The [Python script used to generate the list of repositories to ignore](https://gitlab.com/snippets/1952534) is available as a GitLab Snippet.
-
-### Enabling integrated intelligence
-
-
-## Bitbucket
-
-## AWS CodeCommit
-
-## Gitolite
-
-## Generic Git host
-
-## Non-git code hosts
+[**» Next: Universal Code Search**](universal_code_search.md)

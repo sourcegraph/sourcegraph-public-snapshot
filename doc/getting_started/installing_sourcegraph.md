@@ -1,4 +1,4 @@
-# Installing Sourcegraph
+# Installing Sourcegraph (WIP)
 
 Once Sourcegraph is deployed, the installation process takes only a few minutes. This screencast shows the typical steps involved for installing and configuring a private, self-hosted Sourcegraph instance, ready for sharing internally.
 

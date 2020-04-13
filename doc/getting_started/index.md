@@ -1,4 +1,4 @@
-# Getting started
+# Getting started (WIP)
 
 [Sourcegraph Universal Code Search](https://about.sourcegraph.com/universal-code-search) provides code discovery, code intelligence, and code change management It allows you to explore and better understand all code, faster, with contextual code intelligence to improve developer productivity and code change management to make large-scale changes.
 

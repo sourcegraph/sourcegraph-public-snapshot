@@ -1,4 +1,4 @@
-# Choosing the right deployment model for Sourcegraph
+# Choosing the right deployment model for Sourcegraph (WIP)
 
 You don't have to be a Sys Admin or DevOps Engineer to run Sourcegraph. You just need access to a machine that has Docker installed in order to get started.
 
