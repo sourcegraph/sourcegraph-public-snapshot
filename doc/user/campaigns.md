@@ -215,11 +215,7 @@ Edits to the name and description of a campaign can also be made in the web UI w
 
 Patches are intelligently cached based on the `scopeQuery` and defined `steps`, but the need to clear the cache to run the steps from scratch may be required.
 
-Clearing the cache requires either manually emptying the cache directory or using a different one. If no `-cache` flag is passed to `src actions exec`, the default location of the cache is used which can be found for your platform by running:
-
-```sh
-src actions exec -help
-```
+In order to do that, pass the `-clear-cache` flag to `src actions exec`. That will empty the cache before executing the action.
 
 ## Example campaigns
 
