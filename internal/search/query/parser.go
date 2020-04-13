@@ -90,6 +90,9 @@ const (
 	OR     keyword = "or"
 	LPAREN keyword = "("
 	RPAREN keyword = ")"
+	SQUOTE keyword = "'"
+	DQUOTE keyword = "\""
+	SLASH  keyword = "/"
 )
 
 func isSpace(buf []byte) bool {
@@ -292,37 +295,6 @@ func ScanField(buf []byte) (string, int) {
 
 var fieldValuePattern = lazyregexp.New("(^-?[a-zA-Z0-9]+):(.*)")
 
-// ScanParameter returns a leaf node value usable by _any_ kind of search (e.g.,
-// literal or regexp, or...) and always succeeds.
-//
-// A parameter is a contiguous sequence of characters, where the following two forms are distinguished:
-// (1) a string of syntax field:<string> where : matches the first encountered colon, and field must match ^-?[a-zA-Z0-9]+
-// (2) <string>
-//
-// When a parameter is of form (1), the <string> corresponds to Parameter.Value, field corresponds to Parameter.Field and Parameter.Negated is set if Field starts with '-'.
-// When form (1) does not match, Value corresponds to <string> and Field is the empty string.
-//
-// The value parameter in the parse tree is only distinguished with respect to
-// the two forms above. There is no restriction on values that <string> may take
-// on. Notably, there is no interpretation of quoting or escaping, which may vary
-// depending on the search being performed. All validation with respect to such
-// properties, and how these should be interpretted, is thus context dependent
-// and handled appropriately within those contexts.
-func ScanParameter(parameter []byte) Parameter {
-	result := fieldValuePattern.FindSubmatch(parameter)
-	if result != nil {
-		if result[1][0] == '-' {
-			return Parameter{
-				Field:   string(result[1][1:]),
-				Value:   string(result[2]),
-				Negated: true,
-			}
-		}
-		return Parameter{Field: string(result[1]), Value: string(result[2])}
-	}
-	return Parameter{Field: "", Value: string(parameter)}
-}
-
 // ScanSearchPatternHeuristic scans for a pattern using a heuristic that allows it to
 // contain parentheses, if balanced, with appropriate lexical handling for
 // traditional escape sequences, escaped parentheses, and escaped whitespace.
@@ -364,11 +336,27 @@ loop:
 			// Handle escape sequence.
 			if len(buf[advance:]) > 0 {
 				r = next()
+				if unicode.IsSpace(r) {
+					// Interpret escaped whitespace.
+					piece = append(piece, r)
+					continue
+				}
 				switch r {
-				case 'a', 'b', 'f', 'n', 'r', 't', 'v', '\\', '"', '\'', '(', ')':
+				case 'a', 'b', 'f', 'v', '(', ')':
 					piece = append(piece, '\\', r)
+				case ':', '\\', '"', '\'':
+					piece = append(piece, r)
+				case 'n':
+					piece = append(piece, '\n')
+				case 'r':
+					piece = append(piece, '\r')
+				case 't':
+					piece = append(piece, '\t')
 				default:
-					// Unrecognized escape sequence.
+					// Heuristic is conservative: fail on
+					// unrecognized escape sequence.
+					// ScanValue will accept unrecognized
+					// escape sequences, if applicable.
 					return pieces, count, false
 				}
 			} else {
@@ -415,30 +403,125 @@ func (p *parser) ParseSearchPatternHeuristic() (Node, bool) {
 	return Operator{Kind: Concat, Operands: parameters}, true
 }
 
-// ParseParameter returns valid leaf node values for AND/OR queries, taking into
-// account escape sequences for special syntax: whitespace and parentheses.
-func (p *parser) ParseParameter() Parameter {
-	start := p.pos
-	for {
-		if p.expect(`\ `) || p.expect(`\(`) || p.expect(`\)`) {
-			continue
+// ScanValue scans for a value (e.g., of a parameter, or a string corresponding
+// to a search pattern). It's main function is to determine when to stop
+// scanning a value (e.g., at a parentheses), and which escape sequences to
+// interpret.
+func ScanValue(buf []byte, allowDanglingParens bool) (string, int) {
+	var count, advance int
+	var r rune
+	var result []rune
+
+	next := func() rune {
+		r, advance := utf8.DecodeRune(buf)
+		count += advance
+		buf = buf[advance:]
+		return r
+	}
+
+	for len(buf) > 0 {
+		start := count
+		r = next()
+		if unicode.IsSpace(r) {
+			count = start // Backtrack.
+			break
 		}
-		if p.match(LPAREN) || p.match(RPAREN) {
-			if p.heuristic.allowDanglingParens {
-				p.pos++ // consume the parenthesis.
+		if r == '(' || r == ')' {
+			if allowDanglingParens {
+				result = append(result, r)
 				continue
 			}
+			count = start // Backtrack.
 			break
 		}
-		if p.done() {
-			break
+		if r == '\\' {
+			// Handle escape sequence.
+			if len(buf[advance:]) > 0 {
+				r = next()
+				if unicode.IsSpace(r) {
+					// Interpret escaped whitespace.
+					result = append(result, r)
+					continue
+				}
+				// Interpret escape sequences for:
+				// (1) special syntax in our language :\"'/
+				// (2) whitespace escape sequences \n\r\t
+				switch r {
+				case ':', '\\', '"', '\'':
+					result = append(result, r)
+				case 'n':
+					result = append(result, '\n')
+				case 'r':
+					result = append(result, '\r')
+				case 't':
+					result = append(result, '\t')
+				default:
+					// Accept anything else literally.
+					result = append(result, '\\', r)
+				}
+				continue
+			}
 		}
-		if isSpace(p.buf[p.pos:]) {
-			break
-		}
-		p.pos++
+		result = append(result, r)
 	}
-	return ScanParameter(p.buf[start:p.pos])
+	return string(result), count
+}
+
+// ParseValue parses a value at the current position. A value may belong to a
+// parameter like repo:<value> or the <value> may be a search pattern. Values
+// may be quoted. ParseValue cannot fail: it will first try to scan well-formed
+// delimiters, like quoted strings. If that fails, it will accept unbalanced
+// strings as patterns. Uses of value can then be validated along other concerns
+// for different search types (literal, regexp, etc.).
+func (p *parser) ParseValue() string {
+	delimited := func(delimiter rune) (string, error) {
+		value, advance, err := ScanDelimited(p.buf[p.pos:], delimiter)
+		if err != nil {
+			return "", err
+		}
+		p.pos += advance
+		return value, nil
+	}
+	tryScanDelimiter := func() (string, error) {
+		if p.match(SQUOTE) {
+			return delimited('\'')
+		}
+		if p.match(DQUOTE) {
+			return delimited('"')
+		}
+		if p.match(SLASH) {
+			return delimited('/')
+		}
+		return "", errors.New("failed to scan delimiter")
+	}
+	if value, err := tryScanDelimiter(); err == nil {
+		return value
+	}
+	value, advance := ScanValue(p.buf[p.pos:], p.heuristic.allowDanglingParens)
+	p.pos += advance
+	return value
+}
+
+// ParseParameter returns a leaf node usable by _any_ kind of search (e.g.,
+// literal or regexp, or...) and always succeeds.
+//
+// A parameter is a contiguous sequence of characters, where the following two forms are distinguished:
+// (1) a string of syntax field:<string> where : matches the first encountered colon, and field must match ^-?[a-zA-Z]+
+// (2) <string>
+//
+// When a parameter is of form (1), the <string> corresponds to Parameter.Value,
+// field corresponds to Parameter.Field and Parameter.Negated is set if Field
+// starts with '-'. When form (1) does not match, Value corresponds to <string>
+// and Field is the empty string.
+func (p *parser) ParseParameter() Parameter {
+	field, advance := ScanField(p.buf[p.pos:])
+	p.pos += advance
+	value := p.ParseValue()
+	negated := len(field) > 0 && field[0] == '-'
+	if negated {
+		field = field[1:]
+	}
+	return Parameter{Field: field, Value: value, Negated: negated}
 }
 
 // containsPattern returns true if any descendent of nodes is a search pattern
