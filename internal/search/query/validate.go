@@ -151,6 +151,13 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 		return nil
 	}
 
+	isNumber := func() error {
+		if _, err := strconv.Atoi(value); err != nil {
+			return fmt.Errorf("field %s has value %s, %s is not a number", field, value, value)
+		}
+		return nil
+	}
+
 	isLanguage := func() error {
 		_, ok := enry.GetLanguageByAlias(value)
 		if !ok {
@@ -218,9 +225,11 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 		FieldMessage, "m", "msg":
 		return satisfies(isValidRegexp)
 	case
-		FieldIndex,
-		FieldCount:
+		FieldIndex:
 		return satisfies(isSingular, isNotNegated)
+	case
+		FieldCount:
+		return satisfies(isSingular, isNumber, isNotNegated)
 	case
 		FieldStable:
 		return satisfies(isSingular, isBoolean, isNotNegated)

@@ -37,6 +37,10 @@ func TestAndOrQuery_Validation(t *testing.T) {
 			input: "mr:potato",
 			want:  `unrecognized field "mr"`,
 		},
+		{
+			input: "count:sedonuts",
+			want:  "field count has value sedonuts, sedonuts is not a number",
+		},
 	}
 	for _, c := range cases {
 		t.Run("validate and/or query", func(t *testing.T) {
