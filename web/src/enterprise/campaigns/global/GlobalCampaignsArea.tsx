@@ -32,7 +32,7 @@ export const GlobalCampaignsArea = withAuthenticatedUser<Props>(({ match, ...out
         content = <CampaignsDotComPage {...outerProps} />
     } else if (window.context.experimentalFeatures?.automation === 'enabled') {
         if (!outerProps.authenticatedUser.siteAdmin && window.context.site['campaigns.readAccess.enabled'] !== true) {
-            content = <CampaignsUserMarketingPage enableReadAccess={true} />
+            content = <CampaignsUserMarketingPage {...outerProps} enableReadAccess={true} />
         } else {
             content = (
                 <>
@@ -65,9 +65,9 @@ export const GlobalCampaignsArea = withAuthenticatedUser<Props>(({ match, ...out
             )
         }
     } else if (outerProps.authenticatedUser.siteAdmin) {
-        content = <CampaignsSiteAdminMarketingPage />
+        content = <CampaignsSiteAdminMarketingPage {...outerProps} />
     } else {
-        content = <CampaignsUserMarketingPage enableReadAccess={false} />
+        content = <CampaignsUserMarketingPage {...outerProps} enableReadAccess={false} />
     }
     return <div className="container mt-4">{content}</div>
 })
