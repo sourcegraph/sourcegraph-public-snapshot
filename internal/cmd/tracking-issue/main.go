@@ -7,7 +7,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io"
 	"log"
 	"os"
 	"regexp"
@@ -143,47 +142,39 @@ func patch(s, replacement, opening, closing string) (string, error) {
 }
 
 type Workload struct {
-	Assignee          string
-	Days              float64
-	Issues            []*Issue
-	PullRequests      []*PullRequest
-	IssuePullRequests map[*Issue][]*PullRequest
-	PullRequestIssues map[*PullRequest][]*Issue
+	Assignee     string
+	Days         float64
+	Issues       []*Issue
+	PullRequests []*PullRequest
 }
 
-func (wl *Workload) PrintTo(w io.Writer) error {
+func (wl *Workload) Markdown() string {
+	var b strings.Builder
+
 	var days string
 	if wl.Days > 0 {
 		days = fmt.Sprintf(": __%.2fd__", wl.Days)
 	}
 
-	_, err := fmt.Fprintf(w, "\n@%s%s\n\n", wl.Assignee, days)
-	if err != nil {
-		return err
-	}
+	fmt.Fprintf(&b, "\n@%s%s\n\n", wl.Assignee, days)
 
 	for _, issue := range wl.Issues {
-		if err = issue.PrintTo(w); err != nil {
-			return err
-		}
+		b.WriteString(issue.Markdown())
 
-		for _, pr := range wl.IssuePullRequests[issue] {
-			if err = pr.PrintTo(w); err != nil {
-				return err
-			}
+		for _, pr := range issue.LinkedPRs {
+			b.WriteString("  ") // Nested list
+			b.WriteString(pr.Markdown())
 		}
 	}
 
 	// Put all PRs that aren't linked to issues top-level
 	for _, pr := range wl.PullRequests {
-		if issues := wl.PullRequestIssues[pr]; len(issues) == 0 {
-			if err = pr.PrintTo(w); err != nil {
-				return err
-			}
+		if len(pr.LinkedIssues) == 0 {
+			b.WriteString(pr.Markdown())
 		}
 	}
 
-	return nil
+	return b.String()
 }
 
 func workloads(issues []*Issue, prs []*PullRequest, milestone string) map[string]*Workload {
@@ -207,19 +198,11 @@ func workloads(issues []*Issue, prs []*PullRequest, milestone string) map[string
 		w := workload(Assignee(issue.Assignees))
 
 		w.Issues = append(w.Issues, issue)
-		if w.IssuePullRequests == nil {
-			w.IssuePullRequests = make(map[*Issue][]*PullRequest)
-		}
-
-		if w.PullRequestIssues == nil {
-			w.PullRequestIssues = make(map[*PullRequest][]*Issue)
-		}
 
 		linked := issue.LinkedPullRequests(prs)
-
-		w.IssuePullRequests[issue] = linked
 		for _, pr := range linked {
-			w.PullRequestIssues[pr] = append(w.PullRequestIssues[pr], issue)
+			issue.LinkedPRs = append(issue.LinkedPRs, pr)
+			pr.LinkedIssues = append(pr.LinkedIssues, issue)
 		}
 
 		if issue.Milestone == milestone {
@@ -243,7 +226,7 @@ func generate(workloads map[string]*Workload) string {
 
 	var b strings.Builder
 	for _, assignee := range assignees {
-		_ = workloads[assignee].PrintTo(&b)
+		b.WriteString(workloads[assignee].Markdown())
 	}
 	return b.String()
 }
@@ -297,10 +280,11 @@ type Issue struct {
 	UpdatedAt  time.Time
 	ClosedAt   time.Time
 
-	Deprioritised bool
+	Deprioritised bool           `json:"-"`
+	LinkedPRs     []*PullRequest `json:"-"`
 }
 
-func (issue *Issue) PrintTo(w io.Writer) error {
+func (issue *Issue) Markdown() string {
 	state := " "
 	if strings.EqualFold(issue.State, "closed") {
 		state = "x"
@@ -312,7 +296,7 @@ func (issue *Issue) PrintTo(w io.Writer) error {
 		estimate = "__" + estimate + "__ "
 	}
 
-	_, err := fmt.Fprintf(w, "- [%s] %s [#%d](%s) %s%s\n",
+	return fmt.Sprintf("- [%s] %s [#%d](%s) %s%s\n",
 		state,
 		issue.title(),
 		issue.Number,
@@ -320,8 +304,6 @@ func (issue *Issue) PrintTo(w io.Writer) error {
 		estimate,
 		issue.Emojis(),
 	)
-
-	return err
 }
 
 func (issue *Issue) Emojis() string {
@@ -424,23 +406,23 @@ type PullRequest struct {
 	UpdatedAt  time.Time
 	ClosedAt   time.Time
 	BeganAt    time.Time // Time of the first authored commit
+
+	LinkedIssues []*Issue `json:"-"`
 }
 
-func (pr *PullRequest) PrintTo(w io.Writer) error {
+func (pr *PullRequest) Markdown() string {
 	state := " "
 	if strings.EqualFold(pr.State, "merged") {
 		state = "x"
 	}
 
-	_, err := fmt.Fprintf(w, "  - [%s] %s [#%d](%s) %s\n",
+	return fmt.Sprintf("- [%s] %s [#%d](%s) %s\n",
 		state,
 		pr.title(),
 		pr.Number,
 		pr.URL,
 		pr.Emojis(),
 	)
-
-	return err
 }
 
 func (pr *PullRequest) Emojis() string {
@@ -682,7 +664,7 @@ func listIssuesAndPullRequests(ctx context.Context, cli *graphql.Client, org, mi
 }
 
 func listIssuesGraphQLQuery(alias string) string {
-	const searchQuery = `%s: search(first: $%sCount, type: ISSUE, after: $%sCursor query: $%sQuery) {
+	const searchQuery = `%[1]s: search(first: $%[1]sCount, type: ISSUE, after: $%[1]sCursor query: $%[1]sQuery) {
 		pageInfo {
 			endCursor
 			hasNextPage
@@ -698,9 +680,6 @@ func listIssuesGraphQLQuery(alias string) string {
 	}`
 
 	return fmt.Sprintf(searchQuery,
-		alias,
-		alias,
-		alias,
 		alias,
 		searchNodeFields(false),
 		searchNodeFields(true),
