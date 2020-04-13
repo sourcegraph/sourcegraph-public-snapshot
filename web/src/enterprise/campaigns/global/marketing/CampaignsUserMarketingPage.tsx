@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { CampaignsMarketing } from './CampaignsMarketing'
 import { TelemetryProps } from '../../../../../../shared/src/telemetry/telemetryService'
 
@@ -10,47 +10,68 @@ export interface CampaignsUserMarketingPageProps extends TelemetryProps {
 export const CampaignsUserMarketingPage: React.FunctionComponent<CampaignsUserMarketingPageProps> = ({
     enableReadAccess,
     telemetryService,
-}) => (
-    <>
-        <CampaignsMarketing
-            telemetryService={telemetryService}
-            subTitle={
-                <i>
-                    Ask your admin{' '}
-                    {enableReadAccess && <a href="#getting-started">to enable read-access for campaigns</a>}
-                    {!enableReadAccess && <a href="#getting-started">to enable campaigns for your team</a>}
-                </i>
-            }
-        />
+}) => {
+    const [wasSubmitted, setWasSubmitted] = useState<boolean>(false)
+    const onUpvote = (): React.MouseEventHandler => () => {
+        telemetryService.log('ExpressCampaignsInterest')
+        setWasSubmitted(true)
+    }
+    return (
+        <>
+            <CampaignsMarketing
+                body={
+                    <section className="my-3 text-center">
+                        {!enableReadAccess && <h1>Tell your admin you are interested in Campaigns</h1>}
+                        {enableReadAccess && <h1>How to get started</h1>}
 
-        <section className="my-3 text-center" id="getting-started">
-            {!enableReadAccess && <h1>Ask your admin to enable campaigns for your team</h1>}
-            {enableReadAccess && <h1>Ask your admin to enable read-access for campaigns</h1>}
-
-            <p className="lead">
-                Running Campaigns is currently only possible for site admins of your Sourcegraph instance.{' '}
-                {enableReadAccess && (
-                    <>
-                        However, your administrator can{' '}
-                        <a href="https://docs.sourcegraph.com/user/campaigns#configuration" rel="noopener">
-                            enable read-only access to campaigns
-                        </a>{' '}
-                        for other users, by setting <code>campaigns.readAccess.enabled</code>.
-                    </>
-                )}
-                {!enableReadAccess && (
-                    <>
-                        Your admin will need to{' '}
-                        <a href="https://docs.sourcegraph.com/user/campaigns" rel="noopener">
-                            update the configuration settings
-                        </a>{' '}
-                        to make large-scale code changes across many repositories and different code hosts.
-                    </>
-                )}
-            </p>
-            <a href="https://docs.sourcegraph.com/user/campaigns" rel="noopener" className="btn btn-primary">
-                Learn how to get started with campaigns
-            </a>
-        </section>
-    </>
-)
+                        <p className="lead">
+                            Running Campaigns are currently only supported for site admins of your Sourcegraph instance.{' '}
+                            {enableReadAccess && (
+                                <>
+                                    However, your admin can{' '}
+                                    <a href="https://docs.sourcegraph.com/user/campaigns#configuration" rel="noopener">
+                                        enable read-only access to campaigns
+                                    </a>{' '}
+                                    for other users.
+                                </>
+                            )}
+                            {!enableReadAccess && (
+                                <>
+                                    Your admin will need to{' '}
+                                    <a href="https://docs.sourcegraph.com/user/campaigns" rel="noopener">
+                                        update the configuration settings
+                                    </a>{' '}
+                                    to make large-scale code changes across many repositories and different code hosts.
+                                </>
+                            )}
+                        </p>
+                        <div className="row">
+                            <ol className="col-6 offset-3 lead text-left">
+                                <li>Tell your admin</li>
+                                <li>Request read-only access</li>
+                            </ol>
+                        </div>
+                        <div>
+                            <button
+                                type="button"
+                                className="btn btn-primary mr-2"
+                                disabled={wasSubmitted}
+                                onClick={onUpvote}
+                            >
+                                {!wasSubmitted && <>Let your admin know you're interested 🖐</>}
+                                {wasSubmitted && <>Thanks!</>}
+                            </button>
+                            <a
+                                href="https://docs.sourcegraph.com/user/campaigns"
+                                rel="noopener"
+                                className="btn btn-primary"
+                            >
+                                Learn how to get started with campaigns
+                            </a>
+                        </div>
+                    </section>
+                }
+            />
+        </>
+    )
+}
