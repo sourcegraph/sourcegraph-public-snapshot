@@ -21,11 +21,10 @@ export const CreateCampaign: React.FunctionComponent<Props> = ({ className }) =>
                             <CampaignsIcon className="mr-3" />
                         </h3>
                         <div>
-                            <h3>Create a manual campaign</h3>
+                            <h3>Create a new empty campaign</h3>
                             <p className="mb-0">
-                                Choose manual campaign if you want to track existing changesets (pull requests) with
-                                Sourcegraph. All added changesets can be monitored and a burndown chart will give you an
-                                overview on the progress.
+                                Track existing changesets (pull requests) with Sourcegraph. All added changesets can be
+                                monitored and a burndown chart will give you an overview on the progress.
                             </p>
                         </div>
                     </div>

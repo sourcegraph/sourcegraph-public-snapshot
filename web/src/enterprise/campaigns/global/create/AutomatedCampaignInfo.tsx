@@ -33,23 +33,20 @@ export const AutomatedCampaignInfo: React.FunctionComponent<Props> = ({ classNam
         <div className="card">
             <div className="card-body">
                 <p className="alert alert-info">
-                    Follow the step-by-step guide to get started with your first campaign. You can also find{' '}
-                    <a href="#examples">examples</a> on this page.
+                    Follow the step-by-step guide to get started with your first campaign. You can also find examples at
+                    the bottom of this page.
                 </p>
                 <h3>1. Install the src cli</h3>
                 <p className="pl-2">
-                    Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut
-                    labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores
-                    et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.
-                    Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut
-                    labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores
-                    et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.
+                    First, you need to{' '}
+                    <a href="https://github.com/sourcegraph/src-cli#setup">Install and set-up the src CLI</a>.
                     <br />
                     <br />
                     <code>
-                        export SRC_ENDPOINT={window.location.protocol}//{window.location.hostname}
+                        export SRC_ENDPOINT={window.location.protocol}//{window.location.host}
                         <br />
-                        curl -L ${'{'}SRC_ENDPOINT{'}'}/.api/src-cli/src_dawin_64 -o /usr/local/bin/src
+                        curl -L ${'{'}SRC_ENDPOINT{'}'}/.api/src-cli/src_dawin_amd64 -o /usr/local/bin/src curl -L $
+                        {'{'}SRC_ENDPOINT{'}'}/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src
                     </code>
                 </p>
                 <h3>2. Run your first action</h3>
