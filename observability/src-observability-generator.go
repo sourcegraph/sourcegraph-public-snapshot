@@ -356,7 +356,7 @@ func (c *Container) dashboard() *sdk.Board {
 		},
 	}
 	alertsDefined.AddTarget(&sdk.Target{
-		Expr:    fmt.Sprintf(`label_replace(sum(alert_count{service_name="%s",name!="",level=~"$alert_level"}) by (level,description), "_01_level", "$1", "level", "(.*)")`, c.Name),
+		Expr:    fmt.Sprintf(`label_replace(sum(max by (level,service_name,name,description)(alert_count{service_name="%s",name!="",level=~"$alert_level"})) by (level,description), "_01_level", "$1", "level", "(.*)")`, c.Name),
 		Format:  "table",
 		Instant: true,
 	})
@@ -390,7 +390,7 @@ func (c *Container) dashboard() *sdk.Board {
 		},
 	}
 	alertsFiring.AddTarget(&sdk.Target{
-		Expr:         fmt.Sprintf(`sum by (service_name,level,name)(alert_count{service_name="%s",name!="",level=~"$alert_level"} >= 1)`, c.Name),
+		Expr:         fmt.Sprintf(`sum by (service_name,level,name)(max by (level,service_name,name,description)(alert_count{service_name="%s",name!="",level=~"$alert_level"}) >= 1)`, c.Name),
 		LegendFormat: "{{level}}: {{name}}",
 	})
 	board.Panels = append(board.Panels, alertsFiring)
