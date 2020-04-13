@@ -1,8 +1,8 @@
 FROM golang:1.13-alpine@sha256:ed003971a4809c9ae45afe2d318c24b9e3f6b30864a322877c69a46c504d852c AS builder
 
-COPY ./src-observability-generator /go/src/
+COPY observability /go/src/src-observability-generator
 WORKDIR /go/src/src-observability-generator
-RUN CGO_ENABLED=0 go install .
+RUN CGO_ENABLED=0 go build -o /go/bin/src-observability-generator
 RUN mkdir -p /generated/grafana
 RUN PROMETHEUS_DIR='' GRAFANA_DIR=/generated/grafana /go/bin/src-observability-generator
 

@@ -636,7 +636,7 @@ func withPeriod(s string) string {
 var isDev, _ = strconv.ParseBool(os.Getenv("DEV"))
 
 func main() {
-	grafanaDir, ok := os.LookupEnv("DASHBOARD_DIR")
+	grafanaDir, ok := os.LookupEnv("GRAFANA_DIR")
 	if !ok {
 		grafanaDir = "../docker-images/grafana/config/provisioning/dashboards/sourcegraph/"
 	}
