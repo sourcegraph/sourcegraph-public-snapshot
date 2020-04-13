@@ -7,6 +7,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -167,17 +168,38 @@ func (o Observable) validate() error {
 	if o.Warning.isEmpty() && o.Critical.isEmpty() {
 		return fmt.Errorf("%s: a Warning or Critical alert MUST be defined", o.Name)
 	}
+	if err := o.Warning.validate(); err != nil && !o.Warning.isEmpty() {
+		return fmt.Errorf("Warning: %v", err)
+	}
+	if err := o.Critical.validate(); err != nil && !o.Critical.isEmpty() {
+		return fmt.Errorf("Critical: %v", err)
+	}
 	return nil
 }
 
 // Alert defines when an alert would be considered firing.
 type Alert struct {
-	// GreaterOrEqual indicates the value at which the alert should fire.
+	// GreaterOrEqual, when non-zero, indicates the alert should fire when
+	// greater or equal to this value.
 	GreaterOrEqual float64
+
+	// LessOrEqual, when non-zero, indicates the alert should fire when less
+	// than or equal to this value.
+	LessOrEqual float64
 }
 
 func (a Alert) isEmpty() bool {
-	return a == Alert{} || a.GreaterOrEqual <= 0
+	return a == Alert{} || (a.GreaterOrEqual == 0 && a.LessOrEqual == 0)
+}
+
+func (a Alert) validate() error {
+	if a.isEmpty() {
+		return errors.New("empty")
+	}
+	if a.GreaterOrEqual != 0 && a.LessOrEqual != 0 {
+		return errors.New("only one of GreaterOrEqual,LessOrEqual may be specified")
+	}
+	return nil
 }
 
 // UnitType for controlling the unit type display on graphs.
@@ -418,7 +440,7 @@ func (c *Container) dashboard() *sdk.Board {
 					Show:     true,
 				}
 
-				if o.Warning.GreaterOrEqual > 0 {
+				if o.Warning.GreaterOrEqual != 0 {
 					// Warning threshold
 					panel.GraphPanel.Thresholds = append(panel.GraphPanel.Thresholds, sdk.Threshold{
 						Value:     float32(o.Warning.GreaterOrEqual),
@@ -430,11 +452,35 @@ func (c *Container) dashboard() *sdk.Board {
 						LineColor: "rgba(31, 96, 196, 0.6)",
 					})
 				}
-				if o.Critical.GreaterOrEqual > 0 {
+				if o.Critical.GreaterOrEqual != 0 {
 					// Critical threshold
 					panel.GraphPanel.Thresholds = append(panel.GraphPanel.Thresholds, sdk.Threshold{
 						Value:     float32(o.Critical.GreaterOrEqual),
 						Op:        "gt",
+						ColorMode: "custom",
+						Fill:      true,
+						Line:      true,
+						FillColor: "rgba(242, 73, 92, 0.5)",
+						LineColor: "rgba(31, 96, 196, 0.6)",
+					})
+				}
+				if o.Warning.LessOrEqual != 0 {
+					// Warning threshold
+					panel.GraphPanel.Thresholds = append(panel.GraphPanel.Thresholds, sdk.Threshold{
+						Value:     float32(o.Warning.LessOrEqual),
+						Op:        "lt",
+						ColorMode: "custom",
+						Fill:      true,
+						Line:      true,
+						FillColor: "rgba(255, 152, 48, 0.5)",
+						LineColor: "rgba(31, 96, 196, 0.6)",
+					})
+				}
+				if o.Critical.LessOrEqual != 0 {
+					// Critical threshold
+					panel.GraphPanel.Thresholds = append(panel.GraphPanel.Thresholds, sdk.Threshold{
+						Value:     float32(o.Critical.LessOrEqual),
+						Op:        "lt",
 						ColorMode: "custom",
 						Fill:      true,
 						Line:      true,
@@ -496,18 +542,56 @@ func (c *Container) promAlertsFile() *promRulesFile {
 					labels["level"] = level
 					labels["name"] = o.Name
 
+					// The alertQuery must contribute a query that returns a value < 1 when it is not
+					// firing, or a value of >= 1 when it is firing.
 					var alertQuery string
-					if alert.GreaterOrEqual > 0 {
+					if alert.GreaterOrEqual != 0 {
+						// e.g. "zoekt-indexserver: 20+ indexed search request errors every 5m by code"
 						labels["description"] = fmt.Sprintf("%s: %v+ %s", c.Name, alert.GreaterOrEqual, o.Description)
+						// By dividing the query value and the greaterOrEqual value, we produce a
+						// value of 1 when the query reaches the greaterOrEqual value and < 1
+						// otherwise. Examples:
+						//
+						// 	query_value=50 / greaterOrEqual=50 == 1.0
+						// 	query_value=25 / greaterOrEqual=50 == 0.5
+						// 	query_value=0 / greaterOrEqual=50 == 0.0
+						//
 						alertQuery = fmt.Sprintf("(%s) / %v", o.Query, alert.GreaterOrEqual)
 						if o.DataMayNotExist {
 							alertQuery = fmt.Sprintf("(%s) OR on() vector(0)", alertQuery)
 						}
+					} else if alert.LessOrEqual != 0 {
+						// e.g. "zoekt-indexserver: less than 20 indexed search requests every 5m by code"
+						labels["description"] = fmt.Sprintf("%s: less than %v %s", c.Name, alert.LessOrEqual, o.Description)
+						//
+						// 	lessOrEqual=50 / query_value=100 == 0.5
+						// 	lessOrEqual=50 / query_value=50 == 1.0
+						// 	lessOrEqual=50 / query_value=25 == 2.0
+						// 	lessOrEqual=50 / query_value=0 (0.0000001) == 500000000
+						// 	lessOrEqual=50 / query_value=-50 (0.0000001) == 500000000
+						//
+						alertQuery = fmt.Sprintf("%v / clamp_min(%s, 0.0000001)", alert.LessOrEqual, o.Query)
+						if o.DataMayNotExist {
+							alertQuery = fmt.Sprintf("(%s) OR on() vector(0)", alertQuery)
+						}
 					}
+
+					// This wrapper clamp/floor/default vector should be present on ALL alert_count rule
+					// definitions because:
+					//
+					// 1. Clamping and flooring ensures that a single alert definition can only ever
+					//    contribute a single 0 OR 1 value, and as such cannot artificially inflate
+					//    alert_count or cause it to become a non-whole number.
+					//
+					// 3. "OR on() vector(1)" ensures that the alert is always firing if the inner
+					//    alertQuery does not return values for any reason (e.g. the query is for a
+					//    metric that does not exist.)
+					//
+					expr := "clamp_max(clamp_min(floor(\n" + alertQuery + "\n), 0), 1) OR on() vector(1)"
 					group.Rules = append(group.Rules, promRule{
 						Record: "alert_count",
 						Labels: labels,
-						Expr:   "clamp_max(clamp_min(floor(\n" + alertQuery + "\n), 0), 1) OR on() vector(1)",
+						Expr:   expr,
 					})
 				}
 			}
