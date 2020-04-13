@@ -664,7 +664,7 @@ func listIssuesAndPullRequests(ctx context.Context, cli *graphql.Client, org, mi
 }
 
 func listIssuesGraphQLQuery(alias string) string {
-	const searchQuery = `%s: search(first: $%sCount, type: ISSUE, after: $%sCursor query: $%sQuery) {
+	const searchQuery = `%[1]s: search(first: $%[1]sCount, type: ISSUE, after: $%[1]sCursor query: $%[1]sQuery) {
 		pageInfo {
 			endCursor
 			hasNextPage
@@ -680,9 +680,6 @@ func listIssuesGraphQLQuery(alias string) string {
 	}`
 
 	return fmt.Sprintf(searchQuery,
-		alias,
-		alias,
-		alias,
 		alias,
 		searchNodeFields(false),
 		searchNodeFields(true),
