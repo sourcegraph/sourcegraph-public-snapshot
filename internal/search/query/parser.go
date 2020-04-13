@@ -167,7 +167,7 @@ func (p *parser) match(keyword keyword) bool {
 	if err != nil {
 		return false
 	}
-	return strings.ToLower(v) == string(keyword)
+	return strings.EqualFold(v, string(keyword))
 }
 
 // expect returns the result of match, and advances the position if it succeeds.
@@ -177,6 +177,25 @@ func (p *parser) expect(keyword keyword) bool {
 	}
 	p.pos += len(string(keyword))
 	return true
+}
+
+// matchKeyword is like match but expects the keyword to be preceded and followed by whitespace.
+func (p *parser) matchKeyword(keyword keyword) bool {
+	if p.pos == 0 {
+		return false
+	}
+	if !isSpace(p.buf[p.pos-1 : p.pos]) {
+		return false
+	}
+	v, err := p.peek(len(string(keyword)))
+	if err != nil {
+		return false
+	}
+	after := p.pos + len(string(keyword))
+	if after+1 > len(p.buf) || !isSpace(p.buf[after:after+1]) {
+		return false
+	}
+	return strings.ToLower(v) == string(keyword)
 }
 
 // skipSpaces advances the input and places the parser position at the next
@@ -622,7 +641,7 @@ loop:
 				}
 			}
 			break loop
-		case p.match(AND), p.match(OR):
+		case p.matchKeyword(AND), p.matchKeyword(OR):
 			// Caller advances.
 			break loop
 		default:
@@ -753,7 +772,7 @@ func tryFallbackParser(in string) ([]Node, error) {
 
 // ParseAndOr a raw input string into a parse tree comprising Nodes.
 func ParseAndOr(in string) ([]Node, error) {
-	if in == "" {
+	if strings.TrimSpace(in) == "" {
 		return nil, nil
 	}
 	parser := &parser{
