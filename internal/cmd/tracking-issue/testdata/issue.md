@@ -39,7 +39,7 @@
 - [x] Send pings about Automation usage to Sourcegraph [#7711](https://github.com/sourcegraph/sourcegraph/issues/7711) __1d__ 
 - [ ] ~Write C# LSIF indexer~ [#7760](https://github.com/sourcegraph/sourcegraph/issues/7760) 🛠️
 - [x] ~a8n Spike: Add ability to "stack diffs" (RFC 92)~ [#7721](https://github.com/sourcegraph/sourcegraph/issues/7721) __3d__ 🛠️
-  - [x] a8n: Document how to run an action, create a campaign plan and campaign with CLI [#8064](https://github.com/sourcegraph/sourcegraph/pull/8064) :shipit:
+- [x] a8n: Document how to run an action, create a campaign plan and campaign with CLI [#8064](https://github.com/sourcegraph/sourcegraph/pull/8064) :shipit:
 
 @rvantonder: __10.00d__
 
