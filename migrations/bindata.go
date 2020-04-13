@@ -102,6 +102,8 @@
 // 1528395666_lsif_filename.up.sql (289B)
 // 1528395667_index_boolean_fields_on_repo.down.sql (120B)
 // 1528395667_index_boolean_fields_on_repo.up.sql (187B)
+// 1528395668_campaign_description_nullable.down.sql (144B)
+// 1528395668_campaign_description_nullable.up.sql (143B)
 
 package migrations
 
@@ -2210,6 +2212,46 @@ func _1528395667_index_boolean_fields_on_repoUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395668_campaign_description_nullableDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x0a\x0d\x70\x71\x0c\x71\x55\x48\x4e\xcc\x2d\x48\xcc\x4c\xcf\x2b\x56\x08\x76\x0d\x51\x48\x49\x2d\x4e\x2e\xca\x2c\x28\xc9\xcc\xcf\x53\xb0\x55\x50\x57\x57\x08\xf7\x70\x0d\x72\x45\x11\xf6\x0c\x56\xf0\x0b\xf5\xf1\xb1\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x41\x36\x06\x22\xea\xec\xef\x13\xea\xeb\x87\xa2\x11\x64\xbe\x9f\x7f\x08\x4c\xb7\xb3\xbf\xaf\xaf\x67\x88\x35\x17\x20\x00\x00\xff\xff\xe1\x8c\x3b\x97\x90\x00\x00\x00")
+
+func _1528395668_campaign_description_nullableDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395668_campaign_description_nullableDownSql,
+		"1528395668_campaign_description_nullable.down.sql",
+	)
+}
+
+func _1528395668_campaign_description_nullableDownSql() (*asset, error) {
+	bytes, err := _1528395668_campaign_description_nullableDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395668_campaign_description_nullable.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x28, 0x37, 0xd3, 0xf2, 0x3c, 0xfe, 0x41, 0xad, 0x38, 0x82, 0xd5, 0x51, 0xba, 0xfa, 0x22, 0xa5, 0x17, 0x2e, 0x9b, 0xbd, 0x7, 0x8a, 0xa9, 0xa4, 0xfa, 0x6, 0x7e, 0x1d, 0xb7, 0xeb, 0x79, 0x86}}
+	return a, nil
+}
+
+var __1528395668_campaign_description_nullableUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\x4e\xcc\x2d\x48\xcc\x4c\xcf\x2b\x56\x80\x88\x3a\xfb\xfb\x84\xfa\xfa\x29\xa4\xa4\x16\x27\x17\x65\x16\x94\x64\xe6\xe7\x29\xb8\x04\xf9\x07\x28\xf8\xf9\x87\x28\xf8\x85\xfa\xf8\x58\x73\x85\x06\xb8\x38\x86\x20\x6b\x0c\x76\x0d\x41\x51\x6f\x0b\x56\xa8\x10\xee\xe1\x1a\xe4\x8a\x26\xa1\xae\x6e\xcd\xc5\xe5\xec\xef\xeb\xeb\x19\x62\xcd\x05\x08\x00\x00\xff\xff\x2c\xd9\x1b\x18\x8f\x00\x00\x00")
+
+func _1528395668_campaign_description_nullableUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395668_campaign_description_nullableUpSql,
+		"1528395668_campaign_description_nullable.up.sql",
+	)
+}
+
+func _1528395668_campaign_description_nullableUpSql() (*asset, error) {
+	bytes, err := _1528395668_campaign_description_nullableUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395668_campaign_description_nullable.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x53, 0x74, 0x4b, 0x7b, 0x8d, 0x79, 0xb4, 0x86, 0x49, 0x47, 0x56, 0x14, 0x2d, 0x49, 0x34, 0xa5, 0x4b, 0x6f, 0xc3, 0x57, 0x9d, 0x26, 0x80, 0x4, 0xc5, 0xa5, 0x34, 0xfb, 0xd0, 0xaf, 0xd, 0x94}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2403,6 +2445,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395666_lsif_filename.up.sql":                                         _1528395666_lsif_filenameUpSql,
 	"1528395667_index_boolean_fields_on_repo.down.sql":                        _1528395667_index_boolean_fields_on_repoDownSql,
 	"1528395667_index_boolean_fields_on_repo.up.sql":                          _1528395667_index_boolean_fields_on_repoUpSql,
+	"1528395668_campaign_description_nullable.down.sql":                       _1528395668_campaign_description_nullableDownSql,
+	"1528395668_campaign_description_nullable.up.sql":                         _1528395668_campaign_description_nullableUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -2548,6 +2592,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395666_lsif_filename.up.sql":                                         {_1528395666_lsif_filenameUpSql, map[string]*bintree{}},
 	"1528395667_index_boolean_fields_on_repo.down.sql":                        {_1528395667_index_boolean_fields_on_repoDownSql, map[string]*bintree{}},
 	"1528395667_index_boolean_fields_on_repo.up.sql":                          {_1528395667_index_boolean_fields_on_repoUpSql, map[string]*bintree{}},
+	"1528395668_campaign_description_nullable.down.sql":                       {_1528395668_campaign_description_nullableDownSql, map[string]*bintree{}},
+	"1528395668_campaign_description_nullable.up.sql":                         {_1528395668_campaign_description_nullableUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
