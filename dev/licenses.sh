@@ -4,7 +4,7 @@ cd $(dirname "${BASH_SOURCE[0]}")/..
 
 set -euf -o pipefail
 
-FAIL_ON='GPL-1.0-only;GPL-1.0-or-later;GPL-2.0-only;GPL-2.0-or-later;GPL-3.0-only;GPL-3.0-or-later'
+FAIL_ON='UNKNOWN;GPL-1.0-only;GPL-1.0-or-later;GPL-2.0-only;GPL-2.0-or-later;GPL-3.0-only;GPL-3.0-or-later'
 
 {
     # Webapp, native integrations and browser extension
