@@ -7,6 +7,7 @@ default:
 
 $(images):
 	[ ! -f $@/Makefile ] || (cd $@; $(MAKE))
+	[ ! -f $@/pre-build.sh ] || (cd $@; ./pre-build.sh)
 	$(eval tag := $(shell ./version.sh $@))
 	$(eval image := sourcegraph/$@)
 	docker build -t $(image):$(tag) $@
