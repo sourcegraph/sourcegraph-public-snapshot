@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -17,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // A BitbucketServerSource yields repositories from a single BitbucketServer connection configured
@@ -25,7 +25,7 @@ import (
 type BitbucketServerSource struct {
 	svc     *ExternalService
 	config  *schema.BitbucketServerConnection
-	exclude excluder
+	exclude excludeFunc
 	client  *bitbucketserver.Client
 }
 
@@ -39,12 +39,6 @@ func NewBitbucketServerSource(svc *ExternalService, cf *httpcli.Factory) (*Bitbu
 }
 
 func newBitbucketServerSource(svc *ExternalService, c *schema.BitbucketServerConnection, cf *httpcli.Factory) (*BitbucketServerSource, error) {
-	baseURL, err := url.Parse(c.Url)
-	if err != nil {
-		return nil, err
-	}
-	baseURL = extsvc.NormalizeBaseURL(baseURL)
-
 	if cf == nil {
 		cf = httpcli.NewExternalHTTPClientFactory()
 	}
@@ -59,20 +53,21 @@ func newBitbucketServerSource(svc *ExternalService, c *schema.BitbucketServerCon
 		return nil, err
 	}
 
-	var exclude excluder
+	var eb excludeBuilder
 	for _, r := range c.Exclude {
-		exclude.Exact(r.Name)
-		exclude.Exact(strconv.Itoa(r.Id))
-		exclude.Pattern(r.Pattern)
+		eb.Exact(r.Name)
+		eb.Exact(strconv.Itoa(r.Id))
+		eb.Pattern(r.Pattern)
 	}
-	if err := exclude.Err(); err != nil {
+	exclude, err := eb.Build()
+	if err != nil {
 		return nil, err
 	}
 
-	client := bitbucketserver.NewClient(baseURL, cli)
-	client.Token = c.Token
-	client.Username = c.Username
-	client.Password = c.Password
+	client, err := bitbucketserver.NewClient(c, cli)
+	if err != nil {
+		return nil, err
+	}
 
 	return &BitbucketServerSource{
 		svc:     svc,
@@ -272,19 +267,6 @@ func (s BitbucketServerSource) makeRepo(repo *bitbucketserver.Repo, isArchived b
 		}
 	}
 
-	// Repo Links
-	// var links *protocol.RepoLinks
-	// for _, l := range repo.Links.Self {
-	// 	root := strings.TrimSuffix(l.Href, "/browse")
-	// 	links = &protocol.RepoLinks{
-	// 		Root:   l.Href,
-	// 		Tree:   root + "/browse/{path}?at={rev}",
-	// 		Blob:   root + "/browse/{path}?at={rev}",
-	// 		Commit: root + "/commits/{commit}",
-	// 	}
-	// 	break
-	// }
-
 	urn := s.svc.URN()
 
 	return &Repo{
@@ -325,8 +307,8 @@ func (s *BitbucketServerSource) excludes(r *bitbucketserver.Repo) bool {
 		name = r.Project.Key + "/" + name
 	}
 	if r.State != "AVAILABLE" ||
-		s.exclude.Match(name) ||
-		s.exclude.Match(strconv.Itoa(r.ID)) ||
+		s.exclude(name) ||
+		s.exclude(strconv.Itoa(r.ID)) ||
 		(s.config.ExcludePersonalRepositories && r.IsPersonalRepository()) {
 		return true
 	}

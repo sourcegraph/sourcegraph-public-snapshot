@@ -5,6 +5,7 @@ import { FiltersToTypeAndValue } from '../search/interactive/util'
 import { isEmpty } from 'lodash'
 import { parseSearchQuery, CharacterRange } from '../search/parser/parser'
 import { replaceRange } from './strings'
+import { discreteValueAliases } from '../search/parser/filters'
 
 export interface RepoSpec {
     /**
@@ -173,10 +174,7 @@ export function parseRepoURI(uri: RepoURI): ParsedRepoURI {
     if (rev?.match(/[0-9a-fA-f]{40}/)) {
         commitID = rev
     }
-    const fragmentSplit = parsed.hash
-        .substr('#'.length)
-        .split(':')
-        .map(decodeURIComponent)
+    const fragmentSplit = parsed.hash.substr('#'.length).split(':').map(decodeURIComponent)
     let filePath: string | undefined
     let position: UIPosition | undefined
     let range: UIRange | undefined
@@ -575,7 +573,7 @@ export function buildSearchURLQuery(
         fullQuery = replaceRange(fullQuery, caseInQuery.range)
         searchParams.set('q', fullQuery)
 
-        if (caseInQuery.value === 'yes') {
+        if (discreteValueAliases.yes.includes(caseInQuery.value)) {
             fullQuery = replaceRange(fullQuery, caseInQuery.range)
             searchParams.set('case', caseInQuery.value)
         } else {
@@ -598,11 +596,7 @@ export function buildSearchURLQuery(
         }
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-base-to-string
-    return searchParams
-        .toString()
-        .replace(/%2F/g, '/')
-        .replace(/%3A/g, ':')
+    return searchParams.toString().replace(/%2F/g, '/').replace(/%3A/g, ':')
 }
 
 /**

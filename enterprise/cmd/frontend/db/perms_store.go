@@ -131,6 +131,10 @@ AND permission = %s
 //         1 |       read | bitmap{1} | <DateTime>
 //         2 |       read | bitmap{1} | <DateTime>
 func (s *PermsStore) SetUserPermissions(ctx context.Context, p *authz.UserPermissions) (err error) {
+	if Mocks.Perms.SetUserPermissions != nil {
+		return Mocks.Perms.SetUserPermissions(ctx, p)
+	}
+
 	ctx, save := s.observe(ctx, "SetUserPermissions", "")
 	defer func() { save(&err, p.TracingFields()...) }()
 
@@ -165,50 +169,50 @@ func (s *PermsStore) SetUserPermissions(ctx context.Context, p *authz.UserPermis
 	// Load stored object IDs of both added and removed.
 	changedIDs := roaring.Or(added, removed).ToArray()
 
-	// In case there is nothing to add or remove.
-	if len(changedIDs) == 0 {
-		return nil
-	}
-
-	q := loadRepoPermissionsBatchQuery(changedIDs, p.Perm, "FOR UPDATE")
-	loadedIDs, err := txs.batchLoadIDs(ctx, q)
-	if err != nil {
-		return errors.Wrap(err, "batch load repo permissions")
-	}
-
-	// We have two sets of IDs that one needs to add, and the other needs to remove.
 	updatedAt := txs.clock()
-	updatedPerms := make([]*authz.RepoPermissions, 0, len(changedIDs))
-	for _, id := range changedIDs {
-		repoID := int32(id)
-		userIDs := loadedIDs[repoID]
-		if userIDs == nil {
-			userIDs = roaring.NewBitmap()
+	if len(changedIDs) > 0 {
+		q := loadRepoPermissionsBatchQuery(changedIDs, p.Perm, "FOR UPDATE")
+		loadedIDs, err := txs.batchLoadIDs(ctx, q)
+		if err != nil {
+			return errors.Wrap(err, "batch load repo permissions")
 		}
 
-		switch {
-		case added.Contains(id):
-			userIDs.Add(uint32(p.UserID))
-		case removed.Contains(id):
-			userIDs.Remove(uint32(p.UserID))
+		// We have two sets of IDs that one needs to add, and the other needs to remove.
+		updatedPerms := make([]*authz.RepoPermissions, 0, len(changedIDs))
+		for _, id := range changedIDs {
+			repoID := int32(id)
+			userIDs := loadedIDs[repoID]
+			if userIDs == nil {
+				userIDs = roaring.NewBitmap()
+			}
+
+			switch {
+			case added.Contains(id):
+				userIDs.Add(uint32(p.UserID))
+			case removed.Contains(id):
+				userIDs.Remove(uint32(p.UserID))
+			}
+
+			updatedPerms = append(updatedPerms, &authz.RepoPermissions{
+				RepoID:    repoID,
+				Perm:      p.Perm,
+				UserIDs:   userIDs,
+				UpdatedAt: updatedAt,
+			})
 		}
 
-		updatedPerms = append(updatedPerms, &authz.RepoPermissions{
-			RepoID:    repoID,
-			Perm:      p.Perm,
-			UserIDs:   userIDs,
-			UpdatedAt: updatedAt,
-		})
+		if q, err = upsertRepoPermissionsBatchQuery(updatedPerms...); err != nil {
+			return err
+		} else if err = txs.execute(ctx, q); err != nil {
+			return errors.Wrap(err, "execute upsert repo permissions batch query")
+		}
 	}
 
-	if q, err = upsertRepoPermissionsBatchQuery(updatedPerms...); err != nil {
-		return err
-	} else if err = txs.execute(ctx, q); err != nil {
-		return errors.Wrap(err, "execute upsert repo permissions batch query")
-	}
-
+	// NOTE: The permissions background sync relies on UpdatedAt column to do rolling
+	// update, if we don't always update the value of the column regardless, we will
+	// end up checking the same set of oldest but up-to-date rows in the table.
 	p.UpdatedAt = updatedAt
-	if q, err = upsertUserPermissionsBatchQuery(p); err != nil {
+	if q, err := upsertUserPermissionsBatchQuery(p); err != nil {
 		return err
 	} else if err = txs.execute(ctx, q); err != nil {
 		return errors.Wrap(err, "execute upsert user permissions batch query")
@@ -284,51 +288,51 @@ func (s *PermsStore) SetRepoPermissions(ctx context.Context, p *authz.RepoPermis
 	// Load stored user IDs of both added and removed.
 	changedIDs := roaring.Or(added, removed).ToArray()
 
-	// In case there is nothing to add or remove.
-	if len(changedIDs) == 0 {
-		return nil
-	}
-
-	q := loadUserPermissionsBatchQuery(changedIDs, p.Perm, authz.PermRepos, "FOR UPDATE")
-	loadedIDs, err := txs.batchLoadIDs(ctx, q)
-	if err != nil {
-		return errors.Wrap(err, "batch load user permissions")
-	}
-
-	// We have two sets of IDs that one needs to add, and the other needs to remove.
 	updatedAt := txs.clock()
-	updatedPerms := make([]*authz.UserPermissions, 0, len(changedIDs))
-	for _, id := range changedIDs {
-		userID := int32(id)
-		repoIDs := loadedIDs[userID]
-		if repoIDs == nil {
-			repoIDs = roaring.NewBitmap()
+	if len(changedIDs) > 0 {
+		q := loadUserPermissionsBatchQuery(changedIDs, p.Perm, authz.PermRepos, "FOR UPDATE")
+		loadedIDs, err := txs.batchLoadIDs(ctx, q)
+		if err != nil {
+			return errors.Wrap(err, "batch load user permissions")
 		}
 
-		switch {
-		case added.Contains(id):
-			repoIDs.Add(uint32(p.RepoID))
-		case removed.Contains(id):
-			repoIDs.Remove(uint32(p.RepoID))
+		// We have two sets of IDs that one needs to add, and the other needs to remove.
+		updatedPerms := make([]*authz.UserPermissions, 0, len(changedIDs))
+		for _, id := range changedIDs {
+			userID := int32(id)
+			repoIDs := loadedIDs[userID]
+			if repoIDs == nil {
+				repoIDs = roaring.NewBitmap()
+			}
+
+			switch {
+			case added.Contains(id):
+				repoIDs.Add(uint32(p.RepoID))
+			case removed.Contains(id):
+				repoIDs.Remove(uint32(p.RepoID))
+			}
+
+			updatedPerms = append(updatedPerms, &authz.UserPermissions{
+				UserID:    userID,
+				Perm:      p.Perm,
+				Type:      authz.PermRepos,
+				IDs:       repoIDs,
+				UpdatedAt: updatedAt,
+			})
 		}
 
-		updatedPerms = append(updatedPerms, &authz.UserPermissions{
-			UserID:    userID,
-			Perm:      p.Perm,
-			Type:      authz.PermRepos,
-			IDs:       repoIDs,
-			UpdatedAt: updatedAt,
-		})
+		if q, err = upsertUserPermissionsBatchQuery(updatedPerms...); err != nil {
+			return err
+		} else if err = txs.execute(ctx, q); err != nil {
+			return errors.Wrap(err, "execute upsert user permissions batch query")
+		}
 	}
 
-	if q, err = upsertUserPermissionsBatchQuery(updatedPerms...); err != nil {
-		return err
-	} else if err = txs.execute(ctx, q); err != nil {
-		return errors.Wrap(err, "execute upsert user permissions batch query")
-	}
-
+	// NOTE: The permissions background sync relies on UpdatedAt column to do rolling
+	// update, if we don't always update the value of the column regardless, we will
+	// end up checking the same set of oldest but up-to-date rows in the table.
 	p.UpdatedAt = updatedAt
-	if q, err = upsertRepoPermissionsBatchQuery(p); err != nil {
+	if q, err := upsertRepoPermissionsBatchQuery(p); err != nil {
 		return err
 	} else if err = txs.execute(ctx, q); err != nil {
 		return errors.Wrap(err, "execute upsert repo permissions batch query")
@@ -454,12 +458,12 @@ AND bind_id = %s
 // This method starts its own transaction for update consistency if the caller hasn't started one already.
 //
 // Example input:
-//  &ExternalAccounts{
+//  &extsvc.Accounts{
 //      ServiceType: "sourcegraph",
 //      ServiceID:   "https://sourcegraph.com/",
 //      AccountIDs:  []string{"alice", "bob"},
 //  }
-//  &RepoPermissions{
+//  &authz.RepoPermissions{
 //      RepoID: 1,
 //      Perm: authz.Read,
 //  }
@@ -475,7 +479,7 @@ AND bind_id = %s
 //   repo_id | permission |   user_ids   | updated_at
 //  ---------+------------+--------------+------------
 //         1 |       read | bitmap{1, 2} | <DateTime>
-func (s *PermsStore) SetRepoPendingPermissions(ctx context.Context, accounts *extsvc.ExternalAccounts, p *authz.RepoPermissions) (err error) {
+func (s *PermsStore) SetRepoPendingPermissions(ctx context.Context, accounts *extsvc.Accounts, p *authz.RepoPermissions) (err error) {
 	if Mocks.Perms.SetRepoPendingPermissions != nil {
 		return Mocks.Perms.SetRepoPendingPermissions(ctx, accounts, p)
 	}
@@ -620,7 +624,7 @@ func (s *PermsStore) loadUserPendingPermissionsIDs(ctx context.Context, q *sqlf.
 }
 
 func (s *PermsStore) batchLoadUserPendingPermissions(ctx context.Context, q *sqlf.Query) (
-	idToSpecs map[int32]extsvc.ExternalAccountSpec,
+	idToSpecs map[int32]extsvc.AccountSpec,
 	loaded map[int32]*roaring.Bitmap,
 	err error,
 ) {
@@ -638,11 +642,11 @@ func (s *PermsStore) batchLoadUserPendingPermissions(ctx context.Context, q *sql
 	}
 	defer rows.Close()
 
-	idToSpecs = make(map[int32]extsvc.ExternalAccountSpec)
+	idToSpecs = make(map[int32]extsvc.AccountSpec)
 	loaded = make(map[int32]*roaring.Bitmap)
 	for rows.Next() {
 		var id int32
-		var spec extsvc.ExternalAccountSpec
+		var spec extsvc.AccountSpec
 		var ids []byte
 		if err = rows.Scan(&id, &spec.ServiceType, &spec.ServiceID, &spec.AccountID, &ids); err != nil {
 			return nil, nil, err
@@ -668,7 +672,7 @@ func (s *PermsStore) batchLoadUserPendingPermissions(ctx context.Context, q *sql
 }
 
 func insertUserPendingPermissionsBatchQuery(
-	accounts *extsvc.ExternalAccounts,
+	accounts *extsvc.Accounts,
 	p *authz.RepoPermissions,
 ) (*sqlf.Query, error) {
 	const format = `
@@ -1095,7 +1099,7 @@ func (s *PermsStore) DeleteAllUserPermissions(ctx context.Context, userID int32)
 
 // DeleteAllUserPendingPermissions deletes all rows with given bind IDs from the "user_pending_permissions" table.
 // It accepts list of bind IDs because a user has multiple bind IDs, e.g. username and email addresses.
-func (s *PermsStore) DeleteAllUserPendingPermissions(ctx context.Context, accounts *extsvc.ExternalAccounts) (err error) {
+func (s *PermsStore) DeleteAllUserPendingPermissions(ctx context.Context, accounts *extsvc.Accounts) (err error) {
 	ctx, save := s.observe(ctx, "DeleteAllUserPendingPermissions", "")
 	defer func() { save(&err, accounts.TracingFields()...) }()
 
@@ -1119,7 +1123,7 @@ AND bind_id IN (%s)`,
 	return nil
 }
 
-func (s *PermsStore) execute(ctx context.Context, q *sqlf.Query) (err error) {
+func (s *PermsStore) execute(ctx context.Context, q *sqlf.Query, vs ...interface{}) (err error) {
 	ctx, save := s.observe(ctx, "execute", "")
 	defer func() { save(&err, otlog.Object("q", q)) }()
 
@@ -1128,6 +1132,22 @@ func (s *PermsStore) execute(ctx context.Context, q *sqlf.Query) (err error) {
 	if err != nil {
 		return err
 	}
+
+	if len(vs) > 0 {
+		if !rows.Next() {
+			// One row is expected, return ErrPermsNotFound if no other errors occurred.
+			err = rows.Err()
+			if err == nil {
+				err = authz.ErrPermsNotFound
+			}
+			return err
+		}
+
+		if err = rows.Scan(vs...); err != nil {
+			return err
+		}
+	}
+
 	return rows.Close()
 }
 
@@ -1235,7 +1255,11 @@ func (s *PermsStore) batchLoadIDs(ctx context.Context, q *sqlf.Query) (map[int32
 }
 
 // ListExternalAccounts returns all external accounts that are associated with given user.
-func (s *PermsStore) ListExternalAccounts(ctx context.Context, userID int32) (accounts []*extsvc.ExternalAccount, err error) {
+func (s *PermsStore) ListExternalAccounts(ctx context.Context, userID int32) (accounts []*extsvc.Account, err error) {
+	if Mocks.Perms.ListExternalAccounts != nil {
+		return Mocks.Perms.ListExternalAccounts(ctx, userID)
+	}
+
 	ctx, save := s.observe(ctx, "ListExternalAccounts", "")
 	defer func() { save(&err, otlog.Int32("userID", userID)) }()
 
@@ -1256,11 +1280,11 @@ ORDER BY id ASC
 	defer rows.Close()
 
 	for rows.Next() {
-		var acct extsvc.ExternalAccount
+		var acct extsvc.Account
 		if err := rows.Scan(
 			&acct.ID, &acct.UserID,
 			&acct.ServiceType, &acct.ServiceID, &acct.ClientID, &acct.AccountID,
-			&acct.AuthData, &acct.AccountData,
+			&acct.AuthData, &acct.Data,
 			&acct.CreatedAt, &acct.UpdatedAt,
 		); err != nil {
 			return nil, err
@@ -1278,7 +1302,11 @@ ORDER BY id ASC
 // The returned set has mapping relation as "account ID -> user ID". The number of results
 // could be less than the candidate list due to some users are not associated with any external
 // account.
-func (s *PermsStore) GetUserIDsByExternalAccounts(ctx context.Context, accounts *extsvc.ExternalAccounts) (_ map[string]int32, err error) {
+func (s *PermsStore) GetUserIDsByExternalAccounts(ctx context.Context, accounts *extsvc.Accounts) (_ map[string]int32, err error) {
+	if Mocks.Perms.GetUserIDsByExternalAccounts != nil {
+		return Mocks.Perms.GetUserIDsByExternalAccounts(ctx, accounts)
+	}
+
 	ctx, save := s.observe(ctx, "ListUsersByExternalAccounts", "")
 	defer func() { save(&err, accounts.TracingFields()...) }()
 
@@ -1324,6 +1352,7 @@ func (s *PermsStore) UserIDsWithNoPerms(ctx context.Context) ([]int32, error) {
 -- source: enterprise/cmd/frontend/db/perms_store.go:PermsStore.UserIDsWithNoPerms
 SELECT users.id, '1970-01-01 00:00:00+00'::timestamptz FROM users
 WHERE users.site_admin = FALSE
+AND users.deleted_at IS NULL
 AND users.id NOT IN
 	(SELECT perms.user_id FROM user_permissions AS perms)
 `)
@@ -1345,7 +1374,8 @@ func (s *PermsStore) RepoIDsWithNoPerms(ctx context.Context) ([]api.RepoID, erro
 	q := sqlf.Sprintf(`
 -- source: enterprise/cmd/frontend/db/perms_store.go:PermsStore.RepoIDsWithNoPerms
 SELECT repo.id, '1970-01-01 00:00:00+00'::timestamptz FROM repo
-WHERE repo.private = TRUE
+WHERE repo.deleted_at IS NULL
+AND repo.private = TRUE
 AND repo.id NOT IN
 	(SELECT perms.repo_id FROM repo_permissions AS perms
 	 UNION
@@ -1369,8 +1399,11 @@ AND repo.id NOT IN
 func (s *PermsStore) UserIDsWithOldestPerms(ctx context.Context, limit int) (map[int32]time.Time, error) {
 	q := sqlf.Sprintf(`
 -- source: enterprise/cmd/frontend/db/perms_store.go:PermsStore.UserIDsWithOldestPerms
-SELECT user_id, updated_at FROM user_permissions
-ORDER BY updated_at ASC
+SELECT perms.user_id, perms.updated_at FROM user_permissions AS perms
+WHERE perms.user_id NOT IN
+	(SELECT users.id FROM users
+	 WHERE users.deleted_at IS NOT NULL)
+ORDER BY perms.updated_at ASC
 LIMIT %s
 `, limit)
 	return s.loadIDsWithTime(ctx, q)
@@ -1381,8 +1414,11 @@ LIMIT %s
 func (s *PermsStore) ReposIDsWithOldestPerms(ctx context.Context, limit int) (map[api.RepoID]time.Time, error) {
 	q := sqlf.Sprintf(`
 -- source: enterprise/cmd/frontend/db/perms_store.go:PermsStore.ReposIDsWithOldestPerms
-SELECT repo_id, updated_at FROM repo_permissions
-ORDER BY updated_at ASC
+SELECT perms.repo_id, perms.updated_at FROM repo_permissions AS perms
+WHERE perms.repo_id NOT IN
+	(SELECT repo.id FROM repo
+	 WHERE repo.deleted_at IS NOT NULL)
+ORDER BY perms.updated_at ASC
 LIMIT %s
 `, limit)
 
@@ -1421,6 +1457,68 @@ func (s *PermsStore) loadIDsWithTime(ctx context.Context, q *sqlf.Query) (map[in
 	}
 
 	return results, nil
+}
+
+// PermsMetrics contains metrics values calculated by querying the database.
+type PermsMetrics struct {
+	// The number of users with stale permissions.
+	UsersWithStalePerms int64
+	// The seconds between users with oldest and the most up-to-date permissions.
+	UsersPermsGapSeconds float64
+	// The number of repositories with stale permissions.
+	ReposWithStalePerms int64
+	// The seconds between repositories with oldest and the most up-to-date permissions.
+	ReposPermsGapSeconds float64
+}
+
+// Metrics returns calculated metrics values by querying the database. The "staleDur"
+// argument indicates how long ago was the last update to be considered as stale.
+func (s *PermsStore) Metrics(ctx context.Context, staleDur time.Duration) (*PermsMetrics, error) {
+	m := &PermsMetrics{}
+
+	stale := s.clock().Add(-1 * staleDur)
+	q := sqlf.Sprintf(`
+SELECT COUNT(*) FROM user_permissions
+WHERE updated_at <= %s
+`, stale)
+	if err := s.execute(ctx, q, &m.UsersWithStalePerms); err != nil {
+		return nil, errors.Wrap(err, "users with stale perms")
+	}
+
+	var seconds sql.NullFloat64
+	q = sqlf.Sprintf(`
+SELECT EXTRACT(EPOCH FROM (MAX(updated_at) - MIN(updated_at)))
+FROM user_permissions
+`)
+	if err := s.execute(ctx, q, &seconds); err != nil {
+		return nil, errors.Wrap(err, "users perms gap seconds")
+	}
+	m.UsersPermsGapSeconds = seconds.Float64
+
+	q = sqlf.Sprintf(`
+SELECT COUNT(*) FROM repo_permissions AS perms
+WHERE perms.repo_id NOT IN
+	(SELECT repo.id FROM repo
+	 WHERE repo.deleted_at IS NOT NULL)
+AND perms.updated_at <= %s
+`, stale)
+	if err := s.execute(ctx, q, &m.ReposWithStalePerms); err != nil {
+		return nil, errors.Wrap(err, "repos with stale perms")
+	}
+
+	q = sqlf.Sprintf(`
+SELECT EXTRACT(EPOCH FROM (MAX(perms.updated_at) - MIN(perms.updated_at)))
+FROM repo_permissions AS perms
+WHERE perms.repo_id NOT IN
+	(SELECT repo.id FROM repo
+	 WHERE repo.deleted_at IS NOT NULL)
+`)
+	if err := s.execute(ctx, q, &seconds); err != nil {
+		return nil, errors.Wrap(err, "repos perms gap seconds")
+	}
+	m.ReposPermsGapSeconds = seconds.Float64
+
+	return m, nil
 }
 
 // tx begins a new transaction.

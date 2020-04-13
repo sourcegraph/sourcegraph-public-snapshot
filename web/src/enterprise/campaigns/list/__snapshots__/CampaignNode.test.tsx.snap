@@ -2,10 +2,10 @@
 
 exports[`CampaignNode campaign selection mode 1`] = `
 <li
-  className="card p-2 mt-2"
+  className="list-group-item"
 >
   <div
-    className="d-flex align-items-center"
+    className="d-flex align-items-center p-2"
   >
     <CampaignsIcon
       className="icon-inline mr-2 flex-shrink-0 align-self-stretch text-success"
@@ -95,10 +95,10 @@ and renders in markdown
 
 exports[`CampaignNode campaign with mixed changeset states 1`] = `
 <li
-  className="card p-2 mt-2"
+  className="list-group-item"
 >
   <div
-    className="d-flex align-items-center"
+    className="d-flex align-items-center p-2"
   >
     <CampaignsIcon
       className="icon-inline mr-2 flex-shrink-0 align-self-stretch text-success"
@@ -181,10 +181,10 @@ and renders in markdown
 
 exports[`CampaignNode campaign without description 1`] = `
 <li
-  className="card p-2 mt-2"
+  className="list-group-item"
 >
   <div
-    className="d-flex align-items-center"
+    className="d-flex align-items-center p-2"
   >
     <CampaignsIcon
       className="icon-inline mr-2 flex-shrink-0 align-self-stretch text-success"
@@ -263,10 +263,10 @@ exports[`CampaignNode campaign without description 1`] = `
 
 exports[`CampaignNode closed campaign 1`] = `
 <li
-  className="card p-2 mt-2"
+  className="list-group-item"
 >
   <div
-    className="d-flex align-items-center"
+    className="d-flex align-items-center p-2"
   >
     <CampaignsIcon
       className="icon-inline mr-2 flex-shrink-0 align-self-stretch text-danger"
@@ -349,10 +349,10 @@ and renders in markdown
 
 exports[`CampaignNode closed draft campaign 1`] = `
 <li
-  className="card p-2 mt-2"
+  className="list-group-item"
 >
   <div
-    className="d-flex align-items-center"
+    className="d-flex align-items-center p-2"
   >
     <CampaignsIcon
       className="icon-inline mr-2 flex-shrink-0 align-self-stretch text-danger"
@@ -440,10 +440,10 @@ and renders in markdown
 
 exports[`CampaignNode open campaign 1`] = `
 <li
-  className="card p-2 mt-2"
+  className="list-group-item"
 >
   <div
-    className="d-flex align-items-center"
+    className="d-flex align-items-center p-2"
   >
     <CampaignsIcon
       className="icon-inline mr-2 flex-shrink-0 align-self-stretch text-success"
@@ -526,10 +526,10 @@ and renders in markdown
 
 exports[`CampaignNode open draft campaign 1`] = `
 <li
-  className="card p-2 mt-2"
+  className="list-group-item"
 >
   <div
-    className="d-flex align-items-center"
+    className="d-flex align-items-center p-2"
   >
     <CampaignsIcon
       className="icon-inline mr-2 flex-shrink-0 align-self-stretch text-success"

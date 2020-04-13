@@ -53,13 +53,13 @@ var requireRestart = []string{
 	"searchScopes",
 	"extensions",
 	"disablePublicRepoRedirects",
-	"lightstepAccessToken",
-	"lightstepProject",
 	"auth.userOrgMap",
 	"auth.providers",
 	"externalURL",
 	"update.channel",
 	"useJaeger",
+	"lightstepAccessToken",
+	"lightstepProject",
 }
 
 // NeedRestartToApply determines if a restart is needed to apply the changes

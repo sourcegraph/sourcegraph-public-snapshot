@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -16,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"gopkg.in/inconshreveable/log15.v2"
 )
 
 // A GitLabSource yields repositories from a single GitLab connection configured
@@ -24,7 +24,7 @@ import (
 type GitLabSource struct {
 	svc                 *ExternalService
 	config              *schema.GitLabConnection
-	exclude             excluder
+	exclude             excludeFunc
 	baseURL             *url.URL // URL with path /api/v4 (no trailing slash)
 	nameTransformations reposource.NameTransformations
 	client              *gitlab.Client
@@ -60,12 +60,13 @@ func newGitLabSource(svc *ExternalService, c *schema.GitLabConnection, cf *httpc
 		return nil, err
 	}
 
-	var exclude excluder
+	var eb excludeBuilder
 	for _, r := range c.Exclude {
-		exclude.Exact(r.Name)
-		exclude.Exact(strconv.Itoa(r.Id))
+		eb.Exact(r.Name)
+		eb.Exact(strconv.Itoa(r.Id))
 	}
-	if err := exclude.Err(); err != nil {
+	exclude, err := eb.Build()
+	if err != nil {
 		return nil, err
 	}
 
@@ -160,7 +161,7 @@ func (s *GitLabSource) authenticatedRemoteURL(proj *gitlab.Project) string {
 }
 
 func (s *GitLabSource) excludes(p *gitlab.Project) bool {
-	return s.exclude.Match(p.PathWithNamespace) || s.exclude.Match(strconv.Itoa(p.ID))
+	return s.exclude(p.PathWithNamespace) || s.exclude(strconv.Itoa(p.ID))
 }
 
 func (s *GitLabSource) listAllProjects(ctx context.Context, results chan SourceResult) {

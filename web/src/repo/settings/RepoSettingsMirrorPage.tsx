@@ -16,6 +16,7 @@ import { DirectImportRepoAlert } from '../DirectImportRepoAlert'
 import { fetchRepository } from './backend'
 import { ActionContainer, BaseActionContainer } from './components/ActionContainer'
 import { ErrorAlert } from '../../components/alerts'
+import { asError } from '../../../../shared/src/util/errors'
 
 interface UpdateMirrorRepositoryActionContainerProps {
     repo: GQL.IRepository
@@ -152,7 +153,11 @@ class CheckMirrorRepositoryConnectionActionContainer extends React.PureComponent
                     switchMap(() =>
                         checkMirrorRepositoryConnection({ repository: this.props.repo.id }).pipe(
                             catchError(error => {
-                                this.setState({ errorDescription: error.message, result: undefined, loading: false })
+                                this.setState({
+                                    errorDescription: asError(error).message,
+                                    result: undefined,
+                                    loading: false,
+                                })
                                 this.props.onDidUpdateReachability(false)
                                 return []
                             })
@@ -267,7 +272,7 @@ export class RepoSettingsMirrorPage extends React.PureComponent<Props, State> {
         this.subscriptions.add(
             this.repoUpdates.pipe(switchMap(() => fetchRepository(this.props.repo.name))).subscribe(
                 repo => this.setState({ repo }),
-                err => this.setState({ error: err.message })
+                err => this.setState({ error: asError(err).message })
             )
         )
     }

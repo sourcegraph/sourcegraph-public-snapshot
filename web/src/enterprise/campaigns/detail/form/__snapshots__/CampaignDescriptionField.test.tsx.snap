@@ -23,7 +23,7 @@ exports[`CampaignDescriptionField renders 1`] = `
     </svg>
   </label>
   <textarea
-    className="form-control "
+    className="form-control"
     id="campaignDescription"
     onChange={[Function]}
     style={

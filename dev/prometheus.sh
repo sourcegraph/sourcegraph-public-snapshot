@@ -4,14 +4,13 @@
 #
 
 set -euf -o pipefail
+pushd "$(dirname "${BASH_SOURCE[0]}")/.." > /dev/null
 
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-
-CONFIG_DIR="${DIR}/../docker-images/prometheus/config"
+CONFIG_DIR="$(pwd)/docker-images/prometheus/config"
 
 PROMETHEUS_DISK="${HOME}/.sourcegraph-dev/data/prometheus"
 
-IMAGE=sourcegraph/prometheus:10.0.6@sha256:f681ceb9400f0d546601cbf827ac9c3db16acd37e810da0860cf05d4f42305d1
+IMAGE=sourcegraph/prometheus:10.0.10@sha256:4d73d99f3b18d8e4e09f63671c51eabcba956e357ab33d682de8cf1540e3b863
 CONTAINER=prometheus
 
 CID_FILE="${PROMETHEUS_DISK}/prometheus.cid"
@@ -31,16 +30,22 @@ function finish {
 trap finish EXIT
 
 NET_ARG=""
-PROM_TARGETS="${DIR}/prometheus/all/prometheus_targets.yml"
+PROM_TARGETS="dev/prometheus/all/prometheus_targets.yml"
 
 if [[ "$OSTYPE" == "linux-gnu" ]]; then
    NET_ARG="--net=host"
-   PROM_TARGETS="${DIR}/prometheus/linux/prometheus_targets.yml"
+   PROM_TARGETS="dev/prometheus/linux/prometheus_targets.yml"
 fi
 
 cp ${PROM_TARGETS} ${CONFIG_DIR}/prometheus_targets.yml
 
 docker inspect $CONTAINER > /dev/null 2>&1 && docker rm -f $CONTAINER
+
+# Generate Grafana dashboards
+pushd observability
+DEV=true RELOAD=false go generate
+popd
+
 docker run --rm ${NET_ARG} --cidfile ${CID_FILE} \
     --name=prometheus \
     --cpus=1 \

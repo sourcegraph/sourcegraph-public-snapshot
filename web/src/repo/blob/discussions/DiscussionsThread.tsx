@@ -163,8 +163,7 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
                   },
                   hash
               )
-            : // eslint-disable-next-line @typescript-eslint/no-base-to-string
-              '#' + hash.toString()
+            : '#' + hash.toString()
     }
 
     private onSubmit = (title: string, contents: string): Observable<void> => {
@@ -174,7 +173,7 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
         }
         return addCommentToThread(this.state.thread.id, contents).pipe(
             tap(thread => this.setState({ thread })),
-            map(thread => undefined),
+            map(() => undefined),
             catchError(e => throwError(new Error('Error creating comment: ' + asError(e).message)))
         )
     }
@@ -182,13 +181,13 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
     private onCommentReport = (comment: GQL.IDiscussionComment, reason: string): Observable<void> =>
         updateComment({ commentID: comment.id, report: reason }).pipe(
             tap(thread => this.setState({ thread })),
-            map(thread => undefined)
+            map(() => undefined)
         )
 
     private onCommentClearReports = (comment: GQL.IDiscussionComment): Observable<void> =>
         updateComment({ commentID: comment.id, clearReports: true }).pipe(
             tap(thread => this.setState({ thread })),
-            map(thread => undefined)
+            map(() => undefined)
         )
 
     private onCommentDelete = (comment: GQL.IDiscussionComment): Observable<void> =>

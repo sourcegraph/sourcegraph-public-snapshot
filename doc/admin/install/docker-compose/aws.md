@@ -36,7 +36,7 @@ DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT='/home/ec2-user/deploy-sourcegraph-docker'
 
 # 🚨 Update these variables with the correct values from your fork!
 DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL='https://github.com/sourcegraph/deploy-sourcegraph-docker.git'
-DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v3.12.5'
+DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v3.14.2'
 
 # Install git
 yum update -y
@@ -114,7 +114,7 @@ docker-compose up -d
 * Select **Next: ...** until you get to the **Configure Security Group** page. Then add the following rules:
 
   * Default **HTTP** rule: port range `80`, source `0.0.0.0/0, ::/0`
-  * Default **HTTPS** rule: port range `443`, source `0.0.0.0/0, ::/0`<br>(NOTE: additional work will be required later on to [configure NGINX to support SSL](../../../admin/nginx.md#nginx-ssl-https-configuration))
+  * Default **HTTPS** rule: port range `443`, source `0.0.0.0/0, ::/0`<br>(NOTE: additional work will be required later on to [configure SSL in the Docker Compose deployment](../../../admin/http_https_configuration.md#sourcegraph-via-docker-compose-caddy-2))
 
 * Launch your instance, then navigate to its public IP in your browser. (This can be found by navigating to the instance page on EC2 and looking in the "Description" panel for the "IPv4 Public IP" value.) You may have to wait a minute or two for the instance to finish initializing before Sourcegraph becomes accessible. You can monitor the status by SSHing into the instance and using the following diagnostic commands:
 

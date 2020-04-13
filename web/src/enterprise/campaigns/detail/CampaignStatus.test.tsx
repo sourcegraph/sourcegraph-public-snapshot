@@ -4,16 +4,19 @@ import { CampaignStatus } from './CampaignStatus'
 import { createRenderer } from 'react-test-renderer/shallow'
 
 const PROPS = {
-    onRetry: () => undefined,
+    afterRetry: () => undefined,
 }
 
-const CAMPAIGN: Pick<GQL.ICampaign, '__typename' | 'closedAt' | 'publishedAt' | 'changesets'> = {
-    __typename: 'Campaign',
+const CAMPAIGN: Pick<GQL.ICampaign, 'id' | 'closedAt' | 'viewerCanAdminister' | 'publishedAt'> & {
+    changesets: Pick<GQL.ICampaign['changesets'], 'totalCount'>
+} = {
+    id: 'Q2FtcGFpZ246MQ==',
     closedAt: null,
+    viewerCanAdminister: true,
     publishedAt: '2020-01-01',
     changesets: {
         totalCount: 0,
-    } as GQL.IExternalChangesetConnection,
+    },
 }
 
 describe('CampaignStatus', () => {
@@ -25,12 +28,16 @@ describe('CampaignStatus', () => {
                     createRenderer().render(
                         <CampaignStatus
                             {...PROPS}
-                            campaign={{ ...campaign, closedAt: '2020-01-01' }}
-                            status={{
-                                completedCount: 1,
-                                pendingCount: 0,
-                                errors: [],
-                                state: GQL.BackgroundProcessState.COMPLETED,
+                            campaign={{
+                                ...campaign,
+                                closedAt: '2020-01-01',
+                                viewerCanAdminister,
+                                status: {
+                                    completedCount: 1,
+                                    pendingCount: 0,
+                                    errors: [],
+                                    state: GQL.BackgroundProcessState.COMPLETED,
+                                },
                             }}
                             onPublish={() => undefined}
                         />
@@ -42,12 +49,15 @@ describe('CampaignStatus', () => {
                     createRenderer().render(
                         <CampaignStatus
                             {...PROPS}
-                            campaign={{ ...campaign, publishedAt: null }}
-                            status={{
-                                completedCount: 1,
-                                pendingCount: 0,
-                                errors: [],
-                                state: GQL.BackgroundProcessState.COMPLETED,
+                            campaign={{
+                                ...campaign,
+                                publishedAt: null,
+                                status: {
+                                    completedCount: 1,
+                                    pendingCount: 0,
+                                    errors: [],
+                                    state: GQL.BackgroundProcessState.COMPLETED,
+                                },
                             }}
                             onPublish={() => undefined}
                         />
@@ -62,13 +72,13 @@ describe('CampaignStatus', () => {
                             campaign={{
                                 ...campaign,
                                 publishedAt: null,
-                                changesets: { totalCount: 1 } as GQL.IExternalChangesetConnection,
-                            }}
-                            status={{
-                                completedCount: 1,
-                                pendingCount: 0,
-                                errors: [],
-                                state: GQL.BackgroundProcessState.COMPLETED,
+                                changesets: { totalCount: 1 },
+                                status: {
+                                    completedCount: 1,
+                                    pendingCount: 0,
+                                    errors: [],
+                                    state: GQL.BackgroundProcessState.COMPLETED,
+                                },
                             }}
                             onPublish={() => undefined}
                         />
@@ -80,12 +90,14 @@ describe('CampaignStatus', () => {
                     createRenderer().render(
                         <CampaignStatus
                             {...PROPS}
-                            campaign={campaign}
-                            status={{
-                                completedCount: 3,
-                                pendingCount: 3,
-                                errors: ['a', 'b'],
-                                state: GQL.BackgroundProcessState.PROCESSING,
+                            campaign={{
+                                ...campaign,
+                                status: {
+                                    completedCount: 3,
+                                    pendingCount: 3,
+                                    errors: ['a', 'b'],
+                                    state: GQL.BackgroundProcessState.PROCESSING,
+                                },
                             }}
                             onPublish={() => undefined}
                         />
@@ -97,12 +109,14 @@ describe('CampaignStatus', () => {
                     createRenderer().render(
                         <CampaignStatus
                             {...PROPS}
-                            campaign={campaign}
-                            status={{
-                                completedCount: 3,
-                                pendingCount: 0,
-                                errors: ['a', 'b'],
-                                state: GQL.BackgroundProcessState.ERRORED,
+                            campaign={{
+                                ...campaign,
+                                status: {
+                                    completedCount: 3,
+                                    pendingCount: 0,
+                                    errors: ['a', 'b'],
+                                    state: GQL.BackgroundProcessState.ERRORED,
+                                },
                             }}
                             onPublish={() => undefined}
                         />

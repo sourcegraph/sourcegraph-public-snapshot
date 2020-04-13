@@ -39,12 +39,11 @@ async function init(): Promise<void> {
     // so we do not need to do this here.
     if (!window.SOURCEGRAPH_BUNDLE_URL && !window.localStorage.getItem('SOURCEGRAPH_BUNDLE_URL')) {
         injectExtensionMarker()
-        await injectCodeIntelligence({ sourcegraphURL, assetsURL }, IS_EXTENSION)
+        injectCodeIntelligence({ sourcegraphURL, assetsURL }, IS_EXTENSION)
         metaClickOverride()
         return
     }
 
-    // eslint-disable-next-line require-atomic-updates
     window.SOURCEGRAPH_URL = sourcegraphURL
     const css = await getPhabricatorCSS(sourcegraphURL)
     const style = document.createElement('style')
@@ -55,7 +54,7 @@ async function init(): Promise<void> {
     window.localStorage.setItem('SOURCEGRAPH_URL', sourcegraphURL)
     metaClickOverride()
     injectExtensionMarker()
-    await injectCodeIntelligence({ sourcegraphURL, assetsURL }, IS_EXTENSION)
+    injectCodeIntelligence({ sourcegraphURL, assetsURL }, IS_EXTENSION)
 }
 
 init().catch(err => console.error('Error initializing Phabricator integration', err))

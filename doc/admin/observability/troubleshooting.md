@@ -5,8 +5,10 @@ issue or generating a high-quality issue report.
 
 **How to use this guide:**
 
-1. Scan through [Scenarios](#scenarios) to find which scenario(s) applies to you.
-1. Follow the instructions to update your instance or collect information for the issue report.
+1. Scan through [Specific scenarios](#specific-scenarios) to see if any of these applies to you. If
+   any do, follow the instructions in the subsection.
+1. Scan through [General scenarios](#general-scenarios) to find which scenario(s) applies to you. If any do,
+   follow the instructions to update your instance or collect information for the issue report.
 1. If you cannot resolve the issue on your own, file an issue on the [Sourcegraph issue
    tracker](https://github.com/sourcegraph/sourcegraph/issues) with the collected
    information. Enterprise customers may alternatively file a support ticket or email
@@ -15,7 +17,28 @@ issue or generating a high-quality issue report.
 > NOTE: This guide assumes you have site admin privileges on the Sourcegraph instance. If you are
 > non-admin user, report your error the site admin and have them walk through this guide.
 
-## Scenarios
+## Specific scenarios
+
+#### Scenario: search *and* code pages take a long time to load
+
+If this is the case, this could indicate high gitserver load. To confirm, take the following steps:
+
+1. [Open Grafana](metrics.md#grafana).
+1. **If using Sourcegraph 3.14**: Simply check if either of these alerts are firing:
+    - `gitserver: 50+ concurrent command executions (abnormally high load)`
+    - `gitserver: echo command execution duration exceeding 1s`
+1. **If using an older version of Sourcegraph:**
+    - Go to the Sourcegraph Internal > Gitserver rev2 dashboard.
+    - Examine the "Echo Duration Seconds" dashboard (tracks the `src_gitserver_echo_duration_seconds`
+      metric) and "Commands running concurrently" dashboard (tracks the `src_gitserver_exec_running`
+      metric). If either of these is high (> 1s echo duration or 100s simultaneous execs), then this
+      indicates gitserver is under heavy load and likely the bottleneck.
+1. Confirm your gitserver is not under-provisioned, by e.g. comparing its allocated resources with what the [resource estimator](../install/resource_estimator.md) shows.
+
+Solution: set `USE_ENHANCED_LANGUAGE_DETECTION=false` in the Sourcegraph runtime
+environment.
+
+## General scenarios
 
 This section contains a list of scenarios, each of which contains instructions that include
 [actions](#actions) that are appropriate to the scenario. Note that more than one scenario may apply
@@ -130,17 +153,19 @@ If Sourcegraph feels sluggish overall, the likely culprit is resource allocation
 
 If your users are experiencing search timeouts or search performance issues, please perform the following steps:
 
+1. Try appending variations of `index:only`, `timeout:60s` and `count:999999` to the search query to see if it is still slow.
 1. [Access Grafana directly](metrics.md#accessing-grafana-directly).
 1. Select the **+** icon on the left-hand side, then choose **Import**.
 1. Paste [this JSON](https://gist.githubusercontent.com/slimsag/3fcc134f5ce09728188b94b463131527/raw/f8b545f4ce14b0c30a93f05cd1ee469594957a2c/sourcegraph-debug-search-timeouts.json) into the input and click **Load**.
 1. Once the dashboard appears, include screenshots of **the entire** dashboard in the issue report.
+1. Include the logs of `zoekt-webserver` container in the `indexed-search` pods. If you are using single Docker container enable [debug logs](index.md#Logs) first.
 
 
 ## Actions
 
 This section contains various actions that can be taken to collect information or update Sourcegraph
 in order to resolve an error or performance issue. You should typically not read this section
-directly, but start with the [Scenarios](#scenarios) section to determine which actions are
+directly, but start with the [General scenarios](#general-scenarios) section to determine which actions are
 appropriate.
 
 ### Check browser console

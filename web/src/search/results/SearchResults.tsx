@@ -18,7 +18,7 @@ import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { isSettingsValid, SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
-import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
+import { ErrorLike, isErrorLike, asError } from '../../../../shared/src/util/errors'
 import { PageTitle } from '../../components/PageTitle'
 import { Settings } from '../../schema/settings.schema'
 import { ThemeProps } from '../../../../shared/src/theme'
@@ -29,7 +29,6 @@ import { SearchResultsFilterBars, SearchScopeWithOptionalName } from './SearchRe
 import { SearchResultsList } from './SearchResultsList'
 import { SearchResultTypeTabs } from './SearchResultTypeTabs'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
-import { FiltersToTypeAndValue } from '../../../../shared/src/search/interactive/util'
 import { convertPlainTextToInteractiveQuery } from '../input/helpers'
 
 export interface SearchResultsProps
@@ -55,8 +54,6 @@ export interface SearchResultsProps
     ) => Observable<GQL.ISearchResults | ErrorLike>
     isSourcegraphDotCom: boolean
     deployType: DeployType
-    filtersInQuery: FiltersToTypeAndValue
-    interactiveSearchMode: boolean
 }
 
 interface SearchResultsState {
@@ -184,7 +181,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                         },
                                         error => {
                                             this.props.telemetryService.log('SearchResultsFetchFailed', {
-                                                code_search: { error_message: error.message },
+                                                code_search: { error_message: asError(error).message },
                                             })
                                             console.error(error)
                                         }
@@ -202,9 +199,11 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                 )
         )
 
-        this.props.extensionsController.services.contribution
-            .getContributions()
-            .subscribe(contributions => this.setState({ contributions }))
+        this.subscriptions.add(
+            this.props.extensionsController.services.contribution
+                .getContributions()
+                .subscribe(contributions => this.setState({ contributions }))
+        )
     }
 
     public componentDidUpdate(): void {
@@ -321,7 +320,6 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
             query = `${query} count:${count}`
         }
         params.set('q', query)
-        // eslint-disable-next-line @typescript-eslint/no-base-to-string
         this.props.history.replace({ search: params.toString() })
     }
 
@@ -355,6 +353,6 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
 
         const newQuery = toggleSearchFilter(this.props.navbarSearchQueryState.query, value)
 
-        submitSearch(this.props.history, newQuery, 'filter', this.props.patternType, this.props.caseSensitive)
+        submitSearch({ ...this.props, query: newQuery, source: 'filter' })
     }
 }

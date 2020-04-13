@@ -18,13 +18,13 @@ import (
 	"sync"
 	"time"
 
-	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 var (
@@ -161,6 +161,11 @@ func NewClient(apiURL *url.URL, defaultToken string, cli httpcli.Doer) *Client {
 	}
 }
 
+// WithToken returns a copy of the Client authenticated as the GitHub user with the given token.
+func (c *Client) WithToken(token string) *Client {
+	return NewClient(c.apiURL, token, c.httpClient)
+}
+
 // cache returns the cache associated with the token (which can be empty, in which case the default
 // token will be used). Accessors of the caches should use this method rather than referencing
 // repoCache directly.
@@ -198,7 +203,7 @@ func (c *Client) do(ctx context.Context, token string, req *http.Request, result
 
 	var resp *http.Response
 
-	span, ctx := opentracing.StartSpanFromContext(ctx, "GitHub")
+	span, ctx := ot.StartSpanFromContext(ctx, "GitHub")
 	span.SetTag("URL", req.URL.String())
 	defer func() {
 		if err != nil {

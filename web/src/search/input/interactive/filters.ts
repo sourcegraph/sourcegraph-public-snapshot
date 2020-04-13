@@ -4,7 +4,12 @@ import { FilterType } from '../../../../../shared/src/search/interactive/util'
 import { resolveFilter } from '../../../../../shared/src/search/parser/filters'
 
 /** FilterTypes which have a finite number of valid options. */
-export type FiniteFilterType = FilterType.archived | FilterType.fork | FilterType.type | FilterType.index
+export type FiniteFilterType =
+    | FilterType.archived
+    | FilterType.fork
+    | FilterType.type
+    | FilterType.index
+    | FilterType.visibility
 
 const withBooleanSuggestions = (type: FiniteFilterType): Suggestion[] =>
     ['no', 'only', 'yes'].map(value => ({ type, value }))
@@ -43,10 +48,18 @@ export const finiteFilters: Record<
             })
         ),
     },
+    visibility: {
+        default: 'any',
+        values: [{ value: 'any' }, { value: 'public' }, { value: 'private' }].map(
+            assign({
+                type: FilterType.visibility,
+            })
+        ),
+    },
 }
 
 export const isFiniteFilter = (filter: FilterType): filter is FiniteFilterType =>
-    !!resolveFilter(filter) && ['fork', 'archived', 'type', 'index'].includes(filter)
+    !!resolveFilter(filter) && ['fork', 'archived', 'type', 'index', 'visibility'].includes(filter)
 
 export function isTextFilter(filter: FilterType): boolean {
     return !!resolveFilter(filter) && !isFiniteFilter(filter)
@@ -80,4 +93,5 @@ export const FilterTypeToProseNames: Record<FilterType, string> = {
     content: 'Content',
     patterntype: 'Pattern type',
     index: 'Indexed repos',
+    visibility: 'Repository visiblity',
 }

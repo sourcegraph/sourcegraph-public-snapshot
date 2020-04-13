@@ -6,22 +6,22 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 var (
-	lsifServerURL = env.Get("LSIF_SERVER_URL", "k8s+http://lsif-server:3186", "lsif-server URL (or space separated list of lsif-server URLs)")
+	preciseCodeIntelAPIServerURL = env.Get("PRECISE_CODE_INTEL_API_SERVER_URL", "k8s+http://precise-code-intel:3186", "precise-code-intel-api-server URL (or space separated list of precise-code-intel-api-server URLs)")
 
-	lsifServerURLsOnce sync.Once
-	lsifServerURLs     *endpoint.Map
+	preciseCodeIntelAPIServerURLsOnce sync.Once
+	preciseCodeIntelAPIServerURLs     *endpoint.Map
 
 	DefaultClient = &Client{
-		endpoint: LSIFServerURLs(),
+		endpoint: LSIFURLs(),
 		HTTPClient: &http.Client{
-			// nethttp.Transport will propagate opentracing spans
-			Transport: &nethttp.Transport{},
+			// ot.Transport will propagate opentracing spans
+			Transport: &ot.Transport{},
 		},
 	}
 )
@@ -31,13 +31,13 @@ type Client struct {
 	HTTPClient *http.Client
 }
 
-func LSIFServerURLs() *endpoint.Map {
-	lsifServerURLsOnce.Do(func() {
-		if len(strings.Fields(lsifServerURL)) == 0 {
-			lsifServerURLs = endpoint.Empty(errors.New("an lsif-server has not been configured"))
+func LSIFURLs() *endpoint.Map {
+	preciseCodeIntelAPIServerURLsOnce.Do(func() {
+		if len(strings.Fields(preciseCodeIntelAPIServerURL)) == 0 {
+			preciseCodeIntelAPIServerURLs = endpoint.Empty(errors.New("an precise-code-intel-api-server has not been configured"))
 		} else {
-			lsifServerURLs = endpoint.New(lsifServerURL)
+			preciseCodeIntelAPIServerURLs = endpoint.New(preciseCodeIntelAPIServerURL)
 		}
 	})
-	return lsifServerURLs
+	return preciseCodeIntelAPIServerURLs
 }

@@ -44,25 +44,34 @@ mkdir -p .bin
 export GOBIN="${PWD}/.bin"
 export GO111MODULE=on
 
+INSTALL_GO_TOOLS="github.com/mattn/goreman@v0.3.4 \
+"
+
+# Need to go to a temp directory for tools or we update our go.mod. We use
+# GOPROXY=direct to avoid always consulting a proxy for dlv.
+pushd "${TMPDIR:-/tmp}" > /dev/null || exit 1
+if ! GOPROXY=direct go get -v $INSTALL_GO_TOOLS 2> go-install.log; then
+    cat go-install.log
+    echo >&2 "failed to install prerequisite tools, aborting."
+    exit 1
+fi
+popd > /dev/null || exit 1
+
 INSTALL_GO_PKGS="github.com/mattn/goreman \
 github.com/google/zoekt/cmd/zoekt-archive-index \
 github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver \
 github.com/google/zoekt/cmd/zoekt-webserver \
 "
 
-if [ ! -n "${OFFLINE-}" ]; then
-    INSTALL_GO_PKGS="$INSTALL_GO_PKGS github.com/go-delve/delve/cmd/dlv"
-fi
-
 if ! go install $INSTALL_GO_PKGS; then
-    echo >&2 "failed to install prerequisites, aborting."
+    echo >&2 "failed to install prerequisite packages, aborting."
     exit 1
 fi
 
 # For the target commands, build into a temp directory for comparison, so that
 # we can update only those packages that change. Clean up the temp at exit.
 tmpdir="$(mktemp -d -t src-binaries.XXXXXXXX)"
-trap 'rm "$tmpdir"/*; rmdir "$tmpdir"' EXIT
+trap 'rm -rf "$tmpdir"' EXIT
 export GOBIN="$tmpdir"
 
 TAGS='dev'
@@ -120,7 +129,6 @@ do_install() {
                 # Binary updated. Move it to correct location.
                 mv "${GOBIN}/${cmd}" "${PWD}/.bin/${cmd}"
 
-                # Output name of command so it can be restarted.
                 if $verbose; then
                     echo "$cmd"
                 fi

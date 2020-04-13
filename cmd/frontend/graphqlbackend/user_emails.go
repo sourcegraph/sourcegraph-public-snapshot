@@ -4,11 +4,11 @@ import (
 	"context"
 
 	graphql "github.com/graph-gophers/graphql-go"
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"gopkg.in/inconshreveable/log15.v2"
 )
 
 func (r *UserResolver) Emails(ctx context.Context) ([]*userEmailResolver, error) {

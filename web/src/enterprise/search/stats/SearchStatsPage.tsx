@@ -3,7 +3,7 @@ import ChartLineIcon from 'mdi-react/ChartLineIcon'
 import React, { useCallback, useState, useMemo } from 'react'
 import H from 'history'
 import { Form } from '../../../components/Form'
-import { useObservable } from '../../../util/useObservable'
+import { useObservable } from '../../../../../shared/src/util/useObservable'
 import { querySearchResultsStats } from './backend'
 import { SearchStatsLanguages } from './SearchStatsLanguages'
 import { catchError } from 'rxjs/operators'
@@ -34,7 +34,6 @@ export const SearchStatsPage: React.FunctionComponent<Props> = ({
     const onSubmit = useCallback<React.FormEventHandler<HTMLFormElement>>(
         e => {
             e.preventDefault()
-            // eslint-disable-next-line @typescript-eslint/no-base-to-string
             history.push({ ...location, search: new URLSearchParams({ q: uncommittedQuery }).toString() })
         },
         [history, location, uncommittedQuery]

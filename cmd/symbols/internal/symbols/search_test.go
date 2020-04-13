@@ -8,10 +8,10 @@ import (
 	"path"
 	"testing"
 
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/pkg/ctags"
 	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 func BenchmarkSearch(b *testing.B) {

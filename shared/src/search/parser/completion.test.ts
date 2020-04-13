@@ -8,28 +8,26 @@ describe('getCompletionItems()', () => {
         expect(
             (
                 await getCompletionItems(
-                    're',
                     (parseSearchQuery('re') as ParseSuccess<Sequence>).token,
                     { column: 3 },
-                    () =>
-                        of([
-                            {
-                                __typename: 'Repository',
-                                name: 'github.com/sourcegraph/jsonrpc2',
-                            },
-                            {
-                                __typename: 'Symbol',
-                                name: 'RepoRoutes',
-                                kind: 'VARIABLE',
-                                location: {
-                                    resource: {
-                                        repository: {
-                                            name: 'github.com/sourcegraph/jsonrpc2',
-                                        },
+                    of([
+                        {
+                            __typename: 'Repository',
+                            name: 'github.com/sourcegraph/jsonrpc2',
+                        },
+                        {
+                            __typename: 'Symbol',
+                            name: 'RepoRoutes',
+                            kind: 'VARIABLE',
+                            location: {
+                                resource: {
+                                    repository: {
+                                        name: 'github.com/sourcegraph/jsonrpc2',
                                     },
                                 },
                             },
-                        ] as SearchSuggestion[])
+                        },
+                    ] as SearchSuggestion[])
                 )
             )?.suggestions.map(({ label }) => label)
         ).toStrictEqual([
@@ -56,6 +54,7 @@ describe('getCompletionItems()', () => {
             '-repohasfile',
             'timeout',
             'type',
+            'visibility',
         ])
     })
 
@@ -63,28 +62,26 @@ describe('getCompletionItems()', () => {
         expect(
             (
                 await getCompletionItems(
-                    'reposi',
                     (parseSearchQuery('reposi') as ParseSuccess<Sequence>).token,
                     { column: 7 },
-                    () =>
-                        of([
-                            {
-                                __typename: 'Repository',
-                                name: 'github.com/sourcegraph/jsonrpc2',
-                            },
-                            {
-                                __typename: 'Symbol',
-                                name: 'RepoRoutes',
-                                kind: 'VARIABLE',
-                                location: {
-                                    resource: {
-                                        repository: {
-                                            name: 'github.com/sourcegraph/jsonrpc2',
-                                        },
+                    of([
+                        {
+                            __typename: 'Repository',
+                            name: 'github.com/sourcegraph/jsonrpc2',
+                        },
+                        {
+                            __typename: 'Symbol',
+                            name: 'RepoRoutes',
+                            kind: 'VARIABLE',
+                            location: {
+                                resource: {
+                                    repository: {
+                                        name: 'github.com/sourcegraph/jsonrpc2',
                                     },
                                 },
                             },
-                        ] as SearchSuggestion[])
+                        },
+                    ] as SearchSuggestion[])
                 )
             )?.suggestions.map(({ label }) => label)
         ).toStrictEqual([
@@ -111,6 +108,7 @@ describe('getCompletionItems()', () => {
             '-repohasfile',
             'timeout',
             'type',
+            'visibility',
             'github.com/sourcegraph/jsonrpc2',
             'RepoRoutes',
         ])
@@ -119,12 +117,7 @@ describe('getCompletionItems()', () => {
     test('returns suggestions for an empty query', async () => {
         expect(
             (
-                await getCompletionItems(
-                    '',
-                    (parseSearchQuery('') as ParseSuccess<Sequence>).token,
-                    { column: 1 },
-                    () => NEVER
-                )
+                await getCompletionItems((parseSearchQuery('') as ParseSuccess<Sequence>).token, { column: 1 }, NEVER)
             )?.suggestions.map(({ label }) => label)
         ).toStrictEqual([
             'after',
@@ -150,6 +143,7 @@ describe('getCompletionItems()', () => {
             '-repohasfile',
             'timeout',
             'type',
+            'visibility',
         ])
     })
 
@@ -157,16 +151,14 @@ describe('getCompletionItems()', () => {
         expect(
             (
                 await getCompletionItems(
-                    'a ',
                     (parseSearchQuery('a ') as ParseSuccess<Sequence>).token,
                     { column: 3 },
-                    () =>
-                        of([
-                            {
-                                __typename: 'Repository',
-                                name: 'github.com/sourcegraph/jsonrpc2',
-                            },
-                        ] as SearchSuggestion[])
+                    of([
+                        {
+                            __typename: 'Repository',
+                            name: 'github.com/sourcegraph/jsonrpc2',
+                        },
+                    ] as SearchSuggestion[])
                 )
             )?.suggestions.map(({ label }) => label)
         ).toStrictEqual([
@@ -193,6 +185,7 @@ describe('getCompletionItems()', () => {
             '-repohasfile',
             'timeout',
             'type',
+            'visibility',
             'github.com/sourcegraph/jsonrpc2',
         ])
     })
@@ -201,10 +194,9 @@ describe('getCompletionItems()', () => {
         expect(
             (
                 await getCompletionItems(
-                    'rE',
                     (parseSearchQuery('rE') as ParseSuccess<Sequence>).token,
                     { column: 3 },
-                    () => of([])
+                    of([])
                 )
             )?.suggestions.map(({ label }) => label)
         ).toStrictEqual([
@@ -231,6 +223,7 @@ describe('getCompletionItems()', () => {
             '-repohasfile',
             'timeout',
             'type',
+            'visibility',
         ])
     })
 
@@ -238,10 +231,9 @@ describe('getCompletionItems()', () => {
         expect(
             (
                 await getCompletionItems(
-                    'case:y',
                     (parseSearchQuery('case:y') as ParseSuccess<Sequence>).token,
                     { column: 7 },
-                    () => NEVER
+                    NEVER
                 )
             )?.suggestions.map(({ label }) => label)
         ).toStrictEqual(['yes', 'no'])
@@ -251,12 +243,11 @@ describe('getCompletionItems()', () => {
         expect(
             (
                 await getCompletionItems(
-                    'lang:',
                     (parseSearchQuery('lang:') as ParseSuccess<Sequence>).token,
                     {
                         column: 6,
                     },
-                    () => of([])
+                    of([])
                 )
             )?.suggestions.map(({ label }) => label)
         ).toStrictEqual([
@@ -288,20 +279,18 @@ describe('getCompletionItems()', () => {
         expect(
             (
                 await getCompletionItems(
-                    'a',
                     (parseSearchQuery('file:c') as ParseSuccess<Sequence>).token,
                     { column: 7 },
-                    () =>
-                        of([
-                            {
-                                __typename: 'File',
-                                path: 'connect.go',
-                                name: 'connect.go',
-                                repository: {
-                                    name: 'github.com/sourcegraph/jsonrpc2',
-                                },
+                    of([
+                        {
+                            __typename: 'File',
+                            path: 'connect.go',
+                            name: 'connect.go',
+                            repository: {
+                                name: 'github.com/sourcegraph/jsonrpc2',
                             },
-                        ] as SearchSuggestion[])
+                        },
+                    ] as SearchSuggestion[])
                 )
             )?.suggestions.map(({ label }) => label)
         ).toStrictEqual(['connect.go'])

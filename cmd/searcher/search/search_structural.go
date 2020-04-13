@@ -6,11 +6,11 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // The Sourcegraph frontend and interface only allow LineMatches (matches on a
@@ -74,8 +74,9 @@ func ToFileMatch(combyMatches []comby.FileMatch) (matches []protocol.FileMatch) 
 		matches = append(matches,
 			protocol.FileMatch{
 				Path:        m.URI,
-				LimitHit:    false,
 				LineMatches: lineMatches,
+				MatchCount:  len(m.Matches),
+				LimitHit:    false,
 			})
 	}
 	return matches

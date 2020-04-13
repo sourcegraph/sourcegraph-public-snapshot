@@ -20,7 +20,7 @@ import { parse, parseTemplate } from '../api/client/context/expr/evaluator'
 import { Services } from '../api/client/services'
 import { WorkspaceRootWithMetadata } from '../api/client/services/workspaceService'
 import { ContributableMenu, TextDocumentPositionParams } from '../api/protocol'
-import { ERPRIVATEREPOPUBLICSOURCEGRAPHCOM } from '../backend/errors'
+import { isPrivateRepoPublicSourcegraphComErrorLike } from '../backend/errors'
 import { resolveRawRepoName } from '../backend/repo'
 import { getContributedActionItems } from '../contributions/contributions'
 import { ExtensionsControllerProps } from '../extensions/controller'
@@ -29,7 +29,7 @@ import { asError, ErrorLike, isErrorLike } from '../util/errors'
 import { makeRepoURI, parseRepoURI, withWorkspaceRootInputRevision } from '../util/url'
 import { HoverContext } from './HoverOverlay'
 
-const LOADING: 'loading' = 'loading'
+const LOADING = 'loading' as const
 
 /**
  * This function is passed to {@link module:@sourcegraph/codeintellify.createHoverifier}, which uses it to fetch
@@ -231,7 +231,7 @@ export function getDefinitionURL(
                 // we're executing in a browser extension pointed to the public sourcegraph.com,
                 // in which case repoName === rawRepoName.
                 catchError(err => {
-                    if (isErrorLike(err) && err.code === ERPRIVATEREPOPUBLICSOURCEGRAPHCOM) {
+                    if (isPrivateRepoPublicSourcegraphComErrorLike(err)) {
                         return [uri.repoName]
                     }
                     throw err

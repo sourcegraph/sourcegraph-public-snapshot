@@ -36,7 +36,7 @@ async function addChangeset({
     const changeset = dataOrThrowErrors(
         await mutateGraphQL(
             gql`
-                mutation CreateChangeSet($repositoryID: ID!, $externalID: String!) {
+                mutation CreateChangeset($repositoryID: ID!, $externalID: String!) {
                     createChangesets(input: { repository: $repositoryID, externalID: $externalID }) {
                         id
                     }
@@ -90,7 +90,7 @@ export const AddChangesetForm: React.FunctionComponent<{ campaignID: ID; onAdd: 
     )
     return (
         <>
-            <h3>Track changeset</h3>
+            <h3 className="mb-2 mt-4">Track changeset</h3>
             <Form onSubmit={submit}>
                 <div className="d-flex">
                     <div className="form-group mr-3 mb-0">
@@ -100,7 +100,7 @@ export const AddChangesetForm: React.FunctionComponent<{ campaignID: ID; onAdd: 
                             id="changeset-repo"
                             type="text"
                             size={35}
-                            className="form-control mr-1"
+                            className="form-control mr-1 e2e-track-changeset-repo"
                             placeholder="Repository name"
                             value={repoName}
                             onChange={event => setRepoName(event.target.value)}
@@ -119,19 +119,19 @@ export const AddChangesetForm: React.FunctionComponent<{ campaignID: ID; onAdd: 
                             min={1}
                             step={1}
                             size={16}
-                            className="form-control mr-1"
+                            className="form-control mr-1 e2e-track-changeset-id"
                             placeholder="Changeset number"
                             value={externalID}
                             onChange={event => setExternalID(event.target.value + '')}
                         />
                     </div>
                 </div>
-                <button type="submit" className="btn btn-primary mr-1">
+                <button type="submit" className="btn btn-primary mr-1 e2e-track-changeset-btn" disabled={isLoading}>
                     Add changeset
                     {isLoading && <LoadingSpinner className="ml-2 icon-inline" />}
                 </button>
             </Form>
-            {error && <ErrorAlert error={error} className="mt-3" />}
+            {error && <ErrorAlert error={error} className="mt-2" />}
         </>
     )
 }

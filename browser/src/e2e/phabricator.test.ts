@@ -155,7 +155,7 @@ async function init(driver: Driver): Promise<void> {
 describe('Sourcegraph Phabricator extension', () => {
     let driver: Driver
 
-    before(async function() {
+    before(async function () {
         this.timeout(4 * 60 * 1000)
         driver = await createDriverForTest({ loadExtension: !TEST_NATIVE_INTEGRATION, sourcegraphBaseUrl })
         await init(driver)

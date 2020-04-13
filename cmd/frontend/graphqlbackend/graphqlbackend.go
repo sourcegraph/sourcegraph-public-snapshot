@@ -14,12 +14,13 @@ import (
 	"github.com/graph-gophers/graphql-go/trace"
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 var graphqlFieldHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
@@ -48,7 +49,10 @@ type prometheusTracer struct {
 }
 
 func (prometheusTracer) TraceQuery(ctx context.Context, queryString string, operationName string, variables map[string]interface{}, varTypes map[string]*introspection.Type) (context.Context, trace.TraceQueryFinishFunc) {
-	traceCtx, finish := trace.OpenTracingTracer{}.TraceQuery(ctx, queryString, operationName, variables, varTypes)
+	var finish trace.TraceQueryFinishFunc
+	if ot.ShouldTrace(ctx) {
+		ctx, finish = trace.OpenTracingTracer{}.TraceQuery(ctx, queryString, operationName, variables, varTypes)
+	}
 
 	// Note: We don't care about the error here, we just extract the username if
 	// we get a non-nil user object.
@@ -81,13 +85,21 @@ VARIABLES
 
 `, requestName, currentUserName, queryString, variables)
 	}
-	return traceCtx, finish
+	return ctx, func(err []*gqlerrors.QueryError) {
+		if finish != nil {
+			finish(err)
+		}
+	}
 }
 
 func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldName string, trivial bool, args map[string]interface{}) (context.Context, trace.TraceFieldFinishFunc) {
-	traceCtx, finish := trace.OpenTracingTracer{}.TraceField(ctx, label, typeName, fieldName, trivial, args)
+	var finish trace.TraceFieldFinishFunc
+	if ot.ShouldTrace(ctx) {
+		ctx, finish = trace.OpenTracingTracer{}.TraceField(ctx, label, typeName, fieldName, trivial, args)
+	}
+
 	start := time.Now()
-	return traceCtx, func(err *gqlerrors.QueryError) {
+	return ctx, func(err *gqlerrors.QueryError) {
 		isErrStr := strconv.FormatBool(err != nil)
 		graphqlFieldHistogram.WithLabelValues(typeName, fieldName, isErrStr).Observe(time.Since(start).Seconds())
 
@@ -96,7 +108,9 @@ func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldNa
 			isExact := strconv.FormatBool(fieldName == "lsif")
 			codeIntelSearchHistogram.WithLabelValues(isExact, isErrStr).Observe(time.Since(start).Seconds())
 		}
-		finish(err)
+		if finish != nil {
+			finish(err)
+		}
 	}
 }
 
@@ -153,13 +167,18 @@ func (r *NodeResolver) ToCampaign() (CampaignResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToCampaignPlan() (CampaignPlanResolver, bool) {
-	n, ok := r.Node.(CampaignPlanResolver)
+func (r *NodeResolver) ToPatchSet() (PatchSetResolver, bool) {
+	n, ok := r.Node.(PatchSetResolver)
 	return n, ok
 }
 
 func (r *NodeResolver) ToExternalChangeset() (ExternalChangesetResolver, bool) {
 	n, ok := r.Node.(ExternalChangesetResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToPatch() (PatchResolver, bool) {
+	n, ok := r.Node.(PatchResolver)
 	return n, ok
 }
 
@@ -291,12 +310,12 @@ func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, err
 		return accessTokenByID(ctx, id)
 	case "Campaign":
 		return r.CampaignByID(ctx, id)
-	case "CampaignPlan":
-		return r.CampaignPlanByID(ctx, id)
+	case "PatchSet":
+		return r.PatchSetByID(ctx, id)
 	case "ExternalChangeset":
 		return r.ChangesetByID(ctx, id)
-	case "ChangesetPlan":
-		return r.ChangesetPlanByID(ctx, id)
+	case "Patch":
+		return r.PatchByID(ctx, id)
 	case "DiscussionComment":
 		return discussionCommentByID(ctx, id)
 	case "DiscussionThread":

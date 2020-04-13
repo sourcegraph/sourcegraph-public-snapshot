@@ -174,6 +174,7 @@ func (r *changesetResolver) Repository(ctx context.Context) (*graphqlbackend.Rep
 func (r *changesetResolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampaignArgs) (graphqlbackend.CampaignsConnectionResolver, error) {
 	opts := ee.ListCampaignsOpts{
 		ChangesetID: r.Changeset.ID,
+		HasPatchSet: args.HasPatchSet,
 	}
 	state, err := parseCampaignState(args.State)
 	if err != nil {
@@ -242,7 +243,7 @@ func (r *changesetResolver) Labels(ctx context.Context) ([]graphqlbackend.Change
 	// or removed but we'll also take into account any changeset events that
 	// have happened since the last sync in order to reflect changes that
 	// have come in via webhooks
-	events := campaigns.ChangesetEvents(es)
+	events := ee.ChangesetEvents(es)
 	labels := events.UpdateLabelsSince(r.Changeset)
 	sort.Slice(labels, func(i, j int) bool {
 		return labels[i].Name < labels[j].Name

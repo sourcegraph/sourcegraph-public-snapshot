@@ -154,7 +154,7 @@ describe('Search regression test suite', () => {
         let driver: Driver
         let gqlClient: GraphQLClient
         let resourceManager: TestResourceManager
-        before(async function() {
+        before(async function () {
             this.timeout(3 * 60 * 1000 + 30 * 1000)
             ;({ driver, gqlClient, resourceManager } = await getTestTools(config))
             resourceManager.add(
@@ -344,7 +344,7 @@ describe('Search regression test suite', () => {
         })
         test('Global symbol search ("type:symbol ^newroute count:100") with a few results', async () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=type:symbol+%5Enewroute+count:100')
-            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 2)
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 0)
         })
         test('Indexed multiline search, many results', async () => {
             const urlQuery = buildSearchURLQuery(
@@ -461,7 +461,7 @@ describe('Search regression test suite', () => {
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 0)
         })
 
-        test('Search timeout', async function() {
+        test('Search timeout', async function () {
             this.timeout(2 * 1000)
             const response = await search(gqlClient, 'router index:no timeout:1ns', 'V2', GQL.SearchPatternType.literal)
             expect(response.results.matchCount).toBe(0)
@@ -584,7 +584,7 @@ describe('Search regression test suite', () => {
         let driver: Driver
         let gqlClient: GraphQLClient
         let resourceManager: TestResourceManager
-        before(async function() {
+        before(async function () {
             this.timeout(3 * 60 * 1000 + 30 * 1000)
             ;({ driver, gqlClient, resourceManager } = await getTestTools(config))
             resourceManager.add(

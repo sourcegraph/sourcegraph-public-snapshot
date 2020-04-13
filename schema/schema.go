@@ -127,6 +127,8 @@ type BitbucketCloudConnection struct {
 	//
 	// If "ssh", Sourcegraph will access Bitbucket Cloud repositories using Git URLs of the form git@bitbucket.org:myteam/myproject.git. See the documentation for how to provide SSH private keys and known_hosts: https://docs.sourcegraph.com/admin/repo/auth#repositories-that-need-http-s-or-ssh-authentication.
 	GitURLType string `json:"gitURLType,omitempty"`
+	// RateLimit description: Rate limit applied when making background API requests to Bitbucket Cloud.
+	RateLimit *BitbucketCloudRateLimit `json:"rateLimit,omitempty"`
 	// RepositoryPathPattern description: The pattern used to generate the corresponding Sourcegraph repository name for a Bitbucket Cloud repository.
 	//
 	//  - "{host}" is replaced with the Bitbucket Cloud URL's host (such as bitbucket.org),  and "{nameWithOwner}" is replaced with the Bitbucket Cloud repository's "owner/path" (such as "myorg/myrepo").
@@ -141,6 +143,14 @@ type BitbucketCloudConnection struct {
 	Url string `json:"url"`
 	// Username description: The username to use when authenticating to the Bitbucket Cloud. Also set the corresponding "appPassword" field.
 	Username string `json:"username"`
+}
+
+// BitbucketCloudRateLimit description: Rate limit applied when making background API requests to Bitbucket Cloud.
+type BitbucketCloudRateLimit struct {
+	// Enabled description: true if rate limiting is enabled.
+	Enabled bool `json:"enabled"`
+	// RequestsPerHour description: Requests per hour permitted. This is an average, calculated per second.
+	RequestsPerHour float64 `json:"requestsPerHour"`
 }
 
 // BitbucketServerAuthorization description: If non-null, enforces Bitbucket Server repository permissions.
@@ -185,6 +195,8 @@ type BitbucketServerConnection struct {
 	Password string `json:"password,omitempty"`
 	// Plugin description: Configuration for Bitbucket Server Sourcegraph plugin
 	Plugin *BitbucketServerPlugin `json:"plugin,omitempty"`
+	// RateLimit description: Rate limit applied when making background API requests to BitbucketServer.
+	RateLimit *BitbucketServerRateLimit `json:"rateLimit,omitempty"`
 	// Repos description: An array of repository "projectKey/repositorySlug" strings specifying repositories to mirror on Sourcegraph.
 	Repos []string `json:"repos,omitempty"`
 	// RepositoryPathPattern description: The pattern used to generate the corresponding Sourcegraph repository name for a Bitbucket Server repository.
@@ -255,6 +267,14 @@ type BitbucketServerPlugin struct {
 type BitbucketServerPluginWebhooks struct {
 	// Secret description: Secret for authenticating incoming webhook payloads
 	Secret string `json:"secret"`
+}
+
+// BitbucketServerRateLimit description: Rate limit applied when making background API requests to BitbucketServer.
+type BitbucketServerRateLimit struct {
+	// Enabled description: true if rate limiting is enabled.
+	Enabled bool `json:"enabled"`
+	// RequestsPerHour description: Requests per hour permitted. This is an average, calculated per second.
+	RequestsPerHour float64 `json:"requestsPerHour"`
 }
 type BitbucketServerUsernameIdentity struct {
 	Type string `json:"type"`
@@ -365,6 +385,8 @@ type ExcludedGitoliteRepo struct {
 
 // ExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 type ExperimentalFeatures struct {
+	// AndOrQuery description: Interpret a search input query as an and/or query.
+	AndOrQuery string `json:"andOrQuery,omitempty"`
 	// Automation description: Enables the experimental code change management campaigns feature. NOTE: The automation feature was renamed to campaigns, but this experimental feature flag name was not changed (because the feature flag will go away soon anyway).
 	Automation string `json:"automation,omitempty"`
 	// BitbucketServerFastPerm description: DEPRECATED: Configure in Bitbucket Server config.
@@ -456,6 +478,8 @@ type GitHubConnection struct {
 	InitialRepositoryEnablement bool `json:"initialRepositoryEnablement,omitempty"`
 	// Orgs description: An array of organization names identifying GitHub organizations whose repositories should be mirrored on Sourcegraph.
 	Orgs []string `json:"orgs,omitempty"`
+	// RateLimit description: Rate limit applied when making background API requests to GitHub.
+	RateLimit *GitHubRateLimit `json:"rateLimit,omitempty"`
 	// Repos description: An array of repository "owner/name" strings specifying which GitHub or GitHub Enterprise repositories to mirror on Sourcegraph.
 	Repos []string `json:"repos,omitempty"`
 	// RepositoryPathPattern description: The pattern used to generate the corresponding Sourcegraph repository name for a GitHub or GitHub Enterprise repository. In the pattern, the variable "{host}" is replaced with the GitHub host (such as github.example.com), and "{nameWithOwner}" is replaced with the GitHub repository's "owner/path" (such as "myorg/myrepo").
@@ -481,12 +505,20 @@ type GitHubConnection struct {
 	//
 	// If you need to narrow the set of mirrored repositories further (and don't want to enumerate it with a list or query set as above), create a new bot/machine user on GitHub or GitHub Enterprise that is only affiliated with the desired repositories.
 	RepositoryQuery []string `json:"repositoryQuery,omitempty"`
-	// Token description: A GitHub personal access token. Create one for GitHub.com at https://github.com/settings/tokens/new?scopes=repo&description=Sourcegraph (for GitHub Enterprise, replace github.com with your instance's hostname). The "repo" scope is required to mirror private repositories. If using only public repositories, you can create the token with no scopes.
+	// Token description: A GitHub personal access token. Create one for GitHub.com at https://github.com/settings/tokens/new?description=Sourcegraph (for GitHub Enterprise, replace github.com with your instance's hostname). See https://docs.sourcegraph.com/admin/external_service/github#github-api-token-and-access for which scopes are required for which use cases.
 	Token string `json:"token"`
 	// Url description: URL of a GitHub instance, such as https://github.com or https://github-enterprise.example.com.
 	Url string `json:"url"`
 	// Webhooks description: An array of configurations defining existing GitHub webhooks that send updates back to Sourcegraph.
 	Webhooks []*GitHubWebhook `json:"webhooks,omitempty"`
+}
+
+// GitHubRateLimit description: Rate limit applied when making background API requests to GitHub.
+type GitHubRateLimit struct {
+	// Enabled description: true if rate limiting is enabled.
+	Enabled bool `json:"enabled"`
+	// RequestsPerHour description: Requests per hour permitted. This is an average, calculated per second.
+	RequestsPerHour float64 `json:"requestsPerHour"`
 }
 type GitHubWebhook struct {
 	// Org description: The name of the GitHub organization to which the webhook belongs
@@ -545,6 +577,8 @@ type GitLabConnection struct {
 	ProjectQuery []string `json:"projectQuery"`
 	// Projects description: A list of projects to mirror from this GitLab instance. Supports including by name ({"name": "group/name"}) or by ID ({"id": 42}).
 	Projects []*GitLabProject `json:"projects,omitempty"`
+	// RateLimit description: Rate limit applied when making background API requests to GitLab.
+	RateLimit *GitLabRateLimit `json:"rateLimit,omitempty"`
 	// RepositoryPathPattern description: The pattern used to generate a the corresponding Sourcegraph repository name for a GitLab project. In the pattern, the variable "{host}" is replaced with the GitLab URL's host (such as gitlab.example.com), and "{pathWithNamespace}" is replaced with the GitLab project's "namespace/path" (such as "myteam/myproject").
 	//
 	// For example, if your GitLab is https://gitlab.example.com and your Sourcegraph is https://src.example.com, then a repositoryPathPattern of "{host}/{pathWithNamespace}" would mean that a GitLab project at https://gitlab.example.com/myteam/myproject is available on Sourcegraph at https://src.example.com/gitlab.example.com/myteam/myproject.
@@ -567,6 +601,14 @@ type GitLabProject struct {
 	Id int `json:"id,omitempty"`
 	// Name description: The name of a GitLab project ("group/name") to mirror.
 	Name string `json:"name,omitempty"`
+}
+
+// GitLabRateLimit description: Rate limit applied when making background API requests to GitLab.
+type GitLabRateLimit struct {
+	// Enabled description: true if rate limiting is enabled.
+	Enabled bool `json:"enabled"`
+	// RequestsPerHour description: Requests per hour permitted. This is an average, calculated per second.
+	RequestsPerHour float64 `json:"requestsPerHour"`
 }
 
 // GitoliteConnection description: Configuration for a connection to Gitolite.
@@ -664,6 +706,14 @@ type OAuthIdentity struct {
 	// MinBatchingThreshold description: The minimum number of GitLab projects to fetch at which to start batching requests to fetch project visibility. Please consult with the Sourcegraph support team before modifying this.
 	MinBatchingThreshold int    `json:"minBatchingThreshold,omitempty"`
 	Type                 string `json:"type"`
+}
+
+// ObservabilityTracing description: Controls the settings for distributed tracing.
+type ObservabilityTracing struct {
+	// Debug description: Turns on debug logging of opentracing client requests. This can be useful for debugging connectivity issues between the tracing client and the Jaeger agent, the performance overhead of tracing, and other issues related to the use of distributed tracing.
+	Debug bool `json:"debug,omitempty"`
+	// Sampling description: Determines the requests for which distributed traces are recorded. "none" (default) turns off tracing entirely. "selective" sends traces whenever `?trace=1` is present in the URL. "all" sends traces on every request. Note that this only affects the behavior of the distributed tracing client. The Jaeger instance must be running for traces to be collected (as described in the Sourcegraph installation instructions). Additional downsampling can be configured in Jaeger, itself (https://www.jaegertracing.io/docs/1.17/sampling)
+	Sampling string `json:"sampling,omitempty"`
 }
 
 // OpenIDConnectAuthProvider description: Configures the OpenID Connect authentication provider for SSO.
@@ -957,9 +1007,9 @@ type SiteConfiguration struct {
 	HtmlHeadTop string `json:"htmlHeadTop,omitempty"`
 	// LicenseKey description: The license key associated with a Sourcegraph product subscription, which is necessary to activate Sourcegraph Enterprise functionality. To obtain this value, contact Sourcegraph to purchase a subscription. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.
 	LicenseKey string `json:"licenseKey,omitempty"`
-	// LightstepAccessToken description: Access token for sending traces to LightStep.
+	// LightstepAccessToken description: DEPRECATED. Use Jaeger (`"observability.tracing": { "sampling": "selective" }`), instead.
 	LightstepAccessToken string `json:"lightstepAccessToken,omitempty"`
-	// LightstepProject description: The project ID on LightStep that corresponds to the `lightstepAccessToken`, only for generating links to traces. For example, if `lightstepProject` is `mycompany-prod`, all HTTP responses from Sourcegraph will include an X-Trace header with the URL to the trace on LightStep, of the form `https://app.lightstep.com/mycompany-prod/trace?span_guid=...&at_micros=...`.
+	// LightstepProject description: DEPRECATED. Use Jaeger (`"observability.tracing": { "sampling": "selective" }`), instead.
 	LightstepProject string `json:"lightstepProject,omitempty"`
 	// Log description: Configuration for logging and alerting, including to external services.
 	Log *Log `json:"log,omitempty"`
@@ -967,6 +1017,8 @@ type SiteConfiguration struct {
 	LsifEnforceAuth bool `json:"lsifEnforceAuth,omitempty"`
 	// MaxReposToSearch description: The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. Any value less than or equal to zero means unlimited.
 	MaxReposToSearch int `json:"maxReposToSearch,omitempty"`
+	// ObservabilityTracing description: Controls the settings for distributed tracing.
+	ObservabilityTracing *ObservabilityTracing `json:"observability.tracing,omitempty"`
 	// ParentSourcegraph description: URL to fetch unreachable repository details from. Defaults to "https://sourcegraph.com"
 	ParentSourcegraph *ParentSourcegraph `json:"parentSourcegraph,omitempty"`
 	// PermissionsBackgroundSync description: Sync code host repository and user permissions in the background.
@@ -983,19 +1035,7 @@ type SiteConfiguration struct {
 	SearchLargeFiles []string `json:"search.largeFiles,omitempty"`
 	// UpdateChannel description: The channel on which to automatically check for Sourcegraph updates.
 	UpdateChannel string `json:"update.channel,omitempty"`
-	// UseJaeger description: Use local Jaeger instance for tracing. Kubernetes cluster deployments only.
-	//
-	// After enabling Jaeger and updating your Kubernetes cluster, `kubectl get pods`
-	// should display pods prefixed with `jaeger-cassandra`,
-	// `jaeger-collector`, and `jaeger-query`. `jaeger-collector` will start
-	// crashing until you initialize the Cassandra DB. To do so, do the
-	// following:
-	//
-	// 1. Install [`cqlsh`](https://pypi.python.org/pypi/cqlsh).
-	// 1. `kubectl port-forward $(kubectl get pods | grep jaeger-cassandra | awk '{ print $1 }') 9042`
-	// 1. `git clone https://github.com/uber/jaeger && cd jaeger && MODE=test ./plugin/storage/cassandra/schema/create.sh | cqlsh`
-	// 1. `kubectl port-forward $(kubectl get pods | grep jaeger-query | awk '{ print $1 }') 16686`
-	// 1. Go to http://localhost:16686 to view the Jaeger dashboard.
+	// UseJaeger description: DEPRECATED. Use `"observability.tracing": { "sampling": "all" }`, instead. Enables Jaeger tracing.
 	UseJaeger bool `json:"useJaeger,omitempty"`
 }
 

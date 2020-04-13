@@ -139,6 +139,18 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         description: 'Limit results to the specified type.',
         discreteValues: ['diff', 'commit', 'symbol', 'repo', 'path', 'file'],
     },
+
+    [FilterType.visibility]: {
+        discreteValues: ['any', 'private', 'public'],
+        description: 'Include results from repositories with the matching visibility (private, public, any).',
+        singular: true,
+    },
+}
+
+export const discreteValueAliases: { [key: string]: string[] } = {
+    yes: ['yes', 'y', 'Y', 'YES', 'Yes', '1', 't', 'T', 'true', 'TRUE', 'True'],
+    no: ['n', 'N', 'no', 'NO', 'No', '0', 'f', 'F', 'false', 'FALSE', 'False'],
+    only: ['o', 'only', 'ONLY', 'Only'],
 }
 
 /**
@@ -183,6 +195,26 @@ export const resolveFilter = (
 }
 
 /**
+ * Checks whether a discrete value is valid for a given filter, accounting for valid aliases.
+ */
+const isValidDiscreteValue = (definition: NegatableFilterDefinition | BaseFilterDefinition, value: string): boolean => {
+    if (!definition.discreteValues || definition.discreteValues.includes(value)) {
+        return true
+    }
+
+    const validDiscreteValuesForDefinition = Object.keys(discreteValueAliases).filter(key =>
+        definition.discreteValues?.includes(key)
+    )
+
+    for (const discreteValue of validDiscreteValuesForDefinition) {
+        if (discreteValueAliases[discreteValue].includes(value)) {
+            return true
+        }
+    }
+    return false
+}
+
+/**
  * Validates a filter given its type and value.
  */
 export const validateFilter = (
@@ -197,8 +229,9 @@ export const validateFilter = (
     if (
         definition.discreteValues &&
         (!filterValue ||
-            filterValue.token.type !== 'literal' ||
-            !definition.discreteValues.includes(filterValue.token.value))
+            (filterValue.token.type !== 'literal' && filterValue.token.type !== 'quoted') ||
+            (filterValue.token.type === 'literal' && !isValidDiscreteValue(definition, filterValue.token.value)) ||
+            (filterValue.token.type === 'quoted' && !isValidDiscreteValue(definition, filterValue.token.quotedValue)))
     ) {
         return {
             valid: false,

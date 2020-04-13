@@ -2,18 +2,15 @@ import * as H from 'history'
 import React from 'react'
 import renderer from 'react-test-renderer'
 import { of } from 'rxjs'
-import { CampaignUpdateDiff, calculateChangesetDiff, ChangesetArray } from './CampaignUpdateDiff'
-import {
-    IChangesetPlan,
-    IRepository,
-    IExternalChangeset,
-    ChangesetState,
-} from '../../../../../shared/src/graphql/schema'
+import { CampaignUpdateDiff, calculateChangesetDiff } from './CampaignUpdateDiff'
+import { IRepository, IExternalChangeset, ChangesetState, IPatch } from '../../../../../shared/src/graphql/schema'
 
 describe('CampaignUpdateDiff', () => {
     test('renders a loader', () => {
         const history = H.createMemoryHistory({ keyLength: 0 })
-        const location = H.createLocation('/campaigns/Q2FtcGFpZ25QbGFuOjE4Mw%3D%3D?plan=Q2FtcGFpZ25QbGFuOjE4Mw%3D%3D')
+        const location = H.createLocation(
+            '/campaigns/Q2FtcGFpZ25QbGFuOjE4Mw%3D%3D?patchSet=Q2FtcGFpZ25QbGFuOjE4Mw%3D%3D'
+        )
         expect(
             renderer
                 .create(
@@ -25,17 +22,22 @@ describe('CampaignUpdateDiff', () => {
                             id: 'somecampaign',
                             publishedAt: null,
                             changesets: { totalCount: 1 },
-                            changesetPlans: { totalCount: 1 },
+                            patches: { totalCount: 1 },
                         }}
-                        campaignPlan={{ id: 'someothercampaign', changesetPlans: { totalCount: 1 } }}
+                        patchSet={{ id: 'someothercampaign', patches: { totalCount: 1 } }}
                         _queryChangesets={() =>
                             of({
-                                nodes: [{ __typename: 'ExternalChangeset', repository: { id: 'match1' } }],
+                                nodes: [{ __typename: 'ExternalChangeset', id: '1', repository: { id: 'match1' } }],
                             }) as any
                         }
-                        _queryChangesetPlans={() =>
+                        _queryPatchesFromCampaign={() =>
                             of({
-                                nodes: [{ __typename: 'ChangesetPlan', repository: { id: 'match1' } }],
+                                nodes: [{ __typename: 'Patch', id: '1', repository: { id: 'match1' } }],
+                            }) as any
+                        }
+                        _queryPatchesFromPatchSet={() =>
+                            of({
+                                nodes: [{ __typename: 'Patch', id: '2', repository: { id: 'match1' } }],
                             }) as any
                         }
                     />
@@ -45,7 +47,9 @@ describe('CampaignUpdateDiff', () => {
     })
     test('renders', done => {
         const history = H.createMemoryHistory({ keyLength: 0 })
-        const location = H.createLocation('/campaigns/Q2FtcGFpZ25QbGFuOjE4Mw%3D%3D?plan=Q2FtcGFpZ25QbGFuOjE4Mw%3D%3D')
+        const location = H.createLocation(
+            '/campaigns/Q2FtcGFpZ25QbGFuOjE4Mw%3D%3D?patchSet=Q2FtcGFpZ25QbGFuOjE4Mw%3D%3D'
+        )
         const rendered = renderer.create(
             <CampaignUpdateDiff
                 isLightTheme={true}
@@ -55,17 +59,22 @@ describe('CampaignUpdateDiff', () => {
                     id: 'somecampaign',
                     publishedAt: null,
                     changesets: { totalCount: 1 },
-                    changesetPlans: { totalCount: 1 },
+                    patches: { totalCount: 1 },
                 }}
-                campaignPlan={{ id: 'someothercampaign', changesetPlans: { totalCount: 1 } }}
+                patchSet={{ id: 'someothercampaign', patches: { totalCount: 1 } }}
                 _queryChangesets={() =>
                     of({
-                        nodes: [{ __typename: 'ExternalChangeset', repository: { id: 'match1' } }],
+                        nodes: [{ __typename: 'ExternalChangeset', id: '1', repository: { id: 'match1' } }],
                     }) as any
                 }
-                _queryChangesetPlans={() =>
+                _queryPatchesFromCampaign={() =>
                     of({
-                        nodes: [{ __typename: 'ChangesetPlan', repository: { id: 'match1' } }],
+                        nodes: [{ __typename: 'Patch', id: '1', repository: { id: 'match1' } }],
+                    }) as any
+                }
+                _queryPatchesFromPatchSet={() =>
+                    of({
+                        nodes: [{ __typename: 'Patch', id: '2', repository: { id: 'match1' } }],
                     }) as any
                 }
             />
@@ -76,22 +85,27 @@ describe('CampaignUpdateDiff', () => {
         })
     })
     describe('calculateChangesetDiff', () => {
-        type ChangesetPlanInput = Pick<IChangesetPlan, '__typename'> & { repository: Pick<IRepository, 'id'> }
+        type PatchInput = Pick<IPatch, '__typename'> & { repository: Pick<IRepository, 'id'> }
 
-        type ChangesetInputArray = (
-            | (Pick<IExternalChangeset, '__typename' | 'state'> & { repository: Pick<IRepository, 'id'> })
-            | ChangesetPlanInput
-        )[]
+        type ChangesetInputArray = (Pick<IExternalChangeset, '__typename' | 'state'> & {
+            repository: Pick<IRepository, 'id'>
+        })[]
         const testChangesetDiff = ({
             changesets,
-            changesetPlans,
+            changesetPatches,
+            patches,
             want,
         }: {
             changesets: ChangesetInputArray
-            changesetPlans: ChangesetPlanInput[]
+            changesetPatches: PatchInput[]
+            patches: PatchInput[]
             want: { added: number; changed: number; unmodified: number; deleted: number }
         }): void => {
-            const diff = calculateChangesetDiff(changesets as ChangesetArray, changesetPlans as IChangesetPlan[])
+            const diff = calculateChangesetDiff(
+                changesets as IExternalChangeset[],
+                changesetPatches as IPatch[],
+                patches as IPatch[]
+            )
             expect(diff.added.length).toBe(want.added)
             expect(diff.changed.length).toBe(want.changed)
             expect(diff.unmodified.length).toBe(want.unmodified)
@@ -102,7 +116,8 @@ describe('CampaignUpdateDiff', () => {
                 changesets: [
                     { __typename: 'ExternalChangeset', repository: { id: 'repo-0' }, state: ChangesetState.OPEN },
                 ],
-                changesetPlans: [],
+                changesetPatches: [],
+                patches: [],
                 want: {
                     added: 0,
                     changed: 0,
@@ -116,7 +131,8 @@ describe('CampaignUpdateDiff', () => {
                 changesets: [
                     { __typename: 'ExternalChangeset', repository: { id: 'repo-0' }, state: ChangesetState.MERGED },
                 ],
-                changesetPlans: [],
+                changesetPatches: [],
+                patches: [],
                 want: {
                     added: 0,
                     changed: 0,
@@ -130,7 +146,8 @@ describe('CampaignUpdateDiff', () => {
                 changesets: [
                     { __typename: 'ExternalChangeset', repository: { id: 'repo-0' }, state: ChangesetState.CLOSED },
                 ],
-                changesetPlans: [],
+                changesetPatches: [],
+                patches: [],
                 want: {
                     added: 0,
                     changed: 0,
@@ -144,7 +161,8 @@ describe('CampaignUpdateDiff', () => {
                 changesets: [
                     { __typename: 'ExternalChangeset', repository: { id: 'repo-0' }, state: ChangesetState.OPEN },
                 ],
-                changesetPlans: [{ __typename: 'ChangesetPlan', repository: { id: 'repo-0' } }],
+                changesetPatches: [],
+                patches: [{ __typename: 'Patch', repository: { id: 'repo-0' } }],
                 want: {
                     added: 0,
                     changed: 1,
@@ -158,9 +176,10 @@ describe('CampaignUpdateDiff', () => {
                 changesets: [
                     { __typename: 'ExternalChangeset', repository: { id: 'repo-0' }, state: ChangesetState.OPEN },
                 ],
-                changesetPlans: [
-                    { __typename: 'ChangesetPlan', repository: { id: 'repo-0' } },
-                    { __typename: 'ChangesetPlan', repository: { id: 'repo-1' } },
+                changesetPatches: [],
+                patches: [
+                    { __typename: 'Patch', repository: { id: 'repo-0' } },
+                    { __typename: 'Patch', repository: { id: 'repo-1' } },
                 ],
                 want: {
                     added: 1,
@@ -172,8 +191,9 @@ describe('CampaignUpdateDiff', () => {
         })
         test('draft changeset patch changed', () => {
             testChangesetDiff({
-                changesets: [{ __typename: 'ChangesetPlan', repository: { id: 'repo-0' } }],
-                changesetPlans: [{ __typename: 'ChangesetPlan', repository: { id: 'repo-0' } }],
+                changesets: [],
+                changesetPatches: [{ __typename: 'Patch', repository: { id: 'repo-0' } }],
+                patches: [{ __typename: 'Patch', repository: { id: 'repo-0' } }],
                 want: {
                     added: 0,
                     changed: 1,
@@ -184,8 +204,9 @@ describe('CampaignUpdateDiff', () => {
         })
         test('draft changeset not relevant anymore and ignored', () => {
             testChangesetDiff({
-                changesets: [{ __typename: 'ChangesetPlan', repository: { id: 'repo-0' } }],
-                changesetPlans: [],
+                changesets: [],
+                changesetPatches: [{ __typename: 'Patch', repository: { id: 'repo-0' } }],
+                patches: [],
                 want: {
                     added: 0,
                     changed: 0,

@@ -84,7 +84,7 @@ func alertForTimeout(usedTime time.Duration, suggestTime time.Duration, r *searc
 		proposedQueries: []*searchQueryDescription{
 			{
 				description: "query with longer timeout",
-				query:       fmt.Sprintf("timeout:%v %s", suggestTime, omitQueryField(r.parseTree, query.FieldTimeout)),
+				query:       fmt.Sprintf("timeout:%v %s", suggestTime, omitQueryField(r.query.ParseTree(), query.FieldTimeout)),
 				patternType: r.patternType,
 			},
 		},
@@ -155,7 +155,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 
 	// TODO(sqs): handle -repo:foo fields.
 
-	withoutRepoFields := omitQueryField(r.parseTree, query.FieldRepo)
+	withoutRepoFields := omitQueryField(r.query.ParseTree(), query.FieldRepo)
 
 	switch {
 	case len(repoGroupFilters) > 1:
@@ -177,7 +177,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 			proposedQueries = []*searchQueryDescription{
 				{
 					description: fmt.Sprintf("include repositories outside of repogroup:%s", repoGroupFilters[0]),
-					query:       omitQueryField(r.parseTree, query.FieldRepoGroup),
+					query:       omitQueryField(r.query.ParseTree(), query.FieldRepoGroup),
 					patternType: r.patternType,
 				},
 			}
@@ -224,7 +224,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 			proposedQueries = []*searchQueryDescription{
 				{
 					description: fmt.Sprintf("include repositories outside of repogroup:%s", repoGroupFilters[0]),
-					query:       omitQueryField(r.parseTree, query.FieldRepoGroup),
+					query:       omitQueryField(r.query.ParseTree(), query.FieldRepoGroup),
 					patternType: r.patternType,
 				},
 			}
@@ -419,7 +419,7 @@ outer:
 		// add it to the user's query, but be smart. For example, if the user's
 		// query was "repo:foo" and the parent is "foobar/", then propose "repo:foobar/"
 		// not "repo:foo repo:foobar/" (which are equivalent, but shorter is better).
-		newExpr := addRegexpField(r.parseTree, query.FieldRepo, repoParentPattern)
+		newExpr := addRegexpField(r.query.ParseTree(), query.FieldRepo, repoParentPattern)
 		alert.proposedQueries = append(alert.proposedQueries, &searchQueryDescription{
 			description: "in repositories under " + repoParent + more,
 			query:       newExpr,
@@ -438,7 +438,7 @@ outer:
 			if i >= maxReposToPropose {
 				break
 			}
-			newExpr := addRegexpField(r.parseTree, query.FieldRepo, "^"+regexp.QuoteMeta(pathToPropose)+"$")
+			newExpr := addRegexpField(r.query.ParseTree(), query.FieldRepo, "^"+regexp.QuoteMeta(pathToPropose)+"$")
 			alert.proposedQueries = append(alert.proposedQueries, &searchQueryDescription{
 				description: "in the repository " + strings.TrimPrefix(pathToPropose, "github.com/"),
 				query:       newExpr,

@@ -58,7 +58,7 @@ describe('External services GUI', () => {
 
     saveScreenshotsUponFailures(() => driver.page)
 
-    before(async function() {
+    after(async function () {
         this.timeout(10 * 1000)
         if (!config.noCleanup) {
             await resourceManager.destroyAll()
@@ -159,7 +159,7 @@ describe('External services API', () => {
         }
     })
 
-    test('External services: GitLab', async function() {
+    test('External services: GitLab', async function () {
         this.timeout(5 * 1000)
         const externalService = {
             kind: GQL.ExternalServiceKind.GITLAB,
@@ -185,7 +185,7 @@ describe('External services API', () => {
         )
     })
 
-    test('External services: Bitbucket Cloud', async function() {
+    test('External services: Bitbucket Cloud', async function () {
         this.timeout(30 * 1000)
         const uniqueDisplayName = '[TEST] Regression test: Bitbucket Cloud (bitbucket.org)'
         const externalServiceInput = {
@@ -250,7 +250,7 @@ describe('External services permissions', () => {
 
     saveScreenshotsUponFailures(() => driver.page)
 
-    before(async function() {
+    after(async function () {
         this.timeout(10 * 1000)
         if (!config.noCleanup) {
             await resourceManager.destroyAll()
@@ -260,7 +260,7 @@ describe('External services permissions', () => {
         }
     })
 
-    test('External services permissions: GitHub', async function() {
+    test('External services permissions: GitHub', async function () {
         this.timeout(30 * 1000)
         const externalService = {
             kind: GQL.ExternalServiceKind.GITHUB,

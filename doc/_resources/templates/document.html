@@ -13,7 +13,7 @@
         </button>
         <details-menu aria-label="Sourcegraph version" class="dropdown-menu m-0 p-0" aria-labelledby="Version Dropdown">
 
-            {{/* Update these after each release. */}} {{$previousReleaseRevspec := "v3.12.10"}} {{$previousReleaseVersion := "3.12"}} {{$currentReleaseRevspec := "v3.13.2"}} {{$currentReleaseVersion := "3.13"}} {{$nextReleaseVersion := "master"}}
+            {{/* Update these after each release. */}} {{$previousReleaseRevspec := "v3.13.2"}} {{$previousReleaseVersion := "3.13"}} {{$currentReleaseRevspec := "v3.14.2"}} {{$currentReleaseVersion := "3.14"}} {{$nextReleaseVersion := "master"}}
             <a rel="nofollow" class="dropdown-item {{if eq .ContentVersion " "}}active{{end}}" href="/{{.ContentPagePath}}">master</a>
             <a rel="nofollow" class=" dropdown-item {{if eq $currentReleaseVersion .ContentVersion " "}}active{{end}}" href="/@{{$currentReleaseVersion}}/{{.ContentPagePath}}">{{$currentReleaseVersion}}<span class="current-branch ml-1">current</span></a>
             <a rel="nofollow" class=" dropdown-item {{if eq $previousReleaseVersion .ContentVersion " "}}active{{end}}" href="/@{{$previousReleaseVersion}}/{{.ContentPagePath}}">{{$previousReleaseVersion}}</a>
@@ -93,8 +93,7 @@
                                     <li><a href="/user/code_intelligence/basic_code_intelligence">Basic code intelligence</a></li>
                                     <li><a href="/user/code_intelligence/lsif">LSIF</a></li>
                                     <li><a href="/user/code_intelligence/lsif_quickstart">LSIF quickstart</a></li>
-                                    <li><a href="/user/code_intelligence/lsif_in_ci">LSIF in CI</a></li>
-                                    <li><a href="/user/code_intelligence/lsif_on_github">LSIF on GitHub</a></li>
+                                    <li><a href="/user/code_intelligence/adding_lsif_to_workflows">Adding LSIF to workflows</a></li>
                                     <li><a href="/user/code_intelligence/language_servers">Language servers</a></li>
                                 </ul>
                             </li>
@@ -213,7 +212,7 @@
                                 </ul>
                             </li>
                             <li><a href="/admin/tls_ssl">Securing a Sourcegraph instance with TLS/SSL</a></li>
-                            <li><a href="/admin/nginx">Sourcegraph NGINX HTTP and HTTPS/SSL configuration</a></li>
+                            <li><a href="/admin/http_https_configuration">Sourcegraph HTTP and HTTPS/SSL configuration</a></li>
                             <li><a href="/admin/postgres">Upgrading PostgreSQL</a></li>
                             <li><a href="/admin/updates">Upgrading Sourcegraph</a></li>
                             <li><a href="/admin/auth">User authentication (SSO)</a></li>
@@ -307,7 +306,7 @@
                             </svg>
                     </div>
                     <li class="content-nav-no-hover">
-                        <a class="content-nav-section-header" href="/api">API Documentation</a>
+                        <a class="content-nav-section-header" href="/api">API documentation</a>
                         <ul class="content-nav-section-group">
                             <li><a href="/api/graphql">GraphQL API</a></li>
                             <li class="content-nav-no-hover">

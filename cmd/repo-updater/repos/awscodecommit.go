@@ -9,13 +9,13 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/aws/defaults"
 	"github.com/aws/aws-sdk-go-v2/aws/endpoints"
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/net/http2"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // An AWSCodeCommitSource yields repositories from a single AWS Code Commit
@@ -30,7 +30,7 @@ type AWSCodeCommitSource struct {
 	awsRegion    endpoints.Region
 	client       *awscodecommit.Client
 
-	exclude excluder
+	exclude excludeFunc
 }
 
 // NewAWSCodeCommitSource returns a new AWSCodeCommitSource from the given external service.
@@ -72,12 +72,13 @@ func newAWSCodeCommitSource(svc *ExternalService, c *schema.AWSCodeCommitConnect
 	}
 	awsConfig.HTTPClient = cli
 
-	var exclude excluder
+	var eb excludeBuilder
 	for _, r := range c.Exclude {
-		exclude.Exact(r.Name)
-		exclude.Exact(r.Id)
+		eb.Exact(r.Name)
+		eb.Exact(r.Id)
 	}
-	if err := exclude.Err(); err != nil {
+	exclude, err := eb.Build()
+	if err != nil {
 		return nil, err
 	}
 
@@ -179,7 +180,7 @@ func (s *AWSCodeCommitSource) listAllRepositories(ctx context.Context, results c
 }
 
 func (s *AWSCodeCommitSource) excludes(r *awscodecommit.Repository) bool {
-	return s.exclude.Match(r.Name) || s.exclude.Match(r.ID)
+	return s.exclude(r.Name) || s.exclude(r.ID)
 }
 
 // The code below is copied from

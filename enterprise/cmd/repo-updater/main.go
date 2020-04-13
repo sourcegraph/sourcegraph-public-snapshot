@@ -8,8 +8,10 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	ossAuthz "github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	ossDB "github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/shared"
@@ -21,8 +23,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"gopkg.in/inconshreveable/log15.v2"
 )
 
 func main() {
@@ -42,24 +44,30 @@ func enterpriseInit(
 	ctx := context.Background()
 	campaignsStore := campaigns.NewStore(db)
 
-	syncer := &campaigns.ChangesetSyncer{
-		Store:       campaignsStore,
-		ReposStore:  repoStore,
-		HTTPFactory: cf,
+	rateLimiterRegistry, err := repos.NewRateLimiterRegistry(ctx, repoStore)
+	if err != nil {
+		log15.Error("Creating rate limit registry", "err", err)
 	}
+
+	syncRegistry := campaigns.NewSyncRegistry(ctx, campaignsStore, repoStore, cf, rateLimiterRegistry)
 	if server != nil {
-		server.ChangesetSyncer = syncer
+		server.ChangesetSyncRegistry = syncRegistry
+		server.RateLimiterRegistry = rateLimiterRegistry
 	}
 
-	// Set up syncer
-	go syncer.Run(ctx)
+	clock := func() time.Time {
+		return time.Now().UTC().Truncate(time.Microsecond)
+	}
 
-	// Set up expired campaign deletion
+	sourcer := repos.NewSourcer(cf)
+	go campaigns.RunWorkers(ctx, campaignsStore, clock, gitserver.DefaultClient, sourcer, 5*time.Second)
+
+	// Set up expired patch set deletion
 	go func() {
 		for {
-			err := campaignsStore.DeleteExpiredCampaignPlans(ctx)
+			err := campaignsStore.DeleteExpiredPatchSets(ctx)
 			if err != nil {
-				log15.Error("DeleteExpiredCampaignPlans", "error", err)
+				log15.Error("DeleteExpiredPatchSets", "error", err)
 			}
 			time.Sleep(2 * time.Minute)
 		}
@@ -67,9 +75,6 @@ func enterpriseInit(
 
 	// TODO(jchen): This is an unfortunate compromise to not rewrite ossDB.ExternalServices for now.
 	dbconn.Global = db
-	clock := func() time.Time {
-		return time.Now().UTC().Truncate(time.Microsecond)
-	}
 	permsStore := frontendDB.NewPermsStore(db, clock)
 	permsSyncer := authz.NewPermsSyncer(repoStore, permsStore, clock)
 	go startBackgroundPermsSync(ctx, permsSyncer, db)
@@ -80,15 +85,7 @@ func enterpriseInit(
 
 // startBackgroundPermsSync sets up background permissions syncing.
 func startBackgroundPermsSync(ctx context.Context, syncer *authz.PermsSyncer, db dbutil.DB) {
-	// Block until config is available, otherwise will always get default value (i.e. false).
-	enabled := conf.Cached(func() interface{} {
-		return conf.PermissionsBackgroundSyncEnabled()
-	})().(bool)
-	if !enabled {
-		log15.Debug("startBackgroundPermsSync.notEnabled")
-		return
-	}
-
+	globals.WatchPermissionsBackgroundSync()
 	go func() {
 		t := time.NewTicker(5 * time.Second)
 		for range t.C {

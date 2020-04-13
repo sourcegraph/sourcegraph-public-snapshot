@@ -13,15 +13,109 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- Users and site administrators can now view a log of their actions/events in the user settings.
+- With the new `visibility:` filter search results can now be filtered based on a repository's visibility (possible filter values: `any`, `public` or `private`). [#8344](https://github.com/sourcegraph/sourcegraph/issues/8344)
+- observability: Dashboard panels now show an orange/red background color when the defined warning/critical alert threshold has been met, making it even easier to see on a dashboard what is in a bad state.
+- observability: Symbols: Adding an alert and dashboard panel for when Symbols -> frontend-internal requests are failing. [#9732](https://github.com/sourcegraph/sourcegraph/issues/9732)
+- observability: Distributed tracing is a powerful tool for investigating performance issues. The following changes have been made with the goal of making it easier to use distributed tracing with Sourcegraph:
+
+  - The site configuration field `"observability.tracing": { "sampling": "..." }` allows a site admin to control which requests generate tracing data.
+    - `"all"` will trace all requests.
+    - `"selective"` (recommended) will trace all requests initiated from an end-user URL with `?trace=1`. Non-end-user-initiated requests can set a HTTP header `X-Sourcegraph-Should-Trace: true`. This is the recommended setting, as `"all"` can generate large amounts of tracing data that may cause network and memory resource contention in the Sourcegraph instance.
+    - `"none"` (default) turns off tracing.
+  - Jaeger is now the officially supported distributed tracer. The following is the recommended site configuration to connect Sourcegraph to a Jaeger agent (which must be deployed on the same host and listening on the default ports):
+
+    ```
+    "observability.tracing": {
+      "sampling": "selective"
+    }
+    ```
+
+  - The site configuration field, `useJaeger`, is deprecated in favor of `observability.tracing`.
+  - Support for configuring Lightstep as a distributed tracer is deprecated and will be removed in a subsequent release. Instances that use Lightstep with Sourcegraph are encouraged to migrate to Jaeger (directions for running Jaeger alongside Sourcegraph are included in the installation instructions).
+
+- [`sourcegraph/git-extras`](https://sourcegraph.com/extensions/sourcegraph/git-extras) is now enabled by default on new instances [#3501](https://github.com/sourcegraph/sourcegraph/issues/3501)
+- The Sourcegraph Docker image will now copy `/etc/sourcegraph/gitconfig` to `$HOME/.gitconfig`. This is a convenience similiar to what we provide for [repositories that need HTTP(S) or SSH authentication](https://docs.sourcegraph.com/admin/repo/auth). [#658](https://github.com/sourcegraph/sourcegraph/issues/658)
+- Permissions background syncing is now supported for GitHub via site configuration `"permissions.backgroundSync": {"enabled": true}`.
+- search: Adding `stable:true` to a query ensures a deterministic search result order. This is an experimental parameter. It applies only to file contents, and is limited to at max 5,000 results (consider using [the paginated search API](https://docs.sourcegraph.com/api/graphql/search#sourcegraph-3-9-experimental-paginated-search) if you need more than that.).
+- After completing the Sourcegraph user feedback survey, a button may appear for tweeting this feedback at [@srcgraph](https://twitter.copm/srcgraph).
+
+### Changed
+
+- Multiple backwards-incompatible changes in the parts of the GraphQL API related to Campaigns [#9106](https://github.com/sourcegraph/sourcegraph/issues/9106):
+  - `CampaignPlan.status` has been removed, since we don't need it anymore after moving execution of campaigns to src CLI in [#8008](https://github.com/sourcegraph/sourcegraph/pull/8008).
+  - `CampaignPlan` has been renamed to `PatchSet`.
+  - `ChangesetPlan`/`ChangesetPlanConnection` has been renamed to `Patch`/`PatchConnection`.
+  - `CampaignPlanPatch` has been renamed to `PatchInput`.
+  - `Campaign.plan` has been renamed to `Campaign.patchSet`.
+  - `Campaign.changesetPlans` has been renamed to `campaign.changesetPlan`.
+  - `createCampaignPlanFromPatches` mutation has been renamed to `createPatchSetFromPatches`.
+- Removed the scoped search field on tree pages. When browsing code, the global search query will now get scoped to the current tree or file. [#9225](https://github.com/sourcegraph/sourcegraph/pull/9225)
+
+### Fixed
+
+- `.*` in the filter pattern were ignored and led to missing search results. [#9152](https://github.com/sourcegraph/sourcegraph/pull/9152)
+- observability: the Syntect Server dashboard's "Worker timeouts" can no longer appear to go negative. [#9523](https://github.com/sourcegraph/sourcegraph/issues/9523)
+- observability: the Syntect Server dashboard's "Worker timeouts" no longer incorrectly shows multiple values. [#9524](https://github.com/sourcegraph/sourcegraph/issues/9524)
+- observability: the Syntect Server dashboard's panels are no longer compacted, for improved visibility. [#9525](https://github.com/sourcegraph/sourcegraph/issues/9525)
+- observability: the Frontend dashboard's panels are no longer compacted, for improved visibility. [#9356](https://github.com/sourcegraph/sourcegraph/issues/9356)
+  - **IMPORTANT**: If you have previously configured alerting directly on "hard search errors", you will need to reconfigure it on both panels as it has now been split up ("Hard timeout search responses every 5m" and "Hard error search responses every 5m").
+- observability: the Frontend dashboard's panels no longer show misleading duplicate labels. [#9660](https://github.com/sourcegraph/sourcegraph/issues/9660)
+- observability: "frontend internal errors" are now broken down just by route, which makes reading the graph easier. [#9668](https://github.com/sourcegraph/sourcegraph/issues/9668)
+- observability: Searcher dashboard: "Search errors on unindexed repositories" is now broken down by code instead of instance for improved readability. [#9670](https://github.com/sourcegraph/sourcegraph/issues/9670)
+- observability: Searcher dashboard: "Search errors on unindexed repositories" no longer includes cancelled search requests.
+- observability: Symbols dashboard: "Store fetch queue size" can no longer appear to go negative. [#9731](https://github.com/sourcegraph/sourcegraph/issues/9731)
+- observability: Symbols dashboard: metrics are now aggregated instead of per-instance, for improved visibility. [#9730](https://github.com/sourcegraph/sourcegraph/issues/9730)
+- observability: The "resolve_revision_duration_slow" alert is no longer flaky / non-deterministic. [#9751](https://github.com/sourcegraph/sourcegraph/issues/9751)
+- observability: Firing alerts are now correctly sorted at the top of dashboards by default. [#9766](https://github.com/sourcegraph/sourcegraph/issues/9766)
+- observability: Panels at the bottom of the home dashboard no longer appear clipped / cut off. [#9768](https://github.com/sourcegraph/sourcegraph/issues/9768)
+- observability: Git Server dashboard: disk usage now shown in percentages to match the alerts that can fire. [#9352](https://github.com/sourcegraph/sourcegraph/issues/9352)
+- observability: Git Server dashboard: there is now a panel to show concurrent command executions to match the defined alerts. [#9354](https://github.com/sourcegraph/sourcegraph/issues/9354)
+- observability: Git Server dashboard: adjusted the critical disk space alert to 15% so it can now fire. [#9351](https://github.com/sourcegraph/sourcegraph/issues/9351)
+- observability: Git Server dashboard: the 'echo command duration test' panel now properly displays units in seconds. [#7628](https://github.com/sourcegraph/sourcegraph/issues/7628)
+- The Phabricator integration no longer makes duplicate requests to Phabricator's API on diff views. [#8849](https://github.com/sourcegraph/sourcegraph/issues/8849)
+- Changesets on repositories that aren't available on the instance anymore are now hidden instead of failing. [#9656](https://github.com/sourcegraph/sourcegraph/pull/9656)
+
+### Removed
+
+## 3.14.2
+
+### Fixed
+
+- campaigns: Ignore changesets where repo does not exist anymore. [#9656](https://github.com/sourcegraph/sourcegraph/pull/9656)
+
+## 3.14.1
+
+### Added
+
+- monitoring: new Permissions dashboard to show stats of repository permissions.
+
+### Changed
+
+- Site-Admin/Instrumentation in the Kubernetes cluster deployment now includes indexed-search.
+
+## 3.14.0
+
+### Added
+
 - Site-Admin/Instrumentation is now available in the Kubernetes cluster deployment [8805](https://github.com/sourcegraph/sourcegraph/pull/8805).
 - Extensions can now specify a `baseUri` in the `DocumentFilter` when registering providers.
 - Admins can now exclude GitHub forks and/or archived repositories from the set of repositories being mirrored in Sourcegraph with the `"exclude": [{"forks": true}]` or `"exclude": [{"archived": true}]` GitHub external service configuration. [#8974](https://github.com/sourcegraph/sourcegraph/pull/8974)
-- Campaign changesets can be filtered by State, Review State and Check State [8848](https://github.com/sourcegraph/sourcegraph/pull/8848)
+- Campaign changesets can be filtered by State, Review State and Check State. [#8848](https://github.com/sourcegraph/sourcegraph/pull/8848)
 - Counts of users of and searches conducted with interactive and plain text search modes will be sent back in pings, aggregated daily, weekly, and monthly.
 - Aggregated counts of daily, weekly, and monthly active users of search will be sent back in pings.
 - Counts of number of searches conducted using each filter will be sent back in pings, aggregated daily, weekly, and monthly.
 - Counts of number of users conducting searches containing each filter will be sent back in pings, aggregated daily, weekly, and monthly.
 - Added more entries (Bash, Erlang, Julia, OCaml, Scala) to the list of suggested languages for the `lang:` filter.
+- Permissions background sync is now supported for GitLab and Bitbucket Server via site configuration `"permissions.backgroundSync": {"enabled": true}`.
+- Indexed search exports more prometheus metrics and debug logs to aid debugging performance issues. [#9111](https://github.com/sourcegraph/sourcegraph/issues/9111)
+- monitoring: the Frontend dashboard now shows in excellent detail how search is behaving overall and at a glance.
+- monitoring: added alerts for when hard search errors (both timeouts and general errors) are high.
+- monitoring: added alerts for when partial search timeouts are high.
+- monitoring: added alerts for when search 90th and 99th percentile request duration is high.
+- monitoring: added alerts for when users are being shown an abnormally large amount of search alert user suggestions and no results.
+- monitoring: added alerts for when the internal indexed and unindexed search services are returning bad responses.
+- monitoring: added alerts for when gitserver may be under heavy load due to many concurrent command executions or under-provisioning.
 
 ### Changed
 
@@ -47,6 +141,8 @@ All notable changes to Sourcegraph are documented in this file.
 - A regression in repo-updater was fixed that lead to every repository's git clone being updated every time the list of repositories was synced from the code host. [#8501](https://github.com/sourcegraph/sourcegraph/issues/8501)
 - The default timeout of indexed search has been increased. Previously indexed search would always return within 3s. This lead to broken behaviour on new instances which had yet to tune resource allocations. [#8720](https://github.com/sourcegraph/sourcegraph/pull/8720)
 - Bitbucket Server older than 5.13 failed to sync since Sourcegraph 3.12. This was due to us querying for the `archived` label, but Bitbucket Server 5.13 does not support labels. [#8883](https://github.com/sourcegraph/sourcegraph/issues/8883)
+- monitoring: firing alerts are now ordered at the top of the list in dashboards by default for better visibility.
+- monitoring: fixed an issue where some alerts would fail to report in for the "Total alerts defined" panel in the overview dashboard.
 
 ### Removed
 
@@ -243,7 +339,7 @@ This is `3.12.8` release with internal infrastructure fixes to publish the docke
 ### Fixed
 
 - The `/.auth/saml/metadata` endpoint has been fixed. Previously it panicked if no encryption key was set.
-- The version updating logic has been fixed for `sourcegraph/server`. Users running `sourcegraph/server:3.13.1` will need to manually modify their `docker run` command to use `sourcegraph/server:3.13.1` or higher. [#7442](https://github.com/sourcegraph/sourcegraph/issues/7442)
+- The version updating logic has been fixed for `sourcegraph/server`. Users running `sourcegraph/server:3.11.1` will need to manually modify their `docker run` command to use `sourcegraph/server:3.11.4` or higher. [#7442](https://github.com/sourcegraph/sourcegraph/issues/7442)
 
 ## 3.11.1
 

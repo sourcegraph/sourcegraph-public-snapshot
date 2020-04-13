@@ -93,7 +93,13 @@ async function createTestUser(
         .pipe(
             map(dataOrThrowErrors),
             catchError(err =>
-                throwError(new Error(`Could not create user ${JSON.stringify(username)}: ${asError(err).message})`))
+                throwError(
+                    new Error(
+                        `Could not create user ${JSON.stringify(
+                            username
+                        )} (you may need to update the sudo access token used by the test): ${asError(err).message})`
+                    )
+                )
             ),
             map(({ createUser }) => createUser.resetPasswordURL)
         )
@@ -117,11 +123,7 @@ export async function createAuthProvider(
     const siteConfig = await fetchSiteConfiguration(gqlClient).toPromise()
     const siteConfigParsed: SiteConfiguration = jsonc.parse(siteConfig.configuration.effectiveContents)
     const authProviders = siteConfigParsed['auth.providers']
-    if (
-        authProviders &&
-        authProviders.filter(p => p.type === authProvider.type && (p as any).displayName === authProvider.displayName)
-            .length > 0
-    ) {
+    if (authProviders?.some(p => p.type === authProvider.type && (p as any).displayName === authProvider.displayName)) {
         return () => Promise.resolve() // provider already exists
     }
     const editFns = [
@@ -150,7 +152,7 @@ export async function ensureNewUser(
             await deleteUser({ requestGraphQL }, username)
         }
     } catch (err) {
-        if (!err.message.includes('user not found')) {
+        if (!asError(err).message.includes('user not found')) {
             throw err
         }
     }

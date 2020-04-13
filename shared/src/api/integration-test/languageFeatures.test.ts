@@ -122,19 +122,13 @@ function testLocationProvider<P>({
             // Register the provider and call it.
             const subscription = registerProvider(extensionAPI)(['*'], labeledProvider('a'))
             await extensionAPI.internal.sync()
-            expect(
-                await getResult(services, 'file:///f')
-                    .pipe(take(1))
-                    .toPromise()
-            ).toEqual(labeledProviderResults(['a']))
+            expect(await getResult(services, 'file:///f').pipe(take(1)).toPromise()).toEqual(
+                labeledProviderResults(['a'])
+            )
 
             // Unregister the provider and ensure it's removed.
             subscription.unsubscribe()
-            expect(
-                await getResult(services, 'file:///f')
-                    .pipe(take(1))
-                    .toPromise()
-            ).toEqual(null)
+            expect(await getResult(services, 'file:///f').pipe(take(1)).toPromise()).toEqual(null)
         })
 
         test('syncs with models', async () => {
@@ -151,11 +145,9 @@ function testLocationProvider<P>({
                 isActive: true,
             })
 
-            expect(
-                await getResult(services, 'file:///f2')
-                    .pipe(take(1))
-                    .toPromise()
-            ).toEqual(labeledProviderResults(['a']))
+            expect(await getResult(services, 'file:///f2').pipe(take(1)).toPromise()).toEqual(
+                labeledProviderResults(['a'])
+            )
 
             subscription.unsubscribe()
         })
@@ -172,9 +164,7 @@ function testLocationProvider<P>({
                 })
             )
             await extensionAPI.internal.sync()
-            await getResult(services, 'file:///f')
-                .pipe(take(1))
-                .toPromise()
+            await getResult(services, 'file:///f').pipe(take(1)).toPromise()
             await wait
         })
 
@@ -187,11 +177,10 @@ function testLocationProvider<P>({
             await extensionAPI.internal.sync()
 
             // Expect it to emit the first provider's result first (and not block on both providers being ready).
-            expect(
-                await getResult(services, 'file:///f')
-                    .pipe(take(2), toArray())
-                    .toPromise()
-            ).toEqual([labeledProviderResults(['a']), labeledProviderResults(['a', 'b'])])
+            expect(await getResult(services, 'file:///f').pipe(take(2), toArray()).toPromise()).toEqual([
+                labeledProviderResults(['a']),
+                labeledProviderResults(['a', 'b']),
+            ])
         })
     })
 }

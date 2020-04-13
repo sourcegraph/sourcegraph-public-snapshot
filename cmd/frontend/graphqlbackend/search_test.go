@@ -3,10 +3,12 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"reflect"
 	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -14,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	querytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -379,7 +382,7 @@ func Test_exactlyOneRepo(t *testing.T) {
 func Test_QuoteSuggestions(t *testing.T) {
 	t.Run("regex error", func(t *testing.T) {
 		raw := "*"
-		_, _, err := query.Process(raw, query.SearchTypeRegex)
+		_, err := query.Process(raw, query.SearchTypeRegex)
 		if err == nil {
 			t.Fatalf("error returned from query.Process(%q) is nil", raw)
 		}
@@ -394,7 +397,7 @@ func Test_QuoteSuggestions(t *testing.T) {
 
 	t.Run("type error that is not a regex error should show a suggestion", func(t *testing.T) {
 		raw := "-foobar"
-		_, _, alert := query.Process(raw, query.SearchTypeRegex)
+		_, alert := query.Process(raw, query.SearchTypeRegex)
 		if alert == nil {
 			t.Fatalf("alert returned from query.Process(%q) is nil", raw)
 		}
@@ -402,7 +405,7 @@ func Test_QuoteSuggestions(t *testing.T) {
 
 	t.Run("query parse error", func(t *testing.T) {
 		raw := ":"
-		_, _, err := query.Process(raw, query.SearchTypeRegex)
+		_, err := query.Process(raw, query.SearchTypeRegex)
 		if err == nil {
 			t.Fatalf("error returned from query.Process(%q) is nil", raw)
 		}
@@ -417,7 +420,7 @@ func Test_QuoteSuggestions(t *testing.T) {
 
 	t.Run("negated file field with an invalid regex", func(t *testing.T) {
 		raw := "-f:(a"
-		_, _, err := query.Process(raw, query.SearchTypeRegex)
+		_, err := query.Process(raw, query.SearchTypeRegex)
 		if err == nil {
 			t.Fatal("query.Process failed to detect the invalid regex in the f: field")
 		}
@@ -426,4 +429,47 @@ func Test_QuoteSuggestions(t *testing.T) {
 			t.Fatalf("got %d proposed queries (%v), want exactly 1", len(alert.proposedQueries), alert.proposedQueries)
 		}
 	})
+}
+
+func Test_queryForStableResults(t *testing.T) {
+	cases := []struct {
+		query           string
+		wantStableCount int32
+		wantError       error
+	}{
+		{
+			query:           "foo stable:yes",
+			wantStableCount: 30,
+		},
+		{
+			query:           "foo stable:yes count:1000",
+			wantStableCount: 1000,
+		},
+		{
+			query:     "foo stable:yes count:5001",
+			wantError: fmt.Errorf("Stable searches are limited to at max count:%d results. Consider removing 'stable:', narrowing the search with 'repo:', or using the paginated search API.", maxSearchResultsPerPaginatedRequest),
+		},
+	}
+	for _, c := range cases {
+		t.Run("query for stable results", func(t *testing.T) {
+			queryInfo, _ := query.Process(c.query, query.SearchTypeLiteral)
+			args, queryInfo, err := queryForStableResults(&SearchArgs{}, queryInfo)
+			if err != nil {
+				if !reflect.DeepEqual(err, c.wantError) {
+					t.Errorf("Got error %v, want %v", err, c.wantError)
+				}
+				return
+			}
+			if diff := cmp.Diff(*args.First, c.wantStableCount); diff != "" {
+				t.Error(diff)
+			}
+			// Ensure type:file is set.
+			fileValue := "file"
+			wantTypeValue := querytypes.Value{String: &fileValue}
+			gotTypeValues := queryInfo.Fields()["type"]
+			if len(gotTypeValues) != 1 && *gotTypeValues[0] != wantTypeValue {
+				t.Errorf("Query %s sets stable:yes but is not transformed with type:file.", c.query)
+			}
+		})
+	}
 }

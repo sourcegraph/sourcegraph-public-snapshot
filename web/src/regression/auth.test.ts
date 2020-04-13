@@ -102,7 +102,7 @@ describe('Auth regression test suite', () => {
 
     saveScreenshotsUponFailures(() => driver.page)
 
-    before(async function() {
+    after(async function () {
         this.timeout(10 * 1000)
         if (!config.noCleanup) {
             await resourceManager.destroyAll()
@@ -112,7 +112,7 @@ describe('Auth regression test suite', () => {
         }
     })
 
-    test('Sign in via GitHub', async function() {
+    test('Sign in via GitHub', async function () {
         this.timeout(20 * 1000)
         await testLogin(driver, gqlClient, resourceManager, {
             ...config,
@@ -128,7 +128,7 @@ describe('Auth regression test suite', () => {
         })
     })
 
-    test('Sign in with GitLab', async function() {
+    test('Sign in with GitLab', async function () {
         this.timeout(20 * 1000)
         await testLogin(driver, gqlClient, resourceManager, {
             ...config,
@@ -143,7 +143,7 @@ describe('Auth regression test suite', () => {
         })
     })
 
-    test('Sign in with Okta SAML', async function() {
+    test('Sign in with Okta SAML', async function () {
         this.timeout(20 * 1000)
         await testLogin(driver, gqlClient, resourceManager, {
             ...config,
@@ -156,7 +156,7 @@ describe('Auth regression test suite', () => {
         })
     })
 
-    test('Sign in with Okta OpenID Connect', async function() {
+    test('Sign in with Okta OpenID Connect', async function () {
         this.timeout(20 * 1000)
         await testLogin(driver, gqlClient, resourceManager, {
             ...config,

@@ -24,7 +24,7 @@ type ConfigurationSource interface {
 type Server struct {
 	Source ConfigurationSource
 
-	store *Store
+	store *store
 
 	needRestartMu sync.RWMutex
 	needRestart   bool
@@ -45,7 +45,7 @@ func NewServer(source ConfigurationSource) *Server {
 	fileWrite := make(chan chan struct{}, 1)
 	return &Server{
 		Source:    source,
-		store:     NewStore(),
+		store:     newStore(),
 		fileWrite: fileWrite,
 	}
 }

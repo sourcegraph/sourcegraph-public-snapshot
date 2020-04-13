@@ -41,14 +41,14 @@ func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 			BaseURL: mustURL(t, "https://gitlab.com"),
 		}, nil)
 		_, err := p.FetchUserPerms(context.Background(),
-			&extsvc.ExternalAccount{
-				ExternalAccountSpec: extsvc.ExternalAccountSpec{
+			&extsvc.Account{
+				AccountSpec: extsvc.AccountSpec{
 					ServiceType: "github",
 					ServiceID:   "https://github.com/",
 				},
 			},
 		)
-		want := "not a code host of the account: want {ServiceType:github ServiceID:https://github.com/ ClientID: AccountID:} but have &{ServiceID:https://gitlab.com/ ServiceType:gitlab BaseURL:https://gitlab.com/}"
+		want := `not a code host of the account: want "https://github.com/" but have "https://gitlab.com/"`
 		got := fmt.Sprintf("%v", err)
 		if got != want {
 			t.Fatalf("err: want %q but got %q", want, got)
@@ -90,12 +90,12 @@ func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 
 	authData := json.RawMessage(`{"access_token": "my_access_token"}`)
 	repoIDs, err := p.FetchUserPerms(context.Background(),
-		&extsvc.ExternalAccount{
-			ExternalAccountSpec: extsvc.ExternalAccountSpec{
+		&extsvc.Account{
+			AccountSpec: extsvc.AccountSpec{
 				ServiceType: "gitlab",
 				ServiceID:   "https://gitlab.com/",
 			},
-			ExternalAccountData: extsvc.ExternalAccountData{
+			AccountData: extsvc.AccountData{
 				AuthData: &authData,
 			},
 		},
@@ -104,7 +104,7 @@ func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	expRepoIDs := []extsvc.ExternalRepoID{"1", "2", "3"}
+	expRepoIDs := []extsvc.RepoID{"1", "2", "3"}
 	if diff := cmp.Diff(expRepoIDs, repoIDs); diff != "" {
 		t.Fatal(diff)
 	}
@@ -128,12 +128,15 @@ func TestOAuthProvider_FetchRepoPerms(t *testing.T) {
 			BaseURL: mustURL(t, "https://gitlab.com"),
 		}, nil)
 		_, err := p.FetchRepoPerms(context.Background(),
-			&api.ExternalRepoSpec{
-				ServiceType: "github",
-				ServiceID:   "https://github.com/",
+			&extsvc.Repository{
+				URI: "github.com/user/repo",
+				ExternalRepoSpec: api.ExternalRepoSpec{
+					ServiceType: "github",
+					ServiceID:   "https://github.com/",
+				},
 			},
 		)
-		want := "not a code host of the repository: want ExternalRepoSpec{https://github.com/ github } but have &{ServiceID:https://gitlab.com/ ServiceType:gitlab BaseURL:https://gitlab.com/}"
+		want := `not a code host of the repository: want "https://github.com/" but have "https://gitlab.com/"`
 		got := fmt.Sprintf("%v", err)
 		if got != want {
 			t.Fatalf("err: want %q but got %q", want, got)
@@ -179,10 +182,13 @@ func TestOAuthProvider_FetchRepoPerms(t *testing.T) {
 	)
 
 	accountIDs, err := p.FetchRepoPerms(context.Background(),
-		&api.ExternalRepoSpec{
-			ServiceType: "gitlab",
-			ServiceID:   "https://gitlab.com/",
-			ID:          "gitlab_project_id",
+		&extsvc.Repository{
+			URI: "gitlab.com/user/repo",
+			ExternalRepoSpec: api.ExternalRepoSpec{
+				ServiceType: "gitlab",
+				ServiceID:   "https://gitlab.com/",
+				ID:          "gitlab_project_id",
+			},
 		},
 	)
 	if err != nil {
@@ -190,7 +196,7 @@ func TestOAuthProvider_FetchRepoPerms(t *testing.T) {
 	}
 
 	// 1 should not be included because of "access_level" < 20
-	expAccountIDs := []extsvc.ExternalAccountID{"2", "3"}
+	expAccountIDs := []extsvc.AccountID{"2", "3"}
 	if diff := cmp.Diff(expAccountIDs, accountIDs); diff != "" {
 		t.Fatal(diff)
 	}

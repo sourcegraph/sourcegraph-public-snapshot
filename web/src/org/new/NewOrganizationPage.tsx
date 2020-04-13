@@ -57,7 +57,7 @@ export class NewOrganizationPage extends React.Component<Props, State> {
                         eventLogger.log('CreateNewOrgClicked')
                     }),
                     filter(event => event.currentTarget.checkValidity()),
-                    mergeMap(event =>
+                    mergeMap(() =>
                         createOrganization(this.state).pipe(
                             catchError(error => {
                                 console.error(error)

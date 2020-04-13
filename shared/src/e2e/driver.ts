@@ -3,17 +3,18 @@ import { percySnapshot as realPercySnapshot } from '@percy/puppeteer'
 import * as jsonc from '@sqs/jsonc-parser'
 import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
 import * as os from 'os'
-import puppeteer, { PageEventObj, Page, Serializable, LaunchOptions, PageFnOptions, ConsoleMessage } from 'puppeteer'
+import puppeteer, {
+    PageEventObj,
+    Page,
+    Serializable,
+    LaunchOptions,
+    PageFnOptions,
+    ConsoleMessage,
+    Target,
+} from 'puppeteer'
 import { Key } from 'ts-key-enum'
 import { dataOrThrowErrors, gql, GraphQLResult } from '../graphql/graphql'
-import {
-    IMutation,
-    IQuery,
-    ExternalServiceKind,
-    ICampaignPlanPatch,
-    ICampaignPlan,
-    IRepository,
-} from '../graphql/schema'
+import { IMutation, IQuery, ExternalServiceKind, IRepository, IPatchSet, IPatchInput } from '../graphql/schema'
 import { readEnvBoolean, retry } from './e2e-test-utils'
 import { formatPuppeteerConsoleMessage } from './console'
 import * as path from 'path'
@@ -124,12 +125,24 @@ function getDebugExpressionFromRegexp(tag: string, regexp: string): string {
 }
 
 export class Driver {
+    /** The pages that were visited since the creation of the driver. */
+    public visitedPages: Readonly<URL>[] = []
+
     constructor(
         public browser: puppeteer.Browser,
         public page: puppeteer.Page,
         public sourcegraphBaseUrl: string,
         public keepBrowser?: boolean
-    ) {}
+    ) {
+        const recordVisitedPage = (target: Target): void => {
+            if (target.type() !== 'page') {
+                return
+            }
+            this.visitedPages.push(new URL(target.url()))
+        }
+        browser.on('targetchanged', recordVisitedPage)
+        browser.on('targetcreated', recordVisitedPage)
+    }
 
     public async ensureLoggedIn({
         username,
@@ -186,6 +199,16 @@ export class Driver {
         if (!this.keepBrowser) {
             await this.browser.close()
         }
+        console.log(
+            '\nVisited routes:\n' +
+                Array.from(
+                    new Set(
+                        this.visitedPages
+                            .filter(url => url.href.startsWith(this.sourcegraphBaseUrl))
+                            .map(url => url.pathname)
+                    )
+                ).join('\n')
+        )
     }
 
     public async newPage(): Promise<void> {
@@ -291,15 +314,22 @@ export class Driver {
         await this.page.waitForSelector(`[data-e2e-external-service-card-link="${kind.toUpperCase()}"]`, {
             visible: true,
         })
-        await this.page.click(`[data-e2e-external-service-card-link="${kind.toUpperCase()}"]`)
+        await this.page.evaluate(selector => {
+            const element = document.querySelector<HTMLElement>(selector)
+            if (!element) {
+                throw new Error('Could not find element to click on for selector ' + selector)
+            }
+            element.click()
+        }, `[data-e2e-external-service-card-link="${kind.toUpperCase()}"]`)
         await this.replaceText({
             selector: '#e2e-external-service-form-display-name',
             newText: displayName,
         })
 
+        await this.page.waitForSelector('.e2e-external-service-editor .monaco-editor')
         // Type in a new external service configuration.
         await this.replaceText({
-            selector: '.view-line',
+            selector: '.e2e-external-service-editor .monaco-editor .view-line',
             newText: config,
             selectMethod: 'keyboard',
         })
@@ -319,12 +349,9 @@ export class Driver {
     }
 
     public async paste(value: string): Promise<void> {
-        await this.page.evaluate(
-            async d => {
-                await navigator.clipboard.writeText(d.value)
-            },
-            { value }
-        )
+        await this.page.evaluate(async (value: string) => {
+            await navigator.clipboard.writeText(value)
+        }, value)
         const modifier = os.platform() === 'darwin' ? Key.Meta : Key.Control
         await this.page.keyboard.down(modifier)
         await this.page.keyboard.press('v')
@@ -382,7 +409,7 @@ export class Driver {
 
     private async makeRequest<T = void>({ url, init }: { url: string; init: RequestInit & Serializable }): Promise<T> {
         const handle = await this.page.evaluateHandle((url, init) => fetch(url, init).then(r => r.json()), url, init)
-        return handle.jsonValue()
+        return (await handle.jsonValue()) as T
     }
 
     private async makeGraphQLRequest<T extends IQuery | IMutation>({
@@ -432,21 +459,19 @@ export class Driver {
         return repository
     }
 
-    public async createCampaignPlanFromPatches(
-        patches: ICampaignPlanPatch[]
-    ): Promise<Pick<ICampaignPlan, 'previewURL'>> {
+    public async createPatchSetFromPatches(patches: IPatchInput[]): Promise<Pick<IPatchSet, 'previewURL'>> {
         const resp = await this.makeGraphQLRequest<IMutation>({
             request: gql`
-                mutation($patches: [CampaignPlanPatch!]!) {
-                    createCampaignPlanFromPatches(patches: $patches) {
+                mutation($patches: [PatchInput!]!) {
+                    createPatchSetFromPatches(patches: $patches) {
                         previewURL
                     }
                 }
             `,
             variables: { patches },
         })
-        const { createCampaignPlanFromPatches } = dataOrThrowErrors(resp)
-        return createCampaignPlanFromPatches
+        const { createPatchSetFromPatches } = dataOrThrowErrors(resp)
+        return createPatchSetFromPatches
     }
 
     public async setConfig(path: jsonc.JSONPath, f: (oldValue: jsonc.Node | undefined) => any): Promise<void> {
@@ -481,7 +506,7 @@ export class Driver {
 
     public async ensureHasCORSOrigin({ corsOriginURL }: { corsOriginURL: string }): Promise<void> {
         await this.setConfig(['corsOrigin'], oldCorsOrigin => {
-            const urls = oldCorsOrigin ? oldCorsOrigin.value.split(' ') : []
+            const urls = oldCorsOrigin ? (oldCorsOrigin.value as string).split(' ') : []
             return (urls.includes(corsOriginURL) ? urls : [...urls, corsOriginURL]).join(' ')
         })
     }
@@ -692,7 +717,9 @@ export async function createDriverForTest(options: DriverOptions): Promise<Drive
         }
         if (loadExtension) {
             const chromeExtensionPath = path.resolve(__dirname, '..', '..', '..', 'browser', 'build', 'chrome')
-            const manifest = JSON.parse(await readFile(path.resolve(chromeExtensionPath, 'manifest.json'), 'utf-8'))
+            const manifest = JSON.parse(
+                await readFile(path.resolve(chromeExtensionPath, 'manifest.json'), 'utf-8')
+            ) as { permissions: string[] }
             if (!manifest.permissions.includes('<all_urls>')) {
                 throw new Error(
                     'Browser extension was not built with permissions for all URLs.\nThis is necessary because permissions cannot be granted by e2e tests.\nTo fix, run `EXTENSION_PERMISSIONS_ALL_URLS=true yarn run dev` inside the browser/ directory.'
@@ -718,6 +745,7 @@ export async function createDriverForTest(options: DriverOptions): Promise<Drive
                 map(formatPuppeteerConsoleMessage),
                 concatAll()
             )
+            // eslint-disable-next-line rxjs/no-ignored-subscription
             .subscribe(formattedLine => console.log(formattedLine))
     }
     return new Driver(browser, page, sourcegraphBaseUrl, keepBrowser)

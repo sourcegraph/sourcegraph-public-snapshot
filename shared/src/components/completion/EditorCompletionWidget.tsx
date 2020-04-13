@@ -31,7 +31,7 @@ export interface EditorCompletionWidgetProps
     editorId: string
 }
 
-const LOADING: 'loading' = 'loading'
+const LOADING = 'loading' as const
 
 /**
  * Shows a completion widget with a list of completion items from extensions for a given editor.
@@ -80,9 +80,7 @@ export const EditorCompletionWidget: React.FunctionComponent<EditorCompletionWid
     }, [completionItemsService, editorId, editorService, editorService.editors, modelService])
 
     const onSelectItem = async (item: CompletionItem): Promise<void> => {
-        const editor = await observeEditorAndModel({ editorId }, editorService, modelService)
-            .pipe(first())
-            .toPromise()
+        const editor = await observeEditorAndModel({ editorId }, editorService, modelService).pipe(first()).toPromise()
         const [sel, ...secondarySelections] = editor.selections
         if (!sel) {
             throw new Error('no selection')

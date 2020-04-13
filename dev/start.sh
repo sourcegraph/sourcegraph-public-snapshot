@@ -30,7 +30,6 @@ if ! psql -wc '\x' >/dev/null; then
     exit 1
 fi
 
-export LIGHTSTEP_INCLUDE_SENSITIVE=true
 export PGSSLMODE=disable
 
 # Default to "info" level debugging, and "condensed" log format (nice for human readers)
@@ -48,7 +47,8 @@ export REPO_UPDATER_URL=http://127.0.0.1:3182
 export REDIS_ENDPOINT=127.0.0.1:6379
 export QUERY_RUNNER_URL=http://localhost:3183
 export SYMBOLS_URL=http://localhost:3184
-export LSIF_SERVER_URL=http://localhost:3186
+export PRECISE_CODE_INTEL_API_SERVER_URL=http://localhost:3186
+export PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL=http://localhost:3187
 export SRC_SYNTECT_SERVER=http://localhost:9238
 export SRC_FRONTEND_INTERNAL=localhost:3090
 export SRC_PROF_HTTP=
@@ -59,6 +59,10 @@ export CTAGS_COMMAND="${CTAGS_COMMAND:=cmd/symbols/universal-ctags-dev}"
 export ZOEKT_HOST=localhost:3070
 export USE_ENHANCED_LANGUAGE_DETECTION=${USE_ENHANCED_LANGUAGE_DETECTION:-1}
 export GRAFANA_SERVER_URL=http://localhost:3370
+
+# Caddy / HTTPS configuration
+export SOURCEGRAPH_HTTPS_DOMAIN="${SOURCEGRAPH_HTTPS_DOMAIN:-"sourcegraph.test"}"
+export SOURCEGRAPH_HTTPS_PORT="${SOURCEGRAPH_HTTPS_PORT:-"3443"}"
 
 # Enable sharded indexed search mode
 [ -n "${DISABLE_SEARCH_SHARDING-}" ] || export INDEXED_SEARCH_SERVERS="localhost:3070 localhost:3071"
@@ -78,6 +82,13 @@ export GLOBAL_SETTINGS_ALLOW_EDITS=true
 # WebApp
 export NODE_ENV=development
 export NODE_OPTIONS="--max_old_space_size=4096"
+
+# Ensure SQLite for symbols is built
+./dev/libsqlite3-pcre/build.sh
+export LIBSQLITE3_PCRE="$(./dev/libsqlite3-pcre/build.sh libpath)"
+
+# Ensure ctags image is built
+./cmd/symbols/build-ctags.sh
 
 # Make sure chokidar-cli is installed in the background
 printf >&2 "Concurrently installing Yarn and Go dependencies...\n\n"
@@ -100,8 +111,8 @@ if [[ -n "$yarn_pid" ]]; then
     wait "$yarn_pid"
 fi
 
-# Install LSIF dependencies
-pushd ./lsif 1> /dev/null
+# Install precise code intel dependencies
+pushd ./cmd/precise-code-intel 1> /dev/null
 yarn --no-progress
 popd 1> /dev/null
 
@@ -114,7 +125,7 @@ export PATH="$PWD/.bin:$PWD/node_modules/.bin:$PATH"
 # Build once in the background to make sure editor codeintel works
 # This is fast if no changes were made.
 # Don't fail if it errors as this is only for codeintel, not for the build.
-trap 'kill $build_ts_pid; exit' INT
+trap 'kill $build_ts_pid; exit' EXIT
 (yarn run build-ts || true) &
 build_ts_pid="$!"
 

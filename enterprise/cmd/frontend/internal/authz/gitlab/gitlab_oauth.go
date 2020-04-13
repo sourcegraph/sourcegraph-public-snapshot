@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -18,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"gopkg.in/inconshreveable/log15.v2"
 )
 
 var _ authz.Provider = (*OAuthProvider)(nil)
@@ -95,11 +95,11 @@ func (p *OAuthProvider) ServiceType() string {
 	return p.codeHost.ServiceType
 }
 
-func (p *OAuthProvider) FetchAccount(ctx context.Context, user *types.User, current []*extsvc.ExternalAccount) (mine *extsvc.ExternalAccount, err error) {
+func (p *OAuthProvider) FetchAccount(ctx context.Context, user *types.User, current []*extsvc.Account) (mine *extsvc.Account, err error) {
 	return nil, nil
 }
 
-func (p *OAuthProvider) RepoPerms(ctx context.Context, account *extsvc.ExternalAccount, repos []*types.Repo) (
+func (p *OAuthProvider) RepoPerms(ctx context.Context, account *extsvc.Account, repos []*types.Repo) (
 	[]authz.RepoPerms, error,
 ) {
 	accountID := "" // empty means public / unauthenticated to the code host
@@ -146,7 +146,7 @@ func (p *OAuthProvider) RepoPerms(ctx context.Context, account *extsvc.ExternalA
 
 	var oauthToken string
 	if account != nil {
-		_, tok, err := gitlab.GetExternalAccountData(&account.ExternalAccountData)
+		_, tok, err := gitlab.GetExternalAccountData(&account.AccountData)
 		if err != nil {
 			return nil, err
 		}

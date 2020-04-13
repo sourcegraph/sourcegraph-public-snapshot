@@ -8,8 +8,8 @@ import (
 	"golang.org/x/net/context/ctxhttp"
 
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 
-	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 )
 
@@ -17,7 +17,7 @@ import (
 // on disk) and returns a new VFS backed by that zip archive.
 func NewZipVFS(url string, onFetchStart, onFetchFailed func(), evictOnClose bool) (*ArchiveFS, error) {
 	fetch := func(ctx context.Context) (ar *archiveReader, err error) {
-		span, ctx := opentracing.StartSpanFromContext(ctx, "zip Fetch")
+		span, ctx := ot.StartSpanFromContext(ctx, "zip Fetch")
 		ext.Component.Set(span, "zipvfs")
 		span.SetTag("url", url)
 		defer func() {

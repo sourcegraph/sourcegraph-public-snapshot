@@ -29,35 +29,30 @@ export additional_images=${@:-github.com/sourcegraph/sourcegraph/cmd/frontend gi
 # our enterprise build scripts.
 export server_pkg=${SERVER_PKG:-github.com/sourcegraph/sourcegraph/cmd/server}
 
-cp -a ./lsif "$OUTPUT"
 cp -a ./cmd/server/rootfs/. "$OUTPUT"
-export bindir="$OUTPUT/usr/local/bin"
-mkdir -p "$bindir"
+export BINDIR="$OUTPUT/usr/local/bin"
+mkdir -p "$BINDIR"
 
 go_build() {
-    package="$1"
+    local package="$1"
 
-    go build \
-      -trimpath \
-      -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION"  \
-      -buildmode exe \
-      -installsuffix netgo \
-      -tags "dist netgo" \
-      -o "$bindir/$(basename "$package")" "$package"
+    if [[ "${CI_DEBUG_PROFILE:-"false"}" == "true" ]]; then
+        env time -v ./cmd/server/go-build.sh $package
+    else
+        ./cmd/server/go-build.sh $package
+    fi
 }
 export -f go_build
 
-echo "--- build go and symbols concurrently"
+echo "--- go build"
 
-build_go_packages(){
-   echo "--- go build"
-
-   PACKAGES=(
+PACKAGES=(
     github.com/sourcegraph/sourcegraph/cmd/github-proxy \
     github.com/sourcegraph/sourcegraph/cmd/gitserver \
     github.com/sourcegraph/sourcegraph/cmd/query-runner \
     github.com/sourcegraph/sourcegraph/cmd/replacer \
     github.com/sourcegraph/sourcegraph/cmd/searcher \
+    github.com/sourcegraph/sourcegraph/cmd/symbols \
     $additional_images
     \
     github.com/google/zoekt/cmd/zoekt-archive-index \
@@ -65,19 +60,20 @@ build_go_packages(){
     github.com/google/zoekt/cmd/zoekt-webserver \
     \
     $server_pkg
-   )
+)
 
-   parallel_run go_build {} ::: "${PACKAGES[@]}"
-}
-export -f build_go_packages
+parallel_run go_build {} ::: "${PACKAGES[@]}"
 
-build_symbols() {
-    echo "--- build sqlite for symbols"
-    env CTAGS_D_OUTPUT_PATH="$OUTPUT/.ctags.d" SYMBOLS_EXECUTABLE_OUTPUT_PATH="$bindir/symbols" BUILD_TYPE=dist ./cmd/symbols/build.sh buildSymbolsDockerImageDependencies
-}
-export -f build_symbols
+echo "--- ctags"
+cp -a ./cmd/symbols/.ctags.d "$OUTPUT"
+cp -a ./cmd/symbols/ctags-install-alpine.sh "$OUTPUT"
+cp -a ./dev/libsqlite3-pcre/install-alpine.sh "$OUTPUT/libsqlite3-pcre-install-alpine.sh"
 
-parallel_run {} ::: build_go_packages build_symbols
+echo "--- precise code intel"
+cp -a ./cmd/precise-code-intel "$OUTPUT"
+
+echo "--- observability generation"
+pushd observability && go generate && popd
 
 echo "--- prometheus config"
 cp -r docker-images/prometheus/config "$OUTPUT/sg_config_prometheus"

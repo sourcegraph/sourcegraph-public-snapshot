@@ -3,7 +3,9 @@
 package ci
 
 import (
+	"fmt"
 	"os"
+	"strconv"
 	"time"
 
 	bk "github.com/sourcegraph/sourcegraph/internal/buildkite"
@@ -30,10 +32,26 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		"CI_REPO_NAME":      "sourcegraph",
 		"CI_COMMIT_SHA":     os.Getenv("BUILDKITE_COMMIT"),
 		"CI_COMMIT_MESSAGE": os.Getenv("BUILDKITE_MESSAGE"),
+
+		// Add debug flags for scripts to consume
+		"CI_DEBUG_PROFILE": strconv.FormatBool(c.profilingEnabled),
 	}
 
 	for k, v := range env {
-		bk.OnEveryStepOpts = append(bk.OnEveryStepOpts, bk.Env(k, v))
+		bk.BeforeEveryStepOpts = append(bk.BeforeEveryStepOpts, bk.Env(k, v))
+	}
+
+	if c.profilingEnabled {
+		bk.AfterEveryStepOpts = append(bk.AfterEveryStepOpts, func(s *bk.Step) {
+			// wrap "time -v" around each command for CPU/RAM utilization information
+
+			var prefixed []string
+			for _, cmd := range s.Command {
+				prefixed = append(prefixed, fmt.Sprintf("env time -v %s", cmd))
+			}
+
+			s.Command = prefixed
+		})
 	}
 
 	// Generate pipeline steps. This statement outlines the pipeline steps for each CI case.
@@ -72,7 +90,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addLint,
 			addBrowserExt,
 			addWebApp,
-			addLSIFServer,
+			addPreciseCodeIntelSystem,
 			addSharedTests,
 			addGoTests,
 			addGoBuild,
@@ -90,16 +108,16 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// PERF: Try to order steps such that slower steps are first.
 		pipelineOperations = []func(*bk.Pipeline){
 			triggerE2E(c, env),
-			addLint,    // ~5m
-			addWebApp,  // ~3m
-			addGoTests, // ~2m
-			addGoBuild, // ~2m
-			addCheck,   // ~2m
-			addBrowserExt,
-			addLSIFServer,
-			addSharedTests,
-			addPostgresBackcompat,
-			addDockerfileLint,
+			addLint,                   // ~3.5m
+			addWebApp,                 // ~3m
+			addSharedTests,            // ~3m
+			addBrowserExt,             // ~2m
+			addGoTests,                // ~1.5m
+			addPreciseCodeIntelSystem, // ~1.5m
+			addCheck,                  // ~1m
+			addGoBuild,                // ~0.5m
+			addPostgresBackcompat,     // ~0.25m
+			addDockerfileLint,         // ~0.2m
 			addDockerImages(c, false),
 			wait,
 			addCodeCov,

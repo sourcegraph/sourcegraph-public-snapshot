@@ -28,7 +28,7 @@ Sourcegraph's metrics include a single high-level metric `alert_count` which ind
   - `"frontend"`
   - `"github-proxy"`
   - `"gitserver"`
-  - `"lsif-server"`
+  - `"precise-code-intel"`
   - `"query-runner"`
   - `"replacer"`
   - `"repo-updater"`
@@ -40,6 +40,10 @@ Sourcegraph's metrics include a single high-level metric `alert_count` which ind
 - `name`: the name of the alert that the service fired (chosen by the service)
 - `description`: a human-readable description of the alert
 - `instance`: identifies the Kubernetes pod, Docker container, or host machine from which the alert came.
+
+**Examples:**
+
+To get examples of how you might consume this metric in your own alerting system, see: [Custom consumption of Sourcegraph alerts](alerting_custom_consumption.md).
 
 ## Complete reference
 

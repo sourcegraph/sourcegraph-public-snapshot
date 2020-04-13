@@ -19,11 +19,9 @@ export function toTreeURL(ctx: RepoFile): string {
  */
 export function formatHash(lpr: LineOrPositionOrRange, searchParams: URLSearchParams): string {
     if (!lpr.line) {
-        // eslint-disable-next-line @typescript-eslint/no-base-to-string
         return `#${searchParams.toString()}`
     }
     const anyParams = Array.from(searchParams).length > 0
-    // eslint-disable-next-line @typescript-eslint/no-base-to-string
     return `#L${formatLineOrPositionOrRange(lpr)}${anyParams ? '&' + searchParams.toString() : ''}`
 }
 

@@ -8,7 +8,7 @@ import { Badged, MarkupContent } from 'sourcegraph'
 import { ActionItem, ActionItemAction, ActionItemComponentProps } from '../actions/ActionItem'
 import { HoverMerged } from '../api/client/types/hover'
 import { TelemetryProps } from '../telemetry/telemetryService'
-import { isErrorLike } from '../util/errors'
+import { isErrorLike, asError } from '../util/errors'
 import { highlightCodeSafe, renderMarkdown } from '../util/markdown'
 import { sanitizeClass } from '../util/strings'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../util/url'
@@ -18,7 +18,7 @@ import { ThemeProps } from '../theme'
 import { PlatformContextProps } from '../platform/context'
 import { Subscription } from 'rxjs'
 
-const LOADING: 'loading' = 'loading'
+const LOADING = 'loading' as const
 
 const transformMouseEvent = (handler: (event: MouseEvent) => void) => (event: React.MouseEvent<HTMLElement>) =>
     handler(toNativeEvent(event))
@@ -107,14 +107,16 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
 
         this.subscription.add(
             this.props.platformContext.settings.subscribe(s => {
-                this.setState({
-                    showBadges:
-                        s.final &&
-                        !isErrorLike(s.final) &&
-                        s.final.experimentalFeatures &&
-                        // Enabled if true or null
-                        s.final.experimentalFeatures.showBadgeAttachments !== false,
-                })
+                if (s.final && !isErrorLike(s.final)) {
+                    // Default to true if experimentalFeatures or showBadgeAttachments are not set
+                    this.setState({
+                        showBadges:
+                            !s.final.experimentalFeatures ||
+                            s.final.experimentalFeatures.showBadgeAttachments !== false,
+                    })
+                } else {
+                    this.setState({ showBadges: false })
+                }
             })
         )
     }
@@ -240,7 +242,7 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                                                     )}
                                                     key={i}
                                                 >
-                                                    {upperFirst(err.message)}
+                                                    {upperFirst(asError(err).message)}
                                                 </div>
                                             )
                                         }

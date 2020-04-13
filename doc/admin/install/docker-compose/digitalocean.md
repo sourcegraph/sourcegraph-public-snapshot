@@ -40,7 +40,7 @@ DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT='/root/deploy-sourcegraph-docker'
 
 # 🚨 Update these variables with the correct values from your fork!
 DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL='https://github.com/sourcegraph/deploy-sourcegraph-docker.git'
-DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v3.12.5'
+DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v3.14.2'
 
 # Install git
 sudo apt-get update -y
@@ -129,7 +129,7 @@ After initial setup, we recommend you do the following:
 
 * Restrict the accessibility of ports other than `80` and `443` via [Cloud
   Firewalls](https://www.digitalocean.com/docs/networking/firewalls/quickstart/).
-* Set up [TLS/SSL](../../nginx.md#nginx-ssl-https-configuration) in the NGINX configuration.
+* Set up [TLS/SSL](../../../admin/http_https_configuration.md#sourcegraph-via-docker-compose-caddy-2)) in the Docker Compose deployment
 
 ---
 

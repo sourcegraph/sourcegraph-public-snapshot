@@ -12,7 +12,7 @@ import (
 	"strings"
 	"sync"
 
-	"gopkg.in/inconshreveable/log15.v2"
+	"github.com/inconshreveable/log15"
 
 	"github.com/neelance/parallel"
 	"github.com/pkg/errors"
@@ -30,7 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/query/syntax"
+	querytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -86,32 +86,38 @@ func NewSearchImplementer(args *SearchArgs) (SearchImplementer, error) {
 		queryString = args.Query
 	}
 
-	q, p, err := query.Process(queryString, searchType)
-	if err != nil {
-		return alertForQuery(queryString, err), nil
+	var queryInfo query.QueryInfo
+	if conf.AndOrQueryEnabled() {
+		queryInfo, err = query.ProcessAndOr(args.Query)
+		if err != nil {
+			return alertForQuery(args.Query, err), nil
+		}
+	} else {
+		queryInfo, err = query.Process(queryString, searchType)
+		if err != nil {
+			return alertForQuery(queryString, err), nil
+		}
+	}
+
+	// If stable:truthy is specified, make the query return a stable result ordering.
+	if queryInfo.BoolValue(query.FieldStable) {
+		args, queryInfo, err = queryForStableResults(args, queryInfo)
+		if err != nil {
+			return alertForQuery(queryString, err), nil
+		}
 	}
 
 	// If the request is a paginated one, decode those arguments now.
 	var pagination *searchPaginationInfo
 	if args.First != nil {
-		cursor, err := unmarshalSearchCursor(args.After)
+		pagination, err = processPaginationRequest(args, queryInfo)
 		if err != nil {
 			return nil, err
 		}
-		if *args.First < 0 || *args.First > 5000 {
-			return nil, errors.New("search: requested pagination 'first' value outside allowed range (0 - 5000)")
-		}
-		pagination = &searchPaginationInfo{
-			cursor: cursor,
-			limit:  *args.First,
-		}
-	} else if args.After != nil {
-		return nil, errors.New("Search: paginated requests providing a 'after' but no 'first' is forbidden")
 	}
 
 	return &searchResolver{
-		query:         q,
-		parseTree:     p,
+		query:         queryInfo,
 		originalQuery: args.Query,
 		pagination:    pagination,
 		patternType:   searchType,
@@ -122,6 +128,55 @@ func NewSearchImplementer(args *SearchArgs) (SearchImplementer, error) {
 
 func (r *schemaResolver) Search(args *SearchArgs) (SearchImplementer, error) {
 	return NewSearchImplementer(args)
+}
+
+// queryForStableResults transforms a query that returns a stable result
+// ordering. The transformed query uses pagination underneath the hood.
+func queryForStableResults(args *SearchArgs, queryInfo query.QueryInfo) (*SearchArgs, query.QueryInfo, error) {
+	if queryInfo.BoolValue(query.FieldStable) {
+		var stableResultCount int32
+		if _, countPresent := queryInfo.Fields()["count"]; countPresent {
+			count, _ := queryInfo.StringValue(query.FieldCount)
+			count64, err := strconv.ParseInt(count, 10, 32)
+			if err != nil {
+				return nil, nil, err
+			}
+			stableResultCount = int32(count64)
+			if stableResultCount > maxSearchResultsPerPaginatedRequest {
+				return nil, nil, fmt.Errorf("Stable searches are limited to at max count:%d results. Consider removing 'stable:', narrowing the search with 'repo:', or using the paginated search API.", maxSearchResultsPerPaginatedRequest)
+			}
+		} else {
+			stableResultCount = defaultMaxSearchResults
+		}
+		args.First = &stableResultCount
+		fileValue := "file"
+		// Pagination only works for file content searches, and will
+		// raise an error otherwise. If stable is explicitly set, this
+		// is implied. So, force this query to only return file content
+		// results.
+		queryInfo.Fields()["type"] = []*querytypes.Value{{String: &fileValue}}
+	}
+	return args, queryInfo, nil
+}
+
+func processPaginationRequest(args *SearchArgs, queryInfo query.QueryInfo) (*searchPaginationInfo, error) {
+	var pagination *searchPaginationInfo
+	if args.First != nil {
+		cursor, err := unmarshalSearchCursor(args.After)
+		if err != nil {
+			return nil, err
+		}
+		if *args.First < 0 || *args.First > maxSearchResultsPerPaginatedRequest {
+			return nil, fmt.Errorf("search: requested pagination 'first' value outside allowed range (0 - %d)", maxSearchResultsPerPaginatedRequest)
+		}
+		pagination = &searchPaginationInfo{
+			cursor: cursor,
+			limit:  *args.First,
+		}
+	} else if args.After != nil {
+		return nil, errors.New("search: paginated requests providing an 'after' cursor but no 'first' value is forbidden")
+	}
+	return pagination, nil
 }
 
 // detectSearchType returns the search type to perfrom ("regexp", or
@@ -175,8 +230,7 @@ func detectSearchType(version string, patternType *string, input string) (query.
 
 // searchResolver is a resolver for the GraphQL type `Search`
 type searchResolver struct {
-	query         *query.Query          // the validated search query
-	parseTree     syntax.ParseTree      // the parsed search query
+	query         query.QueryInfo       // the query, either containing and/or expressions or otherwise ordinary
 	originalQuery string                // the raw string of the original search query
 	pagination    *searchPaginationInfo // pagination information, or nil if the request is not paginated.
 	patternType   query.SearchType
@@ -203,6 +257,7 @@ func (r *searchResolver) countIsSet() bool {
 }
 
 const defaultMaxSearchResults = 30
+const maxSearchResultsPerPaginatedRequest = 5000
 
 func (r *searchResolver) maxResults() int32 {
 	if r.pagination != nil {
@@ -318,6 +373,9 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 		archived = No // archived defaults to No unless exactly one repo is being searched.
 	}
 
+	visibilityStr, _ := r.query.StringValue(query.FieldVisibility)
+	visibility := query.ParseVisibility(visibilityStr)
+
 	commitAfter, _ := r.query.StringValue(query.FieldRepoHasCommitAfter)
 
 	tr.LazyPrintf("resolveRepositories - start")
@@ -329,6 +387,8 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 		noForks:          fork == No || fork == False,
 		onlyArchived:     archived == Only || archived == True,
 		noArchived:       archived == No || archived == False,
+		onlyPrivate:      visibility == query.Private,
+		onlyPublic:       visibility == query.Public,
 		commitAfter:      commitAfter,
 	})
 	tr.LazyPrintf("resolveRepositories - done")
@@ -443,6 +503,8 @@ type resolveRepoOp struct {
 	noArchived       bool
 	onlyArchived     bool
 	commitAfter      string
+	onlyPrivate      bool
+	onlyPublic       bool
 }
 
 func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, missingRepoRevisions []*search.RepositoryRevisions, overLimit bool, err error) {
@@ -520,6 +582,8 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 			OnlyForks:    op.onlyForks,
 			NoArchived:   op.noArchived,
 			OnlyArchived: op.onlyArchived,
+			NoPrivate:    op.onlyPublic,
+			OnlyPrivate:  op.onlyPrivate,
 		})
 		tr.LazyPrintf("Repos.List - done")
 		if err != nil {
@@ -750,13 +814,23 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]*se
 func SearchRepos(ctx context.Context, plainQuery string) ([]*RepositoryResolver, error) {
 	queryString := query.ConvertToLiteral(plainQuery)
 
-	q, err := query.ParseAndCheck(queryString)
-	if err != nil {
-		return nil, err
+	var queryInfo query.QueryInfo
+	var err error
+	if conf.AndOrQueryEnabled() {
+		andOrQuery, err := query.ParseAndOr(plainQuery)
+		if err != nil {
+			return nil, err
+		}
+		queryInfo = &query.AndOrQuery{Query: andOrQuery}
+	} else {
+		queryInfo, err = query.ParseAndCheck(queryString)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	sr := &searchResolver{
-		query:         q,
+		query:         queryInfo,
 		originalQuery: plainQuery,
 		pagination:    nil,
 		patternType:   query.SearchTypeLiteral,

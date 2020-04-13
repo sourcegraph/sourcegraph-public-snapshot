@@ -15,7 +15,7 @@ import { HoverContext } from '../../../../shared/src/hover/HoverOverlay'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
-import { isDefined, propertyIsDefined } from '../../../../shared/src/util/types'
+import { isDefined, property } from '../../../../shared/src/util/types'
 import {
     AbsoluteRepoFile,
     FileSpec,
@@ -170,7 +170,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                 // After componentDidUpdate, the blob element is guaranteed to have been rendered
                 map(([, hoverOverlayElement, blobElement]) => ({ hoverOverlayElement, relativeElement: blobElement! })),
                 // Can't reposition HoverOverlay if it wasn't rendered
-                filter(propertyIsDefined('hoverOverlayElement'))
+                filter(property('hoverOverlayElement', isDefined))
             ),
             getHover: position => getHover(this.getLSPTextDocumentPositionParams(position), this.props),
             getActions: context => getHoverActions(this.props, context),
@@ -309,9 +309,9 @@ export class Blob extends React.Component<BlobProps, BlobState> {
         )
 
         /** Emits when the URL's target blob (repository, revision, path, and content) changes. */
-        const modelChanges: Observable<AbsoluteRepoFile &
-            ModeSpec &
-            Pick<BlobProps, 'content' | 'isLightTheme'>> = this.componentUpdates.pipe(
+        const modelChanges: Observable<
+            AbsoluteRepoFile & ModeSpec & Pick<BlobProps, 'content' | 'isLightTheme'>
+        > = this.componentUpdates.pipe(
             map(props => pick(props, 'repoName', 'rev', 'commitID', 'filePath', 'mode', 'content', 'isLightTheme')),
             distinctUntilChanged((a, b) => isEqual(a, b)),
             share()

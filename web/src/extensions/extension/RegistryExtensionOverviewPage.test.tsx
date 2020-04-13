@@ -3,10 +3,14 @@ import React from 'react'
 import { MemoryRouter } from 'react-router'
 import renderer from 'react-test-renderer'
 import { RegistryExtensionOverviewPage } from './RegistryExtensionOverviewPage'
+import { PageTitle } from '../../components/PageTitle'
 
 jest.mock('mdi-react/GithubCircleIcon', () => 'GithubCircleIcon')
 
 describe('RegistryExtensionOverviewPage', () => {
+    afterEach(() => {
+        PageTitle.titleSet = false
+    })
     test('renders', () =>
         expect(
             renderer

@@ -224,7 +224,7 @@ export class Tree extends React.PureComponent<Props, State> {
     public componentDidMount(): void {
         this.subscriptions.add(
             this.expandDirectoryChanges.subscribe(({ path, expanded, node }) => {
-                this.setState((prevState, props) => ({
+                this.setState(prevState => ({
                     resolveTo: expanded ? [...prevState.resolveTo, path] : prevState.resolveTo.filter(p => p !== path),
                 }))
                 if (!expanded) {
@@ -268,7 +268,6 @@ export class Tree extends React.PureComponent<Props, State> {
                     // Strip the ?suggestion query param. Handle both when going from ancestor -> child and child -> ancestor.
                     if (queryParams.has('suggestion')) {
                         queryParams.delete('suggestion')
-                        // eslint-disable-next-line @typescript-eslint/no-base-to-string
                         this.props.history.replace({ search: queryParams.toString() })
                     }
                 })

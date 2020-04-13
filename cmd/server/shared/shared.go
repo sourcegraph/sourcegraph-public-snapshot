@@ -24,18 +24,19 @@ const FrontendInternalHost = "127.0.0.1:3090"
 // defaultEnv is environment variables that will be set if not already set.
 var defaultEnv = map[string]string{
 	// Sourcegraph services running in this container
-	"SRC_GIT_SERVERS":       "127.0.0.1:3178",
-	"SEARCHER_URL":          "http://127.0.0.1:3181",
-	"REPO_UPDATER_URL":      "http://127.0.0.1:3182",
-	"QUERY_RUNNER_URL":      "http://127.0.0.1:3183",
-	"SRC_SYNTECT_SERVER":    "http://127.0.0.1:9238",
-	"SYMBOLS_URL":           "http://127.0.0.1:3184",
-	"REPLACER_URL":          "http://127.0.0.1:3185",
-	"LSIF_SERVER_URL":       "http://127.0.0.1:3186",
-	"SRC_HTTP_ADDR":         ":8080",
-	"SRC_HTTPS_ADDR":        ":8443",
-	"SRC_FRONTEND_INTERNAL": FrontendInternalHost,
-	"GITHUB_BASE_URL":       "http://127.0.0.1:3180", // points to github-proxy
+	"SRC_GIT_SERVERS":                       "127.0.0.1:3178",
+	"SEARCHER_URL":                          "http://127.0.0.1:3181",
+	"REPO_UPDATER_URL":                      "http://127.0.0.1:3182",
+	"QUERY_RUNNER_URL":                      "http://127.0.0.1:3183",
+	"SRC_SYNTECT_SERVER":                    "http://127.0.0.1:9238",
+	"SYMBOLS_URL":                           "http://127.0.0.1:3184",
+	"REPLACER_URL":                          "http://127.0.0.1:3185",
+	"PRECISE_CODE_INTEL_API_SERVER_URL":     "http://127.0.0.1:3186",
+	"PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL": "http://127.0.0.1:3187",
+	"SRC_HTTP_ADDR":                         ":8080",
+	"SRC_HTTPS_ADDR":                        ":8443",
+	"SRC_FRONTEND_INTERNAL":                 FrontendInternalHost,
+	"GITHUB_BASE_URL":                       "http://127.0.0.1:3180", // points to github-proxy
 
 	"GRAFANA_SERVER_URL": "http://127.0.0.1:3370",
 
@@ -116,8 +117,8 @@ func Main() {
 		log.Println("Failed to setup SSH authorization:", err)
 		log.Fatal("SSH authorization required for cloning from your codehost. Please see README.")
 	}
-	if err := copyNetrc(); err != nil {
-		log.Fatal("Failed to copy netrc:", err)
+	if err := copyConfigs(); err != nil {
+		log.Fatal("Failed to copy configs:", err)
 	}
 
 	// TODO validate known_hosts contains all code hosts in config.
@@ -135,8 +136,9 @@ func Main() {
 		`gitserver: gitserver`,
 		`query-runner: query-runner`,
 		`symbols: symbols`,
-		`lsif-server: node /lsif/out/server/server.js`,
-		`lsif-worker: node /lsif/out/worker/worker.js`,
+		`precise-code-intel-api-server: node /precise-code-intel/out/api-server/api.js`,
+		`precise-code-intel-bundle-manager: node /precise-code-intel/out/bundle-manager/manager.js`,
+		`precise-code-intel-worker: node /precise-code-intel/out/worker/worker.js`,
 		`searcher: searcher`,
 		`replacer: replacer`,
 		`github-proxy: github-proxy`,

@@ -113,12 +113,13 @@ func (s *accessTokens) Lookup(ctx context.Context, tokenHexEncoded string, requi
 		// Ensure that subject and creator users still exist.
 		`
 UPDATE access_tokens t SET last_used_at=now()
-FROM access_tokens t2
-JOIN users subject_user ON t2.subject_user_id=subject_user.id
-JOIN users creator_user ON t2.creator_user_id=creator_user.id
-WHERE t.value_sha256=$1 AND t.deleted_at IS NULL AND
-  subject_user.deleted_at IS NULL AND creator_user.deleted_at IS NULL AND
-  $2 = ANY (t.scopes)
+WHERE t.id IN (
+	SELECT t2.id FROM access_tokens t2
+	JOIN users subject_user ON t2.subject_user_id=subject_user.id AND subject_user.deleted_at IS NULL
+	JOIN users creator_user ON t2.creator_user_id=creator_user.id AND creator_user.deleted_at IS NULL
+	WHERE t2.value_sha256=$1 AND t2.deleted_at IS NULL AND
+	$2 = ANY (t2.scopes)
+)
 RETURNING t.subject_user_id
 `,
 		toSHA256Bytes(token), requiredScope,

@@ -14,13 +14,12 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/opentracing-contrib/go-stdlib/nethttp"
-	"github.com/opentracing/opentracing-go"
-	"gopkg.in/inconshreveable/log15.v2"
+	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 )
 
@@ -63,7 +62,7 @@ func main() {
 	}
 
 	// Create Handler now since it also initializes state
-	handler := nethttp.Middleware(opentracing.GlobalTracer(), gitserver.Handler())
+	handler := ot.Middleware(gitserver.Handler())
 
 	go debugserver.Start()
 

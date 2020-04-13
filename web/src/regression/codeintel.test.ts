@@ -6,6 +6,7 @@ import { ElementHandle } from 'puppeteer'
 import { map } from 'rxjs/operators'
 import * as child_process from 'mz/child_process'
 import { applyEdits } from '@sqs/jsonc-parser'
+import { JSONPath } from '@sqs/jsonc-parser/lib/main'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import { getTestTools } from './util/init'
 import { GraphQLClient } from './util/GraphQLClient'
@@ -101,7 +102,7 @@ describe('Code intelligence regression test suite', () => {
     let driver: Driver
     let gqlClient: GraphQLClient
     let outerResourceManager: TestResourceManager
-    before(async function() {
+    before(async function () {
         // sourcegraph/sourcegraph takes a while to clone
         this.timeout(30 * 1000)
         ;({ driver, gqlClient, resourceManager: outerResourceManager } = await getTestTools(config))
@@ -138,6 +139,9 @@ describe('Code intelligence regression test suite', () => {
             throw new Error(`test user ${testUsername} does not exist`)
         }
         await setUserSiteAdmin(gqlClient, user.id, true)
+
+        outerResourceManager.add('Global setting', 'showBadgeAttachments', await enableBadgeAttachments(gqlClient))
+        outerResourceManager.add('Global setting', 'codeIntel.includeForks', await setIncludeForks(gqlClient, true))
     })
 
     saveScreenshotsUponFailures(() => driver.page)
@@ -242,7 +246,7 @@ describe('Code intelligence regression test suite', () => {
 
     describe('Precise code intelligence regression test suite', () => {
         const innerResourceManager = new TestResourceManager()
-        before(async function() {
+        before(async function () {
             this.timeout(30 * 1000)
 
             const repoCommits = [
@@ -620,17 +624,29 @@ function normalizeWhitespace(s: string): string {
 //
 // LSIF utilities
 
+/** Show badge attachments in the UI to distinguish precise and search-based results. */
+async function enableBadgeAttachments(gqlClient: GraphQLClient): Promise<() => Promise<void>> {
+    return writeSetting(gqlClient, ['experimentalFeatures', 'showBadgeAttachments'], true)
+}
+
+/** Replace the codeIntel.includeForks setting with the given value. */
+async function setIncludeForks(gqlClient: GraphQLClient, enabled: boolean): Promise<() => Promise<void>> {
+    return writeSetting(gqlClient, ['basicCodeIntel.includeForks'], enabled)
+}
+/** Replace the codeIntel.lsif setting with the given value. */
+async function setGlobalLSIFSetting(gqlClient: GraphQLClient, enabled: boolean): Promise<() => Promise<void>> {
+    return writeSetting(gqlClient, ['codeIntel.lsif'], enabled)
+}
+
 /**
- * Replace the codeIntel.lsif setting with the given value.
- *
  * Return a promise that updates the global settings to their original value. This return value
  * is suitable for use with the resource manager's destroy queue.
  */
-async function setGlobalLSIFSetting(gqlClient: GraphQLClient, enabled: boolean): Promise<() => Promise<void>> {
+async function writeSetting(gqlClient: GraphQLClient, path: JSONPath, value: unknown): Promise<() => Promise<void>> {
     const { subjectID, settingsID, contents: oldContents } = await getGlobalSettings(gqlClient)
     const newContents = applyEdits(
         oldContents,
-        setProperty(oldContents, ['codeIntel.lsif'], enabled, {
+        setProperty(oldContents, path, value, {
             eol: '\n',
             insertSpaces: true,
             tabSize: 2,
