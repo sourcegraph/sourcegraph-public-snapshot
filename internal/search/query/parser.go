@@ -111,11 +111,18 @@ func skipSpace(buf []byte) int {
 	return count
 }
 
+type heuristic struct {
+	parensAsPatterns    bool // if true, parses parens as patterns rather than expression groups.
+	allowDanglingParens bool // if true, disables parsing parentheses as expression groups.
+}
+
 type parser struct {
-	buf       []byte
-	pos       int
-	balanced  int
-	heuristic bool // if true, activates parsing parens as patterns rather than expression groups.
+	buf          []byte
+	pos          int
+	balanced     int
+	heuristic    heuristic
+	unambiguated bool // if true, this signal implies that at least one expression was unambiguated by explicit parentheses.
+
 }
 
 func (p *parser) done() bool {
@@ -183,6 +190,61 @@ func (p *parser) skipSpaces() error {
 	return nil
 }
 
+// ScanDelimited takes a delimited (e.g., quoted) value for some arbitrary
+// delimiter, returning the undelimited value, and the end position of the
+// original delimited value (i.e., including quotes). `\` is treated as an
+// escape character for the delimiter and traditional string escape sequences.
+// The input buffer must start with the chosen delimiter.
+func ScanDelimited(buf []byte, delimiter rune) (string, int, error) {
+	var count, advance int
+	var r rune
+	var result []rune
+
+	next := func() rune {
+		r, advance := utf8.DecodeRune(buf)
+		count += advance
+		buf = buf[advance:]
+		return r
+	}
+
+	r = next()
+	if r != delimiter {
+		panic(fmt.Sprintf("ScanDelimited expects the input buffer to start with delimiter %s, but it starts with %s.", string(delimiter), string(r)))
+	}
+
+loop:
+	for len(buf) > 0 {
+		r = next()
+		switch {
+		case r == delimiter:
+			break loop
+		case r == '\\':
+			// Handle escape sequence.
+			if len(buf[advance:]) > 0 {
+				r = next()
+				switch r {
+				case 'a', 'b', 'f', 'n', 'r', 't', 'v', '\\', delimiter:
+					result = append(result, r)
+				default:
+					return "", count, errors.New("unrecognized escape sequence")
+				}
+				if len(buf) <= 0 {
+					return "", count, errors.New("unterminated literal: expected " + string(delimiter))
+				}
+			} else {
+				return "", count, errors.New("unterminated escape sequence")
+			}
+		default:
+			result = append(result, r)
+		}
+	}
+
+	if r != delimiter {
+		return "", count, errors.New("unterminated literal: expected " + string(delimiter))
+	}
+	return string(result), count, nil
+}
+
 var fieldValuePattern = lazyregexp.New("(^-?[a-zA-Z0-9]+):(.*)")
 
 // ScanParameter returns a leaf node value usable by _any_ kind of search (e.g.,
@@ -216,45 +278,88 @@ func ScanParameter(parameter []byte) Parameter {
 	return Parameter{Field: "", Value: string(parameter)}
 }
 
+// ScanSearchPatternHeuristic scans for a pattern using a heuristic that allows it to
+// contain parentheses, if balanced, with appropriate lexical handling for
+// traditional escape sequences, escaped parentheses, and escaped whitespace.
+func ScanSearchPatternHeuristic(buf []byte) ([]string, int, bool) {
+	var count, advance, balanced int
+	var r rune
+	var piece []rune
+	var pieces []string
+
+	next := func() rune {
+		r, advance := utf8.DecodeRune(buf)
+		count += advance
+		buf = buf[advance:]
+		return r
+	}
+
+loop:
+	for len(buf) > 0 {
+		r = next()
+		switch {
+		case unicode.IsSpace(r) && balanced == 0:
+			// Stop scanning a potential pattern when we see
+			// whitespace in a balanced state.
+			break loop
+		case r == '(':
+			balanced++
+			piece = append(piece, r)
+		case r == ')':
+			balanced--
+			piece = append(piece, r)
+		case unicode.IsSpace(r):
+			// We see a space and the pattern is unbalanced, so assume this
+			// terminates a piece of an incomplete search pattern.
+			if len(piece) > 0 {
+				pieces = append(pieces, string(piece))
+			}
+			piece = piece[:0]
+		case r == '\\':
+			// Handle escape sequence.
+			if len(buf[advance:]) > 0 {
+				r = next()
+				switch r {
+				case 'a', 'b', 'f', 'n', 'r', 't', 'v', '\\', '"', '\'', '(', ')':
+					piece = append(piece, '\\', r)
+				default:
+					// Unrecognized escape sequence.
+					return pieces, count, false
+				}
+			} else {
+				// Unterminated escape sequence.
+				return pieces, count, false
+			}
+		default:
+			piece = append(piece, r)
+		}
+
+	}
+	if len(piece) > 0 {
+		pieces = append(pieces, string(piece))
+	}
+	return pieces, count, balanced == 0
+}
+
 // ParseSearchPatternHeuristic heuristically parses a search pattern containing
 // parentheses at the current position. There are cases where we want to
 // interpret parentheses as part of a search pattern, rather than an and/or
 // expression group. For example, In the regex foo(a|b)bar, we want to preserve
 // parentheses as part of the pattern.
 func (p *parser) ParseSearchPatternHeuristic() (Node, bool) {
-	if !p.heuristic {
+	if !p.heuristic.parensAsPatterns || p.heuristic.allowDanglingParens {
 		return Parameter{Field: "", Value: ""}, false
 	}
 	start := p.pos
-	balanced := 0
-	for {
-		if p.expect(`\ `) || p.expect(`\(`) || p.expect(`\)`) {
-			continue
-		}
-		if p.expect(LPAREN) {
-			balanced += 1
-			continue
-		}
-		if p.expect(RPAREN) {
-			balanced -= 1
-			continue
-		}
-		if p.done() {
-			break
-		}
-		if isSpace(p.buf[p.pos:]) && balanced == 0 {
-			// Stop scanning a potential pattern when we see whitespace in a balanced state.
-			break
-		}
-		p.pos++
-	}
-	if len(p.buf[start:p.pos]) == 0 || balanced != 0 || !isPureSearchPattern(p.buf[start:p.pos]) {
-		// We tried validating the pattern but it is either empty, unbalanced, or an invalid and/or expression.
-		p.pos = start // Backtrack.
+	pieces, advance, ok := ScanSearchPatternHeuristic(p.buf[p.pos:])
+	end := start + advance
+	if !ok || len(p.buf[start:end]) == 0 || !isPureSearchPattern(p.buf[start:end]) {
+		// We tried validating the pattern but it is either unbalanced
+		// or malformed, empty, or an invalid and/or expression.
 		return Parameter{Field: "", Value: ""}, false
 	}
 	// The heuristic succeeds: we can process the string as a pure search pattern.
-	pieces := strings.Fields(string(p.buf[start:p.pos]))
+	p.pos += advance
 	if len(pieces) == 1 {
 		return Parameter{Field: "", Value: pieces[0]}, true
 	}
@@ -274,6 +379,10 @@ func (p *parser) ParseParameter() Parameter {
 			continue
 		}
 		if p.match(LPAREN) || p.match(RPAREN) {
+			if p.heuristic.allowDanglingParens {
+				p.pos++ // consume the parenthesis.
+				continue
+			}
 			break
 		}
 		if p.done() {
@@ -355,7 +464,7 @@ loop:
 			break loop
 		}
 		switch {
-		case p.match(LPAREN):
+		case p.match(LPAREN) && !p.heuristic.allowDanglingParens:
 			// First try parse a parameter as a search pattern containing parens.
 			if patterns, ok := p.ParseSearchPatternHeuristic(); ok {
 				nodes = append(nodes, patterns)
@@ -364,17 +473,19 @@ loop:
 				// group as part of an and/or expression.
 				_ = p.expect(LPAREN) // Guaranteed to succeed.
 				p.balanced++
+				p.unambiguated = true
 				result, err := p.parseOr()
 				if err != nil {
 					return nil, err
 				}
 				nodes = append(nodes, result...)
 			}
-		case p.expect(RPAREN):
+		case p.expect(RPAREN) && !p.heuristic.allowDanglingParens:
 			p.balanced--
+			p.unambiguated = true
 			if len(nodes) == 0 {
 				// We parsed "()".
-				if p.heuristic {
+				if p.heuristic.parensAsPatterns {
 					// Interpret literally.
 					nodes = []Node{Parameter{Value: "()"}}
 				} else {
@@ -497,24 +608,61 @@ func (p *parser) parseOr() ([]Node, error) {
 	return newOperator(append(left, right...), Or), nil
 }
 
-// parseAndOr a raw input string into a parse tree comprising Nodes.
-func parseAndOr(in string) ([]Node, error) {
-	if in == "" {
-		return nil, nil
+func tryFallbackParser(in string) ([]Node, error) {
+	parser := &parser{
+		buf:       []byte(in),
+		heuristic: heuristic{allowDanglingParens: true},
 	}
-	parser := &parser{buf: []byte(in), heuristic: true}
 	nodes, err := parser.parseOr()
 	if err != nil {
 		return nil, err
 	}
-	if parser.balanced != 0 {
-		return nil, errors.New("unbalanced expression")
+	if hoistedNodes, err := HoistOr(nodes); err == nil {
+		return newOperator(hoistedNodes, And), nil
 	}
 	return newOperator(nodes, And), nil
 }
 
-func ParseAndOr(in string) (QueryInfo, error) {
-	query, err := parseAndOr(in)
+// ParseAndOr a raw input string into a parse tree comprising Nodes.
+func ParseAndOr(in string) ([]Node, error) {
+	if in == "" {
+		return nil, nil
+	}
+	parser := &parser{
+		buf:       []byte(in),
+		heuristic: heuristic{parensAsPatterns: true},
+	}
+
+	nodes, err := parser.parseOr()
+	if err != nil {
+		if nodes, err := tryFallbackParser(in); err == nil {
+			return nodes, nil
+		}
+		return nil, err
+	}
+	if parser.balanced != 0 {
+		if nodes, err := tryFallbackParser(in); err == nil {
+			return nodes, nil
+		}
+		return nil, errors.New("unbalanced expression")
+	}
+	if !parser.unambiguated {
+		// Hoist or expressions if this query is potential ambiguous.
+		if hoistedNodes, err := HoistOr(nodes); err == nil {
+			nodes = hoistedNodes
+		}
+	}
+	return newOperator(nodes, And), nil
+}
+
+// ProcessAndOr query parses and validates an and/or query for a given search type.
+func ProcessAndOr(in string) (QueryInfo, error) {
+	query, err := ParseAndOr(in)
+	if err != nil {
+		return nil, err
+	}
+	query = LowercaseFieldNames(query)
+	err = validate(query)
 	if err != nil {
 		return nil, err
 	}

@@ -16,6 +16,7 @@ export function fetchSymbols(
         gql`
             query Symbols($repo: ID!, $rev: String!, $first: Int, $query: String, $includePatterns: [String!]) {
                 node(id: $repo) {
+                    __typename
                     ... on Repository {
                         commit(rev: $rev) {
                             symbols(first: $first, query: $query, includePatterns: $includePatterns) {

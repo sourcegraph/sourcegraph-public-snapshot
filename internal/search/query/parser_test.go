@@ -78,7 +78,10 @@ func parseAndOrGrammar(in string) ([]Node, error) {
 	if in == "" {
 		return nil, nil
 	}
-	parser := &parser{buf: []byte(in), heuristic: false}
+	parser := &parser{
+		buf:       []byte(in),
+		heuristic: heuristic{parensAsPatterns: false},
+	}
 	nodes, err := parser.parseOr()
 	if err != nil {
 		return nil, err
@@ -237,8 +240,8 @@ func Test_Parse(t *testing.T) {
 		{
 			Name:          "Unbalanced",
 			Input:         "(foo) (bar",
-			WantGrammar:   "unbalanced expression",
-			WantHeuristic: Same,
+			WantGrammar:   Spec("unbalanced expression"),
+			WantHeuristic: Diff(`(concat "(foo)" "(bar")`),
 		},
 		{
 			Name:          "Incomplete expression",
@@ -380,6 +383,53 @@ func Test_Parse(t *testing.T) {
 			WantGrammar:   Spec(`(concat "x" (or "y" "f"))`),
 			WantHeuristic: Diff(`(concat "()" "x" "()" (or "y" "()" "f") "()")`),
 		},
+		// Escaping.
+		{
+			Input:         `\(\)`,
+			WantGrammar:   `"\\(\\)"`,
+			WantHeuristic: Same,
+		},
+		{
+			Input:         `\( \) ()`,
+			WantGrammar:   Spec(`(concat "\\(" "\\)")`),
+			WantHeuristic: Diff(`(concat "\\(" "\\)" "()")`),
+		},
+		{
+			Input:         `\ `,
+			WantGrammar:   `"\\ "`,
+			WantHeuristic: Same,
+		},
+		{
+			Input:         `\  \ `,
+			WantGrammar:   Spec(`(concat "\\ " "\\ ")`),
+			WantHeuristic: Diff(`(concat "\\ " "\\ ")`),
+		},
+		// Dangling parentheses heuristic.
+		{
+			Input:         `(`,
+			WantGrammar:   Spec(`expected operand at 1`),
+			WantHeuristic: Diff(`"("`),
+		},
+		{
+			Input:         `)(())(`,
+			WantGrammar:   Spec(`unbalanced expression`),
+			WantHeuristic: Diff(`"(())("`),
+		},
+		{
+			Input:         `foo( and bar(`,
+			WantGrammar:   Spec(`expected operand at 5`),
+			WantHeuristic: Diff(`(and "foo(" "bar(")`),
+		},
+		{
+			Input:         `repo:foo foo( or bar(`,
+			WantGrammar:   Spec(`expected operand at 14`),
+			WantHeuristic: Diff(`(and "repo:foo" (or "foo(" "bar("))`),
+		},
+		{
+			Input:         `(a or (b and )) or d)`,
+			WantGrammar:   Spec(`unbalanced expression`),
+			WantHeuristic: Diff(`(or "(a" (and "(b" ")") "d)")`),
+		},
 	}
 	for _, tt := range cases {
 		t.Run(tt.Name, func(t *testing.T) {
@@ -403,12 +453,103 @@ func Test_Parse(t *testing.T) {
 			var err error
 			result, err = parseAndOrGrammar(tt.Input) // Parse without heuristic.
 			check(result, err, string(tt.WantGrammar))
-			result, err = parseAndOr(tt.Input)
+			result, err = ParseAndOr(tt.Input)
 			if tt.WantHeuristic == Same {
 				check(result, err, string(tt.WantGrammar))
 			} else {
 				check(result, err, string(tt.WantHeuristic))
 			}
+		})
+	}
+}
+
+func Test_ScanDelimited(t *testing.T) {
+	type result struct {
+		Value  string
+		Count  int
+		ErrMsg string
+	}
+
+	cases := []struct {
+		name      string
+		input     string
+		delimiter rune
+		want      result
+	}{
+		{
+			input:     `""`,
+			delimiter: '"',
+			want:      result{Value: "", Count: 2, ErrMsg: ""},
+		},
+		{
+			input:     `"a"`,
+			delimiter: '"',
+			want:      result{Value: `a`, Count: 3, ErrMsg: ""},
+		},
+		{
+			input:     `"\""`,
+			delimiter: '"',
+			want:      result{Value: `"`, Count: 4, ErrMsg: ""},
+		},
+		{
+			input:     `"\\""`,
+			delimiter: '"',
+			want:      result{Value: `\`, Count: 4, ErrMsg: ""},
+		},
+		{
+			input:     `"\\\"`,
+			delimiter: '"',
+			want:      result{Value: "", Count: 5, ErrMsg: `unterminated literal: expected "`},
+		},
+		{
+			input:     `"\\\""`,
+			delimiter: '"',
+			want:      result{Value: `\"`, Count: 6, ErrMsg: ""},
+		},
+		{
+			input:     `"a`,
+			delimiter: '"',
+			want:      result{Value: "", Count: 2, ErrMsg: `unterminated literal: expected "`},
+		},
+		{
+			input:     `"\?"`,
+			delimiter: '"',
+			want:      result{Value: "", Count: 3, ErrMsg: `unrecognized escape sequence`},
+		},
+		{
+			name:      "panic",
+			input:     `a"`,
+			delimiter: '"',
+			want:      result{},
+		},
+		{
+			input:     `/\//`,
+			delimiter: '/',
+			want:      result{Value: "/", Count: 4, ErrMsg: ""},
+		},
+	}
+
+	for _, tt := range cases {
+		if tt.name == "panic" {
+			defer func() {
+				if r := recover(); r == nil {
+					t.Errorf("expected panic for ScanDelimited")
+				}
+			}()
+			_, _, _ = ScanDelimited([]byte(tt.input), tt.delimiter)
+		}
+
+		t.Run(tt.name, func(t *testing.T) {
+			value, count, err := ScanDelimited([]byte(tt.input), tt.delimiter)
+			var errMsg string
+			if err != nil {
+				errMsg = err.Error()
+			}
+			got := result{value, count, errMsg}
+			if diff := cmp.Diff(tt.want, got); diff != "" {
+				t.Error(diff)
+			}
+
 		})
 	}
 }

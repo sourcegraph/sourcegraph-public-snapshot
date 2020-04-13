@@ -53,12 +53,12 @@ type JSContext struct {
 
 	IsAuthenticatedUser bool `json:"isAuthenticatedUser"`
 
-	SentryDSN      *string `json:"sentryDSN"`
-	SiteID         string  `json:"siteID"`
-	SiteGQLID      string  `json:"siteGQLID"`
-	Debug          bool    `json:"debug"`
-	ShowOnboarding bool    `json:"showOnboarding"`
-	EmailEnabled   bool    `json:"emailEnabled"`
+	SentryDSN     *string `json:"sentryDSN"`
+	SiteID        string  `json:"siteID"`
+	SiteGQLID     string  `json:"siteGQLID"`
+	Debug         bool    `json:"debug"`
+	NeedsSiteInit bool    `json:"needsSiteInit"`
+	EmailEnabled  bool    `json:"emailEnabled"`
 
 	Site              schema.SiteConfiguration `json:"site"` // public subset of site configuration
 	LikelyDockerOnMac bool                     `json:"likelyDockerOnMac"`
@@ -105,7 +105,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 
 	// Show the site init screen?
 	globalState, err := globalstatedb.Get(req.Context())
-	showOnboarding := err == nil && !globalState.Initialized
+	needsSiteInit := err == nil && !globalState.Initialized
 
 	// Auth providers
 	var authProviders []authProviderInfo
@@ -145,7 +145,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 
 		SiteGQLID: string(graphqlbackend.SiteGQLID()),
 
-		ShowOnboarding:    showOnboarding,
+		NeedsSiteInit:     needsSiteInit,
 		EmailEnabled:      conf.CanSendEmail(),
 		Site:              publicSiteConfiguration(),
 		LikelyDockerOnMac: likelyDockerOnMac(),

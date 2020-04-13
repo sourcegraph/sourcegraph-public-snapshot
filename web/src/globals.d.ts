@@ -63,9 +63,9 @@ interface SourcegraphContext
     siteGQLID: GQL.ID
 
     /**
-     * Status of onboarding
+     * Whether the site needs to be initialized.
      */
-    showOnboarding: boolean
+    needsSiteInit: boolean
 
     /**
      * Emails support enabled
