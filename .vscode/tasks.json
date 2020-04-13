@@ -46,7 +46,8 @@
       "problemMatcher": [],
     },
     {
-      "label": "eslint all",
+      "label": "ESLint all",
+      "detail": "Run ESLint once on all TypeScript projects in parallel to get problems in the problems panel",
       "dependsOn": [
         "eslint:web",
         "eslint:shared",

@@ -382,7 +382,7 @@ func TestSyncRegistry(t *testing.T) {
 		},
 	}
 
-	r := NewSyncRegistry(ctx, syncStore, repoStore, nil)
+	r := NewSyncRegistry(ctx, syncStore, repoStore, nil, nil)
 
 	assertSyncerCount := func(want int) {
 		r.mu.Lock()

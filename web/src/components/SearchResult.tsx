@@ -53,7 +53,7 @@ export class SearchResult extends React.Component<Props> {
 
     private renderBody = (): JSX.Element => (
         <>
-            {this.props.result.matches.map((match, index) => {
+            {this.props.result.matches.map(match => {
                 const highlightRanges: HighlightRange[] = []
                 match.highlights.map(highlight =>
                     highlightRanges.push({

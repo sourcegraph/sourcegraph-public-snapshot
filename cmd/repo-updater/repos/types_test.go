@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"golang.org/x/time/rate"
 )
 
 func TestExternalService_Exclude(t *testing.T) {
@@ -466,4 +467,68 @@ func formatJSON(t testing.TB, s string) string {
 	}
 
 	return formatted
+}
+
+func TestRateLimiterRegistry(t *testing.T) {
+	r := &RateLimiterRegistry{
+		rateLimiters: make(map[int64]*rate.Limiter),
+	}
+
+	l := r.GetRateLimiter(1)
+	if l == nil {
+		t.Fatalf("Expected a limiter")
+	}
+	expectedLimit := rate.Inf
+	if l.Limit() != expectedLimit {
+		t.Fatalf("Expected limit %f, got %f", expectedLimit, l.Limit())
+	}
+
+	now := time.Now()
+	s := api.ExternalService{
+		ID:          1,
+		Kind:        "GitLab",
+		DisplayName: "GitLab",
+		Config:      "",
+		CreatedAt:   now,
+		UpdatedAt:   now,
+		DeletedAt:   nil,
+	}
+	err := r.HandleExternalServiceSync(s)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// We should have default limit
+	l = r.GetRateLimiter(1)
+	if l == nil {
+		t.Fatalf("Expected a limiter")
+	}
+	expectedLimit = rate.Limit(10)
+	if l.Limit() != expectedLimit {
+		t.Fatalf("Expected limit %f, got %f", expectedLimit, l.Limit())
+	}
+
+	// Add config
+	s.Config = `
+{
+  "RateLimit": {
+    "Enabled": true,
+    "RequestsPerHour": 3600,
+  }
+}
+`
+	err = r.HandleExternalServiceSync(s)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// We should have new limit
+	l = r.GetRateLimiter(1)
+	if l == nil {
+		t.Fatalf("Expected a limiter")
+	}
+	expectedLimit = rate.Limit(1)
+	if l.Limit() != expectedLimit {
+		t.Fatalf("Expected limit %f, got %f", expectedLimit, l.Limit())
+	}
 }

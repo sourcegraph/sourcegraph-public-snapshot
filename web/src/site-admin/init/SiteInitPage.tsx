@@ -1,10 +1,10 @@
-import * as React from 'react'
-import { Redirect, RouteComponentProps } from 'react-router'
-import * as GQL from '../../../shared/src/graphql/schema'
-import { SignUpArgs, SignUpForm } from '../auth/SignUpForm'
-import { submitTrialRequest } from '../marketing/backend'
-import { BrandLogo } from '../components/branding/BrandLogo'
-import { ThemeProps } from '../../../shared/src/theme'
+import React from 'react'
+import { Redirect } from 'react-router'
+import * as GQL from '../../../../shared/src/graphql/schema'
+import { SignUpArgs, SignUpForm } from '../../auth/SignUpForm'
+import { submitTrialRequest } from '../../marketing/backend'
+import { BrandLogo } from '../../components/branding/BrandLogo'
+import { ThemeProps } from '../../../../shared/src/theme'
 
 const initSite = async (args: SignUpArgs): Promise<void> => {
     const resp = await fetch('/-/site-init', {
@@ -27,16 +27,26 @@ const initSite = async (args: SignUpArgs): Promise<void> => {
     window.location.replace('/site-admin')
 }
 
-interface Props extends RouteComponentProps<{}>, ThemeProps {
-    authenticatedUser: GQL.IUser | null
+interface Props extends ThemeProps {
+    authenticatedUser: Pick<GQL.IUser, 'username'> | null
+
+    /**
+     * Whether site initialization is needed. If not set, the global value from
+     * `window.context.needsSiteInit` is used.
+     */
+    needsSiteInit?: typeof window.context.needsSiteInit
 }
 
 /**
  * A page that is shown when the Sourcegraph instance has not yet been initialized.
  * Only the person who first accesses the instance will see this.
  */
-export const SiteInitPage: React.FunctionComponent<Props> = props => {
-    if (!window.context.showOnboarding) {
+export const SiteInitPage: React.FunctionComponent<Props> = ({
+    authenticatedUser,
+    isLightTheme,
+    needsSiteInit = window.context.needsSiteInit,
+}) => {
+    if (!needsSiteInit) {
         return <Redirect to="/search" />
     }
 
@@ -44,13 +54,13 @@ export const SiteInitPage: React.FunctionComponent<Props> = props => {
         <div className="site-init-page">
             <div className="site-init-page__content card">
                 <div className="card-body p-4">
-                    <BrandLogo className="w-100 mb-3" isLightTheme={props.isLightTheme} />
-                    {props.authenticatedUser ? (
+                    <BrandLogo className="w-100 mb-3" isLightTheme={isLightTheme} />
+                    {authenticatedUser ? (
                         // If there's already a user but the site is not initialized, then the we're in an
                         // unexpected state, likely because of a previous bug or because someone manually modified
                         // the site_config DB table.
                         <p>
-                            You're signed in as <strong>{props.authenticatedUser.username}</strong>. A site admin must
+                            You're signed in as <strong>{authenticatedUser.username}</strong>. A site admin must
                             initialize Sourcegraph before you can continue.
                         </p>
                     ) : (
@@ -61,8 +71,6 @@ export const SiteInitPage: React.FunctionComponent<Props> = props => {
                                 className="w-100"
                                 buttonLabel="Create admin account & continue"
                                 doSignUp={initSite}
-                                location={props.location}
-                                history={props.history}
                             />
                         </>
                     )}

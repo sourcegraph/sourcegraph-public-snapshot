@@ -45,7 +45,7 @@ export class OrgSettingsProfilePage extends React.PureComponent<Props, State> {
                     map(props => props.org),
                     distinctUntilKeyChanged('id')
                 )
-                .subscribe(org => {
+                .subscribe(() => {
                     eventLogger.logViewEvent('OrgSettingsProfile')
                 })
         )

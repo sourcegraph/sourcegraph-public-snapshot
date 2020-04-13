@@ -45,7 +45,7 @@ class FilteredSiteAdminProductLicenseConnection extends FilteredConnection<
     Pick<SiteAdminProductLicenseNodeProps, 'onDidUpdate' | 'showSubscription'>
 > {}
 
-const LOADING: 'loading' = 'loading'
+const LOADING = 'loading' as const
 
 interface State {
     showGenerate: boolean

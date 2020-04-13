@@ -1,7 +1,7 @@
 import { Shortcut } from '@slimsag/react-shortcuts'
 import classNames from 'classnames'
 import H from 'history'
-import { isArray, sortBy, uniq, uniqueId } from 'lodash'
+import { sortBy, uniq, uniqueId } from 'lodash'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import MenuIcon from 'mdi-react/MenuIcon'
 import MenuUpIcon from 'mdi-react/MenuUpIcon'
@@ -88,9 +88,9 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
             return null
         }
         try {
-            const recentActions = JSON.parse(value)
-            if (isArray(recentActions) && recentActions.every(a => typeof a === 'string')) {
-                return recentActions
+            const recentActions: unknown = JSON.parse(value)
+            if (Array.isArray(recentActions) && recentActions.every(a => typeof a === 'string')) {
+                return recentActions as string[]
             }
             return null
         } catch (err) {

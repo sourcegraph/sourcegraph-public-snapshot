@@ -14,7 +14,6 @@ import {
     updateCampaign,
     deleteCampaign,
     createCampaign,
-    retryCampaign,
     closeCampaign,
     publishCampaign,
     fetchPatchSetById,
@@ -380,13 +379,9 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         }
     }
 
-    const onRetry = async (): Promise<void> => {
-        try {
-            setCampaign(await retryCampaign(campaign!.id))
-            changesetUpdates.next()
-        } catch (err) {
-            setAlertError(asError(err))
-        }
+    const afterRetry = (updatedCampaign: Campaign): void => {
+        setCampaign(updatedCampaign)
+        campaignUpdates.next()
     }
 
     const author = campaign ? campaign.author : authenticatedUser
@@ -411,7 +406,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
             />
             {alertError && <ErrorAlert error={alertError} />}
             {campaign && !patchSet && !['saving', 'editing'].includes(mode) && (
-                <CampaignStatus campaign={campaign} onPublish={onPublish} onRetry={onRetry} />
+                <CampaignStatus campaign={campaign} onPublish={onPublish} afterRetry={afterRetry} />
             )}
             <Form id={campaignFormID} onSubmit={onSubmit} onReset={onCancel} className="e2e-campaign-form">
                 {['saving', 'editing'].includes(mode) && (

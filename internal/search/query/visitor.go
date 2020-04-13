@@ -18,6 +18,17 @@ func Visit(nodes []Node, f func(node Node)) {
 	}
 }
 
+// VisitOperator calls f on all operator nodes. f supplies the node's field,
+// value, and whether the value is negated.
+func VisitOperator(nodes []Node, f func(kind operatorKind, operands []Node)) {
+	visitor := func(node Node) {
+		if v, ok := node.(Operator); ok {
+			f(v.Kind, v.Operands)
+		}
+	}
+	Visit(nodes, visitor)
+}
+
 // VisitParameter calls f on all parameter nodes. f supplies the node's field,
 // value, and whether the value is negated.
 func VisitParameter(nodes []Node, f func(field, value string, negated bool)) {

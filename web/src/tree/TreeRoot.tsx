@@ -48,7 +48,7 @@ export interface TreeRootProps extends AbsoluteRepo {
     setActiveNode: (node: TreeNode) => void
 }
 
-const LOADING: 'loading' = 'loading'
+const LOADING = 'loading' as const
 interface TreeRootState {
     treeOrError?: typeof LOADING | GQL.IGitTree | ErrorLike
 }
@@ -132,7 +132,7 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
         this.componentUpdates.next(this.props)
     }
 
-    public componentDidUpdate(prevProps: TreeRootProps): void {
+    public componentDidUpdate(): void {
         this.componentUpdates.next(this.props)
     }
     public componentWillUnmount(): void {

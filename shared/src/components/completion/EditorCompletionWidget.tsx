@@ -31,7 +31,7 @@ export interface EditorCompletionWidgetProps
     editorId: string
 }
 
-const LOADING: 'loading' = 'loading'
+const LOADING = 'loading' as const
 
 /**
  * Shows a completion widget with a list of completion items from extensions for a given editor.

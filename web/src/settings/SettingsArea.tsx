@@ -51,7 +51,7 @@ interface Props extends SettingsAreaPageCommonProps, RouteComponentProps<{}> {
     extraHeader?: JSX.Element
 }
 
-const LOADING: 'loading' = 'loading'
+const LOADING = 'loading' as const
 
 interface State {
     /**

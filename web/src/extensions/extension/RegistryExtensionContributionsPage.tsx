@@ -9,6 +9,7 @@ import { ExtensionAreaRouteContext } from './ExtensionArea'
 import { ExtensionNoManifestAlert } from './RegistryExtensionManifestPage'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { ErrorAlert } from '../../components/alerts'
+import { hasProperty } from '../../../../shared/src/util/types'
 
 interface Props extends ExtensionAreaRouteContext, RouteComponentProps<{}>, ThemeProps {}
 
@@ -68,11 +69,16 @@ function toContributionsGroups(manifest: ExtensionManifest): ContributionGroup[]
     const settingsGroup: ContributionGroup = { title: 'Settings', columnHeaders: ['Name', 'Description'], rows: [] }
     try {
         if (manifest.contributes.configuration && manifest.contributes.configuration.properties) {
-            for (const [name, schema] of Object.entries<any>(manifest.contributes.configuration.properties)) {
+            for (const [name, schema] of Object.entries(manifest.contributes.configuration.properties)) {
                 settingsGroup.rows.push([
                     // eslint-disable-next-line react/jsx-key
                     <code>{name}</code>,
-                    typeof schema.description === 'string' ? schema.description : null,
+                    typeof schema === 'object' &&
+                    schema !== null &&
+                    hasProperty('description')(schema) &&
+                    typeof schema.description === 'string'
+                        ? schema.description
+                        : null,
                 ])
             }
         }

@@ -395,7 +395,11 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account) 
 	_, tok, err := github.GetExternalAccountData(&account.AccountData)
 	if err != nil {
 		return nil, errors.Wrap(err, "get external account data")
+	} else if tok == nil {
+		return nil, errors.New("no token found in the external account data")
 	}
+
+	// 🚨 SECURITY: Use user token is required to only list repositories the user has access to.
 	client := p.client.WithToken(tok.AccessToken)
 
 	// 100 matches the maximum page size, thus a good default to avoid multiple allocations
@@ -436,6 +440,8 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository) 
 
 	// NOTE: We do not store port or scheme in our URI, so stripping the hostname alone is enough.
 	nameWithOwner := strings.TrimPrefix(repo.URI, p.codeHost.BaseURL.Hostname())
+	nameWithOwner = strings.TrimPrefix(nameWithOwner, "/")
+
 	owner, name, err := github.SplitRepositoryNameWithOwner(nameWithOwner)
 	if err != nil {
 		return nil, errors.Wrap(err, "split nameWithOwner")

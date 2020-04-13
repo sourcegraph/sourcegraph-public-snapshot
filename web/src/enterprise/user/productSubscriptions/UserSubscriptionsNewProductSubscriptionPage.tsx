@@ -24,7 +24,7 @@ interface Props extends RouteComponentProps<{}>, ThemeProps {
     user: GQL.IUser | null
 }
 
-const LOADING: 'loading' = 'loading'
+const LOADING = 'loading' as const
 
 interface State {
     /**

@@ -40,8 +40,8 @@ const (
 
 // Global limiter cache so that we reuse the same rate limiter for
 // the same code host, even between config changes.
-// The longer term plan is to have a rate limiter that is shared across
-// all services so the below is just a short term solution.
+// This is a failsafe to protect bitbucket as they do not impose their own
+// rate limiting.
 var limiterMu sync.Mutex
 var limiterCache = make(map[string]*rate.Limiter)
 
