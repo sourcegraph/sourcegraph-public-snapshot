@@ -127,6 +127,9 @@ interface SourcegraphContext
 
         brandName: string
     }
+
+    /** The publishable key for the billing service (Stripe). */
+    billingPublishableKey?: string
 }
 
 interface BrandAssets {
