@@ -1870,10 +1870,10 @@
   resolved "https://registry.npmjs.org/@sourcegraph/comlink/-/comlink-3.1.1-fork.3.tgz#1bd76bc74ca8a9b55f1dbf508c703053ee66c961"
   integrity sha512-+vfSCJTS/GU391Hhdh2/s+wy5ok4hi6X+kizRQqQZwZI03Q1rR6SVLNFsbg4dhbX624mqr1UCRhwNnZdWHAR+A==
 
-"@sourcegraph/eslint-config@^0.15.0":
-  version "0.15.0"
-  resolved "https://registry.npmjs.org/@sourcegraph/eslint-config/-/eslint-config-0.15.0.tgz#f863f13e1de22b4c00fb427b12ec200c88431cd0"
-  integrity sha512-8kF4z8ySBUpNz7aGKbA+GA16bFtEn6OkqAYnZ/S0WsS5MAsGxcwLtRh/W2zzyLQYLOJJb2EOF+t6m7waYw8mIg==
+"@sourcegraph/eslint-config@^0.16.0":
+  version "0.16.0"
+  resolved "https://registry.npmjs.org/@sourcegraph/eslint-config/-/eslint-config-0.16.0.tgz#360de690156c55a25e37f1c2ae99821f31d6de94"
+  integrity sha512-fzhSaRk0I1AtGQSTphw91/FU9SGBUj1GArwKYTtgcsThuKeJ1WxlR8/5DcT+MqJ7G7NCCBT/cOu76YbgWNlflA==
   dependencies:
     "@sourcegraph/prettierrc" "^3.0.3"
     "@typescript-eslint/eslint-plugin" "^2.27.0"
