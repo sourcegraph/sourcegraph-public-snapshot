@@ -218,7 +218,7 @@ func workloads(issues []*Issue, prs []*PullRequest, milestone string) map[string
 		linked := issue.LinkedPullRequests(prs)
 
 		w.IssuePullRequests[issue] = linked
-		for _, pr := range prs {
+		for _, pr := range linked {
 			w.PullRequestIssues[pr] = append(w.PullRequestIssues[pr], issue)
 		}
 
