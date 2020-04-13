@@ -155,7 +155,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     setCampaign(fetchedCampaign)
                     if (fetchedCampaign) {
                         setName(fetchedCampaign.name)
-                        setDescription(fetchedCampaign.description)
+                        setDescription(fetchedCampaign.description ?? '')
                         setBranch(fetchedCampaign.branch ?? '')
                         setBranchModified(false)
                     }
@@ -304,7 +304,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 })
                 setCampaign(newCampaign)
                 setName(newCampaign.name)
-                setDescription(newCampaign.description)
+                setDescription(newCampaign.description ?? '')
                 setBranch(newCampaign.branch ?? '')
                 setBranchModified(false)
                 unblockHistoryRef.current()
