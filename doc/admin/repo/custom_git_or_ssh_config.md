@@ -4,7 +4,7 @@ Sourcegraph supports customising [git-config](https://git-scm.com/docs/git-confi
 
 ## Setting configuration
 
-For cluster environments we have guides for configuring SSH cloning. These can be adapted to additionally set `/etc/gitconfig`:
+For cluster environments, we have guides for configuring SSH cloning. These can be adapted to additionally set `/etc/gitconfig`:
 - Kubernetes guide to [configure repository cloning via SSH](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/docs/configure.md#configure-repository-cloning-via-ssh).
 - Docker guide to [configure SSH cloning](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/README.md#configuring-ssh-cloning)
 
