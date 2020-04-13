@@ -448,7 +448,7 @@ func (c *Container) dashboard() *sdk.Board {
 						ColorMode: "custom",
 						Fill:      true,
 						Line:      true,
-						FillColor: "rgba(255, 152, 48, 0.5)",
+						FillColor: "rgba(255, 83, 67, 0.6)",
 						LineColor: "rgba(31, 96, 196, 0.6)",
 					})
 				}
@@ -460,7 +460,7 @@ func (c *Container) dashboard() *sdk.Board {
 						ColorMode: "custom",
 						Fill:      true,
 						Line:      true,
-						FillColor: "rgba(242, 73, 92, 0.5)",
+						FillColor: "rgba(224, 28, 47, 0.6)",
 						LineColor: "rgba(31, 96, 196, 0.6)",
 					})
 				}
@@ -472,7 +472,7 @@ func (c *Container) dashboard() *sdk.Board {
 						ColorMode: "custom",
 						Fill:      true,
 						Line:      true,
-						FillColor: "rgba(255, 152, 48, 0.5)",
+						FillColor: "rgba(255, 83, 67, 0.6)",
 						LineColor: "rgba(31, 96, 196, 0.6)",
 					})
 				}
@@ -484,7 +484,7 @@ func (c *Container) dashboard() *sdk.Board {
 						ColorMode: "custom",
 						Fill:      true,
 						Line:      true,
-						FillColor: "rgba(242, 73, 92, 0.5)",
+						FillColor: "rgba(224, 28, 47, 0.6)",
 						LineColor: "rgba(31, 96, 196, 0.6)",
 					})
 				}
