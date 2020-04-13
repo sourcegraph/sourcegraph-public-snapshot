@@ -653,6 +653,7 @@ func main() {
 
 	for _, container := range []*Container{
 		Frontend(),
+		GitServer(),
 		GitHubProxy(),
 		PreciseCodeIntelAPIServer(),
 		PreciseCodeIntelBundleManager(),

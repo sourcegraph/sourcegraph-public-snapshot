@@ -1,11 +1,2 @@
-syntect-server.json
-frontend.json
-github-proxy.json
-repo-updater.json
-query-runner.json
-searcher.json
-precise-code-intel*.json
-symbols.json
-replacer.json
-zoekt-indexserver.json
-zoekt-webserver.json
+# All files in this directory are generated.
+*.json
