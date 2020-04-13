@@ -20,7 +20,6 @@ func Test_ScanParameter(t *testing.T) {
 			Input: `file:README.md`,
 			Want:  `{"field":"file","value":"README.md","negated":false}`,
 		},
-
 		{
 			Name:  "First char is colon",
 			Input: `:foo`,
@@ -57,9 +56,9 @@ func Test_ScanParameter(t *testing.T) {
 			Want:  `{"field":"","value":"fie-ld:bar","negated":false}`,
 		},
 		{
-			Name:  "No effect on escaped whitespace",
+			Name:  "Interpret escaped whitespace",
 			Input: `a\ pattern`,
-			Want:  `{"field":"","value":"a\\ pattern","negated":false}`,
+			Want:  `{"field":"","value":"a pattern","negated":false}`,
 		},
 	}
 	for _, tt := range cases {
@@ -509,13 +508,13 @@ func Test_Parse(t *testing.T) {
 		},
 		{
 			Input:         `\ `,
-			WantGrammar:   `"\\ "`,
+			WantGrammar:   `" "`,
 			WantHeuristic: Same,
 		},
 		{
 			Input:         `\  \ `,
-			WantGrammar:   Spec(`(concat "\\ " "\\ ")`),
-			WantHeuristic: Diff(`(concat "\\ " "\\ ")`),
+			WantGrammar:   Spec(`(concat " " " ")`),
+			WantHeuristic: Diff(`(concat " " " ")`),
 		},
 		// Dangling parentheses heuristic.
 		{
@@ -542,6 +541,67 @@ func Test_Parse(t *testing.T) {
 			Input:         `(a or (b and )) or d)`,
 			WantGrammar:   Spec(`unbalanced expression`),
 			WantHeuristic: Diff(`(or "(a" (and "(b" ")") "d)")`),
+		},
+		// Quotes and escape sequences.
+		{
+			Input:         `"`,
+			WantGrammar:   Spec(`""`),
+			WantHeuristic: Diff(`"\""`),
+		},
+		{
+			Input:         `repo:foo' bar'`,
+			WantGrammar:   `(and "repo:foo'" "bar'")`,
+			WantHeuristic: Same,
+		},
+		{
+			Input:         `repo:'foo' 'bar'`,
+			WantGrammar:   Spec(`(and "repo:foo" "bar")`),
+			WantHeuristic: Diff(`(and "repo:foo" "'bar'")`),
+		},
+		{
+			Input:         `repo:"foo" "bar"`,
+			WantGrammar:   Spec(`(and "repo:foo" "bar")`),
+			WantHeuristic: Diff(`(and "repo:foo" "\"bar\"")`),
+		},
+		{
+			Input:         `repo:"foo bar" "foo bar"`,
+			WantGrammar:   Spec(`(and "repo:foo bar" "foo bar")`),
+			WantHeuristic: Diff(`(and "repo:foo bar" (concat "\"foo" "bar\""))`),
+		},
+		{
+			Input:         `repo:"fo\"o" "bar"`,
+			WantGrammar:   Spec(`(and "repo:fo\"o" "bar")`),
+			WantHeuristic: Diff(`(and "repo:fo\"o" "\"bar\"")`),
+		},
+		{
+			Input:         `repo:foo /b\/ar/`,
+			WantGrammar:   `(and "repo:foo" "b/ar")`,
+			WantHeuristic: Same,
+		},
+		{
+			Input:         `repo:foo /a/file/path`,
+			WantGrammar:   Spec(`(and "repo:foo" (concat "a" "file/path"))`),
+			WantHeuristic: Diff(`(and "repo:foo" "/a/file/path")`),
+		},
+		{
+			Input:         `repo:foo /a/file/path/`,
+			WantGrammar:   Spec(`(and "repo:foo" (concat "a" "file/path/"))`),
+			WantHeuristic: Diff(`(and "repo:foo" "/a/file/path/")`),
+		},
+		{
+			Input:         `repo:foo /a/ /another/path/`,
+			WantGrammar:   Spec(`(and "repo:foo" (concat "a" "another" "path/"))`),
+			WantHeuristic: Diff(`(and "repo:foo" (concat "/a/" "/another/path/"))`),
+		},
+		{
+			Input:         `\t\r\n`,
+			WantGrammar:   `"\t\r\n"`,
+			WantHeuristic: Same,
+		},
+		{
+			Input:         `repo:foo\ bar \:\\`,
+			WantGrammar:   `(and "repo:foo bar" ":\\")`,
+			WantHeuristic: Same,
 		},
 	}
 	for _, tt := range cases {
