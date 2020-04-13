@@ -13,7 +13,7 @@ export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
     {
         // Render empty page if no page selected
         path: '',
-        render: lazyComponent(() => import('./SiteAdminOverviewPage'), 'SiteAdminOverviewPage'),
+        render: lazyComponent(() => import('./overview/SiteAdminOverviewPage'), 'SiteAdminOverviewPage'),
         exact: true,
     },
     {

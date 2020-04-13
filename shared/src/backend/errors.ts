@@ -1,43 +1,78 @@
-export const CLONE_IN_PROGRESS_ERROR_NAME = 'CloneInProgressError'
+import { isErrorLike } from '../util/errors'
+import { hasProperty } from '../util/types'
+
+const CLONE_IN_PROGRESS_ERROR_NAME = 'CloneInProgressError'
 export class CloneInProgressError extends Error {
     public readonly name = CLONE_IN_PROGRESS_ERROR_NAME
     constructor(repoName: string, public readonly progress?: string) {
         super(`${repoName} is clone in progress`)
     }
 }
+// Will work even for errors that came from GraphQL, background pages, comlink webworkers, etc.
+// TODO remove error message assertion after https://github.com/sourcegraph/sourcegraph/issues/9697 and https://github.com/sourcegraph/sourcegraph/issues/9693 are fixed
+export const isCloneInProgressErrorLike = (value: unknown): boolean =>
+    isErrorLike(value) && (value.name === CLONE_IN_PROGRESS_ERROR_NAME || /clone in progress/i.test(value.message))
 
-export const REPO_NOT_FOUND_ERROR_NAME = 'RepoNotFoundError'
+const REPO_NOT_FOUND_ERROR_NAME = 'RepoNotFoundError' as const
 export class RepoNotFoundError extends Error {
     public readonly name = REPO_NOT_FOUND_ERROR_NAME
     constructor(repoName: string) {
         super(`repo ${repoName} not found`)
     }
 }
+// Will work even for errors that came from GraphQL, background pages, comlink webworkers, etc.
+// TODO remove error message assertion after https://github.com/sourcegraph/sourcegraph/issues/9697 and https://github.com/sourcegraph/sourcegraph/issues/9693 are fixed
+export const isRepoNotFoundErrorLike = (value: unknown): boolean =>
+    isErrorLike(value) && (value.name === REPO_NOT_FOUND_ERROR_NAME || /repo.*not found/i.test(value.message))
 
-export const REV_NOT_FOUND_ERROR_NAME = 'RevNotFoundError'
+const REV_NOT_FOUND_ERROR_NAME = 'RevNotFoundError' as const
 export class RevNotFoundError extends Error {
     public readonly name = REV_NOT_FOUND_ERROR_NAME
     constructor(rev?: string) {
         super(`rev ${String(rev)} not found`)
     }
 }
+// Will work even for errors that came from GraphQL, background pages, comlink webworkers, etc.
+// TODO remove error message assertion after https://github.com/sourcegraph/sourcegraph/issues/9697 and https://github.com/sourcegraph/sourcegraph/issues/9693 are fixed
+export const isRevNotFoundErrorLike = (value: unknown): boolean =>
+    isErrorLike(value) && (value.name === REV_NOT_FOUND_ERROR_NAME || /rev.*not found/i.test(value.message))
 
-export const REPO_SEE_OTHER_ERROR_NAME = 'RepoSeeOtherError'
+const REPO_SEE_OTHER_ERROR_NAME = 'RepoSeeOtherError' as const
 export class RepoSeeOtherError extends Error {
     public readonly name = REPO_SEE_OTHER_ERROR_NAME
     constructor(public readonly redirectURL: string) {
         super(`Repository not found at this location, but might exist at ${redirectURL}`)
     }
 }
+// Will work even for errors that came from GraphQL, background pages, comlink webworkers, etc.
+// TODO remove error message assertion after https://github.com/sourcegraph/sourcegraph/issues/9697 and https://github.com/sourcegraph/sourcegraph/issues/9693 are fixed
+/** Returns the redirect URL if the passed value is like a RepoSeeOtherError, otherwise `false`. */
+export const isRepoSeeOtherErrorLike = (value: unknown): string | false => {
+    if (!isErrorLike(value)) {
+        return false
+    }
+    if (
+        value.name === REPO_SEE_OTHER_ERROR_NAME &&
+        hasProperty('redirectURL')(value) &&
+        typeof value.redirectURL === 'string'
+    ) {
+        return value.redirectURL
+    }
+    const match = value.message.match(/Repository not found at this location, but might exist at (\S+)/i)
+    if (match) {
+        return match[1]
+    }
+    return false
+}
 
+const PRIVATE_REPO_PUBLIC_SOURCEGRAPH_COM_ERROR_NAME = 'PrivateRepoPublicSourcegraphError' as const
 /**
- * ERPRIVATEREPOPUBLICSOURCEGRAPHCOM means that the current repository is
- * private and the current Sourcegraph URL is Sourcegraph.com. Requests made
- * from a private repository to Sourcegraph.com are blocked unless the
- * `requestMightContainPrivateInfo` argument to `requestGraphQL` is explicitly
- * set to false (defaults to true to be conservative).
+ * An Error that means that the current repository is private and the current
+ * Sourcegraph URL is Sourcegraph.com. Requests made from a private repository
+ * to Sourcegraph.com are blocked unless the `requestMightContainPrivateInfo`
+ * argument to `requestGraphQL` is explicitly set to false (defaults to true to
+ * be conservative).
  */
-export const PRIVATE_REPO_PUBLIC_SOURCEGRAPH_COM_ERROR_NAME = 'PrivateRepoPublicSourcegraphError'
 export class PrivateRepoPublicSourcegraphComError extends Error {
     public readonly name = PRIVATE_REPO_PUBLIC_SOURCEGRAPH_COM_ERROR_NAME
     constructor(graphQLName: string) {
@@ -46,5 +81,11 @@ export class PrivateRepoPublicSourcegraphComError extends Error {
         )
     }
 }
-
-export const AUTH_REQUIRED_ERROR_NAME = 'AuthRequiredError'
+// Will work even for errors that came from GraphQL, background pages, comlink webworkers, etc.
+// TODO remove error message assertion after https://github.com/sourcegraph/sourcegraph/issues/9697 and https://github.com/sourcegraph/sourcegraph/issues/9693 are fixed
+export const isPrivateRepoPublicSourcegraphComErrorLike = (value: unknown): boolean =>
+    isErrorLike(value) &&
+    (value.name === PRIVATE_REPO_PUBLIC_SOURCEGRAPH_COM_ERROR_NAME ||
+        /GraphQL request to the public Sourcegraph.com was blocked because the current repository is private/i.test(
+            value.message
+        ))

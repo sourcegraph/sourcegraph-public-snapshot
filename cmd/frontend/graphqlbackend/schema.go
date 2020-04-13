@@ -442,7 +442,7 @@ input CreateCampaignInput {
     name: String!
 
     # The description of the campaign as Markdown.
-    description: String!
+    description: String
 
     # The name of the branch that will be created for each changeset on the codehost if the patchSet attribute is specified.
     # If a branch with the given name already exists a fallback name will be created by adding a count to the end of the branch name until the name doesn't exist. Example: "my-branch-name" becomes "my-branch-name-1".
@@ -557,7 +557,7 @@ type Campaign implements Node {
     name: String!
 
     # The description as Markdown.
-    description: String!
+    description: String
 
     # The branch of the changesets.
     branch: String

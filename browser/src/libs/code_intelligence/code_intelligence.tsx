@@ -37,11 +37,15 @@ import {
     startWith,
     distinctUntilChanged,
     retryWhen,
+    mapTo,
 } from 'rxjs/operators'
 import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
 import { DecorationMapByLine } from '../../../../shared/src/api/client/services/decoration'
 import { CodeEditorData, CodeEditorWithPartialModel } from '../../../../shared/src/api/client/services/editorService'
-import { PRIVATE_REPO_PUBLIC_SOURCEGRAPH_COM_ERROR_NAME } from '../../../../shared/src/backend/errors'
+import {
+    isPrivateRepoPublicSourcegraphComErrorLike,
+    isRepoNotFoundErrorLike,
+} from '../../../../shared/src/backend/errors'
 import {
     CommandListClassProps,
     CommandListPopoverButtonClassProps,
@@ -567,8 +571,6 @@ export function handleCodeHost({
     const subscriptions = new Subscription()
     const { requestGraphQL } = platformContext
 
-    const openOptionsMenu = (): Promise<void> => browser.runtime.sendMessage({ type: 'openOptionsPage' })
-
     const addedElements = mutations.pipe(
         concatAll(),
         concatMap(mutation => mutation.addedNodes),
@@ -659,12 +661,21 @@ export function handleCodeHost({
                 const { rawRepoName, rev } = getContext()
                 return resolveRev({ repoName: rawRepoName, rev, requestGraphQL }).pipe(
                     retryWhenCloneInProgressError(),
-                    map(rev => !!rev),
-                    catchError(error => [asError(error)]),
+                    mapTo(true),
+                    catchError(error => {
+                        if (isRepoNotFoundErrorLike(error)) {
+                            return [false]
+                        }
+                        return [asError(error)]
+                    }),
                     startWith(undefined)
                 )
             })
         )
+        const onConfigureSourcegraphClick: React.MouseEventHandler<HTMLAnchorElement> = async event => {
+            event.preventDefault()
+            await browser.runtime.sendMessage({ type: 'openOptionsPage' })
+        }
 
         subscriptions.add(
             combineLatest([
@@ -679,13 +690,14 @@ export function handleCodeHost({
                 render(
                     <ViewOnSourcegraphButton
                         {...viewOnSourcegraphButtonClassProps}
+                        codeHostType={codeHost.type}
                         getContext={getContext}
                         minimalUI={minimalUI}
                         sourcegraphURL={sourcegraphURL}
                         repoExistsOrError={repoExistsOrError}
                         showSignInButton={showSignInButton}
                         onSignInClose={nextSignInClose}
-                        onConfigureSourcegraphClick={isInPage ? undefined : openOptionsMenu}
+                        onConfigureSourcegraphClick={isInPage ? undefined : onConfigureSourcegraphClick}
                     />,
                     mount
                 )
@@ -718,7 +730,7 @@ export function handleCodeHost({
                 ),
                 catchError(err => {
                     // Ignore PrivateRepoPublicSourcegraph errors (don't initialize those code views)
-                    if (err.name === PRIVATE_REPO_PUBLIC_SOURCEGRAPH_COM_ERROR_NAME) {
+                    if (isPrivateRepoPublicSourcegraphComErrorLike(err)) {
                         return EMPTY
                     }
                     throw err

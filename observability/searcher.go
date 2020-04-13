@@ -13,7 +13,7 @@ func Searcher() *Container {
 						{
 							Name:            "unindexed_search_request_errors",
 							Description:     "unindexed search request errors every 5m by code",
-							Query:           `sum by (code)(rate(searcher_service_request_total{code!="200",code!="canceled"}[5m]))`,
+							Query:           `sum by (code)(increase(searcher_service_request_total{code!="200",code!="canceled"}[5m]))`,
 							DataMayNotExist: true,
 							Warning:         Alert{GreaterOrEqual: 5},
 							PanelOptions:    PanelOptions().LegendFormat("{{code}}"),

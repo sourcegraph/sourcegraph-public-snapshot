@@ -2710,7 +2710,7 @@ func scanCampaign(c *campaigns.Campaign, s scanner) error {
 	return s.Scan(
 		&c.ID,
 		&c.Name,
-		&c.Description,
+		&dbutil.NullString{S: &c.Description},
 		&dbutil.NullString{S: &c.Branch},
 		&c.AuthorID,
 		&dbutil.NullInt32{N: &c.NamespaceUserID},

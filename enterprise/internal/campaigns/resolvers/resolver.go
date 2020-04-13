@@ -221,11 +221,13 @@ func (r *Resolver) CreateCampaign(ctx context.Context, args *graphqlbackend.Crea
 	}
 
 	campaign := &campaigns.Campaign{
-		Name:        args.Input.Name,
-		Description: args.Input.Description,
-		AuthorID:    user.ID,
+		Name:     args.Input.Name,
+		AuthorID: user.ID,
 	}
 
+	if args.Input.Description != nil {
+		campaign.Description = *args.Input.Description
+	}
 	if args.Input.Branch != nil {
 		campaign.Branch = *args.Input.Branch
 	}

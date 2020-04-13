@@ -88,7 +88,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: '/site-admin/init',
         exact: true,
-        render: lazyComponent(() => import('./site-admin/SiteInitPage'), 'SiteInitPage'),
+        render: lazyComponent(() => import('./site-admin/init/SiteInitPage'), 'SiteInitPage'),
     },
     {
         path: '/site-admin',
