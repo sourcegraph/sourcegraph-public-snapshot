@@ -356,6 +356,9 @@ type Mutation {
     ): Boolean!
     # Manages discussions.
     discussions: DiscussionsMutation
+        @deprecated(
+            reason: "discussions will be removed in 3.16. https://github.com/sourcegraph/sourcegraph/issues/9649"
+        )
     # Sets whether the user with the specified user ID is a site admin.
     #
     # Only site admins may perform this mutation.
