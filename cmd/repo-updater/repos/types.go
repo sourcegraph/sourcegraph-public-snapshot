@@ -1058,5 +1058,5 @@ type errRateLimitUnsupported struct {
 }
 
 func (e errRateLimitUnsupported) Error() string {
-	return fmt.Sprintf("internal rate limiting not support for %s", e.codehostKind)
+	return fmt.Sprintf("internal rate limiting not supported for %s", e.codehostKind)
 }
