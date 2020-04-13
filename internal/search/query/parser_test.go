@@ -187,7 +187,7 @@ func Test_ScanField(t *testing.T) {
 }
 
 func parseAndOrGrammar(in string) ([]Node, error) {
-	if in == "" {
+	if strings.TrimSpace(in) == "" {
 		return nil, nil
 	}
 	parser := &parser{
@@ -223,6 +223,12 @@ func Test_Parse(t *testing.T) {
 			WantHeuristic: Same,
 		},
 		{
+			Name:          "Whitespace",
+			Input:         "             ",
+			WantGrammar:   "",
+			WantHeuristic: Same,
+		},
+		{
 			Name:          "Single",
 			Input:         "a",
 			WantGrammar:   `"a"`,
@@ -253,6 +259,11 @@ func Test_Parse(t *testing.T) {
 		{
 			Input:         "aANDb",
 			WantGrammar:   `"aANDb"`,
+			WantHeuristic: Same,
+		},
+		{
+			Input:         "a oror b",
+			WantGrammar:   `(concat "a" "oror" "b")`,
 			WantHeuristic: Same,
 		},
 		{
@@ -348,18 +359,33 @@ func Test_Parse(t *testing.T) {
 			WantGrammar:   `(and "repo:b" "repo:c" (concat "a" (and "repo:e" "repo:f" (concat "d" "e"))))`,
 			WantHeuristic: Same,
 		},
+		// Keywords as patterns.
+		{
+			Input:         "a or",
+			WantGrammar:   `(concat "a" "or")`,
+			WantHeuristic: Same,
+		},
+		{
+			Input:         "or",
+			WantGrammar:   `"or"`,
+			WantHeuristic: Same,
+		},
+		{
+			Input:         "or or or",
+			WantGrammar:   `(or "or" "or")`,
+			WantHeuristic: Same,
+		},
+		{
+			Input:         "and and andand or oror",
+			WantGrammar:   `(or (and "and" "andand") "oror")`,
+			WantHeuristic: Same,
+		},
 		// Errors.
 		{
 			Name:          "Unbalanced",
 			Input:         "(foo) (bar",
 			WantGrammar:   Spec("unbalanced expression"),
 			WantHeuristic: Diff(`(concat "(foo)" "(bar")`),
-		},
-		{
-			Name:          "Incomplete expression",
-			Input:         "a or",
-			WantGrammar:   "expected operand at 4",
-			WantHeuristic: Same,
 		},
 		{
 			Name:          "Illegal expression on the right",
@@ -370,19 +396,7 @@ func Test_Parse(t *testing.T) {
 		{
 			Name:          "Illegal expression on the right, mixed operators",
 			Input:         "a and OR",
-			WantGrammar:   "expected operand at 6",
-			WantHeuristic: Same,
-		},
-		{
-			Name:          "Illegal expression on the left",
-			Input:         "or",
-			WantGrammar:   "expected operand at 0",
-			WantHeuristic: Same,
-		},
-		{
-			Name:          "Illegal expression on the left, multiple operators",
-			Input:         "or or or",
-			WantGrammar:   "expected operand at 0",
+			WantGrammar:   `(and "a" "OR")`,
 			WantHeuristic: Same,
 		},
 		// Reduction.
