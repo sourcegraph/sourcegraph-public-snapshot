@@ -74,6 +74,119 @@ func Test_ScanParameter(t *testing.T) {
 	}
 }
 
+func Test_ScanField(t *testing.T) {
+	type value struct {
+		Field   string
+		Advance int
+	}
+	cases := []struct {
+		Input string
+		Want  value
+	}{
+		// Valid field.
+		{
+			Input: "repo:foo",
+			Want: value{
+				Field:   "repo",
+				Advance: 5,
+			},
+		},
+		{
+			Input: "RepO:foo",
+			Want: value{
+				Field:   "RepO",
+				Advance: 5,
+			},
+		},
+		{
+			Input: "after:",
+			Want: value{
+				Field:   "after",
+				Advance: 6,
+			},
+		},
+		{
+			Input: "-repo:",
+			Want: value{
+				Field:   "-repo",
+				Advance: 6,
+			},
+		},
+		// Invalid field.
+		{
+			Input: "",
+			Want: value{
+				Field:   "",
+				Advance: 0,
+			},
+		},
+		{
+			Input: "-",
+			Want: value{
+				Field:   "",
+				Advance: 0,
+			},
+		},
+		{
+			Input: "-:",
+			Want: value{
+				Field:   "",
+				Advance: 0,
+			},
+		},
+		{
+			Input: ":",
+			Want: value{
+				Field:   "",
+				Advance: 0,
+			},
+		},
+		{
+			Input: "??:foo",
+			Want: value{
+				Field:   "",
+				Advance: 0,
+			},
+		},
+		{
+			Input: "repo",
+			Want: value{
+				Field:   "",
+				Advance: 0,
+			},
+		},
+		{
+			Input: "-repo",
+			Want: value{
+				Field:   "",
+				Advance: 0,
+			},
+		},
+		{
+			Input: "--repo:",
+			Want: value{
+				Field:   "",
+				Advance: 0,
+			},
+		},
+		{
+			Input: ":foo",
+			Want: value{
+				Field:   "",
+				Advance: 0,
+			},
+		},
+	}
+	for _, c := range cases {
+		t.Run("scan field", func(t *testing.T) {
+			gotField, gotAdvance := ScanField([]byte(c.Input))
+			if diff := cmp.Diff(c.Want, value{gotField, gotAdvance}); diff != "" {
+				t.Error(diff)
+			}
+		})
+	}
+}
+
 func parseAndOrGrammar(in string) ([]Node, error) {
 	if in == "" {
 		return nil, nil

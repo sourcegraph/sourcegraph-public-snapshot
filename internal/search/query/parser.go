@@ -245,6 +245,51 @@ loop:
 	return string(result), count, nil
 }
 
+// ScanField scans an optional '-' at the beginning of a string, and then scans
+// one or more alphabetic characters until it encounters a ':', in which case it
+// returns the value before the colon and its length. In all other cases it
+// returns the empty string and zero length.
+func ScanField(buf []byte) (string, int) {
+	var count int
+	var r rune
+	var result []rune
+	allowed := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+	next := func() rune {
+		r, advance := utf8.DecodeRune(buf)
+		count += advance
+		buf = buf[advance:]
+		return r
+	}
+
+	r = next()
+	if r != '-' && !strings.ContainsRune(allowed, r) {
+		return "", 0
+	}
+	result = append(result, r)
+
+	success := false
+	for len(buf) > 0 {
+		r = next()
+		if strings.ContainsRune(allowed, r) {
+			result = append(result, r)
+			continue
+		}
+		if r == ':' {
+			// Invariant: len(result) > 0. If len(result) == 1,
+			// check that it is not just a '-'. If len(result) > 1, it is valid.
+			if result[0] != '-' || len(result) > 1 {
+				success = true
+			}
+		}
+		break
+	}
+	if !success {
+		return "", 0
+	}
+	return string(result), count
+}
+
 var fieldValuePattern = lazyregexp.New("(^-?[a-zA-Z0-9]+):(.*)")
 
 // ScanParameter returns a leaf node value usable by _any_ kind of search (e.g.,
