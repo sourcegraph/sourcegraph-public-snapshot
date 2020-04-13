@@ -86,7 +86,6 @@ type Collaborator struct {
 	DatabaseID int64  `json:"id"`
 }
 
-
 // ListRepositoryCollaborators lists all GitHub users that has access to the repository.
 // The page is the page of results to return, and is 1-indexed (so the first call should
 // be for page 1).
