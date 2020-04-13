@@ -419,31 +419,31 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 		}
 	})
 
-	github.MockListAffiliatedRepositories = func(ctx context.Context, token string, page int) ([]*github.Repository, bool, int, error) {
-		want := "my_access_token"
-		if token != want {
-			return nil, false, 0, fmt.Errorf("token: want %q but got %q", want, token)
-		}
+	mockClient := &mockClient{
+		MockListAffiliatedRepositories: func(ctx context.Context, page int) ([]*github.Repository, bool, int, error) {
+			switch page {
+			case 1:
+				return []*github.Repository{
+					{ID: "MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE="},
+					{ID: "MDEwOlJlcG9zaXRvcnkyNDQ1MTc1MzY="},
+				}, true, 1, nil
+			case 2:
+				return []*github.Repository{
+					{ID: "MDEwOlJlcG9zaXRvcnkyNDI2NTEwMDA="},
+				}, false, 1, nil
+			}
 
-		switch page {
-		case 1:
-			return []*github.Repository{
-				{ID: "MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE="},
-				{ID: "MDEwOlJlcG9zaXRvcnkyNDQ1MTc1MzY="},
-			}, true, 1, nil
-		case 2:
-			return []*github.Repository{
-				{ID: "MDEwOlJlcG9zaXRvcnkyNDI2NTEwMDA="},
-			}, false, 1, nil
-		}
-
-		return []*github.Repository{}, false, 1, nil
+			return []*github.Repository{}, false, 1, nil
+		},
 	}
-	t.Cleanup(func() {
-		github.MockListAffiliatedRepositories = nil
-	})
+	calledWithToken := false
+	mockClient.MockWithToken = func(token string) client {
+		calledWithToken = true
+		return mockClient
+	}
 
 	p := NewProvider(mustURL(t, "https://github.com"), "admin_token", 3*time.Hour, nil)
+	p.client = mockClient
 
 	authData := json.RawMessage(`{"access_token": "my_access_token"}`)
 	repoIDs, err := p.FetchUserPerms(context.Background(),
@@ -459,6 +459,10 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 	)
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	if !calledWithToken {
+		t.Fatal("!calledWithToken")
 	}
 
 	expRepoIDs := []extsvc.RepoID{
@@ -500,26 +504,24 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 		}
 	})
 
-	github.MockListRepositoryCollaborators = func(ctx context.Context, owner, repo string, page int) ([]*github.Collaborator, bool, error) {
-		switch page {
-		case 1:
-			return []*github.Collaborator{
-				{ID: "MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE="},
-				{ID: "MDEwOlJlcG9zaXRvcnkyNDQ1MTc1MzY="},
-			}, true, nil
-		case 2:
-			return []*github.Collaborator{
-				{ID: "MDEwOlJlcG9zaXRvcnkyNDI2NTEwMDA="},
-			}, false, nil
-		}
-
-		return []*github.Collaborator{}, false, nil
-	}
-	t.Cleanup(func() {
-		github.MockListRepositoryCollaborators = nil
-	})
-
 	p := NewProvider(mustURL(t, "https://github.com"), "admin_token", 3*time.Hour, nil)
+	p.client = &mockClient{
+		MockListRepositoryCollaborators: func(ctx context.Context, owner, repo string, page int) ([]*github.Collaborator, bool, error) {
+			switch page {
+			case 1:
+				return []*github.Collaborator{
+					{ID: "MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE="},
+					{ID: "MDEwOlJlcG9zaXRvcnkyNDQ1MTc1MzY="},
+				}, true, nil
+			case 2:
+				return []*github.Collaborator{
+					{ID: "MDEwOlJlcG9zaXRvcnkyNDI2NTEwMDA="},
+				}, false, nil
+			}
+
+			return []*github.Collaborator{}, false, nil
+		},
+	}
 
 	accountIDs, err := p.FetchRepoPerms(context.Background(),
 		&extsvc.Repository{
