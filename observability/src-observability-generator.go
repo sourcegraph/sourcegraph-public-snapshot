@@ -553,6 +553,8 @@ func (c *Container) promAlertsFile() *promRulesFile {
 						// 	query_value=0 / greaterOrEqual=50 == 0.0
 						//
 						alertQuery = fmt.Sprintf("(%s) / %v", o.Query, alert.GreaterOrEqual)
+
+						// Replace no-data with zero values, so the alert does not fire, if desired.
 						if o.DataMayNotExist {
 							alertQuery = fmt.Sprintf("(%s) OR on() vector(0)", alertQuery)
 						}
@@ -567,6 +569,8 @@ func (c *Container) promAlertsFile() *promRulesFile {
 						// 	lessOrEqual=50 / query_value=-50 (0.0000001) == 500000000
 						//
 						alertQuery = fmt.Sprintf("%v / clamp_min(%s, 0.0000001)", alert.LessOrEqual, o.Query)
+
+						// Replace no-data with zero values, so the alert does not fire, if desired.
 						if o.DataMayNotExist {
 							alertQuery = fmt.Sprintf("(%s) OR on() vector(0)", alertQuery)
 						}
