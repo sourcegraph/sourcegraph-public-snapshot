@@ -18,47 +18,55 @@ func Test_ScanParameter(t *testing.T) {
 		{
 			Name:  "Normal field:value",
 			Input: `file:README.md`,
-			Want:  `{"field":"file","value":"README.md","negated":false}`,
+			Want:  `{"field":"file","value":"README.md","negated":false,"quoted":false}`,
 		},
 		{
 			Name:  "First char is colon",
 			Input: `:foo`,
-			Want:  `{"field":"","value":":foo","negated":false}`,
+			Want:  `{"field":"","value":":foo","negated":false,"quoted":false}`,
 		},
 		{
 			Name:  "Last char is colon",
 			Input: `foo:`,
-			Want:  `{"field":"foo","value":"","negated":false}`,
+			Want:  `{"field":"foo","value":"","negated":false,"quoted":false}`,
 		},
 		{
 			Name:  "Match first colon",
 			Input: `foo:bar:baz`,
-			Want:  `{"field":"foo","value":"bar:baz","negated":false}`,
+			Want:  `{"field":"foo","value":"bar:baz","negated":false,"quoted":false}`,
 		},
 		{
 			Name:  "No field, start with minus",
 			Input: `-:foo`,
-			Want:  `{"field":"","value":"-:foo","negated":false}`,
+			Want:  `{"field":"","value":"-:foo","negated":false,"quoted":false}`,
 		},
 		{
 			Name:  "Minus prefix on field",
 			Input: `-file:README.md`,
-			Want:  `{"field":"file","value":"README.md","negated":true}`,
+			Want:  `{"field":"file","value":"README.md","negated":true,"quoted":false}`,
 		},
 		{
 			Name:  "Double minus prefix on field",
 			Input: `--foo:bar`,
-			Want:  `{"field":"","value":"--foo:bar","negated":false}`,
+			Want:  `{"field":"","value":"--foo:bar","negated":false,"quoted":false}`,
 		},
 		{
 			Name:  "Minus in the middle is not a valid field",
 			Input: `fie-ld:bar`,
-			Want:  `{"field":"","value":"fie-ld:bar","negated":false}`,
+			Want:  `{"field":"","value":"fie-ld:bar","negated":false,"quoted":false}`,
 		},
 		{
 			Name:  "Interpret escaped whitespace",
 			Input: `a\ pattern`,
-			Want:  `{"field":"","value":"a pattern","negated":false}`,
+			Want:  `{"field":"","value":"a pattern","negated":false,"quoted":false}`,
+		},
+		{
+			Input: `"quoted"`,
+			Want:  `{"field":"","value":"quoted","negated":false,"quoted":true}`,
+		},
+		{
+			Input: `'\''`,
+			Want:  `{"field":"","value":"'","negated":false,"quoted":true}`,
 		},
 	}
 	for _, tt := range cases {
@@ -559,8 +567,8 @@ func Test_Parse(t *testing.T) {
 		// Quotes and escape sequences.
 		{
 			Input:         `"`,
-			WantGrammar:   Spec(`""`),
-			WantHeuristic: Diff(`"\""`),
+			WantGrammar:   `""`,
+			WantHeuristic: Same,
 		},
 		{
 			Input:         `repo:foo' bar'`,
@@ -569,43 +577,43 @@ func Test_Parse(t *testing.T) {
 		},
 		{
 			Input:         `repo:'foo' 'bar'`,
-			WantGrammar:   Spec(`(and "repo:foo" "bar")`),
-			WantHeuristic: Diff(`(and "repo:foo" "'bar'")`),
+			WantGrammar:   `(and "repo:foo" "bar")`,
+			WantHeuristic: Same,
 		},
 		{
 			Input:         `repo:"foo" "bar"`,
-			WantGrammar:   Spec(`(and "repo:foo" "bar")`),
-			WantHeuristic: Diff(`(and "repo:foo" "\"bar\"")`),
+			WantGrammar:   `(and "repo:foo" "bar")`,
+			WantHeuristic: Same,
 		},
 		{
 			Input:         `repo:"foo bar" "foo bar"`,
-			WantGrammar:   Spec(`(and "repo:foo bar" "foo bar")`),
-			WantHeuristic: Diff(`(and "repo:foo bar" (concat "\"foo" "bar\""))`),
+			WantGrammar:   `(and "repo:foo bar" "foo bar")`,
+			WantHeuristic: Same,
 		},
 		{
 			Input:         `repo:"fo\"o" "bar"`,
 			WantGrammar:   Spec(`(and "repo:fo\"o" "bar")`),
-			WantHeuristic: Diff(`(and "repo:fo\"o" "\"bar\"")`),
+			WantHeuristic: Same,
 		},
 		{
 			Input:         `repo:foo /b\/ar/`,
-			WantGrammar:   `(and "repo:foo" "b/ar")`,
+			WantGrammar:   `(and "repo:foo" "/b\\/ar/")`,
 			WantHeuristic: Same,
 		},
 		{
 			Input:         `repo:foo /a/file/path`,
-			WantGrammar:   Spec(`(and "repo:foo" (concat "a" "file/path"))`),
-			WantHeuristic: Diff(`(and "repo:foo" "/a/file/path")`),
+			WantGrammar:   `(and "repo:foo" "/a/file/path")`,
+			WantHeuristic: Same,
 		},
 		{
 			Input:         `repo:foo /a/file/path/`,
-			WantGrammar:   Spec(`(and "repo:foo" (concat "a" "file/path/"))`),
-			WantHeuristic: Diff(`(and "repo:foo" "/a/file/path/")`),
+			WantGrammar:   `(and "repo:foo" "/a/file/path/")`,
+			WantHeuristic: Same,
 		},
 		{
 			Input:         `repo:foo /a/ /another/path/`,
-			WantGrammar:   Spec(`(and "repo:foo" (concat "a" "another" "path/"))`),
-			WantHeuristic: Diff(`(and "repo:foo" (concat "/a/" "/another/path/"))`),
+			WantGrammar:   `(and "repo:foo" (concat "/a/" "/another/path/"))`,
+			WantHeuristic: Same,
 		},
 		{
 			Input:         `\t\r\n`,
