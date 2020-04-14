@@ -12,18 +12,18 @@ export const CampaignsMarketing: React.FunctionComponent<CampaignsMarketingProps
             </h1>
             <p className="lead">
                 <em>
-                    Campaigns are currently in beta: during the beta period Campaigns are free to use, after the beta
-                    period Campaigns will be a paid add-on. Please <a href="mailto:sales@sourcegraph.com">contact us</a>{' '}
-                    for more information.
+                    Campaigns are currently in beta. During the beta period, Campaigns are free to use. After the beta
+                    period, Campaigns will be available as a paid add-on. Please{' '}
+                    <a href="mailto:sales@sourcegraph.com">contact us</a> for more information.
                 </em>
             </p>
-            <h2 className="mb-6">Make large-scale code changes across all your repositories and code hosts.</h2>
+            <h2 className="mb-6">Make and track large-scale changes across all code</h2>
             <p className="mt-3">
                 <a href="https://about.sourcegraph.com/product/code-change-management" rel="noopener">
-                    Learn how
+                    Learn how to run Campaigns
                 </a>{' '}
-                campaigns can help you remove legacy code, fix critical security issues, and pay down tech debt. See it
-                in action to run <code>gofmt</code> over all Go repositories:
+                to remove legacy code, fix critical security issues, and pay down tech debt. See it in action below
+                performing <code>gofmt</code> over all Go repositories:
             </p>
 
             <div className="position-relative campaign-marketing--video-wrapper">
@@ -40,12 +40,12 @@ export const CampaignsMarketing: React.FunctionComponent<CampaignsMarketingProps
         {body}
 
         <section className="py-5">
-            <h2>Share your feedback</h2>
+            <h2>Ask questions and share feedback</h2>
             <p>
                 Get in touch on Twitter <a href="https://twitter.com/srcgraph">@srcgraph</a>, file an issue in our{' '}
                 <a href="https://github.com/sourcegraph/sourcegraph/issues">public issue tracker</a>, or email{' '}
-                <a href="mailto:feedback@sourcegraph.com">feedback@sourcegraph.com</a> to share your feedback and use
-                cases. We look forward to hearing from you!
+                <a href="mailto:feedback@sourcegraph.com">feedback@sourcegraph.com</a>. We look forward to hearing from
+                you!
             </p>
         </section>
     </>
