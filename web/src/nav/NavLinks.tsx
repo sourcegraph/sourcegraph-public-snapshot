@@ -61,11 +61,7 @@ export class NavLinks extends React.PureComponent<Props> {
                 <WebActionsNavItems {...this.props} menu={ContributableMenu.GlobalNav} />
                 {this.props.activation && (
                     <li className="nav-item">
-                        <ActivationDropdown
-                            alwaysShow={true}
-                            activation={this.props.activation}
-                            history={this.props.history}
-                        />
+                        <ActivationDropdown activation={this.props.activation} history={this.props.history} />
                     </li>
                 )}
                 {(!this.props.showDotComMarketing || !!this.props.authenticatedUser) && (
