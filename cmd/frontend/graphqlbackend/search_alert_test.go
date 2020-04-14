@@ -200,14 +200,14 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 	ctx := context.Background()
 	calledResolveRepositories := false
 
-	generateRepoRevs := func (numRepos int) []*search.RepositoryRevisions {
+	generateRepoRevs := func(numRepos int) []*search.RepositoryRevisions {
 		repoRevs := make([]*search.RepositoryRevisions, numRepos)
-		chars := []string{"a","b","c"} // create some parent names
+		chars := []string{"a", "b", "c"} // create some parent names
 		j := 0
 		for i := range repoRevs {
 			repoRevs[i] = &search.RepositoryRevisions{
 				Repo: &types.Repo{
-					ID: api.RepoID(i),
+					ID:   api.RepoID(i),
 					Name: api.RepoName(chars[j] + "/repoName" + strconv.Itoa(i)),
 				},
 			}
@@ -220,7 +220,7 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 		return repoRevs
 	}
 
-	setMockResolveRepositories := func (numRepos int) {
+	setMockResolveRepositories := func(numRepos int) {
 		mockResolveRepositories = func(effectiveRepoFieldValues []string) (repoRevs, missingRepoRevs []*search.RepositoryRevisions, overLimit bool, err error) {
 			calledResolveRepositories = true
 			missingRepoRevs = make([]*search.RepositoryRevisions, 0)
@@ -233,34 +233,34 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 	cases := []struct {
 		name      string
 		repoRevs  int
-		query	  string
+		query     string
 		wantAlert *searchAlert
 	}{
 		{
-			name:      "should return default alert",
-			repoRevs:  0,
-			query:	   "a query",
+			name:     "should return default alert",
+			repoRevs: 0,
+			query:    "a query",
 			wantAlert: &searchAlert{
-				prometheusType: "over_repo_limit",
-				title:          "Too many matching repositories",
+				prometheusType:  "over_repo_limit",
+				title:           "Too many matching repositories",
 				proposedQueries: nil,
-				description: 	 "Use a 'repo:' or 'repogroup:' filter to narrow your search and see results.",
+				description:     "Use a 'repo:' or 'repogroup:' filter to narrow your search and see results.",
 			},
 		},
 		{
-			name:      "should return default alert",
-			repoRevs:  1,
-			query:	   "a query",
+			name:     "should return default alert",
+			repoRevs: 1,
+			query:    "a query",
 			wantAlert: &searchAlert{
 				prometheusType: "over_repo_limit",
 				title:          "Too many matching repositories",
 				proposedQueries: []*searchQueryDescription{
 					&searchQueryDescription{"in the repository a/repoName0",
-					"a query repo:^a/repoName0$",
-					query.SearchType(0),
+						"a query repo:^a/repoName0$",
+						query.SearchType(0),
 					},
 				},
-				description: 	 "Use a 'repo:' or 'repogroup:' filter to narrow your search and see results.",
+				description: "Use a 'repo:' or 'repogroup:' filter to narrow your search and see results.",
 			},
 		},
 	}
@@ -278,19 +278,8 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 			t.Error("!calledSearchRepositories")
 		}
 		wantAlert := test.wantAlert
-		fmt.Println("YEYE", alert)
-		fmt.Println("YEYE", test.wantAlert)
 		if !reflect.DeepEqual(alert, wantAlert) {
 			t.Fatalf("test %s, have alert %+v, want: %+v", test.name, alert, test.wantAlert)
 		}
-		//if alert.title != wantAlert.title || alert.description != wantAlert.description || alert.prometheusType != wantAlert.prometheusType {
-		//	t.Fatalf("test %s, have alert %+v, want: %+v", test.name, alert, test.wantAlert)
-		//}
-		//for i, wantQuery := range wantAlert.proposedQueries {
-		//	query := alert.proposedQueries[i]
-		//	if wantQuery.description != query.description || wantQuery.patternType != query.patternType || wantQuery.query != query.query {
-		//		t.Fatalf("test %s, have alert %+v, want: %+v", test.name, alert, test.wantAlert)
-		//	}
-		//}
 	}
 }

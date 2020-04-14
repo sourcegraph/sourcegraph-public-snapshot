@@ -341,7 +341,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAle
 	}
 }
 
-func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) (*searchAlert) {
+func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert {
 	// Try to suggest the most helpful repo: filters to narrow the query.
 	//
 	// For example, suppose the query contains "repo:kubern" and it matches > 30
@@ -366,10 +366,10 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) (*searchAler
 
 	buildAlert := func(proposedQueries []*searchQueryDescription, description string) *searchAlert {
 		return &searchAlert{
-			prometheusType: "over_repo_limit",
-			title:          "Too many matching repositories",
+			prometheusType:  "over_repo_limit",
+			title:           "Too many matching repositories",
 			proposedQueries: proposedQueries,
-			description: 	 description,
+			description:     description,
 		}
 	}
 
