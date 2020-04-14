@@ -9,9 +9,9 @@ import { defer, Subject, Subscription } from 'rxjs'
 import { catchError, delay, distinctUntilChanged, map, retryWhen, switchMap, tap } from 'rxjs/operators'
 import {
     CloneInProgressError,
-    CLONE_IN_PROGRESS_ERROR_NAME,
-    REPO_NOT_FOUND_ERROR_NAME,
-    REV_NOT_FOUND_ERROR_NAME,
+    isCloneInProgressErrorLike,
+    isRevNotFoundErrorLike,
+    isRepoNotFoundErrorLike,
 } from '../../../shared/src/backend/errors'
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
@@ -124,15 +124,13 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                             retryWhen(errors =>
                                 errors.pipe(
                                     tap(error => {
-                                        switch (error.name) {
-                                            case CLONE_IN_PROGRESS_ERROR_NAME:
-                                                // Display cloning screen to the user and retry
-                                                this.props.onResolvedRevOrError(error)
-                                                return
-                                            default:
-                                                // Display error to the user and do not retry
-                                                throw error
+                                        if (isCloneInProgressErrorLike(error)) {
+                                            // Display cloning screen to the user and retry
+                                            this.props.onResolvedRevOrError(error)
+                                            return
                                         }
+                                        // Display error to the user and do not retry
+                                        throw error
                                     }),
                                     delay(1000)
                                 )
@@ -175,43 +173,42 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
 
         if (isErrorLike(this.props.resolvedRevOrError)) {
             // Show error page
-            switch (this.props.resolvedRevOrError.name) {
-                case CLONE_IN_PROGRESS_ERROR_NAME:
-                    return (
-                        <RepositoryCloningInProgressPage
-                            repoName={this.props.repo.name}
-                            progress={(this.props.resolvedRevOrError as CloneInProgressError).progress}
-                        />
-                    )
-                case REPO_NOT_FOUND_ERROR_NAME:
-                    return (
-                        <HeroPage
-                            icon={MapSearchIcon}
-                            title="404: Not Found"
-                            subtitle="The requested repository was not found."
-                        />
-                    )
-                case REV_NOT_FOUND_ERROR_NAME:
-                    if (!this.props.rev) {
-                        return <EmptyRepositoryPage />
-                    }
-
-                    return (
-                        <HeroPage
-                            icon={MapSearchIcon}
-                            title="404: Not Found"
-                            subtitle="The requested revision was not found."
-                        />
-                    )
-                default:
-                    return (
-                        <HeroPage
-                            icon={AlertCircleIcon}
-                            title="Error"
-                            subtitle={<ErrorMessage error={this.props.resolvedRevOrError} />}
-                        />
-                    )
+            if (isCloneInProgressErrorLike(this.props.resolvedRevOrError)) {
+                return (
+                    <RepositoryCloningInProgressPage
+                        repoName={this.props.repo.name}
+                        progress={(this.props.resolvedRevOrError as CloneInProgressError).progress}
+                    />
+                )
             }
+            if (isRepoNotFoundErrorLike(this.props.resolvedRevOrError)) {
+                return (
+                    <HeroPage
+                        icon={MapSearchIcon}
+                        title="404: Not Found"
+                        subtitle="The requested repository was not found."
+                    />
+                )
+            }
+            if (isRevNotFoundErrorLike(this.props.resolvedRevOrError)) {
+                if (!this.props.rev) {
+                    return <EmptyRepositoryPage />
+                }
+                return (
+                    <HeroPage
+                        icon={MapSearchIcon}
+                        title="404: Not Found"
+                        subtitle="The requested revision was not found."
+                    />
+                )
+            }
+            return (
+                <HeroPage
+                    icon={AlertCircleIcon}
+                    title="Error"
+                    subtitle={<ErrorMessage error={this.props.resolvedRevOrError} />}
+                />
+            )
         }
 
         const context: RepoRevContainerContext = {

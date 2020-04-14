@@ -152,6 +152,8 @@ var getBySQLColumns = []string{
 	"uri",
 	"description",
 	"language",
+	"fork",
+	"archived",
 }
 
 func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types.Repo, error) {
@@ -218,6 +220,8 @@ func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
 		&dbutil.NullString{S: &r.URI},
 		&r.Description,
 		&r.Language,
+		&r.Fork,
+		&r.Archived,
 	)
 }
 

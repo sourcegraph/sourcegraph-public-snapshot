@@ -66,7 +66,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// If this is a no-test branch, then run only the Docker build. No tests are run.
 		app := c.branch[27:]
 		pipelineOperations = []func(*bk.Pipeline){
-			addCanidateDockerImage(c, app),
+			addCandidateDockerImage(c, app),
 			wait,
 			addFinalDockerImage(c, app, false),
 		}
@@ -108,16 +108,16 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// PERF: Try to order steps such that slower steps are first.
 		pipelineOperations = []func(*bk.Pipeline){
 			triggerE2E(c, env),
-			addLint,    // ~5m
-			addWebApp,  // ~3m
-			addGoTests, // ~2m
-			addGoBuild, // ~2m
-			addCheck,   // ~2m
-			addBrowserExt,
-			addPreciseCodeIntelSystem,
-			addSharedTests,
-			addPostgresBackcompat,
-			addDockerfileLint,
+			addLint,                   // ~3.5m
+			addWebApp,                 // ~3m
+			addSharedTests,            // ~3m
+			addBrowserExt,             // ~2m
+			addGoTests,                // ~1.5m
+			addPreciseCodeIntelSystem, // ~1.5m
+			addCheck,                  // ~1m
+			addGoBuild,                // ~0.5m
+			addPostgresBackcompat,     // ~0.25m
+			addDockerfileLint,         // ~0.2m
 			addDockerImages(c, false),
 			wait,
 			addCodeCov,

@@ -6,15 +6,11 @@ import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { queryRepositoryComparisonFileDiffs } from '../backend/diffs'
 import { OpenDiffInSourcegraphProps } from '../repo'
 import { getPlatformName } from '../util/context'
-import { SourcegraphIconButton } from './Button'
+import { SourcegraphIconButton, SourcegraphIconButtonProps } from './Button'
 import classNames from 'classnames'
 
-interface Props extends PlatformContextProps<'requestGraphQL'> {
+interface Props extends SourcegraphIconButtonProps, PlatformContextProps<'requestGraphQL'> {
     openProps: OpenDiffInSourcegraphProps
-    className?: string
-    iconClassName?: string
-    ariaLabel?: string
-    onClick?: (e: React.MouseEvent<HTMLElement>) => void
 }
 
 interface State {
@@ -75,8 +71,7 @@ export class OpenDiffOnSourcegraph extends React.Component<Props, State> {
             <SourcegraphIconButton
                 {...this.props}
                 className={classNames('open-on-sourcegraph', this.props.className)}
-                iconClassName={this.props.iconClassName}
-                url={url}
+                href={url}
             />
         )
     }

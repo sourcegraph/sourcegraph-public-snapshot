@@ -16,10 +16,11 @@ import (
 
 // SyncRegistry manages a ChangesetSyncer per external service.
 type SyncRegistry struct {
-	Ctx         context.Context
-	SyncStore   SyncStore
-	RepoStore   RepoStore
-	HTTPFactory *httpcli.Factory
+	Ctx                 context.Context
+	SyncStore           SyncStore
+	RepoStore           RepoStore
+	HTTPFactory         *httpcli.Factory
+	RateLimiterRegistry *repos.RateLimiterRegistry
 
 	priorityNotify chan []int64
 
@@ -34,14 +35,15 @@ type RepoStore interface {
 
 // NewSycnRegistry creates a new sync registry which starts a syncer for each external service and will update them
 // when external services are changed, added or removed.
-func NewSyncRegistry(ctx context.Context, store SyncStore, repoStore RepoStore, cf *httpcli.Factory) *SyncRegistry {
+func NewSyncRegistry(ctx context.Context, store SyncStore, repoStore RepoStore, cf *httpcli.Factory, rateLimiterRegistry *repos.RateLimiterRegistry) *SyncRegistry {
 	r := &SyncRegistry{
-		Ctx:            ctx,
-		SyncStore:      store,
-		RepoStore:      repoStore,
-		HTTPFactory:    cf,
-		priorityNotify: make(chan []int64, 500),
-		syncers:        make(map[int64]*ChangesetSyncer),
+		Ctx:                 ctx,
+		SyncStore:           store,
+		RepoStore:           repoStore,
+		HTTPFactory:         cf,
+		RateLimiterRegistry: rateLimiterRegistry,
+		priorityNotify:      make(chan []int64, 500),
+		syncers:             make(map[int64]*ChangesetSyncer),
 	}
 
 	services, err := repoStore.ListExternalServices(ctx, repos.StoreListExternalServicesArgs{})
@@ -80,7 +82,8 @@ func (s *SyncRegistry) Add(extServiceID int64) {
 	case "GITHUB", "BITBUCKETSERVER":
 	// Supported by campaigns
 	default:
-		log15.Warn("Syncer not started for unsupported code host", "kind", service.Kind)
+		log15.Debug("Campaigns syncer not started for unsupported code host", "kind", service.Kind)
+		return
 	}
 
 	s.mu.Lock()
@@ -169,21 +172,27 @@ func (s *SyncRegistry) EnqueueChangesetSyncs(ctx context.Context, ids []int64) e
 
 // HandleExternalServiceSync handles changes to external services.
 func (s *SyncRegistry) HandleExternalServiceSync(es api.ExternalService) {
-	// For now we just need to start and stop them.
-	// TODO: Once rate limiters are added we'll need to update those
 	s.mu.Lock()
 	syncer, exists := s.syncers[es.ID]
 	s.mu.Unlock()
 
-	if es.DeletedAt == nil && !exists {
+	if timeIsNilOrZero(es.DeletedAt) && !exists {
 		s.Add(es.ID)
 	}
+
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if es.DeletedAt != nil && exists {
 		delete(s.syncers, es.ID)
 		syncer.cancel()
 	}
+}
+
+func timeIsNilOrZero(t *time.Time) bool {
+	if t == nil {
+		return true
+	}
+	return t.IsZero()
 }
 
 // shardChangeset assigns an external service to the supplied changeset.

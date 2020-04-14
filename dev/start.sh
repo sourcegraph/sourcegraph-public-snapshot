@@ -30,7 +30,6 @@ if ! psql -wc '\x' >/dev/null; then
     exit 1
 fi
 
-export LIGHTSTEP_INCLUDE_SENSITIVE=true
 export PGSSLMODE=disable
 
 # Default to "info" level debugging, and "condensed" log format (nice for human readers)

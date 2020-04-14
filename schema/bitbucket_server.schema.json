@@ -22,6 +22,29 @@
     }
   ],
   "properties": {
+    "rateLimit": {
+      "description": "Rate limit applied when making background API requests to BitbucketServer.",
+      "title": "BitbucketServerRateLimit",
+      "type": "object",
+      "required": ["enabled", "requestsPerHour"],
+      "properties": {
+        "enabled": {
+          "description": "true if rate limiting is enabled.",
+          "type": "boolean",
+          "default": true
+        },
+        "requestsPerHour": {
+          "description": "Requests per hour permitted. This is an average, calculated per second.",
+          "type": "number",
+          "default": 28800,
+          "minimum": 0
+        }
+      },
+      "default": {
+        "enabled": true,
+        "requestsPerHour": 28800
+      }
+    },
     "url": {
       "description": "URL of a Bitbucket Server instance, such as https://bitbucket.example.com.",
       "type": "string",

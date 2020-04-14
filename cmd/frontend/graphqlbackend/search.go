@@ -30,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	querytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -86,8 +87,11 @@ func NewSearchImplementer(args *SearchArgs) (SearchImplementer, error) {
 	}
 
 	var queryInfo query.QueryInfo
-	if conf.AndOrQueryEnabled() {
-		queryInfo, err = query.ParseAndOr(args.Query)
+	if conf.AndOrQueryEnabled() && searchType != query.SearchTypeLiteral && query.ContainsAndOrKeyword(args.Query) {
+		// To process the input as an and/or query, the flag must be enabled, not be a
+		// literal search, and must contain either an 'and' or 'or' expression.
+		// Else, fallback to the older existing parser.
+		queryInfo, err = query.ProcessAndOr(args.Query)
 		if err != nil {
 			return alertForQuery(args.Query, err), nil
 		}
@@ -98,22 +102,21 @@ func NewSearchImplementer(args *SearchArgs) (SearchImplementer, error) {
 		}
 	}
 
+	// If stable:truthy is specified, make the query return a stable result ordering.
+	if queryInfo.BoolValue(query.FieldStable) {
+		args, queryInfo, err = queryForStableResults(args, queryInfo)
+		if err != nil {
+			return alertForQuery(queryString, err), nil
+		}
+	}
+
 	// If the request is a paginated one, decode those arguments now.
 	var pagination *searchPaginationInfo
 	if args.First != nil {
-		cursor, err := unmarshalSearchCursor(args.After)
+		pagination, err = processPaginationRequest(args, queryInfo)
 		if err != nil {
 			return nil, err
 		}
-		if *args.First < 0 || *args.First > 5000 {
-			return nil, errors.New("search: requested pagination 'first' value outside allowed range (0 - 5000)")
-		}
-		pagination = &searchPaginationInfo{
-			cursor: cursor,
-			limit:  *args.First,
-		}
-	} else if args.After != nil {
-		return nil, errors.New("Search: paginated requests providing a 'after' but no 'first' is forbidden")
 	}
 
 	return &searchResolver{
@@ -128,6 +131,55 @@ func NewSearchImplementer(args *SearchArgs) (SearchImplementer, error) {
 
 func (r *schemaResolver) Search(args *SearchArgs) (SearchImplementer, error) {
 	return NewSearchImplementer(args)
+}
+
+// queryForStableResults transforms a query that returns a stable result
+// ordering. The transformed query uses pagination underneath the hood.
+func queryForStableResults(args *SearchArgs, queryInfo query.QueryInfo) (*SearchArgs, query.QueryInfo, error) {
+	if queryInfo.BoolValue(query.FieldStable) {
+		var stableResultCount int32
+		if _, countPresent := queryInfo.Fields()["count"]; countPresent {
+			count, _ := queryInfo.StringValue(query.FieldCount)
+			count64, err := strconv.ParseInt(count, 10, 32)
+			if err != nil {
+				return nil, nil, err
+			}
+			stableResultCount = int32(count64)
+			if stableResultCount > maxSearchResultsPerPaginatedRequest {
+				return nil, nil, fmt.Errorf("Stable searches are limited to at max count:%d results. Consider removing 'stable:', narrowing the search with 'repo:', or using the paginated search API.", maxSearchResultsPerPaginatedRequest)
+			}
+		} else {
+			stableResultCount = defaultMaxSearchResults
+		}
+		args.First = &stableResultCount
+		fileValue := "file"
+		// Pagination only works for file content searches, and will
+		// raise an error otherwise. If stable is explicitly set, this
+		// is implied. So, force this query to only return file content
+		// results.
+		queryInfo.Fields()["type"] = []*querytypes.Value{{String: &fileValue}}
+	}
+	return args, queryInfo, nil
+}
+
+func processPaginationRequest(args *SearchArgs, queryInfo query.QueryInfo) (*searchPaginationInfo, error) {
+	var pagination *searchPaginationInfo
+	if args.First != nil {
+		cursor, err := unmarshalSearchCursor(args.After)
+		if err != nil {
+			return nil, err
+		}
+		if *args.First < 0 || *args.First > maxSearchResultsPerPaginatedRequest {
+			return nil, fmt.Errorf("search: requested pagination 'first' value outside allowed range (0 - %d)", maxSearchResultsPerPaginatedRequest)
+		}
+		pagination = &searchPaginationInfo{
+			cursor: cursor,
+			limit:  *args.First,
+		}
+	} else if args.After != nil {
+		return nil, errors.New("search: paginated requests providing an 'after' cursor but no 'first' value is forbidden")
+	}
+	return pagination, nil
 }
 
 // detectSearchType returns the search type to perfrom ("regexp", or
@@ -208,6 +260,7 @@ func (r *searchResolver) countIsSet() bool {
 }
 
 const defaultMaxSearchResults = 30
+const maxSearchResultsPerPaginatedRequest = 5000
 
 func (r *searchResolver) maxResults() int32 {
 	if r.pagination != nil {
@@ -767,10 +820,11 @@ func SearchRepos(ctx context.Context, plainQuery string) ([]*RepositoryResolver,
 	var queryInfo query.QueryInfo
 	var err error
 	if conf.AndOrQueryEnabled() {
-		queryInfo, err = query.ParseAndOr(plainQuery)
+		andOrQuery, err := query.ParseAndOr(plainQuery)
 		if err != nil {
 			return nil, err
 		}
+		queryInfo = &query.AndOrQuery{Query: andOrQuery}
 	} else {
 		queryInfo, err = query.ParseAndCheck(queryString)
 		if err != nil {

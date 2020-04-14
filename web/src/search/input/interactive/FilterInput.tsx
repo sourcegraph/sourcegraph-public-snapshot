@@ -100,7 +100,7 @@ interface Props extends Pick<InteractiveSearchProps, 'filtersInQuery'> {
     toggleFilterNegated: (filterKey: string) => void
 }
 
-const LOADING: 'loading' = 'loading'
+const LOADING = 'loading' as const
 
 interface State {
     /** Only show suggestions if search input is focused */

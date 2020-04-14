@@ -1,8 +1,8 @@
 FROM golang:1.13-alpine@sha256:ed003971a4809c9ae45afe2d318c24b9e3f6b30864a322877c69a46c504d852c AS builder
 
-COPY ./src-observability-generator /go/src/
+COPY observability /go/src/src-observability-generator
 WORKDIR /go/src/src-observability-generator
-RUN CGO_ENABLED=0 go install .
+RUN CGO_ENABLED=0 go build -o /go/bin/src-observability-generator
 RUN mkdir -p /generated/grafana
 RUN PROMETHEUS_DIR='' GRAFANA_DIR=/generated/grafana /go/bin/src-observability-generator
 
@@ -24,6 +24,13 @@ RUN ./build.sh
 
 FROM grafana/grafana:6.7.1@sha256:1ff3999e0fc08a3909e9a3ecdf6e74b4789db9b67c8297c44fdee1e167b9375f as production
 
+ARG COMMIT_SHA="unknown"
+ARG DATE="unknown"
+ARG VERSION="unknown"
+
+LABEL org.opencontainers.image.revision=${COMMIT_SHA}
+LABEL org.opencontainers.image.created=${DATE}
+LABEL org.opencontainers.image.version=${VERSION}
 LABEL org.opencontainers.image.url=https://sourcegraph.com/
 LABEL org.opencontainers.image.source=https://github.com/sourcegraph/sourcegraph/
 LABEL org.opencontainers.image.documentation=https://docs.sourcegraph.com/

@@ -49,11 +49,10 @@ type prometheusTracer struct {
 }
 
 func (prometheusTracer) TraceQuery(ctx context.Context, queryString string, operationName string, variables map[string]interface{}, varTypes map[string]*introspection.Type) (context.Context, trace.TraceQueryFinishFunc) {
-	if !ot.ShouldTrace(ctx) {
-		return ctx, trace.TraceQueryFinishFunc(func([]*gqlerrors.QueryError) {})
+	var finish trace.TraceQueryFinishFunc
+	if ot.ShouldTrace(ctx) {
+		ctx, finish = trace.OpenTracingTracer{}.TraceQuery(ctx, queryString, operationName, variables, varTypes)
 	}
-
-	traceCtx, finish := trace.OpenTracingTracer{}.TraceQuery(ctx, queryString, operationName, variables, varTypes)
 
 	// Note: We don't care about the error here, we just extract the username if
 	// we get a non-nil user object.
@@ -86,17 +85,21 @@ VARIABLES
 
 `, requestName, currentUserName, queryString, variables)
 	}
-	return traceCtx, finish
+	return ctx, func(err []*gqlerrors.QueryError) {
+		if finish != nil {
+			finish(err)
+		}
+	}
 }
 
 func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldName string, trivial bool, args map[string]interface{}) (context.Context, trace.TraceFieldFinishFunc) {
-	if !ot.ShouldTrace(ctx) {
-		return ctx, trace.TraceFieldFinishFunc(func(*gqlerrors.QueryError) {})
+	var finish trace.TraceFieldFinishFunc
+	if ot.ShouldTrace(ctx) {
+		ctx, finish = trace.OpenTracingTracer{}.TraceField(ctx, label, typeName, fieldName, trivial, args)
 	}
 
-	traceCtx, finish := trace.OpenTracingTracer{}.TraceField(ctx, label, typeName, fieldName, trivial, args)
 	start := time.Now()
-	return traceCtx, func(err *gqlerrors.QueryError) {
+	return ctx, func(err *gqlerrors.QueryError) {
 		isErrStr := strconv.FormatBool(err != nil)
 		graphqlFieldHistogram.WithLabelValues(typeName, fieldName, isErrStr).Observe(time.Since(start).Seconds())
 
@@ -105,7 +108,9 @@ func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldNa
 			isExact := strconv.FormatBool(fieldName == "lsif")
 			codeIntelSearchHistogram.WithLabelValues(isExact, isErrStr).Observe(time.Since(start).Seconds())
 		}
-		finish(err)
+		if finish != nil {
+			finish(err)
+		}
 	}
 }
 

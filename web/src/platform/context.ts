@@ -6,7 +6,7 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../shared/src/platform/context'
 import { mutateSettings, updateSettings } from '../../../shared/src/settings/edit'
 import { gqlToCascade } from '../../../shared/src/settings/settings'
-import { createAggregateError } from '../../../shared/src/util/errors'
+import { createAggregateError, asError } from '../../../shared/src/util/errors'
 import { LocalStorageSubject } from '../../../shared/src/util/LocalStorageSubject'
 import { toPrettyBlobURL } from '../../../shared/src/util/url'
 import { queryGraphQL, requestGraphQL } from '../backend/graphql'
@@ -40,7 +40,7 @@ export function createPlatformContext(): PlatformContext {
             try {
                 await updateSettings(context, subject, edit, mutateSettings)
             } catch (error) {
-                if ('message' in error && error.message.includes('version mismatch')) {
+                if (asError(error).message.includes('version mismatch')) {
                     // The user probably edited the settings in another tab, so
                     // try once more.
                     updatedSettings.next(await fetchViewerSettings().toPromise())

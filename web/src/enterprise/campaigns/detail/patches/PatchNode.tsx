@@ -101,6 +101,7 @@ export const PatchNode: React.FunctionComponent<PatchNodeProps> = ({
             {fileDiffs ? (
                 <Collapsible
                     titleClassName="changeset-node__content flex-fill"
+                    expandedButtonClassName="mb-3"
                     title={changesetNodeRow}
                     wholeTitleClickable={false}
                 >

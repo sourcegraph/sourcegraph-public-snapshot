@@ -78,6 +78,22 @@ func (r *RepositoryResolver) ExternalRepo() *api.ExternalRepoSpec {
 	return &r.repo.ExternalRepo
 }
 
+func (r *RepositoryResolver) IsFork(ctx context.Context) (bool, error) {
+	err := r.hydrate(ctx)
+	if err != nil {
+		return false, err
+	}
+	return r.repo.RepoFields.Fork, nil
+}
+
+func (r *RepositoryResolver) IsArchived(ctx context.Context) (bool, error) {
+	err := r.hydrate(ctx)
+	if err != nil {
+		return false, err
+	}
+	return r.repo.RepoFields.Archived, nil
+}
+
 func (r *RepositoryResolver) URI(ctx context.Context) (string, error) {
 	err := r.hydrate(ctx)
 	if err != nil {

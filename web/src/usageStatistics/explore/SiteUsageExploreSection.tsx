@@ -12,7 +12,7 @@ interface Props {
     isLightTheme: boolean
 }
 
-const LOADING: 'loading' = 'loading'
+const LOADING = 'loading' as const
 
 interface State {
     /** The site usage statistics, loading, or an error. */

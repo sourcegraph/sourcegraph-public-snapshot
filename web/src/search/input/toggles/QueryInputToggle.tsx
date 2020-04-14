@@ -71,7 +71,9 @@ export class QueryInputToggle extends React.Component<ToggleProps> {
                 className={classNames(
                     'btn btn-icon icon-inline toggle-container__toggle e2e-regexp-toggle',
                     this.props.className,
-                    { disabled: this.props.disabledCondition }
+                    { disabled: this.props.disabledCondition },
+                    { 'toggle-container__toggle--active': this.props.isActive },
+                    this.props.activeClassName
                 )}
                 role="checkbox"
                 aria-disabled={this.props.disabledCondition}
@@ -80,15 +82,7 @@ export class QueryInputToggle extends React.Component<ToggleProps> {
                 tabIndex={0}
                 data-tooltip={tooltipValue}
             >
-                <span
-                    className={classNames(
-                        'toggle-container__toggle-icon',
-                        { 'toggle-container__toggle-icon--active': this.props.isActive },
-                        this.props.activeClassName
-                    )}
-                >
-                    <Icon />
-                </span>
+                <Icon />
             </div>
         )
     }

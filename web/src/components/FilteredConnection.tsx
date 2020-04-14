@@ -24,9 +24,11 @@ import { pluralize } from '../../../shared/src/util/strings'
 import { Form } from './Form'
 import { RadioButtons } from './RadioButtons'
 import { ErrorMessage } from './alerts'
+import { hasProperty } from '../../../shared/src/util/types'
 
 /** Checks if the passed value satisfies the GraphQL Node interface */
-const hasID = (obj: any): obj is { id: GQL.ID } => obj && typeof obj.id === 'string'
+const hasID = (value: unknown): value is { id: GQL.ID } =>
+    typeof value === 'object' && value !== null && hasProperty('id')(value) && typeof value.id === 'string'
 
 interface FilterProps {
     /** All filters. */
@@ -160,7 +162,7 @@ interface ConnectionNodesProps<C extends Connection<N>, N, NP = {}>
 class ConnectionNodes<C extends Connection<N>, N, NP = {}> extends React.PureComponent<ConnectionNodesProps<C, N, NP>> {
     public render(): JSX.Element | null {
         const NodeComponent = this.props.nodeComponent
-        const ListComponent: any = this.props.listComponent || 'ul' // TODO: remove cast when https://github.com/Microsoft/TypeScript/issues/28768 is fixed
+        const ListComponent = this.props.listComponent || 'ul'
         const HeadComponent = this.props.headComponent
         const FootComponent = this.props.footComponent
         const TotalCountSummaryComponent = this.props.totalCountSummaryComponent

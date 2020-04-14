@@ -91,8 +91,11 @@ func (r *campaignResolver) Name() string {
 	return r.Campaign.Name
 }
 
-func (r *campaignResolver) Description() string {
-	return r.Campaign.Description
+func (r *campaignResolver) Description() *string {
+	if r.Campaign.Description == "" {
+		return nil
+	}
+	return &r.Campaign.Description
 }
 
 func (r *campaignResolver) Branch() *string {

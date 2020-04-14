@@ -14,8 +14,11 @@ describe('Database', () => {
     const makeDatabase = async (filename: string): Promise<Database> => {
         // Create a filesystem read stream for the given test file. This will cover
         // the cases where `yarn test` is run from the root or from the lsif directory.
-        const root = (await fs.exists('lsif')) ? 'lsif' : ''
-        const sourceFile = nodepath.join(root, 'test-data', filename)
+        const sourceFile = nodepath.join(
+            (await fs.exists('cmd')) ? 'cmd/precise-code-intel' : '',
+            'test-data',
+            filename
+        )
         const databaseFile = nodepath.join(storageRoot, uuid.v4())
 
         await convertLsif({

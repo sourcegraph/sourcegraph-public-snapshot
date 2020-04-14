@@ -11,6 +11,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { fetchRepository } from './backend'
 import { ErrorAlert } from '../../components/alerts'
 import { defaultExternalServices } from '../../site-admin/externalServices'
+import { asError } from '../../../../shared/src/util/errors'
 
 interface Props extends RouteComponentProps<{}> {
     repo: GQL.IRepository
@@ -49,7 +50,7 @@ export class RepoSettingsOptionsPage extends React.PureComponent<Props, State> {
         this.subscriptions.add(
             this.repoUpdates.pipe(switchMap(() => fetchRepository(this.props.repo.name))).subscribe(
                 repo => this.setState({ repo }),
-                err => this.setState({ error: err.message })
+                err => this.setState({ error: asError(err).message })
             )
         )
     }

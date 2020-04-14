@@ -771,7 +771,7 @@ func (h *BitbucketServerWebhook) Upsert(every time.Duration) {
 				continue
 			}
 
-			client, err := bbs.NewClientWithConfig(con)
+			client, err := bbs.NewClient(con, nil)
 			if err != nil {
 				log15.Error("Upserting BBS Webhook [Creating Client]", "err", err)
 				continue

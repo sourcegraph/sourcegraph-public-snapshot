@@ -30,17 +30,20 @@
 // Make sure only our code view toolbar shrinks and wraps,
 // not GitHub's UI groups
 .repository-content {
-    .Box-header {
-        > .text-mono {
-            // only let Sourcegraph toolbar shrink
-            flex-shrink: 0 !important;
-        }
-        > div:nth-child(2) {
-            > div:not(.sourcegraph-github-file-code-view-toolbar-mount) {
+    // Exclude tree pages
+    > .Box:not(.Box--condensed) {
+        > .Box-header:not(.Box-header--blue) {
+            > .text-mono {
                 // only let Sourcegraph toolbar shrink
-                flex-shrink: 0;
-                display: flex;
-                align-items: center;
+                flex-shrink: 0 !important;
+            }
+            > div:nth-child(2) {
+                > div:not(.sourcegraph-github-file-code-view-toolbar-mount) {
+                    // only let Sourcegraph toolbar shrink
+                    flex-shrink: 0;
+                    display: flex;
+                    align-items: center;
+                }
             }
         }
     }
@@ -49,11 +52,12 @@
 // Diff views
 .diff-view {
     .file-header {
+        flex-wrap: wrap;
         .file-info {
             flex: 0 2 auto !important;
         }
         .file-actions {
-            flex: 1 1 50%;
+            flex: 1 1 auto;
             margin-left: 1rem;
             display: flex;
             align-items: center;
