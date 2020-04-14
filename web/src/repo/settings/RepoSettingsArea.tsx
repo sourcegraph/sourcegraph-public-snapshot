@@ -13,6 +13,7 @@ import { fetchRepository } from './backend'
 import { RepoSettingsSidebar, RepoSettingsSideBarItems } from './RepoSettingsSidebar'
 import { RouteDescriptor } from '../../util/contributions'
 import { ErrorMessage } from '../../components/alerts'
+import { asError } from '../../../../shared/src/util/errors'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
@@ -62,7 +63,7 @@ export class RepoSettingsArea extends React.Component<Props> {
                 )
                 .subscribe(
                     repo => this.setState({ repo }),
-                    err => this.setState({ error: err.message })
+                    err => this.setState({ error: asError(err).message })
                 )
         )
         this.componentUpdates.next(this.props)

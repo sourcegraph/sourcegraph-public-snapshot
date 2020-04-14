@@ -7,6 +7,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -38,6 +39,24 @@ type Container struct {
 	Groups []Group
 }
 
+func (c *Container) validate() error {
+	if !isValidUID(c.Name) {
+		return fmt.Errorf("Container.Name must be lowercase alphanumeric + dashes; found \"%s\"", c.Name)
+	}
+	if c.Title != strings.Title(c.Title) {
+		return fmt.Errorf("Container.Title must be in Title Case; found \"%s\" want \"%s\"", c.Title, strings.Title(c.Title))
+	}
+	if c.Description != withPeriod(c.Description) || c.Description != upperFirst(c.Description) {
+		return fmt.Errorf("Container.Description must be sentence starting with an uppercas eletter and ending with period; found \"%s\"", c.Description)
+	}
+	for _, g := range c.Groups {
+		if err := g.validate(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // Group describes a group of observable information about a container.
 type Group struct {
 	// Title of the group, briefly summarizing what this group is about, or
@@ -57,6 +76,9 @@ type Group struct {
 }
 
 func (g Group) validate() error {
+	if g.Title != upperFirst(g.Title) || g.Title == withPeriod(g.Title) {
+		return fmt.Errorf("Group.Title must start with an uppercase letter and not end with a period; found \"%s\"", g.Title)
+	}
 	for _, r := range g.Rows {
 		if err := r.validate(); err != nil {
 			return err
@@ -126,6 +148,13 @@ type Observable struct {
 	// would not want an alert to fire if no data was present, so this would be set to true.
 	DataMayNotExist bool
 
+	// DataMayBeNaN indicates whether or not the query may return NaN regularly. Most often,
+	// this should be false as NaN often indicates a mistaken divide by zero. However, for
+	// some queries NaN values may be expected, in which case you should set this to true.
+	//
+	// When false, alerts will fire if the query returns NaN.
+	DataMayBeNaN bool
+
 	// Warning and Critical alert definitions. At least a Warning alert must be present.
 	//
 	// See README.md for why it is intentionally impossible to create a dashboard to monitor
@@ -138,22 +167,46 @@ type Observable struct {
 
 func (o Observable) validate() error {
 	if strings.Contains(o.Name, " ") || strings.ToLower(o.Name) != o.Name {
-		return fmt.Errorf("Observable names should be in lower_snake_case: %q", o.Name)
+		return fmt.Errorf("Observable.Name must be in lower_snake_case; found \"%s\"", o.Name)
+	}
+	if v := string([]rune(o.Description)[0]); v != strings.ToLower(v) {
+		return fmt.Errorf("Observable.Description must be lowercase; found \"%s\"", o.Description)
 	}
 	if o.Warning.isEmpty() && o.Critical.isEmpty() {
 		return fmt.Errorf("%s: a Warning or Critical alert MUST be defined", o.Name)
+	}
+	if err := o.Warning.validate(); err != nil && !o.Warning.isEmpty() {
+		return fmt.Errorf("Warning: %v", err)
+	}
+	if err := o.Critical.validate(); err != nil && !o.Critical.isEmpty() {
+		return fmt.Errorf("Critical: %v", err)
 	}
 	return nil
 }
 
 // Alert defines when an alert would be considered firing.
 type Alert struct {
-	// GreaterOrEqual indicates the value at which the alert should fire.
+	// GreaterOrEqual, when non-zero, indicates the alert should fire when
+	// greater or equal to this value.
 	GreaterOrEqual float64
+
+	// LessOrEqual, when non-zero, indicates the alert should fire when less
+	// than or equal to this value.
+	LessOrEqual float64
 }
 
 func (a Alert) isEmpty() bool {
-	return a == Alert{} || a.GreaterOrEqual <= 0
+	return a == Alert{} || (a.GreaterOrEqual == 0 && a.LessOrEqual == 0)
+}
+
+func (a Alert) validate() error {
+	if a.isEmpty() {
+		return errors.New("empty")
+	}
+	if a.GreaterOrEqual != 0 && a.LessOrEqual != 0 {
+		return errors.New("only one of GreaterOrEqual,LessOrEqual may be specified")
+	}
+	return nil
 }
 
 // UnitType for controlling the unit type display on graphs.
@@ -239,18 +292,8 @@ func PanelOptions() panelOptions { return panelOptions{} }
 
 // dashboard generates the Grafana dashboard for this container.
 func (c *Container) dashboard() *sdk.Board {
-	if !isValidUID(c.Name) {
-		panic(fmt.Sprintf("expected Name to be alphanumeric + dashes: found \"%s\"", c.Name))
-	}
-
 	board := sdk.NewBoard(c.Title)
 	board.Version = uint(rand.Uint32())
-
-	// Note: being able to test edits quickly to dashboards is useful, but without setting this expansion and
-	// unexpansion of rows counts as an "edit" and the site admin would be warned about an unsaved change that
-	// they cannot actually save when navigating away, so we set this when not in dev environments.
-	board.Editable = isDev
-
 	board.UID = c.Name
 	board.ID = 0
 	board.Timezone = "utc"
@@ -291,7 +334,7 @@ func (c *Container) dashboard() *sdk.Board {
 	alertsDefined := sdk.NewTable("Alerts defined")
 	setPanelSize(alertsDefined, 9, 5)
 	setPanelPos(alertsDefined, 0, 3)
-	alertsDefined.TablePanel.Sort = &sdk.Sort{Desc: true}
+	alertsDefined.TablePanel.Sort = &sdk.Sort{Desc: true, Col: 4}
 	alertsDefined.TablePanel.Styles = []sdk.ColumnStyle{
 		{
 			Pattern: "Time",
@@ -320,7 +363,7 @@ func (c *Container) dashboard() *sdk.Board {
 		},
 	}
 	alertsDefined.AddTarget(&sdk.Target{
-		Expr:    fmt.Sprintf(`label_replace(sum(alert_count{service_name="%s",name!="",level=~"$alert_level"}) by (level,description), "_01_level", "$1", "level", "(.*)")`, c.Name),
+		Expr:    fmt.Sprintf(`label_replace(sum(max by (level,service_name,name,description)(alert_count{service_name="%s",name!="",level=~"$alert_level"})) by (level,description), "_01_level", "$1", "level", "(.*)")`, c.Name),
 		Format:  "table",
 		Instant: true,
 	})
@@ -354,7 +397,7 @@ func (c *Container) dashboard() *sdk.Board {
 		},
 	}
 	alertsFiring.AddTarget(&sdk.Target{
-		Expr:         fmt.Sprintf(`sum by (service_name,level,name)(alert_count{service_name="%s",name!="",level=~"$alert_level"} >= 1)`, c.Name),
+		Expr:         fmt.Sprintf(`sum by (service_name,level,name)(max by (level,service_name,name,description)(alert_count{service_name="%s",name!="",level=~"$alert_level"}) >= 1)`, c.Name),
 		LegendFormat: "{{level}}: {{name}}",
 	})
 	board.Panels = append(board.Panels, alertsFiring)
@@ -404,28 +447,48 @@ func (c *Container) dashboard() *sdk.Board {
 					Show:     true,
 				}
 
-				if o.Warning.GreaterOrEqual > 0 {
+				if o.Warning.GreaterOrEqual != 0 {
 					// Warning threshold
 					panel.GraphPanel.Thresholds = append(panel.GraphPanel.Thresholds, sdk.Threshold{
 						Value:     float32(o.Warning.GreaterOrEqual),
 						Op:        "gt",
 						ColorMode: "custom",
 						Fill:      true,
-						Line:      true,
-						FillColor: "rgba(255, 152, 48, 0.5)",
-						LineColor: "rgba(31, 96, 196, 0.6)",
+						Line:      false,
+						FillColor: "rgba(255, 73, 53, 0.8)",
 					})
 				}
-				if o.Critical.GreaterOrEqual > 0 {
+				if o.Critical.GreaterOrEqual != 0 {
 					// Critical threshold
 					panel.GraphPanel.Thresholds = append(panel.GraphPanel.Thresholds, sdk.Threshold{
 						Value:     float32(o.Critical.GreaterOrEqual),
 						Op:        "gt",
 						ColorMode: "custom",
 						Fill:      true,
-						Line:      true,
-						FillColor: "rgba(242, 73, 92, 0.5)",
-						LineColor: "rgba(31, 96, 196, 0.6)",
+						Line:      false,
+						FillColor: "rgba(255, 17, 36, 0.8)",
+					})
+				}
+				if o.Warning.LessOrEqual != 0 {
+					// Warning threshold
+					panel.GraphPanel.Thresholds = append(panel.GraphPanel.Thresholds, sdk.Threshold{
+						Value:     float32(o.Warning.LessOrEqual),
+						Op:        "lt",
+						ColorMode: "custom",
+						Fill:      true,
+						Line:      false,
+						FillColor: "rgba(255, 73, 53, 0.8)",
+					})
+				}
+				if o.Critical.LessOrEqual != 0 {
+					// Critical threshold
+					panel.GraphPanel.Thresholds = append(panel.GraphPanel.Thresholds, sdk.Threshold{
+						Value:     float32(o.Critical.LessOrEqual),
+						Op:        "lt",
+						ColorMode: "custom",
+						Fill:      true,
+						Line:      false,
+						FillColor: "rgba(255, 17, 36, 0.8)",
 					})
 				}
 
@@ -482,18 +545,74 @@ func (c *Container) promAlertsFile() *promRulesFile {
 					labels["level"] = level
 					labels["name"] = o.Name
 
+					// The alertQuery must contribute a query that returns a value < 1 when it is not
+					// firing, or a value of >= 1 when it is firing.
 					var alertQuery string
-					if alert.GreaterOrEqual > 0 {
+					if alert.GreaterOrEqual != 0 {
+						// e.g. "zoekt-indexserver: 20+ indexed search request errors every 5m by code"
 						labels["description"] = fmt.Sprintf("%s: %v+ %s", c.Name, alert.GreaterOrEqual, o.Description)
+						// By dividing the query value and the greaterOrEqual value, we produce a
+						// value of 1 when the query reaches the greaterOrEqual value and < 1
+						// otherwise. Examples:
+						//
+						// 	query_value=50 / greaterOrEqual=50 == 1.0
+						// 	query_value=25 / greaterOrEqual=50 == 0.5
+						// 	query_value=0 / greaterOrEqual=50 == 0.0
+						//
 						alertQuery = fmt.Sprintf("(%s) / %v", o.Query, alert.GreaterOrEqual)
+
+						// Replace no-data with zero values, so the alert does not fire, if desired.
 						if o.DataMayNotExist {
 							alertQuery = fmt.Sprintf("(%s) OR on() vector(0)", alertQuery)
 						}
+
+						// Replace NaN values with zero (not firing) or one (firing) if they are present.
+						fireOnNan := "1"
+						if o.DataMayBeNaN {
+							fireOnNan = "0"
+						}
+						alertQuery = fmt.Sprintf("((%s) >= 0) OR on() vector(%v)", alertQuery, fireOnNan)
+					} else if alert.LessOrEqual != 0 {
+						// e.g. "zoekt-indexserver: less than 20 indexed search requests every 5m by code"
+						labels["description"] = fmt.Sprintf("%s: less than %v %s", c.Name, alert.LessOrEqual, o.Description)
+						//
+						// 	lessOrEqual=50 / query_value=100 == 0.5
+						// 	lessOrEqual=50 / query_value=50 == 1.0
+						// 	lessOrEqual=50 / query_value=25 == 2.0
+						// 	lessOrEqual=50 / query_value=0 (0.0000001) == 500000000
+						// 	lessOrEqual=50 / query_value=-50 (0.0000001) == 500000000
+						//
+						alertQuery = fmt.Sprintf("%v / clamp_min(%s, 0.0000001)", alert.LessOrEqual, o.Query)
+
+						// Replace no-data with zero values, so the alert does not fire, if desired.
+						if o.DataMayNotExist {
+							alertQuery = fmt.Sprintf("(%s) OR on() vector(0)", alertQuery)
+						}
+
+						// Replace NaN values with zero (not firing) or one (firing) if they are present.
+						fireOnNan := "1"
+						if o.DataMayBeNaN {
+							fireOnNan = "0"
+						}
+						alertQuery = fmt.Sprintf("((%s) >= 0) OR on() vector(%v)", alertQuery, fireOnNan)
 					}
+
+					// This wrapper clamp/floor/default vector should be present on ALL alert_count rule
+					// definitions because:
+					//
+					// 1. Clamping and flooring ensures that a single alert definition can only ever
+					//    contribute a single 0 OR 1 value, and as such cannot artificially inflate
+					//    alert_count or cause it to become a non-whole number.
+					//
+					// 3. "OR on() vector(1)" ensures that the alert is always firing if the inner
+					//    alertQuery does not return values for any reason (e.g. the query is for a
+					//    metric that does not exist.)
+					//
+					expr := "clamp_max(clamp_min(floor(\n" + alertQuery + "\n), 0), 1) OR on() vector(1)"
 					group.Rules = append(group.Rules, promRule{
 						Record: "alert_count",
 						Labels: labels,
-						Expr:   "clamp_max(clamp_min(floor(\n" + alertQuery + "\n), 0), 1) OR on() vector(1)",
+						Expr:   expr,
 					})
 				}
 			}
@@ -511,6 +630,9 @@ func (c *Container) promAlertsFile() *promRulesFile {
 //
 // Instead of having to describe all the steps to navigate there because the UID is random.
 func isValidUID(s string) bool {
+	if s != strings.ToLower(s) {
+		return false
+	}
 	for _, r := range s {
 		if !(unicode.IsLetter(r) || unicode.IsNumber(r) || r == '-') {
 			return false
@@ -519,10 +641,23 @@ func isValidUID(s string) bool {
 	return true
 }
 
+// upperFirst returns s with an uppercase first rune.
+func upperFirst(s string) string {
+	return strings.ToUpper(string([]rune(s)[0])) + string([]rune(s)[1:])
+}
+
+// withPeriod returns s ending with a period.
+func withPeriod(s string) string {
+	if !strings.HasSuffix(s, ".") {
+		return s + "."
+	}
+	return s
+}
+
 var isDev, _ = strconv.ParseBool(os.Getenv("DEV"))
 
 func main() {
-	grafanaDir, ok := os.LookupEnv("DASHBOARD_DIR")
+	grafanaDir, ok := os.LookupEnv("GRAFANA_DIR")
 	if !ok {
 		grafanaDir = "../docker-images/grafana/config/provisioning/dashboards/sourcegraph/"
 	}
@@ -539,15 +674,23 @@ func main() {
 
 	for _, container := range []*Container{
 		Frontend(),
+		GitServer(),
 		GitHubProxy(),
 		PreciseCodeIntelAPIServer(),
 		PreciseCodeIntelBundleManager(),
 		PreciseCodeIntelWorker(),
 		QueryRunner(),
+		Replacer(),
 		RepoUpdater(),
 		Searcher(),
+		Symbols(),
 		SyntectServer(),
+		ZoektIndexServer(),
+		ZoektWebServer(),
 	} {
+		if err := container.validate(); err != nil {
+			log.Fatal(err)
+		}
 		if grafanaDir != "" {
 			board := container.dashboard()
 			data, err := json.MarshalIndent(board, "", "  ")

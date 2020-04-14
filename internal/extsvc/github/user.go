@@ -86,16 +86,10 @@ type Collaborator struct {
 	DatabaseID int64  `json:"id"`
 }
 
-var MockListRepositoryCollaborators func(ctx context.Context, owner, repo string, page int) ([]*Collaborator, bool, error)
-
 // ListRepositoryCollaborators lists all GitHub users that has access to the repository.
 // The page is the page of results to return, and is 1-indexed (so the first call should
 // be for page 1).
 func (c *Client) ListRepositoryCollaborators(ctx context.Context, owner, repo string, page int) (users []*Collaborator, hasNextPage bool, _ error) {
-	if MockListRepositoryCollaborators != nil {
-		return MockListRepositoryCollaborators(ctx, owner, repo, page)
-	}
-
 	path := fmt.Sprintf("/repos/%s/%s/collaborators?&page=%d&per_page=100", owner, repo, page)
 	err := c.requestGet(ctx, "", path, &users)
 	if err != nil {

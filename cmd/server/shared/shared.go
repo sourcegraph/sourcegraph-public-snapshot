@@ -117,8 +117,8 @@ func Main() {
 		log.Println("Failed to setup SSH authorization:", err)
 		log.Fatal("SSH authorization required for cloning from your codehost. Please see README.")
 	}
-	if err := copyNetrc(); err != nil {
-		log.Fatal("Failed to copy netrc:", err)
+	if err := copyConfigs(); err != nil {
+		log.Fatal("Failed to copy configs:", err)
 	}
 
 	// TODO validate known_hosts contains all code hosts in config.

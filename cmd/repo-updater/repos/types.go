@@ -948,7 +948,10 @@ func NewRateLimiterRegistry(ctx context.Context, store Store) (*RateLimiterRegis
 	for _, svc := range svcs {
 		err = r.updateRateLimiter(svc)
 		if err != nil {
-			// Errors here are not fatal
+			if _, ok := err.(errRateLimitUnsupported); ok {
+				continue
+			}
+			// Errors here are not fatal, so we can log them
 			log15.Warn("Updating rate limiter", "kind", svc.Kind, "err", err)
 		}
 	}
@@ -1025,7 +1028,7 @@ func (r *RateLimiterRegistry) updateRateLimiter(svc *ExternalService) error {
 			limit = getLimit(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
 	default:
-		return fmt.Errorf("internal rate limiting not support for %s", svc.Kind)
+		return errRateLimitUnsupported{codehostKind: svc.Kind}
 	}
 
 	l := r.GetRateLimiter(svc.ID)
@@ -1039,4 +1042,12 @@ func getLimit(enabled bool, perHour float64) rate.Limit {
 		return rate.Limit(perHour / 3600)
 	}
 	return rate.Inf
+}
+
+type errRateLimitUnsupported struct {
+	codehostKind string
+}
+
+func (e errRateLimitUnsupported) Error() string {
+	return fmt.Sprintf("internal rate limiting not supported for %s", e.codehostKind)
 }

@@ -1,15 +1,15 @@
 import { from, Observable } from 'rxjs'
-import { catchError, delay, filter, map, retryWhen } from 'rxjs/operators'
+import { delay, filter, map, retryWhen } from 'rxjs/operators'
 import {
     CloneInProgressError,
-    CLONE_IN_PROGRESS_ERROR_NAME,
     RepoNotFoundError,
     RevNotFoundError,
+    isCloneInProgressErrorLike,
 } from '../../../../shared/src/backend/errors'
 import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContext } from '../../../../shared/src/platform/context'
-import { isErrorLike, createAggregateError } from '../../../../shared/src/util/errors'
+import { createAggregateError } from '../../../../shared/src/util/errors'
 import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable'
 import { FileSpec, makeRepoURI, RawRepoSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../../../../shared/src/util/url'
 
@@ -33,15 +33,12 @@ export const resolveRepo = memoizeObservable(
             mightContainPrivateInfo: true,
         }).pipe(
             map(dataOrThrowErrors),
-            map(
-                ({ repository }) => {
-                    if (!repository || !repository.name) {
-                        throw new RepoNotFoundError(rawRepoName)
-                    }
-                    return repository.name
-                },
-                catchError((err, caught) => caught)
-            )
+            map(({ repository }) => {
+                if (!repository?.name) {
+                    throw new RepoNotFoundError(rawRepoName)
+                }
+                return repository.name
+            })
         ),
     ({ rawRepoName }) => rawRepoName
 )
@@ -95,7 +92,7 @@ export function retryWhenCloneInProgressError<T>(): (v: Observable<T>) => Observ
             retryWhen(errors =>
                 errors.pipe(
                     filter(err => {
-                        if (isErrorLike(err) && err.name === CLONE_IN_PROGRESS_ERROR_NAME) {
+                        if (isCloneInProgressErrorLike(err)) {
                             return true
                         }
 

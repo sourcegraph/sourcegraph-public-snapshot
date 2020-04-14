@@ -224,7 +224,7 @@ export class Tree extends React.PureComponent<Props, State> {
     public componentDidMount(): void {
         this.subscriptions.add(
             this.expandDirectoryChanges.subscribe(({ path, expanded, node }) => {
-                this.setState((prevState, props) => ({
+                this.setState(prevState => ({
                     resolveTo: expanded ? [...prevState.resolveTo, path] : prevState.resolveTo.filter(p => p !== path),
                 }))
                 if (!expanded) {

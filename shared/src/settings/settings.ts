@@ -18,6 +18,9 @@ export interface IClient {
  */
 export interface Settings {
     extensions?: { [extensionID: string]: boolean }
+    experimentalFeatures?: {
+        showBadgeAttachments?: boolean
+    }
     [key: string]: any
 
     // These properties should never exist on Settings but do exist on SettingsCascade. This makes it so the
