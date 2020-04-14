@@ -194,6 +194,7 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 	}
 	contents, err := json.Marshal(&pingRequest{
 		ClientSiteID:         siteid.Get(),
+		LicenseKey:           conf.Get().LicenseKey,
 		DeployType:           conf.DeployType(),
 		ClientVersionString:  version.Version(),
 		AuthProviders:        authProviderTypes(),
