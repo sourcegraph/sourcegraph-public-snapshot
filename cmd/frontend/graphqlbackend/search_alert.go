@@ -42,6 +42,14 @@ func (a searchAlert) ProposedQueries() *[]*searchQueryDescription {
 	return &a.proposedQueries
 }
 
+func alertForCappedAndExpression() *searchAlert {
+	return &searchAlert{
+		prometheusType: "exceed_and_expression_search_limit",
+		title:          "Too many files to search for and-expression",
+		description:    fmt.Sprintf("One and-expression in the query requires a lot of work! Try using the 'repo:' or 'file:' filters to narrow your search. We're working on improving this experience in https://github.com/sourcegraph/sourcegraph/issues/9824"),
+	}
+}
+
 // alertForQuery converts errors in the query to search alerts.
 func alertForQuery(queryString string, err error) *searchAlert {
 	switch e := err.(type) {

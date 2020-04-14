@@ -131,15 +131,6 @@ func TestAndOrQuery_RegexpPatterns(t *testing.T) {
 			t.Error(diff)
 		}
 	})
-	t.Run("for unrecognized field", func(t *testing.T) {
-		query, err := ProcessAndOr("")
-		if err != nil {
-			t.Fatal(err)
-		}
-		checkPanic(t, "no such field: z", func() {
-			query.RegexpPatterns("z")
-		})
-	})
 }
 
 func TestAndOrQuery_CaseInsensitiveFields(t *testing.T) {

@@ -613,22 +613,22 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (*SearchResultsResolv
 }
 
 // union returns the union of two sets of search results and merges common search data.
-func union(left, right *SearchResultsResolver) (*SearchResultsResolver, error) {
+func union(left, right *SearchResultsResolver) *SearchResultsResolver {
 	if right == nil {
-		return left, nil
+		return left
 	}
 	if left == nil {
-		return right, nil
+		return right
 	}
 	if left.SearchResults != nil && right.SearchResults != nil {
 		left.SearchResults = append(left.SearchResults, right.SearchResults...)
 		// merge common search data.
 		left.searchResultsCommon.update(right.searchResultsCommon)
-		return left, nil
+		return left
 	} else if right.SearchResults != nil {
-		return right, nil
+		return right
 	}
-	return left, nil
+	return left
 }
 
 // intersect returns the intersection of two sets of search result content
@@ -663,46 +663,151 @@ func intersect(left, right *SearchResultsResolver) (*SearchResultsResolver, erro
 		merged = append(merged, ltmp)
 	}
 	left.SearchResults = merged
-	// merge common search data.
 	left.searchResultsCommon.update(right.searchResultsCommon)
 	// for intersect we want the newly computed intersection size.
 	left.searchResultsCommon.resultCount = int32(len(merged))
 	return left, nil
 }
 
-func (r *searchResolver) evaluateOperator(ctx context.Context, scopeParameters []query.Node, operator query.Operator) (*SearchResultsResolver, error) {
-	if len(operator.Operands) == 0 {
+// evaluateAnd performs set intersection on result sets. It collects results for
+// all expressions that are ANDed together by searching for each subexpression
+// and then intersects those results that are in the same repo/file path. To
+// collect N results for count:N, we need to opportunistically ask for more than
+// N results for each subexpression (since intersect can never yield more than N,
+// and likely yields fewer than N results). Thus, we perform a search of 2*N for
+// each expression, and if the intersection does not yield N results, and is not
+// exhaustive for every expression, we rerun the search by doubling count again.
+func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []query.Node, operands []query.Node) (*SearchResultsResolver, error) {
+	if len(operands) == 0 {
 		return nil, nil
 	}
-	var new *SearchResultsResolver
+
 	var err error
-	result, err := r.evaluatePatternExpression(ctx, scopeParameters, operator.Operands[0])
+	var result *SearchResultsResolver
+	var new *SearchResultsResolver
+
+	// The number of results we want. Note that for intersect, this number
+	// corresponds to documents, not line matches. By default, we ask for at
+	// least 5 documents to fill the result page.
+	want := 5
+
+	var countStr string
+	query.VisitField(scopeParameters, "count", func(value string, _ bool) {
+		countStr = value
+	})
+	if countStr != "" {
+		// Override the value of count, if specified.
+		want, _ = strconv.Atoi(countStr) // Invariant: count is validated.
+	} else {
+		scopeParameters = append(scopeParameters, query.Parameter{
+			Field: "count",
+			Value: strconv.FormatInt(int64(want), 10),
+		})
+	}
+
+	tryCount := want * 1000     // Opportunistic approximation for the number of results to get for an intersection.
+	maxResultsForRetry := 20000 // When we retry, cap the max search results we request for each expression if search continues to not be exhaustive. Alert if exceeded.
+
+	var exhausted bool
+	for {
+		scopeParameters = query.MapParameter(scopeParameters, func(field, value string, negated bool) query.Node {
+			if field == "count" {
+				value = strconv.FormatInt(int64(tryCount), 10)
+			}
+			return query.Parameter{Field: field, Value: value, Negated: negated}
+		})
+
+		result, err = r.evaluatePatternExpression(ctx, scopeParameters, operands[0])
+		if err != nil {
+			return nil, err
+		}
+		exhausted = !result.limitHit
+		for _, term := range operands[1:] {
+			new, err = r.evaluatePatternExpression(ctx, scopeParameters, term)
+			if err != nil {
+				return nil, err
+			}
+			if new != nil {
+				exhausted = exhausted && !new.limitHit
+				result, err = intersect(result, new)
+			}
+		}
+		if exhausted {
+			break
+		}
+		if result.searchResultsCommon.resultCount >= int32(want) {
+			break
+		}
+		// If the result size set is not big enough, and we haven't
+		// exhausted search on all expressions, double the tryCount and search more.
+		tryCount *= tryCount
+		if tryCount > maxResultsForRetry {
+			// We've capped out what we're willing to do, throw alert.
+			return &SearchResultsResolver{alert: alertForCappedAndExpression()}, nil
+		}
+	}
+	result.limitHit = !exhausted
+	return result, nil
+}
+
+// evaluateOr performs set union on result sets. It collects results for all
+// expressions that are ORed together by searching for each subexpression. If
+// the maximum number of results are reached after evaluating a subexpression,
+// we shortcircuit and return results immediately.
+func (r *searchResolver) evaluateOr(ctx context.Context, scopeParameters []query.Node, operands []query.Node) (*SearchResultsResolver, error) {
+	if len(operands) == 0 {
+		return nil, nil
+	}
+
+	var countStr string
+	wantCount := defaultMaxSearchResults
+	query.VisitField(scopeParameters, "count", func(value string, _ bool) {
+		countStr = value
+	})
+	if countStr != "" {
+		wantCount, _ = strconv.Atoi(countStr) // Invariant: count is validated.
+	}
+
+	result, err := r.evaluatePatternExpression(ctx, scopeParameters, operands[0])
 	if err != nil {
 		return nil, err
 	}
-	if result == nil {
-		return nil, nil
+	if result.searchResultsCommon.resultCount > int32(wantCount) {
+		result.SearchResults = result.SearchResults[:wantCount]
+		result.searchResultsCommon.resultCount = int32(wantCount)
+		return result, nil
 	}
-	for _, term := range operator.Operands[1:] {
+	var new *SearchResultsResolver
+	for _, term := range operands[1:] {
 		new, err = r.evaluatePatternExpression(ctx, scopeParameters, term)
 		if err != nil {
 			return nil, err
 		}
-		if new == nil && operator.Kind == query.And {
-			// Shortcircuit: intersecting with empty new results is empty.
-			return nil, nil
-		}
 		if new != nil {
-			switch operator.Kind {
-			case query.And:
-				result, err = intersect(result, new)
-			case query.Or:
-				result, err = union(result, new)
-			}
-			if err != nil {
-				return nil, err
+			result = union(result, new)
+			if result.searchResultsCommon.resultCount > int32(wantCount) {
+				result.SearchResults = result.SearchResults[:wantCount]
+				result.searchResultsCommon.resultCount = int32(wantCount)
+				return result, nil
 			}
 		}
+	}
+	return result, nil
+}
+
+func (r *searchResolver) evaluateOperator(ctx context.Context, scopeParameters []query.Node, operator query.Operator) (*SearchResultsResolver, error) {
+	if len(operator.Operands) == 0 {
+		return nil, nil
+	}
+	var result *SearchResultsResolver
+	var err error
+	if operator.Kind == query.And {
+		result, err = r.evaluateAnd(ctx, scopeParameters, operator.Operands)
+	} else {
+		result, err = r.evaluateOr(ctx, scopeParameters, operator.Operands)
+	}
+	if err != nil {
+		return nil, err
 	}
 	return result, nil
 }
