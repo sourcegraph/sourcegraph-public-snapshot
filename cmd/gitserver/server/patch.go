@@ -136,7 +136,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 
 	cmd := exec.CommandContext(ctx, "git", "init")
 	cmd.Dir = tmpRepoDir
-	cmd.Env = append(cmd.Env, tmpGitPathEnv)
+	cmd.Env = append(os.Environ(), tmpGitPathEnv)
 
 	if _, err := run(cmd, "init tmp repo"); err != nil {
 		return http.StatusInternalServerError, resp
@@ -144,7 +144,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 
 	cmd = exec.CommandContext(ctx, "git", "reset", "-q", string(req.BaseCommit))
 	cmd.Dir = tmpRepoDir
-	cmd.Env = append(cmd.Env, tmpGitPathEnv, altObjectsEnv)
+	cmd.Env = append(os.Environ(), tmpGitPathEnv, altObjectsEnv)
 
 	if out, err := run(cmd, "basing staging on base rev"); err != nil {
 		log15.Error("Failed to base the temporary repo on the base revision.", "ref", ref, "base", req.BaseCommit, "output", string(out))
@@ -154,7 +154,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	applyArgs := append([]string{"apply", "--cached"}, req.GitApplyArgs...)
 	cmd = exec.CommandContext(ctx, "git", applyArgs...)
 	cmd.Dir = tmpRepoDir
-	cmd.Env = append(cmd.Env, tmpGitPathEnv, altObjectsEnv)
+	cmd.Env = append(os.Environ(), tmpGitPathEnv, altObjectsEnv)
 	cmd.Stdin = strings.NewReader(req.Patch)
 
 	if out, err := run(cmd, "applying patch"); err != nil {
@@ -185,7 +185,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 
 	cmd = exec.CommandContext(ctx, "git", "commit", "-m", message)
 	cmd.Dir = tmpRepoDir
-	cmd.Env = append(cmd.Env, []string{
+	cmd.Env = append(os.Environ(), []string{
 		tmpGitPathEnv,
 		altObjectsEnv,
 		fmt.Sprintf("GIT_COMMITTER_NAME=%s", committerName),
@@ -203,7 +203,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 
 	cmd = exec.CommandContext(ctx, "git", "rev-parse", "HEAD")
 	cmd.Dir = tmpRepoDir
-	cmd.Env = append(cmd.Env, tmpGitPathEnv, altObjectsEnv)
+	cmd.Env = append(os.Environ(), tmpGitPathEnv, altObjectsEnv)
 
 	// We don't use 'run' here as we only want stdout
 	out, err := cmd.Output()

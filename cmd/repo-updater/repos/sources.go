@@ -7,11 +7,10 @@ import (
 	"sync"
 	"time"
 
-	"golang.org/x/time/rate"
-
-	multierror "github.com/hashicorp/go-multierror"
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"golang.org/x/time/rate"
 )
 
 // A Sourcer converts the given ExternalServices to Sources
@@ -66,7 +65,7 @@ func NewChangesetSource(svc *ExternalService, cf *httpcli.Factory, rl *rate.Limi
 	}
 	css, ok := source.(ChangesetSource)
 	if !ok {
-		return nil, fmt.Errorf("external service %q is not a ChangesetSource", svc.Kind)
+		return nil, fmt.Errorf("ChangesetSource cannot be created from external service %q", svc.Kind)
 	}
 	return css, nil
 }
