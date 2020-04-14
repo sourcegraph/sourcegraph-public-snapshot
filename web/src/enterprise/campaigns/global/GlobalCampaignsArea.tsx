@@ -6,11 +6,11 @@ import { IUser } from '../../../../../shared/src/graphql/schema'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { CreateCampaign } from './create/CreateCampaign'
-import { AutomatedCampaignInfo } from './create/AutomatedCampaignInfo'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 import { CampaignUpdateSelection } from '../detail/CampaignUpdateSelection'
+import { CampaignCLIHelp } from './create/CampaignCLIHelp'
 
 interface Props
     extends RouteComponentProps<{}>,
@@ -40,8 +40,8 @@ export const GlobalCampaignsArea = withAuthenticatedUser<Props>(({ match, ...out
                 exact={true}
             />
             <Route
-                path={`${match.url}/automated`}
-                render={props => <AutomatedCampaignInfo {...outerProps} {...props} />}
+                path={`${match.url}/cli`}
+                render={props => <CampaignCLIHelp {...outerProps} {...props} />}
                 exact={true}
             />
             <Route
