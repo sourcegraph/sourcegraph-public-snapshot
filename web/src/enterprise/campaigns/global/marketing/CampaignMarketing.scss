@@ -1,5 +1,7 @@
 .campaign-marketing {
     &--video-wrapper {
+        // standard value provided by vimeo
+        // stylelint-disable-next-line declaration-property-unit-whitelist
         padding: 56.25% 0 0 0;
     }
     &--video-frame {
