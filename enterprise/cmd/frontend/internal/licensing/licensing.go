@@ -3,7 +3,6 @@ package licensing
 import (
 	"fmt"
 	"log"
-	"os"
 	"sync"
 
 	"github.com/pkg/errors"
@@ -77,14 +76,7 @@ func GetConfiguredProductLicenseInfoWithSignature() (*license.Info, string, erro
 		return MockGetConfiguredProductLicenseInfo()
 	}
 
-	// Support reading the license key from the environment (intended for development, because we
-	// don't want to commit a valid license key to dev/config.json in the OSS repo).
-	keyText := os.Getenv("SOURCEGRAPH_LICENSE_KEY")
-	if keyText == "" {
-		keyText = conf.Get().LicenseKey
-	}
-
-	if keyText != "" {
+	if keyText := conf.Get().LicenseKey; keyText != "" {
 		mu.Lock()
 		defer mu.Unlock()
 
