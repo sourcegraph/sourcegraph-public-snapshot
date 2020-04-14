@@ -5,6 +5,7 @@ import { noop } from 'rxjs'
 import { ActivationDropdown } from './ActivationDropdown'
 import { Activation } from './Activation'
 import { boolean } from '@storybook/addon-knobs'
+import { action } from '@storybook/addon-actions'
 
 const { add } = storiesOf('ActivationDropdown', module).addDecorator(story => (
     <div className="theme-light container">{story()}</div>
@@ -16,7 +17,6 @@ const baseActivation: Activation = {
             id: 'ConnectedCodeHost',
             title: 'Add repositories',
             detail: 'Configure Sourcegraph to talk to your code host and fetch a list of your repositories.',
-            onClick: noop,
         },
         {
             id: 'DidSearch',
@@ -40,8 +40,8 @@ const baseActivation: Activation = {
             detail: 'Configure a single-sign on (SSO) provider or have at least one other teammate sign up.',
         },
     ],
-    refetch: noop,
-    update: noop,
+    refetch: action('Refetch'),
+    update: action('Update'),
     completed: undefined,
 }
 const history = H.createMemoryHistory({ keyLength: 0 })
