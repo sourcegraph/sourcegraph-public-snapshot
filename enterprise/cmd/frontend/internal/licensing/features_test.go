@@ -23,12 +23,10 @@ func TestIsFeatureEnabled(t *testing.T) {
 	t.Run(string(FeatureExtensionRegistry), func(t *testing.T) {
 		check(t, FeatureExtensionRegistry, EnterpriseStarterTags, false)
 		check(t, FeatureExtensionRegistry, EnterpriseTags, true)
-		check(t, FeatureExtensionRegistry, []string{string(FeatureExtensionRegistry)}, true)
 	})
 
 	t.Run(string(FeatureRemoteExtensionsAllowDisallow), func(t *testing.T) {
 		check(t, FeatureRemoteExtensionsAllowDisallow, EnterpriseStarterTags, false)
 		check(t, FeatureRemoteExtensionsAllowDisallow, EnterpriseTags, true)
-		check(t, FeatureRemoteExtensionsAllowDisallow, []string{string(FeatureRemoteExtensionsAllowDisallow)}, true)
 	})
 }

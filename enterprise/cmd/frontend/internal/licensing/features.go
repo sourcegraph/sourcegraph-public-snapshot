@@ -12,14 +12,6 @@ import (
 type Feature string
 
 func isFeatureEnabled(info license.Info, feature Feature) bool {
-	// Allow features to be explicitly enabled/disabled in the license tags.
-	if info.HasTag(string(feature)) {
-		return true
-	}
-	if info.HasTag("no-" + string(feature)) {
-		return false
-	}
-
 	// Add feature-specific logic here.
 	switch feature {
 	case FeatureACLs:
