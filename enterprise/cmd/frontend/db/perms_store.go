@@ -17,7 +17,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-var ErrPermsUpdatedAtNotSet = errors.New("permissions UpdatedAt timestamp must be set")
+var (
+	ErrPermsUpdatedAtNotSet = errors.New("permissions UpdatedAt timestamp must be set")
+	ErrPermsSyncedAtNotSet  = errors.New("permissions SyncedAt timestamp must be set")
+)
 
 // PermsStore is the unified interface for managing permissions explicitly in the database.
 // It is concurrency-safe and maintains data consistency over the 'user_permissions',
@@ -51,13 +54,14 @@ func (s *PermsStore) LoadUserPermissions(ctx context.Context, p *authz.UserPermi
 	}
 	p.IDs = vals.ids
 	p.UpdatedAt = vals.updatedAt
+	p.SyncedAt = vals.syncedAt
 	return nil
 }
 
 func loadUserPermissionsQuery(p *authz.UserPermissions, lock string) *sqlf.Query {
 	const format = `
 -- source: enterprise/cmd/frontend/db/perms_store.go:loadUserPermissionsQuery
-SELECT user_id, object_ids, updated_at
+SELECT user_id, object_ids, updated_at, synced_at
 FROM user_permissions
 WHERE user_id = %s
 AND permission = %s
@@ -88,13 +92,14 @@ func (s *PermsStore) LoadRepoPermissions(ctx context.Context, p *authz.RepoPermi
 	}
 	p.UserIDs = vals.ids
 	p.UpdatedAt = vals.updatedAt
+	p.SyncedAt = vals.syncedAt
 	return nil
 }
 
 func loadRepoPermissionsQuery(p *authz.RepoPermissions, lock string) *sqlf.Query {
 	const format = `
 -- source: enterprise/cmd/frontend/db/perms_store.go:loadRepoPermissionsQuery
-SELECT repo_id, user_ids, updated_at
+SELECT repo_id, user_ids, updated_at, synced_at
 FROM repo_permissions
 WHERE repo_id = %s
 AND permission = %s
@@ -121,15 +126,15 @@ AND permission = %s
 //
 // Table states for input:
 // 	"user_permissions":
-//   user_id | permission | object_type |  object_ids   | updated_at
-//  ---------+------------+-------------+---------------+------------
-//         1 |       read |       repos |  bitmap{1, 2} | <DateTime>
+//   user_id | permission | object_type |  object_ids   | updated_at | synced_at
+//  ---------+------------+-------------+---------------+------------+------------
+//         1 |       read |       repos |  bitmap{1, 2} | <DateTime> | <DateTime>
 //
 //  "repo_permissions":
-//   repo_id | permission | user_ids  | updated_at
-//  ---------+------------+-----------+------------
-//         1 |       read | bitmap{1} | <DateTime>
-//         2 |       read | bitmap{1} | <DateTime>
+//   repo_id | permission | user_ids  | updated_at |  synced_at
+//  ---------+------------+-----------+------------+-------------
+//         1 |       read | bitmap{1} | <DateTime> | <Unchanged>
+//         2 |       read | bitmap{1} | <DateTime> | <Unchanged>
 func (s *PermsStore) SetUserPermissions(ctx context.Context, p *authz.UserPermissions) (err error) {
 	if Mocks.Perms.SetUserPermissions != nil {
 		return Mocks.Perms.SetUserPermissions(ctx, p)
@@ -212,13 +217,54 @@ func (s *PermsStore) SetUserPermissions(ctx context.Context, p *authz.UserPermis
 	// update, if we don't always update the value of the column regardless, we will
 	// end up checking the same set of oldest but up-to-date rows in the table.
 	p.UpdatedAt = updatedAt
-	if q, err := upsertUserPermissionsBatchQuery(p); err != nil {
+	p.SyncedAt = updatedAt
+	if q, err := upsertUserPermissionsQuery(p); err != nil {
 		return err
 	} else if err = txs.execute(ctx, q); err != nil {
-		return errors.Wrap(err, "execute upsert user permissions batch query")
+		return errors.Wrap(err, "execute upsert user permissions query")
 	}
 
 	return nil
+}
+
+// upsertUserPermissionsQuery upserts single row of user permissions, it does the
+// same thing as upsertUserPermissionsBatchQuery but also updates "synced_at"
+// column to the value of p.SyncedAt field.
+func upsertUserPermissionsQuery(p *authz.UserPermissions) (*sqlf.Query, error) {
+	const format = `
+-- source: enterprise/cmd/frontend/db/perms_store.go:upsertUserPermissionsQuery
+INSERT INTO user_permissions
+  (user_id, permission, object_type, object_ids, updated_at, synced_at)
+VALUES
+  (%s, %s, %s, %s, %s, %s)
+ON CONFLICT ON CONSTRAINT
+  user_permissions_perm_object_unique
+DO UPDATE SET
+  object_ids = excluded.object_ids,
+  updated_at = excluded.updated_at,
+  synced_at = excluded.synced_at
+`
+
+	ids, err := p.IDs.ToBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	if p.UpdatedAt.IsZero() {
+		return nil, ErrPermsUpdatedAtNotSet
+	} else if p.SyncedAt.IsZero() {
+		return nil, ErrPermsSyncedAtNotSet
+	}
+
+	return sqlf.Sprintf(
+		format,
+		p.UserID,
+		p.Perm.String(),
+		p.Type,
+		ids,
+		p.UpdatedAt.UTC(),
+		p.SyncedAt.UTC(),
+	), nil
 }
 
 // SetRepoPermissions performs a full update for p, new user IDs found in p will be upserted
@@ -236,15 +282,15 @@ func (s *PermsStore) SetUserPermissions(ctx context.Context, p *authz.UserPermis
 //
 // Table states for input:
 // 	"user_permissions":
-//   user_id | permission | object_type | object_ids | updated_at
-//  ---------+------------+-------------+------------+------------
-//         1 |       read |       repos |  bitmap{1} | <DateTime>
-//         2 |       read |       repos |  bitmap{1} | <DateTime>
+//   user_id | permission | object_type | object_ids | updated_at |  synced_at
+//  ---------+------------+-------------+------------+------------+-------------
+//         1 |       read |       repos |  bitmap{1} | <DateTime> | <Unchanged>
+//         2 |       read |       repos |  bitmap{1} | <DateTime> | <Unchanged>
 //
 //  "repo_permissions":
-//   repo_id | permission |   user_ids   | updated_at
-//  ---------+------------+--------------+------------
-//         1 |       read | bitmap{1, 2} | <DateTime>
+//   repo_id | permission |   user_ids   | updated_at | synced_at
+//  ---------+------------+--------------+------------+------------
+//         1 |       read | bitmap{1, 2} | <DateTime> | <DateTime>
 func (s *PermsStore) SetRepoPermissions(ctx context.Context, p *authz.RepoPermissions) (err error) {
 	if Mocks.Perms.SetRepoPermissions != nil {
 		return Mocks.Perms.SetRepoPermissions(ctx, p)
@@ -332,10 +378,11 @@ func (s *PermsStore) SetRepoPermissions(ctx context.Context, p *authz.RepoPermis
 	// update, if we don't always update the value of the column regardless, we will
 	// end up checking the same set of oldest but up-to-date rows in the table.
 	p.UpdatedAt = updatedAt
-	if q, err := upsertRepoPermissionsBatchQuery(p); err != nil {
+	p.SyncedAt = updatedAt
+	if q, err := upsertRepoPermissionsQuery(p); err != nil {
 		return err
 	} else if err = txs.execute(ctx, q); err != nil {
-		return errors.Wrap(err, "execute upsert repo permissions batch query")
+		return errors.Wrap(err, "execute upsert repo permissions query")
 	}
 
 	return nil
@@ -409,6 +456,45 @@ DO UPDATE SET
 	), nil
 }
 
+// upsertRepoPermissionsQuery upserts single row of repository permissions,
+// it does the same thing as upsertRepoPermissionsBatchQuery but also updates
+// "synced_at" column to the value of p.SyncedAt field.
+func upsertRepoPermissionsQuery(p *authz.RepoPermissions) (*sqlf.Query, error) {
+	const format = `
+-- source: enterprise/cmd/frontend/db/perms_store.go:upsertRepoPermissionsQuery
+INSERT INTO repo_permissions
+  (repo_id, permission, user_ids, updated_at, synced_at)
+VALUES
+  (%s, %s, %s, %s, %s)
+ON CONFLICT ON CONSTRAINT
+  repo_permissions_perm_unique
+DO UPDATE SET
+  user_ids = excluded.user_ids,
+  updated_at = excluded.updated_at,
+  synced_at = excluded.synced_at
+`
+
+	ids, err := p.UserIDs.ToBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	if p.UpdatedAt.IsZero() {
+		return nil, ErrPermsUpdatedAtNotSet
+	} else if p.SyncedAt.IsZero() {
+		return nil, ErrPermsSyncedAtNotSet
+	}
+
+	return sqlf.Sprintf(
+		format,
+		p.RepoID,
+		p.Perm.String(),
+		ids,
+		p.UpdatedAt.UTC(),
+		p.SyncedAt.UTC(),
+	), nil
+}
+
 // LoadUserPendingPermissions returns pending permissions found by given parameters.
 // An ErrPermsNotFound is returned when there are no pending permissions available.
 func (s *PermsStore) LoadUserPendingPermissions(ctx context.Context, p *authz.UserPendingPermissions) (err error) {
@@ -432,7 +518,7 @@ func (s *PermsStore) LoadUserPendingPermissions(ctx context.Context, p *authz.Us
 func loadUserPendingPermissionsQuery(p *authz.UserPendingPermissions, lock string) *sqlf.Query {
 	const format = `
 -- source: enterprise/cmd/frontend/db/perms_store.go:loadUserPendingPermissionsQuery
-SELECT id, object_ids, updated_at
+SELECT id, object_ids, updated_at, NULL
 FROM user_pending_permissions
 WHERE service_type = %s
 AND service_id = %s
@@ -714,7 +800,7 @@ RETURNING id
 func loadRepoPendingPermissionsQuery(p *authz.RepoPermissions, lock string) *sqlf.Query {
 	const format = `
 -- source: enterprise/cmd/frontend/db/perms_store.go:loadRepoPendingPermissionsQuery
-SELECT repo_id, user_ids, updated_at
+SELECT repo_id, user_ids, updated_at, NULL
 FROM repo_pending_permissions
 WHERE repo_id = %s
 AND permission = %s
@@ -1156,11 +1242,12 @@ type permsLoadValues struct {
 	id        int32           // An integer ID
 	ids       *roaring.Bitmap // Bitmap of unmarshalled IDs
 	updatedAt time.Time       // Last updated time of the row
+	syncedAt  time.Time       // Last synced time of the row
 }
 
 // load is a generic method that scans three values from one database table row, these values must have
-// types and be scanned in the order of int32, []byte and time.Time. In addition, it unmarshalles the
-// []byte into a *roaring.Bitmap.
+// types and be scanned in the order of int32 (id), []byte (ids), time.Time (updatedAt) and nullable
+// time.Time (syncedAt). In addition, it unmarshalles the []byte into a *roaring.Bitmap.
 func (s *PermsStore) load(ctx context.Context, q *sqlf.Query) (*permsLoadValues, error) {
 	var err error
 	ctx, save := s.observe(ctx, "load", "")
@@ -1189,7 +1276,8 @@ func (s *PermsStore) load(ctx context.Context, q *sqlf.Query) (*permsLoadValues,
 	var id int32
 	var ids []byte
 	var updatedAt time.Time
-	if err = rows.Scan(&id, &ids, &updatedAt); err != nil {
+	var fullSyncedAt time.Time
+	if err = rows.Scan(&id, &ids, &updatedAt, &dbutil.NullTime{Time: &fullSyncedAt}); err != nil {
 		return nil, err
 	}
 
@@ -1200,6 +1288,7 @@ func (s *PermsStore) load(ctx context.Context, q *sqlf.Query) (*permsLoadValues,
 	vals := &permsLoadValues{
 		id:        id,
 		ids:       roaring.NewBitmap(),
+		syncedAt:  fullSyncedAt,
 		updatedAt: updatedAt,
 	}
 	if len(ids) == 0 {
