@@ -29,6 +29,14 @@ func isPatternExpression(nodes []Node) bool {
 	return result
 }
 
+// ContainsAndOrKeyword returns true if this query contains or- or and-
+// keywords. It is a temporary signal to determine whether we can fallback to
+// the older existing search functionality.
+func ContainsAndOrKeyword(input string) bool {
+	lower := strings.ToLower(input)
+	return strings.Contains(lower, " and ") || strings.Contains(lower, " or ")
+}
+
 // processTopLevel processes the top level of a query. It validates that we can
 // process the query with respect to and/or expressions on file content, but not
 // otherwise for nested parameters.

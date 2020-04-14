@@ -245,3 +245,15 @@ func Test_PartitionSearchPattern(t *testing.T) {
 		})
 	}
 }
+
+func Test_ContainsAndOrKeyword(t *testing.T) {
+	if !ContainsAndOrKeyword("foo OR bar") {
+		t.Errorf("Expected query to contain keyword")
+	}
+	if !ContainsAndOrKeyword("repo:foo AND bar") {
+		t.Errorf("Expected query to contain keyword")
+	}
+	if ContainsAndOrKeyword("repo:foo bar") {
+		t.Errorf("Did not expect query to contain keyword")
+	}
+}

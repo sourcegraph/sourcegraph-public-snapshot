@@ -87,7 +87,10 @@ func NewSearchImplementer(args *SearchArgs) (SearchImplementer, error) {
 	}
 
 	var queryInfo query.QueryInfo
-	if conf.AndOrQueryEnabled() {
+	if conf.AndOrQueryEnabled() && searchType != query.SearchTypeLiteral && query.ContainsAndOrKeyword(args.Query) {
+		// To process the input as an and/or query, the flag must be enabled, not be a
+		// literal search, and must contain either an 'and' or 'or' expression.
+		// Else, fallback to the older existing parser.
 		queryInfo, err = query.ProcessAndOr(args.Query)
 		if err != nil {
 			return alertForQuery(args.Query, err), nil
