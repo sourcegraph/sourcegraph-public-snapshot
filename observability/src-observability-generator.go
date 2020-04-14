@@ -447,9 +447,8 @@ func (c *Container) dashboard() *sdk.Board {
 						Op:        "gt",
 						ColorMode: "custom",
 						Fill:      true,
-						Line:      true,
+						Line:      false,
 						FillColor: "rgba(255, 73, 53, 0.8)",
-						LineColor: "rgba(31, 96, 196, 0.6)",
 					})
 				}
 				if o.Critical.GreaterOrEqual != 0 {
@@ -459,9 +458,8 @@ func (c *Container) dashboard() *sdk.Board {
 						Op:        "gt",
 						ColorMode: "custom",
 						Fill:      true,
-						Line:      true,
+						Line:      false,
 						FillColor: "rgba(255, 17, 36, 0.8)",
-						LineColor: "rgba(31, 96, 196, 0.6)",
 					})
 				}
 				if o.Warning.LessOrEqual != 0 {
@@ -471,9 +469,8 @@ func (c *Container) dashboard() *sdk.Board {
 						Op:        "lt",
 						ColorMode: "custom",
 						Fill:      true,
-						Line:      true,
+						Line:      false,
 						FillColor: "rgba(255, 73, 53, 0.8)",
-						LineColor: "rgba(31, 96, 196, 0.6)",
 					})
 				}
 				if o.Critical.LessOrEqual != 0 {
@@ -483,9 +480,8 @@ func (c *Container) dashboard() *sdk.Board {
 						Op:        "lt",
 						ColorMode: "custom",
 						Fill:      true,
-						Line:      true,
+						Line:      false,
 						FillColor: "rgba(255, 17, 36, 0.8)",
-						LineColor: "rgba(31, 96, 196, 0.6)",
 					})
 				}
 
