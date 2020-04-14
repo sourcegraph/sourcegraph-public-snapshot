@@ -1,17 +1,19 @@
 # Using Sourcegraph with a monorepo
 
-Sourcegraph can be used on git [monorepos](https://trunkbaseddevelopment.com/monorepos/) and provides functionality that developers may be missing:
+Sourcegraph can be used on Git [monorepos](https://trunkbaseddevelopment.com/monorepos/) and provides functionality that developers may be missing:
 
 - Indexed code search across projects in the monorepo.
 - Code intelligence across projects in the monorepo.
 
-This functionality may be missing since the tools on a developers machines often can't cope with the scale of a monorepo. Normally a developer can't load the whole monorepo into your IDE losing functionality useful when doing cross-project work.
+The tools on a developer's local machine often can't cope with the scale of a monorepo. For example, a developer often cannot load the whole monorepo into their IDE, and therefore has to do without code exploration functionality useful when doing cross-project work. Sourcegraph brings this functionality back to developers, enabling them to work efficiently at the day-to-day task of understanding code.
 
-## Scale/performance concerns
+## Scale and performance
 
-Sourcegraph ships with the standard git binary to interact with repositories. Commands like `git rev-parse` and `git show` are called when rendering a page for a user. Operations which scale with the total number of files are left to background indexing jobs. Operations which scale with the total number of commits or refs/tags can be in the user path. These operations use pagination to avoid the scale concerns.
+Sourcegraph is designed to scale to large monorepos, even when local Git operations and other code search tools become slow.
 
-Our indexed search scales by the number of files so has no particular concerns due to monorepos. Sourcegraph has been used to index large monorepos as well as tens of thousands of smaller repositories.
+Sourcegraph uses the standard `git` binary to interact with repositories, but structures its use of `git` to ensure that user requests remain fast. Commands like `git rev-parse` and `git show` are called when rendering a page for a user. Git operations that scale with the total number of files are left to background indexing jobs. Operations that scale with the total number of commits or refs/tags may be in the user path, but these operations use pagination to remain fast.
+
+Sourcegraph's code search index scales horizontally with the number of files being indexed for search. Multiple shards may be allocated for one repository, and the index is agnostic to whether the code exists in one massive repository or many smaller ones. Sourcegraph has been used to index both large monorepos and tens of thousands of smaller repositories.
 
 <!-- TODO code intelligence LSIF -->
 
