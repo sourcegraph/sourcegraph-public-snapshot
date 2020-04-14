@@ -54,6 +54,7 @@ func NewSourcer(cf *httpcli.Factory, decs ...func(Source) Source) Sourcer {
 
 // NewSource returns a repository yielding Source from the given ExternalService configuration.
 // An optional rate limiter can be included which will be used to rate limit requests made to the external service
+// when performing Changeset related operations
 func NewSource(svc *ExternalService, cf *httpcli.Factory, rl *rate.Limiter) (Source, error) {
 	switch strings.ToLower(svc.Kind) {
 	case "github":

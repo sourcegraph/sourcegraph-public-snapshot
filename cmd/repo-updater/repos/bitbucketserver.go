@@ -377,10 +377,6 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 			}
 
 			projectKey, repoSlug := ps[0], ps[1]
-			if err := s.rateLimiter.Wait(ctx); err != nil {
-				ch <- batch{err: errors.Wrapf(err, "waiting for rate limiter")}
-				continue
-			}
 			repo, err := s.client.Repo(ctx, projectKey, repoSlug)
 			if err != nil {
 				// TODO(tsenart): When implementing dry-run, reconsider alternatives to return
@@ -410,10 +406,6 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 
 			next := &bitbucketserver.PageToken{Limit: 1000}
 			for next.HasMore() {
-				if err := s.rateLimiter.Wait(ctx); err != nil {
-					ch <- batch{err: errors.Wrapf(err, "waiting for rate limiter")}
-					continue
-				}
 				repos, page, err := s.client.Repos(ctx, next, q)
 				if err != nil {
 					ch <- batch{err: errors.Wrapf(err, "bitbucketserver.repositoryQuery: query=%q, page=%+v", q, next)}
@@ -453,9 +445,6 @@ func (s *BitbucketServerSource) listAllLabeledRepos(ctx context.Context, label s
 	ids := map[int]struct{}{}
 	next := &bitbucketserver.PageToken{Limit: 1000}
 	for next.HasMore() {
-		if err := s.rateLimiter.Wait(ctx); err != nil {
-			return nil, errors.Wrap(err, "waiting for rate limiter")
-		}
 		repos, page, err := s.client.LabeledRepos(ctx, next, label)
 		if err != nil {
 			// If the instance doesn't have the label then no repos are
