@@ -293,6 +293,7 @@ export const CampaignCLIHelp: React.FunctionComponent<Props> = ({
                                 LSIF data to Sourcegraph
                             </h3>
                         }
+                        titleClassName="flex-grow-1"
                     >
                         <div>
                             <p>
@@ -327,6 +328,7 @@ export const CampaignCLIHelp: React.FunctionComponent<Props> = ({
                                 <LanguageGoIcon className="icon-inline ml-1 mr-2" /> Refactor Go code using Comby
                             </h3>
                         }
+                        titleClassName="flex-grow-1"
                     >
                         <div>
                             <p>
@@ -359,6 +361,7 @@ export const CampaignCLIHelp: React.FunctionComponent<Props> = ({
                                 version
                             </h3>
                         }
+                        titleClassName="flex-grow-1"
                     >
                         <div>
                             <p>
