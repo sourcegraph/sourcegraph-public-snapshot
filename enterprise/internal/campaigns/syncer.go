@@ -82,7 +82,8 @@ func (s *SyncRegistry) Add(extServiceID int64) {
 	case "GITHUB", "BITBUCKETSERVER":
 	// Supported by campaigns
 	default:
-		log15.Warn("Syncer not started for unsupported code host", "kind", service.Kind)
+		log15.Debug("Campaigns syncer not started for unsupported code host", "kind", service.Kind)
+		return
 	}
 
 	s.mu.Lock()
