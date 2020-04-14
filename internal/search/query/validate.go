@@ -152,8 +152,15 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 	}
 
 	isNumber := func() error {
-		if _, err := strconv.Atoi(value); err != nil {
-			return fmt.Errorf("field %s has value %s, %s is not a number", field, value, value)
+		count, err := strconv.ParseInt(value, 10, 32)
+		if err != nil {
+			if err.(*strconv.NumError).Err == strconv.ErrRange {
+				return fmt.Errorf("field %s has a value that is out of range, try making it smaller", field)
+			}
+			return fmt.Errorf("field %s has value %[2]s, %[2]s is not a number", field, value)
+		}
+		if count <= 0 {
+			return fmt.Errorf("field %s requires a positive number", field)
 		}
 		return nil
 	}
