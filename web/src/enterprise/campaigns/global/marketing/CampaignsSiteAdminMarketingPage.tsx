@@ -8,47 +8,61 @@ export const CampaignsSiteAdminMarketingPage: React.FunctionComponent<CampaignsS
     <>
         <CampaignsMarketing
             body={
-                <section className="my-3 text-center">
-                    <h1>Enable campaigns for your team</h1>
+                <section className="my-3">
+                    <h2>Get started</h2>
 
-                    <p className="lead">
-                        <a href="https://docs.sourcegraph.com/user/campaigns">Update your configuration settings</a> to
-                        make large-scale code changes across many repositories and different code hosts.
-                    </p>
-                    <div className="alert alert-info text-left">
-                        <h4>
-                            By enabling this feature, you are agreeing to test out functionality that is currently in
-                            beta.
-                        </h4>
-                        <ul>
-                            <li>
-                                This add-on is not part of the Enterprise, Enterprise plus license tiers and at some
-                                point in the future will need to be negotiated.
-                            </li>
-                            <li>
-                                You will currently incur no charges for this, but in the future you will be charged for
-                                this as an add-on. Please <a href="mailto:sales@sourcegraph.com">contact us</a> to
-                                upgrade to this feature.
-                            </li>
-                            <li>
-                                <strong>Enabling read-only for all users</strong>
-                                <br />
-                                <strong>Warning:</strong> There are no repository permissions enforced if you enable
-                                read-only views on campaigns. Any logged in user will be able to see all code changes
-                                associated with a campaign.
-                            </li>
-                        </ul>
-                    </div>
+                    <p>Creating and managing campaigns is only available to Sourcegraph admins at this time.</p>
+                    <ol>
+                        <li>
+                            <a href="https://docs.sourcegraph.com/user/campaigns">
+                                Update your site configuration settings
+                            </a>{' '}
+                            to enable Campaigns for site admins.
+                            <div className="alert alert-info mt-3">
+                                <p>
+                                    <strong>
+                                        By enabling this feature you agree to test out functionality that is currently
+                                        in beta, and acknowledge the following:
+                                    </strong>
+                                </p>
+                                <ul className="mb-3">
+                                    <li>
+                                        During the beta period Campaigns are free to use. After the beta period ends,
+                                        Campaigns will be a paid add-on.
+                                    </li>
+                                    <li>
+                                        Campaigns are not included as part of the Enterprise or Enterprise plus license
+                                        tiers.
+                                    </li>
+                                </ul>
+                                Please <a href="mailto:sales@sourcegraph.com">contact us</a> for more information.
+                            </div>
+                        </li>
+                        <li>
+                            Optional: enable read-only access for all users.
+                            <div className="alert alert-warning mt-3">
+                                <b>WARNING:</b> Repository permissions are NOT enforced if you enable read-only views on
+                                campaigns. Any logged in user will be able to see all code changes associated with a
+                                campaign. Therefore, read-only access is recommended for instances without repository
+                                permissions configured.
+                            </div>
+                        </li>
+                        <li>
+                            <a href="https://docs.sourcegraph.com/user/campaigns#creating-campaigns">
+                                Create your first campaign
+                            </a>
+                        </li>
+                    </ol>
                     <div>
                         <Link to="/site-admin/configuration" className="btn btn-primary mr-2">
-                            Go to my instance settings
+                            Go to my site configuration
                         </Link>
                         <a
                             href="https://docs.sourcegraph.com/user/campaigns"
                             rel="noopener"
                             className="btn btn-primary"
                         >
-                            Getting started with campaigns
+                            Learn how to run campaigns
                         </a>
                     </div>
                 </section>

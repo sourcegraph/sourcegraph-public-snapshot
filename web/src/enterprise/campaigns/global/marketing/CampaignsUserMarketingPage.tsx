@@ -19,37 +19,39 @@ export const CampaignsUserMarketingPage: React.FunctionComponent<CampaignsUserMa
     return (
         <CampaignsMarketing
             body={
-                <section className="my-3 text-center">
-                    {!enableReadAccess && <h1>Tell your admin you are interested in Campaigns</h1>}
-                    {enableReadAccess && <h1>How to get started</h1>}
-
-                    <p className="lead">
-                        Running Campaigns is currently only supported for site admins of your Sourcegraph instance.{' '}
-                        {enableReadAccess && (
-                            <>
-                                However, your admin can{' '}
-                                <a href="https://docs.sourcegraph.com/user/campaigns#configuration" rel="noopener">
-                                    enable read-only access to campaigns
-                                </a>{' '}
-                                for other users.
-                            </>
-                        )}
-                        {!enableReadAccess && (
-                            <>
-                                Your admin will need to{' '}
-                                <a href="https://docs.sourcegraph.com/user/campaigns" rel="noopener">
-                                    update the configuration settings
-                                </a>{' '}
-                                to make large-scale code changes across many repositories and different code hosts.
-                            </>
-                        )}
+                <section className="my-3">
+                    <h2>Interested in Campaigns?</h2>
+                    <p>
+                        At this time, creating and managing campaigns is only available to Sourcegraph admins. What can
+                        you do?
                     </p>
                     <div className="row">
-                        <ol className="col-6 offset-3 lead text-left">
-                            <li>Tell your admin</li>
-                            <li>Request read-only access</li>
+                        <ol>
+                            <li>Let your Sourcegraph admin know you're interested in using Campaigns for your team.</li>
+                            {enableReadAccess && (
+                                <li>
+                                    Ask your Sourcegraph admin for{' '}
+                                    <a href="https://docs.sourcegraph.com/user/campaigns#configuration" rel="noopener">
+                                        read-only access
+                                    </a>{' '}
+                                    to Campaigns.
+                                    <div className="alert alert-info mt-3">
+                                        <b>NOTE:</b> Repository permissions are NOT enforced by campaigns, so your admin
+                                        may not grant read-only access if your Sourcegraph instance has repository
+                                        permissions configured.
+                                    </div>
+                                </li>
+                            )}
+                            <li>
+                                Learn how to{' '}
+                                <a href="https://docs.sourcegraph.com/user/campaigns#creating-campaigns">
+                                    get started creating campaigns
+                                </a>
+                                .
+                            </li>
                         </ol>
                     </div>
+
                     <div>
                         <button
                             type="button"
@@ -57,7 +59,7 @@ export const CampaignsUserMarketingPage: React.FunctionComponent<CampaignsUserMa
                             disabled={wasSubmitted}
                             onClick={onUpvote}
                         >
-                            {!wasSubmitted && <>Let your admin know you're interested 🖐</>}
+                            {!wasSubmitted && <>Notify I'm interested 🖐</>}
                             {wasSubmitted && <>Thanks!</>}
                         </button>
                         <a
@@ -65,7 +67,7 @@ export const CampaignsUserMarketingPage: React.FunctionComponent<CampaignsUserMa
                             rel="noopener"
                             className="btn btn-primary"
                         >
-                            Learn how to get started with campaigns
+                            Learn how to get started
                         </a>
                     </div>
                 </section>
