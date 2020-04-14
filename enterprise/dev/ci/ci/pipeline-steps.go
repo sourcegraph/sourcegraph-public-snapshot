@@ -25,7 +25,13 @@ var allDockerImages = []string{
 
 	// Images under docker-images/
 	"grafana",
+	"indexed-searcher",
+	"postgres-11.4",
 	"prometheus",
+	"redis-cache",
+	"redis-store",
+	"search-indexer",
+	"syntax-highlighter",
 }
 
 // Verifies the docs formatting and builds the `docsite` command.
