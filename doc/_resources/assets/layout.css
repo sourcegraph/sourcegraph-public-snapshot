@@ -67,7 +67,7 @@ code {
     h2[id]:before, h3[id]:before {
         display: block;
         content: " ";
-        margin-top: -84px;
+        margin-top: -123px;
         height: 114px;
         visibility: hidden;
     }
