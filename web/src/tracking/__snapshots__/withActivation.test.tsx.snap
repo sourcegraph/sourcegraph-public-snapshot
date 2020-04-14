@@ -10,13 +10,40 @@ exports[`withActivation no user 1`] = `
 exports[`withActivation user, admin 1`] = `
 <div>
   activation JSON: 
-  "{\\n  steps: [\\n    {\\n      id: 'ConnectedCodeHost',\\n      title: 'Add repositories',\\n      detail: 'Configure Sourcegraph to talk to your code host and fetch a list of your repositories.'\\n    },\\n    { id: 'DidSearch', title: 'Search your code', detail: [Object] },\\n    {\\n      id: 'FoundReferences',\\n      title: 'Find some references',\\n      detail: 'To find references of a token, navigate to a code file in one of your repositories, hover over a token to activate the tooltip, and then click \\"Find references\\".',\\n      onClick: [Function: onClick]\\n    },\\n    {\\n      id: 'EnabledSharing',\\n      title: 'Configure SSO or share with teammates',\\n      detail: 'Configure a single-sign on (SSO) provider or have at least one other teammate sign up.',\\n      onClick: [Function: onClick]\\n    }\\n  ],\\n  completed: undefined,\\n  update: [Function (anonymous)],\\n  refetch: [Function (anonymous)]\\n}"
+  { steps:
+   [ { id: 'ConnectedCodeHost',
+       title: 'Add repositories',
+       detail:
+        'Configure Sourcegraph to talk to your code host and fetch a list of your repositories.' },
+     { id: 'DidSearch', title: 'Search your code', detail: [Object] },
+     { id: 'FoundReferences',
+       title: 'Find some references',
+       detail:
+        'To find references of a token, navigate to a code file in one of your repositories, hover over a token to activate the tooltip, and then click "Find references".',
+       onClick: [Function: onClick] },
+     { id: 'EnabledSharing',
+       title: 'Configure SSO or share with teammates',
+       detail:
+        'Configure a single-sign on (SSO) provider or have at least one other teammate sign up.',
+       onClick: [Function: onClick] } ],
+  completed: undefined,
+  update: [Function],
+  refetch: [Function] }
 </div>
 `;
 
 exports[`withActivation user, non-admin 1`] = `
 <div>
   activation JSON: 
-  "{\\n  steps: [\\n    { id: 'DidSearch', title: 'Search your code', detail: [Object] },\\n    {\\n      id: 'FoundReferences',\\n      title: 'Find some references',\\n      detail: 'To find references of a token, navigate to a code file in one of your repositories, hover over a token to activate the tooltip, and then click \\"Find references\\".',\\n      onClick: [Function: onClick]\\n    }\\n  ],\\n  completed: undefined,\\n  update: [Function (anonymous)],\\n  refetch: [Function (anonymous)]\\n}"
+  { steps:
+   [ { id: 'DidSearch', title: 'Search your code', detail: [Object] },
+     { id: 'FoundReferences',
+       title: 'Find some references',
+       detail:
+        'To find references of a token, navigate to a code file in one of your repositories, hover over a token to activate the tooltip, and then click "Find references".',
+       onClick: [Function: onClick] } ],
+  completed: undefined,
+  update: [Function],
+  refetch: [Function] }
 </div>
 `;
