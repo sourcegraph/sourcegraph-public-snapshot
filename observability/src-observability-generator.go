@@ -148,6 +148,13 @@ type Observable struct {
 	// would not want an alert to fire if no data was present, so this would be set to true.
 	DataMayNotExist bool
 
+	// DataMayBeNaN indicates whether or not the query may return NaN regularly. Most often,
+	// this should be false as NaN often indicates a mistaken divide by zero. However, for
+	// some queries NaN values may be expected, in which case you should set this to true.
+	//
+	// When false, alerts will fire if the query returns NaN.
+	DataMayBeNaN bool
+
 	// Warning and Critical alert definitions. At least a Warning alert must be present.
 	//
 	// See README.md for why it is intentionally impossible to create a dashboard to monitor
@@ -356,7 +363,7 @@ func (c *Container) dashboard() *sdk.Board {
 		},
 	}
 	alertsDefined.AddTarget(&sdk.Target{
-		Expr:    fmt.Sprintf(`label_replace(sum(alert_count{service_name="%s",name!="",level=~"$alert_level"}) by (level,description), "_01_level", "$1", "level", "(.*)")`, c.Name),
+		Expr:    fmt.Sprintf(`label_replace(sum(max by (level,service_name,name,description)(alert_count{service_name="%s",name!="",level=~"$alert_level"})) by (level,description), "_01_level", "$1", "level", "(.*)")`, c.Name),
 		Format:  "table",
 		Instant: true,
 	})
@@ -390,7 +397,7 @@ func (c *Container) dashboard() *sdk.Board {
 		},
 	}
 	alertsFiring.AddTarget(&sdk.Target{
-		Expr:         fmt.Sprintf(`sum by (service_name,level,name)(alert_count{service_name="%s",name!="",level=~"$alert_level"} >= 1)`, c.Name),
+		Expr:         fmt.Sprintf(`sum by (service_name,level,name)(max by (level,service_name,name,description)(alert_count{service_name="%s",name!="",level=~"$alert_level"}) >= 1)`, c.Name),
 		LegendFormat: "{{level}}: {{name}}",
 	})
 	board.Panels = append(board.Panels, alertsFiring)
@@ -447,9 +454,8 @@ func (c *Container) dashboard() *sdk.Board {
 						Op:        "gt",
 						ColorMode: "custom",
 						Fill:      true,
-						Line:      true,
-						FillColor: "rgba(255, 152, 48, 0.5)",
-						LineColor: "rgba(31, 96, 196, 0.6)",
+						Line:      false,
+						FillColor: "rgba(255, 73, 53, 0.8)",
 					})
 				}
 				if o.Critical.GreaterOrEqual != 0 {
@@ -459,9 +465,8 @@ func (c *Container) dashboard() *sdk.Board {
 						Op:        "gt",
 						ColorMode: "custom",
 						Fill:      true,
-						Line:      true,
-						FillColor: "rgba(242, 73, 92, 0.5)",
-						LineColor: "rgba(31, 96, 196, 0.6)",
+						Line:      false,
+						FillColor: "rgba(255, 17, 36, 0.8)",
 					})
 				}
 				if o.Warning.LessOrEqual != 0 {
@@ -471,9 +476,8 @@ func (c *Container) dashboard() *sdk.Board {
 						Op:        "lt",
 						ColorMode: "custom",
 						Fill:      true,
-						Line:      true,
-						FillColor: "rgba(255, 152, 48, 0.5)",
-						LineColor: "rgba(31, 96, 196, 0.6)",
+						Line:      false,
+						FillColor: "rgba(255, 73, 53, 0.8)",
 					})
 				}
 				if o.Critical.LessOrEqual != 0 {
@@ -483,9 +487,8 @@ func (c *Container) dashboard() *sdk.Board {
 						Op:        "lt",
 						ColorMode: "custom",
 						Fill:      true,
-						Line:      true,
-						FillColor: "rgba(242, 73, 92, 0.5)",
-						LineColor: "rgba(31, 96, 196, 0.6)",
+						Line:      false,
+						FillColor: "rgba(255, 17, 36, 0.8)",
 					})
 				}
 
@@ -557,9 +560,18 @@ func (c *Container) promAlertsFile() *promRulesFile {
 						// 	query_value=0 / greaterOrEqual=50 == 0.0
 						//
 						alertQuery = fmt.Sprintf("(%s) / %v", o.Query, alert.GreaterOrEqual)
+
+						// Replace no-data with zero values, so the alert does not fire, if desired.
 						if o.DataMayNotExist {
 							alertQuery = fmt.Sprintf("(%s) OR on() vector(0)", alertQuery)
 						}
+
+						// Replace NaN values with zero (not firing) or one (firing) if they are present.
+						fireOnNan := "1"
+						if o.DataMayBeNaN {
+							fireOnNan = "0"
+						}
+						alertQuery = fmt.Sprintf("((%s) >= 0) OR on() vector(%v)", alertQuery, fireOnNan)
 					} else if alert.LessOrEqual != 0 {
 						// e.g. "zoekt-indexserver: less than 20 indexed search requests every 5m by code"
 						labels["description"] = fmt.Sprintf("%s: less than %v %s", c.Name, alert.LessOrEqual, o.Description)
@@ -571,9 +583,18 @@ func (c *Container) promAlertsFile() *promRulesFile {
 						// 	lessOrEqual=50 / query_value=-50 (0.0000001) == 500000000
 						//
 						alertQuery = fmt.Sprintf("%v / clamp_min(%s, 0.0000001)", alert.LessOrEqual, o.Query)
+
+						// Replace no-data with zero values, so the alert does not fire, if desired.
 						if o.DataMayNotExist {
 							alertQuery = fmt.Sprintf("(%s) OR on() vector(0)", alertQuery)
 						}
+
+						// Replace NaN values with zero (not firing) or one (firing) if they are present.
+						fireOnNan := "1"
+						if o.DataMayBeNaN {
+							fireOnNan = "0"
+						}
+						alertQuery = fmt.Sprintf("((%s) >= 0) OR on() vector(%v)", alertQuery, fireOnNan)
 					}
 
 					// This wrapper clamp/floor/default vector should be present on ALL alert_count rule

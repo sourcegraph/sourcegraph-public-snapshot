@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/internal/search/query/syntax"
 	"github.com/sourcegraph/sourcegraph/internal/search/query/types"
 )
@@ -69,50 +68,35 @@ func (q OrdinaryQuery) IsCaseSensitive() bool {
 
 // AndOrQuery satisfies the interface for QueryInfo close to that of OrdinaryQuery.
 func (q AndOrQuery) RegexpPatterns(field string) (values, negatedValues []string) {
-	found := false
 	VisitField(q.Query, field, func(visitedValue string, negated bool) {
-		found = true
 		if negated {
 			negatedValues = append(negatedValues, visitedValue)
 		} else {
 			values = append(values, visitedValue)
 		}
 	})
-	if !found {
-		panic("no such field: " + field)
-	}
 	return values, negatedValues
 }
 
 func (q AndOrQuery) StringValues(field string) (values, negatedValues []string) {
-	found := false
 	VisitField(q.Query, field, func(visitedValue string, negated bool) {
-		found = true
 		if negated {
 			negatedValues = append(negatedValues, visitedValue)
 		} else {
 			values = append(values, visitedValue)
 		}
 	})
-	if !found {
-		panic("no such field: " + field)
-	}
 	return values, negatedValues
 }
 
 func (q AndOrQuery) StringValue(field string) (value, negatedValue string) {
-	found := false
 	VisitField(q.Query, field, func(visitedValue string, negated bool) {
-		found = true
 		if negated {
 			negatedValue = visitedValue
 		} else {
 			value = visitedValue
 		}
 	})
-	if !found {
-		panic("no such field: " + field)
-	}
 	return value, negatedValue
 }
 
@@ -145,7 +129,6 @@ func (q AndOrQuery) ParseTree() syntax.ParseTree {
 		}
 		tree = append(tree, expr)
 	})
-	log15.Info("Query", "ParseTree", tree)
 	return tree
 }
 

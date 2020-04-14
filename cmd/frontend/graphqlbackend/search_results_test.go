@@ -1433,3 +1433,19 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 		})
 	}
 }
+
+func TestSearchResolver_evaluateWarning(t *testing.T) {
+	q, _ := query.ProcessAndOr("file:foo or file:bar")
+	want := &searchAlert{
+		prometheusType: "unsupported_and_or_query",
+		title:          "Unable To Process Query",
+		description:    `I'm having trouble understsanding that query. Your query contains "and" or "or" operators that make me think they apply to filters like "repo:" or "file:". We only support "and" or "or" operators on search patterns for file contents currently. You can help me by putting parentheses around the search pattern.`,
+	}
+	andOrQuery, _ := q.(*query.AndOrQuery)
+	got, _ := (&searchResolver{}).evaluate(context.Background(), andOrQuery.Query)
+	t.Run("warn for unsupported and/or query", func(t *testing.T) {
+		if !reflect.DeepEqual(got.alert, want) {
+			t.Fatalf("got alert %v, want alert %v", got.alert, want)
+		}
+	})
+}

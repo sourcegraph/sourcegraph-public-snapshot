@@ -1,0 +1,64 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`UserSubscriptionsProductSubscriptionPage renders 1`] = `
+<div
+  className="user-subscriptions-product-subscription-page"
+>
+  <div
+    className="d-flex align-items-center justify-content-between"
+  >
+    <BackToAllSubscriptionsLink
+      user={
+        Object {
+          "settingsURL": "/u",
+        }
+      }
+    />
+  </div>
+  <h2>
+    Subscription 
+  </h2>
+  <div
+    className="card mt-3"
+  >
+    <div
+      className="card-header"
+    >
+      Billing
+    </div>
+    <div
+      className="card-body"
+    >
+      <span
+        className="text-muted "
+      >
+        No billing information is associated with this subscription.
+         
+        <a
+          href="mailto:sales@sourcegraph.com?subject=Billing%20for%20subscription%20undefined"
+        >
+          Contact sales
+        </a>
+         
+        for help.
+      </span>
+    </div>
+  </div>
+  <div
+    className="card mt-3"
+  >
+    <div
+      className="card-header"
+    >
+      History
+    </div>
+    <ProductSubscriptionHistory
+      productSubscription={
+        Object {
+          "__typename": "ProductSubscription",
+        }
+      }
+    />
+  </div>
+</div>
+`;

@@ -42,6 +42,14 @@ func (a searchAlert) ProposedQueries() *[]*searchQueryDescription {
 	return &a.proposedQueries
 }
 
+func alertForCappedAndExpression() *searchAlert {
+	return &searchAlert{
+		prometheusType: "exceed_and_expression_search_limit",
+		title:          "Too many files to search for and-expression",
+		description:    fmt.Sprintf("One and-expression in the query requires a lot of work! Try using the 'repo:' or 'file:' filters to narrow your search. We're working on improving this experience in https://github.com/sourcegraph/sourcegraph/issues/9824"),
+	}
+}
+
 // alertForQuery converts errors in the query to search alerts.
 func alertForQuery(queryString string, err error) *searchAlert {
 	switch e := err.(type) {
@@ -67,6 +75,12 @@ func alertForQuery(queryString string, err error) *searchAlert {
 				description:     "Quoting the query may help if you want a literal match instead of a regular expression match.",
 				proposedQueries: proposedQuotedQueries(queryString),
 			}
+		}
+	case *query.UnsupportedError:
+		return &searchAlert{
+			prometheusType: "unsupported_and_or_query",
+			title:          "Unable To Process Query",
+			description:    `I'm having trouble understsanding that query. Your query contains "and" or "or" operators that make me think they apply to filters like "repo:" or "file:". We only support "and" or "or" operators on search patterns for file contents currently. You can help me by putting parentheses around the search pattern.`,
 		}
 	}
 	return &searchAlert{
