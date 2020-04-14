@@ -9,7 +9,7 @@ const Component: React.FunctionComponent<ActivationProps & { authenticatedUser: 
     props: ActivationProps & { authenticatedUser: GQL.IUser | null }
 ) => <div>activation steps: {props.activation ? util.inspect(props.activation) : 'undefined'}</div>
 
-describe('withActivation', () => {
+describe.skip('withActivation', () => {
     const ComponentWithActivation = withActivation(Component)
 
     test('no user', () => {
