@@ -152,7 +152,7 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
     className="pt-3 mb-4"
   >
     <div
-      className="p-0 list-group-item h5 font-weight-normal e2e-site-admin-overview-menu"
+      className="p-0 list-group-item font-weight-normal e2e-site-admin-overview-menu"
     >
       <div
         className="d-flex justify-content-between align-items-center position-relative mb-0 py-3 px-3"
@@ -161,12 +161,12 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
           className="d-flex flex-column"
         >
           <span
-            className="mb-0 font-weight-bold"
+            className="h5 mb-0 font-weight-bold"
           >
             Welcome to Sourcegraph
           </span>
           <div
-            className="mb-0 font-weight-normal"
+            className="h5 mb-0 font-weight-normal"
           >
             Complete the steps below to finish onboarding to Sourcegraph
           </div>
@@ -212,9 +212,11 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
               onKeyDown={[Function]}
             >
               <div
-                className="activation-checklist-item d-flex justify-content-between"
+                className="activation-checklist-item d-flex justify-content-between h5 mb-0 font-weight-normal"
               >
-                <div>
+                <div
+                  className="d-flex align-items-center"
+                >
                   <span
                     className="activation-checklist-item__icon-container icon-inline icon-down"
                   >

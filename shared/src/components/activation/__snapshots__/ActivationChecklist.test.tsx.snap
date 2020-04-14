@@ -24,7 +24,9 @@ exports[`ActivationChecklist render 0/1 complete 1`] = `
         <div
           className="activation-checklist-item d-flex justify-content-between"
         >
-          <div>
+          <div
+            className="d-flex align-items-center"
+          >
             <span
               className="activation-checklist-item__icon-container icon-inline icon-down"
             >
@@ -122,7 +124,9 @@ exports[`ActivationChecklist render 0/1 complete 2`] = `
         <div
           className="activation-checklist-item d-flex justify-content-between"
         >
-          <div>
+          <div
+            className="d-flex align-items-center"
+          >
             <span
               className="activation-checklist-item__icon-container icon-inline icon-down"
             >
@@ -220,7 +224,9 @@ exports[`ActivationChecklist render 1/1 complete 1`] = `
         <div
           className="activation-checklist-item d-flex justify-content-between"
         >
-          <div>
+          <div
+            className="d-flex align-items-center"
+          >
             <span
               className="activation-checklist-item__icon-container icon-inline icon-down"
             >
