@@ -172,21 +172,27 @@ func (s *SyncRegistry) EnqueueChangesetSyncs(ctx context.Context, ids []int64) e
 
 // HandleExternalServiceSync handles changes to external services.
 func (s *SyncRegistry) HandleExternalServiceSync(es api.ExternalService) {
-	// For now we just need to start and stop them.
-	// TODO: Once rate limiters are added we'll need to update those
 	s.mu.Lock()
 	syncer, exists := s.syncers[es.ID]
 	s.mu.Unlock()
 
-	if es.DeletedAt == nil && !exists {
+	if timeIsNilOrZero(es.DeletedAt) && !exists {
 		s.Add(es.ID)
 	}
+
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if es.DeletedAt != nil && exists {
 		delete(s.syncers, es.ID)
 		syncer.cancel()
 	}
+}
+
+func timeIsNilOrZero(t *time.Time) bool {
+	if t == nil {
+		return true
+	}
+	return t.IsZero()
 }
 
 // shardChangeset assigns an external service to the supplied changeset.
