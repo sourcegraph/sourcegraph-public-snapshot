@@ -73,6 +73,7 @@ All notable changes to Sourcegraph are documented in this file.
 - observability: Git Server dashboard: there is now a panel to show concurrent command executions to match the defined alerts. [#9354](https://github.com/sourcegraph/sourcegraph/issues/9354)
 - observability: Git Server dashboard: adjusted the critical disk space alert to 15% so it can now fire. [#9351](https://github.com/sourcegraph/sourcegraph/issues/9351)
 - observability: Git Server dashboard: the 'echo command duration test' panel now properly displays units in seconds. [#7628](https://github.com/sourcegraph/sourcegraph/issues/7628)
+- observability: Dashboard panels showing firing alerts no longer over-count firing alerts due to the number of service replicas. [#9353](https://github.com/sourcegraph/sourcegraph/issues/9353)
 - The Phabricator integration no longer makes duplicate requests to Phabricator's API on diff views. [#8849](https://github.com/sourcegraph/sourcegraph/issues/8849)
 - Changesets on repositories that aren't available on the instance anymore are now hidden instead of failing. [#9656](https://github.com/sourcegraph/sourcegraph/pull/9656)
 

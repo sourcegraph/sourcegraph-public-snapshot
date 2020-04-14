@@ -356,7 +356,7 @@ func (c *Container) dashboard() *sdk.Board {
 		},
 	}
 	alertsDefined.AddTarget(&sdk.Target{
-		Expr:    fmt.Sprintf(`label_replace(sum(alert_count{service_name="%s",name!="",level=~"$alert_level"}) by (level,description), "_01_level", "$1", "level", "(.*)")`, c.Name),
+		Expr:    fmt.Sprintf(`label_replace(sum(max by (level,service_name,name,description)(alert_count{service_name="%s",name!="",level=~"$alert_level"})) by (level,description), "_01_level", "$1", "level", "(.*)")`, c.Name),
 		Format:  "table",
 		Instant: true,
 	})
@@ -390,7 +390,7 @@ func (c *Container) dashboard() *sdk.Board {
 		},
 	}
 	alertsFiring.AddTarget(&sdk.Target{
-		Expr:         fmt.Sprintf(`sum by (service_name,level,name)(alert_count{service_name="%s",name!="",level=~"$alert_level"} >= 1)`, c.Name),
+		Expr:         fmt.Sprintf(`sum by (service_name,level,name)(max by (level,service_name,name,description)(alert_count{service_name="%s",name!="",level=~"$alert_level"}) >= 1)`, c.Name),
 		LegendFormat: "{{level}}: {{name}}",
 	})
 	board.Panels = append(board.Panels, alertsFiring)
@@ -448,7 +448,7 @@ func (c *Container) dashboard() *sdk.Board {
 						ColorMode: "custom",
 						Fill:      true,
 						Line:      true,
-						FillColor: "rgba(255, 83, 67, 0.6)",
+						FillColor: "rgba(255, 73, 53, 0.8)",
 						LineColor: "rgba(31, 96, 196, 0.6)",
 					})
 				}
@@ -460,7 +460,7 @@ func (c *Container) dashboard() *sdk.Board {
 						ColorMode: "custom",
 						Fill:      true,
 						Line:      true,
-						FillColor: "rgba(224, 28, 47, 0.6)",
+						FillColor: "rgba(255, 17, 36, 0.8)",
 						LineColor: "rgba(31, 96, 196, 0.6)",
 					})
 				}
@@ -472,7 +472,7 @@ func (c *Container) dashboard() *sdk.Board {
 						ColorMode: "custom",
 						Fill:      true,
 						Line:      true,
-						FillColor: "rgba(255, 83, 67, 0.6)",
+						FillColor: "rgba(255, 73, 53, 0.8)",
 						LineColor: "rgba(31, 96, 196, 0.6)",
 					})
 				}
@@ -484,7 +484,7 @@ func (c *Container) dashboard() *sdk.Board {
 						ColorMode: "custom",
 						Fill:      true,
 						Line:      true,
-						FillColor: "rgba(224, 28, 47, 0.6)",
+						FillColor: "rgba(255, 17, 36, 0.8)",
 						LineColor: "rgba(31, 96, 196, 0.6)",
 					})
 				}
