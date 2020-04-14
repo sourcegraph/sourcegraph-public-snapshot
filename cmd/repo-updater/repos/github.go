@@ -167,6 +167,10 @@ func (s GithubSource) CreateChangeset(ctx context.Context, c *Changeset) (bool, 
 	var exists bool
 	repo := c.Repo.Metadata.(*github.Repository)
 
+	if err := s.rateLimiter.Wait(ctx); err != nil {
+		return false, errors.Wrap(err, "waiting for rate limiter")
+	}
+
 	pr, err := s.client.CreatePullRequest(ctx, &github.CreatePullRequestInput{
 		RepositoryID: repo.ID,
 		Title:        c.Title,
@@ -205,6 +209,9 @@ func (s GithubSource) CloseChangeset(ctx context.Context, c *Changeset) error {
 		return errors.New("Changeset is not a GitHub pull request")
 	}
 
+	if err := s.rateLimiter.Wait(ctx); err != nil {
+		return errors.Wrap(err, "waiting for rate limiter")
+	}
 	err := s.client.ClosePullRequest(ctx, pr)
 	if err != nil {
 		return err
@@ -231,6 +238,12 @@ func (s GithubSource) LoadChangesets(ctx context.Context, cs ...*Changeset) erro
 		}
 	}
 
+	// Each LoadPullRequest call uses 3 tokens. This was calculated by manually calling the query
+	// and asking for the cost as described here:
+	// https://developer.github.com/v4/guides/resource-limitations/#returning-a-calls-rate-limit-status
+	if err := s.rateLimiter.WaitN(ctx, len(prs)*3); err != nil {
+		return errors.Wrap(err, "waiting for rate limiter")
+	}
 	err := s.client.LoadPullRequests(ctx, prs...)
 	if err != nil {
 		return err
@@ -252,6 +265,9 @@ func (s GithubSource) UpdateChangeset(ctx context.Context, c *Changeset) error {
 		return errors.New("Changeset is not a GitHub pull request")
 	}
 
+	if err := s.rateLimiter.Wait(ctx); err != nil {
+		return errors.Wrap(err, "waiting for rate limiter")
+	}
 	updated, err := s.client.UpdatePullRequest(ctx, &github.UpdatePullRequestInput{
 		PullRequestID: pr.ID,
 		Title:         c.Title,

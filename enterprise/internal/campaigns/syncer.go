@@ -98,10 +98,6 @@ func (s *SyncRegistry) Add(extServiceID int64) {
 	// We need to be able to cancel the syncer if the service is removed
 	ctx, cancel = context.WithCancel(s.Ctx)
 
-	var rateLimiter *rate.Limiter
-	if s.RateLimiterRegistry != nil {
-		rateLimiter = s.RateLimiterRegistry.GetRateLimiter(service.ID)
-	}
 	syncer := &ChangesetSyncer{
 		SyncStore:         s.SyncStore,
 		ReposStore:        s.RepoStore,
@@ -109,6 +105,7 @@ func (s *SyncRegistry) Add(extServiceID int64) {
 		externalServiceID: extServiceID,
 		cancel:            cancel,
 		priorityNotify:    make(chan []int64, 500),
+		rateLimitRegistry: s.RateLimiterRegistry,
 	}
 
 	s.syncers[extServiceID] = syncer
