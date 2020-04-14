@@ -1,4 +1,4 @@
-# Getting Started
+# Getting started
 
 Follow these steps to get started with Campaigns on your Sourcegraph instance:
 

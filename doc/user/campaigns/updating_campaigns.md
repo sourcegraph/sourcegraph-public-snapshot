@@ -1,4 +1,4 @@
-# Updating a Campaign
+# Updating a campaign
 
 You can also apply a new patch set to an existing campaign. Following the creation of the patch set with the `src campaign patchset create-from-patches` command, a URL will be output that will guide you to the web UI to allow you to change an existing campaign's patch set.
 

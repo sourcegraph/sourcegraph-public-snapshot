@@ -1,4 +1,4 @@
-# Campaign Types
+# Campaign types
 
 There are two types of campaigns:
 

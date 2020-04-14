@@ -1,10 +1,10 @@
-# Creating a Campaign from Patches
+# Creating a campaign from patches
 
-A Campaign can be created from a set of patches, one per repository. For each patch, the Campaign will create a 
+A campaign can be created from a set of patches, one per repository. For each patch, a changeset (what code hosts call _pull request_ or _merge request_) will be created on the code host on which the repository is hosted.
 
-using the `src` CLI allows you :
+Here is the short version for how to create a patch set and turn that into changesets by creating a campaign:
 
-1. Create an action JSON file (e.g. `action.json`) that contains an action definition
+1. Create an action JSON file (e.g. `action.json`) that contains an action definition.
 1. _Optional_: See repositories the action would run over: `src actions scope-query -f action.json`
 1. Create a set of patches by executing the action over repositories: `src actions exec -f action.json > patches.json`
 1. Save the patches in Sourcegraph by creating a patch set: `src campaign patchset create-from-patches < patches.json`

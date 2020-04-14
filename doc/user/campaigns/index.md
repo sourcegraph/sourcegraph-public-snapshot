@@ -10,28 +10,24 @@ You provide the code to make the change and Campaigns provide the plumbing to tu
 
 ## How it works
 
-Campaigns allow you to create, track and manage code changes in multiple repositories across different code hosts.
+Campaigns allow you to use the `src` CLI and leverage Sourcegraph's search powers to execute code and Docker containers in all the repositories yielded by a single search query and save and inspect the produced **patches**.
 
-With Campaigns you can leverage the power of Sourcegraph's search and, using the `src` CLI, execute code and Docker containers in each repository yielded by a search query.
+The created set of patches can then be turned into multiple **changesets** (a generic name for what some code hosts call _pull requests_ and others _merge requests_) on different code hosts by creating a **campaign**.
 
-This is called **executing an _action_** (an _action_ is a series of commands and Docker containers to run in each repository) and yields **set of patches**, one for each repository, which you can inspect either in the CLI or in the Sourcegraph UI.
-
-If you're happy with the generated patches, Sourcegraph will then **turn the patches into changesets** (a generic name for what some code hosts call _pull requests_ or _merge requests_) on the code hosts for you.
-
-Once created, you can track the review state, CI status and lifecycle of each changeset in the Sourcegraph.
+Once the campaign is created, you can track the review state, CI status and lifecycle of each changeset in the Sourcegraph UI.
 
 See this video for a demonstration of lifecycle of a Campaign:
 
-<div style="max-width: 450px;" class="mx-auto">
+<div style="max-width: 450px;" class="float-md-right float-none ml-md-3 mx-auto">
   <figure class="figure">
     <div class="figure-img">
       <iframe src="https://player.vimeo.com/video/398878670?color=0CB6F4&title=0&byline=0&portrait=0" style="max-height: 250px; width:100%;height:100%;" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>
     </div>
-    <figcaption class="figure-caption">Running <code>gofmt</code> over all repositories with a <code>go.mod</code> file using Campaigns.</figcaption>
+    <figcaption class="figure-caption text-right">Campaign: Running <code>gofmt</code> in each repository containing a <code>go.mod</code> file.</figcaption>
   </figure>
 </div>
 
-1. With the `src` CLI the user **generates a set of patches** by running `gofmt` over every repository that has a `go.mod` file, leveraging Sourcegraphs search capabilities.
+1. With the `src` CLI the user **generates a set of patches** by running `gofmt` over every repository that has a `go.mod` file, leveraging Sourcegraphs search capabilities. This is called **executing an _action_** (an _action_ is a series of commands and Docker containers to run in each repository) and yields **set of patches**, one for each repository, which you can inspect either in the CLI or in the Sourcegraph UI.
 1. The patches are then used to **create a draft Campaign**.
 1. At this point, since it's a draft Camapaign, no changesets (_pull requests_ in the case of GitHub here) have been created on the code host.
 1. The user then selectively **creates GitHub pull requests** by publishing single patches.
