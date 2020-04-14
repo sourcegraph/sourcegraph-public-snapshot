@@ -24,20 +24,3 @@ VERSION=$MY_VERSION ./release.sh
 ```
 
 Note: `$MY_VERSION` above should reflect the underlying Alpine version. If changes are made without altering the underlying Alpine version, then bump the suffix. For example, use 3.10-1, 3.10-2, and so on. To find the current version, consult https://hub.docker.com/r/sourcegraph/alpine
-
-### Known issues
-
-Many of our derivative images have not yet been moved here from our [private infrastructure repository](https://github.com/sourcegraph/infrastructure/tree/master/docker-images). These include:
-
-- `sourcegraph/postgres`
-- `sourcegraph/postgres-11.1`
-- `sourcegraph/redis-cache`
-- `sourcegraph/redis-store`
-- `sourcegraph/redis_exporter`
-- `sourcegraph/zoekt-indexserver`
-- `sourcegraph/zoekt-webserver`
-- `sourcegraph/pgsql-exporter`
-- `sourcegraph/pod-tmp-gc`
-- And possibly others which we intend to open source.
-
-Tracking issue: https://github.com/sourcegraph/sourcegraph/issues/2299
