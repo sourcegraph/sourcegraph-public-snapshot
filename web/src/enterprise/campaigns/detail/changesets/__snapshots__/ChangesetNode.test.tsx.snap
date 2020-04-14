@@ -17,13 +17,13 @@ Object {
             <div
               className="m-0 mb-2"
             >
-              <SourcePullIcon
-                className="mr-1 icon-inline text-success"
-                data-tooltip="open"
-              />
               <h3
                 className="m-0 d-inline"
               >
+                <SourcePullIcon
+                  className="mr-1 icon-inline text-success"
+                  data-tooltip="open"
+                />
                 <LinkOrSpan
                   rel="noopener noreferrer"
                   target="_blank"
@@ -33,6 +33,10 @@ Object {
                    (#
                   123
                   )
+                   
+                  <Memo(ExternalLinkIcon)
+                    size="1rem"
+                  />
                 </LinkOrSpan>
               </h3>
               <small>
