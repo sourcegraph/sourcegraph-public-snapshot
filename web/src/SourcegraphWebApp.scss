@@ -267,3 +267,9 @@ body,
 @import '~@sourcegraph/react-loading-spinner/lib/LoadingSpinner.css';
 
 @import '../../shared/src/index';
+
+:root {
+    // Skip Reach UI styles. See https://reacttraining.com/reach-ui/styling/.
+    --reach-menu-button: 1;
+    --reach-accordion: 1;
+}
