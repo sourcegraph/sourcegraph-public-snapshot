@@ -705,15 +705,14 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 		})
 	}
 
-	tryCount := want * 2        // Opportunistic approximation for the number of results to get for an intersection.
+	tryCount := want * 1000     // Opportunistic approximation for the number of results to get for an intersection.
 	maxResultsForRetry := 20000 // When we retry, cap the max search results we request for each expression if search continues to not be exhaustive. Alert if exceeded.
 
 	var exhausted bool
 	for {
 		scopeParameters = query.MapParameter(scopeParameters, func(field, value string, negated bool) query.Node {
 			if field == "count" {
-				value := strconv.FormatInt(int64(tryCount), 10)
-				return query.Parameter{Field: field, Value: value, Negated: negated}
+				value = strconv.FormatInt(int64(tryCount), 10)
 			}
 			return query.Parameter{Field: field, Value: value, Negated: negated}
 		})
@@ -740,8 +739,8 @@ func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []quer
 			break
 		}
 		// If the result size set is not big enough, and we haven't
-		// exhausted search on all expressions, double the tryCount and search more..
-		tryCount = tryCount * 2
+		// exhausted search on all expressions, double the tryCount and search more.
+		tryCount *= tryCount
 		if tryCount > maxResultsForRetry {
 			// We've capped out what we're willing to do, throw alert.
 			return &SearchResultsResolver{alert: alertForCappedAndExpression()}, nil
