@@ -12,7 +12,9 @@ import classNames from 'classnames'
 interface Props {
     history: H.History
     activation: Activation
-    // For storybook testing
+    /**
+      * Forces display of the activation dropdown button. Used for Storybook testing.
+      */
     alwaysShow?: boolean
 }
 
