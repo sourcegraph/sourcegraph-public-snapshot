@@ -14,7 +14,7 @@ export const CampaignsMarketing: React.FunctionComponent<CampaignsMarketingProps
                 <em>
                     Campaigns are currently in beta: during the beta period Campaigns are free to use, after the beta
                     period Campaigns will be a paid add-on. Please <a href="mailto:sales@sourcegraph.com">contact us</a>{' '}
-                    us for more information.
+                    for more information.
                 </em>
             </p>
             <h2 className="mb-6">Make large-scale code changes across all your repositories and code hosts.</h2>
@@ -43,7 +43,7 @@ export const CampaignsMarketing: React.FunctionComponent<CampaignsMarketingProps
             <h2>Share your feedback</h2>
             <p>
                 Get in touch on Twitter <a href="https://twitter.com/srcgraph">@srcgraph</a>, file an issue in our{' '}
-                <a href="">public issue tracker</a>, or email{' '}
+                <a href="https://github.com/sourcegraph/sourcegraph/issues">public issue tracker</a>, or email{' '}
                 <a href="mailto:feedback@sourcegraph.com">feedback@sourcegraph.com</a> to share your feedback and use
                 cases. We look forward to hearing from you!
             </p>
