@@ -15,6 +15,7 @@ func Frontend() *Container {
 							Description:     "99th percentile search request duration over 5m",
 							Query:           `avg(histogram_quantile(0.99, rate(src_graphql_field_seconds_bucket{type="Search",field="results",error="false"}[5m])))`,
 							DataMayNotExist: true,
+							DataMayBeNaN:    true, // See https://github.com/sourcegraph/sourcegraph/issues/9834
 							Warning:         Alert{GreaterOrEqual: 3},
 							PanelOptions:    PanelOptions().LegendFormat("duration").Unit(Seconds),
 						},
@@ -23,6 +24,7 @@ func Frontend() *Container {
 							Description:     "90th percentile search request duration over 5m",
 							Query:           `avg(histogram_quantile(0.90, rate(src_graphql_field_seconds_bucket{type="Search",field="results",error="false"}[5m])))`,
 							DataMayNotExist: true,
+							DataMayBeNaN:    true, // See https://github.com/sourcegraph/sourcegraph/issues/9834
 							Warning:         Alert{GreaterOrEqual: 3},
 							PanelOptions:    PanelOptions().LegendFormat("duration").Unit(Seconds),
 						},
