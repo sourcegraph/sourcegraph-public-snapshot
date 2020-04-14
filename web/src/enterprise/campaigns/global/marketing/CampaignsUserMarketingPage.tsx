@@ -23,7 +23,7 @@ export const CampaignsUserMarketingPage: React.FunctionComponent<CampaignsUserMa
                         {enableReadAccess && (
                             <li>
                                 Ask your Sourcegraph admin for{' '}
-                                <a href="https://docs.sourcegraph.com/user/campaigns#configuration" rel="noopener">
+                                <a href="https://docs.sourcegraph.com/user/campaigns" rel="noopener">
                                     read-only access
                                 </a>{' '}
                                 to Campaigns.

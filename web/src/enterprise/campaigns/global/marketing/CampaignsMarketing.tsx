@@ -23,7 +23,7 @@ export const CampaignsMarketing: React.FunctionComponent<CampaignsMarketingProps
                     Learn how
                 </a>{' '}
                 campaigns can help you remove legacy code, fix critical security issues, and pay down tech debt. See it
-                in action to run <code>go mod tidy</code> over all Go repositories:
+                in action to run <code>gofmt</code> over all Go repositories:
             </p>
 
             <div className="position-relative campaign-marketing--video-wrapper">

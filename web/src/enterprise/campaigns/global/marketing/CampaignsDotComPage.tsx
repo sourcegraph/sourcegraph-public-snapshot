@@ -16,7 +16,7 @@ export const CampaignsDotComPage: React.FunctionComponent<CampaignsDotComPagePro
                     <li>
                         Install a private Sourcegraph instance using the{' '}
                         <a href="https://docs.sourcegraph.com/#quickstart-guide" rel="noopener">
-                            quickstart guide
+                            quickstart guide.
                         </a>
                     </li>
                     <li>

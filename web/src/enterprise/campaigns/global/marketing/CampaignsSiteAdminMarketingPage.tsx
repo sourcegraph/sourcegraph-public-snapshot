@@ -47,7 +47,7 @@ export const CampaignsSiteAdminMarketingPage: React.FunctionComponent<CampaignsS
                         </div>
                     </li>
                     <li>
-                        <a href="https://docs.sourcegraph.com/user/campaigns#creating-campaigns">
+                        <a href="https://docs.sourcegraph.com/user/campaigns">
                             Create your first campaign
                         </a>
                     </li>
