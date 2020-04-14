@@ -23,7 +23,7 @@ export const ActivationChecklistItem: React.FunctionComponent<ActivationChecklis
     ...props
 }: ActivationChecklistItemProps) => (
     <div className={classNames('activation-checklist-item d-flex justify-content-between', className)}>
-        <div>
+        <div className="d-flex align-items-center">
             <span className="activation-checklist-item__icon-container icon-inline icon-down">
                 <ChevronDownIcon className="activation-checklist-item__icon" />
             </span>
@@ -49,6 +49,7 @@ export interface ActivationChecklistProps {
     steps: ActivationStep[]
     completed?: ActivationCompletionStatus
     className?: string
+    buttonClassName?: string
 }
 
 /**
@@ -67,6 +68,7 @@ export class ActivationChecklist extends React.PureComponent<ActivationChecklist
                                     {...step}
                                     history={this.props.history}
                                     done={(this.props.completed && this.props.completed[step.id]) || false}
+                                    className={this.props.buttonClassName}
                                 />
                             </AccordionButton>
                             <AccordionPanel className="px-2">

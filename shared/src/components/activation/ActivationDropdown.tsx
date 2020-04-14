@@ -122,11 +122,11 @@ export class ActivationDropdown extends React.PureComponent<Props, State> {
                             className={classNames('activation-dropdown', 'dropdown-menu', { show: isExpanded })}
                         >
                             <div className="dropdown-item-text activation-dropdown-header">
-                                <span className="activation-dropdown__title h5 mb-2 font-weight-bold">
+                                <h3 className="mb-0">
                                     {percentageDone(this.props.activation.completed) > 0
                                         ? 'Almost there!'
                                         : 'Welcome to Sourcegraph'}
-                                </span>
+                                </h3>
                                 <p className="mb-2">Complete the steps below to finish onboarding!</p>
                             </div>
                             <ActivationChecklist

@@ -146,10 +146,10 @@ export const SiteAdminOverviewPage: React.FunctionComponent<Props> = ({
                             setupPercentage < 100 ? 'Complete the steps below to finish onboarding to Sourcegraph' : ''
                         }
                         defaultExpanded={setupPercentage < 100}
-                        className="p-0 list-group-item h5 font-weight-normal e2e-site-admin-overview-menu"
+                        className="p-0 list-group-item font-weight-normal e2e-site-admin-overview-menu"
                         buttonClassName="mb-0 py-3 px-3"
-                        titleClassName="mb-0 font-weight-bold"
-                        detailClassName="mb-0 font-weight-normal"
+                        titleClassName="h5 mb-0 font-weight-bold"
+                        detailClassName="h5 mb-0 font-weight-normal"
                         titleAtStart={true}
                     >
                         {activation.completed && (
@@ -157,6 +157,7 @@ export const SiteAdminOverviewPage: React.FunctionComponent<Props> = ({
                                 history={history}
                                 steps={activation.steps}
                                 completed={activation.completed}
+                                buttonClassName="h5 mb-0 font-weight-normal"
                             />
                         )}
                     </Collapsible>
