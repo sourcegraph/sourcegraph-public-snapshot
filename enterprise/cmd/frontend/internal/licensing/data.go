@@ -1,5 +1,19 @@
 package licensing
 
+// The list of plans.
+const (
+	// oldEnterpriseStarter is the old "Enterprise Starter" plan.
+	oldEnterpriseStarter Plan = "old-starter-0"
+
+	// oldEnterprise is the old "Enterprise" plan.
+	oldEnterprise Plan = "old-enterprise-0"
+)
+
+var allPlans = []Plan{
+	oldEnterpriseStarter,
+	oldEnterprise,
+}
+
 // The list of features. For each feature, add a new const here and the checking logic in
 // isFeatureEnabled.
 const (
@@ -17,3 +31,13 @@ const (
 	// not apply to locally published extensions.
 	FeatureRemoteExtensionsAllowDisallow = "remote-extensions-allow-disallow"
 )
+
+// planFeatures defines the features that are enabled for each plan.
+var planFeatures = map[Plan][]Feature{
+	oldEnterpriseStarter: {},
+	oldEnterprise: {
+		FeatureACLs,
+		FeatureExtensionRegistry,
+		FeatureRemoteExtensionsAllowDisallow,
+	},
+}

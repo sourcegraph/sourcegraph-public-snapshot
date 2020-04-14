@@ -12,6 +12,11 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
+// Info wraps the lower-level license.Info and exposes plan and feature information.
+type Info struct {
+	license.Info
+}
+
 // publicKey is the public key used to verify product license keys.
 //
 // It is hardcoded here intentionally (we only have one private signing key, and we don't yet
@@ -30,10 +35,19 @@ var publicKey = func() ssh.PublicKey {
 	return publicKey
 }()
 
+// toInfo converts from the return type of license.ParseSignedKey to the return type of this
+// package's methods (which use the Info wrapper type).
+func toInfo(origInfo *license.Info, origSignature string, origErr error) (info *Info, signature string, err error) {
+	if origInfo != nil {
+		info = &Info{Info: *origInfo}
+	}
+	return info, origSignature, origErr
+}
+
 // ParseProductLicenseKey parses and verifies the license key using the license verification public
 // key (publicKey in this package).
-func ParseProductLicenseKey(licenseKey string) (*license.Info, string, error) {
-	return license.ParseSignedKey(licenseKey, publicKey)
+func ParseProductLicenseKey(licenseKey string) (info *Info, signature string, err error) {
+	return toInfo(license.ParseSignedKey(licenseKey, publicKey))
 }
 
 // ParseProductLicenseKeyWithBuiltinOrGenerationKey is like ParseProductLicenseKey, except it tries
@@ -42,21 +56,21 @@ func ParseProductLicenseKey(licenseKey string) (*license.Info, string, error) {
 //
 // It is useful for local development when using a test license generation key (whose signatures
 // aren't considered valid when verified using the builtin public key).
-func ParseProductLicenseKeyWithBuiltinOrGenerationKey(licenseKey string) (*license.Info, string, error) {
+func ParseProductLicenseKeyWithBuiltinOrGenerationKey(licenseKey string) (*Info, string, error) {
 	var k ssh.PublicKey
 	if licenseGenerationPrivateKey != nil {
 		k = licenseGenerationPrivateKey.PublicKey()
 	} else {
 		k = publicKey
 	}
-	return license.ParseSignedKey(licenseKey, k)
+	return toInfo(license.ParseSignedKey(licenseKey, k))
 }
 
 // Cache the parsing of the license key because public key crypto can be slow.
 var (
 	mu            sync.Mutex
 	lastKeyText   string
-	lastInfo      *license.Info
+	lastInfo      *Info
 	lastSignature string
 )
 
@@ -64,16 +78,16 @@ var MockGetConfiguredProductLicenseInfo func() (*license.Info, string, error)
 
 // GetConfiguredProductLicenseInfo returns information about the current product license key
 // specified in site configuration.
-func GetConfiguredProductLicenseInfo() (*license.Info, error) {
+func GetConfiguredProductLicenseInfo() (*Info, error) {
 	info, _, err := GetConfiguredProductLicenseInfoWithSignature()
 	return info, err
 }
 
 // GetConfiguredProductLicenseInfoWithSignature returns information about the current product license key
 // specified in site configuration, with the signed key's signature.
-func GetConfiguredProductLicenseInfoWithSignature() (*license.Info, string, error) {
+func GetConfiguredProductLicenseInfoWithSignature() (*Info, string, error) {
 	if MockGetConfiguredProductLicenseInfo != nil {
-		return MockGetConfiguredProductLicenseInfo()
+		return toInfo(MockGetConfiguredProductLicenseInfo())
 	}
 
 	if keyText := conf.Get().LicenseKey; keyText != "" {
@@ -81,7 +95,7 @@ func GetConfiguredProductLicenseInfoWithSignature() (*license.Info, string, erro
 		defer mu.Unlock()
 
 		var (
-			info      *license.Info
+			info      *Info
 			signature string
 		)
 		if keyText == lastKeyText {
