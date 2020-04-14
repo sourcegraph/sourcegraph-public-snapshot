@@ -35,7 +35,7 @@ type Parameter struct {
 	Field   string `json:"field"`   // The repo part in repo:sourcegraph.
 	Value   string `json:"value"`   // The sourcegraph part in repo:sourcegraph.
 	Negated bool   `json:"negated"` // True if the - prefix exists, as in -repo:sourcegraph.
-	Quoted  bool   `json:"quoted"`  // True if the parsed value was quoted
+	Quoted  bool   `json:"quoted"`  // True if the parsed value was quoted.
 }
 
 type operatorKind int
