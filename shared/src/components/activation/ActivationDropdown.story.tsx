@@ -1,7 +1,6 @@
 import * as H from 'history'
 import { storiesOf } from '@storybook/react'
 import React from 'react'
-import { noop } from 'rxjs'
 import { ActivationDropdown } from './ActivationDropdown'
 import { Activation } from './Activation'
 import { boolean } from '@storybook/addon-knobs'

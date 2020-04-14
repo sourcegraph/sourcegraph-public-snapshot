@@ -13,8 +13,8 @@ interface Props {
     history: H.History
     activation: Activation
     /**
-      * Forces display of the activation dropdown button. Used for Storybook testing.
-      */
+     * Forces display of the activation dropdown button. Used for Storybook testing.
+     */
     alwaysShow?: boolean
 }
 
