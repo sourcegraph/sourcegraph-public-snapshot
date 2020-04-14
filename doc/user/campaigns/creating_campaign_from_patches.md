@@ -1,8 +1,8 @@
 # Creating a Campaign from Patches
 
-If you have not already, first [install](https://github.com/sourcegraph/src-cli), [set up and configure](https://github.com/sourcegraph/src-cli#setup) the `src` CLI to point to your Sourcegraph instance.
+A Campaign can be created from a set of patches, one per repository. For each patch, the Campaign will create a 
 
-To create a campaign via the CLI:
+using the `src` CLI allows you :
 
 1. Create an action JSON file (e.g. `action.json`) that contains an action definition
 1. _Optional_: See repositories the action would run over: `src actions scope-query -f action.json`
@@ -12,7 +12,11 @@ To create a campaign via the CLI:
 
 Read on detailed steps and documentation.
 
-## Defining an action
+## Requirements
+
+If you have not done so already, first [install](https://github.com/sourcegraph/src-cli), [set up and configure](https://github.com/sourcegraph/src-cli#setup) the `src` CLI to point to your Sourcegraph instance.
+
+## 1. Defining an action
 
 The first thing we need is a definition of an "action". An action contains a list of steps to run in each repository returned by the results of the `scopeQuery` search string.
 
@@ -59,7 +63,7 @@ As you can see from these examples, the "output" of an action is the modified, l
 
 Save that definition in a file called `action.json` (or any other name of your choosing).
 
-## Executing an action to produce patches
+## 2. Executing an action to produce patches
 
 With our action file defined, we can now execute it:
 
@@ -86,7 +90,13 @@ Or it can be piped straight into the next command we're going to use to save the
 src actions exec -f action.json | src campaign patchset create-from-patches
 ```
 
-## Creating a patch set from patches
+>NOTE: **Where to run `src action exec`**
+
+> The patches for a campaign are generated on the machine where the `src` CLI is executed, which in turn, downloads zip archives and runs each step against each repository. For most usecases we recommend that `src` CLI should be run on a Linux machine with considerable CPU, RAM, and network bandwidth to reduce the execution time. Putting this machine in the same network as your Sourcegraph instance will also improve performance.
+
+> Another factor affecting execution time is the number of jobs executed in parallel, which is by default the number of cores on the machine. This can be adjusted using the `-j` parameter.
+
+## 3. Creating a patch set from patches
 
 The next step is to save the set of patches on the Sourcegraph instance so they can be turned into a campaign.
 
@@ -107,7 +117,7 @@ Once completed, the output will contain:
 - The URL to preview the changesets that would be created on the code hosts.
 - The command for the `src` SLI to create a campaign from the patch set.
 
-## Publishing a campaign
+## 4. Publishing a campaign
 
 If you're happy with the preview of the campaign, it's time to trigger the creation of changesets (pull requests) on the code host(s) by creating and publishing the campaign:
 
@@ -127,4 +137,3 @@ If you have defined the `$EDITOR` environment variable, the configured editor wi
 ```sh
 src campaigns create -patchset=Q2FtcGFpZ25QbGFuOjg= -branch=my-first-campaign
 ```
-
