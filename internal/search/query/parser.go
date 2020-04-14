@@ -35,6 +35,7 @@ type Parameter struct {
 	Field   string `json:"field"`   // The repo part in repo:sourcegraph.
 	Value   string `json:"value"`   // The sourcegraph part in repo:sourcegraph.
 	Negated bool   `json:"negated"` // True if the - prefix exists, as in -repo:sourcegraph.
+	Quoted  bool   `json:"quoted"`  // True if the parsed value was quoted.
 }
 
 type operatorKind int
@@ -402,6 +403,10 @@ func (p *parser) ParseSearchPatternHeuristic() (Node, bool) {
 	if !p.heuristic.parensAsPatterns || p.heuristic.allowDanglingParens {
 		return Parameter{Field: "", Value: ""}, false
 	}
+	if value, ok := p.TryParseDelimiter(); ok {
+		return Parameter{Field: "", Value: value}, true
+	}
+
 	start := p.pos
 	pieces, advance, ok := ScanSearchPatternHeuristic(p.buf[p.pos:])
 	end := start + advance
@@ -486,13 +491,9 @@ func ScanValue(buf []byte, allowDanglingParens bool) (string, int) {
 	return string(result), count
 }
 
-// ParseValue parses a value at the current position. A value may belong to a
-// parameter like repo:<value> or the <value> may be a search pattern. Values
-// may be quoted. ParseValue cannot fail: it will first try to scan well-formed
-// delimiters, like quoted strings. If that fails, it will accept unbalanced
-// strings as patterns. Uses of value can then be validated along other concerns
-// for different search types (literal, regexp, etc.).
-func (p *parser) ParseValue() string {
+// TryParseDelimiter tries to parse a delimited, returning whether it succeeded,
+// and the interpreted (i.e., unquoted) value if it succeeds.
+func (p *parser) TryParseDelimiter() (string, bool) {
 	delimited := func(delimiter rune) (string, error) {
 		value, advance, err := ScanDelimited(p.buf[p.pos:], delimiter)
 		if err != nil {
@@ -508,17 +509,28 @@ func (p *parser) ParseValue() string {
 		if p.match(DQUOTE) {
 			return delimited('"')
 		}
-		if p.match(SLASH) {
-			return delimited('/')
-		}
 		return "", errors.New("failed to scan delimiter")
 	}
 	if value, err := tryScanDelimiter(); err == nil {
-		return value
+		return value, true
+	}
+	return "", false
+}
+
+// ParseValue parses a value at the current position and whether it was quoted.
+// A value may belong to a parameter like repo:<value> or the <value> may be a
+// search pattern. Values may be quoted. ParseValue cannot fail: it will first
+// try to scan well-formed delimiters, like quoted strings. If that fails, it
+// will accept unbalanced strings as patterns. Uses of value can then be
+// validated along other concerns for different search types (literal, regexp,
+// etc.).
+func (p *parser) ParseValue() (string, bool) {
+	if value, ok := p.TryParseDelimiter(); ok {
+		return value, true
 	}
 	value, advance := ScanValue(p.buf[p.pos:], p.heuristic.allowDanglingParens)
 	p.pos += advance
-	return value
+	return value, false
 }
 
 // ParseParameter returns a leaf node usable by _any_ kind of search (e.g.,
@@ -535,19 +547,19 @@ func (p *parser) ParseValue() string {
 func (p *parser) ParseParameter() Parameter {
 	field, advance := ScanField(p.buf[p.pos:])
 	p.pos += advance
-	value := p.ParseValue()
+	value, quoted := p.ParseValue()
 	negated := len(field) > 0 && field[0] == '-'
 	if negated {
 		field = field[1:]
 	}
-	return Parameter{Field: field, Value: value, Negated: negated}
+	return Parameter{Field: field, Value: value, Negated: negated, Quoted: quoted}
 }
 
 // containsPattern returns true if any descendent of nodes is a search pattern
 // (i.e., a parameter where the field is the empty string).
 func containsPattern(node Node) bool {
 	var result bool
-	VisitField([]Node{node}, "", func(_ string, _ bool) {
+	VisitField([]Node{node}, "", func(_ string, _, _ bool) {
 		result = true
 	})
 	return result
