@@ -142,7 +142,9 @@ export const SiteAdminOverviewPage: React.FunctionComponent<Props> = ({
                                     : 'Welcome to Sourcegraph'}
                             </>
                         }
-                        detail="Complete the steps below to finish onboarding to Sourcegraph"
+                        detail={
+                            setupPercentage < 100 ? 'Complete the steps below to finish onboarding to Sourcegraph' : ''
+                        }
                         defaultExpanded={setupPercentage < 100}
                         className="p-0 list-group-item h5 font-weight-normal e2e-site-admin-overview-menu"
                         buttonClassName="mb-0 py-3 px-3"
