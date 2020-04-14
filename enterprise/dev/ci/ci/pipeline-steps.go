@@ -22,6 +22,10 @@ var allDockerImages = []string{
 	"precise-code-intel/api-server",
 	"precise-code-intel/bundle-manager",
 	"precise-code-intel/worker",
+
+	// Images under docker-images/
+	"grafana",
+	"prometheus",
 }
 
 // Verifies the docs formatting and builds the `docsite` command.
@@ -234,7 +238,7 @@ func copyEnv(keys ...string) map[string]string {
 func addDockerImages(c Config, final bool) func(*bk.Pipeline) {
 	addDockerImage := func(c Config, app string, insiders bool) func(*bk.Pipeline) {
 		if !final {
-			return addCanidateDockerImage(c, app)
+			return addCandidateDockerImage(c, app)
 		}
 		return addFinalDockerImage(c, app, insiders)
 	}
@@ -269,7 +273,7 @@ func addDockerImages(c Config, final bool) func(*bk.Pipeline) {
 
 // Build a candidate docker image that will re-tagged with the final
 // tags once the e2e tests pass.
-func addCanidateDockerImage(c Config, app string) func(*bk.Pipeline) {
+func addCandidateDockerImage(c Config, app string) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
 
 		baseImage := "sourcegraph/" + strings.ReplaceAll(app, "/", "-")
@@ -282,24 +286,27 @@ func addCanidateDockerImage(c Config, app string) func(*bk.Pipeline) {
 			bk.Cmd("yes | gcloud auth configure-docker"),
 		}
 
-		cmdDir := func() string {
-			if _, err := os.Stat(filepath.Join("enterprise/cmd", app)); err != nil {
-				fmt.Fprintf(os.Stderr, "github.com/sourcegraph/sourcegraph/enterprise/cmd/%s does not exist so building github.com/sourcegraph/sourcegraph/cmd/%s instead\n", app, app)
-				return "cmd/" + app
+		if _, err := os.Stat(filepath.Join("docker-images", app)); err == nil {
+			// Building Docker image located under $REPO_ROOT/docker-images/
+			cmds = append(cmds, bk.Cmd(filepath.Join("docker-images", app, "build.sh")))
+		} else {
+			// Building Docker images located under 4REPO_ROOT/cmd/
+			cmdDir := func() string {
+				if _, err := os.Stat(filepath.Join("enterprise/cmd", app)); err != nil {
+					fmt.Fprintf(os.Stderr, "github.com/sourcegraph/sourcegraph/enterprise/cmd/%s does not exist so building github.com/sourcegraph/sourcegraph/cmd/%s instead\n", app, app)
+					return "cmd/" + app
+				}
+				return "enterprise/cmd/" + app
+			}()
+			preBuildScript := cmdDir + "/pre-build.sh"
+			if _, err := os.Stat(preBuildScript); err == nil {
+				cmds = append(cmds, bk.Cmd(preBuildScript))
 			}
-			return "enterprise/cmd/" + app
-		}()
-
-		preBuildScript := cmdDir + "/pre-build.sh"
-		if _, err := os.Stat(preBuildScript); err == nil {
-			cmds = append(cmds, bk.Cmd(preBuildScript))
+			cmds = append(cmds, bk.Cmd(cmdDir+"/build.sh"))
 		}
 
 		gcrImage := fmt.Sprintf("us.gcr.io/sourcegraph-dev/%s", strings.TrimPrefix(baseImage, "sourcegraph/"))
-
-		cmds = append(cmds, bk.Cmd(cmdDir+"/build.sh"))
-
-		tag := candiateImageTag(c)
+		tag := candidateImageTag(c)
 		cmds = append(cmds,
 			bk.Cmd(fmt.Sprintf("docker tag %s:%s %s:%s", baseImage, c.version, gcrImage, tag)),
 			bk.Cmd(fmt.Sprintf("docker push %s:%s", gcrImage, tag)),
@@ -322,7 +329,7 @@ func addFinalDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline)
 
 		gcrImage := fmt.Sprintf("us.gcr.io/sourcegraph-dev/%s", strings.TrimPrefix(baseImage, "sourcegraph/"))
 
-		candidateImage := fmt.Sprintf("%s:%s", gcrImage, candiateImageTag(c))
+		candidateImage := fmt.Sprintf("%s:%s", gcrImage, candidateImageTag(c))
 		cmds = append(cmds,
 			bk.Cmd(fmt.Sprintf("docker pull %s", candidateImage)),
 			bk.Cmd(fmt.Sprintf("docker tag %s %s:%s", candidateImage, baseImage, c.version)),
@@ -356,7 +363,7 @@ func addFinalDockerImage(c Config, app string, insiders bool) func(*bk.Pipeline)
 	}
 }
 
-func candiateImageTag(c Config) string {
+func candidateImageTag(c Config) string {
 	buildNumber := os.Getenv("BUILDKITE_BUILD_NUMBER")
 	return fmt.Sprintf("%s_%s_candidate", c.commit, buildNumber)
 }
