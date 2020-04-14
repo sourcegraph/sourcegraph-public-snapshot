@@ -221,7 +221,7 @@ func (s *PermsStore) SetUserPermissions(ctx context.Context, p *authz.UserPermis
 	if q, err := upsertUserPermissionsQuery(p); err != nil {
 		return err
 	} else if err = txs.execute(ctx, q); err != nil {
-		return errors.Wrap(err, "execute upsert user permissions batch query")
+		return errors.Wrap(err, "execute upsert user permissions query")
 	}
 
 	return nil

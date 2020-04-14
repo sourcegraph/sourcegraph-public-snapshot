@@ -396,7 +396,7 @@ func testPermsStore_SetUserPermissions(db *sql.DB) func(*testing.T) {
 	}
 
 	return func(t *testing.T) {
-		t.Run("user-centric update should set full_synced_at", func(t *testing.T) {
+		t.Run("user-centric update should set synced_at", func(t *testing.T) {
 			s := NewPermsStore(db, clock)
 			t.Cleanup(func() {
 				cleanupPermsTables(t, s)
@@ -574,7 +574,7 @@ func testPermsStore_SetRepoPermissions(db *sql.DB) func(*testing.T) {
 	}
 
 	return func(t *testing.T) {
-		t.Run("repo-centric update should set full_synced_at", func(t *testing.T) {
+		t.Run("repo-centric update should set synced_at", func(t *testing.T) {
 			s := NewPermsStore(db, clock)
 			t.Cleanup(func() {
 				cleanupPermsTables(t, s)
