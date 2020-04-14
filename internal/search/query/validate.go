@@ -1,7 +1,6 @@
 package query
 
 import (
-	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -9,6 +8,14 @@ import (
 
 	"github.com/src-d/enry/v2"
 )
+
+type UnsupportedError struct {
+	UnsupportedMsg string
+}
+
+func (e *UnsupportedError) Error() string {
+	return e.UnsupportedMsg
+}
 
 // isPatternExpression returns true if every leaf node in a tree root at node is
 // a search pattern.
@@ -36,7 +43,7 @@ func processTopLevel(nodes []Node) ([]Node, error) {
 		} else if term.Kind == Concat {
 			return nodes, nil
 		} else {
-			return nil, errors.New("cannot evaluate: unable to partition pure search pattern")
+			return nil, &UnsupportedError{UnsupportedMsg: "cannot evaluate: unable to partition pure search pattern"}
 		}
 	}
 	return nodes, nil
@@ -62,7 +69,7 @@ func PartitionSearchPattern(nodes []Node) (parameters []Node, pattern Node, err 
 		} else if term, ok := node.(Parameter); ok {
 			parameters = append(parameters, term)
 		} else {
-			return nil, nil, errors.New("cannot evaluate: unable to partition pure search pattern")
+			return nil, nil, &UnsupportedError{UnsupportedMsg: "cannot evaluate: unable to partition pure search pattern"}
 		}
 	}
 	if len(patterns) > 1 {
