@@ -164,7 +164,8 @@ func canUpdateDate(clientVersionString string) (bool, error) {
 // We need to maintain backwards compatibility with the GET-only update checks
 // while expanding the payload size for newer instance versions (via HTTP body).
 type pingRequest struct {
-	ClientSiteID         string          `json:"site"`
+	ClientSiteID         string `json:"site"`
+	LicenseKey           string
 	DeployType           string          `json:"deployType"`
 	ClientVersionString  string          `json:"version"`
 	AuthProviders        []string        `json:"auth"`
@@ -197,7 +198,9 @@ func readPingRequest(r *http.Request) (*pingRequest, error) {
 
 func readPingRequestFromQuery(q url.Values) (*pingRequest, error) {
 	return &pingRequest{
-		ClientSiteID:         q.Get("site"),
+		ClientSiteID: q.Get("site"),
+		// LicenseKey was added after the switch from query strings to POST data, so it's not
+		// available.
 		DeployType:           q.Get("deployType"),
 		ClientVersionString:  q.Get("version"),
 		AuthProviders:        strings.Split(q.Get("auth"), ","),
@@ -254,6 +257,7 @@ type pingPayload struct {
 	RemoteIP             string          `json:"remote_ip"`
 	RemoteSiteVersion    string          `json:"remote_site_version"`
 	RemoteSiteID         string          `json:"remote_site_id"`
+	LicenseKey           string          `json:"license_key"`
 	HasUpdate            string          `json:"has_update"`
 	UniqueUsersToday     string          `json:"unique_users_today"`
 	SiteActivity         json.RawMessage `json:"site_activity"`
@@ -318,6 +322,7 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		RemoteIP:             clientAddr,
 		RemoteSiteVersion:    pr.ClientVersionString,
 		RemoteSiteID:         pr.ClientSiteID,
+		LicenseKey:           pr.LicenseKey,
 		HasUpdate:            strconv.FormatBool(hasUpdate),
 		UniqueUsersToday:     strconv.FormatInt(int64(pr.UniqueUsers), 10),
 		SiteActivity:         pr.Activity,       // no change in schema
