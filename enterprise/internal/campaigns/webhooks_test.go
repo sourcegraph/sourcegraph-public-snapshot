@@ -73,7 +73,7 @@ func testGitHubWebhook(db *sql.DB) func(*testing.T) {
 			t.Fatal(t)
 		}
 
-		githubSrc, err := repos.NewGithubSource(githubExtSvc, cf)
+		githubSrc, err := repos.NewGithubSource(githubExtSvc, cf, nil)
 		if err != nil {
 			t.Fatal(t)
 		}

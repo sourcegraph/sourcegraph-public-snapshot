@@ -238,9 +238,6 @@ func (s fakeChangesetSource) ExternalServices() repos.ExternalServices {
 func (s fakeChangesetSource) LoadChangesets(ctx context.Context, cs ...*repos.Changeset) error {
 	return fakeNotImplemented
 }
-func (s fakeChangesetSource) LoadChangesetCost() int {
-	return 1
-}
 func (s fakeChangesetSource) CloseChangeset(ctx context.Context, c *repos.Changeset) error {
 	return fakeNotImplemented
 }

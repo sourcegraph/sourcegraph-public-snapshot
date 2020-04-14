@@ -7,6 +7,8 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/time/rate"
+
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -33,7 +35,7 @@ func NewSourcer(cf *httpcli.Factory, decs ...func(Source) Source) Sourcer {
 				continue
 			}
 
-			src, err := NewSource(svc, cf)
+			src, err := NewSource(svc, cf, nil)
 			if err != nil {
 				errs = multierror.Append(errs, &SourceError{Err: err, ExtSvc: svc})
 				continue
@@ -51,14 +53,15 @@ func NewSourcer(cf *httpcli.Factory, decs ...func(Source) Source) Sourcer {
 }
 
 // NewSource returns a repository yielding Source from the given ExternalService configuration.
-func NewSource(svc *ExternalService, cf *httpcli.Factory) (Source, error) {
+// An optional rate limiter can be included which will be used to rate limit requests made to the external service
+func NewSource(svc *ExternalService, cf *httpcli.Factory, rl *rate.Limiter) (Source, error) {
 	switch strings.ToLower(svc.Kind) {
 	case "github":
-		return NewGithubSource(svc, cf)
+		return NewGithubSource(svc, cf, rl)
 	case "gitlab":
 		return NewGitLabSource(svc, cf)
 	case "bitbucketserver":
-		return NewBitbucketServerSource(svc, cf)
+		return NewBitbucketServerSource(svc, cf, rl)
 	case "bitbucketcloud":
 		return NewBitbucketCloudSource(svc, cf)
 	case "gitolite":
@@ -93,9 +96,6 @@ type ChangesetSource interface {
 	// them. If a Changeset could not be found on the source, it's included in
 	// the returned slice.
 	LoadChangesets(context.Context, ...*Changeset) error
-	// LoadChangesetCost return estimated cost of loading one changeset. It
-	// can be used to inform rate limiters
-	LoadChangesetCost() int
 	// CreateChangeset will create the Changeset on the source. If it already
 	// exists, *Changeset will be populated and the return value will be
 	// true.

@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/time/rate"
+
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -40,18 +42,24 @@ type GithubSource struct {
 	// originalHostname is the hostname of config.Url (differs from client APIURL, whose host is api.github.com
 	// for an originalHostname of github.com).
 	originalHostname string
+
+	// rateLimiter should be used to limit requests made to the external service
+	rateLimiter *rate.Limiter
 }
 
 // NewGithubSource returns a new GithubSource from the given external service.
-func NewGithubSource(svc *ExternalService, cf *httpcli.Factory) (*GithubSource, error) {
+func NewGithubSource(svc *ExternalService, cf *httpcli.Factory, rl *rate.Limiter) (*GithubSource, error) {
 	var c schema.GitHubConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	return newGithubSource(svc, &c, cf)
+	if rl == nil {
+		rl = rate.NewLimiter(rate.Inf, 0)
+	}
+	return newGithubSource(svc, &c, cf, rl)
 }
 
-func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpcli.Factory) (*GithubSource, error) {
+func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpcli.Factory, rl *rate.Limiter) (*GithubSource, error) {
 	baseURL, err := url.Parse(c.Url)
 	if err != nil {
 		return nil, err
@@ -116,6 +124,7 @@ func newGithubSource(svc *ExternalService, c *schema.GitHubConnection, cf *httpc
 		client:           github.NewClient(apiURL, c.Token, cli),
 		searchClient:     github.NewClient(apiURL, c.Token, cli),
 		originalHostname: originalHostname,
+		rateLimiter:      rl,
 	}, nil
 }
 
@@ -234,13 +243,6 @@ func (s GithubSource) LoadChangesets(ctx context.Context, cs ...*Changeset) erro
 	}
 
 	return nil
-}
-
-// LoadChangesetCost returns the API cost of loading a changeset
-func (s GithubSource) LoadChangesetCost() int {
-	// The cost can be requested from the GitHub API here:
-	// https://developer.github.com/v4/guides/resource-limitations/#returning-a-calls-rate-limit-status
-	return 3
 }
 
 // UpdateChangeset updates the given *Changeset in the code host.
