@@ -72,7 +72,6 @@ export class SiteAdminPingsPage extends React.Component<Props, State> {
                         tooltips)
                     </li>
                     <li>Total count of code campaigns created</li>
-                    <li>Total count of users expressing interest in using campaigns</li>
                 </ul>
                 {!pingsEnabled ? (
                     <p>Pings are disabled.</p>
