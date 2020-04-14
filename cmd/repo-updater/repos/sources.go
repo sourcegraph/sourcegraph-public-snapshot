@@ -35,7 +35,7 @@ func NewSourcer(cf *httpcli.Factory, decs ...func(Source) Source) Sourcer {
 				continue
 			}
 
-			src, err := NewSource(svc, cf, nil)
+			src, err := NewSource(svc, cf)
 			if err != nil {
 				errs = multierror.Append(errs, &SourceError{Err: err, ExtSvc: svc})
 				continue
@@ -53,9 +53,25 @@ func NewSourcer(cf *httpcli.Factory, decs ...func(Source) Source) Sourcer {
 }
 
 // NewSource returns a repository yielding Source from the given ExternalService configuration.
-// An optional rate limiter can be included which will be used to rate limit requests made to the external service
-// when performing Changeset related operations
-func NewSource(svc *ExternalService, cf *httpcli.Factory, rl *rate.Limiter) (Source, error) {
+func NewSource(svc *ExternalService, cf *httpcli.Factory) (Source, error) {
+	return newSource(svc, cf, nil)
+}
+
+// NewChangesetSource returns a new ChangesetSource from the supplied ExternalService using the supplied
+// rate limiter
+func NewChangesetSource(svc *ExternalService, cf *httpcli.Factory, rl *rate.Limiter) (ChangesetSource, error) {
+	source, err := newSource(svc, cf, rl)
+	if err != nil {
+		return nil, err
+	}
+	css, ok := source.(ChangesetSource)
+	if !ok {
+		return nil, fmt.Errorf("external service %q is not a ChangesetSource", svc.Kind)
+	}
+	return css, nil
+}
+
+func newSource(svc *ExternalService, cf *httpcli.Factory, rl *rate.Limiter) (Source, error) {
 	switch strings.ToLower(svc.Kind) {
 	case "github":
 		return NewGithubSource(svc, cf, rl)

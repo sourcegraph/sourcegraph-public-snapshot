@@ -35,6 +35,7 @@ type BitbucketServerSource struct {
 }
 
 // NewBitbucketServerSource returns a new BitbucketServerSource from the given external service.
+// rl is optional
 func NewBitbucketServerSource(svc *ExternalService, cf *httpcli.Factory, rl *rate.Limiter) (*BitbucketServerSource, error) {
 	var c schema.BitbucketServerConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {

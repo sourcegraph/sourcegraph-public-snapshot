@@ -484,7 +484,7 @@ func TestGithubSource_makeRepo(t *testing.T) {
 			lg := log15.New()
 			lg.SetHandler(log15.DiscardHandler())
 
-			s, err := newGithubSource(&svc, test.schmea, nil)
+			s, err := newGithubSource(&svc, test.schmea, nil, nil)
 			if err != nil {
 				t.Fatal(err)
 			}

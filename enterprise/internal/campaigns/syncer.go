@@ -504,6 +504,7 @@ func SyncChangesetsWithSources(ctx context.Context, store SyncStore, bySource []
 // GroupChangesetsBySource returns a slice of SourceChangesets in which the
 // given *campaigns.Changesets are grouped together as repos.Changesets with the
 // repos.Source that can modify them.
+// rlr is optional
 func GroupChangesetsBySource(ctx context.Context, reposStore RepoStore, cf *httpcli.Factory, rlr *repos.RateLimiterRegistry, cs ...*campaigns.Changeset) ([]*SourceChangesets, error) {
 	var repoIDs []api.RepoID
 	repoSet := map[api.RepoID]*repos.Repo{}
@@ -554,14 +555,9 @@ func GroupChangesetsBySource(ctx context.Context, reposStore RepoStore, cf *http
 		if rlr != nil {
 			rl = rlr.GetRateLimiter(e.ID)
 		}
-		src, err := repos.NewSource(e, cf, rl)
+		css, err := repos.NewChangesetSource(e, cf, rl)
 		if err != nil {
 			return nil, err
-		}
-
-		css, ok := src.(repos.ChangesetSource)
-		if !ok {
-			return nil, errors.Errorf("unsupported repo type %q", e.Kind)
 		}
 
 		bySource[e.ID] = &SourceChangesets{ChangesetSource: css}
