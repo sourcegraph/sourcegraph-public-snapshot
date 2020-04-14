@@ -90,12 +90,12 @@ func (e ErrStalePermissions) Error() string {
 // UserPermissions are the permissions of a user to perform an action
 // on the given set of object IDs of the defined type.
 type UserPermissions struct {
-	UserID       int32           // The internal database ID of a user
-	Perm         Perms           // The permission set
-	Type         PermType        // The type of the permissions
-	IDs          *roaring.Bitmap // The object IDs
-	UpdatedAt    time.Time       // The last updated time
-	FullSyncedAt time.Time       // The last user-centric synced time
+	UserID    int32           // The internal database ID of a user
+	Perm      Perms           // The permission set
+	Type      PermType        // The type of the permissions
+	IDs       *roaring.Bitmap // The object IDs
+	UpdatedAt time.Time       // The last updated time
+	SyncedAt  time.Time       // The last user-centric synced time
 }
 
 // Expired returns true if these UserPermissions have elapsed the given ttl.
@@ -133,7 +133,7 @@ func (p *UserPermissions) TracingFields() []otlog.Field {
 		fs = append(fs,
 			otlog.Uint64("UserPermissions.IDs.Count", p.IDs.GetCardinality()),
 			otlog.String("UserPermissions.UpdatedAt", p.UpdatedAt.String()),
-			otlog.String("UserPermissions.FullSyncedAt", p.FullSyncedAt.String()),
+			otlog.String("UserPermissions.SyncedAt", p.SyncedAt.String()),
 		)
 	}
 
@@ -142,11 +142,11 @@ func (p *UserPermissions) TracingFields() []otlog.Field {
 
 // RepoPermissions declares which users have access to a given repository
 type RepoPermissions struct {
-	RepoID       int32           // The internal database ID of a repository
-	Perm         Perms           // The permission set
-	UserIDs      *roaring.Bitmap // The user IDs
-	UpdatedAt    time.Time       // The last updated time
-	FullSyncedAt time.Time       // The last repo-centric synced time
+	RepoID    int32           // The internal database ID of a repository
+	Perm      Perms           // The permission set
+	UserIDs   *roaring.Bitmap // The user IDs
+	UpdatedAt time.Time       // The last updated time
+	SyncedAt  time.Time       // The last repo-centric synced time
 }
 
 // Expired returns true if these RepoPermissions have elapsed the given ttl.
@@ -165,7 +165,7 @@ func (p *RepoPermissions) TracingFields() []otlog.Field {
 		fs = append(fs,
 			otlog.Uint64("RepoPermissions.UserIDs.Count", p.UserIDs.GetCardinality()),
 			otlog.String("RepoPermissions.UpdatedAt", p.UpdatedAt.String()),
-			otlog.String("RepoPermissions.FullSyncedAt", p.FullSyncedAt.String()),
+			otlog.String("RepoPermissions.SyncedAt", p.SyncedAt.String()),
 		)
 	}
 

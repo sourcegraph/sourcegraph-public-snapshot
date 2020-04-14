@@ -731,13 +731,13 @@ Indexes:
 
 # Table "public.repo_permissions"
 ```
-     Column     |           Type           | Modifiers 
-----------------+--------------------------+-----------
- repo_id        | integer                  | not null
- permission     | text                     | not null
- user_ids       | bytea                    | not null
- updated_at     | timestamp with time zone | not null
- full_synced_at | timestamp with time zone | 
+   Column   |           Type           | Modifiers 
+------------+--------------------------+-----------
+ repo_id    | integer                  | not null
+ permission | text                     | not null
+ user_ids   | bytea                    | not null
+ updated_at | timestamp with time zone | not null
+ synced_at  | timestamp with time zone | 
 Indexes:
     "repo_permissions_perm_unique" UNIQUE CONSTRAINT, btree (repo_id, permission)
 
@@ -902,14 +902,14 @@ Indexes:
 
 # Table "public.user_permissions"
 ```
-     Column     |           Type           | Modifiers 
-----------------+--------------------------+-----------
- user_id        | integer                  | not null
- permission     | text                     | not null
- object_type    | text                     | not null
- object_ids     | bytea                    | not null
- updated_at     | timestamp with time zone | not null
- full_synced_at | timestamp with time zone | 
+   Column    |           Type           | Modifiers 
+-------------+--------------------------+-----------
+ user_id     | integer                  | not null
+ permission  | text                     | not null
+ object_type | text                     | not null
+ object_ids  | bytea                    | not null
+ updated_at  | timestamp with time zone | not null
+ synced_at   | timestamp with time zone | 
 Indexes:
     "user_permissions_perm_object_unique" UNIQUE CONSTRAINT, btree (user_id, permission, object_type)
 

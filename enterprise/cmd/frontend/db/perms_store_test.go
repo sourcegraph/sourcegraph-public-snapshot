@@ -111,8 +111,8 @@ func testPermsStore_LoadUserPermissions(db *sql.DB) func(*testing.T) {
 			equal(t, "IDs", []int{1}, bitmapToArray(up.IDs))
 			equal(t, "UpdatedAt", now, up.UpdatedAt.UnixNano())
 
-			if !up.FullSyncedAt.IsZero() {
-				t.Fatal("FullSyncedAt was updated but not supposed to")
+			if !up.SyncedAt.IsZero() {
+				t.Fatal("SyncedAt was updated but not supposed to")
 			}
 		})
 
@@ -151,8 +151,8 @@ func testPermsStore_LoadUserPermissions(db *sql.DB) func(*testing.T) {
 			equal(t, "IDs", 0, len(bitmapToArray(up1.IDs)))
 			equal(t, "UpdatedAt", now, up1.UpdatedAt.UnixNano())
 
-			if !up1.FullSyncedAt.IsZero() {
-				t.Fatal("FullSyncedAt was updated but not supposed to")
+			if !up1.SyncedAt.IsZero() {
+				t.Fatal("SyncedAt was updated but not supposed to")
 			}
 
 			up2 := &authz.UserPermissions{
@@ -166,8 +166,8 @@ func testPermsStore_LoadUserPermissions(db *sql.DB) func(*testing.T) {
 			equal(t, "IDs", []int{1}, bitmapToArray(up2.IDs))
 			equal(t, "UpdatedAt", now, up2.UpdatedAt.UnixNano())
 
-			if !up2.FullSyncedAt.IsZero() {
-				t.Fatal("FullSyncedAt was updated but not supposed to")
+			if !up2.SyncedAt.IsZero() {
+				t.Fatal("SyncedAt was updated but not supposed to")
 			}
 
 			up3 := &authz.UserPermissions{
@@ -181,8 +181,8 @@ func testPermsStore_LoadUserPermissions(db *sql.DB) func(*testing.T) {
 			equal(t, "IDs", []int{1}, bitmapToArray(up3.IDs))
 			equal(t, "UpdatedAt", now, up3.UpdatedAt.UnixNano())
 
-			if !up3.FullSyncedAt.IsZero() {
-				t.Fatal("FullSyncedAt was updated but not supposed to")
+			if !up3.SyncedAt.IsZero() {
+				t.Fatal("SyncedAt was updated but not supposed to")
 			}
 		})
 	}
@@ -242,8 +242,8 @@ func testPermsStore_LoadRepoPermissions(db *sql.DB) func(*testing.T) {
 			}
 			equal(t, "rp.UserIDs", []int{2}, bitmapToArray(rp.UserIDs))
 
-			if !rp.FullSyncedAt.IsZero() {
-				t.Fatal("FullSyncedAt was updated but not supposed to")
+			if !rp.SyncedAt.IsZero() {
+				t.Fatal("SyncedAt was updated but not supposed to")
 			}
 		})
 	}
@@ -422,8 +422,8 @@ func testPermsStore_SetUserPermissions(db *sql.DB) func(*testing.T) {
 			}
 			equal(t, "up.IDs", []int{1}, bitmapToArray(up.IDs))
 
-			if up.FullSyncedAt.IsZero() {
-				t.Fatal("FullSyncedAt was not updated but supposed to")
+			if up.SyncedAt.IsZero() {
+				t.Fatal("SyncedAt was not updated but supposed to")
 			}
 		})
 
@@ -598,8 +598,8 @@ func testPermsStore_SetRepoPermissions(db *sql.DB) func(*testing.T) {
 			}
 			equal(t, "rp.UserIDs", []int{2}, bitmapToArray(rp.UserIDs))
 
-			if rp.FullSyncedAt.IsZero() {
-				t.Fatal("FullSyncedAt was not updated but supposed to")
+			if rp.SyncedAt.IsZero() {
+				t.Fatal("SyncedAt was not updated but supposed to")
 			}
 		})
 
