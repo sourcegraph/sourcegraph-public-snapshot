@@ -119,9 +119,8 @@ export class ActivationDropdown extends React.PureComponent<Props, State> {
                         <MenuPopover
                             className={classNames('activation-dropdown', 'dropdown-menu', { show: isExpanded })}
                         >
-                            {/* <MenuItem onSelect={this.noop}> */}
                             <div className="dropdown-item-text activation-dropdown-header">
-                                <span className="activation-dropdown__title mb-2 font-weight-bold">
+                                <span className="activation-dropdown__title h5 mb-2 font-weight-bold">
                                     {percentageDone(this.props.activation.completed) > 0
                                         ? 'Almost there!'
                                         : 'Welcome to Sourcegraph'}
@@ -134,7 +133,6 @@ export class ActivationDropdown extends React.PureComponent<Props, State> {
                                 completed={this.props.activation.completed}
                                 className="activation-dropdown__checklist"
                             />
-                            {/* </MenuItem> */}
                         </MenuPopover>
                     </>
                 )}
