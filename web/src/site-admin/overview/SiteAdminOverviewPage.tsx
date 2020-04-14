@@ -135,7 +135,13 @@ export const SiteAdminOverviewPage: React.FunctionComponent<Props> = ({
             <div className="pt-3 mb-4">
                 {activation?.completed && (
                     <Collapsible
-                        title={<>{setupPercentage < 100 ? 'Welcome to Sourcegraph' : 'Almost there!'}</>}
+                        title={
+                            <>
+                                {setupPercentage > 0 && setupPercentage < 100
+                                    ? 'Almost there!'
+                                    : 'Welcome to Sourcegraph'}
+                            </>
+                        }
                         detail="Complete the steps below to finish onboarding to Sourcegraph"
                         defaultExpanded={setupPercentage < 100}
                         className="p-0 list-group-item h5 font-weight-normal e2e-site-admin-overview-menu"

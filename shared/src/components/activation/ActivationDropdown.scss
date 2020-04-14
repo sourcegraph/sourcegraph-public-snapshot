@@ -2,6 +2,7 @@
     width: 21rem;
     z-index: 999;
     padding-bottom: 0;
+    overflow: hidden;
 
     &__checklist {
         .list-group-item {

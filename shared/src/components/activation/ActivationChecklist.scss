@@ -27,8 +27,6 @@
     }
 
     [data-reach-accordion-button] {
-        color: var(--link-color);
-
         .icon-down {
             display: none;
         }
@@ -39,7 +37,6 @@
 
     [data-reach-accordion-button][aria-expanded='true'] {
         background-color: $dropdown-link-hover-bg;
-        color: var(--link-color);
 
         .icon-right {
             display: none;
