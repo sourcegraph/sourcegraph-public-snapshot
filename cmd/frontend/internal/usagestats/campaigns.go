@@ -16,15 +16,7 @@ func GetCampaignsUsageStatistics(ctx context.Context) (*types.CampaignsUsageStat
 		return nil, err
 	}
 
-	const qi = "SELECT COUNT(*) FROM event_logs WHERE name = 'ExpressCampaignsInterest';"
-
-	var interested int
-	if err := dbconn.Global.QueryRowContext(ctx, qi).Scan(&interested); err != nil {
-		return nil, err
-	}
-
 	return &types.CampaignsUsageStatistics{
-		CampaignsCount:  int32(count),
-		InterestedCount: int32(interested),
+		CampaignsCount: int32(count),
 	}, nil
 }
