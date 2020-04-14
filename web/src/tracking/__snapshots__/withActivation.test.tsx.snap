@@ -2,14 +2,14 @@
 
 exports[`withActivation no user 1`] = `
 <div>
-  activation JSON: 
+  activation steps: 
   undefined
 </div>
 `;
 
 exports[`withActivation user, admin 1`] = `
 <div>
-  activation JSON: 
+  activation steps: 
   { steps:
    [ { id: 'ConnectedCodeHost',
        title: 'Add repositories',
@@ -34,7 +34,7 @@ exports[`withActivation user, admin 1`] = `
 
 exports[`withActivation user, non-admin 1`] = `
 <div>
-  activation JSON: 
+  activation steps: 
   { steps:
    [ { id: 'DidSearch', title: 'Search your code', detail: [Object] },
      { id: 'FoundReferences',
