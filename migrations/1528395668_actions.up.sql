@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS action_jobs (
     patch text,
     state text NOT NULL DEFAULT 'PENDING'::text CHECK (state = ANY (ARRAY['PENDING'::text, 'RUNNING'::text, 'COMPLETED'::text, 'ERRORED'::text, 'TIMEOUT'::text, 'CANCELED'::text])),
     repository integer NOT NULL REFERENCES repo(id) ON UPDATE CASCADE,
-    execution integer NOT NULL REFERENCES action_executions(id) ON UPDATE CASCADE,
+    execution integer NOT NULL REFERENCES action_executions(id) ON UPDATE CASCADE ON DELETE CASCADE,
     base_revision text NOT NULL,
     base_reference text NOT NULL
 );
