@@ -247,10 +247,10 @@ func findRepos(ctx context.Context, scopeQuery string) ([]actionRepo, error) {
 	var repoMutex sync.Mutex
 	sem := semaphore.NewWeighted(16)
 	repos := make([]actionRepo, 0)
-	for _, repo := range repoMap {
+	for _, r := range repoMap {
 		wg.Add(1)
 		sem.Acquire(ctx, 1)
-		go func() {
+		go func(repo *graphqlbackend.RepositoryResolver) {
 			defer wg.Done()
 			defer sem.Release(1)
 			defaultBranch, err := repo.DefaultBranch(ctx)
@@ -271,7 +271,7 @@ func findRepos(ctx context.Context, scopeQuery string) ([]actionRepo, error) {
 				Ref: string(defaultBranch.Name()),
 			})
 			repoMutex.Unlock()
-		}()
+		}(r)
 	}
 	wg.Wait()
 	return repos, nil
