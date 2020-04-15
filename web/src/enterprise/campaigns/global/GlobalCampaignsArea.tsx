@@ -5,10 +5,12 @@ import { CampaignDetails } from '../detail/CampaignDetails'
 import { IUser } from '../../../../../shared/src/graphql/schema'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
 import { ThemeProps } from '../../../../../shared/src/theme'
+import { CreateCampaign } from './create/CreateCampaign'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 import { CampaignUpdateSelection } from '../detail/CampaignUpdateSelection'
+import { CampaignCLIHelp } from './create/CampaignCLIHelp'
 import { CampaignsDotComPage } from './marketing/CampaignsDotComPage'
 import { CampaignsSiteAdminMarketingPage } from './marketing/CampaignsSiteAdminMarketingPage'
 import { CampaignsUserMarketingPage } from './marketing/CampaignsUserMarketingPage'
@@ -41,6 +43,16 @@ export const GlobalCampaignsArea = withAuthenticatedUser<Props>(({ match, ...out
                         <Route
                             render={props => <GlobalCampaignListPage {...outerProps} {...props} />}
                             path={match.url}
+                            exact={true}
+                        />
+                        <Route
+                            path={`${match.url}/create`}
+                            render={props => <CreateCampaign {...outerProps} {...props} />}
+                            exact={true}
+                        />
+                        <Route
+                            path={`${match.url}/cli`}
+                            render={props => <CampaignCLIHelp {...outerProps} {...props} />}
                             exact={true}
                         />
                         <Route
