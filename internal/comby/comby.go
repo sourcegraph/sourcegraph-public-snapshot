@@ -59,7 +59,7 @@ func rawArgs(args Args) (rawArgs []string) {
 	case DirPath:
 		rawArgs = append(rawArgs, "-directory", string(i))
 	default:
-		log15.Error("unrecognized input type", "type", string(i))
+		log15.Error("unrecognized input type", "type", i)
 		panic("unreachable")
 	}
 
