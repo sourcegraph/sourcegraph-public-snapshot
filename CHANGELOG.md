@@ -84,6 +84,12 @@ All notable changes to Sourcegraph are documented in this file.
 
 - The experimental feature discussions is marked as deprecated. GraphQL and configuration fields related to it will be removed in 3.16. [#9649](https://github.com/sourcegraph/sourcegraph/issues/9649)
 
+## 3.14.3
+
+### Fixed
+
+- phabricator: Duplicate requests to phabricator API from sourcegraph extensions. [#8849](https://github.com/sourcegraph/sourcegraph/issues/8849)
+
 ## 3.14.2
 
 ### Fixed
