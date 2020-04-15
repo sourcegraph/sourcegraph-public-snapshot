@@ -42,6 +42,8 @@ NAME                     READY     STATUS    RESTARTS   AGE
 pgsql-76a4bfcd64-rt4cn   2/2       Running   0          19m
 ```
 
+Make sure you are operating under the correct namespace (i.e. add `-n prod` if your pod is under the `prod` namespace).
+
 Open a PostgreSQL interactive terminal:
 
 ```bash
