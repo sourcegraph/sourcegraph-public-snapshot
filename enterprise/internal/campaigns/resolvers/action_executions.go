@@ -245,7 +245,7 @@ func findRepos(ctx context.Context, scopeQuery string) ([]actionRepo, error) {
 	}
 	var wg sync.WaitGroup
 	var repoMutex sync.Mutex
-	sem := semaphore.NewWeighted(16)
+	sem := semaphore.NewWeighted(32)
 	repos := make([]actionRepo, 0)
 	for _, r := range repoMap {
 		wg.Add(1)
