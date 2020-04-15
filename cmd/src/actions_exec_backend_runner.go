@@ -233,7 +233,7 @@ func runAction(ctx context.Context, prefix, repoID, repoName, rev string, steps 
 			elapsed := time.Since(t0).Round(time.Millisecond)
 			if err != nil {
 				logger.DockerStepErrored(repoName, i, err, elapsed)
-				return nil, errors.Wrap(err, "run docker container")
+				return nil, errors.Wrapf(err, "Running Docker container for image %q failed", step.Image)
 			}
 			logger.DockerStepDone(repoName, i, elapsed)
 

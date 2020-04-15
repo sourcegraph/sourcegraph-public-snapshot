@@ -89,6 +89,10 @@ func (c actionExecutionDiskCache) clear(ctx context.Context, key actionExecution
 		return err
 	}
 
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return nil
+	}
+
 	return os.Remove(path)
 }
 

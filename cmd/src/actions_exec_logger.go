@@ -70,10 +70,14 @@ func (a *actionLogger) ActionFailed(err error, patches []PatchInput) {
 	fmt.Fprintln(os.Stderr)
 	if perr, ok := err.(parallel.Errors); ok {
 		if len(patches) > 0 {
-			yellow.Fprintf(os.Stderr, "✗  Action produced %d patches but failed with %d errors.\n\n", len(patches), len(perr))
+			yellow.Fprintf(os.Stderr, "✗  Action produced %d patches but failed with %d errors:\n\n", len(patches), len(perr))
 		} else {
-			yellow.Fprintf(os.Stderr, "✗  Action failed with %d errors.\n", len(perr))
+			yellow.Fprintf(os.Stderr, "✗  Action failed with %d errors:\n", len(perr))
 		}
+		for _, e := range perr {
+			fmt.Fprintf(os.Stderr, "\t- %s\n", e)
+		}
+		fmt.Println()
 	} else if err != nil {
 		if len(patches) > 0 {
 			yellow.Fprintf(os.Stderr, "✗  Action produced %d patches but failed with error: %s\n\n", len(patches), err)
