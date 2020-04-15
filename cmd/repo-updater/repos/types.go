@@ -1007,41 +1007,25 @@ func (r *RateLimiterRegistry) updateRateLimiter(svc *ExternalService) error {
 		// 10/s is the default enforced by GitLab on their end
 		limit = rate.Limit(10)
 		if c != nil && c.RateLimit != nil {
-			if c.RateLimit.Enabled {
-				limit = rate.Limit(c.RateLimit.RequestsPerHour / 3600)
-			} else {
-				limit = rate.Inf
-			}
+			limit = getLimit(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
 	case *schema.GitHubConnection:
 		// 5000 per hour is the default enforced by GitHub on their end
 		limit = rate.Limit(5000.0 / 3600.0)
 		if c != nil && c.RateLimit != nil {
-			if c.RateLimit.Enabled {
-				limit = rate.Limit(c.RateLimit.RequestsPerHour / 3600)
-			} else {
-				limit = rate.Inf
-			}
+			limit = getLimit(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
 	case *schema.BitbucketServerConnection:
 		// 8/s is the default limit we enforce
 		limit = rate.Limit(8)
 		if c != nil && c.RateLimit != nil {
-			if c.RateLimit.Enabled {
-				limit = rate.Limit(c.RateLimit.RequestsPerHour / 3600)
-			} else {
-				limit = rate.Inf
-			}
+			limit = getLimit(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
 	case *schema.BitbucketCloudConnection:
 		// 2/s is the default limit we enforce
 		limit = rate.Limit(2)
 		if c != nil && c.RateLimit != nil {
-			if c.RateLimit.Enabled {
-				limit = rate.Limit(c.RateLimit.RequestsPerHour / 3600)
-			} else {
-				limit = rate.Inf
-			}
+			limit = getLimit(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
 	default:
 		return errRateLimitUnsupported{codehostKind: svc.Kind}
@@ -1051,6 +1035,13 @@ func (r *RateLimiterRegistry) updateRateLimiter(svc *ExternalService) error {
 	l.SetLimit(limit)
 
 	return nil
+}
+
+func getLimit(enabled bool, perHour float64) rate.Limit {
+	if enabled {
+		return rate.Limit(perHour / 3600)
+	}
+	return rate.Inf
 }
 
 type errRateLimitUnsupported struct {

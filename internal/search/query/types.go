@@ -159,8 +159,12 @@ func valueToTypedValue(field, value string, quoted bool) []*types.Value {
 	switch field {
 	case
 		FieldDefault:
-		// Treat as string for sipmplicity. The type could be regexp or
-		// string depending on quotes or search kind.
+		if quoted {
+			return []*types.Value{{String: &value}}
+		}
+		if regexp, err := regexp.Compile(value); err == nil {
+			return []*types.Value{{Regexp: regexp}}
+		}
 		return []*types.Value{{String: &value}}
 
 	case

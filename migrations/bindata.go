@@ -104,6 +104,8 @@
 // 1528395667_index_boolean_fields_on_repo.up.sql (187B)
 // 1528395668_campaign_description_nullable.down.sql (144B)
 // 1528395668_campaign_description_nullable.up.sql (143B)
+// 1528395669_add_synced_at_to_perms_tables.down.sql (121B)
+// 1528395669_add_synced_at_to_perms_tables.up.sql (143B)
 
 package migrations
 
@@ -2252,6 +2254,46 @@ func _1528395668_campaign_description_nullableUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395669_add_synced_at_to_perms_tablesDownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x2d\x4e\x2d\x8a\x2f\x48\x2d\xca\xcd\x2c\x2e\xce\xcc\xcf\x2b\x56\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\x28\xae\xcc\x4b\x4e\x4d\x89\x4f\x2c\xb1\x46\xd1\x53\x94\x5a\x90\x4f\x8c\x1e\x2e\x67\x7f\x5f\x5f\xcf\x10\x6b\x2e\x40\x00\x00\x00\xff\xff\xe9\xec\x50\xea\x79\x00\x00\x00")
+
+func _1528395669_add_synced_at_to_perms_tablesDownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395669_add_synced_at_to_perms_tablesDownSql,
+		"1528395669_add_synced_at_to_perms_tables.down.sql",
+	)
+}
+
+func _1528395669_add_synced_at_to_perms_tablesDownSql() (*asset, error) {
+	bytes, err := _1528395669_add_synced_at_to_perms_tablesDownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395669_add_synced_at_to_perms_tables.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xe3, 0x2, 0x45, 0x16, 0x37, 0xf4, 0x57, 0xdc, 0xc0, 0x51, 0xd2, 0x7e, 0x49, 0xc7, 0xb6, 0x77, 0x64, 0x54, 0xf0, 0x37, 0xc4, 0xba, 0x31, 0x13, 0xd3, 0x23, 0x5a, 0x9f, 0x79, 0xd0, 0x1a, 0x69}}
+	return a, nil
+}
+
+var __1528395669_add_synced_at_to_perms_tablesUpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x28\x2d\x4e\x2d\x8a\x2f\x48\x2d\xca\xcd\x2c\x2e\xce\xcc\xcf\x2b\x56\x70\x74\x71\x51\x70\xf6\xf7\x09\xf5\xf5\x53\x28\xae\xcc\x4b\x4e\x4d\x89\x4f\x2c\x51\x08\xf1\xf4\x75\x0d\x0e\x71\xf4\x0d\x08\x89\xb2\x46\xd1\x5e\x94\x5a\x90\x4f\xa2\x76\x2e\x67\x7f\x5f\x5f\xcf\x10\x6b\x2e\x40\x00\x00\x00\xff\xff\xbd\x73\x4f\x2f\x8f\x00\x00\x00")
+
+func _1528395669_add_synced_at_to_perms_tablesUpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395669_add_synced_at_to_perms_tablesUpSql,
+		"1528395669_add_synced_at_to_perms_tables.up.sql",
+	)
+}
+
+func _1528395669_add_synced_at_to_perms_tablesUpSql() (*asset, error) {
+	bytes, err := _1528395669_add_synced_at_to_perms_tablesUpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395669_add_synced_at_to_perms_tables.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0x78, 0x90, 0x46, 0x7f, 0x10, 0x9e, 0x14, 0x6c, 0xb2, 0x73, 0x19, 0xe5, 0xff, 0x28, 0x88, 0xc7, 0xa8, 0xfd, 0xf5, 0xcc, 0xed, 0xb0, 0x13, 0xd6, 0x45, 0xed, 0xc, 0x9, 0x99, 0x5f, 0x9a, 0x6}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2447,6 +2489,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395667_index_boolean_fields_on_repo.up.sql":                          _1528395667_index_boolean_fields_on_repoUpSql,
 	"1528395668_campaign_description_nullable.down.sql":                       _1528395668_campaign_description_nullableDownSql,
 	"1528395668_campaign_description_nullable.up.sql":                         _1528395668_campaign_description_nullableUpSql,
+	"1528395669_add_synced_at_to_perms_tables.down.sql":                       _1528395669_add_synced_at_to_perms_tablesDownSql,
+	"1528395669_add_synced_at_to_perms_tables.up.sql":                         _1528395669_add_synced_at_to_perms_tablesUpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -2594,6 +2638,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395667_index_boolean_fields_on_repo.up.sql":                          {_1528395667_index_boolean_fields_on_repoUpSql, map[string]*bintree{}},
 	"1528395668_campaign_description_nullable.down.sql":                       {_1528395668_campaign_description_nullableDownSql, map[string]*bintree{}},
 	"1528395668_campaign_description_nullable.up.sql":                         {_1528395668_campaign_description_nullableUpSql, map[string]*bintree{}},
+	"1528395669_add_synced_at_to_perms_tables.down.sql":                       {_1528395669_add_synced_at_to_perms_tablesDownSql, map[string]*bintree{}},
+	"1528395669_add_synced_at_to_perms_tables.up.sql":                         {_1528395669_add_synced_at_to_perms_tablesUpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.
