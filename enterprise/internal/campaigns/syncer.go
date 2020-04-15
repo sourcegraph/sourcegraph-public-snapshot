@@ -360,11 +360,11 @@ func (s *ChangesetSyncer) Run(ctx context.Context) {
 			schedule, err := s.computeSchedule(ctx)
 			labelValues := []string{svcID, strconv.FormatBool(err == nil)}
 			syncerMetrics.computeScheduleDuration.WithLabelValues(labelValues...).Observe(time.Since(start).Seconds())
-			syncerMetrics.scheduleSize.WithLabelValues(svcID).Set(float64(len(schedule)))
 			if err != nil {
 				log15.Error("Computing queue", "err", err)
 				continue
 			}
+			syncerMetrics.scheduleSize.WithLabelValues(svcID).Set(float64(len(schedule)))
 			s.queue.Upsert(schedule...)
 			var behindSchedule int
 			now := time.Now()
