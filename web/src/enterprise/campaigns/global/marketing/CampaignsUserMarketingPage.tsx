@@ -14,7 +14,7 @@ export const CampaignsUserMarketingPage: React.FunctionComponent<CampaignsUserMa
             <section className="my-3">
                 <h2>Interested in Campaigns?</h2>
                 <p>
-                    At this time, creating and managing campaigns is only available to Sourcegraph admins. What can you
+                    At this time, creating and managing Campaigns is only available to Sourcegraph admins. What can you
                     do?
                 </p>
                 <div className="row">
@@ -28,7 +28,7 @@ export const CampaignsUserMarketingPage: React.FunctionComponent<CampaignsUserMa
                                 </a>{' '}
                                 to Campaigns.
                                 <div className="alert alert-info mt-3">
-                                    <b>NOTE:</b> Repository permissions are NOT enforced by campaigns, so your admin may
+                                    <b>NOTE:</b> Repository permissions are NOT enforced by Campaigns, so your admin may
                                     not grant read-only access if your Sourcegraph instance has repository permissions
                                     configured.
                                 </div>
@@ -37,7 +37,7 @@ export const CampaignsUserMarketingPage: React.FunctionComponent<CampaignsUserMa
                         <li>
                             Learn how to{' '}
                             <a href="https://docs.sourcegraph.com/user/campaigns#creating-campaigns">
-                                get started creating campaigns
+                                get started creating Campaigns
                             </a>
                             .
                         </li>
@@ -45,7 +45,7 @@ export const CampaignsUserMarketingPage: React.FunctionComponent<CampaignsUserMa
                 </div>
 
                 <a href="https://docs.sourcegraph.com/user/campaigns" rel="noopener" className="btn btn-primary">
-                    Learn how to get started
+                    Read more about Campaigns
                 </a>
             </section>
         }

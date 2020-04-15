@@ -19,20 +19,20 @@ Array [
       className="lead"
     >
       <em>
-        Campaigns are currently in beta: during the beta period Campaigns are free to use, after the beta period Campaigns will be a paid add-on. Please 
+        Campaigns are currently in beta. During the beta period, Campaigns are free to use. After the beta period, Campaigns will be available as a paid add-on. Please
+         
         <a
           href="mailto:sales@sourcegraph.com"
         >
           contact us
         </a>
-         
-        for more information.
+         for more information.
       </em>
     </p>
     <h2
       className="mb-6"
     >
-      Make large-scale code changes across all your repositories and code hosts.
+      Make and track large-scale changes across all code
     </h2>
     <p
       className="mt-3"
@@ -41,10 +41,10 @@ Array [
         href="https://about.sourcegraph.com/product/code-change-management"
         rel="noopener"
       >
-        Learn how
+        Learn how to run Campaigns
       </a>
        
-      campaigns can help you remove legacy code, fix critical security issues, and pay down tech debt. See it in action to run 
+      to remove legacy code, fix critical security issues, and pay down tech debt. See it in action below performing 
       <code>
         gofmt
       </code>
@@ -69,7 +69,7 @@ Array [
     className="py-5"
   >
     <h2>
-      Share your feedback
+      Ask questions and share feedback
     </h2>
     <p>
       Get in touch on Twitter 
@@ -92,7 +92,7 @@ Array [
       >
         feedback@sourcegraph.com
       </a>
-       to share your feedback and use cases. We look forward to hearing from you!
+      . We look forward to hearing from you!
     </p>
   </section>,
 ]

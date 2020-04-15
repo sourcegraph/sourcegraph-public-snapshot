@@ -20,14 +20,14 @@ export const CampaignsSiteAdminMarketingPage: React.FunctionComponent<CampaignsS
                         <div className="alert alert-info mt-3">
                             <p>
                                 <strong>
-                                    By enabling this feature you agree to test out functionality that is currently in
+                                    By enabling this feature, you agree to test out functionality that is currently in
                                     beta, and acknowledge the following:
                                 </strong>
                             </p>
                             <ul className="mb-3">
                                 <li>
-                                    During the beta period Campaigns are free to use. After the beta period ends,
-                                    Campaigns will be a paid add-on.
+                                    During the beta period, Campaigns are free to use. After the beta period ends,
+                                    Campaigns will be available as a paid add-on.
                                 </li>
                                 <li>
                                     Campaigns are not included as part of the Enterprise or Enterprise plus license
@@ -41,13 +41,13 @@ export const CampaignsSiteAdminMarketingPage: React.FunctionComponent<CampaignsS
                         Optional: enable read-only access for all users.
                         <div className="alert alert-warning mt-3">
                             <strong>WARNING:</strong> Repository permissions are NOT enforced if you enable read-only
-                            views on campaigns. Any logged in user will be able to see all code changes associated with
-                            a campaign. Therefore, read-only access is recommended for instances without repository
+                            views on Campaigns. Any authenticated user will be able to see all code changes associated
+                            with a Campaign. Therefore, read-only access is recommended for instances without repository
                             permissions configured.
                         </div>
                     </li>
                     <li>
-                        <a href="https://docs.sourcegraph.com/user/campaigns">Create your first campaign</a>
+                        <a href="https://docs.sourcegraph.com/user/campaigns">Create your first Campaign</a>
                     </li>
                 </ol>
                 <div>
@@ -55,7 +55,7 @@ export const CampaignsSiteAdminMarketingPage: React.FunctionComponent<CampaignsS
                         Go to my site configuration
                     </Link>
                     <a href="https://docs.sourcegraph.com/user/campaigns" rel="noopener" className="btn btn-primary">
-                        Learn how to run campaigns
+                        Learn how to run Campaigns
                     </a>
                 </div>
             </section>

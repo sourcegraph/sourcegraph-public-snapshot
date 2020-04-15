@@ -19,20 +19,20 @@ Array [
       className="lead"
     >
       <em>
-        Campaigns are currently in beta: during the beta period Campaigns are free to use, after the beta period Campaigns will be a paid add-on. Please 
+        Campaigns are currently in beta. During the beta period, Campaigns are free to use. After the beta period, Campaigns will be available as a paid add-on. Please
+         
         <a
           href="mailto:sales@sourcegraph.com"
         >
           contact us
         </a>
-         
-        for more information.
+         for more information.
       </em>
     </p>
     <h2
       className="mb-6"
     >
-      Make large-scale code changes across all your repositories and code hosts.
+      Make and track large-scale changes across all code
     </h2>
     <p
       className="mt-3"
@@ -41,10 +41,10 @@ Array [
         href="https://about.sourcegraph.com/product/code-change-management"
         rel="noopener"
       >
-        Learn how
+        Learn how to run Campaigns
       </a>
        
-      campaigns can help you remove legacy code, fix critical security issues, and pay down tech debt. See it in action to run 
+      to remove legacy code, fix critical security issues, and pay down tech debt. See it in action below performing 
       <code>
         gofmt
       </code>
@@ -85,14 +85,14 @@ Array [
         >
           <p>
             <strong>
-              By enabling this feature you agree to test out functionality that is currently in beta, and acknowledge the following:
+              By enabling this feature, you agree to test out functionality that is currently in beta, and acknowledge the following:
             </strong>
           </p>
           <ul
             className="mb-3"
           >
             <li>
-              During the beta period Campaigns are free to use. After the beta period ends, Campaigns will be a paid add-on.
+              During the beta period, Campaigns are free to use. After the beta period ends, Campaigns will be available as a paid add-on.
             </li>
             <li>
               Campaigns are not included as part of the Enterprise or Enterprise plus license tiers.
@@ -115,14 +115,14 @@ Array [
           <strong>
             WARNING:
           </strong>
-           Repository permissions are NOT enforced if you enable read-only views on campaigns. Any logged in user will be able to see all code changes associated with a campaign. Therefore, read-only access is recommended for instances without repository permissions configured.
+           Repository permissions are NOT enforced if you enable read-only views on Campaigns. Any authenticated user will be able to see all code changes associated with a Campaign. Therefore, read-only access is recommended for instances without repository permissions configured.
         </div>
       </li>
       <li>
         <a
           href="https://docs.sourcegraph.com/user/campaigns"
         >
-          Create your first campaign
+          Create your first Campaign
         </a>
       </li>
     </ol>
@@ -138,7 +138,7 @@ Array [
         href="https://docs.sourcegraph.com/user/campaigns"
         rel="noopener"
       >
-        Learn how to run campaigns
+        Learn how to run Campaigns
       </a>
     </div>
   </section>,
@@ -146,7 +146,7 @@ Array [
     className="py-5"
   >
     <h2>
-      Share your feedback
+      Ask questions and share feedback
     </h2>
     <p>
       Get in touch on Twitter 
@@ -169,7 +169,7 @@ Array [
       >
         feedback@sourcegraph.com
       </a>
-       to share your feedback and use cases. We look forward to hearing from you!
+      . We look forward to hearing from you!
     </p>
   </section>,
 ]
