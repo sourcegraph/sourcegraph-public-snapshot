@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"golang.org/x/time/rate"
 )
 
 // SyncRegistry manages a ChangesetSyncer per external service.
@@ -104,6 +105,7 @@ func (s *SyncRegistry) Add(extServiceID int64) {
 		externalServiceID: extServiceID,
 		cancel:            cancel,
 		priorityNotify:    make(chan []int64, 500),
+		rateLimitRegistry: s.RateLimiterRegistry,
 	}
 
 	s.syncers[extServiceID] = syncer
@@ -231,6 +233,9 @@ type ChangesetSyncer struct {
 
 	// cancel should be called to stop this syncer
 	cancel context.CancelFunc
+
+	// rateLimitRegistry should be used fetch the current rate limiter for an external service
+	rateLimitRegistry *repos.RateLimiterRegistry
 }
 
 type SyncStore interface {
@@ -251,7 +256,7 @@ func (s *ChangesetSyncer) Run(ctx context.Context) {
 		scheduleInterval = 2 * time.Minute
 	}
 	if s.syncFunc == nil {
-		s.syncFunc = s.SyncChangesetByID
+		s.syncFunc = s.SyncChangeset
 	}
 	if s.clock == nil {
 		s.clock = time.Now
@@ -413,43 +418,35 @@ func (s *ChangesetSyncer) computeSchedule(ctx context.Context) ([]scheduledSync,
 	return ss, nil
 }
 
-// filterSyncData filters to changesets that serviceID is responsible for.
-func filterSyncData(serviceID int64, allSyncData []campaigns.ChangesetSyncData) []campaigns.ChangesetSyncData {
-	syncData := make([]campaigns.ChangesetSyncData, 0, len(allSyncData))
-	for _, d := range allSyncData {
-		svcID := shardChangeset(d.ChangesetID, d.ExternalServiceIDs)
-		if svcID == serviceID {
-			syncData = append(syncData, d)
-		}
-	}
-	return syncData
-}
-
-// SyncChangesetByID will sync a single changeset given its id.
-func (s *ChangesetSyncer) SyncChangesetByID(ctx context.Context, id int64) error {
-	log15.Debug("SyncChangesetByID", "id", id)
+// SyncChangeset will sync a single changeset given its id.
+func (s *ChangesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
+	log15.Debug("SyncChangeset", "id", id)
 	cs, err := s.SyncStore.GetChangeset(ctx, GetChangesetOpts{
 		ID: id,
 	})
 	if err != nil {
 		return err
 	}
-	return s.SyncChangesets(ctx, cs)
+	return syncChangesets(ctx, s.ReposStore, s.SyncStore, s.HTTPFactory, s.rateLimitRegistry, cs)
 }
 
 // SyncChangesets refreshes the metadata of the given changesets and
 // updates them in the database.
-func (s *ChangesetSyncer) SyncChangesets(ctx context.Context, cs ...*campaigns.Changeset) (err error) {
+func SyncChangesets(ctx context.Context, repoStore RepoStore, syncStore SyncStore, cf *httpcli.Factory, cs ...*campaigns.Changeset) (err error) {
+	return syncChangesets(ctx, repoStore, syncStore, cf, nil, cs...)
+}
+
+func syncChangesets(ctx context.Context, repoStore RepoStore, syncStore SyncStore, cf *httpcli.Factory, rlr *repos.RateLimiterRegistry, cs ...*campaigns.Changeset) (err error) {
 	if len(cs) == 0 {
 		return nil
 	}
 
-	bySource, err := GroupChangesetsBySource(ctx, s.ReposStore, s.HTTPFactory, cs...)
+	bySource, err := GroupChangesetsBySource(ctx, repoStore, cf, rlr, cs...)
 	if err != nil {
 		return err
 	}
 
-	return SyncChangesetsWithSources(ctx, s.SyncStore, bySource)
+	return SyncChangesetsWithSources(ctx, syncStore, bySource)
 }
 
 // SyncChangesetsWithSources refreshes the metadata of the given changesets
@@ -507,7 +504,8 @@ func SyncChangesetsWithSources(ctx context.Context, store SyncStore, bySource []
 // GroupChangesetsBySource returns a slice of SourceChangesets in which the
 // given *campaigns.Changesets are grouped together as repos.Changesets with the
 // repos.Source that can modify them.
-func GroupChangesetsBySource(ctx context.Context, reposStore RepoStore, cf *httpcli.Factory, cs ...*campaigns.Changeset) ([]*SourceChangesets, error) {
+// rlr is optional
+func GroupChangesetsBySource(ctx context.Context, reposStore RepoStore, cf *httpcli.Factory, rlr *repos.RateLimiterRegistry, cs ...*campaigns.Changeset) ([]*SourceChangesets, error) {
 	var repoIDs []api.RepoID
 	repoSet := map[api.RepoID]*repos.Repo{}
 
@@ -553,14 +551,13 @@ func GroupChangesetsBySource(ctx context.Context, reposStore RepoStore, cf *http
 
 	bySource := make(map[int64]*SourceChangesets, len(es))
 	for _, e := range es {
-		src, err := repos.NewSource(e, cf)
+		var rl *rate.Limiter
+		if rlr != nil {
+			rl = rlr.GetRateLimiter(e.ID)
+		}
+		css, err := repos.NewChangesetSource(e, cf, rl)
 		if err != nil {
 			return nil, err
-		}
-
-		css, ok := src.(repos.ChangesetSource)
-		if !ok {
-			return nil, errors.Errorf("unsupported repo type %q", e.Kind)
 		}
 
 		bySource[e.ID] = &SourceChangesets{ChangesetSource: css}
@@ -584,6 +581,18 @@ func GroupChangesetsBySource(ctx context.Context, reposStore RepoStore, cf *http
 	}
 
 	return res, nil
+}
+
+// filterSyncData filters to changesets that serviceID is responsible for.
+func filterSyncData(serviceID int64, allSyncData []campaigns.ChangesetSyncData) []campaigns.ChangesetSyncData {
+	syncData := make([]campaigns.ChangesetSyncData, 0, len(allSyncData))
+	for _, d := range allSyncData {
+		svcID := shardChangeset(d.ChangesetID, d.ExternalServiceIDs)
+		if svcID == serviceID {
+			syncData = append(syncData, d)
+		}
+	}
+	return syncData
 }
 
 type scheduledSync struct {

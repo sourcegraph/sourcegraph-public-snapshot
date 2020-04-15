@@ -49,6 +49,7 @@ func TestExecChangesetJob(t *testing.T) {
 			changesetMetadata: buildGithubPR,
 			existsOnCodehost:  true,
 		},
+
 		{
 			name:              "GitHub_ChangesetExistsInDB",
 			createRepoExtSvc:  createGitHubRepo,
@@ -150,7 +151,10 @@ func TestExecChangesetJob(t *testing.T) {
 				CreatedAt:           now,
 				UpdatedAt:           now,
 			}
-			wantChangeset.SetMetadata(meta)
+			err = wantChangeset.SetMetadata(meta)
+			if err != nil {
+				t.Fatal(err)
+			}
 
 			if tc.existsInDB {
 				// If it was already in the DB we want to make sure that all

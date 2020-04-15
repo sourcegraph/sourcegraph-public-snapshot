@@ -462,17 +462,14 @@ func (r *Resolver) CreateChangesets(ctx context.Context, args *graphqlbackend.Cr
 	}
 
 	store = repos.NewDBStore(tx.DB(), sql.TxOptions{})
-	syncer := ee.ChangesetSyncer{
-		ReposStore:  store,
-		SyncStore:   tx,
-		HTTPFactory: r.httpFactory,
-	}
+
 	// NOTE: We are performing a blocking sync here in order to ensure
 	// that the remote changeset exists and also to remove the possibility
 	// of an unsynced changeset entering our database
-	if err = syncer.SyncChangesets(ctx, cs...); err != nil {
+	if err = ee.SyncChangesets(ctx, store, tx, r.httpFactory, cs...); err != nil {
 		return nil, errors.Wrap(err, "syncing changesets")
 	}
+
 	csr := make([]graphqlbackend.ExternalChangesetResolver, len(cs))
 	for i := range cs {
 		csr[i] = &changesetResolver{

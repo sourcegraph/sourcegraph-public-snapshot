@@ -55,7 +55,7 @@ func TestBitbucketServerSource_MakeRepo(t *testing.T) {
 
 	for name, config := range cases {
 		t.Run(name, func(t *testing.T) {
-			s, err := newBitbucketServerSource(&svc, config, nil)
+			s, err := newBitbucketServerSource(&svc, config, nil, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -128,7 +128,7 @@ func TestBitbucketServerSource_Exclude(t *testing.T) {
 
 	for name, config := range cases {
 		t.Run(name, func(t *testing.T) {
-			s, err := newBitbucketServerSource(&svc, config, nil)
+			s, err := newBitbucketServerSource(&svc, config, nil, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -212,7 +212,7 @@ func TestBitbucketServerSource_LoadChangesets(t *testing.T) {
 				}),
 			}
 
-			bbsSrc, err := NewBitbucketServerSource(svc, cf)
+			bbsSrc, err := NewBitbucketServerSource(svc, cf, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -322,7 +322,7 @@ func TestBitbucketServerSource_CreateChangeset(t *testing.T) {
 				}),
 			}
 
-			bbsSrc, err := NewBitbucketServerSource(svc, cf)
+			bbsSrc, err := NewBitbucketServerSource(svc, cf, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -395,7 +395,7 @@ func TestBitbucketServerSource_CloseChangeset(t *testing.T) {
 				}),
 			}
 
-			bbsSrc, err := NewBitbucketServerSource(svc, cf)
+			bbsSrc, err := NewBitbucketServerSource(svc, cf, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -469,7 +469,7 @@ func TestBitbucketServerSource_UpdateChangeset(t *testing.T) {
 				}),
 			}
 
-			bbsSrc, err := NewBitbucketServerSource(svc, cf)
+			bbsSrc, err := NewBitbucketServerSource(svc, cf, nil)
 			if err != nil {
 				t.Fatal(err)
 			}

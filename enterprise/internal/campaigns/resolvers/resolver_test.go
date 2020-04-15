@@ -298,7 +298,7 @@ func TestCampaigns(t *testing.T) {
 		t.Fatal(t)
 	}
 
-	githubSrc, err := repos.NewGithubSource(githubExtSvc, cf)
+	githubSrc, err := repos.NewGithubSource(githubExtSvc, cf, nil)
 	if err != nil {
 		t.Fatal(t)
 	}
@@ -308,7 +308,7 @@ func TestCampaigns(t *testing.T) {
 		t.Fatal(t)
 	}
 
-	bbsSrc, err := repos.NewBitbucketServerSource(bbsExtSvc, cf)
+	bbsSrc, err := repos.NewBitbucketServerSource(bbsExtSvc, cf, nil)
 	if err != nil {
 		t.Fatal(t)
 	}
@@ -758,7 +758,7 @@ func TestChangesetCountsOverTime(t *testing.T) {
 		t.Fatal(t)
 	}
 
-	githubSrc, err := repos.NewGithubSource(githubExtSvc, cf)
+	githubSrc, err := repos.NewGithubSource(githubExtSvc, cf, nil)
 	if err != nil {
 		t.Fatal(t)
 	}
@@ -807,12 +807,7 @@ func TestChangesetCountsOverTime(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	syncer := ee.ChangesetSyncer{
-		ReposStore:  repoStore,
-		SyncStore:   store,
-		HTTPFactory: cf,
-	}
-	err = syncer.SyncChangesets(ctx, changesets...)
+	err = ee.SyncChangesets(ctx, repoStore, store, cf, changesets...)
 	if err != nil {
 		t.Fatal(err)
 	}
