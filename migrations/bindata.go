@@ -106,6 +106,8 @@
 // 1528395668_campaign_description_nullable.up.sql (143B)
 // 1528395669_add_synced_at_to_perms_tables.down.sql (121B)
 // 1528395669_add_synced_at_to_perms_tables.up.sql (143B)
+// 1528395670_add_site_initialized_pre_315.down.sql (85B)
+// 1528395670_add_site_initialized_pre_315.up.sql (311B)
 
 package migrations
 
@@ -2294,6 +2296,46 @@ func _1528395669_add_synced_at_to_perms_tablesUpSql() (*asset, error) {
 	return a, nil
 }
 
+var __1528395670_add_site_initialized_pre_315DownSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x72\x72\x75\xf7\xf4\xb3\xe6\xe2\x72\xf4\x09\x71\x0d\x52\x08\x71\x74\xf2\x71\x55\x48\xcf\xc9\x4f\x4a\xcc\x89\x2f\x2e\x49\x2c\x49\x55\x70\x09\xf2\x0f\x50\x70\xf6\xf7\x09\xf5\xf5\x53\xf0\x74\x53\x70\x8d\xf0\x0c\x0e\x09\x56\xc8\xcc\xcb\x2c\xc9\x4c\xcc\xc9\xac\x4a\x4d\x89\x2f\x28\x4a\x8d\x37\x36\x34\xb5\xe6\xe2\x72\xf6\xf7\xf5\xf5\x0c\xb1\xe6\x02\x04\x00\x00\xff\xff\x11\x19\x8f\x39\x55\x00\x00\x00")
+
+func _1528395670_add_site_initialized_pre_315DownSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395670_add_site_initialized_pre_315DownSql,
+		"1528395670_add_site_initialized_pre_315.down.sql",
+	)
+}
+
+func _1528395670_add_site_initialized_pre_315DownSql() (*asset, error) {
+	bytes, err := _1528395670_add_site_initialized_pre_315DownSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395670_add_site_initialized_pre_315.down.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xa9, 0x98, 0xf3, 0xe5, 0x14, 0xa7, 0xfa, 0x5d, 0xbb, 0x4d, 0xf1, 0xfa, 0x6b, 0x60, 0x35, 0x91, 0x59, 0xc2, 0x53, 0xc0, 0x88, 0xd1, 0xc0, 0x91, 0xd, 0x2a, 0xa9, 0x74, 0xd5, 0xc4, 0x6c, 0x70}}
+	return a, nil
+}
+
+var __1528395670_add_site_initialized_pre_315UpSql = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x64\x8f\xb1\x6a\xf3\x30\x18\x45\x77\x3d\xc5\x7d\x80\x3f\x01\x63\x3c\x99\x7f\x50\x62\xa5\x0d\xc8\x76\x49\x64\x3a\x1a\x25\x56\xe3\x0f\x14\xc9\x48\xb2\x43\xfa\xf4\x25\x9d\xd2\x76\xbe\xe7\x72\x38\x1b\xf1\xb2\x6f\x4a\xc6\xb8\x54\xe2\x00\xc5\x37\x52\xe0\x62\xfd\x49\xdb\x3e\x26\x9d\x0c\x78\x55\x61\xdb\xca\xae\x6e\x40\x8e\x12\x69\x4b\x9f\x66\xe8\xa7\x60\xfa\x25\xef\xb3\x02\x27\xef\xad\xd1\x0e\x95\xd8\xf1\x4e\x2a\xec\xb8\x3c\x0a\x34\xad\x42\xd3\x49\x59\x32\xb6\x5a\x41\x8d\x14\x71\xa5\x4b\xd0\x89\xbc\xc3\x07\x85\x98\x10\x47\x9a\x26\x33\xe0\x46\x69\xc4\x92\xaf\xb3\xe2\x1f\xa2\x87\x77\xf6\x0e\x72\x31\x69\x77\x36\xf1\x59\x8a\x29\x98\xd5\x37\x88\x9b\x9f\xed\x00\x6d\x83\xd1\xc3\xfd\x61\x18\xf5\x62\x90\x46\xf3\x83\x3f\x7b\x3b\x5f\x1d\x52\x98\xcd\x9a\x75\x6f\x15\x57\xbf\xe2\x8e\x42\xfd\xa9\xca\xb3\xe2\xff\xe3\x81\xf7\x57\x71\x10\xcf\x73\xc9\xd8\xb6\xad\xeb\xbd\x2a\xd9\x57\x00\x00\x00\xff\xff\x9b\xab\xfc\xad\x37\x01\x00\x00")
+
+func _1528395670_add_site_initialized_pre_315UpSqlBytes() ([]byte, error) {
+	return bindataRead(
+		__1528395670_add_site_initialized_pre_315UpSql,
+		"1528395670_add_site_initialized_pre_315.up.sql",
+	)
+}
+
+func _1528395670_add_site_initialized_pre_315UpSql() (*asset, error) {
+	bytes, err := _1528395670_add_site_initialized_pre_315UpSqlBytes()
+	if err != nil {
+		return nil, err
+	}
+
+	info := bindataFileInfo{name: "1528395670_add_site_initialized_pre_315.up.sql", size: 0, mode: os.FileMode(0), modTime: time.Unix(0, 0)}
+	a := &asset{bytes: bytes, info: info, digest: [32]uint8{0xb3, 0xc0, 0xd9, 0xa5, 0x30, 0xae, 0x72, 0x7b, 0x61, 0x21, 0x44, 0xe1, 0x59, 0x1d, 0xf7, 0x43, 0x38, 0xf9, 0x56, 0x22, 0xfa, 0xcd, 0x1c, 0xc6, 0x74, 0x80, 0x9b, 0x10, 0xb, 0x67, 0x31, 0x22}}
+	return a, nil
+}
+
 // Asset loads and returns the asset for the given name.
 // It returns an error if the asset could not be found or
 // could not be loaded.
@@ -2491,6 +2533,8 @@ var _bindata = map[string]func() (*asset, error){
 	"1528395668_campaign_description_nullable.up.sql":                         _1528395668_campaign_description_nullableUpSql,
 	"1528395669_add_synced_at_to_perms_tables.down.sql":                       _1528395669_add_synced_at_to_perms_tablesDownSql,
 	"1528395669_add_synced_at_to_perms_tables.up.sql":                         _1528395669_add_synced_at_to_perms_tablesUpSql,
+	"1528395670_add_site_initialized_pre_315.down.sql":                        _1528395670_add_site_initialized_pre_315DownSql,
+	"1528395670_add_site_initialized_pre_315.up.sql":                          _1528395670_add_site_initialized_pre_315UpSql,
 }
 
 // AssetDir returns the file names below a certain
@@ -2640,6 +2684,8 @@ var _bintree = &bintree{nil, map[string]*bintree{
 	"1528395668_campaign_description_nullable.up.sql":                         {_1528395668_campaign_description_nullableUpSql, map[string]*bintree{}},
 	"1528395669_add_synced_at_to_perms_tables.down.sql":                       {_1528395669_add_synced_at_to_perms_tablesDownSql, map[string]*bintree{}},
 	"1528395669_add_synced_at_to_perms_tables.up.sql":                         {_1528395669_add_synced_at_to_perms_tablesUpSql, map[string]*bintree{}},
+	"1528395670_add_site_initialized_pre_315.down.sql":                        {_1528395670_add_site_initialized_pre_315DownSql, map[string]*bintree{}},
+	"1528395670_add_site_initialized_pre_315.up.sql":                          {_1528395670_add_site_initialized_pre_315UpSql, map[string]*bintree{}},
 }}
 
 // RestoreAsset restores an asset under the given directory.

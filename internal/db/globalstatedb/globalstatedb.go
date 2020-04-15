@@ -13,6 +13,10 @@ import (
 type State struct {
 	SiteID      string
 	Initialized bool // whether the initial site admin account has been created
+
+	// InitializedPre315 is whether this instance was running a pre-3.15.0 version of Sourcegraph
+	// when it was originally initialized.
+	InitializedPre315 bool
 }
 
 func Get(ctx context.Context) (*State, error) {
@@ -74,9 +78,10 @@ func EnsureInitialized(ctx context.Context, dbh interface {
 
 func getConfiguration(ctx context.Context) (*State, error) {
 	configuration := &State{}
-	err := dbconn.Global.QueryRowContext(ctx, "SELECT site_id, initialized FROM global_state LIMIT 1").Scan(
+	err := dbconn.Global.QueryRowContext(ctx, "SELECT site_id, initialized, initialized_pre_315 FROM global_state LIMIT 1").Scan(
 		&configuration.SiteID,
 		&configuration.Initialized,
+		&configuration.InitializedPre315,
 	)
 	return configuration, err
 }

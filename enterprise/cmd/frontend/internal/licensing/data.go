@@ -2,6 +2,10 @@ package licensing
 
 // The list of plans.
 const (
+	// freeNoLicense is the "Free" plan, which is the effective plan when there is no license key
+	// supplied.
+	freeNoLicense Plan = "free"
+
 	// oldEnterpriseStarter is the old "Enterprise Starter" plan.
 	oldEnterpriseStarter Plan = "old-starter-0"
 
@@ -30,14 +34,21 @@ const (
 	// of allowed remote extensions and prevent any other remote extensions from being used. It does
 	// not apply to locally published extensions.
 	FeatureRemoteExtensionsAllowDisallow Feature = "remote-extensions-allow-disallow"
+
+	// FeatureMultipleExternalServices is whether there can be more than 1 external service.
+	FeatureMultipleExternalServices Feature = "multiple-external-services"
 )
 
 // planFeatures defines the features that are enabled for each plan.
 var planFeatures = map[Plan][]Feature{
-	oldEnterpriseStarter: {},
+	freeNoLicense: {},
+	oldEnterpriseStarter: {
+		FeatureMultipleExternalServices,
+	},
 	oldEnterprise: {
 		FeatureACLs,
 		FeatureExtensionRegistry,
 		FeatureRemoteExtensionsAllowDisallow,
+		FeatureMultipleExternalServices,
 	},
 }
