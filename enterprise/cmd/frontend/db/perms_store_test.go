@@ -2131,22 +2131,22 @@ func testPermsStore_UserIDsWithOldestPerms(db *sql.DB) func(*testing.T) {
 			t.Fatal(err)
 		}
 
-		// Mock user user 2's permissions to be updated in the future
+		// Mock user user 2's permissions to be synced in the future
 		q = sqlf.Sprintf(`
 UPDATE user_permissions
-SET updated_at = %s
+SET synced_at = %s
 WHERE user_id = 2`, clock().AddDate(1, 0, 0))
 		if err := s.execute(ctx, q); err != nil {
 			t.Fatal(err)
 		}
 
-		// Should only get user 1 back
+		// Should only get user 1 back (NULL FIRST)
 		results, err := s.UserIDsWithOldestPerms(ctx, 1)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		expResults := map[int32]time.Time{1: clock()}
+		expResults := map[int32]time.Time{1: {}}
 		if diff := cmp.Diff(expResults, results); diff != "" {
 			t.Fatal(diff)
 		}
@@ -2158,7 +2158,7 @@ WHERE user_id = 2`, clock().AddDate(1, 0, 0))
 		}
 
 		expResults = map[int32]time.Time{
-			1: clock(),
+			1: {},
 			2: clock().AddDate(1, 0, 0),
 		}
 		if diff := cmp.Diff(expResults, results); diff != "" {
@@ -2202,10 +2202,10 @@ func testPermsStore_ReposIDsWithOldestPerms(db *sql.DB) func(*testing.T) {
 			t.Fatal(err)
 		}
 
-		// Mock user repo 2's permissions to be updated in the future
+		// Mock user repo 2's permissions to be synced in the future
 		q := sqlf.Sprintf(`
 UPDATE repo_permissions
-SET updated_at = %s
+SET synced_at = %s
 WHERE repo_id = 2`, clock().AddDate(1, 0, 0))
 		if err := s.execute(ctx, q); err != nil {
 			t.Fatal(err)

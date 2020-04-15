@@ -213,9 +213,9 @@ func (s *PermsStore) SetUserPermissions(ctx context.Context, p *authz.UserPermis
 		}
 	}
 
-	// NOTE: The permissions background sync relies on UpdatedAt column to do rolling
-	// update, if we don't always update the value of the column regardless, we will
-	// end up checking the same set of oldest but up-to-date rows in the table.
+	// NOTE: The permissions background syncing heuristics relies on SyncedAt column
+	// to do rolling update, if we don't always update the value of the column regardless,
+	// we will end up checking the same set of oldest but up-to-date rows in the table.
 	p.UpdatedAt = updatedAt
 	p.SyncedAt = updatedAt
 	if q, err := upsertUserPermissionsQuery(p); err != nil {
@@ -374,9 +374,9 @@ func (s *PermsStore) SetRepoPermissions(ctx context.Context, p *authz.RepoPermis
 		}
 	}
 
-	// NOTE: The permissions background sync relies on UpdatedAt column to do rolling
-	// update, if we don't always update the value of the column regardless, we will
-	// end up checking the same set of oldest but up-to-date rows in the table.
+	// NOTE: The permissions background syncing heuristics relies on SyncedAt column
+	// to do rolling update, if we don't always update the value of the column regardless,
+	// we will end up checking the same set of oldest but up-to-date rows in the table.
 	p.UpdatedAt = updatedAt
 	p.SyncedAt = updatedAt
 	if q, err := upsertRepoPermissionsQuery(p); err != nil {
@@ -1276,8 +1276,8 @@ func (s *PermsStore) load(ctx context.Context, q *sqlf.Query) (*permsLoadValues,
 	var id int32
 	var ids []byte
 	var updatedAt time.Time
-	var fullSyncedAt time.Time
-	if err = rows.Scan(&id, &ids, &updatedAt, &dbutil.NullTime{Time: &fullSyncedAt}); err != nil {
+	var syncedAt time.Time
+	if err = rows.Scan(&id, &ids, &updatedAt, &dbutil.NullTime{Time: &syncedAt}); err != nil {
 		return nil, err
 	}
 
@@ -1288,7 +1288,7 @@ func (s *PermsStore) load(ctx context.Context, q *sqlf.Query) (*permsLoadValues,
 	vals := &permsLoadValues{
 		id:        id,
 		ids:       roaring.NewBitmap(),
-		syncedAt:  fullSyncedAt,
+		syncedAt:  syncedAt,
 		updatedAt: updatedAt,
 	}
 	if len(ids) == 0 {
@@ -1439,7 +1439,7 @@ AND account_id IN (%s)
 func (s *PermsStore) UserIDsWithNoPerms(ctx context.Context) ([]int32, error) {
 	q := sqlf.Sprintf(`
 -- source: enterprise/cmd/frontend/db/perms_store.go:PermsStore.UserIDsWithNoPerms
-SELECT users.id, '1970-01-01 00:00:00+00'::timestamptz FROM users
+SELECT users.id, NULL FROM users
 WHERE users.site_admin = FALSE
 AND users.deleted_at IS NULL
 AND users.id NOT IN
@@ -1462,7 +1462,7 @@ AND users.id NOT IN
 func (s *PermsStore) RepoIDsWithNoPerms(ctx context.Context) ([]api.RepoID, error) {
 	q := sqlf.Sprintf(`
 -- source: enterprise/cmd/frontend/db/perms_store.go:PermsStore.RepoIDsWithNoPerms
-SELECT repo.id, '1970-01-01 00:00:00+00'::timestamptz FROM repo
+SELECT repo.id, NULL FROM repo
 WHERE repo.deleted_at IS NULL
 AND repo.private = TRUE
 AND repo.id NOT IN
@@ -1483,31 +1483,32 @@ AND repo.id NOT IN
 	return ids, nil
 }
 
-// UserIDsWithOldestPerms returns a list of user ID and last updated pairs for users
-// who have oldest permissions in database and capped results by the limit.
+// UserIDsWithOldestPerms returns a list of user ID and last updated pairs for users who
+// have the least recent synced permissions in the database and capped results by the limit.
 func (s *PermsStore) UserIDsWithOldestPerms(ctx context.Context, limit int) (map[int32]time.Time, error) {
 	q := sqlf.Sprintf(`
 -- source: enterprise/cmd/frontend/db/perms_store.go:PermsStore.UserIDsWithOldestPerms
-SELECT perms.user_id, perms.updated_at FROM user_permissions AS perms
+SELECT perms.user_id, perms.synced_at FROM user_permissions AS perms
 WHERE perms.user_id NOT IN
 	(SELECT users.id FROM users
 	 WHERE users.deleted_at IS NOT NULL)
-ORDER BY perms.updated_at ASC
+ORDER BY perms.synced_at ASC NULLS FIRST
 LIMIT %s
 `, limit)
 	return s.loadIDsWithTime(ctx, q)
 }
 
 // ReposIDsWithOldestPerms returns a list of repository ID and last updated pairs for
-// repositories that have oldest permissions in database and capped results by the limit.
+// repositories that have the least recent synced permissions in the database and caps
+// results by the limit.
 func (s *PermsStore) ReposIDsWithOldestPerms(ctx context.Context, limit int) (map[api.RepoID]time.Time, error) {
 	q := sqlf.Sprintf(`
 -- source: enterprise/cmd/frontend/db/perms_store.go:PermsStore.ReposIDsWithOldestPerms
-SELECT perms.repo_id, perms.updated_at FROM repo_permissions AS perms
+SELECT perms.repo_id, perms.synced_at FROM repo_permissions AS perms
 WHERE perms.repo_id NOT IN
 	(SELECT repo.id FROM repo
 	 WHERE repo.deleted_at IS NOT NULL)
-ORDER BY perms.updated_at ASC
+ORDER BY perms.synced_at ASC NULLS FIRST
 LIMIT %s
 `, limit)
 
@@ -1523,7 +1524,7 @@ LIMIT %s
 	return results, nil
 }
 
-// loadIDsWithTime runs the query and returns a list of ID and time pairs.
+// loadIDsWithTime runs the query and returns a list of ID and nullable time pairs.
 func (s *PermsStore) loadIDsWithTime(ctx context.Context, q *sqlf.Query) (map[int32]time.Time, error) {
 	rows, err := s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
@@ -1535,7 +1536,7 @@ func (s *PermsStore) loadIDsWithTime(ctx context.Context, q *sqlf.Query) (map[in
 	for rows.Next() {
 		var id int32
 		var t time.Time
-		if err = rows.Scan(&id, &t); err != nil {
+		if err = rows.Scan(&id, &dbutil.NullTime{Time: &t}); err != nil {
 			return nil, err
 		}
 
