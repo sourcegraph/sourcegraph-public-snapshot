@@ -17,10 +17,10 @@ indent_size = 2
 [*.md]
 trim_trailing_whitespace = false
 
-[*.sh]
+[{*.sh, *.bash}]
 indent_style = space
 indent_size = 2
 switch_case_indent = true
 
-[node_modules/**]
+[**/node_modules/**]
 ignore = true
