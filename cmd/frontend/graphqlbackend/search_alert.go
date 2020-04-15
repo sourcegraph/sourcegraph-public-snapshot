@@ -76,7 +76,7 @@ func alertForQuery(queryString string, err error) *searchAlert {
 				proposedQueries: proposedQuotedQueries(queryString),
 			}
 		}
-	case *query.UnsupportedError:
+	case *query.UnsupportedError, *query.ExpectedOperand:
 		return &searchAlert{
 			prometheusType: "unsupported_and_or_query",
 			title:          "Unable To Process Query",

@@ -412,6 +412,11 @@ func Test_Parse(t *testing.T) {
 			WantGrammar:   `(and "a" "OR")`,
 			WantHeuristic: Same,
 		},
+		{
+			Input:         "repo:foo or or or",
+			WantGrammar:   "expected operand at 12",
+			WantHeuristic: Same,
+		},
 		// Reduction.
 		{
 			Name:          "paren reduction with ands",
