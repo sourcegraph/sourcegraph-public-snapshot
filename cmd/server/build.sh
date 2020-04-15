@@ -4,7 +4,8 @@
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 set -eux
 
-export OUTPUT=$(mktemp -d -t sgserver_XXXXXXX)
+OUTPUT=$(mktemp -d -t sgserver_XXXXXXX)
+export OUTPUT
 cleanup() {
   rm -rf "$OUTPUT"
 }
@@ -23,7 +24,13 @@ export CGO_ENABLED=0
 
 # Additional images passed in here when this script is called externally by our
 # enterprise build scripts.
-export additional_images=${@:-github.com/sourcegraph/sourcegraph/cmd/frontend github.com/sourcegraph/sourcegraph/cmd/repo-updater}
+additional_images=()
+if [ $# -eq 0 ]; then
+  additional_images+=("github.com/sourcegraph/sourcegraph/cmd/frontend" "github.com/sourcegraph/sourcegraph/cmd/repo-updater")
+else
+  additional_images+=("$@")
+fi
+export additional_images
 
 # Overridable server package path for when this script is called externally by
 # our enterprise build scripts.
@@ -37,9 +44,9 @@ go_build() {
   local package="$1"
 
   if [[ "${CI_DEBUG_PROFILE:-"false"}" == "true" ]]; then
-    env time -v ./cmd/server/go-build.sh $package
+    env time -v ./cmd/server/go-build.sh "$package"
   else
-    ./cmd/server/go-build.sh $package
+    ./cmd/server/go-build.sh "$package"
   fi
 }
 export -f go_build
@@ -53,14 +60,14 @@ PACKAGES=(
   github.com/sourcegraph/sourcegraph/cmd/replacer
   github.com/sourcegraph/sourcegraph/cmd/searcher
   github.com/sourcegraph/sourcegraph/cmd/symbols
-  $additional_images
 
   github.com/google/zoekt/cmd/zoekt-archive-index
   github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver
   github.com/google/zoekt/cmd/zoekt-webserver
-
-  $server_pkg
 )
+
+PACKAGES+=("${additional_images[@]}")
+PACKAGES+=("$server_pkg")
 
 parallel_run go_build {} ::: "${PACKAGES[@]}"
 
