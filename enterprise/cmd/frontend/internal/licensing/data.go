@@ -29,7 +29,7 @@ const (
 	// FeatureRemoteExtensionsAllowDisallow is whether the site admin may explicitly specify a list
 	// of allowed remote extensions and prevent any other remote extensions from being used. It does
 	// not apply to locally published extensions.
-	FeatureRemoteExtensionsAllowDisallow = "remote-extensions-allow-disallow"
+	FeatureRemoteExtensionsAllowDisallow Feature = "remote-extensions-allow-disallow"
 )
 
 // planFeatures defines the features that are enabled for each plan.
