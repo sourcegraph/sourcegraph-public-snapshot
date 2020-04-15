@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -eu
-pushd $(dirname "${BASH_SOURCE[0]}")/../..
+pushd "$(dirname "${BASH_SOURCE[0]}")"/../..
 
 TOOL_VERSION_FILES=()
 mapfile -d $'\0' TOOL_VERSION_FILES < <(fd .tool-versions --hidden --absolute-path --print0)
