@@ -6,11 +6,11 @@ import { map } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
 import { numberWithCommas, pluralize } from '../../../../shared/src/util/strings'
 import { queryGraphQL } from '../../backend/graphql'
-import { useObservable } from '../../util/useObservable'
 import WarningIcon from 'mdi-react/WarningIcon'
 import CloudCheckIcon from 'mdi-react/CloudCheckIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
 import { LicenseActionButton } from '../../components/licenseActions/LicenseActionButton'
+import { useObservable } from '../../../../shared/src/util/useObservable'
 
 const queryUsageStatistics = (): Observable<{ users: number; organizations: number; accessTokens: number }> =>
     queryGraphQL(gql`

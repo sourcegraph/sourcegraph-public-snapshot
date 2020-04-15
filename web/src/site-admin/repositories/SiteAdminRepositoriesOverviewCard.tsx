@@ -6,11 +6,11 @@ import { map } from 'rxjs/operators'
 import { dataOrThrowErrors, gql } from '../../../../shared/src/graphql/graphql'
 import { numberWithCommas, pluralize } from '../../../../shared/src/util/strings'
 import { queryGraphQL } from '../../backend/graphql'
-import { useObservable } from '../../util/useObservable'
 import WarningIcon from 'mdi-react/WarningIcon'
 import CloudCheckIcon from 'mdi-react/CloudCheckIcon'
 import { LicenseActionButton } from '../../components/licenseActions/LicenseActionButton'
 import CloudAlertIcon from 'mdi-react/CloudAlertIcon'
+import { useObservable } from '../../../../shared/src/util/useObservable'
 
 const queryRepositoriesTotalCount = (): Observable<number> =>
     queryGraphQL(gql`
