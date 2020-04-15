@@ -58,7 +58,7 @@ const combyAction = `{
     {
       "type": "docker",
       "image": "comby/comby",
-      "args": ["-in-place", "fmt.Sprintf(\\"%d\\", :[v])", "strconv.Itoa(:[v])", "-matcher", ".go", "-d", "/work"]
+      "args": ["-in-place", "fmt.Sprintf(\\"%d\\", :[v])", "strconv.Itoa(:[v])", ".go", "-matcher", ".go", "-d", "/work"]
     },
     {
       "type": "docker",
@@ -197,11 +197,36 @@ $ curl -L $SRC_ENDPOINT/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src
 $ export SRC_ACCESS_TOKEN=<YOUR TOKEN>
 `
 
+    const actionFileExample = `$ echo '{
+  "scopeQuery": "repohasfile:main.go",
+  "steps": [
+    {
+      "type": "docker",
+      "image": "golang:1.14-alpine",
+      "args": ["sh", "-c", "cd /work && gofmt -w ./"]
+    }
+  ]
+}
+' > action.json
+`
+
     return (
         <div className={className}>
             <h1>Create a campaign</h1>
             <div className="card">
                 <div className="card-body p-3">
+                    <div className="alert alert-info mt-2">
+                        <a
+                            href=" https://docs.sourcegraph.com/user/campaigns/creating_campaign_from_patches"
+                            rel="noopener noreferrer"
+                            target="_blank"
+                        >
+                            Take a look at the documentation for more detailed steps and additional information.{' '}
+                            <small>
+                                <ExternalLinkIcon className="icon-inline" />
+                            </small>
+                        </a>
+                    </div>
                     <h3>
                         1. Install the{' '}
                         <a href="https://github.com/sourcegraph/src-cli">
@@ -209,8 +234,7 @@ $ export SRC_ACCESS_TOKEN=<YOUR TOKEN>
                         </a>
                     </h3>
                     <div className="ml-2">
-                        <p>Install and configure the src CLI:</p>
-                        <pre className="ml-3">
+                        <pre className="alert alert-secondary ml-3">
                             <code
                                 dangerouslySetInnerHTML={{
                                     __html: highlight('bash', srcInstall, true).value,
@@ -227,29 +251,31 @@ $ export SRC_ACCESS_TOKEN=<YOUR TOKEN>
                     </div>
                     <h3>2. Create an action definition</h3>
                     <div className="ml-2 mb-1">
-                        See below for examples and{' '}
-                        <a
-                            href="https://docs.sourcegraph.com/user/campaigns/creating_campaign_from_patches"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                        >
-                            read the documentation on what actions can can do.
-                        </a>
-                        .
-                    </div>
-                    <h3>3. Optional: See repositories the action would run over</h3>
-                    <div className="ml-2 mb-2">
-                        <pre className="ml-3">
+                        <p>
+                            Here is a short example definition to run <code>gofmt</code> over all repositories that have
+                            a <code>main.go</code> <code>file</code>:
+                        </p>
+                        <pre className="alert alert-secondary ml-3">
                             <code
                                 dangerouslySetInnerHTML={{
-                                    __html: highlight('bash', '$ src actions scope-query -f action.json', true).value,
+                                    __html: highlight('bash', actionFileExample, true).value,
                                 }}
                             />
                         </pre>
+                        <p>
+                            See the examples below for more real-world usecases and{' '}
+                            <a
+                                href="https://docs.sourcegraph.com/user/campaigns/creating_campaign_from_patches"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                read the documentation for more information on what actions can do.
+                            </a>
+                        </p>
                     </div>
-                    <h3>4. Create a set of patches by executing the action over repositories</h3>
+                    <h3>3. Create a set of patches by executing the action over repositories</h3>
                     <div className="ml-2 mb-2">
-                        <pre className="ml-3">
+                        <pre className="alert alert-secondary ml-3">
                             <code
                                 dangerouslySetInnerHTML={{
                                     __html: highlight(
@@ -260,18 +286,10 @@ $ export SRC_ACCESS_TOKEN=<YOUR TOKEN>
                                 }}
                             />
                         </pre>
-                    </div>
-                    <div className="alert alert-info mt-2">
-                        <a
-                            href=" https://docs.sourcegraph.com/user/campaigns/creating_campaign_from_patches"
-                            rel="noopener noreferrer"
-                            target="_blank"
-                        >
-                            Take a look at the documentation for more detailed steps and additional information.{' '}
-                            <small>
-                                <ExternalLinkIcon className="icon-inline" />
-                            </small>
-                        </a>
+                        <p>
+                            Follow the printed instructions to create a campaign from the patches and to turn the
+                            patches into changesets (pull requests) on your code hosts.
+                        </p>
                     </div>
                 </div>
             </div>
@@ -295,7 +313,7 @@ $ export SRC_ACCESS_TOKEN=<YOUR TOKEN>
                                 doesn’t have it yet.
                             </p>
                             <p>
-                                In order to build the Docker image, we first need to create a file called
+                                In order to build the Docker image, we first need to create a file called{' '}
                                 <code>github-action-workflow-golang.yml</code> with the following content:
                             </p>
 
@@ -325,12 +343,12 @@ $ export SRC_ACCESS_TOKEN=<YOUR TOKEN>
                     >
                         <div>
                             <p>
-                                Our goal for this campaign is to simplify Go code by using Comby to rewrite calls to
+                                Our goal for this campaign is to simplify Go code by using Comby to rewrite calls to{' '}
                                 <code>fmt.Sprintf("%d", arg)</code> with <code>strconv.Itoa(:[v])</code>. The semantics
                                 are the same, but one more cleanly expresses the intention behind the code.
                             </p>
                             <p className="text-muted">
-                                Note: Learn more about Comby and what it’s capable of at{' '}
+                                Note: Learn more about Comby and what its capable of at{' '}
                                 <a href="https://comby.dev" target="_blank" rel="noopener noreferrer">
                                     comby.dev
                                 </a>
