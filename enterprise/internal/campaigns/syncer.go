@@ -408,7 +408,7 @@ func (s *ChangesetSyncer) Run(ctx context.Context) {
 				s.queue.Upsert(item)
 				syncerMetrics.scheduleSize.WithLabelValues(svcID).Inc()
 			}
-			syncerMetrics.priorityQueued.WithLabelValues(strconv.FormatInt(s.externalServiceID, 10)).Add(float64(len(ids)))
+			syncerMetrics.priorityQueued.WithLabelValues(svcID).Add(float64(len(ids)))
 		}
 	}
 }
