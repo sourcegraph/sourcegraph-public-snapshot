@@ -1484,7 +1484,7 @@ AND repo.id NOT IN
 }
 
 // UserIDsWithOldestPerms returns a list of user ID and last updated pairs for users who
-// have the least recent synced permissions in database and capped results by the limit.
+// have the least recent synced permissions in the database and capped results by the limit.
 func (s *PermsStore) UserIDsWithOldestPerms(ctx context.Context, limit int) (map[int32]time.Time, error) {
 	q := sqlf.Sprintf(`
 -- source: enterprise/cmd/frontend/db/perms_store.go:PermsStore.UserIDsWithOldestPerms
@@ -1499,7 +1499,7 @@ LIMIT %s
 }
 
 // ReposIDsWithOldestPerms returns a list of repository ID and last updated pairs for
-// repositories that have the least recent synced permissions in database and capped
+// repositories that have the least recent synced permissions in the database and caps
 // results by the limit.
 func (s *PermsStore) ReposIDsWithOldestPerms(ctx context.Context, limit int) (map[api.RepoID]time.Time, error) {
 	q := sqlf.Sprintf(`
