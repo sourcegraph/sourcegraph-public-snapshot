@@ -13,6 +13,16 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+### Changed
+
+### Fixed
+
+### Removed
+
+## 3.15.0
+
+### Added
+
 - Users and site administrators can now view a log of their actions/events in the user settings.
 - With the new `visibility:` filter search results can now be filtered based on a repository's visibility (possible filter values: `any`, `public` or `private`). [#8344](https://github.com/sourcegraph/sourcegraph/issues/8344)
 - observability: Dashboard panels now show an orange/red background color when the defined warning/critical alert threshold has been met, making it even easier to see on a dashboard what is in a bad state.
