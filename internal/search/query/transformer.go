@@ -13,10 +13,10 @@ func LowercaseFieldNames(nodes []Node) []Node {
 	})
 }
 
-// HoistOr is a heuristic that rewrites simple but possibly ambiguous queries
-// containing or-expressions. It changes certain expressions in a way that some
-// consider to be more natural. For example, the following query without
-// parentheses is interpreted as follows in the grammar:
+// Hoist is a heuristic that rewrites simple but possibly ambiguous queries. It
+// changes certain expressions in a way that some consider to be more natural.
+// For example, the following query without parentheses is interpreted as
+// follows in the grammar:
 //
 // repo:foo a or b and c => (repo:foo a) or ((b) and (c))
 //
@@ -25,20 +25,20 @@ func LowercaseFieldNames(nodes []Node) []Node {
 // repo:foo a or b and c => repo:foo (a or b and c)
 //
 // Any number of field:value parameters may occur before and after the pattern
-// expression separated by or-operators, and these are hoisted out. The pattern
-// expression must be contiguous. If not, we want to preserve the default
-// interpretation, which corresponds more naturally to groupings with field
-// parameters, i.e.,
+// expression separated by or- or and-operators, and these are hoisted out. The
+// pattern expression must be contiguous. If not, we want to preserve the
+// default interpretation, which corresponds more naturally to groupings with
+// field parameters, i.e.,
 //
 // repo:foo a or b or repo:bar c => (repo:foo a) or (b) or (repo:bar c)
-func HoistOr(nodes []Node) ([]Node, error) {
+func Hoist(nodes []Node) ([]Node, error) {
 	if len(nodes) != 1 {
 		return nil, fmt.Errorf("heuristic requires one top-level expression")
 	}
 
 	expression, ok := nodes[0].(Operator)
-	if !ok || expression.Kind != Or {
-		return nil, fmt.Errorf("heuristic requires top-level or-expression")
+	if !ok || expression.Kind == Concat {
+		return nil, fmt.Errorf("heuristic requires top-level and- or or-expression")
 	}
 
 	n := len(expression.Operands)
@@ -59,5 +59,5 @@ func HoistOr(nodes []Node) ([]Node, error) {
 		}
 		pattern = append(pattern, node)
 	}
-	return append(scopeParameters, newOperator(pattern, Or)...), nil
+	return append(scopeParameters, newOperator(pattern, expression.Kind)...), nil
 }

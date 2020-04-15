@@ -333,6 +333,11 @@ func Test_Parse(t *testing.T) {
 			WantHeuristic: Diff(`(and "repo:foo" (concat "(a)" "(b)"))`),
 		},
 		{
+			Input:         "repo:foo main { and bar {",
+			WantGrammar:   Spec(`(and (and "repo:foo" (concat "main" "{")) (concat "bar" "{"))`),
+			WantHeuristic: Diff(`(and "repo:foo" (concat "main" "{") (concat "bar" "{"))`),
+		},
+		{
 			Input:         "a b (repo:foo c d)",
 			WantGrammar:   `(concat "a" "b" (and "repo:foo" (concat "c" "d")))`,
 			WantHeuristic: Same,

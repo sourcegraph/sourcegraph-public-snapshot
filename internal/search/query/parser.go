@@ -776,7 +776,7 @@ func tryFallbackParser(in string) ([]Node, error) {
 	if err != nil {
 		return nil, err
 	}
-	if hoistedNodes, err := HoistOr(nodes); err == nil {
+	if hoistedNodes, err := Hoist(nodes); err == nil {
 		return newOperator(hoistedNodes, And), nil
 	}
 	return newOperator(nodes, And), nil
@@ -807,7 +807,7 @@ func ParseAndOr(in string) ([]Node, error) {
 	}
 	if !parser.unambiguated {
 		// Hoist or expressions if this query is potential ambiguous.
-		if hoistedNodes, err := HoistOr(nodes); err == nil {
+		if hoistedNodes, err := Hoist(nodes); err == nil {
 			nodes = hoistedNodes
 		}
 	}
