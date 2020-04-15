@@ -29,7 +29,7 @@ var graphqlFieldHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Name:      "field_seconds",
 	Help:      "GraphQL field resolver latencies in seconds.",
 	Buckets:   []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
-}, []string{"type", "field", "error"})
+}, []string{"type", "field", "error", "source"})
 
 var codeIntelSearchHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Namespace: "src",
@@ -72,9 +72,10 @@ func (prometheusTracer) TraceQuery(ctx context.Context, queryString string, oper
 	if requestName == "unknown" {
 		lvl = log15.Info
 	}
-	lvl("serving GraphQL request", "name", requestName, "user", currentUserName)
+	requestSource := sgtrace.RequestSource(ctx)
+	lvl("serving GraphQL request", "name", requestName, "user", currentUserName, "source", requestSource)
 	if requestName == "unknown" {
-		log.Printf(`logging complete query for unnamed GraphQL request above name=%s user=%s:
+		log.Printf(`logging complete query for unnamed GraphQL request above name=%s user=%s source=%s:
 QUERY
 -----
 %s
@@ -83,7 +84,7 @@ VARIABLES
 ---------
 %v
 
-`, requestName, currentUserName, queryString, variables)
+`, requestName, currentUserName, requestSource, queryString, variables)
 	}
 	return ctx, func(err []*gqlerrors.QueryError) {
 		if finish != nil {
@@ -101,7 +102,7 @@ func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldNa
 	start := time.Now()
 	return ctx, func(err *gqlerrors.QueryError) {
 		isErrStr := strconv.FormatBool(err != nil)
-		graphqlFieldHistogram.WithLabelValues(typeName, fieldName, isErrStr).Observe(time.Since(start).Seconds())
+		graphqlFieldHistogram.WithLabelValues(typeName, fieldName, isErrStr, string(sgtrace.RequestSource(ctx))).Observe(time.Since(start).Seconds())
 
 		origin := sgtrace.RequestOrigin(ctx)
 		if origin != "unknown" && (fieldName == "search" || fieldName == "lsif") {

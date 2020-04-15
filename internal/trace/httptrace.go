@@ -33,6 +33,7 @@ const (
 	requestErrorCauseKey
 	graphQLRequestNameKey
 	originKey
+	sourceKey
 )
 
 // trackOrigin specifies a URL value. When an incoming request has the request header "Origin" set
@@ -121,6 +122,31 @@ func RequestOrigin(ctx context.Context) string {
 // WithRequestOrigin sets the request origin in the context.
 func WithRequestOrigin(ctx context.Context, name string) context.Context {
 	return context.WithValue(ctx, originKey, name)
+}
+
+// SourceType indicates the type of source that likely created the request.
+type SourceType string
+
+const (
+	// SourceBrowser indicates the request likely came from a web browser.
+	SourceBrowser SourceType = "browser"
+
+	// SourceOther indicates the request likely came from a non-browser HTTP client.
+	SourceOther SourceType = ""
+)
+
+// WithRequestSource sets the request source type in the context.
+func WithRequestSource(ctx context.Context, source SourceType) context.Context {
+	return context.WithValue(ctx, sourceKey, source)
+}
+
+// RequestSource returns the request source constant for a request context.
+func RequestSource(ctx context.Context) SourceType {
+	v := ctx.Value(sourceKey)
+	if v == nil {
+		return SourceOther
+	}
+	return v.(SourceType)
 }
 
 // Middleware captures and exports metrics to Prometheus, etc.
