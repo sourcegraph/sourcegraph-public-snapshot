@@ -5,10 +5,10 @@
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 set -eu
 
-OUTPUT=`mktemp -d -t sgdockerbuild_XXXXXXX`
+OUTPUT=$(mktemp -d -t sgdockerbuild_XXXXXXX)
 
 cleanup() {
-    rm -rf "$OUTPUT"
+  rm -rf "$OUTPUT"
 }
 trap cleanup EXIT
 
@@ -23,7 +23,7 @@ cp -a ./dev/src-expose/entry.sh "$OUTPUT"
 go build -trimpath -o "$OUTPUT/src-expose" github.com/sourcegraph/sourcegraph/dev/src-expose
 
 docker build -f dev/src-expose/Dockerfile -t $IMAGE $OUTPUT \
-    --progress=plain \
-    --build-arg COMMIT_SHA \
-    --build-arg DATE \
-    --build-arg VERSION
+  --progress=plain \
+  --build-arg COMMIT_SHA \
+  --build-arg DATE \
+  --build-arg VERSION
