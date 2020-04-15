@@ -125,7 +125,6 @@ func (c *Client) getRepositoryByNodeID(ctx context.Context, id string, nocache b
 
 	key := nodeIDCacheKey(id)
 
-	// 🚨 SECURITY: must forward token here to ensure caching by token
 	return c.cachedGetRepository(ctx, key, func(ctx context.Context) (repo *Repository, keys []string, err error) {
 		keys = append(keys, key)
 		repo, err = c.getRepositoryByNodeIDFromAPI(ctx, id)
@@ -138,7 +137,6 @@ func (c *Client) getRepositoryByNodeID(ctx context.Context, id string, nocache b
 
 // cachedGetRepository caches the getRepositoryFromAPI call.
 func (c *Client) cachedGetRepository(ctx context.Context, key string, getRepositoryFromAPI func(ctx context.Context) (repo *Repository, keys []string, err error), nocache bool) (*Repository, error) {
-	// 🚨 SECURITY: must forward token here to ensure caching by token
 	if !nocache {
 		if cached := c.getRepositoryFromCache(ctx, key); cached != nil {
 			reposGitHubCacheCounter.WithLabelValues("hit").Inc()
@@ -153,7 +151,6 @@ func (c *Client) cachedGetRepository(ctx context.Context, key string, getReposit
 	if IsNotFound(err) {
 		// Before we do anything, ensure we cache NotFound responses.
 		// Do this if client is unauthed or authed, it's okay since we're only caching not found responses here.
-		// 🚨 SECURITY: must forward token here to ensure caching by token
 		c.addRepositoryToCache(keys, &cachedRepo{NotFound: true})
 		reposGitHubCacheCounter.WithLabelValues("notfound").Inc()
 	}
@@ -162,7 +159,6 @@ func (c *Client) cachedGetRepository(ctx context.Context, key string, getReposit
 		return nil, err
 	}
 
-	// 🚨 SECURITY: must forward token here to ensure caching by token
 	c.addRepositoryToCache(keys, &cachedRepo{Repository: *repo})
 	reposGitHubCacheCounter.WithLabelValues("miss").Inc()
 
@@ -190,7 +186,6 @@ type cachedRepo struct {
 // getRepositoryFromCache attempts to get a response from the redis cache.
 // It returns nil error for cache-hit condition and non-nil error for cache-miss.
 func (c *Client) getRepositoryFromCache(ctx context.Context, key string) *cachedRepo {
-	// 🚨 SECURITY: must forward token here to ensure caching by token
 	b, ok := c.repoCache.Get(strings.ToLower(key))
 	if !ok {
 		return nil
@@ -222,7 +217,6 @@ func (c *Client) addRepositoryToCache(keys []string, repo *cachedRepo) {
 func (c *Client) addRepositoriesToCache(repos []*Repository) {
 	for _, repo := range repos {
 		keys := []string{nameWithOwnerCacheKey(repo.NameWithOwner), nodeIDCacheKey(repo.ID)} // cache under multiple
-		// 🚨 SECURITY: must forward token here to ensure caching by token
 		c.addRepositoryToCache(keys, &cachedRepo{Repository: *repo})
 	}
 }
@@ -474,7 +468,6 @@ func (c *Client) ListAffiliatedRepositories(ctx context.Context, page int) (repo
 	path := fmt.Sprintf("user/repos?sort=created&page=%d&per_page=100", page)
 	repos, err = c.listRepositories(ctx, path)
 	if err == nil {
-		// 🚨 SECURITY: must forward token here to ensure caching by token
 		c.addRepositoriesToCache(repos)
 	}
 
