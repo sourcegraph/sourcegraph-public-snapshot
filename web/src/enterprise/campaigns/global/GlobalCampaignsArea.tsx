@@ -9,10 +9,12 @@ import { Runners } from '../actions/Runners'
 import { ActionExecution } from '../actions/ActionExecution'
 import { ActionsList } from '../actions/list/ActionsList'
 import { Action } from '../actions/Action'
+import { CreateCampaign } from './create/CreateCampaign'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetryService'
 import { CampaignUpdateSelection } from '../detail/CampaignUpdateSelection'
+import { CampaignCLIHelp } from './create/CampaignCLIHelp'
 import { CampaignsDotComPage } from './marketing/CampaignsDotComPage'
 import { CampaignsSiteAdminMarketingPage } from './marketing/CampaignsSiteAdminMarketingPage'
 import { CampaignsUserMarketingPage } from './marketing/CampaignsUserMarketingPage'
@@ -77,6 +79,16 @@ export const GlobalCampaignsArea = withAuthenticatedUser<Props>(({ match, ...out
                             render={({ match, ...props }: RouteComponentProps<{ actionID: string }>) => (
                                 <Action {...outerProps} {...props} actionID={match.params.actionID} />
                             )}
+                        />
+                        <Route
+                            path={`${match.url}/create`}
+                            render={props => <CreateCampaign {...outerProps} {...props} />}
+                            exact={true}
+                        />
+                        <Route
+                            path={`${match.url}/cli`}
+                            render={props => <CampaignCLIHelp {...outerProps} {...props} />}
+                            exact={true}
                         />
                         <Route
                             path={`${match.url}/new`}

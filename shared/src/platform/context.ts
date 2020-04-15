@@ -27,6 +27,8 @@ export interface URLToFileContext {
      * the part of the diff it was invoked on.
      */
     part: DiffPart | undefined
+
+    isWebURL?: boolean
 }
 
 /**

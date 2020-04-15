@@ -6,6 +6,7 @@ import { isEmpty } from 'lodash'
 import { parseSearchQuery, CharacterRange } from '../search/parser/parser'
 import { replaceRange } from './strings'
 import { discreteValueAliases } from '../search/parser/filters'
+import { URLToFileContext } from '../platform/context'
 
 export interface RepoSpec {
     /**
@@ -85,7 +86,7 @@ export interface UIPositionSpec {
     position: UIPosition
 }
 
-interface UIRangeSpec {
+export interface UIRangeSpec {
     /**
      * A 1-indexed range in the blob
      */
@@ -116,7 +117,7 @@ export interface ViewStateSpec {
  */
 export type RenderMode = 'code' | 'rendered' | undefined
 
-interface RenderModeSpec {
+export interface RenderModeSpec {
     /**
      * How the file should be rendered.
      */
@@ -419,11 +420,11 @@ function parseLineOrPositionOrRange(lineChar: string): LineOrPositionOrRange {
     return lpr
 }
 
-function toRenderModeQuery(ctx: Partial<RenderModeSpec>): string {
+function toRenderModeAndActionQuery(ctx: Partial<RenderModeSpec>, isWebUrl?: boolean): string {
     if (ctx.renderMode === 'code') {
-        return '?view=code'
+        return isWebUrl ? '?action&view=code' : '?view=code'
     }
-    return ''
+    return isWebUrl ? '?action' : ''
 }
 
 /**
@@ -471,11 +472,17 @@ export function encodeRepoRev(repo: string, rev?: string): string {
 }
 
 export function toPrettyBlobURL(
-    ctx: RepoFile & Partial<UIPositionSpec> & Partial<ViewStateSpec> & Partial<UIRangeSpec> & Partial<RenderModeSpec>
+    target: RepoFile &
+        Partial<UIPositionSpec> &
+        Partial<ViewStateSpec> &
+        Partial<UIRangeSpec> &
+        Partial<RenderModeSpec>,
+    context?: Partial<URLToFileContext>
 ): string {
-    return `/${encodeRepoRev(ctx.repoName, ctx.rev)}/-/blob/${ctx.filePath}${toRenderModeQuery(
-        ctx
-    )}${toPositionOrRangeHash(ctx)}${toViewStateHashComponent(ctx.viewState)}`
+    return `/${encodeRepoRev(target.repoName, target.rev)}/-/blob/${target.filePath}${toRenderModeAndActionQuery(
+        target,
+        context?.isWebURL
+    )}${toPositionOrRangeHash(target)}${toViewStateHashComponent(target.viewState)}`
 }
 
 /**

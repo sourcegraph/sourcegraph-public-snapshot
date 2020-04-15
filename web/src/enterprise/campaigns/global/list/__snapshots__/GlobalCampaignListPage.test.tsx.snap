@@ -81,7 +81,7 @@ exports[`GlobalCampaignListPage renders for siteadmin 1`] = `
     </div>
     <AnchorLink
       className="btn btn-primary ml-3"
-      to="/campaigns/new"
+      to="/campaigns/create"
     >
       <Memo(AddIcon)
         className="icon-inline"

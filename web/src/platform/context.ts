@@ -8,7 +8,14 @@ import { mutateSettings, updateSettings } from '../../../shared/src/settings/edi
 import { gqlToCascade } from '../../../shared/src/settings/settings'
 import { createAggregateError, asError } from '../../../shared/src/util/errors'
 import { LocalStorageSubject } from '../../../shared/src/util/LocalStorageSubject'
-import { toPrettyBlobURL } from '../../../shared/src/util/url'
+import {
+    toPrettyBlobURL,
+    RepoFile,
+    UIPositionSpec,
+    ViewStateSpec,
+    RenderModeSpec,
+    UIRangeSpec,
+} from '../../../shared/src/util/url'
 import { queryGraphQL, requestGraphQL } from '../backend/graphql'
 import { Tooltip } from '../components/tooltip/Tooltip'
 import { eventLogger } from '../tracking/eventLogger'
@@ -60,7 +67,7 @@ export function createPlatformContext(): PlatformContext {
             ),
         forceUpdateTooltip: () => Tooltip.forceUpdate(),
         createExtensionHost: () => createExtensionHost({ wrapEndpoints: false }),
-        urlToFile: toPrettyBlobURL,
+        urlToFile: toPrettyWebBlobURL,
         getScriptURLForExtension: bundleURL => bundleURL,
         sourcegraphURL: window.context.externalURL,
         clientApplication: 'sourcegraph',
@@ -68,6 +75,12 @@ export function createPlatformContext(): PlatformContext {
         telemetryService: eventLogger,
     }
     return context
+}
+
+function toPrettyWebBlobURL(
+    ctx: RepoFile & Partial<UIPositionSpec> & Partial<ViewStateSpec> & Partial<UIRangeSpec> & Partial<RenderModeSpec>
+): string {
+    return toPrettyBlobURL(ctx, { isWebURL: true })
 }
 
 const settingsCascadeFragment = gql`

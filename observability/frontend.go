@@ -12,7 +12,7 @@ func Frontend() *Container {
 					{
 						{
 							Name:            "99th_percentile_search_request_duration",
-							Description:     "99th percentile search request duration over 5m",
+							Description:     "99th percentile successful search request duration over 5m",
 							Query:           `histogram_quantile(0.99, sum by (le)(rate(src_graphql_field_seconds_bucket{type="Search",field="results",error="false"}[5m])))`,
 							DataMayNotExist: true,
 							DataMayBeNaN:    true, // See https://github.com/sourcegraph/sourcegraph/issues/9834
@@ -21,7 +21,7 @@ func Frontend() *Container {
 						},
 						{
 							Name:            "90th_percentile_search_request_duration",
-							Description:     "90th percentile search request duration over 5m",
+							Description:     "90th percentile successful search request duration over 5m",
 							Query:           `histogram_quantile(0.90, sum by (le)(rate(src_graphql_field_seconds_bucket{type="Search",field="results",error="false"}[5m])))`,
 							DataMayNotExist: true,
 							DataMayBeNaN:    true, // See https://github.com/sourcegraph/sourcegraph/issues/9834
@@ -95,6 +95,38 @@ func Frontend() *Container {
 							DataMayNotExist: true,
 							Warning:         Alert{GreaterOrEqual: 25},
 							PanelOptions:    PanelOptions().LegendFormat("{{category}}"),
+						},
+					},
+				},
+			},
+			{
+				Title:  "Container monitoring (not available on k8s or server)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						{
+							Name:            "container_restarts",
+							Description:     "container restarts every 5m by instance (not available on k8s or server)",
+							Query:           `increase(cadvisor_container_restart_count{name=~".*frontend.*"}[5m])`,
+							DataMayNotExist: true,
+							Warning:         Alert{GreaterOrEqual: 1},
+							PanelOptions:    PanelOptions().LegendFormat("{{name}}"),
+						},
+						{
+							Name:            "container_memory_usage",
+							Description:     "container memory usage by instance (not available on k8s or server)",
+							Query:           `cadvisor_container_memory_usage_percentage_total{name=~".*frontend.*"}`,
+							DataMayNotExist: true,
+							Warning:         Alert{GreaterOrEqual: 90},
+							PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage),
+						},
+						{
+							Name:            "container_cpu_usage",
+							Description:     "container cpu usage total (5m average) across all cores by instance (not available on k8s or server)",
+							Query:           `cadvisor_container_cpu_usage_percentage_total{name=~".*frontend.*"}`,
+							DataMayNotExist: true,
+							Warning:         Alert{GreaterOrEqual: 90},
+							PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage),
 						},
 					},
 				},
