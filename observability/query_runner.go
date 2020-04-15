@@ -22,13 +22,13 @@ func QueryRunner() *Container {
 				},
 			},
 			{
-				Title:  "Container monitoring (not yet available in Kubernetes or single-container deployments)",
+				Title:  "Container monitoring (not available on k8s or server)",
 				Hidden: true,
 				Rows: []Row{
 					{
 						{
 							Name:            "container_restarts",
-							Description:     "container restarts every 5m by instance",
+							Description:     "container restarts every 5m by instance (not available on k8s or server)",
 							Query:           `increase(cadvisor_container_restart_count{name=~".*query-runner.*"}[5m])`,
 							DataMayNotExist: true,
 							Warning:         Alert{GreaterOrEqual: 1},
@@ -36,7 +36,7 @@ func QueryRunner() *Container {
 						},
 						{
 							Name:            "container_memory_usage",
-							Description:     "container memory usage by instance",
+							Description:     "container memory usage by instance (not available on k8s or server)",
 							Query:           `cadvisor_container_memory_usage_percentage_total{name=~".*query-runner.*"}`,
 							DataMayNotExist: true,
 							Warning:         Alert{GreaterOrEqual: 90},
@@ -44,7 +44,7 @@ func QueryRunner() *Container {
 						},
 						{
 							Name:            "container_cpu_usage",
-							Description:     "container cpu usage total (5m average) across all cores by instance",
+							Description:     "container cpu usage total (5m average) across all cores by instance (not available on k8s or server)",
 							Query:           `cadvisor_container_cpu_usage_percentage_total{name=~".*query-runner.*"}`,
 							DataMayNotExist: true,
 							Warning:         Alert{GreaterOrEqual: 90},
