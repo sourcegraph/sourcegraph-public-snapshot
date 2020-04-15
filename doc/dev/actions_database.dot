@@ -1,0 +1,104 @@
+digraph {
+    graph [pad="0.5", nodesep="0.5", ranksep="2"];
+    node [shape=plain]
+    rankdir=LR;
+
+
+Action [label=<
+<table border="0" cellborder="1" cellspacing="0" color="darkgreen">
+  <tr><td><i><font color="darkgreen">actions</font></i></td></tr>
+  <tr><td port="action_1"><font color="darkgreen">id</font></td></tr>
+  <tr><td port="action_2"><font color="darkgreen">schedule</font></td></tr>
+  <tr><td port="action_3"><font color="darkgreen">cancel_previous</font></td></tr>
+  <tr><td port="action_4"><font color="darkgreen">definition</font></td></tr>
+  <tr><td port="action_5"><font color="darkgreen">environment</font></td></tr>
+  <tr><td port="action_6"><font color="darkgreen">saved_search_id</font></td></tr>
+  <tr><td port="action_7"><font color="darkgreen">campaign_id</font></td></tr>
+</table>>];
+
+
+ActionExecution [label=<
+<table border="0" cellborder="1" cellspacing="0" color="darkgreen">
+  <tr><td><i><font color="darkgreen">action_executions</font></i></td></tr>
+  <tr><td port="execution_1"><font color="darkgreen">id</font></td></tr>
+  <tr><td port="execution_2"><font color="darkgreen">definition</font></td></tr>
+  <tr><td port="execution_3"><font color="darkgreen">environment</font></td></tr>
+  <tr><td port="execution_4"><font color="darkgreen">invocation_reason</font></td></tr>
+  <tr><td port="execution_5"><font color="darkgreen">action_id</font></td></tr>
+  <tr><td port="execution_6"><font color="darkgreen">patch_set_id</font></td></tr>
+</table>>];
+
+
+ActionJob [label=<
+<table border="0" cellborder="1" cellspacing="0" color="darkgreen">
+  <tr><td><i><font color="darkgreen">action_jobs</font></i></td></tr>
+  <tr><td port="action_job_1"><font color="darkgreen">id</font></td></tr>
+  <tr><td port="action_job_2"><font color="darkgreen">log</font></td></tr>
+  <tr><td port="action_job_3"><font color="darkgreen">started_at</font></td></tr>
+  <tr><td port="action_job_4"><font color="darkgreen">finished_at</font></td></tr>
+  <tr><td port="action_job_5"><font color="darkgreen">runner_seen_at</font></td></tr>
+  <tr><td port="action_job_6"><font color="darkgreen">state</font></td></tr>
+  <tr><td port="action_job_7"><font color="darkgreen">execution_id</font></td></tr>
+  <tr><td port="action_job_8"><font color="darkgreen">patch_id</font></td></tr>
+  <tr><td port="action_job_9"><font color="darkgreen">repo_id</font></td></tr>
+  <tr><td port="action_job_10"><font color="darkgreen">rev</font></td></tr>
+  <tr><td port="action_job_11"><font color="darkgreen">base_ref</font></td></tr>
+  <tr><td port="action_job_12"><font color="darkgreen">diff</font></td></tr>
+</table>>];
+
+Campaign [label=<
+<table border="0" cellborder="1" cellspacing="0" color="darkblue">
+  <tr><td><i><font color="darkblue">campaigns</font></i></td></tr>
+  <tr><td port="campaign_1"><font color="darkblue">id</font></td></tr>
+  <tr><td port="campaign_2"><font color="darkblue">patch_set_id</font></td></tr>
+</table>>];
+
+// CampaignPatchSet [label=<
+// <table border="0" cellborder="1" cellspacing="0">
+//   <tr><td><i>campaign_patch_sets</i></td></tr>
+//   <tr><td port="campaign_patchset_1">patch_set_id</td></tr>
+//   <tr><td port="campaign_patchset_2">campaign_id</td></tr>
+// </table>>];
+
+PatchSet [label=<
+<table border="0" cellborder="1" cellspacing="0" color="darkblue">
+  <tr><td><i><font color="darkblue">patch_sets</font></i></td></tr>
+  <tr><td port="patchset_1"><font color="darkblue">id</font></td></tr>
+</table>>];
+
+Patch [label=<
+<table border="0" cellborder="1" cellspacing="0" color="darkblue">
+  <tr><td><i><font color="darkblue">patches</font></i></td></tr>
+  <tr><td port="patch_1"><font color="darkblue">id</font></td></tr>
+  <tr><td port="patch_2"><font color="darkblue">patch_set_id</font></td></tr>
+  <tr><td port="patch_3"><font color="darkblue">repo_id</font></td></tr>
+  <tr><td port="patch_4"><font color="darkblue">rev</font></td></tr>
+  <tr><td port="patch_5"><font color="darkblue">base_ref</font></td></tr>
+  <tr><td port="patch_6"><font color="darkblue">diff</font></td></tr>
+</table>>];
+
+SavedSearch [label=<
+<table border="0" cellborder="1" cellspacing="0" color="darkblue">
+  <tr><td><i><font color="darkblue">saved_searches</font></i></td></tr>
+  <tr><td port="saved_search_1"><font color="darkblue">id</font></td></tr>
+</table>>];
+
+Repo [label=<
+<table border="0" cellborder="1" cellspacing="0" color="darkblue">
+  <tr><td><i><font color="darkblue">repo</font></i></td></tr>
+  <tr><td port="repo_1"><font color="darkblue">id</font></td></tr>
+</table>>];
+
+ActionJob:action_job_7 -> ActionExecution:execution_1;
+ActionJob:action_job_8 -> Patch:patch_1 [label="attached once finished"];
+ActionJob:action_job_9 -> Repo:repo_1;
+ActionExecution:execution_5 -> Action:action_1;
+ActionExecution:execution_6 -> PatchSet:patchset_1 [label="created when all patches are ready"];
+Action:action_6 -> SavedSearch:saved_search_1 [label="optional saved search triggering executions"];
+Action:action_7 -> Campaign:campaign_1 [label="optional linked campaign to update"];
+Patch:patch_2 -> PatchSet:patchset_1;
+Patch:patch_3 -> Repo:repo_1;
+Campaign:campaign_2 -> PatchSet:patchset_1;
+// CampaignPatchSet:campaign_patchset_1 -> PatchSet:patchset_1;
+// CampaignPatchSet:campaign_patchset_2 -> Campaign:campaign_1;
+}
