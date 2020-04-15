@@ -229,11 +229,11 @@ $ export SRC_ACCESS_TOKEN=<YOUR TOKEN>
                     <div className="ml-2 mb-1">
                         See below for examples and{' '}
                         <a
-                            href="https://docs.sourcegraph.com/user/campaigns#defining-an-action"
+                            href="https://docs.sourcegraph.com/user/campaigns/creating_campaign_from_patches"
                             target="_blank"
                             rel="noopener noreferrer"
                         >
-                            read the documenation on what actions can can do.
+                            read the documentation on what actions can can do.
                         </a>
                         .
                     </div>
