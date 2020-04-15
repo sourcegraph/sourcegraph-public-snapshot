@@ -132,7 +132,7 @@ const (
 	SourceBrowser SourceType = "browser"
 
 	// SourceOther indicates the request likely came from a non-browser HTTP client.
-	SourceOther SourceType = ""
+	SourceOther SourceType = "other"
 )
 
 // WithRequestSource sets the request source type in the context.
