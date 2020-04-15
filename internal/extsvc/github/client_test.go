@@ -118,8 +118,8 @@ func TestClient_WithToken(t *testing.T) {
 	}
 
 	old := &Client{
-		apiURL:       uri,
-		defaultToken: "old_token",
+		apiURL: uri,
+		token:  "old_token",
 	}
 
 	newToken := "new_token"
@@ -128,8 +128,8 @@ func TestClient_WithToken(t *testing.T) {
 		t.Fatal("both clients have the same address")
 	}
 
-	if new.defaultToken != newToken {
-		t.Fatalf("defaultToken: want %q but got %q", newToken, new.defaultToken)
+	if new.token != newToken {
+		t.Fatalf("token: want %q but got %q", newToken, new.token)
 	}
 }
 

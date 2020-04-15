@@ -52,7 +52,7 @@ func (c *Client) GetAuthenticatedUserEmails(ctx context.Context) ([]*UserEmail, 
 	}
 
 	var emails []*UserEmail
-	err := c.requestGet(ctx, "", "/user/emails?per_page=100", &emails)
+	err := c.requestGet(ctx, "/user/emails?per_page=100", &emails)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +73,7 @@ func (c *Client) GetAuthenticatedUserOrgs(ctx context.Context) ([]*Org, error) {
 	}
 
 	var orgs []*Org
-	err := c.requestGet(ctx, "", "/user/orgs?per_page=100", &orgs)
+	err := c.requestGet(ctx, "/user/orgs?per_page=100", &orgs)
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +91,7 @@ type Collaborator struct {
 // be for page 1).
 func (c *Client) ListRepositoryCollaborators(ctx context.Context, owner, repo string, page int) (users []*Collaborator, hasNextPage bool, _ error) {
 	path := fmt.Sprintf("/repos/%s/%s/collaborators?&page=%d&per_page=100", owner, repo, page)
-	err := c.requestGet(ctx, "", path, &users)
+	err := c.requestGet(ctx, path, &users)
 	if err != nil {
 		return nil, false, err
 	}
