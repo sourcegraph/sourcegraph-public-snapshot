@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -14,6 +15,22 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 )
+
+func BenchmarkPrometheusFieldName(b *testing.B) {
+	tests := [][2]string{
+		{"Query", "settingsSubject"},
+		{"SearchResultMatch", "highlights"},
+		{"TreeEntry", "isSingleChild"},
+	}
+	for i, t := range tests {
+		typeName, fieldName := t[0], t[1]
+		b.Run(fmt.Sprintf("test-%v", i), func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				prometheusFieldName(typeName, fieldName)
+			}
+		})
+	}
+}
 
 func TestRepository(t *testing.T) {
 	resetMocks()
