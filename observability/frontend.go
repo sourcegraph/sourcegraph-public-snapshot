@@ -16,7 +16,7 @@ func Frontend() *Container {
 							Query:           `histogram_quantile(0.99, sum by (le)(rate(src_graphql_field_seconds_bucket{type="Search",field="results",error="false",source="browser"}[5m])))`,
 							DataMayNotExist: true,
 							DataMayBeNaN:    true, // See https://github.com/sourcegraph/sourcegraph/issues/9834
-							Warning:         Alert{GreaterOrEqual: 3},
+							Warning:         Alert{GreaterOrEqual: 20},
 							PanelOptions:    PanelOptions().LegendFormat("duration").Unit(Seconds),
 						},
 						{
@@ -25,7 +25,7 @@ func Frontend() *Container {
 							Query:           `histogram_quantile(0.90, sum by (le)(rate(src_graphql_field_seconds_bucket{type="Search",field="results",error="false",source="browser"}[5m])))`,
 							DataMayNotExist: true,
 							DataMayBeNaN:    true, // See https://github.com/sourcegraph/sourcegraph/issues/9834
-							Warning:         Alert{GreaterOrEqual: 3},
+							Warning:         Alert{GreaterOrEqual: 15},
 							PanelOptions:    PanelOptions().LegendFormat("duration").Unit(Seconds),
 						},
 					},
@@ -78,7 +78,7 @@ func Frontend() *Container {
 							Query:           `histogram_quantile(0.99, sum by (le)(rate(src_graphql_field_seconds_bucket{type="Search",field="results",error="false",source="other"}[5m])))`,
 							DataMayNotExist: true,
 							DataMayBeNaN:    true, // See https://github.com/sourcegraph/sourcegraph/issues/9834
-							Warning:         Alert{GreaterOrEqual: 3},
+							Warning:         Alert{GreaterOrEqual: 50},
 							PanelOptions:    PanelOptions().LegendFormat("duration").Unit(Seconds),
 						},
 						{
@@ -87,7 +87,7 @@ func Frontend() *Container {
 							Query:           `histogram_quantile(0.90, sum by (le)(rate(src_graphql_field_seconds_bucket{type="Search",field="results",error="false",source="other"}[5m])))`,
 							DataMayNotExist: true,
 							DataMayBeNaN:    true, // See https://github.com/sourcegraph/sourcegraph/issues/9834
-							Warning:         Alert{GreaterOrEqual: 3},
+							Warning:         Alert{GreaterOrEqual: 40},
 							PanelOptions:    PanelOptions().LegendFormat("duration").Unit(Seconds),
 						},
 					},
