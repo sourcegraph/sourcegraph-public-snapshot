@@ -68,7 +68,7 @@ func Frontend() *Container {
 				},
 			},
 			{
-				Title: "Search API at a glance",
+				Title:  "Search API at a glance",
 				Hidden: true,
 				Rows: []Row{
 					{
