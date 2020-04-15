@@ -3,11 +3,14 @@ package campaigns
 import (
 	"container/heap"
 	"context"
+	"strconv"
 	"sync"
 	"time"
 
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -238,6 +241,56 @@ type ChangesetSyncer struct {
 	rateLimitRegistry *repos.RateLimiterRegistry
 }
 
+var syncerMetrics = struct {
+	syncs                   *prometheus.CounterVec
+	priorityQueued          *prometheus.CounterVec
+	syncDuration            *prometheus.HistogramVec
+	computeScheduleDuration *prometheus.HistogramVec
+	scheduleSize            *prometheus.GaugeVec
+	behindSchedule          *prometheus.GaugeVec
+}{}
+
+func init() {
+	syncerMetrics.syncs = promauto.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "src",
+		Subsystem: "repoupdater",
+		Name:      "changeset_syncer_syncs",
+		Help:      "Total number of changeset syncs",
+	}, []string{"extsvc", "success"})
+	syncerMetrics.priorityQueued = promauto.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "src",
+		Subsystem: "repoupdater",
+		Name:      "changeset_syncer_priority_queued",
+		Help:      "Total number of priority items added to queue",
+	}, []string{"extsvc"})
+	syncerMetrics.syncDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: "src",
+		Subsystem: "repoupdater",
+		Name:      "changeset_syncer_sync_duration_seconds",
+		Help:      "Time spent syncing changesets",
+		Buckets:   []float64{1, 2, 5, 10, 30, 60, 120},
+	}, []string{"extsvc", "success"})
+	syncerMetrics.computeScheduleDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: "src",
+		Subsystem: "repoupdater",
+		Name:      "changeset_syncer_compute_schedule_duration_seconds",
+		Help:      "Time spent computing changeset schedule",
+		Buckets:   []float64{1, 2, 5, 10, 30, 60, 120},
+	}, []string{"extsvc", "success"})
+	syncerMetrics.scheduleSize = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: "src",
+		Subsystem: "repoupdater",
+		Name:      "changeset_syncer_schedule_size",
+		Help:      "The number of changesets scheduled to sync",
+	}, []string{"extsvc"})
+	syncerMetrics.behindSchedule = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: "src",
+		Subsystem: "repoupdater",
+		Name:      "changeset_syncer_behind_schedule",
+		Help:      "The number of changesets behind schedule",
+	}, []string{"extsvc"})
+}
+
 type SyncStore interface {
 	ListChangesetSyncData(context.Context, ListChangesetSyncDataOpts) ([]campaigns.ChangesetSyncData, error)
 	GetChangeset(context.Context, GetChangesetOpts) (*campaigns.Changeset, error)
@@ -250,7 +303,6 @@ type SyncStore interface {
 // Run will start the process of changeset syncing. It is long running
 // and is expected to be launched once at startup.
 func (s *ChangesetSyncer) Run(ctx context.Context) {
-	// TODO: Setup instrumentation here
 	scheduleInterval := s.scheduleInterval
 	if scheduleInterval == 0 {
 		scheduleInterval = 2 * time.Minute
@@ -275,6 +327,8 @@ func (s *ChangesetSyncer) Run(ctx context.Context) {
 
 	var next scheduledSync
 	var ok bool
+
+	svcID := strconv.FormatInt(s.externalServiceID, 10)
 
 	// NOTE: All mutations of the queue should be done is this loop as operations on the queue
 	// are not safe for concurrent use
@@ -302,20 +356,39 @@ func (s *ChangesetSyncer) Run(ctx context.Context) {
 			if timer != nil {
 				timer.Stop()
 			}
+			start := time.Now()
 			schedule, err := s.computeSchedule(ctx)
+			labelValues := []string{svcID, strconv.FormatBool(err == nil)}
+			syncerMetrics.computeScheduleDuration.WithLabelValues(labelValues...).Observe(time.Since(start).Seconds())
 			if err != nil {
 				log15.Error("Computing queue", "err", err)
 				continue
 			}
+			syncerMetrics.scheduleSize.WithLabelValues(svcID).Set(float64(len(schedule)))
 			s.queue.Upsert(schedule...)
+			var behindSchedule int
+			now := time.Now()
+			for _, ss := range schedule {
+				if ss.nextSync.Before(now) {
+					behindSchedule++
+				}
+			}
+			syncerMetrics.behindSchedule.WithLabelValues(svcID).Set(float64(behindSchedule))
 		case <-timerChan:
+			start := time.Now()
 			err := s.syncFunc(ctx, next.changesetID)
+			labelValues := []string{svcID, strconv.FormatBool(err == nil)}
+			syncerMetrics.syncDuration.WithLabelValues(labelValues...).Observe(time.Since(start).Seconds())
+			syncerMetrics.syncs.WithLabelValues(labelValues...).Add(1)
+
 			if err != nil {
 				log15.Error("Syncing changeset", "err", err)
 				// We'll continue and remove it as it'll get retried on next schedule
 			}
+
 			// Remove item now that it has been processed
 			s.queue.Remove(next.changesetID)
+			syncerMetrics.scheduleSize.WithLabelValues(svcID).Dec()
 		case ids := <-s.priorityNotify:
 			if timer != nil {
 				timer.Stop()
@@ -333,7 +406,9 @@ func (s *ChangesetSyncer) Run(ctx context.Context) {
 				}
 				item.priority = priorityHigh
 				s.queue.Upsert(item)
+				syncerMetrics.scheduleSize.WithLabelValues(svcID).Inc()
 			}
+			syncerMetrics.priorityQueued.WithLabelValues(svcID).Add(float64(len(ids)))
 		}
 	}
 }
