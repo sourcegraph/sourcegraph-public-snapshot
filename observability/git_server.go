@@ -61,6 +61,38 @@ func GitServer() *Container {
 					},
 				},
 			},
+			{
+				Title:  "Container monitoring (not yet available in Kubernetes or single-container deployments)",
+				Hidden: true,
+				Rows: []Row{
+					{
+						{
+							Name:            "container_restarts",
+							Description:     "container restarts every 5m by instance",
+							Query:           `increase(cadvisor_container_restart_count{name=~".*gitserver.*"}[5m])`,
+							DataMayNotExist: true,
+							Warning:         Alert{GreaterOrEqual: 1},
+							PanelOptions:    PanelOptions().LegendFormat("{{name}}"),
+						},
+						{
+							Name:            "container_memory_usage",
+							Description:     "container memory usage by instance",
+							Query:           `cadvisor_container_memory_usage_percentage_total{name=~".*gitserver.*"}`,
+							DataMayNotExist: true,
+							Warning:         Alert{GreaterOrEqual: 90},
+							PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage),
+						},
+						{
+							Name:            "container_cpu_usage",
+							Description:     "container cpu usage total (5m average) across all cores by instance",
+							Query:           `cadvisor_container_cpu_usage_percentage_total{name=~".*gitserver.*"}`,
+							DataMayNotExist: true,
+							Warning:         Alert{GreaterOrEqual: 90},
+							PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage),
+						},
+					},
+				},
+			},
 		},
 	}
 }
