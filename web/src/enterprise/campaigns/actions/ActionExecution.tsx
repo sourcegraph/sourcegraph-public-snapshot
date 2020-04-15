@@ -42,11 +42,11 @@ export const ActionExecution: React.FunctionComponent<Props> = ({
                 merge(of(undefined), executionUpdates).pipe(
                     switchMap(() =>
                         fetchActionExecutionByID(actionExecutionID).pipe(
-                            catchError((error) => {
+                            catchError(error => {
                                 setAlertError(error)
                                 return []
                             }),
-                            repeatWhen((obs) => obs.pipe(delay(2000)))
+                            repeatWhen(obs => obs.pipe(delay(2000)))
                         )
                     )
                 ),
@@ -186,7 +186,7 @@ export const ActionExecution: React.FunctionComponent<Props> = ({
             )}
             <h2>Action jobs</h2>
             <ul className="list-group mb-3">
-                {execution.jobs.nodes.map((actionJob) => (
+                {execution.jobs.nodes.map(actionJob => (
                     <ActionJob
                         isLightTheme={isLightTheme}
                         actionJob={actionJob}
@@ -216,7 +216,7 @@ export const ActionExecution: React.FunctionComponent<Props> = ({
                 {execution.status.state === GQL.BackgroundProcessState.PROCESSING && (
                     <>The action execution is still running.</>
                 )}{' '}
-                <span className="badge badge-secondary">{execution.jobs.nodes.filter((job) => job.diff).length}</span>{' '}
+                <span className="badge badge-secondary">{execution.jobs.nodes.filter(job => job.diff).length}</span>{' '}
                 patches have been created{execution.status.state === GQL.BackgroundProcessState.PROCESSING && ' so far'}
                 .
             </p>
