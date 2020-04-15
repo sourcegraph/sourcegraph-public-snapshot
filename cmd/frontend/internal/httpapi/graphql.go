@@ -3,6 +3,7 @@ package httpapi
 import (
 	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -26,7 +27,28 @@ func serveGraphQL(schema *graphql.Schema) func(w http.ResponseWriter, r *http.Re
 		}
 		r = r.WithContext(trace.WithGraphQLRequestName(r.Context(), requestName))
 
+		r = r.WithContext(trace.WithRequestSource(r.Context(), guessSource(r)))
+
 		relayHandler.ServeHTTP(w, r)
 		return nil
 	}
+}
+
+// guessSource guesses the source the request came from (browser, other HTTP client, etc.)
+func guessSource(r *http.Request) trace.SourceType {
+	userAgent := r.UserAgent()
+	for _, guess := range []string{
+		"Mozilla",
+		"WebKit",
+		"Gecko",
+		"Chrome",
+		"Firefox",
+		"Safari",
+		"Edge",
+	} {
+		if strings.Contains(userAgent, guess) {
+			return trace.SourceBrowser
+		}
+	}
+	return trace.SourceOther
 }
