@@ -237,8 +237,8 @@ Dockerfile @sourcegraph/distribution
 /internal/highlight/ @slimsag
 
 # Third party license lists
-/LicensesGo.csv @sourcegraph/core-services
-/LicensesNpm.csv @sourcegraph/web
+/ThirdPartyLicensesGo.csv @sourcegraph/core-services
+/ThirdPartyLicensesNpm.csv @sourcegraph/web
 /dev/licenses-npm.sh @sourcegraph/web
 
 # Changes to the GraphQL API should be approved by both the team owning the backend and the consumers
