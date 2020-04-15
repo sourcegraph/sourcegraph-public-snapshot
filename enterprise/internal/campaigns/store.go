@@ -2777,6 +2777,7 @@ func scanBackgroundProcessStatus(b *campaigns.BackgroundProcessStatus, s scanner
 func scanAction(a *campaigns.Action, s scanner) error {
 	return s.Scan(
 		&a.ID,
+		&a.Name,
 		&a.CampaignID,
 		&a.Schedule,
 		&a.CancelPrevious,
@@ -2884,6 +2885,7 @@ var listActionsQueryFmtstrSelect = `
 -- source: enterprise/internal/campaigns/store.go:ListActions
 SELECT
 	actions.id,
+	actions.name,
 	actions.campaign,
 	actions.schedule,
 	actions.cancel_previous,
@@ -3160,6 +3162,7 @@ var actionByIDQueryFmtstrSelect = `
 -- source: enterprise/internal/campaigns/store.go:ActionByID
 SELECT
 	actions.id,
+	actions.name,
 	actions.campaign,
 	actions.schedule,
 	actions.cancel_previous,
@@ -3493,6 +3496,7 @@ func listActionJobsQuery(opts *ListActionJobsOpts) *sqlf.Query {
 }
 
 type CreateActionOpts struct {
+	Name  string
 	Steps string
 }
 
@@ -3518,11 +3522,12 @@ var createActionQueryFmtstrSelect = `
 -- source: enterprise/internal/campaigns/store.go:CreateAction
 INSERT INTO
 	actions
-	(steps, env)
+	(name, steps, env)
 VALUES
-	(%s, '[]'::json)
+	(%s, %s, '[]'::json)
 RETURNING
 	actions.id,
+	actions.name,
 	actions.campaign,
 	actions.schedule,
 	actions.cancel_previous,
@@ -3533,7 +3538,7 @@ RETURNING
 
 func createActionQuery(opts *CreateActionOpts) *sqlf.Query {
 	queryTemplate := createActionQueryFmtstrSelect
-	return sqlf.Sprintf(queryTemplate, opts.Steps)
+	return sqlf.Sprintf(queryTemplate, opts.Name, opts.Steps)
 }
 
 type UpdateActionOpts struct {
@@ -3569,6 +3574,7 @@ WHERE
 	actions.id = %d
 RETURNING
 	actions.id,
+	actions.name,
 	actions.campaign,
 	actions.schedule,
 	actions.cancel_previous,
@@ -3661,6 +3667,7 @@ var listActionsBySavedSearchQueryQueryFmtstrSelect = `
 -- source: enterprise/internal/campaigns/store.go:ListActionsBySavedSearchQuery
 SELECT
 	actions.id,
+	actions.name,
 	actions.campaign,
 	actions.schedule,
 	actions.cancel_previous,

@@ -2,6 +2,7 @@ BEGIN;
 
 CREATE TABLE IF NOT EXISTS actions (
     id SERIAL PRIMARY KEY,
+    name text NOT NULL,
     campaign integer REFERENCES campaigns(id) ON UPDATE CASCADE,
     schedule text,
     cancel_previous boolean NOT NULL DEFAULT false,

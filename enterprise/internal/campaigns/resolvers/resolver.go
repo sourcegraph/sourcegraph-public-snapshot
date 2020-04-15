@@ -936,6 +936,7 @@ func (r *Resolver) CreateAction(ctx context.Context, args *graphqlbackend.Create
 
 	// todo: workspaceFile
 	action, err := r.store.CreateAction(ctx, ee.CreateActionOpts{
+		Name:  args.Name,
 		Steps: args.Definition,
 	})
 	if err != nil {

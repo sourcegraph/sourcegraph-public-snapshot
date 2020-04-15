@@ -24,7 +24,7 @@ export const ActionsList: React.FunctionComponent<Props> = props => (
             New action
         </Link>
 
-        <FilteredConnection<Pick<IAction, 'id' | 'savedSearch' | 'schedule' | 'actionExecutions'>>
+        <FilteredConnection<Pick<IAction, 'id' | 'name' | 'savedSearch' | 'schedule' | 'actionExecutions'>>
             {...props}
             nodeComponent={ActionNode}
             queryConnection={queryActions}

@@ -101,6 +101,7 @@ type ListActionJobsArgs struct {
 }
 
 type CreateActionArgs struct {
+	Name       string
 	Definition string
 	Workspace  *graphql.ID
 }
@@ -475,6 +476,7 @@ type ActionConnectionResolver interface {
 
 type ActionResolver interface {
 	ID() graphql.ID
+	Name() string
 	Definition() ActionDefinitionResolver
 	SavedSearch(ctx context.Context) (*SavedSearchResolver, error)
 	Schedule() *string

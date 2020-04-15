@@ -11,6 +11,7 @@ import {
     IAction,
     ActionJobState,
     IActionJob,
+    ICreateActionOnMutationArguments,
 } from '../../../../../shared/src/graphql/schema'
 import { PreviewFileDiffFields, FileDiffHunkRangeFields, DiffStatFields } from '../../../backend/diff'
 
@@ -38,6 +39,7 @@ export const fetchActionExecutionByID = (actionExecution: ID): Observable<IActio
                         id
                         action {
                             id
+                            name
                             schedule
                             cancelPreviousScheduledExecution
                             savedSearch {
@@ -136,6 +138,7 @@ export const queryActions = ({ first }: IActionsOnQueryArguments): Observable<IA
                     totalCount
                     nodes {
                         id
+                        name
                         savedSearch {
                             description
                         }
@@ -163,7 +166,7 @@ export const queryActions = ({ first }: IActionsOnQueryArguments): Observable<IA
         { first }
     ).pipe(
         map(dataOrThrowErrors),
-        map((data) => data.actions)
+        map(data => data.actions)
     )
 
 export const fetchActionByID = (action: ID): Observable<IAction | null> =>
@@ -174,6 +177,7 @@ export const fetchActionByID = (action: ID): Observable<IAction | null> =>
                     __typename
                     ... on Action {
                         id
+                        name
                         savedSearch {
                             description
                         }
@@ -236,16 +240,16 @@ export async function createActionExecution(actionID: ID): Promise<IActionExecut
     return dataOrThrowErrors(result).createActionExecution
 }
 
-export async function createAction(definition: string): Promise<IAction> {
+export async function createAction(args: ICreateActionOnMutationArguments): Promise<IAction> {
     const result = await mutateGraphQL(
         gql`
-            mutation CreateAction($definition: JSONCString!) {
-                createAction(definition: $definition) {
+            mutation CreateAction($name: String!, $definition: JSONCString!) {
+                createAction(name: $name, definition: $definition) {
                     id
                 }
             }
         `,
-        { definition }
+        args
     ).toPromise()
     return dataOrThrowErrors(result).createAction
 }

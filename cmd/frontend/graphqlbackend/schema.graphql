@@ -423,6 +423,8 @@ type Mutation {
 
     # Create a new action
     createAction(
+        # Human readable name.
+        name: String!
         definition: JSONCString!
         # ID of a File, todo: make non nullable
         workspace: ID
@@ -491,8 +493,8 @@ type ActionDefinition {
 # An action is run to create patches for campaigns
 type Action implements Node {
     id: ID!
-    # todo: Should we add a name property for readability in the list?
-    # name: String!
+    # A human friendly readable name
+    name: String!
     # The current action definition
     definition: ActionDefinition!
     # The saved search this was associated with, cannot be combined with `schedule`

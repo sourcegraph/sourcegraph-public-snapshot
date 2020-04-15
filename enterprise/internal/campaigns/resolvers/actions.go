@@ -50,6 +50,10 @@ func (r *actionResolver) ID() graphql.ID {
 	return marshalActionID(r.action.ID)
 }
 
+func (r *actionResolver) Name() string {
+	return r.action.Name
+}
+
 func (r *actionResolver) Definition() graphqlbackend.ActionDefinitionResolver {
 	return &actionDefinitionResolver{envStr: r.action.EnvStr, steps: r.action.Steps}
 }

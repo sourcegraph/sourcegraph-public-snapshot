@@ -1277,6 +1277,7 @@ func unixMilliToTime(ms int64) time.Time {
 
 type Action struct {
 	ID             int64
+	Name           string
 	CampaignID     *int64
 	Schedule       *string
 	CancelPrevious bool

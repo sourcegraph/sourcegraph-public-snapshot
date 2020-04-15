@@ -1,4 +1,4 @@
-import * as React from 'react'
+import React from 'react'
 import * as H from 'history'
 import { PageTitle } from '../../../components/PageTitle'
 import { ThemeProps } from '../../../../../shared/src/theme'
@@ -10,6 +10,7 @@ import { switchMap, filter, tap } from 'rxjs/operators'
 import { fetchActionByID, createActionExecution, createAction, updateAction } from './backend'
 import { ActionExecutionNode } from './list/ActionExecutionNode'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
+import { Form } from '../../../components/Form'
 
 interface Props extends ThemeProps {
     actionID?: string
@@ -17,7 +18,8 @@ interface Props extends ThemeProps {
 }
 
 export const Action: React.FunctionComponent<Props> = ({ actionID, isLightTheme, history }) => {
-    const [steps, setSteps] = React.useState<string>()
+    const [name, setName] = React.useState<string>('')
+    const [steps, setSteps] = React.useState<string>('')
     const [isLoading, setIsLoading] = React.useState<boolean>()
     const nextUpdate = React.useMemo(() => new Subject<void>(), [])
     const action = useObservable(
@@ -27,6 +29,7 @@ export const Action: React.FunctionComponent<Props> = ({ actionID, isLightTheme,
                     switchMap(() => fetchActionByID(actionID!)),
                     tap(action => {
                         if (action) {
+                            setName(action.name)
                             setSteps(action.definition.steps)
                         }
                     })
@@ -34,25 +37,24 @@ export const Action: React.FunctionComponent<Props> = ({ actionID, isLightTheme,
             [actionID, nextUpdate]
         )
     )
-    const _createAction = React.useCallback(async () => {
-        setIsLoading(true)
-        try {
-            const action = await createAction(steps ?? '')
-            history.push('/campaigns/actions/' + action.id)
-            nextUpdate.next()
-        } finally {
-            setIsLoading(false)
-        }
-    }, [steps, history, nextUpdate])
-    const _updateAction = React.useCallback(async () => {
-        setIsLoading(true)
-        try {
-            await updateAction(actionID!, steps ?? '')
-            nextUpdate.next()
-        } finally {
-            setIsLoading(false)
-        }
-    }, [actionID, steps, nextUpdate])
+    const onSubmit = React.useCallback<React.FormEventHandler>(
+        async e => {
+            e.preventDefault()
+            setIsLoading(true)
+            try {
+                if (actionID) {
+                    await updateAction(actionID, steps ?? '')
+                } else {
+                    const action = await createAction({ definition: steps, name })
+                    history.push('/campaigns/actions/' + action.id)
+                }
+                nextUpdate.next()
+            } finally {
+                setIsLoading(false)
+            }
+        },
+        [steps, name, actionID, history, nextUpdate]
+    )
     const createExecution = React.useCallback(async () => {
         if (action) {
             await createActionExecution(action.id)
@@ -67,9 +69,9 @@ export const Action: React.FunctionComponent<Props> = ({ actionID, isLightTheme,
     }
     return (
         <>
-            <PageTitle title={action ? 'Action #' + action.id : 'New action'} />
+            <PageTitle title={action ? `Action "${action.name}"` : 'New action'} />
             {action ? (
-                <h1 className={classNames(isLightTheme && 'text-info')}>Action #{action.id}</h1>
+                <h1 className={classNames(isLightTheme && 'text-info')}>Action {action.name}</h1>
             ) : (
                 <h1 className={classNames(isLightTheme && 'text-info')}>Create new action</h1>
             )}
@@ -89,26 +91,43 @@ export const Action: React.FunctionComponent<Props> = ({ actionID, isLightTheme,
                     " change.
                 </div>
             )}
-            <h2>Action definition</h2>
-            <MonacoSettingsEditor
-                isLightTheme={isLightTheme}
-                // readOnly={!!actionID}
-                language="json"
-                value={steps}
-                onChange={setSteps}
-                height={200}
-                className="mb-3"
-            />
-            {!action && (
-                <button className="btn btn-primary mb-3" type="button" onClick={_createAction} disabled={isLoading}>
-                    Create action
-                </button>
-            )}
-            {action && (
-                <button className="btn btn-primary mb-3" type="button" onClick={_updateAction} disabled={isLoading}>
-                    Update action definition
-                </button>
-            )}
+            <Form onSubmit={onSubmit}>
+                <div className="form-group">
+                    <h2>
+                        <label htmlFor="actionName">Name</label>
+                    </h2>
+                    <input
+                        type="text"
+                        id="actionName"
+                        name="name"
+                        value={name}
+                        onChange={e => setName(e.target.value)}
+                        className="form-control"
+                        disabled={isLoading}
+                        required={true}
+                    />
+                </div>
+                <h2>Action definition</h2>
+                <MonacoSettingsEditor
+                    isLightTheme={isLightTheme}
+                    readOnly={isLoading}
+                    language="json"
+                    value={steps}
+                    onChange={setSteps}
+                    height={200}
+                    className="mb-3"
+                />
+                {!action && (
+                    <button className="btn btn-primary mb-3" type="submit" disabled={isLoading}>
+                        Create action
+                    </button>
+                )}
+                {action && (
+                    <button className="btn btn-primary mb-3" type="submit" disabled={isLoading}>
+                        Update action definition
+                    </button>
+                )}
+            </Form>
             {action && (
                 <>
                     <h2>Action executions</h2>
