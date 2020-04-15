@@ -207,6 +207,9 @@ func (s BitbucketServerSource) LoadChangesets(ctx context.Context, cs ...*Change
 }
 
 func (s BitbucketServerSource) loadPullRequestData(ctx context.Context, pr *bitbucketserver.PullRequest) error {
+	// Each request below asks for items in pages of 1000 so it's safe to assume we'll only be requesting
+	// one page per request for now.
+	// We make 3 API calls, so wait until the rate limiter allows them.
 	if err := s.rateLimiter.WaitN(ctx, 3); err != nil {
 		return errors.Wrap(err, "waiting for rate limiter")
 	}
