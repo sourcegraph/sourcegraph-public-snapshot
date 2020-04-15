@@ -25,7 +25,7 @@ func Test_LowercaseFieldNames(t *testing.T) {
 	}
 }
 
-func Test_HoistOr(t *testing.T) {
+func Test_Hoist(t *testing.T) {
 	cases := []struct {
 		input      string
 		want       string
@@ -42,6 +42,14 @@ func Test_HoistOr(t *testing.T) {
 		{
 			input: `repo:foo a or b or c file:bar`,
 			want:  `"repo:foo" "file:bar" (or "a" "b" "c")`,
+		},
+		{
+			input: "repo:foo bar { and baz {",
+			want:  `"repo:foo" (and (concat "bar" "{") (concat "baz" "{"))`,
+		},
+		{
+			input: "repo:foo bar { and baz { and qux {",
+			want:  `"repo:foo" (and (concat "bar" "{") (concat "baz" "{") (concat "qux" "{"))`,
 		},
 		{
 			input: `repo:foo a and b or c and d or e file:bar`,
@@ -73,7 +81,7 @@ func Test_HoistOr(t *testing.T) {
 		},
 		{
 			input:      "a b",
-			wantErrMsg: "heuristic requires top-level or-expression",
+			wantErrMsg: "heuristic requires top-level and- or or-expression",
 		},
 		{
 			input:      "repo:foo a or repo:foobar b or c file:bar",
@@ -81,8 +89,8 @@ func Test_HoistOr(t *testing.T) {
 		},
 	}
 	for _, c := range cases {
-		t.Run("hoist or", func(t *testing.T) {
-			// To test HoistOr, Use a simplified parse function that
+		t.Run("hoist", func(t *testing.T) {
+			// To test Hoist, Use a simplified parse function that
 			// does not perform the heuristic.
 			parse := func(in string) []Node {
 				parser := &parser{
@@ -93,7 +101,7 @@ func Test_HoistOr(t *testing.T) {
 				return newOperator(nodes, And)
 			}
 			query := parse(c.input)
-			hoistedQuery, err := HoistOr(query)
+			hoistedQuery, err := Hoist(query)
 			if err != nil {
 				if diff := cmp.Diff(c.wantErrMsg, err.Error()); diff != "" {
 					t.Error(diff)
