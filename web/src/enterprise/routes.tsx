@@ -23,6 +23,16 @@ export const enterpriseRoutes: readonly LayoutRouteProps<{}>[] = [
         render: () => <Redirect to="/subscriptions/new" />,
     },
     {
+        // Allow unauthenticated viewers to view the "new trial subscription" page to get a trial
+        // license key (instead of just dumping them on a sign-in page).
+        path: '/subscriptions/new-trial',
+        exact: true,
+        render: lazyComponent(
+            () => import('./user/productSubscriptions/trial/NewProductTrialSubscriptionPageOrRedirectUser'),
+            'NewProductTrialSubscriptionPageOrRedirectUser'
+        ),
+    },
+    {
         path: '/campaigns',
         render: lazyComponent(() => import('./campaigns/global/GlobalCampaignsArea'), 'GlobalCampaignsArea'),
         condition: props => props.showCampaigns,

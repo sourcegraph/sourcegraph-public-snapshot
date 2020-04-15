@@ -275,6 +275,8 @@ type ReposListOptions struct {
 	// List of fields by which to order the return repositories.
 	OrderBy RepoListOrderBy
 
+	ExternalServiceID int32
+
 	*LimitOffset
 }
 

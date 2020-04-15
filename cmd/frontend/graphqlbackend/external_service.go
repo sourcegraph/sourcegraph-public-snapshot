@@ -8,6 +8,7 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 )
 
@@ -79,4 +80,10 @@ func (r *externalServiceResolver) Warning() *string {
 		return nil
 	}
 	return &r.warning
+}
+
+func (r *externalServiceResolver) Repositories(ctx context.Context, args *graphqlutil.ConnectionArgs) RepositoryConnectionResolver {
+	return &repositoryConnectionResolver{
+		opt: db.ReposListOptions{},
+	}
 }

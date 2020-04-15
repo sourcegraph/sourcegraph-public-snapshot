@@ -22,6 +22,15 @@ export const enterpriseUserSettingsAreaRoutes: readonly UserSettingsAreaRoute[] 
         condition: () => SHOW_BUSINESS_FEATURES,
     },
     {
+        path: '/subscriptions/new-trial',
+        exact: true,
+        render: lazyComponent(
+            () => import('../productSubscriptions/trial/UserSubscriptionsNewProductTrialSubscriptionPage'),
+            'UserSubscriptionsNewProductTrialSubscriptionPage'
+        ),
+        condition: () => SHOW_BUSINESS_FEATURES,
+    },
+    {
         path: '/subscriptions/:subscriptionUUID',
         exact: true,
         render: lazyComponent(
