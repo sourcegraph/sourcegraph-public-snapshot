@@ -1,0 +1,8 @@
+Dependency;SPDX ID
+https://github.com/antirez/redis;BSD-3-Clause
+https://github.com/postgres/postgres;PostgreSQL
+https://github.com/prometheus/prometheus;Apache-2.0
+https://github.com/jaegertracing/jaeger;Apache-2.0
+https://github.com/grafana/grafana;Apache-2.0
+https://github.com/sourcegraph/zoekt;Apache-2.0
+https://github.com/sqlite/sqlite;blessing
