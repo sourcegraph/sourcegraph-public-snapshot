@@ -7,6 +7,7 @@ import { highlightCode as _highlightCode } from '../../../../search/backend'
 import { useObservable } from '../../../../../../shared/src/util/useObservable'
 import { ThemeProps } from '../../../../../../shared/src/theme'
 import LanguageTypescriptIcon from 'mdi-react/LanguageTypescriptIcon'
+import { highlight } from 'highlight.js/lib/highlight'
 
 interface Props extends ThemeProps {
     className?: string
@@ -183,98 +184,90 @@ export const CampaignCLIHelp: React.FunctionComponent<Props> = ({
             [isLightTheme, highlightCode]
         )
     )
+
+    const srcInstall = `# Configure your Sourcegraph instance:
+$ export SRC_ENDPOINT=${window.location.protocol}//${window.location.host}
+
+# Download the src binary for macOS:
+$ curl -L $SRC_ENDPOINT/.api/src-cli/src_dawin_amd64 -o /usr/local/bin/src
+# Download the src binary for Linux:
+$ curl -L $SRC_ENDPOINT/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src
+
+# Set your personal access token:
+$ export SRC_ACCESS_TOKEN=<YOUR TOKEN>
+`
+
     return (
         <div className={className}>
             <h1>Create a campaign</h1>
             <div className="card">
-                <div className="card-body">
-                    <p className="alert alert-info">
-                        Follow the step-by-step guide to get started with your first campaign. You can also find
-                        examples at the bottom of this page.
-                    </p>
-                    <h3>1. Install the src cli</h3>
+                <div className="card-body p-3">
+                    <h3>
+                        1. Install the{' '}
+                        <a href="https://github.com/sourcegraph/src-cli">
+                            <code>src</code> CLI
+                        </a>
+                    </h3>
                     <div className="ml-2">
+                        <p>Install and configure the src CLI:</p>
+                        <pre className="ml-3">
+                            <code
+                                dangerouslySetInnerHTML={{
+                                    __html: highlight('bash', srcInstall, true).value,
+                                }}
+                            />
+                        </pre>
                         <p>
-                            If you have not already, first install and configure the src CLI to point to your
-                            Sourcegraph instance. This guide will get you the most recent compatible version with your
-                            Sourcegraph instance.
+                            Make sure that <code>git</code> is installed and accessible by the src CLI.
                         </p>
-                        <h4>Configure the endpoint of your Sourcegraph instance</h4>
-                        <div>
-                            <code>
-                                export SRC_ENDPOINT={window.location.protocol}//{window.location.host}
-                            </code>
-                            <br />
-                            <p>
-                                <strong>Tip:</strong> You might want to put this in your shell config.
-                            </p>
-                        </div>
-                        <h4>Download the src CLI</h4>
-                        <h4>macOS</h4>
                         <p>
-                            <code>
-                                curl -L ${'{'}SRC_ENDPOINT{'}'}/.api/src-cli/src_dawin_amd64 -o /usr/local/bin/src
-                            </code>
+                            To create and manage access tokens, click your username in the top right to open the user
+                            menu, select <strong>Settings</strong>, and then <strong>Access tokens</strong>.
                         </p>
-                        <h4>Linux</h4>
-                        <p>
-                            <code>
-                                curl -L ${'{'}SRC_ENDPOINT{'}'}/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src
-                            </code>
-                        </p>
-                        <p>Also, make sure that git is installed and accessible by src.</p>
-                        <h4>Grating access to src CLI</h4>
-                        <p>
-                            To acquire the access token, visit your Sourcegraph instance, click your username in the top
-                            right to open the user menu, select Settings, and then select <strong>Access tokens</strong>{' '}
-                            in the left hand menu. Then expose it to SRC_CLI using the following command:
-                        </p>
-                        <div>
-                            <code>export SRC_ACCESS_TOKEN=&lt;YOUR TOKEN&gt;</code>
-                            <br />
-                            <p>
-                                <strong>Tip:</strong> You might want to put this in your shell config.
-                            </p>
-                        </div>
                     </div>
-                    <h3>2. Create an action JSON file (e.g. action.json) that contains an action definition</h3>
+                    <h3>2. Create an action definition</h3>
                     <div className="ml-2 mb-1">
-                        See below for examples of those files and{' '}
+                        See below for examples and{' '}
                         <a
                             href="https://docs.sourcegraph.com/user/campaigns#defining-an-action"
                             target="_blank"
                             rel="noopener noreferrer"
                         >
-                            read the docs on what they can do
+                            read the documenation on what actions can can do.
                         </a>
                         .
                     </div>
                     <h3>3. Optional: See repositories the action would run over</h3>
                     <div className="ml-2 mb-2">
-                        <code>src actions scope-query -f action.json</code>
+                        <pre className="ml-3">
+                            <code
+                                dangerouslySetInnerHTML={{
+                                    __html: highlight('bash', '$ src actions scope-query -f action.json', true).value,
+                                }}
+                            />
+                        </pre>
                     </div>
                     <h3>4. Create a set of patches by executing the action over repositories</h3>
                     <div className="ml-2 mb-2">
-                        <code>src actions exec -f action.json &gt; patches.json</code>
+                        <pre className="ml-3">
+                            <code
+                                dangerouslySetInnerHTML={{
+                                    __html: highlight(
+                                        'bash',
+                                        '$ src actions exec -f action.json -create-patchset',
+                                        true
+                                    ).value,
+                                }}
+                            />
+                        </pre>
                     </div>
-                    <h3>5. Save the patches in Sourcegraph by creating a patch set</h3>
-                    <div className="ml-2 mb-2">
-                        <code>src campaign patchset create-from-patches &lt; patches.json</code>
-                    </div>
-                    <h3>5. Create a campaign based on the patch set</h3>
-                    <div className="ml-2 mb-2">
-                        <code>
-                            src campaigns create -branch=&lt;branch-name&gt;
-                            -patchset=&lt;patchset-ID-returned-by-previous-command&gt;
-                        </code>
-                    </div>
-                    <div className="ml-2">
+                    <div className="alert alert-info mt-2">
                         <a
-                            href="https://docs.sourcegraph.com/user/campaigns#creating-a-campaign-using-the-src-cli"
+                            href=" https://docs.sourcegraph.com/user/campaigns/creating_campaign_from_patches"
                             rel="noopener noreferrer"
                             target="_blank"
                         >
-                            Read on detailed steps and documentation in the docs.{' '}
+                            Take a look at the documentation for more detailed steps and additional information.{' '}
                             <small>
                                 <ExternalLinkIcon className="icon-inline" />
                             </small>

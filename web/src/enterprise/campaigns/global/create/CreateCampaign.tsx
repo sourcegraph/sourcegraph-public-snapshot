@@ -37,14 +37,11 @@ export const CreateCampaign: React.FunctionComponent<Props> = ({ className }) =>
                             <CampaignsIcon className="mr-3" />
                         </h3>
                         <div>
-                            <h3>Create a campaign using the src CLI</h3>
+                            <h3>Create a campaign from patches</h3>
                             <p className="mb-0">
-                                When a Campaign is created from a set of patches, one per repository, Sourcegraph will
-                                create changesets (pull requests) on the associated code hosts and track their progress
-                                in the newly created campaign, where you can manage them.
-                                <br />
-                                With the src CLI tool, you can not only create the campaign from an existing set of
-                                patches, but you can also generate the patches for a number of repositories.
+                                Use the src CLI to make code changes across multiple repositories and turn the resulting
+                                set of patches into changesets (pull requests) on code hosts by creating a campaign.
+                                Manage and track the progress of the changesets in the newly created campaign.
                             </p>
                         </div>
                     </div>
