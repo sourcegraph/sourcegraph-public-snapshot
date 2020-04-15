@@ -4,16 +4,16 @@ cd $(dirname "${BASH_SOURCE[0]}")/../..
 set -ex
 
 if [ -z "$IMAGE" ]; then
-    echo "Must specify \$IMAGE."
-    exit 1
+  echo "Must specify \$IMAGE."
+  exit 1
 fi
 
 URL="http://localhost:7080"
 
 if curl --output /dev/null --silent --head --fail $URL; then
-    echo "❌ Can't run a new Sourcegraph instance on $URL because another instance is already running."
-    echo "❌ The last time this happened, there was a runaway e2e test run on the same Buildkite agent and the fix was to delete the pod and rebuild."
-    exit 1
+  echo "❌ Can't run a new Sourcegraph instance on $URL because another instance is already running."
+  echo "❌ The last time this happened, there was a runaway e2e test run on the same Buildkite agent and the fix was to delete the pod and rebuild."
+  exit 1
 fi
 
 echo "--- Running a daemonized $IMAGE as the test subject..."
@@ -33,17 +33,17 @@ timeout 60s bash -c "until curl --output /dev/null --silent --head --fail $URL; 
     sleep 5
 done"
 if [ $? -ne 0 ]; then
-    echo "^^^ +++"
-    echo "$URL was not accessible within 60s. Here's the output of docker inspect and docker logs:"
-    docker inspect "$CONTAINER"
-    exit 1
+  echo "^^^ +++"
+  echo "$URL was not accessible within 60s. Here's the output of docker inspect and docker logs:"
+  docker inspect "$CONTAINER"
+  exit 1
 fi
 set -e
 echo "Waiting for $URL... done"
 
 echo "--- yarn run test-e2e"
 # `-pix_fmt yuv420p` makes a QuickTime-compatible mp4.
-ffmpeg -y -f x11grab -video_size 1280x1024 -i "$DISPLAY" -pix_fmt yuv420p e2e.mp4 > ffmpeg.log 2>&1 &
+ffmpeg -y -f x11grab -video_size 1280x1024 -i "$DISPLAY" -pix_fmt yuv420p e2e.mp4 >ffmpeg.log 2>&1 &
 env SOURCEGRAPH_BASE_URL="$URL" PERCY_ON=true ./node_modules/.bin/percy exec -- yarn run cover-e2e
 
 yarn nyc report -r json

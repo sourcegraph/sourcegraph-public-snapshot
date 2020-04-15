@@ -5,7 +5,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 # Skip on non-master branches to avoid preventing us from building historical commits (eg when
 # backporting fixes).
 if [ "$BUILDKITE_BRANCH" != "master" ]; then
-	exit 0
+    exit 0
 fi
 
 URL_MATCHES=$(git grep -h -e https://about.sourcegraph.com --and --not -e '^\s*//' --and --not -e 'CI\:URL_OK' -- '*.go' '*.js' '*.jsx' '*.ts' '*.tsx' '*.json' ':(exclude)vendor' | grep -Eo 'https://about.sourcegraph.com[^'"'"'`)>" ]+' | sed 's/\.$//' | sort -u)
@@ -29,5 +29,5 @@ If the URL is really valid, add the string "CI:URL_OK" (in a comment) to the lin
 
 EOF
 
-    exit 1;
+    exit 1
 fi

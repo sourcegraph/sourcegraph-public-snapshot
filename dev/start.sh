@@ -6,9 +6,9 @@ unset CDPATH
 cd "$(dirname "${BASH_SOURCE[0]}")/.." # cd to repo root dir
 
 if [ -f .env ]; then
-    set -o allexport
-    source .env
-    set +o allexport
+  set -o allexport
+  source .env
+  set +o allexport
 fi
 
 export GO111MODULE=on
@@ -16,18 +16,18 @@ go run ./internal/version/minversion
 
 # Verify postgresql config.
 hash psql 2>/dev/null || {
-    # "brew install postgresql@9.6" does not put psql on the $PATH by default;
-    # try to fix this automatically if we can.
-    hash brew 2>/dev/null && {
-        if [[ -x "$(brew --prefix)/opt/postgresql@9.6/bin/psql" ]]; then
-            export PATH="$(brew --prefix)/opt/postgresql@9.6/bin:$PATH"
-        fi
-    }
+  # "brew install postgresql@9.6" does not put psql on the $PATH by default;
+  # try to fix this automatically if we can.
+  hash brew 2>/dev/null && {
+    if [[ -x "$(brew --prefix)/opt/postgresql@9.6/bin/psql" ]]; then
+      export PATH="$(brew --prefix)/opt/postgresql@9.6/bin:$PATH"
+    fi
+  }
 }
 if ! psql -wc '\x' >/dev/null; then
-    echo "FAIL: postgreSQL config invalid or missing OR postgreSQL is still starting up."
-    echo "You probably need, at least, PGUSER and PGPASSWORD set in the environment."
-    exit 1
+  echo "FAIL: postgreSQL config invalid or missing OR postgreSQL is still starting up."
+  echo "You probably need, at least, PGUSER and PGPASSWORD set in the environment."
+  exit 1
 fi
 
 export PGSSLMODE=disable
@@ -94,30 +94,30 @@ export LIBSQLITE3_PCRE="$(./dev/libsqlite3-pcre/build.sh libpath)"
 printf >&2 "Concurrently installing Yarn and Go dependencies...\n\n"
 yarn_pid=''
 [ -n "${OFFLINE-}" ] || {
-    yarn --no-progress &
-    yarn_pid="$!"
+  yarn --no-progress &
+  yarn_pid="$!"
 }
 
 if ! ./dev/go-install.sh; then
-	# let Yarn finish, otherwise we get Yarn diagnostics AFTER the
-	# actual reason we're failing.
-	wait
-	echo >&2 "WARNING: go-install.sh failed, some builds may have failed."
-	exit 1
+  # let Yarn finish, otherwise we get Yarn diagnostics AFTER the
+  # actual reason we're failing.
+  wait
+  echo >&2 "WARNING: go-install.sh failed, some builds may have failed."
+  exit 1
 fi
 
 # Wait for yarn if it is still running
 if [[ -n "$yarn_pid" ]]; then
-    wait "$yarn_pid"
+  wait "$yarn_pid"
 fi
 
 # Install precise code intel dependencies
-pushd ./cmd/precise-code-intel 1> /dev/null
+pushd ./cmd/precise-code-intel 1>/dev/null
 yarn --no-progress
-popd 1> /dev/null
+popd 1>/dev/null
 
 # Increase ulimit (not needed on Windows/WSL)
-type ulimit > /dev/null && ulimit -n 10000 || true
+type ulimit >/dev/null && ulimit -n 10000 || true
 
 # Put .bin:node_modules/.bin onto the $PATH
 export PATH="$PWD/.bin:$PWD/node_modules/.bin:$PATH"

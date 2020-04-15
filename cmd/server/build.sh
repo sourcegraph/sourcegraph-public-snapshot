@@ -6,12 +6,12 @@ set -eux
 
 export OUTPUT=$(mktemp -d -t sgserver_XXXXXXX)
 cleanup() {
-    rm -rf "$OUTPUT"
+  rm -rf "$OUTPUT"
 }
 trap cleanup EXIT
 
 parallel_run() {
-    ./dev/ci/parallel_run.sh "$@"
+  ./dev/ci/parallel_run.sh "$@"
 }
 export -f parallel_run
 
@@ -34,32 +34,32 @@ export BINDIR="$OUTPUT/usr/local/bin"
 mkdir -p "$BINDIR"
 
 go_build() {
-    local package="$1"
+  local package="$1"
 
-    if [[ "${CI_DEBUG_PROFILE:-"false"}" == "true" ]]; then
-        env time -v ./cmd/server/go-build.sh $package
-    else
-        ./cmd/server/go-build.sh $package
-    fi
+  if [[ "${CI_DEBUG_PROFILE:-"false"}" == "true" ]]; then
+    env time -v ./cmd/server/go-build.sh $package
+  else
+    ./cmd/server/go-build.sh $package
+  fi
 }
 export -f go_build
 
 echo "--- go build"
 
 PACKAGES=(
-    github.com/sourcegraph/sourcegraph/cmd/github-proxy \
-    github.com/sourcegraph/sourcegraph/cmd/gitserver \
-    github.com/sourcegraph/sourcegraph/cmd/query-runner \
-    github.com/sourcegraph/sourcegraph/cmd/replacer \
-    github.com/sourcegraph/sourcegraph/cmd/searcher \
-    github.com/sourcegraph/sourcegraph/cmd/symbols \
-    $additional_images
-    \
-    github.com/google/zoekt/cmd/zoekt-archive-index \
-    github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver \
-    github.com/google/zoekt/cmd/zoekt-webserver \
-    \
-    $server_pkg
+  github.com/sourcegraph/sourcegraph/cmd/github-proxy
+  github.com/sourcegraph/sourcegraph/cmd/gitserver
+  github.com/sourcegraph/sourcegraph/cmd/query-runner
+  github.com/sourcegraph/sourcegraph/cmd/replacer
+  github.com/sourcegraph/sourcegraph/cmd/searcher
+  github.com/sourcegraph/sourcegraph/cmd/symbols
+  $additional_images
+
+  github.com/google/zoekt/cmd/zoekt-archive-index
+  github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver
+  github.com/google/zoekt/cmd/zoekt-webserver
+
+  $server_pkg
 )
 
 parallel_run go_build {} ::: "${PACKAGES[@]}"
@@ -86,7 +86,7 @@ cp -r dev/grafana/linux "$OUTPUT/sg_config_grafana/provisioning/datasources"
 
 echo "--- docker build"
 docker build -f cmd/server/Dockerfile -t "$IMAGE" "$OUTPUT" \
-    --progress=plain \
-    --build-arg COMMIT_SHA \
-    --build-arg DATE \
-    --build-arg VERSION
+  --progress=plain \
+  --build-arg COMMIT_SHA \
+  --build-arg DATE \
+  --build-arg VERSION

@@ -5,9 +5,9 @@
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 set -eu
 
-OUTPUT=`mktemp -d -t sgdockerbuild_XXXXXXX`
+OUTPUT=$(mktemp -d -t sgdockerbuild_XXXXXXX)
 cleanup() {
-    rm -rf "$OUTPUT"
+  rm -rf "$OUTPUT"
 }
 trap cleanup EXIT
 
@@ -17,6 +17,6 @@ cp -a ./cmd/symbols/ctags-install-alpine.sh "$OUTPUT"
 # Build ctags docker image for universal-ctags-dev
 echo "--- ctags docker build"
 docker build -f cmd/symbols/Dockerfile -t ctags "$OUTPUT" \
-    --target=ctags \
-    --progress=plain \
-    --quiet
+  --target=ctags \
+  --progress=plain \
+  --quiet

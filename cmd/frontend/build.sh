@@ -4,9 +4,9 @@
 cd $(dirname "${BASH_SOURCE[0]}")/../..
 set -ex
 
-OUTPUT=`mktemp -d -t sgdockerbuild_XXXXXXX`
+OUTPUT=$(mktemp -d -t sgdockerbuild_XXXXXXX)
 cleanup() {
-    rm -rf "$OUTPUT"
+  rm -rf "$OUTPUT"
 }
 trap cleanup EXIT
 
@@ -18,12 +18,12 @@ export CGO_ENABLED=0
 
 echo "--- go build"
 for pkg in github.com/sourcegraph/sourcegraph/cmd/frontend; do
-    go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION" -buildmode exe -tags dist -o $OUTPUT/$(basename $pkg) $pkg
+  go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION" -buildmode exe -tags dist -o $OUTPUT/$(basename $pkg) $pkg
 done
 
 echo "--- docker build $IMAGE"
 docker build -f cmd/frontend/Dockerfile -t $IMAGE $OUTPUT \
-    --progress=plain \
-    --build-arg COMMIT_SHA \
-    --build-arg DATE \
-    --build-arg VERSION
+  --progress=plain \
+  --build-arg COMMIT_SHA \
+  --build-arg DATE \
+  --build-arg VERSION

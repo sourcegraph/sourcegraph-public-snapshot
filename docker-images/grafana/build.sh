@@ -6,7 +6,7 @@ rm -rf observability
 cp -R ../../observability .
 
 docker build --no-cache -t ${IMAGE:-sourcegraph/grafana} . \
-    --progress=plain \
-    --build-arg COMMIT_SHA \
-    --build-arg DATE \
-    --build-arg VERSION
+  --progress=plain \
+  --build-arg COMMIT_SHA \
+  --build-arg DATE \
+  --build-arg VERSION

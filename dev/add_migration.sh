@@ -4,8 +4,8 @@ cd $(dirname "${BASH_SOURCE[0]}")/../migrations
 set -e
 
 if [ -z "$1" ]; then
-    echo "USAGE: $0 <name>"
-    exit 1
+  echo "USAGE: $0 <name>"
+  exit 1
 fi
 
 # This simulates what "migrate create -ext sql -digits 10 -seq" does.
@@ -22,7 +22,7 @@ END {
 files=$(ls -1 | sort -n | awk -v name="$1" "$awkcmd")
 
 for f in $files; do
-    cat > $f <<EOF
+  cat >$f <<EOF
 BEGIN;
 
 -- Insert migration here. See README.md. Highlights:
@@ -35,5 +35,5 @@ BEGIN;
 COMMIT;
 EOF
 
-    echo "Created migrations/$f"
+  echo "Created migrations/$f"
 done

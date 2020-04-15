@@ -2,7 +2,7 @@
 
 set -euf -o pipefail
 
-pushd "$(dirname "${BASH_SOURCE[0]}")/.." > /dev/null
+pushd "$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null
 
 JAEGER_DISK="${HOME}/.sourcegraph-dev/data/jaeger"
 
@@ -15,13 +15,13 @@ target="$PWD/.bin/jaeger-all-in-one-${suffix}"
 url="https://github.com/jaegertracing/jaeger/releases/download/v${version}/jaeger-${suffix}.tar.gz"
 
 if [ ! -f "${target}" ]; then
-    echo "downloading ${url}" 1>&2
-    curl -sS -L -f "${url}" | tar -xz --to-stdout "jaeger-${suffix}/jaeger-all-in-one" > "${target}.tmp"
-    mv "${target}.tmp" "${target}"
+  echo "downloading ${url}" 1>&2
+  curl -sS -L -f "${url}" | tar -xz --to-stdout "jaeger-${suffix}/jaeger-all-in-one" >"${target}.tmp"
+  mv "${target}.tmp" "${target}"
 fi
 
 chmod +x "${target}"
 
-popd > /dev/null
+popd >/dev/null
 
-exec "${target}" --log-level "${JAEGER_LOG_LEVEL:-info}" "$@" >> ${JAEGER_DISK}/logs/jaeger.log 2>&1
+exec "${target}" --log-level "${JAEGER_LOG_LEVEL:-info}" "$@" >>${JAEGER_DISK}/logs/jaeger.log 2>&1
