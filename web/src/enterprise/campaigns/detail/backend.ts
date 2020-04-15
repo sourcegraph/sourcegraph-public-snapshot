@@ -296,6 +296,7 @@ export const queryChangesets = (
                                 externalID
                                 createdAt
                                 updatedAt
+                                nextSync
                                 diff {
                                     fileDiffs {
                                         diffStat {

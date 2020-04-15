@@ -219,8 +219,11 @@ func (r *changesetResolver) UpdatedAt() graphqlbackend.DateTime {
 	return graphqlbackend.DateTime{Time: r.Changeset.UpdatedAt}
 }
 
-func (r *changesetResolver) NextSync() graphqlbackend.DateTime {
-	return graphqlbackend.DateTime{Time: r.nextSync}
+func (r *changesetResolver) NextSync() *graphqlbackend.DateTime {
+	if r.nextSync.IsZero() {
+		return nil
+	}
+	return &graphqlbackend.DateTime{Time: r.nextSync}
 }
 
 func (r *changesetResolver) Title() (string, error) {
