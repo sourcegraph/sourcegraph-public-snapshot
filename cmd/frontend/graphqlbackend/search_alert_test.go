@@ -255,7 +255,7 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 				prometheusType: "over_repo_limit",
 				title:          "Too many matching repositories",
 				proposedQueries: []*searchQueryDescription{
-					&searchQueryDescription{
+					{
 						"in the repository a/repoName0",
 						"a query repo:^a/repoName0$",
 						query.SearchType(0),
