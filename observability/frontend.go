@@ -12,7 +12,7 @@ func Frontend() *Container {
 					{
 						{
 							Name:            "99th_percentile_search_request_duration",
-							Description:     "99th percentile search request duration over 5m",
+							Description:     "99th percentile successful search request duration over 5m",
 							Query:           `histogram_quantile(0.99, sum by (le)(rate(src_graphql_field_seconds_bucket{type="Search",field="results",error="false"}[5m])))`,
 							DataMayNotExist: true,
 							DataMayBeNaN:    true, // See https://github.com/sourcegraph/sourcegraph/issues/9834
@@ -21,7 +21,7 @@ func Frontend() *Container {
 						},
 						{
 							Name:            "90th_percentile_search_request_duration",
-							Description:     "90th percentile search request duration over 5m",
+							Description:     "90th percentile successful search request duration over 5m",
 							Query:           `histogram_quantile(0.90, sum by (le)(rate(src_graphql_field_seconds_bucket{type="Search",field="results",error="false"}[5m])))`,
 							DataMayNotExist: true,
 							DataMayBeNaN:    true, // See https://github.com/sourcegraph/sourcegraph/issues/9834
