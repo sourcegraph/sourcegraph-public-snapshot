@@ -418,8 +418,8 @@ var (
 	maxSyncDelay = 8 * time.Hour
 )
 
-// nextSync computes the time we want the next sync to happen.
-func nextSync(clock func() time.Time, h campaigns.ChangesetSyncData) time.Time {
+// NextSync computes the time we want the next sync to happen.
+func NextSync(clock func() time.Time, h campaigns.ChangesetSyncData) time.Time {
 	lastSync := h.UpdatedAt
 
 	if lastSync.IsZero() {
@@ -482,7 +482,7 @@ func (s *ChangesetSyncer) computeSchedule(ctx context.Context) ([]scheduledSync,
 
 	ss := make([]scheduledSync, len(syncData))
 	for i := range syncData {
-		nextSync := nextSync(s.clock, syncData[i])
+		nextSync := NextSync(s.clock, syncData[i])
 
 		ss[i] = scheduledSync{
 			changesetID: syncData[i].ChangesetID,
@@ -700,8 +700,8 @@ func newChangesetPriorityQueue() *changesetPriorityQueue {
 func (pq *changesetPriorityQueue) Len() int { return len(pq.items) }
 
 func (pq *changesetPriorityQueue) Less(i, j int) bool {
-	// We want items ordered by priority, then nextSync
-	// Order by priority and then nextSync
+	// We want items ordered by priority, then NextSync
+	// Order by priority and then NextSync
 	a := pq.items[i]
 	b := pq.items[j]
 
