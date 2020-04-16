@@ -63,11 +63,11 @@ export const GlobalCampaignListPage: React.FunctionComponent<Props> = props => (
                     Welcome to campaigns <span className="badge badge-info badge-outline">Beta</span>!
                 </h3>
                 <p className="mb-1">
-                    We're excited for you to get started using campaigns to remove legacy code, fix critical security
-                    issues, pay down tech debt, and more! Take a look at some{' '}
+                    We're excited for you to use campaigns to remove legacy code, fix critical security issues, pay down
+                    tech debt, and more. Take a look at some{' '}
                     <a href="https://docs.sourcegraph.com/user/campaigns/examples">examples in our documentation</a>,
-                    and don't hesitate to reach out with any questions. We look forward to hearing about campaigns you
-                    run inside your organization!
+                    and <a href="mailto:feedback@sourcegraph.com?subject=Campaigns feedback">get in touch</a> with any
+                    questions, feedback, or to share a campaign you run inside your organization!
                 </p>
             </div>
         </div>
