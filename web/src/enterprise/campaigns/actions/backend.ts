@@ -281,3 +281,17 @@ export async function updateActionJob(actionJob: ID, { state }: { state?: Action
     ).toPromise()
     return dataOrThrowErrors(result).updateActionJob
 }
+
+export async function cancelActionExecution(actionExecution: ID): Promise<IEmptyResponse | null> {
+    const result = await mutateGraphQL(
+        gql`
+            mutation CancelActionExecution($actionExecution: ID!) {
+                cancelActionExecution(actionExecution: $actionExecution) {
+                    alwaysNil
+                }
+            }
+        `,
+        { actionExecution }
+    ).toPromise()
+    return dataOrThrowErrors(result).cancelActionExecution
+}

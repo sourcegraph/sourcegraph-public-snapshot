@@ -124,6 +124,10 @@ type CreateActionExecutionsForSavedSearchArgs struct {
 	SavedSearchQuery string
 }
 
+type CancelActionExecutionArgs struct {
+	ActionExecution graphql.ID
+}
+
 type PullActionJobArgs struct {
 	Runner graphql.ID
 }
@@ -169,6 +173,7 @@ type CampaignsResolver interface {
 	UploadWorkspace(ctx context.Context, args *UploadWorkspaceArgs) (*GitTreeEntryResolver, error)
 	CreateActionExecution(ctx context.Context, args *CreateActionExecutionArgs) (ActionExecutionResolver, error)
 	CreateActionExecutionsForSavedSearch(ctx context.Context, args *CreateActionExecutionsForSavedSearchArgs) (*EmptyResponse, error)
+	CancelActionExecution(ctx context.Context, args *CancelActionExecutionArgs) (*EmptyResponse, error)
 	PullActionJob(ctx context.Context, args *PullActionJobArgs) (ActionJobResolver, error)
 	UpdateActionJob(ctx context.Context, args *UpdateActionJobArgs) (ActionJobResolver, error)
 	AppendLog(ctx context.Context, args *AppendLogArgs) (ActionJobResolver, error)
@@ -251,6 +256,10 @@ func (defaultCampaignsResolver) CreateActionExecution(ctx context.Context, args 
 }
 
 func (defaultCampaignsResolver) CreateActionExecutionsForSavedSearch(ctx context.Context, args *CreateActionExecutionsForSavedSearchArgs) (*EmptyResponse, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+func (defaultCampaignsResolver) CancelActionExecution(ctx context.Context, args *CancelActionExecutionArgs) (*EmptyResponse, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 

@@ -3738,3 +3738,31 @@ func actionExecutionStatusQuery(opts *ActionExecutionStatusOpts) *sqlf.Query {
 	queryTemplate := actionExecutionStatusQueryFmtstrSelect
 	return sqlf.Sprintf(queryTemplate, opts.ExecutionID)
 }
+
+type CancelActionExecutionOpts struct {
+	ExecutionID int64
+}
+
+// CancelActionExecutionOpts cancels all still running jobs of an execution.
+func (s *Store) CancelActionExecution(ctx context.Context, opts CancelActionExecutionOpts) error {
+	q := cancelActionExecutionQuery(&opts)
+	_, _, err := s.query(ctx, q, nil)
+	return err
+}
+
+var cancelActionExecutionQueryFmtstr = `
+-- source: enterprise/internal/campaigns/store.go:CancelActionExecution
+UPDATE
+	action_jobs
+SET
+	execution_end = NOW(),
+	state = 'CANCELED'
+WHERE
+	action_jobs.execution = %d
+	AND action_jobs.state IN ('RUNNING', 'PENDING');
+`
+
+func cancelActionExecutionQuery(opts *CancelActionExecutionOpts) *sqlf.Query {
+	queryTemplate := cancelActionExecutionQueryFmtstr
+	return sqlf.Sprintf(queryTemplate, opts.ExecutionID)
+}

@@ -446,6 +446,7 @@ type Mutation {
     createActionExecution(action: ID!): ActionExecution!
     # Called internally by the query-runner to trigger executions
     createActionExecutionsForSavedSearch(savedSearchQuery: String!): EmptyResponse
+    cancelActionExecution(actionExecution: ID!): EmptyResponse
 
     # Begin a job on a runner, if some are in the backlog.
     pullActionJob(runner: ID!): ActionJob

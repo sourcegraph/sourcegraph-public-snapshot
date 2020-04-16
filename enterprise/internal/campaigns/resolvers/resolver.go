@@ -1123,8 +1123,8 @@ func (r *Resolver) UpdateActionJob(ctx context.Context, args *graphqlbackend.Upd
 		State: args.State,
 		Patch: args.Patch,
 	}
-	// set finish time on completion
-	if *args.State == campaigns.ActionJobStateCompleted {
+	// set end time on status change from "running".
+	if args.State != nil && *args.State != campaigns.ActionJobStateRunning {
 		now := time.Now()
 		opts.ExecutionEnd = &now
 	}
@@ -1259,6 +1259,37 @@ func (r *Resolver) RetryActionJob(ctx context.Context, args *graphqlbackend.Retr
 	if err := r.store.ClearActionJob(ctx, ee.ClearActionJobOpts{
 		ID: id,
 	}); err != nil {
+		return nil, err
+	}
+
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func (r *Resolver) CancelActionExecution(ctx context.Context, args *graphqlbackend.CancelActionExecutionArgs) (_ *graphqlbackend.EmptyResponse, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.CancelActionExecution", fmt.Sprintf("Action execution: %s", args.ActionExecution))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	// 🚨 SECURITY: Only site admins may create executions for now
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, errors.Wrap(err, "checking if user is admin")
+	}
+
+	id, err := unmarshalActionExecutionID(args.ActionExecution)
+	if err != nil {
+		return nil, err
+	}
+	// Probe if execution exists, so we don't swallow errors.
+	_, err = r.store.ActionExecutionByID(ctx, ee.ActionExecutionByIDOpts{ID: id})
+	if err != nil {
+		return nil, err
+	}
+
+	// Set all remaining unfinished tasks to canceled
+	err = r.store.CancelActionExecution(ctx, ee.CancelActionExecutionOpts{ExecutionID: id})
+	if err != nil {
 		return nil, err
 	}
 

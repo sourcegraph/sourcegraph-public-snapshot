@@ -7,7 +7,7 @@ import classNames from 'classnames'
 import { MonacoSettingsEditor } from '../../../settings/MonacoSettingsEditor'
 import { ActionJob } from './ActionJob'
 import SyncIcon from 'mdi-react/SyncIcon'
-import { fetchActionExecutionByID } from './backend'
+import { fetchActionExecutionByID, cancelActionExecution as _cancelActionExecution } from './backend'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { merge, of, Subject } from 'rxjs'
 import { switchMap, repeatWhen, delay, catchError } from 'rxjs/operators'
@@ -19,6 +19,7 @@ import { formatDistance, parseISO } from 'date-fns'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import { ErrorAlert } from '../../../components/alerts'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
+import { asError, isErrorLike } from '../../../../../shared/src/util/errors'
 
 interface Props extends ThemeProps {
     actionExecutionID: string
@@ -46,6 +47,7 @@ export const ActionExecution: React.FunctionComponent<Props> = ({
                                 setAlertError(error)
                                 return []
                             }),
+                            // refresh every 2s after the previous request finished so it feels more 'alive'
                             repeatWhen(obs => obs.pipe(delay(2000)))
                         )
                     )
@@ -53,6 +55,16 @@ export const ActionExecution: React.FunctionComponent<Props> = ({
             [actionExecutionID, executionUpdates]
         )
     )
+    const [isCanceling, setIsCanceling] = React.useState<boolean | Error>(false)
+    const cancelActionExecution: React.MouseEventHandler = async () => {
+        setIsCanceling(true)
+        try {
+            await _cancelActionExecution(actionExecutionID)
+            nextExecutionUpdate()
+        } catch (error) {
+            setIsCanceling(asError(error))
+        }
+    }
     if (execution === undefined) {
         return <LoadingSpinner />
     }
@@ -137,16 +149,26 @@ export const ActionExecution: React.FunctionComponent<Props> = ({
                     </div>
                 </div>
                 {execution.status.state === GQL.BackgroundProcessState.PROCESSING && (
-                    <p>
-                        {execution.executionStart ? (
-                            <>
-                                <SyncIcon className="icon-inline icon-spinning" /> Execution is running since{' '}
-                                {formatDistance(parseISO(execution.executionStart), new Date())}.
-                            </>
-                        ) : (
-                            <>Execution is awaiting a runner to pick up jobs.</>
-                        )}
-                    </p>
+                    <div className="alert alert-info d-flex justify-content-between align-items-center">
+                        <p>
+                            {execution.executionStart ? (
+                                <>
+                                    <SyncIcon className="icon-inline icon-spinning" /> Execution is running since{' '}
+                                    {formatDistance(parseISO(execution.executionStart), new Date())}.
+                                </>
+                            ) : (
+                                <>Execution is awaiting a runner to pick up jobs.</>
+                            )}
+                        </p>
+                        <button
+                            type="button"
+                            className="btn btn-danger"
+                            disabled={isCanceling === true}
+                            onClick={cancelActionExecution}
+                        >
+                            {isErrorLike(isCanceling) && <AlertCircleIcon data-tooltip={isCanceling.message} />} Cancel
+                        </button>
+                    </div>
                 )}
                 {execution.status.state === GQL.BackgroundProcessState.COMPLETED && (
                     <p>
@@ -162,7 +184,6 @@ export const ActionExecution: React.FunctionComponent<Props> = ({
             </div>
             {execution.status.state === GQL.BackgroundProcessState.PROCESSING && (
                 <>
-                    {' '}
                     <div className="progress">
                         <div
                             className="progress-bar"
