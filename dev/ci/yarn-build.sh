@@ -17,7 +17,7 @@ NODE_ENV= yarn -s run browserslist
 echo "--- build"
 yarn -s run build --color
 
-if jq -e '.scripts.bundlesize' package.json > /dev/null; then
-    echo "--- bundlesize"
-    NODE_ENV= GITHUB_TOKEN= yarn -s run bundlesize
+if jq -e '.scripts.bundlesize' package.json >/dev/null; then
+  echo "--- bundlesize"
+  NODE_ENV= GITHUB_TOKEN= yarn -s run bundlesize
 fi

@@ -12,6 +12,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
+type ExpectedOperand struct {
+	Msg string
+}
+
+func (e *ExpectedOperand) Error() string {
+	return e.Msg
+}
+
 /*
 Parser implements a parser for the following grammar:
 
@@ -735,7 +743,7 @@ func (p *parser) parseAnd() ([]Node, error) {
 		return nil, err
 	}
 	if left == nil {
-		return nil, fmt.Errorf("expected operand at %d", p.pos)
+		return nil, &UnsupportedError{Msg: fmt.Sprintf("expected operand at %d", p.pos)}
 	}
 	if !p.expect(AND) {
 		return left, nil
@@ -755,7 +763,7 @@ func (p *parser) parseOr() ([]Node, error) {
 		return nil, err
 	}
 	if left == nil {
-		return nil, fmt.Errorf("expected operand at %d", p.pos)
+		return nil, &UnsupportedError{Msg: fmt.Sprintf("expected operand at %d", p.pos)}
 	}
 	if !p.expect(OR) {
 		return left, nil
@@ -776,7 +784,7 @@ func tryFallbackParser(in string) ([]Node, error) {
 	if err != nil {
 		return nil, err
 	}
-	if hoistedNodes, err := HoistOr(nodes); err == nil {
+	if hoistedNodes, err := Hoist(nodes); err == nil {
 		return newOperator(hoistedNodes, And), nil
 	}
 	return newOperator(nodes, And), nil
@@ -807,7 +815,7 @@ func ParseAndOr(in string) ([]Node, error) {
 	}
 	if !parser.unambiguated {
 		// Hoist or expressions if this query is potential ambiguous.
-		if hoistedNodes, err := HoistOr(nodes); err == nil {
+		if hoistedNodes, err := Hoist(nodes); err == nil {
 			nodes = hoistedNodes
 		}
 	}

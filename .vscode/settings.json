@@ -68,4 +68,5 @@
     },
   ],
   "go.lintTool": "golangci-lint",
+  "shellformat.flag": "-i 2 -ci",
 }

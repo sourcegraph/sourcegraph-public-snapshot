@@ -29,7 +29,7 @@ var graphqlFieldHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Name:      "field_seconds",
 	Help:      "GraphQL field resolver latencies in seconds.",
 	Buckets:   []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
-}, []string{"type", "field", "error"})
+}, []string{"type", "field", "error", "source"})
 
 var codeIntelSearchHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Namespace: "src",
@@ -72,9 +72,10 @@ func (prometheusTracer) TraceQuery(ctx context.Context, queryString string, oper
 	if requestName == "unknown" {
 		lvl = log15.Info
 	}
-	lvl("serving GraphQL request", "name", requestName, "user", currentUserName)
+	requestSource := sgtrace.RequestSource(ctx)
+	lvl("serving GraphQL request", "name", requestName, "user", currentUserName, "source", requestSource)
 	if requestName == "unknown" {
-		log.Printf(`logging complete query for unnamed GraphQL request above name=%s user=%s:
+		log.Printf(`logging complete query for unnamed GraphQL request above name=%s user=%s source=%s:
 QUERY
 -----
 %s
@@ -83,7 +84,7 @@ VARIABLES
 ---------
 %v
 
-`, requestName, currentUserName, queryString, variables)
+`, requestName, currentUserName, requestSource, queryString, variables)
 	}
 	return ctx, func(err []*gqlerrors.QueryError) {
 		if finish != nil {
@@ -101,7 +102,7 @@ func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldNa
 	start := time.Now()
 	return ctx, func(err *gqlerrors.QueryError) {
 		isErrStr := strconv.FormatBool(err != nil)
-		graphqlFieldHistogram.WithLabelValues(typeName, fieldName, isErrStr).Observe(time.Since(start).Seconds())
+		graphqlFieldHistogram.WithLabelValues(typeName, prometheusFieldName(typeName, fieldName), isErrStr, string(sgtrace.RequestSource(ctx))).Observe(time.Since(start).Seconds())
 
 		origin := sgtrace.RequestOrigin(ctx)
 		if origin != "unknown" && (fieldName == "search" || fieldName == "lsif") {
@@ -112,6 +113,159 @@ func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldNa
 			finish(err)
 		}
 	}
+}
+
+var whitelistedPrometheusFieldNames = map[[2]string]struct{}{
+	{"AccessTokenConnection", "nodes"}:          {},
+	{"File", "isDirectory"}:                     {},
+	{"File", "name"}:                            {},
+	{"File", "path"}:                            {},
+	{"File", "repository"}:                      {},
+	{"File", "url"}:                             {},
+	{"File2", "content"}:                        {},
+	{"File2", "externalURLs"}:                   {},
+	{"File2", "highlight"}:                      {},
+	{"File2", "isDirectory"}:                    {},
+	{"File2", "richHTML"}:                       {},
+	{"File2", "url"}:                            {},
+	{"FileDiff", "hunks"}:                       {},
+	{"FileDiff", "internalID"}:                  {},
+	{"FileDiff", "mostRelevantFile"}:            {},
+	{"FileDiff", "newPath"}:                     {},
+	{"FileDiff", "oldPath"}:                     {},
+	{"FileDiff", "stat"}:                        {},
+	{"FileDiffConnection", "diffStat"}:          {},
+	{"FileDiffConnection", "nodes"}:             {},
+	{"FileDiffConnection", "pageInfo"}:          {},
+	{"FileDiffConnection", "totalCount"}:        {},
+	{"FileDiffHunk", "body"}:                    {},
+	{"FileDiffHunk", "newRange"}:                {},
+	{"FileDiffHunk", "oldNoNewlineAt"}:          {},
+	{"FileDiffHunk", "oldRange"}:                {},
+	{"FileDiffHunk", "section"}:                 {},
+	{"FileDiffHunkRange", "lines"}:              {},
+	{"FileDiffHunkRange", "Line"}:               {},
+	{"FileMatch", "file"}:                       {},
+	{"FileMatch", "limitHit"}:                   {},
+	{"FileMatch", "lineMatches"}:                {},
+	{"FileMatch", "repository"}:                 {},
+	{"FileMatch", "revSpec"}:                    {},
+	{"FileMatch", "symbols"}:                    {},
+	{"GitBlob", "blame"}:                        {},
+	{"GitBlob", "commit"}:                       {},
+	{"GitBlob", "content"}:                      {},
+	{"GitBlob", "lsif"}:                         {},
+	{"GitBlob", "path"}:                         {},
+	{"GitBlob", "repository"}:                   {},
+	{"GitBlob", "url"}:                          {},
+	{"GitCommit", "abbreviatedOID"}:             {},
+	{"GitCommit", "ancestors"}:                  {},
+	{"GitCommit", "author"}:                     {},
+	{"GitCommit", "blob"}:                       {},
+	{"GitCommit", "body"}:                       {},
+	{"GitCommit", "canonicalURL"}:               {},
+	{"GitCommit", "committer"}:                  {},
+	{"GitCommit", "externalURLs"}:               {},
+	{"GitCommit", "file"}:                       {},
+	{"GitCommit", "id"}:                         {},
+	{"GitCommit", "message"}:                    {},
+	{"GitCommit", "oid"}:                        {},
+	{"GitCommit", "parents"}:                    {},
+	{"GitCommit", "repository"}:                 {},
+	{"GitCommit", "subject"}:                    {},
+	{"GitCommit", "symbols"}:                    {},
+	{"GitCommit", "tree"}:                       {},
+	{"GitCommit", "url"}:                        {},
+	{"GitCommitConnection", "nodes"}:            {},
+	{"GitRefConnection", "nodes"}:               {},
+	{"GitTree", "canonicalURL"}:                 {},
+	{"GitTree", "entries"}:                      {},
+	{"GitTree", "files"}:                        {},
+	{"GitTree", "isRoot"}:                       {},
+	{"GitTree", "url"}:                          {},
+	{"Mutation", "configurationMutation"}:       {},
+	{"Mutation", "createOrganization"}:          {},
+	{"Mutation", "logEvent"}:                    {},
+	{"Mutation", "logUserEvent"}:                {},
+	{"Query", "clientConfiguration"}:            {},
+	{"Query", "currentUser"}:                    {},
+	{"Query", "discussionThreads"}:              {},
+	{"Query", "dotcom"}:                         {},
+	{"Query", "extensionRegistry"}:              {},
+	{"Query", "highlightCode"}:                  {},
+	{"Query", "node"}:                           {},
+	{"Query", "organization"}:                   {},
+	{"Query", "repositories"}:                   {},
+	{"Query", "repository"}:                     {},
+	{"Query", "repositoryRedirect"}:             {},
+	{"Query", "search"}:                         {},
+	{"Query", "settingsSubject"}:                {},
+	{"Query", "site"}:                           {},
+	{"Query", "user"}:                           {},
+	{"Query", "viewerConfiguration"}:            {},
+	{"Query", "viewerSettings"}:                 {},
+	{"RegistryExtensionConnection", "nodes"}:    {},
+	{"Repository", "cloneInProgress"}:           {},
+	{"Repository", "commit"}:                    {},
+	{"Repository", "comparison"}:                {},
+	{"Repository", "gitRefs"}:                   {},
+	{"RepositoryComparison", "commits"}:         {},
+	{"RepositoryComparison", "fileDiffs"}:       {},
+	{"RepositoryComparison", "range"}:           {},
+	{"RepositoryConnection", "nodes"}:           {},
+	{"Search", "results"}:                       {},
+	{"Search", "suggestions"}:                   {},
+	{"SearchAlert", "description"}:              {},
+	{"SearchAlert", "proposedQueries"}:          {},
+	{"SearchAlert", "title"}:                    {},
+	{"SearchFilter", "count"}:                   {},
+	{"SearchFilter", "kind"}:                    {},
+	{"SearchFilter", "label"}:                   {},
+	{"SearchFilter", "limitHit"}:                {},
+	{"SearchFilter", "value"}:                   {},
+	{"SearchQueryDescription", "description"}:   {},
+	{"SearchQueryDescription", "query"}:         {},
+	{"SearchResultMatch", "body"}:               {},
+	{"SearchResultMatch", "highlights"}:         {},
+	{"SearchResultMatch", "url"}:                {},
+	{"SearchResults", "alert"}:                  {},
+	{"SearchResults", "approximateResultCount"}: {},
+	{"SearchResults", "cloning"}:                {},
+	{"SearchResults", "dynamicFilters"}:         {},
+	{"SearchResults", "elapsedMilliseconds"}:    {},
+	{"SearchResults", "indexUnavailable"}:       {},
+	{"SearchResults", "limitHit"}:               {},
+	{"SearchResults", "matchCount"}:             {},
+	{"SearchResults", "missing"}:                {},
+	{"SearchResults", "repositoriesCount"}:      {},
+	{"SearchResults", "results"}:                {},
+	{"SearchResults", "timedout"}:               {},
+	{"SettingsCascade", "final"}:                {},
+	{"SettingsMutation", "editConfiguration"}:   {},
+	{"SettingsSubject", "latestSettings"}:       {},
+	{"SettingsSubject", "settingsCascade"}:      {},
+	{"Signature", "date"}:                       {},
+	{"Signature", "person"}:                     {},
+	{"Site", "alerts"}:                          {},
+	{"SymbolConnection", "nodes"}:               {},
+	{"TreeEntry", "isDirectory"}:                {},
+	{"TreeEntry", "isSingleChild"}:              {},
+	{"TreeEntry", "name"}:                       {},
+	{"TreeEntry", "path"}:                       {},
+	{"TreeEntry", "submodule"}:                  {},
+	{"TreeEntry", "url"}:                        {},
+	{"UserConnection", "nodes"}:                 {},
+}
+
+// prometheusFieldName reduces the cardinality of GraphQL field names to make it suitable
+// for use in a Prometheus metric. We only track the ones most valuable to us.
+//
+// See https://github.com/sourcegraph/sourcegraph/issues/9895
+func prometheusFieldName(typeName, fieldName string) string {
+	if _, ok := whitelistedPrometheusFieldNames[[2]string{typeName, fieldName}]; ok {
+		return fieldName
+	}
+	return "other"
 }
 
 func NewSchema(campaigns CampaignsResolver, codeIntel CodeIntelResolver, authz AuthzResolver) (*graphql.Schema, error) {

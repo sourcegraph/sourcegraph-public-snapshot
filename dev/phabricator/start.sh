@@ -6,16 +6,15 @@ unset CDPATH
 oldest_supported="2017.09-r1"
 
 version="$1"
-if [ -z "$1" ]
-then
-    echo "Usage: dev/phabricator/start.sh <tag>"
-    echo "where <tag> is a release version from https://hub.docker.com/r/bitnami/phabricator/tags/"
-    echo "NOTE: the oldest release we support is ${oldest_supported}"
-    echo
-    echo "Continuing with oldest version supported..."
-    echo
+if [ -z "$1" ]; then
+  echo "Usage: dev/phabricator/start.sh <tag>"
+  echo "where <tag> is a release version from https://hub.docker.com/r/bitnami/phabricator/tags/"
+  echo "NOTE: the oldest release we support is ${oldest_supported}"
+  echo
+  echo "Continuing with oldest version supported..."
+  echo
 
-    version="${oldest_supported}"
+  version="${oldest_supported}"
 fi
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../.." # cd to repo root dir
@@ -24,10 +23,10 @@ source ./dev/phabricator/shared.sh
 
 # Ensure old instances are cleaned up
 if [ "$(docker ps -aq -f network=$network)" ]; then
-    ./dev/phabricator/stop.sh
+  ./dev/phabricator/stop.sh
 
-    docker volume rm $db_volume
-    docker volume rm $app_volume
+  docker volume rm $db_volume
+  docker volume rm $app_volume
 fi
 
 # Create network if not exists
@@ -41,19 +40,19 @@ fi
 
 # Start the db
 docker run -d --name $db_container -e ALLOW_EMPTY_PASSWORD=yes \
-    --net $network \
-    --volume $db_volume:/bitnami \
-    bitnami/mariadb:latest
+  --net $network \
+  --volume $db_volume:/bitnami \
+  bitnami/mariadb:latest
 
 # Start the application
 docker run -d --name $app_container -p 80:80 -p 443:443 \
-    --net $network \
-    --volume $app_volume:/bitnami \
-    -e PHABRICATOR_USERNAME=admin \
-    -e PHABRICATOR_PASSWORD=sourcegraph \
-    -e PHABRICATOR_EMAIL=phabricator@sourcegraph.com \
-    -e MARIADB_HOST=$db_container \
-    bitnami/phabricator:${version}
+  --net $network \
+  --volume $app_volume:/bitnami \
+  -e PHABRICATOR_USERNAME=admin \
+  -e PHABRICATOR_PASSWORD=sourcegraph \
+  -e PHABRICATOR_EMAIL=phabricator@sourcegraph.com \
+  -e MARIADB_HOST=$db_container \
+  bitnami/phabricator:${version}
 
 echo
 echo "Phabricator ${version} is now running at http://127.0.0.1"

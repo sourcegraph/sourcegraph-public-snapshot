@@ -473,7 +473,7 @@ var searchResponseCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 	Subsystem: "graphql",
 	Name:      "search_response",
 	Help:      "Number of searches that have ended in the given status (success, error, timeout, partial_timeout).",
-}, []string{"status", "alert_type"})
+}, []string{"status", "alert_type", "source"})
 
 // logSearchLatency records search durations in the event database. This
 // function may only be called after a search result is performed, because it
@@ -607,7 +607,7 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (*SearchResultsResolv
 	default:
 		status = "unknown"
 	}
-	searchResponseCounter.WithLabelValues(status, alertType).Inc()
+	searchResponseCounter.WithLabelValues(status, alertType, string(trace.RequestSource(ctx))).Inc()
 
 	return rr, err
 }
@@ -1266,10 +1266,7 @@ func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, st
 		return nil, nil, &SearchResultsResolver{alert: alert, start: start}, nil
 	}
 	if overLimit {
-		alert, err := r.alertForOverRepoLimit(ctx)
-		if err != nil {
-			return nil, nil, nil, err
-		}
+		alert := r.alertForOverRepoLimit(ctx)
 		return nil, nil, &SearchResultsResolver{alert: alert, start: start}, nil
 	}
 	return repos, missingRepoRevs, nil, nil

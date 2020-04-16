@@ -333,6 +333,11 @@ func Test_Parse(t *testing.T) {
 			WantHeuristic: Diff(`(and "repo:foo" (concat "(a)" "(b)"))`),
 		},
 		{
+			Input:         "repo:foo main { and bar {",
+			WantGrammar:   Spec(`(and (and "repo:foo" (concat "main" "{")) (concat "bar" "{"))`),
+			WantHeuristic: Diff(`(and "repo:foo" (concat "main" "{") (concat "bar" "{"))`),
+		},
+		{
 			Input:         "a b (repo:foo c d)",
 			WantGrammar:   `(concat "a" "b" (and "repo:foo" (concat "c" "d")))`,
 			WantHeuristic: Same,
@@ -405,6 +410,11 @@ func Test_Parse(t *testing.T) {
 			Name:          "Illegal expression on the right, mixed operators",
 			Input:         "a and OR",
 			WantGrammar:   `(and "a" "OR")`,
+			WantHeuristic: Same,
+		},
+		{
+			Input:         "repo:foo or or or",
+			WantGrammar:   "expected operand at 12",
 			WantHeuristic: Same,
 		},
 		// Reduction.

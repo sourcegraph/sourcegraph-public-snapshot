@@ -10,11 +10,11 @@ import (
 )
 
 type UnsupportedError struct {
-	UnsupportedMsg string
+	Msg string
 }
 
 func (e *UnsupportedError) Error() string {
-	return e.UnsupportedMsg
+	return e.Msg
 }
 
 // isPatternExpression returns true if every leaf node in a tree root at node is
@@ -51,7 +51,7 @@ func processTopLevel(nodes []Node) ([]Node, error) {
 		} else if term.Kind == Concat {
 			return nodes, nil
 		} else {
-			return nil, &UnsupportedError{UnsupportedMsg: "cannot evaluate: unable to partition pure search pattern"}
+			return nil, &UnsupportedError{Msg: "cannot evaluate: unable to partition pure search pattern"}
 		}
 	}
 	return nodes, nil
@@ -77,7 +77,7 @@ func PartitionSearchPattern(nodes []Node) (parameters []Node, pattern Node, err 
 		} else if term, ok := node.(Parameter); ok {
 			parameters = append(parameters, term)
 		} else {
-			return nil, nil, &UnsupportedError{UnsupportedMsg: "cannot evaluate: unable to partition pure search pattern"}
+			return nil, nil, &UnsupportedError{Msg: "cannot evaluate: unable to partition pure search pattern"}
 		}
 	}
 	if len(patterns) > 1 {
