@@ -72,7 +72,7 @@ export const CampaignActionsBar: React.FunctionComponent<Props> = ({
             <h2 className="m-0">
                 {stateBadge}
                 <span>
-                    <Link to="/campaigns">Campaigns</Link> <span className="badge badge-info badge-outline">Beta</span>
+                    <Link to="/campaigns">Campaigns</Link> <span className="badge badge-info">Beta</span>
                 </span>
                 <span className="text-muted d-inline-block mx-2">/</span>
                 <span>{campaign?.name ?? 'New campaign'}</span>
