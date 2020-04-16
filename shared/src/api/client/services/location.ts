@@ -117,7 +117,7 @@ export class TextDocumentLocationProviderIDRegistry extends DocumentFeatureProvi
 }
 
 /**
- * Returns the combined results of invoking multiple location providers and when they are loading.
+ * Returns the combined results of invoking multiple location providers and whether any of them are loading.
  *
  * @internal Callers should instead use the the getLocations or similarly named methods on classes
  * defined in this module.
