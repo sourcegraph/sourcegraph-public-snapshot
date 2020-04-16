@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 echo "--- lint dependencies"
 
@@ -9,10 +9,10 @@ export GOBIN="$PWD/.bin"
 export PATH=$GOBIN:$PATH
 export GO111MODULE=on
 
-pkgs=${@:-./...}
+pkgs=${*:-./...}
 
 echo "--- go install"
-go install -tags=dev -buildmode=archive ${pkgs}
+go install -tags=dev -buildmode=archive "${pkgs}"
 asdf reshim
 
 echo "--- lint"
