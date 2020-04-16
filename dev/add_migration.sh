@@ -11,8 +11,8 @@ fi
 # This simulates what "migrate create -ext sql -digits 10 -seq" does.
 awkcmd=$(
   cat <<-EOF
-BEGIN { FS="_" }
-/^[0-9].*\.sql/ { n=$1 }
+BEGIN { FS="[_/]" }
+{ n=\$2 }
 END {
     gsub(/[^A-Za-z0-9]/, "_", name);
     printf("%s_%s.up.sql\n",   n + 1, name);
@@ -21,13 +21,7 @@ END {
 EOF
 )
 
-# cc @keegancsmith I came up with the following replacement to fix https://github.com/koalaman/shellcheck/wiki/SC2012,
-# but macOS uses BSD's find which doesn't support printf. Perhaps you have other ideas?
-#
-# files=$(find . -maxdepth 1 -mindepth 1 \( -type d -printf "%P/\n" , -type f -printf "%P\n" \) | sort -n | awk -v name="$1" "$awkcmd")
-#
-# shellcheck disable=SC2012
-files=$(ls -1 | sort -n | awk -v name="$1" "$awkcmd")
+files=$(find -s . -type f -name '[0-9]*.sql' | awk -v name="$1" "$awkcmd")
 
 for f in $files; do
   cat >"$f" <<EOF
