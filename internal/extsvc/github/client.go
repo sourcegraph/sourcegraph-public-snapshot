@@ -54,8 +54,10 @@ type Client struct {
 	// githubDotCom is true if this client connects to github.com.
 	githubDotCom bool
 
-	// token is the personal access token used to authenticate requests.
-	// May be empty, in which case the default behavior is to make unauthenticated requests.
+	// token is the personal access token used to authenticate requests. May be empty, in which case
+	// the default behavior is to make unauthenticated requests.
+	// 🚨 SECURITY: Should not be changed after client creation to prevent unauthorized access to the
+	// repository cache. Use `WithToken` to create a new client with a different token instead.
 	token string
 
 	// httpClient is the HTTP client used to make requests to the GitHub API.
