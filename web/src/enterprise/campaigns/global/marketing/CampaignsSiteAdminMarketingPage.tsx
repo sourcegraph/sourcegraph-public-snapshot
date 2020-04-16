@@ -30,8 +30,8 @@ export const CampaignsSiteAdminMarketingPage: React.FunctionComponent<CampaignsS
                                     Campaigns will be available as a paid add-on.
                                 </li>
                                 <li>
-                                    Campaigns are not included as part of the Enterprise or Enterprise plus license
-                                    tiers.
+                                    Campaigns are not included as part of the Enterprise tiers (Enterprise, Enterprise
+                                    Starter, Enterprise Plus, etc.) license tiers.
                                 </li>
                             </ul>
                             Please <a href="mailto:sales@sourcegraph.com">contact us</a> for more information.

@@ -14,7 +14,8 @@ export const CampaignsMarketing: React.FunctionComponent<CampaignsMarketingProps
                 <em>
                     Campaigns are currently in beta. During the beta period, Campaigns are free to use. After the beta
                     period, Campaigns will be available as a paid add-on. Please{' '}
-                    <a href="mailto:sales@sourcegraph.com">contact us</a> for more information.
+                    <a href="mailto:sales@sourcegraph.com?subject=I'm interested in Campaigns!">contact us</a> for more
+                    information.
                 </em>
             </p>
             <h2 className="mb-6">Make and track large-scale changes across all code</h2>

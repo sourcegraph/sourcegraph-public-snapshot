@@ -39,7 +39,9 @@ interface Props {
  */
 export const CampaignCLIHelp: React.FunctionComponent<Props> = ({ className }) => (
     <div className={className}>
-        <h1>Create a campaign</h1>
+        <h1>
+            Create a campaign <span className="badge badge-info badge-outline">Beta</span>
+        </h1>
         <div className="card">
             <div className="card-body p-3">
                 <div className="alert alert-info mt-2">
