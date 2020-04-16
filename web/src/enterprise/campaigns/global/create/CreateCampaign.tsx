@@ -22,7 +22,7 @@ export const CreateCampaign: React.FunctionComponent<Props> = ({ className }) =>
                             <CampaignsIcon className="mr-3" />
                         </h3>
                         <div>
-                            <h3>Generate patches to track</h3>
+                            <h3>Create and track changesets</h3>
                             <p className="mb-0">
                                 Use the src CLI to make code changes across multiple repositories. Then turn the
                                 resulting set of patches into changesets (pull requests) on code hosts by creating a
