@@ -96,7 +96,7 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion | undef
                     type: NonFilterSuggestionType.dir,
                     value: '^' + escapeRegExp(item.path),
                     description: descriptionParts.join(' — '),
-                    url: `${item.url}?suggestion`,
+                    url: `${item.url}?subtree`,
                     label: 'go to dir',
                 }
             }
@@ -105,7 +105,7 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion | undef
                 value: formatRegExp(item.path),
                 displayValue: item.name,
                 description: descriptionParts.join(' — '),
-                url: `${item.url}?suggestion`,
+                url: `${item.url}?subtree`,
                 label: 'go to file',
             }
         }

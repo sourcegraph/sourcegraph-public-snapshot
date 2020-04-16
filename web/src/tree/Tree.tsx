@@ -243,12 +243,10 @@ export class Tree extends React.PureComponent<Props, State> {
                 .subscribe((props: Props) => {
                     const newParentPath = props.activePathIsDir ? props.activePath : dirname(props.activePath)
                     const queryParams = new URLSearchParams(this.props.history.location.search)
-                    // If we're updating due to a file or directory suggestion, load the relevant partial tree and jump to the file.
+                    // If we're updating due to a file/directory suggestion or code intel action,
+                    // load the relevant partial tree and jump to the file.
                     // This case is only used when going from an ancestor to a child file/directory, or equal.
-                    if (
-                        (queryParams.has('suggestion') || queryParams.has('action')) &&
-                        dotPathAsUndefined(newParentPath)
-                    ) {
+                    if (queryParams.has('subtree') && dotPathAsUndefined(newParentPath)) {
                         this.setState({
                             parentPath: dotPathAsUndefined(newParentPath),
                             resolveTo: [newParentPath],
@@ -268,15 +266,9 @@ export class Tree extends React.PureComponent<Props, State> {
                         })
                     }
 
-                    // Strip the ?suggestion query param. Handle both when going from ancestor -> child and child -> ancestor.
-                    if (queryParams.has('suggestion')) {
-                        queryParams.delete('suggestion')
-                        this.props.history.replace({
-                            search: queryParams.toString(),
-                            hash: this.props.history.location.hash,
-                        })
-                    } else if (queryParams.has('action')) {
-                        queryParams.delete('action')
+                    // Strip the ?subtree query param. Handle both when going from ancestor -> child and child -> ancestor.
+                    if (queryParams.has('subtree')) {
+                        queryParams.delete('subtree')
                         this.props.history.replace({
                             search: queryParams.toString(),
                             hash: this.props.history.location.hash,

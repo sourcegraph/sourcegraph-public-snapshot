@@ -80,7 +80,9 @@ export function createPlatformContext(): PlatformContext {
 function toPrettyWebBlobURL(
     ctx: RepoFile & Partial<UIPositionSpec> & Partial<ViewStateSpec> & Partial<UIRangeSpec> & Partial<RenderModeSpec>
 ): string {
-    return toPrettyBlobURL(ctx, { isWebURL: true })
+    const urlSearchParams = new URLSearchParams(toPrettyBlobURL(ctx))
+    urlSearchParams.set('subtree', 'true')
+    return `${decodeURIComponent(urlSearchParams.toString())}`
 }
 
 const settingsCascadeFragment = gql`

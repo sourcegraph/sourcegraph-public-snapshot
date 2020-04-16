@@ -124,7 +124,7 @@ export const FileMatchChildren: React.FunctionComponent<FileMatchProps> = props 
                         className="file-match-children__item-code-wrapper e2e-file-match-children-item-wrapper"
                     >
                         <Link
-                            to={`${props.result.file.url}?action${toPositionOrRangeHash({ position })}`}
+                            to={`${props.result.file.url}?subtree${toPositionOrRangeHash({ position })}`}
                             className="file-match-children__item file-match-children__item-clickable e2e-file-match-children-item"
                             onClick={props.onSelect}
                         >
