@@ -1,5 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
+set -e
 echo "--- no localhost guard"
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
@@ -17,9 +18,10 @@ LOCALHOST_MATCHES=$(git grep -e localhost --and --not -e '^\s*//' --and --not -e
   ':(exclude)schema' \
   ':(exclude)vendor')
 
-if [ ! -z "$LOCALHOST_MATCHES" ]; then
+if [ -n "$LOCALHOST_MATCHES" ]; then
   echo
   echo "Error: Found instances of \"localhost\":"
+  # shellcheck disable=SC2001
   echo "$LOCALHOST_MATCHES" | sed 's/^/  /'
 
   cat <<EOF
