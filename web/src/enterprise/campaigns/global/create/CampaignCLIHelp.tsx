@@ -39,7 +39,9 @@ interface Props {
  */
 export const CampaignCLIHelp: React.FunctionComponent<Props> = ({ className }) => (
     <div className={className}>
-        <h1>Create a campaign</h1>
+        <h1>
+            Create a campaign <span className="badge badge-info">Beta</span>
+        </h1>
         <div className="card">
             <div className="card-body p-3">
                 <div className="alert alert-info mt-2">
@@ -105,7 +107,7 @@ export const CampaignCLIHelp: React.FunctionComponent<Props> = ({ className }) =
                     <pre className="alert alert-secondary ml-3">
                         <code
                             dangerouslySetInnerHTML={{
-                                __html: highlightCodeSafe('$  exec -f action.json -create-patchset', 'bash'),
+                                __html: highlightCodeSafe('$ src cli exec -f action.json -create-patchset', 'bash'),
                             }}
                         />
                     </pre>

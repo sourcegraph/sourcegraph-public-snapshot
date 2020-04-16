@@ -5,7 +5,12 @@ exports[`CampaignCLIHelp renders 1`] = `
   className="test"
 >
   <h1>
-    Create a campaign
+    Create a campaign 
+    <span
+      className="badge badge-info"
+    >
+      Beta
+    </span>
   </h1>
   <div
     className="card"
@@ -161,7 +166,7 @@ $ export SRC_ACCESS_TOKEN=&lt;YOUR TOKEN&gt;
           <code
             dangerouslySetInnerHTML={
               Object {
-                "__html": "$  exec -f action.json -create-patchset",
+                "__html": "$ src cli exec -f action.json -create-patchset",
               }
             }
           />

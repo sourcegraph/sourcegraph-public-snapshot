@@ -90,24 +90,28 @@ export const AddChangesetForm: React.FunctionComponent<{ campaignID: ID; onAdd: 
     )
     return (
         <>
-            <h3 className="mb-2 mt-4">Track changeset</h3>
+            <h3 className="mb-2 mt-4">Add changeset</h3>
             <Form onSubmit={submit}>
                 <div className="d-flex">
                     <div className="form-group mr-3 mb-0">
-                        <label htmlFor="changeset-repo">Repository name</label>
+                        <label htmlFor="changeset-repo">Repository path</label>
                         <input
                             required={true}
                             id="changeset-repo"
                             type="text"
                             size={35}
                             className="form-control mr-1 e2e-track-changeset-repo"
-                            placeholder="Repository name"
+                            placeholder="codehost.example.com/example-org/example-repository"
                             value={repoName}
                             onChange={event => setRepoName(event.target.value)}
                         />
                         <p className="form-text text-muted">
-                            Find the Sourcegraph repository name in the URL (e.g., {window.location.protocol}//
-                            {window.location.host}/<strong>&lt;REPOSITORY_NAME&gt;</strong>)
+                            The location of the repository in Sourcegraph. See the repository's directory URL:{' '}
+                            {window.location.protocol}//
+                            {window.location.host}/<strong>&lt;REPOSITORY_PATH&gt;</strong>
+                            <br />
+                            (Depending on your instance's configuration the path may or may not contain the code host
+                            name)
                         </p>
                     </div>
                     <div className="form-group mr-3 mb-0">
@@ -120,7 +124,7 @@ export const AddChangesetForm: React.FunctionComponent<{ campaignID: ID; onAdd: 
                             step={1}
                             size={16}
                             className="form-control mr-1 e2e-track-changeset-id"
-                            placeholder="Changeset number"
+                            placeholder="1234"
                             value={externalID}
                             onChange={event => setExternalID(event.target.value + '')}
                         />

@@ -10,7 +10,7 @@ export const CampaignsDotComPage: React.FunctionComponent<CampaignsDotComPagePro
                 <h2>Get started</h2>
                 <p>
                     Campaigns are not available on Sourcegraph.com. Instead, use a private Sourcegraph instance to try
-                    Campaigns.
+                    them on your code.
                 </p>
                 <ol>
                     <li>
@@ -27,7 +27,7 @@ export const CampaignsDotComPage: React.FunctionComponent<CampaignsDotComPagePro
                         <a href="https://docs.sourcegraph.com/user/campaigns" rel="noopener">
                             Update the site configuration settings
                         </a>{' '}
-                        to enable Campaigns.
+                        to enable campaigns.
                     </li>
                 </ol>
 
@@ -35,7 +35,7 @@ export const CampaignsDotComPage: React.FunctionComponent<CampaignsDotComPagePro
                     Get started now
                 </a>
                 <a href="https://docs.sourcegraph.com/user/campaigns" rel="noopener" className="btn btn-primary ml-2">
-                    Read more about Campaigns
+                    Read more about campaigns
                 </a>
             </section>
         }

@@ -69,6 +69,12 @@ Array [
         >
           Campaigns
         </a>
+         
+        <span
+          className="badge badge-info"
+        >
+          Beta
+        </span>
       </span>
       <span
         className="text-muted d-inline-block mx-2"
@@ -266,6 +272,12 @@ Array [
         >
           Campaigns
         </a>
+         
+        <span
+          className="badge badge-info"
+        >
+          Beta
+        </span>
       </span>
       <span
         className="text-muted d-inline-block mx-2"
@@ -567,6 +579,12 @@ Array [
         >
           Campaigns
         </a>
+         
+        <span
+          className="badge badge-info"
+        >
+          Beta
+        </span>
       </span>
       <span
         className="text-muted d-inline-block mx-2"
@@ -881,6 +899,12 @@ Array [
         >
           Campaigns
         </a>
+         
+        <span
+          className="badge badge-info"
+        >
+          Beta
+        </span>
       </span>
       <span
         className="text-muted d-inline-block mx-2"
