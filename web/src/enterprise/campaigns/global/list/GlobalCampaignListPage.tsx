@@ -1,11 +1,12 @@
-import React from 'react'
-import { queryCampaigns } from './backend'
+import React, { useMemo } from 'react'
+import { queryCampaigns, queryCampaignsCount } from './backend'
 import AddIcon from 'mdi-react/AddIcon'
 import { Link } from '../../../../../../shared/src/components/Link'
 import { RouteComponentProps } from 'react-router'
 import { FilteredConnection, FilteredConnectionFilter } from '../../../../components/FilteredConnection'
 import { IUser, CampaignState } from '../../../../../../shared/src/graphql/schema'
 import { CampaignNode, CampaignNodeCampaign } from '../../list/CampaignNode'
+import { useObservable } from '../../../../../../shared/src/util/useObservable'
 
 interface Props extends Pick<RouteComponentProps, 'history' | 'location'> {
     authenticatedUser: IUser
@@ -32,58 +33,58 @@ const FILTERS: FilteredConnectionFilter[] = [
     },
 ]
 
-// HELP! Need to get the total number of campaigns to use below. This was just my workaround.
-const totalCount = 1
-
 /**
  * A list of all campaigns on the Sourcegraph instance.
  */
-export const GlobalCampaignListPage: React.FunctionComponent<Props> = props => (
-    <>
-        <div className="d-flex justify-content-between align-items-end mb-3">
-            <div>
-                <h1 className="mb-2">
-                    Campaigns <span className="badge badge-info badge-outline">Beta</span>
-                </h1>
-                <p className="mb-0">
-                    Perform and track large-scale code changes.{' '}
-                    <a href="https://docs.sourcegraph.com/user/campaigns">Learn how.</a>
-                </p>
+export const GlobalCampaignListPage: React.FunctionComponent<Props> = props => {
+    const totalCount = useObservable(useMemo(() => queryCampaignsCount(), []))
+    return (
+        <>
+            <div className="d-flex justify-content-between align-items-end mb-3">
+                <div>
+                    <h1 className="mb-2">
+                        Campaigns <span className="badge badge-info">Beta</span>
+                    </h1>
+                    <p className="mb-0">
+                        Perform and track large-scale code changes.{' '}
+                        <a href="https://docs.sourcegraph.com/user/campaigns">Learn how.</a>
+                    </p>
+                </div>
+                {props.authenticatedUser.siteAdmin && (
+                    <Link to="/campaigns/create" className="btn btn-primary ml-3">
+                        <AddIcon className="icon-inline" /> New campaign
+                    </Link>
+                )}
             </div>
-            {props.authenticatedUser.siteAdmin && (
-                <Link to="/campaigns/create" className="btn btn-primary ml-3">
-                    <AddIcon className="icon-inline" /> New campaign
-                </Link>
+
+            <div className="card mt-4 mb-4">
+                <div className="card-body p-3">
+                    <h3>
+                        Welcome to campaigns <span className="badge badge-info">Beta</span>!
+                    </h3>
+                    <p className="mb-1">
+                        We're excited for you to use campaigns to remove legacy code, fix critical security issues, pay
+                        down tech debt, and more. We look forward to hearing about campaigns you run inside your
+                        organization. Take a look at some{' '}
+                        <a href="https://docs.sourcegraph.com/user/campaigns/examples">examples in our documentation</a>
+                        , and <a href="mailto:feedback@sourcegraph.com?subject=Campaigns feedback">get in touch</a> with
+                        any questions or feedback!
+                    </p>
+                </div>
+            </div>
+
+            {typeof totalCount === 'number' && totalCount > 0 && (
+                <FilteredConnection<CampaignNodeCampaign>
+                    {...props}
+                    nodeComponent={CampaignNode}
+                    queryConnection={queryCampaigns}
+                    hideSearch={true}
+                    filters={FILTERS}
+                    noun="campaign"
+                    pluralNoun="campaigns"
+                    className="mb-3"
+                />
             )}
-        </div>
-
-        <div className="card mt-4 mb-4">
-            <div className="card-body p-3">
-                <h3>
-                    Welcome to campaigns <span className="badge badge-info badge-outline">Beta</span>!
-                </h3>
-                <p className="mb-1">
-                    We're excited for you to use campaigns to remove legacy code, fix critical security issues, pay down
-                    tech debt, and more. We look forward to hearing about campaigns you run inside your organization.
-                    Take a look at some{' '}
-                    <a href="https://docs.sourcegraph.com/user/campaigns/examples">examples in our documentation</a>,
-                    and <a href="mailto:feedback@sourcegraph.com?subject=Campaigns feedback">get in touch</a> with any
-                    questions or feedback!
-                </p>
-            </div>
-        </div>
-
-        {totalCount > 0 && (
-            <FilteredConnection<CampaignNodeCampaign>
-                {...props}
-                nodeComponent={CampaignNode}
-                queryConnection={queryCampaigns}
-                hideSearch={true}
-                filters={FILTERS}
-                noun="campaign"
-                pluralNoun="campaigns"
-                className="mb-3"
-            />
-        )}
-    </>
-)
+        </>
+    )
+}

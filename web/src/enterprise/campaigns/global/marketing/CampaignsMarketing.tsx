@@ -8,7 +8,7 @@ export const CampaignsMarketing: React.FunctionComponent<CampaignsMarketingProps
     <>
         <section className="mt-3 mb-5">
             <h1 className="font-weight-bold display-4">
-                Campaigns <span className="badge badge-info badge-outline">Beta</span>
+                Campaigns <span className="badge badge-info">Beta</span>
             </h1>
             <p className="lead">
                 <em>

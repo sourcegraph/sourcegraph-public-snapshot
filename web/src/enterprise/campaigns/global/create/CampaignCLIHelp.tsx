@@ -40,7 +40,7 @@ interface Props {
 export const CampaignCLIHelp: React.FunctionComponent<Props> = ({ className }) => (
     <div className={className}>
         <h1>
-            Create a campaign <span className="badge badge-info badge-outline">Beta</span>
+            Create a campaign <span className="badge badge-info">Beta</span>
         </h1>
         <div className="card">
             <div className="card-body p-3">

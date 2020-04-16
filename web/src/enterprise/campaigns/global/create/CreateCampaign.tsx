@@ -12,7 +12,7 @@ interface Props {
 export const CreateCampaign: React.FunctionComponent<Props> = ({ className }) => (
     <div className={className}>
         <h1>
-            Create a new campaign <span className="badge badge-info badge-outline">Beta</span>
+            Create a new campaign <span className="badge badge-info">Beta</span>
         </h1>
         <ul className="list-group">
             <li className="list-group-item p-3">
@@ -41,9 +41,9 @@ export const CreateCampaign: React.FunctionComponent<Props> = ({ className }) =>
                         <div>
                             <h3>Track existing changesets</h3>
                             <p className="mb-0">
-                                Track the status of a collection of already created changesets by adding them to a
-                                campaign. The burndown chart provides an overview of progress, and filters help surface
-                                which changesets need action.
+                                Track a collection of already created changesets by adding them to a campaign. The
+                                burndown chart provides an overview of progress, and filters help surface which
+                                changesets need action.
                             </p>
                         </div>
                     </div>
