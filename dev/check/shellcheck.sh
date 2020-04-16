@@ -10,4 +10,4 @@ SHELL_SCRIPTS=()
 
 while IFS='' read -r line; do SHELL_SCRIPTS+=("$line"); done < <(shfmt -f .)
 
-shellcheck --color=always "${SHELL_SCRIPTS[@]}"
+shellcheck --external-sources --source-path="SCRIPTDIR" --color=always "${SHELL_SCRIPTS[@]}"
