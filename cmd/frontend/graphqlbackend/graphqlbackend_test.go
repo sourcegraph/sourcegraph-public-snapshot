@@ -17,16 +17,20 @@ import (
 )
 
 func BenchmarkPrometheusFieldName(b *testing.B) {
-	tests := [][2]string{
-		{"Query", "settingsSubject"},
-		{"SearchResultMatch", "highlights"},
-		{"TreeEntry", "isSingleChild"},
+	tests := [][3]string{
+		{"Query", "settingsSubject", "settingsSubject"},
+		{"SearchResultMatch", "highlights", "highlights"},
+		{"TreeEntry", "isSingleChild", "isSingleChild"},
+		{"NoMatch", "NotMatch", "other"},
 	}
 	for i, t := range tests {
-		typeName, fieldName := t[0], t[1]
+		typeName, fieldName, want := t[0], t[1], t[2]
 		b.Run(fmt.Sprintf("test-%v", i), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				prometheusFieldName(typeName, fieldName)
+				got := prometheusFieldName(typeName, fieldName)
+				if got != want {
+					b.Fatalf("got %q want %q", got, want)
+				}
 			}
 		})
 	}
