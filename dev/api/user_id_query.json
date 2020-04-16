@@ -1,0 +1,3 @@
+{
+  "query": "query($username: String!) { user(username: $username) { id } }"
+}
