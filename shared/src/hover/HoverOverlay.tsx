@@ -1,15 +1,14 @@
 import { HoverOverlayProps as GenericHoverOverlayProps } from '@sourcegraph/codeintellify'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import classNames from 'classnames'
-import { castArray, isEqual, upperFirst } from 'lodash'
+import { isEqual, upperFirst } from 'lodash'
 import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
-import { Badged, MarkupContent } from 'sourcegraph'
 import { ActionItem, ActionItemAction, ActionItemComponentProps } from '../actions/ActionItem'
 import { HoverMerged } from '../api/client/types/hover'
 import { TelemetryProps } from '../telemetry/telemetryService'
 import { isErrorLike, asError } from '../util/errors'
-import { highlightCodeSafe, renderMarkdown } from '../util/markdown'
+import { renderMarkdown } from '../util/markdown'
 import { sanitizeClass } from '../util/strings'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../util/url'
 import { toNativeEvent } from './helpers'
@@ -197,72 +196,53 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                             {upperFirst(hoverOrError.message)}
                         </div>
                     ) : (
-                        hoverOrError &&
-                        castArray<string | Badged<MarkupContent> | { language: string; value: string }>(
-                            hoverOrError.contents
-                        )
-                            .map(value => (typeof value === 'string' ? { kind: 'markdown', value } : value))
-                            .map((content, i) => {
-                                if ('kind' in content || !('language' in content)) {
-                                    if (content.kind === 'markdown') {
-                                        try {
-                                            // Offset first badge when the close button is shown to avoid conflict.
-                                            const offsetBadge = showCloseButton && i === 0
-                                            return (
-                                                <div className="hover-overlay__row e2e-tooltip-badged-content" key={i}>
-                                                    {'badge' in content && content.badge && this.state.showBadges && (
-                                                        <div
-                                                            className={classNames(
-                                                                'hover-overlay__badge',
-                                                                'e2e-hover-badge',
-                                                                offsetBadge && 'hover-overlay__badge--offset'
-                                                            )}
-                                                        >
-                                                            <BadgeAttachment
-                                                                attachment={content.badge}
-                                                                isLightTheme={this.props.isLightTheme}
-                                                            />
-                                                        </div>
-                                                    )}
-
-                                                    <div
-                                                        className="hover-overlay__content e2e-tooltip-content"
-                                                        dangerouslySetInnerHTML={{
-                                                            __html: renderMarkdown(content.value),
-                                                        }}
-                                                    />
-                                                </div>
-                                            )
-                                        } catch (err) {
-                                            return (
+                        hoverOrError?.contents.map((content, i) => {
+                            if (content.kind === 'markdown') {
+                                try {
+                                    // Offset first badge when the close button is shown to avoid conflict.
+                                    const offsetBadge = showCloseButton && i === 0
+                                    return (
+                                        <div className="hover-overlay__row e2e-tooltip-badged-content" key={i}>
+                                            {'badge' in content && content.badge && this.state.showBadges && (
                                                 <div
                                                     className={classNames(
-                                                        'hover-overlay__row',
-                                                        this.props.errorAlertClassName
+                                                        'hover-overlay__badge',
+                                                        'e2e-hover-badge',
+                                                        offsetBadge && 'hover-overlay__badge--offset'
                                                     )}
-                                                    key={i}
                                                 >
-                                                    {upperFirst(asError(err).message)}
+                                                    <BadgeAttachment
+                                                        attachment={content.badge}
+                                                        isLightTheme={this.props.isLightTheme}
+                                                    />
                                                 </div>
-                                            )
-                                        }
-                                    }
+                                            )}
+
+                                            <div
+                                                className="hover-overlay__content e2e-tooltip-content"
+                                                dangerouslySetInnerHTML={{
+                                                    __html: renderMarkdown(content.value),
+                                                }}
+                                            />
+                                        </div>
+                                    )
+                                } catch (err) {
                                     return (
-                                        <div className="hover-overlay__content hover-overlay__row" key={i}>
-                                            {String(content.value)}
+                                        <div
+                                            className={classNames('hover-overlay__row', this.props.errorAlertClassName)}
+                                            key={i}
+                                        >
+                                            {upperFirst(asError(err).message)}
                                         </div>
                                     )
                                 }
-                                return (
-                                    <code
-                                        className="hover-overlay__content hover-overlay__row e2e-tooltip-content"
-                                        key={i}
-                                        dangerouslySetInnerHTML={{
-                                            __html: highlightCodeSafe(content.value, content.language),
-                                        }}
-                                    />
-                                )
-                            })
+                            }
+                            return (
+                                <div className="hover-overlay__content hover-overlay__row" key={i}>
+                                    {content.value}
+                                </div>
+                            )
+                        })
                     )}
                 </div>
                 {hoverOrError && hoverOrError !== LOADING && !isErrorLike(hoverOrError) && hoverOrError.alerts && (
