@@ -11,7 +11,7 @@ import { Observable } from 'rxjs'
 
 interface Props extends Pick<RouteComponentProps, 'history' | 'location'> {
     authenticatedUser: IUser
-    queryCampaignsCount: () => Observable<number>
+    queryCampaignsCount?: () => Observable<number>
 }
 
 const FILTERS: FilteredConnectionFilter[] = [
