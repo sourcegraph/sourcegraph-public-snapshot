@@ -9,9 +9,11 @@ Sourcegraph can also search across every branch, every commit diff, and even com
 Code host integration may also include:
 
 - **User authentication**<br/>
-Log-in via your code host (requires oAuth application or similar)<br/><br/>
+Log-in via your code host (requires oAuth application or similar)<br/>
+
 - **Repository permission syncing**<br/>
-Only display search results for repositories you have access to (requires code host authentication).<br/><br/>
+Only display search results for repositories you have access to (requires code host authentication).<br/>
+
 - **Code intelligence**<br/>
 Decorate code views with IDE quality code intelligence, either through a native application/integration (BitBucket Server, GitLab, Phabricator) or browser extension (GitHub)
 
