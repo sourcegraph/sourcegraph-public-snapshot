@@ -8,19 +8,20 @@ export const CampaignsMarketing: React.FunctionComponent<CampaignsMarketingProps
     <>
         <section className="mt-3 mb-5">
             <h1 className="font-weight-bold display-4">
-                Campaigns <span className="badge badge-info badge-outline">Beta</span>
+                Campaigns <span className="badge badge-info">Beta</span>
             </h1>
             <p className="lead">
                 <em>
-                    Campaigns are currently in beta. During the beta period, Campaigns are free to use. After the beta
-                    period, Campaigns will be available as a paid add-on. Please{' '}
-                    <a href="mailto:sales@sourcegraph.com">contact us</a> for more information.
+                    Campaigns are currently in beta. During the beta period, campaigns are free to use. After the beta
+                    period, campaigns will be available as a paid add-on. Please{' '}
+                    <a href="mailto:sales@sourcegraph.com?subject=I'm interested in Campaigns!">contact us</a> for more
+                    information.
                 </em>
             </p>
             <h2 className="mb-6">Make and track large-scale changes across all code</h2>
             <p className="mt-3">
                 <a href="https://about.sourcegraph.com/product/code-change-management" rel="noopener">
-                    Learn how to run Campaigns
+                    Learn how to run campaigns
                 </a>{' '}
                 to remove legacy code, fix critical security issues, and pay down tech debt. See it in action below
                 performing <code>gofmt</code> over all Go repositories:

@@ -507,11 +507,20 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                     />
                                 </div>
                             </div>
-                            <h3 className="mt-4 mb-2">Progress</h3>
-                            <CampaignBurndownChart
-                                changesetCountsOverTime={campaign.changesetCountsOverTime}
-                                history={history}
-                            />
+                            {totalChangesetCount > 0 ? (
+                                <>
+                                    <h3 className="mt-4 mb-2">Progress</h3>
+                                    <CampaignBurndownChart
+                                        changesetCountsOverTime={campaign.changesetCountsOverTime}
+                                        history={history}
+                                    />
+                                </>
+                            ) : (
+                                <div className="mt-4 mb-2 alert alert-info e2e-campaign-get-started">
+                                    Add a changeset to get started.
+                                </div>
+                            )}
+
                             {/* only campaigns that have no patch set can add changesets manually */}
                             {!campaign.patchSet && campaign.viewerCanAdminister && !campaign.closedAt && (
                                 <AddChangesetForm campaignID={campaign.id} onAdd={onAddChangeset} />
@@ -519,26 +528,26 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                         </>
                     )}
 
-                    <h3 className="mt-4 d-flex align-items-end mb-0">
-                        {totalPatchCount > 0 && (
-                            <>
-                                {totalPatchCount} {pluralize('Patch', totalPatchCount, 'Patches')}
-                            </>
-                        )}
-                        {(totalChangesetCount > 0 || !!campaign) && totalPatchCount > 0 && (
-                            <span className="mx-1">/</span>
-                        )}
-                        {(totalChangesetCount > 0 || !!campaign) && (
-                            <>
-                                {totalChangesetCount} {pluralize('Changeset', totalChangesetCount)}
-                            </>
-                        )}{' '}
-                        {(patchSet || campaign) && (
-                            <CampaignDiffStat campaign={campaign} patchSet={patchSet} className="ml-2 mb-0" />
-                        )}
-                    </h3>
-                    {totalChangesetCount + totalPatchCount > 0 ? (
+                    {totalChangesetCount + totalPatchCount > 0 && (
                         <>
+                            <h3 className="mt-4 d-flex align-items-end mb-0">
+                                {totalPatchCount > 0 && (
+                                    <>
+                                        {totalPatchCount} {pluralize('Patch', totalPatchCount, 'Patches')}
+                                    </>
+                                )}
+                                {(totalChangesetCount > 0 || !!campaign) && totalPatchCount > 0 && (
+                                    <span className="mx-1">/</span>
+                                )}
+                                {(totalChangesetCount > 0 || !!campaign) && (
+                                    <>
+                                        {totalChangesetCount} {pluralize('Changeset', totalChangesetCount)}
+                                    </>
+                                )}{' '}
+                                {(patchSet || campaign) && (
+                                    <CampaignDiffStat campaign={campaign} patchSet={patchSet} className="ml-2 mb-0" />
+                                )}
+                            </h3>
                             {totalPatchCount > 0 &&
                                 (campaign ? (
                                     <CampaignPatches
@@ -575,16 +584,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                 />
                             )}
                         </>
-                    ) : (
-                        campaign?.status.state !== GQL.BackgroundProcessState.PROCESSING &&
-                        // Show hint for empty manual campaigns
-                        (campaign && !campaign.patchSet ? (
-                            <div className="mt-2 alert alert-info e2e-campaign-get-started">
-                                Add a changeset to get started.
-                            </div>
-                        ) : (
-                            <p className="mt-2 text-muted">No changesets</p>
-                        ))
                     )}
                 </>
             )}

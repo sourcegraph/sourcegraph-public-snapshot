@@ -73,6 +73,17 @@ export const GlobalCampaignsArea = withAuthenticatedUser<Props>(({ match, ...out
                         />
                     </Switch>
                     {/* eslint-enable react/jsx-no-bind */}
+                    <p className="mt-4 font-italic">
+                        Campaigns are currently in <span className="badge badge-info">Beta</span>. During the beta
+                        period, campaigns are free to use. After the beta period, campaigns will be available as a paid
+                        add-on. Get in touch on Twitter <a href="https://twitter.com/srcgraph">@srcgraph</a>, file an
+                        issue in our{' '}
+                        <a href="https://github.com/sourcegraph/sourcegraph/issues">public issue tracker</a>, or email{' '}
+                        <a href="mailto:feedback@sourcegraph.com?subject=Feedback on Campaigns">
+                            feedback@sourcegraph.com
+                        </a>
+                        . We're looking forward to your feedback!
+                    </p>
                 </>
             )
         }
