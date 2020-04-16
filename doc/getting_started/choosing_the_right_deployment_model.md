@@ -1,8 +1,8 @@
-# Choosing the right deployment model for Sourcegraph (WIP)
+# Choosing the right deployment model for Sourcegraph
 
-You don't have to be a Sys Admin or DevOps Engineer to run Sourcegraph. You just need access to a machine that has Docker installed in order to get started.
+You don't have to be a Systems Administrator or DevOps Engineer to run Sourcegraph. You just need access to a machine that has Docker installed in order to get started.
 
-It's free to deploy for up to 10 monthly users (great for trialing with your team) and you unlock access to all enterprise features by [getting a trial enterprise license key](https://about.sourcegraph.com/contact/request-demo/?form_submission_source=guides).
+It's free to deploy for up to 10 monthly users (great for trialing with your team) and you can unlock access to all enterprise features by [getting a trial enterprise license key](https://about.sourcegraph.com/contact/request-demo/?form_submission_source=guides).
 
 There are three ways of deploying Sourcegraph:
 
@@ -17,9 +17,11 @@ Handles the most demanding of deployments from thousands to tens of thousands of
 
 > NOTE: If you're still unsure how to best deploy Sourcegraph, [request a demo](https://about.sourcegraph.com/contact/request-demo/?form_submission_source=guides&utm_source=guides) to discuss your requirements with our deployment engineering team.
 
+See the [installing Sourcegraph page](../admin/index.md) for more information.
+
 ## Using the Sourcegraph resource estimator
 
-The [Sourcegraph resource estimator](..//admin/install/resource_estimator.md) is a configurable form that enables you to dial-in the specifics of your environment in order get prcise deployment recommendations.
+The [Sourcegraph resource estimator](../admin/install/resource_estimator.md) enables you to dial-in the specifics of your environment in order get precise deployment recommendations.
 
 ---
 
