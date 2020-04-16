@@ -12,8 +12,8 @@ export const CampaignsMarketing: React.FunctionComponent<CampaignsMarketingProps
             </h1>
             <p className="lead">
                 <em>
-                    Campaigns are currently in beta. During the beta period, Campaigns are free to use. After the beta
-                    period, Campaigns will be available as a paid add-on. Please{' '}
+                    Campaigns are currently in beta. During the beta period, campaigns are free to use. After the beta
+                    period, campaigns will be available as a paid add-on. Please{' '}
                     <a href="mailto:sales@sourcegraph.com?subject=I'm interested in Campaigns!">contact us</a> for more
                     information.
                 </em>
@@ -21,7 +21,7 @@ export const CampaignsMarketing: React.FunctionComponent<CampaignsMarketingProps
             <h2 className="mb-6">Make and track large-scale changes across all code</h2>
             <p className="mt-3">
                 <a href="https://about.sourcegraph.com/product/code-change-management" rel="noopener">
-                    Learn how to run Campaigns
+                    Learn how to run campaigns
                 </a>{' '}
                 to remove legacy code, fix critical security issues, and pay down tech debt. See it in action below
                 performing <code>gofmt</code> over all Go repositories:

@@ -33,7 +33,7 @@ const FILTERS: FilteredConnectionFilter[] = [
 ]
 
 // HELP! Need to get the total number of campaigns to use below. This was just my workaround.
-const totalCount = 0
+const totalCount = 1
 
 /**
  * A list of all campaigns on the Sourcegraph instance.
@@ -57,7 +57,22 @@ export const GlobalCampaignListPage: React.FunctionComponent<Props> = props => (
             )}
         </div>
 
-        {totalCount > 0 ? (
+        <div className="card mt-4 mb-4">
+            <div className="card-body p-3">
+                <h3>
+                    Welcome to campaigns <span className="badge badge-info badge-outline">Beta</span>!
+                </h3>
+                <p className="mb-1">
+                    We're excited for you to get started using campaigns to remove legacy code, fix critical security
+                    issues, pay down tech debt, and more! Take a look at some{' '}
+                    <a href="https://docs.sourcegraph.com/user/campaigns/examples">examples in our documentation</a>,
+                    and don't hesitate to reach out with any questions. We look forward to hearing about campaigns you
+                    run inside your organization!
+                </p>
+            </div>
+        </div>
+
+        {totalCount > 0 && (
             <FilteredConnection<CampaignNodeCampaign>
                 {...props}
                 nodeComponent={CampaignNode}
@@ -68,21 +83,6 @@ export const GlobalCampaignListPage: React.FunctionComponent<Props> = props => (
                 pluralNoun="campaigns"
                 className="mb-3"
             />
-        ) : (
-            <div className="card mt-4 mb-4">
-                <div className="card-body p-3">
-                    <h3>
-                        Welcome to Campaigns <span className="badge badge-info badge-outline">Beta</span>!
-                    </h3>
-                    <p className="mb-1">
-                        We're excited for you to get started using campaigns to remove legacy code, fix critical
-                        security issues, pay down tech debt, and more. See{' '}
-                        <a href="https://docs.sourcegraph.com/user/campaigns/examples">examples in our documentation</a>
-                        , and don't hesitate to reach out with any questions. We look forward to hearing about campaigns
-                        you run inside your organization!
-                    </p>
-                </div>
-            </div>
         )}
     </>
 )
