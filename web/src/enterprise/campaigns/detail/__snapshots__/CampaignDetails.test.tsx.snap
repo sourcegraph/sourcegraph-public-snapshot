@@ -69,6 +69,12 @@ Array [
         >
           Campaigns
         </a>
+         
+        <span
+          className="badge badge-info"
+        >
+          Beta
+        </span>
       </span>
       <span
         className="text-muted d-inline-block mx-2"
@@ -158,14 +164,6 @@ Array [
       </button>
     </div>
   </form>,
-  <h3
-    className="mt-4 d-flex align-items-end mb-0"
-  >
-    2
-     
-    Patches
-     
-  </h3>,
   <PatchSetPatches
     campaignUpdates={
       Subject {
@@ -266,6 +264,12 @@ Array [
         >
           Campaigns
         </a>
+         
+        <span
+          className="badge badge-info"
+        >
+          Beta
+        </span>
       </span>
       <span
         className="text-muted d-inline-block mx-2"
@@ -567,6 +571,12 @@ Array [
         >
           Campaigns
         </a>
+         
+        <span
+          className="badge badge-info"
+        >
+          Beta
+        </span>
       </span>
       <span
         className="text-muted d-inline-block mx-2"
@@ -881,6 +891,12 @@ Array [
         >
           Campaigns
         </a>
+         
+        <span
+          className="badge badge-info"
+        >
+          Beta
+        </span>
       </span>
       <span
         className="text-muted d-inline-block mx-2"

@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react'
-import { queryCampaigns, queryCampaignsCount } from './backend'
+import { queryCampaigns, queryCampaignsCount as _queryCampaignsCount } from './backend'
 import AddIcon from 'mdi-react/AddIcon'
 import { Link } from '../../../../../../shared/src/components/Link'
 import { RouteComponentProps } from 'react-router'
@@ -7,9 +7,11 @@ import { FilteredConnection, FilteredConnectionFilter } from '../../../../compon
 import { IUser, CampaignState } from '../../../../../../shared/src/graphql/schema'
 import { CampaignNode, CampaignNodeCampaign } from '../../list/CampaignNode'
 import { useObservable } from '../../../../../../shared/src/util/useObservable'
+import { Observable } from 'rxjs'
 
 interface Props extends Pick<RouteComponentProps, 'history' | 'location'> {
     authenticatedUser: IUser
+    queryCampaignsCount: () => Observable<number>
 }
 
 const FILTERS: FilteredConnectionFilter[] = [
@@ -36,8 +38,11 @@ const FILTERS: FilteredConnectionFilter[] = [
 /**
  * A list of all campaigns on the Sourcegraph instance.
  */
-export const GlobalCampaignListPage: React.FunctionComponent<Props> = props => {
-    const totalCount = useObservable(useMemo(() => queryCampaignsCount(), []))
+export const GlobalCampaignListPage: React.FunctionComponent<Props> = ({
+    queryCampaignsCount = _queryCampaignsCount,
+    ...props
+}) => {
+    const totalCount = useObservable(useMemo(() => queryCampaignsCount(), [queryCampaignsCount]))
     return (
         <>
             <div className="d-flex justify-content-between align-items-end mb-3">
