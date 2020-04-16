@@ -12,6 +12,14 @@ export const subTypeOf = <U>() => <T extends U>(value: T): T => value
 export const isDefined = <T>(val: T): val is NonNullable<T> => val !== undefined && val !== null
 
 /**
+ * Returns a type guard that checks whether the given value is strictly equal to a specific value.
+ * This can for example be used with `isNot()` to exclude string literals like `"loading"`.
+ *
+ * @param constant The value to compare to.
+ */
+export const isExactly = <T, C extends T>(constant: C) => (value: T): value is C => value === constant
+
+/**
  * Negates a type guard.
  * Returns a function that returns `true` when the input is **not** the type checked for by the given type guard.
  * It therefor excludes a type from a union type.

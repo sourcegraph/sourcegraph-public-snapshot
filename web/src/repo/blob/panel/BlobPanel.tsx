@@ -126,20 +126,11 @@ export class BlobPanel extends React.PureComponent<Props> {
                                 //
                                 // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
                                 locationProvider: registry.getLocations({ ...params, ...extraParams } as P).pipe(
-                                    map(locationsObservable =>
-                                        locationsObservable.pipe(
-                                            tap(locations => {
-                                                if (
-                                                    this.props.activation &&
-                                                    id === 'references' &&
-                                                    locations &&
-                                                    locations.length > 0
-                                                ) {
-                                                    this.props.activation.update({ FoundReferences: true })
-                                                }
-                                            })
-                                        )
-                                    )
+                                    tap(({ result: locations }) => {
+                                        if (this.props.activation && id === 'references' && locations.length > 0) {
+                                            this.props.activation.update({ FoundReferences: true })
+                                        }
+                                    })
                                 ),
                             }
                         })
