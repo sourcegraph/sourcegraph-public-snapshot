@@ -10,7 +10,7 @@ GRAFANA_DISK="${HOME}/.sourcegraph-dev/data/grafana"
 IMAGE=sourcegraph/grafana:10.0.12@sha256:2cde7e16fa56e81237fb05e228018015385f6498c4642d4ae073799a02b2b68c
 CONTAINER=grafana
 
-mkdir -p ${GRAFANA_DISK}/logs
+mkdir -p "${GRAFANA_DISK}"/logs
 
 CONFIG_SUB_DIR="all"
 
@@ -31,10 +31,10 @@ docker run --rm \
   --memory=1g \
   --user=$UID \
   -p 0.0.0.0:3370:3370 \
-  -v ${GRAFANA_DISK}:/var/lib/grafana \
-  -v $(pwd)/dev/grafana/${CONFIG_SUB_DIR}:/sg_config_grafana/provisioning/datasources \
-  -v $(pwd)/docker-images/grafana/jsonnet:/sg_grafana_additional_dashboards \
-  ${IMAGE} >>${GRAFANA_DISK}/logs/grafana.log 2>&1 &
+  -v "${GRAFANA_DISK}":/var/lib/grafana \
+  -v "$(pwd)"/dev/grafana/${CONFIG_SUB_DIR}:/sg_config_grafana/provisioning/datasources \
+  -v "$(pwd)"/docker-images/grafana/jsonnet:/sg_grafana_additional_dashboards \
+  ${IMAGE} >>"${GRAFANA_DISK}"/logs/grafana.log 2>&1 &
 wait $!
 
 # Add the following lines above if you wish to use an auth proxy with Grafana:
