@@ -1,4 +1,6 @@
 language: go
+services:
+- docker
 go:
 - 1.13.x
 go_import_path: github.com/sourcegraph/src-cli
@@ -11,9 +13,12 @@ script:
 env:
   global:
   - secure: eFuG5PSCXNz0i4Knic0wVmTko+O/epoLWpDtDs7jGHo3UD0JIukDTeIoHRPF56LEF3ZmfJWarc0XWZRSUmtn2EYydvCrTlroXLe6lfiFL/ctH0CWpArCp5xHQKVqKk+h6F53hAva3o181PfnFtk58H/xgj2jo8sANbqXricnL5aT34RVje85483poL2RLmd2WiYVqDqeGdkg7DaorpJra1mFvOCmInrbMpexpomJKmpCbxzrdvUmvRE9bDWLHctgvWL6bVTsQNzUN0zh6AIfT0FuFmiwjVlD5d4Bo10jUucg1qs4gglHneplPMoQb3dW7reeE1hIjuZSjXmDZKwYaonpuy8lsEJTEZpo18obYfRP9fjJZJb71rQ/sjbAd2EEV84r13k4JcprUp4uFd/LgUpHNwyRxnm2bKneHSpf9eb0D+A6Kzxkix/vSJeH8G/pHc07mYtf1rqMG57eVeeVinAFbGsvmggQfFGXupW3c48VYS6TTUmcUv0B7jiDHEdFG1zRXElX48S6HJnhI4531jxbEsvgBt63sR5wH5dZv++VodzznwjaJ4LJv+bxZEtswhNA/nzxGCk9vNDkhPxpS531mNAyfV2ewJ81QW94BuWh0dTfo6gVypCS/2xI8L2I2sqs5vk2iCr51WJDL79yLXRP6QhXLcr8jgDpBQMNbpE=
+  - secure: ciaGnJEnSVo1Nc0Kr+frO2o9p/2Zn5/VG2y0z4Jz3bWzO+Foq4ynqyHqLt4I2ySAJxH/V0pewQG7Qq5+LJTo/BONLE8gzpQzONQo5nJJXxwSUbZt49DwcebFtizOsIOxcZ44/3lPDakP3U9ZnmyaJ6qB+tMBhl9ban/XWZDAPqD/EEgxoPXQsU6ZnPWdzu8UYrmoMzlfJdsNPcnslspWHrwIX67O+474LU9DyfXy7XvFrMH2PtIXfviIaAAMi98nYsbFYh8M1KYqlHLU/ZWA50naRZ+hDgTbY9K22QIJCwSq5ZpWhYpYzGQKvxTaVhqQj7t/nRDvuv4dGHnnojsHysxyl8tzeojPVGfls7QCO7X6KWBb1UDHDWPiJm7KkKBoHAhAPt+YypE4XwybxjyzRLV6PicabH+5Zd7zFHd087ZIsyBnnUh/qIze6qnvEZwa6hg9EPpD6Yb8IAz48Sk10slVCNdiKrtLcap1dI1sQYRTFXRPDDLvOePjr9cX0TMaoba61s1HKNtAbTJslCxD5Zxyo5lNzK1wDnjde4gbDpA6fG9eM8DXUnjuPejvZbDeJnVvreWApdGHAdVGHFJA22vmC1PAGYfAQCb/Wcp8xam4KyWSGqriMt5ltiAWtFsLEsnWUV+eXWX957O0MzRABvyUZcgmrdfiqcj9ifBBUj8=
 deploy:
 - provider: script
-  script: curl -sL https://git.io/goreleaser | bash
+  script:
+  - echo "$DOCKER_PASSWORD" | docker login -u sourcegraphci --password-stdin
+  - curl -sL https://git.io/goreleaser | bash
   overwrite: true
   skip_cleanup: true
   on:
