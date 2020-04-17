@@ -1,5 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+set -e
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
-find . -path ./.git -prune -o -print | git -c core.excludesfile=$(cat .github/CODEOWNERS | awk -F " +@" '{ print $1 }' >/tmp/ignore && echo /tmp/ignore) check-ignore --verbose --no-index -n --stdin | grep '^::\s' | grep -v '^::\s\.$'
+awk -F " +@" '{ print $1 }' <.github/CODEOWNERS >/tmp/ignore
+
+find . -path ./.git -prune -o -print | git -c core.excludesfile=/tmp/ignore check-ignore --verbose --no-index -n --stdin | grep '^::\s' | grep -v '^::\s\.$'
