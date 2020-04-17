@@ -6,6 +6,8 @@ import * as sourcegraph from 'sourcegraph'
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
 import { ContributableViewContainer } from '../../protocol'
 import { Entry, FeatureProviderRegistry } from './registry'
+import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
+import { isDefined } from '../../../util/types'
 
 export interface ViewProviderRegistrationOptions {
     id: string
@@ -16,7 +18,7 @@ export interface PanelViewWithComponent extends Pick<sourcegraph.PanelView, 'tit
     /**
      * The location provider whose results to render in the panel view.
      */
-    locationProvider?: Observable<Observable<Location[] | null>>
+    locationProvider?: Observable<MaybeLoadingResult<Location[]>>
 
     /**
      * The React element to render in the panel view.
@@ -93,13 +95,7 @@ export function getViews(
                             })
                         )
                     )
-            ).pipe(
-                map(entries =>
-                    entries.filter(
-                        (result): result is PanelViewWithComponent & ViewProviderRegistrationOptions => result !== null
-                    )
-                )
-            )
+            ).pipe(map(entries => entries.filter(isDefined)))
         )
     )
 }

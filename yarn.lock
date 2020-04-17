@@ -1960,15 +1960,15 @@
     "@babel/helper-module-imports" "^7.0.0"
     "@babel/traverse" "^7.4.4"
 
-"@sourcegraph/codeintellify@^6.4.0":
-  version "6.4.0"
-  resolved "https://registry.npmjs.org/@sourcegraph/codeintellify/-/codeintellify-6.4.0.tgz#ef7e2e17e265731a9701b4a02f1ee131687194c7"
-  integrity sha512-Ke7zCPQDCbKLbDOzXFpORLNi7r1VP3NatwR1C9tx/1NQcQSODUaXwrKlc+X88/2SL/Xz8qY6jndOAvRNfUk/dw==
+"@sourcegraph/codeintellify@^7.0.0":
+  version "7.0.0"
+  resolved "https://registry.npmjs.org/@sourcegraph/codeintellify/-/codeintellify-7.0.0.tgz#8a89d19b254388f7d592846918aa28ccc0101c45"
+  integrity sha512-VrkkXHri2GMpq3SkffeO4lYUEi3BIzkadN6scO6zmRY8BE10mtB51B5/yi1GcXmcYvhXZqx5bRFwnCk6umwTtg==
   dependencies:
     "@sourcegraph/event-positions" "^1.0.4"
     "@sourcegraph/extension-api-types" "^2.0.0"
     lodash "^4.17.10"
-    rxjs "^6.3.3"
+    rxjs "^6.5.5"
     ts-key-enum "^2.0.0"
 
 "@sourcegraph/comlink@^3.1.1-fork.3":
@@ -17943,7 +17943,7 @@ rx-lite@^3.1.2:
   resolved "https://registry.npmjs.org/rx-lite/-/rx-lite-3.1.2.tgz#19ce502ca572665f3b647b10939f97fd1615f102"
   integrity sha1-Gc5QLKVyZl87ZHsQk5+X/RYV8QI=
 
-rxjs@^6.3.2, rxjs@^6.3.3, rxjs@^6.4.0, rxjs@^6.5.5:
+rxjs@^6.3.2, rxjs@^6.4.0, rxjs@^6.5.5:
   version "6.5.5"
   resolved "https://registry.npmjs.org/rxjs/-/rxjs-6.5.5.tgz#c5c884e3094c8cfee31bf27eb87e54ccfc87f9ec"
   integrity sha512-WfQI+1gohdf0Dai/Bbmk5L5ItH5tYqm3ki2c5GdWhKjalzjg93N3avFjVStyZZz+A2Em+ZxKH5bNghw9UeylGQ==

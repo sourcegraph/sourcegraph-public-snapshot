@@ -4,6 +4,7 @@ import {
     findPositionsFromEvents,
     Hoverifier,
     HoverState,
+    MaybeLoadingResult,
 } from '@sourcegraph/codeintellify'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import * as H from 'history'
@@ -81,7 +82,7 @@ import {
 import { observeStorageKey } from '../../browser/storage'
 import { isInPage } from '../../context'
 import { SourcegraphIntegrationURLs, BrowserPlatformContext } from '../../platform/context'
-import { createLSPFromExtensions, toTextDocumentIdentifier } from '../../shared/backend/lsp'
+import { toTextDocumentIdentifier, toTextDocumentPositionParams } from '../../shared/backend/ext-api-conversion'
 import { CodeViewToolbar, CodeViewToolbarClassProps } from '../../shared/components/CodeViewToolbar'
 import { resolveRev, retryWhenCloneInProgressError } from '../../shared/repo/backend'
 import { EventLogger } from '../../shared/tracking/eventLogger'
@@ -356,8 +357,6 @@ function initCodeIntelligence({
 } {
     const subscription = new Subscription()
 
-    const { getHover } = createLSPFromExtensions(extensionsController)
-
     /** Emits when the close button was clicked */
     const closeButtonClicks = new Subject<MouseEvent>()
     const nextCloseButtonClick = closeButtonClicks.next.bind(closeButtonClicks)
@@ -389,11 +388,18 @@ function initCodeIntelligence({
         ),
         getHover: ({ line, character, part, ...rest }) =>
             combineLatest([
-                getHover({ ...rest, position: { line, character } }),
+                extensionsController.services.textDocumentHover.getHover(
+                    toTextDocumentPositionParams({ ...rest, position: { line, character } })
+                ),
                 getActiveHoverAlerts(hoverAlerts),
             ]).pipe(
-                map(([hoverMerged, alerts]): HoverData<ExtensionHoverAlertType> | null =>
-                    hoverMerged ? { ...hoverMerged, alerts } : null
+                map(
+                    ([{ isLoading, result: hoverMerged }, alerts]): MaybeLoadingResult<HoverData<
+                        ExtensionHoverAlertType
+                    > | null> => ({
+                        isLoading,
+                        result: hoverMerged ? { ...hoverMerged, alerts } : null,
+                    })
                 )
             ),
         getActions: context => getHoverActions({ extensionsController, platformContext }, context),
