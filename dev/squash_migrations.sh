@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -eo pipefail
 
@@ -27,7 +27,7 @@ fi
 # Find the last migration defined in the given tag
 VERSION=$(git ls-tree -r --name-only "$1" ./ |
   cut -d'_' -f1 |
-  grep -v [^0-9] |
+  grep -v "[^0-9]" |
   sort |
   tail -n1)
 
@@ -52,10 +52,10 @@ if [ "${SERVER_VERSION}" != 9.6 ]; then
 
   sleep 5
   docker exec -u postgres "${DBNAME}" createdb "${DBNAME}"
-  PGHOST=127.0.0.1
-  PGPORT=5433
-  PGDATABASE="${DBNAME}"
-  PGUSER=postgres
+  export PGHOST=127.0.0.1
+  export PGPORT=5433
+  export PGDATABASE="${DBNAME}"
+  export PGUSER=postgres
 fi
 
 # First, apply migrations up to the version we want to squash
@@ -85,8 +85,8 @@ sed -i '' -e '/^$/N;/^\n$/D' tmp_squashed.sql
 # alphabetical order, so we can delete all files from the migration directory
 # until we hit our squashed migration.
 
-for file in $(ls *.sql); do
-  rm $file
+for file in *.sql; do
+  rm "$file"
   echo "squashed migration $file"
 
   # There should be two files prefixed with this schema version. The down
