@@ -107,7 +107,7 @@ export const CampaignCLIHelp: React.FunctionComponent<Props> = ({ className }) =
                     <pre className="alert alert-secondary ml-3">
                         <code
                             dangerouslySetInnerHTML={{
-                                __html: highlightCodeSafe('$ src cli exec -f action.json -create-patchset', 'bash'),
+                                __html: highlightCodeSafe('$ src action exec -f action.json -create-patchset', 'bash'),
                             }}
                         />
                     </pre>
