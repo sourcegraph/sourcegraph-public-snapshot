@@ -12,20 +12,16 @@ export const useLocalStorage = <T>(
     initialValue: T
 ): [T, (value: T | ((previousValue: T) => T)) => void] => {
     const [storedValue, setStoredValue] = useState<T>(() => {
-        try {
-            const item = localStorage.getItem(key)
-            return item ? (JSON.parse(item) as T) : initialValue
-        } catch (error) {
-            return initialValue
-        }
+        const item = localStorage.getItem(key)
+        return item ? (JSON.parse(item) as T) : initialValue
     })
 
     const setValue = (value: T | ((previousValue: T) => T)): void => {
         // We need to cast here because T could be a function type itself,
         // but we cannot tell TypeScript that functions are not allowed as T.
         const valueToStore = typeof value === 'function' ? (value as (previousValue: T) => T)(storedValue) : value
-        setStoredValue(valueToStore)
         window.localStorage.setItem(key, JSON.stringify(valueToStore))
+        setStoredValue(valueToStore)
     }
 
     return [storedValue, setValue]
