@@ -741,9 +741,9 @@ describe('Search regression test suite', () => {
 
                     return (
                         textContents.length === 3 &&
-                        textContents.includes('repo:auth0/go-jwt-middleware$') &&
-                        textContents.includes('file:README') &&
-                        textContents.includes('lang:markdown')
+                        textContents.includes('repo:"auth0/go-jwt-middleware$"') &&
+                        textContents.includes('file:"README"') &&
+                        textContents.includes('lang:"markdown"')
                     )
                 })
             assert.strictEqual(await hasCorrectFilters(), true)
