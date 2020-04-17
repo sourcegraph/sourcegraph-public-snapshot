@@ -188,10 +188,10 @@ func (cs *clusterScanner) scanCluster() {
 
 // addrToHost converts a scanned k8s endpoint address structure into a string that is the host:port part of a URL.
 func addrToHost(addr *corev1.EndpointAddress, port int) string {
-	if addr.Ip != nil {
-		return fmt.Sprintf("%s:%d", *addr.Ip, port)
-	} else if addr.Hostname != nil && *addr.Hostname != "" {
+	if addr.Hostname != nil && *addr.Hostname != "" {
 		return fmt.Sprintf("%s:%d", *addr.Hostname, port)
+	} else if addr.Ip != nil {
+		return fmt.Sprintf("%s:%d", *addr.Ip, port)
 	}
 	return ""
 }

@@ -77,7 +77,15 @@ func TestClusterScan(t *testing.T) {
 	ktc.getResponses["gitserver"] = &corev1.Endpoints{
 		Subsets: []*corev1.EndpointSubset{{
 			Addresses: []*corev1.EndpointAddress{{
-				Ip: stringPtr("192.168.10.0"),
+				Hostname: stringPtr("gitserver-0"),
+				Ip:       stringPtr("192.168.10.0"),
+			}},
+		}},
+	}
+	ktc.getResponses["searcher"] = &corev1.Endpoints{
+		Subsets: []*corev1.EndpointSubset{{
+			Addresses: []*corev1.EndpointAddress{{
+				Ip: stringPtr("192.168.10.3"),
 			}},
 		}},
 	}
@@ -105,6 +113,16 @@ func TestClusterScan(t *testing.T) {
 				Metadata: &metav1.ObjectMeta{
 					Namespace: stringPtr("foospace"),
 					Name:      stringPtr("gitserver"),
+					Annotations: map[string]string{
+						"sourcegraph.prometheus/scrape": "true",
+						"prometheus.io/port":            "2323",
+					},
+				},
+			},
+			{
+				Metadata: &metav1.ObjectMeta{
+					Namespace: stringPtr("foospace"),
+					Name:      stringPtr("searcher"),
 					Annotations: map[string]string{
 						"sourcegraph.prometheus/scrape": "true",
 						"prometheus.io/port":            "2323",
@@ -145,7 +163,10 @@ func TestClusterScan(t *testing.T) {
 
 	want := []Endpoint{{
 		Service: "gitserver",
-		Host:    "192.168.10.0:2323",
+		Host:    "gitserver-0:2323",
+	}, {
+		Service: "searcher",
+		Host:    "192.168.10.3:2323",
 	}, {
 		Service: "no-prom-port",
 		Host:    "192.168.10.2:2324",
