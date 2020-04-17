@@ -9,7 +9,7 @@ describe('ChangesetLastSynced', () => {
             <ChangesetLastSynced
                 changeset={{
                     id: '123',
-                    nextSync: null,
+                    nextSyncAt: null,
                     updatedAt: subMinutes(new Date('2020-03-01'), 10).toISOString(),
                 }}
                 _now={new Date('2020-03-01')}
@@ -22,7 +22,7 @@ describe('ChangesetLastSynced', () => {
             <ChangesetLastSynced
                 changeset={{
                     id: '123',
-                    nextSync: new Date('2020-03-02').toISOString(),
+                    nextSyncAt: new Date('2020-03-02').toISOString(),
                     updatedAt: subMinutes(new Date('2020-03-01'), 10).toISOString(),
                 }}
                 _now={new Date('2020-03-01')}

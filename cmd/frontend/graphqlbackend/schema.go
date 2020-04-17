@@ -749,7 +749,7 @@ type ExternalChangeset implements Node {
     updatedAt: DateTime!
 
     # The date and time when the next changeset sync is scheduled. Can be null if not scheduled.
-    nextSync: DateTime
+    nextSyncAt: DateTime
 
     # The title of the changeset
     title: String!

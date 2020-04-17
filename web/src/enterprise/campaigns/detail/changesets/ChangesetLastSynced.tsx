@@ -10,7 +10,7 @@ import ErrorIcon from 'mdi-react/ErrorIcon'
 import { isErrorLike } from '../../../../../../shared/src/util/errors'
 
 interface Props {
-    changeset: Pick<IExternalChangeset, 'id' | 'nextSync' | 'updatedAt'>
+    changeset: Pick<IExternalChangeset, 'id' | 'nextSyncAt' | 'updatedAt'>
     campaignUpdates?: Pick<Observer<void>, 'next'>
 
     /** For testing purposes only */
@@ -47,15 +47,11 @@ export const ChangesetLastSynced: React.FunctionComponent<Props> = ({ changeset,
     if (changeset.updatedAt === lastUpdatedAt) {
         tooltipText = 'Currently refreshing'
     } else {
-        // false positive
-        // eslint-disable-next-line no-sync
-        if (!changeset.nextSync) {
+        if (!changeset.nextSyncAt) {
             tooltipText = 'Not scheduled for syncing.'
         } else {
             tooltipText = `Next refresh in ${formatDistance(
-                // false positive
-                // eslint-disable-next-line no-sync
-                parseISO(changeset.nextSync),
+                parseISO(changeset.nextSyncAt),
                 _now ?? new Date()
             )}.`
         }
