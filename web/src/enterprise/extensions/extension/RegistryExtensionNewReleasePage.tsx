@@ -1,14 +1,14 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import H from 'history'
 import ErrorIcon from 'mdi-react/ErrorIcon'
-import React, { useCallback, useEffect, useState } from 'react'
-import { map } from 'rxjs/operators'
+import React, { useCallback, useState } from 'react'
+import { map, catchError, tap, concatMap } from 'rxjs/operators'
 import { ConfiguredRegistryExtension } from '../../../../../shared/src/extensions/extension'
 import { ExtensionManifest } from '../../../../../shared/src/extensions/extensionManifest'
-import { gql } from '../../../../../shared/src/graphql/graphql'
+import { gql, dataOrThrowErrors } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import extensionSchemaJSON from '../../../../../shared/src/schema/extension.schema.json'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../../shared/src/util/errors'
+import { asError, isErrorLike } from '../../../../../shared/src/util/errors'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
 import { mutateGraphQL } from '../../../backend/graphql'
 import { Form } from '../../../components/Form'
@@ -16,6 +16,10 @@ import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../../settings/DynamicallyImportedMonacoSettingsEditor'
 import { useLocalStorage } from '../../../util/useLocalStorage'
+import { useEventObservable } from '../../../../../shared/src/util/useObservable'
+import { fromFetch } from '../../../../../shared/src/graphql/fromFetch'
+import { of, Observable, concat, from } from 'rxjs'
+import { ErrorAlert } from '../../../components/alerts'
 
 const publishExtension = (
     args: Pick<GQL.IPublishExtensionOnExtensionRegistryMutationArguments, 'extensionID' | 'manifest' | 'bundle'>
@@ -35,17 +39,8 @@ const publishExtension = (
         args
     )
         .pipe(
-            map(({ data, errors }) => {
-                if (
-                    !data ||
-                    !data.extensionRegistry ||
-                    !data.extensionRegistry.publishExtension ||
-                    (errors && errors.length > 0)
-                ) {
-                    throw createAggregateError(errors)
-                }
-                return data.extensionRegistry.publishExtension
-            })
+            map(dataOrThrowErrors),
+            map(data => data.extensionRegistry.publishExtension)
         )
         .toPromise()
 
@@ -64,55 +59,65 @@ const DEFAULT_MANIFEST: Pick<ExtensionManifest, 'activationEvents'> = {
     activationEvents: ['*'],
 }
 
-const LOADING: 'loading' = 'loading'
+const LOADING = 'loading' as const
+
+const DEFAULT_SOURCE = `const sourcegraph = require('sourcegraph')
+
+function activate(context) {
+    sourcegraph.app.activeWindow.showNotification(
+        'Hello World!',
+        sourcegraph.NotificationType.Success
+    )
+}
+
+module.exports = { activate }
+`
 
 /** A page for publishing a new release of an extension to the extension registry. */
-// tslint:disable: react-hooks-nesting
 export const RegistryExtensionNewReleasePage = withAuthenticatedUser<Props>(
     ({ extension, onDidUpdateExtension, isLightTheme, history }) => {
-        const [updateOrError, setUpdateOrError] = useState<
-            null | typeof LOADING | GQL.IExtensionRegistryCreateExtensionResult | ErrorLike
-        >(null)
-
-        // Omit the `url` field from the extension so that it gets set to the URL of the bundle
-        // we're uploading.
+        // Omit the `url` field from the extension so that it gets set to the URL of the bundle we're uploading.
         const manifestWithoutUrl = extension.rawManifest ? JSON.parse(extension.rawManifest) : { ...DEFAULT_MANIFEST }
         delete manifestWithoutUrl.url
         const [manifest, setManifest] = useState(JSON.stringify(manifestWithoutUrl, null, 2))
 
-        const [bundle, setBundle] = useState<string | ErrorLike>()
+        const [onChangeBundle, bundleOrError] = useEventObservable(
+            useCallback(
+                (bundleChanges: Observable<string>) =>
+                    concat(
+                        isErrorLike(extension.manifest) || !extension.manifest?.url
+                            ? of(DEFAULT_SOURCE)
+                            : fromFetch(extension.manifest.url, undefined, resp => resp.text()).pipe(
+                                  catchError(err => [asError(err)])
+                              ),
+                        bundleChanges
+                    ),
+                [extension.manifest]
+            )
+        )
 
-        useEffect(() => {
-            if (extension.manifest && !isErrorLike(extension.manifest) && extension.manifest.url) {
-                const extensionManifestUrl = extension.manifest.url
-                ;(async () => {
-                    const resp = await fetch(extensionManifestUrl)
-                    setBundle(resp.status === 200 ? await resp.text() : '')
-                })().catch(err => setBundle(asError(err)))
-            } else {
-                setBundle(undefined)
-            }
-        }, [extension])
-
-        useEffect(() => {
-            setUpdateOrError(null) // reset
-        }, [manifest, bundle])
-
-        const onSubmit = useCallback<React.FormEventHandler>(
-            async e => {
-                e.preventDefault()
-                setUpdateOrError(LOADING)
-                try {
-                    if (isErrorLike(bundle)) {
-                        throw new Error('invalid bundle')
-                    }
-                    setUpdateOrError(await publishExtension({ extensionID: extension.id, manifest, bundle }))
-                    onDidUpdateExtension()
-                } catch (err) {
-                    setUpdateOrError(asError(err))
-                }
-            },
-            [extension.id, manifest, bundle, onDidUpdateExtension]
+        const [onSubmit, updateOrError] = useEventObservable(
+            useCallback(
+                (submits: Observable<React.FormEvent>) =>
+                    submits.pipe(
+                        tap(event => event.preventDefault()),
+                        concatMap(() => {
+                            if (isErrorLike(bundleOrError)) {
+                                throw new Error('Invalid bundle')
+                            }
+                            return concat(
+                                LOADING,
+                                from(
+                                    publishExtension({ extensionID: extension.id, manifest, bundle: bundleOrError })
+                                ).pipe(
+                                    tap(() => onDidUpdateExtension()),
+                                    catchError(err => [asError(err)])
+                                )
+                            )
+                        })
+                    ),
+                [bundleOrError, extension.id, manifest, onDidUpdateExtension]
+            )
         )
 
         const [showEditor, setShowEditor] = useLocalStorage('RegistryExtensionNewReleasePage.showEditor', false)
@@ -151,7 +156,9 @@ export const RegistryExtensionNewReleasePage = withAuthenticatedUser<Props>(
                             <div className="row">
                                 <div className="col-lg-6">
                                     <div className="form-group">
-                                        <label htmlFor="registry-extension-new-release-page__manifest">Manifest</label>
+                                        <label htmlFor="registry-extension-new-release-page__manifest">
+                                            <h3>Manifest</h3>
+                                        </label>
                                         <DynamicallyImportedMonacoSettingsEditor
                                             id="registry-extension-new-release-page__manifest"
                                             className="d-block"
@@ -166,13 +173,15 @@ export const RegistryExtensionNewReleasePage = withAuthenticatedUser<Props>(
                                 </div>
                                 <div className="col-lg-6">
                                     <div className="form-group">
-                                        <label htmlFor="registry-extension-new-release-page__bundle">Source</label>
-                                        {bundle === undefined ? (
+                                        <label htmlFor="registry-extension-new-release-page__bundle">
+                                            <h3>Source</h3>
+                                        </label>
+                                        {bundleOrError === undefined ? (
                                             <div>
                                                 <LoadingSpinner className="icon-inline" />
                                             </div>
-                                        ) : isErrorLike(bundle) ? (
-                                            <div className="alert alert-danger">{bundle.message}</div>
+                                        ) : isErrorLike(bundleOrError) ? (
+                                            <ErrorAlert error={bundleOrError} />
                                         ) : (
                                             <DynamicallyImportedMonacoSettingsEditor
                                                 id="registry-extension-new-release-page__bundle"
@@ -180,9 +189,9 @@ export const RegistryExtensionNewReleasePage = withAuthenticatedUser<Props>(
                                                 className="d-block"
                                                 // Only 1 component can block navigation, and the
                                                 // other editor does, so we don't.
-                                                noBlockNavigationIfDirty={true}
-                                                value={bundle}
-                                                onChange={setBundle}
+                                                blockNavigationIfDirty={false}
+                                                value={bundleOrError}
+                                                onChange={onChangeBundle}
                                                 readOnly={updateOrError === LOADING}
                                                 isLightTheme={isLightTheme}
                                                 history={history}
@@ -193,7 +202,7 @@ export const RegistryExtensionNewReleasePage = withAuthenticatedUser<Props>(
                             </div>
                             <button
                                 type="submit"
-                                disabled={updateOrError === LOADING || isErrorLike(bundle)}
+                                disabled={updateOrError === LOADING || isErrorLike(bundleOrError)}
                                 className="btn btn-primary"
                             >
                                 {updateOrError === LOADING ? <LoadingSpinner className="icon-inline" /> : 'Publish'}

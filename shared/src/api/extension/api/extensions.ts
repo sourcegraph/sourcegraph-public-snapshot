@@ -35,8 +35,9 @@ export class ExtExtensions implements ExtExtensionsAPI, Unsubscribable, ProxyVal
         // Load the extension bundle and retrieve the extension entrypoint module's exports on
         // the global `module` property.
         try {
-            self.exports = {}
-            self.module = {}
+            const exports = {}
+            self.exports = exports
+            self.module = { exports }
             self.importScripts(bundleURL)
         } catch (err) {
             throw new Error(

@@ -27,7 +27,13 @@ interface Props
 
     className?: string
 
-    noBlockNavigationIfDirty?: boolean
+    /**
+     * Block navigation if the editor contents were changed.
+     * Set to `false` if another component already blocks navigation.
+     *
+     * @default true
+     */
+    blockNavigationIfDirty?: boolean
 
     onSave?: (value: string) => void
     onChange?: (value: string) => void
@@ -54,7 +60,7 @@ export class DynamicallyImportedMonacoSettingsEditor extends React.PureComponent
     private configEditor?: _monaco.editor.ICodeEditor
 
     public componentDidMount(): void {
-        if (!this.props.noBlockNavigationIfDirty) {
+        if (this.props.blockNavigationIfDirty !== false) {
             // Prevent navigation when dirty.
             this.subscriptions.add(
                 this.props.history.block((location: H.Location, action: H.Action) => {
