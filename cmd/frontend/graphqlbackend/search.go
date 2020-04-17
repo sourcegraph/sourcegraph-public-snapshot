@@ -378,28 +378,28 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 		return nil, nil, false, err
 	}
 	var settingForks, settingArchived bool
-	if v := settings.SearchIncludeForksEnabled; v != nil {
+	if v := settings.SearchIncludeForks; v != nil {
 		settingForks = *v
 	}
-	if v := settings.SearchIncludeArchivedEnabled; v != nil {
+	if v := settings.SearchIncludeArchived; v != nil {
 		settingArchived = *v
 	}
 
 	forkStr, _ := r.query.StringValue(query.FieldFork)
 	fork := parseYesNoOnly(forkStr)
 	if fork == Invalid && !exactlyOneRepo(repoFilters) && !settingForks {
-		// fork defaults to No unless either of: (1) exactly one repo is
-		// being searched or (2) user/org/global setting includes forks
-		// in all searches
+		// fork defaults to No unless either of:
+		// (1) exactly one repo is being searched, or
+		// (2) user/org/global setting includes forks
 		fork = No
 	}
 
 	archivedStr, _ := r.query.StringValue(query.FieldArchived)
 	archived := parseYesNoOnly(archivedStr)
 	if archived == Invalid && !exactlyOneRepo(repoFilters) && !settingArchived {
-		// archived defaults to No unless either of: (1) exactly one
-		// repo is being searched or (2) user/org/global setting
-		// includes forks in all searches
+		// archived defaults to No unless either of:
+		// (1) exactly one repo is being searched, or
+		// (2) user/org/global setting includes archives in all searches
 		archived = No
 	}
 

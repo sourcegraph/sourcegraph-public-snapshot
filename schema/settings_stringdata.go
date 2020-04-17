@@ -105,13 +105,13 @@ const SettingsSchemaJSON = `{
       "type": "string",
       "pattern": "literal|regexp"
     },
-    "search.includeForksEnabled": {
+    "search.includeForks": {
       "description": "Whether searches should include searching forked repositories.",
       "type": "boolean",
       "default": false,
       "!go": { "pointer": true }
     },
-    "search.includeArchivedEnabled": {
+    "search.includeArchived": {
       "description": "Whether searches should include searching archived repositories.",
       "type": "boolean",
       "default": false,
