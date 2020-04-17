@@ -246,7 +246,7 @@ export class Tree extends React.PureComponent<Props, State> {
                     // If we're updating due to a file/directory suggestion or code intel action,
                     // load the relevant partial tree and jump to the file.
                     // This case is only used when going from an ancestor to a child file/directory, or equal.
-                    if (queryParams.has('subtree') && dotPathAsUndefined(newParentPath)) {
+                    if (queryParams.get('subtree') === 'true' && dotPathAsUndefined(newParentPath)) {
                         this.setState({
                             parentPath: dotPathAsUndefined(newParentPath),
                             resolveTo: [newParentPath],
