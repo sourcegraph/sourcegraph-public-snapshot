@@ -22,7 +22,7 @@ func GitServer() *Container {
 						{
 							Name:            "running_git_commands",
 							Description:     "running git commands (signals load)",
-							Query:           "sum(src_gitserver_exec_running)",
+							Query:           "max(src_gitserver_exec_running)",
 							DataMayNotExist: true,
 							Warning:         Alert{GreaterOrEqual: 50},
 							Critical:        Alert{GreaterOrEqual: 100},
@@ -49,7 +49,7 @@ func GitServer() *Container {
 						{
 							Name:            "echo_command_duration_test",
 							Description:     "echo command duration test",
-							Query:           "sum(src_gitserver_echo_duration_seconds)",
+							Query:           "max(src_gitserver_echo_duration_seconds)",
 							DataMayNotExist: true,
 							Warning:         Alert{GreaterOrEqual: 1.0},
 							Critical:        Alert{GreaterOrEqual: 2.0},
