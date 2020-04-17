@@ -243,14 +243,12 @@ export class Tree extends React.PureComponent<Props, State> {
                 .subscribe((props: Props) => {
                     const newParentPath = props.activePathIsDir ? props.activePath : dirname(props.activePath)
                     const queryParams = new URLSearchParams(this.props.history.location.search)
+                    const queryParamsHasSubtree = queryParams.get('subtree') === 'true'
+
                     // If we're updating due to a file/directory suggestion or code intel action,
                     // load the relevant partial tree and jump to the file.
                     // This case is only used when going from an ancestor to a child file/directory, or equal.
-                    if (
-                        queryParams.get('subtree') === 'true' &&
-                        !queryParams.has('tab') &&
-                        dotPathAsUndefined(newParentPath)
-                    ) {
+                    if (queryParamsHasSubtree && !queryParams.has('tab') && dotPathAsUndefined(newParentPath)) {
                         this.setState({
                             parentPath: dotPathAsUndefined(newParentPath),
                             resolveTo: [newParentPath],
@@ -271,8 +269,8 @@ export class Tree extends React.PureComponent<Props, State> {
                     }
 
                     // Strip the ?subtree query param. Handle both when going from ancestor -> child and child -> ancestor.
-                    if (queryParams.get('subtree') === 'true' && !queryParams.has('tab')) {
-                        queryParams.delete('subtree')
+                    queryParams.delete('subtree')
+                    if (queryParamsHasSubtree && !queryParams.has('tab')) {
                         this.props.history.replace({
                             search: queryParams.toString(),
                             hash: this.props.history.location.hash,
