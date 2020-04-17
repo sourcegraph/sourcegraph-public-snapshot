@@ -10,7 +10,7 @@ CONFIG_DIR="$(pwd)/docker-images/prometheus/config"
 
 PROMETHEUS_DISK="${HOME}/.sourcegraph-dev/data/prometheus"
 
-IMAGE=sourcegraph/prometheus:10.0.10@sha256:4d73d99f3b18d8e4e09f63671c51eabcba956e357ab33d682de8cf1540e3b863
+IMAGE=sourcegraph/prometheus:61380_2020-04-17_046b2c8@sha256:95d68e080b83152c0b0860977e4aaf83c1b88101e212988a2df5ac5955de7b2c
 CONTAINER=prometheus
 
 CID_FILE="${PROMETHEUS_DISK}/prometheus.cid"
