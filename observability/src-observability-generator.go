@@ -212,6 +212,27 @@ func (a Alert) validate() error {
 // UnitType for controlling the unit type display on graphs.
 type UnitType string
 
+// short returns the short string description of the unit, for qualifying a
+// number of this unit type as human-readable.
+func (u UnitType) short() string {
+	switch u {
+	case Number, "":
+		return ""
+	case Milliseconds:
+		return "ms"
+	case Seconds:
+		return "s"
+	case Percentage:
+		return "%"
+	case Bytes:
+		return "B"
+	case BitsPerSecond:
+		return "bps"
+	default:
+		panic("never here")
+	}
+}
+
 // From https://sourcegraph.com/github.com/grafana/grafana@b63b82976b3708b082326c0b7d42f38d4bc261fa/-/blob/packages/grafana-data/src/valueFormats/categories.ts#L23
 const (
 	// Number is the default unit type.
@@ -550,7 +571,7 @@ func (c *Container) promAlertsFile() *promRulesFile {
 					var alertQuery string
 					if alert.GreaterOrEqual != 0 {
 						// e.g. "zoekt-indexserver: 20+ indexed search request errors every 5m by code"
-						labels["description"] = fmt.Sprintf("%s: %v+ %s", c.Name, alert.GreaterOrEqual, o.Description)
+						labels["description"] = fmt.Sprintf("%s: %v%s+ %s", c.Name, alert.GreaterOrEqual, o.PanelOptions.unitType.short(), o.Description)
 						// By dividing the query value and the greaterOrEqual value, we produce a
 						// value of 1 when the query reaches the greaterOrEqual value and < 1
 						// otherwise. Examples:
@@ -574,7 +595,7 @@ func (c *Container) promAlertsFile() *promRulesFile {
 						alertQuery = fmt.Sprintf("((%s) >= 0) OR on() vector(%v)", alertQuery, fireOnNan)
 					} else if alert.LessOrEqual != 0 {
 						// e.g. "zoekt-indexserver: less than 20 indexed search requests every 5m by code"
-						labels["description"] = fmt.Sprintf("%s: less than %v %s", c.Name, alert.LessOrEqual, o.Description)
+						labels["description"] = fmt.Sprintf("%s: less than %v%s %s", c.Name, alert.LessOrEqual, o.PanelOptions.unitType.short(), o.Description)
 						//
 						// 	lessOrEqual=50 / query_value=100 == 0.5
 						// 	lessOrEqual=50 / query_value=50 == 1.0
