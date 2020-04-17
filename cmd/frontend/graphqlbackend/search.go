@@ -369,16 +369,38 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 	}
 	repoGroupFilters, _ := r.query.StringValues(query.FieldRepoGroup)
 
+	merged, err := viewerFinalSettings(ctx)
+	if err != nil {
+		return nil, nil, false, err
+	}
+	var settings schema.Settings
+	if err := json.Unmarshal([]byte(merged.Contents()), &settings); err != nil {
+		return nil, nil, false, err
+	}
+	var settingForks, settingArchived bool
+	if v := settings.SearchIncludeForksEnabled; v != nil {
+		settingForks = *v
+	}
+	if v := settings.SearchIncludeArchivedEnabled; v != nil {
+		settingArchived = *v
+	}
+
 	forkStr, _ := r.query.StringValue(query.FieldFork)
 	fork := parseYesNoOnly(forkStr)
-	if fork == Invalid && !exactlyOneRepo(repoFilters) {
-		fork = No // fork defaults to No unless exactly one repo is being searched.
+	if fork == Invalid && !exactlyOneRepo(repoFilters) && !settingForks {
+		// fork defaults to No unless either of: (1) exactly one repo is
+		// being searched or (2) user/org/global setting includes forks
+		// in all searches
+		fork = No
 	}
 
 	archivedStr, _ := r.query.StringValue(query.FieldArchived)
 	archived := parseYesNoOnly(archivedStr)
-	if archived == Invalid && !exactlyOneRepo(repoFilters) {
-		archived = No // archived defaults to No unless exactly one repo is being searched.
+	if archived == Invalid && !exactlyOneRepo(repoFilters) && !settingArchived {
+		// archived defaults to No unless either of: (1) exactly one
+		// repo is being searched or (2) user/org/global setting
+		// includes forks in all searches
+		archived = No
 	}
 
 	visibilityStr, _ := r.query.StringValue(query.FieldVisibility)

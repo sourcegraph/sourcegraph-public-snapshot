@@ -105,6 +105,18 @@ const SettingsSchemaJSON = `{
       "type": "string",
       "pattern": "literal|regexp"
     },
+    "search.includeForksEnabled": {
+      "description": "Whether searches should include searching forked repositories.",
+      "type": "boolean",
+      "default": false,
+      "!go": { "pointer": true }
+    },
+    "search.includeArchivedEnabled": {
+      "description": "Whether searches should include searching archived repositories.",
+      "type": "boolean",
+      "default": false,
+      "!go": { "pointer": true }
+    },
     "quicklinks": {
       "description": "Links that should be accessible quickly from the home and search pages.",
       "type": "array",
