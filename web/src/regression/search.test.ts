@@ -688,7 +688,9 @@ describe('Search regression test suite', () => {
             await driver.page.click('.e2e-query-input')
             await driver.page.keyboard.type('error')
             await driver.page.keyboard.press('Enter')
-            await driver.assertWindowLocation('/search?q=error+repo:%22auth0/go-jwt-middleware%24%22&patternType=literal')
+            await driver.assertWindowLocation(
+                '/search?q=error+repo:%22auth0/go-jwt-middleware%24%22&patternType=literal'
+            )
             await driver.page.waitForSelector('.e2e-search-result')
             await driver.page.waitForFunction(() => {
                 const results = document.querySelectorAll('.e2e-file-match-children-item-wrapper')
