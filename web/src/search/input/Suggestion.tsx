@@ -105,7 +105,7 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion | undef
                 value: formatRegExp(item.path),
                 displayValue: item.name,
                 description: descriptionParts.join(' — '),
-                url: `${item.url}?subtree`,
+                url: `${item.url}?subtree=true`,
                 label: 'go to file',
             }
         }
