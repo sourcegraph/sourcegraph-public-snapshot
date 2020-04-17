@@ -507,7 +507,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                     />
                                 </div>
                             </div>
-                            {totalChangesetCount > 0 ? (
+                            {totalChangesetCount > 0 && (
                                 <>
                                     <h3 className="mt-4 mb-2">Progress</h3>
                                     <CampaignBurndownChart
@@ -515,15 +515,18 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                         history={history}
                                     />
                                 </>
-                            ) : (
-                                <div className="mt-4 mb-2 alert alert-info e2e-campaign-get-started">
-                                    Add a changeset to get started.
-                                </div>
                             )}
 
-                            {/* only campaigns that have no patch set can add changesets manually */}
+                            {/* Only campaigns that have no patch set can add changesets manually. */}
                             {!campaign.patchSet && campaign.viewerCanAdminister && !campaign.closedAt && (
-                                <AddChangesetForm campaignID={campaign.id} onAdd={onAddChangeset} />
+                                <>
+                                    {totalChangesetCount === 0 && (
+                                        <div className="mt-4 mb-2 alert alert-info e2e-campaign-get-started">
+                                            Add a changeset to get started.
+                                        </div>
+                                    )}
+                                    <AddChangesetForm campaignID={campaign.id} onAdd={onAddChangeset} />
+                                </>
                             )}
                         </>
                     )}
