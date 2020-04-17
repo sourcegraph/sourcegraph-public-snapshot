@@ -50,10 +50,7 @@ export const ChangesetLastSynced: React.FunctionComponent<Props> = ({ changeset,
         if (!changeset.nextSyncAt) {
             tooltipText = 'Not scheduled for syncing.'
         } else {
-            tooltipText = `Next refresh in ${formatDistance(
-                parseISO(changeset.nextSyncAt),
-                _now ?? new Date()
-            )}.`
+            tooltipText = `Next refresh in ${formatDistance(parseISO(changeset.nextSyncAt), _now ?? new Date())}.`
         }
         tooltipText += ' Click to prioritize refresh'
     }
