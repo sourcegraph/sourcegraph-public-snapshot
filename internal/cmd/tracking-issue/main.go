@@ -53,59 +53,40 @@ func run(token, org, milestone, labels string, update bool) (err error) {
 		))),
 	)
 
-	issues, prs, err := listIssuesAndPullRequests(ctx, cli, org, milestone, strings.Split(labels, ","))
+	issues, err := listTrackingIssues(ctx, cli, org)
 	if err != nil {
 		return err
 	}
 
-	tracking, err := trackingIssue(org, milestone, issues)
-	if err != nil {
-		return err
-	}
-
-	workloads := workloads(issues, prs, milestone)
-	body, err := patchIssueBody(tracking, generate(workloads))
-	if err != nil {
-		return err
-	}
-
-	if body != tracking.Body {
-		tracking.Body = body
-	}
-
-	if update {
-		err = updateIssue(cli, tracking)
-	}
-
-	fmt.Println(tracking.Body)
-
-	return err
-}
-
-func trackingIssue(org, milestone string, issues []*Issue) (*Issue, error) {
-	var tracking []*Issue
+	tracking := make([]*TrackingIssue, 0, len(issues))
 	for _, issue := range issues {
-		if issue.IsTrackingIssue(org, milestone) {
-			tracking = append(tracking, issue)
+		tracking = append(tracking, &TrackingIssue{Issue: issue})
+	}
+
+	err = loadTrackingIssues(ctx, cli, tracking)
+	if err != nil {
+		return err
+	}
+
+	for _, issue := range tracking {
+		updated, err := issue.UpdateWork(issue.Workloads().Markdown())
+		if err != nil {
+			log.Printf("failed to patch work section in %q %s: %v", issue.Title, issue.URL, err)
+			continue
+		}
+
+		if !updated {
+			continue
+		}
+
+		if err = updateIssue(cli, issue.Issue); err != nil {
+			log.Printf("failed to update %q %s: %v", issue.Title, issue.URL, err)
+		} else {
+			log.Printf("updated %q %s sucessfully", issue.Title, issue.URL)
 		}
 	}
 
-	switch len(tracking) {
-	case 0:
-		return nil, errors.New("no tracking issue found")
-	case 1:
-		return tracking[0], nil
-	default:
-		return nil, errors.New("more than one tracking issue found")
-	}
-}
-
-func patchIssueBody(issue *Issue, work string) (body string, err error) {
-	const (
-		openingMarker = "<!-- BEGIN WORK -->"
-		closingMarker = "<!-- END WORK -->"
-	)
-	return patch(issue.Body, work, openingMarker, closingMarker)
+	return nil
 }
 
 func updateIssue(cli *graphql.Client, issue *Issue) (err error) {
@@ -139,6 +120,24 @@ func patch(s, replacement, opening, closing string) (string, error) {
 	}
 
 	return s[:start+len(opening)] + replacement + s[end:], nil
+}
+
+type Workloads map[string]*Workloads
+
+func (ws Workloads) Markdown() string {
+	assignees := make([]string, 0, len(ws))
+	for assignee := range ws {
+		assignees = append(assignees, assignee)
+	}
+
+	sort.Strings(assignees)
+
+	var b strings.Builder
+	for _, assignee := range assignees {
+		b.WriteString(ws[assignee].Markdown())
+	}
+
+	return b.String()
 }
 
 type Workload struct {
@@ -177,60 +176,6 @@ func (wl *Workload) Markdown() string {
 	return b.String()
 }
 
-func workloads(issues []*Issue, prs []*PullRequest, milestone string) map[string]*Workload {
-	workloads := map[string]*Workload{}
-
-	workload := func(assignee string) *Workload {
-		w := workloads[assignee]
-		if w == nil {
-			w = &Workload{Assignee: assignee}
-			workloads[assignee] = w
-		}
-		return w
-	}
-
-	for _, pr := range prs {
-		w := workload(pr.Author)
-		w.PullRequests = append(w.PullRequests, pr)
-	}
-
-	for _, issue := range issues {
-		w := workload(Assignee(issue.Assignees))
-
-		w.Issues = append(w.Issues, issue)
-
-		linked := issue.LinkedPullRequests(prs)
-		for _, pr := range linked {
-			issue.LinkedPRs = append(issue.LinkedPRs, pr)
-			pr.LinkedIssues = append(pr.LinkedIssues, issue)
-		}
-
-		if issue.Milestone == milestone {
-			estimate := Estimate(issue.Labels)
-			w.Days += Days(estimate)
-		} else {
-			issue.Deprioritised = true
-		}
-	}
-
-	return workloads
-}
-
-func generate(workloads map[string]*Workload) string {
-	assignees := make([]string, 0, len(workloads))
-	for assignee := range workloads {
-		assignees = append(assignees, assignee)
-	}
-
-	sort.Strings(assignees)
-
-	var b strings.Builder
-	for _, assignee := range assignees {
-		b.WriteString(workloads[assignee].Markdown())
-	}
-	return b.String()
-}
-
 func Days(estimate string) float64 {
 	d, _ := strconv.ParseFloat(strings.TrimSuffix(estimate, "d"), 64)
 	return d
@@ -261,6 +206,68 @@ func Assignee(assignees []string) string {
 		return "Unassigned"
 	}
 	return assignees[0]
+}
+
+type TrackingIssue struct {
+	*Issue
+	Issues []*Issue
+	PRs    []*PullRequest
+}
+
+func (t *TrackingIssue) UpdateWork(work string) (updated bool, err error) {
+	const (
+		openingMarker = "<!-- BEGIN WORK -->"
+		closingMarker = "<!-- END WORK -->"
+	)
+
+	before := t.Body
+
+	after, err := patch(t.Body, work, openingMarker, closingMarker)
+	if err != nil {
+		return false, err
+	}
+
+	t.Body = after
+	return before != after, nil
+}
+
+func (t *TrackingIssue) Workloads() Workloads {
+	workloads := map[string]*Workload{}
+
+	workload := func(assignee string) *Workload {
+		w := workloads[assignee]
+		if w == nil {
+			w = &Workload{Assignee: assignee}
+			workloads[assignee] = w
+		}
+		return w
+	}
+
+	for _, pr := range t.PRs {
+		w := workload(pr.Author)
+		w.PullRequests = append(w.PullRequests, pr)
+	}
+
+	for _, issue := range t.Issues {
+		w := workload(Assignee(issue.Assignees))
+
+		w.Issues = append(w.Issues, issue)
+
+		linked := issue.LinkedPullRequests(t.PRs)
+		for _, pr := range linked {
+			issue.LinkedPRs = append(issue.LinkedPRs, pr)
+			pr.LinkedIssues = append(pr.LinkedIssues, issue)
+		}
+
+		if issue.Milestone == t.Milestone {
+			estimate := Estimate(issue.Labels)
+			w.Days += Days(estimate)
+		} else {
+			issue.Deprioritised = true
+		}
+	}
+
+	return workloads
 }
 
 type Issue struct {
@@ -309,12 +316,6 @@ func (issue *Issue) Markdown() string {
 func (issue *Issue) Emojis() string {
 	categories := Categories(issue.Labels, issue.Repository, issue.Body)
 	return Emojis(categories)
-}
-
-func (issue *Issue) IsTrackingIssue(org, milestone string) bool {
-	return has("tracking", issue.Labels) &&
-		strings.HasPrefix(issue.Repository, org) &&
-		issue.Milestone == milestone
 }
 
 func Emojis(categories map[string]string) string {
@@ -492,41 +493,41 @@ func Emoji(category string) string {
 	}
 }
 
-func listIssuesAndPullRequests(ctx context.Context, cli *graphql.Client, org, milestone string, labels []string) (issues []*Issue, prs []*PullRequest, _ error) {
-	type searchNode struct {
-		Typename   string `json:"__typename"`
-		ID         string
-		Title      string
-		Body       string
-		State      string
-		Number     int
-		URL        string
-		Repository struct {
-			NameWithOwner string
-			IsPrivate     bool
-		}
-		Author    struct{ Login string }
-		Assignees struct{ Nodes []struct{ Login string } }
-		Labels    struct{ Nodes []struct{ Name string } }
-		Milestone struct{ Title string }
-		Commits   struct {
-			Nodes []struct {
-				Commit struct{ AuthoredDate time.Time }
-			}
-		}
-		CreatedAt time.Time
-		UpdatedAt time.Time
-		ClosedAt  time.Time
+type searchNode struct {
+	Typename   string `json:"__typename"`
+	ID         string
+	Title      string
+	Body       string
+	State      string
+	Number     int
+	URL        string
+	Repository struct {
+		NameWithOwner string
+		IsPrivate     bool
 	}
-
-	type search struct {
-		PageInfo struct {
-			EndCursor   string
-			HasNextPage bool
+	Author    struct{ Login string }
+	Assignees struct{ Nodes []struct{ Login string } }
+	Labels    struct{ Nodes []struct{ Name string } }
+	Milestone struct{ Title string }
+	Commits   struct {
+		Nodes []struct {
+			Commit struct{ AuthoredDate time.Time }
 		}
-		Nodes []searchNode
 	}
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	ClosedAt  time.Time
+}
 
+type search struct {
+	PageInfo struct {
+		EndCursor   string
+		HasNextPage bool
+	}
+	Nodes []searchNode
+}
+
+func loadTrackingIssues(ctx context.Context, cli *graphql.Client, issues []*TrackingIssue) error {
 	var (
 		milestonedCount    = 100
 		demilestonedCount  = 100
@@ -577,68 +578,7 @@ func listIssuesAndPullRequests(ctx context.Context, cli *graphql.Client, org, mi
 
 		nodes := append(data.Milestoned.Nodes, data.Demilestoned.Nodes...)
 
-		for _, n := range nodes {
-			switch n.Typename {
-			case "PullRequest":
-				pr := &PullRequest{
-					ID:         n.ID,
-					Title:      n.Title,
-					Body:       n.Body,
-					State:      n.State,
-					Number:     n.Number,
-					URL:        n.URL,
-					Repository: n.Repository.NameWithOwner,
-					Private:    n.Repository.IsPrivate,
-					Assignees:  make([]string, 0, len(n.Assignees.Nodes)),
-					Labels:     make([]string, 0, len(n.Labels.Nodes)),
-					Milestone:  n.Milestone.Title,
-					Author:     n.Author.Login,
-					CreatedAt:  n.CreatedAt,
-					UpdatedAt:  n.UpdatedAt,
-					ClosedAt:   n.ClosedAt,
-					BeganAt:    n.Commits.Nodes[0].Commit.AuthoredDate,
-				}
-
-				for _, assignee := range n.Assignees.Nodes {
-					pr.Assignees = append(pr.Assignees, assignee.Login)
-				}
-
-				for _, label := range n.Labels.Nodes {
-					pr.Labels = append(pr.Labels, label.Name)
-				}
-
-				prs = append(prs, pr)
-
-			case "Issue":
-				issue := &Issue{
-					ID:         n.ID,
-					Title:      n.Title,
-					Body:       n.Body,
-					State:      n.State,
-					Number:     n.Number,
-					URL:        n.URL,
-					Repository: n.Repository.NameWithOwner,
-					Private:    n.Repository.IsPrivate,
-					Assignees:  make([]string, 0, len(n.Assignees.Nodes)),
-					Labels:     make([]string, 0, len(n.Labels.Nodes)),
-					Milestone:  n.Milestone.Title,
-					Author:     n.Author.Login,
-					CreatedAt:  n.CreatedAt,
-					UpdatedAt:  n.UpdatedAt,
-					ClosedAt:   n.ClosedAt,
-				}
-
-				for _, assignee := range n.Assignees.Nodes {
-					issue.Assignees = append(issue.Assignees, assignee.Login)
-				}
-
-				for _, label := range n.Labels.Nodes {
-					issue.Labels = append(issue.Labels, label.Name)
-				}
-
-				issues = append(issues, issue)
-			}
-		}
+		issues, prs := unmarshalSearchNodes(nodes)
 
 		var hasNextPage bool
 		if data.Milestoned.PageInfo.HasNextPage {
@@ -663,7 +603,106 @@ func listIssuesAndPullRequests(ctx context.Context, cli *graphql.Client, org, mi
 	return issues, prs, nil
 }
 
-func listIssuesGraphQLQuery(alias string) string {
+func listTrackingIssues(ctx context.Context, cli *graphql.Client, org string) (all []*Issue, _ error) {
+	var q strings.Builder
+	q.WriteString("query($count: Int!, $cursor: String, $query: String!) {\n")
+	q.WriteString(searchGraphQLQuery("tracking"))
+	q.WriteString("}")
+
+	r := graphql.NewRequest(q.String())
+
+	r.Var("count", 100)
+	r.Var("query", fmt.Sprintf("org:%q label:tracking is:open", org))
+
+	for {
+		var data struct{ Issues search }
+
+		err := cli.Run(ctx, r, &data)
+		if err != nil {
+			return nil, err
+		}
+
+		issues, _ := unmarshalSearchNodes(data.Issues.Nodes)
+		all = append(all, issues...)
+
+		if data.Issues.PageInfo.HasNextPage {
+			r.Var("cursor", data.Issues.PageInfo.EndCursor)
+		} else {
+			break
+		}
+	}
+
+	return all, nil
+}
+
+func unmarshalSearchNodes(nodes []searchNode) (issues []*Issue, prs []*PullRequest) {
+	for _, n := range nodes {
+		switch n.Typename {
+		case "PullRequest":
+			pr := &PullRequest{
+				ID:         n.ID,
+				Title:      n.Title,
+				Body:       n.Body,
+				State:      n.State,
+				Number:     n.Number,
+				URL:        n.URL,
+				Repository: n.Repository.NameWithOwner,
+				Private:    n.Repository.IsPrivate,
+				Assignees:  make([]string, 0, len(n.Assignees.Nodes)),
+				Labels:     make([]string, 0, len(n.Labels.Nodes)),
+				Milestone:  n.Milestone.Title,
+				Author:     n.Author.Login,
+				CreatedAt:  n.CreatedAt,
+				UpdatedAt:  n.UpdatedAt,
+				ClosedAt:   n.ClosedAt,
+				BeganAt:    n.Commits.Nodes[0].Commit.AuthoredDate,
+			}
+
+			for _, assignee := range n.Assignees.Nodes {
+				pr.Assignees = append(pr.Assignees, assignee.Login)
+			}
+
+			for _, label := range n.Labels.Nodes {
+				pr.Labels = append(pr.Labels, label.Name)
+			}
+
+			prs = append(prs, pr)
+
+		case "Issue":
+			issue := &Issue{
+				ID:         n.ID,
+				Title:      n.Title,
+				Body:       n.Body,
+				State:      n.State,
+				Number:     n.Number,
+				URL:        n.URL,
+				Repository: n.Repository.NameWithOwner,
+				Private:    n.Repository.IsPrivate,
+				Assignees:  make([]string, 0, len(n.Assignees.Nodes)),
+				Labels:     make([]string, 0, len(n.Labels.Nodes)),
+				Milestone:  n.Milestone.Title,
+				Author:     n.Author.Login,
+				CreatedAt:  n.CreatedAt,
+				UpdatedAt:  n.UpdatedAt,
+				ClosedAt:   n.ClosedAt,
+			}
+
+			for _, assignee := range n.Assignees.Nodes {
+				issue.Assignees = append(issue.Assignees, assignee.Login)
+			}
+
+			for _, label := range n.Labels.Nodes {
+				issue.Labels = append(issue.Labels, label.Name)
+			}
+
+			issues = append(issues, issue)
+		}
+	}
+
+	return issues, prs
+}
+
+func searchGraphQLQuery(alias string) string {
 	const searchQuery = `%[1]s: search(first: $%[1]sCount, type: ISSUE, after: $%[1]sCursor query: $%[1]sQuery) {
 		pageInfo {
 			endCursor
