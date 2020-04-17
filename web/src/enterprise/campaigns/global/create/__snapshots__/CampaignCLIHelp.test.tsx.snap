@@ -166,7 +166,7 @@ $ export SRC_ACCESS_TOKEN=&lt;YOUR TOKEN&gt;
           <code
             dangerouslySetInnerHTML={
               Object {
-                "__html": "$ src cli exec -f action.json -create-patchset",
+                "__html": "$ src action exec -f action.json -create-patchset",
               }
             }
           />
