@@ -32,6 +32,8 @@ var allDockerImages = []string{
 	"redis-store",
 	"search-indexer",
 	"syntax-highlighter",
+	"jaeger-agent",
+	"jaeger-all-in-one",
 }
 
 // Verifies the docs formatting and builds the `docsite` command.
