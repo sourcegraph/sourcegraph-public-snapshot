@@ -8,6 +8,10 @@ import { of } from 'rxjs'
 import { CampaignStatusProps } from './CampaignStatus'
 import { NOOP_TELEMETRY_SERVICE } from '../../../../../shared/src/telemetry/telemetryService'
 import { PageTitle } from '../../../components/PageTitle'
+import { registerHighlightContributions } from '../../../../../shared/src/highlight/contributions'
+
+// This is idempotent, so calling it in multiple tests is not a problem.
+registerHighlightContributions()
 
 jest.mock('./form/CampaignTitleField', () => ({ CampaignTitleField: 'CampaignTitleField' }))
 jest.mock('./form/CampaignDescriptionField', () => ({ CampaignDescriptionField: 'CampaignDescriptionField' }))
