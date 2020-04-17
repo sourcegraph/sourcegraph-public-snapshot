@@ -1,4 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+set -e
 cd "$(dirname "${BASH_SOURCE[0]}")/.." # cd to repo root dir
 
 generate_graphql=false
@@ -6,7 +8,7 @@ generate_dashboards=false
 generate_observability=false
 generate_schema=false
 generate_ctags_image=false
-cmdlist=""
+cmdlist=()
 all_cmds=false
 failed=false
 
@@ -34,11 +36,11 @@ for i; do
     cmd/*)
       cmd=${i#cmd/}
       cmd=${cmd%%/*}
-      case " $cmdlist " in
+      case " ${cmdlist[*]} " in
         " $cmd ") ;;
 
         *)
-          cmdlist="$cmdlist $cmd"
+          cmdlist+=("$cmd")
           ;;
       esac
       ;;
@@ -55,16 +57,22 @@ $generate_schema && { go generate github.com/sourcegraph/sourcegraph/schema || f
 $generate_ctags_image && { ./cmd/symbols/build-ctags.sh || failed=true; }
 
 if $all_cmds; then
-  rebuilt=$(./dev/go-install.sh -v | tr '\012' ' ')
-  [ $? == 0 ] || failed=true
-elif [ -n "$cmdlist" ]; then
-  rebuilt=$(./dev/go-install.sh -v $cmdlist | tr '\012' ' ')
-  [ $? == 0 ] || failed=true
+  if ! mapfile -t rebuilt < <(./dev/go-install.sh -v); then
+    failed=true
+  fi
+elif [ ${#cmdlist[@]} -gt 0 ]; then
+  if ! mapfile -t rebuilt < <(./dev/go-install.sh -v "${cmdlist[@]}"); then
+    failed=true
+  fi
 fi
 
-if [ -n "$rebuilt" ]; then
-  echo >&2 "Rebuilt: $rebuilt"
-  [ -n "$rebuilt" ] && [ -n "$GOREMAN" ] && $GOREMAN run restart $rebuilt
+if [ ${#rebuilt[@]} -gt 0 ]; then
+  echo >&2 "Rebuilt: ${rebuilt[*]}"
+
+  if [ -n "$GOREMAN" ]; then
+    $GOREMAN run restart "${rebuilt[@]}"
+  fi
+
 else
   echo >&2 "Nothing to rebuild or rebuilds failed."
 fi
