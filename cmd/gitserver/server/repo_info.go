@@ -52,6 +52,9 @@ func (s *Server) repoInfo(ctx context.Context, repo api.RepoName) (*protocol.Rep
 }
 
 func (s *Server) handleRepoInfo(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithCancel(r.Context())
+	defer cancel()
+
 	var req protocol.RepoInfoRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -61,13 +64,60 @@ func (s *Server) handleRepoInfo(w http.ResponseWriter, r *http.Request) {
 	resp := protocol.RepoInfoResponse{
 		Results: make(map[api.RepoName]*protocol.RepoInfo, len(req.Repos)),
 	}
-	for _, repoName := range req.Repos {
-		result, err := s.repoInfo(r.Context(), repoName)
-		if err != nil {
+
+	type infoResult struct {
+		name   api.RepoName
+		result *protocol.RepoInfo
+	}
+
+	concurrency := 10
+	nameChan := make(chan api.RepoName)
+	errChan := make(chan error, concurrency)
+	resultChan := make(chan infoResult, concurrency)
+
+	for i := 0; i < concurrency; i++ {
+		go func() {
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case repoName := <-nameChan:
+					result, err := s.repoInfo(ctx, repoName)
+					if err != nil {
+						errChan <- err
+						return
+					}
+					resultChan <- infoResult{
+						name:   repoName,
+						result: result,
+					}
+				}
+			}
+		}()
+	}
+
+	go func() {
+		for _, repoName := range req.Repos {
+			select {
+			case <-ctx.Done():
+				return
+			case nameChan <- repoName:
+			}
+		}
+	}()
+
+	// Collect results
+	for i := 0; i < len(req.Repos); i++ {
+		select {
+		case <-ctx.Done():
+			http.Error(w, ctx.Err().Error(), http.StatusInternalServerError)
+			return
+		case err := <-errChan:
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
+		case result := <-resultChan:
+			resp.Results[result.name] = result.result
 		}
-		resp.Results[repoName] = result
 	}
 
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
