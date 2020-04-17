@@ -440,7 +440,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                             src CLI
                                         </a>
                                         , you can also apply a new patch set to an existing campaign. Following the
-                                        creation of the patch set with the
+                                        creation of a new patch set that contains new patches, with the
                                     </p>
                                     <div className="alert alert-secondary">
                                         <code
@@ -457,15 +457,15 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                         change an existing campaign’s patch set.
                                     </p>
                                     <p className="mb-0">
-                                        Also, check out the{' '}
+                                        Take a look at the{' '}
                                         <a
                                             href="https://docs.sourcegraph.com/user/campaigns/updating_campaigns"
                                             rel="noopener noreferrer"
                                             target="_blank"
                                         >
-                                            docs on updating campaigns
+                                            documentation on updating campaigns
                                         </a>
-                                        .
+                                        {' '}for more information.
                                     </p>
                                 </div>
                             </div>
