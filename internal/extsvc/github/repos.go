@@ -103,9 +103,6 @@ func (c *Client) GetRepository(ctx context.Context, owner, name string) (*Reposi
 	}, false)
 }
 
-// GetRepositoryByNodeIDMock is set by tests to mock (*Client).GetRepositoryByNodeID.
-var GetRepositoryByNodeIDMock func(ctx context.Context, id string) (*Repository, error)
-
 // GetRepositoryByNodeID gets a repository from GitHub by its GraphQL node ID using the specified user token.
 func (c *Client) GetRepositoryByNodeID(ctx context.Context, id string) (*Repository, error) {
 	return c.getRepositoryByNodeID(ctx, id, false)
@@ -119,10 +116,6 @@ func (c *Client) GetRepositoryByNodeIDNoCache(ctx context.Context, id string) (*
 }
 
 func (c *Client) getRepositoryByNodeID(ctx context.Context, id string, nocache bool) (*Repository, error) {
-	if GetRepositoryByNodeIDMock != nil {
-		return GetRepositoryByNodeIDMock(ctx, id)
-	}
-
 	key := nodeIDCacheKey(id)
 
 	return c.cachedGetRepository(ctx, key, func(ctx context.Context) (repo *Repository, keys []string, err error) {
@@ -335,19 +328,12 @@ query Repository($id: ID!) {
 // GitHub GraphQL API.
 var MaxNodeIDs = 100
 
-// GetRepositoryByNodeIDMock is set by tests to mock (*Client).GetRepositoryByNodeID.
-var GetRepositoriesByNodeIDFromAPIMock func(ctx context.Context, nodeIDs []string) (map[string]*Repository, error)
-
 // GetRepositoriesByNodeIDFromAPI fetches the specified repositories (nodeIDs) and returns a map
 // from node ID to repository metadata. If a repository is not found, it will not be present in the
 // return map. The caller should respect the max nodeID count limit of the GitHub API, which at the
 // time of writing, is 100 (if the caller does not respect this match, this method will return an
 // error). This method does not cache.
 func (c *Client) GetRepositoriesByNodeIDFromAPI(ctx context.Context, nodeIDs []string) (map[string]*Repository, error) {
-	if GetRepositoriesByNodeIDFromAPIMock != nil {
-		return GetRepositoriesByNodeIDFromAPIMock(ctx, nodeIDs)
-	}
-
 	var result struct {
 		Nodes []*Repository
 	}
