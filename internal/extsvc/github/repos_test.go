@@ -16,7 +16,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 )
 
@@ -76,14 +75,9 @@ func newTestClient(t *testing.T, cli httpcli.Doer) *Client {
 
 func newTestClientWithToken(t *testing.T, token string, cli httpcli.Doer) *Client {
 	rcache.SetupForTest(t)
-	c := &Client{
-		apiURL:     &url.URL{Scheme: "https", Host: "example.com", Path: "/"},
-		token:      token,
-		httpClient: cli,
-		RateLimit:  &ratelimit.Monitor{},
-	}
-	c.repoCache = NewRepoCache(c.apiURL, token, "__test__gh_repo", 1000)
-	return c
+
+	apiURL := &url.URL{Scheme: "https", Host: "example.com", Path: "/"}
+	return NewClient(apiURL, token, cli)
 }
 
 // TestClient_GetRepository tests the behavior of GetRepository.

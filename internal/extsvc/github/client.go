@@ -97,26 +97,22 @@ func canonicalizedURL(apiURL *url.URL) *url.URL {
 	return apiURL
 }
 
-// NewRepoCache creates a new cache for GitHub repository metadata. The backing store is Redis. A
-// checksum of the access token and API URL are used as a Redis key prefix to prevent collisions
-// with caches for different tokens and API URLs. An optional keyPrefix may also be specified,
-// typically used in tests.
-func NewRepoCache(apiURL *url.URL, token, keyPrefix string, cacheTTL time.Duration) *rcache.Cache {
-	if keyPrefix == "" {
-		keyPrefix = "gh_repo:"
+// newRepoCache creates a new cache for GitHub repository metadata. The backing store is Redis.
+// A checksum of the access token and API URL are used as a Redis key prefix to prevent collisions
+// with caches for different tokens and API URLs.
+func newRepoCache(apiURL *url.URL, token string) *rcache.Cache {
+	apiURL = canonicalizedURL(apiURL)
+
+	var cacheTTL time.Duration
+	if urlIsGitHubDotCom(apiURL) {
+		cacheTTL = 10 * time.Minute
+	} else {
+		// GitHub Enterprise
+		cacheTTL = 30 * time.Second
 	}
 
-	apiURL = canonicalizedURL(apiURL)
-	if cacheTTL == 0 {
-		if urlIsGitHubDotCom(apiURL) {
-			cacheTTL = 10 * time.Minute
-		} else {
-			// GitHub Enterprise
-			cacheTTL = 30 * time.Second
-		}
-	}
 	key := sha256.Sum256([]byte(token + ":" + apiURL.String()))
-	return rcache.NewWithTTL(keyPrefix+base64.URLEncoding.EncodeToString(key[:]), int(cacheTTL/time.Second))
+	return rcache.NewWithTTL("gh_repo:"+base64.URLEncoding.EncodeToString(key[:]), int(cacheTTL/time.Second))
 }
 
 // NewClient creates a new GitHub API client with an optional default personal access token.
@@ -148,7 +144,7 @@ func NewClient(apiURL *url.URL, token string, cli httpcli.Doer) *Client {
 		token:        token,
 		httpClient:   cli,
 		RateLimit:    &ratelimit.Monitor{HeaderPrefix: "X-"},
-		repoCache:    NewRepoCache(apiURL, token, "", 0),
+		repoCache:    newRepoCache(apiURL, token),
 	}
 }
 
