@@ -1,7 +1,7 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import H from 'history'
 import ErrorIcon from 'mdi-react/ErrorIcon'
-import React, { useCallback, useState, useEffect } from 'react'
+import React, { useCallback, useState } from 'react'
 import { map, catchError, tap, concatMap } from 'rxjs/operators'
 import { ConfiguredRegistryExtension } from '../../../../../shared/src/extensions/extension'
 import { ExtensionManifest } from '../../../../../shared/src/extensions/extensionManifest'
