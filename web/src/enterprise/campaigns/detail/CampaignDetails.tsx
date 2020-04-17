@@ -464,8 +464,8 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                             target="_blank"
                                         >
                                             documentation on updating campaigns
-                                        </a>
-                                        {' '}for more information.
+                                        </a>{' '}
+                                        for more information.
                                     </p>
                                 </div>
                             </div>
