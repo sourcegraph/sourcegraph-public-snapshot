@@ -54,16 +54,28 @@ type Webhook struct {
 	Secret   string   `json:"secret"`
 }
 
+const webhookURL = "rest/sourcegraph-admin/1.0/webhook"
+
 // UpsertWebhook upserts a Webhook on a BBS instance.
 func (c *Client) UpsertWebhook(ctx context.Context, w Webhook) error {
 	raw, err := json.Marshal(w)
 	if err != nil {
 		return err
 	}
-	u := "rest/sourcegraph-admin/1.0/webhook"
-	req, err := http.NewRequest("POST", u, bytes.NewReader(raw))
+	req, err := http.NewRequestWithContext(ctx, "POST", webhookURL, bytes.NewReader(raw))
 	if err != nil {
 		return err
 	}
+	return c.do(ctx, req, nil)
+}
+
+// DeleteWebhook deletes the webhook with the given name
+func (c *Client) DeleteWebhook(ctx context.Context, name string) error {
+	u := webhookURL + "?name=" + name
+	req, err := http.NewRequestWithContext(ctx, "DELETE", u, nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded; charset=utf8")
 	return c.do(ctx, req, nil)
 }
