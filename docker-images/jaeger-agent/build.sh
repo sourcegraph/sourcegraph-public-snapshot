@@ -10,8 +10,8 @@ IMAGE=${IMAGE:-sourcegraph/jaeger-agent}
 echo "Building image ${IMAGE} from Jaeger ${JAEGER_VERSION}"
 
 docker build --no-cache -t ${IMAGE} . \
-       --progress=plain \
-       --build-arg JAEGER_VERSION \
-       --build-arg COMMIT_SHA \
-       --build-arg DATE \
-       --build-arg VERSION
+  --progress=plain \
+  --build-arg JAEGER_VERSION \
+  --build-arg COMMIT_SHA \
+  --build-arg DATE \
+  --build-arg VERSION

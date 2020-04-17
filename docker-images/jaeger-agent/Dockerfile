@@ -4,6 +4,7 @@ ARG JAEGER_VERSION
 FROM jaegertracing/jaeger-agent:${JAEGER_VERSION} as base
 
 FROM alpine:3.11.5@sha256:cb8a924afdf0229ef7515d9e5b3024e23b3eb03ddbba287f4a19c6ac90b8d221
+# hadolint ignore=DL3018
 RUN apk --no-cache add bash curl
 
 COPY --from=base /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
