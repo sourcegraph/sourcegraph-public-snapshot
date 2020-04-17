@@ -49,8 +49,6 @@ interface Props {
     /** The extension that is the subject of the page. */
     extension: ConfiguredRegistryExtension<GQL.IRegistryExtension>
 
-    onDidUpdateExtension: () => void
-
     authenticatedUser: GQL.IUser
     isLightTheme: boolean
     history: H.History
