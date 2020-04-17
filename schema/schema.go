@@ -905,6 +905,10 @@ type Settings struct {
 	SearchContextLines int `json:"search.contextLines,omitempty"`
 	// SearchDefaultPatternType description: The default pattern type (literal or regexp) that search queries will be intepreted as.
 	SearchDefaultPatternType string `json:"search.defaultPatternType,omitempty"`
+	// SearchIncludeArchived description: Whether searches should include searching archived repositories.
+	SearchIncludeArchived *bool `json:"search.includeArchived,omitempty"`
+	// SearchIncludeForks description: Whether searches should include searching forked repositories.
+	SearchIncludeForks *bool `json:"search.includeForks,omitempty"`
 	// SearchRepositoryGroups description: Named groups of repositories that can be referenced in a search query using the repogroup: operator.
 	SearchRepositoryGroups map[string][]string `json:"search.repositoryGroups,omitempty"`
 	// SearchSavedQueries description: DEPRECATED: Saved search queries

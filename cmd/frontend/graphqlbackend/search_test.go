@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	querytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestSearch(t *testing.T) {
@@ -85,6 +86,10 @@ func TestSearch(t *testing.T) {
 			conf.Mock(&conf.Unified{})
 			defer conf.Mock(nil)
 			vars := map[string]interface{}{"query": tc.searchQuery, "version": tc.searchVersion}
+
+			mockDecodedViewerFinalSettings = &schema.Settings{}
+			defer func() { mockDecodedViewerFinalSettings = nil }()
+
 			db.Mocks.Repos.List = tc.reposListMock
 			sr := &schemaResolver{}
 			schema, err := graphql.ParseSchema(Schema, sr, graphql.Tracer(prometheusTracer{}))

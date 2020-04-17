@@ -287,6 +287,23 @@ func (r *searchResolver) maxResults() int32 {
 	return defaultMaxSearchResults
 }
 
+var mockDecodedViewerFinalSettings *schema.Settings
+
+func decodedViewerFinalSettings(ctx context.Context) (*schema.Settings, error) {
+	if mockDecodedViewerFinalSettings != nil {
+		return mockDecodedViewerFinalSettings, nil
+	}
+	merged, err := viewerFinalSettings(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var settings schema.Settings
+	if err := json.Unmarshal([]byte(merged.Contents()), &settings); err != nil {
+		return nil, err
+	}
+	return &settings, nil
+}
+
 var mockResolveRepoGroups func() (map[string][]*types.Repo, error)
 
 func resolveRepoGroups(ctx context.Context) (map[string][]*types.Repo, error) {
@@ -297,12 +314,8 @@ func resolveRepoGroups(ctx context.Context) (map[string][]*types.Repo, error) {
 	groups := map[string][]*types.Repo{}
 
 	// Repo groups can be defined in the search.repoGroups settings field.
-	merged, err := viewerFinalSettings(ctx)
+	settings, err := decodedViewerFinalSettings(ctx)
 	if err != nil {
-		return nil, err
-	}
-	var settings schema.Settings
-	if err := json.Unmarshal([]byte(merged.Contents()), &settings); err != nil {
 		return nil, err
 	}
 	for name, repoPaths := range settings.SearchRepositoryGroups {
@@ -369,16 +382,34 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 	}
 	repoGroupFilters, _ := r.query.StringValues(query.FieldRepoGroup)
 
+	settings, err := decodedViewerFinalSettings(ctx)
+	if err != nil {
+		return nil, nil, false, err
+	}
+	var settingForks, settingArchived bool
+	if v := settings.SearchIncludeForks; v != nil {
+		settingForks = *v
+	}
+	if v := settings.SearchIncludeArchived; v != nil {
+		settingArchived = *v
+	}
+
 	forkStr, _ := r.query.StringValue(query.FieldFork)
 	fork := parseYesNoOnly(forkStr)
-	if fork == Invalid && !exactlyOneRepo(repoFilters) {
-		fork = No // fork defaults to No unless exactly one repo is being searched.
+	if fork == Invalid && !exactlyOneRepo(repoFilters) && !settingForks {
+		// fork defaults to No unless either of:
+		// (1) exactly one repo is being searched, or
+		// (2) user/org/global setting includes forks
+		fork = No
 	}
 
 	archivedStr, _ := r.query.StringValue(query.FieldArchived)
 	archived := parseYesNoOnly(archivedStr)
-	if archived == Invalid && !exactlyOneRepo(repoFilters) {
-		archived = No // archived defaults to No unless exactly one repo is being searched.
+	if archived == Invalid && !exactlyOneRepo(repoFilters) && !settingArchived {
+		// archived defaults to No unless either of:
+		// (1) exactly one repo is being searched, or
+		// (2) user/org/global setting includes archives in all searches
+		archived = No
 	}
 
 	visibilityStr, _ := r.query.StringValue(query.FieldVisibility)

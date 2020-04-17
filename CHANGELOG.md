@@ -52,6 +52,7 @@ All notable changes to Sourcegraph are documented in this file.
 - After completing the Sourcegraph user feedback survey, a button may appear for tweeting this feedback at [@srcgraph](https://twitter.com/srcgraph).
 - `git fetch` and `git clone` now inherit the parent process environment variables. This allows site admins to set `HTTPS_PROXY` or [git http configurations](https://git-scm.com/docs/git-config/2.26.0#Documentation/git-config.txt-httpproxy) via environment variables. For cluster environments site admins should set this on the gitserver container. [#250](https://github.com/sourcegraph/sourcegraph/issues/250)
 - Experimental: Search for file contents using `and`- and `or`-expressions in queries. Enabled via the global settings value `{"experimentalFeatures": {"andOrQuery": "enabled"}}`.
+- Always include forks or archived repositories in searches via the global/org/user settings with `"search.includeForks": true` or `"search.includeArchived": true` respectively.
 
 ### Changed
 
