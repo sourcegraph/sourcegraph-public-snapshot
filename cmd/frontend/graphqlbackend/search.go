@@ -287,6 +287,23 @@ func (r *searchResolver) maxResults() int32 {
 	return defaultMaxSearchResults
 }
 
+var mockDecodedViewerFinalSettings *schema.Settings
+
+func decodedViewerFinalSettings(ctx context.Context) (*schema.Settings, error) {
+	if mockDecodedViewerFinalSettings != nil {
+		return mockDecodedViewerFinalSettings, nil
+	}
+	merged, err := viewerFinalSettings(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var settings schema.Settings
+	if err := json.Unmarshal([]byte(merged.Contents()), &settings); err != nil {
+		return nil, err
+	}
+	return &settings, nil
+}
+
 var mockResolveRepoGroups func() (map[string][]*types.Repo, error)
 
 func resolveRepoGroups(ctx context.Context) (map[string][]*types.Repo, error) {
@@ -297,12 +314,8 @@ func resolveRepoGroups(ctx context.Context) (map[string][]*types.Repo, error) {
 	groups := map[string][]*types.Repo{}
 
 	// Repo groups can be defined in the search.repoGroups settings field.
-	merged, err := viewerFinalSettings(ctx)
+	settings, err := decodedViewerFinalSettings(ctx)
 	if err != nil {
-		return nil, err
-	}
-	var settings schema.Settings
-	if err := json.Unmarshal([]byte(merged.Contents()), &settings); err != nil {
 		return nil, err
 	}
 	for name, repoPaths := range settings.SearchRepositoryGroups {
@@ -369,12 +382,8 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 	}
 	repoGroupFilters, _ := r.query.StringValues(query.FieldRepoGroup)
 
-	merged, err := viewerFinalSettings(ctx)
+	settings, err := decodedViewerFinalSettings(ctx)
 	if err != nil {
-		return nil, nil, false, err
-	}
-	var settings schema.Settings
-	if err := json.Unmarshal([]byte(merged.Contents()), &settings); err != nil {
 		return nil, nil, false, err
 	}
 	var settingForks, settingArchived bool

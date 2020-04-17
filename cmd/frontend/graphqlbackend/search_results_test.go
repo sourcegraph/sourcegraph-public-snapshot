@@ -27,6 +27,7 @@ import (
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchquerytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestSearchResults(t *testing.T) {
@@ -66,6 +67,12 @@ func TestSearchResults(t *testing.T) {
 	searchVersions := []string{"V1", "V2"}
 
 	t.Run("repo: only", func(t *testing.T) {
+		mockDecodedViewerFinalSettings = &schema.Settings{}
+		defer func() { mockDecodedViewerFinalSettings = nil }()
+
+		mockDecodedViewerFinalSettings = &schema.Settings{}
+		defer func() { mockDecodedViewerFinalSettings = nil }()
+
 		var calledReposList bool
 		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 			calledReposList = true
@@ -101,6 +108,9 @@ func TestSearchResults(t *testing.T) {
 	})
 
 	t.Run("multiple terms regexp", func(t *testing.T) {
+		mockDecodedViewerFinalSettings = &schema.Settings{}
+		defer func() { mockDecodedViewerFinalSettings = nil }()
+
 		var calledReposList bool
 		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 			calledReposList = true
@@ -174,6 +184,9 @@ func TestSearchResults(t *testing.T) {
 	})
 
 	t.Run("multiple terms literal", func(t *testing.T) {
+		mockDecodedViewerFinalSettings = &schema.Settings{}
+		defer func() { mockDecodedViewerFinalSettings = nil }()
+
 		var calledReposList bool
 		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 			calledReposList = true
@@ -259,6 +272,10 @@ func BenchmarkSearchResults(b *testing.B) {
 	}
 
 	ctx := context.Background()
+
+	mockDecodedViewerFinalSettings = &schema.Settings{}
+	defer func() { mockDecodedViewerFinalSettings = nil }()
+
 	db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 		return minimalRepos, nil
 	}
@@ -1000,6 +1017,9 @@ func TestSearchResultsHydration(t *testing.T) {
 			Fork:        false,
 		}}
 
+	mockDecodedViewerFinalSettings = &schema.Settings{}
+	defer func() { mockDecodedViewerFinalSettings = nil }()
+
 	db.Mocks.Repos.Get = func(ctx context.Context, id api.RepoID) (*types.Repo, error) {
 		return hydratedRepo, nil
 	}
@@ -1074,6 +1094,9 @@ func TestStructuralSearchRepoFilter(t *testing.T) {
 	indexedRepo := &types.Repo{Name: api.RepoName(repoName)}
 
 	unindexedRepo := &types.Repo{Name: api.RepoName("unindexed/one")}
+
+	mockDecodedViewerFinalSettings = &schema.Settings{}
+	defer func() { mockDecodedViewerFinalSettings = nil }()
 
 	db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 		return []*types.Repo{indexedRepo, unindexedRepo}, nil
