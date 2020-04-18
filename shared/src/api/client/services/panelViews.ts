@@ -9,7 +9,7 @@ import { Entry, FeatureProviderRegistry } from './registry'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { isDefined } from '../../../util/types'
 
-export interface ViewProviderRegistrationOptions {
+export interface PanelViewProviderRegistrationOptions {
     id: string
     container: ContributableViewContainer
 }
@@ -26,43 +26,47 @@ export interface PanelViewWithComponent extends Pick<sourcegraph.PanelView, 'tit
     reactElement?: React.ReactFragment
 }
 
-export type ProvideViewSignature = Observable<PanelViewWithComponent | null>
+export type ProvidePanelViewSignature = Observable<PanelViewWithComponent | null>
 
-/** Provides views from all extensions. */
-export class ViewProviderRegistry extends FeatureProviderRegistry<
-    ViewProviderRegistrationOptions,
-    ProvideViewSignature
+/** Provides panel views from all extensions. */
+export class PanelViewProviderRegistry extends FeatureProviderRegistry<
+    PanelViewProviderRegistrationOptions,
+    ProvidePanelViewSignature
 > {
     /**
-     * Returns an observable that emits the specified view whenever it or the set of registered view providers
-     * changes. If the provider emits an error, the returned observable also emits an error (and completes).
+     * Returns an observable that emits the specified panel view whenever it or the set of
+     * registered panel view providers changes. If the provider emits an error, the returned
+     * observable also emits an error (and completes).
      */
-    public getView(id: string): Observable<PanelViewWithComponent | null> {
-        return getView(this.entries, id)
+    public getPanelView(
+        id: string
+    ): Observable<(PanelViewWithComponent & PanelViewProviderRegistrationOptions) | null> {
+        return getPanelView(this.entries, id)
     }
 
     /**
-     * Returns an observable that emits all views whenever the set of registered view providers or their properties
-     * change. If any provider emits an error, the error is logged and the provider is omitted from the emission of
-     * the observable (the observable does not emit the error).
+     * Returns an observable that emits all panel views whenever the set of registered panel view
+     * providers or their properties change. If any provider emits an error, the error is logged and
+     * the provider is omitted from the emission of the observable (the observable does not emit the
+     * error).
      */
-    public getViews(
+    public getPanelViews(
         container: ContributableViewContainer
-    ): Observable<(PanelViewWithComponent & ViewProviderRegistrationOptions)[]> {
-        return getViews(this.entries, container)
+    ): Observable<(PanelViewWithComponent & PanelViewProviderRegistrationOptions)[]> {
+        return getPanelViews(this.entries, container)
     }
 }
 
 /**
- * Exported for testing only. Most callers should use {@link ViewProviderRegistry#getView}, which uses the
- * registered view providers.
+ * Exported for testing only. Most callers should use {@link ViewProviderRegistry#getPanelView},
+ * which uses the registered panel view providers.
  *
  * @internal
  */
-export function getView(
-    entries: Observable<Entry<ViewProviderRegistrationOptions, Observable<PanelViewWithComponent | null>>[]>,
+export function getPanelView(
+    entries: Observable<Entry<PanelViewProviderRegistrationOptions, Observable<PanelViewWithComponent | null>>[]>,
     id: string
-): Observable<(PanelViewWithComponent & ViewProviderRegistrationOptions) | null> {
+): Observable<(PanelViewWithComponent & PanelViewProviderRegistrationOptions) | null> {
     return entries.pipe(
         map(entries => entries.find(entry => entry.registrationOptions.id === id)),
         switchMap(entry => (entry ? addRegistrationOptions(entry) : [null]))
@@ -70,16 +74,16 @@ export function getView(
 }
 
 /**
- * Exported for testing only. Most callers should use {@link ViewProviderRegistry#getViews}, which uses the
- * registered view providers.
+ * Exported for testing only. Most callers should use {@link ViewProviderRegistry#getPanelViews},
+ * which uses the registered panel view providers.
  *
  * @internal
  */
-export function getViews(
-    entries: Observable<Entry<ViewProviderRegistrationOptions, Observable<PanelViewWithComponent | null>>[]>,
+export function getPanelViews(
+    entries: Observable<Entry<PanelViewProviderRegistrationOptions, Observable<PanelViewWithComponent | null>>[]>,
     container: ContributableViewContainer,
     logErrors = true
-): Observable<(PanelViewWithComponent & ViewProviderRegistrationOptions)[]> {
+): Observable<(PanelViewWithComponent & PanelViewProviderRegistrationOptions)[]> {
     return entries.pipe(
         switchMap(entries =>
             combineLatestOrDefault(
@@ -101,7 +105,7 @@ export function getViews(
 }
 
 function addRegistrationOptions(
-    entry: Entry<ViewProviderRegistrationOptions, Observable<PanelViewWithComponent | null>>
-): Observable<(PanelViewWithComponent & ViewProviderRegistrationOptions) | null> {
+    entry: Entry<PanelViewProviderRegistrationOptions, Observable<PanelViewWithComponent | null>>
+): Observable<(PanelViewWithComponent & PanelViewProviderRegistrationOptions) | null> {
     return entry.provider.pipe(map(view => view && { ...view, ...entry.registrationOptions }))
 }
