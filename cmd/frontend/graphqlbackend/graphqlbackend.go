@@ -103,7 +103,7 @@ func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldNa
 	return ctx, func(err *gqlerrors.QueryError) {
 		isErrStr := strconv.FormatBool(err != nil)
 		graphqlFieldHistogram.WithLabelValues(
-			typeName,
+			prometheusTypeName(typeName),
 			prometheusFieldName(typeName, fieldName),
 			isErrStr,
 			string(sgtrace.RequestSource(ctx)),
@@ -267,6 +267,39 @@ func prometheusFieldName(typeName, fieldName string) string {
 		return fieldName
 	}
 	return "other"
+}
+
+var blacklistedPrometheusTypeNames = map[string]struct{}{
+	"__Type":                                 {},
+	"__Schema":                               {},
+	"__InputValue":                           {},
+	"__Field":                                {},
+	"__EnumValue":                            {},
+	"__Directive":                            {},
+	"UserEmail":                              {},
+	"UpdateSettingsPayload":                  {},
+	"ExtensionRegistryCreateExtensionResult": {},
+	"Range":                                  {},
+	"LineMatch":                              {},
+	"DiffStat":                               {},
+	"DiffHunk":                               {},
+	"DiffHunkRange":                          {},
+	"FileDiffResolver":                       {},
+}
+
+// prometheusTypeName reduces the cardinality of GraphQL type names to make it
+// suitable for use in a Prometheus metric. This is a blacklist of type names
+// which involve non-complex calculations in the GraphQL backend and thus are
+// not worth tracking. You can find a complete list of the ones Prometheus is
+// currently tracking via:
+//
+// 	sum by (type)(src_graphql_field_seconds_count)
+//
+func prometheusTypeName(typeName string) string {
+	if _, ok := blacklistedPrometheusTypeNames[typeName]; ok {
+		return "other"
+	}
+	return typeName
 }
 
 // prometheusGraphQLRequestName is a whitelist of GraphQL request names (e.g. /.api/graphql?Foobar)
