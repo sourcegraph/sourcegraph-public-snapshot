@@ -1,6 +1,9 @@
-import { Remote, ProxyMarked, proxyMarker } from '@sourcegraph/comlink'
+import * as comlink from '@sourcegraph/comlink'
 import * as sourcegraph from 'sourcegraph'
 import { ClientViewsAPI, PanelUpdater, PanelViewData } from '../../client/api/views'
+import { syncSubscription } from '../../util'
+import { Unsubscribable } from 'rxjs'
+import { toProxyableSubscribable } from './common'
 
 /**
  * @internal
@@ -13,7 +16,7 @@ class ExtPanelView implements sourcegraph.PanelView {
         component: null,
     }
 
-    constructor(private proxyPromise: Promise<Remote<PanelUpdater>>) {}
+    constructor(private proxyPromise: Promise<comlink.Remote<PanelUpdater>>) {}
 
     public get title(): string {
         return this.data.title
@@ -59,13 +62,22 @@ class ExtPanelView implements sourcegraph.PanelView {
 }
 
 /** @internal */
-export class ExtViews implements ProxyMarked {
-    public readonly [proxyMarker] = true
+export class ExtViews implements comlink.ProxyMarked {
+    public readonly [comlink.proxyMarker] = true
 
-    constructor(private proxy: Remote<ClientViewsAPI>) {}
+    constructor(private proxy: comlink.Remote<ClientViewsAPI>) {}
 
     public createPanelView(id: string): ExtPanelView {
         const panelProxyPromise = this.proxy.$registerPanelViewProvider({ id })
         return new ExtPanelView(panelProxyPromise)
+    }
+
+    public registerViewProvider(id: string, provider: sourcegraph.ViewProvider): Unsubscribable {
+        const providerFunction: comlink.Local<
+            Parameters<ClientViewsAPI['$registerViewProvider']>[1]
+        > = comlink.proxy((params: { [key: string]: string }) =>
+            toProxyableSubscribable(provider.provideView(params), view => view!)
+        )
+        return syncSubscription(this.proxy.$registerViewProvider(id, providerFunction))
     }
 }

@@ -32,6 +32,9 @@ export interface Contributions {
     /** Menu items contributed by the extension. */
     menus?: MenuContributions
 
+    /** Views contributed by the extension. */
+    views?: ViewContribution[]
+
     /** Search filters contributed by the extension */
     searchFilters?: SearchFilters[]
 }
@@ -303,4 +306,27 @@ export enum ContributableViewContainer {
      * between different panel views.
      */
     Panel = 'window/panel',
+
+    /**
+     * A global view, displayed as a standalone page at `/views/ID`.
+     */
+    Global = 'global',
+}
+
+/**
+ * A view contributed by an extension.
+ */
+export interface ViewContribution {
+    /**
+     * The identifier for this view, which must be unique among all contributed views.
+     */
+    id: string
+
+    /**
+     * The title of this view.
+     *
+     * Currently only 'global' is supported; the other values of {@link ContributableViewContainer}
+     * are intended for the panel view API (which will eventually be merged into the new view API).
+     */
+    where: typeof ContributableViewContainer.Global
 }

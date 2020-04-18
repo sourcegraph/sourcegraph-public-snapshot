@@ -203,6 +203,28 @@
           },
           "type": "object"
         },
+        "views": {
+          "type": "array",
+          "description": "Views (which are pages or partial pages) that are contributed by the extension.",
+          "items": {
+            "title": "ViewContribution",
+            "description": "A view, which is a page or partial page.",
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "where"],
+            "properties": {
+              "id": {
+                "description": "The identifier for this view, which must be unique among all contributed views. By convention, this is a dotted string of the form `myExtensionName.myViewName`.",
+                "type": "string"
+              },
+              "where": {
+                "description": "Where the view is displayed. Currently the only supported value is 'global' (for views displayed as standalone pages at /views/ID).",
+                "type": "string",
+                "enum": ["global"]
+              }
+            }
+          }
+        },
         "searchFilters": {
           "type": "array",
           "description": "Search filters contributed by the extension.",
