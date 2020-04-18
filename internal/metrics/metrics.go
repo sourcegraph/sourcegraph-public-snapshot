@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -140,5 +141,67 @@ func mustRegisterOnce(c prometheus.Collector) {
 			return
 		}
 		panic(err)
+	}
+}
+
+// REDClient is a metrics client for collection RED metrics.
+type REDClient struct {
+	// RED metrics
+	reqs *prometheus.CounterVec
+	errs *prometheus.CounterVec
+	durs *prometheus.HistogramVec
+}
+
+// NewREDClient creates a new REDClient.
+func NewREDClient(service string) *REDClient {
+	const namespace = "src"
+
+	reqs := prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: namespace,
+		Subsystem: service,
+		Name:      "call_total",
+		Help:      fmt.Sprintf("Number of calls to the %s service endpoint", service),
+	}, []string{"method"})
+
+	errs := prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: namespace,
+		Subsystem: service,
+		Name:      "error_total",
+		Help:      fmt.Sprintf("Number of errors encountered when calling the %s service endpoint", service),
+	}, []string{"method", "code"})
+
+	durs := prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: namespace,
+		Subsystem: service,
+		Name:      "duration",
+		Help:      fmt.Sprintf("Duration of %s service endpoint method calls in seconds", service),
+	}, []string{"method"})
+
+	registerer.MustRegister(reqs, errs, durs)
+
+	return &REDClient{
+		reqs: reqs,
+		errs: errs,
+		durs: durs,
+	}
+}
+
+// Record returns a record fn that is called on any given return err. If an error is encountered
+// it will register the err metric. The err is never altered.
+func (c *REDClient) Record(method string) func(error) error {
+	start := time.Now()
+	return func(err error) error {
+		c.reqs.With(prometheus.Labels{"method": method}).Inc()
+
+		if err != nil {
+			c.errs.With(prometheus.Labels{
+				"method": method,
+				"code":   "error",
+			}).Inc()
+		}
+
+		c.durs.With(prometheus.Labels{"method": method}).Observe(time.Since(start).Seconds())
+
+		return err
 	}
 }

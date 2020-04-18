@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -78,6 +79,68 @@ func TestRequestMeterTransport(t *testing.T) {
 
 	if val != 1.0 {
 		t.Errorf("expected counter == 1, got %f", val)
+	}
+}
+
+func TestREDClientRecord(t *testing.T) {
+	rm := NewREDClient("foosystems")
+	rec := rm.Record("foo")
+	func(err error) {
+		rec(err)
+	}(nil)
+
+	val := testutil.ToFloat64(rm.reqs)
+	if got, want := val, 1.0; got != want {
+		t.Errorf("expected entries in histogram, got %f, expected %f", got, want)
+	}
+
+	m, err := rm.reqs.GetMetricWith(prometheus.Labels{"method": "foo"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	val = testutil.ToFloat64(m)
+	if got, want := val, 1.0; got != want {
+		t.Errorf("expected counter to inc, got %f, expected %f", got, want)
+	}
+
+	m, err = rm.errs.GetMetricWith(prometheus.Labels{"method": "foo", "code": "error"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	val = testutil.ToFloat64(m)
+	if got, want := val, 0.0; got != want {
+		t.Errorf("error counter should not increment, got %f, expected %f", got, want)
+	}
+}
+
+func TestREDClientRecord_Error(t *testing.T) {
+	rm := NewREDClient("failure")
+	rec := rm.Record("foo")
+	func(err error) {
+		rec(err)
+	}(errors.New("boom"))
+
+	val := testutil.ToFloat64(rm.reqs)
+	if got, want := val, 1.0; got != want {
+		t.Errorf("expected entries in histogram, got %f, expected %f", got, want)
+	}
+
+	m, err := rm.reqs.GetMetricWith(prometheus.Labels{"method": "foo"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	val = testutil.ToFloat64(m)
+	if got, want := val, 1.0; got != want {
+		t.Errorf("expected counter to inc, got %f, expected %f", got, want)
+	}
+
+	m, err = rm.errs.GetMetricWith(prometheus.Labels{"method": "foo", "code": "error"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	val = testutil.ToFloat64(m)
+	if got, want := val, 1.0; got != want {
+		t.Errorf("error counter should increment, got %f, expected %f", got, want)
 	}
 }
 

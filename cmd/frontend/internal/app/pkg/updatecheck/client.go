@@ -23,8 +23,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/usagestatsdeprecated"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
+
+var recorder = metrics.NewREDClient("updatecheck")
 
 // Status of the check for software updates for Sourcegraph.
 type Status struct {
@@ -67,12 +70,14 @@ var baseURL = &url.URL{
 }
 
 func getAndMarshalSiteActivityJSON(ctx context.Context) (json.RawMessage, error) {
+	rec := recorder.Record("getAndMarshalSiteActivityJSON")
 	days, weeks, months := 2, 1, 1
 	siteActivity, err := usagestats.GetSiteUsageStatistics(ctx, &usagestats.SiteUsageStatisticsOptions{
 		DayPeriods:   &days,
 		WeekPeriods:  &weeks,
 		MonthPeriods: &months,
 	})
+	defer rec(err)
 	if err != nil {
 		return nil, err
 	}
@@ -83,11 +88,50 @@ func getAndMarshalSiteActivityJSON(ctx context.Context) (json.RawMessage, error)
 	return json.RawMessage(contents), nil
 }
 
+func hasSearchOccurred(ctx context.Context) (bool, error) {
+	rec := recorder.Record("hasSearchOccurred")
+	searchOccurred, err := usagestats.HasSearchOccurred()
+	return searchOccurred, rec(err)
+}
+
+func hasFindRefsOccurred(ctx context.Context) (bool, error) {
+	rec := recorder.Record("hasSearchOccured")
+	findRefsOccurred, err := usagestats.HasFindRefsOccurred()
+	return findRefsOccurred, rec(err)
+}
+
+func getTotalUsersCount(ctx context.Context) (int, error) {
+	rec := recorder.Record("getTotalUsersCount")
+	totalUsers, err := db.Users.Count(ctx, &db.UsersListOptions{})
+	return totalUsers, rec(err)
+}
+
+func getTotalReposCount(ctx context.Context) (int, error) {
+	rec := recorder.Record("getTotalReposCount")
+	totalRepos, err := db.Repos.Count(ctx, db.ReposListOptions{})
+	return totalRepos, rec(err)
+}
+
+func getUsersActiveTodayCount(ctx context.Context) (int, error) {
+	rec := recorder.Record("getUsersActiveTodayCount")
+	count, err := usagestatsdeprecated.GetUsersActiveTodayCount()
+	return count, rec(err)
+}
+
+func getInitialSiteAdminEmail(ctx context.Context) (string, error) {
+	rec := recorder.Record("getInitialSiteAdminEmail")
+	initAdminEmail, err := db.UserEmails.GetInitialSiteAdminEmail(ctx)
+	return initAdminEmail, rec(err)
+}
+
 func getAndMarshalCampaignsUsageJSON(ctx context.Context) (json.RawMessage, error) {
+	rec := recorder.Record("getAndMarshalCampaignsUsageJSON")
 	campaignsUsage, err := usagestats.GetCampaignsUsageStatistics(ctx)
+	defer rec(err)
 	if err != nil {
 		return nil, err
 	}
+
 	contents, err := json.Marshal(campaignsUsage)
 	if err != nil {
 		return nil, err
@@ -96,6 +140,7 @@ func getAndMarshalCampaignsUsageJSON(ctx context.Context) (json.RawMessage, erro
 }
 
 func getAndMarshalCodeIntelUsageJSON(ctx context.Context) (json.RawMessage, error) {
+	rec := recorder.Record("getAndMarshalCodeIntelUsageJSON")
 	days, weeks, months := 2, 1, 1
 	codeIntelUsage, err := usagestats.GetCodeIntelUsageStatistics(ctx, &usagestats.CodeIntelUsageStatisticsOptions{
 		DayPeriods:            &days,
@@ -104,9 +149,11 @@ func getAndMarshalCodeIntelUsageJSON(ctx context.Context) (json.RawMessage, erro
 		IncludeEventCounts:    !conf.Get().DisableNonCriticalTelemetry,
 		IncludeEventLatencies: true,
 	})
+	defer rec(err)
 	if err != nil {
 		return nil, err
 	}
+
 	contents, err := json.Marshal(codeIntelUsage)
 	if err != nil {
 		return nil, err
@@ -115,6 +162,7 @@ func getAndMarshalCodeIntelUsageJSON(ctx context.Context) (json.RawMessage, erro
 }
 
 func getAndMarshalSearchUsageJSON(ctx context.Context) (json.RawMessage, error) {
+	rec := recorder.Record("getAndMarshalSearchUsageJSON")
 	days, weeks, months := 2, 1, 1
 	searchUsage, err := usagestats.GetSearchUsageStatistics(ctx, &usagestats.SearchUsageStatisticsOptions{
 		DayPeriods:         &days,
@@ -122,6 +170,7 @@ func getAndMarshalSearchUsageJSON(ctx context.Context) (json.RawMessage, error) 
 		MonthPeriods:       &months,
 		IncludeEventCounts: !conf.Get().DisableNonCriticalTelemetry,
 	})
+	defer rec(err)
 	if err != nil {
 		return nil, err
 	}
@@ -147,51 +196,52 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 	// For the time being, instances will report daily active users through the legacy package via this argument,
 	// as well as using the new package through the `act` argument below. This will allow comparison during the
 	// transition.
-	count, err := usagestatsdeprecated.GetUsersActiveTodayCount()
+	count, err := getUsersActiveTodayCount(ctx)
 	if err != nil {
-		logFunc("usagestatsdeprecated.GetUsersActiveTodayCount failed", "error", err)
+		logFunc("updatecheck.getUsersActiveToday failed", "error", err)
 	}
-	totalUsers, err := db.Users.Count(ctx, &db.UsersListOptions{})
+	totalUsers, err := getTotalUsersCount(ctx)
 	if err != nil {
-		logFunc("db.Users.Count failed", "error", err)
+		logFunc("updatecheck.getTotalUsersCount failed", "error", err)
 	}
-	totalRepos, err := db.Repos.Count(ctx, db.ReposListOptions{})
+	totalRepos, err := getTotalReposCount(ctx)
 	hasRepos := totalRepos > 0
 	if err != nil {
-		logFunc("db.Repos.Count failed", "error", err)
+		logFunc("updatecheck.getTotalReposCount failed", "error", err)
 	}
-	searchOccurred, err := usagestats.HasSearchOccurred()
+	searchOccurred, err := hasSearchOccurred(ctx)
 	if err != nil {
-		logFunc("usagestats.HasSearchOccurred failed", "error", err)
+		logFunc("updatecheck.hasSearchOccurred failed", "error", err)
 	}
-	findRefsOccurred, err := usagestats.HasFindRefsOccurred()
+	findRefsOccurred, err := hasFindRefsOccurred(ctx)
 	if err != nil {
-		logFunc("usagestats.HasFindRefsOccurred failed", "error", err)
+		logFunc("updatecheck.hasFindRefsOccurred failed", "error", err)
 	}
 	act, err := getAndMarshalSiteActivityJSON(ctx)
 	if err != nil {
-		logFunc("getAndMarshalSiteActivityJSON failed", "error", err)
+		logFunc("updatecheck.getAndMarshalSiteActivityJSON failed", "error", err)
 	}
 	campaignsUsage, err := getAndMarshalCampaignsUsageJSON(ctx)
 	if err != nil {
-		logFunc("getAndMarshalCampaignsUsageJSON failed", "error", err)
+		logFunc("updatecheck.getAndMarshalCampaignsUsageJSON failed", "error", err)
 	}
 	codeIntelUsage, err := getAndMarshalCodeIntelUsageJSON(ctx)
 	if err != nil {
-		logFunc("getAndMarshalCodeIntelUsageJSON failed", "error", err)
+		logFunc("updatecheck.getAndMarshalCodeIntelUsageJSON failed", "error", err)
 	}
 	searchUsage, err := getAndMarshalSearchUsageJSON(ctx)
 	if err != nil {
-		logFunc("getAndMarshalSearchUsageJSON failed", "error", err)
+		logFunc("updatecheck.getAndMarshalSearchUsageJSON failed", "error", err)
 	}
-	initAdminEmail, err := db.UserEmails.GetInitialSiteAdminEmail(ctx)
+	initAdminEmail, err := getInitialSiteAdminEmail(ctx)
 	if err != nil {
-		logFunc("db.UserEmails.GetInitialSiteAdminEmail failed", "error", err)
+		logFunc("updatecheck.GetInitialSiteAdminEmail failed", "error", err)
 	}
 	svcs, err := externalServiceKinds(ctx)
 	if err != nil {
-		logFunc("externalServicesKinds failed", "error", err)
+		logFunc("updatecheck.externalServicesKinds failed", "error", err)
 	}
+
 	contents, err := json.Marshal(&pingRequest{
 		ClientSiteID:         siteid.Get(),
 		LicenseKey:           conf.Get().LicenseKey,
@@ -229,7 +279,9 @@ func authProviderTypes() []string {
 }
 
 func externalServiceKinds(ctx context.Context) ([]string, error) {
+	rec := recorder.Record("externalServiceKinds")
 	services, err := db.ExternalServices.List(ctx, db.ExternalServicesListOptions{})
+	defer rec(err)
 	if err != nil {
 		return nil, err
 	}
