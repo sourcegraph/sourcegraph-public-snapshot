@@ -75,7 +75,7 @@ func Frontend() *Container {
 						{
 							Name:            "99th_percentile_search_codeintel_request_duration",
 							Description:     "99th percentile code-intel successful search request duration over 5m",
-							Query:           `histogram_quantile(0.99, sum by (le)(rate(src_graphql_field_seconds_bucket{type="Search",field="results",error="false",source="browser",name="CodeIntelSearch"}[5m])))`,
+							Query:           `histogram_quantile(0.99, sum by (le)(rate(src_graphql_field_seconds_bucket{type="Search",field="results",error="false",source="browser",request_name="CodeIntelSearch"}[5m])))`,
 							DataMayNotExist: true,
 							DataMayBeNaN:    true, // See https://github.com/sourcegraph/sourcegraph/issues/9834
 							Warning:         Alert{GreaterOrEqual: 20},
@@ -84,7 +84,7 @@ func Frontend() *Container {
 						{
 							Name:            "90th_percentile_search_codeintel_request_duration",
 							Description:     "90th percentile code-intel successful search request duration over 5m",
-							Query:           `histogram_quantile(0.90, sum by (le)(rate(src_graphql_field_seconds_bucket{type="Search",field="results",error="false",source="browser",name="CodeIntelSearch"}[5m])))`,
+							Query:           `histogram_quantile(0.90, sum by (le)(rate(src_graphql_field_seconds_bucket{type="Search",field="results",error="false",source="browser",request_name="CodeIntelSearch"}[5m])))`,
 							DataMayNotExist: true,
 							DataMayBeNaN:    true, // See https://github.com/sourcegraph/sourcegraph/issues/9834
 							Warning:         Alert{GreaterOrEqual: 15},
@@ -95,7 +95,7 @@ func Frontend() *Container {
 						{
 							Name:            "hard_timeout_search_codeintel_responses",
 							Description:     "hard timeout search code-intel responses every 5m",
-							Query:           `sum(sum by (status)(increase(src_graphql_search_response{status="timeout",source="browser",name="CodeIntelSearch"}[5m]))) + sum(sum by (status, alert_type)(increase(src_graphql_search_response{status="alert",alert_type="timed_out",source="browser",name="CodeIntelSearch"}[5m])))`,
+							Query:           `sum(sum by (status)(increase(src_graphql_search_response{status="timeout",source="browser",request_name="CodeIntelSearch"}[5m]))) + sum(sum by (status, alert_type)(increase(src_graphql_search_response{status="alert",alert_type="timed_out",source="browser",request_name="CodeIntelSearch"}[5m])))`,
 							DataMayNotExist: true,
 							Warning:         Alert{GreaterOrEqual: 5},
 							Critical:        Alert{GreaterOrEqual: 20},
@@ -104,7 +104,7 @@ func Frontend() *Container {
 						{
 							Name:            "hard_error_search_codeintel_responses",
 							Description:     "hard error search code-intel responses every 5m",
-							Query:           `sum by (status)(increase(src_graphql_search_response{status=~"error",source="browser",name="CodeIntelSearch"}[5m]))`,
+							Query:           `sum by (status)(increase(src_graphql_search_response{status=~"error",source="browser",request_name="CodeIntelSearch"}[5m]))`,
 							DataMayNotExist: true,
 							Warning:         Alert{GreaterOrEqual: 5},
 							Critical:        Alert{GreaterOrEqual: 20},
@@ -113,7 +113,7 @@ func Frontend() *Container {
 						{
 							Name:            "partial_timeout_search_codeintel_responses",
 							Description:     "partial timeout search code-intel responses every 5m",
-							Query:           `sum by (status)(increase(src_graphql_search_response{status="partial_timeout",source="browser",name="CodeIntelSearch"}[5m]))`,
+							Query:           `sum by (status)(increase(src_graphql_search_response{status="partial_timeout",source="browser",request_name="CodeIntelSearch"}[5m]))`,
 							DataMayNotExist: true,
 							Warning:         Alert{GreaterOrEqual: 5},
 							PanelOptions:    PanelOptions().LegendFormat("partial timeout"),
@@ -121,7 +121,7 @@ func Frontend() *Container {
 						{
 							Name:            "search_codeintel_alert_user_suggestions",
 							Description:     "search code-intel alert user suggestions shown every 5m",
-							Query:           `sum by (alert_type)(increase(src_graphql_search_response{status="alert",alert_type!~"timed_out",source="browser",name="CodeIntelSearch"}[5m]))`,
+							Query:           `sum by (alert_type)(increase(src_graphql_search_response{status="alert",alert_type!~"timed_out",source="browser",request_name="CodeIntelSearch"}[5m]))`,
 							DataMayNotExist: true,
 							Warning:         Alert{GreaterOrEqual: 50},
 							PanelOptions:    PanelOptions().LegendFormat("{{alert_type}}"),
