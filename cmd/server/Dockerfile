@@ -60,9 +60,9 @@ COPY --from=ctags /usr/local/bin/universal-* /usr/local/bin/
 COPY --from=precise-code-intel-builder /precise-code-intel /precise-code-intel
 
 # hadolint ignore=DL3022
-COPY --from=sourcegraph/prometheus:61399_2020-04-18_39da607@sha256:7b9ed0f7c94e24092f6880d9d3e8862164f1f2a32b61bf2b2e15e244aea19b66 /bin/prometheus /usr/local/bin
+COPY --from=sourcegraph/prometheus:61407_2020-04-18_9aa5791@sha256:9b31cc8832defb66cd29e5a298422983179495193745324902660073b3fdc835 /bin/prometheus /usr/local/bin
 # hadolint ignore=DL3022
-COPY --from=sourcegraph/prometheus:61399_2020-04-18_39da607@sha256:7b9ed0f7c94e24092f6880d9d3e8862164f1f2a32b61bf2b2e15e244aea19b66 /usr/share/prometheus /usr/share/prometheus
+COPY --from=sourcegraph/prometheus:61407_2020-04-18_9aa5791@sha256:9b31cc8832defb66cd29e5a298422983179495193745324902660073b3fdc835 /usr/share/prometheus /usr/share/prometheus
 
 # hadolint ignore=DL3018
 RUN set -ex && \
