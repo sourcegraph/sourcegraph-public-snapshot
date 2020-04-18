@@ -65,12 +65,16 @@ export class ActivationDropdown extends React.PureComponent<Props, State> {
         this.subscriptions.unsubscribe()
     }
 
-    public render(): JSX.Element {
+    public render(): JSX.Element | null {
         const show =
             this.props.alwaysShow ||
             this.state.displayEvenIfFullyCompleted ||
             this.state.animate ||
             (this.props.activation.completed !== undefined && percentageDone(this.props.activation.completed) < 100)
+        if (!show) {
+            return null
+        }
+
         const confettiConfig = {
             spread: 68,
             startVelocity: 12,
@@ -87,8 +91,7 @@ export class ActivationDropdown extends React.PureComponent<Props, State> {
                         <MenuButton
                             className={classNames(
                                 'activation-dropdown-button activation-dropdown-button__animated-button bg-transparent align-items-center e2e-activation-nav-item-toggle',
-                                { animate: this.state.animate },
-                                { 'activation-dropdown-button--hidden': !show }
+                                { animate: this.state.animate }
                             )}
                         >
                             <div className="activation-dropdown-button__confetti">
