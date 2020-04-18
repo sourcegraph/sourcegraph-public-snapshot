@@ -203,6 +203,42 @@
           },
           "type": "object"
         },
+        "forms": {
+          "type": "array",
+          "description": "Forms (which are collections of input fields) that are contributed by the extension.",
+          "items": {
+            "title": "FormContribution",
+            "description": "A form, which is a collection of input fields.",
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "description": "The identifier for this form, which must be unique among all contributed forms. By convention, this is a dotted string of the form `myExtensionName.myFormName`.",
+                "type": "string"
+              },
+              "schema": {
+                "description": "The JSON Schema for the value represented by the form. This is used to automatically generate the form to display to the user.",
+                "$ref": "http://json-schema.org/draft-07/schema#"
+              }
+            }
+          }
+        },
+        "views": {
+          "type": "array",
+          "description": "Views (which are pages or partial pages) that are contributed by the extension.",
+          "items": {
+            "title": "ViewContribution",
+            "description": "A view, which is a page or partial page.",
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "description": "The identifier for this page, which must be unique among all contributed pages. By convention, this is a dotted string of the form `myExtensionName.myFormName`.",
+                "type": "string"
+              }
+            }
+          }
+        },
         "searchFilters": {
           "type": "array",
           "description": "Search filters contributed by the extension.",

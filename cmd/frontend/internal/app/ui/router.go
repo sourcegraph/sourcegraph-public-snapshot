@@ -65,6 +65,7 @@ const (
 	routeSnippets       = "snippets"
 	routeSubscriptions  = "subscriptions"
 	routeStats          = "stats"
+	routeViews          = "views"
 
 	routeSearchQueryBuilder = "search.query-builder"
 
@@ -130,6 +131,7 @@ func newRouter() *mux.Router {
 	r.PathPrefix("/snippets").Methods("GET").Name(routeSnippets)
 	r.PathPrefix("/subscriptions").Methods("GET").Name(routeSubscriptions)
 	r.PathPrefix("/stats").Methods("GET").Name(routeStats)
+	r.PathPrefix("/views").Methods("GET").Name(routeViews)
 
 	// Legacy redirects
 	r.Path("/login").Methods("GET").Name(routeLegacyLogin)
@@ -210,6 +212,7 @@ func initRouter() {
 	router.Get(routeSnippets).Handler(handler(serveBrandedPageString("Snippets")))
 	router.Get(routeSubscriptions).Handler(handler(serveBrandedPageString("Subscriptions")))
 	router.Get(routeStats).Handler(handler(serveBrandedPageString("Stats")))
+	router.Get(routeViews).Handler(handler(serveBrandedPageString("View")))
 
 	router.Get(routeUserSettings).Handler(handler(serveBrandedPageString("User settings")))
 	router.Get(routeUserRedirect).Handler(handler(serveBrandedPageString("User")))

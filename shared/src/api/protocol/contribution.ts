@@ -32,6 +32,12 @@ export interface Contributions {
     /** Menu items contributed by the extension. */
     menus?: MenuContributions
 
+    /** Forms contributed by the extension. */
+    forms?: FormContribution[]
+
+    /** Views contributed by the extension. */
+    views?: ViewContribution[]
+
     /** Search filters contributed by the extension */
     searchFilters?: SearchFilters[]
 }
@@ -276,6 +282,69 @@ export interface MenuItemContribution {
      * group sorting last. The client must not display the group value.
      */
     group?: string
+}
+
+/**
+ * A form contributed by an extension.
+ */
+export interface FormContribution {
+    /**
+     * The identifier for this form, which must be unique among all contributed forms.
+     */
+    id: string
+
+    /**
+     * The JSON Schema for the value represented by this form.
+     */
+    schema: { [key: string]: any }
+
+    /**
+     * The UI schema, used when rendering the form. See
+     * https://react-jsonschema-form.readthedocs.io/en/latest/form-customization/#the-uischema-object.
+     */
+    uiSchema?: { [key: string]: any }
+
+    /**
+     * Form submission.
+     */
+    submit: {
+        /**
+         * The command to invoke when submitting the form. The command receives the form value as
+         * the first argument.
+         */
+        command: string
+
+        /**
+         * The submit button label.
+         */
+        label?: string
+    }
+
+    /**
+     * The (optional) command to invoke when the form's value is edited by the user.
+     */
+    change?: string
+}
+
+/**
+ * A view contributed by an extension.
+ */
+export interface ViewContribution {
+    /**
+     * The identifier for this view, which must be unique among all contributed views.
+     */
+    id: string
+
+    /**
+     * The title of this view.
+     */
+    title?: string
+
+    /**
+     * The form to display on this view (specified by the form ID as defined in the `forms`
+     * contributions).
+     */
+    form?: string
 }
 
 /**

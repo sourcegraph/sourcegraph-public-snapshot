@@ -183,6 +183,7 @@ function createExtensionAPI(
             },
             createPanelView: (id: string) => views.createPanelView(id),
             createDecorationType,
+            registerViewProvider: (id, provider) => views.registerViewProvider(id, provider),
         },
 
         workspace: {

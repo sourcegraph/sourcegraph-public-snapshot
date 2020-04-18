@@ -1,14 +1,17 @@
-import { ProxyValue, proxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
+import { ProxyValue, proxyValue, proxyValueSymbol, ProxyResult } from '@sourcegraph/comlink'
 import { isEqual, omit } from 'lodash'
 import { combineLatest, from, ReplaySubject, Unsubscribable, ObservableInput } from 'rxjs'
 import { distinctUntilChanged, map, switchMap } from 'rxjs/operators'
-import { PanelView } from 'sourcegraph'
+import { PanelView, View } from 'sourcegraph'
 import { ContributableViewContainer } from '../../protocol'
 import { EditorService, getActiveCodeEditorPosition } from '../services/editorService'
 import { TextDocumentLocationProviderIDRegistry } from '../services/location'
 import { PanelViewWithComponent, PanelViewProviderRegistry } from '../services/panelViews'
 import { Location } from '@sourcegraph/extension-api-types'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
+import { ProxySubscribable } from '../../extension/api/common'
+import { wrapRemoteObservable } from './common'
+import { ViewService } from '../services/viewService'
 
 /** @internal */
 export interface PanelViewData extends Pick<PanelView, 'title' | 'content' | 'priority' | 'component'> {}
@@ -20,6 +23,11 @@ export interface PanelUpdater extends Unsubscribable, ProxyValue {
 /** @internal */
 export interface ClientViewsAPI extends ProxyValue {
     $registerPanelViewProvider(provider: { id: string }): PanelUpdater
+
+    $registerViewProvider(
+        id: string,
+        providerFunction: ProxyResult<((params: { [key: string]: string }) => ProxySubscribable<View>) & ProxyValue>
+    ): Unsubscribable & ProxyValue
 }
 
 /** @internal */
@@ -29,7 +37,8 @@ export class ClientViews implements ClientViewsAPI {
     constructor(
         private panelViewRegistry: PanelViewProviderRegistry,
         private textDocumentLocations: TextDocumentLocationProviderIDRegistry,
-        private editorService: EditorService
+        private editorService: EditorService,
+        private viewService: ViewService
     ) {}
 
     public $registerPanelViewProvider(provider: { id: string }): PanelUpdater {
@@ -84,5 +93,16 @@ export class ClientViews implements ClientViewsAPI {
                 registryUnsubscribable.unsubscribe()
             },
         })
+    }
+
+    public $registerViewProvider(
+        id: string,
+        providerFunction: ProxyResult<((params: { [key: string]: string }) => ProxySubscribable<View>) & ProxyValue>
+    ): Unsubscribable & ProxyValue {
+        return proxyValue(
+            this.viewService.register(id, (params: { [key: string]: string }) =>
+                wrapRemoteObservable(providerFunction(params))
+            )
+        )
     }
 }

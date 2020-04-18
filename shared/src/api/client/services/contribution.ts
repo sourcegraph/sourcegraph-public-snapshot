@@ -200,6 +200,20 @@ export function mergeContributions(contributions: Evaluated<Contributions>[]): E
                 }
             }
         }
+        if (c.forms) {
+            if (!merged.forms) {
+                merged.forms = [...c.forms]
+            } else {
+                merged.forms = [...merged.forms, ...c.forms]
+            }
+        }
+        if (c.views) {
+            if (!merged.views) {
+                merged.views = [...c.views]
+            } else {
+                merged.views = [...merged.views, ...c.views]
+            }
+        }
         if (c.searchFilters) {
             if (!merged.searchFilters) {
                 merged.searchFilters = [...c.searchFilters]

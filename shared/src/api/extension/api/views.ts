@@ -1,6 +1,9 @@
-import { ProxyResult, ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
+import { ProxyResult, ProxyValue, proxyValueSymbol, ProxyInput, proxyValue } from '@sourcegraph/comlink'
 import * as sourcegraph from 'sourcegraph'
 import { ClientViewsAPI, PanelUpdater, PanelViewData } from '../../client/api/views'
+import { syncSubscription } from '../../util'
+import { Unsubscribable } from 'rxjs'
+import { toProxyableSubscribable } from './common'
 
 /**
  * @internal
@@ -67,5 +70,14 @@ export class ExtViews implements ProxyValue {
     public createPanelView(id: string): ExtPanelView {
         const panelProxyPromise = this.proxy.$registerPanelViewProvider({ id })
         return new ExtPanelView(panelProxyPromise)
+    }
+
+    public registerViewProvider(id: string, provider: sourcegraph.ViewProvider): Unsubscribable {
+        const providerFunction: ProxyInput<
+            Parameters<ClientViewsAPI['$registerViewProvider']>[1]
+        > = proxyValue((params: { [key: string]: string }) =>
+            toProxyableSubscribable(provider.provideView(params), view => view!)
+        )
+        return syncSubscription(this.proxy.$registerViewProvider(id, providerFunction))
     }
 }
