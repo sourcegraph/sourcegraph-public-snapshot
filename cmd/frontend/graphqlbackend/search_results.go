@@ -33,6 +33,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -557,6 +558,7 @@ func (r *searchResolver) logSearchLatency(ctx context.Context, durationMs int32)
 // evaluateLeaf performs a single search operation and corresponds to the
 // evaluation of leaf expression in a query.
 func (r *searchResolver) evaluateLeaf(ctx context.Context) (*SearchResultsResolver, error) {
+	start := time.Now()
 	// If the request specifies stable:truthy, use pagination to return a stable ordering.
 	if r.query.BoolValue("stable") {
 		result, err := r.paginatedResults(ctx)
@@ -614,6 +616,25 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (*SearchResultsResolv
 		trace.GraphQLRequestName(ctx),
 	).Inc()
 
+	if v := conf.Get().ObservabilityLogSlowSearches; v != 0 && time.Since(start).Milliseconds() > int64(v) {
+		// Note: We don't care about the error here, we just extract the username if
+		// we get a non-nil user object.
+		currentUser, _ := CurrentUser(ctx)
+		var currentUserName string
+		if currentUser != nil {
+			currentUserName = currentUser.Username()
+		}
+
+		log15.Warn("slow search request",
+			"time", time.Since(start),
+			"query", `"`+r.rawQuery()+`"`,
+			"type", trace.GraphQLRequestName(ctx),
+			"user", currentUserName,
+			"source", trace.RequestSource(ctx),
+			"status", status,
+			"alertType", alertType,
+		)
+	}
 	return rr, err
 }
 
