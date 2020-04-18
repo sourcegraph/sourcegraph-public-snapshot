@@ -73,8 +73,8 @@ func Frontend() *Container {
 				Rows: []Row{
 					{
 						{
-							Name:            "99th_percentile_search_request_duration",
-							Description:     "99th percentile successful search request duration over 5m",
+							Name:            "99th_percentile_search_codeintel_request_duration",
+							Description:     "99th percentile code-intel successful search request duration over 5m",
 							Query:           `histogram_quantile(0.99, sum by (le)(rate(src_graphql_field_seconds_bucket{type="Search",field="results",error="false",source="browser",name="CodeIntelSearch"}[5m])))`,
 							DataMayNotExist: true,
 							DataMayBeNaN:    true, // See https://github.com/sourcegraph/sourcegraph/issues/9834
@@ -82,8 +82,8 @@ func Frontend() *Container {
 							PanelOptions:    PanelOptions().LegendFormat("duration").Unit(Seconds),
 						},
 						{
-							Name:            "90th_percentile_search_request_duration",
-							Description:     "90th percentile successful search request duration over 5m",
+							Name:            "90th_percentile_search_codeintel_request_duration",
+							Description:     "90th percentile code-intel successful search request duration over 5m",
 							Query:           `histogram_quantile(0.90, sum by (le)(rate(src_graphql_field_seconds_bucket{type="Search",field="results",error="false",source="browser",name="CodeIntelSearch"}[5m])))`,
 							DataMayNotExist: true,
 							DataMayBeNaN:    true, // See https://github.com/sourcegraph/sourcegraph/issues/9834
@@ -93,8 +93,8 @@ func Frontend() *Container {
 					},
 					{
 						{
-							Name:            "hard_timeout_search_responses",
-							Description:     "hard timeout search responses every 5m",
+							Name:            "hard_timeout_search_codeintel_responses",
+							Description:     "hard timeout search code-intel responses every 5m",
 							Query:           `sum(sum by (status)(increase(src_graphql_search_response{status="timeout",source="browser",name="CodeIntelSearch"}[5m]))) + sum(sum by (status, alert_type)(increase(src_graphql_search_response{status="alert",alert_type="timed_out",source="browser",name="CodeIntelSearch"}[5m])))`,
 							DataMayNotExist: true,
 							Warning:         Alert{GreaterOrEqual: 5},
@@ -102,8 +102,8 @@ func Frontend() *Container {
 							PanelOptions:    PanelOptions().LegendFormat("hard timeout"),
 						},
 						{
-							Name:            "hard_error_search_responses",
-							Description:     "hard error search responses every 5m",
+							Name:            "hard_error_search_codeintel_responses",
+							Description:     "hard error search code-intel responses every 5m",
 							Query:           `sum by (status)(increase(src_graphql_search_response{status=~"error",source="browser",name="CodeIntelSearch"}[5m]))`,
 							DataMayNotExist: true,
 							Warning:         Alert{GreaterOrEqual: 5},
@@ -111,16 +111,16 @@ func Frontend() *Container {
 							PanelOptions:    PanelOptions().LegendFormat("hard error"),
 						},
 						{
-							Name:            "partial_timeout_search_responses",
-							Description:     "partial timeout search responses every 5m",
+							Name:            "partial_timeout_search_codeintel_responses",
+							Description:     "partial timeout search code-intel responses every 5m",
 							Query:           `sum by (status)(increase(src_graphql_search_response{status="partial_timeout",source="browser",name="CodeIntelSearch"}[5m]))`,
 							DataMayNotExist: true,
 							Warning:         Alert{GreaterOrEqual: 5},
 							PanelOptions:    PanelOptions().LegendFormat("partial timeout"),
 						},
 						{
-							Name:            "search_alert_user_suggestions",
-							Description:     "search alert user suggestions shown every 5m",
+							Name:            "search_codeintel_alert_user_suggestions",
+							Description:     "search code-intel alert user suggestions shown every 5m",
 							Query:           `sum by (alert_type)(increase(src_graphql_search_response{status="alert",alert_type!~"timed_out",source="browser",name="CodeIntelSearch"}[5m]))`,
 							DataMayNotExist: true,
 							Warning:         Alert{GreaterOrEqual: 50},
