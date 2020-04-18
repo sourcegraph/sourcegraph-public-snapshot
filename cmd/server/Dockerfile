@@ -60,9 +60,9 @@ COPY --from=ctags /usr/local/bin/universal-* /usr/local/bin/
 COPY --from=precise-code-intel-builder /precise-code-intel /precise-code-intel
 
 # hadolint ignore=DL3022
-COPY --from=sourcegraph/prometheus:61380_2020-04-17_046b2c8@sha256:95d68e080b83152c0b0860977e4aaf83c1b88101e212988a2df5ac5955de7b2c /bin/prometheus /usr/local/bin
+COPY --from=sourcegraph/prometheus:61399_2020-04-18_39da607@sha256:7b9ed0f7c94e24092f6880d9d3e8862164f1f2a32b61bf2b2e15e244aea19b66 /bin/prometheus /usr/local/bin
 # hadolint ignore=DL3022
-COPY --from=sourcegraph/prometheus:61380_2020-04-17_046b2c8@sha256:95d68e080b83152c0b0860977e4aaf83c1b88101e212988a2df5ac5955de7b2c /usr/share/prometheus /usr/share/prometheus
+COPY --from=sourcegraph/prometheus:61399_2020-04-18_39da607@sha256:7b9ed0f7c94e24092f6880d9d3e8862164f1f2a32b61bf2b2e15e244aea19b66 /usr/share/prometheus /usr/share/prometheus
 
 # hadolint ignore=DL3018
 RUN set -ex && \
@@ -71,7 +71,7 @@ RUN set -ex && \
     apk add --no-cache libc6-compat ca-certificates su-exec
 
 # hadolint ignore=DL3022
-COPY --from=sourcegraph/grafana:61380_2020-04-17_046b2c8@sha256:7797b81d6e6dc061e745bfafbb89608d52b07107bc946139bc58f8295103b379 /usr/share/grafana /usr/share/grafana
+COPY --from=sourcegraph/grafana:61399_2020-04-18_39da607@sha256:9278d1ec99f3887244b5d7d6739340448845acbe545466a19ad73837724e9cf1 /usr/share/grafana /usr/share/grafana
 
 # hadolint ignore=DL3022
 COPY --from=libsqlite3-pcre /sqlite3-pcre/pcre.so /libsqlite3-pcre.so
@@ -79,7 +79,7 @@ ENV LIBSQLITE3_PCRE /libsqlite3-pcre.so
 COPY . /
 
 # hadolint ignore=DL3022
-COPY --from=sourcegraph/grafana:61380_2020-04-17_046b2c8@sha256:7797b81d6e6dc061e745bfafbb89608d52b07107bc946139bc58f8295103b379 /sg_config_grafana/provisioning/dashboards /sg_config_grafana/provisioning/dashboards
+COPY --from=sourcegraph/grafana:61399_2020-04-18_39da607@sha256:9278d1ec99f3887244b5d7d6739340448845acbe545466a19ad73837724e9cf1 /sg_config_grafana/provisioning/dashboards /sg_config_grafana/provisioning/dashboards
 
 # hadolint ignore=DL3022
 COPY --from=wrouesnel/postgres_exporter:v0.7.0@sha256:785c919627c06f540d515aac88b7966f352403f73e931e70dc2cbf783146a98b /postgres_exporter /usr/local/bin/postgres_exporter
