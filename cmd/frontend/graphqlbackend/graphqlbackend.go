@@ -29,7 +29,7 @@ var graphqlFieldHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Name:      "field_seconds",
 	Help:      "GraphQL field resolver latencies in seconds.",
 	Buckets:   []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
-}, []string{"type", "field", "error", "source"})
+}, []string{"type", "field", "error", "source", "request_name"})
 
 var codeIntelSearchHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Namespace: "src",
@@ -102,7 +102,13 @@ func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldNa
 	start := time.Now()
 	return ctx, func(err *gqlerrors.QueryError) {
 		isErrStr := strconv.FormatBool(err != nil)
-		graphqlFieldHistogram.WithLabelValues(typeName, prometheusFieldName(typeName, fieldName), isErrStr, string(sgtrace.RequestSource(ctx))).Observe(time.Since(start).Seconds())
+		graphqlFieldHistogram.WithLabelValues(
+			typeName,
+			prometheusFieldName(typeName, fieldName),
+			isErrStr,
+			string(sgtrace.RequestSource(ctx)),
+			prometheusGraphQLRequestName(sgtrace.GraphQLRequestName(ctx)),
+		).Observe(time.Since(start).Seconds())
 
 		origin := sgtrace.RequestOrigin(ctx)
 		if origin != "unknown" && (fieldName == "search" || fieldName == "lsif") {
@@ -264,6 +270,15 @@ var whitelistedPrometheusFieldNames = map[[2]string]struct{}{
 func prometheusFieldName(typeName, fieldName string) string {
 	if _, ok := whitelistedPrometheusFieldNames[[2]string{typeName, fieldName}]; ok {
 		return fieldName
+	}
+	return "other"
+}
+
+// prometheusGraphQLRequestName is a whitelist of GraphQL request names (e.g. /.api/graphql?Foobar)
+// to include in a Prometheus metric. Be extremely careful
+func prometheusGraphQLRequestName(requestName string) string {
+	if requestName == "CodeIntelSearch" {
+		return requestName
 	}
 	return "other"
 }
