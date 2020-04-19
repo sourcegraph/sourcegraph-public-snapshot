@@ -7,7 +7,7 @@ pushd "$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null
 
 GRAFANA_DISK="${HOME}/.sourcegraph-dev/data/grafana"
 
-IMAGE=sourcegraph/grafana:10.0.12@sha256:2cde7e16fa56e81237fb05e228018015385f6498c4642d4ae073799a02b2b68c
+IMAGE=sourcegraph/grafana:61407_2020-04-18_9aa5791@sha256:27845c4e03643f2a774873abfe549956bdbb3a19508a6e3f96f83c80eb24d81f
 CONTAINER=grafana
 
 mkdir -p "${GRAFANA_DISK}"/logs

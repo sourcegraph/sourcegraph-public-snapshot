@@ -16,7 +16,7 @@ export const CampaignsSiteAdminMarketingPage: React.FunctionComponent<CampaignsS
                         <a href="https://docs.sourcegraph.com/user/campaigns">
                             Update your site configuration settings
                         </a>{' '}
-                        to enable Campaigns for site admins.
+                        to enable campaigns for site admins.
                         <div className="alert alert-info mt-3">
                             <p>
                                 <strong>
@@ -26,12 +26,12 @@ export const CampaignsSiteAdminMarketingPage: React.FunctionComponent<CampaignsS
                             </p>
                             <ul className="mb-3">
                                 <li>
-                                    During the beta period, Campaigns are free to use. After the beta period ends,
-                                    Campaigns will be available as a paid add-on.
+                                    During the beta period, campaigns are free to use. After the beta period ends,
+                                    campaigns will be available as a paid add-on.
                                 </li>
                                 <li>
-                                    Campaigns are not included as part of the Enterprise or Enterprise plus license
-                                    tiers.
+                                    Campaigns are not included as part of the Enterprise tiers (Enterprise, Enterprise
+                                    Starter, Enterprise Plus, etc.) license tiers.
                                 </li>
                             </ul>
                             Please <a href="mailto:sales@sourcegraph.com">contact us</a> for more information.
@@ -41,13 +41,13 @@ export const CampaignsSiteAdminMarketingPage: React.FunctionComponent<CampaignsS
                         Optional: enable read-only access for all users.
                         <div className="alert alert-warning mt-3">
                             <strong>WARNING:</strong> Repository permissions are NOT enforced if you enable read-only
-                            views on Campaigns. Any authenticated user will be able to see all code changes associated
-                            with a Campaign. Therefore, read-only access is recommended for instances without repository
+                            views on campaigns. Any authenticated user will be able to see all code changes associated
+                            with a campaign. Therefore, read-only access is recommended for instances without repository
                             permissions configured.
                         </div>
                     </li>
                     <li>
-                        <a href="https://docs.sourcegraph.com/user/campaigns">Create your first Campaign</a>
+                        <a href="https://docs.sourcegraph.com/user/campaigns">Create your first campaign</a>
                     </li>
                 </ol>
                 <div>
@@ -55,7 +55,7 @@ export const CampaignsSiteAdminMarketingPage: React.FunctionComponent<CampaignsS
                         Go to my site configuration
                     </Link>
                     <a href="https://docs.sourcegraph.com/user/campaigns" rel="noopener" className="btn btn-primary">
-                        Learn how to run Campaigns
+                        Learn how to run campaigns
                     </a>
                 </div>
             </section>

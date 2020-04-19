@@ -54,7 +54,7 @@ func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]graphqlback
 			store:         r.store,
 			Changeset:     c,
 			preloadedRepo: repo,
-			nextSync:      r.scheduledSyncs[c.ID],
+			nextSyncAt:    r.scheduledSyncs[c.ID],
 		})
 	}
 
@@ -139,7 +139,7 @@ type changesetResolver struct {
 	eventsErr  error
 
 	// When the next sync is scheduled
-	nextSync time.Time
+	nextSyncAt time.Time
 }
 
 const changesetIDKind = "ExternalChangeset"
@@ -219,11 +219,11 @@ func (r *changesetResolver) UpdatedAt() graphqlbackend.DateTime {
 	return graphqlbackend.DateTime{Time: r.Changeset.UpdatedAt}
 }
 
-func (r *changesetResolver) NextSync() *graphqlbackend.DateTime {
-	if r.nextSync.IsZero() {
+func (r *changesetResolver) NextSyncAt() *graphqlbackend.DateTime {
+	if r.nextSyncAt.IsZero() {
 		return nil
 	}
-	return &graphqlbackend.DateTime{Time: r.nextSync}
+	return &graphqlbackend.DateTime{Time: r.nextSyncAt}
 }
 
 func (r *changesetResolver) Title() (string, error) {

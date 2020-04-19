@@ -43,9 +43,6 @@ export const CampaignActionsBar: React.FunctionComponent<Props> = ({
     const openChangesetsCount =
         campaign?.changesets.nodes.filter(changeset => changeset.state === GQL.ChangesetState.OPEN).length ?? 0
 
-    const newCampaignHeader = previewingPatchSet ? 'New campaign' : 'New manual campaign'
-    const header = campaign?.name ?? newCampaignHeader
-
     let stateBadge: JSX.Element
 
     if (!campaign) {
@@ -75,10 +72,10 @@ export const CampaignActionsBar: React.FunctionComponent<Props> = ({
             <h2 className="m-0">
                 {stateBadge}
                 <span>
-                    <Link to="/campaigns">Campaigns</Link>
+                    <Link to="/campaigns">Campaigns</Link> <span className="badge badge-info">Beta</span>
                 </span>
                 <span className="text-muted d-inline-block mx-2">/</span>
-                <span>{header}</span>
+                <span>{campaign?.name ?? 'New campaign'}</span>
             </h2>
             <span className="flex-grow-1 d-flex justify-content-end align-items-center">
                 {showSpinner && <LoadingSpinner className="mr-2" />}

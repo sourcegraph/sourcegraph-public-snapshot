@@ -7,9 +7,11 @@ RUN apk add --no-cache \
 RUN npm install -g yarn@1.17.3
 
 COPY precise-code-intel/package.json precise-code-intel/yarn.lock precise-code-intel/tsconfig.json /precise-code-intel/
-RUN yarn --cwd /precise-code-intel
+RUN yarn --cwd /precise-code-intel --frozen-lockfile
 COPY precise-code-intel/src /precise-code-intel/src
 RUN yarn --cwd /precise-code-intel run build
+# Remove all devDependencies
+RUN yarn --cwd /precise-code-intel --frozen-lockfile --production
 
 FROM sourcegraph/alpine:3.10@sha256:4d05cd5669726fc38823e92320659a6d1ef7879e62268adec5df658a0bacf65c
 

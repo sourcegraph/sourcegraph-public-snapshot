@@ -117,7 +117,7 @@ export async function createExtensionHostClientConnection(
         }
     )
 
-    const clientViews = new ClientViews(services.views, services.textDocumentLocations, services.editor)
+    const clientViews = new ClientViews(services.panelViews, services.textDocumentLocations, services.editor)
 
     const clientCodeEditor = new ClientCodeEditor(services.textDocumentDecoration)
     subscription.add(clientCodeEditor)

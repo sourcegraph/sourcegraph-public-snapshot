@@ -114,6 +114,11 @@ func displayNameFromEndpoint(ep Endpoint) string {
 	if colonIdx != -1 {
 		strippedHost = strippedHost[:colonIdx]
 	}
+	// Stateful Services have unique pod names. Lets use them to avoid stutter
+	// in the name (gitserver-gitserver-0 becomes gitserver-0).
+	if strings.HasPrefix(strippedHost, ep.Service) {
+		return strippedHost
+	}
 	return fmt.Sprintf("%s-%s", ep.Service, strippedHost)
 }
 

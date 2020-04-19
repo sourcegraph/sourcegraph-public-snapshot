@@ -4,7 +4,7 @@ coverage:
     project: off
     patch:
       default:
-        threshold: 5%
+        target: 5%
 comment:
   require_changes: yes
   layout: 'diff, flags, files'

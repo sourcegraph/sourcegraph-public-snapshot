@@ -135,7 +135,7 @@ func isDocsOnly() bool {
 		panic(err)
 	}
 	for _, line := range strings.Split(strings.TrimSpace(string(output)), "\n") {
-		if !strings.HasPrefix(line, "doc") && line != "CHANGELOG.md" {
+		if !strings.HasPrefix(line, "doc/") && line != "CHANGELOG.md" {
 			return false
 		}
 	}

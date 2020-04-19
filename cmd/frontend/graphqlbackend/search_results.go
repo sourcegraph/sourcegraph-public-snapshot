@@ -33,6 +33,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -473,7 +474,7 @@ var searchResponseCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 	Subsystem: "graphql",
 	Name:      "search_response",
 	Help:      "Number of searches that have ended in the given status (success, error, timeout, partial_timeout).",
-}, []string{"status", "alert_type", "source"})
+}, []string{"status", "alert_type", "source", "request_name"})
 
 // logSearchLatency records search durations in the event database. This
 // function may only be called after a search result is performed, because it
@@ -557,6 +558,7 @@ func (r *searchResolver) logSearchLatency(ctx context.Context, durationMs int32)
 // evaluateLeaf performs a single search operation and corresponds to the
 // evaluation of leaf expression in a query.
 func (r *searchResolver) evaluateLeaf(ctx context.Context) (*SearchResultsResolver, error) {
+	start := time.Now()
 	// If the request specifies stable:truthy, use pagination to return a stable ordering.
 	if r.query.BoolValue("stable") {
 		result, err := r.paginatedResults(ctx)
@@ -607,8 +609,32 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (*SearchResultsResolv
 	default:
 		status = "unknown"
 	}
-	searchResponseCounter.WithLabelValues(status, alertType, string(trace.RequestSource(ctx))).Inc()
+	searchResponseCounter.WithLabelValues(
+		status,
+		alertType,
+		string(trace.RequestSource(ctx)),
+		trace.GraphQLRequestName(ctx),
+	).Inc()
 
+	if v := conf.Get().ObservabilityLogSlowSearches; v != 0 && time.Since(start).Milliseconds() > int64(v) {
+		// Note: We don't care about the error here, we just extract the username if
+		// we get a non-nil user object.
+		currentUser, _ := CurrentUser(ctx)
+		var currentUserName string
+		if currentUser != nil {
+			currentUserName = currentUser.Username()
+		}
+
+		log15.Warn("slow search request",
+			"time", time.Since(start),
+			"query", `"`+r.rawQuery()+`"`,
+			"type", trace.GraphQLRequestName(ctx),
+			"user", currentUserName,
+			"source", trace.RequestSource(ctx),
+			"status", status,
+			"alertType", alertType,
+		)
+	}
 	return rr, err
 }
 
@@ -1266,10 +1292,7 @@ func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, st
 		return nil, nil, &SearchResultsResolver{alert: alert, start: start}, nil
 	}
 	if overLimit {
-		alert, err := r.alertForOverRepoLimit(ctx)
-		if err != nil {
-			return nil, nil, nil, err
-		}
+		alert := r.alertForOverRepoLimit(ctx)
 		return nil, nil, &SearchResultsResolver{alert: alert, start: start}, nil
 	}
 	return repos, missingRepoRevs, nil, nil

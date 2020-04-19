@@ -20,10 +20,6 @@
     border: none;
     color: var(--link-color);
 
-    &--hidden {
-        display: none;
-    }
-
     &__progress-bar-container {
         display: inline-block;
         width: 1rem;

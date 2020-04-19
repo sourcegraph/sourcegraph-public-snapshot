@@ -1,11 +1,17 @@
 #!/usr/bin/env bash
 
-set -ex
+set -euo pipefail
+
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
-# This merely re-tags the image to match our official versioning scheme. The
-# actual image currently lives here: https://github.com/sourcegraph/infrastructure/tree/master/docker-images
-#
-# TODO: Move the image to this directory so it is open-source and built in CI automatically.
-docker pull index.docker.io/sourcegraph/jaeger-all-in-one:1.17.1@sha256:46bfa2ac08dd08181ab443ef966d664048a6c6ac725054bcc1fbfda5bd4040a3
-docker tag index.docker.io/sourcegraph/jaeger-all-in-one:1.17.1@sha256:46bfa2ac08dd08181ab443ef966d664048a6c6ac725054bcc1fbfda5bd4040a3 "$IMAGE"
+export JAEGER_VERSION="${JAEGER_VERSION:-1.17.1}"
+IMAGE=${IMAGE:-sourcegraph/jaeger-all-in-one}
+
+echo "Building image ${IMAGE} from Jaeger ${JAEGER_VERSION}"
+
+docker build --no-cache -t "${IMAGE}" . \
+  --progress=plain \
+  --build-arg JAEGER_VERSION \
+  --build-arg COMMIT_SHA \
+  --build-arg DATE \
+  --build-arg VERSION

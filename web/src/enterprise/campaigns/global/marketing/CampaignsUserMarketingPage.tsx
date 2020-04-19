@@ -12,23 +12,23 @@ export const CampaignsUserMarketingPage: React.FunctionComponent<CampaignsUserMa
     <CampaignsMarketing
         body={
             <section className="my-3">
-                <h2>Interested in Campaigns?</h2>
+                <h2>Interested in campaigns?</h2>
                 <p>
-                    At this time, creating and managing Campaigns is only available to Sourcegraph admins. What can you
+                    At this time, creating and managing campaigns is only available to Sourcegraph admins. What can you
                     do?
                 </p>
                 <div className="row">
                     <ol>
-                        <li>Let your Sourcegraph admin know you're interested in using Campaigns for your team.</li>
+                        <li>Let your Sourcegraph admin know you're interested in using campaigns for your team.</li>
                         {enableReadAccess && (
                             <li>
                                 Ask your Sourcegraph admin for{' '}
                                 <a href="https://docs.sourcegraph.com/user/campaigns" rel="noopener">
                                     read-only access
                                 </a>{' '}
-                                to Campaigns.
+                                to campaigns.
                                 <div className="alert alert-info mt-3">
-                                    <b>NOTE:</b> Repository permissions are NOT enforced by Campaigns, so your admin may
+                                    <b>NOTE:</b> Repository permissions are NOT enforced by campaigns, so your admin may
                                     not grant read-only access if your Sourcegraph instance has repository permissions
                                     configured.
                                 </div>
@@ -37,7 +37,7 @@ export const CampaignsUserMarketingPage: React.FunctionComponent<CampaignsUserMa
                         <li>
                             Learn how to{' '}
                             <a href="https://docs.sourcegraph.com/user/campaigns#creating-campaigns">
-                                get started creating Campaigns
+                                get started creating campaigns
                             </a>
                             .
                         </li>
@@ -45,7 +45,7 @@ export const CampaignsUserMarketingPage: React.FunctionComponent<CampaignsUserMa
                 </div>
 
                 <a href="https://docs.sourcegraph.com/user/campaigns" rel="noopener" className="btn btn-primary">
-                    Read more about Campaigns
+                    Read more about campaigns
                 </a>
             </section>
         }

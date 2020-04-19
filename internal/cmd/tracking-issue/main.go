@@ -102,8 +102,8 @@ func trackingIssue(org, milestone string, issues []*Issue) (*Issue, error) {
 
 func patchIssueBody(issue *Issue, work string) (body string, err error) {
 	const (
-		openingMarker = "<!-- BEGIN PLANNED WORK -->"
-		closingMarker = "<!-- END PLANNED WORK -->"
+		openingMarker = "<!-- BEGIN WORK -->"
+		closingMarker = "<!-- END WORK -->"
 	)
 	return patch(issue.Body, work, openingMarker, closingMarker)
 }
