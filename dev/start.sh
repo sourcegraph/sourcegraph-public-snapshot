@@ -7,6 +7,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.." # cd to repo root dir
 
 if [ -f .env ]; then
   set -o allexport
+  # shellcheck disable=SC1091
   source .env
   set +o allexport
 fi
@@ -20,7 +21,8 @@ hash psql 2>/dev/null || {
   # try to fix this automatically if we can.
   hash brew 2>/dev/null && {
     if [[ -x "$(brew --prefix)/opt/postgresql@9.6/bin/psql" ]]; then
-      export PATH="$(brew --prefix)/opt/postgresql@9.6/bin:$PATH"
+      PATH="$(brew --prefix)/opt/postgresql@9.6/bin:$PATH"
+      export PATH
     fi
   }
 }
@@ -52,7 +54,10 @@ export PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL=http://localhost:3187
 export SRC_SYNTECT_SERVER=http://localhost:9238
 export SRC_FRONTEND_INTERNAL=localhost:3090
 export SRC_PROF_HTTP=
-export SRC_PROF_SERVICES=$(cat dev/src-prof-services.json)
+
+SRC_PROF_SERVICES=$(cat dev/src-prof-services.json)
+export SRC_PROF_SERVICES
+
 export OVERRIDE_AUTH_SECRET=sSsNGlI8fBDftBz0LDQNXEnP6lrWdt9g0fK6hoFvGQ
 export DEPLOY_TYPE=dev
 export CTAGS_COMMAND="${CTAGS_COMMAND:=cmd/symbols/universal-ctags-dev}"
@@ -85,7 +90,8 @@ export NODE_OPTIONS="--max_old_space_size=4096"
 
 # Ensure SQLite for symbols is built
 ./dev/libsqlite3-pcre/build.sh
-export LIBSQLITE3_PCRE="$(./dev/libsqlite3-pcre/build.sh libpath)"
+LIBSQLITE3_PCRE="$(./dev/libsqlite3-pcre/build.sh libpath)"
+export LIBSQLITE3_PCRE
 
 # Ensure ctags image is built
 ./cmd/symbols/build-ctags.sh
@@ -117,6 +123,10 @@ yarn --no-progress
 popd 1>/dev/null
 
 # Increase ulimit (not needed on Windows/WSL)
+#
+# disabling check because @ggilmore can't tell what the original intent
+# of this command was (is A * B' okay here? )
+# shellcheck disable=SC2015
 type ulimit >/dev/null && ulimit -n 10000 || true
 
 # Put .bin:node_modules/.bin onto the $PATH
@@ -131,4 +141,6 @@ build_ts_pid="$!"
 
 printf >&2 "\nStarting all binaries...\n\n"
 export GOREMAN="goreman --set-ports=false --exit-on-error -f dev/Procfile"
+# ignoring because $GOREMAN is used in other handle-change.sh
+# shellcheck disable=SC2086
 exec $GOREMAN start
