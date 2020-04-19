@@ -410,16 +410,16 @@ func Test_howManyBytesToFree(t *testing.T) {
 }
 
 type fakeDiskSizer struct {
-	bytesFree uint64
 	diskSize  uint64
+	bytesFree uint64
 }
 
-func (f *fakeDiskSizer) BytesFreeOnDisk(mountPoint string) (uint64, error) {
-	return f.bytesFree, nil
+func (f *fakeDiskSizer) MountPoint() string {
+	return ""
 }
 
-func (f *fakeDiskSizer) DiskSizeBytes(mountPoint string) (uint64, error) {
-	return f.diskSize, nil
+func (f *fakeDiskSizer) Size() (uint64, uint64, error) {
+	return f.diskSize, f.bytesFree, nil
 }
 
 func tmpDir(t *testing.T) (string, func()) {
@@ -585,38 +585,6 @@ func makeFakeRepo(d string, sizeBytes int) error {
 		return errors.Wrapf(err, "writing to space_eater file")
 	}
 	return nil
-}
-
-func Test_findMountPoint(t *testing.T) {
-	type args struct {
-		d string
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    string
-		wantErr bool
-	}{
-		{
-			name:    "mount point of root is root",
-			args:    args{d: "/"},
-			want:    "/",
-			wantErr: false,
-		},
-		// What else can we portably count on?
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := findMountPoint(tt.args.d)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("findMountPoint() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if got != tt.want {
-				t.Errorf("findMountPoint() = %v, want %v", got, tt.want)
-			}
-		})
-	}
 }
 
 func TestMaybeCorruptStderrRe(t *testing.T) {

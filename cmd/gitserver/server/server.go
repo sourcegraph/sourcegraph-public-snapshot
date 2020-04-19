@@ -32,6 +32,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/diskutil"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
@@ -114,7 +115,7 @@ type Server struct {
 	DesiredPercentFree int
 
 	// DiskSizer tells how much disk is free and how large the disk is.
-	DiskSizer DiskSizer
+	DiskSizer diskutil.DiskSizer
 
 	// skipCloneForTests is set by tests to avoid clones.
 	skipCloneForTests bool

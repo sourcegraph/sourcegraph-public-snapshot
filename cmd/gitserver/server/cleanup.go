@@ -17,13 +17,12 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-multierror"
-	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-
-	"github.com/prometheus/client_golang/prometheus"
-
 	"github.com/inconshreveable/log15"
+	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/diskutil"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
 func init() {
@@ -221,7 +220,13 @@ func (s *Server) cleanupRepos() {
 	}
 
 	if s.DiskSizer == nil {
-		s.DiskSizer = &StatDiskSizer{}
+		diskSizer, err := diskutil.NewDiskSizer(s.ReposDir)
+		if err != nil {
+			log15.Error("cleanup: finding mount point for dir containing repos", "error", err)
+			return
+		}
+
+		s.DiskSizer = diskSizer
 	}
 	b, err := s.howManyBytesToFree()
 	if err != nil {
@@ -232,30 +237,16 @@ func (s *Server) cleanupRepos() {
 	}
 }
 
-// DiskSizer gets information about disk size and free space.
-type DiskSizer interface {
-	BytesFreeOnDisk(mountPoint string) (uint64, error)
-	DiskSizeBytes(mountPoint string) (uint64, error)
-}
-
 // howManyBytesToFree returns the number of bytes that should be freed to make sure
 // there is sufficient disk space free to satisfy s.DesiredPercentFree.
 func (s *Server) howManyBytesToFree() (int64, error) {
 	// Check how much disk space is available.
-	mountPoint, err := findMountPoint(s.ReposDir)
+	diskSizeBytes, actualFreeBytes, err := s.DiskSizer.Size()
 	if err != nil {
-		return 0, errors.Wrap(err, "finding mount point for dir containing repos")
-	}
-	actualFreeBytes, err := s.DiskSizer.BytesFreeOnDisk(mountPoint)
-	if err != nil {
-		return 0, errors.Wrap(err, "finding the amount of space free on disk")
+		return 0, errors.Wrap(err, "finding the amount of space on disk")
 	}
 
 	// Free up space if necessary.
-	diskSizeBytes, err := s.DiskSizer.DiskSizeBytes(mountPoint)
-	if err != nil {
-		return 0, errors.Wrap(err, "getting disk size")
-	}
 	desiredFreeBytes := uint64(float64(s.DesiredPercentFree) / 100.0 * float64(diskSizeBytes))
 	howManyBytesToFree := int64(desiredFreeBytes - actualFreeBytes)
 	if howManyBytesToFree < 0 {
@@ -266,80 +257,8 @@ func (s *Server) howManyBytesToFree() (int64, error) {
 		"desired percent free", s.DesiredPercentFree,
 		"actual percent free", float64(actualFreeBytes)/float64(diskSizeBytes)*100.0,
 		"amount to free in GiB", float64(howManyBytesToFree)/G,
-		"mount point", mountPoint)
+		"mount point", s.DiskSizer.MountPoint())
 	return howManyBytesToFree, nil
-}
-
-type StatDiskSizer struct{}
-
-func (s *StatDiskSizer) BytesFreeOnDisk(mountPoint string) (uint64, error) {
-	var fs syscall.Statfs_t
-	if err := syscall.Statfs(mountPoint, &fs); err != nil {
-		return 0, errors.Wrap(err, "statting")
-	}
-	free := fs.Bavail * uint64(fs.Bsize)
-	return free, nil
-}
-
-func (s *StatDiskSizer) DiskSizeBytes(mountPoint string) (uint64, error) {
-	var fs syscall.Statfs_t
-	if err := syscall.Statfs(mountPoint, &fs); err != nil {
-		return 0, errors.Wrap(err, "statting")
-	}
-	free := fs.Blocks * uint64(fs.Bsize)
-	return free, nil
-}
-
-// findMountPoint searches upwards starting from the directory d to find the mount point.
-func findMountPoint(d string) (string, error) {
-	d, err := filepath.Abs(d)
-	if err != nil {
-		return "", errors.Wrapf(err, "getting absolute version of %s", d)
-	}
-	for {
-		m, err := isMount(d)
-		if err != nil {
-			return "", errors.Wrapf(err, "finding out if %s is a mount point", d)
-		}
-		if m {
-			return d, nil
-		}
-		d2 := filepath.Dir(d)
-		if d2 == d {
-			return d2, nil
-		}
-		d = d2
-	}
-}
-
-// isMount tells whether the directory d is a mount point.
-func isMount(d string) (bool, error) {
-	ddev, err := device(d)
-	if err != nil {
-		return false, errors.Wrapf(err, "gettting device id for %s", d)
-	}
-	parent := filepath.Dir(d)
-	if parent == d {
-		return true, nil
-	}
-	pdev, err := device(parent)
-	if err != nil {
-		return false, errors.Wrapf(err, "getting device id for %s", parent)
-	}
-	return pdev != ddev, nil
-}
-
-// device gets the device id of a file f.
-func device(f string) (int64, error) {
-	fi, err := os.Stat(f)
-	if err != nil {
-		return 0, errors.Wrapf(err, "running stat on %s", f)
-	}
-	stat, ok := fi.Sys().(*syscall.Stat_t)
-	if !ok {
-		return 0, fmt.Errorf("failed to get stat details for %s", f)
-	}
-	return int64(stat.Dev), nil
 }
 
 // freeUpSpace removes git directories under ReposDir, in order from least
@@ -366,11 +285,7 @@ func (s *Server) freeUpSpace(howManyBytesToFree int64) error {
 
 	// Remove repos until howManyBytesToFree is met or exceeded.
 	var spaceFreed int64
-	mountPoint, err := findMountPoint(s.ReposDir)
-	if err != nil {
-		return errors.Wrap(err, "finding mount point")
-	}
-	diskSizeBytes, err := s.DiskSizer.DiskSizeBytes(mountPoint)
+	diskSizeBytes, _, err := s.DiskSizer.Size()
 	if err != nil {
 		return errors.Wrap(err, "getting disk size")
 	}
@@ -388,7 +303,7 @@ func (s *Server) freeUpSpace(howManyBytesToFree int64) error {
 		spaceFreed += delta
 
 		// Report the new disk usage situation after removing this repo.
-		actualFreeBytes, err := s.DiskSizer.BytesFreeOnDisk(mountPoint)
+		_, actualFreeBytes, err := s.DiskSizer.Size()
 		if err != nil {
 			return errors.Wrap(err, "finding the amount of space free on disk")
 		}
