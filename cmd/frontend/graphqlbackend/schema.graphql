@@ -2667,6 +2667,8 @@ type GitTree implements TreeEntry {
     canonicalURL: String!
     # The URLs to this tree on external services.
     externalURLs: [ExternalLink!]!
+    # The URL to this entry's raw contents as a Zip archive.
+    rawZipArchiveURL: String!
     # Submodule metadata if this tree points to a submodule
     submodule: Submodule
     # A list of directories in this tree.

@@ -12,6 +12,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -108,6 +109,13 @@ func (r *GitTreeEntryResolver) IsDirectory() bool { return r.stat.Mode().IsDir()
 
 func (r *GitTreeEntryResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
 	return externallink.FileOrDir(ctx, r.commit.repo.repo, r.commit.inputRevOrImmutableRev(), r.Path(), r.stat.Mode().IsDir())
+}
+
+func (r *GitTreeEntryResolver) RawZipArchiveURL() string {
+	return globals.ExternalURL().ResolveReference(&neturl.URL{
+		Path:     path.Join(r.Repository().URL(), "-/raw/", r.Path()),
+		RawQuery: "format=zip",
+	}).String()
 }
 
 func (r *GitTreeEntryResolver) Submodule() *gitSubmoduleResolver {
