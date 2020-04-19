@@ -11,12 +11,14 @@ path_filter() {
   echo "${withPath# -o }"
 }
 
+set +e
 LOCALHOST_MATCHES=$(git grep -e localhost --and --not -e '^\s*//' --and --not -e 'CI\:LOCALHOST_OK' -- '*.go' \
   ':(exclude)*_test.go' \
   ':(exclude)cmd/server/shared/nginx.go' \
   ':(exclude)pkg/conf/confdefaults' \
   ':(exclude)schema' \
   ':(exclude)vendor')
+set -e
 
 if [ -n "$LOCALHOST_MATCHES" ]; then
   echo
