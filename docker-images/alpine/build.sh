@@ -1,5 +1,6 @@
-#!/bin/bash
-cd $(dirname "${BASH_SOURCE[0]}")
-set -ex
+#!/usr/bin/env bash
 
-docker build -t ${IMAGE:-sourcegraph/alpine} .
+set -ex
+cd "$(dirname "${BASH_SOURCE[0]}")"
+
+docker build -t "${IMAGE:-sourcegraph/alpine}" .
