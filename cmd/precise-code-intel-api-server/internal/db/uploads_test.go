@@ -34,18 +34,18 @@ func TestGetUploadByID(t *testing.T) {
 		t.Fatal("unexpected record")
 	}
 
-	t1 := time.Now().UTC()
-	t2 := t1.Add(time.Minute).UTC()
+	uploadedAt := time.Unix(1587396557, 0).UTC()
+	startedAt := uploadedAt.Add(time.Minute)
 	expected := Upload{
 		ID:                1,
 		Commit:            makeCommit(1),
 		Root:              "sub/",
 		VisibleAtTip:      true,
-		UploadedAt:        t1,
+		UploadedAt:        uploadedAt,
 		State:             "processing",
 		FailureSummary:    nil,
 		FailureStacktrace: nil,
-		StartedAt:         &t2,
+		StartedAt:         &startedAt,
 		FinishedAt:        nil,
 		TracingContext:    `{"id": 42}`,
 		RepositoryID:      123,
@@ -71,13 +71,20 @@ func TestGetQueuedUploadRank(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	db := &dbImpl{db: dbconn.Global}
 
+	t1 := time.Unix(1587396557, 0).UTC()
+	t2 := t1.Add(+time.Minute * 5)
+	t3 := t1.Add(+time.Minute * 3)
+	t4 := t1.Add(+time.Minute * 1)
+	t5 := t1.Add(+time.Minute * 4)
+	t6 := t1.Add(+time.Minute * 2)
+
 	insertUploads(t, db.db,
-		Upload{ID: 1, UploadedAt: time.Now().UTC(), State: "queued"},
-		Upload{ID: 2, UploadedAt: time.Now().UTC().Add(+time.Minute * 5).UTC(), State: "queued"},
-		Upload{ID: 3, UploadedAt: time.Now().UTC().Add(+time.Minute * 3).UTC(), State: "queued"},
-		Upload{ID: 4, UploadedAt: time.Now().UTC().Add(+time.Minute * 1).UTC(), State: "queued"},
-		Upload{ID: 5, UploadedAt: time.Now().UTC().Add(+time.Minute * 4).UTC(), State: "queued"},
-		Upload{ID: 6, UploadedAt: time.Now().UTC().Add(+time.Minute * 2).UTC(), State: "processing"},
+		Upload{ID: 1, UploadedAt: t1, State: "queued"},
+		Upload{ID: 2, UploadedAt: t2, State: "queued"},
+		Upload{ID: 3, UploadedAt: t3, State: "queued"},
+		Upload{ID: 4, UploadedAt: t4, State: "queued"},
+		Upload{ID: 5, UploadedAt: t5, State: "queued"},
+		Upload{ID: 6, UploadedAt: t6, State: "processing"},
 	)
 
 	if upload, _, _ := db.GetUploadByID(context.Background(), 1); upload.Rank == nil || *upload.Rank != 1 {
@@ -109,16 +116,16 @@ func TestGetUploadsByRepo(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	db := &dbImpl{db: dbconn.Global}
 
-	t1 := time.Now().UTC()
-	t2 := t1.Add(-time.Minute * 1).UTC()
-	t3 := t1.Add(-time.Minute * 2).UTC()
-	t4 := t1.Add(-time.Minute * 3).UTC()
-	t5 := t1.Add(-time.Minute * 4).UTC()
-	t6 := t1.Add(-time.Minute * 5).UTC()
-	t7 := t1.Add(-time.Minute * 6).UTC()
-	t8 := t1.Add(-time.Minute * 7).UTC()
-	t9 := t1.Add(-time.Minute * 8).UTC()
-	t10 := t1.Add(-time.Minute * 9).UTC()
+	t1 := time.Unix(1587396557, 0).UTC()
+	t2 := t1.Add(-time.Minute * 1)
+	t3 := t1.Add(-time.Minute * 2)
+	t4 := t1.Add(-time.Minute * 3)
+	t5 := t1.Add(-time.Minute * 4)
+	t6 := t1.Add(-time.Minute * 5)
+	t7 := t1.Add(-time.Minute * 6)
+	t8 := t1.Add(-time.Minute * 7)
+	t9 := t1.Add(-time.Minute * 8)
+	t10 := t1.Add(-time.Minute * 9)
 	failureSummary := "unlucky 333"
 
 	insertUploads(t, db.db,
@@ -208,7 +215,7 @@ func TestEnqueue(t *testing.T) {
 		Commit:            makeCommit(1),
 		Root:              "sub/",
 		VisibleAtTip:      false,
-		UploadedAt:        time.Now().UTC(),
+		UploadedAt:        time.Time{},
 		State:             "queued",
 		FailureSummary:    nil,
 		FailureStacktrace: nil,
@@ -386,11 +393,12 @@ func TestResetStalled(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	db := &dbImpl{db: dbconn.Global}
 
-	t1 := time.Now().UTC().Add(-time.Second * 6) // old
-	t2 := time.Now().UTC().Add(-time.Second * 2) // new enough
-	t3 := time.Now().UTC().Add(-time.Second * 3) // new enough
-	t4 := time.Now().UTC().Add(-time.Second * 8) // old
-	t5 := time.Now().UTC().Add(-time.Second * 8) // old
+	now := time.Unix(1587396557, 0).UTC()
+	t1 := now.Add(-time.Second * 6) // old
+	t2 := now.Add(-time.Second * 2) // new enough
+	t3 := now.Add(-time.Second * 3) // new enough
+	t4 := now.Add(-time.Second * 8) // old
+	t5 := now.Add(-time.Second * 8) // old
 
 	insertUploads(t, db.db,
 		Upload{ID: 1, State: "processing", StartedAt: &t1},
@@ -413,7 +421,7 @@ func TestResetStalled(t *testing.T) {
 
 	expected := []int{1, 4}
 
-	if ids, err := db.ResetStalled(context.Background()); err != nil {
+	if ids, err := db.ResetStalled(context.Background(), now); err != nil {
 		t.Fatalf("unexpected error resetting stalled uploads: %s", err)
 	} else if !reflect.DeepEqual(ids, expected) {
 		t.Errorf("unexpected ids. want=%v have=%v", expected, ids)

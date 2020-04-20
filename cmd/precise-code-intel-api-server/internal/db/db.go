@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
@@ -36,7 +37,7 @@ type DB interface {
 
 	// ResetStalled moves all unlocked uploads processing for more than `StalledUploadMaxAge` back to the queued state.
 	// This method returns a list of updated upload identifiers.
-	ResetStalled(ctx context.Context) ([]int, error)
+	ResetStalled(ctx context.Context, now time.Time) ([]int, error)
 
 	// GetDumpByID returns a dump by its identifier and boolean flag indicating its existence.
 	GetDumpByID(ctx context.Context, id int) (Dump, bool, error)

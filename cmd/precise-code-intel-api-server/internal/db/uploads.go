@@ -221,17 +221,17 @@ func (db *dbImpl) DeleteUploadByID(ctx context.Context, id int, getTipCommit fun
 
 // ResetStalled moves all unlocked uploads processing for more than `StalledUploadMaxAge` back to the queued state.
 // This method returns a list of updated upload identifiers.
-func (db *dbImpl) ResetStalled(ctx context.Context) ([]int, error) {
+func (db *dbImpl) ResetStalled(ctx context.Context, now time.Time) ([]int, error) {
 	query := `
 		UPDATE lsif_uploads u SET state = 'queued', started_at = null WHERE id = ANY(
 			SELECT id FROM lsif_uploads
-			WHERE state = 'processing' AND started_at < now() - (%s * interval '1 second')
+			WHERE state = 'processing' AND %s - started_at > (%s * interval '1 second')
 			FOR UPDATE SKIP LOCKED
 		)
 		RETURNING u.id
 	`
 
-	ids, err := scanInts(db.query(ctx, sqlf.Sprintf(query, StalledUploadMaxAge/time.Second)))
+	ids, err := scanInts(db.query(ctx, sqlf.Sprintf(query, now.UTC(), StalledUploadMaxAge/time.Second)))
 	if err != nil {
 		return nil, err
 	}

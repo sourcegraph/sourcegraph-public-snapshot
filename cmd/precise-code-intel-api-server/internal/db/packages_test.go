@@ -24,20 +24,20 @@ func TestGetPackage(t *testing.T) {
 		t.Fatal("unexpected record")
 	}
 
-	t1 := time.Now().UTC()
-	t2 := t1.Add(time.Minute).UTC()
-	t3 := t1.Add(time.Minute * 2).UTC()
+	uploadedAt := time.Unix(1587396557, 0).UTC()
+	startedAt := uploadedAt.Add(time.Minute)
+	finishedAt := uploadedAt.Add(time.Minute * 2)
 	expected := Dump{
 		ID:                1,
 		Commit:            makeCommit(1),
 		Root:              "sub/",
 		VisibleAtTip:      true,
-		UploadedAt:        t1,
+		UploadedAt:        uploadedAt,
 		State:             "completed",
 		FailureSummary:    nil,
 		FailureStacktrace: nil,
-		StartedAt:         &t2,
-		FinishedAt:        &t3,
+		StartedAt:         &startedAt,
+		FinishedAt:        &finishedAt,
 		TracingContext:    `{"id": 42}`,
 		RepositoryID:      50,
 		Indexer:           "lsif-go",

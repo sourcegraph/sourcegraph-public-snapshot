@@ -55,7 +55,7 @@ func (j *Janitor) step() error {
 // to QUEUED. For each updated upload record, the conversion process that was responsible
 // for handling the upload did not hold a row lock, indicating that it has died.
 func (j *Janitor) resetStalled() error {
-	ids, err := j.db.ResetStalled(context.Background())
+	ids, err := j.db.ResetStalled(context.Background(), time.Now())
 	if err != nil {
 		return err
 	}
