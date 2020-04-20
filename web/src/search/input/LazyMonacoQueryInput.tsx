@@ -9,7 +9,7 @@ const MonacoQueryInput = lazyComponent(() => import('./MonacoQueryInput'), 'Mona
  * A plain query input displayed during lazy-loading of the MonacoQueryInput.
  * It has no suggestions, but still allows to type in and submit queries.
  */
-const PlainQueryInput: React.FunctionComponent<MonacoQueryInputProps> = ({
+export const PlainQueryInput: React.FunctionComponent<MonacoQueryInputProps> = ({
     queryState,
     autoFocus,
     onChange,
@@ -27,7 +27,7 @@ const PlainQueryInput: React.FunctionComponent<MonacoQueryInputProps> = ({
             <input
                 type="text"
                 autoFocus={autoFocus}
-                className="form-control query-input2__input e2e-query-input"
+                className="form-control code lazy-monaco-query-input--intermediate-input"
                 value={queryState.query}
                 onChange={onInputChange}
                 spellCheck={false}
