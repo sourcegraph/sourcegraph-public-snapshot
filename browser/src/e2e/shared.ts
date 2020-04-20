@@ -38,9 +38,7 @@ export function testSingleFilePage({
                 getDriver().page.waitForNavigation(),
                 getDriver().page.click('.code-view-toolbar .open-on-sourcegraph'),
             ])
-            expect(getDriver().page.url()).toBe(
-                `${sourcegraphBaseUrl}/${repoName}@4fb7cd90793ee6ab445f466b900e6bffb9b63d78/-/blob/call_opt.go`
-            )
+            expect(getDriver().page.url()).toBe(`${sourcegraphBaseUrl}/${repoName}@${COMMIT_SHA}/-/blob/call_opt.go`)
         })
 
         it('shows hover tooltips when hovering a token', async () => {
@@ -64,8 +62,7 @@ export function testSingleFilePage({
                 getDriver().page.click('.e2e-tooltip-go-to-definition'),
             ])
             expect(await getDriver().page.evaluate(() => location.href)).toBe(
-                goToDefinitionURL ||
-                    `${sourcegraphBaseUrl}/${repoName}@4fb7cd90793ee6ab445f466b900e6bffb9b63d78/-/blob/call_opt.go#L5:6`
+                goToDefinitionURL || `${sourcegraphBaseUrl}/${repoName}@${COMMIT_SHA}/-/blob/call_opt.go#L5:6`
             )
         })
     })
