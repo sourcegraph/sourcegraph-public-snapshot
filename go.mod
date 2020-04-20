@@ -22,6 +22,7 @@ require (
 	github.com/dghubble/gologin v2.2.0+incompatible
 	github.com/dnaeon/go-vcr v1.0.1
 	github.com/docker/docker v1.4.2-0.20200213202729-31a86c4ab209
+	github.com/efritz/go-mockgen v0.0.0-20190613153341-3425cf558834
 	github.com/emersion/go-imap v1.0.4
 	github.com/ericchiang/k8s v1.2.0
 	github.com/fatih/astrewrite v0.0.0-20191207154002-9094e544fcef
