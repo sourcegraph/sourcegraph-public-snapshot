@@ -1,3 +1,0 @@
-{
-  "query": "mutation($user: ID!) { deleteUser(user: $user) { alwaysNil } }"
-}
