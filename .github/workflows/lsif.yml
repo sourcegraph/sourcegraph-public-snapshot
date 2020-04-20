@@ -9,7 +9,7 @@ jobs:
       - name: Generate LSIF data
         uses: docker://sourcegraph/lsif-go
         with:
-          args: lsif-go && src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
+          args: '"lsif-go && src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}"'
 
   lsif-web:
     runs-on: ubuntu-latest
@@ -21,14 +21,15 @@ jobs:
       - name: Install dependencies
         run: yarn
       - name: Generate LSIF data
-        uses: sourcegraph/lsif-node-action@master
+        uses: docker://sourcegraph/lsif-node
+        working-directory: web/
         with:
-          project_root: web
+          args: -p .
       - name: Upload LSIF data
-        uses: sourcegraph/lsif-upload-action@master
+        uses: docker://sourcegraph/src-cli
+        working-directory: web/
         with:
-          root: web
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          args: lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
 
   lsif-precise-code-intel:
     runs-on: ubuntu-latest
