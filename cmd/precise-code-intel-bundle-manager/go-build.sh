@@ -18,5 +18,5 @@ export GOOS=linux
 
 echo "--- go build"
 for pkg in github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager; do
-    go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION" -buildmode exe -tags dist -o $OUTPUT/$(basename $pkg) $pkg
+  go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION" -buildmode exe -tags dist -o $OUTPUT/$(basename $pkg) $pkg
 done
