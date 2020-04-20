@@ -98,7 +98,11 @@ interface MonacoEditorWithKeybindingsService extends Monaco.editor.IStandaloneCo
 const hasKeybindingService = (
     editor: Monaco.editor.IStandaloneCodeEditor
 ): editor is MonacoEditorWithKeybindingsService =>
-    hasProperty('_actions')(editor) && hasProperty('_standaloneKeybindingService')(editor)
+    hasProperty('_actions')(editor) &&
+    typeof editor._actions === 'object' &&
+    hasProperty('_standaloneKeybindingService')(editor) &&
+    typeof (editor._standaloneKeybindingService as MonacoEditorWithKeybindingsService['_standaloneKeybindingService'])
+        .addDynamicKeybinding === 'function'
 
 /**
  * A search query input backed by the Monaco editor, allowing it to provide
