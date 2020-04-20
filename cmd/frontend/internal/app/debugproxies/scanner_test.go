@@ -162,14 +162,15 @@ func TestClusterScan(t *testing.T) {
 	cs.scanCluster()
 
 	want := []Endpoint{{
-		Service: "gitserver",
-		Host:    "gitserver-0:2323",
+		Service:  "gitserver",
+		Addr:     "192.168.10.0:2323",
+		Hostname: "gitserver-0",
 	}, {
 		Service: "searcher",
-		Host:    "192.168.10.3:2323",
+		Addr:    "192.168.10.3:2323",
 	}, {
 		Service: "no-prom-port",
-		Host:    "192.168.10.2:2324",
+		Addr:    "192.168.10.2:2324",
 	}}
 
 	if !cmp.Equal(want, eps) {
