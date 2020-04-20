@@ -6,12 +6,50 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
+	"github.com/tomnomnom/linkheader"
 )
+
+func getQuery(r *http.Request, name string) string {
+	return r.URL.Query().Get(name)
+}
+
+func getQueryInt(r *http.Request, name string) int {
+	value, _ := strconv.Atoi(r.URL.Query().Get(name))
+	return value
+}
+
+func getQueryIntDefault(r *http.Request, name string, defaultValue int) int {
+	value, err := strconv.Atoi(r.URL.Query().Get(name))
+	if err != nil {
+		value = defaultValue
+	}
+	return value
+}
+
+func getQueryBool(r *http.Request, name string) bool {
+	value, _ := strconv.ParseBool(r.URL.Query().Get(name))
+	return value
+}
+
+func makeNextLink(url *url.URL, newQueryValues map[string]interface{}) string {
+	q := url.Query()
+	for k, v := range newQueryValues {
+		q.Set(k, fmt.Sprintf("%v", v))
+	}
+	url.RawQuery = q.Encode()
+
+	header := linkheader.Link{
+		URL: url.String(),
+		Rel: "next",
+	}
+	return header.String()
+}
 
 // idFromRequest returns the database id from the request URL's path. This method
 // must only be called from routes containing the `id:[0-9]+` pattern, as the error

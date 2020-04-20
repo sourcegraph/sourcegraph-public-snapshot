@@ -1,7 +1,6 @@
 package server
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -9,23 +8,13 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
-	sgdb "github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/api"
-	sgapi "github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/tomnomnom/linkheader"
 )
 
 const DefaultUploadPageSize = 50
-
-// NOTE: the stuff below is pretty rough and I'm not planning on putting too much
-// effort into this while we're doing the port. This is an internal API so it's
-// allowed to be a bit shoddy during this transitionary period. I'm not even sure
-// if HTTP is the right transport for the long term.
 
 func (s *Server) handler() http.Handler {
 	mux := mux.NewRouter()
@@ -63,21 +52,6 @@ func (s *Server) handleGetUploadByID(w http.ResponseWriter, r *http.Request) {
 
 // DELETE /uploads/{id:[0-9]+}
 func (s *Server) handleDeleteUploadByID(w http.ResponseWriter, r *http.Request) {
-	getTipCommit := func(repositoryID int) (string, error) {
-		repo, err := sgdb.Repos.Get(context.Background(), sgapi.RepoID(repositoryID))
-		if err != nil {
-			return "", err
-		}
-
-		cmd := gitserver.DefaultClient.Command("git", "rev-parse", "HEAD")
-		cmd.Repo = gitserver.Repo{Name: repo.Name}
-		out, err := cmd.CombinedOutput(context.Background())
-		if err != nil {
-			return "", err
-		}
-		return string(bytes.TrimSpace(out)), nil
-	}
-
 	exists, err := s.db.DeleteUploadByID(context.Background(), int(idFromRequest(r)), getTipCommit)
 	if err != nil {
 		log15.Error("Failed to delete upload", "error", err)
@@ -95,17 +69,18 @@ func (s *Server) handleDeleteUploadByID(w http.ResponseWriter, r *http.Request) 
 // GET /uploads/repository/{id:[0-9]+}
 func (s *Server) handleGetUploadsByRepo(w http.ResponseWriter, r *http.Request) {
 	id := int(idFromRequest(r))
-	q := r.URL.Query()
-	term := q.Get("query")
-	state := q.Get("state")
-	visibleAtTip, _ := strconv.ParseBool(q.Get("visibleAtTip"))
-	limit, err := strconv.Atoi(q.Get("limit"))
-	if err != nil {
-		limit = DefaultUploadPageSize
-	}
-	offset, _ := strconv.Atoi(q.Get("offset"))
+	limit := getQueryIntDefault(r, "limit", DefaultUploadPageSize)
+	offset := getQueryInt(r, "offset")
 
-	uploads, totalCount, err := s.db.GetUploadsByRepo(context.Background(), id, state, term, visibleAtTip, limit, offset)
+	uploads, totalCount, err := s.db.GetUploadsByRepo(
+		context.Background(),
+		id,
+		getQuery(r, "state"),
+		getQuery(r, "query"),
+		getQueryBool(r, "visibleAtTip"),
+		limit,
+		offset,
+	)
 	if err != nil {
 		log15.Error("Failed to list uploads", "error", err)
 		http.Error(w, fmt.Sprintf("failed to list uploads: %s", err.Error()), http.StatusInternalServerError)
@@ -113,15 +88,10 @@ func (s *Server) handleGetUploadsByRepo(w http.ResponseWriter, r *http.Request) 
 	}
 
 	if offset+len(uploads) < totalCount {
-		url := r.URL
-		q.Set("limit", strconv.FormatInt(int64(limit), 10))
-		q.Set("offset", strconv.FormatInt(int64(offset+len(uploads)), 10))
-		url.RawQuery = q.Encode()
-		link := linkheader.Link{
-			URL: url.String(),
-			Rel: "next",
-		}
-		w.Header().Set("Link", link.String())
+		w.Header().Set("Link", makeNextLink(r.URL, map[string]interface{}{
+			"limit":  limit,
+			"offset": offset + len(uploads),
+		}))
 	}
 
 	writeJSON(w, map[string]interface{}{"uploads": uploads, "totalCount": totalCount})
@@ -129,12 +99,6 @@ func (s *Server) handleGetUploadsByRepo(w http.ResponseWriter, r *http.Request) 
 
 // POST /upload
 func (s *Server) handleEnqueue(w http.ResponseWriter, r *http.Request) {
-	q := r.URL.Query()
-	repositoryID, _ := strconv.Atoi(q.Get("repositoryId"))
-	commit := q.Get("commit")
-	root := sanitizeRoot(q.Get("root"))
-	indexerName := q.Get("indexerName")
-
 	f, err := ioutil.TempFile("", "upload-")
 	if err != nil {
 		log15.Error("Failed to open target file", "error", err)
@@ -150,9 +114,7 @@ func (s *Server) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO(efritz) - write tracing code
-	tracingContext := "{}"
-
+	indexerName := getQuery(r, "indexerName")
 	if indexerName == "" {
 		if indexerName, err = readIndexerNameFromFile(f); err != nil {
 			log15.Error("Failed to read indexer name from upload", "error", err)
@@ -161,7 +123,14 @@ func (s *Server) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	id, closer, err := s.db.Enqueue(context.Background(), commit, root, tracingContext, repositoryID, indexerName)
+	id, closer, err := s.db.Enqueue(
+		context.Background(),
+		getQuery(r, "commit"),
+		sanitizeRoot(getQuery(r, "root")),
+		"{}", // TODO(efritz) - write tracing code,
+		getQueryInt(r, "repositoryId"),
+		indexerName,
+	)
 	if err == nil {
 		err = closer.CloseTx(s.bundleManagerClient.SendUpload(context.Background(), id, f))
 	}
@@ -177,12 +146,11 @@ func (s *Server) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 
 // GET /exists
 func (s *Server) handleExists(w http.ResponseWriter, r *http.Request) {
-	q := r.URL.Query()
-	repositoryID, _ := strconv.Atoi(q.Get("repositoryId"))
-	commit := q.Get("commit")
-	file := q.Get("path")
-
-	dumps, err := s.api.FindClosestDumps(repositoryID, commit, file)
+	dumps, err := s.api.FindClosestDumps(
+		getQueryInt(r, "repositoryId"),
+		getQuery(r, "commit"),
+		getQuery(r, "path"),
+	)
 	if err != nil {
 		log15.Error("Failed to handle exists request", "error", err)
 		http.Error(w, fmt.Sprintf("failed to handle exists request: %s", err.Error()), http.StatusInternalServerError)
@@ -194,13 +162,12 @@ func (s *Server) handleExists(w http.ResponseWriter, r *http.Request) {
 
 // GET /definitions
 func (s *Server) handleDefinitions(w http.ResponseWriter, r *http.Request) {
-	q := r.URL.Query()
-	file := q.Get("path")
-	line, _ := strconv.Atoi(q.Get("line"))
-	character, _ := strconv.Atoi(q.Get("character"))
-	uploadID, _ := strconv.Atoi(q.Get("uploadId"))
-
-	defs, err := s.api.Definitions(file, line, character, uploadID)
+	defs, err := s.api.Definitions(
+		getQuery(r, "path"),
+		getQueryInt(r, "line"),
+		getQueryInt(r, "character"),
+		getQueryInt(r, "uploadId"),
+	)
 	if err != nil {
 		if err == api.ErrMissingDump {
 			http.Error(w, "no such dump", http.StatusNotFound)
@@ -224,11 +191,7 @@ func (s *Server) handleDefinitions(w http.ResponseWriter, r *http.Request) {
 
 // GET /references
 func (s *Server) handleReferences(w http.ResponseWriter, r *http.Request) {
-	q := r.URL.Query()
-	repositoryID, _ := strconv.Atoi(q.Get("repositoryId"))
-	commit := q.Get("commit")
-	limit, _ := strconv.Atoi(q.Get("limit"))
-
+	q := r.URL.Query() // TODO - remove
 	cursor, err := api.DecodeCursorFromRequest(q, s.db, s.bundleManagerClient)
 	if err != nil {
 		if err == api.ErrMissingDump {
@@ -241,7 +204,12 @@ func (s *Server) handleReferences(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	locations, newCursor, hasNewCursor, err := s.api.References(repositoryID, commit, limit, cursor)
+	locations, newCursor, hasNewCursor, err := s.api.References(
+		getQueryInt(r, "repositoryId"),
+		getQuery(r, "commit"),
+		getQueryInt(r, "limit"),
+		cursor,
+	)
 	if err != nil {
 		log15.Error("Failed to handle references request", "error", err)
 		http.Error(w, fmt.Sprintf("failed to handle references request: %s", err.Error()), http.StatusInternalServerError)
@@ -256,14 +224,9 @@ func (s *Server) handleReferences(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if hasNewCursor {
-		url := r.URL
-		q.Set("cursor", api.EncodeCursor(newCursor))
-		url.RawQuery = q.Encode()
-		link := linkheader.Link{
-			URL: url.String(),
-			Rel: "next",
-		}
-		w.Header().Set("Link", link.String())
+		w.Header().Set("Link", makeNextLink(r.URL, map[string]interface{}{
+			"cursor": api.EncodeCursor(newCursor),
+		}))
 	}
 
 	writeJSON(w, map[string]interface{}{"locations": outers})
@@ -271,13 +234,12 @@ func (s *Server) handleReferences(w http.ResponseWriter, r *http.Request) {
 
 // GET /hover
 func (s *Server) handleHover(w http.ResponseWriter, r *http.Request) {
-	q := r.URL.Query()
-	file := q.Get("path")
-	line, _ := strconv.Atoi(q.Get("line"))
-	character, _ := strconv.Atoi(q.Get("character"))
-	uploadID, _ := strconv.Atoi(q.Get("uploadId"))
-
-	text, rn, exists, err := s.api.Hover(file, line, character, uploadID)
+	text, rn, exists, err := s.api.Hover(
+		getQuery(r, "path"),
+		getQueryInt(r, "line"),
+		getQueryInt(r, "character"),
+		getQueryInt(r, "uploadId"),
+	)
 	if err != nil {
 		if err == api.ErrMissingDump {
 			http.Error(w, "no such dump", http.StatusNotFound)
