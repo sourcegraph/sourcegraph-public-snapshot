@@ -123,9 +123,6 @@ yarn --no-progress
 popd 1>/dev/null
 
 # Increase ulimit (not needed on Windows/WSL)
-#
-# disabling check because @ggilmore can't tell what the original intent
-# of this command was (is A * B' okay here? )
 # shellcheck disable=SC2015
 type ulimit >/dev/null && ulimit -n 10000 || true
 
