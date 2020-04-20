@@ -93,6 +93,8 @@ Multiple or combined **repo:** and **file:** keywords are intersected. For examp
 
 Use operators to create more expressive searches.
 
+> NOTE: Operators are available as of 3.15 and enabled with `{"experimentalFeatures": {"andOrQuery": "enabled"}}` in site settings. Built-in operator support is planned for the upcoming 3.16 release and onwards.
+
 | Operator | Example |
 | --- | --- |
 | `and`, `AND` | [`conf.Get( and log15.Error(`](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+conf.Get%28+and+log15.Error%28&patternType=regexp), [`conf.Get( and log15.Error( and after`](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+conf.Get%28+and+log15.Error%28+and+after&patternType=regexp) |
@@ -109,20 +111,18 @@ Returns file content matching either on the left or right side, or both (set uni
 
 Operators may be combined. `and`-expressions have higher precedence (bind tighter) than `or`-expressions so that `a and b or c and d` means `(a and b) or (c and d)`. 
 
-Expressions may be grouped with parentheses to change the default precedence and meaning. For example, we might like `a and (b or c) and d`.
+Expressions may be grouped with parentheses to change the default precedence and meaning. For example: `a and (b or c) and d`.
 
 ### Operator scope
 
 Except for simple cases, search patterns bind tightest to scoped fields, like `file:main.c`. So, a combined query like
 `file:main.c char c  or (int i and int j)` generally means `(file:main.c char c) or (int i and int j)`
 
-We don't yet support search expressions with different scopes, so the above will raise an alert. If the intent is to apply the `file` scope to the entire pattern, group it like so: `file:main.c (char c or (int i and int j))`
+Since we don't yet support search subexpressions with different scopes, the above will raise an alert. If the intent is to apply the `file` scope to the entire pattern, group it like so: `file:main.c (char c or (int i and int j))`
 
 ### Operator support
 
 Operators are supported in regexp and structural search modes, but not literal search mode. How operators interpret search pattern syntax depends on kind of search (whether [regexp](#regexp-search) or [structural](#structural-search)). Operators currently only apply to searches for file content. Thus, expressions like `repo:npm/cli or repo:npm/npx` are not currently supported. 
-
-**Operators are available as of 3.15 and enabled with** `{"experimentalFeatures": {"andOrQuery": "enabled"}}` **in site settings. Built-in operator support is planned for the upcoming 3.16 release and onwards.**
 
 ---
 
