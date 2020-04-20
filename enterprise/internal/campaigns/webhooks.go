@@ -764,7 +764,7 @@ func (h *BitbucketServerWebhook) Upsert(every time.Duration) {
 		}
 
 		for _, e := range es {
-			func() {
+			err = func() error {
 				ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 				defer cancel()
 
@@ -772,13 +772,12 @@ func (h *BitbucketServerWebhook) Upsert(every time.Duration) {
 
 				con, ok := c.(*schema.BitbucketServerConnection)
 				if !ok {
-					return
+					return nil
 				}
 
 				client, err := bbs.NewClient(con, nil)
 				if err != nil {
-					log15.Error("Upserting BBS Webhook [Creating Client]", "err", err)
-					return
+					return errors.Wrap(err, "creating client")
 				}
 
 				secret := con.WebhookSecret()
@@ -786,9 +785,9 @@ func (h *BitbucketServerWebhook) Upsert(every time.Duration) {
 					// Delete it in case it was created in the past
 					err = client.DeleteWebhook(ctx, h.Name)
 					if err != nil {
-						log15.Error("Upserting BBS Webhook [Deleting Webhook]", "err", err)
+						return errors.Wrap(err, "deleting webhook")
 					}
-					return
+					return nil
 				}
 
 				endpoint := externalURL() + "/.api/bitbucket-server-webhooks"
@@ -802,11 +801,12 @@ func (h *BitbucketServerWebhook) Upsert(every time.Duration) {
 				}
 
 				err = client.UpsertWebhook(context.Background(), wh)
-				if err != nil {
-					log15.Error("Upserting BBS Webhook failed [HTTP Request]", "err", err)
-				}
+				return errors.Wrap(err, "upserting webhook")
 			}()
 
+			if err != nil {
+				log15.Error("Upserting BBS Webhook failed:", "err", err)
+			}
 		}
 
 		time.Sleep(every)
