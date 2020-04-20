@@ -15,7 +15,7 @@ const filterCompletionItemKind = Monaco.languages.CompletionItemKind.Customcolor
 type PartialCompletionItem = Omit<Monaco.languages.CompletionItem, 'range'>
 
 const FILTER_TYPE_COMPLETIONS: Omit<Monaco.languages.CompletionItem, 'range'>[] = Object.keys(FILTERS)
-    .flatMap((label) => {
+    .flatMap(label => {
         const filterType = label as FilterType
         const completionItem: Omit<Monaco.languages.CompletionItem, 'range' | 'detail'> = {
             label,
@@ -206,9 +206,9 @@ export async function getCompletionItems(
             suggestions: [
                 ...staticSuggestions,
                 ...(await dynamicSuggestions.pipe(first()).toPromise())
-                    .map((suggestion) => suggestionToCompletionItem(suggestion, { isFilterValue: false }))
+                    .map(suggestion => suggestionToCompletionItem(suggestion, { isFilterValue: false }))
                     .filter(isDefined)
-                    .map((completionItem) => ({
+                    .map(completionItem => ({
                         ...completionItem,
                         range: toMonacoRange(range),
                         // Set a sortText so that dynamic suggestions
@@ -231,7 +231,7 @@ export async function getCompletionItems(
         if (resolvedFilter.definition.suggestions) {
             if (resolvedFilter.definition.suggestions instanceof Array) {
                 return {
-                    suggestions: resolvedFilter.definition.suggestions.map((label) => ({
+                    suggestions: resolvedFilter.definition.suggestions.map(label => ({
                         label,
                         kind: Monaco.languages.CompletionItemKind.Text,
                         insertText: label,
@@ -245,9 +245,9 @@ export async function getCompletionItems(
             return {
                 suggestions: suggestions
                     .filter(({ __typename }) => __typename === resolvedFilter.definition.suggestions)
-                    .map((suggestion) => suggestionToCompletionItem(suggestion, { isFilterValue: true }))
+                    .map(suggestion => suggestionToCompletionItem(suggestion, { isFilterValue: true }))
                     .filter(isDefined)
-                    .map((partialCompletionItem) => ({
+                    .map(partialCompletionItem => ({
                         ...partialCompletionItem,
                         range: filterValue ? toMonacoRange(filterValue.range) : defaultRange,
                     })),
