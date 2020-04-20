@@ -250,9 +250,11 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
         // Disable default Monaco keybindings
         if (hasKeybindingService(editor)) {
             for (const action of Object.keys(editor._actions)) {
+                // Prefixing action ids with `-` to unbind the default actions.
                 editor._standaloneKeybindingService.addDynamicKeybinding(`-${action}`)
             }
-            // Free CMD+L keybinding
+            // Free CMD+L keybinding, which is part of Monaco's CoreNavigationCommands, and
+            // not exposed on editor._actions.
             editor._standaloneKeybindingService.addDynamicKeybinding('-expandLineSelection')
         }
 
