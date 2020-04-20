@@ -44,6 +44,7 @@
 /internal/txemail @slimsag
 /internal/src-cli @efritz
 /internal/linkheader @efritz
+/internal/sqliteutil @efritz
 /renovate.json @felixfbecker
 /.stylelintrc.json @felixfbecker
 /.stylelintignore @felixfbecker
