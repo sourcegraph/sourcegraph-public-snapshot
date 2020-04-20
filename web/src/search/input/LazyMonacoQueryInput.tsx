@@ -27,7 +27,7 @@ const PlainQueryInput: React.FunctionComponent<MonacoQueryInputProps> = ({
             <input
                 type="text"
                 autoFocus={autoFocus}
-                className="form-control query-input2__input e2e-query-input"
+                className="form-control lazy-query-input--intermediate-input"
                 value={queryState.query}
                 onChange={onInputChange}
                 spellCheck={false}
