@@ -1,6 +1,7 @@
 import expect from 'expect'
 import { Driver } from '../../../shared/src/e2e/driver'
 
+const COMMIT_SHA = '96c4efab7ee28f3d1cf1d248a0139cea37368b18'
 /**
  * Defines e2e tests for a single-file page of a code host.
  */
