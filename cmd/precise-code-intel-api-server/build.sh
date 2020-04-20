@@ -5,9 +5,9 @@
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 set -eu
 
-OUTPUT=`mktemp -d -t sgdockerbuild_XXXXXXX`
+OUTPUT=$(mktemp -d -t sgdockerbuild_XXXXXXX)
 cleanup() {
-    rm -rf "$OUTPUT"
+  rm -rf "$OUTPUT"
 }
 trap cleanup EXIT
 
@@ -18,12 +18,12 @@ export GOOS=linux
 
 echo "--- go build"
 for pkg in github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server; do
-    go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION" -buildmode exe -tags dist -o $OUTPUT/$(basename $pkg) $pkg
+  go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION" -buildmode exe -tags dist -o $OUTPUT/$(basename $pkg) $pkg
 done
 
 echo "--- docker build"
 docker build -f cmd/precise-code-intel-api-server/Dockerfile -t "$IMAGE" "$OUTPUT" \
-    --progress=plain \
-    --build-arg COMMIT_SHA \
-    --build-arg DATE \
-    --build-arg VERSION
+  --progress=plain \
+  --build-arg COMMIT_SHA \
+  --build-arg DATE \
+  --build-arg VERSION
