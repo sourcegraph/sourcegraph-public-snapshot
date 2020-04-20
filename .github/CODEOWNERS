@@ -219,8 +219,9 @@ Dockerfile @sourcegraph/distribution
 /cmd/frontend/graphqlbackend/discussion* @slimsag
 /cmd/frontend/db/discussion* @slimsag
 
-# LSIF
+# Precise code intel
 /cmd/precise-code-intel/ @sourcegraph/code-intel
+/cmd/precise-code-intel-api-server/ @sourcegraph/code-intel
 /internal/lsif @sourcegraph/code-intel
 /internal/codeintel @sourcegraph/code-intel
 /enterprise/internal/codeintel @sourcegraph/code-intel
