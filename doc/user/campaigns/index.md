@@ -11,7 +11,7 @@ You provide the code to make the change and Campaigns provide the plumbing to tu
 <div style="max-width: 500px;" class="mx-auto">
   <figure class="figure">
     <div class="figure-img">
-    <img src="img/go_mod_tidy_campaign.png" width="500px"/>
+    <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/go_mod_tidy_campaign.png" width="500px"/>
     </div>
     <figcaption class="figure-caption text-center">Campaign to run <code>go mod tidy</code> in all Go projects.</figcaption>
   </figure>

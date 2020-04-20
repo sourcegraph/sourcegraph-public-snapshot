@@ -33,7 +33,7 @@ In the UI you can then select which campaign should be updated to use the new pa
 <div style="max-width: 500px;" class="mx-auto">
   <figure class="figure">
     <div class="figure-img">
-    <img src="img/update_select_campaign.png" width="500px"/>
+    <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/update_select_campaign.png" width="500px"/>
     </div>
     <figcaption class="figure-caption text-center">Select which campaign should be updated to use the new patch set.</figcaption>
   </figure>
@@ -46,7 +46,7 @@ You'll then see which changesets will be created, updated (on the code host), de
 <div style="max-width: 500px;" class="mx-auto">
   <figure class="figure">
     <div class="figure-img">
-    <img src="img/update_preview_changes.png" width="500px"/>
+    <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/update_preview_changes.png" width="500px"/>
     </div>
     <figcaption class="figure-caption text-center">Preview of updating a campaign's patch set.</figcaption>
   </figure>
