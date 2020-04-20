@@ -1,7 +1,6 @@
 package api
 
 import (
-	"net/url"
 	"reflect"
 	"testing"
 
@@ -44,7 +43,7 @@ func TestSerializationRoundTrip(t *testing.T) {
 	}
 }
 
-func TestDecodeFreshCursorFromRequest(t *testing.T) {
+func TestDecodeOrCreateCursor(t *testing.T) {
 	mockDB := mocks.NewMockDB()
 	mockBundleManagerClient := mocks.NewMockBundleManagerClient()
 	mockBundleClient := mocks.NewMockBundleClient()
@@ -52,13 +51,6 @@ func TestDecodeFreshCursorFromRequest(t *testing.T) {
 	setMockDBGetDumpByID(t, mockDB, map[int]db.Dump{42: testDump1})
 	setMockBundleManagerClientBundleClient(t, mockBundleManagerClient, map[int]bundles.BundleClient{42: mockBundleClient})
 	setMockBundleClientMonikersByPosition(t, mockBundleClient, "main.go", 10, 20, [][]bundles.MonikerData{{testMoniker1}, {testMoniker2}})
-
-	query := url.Values{
-		"path":      []string{"sub1/main.go"},
-		"line":      []string{"10"},
-		"character": []string{"20"},
-		"uploadId":  []string{"42"},
-	}
 
 	expectedCursor := Cursor{
 		Phase:     "same-dump",
@@ -69,31 +61,24 @@ func TestDecodeFreshCursorFromRequest(t *testing.T) {
 		Monikers:  []bundles.MonikerData{testMoniker1, testMoniker2},
 	}
 
-	if cursor, err := DecodeCursorFromRequest(query, mockDB, mockBundleManagerClient); err != nil {
+	if cursor, err := DecodeOrCreateCursor("sub1/main.go", 10, 20, 42, "", mockDB, mockBundleManagerClient); err != nil {
 		t.Fatalf("unexpected error decoding cursor: %s", err)
 	} else if !reflect.DeepEqual(cursor, expectedCursor) {
 		t.Errorf("unexpected cursor. want=%v have=%v", expectedCursor, cursor)
 	}
 }
 
-func TestDecodeFreshCursorFromRequestUnknownDump(t *testing.T) {
+func TestDecodeOrCreateCursorUnknownDump(t *testing.T) {
 	mockDB := mocks.NewMockDB()
 	mockBundleManagerClient := mocks.NewMockBundleManagerClient()
 	setMockDBGetDumpByID(t, mockDB, nil)
 
-	query := url.Values{
-		"path":      []string{"sub1/main.go"},
-		"line":      []string{"10"},
-		"character": []string{"20"},
-		"uploadId":  []string{"42"},
-	}
-
-	if _, err := DecodeCursorFromRequest(query, mockDB, mockBundleManagerClient); err != ErrMissingDump {
+	if _, err := DecodeOrCreateCursor("sub1/main.go", 10, 20, 42, "", mockDB, mockBundleManagerClient); err != ErrMissingDump {
 		t.Fatalf("unexpected error decoding cursor. want=%v have =%v", ErrMissingDump, err)
 	}
 }
 
-func TestDecodeExistingCursorFromRequest(t *testing.T) {
+func TestDecodeOrCreateCursorExisting(t *testing.T) {
 	expectedCursor := Cursor{
 		Phase:     "same-repo",
 		DumpID:    42,
@@ -120,11 +105,7 @@ func TestDecodeExistingCursorFromRequest(t *testing.T) {
 	mockDB := mocks.NewMockDB()
 	mockBundleManagerClient := mocks.NewMockBundleManagerClient()
 
-	query := url.Values{
-		"cursor": []string{EncodeCursor(expectedCursor)},
-	}
-
-	if cursor, err := DecodeCursorFromRequest(query, mockDB, mockBundleManagerClient); err != nil {
+	if cursor, err := DecodeOrCreateCursor("", 0, 0, 0, EncodeCursor(expectedCursor), mockDB, mockBundleManagerClient); err != nil {
 		t.Fatalf("unexpected error decoding cursor: %s", err)
 	} else if !reflect.DeepEqual(cursor, expectedCursor) {
 		t.Errorf("unexpected cursor. want=%v have=%v", expectedCursor, cursor)

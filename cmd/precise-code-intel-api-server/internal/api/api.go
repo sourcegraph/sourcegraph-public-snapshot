@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/bundles"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/db"
 )
@@ -22,7 +23,6 @@ var _ CodeIntelAPI = &codeIntelAPI{}
 
 var ErrMissingDump = fmt.Errorf("no dump")
 
-// TODO - use in tests?
 func New(db db.DB, bundleManagerClient bundles.BundleManagerClient) CodeIntelAPI {
 	return &codeIntelAPI{
 		db:                  db,

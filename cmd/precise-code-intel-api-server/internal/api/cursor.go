@@ -4,8 +4,6 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"net/url"
-	"strconv"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/bundles"
@@ -31,6 +29,11 @@ type Cursor struct {
 	SkipResultsInDump      int                   // same-repo/remote-repo
 }
 
+func EncodeCursor(cursor Cursor) string {
+	rawEncoded, _ := json.Marshal(cursor)
+	return base64.RawURLEncoding.EncodeToString(rawEncoded)
+}
+
 func decodeCursor(rawEncoded string) (cursor Cursor, err error) {
 	raw, err := base64.RawURLEncoding.DecodeString(rawEncoded)
 	if err != nil {
@@ -41,26 +44,15 @@ func decodeCursor(rawEncoded string) (cursor Cursor, err error) {
 	return
 }
 
-func EncodeCursor(cursor Cursor) string {
-	rawEncoded, _ := json.Marshal(cursor)
-	return base64.RawURLEncoding.EncodeToString(rawEncoded)
-}
-
-// TODO - pass values separately instead
-func DecodeCursorFromRequest(query url.Values, db db.DB, bundleManagerClient bundles.BundleManagerClient) (Cursor, error) {
-	if encoded := query.Get("cursor"); encoded != "" {
-		cursor, err := decodeCursor(encoded)
+func DecodeOrCreateCursor(path string, line, character, uploadID int, rawCursor string, db db.DB, bundleManagerClient bundles.BundleManagerClient) (Cursor, error) {
+	if rawCursor != "" {
+		cursor, err := decodeCursor(rawCursor)
 		if err != nil {
 			return Cursor{}, err
 		}
 
 		return cursor, nil
 	}
-
-	file := query.Get("path")
-	line, _ := strconv.Atoi(query.Get("line"))
-	character, _ := strconv.Atoi(query.Get("character"))
-	uploadID, _ := strconv.Atoi(query.Get("uploadId"))
 
 	dump, exists, err := db.GetDumpByID(context.Background(), uploadID)
 	if err != nil {
@@ -70,7 +62,7 @@ func DecodeCursorFromRequest(query url.Values, db db.DB, bundleManagerClient bun
 		return Cursor{}, ErrMissingDump
 	}
 
-	pathInBundle := strings.TrimPrefix(file, dump.Root)
+	pathInBundle := strings.TrimPrefix(path, dump.Root)
 	bundleClient := bundleManagerClient.BundleClient(dump.ID)
 
 	rangeMonikers, err := bundleClient.MonikersByPosition(context.Background(), pathInBundle, line, character)

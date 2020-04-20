@@ -22,11 +22,7 @@ func TestDefinitions(t *testing.T) {
 		{DumpID: 42, Path: "baz.go", Range: testRange3},
 	})
 
-	api := &codeIntelAPI{
-		db:                  mockDB,
-		bundleManagerClient: mockBundleManagerClient,
-	}
-
+	api := New(mockDB, mockBundleManagerClient)
 	definitions, err := api.Definitions("sub1/main.go", 10, 50, 42)
 	if err != nil {
 		t.Fatalf("expected error getting definitions: %s", err)
@@ -47,11 +43,7 @@ func TestDefinitionsUnknownDump(t *testing.T) {
 	mockBundleManagerClient := mocks.NewMockBundleManagerClient()
 	setMockDBGetDumpByID(t, mockDB, nil)
 
-	api := &codeIntelAPI{
-		db:                  mockDB,
-		bundleManagerClient: mockBundleManagerClient,
-	}
-
+	api := New(mockDB, mockBundleManagerClient)
 	if _, err := api.Definitions("sub1/main.go", 10, 50, 25); err != ErrMissingDump {
 		t.Errorf("unexpected error getting definitions. want=%v have=%v", ErrMissingDump, err)
 	}
@@ -72,11 +64,7 @@ func TestDefinitionViaSameDumpMoniker(t *testing.T) {
 		{DumpID: 42, Path: "baz.go", Range: testRange3},
 	}, 3)
 
-	api := &codeIntelAPI{
-		db:                  mockDB,
-		bundleManagerClient: mockBundleManagerClient,
-	}
-
+	api := New(mockDB, mockBundleManagerClient)
 	definitions, err := api.Definitions("sub1/main.go", 10, 50, 42)
 	if err != nil {
 		t.Fatalf("expected error getting definitions: %s", err)
@@ -110,11 +98,7 @@ func TestDefinitionViaRemoteDumpMoniker(t *testing.T) {
 		{DumpID: 50, Path: "baz.go", Range: testRange3},
 	}, 15)
 
-	api := &codeIntelAPI{
-		db:                  mockDB,
-		bundleManagerClient: mockBundleManagerClient,
-	}
-
+	api := New(mockDB, mockBundleManagerClient)
 	definitions, err := api.Definitions("sub1/main.go", 10, 50, 42)
 	if err != nil {
 		t.Fatalf("expected error getting definitions: %s", err)

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/api"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/bundles"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/db"
@@ -36,15 +37,12 @@ func New(opts ServerOpts) *Server {
 	}
 }
 
-func (s *Server) Start() error {
+func (s *Server) Start() {
 	addr := net.JoinHostPort(s.host, strconv.FormatInt(int64(s.port), 10))
 	handler := ot.Middleware(s.handler())
 	server := &http.Server{Addr: addr, Handler: handler}
 
 	if err := server.ListenAndServe(); err != http.ErrServerClosed {
-		// TODO - should fatal instead
-		return err
+		log15.Error("Failed to start server", "error", err)
 	}
-
-	return nil
 }

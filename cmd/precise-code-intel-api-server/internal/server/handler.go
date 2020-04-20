@@ -127,7 +127,7 @@ func (s *Server) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 		context.Background(),
 		getQuery(r, "commit"),
 		sanitizeRoot(getQuery(r, "root")),
-		"{}", // TODO(efritz) - write tracing code,
+		"{}", // TODO(efritz) - write tracing code
 		getQueryInt(r, "repositoryId"),
 		indexerName,
 	)
@@ -191,8 +191,15 @@ func (s *Server) handleDefinitions(w http.ResponseWriter, r *http.Request) {
 
 // GET /references
 func (s *Server) handleReferences(w http.ResponseWriter, r *http.Request) {
-	q := r.URL.Query() // TODO - remove
-	cursor, err := api.DecodeCursorFromRequest(q, s.db, s.bundleManagerClient)
+	cursor, err := api.DecodeOrCreateCursor(
+		getQuery(r, "path"),
+		getQueryInt(r, "line"),
+		getQueryInt(r, "character"),
+		getQueryInt(r, "uploadId"),
+		getQuery(r, "rawCursor"),
+		s.db,
+		s.bundleManagerClient,
+	)
 	if err != nil {
 		if err == api.ErrMissingDump {
 			http.Error(w, "no such dump", http.StatusNotFound)
