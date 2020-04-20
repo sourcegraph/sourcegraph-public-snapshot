@@ -11,9 +11,7 @@ jobs:
       - name: Upload LSIF data
         uses: docker://sourcegraph/src-cli
         with:
-          args:
-            - lsif upload
-            - -github-token=${{ secrets.GITHUB_TOKEN }}
+          args: lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
 
   lsif-web:
     runs-on: ubuntu-latest
