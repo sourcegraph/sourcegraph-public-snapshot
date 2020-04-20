@@ -9,13 +9,13 @@ import { isDefined } from '../../util/types'
 import { FilterType, isNegatableFilter } from '../interactive/util'
 import { first } from 'rxjs/operators'
 
-const repositoryCompletionItemKind = Monaco.languages.CompletionItemKind.Color
+export const repositoryCompletionItemKind = Monaco.languages.CompletionItemKind.Color
 const filterCompletionItemKind = Monaco.languages.CompletionItemKind.Customcolor
 
 type PartialCompletionItem = Omit<Monaco.languages.CompletionItem, 'range'>
 
 const FILTER_TYPE_COMPLETIONS: Omit<Monaco.languages.CompletionItem, 'range'>[] = Object.keys(FILTERS)
-    .flatMap(label => {
+    .flatMap((label) => {
         const filterType = label as FilterType
         const completionItem: Omit<Monaco.languages.CompletionItem, 'range' | 'detail'> = {
             label,
@@ -51,17 +51,21 @@ const FILTER_TYPE_COMPLETIONS: Omit<Monaco.languages.CompletionItem, 'range'>[] 
         sortText: `0${idx}`,
     }))
 
-const repositoryToCompletion = ({ name }: IRepository): PartialCompletionItem => ({
+const repositoryToCompletion = ({ name }: IRepository, options: { isFilterValue: boolean }): PartialCompletionItem => ({
     label: name,
     kind: repositoryCompletionItemKind,
-    insertText: `^${escapeRegExp(name)}$ `,
+    insertText: options.isFilterValue ? `^${escapeRegExp(name)}$ ` : `repo:^${escapeRegExp(name)}$ `,
     filterText: name,
+    detail: options.isFilterValue ? undefined : 'Repository',
 })
 
-const fileToCompletion = ({ name, path, repository, isDirectory }: IFile): PartialCompletionItem => ({
+const fileToCompletion = (
+    { name, path, repository, isDirectory }: IFile,
+    options: { isFilterValue: boolean }
+): PartialCompletionItem => ({
     label: name,
     kind: isDirectory ? Monaco.languages.CompletionItemKind.Folder : Monaco.languages.CompletionItemKind.File,
-    insertText: `^${escapeRegExp(path)}$ `,
+    insertText: options.isFilterValue ? `^${escapeRegExp(path)}$` : `file:^${escapeRegExp(name)}$ `,
     filterText: name,
     detail: `${path} - ${repository.name}`,
 })
@@ -117,12 +121,15 @@ const languageToCompletion = ({ name }: ILanguage): PartialCompletionItem | unde
           }
         : undefined
 
-const suggestionToCompletionItem = (suggestion: SearchSuggestion): PartialCompletionItem | undefined => {
+const suggestionToCompletionItem = (
+    suggestion: SearchSuggestion,
+    options: { isFilterValue: boolean }
+): PartialCompletionItem | undefined => {
     switch (suggestion.__typename) {
         case 'File':
-            return fileToCompletion(suggestion)
+            return fileToCompletion(suggestion, options)
         case 'Repository':
-            return repositoryToCompletion(suggestion)
+            return repositoryToCompletion(suggestion, options)
         case 'Symbol':
             return symbolToCompletion(suggestion)
         case 'Language':
@@ -199,9 +206,9 @@ export async function getCompletionItems(
             suggestions: [
                 ...staticSuggestions,
                 ...(await dynamicSuggestions.pipe(first()).toPromise())
-                    .map(suggestionToCompletionItem)
+                    .map((suggestion) => suggestionToCompletionItem(suggestion, { isFilterValue: false }))
                     .filter(isDefined)
-                    .map(completionItem => ({
+                    .map((completionItem) => ({
                         ...completionItem,
                         range: toMonacoRange(range),
                         // Set a sortText so that dynamic suggestions
@@ -224,7 +231,7 @@ export async function getCompletionItems(
         if (resolvedFilter.definition.suggestions) {
             if (resolvedFilter.definition.suggestions instanceof Array) {
                 return {
-                    suggestions: resolvedFilter.definition.suggestions.map(label => ({
+                    suggestions: resolvedFilter.definition.suggestions.map((label) => ({
                         label,
                         kind: Monaco.languages.CompletionItemKind.Text,
                         insertText: label,
@@ -238,9 +245,9 @@ export async function getCompletionItems(
             return {
                 suggestions: suggestions
                     .filter(({ __typename }) => __typename === resolvedFilter.definition.suggestions)
-                    .map(suggestionToCompletionItem)
+                    .map((suggestion) => suggestionToCompletionItem(suggestion, { isFilterValue: true }))
                     .filter(isDefined)
-                    .map(partialCompletionItem => ({
+                    .map((partialCompletionItem) => ({
                         ...partialCompletionItem,
                         range: filterValue ? toMonacoRange(filterValue.range) : defaultRange,
                     })),
