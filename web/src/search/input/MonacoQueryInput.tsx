@@ -257,6 +257,10 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
             // Free CMD+L keybinding, which is part of Monaco's CoreNavigationCommands, and
             // not exposed on editor._actions.
             editor._standaloneKeybindingService.addDynamicKeybinding('-expandLineSelection')
+        } else {
+            // Throw an error if hasKeybindingService() returns false,
+            // to surface issues with this workaround when upgrading Monaco.
+            throw new Error('Cannot unbind default Monaco keybindings')
         }
 
         // Trigger a layout of the Monaco editor when its container gets resized.
