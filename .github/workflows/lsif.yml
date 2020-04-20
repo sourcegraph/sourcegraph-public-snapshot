@@ -7,11 +7,13 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - name: Generate LSIF data
-        uses: sourcegraph/lsif-go-action@master
+        uses: docker://sourcegraph/lsif-go
+        entrypoint: /bin/sh
+        run: lsif-go
       - name: Upload LSIF data
-        uses: sourcegraph/lsif-upload-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+        uses: docker://sourcegraph/src-cli
+        entrypoint: /bin/sh
+        run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
 
   lsif-web:
     runs-on: ubuntu-latest
