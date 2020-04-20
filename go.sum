@@ -192,12 +192,10 @@ github.com/eapache/go-resiliency v1.1.0/go.mod h1:kFI+JgMyC7bLPUVY133qvEBtVayf5m
 github.com/eapache/go-xerial-snappy v0.0.0-20180814174437-776d5712da21/go.mod h1:+020luEh2TKB4/GOp8oxxtq0Daoen/Cii55CzbTV6DU=
 github.com/eapache/queue v1.1.0/go.mod h1:6eCeP0CKFpHLu8blIFXhExK/dRa7WDZfr6jVFPTqq+I=
 github.com/edsrzf/mmap-go v0.0.0-20170320065105-0bce6a688712/go.mod h1:YO35OhQPt3KJa3ryjFM5Bs14WD66h8eGKpfaBNrHW5M=
-github.com/efritz/go-genlib v0.0.0-20191225042452-0a053947dd9d h1:Fzt2j/2Byfq7a67+93053ydGdGjaDs7G49UJV3beAU8=
-github.com/efritz/go-genlib v0.0.0-20191225042452-0a053947dd9d/go.mod h1:aMnaM7yzn10TOdj5sGpElY90l/XT3eL+Sj7z7D1V8q8=
-github.com/efritz/go-genlib v0.0.0-20200420145409-8a873dbb21a3 h1:L62+AIwFzfIoc0rlLjBHYoGbhXgRO9vstj4Smm8p+TQ=
-github.com/efritz/go-genlib v0.0.0-20200420145409-8a873dbb21a3/go.mod h1:aMnaM7yzn10TOdj5sGpElY90l/XT3eL+Sj7z7D1V8q8=
-github.com/efritz/go-mockgen v0.0.0-20200420155948-b9dfdf407df3 h1:rFqHSXPzC/BD3kCpcsEbhUwHQSoZfYECefqbLxVQH0Y=
-github.com/efritz/go-mockgen v0.0.0-20200420155948-b9dfdf407df3/go.mod h1:Ea0c5f8vOxthpdtXIYUnnRNVJUVziKCivF09GiEO9/Q=
+github.com/efritz/go-genlib v0.0.0-20200420163202-9c3914df9594 h1:wAEx9E0qHx43LRLQqP5VFTijgLnvvNM53FqLu7G+VQI=
+github.com/efritz/go-genlib v0.0.0-20200420163202-9c3914df9594/go.mod h1:aMnaM7yzn10TOdj5sGpElY90l/XT3eL+Sj7z7D1V8q8=
+github.com/efritz/go-mockgen v0.0.0-20200420163638-0338f3dfc81c h1:MPakRO9Z5EFrMOnZm1we5ngCCxlJuMEiGCRbesXLVls=
+github.com/efritz/go-mockgen v0.0.0-20200420163638-0338f3dfc81c/go.mod h1:K2AZyo7TmaAzRhr4EvUaEHcpumiT0UEAARFnSBid7yE=
 github.com/emersion/go-imap v1.0.4 h1:uiCAIHM6Z5Jwkma1zdNDWWXxSCqb+/xHBkHflD7XBro=
 github.com/emersion/go-imap v1.0.4/go.mod h1:yKASt+C3ZiDAiCSssxg9caIckWF/JG7ZQTO7GAmvicU=
 github.com/emersion/go-message v0.11.1/go.mod h1:C4jnca5HOTo4bGN9YdqNQM9sITuT3Y0K6bSUw9RklvY=
@@ -601,7 +599,6 @@ github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORN
 github.com/kr/pretty v0.2.0 h1:s5hAObm+yFO5uHYt5dYjxi2rXrsnmRpJx4OYvIWUaQs=
 github.com/kr/pretty v0.2.0/go.mod h1:ipq/a2n7PKx3OHsz4KJII5eveXtPO4qwEXGdVfWzfnI=
 github.com/kr/pty v1.1.1/go.mod h1:pFQYn66WHrOpPYNljwOMqo10TkYh1fy3cYio2l3bCsQ=
-github.com/kr/pty v1.1.4/go.mod h1:pFQYn66WHrOpPYNljwOMqo10TkYh1fy3cYio2l3bCsQ=
 github.com/kr/pty v1.1.8/go.mod h1:O1sed60cT9XZ5uDucP5qwvh+TE3NnUj51EiZO/lmSfw=
 github.com/kr/text v0.1.0 h1:45sCR5RtlFHMR4UwH9sdQ5TC8v0qDQCHnXt+kaKSTVE=
 github.com/kr/text v0.1.0/go.mod h1:4Jbv+DJW3UT/LiOwJeYQe1efqtUx/iVham/4vfdArNI=
