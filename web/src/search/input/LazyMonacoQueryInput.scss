@@ -2,9 +2,7 @@
 
 // Match Monaco styling for the intermediate input displayed while
 // lazy-loading the MonacoQueryInput, to avoid unstable UI.
-.lazy-query-input--intermediate-input {
+.lazy-monaco-query-input--intermediate-input {
     height: 100%;
-    font-family: Menlo, Monaco, 'Courier New', monospace;
     font-size: 12px;
-    letter-spacing: 0;
 }
