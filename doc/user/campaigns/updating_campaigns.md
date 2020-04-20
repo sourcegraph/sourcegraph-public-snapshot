@@ -114,6 +114,6 @@ $ src action exec -f extended-action.json -create-patchset
 
 After the command ran successfully a URL is printed.
 
-Open it to select which campaign you want to update. Select your existing campaign. The preview should now show you the additional changesets that will be created when you update the campaign and, if something changed in that repository, how the changeset that already exists will be updated.
+Open it to select which campaign you want to update. Select your existing campaign. The preview now shows you the additional changesets that will be created when you update the campaign and, if something changed in that repository, how the changeset that already exists will be updated.
 
 Click **Update** to create the additional changesets.
