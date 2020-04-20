@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"html/template"
 	"log"
 	"net"
 	"net/http"
@@ -212,13 +213,21 @@ func Main(enterpriseInit EnterpriseInit) {
 	srv := &http.Server{Addr: addr, Handler: handler}
 	go func() { log.Fatal(srv.ListenAndServe()) }()
 
+	tmpl, err := template.ParseFiles("cmd/repo-updater/assets/html/repo_updater_state.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	go debugserver.Start(debugserver.Endpoint{
 		Name: "Repo Updater State",
 		Path: "/repo-updater-state",
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			dumps := []interface{}{
-				scheduler.DebugDump(),
+			schedulerDump := scheduler.DebugDump()
+			if err := tmpl.Execute(w, schedulerDump); err != nil {
+				log.Print(err)
 			}
+
+			var dumps []interface{}
 			for _, dumper := range debugDumpers {
 				dumps = append(dumps, dumper.DebugDump())
 			}

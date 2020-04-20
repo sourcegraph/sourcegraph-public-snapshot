@@ -55,15 +55,15 @@ func startRecording() (*recording, func()) {
 }
 
 func TestUpdateQueue_enqueue(t *testing.T) {
-	a := configuredRepo2{ID: 1, Name: "a", URL: "a.com"}
-	a2 := configuredRepo2{ID: 1, Name: "a2", URL: "a2.com"}
-	b := configuredRepo2{ID: 2, Name: "b", URL: "b.com"}
-	c := configuredRepo2{ID: 3, Name: "c", URL: "c.com"}
-	d := configuredRepo2{ID: 4, Name: "d", URL: "d.com"}
-	e := configuredRepo2{ID: 5, Name: "e", URL: "e.com"}
+	a := ConfiguredRepo2{ID: 1, Name: "a", URL: "a.com"}
+	a2 := ConfiguredRepo2{ID: 1, Name: "a2", URL: "a2.com"}
+	b := ConfiguredRepo2{ID: 2, Name: "b", URL: "b.com"}
+	c := ConfiguredRepo2{ID: 3, Name: "c", URL: "c.com"}
+	d := ConfiguredRepo2{ID: 4, Name: "d", URL: "d.com"}
+	e := ConfiguredRepo2{ID: 5, Name: "e", URL: "e.com"}
 
 	type enqueueCall struct {
-		repo     configuredRepo2
+		repo     ConfiguredRepo2
 		priority priority
 	}
 
@@ -71,7 +71,7 @@ func TestUpdateQueue_enqueue(t *testing.T) {
 		name                  string
 		calls                 []*enqueueCall
 		acquire               int // acquire n updates before assertions
-		expectedUpdates       []*repoUpdate
+		expectedUpdates       []*RepoUpdate
 		expectedNotifications int
 	}{
 		{
@@ -79,7 +79,7 @@ func TestUpdateQueue_enqueue(t *testing.T) {
 			calls: []*enqueueCall{
 				{repo: a, priority: priorityLow},
 			},
-			expectedUpdates: []*repoUpdate{
+			expectedUpdates: []*RepoUpdate{
 				{
 					Repo:     a,
 					Priority: priorityLow,
@@ -93,7 +93,7 @@ func TestUpdateQueue_enqueue(t *testing.T) {
 			calls: []*enqueueCall{
 				{repo: a, priority: priorityHigh},
 			},
-			expectedUpdates: []*repoUpdate{
+			expectedUpdates: []*RepoUpdate{
 				{
 					Repo:     a,
 					Priority: priorityHigh,
@@ -108,7 +108,7 @@ func TestUpdateQueue_enqueue(t *testing.T) {
 				{repo: b, priority: priorityLow},
 				{repo: a, priority: priorityHigh},
 			},
-			expectedUpdates: []*repoUpdate{
+			expectedUpdates: []*RepoUpdate{
 				{
 					Repo:     a,
 					Priority: priorityHigh,
@@ -128,7 +128,7 @@ func TestUpdateQueue_enqueue(t *testing.T) {
 				{repo: a, priority: priorityHigh},
 				{repo: b, priority: priorityLow},
 			},
-			expectedUpdates: []*repoUpdate{
+			expectedUpdates: []*RepoUpdate{
 				{
 					Repo:     a,
 					Priority: priorityHigh,
@@ -148,7 +148,7 @@ func TestUpdateQueue_enqueue(t *testing.T) {
 				{repo: a, priority: priorityLow},
 				{repo: a, priority: priorityLow},
 			},
-			expectedUpdates: []*repoUpdate{
+			expectedUpdates: []*RepoUpdate{
 				{
 					Repo:     a,
 					Priority: priorityLow,
@@ -163,7 +163,7 @@ func TestUpdateQueue_enqueue(t *testing.T) {
 				{repo: a, priority: priorityHigh},
 				{repo: a, priority: priorityLow},
 			},
-			expectedUpdates: []*repoUpdate{
+			expectedUpdates: []*RepoUpdate{
 				{
 					Repo:     a,
 					Priority: priorityHigh,
@@ -178,7 +178,7 @@ func TestUpdateQueue_enqueue(t *testing.T) {
 				{repo: a, priority: priorityLow},
 				{repo: a, priority: priorityHigh},
 			},
-			expectedUpdates: []*repoUpdate{
+			expectedUpdates: []*RepoUpdate{
 				{
 					Repo:     a,
 					Priority: priorityHigh,
@@ -193,7 +193,7 @@ func TestUpdateQueue_enqueue(t *testing.T) {
 				{repo: a, priority: priorityHigh},
 				{repo: a2, priority: priorityLow},
 			},
-			expectedUpdates: []*repoUpdate{
+			expectedUpdates: []*RepoUpdate{
 				{
 					Repo:     a2,
 					Priority: priorityHigh,
@@ -209,7 +209,7 @@ func TestUpdateQueue_enqueue(t *testing.T) {
 				{repo: a2, priority: priorityLow},
 			},
 			acquire: 1,
-			expectedUpdates: []*repoUpdate{
+			expectedUpdates: []*RepoUpdate{
 				{
 					Repo:     a,
 					Priority: priorityHigh,
@@ -234,7 +234,7 @@ func TestUpdateQueue_enqueue(t *testing.T) {
 				{repo: d, priority: priorityHigh},
 				{repo: e, priority: priorityHigh},
 			},
-			expectedUpdates: []*repoUpdate{
+			expectedUpdates: []*RepoUpdate{
 				{
 					Repo:     a,
 					Priority: priorityHigh,
@@ -296,24 +296,24 @@ func TestUpdateQueue_enqueue(t *testing.T) {
 }
 
 func TestUpdateQueue_remove(t *testing.T) {
-	a := configuredRepo2{ID: 1, Name: "a", URL: "a.com"}
-	b := configuredRepo2{ID: 2, Name: "b", URL: "b.com"}
-	c := configuredRepo2{ID: 3, Name: "c", URL: "c.com"}
+	a := ConfiguredRepo2{ID: 1, Name: "a", URL: "a.com"}
+	b := ConfiguredRepo2{ID: 2, Name: "b", URL: "b.com"}
+	c := ConfiguredRepo2{ID: 3, Name: "c", URL: "c.com"}
 
 	type removeCall struct {
-		repo     configuredRepo2
+		repo     ConfiguredRepo2
 		updating bool
 	}
 
 	tests := []struct {
 		name         string
-		initialQueue []*repoUpdate
+		initialQueue []*RepoUpdate
 		removeCalls  []*removeCall
-		finalQueue   []*repoUpdate
+		finalQueue   []*RepoUpdate
 	}{
 		{
 			name: "remove only",
-			initialQueue: []*repoUpdate{
+			initialQueue: []*RepoUpdate{
 				{Repo: a, Seq: 1},
 			},
 			removeCalls: []*removeCall{
@@ -322,33 +322,33 @@ func TestUpdateQueue_remove(t *testing.T) {
 		},
 		{
 			name: "remove front",
-			initialQueue: []*repoUpdate{
+			initialQueue: []*RepoUpdate{
 				{Repo: a, Seq: 1},
 				{Repo: b, Seq: 2},
 			},
 			removeCalls: []*removeCall{
 				{repo: a},
 			},
-			finalQueue: []*repoUpdate{
+			finalQueue: []*RepoUpdate{
 				{Repo: b, Seq: 2},
 			},
 		},
 		{
 			name: "remove back",
-			initialQueue: []*repoUpdate{
+			initialQueue: []*RepoUpdate{
 				{Repo: a, Seq: 1},
 				{Repo: b, Seq: 2},
 			},
 			removeCalls: []*removeCall{
 				{repo: b},
 			},
-			finalQueue: []*repoUpdate{
+			finalQueue: []*RepoUpdate{
 				{Repo: a, Seq: 1},
 			},
 		},
 		{
 			name: "remove middle",
-			initialQueue: []*repoUpdate{
+			initialQueue: []*RepoUpdate{
 				{Repo: a, Seq: 1},
 				{Repo: b, Seq: 2},
 				{Repo: c, Seq: 3},
@@ -356,20 +356,20 @@ func TestUpdateQueue_remove(t *testing.T) {
 			removeCalls: []*removeCall{
 				{repo: c},
 			},
-			finalQueue: []*repoUpdate{
+			finalQueue: []*RepoUpdate{
 				{Repo: a, Seq: 1},
 				{Repo: b, Seq: 2},
 			},
 		},
 		{
 			name: "remove not present",
-			initialQueue: []*repoUpdate{
+			initialQueue: []*RepoUpdate{
 				{Repo: a, Seq: 1},
 			},
 			removeCalls: []*removeCall{
 				{repo: b},
 			},
-			finalQueue: []*repoUpdate{
+			finalQueue: []*RepoUpdate{
 				{Repo: a, Seq: 1},
 			},
 		},
@@ -381,7 +381,7 @@ func TestUpdateQueue_remove(t *testing.T) {
 		},
 		{
 			name: "remove all",
-			initialQueue: []*repoUpdate{
+			initialQueue: []*RepoUpdate{
 				{Repo: a, Seq: 1},
 				{Repo: b, Seq: 2},
 				{Repo: c, Seq: 3},
@@ -394,7 +394,7 @@ func TestUpdateQueue_remove(t *testing.T) {
 		},
 		{
 			name: "remove all reverse",
-			initialQueue: []*repoUpdate{
+			initialQueue: []*RepoUpdate{
 				{Repo: a, Seq: 1},
 				{Repo: b, Seq: 2},
 				{Repo: c, Seq: 3},
@@ -407,25 +407,25 @@ func TestUpdateQueue_remove(t *testing.T) {
 		},
 		{
 			name: "don't remove updating",
-			initialQueue: []*repoUpdate{
+			initialQueue: []*RepoUpdate{
 				{Repo: a, Seq: 1, Updating: true},
 			},
 			removeCalls: []*removeCall{
 				{repo: a, updating: false},
 			},
-			finalQueue: []*repoUpdate{
+			finalQueue: []*RepoUpdate{
 				{Repo: a, Seq: 1, Updating: true},
 			},
 		},
 		{
 			name: "don't remove not updating",
-			initialQueue: []*repoUpdate{
+			initialQueue: []*RepoUpdate{
 				{Repo: a, Seq: 1, Updating: false},
 			},
 			removeCalls: []*removeCall{
 				{repo: a, updating: true},
 			},
-			finalQueue: []*repoUpdate{
+			finalQueue: []*RepoUpdate{
 				{Repo: a, Seq: 1, Updating: false},
 			},
 		},
@@ -456,48 +456,48 @@ func TestUpdateQueue_remove(t *testing.T) {
 }
 
 func TestUpdateQueue_acquireNext(t *testing.T) {
-	a := configuredRepo2{ID: 1, Name: "a", URL: "a.com"}
-	b := configuredRepo2{ID: 2, Name: "b", URL: "b.com"}
+	a := ConfiguredRepo2{ID: 1, Name: "a", URL: "a.com"}
+	b := ConfiguredRepo2{ID: 2, Name: "b", URL: "b.com"}
 
 	tests := []struct {
 		name           string
-		initialQueue   []*repoUpdate
-		acquireResults []*configuredRepo2
-		finalQueue     []*repoUpdate
+		initialQueue   []*RepoUpdate
+		acquireResults []*ConfiguredRepo2
+		finalQueue     []*RepoUpdate
 	}{
 		{
 			name:           "acquire from empty queue returns nil",
-			acquireResults: []*configuredRepo2{nil},
+			acquireResults: []*ConfiguredRepo2{nil},
 		},
 		{
 			name: "acquire sets updating to true",
-			initialQueue: []*repoUpdate{
+			initialQueue: []*RepoUpdate{
 				{Repo: a, Updating: false, Seq: 1},
 			},
-			acquireResults: []*configuredRepo2{&a},
-			finalQueue: []*repoUpdate{
+			acquireResults: []*ConfiguredRepo2{&a},
+			finalQueue: []*RepoUpdate{
 				{Repo: a, Updating: true, Seq: 1},
 			},
 		},
 		{
 			name: "acquire sends update to back of queue",
-			initialQueue: []*repoUpdate{
+			initialQueue: []*RepoUpdate{
 				{Repo: a, Updating: false, Seq: 1},
 				{Repo: b, Updating: false, Seq: 2},
 			},
-			acquireResults: []*configuredRepo2{&a},
-			finalQueue: []*repoUpdate{
+			acquireResults: []*ConfiguredRepo2{&a},
+			finalQueue: []*RepoUpdate{
 				{Repo: b, Updating: false, Seq: 2},
 				{Repo: a, Updating: true, Seq: 1},
 			},
 		},
 		{
 			name: "acquire does not return repos that are already updating",
-			initialQueue: []*repoUpdate{
+			initialQueue: []*RepoUpdate{
 				{Repo: a, Updating: true, Seq: 1},
 			},
-			acquireResults: []*configuredRepo2{nil},
-			finalQueue: []*repoUpdate{
+			acquireResults: []*ConfiguredRepo2{nil},
+			finalQueue: []*RepoUpdate{
 				{Repo: a, Updating: true, Seq: 1},
 			},
 		},
@@ -534,18 +534,18 @@ func TestUpdateQueue_acquireNext(t *testing.T) {
 	}
 }
 
-func setupInitialQueue(s *updateScheduler, initialQueue []*repoUpdate) {
+func setupInitialQueue(s *updateScheduler, initialQueue []*RepoUpdate) {
 	for _, update := range initialQueue {
 		heap.Push(s.updateQueue, update)
 	}
 }
 
-func verifyQueue(t *testing.T, s *updateScheduler, expected []*repoUpdate) {
+func verifyQueue(t *testing.T, s *updateScheduler, expected []*RepoUpdate) {
 	t.Helper()
 
-	var actualQueue []*repoUpdate
+	var actualQueue []*RepoUpdate
 	for len(s.updateQueue.heap) > 0 {
-		update := heap.Pop(s.updateQueue).(*repoUpdate)
+		update := heap.Pop(s.updateQueue).(*RepoUpdate)
 		update.Index = 0 // this will always be -1, but easier to set it to 0 to avoid boilerplate in test cases
 		actualQueue = append(actualQueue, update)
 	}
@@ -556,23 +556,23 @@ func verifyQueue(t *testing.T, s *updateScheduler, expected []*repoUpdate) {
 }
 
 func Test_updateScheduler_UpdateFromDiff(t *testing.T) {
-	a := configuredRepo2{ID: 1, Name: "a", URL: "a.com"}
-	b := configuredRepo2{ID: 2, Name: "b", URL: "b.com"}
+	a := ConfiguredRepo2{ID: 1, Name: "a", URL: "a.com"}
+	b := ConfiguredRepo2{ID: 2, Name: "b", URL: "b.com"}
 
 	tests := []struct {
 		name            string
-		initialSchedule []*scheduledRepoUpdate
-		initialQueue    []*repoUpdate
+		initialSchedule []*ScheduledRepoUpdate
+		initialQueue    []*RepoUpdate
 		diff            Diff
-		finalSchedule   []*scheduledRepoUpdate
-		finalQueue      []*repoUpdate
+		finalSchedule   []*ScheduledRepoUpdate
+		finalQueue      []*RepoUpdate
 	}{
 		{
 			name: "diff with deleted repos",
-			initialSchedule: []*scheduledRepoUpdate{
+			initialSchedule: []*ScheduledRepoUpdate{
 				{Repo: a, Interval: minDelay, Due: defaultTime.Add(minDelay)},
 			},
-			initialQueue: []*repoUpdate{
+			initialQueue: []*RepoUpdate{
 				{Repo: a, Seq: 1, Updating: false},
 			},
 			diff: Diff{
@@ -603,21 +603,21 @@ func Test_updateScheduler_UpdateFromDiff(t *testing.T) {
 					},
 				},
 			},
-			finalSchedule: []*scheduledRepoUpdate{
+			finalSchedule: []*ScheduledRepoUpdate{
 				{Repo: a, Interval: minDelay, Due: defaultTime.Add(minDelay)},
 				{Repo: b, Interval: minDelay, Due: defaultTime.Add(minDelay)},
 			},
-			finalQueue: []*repoUpdate{
+			finalQueue: []*RepoUpdate{
 				{Repo: a, Seq: 1, Updating: false},
 				{Repo: b, Seq: 2, Updating: false},
 			},
 		},
 		{
 			name: "diff with unmodified but partially deleted repos",
-			initialSchedule: []*scheduledRepoUpdate{
+			initialSchedule: []*ScheduledRepoUpdate{
 				{Repo: a, Interval: minDelay, Due: defaultTime.Add(minDelay)},
 			},
-			initialQueue: []*repoUpdate{
+			initialQueue: []*RepoUpdate{
 				{Repo: a, Seq: 1, Updating: false},
 			},
 			diff: Diff{
@@ -636,7 +636,7 @@ func Test_updateScheduler_UpdateFromDiff(t *testing.T) {
 					},
 				},
 			},
-			finalSchedule: []*scheduledRepoUpdate{
+			finalSchedule: []*ScheduledRepoUpdate{
 				{Repo: b, Interval: minDelay, Due: defaultTime.Add(minDelay)},
 			},
 		},
@@ -660,20 +660,20 @@ func Test_updateScheduler_UpdateFromDiff(t *testing.T) {
 }
 
 func TestSchedule_upsert(t *testing.T) {
-	a := configuredRepo2{ID: 1, Name: "a", URL: "a.com"}
-	a2 := configuredRepo2{ID: 1, Name: "a2", URL: "a2.com"}
-	b := configuredRepo2{ID: 2, Name: "b", URL: "b.com"}
+	a := ConfiguredRepo2{ID: 1, Name: "a", URL: "a.com"}
+	a2 := ConfiguredRepo2{ID: 1, Name: "a2", URL: "a2.com"}
+	b := ConfiguredRepo2{ID: 2, Name: "b", URL: "b.com"}
 
 	type upsertCall struct {
 		time time.Time
-		repo configuredRepo2
+		repo ConfiguredRepo2
 	}
 
 	tests := []struct {
 		name                string
-		initialSchedule     []*scheduledRepoUpdate
+		initialSchedule     []*ScheduledRepoUpdate
 		upsertCalls         []*upsertCall
-		finalSchedule       []*scheduledRepoUpdate
+		finalSchedule       []*ScheduledRepoUpdate
 		timeAfterFuncDelays []time.Duration
 		wakeupNotifications int
 	}{
@@ -682,7 +682,7 @@ func TestSchedule_upsert(t *testing.T) {
 			upsertCalls: []*upsertCall{
 				{repo: a, time: defaultTime},
 			},
-			finalSchedule: []*scheduledRepoUpdate{
+			finalSchedule: []*ScheduledRepoUpdate{
 				{
 					Interval: minDelay,
 					Due:      defaultTime.Add(minDelay),
@@ -694,7 +694,7 @@ func TestSchedule_upsert(t *testing.T) {
 		},
 		{
 			name: "upsert duplicate is no-op",
-			initialSchedule: []*scheduledRepoUpdate{
+			initialSchedule: []*ScheduledRepoUpdate{
 				{
 					Interval: minDelay,
 					Due:      defaultTime,
@@ -704,7 +704,7 @@ func TestSchedule_upsert(t *testing.T) {
 			upsertCalls: []*upsertCall{
 				{repo: a, time: defaultTime.Add(time.Minute)},
 			},
-			finalSchedule: []*scheduledRepoUpdate{
+			finalSchedule: []*ScheduledRepoUpdate{
 				{
 					Interval: minDelay,
 					Due:      defaultTime,
@@ -714,7 +714,7 @@ func TestSchedule_upsert(t *testing.T) {
 		},
 		{
 			name: "existing update repo is updated",
-			initialSchedule: []*scheduledRepoUpdate{
+			initialSchedule: []*ScheduledRepoUpdate{
 				{
 					Interval: minDelay,
 					Due:      defaultTime,
@@ -724,7 +724,7 @@ func TestSchedule_upsert(t *testing.T) {
 			upsertCalls: []*upsertCall{
 				{repo: a2, time: defaultTime.Add(time.Minute)},
 			},
-			finalSchedule: []*scheduledRepoUpdate{
+			finalSchedule: []*ScheduledRepoUpdate{
 				{
 					Interval: minDelay,
 					Due:      defaultTime,
@@ -734,7 +734,7 @@ func TestSchedule_upsert(t *testing.T) {
 		},
 		{
 			name: "upsert later",
-			initialSchedule: []*scheduledRepoUpdate{
+			initialSchedule: []*ScheduledRepoUpdate{
 				{
 					Interval: minDelay,
 					Due:      defaultTime.Add(30 * time.Second),
@@ -744,7 +744,7 @@ func TestSchedule_upsert(t *testing.T) {
 			upsertCalls: []*upsertCall{
 				{repo: b, time: defaultTime.Add(time.Second)},
 			},
-			finalSchedule: []*scheduledRepoUpdate{
+			finalSchedule: []*ScheduledRepoUpdate{
 				{
 					Interval: minDelay,
 					Due:      defaultTime.Add(30 * time.Second),
@@ -761,7 +761,7 @@ func TestSchedule_upsert(t *testing.T) {
 		},
 		{
 			name: "upsert before",
-			initialSchedule: []*scheduledRepoUpdate{
+			initialSchedule: []*ScheduledRepoUpdate{
 				{
 					Interval: minDelay,
 					Due:      defaultTime.Add(time.Minute),
@@ -771,7 +771,7 @@ func TestSchedule_upsert(t *testing.T) {
 			upsertCalls: []*upsertCall{
 				{repo: b, time: defaultTime.Add(time.Second)},
 			},
-			finalSchedule: []*scheduledRepoUpdate{
+			finalSchedule: []*ScheduledRepoUpdate{
 				{
 					Interval: minDelay,
 					Due:      defaultTime.Add(time.Second + minDelay),
@@ -808,23 +808,23 @@ func TestSchedule_upsert(t *testing.T) {
 }
 
 func TestSchedule_updateInterval(t *testing.T) {
-	a := configuredRepo2{ID: 1, Name: "a", URL: "a.com"}
-	b := configuredRepo2{ID: 2, Name: "b", URL: "b.com"}
-	c := configuredRepo2{ID: 3, Name: "c", URL: "c.com"}
-	d := configuredRepo2{ID: 4, Name: "d", URL: "d.com"}
-	e := configuredRepo2{ID: 5, Name: "e", URL: "e.com"}
+	a := ConfiguredRepo2{ID: 1, Name: "a", URL: "a.com"}
+	b := ConfiguredRepo2{ID: 2, Name: "b", URL: "b.com"}
+	c := ConfiguredRepo2{ID: 3, Name: "c", URL: "c.com"}
+	d := ConfiguredRepo2{ID: 4, Name: "d", URL: "d.com"}
+	e := ConfiguredRepo2{ID: 5, Name: "e", URL: "e.com"}
 
 	type updateCall struct {
 		time     time.Time
-		repo     configuredRepo2
+		repo     ConfiguredRepo2
 		interval time.Duration
 	}
 
 	tests := []struct {
 		name                string
-		initialSchedule     []*scheduledRepoUpdate
+		initialSchedule     []*ScheduledRepoUpdate
 		updateCalls         []*updateCall
-		finalSchedule       []*scheduledRepoUpdate
+		finalSchedule       []*ScheduledRepoUpdate
 		timeAfterFuncDelays []time.Duration
 		wakeupNotifications int
 	}{
@@ -836,7 +836,7 @@ func TestSchedule_updateInterval(t *testing.T) {
 		},
 		{
 			name: "update earlier",
-			initialSchedule: []*scheduledRepoUpdate{
+			initialSchedule: []*ScheduledRepoUpdate{
 				{
 					Repo:     a,
 					Interval: minDelay,
@@ -850,7 +850,7 @@ func TestSchedule_updateInterval(t *testing.T) {
 					interval: 123 * time.Second,
 				},
 			},
-			finalSchedule: []*scheduledRepoUpdate{
+			finalSchedule: []*ScheduledRepoUpdate{
 				{
 					Repo:     a,
 					Interval: 123 * time.Second,
@@ -862,7 +862,7 @@ func TestSchedule_updateInterval(t *testing.T) {
 		},
 		{
 			name: "minimum interval",
-			initialSchedule: []*scheduledRepoUpdate{
+			initialSchedule: []*ScheduledRepoUpdate{
 				{
 					Repo:     a,
 					Interval: maxDelay,
@@ -876,7 +876,7 @@ func TestSchedule_updateInterval(t *testing.T) {
 					interval: time.Second,
 				},
 			},
-			finalSchedule: []*scheduledRepoUpdate{
+			finalSchedule: []*ScheduledRepoUpdate{
 				{
 					Repo:     a,
 					Interval: minDelay,
@@ -888,7 +888,7 @@ func TestSchedule_updateInterval(t *testing.T) {
 		},
 		{
 			name: "maximum interval",
-			initialSchedule: []*scheduledRepoUpdate{
+			initialSchedule: []*ScheduledRepoUpdate{
 				{
 					Repo:     a,
 					Interval: minDelay,
@@ -902,7 +902,7 @@ func TestSchedule_updateInterval(t *testing.T) {
 					interval: 365 * 25 * time.Hour,
 				},
 			},
-			finalSchedule: []*scheduledRepoUpdate{
+			finalSchedule: []*ScheduledRepoUpdate{
 				{
 					Repo:     a,
 					Interval: maxDelay,
@@ -914,7 +914,7 @@ func TestSchedule_updateInterval(t *testing.T) {
 		},
 		{
 			name: "update later",
-			initialSchedule: []*scheduledRepoUpdate{
+			initialSchedule: []*ScheduledRepoUpdate{
 				{
 					Repo:     a,
 					Interval: minDelay,
@@ -928,7 +928,7 @@ func TestSchedule_updateInterval(t *testing.T) {
 					interval: 123 * time.Minute,
 				},
 			},
-			finalSchedule: []*scheduledRepoUpdate{
+			finalSchedule: []*ScheduledRepoUpdate{
 				{
 					Repo:     a,
 					Interval: 123 * time.Minute,
@@ -940,7 +940,7 @@ func TestSchedule_updateInterval(t *testing.T) {
 		},
 		{
 			name: "heap reorders correctly",
-			initialSchedule: []*scheduledRepoUpdate{
+			initialSchedule: []*ScheduledRepoUpdate{
 				{Repo: c, Interval: minDelay, Due: defaultTime.Add(1 * time.Minute)},
 				{Repo: d, Interval: minDelay, Due: defaultTime.Add(2 * time.Minute)},
 				{Repo: a, Interval: minDelay, Due: defaultTime.Add(3 * time.Minute)},
@@ -954,7 +954,7 @@ func TestSchedule_updateInterval(t *testing.T) {
 				{repo: d, time: defaultTime, interval: 4 * time.Minute},
 				{repo: e, time: defaultTime, interval: 5 * time.Minute},
 			},
-			finalSchedule: []*scheduledRepoUpdate{
+			finalSchedule: []*ScheduledRepoUpdate{
 				{Repo: a, Interval: 1 * time.Minute, Due: defaultTime.Add(1 * time.Minute)},
 				{Repo: b, Interval: 2 * time.Minute, Due: defaultTime.Add(2 * time.Minute)},
 				{Repo: c, Interval: 3 * time.Minute, Due: defaultTime.Add(3 * time.Minute)},
@@ -986,20 +986,20 @@ func TestSchedule_updateInterval(t *testing.T) {
 }
 
 func TestSchedule_remove(t *testing.T) {
-	a := configuredRepo2{ID: 1, Name: "a", URL: "a.com"}
-	b := configuredRepo2{ID: 2, Name: "b", URL: "b.com"}
-	c := configuredRepo2{ID: 3, Name: "c", URL: "c.com"}
+	a := ConfiguredRepo2{ID: 1, Name: "a", URL: "a.com"}
+	b := ConfiguredRepo2{ID: 2, Name: "b", URL: "b.com"}
+	c := ConfiguredRepo2{ID: 3, Name: "c", URL: "c.com"}
 
 	type removeCall struct {
 		time time.Time
-		repo configuredRepo2
+		repo ConfiguredRepo2
 	}
 
 	tests := []struct {
 		name                string
-		initialSchedule     []*scheduledRepoUpdate
+		initialSchedule     []*ScheduledRepoUpdate
 		removeCalls         []*removeCall
-		finalSchedule       []*scheduledRepoUpdate
+		finalSchedule       []*ScheduledRepoUpdate
 		timeAfterFuncDelays []time.Duration
 		wakeupNotifications int
 	}{
@@ -1011,19 +1011,19 @@ func TestSchedule_remove(t *testing.T) {
 		},
 		{
 			name: "remove has no effect if repo isn't in schedule",
-			initialSchedule: []*scheduledRepoUpdate{
+			initialSchedule: []*ScheduledRepoUpdate{
 				{Repo: a},
 			},
 			removeCalls: []*removeCall{
 				{repo: b},
 			},
-			finalSchedule: []*scheduledRepoUpdate{
+			finalSchedule: []*ScheduledRepoUpdate{
 				{Repo: a},
 			},
 		},
 		{
 			name: "remove last scheduled doesn't reschedule timer",
-			initialSchedule: []*scheduledRepoUpdate{
+			initialSchedule: []*ScheduledRepoUpdate{
 				{Repo: a},
 			},
 			removeCalls: []*removeCall{
@@ -1032,7 +1032,7 @@ func TestSchedule_remove(t *testing.T) {
 		},
 		{
 			name: "remove next reschedules timer",
-			initialSchedule: []*scheduledRepoUpdate{
+			initialSchedule: []*ScheduledRepoUpdate{
 				{Repo: a, Interval: minDelay, Due: defaultTime},
 				{Repo: b, Interval: minDelay, Due: defaultTime.Add(minDelay)},
 				{Repo: c, Interval: maxDelay, Due: defaultTime.Add(maxDelay)},
@@ -1040,7 +1040,7 @@ func TestSchedule_remove(t *testing.T) {
 			removeCalls: []*removeCall{
 				{repo: a, time: defaultTime},
 			},
-			finalSchedule: []*scheduledRepoUpdate{
+			finalSchedule: []*ScheduledRepoUpdate{
 				{Repo: b, Interval: minDelay, Due: defaultTime.Add(minDelay)},
 				{Repo: c, Interval: maxDelay, Due: defaultTime.Add(maxDelay)},
 			},
@@ -1049,7 +1049,7 @@ func TestSchedule_remove(t *testing.T) {
 		},
 		{
 			name: "remove not-next doesn't reschedule timer",
-			initialSchedule: []*scheduledRepoUpdate{
+			initialSchedule: []*ScheduledRepoUpdate{
 				{Repo: a, Interval: minDelay, Due: defaultTime},
 				{Repo: b, Interval: minDelay, Due: defaultTime.Add(minDelay)},
 				{Repo: c, Interval: maxDelay, Due: defaultTime.Add(maxDelay)},
@@ -1058,7 +1058,7 @@ func TestSchedule_remove(t *testing.T) {
 				{repo: b, time: defaultTime},
 				{repo: c, time: defaultTime},
 			},
-			finalSchedule: []*scheduledRepoUpdate{
+			finalSchedule: []*ScheduledRepoUpdate{
 				{Repo: a, Interval: minDelay, Due: defaultTime},
 			},
 		},
@@ -1083,18 +1083,18 @@ func TestSchedule_remove(t *testing.T) {
 	}
 }
 
-func setupInitialSchedule(s *updateScheduler, initialSchedule []*scheduledRepoUpdate) {
+func setupInitialSchedule(s *updateScheduler, initialSchedule []*ScheduledRepoUpdate) {
 	for _, update := range initialSchedule {
 		heap.Push(s.schedule, update)
 	}
 }
 
-func verifySchedule(t *testing.T, s *updateScheduler, expected []*scheduledRepoUpdate) {
+func verifySchedule(t *testing.T, s *updateScheduler, expected []*ScheduledRepoUpdate) {
 	t.Helper()
 
-	var actualSchedule []*scheduledRepoUpdate
+	var actualSchedule []*ScheduledRepoUpdate
 	for len(s.schedule.heap) > 0 {
-		update := heap.Pop(s.schedule).(*scheduledRepoUpdate)
+		update := heap.Pop(s.schedule).(*ScheduledRepoUpdate)
 		update.Index = 0 // this will always be -1, but easier to set it to 0 to avoid boilerplate in test cases
 		actualSchedule = append(actualSchedule, update)
 	}
@@ -1123,17 +1123,17 @@ func verifyScheduleRecording(t *testing.T, s *updateScheduler, timeAfterFuncDela
 }
 
 func TestUpdateScheduler_runSchedule(t *testing.T) {
-	a := configuredRepo2{ID: 1, Name: "a", URL: "a.com"}
-	b := configuredRepo2{ID: 2, Name: "b", URL: "b.com"}
-	c := configuredRepo2{ID: 3, Name: "c", URL: "c.com"}
-	d := configuredRepo2{ID: 4, Name: "d", URL: "d.com"}
-	e := configuredRepo2{ID: 5, Name: "e", URL: "e.com"}
+	a := ConfiguredRepo2{ID: 1, Name: "a", URL: "a.com"}
+	b := ConfiguredRepo2{ID: 2, Name: "b", URL: "b.com"}
+	c := ConfiguredRepo2{ID: 3, Name: "c", URL: "c.com"}
+	d := ConfiguredRepo2{ID: 4, Name: "d", URL: "d.com"}
+	e := ConfiguredRepo2{ID: 5, Name: "e", URL: "e.com"}
 
 	tests := []struct {
 		name                  string
-		initialSchedule       []*scheduledRepoUpdate
-		finalSchedule         []*scheduledRepoUpdate
-		finalQueue            []*repoUpdate
+		initialSchedule       []*ScheduledRepoUpdate
+		finalSchedule         []*ScheduledRepoUpdate
+		finalQueue            []*RepoUpdate
 		timeAfterFuncDelays   []time.Duration
 		expectedNotifications func(s *updateScheduler) []chan struct{}
 	}{
@@ -1142,10 +1142,10 @@ func TestUpdateScheduler_runSchedule(t *testing.T) {
 		},
 		{
 			name: "no updates due",
-			initialSchedule: []*scheduledRepoUpdate{
+			initialSchedule: []*ScheduledRepoUpdate{
 				{Repo: a, Interval: 11 * time.Second, Due: defaultTime.Add(time.Minute)},
 			},
-			finalSchedule: []*scheduledRepoUpdate{
+			finalSchedule: []*ScheduledRepoUpdate{
 				{Repo: a, Interval: 11 * time.Second, Due: defaultTime.Add(time.Minute)},
 			},
 			timeAfterFuncDelays: []time.Duration{time.Minute},
@@ -1155,15 +1155,15 @@ func TestUpdateScheduler_runSchedule(t *testing.T) {
 		},
 		{
 			name: "one update due, rescheduled to front",
-			initialSchedule: []*scheduledRepoUpdate{
+			initialSchedule: []*ScheduledRepoUpdate{
 				{Repo: a, Interval: 11 * time.Second, Due: defaultTime.Add(1 * time.Microsecond)},
 				{Repo: b, Interval: 22 * time.Second, Due: defaultTime.Add(time.Minute)},
 			},
-			finalSchedule: []*scheduledRepoUpdate{
+			finalSchedule: []*ScheduledRepoUpdate{
 				{Repo: a, Interval: 11 * time.Second, Due: defaultTime.Add(11 * time.Second)},
 				{Repo: b, Interval: 22 * time.Second, Due: defaultTime.Add(time.Minute)},
 			},
-			finalQueue: []*repoUpdate{
+			finalQueue: []*RepoUpdate{
 				{Repo: a, Priority: priorityLow, Seq: 1},
 			},
 			timeAfterFuncDelays: []time.Duration{11 * time.Second},
@@ -1173,15 +1173,15 @@ func TestUpdateScheduler_runSchedule(t *testing.T) {
 		},
 		{
 			name: "one update due, rescheduled to back",
-			initialSchedule: []*scheduledRepoUpdate{
+			initialSchedule: []*ScheduledRepoUpdate{
 				{Repo: a, Interval: 11 * time.Minute, Due: defaultTime},
 				{Repo: b, Interval: 22 * time.Second, Due: defaultTime.Add(time.Minute)},
 			},
-			finalSchedule: []*scheduledRepoUpdate{
+			finalSchedule: []*ScheduledRepoUpdate{
 				{Repo: b, Interval: 22 * time.Second, Due: defaultTime.Add(time.Minute)},
 				{Repo: a, Interval: 11 * time.Minute, Due: defaultTime.Add(11 * time.Minute)},
 			},
-			finalQueue: []*repoUpdate{
+			finalQueue: []*RepoUpdate{
 				{Repo: a, Priority: priorityLow, Seq: 1},
 			},
 			timeAfterFuncDelays: []time.Duration{time.Minute},
@@ -1191,21 +1191,21 @@ func TestUpdateScheduler_runSchedule(t *testing.T) {
 		},
 		{
 			name: "all updates due",
-			initialSchedule: []*scheduledRepoUpdate{
+			initialSchedule: []*ScheduledRepoUpdate{
 				{Repo: c, Interval: 3 * time.Minute, Due: defaultTime.Add(-5 * time.Minute)},
 				{Repo: d, Interval: 4 * time.Minute, Due: defaultTime.Add(-4 * time.Minute)},
 				{Repo: a, Interval: 1 * time.Minute, Due: defaultTime.Add(-3 * time.Minute)},
 				{Repo: e, Interval: 5 * time.Minute, Due: defaultTime.Add(-2 * time.Minute)},
 				{Repo: b, Interval: 2 * time.Minute, Due: defaultTime.Add(-1 * time.Minute)},
 			},
-			finalSchedule: []*scheduledRepoUpdate{
+			finalSchedule: []*ScheduledRepoUpdate{
 				{Repo: a, Interval: 1 * time.Minute, Due: defaultTime.Add(1 * time.Minute)},
 				{Repo: b, Interval: 2 * time.Minute, Due: defaultTime.Add(2 * time.Minute)},
 				{Repo: c, Interval: 3 * time.Minute, Due: defaultTime.Add(3 * time.Minute)},
 				{Repo: d, Interval: 4 * time.Minute, Due: defaultTime.Add(4 * time.Minute)},
 				{Repo: e, Interval: 5 * time.Minute, Due: defaultTime.Add(5 * time.Minute)},
 			},
-			finalQueue: []*repoUpdate{
+			finalQueue: []*RepoUpdate{
 				{Repo: c, Priority: priorityLow, Seq: 1},
 				{Repo: d, Priority: priorityLow, Seq: 2},
 				{Repo: a, Priority: priorityLow, Seq: 3},
@@ -1245,12 +1245,12 @@ func TestUpdateScheduler_runSchedule(t *testing.T) {
 }
 
 func TestUpdateScheduler_runUpdateLoop(t *testing.T) {
-	a := configuredRepo2{ID: 1, Name: "a", URL: "a.com"}
-	b := configuredRepo2{ID: 2, Name: "b", URL: "b.com"}
-	c := configuredRepo2{ID: 3, Name: "c", URL: "c.com"}
+	a := ConfiguredRepo2{ID: 1, Name: "a", URL: "a.com"}
+	b := ConfiguredRepo2{ID: 2, Name: "b", URL: "b.com"}
+	c := ConfiguredRepo2{ID: 3, Name: "c", URL: "c.com"}
 
 	type mockRequestRepoUpdate struct {
-		repo configuredRepo2
+		repo ConfiguredRepo2
 		resp *gitserverprotocol.RepoUpdateResponse
 		err  error
 	}
@@ -1258,11 +1258,11 @@ func TestUpdateScheduler_runUpdateLoop(t *testing.T) {
 	tests := []struct {
 		name                   string
 		gitMaxConcurrentClones int
-		initialSchedule        []*scheduledRepoUpdate
-		initialQueue           []*repoUpdate
+		initialSchedule        []*ScheduledRepoUpdate
+		initialQueue           []*RepoUpdate
 		mockRequestRepoUpdates []*mockRequestRepoUpdate
-		finalSchedule          []*scheduledRepoUpdate
-		finalQueue             []*repoUpdate
+		finalSchedule          []*ScheduledRepoUpdate
+		finalQueue             []*RepoUpdate
 		timeAfterFuncDelays    []time.Duration
 		expectedNotifications  func(s *updateScheduler) []chan struct{}
 	}{
@@ -1271,17 +1271,17 @@ func TestUpdateScheduler_runUpdateLoop(t *testing.T) {
 		},
 		{
 			name: "non-empty queue at clone limit",
-			initialQueue: []*repoUpdate{
+			initialQueue: []*RepoUpdate{
 				{Repo: a, Seq: 1},
 			},
-			finalQueue: []*repoUpdate{
+			finalQueue: []*RepoUpdate{
 				{Repo: a, Seq: 1},
 			},
 		},
 		{
 			name:                   "queue drains",
 			gitMaxConcurrentClones: 1,
-			initialQueue: []*repoUpdate{
+			initialQueue: []*RepoUpdate{
 				{Repo: a, Seq: 1},
 				{Repo: b, Seq: 2},
 				{Repo: c, Seq: 3},
@@ -1295,10 +1295,10 @@ func TestUpdateScheduler_runUpdateLoop(t *testing.T) {
 		{
 			name:                   "schedule updated",
 			gitMaxConcurrentClones: 1,
-			initialSchedule: []*scheduledRepoUpdate{
+			initialSchedule: []*ScheduledRepoUpdate{
 				{Repo: a, Interval: time.Hour, Due: defaultTime.Add(time.Hour)},
 			},
-			initialQueue: []*repoUpdate{
+			initialQueue: []*RepoUpdate{
 				{Repo: a, Seq: 1},
 				{Repo: b, Seq: 1},
 			},
@@ -1318,7 +1318,7 @@ func TestUpdateScheduler_runUpdateLoop(t *testing.T) {
 					},
 				},
 			},
-			finalSchedule: []*scheduledRepoUpdate{
+			finalSchedule: []*ScheduledRepoUpdate{
 				{Repo: a, Interval: time.Minute, Due: defaultTime.Add(time.Minute)},
 			},
 			timeAfterFuncDelays: []time.Duration{time.Minute},
@@ -1348,7 +1348,7 @@ func TestUpdateScheduler_runUpdateLoop(t *testing.T) {
 			// intentionally don't close the channel so any further receives just block
 
 			contexts := make(chan context.Context, expectedRequestCount)
-			requestRepoUpdate = func(ctx context.Context, repo configuredRepo2, since time.Duration) (*gitserverprotocol.RepoUpdateResponse, error) {
+			requestRepoUpdate = func(ctx context.Context, repo ConfiguredRepo2, since time.Duration) (*gitserverprotocol.RepoUpdateResponse, error) {
 				select {
 				case mock := <-mockRequestRepoUpdates:
 					if !reflect.DeepEqual(mock.repo, repo) {
@@ -1427,12 +1427,12 @@ func Test_updateQueue_Less(t *testing.T) {
 	q := &updateQueue{}
 	tests := []struct {
 		name   string
-		heap   []*repoUpdate
+		heap   []*RepoUpdate
 		expVal bool
 	}{
 		{
 			name: "updating",
-			heap: []*repoUpdate{
+			heap: []*RepoUpdate{
 				{Updating: false},
 				{Updating: true},
 			},
@@ -1440,7 +1440,7 @@ func Test_updateQueue_Less(t *testing.T) {
 		},
 		{
 			name: "priority",
-			heap: []*repoUpdate{
+			heap: []*RepoUpdate{
 				{Priority: priorityHigh},
 				{Priority: priorityLow},
 			},
@@ -1448,7 +1448,7 @@ func Test_updateQueue_Less(t *testing.T) {
 		},
 		{
 			name: "seq",
-			heap: []*repoUpdate{
+			heap: []*RepoUpdate{
 				{Seq: 1},
 				{Seq: 2},
 			},

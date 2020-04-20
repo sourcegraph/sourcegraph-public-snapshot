@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Repo-updater state</title>
+</head>
+<body>
+<header>
+    <h1>Repo-updater state</h1>
+</header>
+<main>
+
+    <table>
+        <thead>
+        <tr>
+            <td colspan="2">Configuration data for the repository from the configuration source</td>
+        </tr>
+        </thead>
+
+        <tbody>
+        <tr>
+            <td>URL</td>
+            <td>{{- /*gotype: github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos.DebugDump*/ -}}
+                {{.UpdateQueue}}</td>
+        </tr>
+
+        <tr>
+            <td>ID</td>
+            <td>1</td>
+        </tr>
+
+        <tr>
+            <td>Name</td>
+            <td>github.com/ayzu/sourcegraph</td>
+        </tr>
+        </tbody>
+    </table>
+
+    <table>
+        <thead>
+        <tr>
+            <td colspan="2">Update configuration</td>
+        </tr>
+        </thead>
+
+        <tbody>
+        <tr>
+            <td>Priority</td>
+            <td>0</td>
+        </tr>
+
+        <tr>
+            <td>The sequence number of the update</td>
+            <td>1</td>
+        </tr>
+
+        <tr>
+            <td>Whether the repo has been acquired for update</td>
+            <td>true</td>
+        </tr>
+
+        <tr>
+            <td>How regularly the repository is updated</td>
+            <td>45000000000000000</td>
+        </tr>
+
+        <tr>
+            <td>The next time that the repo will be enqueued for a update</td>
+            <td>2020-04-20T06:56:28.060649665Z</td>
+        </tr>
+        </tbody>
+    </table>
+
+    <table>
+        <thead>
+        <tr>
+            <td colspan="2">State of the permissions syncer</td>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td>Number of permission syncing requests</td>
+            <td>0</td>
+        </tr>
+
+        <tr>
+            <td colspan="2">Syncing requests</td>
+        </tr>
+
+        <tr>
+            <td>Request priority</td>
+            <td>4</td>
+        </tr>
+
+        <tr>
+            <td>Request type</td>
+            <td>User || Repo</td>
+        </tr>
+
+        <tr>
+            <td>ID</td>
+            <td>500</td>
+        </tr>
+
+        <tr>
+            <td>Next sync at</td>
+            <td>time.Time</td>
+        </tr>
+
+        <tr>
+            <td>No permissions</td>
+            <td>false</td>
+        </tr>
+
+        <tr>
+            <td>Request acquired</td>
+            <td>false</td>
+        </tr>
+        </tbody>
+
+    </table>
+</main>
+
+</body>
+</html>
