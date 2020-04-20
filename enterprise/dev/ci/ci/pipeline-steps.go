@@ -90,6 +90,21 @@ func addWebApp(pipeline *bk.Pipeline) {
 
 // Builds and tests the browser extension.
 func addBrowserExt(pipeline *bk.Pipeline) {
+	for _, browser := range []string{"chrome", "firefox"} {
+		// Run e2e tests
+		pipeline.AddStep(fmt.Sprintf(":%s:", browser),
+			bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", ""),
+			bk.Env("EXTENSION_PERMISSIONS_ALL_URLS", "true"),
+			bk.Env("BROWSER", browser),
+			bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.com"),
+			bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+			bk.Cmd("pushd browser"),
+			bk.Cmd("yarn -s run build"),
+			bk.Cmd("yarn -s mocha ./src/e2e/github.test.ts"),
+			bk.Cmd("popd"),
+			bk.ArtifactPaths("./puppeteer/*.png"))
+	}
+
 	// Browser extension build
 	pipeline.AddStep(":webpack::chrome:",
 		bk.Cmd("dev/ci/yarn-build.sh browser"))
