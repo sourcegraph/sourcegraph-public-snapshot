@@ -238,7 +238,7 @@ func (r *GitTreeEntryResolver) LSIF(ctx context.Context) (LSIFQueryResolver, err
 	codeIntelRequests.WithLabelValues(trace.RequestOrigin(ctx)).Inc()
 	return EnterpriseResolvers.codeIntelResolver.LSIF(ctx, &LSIFQueryArgs{
 		Repository: r.Repository(),
-		Commit:     r.Commit().OID(),
+		Commit:     api.CommitID(r.Commit().OID()),
 		Path:       r.Path(),
 	})
 }

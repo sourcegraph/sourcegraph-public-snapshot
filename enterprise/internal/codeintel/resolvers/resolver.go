@@ -7,8 +7,8 @@ import (
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifserver/client"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/lsifserver/client"
 )
 
 type Resolver struct{}
@@ -93,11 +93,11 @@ func (r *Resolver) LSIFUploads(ctx context.Context, args *graphqlbackend.LSIFRep
 func (r *Resolver) LSIF(ctx context.Context, args *graphqlbackend.LSIFQueryArgs) (graphqlbackend.LSIFQueryResolver, error) {
 	uploads, err := client.DefaultClient.Exists(ctx, &struct {
 		RepoID api.RepoID
-		Commit string
+		Commit api.CommitID
 		Path   string
 	}{
 		RepoID: args.Repository.Type().ID,
-		Commit: string(args.Commit),
+		Commit: args.Commit,
 		Path:   args.Path,
 	})
 

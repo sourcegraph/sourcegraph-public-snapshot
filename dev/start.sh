@@ -138,6 +138,14 @@ build_ts_pid="$!"
 
 printf >&2 "\nStarting all binaries...\n\n"
 export GOREMAN="goreman --set-ports=false --exit-on-error -f dev/Procfile"
-# ignoring because $GOREMAN is used in other handle-change.sh
-# shellcheck disable=SC2086
-exec $GOREMAN start
+
+if ! [ "$(id -u)" = 0 ] && hash authbind; then
+  # ignoring because $GOREMAN is used in other handle-change.sh
+  # shellcheck disable=SC2086
+  # Support using authbind to bind to port 443 as non-root
+  exec authbind --deep $GOREMAN start
+else
+  # ignoring because $GOREMAN is used in other handle-change.sh
+  # shellcheck disable=SC2086
+  exec $GOREMAN start
+fi

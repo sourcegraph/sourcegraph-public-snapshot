@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/sqliteutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 )
@@ -42,7 +43,7 @@ func main() {
 	log.SetFlags(0)
 	tracer.Init()
 
-	symbols.MustRegisterSqlite3WithPcre()
+	sqliteutil.MustRegisterSqlite3WithPcre()
 
 	go debugserver.Start()
 
