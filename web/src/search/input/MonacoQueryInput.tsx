@@ -7,7 +7,7 @@ import { QueryState } from '../helpers'
 import { getProviders } from '../../../../shared/src/search/parser/providers'
 import { Subscription, Observable, Subject, Unsubscribable } from 'rxjs'
 import { fetchSuggestions } from '../backend'
-import { toArray, map, distinctUntilChanged, publishReplay, refCount } from 'rxjs/operators'
+import { toArray, map, distinctUntilChanged, publishReplay, refCount, filter } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { CaseSensitivityProps, PatternTypeProps } from '..'
@@ -200,7 +200,7 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
 
     private onChange = (query: string): void => {
         // Cursor position is irrelevant for the Monaco query input.
-        this.props.onChange({ query, cursorPosition: 0 })
+        this.props.onChange({ query, cursorPosition: 0, fromUserInput: true })
     }
 
     private onSubmit = (): void => {
@@ -213,17 +213,27 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
     }
 
     private onEditorCreated = (editor: Monaco.editor.IStandaloneCodeEditor): void => {
-        if (this.props.autoFocus) {
-            // Focus the editor with cursor at end, and reveal that position.
-            editor.focus()
-            const position = {
-                // +2 as Monaco is 1-indexed, and the cursor should be placed after the query.
-                column: editor.getValue().length + 2,
-                lineNumber: 1,
-            }
-            editor.setPosition(position)
-            editor.revealPosition(position)
-        }
+        this.subscriptions.add(
+            this.componentUpdates
+                .pipe(
+                    filter(({ autoFocus }) => !!autoFocus),
+                    map(({ queryState }) => queryState),
+                    filter(({ fromUserInput }) => !fromUserInput),
+                    distinctUntilChanged((a, b) => a.query === b.query)
+                )
+                .subscribe(() => {
+                    // Focus the editor with cursor at end, and reveal that position.
+                    editor.focus()
+                    const position = {
+                        // +2 as Monaco is 1-indexed, and the cursor should be placed after the query.
+                        column: editor.getValue().length + 2,
+                        lineNumber: 1,
+                    }
+                    editor.setPosition(position)
+                    editor.revealPosition(position)
+                })
+        )
+
         // Prevent newline insertion in model, and surface query changes with stripped newlines.
         this.subscriptions.add(
             toUnsubscribable(
