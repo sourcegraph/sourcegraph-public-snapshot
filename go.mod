@@ -22,7 +22,8 @@ require (
 	github.com/dghubble/gologin v2.2.0+incompatible
 	github.com/dnaeon/go-vcr v1.0.1
 	github.com/docker/docker v1.4.2-0.20200213202729-31a86c4ab209
-	github.com/efritz/go-mockgen v0.0.0-20190613153341-3425cf558834
+	github.com/efritz/go-genlib v0.0.0-20200420145409-8a873dbb21a3 // indirect
+	github.com/efritz/go-mockgen v0.0.0-20200420155948-b9dfdf407df3
 	github.com/emersion/go-imap v1.0.4
 	github.com/ericchiang/k8s v1.2.0
 	github.com/fatih/astrewrite v0.0.0-20191207154002-9094e544fcef
@@ -84,7 +85,6 @@ require (
 	github.com/machinebox/graphql v0.2.2
 	github.com/matryer/is v1.3.0 // indirect
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
-	github.com/mattn/goreman v0.0.0-00010101000000-000000000000 // indirect
 	github.com/mcuadros/go-version v0.0.0-20190830083331-035f6764e8d2
 	github.com/microcosm-cc/bluemonday v1.0.2
 	github.com/mschoch/smat v0.2.0 // indirect
@@ -105,9 +105,7 @@ require (
 	github.com/sergi/go-diff v1.1.0
 	github.com/shirou/gopsutil v2.20.3+incompatible // indirect
 	github.com/shurcooL/github_flavored_markdown v0.0.0-20181002035957-2122de532470
-	github.com/shurcooL/githubv4 v0.0.0-20191127044304-8f68eb5628d0
 	github.com/shurcooL/go v0.0.0-20191216061654-b114cc39af9f // indirect
-	github.com/shurcooL/graphql v0.0.0-20181231061246-d48a9a75455f // indirect
 	github.com/shurcooL/highlight_diff v0.0.0-20181222201841-111da2e7d480 // indirect
 	github.com/shurcooL/highlight_go v0.0.0-20191220051317-782971ddf21b // indirect
 	github.com/shurcooL/httpfs v0.0.0-20190707220628-8d4bc4ba7749
@@ -145,7 +143,7 @@ require (
 	golang.org/x/sync v0.0.0-20200317015054-43a5402ce75a
 	golang.org/x/sys v0.0.0-20200331124033-c3d80250170d
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0
-	golang.org/x/tools v0.0.0-20200403190813-44a64ad78b9b
+	golang.org/x/tools v0.0.0-20200420001825-978e26b7c37c
 	google.golang.org/api v0.21.0 // indirect
 	google.golang.org/genproto v0.0.0-20200403120447-c50568487044 // indirect
 	gopkg.in/jpoehls/gophermail.v0 v0.0.0-20160410235621-62941eab772c
