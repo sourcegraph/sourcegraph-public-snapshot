@@ -150,3 +150,8 @@ declare module 'worker-loader?*' {
     }
     export default WebpackWorker
 }
+
+declare module '*.scss' {
+    const cssModule: string
+    export default cssModule
+}
