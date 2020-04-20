@@ -2,9 +2,9 @@
 
 ## Updating campaign attributes
 
-In order to update the title and the description of a campaign, simply click the "Edit" button on the top right when viewing a campaign. You can then update both attributes.
+In order to update the title and the description of a campaign, simply click the **Edit** button on the top right when viewing a campaign. You can then update both attributes.
 
-When you click on "Save" and the campaign will be updated.
+When you click on **Save** and the campaign will be updated.
 
 If the campaign was created from a patch set and includes changesets that have already been created on the code host, the title and description of those changesets will be updated on the code host, too.
 
@@ -39,7 +39,7 @@ In the UI you can then select which campaign should be updated to use the new pa
   </figure>
 </div>
 
-On this page, click "Preview" to select the campaign that should be updated.
+On this page, click **Preview** to select the campaign that should be updated.
 
 You'll then see which changesets will be created, updated (on the code host), deleted and removed from the campaign or left untouched:
 
@@ -52,11 +52,10 @@ You'll then see which changesets will be created, updated (on the code host), de
   </figure>
 </div>
 
-When you click on "Update" the patches and changesets in a campaign will be updated:
+When you click on **Update** the patches and changesets in a campaign will be updated:
 
 * Patches (unpublished changesets) will be updated if their diff has changed.
 * Published changesets will be updated on the code host if their diff or the campaign's title or description has changed.
 * Published changesets will be closed on the code host and detached from the campaign if the new patch set doesn't contain a patch for their repositories.
 * Published changesets will be left untouched if the new patch set contain the exact same patch for their repositories and the campaigns title and description have not been changed.
 * Published changesets that are already merged or closed will not be updated and kept attached to the campaign. If a the patch set contains an new patch for a repository for which the campaign already has a merged changeset, a new changeset will be created.
-
