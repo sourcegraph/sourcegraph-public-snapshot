@@ -92,7 +92,7 @@ export const CampaignCLIHelp: React.FunctionComponent<Props> = ({ className }) =
                         />
                     </pre>
                     <p>
-                        See the examples below for more real-world usecases and read "{' '}
+                        See the examples below for more real-world use cases and read "{' '}
                         <a
                             href="https://docs.sourcegraph.com/user/campaigns/creating_campaign_from_patches"
                             target="_blank"
