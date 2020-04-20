@@ -32,13 +32,13 @@ describe('Sourcegraph browser extension on github.com', function () {
 
     testSingleFilePage({
         getDriver: () => driver,
-        url: 'https://github.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go',
+        url: 'https://github.com/sourcegraph/jsonrpc2/blob/96c4efab7ee28f3d1cf1d248a0139cea37368b18/call_opt.go',
         repoName: 'github.com/sourcegraph/jsonrpc2',
         sourcegraphBaseUrl,
         // Not using '.js-file-line' because it breaks the reliance on :nth-child() in testSingleFilePage()
         lineSelector: '.js-file-line-container tr',
         goToDefinitionURL:
-            'https://github.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go#L5:6',
+            'https://github.com/sourcegraph/jsonrpc2/blob/96c4efab7ee28f3d1cf1d248a0139cea37368b18/call_opt.go#L5:6',
     })
 
     const tokens = {
