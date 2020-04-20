@@ -394,10 +394,15 @@ declare module 'sourcegraph' {
     export interface DocumentFilter {
         /** A language id, such as `typescript` or `*`. */
         language?: string
+
         /** A URI scheme, such as `file` or `untitled`. */
         scheme?: string
+
         /** A glob pattern, such as `*.{ts,js}`. */
         pattern?: string
+
+        /** A base URI (e.g. root URI of a workspace folder) that the document must be within. */
+        baseUri?: URL | string
     }
 
     /**
@@ -830,6 +835,16 @@ declare module 'sourcegraph' {
         readonly value: Readonly<C>
     }
 
+    interface ConfigurationService extends Subscribable<void> {
+        /**
+         * Returns the full configuration object.
+         *
+         * @template C The configuration schema.
+         * @returns The full configuration object.
+         */
+        get<C extends object = { [key: string]: any }>(): Configuration<C>
+    }
+
     /**
      * The configuration settings.
      *
@@ -845,25 +860,7 @@ declare module 'sourcegraph' {
      * @todo Add a way to get/update configuration for a specific scope or subject.
      * @todo Support applying defaults to the configuration values.
      */
-    export namespace configuration {
-        /**
-         * Returns the full configuration object.
-         *
-         * @template C The configuration schema.
-         * @returns The full configuration object.
-         */
-        export function get<C extends object = { [key: string]: any }>(): Configuration<C>
-
-        /**
-         * Subscribe to changes to the configuration. The {@link next} callback is called when any configuration
-         * value changes (and synchronously immediately). Call {@link get} in the callback to obtain the new
-         * configuration values.
-         *
-         * @template C The configuration schema.
-         * @returns An unsubscribable to stop calling the callback for configuration changes.
-         */
-        export function subscribe(next: () => void): Unsubscribable
-    }
+    export const configuration: ConfigurationService
 
     /**
      * A provider result represents the values that a provider, such as the {@link HoverProvider}, may return. The
@@ -1210,7 +1207,7 @@ declare module 'sourcegraph' {
          *
          * Multiple transformers can be registered. In that case, all transformations will be applied
          * and the result is a single query that has been altered by all transformers. The order in
-         * which transfomers are applied is not defined.
+         * which transforms are applied is not defined.
          *
          * @param provider A query transformer.
          */
@@ -1242,7 +1239,7 @@ declare module 'sourcegraph' {
          * @param command Identifier of the command to execute.
          * @param rest Parameters passed to the command function.
          * @returns A {@link Promise} that resolves to the result of the given command.
-         * @throws If no command exists wih the given command identifier, an error is thrown.
+         * @throws If no command exists with the given command identifier, an error is thrown.
          */
         export function executeCommand<T = any>(command: string, ...args: any[]): Promise<T>
     }

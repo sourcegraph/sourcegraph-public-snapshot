@@ -37,6 +37,7 @@ type Step struct {
 	Concurrency      int                    `json:"concurrency,omitempty"`
 	SoftFail         bool                   `json:"soft_fail,omitempty"`
 	Retry            *RetryOptions          `json:"retry,omitempty"`
+	Agents           map[string]string      `json:"agents,omitempty"`
 }
 
 type RetryOptions struct {
@@ -49,20 +50,28 @@ type AutomaticRetryOptions struct {
 
 var Plugins = make(map[string]interface{})
 
-// OnEveryStepOpts are e.g. commands that are run on every AddStep, similar to
+// BeforeEveryStepOpts are e.g. commands that are run before every AddStep, similar to
 // Plugins.
-var OnEveryStepOpts []StepOpt
+var BeforeEveryStepOpts []StepOpt
+
+// AfterEveryStepOpts are e.g. that are run at the ende of every AddStep, helpful for
+// post-processing
+var AfterEveryStepOpts []StepOpt
 
 func (p *Pipeline) AddStep(label string, opts ...StepOpt) {
 	step := &Step{
 		Label:   label,
 		Env:     make(map[string]string),
+		Agents:  make(map[string]string),
 		Plugins: Plugins,
 	}
-	for _, opt := range OnEveryStepOpts {
+	for _, opt := range BeforeEveryStepOpts {
 		opt(step)
 	}
 	for _, opt := range opts {
+		opt(step)
+	}
+	for _, opt := range AfterEveryStepOpts {
 		opt(step)
 	}
 	p.Steps = append(p.Steps, step)
@@ -151,6 +160,12 @@ func AutomaticRetry(limit int) StepOpt {
 func ArtifactPaths(paths string) StepOpt {
 	return func(step *Step) {
 		step.ArtifactPaths = paths
+	}
+}
+
+func Agent(key, value string) StepOpt {
+	return func(step *Step) {
+		step.Agents[key] = value
 	}
 }
 

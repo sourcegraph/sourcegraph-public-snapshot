@@ -24,8 +24,6 @@ export async function getClient(): Promise<OAuth2Client> {
 async function getAccessToken(oauth2Client: OAuth2Client): Promise<Credentials> {
     try {
         const content = await readFile(TOKEN_PATH, { encoding: 'utf8' })
-        // False positive https://github.com/typescript-eslint/typescript-eslint/issues/1269
-        // eslint-disable-next-line @typescript-eslint/return-await
         return JSON.parse(content)
     } catch (err) {
         const token = await getAccessTokenNoCache(oauth2Client)

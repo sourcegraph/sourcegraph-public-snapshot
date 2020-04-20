@@ -1,4 +1,4 @@
-# Code search overview
+# Code search
 
 > Reference the [**search query syntax**](queries.md) and see [search examples](examples.md) for inspiration.
 

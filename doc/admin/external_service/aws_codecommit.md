@@ -17,6 +17,6 @@ For detailed instructions on how to create the credentials in IAM, see: [Setup f
 
 ## Configuration
 
-AWS CodeCommit external service connections support the following configuration options, which are specified in the JSON editor in the site admin external services area.
+AWS CodeCommit connections support the following configuration options, which are specified in the JSON editor in the site admin "Manage repositories" area.
 
 <div markdown-func=jsonschemadoc jsonschemadoc:path="admin/external_service/aws_codecommit.schema.json">[View page on docs.sourcegraph.com](https://docs.sourcegraph.com/admin/external_service/aws_codecommit) to see rendered content.</div>

@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-multierror"
+	"github.com/inconshreveable/log15"
+	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -22,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // Server is a repoupdater server.
@@ -43,8 +44,17 @@ type Server struct {
 	GitserverClient interface {
 		ListCloned(context.Context) ([]string, error)
 	}
-	ChangesetSyncer interface {
+	ChangesetSyncRegistry interface {
+		// EnqueueChangesetSyncs will queue the supplied changesets to sync ASAP.
 		EnqueueChangesetSyncs(ctx context.Context, ids []int64) error
+		// HandleExternalServiceSync should be called when an external service changes so that
+		// the registry can start or stop the syncer associated with the service
+		HandleExternalServiceSync(es api.ExternalService)
+	}
+	RateLimiterRegistry interface {
+		// HandleExternalServiceSync should be called when an external service changes so that
+		// our internal rate limiter are kept in sync
+		HandleExternalServiceSync(apiService api.ExternalService) error
 	}
 
 	notClonedCountMu        sync.Mutex
@@ -266,7 +276,11 @@ func (s *Server) enqueueRepoUpdate(ctx context.Context, req *protocol.RepoUpdate
 	defer func() {
 		log15.Debug("enqueueRepoUpdate", "httpStatus", httpStatus, "resp", resp, "error", err)
 		if resp != nil {
-			tr.LazyPrintf("response: %s", resp)
+			tr.LogFields(
+				otlog.Int32("resp.id", int32(resp.ID)),
+				otlog.String("resp.name", resp.Name),
+				otlog.String("resp.url", resp.URL),
+			)
 		}
 		tr.SetError(err)
 		tr.Finish()
@@ -324,6 +338,16 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		log15.Error("server.external-service-sync", "kind", req.ExternalService.Kind, "error", err)
 		respond(w, http.StatusInternalServerError, err)
 		return
+	}
+
+	if s.RateLimiterRegistry != nil {
+		err = s.RateLimiterRegistry.HandleExternalServiceSync(req.ExternalService)
+		if err != nil {
+			log15.Warn("Handling rate limiter sync", "err", err)
+		}
+	}
+	if s.ChangesetSyncRegistry != nil {
+		s.ChangesetSyncRegistry.HandleExternalServiceSync(req.ExternalService)
 	}
 
 	log15.Info("server.external-service-sync", "synced", req.ExternalService.Kind)
@@ -564,8 +588,8 @@ func (s *Server) computeNotClonedCount(ctx context.Context) (uint64, error) {
 }
 
 func (s *Server) handleEnqueueChangesetSync(w http.ResponseWriter, r *http.Request) {
-	if s.ChangesetSyncer == nil {
-		log15.Warn("ChangsetSyncer is nil")
+	if s.ChangesetSyncRegistry == nil {
+		log15.Warn("ChangesetSyncer is nil")
 		respond(w, http.StatusForbidden, nil)
 		return
 	}
@@ -579,7 +603,7 @@ func (s *Server) handleEnqueueChangesetSync(w http.ResponseWriter, r *http.Reque
 		respond(w, http.StatusBadRequest, errors.New("no ids provided"))
 		return
 	}
-	err := s.ChangesetSyncer.EnqueueChangesetSyncs(r.Context(), req.IDs)
+	err := s.ChangesetSyncRegistry.EnqueueChangesetSyncs(r.Context(), req.IDs)
 	if err != nil {
 		resp := protocol.ChangesetSyncResponse{Error: err.Error()}
 		respond(w, http.StatusInternalServerError, resp)

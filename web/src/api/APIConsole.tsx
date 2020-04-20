@@ -202,7 +202,7 @@ export class APIConsole extends React.PureComponent<Props, State> {
         )
     }
 
-    // Foward GraphiQL prettify/history buttons directly to their original
+    // Forward GraphiQL prettify/history buttons directly to their original
     // implementation. We have to do this because it is impossible to inject
     // children into the GraphiQL toolbar unless you completely specify your
     // own.
@@ -233,8 +233,6 @@ async function fetcher(graphQLParams: _graphiqlModule.GraphQLParams): Promise<st
     })
     const responseBody = await response.text()
     try {
-        // False positive https://github.com/typescript-eslint/typescript-eslint/issues/1269
-        // eslint-disable-next-line @typescript-eslint/return-await
         return JSON.parse(responseBody)
     } catch (error) {
         return responseBody

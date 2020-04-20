@@ -1,67 +1,128 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`CampaignChangesets renders 1`] = `
-<div
-  className="list-group "
->
-  <FilteredConnection
-    className="mt-2"
-    defaultFirst={15}
-    hideSearch={true}
-    history={
-      Object {
-        "action": "POP",
-        "block": [Function],
-        "canGo": [Function],
-        "createHref": [Function],
-        "entries": Array [
-          Object {
-            "hash": "",
-            "key": undefined,
-            "pathname": "/",
-            "search": "",
-            "state": undefined,
-          },
-        ],
-        "go": [Function],
-        "goBack": [Function],
-        "goForward": [Function],
-        "index": 0,
-        "length": 1,
-        "listen": [Function],
-        "location": Object {
-          "hash": "",
-          "key": undefined,
-          "pathname": "/",
-          "search": "",
-          "state": undefined,
-        },
-        "push": [Function],
-        "replace": [Function],
-      }
-    }
-    location={
-      Object {
-        "hash": "",
-        "key": undefined,
-        "pathname": "/",
-        "search": "",
-        "state": undefined,
-      }
-    }
-    nodeComponent={[Function]}
-    nodeComponentProps={
-      Object {
-        "campaignUpdates": Subject {
-          "_isScalar": false,
-          "closed": false,
-          "hasError": false,
-          "isStopped": false,
-          "observers": Array [],
-          "thrownError": null,
-        },
-        "enablePublishing": false,
-        "history": Object {
+<React.Fragment>
+  <div
+    className="form-inline mb-0 mt-2"
+  >
+    <label
+      htmlFor="changeset-state-filter"
+    >
+      State
+    </label>
+    <select
+      className="form-control mx-2"
+      id="changeset-state-filter"
+      onChange={[Function]}
+    >
+      <option
+        value=""
+      >
+        All
+      </option>
+      <option
+        value="OPEN"
+      >
+        Open
+      </option>
+      <option
+        value="CLOSED"
+      >
+        Closed
+      </option>
+      <option
+        value="MERGED"
+      >
+        Merged
+      </option>
+      <option
+        value="DELETED"
+      >
+        Deleted
+      </option>
+    </select>
+    <label
+      htmlFor="changeset-review-state-filter"
+    >
+      Review state
+    </label>
+    <select
+      className="form-control mx-2"
+      id="changeset-review-state-filter"
+      onChange={[Function]}
+    >
+      <option
+        value=""
+      >
+        All
+      </option>
+      <option
+        value="APPROVED"
+      >
+        Approved
+      </option>
+      <option
+        value="CHANGES_REQUESTED"
+      >
+        Changes requested
+      </option>
+      <option
+        value="PENDING"
+      >
+        Pending
+      </option>
+      <option
+        value="COMMENTED"
+      >
+        Commented
+      </option>
+      <option
+        value="DISMISSED"
+      >
+        Dismissed
+      </option>
+    </select>
+    <label
+      htmlFor="changeset-check-state-filter"
+    >
+      Check state
+    </label>
+    <select
+      className="form-control mx-2"
+      id="changeset-check-state-filter"
+      onChange={[Function]}
+    >
+      <option
+        value=""
+      >
+        All
+      </option>
+      <option
+        value="PENDING"
+      >
+        Pending
+      </option>
+      <option
+        value="PASSED"
+      >
+        Passed
+      </option>
+      <option
+        value="FAILED"
+      >
+        Failed
+      </option>
+    </select>
+  </div>
+  <div
+    className="list-group position-relative"
+  >
+    <FilteredConnection
+      className="mt-2"
+      defaultFirst={15}
+      hideSearch={true}
+      history={
+        Object {
           "action": "POP",
           "block": [Function],
           "canGo": [Function],
@@ -90,31 +151,155 @@ exports[`CampaignChangesets renders 1`] = `
           },
           "push": [Function],
           "replace": [Function],
-        },
-        "isLightTheme": true,
-        "location": Object {
+        }
+      }
+      location={
+        Object {
           "hash": "",
           "key": undefined,
           "pathname": "/",
           "search": "",
           "state": undefined,
-        },
+        }
       }
-    }
-    noun="changeset"
-    pluralNoun="changesets"
-    queryConnection={[Function]}
-    updates={
-      Subject {
-        "_isScalar": false,
-        "closed": false,
-        "hasError": false,
-        "isStopped": false,
-        "observers": Array [],
-        "thrownError": null,
+      nodeComponent={[Function]}
+      nodeComponentProps={
+        Object {
+          "campaignUpdates": Subject {
+            "_isScalar": false,
+            "closed": false,
+            "hasError": false,
+            "isStopped": false,
+            "observers": Array [],
+            "thrownError": null,
+          },
+          "extensionInfo": Object {
+            "extensionsController": undefined,
+            "hoverifier": Object {
+              "hoverState": Object {
+                "actionsOrError": undefined,
+                "highlightedRange": undefined,
+                "hoverOverlayProps": undefined,
+                "hoveredTokenElement": undefined,
+                "selectedPosition": undefined,
+              },
+              "hoverStateUpdates": AnonymousSubject {
+                "_isScalar": false,
+                "closed": false,
+                "destination": AnonymousSubject {
+                  "_isScalar": false,
+                  "closed": false,
+                  "destination": Subject {
+                    "_isScalar": false,
+                    "closed": false,
+                    "hasError": false,
+                    "isStopped": false,
+                    "observers": Array [],
+                    "thrownError": null,
+                  },
+                  "hasError": false,
+                  "isStopped": false,
+                  "observers": Array [],
+                  "operator": MapOperator {
+                    "project": [Function],
+                    "thisArg": undefined,
+                  },
+                  "source": Subject {
+                    "_isScalar": false,
+                    "closed": false,
+                    "hasError": false,
+                    "isStopped": false,
+                    "observers": Array [],
+                    "thrownError": null,
+                  },
+                  "thrownError": null,
+                },
+                "hasError": false,
+                "isStopped": false,
+                "observers": Array [],
+                "operator": DistinctUntilChangedOperator {
+                  "compare": [Function],
+                  "keySelector": undefined,
+                },
+                "source": AnonymousSubject {
+                  "_isScalar": false,
+                  "closed": false,
+                  "destination": Subject {
+                    "_isScalar": false,
+                    "closed": false,
+                    "hasError": false,
+                    "isStopped": false,
+                    "observers": Array [],
+                    "thrownError": null,
+                  },
+                  "hasError": false,
+                  "isStopped": false,
+                  "observers": Array [],
+                  "operator": MapOperator {
+                    "project": [Function],
+                    "thisArg": undefined,
+                  },
+                  "source": Subject {
+                    "_isScalar": false,
+                    "closed": false,
+                    "hasError": false,
+                    "isStopped": false,
+                    "observers": Array [],
+                    "thrownError": null,
+                  },
+                  "thrownError": null,
+                },
+                "thrownError": null,
+              },
+              "hoverify": [Function],
+              "unsubscribe": [Function],
+            },
+          },
+          "history": Object {
+            "action": "POP",
+            "block": [Function],
+            "canGo": [Function],
+            "createHref": [Function],
+            "entries": Array [
+              Object {
+                "hash": "",
+                "key": undefined,
+                "pathname": "/",
+                "search": "",
+                "state": undefined,
+              },
+            ],
+            "go": [Function],
+            "goBack": [Function],
+            "goForward": [Function],
+            "index": 0,
+            "length": 1,
+            "listen": [Function],
+            "location": Object {
+              "hash": "",
+              "key": undefined,
+              "pathname": "/",
+              "search": "",
+              "state": undefined,
+            },
+            "push": [Function],
+            "replace": [Function],
+          },
+          "isLightTheme": true,
+          "location": Object {
+            "hash": "",
+            "key": undefined,
+            "pathname": "/",
+            "search": "",
+            "state": undefined,
+          },
+        }
       }
-    }
-    useURLQuery={false}
-  />
-</div>
+      noun="changeset"
+      pluralNoun="changesets"
+      queryConnection={[Function]}
+      useURLQuery={false}
+    />
+  </div>
+</React.Fragment>
 `;

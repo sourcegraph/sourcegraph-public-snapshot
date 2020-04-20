@@ -6,23 +6,20 @@ cd $(dirname "${BASH_SOURCE[0]}")/..
 DEV_PRIVATE_PATH=$PWD/../../dev-private
 
 if [ ! -d "$DEV_PRIVATE_PATH" ]; then
-    echo "Expected to find github.com/sourcegraph/dev-private checked out to $DEV_PRIVATE_PATH, but path wasn't a directory" 1>&2
-    exit 1
+  echo "Expected to find github.com/sourcegraph/dev-private checked out to $DEV_PRIVATE_PATH, but path wasn't a directory" 1>&2
+  exit 1
 fi
 
 # Warn if dev-private needs to be updated.
 if [ -f "$DEV_PRIVATE_PATH/enterprise/dev/critical-config.json" ]; then
-    echo "Error: You need to update dev-private to a commit that incorporates https://github.com/sourcegraph/dev-private/pull/10."
-    echo
-    echo "Try running:"
-    echo
-    echo "    cd $DEV_PRIVATE_PATH && git pull"
-    echo
-    exit 1
+  echo "Error: You need to update dev-private to a commit that incorporates https://github.com/sourcegraph/dev-private/pull/10."
+  echo
+  echo "Try running:"
+  echo
+  echo "    cd $DEV_PRIVATE_PATH && git pull"
+  echo
+  exit 1
 fi
-
-echo "Installing enterprise web dependencies..."
-[ -n "${OFFLINE-}" ] || yarn --check-files
 
 source "$DEV_PRIVATE_PATH/enterprise/dev/env"
 

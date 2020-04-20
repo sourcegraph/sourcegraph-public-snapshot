@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/shared"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth"
+	eauthz "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/authz"
 	authzResolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/resolvers"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
@@ -30,7 +31,7 @@ import (
 	codeIntelResolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/db/globalstatedb"
 )
 
 func main() {
@@ -42,14 +43,18 @@ func main() {
 	if err := shared.InitDB(); err != nil {
 		log.Fatalf("FATAL: %v", err)
 	}
-	initAuthz(dbconn.Global)
+
+	clock := func() time.Time {
+		return time.Now().UTC().Truncate(time.Microsecond)
+	}
+	eauthz.Init(dbconn.Global, clock)
 
 	ctx := context.Background()
 	go func() {
 		t := time.NewTicker(5 * time.Second)
 		for range t.C {
 			allowAccessByDefault, authzProviders, _, _ :=
-				authzProvidersFromConfig(ctx, conf.Get(), db.ExternalServices, dbconn.Global)
+				eauthz.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices, dbconn.Global)
 			authz.SetProviders(allowAccessByDefault, authzProviders)
 		}
 	}()
@@ -61,19 +66,25 @@ func main() {
 		log.Println("enterprise edition")
 	}
 
-	clock := func() time.Time {
-		return time.Now().UTC().Truncate(time.Microsecond)
+	globalState, err := globalstatedb.Get(ctx)
+	if err != nil {
+		log.Fatalf("FATAL: %v", err)
 	}
 
 	campaignsStore := campaigns.NewStoreWithClock(dbconn.Global, clock)
 	repositories := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 
 	githubWebhook := campaigns.NewGitHubWebhook(campaignsStore, repositories, clock)
-	bitbucketServerWebhook := campaigns.NewBitbucketServerWebhook(campaignsStore, repositories, clock)
+
+	bitbucketWebhookName := "sourcegraph-" + globalState.SiteID
+	bitbucketServerWebhook := campaigns.NewBitbucketServerWebhook(
+		campaignsStore,
+		repositories,
+		clock,
+		bitbucketWebhookName,
+	)
 
 	go bitbucketServerWebhook.Upsert(30 * time.Second)
-
-	go campaigns.RunChangesetJobs(ctx, campaignsStore, clock, gitserver.DefaultClient, 5*time.Second)
 
 	shared.Main(githubWebhook, bitbucketServerWebhook)
 }

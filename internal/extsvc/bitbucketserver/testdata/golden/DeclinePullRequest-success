@@ -1,16 +1,17 @@
 {
-  "id": 32,
-  "version": 1,
-  "title": "foobar",
-  "description": "replace",
+  "id": 63,
+  "version": 3,
+  "title": "This is another test",
+  "description": "Hey there, testing this.",
   "state": "DECLINED",
   "open": false,
   "closed": true,
-  "createdDate": 1575380453999,
-  "updatedDate": 1575640362513,
+  "createdDate": 1585034604332,
+  "updatedDate": 1585577702838,
   "fromRef": {
-   "id": "refs/heads/sourcegraph/campaign-2",
+   "id": "refs/heads/this-is-another-test",
    "repository": {
+    "id": 10070,
     "slug": "automation-testing",
     "project": {
      "key": "SOUR"
@@ -20,6 +21,7 @@
   "toRef": {
    "id": "refs/heads/master",
    "repository": {
+    "id": 10070,
     "slug": "automation-testing",
     "project": {
      "key": "SOUR"
@@ -61,7 +63,7 @@
   "links": {
    "self": [
     {
-     "href": "https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/pull-requests/32"
+     "href": "https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/pull-requests/63"
     }
    ]
   }

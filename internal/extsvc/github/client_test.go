@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/dnaeon/go-vcr/cassette"
+	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
@@ -70,36 +71,39 @@ func TestUnmarshal(t *testing.T) {
 	}
 }
 
-func TestNewRepoCache_GitHubDotCom(t *testing.T) {
-	url, _ := url.Parse("https://www.github.com")
-	token := "asdf"
+func Test_newRepoCache(t *testing.T) {
+	cmpOpts := cmp.AllowUnexported(rcache.Cache{})
+	t.Run("GitHub.com", func(t *testing.T) {
+		url, _ := url.Parse("https://www.github.com")
+		token := "asdf"
 
-	// github.com caches should:
-	// (1) use githubProxyURL for the prefix hash rather than the given url
-	// (2) have a TTL of 10 minutes
-	key := sha256.Sum256([]byte(token + ":" + githubProxyURL.String()))
-	prefix := "gh_repo:" + base64.URLEncoding.EncodeToString(key[:])
-	got := NewRepoCache(url, token, "", 0)
-	want := rcache.NewWithTTL(prefix, 600)
-	if *got != *want {
-		t.Errorf("TestNewRepoCache_GitHubDotCom: got %#v, want %#v", *got, *want)
-	}
-}
+		// github.com caches should:
+		// (1) use githubProxyURL for the prefix hash rather than the given url
+		// (2) have a TTL of 10 minutes
+		key := sha256.Sum256([]byte(token + ":" + githubProxyURL.String()))
+		prefix := "gh_repo:" + base64.URLEncoding.EncodeToString(key[:])
+		got := newRepoCache(url, token)
+		want := rcache.NewWithTTL(prefix, 600)
+		if diff := cmp.Diff(want, got, cmpOpts); diff != "" {
+			t.Fatal(diff)
+		}
+	})
 
-func TestNewRepoCache_GitHubEnterprise(t *testing.T) {
-	url, _ := url.Parse("https://www.sourcegraph.com")
-	token := "asdf"
+	t.Run("GitHub Enterprise", func(t *testing.T) {
+		url, _ := url.Parse("https://www.sourcegraph.com")
+		token := "asdf"
 
-	// GitHub Enterprise caches should:
-	// (1) use the given URL for the prefix hash
-	// (2) have a TTL of 30 seconds
-	key := sha256.Sum256([]byte(token + ":" + url.String()))
-	prefix := "gh_repo:" + base64.URLEncoding.EncodeToString(key[:])
-	got := NewRepoCache(url, token, "", 0)
-	want := rcache.NewWithTTL(prefix, 30)
-	if *got != *want {
-		t.Errorf("TestNewRepoCache_GitHubEnterprise: got %#v, want %#v", *got, *want)
-	}
+		// GitHub Enterprise caches should:
+		// (1) use the given URL for the prefix hash
+		// (2) have a TTL of 30 seconds
+		key := sha256.Sum256([]byte(token + ":" + url.String()))
+		prefix := "gh_repo:" + base64.URLEncoding.EncodeToString(key[:])
+		got := newRepoCache(url, token)
+		want := rcache.NewWithTTL(prefix, 30)
+		if diff := cmp.Diff(want, got, cmpOpts); diff != "" {
+			t.Fatal(diff)
+		}
+	})
 }
 
 var updateRegex = flag.String("update", "", "Update testdata of tests matching the given regex")
@@ -109,6 +113,28 @@ func update(name string) bool {
 		return false
 	}
 	return regexp.MustCompile(*updateRegex).MatchString(name)
+}
+
+func TestClient_WithToken(t *testing.T) {
+	uri, err := url.Parse("https://github.com")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	old := &Client{
+		apiURL: uri,
+		token:  "old_token",
+	}
+
+	newToken := "new_token"
+	new := old.WithToken(newToken)
+	if old == new {
+		t.Fatal("both clients have the same address")
+	}
+
+	if new.token != newToken {
+		t.Fatalf("token: want %q but got %q", newToken, new.token)
+	}
 }
 
 func TestClient_LoadPullRequests(t *testing.T) {

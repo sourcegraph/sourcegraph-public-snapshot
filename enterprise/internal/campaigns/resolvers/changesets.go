@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"sort"
 	"sync"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -28,11 +29,12 @@ type changesetsConnectionResolver struct {
 	opts  ee.ListChangesetsOpts
 
 	// cache results because they are used by multiple fields
-	once       sync.Once
-	changesets []*campaigns.Changeset
-	reposByID  map[api.RepoID]*repos.Repo
-	next       int64
-	err        error
+	once           sync.Once
+	changesets     []*campaigns.Changeset
+	scheduledSyncs map[int64]time.Time
+	reposByID      map[api.RepoID]*repos.Repo
+	next           int64
+	err            error
 }
 
 func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.ExternalChangesetResolver, error) {
@@ -52,6 +54,7 @@ func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]graphqlback
 			store:         r.store,
 			Changeset:     c,
 			preloadedRepo: repo,
+			nextSyncAt:    r.scheduledSyncs[c.ID],
 		})
 	}
 
@@ -59,7 +62,12 @@ func (r *changesetsConnectionResolver) Nodes(ctx context.Context) ([]graphqlback
 }
 
 func (r *changesetsConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	opts := ee.CountChangesetsOpts{CampaignID: r.opts.CampaignID}
+	opts := ee.CountChangesetsOpts{
+		CampaignID:          r.opts.CampaignID,
+		ExternalState:       r.opts.ExternalState,
+		ExternalCheckState:  r.opts.ExternalCheckState,
+		ExternalReviewState: r.opts.ExternalReviewState,
+	}
 	count, err := r.store.CountChangesets(ctx, opts)
 	return int32(count), err
 }
@@ -79,6 +87,21 @@ func (r *changesetsConnectionResolver) compute(ctx context.Context) ([]*campaign
 			return
 		}
 
+		changesetIDs := make([]int64, len(r.changesets))
+		for i, c := range r.changesets {
+			changesetIDs[i] = c.ID
+		}
+
+		syncData, err := r.store.ListChangesetSyncData(ctx, ee.ListChangesetSyncDataOpts{ChangesetIDs: changesetIDs})
+		if err != nil {
+			r.err = err
+			return
+		}
+		r.scheduledSyncs = make(map[int64]time.Time)
+		for _, d := range syncData {
+			r.scheduledSyncs[d.ChangesetID] = ee.NextSync(time.Now, d)
+		}
+
 		reposStore := repos.NewDBStore(r.store.DB(), sql.TxOptions{})
 		repoIDs := make([]api.RepoID, len(r.changesets))
 		for i, c := range r.changesets {
@@ -93,7 +116,7 @@ func (r *changesetsConnectionResolver) compute(ctx context.Context) ([]*campaign
 
 		r.reposByID = make(map[api.RepoID]*repos.Repo, len(rs))
 		for _, repo := range rs {
-			r.reposByID[api.RepoID(repo.ID)] = repo
+			r.reposByID[repo.ID] = repo
 		}
 	})
 
@@ -114,6 +137,9 @@ type changesetResolver struct {
 	eventsOnce sync.Once
 	events     []*campaigns.ChangesetEvent
 	eventsErr  error
+
+	// When the next sync is scheduled
+	nextSyncAt time.Time
 }
 
 const changesetIDKind = "ExternalChangeset"
@@ -169,6 +195,7 @@ func (r *changesetResolver) Repository(ctx context.Context) (*graphqlbackend.Rep
 func (r *changesetResolver) Campaigns(ctx context.Context, args *graphqlbackend.ListCampaignArgs) (graphqlbackend.CampaignsConnectionResolver, error) {
 	opts := ee.ListCampaignsOpts{
 		ChangesetID: r.Changeset.ID,
+		HasPatchSet: args.HasPatchSet,
 	}
 	state, err := parseCampaignState(args.State)
 	if err != nil {
@@ -192,6 +219,13 @@ func (r *changesetResolver) UpdatedAt() graphqlbackend.DateTime {
 	return graphqlbackend.DateTime{Time: r.Changeset.UpdatedAt}
 }
 
+func (r *changesetResolver) NextSyncAt() *graphqlbackend.DateTime {
+	if r.nextSyncAt.IsZero() {
+		return nil
+	}
+	return &graphqlbackend.DateTime{Time: r.nextSyncAt}
+}
+
 func (r *changesetResolver) Title() (string, error) {
 	return r.Changeset.Title()
 }
@@ -200,8 +234,8 @@ func (r *changesetResolver) Body() (string, error) {
 	return r.Changeset.Body()
 }
 
-func (r *changesetResolver) State() (campaigns.ChangesetState, error) {
-	return r.Changeset.State()
+func (r *changesetResolver) State() campaigns.ChangesetState {
+	return r.ExternalState
 }
 
 func (r *changesetResolver) ExternalURL() (*externallink.Resolver, error) {
@@ -212,32 +246,12 @@ func (r *changesetResolver) ExternalURL() (*externallink.Resolver, error) {
 	return externallink.NewResolver(url, r.Changeset.ExternalServiceType), nil
 }
 
-func (r *changesetResolver) ReviewState(ctx context.Context) (campaigns.ChangesetReviewState, error) {
-	if _, ok := r.Changeset.Metadata.(*github.PullRequest); !ok {
-		return r.Changeset.ReviewState()
-	}
-
-	es, err := r.computeEvents(ctx)
-	if err != nil {
-		return campaigns.ChangesetReviewStatePending, err
-	}
-
-	// Make a copy of events so that we can safely sort it
-	events := make(campaigns.ChangesetEvents, len(es))
-	copy(events, es)
-	sort.Sort(events)
-	return events.ReviewState()
+func (r *changesetResolver) ReviewState(ctx context.Context) campaigns.ChangesetReviewState {
+	return r.ExternalReviewState
 }
 
 func (r *changesetResolver) CheckState(ctx context.Context) (*campaigns.ChangesetCheckState, error) {
-	events, err := r.computeEvents(ctx)
-	if err != nil {
-		return nil, err
-	}
-	state, err := campaigns.ComputeCheckState(r.Changeset, events), nil
-	if err != nil {
-		return nil, err
-	}
+	state := r.ExternalCheckState
 	if state == campaigns.ChangesetCheckStateUnknown {
 		return nil, nil
 	}
@@ -257,8 +271,11 @@ func (r *changesetResolver) Labels(ctx context.Context) ([]graphqlbackend.Change
 	// or removed but we'll also take into account any changeset events that
 	// have happened since the last sync in order to reflect changes that
 	// have come in via webhooks
-	events := campaigns.ChangesetEvents(es)
+	events := ee.ChangesetEvents(es)
 	labels := events.UpdateLabelsSince(r.Changeset)
+	sort.Slice(labels, func(i, j int) bool {
+		return labels[i].Name < labels[j].Name
+	})
 	resolvers := make([]graphqlbackend.ChangesetLabelResolver, 0, len(labels))
 	for _, l := range labels {
 		resolvers = append(resolvers, &changesetLabelResolver{label: l})
@@ -282,14 +299,9 @@ func (r *changesetResolver) Events(ctx context.Context, args *struct {
 }
 
 func (r *changesetResolver) Diff(ctx context.Context) (*graphqlbackend.RepositoryComparisonResolver, error) {
-	s, err := r.Changeset.State()
-	if err != nil {
-		return nil, err
-	}
-
 	// Only return diffs for open changesets, otherwise we can't guarantee that
 	// we have the refs on gitserver
-	if s != campaigns.ChangesetStateOpen {
+	if r.ExternalState != campaigns.ChangesetStateOpen {
 		return nil, nil
 	}
 

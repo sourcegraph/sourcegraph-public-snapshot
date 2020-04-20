@@ -20,9 +20,9 @@ func Test_GitLab_FetchAccount(t *testing.T) {
 		description string
 
 		user    *types.User
-		current []*extsvc.ExternalAccount
+		current []*extsvc.Account
 
-		expMine *extsvc.ExternalAccount
+		expMine *extsvc.Account
 	}
 	type test struct {
 		description string
@@ -82,13 +82,13 @@ func Test_GitLab_FetchAccount(t *testing.T) {
 				{
 					description: "1 account, matches",
 					user:        &types.User{ID: 123},
-					current:     []*extsvc.ExternalAccount{acct(t, 1, "saml", "https://okta.mine/", "bl", "")},
+					current:     []*extsvc.Account{acct(t, 1, "saml", "https://okta.mine/", "bl", "")},
 					expMine:     acct(t, 123, gitlab.ServiceType, "https://gitlab.mine/", "101", ""),
 				},
 				{
 					description: "many accounts, none match",
 					user:        &types.User{ID: 123},
-					current: []*extsvc.ExternalAccount{
+					current: []*extsvc.Account{
 						acct(t, 1, "saml", "https://okta.mine/", "nomatch", ""),
 						acct(t, 1, "saml", "nomatch", "bl", ""),
 						acct(t, 1, "nomatch", "https://okta.mine/", "bl", ""),
@@ -98,7 +98,7 @@ func Test_GitLab_FetchAccount(t *testing.T) {
 				{
 					description: "many accounts, 1 match",
 					user:        &types.User{ID: 123},
-					current: []*extsvc.ExternalAccount{
+					current: []*extsvc.Account{
 						acct(t, 1, "saml", "nomatch", "bl", ""),
 						acct(t, 1, "nomatch", "https://okta.mine/", "bl", ""),
 						acct(t, 1, "saml", "https://okta.mine/", "bl", ""),
@@ -172,13 +172,13 @@ func Test_GitLab_FetchAccount(t *testing.T) {
 				{
 					description: "1 authn provider matches",
 					user:        &types.User{ID: 123},
-					current:     []*extsvc.ExternalAccount{acct(t, 1, "openidconnect", "https://onelogin.mine/", "bl", "")},
+					current:     []*extsvc.Account{acct(t, 1, "openidconnect", "https://onelogin.mine/", "bl", "")},
 					expMine:     acct(t, 123, gitlab.ServiceType, "https://gitlab.mine/", "101", ""),
 				},
 				{
 					description: "0 authn providers match",
 					user:        &types.User{ID: 123},
-					current:     []*extsvc.ExternalAccount{acct(t, 1, "openidconnect", "https://onelogin.mine/", "nomatch", "")},
+					current:     []*extsvc.Account{acct(t, 1, "openidconnect", "https://onelogin.mine/", "nomatch", "")},
 					expMine:     nil,
 				},
 			},
@@ -192,16 +192,16 @@ func Test_GitLab_FetchAccount(t *testing.T) {
 			defer func() { providers.MockProviders = nil }()
 
 			ctx := context.Background()
-			authzProvider := newSudoProvider(test.op)
+			authzProvider := newSudoProvider(test.op, nil)
 			for _, c := range test.calls {
 				t.Run(c.description, func(t *testing.T) {
 					acct, err := authzProvider.FetchAccount(ctx, c.user, c.current)
 					if err != nil {
 						t.Fatalf("unexpected error: %v", err)
 					}
-					// ignore AccountData field in comparison
+					// ignore Data field in comparison
 					if acct != nil {
-						acct.AccountData, c.expMine.AccountData = nil, nil
+						acct.Data, c.expMine.Data = nil, nil
 					}
 
 					if !reflect.DeepEqual(acct, c.expMine) {
@@ -218,7 +218,7 @@ func Test_GitLab_FetchAccount(t *testing.T) {
 func Test_SudoProvider_RepoPerms(t *testing.T) {
 	type call struct {
 		description string
-		account     *extsvc.ExternalAccount
+		account     *extsvc.Account
 		repos       []*types.Repo
 		expPerms    []authz.RepoPerms
 	}
@@ -375,7 +375,7 @@ func Test_SudoProvider_RepoPerms(t *testing.T) {
 				ctx := context.Background()
 				op := test.op
 				op.MockCache = make(mockCache)
-				authzProvider := newSudoProvider(op)
+				authzProvider := newSudoProvider(op, nil)
 
 				for i := 0; i < 2; i++ {
 					t.Logf("iter %d", i)

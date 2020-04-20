@@ -2,15 +2,17 @@ package campaigns
 
 import (
 	"reflect"
-	"sort"
+	"strconv"
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // SupportedExternalServices are the external service types currently supported
@@ -29,59 +31,40 @@ func IsRepoSupported(spec *api.ExternalRepoSpec) bool {
 	return ok
 }
 
-// CampaignPlanPatch is a patch applied to a repository (to create a new branch).
-type CampaignPlanPatch struct {
-	Repo         api.RepoID
-	BaseRevision string
-	Patch        string
-}
-
-// A CampaignPlan represents the application of a CampaignType to the Arguments
-// over multiple repositories.
-type CampaignPlan struct {
+// A PatchSet is a collection of multiple Patchs.
+type PatchSet struct {
 	ID int64
 
-	CampaignType string
-	UserID       int32
-
-	// Arguments is a JSONC string
-	Arguments string
-
-	CanceledAt time.Time
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
-}
-
-// Clone returns a clone of a CampaignPlan.
-func (c *CampaignPlan) Clone() *CampaignPlan {
-	cc := *c
-	return &cc
-}
-
-// A CampaignJob is the application of a CampaignType over CampaignPlan arguments in
-// a specific repository at a specific revision.
-type CampaignJob struct {
-	ID             int64
-	CampaignPlanID int64
-
-	RepoID  api.RepoID
-	Rev     api.CommitID
-	BaseRef string
-
-	Diff        string
-	Description string
-
-	StartedAt  time.Time
-	FinishedAt time.Time
-
-	Error string
+	UserID int32
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
 
-// Clone returns a clone of a CampaignJob.
-func (c *CampaignJob) Clone() *CampaignJob {
+// Clone returns a clone of a PatchSet.
+func (c *PatchSet) Clone() *PatchSet {
+	cc := *c
+	return &cc
+}
+
+// A Patch is the application of a CampaignType over PatchSet arguments in
+// a specific repository at a specific revision.
+type Patch struct {
+	ID         int64
+	PatchSetID int64
+
+	RepoID  api.RepoID
+	Rev     api.CommitID
+	BaseRef string
+
+	Diff string
+
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+// Clone returns a clone of a Patch.
+func (c *Patch) Clone() *Patch {
 	cc := *c
 	return &cc
 }
@@ -98,7 +81,7 @@ type Campaign struct {
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 	ChangesetIDs    []int64
-	CampaignPlanID  int64
+	PatchSetID      int64
 	ClosedAt        time.Time
 }
 
@@ -205,17 +188,7 @@ const (
 	ChangesetReviewStateDismissed        ChangesetReviewState = "DISMISSED"
 )
 
-// ChangesetCheckState constants.
-type ChangesetCheckState string
-
-const (
-	ChangesetCheckStateUnknown ChangesetCheckState = "UNKNOWN"
-	ChangesetCheckStatePending ChangesetCheckState = "PENDING"
-	ChangesetCheckStatePassed  ChangesetCheckState = "PASSED"
-	ChangesetCheckStateFailed  ChangesetCheckState = "FAILED"
-)
-
-// Valid returns true if the given Changeset is valid.
+// Valid returns true if the given Changeset review state is valid.
 func (s ChangesetReviewState) Valid() bool {
 	switch s {
 	case ChangesetReviewStateApproved,
@@ -229,12 +202,35 @@ func (s ChangesetReviewState) Valid() bool {
 	}
 }
 
-// A ChangesetJob is the creation of a Changset on an external host from a
-// local CampaignJob for a given Campaign.
+// ChangesetCheckState constants.
+type ChangesetCheckState string
+
+const (
+	ChangesetCheckStateUnknown ChangesetCheckState = "UNKNOWN"
+	ChangesetCheckStatePending ChangesetCheckState = "PENDING"
+	ChangesetCheckStatePassed  ChangesetCheckState = "PASSED"
+	ChangesetCheckStateFailed  ChangesetCheckState = "FAILED"
+)
+
+// Valid returns true if the given Changeset check state is valid.
+func (s ChangesetCheckState) Valid() bool {
+	switch s {
+	case ChangesetCheckStateUnknown,
+		ChangesetCheckStatePending,
+		ChangesetCheckStatePassed,
+		ChangesetCheckStateFailed:
+		return true
+	default:
+		return false
+	}
+}
+
+// A ChangesetJob is the creation of a Changeset on an external host from a
+// local Patch for a given Campaign.
 type ChangesetJob struct {
-	ID            int64
-	CampaignID    int64
-	CampaignJobID int64
+	ID         int64
+	CampaignID int64
+	PatchID    int64
 
 	// Only set once the ChangesetJob has successfully finished.
 	ChangesetID int64
@@ -256,9 +252,17 @@ func (c *ChangesetJob) Clone() *ChangesetJob {
 	return &cc
 }
 
-// SuccessfullyCompleted returns true for jobs that have already succesfully run
+// SuccessfullyCompleted returns true for jobs that have already successfully run
 func (c *ChangesetJob) SuccessfullyCompleted() bool {
 	return c.Error == "" && !c.FinishedAt.IsZero() && c.ChangesetID != 0
+}
+
+// Reset sets the Error, StartedAt and FinishedAt fields to their respective
+// zero values, so that the ChangesetJob can be executed again.
+func (c *ChangesetJob) Reset() {
+	c.Error = ""
+	c.StartedAt = time.Time{}
+	c.FinishedAt = time.Time{}
 }
 
 // A Changeset is a changeset on a code host belonging to a Repository and many
@@ -275,6 +279,9 @@ type Changeset struct {
 	ExternalBranch      string
 	ExternalDeletedAt   time.Time
 	ExternalUpdatedAt   time.Time
+	ExternalState       ChangesetState
+	ExternalReviewState ChangesetReviewState
+	ExternalCheckState  ChangesetCheckState
 }
 
 // Clone returns a clone of a Changeset.
@@ -282,6 +289,26 @@ func (c *Changeset) Clone() *Changeset {
 	tt := *c
 	tt.CampaignIDs = c.CampaignIDs[:len(c.CampaignIDs):len(c.CampaignIDs)]
 	return &tt
+}
+
+func (c *Changeset) SetMetadata(meta interface{}) error {
+	switch pr := meta.(type) {
+	case *github.PullRequest:
+		c.Metadata = pr
+		c.ExternalID = strconv.FormatInt(pr.Number, 10)
+		c.ExternalServiceType = github.ServiceType
+		c.ExternalBranch = pr.HeadRefName
+		c.ExternalUpdatedAt = pr.UpdatedAt
+	case *bitbucketserver.PullRequest:
+		c.Metadata = pr
+		c.ExternalID = strconv.FormatInt(int64(pr.ID), 10)
+		c.ExternalServiceType = bitbucketserver.ServiceType
+		c.ExternalBranch = git.AbbreviateRef(pr.FromRef.ID)
+		c.ExternalUpdatedAt = unixMilliToTime(int64(pr.UpdatedDate))
+	default:
+		return errors.New("unknown changeset type")
+	}
+	return nil
 }
 
 // RemoveCampaignID removes the given id from the Changesets CampaignIDs slice.
@@ -344,8 +371,9 @@ func (c *Changeset) IsDeleted() bool {
 	return !c.ExternalDeletedAt.IsZero()
 }
 
-// State of a Changeset.
-func (c *Changeset) State() (s ChangesetState, err error) {
+// state of a Changeset based on the metadata.
+// It does NOT reflect the final calculated state, use `ExternalState` instead.
+func (c *Changeset) state() (s ChangesetState, err error) {
 	if !c.ExternalDeletedAt.IsZero() {
 		return ChangesetStateDeleted, nil
 	}
@@ -386,32 +414,9 @@ func (c *Changeset) URL() (s string, err error) {
 	}
 }
 
-// ReviewState of a Changeset.
-func (c *Changeset) ReviewState() (s ChangesetReviewState, err error) {
-	states := map[ChangesetReviewState]bool{}
-
-	switch m := c.Metadata.(type) {
-	case *github.PullRequest:
-		// For GitHub we need to use `ChangesetEvents.ReviewState`
-		log15.Warn("Changeset.ReviewState() called, but GitHub review state is calculated through ChangesetEvents.ReviewState", "changeset", c)
-		return ChangesetReviewStatePending, nil
-
-	case *bitbucketserver.PullRequest:
-		for _, r := range m.Reviewers {
-			switch r.Status {
-			case "UNAPPROVED":
-				states[ChangesetReviewStatePending] = true
-			case "NEEDS_WORK":
-				states[ChangesetReviewStateChangesRequested] = true
-			case "APPROVED":
-				states[ChangesetReviewStateApproved] = true
-			}
-		}
-	default:
-		return "", errors.New("unknown changeset type")
-	}
-
-	return SelectReviewState(states), nil
+// Keyer represents items that return a unique key
+type Keyer interface {
+	Key() string
 }
 
 // Events returns the list of ChangesetEvents from the Changeset's metadata.
@@ -432,7 +437,7 @@ func (c *Changeset) Events() (events []*ChangesetEvent) {
 					events = append(events, &ev)
 				}
 			default:
-				ev.Key = ti.Item.(interface{ Key() string }).Key()
+				ev.Key = ti.Item.(Keyer).Key()
 				ev.Kind = ChangesetEventKindFor(ti.Item)
 				ev.Metadata = ti.Item
 				events = append(events, &ev)
@@ -440,15 +445,22 @@ func (c *Changeset) Events() (events []*ChangesetEvent) {
 		}
 
 	case *bitbucketserver.PullRequest:
-		events = make([]*ChangesetEvent, 0, len(m.Activities))
-		for _, a := range m.Activities {
+		events = make([]*ChangesetEvent, 0, len(m.Activities)+len(m.CommitStatus))
+		addEvent := func(e Keyer) {
 			events = append(events, &ChangesetEvent{
 				ChangesetID: c.ID,
-				Key:         a.Key(),
-				Kind:        ChangesetEventKindFor(&a),
-				Metadata:    a,
+				Key:         e.Key(),
+				Kind:        ChangesetEventKindFor(e),
+				Metadata:    e,
 			})
 		}
+		for _, a := range m.Activities {
+			addEvent(a)
+		}
+		for _, s := range m.CommitStatus {
+			addEvent(s)
+		}
+
 	}
 	return events
 }
@@ -524,26 +536,6 @@ func (c *Changeset) Labels() []ChangesetLabel {
 	}
 }
 
-// SelectReviewState computes the single review state for a given set of
-// ChangesetReviewStates. Since a pull request, for example, can have multiple
-// reviews with different states, we need a function to determine what the
-// state for the pull request is.
-func SelectReviewState(states map[ChangesetReviewState]bool) ChangesetReviewState {
-	// If any review requested changes, that state takes precedence over all
-	// other review states, followed by explicit approval. Everything else is
-	// considered pending.
-	for _, state := range [...]ChangesetReviewState{
-		ChangesetReviewStateChangesRequested,
-		ChangesetReviewStateApproved,
-	} {
-		if states[state] {
-			return state
-		}
-	}
-
-	return ChangesetReviewStatePending
-}
-
 // A ChangesetEvent is an event that happened in the lifetime
 // and context of a Changeset.
 type ChangesetEvent struct {
@@ -560,274 +552,6 @@ type ChangesetEvent struct {
 func (e *ChangesetEvent) Clone() *ChangesetEvent {
 	ee := *e
 	return &ee
-}
-
-// ChangesetEvents is a collection of changeset events
-type ChangesetEvents []*ChangesetEvent
-
-func (ce ChangesetEvents) Len() int      { return len(ce) }
-func (ce ChangesetEvents) Swap(i, j int) { ce[i], ce[j] = ce[j], ce[i] }
-
-// Less sorts changeset events by their Timestamps
-func (ce ChangesetEvents) Less(i, j int) bool {
-	return ce[i].Timestamp().Before(ce[j].Timestamp())
-}
-
-// ReviewState returns the overall review state of the review events in the
-// slice
-func (ce ChangesetEvents) ReviewState() (ChangesetReviewState, error) {
-	reviewsByAuthor := map[string]ChangesetReviewState{}
-
-	for _, e := range ce {
-		author, err := e.ReviewAuthor()
-		if err != nil {
-			return "", err
-		}
-		if author == "" {
-			continue
-		}
-		s, err := e.ReviewState()
-		if err != nil {
-			return "", err
-		}
-
-		switch s {
-		case ChangesetReviewStateApproved,
-			ChangesetReviewStateChangesRequested:
-			reviewsByAuthor[author] = s
-		case ChangesetReviewStateDismissed:
-			delete(reviewsByAuthor, author)
-		}
-	}
-
-	states := make(map[ChangesetReviewState]bool)
-	for _, s := range reviewsByAuthor {
-		states[s] = true
-	}
-	return SelectReviewState(states), nil
-}
-
-// ComputeCheckState computes the overall check state based on the current synced check state
-// and any webhook events that have arrived after the most recent sync
-func ComputeCheckState(c *Changeset, events []*ChangesetEvent) ChangesetCheckState {
-	switch m := c.Metadata.(type) {
-	case *github.PullRequest:
-		return computeGitHubCheckState(c.UpdatedAt, m, events)
-
-	case *bitbucketserver.PullRequest:
-		return computeBitbucketBuildStatus(m)
-	}
-
-	return ChangesetCheckStateUnknown
-}
-
-func computeBitbucketBuildStatus(pr *bitbucketserver.PullRequest) ChangesetCheckState {
-	var states []ChangesetCheckState
-	for _, status := range pr.BuildStatuses {
-		states = append(states, parseBitbucketBuildState(status.State))
-	}
-	return combineCheckStates(states)
-}
-
-func parseBitbucketBuildState(s string) ChangesetCheckState {
-	switch s {
-	case "FAILED":
-		return ChangesetCheckStateFailed
-	case "INPROGRESS":
-		return ChangesetCheckStatePending
-	case "SUCCESSFUL":
-		return ChangesetCheckStatePassed
-	default:
-		return ChangesetCheckStateUnknown
-	}
-}
-
-func computeGitHubCheckState(lastSynced time.Time, pr *github.PullRequest, events []*ChangesetEvent) ChangesetCheckState {
-	// We should only consider the latest commit. This could be from a sync or a webhook that
-	// has occurred later
-	var latestCommitTime time.Time
-	var latestOID string
-	statusPerContext := make(map[string]ChangesetCheckState)
-	statusPerCheckSuite := make(map[string]ChangesetCheckState)
-	statusPerCheckRun := make(map[string]ChangesetCheckState)
-
-	if len(pr.Commits.Nodes) > 0 {
-		// We only request the most recent commit
-		commit := pr.Commits.Nodes[0]
-		latestCommitTime = commit.Commit.CommittedDate
-		latestOID = commit.Commit.OID
-		// Calc status per context for the most recent synced commit
-		for _, c := range commit.Commit.Status.Contexts {
-			statusPerContext[c.Context] = parseGithubCheckState(c.State)
-		}
-		for _, c := range commit.Commit.CheckSuites.Nodes {
-			statusPerCheckSuite[c.ID] = parseGithubCheckSuiteState(c.Status, c.Conclusion)
-			for _, r := range c.CheckRuns.Nodes {
-				statusPerCheckRun[r.ID] = parseGithubCheckSuiteState(r.Status, r.Conclusion)
-			}
-		}
-	}
-
-	var statuses []*github.CommitStatus
-	// Get all status updates that have happened since our last sync
-	for _, e := range events {
-		switch m := e.Metadata.(type) {
-		case *github.CommitStatus:
-			if m.ReceivedAt.After(lastSynced) {
-				statuses = append(statuses, m)
-			}
-		case *github.PullRequestCommit:
-			if m.Commit.CommittedDate.After(latestCommitTime) {
-				latestCommitTime = m.Commit.CommittedDate
-				latestOID = m.Commit.OID
-				// statusPerContext is now out of date, reset it
-				for k := range statusPerContext {
-					delete(statusPerContext, k)
-				}
-			}
-		case *github.CheckSuite:
-			if m.ReceivedAt.After(lastSynced) {
-				statusPerCheckSuite[m.ID] = parseGithubCheckSuiteState(m.Status, m.Conclusion)
-			}
-		case *github.CheckRun:
-			if m.ReceivedAt.After(lastSynced) {
-				statusPerCheckRun[m.ID] = parseGithubCheckSuiteState(m.Status, m.Conclusion)
-			}
-		}
-	}
-
-	if len(statuses) > 0 {
-		// Update the statuses using any new webhook events for the latest commit
-		sort.Slice(statuses, func(i, j int) bool {
-			return statuses[i].ReceivedAt.Before(statuses[j].ReceivedAt)
-		})
-		for _, s := range statuses {
-			if s.SHA != latestOID {
-				continue
-			}
-			statusPerContext[s.Context] = parseGithubCheckState(s.State)
-		}
-	}
-	finalStates := make([]ChangesetCheckState, 0, len(statusPerContext))
-	for k := range statusPerContext {
-		finalStates = append(finalStates, statusPerContext[k])
-	}
-	for k := range statusPerCheckSuite {
-		finalStates = append(finalStates, statusPerCheckSuite[k])
-	}
-	for k := range statusPerCheckRun {
-		finalStates = append(finalStates, statusPerCheckRun[k])
-	}
-	return combineCheckStates(finalStates)
-}
-
-// combineCheckStates combines multiple check states into an overall state
-// pending takes highest priority
-// followed by error
-// success return only if all successful
-func combineCheckStates(states []ChangesetCheckState) ChangesetCheckState {
-	if len(states) == 0 {
-		return ChangesetCheckStateUnknown
-	}
-	stateMap := make(map[ChangesetCheckState]bool)
-	for _, s := range states {
-		stateMap[s] = true
-	}
-
-	switch {
-	case stateMap[ChangesetCheckStateUnknown]:
-		// If are pending, overall is Pending
-		return ChangesetCheckStateUnknown
-	case stateMap[ChangesetCheckStatePending]:
-		// If are pending, overall is Pending
-		return ChangesetCheckStatePending
-	case stateMap[ChangesetCheckStateFailed]:
-		// If no pending, but have errors then overall is Failed
-		return ChangesetCheckStateFailed
-	case stateMap[ChangesetCheckStatePassed]:
-		// No pending or errors then overall is Passed
-		return ChangesetCheckStatePassed
-	}
-
-	return ChangesetCheckStateUnknown
-}
-
-func parseGithubCheckState(s string) ChangesetCheckState {
-	s = strings.ToUpper(s)
-	switch s {
-	case "ERROR", "FAILURE":
-		return ChangesetCheckStateFailed
-	case "EXPECTED", "PENDING":
-		return ChangesetCheckStatePending
-	case "SUCCESS":
-		return ChangesetCheckStatePassed
-	default:
-		return ChangesetCheckStateUnknown
-	}
-}
-
-func parseGithubCheckSuiteState(status, conclusion string) ChangesetCheckState {
-	status = strings.ToUpper(status)
-	conclusion = strings.ToUpper(conclusion)
-	switch status {
-	case "IN_PROGRESS", "QUEUED", "REQUESTED":
-		return ChangesetCheckStatePending
-	}
-	if status != "COMPLETED" {
-		return ChangesetCheckStateUnknown
-	}
-	switch conclusion {
-	case "SUCCESS", "NEUTRAL":
-		return ChangesetCheckStatePassed
-	case "ACTION_REQUIRED":
-		return ChangesetCheckStatePending
-	case "CANCELLED", "FAILURE", "TIMED_OUT":
-		return ChangesetCheckStateFailed
-	}
-	return ChangesetCheckStateUnknown
-}
-
-// UpdateLabelsSince returns the set of current labels based the starting set of labels and looking at events
-// that have occurred after "since".
-func (ce *ChangesetEvents) UpdateLabelsSince(cs *Changeset) []ChangesetLabel {
-	var current []ChangesetLabel
-	var since time.Time
-	if cs != nil {
-		current = cs.Labels()
-		since = cs.UpdatedAt
-	}
-	// Copy slice so that we don't mutate ce
-	sorted := make(ChangesetEvents, len(*ce))
-	copy(sorted, *ce)
-	sort.Sort(sorted)
-
-	// Iterate through all label events to get the current set
-	set := make(map[string]ChangesetLabel)
-	for _, l := range current {
-		set[l.Name] = l
-	}
-	for _, event := range sorted {
-		switch e := event.Metadata.(type) {
-		case *github.LabelEvent:
-			if e.CreatedAt.Before(since) {
-				continue
-			}
-			if e.Removed {
-				delete(set, e.Label.Name)
-				continue
-			}
-			set[e.Label.Name] = ChangesetLabel{
-				Name:        e.Label.Name,
-				Color:       e.Label.Color,
-				Description: e.Label.Description,
-			}
-		}
-	}
-	labels := make([]ChangesetLabel, 0, len(set))
-	for _, label := range set {
-		labels = append(labels, label)
-	}
-	return labels
 }
 
 // Actor returns the actor of the ChangesetEvent.
@@ -900,6 +624,8 @@ func (e *ChangesetEvent) ReviewState() (ChangesetReviewState, error) {
 	case ChangesetEventKindBitbucketServerApproved:
 		return ChangesetReviewStateApproved, nil
 
+	// BitbucketServer's "REVIEWED" activity is created when someone clicks
+	// the "Needs work" button in the UI, which is why we map it to "Changes Requested"
 	case ChangesetEventKindBitbucketServerReviewed:
 		return ChangesetReviewStateChangesRequested, nil
 
@@ -909,7 +635,7 @@ func (e *ChangesetEvent) ReviewState() (ChangesetReviewState, error) {
 			return "", errors.New("ChangesetEvent metadata event not PullRequestReview")
 		}
 
-		s := ChangesetReviewState(review.State)
+		s := ChangesetReviewState(strings.ToUpper(review.State))
 		if !s.Valid() {
 			// Ignore invalid states
 			log15.Warn("invalid review state", "state", review.State)
@@ -917,7 +643,8 @@ func (e *ChangesetEvent) ReviewState() (ChangesetReviewState, error) {
 		}
 		return s, nil
 
-	case ChangesetEventKindGitHubReviewDismissed:
+	case ChangesetEventKindGitHubReviewDismissed,
+		ChangesetEventKindBitbucketServerUnapproved:
 		return ChangesetReviewStateDismissed, nil
 
 	default:
@@ -975,6 +702,8 @@ func (e *ChangesetEvent) Timestamp() time.Time {
 		return e.ReceivedAt
 	case *bitbucketserver.Activity:
 		t = unixMilliToTime(int64(e.CreatedDate))
+	case *bitbucketserver.CommitStatus:
+		t = unixMilliToTime(int64(e.Status.DateAdded))
 	}
 
 	return t
@@ -1242,8 +971,71 @@ func (e *ChangesetEvent) Update(o *ChangesetEvent) {
 		if e.CreatedAt.IsZero() {
 			e.CreatedAt = o.CreatedAt
 		}
+	case *bitbucketserver.Activity:
+		o := o.Metadata.(*bitbucketserver.Activity)
+
+		if e.CreatedDate == 0 {
+			e.CreatedDate = o.CreatedDate
+		}
+
+		if e.User == (bitbucketserver.User{}) {
+			e.User = o.User
+		}
+
+		if e.Action == "" {
+			e.Action = o.Action
+		}
+
+		if e.CommentAction == "" {
+			e.CommentAction = o.CommentAction
+		}
+
+		if e.Comment == nil && o.Comment != nil {
+			e.Comment = o.Comment
+		}
+
+		if len(e.AddedReviewers) == 0 {
+			e.AddedReviewers = o.AddedReviewers
+		}
+
+		if len(e.RemovedReviewers) == 0 {
+			e.RemovedReviewers = o.RemovedReviewers
+		}
+
+		if e.Commit == nil && o.Commit != nil {
+			e.Commit = o.Commit
+		}
+
+	case *bitbucketserver.CommitStatus:
+		o := o.Metadata.(*bitbucketserver.CommitStatus)
+		// We always get the full event, so safe to replace it
+		*e = *o
+
+	case *github.CheckRun:
+		o := o.Metadata.(*github.CheckRun)
+		updateGithubCheckRun(e, o)
+
+	case *github.CheckSuite:
+		o := o.Metadata.(*github.CheckSuite)
+		if e.Status == "" {
+			e.Status = o.Status
+		}
+		if e.Conclusion == "" {
+			e.Conclusion = o.Conclusion
+		}
+		e.CheckRuns = o.CheckRuns
+
 	default:
 		panic(errors.Errorf("unknown changeset event metadata %T", e))
+	}
+}
+
+func updateGithubCheckRun(e, o *github.CheckRun) {
+	if e.Status == "" {
+		e.Status = o.Status
+	}
+	if e.Conclusion == "" {
+		e.Conclusion = o.Conclusion
 	}
 }
 
@@ -1362,6 +1154,8 @@ func ChangesetEventKindFor(e interface{}) ChangesetEventKind {
 		return ChangesetEventKindCheckRun
 	case *bitbucketserver.Activity:
 		return ChangesetEventKind("bitbucketserver:" + strings.ToLower(string(e.Action)))
+	case *bitbucketserver.CommitStatus:
+		return ChangesetEventKindBitbucketServerCommitStatus
 	default:
 		panic(errors.Errorf("unknown changeset event kind for %T", e))
 	}
@@ -1372,7 +1166,12 @@ func ChangesetEventKindFor(e interface{}) ChangesetEventKind {
 func NewChangesetEventMetadata(k ChangesetEventKind) (interface{}, error) {
 	switch {
 	case strings.HasPrefix(string(k), "bitbucketserver"):
-		return new(bitbucketserver.Activity), nil
+		switch k {
+		case ChangesetEventKindBitbucketServerCommitStatus:
+			return new(bitbucketserver.CommitStatus), nil
+		default:
+			return new(bitbucketserver.Activity), nil
+		}
 	case strings.HasPrefix(string(k), "github"):
 		switch k {
 		case ChangesetEventKindGitHubAssigned:
@@ -1442,20 +1241,21 @@ const (
 	ChangesetEventKindCheckSuite                 ChangesetEventKind = "github:check_suite"
 	ChangesetEventKindCheckRun                   ChangesetEventKind = "github:check_run"
 
-	ChangesetEventKindBitbucketServerApproved   ChangesetEventKind = "bitbucketserver:approved"
-	ChangesetEventKindBitbucketServerUnapproved ChangesetEventKind = "bitbucketserver:unapproved"
-	ChangesetEventKindBitbucketServerDeclined   ChangesetEventKind = "bitbucketserver:declined"
-	ChangesetEventKindBitbucketServerReviewed   ChangesetEventKind = "bitbucketserver:reviewed"
-	ChangesetEventKindBitbucketServerOpened     ChangesetEventKind = "bitbucketserver:opened"
-	ChangesetEventKindBitbucketServerReopened   ChangesetEventKind = "bitbucketserver:reopened"
-	ChangesetEventKindBitbucketServerRescoped   ChangesetEventKind = "bitbucketserver:rescoped"
-	ChangesetEventKindBitbucketServerUpdated    ChangesetEventKind = "bitbucketserver:updated"
-	ChangesetEventKindBitbucketServerCommented  ChangesetEventKind = "bitbucketserver:commented"
-	ChangesetEventKindBitbucketServerMerged     ChangesetEventKind = "bitbucketserver:merged"
+	ChangesetEventKindBitbucketServerApproved     ChangesetEventKind = "bitbucketserver:approved"
+	ChangesetEventKindBitbucketServerUnapproved   ChangesetEventKind = "bitbucketserver:unapproved"
+	ChangesetEventKindBitbucketServerDeclined     ChangesetEventKind = "bitbucketserver:declined"
+	ChangesetEventKindBitbucketServerReviewed     ChangesetEventKind = "bitbucketserver:reviewed"
+	ChangesetEventKindBitbucketServerOpened       ChangesetEventKind = "bitbucketserver:opened"
+	ChangesetEventKindBitbucketServerReopened     ChangesetEventKind = "bitbucketserver:reopened"
+	ChangesetEventKindBitbucketServerRescoped     ChangesetEventKind = "bitbucketserver:rescoped"
+	ChangesetEventKindBitbucketServerUpdated      ChangesetEventKind = "bitbucketserver:updated"
+	ChangesetEventKindBitbucketServerCommented    ChangesetEventKind = "bitbucketserver:commented"
+	ChangesetEventKindBitbucketServerMerged       ChangesetEventKind = "bitbucketserver:merged"
+	ChangesetEventKindBitbucketServerCommitStatus ChangesetEventKind = "bitbucketserver:commit_status"
 )
 
-// ChangesetSyncHeuristics represents data about the sync status of a changeset
-type ChangesetSyncHeuristics struct {
+// ChangesetSyncData represents data about the sync status of a changeset
+type ChangesetSyncData struct {
 	ChangesetID int64
 	// UpdatedAt is the time we last updated / synced the changeset in our DB
 	UpdatedAt time.Time
@@ -1463,6 +1263,8 @@ type ChangesetSyncHeuristics struct {
 	LatestEvent time.Time
 	// ExternalUpdatedAt is the time the external changeset last changed
 	ExternalUpdatedAt time.Time
+	// ExternalServiceID is the ID of the external service to which the changeset belongs
+	ExternalServiceIDs []int64
 }
 
 func unixMilliToTime(ms int64) time.Time {

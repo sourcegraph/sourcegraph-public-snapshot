@@ -10,7 +10,7 @@ import React from 'react'
  * precise.
  */
 export const LicenseGenerationKeyWarning: React.FunctionComponent<{ className?: string }> = ({ className = '' }) =>
-    (window as any).context.debug ? (
+    window.context?.debug ? (
         <div className={`alert alert-warning ${className}`}>
             License keys generated in dev mode are <strong>NOT VALID</strong>.{' '}
             <a href="https://sourcegraph.com/site-admin/dotcom/product/subscriptions">

@@ -28,8 +28,7 @@ interface Props
  */
 export class SearchNavbarItem extends React.PureComponent<Props> {
     private onSubmit = (): void => {
-        const { history, navbarSearchState, patternType, activation, caseSensitive } = this.props
-        submitSearch(history, navbarSearchState.query, 'nav', patternType, caseSensitive, activation)
+        submitSearch({ ...this.props, query: this.props.navbarSearchState.query, source: 'nav' })
     }
 
     private onFormSubmit = (e: React.FormEvent): void => {
@@ -50,14 +49,14 @@ export class SearchNavbarItem extends React.PureComponent<Props> {
                         queryState={this.props.navbarSearchState}
                         onSubmit={this.onSubmit}
                         autoFocus={true}
-                    ></LazyMonacoQueryInput>
+                    />
                 ) : (
                     <QueryInput
                         {...this.props}
                         value={this.props.navbarSearchState}
                         autoFocus={this.props.location.pathname === '/search' ? 'cursor-at-end' : undefined}
                         hasGlobalQueryBehavior={true}
-                    ></QueryInput>
+                    />
                 )}
                 <SearchButton />
             </Form>

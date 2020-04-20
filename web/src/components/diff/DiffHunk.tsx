@@ -7,7 +7,7 @@ import {
 } from '../../../../shared/src/api/client/services/decoration'
 import { LinkOrSpan } from '../../../../shared/src/components/LinkOrSpan'
 import * as GQL from '../../../../shared/src/graphql/schema'
-import { propertyIsDefined } from '../../../../shared/src/util/types'
+import { property, isDefined } from '../../../../shared/src/util/types'
 import { ThemeProps } from '../../../../shared/src/theme'
 
 const DiffBoundary: React.FunctionComponent<{
@@ -37,30 +37,23 @@ const DiffBoundary: React.FunctionComponent<{
         </td>
     </tr>
 )
-export const DiffHunk: React.FunctionComponent<{
-    /** The anchor (URL hash link) of the file diff. The component creates sub-anchors with this prefix. */
-    fileDiffAnchor: string
-    hunk: GQL.IFileDiffHunk
-    lineNumbers: boolean
-    decorations: Record<'head' | 'base', DecorationMapByLine>
-    location: H.Location
-    history: H.History
-    /**
-     * Reflect selected line in url
-     *
-     * @default true
-     */
-    persistLines?: boolean
-} & ThemeProps> = ({
-    fileDiffAnchor,
-    decorations,
-    hunk,
-    lineNumbers,
-    location,
-    history,
-    persistLines = true,
-    isLightTheme,
-}) => {
+export const DiffHunk: React.FunctionComponent<
+    {
+        /** The anchor (URL hash link) of the file diff. The component creates sub-anchors with this prefix. */
+        fileDiffAnchor: string
+        hunk: GQL.IFileDiffHunk
+        lineNumbers: boolean
+        decorations: Record<'head' | 'base', DecorationMapByLine>
+        location: H.Location
+        history: H.History
+        /**
+         * Reflect selected line in url
+         *
+         * @default true
+         */
+        persistLines?: boolean
+    } & ThemeProps
+> = ({ fileDiffAnchor, decorations, hunk, lineNumbers, location, history, persistLines = true, isLightTheme }) => {
     let oldLine = hunk.oldRange.startLine
     let newLine = hunk.newRange.startLine
     return (
@@ -137,7 +130,7 @@ export const DiffHunk: React.FunctionComponent<{
                             {/* eslint-disable-next-line react/forbid-dom-props */}
                             <td className="diff-hunk__content" style={lineStyle}>
                                 {line}
-                                {decorationsForLine.filter(propertyIsDefined('after')).map((decoration, i) => {
+                                {decorationsForLine.filter(property('after', isDefined)).map((decoration, i) => {
                                     const style = decorationAttachmentStyleForTheme(decoration.after, isLightTheme)
                                     return (
                                         <React.Fragment key={i}>

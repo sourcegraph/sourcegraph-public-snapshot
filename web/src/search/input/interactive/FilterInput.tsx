@@ -29,7 +29,7 @@ import {
     filterStaticSuggestions,
 } from '../../helpers'
 import { dedupeWhitespace, isQuoted } from '../../../../../shared/src/util/strings'
-import { FiltersToTypeAndValue, FilterType, isNegatableFilter } from '../../../../../shared/src/search/interactive/util'
+import { FilterType, isNegatableFilter } from '../../../../../shared/src/search/interactive/util'
 import { startCase, isEqual } from 'lodash'
 import { searchFilterSuggestions } from '../../searchFilterSuggestions'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
@@ -37,13 +37,9 @@ import { CheckButton } from './CheckButton'
 import { isTextFilter, finiteFilters, isFiniteFilter, FilterTypeToProseNames } from './filters'
 import classNames from 'classnames'
 import { generateFiltersQuery } from '../../../../../shared/src/util/url'
+import { InteractiveSearchProps } from '../..'
 
-interface Props {
-    /**
-     * The filters currently added to the query.
-     */
-    filtersInQuery: FiltersToTypeAndValue
-
+interface Props extends Pick<InteractiveSearchProps, 'filtersInQuery'> {
     /**
      * The query in the main query input.
      */
@@ -104,7 +100,7 @@ interface Props {
     toggleFilterNegated: (filterKey: string) => void
 }
 
-const LOADING: 'loading' = 'loading'
+const LOADING = 'loading' as const
 
 interface State {
     /** Only show suggestions if search input is focused */
@@ -278,11 +274,10 @@ export class FilterInput extends React.Component<Props, State> {
             // Don't allow empty filters, unless it's the type filter.
             let inputValue = this.state.inputValue
 
-            if (this.props.filterType === FilterType.content || this.props.filterType === FilterType.message) {
-                // The content and message filters should always be quoted.
-                inputValue = isQuoted(inputValue) ? inputValue : JSON.stringify(inputValue)
-            }
+            // Filters should always be quoted and escaped before being sent to the backend.
+            inputValue = JSON.stringify(inputValue)
 
+            this.inputValues.next(inputValue)
             // Update the top-level filtersInQueryMap with the new value for this filter.
             this.props.onFilterEdited(this.props.mapKey, inputValue)
         }
@@ -306,6 +301,12 @@ export class FilterInput extends React.Component<Props, State> {
         if (this.inputEl.current) {
             this.inputEl.current.focus()
         }
+        // Filters are always quoted and escaped, but we don't display the quoted and escaped value
+        // to the user when editing. This makes queries easier to edit and makes sure URLs are always
+        // properly escaped.
+        const { inputValue } = this.state
+        // Check for isQuoted before parsing to support old URLs that don't have quotes around filters.
+        this.inputValues.next(isQuoted(inputValue) ? JSON.parse(inputValue) : inputValue)
         this.props.toggleFilterEditable(this.props.mapKey)
     }
 
@@ -462,7 +463,7 @@ export class FilterInput extends React.Component<Props, State> {
                                                 ) : (
                                                     this.state.suggestions.values.map((suggestion, index) => {
                                                         const isSelected = highlightedIndex === index
-                                                        const key = `${index}-${suggestion}`
+                                                        const key = `${index}-${suggestion.value}`
                                                         return (
                                                             <SuggestionItem
                                                                 key={key}

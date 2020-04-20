@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/dghubble/gologin/github"
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
@@ -19,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	githubsvc "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"golang.org/x/oauth2"
-	"gopkg.in/inconshreveable/log15.v2"
 )
 
 type sessionIssuerHelper struct {
@@ -59,7 +59,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	}
 
 	// Try every verified email in succession until the first that succeeds
-	var data extsvc.ExternalAccountData
+	var data extsvc.AccountData
 	githubsvc.SetExternalAccountData(&data, ghUser, token)
 	var (
 		firstSafeErrMsg string
@@ -74,7 +74,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 				DisplayName:     deref(ghUser.Name),
 				AvatarURL:       deref(ghUser.AvatarURL),
 			},
-			ExternalAccount: extsvc.ExternalAccountSpec{
+			ExternalAccount: extsvc.AccountSpec{
 				ServiceType: s.ServiceType,
 				ServiceID:   s.ServiceID,
 				ClientID:    s.clientID,

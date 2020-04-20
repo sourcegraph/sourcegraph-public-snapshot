@@ -3,25 +3,30 @@ import { percySnapshot as realPercySnapshot } from '@percy/puppeteer'
 import * as jsonc from '@sqs/jsonc-parser'
 import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
 import * as os from 'os'
-import puppeteer, { PageEventObj, Page, Serializable, LaunchOptions, PageFnOptions, ConsoleMessage } from 'puppeteer'
+import puppeteer, {
+    PageEventObj,
+    Page,
+    Serializable,
+    LaunchOptions,
+    PageFnOptions,
+    ConsoleMessage,
+    Target,
+} from 'puppeteer'
 import { Key } from 'ts-key-enum'
 import { dataOrThrowErrors, gql, GraphQLResult } from '../graphql/graphql'
-import {
-    IMutation,
-    IQuery,
-    ExternalServiceKind,
-    ICampaignPlanPatch,
-    ICampaignPlan,
-    IRepository,
-} from '../graphql/schema'
+import { IMutation, IQuery, ExternalServiceKind, IRepository, IPatchSet, IPatchInput } from '../graphql/schema'
 import { readEnvBoolean, retry } from './e2e-test-utils'
 import { formatPuppeteerConsoleMessage } from './console'
 import * as path from 'path'
 import { escapeRegExp } from 'lodash'
-import { readFile } from 'mz/fs'
+import { readFile, appendFile } from 'mz/fs'
 import { Settings } from '../settings/settings'
 import { fromEvent } from 'rxjs'
 import { filter, map, concatAll } from 'rxjs/operators'
+import mkdirpPromise from 'mkdirp-promise'
+import getFreePort from 'get-port'
+import puppeteerFirefox from 'puppeteer-firefox'
+import webExt from 'web-ext'
 
 /**
  * Returns a Promise for the next emission of the given event on the given Puppeteer page.
@@ -120,12 +125,24 @@ function getDebugExpressionFromRegexp(tag: string, regexp: string): string {
 }
 
 export class Driver {
+    /** The pages that were visited since the creation of the driver. */
+    public visitedPages: Readonly<URL>[] = []
+
     constructor(
         public browser: puppeteer.Browser,
         public page: puppeteer.Page,
         public sourcegraphBaseUrl: string,
         public keepBrowser?: boolean
-    ) {}
+    ) {
+        const recordVisitedPage = (target: Target): void => {
+            if (target.type() !== 'page') {
+                return
+            }
+            this.visitedPages.push(new URL(target.url()))
+        }
+        browser.on('targetchanged', recordVisitedPage)
+        browser.on('targetcreated', recordVisitedPage)
+    }
 
     public async ensureLoggedIn({
         username,
@@ -182,6 +199,16 @@ export class Driver {
         if (!this.keepBrowser) {
             await this.browser.close()
         }
+        console.log(
+            '\nVisited routes:\n' +
+                Array.from(
+                    new Set(
+                        this.visitedPages
+                            .filter(url => url.href.startsWith(this.sourcegraphBaseUrl))
+                            .map(url => url.pathname)
+                    )
+                ).join('\n')
+        )
     }
 
     public async newPage(): Promise<void> {
@@ -282,20 +309,27 @@ export class Driver {
         }
 
         // Navigate to the add external service page.
+        console.log('Adding external service of kind', kind)
         await this.page.goto(this.sourcegraphBaseUrl + '/site-admin/external-services/new')
-        await (
-            await this.page.waitForSelector(`[data-e2e-external-service-card-link="${kind.toUpperCase()}"]`, {
-                visible: true,
-            })
-        ).click()
+        await this.page.waitForSelector(`[data-e2e-external-service-card-link="${kind.toUpperCase()}"]`, {
+            visible: true,
+        })
+        await this.page.evaluate(selector => {
+            const element = document.querySelector<HTMLElement>(selector)
+            if (!element) {
+                throw new Error('Could not find element to click on for selector ' + selector)
+            }
+            element.click()
+        }, `[data-e2e-external-service-card-link="${kind.toUpperCase()}"]`)
         await this.replaceText({
             selector: '#e2e-external-service-form-display-name',
             newText: displayName,
         })
 
+        await this.page.waitForSelector('.e2e-external-service-editor .monaco-editor')
         // Type in a new external service configuration.
         await this.replaceText({
-            selector: '.view-line',
+            selector: '.e2e-external-service-editor .monaco-editor .view-line',
             newText: config,
             selectMethod: 'keyboard',
         })
@@ -315,12 +349,9 @@ export class Driver {
     }
 
     public async paste(value: string): Promise<void> {
-        await this.page.evaluate(
-            async d => {
-                await navigator.clipboard.writeText(d.value)
-            },
-            { value }
-        )
+        await this.page.evaluate(async (value: string) => {
+            await navigator.clipboard.writeText(value)
+        }, value)
         const modifier = os.platform() === 'darwin' ? Key.Meta : Key.Control
         await this.page.keyboard.down(modifier)
         await this.page.keyboard.press('v')
@@ -378,7 +409,7 @@ export class Driver {
 
     private async makeRequest<T = void>({ url, init }: { url: string; init: RequestInit & Serializable }): Promise<T> {
         const handle = await this.page.evaluateHandle((url, init) => fetch(url, init).then(r => r.json()), url, init)
-        return handle.jsonValue()
+        return (await handle.jsonValue()) as T
     }
 
     private async makeGraphQLRequest<T extends IQuery | IMutation>({
@@ -428,21 +459,19 @@ export class Driver {
         return repository
     }
 
-    public async createCampaignPlanFromPatches(
-        patches: ICampaignPlanPatch[]
-    ): Promise<Pick<ICampaignPlan, 'previewURL'>> {
+    public async createPatchSetFromPatches(patches: IPatchInput[]): Promise<Pick<IPatchSet, 'previewURL'>> {
         const resp = await this.makeGraphQLRequest<IMutation>({
             request: gql`
-                mutation($patches: [CampaignPlanPatch!]!) {
-                    createCampaignPlanFromPatches(patches: $patches) {
+                mutation($patches: [PatchInput!]!) {
+                    createPatchSetFromPatches(patches: $patches) {
                         previewURL
                     }
                 }
             `,
             variables: { patches },
         })
-        const { createCampaignPlanFromPatches } = dataOrThrowErrors(resp)
-        return createCampaignPlanFromPatches
+        const { createPatchSetFromPatches } = dataOrThrowErrors(resp)
+        return createPatchSetFromPatches
     }
 
     public async setConfig(path: jsonc.JSONPath, f: (oldValue: jsonc.Node | undefined) => any): Promise<void> {
@@ -477,7 +506,7 @@ export class Driver {
 
     public async ensureHasCORSOrigin({ corsOriginURL }: { corsOriginURL: string }): Promise<void> {
         await this.setConfig(['corsOrigin'], oldCorsOrigin => {
-            const urls = oldCorsOrigin ? oldCorsOrigin.value.split(' ') : []
+            const urls = oldCorsOrigin ? (oldCorsOrigin.value as string).split(' ') : []
             return (urls.includes(corsOriginURL) ? urls : [...urls, corsOriginURL]).join(' ')
         })
     }
@@ -605,7 +634,26 @@ export function modifyJSONC(text: string, path: jsonc.JSONPath, f: (oldValue: js
     )
 }
 
+// Copied from node_modules/puppeteer-firefox/misc/install-preferences.js
+async function getFirefoxCfgPath(): Promise<string> {
+    const firefoxFolder = path.dirname(puppeteerFirefox.executablePath())
+    let configPath: string
+    if (process.platform === 'darwin') {
+        configPath = path.join(firefoxFolder, '..', 'Resources')
+    } else if (process.platform === 'linux') {
+        await mkdirpPromise(path.join(firefoxFolder, 'browser', 'defaults', 'preferences'))
+        configPath = firefoxFolder
+    } else if (process.platform === 'win32') {
+        configPath = firefoxFolder
+    } else {
+        throw new Error('Unsupported platform: ' + process.platform)
+    }
+    return path.join(configPath, 'puppeteer.cfg')
+}
+
 interface DriverOptions extends LaunchOptions {
+    browser?: 'chrome' | 'firefox'
+
     /** If true, load the Sourcegraph browser extension. */
     loadExtension?: boolean
 
@@ -620,29 +668,68 @@ interface DriverOptions extends LaunchOptions {
 
 export async function createDriverForTest(options: DriverOptions): Promise<Driver> {
     const { loadExtension, sourcegraphBaseUrl, logBrowserConsole, keepBrowser } = options
-    const args = ['--window-size=1280,1024']
-    if (process.getuid() === 0) {
-        // TODO don't run as root in CI
-        console.warn('Running as root, disabling sandbox')
-        args.push('--no-sandbox', '--disable-setuid-sandbox')
-    }
-    if (loadExtension) {
-        const chromeExtensionPath = path.resolve(__dirname, '..', '..', '..', 'browser', 'build', 'chrome')
-        const manifest = JSON.parse(await readFile(path.resolve(chromeExtensionPath, 'manifest.json'), 'utf-8'))
-        if (!manifest.permissions.includes('<all_urls>')) {
-            throw new Error(
-                'Browser extension was not built with permissions for all URLs.\nThis is necessary because permissions cannot be granted by e2e tests.\nTo fix, run `EXTENSION_PERMISSIONS_ALL_URLS=true yarn run dev` inside the browser/ directory.'
-            )
-        }
-        args.push(`--disable-extensions-except=${chromeExtensionPath}`, `--load-extension=${chromeExtensionPath}`)
-    }
-
-    const browser = await puppeteer.launch({
+    const args: string[] = []
+    const launchOptions: puppeteer.LaunchOptions = {
         ...options,
         args,
         headless: readEnvBoolean({ variable: 'HEADLESS', defaultValue: false }),
         defaultViewport: null,
-    })
+    }
+    let browser: puppeteer.Browser
+    if (options.browser === 'firefox') {
+        // Make sure CSP is disabled in FF preferences,
+        // because Puppeteer uses new Function() to evaluate code
+        // which is not allowed by the github.com CSP.
+        // The pref option does not work to disable CSP for some reason.
+        const cfgPath = await getFirefoxCfgPath()
+        const disableCspPreference = '\npref("security.csp.enable", false);\n'
+        if (!(await readFile(cfgPath, 'utf-8')).includes(disableCspPreference)) {
+            await appendFile(cfgPath, disableCspPreference)
+        }
+        if (loadExtension) {
+            const cdpPort = await getFreePort()
+            const firefoxExtensionPath = path.resolve(__dirname, '..', '..', '..', 'browser', 'build', 'firefox')
+            // webExt.util.logger.consoleStream.makeVerbose()
+            args.push(`-juggler=${cdpPort}`)
+            if (launchOptions.headless) {
+                args.push('-headless')
+            }
+            await webExt.cmd.run(
+                {
+                    sourceDir: firefoxExtensionPath,
+                    firefox: puppeteerFirefox.executablePath(),
+                    args,
+                },
+                { shouldExitProgram: false }
+            )
+            const browserWSEndpoint = `ws://127.0.0.1:${cdpPort}`
+            browser = await puppeteerFirefox.connect({ browserWSEndpoint })
+        } else {
+            browser = await puppeteerFirefox.launch(launchOptions)
+        }
+    } else {
+        // Chrome
+        args.push('--window-size=1280,1024')
+        if (process.getuid() === 0) {
+            // TODO don't run as root in CI
+            console.warn('Running as root, disabling sandbox')
+            args.push('--no-sandbox', '--disable-setuid-sandbox')
+        }
+        if (loadExtension) {
+            const chromeExtensionPath = path.resolve(__dirname, '..', '..', '..', 'browser', 'build', 'chrome')
+            const manifest = JSON.parse(
+                await readFile(path.resolve(chromeExtensionPath, 'manifest.json'), 'utf-8')
+            ) as { permissions: string[] }
+            if (!manifest.permissions.includes('<all_urls>')) {
+                throw new Error(
+                    'Browser extension was not built with permissions for all URLs.\nThis is necessary because permissions cannot be granted by e2e tests.\nTo fix, run `EXTENSION_PERMISSIONS_ALL_URLS=true yarn run dev` inside the browser/ directory.'
+                )
+            }
+            args.push(`--disable-extensions-except=${chromeExtensionPath}`, `--load-extension=${chromeExtensionPath}`)
+        }
+        browser = await puppeteer.launch(launchOptions)
+    }
+
     const page = await browser.newPage()
     if (logBrowserConsole) {
         fromEvent<ConsoleMessage>(page, 'console')
@@ -658,6 +745,7 @@ export async function createDriverForTest(options: DriverOptions): Promise<Drive
                 map(formatPuppeteerConsoleMessage),
                 concatAll()
             )
+            // eslint-disable-next-line rxjs/no-ignored-subscription
             .subscribe(formattedLine => console.log(formattedLine))
     }
     return new Driver(browser, page, sourcegraphBaseUrl, keepBrowser)

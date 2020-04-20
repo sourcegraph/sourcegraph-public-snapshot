@@ -14,9 +14,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/opentracing-contrib/go-stdlib/nethttp"
-	opentracing "github.com/opentracing/opentracing-go"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/replacer/replace"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -24,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/store"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 )
@@ -61,7 +60,7 @@ func main() {
 		Store: &store,
 		Log:   log15.Root(),
 	}
-	handler := nethttp.Middleware(opentracing.GlobalTracer(), service)
+	handler := ot.Middleware(service)
 
 	host := ""
 	if env.InsecureDev {

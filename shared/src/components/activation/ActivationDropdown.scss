@@ -1,15 +1,24 @@
 .activation-dropdown {
     width: 21rem;
+    z-index: 999;
+    padding-bottom: 0;
+    overflow: hidden;
 
-    &-item {
-        white-space: normal;
+    &__checklist {
+        .list-group-item {
+            border: 0;
+        }
+
+        .activation-dropdown-header {
+            border: 0;
+        }
     }
 }
 
 .activation-dropdown-button {
-    &--hidden {
-        display: none;
-    }
+    display: flex;
+    border: none;
+    color: var(--link-color);
 
     &__progress-bar-container {
         display: inline-block;
@@ -30,10 +39,17 @@
     &__loader {
         padding-left: 0.8375rem;
     }
+
+    &__confetti {
+        z-index: 1000;
+    }
 }
 
 .activation-dropdown-header {
     white-space: normal;
+    border-bottom: 1px solid $dropdown-border-color;
+    padding: 0.25rem 0.75rem 0 0.75rem;
+
     &:hover {
         text-decoration: none;
     }

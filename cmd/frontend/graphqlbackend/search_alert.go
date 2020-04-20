@@ -42,6 +42,14 @@ func (a searchAlert) ProposedQueries() *[]*searchQueryDescription {
 	return &a.proposedQueries
 }
 
+func alertForCappedAndExpression() *searchAlert {
+	return &searchAlert{
+		prometheusType: "exceed_and_expression_search_limit",
+		title:          "Too many files to search for and-expression",
+		description:    fmt.Sprintf("One and-expression in the query requires a lot of work! Try using the 'repo:' or 'file:' filters to narrow your search. We're working on improving this experience in https://github.com/sourcegraph/sourcegraph/issues/9824"),
+	}
+}
+
 // alertForQuery converts errors in the query to search alerts.
 func alertForQuery(queryString string, err error) *searchAlert {
 	switch e := err.(type) {
@@ -68,6 +76,12 @@ func alertForQuery(queryString string, err error) *searchAlert {
 				proposedQueries: proposedQuotedQueries(queryString),
 			}
 		}
+	case *query.UnsupportedError, *query.ExpectedOperand:
+		return &searchAlert{
+			prometheusType: "unsupported_and_or_query",
+			title:          "Unable To Process Query",
+			description:    `I'm having trouble understsanding that query. Your query contains "and" or "or" operators that make me think they apply to filters like "repo:" or "file:". We only support "and" or "or" operators on search patterns for file contents currently. You can help me by putting parentheses around the search pattern.`,
+		}
 	}
 	return &searchAlert{
 		prometheusType: "generic_invalid_query",
@@ -84,7 +98,7 @@ func alertForTimeout(usedTime time.Duration, suggestTime time.Duration, r *searc
 		proposedQueries: []*searchQueryDescription{
 			{
 				description: "query with longer timeout",
-				query:       fmt.Sprintf("timeout:%v %s", suggestTime, omitQueryField(r.parseTree, query.FieldTimeout)),
+				query:       fmt.Sprintf("timeout:%v %s", suggestTime, omitQueryField(r.query.ParseTree(), query.FieldTimeout)),
 				patternType: r.patternType,
 			},
 		},
@@ -112,11 +126,23 @@ func alertForQuotesInQueryInLiteralMode(p syntax.ParseTree) *searchAlert {
 	}
 }
 
-func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAlert, error) {
+// reposExist returns true if one or more repos resolve. If the attempt
+// returns 0 repos or fails, it returns false. It is a helper function for
+// raising NoResolvedRepos alerts with suggestions when we know the original
+// query does not contain any repos to search.
+func reposExist(ctx context.Context, options resolveRepoOp) bool {
+	repos, _, _, err := resolveRepositories(ctx, options)
+	return err == nil && len(repos) > 0
+}
+
+func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) *searchAlert {
 	repoFilters, minusRepoFilters := r.query.RegexpPatterns(query.FieldRepo)
 	repoGroupFilters, _ := r.query.StringValues(query.FieldRepoGroup)
 	fork, _ := r.query.StringValue(query.FieldFork)
 	onlyForks, noForks := fork == "only", fork == "no"
+	forksNotSet := len(fork) == 0
+	archived, _ := r.query.StringValue(query.FieldArchived)
+	archivedNotSet := len(archived) == 0
 
 	// Handle repogroup-only scenarios.
 	if len(repoFilters) == 0 && len(repoGroupFilters) == 0 {
@@ -124,167 +150,212 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 			prometheusType: "no_resolved_repos__no_repositories",
 			title:          "Add repositories or connect repository hosts",
 			description:    "There are no repositories to search. Add an external service connection to your code host.",
-		}, nil
+		}
 	}
 	if len(repoFilters) == 0 && len(repoGroupFilters) == 1 {
 		return &searchAlert{
 			prometheusType: "no_resolved_repos__repogroup_empty",
 			title:          fmt.Sprintf("Add repositories to repogroup:%s to see results", repoGroupFilters[0]),
 			description:    fmt.Sprintf("The repository group %q is empty. See the documentation for configuration and troubleshooting.", repoGroupFilters[0]),
-		}, nil
+		}
 	}
 	if len(repoFilters) == 0 && len(repoGroupFilters) > 1 {
 		return &searchAlert{
 			prometheusType: "no_resolved_repos__repogroup_none_in_common",
 			title:          "Repository groups have no repositories in common",
 			description:    "No repository exists in all of the specified repository groups.",
-		}, nil
+		}
 	}
 
 	// TODO(sqs): handle -repo:foo fields.
 
-	withoutRepoFields := omitQueryField(r.parseTree, query.FieldRepo)
+	withoutRepoFields := omitQueryField(r.query.ParseTree(), query.FieldRepo)
 
-	var a searchAlert
 	switch {
 	case len(repoGroupFilters) > 1:
 		// This is a rare case, so don't bother proposing queries.
-		a.title = "Expand your repository filters to see results"
-		a.description = fmt.Sprintf("No repository exists in all specified groups and satisfies all of your repo: filters.")
+		return &searchAlert{
+			title:       "Expand your repository filters to see results",
+			description: "No repository exists in all specified groups and satisfies all of your repo: filters.",
+		}
 
 	case len(repoGroupFilters) == 1 && len(repoFilters) > 1:
-		a.title = "Expand your repository filters to see results"
-		a.description = fmt.Sprintf("No repositories in repogroup:%s satisfied all of your repo: filters.", repoGroupFilters[0])
-
-		repos1, _, _, err := resolveRepositories(ctx, resolveRepoOp{repoFilters: repoFilters, minusRepoFilters: minusRepoFilters, onlyForks: onlyForks, noForks: noForks})
-		if err != nil {
-			return nil, err
+		proposedQueries := []*searchQueryDescription{}
+		tryRemoveRepoGroup := resolveRepoOp{
+			repoFilters:      repoFilters,
+			minusRepoFilters: minusRepoFilters,
+			onlyForks:        onlyForks,
+			noForks:          noForks,
 		}
-		if len(repos1) > 0 {
-			a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
-				description: fmt.Sprintf("include repositories outside of repogroup:%s", repoGroupFilters[0]),
-				query:       omitQueryField(r.parseTree, query.FieldRepoGroup),
-				patternType: r.patternType,
-			})
+		if reposExist(ctx, tryRemoveRepoGroup) {
+			proposedQueries = []*searchQueryDescription{
+				{
+					description: fmt.Sprintf("include repositories outside of repogroup:%s", repoGroupFilters[0]),
+					query:       omitQueryField(r.query.ParseTree(), query.FieldRepoGroup),
+					patternType: r.patternType,
+				},
+			}
 		}
 
 		unionRepoFilter := unionRegExps(repoFilters)
-		repos2, _, _, err := resolveRepositories(ctx, resolveRepoOp{repoFilters: []string{unionRepoFilter}, minusRepoFilters: minusRepoFilters, repoGroupFilters: repoGroupFilters, onlyForks: onlyForks, noForks: noForks})
-		if err != nil {
-			return nil, err
+		tryAnyRepo := resolveRepoOp{
+			repoFilters:      []string{unionRepoFilter},
+			minusRepoFilters: minusRepoFilters,
+			repoGroupFilters: repoGroupFilters,
+			onlyForks:        onlyForks,
+			noForks:          noForks,
 		}
-		if len(repos2) > 0 {
-			query := withoutRepoFields
-			query += fmt.Sprintf(" repo:%s", unionRepoFilter)
-			a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
-				description: fmt.Sprintf("include repositories satisfying any (not all) of your repo: filters"),
-				query:       query,
+		if reposExist(ctx, tryAnyRepo) {
+			proposedQueries = append(proposedQueries, &searchQueryDescription{
+				description: "include repositories satisfying any (not all) of your repo: filters",
+				query:       withoutRepoFields + fmt.Sprintf(" repo:%s", unionRepoFilter),
 				patternType: r.patternType,
 			})
 		} else {
 			// Fall back to removing repo filters.
-			a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
+			proposedQueries = append(proposedQueries, &searchQueryDescription{
 				description: "remove repo: filters",
 				query:       withoutRepoFields,
 				patternType: r.patternType,
 			})
 		}
 
+		return &searchAlert{
+			title:           "Expand your repository filters to see results",
+			description:     fmt.Sprintf("No repositories in repogroup:%s satisfied all of your repo: filters.", repoGroupFilters[0]),
+			proposedQueries: proposedQueries,
+		}
+
 	case len(repoGroupFilters) == 1 && len(repoFilters) == 1:
-		a.title = "Expand your repository filters to see results"
-		a.description = fmt.Sprintf("No repositories in repogroup:%s satisfied your repo: filter.", repoGroupFilters[0])
-
-		repos1, _, _, err := resolveRepositories(ctx, resolveRepoOp{repoFilters: repoFilters, minusRepoFilters: minusRepoFilters, noForks: noForks, onlyForks: onlyForks})
-		if err != nil {
-			return nil, err
+		proposedQueries := []*searchQueryDescription{}
+		tryRemoveRepoGroup := resolveRepoOp{
+			repoFilters:      repoFilters,
+			minusRepoFilters: minusRepoFilters,
+			onlyForks:        onlyForks,
+			noForks:          noForks,
 		}
-		if len(repos1) > 0 {
-			a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
-				description: fmt.Sprintf("include repositories outside of repogroup:%s", repoGroupFilters[0]),
-				query:       omitQueryField(r.parseTree, query.FieldRepoGroup),
-				patternType: r.patternType,
-			})
+		if reposExist(ctx, tryRemoveRepoGroup) {
+			proposedQueries = []*searchQueryDescription{
+				{
+					description: fmt.Sprintf("include repositories outside of repogroup:%s", repoGroupFilters[0]),
+					query:       omitQueryField(r.query.ParseTree(), query.FieldRepoGroup),
+					patternType: r.patternType,
+				},
+			}
 		}
 
-		a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
+		proposedQueries = append(proposedQueries, &searchQueryDescription{
 			description: "remove repo: filters",
 			query:       withoutRepoFields,
 			patternType: r.patternType,
 		})
+		return &searchAlert{
+			title:           "Expand your repository filters to see results",
+			description:     fmt.Sprintf("No repositories in repogroup:%s satisfied all of your repo: filters.", repoGroupFilters[0]),
+			proposedQueries: proposedQueries,
+		}
 
 	case len(repoGroupFilters) == 0 && len(repoFilters) > 1:
-		a.title = "Expand your repo: filters to see results"
-		a.description = fmt.Sprintf("No repositories satisfied all of your repo: filters.")
-
+		proposedQueries := []*searchQueryDescription{}
 		unionRepoFilter := unionRegExps(repoFilters)
-		repos2, _, _, err := resolveRepositories(ctx, resolveRepoOp{repoFilters: []string{unionRepoFilter}, minusRepoFilters: minusRepoFilters, repoGroupFilters: repoGroupFilters, noForks: noForks, onlyForks: onlyForks})
-		if err != nil {
-			return nil, err
+		tryAnyRepo := resolveRepoOp{
+			repoFilters:      []string{unionRepoFilter},
+			minusRepoFilters: minusRepoFilters,
+			repoGroupFilters: repoGroupFilters,
+			onlyForks:        onlyForks,
+			noForks:          noForks,
 		}
-		if len(repos2) > 0 {
-			query := withoutRepoFields
-			query += fmt.Sprintf(" repo:%s", unionRepoFilter)
-			a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
-				description: fmt.Sprintf("include repositories satisfying any (not all) of your repo: filters"),
-				query:       query,
+		if reposExist(ctx, tryAnyRepo) {
+			proposedQueries = append(proposedQueries, &searchQueryDescription{
+				description: "include repositories satisfying any (not all) of your repo: filters",
+				query:       withoutRepoFields + fmt.Sprintf(" repo:%s", unionRepoFilter),
 				patternType: r.patternType,
 			})
 		}
 
-		a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
+		proposedQueries = append(proposedQueries, &searchQueryDescription{
 			description: "remove repo: filters",
 			query:       withoutRepoFields,
 		})
+		return &searchAlert{
+			title:           "Expand your repo: filters to see results",
+			description:     "No repositories satisfied all of your repo: filters.",
+			proposedQueries: proposedQueries,
+		}
 
 	case len(repoGroupFilters) == 0 && len(repoFilters) == 1:
 		isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx) == nil
-		proposeQueries := true
 		if !envvar.SourcegraphDotComMode() {
 			if needsRepoConfig, err := needsRepositoryConfiguration(ctx); err == nil && needsRepoConfig {
-				proposeQueries = false
-				a.title = "No repositories or code hosts configured"
-				a.description = "To start searching code, "
 				if isSiteAdmin {
-					a.description += "first go to site admin to configure repositories and code hosts."
+					return &searchAlert{
+						title:       "No repositories or code hosts configured",
+						description: "To start searching code, first go to site admin to configure repositories and code hosts.",
+					}
+
 				} else {
-					a.description = "ask the site admin to configure and enable repositories."
+					return &searchAlert{
+						title:       "No repositories or code hosts configured",
+						description: "To start searching code, ask the site admin to configure and enable repositories.",
+					}
 				}
 			}
 		}
 
-		if a.title == "" {
-			a.title = "No repositories satisfied your repo: filter"
-			a.description = "Change your repo: filter to see results"
-			if proposeQueries && strings.TrimSpace(withoutRepoFields) != "" {
-				a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
-					description: "remove repo: filter",
-					query:       withoutRepoFields,
+		proposedQueries := []*searchQueryDescription{}
+		if forksNotSet {
+			tryIncludeForks := resolveRepoOp{
+				repoFilters:      repoFilters,
+				minusRepoFilters: minusRepoFilters,
+				noForks:          false,
+			}
+			if reposExist(ctx, tryIncludeForks) {
+				proposedQueries = append(proposedQueries, &searchQueryDescription{
+					description: "include forked repositories in your query.",
+					query:       r.originalQuery + " fork:yes",
 					patternType: r.patternType,
 				})
 			}
 		}
-	}
 
-	return &a, nil
+		if archivedNotSet {
+			tryIncludeArchived := resolveRepoOp{
+				repoFilters:      repoFilters,
+				minusRepoFilters: minusRepoFilters,
+				onlyForks:        onlyForks,
+				noForks:          noForks,
+				onlyArchived:     true,
+			}
+			if reposExist(ctx, tryIncludeArchived) {
+				proposedQueries = append(proposedQueries, &searchQueryDescription{
+					description: "include archived repositories in your query.",
+					query:       r.originalQuery + " archived:yes",
+					patternType: r.patternType,
+				})
+			}
+		}
+
+		if strings.TrimSpace(withoutRepoFields) != "" {
+			proposedQueries = append(proposedQueries, &searchQueryDescription{
+				description: "remove repo: filter",
+				query:       withoutRepoFields,
+				patternType: r.patternType,
+			})
+		}
+		return &searchAlert{
+			title:           "No repositories satisfied your repo: filter",
+			description:     "Modify your repo: filter to see results",
+			proposedQueries: proposedQueries,
+		}
+	}
+	// Should be unreachable. Return a generic alert if reached.
+	return &searchAlert{
+		title:       "No repository results.",
+		description: "There are no repositories to search.",
+	}
 }
 
-func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) (*searchAlert, error) {
-	alert := &searchAlert{
-		prometheusType: "over_repo_limit",
-		title:          "Too many matching repositories",
-	}
-
-	if envvar.SourcegraphDotComMode() {
-		alert.description = "Use a 'repo:' or 'repogroup:' filter to narrow your search and see results or set up a self-hosted Sourcegraph instance to search an unlimited number of repositories."
-	} else {
-		alert.description = "Use a 'repo:' or 'repogroup:' filter to narrow your search and see results."
-	}
-
-	isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx) == nil
-	if isSiteAdmin {
-		alert.description += " As a site admin, you can increase the limit by changing maxReposToSearch in site config."
-	}
-
+func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) *searchAlert {
 	// Try to suggest the most helpful repo: filters to narrow the query.
 	//
 	// For example, suppose the query contains "repo:kubern" and it matches > 30
@@ -297,84 +368,100 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) (*searchAler
 	//
 	// TODO(sqs): this logic can be significantly improved, but it's better than
 	// nothing for now.
-	repos, _, _, err := r.resolveRepositories(ctx, nil)
-	if err != nil {
-		return nil, err
+
+	var proposedQueries []*searchQueryDescription
+	description := "Use a 'repo:' or 'repogroup:' filter to narrow your search and see results."
+	if envvar.SourcegraphDotComMode() {
+		description = "Use a 'repo:' or 'repogroup:' filter to narrow your search and see results or set up a self-hosted Sourcegraph instance to search an unlimited number of repositories."
 	}
-	paths := make([]string, len(repos))
-	pathPatterns := make([]string, len(repos))
-	for i, repo := range repos {
-		paths[i] = string(repo.Repo.Name)
-		pathPatterns[i] = "^" + regexp.QuoteMeta(string(repo.Repo.Name)) + "$"
+	if backend.CheckCurrentUserIsSiteAdmin(ctx) == nil {
+		description += " As a site admin, you can increase the limit by changing maxReposToSearch in site config."
 	}
 
-	// See if we can narrow it down by using filters like
-	// repo:github.com/myorg/.
-	const maxParentsToPropose = 4
-	ctx, cancel := context.WithTimeout(ctx, 1500*time.Millisecond)
-	defer cancel()
-outer:
-	for i, repoParent := range pathParentsByFrequency(paths) {
-		if i >= maxParentsToPropose || ctx.Err() == nil {
-			break
+	buildAlert := func(proposedQueries []*searchQueryDescription, description string) *searchAlert {
+		return &searchAlert{
+			prometheusType:  "over_repo_limit",
+			title:           "Too many matching repositories",
+			proposedQueries: proposedQueries,
+			description:     description,
 		}
-		repoParentPattern := "^" + regexp.QuoteMeta(repoParent) + "/"
-		repoFieldValues, _ := r.query.RegexpPatterns(query.FieldRepo)
+	}
 
-		for _, v := range repoFieldValues {
-			if strings.HasPrefix(v, strings.TrimSuffix(repoParentPattern, "/")) {
-				continue outer // this repo: filter is already applied
-			}
+	repos, _, _, _ := r.resolveRepositories(ctx, nil)
+	if len(repos) > 0 {
+		paths := make([]string, len(repos))
+		pathPatterns := make([]string, len(repos))
+		for i, repo := range repos {
+			paths[i] = string(repo.Repo.Name)
+			pathPatterns[i] = "^" + regexp.QuoteMeta(string(repo.Repo.Name)) + "$"
 		}
 
-		repoFieldValues = append(repoFieldValues, repoParentPattern)
-		ctx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
+		// See if we can narrow it down by using filters like
+		// repo:github.com/myorg/.
+		const maxParentsToPropose = 4
+		ctx, cancel := context.WithTimeout(ctx, 1500*time.Millisecond)
 		defer cancel()
-		_, _, overLimit, err := r.resolveRepositories(ctx, repoFieldValues)
-		if ctx.Err() != nil {
-			continue
-		} else if err != nil {
-			return nil, err
-		}
-
-		var more string
-		if overLimit {
-			more = " (further filtering required)"
-		}
-
-		// We found a more specific repo: filter that may be narrow enough. Now
-		// add it to the user's query, but be smart. For example, if the user's
-		// query was "repo:foo" and the parent is "foobar/", then propose "repo:foobar/"
-		// not "repo:foo repo:foobar/" (which are equivalent, but shorter is better).
-		newExpr := addRegexpField(r.parseTree, query.FieldRepo, repoParentPattern)
-		alert.proposedQueries = append(alert.proposedQueries, &searchQueryDescription{
-			description: "in repositories under " + repoParent + more,
-			query:       newExpr,
-			patternType: r.patternType,
-		})
-	}
-	if len(alert.proposedQueries) == 0 || ctx.Err() == context.DeadlineExceeded {
-		// Propose specific repos' paths if we aren't able to propose
-		// anything else.
-		const maxReposToPropose = 4
-		shortest := append([]string{}, paths...) // prefer shorter repo names
-		sort.Slice(shortest, func(i, j int) bool {
-			return len(shortest[i]) < len(shortest[j]) || (len(shortest[i]) == len(shortest[j]) && shortest[i] < shortest[j])
-		})
-		for i, pathToPropose := range shortest {
-			if i >= maxReposToPropose {
+	outer:
+		for i, repoParent := range pathParentsByFrequency(paths) {
+			if i >= maxParentsToPropose || ctx.Err() == nil {
 				break
 			}
-			newExpr := addRegexpField(r.parseTree, query.FieldRepo, "^"+regexp.QuoteMeta(pathToPropose)+"$")
-			alert.proposedQueries = append(alert.proposedQueries, &searchQueryDescription{
-				description: "in the repository " + strings.TrimPrefix(pathToPropose, "github.com/"),
+			repoParentPattern := "^" + regexp.QuoteMeta(repoParent) + "/"
+			repoFieldValues, _ := r.query.RegexpPatterns(query.FieldRepo)
+
+			for _, v := range repoFieldValues {
+				if strings.HasPrefix(v, strings.TrimSuffix(repoParentPattern, "/")) {
+					continue outer // this repo: filter is already applied
+				}
+			}
+
+			repoFieldValues = append(repoFieldValues, repoParentPattern)
+			ctx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
+			defer cancel()
+			_, _, overLimit, err := r.resolveRepositories(ctx, repoFieldValues)
+			if ctx.Err() != nil {
+				continue
+			} else if err != nil {
+				return buildAlert([]*searchQueryDescription{}, description)
+			}
+
+			var more string
+			if overLimit {
+				more = "(further filtering required)"
+			}
+			// We found a more specific repo: filter that may be narrow enough. Now
+			// add it to the user's query, but be smart. For example, if the user's
+			// query was "repo:foo" and the parent is "foobar/", then propose "repo:foobar/"
+			// not "repo:foo repo:foobar/" (which are equivalent, but shorter is better).
+			newExpr := addRegexpField(r.query.ParseTree(), query.FieldRepo, repoParentPattern)
+			proposedQueries = append(proposedQueries, &searchQueryDescription{
+				description: fmt.Sprintf("in repositories under %s %s", repoParent, more),
 				query:       newExpr,
 				patternType: r.patternType,
 			})
 		}
+		if len(proposedQueries) == 0 || ctx.Err() == context.DeadlineExceeded {
+			// Propose specific repos' paths if we aren't able to propose
+			// anything else.
+			const maxReposToPropose = 4
+			shortest := append([]string{}, paths...) // prefer shorter repo names
+			sort.Slice(shortest, func(i, j int) bool {
+				return len(shortest[i]) < len(shortest[j]) || (len(shortest[i]) == len(shortest[j]) && shortest[i] < shortest[j])
+			})
+			for i, pathToPropose := range shortest {
+				if i >= maxReposToPropose {
+					break
+				}
+				newExpr := addRegexpField(r.query.ParseTree(), query.FieldRepo, "^"+regexp.QuoteMeta(pathToPropose)+"$")
+				proposedQueries = append(proposedQueries, &searchQueryDescription{
+					description: fmt.Sprintf("in the repository %s", strings.TrimPrefix(pathToPropose, "github.com/")),
+					query:       newExpr,
+					patternType: r.patternType,
+				})
+			}
+		}
 	}
-
-	return alert, nil
+	return buildAlert(proposedQueries, description)
 }
 
 // alertForStructuralSearch filters certain errors from multiErr and converts

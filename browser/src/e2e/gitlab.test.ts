@@ -35,7 +35,7 @@ async function init(driver: Driver): Promise<void> {
 describe('Sourcegraph browser extension on Gitlab Server', () => {
     let driver: Driver
 
-    before(async function() {
+    before(async function () {
         this.timeout(4 * 60 * 1000)
         driver = await createDriverForTest({ loadExtension: true, sourcegraphBaseUrl })
         await init(driver)

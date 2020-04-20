@@ -2,9 +2,11 @@ coverage:
   range: 50...75
   status:
     project: off
-    patch: off
+    patch:
+      default:
+        target: 5%
 comment:
   require_changes: yes
-  layout: 'diff, files'
+  layout: 'diff, flags, files'
 ignore:
   - '**/bindata.go'

@@ -1,7 +1,7 @@
 import { Shortcut } from '@slimsag/react-shortcuts'
 import classNames from 'classnames'
 import H from 'history'
-import { isArray, sortBy, uniq, uniqueId } from 'lodash'
+import { sortBy, uniq, uniqueId } from 'lodash'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import MenuIcon from 'mdi-react/MenuIcon'
 import MenuUpIcon from 'mdi-react/MenuUpIcon'
@@ -48,6 +48,7 @@ export interface CommandListClassProps {
     resultsContainerClassName?: string
     actionItemClassName?: string
     noResultsClassName?: string
+    iconClassName?: string
 }
 
 export interface CommandListProps
@@ -87,9 +88,9 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
             return null
         }
         try {
-            const recentActions = JSON.parse(value)
-            if (isArray(recentActions) && recentActions.every(a => typeof a === 'string')) {
-                return recentActions
+            const recentActions: unknown = JSON.parse(value)
+            if (Array.isArray(recentActions) && recentActions.every(a => typeof a === 'string')) {
+                return recentActions as string[]
             }
             return null
         } catch (err) {
@@ -202,8 +203,9 @@ export class CommandList extends React.PureComponent<CommandListProps, State> {
                                         ref={i === selectedIndex ? this.setSelectedItem : undefined}
                                         title={
                                             <HighlightedMatches
-                                                text={`${item.action.category ? `${item.action.category}: ` : ''}${item
-                                                    .action.title || item.action.command}`}
+                                                text={[item.action.category, item.action.title || item.action.command]
+                                                    .filter(Boolean)
+                                                    .join(': ')}
                                                 pattern={query}
                                             />
                                         }
@@ -294,8 +296,9 @@ export function filterAndRankItems(
         .filter((item, i) => {
             let label = labels[i]
             if (label === undefined) {
-                label = `${item.action.category ? `${item.action.category}: ` : ''}${item.action.title ||
-                    item.action.command}`
+                label = `${item.action.category ? `${item.action.category}: ` : ''}${
+                    item.action.title || item.action.command || ''
+                }`
                 labels[i] = label
             }
             if (scores[i] === undefined) {

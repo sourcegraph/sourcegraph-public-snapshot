@@ -30,6 +30,14 @@ The GitHub service requires a `token` in order to access their API. There are tw
 - **[Personal access token](https://help.github.com/en/articles/creating-a-personal-access-token-for-the-command-line)**:<br>This gives Sourcegraph the same level of acccess to repositories as the account that created the token. If you're not wanting to mix your personal repositories with your organizations repositories, you could add an entry to the `exclude` array, or you can use a machine user token.
 - **[Machine user token](https://developer.github.com/v3/guides/managing-deploy-keys/#machine-users)**:<br>Generates a token for a machine user that is affiliated with an organization instead of a user account.
 
+No token scopes are required if you only want to sync public repositories and don't want to use any of the following features. Otherwise, the following token scopes are required:
+
+- `repo` to sync private repositories from GitHub to Sourcegraph.
+- `read:org` to use the `"allowOrgs"` setting [with a GitHub authentication provider](../auth/index.md#github).
+- `read:org` and `read:discussion` to use [Campaigns](../../user/campaigns/index.md) with GitHub repositories.
+
+>NOTE: If you plan to use repository permissions with background syncing, an access token that has admin access to all private repositories is required. It is because only admin can list all collaborators of a repository.
+
 ## GitHub.com rate limits
 
 You should always include a token in a configuration for a GitHub.com URL to avoid being denied service by GitHub's [unauthenticated rate limits](https://developer.github.com/v3/#rate-limiting). If you don't want to automatically synchronize repositories from the account associated with your personal access token, you can create a token without a [`repo` scope](https://developer.github.com/apps/building-oauth-apps/scopes-for-oauth-apps/#available-scopes) for the purposes of bypassing rate limit restrictions only.
@@ -62,12 +70,15 @@ The following [webhook events](https://developer.github.com/webhooks/) are curre
 - Pull requests
 - Pull request reviews
 - Pull request review comments
+- Check runs
+- Check suites
+- Statuses
 
 To set up a organization webhook on GitHub, go to the settings page of your organization. From there, click **Webhooks**, then **Add webhook**.
 
 Fill in your Sourcegraph external URL with `/.api/github-webhooks` as the path and make sure it is publicly available.
 
-The **Content Type** of the webhook should be `application/json`. Generate the secret with `openssl rand -hex 32` and paste it in the respective field. This value is what you need to specify in the external service config.
+The **Content Type** of the webhook should be `application/json`. Generate the secret with `openssl rand -hex 32` and paste it in the respective field. This value is what you need to specify in the GitHub config.
 
 Click on **Enable SSL verification** if you have configured SSL with a valid certificate in your Sourcegraph instance.
 
@@ -75,7 +86,7 @@ Select **the events mentioned above** on the events section, ensure **Active** i
 
 ## Configuration
 
-GitHub external service connections support the following configuration options, which are specified in the JSON editor in the site admin external services area.
+GitHub connections support the following configuration options, which are specified in the JSON editor in the site admin "Manage repositories" area.
 
 <div markdown-func=jsonschemadoc jsonschemadoc:path="admin/external_service/github.schema.json">[View page on docs.sourcegraph.com](https://docs.sourcegraph.com/admin/external_service/github) to see rendered content.</div>
 

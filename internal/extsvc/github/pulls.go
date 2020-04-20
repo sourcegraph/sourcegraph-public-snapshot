@@ -141,7 +141,7 @@ type PullRequest struct {
 	Participants  []Actor
 	Labels        struct{ Nodes []Label }
 	TimelineItems []TimelineItem
-	Commits       struct{ Nodes []PullRequestCommit }
+	Commits       struct{ Nodes []CommitWithChecks }
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 }
@@ -245,16 +245,22 @@ type PullRequestReviewThread struct {
 }
 
 type PullRequestCommit struct {
+	Commit Commit
+}
+
+func (p PullRequestCommit) Key() string {
+	return p.Commit.OID
+}
+
+// CommitWithChecks represents check/build status of a commit. When we load the PR
+// from GitHub we fetch the most recent commit into this type to check build status.
+type CommitWithChecks struct {
 	Commit struct {
 		OID           string
 		CheckSuites   struct{ Nodes []CheckSuite }
 		Status        Status
 		CommittedDate time.Time
 	}
-}
-
-func (c PullRequestCommit) Key() string {
-	return c.Commit.OID
 }
 
 // PullRequestReviewComment represents a review comment on a given pull request.
@@ -476,7 +482,7 @@ func (c *Client) CreatePullRequest(ctx context.Context, in *CreatePullRequestInp
 	}
 
 	input := map[string]interface{}{"input": in}
-	err := c.requestGraphQL(ctx, "", q.String(), input, &result)
+	err := c.requestGraphQL(ctx, q.String(), input, &result)
 	if err != nil {
 		if gqlErrs, ok := err.(graphqlErrors); ok && len(gqlErrs) == 1 {
 			e := gqlErrs[0]
@@ -528,7 +534,7 @@ func (c *Client) UpdatePullRequest(ctx context.Context, in *UpdatePullRequestInp
 	}
 
 	input := map[string]interface{}{"input": in}
-	err := c.requestGraphQL(ctx, "", q.String(), input, &result)
+	err := c.requestGraphQL(ctx, q.String(), input, &result)
 	if err != nil {
 		if gqlErrs, ok := err.(graphqlErrors); ok && len(gqlErrs) == 1 {
 			e := gqlErrs[0]
@@ -570,7 +576,7 @@ func (c *Client) ClosePullRequest(ctx context.Context, pr *PullRequest) error {
 	input := map[string]interface{}{"input": struct {
 		ID string `json:"pullRequestId"`
 	}{ID: pr.ID}}
-	err := c.requestGraphQL(ctx, "", q.String(), input, &result)
+	err := c.requestGraphQL(ctx, q.String(), input, &result)
 	if err != nil {
 		return err
 	}
@@ -652,7 +658,7 @@ func (c *Client) loadPullRequests(ctx context.Context, prs ...*PullRequest) erro
 		TimelineItems struct{ Nodes []TimelineItem }
 	}
 
-	err := c.requestGraphQL(ctx, "", q.String(), nil, &results)
+	err := c.requestGraphQL(ctx, q.String(), nil, &results)
 	if err != nil {
 		return err
 	}
@@ -680,10 +686,7 @@ func (c *Client) GetOpenPullRequestByRefs(ctx context.Context, owner, name, base
 	q.WriteString(fmt.Sprintf("pullRequests(baseRefName: %q, headRefName: %q, first: 1, states: OPEN) { \n",
 		git.AbbreviateRef(baseRef), git.AbbreviateRef(headRef),
 	))
-	q.WriteString(fmt.Sprintf("nodes{ ... pr }\n"))
-	q.WriteString("}\n")
-	q.WriteString("}\n")
-	q.WriteString("}")
+	q.WriteString("nodes{ ... pr }\n}\n}\n}")
 
 	var results struct {
 		Repository struct {
@@ -697,7 +700,7 @@ func (c *Client) GetOpenPullRequestByRefs(ctx context.Context, owner, name, base
 		}
 	}
 
-	err := c.requestGraphQL(ctx, "", q.String(), nil, &results)
+	err := c.requestGraphQL(ctx, q.String(), nil, &results)
 	if err != nil {
 		return nil, err
 	}
@@ -756,12 +759,12 @@ fragment commitWithChecks on Commit {
       description
     }
   }
-  checkSuites(last: 10){
+  checkSuites(last: 20){
     nodes {
       id
       status
       conclusion
-      checkRuns(last: 10){
+      checkRuns(last: 20){
         nodes{
           id
           status
@@ -983,7 +986,9 @@ fragment pr on PullRequest {
         createdAt
       }
       ... on PullRequestCommit {
-        ...prCommit
+        commit {
+          ...commit
+        }
       }
     }
   }

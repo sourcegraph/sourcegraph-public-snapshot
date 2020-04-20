@@ -11,7 +11,6 @@ import (
 	"net/url"
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
-	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -19,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 var repoupdaterURL = env.Get("REPO_UPDATER_URL", "http://repo-updater:3182", "repo-updater server URL")
@@ -42,8 +42,8 @@ var (
 var DefaultClient = &Client{
 	URL: repoupdaterURL,
 	HTTPClient: &http.Client{
-		// nethttp.Transport will propagate opentracing spans
-		Transport: &nethttp.Transport{
+		// ot.Transport will propagate opentracing spans and whether or not to trace
+		Transport: &ot.Transport{
 			RoundTripper: requestMeter.Transport(&http.Transport{
 				// Default is 2, but we can send many concurrent requests
 				MaxIdleConnsPerHost: 500,
@@ -89,7 +89,7 @@ func (c *Client) RepoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		return MockRepoLookup(args)
 	}
 
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Client.RepoLookup")
+	span, ctx := ot.StartSpanFromContext(ctx, "Client.RepoLookup")
 	defer func() {
 		if result != nil {
 			span.SetTag("found", result.Repo != nil)
@@ -350,7 +350,7 @@ func (c *Client) httpGet(ctx context.Context, method string) (*http.Response, er
 }
 
 func (c *Client) do(ctx context.Context, req *http.Request) (_ *http.Response, err error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Client.do")
+	span, ctx := ot.StartSpanFromContext(ctx, "Client.do")
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)

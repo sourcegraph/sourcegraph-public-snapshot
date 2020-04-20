@@ -44,7 +44,7 @@ export const siteAdminProductSubscriptionFragment = gql`
     }
 `
 
-export const SiteAdminProductSubscriptionNodeHeader: React.FunctionComponent<{ nodes: any }> = () => (
+export const SiteAdminProductSubscriptionNodeHeader: React.FunctionComponent = () => (
     <thead>
         <tr>
             <th>ID</th>
@@ -58,54 +58,49 @@ export const SiteAdminProductSubscriptionNodeHeader: React.FunctionComponent<{ n
 
 export interface SiteAdminProductSubscriptionNodeProps {
     node: GQL.IProductSubscription
-    onDidUpdate: () => void
 }
 
 /**
  * Displays a product subscription in a connection in the site admin area.
  */
-export class SiteAdminProductSubscriptionNode extends React.PureComponent<SiteAdminProductSubscriptionNodeProps> {
-    public render(): JSX.Element | null {
-        return (
-            <tr>
-                <td className="text-nowrap">
-                    <LinkOrSpan to={this.props.node.urlForSiteAdmin} className="mr-3">
-                        {this.props.node.name}
-                    </LinkOrSpan>
-                </td>
-                <td className="w-100">
-                    <AccountName account={this.props.node.account} />
-                    {this.props.node.account && (
-                        <div>
-                            <small>
-                                {this.props.node.account.emails
-                                    .filter(email => email.isPrimary)
-                                    .map(({ email }) => email)
-                                    .join(', ')}
-                            </small>
-                        </div>
-                    )}
-                </td>
-                <td className="text-nowrap">
-                    <ProductSubscriptionLabel productSubscription={this.props.node} className="mr-3" />
-                </td>
-                <td className="text-nowrap">
-                    {this.props.node.activeLicense?.info ? (
-                        <Timestamp date={this.props.node.activeLicense.info.expiresAt} />
-                    ) : (
-                        <span className="text-muted font-italic">None</span>
-                    )}
-                </td>
-                <td className="w-100">
-                    {this.props.node.activeLicense &&
-                    this.props.node.activeLicense.info &&
-                    this.props.node.activeLicense.info.tags.length > 0 ? (
-                        <ProductLicenseTags tags={this.props.node.activeLicense.info.tags} />
-                    ) : (
-                        <span className="text-muted font-italic">None</span>
-                    )}
-                </td>
-            </tr>
-        )
-    }
-}
+export const SiteAdminProductSubscriptionNode: React.FunctionComponent<SiteAdminProductSubscriptionNodeProps> = ({
+    node,
+}) => (
+    <tr>
+        <td className="text-nowrap">
+            <LinkOrSpan to={node.urlForSiteAdmin} className="mr-3">
+                {node.name}
+            </LinkOrSpan>
+        </td>
+        <td className="w-100">
+            <AccountName account={node.account} />
+            {node.account && (
+                <div>
+                    <small>
+                        {node.account.emails
+                            .filter(email => email.isPrimary)
+                            .map(({ email }) => email)
+                            .join(', ')}
+                    </small>
+                </div>
+            )}
+        </td>
+        <td className="text-nowrap">
+            <ProductSubscriptionLabel productSubscription={node} className="mr-3" />
+        </td>
+        <td className="text-nowrap">
+            {node.activeLicense?.info ? (
+                <Timestamp date={node.activeLicense.info.expiresAt} />
+            ) : (
+                <span className="text-muted font-italic">None</span>
+            )}
+        </td>
+        <td className="w-100">
+            {node.activeLicense && node.activeLicense.info && node.activeLicense.info.tags.length > 0 ? (
+                <ProductLicenseTags tags={node.activeLicense.info.tags} />
+            ) : (
+                <span className="text-muted font-italic">None</span>
+            )}
+        </td>
+    </tr>
+)

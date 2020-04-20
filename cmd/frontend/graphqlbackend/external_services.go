@@ -149,6 +149,8 @@ func (*schemaResolver) DeleteExternalService(ctx context.Context, args *struct {
 	if err := db.ExternalServices.Delete(ctx, id); err != nil {
 		return nil, err
 	}
+	now := time.Now()
+	externalService.DeletedAt = &now
 
 	// The user doesn't care if triggering syncing failed when deleting a
 	// service, so kick off in the background.

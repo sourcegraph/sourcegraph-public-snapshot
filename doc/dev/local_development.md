@@ -9,11 +9,14 @@ Have a look around, our code is on [GitHub](https://sourcegraph.com/github.com/s
 - [Step 2: Initialize your database](#step-2-initialize-your-database)
 - [Step 3: (macOS) Start Docker](#step-3-macos-start-docker)
 - [Step 4: Get the code](#step-4-get-the-code)
-- [Step 5: Start the Server](#step-5-start-the-server)
+- [Step 5: Configure HTTPS reverse proxy](#step-5-configure-https-reverse-proxy)
+- [Step 6: Start the server](#step-6-start-the-server)
 - [Troubleshooting](#troubleshooting)
 - [How to Run Tests](#how-to-run-tests)
 - [CPU/RAM/bandwidth/battery usage](#cpurambandwidthbattery-usage)
 - [How to debug live code](#how-to-debug-live-code)
+- [Go dependency management](#go-dependency-management)
+- [Codegen](#codegen)
 - [Windows support](#windows-support)
 - [Other nice things](#other-nice-things)
 
@@ -55,16 +58,42 @@ The following are two recommendations for installing these dependencies:
 3.  Install Go, Node Version Manager, PostgreSQL, Redis, Git, NGINX, golang-migrate, Comby, and SQLite tools with the following command:
 
     ```bash
-    brew install go nvm yarn redis postgresql git gnu-sed nginx golang-migrate comby sqlite pcre FiloSottile/musl-cross/musl-cross
+    brew install go yarn redis postgresql git gnu-sed nginx golang-migrate comby sqlite pcre FiloSottile/musl-cross/musl-cross
     ```
 
-4. Install the current recommended version of Node JS using:
+4.  Install the Node Version Manager (`nvm`) using:
+
+    ```bash
+    NVM_VERSION="$(curl https://api.github.com/repos/nvm-sh/nvm/releases/latest | jq -r .name)"
+    curl -L https://raw.githubusercontent.com/nvm-sh/nvm/"$NVM_VERSION"/install.sh -o install-nvm.sh
+    sh install-nvm.sh
+    ```
+
+    After the install script is finished, re-source your shell profile (e.g.,
+    `source ~/.zshrc`) or restart your terminal session to pick up the `nvm`
+    definitions. Re-running the install script will update the installation.
+
+    Note: `nvm` is implemented as a shell function, so it may not show up in
+    the output of `which nvm`. Use `type nvm` to verify whether it is set up.
+    There is also a Homebrew package for `nvm`, but it is unsupported by the
+    `nvm` maintainers.
+
+5.  Install the current recommended version of Node JS by running the following
+    from the working directory of a sourcegraph repository clone:
 
     ```bash
     nvm install
+    nvm use --delete-prefix
     ```
 
-5.  Configure PostgreSQL and Redis to start automatically
+    After doing this, `node -v` should show the same version mentioned in
+    `.nvmrc` at the root of the sourcegraph repository.
+
+    Note: Although there is a Homebrew package for Node, we advise using `nvm`
+    instead, to ensure you get a Node version compatible with the current state
+    of the sourcegraph repository.
+
+6.  Configure PostgreSQL and Redis to start automatically
 
     ```bash
     brew services start postgresql
@@ -73,7 +102,7 @@ The following are two recommendations for installing these dependencies:
 
     (You can stop them later by calling `stop` instead of `start` above.)
 
-6.  Ensure `psql`, the PostgreSQL command line client, is on your `$PATH`.
+7.  Ensure `psql`, the PostgreSQL command line client, is on your `$PATH`.
     Homebrew does not put it there by default. Homebrew gives you the command to run to insert `psql` in your path in the "Caveats" section of `brew info postgresql`. Alternatively, you can use the command below. It might need to be adjusted depending on your Homebrew prefix (`/usr/local` below) and shell (bash below).
 
     ```bash
@@ -81,7 +110,7 @@ The following are two recommendations for installing these dependencies:
     source ~/.bash_profile
     ```
 
-7.  Open a new Terminal window to ensure `psql` is now on your `$PATH`.
+8.  Open a new Terminal window to ensure `psql` is now on your `$PATH`.
 
 ### Ubuntu
 
@@ -146,6 +175,54 @@ The following are two recommendations for installing these dependencies:
 
     [dockerGroup]: https://stackoverflow.com/a/48957722
     [socketPermissions]: https://stackoverflow.com/a/51362528
+
+### (optional) asdf
+
+[asdf](https://github.com/asdf-vm/asdf) is a CLI tool that manages runtime versions for a number of different languages and tools. It can be likened to a language-agnostic version of [nvm](https://github.com/nvm-sh/nvm) or [pyenv](https://github.com/pyenv/pyenv).
+
+We use asdf in buildkite to lock the versions of the tools that we use on a per-commit basis.
+
+#### Install
+
+##### asdf binary
+
+See the [installation instructions on the official asdf documentation](https://asdf-vm.com/#/core-manage-asdf-vm?id=install-asdf-vm).
+
+##### Plugins
+
+sourcegraph/sourcegraph uses the following plugins:
+
+- [Go](https://github.com/kennyp/asdf-golang)
+
+```bash
+asdf plugin add golang
+```
+
+- [NodeJS](https://github.com/asdf-vm/asdf-nodejs)
+
+```bash
+asdf plugin add nodejs
+
+# Import the Node.js release team's OpenPGP keys to main keyring
+bash ~/.asdf/plugins/nodejs/bin/import-release-team-keyring
+
+# Have asdf read .nvmrc for auto-switching between node version
+## Add the following to $HOME/.asdfrc:
+legacy_version_file = yes
+```
+
+- [Yarn](https://github.com/twuni/asdf-yarn)
+
+```bash
+asdf plugin add yarn
+```
+
+#### Usage instructions
+
+[asdf](https://github.com/asdf-vm/asdf) uses versions specified in [.tool-versions](https://github.com/sourcegraph/sourcegraph/blob/master/.tool-versions) whenever a command is run from one of `sourcegraph/sourcegraph`'s subdirectories.
+
+You can install the all the versions specified in [.tool-versions](https://github.com/sourcegraph/sourcegraph/blob/master/.tool-versions) by running `asdf install`.
+
 
 ## Step 2: Initialize your database
 
@@ -226,7 +303,47 @@ eval $(docker-machine env)
 git clone https://github.com/sourcegraph/sourcegraph.git
 ```
 
-## Step 5: Start the Server
+## Step 5: Configure HTTPS reverse proxy
+
+Sourcegraph's development environment ships with a [Caddy 2](https://caddyserver.com/) HTTPS reverse proxy that allows you to access your local sourcegraph instance via `https://sourcegraph.test:3443` (a fake domain with a self-signed certificate that's added to `/etc/hosts`).
+
+If you'd like Sourcegraph to be accessible under `https://sourcegraph.test` (port 443) instead, you can [set up authbind](https://medium.com/@steve.mu.dev/setup-authbind-on-mac-os-6aee72cb828) and set the environment variable `SOURCEGRAPH_HTTPS_PORT=443`.
+
+### Prerequisites
+
+In order to configure the HTTPS reverse-proxy, you'll need to edit `/etc/hosts` and initialize Caddy 2.
+
+#### Add `sourcegraph.test` to `/etc/hosts`
+
+`sourcegraph.test` needs to be added to `/etc/hosts` as an alias to `127.0.0.1`. There are two main ways of accomplishing this:
+
+1. Manually append `127.0.0.1 sourcegraph.test` to `/etc/hosts`
+1. Use the provided `./dev/add_https_domain_to_hosts.sh` convenience script (sudo may be required).
+
+```bash
+> ./dev/add_https_domain_to_hosts.sh
+
+--- adding sourcegraph.test to '/etc/hosts' (you may need to enter your password)
+Password:
+Adding host(s) "sourcegraph.test" to IP address 127.0.0.1
+--- printing '/etc/hosts'
+...
+127.0.0.1        localhost sourcegraph.test
+...
+```
+
+#### Initialize Caddy 2
+
+[Caddy 2](https://caddyserver.com/) automatically manages self-signed certificates and configures your system so that your web browser can properly recognize them. The first time that Caddy runs, it needs `root/sudo` permissions to add
+its keys to your system's certificate store. You can get this out the way after installing Caddy 2 by running the following command and entering your password if prompted:
+
+```bash
+./dev/caddy.sh trust
+```
+
+You might need to restart your web browsers in order for them to recognize the certificates.
+
+## Step 6: Start the server
 
 ```bash
 cd sourcegraph
@@ -235,7 +352,7 @@ cd sourcegraph
 
 This will continuously compile your code and live reload your locally running instance of Sourcegraph.
 
-Navigate your browser to http://localhost:3080 to see if everything worked.
+Navigate your browser to https://sourcegraph.test:3443 to see if everything worked.
 
 ## Troubleshooting
 
@@ -318,6 +435,14 @@ If you ever need to wipe your local database and Redis, run the following comman
 ./dev/drop-entire-local-database-and-redis.sh
 ```
 
+### Caddy 2 certificate problems
+
+We use Caddy 2 to setup HTTPS for local development. It creates self-signed certificates and uses that to serve the local Sourcegraph instance. If your browser complains about the certificate, check the following:
+
+1. The first time that Caddy 2 reverse-proxies your Sourcegraph instance, it needs to add its certificate authority to your local certificate store. This may require elevated permissions on your machine. If you haven't done so already, try running `caddy reverse-proxy --to localhost:3080` and enter your password if prompted. You may also need to run that command as the `root` user.
+
+1. If you have completed the previous step and your browser still complains about the certificate, try restarting your browser or your local machine.
+
 ## How to Run Tests
 
 See [testing.md](testing.md) for details.
@@ -366,7 +491,9 @@ Install [Delve](https://github.com/derekparker/delve):
 
 ```bash
 xcode-select --install
-go get -u github.com/go-delve/delve/cmd/dlv
+pushd /tmp
+go get github.com/go-delve/delve/cmd/dlv
+popd /tmp
 ```
 
 Then install `pgrep`:

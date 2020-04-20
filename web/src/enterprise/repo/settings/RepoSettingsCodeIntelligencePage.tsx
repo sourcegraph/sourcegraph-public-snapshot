@@ -40,9 +40,7 @@ const LsifUploadNode: FunctionComponent<{ node: GQL.ILSIFUpload; onDelete: () =>
     }
 
     return deletionOrError && isErrorLike(deletionOrError) ? (
-        <div className="alert alert-danger">
-            <ErrorAlert prefix="Error deleting LSIF upload" error={deletionOrError} />
-        </div>
+        <ErrorAlert prefix="Error deleting LSIF upload" error={deletionOrError} />
     ) : (
         <div className="w-100 list-group-item py-2 align-items-center lsif-data__main">
             <div className="lsif-data__meta">
@@ -80,7 +78,7 @@ const LsifUploadNode: FunctionComponent<{ node: GQL.ILSIFUpload; onDelete: () =>
                                 ) : node.state === GQL.LSIFUploadState.ERRORED ? (
                                     <span className="text-danger">Failed to process</span>
                                 ) : (
-                                    <span>Waiting to process</span>
+                                    <span>Waiting to process (#{node.placeInQueue} in line)</span>
                                 )}
                             </Link>
                         </span>

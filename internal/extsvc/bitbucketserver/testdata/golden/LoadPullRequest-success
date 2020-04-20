@@ -1,16 +1,17 @@
 {
   "id": 2,
-  "version": 0,
+  "version": 5,
   "title": "Release testing pr",
   "description": "* Remove dump.go\r\n* make make make",
-  "state": "OPEN",
-  "open": true,
-  "closed": false,
+  "state": "MERGED",
+  "open": false,
+  "closed": true,
   "createdDate": 1563286307998,
-  "updatedDate": 1563286307998,
+  "updatedDate": 1572432617016,
   "fromRef": {
    "id": "refs/heads/release-testing-pr",
    "repository": {
+    "id": 2,
     "slug": "vegeta",
     "project": {
      "key": "SOUR"
@@ -20,6 +21,7 @@
   "toRef": {
    "id": "refs/heads/master",
    "repository": {
+    "id": 2,
     "slug": "vegeta",
     "project": {
      "key": "SOUR"
@@ -41,7 +43,23 @@
    "approved": false,
    "status": "UNAPPROVED"
   },
-  "reviewers": [],
+  "reviewers": [
+   {
+    "user": {
+     "name": "tomas",
+     "emailAddress": "tomas@sourcegraph.com",
+     "id": 3,
+     "displayName": "Tomás Senart",
+     "active": true,
+     "slug": "tomas",
+     "type": "NORMAL"
+    },
+    "lastReviewedCommit": "1f63e719a65cad47a0a272d3d6eef05f4da427bb",
+    "role": "REVIEWER",
+    "approved": false,
+    "status": "UNAPPROVED"
+   }
+  ],
   "participants": [],
   "links": {
    "self": [

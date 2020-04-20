@@ -283,5 +283,5 @@ export const renderMarkdown = memoizeObservable(
                 return data.renderMarkdown
             })
         ),
-    ctx => `${ctx.markdown}:${ctx.options}`
+    ctx => `${ctx.markdown}:${String(ctx.options)}`
 )

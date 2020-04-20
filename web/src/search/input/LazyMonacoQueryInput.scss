@@ -1,0 +1,8 @@
+@import './MonacoQueryInput';
+
+// Match Monaco styling for the intermediate input displayed while
+// lazy-loading the MonacoQueryInput, to avoid unstable UI.
+.lazy-monaco-query-input--intermediate-input {
+    height: 100%;
+    font-size: $code-font-size;
+}

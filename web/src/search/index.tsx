@@ -1,6 +1,9 @@
 import { escapeRegExp } from 'lodash'
 import { SearchPatternType } from '../../../shared/src/graphql/schema'
 import { FiltersToTypeAndValue } from '../../../shared/src/search/interactive/util'
+import { parseCaseSensitivityFromQuery, parsePatternTypeFromQuery } from '../../../shared/src/util/url'
+import { replaceRange } from '../../../shared/src/util/strings'
+import { discreteValueAliases } from '../../../shared/src/search/parser/filters'
 
 /**
  * Parses the query out of the URL search params (the 'q' parameter). In non-interactive mode, if the 'q' parameter is not present, it
@@ -36,13 +39,60 @@ export function parseSearchURLPatternType(query: string): SearchPatternType | un
 }
 
 export function searchURLIsCaseSensitive(query: string): boolean {
+    const queryCaseSensitivity = parseCaseSensitivityFromQuery(query)
+    if (queryCaseSensitivity) {
+        // if `case:` filter exists in the query, override the existing case: query param
+        return discreteValueAliases.yes.includes(queryCaseSensitivity.value)
+    }
     const searchParams = new URLSearchParams(query)
     const caseSensitive = searchParams.get('case')
-    return caseSensitive === 'yes'
+    return discreteValueAliases.yes.includes(caseSensitive || '')
+}
+
+/**
+ * parseSearchURL takes a URL's search querystring and returns
+ * an object containing:
+ * - the canonical, user-visible query (with `patternType` and `case` filters excluded),
+ * - the effective pattern type, and
+ * - the effective case sensitivity of the query.
+ *
+ * @param urlSearchQuery a URL's query string.
+ */
+export function parseSearchURL(
+    urlSearchQuery: string
+): { query: string | undefined; patternType: SearchPatternType | undefined; caseSensitive: boolean } {
+    let finalQuery = parseSearchURLQuery(urlSearchQuery) || ''
+    let patternType = parseSearchURLPatternType(urlSearchQuery)
+    let caseSensitive = searchURLIsCaseSensitive(urlSearchQuery)
+
+    const patternTypeInQuery = parsePatternTypeFromQuery(finalQuery)
+    if (patternTypeInQuery) {
+        // Any `patterntype:` filter in the query should override the patternType= URL query parameter if it exists.
+        finalQuery = replaceRange(finalQuery, patternTypeInQuery.range)
+        patternType = patternTypeInQuery.value as SearchPatternType
+    }
+
+    const caseInQuery = parseCaseSensitivityFromQuery(finalQuery)
+    if (caseInQuery) {
+        // Any `case:` filter in the query should override the case= URL query parameter if it exists.
+        finalQuery = replaceRange(finalQuery, caseInQuery.range)
+
+        if (discreteValueAliases.yes.includes(caseInQuery.value)) {
+            caseSensitive = true
+        } else if (discreteValueAliases.no.includes(caseInQuery.value)) {
+            caseSensitive = false
+        }
+    }
+
+    return { query: finalQuery, patternType, caseSensitive }
+}
+
+export function repoFilterForRepoRev(repoName: string, rev?: string): string {
+    return `${quoteIfNeeded(`^${escapeRegExp(repoName)}$${rev ? `@${abbreviateOID(rev)}` : ''}`)}`
 }
 
 export function searchQueryForRepoRev(repoName: string, rev?: string): string {
-    return `repo:${quoteIfNeeded(`^${escapeRegExp(repoName)}$${rev ? `@${abbreviateOID(rev)}` : ''}`)} `
+    return `repo:${repoFilterForRepoRev(repoName, rev)} `
 }
 
 function abbreviateOID(oid: string): string {

@@ -141,7 +141,7 @@ export interface ParsedRepoRev {
  * Parses a repo-rev string like "my/repo@my/rev" to the repo and rev components.
  */
 export function parseRepoRev(repoRev: string): ParsedRepoRev {
-    const [repo, rev] = repoRev.split('@', 2)
+    const [repo, rev] = repoRev.split('@', 2) as [string, string | undefined]
     return {
         repoName: decodeURIComponent(repo),
         rev: rev && decodeURIComponent(rev),

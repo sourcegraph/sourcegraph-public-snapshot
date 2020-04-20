@@ -1,5 +1,5 @@
 import * as H from 'history'
-import { isEqual, pick, upperFirst } from 'lodash'
+import { isEqual, pick } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import * as React from 'react'
 import { combineLatest, Observable, Subject, Subscription } from 'rxjs'
@@ -9,7 +9,7 @@ import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
-import { createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
+import { createAggregateError, ErrorLike, isErrorLike, asError } from '../../../../shared/src/util/errors'
 import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable'
 import {
     AbsoluteRepoFile,
@@ -35,9 +35,10 @@ import { BlobPanel } from './panel/BlobPanel'
 import { GoToRawAction } from './GoToRawAction'
 import { RenderedFile } from './RenderedFile'
 import { ThemeProps } from '../../../../shared/src/theme'
+import { ErrorMessage } from '../../components/alerts'
 
 function fetchBlobCacheKey(parsed: ParsedRepoURI & { isLightTheme: boolean; disableTimeout: boolean }): string {
-    return makeRepoURI(parsed) + parsed.isLightTheme + parsed.disableTimeout
+    return makeRepoURI(parsed) + String(parsed.isLightTheme) + String(parsed.disableTimeout)
 }
 
 const fetchBlob = memoizeObservable(
@@ -154,9 +155,9 @@ export class BlobPage extends React.PureComponent<Props, State> {
                             isLightTheme,
                             disableTimeout: extendHighlightingTimeout,
                         }).pipe(
-                            catchError(error => {
+                            catchError((error): [ErrorLike] => {
                                 console.error(error)
-                                return [error]
+                                return [asError(error)]
                             })
                         )
                     )
@@ -268,7 +269,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
                     <HeroPage
                         icon={AlertCircleIcon}
                         title="Error"
-                        subtitle={upperFirst(this.state.blobOrError.message)}
+                        subtitle={<ErrorMessage error={this.state.blobOrError} />}
                     />
                 </>
             )
@@ -344,7 +345,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
         const repoNameSplit = this.props.repoName.split('/')
         const repoStr = repoNameSplit.length > 2 ? repoNameSplit.slice(1).join('/') : this.props.repoName
         if (this.props.filePath) {
-            const fileOrDir = this.props.filePath.split('/').pop()
+            const fileOrDir = this.props.filePath.split('/').pop()!
             return `${fileOrDir} - ${repoStr}`
         }
         return `${repoStr}`

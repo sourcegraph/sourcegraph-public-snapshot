@@ -27,18 +27,35 @@ type authzStore struct {
 // GrantPendingPermissions grants pending permissions for a user, which implements the db.AuthzStore interface.
 // It uses provided arguments to retrieve information directly from the database to offload security concerns
 // from the caller.
+//
+// It's possible that there are more than one verified emails and external accounts associated to the user
+// and all of them have pending permissions, we can safely grant all of them whenever possible because permissions
+// are unioned.
 func (s *authzStore) GrantPendingPermissions(ctx context.Context, args *db.GrantPendingPermissionsArgs) error {
 	if args.UserID <= 0 {
 		return nil
 	}
 
-	// Note: It's possible that there are more than one verified emails associated to the user and all of them
-	// have pending permissions due to any previous grant failures, we can safely grant all of them whenever
-	// possible because permissions are unioned.
-	var bindIDs []string
+	// Gather external accounts associated to the user.
+	extAccounts, err := s.store.ListExternalAccounts(ctx, args.UserID)
+	if err != nil {
+		return errors.Wrap(err, "list external accounts")
+	}
 
-	// Note: we purposely don't check cfg.PermissionsUserMapping.Enabled here because admin could disable the
-	// feature by mistake while a user has valid pending permissions.
+	// A list of permissions to be granted, by username, email and/or external accounts.
+	// Plus one because we'll have at least one more username or verified email address.
+	perms := make([]*authz.UserPendingPermissions, 0, len(extAccounts)+1)
+	for _, acct := range extAccounts {
+		perms = append(perms, &authz.UserPendingPermissions{
+			ServiceType: acct.ServiceType,
+			ServiceID:   acct.ServiceID,
+			BindID:      acct.AccountID,
+			Perm:        args.Perm,
+			Type:        args.Type,
+		})
+	}
+
+	// Gather username or verified email based on site configuration.
 	cfg := globals.PermissionsUserMapping()
 	switch cfg.BindID {
 	case "email":
@@ -50,9 +67,14 @@ func (s *authzStore) GrantPendingPermissions(ctx context.Context, args *db.Grant
 		if err != nil {
 			return errors.Wrap(err, "list verified emails")
 		}
-		bindIDs = make([]string, len(emails))
 		for i := range emails {
-			bindIDs[i] = emails[i].Email
+			perms = append(perms, &authz.UserPendingPermissions{
+				ServiceType: authz.SourcegraphServiceType,
+				ServiceID:   authz.SourcegraphServiceID,
+				BindID:      emails[i].Email,
+				Perm:        args.Perm,
+				Type:        args.Type,
+			})
 		}
 
 	case "username":
@@ -60,7 +82,13 @@ func (s *authzStore) GrantPendingPermissions(ctx context.Context, args *db.Grant
 		if err != nil {
 			return errors.Wrap(err, "get user")
 		}
-		bindIDs = append(bindIDs, user.Username)
+		perms = append(perms, &authz.UserPendingPermissions{
+			ServiceType: authz.SourcegraphServiceType,
+			ServiceID:   authz.SourcegraphServiceID,
+			BindID:      user.Username,
+			Perm:        args.Perm,
+			Type:        args.Type,
+		})
 
 	default:
 		return fmt.Errorf("unrecognized user mapping bind ID type %q", cfg.BindID)
@@ -72,12 +100,8 @@ func (s *authzStore) GrantPendingPermissions(ctx context.Context, args *db.Grant
 	}
 	defer txs.Done(&err)
 
-	for _, bindID := range bindIDs {
-		err = txs.GrantPendingPermissions(ctx, args.UserID, &authz.UserPendingPermissions{
-			BindID: bindID,
-			Perm:   args.Perm,
-			Type:   args.Type,
-		})
+	for _, p := range perms {
+		err = txs.GrantPendingPermissions(ctx, args.UserID, p)
 		if err != nil {
 			return errors.Wrap(err, "grant pending permissions")
 		}
@@ -94,13 +118,12 @@ func (s *authzStore) AuthorizedRepos(ctx context.Context, args *db.AuthorizedRep
 	}
 
 	p := &authz.UserPermissions{
-		UserID:   args.UserID,
-		Perm:     args.Perm,
-		Type:     args.Type,
-		Provider: args.Provider,
+		UserID: args.UserID,
+		Perm:   args.Perm,
+		Type:   args.Type,
 	}
 	if err := s.store.LoadUserPermissions(ctx, p); err != nil {
-		if err == ErrPermsNotFound {
+		if err == authz.ErrPermsNotFound {
 			return []*types.Repo{}, nil
 		}
 		return nil, err
@@ -125,12 +148,13 @@ func (s *authzStore) RevokeUserPermissions(ctx context.Context, args *db.RevokeU
 	defer txs.Done(&err)
 
 	if err = txs.DeleteAllUserPermissions(ctx, args.UserID); err != nil {
-		return err
+		return errors.Wrap(err, "delete all user permissions")
 	}
 
-	bindIDs := append([]string{args.Username}, args.VerifiedEmails...)
-	if err := txs.DeleteAllUserPendingPermissions(ctx, bindIDs); err != nil {
-		return err
+	for _, accounts := range args.Accounts {
+		if err := txs.DeleteAllUserPendingPermissions(ctx, accounts); err != nil {
+			return errors.Wrap(err, "delete all user pending permissions")
+		}
 	}
 	return nil
 }

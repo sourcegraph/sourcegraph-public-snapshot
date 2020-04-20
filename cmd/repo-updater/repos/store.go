@@ -46,6 +46,8 @@ type StoreListReposArgs struct {
 	Limit int64
 	// PerPage determines the number of repos returned on each page. Zero means it defaults to 10000.
 	PerPage int64
+	// Only include private repositories.
+	PrivateOnly bool
 
 	// UseOr decides between ANDing or ORing the predicates together.
 	UseOr bool
@@ -124,7 +126,7 @@ func (s *DBStore) Transact(ctx context.Context) (TxStore, error) {
 // which can only be done via `BeginTxStore`.
 //
 // When the error value pointed to by the first given `err` is nil, or when no error
-// pointer is given, the transaction is commited. Otherwise, it's rolled-back.
+// pointer is given, the transaction is committed. Otherwise, it's rolled-back.
 func (s *DBStore) Done(errs ...*error) {
 	switch tx, ok := s.db.(dbutil.Tx); {
 	case !ok:
@@ -372,6 +374,10 @@ func listReposQuery(args StoreListReposArgs) paginatedQuery {
 			er = append(er, sqlf.Sprintf("(external_id = %s AND external_service_type = %s AND external_service_id = %s)", spec.ID, spec.ServiceType, spec.ServiceID))
 		}
 		preds = append(preds, sqlf.Sprintf("(%s)", sqlf.Join(er, "\n OR ")))
+	}
+
+	if args.PrivateOnly {
+		preds = append(preds, sqlf.Sprintf("private = TRUE"))
 	}
 
 	if len(preds) == 0 {

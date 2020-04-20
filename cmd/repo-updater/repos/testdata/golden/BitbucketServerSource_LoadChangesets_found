@@ -12,6 +12,7 @@
    "fromRef": {
     "id": "refs/heads/release-testing-pr",
     "repository": {
+     "id": 2,
      "slug": "vegeta",
      "project": {
       "key": "SOUR"
@@ -21,6 +22,7 @@
    "toRef": {
     "id": "refs/heads/master",
     "repository": {
+     "id": 2,
      "slug": "vegeta",
      "project": {
       "key": "SOUR"
@@ -378,13 +380,17 @@
      ]
     }
    ],
-   "buildstatuses": [
+   "commit_status": [
     {
-     "state": "INPROGRESS",
-     "key": "thekey",
-     "name": "thename",
-     "url": "http://example.com",
-     "description": "the description"
+     "commit": "1f63e719a65cad47a0a272d3d6eef05f4da427bb",
+     "status": {
+      "state": "INPROGRESS",
+      "key": "thekey",
+      "name": "thename",
+      "url": "http://example.com",
+      "description": "the description",
+      "dateAdded": 1581595091775
+     }
     }
    ]
   },
@@ -401,6 +407,7 @@
    "fromRef": {
     "id": "refs/heads/encode-comment",
     "repository": {
+     "id": 2,
      "slug": "vegeta",
      "project": {
       "key": "SOUR"
@@ -410,6 +417,7 @@
    "toRef": {
     "id": "refs/heads/master",
     "repository": {
+     "id": 2,
      "slug": "vegeta",
      "project": {
       "key": "SOUR"

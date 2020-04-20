@@ -63,7 +63,7 @@ interface Props extends SettingsCascadeProps, PlatformContextProps<'settings' | 
     history: H.History
 }
 
-const LOADING: 'loading' = 'loading'
+const LOADING = 'loading' as const
 
 interface ExtensionsResult {
     /** The configured extensions. */

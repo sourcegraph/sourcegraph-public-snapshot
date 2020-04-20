@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { ErrorAlert } from '../../../components/alerts'
+import { asError } from '../../../../../shared/src/util/errors'
 
 export const BaseActionContainer: React.FunctionComponent<{
     title: React.ReactFragment
@@ -117,7 +118,7 @@ export class ActionContainer extends React.PureComponent<Props, State> {
                 }
                 this.timeoutHandle = window.setTimeout(() => this.setState({ flash: false }), 1000)
             },
-            err => this.setState({ loading: false, error: err.message })
+            err => this.setState({ loading: false, error: asError(err).message })
         )
     }
 }

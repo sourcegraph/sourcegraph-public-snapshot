@@ -67,8 +67,8 @@ code {
     h2[id]:before, h3[id]:before {
         display: block;
         content: " ";
-        margin-top: -84px;
-        height: 75px;
+        margin-top: -123px;
+        height: 114px;
         visibility: hidden;
     }
 }
@@ -558,7 +558,7 @@ code {
     padding-bottom: 2rem;
     padding-top: 0;
     max-height: calc(100vh - 70px);
-    top: 70px;
+    top: 110px;
     padding-top: 4px;
     overflow-scrolling: touch;
 }
@@ -576,7 +576,7 @@ code {
     list-style: none;
 }
 
-.content-nav-section li.selected .badge {
+.content-nav-section li.selected > a >.badge {
     background: var(--body-bg);
     color: var(--primary);
 }
@@ -786,6 +786,7 @@ li.content-nav-no-hover:hover {
 /* Docs Content layout */
 
 .docs-content {
+    margin-top: 114px;
     position: relative;
     width: 100%;
     min-height: 100vh;
@@ -798,9 +799,7 @@ li.content-nav-no-hover:hover {
 /* Docs breadcrumbs */
 
 .breadcrumbs {
-    margin-top: 84px;
-    font-size: 12px;
-    margin-bottom: 0.75rem;
+  border-top: 1px solid #eaeaea;
 }
 
 .breadcrumbs>.active {
@@ -816,6 +815,11 @@ li.content-nav-no-hover:hover {
     .content-nav-wrapper {
         border: none;
     }
+
+    .docs-content {
+      margin-top: 0px;
+    }
+
     /* Give space at bottom of div for breadcrumbs */
     .docs-content-section .markdown-body {
         padding: 1rem 0;

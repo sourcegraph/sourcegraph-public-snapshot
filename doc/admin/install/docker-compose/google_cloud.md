@@ -15,7 +15,7 @@ See ["Store customizations in a fork"](./index.md#optional-recommended-store-cus
 ## Deploy to Google Cloud VM
 
 * [Open your Google Cloud console](https://console.cloud.google.com/compute/instances) to create a new VM instance and click **Create Instance**
-* Choose an appropriate machine type (we recommend at least the `n2-standard-8` with `8` vCPUs and `32` GB RAM, more depending on team size and number of repositories/languages enabled)
+* Choose an appropriate machine type (use the [resource estimator](../resource_estimator.md) to find a good starting point for your deployment).
 * Under the "Boot Disk" options, select the following:
   
   * **Operating System**: Ubuntu
@@ -42,7 +42,7 @@ DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT='/root/deploy-sourcegraph-docker'
 
 # 🚨 Update these variables with the correct values from your fork!
 DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL='https://github.com/sourcegraph/deploy-sourcegraph-docker.git'
-DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v3.12.5'
+DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v3.14.2'
 
 # Install git
 sudo apt-get update -y

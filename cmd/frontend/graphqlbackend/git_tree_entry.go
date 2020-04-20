@@ -8,16 +8,17 @@ import (
 	"path"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 var metricLabels = []string{"origin"}
@@ -108,6 +109,13 @@ func (r *GitTreeEntryResolver) IsDirectory() bool { return r.stat.Mode().IsDir()
 
 func (r *GitTreeEntryResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
 	return externallink.FileOrDir(ctx, r.commit.repo.repo, r.commit.inputRevOrImmutableRev(), r.Path(), r.stat.Mode().IsDir())
+}
+
+func (r *GitTreeEntryResolver) RawZipArchiveURL() string {
+	return globals.ExternalURL().ResolveReference(&neturl.URL{
+		Path:     path.Join(r.Repository().URL(), "-/raw/", r.Path()),
+		RawQuery: "format=zip",
+	}).String()
 }
 
 func (r *GitTreeEntryResolver) Submodule() *gitSubmoduleResolver {
@@ -230,7 +238,7 @@ func (r *GitTreeEntryResolver) LSIF(ctx context.Context) (LSIFQueryResolver, err
 	codeIntelRequests.WithLabelValues(trace.RequestOrigin(ctx)).Inc()
 	return EnterpriseResolvers.codeIntelResolver.LSIF(ctx, &LSIFQueryArgs{
 		Repository: r.Repository(),
-		Commit:     r.Commit().OID(),
+		Commit:     api.CommitID(r.Commit().OID()),
 		Path:       r.Path(),
 	})
 }

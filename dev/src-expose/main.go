@@ -109,12 +109,7 @@ func main() {
 		globalBefore   = globalFlags.String("before", "", "A command to run before sync. It is run from the current working directory.")
 		globalReposDir = globalFlags.String("repos-dir", "", "src-expose's git directories. src-expose creates a git repo per directory synced. The git repo is then served to Sourcegraph. The repositories are stored and served relative to this directory. Default: ~/.sourcegraph/src-expose-repos")
 		globalConfig   = globalFlags.String("config", "", "If set will be used instead of command line arguments to specify configuration.")
-		globalAddr     = globalFlags.String("addr", "127.0.0.1:3434", "address on which to serve (end with : for unused port)")
-
-		syncFlags = flag.NewFlagSet("sync", flag.ExitOnError)
-
-		serveFlags = flag.NewFlagSet("serve", flag.ExitOnError)
-		serveAddr  = serveFlags.String("addr", "127.0.0.1:3434", "address on which to serve (end with : for unused port)")
+		globalAddr     = globalFlags.String("addr", ":3434", "address on which to serve (end with : for unused port)")
 	)
 
 	newLogger := func(prefix string) *log.Logger {
@@ -124,18 +119,37 @@ func main() {
 		return log.New(os.Stderr, prefix, log.LstdFlags)
 	}
 
-	parseSnapshotter := func(flagSet *flag.FlagSet, args []string) (*Snapshotter, error) {
+	globalSnapshotter := func() (*Snapshotter, error) {
 		var s Snapshotter
 		if *globalConfig != "" {
-			if len(args) != 0 {
-				return nil, &usageError{"does not take arguments if --config is specified"}
-			}
 			b, err := ioutil.ReadFile(*globalConfig)
 			if err != nil {
 				return nil, fmt.Errorf("could read configuration at %s: %w", *globalConfig, err)
 			}
 			if err := yaml.Unmarshal(b, &s); err != nil {
 				return nil, fmt.Errorf("could not parse configuration at %s: %w", *globalConfig, err)
+			}
+		}
+
+		if s.Destination == "" {
+			s.Destination = *globalReposDir
+		}
+		if *globalBefore != "" {
+			s.Before = *globalBefore
+		}
+
+		return &s, nil
+	}
+
+	parseSnapshotter := func(args []string) (*Snapshotter, error) {
+		s, err := globalSnapshotter()
+		if err != nil {
+			return nil, err
+		}
+
+		if *globalConfig != "" {
+			if len(args) != 0 {
+				return nil, &usageError{"does not take arguments if --config is specified"}
 			}
 		} else {
 			if len(args) == 0 {
@@ -145,18 +159,12 @@ func main() {
 				s.Dirs = append(s.Dirs, &SyncDir{Dir: dir})
 			}
 		}
-		if s.Destination == "" {
-			s.Destination = *globalReposDir
-		}
-		if *globalBefore != "" {
-			s.Before = *globalBefore
-		}
 
 		if err := s.SetDefaults(); err != nil {
 			return nil, err
 		}
 
-		return &s, nil
+		return s, nil
 	}
 
 	serve := &ffcli.Command{
@@ -166,14 +174,16 @@ func main() {
 		LongHelp: `src-expose serve will serve the git repositories over HTTP. These can be git
 cloned, and they can be discovered by Sourcegraph.
 
+See "src-expose -h" for the flags that can be passed.
+
 src-expose will default to serving ~/.sourcegraph/src-expose-repos`,
-		FlagSet: serveFlags,
 		Exec: func(args []string) error {
 			var repoDir string
 			switch len(args) {
 			case 0:
-				s := Snapshotter{
-					Destination: *globalReposDir,
+				s, err := globalSnapshotter()
+				if err != nil {
+					return err
 				}
 				if err := s.SetDefaults(); err != nil {
 					return err
@@ -187,7 +197,7 @@ src-expose will default to serving ~/.sourcegraph/src-expose-repos`,
 				return &usageError{"requires zero or one arguments"}
 			}
 
-			return serveRepos(newLogger("serve: "), *serveAddr, repoDir)
+			return serveRepos(newLogger("serve: "), *globalAddr, repoDir)
 		},
 	}
 
@@ -195,9 +205,8 @@ src-expose will default to serving ~/.sourcegraph/src-expose-repos`,
 		Name:      "sync",
 		Usage:     "src-expose [flags] sync [flags] <src1> [<src2> ...]",
 		ShortHelp: "Do a one-shot sync of directories",
-		FlagSet:   syncFlags,
 		Exec: func(args []string) error {
-			s, err := parseSnapshotter(syncFlags, args)
+			s, err := parseSnapshotter(args)
 			if err != nil {
 				return err
 			}
@@ -211,12 +220,14 @@ src-expose will default to serving ~/.sourcegraph/src-expose-repos`,
 		ShortHelp: "Periodically sync directories src1, src2, ... and serve them.",
 		LongHelp: `Periodically sync directories src1, src2, ... and serve them.
 
+See "src-expose -h" for the flags that can be passed.
+
 For more advanced uses specify --config pointing to a yaml file.
 See https://github.com/sourcegraph/sourcegraph/tree/master/dev/src-expose/examples`,
 		Subcommands: []*ffcli.Command{serve, sync},
 		FlagSet:     globalFlags,
 		Exec: func(args []string) error {
-			s, err := parseSnapshotter(globalFlags, args)
+			s, err := parseSnapshotter(args)
 			if err != nil {
 				return err
 			}

@@ -15,10 +15,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/opentracing-contrib/go-stdlib/nethttp"
-	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/pkg/ctags"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/symbols"
@@ -26,6 +24,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/sqliteutil"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 )
 
@@ -43,7 +43,7 @@ func main() {
 	log.SetFlags(0)
 	tracer.Init()
 
-	symbols.MustRegisterSqlite3WithPcre()
+	sqliteutil.MustRegisterSqlite3WithPcre()
 
 	go debugserver.Start()
 
@@ -73,7 +73,7 @@ func main() {
 	if err := service.Start(); err != nil {
 		log.Fatalln("Start:", err)
 	}
-	handler := nethttp.Middleware(opentracing.GlobalTracer(), service.Handler())
+	handler := ot.Middleware(service.Handler())
 
 	host := ""
 	if env.InsecureDev {

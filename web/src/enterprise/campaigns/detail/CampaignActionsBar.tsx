@@ -1,69 +1,81 @@
 import React from 'react'
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { CampaignsIcon } from '../icons'
-import classNames from 'classnames'
 import { Link } from '../../../../../shared/src/components/Link'
-import { CampaignTitleField } from './form/CampaignTitleField'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { CloseDeleteCampaignPrompt } from './form/CloseDeleteCampaignPrompt'
 import { CampaignUIMode } from './CampaignDetails'
 
 interface Props {
     mode: CampaignUIMode
-    previewingCampaignPlan: boolean
+    previewingPatchSet: boolean
 
-    campaign?: Pick<GQL.ICampaign, 'name' | 'closedAt' | 'viewerCanAdminister'> & {
-        changesets: Pick<GQL.ICampaign['changesets'], 'totalCount'>
+    campaign?: Pick<GQL.ICampaign, 'name' | 'closedAt' | 'viewerCanAdminister' | 'publishedAt'> & {
+        changesets: Pick<GQL.ICampaign['changesets'], 'totalCount'> & {
+            nodes: Pick<GQL.IExternalChangeset, 'state'>[]
+        }
         status: Pick<GQL.ICampaign['status'], 'state'>
     }
 
     onClose: (closeChangesets: boolean) => Promise<void>
     onDelete: (closeChangesets: boolean) => Promise<void>
     onEdit: React.MouseEventHandler
-    name: string
-    onNameChange: (newName: string) => void
+    formID: string
 }
 
 export const CampaignActionsBar: React.FunctionComponent<Props> = ({
     campaign,
-    previewingCampaignPlan,
+    previewingPatchSet,
     mode,
     onClose,
     onDelete,
     onEdit,
-    name,
-    onNameChange,
+    formID,
 }) => {
-    const showActionButtons = campaign && !previewingCampaignPlan && campaign.viewerCanAdminister
+    const showActionButtons = campaign && !previewingPatchSet && campaign.viewerCanAdminister
     const showSpinner = mode === 'saving' || mode === 'deleting' || mode === 'closing'
     const editingCampaign = mode === 'editing' || mode === 'saving'
 
+    const campaignClosed = campaign?.closedAt
     const campaignProcessing = campaign ? campaign.status.state === GQL.BackgroundProcessState.PROCESSING : false
-    const actionsDisabled = mode === 'deleting' || mode === 'closing' || campaignProcessing
+    const actionsDisabled = mode === 'deleting' || mode === 'closing' || mode === 'publishing' || campaignProcessing
+
+    const openChangesetsCount =
+        campaign?.changesets.nodes.filter(changeset => changeset.state === GQL.ChangesetState.OPEN).length ?? 0
+
+    let stateBadge: JSX.Element
+
+    if (!campaign) {
+        stateBadge = <CampaignsIcon className="icon-inline campaign-actions-bar__campaign-icon text-muted mr-2" />
+    } else if (campaignClosed) {
+        stateBadge = (
+            <span className="badge badge-danger mr-2">
+                <CampaignsIcon className="icon-inline campaign-actions-bar__campaign-icon" /> Closed
+            </span>
+        )
+    } else if (!campaign.publishedAt) {
+        stateBadge = (
+            <span className="badge badge-info mr-2">
+                <CampaignsIcon className="icon-inline campaign-actions-bar__campaign-icon" /> Draft
+            </span>
+        )
+    } else {
+        stateBadge = (
+            <span className="badge badge-success mr-2">
+                <CampaignsIcon className="icon-inline campaign-actions-bar__campaign-icon" /> Open
+            </span>
+        )
+    }
 
     return (
-        <div className="d-flex mb-2">
+        <div className="d-flex mb-2 position-relative">
             <h2 className="m-0">
-                <CampaignsIcon
-                    className={classNames(
-                        'icon-inline mr-2',
-                        !campaign ? 'text-muted' : campaign.closedAt ? 'text-danger' : 'text-success'
-                    )}
-                />
+                {stateBadge}
                 <span>
-                    <Link to="/campaigns">Campaigns</Link>
+                    <Link to="/campaigns">Campaigns</Link> <span className="badge badge-info">Beta</span>
                 </span>
                 <span className="text-muted d-inline-block mx-2">/</span>
-                {editingCampaign ? (
-                    <CampaignTitleField
-                        className="w-auto d-inline-block e2e-campaign-title"
-                        value={name}
-                        onChange={onNameChange}
-                        disabled={mode === 'saving'}
-                    />
-                ) : (
-                    <span>{campaign?.name}</span>
-                )}
+                <span>{campaign?.name ?? 'New campaign'}</span>
             </h2>
             <span className="flex-grow-1 d-flex justify-content-end align-items-center">
                 {showSpinner && <LoadingSpinner className="mr-2" />}
@@ -71,38 +83,50 @@ export const CampaignActionsBar: React.FunctionComponent<Props> = ({
                     showActionButtons &&
                     (editingCampaign ? (
                         <>
-                            <button type="submit" className="btn btn-primary mr-1" disabled={mode === 'saving'}>
+                            <button
+                                type="submit"
+                                form={formID}
+                                className="btn btn-primary mr-1"
+                                disabled={mode === 'saving'}
+                            >
                                 Save
                             </button>
-                            <button type="reset" className="btn btn-secondary" disabled={mode === 'saving'}>
+                            <button
+                                type="reset"
+                                form={formID}
+                                className="btn btn-secondary"
+                                disabled={mode === 'saving'}
+                            >
                                 Cancel
                             </button>
                         </>
                     ) : (
                         <>
-                            <button
-                                type="button"
-                                id="e2e-campaign-edit"
-                                className="btn btn-secondary mr-1"
-                                onClick={onEdit}
-                                disabled={actionsDisabled}
-                            >
-                                Edit
-                            </button>
-                            {!campaign.closedAt && (
-                                <CloseDeleteCampaignPrompt
-                                    disabled={actionsDisabled}
-                                    disabledTooltip="Cannot close while campaign is being created"
-                                    message={
-                                        <p>
-                                            Close campaign <strong>{campaign.name}</strong>?
-                                        </p>
-                                    }
-                                    changesetsCount={campaign.changesets.totalCount}
-                                    buttonText="Close"
-                                    onButtonClick={onClose}
-                                    buttonClassName="btn-secondary mr-1"
-                                />
+                            {!campaignClosed && (
+                                <>
+                                    <button
+                                        type="button"
+                                        id="e2e-campaign-edit"
+                                        className="btn btn-secondary mr-1"
+                                        onClick={onEdit}
+                                        disabled={actionsDisabled}
+                                    >
+                                        Edit
+                                    </button>
+                                    <CloseDeleteCampaignPrompt
+                                        disabled={actionsDisabled}
+                                        disabledTooltip="Cannot close while campaign is being created"
+                                        message={
+                                            <p>
+                                                Close campaign <strong>{campaign.name}</strong>?
+                                            </p>
+                                        }
+                                        changesetsCount={openChangesetsCount}
+                                        buttonText="Close"
+                                        onButtonClick={onClose}
+                                        buttonClassName="btn-secondary mr-1"
+                                    />
+                                </>
                             )}
                             <CloseDeleteCampaignPrompt
                                 disabled={actionsDisabled}
@@ -112,7 +136,7 @@ export const CampaignActionsBar: React.FunctionComponent<Props> = ({
                                         Delete campaign <strong>{campaign.name}</strong>?
                                     </p>
                                 }
-                                changesetsCount={campaign.changesets.totalCount}
+                                changesetsCount={openChangesetsCount}
                                 buttonText="Delete"
                                 onButtonClick={onDelete}
                                 buttonClassName="btn-danger"

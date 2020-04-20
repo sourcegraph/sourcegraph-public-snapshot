@@ -84,7 +84,7 @@ Like Oracle OpenGrok, Sourcegraph is self-hosted. You control who can access it.
 - [OpenID Connect user authentication](../auth/index.md#openid-connect) and [SAML user authentication](../auth/index.md#saml) (for Google/G Suite accounts, Okta, OneLogin, etc.)
 - [HTTP user authentication proxies](../auth/index.md#http-authentication-proxies)
 - [Builtin username-password authentication](../auth/index.md#builtin-authentication)
-- [TLS/SSL and other HTTP/HTTPS configuration](../nginx.md)
+- [TLS/SSL and other HTTP/HTTPS configuration](../http_https_configuration.md)
 
 ### Rolling out Sourcegraph organization-wide
 

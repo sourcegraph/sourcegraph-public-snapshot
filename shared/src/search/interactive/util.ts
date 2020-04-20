@@ -29,6 +29,7 @@ export enum FilterType {
     lang = 'lang',
     fork = 'fork',
     archived = 'archived',
+    visibility = 'visibility',
     count = 'count',
     timeout = 'timeout',
     before = 'before',
@@ -37,6 +38,7 @@ export enum FilterType {
     message = 'message',
     content = 'content',
     patterntype = 'patterntype',
+    index = 'index',
 }
 
 export const isFilterType = (filter: string): filter is FilterType => filter in FilterType

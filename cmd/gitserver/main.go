@@ -14,13 +14,12 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/opentracing-contrib/go-stdlib/nethttp"
-	"github.com/opentracing/opentracing-go"
-	"gopkg.in/inconshreveable/log15.v2"
+	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 )
 
@@ -57,13 +56,13 @@ func main() {
 	if tmpDir, err := gitserver.SetupAndClearTmp(); err != nil {
 		log.Fatalf("failed to setup temporary directory: %s", err)
 	} else {
-		// Additionally set TMP_DIR so other temporary files we may accidently
+		// Additionally set TMP_DIR so other temporary files we may accidentally
 		// create are on the faster RepoDir mount.
 		os.Setenv("TMP_DIR", tmpDir)
 	}
 
 	// Create Handler now since it also initializes state
-	handler := nethttp.Middleware(opentracing.GlobalTracer(), gitserver.Handler())
+	handler := ot.Middleware(gitserver.Handler())
 
 	go debugserver.Start()
 

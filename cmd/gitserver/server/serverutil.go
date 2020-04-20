@@ -16,11 +16,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // GitDir is an absolute path to a GIT_DIR.
@@ -112,6 +112,11 @@ func runWithRemoteOpts(ctx context.Context, cmd *exec.Cmd, progress io.Writer) (
 // If progress is not nil, all output is written to it in a separate goroutine.
 func runWith(ctx context.Context, cmd *exec.Cmd, configRemoteOpts bool, progress io.Writer) ([]byte, error) {
 	if configRemoteOpts {
+		// Inherit process environment. This allows admins to configure
+		// variables like http_proxy/etc.
+		if cmd.Env == nil {
+			cmd.Env = os.Environ()
+		}
 		configureRemoteGitCommand(cmd, tlsExternal().(*tlsConfig))
 	}
 
@@ -562,7 +567,7 @@ func updateFileIfDifferent(path string, content []byte) (bool, error) {
 	}
 
 	// fsync to ensure the disk contents are written. This is important, since
-	// we are not gaurenteed that os.Rename is recorded to disk after f's
+	// we are not guaranteed that os.Rename is recorded to disk after f's
 	// contents.
 	if err := f.Sync(); err != nil {
 		f.Close()

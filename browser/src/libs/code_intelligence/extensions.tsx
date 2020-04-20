@@ -7,7 +7,7 @@ import {
     CommandListPopoverButtonProps,
 } from '../../../../shared/src/commandPalette/CommandList'
 import { Notifications } from '../../../../shared/src/notifications/Notifications'
-
+import classNames from 'classnames'
 import { DiffPart } from '@sourcegraph/codeintellify'
 import * as H from 'history'
 import { isEqual } from 'lodash'
@@ -23,12 +23,11 @@ import {
 } from '../../../../shared/src/extensions/controller'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
-import { createPlatformContext, SourcegraphIntegrationURLs } from '../../platform/context'
+import { createPlatformContext, SourcegraphIntegrationURLs, BrowserPlatformContext } from '../../platform/context'
 import { GlobalDebug } from '../../shared/components/GlobalDebug'
 import { ShortcutProvider } from '../../shared/components/ShortcutProvider'
 import { CodeHost } from './code_intelligence'
 import { DOMFunctions } from './code_views'
-import { ISettingsCascade } from '../../../../shared/src/graphql/schema'
 import { IS_LIGHT_THEME } from './consts'
 import { NotificationClassNameProps } from '../../../../shared/src/notifications/NotificationItem'
 
@@ -39,10 +38,9 @@ import { NotificationClassNameProps } from '../../../../shared/src/notifications
 export function initializeExtensions(
     { urlToFile, getContext }: Pick<CodeHost, 'urlToFile' | 'getContext'>,
     urls: SourcegraphIntegrationURLs,
-    initialSettings: Pick<ISettingsCascade, 'subjects' | 'final'>,
     isExtension: boolean
-): PlatformContextProps & ExtensionsControllerProps {
-    const platformContext = createPlatformContext({ urlToFile, getContext }, urls, initialSettings, isExtension)
+): { platformContext: BrowserPlatformContext } & ExtensionsControllerProps {
+    const platformContext = createPlatformContext({ urlToFile, getContext }, urls, isExtension)
     const extensionsController = createExtensionsController(platformContext)
     return { platformContext, extensionsController }
 }
@@ -67,7 +65,7 @@ export const renderCommandPalette = ({
         <ShortcutProvider>
             <CommandListPopoverButton
                 {...props}
-                popoverClassName={`command-list-popover ${props.popoverClassName}`}
+                popoverClassName={classNames('command-list-popover', props.popoverClassName)}
                 popoverInnerClassName={props.popoverInnerClassName}
                 menu={ContributableMenu.CommandPalette}
                 extensionsController={extensionsController}
@@ -102,7 +100,7 @@ export const renderGlobalDebug = ({
 
 const cleanupDecorationsForCodeElement = (codeElement: HTMLElement, part: DiffPart | undefined): void => {
     codeElement.style.backgroundColor = ''
-    const previousAttachments = codeElement.querySelectorAll(`.line-decoration-attachment[data-part=${part}]`)
+    const previousAttachments = codeElement.querySelectorAll(`.line-decoration-attachment[data-part=${String(part)}]`)
     for (const attachment of previousAttachments) {
         attachment.remove()
     }

@@ -19,7 +19,7 @@ It takes less than 5 minutes to run and install Sourcegraph using Docker Compose
 ```bash
 git clone git@github.com:sourcegraph/deploy-sourcegraph-docker.git
 cd deploy-sourcegraph-docker/docker-compose
-git checkout v3.12.5
+git checkout v3.14.2
 docker-compose up -d
 ```
 
@@ -39,7 +39,7 @@ We **strongly** recommend that you create your own fork of [sourcegraph/deploy-s
 * Create a `release` branch (to track all of your customizations to Sourcegraph. When you upgrade Sourcegraph's Docker Compose definition, you will merge upstream into this branch.
 
 ```bash
-SOURCEGRAPH_VERSION="v3.12.5-1"
+SOURCEGRAPH_VERSION="v3.14.2"
 git checkout $SOURCEGRAPH_VERSION -b release
 ```
 
@@ -48,6 +48,10 @@ git checkout $SOURCEGRAPH_VERSION -b release
 ## Storage
 
 The [Sourcegraph Docker Compose definition](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) uses [Docker volumes](https://docs.docker.com/storage/volumes/) to store its data. These volumes are stored at `/var/lib/docker/volumes` by [default on Linux](https://docs.docker.com/storage/#choose-the-right-type-of-mount). 
+
+## Resource estimator
+
+Use the [resource estimator](../resource_estimator.md) to find a good starting point for your deployment.
 
 ## Cloud installation guides
 
@@ -59,7 +63,7 @@ Cloud specific Sourcegraph installation guides for AWS, Google Cloud and Digital
 
 ## Insiders build
 
-To test new development builds of Sourcegraph (triggered by commits to master), change the all semver tags in [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) from `3.12.5` to `insiders`.
+To test new development builds of Sourcegraph (triggered by commits to master), change the all semver tags in [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) from `3.14.2` to `insiders`.
 
 > WARNING: `insiders` builds may be unstable, so back up Sourcegraph's data and config beforehand.
 

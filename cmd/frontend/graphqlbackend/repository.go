@@ -9,6 +9,7 @@ import (
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
@@ -20,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 type RepositoryResolver struct {
@@ -76,6 +76,22 @@ func (r *RepositoryResolver) Name() string {
 
 func (r *RepositoryResolver) ExternalRepo() *api.ExternalRepoSpec {
 	return &r.repo.ExternalRepo
+}
+
+func (r *RepositoryResolver) IsFork(ctx context.Context) (bool, error) {
+	err := r.hydrate(ctx)
+	if err != nil {
+		return false, err
+	}
+	return r.repo.RepoFields.Fork, nil
+}
+
+func (r *RepositoryResolver) IsArchived(ctx context.Context) (bool, error) {
+	err := r.hydrate(ctx)
+	if err != nil {
+		return false, err
+	}
+	return r.repo.RepoFields.Archived, nil
 }
 
 func (r *RepositoryResolver) URI(ctx context.Context) (string, error) {

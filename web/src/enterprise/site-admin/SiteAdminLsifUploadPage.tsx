@@ -7,7 +7,7 @@ import { fetchLsifUpload } from './backend'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { PageTitle } from '../../components/PageTitle'
 import { RouteComponentProps, Redirect } from 'react-router'
-import { useObservable } from '../../util/useObservable'
+import { useObservable } from '../../../../shared/src/util/useObservable'
 
 interface Props extends RouteComponentProps<{ id: string }> {}
 
@@ -31,15 +31,13 @@ export const SiteAdminLsifUploadPage: FunctionComponent<Props> = ({
             {!uploadOrError ? (
                 <LoadingSpinner className="icon-inline" />
             ) : isErrorLike(uploadOrError) ? (
-                <div className="alert alert-danger">
-                    <ErrorAlert prefix="Error loading LSIF upload" error={uploadOrError} />
-                </div>
+                <ErrorAlert prefix="Error loading LSIF upload" error={uploadOrError} />
+            ) : !uploadOrError.projectRoot ? (
+                <ErrorAlert prefix="Error loading LSIF upload" error={{ message: 'Cannot resolve project root' }} />
             ) : (
-                <>
-                    <Redirect
-                        to={`${uploadOrError.projectRoot?.commit.repository.url}/-/settings/code-intelligence/lsif-uploads/${id}`}
-                    />
-                </>
+                <Redirect
+                    to={`${uploadOrError.projectRoot.commit.repository.url}/-/settings/code-intelligence/lsif-uploads/${id}`}
+                />
             )}
         </div>
     )

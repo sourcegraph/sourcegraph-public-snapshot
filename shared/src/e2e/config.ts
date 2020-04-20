@@ -5,6 +5,7 @@ import { pick } from 'lodash'
  * depended on by other modules is not included here.
  */
 export interface Config {
+    browser: 'firefox' | 'chrome'
     sudoToken: string
     sudoUsername: string
     gitHubClientID: string
@@ -57,6 +58,17 @@ const parseBool = (s: string): boolean => {
 }
 
 const configFields: ConfigFields = {
+    browser: {
+        envVar: 'BROWSER',
+        description: 'The browser to use.',
+        defaultValue: 'chrome',
+        parser: (value: string) => {
+            if (!['firefox', 'chrome'].includes(value)) {
+                throw new Error('BROWSER must be "chrome" or "firefox"')
+            }
+            return value
+        },
+    },
     sudoToken: {
         envVar: 'SOURCEGRAPH_SUDO_TOKEN',
         description:
@@ -124,9 +136,9 @@ const configFields: ConfigFields = {
     },
     sourcegraphBaseUrl: {
         envVar: 'SOURCEGRAPH_BASE_URL',
-        defaultValue: 'http://localhost:3080',
+        defaultValue: 'https://sourcegraph.test:3443',
         description:
-            'The base URL of the Sourcegraph instance, e.g., https://sourcegraph.sgdev.org or http://localhost:3080.',
+            'The base URL of the Sourcegraph instance, e.g., https://sourcegraph.sgdev.org or https://sourcegraph.test:3443.',
     },
     includeAdminOnboarding: {
         envVar: 'INCLUDE_ADMIN_ONBOARDING',
@@ -219,7 +231,7 @@ export function getConfig<T extends keyof Config>(...required: T[]): Pick<Config
             }
             const info = [field.envVar]
             if (field.defaultValue) {
-                info.push(`default value: ${field.defaultValue}`)
+                info.push(`default value: ${String(field.defaultValue)}`)
             }
             if (field.description) {
                 info.push(`description: ${field.description}`)

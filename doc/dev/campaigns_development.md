@@ -7,12 +7,12 @@ Before diving into the technical part of campaigns, make sure to read up on what
 1. Start by reading through the [code change management product page](https://about.sourcegraph.com/product/code-change-management/)
 1. **IMPORTANT:** Watch the videos! At the bottom of that page, you'll find two demo videos. A lot of our work aims to reproduce what you can see in these videos — in a scalable way that supports multiple code hosts. **Make sure to watch these videos!**
 1. Take a look at the [sequence of milestones](https://docs.google.com/document/d/1TDsjrCy55UTZA_NyofVssnBotTyPP6Hvbrsp__aUCfM/edit#heading=h.go9qqwdnhiyu) to get a high-level overview of what we did so far and what still needs to be done
-1. Read through the [user documentation](../user/campaigns.md).
+1. Read through the [user documentation](../user/campaigns/index.md).
 
 ## Starting up your environment
 
 1. Run `./enterprise/dev/start.sh` — Wait until all repositories are cloned.
-2. Follow the [user guide on creating campaigns](../user/campaigns.md). **Remember:** If you create a campaign, you're opening real PRs on GitHub. Make sure only [testing repositories](#github-testing-account) are affected. If you create a large campaign, it takes a while to preview/create but also helps a lot with finding bugs/errors, etc.
+2. Follow the [user guide on creating campaigns](../user/campaigns/index.md). **Remember:** If you create a campaign, you're opening real PRs on GitHub. Make sure only [testing repositories](#github-testing-account) are affected. If you create a large campaign, it takes a while to preview/create but also helps a lot with finding bugs/errors, etc.
 
 ## Glossary
 
@@ -22,17 +22,24 @@ The code campaigns feature introduces a lot of new names, GraphQL queries and mu
 | ------------------- | -------------------- | -------------------| ----------- |
 | `Campaign`          | `campaigns.Campaign`       | `campaigns`        | A campaign is a collection of changesets on code hosts. The central entity. |
 | `ExternalChangeset` | `campaigns.Changeset`      | `changesets`       | Changeset is the unified name for pull requests/merge requests/etc. on code hosts.        |
-| `CampaignPlan`      | `campaigns.CampaignPlan`   | `campaign_plans`   | A campaign plan is a collection of changes (think: patches/diffs) that will be applied by running a Campaign. A campaign *has one* campaign plan. |
-| `ChangesetPlan`     | `campaigns.CampaignJob`    | `campaign_jobs`    | A *plan* for a changeset. It represents a patch per repository that *can* be a changeset. It belongs to a campaign plan, which has multiple changeset plans, one per repository. |
-| -                   | `campaigns.ChangesetJob`   | `changeset_jobs`   | It represents the process of turning a `ChangesetPlan` (GraphQL)/`campaigns.CampaignJob` (Go) into a `Changeset` on the code host. It is executed asynchronously in the background when a campaign is created with a campaign plan. |
+| `PatchSet`          | `campaigns.PatchSet`       | `patch_sets`       | A patch set is a collection of patches that will be applied by creating and publishing a Campaign. A campaign *has one* patch set. |
+| `Patch`             | `campaigns.Patch`          | `patches`          | A patch for a repository that *can* be turned into a changeset on a code host. It belongs to a patch set, which has multiple patches, one per repository. |
+| -                   | `campaigns.ChangesetJob`   | `changeset_jobs`   | It represents the process of turning a `Patch` (GraphQL)/`campaigns.Patch` (Go) into a `Changeset` on the code host. It is executed asynchronously in the background when a campaign is created with a patch set. |
 | `ChangesetEvent`    | `campaigns.ChangesetEvent` | `changeset_events` | A changeset event is an event on a code host, e.g. a comment or a review on a pull request on GitHub. They are created by syncing the changesets from the code host on a regular basis and by accepting webhook events and turning them into changeset events. |
+
+## Database layout
+
+<object data="/dev/campaigns_database_layout.svg" type="image/svg+xml" style="width:100%; max-width: 800px">
+</object>
+
+(To re-generate the diagram from the `campaigns_database_layout.dot` file with Graphviz, run: `dot -Tsvg -o campaigns_database_layout.svg campaigns_database_layout.dot`.)
 
 ## Diving into the code as a backend developer
 
 1. Read through `./cmd/frontend/graphqlbackend/campaigns.go` to get an overview of the campaigns GraphQL API.
 1. Read through `./internal/campaigns/types.go` to see all campaigns-related type definitions.
 1. Compare that with the GraphQL definitions in `./cmd/frontend/graphqlbackend/schema.graphql`.
-1. Start reading through `./enterprise/internal/campaigns/resolvers/resolver.go` to see how the main mutation are implemented (look at `createCampaignPlanFromPatches` and `createCampaign` to see how the two main operations are implemented).
+1. Start reading through `./enterprise/internal/campaigns/resolvers/resolver.go` to see how the main mutation are implemented (look at `createPatchSetFromPatches` and `createCampaign` to see how the two main operations are implemented).
 1. Then start from the other end, `enterprise/cmd/repo-updater/main.go`, and see how the enterprise `repo-updater` uses `campaigns.Syncer` to sync `Changesets`.
 
 ## GitHub testing account
@@ -43,7 +50,7 @@ To use this account, follow these steps:
 
 1. Find the GitHub `sd9` user in 1Password
 2. Copy the Campaigns Testing Token
-3. Change your `dev-private/enterprise/dev/external-services-config.json` to only contain a GitHub external service config with the token, like this:
+3. Change your `dev-private/enterprise/dev/external-services-config.json` to only contain a GitHub config with the token, like this:
 
 ```json
 {

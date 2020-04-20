@@ -12,20 +12,36 @@ const (
 	eventTypeHeader = "X-Event-Key"
 )
 
-func WebHookType(r *http.Request) string {
+func WebhookEventType(r *http.Request) string {
 	return r.Header.Get(eventTypeHeader)
 }
 
-func ParseWebHook(event string, payload []byte) (e interface{}, err error) {
-	e = &PullRequestEvent{}
-	return e, json.Unmarshal(payload, e)
+func ParseWebhookEvent(eventType string, payload []byte) (e interface{}, err error) {
+	switch eventType {
+	case "ping":
+		return PingEvent{}, nil
+	case "repo:build_status":
+		e = &BuildStatusEvent{}
+		return e, json.Unmarshal(payload, e)
+	default:
+		e = &PullRequestEvent{}
+		return e, json.Unmarshal(payload, e)
+	}
 }
+
+type PingEvent struct{}
 
 type PullRequestEvent struct {
 	Date        time.Time   `json:"date"`
 	Actor       User        `json:"actor"`
 	PullRequest PullRequest `json:"pullRequest"`
 	Activity    *Activity   `json:"activity"`
+}
+
+type BuildStatusEvent struct {
+	Commit       string        `json:"commit"`
+	Status       BuildStatus   `json:"status"`
+	PullRequests []PullRequest `json:"pullRequests"`
 }
 
 // Webhook defines the JSON schema from the BBS Sourcegraph plugin.

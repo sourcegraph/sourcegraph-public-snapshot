@@ -7,9 +7,10 @@ import (
 	"sync"
 	"time"
 
-	multierror "github.com/hashicorp/go-multierror"
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"golang.org/x/time/rate"
 )
 
 // A Sourcer converts the given ExternalServices to Sources
@@ -52,13 +53,31 @@ func NewSourcer(cf *httpcli.Factory, decs ...func(Source) Source) Sourcer {
 
 // NewSource returns a repository yielding Source from the given ExternalService configuration.
 func NewSource(svc *ExternalService, cf *httpcli.Factory) (Source, error) {
+	return newSource(svc, cf, nil)
+}
+
+// NewChangesetSource returns a new ChangesetSource from the supplied ExternalService using the supplied
+// rate limiter
+func NewChangesetSource(svc *ExternalService, cf *httpcli.Factory, rl *rate.Limiter) (ChangesetSource, error) {
+	source, err := newSource(svc, cf, rl)
+	if err != nil {
+		return nil, err
+	}
+	css, ok := source.(ChangesetSource)
+	if !ok {
+		return nil, fmt.Errorf("ChangesetSource cannot be created from external service %q", svc.Kind)
+	}
+	return css, nil
+}
+
+func newSource(svc *ExternalService, cf *httpcli.Factory, rl *rate.Limiter) (Source, error) {
 	switch strings.ToLower(svc.Kind) {
 	case "github":
-		return NewGithubSource(svc, cf)
+		return NewGithubSource(svc, cf, rl)
 	case "gitlab":
 		return NewGitLabSource(svc, cf)
 	case "bitbucketserver":
-		return NewBitbucketServerSource(svc, cf)
+		return NewBitbucketServerSource(svc, cf, rl)
 	case "bitbucketcloud":
 		return NewBitbucketCloudSource(svc, cf)
 	case "gitolite":
@@ -101,7 +120,6 @@ type ChangesetSource interface {
 	// means the appropriate final state on the codehost (e.g. "declined" on
 	// Bitbucket Server).
 	CloseChangeset(context.Context, *Changeset) error
-
 	// UpdateChangeset can update Changesets.
 	UpdateChangeset(context.Context, *Changeset) error
 }

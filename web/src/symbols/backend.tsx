@@ -1,8 +1,7 @@
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { gql } from '../../../shared/src/graphql/graphql'
+import { gql, dataOrThrowErrors } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
-import { createAggregateError } from '../../../shared/src/util/errors'
 import { queryGraphQL } from '../backend/graphql'
 
 /**
@@ -17,6 +16,7 @@ export function fetchSymbols(
         gql`
             query Symbols($repo: ID!, $rev: String!, $first: Int, $query: String, $includePatterns: [String!]) {
                 node(id: $repo) {
+                    __typename
                     ... on Repository {
                         commit(rev: $rev) {
                             symbols(first: $first, query: $query, includePatterns: $includePatterns) {
@@ -53,17 +53,18 @@ export function fetchSymbols(
         `,
         { ...args, repo, rev }
     ).pipe(
-        map(({ data, errors }) => {
-            if (
-                !data ||
-                !data.node ||
-                !(data.node as GQL.IRepository).commit ||
-                !(data.node as GQL.IRepository).commit!.symbols ||
-                !(data.node as GQL.IRepository).commit!.symbols.nodes
-            ) {
-                throw createAggregateError(errors)
+        map(dataOrThrowErrors),
+        map(({ node }) => {
+            if (!node) {
+                throw new Error(`Node ${repo} not found`)
             }
-            return (data.node as GQL.IRepository).commit!.symbols
+            if (node.__typename !== 'Repository') {
+                throw new Error(`Node is a ${node.__typename}, not a Repository`)
+            }
+            if (!node.commit?.symbols?.nodes) {
+                throw new Error('Could not resolve commit symbols for repository')
+            }
+            return node.commit.symbols
         })
     )
 }

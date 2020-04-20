@@ -6,6 +6,7 @@
 $body-bg-color-light: #ffffff;
 
 @import '../../shared/src/actions/ActionItem';
+@import '../../shared/src/actions/ActionsNavItems';
 @import '../../shared/src/commandPalette/CommandList';
 @import '../../shared/src/components/completion/CompletionWidget.scss';
 @import '../../shared/src/components/Toggle';
@@ -61,7 +62,13 @@ $body-color-dark: #f2f4f8;
     position: fixed;
     right: 0;
     bottom: 0;
+    z-index: 10000;
     background-color: var(--body-bg);
+}
+
+.extension-status {
+    // TODO make the CSS classes configurable
+    background: var(--body-bg);
 }
 
 .toggle--off::-webkit-slider-runnable-track {

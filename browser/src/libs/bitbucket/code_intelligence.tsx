@@ -33,8 +33,6 @@ export const getToolbarMount = (codeView: HTMLElement): HTMLElement => {
         throw new Error('Unable to find mount location')
     }
 
-    fileActions.style.display = 'flex'
-
     const mount = document.createElement('div')
     mount.classList.add('btn-group')
     mount.classList.add('sg-toolbar-mount')
@@ -222,9 +220,10 @@ export const bitbucketServerCodeHost: CodeHost = {
         listItemClassName: 'result',
         selectedListItemClassName: 'focused',
         noResultsClassName: 'no-results',
+        iconClassName,
     },
     codeViewToolbarClassProps: {
-        className: 'aui-buttons',
+        className: 'code-view-toolbar--bitbucket aui-buttons',
         actionItemClass: 'aui-button action-item--bitbucket-server',
         // actionItemPressedClass is not needed because Bitbucket applies styling to aria-pressed="true"
         actionItemIconClass: 'aui-icon',

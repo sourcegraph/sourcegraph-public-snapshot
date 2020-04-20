@@ -1,180 +1,117 @@
-import getFreePort from 'get-port'
 import { startCase } from 'lodash'
-import { appendFile, exists, mkdir, readFile } from 'mz/fs'
-import * as path from 'path'
-import puppeteer from 'puppeteer'
-import puppeteerFirefox from 'puppeteer-firefox'
-import webExt from 'web-ext'
-import * as util from 'util'
+import assert from 'assert'
 import { saveScreenshotsUponFailures } from '../../../shared/src/e2e/screenshotReporter'
+import { Driver, createDriverForTest } from '../../../shared/src/e2e/driver'
+import { testSingleFilePage } from './shared'
+import { retry } from '../../../shared/src/e2e/e2e-test-utils'
+import { getConfig } from '../../../shared/src/e2e/config'
 
-const BROWSER = process.env.E2E_BROWSER || 'chrome'
+describe('Sourcegraph browser extension on github.com', function () {
+    this.slow(8000)
 
-async function getTokenWithSelector(
-    page: puppeteer.Page,
-    token: string,
-    selector: string
-): Promise<puppeteer.ElementHandle> {
-    const elements = await page.$$(selector)
+    const { browser, sourcegraphBaseUrl } = getConfig('browser', 'sourcegraphBaseUrl')
 
-    let element: puppeteer.ElementHandle | undefined
-    for (const elem of elements) {
-        const text = await page.evaluate(element => element.textContent, elem)
-        if (text === token) {
-            element = elem
-            break
-        }
-    }
+    let driver: Driver
 
-    if (!element) {
-        throw new Error(`Unable to find token '${token}' with selector ${selector}`)
-    }
-
-    return element
-}
-
-async function clickElement(page: puppeteer.Page, element: puppeteer.ElementHandle): Promise<void> {
-    // Wait for JS to be evaluated (https://github.com/GoogleChrome/puppeteer/issues/1805#issuecomment-357999249).
-    await page.waitFor(500)
-    await element.click()
-}
-
-// Copied from node_modules/puppeteer-firefox/misc/install-preferences.js
-async function getFirefoxCfgPath(): Promise<string> {
-    const firefoxFolder = path.dirname(puppeteerFirefox.executablePath())
-    let configPath: string
-    if (process.platform === 'darwin') {
-        configPath = path.join(firefoxFolder, '..', 'Resources')
-    } else if (process.platform === 'linux') {
-        if (!(await exists(path.join(firefoxFolder, 'browser', 'defaults')))) {
-            await mkdir(path.join(firefoxFolder, 'browser', 'defaults'))
-        }
-        if (!(await exists(path.join(firefoxFolder, 'browser', 'defaults', 'preferences')))) {
-            await mkdir(path.join(firefoxFolder, 'browser', 'defaults', 'preferences'))
-        }
-        configPath = firefoxFolder
-    } else if (process.platform === 'win32') {
-        configPath = firefoxFolder
-    } else {
-        throw new Error('Unsupported platform: ' + process.platform)
-    }
-    return path.join(configPath, 'puppeteer.cfg')
-}
-
-describe(`Sourcegraph ${startCase(BROWSER)} extension`, () => {
-    let browser: puppeteer.Browser
-    let page: puppeteer.Page
-
-    // Open browser.
-    before(async function() {
+    before('Open browser', async function () {
         this.timeout(90 * 1000)
-
-        if (BROWSER === 'chrome') {
-            const chromeExtensionPath = path.resolve(__dirname, '..', '..', 'build', 'chrome')
-            let args: string[] = [
-                `--disable-extensions-except=${chromeExtensionPath}`,
-                `--load-extension=${chromeExtensionPath}`,
-            ]
-            if (process.getuid() === 0) {
-                // TODO don't run as root in CI
-                console.warn('Running as root, disabling sandbox')
-                args = [...args, '--no-sandbox', '--disable-setuid-sandbox']
-            }
-            browser = await puppeteer.launch({ args, headless: false })
-        } else {
-            // Make sure CSP is disabled in FF preferences,
-            // because Puppeteer uses new Function() to evaluate code
-            // which is not allowed by the github.com CSP.
-            const cfgPath = await getFirefoxCfgPath()
-            const disableCspPreference = '\npref("security.csp.enable", false);\n'
-            if (!(await readFile(cfgPath, 'utf-8')).includes(disableCspPreference)) {
-                await appendFile(cfgPath, disableCspPreference)
-            }
-
-            const cdpPort = await getFreePort()
-            const firefoxExtensionPath = path.resolve(__dirname, '..', '..', 'build', 'firefox')
-            // webExt.util.logger.consoleStream.makeVerbose()
-            await webExt.cmd.run(
-                {
-                    sourceDir: firefoxExtensionPath,
-                    firefox: puppeteerFirefox.executablePath(),
-                    args: [`-juggler=${cdpPort}`, '-headless'],
-                },
-                { shouldExitProgram: false }
-            )
-            const browserWSEndpoint = `ws://127.0.0.1:${cdpPort}`
-            browser = await puppeteerFirefox.connect({ browserWSEndpoint })
+        driver = await createDriverForTest({ loadExtension: true, browser, sourcegraphBaseUrl })
+        if (sourcegraphBaseUrl !== 'https://sourcegraph.com') {
+            await driver.setExtensionSourcegraphUrl()
         }
     })
 
-    beforeEach(async () => {
-        page = await browser.newPage()
-        page.on('console', message => {
-            if (message.text().includes('Download the React DevTools')) {
-                return
-            }
-            if (message.text().includes('[HMR]') || message.text().includes('[WDS]')) {
-                return
-            }
-            console.log('Browser console:', util.inspect(message, { colors: true, depth: 2, breakLength: Infinity }))
-        })
-    })
+    // Take a screenshot when a test fails
+    saveScreenshotsUponFailures(() => driver.page)
 
-    // Take a screenshot when a test fails.
-    saveScreenshotsUponFailures(() => page)
-
-    // Close browser.
-    after(async () => {
-        if (browser) {
-            if (page && !page.isClosed()) {
-                await page.close()
-            }
-            await browser.close()
+    after('Close browser', async () => {
+        if (driver) {
+            await driver.close()
         }
     })
 
-    const repoBaseURL = 'https://github.com/gorilla/mux'
-
-    it('injects View on Sourcegraph', async () => {
-        await page.goto(repoBaseURL)
-        await page.waitForSelector('li#open-on-sourcegraph')
-    })
-
-    it('injects toolbar for code views', async () => {
-        await page.goto('https://github.com/gorilla/mux/blob/master/mux.go')
-        await page.waitForSelector('.code-view-toolbar')
-    })
-
-    it('provides tooltips for single file', async () => {
-        await page.goto('https://github.com/gorilla/mux/blob/master/mux.go')
-
-        await page.waitForSelector('.code-view-toolbar')
-        const element = await getTokenWithSelector(page, 'NewRouter', 'span.pl-en')
-
-        await clickElement(page, element)
-
-        await page.waitForSelector('.e2e-tooltip-go-to-definition')
+    testSingleFilePage({
+        getDriver: () => driver,
+        url: 'https://github.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go',
+        repoName: 'github.com/sourcegraph/jsonrpc2',
+        sourcegraphBaseUrl,
+        // Not using '.js-file-line' because it breaks the reliance on :nth-child() in testSingleFilePage()
+        lineSelector: '.js-file-line-container tr',
+        goToDefinitionURL:
+            'https://github.com/sourcegraph/jsonrpc2/blob/4fb7cd90793ee6ab445f466b900e6bffb9b63d78/call_opt.go#L5:6',
     })
 
     const tokens = {
-        base: { text: 'matchHost', selector: 'span.pl-s1' },
-        head: { text: 'typ', selector: 'span.pl-s1' },
+        // https://github.com/gorilla/mux/pull/117/files#diff-9ef8a22c4ce5141c30a501c542fb1adeL244
+        base: {
+            token: 'varsN',
+            lineId: 'diff-9ef8a22c4ce5141c30a501c542fb1adeL244',
+            goToDefinitionURL:
+                'https://github.com/gorilla/mux/blob/f15e0c49460fd49eebe2bcc8486b05d1bef68d3a/regexp.go#L139:2',
+        },
+        // https://github.com/gorilla/mux/pull/117/files#diff-9ef8a22c4ce5141c30a501c542fb1adeR247
+        head: {
+            token: 'host',
+            lineId: 'diff-9ef8a22c4ce5141c30a501c542fb1adeR247',
+            goToDefinitionURL:
+                'https://github.com/gorilla/mux/blob/e73f183699f8ab7d54609771e1fa0ab7ffddc21b/regexp.go#L233:2',
+        },
     }
 
-    for (const diffType of ['unified', 'split']) {
-        for (const side of ['base', 'head'] as const) {
-            it(`provides tooltips for diff files (${diffType}, ${side})`, async () => {
-                await page.goto(`https://github.com/gorilla/mux/pull/328/files?diff=${diffType}`)
+    describe('Pull request pages', () => {
+        for (const diffType of ['unified', 'split']) {
+            describe(`${startCase(diffType)} view`, () => {
+                for (const side of ['base', 'head'] as const) {
+                    const { token, lineId, goToDefinitionURL } = tokens[side]
+                    it(`provides hover tooltips on token "${token}" in the ${side} part`, async () => {
+                        await driver.page.goto(`https://github.com/gorilla/mux/pull/117/files?diff=${diffType}`)
+                        // The browser extension takes a bit to initialize and register all event listeners.
+                        // Waiting here saves one retry cycle below in the common case.
+                        // If it's not enough, the retry will catch it.
+                        await driver.page.waitFor(1500)
+                        const tokenElement = await retry(async () => {
+                            const lineNumberElement = await driver.page.waitForSelector(`#${lineId}`, {
+                                timeout: 10000,
+                            })
+                            const row = (await driver.page.evaluateHandle(
+                                (element: Element) => element.closest('tr'),
+                                lineNumberElement
+                            ))!.asElement()!
+                            assert(row, 'Expected row to exist')
+                            const tokenElement = (
+                                await driver.page.evaluateHandle(
+                                    (row: Element, token: string) =>
+                                        Array.from(row.querySelectorAll('span')).find(
+                                            element => element.textContent === token
+                                        ),
+                                    row,
+                                    token
+                                )
+                            ).asElement()
+                            assert(tokenElement, 'Expected token element to exist')
+                            return tokenElement!
+                        })
+                        // Retry is here to wait for listeners to be registered
+                        await retry(async () => {
+                            await tokenElement.hover()
+                            await driver.page.waitForSelector('.e2e-tooltip-go-to-definition', { timeout: 5000 })
+                        })
 
-                const token = tokens[side]
-                const element = await getTokenWithSelector(page, token.text, token.selector)
-
-                // Scrolls the element into view so that code view is in view.
-                await element.hover()
-                await page.waitForSelector('[data-path="regexp.go"] .code-view-toolbar .open-on-sourcegraph')
-                await clickElement(page, element)
-                await page.waitForSelector('.e2e-tooltip-go-to-definition')
+                        // Check go-to-definition jumps to the right place
+                        await retry(async () => {
+                            const href = await driver.page.evaluate(
+                                () => document.querySelector<HTMLLinkElement>('.e2e-tooltip-go-to-definition')?.href
+                            )
+                            assert.strictEqual(href, goToDefinitionURL)
+                        })
+                        await Promise.all([
+                            driver.page.waitForNavigation(),
+                            driver.page.click('.e2e-tooltip-go-to-definition'),
+                        ])
+                        assert.strictEqual(await driver.page.evaluate(() => location.href), goToDefinitionURL)
+                    })
+                }
             })
         }
-    }
+    })
 })

@@ -4,33 +4,19 @@ env:
   ENTERPRISE: "1"
   FORCE_COLOR: "3"
   GO111MODULE: "on"
-  IMAGE: us.gcr.io/sourcegraph-dev/server:$TAG
+  IMAGE: "server_instrumented"
+  TAG: "${BUILDKITE_BUILD_NUMBER}_${BUILDKITE_RETRY_COUNT}"
+  COVERAGE_INSTRUMENT: "true"
   TEST_USER_PASSWORD: "SuperSecurePassword"
 
 steps:
-- command:
-  - yes | gcloud auth configure-docker
-  - pushd enterprise
-  - ./cmd/server/pre-build.sh
-  - ./cmd/server/build.sh
-  - popd
-  - docker push "$IMAGE"
-  env:
-    PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
-  label: ':docker:'
-
-- wait
-
 - artifact_paths: ./puppeteer/*.png;./web/e2e.mp4;./web/ffmpeg.log
   command:
-    - yes | gcloud auth configure-docker
+    - pushd enterprise
+    - ./cmd/server/pre-build.sh
+    - ./cmd/server/build.sh
+    - popd
     - ./dev/ci/e2e.sh
-  concurrency: 1
-  concurrency_group: e2e
-  label: ':chromium:'
-
-- wait
-
-- command: docker image rm -f "$IMAGE"
-  label: ':sparkles:'
-  soft_fail: true
+    - docker image rm -f "$IMAGE"
+  timeout_in_minutes: 20
+  label: ':docker::arrow_right::chromium:'

@@ -18,11 +18,11 @@ import (
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	bindata "github.com/golang-migrate/migrate/v4/source/go_bindata"
 	multierror "github.com/hashicorp/go-multierror"
-	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/migrations"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // Transaction calls f within a transaction, rolling back if any error is
@@ -38,7 +38,7 @@ func Transaction(ctx context.Context, db *sql.DB, f func(tx *sql.Tx) error) (err
 		err = tx.Commit()
 	}
 
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Transaction")
+	span, ctx := ot.StartSpanFromContext(ctx, "Transaction")
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)

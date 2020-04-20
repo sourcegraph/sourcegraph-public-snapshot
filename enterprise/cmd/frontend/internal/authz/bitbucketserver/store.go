@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/RoaringBitmap/roaring"
+	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
@@ -16,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"gopkg.in/inconshreveable/log15.v2"
 )
 
 // A store of UserPermissions safe for concurrent use.
@@ -244,6 +244,10 @@ func (s *store) load(ctx context.Context, p *authz.UserPermissions) (err error) 
 }
 
 func loadRepoIDsQuery(c *extsvc.CodeHost, externalIDs []uint32) (*sqlf.Query, error) {
+	if externalIDs == nil {
+		externalIDs = []uint32{}
+	}
+
 	ids, err := json.Marshal(externalIDs)
 	if err != nil {
 		return nil, err
@@ -314,7 +318,6 @@ func loadQuery(p *authz.UserPermissions) *sqlf.Query {
 		p.UserID,
 		p.Perm.String(),
 		p.Type,
-		p.Provider,
 	)
 }
 
@@ -325,7 +328,6 @@ FROM user_permissions
 WHERE user_id = %s
 AND permission = %s
 AND object_type = %s
-AND provider = %s
 `
 
 func (s *store) update(ctx context.Context, p *authz.UserPermissions, update PermissionsUpdateFunc) (err error) {
@@ -447,7 +449,6 @@ func (s *store) upsertQuery(p *authz.UserPermissions) (*sqlf.Query, error) {
 		p.Perm.String(),
 		p.Type,
 		ids,
-		p.Provider,
 		p.UpdatedAt.UTC(),
 	), nil
 }
@@ -455,11 +456,11 @@ func (s *store) upsertQuery(p *authz.UserPermissions) (*sqlf.Query, error) {
 const upsertQueryFmtStr = `
 -- source: enterprise/cmd/frontend/internal/authz/bitbucketserver/store.go:store.upsert
 INSERT INTO user_permissions
-  (user_id, permission, object_type, object_ids, provider, updated_at)
+  (user_id, permission, object_type, object_ids, updated_at)
 VALUES
-  (%s, %s, %s, %s, %s, %s)
+  (%s, %s, %s, %s, %s)
 ON CONFLICT ON CONSTRAINT
-  user_permissions_perm_object_provider_unique
+  user_permissions_perm_object_unique
 DO UPDATE SET
   object_ids = excluded.object_ids,
   updated_at = excluded.updated_at

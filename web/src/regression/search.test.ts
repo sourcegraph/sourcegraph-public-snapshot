@@ -154,7 +154,7 @@ describe('Search regression test suite', () => {
         let driver: Driver
         let gqlClient: GraphQLClient
         let resourceManager: TestResourceManager
-        before(async function() {
+        before(async function () {
             this.timeout(3 * 60 * 1000 + 30 * 1000)
             ;({ driver, gqlClient, resourceManager } = await getTestTools(config))
             resourceManager.add(
@@ -239,7 +239,7 @@ describe('Search regression test suite', () => {
         test('Global text search for something with more than 1000 results and use "count:1000".', async () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=.+count:1000')
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
-            await driver.page.addScriptTag({ content: `${getNumResults}` })
+            await driver.page.addScriptTag({ content: getNumResults.toString() })
             await driver.page.waitForFunction(() => getNumResults() !== null)
             await driver.page.waitForFunction(
                 () => {
@@ -322,7 +322,7 @@ describe('Search regression test suite', () => {
         test('Global search for a filename with many results', async () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=file:doc.go')
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
-            await driver.page.addScriptTag({ content: `${getNumResults}` })
+            await driver.page.addScriptTag({ content: getNumResults.toString() })
             await driver.page.waitForFunction(() => getNumResults() !== null)
             await driver.page.waitForFunction(
                 () => {
@@ -335,7 +335,7 @@ describe('Search regression test suite', () => {
         test('Global symbol search with many results', async () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=type:symbol+test+count:100')
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 10)
-            await driver.page.addScriptTag({ content: `${getNumResults}` })
+            await driver.page.addScriptTag({ content: getNumResults.toString() })
             await driver.page.waitForFunction(() => (getNumResults() || 0) >= 100)
         })
         test('Global symbol search with 0 results', async () => {
@@ -344,7 +344,7 @@ describe('Search regression test suite', () => {
         })
         test('Global symbol search ("type:symbol ^newroute count:100") with a few results', async () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=type:symbol+%5Enewroute+count:100')
-            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 2)
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 0)
         })
         test('Indexed multiline search, many results', async () => {
             const urlQuery = buildSearchURLQuery(
@@ -418,8 +418,50 @@ describe('Search regression test suite', () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
             await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 0)
         })
+        test('Archived repos excluded by default', async () => {
+            const urlQuery = buildSearchURLQuery('type:repo facebookarchive', GQL.SearchPatternType.regexp, false)
+            await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 0)
+        })
+        test('Archived repos included by archived option', async () => {
+            const urlQuery = buildSearchURLQuery(
+                'type:repo facebookarchive archived:yes',
+                GQL.SearchPatternType.regexp,
+                false
+            )
+            await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 0)
+        })
+        test('Single archived repo included if exact', async () => {
+            const urlQuery = buildSearchURLQuery(
+                'repo:^github\\.com/facebookarchive/httpcontrol$ error',
+                GQL.SearchPatternType.regexp,
+                false
+            )
+            await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 0)
+        })
+        test('Fork repos excluded by default', async () => {
+            const urlQuery = buildSearchURLQuery('type:repo sgtest/mux', GQL.SearchPatternType.regexp, false)
+            await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length === 0)
+        })
+        test('Forked repos included by fork option', async () => {
+            const urlQuery = buildSearchURLQuery('type:repo sgtest/mux fork:yes', GQL.SearchPatternType.regexp, false)
+            await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 0)
+        })
+        test('Single forked repo included if exact', async () => {
+            const urlQuery = buildSearchURLQuery(
+                'repo:^github\\.com/sgtest/mux$ error',
+                GQL.SearchPatternType.regexp,
+                false
+            )
+            await driver.page.goto(config.sourcegraphBaseUrl + '/search?' + urlQuery)
+            await driver.page.waitForFunction(() => document.querySelectorAll('.e2e-search-result').length > 0)
+        })
 
-        test('Search timeout', async function() {
+        test('Search timeout', async function () {
             this.timeout(2 * 1000)
             const response = await search(gqlClient, 'router index:no timeout:1ns', 'V2', GQL.SearchPatternType.literal)
             expect(response.results.matchCount).toBe(0)
@@ -542,7 +584,7 @@ describe('Search regression test suite', () => {
         let driver: Driver
         let gqlClient: GraphQLClient
         let resourceManager: TestResourceManager
-        before(async function() {
+        before(async function () {
             this.timeout(3 * 60 * 1000 + 30 * 1000)
             ;({ driver, gqlClient, resourceManager } = await getTestTools(config))
             resourceManager.add(

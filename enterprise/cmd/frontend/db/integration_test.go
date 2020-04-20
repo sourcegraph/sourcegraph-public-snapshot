@@ -16,8 +16,7 @@ func TestIntegration_PermsStore(t *testing.T) {
 
 	t.Parallel()
 
-	db, cleanup := dbtest.NewDB(t, *dsn)
-	defer cleanup()
+	db := dbtest.NewDB(t, *dsn)
 
 	for _, tc := range []struct {
 		name string
@@ -25,6 +24,7 @@ func TestIntegration_PermsStore(t *testing.T) {
 	}{
 		{"PermsStore/LoadUserPermissions", testPermsStore_LoadUserPermissions(db)},
 		{"PermsStore/LoadRepoPermissions", testPermsStore_LoadRepoPermissions(db)},
+		{"PermsStore/SetUserPermissions", testPermsStore_SetUserPermissions(db)},
 		{"PermsStore/SetRepoPermissions", testPermsStore_SetRepoPermissions(db)},
 		{"PermsStore/LoadUserPendingPermissions", testPermsStore_LoadUserPendingPermissions(db)},
 		{"PermsStore/SetRepoPendingPermissions", testPermsStore_SetRepoPendingPermissions(db)},
@@ -33,6 +33,15 @@ func TestIntegration_PermsStore(t *testing.T) {
 		{"PermsStore/DeleteAllUserPermissions", testPermsStore_DeleteAllUserPermissions(db)},
 		{"PermsStore/DeleteAllUserPendingPermissions", testPermsStore_DeleteAllUserPendingPermissions(db)},
 		{"PermsStore/DatabaseDeadlocks", testPermsStore_DatabaseDeadlocks(db)},
+
+		{"PermsStore/ListExternalAccounts", testPermsStore_ListExternalAccounts(db)},
+		{"PermsStore/GetUserIDsByExternalAccounts", testPermsStore_GetUserIDsByExternalAccounts(db)},
+
+		{"PermsStore/UserIDsWithNoPerms", testPermsStore_UserIDsWithNoPerms(db)},
+		{"PermsStore/RepoIDsWithNoPerms", testPermsStore_RepoIDsWithNoPerms(db)},
+		{"PermsStore/UserIDsWithOldestPerms", testPermsStore_UserIDsWithOldestPerms(db)},
+		{"PermsStore/ReposIDsWithOldestPerms", testPermsStore_ReposIDsWithOldestPerms(db)},
+		{"PermsStore/Metrics", testPermsStore_Metrics(db)},
 	} {
 		t.Run(tc.name, tc.test)
 	}

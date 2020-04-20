@@ -102,6 +102,7 @@ function getModeFromExtension(ext: string): string | undefined {
         case 'h++':
         case 'hh':
         case 'h':
+        case 'hpp':
             return 'cpp'
 
         // CUDA
@@ -218,6 +219,11 @@ function getModeFromExtension(ext: string): string | undefined {
         case 'sublime-settings':
         case 'sublime-workspace':
             return 'json'
+
+        // Jsonnet
+        case 'jsonnet':
+        case 'libsonnet':
+            return 'jsonnet'
 
         // Julia
         case 'jl':

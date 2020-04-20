@@ -7,6 +7,6 @@ import { getExtensionVersion, getPlatformName } from '../util/context'
 export function getHeaders(): { [name: string]: string } | undefined {
     // This is required for requests to be allowed by Sourcegraph's CORS rules.
     return {
-        'X-Requested-With': `Sourcegraph - ${getPlatformName()} v${getExtensionVersion()}`,
+        'X-Requested-With': `Sourcegraph - ${getPlatformName() as string} v${getExtensionVersion()}`,
     }
 }

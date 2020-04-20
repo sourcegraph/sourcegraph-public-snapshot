@@ -4,11 +4,21 @@
 
 > _Firefox has determined that the following add-ons are known to cause stability or security problems_
 
-![Firefox browser add-on error](img/firefox-error.png "Firefox browser add-on error")
-
 The Sourcegraph Firefox add-on has been flagged as unsafe by Mozilla because of a compliance issue with Mozilla's policy regarding [add-on development practices](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/AMO/Policy/Reviews#Development_Practices). This issue is specifically related to how we have chosen to implement Sourcegraph extensions.
 
 We made Sourcegraph extensions centrally managed by your Sourcegraph instance, not individually managed in your Firefox profile. Our customers are companies that roll out the browser extension to all employees, and asking each employee to individually manage Sourcegraph settings in Firefox would be more complex for both users and admins than the centrally managed solution.
+
+## What can I do?
+
+We know that Sourcegraph users are a very technical audience, so we hope the information on this page will help you make an informed decision on whether to keep using the Sourcegraph Firefox add-on. Additionally, our add-on is [fully open source](https://github.com/sourcegraph/sourcegraph/tree/master/browser), and you should feel free to inspect the source code if you have any other concerns.
+
+If you decide that you are comfortable trusting the Sourcegraph Mozilla Firefox add-on:
+
+*   If you see the pop up recommending you disable Sourcegraph, uncheck the disable option.
+
+OR
+
+*   Go to your addons page (i.e. type `about:addons` in the Firefox address bar) and re-enable Sourcegraph.
 
 ## What are Sourcegraph extensions, and who can author them?
 
@@ -35,15 +45,3 @@ Sourcegraph extensions are executed from remote code, but their execution enviro
 The above, third-party extensions being opt-in, and users always being able to inspect the bundle of Sourcegraph extensions when they enable them, makes us confident that Sourcegraph extensions do not negatively impact our users’ browsing safety.
 
 Mozilla’s main objection to our execution model is the fact that extensions upgrade automatically without user interaction, so the add-on will always fetch the latest version of the extension from your Sourcegraph instance. In order to be compliant, we would need to change this so that users always have to manually review and approve extension updates. This is a change we are not planning to implement at this time.
-
-## What should I do?
-
-We know that Sourcegraph users are a very technical audience, so we hope the above information will help you make an informed decision on whether to keep using the Sourcegraph Firefox add-on. Additionally, our add-on is [fully open source](https://github.com/sourcegraph/sourcegraph/tree/master/browser), and you should feel free to inspect the source code if you have any other concerns.
-
-If you decide that you are comfortable trusting the Sourcegraph Mozilla Firefox add-on:
-
-*   When you see the pop up recommending you disable Sourcegraph, uncheck the disable option.
-
-OR
-
-*   If you already restarted with the Sourcegraph add-on disabled, you can go to your addons page (i.e. type `about:addons` in the Firefox address bar) and re-enable Sourcegraph.

@@ -7,8 +7,9 @@ import { Observable } from 'rxjs'
 import { SearchSuggestion, IRepository, IFile, ISymbol, ILanguage, SymbolKind } from '../../graphql/schema'
 import { isDefined } from '../../util/types'
 import { FilterType, isNegatableFilter } from '../interactive/util'
+import { first } from 'rxjs/operators'
 
-const repositoryCompletionItemKind = Monaco.languages.CompletionItemKind.Color
+export const repositoryCompletionItemKind = Monaco.languages.CompletionItemKind.Color
 const filterCompletionItemKind = Monaco.languages.CompletionItemKind.Customcolor
 
 type PartialCompletionItem = Omit<Monaco.languages.CompletionItem, 'range'>
@@ -50,17 +51,21 @@ const FILTER_TYPE_COMPLETIONS: Omit<Monaco.languages.CompletionItem, 'range'>[] 
         sortText: `0${idx}`,
     }))
 
-const repositoryToCompletion = ({ name }: IRepository): PartialCompletionItem => ({
+const repositoryToCompletion = ({ name }: IRepository, options: { isFilterValue: boolean }): PartialCompletionItem => ({
     label: name,
     kind: repositoryCompletionItemKind,
-    insertText: `^${escapeRegExp(name)}$ `,
+    insertText: options.isFilterValue ? `^${escapeRegExp(name)}$ ` : `repo:^${escapeRegExp(name)}$ `,
     filterText: name,
+    detail: options.isFilterValue ? undefined : 'Repository',
 })
 
-const fileToCompletion = ({ name, path, repository, isDirectory }: IFile): PartialCompletionItem => ({
+const fileToCompletion = (
+    { name, path, repository, isDirectory }: IFile,
+    options: { isFilterValue: boolean }
+): PartialCompletionItem => ({
     label: name,
     kind: isDirectory ? Monaco.languages.CompletionItemKind.Folder : Monaco.languages.CompletionItemKind.File,
-    insertText: `^${escapeRegExp(path)}$ `,
+    insertText: options.isFilterValue ? `^${escapeRegExp(path)}$` : `file:^${escapeRegExp(name)}$ `,
     filterText: name,
     detail: `${path} - ${repository.name}`,
 })
@@ -116,12 +121,15 @@ const languageToCompletion = ({ name }: ILanguage): PartialCompletionItem | unde
           }
         : undefined
 
-const suggestionToCompletionItem = (suggestion: SearchSuggestion): PartialCompletionItem | undefined => {
+const suggestionToCompletionItem = (
+    suggestion: SearchSuggestion,
+    options: { isFilterValue: boolean }
+): PartialCompletionItem | undefined => {
     switch (suggestion.__typename) {
         case 'File':
-            return fileToCompletion(suggestion)
+            return fileToCompletion(suggestion, options)
         case 'Repository':
-            return repositoryToCompletion(suggestion)
+            return repositoryToCompletion(suggestion, options)
         case 'Symbol':
             return symbolToCompletion(suggestion)
         case 'Language':
@@ -146,10 +154,9 @@ const TRIGGER_SUGGESTIONS: Monaco.languages.Command = {
  * including both static and dynamically fetched suggestions.
  */
 export async function getCompletionItems(
-    rawQuery: string,
     { members }: Pick<Sequence, 'members'>,
     { column }: Pick<Monaco.Position, 'column'>,
-    fetchSuggestions: (query: string) => Observable<SearchSuggestion[]>
+    dynamicSuggestions: Observable<SearchSuggestion[]>
 ): Promise<Monaco.languages.CompletionList | null> {
     const defaultRange = {
         startLineNumber: 1,
@@ -195,18 +202,20 @@ export async function getCompletionItems(
         ) {
             return { suggestions: staticSuggestions }
         }
-        const dynamicSuggestions = (await fetchSuggestions(rawQuery).toPromise())
-            .map(suggestionToCompletionItem)
-            .filter(isDefined)
-            .map(completionItem => ({
-                ...completionItem,
-                range: toMonacoRange(range),
-                // Set a sortText so that dynamic suggestions
-                // are shown after filter type suggestions.
-                sortText: '1',
-            }))
         return {
-            suggestions: [...staticSuggestions, ...dynamicSuggestions],
+            suggestions: [
+                ...staticSuggestions,
+                ...(await dynamicSuggestions.pipe(first()).toPromise())
+                    .map(suggestion => suggestionToCompletionItem(suggestion, { isFilterValue: false }))
+                    .filter(isDefined)
+                    .map(completionItem => ({
+                        ...completionItem,
+                        range: toMonacoRange(range),
+                        // Set a sortText so that dynamic suggestions
+                        // are shown after filter type suggestions.
+                        sortText: '1',
+                    })),
+            ],
         }
     }
     if (token.type === 'filter') {
@@ -232,11 +241,11 @@ export async function getCompletionItems(
             }
             // If the filter definition has an associated suggestion type,
             // use it to filter dynamic suggestions.
-            const suggestions = await fetchSuggestions(rawQuery).toPromise()
+            const suggestions = await dynamicSuggestions.pipe(first()).toPromise()
             return {
                 suggestions: suggestions
                     .filter(({ __typename }) => __typename === resolvedFilter.definition.suggestions)
-                    .map(suggestionToCompletionItem)
+                    .map(suggestion => suggestionToCompletionItem(suggestion, { isFilterValue: true }))
                     .filter(isDefined)
                     .map(partialCompletionItem => ({
                         ...partialCompletionItem,

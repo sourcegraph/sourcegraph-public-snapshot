@@ -14,6 +14,7 @@ import { orgURL } from '../org'
 import { eventLogger } from '../tracking/eventLogger'
 import { deleteOrganization, fetchAllOrganizations } from './backend'
 import { ErrorAlert } from '../components/alerts'
+import { asError } from '../../../shared/src/util/errors'
 
 interface OrgNodeProps {
     /**
@@ -104,7 +105,7 @@ class OrgNode extends React.PureComponent<OrgNodeProps, OrgNodeState> {
                         this.props.onDidUpdate()
                     }
                 },
-                err => this.setState({ loading: false, errorDescription: err.message })
+                err => this.setState({ loading: false, errorDescription: asError(err).message })
             )
     }
 }

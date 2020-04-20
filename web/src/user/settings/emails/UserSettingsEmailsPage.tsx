@@ -1,3 +1,4 @@
+/* eslint rxjs/no-ignored-subscription: warn */
 import DeleteIcon from 'mdi-react/DeleteIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -5,7 +6,7 @@ import { Observable, Subject, Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { gql } from '../../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../../shared/src/graphql/schema'
-import { createAggregateError } from '../../../../../shared/src/util/errors'
+import { createAggregateError, asError } from '../../../../../shared/src/util/errors'
 import { mutateGraphQL, queryGraphQL } from '../../../backend/graphql'
 import { FilteredConnection } from '../../../components/FilteredConnection'
 import { PageTitle } from '../../../components/PageTitle'
@@ -112,7 +113,7 @@ class UserEmailNode extends React.PureComponent<UserEmailNodeProps, UserEmailNod
                         this.props.onDidUpdate()
                     }
                 },
-                error => this.setState({ loading: false, errorDescription: error.message })
+                error => this.setState({ loading: false, errorDescription: asError(error).message })
             )
     }
 
@@ -125,6 +126,8 @@ class UserEmailNode extends React.PureComponent<UserEmailNodeProps, UserEmailNod
             loading: true,
         })
 
+        // TODO this may call setState() after the component was unmounted
+        // eslint-disable-next-line rxjs/no-ignored-subscription
         setUserEmailVerified(this.props.user.id, this.props.node.email, verified).subscribe(
             () => {
                 this.setState({ loading: false })
@@ -137,7 +140,7 @@ class UserEmailNode extends React.PureComponent<UserEmailNodeProps, UserEmailNod
                     this.props.onDidUpdate()
                 }
             },
-            error => this.setState({ loading: false, errorDescription: error.message })
+            error => this.setState({ loading: false, errorDescription: asError(error).message })
         )
     }
 }
@@ -206,7 +209,7 @@ export class UserSettingsEmailsPage extends React.Component<Props, State> {
         )
     }
 
-    private queryUserEmails = (args: {}): Observable<UserEmailConnection> =>
+    private queryUserEmails = (): Observable<UserEmailConnection> =>
         queryGraphQL(
             gql`
                 query UserEmails($user: ID!) {

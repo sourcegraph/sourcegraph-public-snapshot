@@ -2,22 +2,27 @@ package campaigns
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strconv"
 	"time"
 
 	gh "github.com/google/go-github/v28/github"
 	"github.com/hashicorp/go-multierror"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/inconshreveable/log15"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	bbs "github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"gopkg.in/inconshreveable/log15.v2"
 )
 
 type Webhook struct {
@@ -25,12 +30,72 @@ type Webhook struct {
 	Repos repos.Store
 	Now   func() time.Time
 
-	Service string
+	// ServiceType corresponds to api.ExternalRepoSpec.ServiceType
+	// Example values: bitbucketserver.ServiceType, github.ServiceType
+	ServiceType string
+}
+
+type PR struct {
+	ID             int64
+	RepoExternalID string
+}
+
+func (h Webhook) getRepoForPR(
+	ctx context.Context,
+	tx *Store,
+	pr PR,
+	externalServiceID string,
+) (*repos.Repo, error) {
+	reposTx := repos.NewDBStore(tx.DB(), sql.TxOptions{})
+	rs, err := reposTx.ListRepos(ctx, repos.StoreListReposArgs{
+		ExternalRepos: []api.ExternalRepoSpec{
+			{
+				ID:          pr.RepoExternalID,
+				ServiceType: h.ServiceType,
+				ServiceID:   externalServiceID,
+			},
+		},
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to load repository")
+	}
+
+	if len(rs) != 1 {
+		return nil, fmt.Errorf("Fetched repositories have wrong length: %d", len(rs))
+	}
+
+	return rs[0], nil
+}
+
+func extractExternalServiceID(extSvc *repos.ExternalService) (string, error) {
+	c, err := extSvc.Configuration()
+	if err != nil {
+		return "", errors.Wrap(err, "Failed to get external service config")
+	}
+
+	var serviceID string
+	switch c := c.(type) {
+	case *schema.GitHubConnection:
+		serviceID = c.Url
+	case *schema.BitbucketServerConnection:
+		serviceID = c.Url
+	}
+	if serviceID == "" {
+		return "", errors.New("could not determine service id")
+	}
+
+	u, err := url.Parse(serviceID)
+	if err != nil {
+		return "", errors.Wrap(err, "Failed to parse service ID")
+	}
+
+	return extsvc.NormalizeBaseURL(u).String(), nil
 }
 
 func (h Webhook) upsertChangesetEvent(
 	ctx context.Context,
-	pr int64,
+	externalServiceID string,
+	pr PR,
 	ev interface{ Key() string },
 ) (err error) {
 	var tx *Store
@@ -39,9 +104,16 @@ func (h Webhook) upsertChangesetEvent(
 	}
 	defer tx.Done(&err)
 
+	r, err := h.getRepoForPR(ctx, tx, pr, externalServiceID)
+	if err != nil {
+		log15.Debug("Webhook event could not be matched to repo", "err", err)
+		return nil
+	}
+
 	cs, err := tx.GetChangeset(ctx, GetChangesetOpts{
-		ExternalID:          strconv.FormatInt(pr, 10),
-		ExternalServiceType: h.Service,
+		RepoID:              r.ID,
+		ExternalID:          strconv.FormatInt(pr.ID, 10),
+		ExternalServiceType: h.ServiceType,
 	})
 	if err != nil {
 		if err == ErrNoResults {
@@ -71,7 +143,7 @@ func (h Webhook) upsertChangesetEvent(
 	}
 
 	if existing != nil {
-		// Upsert is used to create or update the record in the database,
+		// Update is used to create or update the record in the database,
 		// but we're actually "patching" the record with specific merge semantics
 		// encoded in Update. This is because some webhooks payloads don't contain
 		// all the information that we can get from the API, so we only update the
@@ -80,7 +152,24 @@ func (h Webhook) upsertChangesetEvent(
 		event = existing
 	}
 
-	return tx.UpsertChangesetEvents(ctx, event)
+	// Add new event
+	if err := tx.UpsertChangesetEvents(ctx, event); err != nil {
+		return err
+	}
+
+	// The webhook may have caused the external state of the changeset to change
+	// so we need to update it. We need all events as we may have received more than just the
+	// event we are currently handling
+	events, _, err := tx.ListChangesetEvents(ctx, ListChangesetEventsOpts{
+		ChangesetIDs: []int64{cs.ID},
+		Limit:        -1,
+	})
+	SetDerivedState(cs, events)
+	if err := tx.UpdateChangesets(ctx, cs); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // GitHubWebhook receives GitHub organization webhook events that are
@@ -92,25 +181,35 @@ type GitHubWebhook struct {
 
 type BitbucketServerWebhook struct {
 	*Webhook
+	Name string
 }
 
 func NewGitHubWebhook(store *Store, repos repos.Store, now func() time.Time) *GitHubWebhook {
 	return &GitHubWebhook{&Webhook{store, repos, now, github.ServiceType}}
 }
 
-func NewBitbucketServerWebhook(store *Store, repos repos.Store, now func() time.Time) *BitbucketServerWebhook {
-	return &BitbucketServerWebhook{&Webhook{store, repos, now, bbs.ServiceType}}
+func NewBitbucketServerWebhook(store *Store, repos repos.Store, now func() time.Time, name string) *BitbucketServerWebhook {
+	return &BitbucketServerWebhook{
+		Webhook: &Webhook{store, repos, now, bbs.ServiceType},
+		Name:    name,
+	}
 }
 
 // ServeHTTP implements the http.Handler interface.
 func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	e, err := h.parseEvent(r)
-	if err != nil {
-		respond(w, err.code, err)
+	e, extSvc, httpErr := h.parseEvent(r)
+	if httpErr != nil {
+		respond(w, httpErr.code, httpErr)
 		return
 	}
 
-	prs, ev := h.convertEvent(r.Context(), e)
+	externalServiceID, err := extractExternalServiceID(extSvc)
+	if err != nil {
+		respond(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	prs, ev := h.convertEvent(r.Context(), externalServiceID, e)
 	if len(prs) == 0 || ev == nil {
 		respond(w, http.StatusOK, nil) // Nothing to do
 		return
@@ -118,7 +217,11 @@ func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	m := new(multierror.Error)
 	for _, pr := range prs {
-		err := h.upsertChangesetEvent(r.Context(), pr, ev)
+		if pr == (PR{}) {
+			continue
+		}
+
+		err := h.upsertChangesetEvent(r.Context(), externalServiceID, pr, ev)
 		if err != nil {
 			m = multierror.Append(m, err)
 		}
@@ -128,16 +231,10 @@ func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *GitHubWebhook) parseEvent(r *http.Request) (interface{}, *httpError) {
-	args := repos.StoreListExternalServicesArgs{Kinds: []string{"GITHUB"}}
-	es, err := h.Repos.ListExternalServices(r.Context(), args)
-	if err != nil {
-		return nil, &httpError{http.StatusInternalServerError, err}
-	}
-
+func (h *GitHubWebhook) parseEvent(r *http.Request) (interface{}, *repos.ExternalService, *httpError) {
 	payload, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		return nil, &httpError{http.StatusInternalServerError, err}
+		return nil, nil, &httpError{http.StatusInternalServerError, err}
 	}
 
 	// 🚨 SECURITY: Try to authenticate the request with any of the stored secrets
@@ -145,43 +242,63 @@ func (h *GitHubWebhook) parseEvent(r *http.Request) (interface{}, *httpError) {
 	// it's ok for this to be have linear complexity.
 	// If there are no secrets or no secret managed to authenticate the request,
 	// we return a 401 to the client.
-
-	var secrets [][]byte
-	for _, e := range es {
-		c, _ := e.Configuration()
-		for _, hook := range c.(*schema.GitHubConnection).Webhooks {
-			secrets = append(secrets, []byte(hook.Secret))
-		}
+	args := repos.StoreListExternalServicesArgs{Kinds: []string{"GITHUB"}}
+	es, err := h.Repos.ListExternalServices(r.Context(), args)
+	if err != nil {
+		return nil, nil, &httpError{http.StatusInternalServerError, err}
 	}
 
 	sig := r.Header.Get("X-Hub-Signature")
-	for _, secret := range secrets {
-		if err = gh.ValidateSignature(sig, payload, secret); err == nil {
-			break
+
+	var extSvc *repos.ExternalService
+	for _, e := range es {
+		c, _ := e.Configuration()
+		for _, hook := range c.(*schema.GitHubConnection).Webhooks {
+			if hook.Secret == "" {
+				continue
+			}
+
+			if err = gh.ValidateSignature(sig, payload, []byte(hook.Secret)); err == nil {
+				extSvc = e
+				break
+			}
 		}
 	}
 
-	if len(secrets) == 0 || err != nil {
-		return nil, &httpError{http.StatusUnauthorized, err}
+	if extSvc == nil || err != nil {
+		return nil, nil, &httpError{http.StatusUnauthorized, err}
 	}
 
 	e, err := gh.ParseWebHook(gh.WebHookType(r), payload)
 	if err != nil {
-		return nil, &httpError{http.StatusBadRequest, err}
+		return nil, nil, &httpError{http.StatusBadRequest, err}
 	}
 
-	return e, nil
+	return e, extSvc, nil
 }
 
-func (h *GitHubWebhook) convertEvent(ctx context.Context, theirs interface{}) (prs []int64, ours interface{ Key() string }) {
-	log15.Info("GitHub webhook received", "type", fmt.Sprintf("%T", theirs))
+func (h *GitHubWebhook) convertEvent(ctx context.Context, externalServiceID string, theirs interface{}) (prs []PR, ours interface{ Key() string }) {
+	log15.Debug("GitHub webhook received", "type", fmt.Sprintf("%T", theirs))
 	switch e := theirs.(type) {
 	case *gh.IssueCommentEvent:
-		prs = append(prs, int64(*e.Issue.Number))
+		repo := e.GetRepo()
+		if repo == nil {
+			return
+		}
+		repoExternalID := repo.GetNodeID()
+
+		pr := PR{ID: int64(*e.Issue.Number), RepoExternalID: repoExternalID}
+		prs = append(prs, pr)
 		return prs, h.issueComment(e)
 
 	case *gh.PullRequestEvent:
-		prs = append(prs, int64(*e.Number))
+		repo := e.GetRepo()
+		if repo == nil {
+			return
+		}
+		repoExternalID := repo.GetNodeID()
+		pr := PR{ID: int64(*e.Number), RepoExternalID: repoExternalID}
+		prs = append(prs, pr)
 
 		switch *e.Action {
 		case "assigned":
@@ -205,11 +322,25 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, theirs interface{}) (p
 		}
 
 	case *gh.PullRequestReviewEvent:
-		prs = append(prs, int64(*e.PullRequest.Number))
+		repo := e.GetRepo()
+		if repo == nil {
+			return
+		}
+		repoExternalID := repo.GetNodeID()
+
+		pr := PR{ID: int64(*e.PullRequest.Number), RepoExternalID: repoExternalID}
+		prs = append(prs, pr)
 		ours = h.pullRequestReviewEvent(e)
 
 	case *gh.PullRequestReviewCommentEvent:
-		prs = append(prs, int64(*e.PullRequest.Number))
+		repo := e.GetRepo()
+		if repo == nil {
+			return
+		}
+		repoExternalID := repo.GetNodeID()
+
+		pr := PR{ID: int64(*e.PullRequest.Number), RepoExternalID: repoExternalID}
+		prs = append(prs, pr)
 		switch *e.Action {
 		case "created", "edited":
 			ours = h.pullRequestReviewCommentEvent(e)
@@ -229,9 +360,21 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, theirs interface{}) (p
 			return nil, nil
 		}
 
-		ids, err := h.Store.GetGithubExternalIDForRefs(ctx, refs)
+		repo := e.GetRepo()
+		if repo == nil {
+			return
+		}
+		repoExternalID := repo.GetNodeID()
+
+		spec := api.ExternalRepoSpec{
+			ID:          repoExternalID,
+			ServiceID:   externalServiceID,
+			ServiceType: "github",
+		}
+
+		ids, err := h.Store.GetChangesetExternalIDs(ctx, spec, refs)
 		if err != nil {
-			log15.Error("Error executing GetGithubExternalIDForRefs", "err", err)
+			log15.Error("Error executing GetChangesetExternalIDs", "err", err)
 			return nil, nil
 		}
 
@@ -241,7 +384,7 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, theirs interface{}) (p
 				log15.Error("Error parsing external id", "err", err)
 				continue
 			}
-			prs = append(prs, i)
+			prs = append(prs, PR{ID: i, RepoExternalID: repoExternalID})
 		}
 
 		ours = h.commitStatusEvent(e)
@@ -250,11 +393,19 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, theirs interface{}) (p
 		if e.CheckSuite == nil {
 			return
 		}
+
 		cs := e.GetCheckSuite()
+
+		repo := cs.GetRepository()
+		if repo == nil {
+			return
+		}
+		repoID := repo.GetNodeID()
+
 		for _, pr := range cs.PullRequests {
 			n := pr.GetNumber()
 			if n != 0 {
-				prs = append(prs, int64(n))
+				prs = append(prs, PR{ID: int64(n), RepoExternalID: repoID})
 			}
 		}
 		ours = h.checkSuiteEvent(cs)
@@ -263,11 +414,24 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, theirs interface{}) (p
 		if e.CheckRun == nil {
 			return
 		}
+
 		cr := e.GetCheckRun()
+
+		cs := cr.GetCheckSuite()
+		if cs == nil {
+			return
+		}
+
+		repo := cs.GetRepository()
+		if repo == nil {
+			return
+		}
+		repoID := repo.GetNodeID()
+
 		for _, pr := range cr.PullRequests {
 			n := pr.GetNumber()
 			if n != 0 {
-				prs = append(prs, int64(n))
+				prs = append(prs, PR{ID: int64(n), RepoExternalID: repoID})
 			}
 		}
 		ours = h.checkRunEvent(cr)
@@ -277,26 +441,30 @@ func (h *GitHubWebhook) convertEvent(ctx context.Context, theirs interface{}) (p
 }
 
 func (*GitHubWebhook) issueComment(e *gh.IssueCommentEvent) *github.IssueComment {
-	comment := github.IssueComment{
-		DatabaseID: *e.Comment.ID,
-		Author: github.Actor{
-			AvatarURL: *e.Comment.User.AvatarURL,
-			Login:     *e.Comment.User.Login,
-			URL:       *e.Comment.User.URL,
-		},
-		AuthorAssociation:   *e.Comment.AuthorAssociation,
-		Body:                *e.Comment.Body,
-		URL:                 *e.Comment.URL,
-		CreatedAt:           *e.Comment.CreatedAt,
-		UpdatedAt:           *e.Comment.UpdatedAt,
-		IncludesCreatedEdit: *e.Action == "edited",
+	comment := github.IssueComment{}
+
+	if c := e.GetComment(); c != nil {
+		comment.DatabaseID = c.GetID()
+
+		if u := c.GetUser(); u != nil {
+			comment.Author.AvatarURL = u.GetAvatarURL()
+			comment.Author.Login = u.GetLogin()
+			comment.Author.URL = u.GetURL()
+		}
+
+		comment.AuthorAssociation = c.GetAuthorAssociation()
+		comment.Body = c.GetBody()
+		comment.URL = c.GetURL()
+		comment.CreatedAt = c.GetCreatedAt()
+		comment.UpdatedAt = c.GetUpdatedAt()
 	}
 
-	if comment.IncludesCreatedEdit {
+	comment.IncludesCreatedEdit = e.GetAction() == "edited"
+	if s := e.GetSender(); s != nil && comment.IncludesCreatedEdit {
 		comment.Editor = &github.Actor{
-			AvatarURL: *e.Sender.AvatarURL,
-			Login:     *e.Sender.Login,
-			URL:       *e.Sender.URL,
+			AvatarURL: s.GetAvatarURL(),
+			Login:     s.GetLogin(),
+			URL:       s.GetURL(),
 		}
 	}
 
@@ -304,77 +472,99 @@ func (*GitHubWebhook) issueComment(e *gh.IssueCommentEvent) *github.IssueComment
 }
 
 func (*GitHubWebhook) labeledEvent(e *gh.PullRequestEvent) *github.LabelEvent {
-	return &github.LabelEvent{
-		Actor: github.Actor{
-			AvatarURL: e.GetSender().GetAvatarURL(),
-			Login:     e.GetSender().GetLogin(),
-			URL:       e.GetSender().GetURL(),
-		},
-		Label: github.Label{
-			Color:       e.Label.GetColor(),
-			Description: e.Label.GetDescription(),
-			Name:        e.Label.GetName(),
-			ID:          e.Label.GetNodeID(),
-		},
-		CreatedAt: e.GetPullRequest().GetUpdatedAt(),
-		Removed:   e.GetAction() == "unlabeled",
+	labelEvent := &github.LabelEvent{
+		Removed: e.GetAction() == "unlabeled",
 	}
+
+	if pr := e.GetPullRequest(); pr != nil {
+		labelEvent.CreatedAt = pr.GetUpdatedAt()
+	}
+
+	if l := e.GetLabel(); l != nil {
+		labelEvent.Label.Color = l.GetColor()
+		labelEvent.Label.Description = l.GetDescription()
+		labelEvent.Label.Name = l.GetName()
+		labelEvent.Label.ID = l.GetNodeID()
+	}
+
+	if s := e.GetSender(); s != nil {
+		labelEvent.Actor.AvatarURL = s.GetAvatarURL()
+		labelEvent.Actor.Login = s.GetLogin()
+		labelEvent.Actor.URL = s.GetURL()
+	}
+
+	return labelEvent
 }
 
 func (*GitHubWebhook) assignedEvent(e *gh.PullRequestEvent) *github.AssignedEvent {
-	return &github.AssignedEvent{
-		Actor: github.Actor{
-			AvatarURL: *e.Sender.AvatarURL,
-			Login:     *e.Sender.Login,
-			URL:       *e.Sender.URL,
-		},
-		Assignee: github.Actor{
-			AvatarURL: *e.Assignee.AvatarURL,
-			Login:     *e.Assignee.Login,
-			URL:       *e.Assignee.URL,
-		},
-		CreatedAt: *e.PullRequest.UpdatedAt,
+	assignedEvent := &github.AssignedEvent{}
+
+	if pr := e.GetPullRequest(); pr != nil {
+		assignedEvent.CreatedAt = pr.GetUpdatedAt()
 	}
+
+	if s := e.GetSender(); s != nil {
+		assignedEvent.Actor.AvatarURL = s.GetAvatarURL()
+		assignedEvent.Actor.Login = s.GetLogin()
+		assignedEvent.Actor.URL = s.GetURL()
+	}
+
+	if a := e.GetAssignee(); a != nil {
+		assignedEvent.Assignee.AvatarURL = a.GetAvatarURL()
+		assignedEvent.Assignee.Login = a.GetLogin()
+		assignedEvent.Assignee.URL = a.GetURL()
+	}
+
+	return assignedEvent
 }
 
 func (*GitHubWebhook) unassignedEvent(e *gh.PullRequestEvent) *github.UnassignedEvent {
-	return &github.UnassignedEvent{
-		Actor: github.Actor{
-			AvatarURL: *e.Sender.AvatarURL,
-			Login:     *e.Sender.Login,
-			URL:       *e.Sender.URL,
-		},
-		Assignee: github.Actor{
-			AvatarURL: *e.Assignee.AvatarURL,
-			Login:     *e.Assignee.Login,
-			URL:       *e.Assignee.URL,
-		},
-		CreatedAt: *e.PullRequest.UpdatedAt,
+	unassignedEvent := &github.UnassignedEvent{}
+
+	if pr := e.GetPullRequest(); pr != nil {
+		unassignedEvent.CreatedAt = pr.GetUpdatedAt()
 	}
+
+	if s := e.GetSender(); s != nil {
+		unassignedEvent.Actor.AvatarURL = s.GetAvatarURL()
+		unassignedEvent.Actor.Login = s.GetLogin()
+		unassignedEvent.Actor.URL = s.GetURL()
+	}
+
+	if a := e.GetAssignee(); a != nil {
+		unassignedEvent.Assignee.AvatarURL = a.GetAvatarURL()
+		unassignedEvent.Assignee.Login = a.GetLogin()
+		unassignedEvent.Assignee.URL = a.GetURL()
+	}
+
+	return unassignedEvent
 }
 
 func (*GitHubWebhook) reviewRequestedEvent(e *gh.PullRequestEvent) *github.ReviewRequestedEvent {
-	event := &github.ReviewRequestedEvent{
-		Actor: github.Actor{
-			AvatarURL: *e.Sender.AvatarURL,
-			Login:     *e.Sender.Login,
-			URL:       *e.Sender.URL,
-		},
-		CreatedAt: *e.PullRequest.UpdatedAt,
+	event := &github.ReviewRequestedEvent{}
+
+	if s := e.GetSender(); s != nil {
+		event.Actor.AvatarURL = s.GetAvatarURL()
+		event.Actor.Login = s.GetLogin()
+		event.Actor.URL = s.GetURL()
+	}
+
+	if pr := e.GetPullRequest(); pr != nil {
+		event.CreatedAt = pr.GetUpdatedAt()
 	}
 
 	if e.RequestedReviewer != nil {
 		event.RequestedReviewer = github.Actor{
-			AvatarURL: *e.RequestedReviewer.AvatarURL,
-			Login:     *e.RequestedReviewer.Login,
-			URL:       *e.RequestedReviewer.URL,
+			AvatarURL: e.RequestedReviewer.GetAvatarURL(),
+			Login:     e.RequestedReviewer.GetLogin(),
+			URL:       e.RequestedReviewer.GetURL(),
 		}
 	}
 
 	if e.RequestedTeam != nil {
 		event.RequestedTeam = github.Team{
-			Name: *e.RequestedTeam.Name,
-			URL:  *e.RequestedTeam.URL,
+			Name: e.RequestedTeam.GetName(),
+			URL:  e.RequestedTeam.GetURL(),
 		}
 	}
 
@@ -382,27 +572,30 @@ func (*GitHubWebhook) reviewRequestedEvent(e *gh.PullRequestEvent) *github.Revie
 }
 
 func (*GitHubWebhook) reviewRequestRemovedEvent(e *gh.PullRequestEvent) *github.ReviewRequestRemovedEvent {
-	event := &github.ReviewRequestRemovedEvent{
-		Actor: github.Actor{
-			AvatarURL: *e.Sender.AvatarURL,
-			Login:     *e.Sender.Login,
-			URL:       *e.Sender.URL,
-		},
-		CreatedAt: *e.PullRequest.UpdatedAt,
+	event := &github.ReviewRequestRemovedEvent{}
+
+	if s := e.GetSender(); s != nil {
+		event.Actor.AvatarURL = s.GetAvatarURL()
+		event.Actor.Login = s.GetLogin()
+		event.Actor.URL = s.GetURL()
+	}
+
+	if pr := e.GetPullRequest(); pr != nil {
+		event.CreatedAt = pr.GetUpdatedAt()
 	}
 
 	if e.RequestedReviewer != nil {
 		event.RequestedReviewer = github.Actor{
-			AvatarURL: *e.RequestedReviewer.AvatarURL,
-			Login:     *e.RequestedReviewer.Login,
-			URL:       *e.RequestedReviewer.URL,
+			AvatarURL: e.RequestedReviewer.GetAvatarURL(),
+			Login:     e.RequestedReviewer.GetLogin(),
+			URL:       e.RequestedReviewer.GetURL(),
 		}
 	}
 
 	if e.RequestedTeam != nil {
 		event.RequestedTeam = github.Team{
-			Name: *e.RequestedTeam.Name,
-			URL:  *e.RequestedTeam.URL,
+			Name: e.RequestedTeam.GetName(),
+			URL:  e.RequestedTeam.GetURL(),
 		}
 	}
 
@@ -410,84 +603,112 @@ func (*GitHubWebhook) reviewRequestRemovedEvent(e *gh.PullRequestEvent) *github.
 }
 
 func (*GitHubWebhook) renamedTitleEvent(e *gh.PullRequestEvent) *github.RenamedTitleEvent {
-	return &github.RenamedTitleEvent{
-		Actor: github.Actor{
-			AvatarURL: *e.Sender.AvatarURL,
-			Login:     *e.Sender.Login,
-			URL:       *e.Sender.URL,
-		},
-		PreviousTitle: *e.Changes.Title.From,
-		CurrentTitle:  *e.PullRequest.Title,
-		CreatedAt:     *e.PullRequest.UpdatedAt,
+	event := &github.RenamedTitleEvent{}
+
+	if s := e.GetSender(); s != nil {
+		event.Actor.AvatarURL = s.GetAvatarURL()
+		event.Actor.Login = s.GetLogin()
+		event.Actor.URL = s.GetURL()
 	}
+
+	if pr := e.GetPullRequest(); pr != nil {
+		event.CurrentTitle = pr.GetTitle()
+		event.CreatedAt = pr.GetUpdatedAt()
+	}
+
+	if ch := e.GetChanges(); ch != nil && ch.Title != nil && ch.Title.From != nil {
+		event.PreviousTitle = *ch.Title.From
+	}
+
+	return event
 }
 
 func (*GitHubWebhook) closedEvent(e *gh.PullRequestEvent) *github.ClosedEvent {
-	return &github.ClosedEvent{
-		Actor: github.Actor{
-			AvatarURL: *e.Sender.AvatarURL,
-			Login:     *e.Sender.Login,
-			URL:       *e.Sender.URL,
-		},
-		CreatedAt: *e.PullRequest.UpdatedAt,
+	event := &github.ClosedEvent{}
+
+	if s := e.GetSender(); s != nil {
+		event.Actor.AvatarURL = s.GetAvatarURL()
+		event.Actor.Login = s.GetLogin()
+		event.Actor.URL = s.GetURL()
+	}
+
+	if pr := e.GetPullRequest(); pr != nil {
+		event.CreatedAt = pr.GetUpdatedAt()
+
 		// This is different from the URL returned by GraphQL because the precise
 		// event URL isn't available in this webhook payload. This means if we expose
 		// this URL in the UI, and users click it, they'll just go to the PR page, rather
 		// than the precise location of the "close" event, until the background syncing
 		// runs and updates this URL to the exact one.
-		URL: *e.PullRequest.URL,
+		event.URL = pr.GetURL()
 	}
+
+	return event
 }
 
 func (*GitHubWebhook) reopenedEvent(e *gh.PullRequestEvent) *github.ReopenedEvent {
-	return &github.ReopenedEvent{
-		Actor: github.Actor{
-			AvatarURL: *e.Sender.AvatarURL,
-			Login:     *e.Sender.Login,
-			URL:       *e.Sender.URL,
-		},
-		CreatedAt: *e.PullRequest.UpdatedAt,
+	event := &github.ReopenedEvent{}
+
+	if s := e.GetSender(); s != nil {
+		event.Actor.AvatarURL = s.GetAvatarURL()
+		event.Actor.Login = s.GetLogin()
+		event.Actor.URL = s.GetURL()
 	}
+
+	if pr := e.GetPullRequest(); pr != nil {
+		event.CreatedAt = pr.GetUpdatedAt()
+	}
+
+	return event
 }
 
 func (*GitHubWebhook) pullRequestReviewEvent(e *gh.PullRequestReviewEvent) *github.PullRequestReview {
-	return &github.PullRequestReview{
-		DatabaseID: *e.Review.ID,
-		Author: github.Actor{
-			AvatarURL: *e.Review.User.AvatarURL,
-			Login:     *e.Review.User.Login,
-			URL:       *e.Review.User.URL,
-		},
-		Body:      *e.Review.Body,
-		State:     *e.Review.State,
-		URL:       *e.Review.HTMLURL,
-		CreatedAt: *e.Review.SubmittedAt,
-		UpdatedAt: *e.Review.SubmittedAt,
-		Commit: github.Commit{
-			OID: *e.Review.CommitID,
-		},
+	review := &github.PullRequestReview{}
+
+	if r := e.GetReview(); r != nil {
+		review.DatabaseID = r.GetID()
+		review.Body = e.Review.GetBody()
+		review.State = e.Review.GetState()
+		review.URL = e.Review.GetHTMLURL()
+		review.CreatedAt = e.Review.GetSubmittedAt()
+		review.UpdatedAt = e.Review.GetSubmittedAt()
+
+		if u := r.GetUser(); u != nil {
+			review.Author.AvatarURL = u.GetAvatarURL()
+			review.Author.Login = u.GetLogin()
+			review.Author.URL = u.GetURL()
+		}
+
+		review.Commit.OID = r.GetCommitID()
 	}
+
+	return review
 }
 
 func (*GitHubWebhook) pullRequestReviewCommentEvent(e *gh.PullRequestReviewCommentEvent) *github.PullRequestReviewComment {
-	comment := github.PullRequestReviewComment{
-		DatabaseID:        *e.Comment.ID,
-		AuthorAssociation: *e.Comment.AuthorAssociation,
-		Commit: github.Commit{
-			OID: *e.Comment.CommitID,
-		},
-		Body:                *e.Comment.Body,
-		URL:                 *e.Comment.URL,
-		CreatedAt:           *e.Comment.CreatedAt,
-		UpdatedAt:           *e.Comment.UpdatedAt,
-		IncludesCreatedEdit: *e.Action == "edited",
+	comment := github.PullRequestReviewComment{}
+
+	user := github.Actor{}
+
+	if c := e.GetComment(); c != nil {
+		comment.DatabaseID = c.GetID()
+		comment.AuthorAssociation = c.GetAuthorAssociation()
+		comment.Commit = github.Commit{
+			OID: c.GetCommitID(),
+		}
+		comment.Body = c.GetBody()
+		comment.URL = c.GetURL()
+		comment.CreatedAt = c.GetCreatedAt()
+		comment.UpdatedAt = c.GetUpdatedAt()
+
+		if u := c.GetUser(); u != nil {
+			user.AvatarURL = u.GetAvatarURL()
+			user.Login = u.GetLogin()
+			user.URL = u.GetURL()
+		}
 	}
 
-	user := github.Actor{
-		AvatarURL: *e.Comment.User.AvatarURL,
-		Login:     *e.Comment.User.Login,
-		URL:       *e.Comment.User.URL,
-	}
+	comment.IncludesCreatedEdit = e.GetAction() == "edited"
 
 	if comment.IncludesCreatedEdit {
 		comment.Editor = user
@@ -528,6 +749,12 @@ func (*GitHubWebhook) checkRunEvent(cr *gh.CheckRun) *github.CheckRun {
 // Upsert ensures the creation of the BitbucketServer campaigns webhook.
 // This happens periodically at the specified interval.
 func (h *BitbucketServerWebhook) Upsert(every time.Duration) {
+	externalURL := func() string {
+		return conf.Cached(func() interface{} {
+			return conf.Get().ExternalURL
+		})().(string)
+	}
+
 	for {
 		args := repos.StoreListExternalServicesArgs{Kinds: []string{"BITBUCKETSERVER"}}
 		es, err := h.Repos.ListExternalServices(context.Background(), args)
@@ -544,7 +771,7 @@ func (h *BitbucketServerWebhook) Upsert(every time.Duration) {
 				continue
 			}
 
-			client, err := bbs.NewClientWithConfig(con)
+			client, err := bbs.NewClient(con, nil)
 			if err != nil {
 				log15.Error("Upserting BBS Webhook [Creating Client]", "err", err)
 				continue
@@ -555,11 +782,12 @@ func (h *BitbucketServerWebhook) Upsert(every time.Duration) {
 				continue
 			}
 
-			endpoint := globals.ExternalURL().String() + "/.api/bitbucket-server-webhooks"
+			endpoint := externalURL() + "/.api/bitbucket-server-webhooks"
+
 			wh := bbs.Webhook{
-				Name:     "sourcegraph-campaigns",
+				Name:     h.Name,
 				Scope:    "global",
-				Events:   []string{"pr"},
+				Events:   []string{"pr", "repo"},
 				Endpoint: endpoint,
 				Secret:   secret,
 			}
@@ -575,36 +803,52 @@ func (h *BitbucketServerWebhook) Upsert(every time.Duration) {
 }
 
 func (h *BitbucketServerWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	e, err := h.parseEvent(r)
+	e, extSvc, hErr := h.parseEvent(r)
+	if hErr != nil {
+		respond(w, hErr.code, hErr)
+		return
+	}
+
+	externalServiceID, err := extractExternalServiceID(extSvc)
 	if err != nil {
-		respond(w, err.code, err)
-		return
-	}
-
-	pr, ev := h.convertEvent(e)
-	if pr == 0 || ev == nil {
-		respond(w, http.StatusOK, nil) // Nothing to do
-		return
-	}
-
-	if err := h.upsertChangesetEvent(r.Context(), pr, ev); err != nil {
 		respond(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	prs, ev := h.convertEvent(e)
+
+	m := new(multierror.Error)
+	for _, pr := range prs {
+		if pr == (PR{}) {
+			log15.Warn("Dropping Bitbucket Server webhook event", "type", fmt.Sprintf("%T", e))
+			continue
+		}
+
+		err := h.upsertChangesetEvent(r.Context(), externalServiceID, pr, ev)
+		if err != nil {
+			m = multierror.Append(m, err)
+		}
+	}
+	if m.ErrorOrNil() != nil {
+		respond(w, http.StatusInternalServerError, m)
 	}
 }
 
-func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *httpError) {
+func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *repos.ExternalService, *httpError) {
+	payload, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		return nil, nil, &httpError{http.StatusInternalServerError, err}
+	}
+
 	args := repos.StoreListExternalServicesArgs{Kinds: []string{"BITBUCKETSERVER"}}
 	es, err := h.Repos.ListExternalServices(r.Context(), args)
 	if err != nil {
-		return nil, &httpError{http.StatusInternalServerError, err}
+		return nil, nil, &httpError{http.StatusInternalServerError, err}
 	}
 
-	payload, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		return nil, &httpError{http.StatusInternalServerError, err}
-	}
+	sig := r.Header.Get("X-Hub-Signature")
 
-	var secrets [][]byte
+	var extSvc *repos.ExternalService
 	for _, e := range es {
 		c, _ := e.Configuration()
 		con, ok := c.(*schema.BitbucketServerConnection)
@@ -612,33 +856,47 @@ func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *http
 			continue
 		}
 
+		// TODO: There's a bug here where multiple external services use the
+		// same secret and we pick the wrong one (that doesn't match the event
+		// received)
 		if secret := con.WebhookSecret(); secret != "" {
-			secrets = append(secrets, []byte(secret))
+			if err = gh.ValidateSignature(sig, payload, []byte(secret)); err == nil {
+				extSvc = e
+				break
+			}
 		}
 	}
 
-	sig := r.Header.Get("X-Hub-Signature")
-	for _, secret := range secrets {
-		if err = gh.ValidateSignature(sig, payload, secret); err == nil {
-			break
-		}
+	if extSvc == nil || err != nil {
+		return nil, nil, &httpError{http.StatusUnauthorized, err}
 	}
 
-	if len(secrets) == 0 || err != nil {
-		return nil, &httpError{http.StatusUnauthorized, err}
-	}
-
-	e, err := bbs.ParseWebHook(bbs.WebHookType(r), payload)
+	e, err := bbs.ParseWebhookEvent(bbs.WebhookEventType(r), payload)
 	if err != nil {
-		return nil, &httpError{http.StatusBadRequest, err}
+		return nil, nil, &httpError{http.StatusBadRequest, err}
 	}
-	return e, nil
+	return e, extSvc, nil
 }
 
-func (h *BitbucketServerWebhook) convertEvent(theirs interface{}) (pr int64, ours interface{ Key() string }) {
+func (h *BitbucketServerWebhook) convertEvent(theirs interface{}) (prs []PR, ours interface{ Key() string }) {
+	log15.Debug("Bitbucket Server webhook received", "type", fmt.Sprintf("%T", theirs))
+
 	switch e := theirs.(type) {
 	case *bbs.PullRequestEvent:
-		return int64(e.PullRequest.ID), e.Activity
+		repoID := strconv.Itoa(e.PullRequest.FromRef.Repository.ID)
+		pr := PR{ID: int64(e.PullRequest.ID), RepoExternalID: repoID}
+		prs = append(prs, pr)
+		return prs, e.Activity
+	case *bbs.BuildStatusEvent:
+		for _, p := range e.PullRequests {
+			repoID := strconv.Itoa(p.FromRef.Repository.ID)
+			pr := PR{ID: int64(p.ID), RepoExternalID: repoID}
+			prs = append(prs, pr)
+		}
+		return prs, &bbs.CommitStatus{
+			Commit: e.Commit,
+			Status: e.Status,
+		}
 	}
 
 	return

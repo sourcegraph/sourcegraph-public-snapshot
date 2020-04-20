@@ -1,16 +1,17 @@
 {
-  "id": 31,
-  "version": 1,
-  "title": "Remove NPM credentials",
-  "description": "This campaign removes NPM credentials across GitHub and Bitbucket Server.\n\n---\n\nTokens found:\n\n- `${NPM_TOKEN}`\n- `12345678-2323-1111-1111-12345670B312`",
+  "id": 59,
+  "version": 5,
+  "title": "test193",
+  "description": "test193",
   "state": "DECLINED",
   "open": false,
   "closed": true,
-  "createdDate": 1575369964145,
-  "updatedDate": 1575642286295,
+  "createdDate": 1583938882375,
+  "updatedDate": 1585578348952,
   "fromRef": {
-   "id": "refs/heads/sourcegraph/campaign-1",
+   "id": "refs/heads/test193",
    "repository": {
+    "id": 10070,
     "slug": "automation-testing",
     "project": {
      "key": "SOUR"
@@ -20,6 +21,7 @@
   "toRef": {
    "id": "refs/heads/master",
    "repository": {
+    "id": 10070,
     "slug": "automation-testing",
     "project": {
      "key": "SOUR"
@@ -61,7 +63,7 @@
   "links": {
    "self": [
     {
-     "href": "https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/pull-requests/31"
+     "href": "https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/pull-requests/59"
     }
    ]
   }

@@ -59,7 +59,7 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
     constructor(props: Props) {
         super(props)
         this.subscriptions.add(
-            combineLatest(this.propsChanges, this.visibilityChanges)
+            combineLatest([this.propsChanges, this.visibilityChanges])
                 .pipe(
                     filter(([, isVisible]) => isVisible),
                     map(([{ repoName, filePath, commitID, isLightTheme }]) => ({

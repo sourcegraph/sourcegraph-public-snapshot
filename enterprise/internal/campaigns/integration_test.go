@@ -16,13 +16,12 @@ func TestIntegration(t *testing.T) {
 
 	t.Parallel()
 
-	db, cleanup := dbtest.NewDB(t, *dsn)
-	defer cleanup()
+	db := dbtest.NewDB(t, *dsn)
 
 	t.Run("Store", testStore(db))
 	t.Run("GitHubWebhook", testGitHubWebhook(db))
 
 	// The following tests need to be separate because testStore above wraps everything in a global transaction
 	t.Run("StoreLocking", testStoreLocking(db))
-	t.Run("ProcessCampaignJob", testProcessCampaignJob(db))
+	t.Run("ProcessChangesetJob", testProcessChangesetJob(db))
 }

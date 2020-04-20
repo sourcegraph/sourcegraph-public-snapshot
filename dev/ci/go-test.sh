@@ -4,13 +4,13 @@ set -e
 
 # For symbol tests
 echo "--- build libsqlite"
-./cmd/symbols/build.sh buildLibsqlite3Pcre
+./dev/libsqlite3-pcre/build.sh
 
 # For searcher and replacer tests
 echo "--- comby install"
 ./dev/comby-install-or-upgrade.sh
 
-# Seperate out time for go mod from go test
+# Separate out time for go mod from go test
 echo "--- go mod download"
 go mod download
 

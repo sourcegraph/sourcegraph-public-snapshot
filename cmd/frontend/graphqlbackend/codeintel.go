@@ -6,6 +6,7 @@ import (
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 // NewCodeIntelResolver will be set by enterprise.
@@ -68,6 +69,7 @@ type LSIFUploadResolver interface {
 	FinishedAt() *DateTime
 	Failure() LSIFUploadFailureReasonResolver
 	IsLatestForRepo() bool
+	PlaceInQueue() *int32
 }
 
 type LSIFUploadFailureReasonResolver interface {
@@ -89,7 +91,7 @@ type LSIFQueryResolver interface {
 
 type LSIFQueryArgs struct {
 	Repository *RepositoryResolver
-	Commit     GitObjectID
+	Commit     api.CommitID
 	Path       string
 	UploadID   int64
 }

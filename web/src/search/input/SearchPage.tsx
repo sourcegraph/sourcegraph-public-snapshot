@@ -128,7 +128,7 @@ export class SearchPage extends React.Component<Props, State> {
                                                 patternType={this.props.patternType}
                                                 setPatternType={this.props.setPatternType}
                                                 withSearchModeToggle={this.props.splitSearchModes}
-                                            ></QueryInput>
+                                            />
                                         )}
                                         <SearchButton />
                                     </div>
@@ -167,14 +167,11 @@ export class SearchPage extends React.Component<Props, State> {
 
     private onSubmit = (): void => {
         const query = [this.state.builderQuery, this.state.userQueryState.query].filter(s => !!s).join(' ')
-        submitSearch(
-            this.props.history,
+        submitSearch({
+            ...this.props,
             query,
-            'home',
-            this.props.patternType,
-            this.props.caseSensitive,
-            this.props.activation
-        )
+            source: 'home',
+        })
     }
 
     private onFormSubmit = (event: React.FormEvent<HTMLFormElement>): void => {

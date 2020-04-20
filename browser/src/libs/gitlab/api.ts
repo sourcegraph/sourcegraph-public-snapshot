@@ -4,10 +4,10 @@ import { map, switchMap } from 'rxjs/operators'
 
 import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable'
 import { GitLabInfo } from './scrape'
-import { fromFetch } from 'rxjs/fetch'
 import { checkOk } from '../../../../shared/src/backend/fetch'
 import { FileInfo } from '../code_intelligence'
 import { Omit } from 'utility-types'
+import { fromFetch } from '../../../../shared/src/graphql/fromFetch'
 
 /**
  * Significant revisions for a merge request.
@@ -39,10 +39,7 @@ const buildURL = (owner: string, projectName: string, path: string): string =>
     `${window.location.origin}/api/v4/projects/${encodeURIComponent(owner)}%2f${projectName}${path}`
 
 const get = <T>(url: string): Observable<T> =>
-    fromFetch(url).pipe(
-        map(checkOk),
-        switchMap(response => response.json())
-    )
+    fromFetch(url, undefined, response => checkOk(response).json() as Promise<T>)
 
 const getRepoNameFromProjectID = memoizeObservable(
     (projectId: string): Observable<string> =>
@@ -73,7 +70,7 @@ const getBaseCommitIDFromDiffID = memoizeObservable(
                   buildURL(owner, projectName, `/merge_requests/${mergeRequestID}/versions/${diffID}`)
               ).pipe(map(({ base_commit_sha }) => base_commit_sha))
             : of(undefined),
-    ({ owner, projectName, mergeRequestID, diffID }) => `${owner}${projectName}${mergeRequestID}${diffID}`
+    ({ owner, projectName, mergeRequestID, diffID }) => `${owner}:${projectName}:${mergeRequestID}:${String(diffID)}`
 )
 
 /**
@@ -108,7 +105,7 @@ export const getMergeRequestDetailsFromAPI = memoizeObservable(
             )
         ),
     ({ owner, projectName, mergeRequestID, rawRepoName, diffID }) =>
-        `${owner}${projectName}${mergeRequestID}${rawRepoName}${diffID}`
+        `${owner}:${projectName}:${mergeRequestID}:${rawRepoName}:${String(diffID)}`
 )
 
 interface CommitResponse {

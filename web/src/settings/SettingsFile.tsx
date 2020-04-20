@@ -162,7 +162,6 @@ export class SettingsFile extends React.PureComponent<Props, State> {
             <div className="settings-file e2e-settings-file d-flex flex-grow-1 flex-column">
                 <SaveToolbar
                     dirty={dirty}
-                    disabled={this.state.saving || !dirty}
                     error={this.props.commitError}
                     saving={this.state.saving}
                     onSave={this.save}
@@ -230,7 +229,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
             const action = this.editor.getAction(id)
             action.run().then(
                 () => undefined,
-                (err: any) => console.error(err)
+                err => console.error(err)
             )
         } else {
             alert('Wait for editor to load before running action.')
