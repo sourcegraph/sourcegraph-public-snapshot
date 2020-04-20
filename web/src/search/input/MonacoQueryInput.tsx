@@ -1,6 +1,7 @@
 import React from 'react'
 import * as H from 'history'
 import * as Monaco from 'monaco-editor'
+import { isPlainObject } from 'lodash'
 import { MonacoEditor } from '../../components/MonacoEditor'
 import { QueryState } from '../helpers'
 import { getProviders } from '../../../../shared/src/search/parser/providers'
@@ -99,7 +100,7 @@ const hasKeybindingService = (
     editor: Monaco.editor.IStandaloneCodeEditor
 ): editor is MonacoEditorWithKeybindingsService =>
     hasProperty('_actions')(editor) &&
-    typeof editor._actions === 'object' &&
+    isPlainObject(editor._actions) &&
     hasProperty('_standaloneKeybindingService')(editor) &&
     typeof (editor._standaloneKeybindingService as MonacoEditorWithKeybindingsService['_standaloneKeybindingService'])
         .addDynamicKeybinding === 'function'
