@@ -82,7 +82,7 @@ export const CampaignCLIHelp: React.FunctionComponent<Props> = ({ className }) =
                 <div className="ml-2 mb-1">
                     <p>
                         Here is a short example definition to run <code>gofmt</code> over all repositories that have a{' '}
-                        <code>main.go</code> <code>file</code>:
+                        <code>main.go</code> file:
                     </p>
                     <pre className="alert alert-secondary ml-3">
                         <code
@@ -92,14 +92,15 @@ export const CampaignCLIHelp: React.FunctionComponent<Props> = ({ className }) =
                         />
                     </pre>
                     <p>
-                        See the examples below for more real-world usecases and{' '}
+                        See the examples below for more real-world use cases and read "{' '}
                         <a
                             href="https://docs.sourcegraph.com/user/campaigns/creating_campaign_from_patches"
                             target="_blank"
                             rel="noopener noreferrer"
                         >
-                            read the documentation for more information on what actions can do.
+                            Creating a campaign from patches
                         </a>
+                        " in the documentation for more information about what actions can do.
                     </p>
                 </div>
                 <h3>3. Create a set of patches by executing the action over repositories</h3>
@@ -112,8 +113,11 @@ export const CampaignCLIHelp: React.FunctionComponent<Props> = ({ className }) =
                         />
                     </pre>
                     <p>
-                        Follow the printed instructions to create a campaign from the patches and to turn the patches
-                        into changesets (pull requests) on your code hosts.
+                        After executing the command, follow the printed instructions to create a campaign from the
+                        patches and turn the patches into changesets (pull requests) on your code hosts.
+                    </p>
+                    <p>
+                        Run <code>src action exec -h</code> to see more usage information about this command.
                     </p>
                 </div>
             </div>
