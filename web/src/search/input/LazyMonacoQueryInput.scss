@@ -4,5 +4,5 @@
 // lazy-loading the MonacoQueryInput, to avoid unstable UI.
 .lazy-monaco-query-input--intermediate-input {
     height: 100%;
-    font-size: 12px;
+    font-size: $code-font-size;
 }
