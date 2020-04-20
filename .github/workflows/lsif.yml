@@ -8,12 +8,12 @@ jobs:
       - uses: actions/checkout@v1
       - name: Generate LSIF data
         uses: docker://sourcegraph/lsif-go
-        entrypoint: /bin/sh
-        run: lsif-go
       - name: Upload LSIF data
         uses: docker://sourcegraph/src-cli
-        entrypoint: /bin/sh
-        run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
+        with:
+          args:
+            - lsif upload
+            - -github-token=${{ secrets.GITHUB_TOKEN }}
 
   lsif-web:
     runs-on: ubuntu-latest
