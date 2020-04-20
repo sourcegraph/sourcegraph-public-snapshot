@@ -1,6 +1,6 @@
 # Developing the Sourcegraph web app
 
-Guide to contribute to the Sourcegraph webapp.
+Guide to contribute to the Sourcegraph webapp. Please also see our general [TypeScript documentation](./typescript/index.md).
 
 ## Naming files
 
