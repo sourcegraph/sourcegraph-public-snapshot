@@ -249,19 +249,18 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
         )
 
         // Disable default Monaco keybindings
-        if (hasKeybindingService(editor)) {
-            for (const action of Object.keys(editor._actions)) {
-                // Prefixing action ids with `-` to unbind the default actions.
-                editor._standaloneKeybindingService.addDynamicKeybinding(`-${action}`)
-            }
-            // Free CMD+L keybinding, which is part of Monaco's CoreNavigationCommands, and
-            // not exposed on editor._actions.
-            editor._standaloneKeybindingService.addDynamicKeybinding('-expandLineSelection')
-        } else {
+        if (!hasKeybindingService(editor)) {
             // Throw an error if hasKeybindingService() returns false,
             // to surface issues with this workaround when upgrading Monaco.
             throw new Error('Cannot unbind default Monaco keybindings')
         }
+        for (const action of Object.keys(editor._actions)) {
+            // Prefixing action ids with `-` to unbind the default actions.
+            editor._standaloneKeybindingService.addDynamicKeybinding(`-${action}`)
+        }
+        // Free CMD+L keybinding, which is part of Monaco's CoreNavigationCommands, and
+        // not exposed on editor._actions.
+        editor._standaloneKeybindingService.addDynamicKeybinding('-expandLineSelection')
 
         // Trigger a layout of the Monaco editor when its container gets resized.
         // The Monaco editor doesn't auto-resize with its container:
