@@ -4,6 +4,11 @@ set -euf -o pipefail
 
 pushd "$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null
 
+if ! [ -z "${NO_CADDY:-}" ]; then
+  echo Not using Caddy because NO_CADDY is set. SSH support through Caddy will not work.
+  exit 0
+fi
+
 mkdir -p .bin
 
 version="2.0.0-rc.3"
@@ -29,4 +34,4 @@ chmod +x "${target}"
 
 popd >/dev/null
 
-  exec "${target}" "$@"
+exec "${target}" "$@"
