@@ -72,7 +72,7 @@ function addSouregraphSearchCodeIntelligence(
 /**
  * HACK: this interface and the below type guard are used to free default Monaco
  * keybindings (such as cmd + F, cmd + L) by unregistering them from the private
- * _standaloneKeybindingService.
+ * `_standaloneKeybindingService`.
  *
  * This is necessary as simply registering a noop command with editor.addCommand(keybinding, noop)
  * prevents the default Monaco behaviour, but doesn't free the keybinding, and thus still blocks the
