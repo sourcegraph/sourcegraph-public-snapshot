@@ -97,8 +97,8 @@ func (rph *ReverseProxyHandler) Populate(peps []Endpoint) {
 	for _, ep := range peps {
 		displayName := displayNameFromEndpoint(ep)
 		rps[displayName] = &proxyEndpoint{
-			reverseProxy: reverseProxyFromHost(ep.Host, displayName),
-			host:         ep.Host,
+			reverseProxy: reverseProxyFromHost(ep.Addr, displayName),
+			host:         ep.Addr,
 		}
 	}
 
@@ -109,8 +109,8 @@ func (rph *ReverseProxyHandler) Populate(peps []Endpoint) {
 
 // Creates a display name from an endpoint suited for using in a URL link.
 func displayNameFromEndpoint(ep Endpoint) string {
-	colonIdx := strings.Index(ep.Host, ":")
-	strippedHost := ep.Host
+	colonIdx := strings.Index(ep.Addr, ":")
+	strippedHost := ep.Addr
 	if colonIdx != -1 {
 		strippedHost = strippedHost[:colonIdx]
 	}

@@ -30,7 +30,7 @@ func TestReverseProxyRequestPaths(t *testing.T) {
 		return
 	}
 
-	ep := Endpoint{Service: "gitserver", Host: proxiedURL.Host}
+	ep := Endpoint{Service: "gitserver", Addr: proxiedURL.Host}
 	displayName := displayNameFromEndpoint(ep)
 	rph.Populate([]Endpoint{ep})
 
@@ -70,7 +70,7 @@ func TestIndexLinks(t *testing.T) {
 		return
 	}
 
-	ep := Endpoint{Service: "gitserver", Host: proxiedURL.Host}
+	ep := Endpoint{Service: "gitserver", Addr: proxiedURL.Host}
 	displayName := displayNameFromEndpoint(ep)
 	rph.Populate([]Endpoint{ep})
 
@@ -119,7 +119,7 @@ func TestDisplayNameFromEndpoint(t *testing.T) {
 	for _, c := range cases {
 		got := displayNameFromEndpoint(Endpoint{
 			Service: c.Service,
-			Host:    c.Host,
+			Addr:    c.Host,
 		})
 		if got != c.Want {
 			t.Errorf("displayNameFromEndpoint(%q, %q) mismatch (-want +got):\n%s", c.Service, c.Host, cmp.Diff(c.Want, got))

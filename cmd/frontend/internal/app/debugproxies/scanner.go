@@ -16,8 +16,8 @@ import (
 type Endpoint struct {
 	// Service to which the endpoint belongs
 	Service string
-	// Host:port, so hostname part of a URL (ip address ok)
-	Host string
+	// Addr:port, so hostname part of a URL (ip address ok)
+	Addr string
 }
 
 // ScanConsumer is the callback to consume scan results.
@@ -175,7 +175,7 @@ func (cs *clusterScanner) scanCluster() {
 					if host != "" {
 						scanResults = append(scanResults, Endpoint{
 							Service: svcName,
-							Host:    host,
+							Addr:    host,
 						})
 					}
 				}
