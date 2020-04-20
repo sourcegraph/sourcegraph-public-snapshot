@@ -1,7 +1,7 @@
 import React from 'react'
 import * as H from 'history'
 import * as Monaco from 'monaco-editor'
-import { noop } from 'lodash'
+import { isPlainObject } from 'lodash'
 import { MonacoEditor } from '../../components/MonacoEditor'
 import { QueryState } from '../helpers'
 import { getProviders } from '../../../../shared/src/search/parser/providers'
@@ -13,6 +13,7 @@ import { ThemeProps } from '../../../../shared/src/theme'
 import { CaseSensitivityProps, PatternTypeProps } from '..'
 import { Toggles, TogglesProps } from './toggles/Toggles'
 import { SearchPatternType } from '../../../../shared/src/graphql/schema'
+import { hasProperty } from '../../../../shared/src/util/types'
 
 export interface MonacoQueryInputProps
     extends Omit<TogglesProps, 'navbarSearchQuery' | 'filtersInQuery'>,
@@ -69,7 +70,40 @@ function addSouregraphSearchCodeIntelligence(
     return subscriptions
 }
 
-const NOOP_KEYBINDINGS = [Monaco.KeyMod.CtrlCmd | Monaco.KeyCode.KEY_F, Monaco.KeyMod.CtrlCmd | Monaco.KeyCode.Enter]
+/**
+ * HACK: this interface and the below type guard are used to free default Monaco
+ * keybindings (such as cmd + F, cmd + L) by unregistering them from the private
+ * `_standaloneKeybindingService`.
+ *
+ * This is necessary as simply registering a noop command with editor.addCommand(keybinding, noop)
+ * prevents the default Monaco behaviour, but doesn't free the keybinding, and thus still blocks the
+ * default browser action (eg. select location with cmd + L).
+ *
+ * See upstream issues:
+ * - https://github.com/microsoft/monaco-editor/issues/287
+ * - https://github.com/microsoft/monaco-editor/issues/102 (main tracking issue)
+ */
+interface MonacoEditorWithKeybindingsService extends Monaco.editor.IStandaloneCodeEditor {
+    _actions: {
+        [id: string]: {
+            id: string
+            alias: string
+            label: string
+        }
+    }
+    _standaloneKeybindingService: {
+        addDynamicKeybinding(keybinding: string): void
+    }
+}
+
+const hasKeybindingService = (
+    editor: Monaco.editor.IStandaloneCodeEditor
+): editor is MonacoEditorWithKeybindingsService =>
+    hasProperty('_actions')(editor) &&
+    isPlainObject(editor._actions) &&
+    hasProperty('_standaloneKeybindingService')(editor) &&
+    typeof (editor._standaloneKeybindingService as MonacoEditorWithKeybindingsService['_standaloneKeybindingService'])
+        .addDynamicKeybinding === 'function'
 
 /**
  * A search query input backed by the Monaco editor, allowing it to provide
@@ -214,10 +248,19 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
             )
         )
 
-        // Disable some default Monaco keybindings
-        for (const keybinding of NOOP_KEYBINDINGS) {
-            editor.addCommand(keybinding, noop)
+        // Disable default Monaco keybindings
+        if (!hasKeybindingService(editor)) {
+            // Throw an error if hasKeybindingService() returns false,
+            // to surface issues with this workaround when upgrading Monaco.
+            throw new Error('Cannot unbind default Monaco keybindings')
         }
+        for (const action of Object.keys(editor._actions)) {
+            // Prefixing action ids with `-` to unbind the default actions.
+            editor._standaloneKeybindingService.addDynamicKeybinding(`-${action}`)
+        }
+        // Free CMD+L keybinding, which is part of Monaco's CoreNavigationCommands, and
+        // not exposed on editor._actions.
+        editor._standaloneKeybindingService.addDynamicKeybinding('-expandLineSelection')
 
         // Trigger a layout of the Monaco editor when its container gets resized.
         // The Monaco editor doesn't auto-resize with its container:
