@@ -258,6 +258,7 @@
     "graphiql": "^0.17.5",
     "he": "^1.2.0",
     "highlight.js": "^9.18.1",
+    "highlightjs-graphql": "^1.0.1",
     "is-absolute-url": "^3.0.3",
     "lodash": "^4.17.15",
     "marked": "^0.8.2",

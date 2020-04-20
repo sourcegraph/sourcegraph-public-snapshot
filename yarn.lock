@@ -10452,6 +10452,11 @@ highlight.js@~9.13.0:
   resolved "https://registry.npmjs.org/highlight.js/-/highlight.js-9.13.1.tgz#054586d53a6863311168488a0f58d6c505ce641e"
   integrity sha512-Sc28JNQNDzaH6PORtRLMvif9RSn1mYuOoX3omVjnb0+HbpPygU2ALBI0R/wsiqCb4/fcp07Gdo8g+fhtFrQl6A==
 
+highlightjs-graphql@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.npmjs.org/highlightjs-graphql/-/highlightjs-graphql-1.0.1.tgz#e6e3a69585348a14492386260bb2c0c54c6a2e7b"
+  integrity sha512-g5kt/orsUJTjIt5pgs/uvi78kXndpCtYwzE7H3D0d07r3ETs9oHSZHD0EGaRPndiQ/4EYXt12rnsDkljn3ilAA==
+
 history@4.5.1, history@^4.9.0:
   version "4.5.1"
   resolved "https://registry.npmjs.org/history/-/history-4.5.1.tgz#44935a51021e3b8e67ebac267a35675732aba569"
