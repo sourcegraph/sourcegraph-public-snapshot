@@ -194,6 +194,7 @@ func updateBody(ctx context.Context) (io.Reader, error) {
 	}
 	contents, err := json.Marshal(&pingRequest{
 		ClientSiteID:         siteid.Get(),
+		LicenseKey:           conf.Get().LicenseKey,
 		DeployType:           conf.DeployType(),
 		ClientVersionString:  version.Version(),
 		AuthProviders:        authProviderTypes(),
@@ -312,7 +313,7 @@ func Start() {
 	ctx := context.Background()
 	const delay = 30 * time.Minute
 	for {
-		ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+		ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
 		_, _ = check(ctx) // updates global state on its own, can safely ignore return value
 		cancel()
 

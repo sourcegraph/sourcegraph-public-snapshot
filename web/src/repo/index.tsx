@@ -6,7 +6,6 @@ export function redirectToExternalHost(externalRedirectURL: string): void {
     const redirectURL = new URL(window.location.href)
     // Preserve the path of the current URL and redirect to the repo on the external host.
     redirectURL.host = externalHostURL.host
-    redirectURL.port = externalHostURL.port
     redirectURL.protocol = externalHostURL.protocol
-    window.location.replace(redirectURL.toString())
+    window.location.replace(redirectURL.href)
 }

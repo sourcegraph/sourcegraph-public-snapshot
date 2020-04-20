@@ -166,7 +166,7 @@ export class DiscussionsComment extends React.PureComponent<Props> {
         }, 1000)
     }
 
-    private onReportClick: React.MouseEventHandler<HTMLElement> = event => {
+    private onReportClick: React.MouseEventHandler<HTMLElement> = () => {
         eventLogger.log('ReportCommentButtonClicked')
         const reason = prompt('Report reason:', 'spam, offensive material, etc')
         if (!reason) {
@@ -178,14 +178,14 @@ export class DiscussionsComment extends React.PureComponent<Props> {
         })
     }
 
-    private onClearReportsClick: React.MouseEventHandler<HTMLElement> = event => {
+    private onClearReportsClick: React.MouseEventHandler<HTMLElement> = () => {
         // eslint-disable-next-line rxjs/no-ignored-subscription
         this.props.onClearReports!(this.props.comment).subscribe({
             error: error => alert('Error clearing comment reports: ' + asError(error).message),
         })
     }
 
-    private onDeleteClick: React.MouseEventHandler<HTMLElement> = event => {
+    private onDeleteClick: React.MouseEventHandler<HTMLElement> = () => {
         // eslint-disable-next-line rxjs/no-ignored-subscription
         this.props.onDelete!(this.props.comment).subscribe({
             error: error => alert('Error deleting comment: ' + asError(error).message),

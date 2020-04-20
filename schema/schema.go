@@ -127,6 +127,8 @@ type BitbucketCloudConnection struct {
 	//
 	// If "ssh", Sourcegraph will access Bitbucket Cloud repositories using Git URLs of the form git@bitbucket.org:myteam/myproject.git. See the documentation for how to provide SSH private keys and known_hosts: https://docs.sourcegraph.com/admin/repo/auth#repositories-that-need-http-s-or-ssh-authentication.
 	GitURLType string `json:"gitURLType,omitempty"`
+	// RateLimit description: Rate limit applied when making background API requests to Bitbucket Cloud.
+	RateLimit *BitbucketCloudRateLimit `json:"rateLimit,omitempty"`
 	// RepositoryPathPattern description: The pattern used to generate the corresponding Sourcegraph repository name for a Bitbucket Cloud repository.
 	//
 	//  - "{host}" is replaced with the Bitbucket Cloud URL's host (such as bitbucket.org),  and "{nameWithOwner}" is replaced with the Bitbucket Cloud repository's "owner/path" (such as "myorg/myrepo").
@@ -141,6 +143,14 @@ type BitbucketCloudConnection struct {
 	Url string `json:"url"`
 	// Username description: The username to use when authenticating to the Bitbucket Cloud. Also set the corresponding "appPassword" field.
 	Username string `json:"username"`
+}
+
+// BitbucketCloudRateLimit description: Rate limit applied when making background API requests to Bitbucket Cloud.
+type BitbucketCloudRateLimit struct {
+	// Enabled description: true if rate limiting is enabled.
+	Enabled bool `json:"enabled"`
+	// RequestsPerHour description: Requests per hour permitted. This is an average, calculated per second.
+	RequestsPerHour float64 `json:"requestsPerHour"`
 }
 
 // BitbucketServerAuthorization description: If non-null, enforces Bitbucket Server repository permissions.
@@ -186,7 +196,7 @@ type BitbucketServerConnection struct {
 	// Plugin description: Configuration for Bitbucket Server Sourcegraph plugin
 	Plugin *BitbucketServerPlugin `json:"plugin,omitempty"`
 	// RateLimit description: Rate limit applied when making background API requests to BitbucketServer.
-	RateLimit *RateLimit `json:"rateLimit,omitempty"`
+	RateLimit *BitbucketServerRateLimit `json:"rateLimit,omitempty"`
 	// Repos description: An array of repository "projectKey/repositorySlug" strings specifying repositories to mirror on Sourcegraph.
 	Repos []string `json:"repos,omitempty"`
 	// RepositoryPathPattern description: The pattern used to generate the corresponding Sourcegraph repository name for a Bitbucket Server repository.
@@ -258,6 +268,14 @@ type BitbucketServerPluginWebhooks struct {
 	// Secret description: Secret for authenticating incoming webhook payloads
 	Secret string `json:"secret"`
 }
+
+// BitbucketServerRateLimit description: Rate limit applied when making background API requests to BitbucketServer.
+type BitbucketServerRateLimit struct {
+	// Enabled description: true if rate limiting is enabled.
+	Enabled bool `json:"enabled"`
+	// RequestsPerHour description: Requests per hour permitted. This is an average, calculated per second.
+	RequestsPerHour float64 `json:"requestsPerHour"`
+}
 type BitbucketServerUsernameIdentity struct {
 	Type string `json:"type"`
 }
@@ -313,7 +331,7 @@ type DebugLog struct {
 	ExtsvcGitlab bool `json:"extsvc.gitlab,omitempty"`
 }
 
-// Discussions description: Configures Sourcegraph code discussions.
+// Discussions description: DEPRECATED. Will be removed in 3.16. https://github.com/sourcegraph/sourcegraph/issues/9649. Configures Sourcegraph code discussions.
 type Discussions struct {
 	// AbuseEmails description: Email addresses to notify of e.g. new user reports about abusive comments. Otherwise emails will not be sent.
 	AbuseEmails []string `json:"abuseEmails,omitempty"`
@@ -377,7 +395,7 @@ type ExperimentalFeatures struct {
 	CustomGitFetch []*CustomGitFetchMapping `json:"customGitFetch,omitempty"`
 	// DebugLog description: Turns on debug logging for specific debugging scenarios.
 	DebugLog *DebugLog `json:"debug.log,omitempty"`
-	// Discussions description: Enables the code discussions experiment.
+	// Discussions description: DEPRECATED. Will be removed in 3.16. https://github.com/sourcegraph/sourcegraph/issues/9649. Enables the code discussions experiment.
 	Discussions string `json:"discussions,omitempty"`
 	// EventLogging description: Enables user event logging inside of the Sourcegraph instance. This will allow admins to have greater visibility of user activity, such as frequently viewed pages, frequent searches, and more. These event logs (and any specific user actions) are only stored locally, and never leave this Sourcegraph instance.
 	EventLogging string `json:"eventLogging,omitempty"`
@@ -460,6 +478,8 @@ type GitHubConnection struct {
 	InitialRepositoryEnablement bool `json:"initialRepositoryEnablement,omitempty"`
 	// Orgs description: An array of organization names identifying GitHub organizations whose repositories should be mirrored on Sourcegraph.
 	Orgs []string `json:"orgs,omitempty"`
+	// RateLimit description: Rate limit applied when making background API requests to GitHub.
+	RateLimit *GitHubRateLimit `json:"rateLimit,omitempty"`
 	// Repos description: An array of repository "owner/name" strings specifying which GitHub or GitHub Enterprise repositories to mirror on Sourcegraph.
 	Repos []string `json:"repos,omitempty"`
 	// RepositoryPathPattern description: The pattern used to generate the corresponding Sourcegraph repository name for a GitHub or GitHub Enterprise repository. In the pattern, the variable "{host}" is replaced with the GitHub host (such as github.example.com), and "{nameWithOwner}" is replaced with the GitHub repository's "owner/path" (such as "myorg/myrepo").
@@ -491,6 +511,14 @@ type GitHubConnection struct {
 	Url string `json:"url"`
 	// Webhooks description: An array of configurations defining existing GitHub webhooks that send updates back to Sourcegraph.
 	Webhooks []*GitHubWebhook `json:"webhooks,omitempty"`
+}
+
+// GitHubRateLimit description: Rate limit applied when making background API requests to GitHub.
+type GitHubRateLimit struct {
+	// Enabled description: true if rate limiting is enabled.
+	Enabled bool `json:"enabled"`
+	// RequestsPerHour description: Requests per hour permitted. This is an average, calculated per second.
+	RequestsPerHour float64 `json:"requestsPerHour"`
 }
 type GitHubWebhook struct {
 	// Org description: The name of the GitHub organization to which the webhook belongs
@@ -549,6 +577,8 @@ type GitLabConnection struct {
 	ProjectQuery []string `json:"projectQuery"`
 	// Projects description: A list of projects to mirror from this GitLab instance. Supports including by name ({"name": "group/name"}) or by ID ({"id": 42}).
 	Projects []*GitLabProject `json:"projects,omitempty"`
+	// RateLimit description: Rate limit applied when making background API requests to GitLab.
+	RateLimit *GitLabRateLimit `json:"rateLimit,omitempty"`
 	// RepositoryPathPattern description: The pattern used to generate a the corresponding Sourcegraph repository name for a GitLab project. In the pattern, the variable "{host}" is replaced with the GitLab URL's host (such as gitlab.example.com), and "{pathWithNamespace}" is replaced with the GitLab project's "namespace/path" (such as "myteam/myproject").
 	//
 	// For example, if your GitLab is https://gitlab.example.com and your Sourcegraph is https://src.example.com, then a repositoryPathPattern of "{host}/{pathWithNamespace}" would mean that a GitLab project at https://gitlab.example.com/myteam/myproject is available on Sourcegraph at https://src.example.com/gitlab.example.com/myteam/myproject.
@@ -571,6 +601,14 @@ type GitLabProject struct {
 	Id int `json:"id,omitempty"`
 	// Name description: The name of a GitLab project ("group/name") to mirror.
 	Name string `json:"name,omitempty"`
+}
+
+// GitLabRateLimit description: Rate limit applied when making background API requests to GitLab.
+type GitLabRateLimit struct {
+	// Enabled description: true if rate limiting is enabled.
+	Enabled bool `json:"enabled"`
+	// RequestsPerHour description: Requests per hour permitted. This is an average, calculated per second.
+	RequestsPerHour float64 `json:"requestsPerHour"`
 }
 
 // GitoliteConnection description: Configuration for a connection to Gitolite.
@@ -756,14 +794,6 @@ type QuickLink struct {
 	// Url description: The URL of this quick link (absolute or relative)
 	Url string `json:"url"`
 }
-
-// RateLimit description: Rate limit applied when making background API requests to BitbucketServer.
-type RateLimit struct {
-	// Enabled description: true if rate limiting is enabled.
-	Enabled bool `json:"enabled"`
-	// RequestsPerHour description: Requests per hour permitted. This is an average, calculated per second.
-	RequestsPerHour float64 `json:"requestsPerHour"`
-}
 type Repos struct {
 	// Callsign description: The unique Phabricator identifier for the repository, like 'MUX'.
 	Callsign string `json:"callsign"`
@@ -875,6 +905,10 @@ type Settings struct {
 	SearchContextLines int `json:"search.contextLines,omitempty"`
 	// SearchDefaultPatternType description: The default pattern type (literal or regexp) that search queries will be intepreted as.
 	SearchDefaultPatternType string `json:"search.defaultPatternType,omitempty"`
+	// SearchIncludeArchived description: Whether searches should include searching archived repositories.
+	SearchIncludeArchived *bool `json:"search.includeArchived,omitempty"`
+	// SearchIncludeForks description: Whether searches should include searching forked repositories.
+	SearchIncludeForks *bool `json:"search.includeForks,omitempty"`
 	// SearchRepositoryGroups description: Named groups of repositories that can be referenced in a search query using the repogroup: operator.
 	SearchRepositoryGroups map[string][]string `json:"search.repositoryGroups,omitempty"`
 	// SearchSavedQueries description: DEPRECATED: Saved search queries
@@ -943,7 +977,7 @@ type SiteConfiguration struct {
 	DisableNonCriticalTelemetry bool `json:"disableNonCriticalTelemetry,omitempty"`
 	// DisablePublicRepoRedirects description: Disable redirects to sourcegraph.com when visiting public repositories that can't exist on this server.
 	DisablePublicRepoRedirects bool `json:"disablePublicRepoRedirects,omitempty"`
-	// Discussions description: Configures Sourcegraph code discussions.
+	// Discussions description: DEPRECATED. Will be removed in 3.16. https://github.com/sourcegraph/sourcegraph/issues/9649. Configures Sourcegraph code discussions.
 	Discussions *Discussions `json:"discussions,omitempty"`
 	// DontIncludeSymbolResultsByDefault description: Set to `true` to not include symbol results if no `type:` filter was given
 	DontIncludeSymbolResultsByDefault bool `json:"dontIncludeSymbolResultsByDefault,omitempty"`
@@ -987,6 +1021,10 @@ type SiteConfiguration struct {
 	LsifEnforceAuth bool `json:"lsifEnforceAuth,omitempty"`
 	// MaxReposToSearch description: The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. Any value less than or equal to zero means unlimited.
 	MaxReposToSearch int `json:"maxReposToSearch,omitempty"`
+	// ObservabilityLogSlowGraphQLRequests description: (debug) logs all GraphQL requests slower than the specified number of milliseconds.
+	ObservabilityLogSlowGraphQLRequests int `json:"observability.logSlowGraphQLRequests,omitempty"`
+	// ObservabilityLogSlowSearches description: (debug) logs all search queries (issued by users, code intelligence, or API requests) slower than the specified number of milliseconds.
+	ObservabilityLogSlowSearches int `json:"observability.logSlowSearches,omitempty"`
 	// ObservabilityTracing description: Controls the settings for distributed tracing.
 	ObservabilityTracing *ObservabilityTracing `json:"observability.tracing,omitempty"`
 	// ParentSourcegraph description: URL to fetch unreachable repository details from. Defaults to "https://sourcegraph.com"

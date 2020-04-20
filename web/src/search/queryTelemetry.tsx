@@ -2,7 +2,8 @@ import { count } from '../../../shared/src/util/strings'
 import { parseSearchQuery, ParserResult, Sequence } from '../../../shared/src/search/parser/parser'
 import { resolveFilter } from '../../../shared/src/search/parser/filters'
 
-export function queryTelemetryData(query: string, caseSensitive: boolean): { [key: string]: any } {
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+export function queryTelemetryData(query: string, caseSensitive: boolean) {
     return {
         // 🚨 PRIVACY: never provide any private data in { code_search: { query_data: { query } } }.
         query: query ? queryStringTelemetryData(query, caseSensitive) : undefined,
@@ -24,7 +25,8 @@ function filterExistsInQuery(parsedQuery: ParserResult<Sequence>, filterToMatch:
     }
     return false
 }
-function queryStringTelemetryData(q: string, caseSensitive: boolean): { [key: string]: any } {
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+function queryStringTelemetryData(q: string, caseSensitive: boolean) {
     // 🚨 PRIVACY: never provide any private data in this function's return value.
     // This only takes ~1.7ms per call, so it does not need to be optimized.
     const parsedQuery = parseSearchQuery(q)

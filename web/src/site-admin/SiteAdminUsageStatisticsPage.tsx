@@ -17,11 +17,7 @@ interface ChartData {
     dateFormat: string
 }
 
-interface ChartOptions {
-    daus: ChartData
-    waus: ChartData
-    maus: ChartData
-}
+type ChartOptions = Record<'daus' | 'waus' | 'maus', ChartData>
 
 const chartGeneratorOptions: ChartOptions = {
     daus: { label: 'Daily unique users', dateFormat: 'E, MMM d' },

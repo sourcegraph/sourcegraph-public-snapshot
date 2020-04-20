@@ -5,7 +5,7 @@ import { parseBrowserRepoURL, toTreeURL } from './url'
  * prototype (because that causes 2 object literals to fail the test) and (2) treats undefined properties as
  * missing.
  */
-function assertDeepStrictEqual(actual: any, expected: any, message?: string): void {
+function assertDeepStrictEqual(actual: unknown, expected: unknown): void {
     actual = JSON.parse(JSON.stringify(actual))
     expected = JSON.parse(JSON.stringify(expected))
     expect(actual).toEqual(expected)

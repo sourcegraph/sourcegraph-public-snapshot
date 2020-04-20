@@ -10,8 +10,8 @@ cd $(dirname "${BASH_SOURCE[0]}")/../..
 
 HEAD=$(git symbolic-ref --short HEAD || git rev-parse HEAD)
 if [ -z "$HEAD" ]; then
-    echo 'Could not set $HEAD to current revision'
-    exit 1
+  echo 'Could not set $HEAD to current revision'
+  exit 1
 fi
 
 cat <<EOF
@@ -34,7 +34,7 @@ echo ""
 # Recreate the test DB and run TestMigrations once to ensure that the schema version is the latest.
 set -ex
 asdf install # in case the go version has changed in between these two commits
-go test -count=1 -v ./cmd/frontend/db/  -run=TestMigrations
+go test -count=1 -v ./cmd/frontend/db/ -run=TestMigrations
 HEAD="$HEAD" OLD="${COMMIT_BEFORE_LAST_MIGRATION}" ./dev/ci/db-backcompat.sh
 set +ex
 

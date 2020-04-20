@@ -1,6 +1,6 @@
 import { Selection } from '@sourcegraph/extension-api-classes'
 import { Location } from '@sourcegraph/extension-api-types'
-import { Observable, of, throwError } from 'rxjs'
+import { Observable, of } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
 import { TextDocumentRegistrationOptions } from '../../protocol'
 import {
@@ -12,7 +12,7 @@ import { Entry } from './registry'
 import { FIXTURE } from './registry.test'
 import { first } from 'rxjs/operators'
 
-const scheduler = (): TestScheduler => new TestScheduler((a, b) => expect(a).toEqual(b))
+const scheduler = (): TestScheduler => new TestScheduler((actual, expected) => expect(actual).toEqual(expected))
 
 const FIXTURE_LOCATION: Location = {
     uri: 'file:///f',
@@ -89,96 +89,107 @@ describe('TextDocumentLocationProviderRegistry', () => {
 
 describe('getLocationsFromProviders', () => {
     describe('0 providers', () => {
-        test('returns null', () =>
-            scheduler().run(({ cold, expectObservable }) =>
+        it('emits an empty non-loading result', () => {
+            scheduler().run(({ cold, expectObservable }) => {
                 expectObservable(
                     getLocationsFromProviders(
                         cold<ProvideTextDocumentLocationSignature[]>('-a-|', { a: [] }),
                         FIXTURE.TextDocumentPositionParams
                     )
                 ).toBe('-a-|', {
-                    a: cold<Location[] | null>('(a|)', { a: null }),
+                    a: { isLoading: false, result: [] },
                 })
-            ))
+            })
+        })
     })
 
     describe('1 provider', () => {
-        test('returns null result from provider', () =>
-            scheduler().run(({ cold, expectObservable }) =>
+        it('emits an empty result from provider', () => {
+            scheduler().run(({ cold, expectObservable }) => {
                 expectObservable(
                     getLocationsFromProviders(
-                        cold<ProvideTextDocumentLocationSignature[]>('-a-|', { a: [() => of(null)] }),
+                        cold<ProvideTextDocumentLocationSignature[]>('-a', { a: [() => of(null)] }),
                         FIXTURE.TextDocumentPositionParams
                     )
-                ).toBe('-a-|', {
-                    a: cold<Location[] | null>('(a|)', { a: null }),
+                ).toBe('-(lr)', {
+                    l: { isLoading: true, result: [] },
+                    r: { isLoading: false, result: [] },
                 })
-            ))
+            })
+        })
 
-        test('returns result array from provider', () =>
-            scheduler().run(({ cold, expectObservable }) =>
+        it('returns result array from provider', () => {
+            scheduler().run(({ cold, expectObservable }) => {
                 expectObservable(
                     getLocationsFromProviders(
-                        cold<ProvideTextDocumentLocationSignature[]>('-a-|', {
-                            a: [() => of(FIXTURE_LOCATIONS)],
+                        cold<ProvideTextDocumentLocationSignature[]>('-a', {
+                            a: [() => cold('-a', { a: FIXTURE_LOCATIONS })],
                         }),
                         FIXTURE.TextDocumentPositionParams
                     )
-                ).toBe('-a-|', {
-                    a: cold<Location[] | null>('(a|)', { a: FIXTURE_LOCATIONS }),
+                ).toBe('-lr', {
+                    l: { isLoading: true, result: [] },
+                    r: { isLoading: false, result: FIXTURE_LOCATIONS },
                 })
-            ))
+            })
+        })
     })
 
-    test('errors do not propagate', () =>
-        scheduler().run(({ cold, expectObservable }) =>
+    it('returns the results of other providers even if a provider errors', () => {
+        scheduler().run(({ cold, expectObservable }) => {
             expectObservable(
                 getLocationsFromProviders(
-                    cold<ProvideTextDocumentLocationSignature[]>('-a-|', {
-                        a: [() => of([FIXTURE_LOCATION]), () => throwError(new Error('x'))],
+                    cold<ProvideTextDocumentLocationSignature[]>('-a', {
+                        a: [() => cold('-a', { a: [FIXTURE_LOCATION] }), () => cold('-#', {}, new Error('x'))],
                     }),
                     FIXTURE.TextDocumentPositionParams,
                     false
                 )
-            ).toBe('-a-|', {
-                a: cold<Location[] | null>('(a|)', { a: [FIXTURE_LOCATION] }),
+            ).toBe('-lr', {
+                l: { isLoading: true, result: [] },
+                r: { isLoading: false, result: [FIXTURE_LOCATION] },
             })
-        ))
+        })
+    })
 
     describe('2 providers', () => {
-        test('returns null result if both providers return null', () =>
-            scheduler().run(({ cold, expectObservable }) =>
+        it('returns an empty result if both providers return an empty result', () => {
+            scheduler().run(({ cold, expectObservable }) => {
                 expectObservable(
                     getLocationsFromProviders(
-                        cold<ProvideTextDocumentLocationSignature[]>('-a-|', {
+                        cold<ProvideTextDocumentLocationSignature[]>('-a', {
                             a: [() => of(null), () => of(null)],
                         }),
                         FIXTURE.TextDocumentPositionParams
                     )
-                ).toBe('-a-|', {
-                    a: cold<Location[] | null>('(a|)', { a: null }),
+                ).toBe('-(lr)', {
+                    l: { isLoading: true, result: [] },
+                    r: { isLoading: false, result: [] },
                 })
-            ))
+            })
+        })
 
-        test('omits null result from 1 provider', () =>
-            scheduler().run(({ cold, expectObservable }) =>
+        it('omits null result from 1 provider', () => {
+            scheduler().run(({ cold, expectObservable }) => {
                 expectObservable(
                     getLocationsFromProviders(
-                        cold<ProvideTextDocumentLocationSignature[]>('-a-|', {
-                            a: [() => of(FIXTURE_LOCATIONS), () => of(null)],
+                        cold<ProvideTextDocumentLocationSignature[]>('-a', {
+                            a: [() => cold('-a', { a: FIXTURE_LOCATIONS }), () => of(null)],
                         }),
                         FIXTURE.TextDocumentPositionParams
                     )
-                ).toBe('-a-|', {
-                    a: cold<Location[] | null>('(a|)', { a: FIXTURE_LOCATIONS }),
+                ).toBe('-lr', {
+                    l: { isLoading: true, result: [] },
+                    r: { isLoading: false, result: FIXTURE_LOCATIONS },
                 })
-            ))
+            })
+        })
 
-        test('merges results from providers', () =>
-            scheduler().run(({ cold, expectObservable }) =>
+        it('merges results from providers', () => {
+            scheduler().run(({ cold, expectObservable }) => {
                 expectObservable(
                     getLocationsFromProviders(
-                        cold<ProvideTextDocumentLocationSignature[]>('-a-|', {
+                        cold<ProvideTextDocumentLocationSignature[]>('-a', {
                             a: [
                                 () =>
                                     of([
@@ -198,9 +209,21 @@ describe('getLocationsFromProviders', () => {
                         }),
                         FIXTURE.TextDocumentPositionParams
                     )
-                ).toBe('-a-|', {
-                    a: cold<Location[] | null>('(a|)', {
-                        a: [
+                ).toBe('-(ab)', {
+                    // Partial result (first provider emitted)
+                    a: {
+                        isLoading: true,
+                        result: [
+                            {
+                                uri: 'file:///f1',
+                                range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } },
+                            },
+                        ],
+                    },
+                    // Full result
+                    b: {
+                        isLoading: false,
+                        result: [
                             {
                                 uri: 'file:///f1',
                                 range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } },
@@ -210,26 +233,30 @@ describe('getLocationsFromProviders', () => {
                                 range: { start: { line: 5, character: 6 }, end: { line: 7, character: 8 } },
                             },
                         ],
-                    }),
+                    },
                 })
-            ))
+            })
+        })
     })
 
     describe('multiple emissions', () => {
-        test('returns stream of results', () =>
-            scheduler().run(({ cold, expectObservable }) =>
+        it('returns stream of results', () => {
+            scheduler().run(({ cold, expectObservable }) => {
                 expectObservable(
                     getLocationsFromProviders(
-                        cold<ProvideTextDocumentLocationSignature[]>('-a-b-|', {
+                        cold<ProvideTextDocumentLocationSignature[]>('-a----b', {
                             a: [() => of(FIXTURE_LOCATIONS)],
                             b: [() => of(null)],
                         }),
                         FIXTURE.TextDocumentPositionParams
                     )
-                ).toBe('-a-b-|', {
-                    a: cold<Location[] | null>('(a|)', { a: FIXTURE_LOCATIONS }),
-                    b: cold<Location[] | null>('(a|)', { a: null }),
+                ).toBe('-(ab)-(cd)', {
+                    a: { isLoading: true, result: [] },
+                    b: { isLoading: false, result: FIXTURE_LOCATIONS },
+                    c: { isLoading: true, result: [] },
+                    d: { isLoading: false, result: [] },
                 })
-            ))
+            })
+        })
     })
 })

@@ -187,7 +187,7 @@
 <!-- code_intel -->
 <g id="node10" class="node">
 <title>code_intel</title>
-<g id="a_node10"><a xlink:href="https://github.com/sourcegraph/sourcegraph/tree/master/doc/dev/architecture/codeintel.svg" xlink:title="Code intel processes\n(click to expand)" target="_blank">
+<g id="a_node10"><a xlink:href="https://github.com/sourcegraph/sourcegraph/tree/master/doc/dev/architecture/precise-code-intel.svg" xlink:title="Code intel processes\n(click to expand)" target="_blank">
 <polygon fill="#d9d9d9" stroke="black" points="160.79,-423.15 45.02,-423.15 45.02,-381.15 160.79,-381.15 160.79,-423.15"/>
 <text text-anchor="middle" x="102.9" y="-404.15" font-family="Iosevka" font-size="10.00">Code intel processes</text>
 <text text-anchor="middle" x="102.9" y="-394.15" font-family="Iosevka" font-size="10.00">(click to expand)</text>

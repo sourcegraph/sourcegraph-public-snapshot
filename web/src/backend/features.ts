@@ -2,6 +2,7 @@ import { Observable } from 'rxjs'
 import { HoverMerged } from '../../../shared/src/api/client/types/hover'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import { FileSpec, UIPositionSpec, RepoSpec, ResolvedRevSpec } from '../../../shared/src/util/url'
+import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 
 /**
  * Fetches hover information for the given location.
@@ -12,7 +13,7 @@ import { FileSpec, UIPositionSpec, RepoSpec, ResolvedRevSpec } from '../../../sh
 export function getHover(
     ctx: RepoSpec & ResolvedRevSpec & FileSpec & UIPositionSpec,
     { extensionsController }: ExtensionsControllerProps
-): Observable<HoverMerged | null> {
+): Observable<MaybeLoadingResult<HoverMerged | null>> {
     return extensionsController.services.textDocumentHover.getHover({
         textDocument: { uri: `git://${ctx.repoName}?${ctx.commitID}#${ctx.filePath}` },
         position: {

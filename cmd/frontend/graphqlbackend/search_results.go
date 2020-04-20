@@ -33,6 +33,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -473,7 +474,7 @@ var searchResponseCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 	Subsystem: "graphql",
 	Name:      "search_response",
 	Help:      "Number of searches that have ended in the given status (success, error, timeout, partial_timeout).",
-}, []string{"status", "alert_type"})
+}, []string{"status", "alert_type", "source", "request_name"})
 
 // logSearchLatency records search durations in the event database. This
 // function may only be called after a search result is performed, because it
@@ -557,6 +558,29 @@ func (r *searchResolver) logSearchLatency(ctx context.Context, durationMs int32)
 // evaluateLeaf performs a single search operation and corresponds to the
 // evaluation of leaf expression in a query.
 func (r *searchResolver) evaluateLeaf(ctx context.Context) (*SearchResultsResolver, error) {
+	start := time.Now()
+	// If the request specifies stable:truthy, use pagination to return a stable ordering.
+	if r.query.BoolValue("stable") {
+		result, err := r.paginatedResults(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if result == nil {
+			// Panic if paginatedResults does not ensure a non-nil search result.
+			panic("stable search: paginated search returned nil results")
+		}
+		if result.cursor == nil {
+			// Perhaps an alert was raised.
+			return result, err
+		}
+		if !result.cursor.Finished {
+			// For stable result queries limitHit = true implies
+			// there is a next cursor, and more results may exist.
+			result.searchResultsCommon.limitHit = true
+		}
+		return result, err
+	}
+
 	// If the request is a paginated one, we handle it separately. See
 	// paginatedResults for more details.
 	if r.pagination != nil {
@@ -585,28 +609,52 @@ func (r *searchResolver) evaluateLeaf(ctx context.Context) (*SearchResultsResolv
 	default:
 		status = "unknown"
 	}
-	searchResponseCounter.WithLabelValues(status, alertType).Inc()
+	searchResponseCounter.WithLabelValues(
+		status,
+		alertType,
+		string(trace.RequestSource(ctx)),
+		trace.GraphQLRequestName(ctx),
+	).Inc()
 
+	if v := conf.Get().ObservabilityLogSlowSearches; v != 0 && time.Since(start).Milliseconds() > int64(v) {
+		// Note: We don't care about the error here, we just extract the username if
+		// we get a non-nil user object.
+		currentUser, _ := CurrentUser(ctx)
+		var currentUserName string
+		if currentUser != nil {
+			currentUserName = currentUser.Username()
+		}
+
+		log15.Warn("slow search request",
+			"time", time.Since(start),
+			"query", `"`+r.rawQuery()+`"`,
+			"type", trace.GraphQLRequestName(ctx),
+			"user", currentUserName,
+			"source", trace.RequestSource(ctx),
+			"status", status,
+			"alertType", alertType,
+		)
+	}
 	return rr, err
 }
 
 // union returns the union of two sets of search results and merges common search data.
-func union(left, right *SearchResultsResolver) (*SearchResultsResolver, error) {
+func union(left, right *SearchResultsResolver) *SearchResultsResolver {
 	if right == nil {
-		return left, nil
+		return left
 	}
 	if left == nil {
-		return right, nil
+		return right
 	}
 	if left.SearchResults != nil && right.SearchResults != nil {
 		left.SearchResults = append(left.SearchResults, right.SearchResults...)
 		// merge common search data.
 		left.searchResultsCommon.update(right.searchResultsCommon)
-		return left, nil
+		return left
 	} else if right.SearchResults != nil {
-		return right, nil
+		return right
 	}
-	return left, nil
+	return left
 }
 
 // intersect returns the intersection of two sets of search result content
@@ -641,46 +689,151 @@ func intersect(left, right *SearchResultsResolver) (*SearchResultsResolver, erro
 		merged = append(merged, ltmp)
 	}
 	left.SearchResults = merged
-	// merge common search data.
 	left.searchResultsCommon.update(right.searchResultsCommon)
 	// for intersect we want the newly computed intersection size.
 	left.searchResultsCommon.resultCount = int32(len(merged))
 	return left, nil
 }
 
-func (r *searchResolver) evaluateOperator(ctx context.Context, scopeParameters []query.Node, operator query.Operator) (*SearchResultsResolver, error) {
-	if len(operator.Operands) == 0 {
+// evaluateAnd performs set intersection on result sets. It collects results for
+// all expressions that are ANDed together by searching for each subexpression
+// and then intersects those results that are in the same repo/file path. To
+// collect N results for count:N, we need to opportunistically ask for more than
+// N results for each subexpression (since intersect can never yield more than N,
+// and likely yields fewer than N results). Thus, we perform a search of 2*N for
+// each expression, and if the intersection does not yield N results, and is not
+// exhaustive for every expression, we rerun the search by doubling count again.
+func (r *searchResolver) evaluateAnd(ctx context.Context, scopeParameters []query.Node, operands []query.Node) (*SearchResultsResolver, error) {
+	if len(operands) == 0 {
 		return nil, nil
 	}
-	var new *SearchResultsResolver
+
 	var err error
-	result, err := r.evaluatePatternExpression(ctx, scopeParameters, operator.Operands[0])
+	var result *SearchResultsResolver
+	var new *SearchResultsResolver
+
+	// The number of results we want. Note that for intersect, this number
+	// corresponds to documents, not line matches. By default, we ask for at
+	// least 5 documents to fill the result page.
+	want := 5
+
+	var countStr string
+	query.VisitField(scopeParameters, "count", func(value string, _, _ bool) {
+		countStr = value
+	})
+	if countStr != "" {
+		// Override the value of count, if specified.
+		want, _ = strconv.Atoi(countStr) // Invariant: count is validated.
+	} else {
+		scopeParameters = append(scopeParameters, query.Parameter{
+			Field: "count",
+			Value: strconv.FormatInt(int64(want), 10),
+		})
+	}
+
+	tryCount := want * 1000     // Opportunistic approximation for the number of results to get for an intersection.
+	maxResultsForRetry := 20000 // When we retry, cap the max search results we request for each expression if search continues to not be exhaustive. Alert if exceeded.
+
+	var exhausted bool
+	for {
+		scopeParameters = query.MapParameter(scopeParameters, func(field, value string, negated bool) query.Node {
+			if field == "count" {
+				value = strconv.FormatInt(int64(tryCount), 10)
+			}
+			return query.Parameter{Field: field, Value: value, Negated: negated}
+		})
+
+		result, err = r.evaluatePatternExpression(ctx, scopeParameters, operands[0])
+		if err != nil {
+			return nil, err
+		}
+		exhausted = !result.limitHit
+		for _, term := range operands[1:] {
+			new, err = r.evaluatePatternExpression(ctx, scopeParameters, term)
+			if err != nil {
+				return nil, err
+			}
+			if new != nil {
+				exhausted = exhausted && !new.limitHit
+				result, err = intersect(result, new)
+			}
+		}
+		if exhausted {
+			break
+		}
+		if result.searchResultsCommon.resultCount >= int32(want) {
+			break
+		}
+		// If the result size set is not big enough, and we haven't
+		// exhausted search on all expressions, double the tryCount and search more.
+		tryCount *= tryCount
+		if tryCount > maxResultsForRetry {
+			// We've capped out what we're willing to do, throw alert.
+			return &SearchResultsResolver{alert: alertForCappedAndExpression()}, nil
+		}
+	}
+	result.limitHit = !exhausted
+	return result, nil
+}
+
+// evaluateOr performs set union on result sets. It collects results for all
+// expressions that are ORed together by searching for each subexpression. If
+// the maximum number of results are reached after evaluating a subexpression,
+// we shortcircuit and return results immediately.
+func (r *searchResolver) evaluateOr(ctx context.Context, scopeParameters []query.Node, operands []query.Node) (*SearchResultsResolver, error) {
+	if len(operands) == 0 {
+		return nil, nil
+	}
+
+	var countStr string
+	wantCount := defaultMaxSearchResults
+	query.VisitField(scopeParameters, "count", func(value string, _, _ bool) {
+		countStr = value
+	})
+	if countStr != "" {
+		wantCount, _ = strconv.Atoi(countStr) // Invariant: count is validated.
+	}
+
+	result, err := r.evaluatePatternExpression(ctx, scopeParameters, operands[0])
 	if err != nil {
 		return nil, err
 	}
-	if result == nil {
-		return nil, nil
+	if result.searchResultsCommon.resultCount > int32(wantCount) {
+		result.SearchResults = result.SearchResults[:wantCount]
+		result.searchResultsCommon.resultCount = int32(wantCount)
+		return result, nil
 	}
-	for _, term := range operator.Operands[1:] {
+	var new *SearchResultsResolver
+	for _, term := range operands[1:] {
 		new, err = r.evaluatePatternExpression(ctx, scopeParameters, term)
 		if err != nil {
 			return nil, err
 		}
-		if new == nil && operator.Kind == query.And {
-			// Shortcircuit: intersecting with empty new results is empty.
-			return nil, nil
-		}
 		if new != nil {
-			switch operator.Kind {
-			case query.And:
-				result, err = intersect(result, new)
-			case query.Or:
-				result, err = union(result, new)
-			}
-			if err != nil {
-				return nil, err
+			result = union(result, new)
+			if result.searchResultsCommon.resultCount > int32(wantCount) {
+				result.SearchResults = result.SearchResults[:wantCount]
+				result.searchResultsCommon.resultCount = int32(wantCount)
+				return result, nil
 			}
 		}
+	}
+	return result, nil
+}
+
+func (r *searchResolver) evaluateOperator(ctx context.Context, scopeParameters []query.Node, operator query.Operator) (*SearchResultsResolver, error) {
+	if len(operator.Operands) == 0 {
+		return nil, nil
+	}
+	var result *SearchResultsResolver
+	var err error
+	if operator.Kind == query.And {
+		result, err = r.evaluateAnd(ctx, scopeParameters, operator.Operands)
+	} else {
+		result, err = r.evaluateOr(ctx, scopeParameters, operator.Operands)
+	}
+	if err != nil {
+		return nil, err
 	}
 	return result, nil
 }
@@ -709,7 +862,7 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, scopePar
 func (r *searchResolver) evaluate(ctx context.Context, q []query.Node) (*SearchResultsResolver, error) {
 	scopeParameters, pattern, err := query.PartitionSearchPattern(q)
 	if err != nil {
-		return nil, err
+		return &SearchResultsResolver{alert: alertForQuery("", err)}, nil
 	}
 	if pattern == nil {
 		r.query = query.AndOrQuery{Query: scopeParameters}
@@ -1139,10 +1292,7 @@ func (r *searchResolver) determineRepos(ctx context.Context, tr *trace.Trace, st
 		return nil, nil, &SearchResultsResolver{alert: alert, start: start}, nil
 	}
 	if overLimit {
-		alert, err := r.alertForOverRepoLimit(ctx)
-		if err != nil {
-			return nil, nil, nil, err
-		}
+		alert := r.alertForOverRepoLimit(ctx)
 		return nil, nil, &SearchResultsResolver{alert: alert, start: start}, nil
 	}
 	return repos, missingRepoRevs, nil, nil

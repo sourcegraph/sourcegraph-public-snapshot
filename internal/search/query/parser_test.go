@@ -18,48 +18,55 @@ func Test_ScanParameter(t *testing.T) {
 		{
 			Name:  "Normal field:value",
 			Input: `file:README.md`,
-			Want:  `{"field":"file","value":"README.md","negated":false}`,
+			Want:  `{"field":"file","value":"README.md","negated":false,"quoted":false}`,
 		},
-
 		{
 			Name:  "First char is colon",
 			Input: `:foo`,
-			Want:  `{"field":"","value":":foo","negated":false}`,
+			Want:  `{"field":"","value":":foo","negated":false,"quoted":false}`,
 		},
 		{
 			Name:  "Last char is colon",
 			Input: `foo:`,
-			Want:  `{"field":"foo","value":"","negated":false}`,
+			Want:  `{"field":"foo","value":"","negated":false,"quoted":false}`,
 		},
 		{
 			Name:  "Match first colon",
 			Input: `foo:bar:baz`,
-			Want:  `{"field":"foo","value":"bar:baz","negated":false}`,
+			Want:  `{"field":"foo","value":"bar:baz","negated":false,"quoted":false}`,
 		},
 		{
 			Name:  "No field, start with minus",
 			Input: `-:foo`,
-			Want:  `{"field":"","value":"-:foo","negated":false}`,
+			Want:  `{"field":"","value":"-:foo","negated":false,"quoted":false}`,
 		},
 		{
 			Name:  "Minus prefix on field",
 			Input: `-file:README.md`,
-			Want:  `{"field":"file","value":"README.md","negated":true}`,
+			Want:  `{"field":"file","value":"README.md","negated":true,"quoted":false}`,
 		},
 		{
 			Name:  "Double minus prefix on field",
 			Input: `--foo:bar`,
-			Want:  `{"field":"","value":"--foo:bar","negated":false}`,
+			Want:  `{"field":"","value":"--foo:bar","negated":false,"quoted":false}`,
 		},
 		{
 			Name:  "Minus in the middle is not a valid field",
 			Input: `fie-ld:bar`,
-			Want:  `{"field":"","value":"fie-ld:bar","negated":false}`,
+			Want:  `{"field":"","value":"fie-ld:bar","negated":false,"quoted":false}`,
 		},
 		{
-			Name:  "No effect on escaped whitespace",
+			Name:  "Interpret escaped whitespace",
 			Input: `a\ pattern`,
-			Want:  `{"field":"","value":"a\\ pattern","negated":false}`,
+			Want:  `{"field":"","value":"a pattern","negated":false,"quoted":false}`,
+		},
+		{
+			Input: `"quoted"`,
+			Want:  `{"field":"","value":"quoted","negated":false,"quoted":true}`,
+		},
+		{
+			Input: `'\''`,
+			Want:  `{"field":"","value":"'","negated":false,"quoted":true}`,
 		},
 	}
 	for _, tt := range cases {
@@ -74,11 +81,127 @@ func Test_ScanParameter(t *testing.T) {
 	}
 }
 
+func Test_ScanField(t *testing.T) {
+	type value struct {
+		Field   string
+		Advance int
+	}
+	cases := []struct {
+		Input string
+		Want  value
+	}{
+		// Valid field.
+		{
+			Input: "repo:foo",
+			Want: value{
+				Field:   "repo",
+				Advance: 5,
+			},
+		},
+		{
+			Input: "RepO:foo",
+			Want: value{
+				Field:   "RepO",
+				Advance: 5,
+			},
+		},
+		{
+			Input: "after:",
+			Want: value{
+				Field:   "after",
+				Advance: 6,
+			},
+		},
+		{
+			Input: "-repo:",
+			Want: value{
+				Field:   "-repo",
+				Advance: 6,
+			},
+		},
+		// Invalid field.
+		{
+			Input: "",
+			Want: value{
+				Field:   "",
+				Advance: 0,
+			},
+		},
+		{
+			Input: "-",
+			Want: value{
+				Field:   "",
+				Advance: 0,
+			},
+		},
+		{
+			Input: "-:",
+			Want: value{
+				Field:   "",
+				Advance: 0,
+			},
+		},
+		{
+			Input: ":",
+			Want: value{
+				Field:   "",
+				Advance: 0,
+			},
+		},
+		{
+			Input: "??:foo",
+			Want: value{
+				Field:   "",
+				Advance: 0,
+			},
+		},
+		{
+			Input: "repo",
+			Want: value{
+				Field:   "",
+				Advance: 0,
+			},
+		},
+		{
+			Input: "-repo",
+			Want: value{
+				Field:   "",
+				Advance: 0,
+			},
+		},
+		{
+			Input: "--repo:",
+			Want: value{
+				Field:   "",
+				Advance: 0,
+			},
+		},
+		{
+			Input: ":foo",
+			Want: value{
+				Field:   "",
+				Advance: 0,
+			},
+		},
+	}
+	for _, c := range cases {
+		t.Run("scan field", func(t *testing.T) {
+			gotField, gotAdvance := ScanField([]byte(c.Input))
+			if diff := cmp.Diff(c.Want, value{gotField, gotAdvance}); diff != "" {
+				t.Error(diff)
+			}
+		})
+	}
+}
+
 func parseAndOrGrammar(in string) ([]Node, error) {
-	if in == "" {
+	if strings.TrimSpace(in) == "" {
 		return nil, nil
 	}
-	parser := &parser{buf: []byte(in), heuristic: false}
+	parser := &parser{
+		buf:       []byte(in),
+		heuristic: heuristic{parensAsPatterns: false},
+	}
 	nodes, err := parser.parseOr()
 	if err != nil {
 		return nil, err
@@ -104,6 +227,12 @@ func Test_Parse(t *testing.T) {
 		{
 			Name:          "Empty string",
 			Input:         "",
+			WantGrammar:   "",
+			WantHeuristic: Same,
+		},
+		{
+			Name:          "Whitespace",
+			Input:         "             ",
 			WantGrammar:   "",
 			WantHeuristic: Same,
 		},
@@ -138,6 +267,11 @@ func Test_Parse(t *testing.T) {
 		{
 			Input:         "aANDb",
 			WantGrammar:   `"aANDb"`,
+			WantHeuristic: Same,
+		},
+		{
+			Input:         "a oror b",
+			WantGrammar:   `(concat "a" "oror" "b")`,
 			WantHeuristic: Same,
 		},
 		{
@@ -199,6 +333,11 @@ func Test_Parse(t *testing.T) {
 			WantHeuristic: Diff(`(and "repo:foo" (concat "(a)" "(b)"))`),
 		},
 		{
+			Input:         "repo:foo main { and bar {",
+			WantGrammar:   Spec(`(and (and "repo:foo" (concat "main" "{")) (concat "bar" "{"))`),
+			WantHeuristic: Diff(`(and "repo:foo" (concat "main" "{") (concat "bar" "{"))`),
+		},
+		{
 			Input:         "a b (repo:foo c d)",
 			WantGrammar:   `(concat "a" "b" (and "repo:foo" (concat "c" "d")))`,
 			WantHeuristic: Same,
@@ -233,18 +372,33 @@ func Test_Parse(t *testing.T) {
 			WantGrammar:   `(and "repo:b" "repo:c" (concat "a" (and "repo:e" "repo:f" (concat "d" "e"))))`,
 			WantHeuristic: Same,
 		},
+		// Keywords as patterns.
+		{
+			Input:         "a or",
+			WantGrammar:   `(concat "a" "or")`,
+			WantHeuristic: Same,
+		},
+		{
+			Input:         "or",
+			WantGrammar:   `"or"`,
+			WantHeuristic: Same,
+		},
+		{
+			Input:         "or or or",
+			WantGrammar:   `(or "or" "or")`,
+			WantHeuristic: Same,
+		},
+		{
+			Input:         "and and andand or oror",
+			WantGrammar:   `(or (and "and" "andand") "oror")`,
+			WantHeuristic: Same,
+		},
 		// Errors.
 		{
 			Name:          "Unbalanced",
 			Input:         "(foo) (bar",
-			WantGrammar:   "unbalanced expression",
-			WantHeuristic: Same,
-		},
-		{
-			Name:          "Incomplete expression",
-			Input:         "a or",
-			WantGrammar:   "expected operand at 4",
-			WantHeuristic: Same,
+			WantGrammar:   Spec("unbalanced expression"),
+			WantHeuristic: Diff(`(concat "(foo)" "(bar")`),
 		},
 		{
 			Name:          "Illegal expression on the right",
@@ -255,19 +409,12 @@ func Test_Parse(t *testing.T) {
 		{
 			Name:          "Illegal expression on the right, mixed operators",
 			Input:         "a and OR",
-			WantGrammar:   "expected operand at 6",
+			WantGrammar:   `(and "a" "OR")`,
 			WantHeuristic: Same,
 		},
 		{
-			Name:          "Illegal expression on the left",
-			Input:         "or",
-			WantGrammar:   "expected operand at 0",
-			WantHeuristic: Same,
-		},
-		{
-			Name:          "Illegal expression on the left, multiple operators",
-			Input:         "or or or",
-			WantGrammar:   "expected operand at 0",
+			Input:         "repo:foo or or or",
+			WantGrammar:   "expected operand at 12",
 			WantHeuristic: Same,
 		},
 		// Reduction.
@@ -380,6 +527,114 @@ func Test_Parse(t *testing.T) {
 			WantGrammar:   Spec(`(concat "x" (or "y" "f"))`),
 			WantHeuristic: Diff(`(concat "()" "x" "()" (or "y" "()" "f") "()")`),
 		},
+		// Escaping.
+		{
+			Input:         `\(\)`,
+			WantGrammar:   `"\\(\\)"`,
+			WantHeuristic: Same,
+		},
+		{
+			Input:         `\( \) ()`,
+			WantGrammar:   Spec(`(concat "\\(" "\\)")`),
+			WantHeuristic: Diff(`(concat "\\(" "\\)" "()")`),
+		},
+		{
+			Input:         `\ `,
+			WantGrammar:   `" "`,
+			WantHeuristic: Same,
+		},
+		{
+			Input:         `\  \ `,
+			WantGrammar:   Spec(`(concat " " " ")`),
+			WantHeuristic: Diff(`(concat " " " ")`),
+		},
+		// Dangling parentheses heuristic.
+		{
+			Input:         `(`,
+			WantGrammar:   Spec(`expected operand at 1`),
+			WantHeuristic: Diff(`"("`),
+		},
+		{
+			Input:         `)(())(`,
+			WantGrammar:   Spec(`unbalanced expression`),
+			WantHeuristic: Diff(`"(())("`),
+		},
+		{
+			Input:         `foo( and bar(`,
+			WantGrammar:   Spec(`expected operand at 5`),
+			WantHeuristic: Diff(`(and "foo(" "bar(")`),
+		},
+		{
+			Input:         `repo:foo foo( or bar(`,
+			WantGrammar:   Spec(`expected operand at 14`),
+			WantHeuristic: Diff(`(and "repo:foo" (or "foo(" "bar("))`),
+		},
+		{
+			Input:         `(a or (b and )) or d)`,
+			WantGrammar:   Spec(`unbalanced expression`),
+			WantHeuristic: Diff(`(or "(a" (and "(b" ")") "d)")`),
+		},
+		// Quotes and escape sequences.
+		{
+			Input:         `"`,
+			WantGrammar:   `""`,
+			WantHeuristic: Same,
+		},
+		{
+			Input:         `repo:foo' bar'`,
+			WantGrammar:   `(and "repo:foo'" "bar'")`,
+			WantHeuristic: Same,
+		},
+		{
+			Input:         `repo:'foo' 'bar'`,
+			WantGrammar:   `(and "repo:foo" "bar")`,
+			WantHeuristic: Same,
+		},
+		{
+			Input:         `repo:"foo" "bar"`,
+			WantGrammar:   `(and "repo:foo" "bar")`,
+			WantHeuristic: Same,
+		},
+		{
+			Input:         `repo:"foo bar" "foo bar"`,
+			WantGrammar:   `(and "repo:foo bar" "foo bar")`,
+			WantHeuristic: Same,
+		},
+		{
+			Input:         `repo:"fo\"o" "bar"`,
+			WantGrammar:   Spec(`(and "repo:fo\"o" "bar")`),
+			WantHeuristic: Same,
+		},
+		{
+			Input:         `repo:foo /b\/ar/`,
+			WantGrammar:   `(and "repo:foo" "/b\\/ar/")`,
+			WantHeuristic: Same,
+		},
+		{
+			Input:         `repo:foo /a/file/path`,
+			WantGrammar:   `(and "repo:foo" "/a/file/path")`,
+			WantHeuristic: Same,
+		},
+		{
+			Input:         `repo:foo /a/file/path/`,
+			WantGrammar:   `(and "repo:foo" "/a/file/path/")`,
+			WantHeuristic: Same,
+		},
+		{
+			Input:         `repo:foo /a/ /another/path/`,
+			WantGrammar:   `(and "repo:foo" (concat "/a/" "/another/path/"))`,
+			WantHeuristic: Same,
+		},
+		{
+			Input:         `\t\r\n`,
+			WantGrammar:   `"\t\r\n"`,
+			WantHeuristic: Same,
+		},
+		{
+			Input:         `repo:foo\ bar \:\\`,
+			WantGrammar:   `(and "repo:foo bar" ":\\")`,
+			WantHeuristic: Same,
+		},
 	}
 	for _, tt := range cases {
 		t.Run(tt.Name, func(t *testing.T) {
@@ -403,12 +658,103 @@ func Test_Parse(t *testing.T) {
 			var err error
 			result, err = parseAndOrGrammar(tt.Input) // Parse without heuristic.
 			check(result, err, string(tt.WantGrammar))
-			result, err = parseAndOr(tt.Input)
+			result, err = ParseAndOr(tt.Input)
 			if tt.WantHeuristic == Same {
 				check(result, err, string(tt.WantGrammar))
 			} else {
 				check(result, err, string(tt.WantHeuristic))
 			}
+		})
+	}
+}
+
+func Test_ScanDelimited(t *testing.T) {
+	type result struct {
+		Value  string
+		Count  int
+		ErrMsg string
+	}
+
+	cases := []struct {
+		name      string
+		input     string
+		delimiter rune
+		want      result
+	}{
+		{
+			input:     `""`,
+			delimiter: '"',
+			want:      result{Value: "", Count: 2, ErrMsg: ""},
+		},
+		{
+			input:     `"a"`,
+			delimiter: '"',
+			want:      result{Value: `a`, Count: 3, ErrMsg: ""},
+		},
+		{
+			input:     `"\""`,
+			delimiter: '"',
+			want:      result{Value: `"`, Count: 4, ErrMsg: ""},
+		},
+		{
+			input:     `"\\""`,
+			delimiter: '"',
+			want:      result{Value: `\`, Count: 4, ErrMsg: ""},
+		},
+		{
+			input:     `"\\\"`,
+			delimiter: '"',
+			want:      result{Value: "", Count: 5, ErrMsg: `unterminated literal: expected "`},
+		},
+		{
+			input:     `"\\\""`,
+			delimiter: '"',
+			want:      result{Value: `\"`, Count: 6, ErrMsg: ""},
+		},
+		{
+			input:     `"a`,
+			delimiter: '"',
+			want:      result{Value: "", Count: 2, ErrMsg: `unterminated literal: expected "`},
+		},
+		{
+			input:     `"\?"`,
+			delimiter: '"',
+			want:      result{Value: "", Count: 3, ErrMsg: `unrecognized escape sequence`},
+		},
+		{
+			name:      "panic",
+			input:     `a"`,
+			delimiter: '"',
+			want:      result{},
+		},
+		{
+			input:     `/\//`,
+			delimiter: '/',
+			want:      result{Value: "/", Count: 4, ErrMsg: ""},
+		},
+	}
+
+	for _, tt := range cases {
+		if tt.name == "panic" {
+			defer func() {
+				if r := recover(); r == nil {
+					t.Errorf("expected panic for ScanDelimited")
+				}
+			}()
+			_, _, _ = ScanDelimited([]byte(tt.input), tt.delimiter)
+		}
+
+		t.Run(tt.name, func(t *testing.T) {
+			value, count, err := ScanDelimited([]byte(tt.input), tt.delimiter)
+			var errMsg string
+			if err != nil {
+				errMsg = err.Error()
+			}
+			got := result{value, count, errMsg}
+			if diff := cmp.Diff(tt.want, got); diff != "" {
+				t.Error(diff)
+			}
+
 		})
 	}
 }

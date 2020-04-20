@@ -3,7 +3,7 @@ import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
 import { Observable, Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { PanelViewWithComponent, ViewProviderRegistrationOptions } from '../api/client/services/view'
+import { PanelViewWithComponent, PanelViewProviderRegistrationOptions } from '../api/client/services/panelViews'
 import { ContributableMenu, ContributableViewContainer } from '../api/protocol/contribution'
 import { ExtensionsControllerProps } from '../extensions/controller'
 import { ActionsNavItems } from '../actions/ActionsNavItems'
@@ -33,7 +33,7 @@ interface Props
 
 interface State {
     /** Panel views contributed by extensions. */
-    panelViews?: (PanelViewWithComponent & Pick<ViewProviderRegistrationOptions, 'id'>)[] | null
+    panelViews?: (PanelViewWithComponent & Pick<PanelViewProviderRegistrationOptions, 'id'>)[] | null
 }
 
 /**
@@ -70,8 +70,8 @@ export class Panel extends React.PureComponent<Props, State> {
 
     public componentDidMount(): void {
         this.subscriptions.add(
-            this.props.extensionsController.services.views
-                .getViews(ContributableViewContainer.Panel)
+            this.props.extensionsController.services.panelViews
+                .getPanelViews(ContributableViewContainer.Panel)
                 .pipe(map(panelViews => ({ panelViews })))
                 .subscribe(stateUpdate => this.setState(stateUpdate))
         )

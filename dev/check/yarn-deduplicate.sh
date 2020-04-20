@@ -10,6 +10,6 @@ yarn --mutex network --frozen-lockfile --ignore-scripts
 
 echo "Checking for duplicate dependencies in yarn.lock"
 yarn run -s yarn-deduplicate --fail --list --strategy fewer ./yarn.lock || {
-    echo 'yarn.lock contains duplicate dependencies. Please run `yarn deduplicate` and commit the result.'
-    exit 1
+  echo 'yarn.lock contains duplicate dependencies. Please run `yarn deduplicate` and commit the result.'
+  exit 1
 }

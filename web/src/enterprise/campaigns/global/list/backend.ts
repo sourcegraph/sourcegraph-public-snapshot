@@ -40,3 +40,17 @@ export const queryCampaigns = ({
         map(dataOrThrowErrors),
         map(data => data.campaigns)
     )
+
+export const queryCampaignsCount = (): Observable<number> =>
+    queryGraphQL(
+        gql`
+            query Campaigns {
+                campaigns(first: 1) {
+                    totalCount
+                }
+            }
+        `
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.campaigns.totalCount)
+    )

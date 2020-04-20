@@ -18,7 +18,7 @@ interface SubmitSearchParams
         Pick<CaseSensitivityProps, 'caseSensitive'> {
     history: H.History
     query: string
-    source: 'home' | 'nav' | 'repo' | 'tree' | 'filter' | 'type'
+    source: 'home' | 'nav' | 'repo' | 'tree' | 'filter' | 'type' | 'scopePage'
 }
 
 /**

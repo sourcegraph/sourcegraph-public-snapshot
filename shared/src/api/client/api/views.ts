@@ -1,12 +1,14 @@
 import { ProxyValue, proxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
 import { isEqual, omit } from 'lodash'
-import { combineLatest, from, of, ReplaySubject, Unsubscribable } from 'rxjs'
+import { combineLatest, from, ReplaySubject, Unsubscribable, ObservableInput } from 'rxjs'
 import { distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import { PanelView } from 'sourcegraph'
 import { ContributableViewContainer } from '../../protocol'
 import { EditorService, getActiveCodeEditorPosition } from '../services/editorService'
 import { TextDocumentLocationProviderIDRegistry } from '../services/location'
-import { PanelViewWithComponent, ViewProviderRegistry } from '../services/view'
+import { PanelViewWithComponent, PanelViewProviderRegistry } from '../services/panelViews'
+import { Location } from '@sourcegraph/extension-api-types'
+import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 
 /** @internal */
 export interface PanelViewData extends Pick<PanelView, 'title' | 'content' | 'priority' | 'component'> {}
@@ -25,7 +27,7 @@ export class ClientViews implements ClientViewsAPI {
     public readonly [proxyValueSymbol] = true
 
     constructor(
-        private viewRegistry: ViewProviderRegistry,
+        private panelViewRegistry: PanelViewProviderRegistry,
         private textDocumentLocations: TextDocumentLocationProviderIDRegistry,
         private editorService: EditorService
     ) {}
@@ -34,7 +36,7 @@ export class ClientViews implements ClientViewsAPI {
         // TODO(sqs): This will probably hang forever if an extension neglects to set any of the fields on a
         // PanelView because this subject will never emit.
         const panelView = new ReplaySubject<PanelViewData>(1)
-        const registryUnsubscribable = this.viewRegistry.registerProvider(
+        const registryUnsubscribable = this.panelViewRegistry.registerProvider(
             { ...provider, container: ContributableViewContainer.Panel },
             combineLatest([
                 panelView.pipe(
@@ -51,12 +53,14 @@ export class ClientViews implements ClientViewsAPI {
 
                         return from(this.editorService.activeEditorUpdates).pipe(
                             map(getActiveCodeEditorPosition),
-                            switchMap(params => {
-                                if (!params) {
-                                    return of(of(null))
+                            switchMap(
+                                (params): ObservableInput<MaybeLoadingResult<Location[]>> => {
+                                    if (!params) {
+                                        return [{ isLoading: false, result: [] }]
+                                    }
+                                    return this.textDocumentLocations.getLocations(component.locationProvider, params)
                                 }
-                                return this.textDocumentLocations.getLocations(component.locationProvider, params)
-                            })
+                            )
                         )
                     })
                 ),

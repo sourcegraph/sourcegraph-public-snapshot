@@ -21,6 +21,12 @@ exports[`CampaignActionsBar all changesets not open 1`] = `
       >
         Campaigns
       </AnchorLink>
+       
+      <span
+        className="badge badge-info"
+      >
+        Beta
+      </span>
     </span>
     <span
       className="text-muted d-inline-block mx-2"
@@ -106,6 +112,12 @@ exports[`CampaignActionsBar closed 1`] = `
       >
         Campaigns
       </AnchorLink>
+       
+      <span
+        className="badge badge-info"
+      >
+        Beta
+      </span>
     </span>
     <span
       className="text-muted d-inline-block mx-2"
@@ -163,6 +175,12 @@ exports[`CampaignActionsBar edit mode 1`] = `
       >
         Campaigns
       </AnchorLink>
+       
+      <span
+        className="badge badge-info"
+      >
+        Beta
+      </span>
     </span>
     <span
       className="text-muted d-inline-block mx-2"
@@ -219,6 +237,12 @@ exports[`CampaignActionsBar editable 1`] = `
       >
         Campaigns
       </AnchorLink>
+       
+      <span
+        className="badge badge-info"
+      >
+        Beta
+      </span>
     </span>
     <span
       className="text-muted d-inline-block mx-2"
@@ -304,6 +328,12 @@ exports[`CampaignActionsBar mode: closing 1`] = `
       >
         Campaigns
       </AnchorLink>
+       
+      <span
+        className="badge badge-info"
+      >
+        Beta
+      </span>
     </span>
     <span
       className="text-muted d-inline-block mx-2"
@@ -392,6 +422,12 @@ exports[`CampaignActionsBar mode: deleting 1`] = `
       >
         Campaigns
       </AnchorLink>
+       
+      <span
+        className="badge badge-info"
+      >
+        Beta
+      </span>
     </span>
     <span
       className="text-muted d-inline-block mx-2"
@@ -480,6 +516,12 @@ exports[`CampaignActionsBar mode: saving 1`] = `
       >
         Campaigns
       </AnchorLink>
+       
+      <span
+        className="badge badge-info"
+      >
+        Beta
+      </span>
     </span>
     <span
       className="text-muted d-inline-block mx-2"
@@ -534,6 +576,12 @@ exports[`CampaignActionsBar new with patch set 1`] = `
       >
         Campaigns
       </AnchorLink>
+       
+      <span
+        className="badge badge-info"
+      >
+        Beta
+      </span>
     </span>
     <span
       className="text-muted d-inline-block mx-2"
@@ -566,6 +614,12 @@ exports[`CampaignActionsBar new without patch set 1`] = `
       >
         Campaigns
       </AnchorLink>
+       
+      <span
+        className="badge badge-info"
+      >
+        Beta
+      </span>
     </span>
     <span
       className="text-muted d-inline-block mx-2"
@@ -573,7 +627,7 @@ exports[`CampaignActionsBar new without patch set 1`] = `
       /
     </span>
     <span>
-      New manual campaign
+      New campaign
     </span>
   </h2>
   <span
@@ -603,6 +657,12 @@ exports[`CampaignActionsBar not editable 1`] = `
       >
         Campaigns
       </AnchorLink>
+       
+      <span
+        className="badge badge-info"
+      >
+        Beta
+      </span>
     </span>
     <span
       className="text-muted d-inline-block mx-2"
@@ -640,6 +700,12 @@ exports[`CampaignActionsBar processing 1`] = `
       >
         Campaigns
       </AnchorLink>
+       
+      <span
+        className="badge badge-info"
+      >
+        Beta
+      </span>
     </span>
     <span
       className="text-muted d-inline-block mx-2"
@@ -696,6 +762,12 @@ exports[`CampaignActionsBar some changesets still open 1`] = `
       >
         Campaigns
       </AnchorLink>
+       
+      <span
+        className="badge badge-info"
+      >
+        Beta
+      </span>
     </span>
     <span
       className="text-muted d-inline-block mx-2"

@@ -14,8 +14,8 @@ import { map, tap, retryWhen, delayWhen, take, mergeMap } from 'rxjs/operators'
 import { zip, timer, concat, throwError, defer, Observable } from 'rxjs'
 import {
     CloneInProgressError,
-    CLONE_IN_PROGRESS_ERROR_NAME,
-    REPO_NOT_FOUND_ERROR_NAME,
+    isCloneInProgressErrorLike,
+    isRepoNotFoundErrorLike,
 } from '../../../../shared/src/backend/errors'
 import { isErrorLike, createAggregateError } from '../../../../shared/src/util/errors'
 import { ResourceDestructor } from './TestResourceManager'
@@ -91,10 +91,7 @@ export function waitForRepo(
         ? request.pipe(
               map(result => {
                   // map to true if repo is not found, false if repo is found, throw other errors
-                  if (
-                      isErrorGraphQLResult(result) &&
-                      result.errors.some(err => err.name === REPO_NOT_FOUND_ERROR_NAME)
-                  ) {
+                  if (isErrorGraphQLResult(result) && result.errors.some(isRepoNotFoundErrorLike)) {
                       return undefined
                   }
                   const { repository } = dataOrThrowErrors(result)
@@ -145,7 +142,7 @@ export function waitForRepo(
                   concat(
                       errors.pipe(
                           delayWhen((error, retryCount) => {
-                              if (isErrorLike(error) && error.name === CLONE_IN_PROGRESS_ERROR_NAME) {
+                              if (isCloneInProgressErrorLike(error)) {
                                   // Delay retry by 2s.
                                   if (logStatusMessages) {
                                       console.log(

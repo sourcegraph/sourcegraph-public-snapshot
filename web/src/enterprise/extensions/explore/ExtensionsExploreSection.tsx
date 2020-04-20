@@ -74,7 +74,7 @@ export class ExtensionsExploreSection extends React.PureComponent<Props, State> 
                         {extensionsOrError
                             .slice(0, ExtensionsExploreSection.QUERY_EXTENSIONS_ARG_FIRST)
                             .filter((e): e is GQL.IRegistryExtension => e !== LOADING)
-                            .map((extension, i) => (
+                            .map(extension => (
                                 <ExtensionsExploreSectionExtensionCard
                                     key={extension.id}
                                     extensionID={extension.extensionIDWithoutRegistry}

@@ -8,8 +8,7 @@ yarn --mutex network --frozen-lockfile --network-timeout 60000
 yarn --mutex network --cwd cmd/precise-code-intel --frozen-lockfile --network-timeout 60000
 yarn --mutex network --cwd dev/release --frozen-lockfile --network-timeout 60000
 
-for cmd in "$@"
-do
-    echo "--- $cmd"
-    yarn -s run $cmd
+for cmd in "$@"; do
+  echo "--- $cmd"
+  yarn -s run $cmd
 done

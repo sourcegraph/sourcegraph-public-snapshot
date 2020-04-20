@@ -81,6 +81,8 @@ require (
 	github.com/lib/pq v1.3.0
 	github.com/lightstep/lightstep-tracer-common/golang/gogo v0.0.0-20200310182322-adf4263e074b // indirect
 	github.com/lightstep/lightstep-tracer-go v0.20.0
+	github.com/machinebox/graphql v0.2.2
+	github.com/matryer/is v1.3.0 // indirect
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
 	github.com/mattn/goreman v0.0.0-00010101000000-000000000000 // indirect
 	github.com/mcuadros/go-version v0.0.0-20190830083331-035f6764e8d2
@@ -153,7 +155,7 @@ require (
 )
 
 replace (
-	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20200401202556-ef3ec2393b46
+	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20200417123535-6727685ef676
 	github.com/mattn/goreman => github.com/sourcegraph/goreman v0.1.2-0.20180928223752-6e9a2beb830d
 	github.com/russellhaering/gosaml2 => github.com/sourcegraph/gosaml2 v0.3.2-0.20200109173551-5cfddeb48b17
 	github.com/uber/gonduit => github.com/sourcegraph/gonduit v0.4.0
