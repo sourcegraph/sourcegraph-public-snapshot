@@ -15,11 +15,11 @@ You can also apply a new patch set to an existing campaign and update its patche
 To do that, you need to use the [`src` CLI](https://github.com/sourcegraph/src-cli) to create a new patch set that reflects the desired state of all patches/changesets in the campaign:
 
 ```
-$ src action exec -f new-action-definition.json -create-patchset
+$ src action exec -f new-action-definition.json | src campaign patchset create-from-patches
 
 # Or:
 
-$ src action exec -f new-action-definition.json | src campaign patchset create-from-patches
+$ src -v action exec -f new-action-definition.json -create-patchset
 ```
 
 For example, the `new-action-definition.json` could have a `"scopeQuery"` that yields _more_ repositories and thus produces _more_ patches.
