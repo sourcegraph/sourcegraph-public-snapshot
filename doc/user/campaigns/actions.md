@@ -8,8 +8,8 @@ These **patches can then be turned into _changesets_ (pull requests)** on the co
 
 An _action_ is made up of two things:
 
-1. a Sourcegraph search query (the `scopeQuery`).
-1. a series of steps to be executed in each repository yielded by the search query.
+1. A Sourcegraph search query (the `scopeQuery`).
+1. A series of steps to be executed in each repository yielded by the search query.
 
 Here is an example definition of an action:
 
