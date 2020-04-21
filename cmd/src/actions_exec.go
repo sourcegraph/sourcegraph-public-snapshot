@@ -152,7 +152,10 @@ Format of the action JSON files:
 	)
 
 	handler := func(args []string) error {
-		flagSet.Parse(args)
+		err := flagSet.Parse(args)
+		if err != nil {
+			return err
+		}
 
 		if !isGitAvailable() {
 			return errors.New("Could not find git in $PATH. 'src actions exec' requires git to be available.")
@@ -168,10 +171,7 @@ Format of the action JSON files:
 			return errors.New("cache is not a valid path")
 		}
 
-		var (
-			actionFile []byte
-			err        error
-		)
+		var actionFile []byte
 
 		if *fileFlag == "-" {
 			actionFile, err = ioutil.ReadAll(os.Stdin)
@@ -290,7 +290,7 @@ Format of the action JSON files:
 					return err
 				}
 
-				c, _ := askForConfirmation(fmt.Sprintf("Create a patch set for the produced patches anyway?"))
+				c, _ := askForConfirmation("Create a patch set for the produced patches anyway?")
 				if !c {
 					return err
 				}
@@ -580,10 +580,6 @@ func diffStatDescription(fileDiffs []*diff.FileDiff) string {
 	}
 
 	return fmt.Sprintf("%d file%s changed", len(fileDiffs), plural)
-}
-
-func diffStatSummary(stat diff.Stat) string {
-	return fmt.Sprintf("%d insertions(+), %d deletions(-)", stat.Added+stat.Changed, stat.Deleted+stat.Changed)
 }
 
 func diffStatDiagram(stat diff.Stat) string {

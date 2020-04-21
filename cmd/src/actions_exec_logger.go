@@ -20,7 +20,6 @@ var (
 	boldBlack = color.New(color.Bold, color.FgBlack)
 	boldRed   = color.New(color.Bold, color.FgRed)
 	boldGreen = color.New(color.Bold, color.FgGreen)
-	green     = color.New(color.FgGreen)
 	hiGreen   = color.New(color.FgHiGreen)
 	yellow    = color.New(color.FgYellow)
 	grey      = color.New(color.FgHiBlack)

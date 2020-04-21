@@ -32,7 +32,10 @@ Examples:
 	)
 
 	handler := func(args []string) error {
-		flagSet.Parse(args)
+		err := flagSet.Parse(args)
+		if err != nil {
+			return err
+		}
 
 		var formatStr string
 		if *formatFlag != "" {

@@ -56,7 +56,10 @@ Examples:
 	)
 
 	handler := func(args []string) error {
-		flagSet.Parse(args)
+		err := flagSet.Parse(args)
+		if err != nil {
+			return err
+		}
 
 		// Build the GraphQL request.
 		query := *queryFlag
@@ -133,7 +136,7 @@ func curlCmd(endpoint, accessToken, query string, vars map[string]interface{}) (
 		return "", err
 	}
 
-	s := fmt.Sprintf("curl \\\n")
+	s := "curl \\\n"
 	if accessToken != "" {
 		s += fmt.Sprintf("   %s \\\n", shellquote.Join("-H", "Authorization: token "+accessToken))
 	}

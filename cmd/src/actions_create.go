@@ -42,7 +42,10 @@ Examples:
 	)
 
 	handler := func(args []string) error {
-		flagSet.Parse(args)
+		err := flagSet.Parse(args)
+		if err != nil {
+			return err
+		}
 
 		if _, err := os.Stat(*fileFlag); !os.IsNotExist(err) {
 			return fmt.Errorf("file %q already exists", *fileFlag)

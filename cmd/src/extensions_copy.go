@@ -33,7 +33,10 @@ Copy an extension from Sourcegraph.com to your private registry.
 	)
 
 	handler := func(args []string) error {
-		flagSet.Parse(args)
+		err := flagSet.Parse(args)
+		if err != nil {
+			return err
+		}
 
 		extensionID := *extensionIDFlag
 		if extensionID == "" {
@@ -62,7 +65,6 @@ Copy an extension from Sourcegraph.com to your private registry.
 			}
 		}
 
-		var err error
 		withCfg(&config{Endpoint: "https://sourcegraph.com"}, func() {
 			err = (&apiRequest{
 				query: `query GetExtension(

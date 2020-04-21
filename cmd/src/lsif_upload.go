@@ -174,7 +174,7 @@ Examples:
 
 		if *apiFlags.getCurl {
 			curl := fmt.Sprintf("gzip -c %s | curl \\\n", shellquote.Join(*fileFlag))
-			curl += fmt.Sprintf("   -X POST \\\n")
+			curl += "   -X POST \\\n"
 			curl += fmt.Sprintf("   %s \\\n", shellquote.Join("-H", "Content-Type: application/x-ndjson+lsif"))
 			if cfg.AccessToken != "" {
 				curl += fmt.Sprintf("   %s \\\n", shellquote.Join("-H", "Authorization: token "+cfg.AccessToken))

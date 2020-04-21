@@ -44,7 +44,10 @@ Notes:
 	)
 
 	handler := func(args []string) error {
-		flagSet.Parse(args)
+		err := flagSet.Parse(args)
+		if err != nil {
+			return err
+		}
 
 		if *campaignIDFlag == "" {
 			return &usageError{errors.New("-campaign must be specified")}

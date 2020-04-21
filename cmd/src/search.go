@@ -18,7 +18,7 @@ import (
 	"jaytaylor.com/html2text"
 )
 
-var dateRegex = regexp.MustCompile("(\\w{4}-\\w{2}-\\w{2})")
+var dateRegex = regexp.MustCompile(`(\w{4}-\w{2}-\w{2})`)
 
 func init() {
 	usage := `
@@ -328,9 +328,6 @@ func searchHighlightPreview(preview interface{}, start, end string) string {
 }
 
 func searchHighlightDiffPreview(diffPreview interface{}) string {
-	p := diffPreview.(map[string]interface{})
-	diff := p["value"].(string)
-
 	useColordiff, err := strconv.ParseBool(os.Getenv("COLORDIFF"))
 	if err != nil {
 		useColordiff = true
@@ -350,7 +347,7 @@ func searchHighlightDiffPreview(diffPreview interface{}) string {
 	// adds).
 	uniqueStartOfMatchToken := "pXRdMhZbgnPL355429nsO4qFgX86LfXTSmqH4Nr3#*(@)!*#()@!APPJB8ZRutvZ5fdL01273i6OdzLDm0UMC9372891skfJTl2c52yR1v"
 	uniqueEndOfMatchToken := "v1Ry25c2lTJfks1982739CMU0mDLzdO6i37210Ldf5ZvtuRZ8BJPPA!@)(#*!)@(*#3rN4HqmSTXfL68XgFq4Osn924553LPngbZhMdRXp"
-	diff = searchHighlightPreview(diffPreview, uniqueStartOfMatchToken, uniqueEndOfMatchToken)
+	diff := searchHighlightPreview(diffPreview, uniqueStartOfMatchToken, uniqueEndOfMatchToken)
 
 	// Now highlight our diff with colordiff.
 	var buf bytes.Buffer

@@ -45,10 +45,10 @@ type commander []*command
 func (c commander) run(flagSet *flag.FlagSet, cmdName, usageText string, args []string) {
 	// Parse flags.
 	flagSet.Usage = func() {
-		fmt.Fprintf(flag.CommandLine.Output(), usageText)
+		fmt.Fprint(flag.CommandLine.Output(), usageText)
 	}
 	if !flagSet.Parsed() {
-		flagSet.Parse(args)
+		_ = flagSet.Parse(args)
 	}
 
 	// Print usage if the command is "help".
