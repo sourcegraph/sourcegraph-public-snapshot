@@ -48,11 +48,11 @@ See this video for a demonstration of lifecycle of a Campaign:
 If you are a first-time user of Campaigns, we recommend that you read through the following sections of the documentation:
 
 1. Read through the **How it works** section above and **watch the video** to get an understanding of how Campaigns work.
-1. Go through the [**Getting started**](./getting_started.md) instructions to setup your Sourcegraph instance for Campaigns.
-1. Create a manual campaign to track the progress of already-existing pull requests on your code host: [**Creating a manual Campaign**](./creating_manual_campaign.md).
-1. Create your first campaign from a set of patches by reading [**Creating a Campaign from Patches**](./creating_campaign_from_patches.md).
+1. Go through the "[Getting started](./getting_started.md)" instructions to setup your Sourcegraph instance for Campaigns.
+1. Create your first campaign from a set of patches by reading "[Creating a Campaign from Patches**](./creating_campaign_from_patches.md)".
+1. Create a manual campaign to track the progress of already-existing pull requests on your code host: "[Creating a manual Campaign](./creating_manual_campaign.md)".
 
-At this point you're ready to explore some of the [example campaigns](./examples/index.md) and create your own action definitions and campaigns.
+At this point you're ready to explore some of the [**example campaigns**](./examples/index.md) and create your own action definitions and campaigns.
 
 ## Requirements
 
