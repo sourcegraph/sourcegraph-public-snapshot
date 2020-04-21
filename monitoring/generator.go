@@ -1,6 +1,6 @@
-//go:generate echo "Regenerating observability..."
-//go:generate go build -o /tmp/src-observability-generator
-//go:generate /tmp/src-observability-generator
+//go:generate echo "Regenerating monitoring..."
+//go:generate go build -o /tmp/monitoring-generator
+//go:generate /tmp/monitoring-generator
 
 package main
 

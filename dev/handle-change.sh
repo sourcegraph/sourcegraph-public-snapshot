@@ -5,7 +5,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.." # cd to repo root dir
 
 generate_graphql=false
 generate_dashboards=false
-generate_observability=false
+generate_monitoring=false
 generate_schema=false
 generate_ctags_image=false
 cmdlist=()
@@ -20,8 +20,8 @@ for i; do
     docker-images/grafana/jsonnet/*.jsonnet)
       generate_dashboards=true
       ;;
-    observability/*)
-      generate_observability=true
+    monitoring/*)
+      generate_monitoring=true
       ;;
     schema/*.json)
       generate_schema=true
@@ -52,7 +52,7 @@ done
 
 $generate_graphql && { go generate github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend || failed=true; }
 $generate_dashboards && { docker-images/grafana/jsonnet/build.sh || failed=true; }
-$generate_observability && { pushd observability && DEV=true go generate && popd || failed=true; }
+$generate_monitoring && { pushd monitoring && DEV=true go generate && popd || failed=true; }
 $generate_schema && { go generate github.com/sourcegraph/sourcegraph/schema || failed=true; }
 $generate_ctags_image && { ./cmd/symbols/build-ctags.sh || failed=true; }
 

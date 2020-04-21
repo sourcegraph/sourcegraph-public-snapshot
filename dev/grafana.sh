@@ -21,7 +21,7 @@ fi
 docker inspect $CONTAINER >/dev/null 2>&1 && docker rm -f $CONTAINER
 
 # Generate Grafana dashboards
-pushd observability
+pushd monitoring
 DEV=true RELOAD=false go generate
 popd
 
