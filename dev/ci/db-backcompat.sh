@@ -65,10 +65,10 @@ function runTest() {
 	    DB schema version:				${CURRENT_DB_SCHEMA}
 	EOF
 
-    # All DB tests are assumed to import the ./cmd/frontend/db/testing package, so use that to
+    # All DB tests are assumed to import the internal/db/dbtesting package, so use that to
     # find which packages' tests need to be run.
     # shellcheck disable=SC2016
-    mapfile -t PACKAGES_WITH_DB_TEST < <(go list -f '{{$printed := false}}{{range .TestImports}}{{if and (not $printed) (eq . "github.com/sourcegraph/sourcegraph/cmd/frontend/db/testing")}}{{$.ImportPath}}{{$printed = true}}{{end}}{{end}}' ./...)
+    mapfile -t PACKAGES_WITH_DB_TEST < <(go list -f '{{$printed := false}}{{range .TestImports}}{{if and (not $printed) (eq . "github.com/sourcegraph/sourcegraph/internal/db/dbtesting")}}{{$.ImportPath}}{{$printed = true}}{{end}}{{end}}' ./...)
 
     set -ex
     # Test without cache, because schema change does not
