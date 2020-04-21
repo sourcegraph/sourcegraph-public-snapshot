@@ -36,7 +36,7 @@
             "enum": ["command", "docker"]
           },
           "args": {
-            "description": "The command to execute.",
+            "description": "The command and its argument to execute if \"type\" is \"command\", or a list of arguments to be passed to the Docker container if \"type\" is \"docker\".",
             "type": "array",
             "minItems": 1,
             "items": {
@@ -47,6 +47,13 @@
             "description": "The Docker image handle for running the container executing this step. Just like when running `docker run`, `args` here override the default `CMD` to be executed.",
             "type": "string",
             "minLength": 1
+          },
+          "cacheDirs": {
+            "description": "Names of directories to create in a temporary location and mount into each \"docker\" step container under the specified name.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "oneOf": [
