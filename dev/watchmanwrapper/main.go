@@ -5,10 +5,12 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"os"
 	"os/exec"
+	"strconv"
 )
 
 type Response struct {
@@ -26,6 +28,11 @@ func main() {
 		log.Fatal(err)
 	}
 
+	debug, _ := strconv.ParseBool(os.Getenv("WATCHMAN_DEBUG"))
+	if debug {
+		fmt.Fprintln(os.Stderr, "!!! WATCHMAN debugging enabled")
+	}
+
 	go func() {
 		dec := json.NewDecoder(stdout)
 		for {
@@ -39,6 +46,10 @@ func main() {
 			}
 			if r.IsFreshInstance || len(r.Files) == 0 {
 				continue
+			}
+
+			if debug {
+				fmt.Fprintln(os.Stderr, "!!! WATCH EVENT", r.Files)
 			}
 
 			cmd := exec.Command(os.Args[1], r.Files...)

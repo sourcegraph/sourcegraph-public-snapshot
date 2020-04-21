@@ -49,14 +49,16 @@ execWatchman() {
   popd
   exec dev/watchmanwrapper/watchmanwrapper dev/handle-change.sh <<-EOT
 ["subscribe", ".", "gochangewatch", {
-  "expression": ["anyof",
-    ["suffix", "go"],
-    ["dirname", "cmd/symbols"],
-    ["dirname", "schema"],
-    ["dirname", "docker-images/grafana/jsonnet"],
-    ["dirname", "observability"],
-    ["name", "cmd/frontend/graphqlbackend/schema.graphql", "wholename"]
-  ],
+  "expression": ["allof",
+    ["not", ["match", ".*"]],
+    ["anyof",
+      ["suffix", "go"],
+      ["dirname", "cmd/symbols"],
+      ["dirname", "schema"],
+      ["dirname", "docker-images/grafana/jsonnet"],
+      ["dirname", "observability"],
+      ["name", "cmd/frontend/graphqlbackend/schema.graphql", "wholename"]
+  ]],
   "fields": ["name"]
 }]
 EOT
