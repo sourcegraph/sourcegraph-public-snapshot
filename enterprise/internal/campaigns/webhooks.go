@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+
 	gh "github.com/google/go-github/v28/github"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
@@ -766,56 +768,12 @@ func (h *BitbucketServerWebhook) Upsert(every time.Duration) {
 		}
 
 		for _, e := range es {
-			err = func() error {
-				ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-				defer cancel()
-
-				c, _ := e.Configuration()
-				con, ok := c.(*schema.BitbucketServerConnection)
-				if !ok {
-					return nil
-				}
-
-				secret := con.WebhookSecret()
-				oldSecret, ok := secrets[e.ID]
-				if ok && oldSecret == secret {
-					// Nothing has changed since our last check
-					return nil
-				}
-
-				client, err := bbs.NewClient(con, nil)
-				if err != nil {
-					return errors.Wrap(err, "creating client")
-				}
-
-				if secret == "" {
-					// Secret is now blank, delete hook
-					err = client.DeleteWebhook(ctx, h.Name)
-					if err != nil {
-						return errors.Wrap(err, "deleting webhook")
-					}
-					secrets[e.ID] = secret
-					return nil
-				}
-
-				// Secret has changed to a non blank value, upsert
-				endpoint := externalURL() + "/.api/bitbucket-server-webhooks"
-				wh := bbs.Webhook{
-					Name:     h.Name,
-					Scope:    "global",
-					Events:   []string{"pr", "repo"},
-					Endpoint: endpoint,
-					Secret:   secret,
-				}
-
-				err = client.UpsertWebhook(context.Background(), wh)
-				if err != nil {
-					return errors.Wrap(err, "upserting webhook")
-				}
-				secrets[e.ID] = secret
-				return nil
-			}()
-
+			c, _ := e.Configuration()
+			con, ok := c.(*schema.BitbucketServerConnection)
+			if !ok {
+				continue
+			}
+			err = upsertBitbucketWebhook(e.ID, con, h.Name, externalURL(), nil, secrets)
 			if err != nil {
 				log15.Error("Upserting BBS Webhook failed:", "err", err)
 			}
@@ -823,6 +781,50 @@ func (h *BitbucketServerWebhook) Upsert(every time.Duration) {
 
 		time.Sleep(every)
 	}
+}
+
+func upsertBitbucketWebhook(id int64, con *schema.BitbucketServerConnection, hookName string, externalURL string, httpClient httpcli.Doer, secrets map[int64]string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	secret := con.WebhookSecret()
+	oldSecret, ok := secrets[id]
+	if ok && oldSecret == secret {
+		// Nothing has changed since our last check
+		return nil
+	}
+
+	client, err := bbs.NewClient(con, httpClient)
+	if err != nil {
+		return errors.Wrap(err, "creating client")
+	}
+
+	if secret == "" {
+		// Secret is now blank, delete hook
+		err = client.DeleteWebhook(ctx, hookName)
+		if err != nil {
+			return errors.Wrap(err, "deleting webhook")
+		}
+		secrets[id] = secret
+		return nil
+	}
+
+	// Secret has changed to a non blank value, upsert
+	endpoint := externalURL + "/.api/bitbucket-server-webhooks"
+	wh := bbs.Webhook{
+		Name:     hookName,
+		Scope:    "global",
+		Events:   []string{"pr", "repo"},
+		Endpoint: endpoint,
+		Secret:   secret,
+	}
+
+	err = client.UpsertWebhook(ctx, wh)
+	if err != nil {
+		return errors.Wrap(err, "upserting webhook")
+	}
+	secrets[id] = secret
+	return nil
 }
 
 func (h *BitbucketServerWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
