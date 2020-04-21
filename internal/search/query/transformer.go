@@ -86,17 +86,17 @@ func Hoist(nodes []Node) ([]Node, error) {
 
 // UpperCaseSearch adds case:yes to queries if any pattern is mixed-case.
 func CaseSensitiveSearch(nodes []Node) []Node {
-	return MapParameter(nodes, func(field, value string, negated bool) Node {
-		var parameters []Node
+	var foundMixedCase bool
+	VisitParameter(nodes, func(field, value string, negated, _ bool) {
 		if field == "" || field == "content" {
 			if match, _ := regexp.MatchString(`^(.*[A-Z]).*$`, value); match {
-				parameters = append(parameters, Parameter{Field: "case", Value: "yes", Negated: negated})
-				parameters = append(parameters, Parameter{Field: field, Value: value, Negated: negated})
+				foundMixedCase = true
 			}
 		}
-		if len(parameters) > 0 {
-			return Operator{Kind: And, Operands: parameters}
-		}
-		return Parameter{Field: field, Value: value, Negated: negated}
 	})
+	if foundMixedCase {
+		nodes = append(nodes, Parameter{Field: "case", Value: "yes"})
+		return newOperator(nodes, And)
+	}
+	return nodes
 }

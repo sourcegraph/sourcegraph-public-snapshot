@@ -130,12 +130,12 @@ func Test_Hoist(t *testing.T) {
 
 func Test_CaseSensitiveSearch(t *testing.T) {
 	cases := []struct {
-		input      string
-		want       string
+		input string
+		want  string
 	}{
 		{
 			input: `TeSt`,
-			want:  `(and "case:yes" "TeSt")`,
+			want:  `(and "TeSt" "case:yes")`,
 		},
 		{
 			input: `test`,
@@ -143,7 +143,7 @@ func Test_CaseSensitiveSearch(t *testing.T) {
 		},
 		{
 			input: `content:TeSt`,
-			want:  `(and "case:yes" "content:TeSt")`,
+			want:  `(and "content:TeSt" "case:yes")`,
 		},
 		{
 			input: `content:test`,
@@ -151,7 +151,7 @@ func Test_CaseSensitiveSearch(t *testing.T) {
 		},
 		{
 			input: `repo:foo TeSt`,
-			want:  `(and "repo:foo" "case:yes" "TeSt")`,
+			want:  `(and "repo:foo" "TeSt" "case:yes")`,
 		},
 		{
 			input: `repo:foo test`,
@@ -159,7 +159,7 @@ func Test_CaseSensitiveSearch(t *testing.T) {
 		},
 		{
 			input: `repo:foo content:TeSt`,
-			want:  `(and "repo:foo" "case:yes" "content:TeSt")`,
+			want:  `(and "repo:foo" "content:TeSt" "case:yes")`,
 		},
 		{
 			input: `repo:foo content:test`,
@@ -167,11 +167,11 @@ func Test_CaseSensitiveSearch(t *testing.T) {
 		},
 		{
 			input: `TeSt1 TesT2`,
-			want:  `(concat (and "case:yes" "TeSt1") (and "case:yes" "TesT2"))`,
+			want:  `(and (concat "TeSt1" "TesT2") "case:yes")`,
 		},
 		{
 			input: `TeSt1 test2`,
-			want:  `(concat (and "case:yes" "TeSt1") "test2")`,
+			want:  `(and (concat "TeSt1" "test2") "case:yes")`,
 		},
 	}
 	for _, c := range cases {
