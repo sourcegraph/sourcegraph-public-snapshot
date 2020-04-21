@@ -104,17 +104,18 @@ Note that if you need to install your dependencies in a custom container, you ca
 jobs:
   lsif-node:
     runs-on: ubuntu-latest
-    # TODO: pin that container version!
     container: my-awesome-container
     steps:
       - uses: actions/checkout@v1
       - name: Install dependencies
         run: <install dependencies>
       - name: Generate LSIF data
+        # TODO: pin that container version!
         uses: sourcegraph/lsif-node
         with:
           args: lsif-tsc -p .
       - name: Upload LSIF data
+        # TODO: pin that container version!
         uses: sourcegraph/src-cli
         with:
           args: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
