@@ -35,7 +35,7 @@ USER sourcegraph
 
 COPY ./precise-code-intel-bundle-manager /usr/local/bin/precise-code-intel-bundle-manager
 
-EXPOSE 3186
+EXPOSE 3187
 ENV LOG_LEVEL=debug
-ENV GO111MODULES=on LANG=en_US.utf8 LOG_LEVEL=debug
+ENV GO111MODULES=on LANG=en_US.utf8
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/precise-code-intel-bundle-manager"]
