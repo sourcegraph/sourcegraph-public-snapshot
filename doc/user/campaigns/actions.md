@@ -57,7 +57,6 @@ To execute actions with the `src` CLI the following is required:
 1. [git](https://git-scm.com/).
 1. [Docker](https://www.docker.com/), if you want to execute Docker containers.
 
-
 ## Defining an action
 
 An action definition is a JSON file ([JSON schema for actions](https://raw.githubusercontent.com/sourcegraph/src-cli/master/schema/actions.schema.json)) and needs to specify:
@@ -77,9 +76,17 @@ That will create a new `action.json` file in the current directory (see `src act
 
 ### The scope query
 
-The scope query, specified as `"scopeQuery"` in an action definition, is a Sourcegraph search query that's executed to yield a list of repositories in which to execute an action.
+The scope query, specified as `"scopeQuery"` in an action definition, is a [Sourcegraph search](../search/index.md) query that's executed to yield a list of repositories in which to execute an action.
 
 It doesn't have to use `type:repo` to only search for repositories, because `src action exec` will construct a _unique list of repositories_ associated with each search result. If the scope query, for example, yields eight search results in three different repositories, `src action exec` will execute the action in these three repositories.
+
+Examples:
+
+- `lang:go fmt.Sprintf` returns repositories in which `fmt.Sprintf` appears in a Go file.
+- `lang:go fmt.Sprintf repo:github.com/my-org/[a-c]` returns repositories in which `fmt.Sprintf` appears in a Go file, if they are part of the `my-org` GitHub organization and their name begins with `a`, `b` or `c`.
+- `repohasfile:yarn.lock` returns repositories in which a file called `yarn.lock` exists.
+
+See "[Search query syntax](../search/queries.md)" and "[Search examples](../search/examples.md)" for more information.
 
 ### Docker steps
 
