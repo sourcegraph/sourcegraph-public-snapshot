@@ -88,6 +88,20 @@ Examples:
 
 See "[Search query syntax](../search/queries.md)" and "[Search examples](../search/examples.md)" for more information.
 
+If you want to see which repositories are yielded by a `"scopeQuery"` in an action definition without execution the action, use `src action scope-query`:
+
+```
+$ src action scope-query -f my-action-definition.json
+```
+
+This will return a list of repositories.
+
+Since action definitions are JSON files and require the `"scopeQuery"` to be escaped, it often helps to use `src action scope-query` in combination with the `-v` flag to see exactly which query is sent to the Sourcegraph instance:
+
+```
+$ src -v action scope-query -f my-action-definition.json
+```
+
 ### Docker steps
 
 A Docker step specification requires three attributes: `"type"`, `"image"` and `"args"`.
