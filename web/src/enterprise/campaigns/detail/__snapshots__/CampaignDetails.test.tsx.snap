@@ -329,6 +329,60 @@ Array [
       onChange={[Function]}
       value="d"
     />
+    <div
+      className="card"
+    >
+      <div
+        className="card-body"
+      >
+        <h3
+          className="card-title"
+        >
+          Want to update the patches?
+        </h3>
+        <p>
+          Using the
+           
+          <a
+            href="https://github.com/sourcegraph/src-cli"
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            src CLI
+          </a>
+          , you can also apply a new patch set to an existing campaign. Following the creation of a new patch set that contains new patches, with the
+        </p>
+        <div
+          className="alert alert-secondary"
+        >
+          <code
+            dangerouslySetInnerHTML={
+              Object {
+                "__html": "$ src action <span class=\\"hljs-built_in\\">exec</span> -f action.json | src campaign patchset create-from-patches",
+              }
+            }
+          />
+        </div>
+        <p>
+          command, a URL will be output that will guide you to the web UI to allow you to change an existing campaign’s patch set.
+        </p>
+        <p
+          className="mb-0"
+        >
+          Take a look at the
+           
+          <a
+            href="https://docs.sourcegraph.com/user/campaigns/updating_campaigns"
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            documentation on updating campaigns
+          </a>
+           
+          for more information.
+        </p>
+      </div>
+    </div>
   </form>,
   <h3
     className="mt-4 d-flex align-items-end mb-0"

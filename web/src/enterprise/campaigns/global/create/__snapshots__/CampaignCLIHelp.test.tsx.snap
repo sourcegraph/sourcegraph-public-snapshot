@@ -64,16 +64,16 @@ exports[`CampaignCLIHelp renders 1`] = `
           <code
             dangerouslySetInnerHTML={
               Object {
-                "__html": "# Configure your Sourcegraph instance:
-$ export SRC_ENDPOINT=http://localhost
+                "__html": "<span class=\\"hljs-comment\\"># Configure your Sourcegraph instance:</span>
+$ <span class=\\"hljs-built_in\\">export</span> SRC_ENDPOINT=http://localhost
 
-# Download the src binary for macOS:
-$ curl -L $SRC_ENDPOINT/.api/src-cli/src_dawin_amd64 -o /usr/local/bin/src
-# Download the src binary for Linux:
-$ curl -L $SRC_ENDPOINT/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src
+<span class=\\"hljs-comment\\"># Download the src binary for macOS:</span>
+$ curl -L <span class=\\"hljs-variable\\">$SRC_ENDPOINT</span>/.api/src-cli/src_dawin_amd64 -o /usr/<span class=\\"hljs-built_in\\">local</span>/bin/src
+<span class=\\"hljs-comment\\"># Download the src binary for Linux:</span>
+$ curl -L <span class=\\"hljs-variable\\">$SRC_ENDPOINT</span>/.api/src-cli/src_linux_amd64 -o /usr/<span class=\\"hljs-built_in\\">local</span>/bin/src
 
-# Set your personal access token:
-$ export SRC_ACCESS_TOKEN=&lt;YOUR TOKEN&gt;
+<span class=\\"hljs-comment\\"># Set your personal access token:</span>
+$ <span class=\\"hljs-built_in\\">export</span> SRC_ACCESS_TOKEN=&lt;YOUR TOKEN&gt;
 ",
               }
             }
@@ -114,11 +114,7 @@ $ export SRC_ACCESS_TOKEN=&lt;YOUR TOKEN&gt;
           <code>
             main.go
           </code>
-           
-          <code>
-            file
-          </code>
-          :
+           file:
         </p>
         <pre
           className="alert alert-secondary ml-3"
@@ -126,7 +122,7 @@ $ export SRC_ACCESS_TOKEN=&lt;YOUR TOKEN&gt;
           <code
             dangerouslySetInnerHTML={
               Object {
-                "__html": "$ echo '{
+                "__html": "$ <span class=\\"hljs-built_in\\">echo</span> <span class=\\"hljs-string\\">'{
   \\"scopeQuery\\": \\"repohasfile:main.go\\",
   \\"steps\\": [
     {
@@ -136,22 +132,23 @@ $ export SRC_ACCESS_TOKEN=&lt;YOUR TOKEN&gt;
     }
   ]
 }
-' &gt; action.json
+'</span> &gt; action.json
 ",
               }
             }
           />
         </pre>
         <p>
-          See the examples below for more real-world usecases and
+          See the examples below for more real-world use cases and read "
            
           <a
             href="https://docs.sourcegraph.com/user/campaigns/creating_campaign_from_patches"
             rel="noopener noreferrer"
             target="_blank"
           >
-            read the documentation for more information on what actions can do.
+            Creating a campaign from patches
           </a>
+          " in the documentation for more information about what actions can do.
         </p>
       </div>
       <h3>
@@ -166,13 +163,20 @@ $ export SRC_ACCESS_TOKEN=&lt;YOUR TOKEN&gt;
           <code
             dangerouslySetInnerHTML={
               Object {
-                "__html": "$ src action exec -f action.json -create-patchset",
+                "__html": "$ src action <span class=\\"hljs-built_in\\">exec</span> -f action.json -create-patchset",
               }
             }
           />
         </pre>
         <p>
-          Follow the printed instructions to create a campaign from the patches and to turn the patches into changesets (pull requests) on your code hosts.
+          After executing the command, follow the printed instructions to create a campaign from the patches and turn the patches into changesets (pull requests) on your code hosts.
+        </p>
+        <p>
+          Run 
+          <code>
+            src action exec -h
+          </code>
+           to see more usage information about this command.
         </p>
       </div>
     </div>

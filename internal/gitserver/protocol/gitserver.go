@@ -96,16 +96,16 @@ type IsRepoClonedRequest struct {
 	Repo api.RepoName
 }
 
-// RepoInfoRequest is a request for information about multiple repositories on gitserver.
-type RepoInfoRequest struct {
-	// Repos are the repositories to get information about.
-	Repos []api.RepoName
-}
-
 // RepoDeleteRequest is a request to delete a repository clone on gitserver
 type RepoDeleteRequest struct {
 	// Repo is the repository to delete.
 	Repo api.RepoName
+}
+
+// RepoInfoRequest is a request for information about multiple repositories on gitserver.
+type RepoInfoRequest struct {
+	// Repos are the repositories to get information about.
+	Repos []api.RepoName
 }
 
 // RepoInfo is the information requests about a single repository
@@ -129,6 +129,25 @@ type RepoInfo struct {
 type RepoInfoResponse struct {
 	// Results mapping from the repository name to the repository information.
 	Results map[api.RepoName]*RepoInfo
+}
+
+// RepoCloneProgressRequest is a request for information about the clone progress of multiple
+// repositories on gitserver.
+type RepoCloneProgressRequest struct {
+	Repos []api.RepoName
+}
+
+// RepoCloneProgress is information about the clone progress of a repo
+type RepoCloneProgress struct {
+	CloneInProgress bool   // whether the repository is currently being cloned
+	CloneProgress   string // a progress message from the running clone command.
+	Cloned          bool   // whether the repository has been cloned successfully
+}
+
+// RepoCloneProgressResponse is the response to a repository clone progress request
+// for multiple repositories at the same time.
+type RepoCloneProgressResponse struct {
+	Results map[api.RepoName]*RepoCloneProgress
 }
 
 // CreateCommitFromPatchRequest is the request information needed for creating

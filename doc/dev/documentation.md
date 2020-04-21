@@ -13,13 +13,20 @@ The documentation is organized into the following top-level directories:
 - [`integration/`](https://github.com/sourcegraph/sourcegraph/tree/master/doc/integration) for integrations with other products, targeted at the general audience (vs. `admin/external_service/` for site admin-specific docs)
 - [`api/`](https://github.com/sourcegraph/sourcegraph/tree/master/doc/api) for the Sourcegraph GraphQL API
 
-### Previewing changes locally
+## Previewing changes locally
 
 You can preview the documentation site at http://localhost:5080 when running Sourcegraph in [local development](local_development.md) (using `dev/start.sh` or `enterprise/dev/start.sh`). It uses content, templates, and assets from the local disk. There is no caching or background build process, so you'll see all changes reflected immediately after you reload the page in your browser.
 
 ## Linking to documentation in-product
 
 In-product documentation links should point to `/help/PATH` instead of using an absolute URL of the form https://docs.sourcegraph.com/PATH. This ensures they link to the documentation for the current product version. There is a redirect (when using either `<a>` or react-router `<Link>`) from `/help/PATH` to the versioned docs.sourcegraph.com URL (https://docs.sourcegraph.com/@VERSION/PATH).
+
+## Adding images to the documentation
+
+We generally try to avoid adding large binary files to our repository. Images to be used in documentation fall under that category, but there can be exceptions if the images are small.
+
+- If the image is less than 100kb in size, it can be added to the `./doc` folder.
+- If it is bigger than 100kb, upload it to the [sourcegraph-assets/docs/images](https://console.cloud.google.com/storage/browser/sourcegraph-assets/docs/images/?project=sourcegraph-de&folder=true&organizationId=true) on Google Cloud storage and link to it.
 
 ## Updating documentation
 

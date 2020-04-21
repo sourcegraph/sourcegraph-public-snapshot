@@ -7,19 +7,18 @@ import (
 	"net/http"
 
 	"github.com/sourcegraph/go-lsp"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/lsif"
 )
 
 func (c *Client) Exists(ctx context.Context, args *struct {
 	RepoID api.RepoID
-	Commit string
+	Commit api.CommitID
 	Path   string
 }) ([]*lsif.LSIFUpload, error) {
 	query := queryValues{}
 	query.SetInt("repositoryId", int64(args.RepoID))
-	query.Set("commit", args.Commit)
+	query.Set("commit", string(args.Commit))
 	query.Set("path", args.Path)
 
 	req := &lsifRequest{
@@ -42,7 +41,7 @@ func (c *Client) Exists(ctx context.Context, args *struct {
 
 func (c *Client) Upload(ctx context.Context, args *struct {
 	RepoID      api.RepoID
-	Commit      graphqlbackend.GitObjectID
+	Commit      api.CommitID
 	Root        string
 	IndexerName string
 	Body        io.ReadCloser
@@ -76,7 +75,7 @@ func (c *Client) Upload(ctx context.Context, args *struct {
 
 func (c *Client) Definitions(ctx context.Context, args *struct {
 	RepoID    api.RepoID
-	Commit    graphqlbackend.GitObjectID
+	Commit    api.CommitID
 	Path      string
 	Line      int32
 	Character int32
@@ -85,7 +84,7 @@ func (c *Client) Definitions(ctx context.Context, args *struct {
 	return c.locationQuery(ctx, &struct {
 		Operation string
 		RepoID    api.RepoID
-		Commit    graphqlbackend.GitObjectID
+		Commit    api.CommitID
 		Path      string
 		Line      int32
 		Character int32
@@ -105,7 +104,7 @@ func (c *Client) Definitions(ctx context.Context, args *struct {
 
 func (c *Client) References(ctx context.Context, args *struct {
 	RepoID    api.RepoID
-	Commit    graphqlbackend.GitObjectID
+	Commit    api.CommitID
 	Path      string
 	Line      int32
 	Character int32
@@ -116,7 +115,7 @@ func (c *Client) References(ctx context.Context, args *struct {
 	return c.locationQuery(ctx, &struct {
 		Operation string
 		RepoID    api.RepoID
-		Commit    graphqlbackend.GitObjectID
+		Commit    api.CommitID
 		Path      string
 		Line      int32
 		Character int32
@@ -139,7 +138,7 @@ func (c *Client) References(ctx context.Context, args *struct {
 func (c *Client) locationQuery(ctx context.Context, args *struct {
 	Operation string
 	RepoID    api.RepoID
-	Commit    graphqlbackend.GitObjectID
+	Commit    api.CommitID
 	Path      string
 	Line      int32
 	Character int32
@@ -177,7 +176,7 @@ func (c *Client) locationQuery(ctx context.Context, args *struct {
 
 func (c *Client) Hover(ctx context.Context, args *struct {
 	RepoID    api.RepoID
-	Commit    graphqlbackend.GitObjectID
+	Commit    api.CommitID
 	Path      string
 	Line      int32
 	Character int32

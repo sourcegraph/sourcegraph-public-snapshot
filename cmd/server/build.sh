@@ -4,6 +4,10 @@
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 set -eux
 
+# Fail early if env vars are not set
+[ ! -z "$VERSION" ]
+[ ! -z "$IMAGE" ]
+
 export OUTPUT=$(mktemp -d -t sgserver_XXXXXXX)
 cleanup() {
   rm -rf "$OUTPUT"
@@ -83,6 +87,9 @@ cp dev/prometheus/linux/prometheus_targets.yml "$OUTPUT/sg_prometheus_add_ons"
 echo "--- grafana config"
 cp -r docker-images/grafana/config "$OUTPUT/sg_config_grafana"
 cp -r dev/grafana/linux "$OUTPUT/sg_config_grafana/provisioning/datasources"
+
+echo "--- jaeger-all-in-one binary"
+cmd/server/jaeger.sh
 
 echo "--- docker build"
 docker build -f cmd/server/Dockerfile -t "$IMAGE" "$OUTPUT" \

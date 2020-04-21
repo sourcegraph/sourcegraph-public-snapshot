@@ -4,7 +4,7 @@ import React, { createRef, useEffect, useLayoutEffect, useState } from 'react'
 import { map } from 'rxjs/operators'
 import { EditorId, observeEditorAndModel } from '../../../shared/src/api/client/services/editorService'
 import { TextModel } from '../../../shared/src/api/client/services/modelService'
-import { PanelViewWithComponent } from '../../../shared/src/api/client/services/view'
+import { PanelViewWithComponent } from '../../../shared/src/api/client/services/panelViews'
 import { SNIPPET_URI_SCHEME } from '../../../shared/src/api/client/types/textDocument'
 import { ContributableViewContainer } from '../../../shared/src/api/protocol'
 import { EditorTextField } from '../../../shared/src/components/editorTextField/EditorTextField'
@@ -70,11 +70,11 @@ export const SnippetsPage: React.FunctionComponent<Props> = ({ location, extensi
 
     const [panelViews, setPanelViews] = useState<PanelViewWithComponent[] | null>(null)
     useEffect(() => {
-        const subscription = extensionsController.services.views
-            .getViews(ContributableViewContainer.Panel)
+        const subscription = extensionsController.services.panelViews
+            .getPanelViews(ContributableViewContainer.Panel)
             .subscribe(views => setPanelViews(views))
         return () => subscription.unsubscribe()
-    }, [extensionsController.services.views])
+    }, [extensionsController.services.panelViews])
 
     // Add Markdown panel for Markdown snippets.
     const [modelText, setModelText] = useState<string | null>(null)

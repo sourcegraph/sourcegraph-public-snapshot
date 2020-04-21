@@ -6,7 +6,7 @@ import { PanelView } from 'sourcegraph'
 import { ContributableViewContainer } from '../../protocol'
 import { EditorService, getActiveCodeEditorPosition } from '../services/editorService'
 import { TextDocumentLocationProviderIDRegistry } from '../services/location'
-import { PanelViewWithComponent, ViewProviderRegistry } from '../services/view'
+import { PanelViewWithComponent, PanelViewProviderRegistry } from '../services/panelViews'
 import { Location } from '@sourcegraph/extension-api-types'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 
@@ -27,7 +27,7 @@ export class ClientViews implements ClientViewsAPI {
     public readonly [proxyValueSymbol] = true
 
     constructor(
-        private viewRegistry: ViewProviderRegistry,
+        private panelViewRegistry: PanelViewProviderRegistry,
         private textDocumentLocations: TextDocumentLocationProviderIDRegistry,
         private editorService: EditorService
     ) {}
@@ -36,7 +36,7 @@ export class ClientViews implements ClientViewsAPI {
         // TODO(sqs): This will probably hang forever if an extension neglects to set any of the fields on a
         // PanelView because this subject will never emit.
         const panelView = new ReplaySubject<PanelViewData>(1)
-        const registryUnsubscribable = this.viewRegistry.registerProvider(
+        const registryUnsubscribable = this.panelViewRegistry.registerProvider(
             { ...provider, container: ContributableViewContainer.Panel },
             combineLatest([
                 panelView.pipe(

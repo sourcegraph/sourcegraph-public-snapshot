@@ -8,6 +8,15 @@ Campaigns are part of [Sourcegraph code change management](https://about.sourceg
 
 You provide the code to make the change and Campaigns provide the plumbing to turn it into a large-scale code change campaign and monitor its progress.
 
+<div style="max-width: 500px;" class="mx-auto">
+  <figure class="figure">
+    <div class="figure-img">
+    <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/go_mod_tidy_campaign.png" width="500px"/>
+    </div>
+    <figcaption class="figure-caption text-center">Campaign to run <code>go mod tidy</code> in all Go projects.</figcaption>
+  </figure>
+</div>
+
 ## How it works
 
 Campaigns allow you to use the `src` CLI and leverage Sourcegraph's search powers to execute code and Docker containers in all the repositories yielded by a single search query and save and inspect the produced **patches**.

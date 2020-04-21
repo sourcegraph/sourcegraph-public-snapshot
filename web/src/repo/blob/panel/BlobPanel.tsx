@@ -8,9 +8,9 @@ import { TextDocumentLocationProviderRegistry } from '../../../../../shared/src/
 import { Entry } from '../../../../../shared/src/api/client/services/registry'
 import {
     PanelViewWithComponent,
-    ProvideViewSignature,
-    ViewProviderRegistrationOptions,
-} from '../../../../../shared/src/api/client/services/view'
+    ProvidePanelViewSignature,
+    PanelViewProviderRegistrationOptions,
+} from '../../../../../shared/src/api/client/services/panelViews'
 import { ContributableViewContainer, TextDocumentPositionParams } from '../../../../../shared/src/api/protocol'
 import { ActivationProps } from '../../../../../shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
@@ -93,7 +93,7 @@ export class BlobPanel extends React.PureComponent<Props> {
             priority: number,
             registry: TextDocumentLocationProviderRegistry<P>,
             extraParams?: Pick<P, Exclude<keyof P, keyof TextDocumentPositionParams>>
-        ): Entry<ViewProviderRegistrationOptions, ProvideViewSignature> => ({
+        ): Entry<PanelViewProviderRegistrationOptions, ProvidePanelViewSignature> => ({
             registrationOptions: { id, container: ContributableViewContainer.Panel },
             provider: from(this.props.extensionsController.services.editor.activeEditorUpdates).pipe(
                 map(activeEditor =>
@@ -140,7 +140,7 @@ export class BlobPanel extends React.PureComponent<Props> {
         })
 
         this.subscriptions.add(
-            this.props.extensionsController.services.views.registerProviders(
+            this.props.extensionsController.services.panelViews.registerProviders(
                 [
                     entryForViewProviderRegistration(
                         'def',
@@ -211,7 +211,8 @@ export class BlobPanel extends React.PureComponent<Props> {
                         ),
                     },
                 ].filter(
-                    (v): v is Entry<ViewProviderRegistrationOptions, Observable<PanelViewWithComponent | null>> => !!v
+                    (v): v is Entry<PanelViewProviderRegistrationOptions, Observable<PanelViewWithComponent | null>> =>
+                        !!v
                 )
             )
         )

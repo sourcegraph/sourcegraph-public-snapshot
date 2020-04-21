@@ -24,7 +24,7 @@ import * as H from 'history'
 import { CampaignBurndownChart } from './BurndownChart'
 import { AddChangesetForm } from './AddChangesetForm'
 import { Subject, of, merge, Observable, NEVER } from 'rxjs'
-import { renderMarkdown } from '../../../../../shared/src/util/markdown'
+import { renderMarkdown, highlightCodeSafe } from '../../../../../shared/src/util/markdown'
 import { ErrorAlert } from '../../../components/alerts'
 import { Markdown } from '../../../../../shared/src/components/Markdown'
 import { switchMap, tap, takeWhile, repeatWhen, delay, distinctUntilChanged } from 'rxjs/operators'
@@ -424,6 +424,51 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                 onChange={onBranchChange}
                                 disabled={mode === 'saving'}
                             />
+                        )}
+                        {/* Existing non-manual campaign, but not updating with a new set of patches */}
+                        {campaign && !!campaign.patchSet && !patchSet && (
+                            <div className="card">
+                                <div className="card-body">
+                                    <h3 className="card-title">Want to update the patches?</h3>
+                                    <p>
+                                        Using the{' '}
+                                        <a
+                                            href="https://github.com/sourcegraph/src-cli"
+                                            rel="noopener noreferrer"
+                                            target="_blank"
+                                        >
+                                            src CLI
+                                        </a>
+                                        , you can also apply a new patch set to an existing campaign. Following the
+                                        creation of a new patch set that contains new patches, with the
+                                    </p>
+                                    <div className="alert alert-secondary">
+                                        <code
+                                            dangerouslySetInnerHTML={{
+                                                __html: highlightCodeSafe(
+                                                    '$ src action exec -f action.json | src campaign patchset create-from-patches',
+                                                    'bash'
+                                                ),
+                                            }}
+                                        />
+                                    </div>
+                                    <p>
+                                        command, a URL will be output that will guide you to the web UI to allow you to
+                                        change an existing campaign’s patch set.
+                                    </p>
+                                    <p className="mb-0">
+                                        Take a look at the{' '}
+                                        <a
+                                            href="https://docs.sourcegraph.com/user/campaigns/updating_campaigns"
+                                            rel="noopener noreferrer"
+                                            target="_blank"
+                                        >
+                                            documentation on updating campaigns
+                                        </a>{' '}
+                                        for more information.
+                                    </p>
+                                </div>
+                            </div>
                         )}
                     </>
                 )}

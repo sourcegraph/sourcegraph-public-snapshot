@@ -601,6 +601,18 @@
         }
       }
     },
+    "observability.logSlowSearches": {
+      "description": "(debug) logs all search queries (issued by users, code intelligence, or API requests) slower than the specified number of milliseconds.",
+      "type": "integer",
+      "group": "Debug",
+      "examples": [["10000"]]
+    },
+    "observability.logSlowGraphQLRequests": {
+      "description": "(debug) logs all GraphQL requests slower than the specified number of milliseconds.",
+      "type": "integer",
+      "group": "Debug",
+      "examples": [["10000"]]
+    },
     "htmlHeadTop": {
       "description": "HTML to inject at the top of the `<head>` element on each page, for analytics scripts",
       "type": "string",

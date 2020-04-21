@@ -1,11 +1,11 @@
 # Getting started
 
-Follow these steps to get started with Campaigns on your Sourcegraph instance:
+Follow these steps to get started with campaigns on your Sourcegraph instance:
 
-1. **Enable the Campaigns feature flag**: [Configuration](./configuration.md). Since Campaigns are currently in beta, they're behind a feature flag and need to be enabled by a site-admin.
+1. **Enable the Campaigns feature flag**: [Configuration](./configuration.md). Since campaigns are currently in beta, they're behind a feature flag and need to be enabled by a site admin.
 1. **Setup the `src` CLI on your machine**: [Installation and setup instructions](https://github.com/sourcegraph/src-cli/#installation)
 
-Now you're ready to [create a manual Campaign](./creating_manual_campaign.md) or to [create a Campaign from patches](./creating_campaign_from_patches.md).
+Now you're ready to [create a manual campaign](./creating_manual_campaign.md) or to [create a campaign from patches](./creating_campaign_from_patches.md).
 
 ---
 

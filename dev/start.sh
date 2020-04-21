@@ -131,4 +131,10 @@ build_ts_pid="$!"
 
 printf >&2 "\nStarting all binaries...\n\n"
 export GOREMAN="goreman --set-ports=false --exit-on-error -f dev/Procfile"
-exec $GOREMAN start
+
+if ! [ "$(id -u)" = 0 ] && hash authbind; then
+  # Support using authbind to bind to port 443 as non-root
+  exec authbind --deep $GOREMAN start
+else
+  exec $GOREMAN start
+fi
