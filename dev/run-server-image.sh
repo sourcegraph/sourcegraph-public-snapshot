@@ -1,9 +1,10 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # This runs a published or local server image.
 
 DATA=/tmp/sourcegraph
 
-case $CLEAN in
+# shellcheck disable=SC2153
+case "$CLEAN" in
 
   "true")
     clean=y
@@ -13,7 +14,7 @@ case $CLEAN in
     ;;
   *)
     echo -n "Do you want to delete $DATA and start clean? [Y/n] "
-    read clean
+    read -r clean
     ;;
 esac
 
@@ -24,7 +25,7 @@ fi
 
 IMAGE=${IMAGE:-sourcegraph/server:${TAG:-insiders}}
 echo "pulling docker image ${IMAGE}"
-docker pull $IMAGE
+docker pull "$IMAGE"
 
 echo "starting server..."
 docker run "$@" \
@@ -34,4 +35,4 @@ docker run "$@" \
   -e DEBUG=t \
   --volume $DATA/config:/etc/sourcegraph \
   --volume $DATA/data:/var/opt/sourcegraph \
-  $IMAGE
+  "$IMAGE"

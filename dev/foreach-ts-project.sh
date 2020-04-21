@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -e
 unset CDPATH
@@ -8,7 +8,7 @@ parallel_run() {
   ./dev/ci/parallel_run.sh "$@"
 }
 
-export ARGS="$@"
+export ARGS=$*
 
 DIRS=(
   web
@@ -41,6 +41,6 @@ if [[ "${CI:-"false"}" == "true" ]]; then
   parallel_run run_command {} ::: "${DIRS[@]}"
 else
   for dir in "${DIRS[@]}"; do
-    run_command $dir
+    run_command "$dir"
   done
 fi

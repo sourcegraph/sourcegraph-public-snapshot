@@ -6,7 +6,7 @@ pushd "$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null
 
 JAEGER_DISK="${HOME}/.sourcegraph-dev/data/jaeger"
 
-mkdir -p ${JAEGER_DISK}/logs
+mkdir -p "${JAEGER_DISK}"/logs
 mkdir -p .bin
 
 version=1.17.1
@@ -24,4 +24,4 @@ chmod +x "${target}"
 
 popd >/dev/null
 
-exec "${target}" --log-level "${JAEGER_LOG_LEVEL:-info}" "$@" >>${JAEGER_DISK}/logs/jaeger.log 2>&1
+exec "${target}" --log-level "${JAEGER_LOG_LEVEL:-info}" "$@" >>"${JAEGER_DISK}"/logs/jaeger.log 2>&1

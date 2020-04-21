@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Resets Keycloak configuration to what is in the ../config directory.
 
@@ -7,6 +7,7 @@ set -e
 unset CDPATH
 cd "$(dirname "${BASH_SOURCE[0]}")/.." # cd to dev/auth-provider dir
 
+# shellcheck source=./common.sh
 source scripts/common.sh
 
 # Authenticate CLI.
@@ -24,7 +25,7 @@ trap finish EXIT
 keycloak_createuser() {
   USERNAME=$1
   PASSWORD=q
-  echo Creating user $USERNAME...
+  echo Creating user "$USERNAME"...
   if [ -n "$RESET" ]; then
     KEYCLOAK_USER_ID=$(docker exec $CONTAINER keycloak/bin/kcadm.sh get users --query username="$USERNAME" --fields id --format csv --noquotes)
     if [ -n "$KEYCLOAK_USER_ID" ]; then
@@ -37,7 +38,7 @@ keycloak_createuser() {
   # Make all users Keycloak admins for convenience.
   docker exec $CONTAINER keycloak/bin/kcadm.sh add-roles --uusername "$USERNAME" --rolename admin
 
-  echo "$USERNAME / $PASSWORD<br/>" >>$MOTDFILE
+  echo "$USERNAME / $PASSWORD<br/>" >>"$MOTDFILE"
 }
 keycloak_createuser alice q
 keycloak_createuser bob q
@@ -49,7 +50,7 @@ docker exec $CONTAINER keycloak/bin/kcadm.sh update realms/$REALM -s displayName
 keycloak_createclient() {
   CLIENTID=$1
   CONFIGFILE=$2
-  echo Creating client $CLIENTID...
+  echo Creating client "$CLIENTID"...
   if [ -n "$RESET" ]; then
     KEYCLOAK_CLIENT_ID=$(docker exec $CONTAINER keycloak/bin/kcadm.sh get clients --query clientId="$CLIENTID" --fields id --format csv --noquotes)
     if [ -n "$KEYCLOAK_CLIENT_ID" ]; then
@@ -57,7 +58,7 @@ keycloak_createclient() {
     fi
   fi
 
-  docker exec -i $CONTAINER keycloak/bin/kcadm.sh create clients -f - <$CONFIGFILE
+  docker exec -i $CONTAINER keycloak/bin/kcadm.sh create clients -f - <"$CONFIGFILE"
 }
 keycloak_createclient sourcegraph-client-openid config/client-openid.json
 keycloak_createclient sourcegraph-client-openid-2 config/client-openid-2.json
