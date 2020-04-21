@@ -790,6 +790,8 @@ func (h *BitbucketServerWebhook) SyncWebhooks(every time.Duration) {
 	}
 }
 
+const externalServiceIDParam = "externalServiceID"
+
 // syncWebook ensures that the webhook has been configured correctly on Bitbucket. If no secret has been set, we delete
 // the exising webhook config.
 func (h *BitbucketServerWebhook) syncWebhook(id int64, con *schema.BitbucketServerConnection, externalURL string) error {
@@ -821,7 +823,7 @@ func (h *BitbucketServerWebhook) syncWebhook(id int64, con *schema.BitbucketServ
 	}
 
 	// Secret has changed to a non blank value, upsert
-	endpoint := externalURL + "/.api/bitbucket-server-webhooks"
+	endpoint := fmt.Sprintf("%s/.api/bitbucket-server-webhooks?%s=%d", externalURL, externalServiceIDParam, id)
 	wh := bbs.Webhook{
 		Name:     h.Name,
 		Scope:    "global",
@@ -884,17 +886,28 @@ func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *repo
 
 	sig := r.Header.Get("X-Hub-Signature")
 
+	rawID := r.FormValue(externalServiceIDParam)
+	var externalServiceID int64
+	// id could be blank temporarily if we haven't updated the hook url to include the param yet
+	if rawID != "" {
+		externalServiceID, err = strconv.ParseInt(rawID, 10, 64)
+		if err != nil {
+			return nil, nil, &httpError{http.StatusBadRequest, errors.Wrap(err, "invalid external service id")}
+		}
+	}
+
 	var extSvc *repos.ExternalService
 	for _, e := range es {
+		if externalServiceID != 0 && e.ID != externalServiceID {
+			continue
+		}
+
 		c, _ := e.Configuration()
 		con, ok := c.(*schema.BitbucketServerConnection)
 		if !ok {
 			continue
 		}
 
-		// TODO: There's a bug here where multiple external services use the
-		// same secret and we pick the wrong one (that doesn't match the event
-		// received)
 		if secret := con.WebhookSecret(); secret != "" {
 			if err = gh.ValidateSignature(sig, payload, []byte(secret)); err == nil {
 				extSvc = e
