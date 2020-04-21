@@ -141,7 +141,7 @@ This "merging" is better done by the caller.
 Instead of constructors, factory functions can be defined that create and return object literals (typed with an interface).
 These functions are conventionally named `create`+_name of interface_ (eg. [`createModelService()`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@b1ddeff4a2b94ceccda7cdf7021d5f82aa4522ed/-/blob/shared/src/api/client/services/modelService.ts#L99-167).
 
-There are a few places where we do use classes.
+There are a few places where we do use classes, e.g. [`ExtDocuments`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@fd9eef0b5893dfb3358d2a3358d15f3e9b14ca9e/-/blob/shared/src/api/extension/api/documents.ts#L21:20).
 These are usually where mutation is unavoidable.
 For example, our extension host web worker runs in a separate thread.
 We need to sync various data between the worker and the main thread, because requesting that data on demand every time  through message passing would not be performant.
