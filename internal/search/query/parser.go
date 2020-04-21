@@ -833,5 +833,6 @@ func ProcessAndOr(in string) (QueryInfo, error) {
 	if err != nil {
 		return nil, err
 	}
+	query = SubstituteAliases(query)
 	return &AndOrQuery{Query: query}, nil
 }

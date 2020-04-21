@@ -15,6 +15,16 @@ func prettyPrint(nodes []Node) string {
 	return strings.Join(resultStr, " ")
 }
 
+func Test_SubstituteAliases(t *testing.T) {
+	input := "r:repo g:repogroup f:file"
+	want := `(and "repo:repo" "repogroup:repogroup" "file:file")`
+	query, _ := ParseAndOr(input)
+	got := prettyPrint(SubstituteAliases(query))
+	if diff := cmp.Diff(got, want); diff != "" {
+		t.Fatal(diff)
+	}
+}
+
 func Test_LowercaseFieldNames(t *testing.T) {
 	input := "rEpO:foo PATTERN"
 	want := `(and "repo:foo" "PATTERN")`

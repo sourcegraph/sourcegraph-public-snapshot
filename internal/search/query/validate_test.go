@@ -112,7 +112,7 @@ func TestAndOrQuery_RegexpPatterns(t *testing.T) {
 		want
 	}{
 		query: "r:a r:b -r:c",
-		field: "r",
+		field: "repo",
 		want: want{
 			values:        []string{"a", "b"},
 			negatedValues: []string{"c"},
