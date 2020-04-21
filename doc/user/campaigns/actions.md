@@ -45,7 +45,7 @@ The `"scopeQuery"` yields every repository in which the old import path is menti
 
 The first step, of type `"docker"`, executes the Docker image `comby/comby` (with each repository mounted under `/work`) to rewrite the import path from `gopkg.in/inconshreveable/log15.v2` to `github.com/inconshreveable/log15`.
 
-The second step, a `"command"`, then runs [`goimports`](https://pkg.go.dev/golang.org/x/tools/cmd/goimport) to ensure that updating the import paths worked and that the code is correctly formatted.
+The second step, a `"command"`, then runs [`goimports`](https://pkg.go.dev/golang.org/x/tools/cmd/goimports) to ensure that updating the import paths worked and that the code is correctly formatted.
 
 Since it is a `"command"`, the `goimports` step doesn't use a Docker container, but instead runs the `goimports` executable in a temporary directory on the machine on which the `src` CLI is executed.
 
@@ -66,8 +66,6 @@ An action definition is a JSON file ([JSON schema for actions](https://raw.githu
 - `"steps"` - a list of action steps to execute in each repository.
 
 A single step can either be a of type `"command"`, which means the step is executed on the machine on which `src actions exec` is executed, or it can be of type `"docker"` which then runs a container in which the repository is mounted.
-
- if you're interested in how an action definition is validated.)
 
 To create a new, empty action definition you can use the following helper command:
 
