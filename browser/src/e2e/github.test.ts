@@ -9,13 +9,13 @@ import { getConfig } from '../../../shared/src/e2e/config'
 describe('Sourcegraph browser extension on github.com', function () {
     this.slow(8000)
 
-    const { browser, sourcegraphBaseUrl } = getConfig('browser', 'sourcegraphBaseUrl')
+    const { browser, sourcegraphBaseUrl, ...restConfig } = getConfig('browser', 'sourcegraphBaseUrl')
 
     let driver: Driver
 
     before('Open browser', async function () {
         this.timeout(90 * 1000)
-        driver = await createDriverForTest({ loadExtension: true, browser, sourcegraphBaseUrl })
+        driver = await createDriverForTest({ loadExtension: true, browser, sourcegraphBaseUrl, ...restConfig })
         if (sourcegraphBaseUrl !== 'https://sourcegraph.com') {
             await driver.setExtensionSourcegraphUrl()
         }
@@ -24,11 +24,7 @@ describe('Sourcegraph browser extension on github.com', function () {
     // Take a screenshot when a test fails
     saveScreenshotsUponFailures(() => driver.page)
 
-    after('Close browser', async () => {
-        if (driver) {
-            await driver.close()
-        }
-    })
+    after('Close browser', () => driver?.close())
 
     testSingleFilePage({
         getDriver: () => driver,
