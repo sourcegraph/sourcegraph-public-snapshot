@@ -5,12 +5,13 @@ import (
 	"compress/gzip"
 	"io"
 	"io/ioutil"
-	"reflect"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestUnmarshalDocumentData(t *testing.T) {
-	contents, err := ioutil.ReadFile("../../test-data/documentdata.json")
+	contents, err := ioutil.ReadFile("../../testdata/documentdata.json")
 	if err != nil {
 		t.Fatalf("unexpected error %s", err)
 	}
@@ -74,13 +75,13 @@ func TestUnmarshalDocumentData(t *testing.T) {
 		},
 	}
 
-	if !reflect.DeepEqual(actual, expected) {
-		t.Errorf("unexpected document data: want=%#v have=%#v", expected, actual)
+	if diff := cmp.Diff(actual, expected); diff != "" {
+		t.Errorf("unexpected document data (-want +got):\n%s", diff)
 	}
 }
 
 func TestUnmarshalResultChunkData(t *testing.T) {
-	contents, err := ioutil.ReadFile("../../test-data/resultchunkdata.json")
+	contents, err := ioutil.ReadFile("../../testdata/resultchunkdata.json")
 	if err != nil {
 		t.Fatalf("unexpected error %s", err)
 	}
@@ -117,8 +118,8 @@ func TestUnmarshalResultChunkData(t *testing.T) {
 		},
 	}
 
-	if !reflect.DeepEqual(actual, expected) {
-		t.Errorf("unexpected result chunk data: want=%#v have=%#v", expected, actual)
+	if diff := cmp.Diff(actual, expected); diff != "" {
+		t.Errorf("unexpected result chunk data (-want +got):\n%s", diff)
 	}
 }
 

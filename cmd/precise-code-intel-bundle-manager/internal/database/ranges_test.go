@@ -1,9 +1,9 @@
 package database
 
 import (
-	"reflect"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/types"
 )
 
@@ -49,8 +49,8 @@ func TestFindRanges(t *testing.T) {
 	for i, r := range ranges {
 		actual := findRanges(m, i, 4)
 		expected := []types.RangeData{r}
-		if !reflect.DeepEqual(actual, expected) {
-			t.Errorf("unexpected findRanges result %d. want=%v have=%v", i, expected, actual)
+		if diff := cmp.Diff(actual, expected); diff != "" {
+			t.Errorf("unexpected findRanges result %d (-want +got):\n%s", i, diff)
 		}
 	}
 }
@@ -96,8 +96,8 @@ func TestFindRangesOrder(t *testing.T) {
 
 	actual := findRanges(m, 2, 4)
 	expected := []types.RangeData{ranges[2], ranges[1], ranges[0]}
-	if !reflect.DeepEqual(actual, expected) {
-		t.Errorf("unexpected findRanges result. want=%v have=%v", expected, actual)
+	if diff := cmp.Diff(actual, expected); diff != "" {
+		t.Errorf("unexpected findRanges result (-want +got):\n%s", diff)
 	}
 
 }

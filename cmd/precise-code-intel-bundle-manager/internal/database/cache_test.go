@@ -1,6 +1,7 @@
 package database
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"testing"
@@ -64,7 +65,7 @@ func TestDatabaseCacheEvictionWhileHeld(t *testing.T) {
 		// note: this version of foo should be a fresh connection
 		return cache.WithDatabase("foo", openTestDatabase, func(db2 *Database) error {
 			if db1 == db2 {
-				return fmt.Errorf("unexpected cached database")
+				return errors.New("unexpected cached database")
 			}
 
 			// evicted database stays open while held
@@ -79,7 +80,7 @@ func TestDatabaseCacheEvictionWhileHeld(t *testing.T) {
 				return err2
 			}
 			if meta1.LSIFVersion != "0.4.3" || meta2.LSIFVersion != "0.4.3" {
-				return fmt.Errorf("unexpected lsif version: want=%s have=%s %s", "0.4.3", meta1.LSIFVersion, meta2.LSIFVersion)
+				return fmt.Errorf("unexpected lsif versions: want=%q have=%q and %q", "0.4.3", meta1.LSIFVersion, meta2.LSIFVersion)
 			}
 
 			return nil
@@ -92,10 +93,15 @@ func TestDatabaseCacheEvictionWhileHeld(t *testing.T) {
 	if err := readMetaLoop(dbRef); err == nil {
 		t.Fatalf("unexpected nil error")
 	} else if !strings.Contains(err.Error(), "database is closed") {
-		t.Fatalf("unexpected error: want=%s have=%s", "database is closed", err)
+		t.Fatalf("unexpected error: want=%q have=%q", "database is closed", err)
 	}
 }
 
+// readMetaLoop attempts to read the metadata from the given database and returns the
+// first error that occurs. The ReadMeta function is re-invoked until an error occurs
+// or until there were 100 attempts. This function is used to determine if the database
+// has been closed (non-nil error), or to ensure that the database remains open for at
+// least 100ms (nil-valued error).
 func readMetaLoop(db *Database) (err error) {
 	for i := 0; i < 100; i++ {
 		if _, err = ReadMeta(db.db); err != nil {
@@ -105,5 +111,5 @@ func readMetaLoop(db *Database) (err error) {
 		time.Sleep(time.Millisecond)
 	}
 
-	return
+	return err
 }

@@ -60,6 +60,6 @@ func (s *Server) Start() {
 	server := &http.Server{Addr: addr, Handler: handler}
 
 	if err := server.ListenAndServe(); err != http.ErrServerClosed {
-		log15.Error("Failed to start server", "error", err)
+		log15.Error("Failed to start server", "err", err)
 	}
 }

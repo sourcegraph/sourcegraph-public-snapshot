@@ -28,7 +28,7 @@ func (entry *databaseCacheEntry) close() {
 			entry.wg.Wait()
 
 			if err := entry.db.Close(); err != nil {
-				log15.Error("Failed to close database", "filename", entry.filename, "error", err)
+				log15.Error("Failed to close database", "filename", entry.filename, "err", err)
 			}
 		}()
 	})

@@ -40,7 +40,7 @@ func idFromRequest(r *http.Request) int64 {
 // copyAll writes the contents of r to w and logs on write failure.
 func copyAll(w http.ResponseWriter, r io.Reader) {
 	if _, err := io.Copy(w, r); err != nil {
-		log15.Error("Failed to write payload to client", "error", err)
+		log15.Error("Failed to write payload to client", "err", err)
 	}
 }
 
@@ -49,7 +49,7 @@ func copyAll(w http.ResponseWriter, r io.Reader) {
 func writeJSON(w http.ResponseWriter, payload interface{}) {
 	data, err := json.Marshal(payload)
 	if err != nil {
-		log15.Error("Failed to serialize result", "error", err)
+		log15.Error("Failed to serialize result", "err", err)
 		http.Error(w, fmt.Sprintf("failed to serialize result: %s", err.Error()), http.StatusInternalServerError)
 		return
 	}

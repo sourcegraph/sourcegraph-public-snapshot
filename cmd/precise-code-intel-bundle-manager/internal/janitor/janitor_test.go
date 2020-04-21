@@ -6,10 +6,11 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"reflect"
 	"sort"
 	"testing"
 	"time"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestCleanFailedUploads(t *testing.T) {
@@ -43,8 +44,8 @@ func TestCleanFailedUploads(t *testing.T) {
 		}
 
 		expected := []string{"u3", "u4"}
-		if !reflect.DeepEqual(names, expected) {
-			t.Errorf("unexpected directory contents: want=%s have=%s", expected, names)
+		if diff := cmp.Diff(names, expected); diff != "" {
+			t.Errorf("unexpected directory contents (-want +got):\n%s", diff)
 		}
 	})
 }
@@ -89,12 +90,14 @@ func TestRemoveDeadDumps(t *testing.T) {
 			t.Fatalf("unexpected error listing directory: %s", err)
 		}
 
-		if expected := []string{"1.lsif.db", "2.lsif.db", "3.lsif.db", "4.lsif.db", "5.lsif.db"}; !reflect.DeepEqual(names, expected) {
-			t.Errorf("unexpected directory contents: want=%v have=%v", expected, names)
+		expectedNames := []string{"1.lsif.db", "2.lsif.db", "3.lsif.db", "4.lsif.db", "5.lsif.db"}
+		if diff := cmp.Diff(names, expectedNames); diff != "" {
+			t.Errorf("unexpected directory contents: want=%v have=%v", expectedNames, names)
 		}
 
-		if expected := [][]int{ids}; !reflect.DeepEqual(idArgs, expected) {
-			t.Errorf("unexpected arguments to statesFn: want=%v have=%v", expected, idArgs)
+		expectedArgs := [][]int{ids}
+		if diff := cmp.Diff(idArgs, expectedArgs); diff != "" {
+			t.Errorf("unexpected arguments to statesFn (-want +got):\n%s", diff)
 		}
 	})
 }
@@ -140,7 +143,7 @@ func TestRemoveDeadDumpsMaxRequestBatchSize(t *testing.T) {
 		}
 
 		if len(names) != 112 {
-			t.Errorf("unexpected directory file count: want=%v have=%v", 112, len(names))
+			t.Errorf("unexpected directory file count: want=%d have=%d", 112, len(names))
 		}
 
 		var allArgs []int
@@ -153,8 +156,8 @@ func TestRemoveDeadDumpsMaxRequestBatchSize(t *testing.T) {
 		}
 		sort.Ints(allArgs)
 
-		if !reflect.DeepEqual(allArgs, ids) {
-			t.Errorf("unexpected flattened arguments to statesFn: want=%v have=%v", ids, allArgs)
+		if diff := cmp.Diff(allArgs, ids); diff != "" {
+			t.Errorf("unexpected flattened arguments to statesFn (-want +got):\n%s", diff)
 		}
 	})
 }
@@ -200,8 +203,9 @@ func TestCleanOldDumpsStopsAfterFreeingDesiredSpace(t *testing.T) {
 			t.Fatalf("unexpected error listing directory: %s", err)
 		}
 
-		if expected := []string{"10.lsif.db", "6.lsif.db", "7.lsif.db", "8.lsif.db", "9.lsif.db"}; !reflect.DeepEqual(names, expected) {
-			t.Errorf("unexpected directory contents: want=%v have=%v", expected, names)
+		expected := []string{"10.lsif.db", "6.lsif.db", "7.lsif.db", "8.lsif.db", "9.lsif.db"}
+		if diff := cmp.Diff(names, expected); diff != "" {
+			t.Errorf("unexpected directory contents (-want +got):\n%s", diff)
 		}
 	})
 }
@@ -252,8 +256,9 @@ func TestCleanOldDumpsStopsWithNoPrunableDatabases(t *testing.T) {
 			t.Fatalf("unexpected error listing directory: %s", err)
 		}
 
-		if expected := []string{"10.lsif.db", "6.lsif.db", "7.lsif.db", "8.lsif.db", "9.lsif.db"}; !reflect.DeepEqual(names, expected) {
-			t.Errorf("unexpected directory contents: want=%v have=%v", expected, names)
+		expected := []string{"10.lsif.db", "6.lsif.db", "7.lsif.db", "8.lsif.db", "9.lsif.db"}
+		if diff := cmp.Diff(names, expected); diff != "" {
+			t.Errorf("unexpected directory contents (-want +got):\n%s", diff)
 		}
 	})
 }
@@ -262,8 +267,8 @@ func TestBatchIntSlice(t *testing.T) {
 	batches := batchIntSlice([]int{1, 2, 3, 4, 5, 6, 7, 8, 9}, 2)
 	expected := [][]int{{1, 2}, {3, 4}, {5, 6}, {7, 8}, {9}}
 
-	if !reflect.DeepEqual(batches, expected) {
-		t.Errorf("unexpected batch layout: want=%v have=%v", expected, batches)
+	if diff := cmp.Diff(batches, expected); diff != "" {
+		t.Errorf("unexpected batch layout (-want +got):\n%s", diff)
 	}
 }
 

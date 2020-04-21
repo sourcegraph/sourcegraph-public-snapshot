@@ -45,7 +45,7 @@ func NewJanitor(opts JanitorOpts) *Janitor {
 func (j *Janitor) Start() {
 	for {
 		if err := j.step(); err != nil {
-			log15.Error("Failed to run janitor process", "error", err)
+			log15.Error("Failed to run janitor process", "err", err)
 		}
 
 		time.Sleep(j.janitorInterval)

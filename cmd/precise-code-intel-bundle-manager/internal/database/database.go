@@ -2,6 +2,7 @@ package database
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"sort"
 
@@ -88,7 +89,7 @@ func ReadMeta(db *sqlx.DB) (BundleMeta, error) {
 	}
 
 	if len(rows) == 0 {
-		return BundleMeta{}, fmt.Errorf("no rows in meta table")
+		return BundleMeta{}, errors.New("no rows in meta table")
 	}
 
 	return BundleMeta{
@@ -98,7 +99,7 @@ func ReadMeta(db *sqlx.DB) (BundleMeta, error) {
 	}, nil
 }
 
-// OpenDatabase opens a handle to th SQLIte file at the given path.
+// OpenDatabase opens a handle to the SQLite file at the given path.
 func OpenDatabase(filename string, documentDataCache *DocumentDataCache, resultChunkDataCache *ResultChunkDataCache) (*Database, error) {
 	// TODO - What is the behavior if the db is missing? Should we stat first or clean up after?
 	db, err := sqlx.Open("sqlite3_with_pcre", filename)
@@ -120,7 +121,7 @@ func OpenDatabase(filename string, documentDataCache *DocumentDataCache, resultC
 	}, nil
 }
 
-// Close closes the underlyign SQLite handle.
+// Close closes the underlying SQLite handle.
 func (db *Database) Close() error {
 	return db.db.Close()
 }
@@ -151,10 +152,10 @@ func (db *Database) Definitions(path string, line, character int) ([]Location, e
 		return db.convertRangesToLocations(definitionResults)
 	}
 
-	return nil, nil
+	return []Location{}, nil
 }
 
-// Definitions returns the set of locations referencing the symbol at the given position.
+// References returns the set of locations referencing the symbol at the given position.
 func (db *Database) References(path string, line, character int) ([]Location, error) {
 	_, ranges, exists, err := db.getRangeByPosition(path, line, character)
 	if err != nil || !exists {
@@ -183,7 +184,7 @@ func (db *Database) References(path string, line, character int) ([]Location, er
 	return allLocations, nil
 }
 
-// Definitions returns the hover text of the symbol at the given position.
+// Hover returns the hover text of the symbol at the given position.
 func (db *Database) Hover(path string, line, character int) (string, Range, bool, error) {
 	documentData, ranges, exists, err := db.getRangeByPosition(path, line, character)
 	if err != nil || !exists {
@@ -260,7 +261,7 @@ func (db *Database) MonikerResults(tableName, scheme, identifier string, skip, t
 		EndCharacter   int    `db:"endCharacter"`
 	}
 
-	if err := db.db.Select(&rows, query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+	if err := db.db.Select(&rows, query.Query(sqlf.SimpleBindVar), query.Args()...); err != nil {
 		return nil, 0, err
 	}
 
@@ -272,10 +273,10 @@ func (db *Database) MonikerResults(tableName, scheme, identifier string, skip, t
 		})
 	}
 
-	countQuery := sqlf.Sprintf("SELECT COUNT(1) FROM '"+tableName+"' WHERE scheme = %s AND identifier = %s", scheme, identifier)
+	countQuery := sqlf.Sprintf("SELECT COUNT(*) FROM '"+tableName+"' WHERE scheme = %s AND identifier = %s", scheme, identifier)
 
 	var totalCount int
-	if err := db.db.Get(&totalCount, countQuery.Query(sqlf.PostgresBindVar), countQuery.Args()...); err != nil {
+	if err := db.db.Get(&totalCount, countQuery.Query(sqlf.SimpleBindVar), countQuery.Args()...); err != nil {
 		return nil, 0, err
 	}
 
@@ -301,8 +302,10 @@ func (db *Database) PackageInformation(path string, packageInformationID types.I
 // document data by a unique key prefixed by the database filename.
 func (db *Database) getDocumentData(path string) (types.DocumentData, bool, error) {
 	documentData, err := db.documentDataCache.GetOrCreate(fmt.Sprintf("%s::%s", db.filename, path), func() (types.DocumentData, error) {
+		query := sqlf.Sprintf("SELECT data FROM documents WHERE path = %s", path)
+
 		var data string
-		if err := db.db.Get(&data, "SELECT data FROM documents WHERE path = :path", path); err != nil {
+		if err := db.db.Get(&data, query.Query(sqlf.SimpleBindVar), query.Args()...); err != nil {
 			return types.DocumentData{}, err
 		}
 
@@ -386,8 +389,10 @@ func (db *Database) getResultByID(id types.ID) ([]documentPathRangeID, error) {
 // This method caches result chunk data by a unique key prefixed by the database filename.
 func (db *Database) getResultChunkByResultID(id types.ID) (types.ResultChunkData, bool, error) {
 	resultChunkData, err := db.resultChunkDataCache.GetOrCreate(fmt.Sprintf("%s::%s", db.filename, id), func() (types.ResultChunkData, error) {
+		query := sqlf.Sprintf("SELECT data FROM resultChunks WHERE id = %s", hashKey(id, db.numResultChunks))
+
 		var data string
-		if err := db.db.Get(&data, "SELECT data FROM resultChunks WHERE id = :id", hashKey(id, db.numResultChunks)); err != nil {
+		if err := db.db.Get(&data, query.Query(sqlf.SimpleBindVar), query.Args()...); err != nil {
 			return types.ResultChunkData{}, err
 		}
 

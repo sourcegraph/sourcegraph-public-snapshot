@@ -1,9 +1,9 @@
 package database
 
 import (
-	"reflect"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/sqliteutil"
 )
@@ -49,8 +49,8 @@ func TestDatabaseDefinitions(t *testing.T) {
 				},
 			}
 
-			if !reflect.DeepEqual(actual, expected) {
-				t.Errorf("unexpected definitions locations. want=%v have=%v", expected, actual)
+			if diff := cmp.Diff(actual, expected); diff != "" {
+				t.Errorf("unexpected definitions locations (-want +got):\n%s", diff)
 			}
 		}
 	})
@@ -84,8 +84,8 @@ func TestDatabaseReferences(t *testing.T) {
 				},
 			}
 
-			if !reflect.DeepEqual(actual, expected) {
-				t.Errorf("unexpected reference locations. want=%v have=%v", expected, actual)
+			if diff := cmp.Diff(actual, expected); diff != "" {
+				t.Errorf("unexpected reference locations (-want +got):\n%s", diff)
 			}
 		}
 	})
@@ -106,12 +106,12 @@ func TestDatabaseHover(t *testing.T) {
 			expectedText := "```go\n" + signature + "\n```\n\n---\n\n" + docstring
 			expectedRange := newRange(628, 18, 628, 30)
 
-			if !reflect.DeepEqual(actualText, expectedText) {
-				t.Errorf("unexpected hover text. want=%v have=%v", expectedText, actualText)
+			if actualText != expectedText {
+				t.Errorf("unexpected hover text. want=%s have=%s", expectedText, actualText)
 			}
 
-			if !reflect.DeepEqual(actualRange, expectedRange) {
-				t.Errorf("unexpected hover range. want=%v have=%v", expectedRange, actualRange)
+			if diff := cmp.Diff(actualRange, expectedRange); diff != "" {
+				t.Errorf("unexpected hover range (-want +got):\n%s", diff)
 			}
 		}
 	})
@@ -136,8 +136,8 @@ func TestDatabaseMonikersByPosition(t *testing.T) {
 				},
 			}
 
-			if !reflect.DeepEqual(actual, expected) {
-				t.Errorf("unexpected moniker result. want=%v have=%v", expected, actual)
+			if diff := cmp.Diff(actual, expected); diff != "" {
+				t.Errorf("unexpected moniker result (-want +got):\n%s", diff)
 			}
 		}
 	})
@@ -214,11 +214,11 @@ func TestDatabaseMonikerResults(t *testing.T) {
 				t.Errorf("unexpected error for test case #%d: %s", i, err)
 			} else {
 				if totalCount != testCase.expectedTotalCount {
-					t.Errorf("unexpected moniker result total count for test case #%d. want=%v have=%v", i, testCase.expectedTotalCount, totalCount)
+					t.Errorf("unexpected moniker result total count for test case #%d. want=%d have=%d", i, testCase.expectedTotalCount, totalCount)
 				}
 
-				if !reflect.DeepEqual(actual, testCase.expectedLocations) {
-					t.Errorf("unexpected moniker result locations for test case #%d. want=%v have=%v", i, testCase.expectedLocations, actual)
+				if diff := cmp.Diff(actual, testCase.expectedLocations); diff != "" {
+					t.Errorf("unexpected moniker result locations for test case #%d (-want +got):\n%s", i, diff)
 				}
 			}
 		}
@@ -237,8 +237,8 @@ func TestDatabasePackageInformation(t *testing.T) {
 				Version: "v0.0.0-ad3507cbeb18",
 			}
 
-			if !reflect.DeepEqual(actual, expected) {
-				t.Errorf("unexpected package information. want=%v have=%v", expected, actual)
+			if diff := cmp.Diff(actual, expected); diff != "" {
+				t.Errorf("unexpected package information (-want +got):\n%s", diff)
 			}
 		}
 	})
@@ -265,5 +265,5 @@ func openTestDatabase() (*Database, error) {
 		return nil, err
 	}
 
-	return OpenDatabase("../../test-data/lsif-go@ad3507cb.lsif.db", documentDataCache, resultChunkDataCache)
+	return OpenDatabase("../../testdata/lsif-go@ad3507cb.lsif.db", documentDataCache, resultChunkDataCache)
 }

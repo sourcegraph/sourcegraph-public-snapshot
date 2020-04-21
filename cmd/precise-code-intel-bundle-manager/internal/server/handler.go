@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -105,7 +106,7 @@ func (s *Server) handleMonikerResults(w http.ResponseWriter, r *http.Request) {
 		case "reference":
 			tableName = "references"
 		default:
-			return nil, fmt.Errorf("illegal tableName supplied")
+			return nil, errors.New("illegal tableName supplied")
 		}
 
 		locations, count, err := db.MonikerResults(
@@ -142,13 +143,13 @@ func (s *Server) doUpload(w http.ResponseWriter, r *http.Request, makeFilename f
 
 	targetFile, err := os.OpenFile(makeFilename(s.bundleDir, idFromRequest(r)), os.O_WRONLY|os.O_CREATE, 0666)
 	if err != nil {
-		log15.Error("Failed to open target file", "error", err)
+		log15.Error("Failed to open target file", "err", err)
 		http.Error(w, fmt.Sprintf("failed to open target file: %s", err.Error()), http.StatusInternalServerError)
 		return
 	}
 
 	if _, err := io.Copy(targetFile, r.Body); err != nil {
-		log15.Error("Failed to write payload", "error", err)
+		log15.Error("Failed to write payload", "err", err)
 		http.Error(w, fmt.Sprintf("failed to write payload: %s", err.Error()), http.StatusInternalServerError)
 		return
 	}
