@@ -3,6 +3,7 @@ package query
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 )
 
@@ -81,4 +82,21 @@ func Hoist(nodes []Node) ([]Node, error) {
 		pattern = append(pattern, node)
 	}
 	return append(scopeParameters, newOperator(pattern, expression.Kind)...), nil
+}
+
+// UpperCaseSearch adds case:yes to queries if any pattern is mixed-case.
+func CaseSensitiveSearch(nodes []Node) []Node {
+	return MapParameter(nodes, func(field, value string, negated bool) Node {
+		var parameters []Node
+		if field == "" || field == "content" {
+			if match, _ := regexp.MatchString(`^(.*[A-Z]).*$`, value); match {
+				parameters = append(parameters, Parameter{Field: "case", Value: "yes", Negated: negated})
+				parameters = append(parameters, Parameter{Field: field, Value: value, Negated: negated})
+			}
+		}
+		if len(parameters) > 0 {
+			return Operator{Kind: And, Operands: parameters}
+		}
+		return Parameter{Field: field, Value: value, Negated: negated}
+	})
 }

@@ -40,6 +40,12 @@ const SettingsSchemaJSON = `{
           "type": "boolean",
           "default": false,
           "!go": { "pointer": true }
+        },
+        "caseSensitiveSearch": {
+          "description": "Enables the search to be case sensitive. When true, patterns become case-sensitive (case-folding is disabled).",
+          "type": "boolean",
+          "default": false,
+          "!go": { "pointer": true }
         }
       },
       "group": "Experimental"

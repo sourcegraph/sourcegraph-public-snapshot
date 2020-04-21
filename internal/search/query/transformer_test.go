@@ -1,6 +1,7 @@
 package query
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -29,6 +30,7 @@ func Test_LowercaseFieldNames(t *testing.T) {
 	input := "rEpO:foo PATTERN"
 	want := `(and "repo:foo" "PATTERN")`
 	query, _ := ParseAndOr(input)
+	fmt.Println("KEKE", query)
 	got := prettyPrint(LowercaseFieldNames(query))
 	if diff := cmp.Diff(got, want); diff != "" {
 		t.Fatal(diff)
@@ -121,6 +123,63 @@ func Test_Hoist(t *testing.T) {
 			got := prettyPrint(hoistedQuery)
 			if diff := cmp.Diff(c.want, got); diff != "" {
 				t.Error(diff)
+			}
+		})
+	}
+}
+
+func Test_CaseSensitiveSearch(t *testing.T) {
+	cases := []struct {
+		input      string
+		want       string
+	}{
+		{
+			input: `TeSt`,
+			want:  `(and "case:yes" "TeSt")`,
+		},
+		{
+			input: `test`,
+			want:  `"test"`,
+		},
+		{
+			input: `content:TeSt`,
+			want:  `(and "case:yes" "content:TeSt")`,
+		},
+		{
+			input: `content:test`,
+			want:  `"content:test"`,
+		},
+		{
+			input: `repo:foo TeSt`,
+			want:  `(and "repo:foo" "case:yes" "TeSt")`,
+		},
+		{
+			input: `repo:foo test`,
+			want:  `(and "repo:foo" "test")`,
+		},
+		{
+			input: `repo:foo content:TeSt`,
+			want:  `(and "repo:foo" "case:yes" "content:TeSt")`,
+		},
+		{
+			input: `repo:foo content:test`,
+			want:  `(and "repo:foo" "content:test")`,
+		},
+		{
+			input: `TeSt1 TesT2`,
+			want:  `(concat (and "case:yes" "TeSt1") (and "case:yes" "TesT2"))`,
+		},
+		{
+			input: `TeSt1 test2`,
+			want:  `(concat (and "case:yes" "TeSt1") "test2")`,
+		},
+	}
+	for _, c := range cases {
+		t.Run("caseSensitiveSearch", func(t *testing.T) {
+			query, _ := ParseAndOr(c.input)
+			got := prettyPrint(CaseSensitiveSearch(query))
+			if diff := cmp.Diff(got, c.want); diff != "" {
+				t.Fatal(diff)
 			}
 		})
 	}
