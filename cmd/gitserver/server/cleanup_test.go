@@ -419,7 +419,7 @@ func (f *fakeDiskSizer) DiskSizeBytes(mountPoint string) (uint64, error) {
 
 func tmpDir(t *testing.T) string {
 	t.Helper()
-	dir, err := ioutil.TempDir("", t.Name())
+	dir, err := ioutil.TempDir("", filepath.Base(t.Name()))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -238,6 +238,11 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/ping", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
+
+	mux.Handle("/git/", http.StripPrefix("/git", &gitServiceHandler{
+		Dir: func(d string) string { return string(s.dir(api.RepoName(d))) },
+	}))
+
 	return mux
 }
 
