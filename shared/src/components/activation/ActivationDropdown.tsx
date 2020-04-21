@@ -6,10 +6,10 @@ import { concat, of, Subject, Subscription } from 'rxjs'
 import { concatMap, delay, filter, map, pairwise, startWith, tap } from 'rxjs/operators'
 import { Activation, percentageDone } from './Activation'
 import { ActivationChecklist } from './ActivationChecklist'
-import { Menu, MenuButton, MenuPopover } from '@reach/menu-button'
+import { Menu, MenuButton, MenuPopover, MenuPopoverProps } from '@reach/menu-button'
 import classNames from 'classnames'
 
-interface Props {
+export interface ActivationDropdownProps extends Pick<MenuPopoverProps, 'portal'> {
     history: H.History
     activation: Activation
     /**
@@ -28,9 +28,9 @@ const animationDurationMillis = 3260
  * Renders the activation status navlink item, a dropdown button that shows activation
  * status in the navbar.
  */
-export class ActivationDropdown extends React.PureComponent<Props, State> {
+export class ActivationDropdown extends React.PureComponent<ActivationDropdownProps, State> {
     public state: State = { animate: false, displayEvenIfFullyCompleted: false }
-    private componentUpdates = new Subject<Props>()
+    private componentUpdates = new Subject<ActivationDropdownProps>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
@@ -123,6 +123,7 @@ export class ActivationDropdown extends React.PureComponent<Props, State> {
                         </MenuButton>
                         <MenuPopover
                             className={classNames('activation-dropdown', 'dropdown-menu', { show: isExpanded })}
+                            portal={this.props.portal}
                         >
                             <div className="dropdown-item-text activation-dropdown-header">
                                 <h3 className="mb-0">

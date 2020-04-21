@@ -51,6 +51,19 @@ func (s *Server) repoInfo(ctx context.Context, repo api.RepoName) (*protocol.Rep
 	return &resp, nil
 }
 
+func (s *Server) repoCloneProgress(repo api.RepoName) (*protocol.RepoCloneProgress, error) {
+	dir := s.dir(repo)
+	resp := protocol.RepoCloneProgress{
+		Cloned: repoCloned(dir),
+	}
+	resp.CloneProgress, resp.CloneInProgress = s.locker.Status(dir)
+	if isAlwaysCloningTest(repo) {
+		resp.CloneInProgress = true
+		resp.CloneProgress = "This will never finish cloning"
+	}
+	return &resp, nil
+}
+
 func (s *Server) handleRepoInfo(w http.ResponseWriter, r *http.Request) {
 	var req protocol.RepoInfoRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -63,6 +76,31 @@ func (s *Server) handleRepoInfo(w http.ResponseWriter, r *http.Request) {
 	}
 	for _, repoName := range req.Repos {
 		result, err := s.repoInfo(r.Context(), repoName)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		resp.Results[repoName] = result
+	}
+
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (s *Server) handleRepoCloneProgress(w http.ResponseWriter, r *http.Request) {
+	var req protocol.RepoCloneProgressRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	resp := protocol.RepoCloneProgressResponse{
+		Results: make(map[api.RepoName]*protocol.RepoCloneProgress, len(req.Repos)),
+	}
+	for _, repoName := range req.Repos {
+		result, err := s.repoCloneProgress(repoName)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

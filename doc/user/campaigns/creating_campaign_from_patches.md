@@ -10,7 +10,7 @@ Here is the short version for how to create a patch set and turn that into chang
 1. Save the patches in Sourcegraph by creating a patch set: `src campaign patchset create-from-patches < patches.json`
 1. Create a campaign based on the patch set: `src campaigns create -branch=<branch-name> -patchset=<patchset-ID-returned-by-previous-command>`
 
-Read on detailed steps and documentation.
+Read on detailed steps and documentation and see "[Actions](./actions.md)" for more information about how to define and execute actions.
 
 ## Requirements
 
@@ -20,7 +20,7 @@ If you have not done so already, first [install](https://github.com/sourcegraph/
 
 The first thing we need is a definition of an "action". An action contains a list of steps to run in each repository returned by the results of the `scopeQuery` search string.
 
-There are two types of steps: `docker` and `command`. See `src actions exec -help` for more information.
+There are two types of steps: `docker` and `command`. See "[Actions](./actions.md)" for more information.
 
 Here is an example of a multi-step action definition using the `docker` and `command` types:
 
@@ -49,7 +49,7 @@ Here is an example of a multi-step action definition using the `docker` and `com
 }
 ```
 
-This action will execute on every repository that has `go-` in its name and doesn't have an `INSTALL.md` file.
+This action will be executed for each repository that has `go-` in its name and doesn't have an `INSTALL.md` file.
 
 1. The first step (a `command` step) creates an `INSTALL.md` file in the root directory of each repository by running `sh` in a temporary copy of each repository. **This is executed on the machine on which `src` is being run.** Note that the first element in `"args"` is the command itself.
 
@@ -73,12 +73,13 @@ src actions exec -f action.json
 
 This command is going to:
 
-1. Build the required Docker image if necessary.
-1. Download a ZIP archive of the repositories matched by the `"scopeQuery"` from the Sourcegraph instance to a local temporary directory in `/tmp`.
-1. Execute the action for each repository in parallel (the number of parallel jobs can be configured with `-j`, the default is number of cores on the machine), with each step in an action being executed sequentially on the same copy of a repository. If a step in an action is of type `"command"` the command will be executed in the temporary directory that contains the copy of the repository. If the type is `"docker"` then a container will be launched in which the repository is mounted under `/work`.
-1. Produce a patch for each repository with a diff between a fresh copy of the repository's contents and directory in which the action ran.
+1. Download a ZIP archive of each repository returned by the `"scopeQuery"` and extract it to a local temporary directory in `/tmp`.
+1. Execute the action for each repository in parallel, with each step in an action being executed sequentially on the same copy of a repository.
+1. Produce a patch for each repository with creating diff between a fresh copy of the repository and the directory in which the action ran.
 
-The output can either be saved into a file by redirecting it:
+(See "[Actions](./actions.md)" for more information about how actions are executed.)
+
+The output, a set of patches, can either be saved into a file by redirecting it:
 
 ```sh
 src actions exec -f action.json > patches.json
@@ -89,12 +90,6 @@ Or it can be piped straight into the next command we're going to use to save the
 ```sh
 src actions exec -f action.json | src campaign patchset create-from-patches
 ```
-
->NOTE: **Where to run `src action exec`**
-
-> The patches for a campaign are generated on the machine where the `src` CLI is executed, which in turn, downloads zip archives and runs each step against each repository. For most usecases we recommend that `src` CLI should be run on a Linux machine with considerable CPU, RAM, and network bandwidth to reduce the execution time. Putting this machine in the same network as your Sourcegraph instance will also improve performance.
-
-> Another factor affecting execution time is the number of jobs executed in parallel, which is by default the number of cores on the machine. This can be adjusted using the `-j` parameter.
 
 ## 3. Creating a patch set from patches
 

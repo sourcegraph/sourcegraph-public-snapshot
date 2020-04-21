@@ -9,13 +9,13 @@ import { getConfig } from '../../../shared/src/e2e/config'
 describe('Sourcegraph browser extension on github.com', function () {
     this.slow(8000)
 
-    const { browser, sourcegraphBaseUrl } = getConfig('browser', 'sourcegraphBaseUrl')
+    const { browser, sourcegraphBaseUrl, ...restConfig } = getConfig('browser', 'sourcegraphBaseUrl')
 
     let driver: Driver
 
     before('Open browser', async function () {
         this.timeout(90 * 1000)
-        driver = await createDriverForTest({ loadExtension: true, browser, sourcegraphBaseUrl })
+        driver = await createDriverForTest({ loadExtension: true, browser, sourcegraphBaseUrl, ...restConfig })
         if (sourcegraphBaseUrl !== 'https://sourcegraph.com') {
             await driver.setExtensionSourcegraphUrl()
         }
@@ -24,11 +24,7 @@ describe('Sourcegraph browser extension on github.com', function () {
     // Take a screenshot when a test fails
     saveScreenshotsUponFailures(() => driver.page)
 
-    after('Close browser', async () => {
-        if (driver) {
-            await driver.close()
-        }
-    })
+    after('Close browser', () => driver?.close())
 
     testSingleFilePage({
         getDriver: () => driver,
@@ -54,7 +50,7 @@ describe('Sourcegraph browser extension on github.com', function () {
             token: 'host',
             lineId: 'diff-9ef8a22c4ce5141c30a501c542fb1adeR247',
             goToDefinitionURL:
-                'https://github.com/gorilla/mux/blob/e73f183699f8ab7d54609771e1fa0ab7ffddc21b/regexp.go#L233:2',
+                'https://sourcegraph.com/github.com/gorilla/mux@e73f183699f8ab7d54609771e1fa0ab7ffddc21b/-/blob/regexp.go#L247:24&tab=def',
         },
     }
 
@@ -100,7 +96,7 @@ describe('Sourcegraph browser extension on github.com', function () {
                         // Check go-to-definition jumps to the right place
                         await retry(async () => {
                             const href = await driver.page.evaluate(
-                                () => document.querySelector<HTMLLinkElement>('.e2e-tooltip-go-to-definition')?.href
+                                () => document.querySelector<HTMLAnchorElement>('.e2e-tooltip-go-to-definition')?.href
                             )
                             assert.strictEqual(href, goToDefinitionURL)
                         })
@@ -108,7 +104,9 @@ describe('Sourcegraph browser extension on github.com', function () {
                             driver.page.waitForNavigation(),
                             driver.page.click('.e2e-tooltip-go-to-definition'),
                         ])
-                        assert.strictEqual(await driver.page.evaluate(() => location.href), goToDefinitionURL)
+                        await retry(async () => {
+                            assert.strictEqual(await driver.page.evaluate(() => location.href), goToDefinitionURL)
+                        })
                     })
                 }
             })

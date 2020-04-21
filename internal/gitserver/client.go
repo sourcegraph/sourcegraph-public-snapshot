@@ -659,6 +659,76 @@ func (c *Client) IsRepoCloned(ctx context.Context, repo api.RepoName) (bool, err
 	return cloned, nil
 }
 
+func (c *Client) RepoCloneProgress(ctx context.Context, repos ...api.RepoName) (*protocol.RepoCloneProgressResponse, error) {
+	numPossibleShards := len(c.Addrs(ctx))
+	shards := make(map[string]*protocol.RepoCloneProgressRequest, (len(repos)/numPossibleShards)*2) // 2x because it may not be a perfect division
+
+	for _, r := range repos {
+		addr := c.AddrForRepo(ctx, r)
+		shard := shards[addr]
+
+		if shard == nil {
+			shard = new(protocol.RepoCloneProgressRequest)
+			shards[addr] = shard
+		}
+
+		shard.Repos = append(shard.Repos, r)
+	}
+
+	type op struct {
+		req *protocol.RepoCloneProgressRequest
+		res *protocol.RepoCloneProgressResponse
+		err error
+	}
+
+	ch := make(chan op, len(shards))
+	for _, req := range shards {
+		go func(o op) {
+			var resp *http.Response
+			resp, o.err = c.httpPost(ctx, o.req.Repos[0], "repo-clone-progress", o.req)
+			if o.err != nil {
+				ch <- o
+				return
+			}
+
+			defer resp.Body.Close()
+			if resp.StatusCode != http.StatusOK {
+				o.err = &url.Error{
+					URL: resp.Request.URL.String(),
+					Op:  "RepoCloneProgress",
+					Err: errors.Errorf("RepoCloneProgress: http status %d", resp.StatusCode),
+				}
+				ch <- o
+				return // we never get an error status code AND result
+			}
+
+			o.res = new(protocol.RepoCloneProgressResponse)
+			o.err = json.NewDecoder(resp.Body).Decode(o.res)
+			ch <- o
+		}(op{req: req})
+	}
+
+	err := new(multierror.Error)
+	res := protocol.RepoCloneProgressResponse{
+		Results: make(map[api.RepoName]*protocol.RepoCloneProgress),
+	}
+
+	for i := 0; i < cap(ch); i++ {
+		o := <-ch
+
+		if o.err != nil {
+			err = multierror.Append(err, o.err)
+			continue
+		}
+
+		for repo, info := range o.res.Results {
+			res.Results[repo] = info
+		}
+	}
+
+	return &res, err.ErrorOrNil()
+}
+
 // RepoInfo retrieves information about one or more repositories on gitserver.
 //
 // The repository not existing is not an error; in that case, RepoInfoResponse.Results[i].Cloned

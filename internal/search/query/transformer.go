@@ -6,6 +6,27 @@ import (
 	"strings"
 )
 
+// SubstituteAliases substitutes field name aliases for their canonical names.
+func SubstituteAliases(nodes []Node) []Node {
+	aliases := map[string]string{
+		"r":        FieldRepo,
+		"g":        FieldRepoGroup,
+		"f":        FieldFile,
+		"l":        FieldLang,
+		"language": FieldLang,
+		"since":    FieldAfter,
+		"until":    FieldBefore,
+		"m":        FieldMessage,
+		"msg":      FieldMessage,
+	}
+	return MapParameter(nodes, func(field, value string, negated bool) Node {
+		if canonical, ok := aliases[field]; ok {
+			field = canonical
+		}
+		return Parameter{Field: field, Value: value, Negated: negated}
+	})
+}
+
 // LowercaseFieldNames performs strings.ToLower on every field name.
 func LowercaseFieldNames(nodes []Node) []Node {
 	return MapParameter(nodes, func(field, value string, negated bool) Node {
