@@ -1,5 +1,9 @@
 # Adding LSIF to your workflows
 
+## [Language Specific Guides](./languages.md)
+
+Check if we've created documentation for your language yet! If not, this general guide will help you through the process.
+
 ## LSIF in continuous integration
 
 After walking through the [LSIF quickstart guide](./lsif_quickstart.md), add a job to your CI so code intelligence keeps up with the changes to your repository.

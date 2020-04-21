@@ -9,10 +9,7 @@ Code intelligence provides advanced code navigation and cross-references for you
 
 Code intelligence works out of the box with all of the most popular [programming language extensions](https://sourcegraph.com/extensions?query=category%3A%22Programming+languages%22) using our search-based [basic code intelligence](./basic_code_intelligence.md).
 
-There are two ways to get more precise code intelligence:
-
-- Recommended: [upload LSIF code intelligence data](./lsif.md)
-- Not recommended: [deploy a language server](./language_servers.md)
+To get more precise code intelligence, you can upload [LSIF data](./lsif.md) for your repositories.
 
 Code intelligence is provided by [Sourcegraph extensions](../../extensions/index.md).
 
@@ -62,11 +59,3 @@ We use [Ctags](https://github.com/universal-ctags/ctags) to index the symbols of
 We use [Ctags](https://github.com/universal-ctags/ctags) to index the symbols of a repository on-demand. These symbols are also used for the symbol sidebar, which categorizes declarations by type (variable, function, interface, etc). Clicking on a symbol in the sidebar jumps you to the line where it is defined.
 
 <img src="img/SymbolSidebar.png" width="500"/>
-
-## Code intelligence in action
-
-Code intelligence adds context to your development workflows. The example below shows how code reviews are improved using code intelligence on a pull request in GitHub.
-
-### GitHub pull request and file integration (using a language server)
-
-<img src="img/CodeReview.gif" width="450" style="margin-left:0;margin-right:0;"/>

@@ -1,6 +1,12 @@
 # LSIF quickstart guide
 
-This quickstart guide will walk you through installing and generating LSIF data locally on your machine, and then manually uploading the LSIF data to your Sourcegraph instance for your repository. This will let you experiment with the process locally, and test your generated LSIF data on your repository before changing your CI process.
+## [Language Specific Guides](./languages.md)
+
+Check if we've created documentation for your language yet! If not, this general guide will help you through the process.
+
+## Manual LSIF generation
+
+We'll walk you through installing and generating LSIF data locally on your machine, and then manually uploading the LSIF data to your Sourcegraph instance for your repository. This will let you experiment with the process locally, and test your generated LSIF data on your repository before changing your CI process.
 
 ## 1. Set up your environment
 
@@ -68,4 +74,4 @@ To verify that LSIF is correctly enabled, hover over a symbol and ensure that it
 
 ## 5. Productionize the process
 
-Now that you're happy with the code intelligence on your repository, you need to make sure that is stays up to date with your repository. This can be done by periodically generating LSIF data, and pushing it to Sourcegraph. You can either [add a step to your CI](adding_lsif_to_workflows.md#lsif-in-continuous-integration), or run it as a [GitHub Action](adding_lsif_to_workflows.md#lsif-on-gitgub).
+Now that you're happy with the code intelligence on your repository, you need to make sure that is stays up to date with your repository. Our [continuous integration guide](adding_lsif_to_workflows.md) will get you started.
