@@ -3,10 +3,10 @@ package db
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
@@ -64,8 +64,8 @@ func TestGetDumpByID(t *testing.T) {
 		t.Fatalf("unexpected error getting dump: %s", err)
 	} else if !exists {
 		t.Fatal("expected record to exist")
-	} else if !reflect.DeepEqual(dump, expected) {
-		t.Errorf("unexpected dump. want=%v have=%v", expected, dump)
+	} else if diff := cmp.Diff(dump, expected); diff != "" {
+		t.Errorf("unexpected dump (-want +got):\n%s", diff)
 	}
 }
 
@@ -314,7 +314,7 @@ func TestDeleteOldestDump(t *testing.T) {
 	} else if !prunable {
 		t.Fatal("unexpectedly non-prunable")
 	} else if id != 1 {
-		t.Errorf("unexpected pruned identifier. want=%v have=%v", 1, id)
+		t.Errorf("unexpected pruned identifier. want=%d have=%d", 1, id)
 	}
 
 	// Prune next oldest (skips visible at tip)
@@ -323,7 +323,7 @@ func TestDeleteOldestDump(t *testing.T) {
 	} else if !prunable {
 		t.Fatal("unexpectedly non-prunable")
 	} else if id != 3 {
-		t.Errorf("unexpected pruned identifier. want=%v have=%v", 3, id)
+		t.Errorf("unexpected pruned identifier. want=%d have=%d", 3, id)
 	}
 }
 
@@ -437,17 +437,11 @@ func TestUpdateDumpsVisibleFromTipOverlappingRootsSameIndexer(t *testing.T) {
 		t.Fatalf("unexpected error updating dumps visible from tip: %s", err)
 	}
 
-	expected := map[int]bool{
-		1: false,
-		2: false,
-		3: false,
-		4: true,
-		5: true,
-		6: false,
-	}
+	visibilities := getDumpVisibilities(t, db.db)
+	expected := map[int]bool{1: false, 2: false, 3: false, 4: true, 5: true, 6: false}
 
-	if visibilities := getDumpVisibilities(t, db.db); !reflect.DeepEqual(visibilities, expected) {
-		t.Errorf("unexpected visibility. want=%v have=%v", expected, visibilities)
+	if diff := cmp.Diff(visibilities, expected); diff != "" {
+		t.Errorf("unexpected visibility (-want +got):\n%s", diff)
 	}
 }
 
@@ -489,19 +483,9 @@ func TestUpdateDumpsVisibleFromTipOverlappingRoots(t *testing.T) {
 		t.Fatalf("unexpected error updating dumps visible from tip: %s", err)
 	}
 
-	expected := map[int]bool{
-		1: false,
-		2: true,
-		3: true,
-		4: true,
-		5: false,
-		6: false,
-		7: false,
-		8: false,
-		9: true,
-	}
-
-	if visibilities := getDumpVisibilities(t, db.db); !reflect.DeepEqual(visibilities, expected) {
+	visibilities := getDumpVisibilities(t, db.db)
+	expected := map[int]bool{1: false, 2: true, 3: true, 4: true, 5: false, 6: false, 7: false, 8: false, 9: true}
+	if diff := cmp.Diff(visibilities, expected); diff != "" {
 		t.Errorf("unexpected visibility. want=%v have=%v", expected, visibilities)
 	}
 }
@@ -548,18 +532,10 @@ func TestUpdateDumpsVisibleFromTipBranchingPaths(t *testing.T) {
 		t.Fatalf("unexpected error updating dumps visible from tip: %s", err)
 	}
 
-	expected := map[int]bool{
-		1: false,
-		2: true,
-		3: true,
-		4: false,
-		5: false,
-		6: true,
-		7: true,
-	}
-
-	if visibilities := getDumpVisibilities(t, db.db); !reflect.DeepEqual(visibilities, expected) {
-		t.Errorf("unexpected visibility. want=%v have=%v", expected, visibilities)
+	visibilities := getDumpVisibilities(t, db.db)
+	expected := map[int]bool{1: false, 2: true, 3: true, 4: false, 5: false, 6: true, 7: true}
+	if diff := cmp.Diff(visibilities, expected); diff != "" {
+		t.Errorf("unexpected visibility (-want +got):\n%s", diff)
 	}
 }
 
@@ -584,19 +560,31 @@ func TestUpdateDumpsVisibleFromTipMaxTraversalLimit(t *testing.T) {
 
 	if err := db.updateDumpsVisibleFromTip(context.Background(), nil, 50, makeCommit(MaxTraversalLimit)); err != nil {
 		t.Fatalf("unexpected error updating dumps visible from tip: %s", err)
-	} else if visibilities, expected := getDumpVisibilities(t, db.db), map[int]bool{1: true}; !reflect.DeepEqual(visibilities, expected) {
-		t.Errorf("unexpected visibility. want=%v have=%v", expected, visibilities)
+	} else {
+		visibilities := getDumpVisibilities(t, db.db)
+		expected := map[int]bool{1: true}
+		if diff := cmp.Diff(visibilities, expected); diff != "" {
+			t.Errorf("unexpected visibility (-want +got):\n%s", diff)
+		}
 	}
 
 	if err := db.updateDumpsVisibleFromTip(context.Background(), nil, 50, makeCommit(1)); err != nil {
 		t.Fatalf("unexpected error updating dumps visible from tip: %s", err)
-	} else if visibilities, expected := getDumpVisibilities(t, db.db), map[int]bool{1: true}; !reflect.DeepEqual(visibilities, expected) {
-		t.Errorf("unexpected visibility. want=%v have=%v", expected, visibilities)
+	} else {
+		visibilities := getDumpVisibilities(t, db.db)
+		expected := map[int]bool{1: true}
+		if diff := cmp.Diff(visibilities, expected); diff != "" {
+			t.Errorf("unexpected visibility (-want +got):\n%s", diff)
+		}
 	}
 
 	if err := db.updateDumpsVisibleFromTip(context.Background(), nil, 50, makeCommit(0)); err != nil {
 		t.Fatalf("unexpected error updating dumps visible from tip: %s", err)
-	} else if visibilities, expected := getDumpVisibilities(t, db.db), map[int]bool{1: false}; !reflect.DeepEqual(visibilities, expected) {
-		t.Errorf("unexpected visibility. want=%v have=%v", expected, visibilities)
+	} else {
+		visibilities := getDumpVisibilities(t, db.db)
+		expected := map[int]bool{1: false}
+		if diff := cmp.Diff(visibilities, expected); diff != "" {
+			t.Errorf("unexpected visibility (-want +got):\n%s", diff)
+		}
 	}
 }

@@ -1,10 +1,11 @@
 package api
 
 import (
+	"context"
 	"fmt"
-	"reflect"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/bundles"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/db"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/mocks"
@@ -37,7 +38,7 @@ func TestHandleSameDumpCursor(t *testing.T) {
 	}
 
 	t.Run("partial results", func(t *testing.T) {
-		references, newCursor, hasNewCursor, err := rpr.dispatchCursorHandler(Cursor{
+		references, newCursor, hasNewCursor, err := rpr.dispatchCursorHandler(context.Background(), Cursor{
 			Phase:       "same-dump",
 			DumpID:      42,
 			Path:        "main.go",
@@ -57,8 +58,8 @@ func TestHandleSameDumpCursor(t *testing.T) {
 			{Dump: testDump1, Path: "sub1/bonk.go", Range: testRange4},
 			{Dump: testDump1, Path: "sub1/quux.go", Range: testRange5},
 		}
-		if !reflect.DeepEqual(references, expectedReferences) {
-			t.Errorf("unexpected references. want=%v have=%v", expectedReferences, references)
+		if diff := cmp.Diff(references, expectedReferences); diff != "" {
+			t.Errorf("unexpected references (-want +got):\n%s", diff)
 		}
 
 		expectedNewCursor := Cursor{
@@ -72,13 +73,13 @@ func TestHandleSameDumpCursor(t *testing.T) {
 		}
 		if !hasNewCursor {
 			t.Errorf("expected new cursor")
-		} else if !reflect.DeepEqual(newCursor, expectedNewCursor) {
-			t.Errorf("unexpected new cursor. want=%v have=%v", expectedNewCursor, newCursor)
+		} else if diff := cmp.Diff(newCursor, expectedNewCursor); diff != "" {
+			t.Errorf("unexpected new cursor (-want +got):\n%s", diff)
 		}
 	})
 
 	t.Run("end of result set", func(t *testing.T) {
-		references, newCursor, hasNewCursor, err := rpr.dispatchCursorHandler(Cursor{
+		references, newCursor, hasNewCursor, err := rpr.dispatchCursorHandler(context.Background(), Cursor{
 			Phase:       "same-dump",
 			DumpID:      42,
 			Path:        "main.go",
@@ -97,8 +98,8 @@ func TestHandleSameDumpCursor(t *testing.T) {
 			{Dump: testDump1, Path: "sub1/bonk.go", Range: testRange4},
 			{Dump: testDump1, Path: "sub1/quux.go", Range: testRange5},
 		}
-		if !reflect.DeepEqual(references, expectedReferences) {
-			t.Errorf("unexpected references. want=%v have=%v", expectedReferences, references)
+		if diff := cmp.Diff(references, expectedReferences); diff != "" {
+			t.Errorf("unexpected references (-want +got):\n%s", diff)
 		}
 
 		expectedNewCursor := Cursor{
@@ -110,8 +111,8 @@ func TestHandleSameDumpCursor(t *testing.T) {
 		}
 		if !hasNewCursor {
 			t.Errorf("expected new cursor")
-		} else if !reflect.DeepEqual(newCursor, expectedNewCursor) {
-			t.Errorf("unexpected new cursor. want=%v have=%v", expectedNewCursor, newCursor)
+		} else if diff := cmp.Diff(newCursor, expectedNewCursor); diff != "" {
+			t.Errorf("unexpected new cursor (-want +got):\n%s", diff)
 		}
 	})
 }
@@ -144,7 +145,7 @@ func TestHandleDefinitionMonikersCursor(t *testing.T) {
 			{DumpID: 50, Path: "quux.go", Range: testRange5},
 		}, 10)
 
-		references, newCursor, hasNewCursor, err := rpr.dispatchCursorHandler(Cursor{
+		references, newCursor, hasNewCursor, err := rpr.dispatchCursorHandler(context.Background(), Cursor{
 			Phase:       "definition-monikers",
 			DumpID:      42,
 			Path:        "main.go",
@@ -162,8 +163,8 @@ func TestHandleDefinitionMonikersCursor(t *testing.T) {
 			{Dump: testDump2, Path: "sub2/bonk.go", Range: testRange4},
 			{Dump: testDump2, Path: "sub2/quux.go", Range: testRange5},
 		}
-		if !reflect.DeepEqual(references, expectedReferences) {
-			t.Errorf("unexpected references. want=%v have=%v", expectedReferences, references)
+		if diff := cmp.Diff(references, expectedReferences); diff != "" {
+			t.Errorf("unexpected references (-want +got):\n%s", diff)
 		}
 
 		expectedNewCursor := Cursor{
@@ -175,8 +176,8 @@ func TestHandleDefinitionMonikersCursor(t *testing.T) {
 		}
 		if !hasNewCursor {
 			t.Errorf("expected new cursor")
-		} else if !reflect.DeepEqual(newCursor, expectedNewCursor) {
-			t.Errorf("unexpected new cursor. want=%v have=%v", expectedNewCursor, newCursor)
+		} else if diff := cmp.Diff(newCursor, expectedNewCursor); diff != "" {
+			t.Errorf("unexpected new cursor (-want +got):\n%s", diff)
 		}
 	})
 
@@ -189,7 +190,7 @@ func TestHandleDefinitionMonikersCursor(t *testing.T) {
 			{DumpID: 50, Path: "quux.go", Range: testRange5},
 		}, 10)
 
-		references, newCursor, hasNewCursor, err := rpr.dispatchCursorHandler(Cursor{
+		references, newCursor, hasNewCursor, err := rpr.dispatchCursorHandler(context.Background(), Cursor{
 			Phase:       "definition-monikers",
 			DumpID:      42,
 			Path:        "main.go",
@@ -207,8 +208,8 @@ func TestHandleDefinitionMonikersCursor(t *testing.T) {
 			{Dump: testDump2, Path: "sub2/bonk.go", Range: testRange4},
 			{Dump: testDump2, Path: "sub2/quux.go", Range: testRange5},
 		}
-		if !reflect.DeepEqual(references, expectedReferences) {
-			t.Errorf("unexpected references. want=%v have=%v", expectedReferences, references)
+		if diff := cmp.Diff(references, expectedReferences); diff != "" {
+			t.Errorf("unexpected references (-want +got):\n%s", diff)
 		}
 
 		expectedNewCursor := Cursor{
@@ -221,8 +222,8 @@ func TestHandleDefinitionMonikersCursor(t *testing.T) {
 		}
 		if !hasNewCursor {
 			t.Errorf("expected new cursor")
-		} else if !reflect.DeepEqual(newCursor, expectedNewCursor) {
-			t.Errorf("unexpected new cursor. want=%v have=%v", expectedNewCursor, newCursor)
+		} else if diff := cmp.Diff(newCursor, expectedNewCursor); diff != "" {
+			t.Errorf("unexpected new cursor (-want +got):\n%s", diff)
 		}
 	})
 }
@@ -262,7 +263,7 @@ func TestHandleSameRepoCursor(t *testing.T) {
 			limit:               5,
 		}
 
-		references, newCursor, hasNewCursor, err := rpr.resolvePage(Cursor{
+		references, newCursor, hasNewCursor, err := rpr.resolvePage(context.Background(), Cursor{
 			Phase:      "same-repo",
 			DumpID:     42,
 			Scheme:     "gomod",
@@ -281,8 +282,8 @@ func TestHandleSameRepoCursor(t *testing.T) {
 			{Dump: testDump2, Path: "sub2/bonk.go", Range: testRange4},
 			{Dump: testDump2, Path: "sub2/quux.go", Range: testRange5},
 		}
-		if !reflect.DeepEqual(references, expectedReferences) {
-			t.Errorf("unexpected references. want=%v have=%v", expectedReferences, references)
+		if diff := cmp.Diff(references, expectedReferences); diff != "" {
+			t.Errorf("unexpected references (-want +got):\n%s", diff)
 		}
 
 		expectedNewCursor := Cursor{
@@ -300,8 +301,8 @@ func TestHandleSameRepoCursor(t *testing.T) {
 		}
 		if !hasNewCursor {
 			t.Errorf("expected new cursor")
-		} else if !reflect.DeepEqual(newCursor, expectedNewCursor) {
-			t.Errorf("unexpected new cursor. want=%v have=%v", expectedNewCursor, newCursor)
+		} else if diff := cmp.Diff(newCursor, expectedNewCursor); diff != "" {
+			t.Errorf("unexpected new cursor (-want +got):\n%s", diff)
 		}
 	})
 
@@ -327,7 +328,7 @@ func TestHandleSameRepoCursor(t *testing.T) {
 			limit:               5,
 		}
 
-		references, newCursor, hasNewCursor, err := rpr.resolvePage(Cursor{
+		references, newCursor, hasNewCursor, err := rpr.resolvePage(context.Background(), Cursor{
 			Phase:      "same-repo",
 			DumpID:     42,
 			Scheme:     "gomod",
@@ -346,8 +347,8 @@ func TestHandleSameRepoCursor(t *testing.T) {
 			{Dump: testDump3, Path: "sub3/bonk.go", Range: testRange4},
 			{Dump: testDump4, Path: "sub4/quux.go", Range: testRange5},
 		}
-		if !reflect.DeepEqual(references, expectedReferences) {
-			t.Errorf("unexpected references. want=%v have=%v", expectedReferences, references)
+		if diff := cmp.Diff(references, expectedReferences); diff != "" {
+			t.Errorf("unexpected references (-want +got):\n%s", diff)
 		}
 
 		expectedNewCursor := Cursor{
@@ -360,8 +361,8 @@ func TestHandleSameRepoCursor(t *testing.T) {
 		}
 		if !hasNewCursor {
 			t.Errorf("expected new cursor")
-		} else if !reflect.DeepEqual(newCursor, expectedNewCursor) {
-			t.Errorf("unexpected new cursor. want=%v have=%v", expectedNewCursor, newCursor)
+		} else if diff := cmp.Diff(newCursor, expectedNewCursor); diff != "" {
+			t.Errorf("unexpected new cursor (-want +got):\n%s", diff)
 		}
 	})
 }
@@ -393,7 +394,7 @@ func TestHandleSameRepoCursorMultipleDumpBatches(t *testing.T) {
 		limit:               5,
 	}
 
-	references, newCursor, hasNewCursor, err := rpr.dispatchCursorHandler(Cursor{
+	references, newCursor, hasNewCursor, err := rpr.dispatchCursorHandler(context.Background(), Cursor{
 		Phase:                  "same-repo",
 		DumpID:                 42,
 		Scheme:                 "gomod",
@@ -414,8 +415,8 @@ func TestHandleSameRepoCursorMultipleDumpBatches(t *testing.T) {
 		{Dump: testDump3, Path: "sub3/baz.go", Range: testRange3},
 		{Dump: testDump3, Path: "sub3/bonk.go", Range: testRange4},
 	}
-	if !reflect.DeepEqual(references, expectedReferences) {
-		t.Errorf("unexpected references. want=%v have=%v", expectedReferences, references)
+	if diff := cmp.Diff(references, expectedReferences); diff != "" {
+		t.Errorf("unexpected references (-want +got):\n%s", diff)
 	}
 
 	expectedNewCursor := Cursor{
@@ -433,8 +434,8 @@ func TestHandleSameRepoCursorMultipleDumpBatches(t *testing.T) {
 	}
 	if !hasNewCursor {
 		t.Errorf("expected new cursor")
-	} else if !reflect.DeepEqual(newCursor, expectedNewCursor) {
-		t.Errorf("unexpected new cursor. want=%v have=%v", expectedNewCursor, newCursor)
+	} else if diff := cmp.Diff(newCursor, expectedNewCursor); diff != "" {
+		t.Errorf("unexpected new cursor (-want +got):\n%s", diff)
 	}
 }
 
@@ -478,7 +479,7 @@ func TestHandleRemoteRepoCursor(t *testing.T) {
 			limit:               5,
 		}
 
-		references, newCursor, hasNewCursor, err := rpr.resolvePage(Cursor{
+		references, newCursor, hasNewCursor, err := rpr.resolvePage(context.Background(), Cursor{
 			Phase:      "remote-repo",
 			DumpID:     42,
 			Scheme:     "gomod",
@@ -497,8 +498,8 @@ func TestHandleRemoteRepoCursor(t *testing.T) {
 			{Dump: testDump2, Path: "sub2/bonk.go", Range: testRange4},
 			{Dump: testDump2, Path: "sub2/quux.go", Range: testRange5},
 		}
-		if !reflect.DeepEqual(references, expectedReferences) {
-			t.Errorf("unexpected references. want=%v have=%v", expectedReferences, references)
+		if diff := cmp.Diff(references, expectedReferences); diff != "" {
+			t.Errorf("unexpected references (-want +got):\n%s", diff)
 		}
 
 		expectedNewCursor := Cursor{
@@ -516,8 +517,8 @@ func TestHandleRemoteRepoCursor(t *testing.T) {
 		}
 		if !hasNewCursor {
 			t.Errorf("expected new cursor")
-		} else if !reflect.DeepEqual(newCursor, expectedNewCursor) {
-			t.Errorf("unexpected new cursor. want=%v have=%v", expectedNewCursor, newCursor)
+		} else if diff := cmp.Diff(newCursor, expectedNewCursor); diff != "" {
+			t.Errorf("unexpected new cursor (-want +got):\n%s", diff)
 		}
 	})
 
@@ -543,7 +544,7 @@ func TestHandleRemoteRepoCursor(t *testing.T) {
 			limit:               5,
 		}
 
-		references, _, hasNewCursor, err := rpr.resolvePage(Cursor{
+		references, _, hasNewCursor, err := rpr.resolvePage(context.Background(), Cursor{
 			Phase:      "remote-repo",
 			DumpID:     42,
 			Scheme:     "gomod",
@@ -562,8 +563,8 @@ func TestHandleRemoteRepoCursor(t *testing.T) {
 			{Dump: testDump3, Path: "sub3/bonk.go", Range: testRange4},
 			{Dump: testDump4, Path: "sub4/quux.go", Range: testRange5},
 		}
-		if !reflect.DeepEqual(references, expectedReferences) {
-			t.Errorf("unexpected references. want=%v have=%v", expectedReferences, references)
+		if diff := cmp.Diff(references, expectedReferences); diff != "" {
+			t.Errorf("unexpected references (-want +got):\n%s", diff)
 		}
 		if hasNewCursor {
 			t.Errorf("unexpected new cursor")
@@ -598,7 +599,7 @@ func TestHandleRemoteRepoCursorMultipleDumpBatches(t *testing.T) {
 		limit:               5,
 	}
 
-	references, newCursor, hasNewCursor, err := rpr.dispatchCursorHandler(Cursor{
+	references, newCursor, hasNewCursor, err := rpr.dispatchCursorHandler(context.Background(), Cursor{
 		Phase:                  "remote-repo",
 		DumpID:                 42,
 		Scheme:                 "gomod",
@@ -619,8 +620,8 @@ func TestHandleRemoteRepoCursorMultipleDumpBatches(t *testing.T) {
 		{Dump: testDump3, Path: "sub3/baz.go", Range: testRange3},
 		{Dump: testDump3, Path: "sub3/bonk.go", Range: testRange4},
 	}
-	if !reflect.DeepEqual(references, expectedReferences) {
-		t.Errorf("unexpected references. want=%v have=%v", expectedReferences, references)
+	if diff := cmp.Diff(references, expectedReferences); diff != "" {
+		t.Errorf("unexpected references (-want +got):\n%s", diff)
 	}
 
 	expectedNewCursor := Cursor{
@@ -638,8 +639,8 @@ func TestHandleRemoteRepoCursorMultipleDumpBatches(t *testing.T) {
 	}
 	if !hasNewCursor {
 		t.Errorf("expected new cursor")
-	} else if !reflect.DeepEqual(newCursor, expectedNewCursor) {
-		t.Errorf("unexpected new cursor. want=%v have=%v", expectedNewCursor, newCursor)
+	} else if diff := cmp.Diff(newCursor, expectedNewCursor); diff != "" {
+		t.Errorf("unexpected new cursor (-want +got):\n%s", diff)
 	}
 }
 
@@ -686,8 +687,8 @@ func TestApplyBloomFilter(t *testing.T) {
 				filteredDumpIDs = append(filteredDumpIDs, reference.DumpID)
 			}
 
-			if !reflect.DeepEqual(filteredDumpIDs, testCase.expectedDumpIDs) {
-				t.Errorf("unexpected filtered references ids. want=%v have=%v", testCase.expectedDumpIDs, filteredDumpIDs)
+			if diff := cmp.Diff(filteredDumpIDs, testCase.expectedDumpIDs); diff != "" {
+				t.Errorf("unexpected filtered references ids (-want +got):\n%s", diff)
 			}
 		})
 	}

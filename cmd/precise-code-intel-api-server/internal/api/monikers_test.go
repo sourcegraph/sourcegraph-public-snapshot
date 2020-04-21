@@ -1,9 +1,9 @@
 package api
 
 import (
-	"reflect"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/bundles"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/db"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/mocks"
@@ -31,7 +31,7 @@ func TestLookupMoniker(t *testing.T) {
 		t.Fatalf("unexpected error querying moniker: %s", err)
 	}
 	if totalCount != 15 {
-		t.Errorf("unexpected total count. want=%v have=%v", 5, totalCount)
+		t.Errorf("unexpected total count. want=%d have=%d", 5, totalCount)
 	}
 
 	expectedLocations := []ResolvedLocation{
@@ -41,8 +41,8 @@ func TestLookupMoniker(t *testing.T) {
 		{Dump: testDump2, Path: "sub2/bar.go", Range: testRange4},
 		{Dump: testDump2, Path: "sub2/baz.go", Range: testRange5},
 	}
-	if !reflect.DeepEqual(locations, expectedLocations) {
-		t.Errorf("unexpected definitions. want=%v have=%v", expectedLocations, locations)
+	if diff := cmp.Diff(locations, expectedLocations); diff != "" {
+		t.Errorf("unexpected definitions (-want +got):\n%s", diff)
 	}
 }
 
@@ -55,7 +55,7 @@ func TestLookupMonikerNoPackageInformationID(t *testing.T) {
 		t.Fatalf("unexpected error querying moniker: %s", err)
 	}
 	if totalCount != 0 {
-		t.Errorf("unexpected total count. want=%v have=%v", 0, totalCount)
+		t.Errorf("unexpected total count. want=%d have=%d", 0, totalCount)
 	}
 }
 
@@ -73,6 +73,6 @@ func TestLookupMonikerNoPackage(t *testing.T) {
 		t.Fatalf("unexpected error querying moniker: %s", err)
 	}
 	if totalCount != 0 {
-		t.Errorf("unexpected total count. want=%v have=%v", 0, totalCount)
+		t.Errorf("unexpected total count. want=%d have=%d", 0, totalCount)
 	}
 }

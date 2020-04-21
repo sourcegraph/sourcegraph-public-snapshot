@@ -1,9 +1,9 @@
 package api
 
 import (
-	"reflect"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/bundles"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/db"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/mocks"
@@ -38,8 +38,8 @@ func TestSerializationRoundTrip(t *testing.T) {
 		t.Fatalf("unexpected error decoding cursor: %s", err)
 	}
 
-	if !reflect.DeepEqual(c, roundtripped) {
-		t.Errorf("unexpected cursor. want=%v have=%v", c, roundtripped)
+	if diff := cmp.Diff(c, roundtripped); diff != "" {
+		t.Errorf("unexpected cursor (-want +got):\n%s", diff)
 	}
 }
 
@@ -63,8 +63,8 @@ func TestDecodeOrCreateCursor(t *testing.T) {
 
 	if cursor, err := DecodeOrCreateCursor("sub1/main.go", 10, 20, 42, "", mockDB, mockBundleManagerClient); err != nil {
 		t.Fatalf("unexpected error decoding cursor: %s", err)
-	} else if !reflect.DeepEqual(cursor, expectedCursor) {
-		t.Errorf("unexpected cursor. want=%v have=%v", expectedCursor, cursor)
+	} else if diff := cmp.Diff(cursor, expectedCursor); diff != "" {
+		t.Errorf("unexpected cursor (-want +got):\n%s", diff)
 	}
 }
 
@@ -74,7 +74,7 @@ func TestDecodeOrCreateCursorUnknownDump(t *testing.T) {
 	setMockDBGetDumpByID(t, mockDB, nil)
 
 	if _, err := DecodeOrCreateCursor("sub1/main.go", 10, 20, 42, "", mockDB, mockBundleManagerClient); err != ErrMissingDump {
-		t.Fatalf("unexpected error decoding cursor. want=%v have =%v", ErrMissingDump, err)
+		t.Fatalf("unexpected error decoding cursor. want=%q have =%q", ErrMissingDump, err)
 	}
 }
 
@@ -107,7 +107,7 @@ func TestDecodeOrCreateCursorExisting(t *testing.T) {
 
 	if cursor, err := DecodeOrCreateCursor("", 0, 0, 0, EncodeCursor(expectedCursor), mockDB, mockBundleManagerClient); err != nil {
 		t.Fatalf("unexpected error decoding cursor: %s", err)
-	} else if !reflect.DeepEqual(cursor, expectedCursor) {
-		t.Errorf("unexpected cursor. want=%v have=%v", expectedCursor, cursor)
+	} else if diff := cmp.Diff(cursor, expectedCursor); diff != "" {
+		t.Errorf("unexpected cursor (-want +got):\n%s", diff)
 	}
 }

@@ -2,9 +2,9 @@ package db
 
 import (
 	"context"
-	"reflect"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
@@ -46,7 +46,7 @@ func TestSameRepoPager(t *testing.T) {
 	defer func() { _ = pager.CloseTx(nil) }()
 
 	if totalCount != 5 {
-		t.Errorf("unexpected dump. want=%v have=%v", 5, totalCount)
+		t.Errorf("unexpected dump. want=%d have=%d", 5, totalCount)
 	}
 
 	expected := []Reference{
@@ -59,8 +59,8 @@ func TestSameRepoPager(t *testing.T) {
 
 	if references, err := pager.PageFromOffset(0); err != nil {
 		t.Fatalf("unexpected error getting next page: %s", err)
-	} else if !reflect.DeepEqual(references, expected) {
-		t.Errorf("unexpected references. want=%v have=%v", expected, references)
+	} else if diff := cmp.Diff(references, expected); diff != "" {
+		t.Errorf("unexpected references (-want +got):\n%s", diff)
 	}
 }
 
@@ -78,7 +78,7 @@ func TestSameRepoPagerEmpty(t *testing.T) {
 	defer func() { _ = pager.CloseTx(nil) }()
 
 	if totalCount != 0 {
-		t.Errorf("unexpected dump. want=%v have=%v", 0, totalCount)
+		t.Errorf("unexpected dump. want=%d have=%d", 0, totalCount)
 	}
 }
 
@@ -124,7 +124,7 @@ func TestSameRepoPagerMultiplePages(t *testing.T) {
 	defer func() { _ = pager.CloseTx(nil) }()
 
 	if totalCount != 9 {
-		t.Errorf("unexpected dump. want=%v have=%v", 9, totalCount)
+		t.Errorf("unexpected dump. want=%d have=%d", 9, totalCount)
 	}
 
 	expected := []Reference{
@@ -147,8 +147,8 @@ func TestSameRepoPagerMultiplePages(t *testing.T) {
 
 		if references, err := pager.PageFromOffset(lo); err != nil {
 			t.Fatalf("unexpected error getting page at offset %d: %s", lo, err)
-		} else if !reflect.DeepEqual(references, expected[lo:hi]) {
-			t.Errorf("unexpected references at offset %d. want=%v have=%v", lo, expected[lo:hi], references)
+		} else if diff := cmp.Diff(references, expected[lo:hi]); diff != "" {
+			t.Errorf("unexpected references at offset %d (-want +got):\n%s", lo, diff)
 		}
 	}
 }
@@ -192,7 +192,7 @@ func TestSameRepoPagerVisibility(t *testing.T) {
 	defer func() { _ = pager.CloseTx(nil) }()
 
 	if totalCount != 3 {
-		t.Errorf("unexpected dump. want=%v have=%v", 5, totalCount)
+		t.Errorf("unexpected dump. want=%d have=%d", 5, totalCount)
 	}
 
 	expected := []Reference{
@@ -203,8 +203,8 @@ func TestSameRepoPagerVisibility(t *testing.T) {
 
 	if references, err := pager.PageFromOffset(0); err != nil {
 		t.Fatalf("unexpected error getting next page: %s", err)
-	} else if !reflect.DeepEqual(references, expected) {
-		t.Errorf("unexpected references. want=%v have=%v", expected, references)
+	} else if diff := cmp.Diff(references, expected); diff != "" {
+		t.Errorf("unexpected references (-want +got):\n%s", diff)
 	}
 }
 
@@ -242,7 +242,7 @@ func TestPackageReferencePager(t *testing.T) {
 	defer func() { _ = pager.CloseTx(nil) }()
 
 	if totalCount != 5 {
-		t.Errorf("unexpected dump. want=%v have=%v", 5, totalCount)
+		t.Errorf("unexpected dump. want=%d have=%d", 5, totalCount)
 	}
 
 	expected := []Reference{
@@ -255,8 +255,8 @@ func TestPackageReferencePager(t *testing.T) {
 
 	if references, err := pager.PageFromOffset(0); err != nil {
 		t.Fatalf("unexpected error getting next page: %s", err)
-	} else if !reflect.DeepEqual(references, expected) {
-		t.Errorf("unexpected references. want=%v have=%v", expected, references)
+	} else if diff := cmp.Diff(references, expected); diff != "" {
+		t.Errorf("unexpected references (-want +got):\n%s", diff)
 	}
 }
 
@@ -274,7 +274,7 @@ func TestPackageReferencePagerEmpty(t *testing.T) {
 	defer func() { _ = pager.CloseTx(nil) }()
 
 	if totalCount != 0 {
-		t.Errorf("unexpected dump. want=%v have=%v", 0, totalCount)
+		t.Errorf("unexpected dump. want=%d have=%d", 0, totalCount)
 	}
 }
 
@@ -316,7 +316,7 @@ func TestPackageReferencePagerPages(t *testing.T) {
 	defer func() { _ = pager.CloseTx(nil) }()
 
 	if totalCount != 9 {
-		t.Errorf("unexpected dump. want=%v have=%v", 9, totalCount)
+		t.Errorf("unexpected dump. want=%d have=%d", 9, totalCount)
 	}
 
 	testCases := []struct {
@@ -350,8 +350,8 @@ func TestPackageReferencePagerPages(t *testing.T) {
 	for _, testCase := range testCases {
 		if references, err := pager.PageFromOffset(testCase.offset); err != nil {
 			t.Fatalf("unexpected error getting page at offset %d: %s", testCase.offset, err)
-		} else if !reflect.DeepEqual(references, expected[testCase.lo:testCase.hi]) {
-			t.Errorf("unexpected references at offset %d. want=%v have=%v", testCase.offset, expected[testCase.lo:testCase.hi], references)
+		} else if diff := cmp.Diff(references, expected[testCase.lo:testCase.hi]); diff != "" {
+			t.Errorf("unexpected references at offset %d (-want +got):\n%s", testCase.offset, diff)
 		}
 	}
 }

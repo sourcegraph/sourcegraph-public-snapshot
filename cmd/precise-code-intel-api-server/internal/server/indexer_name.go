@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"compress/gzip"
 	"encoding/json"
-	"fmt"
+	"errors"
 	"io"
 	"os"
 )
@@ -18,7 +18,7 @@ type toolInfo struct {
 	Name string `json:"name"`
 }
 
-var ErrInvalidMetaDataVertex = fmt.Errorf("invalid metadata vertex")
+var ErrInvalidMetaDataVertex = errors.New("invalid metadata vertex")
 
 // readIndexerNameFromFile returns the name of the tool that generated
 // the given index file. This function reads only the first line of the
@@ -53,7 +53,7 @@ func readIndexerName(r io.Reader) (string, error) {
 		return "", err
 	}
 	if isPrefix {
-		return "", fmt.Errorf("metaData vertex exceeds buffer")
+		return "", errors.New("metaData vertex exceeds buffer")
 	}
 
 	meta := metaDataVertex{}

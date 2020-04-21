@@ -5,18 +5,16 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"reflect"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestExists(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != "GET" {
-			t.Errorf("unexpected method. want=%s have=%s", "GET", r.Method)
-		}
-		if r.URL.Path != "/dbs/42/exists" {
-			t.Errorf("unexpected path. want=%s have=%s", "/dbs/42/exists", r.URL.Path)
-		}
+		assertRequest(t, r, "GET", "/dbs/42/exists", map[string]string{
+			"path": "main.go",
+		})
 
 		_, _ = w.Write([]byte(`true`))
 	}))
@@ -46,21 +44,11 @@ func TestExistsBadResponse(t *testing.T) {
 
 func TestDefinitions(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		expectedQuery := map[string]string{
+		assertRequest(t, r, "GET", "/dbs/42/definitions", map[string]string{
 			"path":      "main.go",
 			"line":      "10",
 			"character": "20",
-		}
-
-		if r.Method != "GET" {
-			t.Errorf("unexpected method. want=%s have=%s", "GET", r.Method)
-		}
-		if r.URL.Path != "/dbs/42/definitions" {
-			t.Errorf("unexpected path. want=%s have=%s", "/dbs/42/exists", r.URL.Path)
-		}
-		if !compareQuery(r.URL.Query(), expectedQuery) {
-			t.Errorf("unexpected query. want=%v have=%s", expectedQuery, r.URL.Query().Encode())
-		}
+		})
 
 		_, _ = w.Write([]byte(`[
 			{"path": "foo.go", "range": {"start": {"line": 1, "character": 2}, "end": {"line": 3, "character": 4}}},
@@ -78,28 +66,18 @@ func TestDefinitions(t *testing.T) {
 	definitions, err := client.Definitions(context.Background(), "main.go", 10, 20)
 	if err != nil {
 		t.Fatalf("unexpected error querying definitions: %s", err)
-	} else if !reflect.DeepEqual(definitions, expected) {
-		t.Errorf("unexpected definitions. want=%v have=%v", expected, definitions)
+	} else if diff := cmp.Diff(definitions, expected); diff != "" {
+		t.Errorf("unexpected definitions (-want +got):\n%s", diff)
 	}
 }
 
 func TestReferences(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		expectedQuery := map[string]string{
+		assertRequest(t, r, "GET", "/dbs/42/references", map[string]string{
 			"path":      "main.go",
 			"line":      "10",
 			"character": "20",
-		}
-
-		if r.Method != "GET" {
-			t.Errorf("unexpected method. want=%s have=%s", "GET", r.Method)
-		}
-		if r.URL.Path != "/dbs/42/references" {
-			t.Errorf("unexpected path. want=%s have=%s", "/dbs/42/exists", r.URL.Path)
-		}
-		if !compareQuery(r.URL.Query(), expectedQuery) {
-			t.Errorf("unexpected query. want=%v have=%s", expectedQuery, r.URL.Query().Encode())
-		}
+		})
 
 		_, _ = w.Write([]byte(`[
 			{"path": "foo.go", "range": {"start": {"line": 1, "character": 2}, "end": {"line": 3, "character": 4}}},
@@ -117,28 +95,18 @@ func TestReferences(t *testing.T) {
 	references, err := client.References(context.Background(), "main.go", 10, 20)
 	if err != nil {
 		t.Fatalf("unexpected error querying references: %s", err)
-	} else if !reflect.DeepEqual(references, expected) {
-		t.Errorf("unexpected references. want=%v have=%v", expected, references)
+	} else if diff := cmp.Diff(references, expected); diff != "" {
+		t.Errorf("unexpected references (-want +got):\n%s", diff)
 	}
 }
 
 func TestHover(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		expectedQuery := map[string]string{
+		assertRequest(t, r, "GET", "/dbs/42/hover", map[string]string{
 			"path":      "main.go",
 			"line":      "10",
 			"character": "20",
-		}
-
-		if r.Method != "GET" {
-			t.Errorf("unexpected method. want=%s have=%s", "GET", r.Method)
-		}
-		if r.URL.Path != "/dbs/42/hover" {
-			t.Errorf("unexpected path. want=%s have=%s", "/dbs/42/exists", r.URL.Path)
-		}
-		if !compareQuery(r.URL.Query(), expectedQuery) {
-			t.Errorf("unexpected query. want=%v have=%s", expectedQuery, r.URL.Query().Encode())
-		}
+		})
 
 		_, _ = w.Write([]byte(`{
 			"text": "starts the program",
@@ -164,29 +132,19 @@ func TestHover(t *testing.T) {
 	} else {
 		if text != expectedText {
 			t.Errorf("unexpected hover text. want=%v have=%v", expectedText, text)
-		} else if !reflect.DeepEqual(r, expectedRange) {
-			t.Errorf("unexpected hover range. want=%v have=%v", expectedRange, r)
+		} else if diff := cmp.Diff(r, expectedRange); diff != "" {
+			t.Errorf("unexpected hover range (-want +got):\n%s", diff)
 		}
 	}
 }
 
 func TestHoverNull(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		expectedQuery := map[string]string{
+		assertRequest(t, r, "GET", "/dbs/42/hover", map[string]string{
 			"path":      "main.go",
 			"line":      "10",
 			"character": "20",
-		}
-
-		if r.Method != "GET" {
-			t.Errorf("unexpected method. want=%s have=%s", "GET", r.Method)
-		}
-		if r.URL.Path != "/dbs/42/hover" {
-			t.Errorf("unexpected path. want=%s have=%s", "/dbs/42/exists", r.URL.Path)
-		}
-		if !compareQuery(r.URL.Query(), expectedQuery) {
-			t.Errorf("unexpected query. want=%v have=%s", expectedQuery, r.URL.Query().Encode())
-		}
+		})
 
 		_, _ = w.Write([]byte(`null`))
 	}))
@@ -203,21 +161,11 @@ func TestHoverNull(t *testing.T) {
 
 func TestMonikersByPosition(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		expectedQuery := map[string]string{
+		assertRequest(t, r, "GET", "/dbs/42/monikersByPosition", map[string]string{
 			"path":      "main.go",
 			"line":      "10",
 			"character": "20",
-		}
-
-		if r.Method != "GET" {
-			t.Errorf("unexpected method. want=%s have=%s", "GET", r.Method)
-		}
-		if r.URL.Path != "/dbs/42/monikersByPosition" {
-			t.Errorf("unexpected path. want=%s have=%s", "/dbs/42/monikersByPosition", r.URL.Path)
-		}
-		if !compareQuery(r.URL.Query(), expectedQuery) {
-			t.Errorf("unexpected query. want=%v have=%s", expectedQuery, r.URL.Query().Encode())
-		}
+		})
 
 		_, _ = w.Write([]byte(`[
 			[{
@@ -254,29 +202,19 @@ func TestMonikersByPosition(t *testing.T) {
 	monikers, err := client.MonikersByPosition(context.Background(), "main.go", 10, 20)
 	if err != nil {
 		t.Fatalf("unexpected error querying monikers by position: %s", err)
-	} else if !reflect.DeepEqual(monikers, expected) {
-		t.Errorf("unexpected moniker data. want=%v have=%v", expected, monikers)
+	} else if diff := cmp.Diff(monikers, expected); diff != "" {
+		t.Errorf("unexpected moniker data (-want +got):\n%s", diff)
 	}
 }
 
 func TestMonikerResults(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		expectedQuery := map[string]string{
+		assertRequest(t, r, "GET", "/dbs/42/monikerResults", map[string]string{
 			"modelType":  "definitions",
 			"scheme":     "gomod",
 			"identifier": "leftpad",
 			"take":       "25",
-		}
-
-		if r.Method != "GET" {
-			t.Errorf("unexpected method. want=%s have=%s", "GET", r.Method)
-		}
-		if r.URL.Path != "/dbs/42/monikerResults" {
-			t.Errorf("unexpected path. want=%s have=%s", "/dbs/42/monikerResults", r.URL.Path)
-		}
-		if !compareQuery(r.URL.Query(), expectedQuery) {
-			t.Errorf("unexpected query. want=%v have=%s", expectedQuery, r.URL.Query().Encode())
-		}
+		})
 
 		_, _ = w.Write([]byte(`{
 			"locations": [
@@ -302,27 +240,17 @@ func TestMonikerResults(t *testing.T) {
 	if count != 5 {
 		t.Errorf("unexpected count. want=%v have=%v", 2, count)
 	}
-	if !reflect.DeepEqual(locations, expected) {
-		t.Errorf("unexpected locations. want=%v have=%v", expected, locations)
+	if diff := cmp.Diff(locations, expected); diff != "" {
+		t.Errorf("unexpected locations (-want +got):\n%s", diff)
 	}
 }
 
 func TestPackageInformation(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		expectedQuery := map[string]string{
+		assertRequest(t, r, "GET", "/dbs/42/packageInformation", map[string]string{
 			"path":                 "main.go",
 			"packageInformationId": "123",
-		}
-
-		if r.Method != "GET" {
-			t.Errorf("unexpected method. want=%s have=%s", "GET", r.Method)
-		}
-		if r.URL.Path != "/dbs/42/packageInformation" {
-			t.Errorf("unexpected path. want=%s have=%s", "/dbs/42/packageInformation", r.URL.Path)
-		}
-		if !compareQuery(r.URL.Query(), expectedQuery) {
-			t.Errorf("unexpected query. want=%v have=%s", expectedQuery, r.URL.Query().Encode())
-		}
+		})
 
 		_, _ = w.Write([]byte(`{"name": "leftpad", "version": "0.1.0"}`))
 	}))
@@ -337,8 +265,20 @@ func TestPackageInformation(t *testing.T) {
 	packageInformation, err := client.PackageInformation(context.Background(), "main.go", "123")
 	if err != nil {
 		t.Fatalf("unexpected error querying package information: %s", err)
-	} else if !reflect.DeepEqual(packageInformation, expected) {
-		t.Errorf("unexpected package information. want=%v have=%v", expected, packageInformation)
+	} else if diff := cmp.Diff(packageInformation, expected); diff != "" {
+		t.Errorf("unexpected package information (-want +got):\n%s", diff)
+	}
+}
+
+func assertRequest(t *testing.T, r *http.Request, expectedMethod, expectedPath string, expectedQuery map[string]string) {
+	if r.Method != expectedMethod {
+		t.Errorf("unexpected method. want=%s have=%s", expectedMethod, r.Method)
+	}
+	if r.URL.Path != expectedPath {
+		t.Errorf("unexpected path. want=%s have=%s", expectedPath, r.URL.Path)
+	}
+	if !compareQuery(r.URL.Query(), expectedQuery) {
+		t.Errorf("unexpected query. want=%v have=%s", expectedQuery, r.URL.Query().Encode())
 	}
 }
 
@@ -348,5 +288,5 @@ func compareQuery(query url.Values, expected map[string]string) bool {
 		values[k] = v[0]
 	}
 
-	return reflect.DeepEqual(values, expected)
+	return cmp.Diff(values, expected) == ""
 }

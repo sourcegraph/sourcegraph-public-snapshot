@@ -2,11 +2,12 @@ package db
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"reflect"
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
@@ -59,8 +60,8 @@ func TestGetUploadByID(t *testing.T) {
 		t.Fatalf("unexpected error getting upload: %s", err)
 	} else if !exists {
 		t.Fatal("expected record to exist")
-	} else if !reflect.DeepEqual(upload, expected) {
-		t.Errorf("unexpected upload. want=%v have=%v", expected, upload)
+	} else if diff := cmp.Diff(upload, expected); diff != "" {
+		t.Errorf("unexpected upload (-want +got):\n%s", diff)
 	}
 }
 
@@ -179,8 +180,8 @@ func TestGetUploadsByRepo(t *testing.T) {
 					ids = append(ids, upload.ID)
 				}
 
-				if !reflect.DeepEqual(ids, testCase.expectedIDs[lo:hi]) {
-					t.Errorf("unexpected upload ids at offset %d. want=%v have=%v", lo, testCase.expectedIDs[lo:hi], ids)
+				if diff := cmp.Diff(ids, testCase.expectedIDs[lo:hi]); diff != "" {
+					t.Errorf("unexpected upload ids at offset %d (-want +got):\n%s", lo, diff)
 				}
 			}
 		})
@@ -235,8 +236,8 @@ func TestEnqueue(t *testing.T) {
 		// Update auto-generated timestamp
 		expected.UploadedAt = upload.UploadedAt
 
-		if !reflect.DeepEqual(upload, expected) {
-			t.Errorf("unexpected upload. want=%v have=%v", expected, upload)
+		if diff := cmp.Diff(upload, expected); diff != "" {
+			t.Errorf("unexpected upload (-want +got):\n%s", diff)
 		}
 	}
 }
@@ -252,7 +253,7 @@ func TestEnqueueRollback(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error enqueueing upload: %s", err)
 	}
-	_ = closer.CloseTx(fmt.Errorf(""))
+	_ = closer.CloseTx(errors.New(""))
 
 	// Upload does not exist after rollback
 	if _, exists, err := db.GetUploadByID(context.Background(), id); err != nil {
@@ -284,8 +285,8 @@ func TestGetStates(t *testing.T) {
 
 	if states, err := db.GetStates(context.Background(), []int{1, 2, 4, 6}); err != nil {
 		t.Fatalf("unexpected error getting states: %s", err)
-	} else if !reflect.DeepEqual(states, expected) {
-		t.Errorf("unexpected upload states. want=%v have=%v", expected, states)
+	} else if diff := cmp.Diff(states, expected); diff != "" {
+		t.Errorf("unexpected upload states (-want +got):\n%s", diff)
 	}
 }
 
@@ -375,14 +376,10 @@ func TestDeleteUploadByIDUpdatesVisibility(t *testing.T) {
 		t.Fatalf("expected call to getTipCommit")
 	}
 
-	expected := map[int]bool{
-		2: true,
-		3: true,
-		4: false,
-	}
-
-	if visibilities := getDumpVisibilities(t, db.db); !reflect.DeepEqual(visibilities, expected) {
-		t.Errorf("unexpected visibility. want=%v have=%v", expected, visibilities)
+	expected := map[int]bool{2: true, 3: true, 4: false}
+	visibilities := getDumpVisibilities(t, db.db)
+	if diff := cmp.Diff(visibilities, expected); diff != "" {
+		t.Errorf("unexpected visibility (-want +got):\n%s", diff)
 	}
 }
 
@@ -423,7 +420,7 @@ func TestResetStalled(t *testing.T) {
 
 	if ids, err := db.ResetStalled(context.Background(), now); err != nil {
 		t.Fatalf("unexpected error resetting stalled uploads: %s", err)
-	} else if !reflect.DeepEqual(ids, expected) {
-		t.Errorf("unexpected ids. want=%v have=%v", expected, ids)
+	} else if diff := cmp.Diff(ids, expected); diff != "" {
+		t.Errorf("unexpected ids (-want +got):\n%s", diff)
 	}
 }

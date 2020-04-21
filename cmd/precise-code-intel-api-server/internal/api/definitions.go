@@ -8,8 +8,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/db"
 )
 
-func (api *codeIntelAPI) Definitions(file string, line, character, uploadID int) ([]ResolvedLocation, error) {
-	dump, exists, err := api.db.GetDumpByID(context.Background(), uploadID)
+// Definitions returns the list of source locations that define the symbol at the given position.
+// This may include remote definitions if the remote repository is also indexed.
+func (api *codeIntelAPI) Definitions(ctx context.Context, file string, line, character, uploadID int) ([]ResolvedLocation, error) {
+	dump, exists, err := api.db.GetDumpByID(ctx, uploadID)
 	if err != nil {
 		return nil, err
 	}
@@ -19,11 +21,11 @@ func (api *codeIntelAPI) Definitions(file string, line, character, uploadID int)
 
 	pathInBundle := strings.TrimPrefix(file, dump.Root)
 	bundleClient := api.bundleManagerClient.BundleClient(dump.ID)
-	return api.definitionsRaw(dump, bundleClient, pathInBundle, line, character)
+	return api.definitionsRaw(ctx, dump, bundleClient, pathInBundle, line, character)
 }
 
-func (api *codeIntelAPI) definitionsRaw(dump db.Dump, bundleClient bundles.BundleClient, pathInBundle string, line, character int) ([]ResolvedLocation, error) {
-	locations, err := bundleClient.Definitions(context.Background(), pathInBundle, line, character)
+func (api *codeIntelAPI) definitionsRaw(ctx context.Context, dump db.Dump, bundleClient bundles.BundleClient, pathInBundle string, line, character int) ([]ResolvedLocation, error) {
+	locations, err := bundleClient.Definitions(ctx, pathInBundle, line, character)
 	if err != nil {
 		return nil, err
 	}
@@ -65,8 +67,8 @@ func (api *codeIntelAPI) definitionsRaw(dump db.Dump, bundleClient bundles.Bundl
 	return nil, nil
 }
 
-func (api *codeIntelAPI) definitionRaw(dump db.Dump, bundleClient bundles.BundleClient, pathInBundle string, line, character int) (ResolvedLocation, bool, error) {
-	resolved, err := api.definitionsRaw(dump, bundleClient, pathInBundle, line, character)
+func (api *codeIntelAPI) definitionRaw(ctx context.Context, dump db.Dump, bundleClient bundles.BundleClient, pathInBundle string, line, character int) (ResolvedLocation, bool, error) {
+	resolved, err := api.definitionsRaw(ctx, dump, bundleClient, pathInBundle, line, character)
 	if err != nil || len(resolved) == 0 {
 		return ResolvedLocation{}, false, err
 	}

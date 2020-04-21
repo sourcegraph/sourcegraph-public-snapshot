@@ -27,7 +27,7 @@ func TestReadIndexerName(t *testing.T) {
 func TestReadIndexerNameMalformed(t *testing.T) {
 	for _, metaDataVertex := range []string{`invalid json`, `{"label": "textDocument/references"}`} {
 		if _, err := readIndexerName(generateTestIndex(metaDataVertex)); err != ErrInvalidMetaDataVertex {
-			t.Fatalf("unexpected error reading indexer name. want=%s have=%s", ErrInvalidMetaDataVertex, err)
+			t.Fatalf("unexpected error reading indexer name. want=%q have=%q", ErrInvalidMetaDataVertex, err)
 		}
 	}
 }
@@ -55,7 +55,7 @@ func TestReadIndexerNameFromFile(t *testing.T) {
 		t.Fatalf("unexpected error reading from file %s", err)
 	}
 	if firstLine != testMetaDataVertex {
-		t.Errorf("unexpected buffer location. want=%s have=%s", testMetaDataVertex, firstLine)
+		t.Errorf("unexpected buffer location. want=%q have=%q", testMetaDataVertex, firstLine)
 	}
 }
 

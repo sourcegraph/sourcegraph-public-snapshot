@@ -7,15 +7,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/db"
 )
 
-func (api *codeIntelAPI) FindClosestDumps(repositoryID int, commit, file string) ([]db.Dump, error) {
-	candidates, err := api.db.FindClosestDumps(context.Background(), repositoryID, commit, file)
+// FindClosestDumps returns the set of dumps that can most accurately answer code intelligence
+// queries for the given file. These IDs should be subsequently passed to invocations of Definitions,
+// References, and Hover.
+func (api *codeIntelAPI) FindClosestDumps(ctx context.Context, repositoryID int, commit, file string) ([]db.Dump, error) {
+	candidates, err := api.db.FindClosestDumps(ctx, repositoryID, commit, file)
 	if err != nil {
 		return nil, err
 	}
 
 	var dumps []db.Dump
 	for _, dump := range candidates {
-		exists, err := api.bundleManagerClient.BundleClient(dump.ID).Exists(context.Background(), strings.TrimPrefix(file, dump.Root))
+		exists, err := api.bundleManagerClient.BundleClient(dump.ID).Exists(ctx, strings.TrimPrefix(file, dump.Root))
 		if err != nil {
 			return nil, err
 		}

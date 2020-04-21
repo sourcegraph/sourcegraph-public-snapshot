@@ -1,9 +1,10 @@
 package api
 
 import (
-	"reflect"
+	"context"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/bundles"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/db"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/mocks"
@@ -35,7 +36,7 @@ func TestFindClosestDatabase(t *testing.T) {
 	setMockBundleClientExists(t, mockBundleClient4, "s1/main.go", false)
 
 	api := New(mockDB, mockBundleManagerClient)
-	dumps, err := api.FindClosestDumps(42, testCommit, "s1/main.go")
+	dumps, err := api.FindClosestDumps(context.Background(), 42, testCommit, "s1/main.go")
 	if err != nil {
 		t.Errorf("unexpected error finding closest database: %s", err)
 	}
@@ -44,7 +45,7 @@ func TestFindClosestDatabase(t *testing.T) {
 		{ID: 50, Root: "s1/"},
 		{ID: 52, Root: "s1/"},
 	}
-	if !reflect.DeepEqual(dumps, expected) {
-		t.Errorf("unexpected file. want=%v have=%v", expected, dumps)
+	if diff := cmp.Diff(dumps, expected); diff != "" {
+		t.Errorf("unexpected dumps (-want +got):\n%s", diff)
 	}
 }

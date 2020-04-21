@@ -147,6 +147,7 @@ func (s *Server) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 // GET /exists
 func (s *Server) handleExists(w http.ResponseWriter, r *http.Request) {
 	dumps, err := s.api.FindClosestDumps(
+		context.Background(),
 		getQueryInt(r, "repositoryId"),
 		getQuery(r, "commit"),
 		getQuery(r, "path"),
@@ -163,6 +164,7 @@ func (s *Server) handleExists(w http.ResponseWriter, r *http.Request) {
 // GET /definitions
 func (s *Server) handleDefinitions(w http.ResponseWriter, r *http.Request) {
 	defs, err := s.api.Definitions(
+		context.Background(),
 		getQuery(r, "path"),
 		getQueryInt(r, "line"),
 		getQueryInt(r, "character"),
@@ -212,6 +214,7 @@ func (s *Server) handleReferences(w http.ResponseWriter, r *http.Request) {
 	}
 
 	locations, newCursor, hasNewCursor, err := s.api.References(
+		context.Background(),
 		getQueryInt(r, "repositoryId"),
 		getQuery(r, "commit"),
 		getQueryInt(r, "limit"),
@@ -242,6 +245,7 @@ func (s *Server) handleReferences(w http.ResponseWriter, r *http.Request) {
 // GET /hover
 func (s *Server) handleHover(w http.ResponseWriter, r *http.Request) {
 	text, rn, exists, err := s.api.Hover(
+		context.Background(),
 		getQuery(r, "path"),
 		getQueryInt(r, "line"),
 		getQueryInt(r, "character"),

@@ -6,8 +6,9 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestSendUpload(t *testing.T) {
@@ -21,8 +22,8 @@ func TestSendUpload(t *testing.T) {
 
 		if content, err := ioutil.ReadAll(r.Body); err != nil {
 			t.Fatalf("unexpected error reading payload: %s", err)
-		} else if !reflect.DeepEqual(content, []byte("payload\n")) {
-			t.Errorf("unexpected request payload. want=%s have=%s", "payload\n", content)
+		} else if diff := cmp.Diff(content, []byte("payload\n")); diff != "" {
+			t.Errorf("unexpected request payload (-want +got):\n%s", diff)
 		}
 	}))
 	defer ts.Close()

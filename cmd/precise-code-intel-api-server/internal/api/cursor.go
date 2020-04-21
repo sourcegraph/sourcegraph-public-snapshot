@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/db"
 )
 
+// Cursor holds the complete state necessary to page through a reference result set.
 type Cursor struct {
 	Phase                  string                // common
 	DumpID                 int                   // common
@@ -29,11 +30,13 @@ type Cursor struct {
 	SkipResultsInDump      int                   // same-repo/remote-repo
 }
 
+// EncodeCursor returns an encoding of the given cursor suitable for a URL.
 func EncodeCursor(cursor Cursor) string {
 	rawEncoded, _ := json.Marshal(cursor)
 	return base64.RawURLEncoding.EncodeToString(rawEncoded)
 }
 
+// decodeCursor is the inverse of EncodeCursor.
 func decodeCursor(rawEncoded string) (cursor Cursor, err error) {
 	raw, err := base64.RawURLEncoding.DecodeString(rawEncoded)
 	if err != nil {
@@ -44,6 +47,8 @@ func decodeCursor(rawEncoded string) (cursor Cursor, err error) {
 	return
 }
 
+// DecodeOrCreateCursor decodes and returns the raw cursor, or creates a new initial page cursor
+// if a raw cursor is not supplied.
 func DecodeOrCreateCursor(path string, line, character, uploadID int, rawCursor string, db db.DB, bundleManagerClient bundles.BundleManagerClient) (Cursor, error) {
 	if rawCursor != "" {
 		cursor, err := decodeCursor(rawCursor)

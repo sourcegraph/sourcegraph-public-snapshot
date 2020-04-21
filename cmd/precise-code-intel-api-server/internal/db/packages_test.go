@@ -2,10 +2,10 @@ package db
 
 import (
 	"context"
-	"reflect"
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
@@ -70,7 +70,7 @@ func TestGetPackage(t *testing.T) {
 		t.Fatalf("unexpected error getting package: %s", err)
 	} else if !exists {
 		t.Fatal("expected record to exist")
-	} else if !reflect.DeepEqual(dump, expected) {
-		t.Errorf("unexpected dump. want=%v have=%v", expected, dump)
+	} else if diff := cmp.Diff(dump, expected); diff != "" {
+		t.Errorf("unexpected dump (-want +got):\n%s", diff)
 	}
 }

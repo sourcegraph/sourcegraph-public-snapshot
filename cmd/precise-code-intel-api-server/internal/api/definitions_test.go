@@ -1,9 +1,10 @@
 package api
 
 import (
-	"reflect"
+	"context"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/bundles"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/db"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/mocks"
@@ -23,7 +24,7 @@ func TestDefinitions(t *testing.T) {
 	})
 
 	api := New(mockDB, mockBundleManagerClient)
-	definitions, err := api.Definitions("sub1/main.go", 10, 50, 42)
+	definitions, err := api.Definitions(context.Background(), "sub1/main.go", 10, 50, 42)
 	if err != nil {
 		t.Fatalf("expected error getting definitions: %s", err)
 	}
@@ -33,8 +34,8 @@ func TestDefinitions(t *testing.T) {
 		{Dump: testDump1, Path: "sub1/bar.go", Range: testRange2},
 		{Dump: testDump1, Path: "sub1/baz.go", Range: testRange3},
 	}
-	if !reflect.DeepEqual(definitions, expectedDefinitions) {
-		t.Errorf("unexpected definitions. want=%v have=%v", expectedDefinitions, definitions)
+	if diff := cmp.Diff(definitions, expectedDefinitions); diff != "" {
+		t.Errorf("unexpected definitions (-want +got):\n%s", diff)
 	}
 }
 
@@ -44,8 +45,8 @@ func TestDefinitionsUnknownDump(t *testing.T) {
 	setMockDBGetDumpByID(t, mockDB, nil)
 
 	api := New(mockDB, mockBundleManagerClient)
-	if _, err := api.Definitions("sub1/main.go", 10, 50, 25); err != ErrMissingDump {
-		t.Errorf("unexpected error getting definitions. want=%v have=%v", ErrMissingDump, err)
+	if _, err := api.Definitions(context.Background(), "sub1/main.go", 10, 50, 25); err != ErrMissingDump {
+		t.Errorf("unexpected error getting definitions. want=%q have=%q", ErrMissingDump, err)
 	}
 }
 
@@ -65,7 +66,7 @@ func TestDefinitionViaSameDumpMoniker(t *testing.T) {
 	}, 3)
 
 	api := New(mockDB, mockBundleManagerClient)
-	definitions, err := api.Definitions("sub1/main.go", 10, 50, 42)
+	definitions, err := api.Definitions(context.Background(), "sub1/main.go", 10, 50, 42)
 	if err != nil {
 		t.Fatalf("expected error getting definitions: %s", err)
 	}
@@ -75,8 +76,8 @@ func TestDefinitionViaSameDumpMoniker(t *testing.T) {
 		{Dump: testDump1, Path: "sub1/bar.go", Range: testRange2},
 		{Dump: testDump1, Path: "sub1/baz.go", Range: testRange3},
 	}
-	if !reflect.DeepEqual(definitions, expectedDefinitions) {
-		t.Errorf("unexpected definitions. want=%v have=%v", expectedDefinitions, definitions)
+	if diff := cmp.Diff(definitions, expectedDefinitions); diff != "" {
+		t.Errorf("unexpected definitions (-want +got):\n%s", diff)
 	}
 }
 
@@ -99,7 +100,7 @@ func TestDefinitionViaRemoteDumpMoniker(t *testing.T) {
 	}, 15)
 
 	api := New(mockDB, mockBundleManagerClient)
-	definitions, err := api.Definitions("sub1/main.go", 10, 50, 42)
+	definitions, err := api.Definitions(context.Background(), "sub1/main.go", 10, 50, 42)
 	if err != nil {
 		t.Fatalf("expected error getting definitions: %s", err)
 	}
@@ -109,7 +110,7 @@ func TestDefinitionViaRemoteDumpMoniker(t *testing.T) {
 		{Dump: testDump2, Path: "sub2/bar.go", Range: testRange2},
 		{Dump: testDump2, Path: "sub2/baz.go", Range: testRange3},
 	}
-	if !reflect.DeepEqual(definitions, expectedDefinitions) {
-		t.Errorf("unexpected definitions. want=%v have=%v", expectedDefinitions, definitions)
+	if diff := cmp.Diff(definitions, expectedDefinitions); diff != "" {
+		t.Errorf("unexpected definitions (-want +got):\n%s", diff)
 	}
 }
