@@ -3,6 +3,7 @@ on:
   - push
 jobs:
   lsif-go:
+    runs-on: ubuntu-latest
     container: sourcegraph/lsif-go
     steps:
       - uses: actions/checkout@v1
@@ -12,6 +13,7 @@ jobs:
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
 
   lsif-web:
+    runs-on: ubuntu-latest
     container: sourcegraph/lsif-node
     steps:
       - uses: actions/checkout@v1
@@ -27,6 +29,7 @@ jobs:
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
 
   lsif-precise-code-intel:
+    runs-on: ubuntu-latest
     container: sourcegraph/lsif-node
     defaults:
       run:
@@ -41,6 +44,7 @@ jobs:
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
 
   lsif-shared:
+    runs-on: ubuntu-latest
     container: sourcegraph/lsif-node
     steps:
       - uses: actions/checkout@v1
@@ -56,6 +60,7 @@ jobs:
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
 
   lsif-browser:
+    runs-on: ubuntu-latest
     container: sourcegraph/lsif-node
     steps:
       - uses: actions/checkout@v1
