@@ -749,6 +749,8 @@ func (*GitHubWebhook) checkRunEvent(cr *gh.CheckRun) *github.CheckRun {
 // Upsert ensures the creation of the BitbucketServer campaigns webhook.
 // This happens periodically at the specified interval.
 func (h *BitbucketServerWebhook) Upsert(every time.Duration) {
+	secrets := make(map[int64]string)
+
 	externalURL := func() string {
 		return conf.Cached(func() interface{} {
 			return conf.Get().ExternalURL
@@ -769,9 +771,15 @@ func (h *BitbucketServerWebhook) Upsert(every time.Duration) {
 				defer cancel()
 
 				c, _ := e.Configuration()
-
 				con, ok := c.(*schema.BitbucketServerConnection)
 				if !ok {
+					return nil
+				}
+
+				secret := con.WebhookSecret()
+				oldSecret, ok := secrets[e.ID]
+				if ok && oldSecret == secret {
+					// Nothing has changed since our last check
 					return nil
 				}
 
@@ -780,18 +788,18 @@ func (h *BitbucketServerWebhook) Upsert(every time.Duration) {
 					return errors.Wrap(err, "creating client")
 				}
 
-				secret := con.WebhookSecret()
 				if secret == "" {
-					// Delete it in case it was created in the past
+					// Secret is now blank, delete hook
 					err = client.DeleteWebhook(ctx, h.Name)
 					if err != nil {
 						return errors.Wrap(err, "deleting webhook")
 					}
+					secrets[e.ID] = secret
 					return nil
 				}
 
+				// Secret has changed to a non blank value, upsert
 				endpoint := externalURL() + "/.api/bitbucket-server-webhooks"
-
 				wh := bbs.Webhook{
 					Name:     h.Name,
 					Scope:    "global",
@@ -801,7 +809,11 @@ func (h *BitbucketServerWebhook) Upsert(every time.Duration) {
 				}
 
 				err = client.UpsertWebhook(context.Background(), wh)
-				return errors.Wrap(err, "upserting webhook")
+				if err != nil {
+					return errors.Wrap(err, "upserting webhook")
+				}
+				secrets[e.ID] = secret
+				return nil
 			}()
 
 			if err != nil {
