@@ -136,7 +136,7 @@ If you need more directories (outside of the repository) to be persisted across 
 }
 ```
 
-Note the `cacheDirs` properties used by each step. For every entry in `cacheDirs` `src action exec` will create a temporary directory that persists across all steps and which is then mounted under the specified name into the container.
+Note the `cacheDirs` properties used by each step. For every entry in `cacheDirs`, `src action exec` will create a temporary directory that persists across all steps and which is then mounted under the specified name into the container.
 
 This can be used, for example, to cache package manager installations across multiple steps.
 
