@@ -794,12 +794,12 @@ const externalServiceIDParam = "externalServiceID"
 
 // syncWebook ensures that the webhook has been configured correctly on Bitbucket. If no secret has been set, we delete
 // the exising webhook config.
-func (h *BitbucketServerWebhook) syncWebhook(id int64, con *schema.BitbucketServerConnection, externalURL string) error {
+func (h *BitbucketServerWebhook) syncWebhook(externalServiceID int64, con *schema.BitbucketServerConnection, externalURL string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	secret := con.WebhookSecret()
-	oldSecret, ok := h.secrets[id]
+	oldSecret, ok := h.secrets[externalServiceID]
 
 	if ok && oldSecret == secret {
 		// Nothing has changed since our last check
@@ -819,12 +819,12 @@ func (h *BitbucketServerWebhook) syncWebhook(id int64, con *schema.BitbucketServ
 		if err != nil {
 			return errors.Wrap(err, "deleting webhook")
 		}
-		h.secrets[id] = secret
+		h.secrets[externalServiceID] = secret
 		return nil
 	}
 
 	// Secret has changed to a non blank value, upsert
-	endpoint := fmt.Sprintf("%s/.api/bitbucket-server-webhooks?%s=%d", externalURL, externalServiceIDParam, id)
+	endpoint := fmt.Sprintf("%s/.api/bitbucket-server-webhooks?%s=%d", externalURL, externalServiceIDParam, externalServiceID)
 	wh := bbs.Webhook{
 		Name:     h.Name,
 		Scope:    "global",
@@ -837,7 +837,7 @@ func (h *BitbucketServerWebhook) syncWebhook(id int64, con *schema.BitbucketServ
 	if err != nil {
 		return errors.Wrap(err, "upserting webhook")
 	}
-	h.secrets[id] = secret
+	h.secrets[externalServiceID] = secret
 	return nil
 }
 
