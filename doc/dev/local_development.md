@@ -51,19 +51,19 @@ The following are two recommendations for installing these dependencies:
 
     optionally via `brew`
 
-    ```bash
+    ```
     brew cask install docker
     ```
 
 3.  Install Go, Node Version Manager, PostgreSQL, Redis, Git, NGINX, golang-migrate, Comby, and SQLite tools with the following command:
 
-    ```bash
+    ```
     brew install go yarn redis postgresql git gnu-sed nginx golang-migrate comby sqlite pcre FiloSottile/musl-cross/musl-cross
     ```
 
 4.  Install the Node Version Manager (`nvm`) using:
 
-    ```bash
+    ```
     NVM_VERSION="$(curl https://api.github.com/repos/nvm-sh/nvm/releases/latest | jq -r .name)"
     curl -L https://raw.githubusercontent.com/nvm-sh/nvm/"$NVM_VERSION"/install.sh -o install-nvm.sh
     sh install-nvm.sh
@@ -81,7 +81,7 @@ The following are two recommendations for installing these dependencies:
 5.  Install the current recommended version of Node JS by running the following
     from the working directory of a sourcegraph repository clone:
 
-    ```bash
+    ```
     nvm install
     nvm use --delete-prefix
     ```
@@ -95,7 +95,7 @@ The following are two recommendations for installing these dependencies:
 
 6.  Configure PostgreSQL and Redis to start automatically
 
-    ```bash
+    ```
     brew services start postgresql
     brew services start redis
     ```
@@ -105,7 +105,7 @@ The following are two recommendations for installing these dependencies:
 7.  Ensure `psql`, the PostgreSQL command line client, is on your `$PATH`.
     Homebrew does not put it there by default. Homebrew gives you the command to run to insert `psql` in your path in the "Caveats" section of `brew info postgresql`. Alternatively, you can use the command below. It might need to be adjusted depending on your Homebrew prefix (`/usr/local` below) and shell (bash below).
 
-    ```bash
+    ```
     hash psql || { echo 'export PATH="/usr/local/opt/postgresql/bin:$PATH"' >> ~/.bash_profile }
     source ~/.bash_profile
     ```
@@ -117,7 +117,7 @@ The following are two recommendations for installing these dependencies:
 
 1. Add package repositories:
 
-    ```bash
+    ```
     # Go
     sudo add-apt-repository ppa:longsleep/golang-backports
 
@@ -132,13 +132,13 @@ The following are two recommendations for installing these dependencies:
 
 2. Update repositories:
 
-    ```bash
+    ```
     sudo apt-get update
     ```
 
 3. Install dependencies:
 
-    ```bash
+    ```
     sudo apt install -y make git-all postgresql postgresql-contrib redis-server nginx libpcre3-dev libsqlite3-dev pkg-config golang-go musl-tools docker-ce docker-ce-cli containerd.io yarn
 
     # install golang-migrate (you must move the extracted binary into your $PATH)
@@ -156,7 +156,7 @@ The following are two recommendations for installing these dependencies:
 
 4. Configure startup services
 
-    ```bash
+    ```
     sudo systemctl enable postgresql
     sudo systemctl enable redis-server.service
     ```
@@ -165,7 +165,7 @@ The following are two recommendations for installing these dependencies:
 
     In this case you should not enable the `redis-server.service` from the previous step.
 
-    ```bash
+    ```
     dockerd # if docker isn't already running
     docker run -p 6379:6379 -v $REDIS_DATA_DIR redis
     # $REDIS_DATA_DIR should be an absolute path to a folder where you intend to store Redis data
@@ -230,25 +230,25 @@ You need a fresh Postgres database and a database user that has full ownership o
 
 1. Create a database for the current Unix user
 
-    ```bash
+    ```
     # For Linux users, first access the postgres user shell
     sudo su - postgres
     ```
 
-    ```bash
+    ```
     createdb
     ```
 
 2. Create the Sourcegraph user and password
 
-    ```bash
+    ```
     createuser --superuser sourcegraph
     psql -c "ALTER USER sourcegraph WITH PASSWORD 'sourcegraph';"
     ```
 
 3. Create the Sourcegraph database
 
-    ```bash
+    ```
     createdb --owner=sourcegraph --encoding=UTF8 --template=template0 sourcegraph
     ```
 
@@ -258,7 +258,7 @@ You need a fresh Postgres database and a database user that has full ownership o
 
     Add these, for example, in your `~/.bashrc`:
 
-    ```bash
+    ```
     export PGPORT=5432
     export PGHOST=localhost
     export PGUSER=sourcegraph
