@@ -4,7 +4,7 @@ COPY monitoring /go/src/monitoring-generator
 WORKDIR /go/src/monitoring-generator
 RUN CGO_ENABLED=0 go build -o /go/bin/monitoring-generator
 RUN mkdir -p /generated/grafana
-RUN PROMETHEUS_DIR='' GRAFANA_DIR=/generated/grafana /go/bin/monitoring-generator
+RUN DOC_SOLUTIONS_FILE='' PROMETHEUS_DIR='' GRAFANA_DIR=/generated/grafana /go/bin/monitoring-generator
 
 RUN apk add --no-cache bash=5.0.11-r1 git=2.24.3-r0  openssh=8.1_p1-r0 build-base=0.5-r1
 
