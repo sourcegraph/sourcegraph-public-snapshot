@@ -71,7 +71,7 @@ Make sure you have [enabled LSIF code intelligence](lsif.md#enabling-lsif-on-you
 
 Once the LSIF data is uploaded, navigate to a code file for the targeted language in the repository (or sub-directory) the LSIF index was generated from. LSIF data should now be the source of hover-tooltips, definitions, and references for that file.
 
-To verify that LSIF is correctly enabled, hover over a symbol and ensure that its hover text is not decorated with a ![tooltip](img/basic-code-intel-tooltip.svg) tooltip. This icon indicates the results are from search-based [basic code intelligence](./basic_code_intelligence.md) and should be absent when results are precise (from an LSIF index or a [Language Server](./language_servers.md)).
+To verify that LSIF is correctly enabled, hover over a symbol and ensure that its hover text is not decorated with a ![tooltip](img/basic-code-intel-tooltip.svg) tooltip. This icon indicates the results are from search-based [basic code intelligence](./basic_code_intelligence.md) and should be absent when results are precise.
 
 ## 5. Productionize the process
 
