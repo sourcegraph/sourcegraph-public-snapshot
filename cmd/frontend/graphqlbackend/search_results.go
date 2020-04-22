@@ -886,7 +886,7 @@ func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, e
 		if err != nil {
 			return nil, err
 		}
-		if *settings.SearchUpperCase {
+		if v:= settings.SearchUpperCase; v != nil && *v {
 			q.Query = query.SearchUpperCase(q.Query)
 		}
 		return r.evaluate(ctx, q.Query)
