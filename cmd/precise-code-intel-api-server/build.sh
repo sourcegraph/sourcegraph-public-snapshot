@@ -17,9 +17,8 @@ export GOARCH=amd64
 export GOOS=linux
 
 echo "--- go build"
-for pkg in github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server; do
-  go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION" -buildmode exe -tags dist -o $OUTPUT/$(basename $pkg) $pkg
-done
+pkg="github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server"
+go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION" -buildmode exe -tags dist -o "$OUTPUT/$(basename $pkg)" "$pkg"
 
 echo "--- docker build"
 docker build -f cmd/precise-code-intel-api-server/Dockerfile -t "$IMAGE" "$OUTPUT" \
