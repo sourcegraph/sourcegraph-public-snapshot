@@ -47,7 +47,9 @@ See this video for a demonstration of lifecycle of a Campaign:
   </figure>
 </div>
 
-1. With the `src` CLI the user **generates a set of patches** by running `gofmt` over every repository that has a `go.mod` file, leveraging Sourcegraphs search capabilities. This is called **executing an _action_** (an _action_ is a series of commands and Docker containers to run in each repository) and yields **set of patches**, one for each repository, which you can inspect either in the CLI or in the Sourcegraph UI.
+1. With the `src` CLI the user **generates a set of patches** by running `gofmt` over every repository that has a `go.mod` file, leveraging Sourcegraphs search capabilities.
+
+    This is called **executing an _action_** (an _action_ is a series of commands and Docker containers to run in each repository) and yields **set of patches**, one for each repository, which you can inspect either in the CLI or in the Sourcegraph UI.
 1. The patches are then used to **create a draft Campaign**.
 1. At this point, since it's a draft Camapaign, no changesets (_pull requests_ in the case of GitHub here) have been created on the code host.
 1. The user then selectively **creates GitHub pull requests** by publishing single patches.

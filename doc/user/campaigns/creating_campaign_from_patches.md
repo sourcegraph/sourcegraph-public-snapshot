@@ -32,119 +32,115 @@ Read on detailed steps and documentation and see "[Actions](./actions.md)" for m
 
 If you have not done so already, first [install](https://github.com/sourcegraph/src-cli), [set up and configure](https://github.com/sourcegraph/src-cli#setup) the `src` CLI to point to your Sourcegraph instance.
 
-## 1. Defining an action
+## Steps
 
-The first thing we need is a definition of an "action". An action contains a list of steps to run in each repository returned by the results of the `scopeQuery` search string.
+1. **Defining an action**
 
-There are two types of steps: `docker` and `command`. See "[Actions](./actions.md)" for more information.
+    The first thing we need is a definition of an "action". An action contains a list of steps to run in each repository returned by the results of the `scopeQuery` search string. There are two types of steps: `docker` and `command`. See "[Actions](./actions.md)" for more information.
 
-Here is an example of a multi-step action definition using the `docker` and `command` types:
+    Here is an example of a multi-step action definition using the `docker` and `command` types:
 
-```json
-{
-  "scopeQuery": "repo:go-* -repohasfile:INSTALL.md",
-  "steps": [
+    ```
     {
-      "type": "command",
-      "args": ["sh", "-c", "echo '# Installation' > INSTALL.md"]
-    },
-    {
-      "type": "command",
-      "args": ["sed", "-i", "", "s/No install instructions/See INSTALL.md/", "README.md"]
-    },
-    {
-      "type": "docker",
-      "dockerfile": "FROM alpine:3 \n CMD find /work -iname '*.md' -type f | xargs -n 1 sed -i s/this/that/g"
-    },
-    {
-      "type": "docker",
-      "image": "golang:1.13-alpine",
-      "args": ["go", "fix", "/work/..."]
+      "scopeQuery": "repo:go-* -repohasfile:INSTALL.md",
+      "steps": [
+        {
+          "type": "command",
+          "args": ["sh", "-c", "echo '# Installation' > INSTALL.md"]
+        },
+        {
+          "type": "command",
+          "args": ["sed", "-i", "", "s/No install instructions/See INSTALL.md/", "README.md"]
+        },
+        {
+          "type": "docker",
+          "image": "golang:1.13-alpine",
+          "args": ["go", "fix", "/work/..."]
+        }
+      ]
     }
-  ]
-}
-```
+    ```
 
-This action will be executed for each repository that has `go-` in its name and doesn't have an `INSTALL.md` file.
+    **Save that definition in a file called `action.json` (or any other name of your choosing).**
 
-1. The first step (a `command` step) creates an `INSTALL.md` file in the root directory of each repository by running `sh` in a temporary copy of each repository. **This is executed on the machine on which `src` is being run.** Note that the first element in `"args"` is the command itself.
+    This action will be executed for each repository that has `go-` in its name and doesn't have an `INSTALL.md` file.
 
-2. The second step, again a `"command"` step, runs the `sed` command to replace text in the `README.md` file in the root of each repository (the `-i ''` argument is only necessary for BSD versions of `sed` that usually come with macOS). Please note that the executed command is simply `sed` which means its arguments are _not_ expanded, as they would be in a shell. To achieve that, execute the `sed` as part of a shell invocation (using `sh -c` and passing in a single argument, for example, like in the first step).
+    - **The first step** (a `command` step) creates an `INSTALL.md` file in the root directory of each repository by running `sh` in a temporary copy of each repository. This is executed on the machine on which `src` is being run.
+    - **The second step**, again a `"command"` step, runs the `sed` command to replace text in the `README.md` file in the root of each repository (the `-i ''` argument is only necessary for BSD versions of `sed` that usually come with macOS).
 
-3. The third step builds a Docker image from the specified `"dockerfile"` and starts a container with this image in which the repository is mounted under `/work`.
+        > NOTE: The executed command is simply `sed` which means its arguments are _not_ expanded, as they would be in a shell. To achieve that, execute the `sed` as part of a shell invocation (using `sh -c` and passing in a single argument, for example, like in the first step).
 
-4. The fourth step starts a Docker container based on the `golang:1.13-alpine` image and runs `go fix /work/...` in it.
+    - **The third step** starts a Docker container based on the `golang:1.13-alpine` image and runs `go fix /work/...` in it.
 
-As you can see from these examples, the "output" of an action is the modified, local copy of a repository.
+    As you can see from these examples, the "output" of an action is the modified, local copy of a repository.
 
-Save that definition in a file called `action.json` (or any other name of your choosing).
 
-## 2. Executing an action to produce patches
+2. **Executing an action to produce patches**
 
-With our action file defined, we can now execute it:
+    With our action file defined, we can now execute it:
 
-```sh
-src actions exec -f action.json
-```
+    ```
+    src actions exec -f action.json
+    ```
 
-This command is going to:
+    This command is going to:
 
-1. Download a ZIP archive of each repository returned by the `"scopeQuery"` and extract it to a local temporary directory in `/tmp`.
-1. Execute the action for each repository in parallel, with each step in an action being executed sequentially on the same copy of a repository.
-1. Produce a patch for each repository with creating diff between a fresh copy of the repository and the directory in which the action ran.
+    1. Download a ZIP archive of each repository returned by the `"scopeQuery"` and extract it to a local temporary directory in `/tmp`.
+    1. Execute the action for each repository in parallel, with each step in an action being executed sequentially on the same copy of a repository.
+    1. Produce a patch for each repository with creating diff between a fresh copy of the repository and the directory in which the action ran.
 
-(See "[Actions](./actions.md)" for more information about how actions are executed.)
+    (See "[Actions](./actions.md)" for more information about how actions are executed.)
 
-The output, a set of patches, can either be saved into a file by redirecting it:
+    The output, a set of patches, can either be saved into a file by redirecting it:
 
-```sh
-src actions exec -f action.json > patches.json
-```
+    ```
+    src actions exec -f action.json > patches.json
+    ```
 
-Or it can be piped straight into the next command we're going to use to save the patches on the Sourcegraph instance:
+    Or it can be piped straight into the next command we're going to use to save the patches on the Sourcegraph instance:
 
-```sh
-src actions exec -f action.json | src campaign patchset create-from-patches
-```
+    ```
+    src actions exec -f action.json | src campaign patchset create-from-patches
+    ```
 
-## 3. Creating a patch set from patches
+3. **Creating a patch set from patches**
 
-The next step is to save the set of patches on the Sourcegraph instance so they can be turned into a campaign.
+    The next step is to save the set of patches on the Sourcegraph instance so they can be turned into a campaign.
 
-To do that, run:
+    To do that, run:
 
-```sh
-src campaign patchset create-from-patches < patches.json
-```
+    ```
+    src campaign patchset create-from-patches < patches.json
+    ```
 
-Or, again, pipe the patches directly into it:
+    Or, again, pipe the patches directly into it:
 
-```sh
-src actions exec -f action.json | src campaign patchset create-from-patches
-```
+    ```
+    src actions exec -f action.json | src campaign patchset create-from-patches
+    ```
 
-Once completed, the output will contain:
+    Once completed, the output will contain:
 
-- The URL to preview the changesets that would be created on the code hosts.
-- The command for the `src` SLI to create a campaign from the patch set.
+    - The URL to preview the changesets that would be created on the code hosts.
+    - The command for the `src` SLI to create a campaign from the patch set.
 
-## 4. Publishing a campaign
+4. **Publishing a campaign**
 
-If you're happy with the preview of the campaign, it's time to trigger the creation of changesets (pull requests) on the code host(s) by creating and publishing the campaign:
+    If you're happy with the preview of the campaign, it's time to trigger the creation of changesets (pull requests) on the code host(s) by creating and publishing the campaign:
 
-```sh
-src campaigns create -name='My campaign name' \
-   -desc='My first CLI-created campaign' \
-   -patchset=Q2FtcGFpZ25QbGFuOjg= \
-   -branch=my-first-campaign
-```
+    ```
+    src campaigns create -name='My campaign name' \
+      -desc='My first CLI-created campaign' \
+      -patchset=Q2FtcGFpZ25QbGFuOjg= \
+      -branch=my-first-campaign
+    ```
 
-Creating this campaign will asynchronously create a pull request for each repository that has a patch in the patch set. You can check the progress of campaign completion by viewing the campaign on your Sourcegraph instance.
+    Creating this campaign will asynchronously create a pull request for each repository that has a patch in the patch set. You can check the progress of campaign completion by viewing the campaign on your Sourcegraph instance.
 
-The `-branch` flag specifies the branch name that will be used for each pull request. If a branch with that name already exists for a repository, a fallback will be generated by appending a counter at the end of the name, e.g.: `my-first-campaign-1`.
+    The `-branch` flag specifies the branch name that will be used for each pull request. If a branch with that name already exists for a repository, a fallback will be generated by appending a counter at the end of the name, e.g.: `my-first-campaign-1`.
 
-If you have defined the `$EDITOR` environment variable, the configured editor will be used to edit the name and Markdown description of the campaign:
+    If you have defined the `$EDITOR` environment variable, the configured editor will be used to edit the name and Markdown description of the campaign:
 
-```sh
-src campaigns create -patchset=Q2FtcGFpZ25QbGFuOjg= -branch=my-first-campaign
-```
+    ```sh
+    src campaigns create -patchset=Q2FtcGFpZ25QbGFuOjg= -branch=my-first-campaign
+    ```
