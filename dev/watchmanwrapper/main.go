@@ -18,6 +18,8 @@ type Response struct {
 	Files           []string `json:"files"`
 }
 
+var neverRead = (chan<- []string)(make(chan []string))
+
 func main() {
 	cmd := exec.Command("watchman", "-j", "--server-encoding=json", "-p")
 	cmd.Stdin = os.Stdin
@@ -33,10 +35,11 @@ func main() {
 		fmt.Fprintln(os.Stderr, "!!! WATCHMAN debugging enabled")
 	}
 
+	pending := make(chan []string)
 	changed := make(chan []string)
 
 	// reads stdout of watchman process and sends the changed files on the
-	// changed channel.
+	// pending channel.
 	go func() {
 		dec := json.NewDecoder(stdout)
 		for {
@@ -52,11 +55,42 @@ func main() {
 				continue
 			}
 
-			changed <- r.Files
+			pending <- r.Files
 		}
 	}()
 
-	// reads the changed channel and runs the command os.Args[1] with the files as arguments
+	// reads pending and sends to changed. If there are pending files but
+	// handle changed process is running, this goroutine will continue to read
+	// from pending and merge the changed files into the list.
+	go func() {
+		seen := map[string]struct{}{}
+		var files []string
+		for {
+			// if we have no files to send then we make changedC a channel
+			// that blocks so we effectively only read pending.
+			changedC := neverRead
+			if len(files) > 0 {
+				changedC = changed
+			}
+
+			select {
+			case fs := <-pending:
+				for _, f := range fs {
+					if _, ok := seen[f]; !ok {
+						seen[f] = struct{}{}
+						files = append(files, f)
+					}
+				}
+
+			case changedC <- files:
+				files = nil
+				seen = map[string]struct{}{}
+			}
+		}
+	}()
+
+	// reads the changed channel and runs the command os.Args[1] with the
+	// files as arguments
 	go func() {
 		for files := range changed {
 			if debug {
