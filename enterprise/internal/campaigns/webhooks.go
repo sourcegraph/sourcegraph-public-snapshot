@@ -11,8 +11,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-
 	gh "github.com/google/go-github/v28/github"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
@@ -24,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	bbs "github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -775,7 +774,7 @@ func (h *BitbucketServerWebhook) Upsert(every time.Duration) {
 			}
 			err = upsertBitbucketWebhook(e.ID, con, h.Name, externalURL(), nil, secrets)
 			if err != nil {
-				log15.Error("Upserting BBS Webhook failed:", "err", err)
+				log15.Error("Upserting BBS Webhook failed", "err", err)
 			}
 		}
 
