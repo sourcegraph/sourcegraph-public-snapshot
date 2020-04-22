@@ -878,12 +878,6 @@ func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *repo
 		return nil, nil, &httpError{http.StatusInternalServerError, err}
 	}
 
-	args := repos.StoreListExternalServicesArgs{Kinds: []string{"BITBUCKETSERVER"}}
-	es, err := h.Repos.ListExternalServices(r.Context(), args)
-	if err != nil {
-		return nil, nil, &httpError{http.StatusInternalServerError, err}
-	}
-
 	sig := r.Header.Get("X-Hub-Signature")
 
 	rawID := r.FormValue(externalServiceIDParam)
@@ -894,6 +888,15 @@ func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *repo
 		if err != nil {
 			return nil, nil, &httpError{http.StatusBadRequest, errors.Wrap(err, "invalid external service id")}
 		}
+	}
+
+	args := repos.StoreListExternalServicesArgs{Kinds: []string{"BITBUCKETSERVER"}}
+	if externalServiceID != 0 {
+		args.IDs = append(args.IDs, externalServiceID)
+	}
+	es, err := h.Repos.ListExternalServices(r.Context(), args)
+	if err != nil {
+		return nil, nil, &httpError{http.StatusInternalServerError, err}
 	}
 
 	var extSvc *repos.ExternalService
