@@ -7,15 +7,15 @@ import (
 
 	"github.com/sourcegraph/go-lsp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/lsifserver/client"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/lsifserver/client"
 	"github.com/sourcegraph/sourcegraph/internal/lsif"
 )
 
 type lsifQueryResolver struct {
 	repositoryResolver *graphqlbackend.RepositoryResolver
 	// commit is the requested target commit
-	commit graphqlbackend.GitObjectID
+	commit api.CommitID
 	path   string
 	// uploads are ordered by their commit distance from the target commit
 	uploads []*lsif.LSIFUpload
@@ -36,7 +36,7 @@ func (r *lsifQueryResolver) Definitions(ctx context.Context, args *graphqlbacken
 
 		opts := &struct {
 			RepoID    api.RepoID
-			Commit    graphqlbackend.GitObjectID
+			Commit    api.CommitID
 			Path      string
 			Line      int32
 			Character int32
@@ -94,7 +94,7 @@ func (r *lsifQueryResolver) References(ctx context.Context, args *graphqlbackend
 
 		opts := &struct {
 			RepoID    api.RepoID
-			Commit    graphqlbackend.GitObjectID
+			Commit    api.CommitID
 			Path      string
 			Line      int32
 			Character int32
@@ -157,7 +157,7 @@ func (r *lsifQueryResolver) Hover(ctx context.Context, args *graphqlbackend.LSIF
 
 		text, lspRange, err := client.DefaultClient.Hover(ctx, &struct {
 			RepoID    api.RepoID
-			Commit    graphqlbackend.GitObjectID
+			Commit    api.CommitID
 			Path      string
 			Line      int32
 			Character int32

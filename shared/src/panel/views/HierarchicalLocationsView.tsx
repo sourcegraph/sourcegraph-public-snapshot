@@ -15,13 +15,14 @@ import { parseRepoURI } from '../../util/url'
 import { registerPanelToolbarContributions } from './contributions'
 import { FileLocations, FileLocationsError, FileLocationsNotFound } from './FileLocations'
 import { groupLocations } from './locations'
+import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 
 export interface HierarchicalLocationsViewProps extends ExtensionsControllerProps<'services'>, SettingsCascadeProps {
     location: H.Location
     /**
-     * The higher-order observable that emits the locations.
+     * The observable that emits the locations.
      */
-    locations: Observable<Observable<Location[] | null>>
+    locations: Observable<MaybeLoadingResult<Location[]>>
 
     /**
      * In the grouping (i.e., by repository and, optionally, then by file), this is the URI of the first group.
@@ -48,7 +49,7 @@ interface State {
      * Locations (inside files identified by LSP-style git:// URIs) to display, loading, or an error if they failed
      * to load.
      */
-    locationsOrError: { results?: Location[]; loading: boolean } | ErrorLike
+    locationsOrError: MaybeLoadingResult<Location[] | ErrorLike>
 
     selectedGroups?: string[]
 }
@@ -57,7 +58,7 @@ interface State {
  * Displays a multi-column view to drill down (by repository, file, etc.) to a list of locations in files.
  */
 export class HierarchicalLocationsView extends React.PureComponent<HierarchicalLocationsViewProps, State> {
-    public state: State = { locationsOrError: { loading: true } }
+    public state: State = { locationsOrError: { isLoading: true, result: [] } }
 
     private componentUpdates = new Subject<HierarchicalLocationsViewProps>()
     private subscriptions = new Subscription()
@@ -73,35 +74,24 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                 .pipe(
                     switchMap(locationProviderResults =>
                         locationProviderResults.pipe(
-                            switchMap(locations =>
-                                locations.pipe(
-                                    map(result => ({ results: result || [], loading: true })),
-                                    catchError((error): [ErrorLike] => [asError(error)]),
-                                    startWith<State['locationsOrError']>({ results: undefined, loading: true }),
-                                    tap(locationsOrError => {
-                                        const hasResults =
-                                            locationsOrError &&
-                                            !isErrorLike(locationsOrError) &&
-                                            !!locationsOrError.results &&
-                                            locationsOrError.results.length > 0
-                                        this.props.extensionsController.services.context.updateContext({
-                                            'panel.locations.hasResults': hasResults,
-                                        })
-                                    }),
-                                    endWith<State['locationsOrError']>({ loading: false })
-                                )
-                            )
+                            catchError((error): [MaybeLoadingResult<Location[] | ErrorLike>] => [
+                                { isLoading: false, result: asError(error) },
+                            ]),
+                            startWith({ result: [], isLoading: true }),
+                            tap(({ result }) => {
+                                const hasResults = !isErrorLike(result) && result.length > 0
+                                this.props.extensionsController.services.context.updateContext({
+                                    'panel.locations.hasResults': hasResults,
+                                })
+                            }),
+                            endWith({ isLoading: false })
                         )
                     )
                 )
-                .subscribe(
-                    locationsOrError =>
-                        this.setState(old => ({
-                            locationsOrError: isErrorLike(locationsOrError)
-                                ? locationsOrError
-                                : { ...old.locationsOrError, ...locationsOrError },
-                        })),
-                    error => console.error(error)
+                .subscribe(locationsOrError =>
+                    this.setState(previous => ({
+                        locationsOrError: { ...previous.locationsOrError, ...locationsOrError },
+                    }))
                 )
         )
 
@@ -119,16 +109,13 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
     }
 
     public render(): JSX.Element | null {
-        if (isErrorLike(this.state.locationsOrError)) {
-            return <FileLocationsError error={this.state.locationsOrError} />
+        if (isErrorLike(this.state.locationsOrError.result)) {
+            return <FileLocationsError error={this.state.locationsOrError.result} />
         }
-        if (
-            this.state.locationsOrError.loading &&
-            (!this.state.locationsOrError.results || this.state.locationsOrError.results.length === 0)
-        ) {
+        if (this.state.locationsOrError.isLoading && this.state.locationsOrError.result.length === 0) {
             return <LoadingSpinner className="icon-inline m-1 e2e-loading-spinner" />
         }
-        if (this.state.locationsOrError.results && this.state.locationsOrError.results.length === 0) {
+        if (this.state.locationsOrError.result.length === 0) {
             return <FileLocationsNotFound />
         }
 
@@ -156,7 +143,7 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
         }
 
         const { groups, selectedGroups, visibleLocations } = groupLocations<Location, string>(
-            this.state.locationsOrError.results || [],
+            this.state.locationsOrError.result,
             this.state.selectedGroups || null,
             GROUPS.map(({ key }) => key),
             { uri: this.props.defaultGroup }
@@ -230,10 +217,9 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                                                     </span>
                                                 </span>
                                             ))}
-                                            {!isErrorLike(this.state.locationsOrError) &&
-                                                this.state.locationsOrError.loading && (
-                                                    <LoadingSpinner className="icon-inline m-2 flex-shrink-0 e2e-loading-spinner" />
-                                                )}
+                                            {this.state.locationsOrError.isLoading && (
+                                                <LoadingSpinner className="icon-inline m-2 flex-shrink-0 e2e-loading-spinner" />
+                                            )}
                                         </div>
                                     }
                                 />

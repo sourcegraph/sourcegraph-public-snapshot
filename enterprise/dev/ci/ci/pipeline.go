@@ -66,7 +66,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// If this is a no-test branch, then run only the Docker build. No tests are run.
 		app := c.branch[27:]
 		pipelineOperations = []func(*bk.Pipeline){
-			addCanidateDockerImage(c, app),
+			addCandidateDockerImage(c, app),
 			wait,
 			addFinalDockerImage(c, app, false),
 		}

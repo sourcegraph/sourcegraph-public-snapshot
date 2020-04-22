@@ -10,7 +10,7 @@ import ErrorIcon from 'mdi-react/ErrorIcon'
 import { isErrorLike } from '../../../../../../shared/src/util/errors'
 
 interface Props {
-    changeset: Pick<IExternalChangeset, 'id' | 'updatedAt'>
+    changeset: Pick<IExternalChangeset, 'id' | 'nextSyncAt' | 'updatedAt'>
     campaignUpdates?: Pick<Observer<void>, 'next'>
 
     /** For testing purposes only */
@@ -43,6 +43,18 @@ export const ChangesetLastSynced: React.FunctionComponent<Props> = ({ changeset,
         }
     }
 
+    let tooltipText = ''
+    if (changeset.updatedAt === lastUpdatedAt) {
+        tooltipText = 'Currently refreshing'
+    } else {
+        if (!changeset.nextSyncAt) {
+            tooltipText = 'Not scheduled for syncing.'
+        } else {
+            tooltipText = `Next refresh in ${formatDistance(parseISO(changeset.nextSyncAt), _now ?? new Date())}.`
+        }
+        tooltipText += ' Click to prioritize refresh'
+    }
+
     const UpdateLoaderIcon =
         typeof lastUpdatedAt === 'string' && changeset.updatedAt === lastUpdatedAt ? LoadingSpinner : SyncIcon
 
@@ -52,11 +64,7 @@ export const ChangesetLastSynced: React.FunctionComponent<Props> = ({ changeset,
             {isErrorLike(lastUpdatedAt) && (
                 <ErrorIcon data-tooltip={lastUpdatedAt.message} className="ml-2 icon-inline small" />
             )}
-            <span
-                data-tooltip={
-                    changeset.updatedAt === lastUpdatedAt ? 'Currently refreshing' : 'Click to prioritize refresh'
-                }
-            >
+            <span data-tooltip={tooltipText}>
                 <UpdateLoaderIcon
                     className={classNames('icon-inline', typeof lastUpdatedAt !== 'string' && 'cursor-pointer')}
                     onClick={enqueueChangeset}

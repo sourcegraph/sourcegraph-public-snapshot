@@ -85,7 +85,7 @@ export interface UIPositionSpec {
     position: UIPosition
 }
 
-interface UIRangeSpec {
+export interface UIRangeSpec {
     /**
      * A 1-indexed range in the blob
      */
@@ -116,7 +116,7 @@ export interface ViewStateSpec {
  */
 export type RenderMode = 'code' | 'rendered' | undefined
 
-interface RenderModeSpec {
+export interface RenderModeSpec {
     /**
      * How the file should be rendered.
      */
@@ -471,11 +471,11 @@ export function encodeRepoRev(repo: string, rev?: string): string {
 }
 
 export function toPrettyBlobURL(
-    ctx: RepoFile & Partial<UIPositionSpec> & Partial<ViewStateSpec> & Partial<UIRangeSpec> & Partial<RenderModeSpec>
+    target: RepoFile & Partial<UIPositionSpec> & Partial<ViewStateSpec> & Partial<UIRangeSpec> & Partial<RenderModeSpec>
 ): string {
-    return `/${encodeRepoRev(ctx.repoName, ctx.rev)}/-/blob/${ctx.filePath}${toRenderModeQuery(
-        ctx
-    )}${toPositionOrRangeHash(ctx)}${toViewStateHashComponent(ctx.viewState)}`
+    return `/${encodeRepoRev(target.repoName, target.rev)}/-/blob/${target.filePath}${toRenderModeQuery(
+        target
+    )}${toPositionOrRangeHash(target)}${toViewStateHashComponent(target.viewState)}`
 }
 
 /**

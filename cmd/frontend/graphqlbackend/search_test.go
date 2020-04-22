@@ -3,10 +3,12 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"reflect"
 	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -14,7 +16,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	querytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestSearch(t *testing.T) {
@@ -82,6 +86,10 @@ func TestSearch(t *testing.T) {
 			conf.Mock(&conf.Unified{})
 			defer conf.Mock(nil)
 			vars := map[string]interface{}{"query": tc.searchQuery, "version": tc.searchVersion}
+
+			mockDecodedViewerFinalSettings = &schema.Settings{}
+			defer func() { mockDecodedViewerFinalSettings = nil }()
+
 			db.Mocks.Repos.List = tc.reposListMock
 			sr := &schemaResolver{}
 			schema, err := graphql.ParseSchema(Schema, sr, graphql.Tracer(prometheusTracer{}))
@@ -426,4 +434,47 @@ func Test_QuoteSuggestions(t *testing.T) {
 			t.Fatalf("got %d proposed queries (%v), want exactly 1", len(alert.proposedQueries), alert.proposedQueries)
 		}
 	})
+}
+
+func Test_queryForStableResults(t *testing.T) {
+	cases := []struct {
+		query           string
+		wantStableCount int32
+		wantError       error
+	}{
+		{
+			query:           "foo stable:yes",
+			wantStableCount: 30,
+		},
+		{
+			query:           "foo stable:yes count:1000",
+			wantStableCount: 1000,
+		},
+		{
+			query:     "foo stable:yes count:5001",
+			wantError: fmt.Errorf("Stable searches are limited to at max count:%d results. Consider removing 'stable:', narrowing the search with 'repo:', or using the paginated search API.", maxSearchResultsPerPaginatedRequest),
+		},
+	}
+	for _, c := range cases {
+		t.Run("query for stable results", func(t *testing.T) {
+			queryInfo, _ := query.Process(c.query, query.SearchTypeLiteral)
+			args, queryInfo, err := queryForStableResults(&SearchArgs{}, queryInfo)
+			if err != nil {
+				if !reflect.DeepEqual(err, c.wantError) {
+					t.Errorf("Got error %v, want %v", err, c.wantError)
+				}
+				return
+			}
+			if diff := cmp.Diff(*args.First, c.wantStableCount); diff != "" {
+				t.Error(diff)
+			}
+			// Ensure type:file is set.
+			fileValue := "file"
+			wantTypeValue := querytypes.Value{String: &fileValue}
+			gotTypeValues := queryInfo.Fields()["type"]
+			if len(gotTypeValues) != 1 && *gotTypeValues[0] != wantTypeValue {
+				t.Errorf("Query %s sets stable:yes but is not transformed with type:file.", c.query)
+			}
+		})
+	}
 }

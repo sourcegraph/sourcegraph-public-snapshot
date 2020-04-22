@@ -24,7 +24,7 @@ type CreateCampaignArgs struct {
 	Input struct {
 		Namespace   graphql.ID
 		Name        string
-		Description string
+		Description *string
 		Branch      *string
 		PatchSet    *graphql.ID
 		Draft       *bool
@@ -202,7 +202,7 @@ type ListChangesetsArgs struct {
 type CampaignResolver interface {
 	ID() graphql.ID
 	Name() string
-	Description() string
+	Description() *string
 	Branch() *string
 	Author(ctx context.Context) (*UserResolver, error)
 	ViewerCanAdminister(ctx context.Context) (bool, error)
@@ -243,6 +243,7 @@ type ExternalChangesetResolver interface {
 	ExternalID() string
 	CreatedAt() DateTime
 	UpdatedAt() DateTime
+	NextSyncAt() *DateTime
 	Title() (string, error)
 	Body() (string, error)
 	State() campaigns.ChangesetState

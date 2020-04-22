@@ -13,8 +13,8 @@ describe('Views (integration)', () => {
             panelView.priority = 3
             await extensionAPI.internal.sync()
 
-            const values = await services.views
-                .getViews(ContributableViewContainer.Panel)
+            const values = await services.panelViews
+                .getPanelViews(ContributableViewContainer.Panel)
                 .pipe(first(v => v.length > 0))
                 .toPromise()
             assertToJSON(values, [
@@ -42,8 +42,8 @@ describe('Views (integration)', () => {
             panelView.priority = 3
             panelView.component = { locationProvider: LOCATION_PROVIDER_ID }
 
-            const values = await services.views
-                .getViews(ContributableViewContainer.Panel)
+            const values = await services.panelViews
+                .getPanelViews(ContributableViewContainer.Panel)
                 .pipe(first(v => v.length > 0))
                 .toPromise()
             assertToJSON(

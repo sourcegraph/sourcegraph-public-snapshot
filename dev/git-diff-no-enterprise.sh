@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 
 function usage() {
-    echo "Usage:   ./git-diff-no-enterprise.sh <base> <head>"
-    echo "Example: ./git-diff-no-enterprise.sh oss/master HEAD"
-    echo 'Debug:   Set VERBOSE=1'
+  echo "Usage:   ./git-diff-no-enterprise.sh <base> <head>"
+  echo "Example: ./git-diff-no-enterprise.sh oss/master HEAD"
+  echo 'Debug:   Set VERBOSE=1'
 }
 
 if [ -z "$1" ] || [ -z "$2" ]; then
-    usage
-    exit 1
+  usage
+  exit 1
 fi
 
-if [ ! -z "$VERBOSE" ]; then
-    set -x
+if [ -n "$VERBOSE" ]; then
+  set -x
 fi
 set -euo pipefail
 

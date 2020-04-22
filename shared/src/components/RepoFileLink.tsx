@@ -43,7 +43,7 @@ export const RepoFileLink: React.FunctionComponent<Props> = ({
     return (
         <>
             <Link to={repoURL}>{repoDisplayName || displayRepoName(repoName)}</Link> ›{' '}
-            <Link to={fileURL}>
+            <Link to={`${fileURL}?subtree=true`}>
                 {fileBase ? `${fileBase}/` : null}
                 <strong>{fileName}</strong>
             </Link>

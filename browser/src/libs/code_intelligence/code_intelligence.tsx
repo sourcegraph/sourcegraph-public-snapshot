@@ -4,6 +4,7 @@ import {
     findPositionsFromEvents,
     Hoverifier,
     HoverState,
+    MaybeLoadingResult,
 } from '@sourcegraph/codeintellify'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import * as H from 'history'
@@ -37,11 +38,15 @@ import {
     startWith,
     distinctUntilChanged,
     retryWhen,
+    mapTo,
 } from 'rxjs/operators'
 import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
 import { DecorationMapByLine } from '../../../../shared/src/api/client/services/decoration'
 import { CodeEditorData, CodeEditorWithPartialModel } from '../../../../shared/src/api/client/services/editorService'
-import { PRIVATE_REPO_PUBLIC_SOURCEGRAPH_COM_ERROR_NAME } from '../../../../shared/src/backend/errors'
+import {
+    isPrivateRepoPublicSourcegraphComErrorLike,
+    isRepoNotFoundErrorLike,
+} from '../../../../shared/src/backend/errors'
 import {
     CommandListClassProps,
     CommandListPopoverButtonClassProps,
@@ -77,7 +82,7 @@ import {
 import { observeStorageKey } from '../../browser/storage'
 import { isInPage } from '../../context'
 import { SourcegraphIntegrationURLs, BrowserPlatformContext } from '../../platform/context'
-import { createLSPFromExtensions, toTextDocumentIdentifier } from '../../shared/backend/lsp'
+import { toTextDocumentIdentifier, toTextDocumentPositionParams } from '../../shared/backend/ext-api-conversion'
 import { CodeViewToolbar, CodeViewToolbarClassProps } from '../../shared/components/CodeViewToolbar'
 import { resolveRev, retryWhenCloneInProgressError } from '../../shared/repo/backend'
 import { EventLogger } from '../../shared/tracking/eventLogger'
@@ -352,8 +357,6 @@ function initCodeIntelligence({
 } {
     const subscription = new Subscription()
 
-    const { getHover } = createLSPFromExtensions(extensionsController)
-
     /** Emits when the close button was clicked */
     const closeButtonClicks = new Subject<MouseEvent>()
     const nextCloseButtonClick = closeButtonClicks.next.bind(closeButtonClicks)
@@ -385,11 +388,18 @@ function initCodeIntelligence({
         ),
         getHover: ({ line, character, part, ...rest }) =>
             combineLatest([
-                getHover({ ...rest, position: { line, character } }),
+                extensionsController.services.textDocumentHover.getHover(
+                    toTextDocumentPositionParams({ ...rest, position: { line, character } })
+                ),
                 getActiveHoverAlerts(hoverAlerts),
             ]).pipe(
-                map(([hoverMerged, alerts]): HoverData<ExtensionHoverAlertType> | null =>
-                    hoverMerged ? { ...hoverMerged, alerts } : null
+                map(
+                    ([{ isLoading, result: hoverMerged }, alerts]): MaybeLoadingResult<HoverData<
+                        ExtensionHoverAlertType
+                    > | null> => ({
+                        isLoading,
+                        result: hoverMerged ? { ...hoverMerged, alerts } : null,
+                    })
                 )
             ),
         getActions: context => getHoverActions({ extensionsController, platformContext }, context),
@@ -567,8 +577,6 @@ export function handleCodeHost({
     const subscriptions = new Subscription()
     const { requestGraphQL } = platformContext
 
-    const openOptionsMenu = (): Promise<void> => browser.runtime.sendMessage({ type: 'openOptionsPage' })
-
     const addedElements = mutations.pipe(
         concatAll(),
         concatMap(mutation => mutation.addedNodes),
@@ -659,12 +667,21 @@ export function handleCodeHost({
                 const { rawRepoName, rev } = getContext()
                 return resolveRev({ repoName: rawRepoName, rev, requestGraphQL }).pipe(
                     retryWhenCloneInProgressError(),
-                    map(rev => !!rev),
-                    catchError(error => [asError(error)]),
+                    mapTo(true),
+                    catchError(error => {
+                        if (isRepoNotFoundErrorLike(error)) {
+                            return [false]
+                        }
+                        return [asError(error)]
+                    }),
                     startWith(undefined)
                 )
             })
         )
+        const onConfigureSourcegraphClick: React.MouseEventHandler<HTMLAnchorElement> = async event => {
+            event.preventDefault()
+            await browser.runtime.sendMessage({ type: 'openOptionsPage' })
+        }
 
         subscriptions.add(
             combineLatest([
@@ -679,13 +696,14 @@ export function handleCodeHost({
                 render(
                     <ViewOnSourcegraphButton
                         {...viewOnSourcegraphButtonClassProps}
+                        codeHostType={codeHost.type}
                         getContext={getContext}
                         minimalUI={minimalUI}
                         sourcegraphURL={sourcegraphURL}
                         repoExistsOrError={repoExistsOrError}
                         showSignInButton={showSignInButton}
                         onSignInClose={nextSignInClose}
-                        onConfigureSourcegraphClick={isInPage ? undefined : openOptionsMenu}
+                        onConfigureSourcegraphClick={isInPage ? undefined : onConfigureSourcegraphClick}
                     />,
                     mount
                 )
@@ -718,7 +736,7 @@ export function handleCodeHost({
                 ),
                 catchError(err => {
                     // Ignore PrivateRepoPublicSourcegraph errors (don't initialize those code views)
-                    if (err.name === PRIVATE_REPO_PUBLIC_SOURCEGRAPH_COM_ERROR_NAME) {
+                    if (isPrivateRepoPublicSourcegraphComErrorLike(err)) {
                         return EMPTY
                     }
                     throw err

@@ -14,7 +14,7 @@ import { createModelService } from './services/modelService'
 import { NotificationsService } from './services/notifications'
 import { QueryTransformerRegistry } from './services/queryTransformer'
 import { createSettingsService } from './services/settings'
-import { ViewProviderRegistry } from './services/view'
+import { PanelViewProviderRegistry } from './services/panelViews'
 import { createWorkspaceService } from './services/workspaceService'
 
 /**
@@ -49,6 +49,6 @@ export class Services {
     public readonly textDocumentHover = new TextDocumentHoverProviderRegistry()
     public readonly textDocumentDecoration = new TextDocumentDecorationProviderRegistry()
     public readonly queryTransformer = new QueryTransformerRegistry()
-    public readonly views = new ViewProviderRegistry()
+    public readonly panelViews = new PanelViewProviderRegistry()
     public readonly completionItems = new CompletionItemProviderRegistry()
 }

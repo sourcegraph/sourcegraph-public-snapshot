@@ -238,10 +238,10 @@ func init() {
 
 func firstCharacters(s string, n int) string {
 	v := []rune(s)
-	if len(v) < 10 {
+	if len(v) < n {
 		return string(v)
 	}
-	return string(v[:10])
+	return string(v[:n])
 }
 
 // preSpansToTable takes the syntect data structure, which looks like:

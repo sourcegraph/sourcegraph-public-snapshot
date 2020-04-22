@@ -149,7 +149,7 @@ func Main(enterpriseInit EnterpriseInit) {
 			switch c := cfg.(type) {
 			case *schema.GitHubConnection:
 				if strings.HasPrefix(c.Url, "https://github.com") && c.Token != "" {
-					server.GithubDotComSource, err = repos.NewGithubSource(e, cf)
+					server.GithubDotComSource, err = repos.NewGithubSource(e, cf, nil)
 				}
 			case *schema.GitLabConnection:
 				if strings.HasPrefix(c.Url, "https://gitlab.com") && c.Token != "" {

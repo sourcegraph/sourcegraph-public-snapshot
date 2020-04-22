@@ -3,6 +3,7 @@
 exports[`PatchNode renders a patch with publishing disabled 1`] = `
 Object {
   "children": <Collapsible
+    expandedButtonClassName="mb-3"
     title={
       <div
         className="d-flex align-items-center m-1 ml-2"
@@ -152,6 +153,7 @@ Object {
 exports[`PatchNode renders a patch with publishing enabled 1`] = `
 Object {
   "children": <Collapsible
+    expandedButtonClassName="mb-3"
     title={
       <div
         className="d-flex align-items-center m-1 ml-2"

@@ -27,6 +27,7 @@ import (
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchquerytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestSearchResults(t *testing.T) {
@@ -66,6 +67,9 @@ func TestSearchResults(t *testing.T) {
 	searchVersions := []string{"V1", "V2"}
 
 	t.Run("repo: only", func(t *testing.T) {
+		mockDecodedViewerFinalSettings = &schema.Settings{}
+		defer func() { mockDecodedViewerFinalSettings = nil }()
+
 		var calledReposList bool
 		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 			calledReposList = true
@@ -101,6 +105,9 @@ func TestSearchResults(t *testing.T) {
 	})
 
 	t.Run("multiple terms regexp", func(t *testing.T) {
+		mockDecodedViewerFinalSettings = &schema.Settings{}
+		defer func() { mockDecodedViewerFinalSettings = nil }()
+
 		var calledReposList bool
 		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 			calledReposList = true
@@ -174,6 +181,9 @@ func TestSearchResults(t *testing.T) {
 	})
 
 	t.Run("multiple terms literal", func(t *testing.T) {
+		mockDecodedViewerFinalSettings = &schema.Settings{}
+		defer func() { mockDecodedViewerFinalSettings = nil }()
+
 		var calledReposList bool
 		db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 			calledReposList = true
@@ -259,6 +269,10 @@ func BenchmarkSearchResults(b *testing.B) {
 	}
 
 	ctx := context.Background()
+
+	mockDecodedViewerFinalSettings = &schema.Settings{}
+	defer func() { mockDecodedViewerFinalSettings = nil }()
+
 	db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 		return minimalRepos, nil
 	}
@@ -1000,6 +1014,9 @@ func TestSearchResultsHydration(t *testing.T) {
 			Fork:        false,
 		}}
 
+	mockDecodedViewerFinalSettings = &schema.Settings{}
+	defer func() { mockDecodedViewerFinalSettings = nil }()
+
 	db.Mocks.Repos.Get = func(ctx context.Context, id api.RepoID) (*types.Repo, error) {
 		return hydratedRepo, nil
 	}
@@ -1074,6 +1091,9 @@ func TestStructuralSearchRepoFilter(t *testing.T) {
 	indexedRepo := &types.Repo{Name: api.RepoName(repoName)}
 
 	unindexedRepo := &types.Repo{Name: api.RepoName("unindexed/one")}
+
+	mockDecodedViewerFinalSettings = &schema.Settings{}
+	defer func() { mockDecodedViewerFinalSettings = nil }()
 
 	db.Mocks.Repos.List = func(_ context.Context, op db.ReposListOptions) ([]*types.Repo, error) {
 		return []*types.Repo{indexedRepo, unindexedRepo}, nil
@@ -1432,4 +1452,24 @@ func Test_SearchResultsResolver_ApproximateResultCount(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestSearchResolver_evaluateWarning(t *testing.T) {
+	q, _ := query.ProcessAndOr("file:foo or file:bar")
+	wantPrefix := "I'm having trouble understsanding that query."
+	andOrQuery, _ := q.(*query.AndOrQuery)
+	got, _ := (&searchResolver{}).evaluate(context.Background(), andOrQuery.Query)
+	t.Run("warn for unsupported and/or query", func(t *testing.T) {
+		if !strings.HasPrefix(got.alert.description, wantPrefix) {
+			t.Fatalf("got alert description %s, want %s", got.alert.description, wantPrefix)
+		}
+	})
+
+	_, err := query.ProcessAndOr("file:foo or or or")
+	gotAlert := alertForQuery("", err)
+	t.Run("warn for unsupported ambiguous and/or query", func(t *testing.T) {
+		if !strings.HasPrefix(gotAlert.description, wantPrefix) {
+			t.Fatalf("got alert description %s, want %s", got.alert.description, wantPrefix)
+		}
+	})
 }

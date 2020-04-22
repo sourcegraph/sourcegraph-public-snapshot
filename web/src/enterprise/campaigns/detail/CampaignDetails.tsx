@@ -24,7 +24,7 @@ import * as H from 'history'
 import { CampaignBurndownChart } from './BurndownChart'
 import { AddChangesetForm } from './AddChangesetForm'
 import { Subject, of, merge, Observable, NEVER } from 'rxjs'
-import { renderMarkdown } from '../../../../../shared/src/util/markdown'
+import { renderMarkdown, highlightCodeSafe } from '../../../../../shared/src/util/markdown'
 import { ErrorAlert } from '../../../components/alerts'
 import { Markdown } from '../../../../../shared/src/components/Markdown'
 import { switchMap, tap, takeWhile, repeatWhen, delay, distinctUntilChanged } from 'rxjs/operators'
@@ -155,7 +155,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                     setCampaign(fetchedCampaign)
                     if (fetchedCampaign) {
                         setName(fetchedCampaign.name)
-                        setDescription(fetchedCampaign.description)
+                        setDescription(fetchedCampaign.description ?? '')
                         setBranch(fetchedCampaign.branch ?? '')
                         setBranchModified(false)
                     }
@@ -304,7 +304,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 })
                 setCampaign(newCampaign)
                 setName(newCampaign.name)
-                setDescription(newCampaign.description)
+                setDescription(newCampaign.description ?? '')
                 setBranch(newCampaign.branch ?? '')
                 setBranchModified(false)
                 unblockHistoryRef.current()
@@ -425,6 +425,51 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                 disabled={mode === 'saving'}
                             />
                         )}
+                        {/* Existing non-manual campaign, but not updating with a new set of patches */}
+                        {campaign && !!campaign.patchSet && !patchSet && (
+                            <div className="card">
+                                <div className="card-body">
+                                    <h3 className="card-title">Want to update the patches?</h3>
+                                    <p>
+                                        Using the{' '}
+                                        <a
+                                            href="https://github.com/sourcegraph/src-cli"
+                                            rel="noopener noreferrer"
+                                            target="_blank"
+                                        >
+                                            src CLI
+                                        </a>
+                                        , you can also apply a new patch set to an existing campaign. Following the
+                                        creation of a new patch set that contains new patches, with the
+                                    </p>
+                                    <div className="alert alert-secondary">
+                                        <code
+                                            dangerouslySetInnerHTML={{
+                                                __html: highlightCodeSafe(
+                                                    '$ src action exec -f action.json | src campaign patchset create-from-patches',
+                                                    'bash'
+                                                ),
+                                            }}
+                                        />
+                                    </div>
+                                    <p>
+                                        command, a URL will be output that will guide you to the web UI to allow you to
+                                        change an existing campaign’s patch set.
+                                    </p>
+                                    <p className="mb-0">
+                                        Take a look at the{' '}
+                                        <a
+                                            href="https://docs.sourcegraph.com/user/campaigns/updating_campaigns"
+                                            rel="noopener noreferrer"
+                                            target="_blank"
+                                        >
+                                            documentation on updating campaigns
+                                        </a>{' '}
+                                        for more information.
+                                    </p>
+                                </div>
+                            </div>
+                        )}
                     </>
                 )}
                 {/* If we are in the update view */}
@@ -507,38 +552,50 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                     />
                                 </div>
                             </div>
-                            <h3 className="mt-4 mb-2">Progress</h3>
-                            <CampaignBurndownChart
-                                changesetCountsOverTime={campaign.changesetCountsOverTime}
-                                history={history}
-                            />
-                            {/* only campaigns that have no patch set can add changesets manually */}
+                            {totalChangesetCount > 0 && (
+                                <>
+                                    <h3 className="mt-4 mb-2">Progress</h3>
+                                    <CampaignBurndownChart
+                                        changesetCountsOverTime={campaign.changesetCountsOverTime}
+                                        history={history}
+                                    />
+                                </>
+                            )}
+
+                            {/* Only campaigns that have no patch set can add changesets manually. */}
                             {!campaign.patchSet && campaign.viewerCanAdminister && !campaign.closedAt && (
-                                <AddChangesetForm campaignID={campaign.id} onAdd={onAddChangeset} />
+                                <>
+                                    {totalChangesetCount === 0 && (
+                                        <div className="mt-4 mb-2 alert alert-info e2e-campaign-get-started">
+                                            Add a changeset to get started.
+                                        </div>
+                                    )}
+                                    <AddChangesetForm campaignID={campaign.id} onAdd={onAddChangeset} />
+                                </>
                             )}
                         </>
                     )}
 
-                    <h3 className="mt-4 d-flex align-items-end mb-0">
-                        {totalPatchCount > 0 && (
-                            <>
-                                {totalPatchCount} {pluralize('Patch', totalPatchCount, 'Patches')}
-                            </>
-                        )}
-                        {(totalChangesetCount > 0 || !!campaign) && totalPatchCount > 0 && (
-                            <span className="mx-1">/</span>
-                        )}
-                        {(totalChangesetCount > 0 || !!campaign) && (
-                            <>
-                                {totalChangesetCount} {pluralize('Changeset', totalChangesetCount)}
-                            </>
-                        )}{' '}
-                        {(patchSet || campaign) && (
-                            <CampaignDiffStat campaign={campaign} patchSet={patchSet} className="ml-2 mb-0" />
-                        )}
-                    </h3>
-                    {totalChangesetCount + totalPatchCount > 0 ? (
+                    {totalChangesetCount + totalPatchCount > 0 && (
                         <>
+                            <h3 className="mt-4 d-flex align-items-end mb-0">
+                                {totalPatchCount > 0 && (
+                                    <>
+                                        {totalPatchCount} {pluralize('Patch', totalPatchCount, 'Patches')}
+                                    </>
+                                )}
+                                {(totalChangesetCount > 0 || !!campaign) && totalPatchCount > 0 && (
+                                    <span className="mx-1">/</span>
+                                )}
+                                {(totalChangesetCount > 0 || !!campaign) && (
+                                    <>
+                                        {totalChangesetCount} {pluralize('Changeset', totalChangesetCount)}
+                                    </>
+                                )}{' '}
+                                {(patchSet || campaign) && (
+                                    <CampaignDiffStat campaign={campaign} patchSet={patchSet} className="ml-2 mb-0" />
+                                )}
+                            </h3>
                             {totalPatchCount > 0 &&
                                 (campaign ? (
                                     <CampaignPatches
@@ -575,16 +632,6 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                 />
                             )}
                         </>
-                    ) : (
-                        campaign?.status.state !== GQL.BackgroundProcessState.PROCESSING &&
-                        // Show hint for empty manual campaigns
-                        (campaign && !campaign.patchSet ? (
-                            <div className="mt-2 alert alert-info e2e-campaign-get-started">
-                                Add a changeset to get started.
-                            </div>
-                        ) : (
-                            <p className="mt-2 text-muted">No changesets</p>
-                        ))
                     )}
                 </>
             )}

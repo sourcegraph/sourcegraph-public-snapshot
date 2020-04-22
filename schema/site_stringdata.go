@@ -55,7 +55,7 @@ const SiteSchemaJSON = `{
       "additionalProperties": false,
       "properties": {
         "discussions": {
-          "description": "Enables the code discussions experiment.",
+          "description": "DEPRECATED. Will be removed in 3.16. https://github.com/sourcegraph/sourcegraph/issues/9649. Enables the code discussions experiment.",
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "disabled"
@@ -517,7 +517,7 @@ const SiteSchemaJSON = `{
       "group": "Extensions"
     },
     "discussions": {
-      "description": "Configures Sourcegraph code discussions.",
+      "description": "DEPRECATED. Will be removed in 3.16. https://github.com/sourcegraph/sourcegraph/issues/9649. Configures Sourcegraph code discussions.",
       "type": "object",
       "properties": {
         "abuseProtection": {
@@ -605,6 +605,18 @@ const SiteSchemaJSON = `{
           "default": false
         }
       }
+    },
+    "observability.logSlowSearches": {
+      "description": "(debug) logs all search queries (issued by users, code intelligence, or API requests) slower than the specified number of milliseconds.",
+      "type": "integer",
+      "group": "Debug",
+      "examples": [["10000"]]
+    },
+    "observability.logSlowGraphQLRequests": {
+      "description": "(debug) logs all GraphQL requests slower than the specified number of milliseconds.",
+      "type": "integer",
+      "group": "Debug",
+      "examples": [["10000"]]
     },
     "htmlHeadTop": {
       "description": "HTML to inject at the top of the ` + "`" + `<head>` + "`" + ` element on each page, for analytics scripts",

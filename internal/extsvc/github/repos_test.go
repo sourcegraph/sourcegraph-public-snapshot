@@ -13,9 +13,9 @@ import (
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/google/go-cmp/cmp"
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 )
 
@@ -70,15 +70,14 @@ func (s mockHTTPEmptyResponse) Do(req *http.Request) (*http.Response, error) {
 }
 
 func newTestClient(t *testing.T, cli httpcli.Doer) *Client {
+	return newTestClientWithToken(t, "", cli)
+}
+
+func newTestClientWithToken(t *testing.T, token string, cli httpcli.Doer) *Client {
 	rcache.SetupForTest(t)
-	return &Client{
-		apiURL:          &url.URL{Scheme: "https", Host: "example.com", Path: "/"},
-		httpClient:      cli,
-		RateLimit:       &ratelimit.Monitor{},
-		repoCache:       map[string]*rcache.Cache{},
-		repoCachePrefix: "__test__gh_repo",
-		repoCacheTTL:    1000,
-	}
+
+	apiURL := &url.URL{Scheme: "https", Host: "example.com", Path: "/"}
+	return NewClient(apiURL, token, cli)
 }
 
 // TestClient_GetRepository tests the behavior of GetRepository.
@@ -255,7 +254,7 @@ func TestClient_GetRepositoriesByNodeFromAPI(t *testing.T) {
 			responseBody: test.responseBody,
 		}
 		c := newTestClient(t, &mock)
-		gotRepos, err := c.GetRepositoriesByNodeIDFromAPI(context.Background(), "", test.nodeIDs)
+		gotRepos, err := c.GetRepositoriesByNodeIDFromAPI(context.Background(), test.nodeIDs)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -311,7 +310,7 @@ func TestClient_GetRepositoryByNodeID(t *testing.T) {
 		IsFork:        true,
 	}
 
-	repo, err := c.GetRepositoryByNodeID(context.Background(), "", "i")
+	repo, err := c.GetRepositoryByNodeID(context.Background(), "i")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -326,7 +325,7 @@ func TestClient_GetRepositoryByNodeID(t *testing.T) {
 	}
 
 	// Test that repo is cached (and therefore NOT fetched) from client on second request.
-	repo, err = c.GetRepositoryByNodeID(context.Background(), "", "i")
+	repo, err = c.GetRepositoryByNodeID(context.Background(), "i")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -355,7 +354,7 @@ func TestClient_GetRepositoryByNodeID_nonexistent(t *testing.T) {
 	}
 	c := newTestClient(t, &mock)
 
-	repo, err := c.GetRepositoryByNodeID(context.Background(), "", "i")
+	repo, err := c.GetRepositoryByNodeID(context.Background(), "i")
 	if !IsNotFound(err) {
 		t.Errorf("got err == %v, want IsNotFound(err) == true", err)
 	}
@@ -526,61 +525,77 @@ func TestClient_ListRepositoriesForSearch_incomplete(t *testing.T) {
 
 // 🚨 SECURITY: test that cache entries are keyed by auth token
 func TestClient_GetRepositoryByNodeID_security(t *testing.T) {
-	c := newTestClient(t, newMockHTTPResponseBody(`{ "data": { "node": { "id": "i0" } } }`, http.StatusOK))
+	c0 := newTestClient(t, nil)
+	c1 := newTestClientWithToken(t, "tok1", nil)
+	c2 := newTestClientWithToken(t, "tok2", nil)
 
-	got, err := c.GetRepositoryByNodeID(context.Background(), "tok0", "id0")
+	// Get "id0" and cache the result for c1
+	c1.httpClient = newMockHTTPResponseBody(`{ "data": { "node": { "id": "id0-tok1" } } }`, http.StatusOK)
+	got, err := c1.GetRepositoryByNodeID(context.Background(), "id0")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want := (&Repository{ID: "i0"}); !reflect.DeepEqual(got, want) {
-		t.Errorf("got %v, want %v", got, want)
+	expRepo := &Repository{ID: "id0-tok1"}
+	if diff := cmp.Diff(expRepo, got); diff != "" {
+		t.Fatal(diff)
 	}
 
-	c.httpClient = newMockHTTPResponseBody(`{ "data": { "node": { "id": "SHOULD NOT BE SEEN" } } }`, http.StatusOK)
-	got, err = c.GetRepositoryByNodeID(context.Background(), "tok0", "id0")
+	// Verify c1 gets the "id0" from cache in subsequent calls
+	c1.httpClient = newMockHTTPResponseBody(`{ "data": { "node": { "id": "SHOULD NOT BE SEEN" } } }`, http.StatusOK)
+	got, err = c1.GetRepositoryByNodeID(context.Background(), "id0")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want := (&Repository{ID: "i0"}); !reflect.DeepEqual(got, want) {
-		t.Errorf("got %v, want %v", got, want)
+	expRepo = &Repository{ID: "id0-tok1"}
+	if diff := cmp.Diff(expRepo, got); diff != "" {
+		t.Fatal(diff)
 	}
 
-	c.httpClient = newMockHTTPResponseBody(`{ "data": { "node": { "id": "i0-tok1" } } }`, http.StatusOK)
-	got, err = c.GetRepositoryByNodeID(context.Background(), "tok1", "id0")
+	// c2 should not get "id0" from cache
+	c2.httpClient = newMockHTTPResponseBody(`{ "data": { "node": { "id": "id0-tok2" } } }`, http.StatusOK)
+	got, err = c2.GetRepositoryByNodeID(context.Background(), "id0")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want := (&Repository{ID: "i0-tok1"}); !reflect.DeepEqual(got, want) {
-		t.Errorf("got %v, want %v", got, want)
+	expRepo = &Repository{ID: "id0-tok2"}
+	if diff := cmp.Diff(expRepo, got); diff != "" {
+		t.Fatal(diff)
 	}
 
-	c.httpClient = newMockHTTPResponseBody(`{}`, http.StatusNotFound)
-	_, err = c.GetRepositoryByNodeID(context.Background(), "tok0", "id1")
+	// Let c1 cache "id1" as not found
+	c1.httpClient = newMockHTTPResponseBody(`{}`, http.StatusNotFound)
+	_, err = c1.GetRepositoryByNodeID(context.Background(), "id1")
 	if err != ErrNotFound {
-		t.Errorf("expected err %v, but got %v", ErrNotFound, err)
+		t.Fatalf("want err %v, but got %v", ErrNotFound, err)
 	}
 
-	// "not found" should be cached
-	c.httpClient = newMockHTTPResponseBody(`{ "data": { "node": { "id": "id1" } } }`, http.StatusOK)
-	_, err = c.GetRepositoryByNodeID(context.Background(), "tok0", "id1")
+	// Verify c1 sees "id1" as "not found" from cache in subsequent calls
+	c1.httpClient = newMockHTTPResponseBody(`{ "data": { "node": { "id": "id1-tok1" } } }`, http.StatusOK)
+	_, err = c1.GetRepositoryByNodeID(context.Background(), "id1")
 	if err != ErrNotFound {
-		t.Errorf("expected err %v, but got %v", ErrNotFound, err)
+		t.Fatalf("want err %v, but got %v", ErrNotFound, err)
 	}
-	// "not found" not cached with different auth token
-	got, err = c.GetRepositoryByNodeID(context.Background(), "tok1", "id1")
+
+	// c2 should get "id1" as usual
+	c2.httpClient = newMockHTTPResponseBody(`{ "data": { "node": { "id": "id1-tok2" } } }`, http.StatusOK)
+	got, err = c2.GetRepositoryByNodeID(context.Background(), "id1")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want := (&Repository{ID: "id1"}); !reflect.DeepEqual(got, want) {
-		t.Errorf("got %v, want %v", got, want)
+	expRepo = &Repository{ID: "id1-tok2"}
+	if diff := cmp.Diff(expRepo, got); diff != "" {
+		t.Fatal(diff)
 	}
-	// "not found" not cached with no auth token
-	got, err = c.GetRepositoryByNodeID(context.Background(), "", "id1")
+
+	// For sanity, c0 (unauthenticated) should get "id1" as usual
+	c0.httpClient = newMockHTTPResponseBody(`{ "data": { "node": { "id": "id1" } } }`, http.StatusOK)
+	got, err = c0.GetRepositoryByNodeID(context.Background(), "id1")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want := (&Repository{ID: "id1"}); !reflect.DeepEqual(got, want) {
-		t.Errorf("got %v, want %v", got, want)
+	expRepo = &Repository{ID: "id1"}
+	if diff := cmp.Diff(expRepo, got); diff != "" {
+		t.Fatal(diff)
 	}
 }
 

@@ -36,8 +36,9 @@ const (
 
 	// Temporary experimental fields:
 	FieldIndex     = "index"
-	FieldCount     = "count" // Searches that specify `count:` will fetch at least that number of results, or the full result set
-	FieldMax       = "max"   // Deprecated alias for count
+	FieldCount     = "count"  // Searches that specify `count:` will fetch at least that number of results, or the full result set
+	FieldStable    = "stable" // Forces search to return a stable result ordering (currently limited to file content matches).
+	FieldMax       = "max"    // Deprecated alias for count
 	FieldTimeout   = "timeout"
 	FieldReplace   = "replace"
 	FieldCombyRule = "rule"
@@ -74,6 +75,7 @@ var (
 			// Experimental fields:
 			FieldIndex:     {Literal: types.StringType, Quoted: types.StringType, Singular: true},
 			FieldCount:     {Literal: types.StringType, Quoted: types.StringType, Singular: true},
+			FieldStable:    {Literal: types.BoolType, Quoted: types.BoolType, Singular: true},
 			FieldMax:       {Literal: types.StringType, Quoted: types.StringType, Singular: true},
 			FieldTimeout:   {Literal: types.StringType, Quoted: types.StringType, Singular: true},
 			FieldReplace:   {Literal: types.StringType, Quoted: types.StringType, Singular: true},

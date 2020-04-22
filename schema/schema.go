@@ -331,7 +331,7 @@ type DebugLog struct {
 	ExtsvcGitlab bool `json:"extsvc.gitlab,omitempty"`
 }
 
-// Discussions description: Configures Sourcegraph code discussions.
+// Discussions description: DEPRECATED. Will be removed in 3.16. https://github.com/sourcegraph/sourcegraph/issues/9649. Configures Sourcegraph code discussions.
 type Discussions struct {
 	// AbuseEmails description: Email addresses to notify of e.g. new user reports about abusive comments. Otherwise emails will not be sent.
 	AbuseEmails []string `json:"abuseEmails,omitempty"`
@@ -395,7 +395,7 @@ type ExperimentalFeatures struct {
 	CustomGitFetch []*CustomGitFetchMapping `json:"customGitFetch,omitempty"`
 	// DebugLog description: Turns on debug logging for specific debugging scenarios.
 	DebugLog *DebugLog `json:"debug.log,omitempty"`
-	// Discussions description: Enables the code discussions experiment.
+	// Discussions description: DEPRECATED. Will be removed in 3.16. https://github.com/sourcegraph/sourcegraph/issues/9649. Enables the code discussions experiment.
 	Discussions string `json:"discussions,omitempty"`
 	// EventLogging description: Enables user event logging inside of the Sourcegraph instance. This will allow admins to have greater visibility of user activity, such as frequently viewed pages, frequent searches, and more. These event logs (and any specific user actions) are only stored locally, and never leave this Sourcegraph instance.
 	EventLogging string `json:"eventLogging,omitempty"`
@@ -901,10 +901,16 @@ type Settings struct {
 	Notices []*Notice `json:"notices,omitempty"`
 	// Quicklinks description: Links that should be accessible quickly from the home and search pages.
 	Quicklinks []*QuickLink `json:"quicklinks,omitempty"`
+	// SearchUpperCase description: When active, any upper case characters in the pattern will make the entire query case-sensitive.
+	SearchUpperCase *bool `json:"search.UpperCase,omitempty"`
 	// SearchContextLines description: The default number of lines to show as context below and above search results. Default is 1.
 	SearchContextLines int `json:"search.contextLines,omitempty"`
 	// SearchDefaultPatternType description: The default pattern type (literal or regexp) that search queries will be intepreted as.
 	SearchDefaultPatternType string `json:"search.defaultPatternType,omitempty"`
+	// SearchIncludeArchived description: Whether searches should include searching archived repositories.
+	SearchIncludeArchived *bool `json:"search.includeArchived,omitempty"`
+	// SearchIncludeForks description: Whether searches should include searching forked repositories.
+	SearchIncludeForks *bool `json:"search.includeForks,omitempty"`
 	// SearchRepositoryGroups description: Named groups of repositories that can be referenced in a search query using the repogroup: operator.
 	SearchRepositoryGroups map[string][]string `json:"search.repositoryGroups,omitempty"`
 	// SearchSavedQueries description: DEPRECATED: Saved search queries
@@ -973,7 +979,7 @@ type SiteConfiguration struct {
 	DisableNonCriticalTelemetry bool `json:"disableNonCriticalTelemetry,omitempty"`
 	// DisablePublicRepoRedirects description: Disable redirects to sourcegraph.com when visiting public repositories that can't exist on this server.
 	DisablePublicRepoRedirects bool `json:"disablePublicRepoRedirects,omitempty"`
-	// Discussions description: Configures Sourcegraph code discussions.
+	// Discussions description: DEPRECATED. Will be removed in 3.16. https://github.com/sourcegraph/sourcegraph/issues/9649. Configures Sourcegraph code discussions.
 	Discussions *Discussions `json:"discussions,omitempty"`
 	// DontIncludeSymbolResultsByDefault description: Set to `true` to not include symbol results if no `type:` filter was given
 	DontIncludeSymbolResultsByDefault bool `json:"dontIncludeSymbolResultsByDefault,omitempty"`
@@ -1017,6 +1023,10 @@ type SiteConfiguration struct {
 	LsifEnforceAuth bool `json:"lsifEnforceAuth,omitempty"`
 	// MaxReposToSearch description: The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. Any value less than or equal to zero means unlimited.
 	MaxReposToSearch int `json:"maxReposToSearch,omitempty"`
+	// ObservabilityLogSlowGraphQLRequests description: (debug) logs all GraphQL requests slower than the specified number of milliseconds.
+	ObservabilityLogSlowGraphQLRequests int `json:"observability.logSlowGraphQLRequests,omitempty"`
+	// ObservabilityLogSlowSearches description: (debug) logs all search queries (issued by users, code intelligence, or API requests) slower than the specified number of milliseconds.
+	ObservabilityLogSlowSearches int `json:"observability.logSlowSearches,omitempty"`
 	// ObservabilityTracing description: Controls the settings for distributed tracing.
 	ObservabilityTracing *ObservabilityTracing `json:"observability.tracing,omitempty"`
 	// ParentSourcegraph description: URL to fetch unreachable repository details from. Defaults to "https://sourcegraph.com"

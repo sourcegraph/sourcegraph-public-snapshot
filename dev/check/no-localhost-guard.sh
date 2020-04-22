@@ -1,28 +1,32 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
+set -e
 echo "--- no localhost guard"
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 
 path_filter() {
-    local IFS=;
-    local withPath="${*/#/ -o -path }"
-    echo "${withPath# -o }"
+  local IFS=
+  local withPath="${*/#/ -o -path }"
+  echo "${withPath# -o }"
 }
 
+set +e
 LOCALHOST_MATCHES=$(git grep -e localhost --and --not -e '^\s*//' --and --not -e 'CI\:LOCALHOST_OK' -- '*.go' \
-                    ':(exclude)*_test.go' \
-                    ':(exclude)cmd/server/shared/nginx.go' \
-                    ':(exclude)pkg/conf/confdefaults' \
-                    ':(exclude)schema' \
-                    ':(exclude)vendor')
+  ':(exclude)*_test.go' \
+  ':(exclude)cmd/server/shared/nginx.go' \
+  ':(exclude)pkg/conf/confdefaults' \
+  ':(exclude)schema' \
+  ':(exclude)vendor')
+set -e
 
-if [ ! -z "$LOCALHOST_MATCHES" ]; then
-    echo
-    echo "Error: Found instances of \"localhost\":"
-    echo "$LOCALHOST_MATCHES" | sed 's/^/  /'
+if [ -n "$LOCALHOST_MATCHES" ]; then
+  echo
+  echo "Error: Found instances of \"localhost\":"
+  # shellcheck disable=SC2001
+  echo "$LOCALHOST_MATCHES" | sed 's/^/  /'
 
-    cat <<EOF
+  cat <<EOF
 
 We generally prefer to use "127.0.0.1" instead of "localhost", because
 the Go DNS resolver fails to resolve "localhost" correctly in some
@@ -35,5 +39,5 @@ If your usage of "localhost" is valid, then either
 
 EOF
 
-    exit 1;
+  exit 1
 fi

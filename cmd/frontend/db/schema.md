@@ -27,7 +27,7 @@ Foreign-key constraints:
 -------------------+--------------------------+--------------------------------------------------------
  id                | bigint                   | not null default nextval('campaigns_id_seq'::regclass)
  name              | text                     | not null
- description       | text                     | not null
+ description       | text                     | 
  author_id         | integer                  | not null
  namespace_user_id | integer                  | 
  namespace_org_id  | integer                  | 
@@ -737,6 +737,7 @@ Indexes:
  permission | text                     | not null
  user_ids   | bytea                    | not null
  updated_at | timestamp with time zone | not null
+ synced_at  | timestamp with time zone | 
 Indexes:
     "repo_permissions_perm_unique" UNIQUE CONSTRAINT, btree (repo_id, permission)
 
@@ -908,6 +909,7 @@ Indexes:
  object_type | text                     | not null
  object_ids  | bytea                    | not null
  updated_at  | timestamp with time zone | not null
+ synced_at   | timestamp with time zone | 
 Indexes:
     "user_permissions_perm_object_unique" UNIQUE CONSTRAINT, btree (user_id, permission, object_type)
 
