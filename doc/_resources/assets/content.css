@@ -477,28 +477,28 @@ a:hover {
     margin-top: 0.25em;
 }
 
-.markdown-body ol {
+.markdown-body > ol {
     counter-reset:li;
     list-style:none;
     position:relative;
     padding-left:0
 }
 
-.markdown-body ol>li {
+.markdown-body > ol > li {
     padding: 8px 0 8px 42px;
     position: relative;
     margin-bottom: 5px;
 }
 
-.markdown-body ol>li p:first-child {
+.markdown-body > ol > li p:first-child {
     margin-top: 0px;
 }
 
-.markdown-body ol>li p:last-child {
+.markdown-body > ol > li p:last-child {
     margin-bottom: 0px;
 }
 
-.markdown-body ol>li:before {
+.markdown-body > ol > li:before {
     content:counter(li);
     counter-increment:li;
     position:absolute;
