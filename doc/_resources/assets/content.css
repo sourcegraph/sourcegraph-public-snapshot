@@ -481,7 +481,6 @@ a:hover {
     counter-reset:li;
     list-style:none;
     position:relative;
-    padding-bottom:10px;
     padding-left:0
 }
 
@@ -489,6 +488,14 @@ a:hover {
     padding: 8px 0 8px 42px;
     position: relative;
     margin-bottom: 5px;
+}
+
+.markdown-body ol>li p:first-child {
+    margin-top: 0px;
+}
+
+.markdown-body ol>li p:last-child {
+    margin-bottom: 0px;
 }
 
 .markdown-body ol>li:before {
