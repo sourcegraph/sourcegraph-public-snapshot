@@ -51,6 +51,8 @@ func getMode() configurationMode {
 		return modeServer
 	case "client":
 		return modeClient
+	case "dummy":
+		return modeTest
 	default:
 		// Detect 'go test' and default to test mode in that case.
 		p, err := os.Executable()
