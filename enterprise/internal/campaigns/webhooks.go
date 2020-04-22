@@ -59,11 +59,11 @@ func (h Webhook) getRepoForPR(
 		},
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "Failed to load repository")
+		return nil, errors.Wrap(err, "failed to load repository")
 	}
 
 	if len(rs) != 1 {
-		return nil, fmt.Errorf("Fetched repositories have wrong length: %d", len(rs))
+		return nil, fmt.Errorf("fetched repositories have wrong length: %d", len(rs))
 	}
 
 	return rs[0], nil
