@@ -84,7 +84,7 @@ func main() {
 		bitbucketWebhookName,
 	)
 
-	go bitbucketServerWebhook.Upsert(1 * time.Minute)
+	go bitbucketServerWebhook.SyncWebhooks(1 * time.Minute)
 
 	shared.Main(githubWebhook, bitbucketServerWebhook)
 }

@@ -400,7 +400,11 @@ func TestBitbucketWebhookUpsert(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			rec := new(requestRecorder)
-			err := upsertBitbucketWebhook(1, tc.con, "testhook", "http://example.com/", rec, tc.secrets)
+			h := NewBitbucketServerWebhook(nil, nil, time.Now, "testhook")
+			h.secrets = tc.secrets
+			h.httpClient = rec
+
+			err := h.syncWebhook(1, tc.con, "http://example.com/")
 			if err != nil {
 				t.Fatal(err)
 			}
