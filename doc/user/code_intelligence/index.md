@@ -28,6 +28,12 @@ By spinning up Sourcegraph, you can get code intelligence:
 
 ## Code intelligence features
 
+### On a GitHub pull request
+
+Using our [integrations](../../integration/index.md), all these features will be available everywhere you read code!
+
+<img src="img/CodeReview.gif" width="450" style="margin-left:0;margin-right:0;"/>
+
 ### Hover tooltips with documentation and type signatures
 
 Hover tooltips allow you to quickly glance at the type signature and accompanying documentation of a symbol definition without having to context switch to another source file (which may or may not be available while browsing code).
