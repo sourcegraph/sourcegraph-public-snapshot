@@ -792,8 +792,8 @@ func (h *BitbucketServerWebhook) SyncWebhooks(every time.Duration) {
 
 const externalServiceIDParam = "externalServiceID"
 
-// syncWebook ensures that the webhook has been configured correctly on Bitbucket. If no secret has been set, we delete
-// the exising webhook config.
+// syncWebhook ensures that the webhook has been configured correctly on Bitbucket. If no secret has been set, we delete
+// the existing webhook config.
 func (h *BitbucketServerWebhook) syncWebhook(externalServiceID int64, con *schema.BitbucketServerConnection, externalURL string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
