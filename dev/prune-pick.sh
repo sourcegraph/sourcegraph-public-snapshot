@@ -3,7 +3,7 @@
 # prune-pick.sh automates cherry-picking commits that should be modified to omit the presence of a
 # given directory.
 
-if [ ! -z "$VERBOSE" ]; then
+if [ -n "$VERBOSE" ]; then
   set -x
 fi
 set -eo pipefail
@@ -23,8 +23,7 @@ function pickOne() {
     exit 1
   fi
 
-  git cherry-pick $COMMIT &>/dev/null
-  if [ "$?" = 0 ]; then
+  if (git cherry-pick "$COMMIT" &>/dev/null); then
     set -e
     PRUNE_DIR_EXISTED=$(
       test -d "$PRUNE_DIR"
@@ -48,15 +47,22 @@ function pickOne() {
     set -e
     # dirty cherry-pick
     rm -rf "$PRUNE_DIR" && (git add "$PRUNE_DIR" 2>/dev/null || true)
-    if [ ! -z "$(git status --porcelain | grep -v '^M')" ]; then
+    #
+    # Ignoring https://github.com/koalaman/shellcheck/wiki/SC2143 because "pipefail" option is set above.
+    #
+    # shellcheck disable=SC2143
+    if [ -n "$(git status --porcelain | grep -v '^M')" ]; then
       echo "Failed to cherry-pick commit $COMMIT. This script is aborting and leaving the working directory in an intermediate state."
-      echo 'You must either `git cherry-pick --abort` OR manually resolve the conflict and run `git cherry-pick --continue`.'
+      echo 'You must either "git cherry-pick --abort" OR manually resolve the conflict and run "git cherry-pick --continue".'
       exit 1
     fi
     set +e
-    git -c core.editor=true cherry-pick --continue &>/dev/null
-    if [ "$?" != 0 ]; then
+    if ! (git -c core.editor=true cherry-pick --continue &>/dev/null); then
       set -e
+      #
+      # Ignoring https://github.com/koalaman/shellcheck/wiki/SC2143 because "pipefail" option is set above.
+      #
+      # shellcheck disable=SC2143
       if [ -z "$(git status --porcelain | grep -v '^M')" ]; then
         git -c core.editor=true commit --allow-empty
         git reset --hard HEAD^ &>/dev/null
@@ -82,6 +88,9 @@ fi
 
 set -e
 
+# cc @beyang - what are the possible values of
+# $COMMIT_RANGE ?
+# shellcheck disable=SC2116
 for rev in $(echo "$COMMITS"); do
-  pickOne $rev $PRUNE_DIR
+  pickOne "$rev" "$PRUNE_DIR"
 done

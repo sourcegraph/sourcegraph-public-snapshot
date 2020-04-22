@@ -6,7 +6,6 @@ import { isEmpty } from 'lodash'
 import { parseSearchQuery, CharacterRange } from '../search/parser/parser'
 import { replaceRange } from './strings'
 import { discreteValueAliases } from '../search/parser/filters'
-import { URLToFileContext } from '../platform/context'
 
 export interface RepoSpec {
     /**
@@ -420,11 +419,11 @@ function parseLineOrPositionOrRange(lineChar: string): LineOrPositionOrRange {
     return lpr
 }
 
-function toRenderModeAndActionQuery(ctx: Partial<RenderModeSpec>, isWebUrl?: boolean): string {
+function toRenderModeQuery(ctx: Partial<RenderModeSpec>): string {
     if (ctx.renderMode === 'code') {
-        return isWebUrl ? '?action&view=code' : '?view=code'
+        return '?view=code'
     }
-    return isWebUrl ? '?action' : ''
+    return ''
 }
 
 /**
@@ -472,16 +471,10 @@ export function encodeRepoRev(repo: string, rev?: string): string {
 }
 
 export function toPrettyBlobURL(
-    target: RepoFile &
-        Partial<UIPositionSpec> &
-        Partial<ViewStateSpec> &
-        Partial<UIRangeSpec> &
-        Partial<RenderModeSpec>,
-    context?: Partial<URLToFileContext>
+    target: RepoFile & Partial<UIPositionSpec> & Partial<ViewStateSpec> & Partial<UIRangeSpec> & Partial<RenderModeSpec>
 ): string {
-    return `/${encodeRepoRev(target.repoName, target.rev)}/-/blob/${target.filePath}${toRenderModeAndActionQuery(
-        target,
-        context?.isWebURL
+    return `/${encodeRepoRev(target.repoName, target.rev)}/-/blob/${target.filePath}${toRenderModeQuery(
+        target
     )}${toPositionOrRangeHash(target)}${toViewStateHashComponent(target.viewState)}`
 }
 

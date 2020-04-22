@@ -2,11 +2,25 @@ import { action } from '@storybook/addon-actions'
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { Toggle } from './Toggle'
-import './Toggle.scss'
+import toggleStyles from './Toggle.scss'
+import css from 'tagged-template-noop'
 
 const onToggle = action('onToggle')
 
-const { add } = storiesOf('Toggle', module)
+const cssVars = css`
+    :root {
+        --text-muted: grey;
+        --primary: blue;
+    }
+`
+
+const { add } = storiesOf('Toggle', module).addDecorator(story => (
+    <>
+        <style>{toggleStyles}</style>
+        <style>{cssVars}</style>
+        <div>{story()}</div>
+    </>
+))
 
 add('interactive', () => {
     interface State {

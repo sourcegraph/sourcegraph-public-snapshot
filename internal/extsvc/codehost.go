@@ -62,6 +62,13 @@ func NormalizeBaseURL(baseURL *url.URL) *url.URL {
 // code hosts' URL hostname component.
 func CodeHostOf(name api.RepoName, codehosts ...*CodeHost) *CodeHost {
 	for _, c := range codehosts {
+
+		// Check if repo name is missing path/namespace by checking if the repo name
+		// is exactly the code host.
+		// https://github.com/sourcegraph/sourcegraph/issues/9274
+		if strings.EqualFold(string(name), c.BaseURL.Hostname()) {
+			return nil
+		}
 		if strings.HasPrefix(strings.ToLower(string(name)), c.BaseURL.Hostname()) {
 			return c
 		}

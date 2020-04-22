@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -ex
-cd $(dirname "${BASH_SOURCE[0]}")
+cd "$(dirname "${BASH_SOURCE[0]}")"
 
 parallel_run() {
   ../ci/parallel_run.sh "$@"
@@ -24,6 +24,7 @@ CHECKS=(
   ./bash-syntax.sh
   ./check-owners.sh
   ./shfmt.sh
+  ./shellcheck.sh
   ./licenses.sh
 )
 

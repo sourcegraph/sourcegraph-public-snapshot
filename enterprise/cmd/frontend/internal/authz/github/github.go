@@ -35,8 +35,9 @@ func NewProvider(githubURL *url.URL, baseToken string, cacheTTL time.Duration, m
 		cache:    mockCache,
 		cacheTTL: cacheTTL,
 	}
+
 	// Note: this will use the same underlying Redis instance and key namespace for every instance
-	// of Provider.  This is by design, so that different instances, even in different processes,
+	// of Provider. This is by design, so that different instances, even in different processes,
 	// will share cache entries.
 	if p.cache == nil {
 		p.cache = rcache.NewWithTTL(fmt.Sprintf("githubAuthz:%s", githubURL.String()), int(math.Ceil(cacheTTL.Seconds())))
@@ -205,7 +206,7 @@ func (p *Provider) getCachedPublicRepos(ctx context.Context, repos []*types.Repo
 func (p *Provider) fetchPublicRepos(ctx context.Context, repos []*types.Repo) (map[string]bool, error) {
 	isPublic := make(map[string]bool)
 	for _, repo := range repos {
-		ghRepo, err := p.client.GetRepositoryByNodeID(ctx, "", repo.ExternalRepo.ID)
+		ghRepo, err := p.client.GetRepositoryByNodeID(ctx, repo.ExternalRepo.ID)
 		if err == github.ErrNotFound {
 			// Note: we could set `isPublic[repo.ExternalRepoSpec.ID] = false` here, but
 			// purposefully don't cache if a repo is private in case it later becomes public.
@@ -328,6 +329,7 @@ func (p *Provider) fetchUserRepos(ctx context.Context, userAccount *extsvc.Accou
 	if err != nil {
 		return nil, nil, err
 	}
+	client := p.client.WithToken(tok.AccessToken)
 
 	// Batch fetch repos from API
 	ghRepos := make(map[string]*github.Repository)
@@ -336,7 +338,7 @@ func (p *Provider) fetchUserRepos(ctx context.Context, userAccount *extsvc.Accou
 		if j > len(repoIDs) {
 			j = len(repoIDs)
 		}
-		ghReposBatch, err := p.client.GetRepositoriesByNodeIDFromAPI(ctx, tok.AccessToken, repoIDs[i:j])
+		ghReposBatch, err := client.GetRepositoriesByNodeIDFromAPI(ctx, repoIDs[i:j])
 		if err != nil {
 			return nil, nil, err
 		}

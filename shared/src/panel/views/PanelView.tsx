@@ -1,7 +1,7 @@
 import H from 'history'
 import React from 'react'
 import { Observable } from 'rxjs'
-import { PanelViewWithComponent, ViewProviderRegistrationOptions } from '../../api/client/services/view'
+import { PanelViewWithComponent, PanelViewProviderRegistrationOptions } from '../../api/client/services/panelViews'
 import { FetchFileCtx } from '../../components/CodeExcerpt'
 import { Markdown } from '../../components/Markdown'
 import { ExtensionsControllerProps } from '../../extensions/controller'
@@ -12,7 +12,7 @@ import { EmptyPanelView } from './EmptyPanelView'
 import { HierarchicalLocationsView } from './HierarchicalLocationsView'
 
 interface Props extends ExtensionsControllerProps, SettingsCascadeProps {
-    panelView: PanelViewWithComponent & Pick<ViewProviderRegistrationOptions, 'id'>
+    panelView: PanelViewWithComponent & Pick<PanelViewProviderRegistrationOptions, 'id'>
     repoName?: string
     history: H.History
     location: H.Location

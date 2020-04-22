@@ -379,7 +379,7 @@ type ExternalChangesetResolver interface {
 	ExternalID() string
 	CreatedAt() DateTime
 	UpdatedAt() DateTime
-	NextSync() *DateTime
+	NextSyncAt() *DateTime
 	Title() (string, error)
 	Body() (string, error)
 	State() campaigns.ChangesetState

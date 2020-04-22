@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"log"
 	"strconv"
@@ -18,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -29,7 +31,7 @@ var graphqlFieldHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Name:      "field_seconds",
 	Help:      "GraphQL field resolver latencies in seconds.",
 	Buckets:   []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
-}, []string{"type", "field", "error", "source"})
+}, []string{"type", "field", "error", "source", "request_name"})
 
 var codeIntelSearchHistogram = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 	Namespace: "src",
@@ -49,6 +51,7 @@ type prometheusTracer struct {
 }
 
 func (prometheusTracer) TraceQuery(ctx context.Context, queryString string, operationName string, variables map[string]interface{}, varTypes map[string]*introspection.Type) (context.Context, trace.TraceQueryFinishFunc) {
+	start := time.Now()
 	var finish trace.TraceQueryFinishFunc
 	if ot.ShouldTrace(ctx) {
 		ctx, finish = trace.OpenTracingTracer{}.TraceQuery(ctx, queryString, operationName, variables, varTypes)
@@ -90,6 +93,23 @@ VARIABLES
 		if finish != nil {
 			finish(err)
 		}
+		d := time.Since(start)
+		if v := conf.Get().ObservabilityLogSlowGraphQLRequests; v != 0 && d.Milliseconds() > int64(v) {
+			encodedVariables, _ := json.Marshal(variables)
+			log15.Warn("slow GraphQL request", "time", d, "name", requestName, "user", currentUserName, "source", requestSource, "error", err, "variables", string(encodedVariables))
+			if requestName == "unknown" {
+				log.Printf(`logging complete query for slow GraphQL request above time=%v name=%s user=%s source=%s error=%v:
+QUERY
+-----
+%s
+
+VARIABLES
+---------
+%s
+
+`, d, requestName, currentUserName, requestSource, err, queryString, encodedVariables)
+			}
+		}
 	}
 }
 
@@ -102,7 +122,13 @@ func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldNa
 	start := time.Now()
 	return ctx, func(err *gqlerrors.QueryError) {
 		isErrStr := strconv.FormatBool(err != nil)
-		graphqlFieldHistogram.WithLabelValues(typeName, prometheusFieldName(typeName, fieldName), isErrStr, string(sgtrace.RequestSource(ctx))).Observe(time.Since(start).Seconds())
+		graphqlFieldHistogram.WithLabelValues(
+			prometheusTypeName(typeName),
+			prometheusFieldName(typeName, fieldName),
+			isErrStr,
+			string(sgtrace.RequestSource(ctx)),
+			prometheusGraphQLRequestName(sgtrace.GraphQLRequestName(ctx)),
+		).Observe(time.Since(start).Seconds())
 
 		origin := sgtrace.RequestOrigin(ctx)
 		if origin != "unknown" && (fieldName == "search" || fieldName == "lsif") {
@@ -218,11 +244,6 @@ var whitelistedPrometheusFieldNames = map[[2]string]struct{}{
 	{"SearchAlert", "description"}:              {},
 	{"SearchAlert", "proposedQueries"}:          {},
 	{"SearchAlert", "title"}:                    {},
-	{"SearchFilter", "count"}:                   {},
-	{"SearchFilter", "kind"}:                    {},
-	{"SearchFilter", "label"}:                   {},
-	{"SearchFilter", "limitHit"}:                {},
-	{"SearchFilter", "value"}:                   {},
 	{"SearchQueryDescription", "description"}:   {},
 	{"SearchQueryDescription", "query"}:         {},
 	{"SearchResultMatch", "body"}:               {},
@@ -264,6 +285,48 @@ var whitelistedPrometheusFieldNames = map[[2]string]struct{}{
 func prometheusFieldName(typeName, fieldName string) string {
 	if _, ok := whitelistedPrometheusFieldNames[[2]string{typeName, fieldName}]; ok {
 		return fieldName
+	}
+	return "other"
+}
+
+var blacklistedPrometheusTypeNames = map[string]struct{}{
+	"__Type":                                 {},
+	"__Schema":                               {},
+	"__InputValue":                           {},
+	"__Field":                                {},
+	"__EnumValue":                            {},
+	"__Directive":                            {},
+	"UserEmail":                              {},
+	"UpdateSettingsPayload":                  {},
+	"ExtensionRegistryCreateExtensionResult": {},
+	"Range":                                  {},
+	"LineMatch":                              {},
+	"DiffStat":                               {},
+	"DiffHunk":                               {},
+	"DiffHunkRange":                          {},
+	"FileDiffResolver":                       {},
+}
+
+// prometheusTypeName reduces the cardinality of GraphQL type names to make it
+// suitable for use in a Prometheus metric. This is a blacklist of type names
+// which involve non-complex calculations in the GraphQL backend and thus are
+// not worth tracking. You can find a complete list of the ones Prometheus is
+// currently tracking via:
+//
+// 	sum by (type)(src_graphql_field_seconds_count)
+//
+func prometheusTypeName(typeName string) string {
+	if _, ok := blacklistedPrometheusTypeNames[typeName]; ok {
+		return "other"
+	}
+	return typeName
+}
+
+// prometheusGraphQLRequestName is a whitelist of GraphQL request names (e.g. /.api/graphql?Foobar)
+// to include in a Prometheus metric. Be extremely careful
+func prometheusGraphQLRequestName(requestName string) string {
+	if requestName == "CodeIntelSearch" {
+		return requestName
 	}
 	return "other"
 }

@@ -1,13 +1,18 @@
 import * as H from 'history'
 import { storiesOf } from '@storybook/react'
 import React from 'react'
-import { ActivationDropdown } from './ActivationDropdown'
+import { ActivationDropdown, ActivationDropdownProps } from './ActivationDropdown'
 import { Activation } from './Activation'
 import { boolean } from '@storybook/addon-knobs'
 import { action } from '@storybook/addon-actions'
+import webMainStyles from '../../../../web/src/SourcegraphWebApp.scss'
+import { subTypeOf } from '../../util/types'
 
 const { add } = storiesOf('ActivationDropdown', module).addDecorator(story => (
-    <div className="theme-light container">{story()}</div>
+    <>
+        <style>{webMainStyles}</style>
+        <div className="theme-light">{story()}</div>
+    </>
 ))
 
 const baseActivation: Activation = {
@@ -44,12 +49,17 @@ const baseActivation: Activation = {
     completed: undefined,
 }
 const history = H.createMemoryHistory({ keyLength: 0 })
+const commonProps = subTypeOf<Partial<ActivationDropdownProps>>()({
+    alwaysShow: true,
+    history,
+    // Make sure the dropdown is not rendered outside the theme-light container
+    portal: false,
+})
 
-add('Loading', () => <ActivationDropdown alwaysShow={true} history={history} activation={baseActivation} />)
+add('Loading', () => <ActivationDropdown {...commonProps} activation={baseActivation} />)
 add('0/4 completed', () => (
     <ActivationDropdown
-        alwaysShow={true}
-        history={history}
+        {...commonProps}
         activation={{
             ...baseActivation,
             completed: {
@@ -63,8 +73,7 @@ add('0/4 completed', () => (
 ))
 add('1/4 completed', () => (
     <ActivationDropdown
-        alwaysShow={true}
-        history={history}
+        {...commonProps}
         activation={{
             ...baseActivation,
             completed: {

@@ -934,7 +934,7 @@ type ExternalChangeset implements Node {
     updatedAt: DateTime!
 
     # The date and time when the next changeset sync is scheduled. Can be null if not scheduled.
-    nextSync: DateTime
+    nextSyncAt: DateTime
 
     # The title of the changeset
     title: String!
@@ -2850,6 +2850,8 @@ type GitTree implements TreeEntry {
     canonicalURL: String!
     # The URLs to this tree on external services.
     externalURLs: [ExternalLink!]!
+    # The URL to this entry's raw contents as a Zip archive.
+    rawZipArchiveURL: String!
     # Submodule metadata if this tree points to a submodule
     submodule: Submodule
     # A list of directories in this tree.

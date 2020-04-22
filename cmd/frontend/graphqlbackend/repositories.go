@@ -151,7 +151,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 				for i, repo := range repos {
 					repoNames[i] = repo.Name
 				}
-				response, err := gitserver.DefaultClient.RepoInfo(ctx, repoNames...)
+				response, err := gitserver.DefaultClient.RepoCloneProgress(ctx, repoNames...)
 				if err != nil {
 					r.err = err
 					return

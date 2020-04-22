@@ -20,7 +20,7 @@ export default ({ config }: { config: webpack.Configuration }) => {
     config.module.rules.unshift({
         test: /\.(css|sass|scss)$/,
         use: [
-            'style-loader',
+            'to-string-loader',
             'css-loader',
             {
                 loader: 'sass-loader',

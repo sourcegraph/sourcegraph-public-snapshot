@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+
 	gh "github.com/google/go-github/v28/github"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
@@ -182,6 +184,14 @@ type GitHubWebhook struct {
 type BitbucketServerWebhook struct {
 	*Webhook
 	Name string
+
+	// externalServiceID -> secret
+	// It keeps track of secrets we know have been stored
+	// in the remote Bitbucket webhook config
+	secrets map[int64]string
+
+	// Optional httpClient
+	httpClient httpcli.Doer
 }
 
 func NewGitHubWebhook(store *Store, repos repos.Store, now func() time.Time) *GitHubWebhook {
@@ -192,6 +202,7 @@ func NewBitbucketServerWebhook(store *Store, repos repos.Store, now func() time.
 	return &BitbucketServerWebhook{
 		Webhook: &Webhook{store, repos, now, bbs.ServiceType},
 		Name:    name,
+		secrets: make(map[int64]string),
 	}
 }
 
@@ -746,9 +757,9 @@ func (*GitHubWebhook) checkRunEvent(cr *gh.CheckRun) *github.CheckRun {
 	}
 }
 
-// Upsert ensures the creation of the BitbucketServer campaigns webhook.
+// SyncWebhooks ensures the creation / deletion of the BitbucketServer campaigns webhook.
 // This happens periodically at the specified interval.
-func (h *BitbucketServerWebhook) Upsert(every time.Duration) {
+func (h *BitbucketServerWebhook) SyncWebhooks(every time.Duration) {
 	externalURL := func() string {
 		return conf.Cached(func() interface{} {
 			return conf.Get().ExternalURL
@@ -765,41 +776,69 @@ func (h *BitbucketServerWebhook) Upsert(every time.Duration) {
 
 		for _, e := range es {
 			c, _ := e.Configuration()
-
 			con, ok := c.(*schema.BitbucketServerConnection)
 			if !ok {
 				continue
 			}
-
-			client, err := bbs.NewClient(con, nil)
+			err = h.syncWebhook(e.ID, con, externalURL())
 			if err != nil {
-				log15.Error("Upserting BBS Webhook [Creating Client]", "err", err)
-				continue
-			}
-
-			secret := con.WebhookSecret()
-			if secret == "" {
-				continue
-			}
-
-			endpoint := externalURL() + "/.api/bitbucket-server-webhooks"
-
-			wh := bbs.Webhook{
-				Name:     h.Name,
-				Scope:    "global",
-				Events:   []string{"pr", "repo"},
-				Endpoint: endpoint,
-				Secret:   secret,
-			}
-
-			err = client.UpsertWebhook(context.Background(), wh)
-			if err != nil {
-				log15.Error("Upserting BBS Webhook failed [HTTP Request]", "err", err)
+				log15.Error("Upserting BBS Webhook failed", "err", err)
 			}
 		}
 
 		time.Sleep(every)
 	}
+}
+
+const externalServiceIDParam = "externalServiceID"
+
+// syncWebook ensures that the webhook has been configured correctly on Bitbucket. If no secret has been set, we delete
+// the exising webhook config.
+func (h *BitbucketServerWebhook) syncWebhook(externalServiceID int64, con *schema.BitbucketServerConnection, externalURL string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	secret := con.WebhookSecret()
+	oldSecret, ok := h.secrets[externalServiceID]
+
+	if ok && oldSecret == secret {
+		// Nothing has changed since our last check
+		return nil
+	}
+
+	client, err := bbs.NewClient(con, h.httpClient)
+	if err != nil {
+		return errors.Wrap(err, "creating client")
+	}
+
+	if secret == "" {
+		// Secret now blank, delete hook.
+		// If this is the first iteration we don't know if the server
+		// has a hook configured or not. If not, the delete will be a noop
+		err = client.DeleteWebhook(ctx, h.Name)
+		if err != nil {
+			return errors.Wrap(err, "deleting webhook")
+		}
+		h.secrets[externalServiceID] = secret
+		return nil
+	}
+
+	// Secret has changed to a non blank value, upsert
+	endpoint := fmt.Sprintf("%s/.api/bitbucket-server-webhooks?%s=%d", externalURL, externalServiceIDParam, externalServiceID)
+	wh := bbs.Webhook{
+		Name:     h.Name,
+		Scope:    "global",
+		Events:   []string{"pr", "repo"},
+		Endpoint: endpoint,
+		Secret:   secret,
+	}
+
+	err = client.UpsertWebhook(ctx, wh)
+	if err != nil {
+		return errors.Wrap(err, "upserting webhook")
+	}
+	h.secrets[externalServiceID] = secret
+	return nil
 }
 
 func (h *BitbucketServerWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -840,25 +879,39 @@ func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *repo
 		return nil, nil, &httpError{http.StatusInternalServerError, err}
 	}
 
+	sig := r.Header.Get("X-Hub-Signature")
+
+	rawID := r.FormValue(externalServiceIDParam)
+	var externalServiceID int64
+	// id could be blank temporarily if we haven't updated the hook url to include the param yet
+	if rawID != "" {
+		externalServiceID, err = strconv.ParseInt(rawID, 10, 64)
+		if err != nil {
+			return nil, nil, &httpError{http.StatusBadRequest, errors.Wrap(err, "invalid external service id")}
+		}
+	}
+
 	args := repos.StoreListExternalServicesArgs{Kinds: []string{"BITBUCKETSERVER"}}
+	if externalServiceID != 0 {
+		args.IDs = append(args.IDs, externalServiceID)
+	}
 	es, err := h.Repos.ListExternalServices(r.Context(), args)
 	if err != nil {
 		return nil, nil, &httpError{http.StatusInternalServerError, err}
 	}
 
-	sig := r.Header.Get("X-Hub-Signature")
-
 	var extSvc *repos.ExternalService
 	for _, e := range es {
+		if externalServiceID != 0 && e.ID != externalServiceID {
+			continue
+		}
+
 		c, _ := e.Configuration()
 		con, ok := c.(*schema.BitbucketServerConnection)
 		if !ok {
 			continue
 		}
 
-		// TODO: There's a bug here where multiple external services use the
-		// same secret and we pick the wrong one (that doesn't match the event
-		// received)
 		if secret := con.WebhookSecret(); secret != "" {
 			if err = gh.ValidateSignature(sig, payload, []byte(secret)); err == nil {
 				extSvc = e

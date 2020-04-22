@@ -1,7 +1,7 @@
-import { HoveredToken, LOADER_DELAY } from '@sourcegraph/codeintellify'
+import { HoveredToken, LOADER_DELAY, MaybeLoadingResult, emitLoading } from '@sourcegraph/codeintellify'
 import * as H from 'history'
 import { isEqual, uniqWith } from 'lodash'
-import { combineLatest, merge, Observable, of, Subscription, Unsubscribable } from 'rxjs'
+import { combineLatest, merge, Observable, of, Subscription, Unsubscribable, concat } from 'rxjs'
 import {
     catchError,
     delay,
@@ -10,9 +10,10 @@ import {
     first,
     map,
     share,
-    startWith,
     switchMap,
     takeUntil,
+    scan,
+    mapTo,
 } from 'rxjs/operators'
 import { ActionItemAction } from '../actions/ActionItem'
 import { Context } from '../api/client/context/context'
@@ -102,42 +103,45 @@ export function getHoverActionsContext(
         extensionsController.services,
         params
     ).pipe(
-        map(result => (result ? result.url : result)), // we only care about the URL or null, not whether there are multiple
-        catchError(err => [asError(err) as ErrorLike]),
+        catchError((err): [MaybeLoadingResult<ErrorLike>] => [{ isLoading: false, result: asError(err) }]),
         share()
     )
 
     return combineLatest([
-        // the fairly long LOADER_DELAY has elapsed.
-        merge(
-            [undefined], // don't block on the first emission
-            of(LOADING).pipe(delay(LOADER_DELAY), takeUntil(definitionURLOrError)),
-            definitionURLOrError
-        ),
+        // definitionURLOrError:
+        definitionURLOrError.pipe(emitLoading<UIDefinitionURL | ErrorLike, null>(LOADER_DELAY, null)),
 
+        // hasReferenceProvider:
         // Only show "Find references" if a reference provider is registered. Unlike definitions, references are
         // not preloaded and here just involve statically constructing a URL, so no need to indicate loading.
         extensionsController.services.textDocumentReferences
             .providersForDocument(params.textDocument)
             .pipe(map(providers => providers.length !== 0)),
 
+        // showFindReferences:
         // If there is no definition, delay showing "Find references" because it is likely that the token is
         // punctuation or something else that has no meaningful references. This reduces UI jitter when it can be
         // quickly determined that there is no definition. TODO(sqs): Allow reference providers to register
         // "trigger characters" or have a "hasReferences" method to opt-out of being called for certain tokens.
         merge(
-            of(true).pipe(delay(LOADER_DELAY), takeUntil(definitionURLOrError.pipe(filter(v => !!v)))),
+            [false],
+            of(true).pipe(
+                delay(LOADER_DELAY),
+                takeUntil(definitionURLOrError.pipe(filter(({ result }) => result !== null)))
+            ),
             definitionURLOrError.pipe(
-                filter(v => !!v),
-                map(v => !!v)
+                filter(({ result }) => result !== null),
+                mapTo(true)
             )
-        ).pipe(startWith(false)),
+        ),
     ]).pipe(
         map(
             ([definitionURLOrError, hasReferenceProvider, showFindReferences]): HoverActionsContext => ({
                 'goToDefinition.showLoading': definitionURLOrError === LOADING,
                 'goToDefinition.url':
-                    (definitionURLOrError !== LOADING && !isErrorLike(definitionURLOrError) && definitionURLOrError) ||
+                    (definitionURLOrError !== LOADING &&
+                        !isErrorLike(definitionURLOrError) &&
+                        definitionURLOrError?.url) ||
                     null,
                 'goToDefinition.notFound':
                     definitionURLOrError !== LOADING &&
@@ -161,6 +165,18 @@ export function getHoverActionsContext(
     )
 }
 
+export interface UIDefinitionURL {
+    /**
+     * The target browser URL to navigate to when go to definition is invoked.
+     */
+    url: string
+
+    /**
+     * Whether the URL refers to a definition panel that shows multiple definitions.
+     */
+    multiple: boolean
+}
+
 /**
  * Returns an observable that emits null if no definitions are found, {url, multiple: false} if exactly 1
  * definition is found, {url: defPanelURL, multiple: true} if multiple definitions are found, or an error.
@@ -179,77 +195,90 @@ export function getDefinitionURL(
         textDocumentDefinition: Pick<Services['textDocumentDefinition'], 'getLocations'>
     },
     params: TextDocumentPositionParams & URLToFileContext
-): Observable<{ url: string; multiple: boolean } | null> {
+): Observable<MaybeLoadingResult<UIDefinitionURL | null>> {
     return textDocumentDefinition.getLocations(params).pipe(
-        switchMap(locations => locations),
-        switchMap(definitions => {
-            if (definitions === null || definitions.length === 0) {
-                return of(null)
-            }
-
-            // Get unique definitions.
-            definitions = uniqWith(definitions, isEqual)
-
-            if (definitions.length > 1) {
-                // Open the panel to show all definitions.
-                const uri = withWorkspaceRootInputRevision(
-                    workspace.roots.value || [],
-                    parseRepoURI(params.textDocument.uri)
-                )
-                return of({
-                    url: urlToFile(
-                        {
-                            ...uri,
-                            rev: uri.rev || '',
-                            filePath: uri.filePath || '',
-                            position: { line: params.position.line + 1, character: params.position.character + 1 },
-                            viewState: 'def',
-                        },
-                        { part: params.part }
-                    ),
-                    multiple: true,
-                })
-            }
-            const def = definitions[0]
-
-            // Preserve the input revision (e.g., a Git branch name instead of a Git commit SHA) if the result is
-            // inside one of the current roots. This avoids navigating the user from (e.g.) a URL with a nice Git
-            // branch name to a URL with a full Git commit SHA.
-            const uri = withWorkspaceRootInputRevision(workspace.roots.value || [], parseRepoURI(def.uri))
-
-            if (def.range) {
-                uri.position = {
-                    line: def.range.start.line + 1,
-                    character: def.range.start.character + 1,
+        switchMap(
+            ({ isLoading, result: definitions }): Observable<Partial<MaybeLoadingResult<UIDefinitionURL | null>>> => {
+                if (definitions.length === 0) {
+                    return of<MaybeLoadingResult<UIDefinitionURL | null>>({ isLoading, result: null })
                 }
-            }
 
-            // When returning a single definition, include the repo's
-            // `rawRepoName`, to allow building URLs on the code host.
-            return resolveRawRepoName({ ...uri, requestGraphQL }).pipe(
-                // When encountering an ERPRIVATEREPOPUBLICSOURCEGRAPHCOM, we can assume that
-                // we're executing in a browser extension pointed to the public sourcegraph.com,
-                // in which case repoName === rawRepoName.
-                catchError(err => {
-                    if (isPrivateRepoPublicSourcegraphComErrorLike(err)) {
-                        return [uri.repoName]
-                    }
-                    throw err
-                }),
-                map(rawRepoName => ({
-                    url: urlToFile(
-                        {
-                            ...uri,
-                            rev: uri.rev || '',
-                            filePath: uri.filePath || '',
-                            rawRepoName,
+                // Get unique definitions.
+                definitions = uniqWith(definitions, isEqual)
+
+                if (definitions.length > 1) {
+                    // Open the panel to show all definitions.
+                    const uri = withWorkspaceRootInputRevision(
+                        workspace.roots.value || [],
+                        parseRepoURI(params.textDocument.uri)
+                    )
+                    return of<MaybeLoadingResult<UIDefinitionURL | null>>({
+                        isLoading,
+                        result: {
+                            url: urlToFile(
+                                {
+                                    ...uri,
+                                    rev: uri.rev || '',
+                                    filePath: uri.filePath || '',
+                                    position: {
+                                        line: params.position.line + 1,
+                                        character: params.position.character + 1,
+                                    },
+                                    viewState: 'def',
+                                },
+                                { part: params.part }
+                            ),
+                            multiple: true,
                         },
-                        { part: params.part }
-                    ),
-                    multiple: false,
-                }))
-            )
-        })
+                    })
+                }
+                const def = definitions[0]
+
+                // Preserve the input revision (e.g., a Git branch name instead of a Git commit SHA) if the result is
+                // inside one of the current roots. This avoids navigating the user from (e.g.) a URL with a nice Git
+                // branch name to a URL with a full Git commit SHA.
+                const uri = withWorkspaceRootInputRevision(workspace.roots.value || [], parseRepoURI(def.uri))
+
+                if (def.range) {
+                    uri.position = {
+                        line: def.range.start.line + 1,
+                        character: def.range.start.character + 1,
+                    }
+                }
+
+                // When returning a single definition, include the repo's
+                // `rawRepoName`, to allow building URLs on the code host.
+                return concat(
+                    // While we resolve the raw repo name, emit isLoading with the previous result
+                    // (merged in the scan() below)
+                    [{ isLoading: true }],
+                    resolveRawRepoName({ ...uri, requestGraphQL }).pipe(
+                        // When encountering an ERPRIVATEREPOPUBLICSOURCEGRAPHCOM, we can assume that
+                        // we're executing in a browser extension pointed to the public sourcegraph.com,
+                        // in which case repoName === rawRepoName.
+                        catchError(err => {
+                            if (isPrivateRepoPublicSourcegraphComErrorLike(err)) {
+                                return [uri.repoName]
+                            }
+                            throw err
+                        }),
+                        map(rawRepoName => ({
+                            url: urlToFile(
+                                { ...uri, rev: uri.rev || '', filePath: uri.filePath || '', rawRepoName },
+                                { part: params.part }
+                            ),
+                            multiple: false,
+                        })),
+                        map(result => ({ isLoading, result }))
+                    )
+                )
+            }
+        ),
+        // Merge partial updates
+        scan(
+            (previous, current) => ({ ...previous, ...current }),
+            ((): MaybeLoadingResult<UIDefinitionURL | null> => ({ isLoading: true, result: null }))()
+        )
     )
 }
 
@@ -343,12 +372,12 @@ export function registerHoverContributions({
             command: 'goToDefinition',
             run: async (paramsStr: string) => {
                 const params: TextDocumentPositionParams & URLToFileContext = JSON.parse(paramsStr)
-                const result = await getDefinitionURL(
+                const { result } = await getDefinitionURL(
                     { urlToFile, requestGraphQL },
                     extensionsController.services,
                     params
                 )
-                    .pipe(first())
+                    .pipe(first(({ isLoading, result }) => !isLoading || result !== null))
                     .toPromise()
                 if (!result) {
                     throw new Error('No definition found.')
