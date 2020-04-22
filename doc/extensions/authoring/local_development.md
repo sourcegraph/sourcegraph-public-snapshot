@@ -1,6 +1,6 @@
 # Local development (sideloading)
 
-When developing an extension, you can sideload it from your local development machine's Parcel dev server (instead of re-publishing it after each code change). This speeds up the development cycle and avoids breaking the published version of your extension.
+When developing an extension, you can sideload it from your local development machine's Parcel dev server (instead of re-publishing it after each code change). This speeds up the development cycle and avoids breaking the published version of your extension. This works on [Sourcegraph.com](https://sourcegraph.com/search) and self-hosted instances.
 
 To set this up:
 
