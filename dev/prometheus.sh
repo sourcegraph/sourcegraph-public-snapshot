@@ -15,16 +15,16 @@ CONTAINER=prometheus
 
 CID_FILE="${PROMETHEUS_DISK}/prometheus.cid"
 
-mkdir -p ${PROMETHEUS_DISK}/logs
-rm -f ${CID_FILE}
+mkdir -p "${PROMETHEUS_DISK}"/logs
+rm -f "${CID_FILE}"
 
 function finish() {
-  if test -f ${CID_FILE}; then
+  if test -f "${CID_FILE}"; then
     echo 'trapped CTRL-C: stopping docker prometheus container'
-    docker stop $(cat ${CID_FILE})
-    rm -f ${CID_FILE}
+    docker stop "$(cat "${CID_FILE}")"
+    rm -f "${CID_FILE}"
   fi
-  rm -f ${CONFIG_DIR}/prometheus_targets.yml
+  rm -f "${CONFIG_DIR}"/prometheus_targets.yml
   docker rm -f $CONTAINER
 }
 trap finish EXIT
@@ -37,23 +37,23 @@ if [[ "$OSTYPE" == "linux-gnu" ]]; then
   PROM_TARGETS="dev/prometheus/linux/prometheus_targets.yml"
 fi
 
-cp ${PROM_TARGETS} ${CONFIG_DIR}/prometheus_targets.yml
+cp ${PROM_TARGETS} "${CONFIG_DIR}"/prometheus_targets.yml
 
 docker inspect $CONTAINER >/dev/null 2>&1 && docker rm -f $CONTAINER
 
 # Generate Grafana dashboards
-pushd observability
+pushd monitoring
 DEV=true RELOAD=false go generate
 popd
 
-docker run --rm ${NET_ARG} --cidfile ${CID_FILE} \
+docker run --rm ${NET_ARG} --cidfile "${CID_FILE}" \
   --name=prometheus \
   --cpus=1 \
   --memory=4g \
   --user=$UID \
   -p 0.0.0.0:9090:9090 \
-  -v ${PROMETHEUS_DISK}:/prometheus \
-  -v ${CONFIG_DIR}:/sg_prometheus_add_ons \
+  -v "${PROMETHEUS_DISK}":/prometheus \
+  -v "${CONFIG_DIR}":/sg_prometheus_add_ons \
   -e PROMETHEUS_ADDITIONAL_FLAGS=--web.enable-lifecycle \
-  ${IMAGE} >>${PROMETHEUS_DISK}/logs/prometheus.log 2>&1 &
+  ${IMAGE} >>"${PROMETHEUS_DISK}"/logs/prometheus.log 2>&1 &
 wait $!

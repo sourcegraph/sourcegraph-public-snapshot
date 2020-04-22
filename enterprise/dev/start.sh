@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -euf -o pipefail
-cd $(dirname "${BASH_SOURCE[0]}")/..
+cd "$(dirname "${BASH_SOURCE[0]}")"/..
 
 DEV_PRIVATE_PATH=$PWD/../../dev-private
 
@@ -21,6 +21,7 @@ if [ -f "$DEV_PRIVATE_PATH/enterprise/dev/critical-config.json" ]; then
   exit 1
 fi
 
+# shellcheck disable=SC1090
 source "$DEV_PRIVATE_PATH/enterprise/dev/env"
 
 export SITE_CONFIG_FILE=$DEV_PRIVATE_PATH/enterprise/dev/site-config.json

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # This script tests the backward-compatibility of the current DB schema at revision $HEAD with the
 # DB unit tests at revision $OLD. $HEAD should be set to the currently checked out revision.
@@ -11,9 +11,10 @@
 # * It then checks out $HEAD again and exits with the exit code of the db unit tests it ran in the
 #   old revision.
 
-cd $(dirname "${BASH_SOURCE[0]}")/../..
+cd "$(dirname "${BASH_SOURCE[0]}")"/../..
 
-if [ -z "$HEAD" ] || [ ! -z "$(git diff "$HEAD"..HEAD)" ]; then
+if [ -z "$HEAD" ] || [ -n "$(git diff "$HEAD"..HEAD)" ]; then
+  # shellcheck disable=SC2016
   echo 'Must set $HEAD to currently checked out branch.'
   set -x
   git diff "$HEAD"..HEAD
@@ -22,11 +23,12 @@ if [ -z "$HEAD" ] || [ ! -z "$(git diff "$HEAD"..HEAD)" ]; then
   exit 1
 fi
 if [ -z "$OLD" ]; then
+  # shellcheck disable=SC2016
   echo 'Must set $OLD to old commit.'
   exit 1
 fi
 
-if [ ! -z "$(git status --porcelain)" ]; then
+if [ -n "$(git status --porcelain)" ]; then
   git status
   echo 'Work tree is dirty, aborting.'
   exit 1
@@ -35,7 +37,7 @@ fi
 echo "Running backcompat test between $HEAD (HEAD) and $OLD"
 
 function getLatestMigrationVersion() {
-  ls -1 ./migrations/*.up.sql | cut -d'_' -f 1 | cut -d'/' -f 3 | tail -n1
+  find ./migrations -type f -name '[0-9]*.up.sql' | cut -d'_' -f 1 | cut -d'/' -f 3 | sort -n | tail -n1
 }
 
 LATEST_SCHEMA=$(getLatestMigrationVersion)
@@ -43,6 +45,7 @@ CURRENT_DB_SCHEMA=$(psql -t -d sourcegraph-test-db -c 'select version from schem
 
 if [ "$LATEST_SCHEMA" != "$CURRENT_DB_SCHEMA" ]; then
   echo "Latest migration schema version ($LATEST_SCHEMA) does not match schema in test DB ($CURRENT_DB_SCHEMA)."
+  # shellcheck disable=SC2016
   echo '    You can run `go test -count=1 -v ./cmd/frontend/db/  -run=TestMigrations` to update the test DB schema.'
   exit 1
 fi
@@ -62,14 +65,15 @@ function runTest() {
 	    DB schema version:				${CURRENT_DB_SCHEMA}
 	EOF
 
-    # All DB tests are assumed to import the ./cmd/frontend/db/testing package, so use that to
+    # All DB tests are assumed to import the internal/db/dbtesting package, so use that to
     # find which packages' tests need to be run.
-    PACKAGES_WITH_DB_TEST=$(go list -f '{{$printed := false}}{{range .TestImports}}{{if and (not $printed) (eq . "github.com/sourcegraph/sourcegraph/cmd/frontend/db/testing")}}{{$.ImportPath}}{{$printed = true}}{{end}}{{end}}' ./...)
+    # shellcheck disable=SC2016
+    mapfile -t PACKAGES_WITH_DB_TEST < <(go list -f '{{$printed := false}}{{range .TestImports}}{{if and (not $printed) (eq . "github.com/sourcegraph/sourcegraph/internal/db/dbtesting")}}{{$.ImportPath}}{{$printed = true}}{{end}}{{end}}' ./...)
 
     set -ex
     # Test without cache, because schema change does not
     # necessarily mean Go source has changed.
-    TEST_SKIP_DROP_DB_BEFORE_TESTS=true SKIP_MIGRATION_TEST=true go test -count=1 -v $PACKAGES_WITH_DB_TEST
+    TEST_SKIP_DROP_DB_BEFORE_TESTS=true SKIP_MIGRATION_TEST=true go test -count=1 -v "${PACKAGES_WITH_DB_TEST[@]}"
     set +ex
 
     NOW_DB_SCHEMA=$(psql -t -d sourcegraph-test-db -c 'select version from schema_migrations' | xargs echo -n)

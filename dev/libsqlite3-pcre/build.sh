@@ -37,7 +37,9 @@ function libpath() {
 }
 
 function build() {
-  local libsqlite_path=$(libpath)
+  local libsqlite_path
+  libsqlite_path=$(libpath)
+
   if [[ -f "$libsqlite_path" ]]; then
     # Already exists
     exit 0
@@ -71,12 +73,14 @@ function build() {
   case "$OSTYPE" in
     darwin*)
       # pkg-config spits out multiple arguments and must not be quoted.
+      # shellcheck disable=SC2046
       gcc -fno-common -dynamiclib pcre.c -o "$libsqlite_path" $(pkg-config --cflags sqlite3 libpcre) $(pkg-config --libs libpcre) -fPIC
       exit 0
       ;;
 
     linux*)
       # pkg-config spits out multiple arguments and must not be quoted.
+      # shellcheck disable=SC2046
       gcc -shared -o "$libsqlite_path" $(pkg-config --cflags sqlite3 libpcre) -fPIC -W -Werror pcre.c $(pkg-config --libs libpcre) -Wl,-z,defs
       exit 0
       ;;

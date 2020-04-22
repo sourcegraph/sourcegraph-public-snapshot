@@ -1,9 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Convenience script which just ensures all go code can compile
 
 set -ex
-cd $(dirname "${BASH_SOURCE[0]}")/../..
+cd "$(dirname "${BASH_SOURCE[0]}")"/../..
 
 export GOBIN=${PWD}/.bin
 go list github.com/sourcegraph/sourcegraph/cmd/... |

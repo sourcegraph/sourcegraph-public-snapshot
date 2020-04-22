@@ -22,7 +22,7 @@ export CGO_ENABLED=0
 cp -a ./dev/src-expose/entry.sh "$OUTPUT"
 go build -trimpath -o "$OUTPUT/src-expose" github.com/sourcegraph/sourcegraph/dev/src-expose
 
-docker build -f dev/src-expose/Dockerfile -t $IMAGE $OUTPUT \
+docker build -f dev/src-expose/Dockerfile -t "$IMAGE" "$OUTPUT" \
   --progress=plain \
   --build-arg COMMIT_SHA \
   --build-arg DATE \

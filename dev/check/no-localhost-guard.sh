@@ -1,5 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
+set -e
 echo "--- no localhost guard"
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
@@ -10,16 +11,19 @@ path_filter() {
   echo "${withPath# -o }"
 }
 
+set +e
 LOCALHOST_MATCHES=$(git grep -e localhost --and --not -e '^\s*//' --and --not -e 'CI\:LOCALHOST_OK' -- '*.go' \
   ':(exclude)*_test.go' \
   ':(exclude)cmd/server/shared/nginx.go' \
   ':(exclude)pkg/conf/confdefaults' \
   ':(exclude)schema' \
   ':(exclude)vendor')
+set -e
 
-if [ ! -z "$LOCALHOST_MATCHES" ]; then
+if [ -n "$LOCALHOST_MATCHES" ]; then
   echo
   echo "Error: Found instances of \"localhost\":"
+  # shellcheck disable=SC2001
   echo "$LOCALHOST_MATCHES" | sed 's/^/  /'
 
   cat <<EOF
