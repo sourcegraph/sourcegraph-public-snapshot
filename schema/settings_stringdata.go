@@ -3,8 +3,7 @@
 package schema
 
 // SettingsSchemaJSON is the content of the file "settings.schema.json".
-const SettingsSchemaJSON = `
-{
+const SettingsSchemaJSON = `{
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "settings.schema.json#",
   "title": "Settings",
