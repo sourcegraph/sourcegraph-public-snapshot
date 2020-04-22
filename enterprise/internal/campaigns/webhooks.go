@@ -800,6 +800,7 @@ func (h *BitbucketServerWebhook) syncWebhook(id int64, con *schema.BitbucketServ
 
 	secret := con.WebhookSecret()
 	oldSecret, ok := h.secrets[id]
+
 	if ok && oldSecret == secret {
 		// Nothing has changed since our last check
 		return nil
