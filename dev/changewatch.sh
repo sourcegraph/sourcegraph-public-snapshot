@@ -21,7 +21,7 @@ useChokidar() {
     cmd/frontend/graphqlbackend/schema.graphql \
     "'schema/*.json'" \
     "'docker-images/grafana/jsonnet/*.jsonnet'" \
-    "'observability/*'" \
+    "'monitoring/*'" \
     "'cmd/symbols/**/*'" \
     "'cmd/symbols/.ctags.d/*'" \
     -c "'./dev/handle-change.sh {path}'"
@@ -39,7 +39,7 @@ execInotifywrapper() {
     -match 'cmd/frontend/graphqlbackend/schema\.graphql' \
     -match 'schema/.*.json' \
     -match 'docker-images/grafana/jsonnet/*.jsonnet' \
-    -match 'observability/*' \
+    -match 'monitoring/*' \
     -cmd './dev/handle-change.sh'
 }
 
@@ -56,7 +56,7 @@ execWatchman() {
     ["dirname", "cmd/symbols"],
     ["dirname", "schema"],
     ["dirname", "docker-images/grafana/jsonnet"],
-    ["dirname", "observability"],
+    ["dirname", "monitoring"],
     ["name", "cmd/frontend/graphqlbackend/schema.graphql", "wholename"]
   ],
   "fields": ["name"]
