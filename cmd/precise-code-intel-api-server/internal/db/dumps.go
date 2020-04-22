@@ -147,7 +147,7 @@ func (db *dbImpl) updateDumpsVisibleFromTip(ctx context.Context, tw *transaction
 	if tw == nil {
 		tw, err = db.beginTx(ctx)
 		if err != nil {
-			return
+			return err
 		}
 		defer func() {
 			err = closeTx(tw.tx, err)
@@ -164,5 +164,5 @@ func (db *dbImpl) updateDumpsVisibleFromTip(ctx context.Context, tw *transaction
 	`
 
 	_, err = tw.exec(ctx, withAncestorLineage(query, repositoryID, tipCommit, repositoryID))
-	return
+	return err
 }

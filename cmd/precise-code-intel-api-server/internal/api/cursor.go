@@ -37,14 +37,15 @@ func EncodeCursor(cursor Cursor) string {
 }
 
 // decodeCursor is the inverse of EncodeCursor.
-func decodeCursor(rawEncoded string) (cursor Cursor, err error) {
+func decodeCursor(rawEncoded string) (Cursor, error) {
 	raw, err := base64.RawURLEncoding.DecodeString(rawEncoded)
 	if err != nil {
-		return
+		return Cursor{}, err
 	}
 
+	var cursor Cursor
 	err = json.Unmarshal([]byte(raw), &cursor)
-	return
+	return cursor, err
 }
 
 // DecodeOrCreateCursor decodes and returns the raw cursor, or creates a new initial page cursor

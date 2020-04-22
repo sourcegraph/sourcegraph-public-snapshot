@@ -31,19 +31,24 @@ type ReferencePageResolver struct {
 	limit               int
 }
 
-func (s *ReferencePageResolver) resolvePage(ctx context.Context, cursor Cursor) (locations []ResolvedLocation, newCursor Cursor, hasNewCursor bool, err error) {
-	for s.limit > 0 {
-		var batch []ResolvedLocation
-		batch, newCursor, hasNewCursor, err = s.dispatchCursorHandler(ctx, cursor)
-		locations = append(locations, batch...)
-		if err != nil || !hasNewCursor {
-			break
+func (s *ReferencePageResolver) resolvePage(ctx context.Context, cursor Cursor) ([]ResolvedLocation, Cursor, bool, error) {
+	var allLocations []ResolvedLocation
+
+	for {
+		locations, newCursor, hasNewCursor, err := s.dispatchCursorHandler(ctx, cursor)
+		if err != nil {
+			return nil, Cursor{}, false, err
 		}
-		s.limit -= len(batch)
+
+		s.limit -= len(locations)
+		allLocations = append(allLocations, locations...)
+
+		if !hasNewCursor || s.limit <= 0 {
+			return allLocations, newCursor, hasNewCursor, err
+		}
+
 		cursor = newCursor
 	}
-
-	return
 }
 
 func (s *ReferencePageResolver) dispatchCursorHandler(ctx context.Context, cursor Cursor) ([]ResolvedLocation, Cursor, bool, error) {
