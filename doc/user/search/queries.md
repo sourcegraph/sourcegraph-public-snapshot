@@ -35,7 +35,6 @@ Literal search interprets search patterns literally to simplify searching for wo
 | [`foo bar`](https://sourcegraph.com/search?q=foo+bar&patternType=literal) | Match the string `foo bar`. Matching is ordered: match `foo` followed by `bar`. Matching is case-_insensitive_ (toggle the <img src=../img/case.png> button to change). | |
 | [`"foo bar"`](https://sourcegraph.com/search?q=%22foo+bar%22&patternType=literal) | Match the string `"foo bar"`. The quotes are matched literally. |
 
-
 As of version 3.9.0, by default, searches are interpreted literally instead of as regexp. To change the default search, site admins and users can change their instance and personal default by setting `search.defaultPatternType` to `"literal"` or `"regexp"`. 
 
 ### Regexp search 
@@ -89,6 +88,41 @@ The following keywords can be used on all searches (using [RE2 syntax](https://g
 
 
 Multiple or combined **repo:** and **file:** keywords are intersected. For example, `repo:foo repo:bar` limits your search to repositories whose path contains **both** _foo_ and _bar_ (such as _github.com/alice/foobar_). To include results from repositories whose path contains **either** _foo_ or _bar_, use `repo:foo|bar`.
+
+## Operators
+
+Use operators to create more expressive searches.
+
+> NOTE: Operators are available as of 3.15 and enabled with `{"experimentalFeatures": {"andOrQuery": "enabled"}}` in site settings. Built-in operator support is planned for the upcoming 3.16 release and onwards.
+
+| Operator | Example |
+| --- | --- |
+| `and`, `AND` | [`conf.Get( and log15.Error(`](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+conf.Get%28+and+log15.Error%28&patternType=regexp), [`conf.Get( and log15.Error( and after`](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+conf.Get%28+and+log15.Error%28+and+after&patternType=regexp) |
+
+Returns results for files containing matches on the left _and_ right side of the `and` (set intersection). The number of results reports the number of files containing both strings. 
+
+| Operator | Example |
+| --- | --- |
+| `or`, `OR` | [`conf.Get( or log15.Error(`](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+conf.Get%28+or+log15.Error%28&patternType=regexp), [<code>conf.Get( or log15.Error( or after   </code>](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+conf.Get%28+or+log15.Error%28+or+after&patternType=regexp)| 
+
+Returns file content matching either on the left or right side, or both (set union). The number of results reports the number of matches of both strings. 
+
+### Operator precedence and groups
+
+Operators may be combined. `and`-expressions have higher precedence (bind tighter) than `or`-expressions so that `a and b or c and d` means `(a and b) or (c and d)`. 
+
+Expressions may be grouped with parentheses to change the default precedence and meaning. For example: `a and (b or c) and d`.
+
+### Operator scope
+
+Except for simple cases, search patterns bind tightest to scoped fields, like `file:main.c`. So, a combined query like
+`file:main.c char c  or (int i and int j)` generally means `(file:main.c char c) or (int i and int j)`
+
+Since we don't yet support search subexpressions with different scopes, the above will raise an alert. If the intent is to apply the `file` scope to the entire pattern, group it like so: `file:main.c (char c or (int i and int j))`
+
+### Operator support
+
+Operators are supported in regexp and structural search modes, but not literal search mode. How operators interpret search pattern syntax depends on kind of search (whether [regexp](#regexp-search) or [structural](#structural-search)). Operators currently only apply to searches for file content. Thus, expressions like `repo:npm/cli or repo:npm/npx` are not currently supported. 
 
 ---
 

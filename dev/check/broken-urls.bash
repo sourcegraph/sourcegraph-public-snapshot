@@ -1,6 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-cd "$(dirname "${BASH_SOURCE[0]}")/../.."
+set -e
+cd "$(dirname "${BASH_SOURCE[0]}")"/../..
 
 # Skip on non-master branches to avoid preventing us from building historical commits (eg when
 # backporting fixes).
@@ -18,7 +19,7 @@ for url in $URL_MATCHES; do
     fi
 done
 
-if [ ! -z "$BAD_URLS" ]; then
+if [ -n "$BAD_URLS" ]; then
     echo
     echo "Error: Found broken about.sourcegraph.com URLs:"
     echo "$BAD_URLS" | sed 's/ /\n/g' | sed 's/^/  /'

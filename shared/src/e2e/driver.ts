@@ -21,12 +21,13 @@ import * as path from 'path'
 import { escapeRegExp } from 'lodash'
 import { readFile, appendFile } from 'mz/fs'
 import { Settings } from '../settings/settings'
-import { fromEvent } from 'rxjs'
-import { filter, map, concatAll } from 'rxjs/operators'
+import { fromEvent, merge } from 'rxjs'
+import { filter, map, concatAll, mergeMap } from 'rxjs/operators'
 import mkdirpPromise from 'mkdirp-promise'
 import getFreePort from 'get-port'
 import puppeteerFirefox from 'puppeteer-firefox'
 import webExt from 'web-ext'
+import { isDefined } from '../util/types'
 
 /**
  * Returns a Promise for the next emission of the given event on the given Puppeteer page.
@@ -732,8 +733,15 @@ export async function createDriverForTest(options: DriverOptions): Promise<Drive
 
     const page = await browser.newPage()
     if (logBrowserConsole) {
-        fromEvent<ConsoleMessage>(page, 'console')
+        merge(
+            await browser.pages(),
+            fromEvent<Target>(browser, 'targetcreated').pipe(
+                mergeMap(target => target.page()),
+                filter(isDefined)
+            )
+        )
             .pipe(
+                mergeMap(page => fromEvent<ConsoleMessage>(page, 'console')),
                 filter(
                     message =>
                         !message.text().includes('Download the React DevTools') &&

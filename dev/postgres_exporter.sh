@@ -10,7 +10,7 @@ CONTAINER=postgres_exporter
 
 # Use psql to read the effective values for PG* env vars (instead of, e.g., hardcoding the default
 # values).
-get_pg_env() { psql -c '\set' | grep $1 | cut -f 2 -d "'"; }
+get_pg_env() { psql -c '\set' | grep "$1" | cut -f 2 -d "'"; }
 PGHOST=${PGHOST-$(get_pg_env HOST)}
 PGUSER=${PGUSER-$(get_pg_env USER)}
 PGPORT=${PGPORT-$(get_pg_env PORT)}
@@ -28,4 +28,4 @@ if [[ "$OSTYPE" == "linux-gnu" ]]; then
   DATA_SOURCE_NAME="postgresql://${PGUSER}:${PGPASSWORD}@${ADJUSTED_HOST}:${PGPORT}/postgres?sslmode=${PGSSLMODE:-disable}"
 fi
 
-exec docker run --rm -p9187:9187 ${NET_ARG} --name=postgres_exporter -e DATA_SOURCE_NAME=${DATA_SOURCE_NAME} ${IMAGE}
+exec docker run --rm -p9187:9187 ${NET_ARG} --name="$CONTAINER" -e DATA_SOURCE_NAME="${DATA_SOURCE_NAME}" ${IMAGE}

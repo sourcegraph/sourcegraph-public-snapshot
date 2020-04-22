@@ -97,8 +97,8 @@ func (rph *ReverseProxyHandler) Populate(peps []Endpoint) {
 	for _, ep := range peps {
 		displayName := displayNameFromEndpoint(ep)
 		rps[displayName] = &proxyEndpoint{
-			reverseProxy: reverseProxyFromHost(ep.Host, displayName),
-			host:         ep.Host,
+			reverseProxy: reverseProxyFromHost(ep.Addr, displayName),
+			host:         ep.Addr,
 		}
 	}
 
@@ -109,17 +109,20 @@ func (rph *ReverseProxyHandler) Populate(peps []Endpoint) {
 
 // Creates a display name from an endpoint suited for using in a URL link.
 func displayNameFromEndpoint(ep Endpoint) string {
-	colonIdx := strings.Index(ep.Host, ":")
-	strippedHost := ep.Host
-	if colonIdx != -1 {
-		strippedHost = strippedHost[:colonIdx]
+	host := ep.Hostname
+	if host == "" {
+		host = ep.Addr
+		if idx := strings.Index(host, ":"); idx != -1 {
+			host = host[:idx]
+		}
 	}
+
 	// Stateful Services have unique pod names. Lets use them to avoid stutter
 	// in the name (gitserver-gitserver-0 becomes gitserver-0).
-	if strings.HasPrefix(strippedHost, ep.Service) {
-		return strippedHost
+	if strings.HasPrefix(host, ep.Service) {
+		return host
 	}
-	return fmt.Sprintf("%s-%s", ep.Service, strippedHost)
+	return fmt.Sprintf("%s-%s", ep.Service, host)
 }
 
 // reverseProxyFromHost creates a reverse proxy from specified host with the path prefix that will be stripped from

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-cd $(dirname "${BASH_SOURCE[0]}")/../..
 set -ex
+cd "$(dirname "${BASH_SOURCE[0]}")"/../..
 
 if [ -z "$IMAGE" ]; then
   echo "Must specify \$IMAGE."
@@ -17,7 +17,7 @@ if curl --output /dev/null --silent --head --fail $URL; then
 fi
 
 echo "--- Running a daemonized $IMAGE as the test subject..."
-CONTAINER="$(docker container run -d -e DEPLOY_TYPE=dev $IMAGE)"
+CONTAINER="$(docker container run -d -e DEPLOY_TYPE=dev "$IMAGE")"
 trap 'kill $(jobs -p -r)'" ; docker logs --timestamps $CONTAINER ; docker container rm -f $CONTAINER ; docker image rm -f $IMAGE" EXIT
 
 docker exec "$CONTAINER" apk add --no-cache socat
@@ -27,18 +27,23 @@ docker exec "$CONTAINER" apk add --no-cache socat
 socat tcp-listen:7080,reuseaddr,fork system:"docker exec -i $CONTAINER socat stdio 'tcp:localhost:7080'" &
 
 echo "--- Waiting for $URL to be up"
-set +e
-timeout 60s bash -c "until curl --output /dev/null --silent --head --fail $URL; do
+
+read -r -d '' retryPingCommand <<-EOF
+until curl --output /dev/null --silent --head --fail $URL; do
     echo Waiting 5s for $URL...
     sleep 5
-done"
-if [ $? -ne 0 ]; then
+done
+EOF
+
+set +e
+if ! timeout 60s bash -c "$retryPingCommand"; then
   echo "^^^ +++"
   echo "$URL was not accessible within 60s. Here's the output of docker inspect and docker logs:"
   docker inspect "$CONTAINER"
   exit 1
 fi
 set -e
+
 echo "Waiting for $URL... done"
 
 echo "--- yarn run test-e2e"

@@ -2,13 +2,11 @@
 
 ## Updating campaign attributes
 
-In order to update the title and the description of a campaign, simply click the **Edit** button on the top right when viewing a campaign. You can then update both attributes.
+In order to update the title and the description of a campaign, simply click the **Edit** button on the top right when viewing a campaign. You can then update both attributes. The branch name of a campaign can also be edited, but only if the campaign was created from a patch set and doesn't contain any published changesets.
 
 When you click on **Save** and the campaign will be updated.
 
 If the campaign was created from a patch set and includes changesets that have already been created on the code host, the title and description of those changesets will be updated on the code host, too.
-
-The branch name of a campaign can also be edited, but only if the campaign doesn't contain any published changesets.
 
 ## Updating the patch set of a campaign
 
@@ -26,7 +24,15 @@ $ src action exec -f new-action-definition.json | src campaign patchset create-f
 
 For example, the `new-action-definition.json` could have a `"scopeQuery"` that yields _more_ repositories and thus produces _more_ patches.
 
-Following the creation of the patch set with one of the two commands above, a URL will be printed that will guide you to the Sourcegraph web UI.
+Following the creation of the patch set with one of the two commands above, a URL will be printed that will guide you to the Sourcegraph web UI:
+
+<div style="max-width: 500px;" class="mx-auto">
+  <figure class="figure">
+    <div class="figure-img">
+    <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/update_patchset.png" width="500px"/>
+    </div>
+  </figure>
+</div>
 
 In the UI you can then select which campaign should be updated to use the new patch set:
 
@@ -59,3 +65,55 @@ When you click on **Update** the patches and changesets in a campaign will be up
 * Published changesets will be closed on the code host and detached from the campaign if the new patch set doesn't contain a patch for their repositories.
 * Published changesets will be left untouched if the new patch set contain the exact same patch for their repositories and the campaigns title and description have not been changed.
 * Published changesets that are already merged or closed will not be updated and kept attached to the campaign. If a the patch set contains an new patch for a repository for which the campaign already has a merged changeset, a new changeset will be created.
+
+### Example: Extending the scope of an campaign
+
+A common reason for updating campaigns is to widen or narrow their scope, wanting more or fewer changesets to be created on a code host. In order to do that, one needs to update the patch set of an existing campaign with a patch set that contains the desired amount of patches.
+
+Say you have successfully created a campaign based on the patches yielded by running the following action:
+
+```json
+{
+  "scopeQuery": "repo:github.com/sourcegraph/sourcegraph$",
+  "steps": [
+    {
+      "type": "docker",
+      "image": "golang:1.14-alpine",
+      "args": ["sh", "-c", "cd /work && go fmt ./..."]
+    }
+  ]
+}
+```
+
+The campaign now has a single changeset, for the `github.com/sourcegraph/sourcegraph` repository, which was the only repository yielded by the `"scopeQuery"` above.
+
+Now you want to run the same action over more repositories and extend the existing campaign by creating additional changesets on the code hosts.
+
+To do that, first change the action definition's `"scopeQuery"` to yield more repositories:
+
+```json
+{
+  "scopeQuery": "repo:github.com/sourcegraph",
+  "steps": [
+    {
+      "type": "docker",
+      "image": "golang:1.14-alpine",
+      "args": ["sh", "-c", "cd /work && go fmt ./..."]
+    }
+  ]
+}
+```
+
+This will now run the `go fmt` in every repository in the `github.com/sourcegraph` organization.
+
+Execute the action and create a new patch set:
+
+```
+$ src action exec -f extended-action.json -create-patchset
+```
+
+After the command ran successfully, a URL to continue in the web UI is printed.
+
+Open it to select which campaign you want to update. Select your existing campaign. The preview now shows you the additional changesets that will be created when you update the campaign and, if something changed in that repository, how the changeset that already exists will be updated.
+
+Click **Update** to create the additional changesets.

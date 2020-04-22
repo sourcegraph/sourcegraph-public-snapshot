@@ -12,6 +12,7 @@
     "orta.vscode-jest",
     "dbaeumer.vscode-eslint",
     "foxundermoon.shell-format",
+    "timonwong.shellcheck",
   ],
   "unwantedRecommendations": ["ms-vscode.vscode-typescript-tslint-plugin", "eg2.tslint"],
 }

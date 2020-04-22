@@ -114,11 +114,7 @@ $ <span class=\\"hljs-built_in\\">export</span> SRC_ACCESS_TOKEN=&lt;YOUR TOKEN&
           <code>
             main.go
           </code>
-           
-          <code>
-            file
-          </code>
-          :
+           file:
         </p>
         <pre
           className="alert alert-secondary ml-3"
@@ -143,15 +139,16 @@ $ <span class=\\"hljs-built_in\\">export</span> SRC_ACCESS_TOKEN=&lt;YOUR TOKEN&
           />
         </pre>
         <p>
-          See the examples below for more real-world usecases and
+          See the examples below for more real-world use cases and read "
            
           <a
             href="https://docs.sourcegraph.com/user/campaigns/creating_campaign_from_patches"
             rel="noopener noreferrer"
             target="_blank"
           >
-            read the documentation for more information on what actions can do.
+            Creating a campaign from patches
           </a>
+          " in the documentation for more information about what actions can do.
         </p>
       </div>
       <h3>
@@ -172,7 +169,14 @@ $ <span class=\\"hljs-built_in\\">export</span> SRC_ACCESS_TOKEN=&lt;YOUR TOKEN&
           />
         </pre>
         <p>
-          Follow the printed instructions to create a campaign from the patches and to turn the patches into changesets (pull requests) on your code hosts.
+          After executing the command, follow the printed instructions to create a campaign from the patches and turn the patches into changesets (pull requests) on your code hosts.
+        </p>
+        <p>
+          Run 
+          <code>
+            src action exec -h
+          </code>
+           to see more usage information about this command.
         </p>
       </div>
     </div>
