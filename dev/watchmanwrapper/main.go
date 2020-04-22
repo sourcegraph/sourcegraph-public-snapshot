@@ -33,6 +33,10 @@ func main() {
 		fmt.Fprintln(os.Stderr, "!!! WATCHMAN debugging enabled")
 	}
 
+	changed := make(chan []string)
+
+	// reads stdout of watchman process and sends the changed files on the
+	// changed channel.
 	go func() {
 		dec := json.NewDecoder(stdout)
 		for {
@@ -48,11 +52,18 @@ func main() {
 				continue
 			}
 
+			changed <- r.Files
+		}
+	}()
+
+	// reads the changed channel and runs the command os.Args[1] with the files as arguments
+	go func() {
+		for files := range changed {
 			if debug {
-				fmt.Fprintln(os.Stderr, "!!! WATCH EVENT", r.Files)
+				fmt.Fprintln(os.Stderr, "!!! WATCH EVENT", files)
 			}
 
-			cmd := exec.Command(os.Args[1], r.Files...)
+			cmd := exec.Command(os.Args[1], files...)
 			cmd.Stderr = os.Stderr
 			cmd.Stdout = os.Stdout
 			err = cmd.Run()
