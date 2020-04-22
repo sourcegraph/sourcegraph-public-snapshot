@@ -733,7 +733,7 @@ This document contains possible solutions for when you find alerts are firing in
 If your alert isn't mentioned here, or if the solution doesn't help, [contact us](mailto:support@sourcegraph.com)
 for assistance.
 
-<!-- GENERATED: DO NOT EDIT: See monitoring/ for details. -->
+<!-- DO NOT EDIT: generated via: go generate ./monitoring -->
 
 `)
 	for _, c := range containers {
