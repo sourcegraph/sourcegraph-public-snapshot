@@ -67,6 +67,7 @@
 /dev/src-expose @keegancsmith
 /dev/drop-test-databases.sh @efritz
 /dev/squash_migrations.sh @efritz
+/dev/watchmanwrapper @keegancsmith
 /.storybook @felixfbecker
 /CONTRIBUTING.md @beyang @nicksnyder @slimsag
 /SECURITY.md @beyang @nicksnyder
