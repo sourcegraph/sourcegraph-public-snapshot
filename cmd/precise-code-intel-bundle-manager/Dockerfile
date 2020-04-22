@@ -36,6 +36,6 @@ USER sourcegraph
 COPY ./precise-code-intel-bundle-manager /usr/local/bin/precise-code-intel-bundle-manager
 
 EXPOSE 3187
-ENV LOG_LEVEL=debug
-ENV GO111MODULES=on LANG=en_US.utf8
+VOLUME ["/lsif-storage"]
+ENV LOG_LEVEL=debug GO111MODULES=on LANG=en_US.utf8
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/precise-code-intel-bundle-manager"]
