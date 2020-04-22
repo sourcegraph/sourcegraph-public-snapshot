@@ -56,6 +56,7 @@ require (
 	github.com/gorilla/securecookie v1.1.1
 	github.com/gorilla/sessions v1.2.0
 	github.com/goware/urlx v0.3.1
+	github.com/grafana-tools/sdk v0.0.0-00010101000000-000000000000
 	github.com/graph-gophers/graphql-go v0.0.0-20200309224638-dae41bde9ef9
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
 	github.com/hashicorp/go-hclog v0.12.2 // indirect
@@ -83,7 +84,6 @@ require (
 	github.com/machinebox/graphql v0.2.2
 	github.com/matryer/is v1.3.0 // indirect
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
-	github.com/mattn/goreman v0.0.0-00010101000000-000000000000 // indirect
 	github.com/mcuadros/go-version v0.0.0-20190830083331-035f6764e8d2
 	github.com/microcosm-cc/bluemonday v1.0.2
 	github.com/mschoch/smat v0.2.0 // indirect
@@ -104,9 +104,7 @@ require (
 	github.com/sergi/go-diff v1.1.0
 	github.com/shirou/gopsutil v2.20.3+incompatible // indirect
 	github.com/shurcooL/github_flavored_markdown v0.0.0-20181002035957-2122de532470
-	github.com/shurcooL/githubv4 v0.0.0-20191127044304-8f68eb5628d0
 	github.com/shurcooL/go v0.0.0-20191216061654-b114cc39af9f // indirect
-	github.com/shurcooL/graphql v0.0.0-20181231061246-d48a9a75455f // indirect
 	github.com/shurcooL/highlight_diff v0.0.0-20181222201841-111da2e7d480 // indirect
 	github.com/shurcooL/highlight_go v0.0.0-20191220051317-782971ddf21b // indirect
 	github.com/shurcooL/httpfs v0.0.0-20190707220628-8d4bc4ba7749
@@ -159,6 +157,9 @@ replace (
 	github.com/russellhaering/gosaml2 => github.com/sourcegraph/gosaml2 v0.3.2-0.20200109173551-5cfddeb48b17
 	github.com/uber/gonduit => github.com/sourcegraph/gonduit v0.4.0
 )
+
+// https://github.com/grafana-tools/sdk/pull/80
+replace github.com/grafana-tools/sdk => github.com/slimsag/sdk v0.0.0-20200402190125-fc52c0aed0b7
 
 replace github.com/russross/blackfriday => github.com/russross/blackfriday v1.5.2
 
