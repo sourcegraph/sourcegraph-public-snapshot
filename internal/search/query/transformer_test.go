@@ -1,7 +1,6 @@
 package query
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 
@@ -30,7 +29,6 @@ func Test_LowercaseFieldNames(t *testing.T) {
 	input := "rEpO:foo PATTERN"
 	want := `(and "repo:foo" "PATTERN")`
 	query, _ := ParseAndOr(input)
-	fmt.Println("KEKE", query)
 	got := prettyPrint(LowercaseFieldNames(query))
 	if diff := cmp.Diff(got, want); diff != "" {
 		t.Fatal(diff)
