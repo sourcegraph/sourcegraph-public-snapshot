@@ -422,8 +422,8 @@ type requestRecorder struct {
 func (r *requestRecorder) Do(req *http.Request) (*http.Response, error) {
 	r.requests = append(r.requests, req)
 	return &http.Response{
-		Status:     "OK",
-		StatusCode: 200,
+		Status:     http.StatusText(http.StatusOK),
+		StatusCode: http.StatusOK,
 		Body:       ioutil.NopCloser(strings.NewReader("")),
 	}, nil
 }
