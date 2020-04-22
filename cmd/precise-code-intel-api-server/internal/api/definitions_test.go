@@ -34,7 +34,7 @@ func TestDefinitions(t *testing.T) {
 		{Dump: testDump1, Path: "sub1/bar.go", Range: testRange2},
 		{Dump: testDump1, Path: "sub1/baz.go", Range: testRange3},
 	}
-	if diff := cmp.Diff(definitions, expectedDefinitions); diff != "" {
+	if diff := cmp.Diff(expectedDefinitions, definitions); diff != "" {
 		t.Errorf("unexpected definitions (-want +got):\n%s", diff)
 	}
 }
@@ -76,7 +76,7 @@ func TestDefinitionViaSameDumpMoniker(t *testing.T) {
 		{Dump: testDump1, Path: "sub1/bar.go", Range: testRange2},
 		{Dump: testDump1, Path: "sub1/baz.go", Range: testRange3},
 	}
-	if diff := cmp.Diff(definitions, expectedDefinitions); diff != "" {
+	if diff := cmp.Diff(expectedDefinitions, definitions); diff != "" {
 		t.Errorf("unexpected definitions (-want +got):\n%s", diff)
 	}
 }
@@ -110,7 +110,7 @@ func TestDefinitionViaRemoteDumpMoniker(t *testing.T) {
 		{Dump: testDump2, Path: "sub2/bar.go", Range: testRange2},
 		{Dump: testDump2, Path: "sub2/baz.go", Range: testRange3},
 	}
-	if diff := cmp.Diff(definitions, expectedDefinitions); diff != "" {
+	if diff := cmp.Diff(expectedDefinitions, definitions); diff != "" {
 		t.Errorf("unexpected definitions (-want +got):\n%s", diff)
 	}
 }

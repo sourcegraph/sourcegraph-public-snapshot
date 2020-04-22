@@ -66,7 +66,7 @@ func TestDefinitions(t *testing.T) {
 	definitions, err := client.Definitions(context.Background(), "main.go", 10, 20)
 	if err != nil {
 		t.Fatalf("unexpected error querying definitions: %s", err)
-	} else if diff := cmp.Diff(definitions, expected); diff != "" {
+	} else if diff := cmp.Diff(expected, definitions); diff != "" {
 		t.Errorf("unexpected definitions (-want +got):\n%s", diff)
 	}
 }
@@ -95,7 +95,7 @@ func TestReferences(t *testing.T) {
 	references, err := client.References(context.Background(), "main.go", 10, 20)
 	if err != nil {
 		t.Fatalf("unexpected error querying references: %s", err)
-	} else if diff := cmp.Diff(references, expected); diff != "" {
+	} else if diff := cmp.Diff(expected, references); diff != "" {
 		t.Errorf("unexpected references (-want +got):\n%s", diff)
 	}
 }
@@ -132,7 +132,7 @@ func TestHover(t *testing.T) {
 	} else {
 		if text != expectedText {
 			t.Errorf("unexpected hover text. want=%v have=%v", expectedText, text)
-		} else if diff := cmp.Diff(r, expectedRange); diff != "" {
+		} else if diff := cmp.Diff(expectedRange, r); diff != "" {
 			t.Errorf("unexpected hover range (-want +got):\n%s", diff)
 		}
 	}
@@ -202,7 +202,7 @@ func TestMonikersByPosition(t *testing.T) {
 	monikers, err := client.MonikersByPosition(context.Background(), "main.go", 10, 20)
 	if err != nil {
 		t.Fatalf("unexpected error querying monikers by position: %s", err)
-	} else if diff := cmp.Diff(monikers, expected); diff != "" {
+	} else if diff := cmp.Diff(expected, monikers); diff != "" {
 		t.Errorf("unexpected moniker data (-want +got):\n%s", diff)
 	}
 }
@@ -240,7 +240,7 @@ func TestMonikerResults(t *testing.T) {
 	if count != 5 {
 		t.Errorf("unexpected count. want=%v have=%v", 2, count)
 	}
-	if diff := cmp.Diff(locations, expected); diff != "" {
+	if diff := cmp.Diff(expected, locations); diff != "" {
 		t.Errorf("unexpected locations (-want +got):\n%s", diff)
 	}
 }
@@ -265,7 +265,7 @@ func TestPackageInformation(t *testing.T) {
 	packageInformation, err := client.PackageInformation(context.Background(), "main.go", "123")
 	if err != nil {
 		t.Fatalf("unexpected error querying package information: %s", err)
-	} else if diff := cmp.Diff(packageInformation, expected); diff != "" {
+	} else if diff := cmp.Diff(expected, packageInformation); diff != "" {
 		t.Errorf("unexpected package information (-want +got):\n%s", diff)
 	}
 }
@@ -288,5 +288,5 @@ func compareQuery(query url.Values, expected map[string]string) bool {
 		values[k] = v[0]
 	}
 
-	return cmp.Diff(values, expected) == ""
+	return cmp.Diff(expected, values) == ""
 }

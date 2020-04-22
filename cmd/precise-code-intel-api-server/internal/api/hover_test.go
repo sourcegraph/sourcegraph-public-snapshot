@@ -31,7 +31,7 @@ func TestHover(t *testing.T) {
 	if text != "text" {
 		t.Errorf("unexpected text. want=%s have=%s", "text", text)
 	}
-	if diff := cmp.Diff(r, testRange1); diff != "" {
+	if diff := cmp.Diff(testRange1, r); diff != "" {
 		t.Errorf("unexpected range (-want +got):\n%s", diff)
 	}
 }
@@ -79,7 +79,7 @@ func TestHoverRemoteDefinitionHoverText(t *testing.T) {
 	if text != "text" {
 		t.Errorf("unexpected text. want=%s have=%s", "text", text)
 	}
-	if diff := cmp.Diff(r, testRange4); diff != "" {
+	if diff := cmp.Diff(testRange4, r); diff != "" {
 		t.Errorf("unexpected range (-want +got):\n%s", diff)
 	}
 }

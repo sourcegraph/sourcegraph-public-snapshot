@@ -64,7 +64,7 @@ func TestGetDumpByID(t *testing.T) {
 		t.Fatalf("unexpected error getting dump: %s", err)
 	} else if !exists {
 		t.Fatal("expected record to exist")
-	} else if diff := cmp.Diff(dump, expected); diff != "" {
+	} else if diff := cmp.Diff(expected, dump); diff != "" {
 		t.Errorf("unexpected dump (-want +got):\n%s", diff)
 	}
 }
@@ -440,7 +440,7 @@ func TestUpdateDumpsVisibleFromTipOverlappingRootsSameIndexer(t *testing.T) {
 	visibilities := getDumpVisibilities(t, db.db)
 	expected := map[int]bool{1: false, 2: false, 3: false, 4: true, 5: true, 6: false}
 
-	if diff := cmp.Diff(visibilities, expected); diff != "" {
+	if diff := cmp.Diff(expected, visibilities); diff != "" {
 		t.Errorf("unexpected visibility (-want +got):\n%s", diff)
 	}
 }
@@ -485,7 +485,7 @@ func TestUpdateDumpsVisibleFromTipOverlappingRoots(t *testing.T) {
 
 	visibilities := getDumpVisibilities(t, db.db)
 	expected := map[int]bool{1: false, 2: true, 3: true, 4: true, 5: false, 6: false, 7: false, 8: false, 9: true}
-	if diff := cmp.Diff(visibilities, expected); diff != "" {
+	if diff := cmp.Diff(expected, visibilities); diff != "" {
 		t.Errorf("unexpected visibility. want=%v have=%v", expected, visibilities)
 	}
 }
@@ -534,7 +534,7 @@ func TestUpdateDumpsVisibleFromTipBranchingPaths(t *testing.T) {
 
 	visibilities := getDumpVisibilities(t, db.db)
 	expected := map[int]bool{1: false, 2: true, 3: true, 4: false, 5: false, 6: true, 7: true}
-	if diff := cmp.Diff(visibilities, expected); diff != "" {
+	if diff := cmp.Diff(expected, visibilities); diff != "" {
 		t.Errorf("unexpected visibility (-want +got):\n%s", diff)
 	}
 }
@@ -563,7 +563,7 @@ func TestUpdateDumpsVisibleFromTipMaxTraversalLimit(t *testing.T) {
 	} else {
 		visibilities := getDumpVisibilities(t, db.db)
 		expected := map[int]bool{1: true}
-		if diff := cmp.Diff(visibilities, expected); diff != "" {
+		if diff := cmp.Diff(expected, visibilities); diff != "" {
 			t.Errorf("unexpected visibility (-want +got):\n%s", diff)
 		}
 	}
@@ -573,7 +573,7 @@ func TestUpdateDumpsVisibleFromTipMaxTraversalLimit(t *testing.T) {
 	} else {
 		visibilities := getDumpVisibilities(t, db.db)
 		expected := map[int]bool{1: true}
-		if diff := cmp.Diff(visibilities, expected); diff != "" {
+		if diff := cmp.Diff(expected, visibilities); diff != "" {
 			t.Errorf("unexpected visibility (-want +got):\n%s", diff)
 		}
 	}
@@ -583,7 +583,7 @@ func TestUpdateDumpsVisibleFromTipMaxTraversalLimit(t *testing.T) {
 	} else {
 		visibilities := getDumpVisibilities(t, db.db)
 		expected := map[int]bool{1: false}
-		if diff := cmp.Diff(visibilities, expected); diff != "" {
+		if diff := cmp.Diff(expected, visibilities); diff != "" {
 			t.Errorf("unexpected visibility (-want +got):\n%s", diff)
 		}
 	}

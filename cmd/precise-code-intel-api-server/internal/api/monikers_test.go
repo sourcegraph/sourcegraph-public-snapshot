@@ -41,7 +41,7 @@ func TestLookupMoniker(t *testing.T) {
 		{Dump: testDump2, Path: "sub2/bar.go", Range: testRange4},
 		{Dump: testDump2, Path: "sub2/baz.go", Range: testRange5},
 	}
-	if diff := cmp.Diff(locations, expectedLocations); diff != "" {
+	if diff := cmp.Diff(expectedLocations, locations); diff != "" {
 		t.Errorf("unexpected definitions (-want +got):\n%s", diff)
 	}
 }

@@ -63,7 +63,7 @@ func TestDecodeOrCreateCursor(t *testing.T) {
 
 	if cursor, err := DecodeOrCreateCursor("sub1/main.go", 10, 20, 42, "", mockDB, mockBundleManagerClient); err != nil {
 		t.Fatalf("unexpected error decoding cursor: %s", err)
-	} else if diff := cmp.Diff(cursor, expectedCursor); diff != "" {
+	} else if diff := cmp.Diff(expectedCursor, cursor); diff != "" {
 		t.Errorf("unexpected cursor (-want +got):\n%s", diff)
 	}
 }
@@ -107,7 +107,7 @@ func TestDecodeOrCreateCursorExisting(t *testing.T) {
 
 	if cursor, err := DecodeOrCreateCursor("", 0, 0, 0, EncodeCursor(expectedCursor), mockDB, mockBundleManagerClient); err != nil {
 		t.Fatalf("unexpected error decoding cursor: %s", err)
-	} else if diff := cmp.Diff(cursor, expectedCursor); diff != "" {
+	} else if diff := cmp.Diff(expectedCursor, cursor); diff != "" {
 		t.Errorf("unexpected cursor (-want +got):\n%s", diff)
 	}
 }

@@ -60,7 +60,7 @@ func TestGetUploadByID(t *testing.T) {
 		t.Fatalf("unexpected error getting upload: %s", err)
 	} else if !exists {
 		t.Fatal("expected record to exist")
-	} else if diff := cmp.Diff(upload, expected); diff != "" {
+	} else if diff := cmp.Diff(expected, upload); diff != "" {
 		t.Errorf("unexpected upload (-want +got):\n%s", diff)
 	}
 }
@@ -180,7 +180,7 @@ func TestGetUploadsByRepo(t *testing.T) {
 					ids = append(ids, upload.ID)
 				}
 
-				if diff := cmp.Diff(ids, testCase.expectedIDs[lo:hi]); diff != "" {
+				if diff := cmp.Diff(testCase.expectedIDs[lo:hi], ids); diff != "" {
 					t.Errorf("unexpected upload ids at offset %d (-want +got):\n%s", lo, diff)
 				}
 			}
@@ -236,7 +236,7 @@ func TestEnqueue(t *testing.T) {
 		// Update auto-generated timestamp
 		expected.UploadedAt = upload.UploadedAt
 
-		if diff := cmp.Diff(upload, expected); diff != "" {
+		if diff := cmp.Diff(expected, upload); diff != "" {
 			t.Errorf("unexpected upload (-want +got):\n%s", diff)
 		}
 	}
@@ -285,7 +285,7 @@ func TestGetStates(t *testing.T) {
 
 	if states, err := db.GetStates(context.Background(), []int{1, 2, 4, 6}); err != nil {
 		t.Fatalf("unexpected error getting states: %s", err)
-	} else if diff := cmp.Diff(states, expected); diff != "" {
+	} else if diff := cmp.Diff(expected, states); diff != "" {
 		t.Errorf("unexpected upload states (-want +got):\n%s", diff)
 	}
 }
@@ -378,7 +378,7 @@ func TestDeleteUploadByIDUpdatesVisibility(t *testing.T) {
 
 	expected := map[int]bool{2: true, 3: true, 4: false}
 	visibilities := getDumpVisibilities(t, db.db)
-	if diff := cmp.Diff(visibilities, expected); diff != "" {
+	if diff := cmp.Diff(expected, visibilities); diff != "" {
 		t.Errorf("unexpected visibility (-want +got):\n%s", diff)
 	}
 }
@@ -420,7 +420,7 @@ func TestResetStalled(t *testing.T) {
 
 	if ids, err := db.ResetStalled(context.Background(), now); err != nil {
 		t.Fatalf("unexpected error resetting stalled uploads: %s", err)
-	} else if diff := cmp.Diff(ids, expected); diff != "" {
+	} else if diff := cmp.Diff(expected, ids); diff != "" {
 		t.Errorf("unexpected ids (-want +got):\n%s", diff)
 	}
 }

@@ -3,6 +3,7 @@ package server
 import (
 	"net"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/inconshreveable/log15"
@@ -44,5 +45,6 @@ func (s *Server) Start() {
 
 	if err := server.ListenAndServe(); err != http.ErrServerClosed {
 		log15.Error("Failed to start server", "error", err)
+		os.Exit(1)
 	}
 }

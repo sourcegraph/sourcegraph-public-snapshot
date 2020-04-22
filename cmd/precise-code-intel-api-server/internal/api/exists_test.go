@@ -45,7 +45,7 @@ func TestFindClosestDatabase(t *testing.T) {
 		{ID: 50, Root: "s1/"},
 		{ID: 52, Root: "s1/"},
 	}
-	if diff := cmp.Diff(dumps, expected); diff != "" {
+	if diff := cmp.Diff(expected, dumps); diff != "" {
 		t.Errorf("unexpected dumps (-want +got):\n%s", diff)
 	}
 }

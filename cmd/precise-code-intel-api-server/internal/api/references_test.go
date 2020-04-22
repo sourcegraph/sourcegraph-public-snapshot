@@ -58,7 +58,7 @@ func TestHandleSameDumpCursor(t *testing.T) {
 			{Dump: testDump1, Path: "sub1/bonk.go", Range: testRange4},
 			{Dump: testDump1, Path: "sub1/quux.go", Range: testRange5},
 		}
-		if diff := cmp.Diff(references, expectedReferences); diff != "" {
+		if diff := cmp.Diff(expectedReferences, references); diff != "" {
 			t.Errorf("unexpected references (-want +got):\n%s", diff)
 		}
 
@@ -73,7 +73,7 @@ func TestHandleSameDumpCursor(t *testing.T) {
 		}
 		if !hasNewCursor {
 			t.Errorf("expected new cursor")
-		} else if diff := cmp.Diff(newCursor, expectedNewCursor); diff != "" {
+		} else if diff := cmp.Diff(expectedNewCursor, newCursor); diff != "" {
 			t.Errorf("unexpected new cursor (-want +got):\n%s", diff)
 		}
 	})
@@ -98,7 +98,7 @@ func TestHandleSameDumpCursor(t *testing.T) {
 			{Dump: testDump1, Path: "sub1/bonk.go", Range: testRange4},
 			{Dump: testDump1, Path: "sub1/quux.go", Range: testRange5},
 		}
-		if diff := cmp.Diff(references, expectedReferences); diff != "" {
+		if diff := cmp.Diff(expectedReferences, references); diff != "" {
 			t.Errorf("unexpected references (-want +got):\n%s", diff)
 		}
 
@@ -111,7 +111,7 @@ func TestHandleSameDumpCursor(t *testing.T) {
 		}
 		if !hasNewCursor {
 			t.Errorf("expected new cursor")
-		} else if diff := cmp.Diff(newCursor, expectedNewCursor); diff != "" {
+		} else if diff := cmp.Diff(expectedNewCursor, newCursor); diff != "" {
 			t.Errorf("unexpected new cursor (-want +got):\n%s", diff)
 		}
 	})
@@ -176,7 +176,7 @@ func TestHandleDefinitionMonikersCursor(t *testing.T) {
 		}
 		if !hasNewCursor {
 			t.Errorf("expected new cursor")
-		} else if diff := cmp.Diff(newCursor, expectedNewCursor); diff != "" {
+		} else if diff := cmp.Diff(expectedNewCursor, newCursor); diff != "" {
 			t.Errorf("unexpected new cursor (-want +got):\n%s", diff)
 		}
 	})
@@ -208,7 +208,7 @@ func TestHandleDefinitionMonikersCursor(t *testing.T) {
 			{Dump: testDump2, Path: "sub2/bonk.go", Range: testRange4},
 			{Dump: testDump2, Path: "sub2/quux.go", Range: testRange5},
 		}
-		if diff := cmp.Diff(references, expectedReferences); diff != "" {
+		if diff := cmp.Diff(expectedReferences, references); diff != "" {
 			t.Errorf("unexpected references (-want +got):\n%s", diff)
 		}
 
@@ -222,7 +222,7 @@ func TestHandleDefinitionMonikersCursor(t *testing.T) {
 		}
 		if !hasNewCursor {
 			t.Errorf("expected new cursor")
-		} else if diff := cmp.Diff(newCursor, expectedNewCursor); diff != "" {
+		} else if diff := cmp.Diff(expectedNewCursor, newCursor); diff != "" {
 			t.Errorf("unexpected new cursor (-want +got):\n%s", diff)
 		}
 	})
@@ -282,7 +282,7 @@ func TestHandleSameRepoCursor(t *testing.T) {
 			{Dump: testDump2, Path: "sub2/bonk.go", Range: testRange4},
 			{Dump: testDump2, Path: "sub2/quux.go", Range: testRange5},
 		}
-		if diff := cmp.Diff(references, expectedReferences); diff != "" {
+		if diff := cmp.Diff(expectedReferences, references); diff != "" {
 			t.Errorf("unexpected references (-want +got):\n%s", diff)
 		}
 
@@ -301,7 +301,7 @@ func TestHandleSameRepoCursor(t *testing.T) {
 		}
 		if !hasNewCursor {
 			t.Errorf("expected new cursor")
-		} else if diff := cmp.Diff(newCursor, expectedNewCursor); diff != "" {
+		} else if diff := cmp.Diff(expectedNewCursor, newCursor); diff != "" {
 			t.Errorf("unexpected new cursor (-want +got):\n%s", diff)
 		}
 	})
@@ -347,7 +347,7 @@ func TestHandleSameRepoCursor(t *testing.T) {
 			{Dump: testDump3, Path: "sub3/bonk.go", Range: testRange4},
 			{Dump: testDump4, Path: "sub4/quux.go", Range: testRange5},
 		}
-		if diff := cmp.Diff(references, expectedReferences); diff != "" {
+		if diff := cmp.Diff(expectedReferences, references); diff != "" {
 			t.Errorf("unexpected references (-want +got):\n%s", diff)
 		}
 
@@ -361,7 +361,7 @@ func TestHandleSameRepoCursor(t *testing.T) {
 		}
 		if !hasNewCursor {
 			t.Errorf("expected new cursor")
-		} else if diff := cmp.Diff(newCursor, expectedNewCursor); diff != "" {
+		} else if diff := cmp.Diff(expectedNewCursor, newCursor); diff != "" {
 			t.Errorf("unexpected new cursor (-want +got):\n%s", diff)
 		}
 	})
@@ -415,7 +415,7 @@ func TestHandleSameRepoCursorMultipleDumpBatches(t *testing.T) {
 		{Dump: testDump3, Path: "sub3/baz.go", Range: testRange3},
 		{Dump: testDump3, Path: "sub3/bonk.go", Range: testRange4},
 	}
-	if diff := cmp.Diff(references, expectedReferences); diff != "" {
+	if diff := cmp.Diff(expectedReferences, references); diff != "" {
 		t.Errorf("unexpected references (-want +got):\n%s", diff)
 	}
 
@@ -434,7 +434,7 @@ func TestHandleSameRepoCursorMultipleDumpBatches(t *testing.T) {
 	}
 	if !hasNewCursor {
 		t.Errorf("expected new cursor")
-	} else if diff := cmp.Diff(newCursor, expectedNewCursor); diff != "" {
+	} else if diff := cmp.Diff(expectedNewCursor, newCursor); diff != "" {
 		t.Errorf("unexpected new cursor (-want +got):\n%s", diff)
 	}
 }
@@ -498,7 +498,7 @@ func TestHandleRemoteRepoCursor(t *testing.T) {
 			{Dump: testDump2, Path: "sub2/bonk.go", Range: testRange4},
 			{Dump: testDump2, Path: "sub2/quux.go", Range: testRange5},
 		}
-		if diff := cmp.Diff(references, expectedReferences); diff != "" {
+		if diff := cmp.Diff(expectedReferences, references); diff != "" {
 			t.Errorf("unexpected references (-want +got):\n%s", diff)
 		}
 
@@ -517,7 +517,7 @@ func TestHandleRemoteRepoCursor(t *testing.T) {
 		}
 		if !hasNewCursor {
 			t.Errorf("expected new cursor")
-		} else if diff := cmp.Diff(newCursor, expectedNewCursor); diff != "" {
+		} else if diff := cmp.Diff(expectedNewCursor, newCursor); diff != "" {
 			t.Errorf("unexpected new cursor (-want +got):\n%s", diff)
 		}
 	})
@@ -563,7 +563,7 @@ func TestHandleRemoteRepoCursor(t *testing.T) {
 			{Dump: testDump3, Path: "sub3/bonk.go", Range: testRange4},
 			{Dump: testDump4, Path: "sub4/quux.go", Range: testRange5},
 		}
-		if diff := cmp.Diff(references, expectedReferences); diff != "" {
+		if diff := cmp.Diff(expectedReferences, references); diff != "" {
 			t.Errorf("unexpected references (-want +got):\n%s", diff)
 		}
 		if hasNewCursor {
@@ -620,7 +620,7 @@ func TestHandleRemoteRepoCursorMultipleDumpBatches(t *testing.T) {
 		{Dump: testDump3, Path: "sub3/baz.go", Range: testRange3},
 		{Dump: testDump3, Path: "sub3/bonk.go", Range: testRange4},
 	}
-	if diff := cmp.Diff(references, expectedReferences); diff != "" {
+	if diff := cmp.Diff(expectedReferences, references); diff != "" {
 		t.Errorf("unexpected references (-want +got):\n%s", diff)
 	}
 
@@ -639,7 +639,7 @@ func TestHandleRemoteRepoCursorMultipleDumpBatches(t *testing.T) {
 	}
 	if !hasNewCursor {
 		t.Errorf("expected new cursor")
-	} else if diff := cmp.Diff(newCursor, expectedNewCursor); diff != "" {
+	} else if diff := cmp.Diff(expectedNewCursor, newCursor); diff != "" {
 		t.Errorf("unexpected new cursor (-want +got):\n%s", diff)
 	}
 }
@@ -687,7 +687,7 @@ func TestApplyBloomFilter(t *testing.T) {
 				filteredDumpIDs = append(filteredDumpIDs, reference.DumpID)
 			}
 
-			if diff := cmp.Diff(filteredDumpIDs, testCase.expectedDumpIDs); diff != "" {
+			if diff := cmp.Diff(testCase.expectedDumpIDs, filteredDumpIDs); diff != "" {
 				t.Errorf("unexpected filtered references ids (-want +got):\n%s", diff)
 			}
 		})

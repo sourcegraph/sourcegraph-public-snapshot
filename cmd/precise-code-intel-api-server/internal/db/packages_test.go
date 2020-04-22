@@ -70,7 +70,7 @@ func TestGetPackage(t *testing.T) {
 		t.Fatalf("unexpected error getting package: %s", err)
 	} else if !exists {
 		t.Fatal("expected record to exist")
-	} else if diff := cmp.Diff(dump, expected); diff != "" {
+	} else if diff := cmp.Diff(expected, dump); diff != "" {
 		t.Errorf("unexpected dump (-want +got):\n%s", diff)
 	}
 }

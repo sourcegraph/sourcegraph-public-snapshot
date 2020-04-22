@@ -22,7 +22,7 @@ func TestSendUpload(t *testing.T) {
 
 		if content, err := ioutil.ReadAll(r.Body); err != nil {
 			t.Fatalf("unexpected error reading payload: %s", err)
-		} else if diff := cmp.Diff(content, []byte("payload\n")); diff != "" {
+		} else if diff := cmp.Diff([]byte("payload\n"), content); diff != "" {
 			t.Errorf("unexpected request payload (-want +got):\n%s", diff)
 		}
 	}))
