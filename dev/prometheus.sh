@@ -42,7 +42,7 @@ cp ${PROM_TARGETS} "${CONFIG_DIR}"/prometheus_targets.yml
 docker inspect $CONTAINER >/dev/null 2>&1 && docker rm -f $CONTAINER
 
 # Generate Grafana dashboards
-pushd observability
+pushd monitoring
 DEV=true RELOAD=false go generate
 popd
 

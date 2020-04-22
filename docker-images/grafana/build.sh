@@ -4,8 +4,8 @@ set -ex
 
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
-rm -rf observability
-cp -R ../../observability .
+rm -rf monitoring
+cp -R ../../monitoring .
 
 docker build --no-cache -t "${IMAGE:-sourcegraph/grafana}" . \
   --progress=plain \
