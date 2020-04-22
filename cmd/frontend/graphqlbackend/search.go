@@ -96,16 +96,6 @@ func NewSearchImplementer(args *SearchArgs) (SearchImplementer, error) {
 		if err != nil {
 			return alertForQuery(args.Query, err), nil
 		}
-		// Get settings to check if CaseSensitiveSearch is active or not
-		settings, err := decodedViewerFinalSettings(context.Background())
-		if err != nil {
-			return nil, err
-		}
-		if *settings.ExperimentalFeatures.CaseSensitiveSearch {
-			andOrQuery := queryInfo.(*query.AndOrQuery)
-			nodes := query.CaseSensitiveSearch(andOrQuery.Query)
-			queryInfo = &query.AndOrQuery{Query: nodes}
-		}
 	} else {
 		queryInfo, err = query.Process(queryString, searchType)
 		if err != nil {
