@@ -14,7 +14,7 @@ import "fmt"
 //    so repeat yourself instead if it applies to less than 5 dashboards.
 //
 // 2. ONLY declare shared Observables. Introducing shared Rows or Groups prevents individual dashboard
-//    maintainers from holistically considering both the the layout of dashboards as well as the
+//    maintainers from holistically considering both the layout of dashboards as well as the
 //    metrics and alerts defined within them -- which we do not want.
 //
 // 3. Use the sharedObservable type and do NOT parameterize more than just the container name. It may
