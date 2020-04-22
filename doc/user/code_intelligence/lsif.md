@@ -51,7 +51,7 @@ The following table gives a rough estimate for the space and time requirements f
 
 ## Data retention policy
 
-The bulk of LSIF data is stored on-disk, and as code intelligence data for a commit ages it becomes less useful. Sourcegraph will automatically remove the least recently uploaded data if the amount of disk space falls below a configurable threshold. This value defaults to 10 GiB (10⨉2^30 = 10737418240  bytes), and can be changed via the `DBS_DIR_MAXIMUM_SIZE_BYTES` environment variable.
+The bulk of LSIF data is stored on-disk, and as code intelligence data for a commit ages it becomes less useful. Sourcegraph will automatically remove the least recently uploaded data if the amount of used disk space exceeds a configurable threshold. This value defaults to 10 GiB (10⨉2^30 = 10737418240  bytes), and can be changed via the `DBS_DIR_MAXIMUM_SIZE_BYTES` environment variable.
 
 ## More about LSIF
 
