@@ -15,7 +15,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assets"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/templates"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
 // TODO(slimsag): tests for everything in this file

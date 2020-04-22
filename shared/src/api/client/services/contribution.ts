@@ -1,5 +1,5 @@
 import { isEqual, mapValues } from 'lodash'
-import { BehaviorSubject, combineLatest, isObservable, Observable, of, Subscribable, Unsubscribable } from 'rxjs'
+import { BehaviorSubject, combineLatest, isObservable, Observable, of, Subscribable, Unsubscribable, from } from 'rxjs'
 import { distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
 import { ContributableMenu, Contributions, Evaluated, MenuItemContribution, Raw } from '../../protocol'
@@ -7,6 +7,7 @@ import { Context, ContributionScope, getComputedContextProperty } from '../conte
 import { ComputedContext, Expression, parse, parseTemplate } from '../context/expr/evaluator'
 import { EditorService } from './editorService'
 import { SettingsService } from './settings'
+import { ModelService } from './modelService'
 
 /** A registered set of contributions from an extension in the registry. */
 export interface ContributionsEntry {
@@ -34,7 +35,8 @@ export class ContributionRegistry {
     private _entries = new BehaviorSubject<ContributionsEntry[]>([])
 
     constructor(
-        private editorService: Pick<EditorService, 'editorsAndModels'>,
+        private editorService: Pick<EditorService, 'activeEditorUpdates'>,
+        private modelService: Pick<ModelService, 'getPartialModel'>,
         private settingsService: Pick<SettingsService, 'data'>,
         private context: Subscribable<Context<any>>
     ) {}
@@ -110,11 +112,17 @@ export class ContributionRegistry {
                     )
                 )
             ),
-            this.editorService.editorsAndModels,
+            from(this.editorService.activeEditorUpdates).pipe(
+                map(activeEditor =>
+                    activeEditor
+                        ? { ...activeEditor, model: this.modelService.getPartialModel(activeEditor.resource) }
+                        : undefined
+                )
+            ),
             this.settingsService.data,
             this.context,
         ]).pipe(
-            map(([multiContributions, editors, settings, context]) => {
+            map(([multiContributions, activeEditor, settings, context]) => {
                 // Merge in extra context.
                 if (extraContext) {
                     context = { ...context, ...extraContext }
@@ -122,7 +130,7 @@ export class ContributionRegistry {
 
                 // TODO(sqs): use {@link ContextService#observeValue}
                 const computedContext = {
-                    get: (key: string) => getComputedContextProperty(editors, settings, context, key, scope),
+                    get: (key: string) => getComputedContextProperty(activeEditor, settings, context, key, scope),
                 }
                 return multiContributions.flat().map(contributions => {
                     try {
@@ -212,10 +220,7 @@ export function filterContributions(contributions: Evaluated<Contributions>): Ev
     }
     return {
         ...contributions,
-        menus: mapValues(
-            contributions.menus,
-            menuItems => menuItems && menuItems.filter(menuItem => menuItem.when !== false)
-        ),
+        menus: mapValues(contributions.menus, menuItems => menuItems?.filter(menuItem => menuItem.when !== false)),
     }
 }
 
@@ -232,14 +237,8 @@ export function evaluateContributions(
         ...contributions,
         menus:
             contributions.menus &&
-            mapValues(
-                contributions.menus,
-                (menuItems): Evaluated<MenuItemContribution>[] | undefined =>
-                    menuItems &&
-                    menuItems.map(menuItem => ({
-                        ...menuItem,
-                        when: menuItem.when && !!menuItem.when.exec(context),
-                    }))
+            mapValues(contributions.menus, (menuItems): Evaluated<MenuItemContribution>[] | undefined =>
+                menuItems?.map(menuItem => ({ ...menuItem, when: menuItem.when && !!menuItem.when.exec(context) }))
             ),
         actions: evaluateActionContributions(context, contributions.actions),
     }
@@ -252,27 +251,22 @@ function evaluateActionContributions(
     context: ComputedContext,
     actions: Contributions['actions']
 ): Evaluated<Contributions['actions']> {
-    return (
-        actions &&
-        actions.map(action => ({
-            ...action,
-            title: action.title && action.title.exec(context),
-            category: action.category && action.category.exec(context),
-            description: action.description && action.description.exec(context),
-            iconURL: action.iconURL && action.iconURL.exec(context),
-            actionItem: action.actionItem && {
-                ...action.actionItem,
-                label: action.actionItem.label && action.actionItem.label.exec(context),
-                description: action.actionItem.description && action.actionItem.description.exec(context),
-                iconURL: action.actionItem.iconURL && action.actionItem.iconURL.exec(context),
-                iconDescription: action.actionItem.iconDescription && action.actionItem.iconDescription.exec(context),
-                pressed: action.actionItem.pressed && action.actionItem.pressed.exec(context),
-            },
-            commandArguments:
-                action.commandArguments &&
-                action.commandArguments.map(arg => (arg instanceof Expression ? arg.exec(context) : arg)),
-        }))
-    )
+    return actions?.map(action => ({
+        ...action,
+        title: action.title?.exec(context),
+        category: action.category?.exec(context),
+        description: action.description?.exec(context),
+        iconURL: action.iconURL?.exec(context),
+        actionItem: action.actionItem && {
+            ...action.actionItem,
+            label: action.actionItem.label?.exec(context),
+            description: action.actionItem.description?.exec(context),
+            iconURL: action.actionItem.iconURL?.exec(context),
+            iconDescription: action.actionItem.iconDescription?.exec(context),
+            pressed: action.actionItem.pressed?.exec(context),
+        },
+        commandArguments: action.commandArguments?.map(arg => (arg instanceof Expression ? arg.exec(context) : arg)),
+    }))
 }
 
 /**
@@ -283,14 +277,11 @@ export function parseContributionExpressions(contributions: Raw<Contributions>):
         ...contributions,
         menus:
             contributions.menus &&
-            mapValues(
-                contributions.menus,
-                (menuItems): MenuItemContribution[] | undefined =>
-                    menuItems &&
-                    menuItems.map(menuItem => ({
-                        ...menuItem,
-                        when: typeof menuItem.when === 'string' ? parse<boolean>(menuItem.when) : undefined,
-                    }))
+            mapValues(contributions.menus, (menuItems): MenuItemContribution[] | undefined =>
+                menuItems?.map(menuItem => ({
+                    ...menuItem,
+                    when: typeof menuItem.when === 'string' ? parse<boolean>(menuItem.when) : undefined,
+                }))
             ),
         actions: contributions && parseActionContributionExpressions(contributions.actions),
     }
@@ -303,25 +294,20 @@ const maybe = <T, R>(value: T | undefined, fn: (value: T) => R): R | undefined =
  * Evaluates expressions in contribution definitions against the given context.
  */
 function parseActionContributionExpressions(actions: Raw<Contributions['actions']>): Contributions['actions'] {
-    return (
-        actions &&
-        actions.map(action => ({
-            ...action,
-            title: maybe(action.title, parseTemplate),
-            category: maybe(action.category, parseTemplate),
-            description: maybe(action.description, parseTemplate),
-            iconURL: maybe(action.iconURL, parseTemplate),
-            actionItem: action.actionItem && {
-                ...action.actionItem,
-                label: maybe(action.actionItem.label, parseTemplate),
-                description: maybe(action.actionItem.description, parseTemplate),
-                iconURL: maybe(action.actionItem.iconURL, parseTemplate),
-                iconDescription: maybe(action.actionItem.iconDescription, parseTemplate),
-                pressed: maybe(action.actionItem.pressed, pressed => parse(pressed)),
-            },
-            commandArguments:
-                action.commandArguments &&
-                action.commandArguments.map(arg => (typeof arg === 'string' ? parseTemplate(arg) : arg)),
-        }))
-    )
+    return actions?.map(action => ({
+        ...action,
+        title: maybe(action.title, parseTemplate),
+        category: maybe(action.category, parseTemplate),
+        description: maybe(action.description, parseTemplate),
+        iconURL: maybe(action.iconURL, parseTemplate),
+        actionItem: action.actionItem && {
+            ...action.actionItem,
+            label: maybe(action.actionItem.label, parseTemplate),
+            description: maybe(action.actionItem.description, parseTemplate),
+            iconURL: maybe(action.actionItem.iconURL, parseTemplate),
+            iconDescription: maybe(action.actionItem.iconDescription, parseTemplate),
+            pressed: maybe(action.actionItem.pressed, pressed => parse(pressed)),
+        },
+        commandArguments: action.commandArguments?.map(arg => (typeof arg === 'string' ? parseTemplate(arg) : arg)),
+    }))
 }

@@ -12,13 +12,13 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketcloud"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitolite"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 )
 
 func TestSyncer_Sync(t *testing.T) {
@@ -39,7 +39,7 @@ func TestSyncer_Sync(t *testing.T) {
 			name:    "sourcer error aborts sync",
 			sourcer: repos.NewFakeSourcer(errors.New("boom")),
 			store:   new(repos.FakeStore),
-			err:     "syncer.sync.sourced: boom",
+			err:     "syncer.sync.sourced: 1 error occurred:\n\t* boom\n\n",
 		},
 		{
 			name: "sources partial errors aborts sync",
@@ -54,7 +54,7 @@ func TestSyncer_Sync(t *testing.T) {
 			name:    "store list error aborts sync",
 			sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(&github, nil)),
 			store:   &repos.FakeStore{ListReposError: errors.New("boom")},
-			err:     "syncer.sync.store.list-repos: boom",
+			err:     "syncer.sync.streaming: syncer.storedExternalIDs: boom",
 		},
 		{
 			name:    "store upsert error aborts sync",
@@ -69,11 +69,19 @@ func TestSyncer_Sync(t *testing.T) {
 			now := clock.Now
 			ctx := context.Background()
 
-			syncer := repos.NewSyncer(tc.store, tc.sourcer, nil, now)
-			_, err := syncer.Sync(ctx)
+			syncer := &repos.Syncer{
+				Store:   tc.store,
+				Sourcer: tc.sourcer,
+				Now:     now,
+			}
+			err := syncer.Sync(ctx)
 
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("have error %q, want %q", have, want)
+			}
+
+			if have, want := fmt.Sprint(syncer.LastSyncError()), tc.err; have != want {
+				t.Errorf("have LastSyncError %q, want %q", have, want)
 			}
 		})
 	}
@@ -88,7 +96,6 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 	githubRepo := (&repos.Repo{
 		Name:     "github.com/org/foo",
 		Metadata: &github.Repository{},
-		Enabled:  true,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "foo-external-12345",
 			ServiceID:   "https://github.com/",
@@ -106,7 +113,6 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 	gitlabRepo := (&repos.Repo{
 		Name:     "gitlab.com/org/foo",
 		Metadata: &gitlab.Project{},
-		Enabled:  true,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "12345",
 			ServiceID:   "https://gitlab.com/",
@@ -124,7 +130,6 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 	bitbucketServerRepo := (&repos.Repo{
 		Name:     "bitbucketserver.mycorp.com/org/foo",
 		Metadata: &bitbucketserver.Repo{},
-		Enabled:  true,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "23456",
 			ServiceID:   "https://bitbucketserver.mycorp.com/",
@@ -142,7 +147,6 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 	awsCodeCommitRepo := (&repos.Repo{
 		Name:     "git-codecommit.us-west-1.amazonaws.com/stripe-go",
 		Metadata: &awscodecommit.Repository{},
-		Enabled:  true,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
 			ServiceID:   "arn:aws:codecommit:us-west-1:999999999999:",
@@ -158,8 +162,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 	}
 
 	otherRepo := (&repos.Repo{
-		Name:    "git-host.com/org/foo",
-		Enabled: true,
+		Name: "git-host.com/org/foo",
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "git-host.com/org/foo",
 			ServiceID:   "https://git-host.com/",
@@ -177,7 +180,6 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 	gitoliteRepo := (&repos.Repo{
 		Name:     "gitolite.mycorp.com/foo",
 		Metadata: &gitolite.Repo{},
-		Enabled:  true,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "foo",
 			ServiceID:   "git@gitolite.mycorp.com",
@@ -195,7 +197,6 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 	bitbucketCloudRepo := (&repos.Repo{
 		Name:     "bitbucket.org/team/foo",
 		Metadata: &bitbucketcloud.Repo{},
-		Enabled:  true,
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "{e164a64c-bd73-4a40-b447-d71b43f328a8}",
 			ServiceID:   "https://bitbucket.org/",
@@ -248,19 +249,6 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				err: "<nil>",
 			},
 			testCase{
-				name:    "had name and got external_id",
-				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(tc.svc.Clone(), nil, tc.repo.Clone())),
-				store:   s,
-				stored: repos.Repos{tc.repo.With(func(r *repos.Repo) {
-					r.ExternalRepo.ID = ""
-				})},
-				now: clock.Now,
-				diff: repos.Diff{Modified: repos.Repos{
-					tc.repo.With(repos.Opt.RepoModifiedAt(clock.Time(1))),
-				}},
-				err: "<nil>",
-			},
-			testCase{
 				name: "new repo sources",
 				sourcer: repos.NewFakeSourcer(nil,
 					repos.NewFakeSource(tc.svc.Clone(), nil, tc.repo.Clone()),
@@ -272,30 +260,6 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				diff: repos.Diff{Modified: repos.Repos{tc.repo.With(
 					repos.Opt.RepoModifiedAt(clock.Time(1)),
 					repos.Opt.RepoSources(tc.svc.URN(), svcdup.URN()),
-				)}},
-				err: "<nil>",
-			},
-			testCase{
-				name: "enabled field is not updateable",
-				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(tc.svc.Clone(), nil, tc.repo.With(func(r *repos.Repo) {
-					r.Enabled = !r.Enabled
-				}))),
-				store:  s,
-				stored: repos.Repos{tc.repo.Clone()},
-				now:    clock.Now,
-				diff:   repos.Diff{Unmodified: repos.Repos{tc.repo.Clone()}},
-				err:    "<nil>",
-			},
-			testCase{
-				name: "enabled field of a undeleted repo is not updateable",
-				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(tc.svc.Clone(), nil, tc.repo.With(func(r *repos.Repo) {
-					r.Enabled = !r.Enabled
-				}))),
-				store:  s,
-				stored: repos.Repos{tc.repo.With(repos.Opt.RepoDeletedAt(clock.Time(0)))},
-				now:    clock.Now,
-				diff: repos.Diff{Added: repos.Repos{tc.repo.With(
-					repos.Opt.RepoCreatedAt(clock.Time(1)),
 				)}},
 				err: "<nil>",
 			},
@@ -324,7 +288,6 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				now: clock.Now,
 				diff: repos.Diff{Deleted: repos.Repos{tc.repo.With(
 					repos.Opt.RepoDeletedAt(clock.Time(1)),
-					repos.Opt.RepoEnabled(true),
 				)}},
 				err: "<nil>",
 			},
@@ -361,7 +324,6 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				diff: repos.Diff{
 					Deleted: repos.Repos{
 						tc.repo.With(func(r *repos.Repo) {
-							r.Enabled = true
 							r.Sources = map[string]*repos.SourceInfo{}
 							r.DeletedAt = clock.Time(0)
 							r.UpdatedAt = clock.Time(0)
@@ -415,8 +377,8 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				),
 				store: s,
 				stored: repos.Repos{
-					tc.repo.With(repos.Opt.RepoName("old-name")), // same external id as sourced
-					tc.repo.With(repos.Opt.RepoExternalID("")),   // same name as sourced
+					tc.repo.With(repos.Opt.RepoName("old-name")),  // same external id as sourced
+					tc.repo.With(repos.Opt.RepoExternalID("bar")), // same name as sourced
 				}.With(repos.Opt.RepoCreatedAt(clock.Time(1))),
 				now: clock.Now,
 				diff: repos.Diff{
@@ -580,8 +542,12 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 					}
 				}
 
-				syncer := repos.NewSyncer(st, tc.sourcer, nil, now)
-				diff, err := syncer.Sync(ctx)
+				syncer := &repos.Syncer{
+					Store:   st,
+					Sourcer: tc.sourcer,
+					Now:     now,
+				}
+				err := syncer.Sync(ctx)
 
 				if have, want := fmt.Sprint(err), tc.err; have != want {
 					t.Errorf("have error %q, want %q", have, want)
@@ -591,25 +557,16 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 					return
 				}
 
-				for _, d := range []struct {
-					name       string
-					have, want repos.Repos
-				}{
-					{"added", diff.Added, tc.diff.Added},
-					{"deleted", diff.Deleted, tc.diff.Deleted},
-					{"modified", diff.Modified, tc.diff.Modified},
-					{"unmodified", diff.Unmodified, tc.diff.Unmodified},
-				} {
-					t.Logf("diff.%s", d.name)
-					repos.Assert.ReposEqual(d.want...)(t, d.have)
-				}
-
 				if st != nil {
-					var want repos.Repos
-					want.Concat(diff.Added, diff.Modified, diff.Unmodified)
-					sort.Sort(want)
+					var want, have repos.Repos
+					want.Concat(tc.diff.Added, tc.diff.Modified, tc.diff.Unmodified)
+					have, _ = st.ListRepos(ctx, repos.StoreListReposArgs{})
 
-					have, _ := st.ListRepos(ctx, repos.StoreListReposArgs{})
+					want = want.With(repos.Opt.RepoID(0))
+					have = have.With(repos.Opt.RepoID(0))
+					sort.Sort(want)
+					sort.Sort(have)
+
 					repos.Assert.ReposEqual(want...)(t, have)
 				}
 			}))
@@ -631,7 +588,6 @@ func testSyncSubset(s repos.Store) func(*testing.T) {
 		Name:        "github.com/foo/bar",
 		Description: "The description",
 		Language:    "barlang",
-		Enabled:     true,
 		Archived:    false,
 		Fork:        false,
 		ExternalRepo: api.ExternalRepoSpec{
@@ -731,8 +687,11 @@ func testSyncSubset(s repos.Store) func(*testing.T) {
 				}
 
 				clock := clock
-				syncer := repos.NewSyncer(st, nil, nil, clock.Now)
-				_, err := syncer.SyncSubset(ctx, tc.sourced.Clone()...)
+				syncer := &repos.Syncer{
+					Store: st,
+					Now:   clock.Now,
+				}
+				err := syncer.SyncSubset(ctx, tc.sourced.Clone()...)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -833,35 +792,6 @@ func TestDiff(t *testing.T) {
 			diff: repos.Diff{Modified: repos.Repos{
 				{Name: "2", ExternalRepo: eid("1"), Description: "foo"},
 			}},
-		},
-		{
-			name: "duplicate with added external id is merged correctly",
-			store: repos.Repos{
-				{Name: "1", Description: "foo"},
-			},
-			source: repos.Repos{
-				{Name: "1", ExternalRepo: eid("1"), Description: "foo"},
-			},
-			diff: repos.Diff{Modified: repos.Repos{
-				{Name: "1", ExternalRepo: eid("1"), Description: "foo"},
-			}},
-		},
-		{
-			name: "no duplicate with added external id and changed name",
-			store: repos.Repos{
-				{Name: "1", Description: "foo"},
-			},
-			source: repos.Repos{
-				{Name: "2", ExternalRepo: eid("1"), Description: "foo"},
-			},
-			diff: repos.Diff{
-				Deleted: repos.Repos{
-					{Name: "1", Description: "foo"},
-				},
-				Added: repos.Repos{
-					{Name: "2", ExternalRepo: eid("1"), Description: "foo"},
-				},
-			},
 		},
 		{
 			name: "unmodified preserves stored repo",
@@ -965,21 +895,6 @@ func TestDiff(t *testing.T) {
 			},
 		},
 		{
-			name: "conflict on case insensitive name no external",
-			store: repos.Repos{
-				{Name: "fOO"},
-			},
-			source: repos.Repos{
-				{Name: "fOO", ExternalRepo: eid("fOO")},
-				{Name: "Foo", ExternalRepo: eid("Foo")},
-			},
-			diff: repos.Diff{
-				Modified: repos.Repos{
-					{Name: "Foo", ExternalRepo: eid("Foo")},
-				},
-			},
-		},
-		{
 			name: "conflict on case insensitive name exists 1",
 			store: repos.Repos{
 				{Name: "foo", ExternalRepo: eid("1")},
@@ -1012,47 +927,18 @@ func TestDiff(t *testing.T) {
 				},
 			},
 		},
+		// 🚨 SECURITY: Tests to ensure we detect repository visibility changes.
 		{
-			name: "associate by name",
+			name: "repository visiblity changed",
 			store: repos.Repos{
-				{Name: "foo"},
-				{Name: "baz"},
+				{Name: "foo", ExternalRepo: eid("1"), Description: "foo", Private: false},
 			},
 			source: repos.Repos{
-				{Name: "foo", ExternalRepo: eid("1")},
-				{Name: "bar", ExternalRepo: eid("2")},
+				{Name: "foo", ExternalRepo: eid("1"), Description: "foo", Private: true},
 			},
 			diff: repos.Diff{
-				Added: repos.Repos{
-					{Name: "bar", ExternalRepo: eid("2")},
-				},
 				Modified: repos.Repos{
-					{Name: "foo", ExternalRepo: eid("1")},
-				},
-				Deleted: repos.Repos{
-					{Name: "baz"},
-				},
-			},
-		},
-		{
-			name: "associate by name conflict",
-			store: repos.Repos{
-				{Name: "foo"},
-				{Name: "bar", ExternalRepo: eid("1")},
-			},
-			source: repos.Repos{
-				{Name: "foo", ExternalRepo: eid("1")},
-				{Name: "bar", ExternalRepo: eid("2")},
-			},
-			diff: repos.Diff{
-				Added: repos.Repos{
-					{Name: "bar", ExternalRepo: eid("2")},
-				},
-				Modified: repos.Repos{
-					{Name: "foo", ExternalRepo: eid("1")},
-				},
-				Deleted: repos.Repos{
-					{Name: "foo"},
+					{Name: "foo", ExternalRepo: eid("1"), Description: "foo", Private: true},
 				},
 			},
 		},

@@ -1,8 +1,8 @@
-import path from 'path'
-import webpack from 'webpack'
+import * as path from 'path'
+import * as webpack from 'webpack'
 
 export default ({ config }: { config: webpack.Configuration }) => {
-    if (!config.module || !config.resolve || !config.resolve.extensions) {
+    if (!config.module || !config.resolve?.extensions) {
         throw new Error('unexpected config')
     }
 
@@ -10,7 +10,7 @@ export default ({ config }: { config: webpack.Configuration }) => {
         test: /\.tsx?$/,
         loader: require.resolve('babel-loader'),
         options: {
-            presets: [['react-app', { flow: false, typescript: true }]],
+            configFile: path.resolve(__dirname, '..', 'babel.config.js'),
         },
     })
     config.resolve.extensions.push('.ts', '.tsx')
@@ -25,7 +25,9 @@ export default ({ config }: { config: webpack.Configuration }) => {
             {
                 loader: 'sass-loader',
                 options: {
-                    includePaths: [path.resolve(__dirname, '..', 'node_modules')],
+                    sassOptions: {
+                        includePaths: [path.resolve(__dirname, '..', 'node_modules')],
+                    },
                 },
             },
         ],

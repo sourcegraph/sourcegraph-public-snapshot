@@ -10,11 +10,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
-	repoupdaterprotocol "github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	repoupdaterprotocol "github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 )
 
 func (r *RepositoryResolver) MirrorInfo() *repositoryMirrorInfoResolver {
@@ -47,7 +47,7 @@ func (r *repositoryMirrorInfoResolver) repoUpdateSchedulerInfo(ctx context.Conte
 	r.repoUpdateSchedulerInfoOnce.Do(func() {
 		args := repoupdaterprotocol.RepoUpdateSchedulerInfoArgs{
 			RepoName: r.repository.repo.Name,
-			ID:       uint32(r.repository.repo.ID),
+			ID:       r.repository.repo.ID,
 		}
 		r.repoUpdateSchedulerInfoResult, r.repoUpdateSchedulerInfoErr = repoupdater.DefaultClient.RepoUpdateSchedulerInfo(ctx, args)
 	})
@@ -189,7 +189,7 @@ func (r *schemaResolver) CheckMirrorRepositoryConnection(ctx context.Context, ar
 	var repo *types.Repo
 	switch {
 	case args.Repository != nil:
-		repoID, err := unmarshalRepositoryID(*args.Repository)
+		repoID, err := UnmarshalRepositoryID(*args.Repository)
 		if err != nil {
 			return nil, err
 		}
@@ -258,7 +258,7 @@ func (r *schemaResolver) UpdateAllMirrorRepositories(ctx context.Context) (*Empt
 		return nil, err
 	}
 
-	reposList, err := db.Repos.List(ctx, db.ReposListOptions{Enabled: true, Disabled: true})
+	reposList, err := db.Repos.List(ctx, db.ReposListOptions{})
 	if err != nil {
 		return nil, err
 	}

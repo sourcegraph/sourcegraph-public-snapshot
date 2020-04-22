@@ -21,7 +21,10 @@ describe('provideMentionCompletions', () => {
                 .pipe(first())
                 .toPromise()
         ).toEqual({
-            items: [{ label: 'alice', insertText: '@alice ' }, { label: 'ab', insertText: '@ab ' }],
+            items: [
+                { label: 'alice', insertText: '@alice ' },
+                { label: 'ab', insertText: '@ab ' },
+            ],
         }))
 
     test('supports multiple lines', async () =>
@@ -30,7 +33,10 @@ describe('provideMentionCompletions', () => {
                 .pipe(first())
                 .toPromise()
         ).toEqual({
-            items: [{ label: 'alice', insertText: '@alice ' }, { label: 'ab', insertText: '@ab ' }],
+            items: [
+                { label: 'alice', insertText: '@alice ' },
+                { label: 'ab', insertText: '@ab ' },
+            ],
         }))
 
     test('empty when no @ trigger at cursor token', async () =>

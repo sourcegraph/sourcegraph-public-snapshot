@@ -1,6 +1,5 @@
 // We want to polyfill first.
-// prettier-ignore
-import '../../config/polyfill'
+import '../polyfills'
 
 import * as React from 'react'
 import { render } from 'react-dom'
@@ -9,32 +8,32 @@ import { GraphQLResult } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { background } from '../../browser/runtime'
 import { observeStorageKey, storage } from '../../browser/storage'
-import { defaultStorageItems, featureFlagDefaults, FeatureFlags } from '../../browser/types'
+import { featureFlagDefaults, FeatureFlags } from '../../browser/types'
 import { OptionsContainer, OptionsContainerProps } from '../../libs/options/OptionsContainer'
 import { OptionsMenuProps } from '../../libs/options/OptionsMenu'
 import { initSentry } from '../../libs/sentry'
 import { fetchSite } from '../../shared/backend/server'
 import { featureFlags } from '../../shared/util/featureFlags'
 import { assertEnv } from '../envAssertion'
+import { observeSourcegraphURL } from '../../shared/util/context'
 
 assertEnv('OPTIONS')
 
 initSentry('options')
 
+const IS_EXTENSION = true
+
 type State = Pick<
     FeatureFlags,
     'allowErrorReporting' | 'experimentalLinkPreviews' | 'experimentalTextFieldCompletion'
-> & { sourcegraphURL: string | null }
+> & { sourcegraphURL: string | null; isActivated: boolean }
 
 const keyIsFeatureFlag = (key: string): key is keyof FeatureFlags =>
     !!Object.keys(featureFlagDefaults).find(k => key === k)
 
 const toggleFeatureFlag = (key: string): void => {
     if (keyIsFeatureFlag(key)) {
-        featureFlags
-            .toggle(key)
-            .then(noop)
-            .catch(noop)
+        featureFlags.toggle(key).then(noop).catch(noop)
     }
 }
 
@@ -67,6 +66,7 @@ const ensureValidSite = (): Observable<GQL.ISite> => fetchSite(requestGraphQL)
 class Options extends React.Component<{}, State> {
     public state: State = {
         sourcegraphURL: null,
+        isActivated: true,
         allowErrorReporting: false,
         experimentalLinkPreviews: false,
         experimentalTextFieldCompletion: false,
@@ -81,16 +81,26 @@ class Options extends React.Component<{}, State> {
                     ...featureFlagDefaults,
                     ...featureFlags,
                 }
-                this.setState({ allowErrorReporting, experimentalLinkPreviews, experimentalTextFieldCompletion })
+                this.setState({
+                    allowErrorReporting,
+                    experimentalLinkPreviews,
+                    experimentalTextFieldCompletion,
+                })
             })
         )
 
         this.subscriptions.add(
-            observeStorageKey('sync', 'sourcegraphURL').subscribe(
-                (sourcegraphURL = defaultStorageItems.sourcegraphURL) => {
-                    this.setState({ sourcegraphURL })
-                }
-            )
+            observeSourcegraphURL(IS_EXTENSION).subscribe(sourcegraphURL => {
+                this.setState({ sourcegraphURL })
+            })
+        )
+
+        this.subscriptions.add(
+            observeStorageKey('sync', 'disableExtension').subscribe(disableExtension => {
+                this.setState({
+                    isActivated: !disableExtension,
+                })
+            })
         )
     }
 
@@ -105,6 +115,7 @@ class Options extends React.Component<{}, State> {
 
         const props: OptionsContainerProps = {
             sourcegraphURL: this.state.sourcegraphURL,
+            isActivated: this.state.isActivated,
 
             ensureValidSite,
             fetchCurrentTabStatus,
@@ -118,6 +129,7 @@ class Options extends React.Component<{}, State> {
                 }),
 
             setSourcegraphURL: (sourcegraphURL: string) => storage.sync.set({ sourcegraphURL }),
+            toggleExtensionDisabled: (isActivated: boolean) => storage.sync.set({ disableExtension: !isActivated }),
             toggleFeatureFlag,
             featureFlags: [
                 { key: 'allowErrorReporting', value: this.state.allowErrorReporting },
@@ -134,6 +146,8 @@ const inject = (): void => {
     const injectDOM = document.createElement('div')
     injectDOM.className = 'sourcegraph-options-menu options'
     document.body.appendChild(injectDOM)
+    // For shared CSS that would otherwise be dark by default
+    document.body.classList.add('theme-light')
 
     render(<Options />, injectDOM)
 }

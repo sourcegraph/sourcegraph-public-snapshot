@@ -17,15 +17,15 @@ import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/
 import * as GQL from '../../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../../shared/src/settings/settings'
-import { AbsoluteRepoFile, ModeSpec, parseHash, PositionSpec } from '../../../../../shared/src/util/url'
+import { AbsoluteRepoFile, ModeSpec, parseHash, UIPositionSpec } from '../../../../../shared/src/util/url'
 import { isDiscussionsEnabled } from '../../../discussions'
-import { ThemeProps } from '../../../theme'
 import { RepoHeaderContributionsLifecycleProps } from '../../RepoHeader'
 import { RepoRevSidebarCommits } from '../../RepoRevSidebarCommits'
 import { DiscussionsTree } from '../discussions/DiscussionsTree'
+import { ThemeProps } from '../../../../../shared/src/theme'
 interface Props
     extends AbsoluteRepoFile,
-        Partial<PositionSpec>,
+        Partial<UIPositionSpec>,
         ModeSpec,
         RepoHeaderContributionsLifecycleProps,
         SettingsCascadeProps,
@@ -44,7 +44,7 @@ interface Props
 export type BlobPanelTabID = 'info' | 'def' | 'references' | 'discussions' | 'impl' | 'typedef' | 'history'
 
 /** The subject (what the contextual information refers to). */
-interface PanelSubject extends AbsoluteRepoFile, ModeSpec, Partial<PositionSpec> {
+interface PanelSubject extends AbsoluteRepoFile, ModeSpec, Partial<UIPositionSpec> {
     repoID: string
 
     /**
@@ -95,14 +95,24 @@ export class BlobPanel extends React.PureComponent<Props> {
             extraParams?: Pick<P, Exclude<keyof P, keyof TextDocumentPositionParams>>
         ): Entry<ViewProviderRegistrationOptions, ProvideViewSignature> => ({
             registrationOptions: { id, container: ContributableViewContainer.Panel },
-            provider: from(this.props.extensionsController.services.editor.editorsAndModels).pipe(
-                switchMap(editors =>
-                    registry.hasProvidersForActiveTextDocument(editors).pipe(
+            provider: from(this.props.extensionsController.services.editor.activeEditorUpdates).pipe(
+                map(activeEditor =>
+                    activeEditor
+                        ? {
+                              ...activeEditor,
+                              model: this.props.extensionsController.services.model.getPartialModel(
+                                  activeEditor.resource
+                              ),
+                          }
+                        : undefined
+                ),
+                switchMap(activeEditor =>
+                    registry.hasProvidersForActiveTextDocument(activeEditor).pipe(
                         map(hasProviders => {
                             if (!hasProviders) {
                                 return null
                             }
-                            const params: TextDocumentPositionParams | null = getActiveCodeEditorPosition(editors)
+                            const params: TextDocumentPositionParams | null = getActiveCodeEditorPosition(activeEditor)
                             if (!params) {
                                 return null
                             }
@@ -114,22 +124,13 @@ export class BlobPanel extends React.PureComponent<Props> {
                                 // This disable directive is necessary because TypeScript is not yet smart
                                 // enough to know that (typeof params & typeof extraParams) is P.
                                 //
-                                // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
+                                // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
                                 locationProvider: registry.getLocations({ ...params, ...extraParams } as P).pipe(
-                                    map(locationsObservable =>
-                                        locationsObservable.pipe(
-                                            tap(locations => {
-                                                if (
-                                                    this.props.activation &&
-                                                    id === 'references' &&
-                                                    locations &&
-                                                    locations.length > 0
-                                                ) {
-                                                    this.props.activation.update({ FoundReferences: true })
-                                                }
-                                            })
-                                        )
-                                    )
+                                    tap(({ result: locations }) => {
+                                        if (this.props.activation && id === 'references' && locations.length > 0) {
+                                            this.props.activation.update({ FoundReferences: true })
+                                        }
+                                    })
                                 ),
                             }
                         })

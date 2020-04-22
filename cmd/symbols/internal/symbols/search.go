@@ -11,19 +11,19 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 
+	"github.com/inconshreveable/log15"
 	"github.com/jmoiron/sqlx"
 	"github.com/keegancsmith/sqlf"
 	sqlite3 "github.com/mattn/go-sqlite3"
-	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
-	"golang.org/x/net/trace"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/sourcegraph/sourcegraph/internal/symbols/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	nettrace "golang.org/x/net/trace"
 )
 
 // maxFileSize is the limit on file size in bytes. Only files smaller than this are processed.
@@ -69,8 +69,7 @@ func (s *Service) search(ctx context.Context, args protocol.SearchArgs) (result 
 	defer cancel()
 
 	log15.Debug("Symbol search", "repo", args.Repo, "query", args.Query)
-
-	span, ctx := opentracing.StartSpanFromContext(ctx, "search")
+	span, ctx := ot.StartSpanFromContext(ctx, "search")
 	span.SetTag("repo", args.Repo)
 	span.SetTag("commitID", args.CommitID)
 	span.SetTag("query", args.Query)
@@ -83,7 +82,7 @@ func (s *Service) search(ctx context.Context, args protocol.SearchArgs) (result 
 		span.Finish()
 	}()
 
-	tr := trace.New("symbols.search", fmt.Sprintf("args:%+v", args))
+	tr := nettrace.New("symbols.search", fmt.Sprintf("args:%+v", args))
 	defer func() {
 		if err != nil {
 			tr.LazyPrintf("error: %v", err)
@@ -152,7 +151,7 @@ func isLiteralEquality(expr string) (ok bool, lit string, err error) {
 }
 
 func filterSymbols(ctx context.Context, db *sqlx.DB, args protocol.SearchArgs) (res []protocol.Symbol, err error) {
-	span, _ := opentracing.StartSpanFromContext(ctx, "filterSymbols")
+	span, _ := ot.StartSpanFromContext(ctx, "filterSymbols")
 	defer func() {
 		if err != nil {
 			ext.Error.Set(span, true)
@@ -233,7 +232,7 @@ func filterSymbols(ctx context.Context, db *sqlx.DB, args protocol.SearchArgs) (
 // filenames to prevent a newer version of the symbols service from attempting
 // to read from a database created by an older (and likely incompatible) symbols
 // service. Increment this when you change the database schema.
-const symbolsDBVersion = 2
+const symbolsDBVersion = 3
 
 // symbolInDB is the same as `protocol.Symbol`, but with two additional columns:
 // namelowercase and pathlowercase, which enable indexed case insensitive
@@ -311,7 +310,7 @@ func (s *Service) writeAllSymbolsToNewDB(ctx context.Context, dbFile string, rep
 			name VARCHAR(256) NOT NULL,
 			namelowercase VARCHAR(256) NOT NULL,
 			path VARCHAR(4096) NOT NULL,
-			pathlowercase VARCHAR(256) NOT NULL,
+			pathlowercase VARCHAR(4096) NOT NULL,
 			line INT NOT NULL,
 			kind VARCHAR(255) NOT NULL,
 			language VARCHAR(255) NOT NULL,

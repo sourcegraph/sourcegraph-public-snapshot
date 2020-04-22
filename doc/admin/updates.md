@@ -15,3 +15,11 @@ You can always find the version number of the latest release at [docs.sourcegrap
 ## For Kubernetes cluster deployments
 
 See "[Updating Sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/docs/update.md)" in the Kubernetes cluster administrator guide.
+
+## For Docker Compose deployments
+
+Please see: [updating a Docker Compose Sourcegraph instance](updates/docker_compose.md)
+
+## For pure-Docker cluster deployments
+
+Please see: [updating a pure-Docker Sourcegraph cluster](updates/pure_docker.md)

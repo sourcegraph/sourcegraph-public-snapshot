@@ -2,21 +2,26 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
+	"encoding/json"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/usagestats"
+	usagestatsdeprecated "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/usagestatsdeprecated"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
 
 func (r *UserResolver) UsageStatistics(ctx context.Context) (*userUsageStatisticsResolver, error) {
 	if envvar.SourcegraphDotComMode() {
-		return nil, errors.New("usage statistics are not available on sourcegraph.com")
+		if err := backend.CheckSiteAdminOrSameUser(ctx, r.user.ID); err != nil {
+			return nil, err
+		}
 	}
 
-	stats, err := usagestats.GetByUserID(r.user.ID)
+	stats, err := usagestatsdeprecated.GetByUserID(r.user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -61,9 +66,35 @@ func (*schemaResolver) LogUserEvent(ctx context.Context, args *struct {
 	Event        string
 	UserCookieID string
 }) (*EmptyResponse, error) {
-	if envvar.SourcegraphDotComMode() {
+	actor := actor.FromContext(ctx)
+	return nil, usagestatsdeprecated.LogActivity(actor.IsAuthenticated(), actor.UID, args.UserCookieID, args.Event)
+}
+
+func (*schemaResolver) LogEvent(ctx context.Context, args *struct {
+	Event        string
+	UserCookieID string
+	URL          string
+	Source       string
+	Argument     *string
+}) (*EmptyResponse, error) {
+	if !conf.EventLoggingEnabled() {
 		return nil, nil
 	}
+
+	var payload json.RawMessage
+	if args.Argument != nil {
+		if err := json.Unmarshal([]byte(*args.Argument), &payload); err != nil {
+			return nil, err
+		}
+	}
+
 	actor := actor.FromContext(ctx)
-	return nil, usagestats.LogActivity(actor.IsAuthenticated(), actor.UID, args.UserCookieID, args.Event)
+	return nil, usagestats.LogEvent(ctx, usagestats.Event{
+		EventName:    args.Event,
+		URL:          args.URL,
+		UserID:       actor.UID,
+		UserCookieID: args.UserCookieID,
+		Source:       args.Source,
+		Argument:     payload,
+	})
 }

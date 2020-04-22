@@ -1,23 +1,41 @@
 #!/usr/bin/env bash
-set -e
 
-# Description: Dashboards and graphs for Prometheus metrics.
-#
-#
-docker run --detach \
-    --name=grafana \
-    --cpus=1 \
-    --memory=1g \
-    -p 0.0.0.0:3000:3000 \
-    -v ~/sourcegraph-docker/grafana-disk:/var/lib/grafana \
-    -v $(pwd)/grafana:/etc/grafana \
-    -e GF_AUTH_ANONYMOUS_ENABLED=true \
-    -e GF_AUTH_ANONYMOUS_ORG_NAME=Sourcegraph \
-    -e GF_AUTH_ANONYMOUS_ORG_ROLE=Editor \
-    -e GF_USERS_ALLOW_SIGN_UP='false' \
-    -e GF_USERS_AUTO_ASSIGN_ORG='true' \
-    -e GF_USERS_AUTO_ASSIGN_ORG_ROLE=Editor \
-    grafana/grafana:6.1.1@sha256:e7a513bf7f33ef9681b2d35a799136e1ce9330f9055f75dfa2101d812946184b
+# Description: Dashboards and graphs for Grafana metrics.
+
+set -euf -o pipefail
+pushd "$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null
+
+GRAFANA_DISK="${HOME}/.sourcegraph-dev/data/grafana"
+
+IMAGE=sourcegraph/grafana:10.0.12@sha256:2cde7e16fa56e81237fb05e228018015385f6498c4642d4ae073799a02b2b68c
+CONTAINER=grafana
+
+mkdir -p ${GRAFANA_DISK}/logs
+
+CONFIG_SUB_DIR="all"
+
+if [[ "$OSTYPE" == "linux-gnu" ]]; then
+  CONFIG_SUB_DIR="linux"
+fi
+
+docker inspect $CONTAINER >/dev/null 2>&1 && docker rm -f $CONTAINER
+
+# Generate Grafana dashboards
+pushd observability
+DEV=true RELOAD=false go generate
+popd
+
+docker run --rm \
+  --name=grafana \
+  --cpus=1 \
+  --memory=1g \
+  --user=$UID \
+  -p 0.0.0.0:3370:3370 \
+  -v ${GRAFANA_DISK}:/var/lib/grafana \
+  -v $(pwd)/dev/grafana/${CONFIG_SUB_DIR}:/sg_config_grafana/provisioning/datasources \
+  -v $(pwd)/docker-images/grafana/jsonnet:/sg_grafana_additional_dashboards \
+  ${IMAGE} >>${GRAFANA_DISK}/logs/grafana.log 2>&1 &
+wait $!
 
 # Add the following lines above if you wish to use an auth proxy with Grafana:
 #

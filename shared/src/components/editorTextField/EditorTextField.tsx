@@ -1,8 +1,8 @@
 import { isEqual } from 'lodash'
 import React, { createRef, TextareaHTMLAttributes, useEffect, useState } from 'react'
-import { from, Subscription, Unsubscribable } from 'rxjs'
+import { Subscription, Unsubscribable } from 'rxjs'
 import { distinctUntilChanged, filter, map } from 'rxjs/operators'
-import { CodeEditorData, EditorId, EditorService } from '../../api/client/services/editorService'
+import { CodeEditorData, EditorId, EditorService, observeEditorAndModel } from '../../api/client/services/editorService'
 import { ModelService, TextModel } from '../../api/client/services/modelService'
 import { offsetToPosition, positionToOffset } from '../../api/client/types/textDocument'
 import { ExtensionsControllerProps } from '../../extensions/controller'
@@ -58,14 +58,15 @@ export const EditorTextFieldUtils = {
      * model change.
      */
     updateElementOnEditorOrModelChanges: (
-        editorService: Pick<EditorService, 'observeEditorAndModel'>,
+        editorService: Pick<EditorService, 'observeEditor'>,
+        modelService: Pick<ModelService, 'observeModel'>,
         editor: EditorId,
         setValue: (text: string) => void,
         textAreaRef: React.RefObject<Pick<HTMLTextAreaElement, 'value' | 'setSelectionRange'>>
     ): Unsubscribable => {
         const subscriptions = new Subscription()
 
-        const changes = from(editorService.observeEditorAndModel(editor))
+        const changes = observeEditorAndModel(editor, editorService, modelService)
         const modelTextChanges = changes.pipe(
             map(({ model: { text } }) => text),
             filter(isDefined),
@@ -154,6 +155,7 @@ export const EditorTextField: React.FunctionComponent<Props> = ({
     useEffect(() => {
         const subscription = EditorTextFieldUtils.updateElementOnEditorOrModelChanges(
             editorService,
+            modelService,
             { editorId },
             text => {
                 setValue(text)

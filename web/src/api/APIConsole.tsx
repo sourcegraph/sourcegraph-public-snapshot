@@ -1,13 +1,14 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as _graphiqlModule from 'graphiql' // type only
 import * as H from 'history'
-import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { from as fromPromise, Subject, Subscription } from 'rxjs'
 import { catchError, debounceTime } from 'rxjs/operators'
 import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { eventLogger } from '../tracking/eventLogger'
+import { ErrorAlert } from '../components/alerts'
+import { PageTitle } from '../components/PageTitle'
 
 const defaultQuery = `# Type queries here, with completion, validation, and hovers.
 #
@@ -121,14 +122,13 @@ export class APIConsole extends React.PureComponent<Props, State> {
     public render(): JSX.Element | null {
         return (
             <div className="api-console">
+                <PageTitle title="API console" />
                 {this.state.graphiqlOrError === undefined ? (
                     <span className="api-console__loader">
                         <LoadingSpinner className="icon-inline" /> Loading…
                     </span>
                 ) : isErrorLike(this.state.graphiqlOrError) ? (
-                    <div className="alert alert-danger">
-                        <strong>Error loading API console:</strong> {upperFirst(this.state.graphiqlOrError.message)}
-                    </div>
+                    <ErrorAlert prefix="Error loading API console" error={this.state.graphiqlOrError} />
                 ) : (
                     this.renderGraphiQL()
                 )}
@@ -140,7 +140,7 @@ export class APIConsole extends React.PureComponent<Props, State> {
      * Renders the API console once GraphiQL has loaded. This method should
      * only be invoked once this.state.graphiqlOrError is loaded successfully.
      */
-    private renderGraphiQL = () => {
+    private renderGraphiQL = (): JSX.Element => {
         if (!this.state.graphiqlOrError || isErrorLike(this.state.graphiqlOrError)) {
             throw new Error('renderGraphiQL called illegally')
         }
@@ -186,12 +186,13 @@ export class APIConsole extends React.PureComponent<Props, State> {
     // Update state.parameters when query/variables/operation name are changed
     // so that we can update the browser URL.
 
-    private onEditQuery = (newQuery: string) => this.updateStateParameters(params => ({ ...params, query: newQuery }))
+    private onEditQuery = (newQuery: string): void =>
+        this.updateStateParameters(params => ({ ...params, query: newQuery }))
 
-    private onEditVariables = (newVariables: string) =>
+    private onEditVariables = (newVariables: string): void =>
         this.updateStateParameters(params => ({ ...params, variables: newVariables }))
 
-    private onEditOperationName = (newOperationName: string) =>
+    private onEditOperationName = (newOperationName: string): void =>
         this.updateStateParameters(params => ({ ...params, operationName: newOperationName }))
 
     private updateStateParameters(update: (params: Parameters) => Parameters): void {
@@ -201,7 +202,7 @@ export class APIConsole extends React.PureComponent<Props, State> {
         )
     }
 
-    // Foward GraphiQL prettify/history buttons directly to their original
+    // Forward GraphiQL prettify/history buttons directly to their original
     // implementation. We have to do this because it is impossible to inject
     // children into the GraphiQL toolbar unless you completely specify your
     // own.
@@ -209,13 +210,13 @@ export class APIConsole extends React.PureComponent<Props, State> {
     private setGraphiQLRef = (ref: _graphiqlModule.default | null): void => {
         this.graphiQLRef = ref
     }
-    private handlePrettifyQuery = () => {
+    private handlePrettifyQuery = (): void => {
         if (!this.graphiQLRef) {
             return
         }
         this.graphiQLRef.handlePrettifyQuery()
     }
-    private handleToggleHistory = () => {
+    private handleToggleHistory = (): void => {
         if (!this.graphiQLRef) {
             return
         }
@@ -223,19 +224,17 @@ export class APIConsole extends React.PureComponent<Props, State> {
     }
 }
 
-function fetcher(graphQLParams: _graphiqlModule.GraphQLParams): Promise<string> {
-    return fetch('/.api/graphql', {
-        method: 'post',
+async function fetcher(graphQLParams: _graphiqlModule.GraphQLParams): Promise<string> {
+    const response = await fetch('/.api/graphql', {
+        method: 'POST',
         body: JSON.stringify(graphQLParams),
         credentials: 'include',
-        headers: new Headers({ 'x-requested-with': 'Sourcegraph GraphQL Explorer' }), // enables authenticated queries
+        headers: new Headers({ 'x-requested-with': 'Sourcegraph GraphQL Explorer' }),
     })
-        .then(response => response.text())
-        .then(responseBody => {
-            try {
-                return JSON.parse(responseBody)
-            } catch (error) {
-                return responseBody
-            }
-        })
+    const responseBody = await response.text()
+    try {
+        return JSON.parse(responseBody)
+    } catch (error) {
+        return responseBody
+    }
 }

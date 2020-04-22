@@ -8,8 +8,8 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	uirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
 
 // RequireAuthMiddleware is a middleware that requires authentication for all HTTP requests, except
@@ -26,7 +26,8 @@ var RequireAuthMiddleware = &Middleware{
 			// prevent access.
 			if !actor.FromContext(r.Context()).IsAuthenticated() && !AllowAnonymousRequest(r) {
 				// Report HTTP 401 Unauthorized for API requests.
-				http.Error(w, "Private mode requires authentication.", http.StatusUnauthorized)
+				code := anonymousStatusCode(r, http.StatusUnauthorized)
+				http.Error(w, "Private mode requires authentication.", code)
 				return
 			}
 
@@ -40,9 +41,10 @@ var RequireAuthMiddleware = &Middleware{
 			// prevent access and redirect them to the login page.
 			if !actor.FromContext(r.Context()).IsAuthenticated() && !AllowAnonymousRequest(r) {
 				// Redirect 302 Found for web page requests.
+				code := anonymousStatusCode(r, http.StatusFound)
 				q := url.Values{}
 				q.Set("returnTo", r.URL.String())
-				http.Redirect(w, r, "/sign-in?"+q.Encode(), http.StatusFound)
+				http.Redirect(w, r, "/sign-in?"+q.Encode(), code)
 				return
 			}
 
@@ -71,6 +73,13 @@ var (
 		uirouter.RouteSignUp:        {},
 		uirouter.RoutePasswordReset: {},
 	}
+	// Some routes return non-standard HTTP responses when a user is not
+	// signed in.
+	anonymousUIStatusCode = map[string]int{
+		// This route lives in the app, but should act like the API since most
+		// clients are extensions.
+		uirouter.RouteRaw: http.StatusUnauthorized,
+	}
 )
 
 func matchedRouteName(req *http.Request, router *mux.Router) string {
@@ -92,12 +101,26 @@ func AllowAnonymousRequest(req *http.Request) bool {
 		return true
 	}
 
-	if strings.HasPrefix(req.URL.Path, "/.assets/") || strings.HasPrefix(req.URL.Path, "/.api/telemetry/log/v1/") {
+	if strings.HasPrefix(req.URL.Path, "/.assets/") {
 		return true
 	}
 
-	// Permission is checked later by validating the LSIF upload token.
+	// Permission is checked by github token
 	if strings.HasPrefix(req.URL.Path, "/.api/lsif/upload") {
+		return true
+	}
+
+	// This is just a redirect to a public download
+	if strings.HasPrefix(req.URL.Path, "/.api/src-cli") {
+		return true
+	}
+
+	// Authentication is performed in the webhook handler itself.
+	if strings.HasPrefix(req.URL.Path, "/.api/github-webhooks") {
+		return true
+	}
+
+	if strings.HasPrefix(req.URL.Path, "/.api/bitbucket-server-webhooks") {
 		return true
 	}
 
@@ -110,4 +133,18 @@ func AllowAnonymousRequest(req *http.Request) bool {
 	}
 	_, ok := anonymousAccessibleAPIRoutes[apiRouteName]
 	return ok
+}
+
+func anonymousStatusCode(req *http.Request, defaultCode int) int {
+	name := matchedRouteName(req, router.Router())
+	if name != router.UI {
+		return defaultCode
+	}
+
+	name = matchedRouteName(req, uirouter.Router)
+	if code, ok := anonymousUIStatusCode[name]; ok {
+		return code
+	}
+
+	return defaultCode
 }

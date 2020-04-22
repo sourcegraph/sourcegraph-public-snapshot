@@ -96,5 +96,5 @@ export class UserSettingsExternalAccountsPage extends React.Component<Props> {
             })
         )
 
-    private onDidUpdateExternalAccount = () => this.externalAccountUpdates.next()
+    private onDidUpdateExternalAccount = (): void => this.externalAccountUpdates.next()
 }

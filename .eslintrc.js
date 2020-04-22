@@ -13,7 +13,7 @@ const config = {
     ecmaFeatures: {
       jsx: true,
     },
-    project: 'tsconfig.json',
+    project: __dirname + '/tsconfig.json',
   },
   settings: {
     react: {
@@ -33,7 +33,21 @@ const config = {
   rules: {
     // Rules that are specific to this repo
     // All other rules should go into https://github.com/sourcegraph/eslint-config
-    'no-restricted-imports': ['error', { paths: ['highlight.js', 'marked'] }],
+    'no-restricted-imports': [
+      'error',
+      {
+        paths: [
+          'highlight.js',
+          'marked',
+          'rxjs/ajax',
+          {
+            name: 'rxjs/fetch',
+            message:
+              'rxjs fromFetch is broken. Until https://github.com/ReactiveX/rxjs/pull/5306 is merged, please use shared/src/graphql/fromFetch.ts',
+          },
+        ],
+      },
+    ],
     'react/forbid-elements': [
       'error',
       {

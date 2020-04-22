@@ -12,8 +12,10 @@ import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors
 import { buildSearchURLQuery } from '../../../shared/src/util/url'
 import { NamespaceProps } from '../namespaces'
 import { deleteSavedSearch, fetchSavedSearches } from '../search/backend'
+import { PatternTypeProps } from '../search'
+import { ErrorAlert } from '../components/alerts'
 
-interface NodeProps extends RouteComponentProps {
+interface NodeProps extends RouteComponentProps, Omit<PatternTypeProps, 'setPatternType'> {
     savedSearch: GQL.ISavedSearch
     onDelete: () => void
 }
@@ -53,16 +55,21 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
     }
     public render(): JSX.Element | null {
         return (
-            <div className="saved-search-list-page__row list-group-item">
+            <div className="saved-search-list-page__row list-group-item e2e-saved-search-list-page-row">
                 <div className="d-flex">
                     <MessageTextOutlineIcon className="saved-search-list-page__row--icon icon-inline" />
-                    <Link to={'/search?' + buildSearchURLQuery(this.props.savedSearch.query)}>
-                        <div>{this.props.savedSearch.description}</div>
+                    <Link
+                        to={
+                            '/search?' +
+                            buildSearchURLQuery(this.props.savedSearch.query, this.props.patternType, false)
+                        }
+                    >
+                        <div className="e2e-saved-search-list-page-row-title">{this.props.savedSearch.description}</div>
                     </Link>
                 </div>
                 <div>
                     <Link
-                        className="btn btn-secondary btn-sm e2e-edit-external-service-button"
+                        className="btn btn-secondary btn-sm e2e-edit-saved-search-button"
                         to={`${this.props.match.path}/${this.props.savedSearch.id}`}
                         data-tooltip="Saved search settings"
                     >
@@ -70,7 +77,7 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
                     </Link>{' '}
                     <button
                         type="button"
-                        className="btn btn-sm btn-danger e2e-delete-external-service-button"
+                        className="btn btn-sm btn-danger e2e-delete-saved-search-button"
                         onClick={this.onDelete}
                         disabled={this.state.isDeleting}
                         data-tooltip="Delete saved search"
@@ -82,7 +89,7 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
         )
     }
 
-    private onDelete = () => {
+    private onDelete = (): void => {
         if (!window.confirm(`Delete the external service ${this.props.savedSearch.description}?`)) {
             return
         }
@@ -95,16 +102,13 @@ interface State {
     savedSearchesOrError?: GQL.ISavedSearch[] | ErrorLike
 }
 
-interface Props extends RouteComponentProps<{}>, NamespaceProps {}
+interface Props extends RouteComponentProps<{}>, NamespaceProps, Omit<PatternTypeProps, 'setPatternType'> {}
 
 export class SavedSearchListPage extends React.Component<Props, State> {
     public subscriptions = new Subscription()
     private refreshRequests = new Subject<void>()
 
     public state: State = {}
-    constructor(props: Props) {
-        super(props)
-    }
 
     public componentDidMount(): void {
         this.subscriptions.add(
@@ -134,15 +138,16 @@ export class SavedSearchListPage extends React.Component<Props, State> {
                         <div>Manage notifications and alerts for specific search queries</div>
                     </div>
                     <div>
-                        <Link to={`${this.props.match.path}/add`} className="btn btn-primary">
+                        <Link
+                            to={`${this.props.match.path}/add`}
+                            className="btn btn-primary e2e-add-saved-search-button"
+                        >
                             <PlusIcon className="icon-inline" /> Add saved search
                         </Link>
                     </div>
                 </div>
                 {this.state.savedSearchesOrError && isErrorLike(this.state.savedSearchesOrError) && (
-                    <div className="alert alert-danger mb-3">
-                        <strong>Error:</strong> {this.state.savedSearchesOrError.message}
-                    </div>
+                    <ErrorAlert className="mb-3" error={this.state.savedSearchesOrError} />
                 )}
                 <div className="list-group list-group-flush">
                     {this.state.savedSearchesOrError &&
@@ -163,7 +168,7 @@ export class SavedSearchListPage extends React.Component<Props, State> {
         )
     }
 
-    private onDelete = () => {
+    private onDelete = (): void => {
         this.refreshRequests.next()
     }
 }

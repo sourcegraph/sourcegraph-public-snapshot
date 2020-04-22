@@ -6,8 +6,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 )
 
 func (r *RepositoryResolver) ExternalRepository() *externalRepositoryResolver {
@@ -35,7 +35,7 @@ func (r *RepositoryResolver) ExternalServices(ctx context.Context, args *struct 
 		return nil, err
 	}
 
-	svcs, err := repoupdater.DefaultClient.RepoExternalServices(ctx, uint32(r.repo.ID))
+	svcs, err := repoupdater.DefaultClient.RepoExternalServices(ctx, r.repo.ID)
 	if err != nil {
 		return nil, err
 	}

@@ -4,7 +4,7 @@ exports[`UserAvatar no avatar URL 1`] = `null`;
 
 exports[`UserAvatar with avatar URL 1`] = `
 <img
-  className="avatar-icon "
+  className="user-avatar "
   src="u"
 />
 `;

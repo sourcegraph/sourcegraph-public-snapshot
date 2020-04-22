@@ -82,7 +82,7 @@ export interface RepoHeaderContribution {
      * The element to display in the RepoHeader. The element *must* have a React key that is a string and is unique
      * among all RepoHeaderContributions. If not, an exception will be thrown.
      */
-    element: React.ReactElement<any>
+    element: React.ReactElement
 }
 
 /** React props for components that store or display RepoHeaderContributions. */
@@ -226,14 +226,19 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                     ))}
                 </ul>
                 <div className="repo-header__spacer" />
-                <ul className="navbar-nav navbar-nav__action-items">
-                    <WebActionsNavItems {...this.props} menu={ContributableMenu.EditorTitle} />
+                <ul className="navbar-nav">
+                    <WebActionsNavItems
+                        {...this.props}
+                        listItemClass="repo-header__action-list-item"
+                        actionItemPressedClass="repo-header__action-item--pressed"
+                        menu={ContributableMenu.EditorTitle}
+                    />
                 </ul>
                 <ul className="navbar-nav">
                     {this.props.actionButtons.map(
                         ({ condition = () => true, label, tooltip, icon: Icon, to }) =>
                             condition(context) && (
-                                <li className="nav-item" key={label}>
+                                <li className="nav-item repo-header__action-list-item" key={label}>
                                     <LinkOrButton to={to(context)} data-tooltip={tooltip}>
                                         {Icon && <Icon className="icon-inline" />}{' '}
                                         <span className="d-none d-lg-inline">{label}</span>
@@ -242,12 +247,12 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                             )
                     )}
                     {rightActions.map((a, i) => (
-                        <li className="nav-item" key={a.element.key || i}>
+                        <li className="nav-item repo-header__action-list-item" key={a.element.key || i}>
                             {a.element}
                         </li>
                     ))}
                     {this.props.repo.viewerCanAdminister && (
-                        <li className="nav-item">
+                        <li className="nav-item repo-header__action-list-item">
                             <LinkOrButton to={`/${this.props.repo.name}/-/settings`} data-tooltip="Repository settings">
                                 <SettingsIcon className="icon-inline" />{' '}
                                 <span className="d-none d-lg-inline">Settings</span>

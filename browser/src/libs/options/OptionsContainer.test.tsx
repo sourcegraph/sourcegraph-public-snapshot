@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { render, RenderResult } from 'react-testing-library'
+import { render, RenderResult } from '@testing-library/react'
 import { noop, Observable, of } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import { TestScheduler } from 'rxjs/testing'
@@ -8,17 +8,21 @@ import { OptionsContainer, OptionsContainerProps } from './OptionsContainer'
 describe('OptionsContainer', () => {
     const stubs: Pick<
         OptionsContainerProps,
+        | 'isActivated'
         | 'fetchCurrentTabStatus'
         | 'ensureValidSite'
+        | 'toggleExtensionDisabled'
         | 'toggleFeatureFlag'
         | 'featureFlags'
         | 'hasPermissions'
         | 'requestPermissions'
     > = {
+        isActivated: true,
         hasPermissions: () => Promise.resolve(true),
         requestPermissions: noop,
         fetchCurrentTabStatus: () => Promise.resolve(undefined),
         ensureValidSite: (url: string) => new Observable<void>(),
+        toggleExtensionDisabled: (isActivated: boolean) => Promise.resolve(undefined),
         toggleFeatureFlag: noop,
         featureFlags: [],
     }
@@ -58,7 +62,7 @@ describe('OptionsContainer', () => {
     test('checks the connection status when it the url updates', () => {
         const scheduler = new TestScheduler((a, b) => expect(a).toEqual(b))
 
-        const buildRenderer = (): ((ui: React.ReactElement<any>) => void) => {
+        const buildRenderer = (): ((ui: React.ReactElement) => void) => {
             let rerender: RenderResult['rerender'] | undefined
 
             return ui => {

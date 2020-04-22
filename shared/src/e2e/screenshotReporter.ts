@@ -1,54 +1,48 @@
 import mkdirp from 'mkdirp-promise'
 import * as path from 'path'
-import puppeteer from 'puppeteer'
+import * as puppeteer from 'puppeteer'
+import { afterEach } from 'mocha'
 
 /**
- * Registers a jasmine reporter (for use with jest) that takes a screenshot of the browser when a test fails (and
- * closes the page after each test). It is used by e2e tests.
- *
- * From https://github.com/smooth-code/jest-puppeteer/issues/131#issuecomment-424073620.
+ * Registers an `afterEach` hook (for use with Mocha) that takes a screenshot of
+ * the browser when a test fails. It is used by e2e tests.
  */
-export function saveScreenshotsUponFailuresAndClosePage(
-    repoRootDir: string,
-    screenshotDir: string,
-    getPage: () => puppeteer.Page
-): void {
-    /**
-     * jasmine reporter does not support async, so we store the promise and wait for it before each test.
-     */
-    let promise = Promise.resolve()
-    beforeEach(() => promise)
-    afterAll(() => promise)
-
-    /**
-     * Take a screenshot when a test fails. Jest standard reporters run in a separate process so they don't have
-     * access to the page instance. Using jasmine reporter allows us to have access to the test result, test name
-     * and page instance at the same time.
-     */
-    jasmine.getEnv().addReporter({
-        specDone: result => {
-            if (result.status === 'failed') {
-                promise = promise
-                    .catch()
-                    .then(() => takeScreenshot(getPage(), repoRootDir, screenshotDir, result.fullName))
-            }
-        },
+export function saveScreenshotsUponFailures(getPage: () => puppeteer.Page): void {
+    afterEach('Save screenshot', async function () {
+        if (this.currentTest && this.currentTest.state === 'failed') {
+            await takeScreenshot({
+                page: getPage(),
+                repoRootDir: path.resolve(__dirname, '..', '..', '..'),
+                screenshotDir: path.resolve(__dirname, '..', '..', '..', 'puppeteer'),
+                testName: this.currentTest.fullTitle(),
+            })
+        }
     })
 }
 
-async function takeScreenshot(
-    page: puppeteer.Page,
-    repoRootDir: string,
-    screenshotDir: string,
+async function takeScreenshot({
+    page,
+    repoRootDir,
+    screenshotDir,
+    testName,
+}: {
+    page: puppeteer.Page
+    repoRootDir: string
+    screenshotDir: string
     testName: string
-): Promise<void> {
+}): Promise<void> {
     await mkdirp(screenshotDir)
-    const filePath = path.join(screenshotDir, testName.replace(/\W/g, '_') + '.png')
-    await page.screenshot({ path: filePath })
+    const fileName = testName.replace(/\W/g, '_') + '.png'
+    const filePath = path.join(screenshotDir, fileName)
+    const screenshot = await page.screenshot({ path: filePath })
     if (process.env.CI) {
         // Print image with ANSI escape code for Buildkite: https://buildkite.com/docs/builds/images-in-log-output.
         console.log(`\u001B]1338;url="artifact://${path.relative(repoRootDir, filePath)}";alt="Screenshot"\u0007`)
+    } else if (process.env.TERM_PROGRAM === 'iTerm.app') {
+        // Print image inline for iTerm2
+        const nameBase64 = Buffer.from(fileName).toString('base64')
+        console.log(`\u001B]1337;File=name=${nameBase64};inline=1;width=500px:${screenshot.toString('base64')}\u0007`)
     } else {
-        console.log(`Saved screenshot of failure to ${path.relative(process.cwd(), filePath)}`)
+        console.log(`📸  Saved screenshot of failure to ${path.relative(process.cwd(), filePath)}`)
     }
 }

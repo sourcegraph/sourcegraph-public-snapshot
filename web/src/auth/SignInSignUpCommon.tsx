@@ -3,7 +3,9 @@ import * as React from 'react'
 import { USERNAME_MAX_LENGTH, VALID_USERNAME_REGEXP } from '../user'
 
 export const PasswordInput: React.FunctionComponent<
-    React.InputHTMLAttributes<HTMLInputElement> & { inputRef?: React.Ref<HTMLInputElement> }
+    React.InputHTMLAttributes<HTMLInputElement> & {
+        inputRef?: React.Ref<HTMLInputElement>
+    }
 > = props => {
     const { inputRef, ...other } = props
     return (

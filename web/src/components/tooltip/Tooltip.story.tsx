@@ -5,7 +5,6 @@ import { Tooltip } from './Tooltip'
 import './Tooltip.scss'
 
 const { add } = storiesOf('Tooltip', module).addDecorator(story => (
-    // tslint:disable-next-line: jsx-ban-props
     <div style={{ maxWidth: '20rem', margin: '2rem' }}>{story()}</div>
 ))
 

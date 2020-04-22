@@ -9,10 +9,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
-	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 )
 
 func TestCheckMirrorRepositoryConnection(t *testing.T) {
@@ -53,7 +53,7 @@ func TestCheckMirrorRepositoryConnection(t *testing.T) {
 
 		gqltesting.RunTests(t, []*gqltesting.Test{
 			{
-				Schema: GraphQLSchema,
+				Schema: mustParseGraphQLSchema(t),
 				Query: `
 				mutation {
 					checkMirrorRepositoryConnection(repository: "UmVwb3NpdG9yeToxMjM=") {
@@ -109,7 +109,7 @@ func TestCheckMirrorRepositoryConnection(t *testing.T) {
 
 		gqltesting.RunTests(t, []*gqltesting.Test{
 			{
-				Schema: GraphQLSchema,
+				Schema: mustParseGraphQLSchema(t),
 				Query: `
 				mutation {
 					checkMirrorRepositoryConnection(name: "my/repo") {

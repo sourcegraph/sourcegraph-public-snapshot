@@ -1,29 +1,31 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
-import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } from 'rxjs/operators'
+import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap, filter } from 'rxjs/operators'
 import { ActivationProps } from '../../../../shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
-import { gql } from '../../../../shared/src/graphql/graphql'
+import { gql, dataOrThrowErrors } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
-import { createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
+import { isErrorLike, asError } from '../../../../shared/src/util/errors'
 import { queryGraphQL } from '../../backend/graphql'
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import { NamespaceProps } from '../../namespaces'
-import { ThemeProps } from '../../theme'
+import { ThemeProps } from '../../../../shared/src/theme'
 import { RouteDescriptor } from '../../util/contributions'
 import { UserSettingsAreaRoute } from '../settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from '../settings/UserSettingsSidebar'
 import { UserAreaHeader, UserAreaHeaderNavItem } from './UserAreaHeader'
+import { PatternTypeProps } from '../../search'
+import { ErrorMessage } from '../../components/alerts'
+import { isDefined } from '../../../../shared/src/util/types'
 
-const fetchUser = (args: { username: string }): Observable<GQL.IUser | null> =>
+const fetchUser = (args: { username: string }): Observable<GQL.IUser> =>
     queryGraphQL(
         gql`
             query User($username: String!) {
@@ -37,6 +39,7 @@ const fetchUser = (args: { username: string }): Observable<GQL.IUser | null> =>
                     avatarURL
                     viewerCanAdminister
                     siteAdmin
+                    builtinAuth
                     createdAt
                     emails {
                         email
@@ -54,9 +57,10 @@ const fetchUser = (args: { username: string }): Observable<GQL.IUser | null> =>
         `,
         args
     ).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.user) {
-                throw createAggregateError(errors)
+        map(dataOrThrowErrors),
+        map(data => {
+            if (!data.user) {
+                throw new Error(`User not found: ${JSON.stringify(args.username)}`)
             }
             return data.user
         })
@@ -74,7 +78,8 @@ interface UserAreaProps
         PlatformContextProps,
         SettingsCascadeProps,
         ThemeProps,
-        ActivationProps {
+        ActivationProps,
+        Omit<PatternTypeProps, 'setPatternType'> {
     userAreaRoutes: readonly UserAreaRoute[]
     userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[]
     userSettingsSideBarItems: UserSettingsSidebarItems
@@ -92,7 +97,7 @@ interface UserAreaState {
      * The fetched user (who is the subject of the page), or an error if an error occurred; undefined while
      * loading.
      */
-    userOrError?: GQL.IUser | ErrorLike
+    userOrError?: GQL.IUser | Error
 }
 
 /**
@@ -104,7 +109,8 @@ export interface UserAreaRouteContext
         SettingsCascadeProps,
         ThemeProps,
         ActivationProps,
-        NamespaceProps {
+        NamespaceProps,
+        Omit<PatternTypeProps, 'setPatternType'> {
     /** The user area main URL. */
     url: string
 
@@ -151,7 +157,8 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
                     switchMap(([username, forceRefresh]) => {
                         type PartialStateUpdate = Pick<UserAreaState, 'userOrError'>
                         return fetchUser({ username }).pipe(
-                            catchError(error => [error]),
+                            filter(isDefined),
+                            catchError(error => [asError(error)]),
                             map((c): PartialStateUpdate => ({ userOrError: c })),
 
                             // Don't clear old user data while we reload, to avoid unmounting all components during
@@ -160,13 +167,16 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
                         )
                     })
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate), err => console.error(err))
+                .subscribe(
+                    stateUpdate => this.setState(stateUpdate),
+                    err => console.error(err)
+                )
         )
 
         this.componentUpdates.next(this.props)
     }
 
-    public componentDidUpdate(props: UserAreaProps): void {
+    public componentDidUpdate(): void {
         this.componentUpdates.next(this.props)
     }
 
@@ -180,7 +190,11 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
         }
         if (isErrorLike(this.state.userOrError)) {
             return (
-                <HeroPage icon={AlertCircleIcon} title="Error" subtitle={upperFirst(this.state.userOrError.message)} />
+                <HeroPage
+                    icon={AlertCircleIcon}
+                    title="Error"
+                    subtitle={<ErrorMessage error={this.state.userOrError} />}
+                />
             )
         }
 
@@ -226,5 +240,7 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
         )
     }
 
-    private onDidUpdateUser = () => this.refreshRequests.next()
+    private onDidUpdateUser = (): void => {
+        this.refreshRequests.next()
+    }
 }

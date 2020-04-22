@@ -21,7 +21,7 @@ interface State {
     sideloadedExtensionURL?: string | null
 }
 
-export class ExtensionStatus extends React.PureComponent<Props, State> {
+class ExtensionStatus extends React.PureComponent<Props, State> {
     public state: State = {}
 
     private componentUpdates = new Subject<Props>()
@@ -39,7 +39,10 @@ export class ExtensionStatus extends React.PureComponent<Props, State> {
                     catchError(err => [asError(err)]),
                     map(extensionsOrError => ({ extensionsOrError }))
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate), err => console.error(err))
+                .subscribe(
+                    stateUpdate => this.setState(stateUpdate),
+                    err => console.error(err)
+                )
         )
 
         const platformContext = this.componentUpdates.pipe(
@@ -136,7 +139,7 @@ export class ExtensionStatus extends React.PureComponent<Props, State> {
         )
     }
 
-    private setSideloadedExtensionURL = () => {
+    private setSideloadedExtensionURL = (): void => {
         const url = window.prompt(
             'Parcel dev server URL:',
             this.state.sideloadedExtensionURL || 'http://localhost:1234'
@@ -144,7 +147,7 @@ export class ExtensionStatus extends React.PureComponent<Props, State> {
         this.props.platformContext.sideloadedExtensionURL.next(url)
     }
 
-    private clearSideloadedExtensionURL = () => {
+    private clearSideloadedExtensionURL = (): void => {
         this.props.platformContext.sideloadedExtensionURL.next(null)
     }
 }

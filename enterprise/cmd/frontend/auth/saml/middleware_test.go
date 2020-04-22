@@ -25,9 +25,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/enterprise/pkg/license"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -168,17 +167,12 @@ func TestMiddleware(t *testing.T) {
 	idpHTTPServer, idpServer := newSAMLIDPServer(t)
 	defer idpHTTPServer.Close()
 
-	licensing.MockGetConfiguredProductLicenseInfo = func() (*license.Info, string, error) {
-		return &license.Info{Tags: licensing.EnterpriseTags}, "test-signature", nil
-	}
-	defer func() { licensing.MockGetConfiguredProductLicenseInfo = nil }()
+	defer licensing.TestingSkipFeatureChecks()()
 
 	conf.Mock(&conf.Unified{
 		SiteConfiguration: schema.SiteConfiguration{
 			ExperimentalFeatures: &schema.ExperimentalFeatures{},
-		},
-		Critical: schema.CriticalConfiguration{
-			ExternalURL: "http://example.com",
+			ExternalURL:          "http://example.com",
 		},
 	})
 	defer conf.Mock(nil)
@@ -221,9 +215,9 @@ func TestMiddleware(t *testing.T) {
 	authedHandler.Handle("/", Middleware.App(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/":
-			w.Write([]byte("This is the home"))
+			_, _ = w.Write([]byte("This is the home"))
 		case "/page":
-			w.Write([]byte("This is a page"))
+			_, _ = w.Write([]byte("This is a page"))
 		case "/require-authn":
 			actr := actor.FromContext(r.Context())
 			if actr.UID == 0 {
@@ -231,7 +225,7 @@ func TestMiddleware(t *testing.T) {
 			} else if actr.UID != mockedUserID {
 				t.Errorf("in authn expected-endpoint, actor with incorrect UID was set; %d != %d", actr.UID, mockedUserID)
 			}
-			w.Write([]byte("Authenticated"))
+			_, _ = w.Write([]byte("Authenticated"))
 		default:
 			http.Error(w, "", http.StatusNotFound)
 		}

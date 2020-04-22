@@ -14,15 +14,15 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 
 	"golang.org/x/tools/imports"
 
 	"github.com/fatih/astrewrite"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
-var vendorRe = regexp.MustCompile(`(/|^)vendor/`)
+var vendorRe = lazyregexp.New(`(/|^)vendor/`)
 
 func main() {
 	rewriteFunc := func(n ast.Node) (ast.Node, bool) {

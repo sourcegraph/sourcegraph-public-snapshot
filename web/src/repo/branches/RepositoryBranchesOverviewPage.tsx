@@ -1,5 +1,4 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { upperFirst } from 'lodash'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import * as React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
@@ -7,13 +6,14 @@ import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
-import { createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
+import { createAggregateError, ErrorLike, isErrorLike, asError } from '../../../../shared/src/util/errors'
 import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable'
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { gitRefFragment, GitRefNode } from '../GitRef'
 import { RepositoryBranchesAreaPageProps } from './RepositoryBranchesArea'
+import { ErrorAlert } from '../../components/alerts'
 
 interface Data {
     defaultBranch: GQL.IGitRef | null
@@ -91,13 +91,16 @@ export class RepositoryBranchesOverviewPage extends React.PureComponent<Props, S
                     switchMap(({ repo }) => {
                         type PartialStateUpdate = Pick<State, 'dataOrError'>
                         return queryGitBranches({ repo: repo.id, first: 10 }).pipe(
-                            catchError(error => [error]),
+                            catchError((error): [ErrorLike] => [asError(error)]),
                             map((c): PartialStateUpdate => ({ dataOrError: c })),
                             startWith<PartialStateUpdate>({ dataOrError: undefined })
                         )
                     })
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate), error => console.error(error))
+                .subscribe(
+                    stateUpdate => this.setState(stateUpdate),
+                    error => console.error(error)
+                )
         )
         this.componentUpdates.next(this.props)
     }
@@ -117,7 +120,7 @@ export class RepositoryBranchesOverviewPage extends React.PureComponent<Props, S
                 {this.state.dataOrError === undefined ? (
                     <LoadingSpinner className="icon-inline mt-2" />
                 ) : isErrorLike(this.state.dataOrError) ? (
-                    <div className="alert alert-danger mt-2">Error: {upperFirst(this.state.dataOrError.message)}</div>
+                    <ErrorAlert className="mt-2" error={this.state.dataOrError} />
                 ) : (
                     <div className="repository-branches-page__cards">
                         {this.state.dataOrError.defaultBranch && (

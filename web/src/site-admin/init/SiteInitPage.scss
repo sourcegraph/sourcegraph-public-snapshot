@@ -1,0 +1,10 @@
+.site-init-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1 1 auto;
+
+    &__content {
+        width: 26rem;
+    }
+}

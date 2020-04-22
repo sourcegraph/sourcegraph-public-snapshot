@@ -4,18 +4,18 @@ package tracking
 import (
 	"log"
 
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/inconshreveable/log15"
 
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/pkg/hubspot"
-	"github.com/sourcegraph/sourcegraph/pkg/hubspot/hubspotutil"
+	"github.com/sourcegraph/sourcegraph/internal/hubspot"
+	"github.com/sourcegraph/sourcegraph/internal/hubspot/hubspotutil"
 )
 
 // SyncUser handles creating or syncing a user profile in HubSpot, and if provided,
 // logs a user event.
-func SyncUser(email string, eventID string, contactParams *hubspot.ContactProperties) {
+func SyncUser(email, eventID string, contactParams *hubspot.ContactProperties) {
 	defer func() {
 		if err := recover(); err != nil {
 			log.Printf("panic in tracking.SyncUser: %s", err)

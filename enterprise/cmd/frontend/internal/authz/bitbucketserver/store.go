@@ -3,30 +3,26 @@ package bitbucketserver
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/RoaringBitmap/roaring"
+	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/segmentio/fasthash/fnv1"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbutil"
-	"github.com/sourcegraph/sourcegraph/pkg/trace"
-	"gopkg.in/inconshreveable/log15.v2"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-// A store of Permissions with in-memory caching, safe for concurrent use.
+// A store of UserPermissions safe for concurrent use.
 //
 // It leverages Postgres row locking for concurrency control of cache fill events,
 // so that many concurrent requests during an expiration don't overload the Bitbucket Server API.
-//
-// The second in-memory read-through layer avoids the round-trip and serialization
-// costs associated with talking to Postgres, further speeding up the steady state
-// operations.
 type store struct {
 	db dbutil.DB
 	// Duration after which a given user's cached permissions SHOULD be updated.
@@ -35,13 +31,12 @@ type store struct {
 	// Duration after which a given user's cached permissions MUST be updated.
 	// Previously cached permissions can no longer be used.
 	hardTTL time.Duration
-	cache   *cache
 	clock   func() time.Time
 	block   bool // Perform blocking updates if true.
-	updates chan *Permissions
+	updates chan *authz.UserPermissions
 }
 
-func newStore(db dbutil.DB, ttl, hardTTL time.Duration, clock func() time.Time, cache *cache) *store {
+func newStore(db dbutil.DB, ttl, hardTTL time.Duration, clock func() time.Time) *store {
 	if hardTTL < ttl {
 		hardTTL = ttl
 	}
@@ -50,97 +45,84 @@ func newStore(db dbutil.DB, ttl, hardTTL time.Duration, clock func() time.Time, 
 		db:      db,
 		ttl:     ttl,
 		hardTTL: hardTTL,
-		cache:   cache,
 		clock:   clock,
 	}
 }
 
-// Permissions of a user to perform an action on the
-// given set of object IDs of the defined type.
-type Permissions struct {
-	UserID    int32
-	Perm      authz.Perms
-	Type      string
-	IDs       *roaring.Bitmap
-	UpdatedAt time.Time
-}
-
-// Expired returns true if these Permissions have elapsed the given ttl.
-func (p *Permissions) Expired(ttl time.Duration, now time.Time) bool {
-	return !now.Before(p.UpdatedAt.Add(ttl))
-}
-
-// Authorized returns the intersection of the given ids with
-// the authorized ids.
-func (p *Permissions) Authorized(repos []*types.Repo) []authz.RepoPerms {
-	perms := make([]authz.RepoPerms, 0, len(repos))
-	for _, r := range repos {
-		if r.ID != 0 && p.IDs != nil && p.IDs.Contains(uint32(r.ID)) {
-			perms = append(perms, authz.RepoPerms{Repo: r, Perms: p.Perm})
-		}
-	}
-	return perms
-}
-
 // DefaultHardTTL is the default hard TTL used in the permissions store, after which
 // cached permissions for a given user MUST be updated, and previously cached permissions
-// can no longer be used, resulting in a call to LoadPermissions returning a StalePermissionsError.
+// can no longer be used, resulting in a call to LoadPermissions returning a ErrStalePermissions.
 const DefaultHardTTL = 3 * 24 * time.Hour
 
 // PermissionsUpdateFunc fetches updated permissions from a source of truth,
-// returning the correspondent Sourcegraph ids (e.g. repo table ids) of those objects
-// for which the authenticated user has permissions for.
-type PermissionsUpdateFunc func(context.Context) (ids []uint32, err error)
+// returning the correspondent external ids of those objects for which the
+// authenticated user has permissions for, as well as the code host associated
+// with those objects.
+type PermissionsUpdateFunc func(context.Context) (
+	ids []uint32,
+	codeHost *extsvc.CodeHost,
+	err error,
+)
 
 // LoadPermissions loads stored permissions into p, calling the given update closure
 // to asynchronously fetch updated permissions when they expire. When there are no
 // valid permissions available (i.e. the first time a user needs them), an error is
 // returned.
-//
-// Callers must NOT mutate the resulting Permissions pointer. It's shared across go-routines
-// and it's meant to be read-only. Any write to it is not thread-safe.
 func (s *store) LoadPermissions(
 	ctx context.Context,
-	p **Permissions,
+	p *authz.UserPermissions,
 	update PermissionsUpdateFunc,
 ) (err error) {
-	if s == nil || p == nil || *p == nil {
+	if s == nil || p == nil {
 		return nil
 	}
 
 	ctx, save := s.observe(ctx, "LoadPermissions", "")
-	defer func() { save(*p, &err) }()
+	defer func() { save(&err, p.TracingFields()...) }()
 
 	now := s.clock()
 
-	// Do we have valid permissions cached in-memory?
-	if !s.cache.load(p) || (*p).Expired(s.ttl, now) {
-		// Try to load updated permissions from the database.
-		if err = s.load(ctx, *p); err != nil {
-			return err
-		} else if !(*p).Expired(s.ttl, now) { // Cache them if they're not expired.
-			s.cache.update(*p)
-		}
+	// Load updated permissions from the database.
+	if err = s.load(ctx, p); err != nil {
+		return err
 	}
 
-	if !(*p).Expired(s.ttl, now) { // Are these permissions still valid?
+	if !p.Expired(s.ttl, now) { // Are these permissions still valid?
 		return nil
 	}
 
-	expired := **p
+	return s.UpdatePermissions(ctx, p, update)
+}
+
+// UpdatePermissions updates the given UserPermissions, calling the update function
+// to fetch fresh data from the source of truth.
+func (s *store) UpdatePermissions(
+	ctx context.Context,
+	p *authz.UserPermissions,
+	update PermissionsUpdateFunc,
+) (err error) {
+	ctx, save := s.observe(ctx, "UpdatePermissions", "")
+	defer func() { save(&err, p.TracingFields()...) }()
+
+	now := s.clock()
+	expired := *p
 	expired.IDs = nil
 
 	if !s.block { // Non blocking code path
-		go func(expired *Permissions) {
+		go func(expired *authz.UserPermissions) {
 			err := s.update(ctx, expired, update)
 			if err != nil && err != errLockNotAvailable {
-				log15.Error("bitbucketserver.authz.store.update", "error", err)
+				log15.Error("bitbucketserver.authz.store.UpdatePermissions", "error", err)
 			}
 		}(&expired)
 
 		// No valid permissions available yet or hard TTL expired.
-		if (*p).UpdatedAt.IsZero() || (*p).Expired(s.hardTTL, now) {
-			return &StalePermissionsError{Permissions: *p}
+		if p.UpdatedAt.IsZero() || p.Expired(s.hardTTL, now) {
+			return &authz.ErrStalePermissions{
+				UserID: p.UserID,
+				Perm:   p.Perm,
+				Type:   p.Type,
+			}
 		}
 
 		return nil
@@ -150,39 +132,29 @@ func (s *store) LoadPermissions(
 	switch err = s.update(ctx, &expired, update); {
 	case err == nil:
 	case err == errLockNotAvailable:
-		if (*p).Expired(s.hardTTL, now) {
-			return &StalePermissionsError{Permissions: *p}
+		if p.Expired(s.hardTTL, now) {
+			return &authz.ErrStalePermissions{
+				UserID: p.UserID,
+				Perm:   p.Perm,
+				Type:   p.Type,
+			}
 		}
 	default:
 		return err
 	}
 
-	*p = &expired
-
+	*p = expired
 	return nil
-}
-
-// StalePermissionsError is returned by LoadPermissions when the stored
-// permissions are stale (e.g. the first time a user needs them and they haven't
-// been fetched yet). Callers should pass this error up to the user and show it
-// in the UI.
-type StalePermissionsError struct {
-	*Permissions
-}
-
-// Error implements the error interface.
-func (e StalePermissionsError) Error() string {
-	return fmt.Sprintf("%s:%s permissions for user=%d are stale and being updated", e.Perm, e.Type, e.UserID)
 }
 
 var errLockNotAvailable = errors.New("lock not available")
 
 // lock uses Postgres advisory locks to acquire an exclusive lock over the
-// given Permissions. Concurrent processes that call this method while a lock is
+// given UserPermissions. Concurrent processes that call this method while a lock is
 // already held by another process will have errLockNotAvailable returned.
-func (s *store) lock(ctx context.Context, p *Permissions) (err error) {
+func (s *store) lock(ctx context.Context, p *authz.UserPermissions) (err error) {
 	ctx, save := s.observe(ctx, "lock", "")
-	defer save(p, &err)
+	defer func() { save(&err, p.TracingFields()...) }()
 
 	if _, ok := s.db.(*sql.Tx); !ok {
 		return errors.Errorf("store.lock must be called inside a transaction")
@@ -218,10 +190,10 @@ func (s *store) lock(ctx context.Context, p *Permissions) (err error) {
 
 var lockNamespace = int32(fnv1.HashString32("perms"))
 
-func lockQuery(p *Permissions) *sqlf.Query {
+func lockQuery(p *authz.UserPermissions) *sqlf.Query {
 	// Postgres advisory lock ids are a global namespace within one database.
 	// It's very unlikely that another part of our application uses a lock
-	// namespace identicaly to this one. It's equally unlikely that there are
+	// namespace identically to this one. It's equally unlikely that there are
 	// lock id conflicts for different permissions, but if it'd happen, no safety
 	// guarantees would be violated, since those two different users would simply
 	// have to wait on the other's update to finish, using stale permissions until
@@ -239,9 +211,9 @@ const lockQueryFmtStr = `
 SELECT pg_try_advisory_xact_lock(%s, %s)
 `
 
-func (s *store) load(ctx context.Context, p *Permissions) (err error) {
+func (s *store) load(ctx context.Context, p *authz.UserPermissions) (err error) {
 	ctx, save := s.observe(ctx, "load", "")
-	defer save(p, &err)
+	defer func() { save(&err, p.TracingFields()...) }()
 
 	q := loadQuery(p)
 
@@ -271,7 +243,76 @@ func (s *store) load(ctx context.Context, p *Permissions) (err error) {
 	return p.IDs.UnmarshalBinary(ids)
 }
 
-func loadQuery(p *Permissions) *sqlf.Query {
+func loadRepoIDsQuery(c *extsvc.CodeHost, externalIDs []uint32) (*sqlf.Query, error) {
+	if externalIDs == nil {
+		externalIDs = []uint32{}
+	}
+
+	ids, err := json.Marshal(externalIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	return sqlf.Sprintf(
+		loadRepoIDsQueryFmtStr,
+		c.ServiceType,
+		c.ServiceID,
+		ids,
+	), nil
+}
+
+const loadRepoIDsQueryFmtStr = `
+-- source: enterprise/cmd/frontend/internal/authz/bitbucketserver/store.go:store.loadRepoIDs
+SELECT id FROM repo
+WHERE external_service_type = %s AND external_service_id = %s
+AND external_id IN (SELECT jsonb_array_elements_text(%s))
+ORDER BY id ASC
+`
+
+func (s *store) loadRepoIDs(ctx context.Context, c *extsvc.CodeHost, externalIDs []uint32) (ids *roaring.Bitmap, err error) {
+	ctx, save := s.observe(ctx, "loadRepoIDs", "")
+	defer func() {
+		fs := []otlog.Field{otlog.Int("externalIDs.count", len(externalIDs))}
+		if ids != nil {
+			fs = append(fs, otlog.Uint64("repoIDs.count", ids.GetCardinality()))
+		}
+		save(&err, fs...)
+	}()
+
+	var q *sqlf.Query
+	if q, err = loadRepoIDsQuery(c, externalIDs); err != nil {
+		return nil, err
+	}
+
+	var rows *sql.Rows
+	rows, err = s.db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		return nil, err
+	}
+
+	ns := make([]uint32, 0, len(externalIDs))
+	for rows.Next() {
+		var id uint32
+		if err = rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ns = append(ns, id)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	if err = rows.Close(); err != nil {
+		return nil, err
+	}
+
+	ids = roaring.BitmapOf(ns...)
+	ids.RunOptimize()
+	return ids, nil
+}
+
+func loadQuery(p *authz.UserPermissions) *sqlf.Query {
 	return sqlf.Sprintf(
 		loadQueryFmtStr,
 		p.UserID,
@@ -284,12 +325,14 @@ const loadQueryFmtStr = `
 -- source: enterprise/cmd/frontend/internal/authz/bitbucketserver/store.go:store.load
 SELECT object_ids, updated_at
 FROM user_permissions
-WHERE user_id = %s AND permission = %s AND object_type = %s
+WHERE user_id = %s
+AND permission = %s
+AND object_type = %s
 `
 
-func (s *store) update(ctx context.Context, p *Permissions, update PermissionsUpdateFunc) (err error) {
-	ctx, save := s.observe(ctx, "update", "")
-	defer save(p, &err)
+func (s *store) update(ctx context.Context, p *authz.UserPermissions, update PermissionsUpdateFunc) (err error) {
+	_, save := s.observe(ctx, "update", "")
+	defer func() { save(&err, p.TracingFields()...) }()
 
 	// Set context to background without a request bound timeout,
 	// but let the above instrumentation use the original request's context.
@@ -337,17 +380,24 @@ func (s *store) update(ctx context.Context, p *Permissions, update PermissionsUp
 
 	now := s.clock()
 	if expired = p.Expired(s.ttl, now); !expired { // Valid!
-		return nil // Permissions were updated by another process.
+		return nil // UserPermissions were updated by another process.
 	}
 
 	// Slow cache update operation, talks to the code host.
-	var ids []uint32
-	if ids, err = update(ctx); err != nil {
+	var (
+		externalIDs []uint32
+		c           *extsvc.CodeHost
+	)
+
+	if externalIDs, c, err = update(ctx); err != nil {
 		return err
 	}
 
-	// Create a set of the given ids and update the timestamp.
-	p.IDs = roaring.BitmapOf(ids...)
+	p.IDs, err = s.loadRepoIDs(ctx, c, externalIDs)
+	if err != nil {
+		return err
+	}
+
 	p.UpdatedAt = now
 
 	// Write back the updated permissions to the database.
@@ -365,9 +415,9 @@ func (s *store) tx(ctx context.Context) (*sql.Tx, error) {
 	}
 }
 
-func (s *store) upsert(ctx context.Context, p *Permissions) (err error) {
+func (s *store) upsert(ctx context.Context, p *authz.UserPermissions) (err error) {
 	ctx, save := s.observe(ctx, "upsert", "")
-	defer save(p, &err)
+	defer func() { save(&err, p.TracingFields()...) }()
 
 	var q *sqlf.Query
 	if q, err = s.upsertQuery(p); err != nil {
@@ -383,7 +433,7 @@ func (s *store) upsert(ctx context.Context, p *Permissions) (err error) {
 	return rows.Close()
 }
 
-func (s *store) upsertQuery(p *Permissions) (*sqlf.Query, error) {
+func (s *store) upsertQuery(p *authz.UserPermissions) (*sqlf.Query, error) {
 	ids, err := p.IDs.ToBytes()
 	if err != nil {
 		return nil, err
@@ -416,29 +466,17 @@ DO UPDATE SET
   updated_at = excluded.updated_at
 `
 
-func (s *store) observe(ctx context.Context, family, title string) (context.Context, func(*Permissions, *error)) {
+func (s *store) observe(ctx context.Context, family, title string) (context.Context, func(*error, ...otlog.Field)) {
 	began := s.clock()
 	tr, ctx := trace.New(ctx, "bitbucket.authz.store."+family, title)
 
-	return ctx, func(ps *Permissions, err *error) {
+	return ctx, func(err *error, fs ...otlog.Field) {
 		now := s.clock()
 		took := now.Sub(began)
 
-		fields := []otlog.Field{
-			otlog.String("Duration", took.String()),
-			otlog.Int32("Permissions.UserID", ps.UserID),
-			otlog.String("Permissions.Perm", string(ps.Perm)),
-			otlog.String("Permissions.Type", ps.Type),
-		}
+		fs = append(fs, otlog.String("Duration", took.String()))
 
-		if ps.IDs != nil {
-			fields = append(fields,
-				otlog.Uint64("Permissions.IDs.Count", ps.IDs.GetCardinality()),
-				otlog.String("Permissions.UpdatedAt", ps.UpdatedAt.String()),
-			)
-		}
-
-		tr.LogFields(fields...)
+		tr.LogFields(fs...)
 
 		success := err == nil || *err == nil
 		if !success {
@@ -446,65 +484,5 @@ func (s *store) observe(ctx context.Context, family, title string) (context.Cont
 		}
 
 		tr.Finish()
-	}
-}
-
-// A store's in-memory read-through cache used in LoadPermissions.
-type cache struct {
-	mu    sync.RWMutex
-	cache map[cacheKey]*Permissions
-}
-
-func newCache() *cache {
-	return &cache{cache: map[cacheKey]*Permissions{}}
-}
-
-type cacheKey struct {
-	UserID int32
-	Perm   authz.Perms
-	Type   string
-}
-
-// load sets the given Permissions pointer with a matching cached
-// Permissions. If no cached Permissions are found or if they are
-// now expired,
-func (c *cache) load(p **Permissions) (hit bool) {
-	if c == nil {
-		return false
-	}
-
-	k := newCacheKey(*p)
-
-	c.mu.RLock()
-	e, hit := c.cache[k]
-	c.mu.RUnlock()
-
-	if hit {
-		*p = e
-	}
-
-	return hit
-}
-
-func (c *cache) update(p *Permissions) {
-	if c == nil {
-		return
-	}
-
-	k := newCacheKey(p)
-	c.mu.Lock()
-	c.cache[k] = p
-	c.mu.Unlock()
-}
-
-func newCacheKey(p *Permissions) cacheKey {
-	if p.Type == "" {
-		panic("empty Type")
-	}
-
-	return cacheKey{
-		UserID: p.UserID,
-		Perm:   p.Perm,
-		Type:   p.Type,
 	}
 }

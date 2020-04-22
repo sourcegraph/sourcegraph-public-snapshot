@@ -8,11 +8,13 @@ import { FeedbackText } from '../components/FeedbackText'
 import { Form } from '../components/Form'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
-import { ThemeProps } from '../theme'
 import { eventLogger } from '../tracking/eventLogger'
 import { submitSurvey } from './backend'
 import { SurveyCTA } from './SurveyToast'
 import { Subscription } from 'rxjs'
+import { ThemeProps } from '../../../shared/src/theme'
+import TwitterIcon from 'mdi-react/TwitterIcon'
+
 interface SurveyFormProps {
     location: H.Location
     history: H.History
@@ -111,26 +113,26 @@ class SurveyForm extends React.Component<SurveyFormProps, SurveyFormState> {
         )
     }
 
-    private onScoreChange = (score: number) => {
+    private onScoreChange = (score: number): void => {
         if (this.props.onScoreChange) {
             this.props.onScoreChange(score)
         }
         this.setState({ error: undefined })
     }
 
-    private onEmailFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    private onEmailFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
         this.setState({ email: e.target.value })
     }
 
-    private onReasonFieldChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    private onReasonFieldChange = (e: React.ChangeEvent<HTMLTextAreaElement>): void => {
         this.setState({ reason: e.target.value })
     }
 
-    private onBetterProductFieldChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    private onBetterProductFieldChange = (e: React.ChangeEvent<HTMLTextAreaElement>): void => {
         this.setState({ betterProduct: e.target.value })
     }
 
-    private handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    private handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
         if (this.state.loading) {
             return
@@ -161,7 +163,13 @@ class SurveyForm extends React.Component<SurveyFormProps, SurveyFormState> {
                     if (this.props.onSubmit) {
                         this.props.onSubmit()
                     }
-                    this.props.history.push('/survey/thanks')
+                    this.props.history.push({
+                        pathname: '/survey/thanks',
+                        state: {
+                            score: this.props.score,
+                            feedback: this.state.reason,
+                        },
+                    })
                 })
         )
     }
@@ -171,11 +179,37 @@ interface SurveyPageProps extends RouteComponentProps<{ score?: string }>, Theme
     authenticatedUser: GQL.IUser | null
 }
 
-export class SurveyPage extends React.Component<SurveyPageProps> {
-    constructor(props: SurveyPageProps) {
-        super(props)
-    }
+export interface TweetFeedbackProps {
+    score: number
+    feedback: string
+}
 
+const SCORE_TO_TWEET = 9
+const TweetFeedback: React.FunctionComponent<TweetFeedbackProps> = ({ feedback, score }) => {
+    if (score >= SCORE_TO_TWEET) {
+        const url = new URL('https://twitter.com/intent/tweet')
+        url.searchParams.set('text', `After using @srcgraph: ${feedback}`)
+        return (
+            <>
+                <p className="mt-2">
+                    One more favor, could you share your feedback on Twitter? We'd really appreciate it!
+                </p>
+                <a
+                    className="d-inline-block mt-2 btn btn-primary"
+                    href={url.href}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                >
+                    <TwitterIcon className="icon-inline mr-2" />
+                    Tweet feedback
+                </a>
+            </>
+        )
+    }
+    return null
+}
+
+export class SurveyPage extends React.Component<SurveyPageProps> {
     public componentDidMount(): void {
         eventLogger.logViewEvent('Survey')
     }
@@ -186,7 +220,13 @@ export class SurveyPage extends React.Component<SurveyPageProps> {
                 <div className="survey-page">
                     <PageTitle title="Thanks" />
                     <HeroPage
-                        title="Thank you for sending feedback."
+                        title="Thanks for the feedback!"
+                        body={
+                            <TweetFeedback
+                                score={this.props.location.state.score}
+                                feedback={this.props.location.state.feedback}
+                            />
+                        }
                         cta={<FeedbackText headerText="Anything else?" />}
                     />
                 </div>
@@ -203,5 +243,6 @@ export class SurveyPage extends React.Component<SurveyPageProps> {
         )
     }
 
-    private intScore = (score?: string) => (score ? Math.max(0, Math.min(10, Math.round(+score))) : undefined)
+    private intScore = (score?: string): number | undefined =>
+        score ? Math.max(0, Math.min(10, Math.round(+score))) : undefined
 }

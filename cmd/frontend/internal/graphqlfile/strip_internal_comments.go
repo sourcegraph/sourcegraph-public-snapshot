@@ -5,7 +5,8 @@ package graphqlfile
 import (
 	"bufio"
 	"bytes"
-	"regexp"
+
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
 // StripInternalComments removes lines starting with #! (e.g. internal
@@ -14,7 +15,7 @@ func StripInternalComments(schema []byte) ([]byte, error) {
 	var (
 		scanner = bufio.NewScanner(bytes.NewReader(schema))
 		out     []byte
-		re      = regexp.MustCompile("^ *#!")
+		re      = lazyregexp.New("^ *#!")
 	)
 	for scanner.Scan() {
 		line := scanner.Text()

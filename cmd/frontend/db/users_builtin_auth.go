@@ -8,9 +8,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
-	"github.com/sourcegraph/sourcegraph/pkg/randstring"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/randstring"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -101,6 +101,10 @@ func (u *users) UpdatePassword(ctx context.Context, id int32, oldPassword, newPa
 		return err
 	} else if !ok {
 		return errors.New("wrong old password")
+	}
+
+	if err := checkPasswordLength(newPassword); err != nil {
+		return err
 	}
 
 	passwd, err := hashPassword(newPassword)

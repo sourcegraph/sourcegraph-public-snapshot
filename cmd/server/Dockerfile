@@ -1,22 +1,25 @@
-FROM alpine:3.9@sha256:644fcb1a676b5165371437feaa922943aaf7afcfa8bfee4472f6860aad1ef2a0 AS ctags
+FROM alpine:3.10@sha256:e4355b66995c96b4b468159fc5c7e3540fcef961189ca13fee877798649f531a as libsqlite3-pcre
 
-# hadolint ignore=DL3003,DL3018,DL4006
-RUN apk --no-cache add --virtual build-deps curl jansson-dev \
-    libseccomp-dev linux-headers autoconf pkgconfig make automake \
-    gcc g++ binutils
+COPY libsqlite3-pcre-install-alpine.sh /libsqlite3-pcre-install-alpine.sh
+RUN /libsqlite3-pcre-install-alpine.sh
 
-ENV CTAGS_VERSION=1a94658c2cb47304d0e9811d49e0a5f48bdb3a0a
+FROM alpine:3.10@sha256:e4355b66995c96b4b468159fc5c7e3540fcef961189ca13fee877798649f531a AS ctags
 
-# hadolint ignore=DL3003
-RUN curl -fsSL -o ctags.tar.gz "https://codeload.github.com/universal-ctags/ctags/tar.gz/$CTAGS_VERSION" && \
-    tar -C /tmp -xzf ctags.tar.gz && cd /tmp/ctags-$CTAGS_VERSION && \
-    ./autogen.sh && LDFLAGS=-static ./configure --program-prefix=universal- --enable-json --enable-seccomp && \
-    make -j8 && make install && cd && \
-    rm -rf /tmp/ctags-$CTAGS_VERSION && \
-    apk --no-cache --purge del build-deps
+COPY ctags-install-alpine.sh /ctags-install-alpine.sh
+RUN /ctags-install-alpine.sh
 
-# TODO: Make this image use our sourcegraph/alpine:3.9 base image.
-FROM alpine:3.9@sha256:644fcb1a676b5165371437feaa922943aaf7afcfa8bfee4472f6860aad1ef2a0
+FROM alpine:3.10@sha256:e4355b66995c96b4b468159fc5c7e3540fcef961189ca13fee877798649f531a AS precise-code-intel-builder
+
+RUN apk add --no-cache nodejs-current=12.4.0-r0 nodejs-npm=10.19.0-r0
+RUN npm install -g yarn@1.17.3
+
+COPY precise-code-intel/package.json precise-code-intel/yarn.lock precise-code-intel/tsconfig.json /precise-code-intel/
+RUN yarn --cwd /precise-code-intel
+COPY precise-code-intel/src /precise-code-intel/src
+RUN yarn --cwd /precise-code-intel run build
+
+# TODO: Make this image use our sourcegraph/alpine:3.10 base image
+FROM alpine:3.10@sha256:e4355b66995c96b4b468159fc5c7e3540fcef961189ca13fee877798649f531a
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"
@@ -42,35 +45,44 @@ RUN apk update && apk add --no-cache \
     # from our *Minimum Supported Version* which alone dictates
     # the features we can depend on. See this link for more information:
     # https://github.com/sourcegraph/sourcegraph/blob/master/doc/dev/postgresql.md#version-requirements
-    'bash=4.4.19-r1' 'postgresql-contrib=11.5-r0' 'postgresql=11.5-r0' \
-    'redis=3.2.12-r0' bind-tools ca-certificates git@edge \
-    mailcap nginx openssh-client pcre su-exec tini nodejs=10.14.2-r0
+    'bash=5.0.0-r0' 'postgresql-contrib=11.7-r0' 'postgresql=11.7-r0' \
+    'redis=5.0.8-r0' bind-tools ca-certificates git@edge \
+    mailcap nginx openssh-client pcre su-exec tini nodejs-current=12.4.0-r0 curl
 
 # IMPORTANT: If you update the syntect_server version below, you MUST confirm
 # the ENV variables from its Dockerfile (https://github.com/sourcegraph/syntect_server/blob/master/Dockerfile)
 # have been appropriately set in cmd/server/shared/shared.go.
 # hadolint ignore=DL3022
-COPY --from=comby/comby:0.7.0 /usr/local/bin/comby /usr/local/bin/comby
+COPY --from=comby/comby:0.15.0@sha256:b3b57ed810be1489ccd1ef8fa42210d87d2d396e416c62cee345f615a0dcb09b /usr/local/bin/comby /usr/local/bin/comby
 # hadolint ignore=DL3022
-COPY --from=sourcegraph/syntect_server:5e1efbb@sha256:6ec136246b302a6c8fc113f087a66d5f9a89a9f5b851e9abb917c8b5e1d8c4b1 /syntect_server /usr/local/bin/
+COPY --from=sourcegraph/syntect_server:c0297a1@sha256:333abb45cfaae9c9d37e576c3853843b00eca33a40a7c71f6b93211ed96528df /syntect_server /usr/local/bin/
 COPY --from=ctags /usr/local/bin/universal-* /usr/local/bin/
+COPY --from=precise-code-intel-builder /precise-code-intel /precise-code-intel
 
 # hadolint ignore=DL3022
-COPY --from=sourcegraph/prometheus:v1.4.1@sha256:1a02878ac9a0f532a68673bda93d406b21786706446c42a40cb3ed3e867278c0 /bin/prometheus /usr/local/bin
+COPY --from=sourcegraph/prometheus:10.0.10@sha256:4d73d99f3b18d8e4e09f63671c51eabcba956e357ab33d682de8cf1540e3b863 /bin/prometheus /usr/local/bin
+# hadolint ignore=DL3022
+COPY --from=sourcegraph/prometheus:10.0.10@sha256:4d73d99f3b18d8e4e09f63671c51eabcba956e357ab33d682de8cf1540e3b863 /usr/share/prometheus /usr/share/prometheus
 
 # hadolint ignore=DL3018
 RUN set -ex && \
- addgroup -S grafana && \
- adduser -S -G grafana grafana && \
- apk add --no-cache libc6-compat=1.1.23-r3 ca-certificates su-exec
+    addgroup -S grafana && \
+    adduser -S -G grafana grafana && \
+    apk add --no-cache libc6-compat ca-certificates su-exec
 
 # hadolint ignore=DL3022
-COPY --from=grafana/grafana:6.1.1@sha256:e7a513bf7f33ef9681b2d35a799136e1ce9330f9055f75dfa2101d812946184b /usr/share/grafana /usr/share/grafana
+COPY --from=sourcegraph/grafana:10.0.12@sha256:2cde7e16fa56e81237fb05e228018015385f6498c4642d4ae073799a02b2b68c /usr/share/grafana /usr/share/grafana
 
 # hadolint ignore=DL3022
 COPY --from=libsqlite3-pcre /sqlite3-pcre/pcre.so /libsqlite3-pcre.so
 ENV LIBSQLITE3_PCRE /libsqlite3-pcre.so
 COPY . /
+
+# hadolint ignore=DL3022
+COPY --from=sourcegraph/grafana:10.0.12@sha256:2cde7e16fa56e81237fb05e228018015385f6498c4642d4ae073799a02b2b68c /sg_config_grafana/provisioning/dashboards /sg_config_grafana/provisioning/dashboards
+
+# hadolint ignore=DL3022
+COPY --from=wrouesnel/postgres_exporter:v0.7.0@sha256:785c919627c06f540d515aac88b7966f352403f73e931e70dc2cbf783146a98b /postgres_exporter /usr/local/bin/postgres_exporter
 
 RUN echo "hosts: files dns" > /etc/nsswitch.conf
 

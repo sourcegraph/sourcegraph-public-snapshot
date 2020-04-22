@@ -11,7 +11,7 @@ import {
 import { dataOrThrowErrors, gql } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { queryGraphQL } from '../backend/graphql'
-import { logUserEvent } from '../user/settings/backend'
+import { logUserEvent, logEvent } from '../user/settings/backend'
 
 /**
  * Fetches activation status from server.
@@ -20,7 +20,7 @@ const fetchActivationStatus = (isSiteAdmin: boolean): Observable<ActivationCompl
     queryGraphQL(
         isSiteAdmin
             ? gql`
-                  query {
+                  query ActivationStatus {
                       externalServices {
                           totalCount
                       }
@@ -43,7 +43,7 @@ const fetchActivationStatus = (isSiteAdmin: boolean): Observable<ActivationCompl
                   }
               `
             : gql`
-                  query {
+                  query ActivationStatus {
                       currentUser {
                           usageStatistics {
                               searchQueries
@@ -117,16 +117,19 @@ const getActivationSteps = (authenticatedUser: GQL.IUser): ActivationStep[] => {
     const sources: (ActivationStep & { siteAdminOnly?: boolean })[] = [
         {
             id: 'ConnectedCodeHost',
-            title: 'Connect your code host',
+            title: 'Add repositories',
             detail: 'Configure Sourcegraph to talk to your code host and fetch a list of your repositories.',
-            link: { to: '/site-admin/external-services' },
             siteAdminOnly: true,
         },
         {
             id: 'DidSearch',
             title: 'Search your code',
-            detail: 'Perform a search query on your code.',
-            link: { to: '/search' },
+            detail: (
+                <span>
+                    Head to the <a href="/search">homepage</a> and perform a search query on your code.{' '}
+                    <strong>Example:</strong> type 'lang:' and select a language
+                </span>
+            ),
         },
         {
             id: 'FoundReferences',
@@ -148,7 +151,10 @@ const getActivationSteps = (authenticatedUser: GQL.IUser): ActivationStep[] => {
             id: 'EnabledSharing',
             title: 'Configure SSO or share with teammates',
             detail: 'Configure a single-sign on (SSO) provider or have at least one other teammate sign up.',
-            link: { to: 'https://docs.sourcegraph.com/admin/auth', target: '_blank' },
+            onClick: () => {
+                window.open('https://docs.sourcegraph.com/admin/auth', '_blank', 'height=200,width=200')
+                window.open('/site-admin/configuration', '_self')
+            },
             siteAdminOnly: true,
         },
     ]
@@ -164,6 +170,7 @@ const getActivationSteps = (authenticatedUser: GQL.IUser): ActivationStep[] => {
 const recordUpdate = (update: Partial<ActivationCompletionStatus>): void => {
     if (update.FoundReferences) {
         logUserEvent(GQL.UserEvent.CODEINTELREFS)
+        logEvent('CodeIntelRefs')
     }
 }
 
@@ -179,8 +186,9 @@ interface WithActivationState {
  * Modifies the input component to return a component that includes the activation status in the
  * `activation` field of its props.
  */
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-export const withActivation = <P extends ActivationProps>(Component: React.ComponentType<P>) =>
+export const withActivation = <P extends ActivationProps>(
+    Component: React.ComponentType<P>
+): React.ComponentType<WithActivationProps & Subtract<P, ActivationProps>> =>
     class WithActivation extends React.Component<
         WithActivationProps & Subtract<P, ActivationProps>,
         WithActivationState
@@ -249,7 +257,7 @@ export const withActivation = <P extends ActivationProps>(Component: React.Compo
             return undefined
         }
 
-        private refetchCompletionStatus = () => this.refetches.next()
+        private refetchCompletionStatus = (): void => this.refetches.next()
 
         private updateCompletionStatus = (update: Partial<ActivationCompletionStatus>): void =>
             this.updates.next(update)

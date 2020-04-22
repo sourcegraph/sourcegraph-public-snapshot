@@ -20,19 +20,33 @@ import (
 	"strconv"
 	"time"
 
-	"golang.org/x/net/trace"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
-	"github.com/sourcegraph/sourcegraph/pkg/store"
+	"github.com/sourcegraph/sourcegraph/internal/store"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	nettrace "golang.org/x/net/trace"
 
 	"github.com/pkg/errors"
 
 	"github.com/gorilla/schema"
-	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
+)
+
+const (
+	// maxFileMatches is the limit on number of matching files we return.
+	maxFileMatches = 1000
+
+	// maxLineMatches is the limit on number of matches to return in a
+	// file.
+	maxLineMatches = 100
+
+	// numWorkers is how many concurrent readerGreps run in the case of
+	// regexSearch, and the number of parallel workers in the case of
+	// structuralSearch.
+	numWorkers = 8
 )
 
 // Service is the search service. It is an http.Handler.
@@ -117,16 +131,18 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []protocol.FileMatch, limitHit, deadlineHit bool, err error) {
-	tr := trace.New("search", fmt.Sprintf("%s@%s", p.Repo, p.Commit))
+	tr := nettrace.New("search", fmt.Sprintf("%s@%s", p.Repo, p.Commit))
 	tr.LazyPrintf("%s", p.Pattern)
 
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Search")
+	span, ctx := ot.StartSpanFromContext(ctx, "Search")
 	ext.Component.Set(span, "service")
 	span.SetTag("repo", p.Repo)
 	span.SetTag("url", p.URL)
 	span.SetTag("commit", p.Commit)
 	span.SetTag("pattern", p.Pattern)
 	span.SetTag("isRegExp", strconv.FormatBool(p.IsRegExp))
+	span.SetTag("isStructuralPat", strconv.FormatBool(p.IsStructuralPat))
+	span.SetTag("languages", p.Languages)
 	span.SetTag("isWordMatch", strconv.FormatBool(p.IsWordMatch))
 	span.SetTag("isCaseSensitive", strconv.FormatBool(p.IsCaseSensitive))
 	span.SetTag("pathPatternsAreRegExps", strconv.FormatBool(p.PathPatternsAreRegExps))
@@ -168,7 +184,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 		span.SetTag("deadlineHit", deadlineHit)
 		span.Finish()
 		if s.Log != nil {
-			s.Log.Debug("search request", "repo", p.Repo, "commit", p.Commit, "pattern", p.Pattern, "isRegExp", p.IsRegExp, "isWordMatch", p.IsWordMatch, "isCaseSensitive", p.IsCaseSensitive, "patternMatchesContent", p.PatternMatchesContent, "patternMatchesPath", p.PatternMatchesPath, "matches", len(matches), "code", code, "duration", time.Since(start), "err", err)
+			s.Log.Debug("search request", "repo", p.Repo, "commit", p.Commit, "pattern", p.Pattern, "isRegExp", p.IsRegExp, "isStructuralPat", p.IsStructuralPat, "languages", p.Languages, "isWordMatch", p.IsWordMatch, "isCaseSensitive", p.IsCaseSensitive, "patternMatchesContent", p.PatternMatchesContent, "patternMatchesPath", p.PatternMatchesPath, "matches", len(matches), "code", code, "duration", time.Since(start), "err", err)
 		}
 	}(time.Now())
 
@@ -196,9 +212,9 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 		return path, zf, err
 	}
 
-	_, zf, err := store.GetZipFileWithRetry(getZf)
+	zipPath, zf, err := store.GetZipFileWithRetry(getZf)
 	if err != nil {
-		return nil, false, false, err
+		return nil, false, false, errors.Wrap(err, "failed to get archive")
 	}
 	defer zf.Close()
 
@@ -211,7 +227,11 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 	archiveFiles.Observe(float64(nFiles))
 	archiveSize.Observe(float64(bytes))
 
-	matches, limitHit, err = concurrentFind(ctx, rg, zf, p.FileMatchLimit, p.PatternMatchesContent, p.PatternMatchesPath)
+	if p.IsStructuralPat {
+		matches, limitHit, err = structuralSearch(ctx, zipPath, p.Pattern, p.CombyRule, p.Languages, p.IncludePatterns, p.Repo)
+	} else {
+		matches, limitHit, err = regexSearch(ctx, rg, zf, p.FileMatchLimit, p.PatternMatchesContent, p.PatternMatchesPath)
+	}
 	return matches, limitHit, false, err
 }
 
@@ -223,7 +243,7 @@ func validateParams(p *protocol.Request) error {
 	if len(p.Commit) != 40 {
 		return errors.Errorf("Commit must be resolved (Commit=%q)", p.Commit)
 	}
-	if p.Pattern == "" && p.ExcludePattern == "" && len(p.IncludePatterns) == 0 && p.IncludePattern == "" {
+	if p.Pattern == "" && p.ExcludePattern == "" && len(p.IncludePatterns) == 0 {
 		return errors.New("At least one of pattern and include/exclude pattners must be non-empty")
 	}
 	return nil

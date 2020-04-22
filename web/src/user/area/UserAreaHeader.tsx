@@ -28,7 +28,7 @@ export const UserAreaHeader: React.FunctionComponent<Props> = ({ url, navItems, 
                         {props.user.displayName ? (
                             <div>
                                 <div className="user-area-header__title-subtitle">{props.user.username}</div>
-                                {props.user.displayName}{' '}
+                                <span className="e2e-user-area-header__display-name">{props.user.displayName} </span>
                             </div>
                         ) : (
                             props.user.username

@@ -1,24 +1,27 @@
 package httpapi
 
 import (
+	"bytes"
+	"context"
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
-
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"strconv"
 
 	"github.com/gorilla/mux"
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
-	"github.com/sourcegraph/sourcegraph/pkg/txemail"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
-	"gopkg.in/inconshreveable/log15.v2"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/txemail"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 func serveReposGetByName(w http.ResponseWriter, r *http.Request) error {
@@ -32,49 +35,7 @@ func serveReposGetByName(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	w.WriteHeader(http.StatusOK)
-	w.Write(data)
-	return nil
-}
-
-func serveReposCreateIfNotExists(w http.ResponseWriter, r *http.Request) error {
-	var repo api.RepoCreateOrUpdateRequest
-	err := json.NewDecoder(r.Body).Decode(&repo)
-	if err != nil {
-		return err
-	}
-	err = backend.Repos.Upsert(r.Context(), api.InsertRepoOp{
-		Name:         repo.RepoName,
-		Description:  repo.Description,
-		Fork:         repo.Fork,
-		Archived:     repo.Archived,
-		Enabled:      repo.Enabled,
-		ExternalRepo: repo.ExternalRepo,
-	})
-	if err != nil {
-		return err
-	}
-	sgRepo, err := backend.Repos.GetByName(r.Context(), repo.RepoName)
-	if err != nil {
-		return err
-	}
-	data, err := json.Marshal(sgRepo)
-	if err != nil {
-		return err
-	}
-	w.WriteHeader(http.StatusOK)
-	w.Write(data)
-	return nil
-}
-
-func serveReposUpdateMetadata(w http.ResponseWriter, r *http.Request) error {
-	var repo api.ReposUpdateMetadataRequest
-	err := json.NewDecoder(r.Body).Decode(&repo)
-	if err != nil {
-		return err
-	}
-	if err := db.Repos.UpdateRepositoryMetadata(r.Context(), repo.RepoName, repo.Description, repo.Fork, repo.Archived); err != nil {
-		return errors.Wrap(err, "Repos.UpdateRepositoryMetadata failed")
-	}
+	_, _ = w.Write(data)
 	return nil
 }
 
@@ -93,7 +54,7 @@ func servePhabricatorRepoCreate(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	w.WriteHeader(http.StatusOK)
-	w.Write(data)
+	_, _ = w.Write(data)
 	return nil
 }
 
@@ -190,20 +151,71 @@ func serveSearchConfiguration(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func serveReposList(w http.ResponseWriter, r *http.Request) error {
-	var err error
-	var res []*types.Repo
-	if envvar.SourcegraphDotComMode() {
-		res, err = backend.Repos.ListDefault(r.Context())
+type reposListServer struct {
+	// SourcegraphDotComMode is true if this instance of Sourcegraph is http://sourcegraph.com
+	SourcegraphDotComMode bool
+
+	// Repos is the subset of backend.Repos methods we use. Declared as an
+	// interface for testing.
+	Repos interface {
+		// ListDefault returns the repositories to index on Sourcegraph.com
+		ListDefault(context.Context) ([]*types.Repo, error)
+		// List returns a list of repositories
+		List(context.Context, db.ReposListOptions) ([]*types.Repo, error)
+	}
+
+	// Indexers is the subset of searchbackend.Indexers methods we
+	// use. reposListServer is used by indexed-search to get the list of
+	// repositories to index. These methods are used to return the correct
+	// subset for horizontal indexed search. Declared as an interface for
+	// testing.
+	Indexers interface {
+		// ReposSubset returns the subset of repoNames that hostname should
+		// index.
+		ReposSubset(ctx context.Context, hostname string, indexed map[string]struct{}, repoNames []string) ([]string, error)
+		// Enabled is true if horizontal indexed search is enabled.
+		Enabled() bool
+	}
+}
+
+// Deprecated: serveList used to be used by Zoekt to get the list of
+// repositories to index. Can be removed in 3.11.
+func (h *reposListServer) serveList(w http.ResponseWriter, r *http.Request) error {
+	var opt struct {
+		Hostname string
+		db.ReposListOptions
+	}
+	if err := json.NewDecoder(r.Body).Decode(&opt); err != nil {
+		return err
+	}
+
+	var names []string
+	if h.SourcegraphDotComMode {
+		res, err := h.Repos.ListDefault(r.Context())
+		if err != nil {
+			return errors.Wrap(err, "listing repos")
+		}
+		names = make([]string, len(res))
+		for i, r := range res {
+			names[i] = string(r.Name)
+		}
 	} else {
-		var opt db.ReposListOptions
-		if err := json.NewDecoder(r.Body).Decode(&opt); err != nil {
+		res, err := h.Repos.List(r.Context(), opt.ReposListOptions)
+		if err != nil {
+			return errors.Wrap(err, "listing repos")
+		}
+		names = make([]string, len(res))
+		for i, r := range res {
+			names[i] = string(r.Name)
+		}
+	}
+
+	if h.Indexers.Enabled() {
+		var err error
+		names, err = h.Indexers.ReposSubset(r.Context(), opt.Hostname, map[string]struct{}{}, names)
+		if err != nil {
 			return err
 		}
-		res, err = backend.Repos.List(r.Context(), opt)
-	}
-	if err != nil {
-		return errors.Wrap(err, "listing repos")
 	}
 
 	// BACKCOMPAT: Add a Name field that serializes to `URI` because
@@ -212,24 +224,77 @@ func serveReposList(w http.ResponseWriter, r *http.Request) error {
 	// "repo name".
 	type repoWithBackcompatURIField struct {
 		Name string `json:"URI"`
-		// The Repo field has been removed because the only caller of
-		// this handler (zoekt-sourcegraph-indexserver) wasn't using
-		// it.
 	}
-	res2 := make([]repoWithBackcompatURIField, len(res))
-	for i, repo := range res {
-		res2[i] = repoWithBackcompatURIField{
-			Name: string(repo.Name),
-		}
+	res := make([]repoWithBackcompatURIField, len(names))
+	for i, name := range names {
+		res[i].Name = name
 	}
 
-	data, err := json.Marshal(res2)
+	data, err := json.Marshal(res)
 	if err != nil {
 		return err
 	}
 	w.WriteHeader(http.StatusOK)
-	w.Write(data)
+	_, _ = w.Write(data)
 	return nil
+}
+
+// serveIndex is used by zoekt to get the list of repositories for it to
+// index.
+func (h *reposListServer) serveIndex(w http.ResponseWriter, r *http.Request) error {
+	var opt struct {
+		// Hostname is used to determine the subset of repos to return
+		Hostname string
+		// Indexed is the repository names of indexed repos by Hostname.
+		Indexed []string
+	}
+	if err := json.NewDecoder(r.Body).Decode(&opt); err != nil {
+		return err
+	}
+
+	var names []string
+	if h.SourcegraphDotComMode {
+		res, err := h.Repos.ListDefault(r.Context())
+		if err != nil {
+			return errors.Wrap(err, "listing repos")
+		}
+		names = make([]string, len(res))
+		for i, r := range res {
+			names[i] = string(r.Name)
+		}
+	} else {
+		trueP := true
+		res, err := h.Repos.List(r.Context(), db.ReposListOptions{Index: &trueP})
+		if err != nil {
+			return errors.Wrap(err, "listing repos")
+		}
+		names = make([]string, len(res))
+		for i, r := range res {
+			names[i] = string(r.Name)
+		}
+	}
+
+	if h.Indexers.Enabled() {
+		indexed := make(map[string]struct{}, len(opt.Indexed))
+		for _, name := range opt.Indexed {
+			indexed[name] = struct{}{}
+		}
+
+		var err error
+		names, err = h.Indexers.ReposSubset(r.Context(), opt.Hostname, indexed, names)
+		if err != nil {
+			return err
+		}
+	}
+
+	data := struct {
+		RepoNames []string
+	}{
+		RepoNames: names,
+	}
+
+	w.WriteHeader(http.StatusOK)
+	return json.NewEncoder(w).Encode(&data)
 }
 
 func serveReposListEnabled(w http.ResponseWriter, r *http.Request) error {
@@ -301,7 +366,7 @@ func serveSavedQueriesSetInfo(w http.ResponseWriter, r *http.Request) error {
 		return errors.Wrap(err, "SavedQueries.Set")
 	}
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("OK"))
+	_, _ = w.Write([]byte("OK"))
 	return nil
 }
 
@@ -316,7 +381,7 @@ func serveSavedQueriesDeleteInfo(w http.ResponseWriter, r *http.Request) error {
 		return errors.Wrap(err, "SavedQueries.Delete")
 	}
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("OK"))
+	_, _ = w.Write([]byte("OK"))
 	return nil
 }
 
@@ -439,7 +504,7 @@ func serveGitResolveRevision(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(commitID))
+	_, _ = w.Write([]byte(commitID))
 	return nil
 }
 
@@ -469,6 +534,67 @@ func serveGitTar(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
+func serveGitExec(w http.ResponseWriter, r *http.Request) error {
+	defer r.Body.Close()
+	req := protocol.ExecRequest{}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		return errors.Wrap(err, "Decode")
+	}
+
+	vars := mux.Vars(r)
+	repoID, err := strconv.ParseInt(vars["RepoID"], 10, 64)
+	if err != nil {
+		http.Error(w, "illegal repository id: "+err.Error(), http.StatusBadRequest)
+		return nil
+	}
+
+	repo, err := db.Repos.Get(r.Context(), api.RepoID(repoID))
+	if err != nil {
+		return err
+	}
+
+	// Set repo name in gitserver request payload
+	req.Repo = repo.Name
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(req); err != nil {
+		return errors.Wrap(err, "Encode")
+	}
+
+	// Find the correct shard to query
+	addr := gitserver.DefaultClient.AddrForRepo(r.Context(), repo.Name)
+
+	director := func(req *http.Request) {
+		req.URL.Scheme = "http"
+		req.URL.Host = addr
+		req.URL.Path = "/exec"
+		req.Body = ioutil.NopCloser(bytes.NewReader(buf.Bytes()))
+		req.ContentLength = int64(buf.Len())
+	}
+
+	gitserver.DefaultReverseProxy.ServeHTTP(repo.Name, "POST", "exec", director, w, r)
+	return nil
+}
+
 func handlePing(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("pong"))
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "could not parse form: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	for _, service := range r.Form["service"] {
+		switch service {
+		case "gitserver":
+			if err := gitserver.DefaultClient.WaitForGitServers(r.Context()); err != nil {
+				http.Error(w, "wait for gitservers failed: "+err.Error(), http.StatusBadGateway)
+				return
+			}
+
+		default:
+			http.Error(w, "unknown service: "+service, http.StatusBadRequest)
+			return
+		}
+	}
+
+	_, _ = w.Write([]byte("pong"))
 }

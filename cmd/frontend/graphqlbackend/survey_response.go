@@ -5,12 +5,13 @@ import (
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-	"github.com/sourcegraph/sourcegraph/pkg/hubspot/hubspotutil"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/hubspot/hubspotutil"
 )
 
 type surveyResponseResolver struct {
@@ -24,7 +25,12 @@ func marshalSurveyResponseID(id int32) graphql.ID { return relay.MarshalID("Surv
 
 func (s *surveyResponseResolver) User(ctx context.Context) (*UserResolver, error) {
 	if s.surveyResponse.UserID != nil {
-		return UserByIDInt32(ctx, *s.surveyResponse.UserID)
+		user, err := UserByIDInt32(ctx, *s.surveyResponse.UserID)
+		if err != nil && errcode.IsNotFound(err) {
+			// This can happen if the user has been deleted, see issue #4888 and #6454
+			return nil, nil
+		}
+		return user, err
 	}
 	return nil, nil
 }
@@ -106,7 +112,8 @@ func (r *schemaResolver) SubmitSurvey(ctx context.Context, args *struct {
 		IsAuthenticated: actor.IsAuthenticated(),
 		SiteID:          siteid.Get(),
 	}); err != nil {
-		return nil, err
+		// Log an error, but don't return one if the only failure was in submitting survey results to HubSpot.
+		log15.Error("Unable to submit survey results to Sourcegraph remote", "error", err)
 	}
 
 	return &EmptyResponse{}, nil

@@ -1,10 +1,9 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import { isEqual } from 'lodash'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import * as React from 'react'
 import { Redirect } from 'react-router'
-import { combineLatest, Subject, Subscription, throwError } from 'rxjs'
+import { combineLatest, Subject, Subscription, throwError, Observable } from 'rxjs'
 import { catchError, delay, distinctUntilChanged, map, repeatWhen, startWith, switchMap, tap } from 'rxjs/operators'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
@@ -15,6 +14,7 @@ import { eventLogger } from '../../../tracking/eventLogger'
 import { formatHash } from '../../../util/url'
 import { DiscussionsInput, TitleMode } from './DiscussionsInput'
 import { DiscussionsNavbar } from './DiscussionsNavbar'
+import { ErrorAlert } from '../../../components/alerts'
 
 interface Props extends ExtensionsControllerProps {
     threadIDWithoutKind: string
@@ -102,10 +102,7 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
                 <DiscussionsNavbar {...this.props} threadTitle={thread ? thread.title : undefined} />
                 {loading && <LoadingSpinner className="icon-inline" />}
                 {error && (
-                    <div className="discussions-thread__error alert alert-danger">
-                        <AlertCircleIcon className="icon-inline discussions-thread__error-icon" />
-                        Error loading thread: {error.message}
-                    </div>
+                    <ErrorAlert className="discussions-thread__error" prefix="Error loading thread" error={error} />
                 )}
                 {thread && (
                     <div className="discussions-thread__comments">
@@ -169,31 +166,31 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
             : '#' + hash.toString()
     }
 
-    private onSubmit = (title: string, contents: string) => {
+    private onSubmit = (title: string, contents: string): Observable<void> => {
         eventLogger.log('RepliedToDiscussion')
         if (!this.state.thread) {
             throw new Error('no thread')
         }
         return addCommentToThread(this.state.thread.id, contents).pipe(
             tap(thread => this.setState({ thread })),
-            map(thread => undefined),
+            map(() => undefined),
             catchError(e => throwError(new Error('Error creating comment: ' + asError(e).message)))
         )
     }
 
-    private onCommentReport = (comment: GQL.IDiscussionComment, reason: string) =>
+    private onCommentReport = (comment: GQL.IDiscussionComment, reason: string): Observable<void> =>
         updateComment({ commentID: comment.id, report: reason }).pipe(
             tap(thread => this.setState({ thread })),
-            map(thread => undefined)
+            map(() => undefined)
         )
 
-    private onCommentClearReports = (comment: GQL.IDiscussionComment) =>
+    private onCommentClearReports = (comment: GQL.IDiscussionComment): Observable<void> =>
         updateComment({ commentID: comment.id, clearReports: true }).pipe(
             tap(thread => this.setState({ thread })),
-            map(thread => undefined)
+            map(() => undefined)
         )
 
-    private onCommentDelete = (comment: GQL.IDiscussionComment) =>
+    private onCommentDelete = (comment: GQL.IDiscussionComment): Observable<void> =>
         // TODO: Support deleting the whole thread, and/or fix this when it is deleting the 1st comment
         // in a thread. See https://github.com/sourcegraph/sourcegraph/issues/429.
         updateComment({ commentID: comment.id, delete: true }).pipe(

@@ -1,13 +1,32 @@
+import expect from 'expect'
 import { percySnapshot as realPercySnapshot } from '@percy/puppeteer'
 import * as jsonc from '@sqs/jsonc-parser'
 import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
 import * as os from 'os'
-import puppeteer, { LaunchOptions, PageEventObj, Page, Serializable } from 'puppeteer'
+import puppeteer, {
+    PageEventObj,
+    Page,
+    Serializable,
+    LaunchOptions,
+    PageFnOptions,
+    ConsoleMessage,
+    Target,
+} from 'puppeteer'
 import { Key } from 'ts-key-enum'
-import * as util from 'util'
 import { dataOrThrowErrors, gql, GraphQLResult } from '../graphql/graphql'
-import { IMutation, IQuery } from '../graphql/schema'
-import { readEnvBoolean, readEnvString, retry } from './e2e-test-utils'
+import { IMutation, IQuery, ExternalServiceKind, IRepository, IPatchSet, IPatchInput } from '../graphql/schema'
+import { readEnvBoolean, retry } from './e2e-test-utils'
+import { formatPuppeteerConsoleMessage } from './console'
+import * as path from 'path'
+import { escapeRegExp } from 'lodash'
+import { readFile, appendFile } from 'mz/fs'
+import { Settings } from '../settings/settings'
+import { fromEvent } from 'rxjs'
+import { filter, map, concatAll } from 'rxjs/operators'
+import mkdirpPromise from 'mkdirp-promise'
+import getFreePort from 'get-port'
+import puppeteerFirefox from 'puppeteer-firefox'
+import webExt from 'web-ext'
 
 /**
  * Returns a Promise for the next emission of the given event on the given Puppeteer page.
@@ -19,15 +38,7 @@ export const percySnapshot = readEnvBoolean({ variable: 'PERCY_ON', defaultValue
     ? realPercySnapshot
     : () => Promise.resolve()
 
-/**
- * Used in the external service configuration.
- */
-export const gitHubToken = readEnvString({ variable: 'GITHUB_TOKEN' })
-
-export const sourcegraphBaseUrl = readEnvString({
-    variable: 'SOURCEGRAPH_BASE_URL',
-    defaultValue: 'http://localhost:3080',
-})
+export const BROWSER_EXTENSION_DEV_ID = 'bmfbcejdknlknpncfpeloejonjoledha'
 
 /**
  * Specifies how to select the content of the element. No
@@ -45,11 +56,104 @@ type SelectTextMethod = 'selectall' | 'keyboard'
  */
 type EnterTextMethod = 'type' | 'paste'
 
-export class Driver {
-    constructor(public browser: puppeteer.Browser, public page: puppeteer.Page) {}
+interface FindElementOptions {
+    /**
+     * Filter candidate elements to those with the specified CSS selector
+     */
+    selector?: string
 
-    public async ensureLoggedIn(): Promise<void> {
-        await this.page.goto(sourcegraphBaseUrl)
+    /**
+     * Log the XPath quer(y|ies) used to find the element.
+     */
+    log?: boolean
+
+    /**
+     * Specifies how exact the search criterion is.
+     */
+    fuzziness?: 'exact' | 'prefix' | 'space-prefix' | 'contains'
+
+    /**
+     * Specifies whether to wait (and how long) for the element to appear.
+     */
+    wait?: PageFnOptions | boolean
+}
+
+function findElementRegexpStrings(
+    text: string,
+    { fuzziness = 'space-prefix' }: Pick<FindElementOptions, 'fuzziness'>
+): string[] {
+    //  Escape regexp special chars. Copied from
+    //  https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions
+    const escapedText = escapeRegExp(text)
+    const regexps = [`^${escapedText}$`]
+    if (fuzziness === 'exact') {
+        return regexps
+    }
+    regexps.push(`^${escapedText}\\b`)
+    if (fuzziness === 'prefix') {
+        return regexps
+    }
+    regexps.push(`^\\s+${escapedText}$`) // Still prefer exact
+    regexps.push(`^\\s+${escapedText}\\b`)
+    if (fuzziness === 'space-prefix') {
+        return regexps
+    }
+    regexps.push(escapedText)
+    return regexps
+}
+
+function findElementMatchingRegexps(tag: string, regexps: string[]): HTMLElement | null {
+    for (const regexpString of regexps) {
+        const regexp = new RegExp(regexpString)
+        for (const el of document.querySelectorAll<HTMLElement>(tag)) {
+            if (!el.offsetParent) {
+                // Ignore hidden elements
+                continue
+            }
+            if (el.innerText && el.innerText.match(regexp)) {
+                return el
+            }
+        }
+    }
+    return null
+}
+
+function getDebugExpressionFromRegexp(tag: string, regexp: string): string {
+    return `Array.from(document.querySelectorAll(${JSON.stringify(
+        tag
+    )})).filter(e => e.innerText && e.innerText.match(/${regexp}/))`
+}
+
+export class Driver {
+    /** The pages that were visited since the creation of the driver. */
+    public visitedPages: Readonly<URL>[] = []
+
+    constructor(
+        public browser: puppeteer.Browser,
+        public page: puppeteer.Page,
+        public sourcegraphBaseUrl: string,
+        public keepBrowser?: boolean
+    ) {
+        const recordVisitedPage = (target: Target): void => {
+            if (target.type() !== 'page') {
+                return
+            }
+            this.visitedPages.push(new URL(target.url()))
+        }
+        browser.on('targetchanged', recordVisitedPage)
+        browser.on('targetcreated', recordVisitedPage)
+    }
+
+    public async ensureLoggedIn({
+        username,
+        password,
+        email,
+    }: {
+        username: string
+        password: string
+        email?: string
+    }): Promise<void> {
+        await this.page.goto(this.sourcegraphBaseUrl)
         await this.page.evaluate(() => {
             localStorage.setItem('has-dismissed-browser-ext-toast', 'true')
             localStorage.setItem('has-dismissed-integrations-toast', 'true')
@@ -57,21 +161,54 @@ export class Driver {
         })
         const url = new URL(this.page.url())
         if (url.pathname === '/site-admin/init') {
-            await this.page.type('input[name=email]', 'test@test.com')
-            await this.page.type('input[name=username]', 'test')
-            await this.page.type('input[name=password]', 'test')
+            await this.page.waitForSelector('.e2e-signup-form')
+            if (email) {
+                await this.page.type('input[name=email]', email)
+            }
+            await this.page.type('input[name=username]', username)
+            await this.page.type('input[name=password]', password)
             await this.page.click('button[type=submit]')
-            await this.page.waitForNavigation()
+            await this.page.waitForNavigation({ timeout: 3 * 1000 })
         } else if (url.pathname === '/sign-in') {
-            await this.page.type('input', 'test')
-            await this.page.type('input[name=password]', 'test')
+            await this.page.waitForSelector('.e2e-signin-form')
+            await this.page.type('input', username)
+            await this.page.type('input[name=password]', password)
             await this.page.click('button[type=submit]')
-            await this.page.waitForNavigation()
+            await this.page.waitForNavigation({ timeout: 3 * 1000 })
         }
     }
 
+    /**
+     * Navigates to the Sourcegraph browser extension options page and sets the sourcegraph URL.
+     */
+    public async setExtensionSourcegraphUrl(): Promise<void> {
+        await this.page.goto(`chrome-extension://${BROWSER_EXTENSION_DEV_ID}/options.html`)
+        await this.page.waitForSelector('.e2e-sourcegraph-url')
+        await this.replaceText({ selector: '.e2e-sourcegraph-url', newText: this.sourcegraphBaseUrl })
+        await this.page.keyboard.press(Key.Enter)
+        await this.page.waitForFunction(
+            () => {
+                const element = document.querySelector('.e2e-connection-status')
+                return element?.textContent?.includes('Connected')
+            },
+            { timeout: 5000 }
+        )
+    }
+
     public async close(): Promise<void> {
-        await this.browser.close()
+        if (!this.keepBrowser) {
+            await this.browser.close()
+        }
+        console.log(
+            '\nVisited routes:\n' +
+                Array.from(
+                    new Set(
+                        this.visitedPages
+                            .filter(url => url.href.startsWith(this.sourcegraphBaseUrl))
+                            .map(url => url.pathname)
+                    )
+                ).join('\n')
+        )
     }
 
     public async newPage(): Promise<void> {
@@ -140,59 +277,81 @@ export class Driver {
         config,
         ensureRepos,
     }: {
-        kind: string
+        kind: ExternalServiceKind
         displayName: string
         config: string
         ensureRepos?: string[]
     }): Promise<void> {
-        await this.page.goto(sourcegraphBaseUrl + '/site-admin/external-services')
-        await this.page.waitFor('.e2e-filtered-connection')
-        await this.page.waitForSelector('.e2e-filtered-connection__loader', { hidden: true })
+        // Use the graphQL API to query external services on the instance.
+        const { externalServices } = dataOrThrowErrors(
+            await this.makeGraphQLRequest<IQuery>({
+                request: gql`
+                    query ExternalServices {
+                        externalServices(first: 1) {
+                            totalCount
+                        }
+                    }
+                `,
+                variables: {},
+            })
+        )
+        // Delete existing external services if there are any.
+        if (externalServices.totalCount !== 0) {
+            await this.page.goto(this.sourcegraphBaseUrl + '/site-admin/external-services')
+            await this.page.waitFor('.e2e-filtered-connection')
+            await this.page.waitForSelector('.e2e-filtered-connection__loader', { hidden: true })
 
-        // Matches buttons for deleting external services named ${displayName}.
-        const deleteButtonSelector = `[data-e2e-external-service-name="${displayName}"] .e2e-delete-external-service-button`
-        if (await this.page.$(deleteButtonSelector)) {
-            await Promise.all([this.acceptNextDialog(), this.page.click(deleteButtonSelector)])
+            // Matches buttons for deleting external services named ${displayName}.
+            const deleteButtonSelector = `[data-e2e-external-service-name="${displayName}"] .e2e-delete-external-service-button`
+            if (await this.page.$(deleteButtonSelector)) {
+                await Promise.all([this.acceptNextDialog(), this.page.click(deleteButtonSelector)])
+            }
         }
 
-        await (await this.page.waitForSelector('.e2e-goto-add-external-service-page', { visible: true })).click()
-
-        await (await this.page.waitForSelector(`[data-e2e-external-service-card-link="${kind.toUpperCase()}"]`, {
+        // Navigate to the add external service page.
+        console.log('Adding external service of kind', kind)
+        await this.page.goto(this.sourcegraphBaseUrl + '/site-admin/external-services/new')
+        await this.page.waitForSelector(`[data-e2e-external-service-card-link="${kind.toUpperCase()}"]`, {
             visible: true,
-        })).click()
-
+        })
+        await this.page.evaluate(selector => {
+            const element = document.querySelector<HTMLElement>(selector)
+            if (!element) {
+                throw new Error('Could not find element to click on for selector ' + selector)
+            }
+            element.click()
+        }, `[data-e2e-external-service-card-link="${kind.toUpperCase()}"]`)
         await this.replaceText({
             selector: '#e2e-external-service-form-display-name',
             newText: displayName,
         })
 
+        await this.page.waitForSelector('.e2e-external-service-editor .monaco-editor')
         // Type in a new external service configuration.
         await this.replaceText({
-            selector: '.view-line',
+            selector: '.e2e-external-service-editor .monaco-editor .view-line',
             newText: config,
             selectMethod: 'keyboard',
         })
-        await this.page.click('.e2e-add-external-service-button')
-        await this.page.waitForNavigation()
+        await Promise.all([this.page.waitForNavigation(), this.page.click('.e2e-add-external-service-button')])
 
         if (ensureRepos) {
             // Clone the repositories
             for (const slug of ensureRepos) {
-                await this.page.goto(sourcegraphBaseUrl + `/site-admin/repositories?query=${encodeURIComponent(slug)}`)
-                await this.page.waitForSelector(`.repository-node[data-e2e-repository='${slug}']`, {
-                    visible: true,
-                })
+                await this.page.goto(
+                    this.sourcegraphBaseUrl + `/site-admin/repositories?query=${encodeURIComponent(slug)}`
+                )
+                await this.page.waitForSelector(`.repository-node[data-e2e-repository='${slug}']`, { visible: true })
+                // Workaround for https://github.com/sourcegraph/sourcegraph/issues/5286
+                await this.page.goto(`${this.sourcegraphBaseUrl}/${slug}`)
             }
         }
     }
 
     public async paste(value: string): Promise<void> {
-        await this.page.evaluate(
-            async d => {
-                await navigator.clipboard.writeText(d.value)
-            },
-            { value }
-        )
+        await this.page.evaluate(async (value: string) => {
+            await navigator.clipboard.writeText(value)
+        }, value)
         const modifier = os.platform() === 'darwin' ? Key.Meta : Key.Control
         await this.page.keyboard.down(modifier)
         await this.page.keyboard.press('v')
@@ -200,14 +359,14 @@ export class Driver {
     }
 
     public async assertWindowLocation(location: string, isAbsolute = false): Promise<any> {
-        const url = isAbsolute ? location : sourcegraphBaseUrl + location
+        const url = isAbsolute ? location : this.sourcegraphBaseUrl + location
         await retry(async () => {
             expect(await this.page.evaluate(() => window.location.href)).toEqual(url)
         })
     }
 
     public async assertWindowLocationPrefix(locationPrefix: string, isAbsolute = false): Promise<any> {
-        const prefix = isAbsolute ? locationPrefix : sourcegraphBaseUrl + locationPrefix
+        const prefix = isAbsolute ? locationPrefix : this.sourcegraphBaseUrl + locationPrefix
         await retry(async () => {
             const loc: string = await this.page.evaluate(() => window.location.href)
             expect(loc.startsWith(prefix)).toBeTruthy()
@@ -250,7 +409,7 @@ export class Driver {
 
     private async makeRequest<T = void>({ url, init }: { url: string; init: RequestInit & Serializable }): Promise<T> {
         const handle = await this.page.evaluateHandle((url, init) => fetch(url, init).then(r => r.json()), url, init)
-        return handle.jsonValue()
+        return (await handle.jsonValue()) as T
     }
 
     private async makeGraphQLRequest<T extends IQuery | IMutation>({
@@ -261,9 +420,14 @@ export class Driver {
         variables: {}
     }): Promise<GraphQLResult<T>> {
         const nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)
-        const xhrHeaders = await this.page.evaluate(() => (window as any).context.xhrHeaders)
+        const xhrHeaders =
+            (await this.page.evaluate(
+                sourcegraphBaseUrl =>
+                    location.href.startsWith(sourcegraphBaseUrl) && (window as any).context.xhrHeaders,
+                this.sourcegraphBaseUrl
+            )) || {}
         const response = await this.makeRequest<GraphQLResult<T>>({
-            url: `${sourcegraphBaseUrl}/.api/graphql${nameMatch ? '?' + nameMatch[1] : ''}`,
+            url: `${this.sourcegraphBaseUrl}/.api/graphql${nameMatch ? '?' + nameMatch[1] : ''}`,
             init: {
                 method: 'POST',
                 body: JSON.stringify({ query: request, variables }),
@@ -277,7 +441,40 @@ export class Driver {
         return response
     }
 
-    public async ensureHasCORSOrigin({ corsOriginURL }: { corsOriginURL: string }): Promise<void> {
+    public async getRepository(name: string): Promise<Pick<IRepository, 'id'>> {
+        const resp = await this.makeGraphQLRequest<IQuery>({
+            request: gql`
+                query($name: String!) {
+                    repository(name: $name) {
+                        id
+                    }
+                }
+            `,
+            variables: { name },
+        })
+        const { repository } = dataOrThrowErrors(resp)
+        if (!repository) {
+            throw new Error(`repository not found: ${name}`)
+        }
+        return repository
+    }
+
+    public async createPatchSetFromPatches(patches: IPatchInput[]): Promise<Pick<IPatchSet, 'previewURL'>> {
+        const resp = await this.makeGraphQLRequest<IMutation>({
+            request: gql`
+                mutation($patches: [PatchInput!]!) {
+                    createPatchSetFromPatches(patches: $patches) {
+                        previewURL
+                    }
+                }
+            `,
+            variables: { patches },
+        })
+        const { createPatchSetFromPatches } = dataOrThrowErrors(resp)
+        return createPatchSetFromPatches
+    }
+
+    public async setConfig(path: jsonc.JSONPath, f: (oldValue: jsonc.Node | undefined) => any): Promise<void> {
         const currentConfigResponse = await this.makeGraphQLRequest<IQuery>({
             request: gql`
                 query Site {
@@ -295,10 +492,7 @@ export class Driver {
         })
         const { site } = dataOrThrowErrors(currentConfigResponse)
         const currentConfig = site.configuration.effectiveContents
-        const newConfig = modifyJSONC(currentConfig, ['corsOrigin'], oldCorsOrigin => {
-            const urls = oldCorsOrigin ? oldCorsOrigin.value.split(' ') : []
-            return (urls.includes(corsOriginURL) ? urls : [...urls, corsOriginURL]).join(' ')
-        })
+        const newConfig = modifyJSONC(currentConfig, path, f)
         const updateConfigResponse = await this.makeGraphQLRequest<IMutation>({
             request: gql`
                 mutation UpdateSiteConfiguration($lastID: Int!, $input: String!) {
@@ -310,19 +504,26 @@ export class Driver {
         dataOrThrowErrors(updateConfigResponse)
     }
 
+    public async ensureHasCORSOrigin({ corsOriginURL }: { corsOriginURL: string }): Promise<void> {
+        await this.setConfig(['corsOrigin'], oldCorsOrigin => {
+            const urls = oldCorsOrigin ? (oldCorsOrigin.value as string).split(' ') : []
+            return (urls.includes(corsOriginURL) ? urls : [...urls, corsOriginURL]).join(' ')
+        })
+    }
+
     public async resetUserSettings(): Promise<void> {
+        return this.setUserSettings({})
+    }
+
+    public async setUserSettings<S extends Settings>(settings: S): Promise<void> {
         const currentSettingsResponse = await this.makeGraphQLRequest<IQuery>({
             request: gql`
                 query UserSettings {
                     currentUser {
                         id
-                        settingsCascade {
-                            subjects {
-                                latestSettings {
-                                    id
-                                    contents
-                                }
-                            }
+                        latestSettings {
+                            id
+                            contents
                         }
                     }
                 }
@@ -331,37 +532,97 @@ export class Driver {
         })
 
         const { currentUser } = dataOrThrowErrors(currentSettingsResponse)
+        if (!currentUser) {
+            throw new Error('no currentUser')
+        }
 
-        if (currentUser && currentUser.settingsCascade) {
-            const emptySettings = '{}'
-            const [{ latestSettings }] = currentUser.settingsCascade.subjects.slice(-1)
-
-            if (latestSettings && latestSettings.contents !== emptySettings) {
-                const updateConfigResponse = await this.makeGraphQLRequest<IMutation>({
-                    request: gql`
-                        mutation OverwriteSettings($subject: ID!, $lastID: Int, $contents: String!) {
-                            settingsMutation(input: { subject: $subject, lastID: $lastID }) {
-                                overwriteSettings(contents: $contents) {
-                                    empty {
-                                        alwaysNil
-                                    }
-                                }
+        const updateConfigResponse = await this.makeGraphQLRequest<IMutation>({
+            request: gql`
+                mutation OverwriteSettings($subject: ID!, $lastID: Int, $contents: String!) {
+                    settingsMutation(input: { subject: $subject, lastID: $lastID }) {
+                        overwriteSettings(contents: $contents) {
+                            empty {
+                                alwaysNil
                             }
                         }
-                    `,
-                    variables: {
-                        contents: emptySettings,
-                        subject: currentUser.id,
-                        lastID: latestSettings.id,
-                    },
-                })
-                dataOrThrowErrors(updateConfigResponse)
-            }
+                    }
+                }
+            `,
+            variables: {
+                contents: JSON.stringify(settings),
+                subject: currentUser.id,
+                lastID: currentUser.latestSettings ? currentUser.latestSettings.id : null,
+            },
+        })
+        dataOrThrowErrors(updateConfigResponse)
+    }
+
+    /**
+     * Finds the first HTML element matching the text using the regular expressions returned in
+     * {@link findElementRegexpStrings}.
+     *
+     * @param options specifies additional parameters for finding the element. If you want to wait
+     * until the element appears, specify the `wait` field (which can contain additional inner
+     * options for how long to wait).
+     */
+    public async findElementWithText(
+        text: string,
+        options: FindElementOptions & { action?: 'click' } = {}
+    ): Promise<puppeteer.ElementHandle<Element>> {
+        const { selector: tagName, fuzziness, wait } = options
+        const tag = tagName || '*'
+        const regexps = findElementRegexpStrings(text, { fuzziness })
+
+        const notFoundErr = (underlying?: Error): Error => {
+            const debuggingExpressions = regexps.map(r => getDebugExpressionFromRegexp(tag, r))
+            return new Error(
+                `Could not find element with text ${JSON.stringify(text)}, options: ${JSON.stringify(options)}` +
+                    (underlying ? `. Underlying error was: ${JSON.stringify(underlying.message)}.` : '') +
+                    ` Debug expressions: ${debuggingExpressions.join('\n')}`
+            )
         }
+
+        return retry(
+            async () => {
+                const handlePromise = wait
+                    ? this.page
+                          .waitForFunction(
+                              findElementMatchingRegexps,
+                              typeof wait === 'object' ? wait : {},
+                              tag,
+                              regexps
+                          )
+                          .catch(err => {
+                              throw notFoundErr(err)
+                          })
+                    : this.page.evaluateHandle(findElementMatchingRegexps, tag, regexps)
+
+                const el = (await handlePromise).asElement()
+                if (!el) {
+                    throw notFoundErr()
+                }
+
+                if (options.action === 'click') {
+                    await el.click()
+                }
+                return el
+            },
+            {
+                retries: options.action === 'click' ? 3 : 0,
+                minTimeout: 100,
+                maxTimeout: 100,
+                factor: 1,
+                maxRetryTime: 500,
+            }
+        )
+    }
+
+    public async waitUntilURL(url: string, options: PageFnOptions = {}): Promise<void> {
+        await this.page.waitForFunction(url => document.location.href === url, options, url)
     }
 }
 
-function modifyJSONC(text: string, path: jsonc.JSONPath, f: (oldValue: jsonc.Node | undefined) => any): any {
+export function modifyJSONC(text: string, path: jsonc.JSONPath, f: (oldValue: jsonc.Node | undefined) => any): any {
     const old = jsonc.findNodeAtLocation(jsonc.parseTree(text), path)
     return jsonc.applyEdits(
         text,
@@ -373,32 +634,119 @@ function modifyJSONC(text: string, path: jsonc.JSONPath, f: (oldValue: jsonc.Nod
     )
 }
 
-export async function createDriverForTest(): Promise<Driver> {
-    let args: string[] = []
-    if (process.getuid() === 0) {
-        // TODO don't run as root in CI
-        console.warn('Running as root, disabling sandbox')
-        args = ['--no-sandbox', '--disable-setuid-sandbox']
+// Copied from node_modules/puppeteer-firefox/misc/install-preferences.js
+async function getFirefoxCfgPath(): Promise<string> {
+    const firefoxFolder = path.dirname(puppeteerFirefox.executablePath())
+    let configPath: string
+    if (process.platform === 'darwin') {
+        configPath = path.join(firefoxFolder, '..', 'Resources')
+    } else if (process.platform === 'linux') {
+        await mkdirpPromise(path.join(firefoxFolder, 'browser', 'defaults', 'preferences'))
+        configPath = firefoxFolder
+    } else if (process.platform === 'win32') {
+        configPath = firefoxFolder
+    } else {
+        throw new Error('Unsupported platform: ' + process.platform)
     }
+    return path.join(configPath, 'puppeteer.cfg')
+}
 
-    const launchOpt: LaunchOptions = {
-        args: [...args, '--window-size=1280,1024'],
+interface DriverOptions extends LaunchOptions {
+    browser?: 'chrome' | 'firefox'
+
+    /** If true, load the Sourcegraph browser extension. */
+    loadExtension?: boolean
+
+    sourcegraphBaseUrl: string
+
+    /** If true, print browser console messages to stdout. */
+    logBrowserConsole?: boolean
+
+    /** If true, keep browser open when driver is closed */
+    keepBrowser?: boolean
+}
+
+export async function createDriverForTest(options: DriverOptions): Promise<Driver> {
+    const { loadExtension, sourcegraphBaseUrl, logBrowserConsole, keepBrowser } = options
+    const args: string[] = []
+    const launchOptions: puppeteer.LaunchOptions = {
+        ...options,
+        args,
         headless: readEnvBoolean({ variable: 'HEADLESS', defaultValue: false }),
         defaultViewport: null,
     }
-    const browser = await puppeteer.launch(launchOpt)
+    let browser: puppeteer.Browser
+    if (options.browser === 'firefox') {
+        // Make sure CSP is disabled in FF preferences,
+        // because Puppeteer uses new Function() to evaluate code
+        // which is not allowed by the github.com CSP.
+        // The pref option does not work to disable CSP for some reason.
+        const cfgPath = await getFirefoxCfgPath()
+        const disableCspPreference = '\npref("security.csp.enable", false);\n'
+        if (!(await readFile(cfgPath, 'utf-8')).includes(disableCspPreference)) {
+            await appendFile(cfgPath, disableCspPreference)
+        }
+        if (loadExtension) {
+            const cdpPort = await getFreePort()
+            const firefoxExtensionPath = path.resolve(__dirname, '..', '..', '..', 'browser', 'build', 'firefox')
+            // webExt.util.logger.consoleStream.makeVerbose()
+            args.push(`-juggler=${cdpPort}`)
+            if (launchOptions.headless) {
+                args.push('-headless')
+            }
+            await webExt.cmd.run(
+                {
+                    sourceDir: firefoxExtensionPath,
+                    firefox: puppeteerFirefox.executablePath(),
+                    args,
+                },
+                { shouldExitProgram: false }
+            )
+            const browserWSEndpoint = `ws://127.0.0.1:${cdpPort}`
+            browser = await puppeteerFirefox.connect({ browserWSEndpoint })
+        } else {
+            browser = await puppeteerFirefox.launch(launchOptions)
+        }
+    } else {
+        // Chrome
+        args.push('--window-size=1280,1024')
+        if (process.getuid() === 0) {
+            // TODO don't run as root in CI
+            console.warn('Running as root, disabling sandbox')
+            args.push('--no-sandbox', '--disable-setuid-sandbox')
+        }
+        if (loadExtension) {
+            const chromeExtensionPath = path.resolve(__dirname, '..', '..', '..', 'browser', 'build', 'chrome')
+            const manifest = JSON.parse(
+                await readFile(path.resolve(chromeExtensionPath, 'manifest.json'), 'utf-8')
+            ) as { permissions: string[] }
+            if (!manifest.permissions.includes('<all_urls>')) {
+                throw new Error(
+                    'Browser extension was not built with permissions for all URLs.\nThis is necessary because permissions cannot be granted by e2e tests.\nTo fix, run `EXTENSION_PERMISSIONS_ALL_URLS=true yarn run dev` inside the browser/ directory.'
+                )
+            }
+            args.push(`--disable-extensions-except=${chromeExtensionPath}`, `--load-extension=${chromeExtensionPath}`)
+        }
+        browser = await puppeteer.launch(launchOptions)
+    }
+
     const page = await browser.newPage()
-    page.on('console', message => {
-        if (message.text().includes('Download the React DevTools')) {
-            return
-        }
-        if (message.text().includes('[HMR]') || message.text().includes('[WDS]')) {
-            return
-        }
-        console.log(
-            'Browser console message:',
-            util.inspect(message, { colors: true, depth: 2, breakLength: Infinity })
-        )
-    })
-    return new Driver(browser, page)
+    if (logBrowserConsole) {
+        fromEvent<ConsoleMessage>(page, 'console')
+            .pipe(
+                filter(
+                    message =>
+                        !message.text().includes('Download the React DevTools') &&
+                        !message.text().includes('[HMR]') &&
+                        !message.text().includes('[WDS]') &&
+                        !message.text().includes('Warning: componentWillReceiveProps has been renamed')
+                ),
+                // Immediately format remote handles to strings, but maintain order.
+                map(formatPuppeteerConsoleMessage),
+                concatAll()
+            )
+            // eslint-disable-next-line rxjs/no-ignored-subscription
+            .subscribe(formattedLine => console.log(formattedLine))
+    }
+    return new Driver(browser, page, sourcegraphBaseUrl, keepBrowser)
 }

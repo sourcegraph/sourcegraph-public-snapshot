@@ -14,7 +14,6 @@ describe('Bitbucket DOM functions', () => {
                         { diffPart: 'head', lineNumber: 740 }, // added
                         { diffPart: 'base', lineNumber: 735 }, // removed
                     ],
-                    firstCharacterIsDiffIndicator: false,
                 })
             })
         }
@@ -26,7 +25,6 @@ describe('Bitbucket DOM functions', () => {
         testDOMFunctions(singleFileDOMFunctions, {
             htmlFixturePath,
             lineCases: [{ lineNumber: 1 }, { lineNumber: 22 }],
-            firstCharacterIsDiffIndicator: false,
         })
     })
 })

@@ -2,21 +2,20 @@ import { from, of, Subscribable, throwError } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
 import { ConfiguredExtension } from '../../../extensions/extension'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '../../../settings/settings'
-import { CodeEditorWithPartialModel, EditorService } from './editorService'
-import { createTestEditorService } from './editorService.test'
 import { ExecutableExtension, ExtensionsService } from './extensionsService'
 import { SettingsService } from './settings'
+import { ModelService } from './modelService'
 
 const scheduler = (): TestScheduler => new TestScheduler((a, b) => expect(a).toEqual(b))
 
 class TestExtensionsService extends ExtensionsService {
     constructor(
         mockConfiguredExtensions: ConfiguredExtension[],
-        editorService: Pick<EditorService, 'editorsAndModels'>,
+        modelService: Pick<ModelService, 'activeLanguages'>,
         settingsService: Pick<SettingsService, 'data'>,
         extensionActivationFilter: (
             enabledExtensions: ConfiguredExtension[],
-            editors: readonly CodeEditorWithPartialModel[]
+            activeLanguages: ReadonlySet<string>
         ) => ConfiguredExtension[],
         sideloadedExtensionURL: Subscribable<string | null>,
         fetchSideloadedExtension: (baseUrl: string) => Subscribable<ConfiguredExtension | null>
@@ -29,7 +28,7 @@ class TestExtensionsService extends ExtensionsService {
                 getScriptURLForExtension: scriptURL => scriptURL,
                 sideloadedExtensionURL,
             },
-            editorService,
+            modelService,
             settingsService,
             extensionActivationFilter,
             fetchSideloadedExtension
@@ -45,11 +44,11 @@ describe('activeExtensions', () => {
                 from(
                     new TestExtensionsService(
                         [],
-                        createTestEditorService(
-                            cold<readonly CodeEditorWithPartialModel[]>('-a-|', {
-                                a: [],
-                            })
-                        ),
+                        {
+                            activeLanguages: cold<ReadonlySet<string>>('-a-|', {
+                                a: new Set(),
+                            }),
+                        },
                         { data: cold<SettingsCascadeOrError>('-a-|', { a: EMPTY_SETTINGS_CASCADE }) },
                         enabledExtensions => enabledExtensions,
                         cold('-a-|', { a: '' }),
@@ -67,48 +66,34 @@ describe('activeExtensions', () => {
             expectObservable(
                 from(
                     new TestExtensionsService(
-                        [{ id: 'x', manifest, rawManifest: null }, { id: 'y', manifest, rawManifest: null }],
-                        createTestEditorService(
-                            cold<readonly CodeEditorWithPartialModel[]>('-a-b-|', {
-                                a: [
-                                    {
-                                        type: 'CodeEditor',
-                                        editorId: 'editor#0',
-                                        resource: 'u',
-                                        model: { languageId: 'x' },
-                                        selections: [],
-                                        isActive: true,
-                                    },
-                                ],
-                                b: [
-                                    {
-                                        type: 'CodeEditor',
-                                        editorId: 'editor#1',
-                                        resource: 'u2',
-                                        model: { languageId: 'y' },
-                                        selections: [],
-                                        isActive: true,
-                                    },
-                                ],
-                            })
-                        ),
+                        [
+                            { id: 'x', manifest, rawManifest: null },
+                            { id: 'y', manifest, rawManifest: null },
+                        ],
+                        {
+                            activeLanguages: cold<ReadonlySet<string>>('-a-b-|', {
+                                a: new Set(['x']),
+                                b: new Set(['y']),
+                            }),
+                        },
                         {
                             data: cold<SettingsCascadeOrError>('-a-b-|', {
                                 a: { final: { extensions: { x: true } }, subjects: [] },
                                 b: { final: { extensions: { x: true, y: true } }, subjects: [] },
                             }),
                         },
-                        (enabledExtensions, editors) =>
-                            enabledExtensions.filter(x =>
-                                editors.some(({ model: { languageId } }) => x.id === languageId)
-                            ),
+                        (enabledExtensions, activeLanguages) =>
+                            enabledExtensions.filter(x => activeLanguages.has(x.id)),
                         cold('-a--|', { a: '' }),
                         () => of(null)
                     ).activeExtensions
                 )
             ).toBe('-a-b-|', {
                 a: [{ id: 'x', manifest, scriptURL: 'u' }],
-                b: [{ id: 'x', manifest, scriptURL: 'u' }, { id: 'y', manifest, scriptURL: 'u' }],
+                b: [
+                    { id: 'x', manifest, scriptURL: 'u' },
+                    { id: 'y', manifest, scriptURL: 'u' },
+                ],
             } as Record<string, ExecutableExtension[]>)
         ))
 
@@ -118,11 +103,11 @@ describe('activeExtensions', () => {
                 from(
                     new TestExtensionsService(
                         [{ id: 'foo', manifest, rawManifest: null }],
-                        createTestEditorService(
-                            cold<readonly CodeEditorWithPartialModel[]>('a-|', {
-                                a: [],
-                            })
-                        ),
+                        {
+                            activeLanguages: cold<ReadonlySet<string>>('a-|', {
+                                a: new Set([]),
+                            }),
+                        },
                         {
                             data: cold<SettingsCascadeOrError>('a-|', {
                                 a: {
@@ -163,11 +148,11 @@ describe('activeExtensions', () => {
                 from(
                     new TestExtensionsService(
                         [{ id: 'foo', manifest, rawManifest: null }],
-                        createTestEditorService(
-                            cold<readonly CodeEditorWithPartialModel[]>('a-|', {
-                                a: [],
-                            })
-                        ),
+                        {
+                            activeLanguages: cold<ReadonlySet<string>>('a-|', {
+                                a: new Set([]),
+                            }),
+                        },
                         {
                             data: cold<SettingsCascadeOrError>('a-|', {
                                 a: {

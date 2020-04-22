@@ -1,12 +1,34 @@
 import { DiffPart } from '@sourcegraph/codeintellify'
 import { DOMFunctions } from '../code_intelligence/code_views'
 
+/**
+ * Returns `true` if the element is a line number cell in a Phabricator diff code views.
+ *
+ * Supports both `<th>` line number cells, where the line number is the `textContent` (old Phabricator versions)
+ * and `<td>` line number cells with a `data-n` attribtue (recent Phabricator versions).
+ */
+const isLineNumberCell = (element: HTMLElement): boolean =>
+    Boolean((element.tagName === 'TH' && element.textContent) || element.dataset.n)
+
+const getLineNumber = (lineNumberCell: HTMLElement): number =>
+    parseInt((lineNumberCell.tagName === 'TH' ? lineNumberCell.textContent : lineNumberCell.dataset.n) || '', 10)
+
+/**
+ * Returns the closest line number cell to a code element in a Phabricator diff.
+ * If no line number cell can be found, an error is thrown.
+ *
+ * Supports both `<th>` line number cells, where the line number is the `textContent` (old Phabricator versions)
+ * and `<td>` line number cells with a `data-n` attribtue (recent Phabricator versions).
+ */
 const getLineNumberCellFromCodeElement = (codeElement: HTMLElement): HTMLElement | null => {
     let elem: HTMLElement | null = codeElement
-    while ((elem && elem.tagName !== 'TH') || (elem && !elem.textContent)) {
+    while (elem) {
+        if (isLineNumberCell(elem)) {
+            return elem
+        }
         elem = elem.previousElementSibling as HTMLElement | null
     }
-    return elem
+    return null
 }
 
 const getDiffLineNumberElementFromLineNumber = (
@@ -14,11 +36,15 @@ const getDiffLineNumberElementFromLineNumber = (
     line: number,
     part?: DiffPart
 ): HTMLElement | null => {
-    const lineNumberCells = codeView.querySelectorAll<HTMLTableHeaderCellElement>(
-        `th:nth-of-type(${part === 'base' ? 1 : 2})`
-    )
-    for (const lineNumberCell of lineNumberCells) {
-        if (lineNumberCell.textContent && parseInt(lineNumberCell.textContent, 10) === line) {
+    const lineNumberSelector = codeView.querySelector('td[data-n]')
+        ? 'td[data-n]'
+        : `th:nth-of-type(${part === 'base' ? 1 : 2})`
+    for (const lineNumberCell of codeView.querySelectorAll<HTMLElement>(lineNumberSelector)) {
+        if (getLineNumber(lineNumberCell) === line) {
+            if (part === 'head' && lineNumberCell.previousElementSibling === null) {
+                // this is the line number for the base element
+                continue
+            }
             return lineNumberCell
         }
     }
@@ -28,7 +54,16 @@ const getDiffLineNumberElementFromLineNumber = (
 const getDiffCodeElementFromLineNumber = (codeView: HTMLElement, line: number, part?: DiffPart): HTMLElement | null => {
     const lineNumberCell = getDiffLineNumberElementFromLineNumber(codeView, line, part)
     let codeElement: HTMLElement | null = lineNumberCell
-    while (codeElement && (codeElement.tagName !== 'TD' || codeElement.classList.contains('copy'))) {
+    while (
+        codeElement &&
+        // On unified diffs, some <th> or td.n elements can have an empty text content or no data-n attribute
+        // (for added lines that did not exist in the base, for instance),
+        // in which case isLineNumberCell returns false.
+        (codeElement.tagName !== 'TD' ||
+            codeElement.classList.contains('n') ||
+            isLineNumberCell(codeElement) ||
+            codeElement.classList.contains('copy'))
+    ) {
         codeElement = codeElement.nextElementSibling as HTMLElement | null
     }
     return codeElement
@@ -44,27 +79,28 @@ export const diffDomFunctions: DOMFunctions = {
         }
 
         const td = target.closest('td')
-        if (
-            td &&
-            (td.classList.contains('show-more') ||
-                td.classList.contains('show-context') ||
-                !getLineNumberCellFromCodeElement(td))
-        ) {
+        if (!td) {
             return null
         }
-
+        if (td.classList.contains('show-more') || td.classList.contains('show-context')) {
+            // This element represents a collapsed part of the diff, it's not a code element.
+            return null
+        }
+        if (!getLineNumberCellFromCodeElement(td)) {
+            // The element has no associated line number cell: this can be the case when hovering
+            // 'empty' lines in the base part of a split diff that has added lines.
+            return null
+        }
         return td
     },
     getCodeElementFromLineNumber: getDiffCodeElementFromLineNumber,
     getLineElementFromLineNumber: getDiffCodeElementFromLineNumber,
     getLineNumberFromCodeElement: codeElement => {
-        const elem = getLineNumberCellFromCodeElement(codeElement)
-
-        if (elem === null) {
-            throw new Error('could not find line number element from code element')
+        const lineNumberCell = getLineNumberCellFromCodeElement(codeElement)
+        if (!lineNumberCell) {
+            throw new Error('Could not find line number cell from code element')
         }
-
-        return parseInt(elem.textContent!, 10)
+        return getLineNumber(lineNumberCell)
     },
     getDiffCodePart: codeElement => {
         // Changed lines have handy class names.
@@ -75,29 +111,26 @@ export const diffDomFunctions: DOMFunctions = {
             return 'head'
         }
 
-        // For diffs, we'll have to traverse back to the line number <th> and see if it is the last element to determin
-        // whether it was the base or head.
-        let elem: HTMLElement = codeElement
-        while (elem.tagName !== 'TH') {
-            if (!elem.previousElementSibling) {
-                throw Error('could not find line number cell from code element')
-            }
-            elem = elem.previousElementSibling as HTMLElement
+        const lineNumberCell = getLineNumberCellFromCodeElement(codeElement)
+        if (!lineNumberCell) {
+            throw new Error('Could not find line number cell from code element')
         }
 
         // In unified diffs, both <th>'s have a class telling us which side of the diff the line belongs to.
-        if (elem.classList.contains('left')) {
+        if (lineNumberCell.classList.contains('left')) {
             return 'base'
         }
-        if (elem.classList.contains('right')) {
+        if (lineNumberCell.classList.contains('right')) {
             return 'head'
         }
 
-        return elem.previousElementSibling ? 'head' : 'base'
+        // If the lineNumberCell is the first element in the line, the codeElement
+        // belongs to the base part of the diff.
+        return lineNumberCell.previousElementSibling ? 'head' : 'base'
     },
     isFirstCharacterDiffIndicator: (codeElement: HTMLElement) => {
         const firstChild = codeElement.firstElementChild as HTMLElement
-        if (firstChild.classList.contains('aural-only')) {
+        if (firstChild?.classList.contains('aural-only')) {
             return true
         }
 
@@ -149,7 +182,7 @@ export const diffusionDOMFns: DOMFunctions = {
         }
         const lineNumber = parseInt(lineAnchor.textContent || '', 10)
         if (isNaN(lineNumber)) {
-            throw new Error(`Could not parse lineNumber from lineAnchor.textContent: ${lineAnchor.textContent}`)
+            throw new Error(`Could not parse lineNumber from lineAnchor.textContent: ${String(lineAnchor.textContent)}`)
         }
         return lineNumber
     },

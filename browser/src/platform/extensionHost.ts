@@ -1,16 +1,19 @@
 import * as MessageChannelAdapter from '@sourcegraph/comlink/messagechanneladapter'
 import { Observable } from 'rxjs'
-import uuid from 'uuid'
+import * as uuid from 'uuid'
 import { EndpointPair } from '../../../shared/src/platform/context'
 import { isInPage } from '../context'
+import { SourcegraphIntegrationURLs } from './context'
 
-function createInPageExtensionHost(sourcegraphURL: string): Observable<EndpointPair> {
+function createInPageExtensionHost({
+    assetsURL,
+}: Pick<SourcegraphIntegrationURLs, 'assetsURL'>): Observable<EndpointPair> {
     return new Observable(subscriber => {
         // Create an iframe pointing to extensionHostFrame.html,
         // which will load the extension host worker, and forward it
         // the client endpoints.
         const frame: HTMLIFrameElement = document.createElement('iframe')
-        frame.setAttribute('src', `${sourcegraphURL}/.assets/extension/extensionHostFrame.html`)
+        frame.setAttribute('src', new URL('extensionHostFrame.html', assetsURL).href)
         frame.setAttribute('style', 'display: none;')
         document.body.append(frame)
         const clientAPIChannel = new MessageChannel()
@@ -23,7 +26,7 @@ function createInPageExtensionHost(sourcegraphURL: string): Observable<EndpointP
             proxy: extensionHostAPIChannel.port1,
             expose: clientAPIChannel.port1,
         }
-        // Subscribe to the load event on the frame,
+        // Subscribe to the load event on the frame
         frame.addEventListener(
             'load',
             () => {
@@ -35,7 +38,7 @@ function createInPageExtensionHost(sourcegraphURL: string): Observable<EndpointP
                             wrapEndpoints: false,
                         },
                     },
-                    sourcegraphURL,
+                    new URL(assetsURL).origin,
                     Object.values(clientEndpoints)
                 )
                 subscriber.next(workerEndpoints)
@@ -65,9 +68,9 @@ function createInPageExtensionHost(sourcegraphURL: string): Observable<EndpointP
  * worker per pair of ports, and forward messages between the port objects and
  * the extension host worker's endpoints.
  */
-export function createExtensionHost(sourcegraphURL: string): Observable<EndpointPair> {
+export function createExtensionHost(urls: Pick<SourcegraphIntegrationURLs, 'assetsURL'>): Observable<EndpointPair> {
     if (isInPage) {
-        return createInPageExtensionHost(sourcegraphURL)
+        return createInPageExtensionHost(urls)
     }
     const id = uuid.v4()
     return new Observable(subscriber => {
@@ -90,7 +93,7 @@ export function createExtensionHost(sourcegraphURL: string): Observable<Endpoint
  * as a comlink Endpoint to transport messages between the content script and the extension host.
  *
  * It is necessary to wrap the port using MessageChannelAdapter because browser.runtime.Port objects do not support
- * transfering MessagePort objects (see https://github.com/GoogleChromeLabs/comlink/blob/master/messagechanneladapter.md).
+ * transferring MessagePort objects (see https://github.com/GoogleChromeLabs/comlink/blob/master/messagechanneladapter.md).
  *
  */
 function endpointFromPort(port: browser.runtime.Port): MessagePort {

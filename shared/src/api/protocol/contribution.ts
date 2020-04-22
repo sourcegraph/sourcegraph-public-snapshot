@@ -13,14 +13,14 @@ import { KeyPath } from '../client/services/settings'
  */
 export type Raw<TContribution> = { [K in keyof TContribution]: RawValue<TContribution[K]> }
 // need a type alias so union types (including undefined for optional properties) distribute
-type RawValue<V> = V extends Expression<any> ? string : (V extends Primitive | null | undefined ? V : Raw<V>)
+type RawValue<V> = V extends Expression<any> ? string : V extends Primitive | null | undefined ? V : Raw<V>
 
 /**
  * The given contribution type after being evaluated (all expressions replaced with their value)
  */
 export type Evaluated<TContribution> = { [K in keyof TContribution]: EvaluatedValue<TContribution[K]> }
 // need a type alias so union types (including undefined for optional properties) distribute
-type EvaluatedValue<V> = V extends Expression<infer T> ? T : (V extends Primitive | null | undefined ? V : Evaluated<V>)
+type EvaluatedValue<V> = V extends Expression<infer T> ? T : V extends Primitive | null | undefined ? V : Evaluated<V>
 
 /**
  * Describes the functionality provided by an extension.

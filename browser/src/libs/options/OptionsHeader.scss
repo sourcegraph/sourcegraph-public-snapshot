@@ -1,3 +1,5 @@
+@import '../../../../shared/src/components/Toggle';
+
 .options-header {
     display: flex;
     align-items: stretch;
@@ -5,7 +7,18 @@
 
     &__logo {
         flex: 1;
-        max-width: 50%;
+        max-width: 65%;
+        width: 300px;
+    }
+
+    &__version {
+        flex: 1;
+        display: flex;
+        align-items: center;
+
+        font-weight: 500;
+        color: $color-light-bg-5;
+        margin-left: 30px;
     }
 
     &__right {

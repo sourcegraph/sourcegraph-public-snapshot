@@ -35,21 +35,20 @@ export const SearchResultsFilterBars: React.FunctionComponent<{
             <div className="search-results-filter-bars__row" data-testid="filters-bar">
                 Filters:
                 <div className="search-results-filter-bars__filters">
-                    {extensionFilters &&
-                        extensionFilters
-                            .filter(filter => filter.value !== '')
-                            .map((filter, i) => (
-                                <FilterChip
-                                    query={navbarSearchQuery}
-                                    onFilterChosen={onFilterClick}
-                                    key={filter.name + filter.value}
-                                    value={filter.value}
-                                    name={filter.name}
-                                />
-                            ))}
+                    {extensionFilters
+                        ?.filter(filter => filter.value !== '')
+                        .map(filter => (
+                            <FilterChip
+                                query={navbarSearchQuery}
+                                onFilterChosen={onFilterClick}
+                                key={filter.name + filter.value}
+                                value={filter.value}
+                                name={filter.name}
+                            />
+                        ))}
                     {filters
                         .filter(filter => filter.value !== '')
-                        .map((filter, i) => (
+                        .map(filter => (
                             <FilterChip
                                 query={navbarSearchQuery}
                                 onFilterChosen={onFilterClick}
@@ -67,7 +66,7 @@ export const SearchResultsFilterBars: React.FunctionComponent<{
                 <div className="search-results-filter-bars__filters">
                     {results.dynamicFilters
                         .filter(filter => filter.kind === 'repo' && filter.value !== '')
-                        .map((filter, i) => (
+                        .map(filter => (
                             <FilterChip
                                 name={filter.label}
                                 query={navbarSearchQuery}
@@ -91,12 +90,9 @@ export const SearchResultsFilterBars: React.FunctionComponent<{
                 </div>
             </div>
         )}
-        {quickLinks && (
-            <div className="search-results-filter-bars__row" data-testid="quicklinks-bar">
-                <div className="search-results-filter-bars__quicklinks">
-                    <QuickLinks quickLinks={quickLinks} />
-                </div>
-            </div>
-        )}
+        <QuickLinks
+            quickLinks={quickLinks}
+            className="search-results-filter-bars__row search-results-filter-bars__quicklinks"
+        />
     </div>
 )

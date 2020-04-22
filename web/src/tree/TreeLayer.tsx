@@ -28,6 +28,7 @@ import {
     TreeEntryInfo,
     treePadding,
 } from './util'
+import { ErrorAlert } from '../components/alerts'
 
 export interface TreeLayerProps extends AbsoluteRepo {
     history: H.History
@@ -50,7 +51,7 @@ export interface TreeLayerProps extends AbsoluteRepo {
     setActiveNode: (node: TreeNode) => void
 }
 
-const LOADING: 'loading' = 'loading'
+const LOADING = 'loading' as const
 interface TreeLayerState {
     treeOrError?: typeof LOADING | GQL.IGitTree | ErrorLike
 }
@@ -101,16 +102,13 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                             catchError(err => [asError(err)]),
                             share()
                         )
-                        return merge(
-                            treeFetch,
-                            of(LOADING).pipe(
-                                delay(300),
-                                takeUntil(treeFetch)
-                            )
-                        )
+                        return merge(treeFetch, of(LOADING).pipe(delay(300), takeUntil(treeFetch)))
                     })
                 )
-                .subscribe(treeOrError => this.setState({ treeOrError }), err => console.error(err))
+                .subscribe(
+                    treeOrError => this.setState({ treeOrError }),
+                    err => console.error(err)
+                )
         )
 
         // If the layer is already expanded, fetch contents.
@@ -177,7 +175,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                 if (parent === this.node) {
                     return true
                 }
-                parent = parent && parent.parent
+                parent = parent?.parent
             }
 
             // Update if currently selected node.
@@ -191,7 +189,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                 if (currentParent === this.node) {
                     return true
                 }
-                currentParent = currentParent && currentParent.parent
+                currentParent = currentParent?.parent
             }
 
             // If none of the above conditions are met, there's no need to update.
@@ -272,14 +270,13 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                                     <tr>
                                         <td className="tree__cell">
                                             {isErrorLike(treeOrError) ? (
-                                                <div
-                                                    className="tree__row-alert alert alert-danger"
+                                                <ErrorAlert
+                                                    className="tree__row-alert"
                                                     // needed because of dynamic styling
-                                                    // eslint-disable-next-line react/forbid-dom-props
                                                     style={treePadding(this.props.depth, true)}
-                                                >
-                                                    Error loading file tree: {treeOrError.message}
-                                                </div>
+                                                    error={treeOrError}
+                                                    prefix="Error loading file tree"
+                                                />
                                             ) : (
                                                 treeOrError && (
                                                     <ChildTreeLayer
@@ -323,7 +320,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
         }
     }
 
-    private handleTreeClick = () => {
+    private handleTreeClick = (): void => {
         this.props.onSelect(this.node)
         const path = this.props.entryInfo ? this.props.entryInfo.path : ''
         this.props.onToggleExpand(path, !this.props.isExpanded, this.node)
@@ -334,7 +331,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
      * that shouldn't update URL on click w/o modifier key (but should retain
      * anchor element properties, like right click "Copy link address").
      */
-    private noopRowClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    private noopRowClick = (e: React.MouseEvent<HTMLAnchorElement>): void => {
         if (!e.altKey && !e.metaKey && !e.shiftKey && !e.ctrlKey) {
             e.preventDefault()
             e.stopPropagation()
@@ -345,12 +342,12 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
     /**
      * linkRowClick is the click handler for <Link>
      */
-    private linkRowClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    private linkRowClick: React.MouseEventHandler<HTMLAnchorElement> = () => {
         this.props.setActiveNode(this.node)
         this.props.onSelect(this.node)
     }
 
-    private setChildNode = (node: TreeNode, index: number) => {
+    private setChildNode = (node: TreeNode, index: number): void => {
         this.node.childNodes[index] = node
     }
 }

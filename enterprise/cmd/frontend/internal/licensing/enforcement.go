@@ -6,8 +6,8 @@ import (
 	"html"
 	"net/http"
 
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
 // NewPreCreateUserHook returns a PreCreateUserHook closure with
@@ -39,9 +39,9 @@ func NewPreCreateUserHook(s UsersStore) func(context.Context) error {
 			} else {
 				message := "Unable to create user account: "
 				if info == nil {
-					message = fmt.Sprintf("a Sourcegraph subscription is required to exceed %d users, and new users can not be created above %d (this instance now has %d users). A site admin must purchase a subscription at https://sourcegraph.com/user/settings/subscriptions/new. Enter the license key in the Sourcegraph management console.", NoLicenseWarningUserCount, NoLicenseMaximumAllowedUserCount, userCount)
+					message += fmt.Sprintf("a Sourcegraph subscription is required to exceed %d users (this instance now has %d users). Contact Sourcegraph to learn more at https://about.sourcegraph.com/contact/sales.", NoLicenseMaximumAllowedUserCount, userCount)
 				} else {
-					message += "the Sourcegraph subscription's maximum user count has been reached. A site admin must upgrade the Sourcegraph subscription to allow for more users. Enter the license key in the Sourcegraph management console (https://docs.sourcegraph.com/admin/management_console)."
+					message += "the Sourcegraph subscription's maximum user count has been reached. A site admin must upgrade the Sourcegraph subscription to allow for more users. Contact Sourcegraph at https://about.sourcegraph.com/contact/sales."
 				}
 				return errcode.NewPresentationError(message)
 			}
@@ -58,7 +58,7 @@ func WriteSubscriptionErrorResponseForFeature(w http.ResponseWriter, featureName
 	WriteSubscriptionErrorResponse(
 		w, http.StatusForbidden,
 		fmt.Sprintf("License is not valid for %s", featureNameHumanReadable),
-		fmt.Sprintf("To use the %s feature, a site admin must upgrade the Sourcegraph license in the Sourcegraph management console (https://docs.sourcegraph.com/admin/management_console). (The site admin may also remove the site configuration that enables this feature to dismiss this message.)", featureNameHumanReadable),
+		fmt.Sprintf("To use the %s feature, a site admin must upgrade the Sourcegraph license in the Sourcegraph [**site configuration**](/site-admin/configuration). (The site admin may also remove the site configuration that enables this feature to dismiss this message.)", featureNameHumanReadable),
 	)
 }
 

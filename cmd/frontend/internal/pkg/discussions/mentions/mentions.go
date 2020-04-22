@@ -1,9 +1,9 @@
 // Package mentions provides utilities for at mentions in discussions.
 package mentions
 
-import "regexp"
+import "github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 
-var mentions = regexp.MustCompile(`(^|\s)@(\S*)`)
+var mentions = lazyregexp.New(`(^|\s)@(\S*)`)
 
 // Parse parses the @mentions from the given markdown comment contents and
 // returns a list of usernames without the @ prefixes.

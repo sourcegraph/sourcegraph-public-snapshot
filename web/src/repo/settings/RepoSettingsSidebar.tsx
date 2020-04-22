@@ -7,8 +7,14 @@ import {
     SIDEBAR_CARD_CLASS,
     SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS,
 } from '../../components/Sidebar'
+import { NavItemDescriptor } from '../../util/contributions'
 
-interface Props extends RouteComponentProps<any> {
+export interface RepoSettingsSideBarItem extends NavItemDescriptor {}
+
+export type RepoSettingsSideBarItems = readonly RepoSettingsSideBarItem[]
+
+interface Props extends RouteComponentProps<{}> {
+    repoSettingsSidebarItems: RepoSettingsSideBarItems
     className?: string
     repo?: GQL.IRepository
 }
@@ -16,33 +22,29 @@ interface Props extends RouteComponentProps<any> {
 /**
  * Sidebar for repository settings pages.
  */
-export const RepoSettingsSidebar: React.FunctionComponent<Props> = (props: Props) =>
-    props.repo ? (
-        <div className={`repo-settings-sidebar ${props.className || ''}`}>
+export const RepoSettingsSidebar: React.FunctionComponent<Props> = ({
+    repo,
+    className,
+    repoSettingsSidebarItems,
+}: Props) =>
+    repo ? (
+        <div className={`repo-settings-sidebar ${className || ''}`}>
             <div className={SIDEBAR_CARD_CLASS}>
                 <div className="card-header">Settings</div>
                 <div className="list-group list-group-flush">
-                    <NavLink
-                        to={`/${props.repo.name}/-/settings`}
-                        exact={true}
-                        className={SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS}
-                    >
-                        Options
-                    </NavLink>
-                    <NavLink
-                        to={`/${props.repo.name}/-/settings/index`}
-                        exact={true}
-                        className={SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS}
-                    >
-                        Indexing
-                    </NavLink>
-                    <NavLink
-                        to={`/${props.repo.name}/-/settings/mirror`}
-                        exact={true}
-                        className={SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS}
-                    >
-                        Mirroring
-                    </NavLink>
+                    {repoSettingsSidebarItems.map(
+                        ({ label, to, exact, condition = () => true }) =>
+                            condition({}) && (
+                                <NavLink
+                                    to={`/${repo?.name}/-/settings${to}`}
+                                    exact={exact}
+                                    key={label}
+                                    className={SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS}
+                                >
+                                    {label}
+                                </NavLink>
+                            )
+                    )}
                 </div>
             </div>
             <Link to="/api/console" className={SIDEBAR_BUTTON_CLASS}>
@@ -51,5 +53,5 @@ export const RepoSettingsSidebar: React.FunctionComponent<Props> = (props: Props
             </Link>
         </div>
     ) : (
-        <div className={`repo-settings-sidebar ${props.className || ''}`} />
+        <div className={`repo-settings-sidebar ${className || ''}`} />
     )

@@ -85,6 +85,9 @@ export const gitRefFragment = gql`
     fragment SignatureFields on Signature {
         person {
             displayName
+            user {
+                username
+            }
         }
         date
     }
@@ -136,5 +139,5 @@ export const queryGitRefs = memoizeObservable(
                 return (data.node as GQL.IRepository).gitRefs
             })
         ),
-    args => `${args.repo}:${args.first}:${args.query}:${args.type}`
+    args => `${args.repo}:${String(args.first)}:${String(args.query)}:${args.type}`
 )

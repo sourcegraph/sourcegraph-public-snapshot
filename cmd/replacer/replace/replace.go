@@ -25,16 +25,16 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/net/trace"
+	nettrace "golang.org/x/net/trace"
 
-	"github.com/opentracing/opentracing-go"
+	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/replacer/protocol"
-	"github.com/sourcegraph/sourcegraph/pkg/store"
-	"gopkg.in/inconshreveable/log15.v2"
+	"github.com/sourcegraph/sourcegraph/internal/store"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 
 	"github.com/gorilla/schema"
 )
@@ -50,7 +50,7 @@ type ExternalTool struct {
 }
 
 // Configure the command line options and return the command to execute using an external tool
-func (t *ExternalTool) command(spec *protocol.RewriteSpecification, zipPath string) (cmd *exec.Cmd, err error) {
+func (t *ExternalTool) command(ctx context.Context, spec *protocol.RewriteSpecification, zipPath string) (cmd *exec.Cmd, err error) {
 	switch t.Name {
 	case "comby":
 		_, err = exec.LookPath("comby")
@@ -72,7 +72,7 @@ func (t *ExternalTool) command(spec *protocol.RewriteSpecification, zipPath stri
 		}
 
 		log15.Info(fmt.Sprintf("running command: comby %q", strings.Join(args[:], " ")))
-		return exec.Command(t.BinaryPath, args...), nil
+		return exec.CommandContext(ctx, t.BinaryPath, args...), nil
 
 	default:
 		return nil, errors.Errorf("Unknown external replace tool %q.", t.Name)
@@ -132,10 +132,10 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Service) replace(ctx context.Context, p *protocol.Request, w http.ResponseWriter, r *http.Request) (deadlineHit bool, err error) {
-	tr := trace.New("replace", fmt.Sprintf("%s@%s", p.Repo, p.Commit))
+	tr := nettrace.New("replace", fmt.Sprintf("%s@%s", p.Repo, p.Commit))
 	tr.LazyPrintf("%s", p.RewriteSpecification)
 
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Replace")
+	span, ctx := ot.StartSpanFromContext(ctx, "Replace")
 	ext.Component.Set(span, "service")
 	span.SetTag("repo", p.Repo)
 	span.SetTag("url", p.URL)
@@ -198,7 +198,7 @@ func (s *Service) replace(ctx context.Context, p *protocol.Request, w http.Respo
 
 	zipPath, zf, err := store.GetZipFileWithRetry(getZf)
 	if err != nil {
-		return false, err
+		return false, errors.Wrap(err, "failed to get archive")
 	}
 	defer zf.Close()
 
@@ -219,27 +219,27 @@ func (s *Service) replace(ctx context.Context, p *protocol.Request, w http.Respo
 		BinaryPath: "comby",
 	}
 
-	cmd, err := t.command(&p.RewriteSpecification, zipPath)
+	cmd, err := t.command(ctx, &p.RewriteSpecification, zipPath)
 	if err != nil {
 		log15.Info("Invalid command: " + err.Error())
-		return
+		return false, errors.Wrap(err, "invalid command")
 	}
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		log15.Info("Could not connect to command stdout: " + err.Error())
-		return
+		return false, errors.Wrap(err, "failed to connect to command stdout")
 	}
 
 	if err := cmd.Start(); err != nil {
 		log15.Info("Error starting command: " + err.Error())
-		return false, errors.New(err.Error())
+		return false, errors.Wrap(err, "failed to start command")
 	}
 
 	_, err = io.Copy(w, stdout)
 	if err != nil {
 		log15.Info("Error copying external command output to HTTP writer: " + err.Error())
-		return
+		return false, errors.Wrap(err, "failed while copying command output to HTTP")
 	}
 
 	if err := cmd.Wait(); err != nil {

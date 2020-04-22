@@ -1,6 +1,34 @@
-import { ProxiedObject, ProxyValue } from '@sourcegraph/comlink'
+import { ProxiedObject, ProxyValue, transferHandlers } from '@sourcegraph/comlink'
 import { Subscription } from 'rxjs'
 import { Subscribable, Unsubscribable } from 'sourcegraph'
+import { hasProperty } from '../util/types'
+
+/**
+ * Tests whether a value is a WHATWG URL object.
+ */
+export const isURL = (value: unknown): value is URL =>
+    typeof value === 'object' &&
+    value !== null &&
+    hasProperty('href')(value) &&
+    hasProperty('toString')(value) &&
+    typeof value.toString === 'function' &&
+    // eslint-disable-next-line @typescript-eslint/no-base-to-string
+    value.href === value.toString()
+
+/**
+ * Registers global comlink transfer handlers.
+ * This needs to be called before using comlink.
+ * Idempotent.
+ */
+export function registerComlinkTransferHandlers(): void {
+    transferHandlers.set('URL', {
+        canHandle: isURL,
+        // TODO the comlink types could be better here to avoid the any
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access
+        serialize: (url: any) => url.href,
+        deserialize: (urlString: any) => new URL(urlString),
+    })
+}
 
 /**
  * Creates a synchronous Subscription that will unsubscribe the given proxied Subscription asynchronously.
@@ -23,28 +51,19 @@ export const syncSubscription = (
  * Runs f and returns a resolved promise with its value or a rejected promise with its exception,
  * regardless of whether it returns a promise or not.
  */
-export function tryCatchPromise<T>(f: () => T | Promise<T>): Promise<T> {
-    try {
-        return Promise.resolve(f())
-    } catch (err) {
-        return Promise.reject(err)
-    }
-}
+export const tryCatchPromise = async <T>(f: () => T | Promise<T>): Promise<T> => f()
 
 /**
  * Reports whether value is a Promise.
  */
-export function isPromise(value: any): value is Promise<any> {
-    return typeof value.then === 'function'
-}
+export const isPromiseLike = (value: unknown): value is PromiseLike<unknown> =>
+    typeof value === 'object' && value !== null && hasProperty('then')(value) && typeof value.then === 'function'
 
 /**
  * Reports whether value is a {@link sourcegraph.Subscribable}.
  */
-export function isSubscribable(value: any): value is Subscribable<any> {
-    return typeof value.subscribe === 'function'
-}
-
-export interface PromiseCallback<T> {
-    resolve: (p: T | Promise<T>) => void
-}
+export const isSubscribable = (value: unknown): value is Subscribable<unknown> =>
+    typeof value === 'object' &&
+    value !== null &&
+    hasProperty('subscribe')(value) &&
+    typeof value.subscribe === 'function'

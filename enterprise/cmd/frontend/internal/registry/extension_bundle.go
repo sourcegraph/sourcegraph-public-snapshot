@@ -6,14 +6,15 @@ import (
 	"net/url"
 	"path"
 	"path/filepath"
-	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/gorilla/mux"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	frontendregistry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
 func init() {
@@ -21,7 +22,7 @@ func init() {
 }
 
 // sourceMappingURLLineRegex is a regular expression that matches all lines with a `//# sourceMappingURL` comment
-var sourceMappingURLLineRegex = regexp.MustCompile(`(?m)\r?\n?^//# sourceMappingURL=.+$`)
+var sourceMappingURLLineRegex = lazyregexp.New(`(?m)\r?\n?^//# sourceMappingURL=.+$`)
 
 // handleRegistryExtensionBundle serves the bundled JavaScript source file or the source map for an
 // extension in the registry as a raw JavaScript or JSON file.
@@ -62,9 +63,13 @@ func handleRegistryExtensionBundle(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.Header().Set("X-XSS-Protection", "1; mode=block")
 
-	// Allow downstream Sourcegraph sites' clients to access this file directly.
-	w.Header().Del("Access-Control-Allow-Credentials") // credentials are not needed
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+	// 🚨 SECURITY sourcegraph.com only: downstream Sourcegraph sites' clients to access this file directly.
+	// On private registries, requests to fetch extension bundles are authenticated, and Access-Control headers
+	// should be preserved.
+	if envvar.SourcegraphDotComMode() {
+		w.Header().Del("Access-Control-Allow-Credentials") // credentials are not needed
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+	}
 
 	// We want to cache forever because an extension release is immutable, except that if the
 	// database is reset and and the registry_extension_releases.id sequence starts over, we don't
@@ -85,7 +90,7 @@ func handleRegistryExtensionBundle(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
 		data = sourceMappingURLLineRegex.ReplaceAll(bundle, []byte{})
 	}
-	w.Write(data)
+	_, _ = w.Write(data)
 
 	if !wantSourceMap && sourceMap != nil {
 		// Append `//# sourceMappingURL=` directive to JS bundle if we have a source map. It is
@@ -98,7 +103,7 @@ func handleRegistryExtensionBundle(w http.ResponseWriter, r *http.Request) {
 		// This implementation is not ideal because it means the JS bundle's contents depend on the
 		// external URL, which makes it technically not immutable. But given the blob URL constraint
 		// mentioned above, it's the best known solution.
-		if externalURL, _ := url.Parse(conf.Get().Critical.ExternalURL); externalURL != nil {
+		if externalURL, _ := url.Parse(conf.Get().ExternalURL); externalURL != nil {
 			sourceMapURL := externalURL.ResolveReference(&url.URL{Path: path.Join(path.Dir(r.URL.Path), fmt.Sprintf("%d.map", releaseID))}).String()
 			fmt.Fprintf(w, "\n//# sourceMappingURL=%s", sourceMapURL)
 		}

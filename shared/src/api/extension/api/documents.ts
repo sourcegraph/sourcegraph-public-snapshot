@@ -1,12 +1,20 @@
 import { ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
 import { Subject } from 'rxjs'
 import { TextDocument } from 'sourcegraph'
-import { TextModel } from '../../client/services/modelService'
+import { TextModelUpdate } from '../../client/services/modelService'
 import { ExtDocument } from './textDocument'
 
 /** @internal */
 export interface ExtDocumentsAPI extends ProxyValue {
-    $acceptDocumentData(models: readonly TextModel[]): void
+    $acceptDocumentData(modelUpdates: readonly TextModelUpdate[]): void
+}
+
+const DOCUMENT_NOT_FOUND_ERROR_NAME = 'DocumentNotFoundError'
+class DocumentNotFoundError extends Error {
+    public readonly name = DOCUMENT_NOT_FOUND_ERROR_NAME
+    constructor(resource: string) {
+        super(`document not found: ${resource}`)
+    }
 }
 
 /** @internal */
@@ -25,7 +33,7 @@ export class ExtDocuments implements ExtDocumentsAPI, ProxyValue {
     public get(resource: string): ExtDocument {
         const doc = this.documents.get(resource)
         if (!doc) {
-            throw new Error(`document not found: ${resource}`)
+            throw new DocumentNotFoundError(resource)
         }
         return doc
     }
@@ -57,13 +65,24 @@ export class ExtDocuments implements ExtDocumentsAPI, ProxyValue {
 
     public openedTextDocuments = new Subject<TextDocument>()
 
-    public $acceptDocumentData(models: readonly TextModel[]): void {
-        for (const model of models) {
-            const isNew = !this.documents.has(model.uri)
-            const doc = new ExtDocument(model)
-            this.documents.set(model.uri, doc)
-            if (isNew) {
-                this.openedTextDocuments.next(doc)
+    public $acceptDocumentData(modelUpdates: readonly TextModelUpdate[]): void {
+        for (const update of modelUpdates) {
+            switch (update.type) {
+                case 'added': {
+                    const { uri, languageId, text } = update
+                    const doc = new ExtDocument({ uri, languageId, text })
+                    this.documents.set(update.uri, doc)
+                    this.openedTextDocuments.next(doc)
+                    break
+                }
+                case 'updated': {
+                    const doc = this.get(update.uri)
+                    doc.update(update)
+                    break
+                }
+                case 'deleted':
+                    this.documents.delete(update.uri)
+                    break
             }
         }
     }

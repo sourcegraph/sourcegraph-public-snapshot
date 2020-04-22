@@ -6,12 +6,13 @@ import * as GQL from '../../../../shared/src/graphql/schema'
 import { asError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { BarChart } from '../../components/d3/BarChart'
 import { fetchSiteUsageStatistics } from '../../site-admin/backend'
+import { ErrorAlert } from '../../components/alerts'
 
 interface Props {
     isLightTheme: boolean
 }
 
-const LOADING: 'loading' = 'loading'
+const LOADING = 'loading' as const
 
 interface State {
     /** The site usage statistics, loading, or an error. */
@@ -43,7 +44,7 @@ export class SiteUsageExploreSection extends React.PureComponent<Props, State> {
             <div className="site-usage-explore-section">
                 <h2>Site usage</h2>
                 {isErrorLike(this.state.siteUsageStatisticsOrError) ? (
-                    <div className="alert alert-danger">Error: {this.state.siteUsageStatisticsOrError.message}</div>
+                    <ErrorAlert error={this.state.siteUsageStatisticsOrError} />
                 ) : this.state.siteUsageStatisticsOrError === LOADING ? (
                     <p>Loading...</p>
                 ) : (

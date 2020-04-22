@@ -1,0 +1,63 @@
+.activation-checklist {
+    &__button {
+        display: block;
+        background-color: transparent;
+        padding: 0;
+        border-bottom: 0;
+    }
+
+    &__container {
+        padding: 0;
+
+        &:first-child {
+            border-top-width: 1px !important;
+        }
+    }
+
+    &__title {
+        margin-left: 0.25rem;
+    }
+
+    &__detail {
+        // This is the width of the icon in the row above. This is to get text to line up properly.
+        margin: 0 1.25rem;
+        padding: 0 0.5rem;
+        border-bottom-width: 1px;
+    }
+
+    [data-reach-accordion-button] {
+        .icon-down {
+            display: none;
+        }
+        .icon-right {
+            display: inline-block;
+        }
+    }
+
+    [data-reach-accordion-button][aria-expanded='true'] {
+        background-color: $dropdown-link-hover-bg;
+
+        .icon-right {
+            display: none;
+        }
+        .icon-down {
+            display: inline-block;
+        }
+    }
+
+    [data-reach-accordion-panel][data-state='open'] {
+        background-color: $dropdown-link-hover-bg;
+    }
+}
+
+.activation-checklist-item {
+    padding: 0.25rem 0.75rem;
+
+    &__icon-container {
+        width: 1.25rem;
+    }
+
+    &__icon {
+        fill: $body-color !important;
+    }
+}

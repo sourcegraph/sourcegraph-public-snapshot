@@ -1,6 +1,7 @@
 package registry
 
 import (
+	"context"
 	"encoding/json"
 	"reflect"
 	"testing"
@@ -8,8 +9,8 @@ import (
 
 	"github.com/lib/pq"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
 // registryExtensionNamesForTests is a list of test cases containing valid and invalid registry
@@ -39,7 +40,8 @@ func TestRegistryExtensions_validNames(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	user, err := db.Users.Create(ctx, db.NewUser{Username: "u"})
 	if err != nil {
@@ -67,7 +69,8 @@ func TestRegistryExtensions(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	testGetByID := func(t *testing.T, id int32, want *dbExtension, wantPublisherName string) {
 		t.Helper()
@@ -334,7 +337,8 @@ func TestRegistryExtensions_ListCount(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	testList := func(t *testing.T, opt dbExtensionsListOptions, want []*dbExtension) {
 		t.Helper()

@@ -115,16 +115,16 @@ export function createController(context: PlatformContext): Controller {
     // Debug helpers.
     const DEBUG = true
     if (DEBUG) {
-        // Debug helper: log model changes.
-        const LOG_MODEL = false
-        if (LOG_MODEL) {
-            subscriptions.add(services.editor.editors.subscribe(model => log('info', 'model', model)))
+        // Debug helper: log editor changes.
+        const LOG_EDITORS = false
+        if (LOG_EDITORS) {
+            subscriptions.add(
+                services.editor.editorUpdates.subscribe(() => log('info', 'editors', services.editor.editors))
+            )
         }
 
         // Debug helpers: e.g., just run `sxservices` in devtools to get a reference to the services.
         ;(window as any).sxservices = services
-        // This value is synchronously available because observable has an underlying BehaviorSubject source.
-        subscriptions.add(services.editor.editors.subscribe(v => ((window as any).sxmodel = v)))
     }
 
     return {

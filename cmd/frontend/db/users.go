@@ -6,17 +6,19 @@ import (
 	"errors"
 	"fmt"
 	"time"
+	"unicode/utf8"
 
 	multierror "github.com/hashicorp/go-multierror"
+	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/pkg/db/globalstatedb"
-	"github.com/sourcegraph/sourcegraph/pkg/trace"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/globalstatedb"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 // users provides access to the `users` table.
@@ -100,6 +102,10 @@ type NewUser struct {
 	// user if at least one of the following is true: (1) the site has already been initialized or
 	// (2) any other user account already exists.
 	FailIfNotInitialUser bool `json:"-"` // forbid this field being set by JSON, just in case
+
+	// EnforcePasswordLength is whether should enforce minimum and maximum password length requirement.
+	// Users created by non-builtin auth providers do not have a password thus no need to check.
+	EnforcePasswordLength bool `json:"-"` // forbid this field being set by JSON, just in case
 }
 
 // Create creates a new user in the database.
@@ -120,6 +126,10 @@ type NewUser struct {
 // order to avoid a race condition where multiple initial site admins could be created or zero site
 // admins could be created.
 func (u *users) Create(ctx context.Context, info NewUser) (newUser *types.User, err error) {
+	if Mocks.Users.Create != nil {
+		return Mocks.Users.Create(ctx, info)
+	}
+
 	tx, err := dbconn.Global.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
@@ -138,11 +148,32 @@ func (u *users) Create(ctx context.Context, info NewUser) (newUser *types.User, 
 	return u.create(ctx, tx, info)
 }
 
+// maxPasswordRunes is the maximum number of UTF-8 runes that a password can contain.
+// This safety limit is to protect us from a DDOS attack caused by hashing very large passwords on Sourcegraph.com.
+const maxPasswordRunes = 256
+
+// checkPasswordLength returns an error if the password is too long.
+func checkPasswordLength(pw string) error {
+	pwLen := utf8.RuneCountInString(pw)
+	minPasswordRunes := conf.AuthMinPasswordLength()
+	if pwLen < minPasswordRunes ||
+		pwLen > maxPasswordRunes {
+		return errcode.NewPresentationError(fmt.Sprintf("Passwords may not be less than %d or be more than %d characters.", minPasswordRunes, maxPasswordRunes))
+	}
+	return nil
+}
+
 // create is like Create, except it uses the provided DB transaction. It must execute in a
 // transaction because the post-user-creation hooks must run atomically with the user creation.
 func (u *users) create(ctx context.Context, tx *sql.Tx, info NewUser) (newUser *types.User, err error) {
 	if Mocks.Users.Create != nil {
 		return Mocks.Users.Create(ctx, info)
+	}
+
+	if info.EnforcePasswordLength {
+		if err := checkPasswordLength(info.Password); err != nil {
+			return nil, err
+		}
 	}
 
 	if info.Email != "" && info.EmailVerificationCode == "" && !info.EmailIsVerified {
@@ -243,7 +274,7 @@ func (u *users) create(ctx context.Context, tx *sql.Tx, info NewUser) (newUser *
 		// adding random calls here.
 
 		// Ensure the user (all users, actually) is joined to the orgs specified in auth.userOrgMap.
-		orgs, errs := orgsForAllUsersToJoin(conf.Get().Critical.AuthUserOrgMap)
+		orgs, errs := orgsForAllUsersToJoin(conf.Get().AuthUserOrgMap)
 		for _, err := range errs {
 			log15.Warn(err.Error())
 		}
@@ -260,6 +291,7 @@ func (u *users) create(ctx context.Context, tx *sql.Tx, info NewUser) (newUser *
 		CreatedAt:   createdAt,
 		UpdatedAt:   updatedAt,
 		SiteAdmin:   siteAdmin,
+		BuiltinAuth: info.Password != "",
 	}, nil
 }
 
@@ -353,6 +385,10 @@ func (u *users) Update(ctx context.Context, id int32, update UserUpdate) error {
 }
 
 func (u *users) Delete(ctx context.Context, id int32) error {
+	if Mocks.Users.Delete != nil {
+		return Mocks.Users.Delete(ctx, id)
+	}
+
 	// Wrap in transaction because we delete from multiple tables.
 	tx, err := dbconn.Global.BeginTx(ctx, nil)
 	if err != nil {
@@ -417,6 +453,10 @@ func (u *users) Delete(ctx context.Context, id int32) error {
 }
 
 func (u *users) HardDelete(ctx context.Context, id int32) error {
+	if Mocks.Users.HardDelete != nil {
+		return Mocks.Users.HardDelete(ctx, id)
+	}
+
 	// Wrap in transaction because we delete from multiple tables.
 	tx, err := dbconn.Global.BeginTx(ctx, nil)
 	if err != nil {
@@ -516,6 +556,10 @@ func (u *users) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bool) 
 // invited too many users, or some other error occurred). If the user has
 // quota remaining, their quota is decremented and ok is true.
 func (u *users) CheckAndDecrementInviteQuota(ctx context.Context, userID int32) (ok bool, err error) {
+	if Mocks.Users.CheckAndDecrementInviteQuota != nil {
+		return Mocks.Users.CheckAndDecrementInviteQuota(ctx, userID)
+	}
+
 	var quotaRemaining int32
 	sqlQuery := `
 	UPDATE users SET invite_quota=(invite_quota - 1)
@@ -557,6 +601,25 @@ func (u *users) GetByUsername(ctx context.Context, username string) (*types.User
 	return u.getOneBySQL(ctx, "WHERE username=$1 AND deleted_at IS NULL LIMIT 1", username)
 }
 
+// GetByUsernames returns a list of users by given usernames. The number of results list could be less
+// than the candidate list due to no user is associated with some usernames.
+func (u *users) GetByUsernames(ctx context.Context, usernames ...string) ([]*types.User, error) {
+	if Mocks.Users.GetByUsernames != nil {
+		return Mocks.Users.GetByUsernames(ctx, usernames...)
+	}
+
+	if len(usernames) == 0 {
+		return []*types.User{}, nil
+	}
+
+	items := make([]*sqlf.Query, len(usernames))
+	for i := range usernames {
+		items[i] = sqlf.Sprintf("%s", usernames[i])
+	}
+	q := sqlf.Sprintf("WHERE username IN (%s) AND deleted_at IS NULL ORDER BY id ASC", sqlf.Join(items, ","))
+	return u.getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+}
+
 var ErrNoCurrentUser = errors.New("no current user")
 
 func (u *users) GetByCurrentAuthUser(ctx context.Context) (*types.User, error) {
@@ -566,6 +629,9 @@ func (u *users) GetByCurrentAuthUser(ctx context.Context) (*types.User, error) {
 
 	actor := actor.FromContext(ctx)
 	if !actor.IsAuthenticated() {
+		return nil, ErrNoCurrentUser
+	}
+	if dbconn.Global == nil {
 		return nil, ErrNoCurrentUser
 	}
 
@@ -660,7 +726,7 @@ func (u *users) getOneBySQL(ctx context.Context, query string, args ...interface
 
 // getBySQL returns users matching the SQL query, if any exist.
 func (*users) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*types.User, error) {
-	rows, err := dbconn.Global.QueryContext(ctx, "SELECT u.id, u.username, u.display_name, u.avatar_url, u.created_at, u.updated_at, u.site_admin, u.tags FROM users u "+query, args...)
+	rows, err := dbconn.Global.QueryContext(ctx, "SELECT u.id, u.username, u.display_name, u.avatar_url, u.created_at, u.updated_at, u.site_admin, u.passwd IS NOT NULL, u.tags FROM users u "+query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -670,7 +736,7 @@ func (*users) getBySQL(ctx context.Context, query string, args ...interface{}) (
 	for rows.Next() {
 		var u types.User
 		var displayName, avatarURL sql.NullString
-		err := rows.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, pq.Array(&u.Tags))
+		err := rows.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, pq.Array(&u.Tags))
 		if err != nil {
 			return nil, err
 		}

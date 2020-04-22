@@ -1,7 +1,7 @@
 import * as H from 'history'
 import InformationVariantIcon from 'mdi-react/InformationVariantIcon'
 import * as React from 'react'
-import { throwError } from 'rxjs'
+import { throwError, Observable } from 'rxjs'
 import { catchError, map, tap } from 'rxjs/operators'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
@@ -58,7 +58,7 @@ export class DiscussionsCreate extends React.PureComponent<Props, State> {
         )
     }
 
-    private onSubmit = (title: string, contents: string) => {
+    private onSubmit = (title: string, contents: string): Observable<void> => {
         eventLogger.log('CreatedDiscussion')
 
         const lpr = parseHash(window.location.hash)
@@ -83,15 +83,9 @@ export class DiscussionsCreate extends React.PureComponent<Props, State> {
                     startCharacter,
                     endLine,
                     endCharacter,
-
-                    // TODO(slimsag:discussions): Even though these fields are declared as
-                    // nullable in the GraphQL schema ("lines: [String!]"), graphql/schema.ts
-                    // not generate the proper nullable type, so we must cast to any.
-                    //
-                    // See https://github.com/sourcegraph/sourcegraph/issues/13098
-                    linesBefore: null as any,
-                    lines: null as any,
-                    linesAfter: null as any,
+                    linesBefore: null,
+                    lines: null,
+                    linesAfter: null,
                 },
             },
         }).pipe(
@@ -103,10 +97,10 @@ export class DiscussionsCreate extends React.PureComponent<Props, State> {
                 // TODO(slimsag:discussions): ASAP: focus the new thread's range
                 this.props.history.push(location.pathname + location.search + '#' + hash.toString())
             }),
-            map(thread => undefined),
+            map(() => undefined),
             catchError(e => throwError(new Error('Error creating thread: ' + asError(e).message)))
         )
     }
 
-    private onTitleChange = (newTitle: string) => this.setState({ title: newTitle })
+    private onTitleChange = (newTitle: string): void => this.setState({ title: newTitle })
 }

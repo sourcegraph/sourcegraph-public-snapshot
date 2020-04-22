@@ -1,5 +1,4 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { combineLatest, concat, Observable, Subject, Subscription } from 'rxjs'
@@ -19,6 +18,7 @@ import { eventLogger } from '../../../tracking/eventLogger'
 import { UserAreaRouteContext } from '../../area/UserArea'
 import { UserAvatar } from '../../UserAvatar'
 import { updateUser } from '../backend'
+import { ErrorAlert } from '../../../components/alerts'
 
 function queryUser(user: GQL.ID): Observable<GQL.IUser> {
     return queryGraphQL(
@@ -103,7 +103,10 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                         )
                     )
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate), err => console.error(err))
+                .subscribe(
+                    stateUpdate => this.setState(stateUpdate),
+                    err => console.error(err)
+                )
         )
 
         this.subscriptions.add(
@@ -115,7 +118,7 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                     }),
                     filter(event => event.currentTarget.checkValidity()),
                     tap(() => this.setState({ loading: true })),
-                    mergeMap(event =>
+                    mergeMap(() =>
                         updateUser(this.props.user.id, {
                             username: this.state.username === undefined ? null : this.state.username,
                             displayName: this.state.displayName === undefined ? null : this.state.displayName,
@@ -174,18 +177,15 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                         </div>
                     )}
 
-                {isErrorLike(this.state.userOrError) && (
-                    <p className="alert alert-danger">Error: {upperFirst(this.state.userOrError.message)}</p>
-                )}
-                {this.state.error && (
-                    <p className="alert alert-danger">Error: {upperFirst(this.state.error.message)}</p>
-                )}
+                {isErrorLike(this.state.userOrError) && <ErrorAlert error={this.state.userOrError.message} />}
+                {this.state.error && <ErrorAlert error={this.state.error.message} />}
                 {this.state.userOrError && !isErrorLike(this.state.userOrError) && (
                     <Form className="user-settings-profile-page__form" onSubmit={this.handleSubmit}>
                         <div className="form-group">
                             <label htmlFor="user-settings-profile-page__form-username">Username</label>
                             <UsernameInput
                                 id="user-settings-profile-page__form-username"
+                                className="e2e-user-settings-profile-page-username"
                                 value={
                                     this.state.username === undefined
                                         ? this.state.userOrError.username
@@ -202,7 +202,7 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                             />
                             <small className="form-text text-muted">
                                 A username consists of letters, numbers, hyphens (-), dots (.) and may not begin or end
-                                with a hyphen nor a dot.
+                                with a dot, nor begin with a hyphen.
                             </small>
                         </div>
                         <div className="form-group">
@@ -210,7 +210,7 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                             <input
                                 id="user-settings-profile-page__form-display-name"
                                 type="text"
-                                className="form-control"
+                                className="form-control e2e-user-settings-profile-page__display-name"
                                 value={
                                     this.state.displayName === undefined
                                         ? this.state.userOrError.displayName || ''
@@ -229,7 +229,7 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                                 <input
                                     id="user-settings-profile-page__form-avatar-url"
                                     type="url"
-                                    className="form-control"
+                                    className="form-control e2e-user-settings-profile-page__avatar_url"
                                     value={
                                         this.state.avatarURL === undefined
                                             ? this.state.userOrError.avatarURL || ''
@@ -248,7 +248,7 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                             )}
                         </div>
                         <button
-                            className="btn btn-primary user-settings-profile-page__button"
+                            className="btn btn-primary user-settings-profile-page__button e2e-user-settings-profile-page-update-profile"
                             type="submit"
                             disabled={this.state.loading}
                         >
@@ -260,7 +260,9 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                             </div>
                         )}
                         {this.state.saved && (
-                            <p className="alert alert-success user-settings-profile-page__alert">Profile saved!</p>
+                            <p className="alert alert-success user-settings-profile-page__alert e2e-user-settings-profile-page-alert-success">
+                                Profile saved!
+                            </p>
                         )}
                         {window.context.sourcegraphDotComMode && (
                             <p className="mt-4">
@@ -274,23 +276,23 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
         )
     }
 
-    private onUsernameFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    private onUsernameFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
         this.setState({ username: e.target.value })
     }
 
-    private onDisplayNameFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    private onDisplayNameFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
         this.setState({ displayName: e.target.value })
     }
 
-    private onAvatarURLFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    private onAvatarURLFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
         this.setState({ avatarURL: e.target.value })
     }
 
-    private handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    private handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         this.submits.next(event)
     }
 
-    private handleError = (err: Error) => {
+    private handleError = (err: Error): [] => {
         console.error(err)
         this.setState({ loading: false, saved: false, error: err })
         return []

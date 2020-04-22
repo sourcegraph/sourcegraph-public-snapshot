@@ -99,11 +99,12 @@ export class RepositoriesPopover extends React.PureComponent<Props> {
                     history={this.props.history}
                     location={this.props.location}
                     noSummaryIfAllNodesVisible={true}
-                    shouldUpdateURLQuery={false}
+                    useURLQuery={false}
                 />
             </div>
         )
     }
 
-    private queryRepositories = (args: FilteredConnectionQueryArgs) => fetchRepositories({ ...args })
+    private queryRepositories = (args: FilteredConnectionQueryArgs): Observable<GQL.IRepositoryConnection> =>
+        fetchRepositories({ ...args })
 }

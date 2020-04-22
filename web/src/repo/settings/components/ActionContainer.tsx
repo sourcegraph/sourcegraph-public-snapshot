@@ -1,5 +1,6 @@
-import { upperFirst } from 'lodash'
 import * as React from 'react'
+import { ErrorAlert } from '../../../components/alerts'
+import { asError } from '../../../../../shared/src/util/errors'
 
 export const BaseActionContainer: React.FunctionComponent<{
     title: React.ReactFragment
@@ -92,17 +93,18 @@ export class ActionContainer extends React.PureComponent<Props, State> {
                 }
                 details={
                     <>
-                        {this.state.error && (
-                            <div className="alert alert-danger mb-0 mt-3">Error: {upperFirst(this.state.error)}</div>
+                        {this.state.error ? (
+                            <ErrorAlert className="mb-0 mt-3" error={this.state.error} />
+                        ) : (
+                            this.props.info
                         )}
-                        {!this.state.error && this.props.info}
                     </>
                 }
             />
         )
     }
 
-    private onClick = () => {
+    private onClick = (): void => {
         this.setState({
             error: undefined,
             loading: true,
@@ -116,7 +118,7 @@ export class ActionContainer extends React.PureComponent<Props, State> {
                 }
                 this.timeoutHandle = window.setTimeout(() => this.setState({ flash: false }), 1000)
             },
-            err => this.setState({ loading: false, error: err.message })
+            err => this.setState({ loading: false, error: asError(err).message })
         )
     }
 }

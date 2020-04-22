@@ -21,7 +21,7 @@ You can use any build tool you wish, so long as it meets these requirements.
 
 The easiest way to get an extension ready to publish is to use the [Sourcegraph extension creator](https://github.com/sourcegraph/create-extension):
 
-```shell
+```bash
 mkdir my-extension
 cd my-extension
 npm init sourcegraph-extension
@@ -29,7 +29,7 @@ npm init sourcegraph-extension
 
 Follow the prompts, and when complete, you'll have the following files:
 
-```shell
+```bash
 ├── README.md
 ├── node_modules
 ├── package-lock.json
@@ -37,7 +37,7 @@ Follow the prompts, and when complete, you'll have the following files:
 ├── src
 │   └── my-extension.ts
 ├── tsconfig.json
-└── tslint.json
+└── .eslintrc.json
 ```
 
 ### Description of generated files
@@ -58,7 +58,7 @@ The `README.md` is the content for your extension page in the [extensions regist
 
 The Sourcegraph extension creator generates a minimal and production ready `package.json` used for [extension metadata and configuration](manifest.md).
 
-#### tslint.json and tsconfig.json
+#### .eslintrc.json and tsconfig.json
 
 These are configuration files for linting and TypeScript compilation and will be sufficient for most extensions.
 

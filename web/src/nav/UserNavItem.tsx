@@ -1,11 +1,13 @@
-import { Shortcut, ShortcutProps } from '@slimsag/react-shortcuts'
+import { Shortcut } from '@slimsag/react-shortcuts'
 import * as H from 'history'
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 import * as GQL from '../../../shared/src/graphql/schema'
-import { ThemePreference, ThemePreferenceProps, ThemeProps } from '../theme'
+import { KeyboardShortcut } from '../../../shared/src/keyboardShortcuts'
+import { ThemeProps } from '../../../shared/src/theme'
 import { UserAvatar } from '../user/UserAvatar'
+import { ThemePreferenceProps, ThemePreference } from '../theme'
 
 interface Props extends ThemeProps, ThemePreferenceProps {
     location: H.Location
@@ -15,7 +17,7 @@ interface Props extends ThemeProps, ThemePreferenceProps {
     >
     showDotComMarketing: boolean
     showDiscussions: boolean
-    switchThemeKeybinding?: Pick<ShortcutProps, 'held' | 'ordered'>[]
+    keyboardShortcutForSwitchTheme?: KeyboardShortcut
 }
 
 interface State {
@@ -78,8 +80,6 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                     <div className="px-2 py-1">
                         <div className="d-flex align-items-center">
                             <div className="mr-2">Theme</div>
-                            {/* <Select> doesn't support small version */}
-                            {/* eslint-disable-next-line react/forbid-elements */}
                             <select
                                 className="custom-select custom-select-sm e2e-theme-toggle"
                                 onChange={this.onThemeChange}
@@ -104,8 +104,8 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                                 </small>
                             </div>
                         )}
-                        {this.props.switchThemeKeybinding &&
-                            this.props.switchThemeKeybinding.map((keybinding, i) => (
+                        {this.props.keyboardShortcutForSwitchTheme &&
+                            this.props.keyboardShortcutForSwitchTheme.keybindings.map((keybinding, i) => (
                                 <Shortcut key={i} {...keybinding} onMatch={this.onThemeCycle} />
                             ))}
                     </div>
@@ -155,13 +155,13 @@ export class UserNavItem extends React.PureComponent<Props, State> {
         )
     }
 
-    private toggleIsOpen = () => this.setState(prevState => ({ isOpen: !prevState.isOpen }))
+    private toggleIsOpen = (): void => this.setState(prevState => ({ isOpen: !prevState.isOpen }))
 
     private onThemeChange: React.ChangeEventHandler<HTMLSelectElement> = event => {
         this.props.onThemePreferenceChange(event.target.value as ThemePreference)
     }
 
-    private onThemeCycle = () => {
+    private onThemeCycle = (): void => {
         this.props.onThemePreferenceChange(
             this.props.themePreference === ThemePreference.Dark ? ThemePreference.Light : ThemePreference.Dark
         )

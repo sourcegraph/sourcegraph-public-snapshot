@@ -8,16 +8,10 @@ export enum ConnectionErrors {
     UnableToConnect,
 }
 
-interface StatusClassNames {
-    connecting: 'warning'
-    connected: 'success'
-    error: 'error'
-}
-
-const statusClassNames: StatusClassNames = {
+const statusClassNames = {
     connecting: 'warning',
     connected: 'success',
-    error: 'error',
+    error: 'danger',
 }
 
 /**
@@ -29,7 +23,7 @@ const zeroWidthNbsp = '\u2060'
 
 export interface ServerURLFormProps {
     className?: string
-    status: keyof StatusClassNames
+    status: keyof typeof statusClassNames
     connectionError?: ConnectionErrors
 
     value: string
@@ -70,10 +64,7 @@ export class ServerURLForm extends React.Component<ServerURLFormProps> {
             })
         )
 
-        const submitAfterInactivity = this.changes.pipe(
-            debounceTime(5000),
-            takeUntil(this.submits)
-        )
+        const submitAfterInactivity = this.changes.pipe(debounceTime(5000), takeUntil(this.submits))
 
         this.subscriptions.add(
             merge(this.submits, submitAfterInactivity).subscribe(() => {
@@ -107,13 +98,15 @@ export class ServerURLForm extends React.Component<ServerURLFormProps> {
                                         (this.isUpdating ? 'secondary' : statusClassNames[this.props.status])
                                     }
                                 />{' '}
-                                <span>{this.isUpdating ? zeroWidthNbsp : upperFirst(this.props.status)}</span>
+                                <span className="e2e-connection-status">
+                                    {this.isUpdating ? zeroWidthNbsp : upperFirst(this.props.status)}
+                                </span>
                             </span>
                         </span>
                     </div>
                     <input
                         type="text"
-                        className="form-control"
+                        className="form-control e2e-sourcegraph-url"
                         id="sourcegraph-url"
                         ref={this.inputElement}
                         value={this.props.value}
@@ -124,7 +117,7 @@ export class ServerURLForm extends React.Component<ServerURLFormProps> {
                     />
                 </div>
                 {!this.state.isUpdating && this.props.connectionError === ConnectionErrors.AuthError && (
-                    <div className="mt-1">
+                    <div className="alert alert-danger mt-2 mb-0">
                         Authentication to Sourcegraph failed.{' '}
                         <a href={this.props.value} target="_blank" rel="noopener noreferrer">
                             Sign in to your instance
@@ -133,7 +126,7 @@ export class ServerURLForm extends React.Component<ServerURLFormProps> {
                     </div>
                 )}
                 {!this.state.isUpdating && this.props.connectionError === ConnectionErrors.UnableToConnect && (
-                    <div className="mt-1">
+                    <div className="alert alert-danger mt-2 mb-0">
                         <p>
                             Unable to connect to{' '}
                             <a href={this.props.value} target="_blank" rel="noopener noreferrer">
@@ -141,7 +134,7 @@ export class ServerURLForm extends React.Component<ServerURLFormProps> {
                             </a>
                             . Ensure the URL is correct and you are{' '}
                             <a href={this.props.value + '/sign-in'} target="_blank" rel="noopener noreferrer">
-                                logged in
+                                signed in
                             </a>
                             .
                         </p>
@@ -154,7 +147,7 @@ export class ServerURLForm extends React.Component<ServerURLFormProps> {
                                 for this URL.
                             </p>
                         )}
-                        <p>
+                        <p className="mb-0">
                             <b>Site admins:</b> ensure that{' '}
                             <a
                                 href="https://docs.sourcegraph.com/admin/config/site_config"
@@ -171,17 +164,17 @@ export class ServerURLForm extends React.Component<ServerURLFormProps> {
         )
     }
 
-    private handleChange = ({ target: { value } }: React.ChangeEvent<HTMLInputElement>) => {
+    private handleChange = ({ target: { value } }: React.ChangeEvent<HTMLInputElement>): void => {
         this.changes.next(value)
     }
 
-    private handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    private handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
 
         this.submits.next()
     }
 
-    private requestServerURLPermissions = () => this.props.requestPermissions(this.props.value)
+    private requestServerURLPermissions = (): void => this.props.requestPermissions(this.props.value)
 
     private get isUpdating(): boolean {
         if (typeof this.props.overrideUpdatingState !== 'undefined') {

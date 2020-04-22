@@ -1,22 +1,23 @@
 import { HoverOverlayProps as GenericHoverOverlayProps } from '@sourcegraph/codeintellify'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import classNames from 'classnames'
-import { castArray, isEqual } from 'lodash'
-import AlertCircleOutlineIcon from 'mdi-react/AlertCircleOutlineIcon'
+import { isEqual, upperFirst } from 'lodash'
 import CloseIcon from 'mdi-react/CloseIcon'
-import HelpCircleIcon from 'mdi-react/HelpCircleIcon'
 import * as React from 'react'
-import { MarkupContent } from 'sourcegraph'
 import { ActionItem, ActionItemAction, ActionItemComponentProps } from '../actions/ActionItem'
 import { HoverMerged } from '../api/client/types/hover'
 import { TelemetryProps } from '../telemetry/telemetryService'
-import { isErrorLike } from '../util/errors'
-import { highlightCodeSafe, renderMarkdown } from '../util/markdown'
+import { isErrorLike, asError } from '../util/errors'
+import { renderMarkdown } from '../util/markdown'
 import { sanitizeClass } from '../util/strings'
 import { FileSpec, RepoSpec, ResolvedRevSpec, RevSpec } from '../util/url'
 import { toNativeEvent } from './helpers'
+import { BadgeAttachment } from '../components/BadgeAttachment'
+import { ThemeProps } from '../theme'
+import { PlatformContextProps } from '../platform/context'
+import { Subscription } from 'rxjs'
 
-const LOADING: 'loading' = 'loading'
+const LOADING = 'loading' as const
 
 const transformMouseEvent = (handler: (event: MouseEvent) => void) => (event: React.MouseEvent<HTMLElement>) =>
     handler(toNativeEvent(event))
@@ -30,10 +31,13 @@ export interface HoverOverlayClassProps {
     className?: string
     closeButtonClassName?: string
 
+    iconClassName?: string
+
     actionItemClassName?: string
     actionItemPressedClassName?: string
 
-    alertClassName?: string
+    infoAlertClassName?: string
+    errorAlertClassName?: string
 }
 
 /**
@@ -62,7 +66,9 @@ export interface HoverOverlayProps<A extends string>
     extends GenericHoverOverlayProps<HoverContext, HoverData<A>, ActionItemAction>,
         ActionItemComponentProps,
         HoverOverlayClassProps,
-        TelemetryProps {
+        TelemetryProps,
+        ThemeProps,
+        PlatformContextProps<'forceUpdateTooltip' | 'settings'> {
     /** A ref callback to get the root overlay element. Use this to calculate the position. */
     hoverRef?: React.Ref<HTMLDivElement>
 
@@ -70,6 +76,10 @@ export interface HoverOverlayProps<A extends string>
     onCloseButtonClick?: (event: MouseEvent) => void
     /** Called when an alert is dismissed, with the type of the dismissed alert. */
     onAlertDismissed?: (alertType: A) => void
+}
+
+interface HoverOverlayState {
+    showBadges: boolean
 }
 
 const isEmptyHover = <A extends string>({
@@ -81,9 +91,33 @@ const isEmptyHover = <A extends string>({
     ((!hoverOrError || hoverOrError === LOADING || isErrorLike(hoverOrError)) &&
         (!actionsOrError || actionsOrError === LOADING || isErrorLike(actionsOrError)))
 
-export class HoverOverlay<A extends string> extends React.PureComponent<HoverOverlayProps<A>> {
+export class HoverOverlay<A extends string> extends React.PureComponent<HoverOverlayProps<A>, HoverOverlayState> {
+    private subscription = new Subscription()
+
+    constructor(props: HoverOverlayProps<A>) {
+        super(props)
+        this.state = {
+            showBadges: false,
+        }
+    }
+
     public componentDidMount(): void {
         this.logTelemetryEvent()
+
+        this.subscription.add(
+            this.props.platformContext.settings.subscribe(s => {
+                if (s.final && !isErrorLike(s.final)) {
+                    // Default to true if experimentalFeatures or showBadgeAttachments are not set
+                    this.setState({
+                        showBadges:
+                            !s.final.experimentalFeatures ||
+                            s.final.experimentalFeatures.showBadgeAttachments !== false,
+                    })
+                } else {
+                    this.setState({ showBadges: false })
+                }
+            })
+        )
     }
 
     public componentDidUpdate(prevProps: HoverOverlayProps<A>): void {
@@ -95,6 +129,10 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
         ) {
             this.logTelemetryEvent()
         }
+    }
+
+    public componentWillUnmount(): void {
+        this.subscription.unsubscribe()
     }
 
     public render(): JSX.Element | null {
@@ -130,7 +168,7 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                               visibility: 'hidden',
                           }
                 }
-                className={`hover-overlay card ${className}`}
+                className={classNames('hover-overlay', className)}
                 ref={hoverRef}
             >
                 {showCloseButton && (
@@ -148,54 +186,63 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                             <LoadingSpinner className="icon-inline" />
                         </div>
                     ) : isErrorLike(hoverOrError) ? (
-                        <div className="hover-overlay__row hover-overlay__hover-error alert alert-danger">
-                            <h4>
-                                <AlertCircleOutlineIcon className="icon-inline" /> Error:
-                            </h4>{' '}
-                            {hoverOrError.message}
+                        <div
+                            className={classNames(
+                                'hover-overlay__row',
+                                'hover-overlay__hover-error',
+                                this.props.errorAlertClassName
+                            )}
+                        >
+                            {upperFirst(hoverOrError.message)}
                         </div>
                     ) : (
-                        hoverOrError &&
-                        castArray<string | MarkupContent | { language: string; value: string }>(hoverOrError.contents)
-                            .map(value => (typeof value === 'string' ? { kind: 'markdown', value } : value))
-                            .map((content, i) => {
-                                if ('kind' in content || !('language' in content)) {
-                                    if (content.kind === 'markdown') {
-                                        try {
-                                            return (
-                                                <div
-                                                    className="hover-overlay__content hover-overlay__row e2e-tooltip-content"
-                                                    key={i}
-                                                    dangerouslySetInnerHTML={{ __html: renderMarkdown(content.value) }}
-                                                />
-                                            )
-                                        } catch (err) {
-                                            return (
-                                                <div className="hover-overlay__row alert alert-danger" key={i}>
-                                                    <strong>
-                                                        <AlertCircleOutlineIcon className="icon-inline" /> Error:
-                                                    </strong>{' '}
-                                                    {err.message}
-                                                </div>
-                                            )
-                                        }
-                                    }
+                        hoverOrError?.contents.map((content, i) => {
+                            if (content.kind === 'markdown') {
+                                try {
+                                    // Offset first badge when the close button is shown to avoid conflict.
+                                    const offsetBadge = showCloseButton && i === 0
                                     return (
-                                        <div className="hover-overlay__content hover-overlay__row" key={i}>
-                                            {String(content.value)}
+                                        <div className="hover-overlay__row e2e-tooltip-badged-content" key={i}>
+                                            {'badge' in content && content.badge && this.state.showBadges && (
+                                                <div
+                                                    className={classNames(
+                                                        'hover-overlay__badge',
+                                                        'e2e-hover-badge',
+                                                        offsetBadge && 'hover-overlay__badge--offset'
+                                                    )}
+                                                >
+                                                    <BadgeAttachment
+                                                        attachment={content.badge}
+                                                        isLightTheme={this.props.isLightTheme}
+                                                    />
+                                                </div>
+                                            )}
+
+                                            <div
+                                                className="hover-overlay__content e2e-tooltip-content"
+                                                dangerouslySetInnerHTML={{
+                                                    __html: renderMarkdown(content.value),
+                                                }}
+                                            />
+                                        </div>
+                                    )
+                                } catch (err) {
+                                    return (
+                                        <div
+                                            className={classNames('hover-overlay__row', this.props.errorAlertClassName)}
+                                            key={i}
+                                        >
+                                            {upperFirst(asError(err).message)}
                                         </div>
                                     )
                                 }
-                                return (
-                                    <code
-                                        className="hover-overlay__content hover-overlay__row e2e-tooltip-content"
-                                        key={i}
-                                        dangerouslySetInnerHTML={{
-                                            __html: highlightCodeSafe(content.value, content.language),
-                                        }}
-                                    />
-                                )
-                            })
+                            }
+                            return (
+                                <div className="hover-overlay__content hover-overlay__row" key={i}>
+                                    {content.value}
+                                </div>
+                            )
+                        })
                     )}
                 </div>
                 {hoverOrError && hoverOrError !== LOADING && !isErrorLike(hoverOrError) && hoverOrError.alerts && (
@@ -205,13 +252,11 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                                 className={classNames(
                                     'hover-overlay__row',
                                     'hover-overlay__alert',
-                                    this.props.alertClassName
+                                    this.props.infoAlertClassName
                                 )}
                                 key={type}
                             >
                                 <div className="hover-overlay__alert-content">
-                                    <HelpCircleIcon className="icon-inline" />
-                                    &nbsp;
                                     <small>{content}</small>
                                     <a
                                         className="hover-overlay__alert-close"
@@ -240,6 +285,7 @@ export class HoverOverlay<A extends string> extends React.PureComponent<HoverOve
                                         actionItemClassName,
                                         `e2e-tooltip-${sanitizeClass(action.action.title || 'untitled')}`
                                     )}
+                                    iconClassName={this.props.iconClassName}
                                     pressedClassName={actionItemPressedClassName}
                                     variant="actionItem"
                                     disabledDuringExecution={true}

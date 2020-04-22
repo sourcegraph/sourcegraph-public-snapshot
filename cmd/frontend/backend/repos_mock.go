@@ -9,21 +9,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 type MockRepos struct {
-	Get                       func(v0 context.Context, id api.RepoID) (*types.Repo, error)
-	GetByName                 func(v0 context.Context, name api.RepoName) (*types.Repo, error)
-	AddGitHubDotComRepository func(name api.RepoName) error
-	List                      func(v0 context.Context, v1 db.ReposListOptions) ([]*types.Repo, error)
-	GetCommit                 func(v0 context.Context, repo *types.Repo, commitID api.CommitID) (*git.Commit, error)
-	ResolveRev                func(v0 context.Context, repo *types.Repo, rev string) (api.CommitID, error)
-	GetInventory              func(v0 context.Context, repo *types.Repo, commitID api.CommitID) (*inventory.Inventory, error)
-	GetInventoryUncached      func(ctx context.Context, repo *types.Repo, commitID api.CommitID) (*inventory.Inventory, error)
+	Get          func(v0 context.Context, id api.RepoID) (*types.Repo, error)
+	GetByName    func(v0 context.Context, name api.RepoName) (*types.Repo, error)
+	List         func(v0 context.Context, v1 db.ReposListOptions) ([]*types.Repo, error)
+	GetCommit    func(v0 context.Context, repo *types.Repo, commitID api.CommitID) (*git.Commit, error)
+	ResolveRev   func(v0 context.Context, repo *types.Repo, rev string) (api.CommitID, error)
+	GetInventory func(v0 context.Context, repo *types.Repo, commitID api.CommitID) (*inventory.Inventory, error)
 }
 
 var errRepoNotFound = &errcode.Mock{

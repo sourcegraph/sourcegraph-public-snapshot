@@ -6,12 +6,17 @@ import (
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 )
 
-func (schemaResolver) SettingsSubject(ctx context.Context, args *struct{ ID graphql.ID }) (*settingsSubject, error) {
-	return settingsSubjectByID(ctx, args.ID)
+func (r *schemaResolver) SettingsSubject(ctx context.Context, args *struct{ ID graphql.ID }) (*settingsSubject, error) {
+	n, err := r.nodeByID(ctx, args.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return settingsSubjectForNode(ctx, n)
 }
 
 var errUnknownSettingsSubject = errors.New("unknown settings subject")
@@ -24,15 +29,10 @@ type settingsSubject struct {
 	user            *UserResolver
 }
 
-// settingsSubjectByID fetches the settings subject with the given ID. If the ID refers to a node
-// that is not a valid settings subject, an error is returned.
-func settingsSubjectByID(ctx context.Context, id graphql.ID) (*settingsSubject, error) {
-	resolver, err := NodeByID(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-
-	switch s := resolver.(type) {
+// settingsSubjectForNode fetches the settings subject for the given Node. If
+// the node is not a valid settings subject, an error is returned.
+func settingsSubjectForNode(ctx context.Context, n Node) (*settingsSubject, error) {
+	switch s := n.(type) {
 	case *siteResolver:
 		return &settingsSubject{site: s}, nil
 
@@ -168,5 +168,5 @@ func (s *settingsSubject) readSettings(ctx context.Context, v interface{}) error
 	if settings == nil {
 		return nil
 	}
-	return jsonc.Unmarshal(settings.Contents(), &v)
+	return jsonc.Unmarshal(string(settings.Contents()), &v)
 }

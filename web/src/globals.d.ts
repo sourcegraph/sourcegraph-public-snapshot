@@ -21,12 +21,13 @@ interface ImmutableUser {
     readonly UID: number
 }
 
-type DeployType = 'cluster' | 'docker-container' | 'dev'
+type DeployType = 'kubernetes' | 'docker-container' | 'docker-compose' | 'pure-docker' | 'dev'
 
 /**
  * Defined in cmd/frontend/internal/app/jscontext/jscontext.go JSContext struct
  */
-interface SourcegraphContext {
+interface SourcegraphContext
+    extends Pick<Required<import('./schema/site.schema').SiteConfiguration>, 'experimentalFeatures'> {
     xhrHeaders: { [key: string]: string }
     csrfToken: string
     userAgentIsBot: boolean
@@ -54,7 +55,7 @@ interface SourcegraphContext {
     sourcegraphDotComMode: boolean
 
     /**
-     * siteID is the identifier of the Sourcegraph site. It is also the Telligent app ID.
+     * siteID is the identifier of the Sourcegraph site.
      */
     siteID: string
 
@@ -62,9 +63,9 @@ interface SourcegraphContext {
     siteGQLID: GQL.ID
 
     /**
-     * Status of onboarding
+     * Whether the site needs to be initialized.
      */
-    showOnboarding: boolean
+    needsSiteInit: boolean
 
     /**
      * Emails support enabled
@@ -72,12 +73,12 @@ interface SourcegraphContext {
     emailEnabled: boolean
 
     /**
-     * A subset of the critical configuration. Not all fields are set.
+     * A subset of the site configuration. Not all fields are set.
      */
-    critical: {
-        'auth.public': boolean
-        'update.channel': string
-    }
+    site: Pick<
+        import('./schema/site.schema').SiteConfiguration,
+        'auth.public' | 'update.channel' | 'campaigns.readAccess.enabled'
+    >
 
     /** Whether access tokens are enabled. */
     accessTokensAllow: 'all-users-create' | 'site-admin-create' | 'none'
@@ -127,8 +128,8 @@ interface SourcegraphContext {
         brandName: string
     }
 
-    /** Whether new external service status indicator is shown in navbar or not. */
-    showStatusIndicator?: boolean
+    /** The publishable key for the billing service (Stripe). */
+    billingPublishableKey?: string
 }
 
 interface BrandAssets {

@@ -11,7 +11,7 @@ import (
 	"os/exec"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
 type Entry struct {
@@ -68,7 +68,7 @@ func NewParser(ctagsCommand string) (Parser, error) {
 	// }
 
 	cmd := exec.Command(ctagsCommand, "--_interactive="+opt, "--fields=*",
-		"--languages=Basic,C,C#,C++,Clojure,Cobol,CSS,CUDA,D,Elixir,elm,Erlang,Go,haskell,Java,JavaScript,kotlin,Lisp,Lua,MatLab,ObjectiveC,OCaml,Perl,Perl6,PHP,Protobuf,Python,R,Ruby,Rust,scala,Scheme,Sh,swift,Tcl,typescript,tsx,Verilog,Vim",
+		"--languages=Basic,C,C#,C++,Clojure,Cobol,CSS,CUDA,D,Elixir,elm,Erlang,Go,GraphQL,Groovy,haskell,Java,JavaScript,Jsonnet,kotlin,Lisp,Lua,MatLab,ObjectiveC,OCaml,Pascal,Perl,Perl6,PHP,Protobuf,Python,R,Ruby,Rust,scala,Scheme,Sh,swift,SystemVerilog,Tcl,Thrift,typescript,tsx,Verilog,VHDL,Vim",
 		"--map-CSS=+.scss", "--map-CSS=+.less", "--map-CSS=+.sass",
 	)
 	in, err := cmd.StdinPipe()
@@ -115,9 +115,9 @@ type ctagsProcess struct {
 }
 
 func (p *ctagsProcess) Close() {
-	p.cmd.Process.Kill()
-	p.outPipe.Close()
-	p.in.Close()
+	_ = p.cmd.Process.Kill()
+	_ = p.outPipe.Close()
+	_ = p.in.Close()
 }
 
 func (p *ctagsProcess) read(rep *reply) error {

@@ -7,6 +7,7 @@ import {
     toPrettyBlobURL,
     withWorkspaceRootInputRevision,
 } from './url'
+import { SearchPatternType } from '../graphql/schema'
 
 /**
  * Asserts deep object equality using node's assert.deepEqual, except it (1) ignores differences in the
@@ -95,6 +96,15 @@ describe('parseRepoURI', () => {
                     character: 9,
                 },
             },
+        })
+    })
+
+    test('should parse a file with special characters', () => {
+        const parsed = parseRepoURI('git://github.com/gorilla/mux?branch#space%20here.go')
+        assertDeepStrictEqual(parsed, {
+            repoName: 'github.com/gorilla/mux',
+            rev: 'branch',
+            filePath: 'space here.go',
         })
     })
 })
@@ -276,11 +286,32 @@ describe('withWorkspaceRootInputRevision', () => {
 })
 
 describe('buildSearchURLQuery', () => {
-    it('builds the URL query for a search', () => expect(buildSearchURLQuery('foo')).toBe('q=foo'))
-    it('handles an empty query', () => expect(buildSearchURLQuery('')).toBe('q='))
+    it('builds the URL query for a regular expression search', () =>
+        expect(buildSearchURLQuery('foo', SearchPatternType.regexp, false)).toBe('q=foo&patternType=regexp'))
+    it('builds the URL query for a literal search', () =>
+        expect(buildSearchURLQuery('foo', SearchPatternType.literal, false)).toBe('q=foo&patternType=literal'))
+    it('handles an empty query', () =>
+        expect(buildSearchURLQuery('', SearchPatternType.regexp, false)).toBe('q=&patternType=regexp'))
     it('handles characters that need encoding', () =>
-        expect(buildSearchURLQuery('foo bar%baz')).toBe('q=foo+bar%25baz'))
-    it('preserves / and : for readability', () => expect(buildSearchURLQuery('repo:foo/bar')).toBe('q=repo:foo/bar'))
+        expect(buildSearchURLQuery('foo bar%baz', SearchPatternType.regexp, false)).toBe(
+            'q=foo+bar%25baz&patternType=regexp'
+        ))
+    it('preserves / and : for readability', () =>
+        expect(buildSearchURLQuery('repo:foo/bar', SearchPatternType.regexp, false)).toBe(
+            'q=repo:foo/bar&patternType=regexp'
+        ))
+    it('overrides the patternType parameter if a patternType field exists in the query', () =>
+        expect(buildSearchURLQuery('foo patternType:literal', SearchPatternType.regexp, false)).toBe(
+            'q=foo+&patternType=literal'
+        ))
+    it('builds the URL query with a case parameter if caseSensitive is true', () =>
+        expect(buildSearchURLQuery('foo', SearchPatternType.literal, true)).toBe('q=foo&patternType=literal&case=yes'))
+    it('appends the case parameter if `case:yes` exists in the query', () =>
+        expect(buildSearchURLQuery('foo case:yes', SearchPatternType.literal, false)).toBe(
+            'q=foo+&patternType=literal&case=yes'
+        ))
+    it('removes the case parameter case:no exists in the query and caseSensitive is true', () =>
+        expect(buildSearchURLQuery('foo case:no', SearchPatternType.literal, true)).toBe('q=foo+&patternType=literal'))
 })
 
 describe('lprToSelectionsZeroIndexed', () => {

@@ -4,7 +4,7 @@ import { concat, Subject, Subscription } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 import * as GQL from '../../../shared/src/graphql/schema'
-import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
+import { ErrorLike, isErrorLike, asError } from '../../../shared/src/util/errors'
 import { NamespaceProps } from '../namespaces'
 import { createSavedSearch } from '../search/backend'
 import { SavedQueryFields, SavedSearchForm } from './SavedSearchForm'
@@ -13,7 +13,7 @@ interface Props extends RouteComponentProps, NamespaceProps {
     authenticatedUser: GQL.IUser | null
 }
 
-const LOADING: 'loading' = 'loading'
+const LOADING = 'loading' as const
 
 interface State {
     createdOrError: undefined | typeof LOADING | true | ErrorLike
@@ -44,8 +44,8 @@ export class SavedSearchCreateForm extends React.Component<Props, State> {
                                 this.props.namespace.__typename === 'User' ? this.props.namespace.id : null,
                                 this.props.namespace.__typename === 'Org' ? this.props.namespace.id : null
                             ).pipe(
-                                map(() => true),
-                                catchError(error => [error])
+                                map(() => true as const),
+                                catchError((error): [ErrorLike] => [asError(error)])
                             )
                         )
                     )
@@ -63,7 +63,11 @@ export class SavedSearchCreateForm extends React.Component<Props, State> {
         const q = new URLSearchParams(this.props.location.search)
         let defaultValue: Partial<SavedQueryFields> = {}
         const query = q.get('query')
-        if (query) {
+        const patternType = q.get('patternType')
+
+        if (query && patternType) {
+            defaultValue = { query: query + ` patternType:${patternType}` }
+        } else if (query) {
             defaultValue = { query }
         }
 
@@ -80,5 +84,5 @@ export class SavedSearchCreateForm extends React.Component<Props, State> {
         )
     }
 
-    private onSubmit = (fields: Omit<SavedQueryFields, 'id'>) => this.submits.next(fields)
+    private onSubmit = (fields: Omit<SavedQueryFields, 'id'>): void => this.submits.next(fields)
 }

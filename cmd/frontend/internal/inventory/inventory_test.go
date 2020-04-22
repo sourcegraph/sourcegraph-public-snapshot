@@ -2,86 +2,83 @@ package inventory
 
 import (
 	"bufio"
+	"bytes"
 	"context"
-	"encoding/json"
+	"fmt"
+	"io"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
+
+	"github.com/src-d/enry/v2"
 )
 
-func TestScan(t *testing.T) {
+func TestGetLang_language(t *testing.T) {
 	tests := map[string]struct {
-		files   []fi
-		want    *Inventory
-		wantErr error
+		file fi
+		want Lang
 	}{
-		"empty file": {
-			files: []fi{
-				{"a", ""},
-			},
-			want: &Inventory{},
-		},
-		"java": {
-			files: []fi{{"a.java", "a"}},
-			want: &Inventory{
-				Languages: []*Lang{
-					{Name: "Java", TotalBytes: 1, Type: "programming"},
-				},
-			},
-		},
-		"go": {
-			files: []fi{{"a.go", "a"}},
-			want: &Inventory{
-				Languages: []*Lang{
-					{Name: "Go", TotalBytes: 1, Type: "programming"},
-				},
-			},
-		},
-		"java and go": {
-			files: []fi{{"a.java", "aa"}, {"a.go", "a"}},
-			want: &Inventory{
-				Languages: []*Lang{
-					{Name: "Java", TotalBytes: 2, Type: "programming"},
-					{Name: "Go", TotalBytes: 1, Type: "programming"},
-				},
-			},
-		},
-		"large": {
-			files: []fi{
-				{"a.java", "aaaaaaaaa"},
-				{"b.java", "bbbbbbb"},
-				{"a.go", "aaaaa"},
-				{"b.go", "bbb"},
-				{"c.txt", "ccccc"},
-			},
-			want: &Inventory{
-				Languages: []*Lang{
-					{Name: "Java", TotalBytes: 16, Type: "programming"},
-					{Name: "Go", TotalBytes: 8, Type: "programming"},
-					{Name: "Text", TotalBytes: 5, Type: "prose"},
-				},
-			},
-		},
+		"empty file": {file: fi{"a.java", ""}, want: Lang{
+			Name:       "Java",
+			TotalBytes: 0,
+			TotalLines: 0,
+		}},
+		"empty file_unsafe_path": {file: fi{"a.ml", ""}, want: Lang{
+			Name:       "",
+			TotalBytes: 0,
+			TotalLines: 0,
+		}},
+		"java": {file: fi{"a.java", "a"}, want: Lang{
+			Name:       "Java",
+			TotalBytes: 1,
+			TotalLines: 1,
+		}},
+		"go": {file: fi{"a.go", "a"}, want: Lang{
+			Name:       "Go",
+			TotalBytes: 1,
+			TotalLines: 1,
+		}},
+		"go-with-newline": {file: fi{"a.go", "a\n"}, want: Lang{
+			Name:       "Go",
+			TotalBytes: 2,
+			TotalLines: 1,
+		}},
+		// Ensure that .tsx and .jsx are considered as valid extensions for TypeScript and JavaScript,
+		// respectively.
+		"override tsx": {file: fi{"a.tsx", "xx"}, want: Lang{
+			Name:       "TypeScript",
+			TotalBytes: 2,
+			TotalLines: 1,
+		}},
+		"override jsx": {file: fi{"b.jsx", "x"}, want: Lang{
+			Name:       "JavaScript",
+			TotalBytes: 1,
+			TotalLines: 1,
+		}},
 	}
 	for label, test := range tests {
-		var fi []os.FileInfo
-		for _, file := range test.files {
-			fi = append(fi, file)
-		}
-		inv, err := Get(context.Background(), fi)
-		if err != nil && (test.wantErr == nil || err.Error() != test.wantErr.Error()) {
-			t.Errorf("%s: Scan: %s (want error %v)", label, err, test.wantErr)
-			continue
-		}
-		if test.wantErr != nil && err == nil {
-			t.Errorf("%s: Scan: got error == nil, want error %v", label, test.wantErr)
-			continue
-		}
-		if !reflect.DeepEqual(inv, test.want) {
-			t.Errorf("%s: got %+v, want %+v", label, inv, test.want)
-			continue
-		}
+		t.Run(label, func(t *testing.T) {
+			lang, err := getLang(context.Background(),
+				test.file,
+				make([]byte, fileReadBufferSize),
+				makeFileReader(context.Background(), test.file.Path, test.file.Contents))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !reflect.DeepEqual(lang, test.want) {
+				t.Errorf("Got %q, want %q", lang, test.want)
+			}
+		})
+	}
+}
+
+func makeFileReader(ctx context.Context, path, contents string) func(context.Context, string) (io.ReadCloser, error) {
+	return func(ctx context.Context, path string) (io.ReadCloser, error) {
+		return ioutil.NopCloser(strings.NewReader(contents)), nil
 	}
 }
 
@@ -114,42 +111,98 @@ func (f fi) Sys() interface{} {
 	return interface{}(nil)
 }
 
-func BenchmarkGet(b *testing.B) {
+func TestGet_readFile(t *testing.T) {
+	tests := []struct {
+		file os.FileInfo
+		want string
+	}{
+		{file: fi{"a.java", "aaaaaaaaa"}, want: "Java"},
+		{file: fi{"b.md", "# Hello"}, want: "Markdown"},
+
+		// The .m extension is used by many languages, but this code is obviously Objective-C. This
+		// test checks that this file is detected correctly as Objective-C.
+		{
+			file: fi{"c.m", "@interface X:NSObject { double x; } @property(nonatomic, readwrite) double foo;"},
+			want: "Objective-C",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.file.Name(), func(t *testing.T) {
+			fr := makeFileReader(context.Background(), test.file.(fi).Path, test.file.(fi).Contents)
+			lang, err := getLang(context.Background(), test.file, make([]byte, fileReadBufferSize), fr)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if lang.Name != test.want {
+				t.Errorf("got %q, want %q", lang.Name, test.want)
+			}
+		})
+	}
+}
+
+type nopReadCloser struct {
+	data   []byte
+	reader *bytes.Reader
+}
+
+func (n *nopReadCloser) Read(p []byte) (int, error) {
+	return n.reader.Read((p))
+}
+
+func (n *nopReadCloser) Close() error {
+	return nil
+}
+
+func BenchmarkGetLang(b *testing.B) {
 	files, err := readFileTree("prom-repo-tree.txt")
 	if err != nil {
 		b.Fatal(err)
 	}
-
+	fr := newFileReader(files)
+	buf := make([]byte, fileReadBufferSize)
+	b.Logf("Calling Get on %d files.", len(files))
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		_, err = Get(context.Background(), files)
-		if err != nil {
-			b.Fatal(err)
+		for _, file := range files {
+			_, err = getLang(context.Background(), file, buf, fr)
+			if err != nil {
+				b.Fatal(err)
+			}
 		}
 	}
 }
 
-func TestGetGolden(t *testing.T) {
-	mustMarshal := func(v interface{}) string {
-		b, err := json.Marshal(v)
-		if err != nil {
-			t.Fatal(err)
-		}
-		return string(b)
-	}
-
+func BenchmarkIsVendor(b *testing.B) {
 	files, err := readFileTree("prom-repo-tree.txt")
 	if err != nil {
-		t.Fatal(err)
+		b.Fatal(err)
 	}
+	b.Logf("Calling IsVendor on %d files.", len(files))
 
-	want := `{"Languages":[{"Name":"Go","TotalBytes":1505,"Type":"programming"},{"Name":"Markdown","TotalBytes":38,"Type":"prose"},{"Name":"YAML","TotalBytes":29,"Type":"data"},{"Name":"HTML","TotalBytes":28,"Type":"markup"},{"Name":"Unix Assembly","TotalBytes":26,"Type":"programming"},{"Name":"Protocol Buffer","TotalBytes":25,"Type":"data"},{"Name":"JavaScript","TotalBytes":16,"Type":"programming"},{"Name":"CSS","TotalBytes":10,"Type":"markup"},{"Name":"Perl","TotalBytes":9,"Type":"programming"},{"Name":"JSON","TotalBytes":5,"Type":"data"},{"Name":"Text","TotalBytes":4,"Type":"prose"},{"Name":"Shell","TotalBytes":4,"Type":"programming"},{"Name":"SVG","TotalBytes":2,"Type":"data"},{"Name":"INI","TotalBytes":2,"Type":"data"},{"Name":"XML","TotalBytes":1,"Type":"data"},{"Name":"Python","TotalBytes":1,"Type":"programming"},{"Name":"Makefile","TotalBytes":1,"Type":"programming"},{"Name":"Dockerfile","TotalBytes":1,"Type":"data"},{"Name":"C","TotalBytes":1,"Type":"programming"}]}`
-	got, err := Get(context.Background(), files)
-	if err != nil {
-		t.Fatal(err)
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		for _, f := range files {
+			_ = enry.IsVendor(f.Name())
+		}
 	}
-	if mustMarshal(got) != want {
-		t.Errorf("did not match golden\ngot:  %s\nwant: %s", mustMarshal(got), want)
+}
+
+func newFileReader(files []os.FileInfo) func(_ context.Context, path string) (io.ReadCloser, error) {
+	m := make(map[string]*nopReadCloser, len(files))
+	for _, f := range files {
+		data := []byte(f.(fi).Contents)
+		m[f.Name()] = &nopReadCloser{
+			data:   data,
+			reader: bytes.NewReader(data),
+		}
+	}
+	return func(_ context.Context, path string) (io.ReadCloser, error) {
+		nc, ok := m[path]
+		if !ok {
+			return nil, fmt.Errorf("no file: %s", path)
+		}
+		nc.reader.Reset(nc.data)
+		return nc, nil
 	}
 }
 
@@ -162,10 +215,43 @@ func readFileTree(name string) ([]os.FileInfo, error) {
 	var files []os.FileInfo
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		files = append(files, fi{scanner.Text(), "a"})
+		path := scanner.Text()
+		files = append(files, fi{path, fakeContents(path)})
 	}
 	if err := scanner.Err(); err != nil {
 		return nil, err
 	}
 	return files, nil
+}
+
+func fakeContents(path string) string {
+	switch filepath.Ext(path) {
+	case ".html":
+		return `<html><head><title>hello</title></head><body><h1>hello</h1></body></html>`
+	case ".go":
+		return `package foo
+
+import "fmt"
+
+// Foo gets foo.
+func Foo(x *string) (chan struct{}) {
+	panic("hello, world")
+}
+`
+	case ".js":
+		return `import { foo } from 'bar'
+
+export function baz(n) {
+	return document.getElementById('x')
+}
+`
+	case ".m":
+		return `@interface X:NSObject {
+	double x;
+}
+
+@property(nonatomic, readwrite) double foo;`
+	default:
+		return ""
+	}
 }

@@ -9,12 +9,12 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
-func (r *gitTreeEntryResolver) IsRoot() bool {
-	path := path.Clean(r.path)
+func (r *GitTreeEntryResolver) IsRoot() bool {
+	path := path.Clean(r.Path())
 	return path == "/" || path == "." || path == ""
 }
 
@@ -26,24 +26,24 @@ type gitTreeEntryConnectionArgs struct {
 	RecursiveSingleChild bool
 }
 
-func (r *gitTreeEntryResolver) Entries(ctx context.Context, args *gitTreeEntryConnectionArgs) ([]*gitTreeEntryResolver, error) {
+func (r *GitTreeEntryResolver) Entries(ctx context.Context, args *gitTreeEntryConnectionArgs) ([]*GitTreeEntryResolver, error) {
 	return r.entries(ctx, args, nil)
 }
 
-func (r *gitTreeEntryResolver) Directories(ctx context.Context, args *gitTreeEntryConnectionArgs) ([]*gitTreeEntryResolver, error) {
+func (r *GitTreeEntryResolver) Directories(ctx context.Context, args *gitTreeEntryConnectionArgs) ([]*GitTreeEntryResolver, error) {
 	return r.entries(ctx, args, func(fi os.FileInfo) bool { return fi.Mode().IsDir() })
 }
 
-func (r *gitTreeEntryResolver) Files(ctx context.Context, args *gitTreeEntryConnectionArgs) ([]*gitTreeEntryResolver, error) {
+func (r *GitTreeEntryResolver) Files(ctx context.Context, args *gitTreeEntryConnectionArgs) ([]*GitTreeEntryResolver, error) {
 	return r.entries(ctx, args, func(fi os.FileInfo) bool { return !fi.Mode().IsDir() })
 }
 
-func (r *gitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryConnectionArgs, filter func(fi os.FileInfo) bool) ([]*gitTreeEntryResolver, error) {
+func (r *GitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryConnectionArgs, filter func(fi os.FileInfo) bool) ([]*GitTreeEntryResolver, error) {
 	cachedRepo, err := backend.CachedGitRepo(ctx, r.commit.repo.repo)
 	if err != nil {
 		return nil, err
 	}
-	entries, err := git.ReadDir(ctx, *cachedRepo, api.CommitID(r.commit.OID()), r.path, r.isRecursive || args.Recursive)
+	entries, err := git.ReadDir(ctx, *cachedRepo, api.CommitID(r.commit.OID()), r.Path(), r.isRecursive || args.Recursive)
 	if err != nil {
 		if strings.Contains(err.Error(), "file does not exist") { // TODO proper error value
 			// empty tree is not an error
@@ -58,18 +58,14 @@ func (r *gitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryCo
 		entries = entries[:int(*args.First)]
 	}
 
-	var prefix string
-	if r.path != "" {
-		prefix = r.path + "/"
-	}
-
-	var l []*gitTreeEntryResolver
+	hasSingleChild := len(entries) == 1
+	var l []*GitTreeEntryResolver
 	for _, entry := range entries {
 		if filter == nil || filter(entry) {
-			l = append(l, &gitTreeEntryResolver{
-				commit: r.commit,
-				path:   prefix + entry.Name(), // relies on git paths being cleaned already
-				stat:   entry,
+			l = append(l, &GitTreeEntryResolver{
+				commit:        r.commit,
+				stat:          entry,
+				isSingleChild: &hasSingleChild,
 			})
 		}
 	}

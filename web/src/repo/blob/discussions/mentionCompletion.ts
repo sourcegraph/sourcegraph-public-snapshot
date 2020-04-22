@@ -1,11 +1,12 @@
 import { Position } from '@sourcegraph/extension-api-types'
-import { from, Observable, of, Subscription, Unsubscribable } from 'rxjs'
+import { Observable, of, Subscription, Unsubscribable } from 'rxjs'
 import { first, map, switchMap } from 'rxjs/operators'
 import { CompletionList } from 'sourcegraph'
 import { COMMENT_URI_SCHEME, positionToOffset } from '../../../../../shared/src/api/client/types/textDocument'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import { getWordAtText } from '../../../../../shared/src/util/wordHelpers'
 import { fetchAllUsers } from '../../../site-admin/backend'
+import { ModelService } from '../../../../../shared/src/api/client/services/modelService'
 
 /**
  * Registers contributions for username mention completion in discussion comments.
@@ -20,9 +21,7 @@ export function registerDiscussionsMentionCompletionContributions({
                   completionItems: {
                       registerProvider: ExtensionsControllerProps['extensionsController']['services']['completionItems']['registerProvider']
                   }
-                  model: {
-                      models: ExtensionsControllerProps['extensionsController']['services']['model']['models']
-                  }
+                  model: Pick<ModelService, 'observeModel'>
               }
           }
       }): Unsubscribable {
@@ -33,17 +32,8 @@ export function registerDiscussionsMentionCompletionContributions({
                 documentSelector: [{ scheme: COMMENT_URI_SCHEME }],
             },
             params =>
-                from(extensionsController.services.model.models).pipe(
-                    switchMap(models => {
-                        const model = models.find(m => m.uri === params.textDocument.uri)
-                        if (!model) {
-                            throw new Error(`model not found: ${params.textDocument.uri}`)
-                        }
-                        if (model.text === undefined) {
-                            return of(null)
-                        }
-                        return provideMentionCompletions(model.text, params.position)
-                    }),
+                extensionsController.services.model.observeModel(params.textDocument.uri).pipe(
+                    switchMap(({ text }) => (text ? provideMentionCompletions(text, params.position) : of(null))),
                     first()
                 )
         )
@@ -66,7 +56,7 @@ export function provideMentionCompletions(
     // Check the text that the user is currently typing to see if they have typed "@" (and aren't
     // typing an email address, i.e., the word begins with "@").
     const word = getWordAtText(positionToOffset(text, position), text)
-    if (word && word.word.startsWith('@')) {
+    if (word?.word.startsWith('@')) {
         return queryUsernamesFunction(word.word.slice(1)).pipe(
             map(usernames => ({ items: usernames.map(username => ({ label: username, insertText: `@${username} ` })) }))
         )

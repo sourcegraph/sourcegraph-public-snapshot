@@ -1,3 +1,0 @@
-BEGIN;
-ALTER TABLE default_repos ADD PRIMARY KEY(repo_id);
-COMMIT;

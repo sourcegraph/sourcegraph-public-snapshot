@@ -102,7 +102,7 @@ node_modules/
 # Extensions
 /packages/sourcegraph-extension-api/dist
 
-# Management console
-/cmd/management-console/web
-/cmd/management-console/assets
-!/cmd/management-console/assets/assets_vfsdata.go
+# Precise code intel
+./cmd/precise-code-intel/node_modules
+./cmd/precise-code-intel/out
+./cmd/precise-code-intel/test-data

@@ -3,7 +3,8 @@
 set -e
 
 echo "--- yarn in root"
-yarn --frozen-lockfile --network-timeout 60000
+# mutex is necessary since CI runs various yarn installs in parallel
+yarn --mutex network --frozen-lockfile --network-timeout 60000
 
 cd $1
 echo "--- test"

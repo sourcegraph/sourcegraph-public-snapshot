@@ -14,7 +14,10 @@ describe('transformQuery', () => {
         test('returns original query', () =>
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
-                    transformQuery(cold<TransformQuerySignature[]>('-a-|', { a: [] }), FIXTURE_INPUT)
+                    transformQuery(
+                        cold<TransformQuerySignature[]>('-a-|', { a: [] }),
+                        FIXTURE_INPUT
+                    )
                 ).toBe('-a-|', {
                     a: FIXTURE_INPUT,
                 })

@@ -93,6 +93,10 @@ export const repoRevContainerRoutes: readonly RepoRevContainerRoute[] = [
             repo: { name: repoName, id: repoID, description: repoDescription },
             resolvedRev: { commitID, defaultBranch },
             match,
+            patternType,
+            setPatternType,
+            caseSensitive,
+            setCaseSensitivity,
             ...context
         }: RepoRevContainerContext &
             RouteComponentProps<{
@@ -119,7 +123,17 @@ export const repoRevContainerRoutes: readonly RepoRevContainerRoute[] = [
                 return <Redirect to={window.location.pathname + window.location.search + formatHash(hash, newHash)} />
             }
 
-            const repoRevProps = { repoID, repoDescription, repoName, commitID, filePath }
+            const repoRevProps = {
+                repoID,
+                repoDescription,
+                repoName,
+                commitID,
+                filePath,
+                patternType,
+                setPatternType,
+                caseSensitive,
+                setCaseSensitivity,
+            }
 
             return (
                 <>

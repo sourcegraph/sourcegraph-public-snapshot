@@ -13,11 +13,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/db/globalstatedb"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/version"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/version"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 )
@@ -67,6 +66,15 @@ func (r *siteResolver) Configuration(ctx context.Context) (*siteConfigurationRes
 		return nil, err
 	}
 	return &siteConfigurationResolver{}, nil
+}
+
+func (r *siteResolver) CriticalConfiguration(ctx context.Context) (*criticalConfigurationResolver, error) {
+	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
+	// so only admins may view it.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+	return &criticalConfigurationResolver{}, nil
 }
 
 func (r *siteResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
@@ -119,39 +127,6 @@ func (r *siteResolver) ProductSubscription() *productSubscriptionStatus {
 	return &productSubscriptionStatus{}
 }
 
-func (r *siteResolver) ManagementConsoleState(ctx context.Context) (*managementConsoleStateResolver, error) {
-	// 🚨 SECURITY: Only site admins may view this information.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, err
-	}
-	return &managementConsoleStateResolver{}, nil
-}
-
-type managementConsoleStateResolver struct{}
-
-func (m *managementConsoleStateResolver) PlaintextPassword(ctx context.Context) (*string, error) {
-	// 🚨 SECURITY: Only site admins may view this information.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, err
-	}
-	password, err := globalstatedb.GetManagementConsolePlaintextPassword(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if password == "" {
-		return nil, nil
-	}
-	return &password, nil
-}
-
-func (r *schemaResolver) ClearManagementConsolePlaintextPassword(ctx context.Context) (*EmptyResponse, error) {
-	// 🚨 SECURITY: Only site admins may view this information.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return &EmptyResponse{}, nil
-	}
-	return &EmptyResponse{}, globalstatedb.ClearManagementConsolePlaintextPassword(ctx)
-}
-
 type siteConfigurationResolver struct{}
 
 func (r *siteConfigurationResolver) ID(ctx context.Context) (int32, error) {
@@ -163,13 +138,14 @@ func (r *siteConfigurationResolver) ID(ctx context.Context) (int32, error) {
 	return 0, nil // TODO(slimsag): future: return the real ID here to prevent races
 }
 
-func (r *siteConfigurationResolver) EffectiveContents(ctx context.Context) (string, error) {
+func (r *siteConfigurationResolver) EffectiveContents(ctx context.Context) (JSONCString, error) {
 	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
 	// so only admins may view it.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return "", err
+		return JSONCString(""), err
 	}
-	return globals.ConfigurationServerFrontendOnly.Raw().Site, nil
+	siteConfig := globals.ConfigurationServerFrontendOnly.Raw().Site
+	return JSONCString(siteConfig), nil
 }
 
 func (r *siteConfigurationResolver) ValidationMessages(ctx context.Context) ([]string, error) {
@@ -177,7 +153,7 @@ func (r *siteConfigurationResolver) ValidationMessages(ctx context.Context) ([]s
 	if err != nil {
 		return nil, err
 	}
-	return conf.ValidateSite(contents)
+	return conf.ValidateSite(string(contents))
 }
 
 var siteConfigAllowEdits, _ = strconv.ParseBool(env.Get("SITE_CONFIG_ALLOW_EDITS", "false", "When SITE_CONFIG_FILE is in use, allow edits in the application to be made which will be overwritten on next process restart"))
@@ -204,4 +180,25 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 		return false, err
 	}
 	return globals.ConfigurationServerFrontendOnly.NeedServerRestart(), nil
+}
+
+type criticalConfigurationResolver struct{}
+
+func (r *criticalConfigurationResolver) ID(ctx context.Context) (int32, error) {
+	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
+	// so only admins may view it.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return 0, err
+	}
+	return 0, nil // TODO(slimsag): future: return the real ID here to prevent races
+}
+
+func (r *criticalConfigurationResolver) EffectiveContents(ctx context.Context) (JSONCString, error) {
+	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
+	// so only admins may view it.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return JSONCString(""), err
+	}
+	criticalConf := globals.ConfigurationServerFrontendOnly.Raw().Critical
+	return JSONCString(criticalConf), nil
 }

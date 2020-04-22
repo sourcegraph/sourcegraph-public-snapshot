@@ -11,6 +11,6 @@ export function getSelectionsFromHash(): Selection[] {
 export function observeSelectionsFromHash(): Observable<Selection[]> {
     return fromEvent(window, 'hashchange').pipe(
         map(getSelectionsFromHash),
-        distinctUntilChanged(isEqual)
+        distinctUntilChanged((a, b) => isEqual(a, b))
     )
 }

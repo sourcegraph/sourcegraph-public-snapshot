@@ -10,32 +10,51 @@ import (
 	"sync"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
+	"github.com/inconshreveable/log15"
+	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/pkg/trace"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 // Server is a repoupdater server.
 type Server struct {
 	repos.Store
 	*repos.Syncer
-	GithubDotComSource interface {
+	SourcegraphDotComMode bool
+	GithubDotComSource    interface {
 		GetRepo(ctx context.Context, nameWithOwner string) (*repos.Repo, error)
 	}
+	GitLabDotComSource interface {
+		GetRepo(ctx context.Context, projectWithNamespace string) (*repos.Repo, error)
+	}
 	Scheduler interface {
-		UpdateQueueLen() int
-		UpdateOnce(id uint32, name api.RepoName, url string)
-		ScheduleInfo(id uint32) *protocol.RepoUpdateSchedulerInfoResult
+		UpdateOnce(id api.RepoID, name api.RepoName, url string)
+		ScheduleInfo(id api.RepoID) *protocol.RepoUpdateSchedulerInfoResult
 	}
 	GitserverClient interface {
 		ListCloned(context.Context) ([]string, error)
+	}
+	ChangesetSyncRegistry interface {
+		// EnqueueChangesetSyncs will queue the supplied changesets to sync ASAP.
+		EnqueueChangesetSyncs(ctx context.Context, ids []int64) error
+		// HandleExternalServiceSync should be called when an external service changes so that
+		// the registry can start or stop the syncer associated with the service
+		HandleExternalServiceSync(es api.ExternalService)
+	}
+	RateLimiterRegistry interface {
+		// HandleExternalServiceSync should be called when an external service changes so that
+		// our internal rate limiter are kept in sync
+		HandleExternalServiceSync(apiService api.ExternalService) error
 	}
 
 	notClonedCountMu        sync.Mutex
@@ -53,6 +72,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/exclude-repo", s.handleExcludeRepo)
 	mux.HandleFunc("/sync-external-service", s.handleExternalServiceSync)
 	mux.HandleFunc("/status-messages", s.handleStatusMessages)
+	mux.HandleFunc("/enqueue-changeset-sync", s.handleEnqueueChangesetSync)
 	return mux
 }
 
@@ -65,7 +85,7 @@ func (s *Server) handleRepoExternalServices(w http.ResponseWriter, r *http.Reque
 	}
 
 	rs, err := s.Store.ListRepos(r.Context(), repos.StoreListReposArgs{
-		IDs: []uint32{req.ID},
+		IDs: []api.RepoID{req.ID},
 	})
 	if err != nil {
 		respond(w, http.StatusInternalServerError, err)
@@ -108,7 +128,7 @@ func (s *Server) handleExcludeRepo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	rs, err := s.Store.ListRepos(r.Context(), repos.StoreListReposArgs{
-		IDs: []uint32{req.ID},
+		IDs: []api.RepoID{req.ID},
 	})
 	if err != nil {
 		respond(w, http.StatusInternalServerError, err)
@@ -221,7 +241,7 @@ func (s *Server) handleRepoLookup(w http.ResponseWriter, r *http.Request) {
 
 	result, err := s.repoLookup(r.Context(), args)
 	if err != nil {
-		if err == context.Canceled {
+		if r.Context().Err() != nil {
 			http.Error(w, "request canceled", http.StatusGatewayTimeout)
 			return
 		}
@@ -256,7 +276,11 @@ func (s *Server) enqueueRepoUpdate(ctx context.Context, req *protocol.RepoUpdate
 	defer func() {
 		log15.Debug("enqueueRepoUpdate", "httpStatus", httpStatus, "resp", resp, "error", err)
 		if resp != nil {
-			tr.LazyPrintf("response: %s", resp)
+			tr.LogFields(
+				otlog.Int32("resp.id", int32(resp.ID)),
+				otlog.String("resp.name", resp.Name),
+				otlog.String("resp.url", resp.URL),
+			)
 		}
 		tr.SetError(err)
 		tr.Finish()
@@ -298,57 +322,79 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 
 	s.Syncer.TriggerSync()
 
-	errch := make(chan error, 1)
-	go func() {
-		src, err := repos.NewSource(&repos.ExternalService{
-			ID:          req.ExternalService.ID,
-			Kind:        req.ExternalService.Kind,
-			DisplayName: req.ExternalService.DisplayName,
-			Config:      req.ExternalService.Config,
-		}, repos.NewHTTPClientFactory())
-		if err != nil {
-			errch <- err
-			return
-		}
-
-		_, err = src.ListRepos(ctx)
-		if err != nil && ctx.Err() != nil {
-			// ignore if we took too long
-			err = nil
-		}
-		errch <- err
-	}()
-
-	select {
-	case err := <-errch:
-		switch {
-		case err == nil:
-			log15.Info("server.external-service-sync", "synced", req.ExternalService.Kind)
-			respond(w, http.StatusOK, &protocol.ExternalServiceSyncResult{
-				ExternalService: req.ExternalService,
-			})
-		case err == github.ErrIncompleteResults:
-			log15.Info("server.external-service-sync", "kind", req.ExternalService.Kind, "error", err)
-			syncResult := &protocol.ExternalServiceSyncResult{
-				ExternalService: req.ExternalService,
-				Error:           err.Error(),
-			}
-			respond(w, http.StatusOK, syncResult)
-		default:
-			log15.Error("server.external-service-sync", "kind", req.ExternalService.Kind, "error", err)
-			respond(w, http.StatusInternalServerError, err)
-		}
-
-	case <-time.After(10 * time.Second):
-		respond(w, http.StatusOK, &protocol.ExternalServiceSyncResult{
+	err := externalServiceValidate(ctx, &req)
+	if err == github.ErrIncompleteResults {
+		log15.Info("server.external-service-sync", "kind", req.ExternalService.Kind, "error", err)
+		syncResult := &protocol.ExternalServiceSyncResult{
 			ExternalService: req.ExternalService,
-			Error:           "warning: took longer than 10s to verify config against code host. Please monitor repo-updater logs.",
-		})
-
-	case <-ctx.Done():
+			Error:           err.Error(),
+		}
+		respond(w, http.StatusOK, syncResult)
+		return
+	} else if ctx.Err() != nil {
 		// client is gone
 		return
+	} else if err != nil {
+		log15.Error("server.external-service-sync", "kind", req.ExternalService.Kind, "error", err)
+		respond(w, http.StatusInternalServerError, err)
+		return
 	}
+
+	if s.RateLimiterRegistry != nil {
+		err = s.RateLimiterRegistry.HandleExternalServiceSync(req.ExternalService)
+		if err != nil {
+			log15.Warn("Handling rate limiter sync", "err", err)
+		}
+	}
+	if s.ChangesetSyncRegistry != nil {
+		s.ChangesetSyncRegistry.HandleExternalServiceSync(req.ExternalService)
+	}
+
+	log15.Info("server.external-service-sync", "synced", req.ExternalService.Kind)
+	respond(w, http.StatusOK, &protocol.ExternalServiceSyncResult{
+		ExternalService: req.ExternalService,
+	})
+}
+
+func externalServiceValidate(ctx context.Context, req *protocol.ExternalServiceSyncRequest) error {
+	if req.ExternalService.DeletedAt != nil {
+		// We don't need to check deleted services.
+		return nil
+	}
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	src, err := repos.NewSource(&repos.ExternalService{
+		ID:          req.ExternalService.ID,
+		Kind:        req.ExternalService.Kind,
+		DisplayName: req.ExternalService.DisplayName,
+		Config:      req.ExternalService.Config,
+	}, httpcli.NewExternalHTTPClientFactory())
+	if err != nil {
+		return err
+	}
+
+	results := make(chan repos.SourceResult)
+
+	go func() {
+		src.ListRepos(ctx, results)
+		close(results)
+	}()
+
+	for res := range results {
+		if res.Err != nil {
+			// Send error to user before waiting for all results, but drain
+			// the rest of the results to not leak a blocked goroutine
+			go func() {
+				for range results {
+				}
+			}()
+			return res.Err
+		}
+	}
+
+	return nil
 }
 
 var mockRepoLookup func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error)
@@ -372,10 +418,35 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		return mockRepoLookup(args)
 	}
 
-	var repo *repos.Repo
 	result = &protocol.RepoLookupResult{}
+	codehost := extsvc.CodeHostOf(args.Repo, extsvc.PublicCodeHosts...)
 
-	if s.shouldGetGithubDotComRepo(args) {
+	if !s.SourcegraphDotComMode || codehost == nil {
+		repos, err := s.Store.ListRepos(ctx, repos.StoreListReposArgs{
+			Names: []string{string(args.Repo)},
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		if len(repos) != 1 {
+			result.ErrorNotFound = true
+			return result, nil
+		}
+
+		repoInfo, err := newRepoInfo(repos[0])
+		if err != nil {
+			return nil, err
+		}
+
+		result.Repo = repoInfo
+		return result, nil
+	}
+
+	var repo *repos.Repo
+
+	switch codehost {
+	case extsvc.GitHubDotCom:
 		nameWithOwner := strings.TrimPrefix(string(args.Repo), "github.com/")
 		repo, err = s.GithubDotComSource.GetRepo(ctx, nameWithOwner)
 		if err != nil {
@@ -394,23 +465,25 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 			return nil, err
 		}
 
-		_, err = s.Syncer.SyncSubset(ctx, repo)
+	case extsvc.GitLabDotCom:
+		projectWithNamespace := strings.TrimPrefix(string(args.Repo), "gitlab.com/")
+		repo, err = s.GitLabDotComSource.GetRepo(ctx, projectWithNamespace)
 		if err != nil {
+			if gitlab.IsNotFound(err) {
+				result.ErrorNotFound = true
+				return result, nil
+			}
+			if isUnauthorized(err) {
+				result.ErrorUnauthorized = true
+				return result, nil
+			}
 			return nil, err
 		}
-	} else {
-		repos, err := s.Store.ListRepos(ctx, repos.StoreListReposArgs{
-			Names: []string{string(args.Repo)},
-		})
-		if err != nil {
-			return nil, err
-		}
+	}
 
-		if len(repos) != 1 {
-			result.ErrorNotFound = true
-			return result, nil
-		}
-		repo = repos[0]
+	err = s.Syncer.SyncSubset(ctx, repo)
+	if err != nil {
+		return nil, err
 	}
 
 	repoInfo, err := newRepoInfo(repo)
@@ -422,31 +495,46 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 	return result, nil
 }
 
-func (s *Server) shouldGetGithubDotComRepo(args protocol.RepoLookupArgs) bool {
-	if s.GithubDotComSource == nil {
-		return false
+func (s *Server) handleStatusMessages(w http.ResponseWriter, r *http.Request) {
+	resp := protocol.StatusMessagesResponse{
+		Messages: []protocol.StatusMessage{},
 	}
 
-	repoName := strings.ToLower(string(args.Repo))
-	return strings.HasPrefix(repoName, "github.com/")
-}
-
-func (s *Server) handleStatusMessages(w http.ResponseWriter, r *http.Request) {
 	notCloned, err := s.computeNotClonedCount(r.Context())
 	if err != nil {
 		respond(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	resp := protocol.StatusMessagesResponse{
-		Messages: []protocol.StatusMessage{},
-	}
-
 	if notCloned != 0 {
 		resp.Messages = append(resp.Messages, protocol.StatusMessage{
-			Message: fmt.Sprintf("%d repositories enqueued for cloning...", notCloned),
-			Type:    protocol.CloningStatusMessage,
+			Cloning: &protocol.CloningProgress{
+				Message: fmt.Sprintf("%d repositories enqueued for cloning...", notCloned),
+			},
 		})
+	}
+
+	if e := s.Syncer.LastSyncError(); e != nil {
+		if multiErr, ok := errors.Cause(e).(*multierror.Error); ok {
+			for _, e := range multiErr.Errors {
+				if sourceErr, ok := e.(*repos.SourceError); ok {
+					resp.Messages = append(resp.Messages, protocol.StatusMessage{
+						ExternalServiceSyncError: &protocol.ExternalServiceSyncError{
+							Message:           sourceErr.Err.Error(),
+							ExternalServiceId: sourceErr.ExtSvc.ID,
+						},
+					})
+				} else {
+					resp.Messages = append(resp.Messages, protocol.StatusMessage{
+						SyncError: &protocol.SyncError{Message: e.Error()},
+					})
+				}
+			}
+		} else {
+			resp.Messages = append(resp.Messages, protocol.StatusMessage{
+				SyncError: &protocol.SyncError{Message: e.Error()},
+			})
+		}
 	}
 
 	log15.Debug("TRACE handleStatusMessages", "messages", resp.Messages)
@@ -499,6 +587,31 @@ func (s *Server) computeNotClonedCount(ctx context.Context) (uint64, error) {
 	return notCloned, nil
 }
 
+func (s *Server) handleEnqueueChangesetSync(w http.ResponseWriter, r *http.Request) {
+	if s.ChangesetSyncRegistry == nil {
+		log15.Warn("ChangesetSyncer is nil")
+		respond(w, http.StatusForbidden, nil)
+		return
+	}
+
+	var req protocol.ChangesetSyncRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respond(w, http.StatusBadRequest, err)
+		return
+	}
+	if len(req.IDs) == 0 {
+		respond(w, http.StatusBadRequest, errors.New("no ids provided"))
+		return
+	}
+	err := s.ChangesetSyncRegistry.EnqueueChangesetSyncs(r.Context(), req.IDs)
+	if err != nil {
+		resp := protocol.ChangesetSyncResponse{Error: err.Error()}
+		respond(w, http.StatusInternalServerError, resp)
+		return
+	}
+	respond(w, http.StatusOK, nil)
+}
+
 func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
 	urls := r.CloneURLs()
 	if len(urls) == 0 {
@@ -510,6 +623,7 @@ func newRepoInfo(r *repos.Repo) (*protocol.RepoInfo, error) {
 		Description:  r.Description,
 		Fork:         r.Fork,
 		Archived:     r.Archived,
+		Private:      r.Private,
 		VCS:          protocol.VCSInfo{URL: urls[0]},
 		ExternalRepo: r.ExternalRepo,
 	}
@@ -574,6 +688,9 @@ func pathAppend(base, p string) string {
 
 func isUnauthorized(err error) bool {
 	code := github.HTTPErrorCode(err)
+	if code == 0 {
+		code = gitlab.HTTPErrorCode(err)
+	}
 	return code == http.StatusUnauthorized || code == http.StatusForbidden
 }
 

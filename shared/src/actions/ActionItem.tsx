@@ -11,7 +11,8 @@ import { LinkOrButton } from '../components/LinkOrButton'
 import { ExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContextProps } from '../platform/context'
 import { TelemetryProps } from '../telemetry/telemetryService'
-import { asError, ErrorLike, isErrorLike } from '../util/errors'
+import { asError, ErrorLike, isErrorLike, tryCatch } from '../util/errors'
+import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 
 export interface ActionItemAction {
     /**
@@ -29,8 +30,10 @@ export interface ActionItemAction {
 
 export interface ActionItemComponentProps
     extends ExtensionsControllerProps<'executeCommand'>,
-        PlatformContextProps<'forceUpdateTooltip'> {
+        PlatformContextProps<'forceUpdateTooltip' | 'settings'> {
     location: H.Location
+
+    iconClassName?: string
 }
 
 export interface ActionItemProps extends ActionItemAction, ActionItemComponentProps, TelemetryProps {
@@ -42,8 +45,6 @@ export interface ActionItemProps extends ActionItemAction, ActionItemComponentPr
      * Added _in addition_ to `className` if the action item is a toggle in the "pressed" state.
      */
     pressedClassName?: string
-
-    iconClassName?: string
 
     /** Called after executing the action (for both success and failure). */
     onDidExecute?: (actionID: string) => void
@@ -73,10 +74,10 @@ export interface ActionItemProps extends ActionItemAction, ActionItemComponentPr
     showInlineError?: boolean
 
     /** Instead of showing the icon and/or title, show this element. */
-    title?: React.ReactElement<any>
+    title?: JSX.Element | null
 }
 
-const LOADING: 'loading' = 'loading'
+const LOADING = 'loading' as const
 
 interface State {
     /** The executed action: undefined while loading, null when done or not started, or an error. */
@@ -107,7 +108,10 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
                         )
                     )
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate), error => console.error(error))
+                .subscribe(
+                    stateUpdate => this.setState(stateUpdate),
+                    error => console.error(error)
+                )
         )
     }
 
@@ -148,8 +152,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
                             alt={this.props.action.actionItem.iconDescription}
                             className={this.props.iconClassName}
                         />
-                    )}
-                    {this.props.action.actionItem.iconURL && this.props.action.actionItem.label && <>&nbsp;</>}
+                    )}{' '}
                     {this.props.action.actionItem.label}
                 </>
             )
@@ -157,10 +160,9 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
         } else {
             content = (
                 <>
-                    {this.props.action.iconURL && <img src={this.props.action.iconURL} className="icon-inline" />}
-                    {this.props.action.iconURL && (this.props.action.category || this.props.action.title) && (
-                        <>&nbsp;</>
-                    )}
+                    {this.props.action.iconURL && (
+                        <img src={this.props.action.iconURL} className={this.props.iconClassName} />
+                    )}{' '}
                     {this.props.action.category ? `${this.props.action.category}: ` : ''}
                     {this.props.action.title}
                 </>
@@ -188,6 +190,9 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
                 ? this.props.action.actionItem.pressed
                 : undefined
 
+        const primaryTo = urlForClientCommandOpen(this.props.action, this.props.location)
+        const altTo = this.props.altAction && urlForClientCommandOpen(this.props.altAction, this.props.location)
+
         return (
             <LinkOrButton
                 data-tooltip={
@@ -209,13 +214,14 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
                 pressed={pressed}
                 // If the command is 'open' or 'openXyz' (builtin commands), render it as a link. Otherwise render
                 // it as a button that executes the command.
-                to={
-                    urlForClientCommandOpen(this.props.action, this.props.location) ||
-                    (this.props.altAction && urlForClientCommandOpen(this.props.altAction, this.props.location))
-                }
+                to={primaryTo || altTo}
                 onSelect={this.runAction}
             >
-                {content}
+                {content}{' '}
+                {primaryTo &&
+                    tryCatch(() => new URL(primaryTo, window.location.href).origin !== window.location.origin) && (
+                        <OpenInNewIcon className={this.props.iconClassName} />
+                    )}
                 {showLoadingSpinner && (
                     <div className="action-item__loader">
                         <LoadingSpinner className={this.props.iconClassName} />
@@ -225,7 +231,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
         )
     }
 
-    public runAction = (e: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>) => {
+    public runAction = (e: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>): void => {
         const action = (isAltEvent(e) && this.props.altAction) || this.props.action
 
         if (!action.command) {

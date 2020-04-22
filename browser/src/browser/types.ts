@@ -1,11 +1,6 @@
 import { GraphQLResult } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { ExtensionHoverAlertType } from '../libs/code_intelligence/hover_alerts'
-import { DEFAULT_SOURCEGRAPH_URL } from '../shared/util/context'
-
-interface RepoLocations {
-    [key: string]: string
-}
 
 export interface PhabricatorMapping {
     callsign: string
@@ -19,7 +14,6 @@ export interface FeatureFlags {
     /**
      * Allow error reporting.
      *
-     * @duration permanent
      * @todo Since this is not really a feature flag, just unnest it into settings (and potentially get rid of the feature flags abstraction completely)
      */
     allowErrorReporting: boolean
@@ -41,56 +35,35 @@ export const featureFlagDefaults: FeatureFlags = {
     experimentalTextFieldCompletion: false,
 }
 
-export interface StorageItems {
+interface SourcegraphURL {
     sourcegraphURL: string
+}
 
-    identity: string
-    enterpriseUrls: string[]
-    repoLocations: RepoLocations
-    phabricatorMappings: PhabricatorMapping[]
+export interface SyncStorageItems extends SourcegraphURL {
     sourcegraphAnonymousUid: string
+    /**
+     * Temporarily disable the browser extension features.
+     */
     disableExtension: boolean
     /**
      * Storage for feature flags.
      */
     featureFlags: Partial<FeatureFlags>
-    clientConfiguration: ClientConfigurationDetails
     /**
      * Overrides settings from Sourcegraph.
      */
     clientSettings: string
-    sideloadedExtensionURL: string | null
     dismissedHoverAlerts: {
         [alertType in ExtensionHoverAlertType]?: boolean
     }
 }
 
-interface ClientConfigurationDetails {
-    contentScriptUrls: string[]
-    parentSourcegraph: {
-        url: string
-    }
+export interface LocalStorageItems {
+    sideloadedExtensionURL: string | null
 }
 
-export const defaultStorageItems: StorageItems = {
-    sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
-
-    identity: '',
-    enterpriseUrls: [],
-    repoLocations: {},
-    phabricatorMappings: [],
-    sourcegraphAnonymousUid: '',
-    disableExtension: false,
-    featureFlags: featureFlagDefaults,
-    clientConfiguration: {
-        contentScriptUrls: [],
-        parentSourcegraph: {
-            url: DEFAULT_SOURCEGRAPH_URL,
-        },
-    },
-    clientSettings: '',
-    sideloadedExtensionURL: null,
-    dismissedHoverAlerts: {},
+export interface ManagedStorageItems extends SourcegraphURL {
+    phabricatorMappings: PhabricatorMapping[]
 }
 
 /**

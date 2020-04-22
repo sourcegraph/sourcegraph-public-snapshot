@@ -2,32 +2,32 @@
 
 This tutorial shows you how to deploy Sourcegraph to a single node running on DigitalOcean.
 
-If you're just starting out, we recommend [installing Sourcegraph locally](index.md). It takes only a few minutes and lets you try out all of the features. If you need scalability and high-availability beyond what a single-server deployment can offer, use the [Kubernetes cluster deployment option](https://github.com/sourcegraph/deploy-sourcegraph).
+> NOTE: Trying to decide how to deploy Sourcegraph? See [our recommendations](../index.md) for how to chose a deployment type that suits your needs.
 
 ---
 
-## Use the "Create Droplets" wizard
+## Run Sourcegraph on a Digital Ocean Droplet
 
-[Open your DigitalOcean dashboard](https://cloud.digitalocean.com/droplets/new) to create a new droplet
+1. [Create a new Digital Ocean Droplet](https://cloud.digitalocean.com/droplets/new). Set the
+   operating system to be Ubuntu 18.04. For droplet size, we recommend at least 4GB RAM and 2 CPU,
+   but you may need more depending on team size and number of repositories. We recommend you set up
+   SSH access (Authentication > SSH keys) for convenient access to the droplet.
+1. SSH into the droplet, and install Docker: `snap install docker`
+1. Run the Sourcegraph Docker image as a daemon:
 
-- **Choose an image -** Select the **One-click apps** tab and then choose Docker
-- **Choose a size -** We recommend at least 4GB RAM and 2 CPU, more depending on team size and number of repositories/languages enabled.
-- **Select additional options -** Check "User data" and paste in the following:
+   ```
+   docker run -d --publish 80:7080 --publish 443:7443 --restart unless-stopped --volume /root/.sourcegraph/config:/etc/sourcegraph --volume /root/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.14.3
+   ```
+1. Navigate to the droplet's IP address to finish initializing Sourcegraph. If you have configured a
+   DNS entry for the IP, configure `externalURL` to reflect that.
 
-  ```
-  #cloud-config
-  repo_update: true
-  repo_upgrade: all
+### After initialization
 
-  runcmd:
-  - mkdir -p /root/.sourcegraph/config
-  - mkdir -p /root/.sourcegraph/data
-  - [ sh, -c, 'docker run -d --publish 80:7080 --publish 443:7443 --publish 2633:2633 --restart unless-stopped --volume /root/.sourcegraph/config:/etc/sourcegraph --volume /root/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.7.0' ]
-  ```
+After initial setup, we recommend you do the following:
 
-- Launch your instance, then navigate to its IP address.
-
-- If you have configured a DNS entry for the IP, configure `externalURL` to reflect that. (Note: `externalURL` was called `appURL` in Sourcegraph 2.13 and earlier.)
+* Restrict the accessibility of ports other than `80` and `443` via [Cloud
+  Firewalls](https://www.digitalocean.com/docs/networking/firewalls/quickstart/).
+* Set up [TLS/SSL](../../http_https_configuration.md#nginx-ssl-https-configuration) in the NGINX configuration.
 
 ---
 

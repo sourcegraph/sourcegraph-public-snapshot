@@ -9,7 +9,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 )
 
 // SurveyResponseListOptions specifies the options for listing survey responses.
@@ -90,8 +90,7 @@ func (s *surveyResponses) Last30DaysNetPromoterScore(ctx context.Context) (int, 
 		return 0, err
 	}
 
-	var promoters int
-	var detractors int
+	var promoters, detractors int
 	err = dbconn.Global.QueryRowContext(ctx, promotersQ.Query(sqlf.PostgresBindVar), promotersQ.Args()...).Scan(&promoters)
 	if err != nil {
 		return 0, err

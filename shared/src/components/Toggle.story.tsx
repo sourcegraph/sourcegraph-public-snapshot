@@ -22,7 +22,7 @@ add('interactive', () => {
                 </div>
             )
         }
-        private onToggle = (value: boolean) => this.setState({ value }, () => onToggle(value))
+        private onToggle = (value: boolean): void => this.setState({ value }, (): void => onToggle(value))
     }
     return <ToggleInteractive />
 })

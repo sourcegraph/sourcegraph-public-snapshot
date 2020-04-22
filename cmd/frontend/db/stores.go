@@ -16,10 +16,13 @@ var (
 	Settings                  = &settings{}
 	Users                     = &users{}
 	UserEmails                = &userEmails{}
+	EventLogs                 = &eventLogs{}
 
 	SurveyResponses = &surveyResponses{}
 
 	ExternalAccounts = &userExternalAccounts{}
 
 	OrgInvitations = &orgInvitations{}
+
+	Authz AuthzStore = &authzStore{}
 )

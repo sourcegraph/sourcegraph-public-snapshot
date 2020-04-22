@@ -6,24 +6,24 @@ import (
 
 	"github.com/dghubble/gologin"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/auth/oauth"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/oauth2"
 )
 
 const sessionKey = "gitlaboauth@0"
 
-func parseProvider(callbackURL string, p *schema.GitLabAuthProvider, sourceCfg schema.AuthProviders) (provider *oauth.Provider, problems []string) {
+func parseProvider(callbackURL string, p *schema.GitLabAuthProvider, sourceCfg schema.AuthProviders) (provider *oauth.Provider, messages []string) {
 	rawURL := p.Url
 	if rawURL == "" {
 		rawURL = "https://gitlab.com/"
 	}
 	parsedURL, err := url.Parse(rawURL)
 	if err != nil {
-		problems = append(problems, fmt.Sprintf("Could not parse GitLab URL %q. You will not be able to login via this GitLab instance.", rawURL))
-		return nil, problems
+		messages = append(messages, fmt.Sprintf("Could not parse GitLab URL %q. You will not be able to login via this GitLab instance.", rawURL))
+		return nil, messages
 	}
 	codeHost := extsvc.NewCodeHost(parsedURL, gitlab.ServiceType)
 	oauth2Cfg := oauth2.Config{

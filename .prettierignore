@@ -19,7 +19,6 @@ ts-node-*
 testdata
 .github/*
 doc/
-cmd/management-console/assets/
 **/.cache
 shared/dev/**/*.js
 **/__snapshots__

@@ -6,6 +6,8 @@ if (window.context.sentryDSN) {
         dsn: window.context.sentryDSN,
         release: 'frontend@' + window.context.version,
     })
+    // Sentry is never un-initialized
+    // eslint-disable-next-line rxjs/no-ignored-subscription
     authenticatedUser.subscribe(user => {
         sentry.configureScope(scope => {
             if (user) {

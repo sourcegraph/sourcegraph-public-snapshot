@@ -41,7 +41,7 @@ export class RegistryExtensionDeleteButton extends React.PureComponent<
         this.subscriptions.add(
             this.deletes
                 .pipe(
-                    switchMap(args =>
+                    switchMap(() =>
                         deleteRegistryExtensionWithConfirmation(this.props.extension.id).pipe(
                             tap(deleted => {
                                 if (deleted && this.props.onDidUpdate) {
@@ -57,7 +57,10 @@ export class RegistryExtensionDeleteButton extends React.PureComponent<
                         )
                     )
                 )
-                .subscribe(stateUpdate => this.setState(stateUpdate), error => console.error(error))
+                .subscribe(
+                    stateUpdate => this.setState(stateUpdate),
+                    error => console.error(error)
+                )
         )
     }
 
@@ -91,5 +94,5 @@ export class RegistryExtensionDeleteButton extends React.PureComponent<
         )
     }
 
-    private deleteExtension = () => this.deletes.next()
+    private deleteExtension = (): void => this.deletes.next()
 }

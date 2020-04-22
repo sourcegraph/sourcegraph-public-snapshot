@@ -110,7 +110,7 @@ export function handleContentViews(
                             // because we are managing a stateful Map. The subscription is
                             // managed correctly.
                             //
-                            // tslint:disable-next-line: rxjs-no-nested-subscribe
+                            // eslint-disable-next-line rxjs/no-nested-subscribe
                             .subscribe(linkPreview => {
                                 try {
                                     pauseMutationObserver.next(true) // ignore DOM mutations we make

@@ -1,9 +1,16 @@
 {
   "extends": "../tsconfig.json",
+  "references": [{ "path": "../shared" }, { "path": "../schema" }],
   "compilerOptions": {
-    "typeRoots": ["../shared/src/types", "../node_modules/@types", "src/types"],
+    "module": "commonjs",
+    "baseUrl": ".",
+    "paths": {
+      "*": ["src/types/*", "../shared/src/types/*", "*"],
+    },
     "jsx": "react",
+    "rootDir": ".",
+    "outDir": "out",
   },
-  "include": ["**/*"],
-  "exclude": ["../node_modules"],
+  "include": ["./**/*"],
+  "exclude": ["../node_modules", "./node_modules", "./out", "src/e2e", "src/regression"],
 }

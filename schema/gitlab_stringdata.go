@@ -25,9 +25,32 @@ const GitLabSchemaJSON = `{
       "examples": ["https://gitlab.com", "https://gitlab.example.com"]
     },
     "token": {
-      "description": "A GitLab access token with \"api\" and \"sudo\" scopes. If this token does not have \"sudo\" scope, then you must set ` + "`" + `permissions.ignore` + "`" + ` to true.",
+      "description": "A GitLab access token with \"api\" scope. If you are enabling permissions with identity provider type \"external\", this token should also have \"sudo\" scope.",
       "type": "string",
       "minLength": 1
+    },
+    "rateLimit": {
+      "description": "Rate limit applied when making background API requests to GitLab.",
+      "title": "GitLabRateLimit",
+      "type": "object",
+      "required": ["enabled", "requestsPerHour"],
+      "properties": {
+        "enabled": {
+          "description": "true if rate limiting is enabled.",
+          "type": "boolean",
+          "default": true
+        },
+        "requestsPerHour": {
+          "description": "Requests per hour permitted. This is an average, calculated per second.",
+          "type": "number",
+          "default": 36000,
+          "minimum": 0
+        }
+      },
+      "default": {
+        "enabled": true,
+        "requestsPerHour": 36000
+      }
     },
     "gitURLType": {
       "description": "The type of Git URLs to use for cloning and fetching Git repositories on this GitLab instance.\n\nIf \"http\", Sourcegraph will access GitLab repositories using Git URLs of the form http(s)://gitlab.example.com/myteam/myproject.git (using https: if the GitLab instance uses HTTPS).\n\nIf \"ssh\", Sourcegraph will access GitLab repositories using Git URLs of the form git@example.gitlab.com:myteam/myproject.git. See the documentation for how to provide SSH private keys and known_hosts: https://docs.sourcegraph.com/admin/repo/auth#repositories-that-need-http-s-or-ssh-authentication.",
@@ -36,7 +59,7 @@ const GitLabSchemaJSON = `{
       "default": "http"
     },
     "certificate": {
-      "description": "TLS certificate of the GitLab instance. This is only necessary if the certificate is self-signed or signed by an internal CA. To get the certificate run ` + "`" + `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM` + "`" + `",
+      "description": "TLS certificate of the GitLab instance. This is only necessary if the certificate is self-signed or signed by an internal CA. To get the certificate run ` + "`" + `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM` + "`" + `. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.",
       "type": "string",
       "pattern": "^-----BEGIN CERTIFICATE-----\n",
       "examples": ["-----BEGIN CERTIFICATE-----\n..."]
@@ -54,7 +77,7 @@ const GitLabSchemaJSON = `{
           "name": {
             "description": "The name of a GitLab project (\"group/name\") to mirror.",
             "type": "string",
-            "pattern": "^[\\w-]+/[\\w.-]+$"
+            "pattern": "^[\\w-]+(/[\\w.-]+)+$"
           },
           "id": {
             "description": "The ID of a GitLab project (as returned by the GitLab instance's API) to mirror.",
@@ -70,7 +93,6 @@ const GitLabSchemaJSON = `{
     "exclude": {
       "description": "A list of projects to never mirror from this GitLab instance. Takes precedence over \"projects\" and \"projectQuery\" configuration. Supports excluding by name ({\"name\": \"group/name\"}) or by ID ({\"id\": 42}).",
       "type": "array",
-      "minItems": 1,
       "items": {
         "type": "object",
         "title": "ExcludedGitLabProject",
@@ -109,6 +131,25 @@ const GitLabSchemaJSON = `{
       "type": "string",
       "default": "{host}/{pathWithNamespace}"
     },
+    "nameTransformations": {
+      "description": "An array of transformations will apply to the repository name. Currently, only regex replacement is supported. All transformations happen after \"repositoryPathPattern\" is processed.",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/NameTransformation"
+      },
+      "examples": [
+        [
+          {
+            "regex": "\\.d/",
+            "replacement": "/"
+          },
+          {
+            "regex": "-git$",
+            "replacement": ""
+          }
+        ]
+      ]
+    },
     "initialRepositoryEnablement": {
       "description": "Defines whether repositories from this GitLab instance should be enabled and cloned when they are first seen by Sourcegraph. If false, the site admin must explicitly enable GitLab repositories (in the site admin area) to clone them and make them searchable on Sourcegraph. If true, they will be enabled and cloned immediately (subject to rate limiting by GitLab); site admins can still disable them explicitly, and they'll remain disabled.",
       "type": "boolean"
@@ -140,7 +181,7 @@ const GitLabSchemaJSON = `{
           }
         },
         "ttl": {
-          "description": "The TTL of how long to cache permissions data. This is 3 hours by default.\n\nDecreasing the TTL will increase the load on the code host API. If you have X repos on your instance, it will take ~X/100 API requests to fetch the complete list for 1 user.  If you have Y users, you will incur X*Y/100 API requests per cache refresh period.\n\nIf set to zero, Sourcegraph will sync a user's entire accessible repository list on every request (NOT recommended).",
+          "description": "The TTL of how long to cache permissions data. This is 3 hours by default.\n\nDecreasing the TTL will increase the load on the code host API. If you have X private repositories on your instance, it will take ~X/100 API requests to fetch the complete list for 1 user.  If you have Y users, you will incur up to X*Y/100 API requests per cache refresh period (depending on user activity).\n\nIf set to zero, Sourcegraph will sync a user's entire accessible repository list on every request (NOT recommended).\n\nPublic and internal repositories are cached once for all users per cache TTL period.",
           "type": "string",
           "default": "3h"
         }
@@ -156,6 +197,16 @@ const GitLabSchemaJSON = `{
         "type": {
           "type": "string",
           "const": "oauth"
+        },
+        "minBatchingThreshold": {
+          "description": "The minimum number of GitLab projects to fetch at which to start batching requests to fetch project visibility. Please consult with the Sourcegraph support team before modifying this.",
+          "type": "integer",
+          "default": 200
+        },
+        "maxBatchRequests": {
+          "description": "The maximum number of batch API requests to make for GitLab Project visibility. Please consult with the Sourcegraph support team before modifying this.",
+          "type": "integer",
+          "default": 300
         }
       }
     },
@@ -190,6 +241,23 @@ const GitLabSchemaJSON = `{
         "gitlabProvider": {
           "type": "string",
           "description": "The name that identifies the authentication provider to GitLab. This is passed to the ` + "`" + `?provider=` + "`" + ` query parameter in calls to the GitLab Users API. If you're not sure what this value is, you can look at the ` + "`" + `identities` + "`" + ` field of the GitLab Users API result (` + "`" + `curl  -H 'PRIVATE-TOKEN: $YOUR_TOKEN' $GITLAB_URL/api/v4/users` + "`" + `)."
+        }
+      }
+    },
+    "NameTransformation": {
+      "title": "GitLabNameTransformation",
+      "type": "object",
+      "additionalProperties": false,
+      "anyOf": [{ "required": ["regex", "replacement"] }],
+      "properties": {
+        "regex": {
+          "type": "string",
+          "format": "regex",
+          "description": "The regex to match for the occurrences of its replacement."
+        },
+        "replacement": {
+          "type": "string",
+          "description": "The replacement used to replace all matched occurrences by the regex."
         }
       }
     }

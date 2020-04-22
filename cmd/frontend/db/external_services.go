@@ -1,12 +1,12 @@
 package db
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"strings"
 	"time"
 
 	multierror "github.com/hashicorp/go-multierror"
@@ -14,10 +14,10 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbutil"
-	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/xeipuuv/gojsonschema"
 )
@@ -29,7 +29,7 @@ import (
 type ExternalServicesStore struct {
 	GitHubValidators          []func(*schema.GitHubConnection) error
 	GitLabValidators          []func(*schema.GitLabConnection, []schema.AuthProviders) error
-	BitbucketServerValidators []func(*schema.BitbucketServerConnection, []schema.AuthProviders) error
+	BitbucketServerValidators []func(*schema.BitbucketServerConnection) error
 }
 
 // ExternalServiceKinds contains a map of all supported kinds of
@@ -98,18 +98,13 @@ func (e *ExternalServicesStore) ValidateConfig(kind, config string, ps []schema.
 		return errors.Wrap(err, "failed to validate config against schema")
 	}
 
-	errs := &multierror.Error{
-		ErrorFormat: func(errs []error) string {
-			// Markdown bullet list of error messages.
-			var buf bytes.Buffer
-			for _, err := range errs {
-				fmt.Fprintf(&buf, "- %s\n", err)
-			}
-			return buf.String()
-		},
-	}
+	var errs *multierror.Error
 	for _, err := range res.Errors() {
-		errs = multierror.Append(errs, errors.New(err.String()))
+		e := err.String()
+		// Remove `(root): ` from error formatting since these errors are
+		// presented to users.
+		e = strings.TrimPrefix(e, "(root): ")
+		errs = multierror.Append(errs, errors.New(e))
 	}
 
 	// Extra validation not based on JSON Schema.
@@ -133,7 +128,7 @@ func (e *ExternalServicesStore) ValidateConfig(kind, config string, ps []schema.
 		if err = json.Unmarshal(normalized, &c); err != nil {
 			return err
 		}
-		err = e.validateBitbucketServerConnection(&c, ps)
+		err = e.validateBitbucketServerConnection(&c)
 
 	case "OTHER":
 		var c schema.OtherExternalServiceConnection
@@ -196,10 +191,10 @@ func (e *ExternalServicesStore) validateGitlabConnection(c *schema.GitLabConnect
 	return err.ErrorOrNil()
 }
 
-func (e *ExternalServicesStore) validateBitbucketServerConnection(c *schema.BitbucketServerConnection, ps []schema.AuthProviders) error {
+func (e *ExternalServicesStore) validateBitbucketServerConnection(c *schema.BitbucketServerConnection) error {
 	err := new(multierror.Error)
 	for _, validate := range e.BitbucketServerValidators {
-		err = multierror.Append(err, validate(c, ps))
+		err = multierror.Append(err, validate(c))
 	}
 
 	if c.Repos == nil && c.RepositoryQuery == nil {
@@ -219,7 +214,7 @@ func (e *ExternalServicesStore) validateBitbucketServerConnection(c *schema.Bitb
 //
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin.
 func (c *ExternalServicesStore) Create(ctx context.Context, confGet func() *conf.Unified, externalService *types.ExternalService) error {
-	ps := confGet().Critical.AuthProviders
+	ps := confGet().AuthProviders
 	if err := c.ValidateConfig(externalService.Kind, externalService.Config, ps); err != nil {
 		return err
 	}

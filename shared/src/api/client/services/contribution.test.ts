@@ -13,8 +13,8 @@ import {
     mergeContributions,
     parseContributionExpressions,
 } from './contribution'
-import { CodeEditorWithPartialModel } from './editorService'
 import { createTestEditorService } from './editorService.test'
+import { ModelService } from './modelService'
 
 const scheduler = (): TestScheduler => new TestScheduler((a, b) => expect(a).toEqual(b))
 
@@ -29,10 +29,16 @@ const FIXTURE_CONTRIBUTIONS_1: Contributions = {
     },
 }
 const FIXTURE_CONTRIBUTIONS_1_EVALUATED: Evaluated<Contributions> = {
-    actions: [{ id: '1.a', command: 'c', title: '1.A' }, { id: '1.b', command: 'c', title: '1.B' }],
+    actions: [
+        { id: '1.a', command: 'c', title: '1.A' },
+        { id: '1.b', command: 'c', title: '1.B' },
+    ],
     menus: {
         [ContributableMenu.CommandPalette]: [{ action: '1.a', when: undefined }],
-        [ContributableMenu.GlobalNav]: [{ action: '1.a', when: undefined }, { action: '1.b', when: undefined }],
+        [ContributableMenu.GlobalNav]: [
+            { action: '1.a', when: undefined },
+            { action: '1.b', when: undefined },
+        ],
     },
 }
 
@@ -47,10 +53,16 @@ const FIXTURE_CONTRIBUTIONS_2: Contributions = {
     },
 }
 const FIXTURE_CONTRIBUTIONS_2_EVALUATED: Evaluated<Contributions> = {
-    actions: [{ id: '2.a', command: 'c', title: '2.A' }, { id: '2.b', command: 'c', title: '2.B' }],
+    actions: [
+        { id: '2.a', command: 'c', title: '2.A' },
+        { id: '2.b', command: 'c', title: '2.B' },
+    ],
     menus: {
         [ContributableMenu.CommandPalette]: [{ action: '2.a', when: undefined }],
-        [ContributableMenu.EditorTitle]: [{ action: '2.a', when: undefined }, { action: '2.b', when: undefined }],
+        [ContributableMenu.EditorTitle]: [
+            { action: '2.a', when: undefined },
+            { action: '2.b', when: undefined },
+        ],
     },
 }
 
@@ -62,24 +74,42 @@ const FIXTURE_CONTRIBUTIONS_MERGED: Evaluated<Contributions> = {
         { id: '2.b', command: 'c', title: '2.B' },
     ],
     menus: {
-        [ContributableMenu.CommandPalette]: [{ action: '1.a', when: undefined }, { action: '2.a', when: undefined }],
-        [ContributableMenu.GlobalNav]: [{ action: '1.a', when: undefined }, { action: '1.b', when: undefined }],
-        [ContributableMenu.EditorTitle]: [{ action: '2.a', when: undefined }, { action: '2.b', when: undefined }],
+        [ContributableMenu.CommandPalette]: [
+            { action: '1.a', when: undefined },
+            { action: '2.a', when: undefined },
+        ],
+        [ContributableMenu.GlobalNav]: [
+            { action: '1.a', when: undefined },
+            { action: '1.b', when: undefined },
+        ],
+        [ContributableMenu.EditorTitle]: [
+            { action: '2.a', when: undefined },
+            { action: '2.b', when: undefined },
+        ],
     },
+}
+
+const TEST_MODEL_SERVICE: Pick<ModelService, 'getPartialModel'> = {
+    getPartialModel: () => ({ languageId: 'x' }),
 }
 
 describe('ContributionRegistry', () => {
     test('is initially empty', () => {
         expect(
-            new ContributionRegistry(createTestEditorService(of([])), { data: of(EMPTY_SETTINGS_CASCADE) }, of({}))
-                .entries.value
+            new ContributionRegistry(
+                createTestEditorService({}),
+                TEST_MODEL_SERVICE,
+                { data: of(EMPTY_SETTINGS_CASCADE) },
+                of({})
+            ).entries.value
         ).toEqual([])
     })
 
     test('registers and unregisters contributions', () => {
         const subscriptions = new Subscription()
         const registry = new ContributionRegistry(
-            createTestEditorService(of([])),
+            createTestEditorService({}),
+            TEST_MODEL_SERVICE,
             { data: of(EMPTY_SETTINGS_CASCADE) },
             of({})
         )
@@ -101,7 +131,8 @@ describe('ContributionRegistry', () => {
 
     test('replaces contributions', () => {
         const registry = new ContributionRegistry(
-            createTestEditorService(of([])),
+            createTestEditorService({}),
+            TEST_MODEL_SERVICE,
             { data: of(EMPTY_SETTINGS_CASCADE) },
             of({})
         )
@@ -123,14 +154,21 @@ describe('ContributionRegistry', () => {
 
     describe('contributions observable', () => {
         test('emits stream of results of registrations', () => {
-            const registry = new (class extends ContributionRegistry {
-                public getContributionsFromEntries(
-                    entries: Observable<ContributionsEntry[]>
-                ): Observable<Evaluated<Contributions>> {
-                    return super.getContributionsFromEntries(entries, undefined)
-                }
-            })(createTestEditorService(of([])), { data: of(EMPTY_SETTINGS_CASCADE) }, of({}))
             scheduler().run(({ cold, expectObservable }) => {
+                const registry = new (class extends ContributionRegistry {
+                    public getContributionsFromEntries(
+                        entries: Observable<ContributionsEntry[]>
+                    ): Observable<Evaluated<Contributions>> {
+                        return super.getContributionsFromEntries(entries, undefined)
+                    }
+                })(
+                    {
+                        activeEditorUpdates: of(undefined),
+                    },
+                    TEST_MODEL_SERVICE,
+                    { data: of(EMPTY_SETTINGS_CASCADE) },
+                    of({})
+                )
                 type Marble = 'a' | 'b' | 'c'
                 const values: Record<Marble, ContributionsEntry[]> = {
                     a: [{ contributions: FIXTURE_CONTRIBUTIONS_1 }],
@@ -149,14 +187,21 @@ describe('ContributionRegistry', () => {
         })
 
         it('supports registration of an observable', () => {
-            const registry = new (class extends ContributionRegistry {
-                public getContributionsFromEntries(
-                    entries: Observable<ContributionsEntry[]>
-                ): Observable<Evaluated<Contributions>> {
-                    return super.getContributionsFromEntries(entries, undefined)
-                }
-            })(createTestEditorService(of([])), { data: of(EMPTY_SETTINGS_CASCADE) }, of({}))
             scheduler().run(({ cold, expectObservable }) => {
+                const registry = new (class extends ContributionRegistry {
+                    public getContributionsFromEntries(
+                        entries: Observable<ContributionsEntry[]>
+                    ): Observable<Evaluated<Contributions>> {
+                        return super.getContributionsFromEntries(entries, undefined)
+                    }
+                })(
+                    {
+                        activeEditorUpdates: of(undefined),
+                    },
+                    TEST_MODEL_SERVICE,
+                    { data: of(EMPTY_SETTINGS_CASCADE) },
+                    of({})
+                )
                 type Marble = 'b' | 'c'
                 const values: Record<Marble, Contributions | Contributions[]> = {
                     b: FIXTURE_CONTRIBUTIONS_1,
@@ -183,11 +228,9 @@ describe('ContributionRegistry', () => {
                     constructor() {
                         super(
                             {
-                                editorsAndModels: cold<readonly CodeEditorWithPartialModel[]>('-a-b-|', {
-                                    a: [],
-                                    b: [],
-                                }),
+                                activeEditorUpdates: of(undefined),
                             },
+                            TEST_MODEL_SERVICE,
                             {
                                 data: cold<SettingsCascadeOrError>('-a-b-|', {
                                     a: EMPTY_SETTINGS_CASCADE,
@@ -227,11 +270,8 @@ describe('ContributionRegistry', () => {
                 const registry = new (class extends ContributionRegistry {
                     constructor() {
                         super(
-                            {
-                                editorsAndModels: cold<readonly CodeEditorWithPartialModel[]>('a', {
-                                    a: [],
-                                }),
-                            },
+                            createTestEditorService({}),
+                            TEST_MODEL_SERVICE,
                             { data: cold<SettingsCascadeOrError>('a', { a: EMPTY_SETTINGS_CASCADE }) },
                             cold<Context>('a', {})
                         )
@@ -270,7 +310,10 @@ describe('ContributionRegistry', () => {
 
 describe('mergeContributions()', () => {
     const FIXTURE_CONTRIBUTIONS_1: Evaluated<Contributions> = {
-        actions: [{ id: '1.a', command: 'c', title: '1.A' }, { id: '1.b', command: 'c', title: '1.B' }],
+        actions: [
+            { id: '1.a', command: 'c', title: '1.A' },
+            { id: '1.b', command: 'c', title: '1.B' },
+        ],
         menus: {
             [ContributableMenu.CommandPalette]: [{ action: '1.a' }],
             [ContributableMenu.GlobalNav]: [{ action: '1.a' }, { action: '1.b' }],
@@ -278,7 +321,10 @@ describe('mergeContributions()', () => {
     }
 
     const FIXTURE_CONTRIBUTIONS_2: Evaluated<Contributions> = {
-        actions: [{ id: '2.a', command: 'c', title: '2.A' }, { id: '2.b', command: 'c', title: '2.B' }],
+        actions: [
+            { id: '2.a', command: 'c', title: '2.A' },
+            { id: '2.b', command: 'c', title: '2.B' },
+        ],
         menus: {
             [ContributableMenu.CommandPalette]: [{ action: '2.a' }],
             [ContributableMenu.EditorTitle]: [{ action: '2.a' }, { action: '2.b' }],
@@ -340,7 +386,11 @@ describe('filterContributions()', () => {
 
     it('handles non-empty contributions', () => {
         const expected: Evaluated<Contributions> = {
-            actions: [{ id: 'a1', command: 'c' }, { id: 'a2', command: 'c' }, { id: 'a3', command: 'c' }],
+            actions: [
+                { id: 'a1', command: 'c' },
+                { id: 'a2', command: 'c' },
+                { id: 'a3', command: 'c' },
+            ],
             menus: {
                 [ContributableMenu.CommandPalette]: [{ action: 'a1', when: true }, { action: 'a3' }],
                 [ContributableMenu.GlobalNav]: [{ action: 'a1', when: true }, { action: 'a2' }],
@@ -348,7 +398,11 @@ describe('filterContributions()', () => {
         }
         expect(
             filterContributions({
-                actions: [{ id: 'a1', command: 'c' }, { id: 'a2', command: 'c' }, { id: 'a3', command: 'c' }],
+                actions: [
+                    { id: 'a1', command: 'c' },
+                    { id: 'a2', command: 'c' },
+                    { id: 'a3', command: 'c' },
+                ],
                 menus: {
                     [ContributableMenu.CommandPalette]: [
                         { action: 'a1', when: true },

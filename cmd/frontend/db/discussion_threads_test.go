@@ -1,13 +1,13 @@
 package db
 
 import (
+	"context"
 	"reflect"
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
 
 // TODO(slimsag:discussions): future: test that DiscussionThreadsListOptions.AuthorUserID works
@@ -16,7 +16,8 @@ func TestDiscussionThreads_CreateGet(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	user, err := Users.Create(ctx, NewUser{
 		Email:                 "a@a.com",
@@ -29,7 +30,7 @@ func TestDiscussionThreads_CreateGet(t *testing.T) {
 	}
 
 	// Create a repository to comply with the postgres repo constraint.
-	if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
+	if err := Repos.Upsert(ctx, InsertRepoOp{Name: "myrepo", Description: "", Fork: false}); err != nil {
 		t.Fatal(err)
 	}
 	repo, err := Repos.GetByName(ctx, "myrepo")
@@ -76,7 +77,8 @@ func TestDiscussionThreads_Update(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	user, err := Users.Create(ctx, NewUser{
 		Email:                 "a@a.com",
@@ -89,7 +91,7 @@ func TestDiscussionThreads_Update(t *testing.T) {
 	}
 
 	// Create a repository to comply with the postgres repo constraint.
-	if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
+	if err := Repos.Upsert(ctx, InsertRepoOp{Name: "myrepo", Description: "", Fork: false}); err != nil {
 		t.Fatal(err)
 	}
 	repo, err := Repos.GetByName(ctx, "myrepo")
@@ -133,7 +135,8 @@ func TestDiscussionThreads_Count(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	user, err := Users.Create(ctx, NewUser{
 		Email:                 "a@a.com",
@@ -146,7 +149,7 @@ func TestDiscussionThreads_Count(t *testing.T) {
 	}
 
 	// Create a repository to comply with the postgres repo constraint.
-	if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
+	if err := Repos.Upsert(ctx, InsertRepoOp{Name: "myrepo", Description: "", Fork: false}); err != nil {
 		t.Fatal(err)
 	}
 	repo, err := Repos.GetByName(ctx, "myrepo")
@@ -197,7 +200,8 @@ func TestDiscussionThreads_List(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	user, err := Users.Create(ctx, NewUser{
 		Email:                 "a@a.com",
@@ -210,7 +214,7 @@ func TestDiscussionThreads_List(t *testing.T) {
 	}
 
 	// Create a repository to comply with the postgres repo constraint.
-	if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
+	if err := Repos.Upsert(ctx, InsertRepoOp{Name: "myrepo", Description: "", Fork: false}); err != nil {
 		t.Fatal(err)
 	}
 	repo, err := Repos.GetByName(ctx, "myrepo")
@@ -261,7 +265,8 @@ func TestDiscussionThreads_Delete(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	user, err := Users.Create(ctx, NewUser{
 		Email:                 "a@a.com",
@@ -274,7 +279,7 @@ func TestDiscussionThreads_Delete(t *testing.T) {
 	}
 
 	// Create a repository to comply with the postgres repo constraint.
-	if err := Repos.Upsert(ctx, api.InsertRepoOp{Name: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
+	if err := Repos.Upsert(ctx, InsertRepoOp{Name: "myrepo", Description: "", Fork: false}); err != nil {
 		t.Fatal(err)
 	}
 	repo, err := Repos.GetByName(ctx, "myrepo")

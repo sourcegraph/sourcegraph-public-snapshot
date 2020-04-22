@@ -5,12 +5,13 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 // HandlerMetrics encapsulates the Prometheus metrics of an http.Handler.
@@ -53,12 +54,11 @@ func ObservedHandler(
 	tr opentracing.Tracer,
 ) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
-		return nethttp.Middleware(tr,
+		return ot.MiddlewareWithTracer(tr,
 			&observedHandler{
 				next:    next,
 				log:     log,
 				metrics: m,
-				tracer:  tr,
 			},
 			nethttp.OperationNameFunc(func(r *http.Request) string {
 				return "HTTP " + r.Method + ":" + r.URL.Path
@@ -75,7 +75,6 @@ type observedHandler struct {
 	next    http.Handler
 	log     log15.Logger
 	metrics HandlerMetrics
-	tracer  opentracing.Tracer
 }
 
 func (h *observedHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {

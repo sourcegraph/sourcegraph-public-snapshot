@@ -1,17 +1,19 @@
 package db
 
 import (
+	"context"
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
 
 func TestOrgs_ValidNames(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	for _, test := range usernamesForTests {
 		t.Run(test.name, func(t *testing.T) {
@@ -34,7 +36,8 @@ func TestOrgs_Count(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
 	org, err := Orgs.Create(ctx, "a", nil)
 	if err != nil {
@@ -62,9 +65,11 @@ func TestOrgs_Delete(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := dbtesting.TestContext(t)
+	dbtesting.SetupGlobalTestDB(t)
+	ctx := context.Background()
 
-	org, err := Orgs.Create(ctx, "a", nil)
+	displayName := "a"
+	org, err := Orgs.Create(ctx, "a", &displayName)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -79,7 +84,7 @@ func TestOrgs_Delete(t *testing.T) {
 	if _, ok := err.(*OrgNotFoundError); !ok {
 		t.Errorf("got error %v, want *OrgNotFoundError", err)
 	}
-	orgs, err := Orgs.List(ctx, nil)
+	orgs, err := Orgs.List(ctx, &OrgsListOptions{Query: "a"})
 	if err != nil {
 		t.Fatal(err)
 	}

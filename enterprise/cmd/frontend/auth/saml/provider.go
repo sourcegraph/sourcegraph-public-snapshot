@@ -21,7 +21,7 @@ import (
 	dsig "github.com/russellhaering/goxmldsig"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/net/context/ctxhttp"
 )
@@ -163,7 +163,7 @@ func getServiceProvider(ctx context.Context, pc *schema.SAMLAuthProvider) (*saml
 	if pc.ServiceProviderIssuer == "" {
 		return nil, errors.New("invalid SAML Service Provider configuration: issuer is empty (and default issuer could not be derived from empty externalURL)")
 	}
-	externalURL, err := url.Parse(conf.Get().Critical.ExternalURL)
+	externalURL, err := url.Parse(conf.Get().ExternalURL)
 	if err != nil {
 		return nil, errors.WithMessage(err, "parsing external URL for SAML Service Provider")
 	}

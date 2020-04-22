@@ -1,7 +1,7 @@
 import { Observable, of, zip } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 
-import { ERPRIVATEREPOPUBLICSOURCEGRAPHCOM } from '../../../../../shared/src/backend/errors'
+import { isPrivateRepoPublicSourcegraphComErrorLike } from '../../../../../shared/src/backend/errors'
 import { PlatformContext } from '../../../../../shared/src/platform/context'
 import { resolveRepo, resolveRev, retryWhenCloneInProgressError } from '../../../shared/repo/backend'
 import { FileInfo, FileInfoWithRepoNames } from '../code_intelligence'
@@ -53,7 +53,7 @@ export const resolveRepoNames = (
         // has access to that code. In that case, it's impossible to resolve the repo names,
         // so we keep the repo names inferred from the code host's DOM.
         catchError(err => {
-            if (err.name === ERPRIVATEREPOPUBLICSOURCEGRAPHCOM) {
+            if (isPrivateRepoPublicSourcegraphComErrorLike(err)) {
                 return [{ rawRepoName, baseRawRepoName, repoName: rawRepoName, baseRepoName: baseRawRepoName, ...rest }]
             }
             throw err

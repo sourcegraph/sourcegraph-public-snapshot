@@ -3,7 +3,7 @@ import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
 import { fromEvent, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
-import { FormatListBulletedIcon } from '../../../shared/src/components/icons' // TODO: Switch to mdi icon
+import { FormatListBulletedIcon } from '../../../shared/src/components/icons'
 import { Resizable } from '../../../shared/src/components/Resizable'
 import {
     Spacer,
@@ -40,7 +40,10 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
     private static LAST_TAB_STORAGE_KEY = 'repo-rev-sidebar-last-tab'
     private static HIDDEN_STORAGE_KEY = 'repo-rev-sidebar-hidden'
 
-    private static TABS: Tab<SidebarTabID>[] = [{ id: 'files', label: 'Files' }, { id: 'symbols', label: 'Symbols' }]
+    private static TABS: Tab<SidebarTabID>[] = [
+        { id: 'files', label: 'Files' },
+        { id: 'symbols', label: 'Symbols' },
+    ]
 
     public state: State = {
         showSidebar: localStorage.getItem(RepoRevSidebar.HIDDEN_STORAGE_KEY) === null,
@@ -106,7 +109,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                         id="explorer"
                         className={`repo-rev-sidebar ${this.props.className} ${
                             this.state.showSidebar ? `repo-rev-sidebar--open ${this.props.className}--open` : ''
-                        }`}
+                        } e2e-repo-rev-sidebar`}
                         tabClassName="tab-bar__tab--h5like"
                         onSelectTab={this.onSelectTab}
                     >
@@ -136,7 +139,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
         )
     }
 
-    private onSidebarToggle = () => {
+    private onSidebarToggle = (): void => {
         if (this.state.showSidebar) {
             localStorage.setItem(RepoRevSidebar.HIDDEN_STORAGE_KEY, 'true')
         } else {
@@ -145,7 +148,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
         this.setState(state => ({ showSidebar: !state.showSidebar }))
     }
 
-    private onSelectTab = (tab: string) => {
+    private onSelectTab = (tab: string): void => {
         if (tab === 'symbols') {
             eventLogger.log('SidebarSymbolsTabSelected')
         } else if (tab === 'files') {

@@ -15,15 +15,15 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
-	"gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/query-runner/queryrunnerapi"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/debugserver"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/eventlogger"
-	"github.com/sourcegraph/sourcegraph/pkg/tracer"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/debugserver"
+	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/eventlogger"
+	"github.com/sourcegraph/sourcegraph/internal/tracer"
 )
 
 var forceRunInterval = env.Get("FORCE_RUN_INTERVAL", "", "Force an interval to run saved queries at, instead of assuming query execution time * 30 (query that takes 2s to run, runs every 60s)")
@@ -340,6 +340,9 @@ func searchURL(query, utmSource string) string {
 	return u.String()
 }
 
-func logEvent(userID int32, email, eventName, eventType string) {
-	eventlogger.LogEvent(userID, email, eventName, json.RawMessage(fmt.Sprintf(`{"saved_searches": {"event_type": "%s"}}`, eventType)))
+func logEvent(userID int32, eventName, eventType string) {
+	contents, _ := json.Marshal(map[string]string{
+		"event_type": eventType,
+	})
+	eventlogger.LogEvent(userID, eventName, json.RawMessage(contents))
 }

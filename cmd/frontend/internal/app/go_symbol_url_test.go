@@ -6,7 +6,7 @@ import (
 
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 type symbolLocationArgs struct {
@@ -23,7 +23,7 @@ type test struct {
 	want *lsp.Location
 }
 
-func mkLocation(uri string, line int, character int) *lsp.Location {
+func mkLocation(uri string, line, character int) *lsp.Location {
 	return &lsp.Location{
 		URI: "https://github.com/gorilla/mux?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#/mux.go",
 		Range: lsp.Range{

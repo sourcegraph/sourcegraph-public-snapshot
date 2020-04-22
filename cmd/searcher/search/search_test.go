@@ -13,7 +13,6 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"os"
-	"os/exec"
 	"sort"
 	"strconv"
 	"strings"
@@ -21,9 +20,10 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/search"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/store"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/store"
+	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
 
 func TestSearch(t *testing.T) {
@@ -97,7 +97,7 @@ main.go:6:	fmt.Println("Hello world")
 		{protocol.PatternInfo{Pattern: "world", ExcludePattern: "README.md"}, `
 main.go:6:	fmt.Println("Hello world")
 `},
-		{protocol.PatternInfo{Pattern: "world", IncludePattern: "*.md"}, `
+		{protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{"*.md"}}, `
 README.md:1:# Hello World
 README.md:3:Hello world example in go
 `},
@@ -109,7 +109,7 @@ abc.txt:1:w
 		{protocol.PatternInfo{Pattern: "world", ExcludePattern: "README\\.md", PathPatternsAreRegExps: true}, `
 main.go:6:	fmt.Println("Hello world")
 `},
-		{protocol.PatternInfo{Pattern: "world", IncludePattern: "\\.md", PathPatternsAreRegExps: true}, `
+		{protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{"\\.md"}, PathPatternsAreRegExps: true}, `
 README.md:1:# Hello World
 README.md:3:Hello world example in go
 `},
@@ -119,10 +119,10 @@ README.md:1:# Hello World
 README.md:3:Hello world example in go
 `},
 
-		{protocol.PatternInfo{Pattern: "world", IncludePattern: "*.{MD,go}", PathPatternsAreCaseSensitive: true}, `
+		{protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{"*.{MD,go}"}, PathPatternsAreCaseSensitive: true}, `
 main.go:6:	fmt.Println("Hello world")
 `},
-		{protocol.PatternInfo{Pattern: "world", IncludePattern: `\.(MD|go)`, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: true}, `
+		{protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{`\.(MD|go)`}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: true}, `
 main.go:6:	fmt.Println("Hello world")
 `},
 
@@ -190,18 +190,15 @@ main.go:7:}
 	ts := httptest.NewServer(&search.Service{Store: store})
 	defer ts.Close()
 
-	s := &search.StoreSearcher{Store: store}
-	defer s.Close()
-
 	for i, test := range cases {
-		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
 			test.arg.PatternMatchesContent = true
 			req := protocol.Request{
 				Repo:         "foo",
 				URL:          "u",
 				Commit:       "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 				PatternInfo:  test.arg,
-				FetchTimeout: "500ms",
+				FetchTimeout: "2000ms",
 			}
 			m, err := doSearch(ts.URL, &req)
 			if err != nil {
@@ -218,7 +215,7 @@ main.go:7:}
 				test.want = test.want[1:]
 			}
 			if got != test.want {
-				d, err := diff(test.want, got)
+				d, err := testutil.Diff(test.want, got)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -286,8 +283,8 @@ func TestSearch_badrequest(t *testing.T) {
 			URL:    "u",
 			Commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			PatternInfo: protocol.PatternInfo{
-				Pattern:        "test",
-				IncludePattern: "[c-a]",
+				Pattern:         "test",
+				IncludePatterns: []string{"[c-a]"},
 			},
 		},
 
@@ -309,7 +306,7 @@ func TestSearch_badrequest(t *testing.T) {
 			Commit: "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			PatternInfo: protocol.PatternInfo{
 				Pattern:                "test",
-				IncludePattern:         "**",
+				IncludePatterns:        []string{"**"},
 				PathPatternsAreRegExps: true,
 			},
 		},
@@ -353,12 +350,15 @@ func doSearch(u string, p *protocol.Request) ([]protocol.FileMatch, error) {
 		"URL":             []string{string(p.URL)},
 		"Commit":          []string{string(p.Commit)},
 		"Pattern":         []string{p.Pattern},
+		"FetchTimeout":    []string{p.FetchTimeout},
 		"IncludePatterns": p.IncludePatterns,
-		"IncludePattern":  []string{p.IncludePattern},
 		"ExcludePattern":  []string{p.ExcludePattern},
 	}
 	if p.IsRegExp {
 		form.Set("IsRegExp", "true")
+	}
+	if p.IsStructuralPat {
+		form.Set("IsStructuralPat", "true")
 	}
 	if p.IsWordMatch {
 		form.Set("IsWordMatch", "true")
@@ -477,31 +477,6 @@ func sanityCheckSorted(m []protocol.FileMatch) error {
 		}
 	}
 	return nil
-}
-
-func diff(b1, b2 string) (string, error) {
-	f1, err := ioutil.TempFile("", "search_test")
-	if err != nil {
-		return "", err
-	}
-	defer os.Remove(f1.Name())
-	defer f1.Close()
-
-	f2, err := ioutil.TempFile("", "search_test")
-	if err != nil {
-		return "", err
-	}
-	defer os.Remove(f2.Name())
-	defer f2.Close()
-
-	f1.WriteString(b1)
-	f2.WriteString(b2)
-
-	data, err := exec.Command("diff", "-u", "--label=want", f1.Name(), "--label=got", f2.Name()).CombinedOutput()
-	if len(data) > 0 {
-		err = nil
-	}
-	return string(data), err
 }
 
 type sortByPath []protocol.FileMatch

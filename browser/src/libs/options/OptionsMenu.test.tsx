@@ -1,13 +1,15 @@
 import { noop } from 'lodash'
 import React from 'react'
 import renderer from 'react-test-renderer'
-import { cleanup, fireEvent, render } from 'react-testing-library'
+import { cleanup, fireEvent, render } from '@testing-library/react'
 import sinon from 'sinon'
 
 import { DEFAULT_SOURCEGRAPH_URL } from '../../shared/util/context'
 import { OptionsMenu, OptionsMenuProps } from './OptionsMenu'
 
-describe('ServerURLForm', () => {
+jest.mock('mdi-react/SettingsOutlineIcon', () => 'SettingsOutlineIcon')
+
+describe('OptionsMenu', () => {
     afterAll(cleanup)
 
     const stubs: OptionsMenuProps = {
@@ -18,7 +20,9 @@ describe('ServerURLForm', () => {
         requestPermissions: noop,
         onURLChange: noop,
         onURLSubmit: noop,
+        isActivated: true,
         toggleFeatureFlag: noop,
+        onToggleActivationClick: noop,
         onSettingsClick: noop,
     }
 
@@ -90,7 +94,10 @@ describe('ServerURLForm', () => {
                 <OptionsMenu
                     {...stubs}
                     isSettingsOpen={true}
-                    featureFlags={[{ key: 'foo', value: true }, { key: 'bar', value: false }]}
+                    featureFlags={[
+                        { key: 'foo', value: true },
+                        { key: 'bar', value: false },
+                    ]}
                 />
             )
         ).toMatchSnapshot()
@@ -102,7 +109,10 @@ describe('ServerURLForm', () => {
             <OptionsMenu
                 {...stubs}
                 isSettingsOpen={true}
-                featureFlags={[{ key: 'foo', value: true }, { key: 'bar', value: false }]}
+                featureFlags={[
+                    { key: 'foo', value: true },
+                    { key: 'bar', value: false },
+                ]}
                 toggleFeatureFlag={toggleFeatureFlag}
             />
         )

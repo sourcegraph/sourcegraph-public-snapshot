@@ -7,9 +7,10 @@ import (
 	"sync"
 	"time"
 
-	multierror "github.com/hashicorp/go-multierror"
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"golang.org/x/time/rate"
 )
 
 // A Sourcer converts the given ExternalServices to Sources
@@ -26,7 +27,7 @@ type Sourcer func(...*ExternalService) (Sources, error)
 func NewSourcer(cf *httpcli.Factory, decs ...func(Source) Source) Sourcer {
 	return func(svcs ...*ExternalService) (Sources, error) {
 		srcs := make([]Source, 0, len(svcs))
-		errs := new(multierror.Error)
+		var errs *multierror.Error
 
 		for _, svc := range svcs {
 			if svc.IsDeleted() {
@@ -35,7 +36,7 @@ func NewSourcer(cf *httpcli.Factory, decs ...func(Source) Source) Sourcer {
 
 			src, err := NewSource(svc, cf)
 			if err != nil {
-				errs = multierror.Append(errs, err)
+				errs = multierror.Append(errs, &SourceError{Err: err, ExtSvc: svc})
 				continue
 			}
 
@@ -52,13 +53,31 @@ func NewSourcer(cf *httpcli.Factory, decs ...func(Source) Source) Sourcer {
 
 // NewSource returns a repository yielding Source from the given ExternalService configuration.
 func NewSource(svc *ExternalService, cf *httpcli.Factory) (Source, error) {
+	return newSource(svc, cf, nil)
+}
+
+// NewChangesetSource returns a new ChangesetSource from the supplied ExternalService using the supplied
+// rate limiter
+func NewChangesetSource(svc *ExternalService, cf *httpcli.Factory, rl *rate.Limiter) (ChangesetSource, error) {
+	source, err := newSource(svc, cf, rl)
+	if err != nil {
+		return nil, err
+	}
+	css, ok := source.(ChangesetSource)
+	if !ok {
+		return nil, fmt.Errorf("ChangesetSource cannot be created from external service %q", svc.Kind)
+	}
+	return css, nil
+}
+
+func newSource(svc *ExternalService, cf *httpcli.Factory, rl *rate.Limiter) (Source, error) {
 	switch strings.ToLower(svc.Kind) {
 	case "github":
-		return NewGithubSource(svc, cf)
+		return NewGithubSource(svc, cf, rl)
 	case "gitlab":
 		return NewGitLabSource(svc, cf)
 	case "bitbucketserver":
-		return NewBitbucketServerSource(svc, cf)
+		return NewBitbucketServerSource(svc, cf, rl)
 	case "bitbucketcloud":
 		return NewBitbucketCloudSource(svc, cf)
 	case "gitolite":
@@ -68,7 +87,7 @@ func NewSource(svc *ExternalService, cf *httpcli.Factory) (Source, error) {
 	case "awscodecommit":
 		return NewAWSCodeCommitSource(svc, cf)
 	case "other":
-		return NewOtherSource(svc)
+		return NewOtherSource(svc, cf)
 	default:
 		panic(fmt.Sprintf("source not implemented for external service kind %q", svc.Kind))
 	}
@@ -80,10 +99,94 @@ const sourceTimeout = 30 * time.Minute
 // A Source yields repositories to be stored and analysed by Sourcegraph.
 // Successive calls to its ListRepos method may yield different results.
 type Source interface {
-	// ListRepos returns all the repos a source yields.
-	ListRepos(context.Context) ([]*Repo, error)
+	// ListRepos sends all the repos a source yields over the passed in channel
+	// as SourceResults
+	ListRepos(context.Context, chan SourceResult)
 	// ExternalServices returns the ExternalServices for the Source.
 	ExternalServices() ExternalServices
+}
+
+// A ChangesetSource can load the latest state of a list of Changesets.
+type ChangesetSource interface {
+	// LoadChangesets loads the given Changesets from the sources and updates
+	// them. If a Changeset could not be found on the source, it's included in
+	// the returned slice.
+	LoadChangesets(context.Context, ...*Changeset) error
+	// CreateChangeset will create the Changeset on the source. If it already
+	// exists, *Changeset will be populated and the return value will be
+	// true.
+	CreateChangeset(context.Context, *Changeset) (bool, error)
+	// CloseChangeset will close the Changeset on the source, where "close"
+	// means the appropriate final state on the codehost (e.g. "declined" on
+	// Bitbucket Server).
+	CloseChangeset(context.Context, *Changeset) error
+	// UpdateChangeset can update Changesets.
+	UpdateChangeset(context.Context, *Changeset) error
+}
+
+// ChangesetsNotFoundError is returned by LoadChangesets if any of the passed
+// Changesets could not be found on the codehost.
+type ChangesetsNotFoundError struct {
+	Changesets []*Changeset
+}
+
+func (e ChangesetsNotFoundError) Error() string {
+	if len(e.Changesets) == 1 {
+		return fmt.Sprintf("Changeset with external ID %q not found", e.Changesets[0].Changeset.ExternalID)
+	}
+
+	items := make([]string, len(e.Changesets))
+	for i := range e.Changesets {
+		items[i] = fmt.Sprintf("* %q", e.Changesets[i].Changeset.ExternalID)
+	}
+
+	return fmt.Sprintf(
+		"Changesets with the following external IDs could not be found:\n\t%s\n\n",
+		strings.Join(items, "\n\t"),
+	)
+}
+
+// A SourceResult is sent by a Source over a channel for each repository it
+// yields when listing repositories
+type SourceResult struct {
+	// Source points to the Source that produced this result
+	Source Source
+	// Repo is the repository that was listed by the Source
+	Repo *Repo
+	// Err is only set in case the Source ran into an error when listing repositories
+	Err error
+}
+
+type SourceError struct {
+	Err    error
+	ExtSvc *ExternalService
+}
+
+func (s *SourceError) Error() string {
+	if multiErr, ok := s.Err.(*multierror.Error); ok {
+		// Create new Error with custom formatter. Do not mutate otherwise can
+		// race with other callers of Error.
+		return (&multierror.Error{
+			Errors:      multiErr.Errors,
+			ErrorFormat: sourceErrorFormatFunc,
+		}).Error()
+	}
+	return s.Err.Error()
+}
+
+func sourceErrorFormatFunc(es []error) string {
+	if len(es) == 1 {
+		return es[0].Error()
+	}
+
+	points := make([]string, len(es))
+	for i, err := range es {
+		points[i] = fmt.Sprintf("* %s", err)
+	}
+
+	return fmt.Sprintf(
+		"%d errors occurred:\n\t%s\n\n",
+		len(es), strings.Join(points, "\n\t"))
 }
 
 // Sources is a list of Sources that implements the Source interface.
@@ -91,15 +194,9 @@ type Sources []Source
 
 // ListRepos lists all the repos of all the sources and returns the
 // aggregate result.
-func (srcs Sources) ListRepos(ctx context.Context) ([]*Repo, error) {
+func (srcs Sources) ListRepos(ctx context.Context, results chan SourceResult) {
 	if len(srcs) == 0 {
-		return nil, nil
-	}
-
-	type result struct {
-		src   Source
-		repos []*Repo
-		err   error
+		return
 	}
 
 	// Group sources by external service kind so that we execute requests
@@ -108,38 +205,17 @@ func (srcs Sources) ListRepos(ctx context.Context) ([]*Repo, error) {
 	// See https://developer.github.com/v3/guides/best-practices-for-integrators/#dealing-with-abuse-rate-limits)
 
 	var wg sync.WaitGroup
-	ch := make(chan result)
 	for _, sources := range group(srcs) {
 		wg.Add(1)
 		go func(sources Sources) {
 			defer wg.Done()
 			for _, src := range sources {
-				if repos, err := src.ListRepos(ctx); err != nil {
-					ch <- result{src: src, err: err}
-				} else {
-					ch <- result{src: src, repos: repos}
-				}
+				src.ListRepos(ctx, results)
 			}
 		}(sources)
 	}
 
-	go func() {
-		wg.Wait()
-		close(ch)
-	}()
-
-	var repos []*Repo
-	errs := new(multierror.Error)
-
-	for r := range ch {
-		if r.err != nil {
-			errs = multierror.Append(errs, r.err)
-		} else {
-			repos = append(repos, r.repos...)
-		}
-	}
-
-	return repos, errs.ErrorOrNil()
+	wg.Wait()
 }
 
 // ExternalServices returns the ExternalServices from the given Sources.
@@ -176,4 +252,35 @@ func group(srcs []Source) map[string]Sources {
 	}
 
 	return groups
+}
+
+// listAll calls ListRepos on the given Source and collects the SourceResults
+// the Source sends over a channel into a slice of *Repo and a single error
+func listAll(ctx context.Context, src Source, observe ...func(*Repo)) ([]*Repo, error) {
+	results := make(chan SourceResult)
+
+	go func() {
+		src.ListRepos(ctx, results)
+		close(results)
+	}()
+
+	var (
+		repos []*Repo
+		errs  *multierror.Error
+	)
+
+	for res := range results {
+		if res.Err != nil {
+			for _, extSvc := range res.Source.ExternalServices() {
+				errs = multierror.Append(errs, &SourceError{Err: res.Err, ExtSvc: extSvc})
+			}
+			continue
+		}
+		for _, o := range observe {
+			o(res.Repo)
+		}
+		repos = append(repos, res.Repo)
+	}
+
+	return repos, errs.ErrorOrNil()
 }

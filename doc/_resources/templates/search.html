@@ -1,0 +1,50 @@
+{{define "title"}}
+	{{.Query}} - Search
+{{end}}
+
+{{define "head"}}
+	<meta name="robots" content="noindex">
+{{end}}
+
+{{define "query"}}{{.Query}}{{end}}
+
+{{define "content"}}
+	<section id="content" class="search-result">
+		<h1>{{.Result.Total}} result{{if ne .Result.Total 1}}s{{end}} found for <strong>{{.Query}}</strong></h1>
+		{{if .Result.DocumentResults}}
+		<ol class="document-results">
+			{{range $dr := .Result.DocumentResults}}
+			<li class="document-result">
+				<h2 class="document-result-title"><a href="{{$dr.URL}}">{{with $dr.Title}}{{highlight .}}{{else}}Untitled{{end}}</a></h2>
+				<span class="document-result-path">{{highlight (replace (trimPrefix $dr.URL "/") "/" " › " -1)}}</span>
+				{{if $dr.SectionResults}}
+					<ol class="section-results">
+					{{range $sr := $dr.SectionResults}}
+						<li class="section-result">
+							{{if $sr.ID}}
+								<h3 class="section-result-title">
+									<a href="{{$dr.URL}}{{with $sr.ID}}#{{.}}{{end}}">
+										{{range $i, $titleEntry := $sr.TitleStack}}
+											{{if ge $i 2}}
+												{{highlight $titleEntry}}
+												{{if ne $i (subtract (len $sr.TitleStack) 1)}}›{{end}}
+											{{end}}
+										{{end}}
+									</a>
+								</h3>
+							{{end}}
+							{{if $sr.Excerpts}}
+								{{range (slice $sr.Excerpts 0 1)}}
+									<p class="excerpt">{{highlight .}}</p>
+								{{end}}
+							{{end}}
+						</li>
+					{{end}}
+					</ol>
+				{{end}}
+			</li>
+			{{end}}
+		</ol>
+		{{end}}
+	</section>
+{{end}}

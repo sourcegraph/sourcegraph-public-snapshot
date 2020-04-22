@@ -25,8 +25,73 @@ interface Node {
 # A valid JSON value.
 scalar JSONValue
 
+# A string that contains valid JSON, with additional support for //-style comments and trailing commas.
+scalar JSONCString
+
 # A mutation.
 type Mutation {
+    # Creates a list of Changesets of a given repository in a code host (e.g.
+    # pull request on GitHub). If a changeset with the given input already
+    # exists, it's returned instead of a new entry being added to the database.
+    createChangesets(input: [CreateChangesetInput!]!): [ExternalChangeset!]!
+    # Adds a list of Changesets to a Campaign.
+    # The campaign must not have a PatchSet.
+    addChangesetsToCampaign(campaign: ID!, changesets: [ID!]!): Campaign!
+    # Create a campaign in a namespace. The newly created campaign is returned.
+    createCampaign(input: CreateCampaignInput!): Campaign!
+    # Create a patch set from patches (in unified diff format) that are computed by the caller.
+    #
+    # To create the campaign, call createCampaign with the returned PatchSet.id in the
+    # CreateCampaignInput.patchSet field.
+    createPatchSetFromPatches(
+        # A list of patches (diffs) to apply to repositories (in new branches) when a campaign is
+        # created from this PatchSet.
+        patches: [PatchInput!]!
+    ): PatchSet!
+    # Updates a campaign.
+    # Note, updating is not allowed when:
+    # The campaign has already been closed.
+    # A plan is added to a manual campaign.
+    # A non-manual campaign is being published.
+    # The branch of a (partially-) published campaign is changed.
+    updateCampaign(input: UpdateCampaignInput!): Campaign!
+    # Retries creating changesets from the patches in the PatchSet that could not be successfully created on the code host.
+    # Retrying will clear the errors list of a campaign and change its state back to CREATING_CHANGESETS.
+    retryCampaign(campaign: ID!): Campaign!
+    # Deletes a campaign.
+    deleteCampaign(
+        campaign: ID!
+        # Whether to close the changesets associated with this campaign on their
+        # respective codehosts, where "close" means the appropriate final state
+        # on the codehost (e.g. "declined" on Bitbucket Server).
+        closeChangesets: Boolean = false
+    ): EmptyResponse
+    # Closes a campaign.
+    # Closing a campaign sets the Campaign's ClosedAt timestamp to the current
+    # time and, if closeChangesets = true, closes associated changesets on the
+    # codehosts.
+    closeCampaign(
+        campaign: ID!
+        # Whether to close the changesets associated with this campaign on their
+        # respective codehosts, where "close" means the appropriate final state
+        # on the codehost (e.g. "declined" on Bitbucket Server).
+        closeChangesets: Boolean = false
+    ): Campaign!
+    # Publishes the Campaign by turning its patches into changesets on
+    # the codehosts.
+    # The Campaign.draft field will be set to false and Campaign.status will
+    # update according to the progress of turning the patches into
+    # changesets.
+    publishCampaign(campaign: ID!): Campaign!
+    # Creates an ExternalChangeset on the codehost asynchronously.
+    # The Patch has to belong to a PatchSet that has been attached
+    # to a Campaign. Otherwise an error is returned.
+    # Since this is an asynchronous operation, the Campaign.status field can be
+    # used to keep track of progress.
+    publishChangeset(patch: ID!): EmptyResponse!
+    # Enqueues the given changeset for high-priority syncing.
+    syncChangeset(changeset: ID!): EmptyResponse!
+
     # Updates the user profile information for the user with the given ID.
     #
     # Only the user and site admins may perform this mutation.
@@ -57,15 +122,6 @@ type Mutation {
     # Only site admins may perform this mutation.
     setRepositoryEnabled(repository: ID!, enabled: Boolean!): EmptyResponse
         @deprecated(reason: "update external service exclude setting.")
-    # DEPRECATED: All repositories are accessible or deleted. To prevent a
-    # repository from being accessed on Sourcegraph add it to the external
-    # service exclude configuration.
-    #
-    # Enables or disables all site repositories.
-    #
-    # Only site admins may perform this mutation.
-    setAllRepositoriesEnabled(enabled: Boolean!): EmptyResponse
-        @deprecated(reason: "update external service exclude setting.")
     # Tests the connection to a mirror repository's original source repository. This is an
     # expensive and slow operation, so it should only be used for interactive diagnostics.
     #
@@ -94,19 +150,6 @@ type Mutation {
     #
     # Only site admins may perform this mutation.
     updateAllMirrorRepositories: EmptyResponse! @deprecated(reason: "syncer ensures all repositories are up to date.")
-    # DEPRECATED: All repositories are accessible or deleted. To prevent a
-    # repository from being accessed on Sourcegraph add it to the external
-    # service exclude configuration. It will be deleted. This mutation will be removed in 3.6.
-    #
-    # Deletes a repository and all data associated with it, irreversibly.
-    #
-    # If the repository was added because it was present in the site configuration (directly,
-    # or because it originated from a configured code host), then it will be re-added during
-    # the next sync. If you intend to make the repository inaccessible to users and not searchable,
-    # use setRepositoryEnabled to disable the repository instead of deleteRepository.
-    #
-    # Only site admins may perform this mutation.
-    deleteRepository(repository: ID!): EmptyResponse @deprecated(reason: "update external service exclude setting.")
     # Creates a new user account.
     #
     # Only site admins may perform this mutation.
@@ -263,7 +306,20 @@ type Mutation {
         date: String
     ): GitCommit
     # Logs a user event.
-    logUserEvent(event: UserEvent!, userCookieID: String!): EmptyResponse
+    logUserEvent(event: UserEvent!, userCookieID: String!): EmptyResponse @deprecated(reason: "use logEvent instead")
+    # Logs an event.
+    logEvent(
+        # The name of the event.
+        event: String!
+        # The randomly generated unique user ID stored in a browser cookie.
+        userCookieID: String!
+        # The URL when the event was logged.
+        url: String!
+        # The source of the event.
+        source: EventSource!
+        # The additional argument information.
+        argument: String
+    ): EmptyResponse
     # Sends a test notification for the saved search. Be careful: this will send a notifcation (email and other
     # types of notifications, if configured) to all subscribers of the saved search, which could be bothersome.
     #
@@ -298,6 +354,9 @@ type Mutation {
     ): Boolean!
     # Manages discussions.
     discussions: DiscussionsMutation
+        @deprecated(
+            reason: "discussions will be removed in 3.16. https://github.com/sourcegraph/sourcegraph/issues/9649"
+        )
     # Sets whether the user with the specified user ID is a site admin.
     #
     # Only site admins may perform this mutation.
@@ -313,9 +372,6 @@ type Mutation {
     requestTrial(email: String!): EmptyResponse
     # Manages the extension registry.
     extensionRegistry: ExtensionRegistryMutation!
-    # Clears the management console plaintext password forever. Only site
-    # admins can perform this action.
-    clearManagementConsolePlaintextPassword: EmptyResponse
     # Mutations that are only used on Sourcegraph.com.
     #
     # FOR INTERNAL USE ONLY.
@@ -341,6 +397,439 @@ type Mutation {
     ): SavedSearch!
     # Deletes a saved search
     deleteSavedSearch(id: ID!): EmptyResponse
+
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
+    # Deletes an LSIF upload.
+    deleteLSIFUpload(id: ID!): EmptyResponse
+
+    # Set permissions of a repository with a full set of users by their usernames or emails.
+    setRepositoryPermissionsForUsers(
+        # The repository that the mutation is applied to.
+        repository: ID!
+        # A list of usernames or email addresses according to site configuration.
+        bindIDs: [String!]!
+        # The level of repository permission.
+        perm: RepositoryPermission = READ
+    ): EmptyResponse!
+}
+
+# A patch to apply to a repository (in a new branch) when a campaign is created
+# from the parent patch set.
+input PatchInput {
+    # The repository that this patch is applied to.
+    repository: ID!
+
+    # The base revision in the repository that this patch is based on.
+    # Example: "4095572721c6234cd72013fd49dff4fb48f0f8a4"
+    baseRevision: String!
+
+    # The reference to the base revision at the time the patch was created.
+    # Example: "refs/heads/master"
+    baseRef: String!
+
+    # The patch (in unified diff format) to apply.
+    #
+    # The filenames must not be prefixed (e.g., with 'a/' and 'b/'). Tip: use 'git diff --no-prefix'
+    # to omit the prefix.
+    patch: String!
+}
+
+# Input arguments for creating a campaign.
+input CreateCampaignInput {
+    # The ID of the namespace where this campaign is defined.
+    namespace: ID!
+
+    # The name of the campaign.
+    name: String!
+
+    # The description of the campaign as Markdown.
+    description: String
+
+    # The name of the branch that will be created for each changeset on the codehost if the patchSet attribute is specified.
+    # If a branch with the given name already exists a fallback name will be created by adding a count to the end of the branch name until the name doesn't exist. Example: "my-branch-name" becomes "my-branch-name-1".
+    # This is required if the patchSet attribute is specified.
+    branch: String
+
+    # An optional reference to a PatchSet that was created before this mutation.
+    # If null, existing changesets can be added manually.
+    # If set, no changesets can be added manually, they will be created by Sourcegraph
+    # based on the patches belonging to the PatchSet.
+    # Will error if the PatchSet has been purged already and needs to be recreated.
+    # Using a PatchSet for a campaign will retain it for the lifetime of the campaign and prevents it from being purged.
+    patchSet: ID
+
+    # Whether or not to create the Campaign in draft mode. Default is false.
+    # When a Campaign is created in draft mode, its patches are not
+    # created on the codehost, but only when publishing the Campaign.
+    draft: Boolean
+}
+
+# Input arguments for updating a campaign.
+input UpdateCampaignInput {
+    # The ID of the campaign to update.
+    id: ID!
+
+    # The updated name of the campaign (if non-null).
+    name: String
+
+    # The branch name. This is not allowed if the campaign or any individual changesets have already been published.
+    branch: String
+
+    # The updated description of the campaign as Markdown (if non-null).
+    description: String
+
+    # An optional reference to a completed PatchSet that was previewed
+    # before updating the Campaign.
+    # If set, the Campaign's changesets will be updated to the Changesets of the given PatchSet.
+    # The Campaign's status will be updated accordingly while possibly
+    # new ExternalChangesets are created/updated/closed on the codehosts.
+    patchSet: ID
+}
+
+# A set of Patches that will be turned into changesets by a campaign.
+# It is cached and addressable by its ID for a limited amount of time.
+type PatchSet implements Node {
+    # The unique ID of this PatchSet.
+    id: ID!
+
+    # The proposed patches for the changesets that will be created by the campaign.
+    patches(first: Int): PatchConnection!
+
+    # The URL where the PatchSet can be previewed and a campaign can be created from it.
+    previewURL: String!
+}
+
+# A paginated list of repository diffs committed to git.
+type RepositoryComparisonConnection {
+    # A list of repository diffs committed to git.
+    nodes: [RepositoryComparison!]!
+
+    # The total number of repository diffs in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# The state a background process can be in.
+enum BackgroundProcessState {
+    # The background process is processing items.
+    PROCESSING
+    # The background process attempted processing all items, but some failed.
+    ERRORED
+    # The background process completed processing all items successfully.
+    COMPLETED
+    # The background process was canceled.
+    CANCELED
+}
+
+# Reusable type to report progress of a background process.
+type BackgroundProcessStatus {
+    # How many items were successfully completed.
+    completedCount: Int!
+
+    # How many items are not done yet (including items that errored).
+    pendingCount: Int!
+
+    # The state the background process is currently in.
+    state: BackgroundProcessState!
+
+    # Messages of errors that occurred since the current run of this process was started.
+    errors: [String!]!
+}
+
+# A collection of changesets.
+type Campaign implements Node {
+    # The unique ID for the campaign.
+    id: ID!
+
+    # The PatchSet that was used to create this campaign.
+    # If null, changesets are added to the campaign manually.
+    patchSet: PatchSet
+
+    # The current status of creating or updating the campaigns changesets on
+    # the code host.
+    status: BackgroundProcessStatus!
+
+    # The namespace where this campaign is defined.
+    namespace: Namespace!
+
+    # The name of the campaign.
+    name: String!
+
+    # The description as Markdown.
+    description: String
+
+    # The branch of the changesets.
+    branch: String
+
+    # The user who authored the campaign.
+    author: User!
+
+    # Whether the current user can edit or delete this campaign.
+    viewerCanAdminister: Boolean!
+
+    # The URL to this campaign.
+    url: String!
+
+    # The date and time when the campaign was created.
+    createdAt: DateTime!
+
+    # The date and time when the campaign was updated.
+    updatedAt: DateTime!
+
+    # The combined diff of all changesets across all repositories, already created on the code host.
+    repositoryDiffs(first: Int): RepositoryComparisonConnection!
+
+    # The changesets in this campaign, already created on the code host.
+    changesets(
+        first: Int
+        # Only include changesets with the given state
+        state: ChangesetState
+        # Only include changesets with the given review state
+        reviewState: ChangesetReviewState
+        # Only include changesets with the given check state
+        checkState: ChangesetCheckState
+    ): ExternalChangesetConnection!
+
+    # The changeset counts over time, in 1 day intervals backwards from the point in time given in 'to'.
+    changesetCountsOverTime(
+        # Only include changeset counts up to this point in time (inclusive).
+        # Defaults to createdAt.
+        from: DateTime
+        # Only include changeset counts up to this point in time (inclusive).
+        # Defaults to now.
+        to: DateTime
+    ): [ChangesetCounts!]!
+
+    # The date and time when the campaign was closed.
+    closedAt: DateTime
+
+    # The date and time when the Campaign changed from draft mode to published.
+    # If the Campaign has not been published yet (is still in draft mode) this
+    # is null.
+    # If the Campaign was never in draft mode the value is the same as createdAt.
+    publishedAt: DateTime
+
+    # The patches that will be turned into changesets on the code host when
+    # publishing the Campaign.
+    # If the Campaign is a "manual" campaign and doesn't have a PatchSet
+    # attached, there won't be any nodes returned by this connection.
+    # When publishing a Campaign, the number of nodes in changesets will
+    # increase with each decrease in patches. The Completed count in the
+    # Campaign.status increments with every Patch turned into an
+    # ExternalChangeset.
+    patches(first: Int): PatchConnection!
+}
+
+# The counts of changesets in certain states at a specific point in time.
+type ChangesetCounts {
+    # The point in time these counts were recorded.
+    date: DateTime!
+    # The total number of changesets.
+    total: Int!
+    # The number of merged changesets.
+    merged: Int!
+    # The number of closed changesets.
+    closed: Int!
+    # The number of open changesets (independent of review state).
+    open: Int!
+    # The number of changesets that are both open and approved.
+    openApproved: Int!
+    # The number of changesets that are both open and have requested changes.
+    openChangesRequested: Int!
+    # The number of changesets that are both open and are pending review.
+    openPending: Int!
+}
+
+# A list of campaigns.
+type CampaignConnection {
+    # A list of campaigns.
+    nodes: [Campaign!]!
+
+    # The total number of campaigns in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# A Changeset's state
+enum ChangesetState {
+    OPEN
+    CLOSED
+    MERGED
+    DELETED
+}
+
+# The state of a Changeset Review
+enum ChangesetReviewState {
+    APPROVED
+    CHANGES_REQUESTED
+    PENDING
+    COMMENTED
+    DISMISSED
+}
+
+# The state of continuous integration checks on a changeset
+enum ChangesetCheckState {
+    PENDING
+    PASSED
+    FAILED
+}
+
+# The input to the createChangesets mutation.
+input CreateChangesetInput {
+    # The repository ID that this Changeset belongs to.
+    repository: ID!
+    # The external ID that uniquely identifies this Changeset in the above repository.
+    # Github: PR number
+    externalID: String!
+}
+
+# A Patch that can be used to create a changeset on a code host.
+type Patch implements Node {
+    # The id of the patch.
+    id: ID!
+
+    # The repository in which the patch is applied.
+    repository: Repository!
+
+    # The actual diff of the patch.
+    diff: PreviewRepositoryComparison!
+
+    # Whether the Patch is enqueued for publication. Default is false.
+    # It will be true when:
+    # - a Campaign has been created with the PatchSet to which this Patch belongs.
+    # - when a Campaign with the PatchSet has been published after being in draft mode.
+    # - when the Patch has been individually published through the publishChangeset mutation.
+    publicationEnqueued: Boolean!
+}
+
+# A label attached to a changeset on a codehost, mirrored
+type ChangesetLabel {
+    # The labels text
+    text: String!
+    # Label color, defined in hex without the #. E.g., 93ba13
+    color: String!
+    # Optional descriptive text to support the understandability of the labels meaning
+    description: String
+}
+
+# A changeset in a code host (e.g. a PR on Github)
+type ExternalChangeset implements Node {
+    # The unique ID for the changeset.
+    id: ID!
+
+    # The external ID that uniquely identifies this ExternalChangeset on the
+    # codehost. For example, on GitHub this is the PR number.
+    externalID: String!
+
+    # The repository changed by this changeset.
+    repository: Repository!
+
+    # The campaigns that have this changeset in them.
+    campaigns(
+        # Returns the first n campaigns from the list.
+        first: Int
+        state: CampaignState
+        # Only return campaigns that have a patch set.
+        hasPatchSet: Boolean
+    ): CampaignConnection!
+
+    # The events belonging to this changeset.
+    events(first: Int): ChangesetEventConnection!
+
+    # The date and time when the changeset was created.
+    createdAt: DateTime!
+
+    # The date and time when the changeset was updated.
+    updatedAt: DateTime!
+
+    # The date and time when the next changeset sync is scheduled. Can be null if not scheduled.
+    nextSyncAt: DateTime
+
+    # The title of the changeset
+    title: String!
+
+    # The body of the changeset
+    body: String!
+
+    # The state of the changeset
+    state: ChangesetState!
+
+    # The labels attached to the changeset on the code host.
+    labels: [ChangesetLabel!]!
+
+    # The external URL of the changeset on the code host.
+    externalURL: ExternalLink!
+
+    # The review state of this changeset.
+    reviewState: ChangesetReviewState!
+
+    # The head of the diff ("new" or "right-hand side").
+    head: GitRef!
+
+    # The base of the diff ("old" or "left-hand side").
+    base: GitRef!
+
+    # The diff of this changeset.
+    # Only returned if the changeset has not been merged or closed.
+    diff: RepositoryComparison
+
+    # The state of the continuous integration checks on this changeset.
+    # It can be null if no checks have been configured.
+    checkState: ChangesetCheckState
+}
+
+# A list of changesets.
+type ExternalChangesetConnection {
+    # A list of changesets.
+    nodes: [ExternalChangeset!]!
+
+    # The total number of changesets in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# A list of patches.
+type PatchConnection {
+    # A list of patches.
+    nodes: [Patch!]!
+
+    # The total number of patches in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# A changeset event in a code host (e.g. a comment on a PR on Github)
+type ChangesetEvent implements Node {
+    # The unique ID for the changeset event.
+    id: ID!
+
+    # The changeset this event belongs to.
+    changeset: ExternalChangeset!
+
+    # The date and time when the changeset was created.
+    createdAt: DateTime!
+}
+
+# A list of changeset events.
+type ChangesetEventConnection {
+    # A list of changeset events.
+    nodes: [ChangesetEvent!]!
+
+    # The total number of changeset events in the connection.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
 }
 
 # A new external service.
@@ -528,6 +1017,13 @@ input MarkdownOptions {
     alwaysNil: String
 }
 
+# The product sources where events can come from.
+enum EventSource {
+    WEB
+    CODEHOSTINTEGRATION
+    BACKEND
+}
+
 # Input for Mutation.settingsMutation, which contains fields that all settings (global, organization, and user
 # settings) mutations need.
 input SettingsMutationGroupInput {
@@ -655,23 +1151,51 @@ input SurveySubmissionInput {
     better: String
 }
 
+# The state of the campaign
+enum CampaignState {
+    OPEN
+    CLOSED
+}
+
 # A query.
 type Query {
     # The root of the query.
     root: Query! @deprecated(reason: "this will be removed.")
     # Looks up a node by ID.
     node(id: ID!): Node
+
+    # A list of campaigns.
+    campaigns(
+        # Returns the first n campaigns from the list.
+        first: Int
+        state: CampaignState
+        # Only return campaigns that have a patch set.
+        hasPatchSet: Boolean
+    ): CampaignConnection!
+
     # Looks up a repository by either name or cloneURL.
     repository(
         # Query the repository by name, for example "github.com/gorilla/mux".
         name: String
         # Query the repository by a Git clone URL (format documented here: https://git-scm.com/docs/git-clone#_git_urls_a_id_urls_a)
-        # by checking if there exists a code host configuration that matches the clone URL.
+        # by checking for a code host configuration that matches the clone URL.
         # Will not actually check the code host to see if the repository actually exists.
         cloneURL: String
         # An alias for name. DEPRECATED: use name instead.
         uri: String
     ): Repository
+    # Looks up a repository by either name or cloneURL. When the repository does not exist on the server
+    # and "disablePublicRepoRedirects" is "false" in the site configuration, it returns a Redirect to
+    # an external Sourcegraph URL that may have this repository instead. Otherwise, this query returns
+    # null.
+    repositoryRedirect(
+        # Query the repository by name, for example "github.com/gorilla/mux".
+        name: String
+        # Query the repository by a Git clone URL (format documented here: https://git-scm.com/docs/git-clone#_git_urls_a_id_urls_a)
+        # by checking for a code host configuration that matches the clone URL.
+        # Will not actually check the code host to see if the repository actually exists.
+        cloneURL: String
+    ): RepositoryRedirect
     # Lists all external services.
     externalServices(
         # Returns the first n external services from the list.
@@ -685,14 +1209,6 @@ type Query {
         query: String
         # Return repositories whose names are in the list.
         names: [String!]
-        # Include enabled repositories.
-        #
-        # DEPRECATED: All repositories are enabled. Will be removed in 3.6.
-        enabled: Boolean = true
-        # Include disabled repositories.
-        #
-        # DEPRECATED: No repositories are disabled. Will be removed in 3.6.
-        disabled: Boolean = false
         # Include cloned repositories.
         cloned: Boolean = true
         # Include repositories that are currently being cloned.
@@ -799,10 +1315,38 @@ type Query {
     viewerConfiguration: ConfigurationCascade! @deprecated(reason: "use viewerSettings instead")
     # The configuration for clients.
     clientConfiguration: ClientConfigurationDetails!
+    # Fetch search filter suggestions for autocompletion.
+    searchFilterSuggestions: SearchFilterSuggestions!
     # Runs a search.
     search(
+        # The version of the search syntax being used.
+        # All new clients should use the latest version.
+        version: SearchVersion = V1
+        # PatternType controls the search pattern type, if and only if it is not specified in the query string using
+        # the patternType: field.
+        patternType: SearchPatternType
         # The search query (such as "foo" or "repo:myrepo foo").
         query: String = ""
+
+        # (experimental) Sourcegraph 3.9 added support for cursor-based paginated
+        # search requests when this field is specified. For details, see
+        # https://docs.sourcegraph.com/api/graphql/search
+        #
+        # When specified, indicates that this request should be paginated and
+        # to fetch results starting at this cursor.
+        #
+        # A future request can be made for more results by passing in the
+        # 'SearchResults.pageInfo.endCursor' that is returned.
+        after: String
+
+        # (experimental) Sourcegraph 3.9 added support for cursor-based paginated
+        # search requests when this field is specified. For details, see
+        # https://docs.sourcegraph.com/api/graphql/search
+        #
+        # When specified, indicates that this request should be paginated and
+        # the first N results (relative to the cursor) should be returned. i.e.
+        # how many results to return per page. It must be in the range of 0-5000.
+        first: Int
     ): Search
     # All saved searches configured for the current user, merged from all configurations.
     savedSearches: [SavedSearch!]!
@@ -815,31 +1359,53 @@ type Query {
         # Returns the first n survey responses from the list.
         first: Int
     ): SurveyResponseConnection!
-    # The most frequently occurring recent queries.
-    topQueries(
-        # Maximum number of unique queries to return.
-        limit: Int!
-    ): [QueryCount!]!
     # The extension registry.
     extensionRegistry: ExtensionRegistry!
     # Queries that are only used on Sourcegraph.com.
     #
     # FOR INTERNAL USE ONLY.
     dotcom: DotcomQuery!
-    # Lists all status messages
+    # FOR INTERNAL USE ONLY: Lists all status messages
     statusMessages: [StatusMessage!]!
 
     # Look up a namespace by ID.
     namespace(id: ID!): Namespace
+
+    # The repositories a user is authorized to access with the given permission.
+    # This isn’t defined in the User type because we store permissions for users
+    # that don’t yet exist (i.e. late binding). Only one of "username" or "email"
+    # is required to identify a user.
+    authorizedUserRepositories(
+        # The username.
+        username: String
+        # One of the email addresses.
+        email: String
+        # Permission that the user has on the repositories.
+        perm: RepositoryPermission = READ
+        # Number of repositories to return after the given cursor.
+        first: Int!
+        # Opaque pagination cursor.
+        after: String
+    ): RepositoryConnection!
+
+    # Returns a list of usernames or emails that have associated pending permissions.
+    # The returned list can be used to query authorizedUserRepositories for pending permissions.
+    usersWithPendingPermissions: [String!]!
 }
 
-# A query and an associated number of times it occurred.
-type QueryCount {
-    # The search query.
-    query: String!
+# The version of the search syntax.
+enum SearchVersion {
+    # Search syntax that defaults to regexp search.
+    V1
+    # Search syntax that defaults to literal search.
+    V2
+}
 
-    # The number of times the search query was made.
-    count: Int!
+# The search pattern type.
+enum SearchPatternType {
+    literal
+    regexp
+    structural
 }
 
 # Configuration details for the browser extension, editor extensions, etc.
@@ -866,6 +1432,14 @@ type Search {
     # cached and thus quicker to query. Useful for e.g. querying sparkline
     # data.
     stats: SearchResultsStats!
+}
+
+# Predefined suggestions for search filters when backfill.
+type SearchFilterSuggestions {
+    # The suggestions for search filter "repogroup:".
+    repogroup: [String!]!
+    # The suggestions for search filter "repo:".
+    repo: [String!]!
 }
 
 # A search result.
@@ -931,23 +1505,46 @@ type SearchResults {
     # This string is typically shown to users to indicate the true result count.
     approximateResultCount: String!
     # Whether or not the results limit was hit.
+    #
+    # In paginated requests, this field is always false. Use 'pageInfo.hasNextPage' instead.
     limitHit: Boolean!
     # Integers representing the sparkline for the search results.
     sparkline: [Int!]!
     # Repositories that were eligible to be searched.
     repositories: [Repository!]!
+    # The number of repositories that were eligible to be searched (for clients
+    # that just wish to know how many without querying the, sometimes extremely
+    # large, list).
+    repositoriesCount: Int!
     # Repositories that were actually searched. Excludes repositories that would have been searched but were not
     # because a timeout or error occurred while performing the search, or because the result limit was already
     # reached.
+    #
+    # In paginated search requests, this represents the set of repositories searched for the
+    # individual paginated request / input cursor and not the global set of repositories that
+    # would be searched if further requests were made.
     repositoriesSearched: [Repository!]!
     # Indexed repositories searched. This is a subset of repositoriesSearched.
     indexedRepositoriesSearched: [Repository!]!
     # Repositories that are busy cloning onto gitserver.
+    #
+    # In paginated search requests, some repositories may be cloning. These are reported here
+    # and you may choose to retry the paginated request with the same cursor after they have
+    # cloned OR you may simply continue making further paginated requests and choose to skip
+    # the cloning repositories.
     cloning: [Repository!]!
     # Repositories or commits that do not exist.
+    #
+    # In paginated search requests, some repositories may be missing (e.g. if Sourcegraph is
+    # aware of them but is temporarily unable to serve them). These are reported here and you
+    # may choose to retry the paginated request with the same cursor and they may no longer be
+    # missing OR you may simply continue making further paginated requests and choose to skip
+    # the missing repositories.
     missing: [Repository!]!
     # Repositories or commits which we did not manage to search in time. Trying
     # again usually will work.
+    #
+    # In paginated search requests, this field is not relevant.
     timedout: [Repository!]!
     # True if indexed search is enabled but was not available during this search.
     indexUnavailable: Boolean!
@@ -957,6 +1554,10 @@ type SearchResults {
     elapsedMilliseconds: Int!
     # Dynamic filters generated by the search results
     dynamicFilters: [SearchFilter!]!
+    # Pagination information.
+    #
+    # This field is only applcable when the original request was a paginated one.
+    pageInfo: PageInfo!
 }
 
 # Statistics about search results.
@@ -965,6 +1566,11 @@ type SearchResultsStats {
     approximateResultCount: String!
     # The sparkline.
     sparkline: [Int!]!
+
+    # Statistics about the languages represented in the search results.
+    #
+    # Known issue: The LanguageStatistics.totalBytes field values are incorrect in the result.
+    languages: [LanguageStatistics!]!
 }
 
 # A search filter.
@@ -981,8 +1587,14 @@ type SearchFilter {
     kind: String!
 }
 
+# A programming language.
+type Language {
+    # Name of the programming language.
+    name: String!
+}
+
 # A search suggestion.
-union SearchSuggestion = Repository | File | Symbol
+union SearchSuggestion = Repository | File | Symbol | Language
 
 # A search-related alert message.
 type SearchAlert {
@@ -1073,6 +1685,10 @@ type CodemodResult implements GenericSearchResultInterface {
     detail: Markdown!
     # A list of matches in this search result.
     matches: [SearchResultMatch!]!
+    # The commit whose contents the codemod was run against.
+    commit: GitCommit!
+    # The raw diff of the modification.
+    rawDiff: String!
 }
 
 # A search result that is a diff between two diffable Git objects.
@@ -1134,7 +1750,7 @@ type ExternalService implements Node {
     # The display name of the external service.
     displayName: String!
     # The JSON configuration of the external service.
-    config: String!
+    config: JSONCString!
     # When the external service was created.
     createdAt: DateTime!
     # When the external service was last updated.
@@ -1181,13 +1797,6 @@ type Repository implements Node & GenericSearchResultInterface {
     description: String!
     # The primary programming language in the repository.
     language: String!
-    # DEPRECATED: All repositories are enabled. This field will be removed in 3.6.
-    #
-    # Whether the repository is enabled. A disabled repository should only be accessible to site admins.
-    #
-    # NOTE: Disabling a repository does not provide any additional security. This field is merely a
-    # guideline to UI implementations.
-    enabled: Boolean! @deprecated(reason: "Always true. All repositories are enabled.")
     # DEPRECATED: This field is unused in known clients.
     #
     # The date when this repository was created on Sourcegraph.
@@ -1212,6 +1821,10 @@ type Repository implements Node & GenericSearchResultInterface {
     # Information about this repository from the external service that it originates from (such as GitHub, GitLab,
     # Phabricator, etc.).
     externalRepository: ExternalRepository
+    # Whether the repository is a fork.
+    isFork: Boolean!
+    # Whether the repository has been archived.
+    isArchived: Boolean!
     # Lists all external services which yield this repository.
     externalServices(
         # Returns the first n external services from the list.
@@ -1242,6 +1855,10 @@ type Repository implements Node & GenericSearchResultInterface {
         type: GitRefType
         # Ordering for Git refs in the list.
         orderBy: GitRefOrder
+        # Ordering is an expensive operation that doesn't scale for lots of
+        # references. If this is true we fallback on not ordering. This should
+        # never be false in interactive API requests.
+        interactive: Boolean = true
     ): GitRefConnection!
     # The repository's Git branches.
     branches(
@@ -1251,6 +1868,10 @@ type Repository implements Node & GenericSearchResultInterface {
         query: String
         # Ordering for Git branches in the list.
         orderBy: GitRefOrder
+        # Ordering is an expensive operation that doesn't scale for lots of
+        # references. If this is true we fallback on not ordering. This should
+        # never be false in interactive API requests.
+        interactive: Boolean = true
     ): GitRefConnection!
     # The repository's Git tags.
     tags(
@@ -1278,7 +1899,7 @@ type Repository implements Node & GenericSearchResultInterface {
         first: Int
     ): RepositoryContributorConnection!
     # Link to another Sourcegraph instance location where this repository is located.
-    redirectURL: String
+    redirectURL: String @deprecated(reason: "use repositoryRedirect query instead")
     # Whether the viewer has admin privileges on this repository.
     viewerCanAdminister: Boolean!
     # Base64 data uri to an icon.
@@ -1289,7 +1910,55 @@ type Repository implements Node & GenericSearchResultInterface {
     detail: Markdown!
     # The result previews of the result.
     matches: [SearchResultMatch!]!
+
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
+    # The repository's LSIF uploads.
+    lsifUploads(
+        # An (optional) search query that searches over the commit and root properties.
+        query: String
+
+        # The state of returned uploads.
+        state: LSIFUploadState
+
+        # When specified, shows only uploads that are latest for the given repository.
+        isLatestForRepo: Boolean
+
+        # When specified, indicates that this request should be paginated and
+        # the first N results (relative to the cursor) should be returned. i.e.
+        # how many results to return per page. It must be in the range of 0-5000.
+        first: Int
+
+        # When specified, indicates that this request should be paginated and
+        # to fetch results starting at this cursor.
+        #
+        # A future request can be made for more results by passing in the
+        # 'LSIFUploadConnection.pageInfo.endCursor' that is returned.
+        after: String
+    ): LSIFUploadConnection!
+
+    # A list of authorized users to access this repository with the given permission.
+    # This API currently only returns permissions from the Sourcegraph provider, i.e.
+    # "permissions.userMapping" in site configuration.
+    authorizedUsers(
+        # Permission that the user has on this repository.
+        perm: RepositoryPermission = READ
+        # Number of users to return after the given cursor.
+        first: Int!
+        # Opaque pagination cursor.
+        after: String
+    ): UserConnection!
 }
+
+# A reference to another Sourcegraph instance.
+type Redirect {
+    # The URL of the other Sourcegraph instance.
+    url: String!
+}
+
+# A repository or a link to another Sourcegraph instance location where this repository may be located.
+union RepositoryRedirect = Repository | Redirect
 
 # A URL to a resource on an external service, such as the URL to a repository on its external (origin) code host.
 type ExternalLink {
@@ -1416,8 +2085,62 @@ type GitRefConnection {
     pageInfo: PageInfo!
 }
 
-# The differences between two Git commits in a repository.
+# A not-yet-committed preview of a diff on a repository.
+type PreviewRepositoryComparison {
+    # The repository that this diff is targeting.
+    baseRepository: Repository!
+
+    # The preview of the file diffs for each file in the diff.
+    fileDiffs(first: Int): PreviewFileDiffConnection!
+}
+
+# A list of file diffs that might be applied.
+type PreviewFileDiffConnection {
+    # A list of file diffs that might be applied.
+    nodes: [PreviewFileDiff!]!
+    # The total count of file diffs in the connection, if available. This total count may be larger than the number
+    # of nodes in this object when the result is paginated.
+    totalCount: Int
+    # Pagination information.
+    pageInfo: PageInfo!
+    # The diff stat for the file diffs in this object, which may be a subset of the entire diff if the result is
+    # paginated.
+    diffStat: DiffStat!
+    # The raw diff for the file diffs in this object, which may be a subset of the entire diff if the result is
+    # paginated.
+    rawDiff: String!
+}
+
+# A diff for a single file that has not been applied yet.
+# Subset of the FileDiff type.
+type PreviewFileDiff {
+    # The old (original) path of the file, or null if the file was added.
+    oldPath: String
+    # The old file, or null if the file was created (oldFile.path == oldPath).
+    oldFile: File2
+    # The new path of the file if the diff was applied, or null if the file was deleted.
+    newPath: String
+    # Hunks that were would be changed from old to new.
+    hunks: [FileDiffHunk!]!
+    # The diff stat for the whole file.
+    stat: DiffStat!
+    # FOR INTERNAL USE ONLY.
+    #
+    # An identifier for the file diff that is unique among all other file diffs in the list that
+    # contains it.
+    internalID: String!
+}
+
+# The differences between two concrete Git commits in a repository.
 type RepositoryComparison {
+    # The repository that is the base (left-hand side) of this comparison.
+    baseRepository: Repository!
+
+    # The repository that is the head (right-hand side) of this comparison. Cross-repository
+    # comparisons are not yet supported, so this is always equal to
+    # RepositoryComparison.baseRepository.
+    headRepository: Repository!
+
     # The range that this comparison represents.
     range: GitRevisionRange!
     # The commits in the comparison range, excluding the base and including the head.
@@ -1533,8 +2256,8 @@ type RepositoryContributor {
 
 # A code symbol (e.g., a function, variable, type, class, etc.).
 #
-# It is derived from symbols as defined in the Language Server Protocol (see
-# https://microsoft.github.io/language-server-protocol/specification#workspace_symbol).
+# It is derived from DocumentSymbol as defined in the Language Server Protocol (see
+# https://microsoft.github.io/language-server-protocol/specifications/specification-3-14/#textDocument_documentSymbol).
 type Symbol {
     # The name of the symbol.
     name: String!
@@ -1738,7 +2461,9 @@ type PhabricatorRepo {
 
 # Pagination information. See https://facebook.github.io/relay/graphql/connections.htm#sec-undefined.PageInfo.
 type PageInfo {
-    # Whether there is a next page of nodes in the connection.
+    # When paginating forwards, the cursor to continue.
+    endCursor: String
+    # When paginating forwards, are there more items?
     hasNextPage: Boolean!
 }
 
@@ -1746,8 +2471,25 @@ type PageInfo {
 type GitCommitConnection {
     # A list of Git commits.
     nodes: [GitCommit!]!
+    # The total number of Git commits in the connection. If the GitCommitConnection is paginated
+    # (e.g., because a "first" parameter was provided to the field that produced it), this field is
+    # null to avoid it taking unexpectedly long to compute the total count. Remove the pagination
+    # parameters to obtain a non-null value for this field.
+    totalCount: Int
     # Pagination information.
     pageInfo: PageInfo!
+}
+
+# Statistics about a language's usage.
+type LanguageStatistics {
+    # The name of the language.
+    name: String!
+
+    # The total bytes in the language.
+    totalBytes: Float!
+
+    # The total number of lines in the language.
+    totalLines: Int!
 }
 
 # A Git commit.
@@ -1796,6 +2538,8 @@ type GitCommit implements Node {
     file(path: String!): File2
     # Lists the programming languages present in the tree at this commit.
     languages: [String!]!
+    # List statistics for each language present in the repository.
+    languageStatistics: [LanguageStatistics!]!
     # The log of commits consisting of this commit and its ancestors.
     ancestors(
         # Returns the first n commits from the list.
@@ -1804,6 +2548,8 @@ type GitCommit implements Node {
         query: String
         # Return commits that affect the path.
         path: String
+        # Return commits more recent than the specified date.
+        after: String
     ): GitCommitConnection!
     # Returns the number of commits that this commit is behind and ahead of revspec.
     behindAhead(revspec: String!): BehindAheadCounts!
@@ -1987,14 +2733,15 @@ interface File2 {
     # The URLs to this file on external services.
     externalURLs: [ExternalLink!]!
     # Highlight the file.
-    highlight(disableTimeout: Boolean!, isLightTheme: Boolean!): HighlightedFile!
-    # Symbols defined in this file.
-    symbols(
-        # Returns the first n symbols from the list.
-        first: Int
-        # Return symbols matching the query.
-        query: String
-    ): SymbolConnection!
+    highlight(
+        disableTimeout: Boolean!
+        isLightTheme: Boolean!
+        # If highlightLongLines is true, lines which are longer than 2000 bytes are highlighted.
+        # 2000 bytes is enabled. This may produce a significant amount of HTML
+        # which some browsers (such as Chrome, but not Firefox) may have trouble
+        # rendering efficiently.
+        highlightLongLines: Boolean = false
+    ): HighlightedFile!
 }
 
 # File is temporarily preserved for backcompat with browser extension search API client code.
@@ -2041,7 +2788,7 @@ type GitBlob implements TreeEntry & File2 {
     # Blame the blob.
     blame(startLine: Int!, endLine: Int!): [Hunk!]!
     # Highlight the blob contents.
-    highlight(disableTimeout: Boolean!, isLightTheme: Boolean!): HighlightedFile!
+    highlight(disableTimeout: Boolean!, isLightTheme: Boolean!, highlightLongLines: Boolean = false): HighlightedFile!
     # Submodule metadata if this tree points to a submodule
     submodule: Submodule
     # Symbols defined in this blob.
@@ -2060,6 +2807,65 @@ type GitBlob implements TreeEntry & File2 {
         # Recurse into sub-trees of single-child directories
         recursiveSingleChild: Boolean = false
     ): Boolean!
+
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
+    # A wrapper around LSIF query methods. If no LSIF upload can be used to answer code
+    # intelligence queries for this path-at-revision, this resolves to null.
+    lsif: LSIFQueryResolver
+}
+
+# A wrapper object around LSIF query methods for a particular path-at-revision. When this node is
+# null, no LSIF data is available for containing git blob.
+type LSIFQueryResolver {
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
+    # A list of definitions of the symbol under the given document position.
+    definitions(
+        # The line on which the symbol occurs (zero-based, inclusive).
+        line: Int!
+
+        # The character (not byte) of the start line on which the symbol occurs (zero-based, inclusive).
+        character: Int!
+    ): LocationConnection
+
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
+    # A list of references of the symbol under the given document position.
+    references(
+        # The line on which the symbol occurs (zero-based, inclusive).
+        line: Int!
+
+        # The character (not byte) of the start line on which the symbol occurs (zero-based, inclusive).
+        character: Int!
+
+        # When specified, indicates that this request should be paginated and
+        # to fetch results starting at this cursor.
+        #
+        # A future request can be made for more results by passing in the
+        # 'LocationConnection.pageInfo.endCursor' that is returned.
+        after: String
+
+        # When specified, indicates that this request should be paginated and
+        # the first N results (relative to the cursor) should be returned. i.e.
+        # how many results to return per page.
+        first: Int
+    ): LocationConnection
+
+    # (experimental) The LSIF API may change substantially in the near future as we
+    # continue to adjust it for our use cases. Changes will not be documented in the
+    # CHANGELOG during this time.
+    # The hover result of the symbol under the given document position.
+    hover(
+        # The line on which the symbol occurs (zero-based, inclusive).
+        line: Int!
+
+        # The character (not byte) of the start line on which the symbol occurs (zero-based, inclusive).
+        character: Int!
+    ): Hover
 }
 
 # A highlighted file.
@@ -2080,6 +2886,9 @@ type FileMatch {
     file: GitBlob!
     # The repository containing the file match.
     repository: Repository!
+    # The revspec of the revision that contains this match. If no revspec was given (such as when no
+    # repository filter or revspec is specified in the search query), it is null.
+    revSpec: GitRevSpec
     # The resource.
     resource: String! @deprecated(reason: "use the file field instead")
     # The symbols found in this file that match the query.
@@ -2127,6 +2936,10 @@ interface Namespace {
     # The globally unique ID of this namespace.
     id: ID!
 
+    # The name of this namespace's component. For a user, this is the username. For an organization,
+    # this is the organization name.
+    namespaceName: String!
+
     # The URL to this namespace.
     url: String!
 }
@@ -2168,6 +2981,8 @@ type User implements Node & SettingsSubject & Namespace {
     #
     # Only the user and site admins can access this field.
     siteAdmin: Boolean!
+    # Whether the user account uses built in auth.
+    builtinAuth: Boolean!
     # The latest settings for the user.
     #
     # Only the user and site admins can access this field.
@@ -2192,6 +3007,11 @@ type User implements Node & SettingsSubject & Namespace {
     tags: [String!]!
     # The user's usage statistics on Sourcegraph.
     usageStatistics: UserUsageStatistics!
+    # The user's events on Sourcegraph.
+    eventLogs(
+        # Returns the first n event logs from the list.
+        first: Int
+    ): EventLogsConnection!
     # The user's email addresses.
     #
     # Only the user and site admins can access this field.
@@ -2236,6 +3056,9 @@ type User implements Node & SettingsSubject & Namespace {
     #
     # FOR INTERNAL USE ONLY.
     databaseID: Int!
+
+    # The name of this user namespace's component. For users, this is the username.
+    namespaceName: String!
 }
 
 # An access token that grants to the holder the privileges of the user who created it.
@@ -2425,6 +3248,9 @@ type Org implements Node & SettingsSubject & Namespace {
     url: String!
     # The URL to the organization's settings.
     settingsURL: String
+
+    # The name of this user namespace's component. For organizations, this is the organization's name.
+    namespaceName: String!
 }
 
 # The result of Mutation.inviteUserToOrganization.
@@ -2705,7 +3531,6 @@ type DiscussionCommentConnection {
 
 # RepositoryOrderBy enumerates the ways a repositories list can be ordered.
 enum RepositoryOrderBy {
-    REPO_URI # deprecated (use the equivalent REPOSITORY_NAME)
     REPOSITORY_NAME
     REPO_CREATED_AT # deprecated (use the equivalent REPOSITORY_CREATED_AT)
     REPOSITORY_CREATED_AT
@@ -2748,6 +3573,8 @@ type Site implements SettingsSubject {
     siteID: String!
     # The site's configuration. Only visible to site admins.
     configuration: SiteConfiguration!
+    # The site's critical configuration. Only visible to site admins.
+    criticalConfiguration: CriticalConfiguration!
     # The site's latest site-wide settings (which are the second-lowest-precedence
     # in the configuration cascade for a user).
     latestSettings: Settings
@@ -2820,27 +3647,25 @@ type Site implements SettingsSubject {
     productSubscription: ProductSubscriptionStatus!
     # Usage statistics for this site.
     usageStatistics(
-        # Days of history.
+        # Days of history (based on current UTC time).
         days: Int
-        # Weeks of history.
+        # Weeks of history (based on current UTC time).
         weeks: Int
-        # Months of history.
+        # Months of history (based on current UTC time).
         months: Int
     ): SiteUsageStatistics!
-    # Information about this site's management console.
-    #
-    # Only site admins may retrieve this information.
-    managementConsoleState: ManagementConsoleState!
-}
-
-# Information about this site's management console.
-#
-# Only site admins may retrieve this information.
-type ManagementConsoleState {
-    # The plaintext password of the management console, which is automatically
-    # generated. This can only be retrieved until the admin clears it, after
-    # which it is impossible to retrieve.
-    plaintextPassword: String
+    # (experimental) The extended usage statistics API may change substantially in the near
+    # future as we continue to adjust it for our use cases. Changes will not be documented
+    # in the CHANGELOG during this time.
+    # Usage statistics of code intelligence features.
+    codeIntelUsageStatistics(
+        # Days of history (based on current UTC time).
+        days: Int
+        # Weeks of history (based on current UTC time).
+        weeks: Int
+        # Months of history (based on current UTC time).
+        months: Int
+    ): CodeIntelUsageStatistics!
 }
 
 # The configuration for a site.
@@ -2848,11 +3673,19 @@ type SiteConfiguration {
     # The unique identifier of this site configuration version.
     id: Int!
     # The effective configuration JSON.
-    effectiveContents: String!
+    effectiveContents: JSONCString!
     # Messages describing validation problems or usage of deprecated configuration in the configuration JSON.
     # This includes both JSON Schema validation problems and other messages that perform more advanced checks
     # on the configuration (that can't be expressed in the JSON Schema).
     validationMessages: [String!]!
+}
+
+# The critical configuration for a site.
+type CriticalConfiguration {
+    # The unique identifier of this site configuration version.
+    id: Int!
+    # The effective configuration JSON.
+    effectiveContents: JSONCString!
 }
 
 # Information about software updates for Sourcegraph.
@@ -2942,7 +3775,7 @@ type Settings {
     createdAt: DateTime!
     # The stringified JSON contents of the settings. The contents may include "//"-style comments and trailing
     # commas in the JSON.
-    contents: String!
+    contents: JSONCString!
     # DEPRECATED: This field will be removed in a future release.
     #
     # The configuration.
@@ -2954,7 +3787,7 @@ type Configuration {
     # DEPRECATED: This field will be removed in a future release.
     #
     # The raw JSON contents, encoded as a string.
-    contents: String! @deprecated(reason: "use the contents field on the parent type instead")
+    contents: JSONCString! @deprecated(reason: "use the contents field on the parent type instead")
     # DEPRECATED: This field is always empty. It will be removed in a future release.
     messages: [String!]! @deprecated(reason: "use client-side JSON Schema validation instead")
 }
@@ -3067,6 +3900,62 @@ type SiteUsageStages {
     secure: Int!
     # The number of users using automation stage features.
     automate: Int!
+}
+
+# A site's aggregate usage statistics of code intel features.
+#
+# This information is visible to all viewers.
+type CodeIntelUsageStatistics {
+    # Recent daily code intel usage statistics.
+    daily: [CodeIntelUsagePeriod!]!
+    # Recent weekly code intel usage statistics.
+    weekly: [CodeIntelUsagePeriod!]!
+    # Recent monthly code intel usage statistics.
+    monthly: [CodeIntelUsagePeriod!]!
+}
+
+# Usage statistics of code intel features in a given timespan.
+#
+# This information is visible to all viewers.
+type CodeIntelUsagePeriod {
+    # The time when this started.
+    startTime: DateTime!
+    # Recent hover statistics.
+    hover: CodeIntelEventCategoryStatistics!
+    # Recent definitions statistics.
+    definitions: CodeIntelEventCategoryStatistics!
+    # Recent references statistics.
+    references: CodeIntelEventCategoryStatistics!
+}
+
+# Statistics about aparticular family of code intel features in a given timestan.
+type CodeIntelEventCategoryStatistics {
+    # Recent LSIF-based code intel event statistics.
+    lsif: CodeIntelEventStatistics!
+    # Recent LSP-based code intel event statistics.
+    lsp: CodeIntelEventStatistics!
+    # Recent search-based code intel event statistics.
+    search: CodeIntelEventStatistics!
+}
+
+# Statistics about a particular code intel feature in a given timespan.
+type CodeIntelEventStatistics {
+    # The number of unique users that performed this event in this timespan.
+    usersCount: Int!
+    # The total number of events in this timespan.
+    eventsCount: Int!
+    # Latency percentiles of all events in this timespan.
+    eventLatencies: CodeIntelEventLatencies!
+}
+
+# A collection of event latencies for a particular event in a given timespan.
+type CodeIntelEventLatencies {
+    # The 50th percentile latency in this timespan.
+    p50: Float!
+    # The 90th percentile latency in this timespan.
+    p90: Float!
+    # The 99th percentile latency in this timespan.
+    p99: Float!
 }
 
 # A deployment configuration.
@@ -3351,6 +4240,102 @@ type RegistryExtensionConnection {
     error: String
 }
 
+# A list of locations within a file.
+type LocationConnection {
+    # A list of locations within a file.
+    nodes: [Location!]!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# Hover range and markdown content.
+type Hover {
+    # A markdown string containing the contents of the hover.
+    markdown: Markdown!
+
+    # The range to highlight.
+    range: Range!
+}
+
+# The state an LSIF upload can be in.
+enum LSIFUploadState {
+    # This upload is being processed.
+    PROCESSING
+
+    # This upload failed to be processed.
+    ERRORED
+
+    # This upload was processed successfully.
+    COMPLETED
+
+    # This upload is queued to be processed later.
+    QUEUED
+}
+
+# Metadata and status about an LSIF upload.
+type LSIFUpload implements Node {
+    # The ID.
+    id: ID!
+
+    # The project for which this upload provides code intelligence.
+    projectRoot: GitTree
+
+    # The original 40-character commit commit supplied at upload time.
+    inputCommit: String!
+
+    # The original root supplied at upload time.
+    inputRoot: String!
+
+    # The original indexer name supplied at upload time.
+    inputIndexer: String!
+
+    # The upload's current state.
+    state: LSIFUploadState!
+
+    # The time the upload was uploaded.
+    uploadedAt: DateTime!
+
+    # The time the upload was processed.
+    startedAt: DateTime
+
+    # The time the upload compelted or errored.
+    finishedAt: DateTime
+
+    # Metadata about an upload's failure (not set if state is not ERRORED).
+    failure: LSIFUploadFailureReason
+
+    # Whether or not this upload provides intelligence for the tip of the default branch. Find reference
+    # queries will return symbols from remote repositories only when this property is true. This property
+    # is updated asynchronously and is eventually consistent with the git data known by the Sourcegraph
+    # instance.
+    isLatestForRepo: Boolean!
+
+    # The rank of this upload in the queue. The value of this field is null if the upload has been processed.
+    placeInQueue: Int
+}
+
+# Metadata about a LSIF upload failure.
+type LSIFUploadFailureReason {
+    # A summary of the failure.
+    summary: String!
+
+    # The stacktrace of the failure.
+    stacktrace: String!
+}
+
+# A list of LSIF uploads.
+type LSIFUploadConnection {
+    # A list of LSIF uploads.
+    nodes: [LSIFUpload!]!
+
+    # The total number of uploads in this result set.
+    totalCount: Int
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
 # Mutations that are only used on Sourcegraph.com.
 #
 # FOR INTERNAL USE ONLY.
@@ -3464,6 +4449,8 @@ type DotcomQuery {
         #
         # Only Sourcegraph.com site admins may perform this query with account == null.
         account: ID
+        # Returns product subscriptions from users with usernames or email addresses that match the query.
+        query: String
     ): ProductSubscriptionConnection!
     # The invoice that would be generated for a new or updated subscription. This is used to show
     # users a preview of the credits, debits, and other billing information before creating or
@@ -3710,21 +4697,70 @@ type ProductSubscriptionEvent {
     url: String
 }
 
-# The type of a StatusMessage
-enum StatusMessageType {
-    CLONING
-}
-
-# A status message
-type StatusMessage {
+# FOR INTERNAL USE ONLY: A status message produced when repositories are being
+# cloned
+type CloningProgress {
     # The message of this status message
     message: String!
-    # The type.
-    type: StatusMessageType!
 }
+
+# FOR INTERNAL USE ONLY: A status message produced when repositories could not
+# be synced from an external service
+type ExternalServiceSyncError {
+    # The message of this status message
+    message: String!
+    # The external service that failed to sync
+    externalService: ExternalService!
+}
+
+# FOR INTERNAL USE ONLY: A status message produced when repositories could not
+# be synced
+type SyncError {
+    # The message of this status message
+    message: String!
+}
+
+# FOR INTERNAL USE ONLY: A status message
+union StatusMessage = CloningProgress | ExternalServiceSyncError | SyncError
 
 # An RFC 3339-encoded UTC date string, such as 1973-11-29T21:33:09Z. This value can be parsed into a
 # JavaScript Date using Date.parse. To produce this value from a JavaScript Date instance, use
 # Date#toISOString.
 scalar DateTime
+
+# Different repository permission levels.
+enum RepositoryPermission {
+    READ
+}
+
+# A single user event that has been logged.
+type EventLog {
+    # The name of the event.
+    name: String!
+    # The user who executed the event, if one exists.
+    user: User
+    # The randomly generated unique user ID stored in a browser cookie.
+    anonymousUserID: String!
+    # The URL when the event was logged.
+    url: String!
+    # The source of the event.
+    source: EventSource!
+    # The additional argument information.
+    argument: String
+    # The Sourcegraph version when the event was logged.
+    version: String!
+    # The timestamp when the event was logged.
+    timestamp: DateTime!
+}
+
+# A list of event logs.
+type EventLogsConnection {
+    # A list of event logs.
+    nodes: [EventLog!]!
+    # The total count of event logs in the connection. This total count may be larger than the number of nodes
+    # in this object when the result is paginated.
+    totalCount: Int!
+    # Pagination information.
+    pageInfo: PageInfo!
+}
 `

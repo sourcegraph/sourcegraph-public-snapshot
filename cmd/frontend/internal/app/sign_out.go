@@ -5,8 +5,8 @@ import (
 	"html/template"
 	"net/http"
 
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 type SignOutURL struct {
@@ -58,7 +58,7 @@ func renderSignoutPageTemplate(w http.ResponseWriter, r *http.Request, signoutUR
 		return
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	buf.WriteTo(w)
+	_, _ = buf.WriteTo(w)
 }
 
 var signoutPageTemplate = template.Must(template.New("").Parse(`

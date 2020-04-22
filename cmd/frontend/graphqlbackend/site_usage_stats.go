@@ -2,11 +2,9 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/usagestats"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/usagestatsdeprecated"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 )
 
@@ -15,10 +13,7 @@ func (r *siteResolver) UsageStatistics(ctx context.Context, args *struct {
 	Weeks  *int32
 	Months *int32
 }) (*siteUsageStatisticsResolver, error) {
-	if envvar.SourcegraphDotComMode() {
-		return nil, errors.New("site usage statistics are not available on sourcegraph.com")
-	}
-	opt := &usagestats.SiteUsageStatisticsOptions{}
+	opt := &usagestatsdeprecated.SiteUsageStatisticsOptions{}
 	if args.Days != nil {
 		d := int(*args.Days)
 		opt.DayPeriods = &d
@@ -31,7 +26,7 @@ func (r *siteResolver) UsageStatistics(ctx context.Context, args *struct {
 		m := int(*args.Months)
 		opt.MonthPeriods = &m
 	}
-	activity, err := usagestats.GetSiteUsageStatistics(opt)
+	activity, err := usagestatsdeprecated.GetSiteUsageStatistics(opt)
 	if err != nil {
 		return nil, err
 	}
@@ -43,33 +38,23 @@ type siteUsageStatisticsResolver struct {
 }
 
 func (s *siteUsageStatisticsResolver) DAUs() []*siteUsagePeriodResolver {
-	daus := make([]*siteUsagePeriodResolver, 0, len(s.siteUsageStatistics.DAUs))
-	for _, d := range s.siteUsageStatistics.DAUs {
-		daus = append(daus, &siteUsagePeriodResolver{
-			siteUsagePeriod: d,
-		})
-	}
-	return daus
+	return s.activities(s.siteUsageStatistics.DAUs)
 }
 
 func (s *siteUsageStatisticsResolver) WAUs() []*siteUsagePeriodResolver {
-	waus := make([]*siteUsagePeriodResolver, 0, len(s.siteUsageStatistics.WAUs))
-	for _, w := range s.siteUsageStatistics.WAUs {
-		waus = append(waus, &siteUsagePeriodResolver{
-			siteUsagePeriod: w,
-		})
-	}
-	return waus
+	return s.activities(s.siteUsageStatistics.WAUs)
 }
 
 func (s *siteUsageStatisticsResolver) MAUs() []*siteUsagePeriodResolver {
-	maus := make([]*siteUsagePeriodResolver, 0, len(s.siteUsageStatistics.MAUs))
-	for _, m := range s.siteUsageStatistics.MAUs {
-		maus = append(maus, &siteUsagePeriodResolver{
-			siteUsagePeriod: m,
-		})
+	return s.activities(s.siteUsageStatistics.MAUs)
+}
+
+func (s *siteUsageStatisticsResolver) activities(periods []*types.SiteActivityPeriod) []*siteUsagePeriodResolver {
+	resolvers := make([]*siteUsagePeriodResolver, 0, len(periods))
+	for _, p := range periods {
+		resolvers = append(resolvers, &siteUsagePeriodResolver{siteUsagePeriod: p})
 	}
-	return maus
+	return resolvers
 }
 
 type siteUsagePeriodResolver struct {

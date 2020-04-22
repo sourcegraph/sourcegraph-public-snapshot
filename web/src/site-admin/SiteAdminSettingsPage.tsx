@@ -14,12 +14,11 @@ interface Props extends RouteComponentProps<{}>, PlatformContextProps, SettingsC
 
 export const SiteAdminSettingsPage: React.FunctionComponent<Props> = props => (
     <>
-        <PageTitle title="Site settings" />
+        <PageTitle title="Global settings" />
         <SettingsArea
             {...props}
             subject={props.site}
             authenticatedUser={props.authenticatedUser}
-            className="mt-3"
             extraHeader={
                 <p>
                     Global settings apply to all organizations and users. Settings for a user or organization override

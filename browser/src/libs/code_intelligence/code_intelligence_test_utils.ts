@@ -7,7 +7,7 @@ import { CodeHost, MountGetter } from './code_intelligence'
 import { CodeView, DOMFunctions } from './code_views'
 
 const mountGetterKeys = ['getCommandPaletteMount', 'getViewContextOnSourcegraphMount'] as const
-type MountGetterKey = (typeof mountGetterKeys)[number]
+type MountGetterKey = typeof mountGetterKeys[number]
 
 /**
  * @param containerHtmlFixturePaths Paths to full-document fixtures keyed by the mount getter function name
@@ -125,6 +125,11 @@ interface Line {
      * The part of the diff, if the code view is a diff code view.
      */
     diffPart?: DiffPart
+
+    /**
+     * Whether the first character of the line is a diff indicator
+     */
+    firstCharacterIsDiffIndicator?: boolean
 }
 
 export interface DOMFunctionsTest {
@@ -136,16 +141,11 @@ export interface DOMFunctionsTest {
     lineCases: Line[]
 
     url?: string // TODO DOM functions should not rely on global state like the URL
-
-    /**
-     * Whether the code view is a diff code view and the first character the a diff indicator
-     */
-    firstCharacterIsDiffIndicator: boolean
 }
 
 export function testDOMFunctions(
     domFunctions: DOMFunctions,
-    { htmlFixturePath, lineCases: codeElements, url, firstCharacterIsDiffIndicator }: DOMFunctionsTest
+    { htmlFixturePath, lineCases: codeElements, url }: DOMFunctionsTest
 ): void {
     let codeViewElement: HTMLElement
     beforeEach(async () => {
@@ -154,79 +154,90 @@ export function testDOMFunctions(
         }
         codeViewElement = await getFixtureBody({ htmlFixturePath, isFullDocument: false })
     })
-    for (const { diffPart, lineNumber } of codeElements) {
-        describe(`line number ${lineNumber}` + (diffPart !== undefined ? ` in ${diffPart} diff part` : ''), () => {
-            const simmerOptions: SimmerOptions = {
-                depth: 20,
-                specificityThreshold: 500,
-                selectorMaxLength: 1000,
-            }
-
-            describe('getLineElementFromLineNumber()', () => {
-                it('should return the right line element given the line number', () => {
-                    const codeElement = domFunctions.getLineElementFromLineNumber(codeViewElement, lineNumber, diffPart)
-                    expect(codeElement).toBeDefined()
-                    expect(codeElement).not.toBeNull()
-                    // Generate CSS selector for element
-                    const simmer = new Simmer(codeViewElement, simmerOptions)
-                    const selector = simmer(codeElement!)
-                    expect(selector).toBeTruthy()
-                    expect({ selector, content: codeElement!.textContent!.trim() }).toMatchSnapshot()
-                })
-            })
-
-            describe('getCodeElementFromLineNumber()', () => {
-                it('should return the right code element given the line number', () => {
-                    const codeElement = domFunctions.getCodeElementFromLineNumber(codeViewElement, lineNumber, diffPart)
-                    expect(codeElement).toBeDefined()
-                    expect(codeElement).not.toBeNull()
-                    // Generate CSS selector for element
-                    const simmer = new Simmer(codeViewElement, simmerOptions)
-                    const selector = simmer(codeElement!)
-                    expect(selector).toBeTruthy()
-                    expect({ selector, content: codeElement!.textContent!.trim() }).toMatchSnapshot()
-                })
-            })
-
-            let codeElement: HTMLElement
-            const setCodeElement = (): void => {
-                codeElement = domFunctions.getCodeElementFromLineNumber(codeViewElement, lineNumber, diffPart)!
-                if (!codeElement) {
-                    throw new Error('Test depends on test for getCodeElementFromLineNumber() passing')
+    for (const { diffPart, lineNumber, firstCharacterIsDiffIndicator } of codeElements) {
+        describe(
+            `line number ${lineNumber}` + (diffPart !== undefined ? ` in ${String(diffPart)} diff part` : ''),
+            () => {
+                const simmerOptions: SimmerOptions = {
+                    depth: 20,
+                    specificityThreshold: 500,
+                    selectorMaxLength: 1000,
                 }
-            }
-            // These tests depend on getCodeElementFromLineNumber() working as expected
-            describe('getLineNumberFromCodeElement()', () => {
-                beforeEach(setCodeElement)
-                it('should return the right line number given the code element', () => {
-                    const returnedLineNumber = domFunctions.getLineNumberFromCodeElement(codeElement)
-                    expect(returnedLineNumber).toBe(lineNumber)
+
+                describe('getLineElementFromLineNumber()', () => {
+                    it('should return the right line element given the line number', () => {
+                        const codeElement = domFunctions.getLineElementFromLineNumber(
+                            codeViewElement,
+                            lineNumber,
+                            diffPart
+                        )
+                        expect(codeElement).toBeDefined()
+                        expect(codeElement).not.toBeNull()
+                        // Generate CSS selector for element
+                        const simmer = new Simmer(codeViewElement, simmerOptions)
+                        const selector = simmer(codeElement!)
+                        expect(selector).toBeTruthy()
+                        expect({ selector, content: codeElement!.textContent!.trim() }).toMatchSnapshot()
+                    })
                 })
-            })
-            if (domFunctions.getDiffCodePart) {
-                describe('getDiffCodePart()', () => {
+
+                describe('getCodeElementFromLineNumber()', () => {
+                    it('should return the right code element given the line number', () => {
+                        const codeElement = domFunctions.getCodeElementFromLineNumber(
+                            codeViewElement,
+                            lineNumber,
+                            diffPart
+                        )
+                        expect(codeElement).toBeDefined()
+                        expect(codeElement).not.toBeNull()
+                        // Generate CSS selector for element
+                        const simmer = new Simmer(codeViewElement, simmerOptions)
+                        const selector = simmer(codeElement!)
+                        expect(selector).toBeTruthy()
+                        expect({ selector, content: codeElement!.textContent!.trim() }).toMatchSnapshot()
+                    })
+                })
+
+                let codeElement: HTMLElement
+                const setCodeElement = (): void => {
+                    codeElement = domFunctions.getCodeElementFromLineNumber(codeViewElement, lineNumber, diffPart)!
+                    if (!codeElement) {
+                        throw new Error('Test depends on test for getCodeElementFromLineNumber() passing')
+                    }
+                }
+                // These tests depend on getCodeElementFromLineNumber() working as expected
+                describe('getLineNumberFromCodeElement()', () => {
                     beforeEach(setCodeElement)
-                    it(`should return "${diffPart}" when given the code element`, () => {
-                        expect(domFunctions.getDiffCodePart!(codeElement)).toBe(diffPart)
+                    it('should return the right line number given the code element', () => {
+                        const returnedLineNumber = domFunctions.getLineNumberFromCodeElement(codeElement)
+                        expect(returnedLineNumber).toBe(lineNumber)
+                    })
+                })
+                if (domFunctions.getDiffCodePart) {
+                    describe('getDiffCodePart()', () => {
+                        beforeEach(setCodeElement)
+                        it(`should return "${String(diffPart)}" when given the code element`, () => {
+                            expect(domFunctions.getDiffCodePart!(codeElement)).toBe(diffPart)
+                        })
+                    })
+                }
+                describe('isFirstCharacterDiffIndicator()', () => {
+                    beforeEach(setCodeElement)
+                    it('should return correctly whether the first character is a diff indicator', () => {
+                        // Default is false
+                        const is = Boolean(
+                            domFunctions.isFirstCharacterDiffIndicator &&
+                                domFunctions.isFirstCharacterDiffIndicator(codeElement)
+                        )
+                        expect(is).toBe(Boolean(firstCharacterIsDiffIndicator))
+                        if (is) {
+                            // Check that the first character is truly a diff indicator
+                            const diffIndicators = new Set(['+', '-', ' '])
+                            expect(is).toBe(diffIndicators.has(codeElement.textContent![0]))
+                        }
                     })
                 })
             }
-            describe('isFirstCharacterDiffIndicator()', () => {
-                beforeEach(setCodeElement)
-                it('should return correctly whether the first character is a diff indicator', () => {
-                    // Default is false
-                    const is = Boolean(
-                        domFunctions.isFirstCharacterDiffIndicator &&
-                            domFunctions.isFirstCharacterDiffIndicator(codeElement)
-                    )
-                    expect(is).toBe(firstCharacterIsDiffIndicator)
-                    if (is) {
-                        // Check that the first character is truly a diff indicator
-                        const diffIndicators = new Set(['+', '-', ' '])
-                        expect(is).toBe(diffIndicators.has(codeElement.textContent![0]))
-                    }
-                })
-            })
-        })
+        )
     }
 }

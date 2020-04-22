@@ -7,8 +7,8 @@ import (
 	"github.com/graph-gophers/graphql-go/gqltesting"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 func TestSettingsMutation_EditSettings(t *testing.T) {
@@ -33,7 +33,7 @@ func TestSettingsMutation_EditSettings(t *testing.T) {
 	gqltesting.RunTests(t, []*gqltesting.Test{
 		{
 			Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
-			Schema:  GraphQLSchema,
+			Schema:  mustParseGraphQLSchema(t),
 			Query: `
 				mutation($value: JSONValue) {
 					settingsMutation(input: {subject: "VXNlcjox", lastID: 1}) {
@@ -77,7 +77,7 @@ func TestSettingsMutation_OverwriteSettings(t *testing.T) {
 	gqltesting.RunTests(t, []*gqltesting.Test{
 		{
 			Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
-			Schema:  GraphQLSchema,
+			Schema:  mustParseGraphQLSchema(t),
 			Query: `
 				mutation($contents: String!) {
 					settingsMutation(input: {subject: "VXNlcjox", lastID: 1}) {

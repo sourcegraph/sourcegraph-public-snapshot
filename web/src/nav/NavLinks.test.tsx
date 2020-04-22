@@ -1,15 +1,15 @@
 import * as H from 'history'
-import { flatten, noop } from 'lodash'
+import { noop } from 'lodash'
 import React from 'react'
 import { createRenderer } from 'react-test-renderer/shallow'
-import { setLinkComponent } from '../../../shared/src/components/Link'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
-import { KeybindingsProps } from '../keybindings'
 import { ThemePreference } from '../theme'
 import { eventLogger } from '../tracking/eventLogger'
 import { NavLinks } from './NavLinks'
+import { KeyboardShortcutsProps } from '../keyboardShortcuts/keyboardShortcuts'
+import { NEVER } from 'rxjs'
 
 // Renders a human-readable list of the NavLinks' contents so that humans can more easily diff
 // snapshots to see what actually changed.
@@ -25,32 +25,36 @@ const renderShallow = (element: React.ReactElement<NavLinks['props']>): any => {
             return element.toString()
         }
         if (element.type === 'li' && (element.props.children.props.href || element.props.children.props.to)) {
-            return `${element.props.children.props.children} ${element.props.children.props.href ||
-                element.props.children.props.to}`
+            const href = element.props.children.props.href || element.props.children.props.to
+            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+            return `${element.props.children.props.children} ${href}`
         }
         if (typeof element.type === 'symbol' || typeof element.type === 'string') {
-            return flatten(React.Children.map(element.props.children, element => getDisplayName(element)))
+            return React.Children.map(element.props.children, element => getDisplayName(element)).flat()
         }
         return (element.type as any).displayName || element.type.name || 'Unknown'
     }
 
-    return flatten(
-        React.Children.map(renderer.getRenderOutput().props.children, e => getDisplayName(e)).filter(e => !!e)
+    return React.Children.map<string | string[], React.ReactChild>(renderer.getRenderOutput().props.children, e =>
+        getDisplayName(e)
     )
+        .filter(e => !!e)
+        .flat()
 }
 
 describe('NavLinks', () => {
-    setLinkComponent((props: any) => <a {...props} />)
-    afterAll(() => setLinkComponent(null as any)) // reset global env for other tests
     const NOOP_EXTENSIONS_CONTROLLER: ExtensionsControllerProps<
         'executeCommand' | 'services'
     >['extensionsController'] = { executeCommand: () => Promise.resolve(), services: {} as any }
-    const NOOP_PLATFORM_CONTEXT = { forceUpdateTooltip: () => undefined }
-    const KEYBINDINGS: KeybindingsProps['keybindings'] = { commandPalette: [], switchTheme: [] }
+    const NOOP_PLATFORM_CONTEXT = { forceUpdateTooltip: () => undefined, settings: NEVER }
+    const KEYBOARD_SHORTCUTS: KeyboardShortcutsProps['keyboardShortcuts'] = []
     const SETTINGS_CASCADE: SettingsCascadeProps['settingsCascade'] = { final: null, subjects: null }
-    // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     const USER = { username: 'u' } as GQL.IUser
     const history = H.createMemoryHistory({ keyLength: 0 })
+    const NOOP_TOGGLE_MODE = (): void => {
+        /* noop */
+    }
     const commonProps = {
         extensionsController: NOOP_EXTENSIONS_CONTROLLER,
         platformContext: NOOP_PLATFORM_CONTEXT,
@@ -58,11 +62,14 @@ describe('NavLinks', () => {
         isLightTheme: true,
         themePreference: ThemePreference.Light,
         onThemePreferenceChange: noop,
-        keybindings: KEYBINDINGS,
+        keyboardShortcuts: KEYBOARD_SHORTCUTS,
         settingsCascade: SETTINGS_CASCADE,
         history,
         isSourcegraphDotCom: false,
-        showStatusIndicator: false,
+        showCampaigns: true,
+        splitSearchModes: false,
+        interactiveSearchMode: false,
+        toggleSearchMode: NOOP_TOGGLE_MODE,
     }
 
     // The 3 main props that affect the desired contents of NavLinks are whether the user is signed

@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { cleanup, fireEvent, render } from 'react-testing-library'
+import { cleanup, fireEvent, render } from '@testing-library/react'
 import { EMPTY, merge, noop, of, Subject } from 'rxjs'
 import { switchMap, tap } from 'rxjs/operators'
 import { TestScheduler } from 'rxjs/testing'

@@ -1,16 +1,38 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-set -ex
-cd $(dirname "${BASH_SOURCE[0]}")/../..
+set -exuo pipefail
+cd $(dirname "${BASH_SOURCE[0]}")/../../..
 
-pushd ..
+parallel_run() {
+  ./dev/ci/parallel_run.sh "$@"
+}
+
 echo "--- yarn root"
-yarn --frozen-lockfile --network-timeout 60000
-echo "--- yarn browser"
-(pushd browser && TARGETS=phabricator yarn build && popd)
-echo "--- yarn web"
-(pushd web && NODE_ENV=production yarn -s run build --color && popd)
-popd
+# mutex is necessary since frontend and the management-console can
+# run concurrent "yarn" installs
+# TODO: This is no longer needed since the management console was removed.
+yarn --mutex network --frozen-lockfile --network-timeout 60000
 
-echo "--- generate"
-dev/generate.sh
+MAYBE_TIME_PREFIX=""
+if [[ "${CI_DEBUG_PROFILE:-"false"}" == "true" ]]; then
+  MAYBE_TIME_PREFIX="env time -v"
+fi
+
+build_browser() {
+  echo "--- yarn browser"
+  (cd browser && TARGETS=phabricator eval "${MAYBE_TIME_PREFIX} yarn build")
+}
+
+build_web() {
+  echo "--- yarn web"
+  (cd web && NODE_ENV=production eval "${MAYBE_TIME_PREFIX} yarn -s run build --color")
+}
+
+export -f build_browser
+export -f build_web
+
+echo "--- (enterprise) build browser and web concurrently"
+parallel_run ::: build_browser build_web
+
+echo "--- (enterprise) generate"
+./enterprise/dev/generate.sh

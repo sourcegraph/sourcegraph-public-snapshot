@@ -5,8 +5,9 @@ import { fromEvent } from 'rxjs'
 import { take } from 'rxjs/operators'
 import { EndpointPair, isEndpointPair } from '../../platform/context'
 import { startExtensionHost } from './extensionHost'
+import { hasProperty } from '../../util/types'
 
-export interface InitMessage {
+interface InitMessage {
     endpoints: {
         proxy: MessagePort
         expose: MessagePort
@@ -20,7 +21,8 @@ export interface InitMessage {
     wrapEndpoints: boolean
 }
 
-const isInitMessage = (value: any): value is InitMessage => value.endpoints && isEndpointPair(value.endpoints)
+const isInitMessage = (value: unknown): value is InitMessage =>
+    typeof value === 'object' && value !== null && hasProperty('endpoints')(value) && isEndpointPair(value.endpoints)
 
 const wrapMessagePort = (port: MessagePort): MessagePort =>
     MessageChannelAdapter.wrap({
@@ -45,9 +47,7 @@ const wrapEndpoints = ({ proxy, expose }: InitMessage['endpoints']): EndpointPai
  */
 async function extensionHostMain(): Promise<void> {
     try {
-        const event = await fromEvent<MessageEvent>(self, 'message')
-            .pipe(take(1))
-            .toPromise()
+        const event = await fromEvent<MessageEvent>(self, 'message').pipe(take(1)).toPromise()
         if (!isInitMessage(event.data)) {
             throw new Error('First message event in extension host worker was not a well-formed InitMessage')
         }

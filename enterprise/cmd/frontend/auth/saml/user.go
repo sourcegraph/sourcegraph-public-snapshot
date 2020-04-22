@@ -10,12 +10,12 @@ import (
 	saml2 "github.com/russellhaering/gosaml2"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
 type authnResponseInfo struct {
-	spec                 extsvc.ExternalAccountSpec
+	spec                 extsvc.AccountSpec
 	email, displayName   string
 	unnormalizedUsername string
 	accountData          interface{}
@@ -50,7 +50,7 @@ func readAuthnResponse(p *provider, encodedResp string) (*authnResponseInfo, err
 		return ""
 	}
 	attr := samlAssertionValues(assertions.Values)
-	email := firstNonempty(attr.Get("email"), attr.Get("emailaddress"))
+	email := firstNonempty(attr.Get("email"), attr.Get("emailaddress"), attr.Get("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"), attr.Get("http://schemas.xmlsoap.org/claims/EmailAddress"))
 	if email == "" && mightBeEmail(assertions.NameID) {
 		email = assertions.NameID
 	}
@@ -58,15 +58,15 @@ func readAuthnResponse(p *provider, encodedResp string) (*authnResponseInfo, err
 		email = pn
 	}
 	info := authnResponseInfo{
-		spec: extsvc.ExternalAccountSpec{
+		spec: extsvc.AccountSpec{
 			ServiceType: providerType,
 			ServiceID:   pi.ServiceID,
 			ClientID:    pi.ClientID,
 			AccountID:   assertions.NameID,
 		},
 		email:                email,
-		unnormalizedUsername: firstNonempty(attr.Get("login"), attr.Get("uid"), email),
-		displayName:          firstNonempty(attr.Get("displayName"), attr.Get("givenName")+" "+attr.Get("surname")),
+		unnormalizedUsername: firstNonempty(attr.Get("login"), attr.Get("uid"), attr.Get("username"), attr.Get("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"), email),
+		displayName:          firstNonempty(attr.Get("displayName"), attr.Get("givenName")+" "+attr.Get("surname"), attr.Get("http://schemas.xmlsoap.org/claims/CommonName"), attr.Get("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname")),
 		accountData:          assertions,
 	}
 	if assertions.NameID == "" {
@@ -85,7 +85,7 @@ func readAuthnResponse(p *provider, encodedResp string) (*authnResponseInfo, err
 // authenticated actor if successful; otherwise it returns an friendly error message (safeErrMsg)
 // that is safe to display to users, and a non-nil err with lower-level error details.
 func getOrCreateUser(ctx context.Context, info *authnResponseInfo) (_ *actor.Actor, safeErrMsg string, err error) {
-	var data extsvc.ExternalAccountData
+	var data extsvc.AccountData
 	data.SetAccountData(info.accountData)
 
 	username, err := auth.NormalizeUsername(info.unnormalizedUsername)

@@ -18,9 +18,7 @@ describe('Documents (integration)', () => {
                 extensionAPI,
             } = await integrationTestContext()
             modelService.addModel({ uri: 'file:///f2', languageId: 'l2', text: 't2' })
-            await from(extensionAPI.workspace.openedTextDocuments)
-                .pipe(take(1))
-                .toPromise()
+            await from(extensionAPI.workspace.openedTextDocuments).pipe(take(1)).toPromise()
             assertToJSON(extensionAPI.workspace.textDocuments, [
                 { uri: 'file:///f', languageId: 'l', text: 't' },
                 { uri: 'file:///f2', languageId: 'l2', text: 't2' },
@@ -39,9 +37,7 @@ describe('Documents (integration)', () => {
             expect(values).toEqual([] as TextDocument[])
 
             modelService.addModel({ uri: 'file:///f2', languageId: 'l2', text: 't2' })
-            await from(extensionAPI.workspace.openedTextDocuments)
-                .pipe(take(1))
-                .toPromise()
+            await from(extensionAPI.workspace.openedTextDocuments).pipe(take(1)).toPromise()
 
             assertToJSON(values, [{ uri: 'file:///f2', languageId: 'l2', text: 't2' }] as TextDocument[])
         })

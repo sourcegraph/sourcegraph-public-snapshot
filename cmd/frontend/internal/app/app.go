@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
-	"github.com/sourcegraph/sourcegraph/pkg/trace"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 // NewHandler returns a new app handler that uses the app router.
@@ -67,7 +67,7 @@ func NewHandler() http.Handler {
 
 	r.Get(router.DebugHeaders).Handler(trace.TraceRoute(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		r.Header.Del("Cookie")
-		r.Header.Write(w)
+		_ = r.Header.Write(w)
 	})))
 	addDebugHandlers(r.Get(router.Debug).Subrouter())
 

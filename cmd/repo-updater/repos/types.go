@@ -1,27 +1,43 @@
 package repos
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 	"reflect"
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/goware/urlx"
-	multierror "github.com/hashicorp/go-multierror"
+	"github.com/hashicorp/go-multierror"
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/awscodecommit"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/gitolite"
-	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/xeipuuv/gojsonschema"
+	"golang.org/x/time/rate"
 )
+
+// A Changeset of an existing Repo.
+type Changeset struct {
+	Title   string
+	Body    string
+	HeadRef string
+	BaseRef string
+
+	*campaigns.Changeset
+	*Repo
+}
 
 // An ExternalService is defines a Source that yields Repos.
 type ExternalService struct {
@@ -519,7 +535,7 @@ func (e *ExternalService) With(opts ...func(*ExternalService)) *ExternalService 
 // Repo represents a source code repository stored in Sourcegraph.
 type Repo struct {
 	// The internal Sourcegraph repo ID.
-	ID uint32
+	ID api.RepoID
 	// Name is the name for this repository (e.g., "github.com/user/repo"). It
 	// is the same as URI, unless the user configures a non-default
 	// repositoryPathPattern.
@@ -535,11 +551,10 @@ type Repo struct {
 	Language string
 	// Fork is whether this repository is a fork of another repository.
 	Fork bool
-	// Enabled is whether the repository is enabled. Disabled repositories are
-	// not accessible by users (except site admins).
-	Enabled bool
 	// Archived is whether the repository has been archived.
 	Archived bool
+	// Private is whether the repository is private.
+	Private bool
 	// CreatedAt is when this repository was created on Sourcegraph.
 	CreatedAt time.Time
 	// UpdatedAt is when this repository's metadata was last updated on Sourcegraph.
@@ -633,6 +648,10 @@ func (r *Repo) Update(n *Repo) (modified bool) {
 		r.Fork, modified = n.Fork, true
 	}
 
+	if r.Private != n.Private {
+		r.Private, modified = n.Private, true
+	}
+
 	if !reflect.DeepEqual(r.Sources, n.Sources) {
 		r.Sources, modified = n.Sources, true
 	}
@@ -705,6 +724,14 @@ func (r *Repo) Less(s *Repo) bool {
 	return sortedSliceLess(sourcesKeys(r.Sources), sourcesKeys(s.Sources))
 }
 
+func (r *Repo) String() string {
+	eid := fmt.Sprintf("{%s %s %s}", r.ExternalRepo.ServiceID, r.ExternalRepo.ServiceType, r.ExternalRepo.ID)
+	if r.IsDeleted() {
+		return fmt.Sprintf("Repo{ID: %d, Name: %q, EID: %s, IsDeleted: true}", r.ID, r.Name, eid)
+	}
+	return fmt.Sprintf("Repo{ID: %d, Name: %q, EID: %s}", r.ID, r.Name, eid)
+}
+
 func sourcesKeys(m map[string]*SourceInfo) []string {
 	keys := make([]string, 0, len(m))
 	for k := range m {
@@ -739,6 +766,15 @@ func pick(a *Repo, b *Repo) (keep, discard *Repo) {
 // Repos is an utility type with convenience methods for operating on lists of Repos.
 type Repos []*Repo
 
+// IDs returns the list of ids from all Repos.
+func (rs Repos) IDs() []api.RepoID {
+	ids := make([]api.RepoID, len(rs))
+	for i := range rs {
+		ids[i] = rs[i].ID
+	}
+	return ids
+}
+
 // Names returns the list of names from all Repos.
 func (rs Repos) Names() []string {
 	names := make([]string, len(rs))
@@ -765,9 +801,7 @@ func (rs Repos) Kinds() (kinds []string) {
 func (rs Repos) ExternalRepos() []api.ExternalRepoSpec {
 	specs := make([]api.ExternalRepoSpec, 0, len(rs))
 	for _, r := range rs {
-		if r.ExternalRepo.IsSet() {
-			specs = append(specs, r.ExternalRepo)
-		}
+		specs = append(specs, r.ExternalRepo)
 	}
 	return specs
 }
@@ -891,4 +925,129 @@ func (es ExternalServices) With(opts ...func(*ExternalService)) ExternalServices
 	clone := es.Clone()
 	clone.Apply(opts...)
 	return clone
+}
+
+type RateLimiterRegistry struct {
+	mu sync.Mutex
+	// Rate limiter per external service, keys are database ID of external services.
+	rateLimiters map[int64]*rate.Limiter
+}
+
+// NewRateLimitRegistry returns a new registry and attempts to populate it. On error, an
+// empty registry is returned which can still to handle syncs.
+func NewRateLimiterRegistry(ctx context.Context, store Store) (*RateLimiterRegistry, error) {
+	r := &RateLimiterRegistry{
+		rateLimiters: make(map[int64]*rate.Limiter),
+	}
+
+	svcs, err := store.ListExternalServices(ctx, StoreListExternalServicesArgs{})
+	if err != nil {
+		return r, errors.Wrap(err, "fetching external services")
+	}
+
+	for _, svc := range svcs {
+		err = r.updateRateLimiter(svc)
+		if err != nil {
+			if _, ok := err.(errRateLimitUnsupported); ok {
+				continue
+			}
+			// Errors here are not fatal, so we can log them
+			log15.Warn("Updating rate limiter", "kind", svc.Kind, "err", err)
+		}
+	}
+
+	return r, nil
+}
+
+// GetRateLimiter fetches the rate limiter associated with the given external service. If none has been
+// configured an infinite limiter is returned.
+func (r *RateLimiterRegistry) GetRateLimiter(externalServiceID int64) *rate.Limiter {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	l := r.rateLimiters[externalServiceID]
+	if l == nil {
+		l = rate.NewLimiter(rate.Inf, 100)
+		r.rateLimiters[externalServiceID] = l
+	}
+	return l
+}
+
+// HandleExternalServiceSync will update the rate limiter associated with the supplied external service
+// so that it's settings match the service config.
+func (r *RateLimiterRegistry) HandleExternalServiceSync(apiService api.ExternalService) error {
+	svc := &ExternalService{
+		ID:          apiService.ID,
+		Kind:        apiService.Kind,
+		DisplayName: apiService.DisplayName,
+		Config:      apiService.Config,
+		CreatedAt:   apiService.CreatedAt,
+		UpdatedAt:   apiService.UpdatedAt,
+		DeletedAt:   time.Time{},
+	}
+	if apiService.DeletedAt != nil {
+		svc.DeletedAt = *apiService.DeletedAt
+	}
+	return r.updateRateLimiter(svc)
+}
+
+func (r *RateLimiterRegistry) updateRateLimiter(svc *ExternalService) error {
+	config, err := svc.Configuration()
+	if err != nil {
+		return errors.Wrap(err, "getting external service configuration")
+	}
+
+	// Rate limit config can be in a few states:
+	// 1. Not defined: We fall back to default specified in code.
+	// 2. Defined and enabled: We use their defined limit.
+	// 3. Defined and disabled: We use an infinite limiter.
+
+	var limit rate.Limit
+	switch c := config.(type) {
+	case *schema.GitLabConnection:
+		// 10/s is the default enforced by GitLab on their end
+		limit = rate.Limit(10)
+		if c != nil && c.RateLimit != nil {
+			limit = getLimit(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
+		}
+	case *schema.GitHubConnection:
+		// 5000 per hour is the default enforced by GitHub on their end
+		limit = rate.Limit(5000.0 / 3600.0)
+		if c != nil && c.RateLimit != nil {
+			limit = getLimit(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
+		}
+	case *schema.BitbucketServerConnection:
+		// 8/s is the default limit we enforce
+		limit = rate.Limit(8)
+		if c != nil && c.RateLimit != nil {
+			limit = getLimit(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
+		}
+	case *schema.BitbucketCloudConnection:
+		// 2/s is the default limit we enforce
+		limit = rate.Limit(2)
+		if c != nil && c.RateLimit != nil {
+			limit = getLimit(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
+		}
+	default:
+		return errRateLimitUnsupported{codehostKind: svc.Kind}
+	}
+
+	l := r.GetRateLimiter(svc.ID)
+	l.SetLimit(limit)
+
+	return nil
+}
+
+func getLimit(enabled bool, perHour float64) rate.Limit {
+	if enabled {
+		return rate.Limit(perHour / 3600)
+	}
+	return rate.Inf
+}
+
+type errRateLimitUnsupported struct {
+	codehostKind string
+}
+
+func (e errRateLimitUnsupported) Error() string {
+	return fmt.Sprintf("internal rate limiting not supported for %s", e.codehostKind)
 }

@@ -1,18 +1,17 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
-import { isEqual, upperFirst } from 'lodash'
+import { isEqual } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import FileIcon from 'mdi-react/FileIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
-import TimerSandIcon from 'mdi-react/TimerSandIcon'
+import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { debounceTime, distinctUntilChanged, filter, first, map, skip, skipUntil } from 'rxjs/operators'
-import { parseSearchURLQuery } from '..'
+import { parseSearchURLQuery, PatternTypeProps, InteractiveSearchProps, CaseSensitivityProps } from '..'
 import { FetchFileCtx } from '../../../../shared/src/components/CodeExcerpt'
 import { FileMatch } from '../../../../shared/src/components/FileMatch'
-import { RepositoryIcon } from '../../../../shared/src/components/icons' // TODO: Switch to mdi icon
 import { displayRepoName } from '../../../../shared/src/components/RepoFileLink'
 import { VirtualList } from '../../../../shared/src/components/VirtualList'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
@@ -21,24 +20,29 @@ import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { TelemetryProps } from '../../../../shared/src/telemetry/telemetryService'
 import { ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
-import { isDefined } from '../../../../shared/src/util/types'
+import { isDefined, hasProperty } from '../../../../shared/src/util/types'
 import { buildSearchURLQuery } from '../../../../shared/src/util/url'
 import { ModalContainer } from '../../components/ModalContainer'
 import { SearchResult } from '../../components/SearchResult'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
-import { ThemeProps } from '../../theme'
+import { ThemeProps } from '../../../../shared/src/theme'
 import { eventLogger } from '../../tracking/eventLogger'
 import { shouldDisplayPerformanceWarning } from '../backend'
 import { SearchResultsInfoBar } from './SearchResultsInfoBar'
+import { ErrorAlert } from '../../components/alerts'
 
-const isSearchResults = (val: any): val is GQL.ISearchResults => val && val.__typename === 'SearchResults'
+const isSearchResults = (val: unknown): val is GQL.ISearchResults =>
+    typeof val === 'object' && val !== null && hasProperty('__typename')(val) && val.__typename === 'SearchResults'
 
 export interface SearchResultsListProps
     extends ExtensionsControllerProps<'executeCommand' | 'services'>,
-        PlatformContextProps<'forceUpdateTooltip'>,
+        PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         TelemetryProps,
         SettingsCascadeProps,
-        ThemeProps {
+        ThemeProps,
+        PatternTypeProps,
+        CaseSensitivityProps,
+        InteractiveSearchProps {
     location: H.Location
     history: H.History
     authenticatedUser: GQL.IUser | null
@@ -60,6 +64,8 @@ export interface SearchResultsListProps
     onSaveQueryClick: () => void
     didSave: boolean
 
+    interactiveSearchMode: boolean
+
     fetchHighlightedFileLines: (ctx: FetchFileCtx, force?: boolean) => Observable<string[]>
 }
 
@@ -75,22 +81,25 @@ interface State {
 export class SearchResultsList extends React.PureComponent<SearchResultsListProps, State> {
     /** Emits when a result was either scrolled into or out of the page */
     private visibleItemChanges = new Subject<{ isVisible: boolean; index: number }>()
-    private nextItemVisibilityChange = (isVisible: boolean, index: number) =>
+    private nextItemVisibilityChange = (isVisible: boolean, index: number): void =>
         this.visibleItemChanges.next({ isVisible, index })
 
     /** Emits with the index of the first visible result on the page */
     private firstVisibleItems = new Subject<number>()
 
-    /** Refrence to the current scrollable list element */
+    /** Reference to the current scrollable list element */
     private scrollableElementRef: HTMLElement | null = null
-    private setScrollableElementRef = (ref: HTMLElement | null) => (this.scrollableElementRef = ref)
+    private setScrollableElementRef = (ref: HTMLElement | null): void => {
+        this.scrollableElementRef = ref
+    }
 
     /** Emits with the <VirtualList> elements */
     private virtualListContainerElements = new Subject<HTMLElement | null>()
-    private nextVirtualListContainerElement = (ref: HTMLElement | null) => this.virtualListContainerElements.next(ref)
+    private nextVirtualListContainerElement = (ref: HTMLElement | null): void =>
+        this.virtualListContainerElements.next(ref)
 
     private jumpToTopClicks = new Subject<void>()
-    private nextJumpToTopClick = () => this.jumpToTopClicks.next()
+    private nextJumpToTopClick = (): void => this.jumpToTopClicks.next()
 
     private componentUpdates = new Subject<SearchResultsListProps>()
 
@@ -111,7 +120,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
         this.subscriptions.add(
             this.visibleItemChanges
                 .pipe(filter(({ isVisible, index }) => isVisible && !this.state.visibleItems.has(index)))
-                .subscribe(({ isVisible, index }) => {
+                .subscribe(({ index }) => {
                     this.setState(({ visibleItems }) => {
                         visibleItems.add(index)
 
@@ -332,10 +341,11 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                         </div>
                     ) : isErrorLike(this.props.resultsOrError) ? (
                         /* GraphQL, network, query syntax error */
-                        <div className="alert alert-warning m-2" data-testid="search-results-list-error">
-                            <AlertCircleIcon className="icon-inline" />
-                            {upperFirst(this.props.resultsOrError.message)}
-                        </div>
+                        <ErrorAlert
+                            className="m-2"
+                            data-testid="search-results-list-error"
+                            error={this.props.resultsOrError}
+                        />
                     ) : (
                         (() => {
                             const results = this.props.resultsOrError
@@ -344,6 +354,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                     {/* Info Bar */}
                                     <SearchResultsInfoBar
                                         {...this.props}
+                                        query={parsedQuery}
                                         results={results}
                                         showDotComMarketing={this.props.isSourcegraphDotCom}
                                         displayPerformanceWarning={this.state.displayPerformanceWarning}
@@ -362,7 +373,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                         onShowMoreItems={this.onBottomHit(results.results.length)}
                                         onVisibilityChange={this.nextItemVisibilityChange}
                                         items={results.results
-                                            .map((result, i) => this.renderResult(result, i <= 15))
+                                            .map(result => this.renderResult(result))
                                             .filter(isDefined)}
                                         containment={this.scrollableElementRef || undefined}
                                         onRef={this.nextVirtualListContainerElement}
@@ -393,7 +404,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                     )}
 
                                     {/* Server-provided help message */}
-                                    {results.alert ? (
+                                    {results.alert && (
                                         <div className="alert alert-info m-2">
                                             <h3>
                                                 <AlertCircleIcon className="icon-inline" /> {results.alert.title}
@@ -409,7 +420,12 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                                                     className="btn btn-secondary btn-sm"
                                                                     to={
                                                                         '/search?' +
-                                                                        buildSearchURLQuery(proposedQuery.query)
+                                                                        buildSearchURLQuery(
+                                                                            proposedQuery.query,
+                                                                            this.props.patternType,
+                                                                            this.props.caseSensitive,
+                                                                            this.props.filtersInQuery
+                                                                        )
                                                                     }
                                                                 >
                                                                     {proposedQuery.query || proposedQuery.description}
@@ -422,44 +438,32 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                                     </ul>
                                                 </>
                                             )}{' '}
-                                        </div>
-                                    ) : (
-                                        results.results.length === 0 &&
-                                        (results.timedout.length > 0 ? (
-                                            /* No results, but timeout hit */
-                                            <div className="alert alert-warning m-2">
-                                                <h3>
-                                                    <TimerSandIcon className="icon-inline" /> Search timed out
-                                                </h3>
-                                                {this.renderRecommendations([
-                                                    <>
-                                                        Try narrowing your query, or specifying a longer "timeout:" in
-                                                        your query.
-                                                    </>,
-                                                    /* If running on non-cluster, give some smart advice */
-                                                    ...(!this.props.isSourcegraphDotCom &&
-                                                    window.context.deployType !== 'cluster'
+                                            {results.timedout.length > 0 &&
+                                                results.timedout.length === results.repositoriesCount &&
+                                                /* All repositories timed out. */
+                                                this.renderRecommendations(
+                                                    ['dev', 'docker-container'].includes(window.context.deployType)
                                                         ? [
                                                               <>
                                                                   Upgrade to Sourcegraph Enterprise for a highly
-                                                                  scalable Kubernetes cluster deployment option.
+                                                                  scalable Docker Compose or Kubernetes cluster
+                                                                  deployment option.
                                                               </>,
                                                               window.context.likelyDockerOnMac
                                                                   ? 'Use Docker Machine instead of Docker for Mac for better performance on macOS.'
-                                                                  : 'Run Sourcegraph on a server with more CPU and memory, or faster disk IO.',
+                                                                  : 'Contact your Sourcegraph administrator if you are seeing timeouts regularly, as more CPU, memory, or disk resources may need to be provisioned.',
                                                           ]
-                                                        : []),
-                                                ])}
-                                            </div>
-                                        ) : (
-                                            <>
-                                                <div className="alert alert-info d-flex m-2">
-                                                    <h3 className="m-0">
-                                                        <SearchIcon className="icon-inline" /> No results
-                                                    </h3>
-                                                </div>
-                                            </>
-                                        ))
+                                                        : []
+                                                )}
+                                        </div>
+                                    )}
+
+                                    {results.matchCount === 0 && !results.alert && (
+                                        <div className="alert alert-info d-flex m-2">
+                                            <h3 className="m-0">
+                                                <SearchIcon className="icon-inline" /> No results
+                                            </h3>
+                                        </div>
                                     )}
                                 </>
                             )
@@ -496,17 +500,14 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
         )
     }
 
-    private renderResult(
-        result: GQL.GenericSearchResultInterface | GQL.IFileMatch,
-        expanded: boolean
-    ): JSX.Element | undefined {
+    private renderResult(result: GQL.GenericSearchResultInterface | GQL.IFileMatch): JSX.Element | undefined {
         switch (result.__typename) {
             case 'FileMatch':
                 return (
                     <FileMatch
                         key={'file:' + result.file.url}
                         location={this.props.location}
-                        icon={result.lineMatches && result.lineMatches.length > 0 ? RepositoryIcon : FileIcon}
+                        icon={result.lineMatches && result.lineMatches.length > 0 ? SourceRepositoryIcon : FileIcon}
                         result={result}
                         onSelect={this.logEvent}
                         expanded={false}
@@ -523,7 +524,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
     }
 
     /** onBottomHit increments the amount of results to be shown when we have scrolled to the bottom of the list. */
-    private onBottomHit = (limit: number): (() => void) => () =>
+    private onBottomHit = (limit: number) => (): void =>
         this.setState(({ resultsShown }) => ({
             resultsShown: Math.min(limit, resultsShown + 10),
         }))
@@ -561,5 +562,5 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
         })
     }
 
-    private logEvent = () => eventLogger.log('SearchResultClicked')
+    private logEvent = (): void => eventLogger.log('SearchResultClicked')
 }

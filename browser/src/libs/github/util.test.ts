@@ -1,4 +1,6 @@
-import { parseURL } from './util'
+import { startCase } from 'lodash'
+import { parseURL, getDiffFileName } from './util'
+import { getFixtureBody } from '../code_intelligence/code_intelligence_test_utils'
 
 describe('util', () => {
     describe('parseURL()', () => {
@@ -59,4 +61,69 @@ describe('util', () => {
             })
         }
     })
+})
+
+type GithubVersion = 'github.com' | 'ghe-2.14.11'
+type GithubDiffPage = 'commit' | 'pull-request' | 'pull-request-discussion'
+
+describe('getDiffFileName()', () => {
+    const tests: Record<GithubVersion, Record<GithubDiffPage, string>> = {
+        'github.com': {
+            commit: 'doc/dev/incidents.md',
+            'pull-request-discussion': 'web/src/regression/util/TestResourceManager.ts',
+            'pull-request': 'packages/sourcegraph-extension-api/src/sourcegraph.d.ts',
+        },
+        'ghe-2.14.11': {
+            commit: 'mux.go',
+            'pull-request': 'mux.go',
+            'pull-request-discussion': 'mux.go',
+        },
+    }
+    const testGetDeltaFilename = ({
+        expectedFilePath,
+        htmlFixturePath,
+    }: {
+        expectedFilePath: string
+        htmlFixturePath: string
+    }) => {
+        test('extracts the filename', async () => {
+            const container = await getFixtureBody({
+                htmlFixturePath,
+                isFullDocument: false,
+            })
+            // TODO add examples with renamed files and check that getDeltaFilename() doesn't return
+            // identical headFilePath & baseFilePath
+            expect(getDiffFileName(container)).toStrictEqual({
+                baseFilePath: expectedFilePath,
+                headFilePath: expectedFilePath,
+            })
+        })
+    }
+    for (const gitHubVersion of ['github.com', 'ghe-2.14.11'] as const) {
+        describe(gitHubVersion, () => {
+            for (const [gitHubDiffPage, expectedFilePath] of Object.entries(tests[gitHubVersion])) {
+                describe(`${startCase(gitHubDiffPage)} page`, () => {
+                    for (const gitHubFlavor of ['vanilla', 'refined-github']) {
+                        describe(startCase(gitHubFlavor), () => {
+                            if (gitHubDiffPage === 'pull-request-discussion') {
+                                testGetDeltaFilename({
+                                    expectedFilePath,
+                                    htmlFixturePath: `${__dirname}/__fixtures__/${gitHubVersion}/${gitHubDiffPage}/${gitHubFlavor}/code-view.html`,
+                                })
+                            } else {
+                                for (const view of ['split', 'unified']) {
+                                    describe(`${view}`, () => {
+                                        testGetDeltaFilename({
+                                            expectedFilePath,
+                                            htmlFixturePath: `${__dirname}/__fixtures__/${gitHubVersion}/${gitHubDiffPage}/${gitHubFlavor}/${view}/code-view.html`,
+                                        })
+                                    })
+                                }
+                            }
+                        })
+                    }
+                })
+            }
+        })
+    }
 })

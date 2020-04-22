@@ -46,7 +46,7 @@ exports[`<SiteAdminExternalServiceForm /> create GitHub 1`] = `
     disabled={false}
     type="submit"
   >
-    Add external service
+    Add repositories
   </button>
 </form>
 `;
@@ -97,7 +97,7 @@ exports[`<SiteAdminExternalServiceForm /> edit GitHub 1`] = `
     disabled={false}
     type="submit"
   >
-    Add external service
+    Add repositories
   </button>
 </form>
 `;
@@ -151,7 +151,7 @@ exports[`<SiteAdminExternalServiceForm /> edit GitHub, loading 1`] = `
     <div
       className="loading-spinner icon-inline"
     />
-    Add external service
+    Add repositories
   </button>
 </form>
 `;

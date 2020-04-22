@@ -1,4 +1,19 @@
-FROM alpine:3.9@sha256:644fcb1a676b5165371437feaa922943aaf7afcfa8bfee4472f6860aad1ef2a0
+# NOTE: This layer of the docker image is also used in local development as a wrapper around universal-ctags
+FROM alpine:3.10@sha256:e4355b66995c96b4b468159fc5c7e3540fcef961189ca13fee877798649f531a AS ctags
+
+COPY ctags-install-alpine.sh /ctags-install-alpine.sh
+RUN /ctags-install-alpine.sh
+
+# For local development
+WORKDIR /
+COPY .ctags.d /.ctags.d
+
+FROM alpine:3.10@sha256:e4355b66995c96b4b468159fc5c7e3540fcef961189ca13fee877798649f531a as libsqlite3-pcre
+
+COPY libsqlite3-pcre-install-alpine.sh /libsqlite3-pcre-install-alpine.sh
+RUN /libsqlite3-pcre-install-alpine.sh
+
+FROM alpine:3.10@sha256:e4355b66995c96b4b468159fc5c7e3540fcef961189ca13fee877798649f531a AS symbols
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"
@@ -31,6 +46,7 @@ WORKDIR /
 COPY .ctags.d /.ctags.d
 
 ENV CACHE_DIR=/mnt/cache/symbols
+RUN mkdir -p ${CACHE_DIR}
 EXPOSE 3184
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/symbols"]
 COPY symbols /usr/local/bin/

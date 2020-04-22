@@ -1,9 +1,10 @@
 import { DiffPart } from '@sourcegraph/codeintellify'
 import { Range } from '@sourcegraph/extension-api-classes'
-import { uniqueId } from 'lodash'
+import { uniqueId, noop } from 'lodash'
 import renderer from 'react-test-renderer'
 import { BehaviorSubject, from, NEVER, of, Subject, Subscription, throwError } from 'rxjs'
-import { filter, skip, switchMap, take } from 'rxjs/operators'
+import { filter, skip, switchMap, take, first } from 'rxjs/operators'
+import { TestScheduler } from 'rxjs/testing'
 import * as sinon from 'sinon'
 import { Services } from '../../../../shared/src/api/client/services'
 import { integrationTestContext } from '../../../../shared/src/api/integration-test/testHelpers'
@@ -13,7 +14,7 @@ import { SuccessGraphQLResult } from '../../../../shared/src/graphql/graphql'
 import { IQuery } from '../../../../shared/src/graphql/schema'
 import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
 import { resetAllMemoizationCaches } from '../../../../shared/src/util/memoizeObservable'
-import { isDefined } from '../../../../shared/src/util/types'
+import { isDefined, subTypeOf } from '../../../../shared/src/util/types'
 import { DEFAULT_SOURCEGRAPH_URL } from '../../shared/util/context'
 import { MutationRecordLike } from '../../shared/util/dom'
 import {
@@ -22,16 +23,38 @@ import {
     createOverlayMount,
     FileInfo,
     handleCodeHost,
+    observeHoverOverlayMountLocation,
+    HandleCodeHostOptions,
 } from './code_intelligence'
 import { toCodeViewResolver } from './code_views'
 import { DEFAULT_GRAPHQL_RESPONSES, mockRequestGraphQL } from './test_helpers'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
+import { NotificationType } from '../../../../shared/src/api/client/services/notifications'
+import { toPrettyBlobURL } from '../../../../shared/src/util/url'
+import { MockIntersectionObserver } from './MockIntersectionObserver'
 
-const RENDER = jest.fn()
+const RENDER = sinon.spy()
+
+const notificationClassNames = {
+    [NotificationType.Log]: 'log',
+    [NotificationType.Success]: 'success',
+    [NotificationType.Info]: 'info',
+    [NotificationType.Warning]: 'warning',
+    [NotificationType.Error]: 'error',
+}
 
 const elementRenderedAtMount = (mount: Element): renderer.ReactTestRendererJSON | undefined => {
-    const call = RENDER.mock.calls.find(call => call[1] === mount)
-    return call && call[0]
+    const call = RENDER.args.find(call => call[1] === mount)
+    return call?.[0]
+}
+
+const scheduler = (): TestScheduler => new TestScheduler((a, b) => expect(a).toEqual(b))
+
+const createTestElement = (): HTMLElement => {
+    const el = document.createElement('div')
+    el.className = `test test-${uniqueId()}`
+    document.body.appendChild(el)
+    return el
 }
 
 jest.mock('uuid', () => ({
@@ -41,32 +64,51 @@ jest.mock('uuid', () => ({
 const createMockController = (services: Services): Controller => ({
     services,
     notifications: NEVER,
-    executeCommand: jest.fn(),
-    unsubscribe: jest.fn(),
+    executeCommand: () => Promise.resolve(),
+    unsubscribe: noop,
 })
 
 const createMockPlatformContext = (
     partialMocks?: Partial<CodeIntelligenceProps['platformContext']>
 ): CodeIntelligenceProps['platformContext'] => ({
-    forceUpdateTooltip: jest.fn(),
-    urlToFile: jest.fn(),
+    forceUpdateTooltip: noop,
+    urlToFile: toPrettyBlobURL,
     requestGraphQL: mockRequestGraphQL(),
     sideloadedExtensionURL: new Subject<string | null>(),
     settings: NEVER,
+    refreshSettings: () => Promise.resolve(),
     ...partialMocks,
 })
 
+const commonArgs = () =>
+    subTypeOf<Partial<HandleCodeHostOptions>>()({
+        mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
+        showGlobalDebug: false,
+        platformContext: createMockPlatformContext(),
+        sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
+        telemetryService: NOOP_TELEMETRY_SERVICE,
+        render: RENDER,
+        userSignedIn: true,
+        minimalUI: false,
+    })
+
 describe('code_intelligence', () => {
+    // Mock the global IntersectionObserver constructor with an implementation that
+    // will immediately signal all observed elements as intersecting.
+    beforeAll(() => {
+        window.IntersectionObserver = MockIntersectionObserver
+    })
+
     beforeEach(() => {
         document.body.innerHTML = ''
     })
 
     describe('createOverlayMount()', () => {
         it('should create the overlay mount', () => {
-            createOverlayMount('some-code-host')
+            createOverlayMount('some-code-host', document.body)
             const mount = document.body.querySelector('.hover-overlay-mount')
             expect(mount).toBeDefined()
-            expect(mount!.className).toBe('hover-overlay-mount hover-overlay-mount__some-code-host')
+            expect(mount!.className).toBe('hover-overlay-mount hover-overlay-mount__some-code-host theme-light')
         })
     })
 
@@ -82,41 +124,30 @@ describe('code_intelligence', () => {
         let subscriptions = new Subscription()
 
         afterEach(() => {
-            RENDER.mockClear()
+            RENDER.resetHistory()
             resetAllMemoizationCaches()
             subscriptions.unsubscribe()
             subscriptions = new Subscription()
         })
 
-        const createTestElement = (): HTMLElement => {
-            const el = document.createElement('div')
-            el.className = `test test-${uniqueId()}`
-            document.body.appendChild(el)
-            return el
-        }
-
         test('renders the hover overlay mount', async () => {
             const { services } = await integrationTestContext()
             subscriptions.add(
                 handleCodeHost({
-                    mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
+                    ...commonArgs(),
                     codeHost: {
                         type: 'github',
                         name: 'GitHub',
                         check: () => true,
                         codeViewResolvers: [],
+                        notificationClassNames,
                     },
                     extensionsController: createMockController(services),
-                    showGlobalDebug: false,
-                    platformContext: createMockPlatformContext(),
-                    sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
-                    telemetryService: NOOP_TELEMETRY_SERVICE,
-                    render: RENDER,
                 })
             )
             const overlayMount = document.body.querySelector('.hover-overlay-mount')
             expect(overlayMount).toBeDefined()
-            expect(overlayMount!.className).toBe('hover-overlay-mount hover-overlay-mount__github')
+            expect(overlayMount!.className).toBe('hover-overlay-mount hover-overlay-mount__github theme-light')
             const renderedOverlay = elementRenderedAtMount(overlayMount!)
             expect(renderedOverlay).not.toBeUndefined()
         })
@@ -126,20 +157,16 @@ describe('code_intelligence', () => {
             const commandPaletteMount = createTestElement()
             subscriptions.add(
                 handleCodeHost({
-                    mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
+                    ...commonArgs(),
                     codeHost: {
                         type: 'github',
                         name: 'GitHub',
                         check: () => true,
                         getCommandPaletteMount: () => commandPaletteMount,
                         codeViewResolvers: [],
+                        notificationClassNames,
                     },
                     extensionsController: createMockController(services),
-                    showGlobalDebug: false,
-                    platformContext: createMockPlatformContext(),
-                    sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
-                    telemetryService: NOOP_TELEMETRY_SERVICE,
-                    render: RENDER,
                 })
             )
             const renderedCommandPalette = elementRenderedAtMount(commandPaletteMount)
@@ -150,19 +177,16 @@ describe('code_intelligence', () => {
             const { services } = await integrationTestContext()
             subscriptions.add(
                 handleCodeHost({
-                    mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
+                    ...commonArgs(),
                     codeHost: {
                         type: 'github',
                         name: 'GitHub',
                         check: () => true,
                         codeViewResolvers: [],
+                        notificationClassNames,
                     },
                     extensionsController: createMockController(services),
                     showGlobalDebug: true,
-                    platformContext: createMockPlatformContext(),
-                    sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
-                    telemetryService: NOOP_TELEMETRY_SERVICE,
-                    render: RENDER,
                 })
             )
             const globalDebugMount = document.body.querySelector('.global-debug')
@@ -184,18 +208,19 @@ describe('code_intelligence', () => {
             }
             subscriptions.add(
                 handleCodeHost({
-                    mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
+                    ...commonArgs(),
                     codeHost: {
                         type: 'github',
                         name: 'GitHub',
                         check: () => true,
+                        notificationClassNames,
                         codeViewResolvers: [
                             toCodeViewResolver('#code', {
                                 dom: {
-                                    getCodeElementFromTarget: jest.fn(),
-                                    getCodeElementFromLineNumber: jest.fn(),
-                                    getLineElementFromLineNumber: jest.fn(),
-                                    getLineNumberFromCodeElement: jest.fn(),
+                                    getCodeElementFromTarget: sinon.spy(),
+                                    getCodeElementFromLineNumber: sinon.spy(),
+                                    getLineElementFromLineNumber: sinon.spy(),
+                                    getLineNumberFromCodeElement: sinon.spy(),
                                 },
                                 resolveFileInfo: codeView => of(fileInfo),
                                 getToolbarMount: () => toolbarMount,
@@ -209,39 +234,26 @@ describe('code_intelligence', () => {
                         requestGraphQL: mockRequestGraphQL({
                             ...DEFAULT_GRAPHQL_RESPONSES,
                             ResolveRepo: variables =>
-                                // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
+                                // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
                                 of({
                                     data: {
                                         repository: {
-                                            name: `github/${variables.rawRepoName}`,
+                                            name: `github/${variables.rawRepoName as string}`,
                                         },
                                     },
                                     errors: undefined,
                                 } as SuccessGraphQLResult<IQuery>),
                         }),
                     }),
-                    sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
-                    telemetryService: NOOP_TELEMETRY_SERVICE,
-                    render: RENDER,
                 })
             )
-            const editors = await from(services.editor.editorsAndModels)
-                .pipe(
-                    skip(1),
-                    take(1)
-                )
-                .toPromise()
-            expect(editors).toEqual([
+            await from(services.editor.editorUpdates).pipe(first()).toPromise()
+            expect([...services.editor.editors.values()]).toEqual([
                 {
                     editorId: 'editor#0',
                     isActive: true,
                     // The repo name exposed to extensions is affected by repositoryPathPattern
                     resource: 'git://github/foo?1#/bar.ts',
-                    model: {
-                        uri: 'git://github/foo?1#/bar.ts',
-                        text: 'Hello World',
-                        languageId: 'typescript',
-                    },
                     selections: [],
                     type: 'CodeEditor',
                 },
@@ -269,11 +281,12 @@ describe('code_intelligence', () => {
                 codeView.appendChild(line)
                 subscriptions.add(
                     handleCodeHost({
-                        mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
+                        ...commonArgs(),
                         codeHost: {
                             type: 'github',
                             name: 'GitHub',
                             check: () => true,
+                            notificationClassNames,
                             codeViewResolvers: [
                                 toCodeViewResolver('#code', {
                                     dom: {
@@ -288,10 +301,6 @@ describe('code_intelligence', () => {
                         },
                         extensionsController: createMockController(services),
                         showGlobalDebug: true,
-                        platformContext: createMockPlatformContext(),
-                        sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
-                        telemetryService: NOOP_TELEMETRY_SERVICE,
-                        render: RENDER,
                     })
                 )
                 const activeEditor = await from(extensionAPI.app.activeWindowChanges)
@@ -375,19 +384,20 @@ describe('code_intelligence', () => {
                 const dom = {
                     getCodeElementFromTarget: (target: HTMLElement) => target.closest('.code-element') as HTMLElement,
                     getCodeElementFromLineNumber: (codeView: HTMLElement, line: number, part?: DiffPart) =>
-                        codeView.querySelector<HTMLElement>(`[line="${line}"][part="${part}"] > .code-element`),
+                        codeView.querySelector<HTMLElement>(`[line="${line}"][part="${String(part)}"] > .code-element`),
                     getLineElementFromLineNumber: (codeView: HTMLElement, line: number, part?: DiffPart) =>
-                        codeView.querySelector<HTMLElement>(`[line="${line}"][part="${part}"]`),
+                        codeView.querySelector<HTMLElement>(`[line="${line}"][part="${String(part)}"]`),
                     getLineNumberFromCodeElement: (codeElement: HTMLElement) =>
                         parseInt(codeElement.parentElement!.getAttribute('line')!, 10),
                 }
                 subscriptions.add(
                     handleCodeHost({
-                        mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
+                        ...commonArgs(),
                         codeHost: {
                             type: 'github',
                             name: 'GitHub',
                             check: () => true,
+                            notificationClassNames,
                             codeViewResolvers: [
                                 toCodeViewResolver('#code', {
                                     dom,
@@ -398,9 +408,6 @@ describe('code_intelligence', () => {
                         extensionsController: createMockController(services),
                         showGlobalDebug: true,
                         platformContext: createMockPlatformContext({}),
-                        sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
-                        telemetryService: NOOP_TELEMETRY_SERVICE,
-                        render: RENDER,
                     })
                 )
                 await from(extensionAPI.app.activeWindowChanges)
@@ -415,10 +422,7 @@ describe('code_intelligence', () => {
                 const decorated = (commit: string): Promise<TextDocumentDecoration[] | null> =>
                     services.textDocumentDecoration
                         .getDecorations({ uri: `git://foo?${commit}#/bar.ts` })
-                        .pipe(
-                            skip(1),
-                            take(1)
-                        )
+                        .pipe(skip(1), take(1))
                         .toPromise()
 
                 // Set decorations and verify that a decoration attachment has been added
@@ -528,18 +532,20 @@ describe('code_intelligence', () => {
             ])
             subscriptions.add(
                 handleCodeHost({
+                    ...commonArgs(),
                     mutations,
                     codeHost: {
                         type: 'github',
                         name: 'GitHub',
                         check: () => true,
+                        notificationClassNames,
                         codeViewResolvers: [
                             toCodeViewResolver('.code', {
                                 dom: {
-                                    getCodeElementFromTarget: jest.fn(),
-                                    getCodeElementFromLineNumber: jest.fn(),
-                                    getLineElementFromLineNumber: jest.fn(),
-                                    getLineNumberFromCodeElement: jest.fn(),
+                                    getCodeElementFromTarget: sinon.spy(),
+                                    getCodeElementFromLineNumber: sinon.spy(),
+                                    getLineElementFromLineNumber: sinon.spy(),
+                                    getLineNumberFromCodeElement: sinon.spy(),
                                 },
                                 resolveFileInfo: codeView => of(fileInfo),
                             }),
@@ -548,26 +554,13 @@ describe('code_intelligence', () => {
                     extensionsController: createMockController(services),
                     showGlobalDebug: true,
                     platformContext: createMockPlatformContext(),
-                    sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
-                    telemetryService: NOOP_TELEMETRY_SERVICE,
-                    render: RENDER,
                 })
             )
-            let editors = await from(services.editor.editorsAndModels)
-                .pipe(
-                    skip(2),
-                    take(1)
-                )
-                .toPromise()
-            expect(editors).toEqual([
+            await from(services.editor.editorUpdates).pipe(skip(1), take(1)).toPromise()
+            expect([...services.editor.editors.values()]).toEqual([
                 {
                     editorId: 'editor#0',
                     isActive: true,
-                    model: {
-                        languageId: 'typescript',
-                        text: 'Hello World',
-                        uri: 'git://foo?1#/bar.ts',
-                    },
                     resource: 'git://foo?1#/bar.ts',
                     selections: [],
                     type: 'CodeEditor',
@@ -575,11 +568,6 @@ describe('code_intelligence', () => {
                 {
                     editorId: 'editor#1',
                     isActive: true,
-                    model: {
-                        languageId: 'typescript',
-                        text: 'Hello World',
-                        uri: 'git://foo?1#/bar.ts',
-                    },
                     resource: 'git://foo?1#/bar.ts',
                     selections: [],
                     type: 'CodeEditor',
@@ -589,21 +577,11 @@ describe('code_intelligence', () => {
             // Simulate codeView1 removal
             mutations.next([{ addedNodes: [], removedNodes: [codeView1] }])
             // One editor should have been removed, model should still exist
-            editors = await from(services.editor.editorsAndModels)
-                .pipe(
-                    skip(1),
-                    take(1)
-                )
-                .toPromise()
-            expect(editors).toEqual([
+            await from(services.editor.editorUpdates).pipe(first()).toPromise()
+            expect([...services.editor.editors.values()]).toEqual([
                 {
                     editorId: 'editor#1',
                     isActive: true,
-                    model: {
-                        languageId: 'typescript',
-                        text: 'Hello World',
-                        uri: 'git://foo?1#/bar.ts',
-                    },
                     resource: 'git://foo?1#/bar.ts',
                     selections: [],
                     type: 'CodeEditor',
@@ -613,13 +591,8 @@ describe('code_intelligence', () => {
             // Simulate codeView2 removal
             mutations.next([{ addedNodes: [], removedNodes: [codeView2] }])
             // Second editor and model should have been removed
-            editors = await from(services.editor.editorsAndModels)
-                .pipe(
-                    skip(1),
-                    take(1)
-                )
-                .toPromise()
-            expect(editors).toEqual([])
+            await from(services.editor.editorUpdates).pipe(first()).toPromise()
+            expect([...services.editor.editors.values()]).toEqual([])
             expect(services.model.hasModel('git://foo?1#/bar.ts')).toBe(false)
         })
 
@@ -638,11 +611,12 @@ describe('code_intelligence', () => {
             }
             subscriptions.add(
                 handleCodeHost({
-                    mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
+                    ...commonArgs(),
                     codeHost: {
                         type: 'github',
                         name: 'GitHub',
                         check: () => true,
+                        notificationClassNames,
                         codeViewResolvers: [
                             toCodeViewResolver('#code', {
                                 dom,
@@ -657,19 +631,10 @@ describe('code_intelligence', () => {
                     },
                     extensionsController: createMockController(services),
                     showGlobalDebug: true,
-                    platformContext: createMockPlatformContext(),
-                    sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
-                    telemetryService: NOOP_TELEMETRY_SERVICE,
-                    render: RENDER,
                 })
             )
-            const editors = await from(services.editor.editors)
-                .pipe(
-                    skip(1),
-                    take(1)
-                )
-                .toPromise()
-            expect(editors.length).toEqual(1)
+            await from(services.editor.editorUpdates).pipe(first()).toPromise()
+            expect(services.editor.editors.size).toEqual(1)
             codeView.dispatchEvent(new MouseEvent('mouseover'))
             sinon.assert.called(dom.getCodeElementFromTarget)
         })
@@ -689,11 +654,12 @@ describe('code_intelligence', () => {
             }
             subscriptions.add(
                 handleCodeHost({
-                    mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
+                    ...commonArgs(),
                     codeHost: {
                         type: 'github',
                         name: 'GitHub',
                         check: () => true,
+                        notificationClassNames,
                         nativeTooltipResolvers: [{ selector: '.native', resolveView: element => ({ element }) }],
                         codeViewResolvers: [
                             toCodeViewResolver('#code', {
@@ -719,19 +685,11 @@ describe('code_intelligence', () => {
                             },
                         }),
                     },
-                    sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
-                    telemetryService: NOOP_TELEMETRY_SERVICE,
-                    render: RENDER,
                 })
             )
-            const editors = await from(services.editor.editors)
-                .pipe(
-                    skip(1),
-                    take(1)
-                )
-                .toPromise()
+            await from(services.editor.editorUpdates).pipe(first()).toPromise()
 
-            expect(editors.length).toEqual(1)
+            expect(services.editor.editors.size).toEqual(1)
             codeView.dispatchEvent(new MouseEvent('mouseover'))
             sinon.assert.notCalled(dom.getCodeElementFromTarget)
         })
@@ -753,11 +711,12 @@ describe('code_intelligence', () => {
             }
             subscriptions.add(
                 handleCodeHost({
-                    mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
+                    ...commonArgs(),
                     codeHost: {
                         type: 'github',
                         name: 'GitHub',
                         check: () => true,
+                        notificationClassNames,
                         nativeTooltipResolvers: [{ selector: '.native', resolveView: element => ({ element }) }],
                         codeViewResolvers: [
                             toCodeViewResolver('#code', {
@@ -783,18 +742,10 @@ describe('code_intelligence', () => {
                             },
                         }),
                     },
-                    sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
-                    telemetryService: NOOP_TELEMETRY_SERVICE,
-                    render: RENDER,
                 })
             )
-            const editors = await from(services.editor.editors)
-                .pipe(
-                    skip(1),
-                    take(1)
-                )
-                .toPromise()
-            expect(editors.length).toEqual(1)
+            await from(services.editor.editorUpdates).pipe(first()).toPromise()
+            expect(services.editor.editors.size).toEqual(1)
             codeView.dispatchEvent(new MouseEvent('mouseover'))
             sinon.assert.called(dom.getCodeElementFromTarget)
             expect(nativeTooltip.classList.contains('native-tooltip--hidden')).toBe(true)
@@ -811,18 +762,19 @@ describe('code_intelligence', () => {
             }
             subscriptions.add(
                 handleCodeHost({
-                    mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
+                    ...commonArgs(),
                     codeHost: {
                         type: 'github',
                         name: 'GitHub',
                         check: () => true,
+                        notificationClassNames,
                         codeViewResolvers: [
                             toCodeViewResolver('#code', {
                                 dom: {
-                                    getCodeElementFromTarget: jest.fn(),
-                                    getCodeElementFromLineNumber: jest.fn(),
-                                    getLineElementFromLineNumber: jest.fn(),
-                                    getLineNumberFromCodeElement: jest.fn(),
+                                    getCodeElementFromTarget: sinon.spy(),
+                                    getCodeElementFromLineNumber: sinon.spy(),
+                                    getLineElementFromLineNumber: sinon.spy(),
+                                    getLineNumberFromCodeElement: sinon.spy(),
                                 },
                                 resolveFileInfo: () => of(fileInfo),
                             }),
@@ -840,18 +792,10 @@ describe('code_intelligence', () => {
                             ResolveRev: () => throwError(new PrivateRepoPublicSourcegraphComError('ResolveRev')),
                         }),
                     }),
-                    sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
-                    telemetryService: NOOP_TELEMETRY_SERVICE,
-                    render: RENDER,
                 })
             )
-            const editors = await from(services.editor.editors)
-                .pipe(
-                    skip(1),
-                    take(1)
-                )
-                .toPromise()
-            expect(editors).toEqual([
+            await from(services.editor.editorUpdates).pipe(first()).toPromise()
+            expect([...services.editor.editors.values()]).toEqual([
                 {
                     editorId: 'editor#0',
                     isActive: true,
@@ -861,6 +805,104 @@ describe('code_intelligence', () => {
                     type: 'CodeEditor',
                 },
             ])
+        })
+    })
+
+    describe('observeHoverOverlayMountLocation()', () => {
+        test('emits document.body if the getMountLocationSelector() returns null', () => {
+            scheduler().run(({ cold, expectObservable }) => {
+                expectObservable(
+                    observeHoverOverlayMountLocation(
+                        () => null,
+                        cold<MutationRecordLike[]>('a', {
+                            a: [
+                                {
+                                    addedNodes: [document.body],
+                                    removedNodes: [],
+                                },
+                            ],
+                        })
+                    )
+                ).toBe('a', {
+                    a: document.body,
+                })
+            })
+        })
+
+        test('emits a custom mount location if a node matching the selector is in addedNodes()', () => {
+            const el = createTestElement()
+            scheduler().run(({ cold, expectObservable }) => {
+                expectObservable(
+                    observeHoverOverlayMountLocation(
+                        () => '.test',
+                        cold<MutationRecordLike[]>('-b', {
+                            b: [
+                                {
+                                    addedNodes: [el],
+                                    removedNodes: [],
+                                },
+                            ],
+                        })
+                    )
+                ).toBe('ab', {
+                    a: document.body,
+                    b: el,
+                })
+            })
+        })
+
+        test('emits a custom mount location if a node matching the selector is nested in an addedNode', () => {
+            const el = createTestElement()
+            const nested = document.createElement('div')
+            nested.classList.add('nested')
+            el.appendChild(nested)
+            scheduler().run(({ cold, expectObservable }) => {
+                expectObservable(
+                    observeHoverOverlayMountLocation(
+                        () => '.nested',
+                        cold<MutationRecordLike[]>('-b', {
+                            b: [
+                                {
+                                    addedNodes: [el],
+                                    removedNodes: [],
+                                },
+                            ],
+                        })
+                    )
+                ).toBe('ab', {
+                    a: document.body,
+                    b: nested,
+                })
+            })
+        })
+
+        test('emits document.body if a node matching the selector is removed', () => {
+            const el = createTestElement()
+            scheduler().run(({ cold, expectObservable }) => {
+                expectObservable(
+                    observeHoverOverlayMountLocation(
+                        () => '.test',
+                        cold<MutationRecordLike[]>('-bc', {
+                            b: [
+                                {
+                                    addedNodes: [el],
+                                    removedNodes: [],
+                                },
+                            ],
+                            c: [
+                                {
+                                    addedNodes: [],
+                                    removedNodes: [el],
+                                },
+                            ],
+                        })
+                    )
+                ).toBe('abc', {
+                    a: document.body,
+                    b: el,
+                    c: document.body,
+                })
+            })
         })
     })
 })

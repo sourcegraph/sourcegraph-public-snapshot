@@ -6,7 +6,7 @@ describe('phabricator/code_intelligence', () => {
         describe('getToolbarMount()', () => {
             for (const view of ['split', 'unified']) {
                 testToolbarMountGetter(
-                    `${__dirname}/__fixtures__/code-views/differential/${view}.html`,
+                    `${__dirname}/__fixtures__/code-views/2017.09-r1/differential/${view}.html`,
                     diffCodeView.getToolbarMount
                 )
             }
@@ -16,7 +16,7 @@ describe('phabricator/code_intelligence', () => {
         describe('getToolbarMount()', () => {
             for (const view of ['split', 'unified']) {
                 testToolbarMountGetter(
-                    `${__dirname}/__fixtures__/code-views/commit/${view}.html`,
+                    `${__dirname}/__fixtures__/code-views/2017.09-r1/commit/${view}.html`,
                     commitCodeView.getToolbarMount
                 )
             }

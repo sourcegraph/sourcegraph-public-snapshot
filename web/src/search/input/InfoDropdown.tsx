@@ -1,12 +1,9 @@
 import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
 import React from 'react'
-import { Dropdown } from 'reactstrap'
-import DropdownItem from 'reactstrap/lib/DropdownItem'
-import DropdownMenu from 'reactstrap/lib/DropdownMenu'
-import DropdownToggle from 'reactstrap/lib/DropdownToggle'
+import { Dropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 import { renderMarkdown } from '../../../../shared/src/util/markdown'
 import { pluralize } from '../../../../shared/src/util/strings'
-import { QueryFieldExamples } from './QueryBuilderInputRow'
+import { QueryFieldExamples } from '../queryBuilder/QueryBuilderInputRow'
 
 interface Props {
     title: string
@@ -24,7 +21,7 @@ export class InfoDropdown extends React.Component<Props, State> {
         this.state = { isOpen: false }
     }
 
-    private toggleIsOpen = () => this.setState(prevState => ({ isOpen: !prevState.isOpen }))
+    private toggleIsOpen = (): void => this.setState(prevState => ({ isOpen: !prevState.isOpen }))
 
     public render(): JSX.Element | null {
         return (

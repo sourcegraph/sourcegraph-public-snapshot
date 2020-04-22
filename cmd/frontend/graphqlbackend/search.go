@@ -6,43 +6,40 @@ import (
 	"fmt"
 	"math"
 	"regexp"
+	regexpsyntax "regexp/syntax"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
 
-	zoektrpc "github.com/google/zoekt/rpc"
+	"github.com/inconshreveable/log15"
+
 	"github.com/neelance/parallel"
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/inventory/filelang"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
-	searchquerytypes "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/types"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/endpoint"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	searchbackend "github.com/sourcegraph/sourcegraph/pkg/search/backend"
-	"github.com/sourcegraph/sourcegraph/pkg/trace"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/endpoint"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/search"
+	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	querytypes "github.com/sourcegraph/sourcegraph/internal/search/query/types"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // This file contains the root resolver for search. It currently has a lot of
 // logic that spans out into all the other search_* files.
-//
-// NOTE: This file and most supporting code will be deleted when search2.go is
-// rolled out. However, right now to understand search and fix bugs in it you
-// should start here.
+var mockResolveRepositories func(effectiveRepoFieldValues []string) (repoRevs, missingRepoRevs []*search.RepositoryRevisions, overLimit bool, err error)
 
 func maxReposToSearch() int {
 	switch max := conf.Get().MaxReposToSearch; {
@@ -54,41 +51,193 @@ func maxReposToSearch() int {
 	}
 }
 
-// Search provides search results and suggestions.
-func (r *schemaResolver) Search(args *struct {
-	Query string
-}) (interface {
-	Results(context.Context) (*searchResultsResolver, error)
+type SearchArgs struct {
+	Version     string
+	PatternType *string
+	Query       string
+	After       *string
+	First       *int32
+}
+
+type SearchImplementer interface {
+	Results(context.Context) (*SearchResultsResolver, error)
 	Suggestions(context.Context, *searchSuggestionsArgs) ([]*searchSuggestionResolver, error)
 	//lint:ignore U1000 is used by graphql via reflection
 	Stats(context.Context) (*searchResultsStats, error)
-}, error) {
+}
+
+// NewSearchImplementer returns a SearchImplementer that provides search results and suggestions.
+func NewSearchImplementer(args *SearchArgs) (SearchImplementer, error) {
 	tr, _ := trace.New(context.Background(), "graphql.schemaResolver", "Search")
 	defer tr.Finish()
-	q, err := query.ParseAndCheck(args.Query)
+
+	searchType, err := detectSearchType(args.Version, args.PatternType, args.Query)
 	if err != nil {
-		return &didYouMeanQuotedResolver{query: args.Query, err: err}, nil
+		return nil, err
 	}
+
+	if searchType == query.SearchTypeStructural && !conf.StructuralSearchEnabled() {
+		return nil, errors.New("Structural search is disabled in the site configuration.")
+	}
+
+	var queryString string
+	if searchType == query.SearchTypeLiteral {
+		queryString = query.ConvertToLiteral(args.Query)
+	} else {
+		queryString = args.Query
+	}
+
+	var queryInfo query.QueryInfo
+	if conf.AndOrQueryEnabled() && searchType != query.SearchTypeLiteral && query.ContainsAndOrKeyword(args.Query) {
+		// To process the input as an and/or query, the flag must be enabled, not be a
+		// literal search, and must contain either an 'and' or 'or' expression.
+		// Else, fallback to the older existing parser.
+		queryInfo, err = query.ProcessAndOr(args.Query)
+		if err != nil {
+			return alertForQuery(args.Query, err), nil
+		}
+	} else {
+		queryInfo, err = query.Process(queryString, searchType)
+		if err != nil {
+			return alertForQuery(queryString, err), nil
+		}
+	}
+
+	// If stable:truthy is specified, make the query return a stable result ordering.
+	if queryInfo.BoolValue(query.FieldStable) {
+		args, queryInfo, err = queryForStableResults(args, queryInfo)
+		if err != nil {
+			return alertForQuery(queryString, err), nil
+		}
+	}
+
+	// If the request is a paginated one, decode those arguments now.
+	var pagination *searchPaginationInfo
+	if args.First != nil {
+		pagination, err = processPaginationRequest(args, queryInfo)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return &searchResolver{
-		query: q,
-		zoekt: IndexedSearch(),
+		query:         queryInfo,
+		originalQuery: args.Query,
+		pagination:    pagination,
+		patternType:   searchType,
+		zoekt:         search.Indexed(),
+		searcherURLs:  search.SearcherURLs(),
 	}, nil
 }
 
-func asString(v *searchquerytypes.Value) string {
-	switch {
-	case v.String != nil:
-		return *v.String
-	case v.Regexp != nil:
-		return v.Regexp.String()
-	default:
-		panic("unable to get value as string")
+func (r *schemaResolver) Search(args *SearchArgs) (SearchImplementer, error) {
+	return NewSearchImplementer(args)
+}
+
+// queryForStableResults transforms a query that returns a stable result
+// ordering. The transformed query uses pagination underneath the hood.
+func queryForStableResults(args *SearchArgs, queryInfo query.QueryInfo) (*SearchArgs, query.QueryInfo, error) {
+	if queryInfo.BoolValue(query.FieldStable) {
+		var stableResultCount int32
+		if _, countPresent := queryInfo.Fields()["count"]; countPresent {
+			count, _ := queryInfo.StringValue(query.FieldCount)
+			count64, err := strconv.ParseInt(count, 10, 32)
+			if err != nil {
+				return nil, nil, err
+			}
+			stableResultCount = int32(count64)
+			if stableResultCount > maxSearchResultsPerPaginatedRequest {
+				return nil, nil, fmt.Errorf("Stable searches are limited to at max count:%d results. Consider removing 'stable:', narrowing the search with 'repo:', or using the paginated search API.", maxSearchResultsPerPaginatedRequest)
+			}
+		} else {
+			stableResultCount = defaultMaxSearchResults
+		}
+		args.First = &stableResultCount
+		fileValue := "file"
+		// Pagination only works for file content searches, and will
+		// raise an error otherwise. If stable is explicitly set, this
+		// is implied. So, force this query to only return file content
+		// results.
+		queryInfo.Fields()["type"] = []*querytypes.Value{{String: &fileValue}}
 	}
+	return args, queryInfo, nil
+}
+
+func processPaginationRequest(args *SearchArgs, queryInfo query.QueryInfo) (*searchPaginationInfo, error) {
+	var pagination *searchPaginationInfo
+	if args.First != nil {
+		cursor, err := unmarshalSearchCursor(args.After)
+		if err != nil {
+			return nil, err
+		}
+		if *args.First < 0 || *args.First > maxSearchResultsPerPaginatedRequest {
+			return nil, fmt.Errorf("search: requested pagination 'first' value outside allowed range (0 - %d)", maxSearchResultsPerPaginatedRequest)
+		}
+		pagination = &searchPaginationInfo{
+			cursor: cursor,
+			limit:  *args.First,
+		}
+	} else if args.After != nil {
+		return nil, errors.New("search: paginated requests providing an 'after' cursor but no 'first' value is forbidden")
+	}
+	return pagination, nil
+}
+
+// detectSearchType returns the search type to perfrom ("regexp", or
+// "literal"). The search type derives from three sources: the version and
+// patternType parameters passed to the search endpoint (literal search is the
+// default in V2), and the `patternType:` filter in the input query string which
+// overrides the searchType, if present.
+func detectSearchType(version string, patternType *string, input string) (query.SearchType, error) {
+	var searchType query.SearchType
+	if patternType != nil {
+		switch *patternType {
+		case "literal":
+			searchType = query.SearchTypeLiteral
+		case "regexp":
+			searchType = query.SearchTypeRegex
+		case "structural":
+			searchType = query.SearchTypeStructural
+		default:
+			return -1, fmt.Errorf("unrecognized patternType: %v", patternType)
+		}
+	} else {
+		switch version {
+		case "V1":
+			searchType = query.SearchTypeRegex
+		case "V2":
+			searchType = query.SearchTypeLiteral
+		default:
+			return -1, fmt.Errorf("unrecognized version: %v", version)
+		}
+	}
+
+	// The patterntype field is Singular, but not enforced since we do not
+	// properly parse the input. The regex extraction, takes the left-most
+	// "patterntype:value" match.
+	var patternTypeRegex = lazyregexp.New(`(?i)patterntype:([a-zA-Z"']+)`)
+	patternFromField := patternTypeRegex.FindStringSubmatch(input)
+	if len(patternFromField) > 1 {
+		extracted := patternFromField[1]
+		if match, _ := regexp.MatchString("regex", extracted); match {
+			searchType = query.SearchTypeRegex
+		} else if match, _ := regexp.MatchString("literal", extracted); match {
+			searchType = query.SearchTypeLiteral
+
+		} else if match, _ := regexp.MatchString("structural", extracted); match {
+			searchType = query.SearchTypeStructural
+		}
+	}
+
+	return searchType, nil
 }
 
 // searchResolver is a resolver for the GraphQL type `Search`
 type searchResolver struct {
-	query *query.Query // the parsed search query
+	query         query.QueryInfo       // the query, either containing and/or expressions or otherwise ordinary
+	originalQuery string                // the raw string of the original search query
+	pagination    *searchPaginationInfo // pagination information, or nil if the request is not paginated.
+	patternType   query.SearchType
 
 	// Cached resolveRepositories results.
 	reposMu                   sync.Mutex
@@ -96,12 +245,13 @@ type searchResolver struct {
 	repoOverLimit             bool
 	repoErr                   error
 
-	zoekt *searchbackend.Zoekt
+	zoekt        *searchbackend.Zoekt
+	searcherURLs *endpoint.Map
 }
 
 // rawQuery returns the original query string input.
 func (r *searchResolver) rawQuery() string {
-	return r.query.Syntax.Input
+	return r.originalQuery
 }
 
 func (r *searchResolver) countIsSet() bool {
@@ -111,8 +261,15 @@ func (r *searchResolver) countIsSet() bool {
 }
 
 const defaultMaxSearchResults = 30
+const maxSearchResultsPerPaginatedRequest = 5000
 
 func (r *searchResolver) maxResults() int32 {
+	if r.pagination != nil {
+		// Paginated search requests always consume an entire result set for a
+		// given repository, so we do not want any limit here. See
+		// search_pagination.go for details on why this is necessary .
+		return math.MaxInt32
+	}
 	count, _ := r.query.StringValues(query.FieldCount)
 	if len(count) > 0 {
 		n, _ := strconv.Atoi(count[0])
@@ -156,51 +313,38 @@ func resolveRepoGroups(ctx context.Context) (map[string][]*types.Repo, error) {
 		groups[name] = repos
 	}
 
-	if envvar.SourcegraphDotComMode() {
-		sampleRepos, err := getSampleRepos(ctx)
-		if err != nil {
-			return nil, err
-		}
-		groups["sample"] = sampleRepos
-	}
-
 	return groups, nil
 }
 
-var (
-	sampleReposMu sync.Mutex
-	sampleRepos   []*types.Repo
-)
+// Cf. golang/go/src/regexp/syntax/parse.go.
+const regexpFlags regexpsyntax.Flags = regexpsyntax.ClassNL | regexpsyntax.PerlX | regexpsyntax.UnicodeGroups
 
-func getSampleRepos(ctx context.Context) ([]*types.Repo, error) {
-	sampleReposMu.Lock()
-	defer sampleReposMu.Unlock()
-	if sampleRepos == nil {
-		sampleRepoPaths := []api.RepoName{
-			"github.com/sourcegraph/jsonrpc2",
-			"github.com/sourcegraph/javascript-typescript-langserver",
-			"github.com/gorilla/mux",
-			"github.com/gorilla/schema",
-			"github.com/golang/lint",
-			"github.com/golang/oauth2",
-			"github.com/pallets/flask",
-		}
-		repos := make([]*types.Repo, len(sampleRepoPaths))
-		for i, path := range sampleRepoPaths {
-			repo, err := backend.Repos.GetByName(ctx, path)
+// exactlyOneRepo returns whether exactly one repo: literal field is specified and
+// delineated by regex anchors ^ and $. This function helps determine whether we
+// should return results for a single repo regardless of whether it is a fork or
+// archive.
+func exactlyOneRepo(repoFilters []string) bool {
+	if len(repoFilters) == 1 {
+		filter := repoFilters[0]
+		if strings.HasPrefix(filter, "^") && strings.HasSuffix(filter, "$") {
+			filter := strings.TrimSuffix(strings.TrimPrefix(filter, "^"), "$")
+			r, err := regexpsyntax.Parse(filter, regexpFlags)
 			if err != nil {
-				return nil, fmt.Errorf("get %q: %s", path, err)
+				return false
 			}
-			repos[i] = repo
+			return r.Op == regexpsyntax.OpLiteral
 		}
-		sampleRepos = repos
 	}
-	return sampleRepos, nil
+	return false
 }
 
 // resolveRepositories calls doResolveRepositories, caching the result for the common
 // case where effectiveRepoFieldValues == nil.
 func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoFieldValues []string) (repoRevs, missingRepoRevs []*search.RepositoryRevisions, overLimit bool, err error) {
+	if mockResolveRepositories != nil {
+		return mockResolveRepositories(effectiveRepoFieldValues)
+	}
+
 	tr, ctx := trace.New(ctx, "graphql.resolveRepositories", fmt.Sprintf("effectiveRepoFieldValues: %v", effectiveRepoFieldValues))
 	defer func() {
 		if err != nil {
@@ -227,9 +371,18 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 
 	forkStr, _ := r.query.StringValue(query.FieldFork)
 	fork := parseYesNoOnly(forkStr)
+	if fork == Invalid && !exactlyOneRepo(repoFilters) {
+		fork = No // fork defaults to No unless exactly one repo is being searched.
+	}
 
 	archivedStr, _ := r.query.StringValue(query.FieldArchived)
 	archived := parseYesNoOnly(archivedStr)
+	if archived == Invalid && !exactlyOneRepo(repoFilters) {
+		archived = No // archived defaults to No unless exactly one repo is being searched.
+	}
+
+	visibilityStr, _ := r.query.StringValue(query.FieldVisibility)
+	visibility := query.ParseVisibility(visibilityStr)
 
 	commitAfter, _ := r.query.StringValue(query.FieldRepoHasCommitAfter)
 
@@ -242,6 +395,8 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 		noForks:          fork == No || fork == False,
 		onlyArchived:     archived == Only || archived == True,
 		noArchived:       archived == No || archived == False,
+		onlyPrivate:      visibility == query.Private,
+		onlyPublic:       visibility == query.Public,
 		commitAfter:      commitAfter,
 	})
 	tr.LazyPrintf("resolveRepositories - done")
@@ -356,6 +511,8 @@ type resolveRepoOp struct {
 	noArchived       bool
 	onlyArchived     bool
 	commitAfter      string
+	onlyPrivate      bool
+	onlyPublic       bool
 }
 
 func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, missingRepoRevisions []*search.RepositoryRevisions, overLimit bool, err error) {
@@ -405,13 +562,13 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 	}
 
 	var defaultRepos []*types.Repo
-	// TODO(ijt): make sure filters like file: don't prevent default repos from being used.
 	if envvar.SourcegraphDotComMode() && len(includePatterns) == 0 {
-		// TODO(ijt): check config like search.defaultRepos.enabled so installations not
-		// using default_repos won't have to pay the ~0.5 msec cost of this query.
-		defaultRepos, err = db.DefaultRepos.List(ctx)
+		getIndexedRepos := func(ctx context.Context, revs []*search.RepositoryRevisions) (indexed, unindexed []*search.RepositoryRevisions, err error) {
+			return zoektIndexedRepos(ctx, search.Indexed(), revs, nil)
+		}
+		defaultRepos, err = defaultRepositories(ctx, db.DefaultRepos.List, getIndexedRepos)
 		if err != nil {
-			return nil, nil, false, err
+			return nil, nil, false, errors.Wrap(err, "getting list of default repos")
 		}
 	}
 
@@ -427,13 +584,14 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 			OnlyRepoIDs:     true,
 			IncludePatterns: includePatterns,
 			ExcludePattern:  unionRegExps(excludePatterns),
-			Enabled:         true,
 			// List N+1 repos so we can see if there are repos omitted due to our repo limit.
 			LimitOffset:  &db.LimitOffset{Limit: maxRepoListSize + 1},
 			NoForks:      op.noForks,
 			OnlyForks:    op.onlyForks,
 			NoArchived:   op.noArchived,
 			OnlyArchived: op.onlyArchived,
+			NoPrivate:    op.onlyPublic,
+			OnlyPrivate:  op.onlyPrivate,
 		})
 		tr.LazyPrintf("Repos.List - done")
 		if err != nil {
@@ -509,6 +667,55 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 	return repoRevisions, missingRepoRevisions, overLimit, err
 }
 
+type indexedReposFunc func(ctx context.Context, revs []*search.RepositoryRevisions) (indexed, unindexed []*search.RepositoryRevisions, err error)
+type defaultReposFunc func(ctx context.Context) ([]*types.Repo, error)
+
+func defaultRepositories(ctx context.Context, getRawDefaultRepos defaultReposFunc, getIndexedRepos indexedReposFunc) ([]*types.Repo, error) {
+	// Get the list of default repos from the db.
+	defaultRepos, err := getRawDefaultRepos(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "querying db for default repos")
+	}
+	// Find out which of the default repos have been indexed.
+	defaultRepoRevs := make([]*search.RepositoryRevisions, 0, len(defaultRepos))
+	for _, r := range defaultRepos {
+		rr := &search.RepositoryRevisions{
+			Repo: r,
+			Revs: []search.RevisionSpecifier{{RevSpec: ""}},
+		}
+		defaultRepoRevs = append(defaultRepoRevs, rr)
+	}
+
+	indexed, unindexed, err := getIndexedRepos(ctx, defaultRepoRevs)
+	if err != nil {
+		return nil, errors.Wrap(err, "finding subset of default repos that are indexed")
+	}
+	// If any are unindexed, log the first few so we can find out if something is going wrong with those.
+	if len(unindexed) > 0 {
+		N := len(unindexed)
+		if N > 10 {
+			N = 10
+		}
+		var names []string
+		for i := 0; i < N; i++ {
+			names = append(names, string(unindexed[i].Repo.Name))
+		}
+		log15.Info("some unindexed repos found; listing up to 10 of them", "unindexed", names)
+	}
+	// Exclude any that aren't indexed.
+	indexedMap := make(map[api.RepoID]bool, len(indexed))
+	for _, r := range indexed {
+		indexedMap[r.Repo.ID] = true
+	}
+	defaultRepos2 := make([]*types.Repo, 0, len(indexedMap))
+	for _, r := range defaultRepos {
+		if indexedMap[r.ID] {
+			defaultRepos2 = append(defaultRepos2, r)
+		}
+	}
+	return defaultRepos2, nil
+}
+
 func filterRepoHasCommitAfter(ctx context.Context, revisions []*search.RepositoryRevisions, after string) ([]*search.RepositoryRevisions, error) {
 	var (
 		mut  sync.Mutex
@@ -537,10 +744,10 @@ func filterRepoHasCommitAfter(ctx context.Context, revisions []*search.Repositor
 			for _, rev := range revs.Revs {
 				ok, err := git.HasCommitAfter(ctx, revs.GitserverRepo(), after, rev.RevSpec)
 				if err != nil {
-					if ctx.Err() != nil {
-						run.Error(errors.New("timeout due to repohascommitafter: filter, please try setting a larger timeout: in your query (we are improving this, see https://github.com/sourcegraph/sourcegraph/issues/4614)"))
+					if gitserver.IsRevisionNotFound(err) || vcs.IsRepoNotExist(err) {
 						continue
 					}
+
 					run.Error(err)
 					continue
 				}
@@ -584,14 +791,15 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]*se
 	if err != nil {
 		return nil, err
 	}
-	args := search.Args{
-		Pattern:         p,
+	args := search.TextParameters{
+		PatternInfo:     p,
 		Repos:           repos,
 		Query:           r.query,
 		UseFullDeadline: r.searchTimeoutFieldSet(),
 		Zoekt:           r.zoekt,
+		SearcherURLs:    r.searcherURLs,
 	}
-	if err := args.Pattern.Validate(); err != nil {
+	if err := args.PatternInfo.Validate(); err != nil {
 		return nil, err
 	}
 
@@ -603,9 +811,46 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]*se
 	var suggestions []*searchSuggestionResolver
 	for i, result := range fileResults {
 		assumedScore := len(fileResults) - i // Greater score is first, so we inverse the index.
-		suggestions = append(suggestions, newSearchResultResolver(result.File(), assumedScore))
+		suggestions = append(suggestions, newSearchSuggestionResolver(result.File(), assumedScore))
 	}
 	return suggestions, nil
+}
+
+// SearchRepos searches for the provided query but only the the unique list of
+// repositories belonging to the search results.
+// It's used by campaigns to search.
+func SearchRepos(ctx context.Context, plainQuery string) ([]*RepositoryResolver, error) {
+	queryString := query.ConvertToLiteral(plainQuery)
+
+	var queryInfo query.QueryInfo
+	var err error
+	if conf.AndOrQueryEnabled() {
+		andOrQuery, err := query.ParseAndOr(plainQuery)
+		if err != nil {
+			return nil, err
+		}
+		queryInfo = &query.AndOrQuery{Query: andOrQuery}
+	} else {
+		queryInfo, err = query.ParseAndCheck(queryString)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	sr := &searchResolver{
+		query:         queryInfo,
+		originalQuery: plainQuery,
+		pagination:    nil,
+		patternType:   query.SearchTypeLiteral,
+		zoekt:         search.Indexed(),
+		searcherURLs:  search.SearcherURLs(),
+	}
+
+	results, err := sr.Results(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return results.Repositories(), nil
 }
 
 func unionRegExps(patterns []string) string {
@@ -646,7 +891,7 @@ func (e *badRequestError) Cause() error {
 
 // searchSuggestionResolver is a resolver for the GraphQL union type `SearchSuggestion`
 type searchSuggestionResolver struct {
-	// result is either a RepositoryResolver or a gitTreeEntryResolver
+	// result is either a RepositoryResolver or a GitTreeEntryResolver
 	result interface{}
 	// score defines how well this item matches the query for sorting purposes
 	score int
@@ -661,18 +906,18 @@ func (r *searchSuggestionResolver) ToRepository() (*RepositoryResolver, bool) {
 	return res, ok
 }
 
-func (r *searchSuggestionResolver) ToFile() (*gitTreeEntryResolver, bool) {
-	res, ok := r.result.(*gitTreeEntryResolver)
+func (r *searchSuggestionResolver) ToFile() (*GitTreeEntryResolver, bool) {
+	res, ok := r.result.(*GitTreeEntryResolver)
 	return res, ok
 }
 
-func (r *searchSuggestionResolver) ToGitBlob() (*gitTreeEntryResolver, bool) {
-	res, ok := r.result.(*gitTreeEntryResolver)
+func (r *searchSuggestionResolver) ToGitBlob() (*GitTreeEntryResolver, bool) {
+	res, ok := r.result.(*GitTreeEntryResolver)
 	return res, ok && res.stat.Mode().IsRegular()
 }
 
-func (r *searchSuggestionResolver) ToGitTree() (*gitTreeEntryResolver, bool) {
-	res, ok := r.result.(*gitTreeEntryResolver)
+func (r *searchSuggestionResolver) ToGitTree() (*GitTreeEntryResolver, bool) {
+	res, ok := r.result.(*GitTreeEntryResolver)
 	return res, ok && res.stat.Mode().IsDir()
 }
 
@@ -684,21 +929,29 @@ func (r *searchSuggestionResolver) ToSymbol() (*symbolResolver, bool) {
 	return toSymbolResolver(s.symbol, s.baseURI, s.lang, s.commit), true
 }
 
-// newSearchResultResolver returns a new searchResultResolver wrapping the
+func (r *searchSuggestionResolver) ToLanguage() (*languageResolver, bool) {
+	res, ok := r.result.(*languageResolver)
+	return res, ok
+}
+
+// newSearchSuggestionResolver returns a new searchSuggestionResolver wrapping the
 // given result.
 //
-// A panic occurs if the type of result is not a *RepositoryResolver or
-// *gitTreeEntryResolver.
-func newSearchResultResolver(result interface{}, score int) *searchSuggestionResolver {
+// A panic occurs if the type of result is not a *RepositoryResolver, *GitTreeEntryResolver,
+// *searchSymbolResult or *languageResolver.
+func newSearchSuggestionResolver(result interface{}, score int) *searchSuggestionResolver {
 	switch r := result.(type) {
 	case *RepositoryResolver:
 		return &searchSuggestionResolver{result: r, score: score, length: len(r.repo.Name), label: string(r.repo.Name)}
 
-	case *gitTreeEntryResolver:
-		return &searchSuggestionResolver{result: r, score: score, length: len(r.path), label: r.path}
+	case *GitTreeEntryResolver:
+		return &searchSuggestionResolver{result: r, score: score, length: len(r.Path()), label: r.Path()}
 
 	case *searchSymbolResult:
 		return &searchSuggestionResolver{result: r, score: score, length: len(r.symbol.Name + " " + r.symbol.Parent), label: r.symbol.Name + " " + r.symbol.Parent}
+
+	case *languageResolver:
+		return &searchSuggestionResolver{result: r, score: score, length: len(r.Name()), label: r.Name()}
 
 	default:
 		panic("never here")
@@ -721,50 +974,6 @@ func sortSearchSuggestions(s []*searchSuggestionResolver) {
 		// All else equal, sort alphabetically.
 		return a.label < b.label
 	})
-}
-
-// langIncludeExcludePatterns returns regexps for the include/exclude path patterns given the lang:
-// and -lang: filter values in a search query. For example, a query containing "lang:go" should
-// include files whose paths match /\.go$/.
-func langIncludeExcludePatterns(values, negatedValues []string) (includePatterns, excludePatterns []string, err error) {
-	lookup := func(value string) *filelang.Language {
-		value = strings.ToLower(value)
-		for _, lang := range filelang.Langs {
-			if strings.ToLower(lang.Name) == value {
-				return lang
-			}
-			for _, alias := range lang.Aliases {
-				if alias == value {
-					return lang
-				}
-			}
-		}
-		return nil
-	}
-
-	do := func(values []string, patterns *[]string) error {
-		for _, value := range values {
-			lang := lookup(value)
-			if lang == nil {
-				return fmt.Errorf("unknown language: %q", value)
-			}
-			extPatterns := make([]string, len(lang.Extensions))
-			for i, ext := range lang.Extensions {
-				// Add `\.ext$` pattern to match files with the given extension.
-				extPatterns[i] = regexp.QuoteMeta(ext) + "$"
-			}
-			*patterns = append(*patterns, unionRegExps(extPatterns))
-		}
-		return nil
-	}
-
-	if err := do(values, &includePatterns); err != nil {
-		return nil, nil, err
-	}
-	if err := do(negatedValues, &excludePatterns); err != nil {
-		return nil, nil, err
-	}
-	return includePatterns, excludePatterns, nil
 }
 
 // handleRepoSearchResult handles the limitHit and searchErr returned by a search function,
@@ -796,38 +1005,3 @@ func handleRepoSearchResult(common *searchResultsCommon, repoRev *search.Reposit
 }
 
 var errMultipleRevsNotSupported = errors.New("not yet supported: searching multiple revs in the same repo")
-
-var (
-	zoektAddr   = env.Get("ZOEKT_HOST", "indexed-search:80", "host:port of the zoekt instance")
-	searcherURL = env.Get("SEARCHER_URL", "k8s+http://searcher:3181", "searcher server URL")
-
-	searcherURLsOnce sync.Once
-	searcherURLs     *endpoint.Map
-
-	indexedSearchOnce sync.Once
-	indexedSearch     *searchbackend.Zoekt
-)
-
-func SearcherURLs() *endpoint.Map {
-	searcherURLsOnce.Do(func() {
-		if len(strings.Fields(searcherURL)) == 0 {
-			searcherURLs = endpoint.Empty(errors.New("a searcher service has not been configured"))
-		} else {
-			searcherURLs = endpoint.New(searcherURL)
-		}
-	})
-	return searcherURLs
-}
-
-func IndexedSearch() *searchbackend.Zoekt {
-	indexedSearchOnce.Do(func() {
-		indexedSearch = &searchbackend.Zoekt{}
-		if zoektAddr != "" {
-			indexedSearch.Client = zoektrpc.Client(zoektAddr)
-		}
-		conf.Watch(func() {
-			indexedSearch.SetEnabled(conf.SearchIndexEnabled())
-		})
-	})
-	return indexedSearch
-}

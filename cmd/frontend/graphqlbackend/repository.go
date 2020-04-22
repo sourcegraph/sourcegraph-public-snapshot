@@ -9,18 +9,18 @@ import (
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/extsvc/phabricator"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 type RepositoryResolver struct {
@@ -51,7 +51,7 @@ func repositoryByID(ctx context.Context, id graphql.ID) (*RepositoryResolver, er
 	return &RepositoryResolver{repo: repo}, nil
 }
 
-func repositoryByIDInt32(ctx context.Context, repoID api.RepoID) (*RepositoryResolver, error) {
+func RepositoryByIDInt32(ctx context.Context, repoID api.RepoID) (*RepositoryResolver, error) {
 	repo, err := db.Repos.Get(ctx, repoID)
 	if err != nil {
 		return nil, err
@@ -60,18 +60,38 @@ func repositoryByIDInt32(ctx context.Context, repoID api.RepoID) (*RepositoryRes
 }
 
 func (r *RepositoryResolver) ID() graphql.ID {
-	return marshalRepositoryID(r.repo.ID)
+	return MarshalRepositoryID(r.repo.ID)
 }
 
-func marshalRepositoryID(repo api.RepoID) graphql.ID { return relay.MarshalID("Repository", repo) }
+func MarshalRepositoryID(repo api.RepoID) graphql.ID { return relay.MarshalID("Repository", repo) }
 
-func unmarshalRepositoryID(id graphql.ID) (repo api.RepoID, err error) {
+func UnmarshalRepositoryID(id graphql.ID) (repo api.RepoID, err error) {
 	err = relay.UnmarshalSpec(id, &repo)
 	return
 }
 
 func (r *RepositoryResolver) Name() string {
 	return string(r.repo.Name)
+}
+
+func (r *RepositoryResolver) ExternalRepo() *api.ExternalRepoSpec {
+	return &r.repo.ExternalRepo
+}
+
+func (r *RepositoryResolver) IsFork(ctx context.Context) (bool, error) {
+	err := r.hydrate(ctx)
+	if err != nil {
+		return false, err
+	}
+	return r.repo.RepoFields.Fork, nil
+}
+
+func (r *RepositoryResolver) IsArchived(ctx context.Context) (bool, error) {
+	err := r.hydrate(ctx)
+	if err != nil {
+		return false, err
+	}
+	return r.repo.RepoFields.Archived, nil
 }
 
 func (r *RepositoryResolver) URI(ctx context.Context) (string, error) {
@@ -92,6 +112,7 @@ func (r *RepositoryResolver) Description(ctx context.Context) (string, error) {
 	return r.repo.Description, nil
 }
 
+// Deprecated: Use repositoryRedirect query instead.
 func (r *RepositoryResolver) RedirectURL() *string {
 	return r.redirectURL
 }
@@ -110,12 +131,12 @@ func (r *RepositoryResolver) CloneInProgress(ctx context.Context) (bool, error) 
 	return r.MirrorInfo().CloneInProgress(ctx)
 }
 
-type repositoryCommitArgs struct {
+type RepositoryCommitArgs struct {
 	Rev          string
 	InputRevspec *string
 }
 
-func (r *RepositoryResolver) Commit(ctx context.Context, args *repositoryCommitArgs) (*GitCommitResolver, error) {
+func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitArgs) (*GitCommitResolver, error) {
 	commitID, err := backend.Repos.ResolveRev(ctx, r.repo, args.Rev)
 	if err != nil {
 		if gitserver.IsRevisionNotFound(err) {
@@ -124,6 +145,10 @@ func (r *RepositoryResolver) Commit(ctx context.Context, args *repositoryCommitA
 		return nil, err
 	}
 
+	return r.CommitFromID(ctx, args, commitID)
+}
+
+func (r *RepositoryResolver) CommitFromID(ctx context.Context, args *RepositoryCommitArgs, commitID api.CommitID) (*GitCommitResolver, error) {
 	commit, err := backend.Repos.GetCommit(ctx, r.repo, commitID)
 	if commit == nil || err != nil {
 		return nil, err
@@ -174,7 +199,7 @@ func (r *RepositoryResolver) Language(ctx context.Context) string {
 		return ""
 	}
 
-	inventory, err := backend.Repos.GetInventory(ctx, r.repo, commitID)
+	inventory, err := backend.Repos.GetInventory(ctx, r.repo, commitID, false)
 	if err != nil {
 		return ""
 	}
@@ -218,7 +243,7 @@ func (r *RepositoryResolver) Matches() []*searchResultMatchResolver {
 }
 
 func (r *RepositoryResolver) ToRepository() (*RepositoryResolver, bool) { return r, true }
-func (r *RepositoryResolver) ToFileMatch() (*fileMatchResolver, bool)   { return nil, false }
+func (r *RepositoryResolver) ToFileMatch() (*FileMatchResolver, bool)   { return nil, false }
 func (r *RepositoryResolver) ToCommitSearchResult() (*commitSearchResultResolver, bool) {
 	return nil, false
 }
@@ -232,6 +257,10 @@ func (r *RepositoryResolver) searchResultURIs() (string, string) {
 
 func (r *RepositoryResolver) resultCount() int32 {
 	return 1
+}
+
+func (r *RepositoryResolver) Type() *types.Repo {
+	return r.repo
 }
 
 func (r *RepositoryResolver) hydrate(ctx context.Context) error {
@@ -250,6 +279,32 @@ func (r *RepositoryResolver) hydrate(ctx context.Context) error {
 	})
 
 	return r.err
+}
+
+func (r *RepositoryResolver) LSIFUploads(ctx context.Context, args *LSIFUploadsQueryArgs) (LSIFUploadConnectionResolver, error) {
+	return EnterpriseResolvers.codeIntelResolver.LSIFUploads(ctx, &LSIFRepositoryUploadsQueryArgs{
+		LSIFUploadsQueryArgs: args,
+		RepositoryID:         r.ID(),
+	})
+}
+
+type AuthorizedUserArgs struct {
+	RepositoryID graphql.ID
+	Perm         string
+	First        int32
+	After        *string
+}
+
+type RepoAuthorizedUserArgs struct {
+	RepositoryID graphql.ID
+	*AuthorizedUserArgs
+}
+
+func (r *RepositoryResolver) AuthorizedUsers(ctx context.Context, args *AuthorizedUserArgs) (UserConnectionResolver, error) {
+	return EnterpriseResolvers.authzResolver.AuthorizedUsers(ctx, &RepoAuthorizedUserArgs{
+		RepositoryID:       r.ID(),
+		AuthorizedUserArgs: args,
+	})
 }
 
 func (*schemaResolver) AddPhabricatorRepo(ctx context.Context, args *struct {
@@ -301,7 +356,7 @@ func (*schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struct 
 			return nil, err
 		}
 		r := &RepositoryResolver{repo: repo}
-		return r.Commit(ctx, &repositoryCommitArgs{Rev: targetRef})
+		return r.Commit(ctx, &RepositoryCommitArgs{Rev: targetRef})
 	}
 
 	// If we already created the commit

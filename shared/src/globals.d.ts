@@ -9,3 +9,8 @@ declare module 'worker-loader?*' {
     }
     export default WebpackWorker
 }
+
+/**
+ * Set by shared/dev/jest-environment.js
+ */
+declare var jsdom: import('jsdom').JSDOM

@@ -4,97 +4,257 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
+	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
+	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbtesting"
 )
 
-func Test_serveReposList(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
+func TestReposList(t *testing.T) {
+	defaultRepos := []string{"github.com/popular/foo", "github.com/popular/bar"}
+	allRepos := append(defaultRepos, "github.com/alice/foo", "github.com/alice/bar")
 
-	getRepoURIsViaHTTP := func(t *testing.T) []string {
-		t.Helper()
-		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if err := serveReposList(w, r); err != nil {
-				t.Errorf("calling serveReposList: %v", err)
-			}
-		}))
-		defer ts.Close()
-		resp, err := http.Post(ts.URL, "application/json; charset=utf8", bytes.NewReader([]byte(`{"Enabled": true, "Index": true}`)))
-		if err != nil {
-			t.Fatalf("calling http.Get: %v", err)
-		}
-		// Parse the response as in zoekt-sourcegraph-indexserver/main.go.
-		type repo struct {
-			URI string
-		}
-		var repos []repo
-		err = json.NewDecoder(resp.Body).Decode(&repos)
-		if err != nil {
-			t.Fatalf("json decoding response: %v", err)
-		}
-		resp.Body.Close()
-		if err != nil {
-			t.Fatalf("closing response body: %v", err)
-		}
-		var URIs []string
-		for _, r := range repos {
-			URIs = append(URIs, r.URI)
-		}
-		return URIs
-	}
+	cases := []struct {
+		name string
+		srv  *reposListServer
+		body string
+		want []string
+	}{{
+		name: "no indexers",
+		srv: &reposListServer{
+			Repos: &mockRepos{
+				defaultRepos: defaultRepos,
+				repos:        allRepos,
+			},
+			Indexers: suffixIndexers(false),
+		},
+		body: `{"Enabled": true, "Index": true}`,
+		want: allRepos,
+	}, {
+		name: "dot-com no indexers",
+		srv: &reposListServer{
+			SourcegraphDotComMode: true,
+			Repos: &mockRepos{
+				defaultRepos: defaultRepos,
+				repos:        allRepos,
+			},
+			Indexers: suffixIndexers(false),
+		},
+		body: `{"Enabled": true, "Index": true}`,
+		want: defaultRepos,
+	}, {
+		name: "indexers",
+		srv: &reposListServer{
+			Repos: &mockRepos{
+				defaultRepos: defaultRepos,
+				repos:        allRepos,
+			},
+			Indexers: suffixIndexers(true),
+		},
+		body: `{"Hostname": "foo", "Enabled": true, "Index": true}`,
+		want: []string{"github.com/popular/foo", "github.com/alice/foo"},
+	}, {
+		name: "dot-com indexers",
+		srv: &reposListServer{
+			SourcegraphDotComMode: true,
+			Repos: &mockRepos{
+				defaultRepos: defaultRepos,
+				repos:        allRepos,
+			},
+			Indexers: suffixIndexers(true),
+		},
+		body: `{"Hostname": "foo", "Enabled": true, "Index": true}`,
+		want: []string{"github.com/popular/foo"},
+	}, {
+		name: "none",
+		srv: &reposListServer{
+			Repos: &mockRepos{
+				defaultRepos: defaultRepos,
+				repos:        allRepos,
+			},
+			Indexers: suffixIndexers(true),
+		},
+		body: `{"Hostname": "baz", "Enabled": true, "Index": true}`,
+	}}
 
-	t.Run("all repos are returned for non-sourcegraph.com", func(t *testing.T) {
-		ctx := dbtesting.TestContext(t)
-		qs := []string{
-			`INSERT INTO repo(uri, name, created_at, updated_at, description, language) VALUES ('github.com/alice/rabbitmq', 'github.com/alice/rabbitmq', '2015-01-01', '2016-01-01', '', '')`,
-			`INSERT INTO repo(uri, name, created_at, updated_at, description, language) VALUES ('github.com/bob/jabberd', 'github.com/bob/jabberd', '2001-01-01', '2019-01-01', '', '')`,
-		}
-		for _, q := range qs {
-			if _, err := dbconn.Global.ExecContext(ctx, q); err != nil {
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest("POST", "/", bytes.NewReader([]byte(tc.body)))
+			w := httptest.NewRecorder()
+			if err := tc.srv.serveList(w, req); err != nil {
 				t.Fatal(err)
 			}
-		}
-		db.MockAuthzFilter = func(ctx context.Context, repos []*types.Repo, p authz.Perms) ([]*types.Repo, error) {
-			return repos, nil
-		}
-		defer func() { db.MockAuthzFilter = nil }()
-		URIs := getRepoURIsViaHTTP(t)
-		wantURIs := []string{"github.com/alice/rabbitmq", "github.com/bob/jabberd"}
-		if !reflect.DeepEqual(URIs, wantURIs) {
-			t.Errorf("got %v, want %v", URIs, wantURIs)
-		}
-	})
 
-	t.Run("only default repos are returned for sourcegraph.com", func(t *testing.T) {
-		ctx := dbtesting.TestContext(t)
-		qs := []string{
-			`INSERT INTO repo(id, name) VALUES (1, 'github.com/vim/vim')`,
-			`INSERT INTO repo(id, name) VALUES (2, 'github.com/torvalds/linux')`,
-			`INSERT INTO default_repos(repo_id) VALUES (2)`,
-		}
-		for _, q := range qs {
-			if _, err := dbconn.Global.ExecContext(ctx, q); err != nil {
+			resp := w.Result()
+			body, _ := ioutil.ReadAll(resp.Body)
+
+			if resp.StatusCode != http.StatusOK {
+				t.Errorf("got status %v", resp.StatusCode)
+			}
+
+			// Parse the response as in zoekt-sourcegraph-indexserver/main.go.
+			var repos []struct{ URI string }
+			if err := json.Unmarshal(body, &repos); err != nil {
 				t.Fatal(err)
 			}
+
+			var got []string
+			for _, r := range repos {
+				got = append(got, r.URI)
+			}
+
+			if !cmp.Equal(tc.want, got) {
+				t.Fatalf("mismatch (-want +got):\n%s", cmp.Diff(tc.want, got))
+			}
+		})
+	}
+}
+
+func TestReposIndex(t *testing.T) {
+	defaultRepos := []string{"github.com/popular/foo", "github.com/popular/bar"}
+	allRepos := append(defaultRepos, "github.com/alice/foo", "github.com/alice/bar")
+
+	cases := []struct {
+		name string
+		srv  *reposListServer
+		body string
+		want []string
+	}{{
+		name: "indexers",
+		srv: &reposListServer{
+			Repos: &mockRepos{
+				defaultRepos: defaultRepos,
+				repos:        allRepos,
+			},
+			Indexers: suffixIndexers(true),
+		},
+		body: `{"Hostname": "foo"}`,
+		want: []string{"github.com/popular/foo", "github.com/alice/foo"},
+	}, {
+		name: "indexers",
+		srv: &reposListServer{
+			Repos: &mockRepos{
+				defaultRepos: defaultRepos,
+				repos:        allRepos,
+			},
+			Indexers: suffixIndexers(true),
+		},
+		body: `{"Hostname": "foo", "Indexed": ["github.com/alice/bar"]}`,
+		want: []string{"github.com/popular/foo", "github.com/alice/foo", "github.com/alice/bar"},
+	}, {
+		name: "dot-com indexers",
+		srv: &reposListServer{
+			SourcegraphDotComMode: true,
+			Repos: &mockRepos{
+				defaultRepos: defaultRepos,
+				repos:        allRepos,
+			},
+			Indexers: suffixIndexers(true),
+		},
+		body: `{"Hostname": "foo"}`,
+		want: []string{"github.com/popular/foo"},
+	}, {
+		name: "none",
+		srv: &reposListServer{
+			Repos: &mockRepos{
+				defaultRepos: defaultRepos,
+				repos:        allRepos,
+			},
+			Indexers: suffixIndexers(true),
+		},
+		body: `{"Hostname": "baz"}`,
+	}}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest("POST", "/", bytes.NewReader([]byte(tc.body)))
+			w := httptest.NewRecorder()
+			if err := tc.srv.serveIndex(w, req); err != nil {
+				t.Fatal(err)
+			}
+
+			resp := w.Result()
+			body, _ := ioutil.ReadAll(resp.Body)
+
+			if resp.StatusCode != http.StatusOK {
+				t.Errorf("got status %v", resp.StatusCode)
+			}
+
+			var data struct {
+				RepoNames []string
+			}
+			if err := json.Unmarshal(body, &data); err != nil {
+				t.Fatal(err)
+			}
+			got := data.RepoNames
+
+			if !cmp.Equal(tc.want, got) {
+				t.Fatalf("mismatch (-want +got):\n%s", cmp.Diff(tc.want, got))
+			}
+		})
+	}
+}
+
+type mockRepos struct {
+	defaultRepos []string
+	repos        []string
+}
+
+func (r *mockRepos) ListDefault(context.Context) ([]*types.Repo, error) {
+	var repos []*types.Repo
+	for _, name := range r.defaultRepos {
+		repos = append(repos, &types.Repo{
+			Name: api.RepoName(name),
+		})
+	}
+	return repos, nil
+}
+
+func (r *mockRepos) List(ctx context.Context, opt db.ReposListOptions) ([]*types.Repo, error) {
+	if opt.Index == nil || !*opt.Index {
+		return nil, errors.New("reposList test expects Index=true options")
+	}
+
+	var repos []*types.Repo
+	for _, name := range r.repos {
+		repos = append(repos, &types.Repo{
+			Name: api.RepoName(name),
+		})
+	}
+	return repos, nil
+}
+
+// suffixIndexers mocks Indexers. ReposSubset will return all repoNames with
+// the suffix of hostname.
+type suffixIndexers bool
+
+func (b suffixIndexers) ReposSubset(ctx context.Context, hostname string, indexed map[string]struct{}, repoNames []string) ([]string, error) {
+	if !b.Enabled() {
+		return nil, errors.New("indexers disabled")
+	}
+	if hostname == "" {
+		return nil, errors.New("empty hostname")
+	}
+
+	var filter []string
+	for _, name := range repoNames {
+		if strings.HasSuffix(name, hostname) {
+			filter = append(filter, name)
+		} else if _, ok := indexed[name]; ok {
+			filter = append(filter, name)
 		}
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(false)
-		URIs := getRepoURIsViaHTTP(t)
-		wantURIs := []string{"github.com/torvalds/linux"}
-		if !reflect.DeepEqual(URIs, wantURIs) {
-			t.Errorf("got %v, want %v", URIs, wantURIs)
-		}
-	})
+	}
+	return filter, nil
+}
+
+func (b suffixIndexers) Enabled() bool {
+	return bool(b)
 }

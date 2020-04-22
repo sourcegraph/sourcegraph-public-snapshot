@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -17,7 +17,7 @@ func TestForbidAllMiddleware(t *testing.T) {
 	}))
 
 	t.Run("disabled", func(t *testing.T) {
-		conf.Mock(&conf.Unified{Critical: schema.CriticalConfiguration{AuthProviders: []schema.AuthProviders{{Builtin: &schema.BuiltinAuthProvider{Type: "builtin"}}}}})
+		conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{AuthProviders: []schema.AuthProviders{{Builtin: &schema.BuiltinAuthProvider{Type: "builtin"}}}}})
 		defer conf.Mock(nil)
 
 		rr := httptest.NewRecorder()
@@ -32,7 +32,7 @@ func TestForbidAllMiddleware(t *testing.T) {
 	})
 
 	t.Run("enabled", func(t *testing.T) {
-		conf.Mock(&conf.Unified{Critical: schema.CriticalConfiguration{}})
+		conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{}})
 		defer conf.Mock(nil)
 
 		rr := httptest.NewRecorder()

@@ -1,5 +1,7 @@
 # Critical configuration
 
+> NOTE: Since Sourcegraph v3.11, critical configuration has been removed. All critical configuration options are now in the site configuration. See the [migration notes for Sourcegraph v3.11+](../migration/3_11.md) for more information.
+
 Critical configuration defines how critical Sourcegraph components behave, such as the external URL and user authentication. Unlike normal [site configuration](site_config.md), incorrect critical configuration can make Sourcegraph's web interface unreachable. Therefore, critical configuration must be edited on the failsafe [management console](../management_console.md), to allow recovery from misconfiguration.
 
 ## View and edit critical configuration

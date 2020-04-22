@@ -1,0 +1,42 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`UserSubscriptionsEditProductSubscriptionPage renders 1`] = `
+<div
+  className="user-subscriptions-edit-product-subscription-page"
+>
+  <a
+    className="btn btn-link btn-sm mb-3"
+    href="/s"
+    onClick={[Function]}
+  >
+    <ArrowLeftIcon
+      className="icon-inline"
+    />
+     Subscription
+  </a>
+  <h2>
+    Upgrade or change subscription 
+    L-123
+  </h2>
+  <ProductSubscriptionForm
+    accountID="u"
+    afterPrimaryButton={
+      <small
+        className="form-text text-muted"
+      >
+        An upgraded license key will be available immediately after payment.
+      </small>
+    }
+    initialValue={
+      Object {
+        "billingPlanID": "bp",
+        "userCount": 123,
+      }
+    }
+    isLightTheme={true}
+    onSubmit={[Function]}
+    primaryButtonText="Upgrade subscription"
+    subscriptionID="s"
+  />
+</div>
+`;

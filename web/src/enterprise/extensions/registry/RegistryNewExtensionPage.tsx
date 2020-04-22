@@ -1,5 +1,4 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { upperFirst } from 'lodash'
 import AddIcon from 'mdi-react/AddIcon'
 import PuzzleIcon from 'mdi-react/PuzzleIcon'
 import * as React from 'react'
@@ -19,6 +18,7 @@ import { eventLogger } from '../../../tracking/eventLogger'
 import { RegistryExtensionNameFormGroup, RegistryPublisherFormGroup } from '../extension/RegistryExtensionForm'
 import { queryViewerRegistryPublishers } from './backend'
 import { RegistryAreaPageProps } from './RegistryArea'
+import { ErrorAlert } from '../../../components/alerts'
 
 function createExtension(publisher: GQL.ID, name: string): Observable<GQL.IExtensionRegistryCreateExtensionResult> {
     return mutateGraphQL(
@@ -88,7 +88,10 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
                         map(result => ({ publishersOrError: result, publisher: result[0] && result[0].id })),
                         catchError(error => [{ publishersOrError: asError(error) }])
                     )
-                ).subscribe(stateUpdate => this.setState(stateUpdate as State), err => console.error(err))
+                ).subscribe(
+                    stateUpdate => this.setState(stateUpdate as State),
+                    err => console.error(err)
+                )
             )
 
             this.subscriptions.add(
@@ -109,7 +112,10 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
                             )
                         )
                     )
-                    .subscribe(stateUpdate => this.setState(stateUpdate as State), err => console.error(err))
+                    .subscribe(
+                        stateUpdate => this.setState(stateUpdate as State),
+                        err => console.error(err)
+                    )
             )
 
             this.componentUpdates.next(this.props)
@@ -189,9 +195,7 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
                             </button>
                         </Form>
                         {isErrorLike(this.state.creationOrError) && (
-                            <div className="alert alert-danger mt-3">
-                                {upperFirst(this.state.creationOrError.message)}
-                            </div>
+                            <ErrorAlert className="mt-3" error={this.state.creationOrError} />
                         )}
                     </ModalPage>
                 </>

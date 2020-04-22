@@ -31,7 +31,7 @@ export type ContributionScope =
  * @param scope the user interface component in whose scope this computation should occur
  */
 export function getComputedContextProperty(
-    editors: readonly CodeEditorWithPartialModel[],
+    activeEditor: CodeEditorWithPartialModel | undefined,
     settings: SettingsCascadeOrError,
     context: Context<any>,
     key: string,
@@ -45,12 +45,12 @@ export function getComputedContextProperty(
         // which a falsey null default is useful).
         return value === undefined ? null : value
     }
-    const component: ContributionScope | null = scope || editors.find(({ isActive }) => isActive) || null
+    const component: ContributionScope | null = scope || activeEditor || null
     if (key === 'resource' || key === 'component' /* BACKCOMPAT: allow 'component' */) {
         return !!component
     }
     if (key.startsWith('resource.')) {
-        if (!component || component.type !== 'CodeEditor') {
+        if (component?.type !== 'CodeEditor') {
             return null
         }
         // TODO(sqs): Define these precisely. If the resource is in a repository, what is the "path"? Is it the
@@ -73,7 +73,7 @@ export function getComputedContextProperty(
         }
     }
     if (key.startsWith('component.')) {
-        if (!component || component.type !== 'CodeEditor') {
+        if (component?.type !== 'CodeEditor') {
             return null
         }
         const prop = key.slice('component.'.length)
@@ -99,7 +99,7 @@ export function getComputedContextProperty(
         }
     }
     if (key.startsWith('panel.activeView.')) {
-        if (!component || component.type !== 'panelView') {
+        if (component?.type !== 'panelView') {
             return null
         }
         const prop = key.slice('panel.activeView.'.length)

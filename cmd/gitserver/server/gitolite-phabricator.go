@@ -7,13 +7,13 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"regexp"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
+	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/schema"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // handleGetGitolitePhabricatorMetadata serves the Gitolite
@@ -68,9 +68,9 @@ func (s *Server) handleGetGitolitePhabricatorMetadata(w http.ResponseWriter, r *
 	}
 }
 
-var callSignPattern = regexp.MustCompile("^[A-Z]+$")
+var callSignPattern = lazyregexp.New("^[A-Z]+$")
 
-func getGitolitePhabCallsign(ctx context.Context, gconf *schema.GitoliteConnection, repo string, command string) (string, error) {
+func getGitolitePhabCallsign(ctx context.Context, gconf *schema.GitoliteConnection, repo, command string) (string, error) {
 	cmd := exec.CommandContext(ctx, "sh", "-c", command)
 	cmd.Env = append(os.Environ(), "REPO="+repo)
 	stdout, err := cmd.Output()

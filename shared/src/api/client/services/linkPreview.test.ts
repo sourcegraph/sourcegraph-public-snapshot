@@ -80,7 +80,10 @@ describe('provideLinkPreview', () => {
         test('returns null', () =>
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
-                    provideLinkPreview(cold<ProvideLinkPreviewSignature[]>('-a-|', { a: [] }), 'http://example.com/foo')
+                    provideLinkPreview(
+                        cold<ProvideLinkPreviewSignature[]>('-a-|', { a: [] }),
+                        'http://example.com/foo'
+                    )
                 ).toBe('-a-|', {
                     a: null,
                 })

@@ -7,17 +7,17 @@ import (
 	"path"
 	"strings"
 
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/discussions/mentions"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-	"github.com/sourcegraph/sourcegraph/pkg/markdown"
-	"github.com/sourcegraph/sourcegraph/pkg/txemail"
-	"github.com/sourcegraph/sourcegraph/pkg/txemail/txtypes"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/markdown"
+	"github.com/sourcegraph/sourcegraph/internal/txemail"
+	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 )
 
 // NotifyNewThread should be invoked after a new thread (and its first comment)
@@ -272,7 +272,7 @@ func (n *notifier) notifyUsername(ctx context.Context, username string) error {
 			ThreadTitle:           n.thread.Title,
 			CommentAuthorUsername: commentAuthor.Username,
 			CommentContents:       n.comment.Contents,
-			CommentContentsHTML:   template.HTML(markdown.Render(n.comment.Contents, nil)),
+			CommentContentsHTML:   template.HTML(markdown.Render(n.comment.Contents)),
 			URL:                   url.String(),
 			UniqueValue:           fmt.Sprint(n.comment.ID),
 			CanReply:              conf.CanReadEmail(),

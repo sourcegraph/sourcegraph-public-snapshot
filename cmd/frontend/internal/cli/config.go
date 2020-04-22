@@ -6,21 +6,22 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"net/url"
 	"os"
 	"os/user"
 	"strings"
 	"sync"
 
+	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/pkg/db/confdb"
-	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/db/confdb"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 )
 
 func printConfigValidation() {
@@ -34,7 +35,7 @@ func printConfigValidation() {
 		log15.Warn("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 		log15.Warn("⚠️ Warnings related to the Sourcegraph site configuration:")
 		for _, verr := range messages {
-			log15.Warn(verr)
+			log15.Warn(verr.String())
 		}
 		log15.Warn("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 	}
@@ -53,7 +54,8 @@ func handleConfigOverrides() error {
 	overrideCriticalConfig := os.Getenv("CRITICAL_CONFIG_FILE")
 	overrideSiteConfig := os.Getenv("SITE_CONFIG_FILE")
 	overrideExtSvcConfig := os.Getenv("EXTSVC_CONFIG_FILE")
-	overrideAny := overrideCriticalConfig != "" || overrideSiteConfig != "" || overrideExtSvcConfig != ""
+	overrideGlobalSettings := os.Getenv("GLOBAL_SETTINGS_FILE")
+	overrideAny := overrideCriticalConfig != "" || overrideSiteConfig != "" || overrideExtSvcConfig != "" || overrideGlobalSettings != ""
 	if overrideAny || conf.IsDev(conf.DeployType()) {
 		raw, err := (&configurationSource{}).Read(ctx)
 		if err != nil {
@@ -80,6 +82,30 @@ func handleConfigOverrides() error {
 			err := (&configurationSource{}).Write(ctx, raw)
 			if err != nil {
 				return errors.Wrap(err, "writing critical/site config overrides to database")
+			}
+		}
+
+		if overrideGlobalSettings != "" {
+			globalSettingsBytes, err := ioutil.ReadFile(overrideGlobalSettings)
+			if err != nil {
+				return errors.Wrap(err, "reading GLOBAL_SETTINGS_FILE")
+			}
+			currentSettings, err := db.Settings.GetLatest(ctx, api.SettingsSubject{Site: true})
+			if err != nil {
+				return errors.Wrap(err, "could not fetch current settings")
+			}
+			// Only overwrite the settings if the current settings differ, don't exist, or were
+			// created by a human user to prevent creating unnecessary rows in the DB.
+			globalSettings := string(globalSettingsBytes)
+			if currentSettings == nil || currentSettings.AuthorUserID != nil || currentSettings.Contents != globalSettings {
+				var lastID *int32 = nil
+				if currentSettings != nil {
+					lastID = &currentSettings.ID
+				}
+				_, err = db.Settings.CreateIfUpToDate(ctx, api.SettingsSubject{Site: true}, lastID, nil, globalSettings)
+				if err != nil {
+					return errors.Wrap(err, "writing global setting override to database")
+				}
 			}
 		}
 
@@ -171,7 +197,7 @@ func handleConfigOverrides() error {
 				}
 			}
 
-			ps := confGet().Critical.AuthProviders
+			ps := confGet().AuthProviders
 			for id, extSvc := range toUpdate {
 				log15.Debug("Updating external service", "id", id, "displayName", extSvc.DisplayName)
 
@@ -240,7 +266,7 @@ func serviceConnections() conftypes.ServiceConnections {
 
 		serviceConnectionsVal = conftypes.ServiceConnections{
 			GitServers:  gitServers(),
-			PostgresDSN: postgresDSN(username, os.Getenv),
+			PostgresDSN: dbutil.PostgresDSN(username, os.Getenv),
 		}
 	})
 	return serviceConnectionsVal
@@ -256,53 +282,4 @@ func gitServers() []string {
 		}
 	}
 	return strings.Fields(v)
-}
-
-func postgresDSN(currentUser string, getenv func(string) string) string {
-	// PGDATASOURCE is a sourcegraph specific variable for just setting the DSN
-	if dsn := getenv("PGDATASOURCE"); dsn != "" {
-		return dsn
-	}
-
-	// TODO match logic in lib/pq
-	// https://sourcegraph.com/github.com/lib/pq@d6156e141ac6c06345c7c73f450987a9ed4b751f/-/blob/connector.go#L42
-	dsn := &url.URL{
-		Scheme: "postgres",
-		Host:   "127.0.0.1:5432",
-	}
-
-	// Username preference: PGUSER, $USER, postgres
-	username := "postgres"
-	if currentUser != "" {
-		username = currentUser
-	}
-	if user := getenv("PGUSER"); user != "" {
-		username = user
-	}
-
-	if password := getenv("PGPASSWORD"); password != "" {
-		dsn.User = url.UserPassword(username, password)
-	} else {
-		dsn.User = url.User(username)
-	}
-
-	if host := getenv("PGHOST"); host != "" {
-		dsn.Host = host
-	}
-
-	if port := getenv("PGPORT"); port != "" {
-		dsn.Host += ":" + port
-	}
-
-	if db := getenv("PGDATABASE"); db != "" {
-		dsn.Path = db
-	}
-
-	if sslmode := getenv("PGSSLMODE"); sslmode != "" {
-		qry := dsn.Query()
-		qry.Set("sslmode", sslmode)
-		dsn.RawQuery = qry.Encode()
-	}
-
-	return dsn.String()
 }

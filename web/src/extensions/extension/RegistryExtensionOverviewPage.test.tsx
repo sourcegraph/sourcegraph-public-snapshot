@@ -2,13 +2,15 @@ import { noop } from 'lodash'
 import React from 'react'
 import { MemoryRouter } from 'react-router'
 import renderer from 'react-test-renderer'
-import { setLinkComponent } from '../../../../shared/src/components/Link'
 import { RegistryExtensionOverviewPage } from './RegistryExtensionOverviewPage'
+import { PageTitle } from '../../components/PageTitle'
+
+jest.mock('mdi-react/GithubCircleIcon', () => 'GithubCircleIcon')
 
 describe('RegistryExtensionOverviewPage', () => {
-    setLinkComponent((props: any) => <a {...props} />)
-    afterAll(() => setLinkComponent(null as any)) // reset global env for other tests
-
+    afterEach(() => {
+        PageTitle.titleSet = false
+    })
     test('renders', () =>
         expect(
             renderer
@@ -57,9 +59,8 @@ describe('RegistryExtensionOverviewPage', () => {
             ).root
             expect(
                 toText(
-                    x.findAll(
-                        ({ props: { className } }) =>
-                            className && className.includes('registry-extension-overview-page__categories')
+                    x.findAll(({ props: { className } }) =>
+                        className?.includes('registry-extension-overview-page__categories')
                     )
                 )
             ).toEqual(['Other', 'Programming languages' /* no 'invalid' */])

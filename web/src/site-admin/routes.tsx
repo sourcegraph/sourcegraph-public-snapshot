@@ -13,7 +13,7 @@ export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
     {
         // Render empty page if no page selected
         path: '',
-        render: lazyComponent(() => import('./SiteAdminOverviewPage'), 'SiteAdminOverviewPage'),
+        render: lazyComponent(() => import('./overview/SiteAdminOverviewPage'), 'SiteAdminOverviewPage'),
         exact: true,
     },
     {
@@ -85,6 +85,11 @@ export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         path: '/pings',
         render: lazyComponent(() => import('./SiteAdminPingsPage'), 'SiteAdminPingsPage'),
         exact: true,
+    },
+    {
+        path: '/report-bug',
+        exact: true,
+        render: lazyComponent(() => import('./SiteAdminReportBugPage'), 'SiteAdminReportBugPage'),
     },
     {
         path: '/surveys',

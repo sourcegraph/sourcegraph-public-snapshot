@@ -7,6 +7,7 @@ import {
     publisherName,
     RegistryPublisher,
 } from '../../../extensions/extension/extension'
+import { ErrorAlert } from '../../../components/alerts'
 
 export const RegistryPublisherFormGroup: React.FunctionComponent<{
     className?: string
@@ -23,7 +24,7 @@ export const RegistryPublisherFormGroup: React.FunctionComponent<{
     <div className={`form-group ${className}`}>
         <label htmlFor="extension-registry-create-extension-page__publisher">Publisher</label>
         {isErrorLike(publishersOrError) ? (
-            <div className="alert alert-danger">{publishersOrError.message}</div>
+            <ErrorAlert error={publishersOrError} />
         ) : (
             <select
                 id="extension-registry-create-extension-page__publisher"
@@ -36,7 +37,7 @@ export const RegistryPublisherFormGroup: React.FunctionComponent<{
                 {publishersOrError === 'loading' ? (
                     <option disabled={true}>Loading...</option>
                 ) : (
-                    publishersOrError.map((p, i) => (
+                    publishersOrError.map(p => (
                         <option key={p.id} value={p.id}>
                             {publisherName(p)}
                         </option>

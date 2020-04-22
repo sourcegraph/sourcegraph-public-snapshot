@@ -77,8 +77,8 @@
 
     &__code-excerpt {
         padding-top: 0;
-        padding-bottom: 0;
-        padding-left: 0;
+        padding-bottom: 1rem;
+        padding-left: 0.5rem;
         padding-right: 0;
 
         table {
@@ -155,9 +155,6 @@
         }
 
         &__code-excerpt {
-            padding-top: 0;
-            padding-bottom: 1rem;
-
             td.line {
                 display: none;
             }

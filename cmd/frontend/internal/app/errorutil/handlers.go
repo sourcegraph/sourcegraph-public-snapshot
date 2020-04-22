@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/inconshreveable/log15"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/trace"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 // Handler is a wrapper func for app HTTP handlers that enables app
@@ -29,6 +29,8 @@ func Handler(h func(http.ResponseWriter, *http.Request) error) http.Handler {
 				}
 				log15.Error("App HTTP handler error response", "method", req.Method, "request_uri", req.URL.RequestURI(), "status_code", status, "error", err, "trace", spanURL)
 			}
+
+			trace.SetRequestErrorCause(req.Context(), err)
 
 			w.Header().Set("cache-control", "no-cache")
 

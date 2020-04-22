@@ -1,1 +1,0 @@
-ALTER TABLE site_config ADD COLUMN enable_telemetry boolean default true;

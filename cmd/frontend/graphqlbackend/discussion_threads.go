@@ -17,9 +17,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/discussions"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/discussions/ratelimit"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -47,7 +47,7 @@ func discussionsResolveRepository(ctx context.Context, id *graphql.ID, name, git
 		if err != nil {
 			return nil, err
 		}
-		return repositoryByIDInt32(ctx, repo.ID)
+		return RepositoryByIDInt32(ctx, repo.ID)
 	case gitCloneURL != nil:
 		repositoryName, err := cloneURLToRepoName(ctx, *gitCloneURL)
 		if err != nil {
@@ -57,7 +57,7 @@ func discussionsResolveRepository(ctx context.Context, id *graphql.ID, name, git
 		if err != nil {
 			return nil, err
 		}
-		return repositoryByIDInt32(ctx, repo.ID)
+		return RepositoryByIDInt32(ctx, repo.ID)
 	default:
 		panic("invalid state")
 	}
@@ -160,7 +160,7 @@ func (d *discussionThreadTargetRepoInput) populateLinesFromRepository(ctx contex
 	} else {
 		panic("precondition failed (protected by validation)")
 	}
-	commit, err := repo.Commit(ctx, &repositoryCommitArgs{Rev: rev})
+	commit, err := repo.Commit(ctx, &RepositoryCommitArgs{Rev: rev})
 	if err != nil {
 		return err
 	}
@@ -402,7 +402,7 @@ type discussionThreadTargetRepoResolver struct {
 }
 
 func (r *discussionThreadTargetRepoResolver) Repository(ctx context.Context) (*RepositoryResolver, error) {
-	return repositoryByIDInt32(ctx, r.t.RepoID)
+	return RepositoryByIDInt32(ctx, r.t.RepoID)
 }
 
 func (r *discussionThreadTargetRepoResolver) Path() *string { return r.t.Path }
@@ -419,7 +419,7 @@ func (r *discussionThreadTargetRepoResolver) branchOrRevision(ctx context.Contex
 	if rev == nil {
 		return nil, nil
 	}
-	repo, err := repositoryByIDInt32(ctx, r.t.RepoID)
+	repo, err := RepositoryByIDInt32(ctx, r.t.RepoID)
 	if err != nil {
 		return nil, err
 	}
@@ -439,7 +439,7 @@ func (r *discussionThreadTargetRepoResolver) RelativePath(ctx context.Context, a
 	if r.t.Path == nil {
 		return nil, nil
 	}
-	repo, err := repositoryByIDInt32(ctx, r.t.RepoID)
+	repo, err := RepositoryByIDInt32(ctx, r.t.RepoID)
 	if err != nil {
 		return nil, err
 	}
@@ -447,7 +447,7 @@ func (r *discussionThreadTargetRepoResolver) RelativePath(ctx context.Context, a
 		// The thread wasn't created on a specific revision or branch, so we
 		// cannot walk the history. Instead, we must assume its location and
 		// check in the relative revision.
-		commit, err := repo.Commit(ctx, &repositoryCommitArgs{Rev: args.Rev})
+		commit, err := repo.Commit(ctx, &RepositoryCommitArgs{Rev: args.Rev})
 		if err != nil {
 			return nil, err
 		}
@@ -473,7 +473,7 @@ func (r *discussionThreadTargetRepoResolver) RelativePath(ctx context.Context, a
 		return nil, err
 	}
 	currentPath := *r.t.Path
-	fileDiffs, err := comparison.FileDiffs(&struct{ First *int32 }{}).Nodes(ctx)
+	fileDiffs, err := comparison.FileDiffs(&graphqlutil.ConnectionArgs{}).Nodes(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -579,11 +579,11 @@ func (r *discussionThreadTargetRepoResolver) RelativeSelection(ctx context.Conte
 	if path == nil {
 		return nil, nil
 	}
-	repo, err := repositoryByIDInt32(ctx, r.t.RepoID)
+	repo, err := RepositoryByIDInt32(ctx, r.t.RepoID)
 	if err != nil {
 		return nil, err
 	}
-	commit, err := repo.Commit(ctx, &repositoryCommitArgs{Rev: args.Rev})
+	commit, err := repo.Commit(ctx, &RepositoryCommitArgs{Rev: args.Rev})
 	if err != nil {
 		return nil, err
 	}
@@ -597,7 +597,7 @@ func (r *discussionThreadTargetRepoResolver) RelativeSelection(ctx context.Conte
 		return oldSel, nil // nothing to do (requested relative revision is identical to the stored revision)
 	}
 	if r.t.Branch != nil {
-		branchCommit, err := repo.Commit(ctx, &repositoryCommitArgs{Rev: *r.t.Branch})
+		branchCommit, err := repo.Commit(ctx, &RepositoryCommitArgs{Rev: *r.t.Branch})
 		if err != nil {
 			return nil, err
 		}
@@ -781,7 +781,7 @@ func viewerCanUseDiscussions(ctx context.Context) error {
 		return err
 	}
 	var settings schema.Settings
-	if err := jsonc.Unmarshal(merged.Contents(), &settings); err != nil {
+	if err := jsonc.Unmarshal(string(merged.Contents()), &settings); err != nil {
 		return err
 	}
 	enabled, ok := settings.Extensions["sourcegraph/code-discussions"]

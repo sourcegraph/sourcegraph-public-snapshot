@@ -1,5 +1,5 @@
 import * as comlink from '@sourcegraph/comlink'
-import { from, Subject, Subscription } from 'rxjs'
+import { from, merge, Subject, Subscription, of } from 'rxjs'
 import { concatMap } from 'rxjs/operators'
 import { ContextValues, Progress, ProgressOptions, Unsubscribable } from 'sourcegraph'
 import { EndpointPair } from '../../platform/context'
@@ -24,6 +24,9 @@ import {
     ShowMessageRequestParams,
     ShowNotificationParams,
 } from './services/notifications'
+import { TextModelUpdate } from './services/modelService'
+import { EditorUpdate } from './services/editorService'
+import { registerComlinkTransferHandlers } from '../util'
 
 export interface ExtensionHostClientConnection {
     /**
@@ -48,7 +51,7 @@ export interface ActivatedExtension {
 }
 
 /**
- * @param endpoint The Worker object to communicate with
+ * @param endpoints The Worker object to communicate with
  */
 export async function createExtensionHostClientConnection(
     endpoints: EndpointPair,
@@ -58,6 +61,8 @@ export async function createExtensionHostClientConnection(
     const subscription = new Subscription()
 
     // MAIN THREAD
+
+    registerComlinkTransferHandlers()
 
     /** Proxy to the exposed extension host API */
     const initializeExtensionHost = comlink.proxy<ExtensionHostAPIFactory>(endpoints.proxy)
@@ -71,13 +76,27 @@ export async function createExtensionHostClientConnection(
 
     // Sync models and editors to the extension host
     subscription.add(
-        from(services.model.models)
-            .pipe(concatMap(models => proxy.documents.$acceptDocumentData(models)))
+        merge(
+            of([...services.model.models.entries()].map(([, model]): TextModelUpdate => ({ type: 'added', ...model }))),
+            from(services.model.modelUpdates)
+        )
+            .pipe(concatMap(modelUpdates => proxy.documents.$acceptDocumentData(modelUpdates)))
             .subscribe()
     )
     subscription.add(
-        from(services.editor.editors)
-            .pipe(concatMap(editors => proxy.windows.$acceptWindowData({ editors })))
+        merge(
+            of(
+                [...services.editor.editors.entries()].map(
+                    ([editorId, editorData]): EditorUpdate => ({
+                        type: 'added',
+                        editorId,
+                        editorData,
+                    })
+                )
+            ),
+            from(services.editor.editorUpdates)
+        )
+            .pipe(concatMap(editorUpdates => proxy.windows.$acceptWindowData(editorUpdates)))
             .subscribe()
     )
 

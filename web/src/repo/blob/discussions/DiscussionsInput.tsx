@@ -1,11 +1,10 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import { uniqueId } from 'lodash'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import * as React from 'react'
 import { concat, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, filter, map, mergeMap, startWith, switchMap, tap, withLatestFrom } from 'rxjs/operators'
-import { CodeEditor, EditorId } from '../../../../../shared/src/api/client/services/editorService'
+import { CodeEditorData, EditorId } from '../../../../../shared/src/api/client/services/editorService'
 import { TextModel } from '../../../../../shared/src/api/client/services/modelService'
 import { COMMENT_URI_SCHEME } from '../../../../../shared/src/api/client/types/textDocument'
 import { EditorTextField } from '../../../../../shared/src/components/editorTextField/EditorTextField'
@@ -21,6 +20,7 @@ import { Form } from '../../../components/Form'
 import { WebEditorCompletionWidget } from '../../../components/shared'
 import { renderMarkdown } from '../../../discussions/backend'
 import { eventLogger } from '../../../tracking/eventLogger'
+import { ErrorAlert } from '../../../components/alerts'
 
 /**
  * How & whether or not to render a title input field.
@@ -75,24 +75,24 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
     private subscriptions = new Subscription()
 
     private submits = new Subject<React.FormEvent<HTMLFormElement>>()
-    private nextSubmit = (e: React.FormEvent<HTMLFormElement>) => this.submits.next(e)
+    private nextSubmit = (e: React.FormEvent<HTMLFormElement>): void => this.submits.next(e)
 
     private titleInputChanges = new Subject<string>()
-    private nextTitleInputChange = (e: React.ChangeEvent<HTMLInputElement>) =>
+    private nextTitleInputChange = (e: React.ChangeEvent<HTMLInputElement>): void =>
         this.titleInputChanges.next(e.currentTarget.value)
 
     private textAreaKeyDowns = new Subject<React.KeyboardEvent<HTMLTextAreaElement>>()
-    private nextTextAreaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    private nextTextAreaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>): void => {
         this.textAreaKeyDowns.next(e)
     }
 
     private valueChanges = new Subject<string>()
-    private nextTextAreaChange = (value: string) => {
+    private nextTextAreaChange = (value: string): void => {
         this.valueChanges.next(value)
     }
 
     private tabChanges = new Subject<string>()
-    private nextTabChange = (tab: string) => this.tabChanges.next(tab)
+    private nextTabChange = (tab: string): void => this.tabChanges.next(tab)
 
     private textAreaRef = React.createRef<HTMLTextAreaElement>()
 
@@ -118,7 +118,7 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
             startWith(undefined),
             switchMap(
                 () =>
-                    new Observable<EditorId & { modelUri: CodeEditor['resource'] }>(sub => {
+                    new Observable<EditorId & { modelUri: CodeEditorData['resource'] }>(sub => {
                         const model: TextModel = {
                             uri: uniqueId(`${COMMENT_URI_SCHEME}://`),
                             languageId: 'plaintext',
@@ -134,7 +134,6 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                         sub.next({ editorId: editor.editorId, modelUri: model.uri })
                         return () => {
                             this.props.extensionsController.services.editor.removeEditor(editor)
-                            this.props.extensionsController.services.model.removeModel(model.uri)
                         }
                     })
             )
@@ -189,7 +188,7 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                                     return [
                                         state => ({
                                             ...state,
-                                            error: new Error('Error rendering Markdown: ' + error.message),
+                                            error: new Error('Error rendering Markdown: ' + asError(error).message),
                                             previewLoading: false,
                                         }),
                                     ]
@@ -241,7 +240,10 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                         )
                     )
                 )
-            ).subscribe(updateState => this.setState(state => updateState(state)), err => console.error(err))
+            ).subscribe(
+                updateState => this.setState(state => updateState(state)),
+                err => console.error(err)
+            )
         )
         this.componentUpdates.next(this.props)
     }
@@ -274,7 +276,10 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                 )}
                 {/* TODO(slimsag:discussions): local storage persistence is not ideal here. */}
                 <TabsWithLocalStorageViewStatePersistence
-                    tabs={[{ id: 'write', label: 'Write' }, { id: 'preview', label: 'Preview' }]}
+                    tabs={[
+                        { id: 'write', label: 'Write' },
+                        { id: 'preview', label: 'Preview' },
+                    ]}
                     storageKey="discussions-input-last-tab"
                     tabBarEndFragment={
                         <>
@@ -319,12 +324,7 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                         {this.props.submitLabel}
                     </button>
                 </div>
-                {error && (
-                    <div className="discussions-input__error alert alert-danger">
-                        <AlertCircleIcon className="icon-inline discussions-input__error-icon" />
-                        {error.message}
-                    </div>
-                )}
+                {error && <ErrorAlert className="discussions-input__error" error={error} />}
             </Form>
         )
     }
@@ -334,11 +334,7 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
         if (this.props.titleMode !== TitleMode.Implicit) {
             return comment
         }
-        return comment
-            .trimLeft()
-            .split('\n')
-            .slice(1)
-            .join('\n')
+        return comment.trimLeft().split('\n').slice(1).join('\n')
     }
 
     private canSubmit = (): boolean => {

@@ -4,12 +4,14 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -24,7 +26,7 @@ func gitCommitByID(ctx context.Context, id graphql.ID) (*GitCommitResolver, erro
 	if err != nil {
 		return nil, err
 	}
-	return repo.Commit(ctx, &repositoryCommitArgs{Rev: string(commitID)})
+	return repo.Commit(ctx, &RepositoryCommitArgs{Rev: string(commitID)})
 }
 
 type GitCommitResolver struct {
@@ -34,6 +36,9 @@ type GitCommitResolver struct {
 	// to avoid redirecting a user browsing a revision "mybranch" to the absolute commit ID as they follow links in the UI.
 	inputRev *string
 
+	// fetch + serve sourcegraph stored user information
+	includeUserInfo bool
+
 	// oid MUST be specified and a 40-character Git SHA.
 	oid GitObjectID
 
@@ -41,20 +46,51 @@ type GitCommitResolver struct {
 	committer *signatureResolver
 	message   string
 	parents   []api.CommitID
+
+	// once ensures that fetching git commit information occurs once
+	once sync.Once
+	err  error
 }
 
 func toGitCommitResolver(repo *RepositoryResolver, commit *git.Commit) *GitCommitResolver {
-	authorResolver := toSignatureResolver(&commit.Author)
-	return &GitCommitResolver{
-		repo: repo,
-
-		oid: GitObjectID(commit.ID),
-
-		author:    *authorResolver,
-		committer: toSignatureResolver(commit.Committer),
-		message:   commit.Message,
-		parents:   commit.Parents,
+	res := &GitCommitResolver{
+		repo:            repo,
+		includeUserInfo: true,
+		oid:             GitObjectID(commit.ID),
 	}
+	res.once.Do(func() {
+		res.consumeCommit(commit)
+	})
+	return res
+}
+
+func (r *GitCommitResolver) resolveCommit(ctx context.Context) {
+	if r.err != nil {
+		return
+	}
+
+	r.once.Do(func() {
+		var cachedRepo *gitserver.Repo
+		cachedRepo, r.err = backend.CachedGitRepo(ctx, r.repo.repo)
+		if r.err != nil {
+			return
+		}
+
+		var commit *git.Commit
+		commit, r.err = git.GetCommit(ctx, *cachedRepo, nil, api.CommitID(r.oid))
+		if r.err != nil {
+			return
+		}
+
+		r.consumeCommit(commit)
+	})
+}
+
+func (r *GitCommitResolver) consumeCommit(commit *git.Commit) {
+	r.author = *toSignatureResolver(&commit.Author, r.includeUserInfo)
+	r.committer = toSignatureResolver(commit.Committer, r.includeUserInfo)
+	r.message = commit.Message
+	r.parents = commit.Parents
 }
 
 // gitCommitGQLID is a type used for marshaling and unmarshaling a Git commit's
@@ -85,23 +121,48 @@ func (r *GitCommitResolver) OID() GitObjectID { return r.oid }
 func (r *GitCommitResolver) AbbreviatedOID() string {
 	return string(r.oid)[:7]
 }
-func (r *GitCommitResolver) Author() *signatureResolver    { return &r.author }
-func (r *GitCommitResolver) Committer() *signatureResolver { return r.committer }
-func (r *GitCommitResolver) Message() string               { return r.message }
-func (r *GitCommitResolver) Subject() string               { return gitCommitSubject(r.message) }
-func (r *GitCommitResolver) Body() *string {
+func (r *GitCommitResolver) Author(ctx context.Context) (*signatureResolver, error) {
+	r.resolveCommit(ctx)
+	if r.err != nil {
+		return nil, r.err
+	}
+	return &r.author, nil
+}
+func (r *GitCommitResolver) Committer(ctx context.Context) (*signatureResolver, error) {
+	r.resolveCommit(ctx)
+	return r.committer, r.err
+}
+func (r *GitCommitResolver) Message(ctx context.Context) (string, error) {
+	r.resolveCommit(ctx)
+	return r.message, r.err
+}
+func (r *GitCommitResolver) Subject(ctx context.Context) (string, error) {
+	r.resolveCommit(ctx)
+	return gitCommitSubject(r.message), r.err
+}
+func (r *GitCommitResolver) Body(ctx context.Context) (*string, error) {
+	r.resolveCommit(ctx)
+	if r.err != nil {
+		return nil, r.err
+	}
+
 	body := gitCommitBody(r.message)
 	if body == "" {
-		return nil
+		return nil, nil
 	}
-	return &body
+	return &body, nil
 }
 
 func (r *GitCommitResolver) Parents(ctx context.Context) ([]*GitCommitResolver, error) {
+	r.resolveCommit(ctx)
+	if r.err != nil {
+		return nil, r.err
+	}
+
 	resolvers := make([]*GitCommitResolver, len(r.parents))
 	for i, parent := range r.parents {
 		var err error
-		resolvers[i], err = r.repo.Commit(ctx, &repositoryCommitArgs{Rev: string(parent)})
+		resolvers[i], err = r.repo.Commit(ctx, &RepositoryCommitArgs{Rev: string(parent)})
 		if err != nil {
 			return nil, err
 		}
@@ -124,7 +185,7 @@ func (r *GitCommitResolver) ExternalURLs(ctx context.Context) ([]*externallink.R
 func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 	Path      string
 	Recursive bool
-}) (*gitTreeEntryResolver, error) {
+}) (*GitTreeEntryResolver, error) {
 	cachedRepo, err := backend.CachedGitRepo(ctx, r.repo.repo)
 	if err != nil {
 		return nil, err
@@ -136,9 +197,8 @@ func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 	if !stat.Mode().IsDir() {
 		return nil, fmt.Errorf("not a directory: %q", args.Path)
 	}
-	return &gitTreeEntryResolver{
+	return &GitTreeEntryResolver{
 		commit:      r,
-		path:        args.Path,
 		stat:        stat,
 		isRecursive: args.Recursive,
 	}, nil
@@ -146,7 +206,7 @@ func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 
 func (r *GitCommitResolver) Blob(ctx context.Context, args *struct {
 	Path string
-}) (*gitTreeEntryResolver, error) {
+}) (*GitTreeEntryResolver, error) {
 	cachedRepo, err := backend.CachedGitRepo(ctx, r.repo.repo)
 	if err != nil {
 		return nil, err
@@ -158,21 +218,20 @@ func (r *GitCommitResolver) Blob(ctx context.Context, args *struct {
 	if !stat.Mode().IsRegular() {
 		return nil, fmt.Errorf("not a blob: %q", args.Path)
 	}
-	return &gitTreeEntryResolver{
+	return &GitTreeEntryResolver{
 		commit: r,
-		path:   args.Path,
 		stat:   stat,
 	}, nil
 }
 
 func (r *GitCommitResolver) File(ctx context.Context, args *struct {
 	Path string
-}) (*gitTreeEntryResolver, error) {
+}) (*GitTreeEntryResolver, error) {
 	return r.Blob(ctx, args)
 }
 
 func (r *GitCommitResolver) Languages(ctx context.Context) ([]string, error) {
-	inventory, err := backend.Repos.GetInventory(ctx, r.repo.repo, api.CommitID(r.oid))
+	inventory, err := backend.Repos.GetInventory(ctx, r.repo.repo, api.CommitID(r.oid), false)
 	if err != nil {
 		return nil, err
 	}
@@ -184,16 +243,32 @@ func (r *GitCommitResolver) Languages(ctx context.Context) ([]string, error) {
 	return names, nil
 }
 
+func (r *GitCommitResolver) LanguageStatistics(ctx context.Context) ([]*languageStatisticsResolver, error) {
+	inventory, err := backend.Repos.GetInventory(ctx, r.repo.repo, api.CommitID(r.oid), false)
+	if err != nil {
+		return nil, err
+	}
+	stats := make([]*languageStatisticsResolver, 0, len(inventory.Languages))
+	for _, lang := range inventory.Languages {
+		stats = append(stats, &languageStatisticsResolver{
+			l: lang,
+		})
+	}
+	return stats, nil
+}
+
 func (r *GitCommitResolver) Ancestors(ctx context.Context, args *struct {
 	graphqlutil.ConnectionArgs
 	Query *string
 	Path  *string
+	After *string
 }) (*gitCommitConnectionResolver, error) {
 	return &gitCommitConnectionResolver{
 		revisionRange: string(r.oid),
 		first:         args.ConnectionArgs.First,
 		query:         args.Query,
 		path:          args.Path,
+		after:         args.After,
 		repo:          r.repo,
 	}, nil
 }

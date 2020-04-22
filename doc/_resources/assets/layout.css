@@ -12,20 +12,14 @@
     --body-color: #2b3750;
     --body-bg: #fbfdff;
     --text-muted: #6d727c;
-    --link-color: #566e9f;
-    --link-hover-color: #1d2535 --body-color: #2b3750;
+    --link-color: #0055c5;
+	--link-hover-color: #1986ea;
     --body-bg: #fbfdff;
     --text-muted: #6d727c;
-    --link-color: #566e9f;
-    --link-hover-color: #1d2535 --loading-spinner-outer-color: rgba(43, 55, 80, 0.3);
-    --loading-spinner-inner-color: #2b3750;
     --secondary: #e1e6ef;
     --border-color: #cad2e2;
-
     --body-bg: #ffffff;
     --text-muted: #{$color-light-text-2};
-    --link-color: #566e9f;
-    --link-hover-color: #1d2535;
     --dropdown-bg: #{$color-light-bg-1};
     --dropdown-border-color: #{$color-light-border};
 }
@@ -73,8 +67,8 @@ code {
     h2[id]:before, h3[id]:before {
         display: block;
         content: " ";
-        margin-top: -84px;
-        height: 75px;
+        margin-top: -123px;
+        height: 114px;
         visibility: hidden;
     }
 }
@@ -164,6 +158,9 @@ code {
 /* Large Viewport */
 
 @media screen and (min-width: 1020px) {
+    .large-push-3 {
+        margin-left: 25%;
+    }
     .large-push-2 {
         margin-left: 16.66667%;
     }
@@ -204,6 +201,9 @@ code {
     }
     .medium-4 {
         width: 33.33334%;
+    }
+    .medium-push-4 {
+        margin-left: 33.33334%;
     }
     .medium-push-3 {
         margin-left: 25%;
@@ -451,6 +451,7 @@ code {
         z-index: 9998;
     }
     .nav-state:not(:checked)+.nav-content .nav-container .nav-links {
+        display: none;
         top: -100%;
         opacity: 0;
     }
@@ -557,7 +558,7 @@ code {
     padding-bottom: 2rem;
     padding-top: 0;
     max-height: calc(100vh - 70px);
-    top: 70px;
+    top: 110px;
     padding-top: 4px;
     overflow-scrolling: touch;
 }
@@ -573,6 +574,11 @@ code {
 
 .content-nav-section li {
     list-style: none;
+}
+
+.content-nav-section li.selected > a >.badge {
+    background: var(--body-bg);
+    color: var(--primary);
 }
 
 .content-nav-section .close--icon+li {
@@ -665,7 +671,6 @@ li.content-nav-no-hover:hover {
 .content-nav-section-subsection {
     padding-top: 0;
     border-left: 1px solid #0d97ff;
-    margin-bottom: 1rem;
     background-color: none;
 }
 
@@ -743,17 +748,13 @@ li.content-nav-no-hover:hover {
 .page-nav {
     position: fixed;
     right: 0;
-    top: 135px;
+    top: 136px;
+    padding-right: 1rem;
     padding-bottom: 2rem;
 }
 
-/* Because there is no breadcrumb trail */
-
-#home .page-nav {
-    top: 106px;
-}
-
 .page-nav-title {
+    font-size: 1.3rem;
     border-bottom: 1px solid #eaeaea;
 }
 
@@ -785,6 +786,7 @@ li.content-nav-no-hover:hover {
 /* Docs Content layout */
 
 .docs-content {
+    margin-top: 114px;
     position: relative;
     width: 100%;
     min-height: 100vh;
@@ -797,9 +799,7 @@ li.content-nav-no-hover:hover {
 /* Docs breadcrumbs */
 
 .breadcrumbs {
-    margin-top: 84px;
-    font-size: 12px;
-    margin-bottom: 0.75rem;
+  border-top: 1px solid #eaeaea;
 }
 
 .breadcrumbs>.active {
@@ -815,6 +815,11 @@ li.content-nav-no-hover:hover {
     .content-nav-wrapper {
         border: none;
     }
+
+    .docs-content {
+      margin-top: 0px;
+    }
+
     /* Give space at bottom of div for breadcrumbs */
     .docs-content-section .markdown-body {
         padding: 1rem 0;
@@ -1203,4 +1208,3 @@ li.content-nav-no-hover:hover {
 .version-dropdown .dropdown-item {
     padding: 0.5rem 1rem;
 }
-

@@ -1,5 +1,5 @@
+import { parse as parseJSONC } from '@sqs/jsonc-parser'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { concat, Observable, of, Subject, Subscription } from 'rxjs'
@@ -11,14 +11,16 @@ import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { ExternalServiceCard } from '../components/ExternalServiceCard'
-import { getExternalService } from './externalServices'
 import { SiteAdminExternalServiceForm } from './SiteAdminExternalServiceForm'
+import { ErrorAlert } from '../components/alerts'
+import { defaultExternalServices, codeHostExternalServices } from './externalServices'
+import { hasProperty } from '../../../shared/src/util/types'
 
 interface Props extends RouteComponentProps<{ id: GQL.ID }> {
     isLightTheme: boolean
 }
 
-const LOADING: 'loading' = 'loading'
+const LOADING = 'loading' as const
 
 interface State {
     externalServiceOrError: typeof LOADING | GQL.IExternalService | ErrorLike
@@ -109,7 +111,20 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
                 this.state.externalServiceOrError) ||
             undefined
 
-        const externalServiceCategory = externalService && getExternalService(externalService.kind)
+        let externalServiceCategory = externalService && defaultExternalServices[externalService.kind]
+        if (externalService && externalService.kind === GQL.ExternalServiceKind.GITHUB) {
+            const parsedConfig: unknown = parseJSONC(externalService.config)
+            // we have no way of finding out whether a externalservice of kind GITHUB is GitHub.com or GitHub enterprise, so we need to guess based on the url
+            if (
+                typeof parsedConfig === 'object' &&
+                parsedConfig !== null &&
+                hasProperty('url')(parsedConfig) &&
+                typeof parsedConfig.url === 'string' &&
+                !parsedConfig.url.startsWith('https://github.com/')
+            ) {
+                externalServiceCategory = codeHostExternalServices.ghe
+            }
+        }
 
         return (
             <div className="site-admin-configuration-page mt-3">
@@ -118,17 +133,14 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
                 ) : (
                     <PageTitle title="External service" />
                 )}
-                <h2>Update external service</h2>
+                <h2>Update synced repositories</h2>
                 {this.state.externalServiceOrError === LOADING && <LoadingSpinner className="icon-inline" />}
                 {isErrorLike(this.state.externalServiceOrError) && (
-                    <p className="alert alert-danger">{upperFirst(this.state.externalServiceOrError.message)}</p>
+                    <ErrorAlert className="mb-3" error={this.state.externalServiceOrError} />
                 )}
-                {externalService && (
+                {externalServiceCategory && (
                     <div className="mb-3">
-                        <ExternalServiceCard
-                            {...getExternalService(externalService.kind)}
-                            kind={externalService.kind}
-                        />
+                        <ExternalServiceCard {...externalServiceCategory} />
                     </div>
                 )}
                 {externalService && externalServiceCategory && (
@@ -153,7 +165,7 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
         )
     }
 
-    private onChange = (input: GQL.IAddExternalServiceInput) => {
+    private onChange = (input: GQL.IAddExternalServiceInput): void => {
         this.setState(state => {
             if (isExternalService(state.externalServiceOrError)) {
                 return { ...state, externalServiceOrError: { ...state.externalServiceOrError, ...input } }
@@ -162,7 +174,7 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
         })
     }
 
-    private onSubmit = (event?: React.FormEvent<HTMLFormElement>) => {
+    private onSubmit = (event?: React.FormEvent<HTMLFormElement>): void => {
         if (event) {
             event.preventDefault()
         }

@@ -12,12 +12,12 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
-	"github.com/sourcegraph/sourcegraph/pkg/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 )
 
 // dbExtension describes an extension in the extension registry.
 //
-// It is the internal form of github.com/sourcegraph/sourcegraph/pkg/registry.Extension (which is
+// It is the internal form of github.com/sourcegraph/sourcegraph/internal/registry.Extension (which is
 // the external API type). These types should generally be kept in sync, but registry.Extension
 // updates require backcompat.
 type dbExtension struct {

@@ -27,16 +27,16 @@
 ### Prerequisites
 
 - Git
-- Go (1.11 or later)
+- Go (1.13 or later)
 - Docker
-- PostgreSQL (version 9)
+- PostgreSQL (v11 or higher)
 - Node.js (version 8 or 10)
 - Redis
 - Yarn
 - Nginx
 
 For a detailed guide to installing prerequisites, see [these
-instructions](doc/dev/local_development.md#step-2-install-dependencies).
+instructions](doc/dev/local_development.md#step-1-install-dependencies).
 
 ### Installation
 
@@ -44,26 +44,29 @@ instructions](doc/dev/local_development.md#step-2-install-dependencies).
 
 To use Sourcegraph OSS:
 
-1.  [Ensure Docker is running](doc/dev/local_development.md#step-5-start-docker)
-1.  [Initialize the PostgreSQL database](doc/dev/local_development.md#step-4-initialize-your-database)
+1.  [Ensure Docker is running](doc/dev/local_development.md#step-3-macos-start-docker)
+1.  [Initialize the PostgreSQL database](doc/dev/local_development.md#step-2-initialize-your-database)
+1.  [Configure the HTTPS reverse proxy](doc/dev/local_development.md#step-5-configure-https-reverse-proxy)
 1.  Start the development server
 
     ```
-    ./dev/launch.sh
+    ./dev/start.sh
     ```
 
-Sourcegraph should now be running at http://localhost:3080.
+Sourcegraph should now be running at https://sourcegraph.test:3443.
 
 For detailed instructions and troubleshooting, see the [local development documentation](./doc/dev/local_development.md).
 
 ### Documentation
 
-The `docs` folder has additional documentation for developing and understanding Sourcegraph:
+The `doc` directory has additional documentation for developing and understanding Sourcegraph:
 
 - [Project FAQ](./doc/admin/faq.md)
-- [Architecture](./doc/dev/architecture.md): high-level architecture
+- [Architecture](./doc/dev/architecture/index.md): high-level architecture
 - [Database setup](./doc/dev/postgresql.md): database setup and best practices
-- [Style guide](./doc/dev/style.md)
+- [General style guide](https://about.sourcegraph.com/handbook/communication/style_guide)
+- [Go style guide](https://about.sourcegraph.com/handbook/engineering/go_style_guide)
+- [Documentation style guide](https://about.sourcegraph.com/handbook/documentation)
 - [GraphQL API](./doc/dev/graphql_api.md): useful tips when modifying the GraphQL API
 - [Contributing](./CONTRIBUTING.md)
 

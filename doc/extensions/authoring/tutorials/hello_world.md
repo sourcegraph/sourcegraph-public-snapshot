@@ -17,7 +17,7 @@ Follow the instructions for [setting up your development environment](../develop
 
 Use the [Sourcegraph extension creator](https://github.com/sourcegraph/create-extension) to get started:
 
-```shell
+```bash
 mkdir hello-world-extension
 cd hello-world-extension
 npm init sourcegraph-extension
@@ -31,7 +31,7 @@ Now let's publish it so you (and other people) can use it.
 
 Publish the extension by running:
 
-```shell
+```bash
 src ext publish
 ```
 

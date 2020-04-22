@@ -25,7 +25,7 @@ describe('Configuration (integration)', () => {
             const calls: (SettingsEdit | string)[] = []
             const { extensionAPI } = await integrationTestContext({
                 settings: of({ final: { a: 1 }, subjects: [{ subject: {} as any, lastID: null, settings: null }] }),
-                // eslint-disable-next-line require-await
+                // eslint-disable-next-line @typescript-eslint/require-await
                 updateSettings: async (_subject, edit) => {
                     calls.push(edit)
                 },

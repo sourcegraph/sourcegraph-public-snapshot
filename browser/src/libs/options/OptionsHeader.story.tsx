@@ -9,6 +9,11 @@ import { OptionsHeader } from './OptionsHeader'
 
 storiesOf('Options - OptionsHeader', module).add('Default', () => (
     <div style={{ maxWidth: 400 }}>
-        <OptionsHeader version="0.0.0" onSettingsClick={action('Settings clicked')} />
+        <OptionsHeader
+            version="0.0.0"
+            isActivated={true}
+            onSettingsClick={action('Settings clicked')}
+            onToggleActivationClick={action('Toggle activation clicked')}
+        />
     </div>
 ))

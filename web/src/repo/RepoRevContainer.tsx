@@ -1,4 +1,4 @@
-import { isEqual, upperFirst } from 'lodash'
+import { isEqual } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
@@ -7,7 +7,12 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { UncontrolledPopover } from 'reactstrap'
 import { defer, Subject, Subscription } from 'rxjs'
 import { catchError, delay, distinctUntilChanged, map, retryWhen, switchMap, tap } from 'rxjs/operators'
-import { CloneInProgressError, ECLONEINPROGESS, EREPONOTFOUND, EREVNOTFOUND } from '../../../shared/src/backend/errors'
+import {
+    CloneInProgressError,
+    isCloneInProgressErrorLike,
+    isRevNotFoundErrorLike,
+    isRepoNotFoundErrorLike,
+} from '../../../shared/src/backend/errors'
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
 import * as GQL from '../../../shared/src/graphql/schema'
@@ -16,9 +21,8 @@ import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 import { ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { HeroPage } from '../components/HeroPage'
 import { ChromeExtensionToast } from '../marketing/BrowserExtensionToast'
-import { SurveyToast } from '../marketing/SurveyToast'
 import { IS_CHROME } from '../marketing/util'
-import { ThemeProps } from '../theme'
+import { ThemeProps } from '../../../shared/src/theme'
 import { EventLoggerProps } from '../tracking/eventLogger'
 import { RouteDescriptor } from '../util/contributions'
 import { CopyLinkAction } from './actions/CopyLinkAction'
@@ -29,6 +33,10 @@ import { RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
 import { EmptyRepositoryPage, RepositoryCloningInProgressPage } from './RepositoryGitDataContainer'
 import { RevisionsPopover } from './RevisionsPopover'
+import { PatternTypeProps, CaseSensitivityProps } from '../search'
+import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
+import { RepoSettingsSideBarItem } from './settings/RepoSettingsSidebar'
+import { ErrorMessage } from '../components/alerts'
 
 /** Props passed to sub-routes of {@link RepoRevContainer}. */
 export interface RepoRevContainerContext
@@ -42,7 +50,9 @@ export interface RepoRevContainerContext
         Pick<
             RepoContainerContext,
             Exclude<keyof RepoContainerContext, 'onDidUpdateRepository' | 'onDidUpdateExternalLinks'>
-        > {
+        >,
+        PatternTypeProps,
+        CaseSensitivityProps {
     repo: GQL.IRepository
     rev: string
     resolvedRev: ResolvedRev
@@ -62,8 +72,12 @@ interface RepoRevContainerProps
         EventLoggerProps,
         ExtensionsControllerProps,
         ThemeProps,
-        ActivationProps {
+        ActivationProps,
+        PatternTypeProps,
+        CaseSensitivityProps {
     routes: readonly RepoRevContainerRoute[]
+    repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
+    repoSettingsSidebarItems: readonly RepoSettingsSideBarItem[]
     repo: GQL.IRepository
     rev: string
     authenticatedUser: GQL.IUser | null
@@ -110,15 +124,13 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                             retryWhen(errors =>
                                 errors.pipe(
                                     tap(error => {
-                                        switch (error.code) {
-                                            case ECLONEINPROGESS:
-                                                // Display cloning screen to the user and retry
-                                                this.props.onResolvedRevOrError(error)
-                                                return
-                                            default:
-                                                // Display error to the user and do not retry
-                                                throw error
+                                        if (isCloneInProgressErrorLike(error)) {
+                                            // Display cloning screen to the user and retry
+                                            this.props.onResolvedRevOrError(error)
+                                            return
                                         }
+                                        // Display error to the user and do not retry
+                                        throw error
                                     }),
                                     delay(1000)
                                 )
@@ -161,43 +173,42 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
 
         if (isErrorLike(this.props.resolvedRevOrError)) {
             // Show error page
-            switch (this.props.resolvedRevOrError.code) {
-                case ECLONEINPROGESS:
-                    return (
-                        <RepositoryCloningInProgressPage
-                            repoName={this.props.repo.name}
-                            progress={(this.props.resolvedRevOrError as CloneInProgressError).progress}
-                        />
-                    )
-                case EREPONOTFOUND:
-                    return (
-                        <HeroPage
-                            icon={MapSearchIcon}
-                            title="404: Not Found"
-                            subtitle="The requested repository was not found."
-                        />
-                    )
-                case EREVNOTFOUND:
-                    if (!this.props.rev) {
-                        return <EmptyRepositoryPage />
-                    }
-
-                    return (
-                        <HeroPage
-                            icon={MapSearchIcon}
-                            title="404: Not Found"
-                            subtitle="The requested revision was not found."
-                        />
-                    )
-                default:
-                    return (
-                        <HeroPage
-                            icon={AlertCircleIcon}
-                            title="Error"
-                            subtitle={upperFirst(this.props.resolvedRevOrError.message)}
-                        />
-                    )
+            if (isCloneInProgressErrorLike(this.props.resolvedRevOrError)) {
+                return (
+                    <RepositoryCloningInProgressPage
+                        repoName={this.props.repo.name}
+                        progress={(this.props.resolvedRevOrError as CloneInProgressError).progress}
+                    />
+                )
             }
+            if (isRepoNotFoundErrorLike(this.props.resolvedRevOrError)) {
+                return (
+                    <HeroPage
+                        icon={MapSearchIcon}
+                        title="404: Not Found"
+                        subtitle="The requested repository was not found."
+                    />
+                )
+            }
+            if (isRevNotFoundErrorLike(this.props.resolvedRevOrError)) {
+                if (!this.props.rev) {
+                    return <EmptyRepositoryPage />
+                }
+                return (
+                    <HeroPage
+                        icon={MapSearchIcon}
+                        title="404: Not Found"
+                        subtitle="The requested revision was not found."
+                    />
+                )
+            }
+            return (
+                <HeroPage
+                    icon={AlertCircleIcon}
+                    title="Error"
+                    subtitle={<ErrorMessage error={this.props.resolvedRevOrError} />}
+                />
+            )
         }
 
         const context: RepoRevContainerContext = {
@@ -213,12 +224,17 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
             routePrefix: this.props.routePrefix,
             authenticatedUser: this.props.authenticatedUser,
             settingsCascade: this.props.settingsCascade,
+            patternType: this.props.patternType,
+            setPatternType: this.props.setPatternType,
+            caseSensitive: this.props.caseSensitive,
+            setCaseSensitivity: this.props.setCaseSensitivity,
+            repoSettingsAreaRoutes: this.props.repoSettingsAreaRoutes,
+            repoSettingsSidebarItems: this.props.repoSettingsSidebarItems,
         }
 
         return (
             <div className="repo-rev-container">
                 {IS_CHROME && <ChromeExtensionToast />}
-                <SurveyToast authenticatedUser={this.props.authenticatedUser} />
                 <RepoHeaderContributionPortal
                     position="nav"
                     priority={100}

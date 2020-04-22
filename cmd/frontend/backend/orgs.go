@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
 var ErrNotAuthenticated = errors.New("not authenticated")
@@ -19,7 +19,7 @@ func CheckOrgAccess(ctx context.Context, orgID int32) error {
 	if hasAuthzBypass(ctx) {
 		return nil
 	}
-	currentUser, err := currentUser(ctx)
+	currentUser, err := CurrentUser(ctx)
 	if err != nil {
 		return err
 	}

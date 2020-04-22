@@ -1,12 +1,15 @@
+/* eslint rxjs/no-ignored-subscription: warn */
 import * as Sentry from '@sentry/browser'
 import { once } from 'lodash'
 import { observeStorageKey } from '../../browser/storage'
 import { featureFlagDefaults } from '../../browser/types'
 import { isInPage } from '../../context'
-import { DEFAULT_SOURCEGRAPH_URL, getExtensionVersion } from '../../shared/util/context'
+import { DEFAULT_SOURCEGRAPH_URL, getExtensionVersion, observeSourcegraphURL } from '../../shared/util/context'
+
+const IS_EXTENSION = true
 
 const isExtensionStackTrace = (stacktrace: Sentry.Stacktrace, extensionID: string): boolean =>
-    !!(stacktrace.frames && stacktrace.frames.some(({ filename }) => !!(filename && filename.includes(extensionID))))
+    !!(stacktrace.frames && stacktrace.frames.some(({ filename }) => !!filename?.includes(extensionID)))
 
 const callSentryInit = once((extensionID: string) => {
     Sentry.init({
@@ -56,7 +59,7 @@ export function initSentry(script: 'content' | 'options' | 'background', codeHos
         })
     })
 
-    observeStorageKey('sync', 'sourcegraphURL').subscribe(url => {
+    observeSourcegraphURL(IS_EXTENSION).subscribe(url => {
         Sentry.configureScope(scope => {
             scope.setTag('using_dot_com', url === DEFAULT_SOURCEGRAPH_URL ? 'true' : 'false')
         })

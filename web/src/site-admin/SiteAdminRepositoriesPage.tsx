@@ -5,7 +5,7 @@ import SettingsIcon from 'mdi-react/SettingsIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
-import { Subject } from 'rxjs'
+import { Subject, Observable } from 'rxjs'
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 import { RepoLink } from '../../../shared/src/components/RepoLink'
 import * as GQL from '../../../shared/src/graphql/schema'
@@ -18,6 +18,7 @@ import { PageTitle } from '../components/PageTitle'
 import { refreshSiteFlags } from '../site/backend'
 import { eventLogger } from '../tracking/eventLogger'
 import { fetchAllRepositoriesAndPollIfEmptyOrAnyCloning } from './backend'
+import { ErrorAlert } from '../components/alerts'
 
 interface RepositoryNodeProps extends ActivationProps {
     node: GQL.IRepository
@@ -72,15 +73,13 @@ class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Repository
                         }{' '}
                     </div>
                 </div>
-                {this.state.errorDescription && (
-                    <div className="alert alert-danger mt-2">{this.state.errorDescription}</div>
-                )}
+                {this.state.errorDescription && <ErrorAlert className="mt-2" error={this.state.errorDescription} />}
             </li>
         )
     }
 }
 
-interface Props extends RouteComponentProps<any>, ActivationProps {}
+interface Props extends RouteComponentProps<{}>, ActivationProps {}
 
 class FilteredRepositoryConnection extends FilteredConnection<
     GQL.IRepository,
@@ -151,12 +150,10 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props> {
         return (
             <div className="site-admin-repositories-page">
                 <PageTitle title="Repositories - Admin" />
-                <div className="d-flex justify-content-between align-items-center mt-3 mb-1">
-                    <h2 className="mb-0">Repositories</h2>
-                </div>
+                <h2>Repositories</h2>
                 <p>
-                    Repositories are mirrored from connected{' '}
-                    <Link to="/site-admin/external-services">external services</Link>.
+                    Repositories are synced from connected{' '}
+                    <Link to="/site-admin/external-services">code host connections</Link>.
                 </p>
                 <FilteredRepositoryConnection
                     className="list-group list-group-flush mt-3"
@@ -174,8 +171,8 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props> {
         )
     }
 
-    private queryRepositories = (args: FilteredConnectionQueryArgs) =>
+    private queryRepositories = (args: FilteredConnectionQueryArgs): Observable<GQL.IRepositoryConnection> =>
         fetchAllRepositoriesAndPollIfEmptyOrAnyCloning({ ...args })
 
-    private onDidUpdateRepository = () => this.repositoryUpdates.next()
+    private onDidUpdateRepository = (): void => this.repositoryUpdates.next()
 }

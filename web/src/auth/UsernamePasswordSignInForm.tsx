@@ -1,11 +1,12 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
-import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Form } from '../components/Form'
 import { eventLogger } from '../tracking/eventLogger'
 import { getReturnTo, PasswordInput } from './SignInSignUpCommon'
+import { ErrorAlert } from '../components/alerts'
+import { asError } from '../../../shared/src/util/errors'
 
 interface Props {
     location: H.Location
@@ -15,7 +16,7 @@ interface Props {
 interface State {
     email: string
     password: string
-    errorDescription: string
+    error?: Error
     loading: boolean
 }
 
@@ -28,24 +29,21 @@ export class UsernamePasswordSignInForm extends React.Component<Props, State> {
         this.state = {
             email: '',
             password: '',
-            errorDescription: '',
             loading: false,
         }
     }
 
     public render(): JSX.Element | null {
         return (
-            <Form className="signin-signup-form signin-form" onSubmit={this.handleSubmit}>
+            <Form className="signin-signup-form signin-form e2e-signin-form" onSubmit={this.handleSubmit}>
                 {window.context.allowSignup ? (
-                    <Link className="signin-signup-form__mode" to={`/sign-up${this.props.location.search}`}>
-                        Don't have an account? Sign up.
-                    </Link>
+                    <p>
+                        <Link to={`/sign-up${this.props.location.search}`}>Don't have an account? Sign up.</Link>
+                    </p>
                 ) : (
                     <p className="text-muted">To create an account, contact the site admin.</p>
                 )}
-                {this.state.errorDescription !== '' && (
-                    <div className="alert alert-danger my-2">Error: {upperFirst(this.state.errorDescription)}</div>
-                )}
+                {this.state.error && <ErrorAlert className="my-2" error={this.state.error} icon={false} />}
                 <div className="form-group">
                     <input
                         className="form-control signin-signup-form__input"
@@ -81,7 +79,7 @@ export class UsernamePasswordSignInForm extends React.Component<Props, State> {
                     )}
                 </div>
                 {this.state.loading && (
-                    <div className="signin-signup-form__loader">
+                    <div className="w-100 text-center mb-2">
                         <LoadingSpinner className="icon-inline" />
                     </div>
                 )}
@@ -89,15 +87,15 @@ export class UsernamePasswordSignInForm extends React.Component<Props, State> {
         )
     }
 
-    private onEmailFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    private onEmailFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
         this.setState({ email: e.target.value })
     }
 
-    private onPasswordFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    private onPasswordFieldChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
         this.setState({ password: e.target.value })
     }
 
-    private handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    private handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
         event.preventDefault()
         if (this.state.loading) {
             return
@@ -120,17 +118,21 @@ export class UsernamePasswordSignInForm extends React.Component<Props, State> {
         })
             .then(resp => {
                 if (resp.status === 200) {
-                    const returnTo = getReturnTo(this.props.location)
-                    window.location.replace(returnTo)
+                    if (new URLSearchParams(this.props.location.search).get('close') === 'true') {
+                        window.close()
+                    } else {
+                        const returnTo = getReturnTo(this.props.location)
+                        window.location.replace(returnTo)
+                    }
                 } else if (resp.status === 401) {
                     throw new Error('User or password was incorrect')
                 } else {
                     throw new Error('Unknown Error')
                 }
             })
-            .catch(err => {
-                console.error('auth error: ', err)
-                this.setState({ loading: false, errorDescription: (err && err.message) || 'Unknown Error' })
+            .catch(error => {
+                console.error('Auth error:', error)
+                this.setState({ loading: false, error: asError(error) })
             })
     }
 }

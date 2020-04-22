@@ -2,13 +2,16 @@ import React from 'react'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { Timestamp } from '../../components/time/Timestamp'
 import { UserAvatar } from '../../user/UserAvatar'
+import { formatPersonName, PersonLink } from '../../person/PersonLink'
 
 /**
  * The subset of {@link GQL.ISignature} information needed by {@link GitCommitNodeByline}. Using the
  * minimal subset makes testing easier.
  */
 interface Signature extends Pick<GQL.ISignature, 'date'> {
-    person: Pick<GQL.IPerson, 'email' | 'name' | 'displayName' | 'avatarURL'>
+    person: {
+        user: Pick<GQL.IUser, 'username' | 'displayName' | 'url'> | null
+    } & Pick<GQL.IPerson, 'email' | 'name' | 'displayName' | 'avatarURL'>
 }
 
 /**
@@ -37,15 +40,15 @@ export const GitCommitNodeByline: React.FunctionComponent<{
                 <UserAvatar
                     className="icon-inline"
                     user={author.person}
-                    data-tooltip={`${author.person.displayName} (author)`}
+                    data-tooltip={`${formatPersonName(author.person)} (author)`}
                 />{' '}
                 <UserAvatar
                     className="icon-inline mr-1"
                     user={committer.person}
-                    data-tooltip={`${committer.person.displayName} (committer)`}
+                    data-tooltip={`${formatPersonName(committer.person)} (committer)`}
                 />{' '}
-                <strong>{author.person.displayName}</strong> {!compact && 'authored'} and{' '}
-                <strong>{committer.person.displayName}</strong>{' '}
+                <PersonLink person={author.person} className="font-weight-bold" /> {!compact && 'authored'} and{' '}
+                <PersonLink person={committer.person} className="font-weight-bold" />{' '}
                 {!compact && (
                     <>
                         committed <Timestamp date={committer.date} />
@@ -57,8 +60,12 @@ export const GitCommitNodeByline: React.FunctionComponent<{
 
     return (
         <small className={`git-commit-node-byline git-commit-node-byline--no-committer ${className}`}>
-            <UserAvatar className="icon-inline mr-1" user={author.person} data-tooltip={author.person.displayName} />{' '}
-            <strong>{author.person.displayName}</strong>{' '}
+            <UserAvatar
+                className="icon-inline mr-1"
+                user={author.person}
+                data-tooltip={formatPersonName(author.person)}
+            />{' '}
+            <PersonLink person={author.person} className="font-weight-bold" />{' '}
             {!compact && (
                 <>
                     committed <Timestamp date={author.date} />
