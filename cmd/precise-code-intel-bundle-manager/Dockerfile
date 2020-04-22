@@ -37,5 +37,5 @@ COPY ./precise-code-intel-bundle-manager /usr/local/bin/precise-code-intel-bundl
 
 EXPOSE 3187
 VOLUME ["/lsif-storage"]
-ENV LOG_LEVEL=debug GO111MODULES=on LANG=en_US.utf8
+ENV GO111MODULES=on LANG=en_US.utf8 LOG_LEVEL=debug
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/precise-code-intel-bundle-manager"]
