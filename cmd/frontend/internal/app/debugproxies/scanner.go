@@ -16,8 +16,11 @@ import (
 type Endpoint struct {
 	// Service to which the endpoint belongs
 	Service string
-	// Host:port, so hostname part of a URL (ip address ok)
-	Host string
+	// Addr:port, so hostname part of a URL (ip address ok)
+	Addr string
+	// Hostname of the endpoint, if set. Only use this for display purposes,
+	// it doesn't include the port nor is it gaurenteed to be resolvable.
+	Hostname string
 }
 
 // ScanConsumer is the callback to consume scan results.
@@ -171,11 +174,16 @@ func (cs *clusterScanner) scanCluster() {
 
 			for _, addr := range subset.Addresses {
 				for _, port := range ports {
-					host := addrToHost(addr, port)
-					if host != "" {
+					addrStr := fromStrPtr(addr.Ip)
+					if addrStr == "" {
+						addrStr = fromStrPtr(addr.Hostname)
+					}
+
+					if addrStr != "" {
 						scanResults = append(scanResults, Endpoint{
-							Service: svcName,
-							Host:    host,
+							Service:  svcName,
+							Addr:     fmt.Sprintf("%s:%d", addrStr, port),
+							Hostname: fromStrPtr(addr.Hostname),
 						})
 					}
 				}
@@ -186,12 +194,10 @@ func (cs *clusterScanner) scanCluster() {
 	cs.consume(scanResults)
 }
 
-// addrToHost converts a scanned k8s endpoint address structure into a string that is the host:port part of a URL.
-func addrToHost(addr *corev1.EndpointAddress, port int) string {
-	if addr.Hostname != nil && *addr.Hostname != "" {
-		return fmt.Sprintf("%s:%d", *addr.Hostname, port)
-	} else if addr.Ip != nil {
-		return fmt.Sprintf("%s:%d", *addr.Ip, port)
+// fromStrPtr returns *s. If s is nil the empty string is returned.
+func fromStrPtr(s *string) string {
+	if s == nil {
+		return ""
 	}
-	return ""
+	return *s
 }

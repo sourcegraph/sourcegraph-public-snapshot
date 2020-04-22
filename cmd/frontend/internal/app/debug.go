@@ -38,7 +38,7 @@ func addDebugHandlers(r *mux.Router) {
 		for _, s := range debugserver.Services {
 			peps = append(peps, debugproxies.Endpoint{
 				Service: s.Name,
-				Host:    s.Host,
+				Addr:    s.Host,
 			})
 		}
 		rph.Populate(peps)

@@ -19,7 +19,8 @@ while getopts 'v' o; do
       ;;
   esac
 done
-shift $(expr $OPTIND - 1)
+# shellcheck disable=SC2003
+shift "$(expr $OPTIND - 1)"
 
 # check provided commands
 ok=true
@@ -47,26 +48,28 @@ mkdir -p .bin
 export GOBIN="${PWD}/.bin"
 export GO111MODULE=on
 
-INSTALL_GO_TOOLS="github.com/mattn/goreman@v0.3.4 \
-"
+INSTALL_GO_TOOLS=(
+  "github.com/mattn/goreman@v0.3.4"
+)
 
 # Need to go to a temp directory for tools or we update our go.mod. We use
 # GOPROXY=direct to avoid always consulting a proxy for dlv.
 pushd "${TMPDIR:-/tmp}" >/dev/null || exit 1
-if ! GOPROXY=direct go get -v $INSTALL_GO_TOOLS 2>go-install.log; then
+if ! GOPROXY=direct go get -v "${INSTALL_GO_TOOLS[@]}" 2>go-install.log; then
   cat go-install.log
   echo >&2 "failed to install prerequisite tools, aborting."
   exit 1
 fi
 popd >/dev/null || exit 1
 
-INSTALL_GO_PKGS="github.com/mattn/goreman \
-github.com/google/zoekt/cmd/zoekt-archive-index \
-github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver \
-github.com/google/zoekt/cmd/zoekt-webserver \
-"
+INSTALL_GO_PKGS=(
+  "github.com/mattn/goreman"
+  "github.com/google/zoekt/cmd/zoekt-archive-index"
+  "github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver"
+  "github.com/google/zoekt/cmd/zoekt-webserver"
+)
 
-if ! go install $INSTALL_GO_PKGS; then
+if ! go install "${INSTALL_GO_PKGS[@]}"; then
   echo >&2 "failed to install prerequisite packages, aborting."
   exit 1
 fi
@@ -87,22 +90,22 @@ fi
 # build a list of "cmd,true" and "cmd,false" pairs to indicate whether each command
 # wants its own flags. we can't use variable names with the command in them because
 # some commands have hyphens.
-raced=""
-unraced=""
+raced=()
+unraced=()
 case $GORACED in
   "all")
     for cmd in $commands; do
-      raced="$raced $cmd"
+      raced+=("$cmd")
     done
     ;;
   *)
     for cmd in $commands; do
       case " $GORACED " in
         *" $cmd "*)
-          raced="$raced $cmd"
+          raced+=("$cmd")
           ;;
         *)
-          unraced="$unraced $cmd"
+          unraced+=("$cmd")
           ;;
       esac
     done
@@ -114,20 +117,20 @@ do_install() {
   race=$1
   shift
   cmdlist="$*"
-  cmds=""
+  cmds=()
   for cmd in $cmdlist; do
     replaced=false
     for enterpriseCmd in $ENTERPRISE_COMMANDS; do
       if [ "$cmd" == "$enterpriseCmd" ]; then
-        cmds="$cmds github.com/sourcegraph/sourcegraph/enterprise/cmd/$enterpriseCmd"
+        cmds+=("github.com/sourcegraph/sourcegraph/enterprise/cmd/$enterpriseCmd")
         replaced=true
       fi
     done
     if [ $replaced == false ]; then
-      cmds="$cmds github.com/sourcegraph/sourcegraph/cmd/$cmd"
+      cmds+=("github.com/sourcegraph/sourcegraph/cmd/$cmd")
     fi
   done
-  if (go install -v -gcflags="$GCFLAGS" -tags "$TAGS" -race=$race $cmds); then
+  if (go install -v -gcflags="$GCFLAGS" -tags "$TAGS" -race="$race" "${cmds[@]}"); then
     for cmd in $cmdlist; do
       # Check whether the binary of each command has changed
       if ! cmp -s "${GOBIN}/${cmd}" "${PWD}/.bin/${cmd}"; then
@@ -144,15 +147,15 @@ do_install() {
   fi
 }
 
-if [ -n "$raced" ]; then
+if [ ${#raced[@]} -ge 1 ]; then
   echo >&2 "Go race detector enabled for: $GORACED."
-  do_install true $raced
+  do_install true "${raced[@]}"
 else
   echo >&2 "Go race detector disabled. You can enable it for specific commands by setting GORACED (e.g. GORACED=frontend,searcher or GORACED=all for all commands)"
 fi
 
-if [ -n "$unraced" ]; then
-  do_install false $unraced
+if [ ${#unraced[@]} -ge 1 ]; then
+  do_install false "${unraced[@]}"
 fi
 
 if [ -n "$failed" ]; then

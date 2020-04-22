@@ -30,7 +30,7 @@ func TestReverseProxyRequestPaths(t *testing.T) {
 		return
 	}
 
-	ep := Endpoint{Service: "gitserver", Host: proxiedURL.Host}
+	ep := Endpoint{Service: "gitserver", Addr: proxiedURL.Host}
 	displayName := displayNameFromEndpoint(ep)
 	rph.Populate([]Endpoint{ep})
 
@@ -70,7 +70,7 @@ func TestIndexLinks(t *testing.T) {
 		return
 	}
 
-	ep := Endpoint{Service: "gitserver", Host: proxiedURL.Host}
+	ep := Endpoint{Service: "gitserver", Addr: proxiedURL.Host}
 	displayName := displayNameFromEndpoint(ep)
 	rph.Populate([]Endpoint{ep})
 
@@ -100,29 +100,31 @@ func TestIndexLinks(t *testing.T) {
 
 func TestDisplayNameFromEndpoint(t *testing.T) {
 	cases := []struct {
-		Service, Host string
-		Want          string
+		Service, Addr, Hostname string
+		Want                    string
 	}{{
-		Service: "gitserver",
-		Host:    "gitserver-0:2323",
-		Want:    "gitserver-0",
+		Service:  "gitserver",
+		Addr:     "192.168.10.0:2323",
+		Hostname: "gitserver-0",
+		Want:     "gitserver-0",
 	}, {
 		Service: "searcher",
-		Host:    "192.168.10.3:2323",
+		Addr:    "192.168.10.3:2323",
 		Want:    "searcher-192.168.10.3",
 	}, {
 		Service: "no-port",
-		Host:    "192.168.10.1",
+		Addr:    "192.168.10.1",
 		Want:    "no-port-192.168.10.1",
 	}}
 
 	for _, c := range cases {
 		got := displayNameFromEndpoint(Endpoint{
-			Service: c.Service,
-			Host:    c.Host,
+			Service:  c.Service,
+			Addr:     c.Addr,
+			Hostname: c.Hostname,
 		})
 		if got != c.Want {
-			t.Errorf("displayNameFromEndpoint(%q, %q) mismatch (-want +got):\n%s", c.Service, c.Host, cmp.Diff(c.Want, got))
+			t.Errorf("displayNameFromEndpoint(%q, %q) mismatch (-want +got):\n%s", c.Service, c.Addr, cmp.Diff(c.Want, got))
 		}
 	}
 }

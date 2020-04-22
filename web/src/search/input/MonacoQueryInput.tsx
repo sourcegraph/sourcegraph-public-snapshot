@@ -213,6 +213,18 @@ export class MonacoQueryInput extends React.PureComponent<MonacoQueryInputProps>
     }
 
     private onEditorCreated = (editor: Monaco.editor.IStandaloneCodeEditor): void => {
+        // Accessibility: allow tab usage to move focus to
+        // next previous focusable element (and not to insert the tab character).
+        // - Cannot be set through IEditorOptions
+        // - Cannot be called synchronously (otherwise risks being overridden by Monaco defaults)
+        this.subscriptions.add(
+            toUnsubscribable(
+                editor.onDidFocusEditorText(() => {
+                    editor.createContextKey('editorTabMovesFocus', true)
+                })
+            )
+        )
+
         this.subscriptions.add(
             this.componentUpdates
                 .pipe(

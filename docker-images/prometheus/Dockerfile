@@ -1,10 +1,10 @@
 FROM golang:1.13-alpine@sha256:ed003971a4809c9ae45afe2d318c24b9e3f6b30864a322877c69a46c504d852c AS builder
 
-COPY observability /go/src/src-observability-generator
-WORKDIR /go/src/src-observability-generator
-RUN CGO_ENABLED=0 go build -o /go/bin/src-observability-generator
+COPY monitoring /go/src/monitoring-generator
+WORKDIR /go/src/monitoring-generator
+RUN CGO_ENABLED=0 go build -o /go/bin/monitoring-generator
 RUN mkdir -p /generated/prometheus
-RUN PROMETHEUS_DIR=/generated/prometheus GRAFANA_DIR='' /go/bin/src-observability-generator
+RUN PROMETHEUS_DIR=/generated/prometheus GRAFANA_DIR='' /go/bin/monitoring-generator
 
 # This Dockerfile is adapted from https://github.com/prometheus/prometheus/blob/v2.15.2/Dockerfile with
 # our own customizations.

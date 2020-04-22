@@ -34,7 +34,7 @@ No token scopes are required if you only want to sync public repositories and do
 
 - `repo` to sync private repositories from GitHub to Sourcegraph.
 - `read:org` to use the `"allowOrgs"` setting [with a GitHub authentication provider](../auth/index.md#github).
-- `read:org` and `read:discussion` to use [Campaigns](../../user/campaigns/index.md) with GitHub repositories.
+- `repo`, `read:org`, and `read:discussion` to use [Campaigns](../../user/campaigns/index.md) with GitHub repositories.
 
 >NOTE: If you plan to use repository permissions with background syncing, an access token that has admin access to all private repositories is required. It is because only admin can list all collaborators of a repository.
 

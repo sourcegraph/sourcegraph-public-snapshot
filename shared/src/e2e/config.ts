@@ -1,5 +1,3 @@
-import { pick } from 'lodash'
-
 /**
  * Defines configuration for e2e tests. This is as-yet incomplete as some config
  * depended on by other modules is not included here.
@@ -206,11 +204,10 @@ const configFields: ConfigFields = {
  * "test main" function (i.e., Jest `test` blocks). Doing this ensures that all the necessary
  * environment variables necessary for a test are presented to the user in one go.
  */
-export function getConfig<T extends keyof Config>(...required: T[]): Pick<Config, T> {
+export function getConfig<T extends keyof Config>(...required: T[]): Partial<Config> & Pick<Config, T> {
     // Read config
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const config: { [key: string]: any } = {}
-    for (const fieldName of required) {
+    const config: any = {}
+    for (const fieldName of Object.keys(configFields) as (keyof Config)[]) {
         const field = configFields[fieldName]
         if (field.defaultValue !== undefined) {
             config[fieldName] = field.defaultValue
@@ -247,5 +244,5 @@ create a .envrc file at the root of this repository.
         `)
     }
 
-    return pick(config, required)
+    return config
 }

@@ -11,7 +11,7 @@ if [ -z "$1" ] || [ -z "$2" ]; then
   exit 1
 fi
 
-if [ ! -z "$VERBOSE" ]; then
+if [ -n "$VERBOSE" ]; then
   set -x
 fi
 set -euo pipefail
