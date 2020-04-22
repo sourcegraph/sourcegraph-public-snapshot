@@ -186,6 +186,8 @@ type BitbucketServerWebhook struct {
 	Name string
 
 	// externalServiceID -> secret
+	// It keeps track of secrets we know have been stored
+	// in the remote Bitbucket webhook config
 	secrets map[int64]string
 
 	// Optional httpClient
