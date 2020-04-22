@@ -13,36 +13,38 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/mocks"
 )
 
-var testCommit = "0000000000000000000000000000000000000000"
-var testDump1 = db.Dump{ID: 42, Root: "sub1/"}
-var testDump2 = db.Dump{ID: 50, Root: "sub2/"}
-var testDump3 = db.Dump{ID: 51, Root: "sub3/"}
-var testDump4 = db.Dump{ID: 52, Root: "sub4/"}
-var testMoniker1 = bundles.MonikerData{Kind: "import", Scheme: "gomod", Identifier: "pad", PackageInformationID: "1234"}
-var testMoniker2 = bundles.MonikerData{Kind: "export", Scheme: "gomod", Identifier: "pad", PackageInformationID: "1234"}
-var testMoniker3 = bundles.MonikerData{Kind: "export", Scheme: "gomod", Identifier: "pad"}
-var testPackageInformation = bundles.PackageInformationData{Name: "leftpad", Version: "0.1.0"}
+var (
+	testCommit             = "0000000000000000000000000000000000000000"
+	testDump1              = db.Dump{ID: 42, Root: "sub1/"}
+	testDump2              = db.Dump{ID: 50, Root: "sub2/"}
+	testDump3              = db.Dump{ID: 51, Root: "sub3/"}
+	testDump4              = db.Dump{ID: 52, Root: "sub4/"}
+	testMoniker1           = bundles.MonikerData{Kind: "import", Scheme: "gomod", Identifier: "pad", PackageInformationID: "1234"}
+	testMoniker2           = bundles.MonikerData{Kind: "export", Scheme: "gomod", Identifier: "pad", PackageInformationID: "1234"}
+	testMoniker3           = bundles.MonikerData{Kind: "export", Scheme: "gomod", Identifier: "pad"}
+	testPackageInformation = bundles.PackageInformationData{Name: "leftpad", Version: "0.1.0"}
 
-var testRange1 = bundles.Range{
-	Start: bundles.Position{Line: 10, Character: 50},
-	End:   bundles.Position{Line: 10, Character: 55},
-}
-var testRange2 = bundles.Range{
-	Start: bundles.Position{Line: 11, Character: 50},
-	End:   bundles.Position{Line: 11, Character: 55},
-}
-var testRange3 = bundles.Range{
-	Start: bundles.Position{Line: 12, Character: 50},
-	End:   bundles.Position{Line: 12, Character: 55},
-}
-var testRange4 = bundles.Range{
-	Start: bundles.Position{Line: 13, Character: 50},
-	End:   bundles.Position{Line: 13, Character: 55},
-}
-var testRange5 = bundles.Range{
-	Start: bundles.Position{Line: 14, Character: 50},
-	End:   bundles.Position{Line: 14, Character: 55},
-}
+	testRange1 = bundles.Range{
+		Start: bundles.Position{Line: 10, Character: 50},
+		End:   bundles.Position{Line: 10, Character: 55},
+	}
+	testRange2 = bundles.Range{
+		Start: bundles.Position{Line: 11, Character: 50},
+		End:   bundles.Position{Line: 11, Character: 55},
+	}
+	testRange3 = bundles.Range{
+		Start: bundles.Position{Line: 12, Character: 50},
+		End:   bundles.Position{Line: 12, Character: 55},
+	}
+	testRange4 = bundles.Range{
+		Start: bundles.Position{Line: 13, Character: 50},
+		End:   bundles.Position{Line: 13, Character: 55},
+	}
+	testRange5 = bundles.Range{
+		Start: bundles.Position{Line: 14, Character: 50},
+		End:   bundles.Position{Line: 14, Character: 55},
+	}
+)
 
 func setMockDBGetDumpByID(t *testing.T, mockDB *mocks.MockDB, dumps map[int]db.Dump) {
 	mockDB.GetDumpByIDFunc.SetDefaultHook(func(ctx context.Context, id int) (dump db.Dump, ok bool, _ error) {
