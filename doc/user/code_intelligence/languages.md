@@ -31,7 +31,7 @@ The upload command will provide a URL you can visit to see the upload's status, 
 
 We provide the docker images `sourcegraph/lsif-go` and `sourcegraph/src-cli` to make automating this process in your favorite CI framework as easy as possible. Note that the `lsif-go` image bundles `src-cli` so the second image may not be necessary.
 
-Here's some examples in a couple popular frameworks, just substitute the indexer and upload commands with what works for your project locally:
+Here's some examples in a couple popular frameworks, just substitute the indexer and upload commands with what works for your project locally. If you end up implementing this in a different framework, feel free to edit this page with instructions!
 
 ### GitHub Actions
 ```yaml
@@ -53,11 +53,17 @@ jobs:
 jobs:
   lsif-go:
     docker:
+      # TODO: pin that container version!
       - image: sourcegraph/lsif-go
     steps:
       - checkout
       - run: lsif-go
       - run: src lsif upload -github-token=<<parameters.github-token>>
+
+workflows:
+  lsif-node:
+    jobs:
+      - lsif-node
 ```
 
 ### Travis CI
@@ -69,6 +75,7 @@ jobs:
   include:
     - stage: lsif-go
       script:
+      # TODO: pin that container version!
       - |
         docker run --rm -v $(pwd):/src -w /src sourcegraph/lsif-go /bin/sh -c \
           "lsif-go; src lsif upload -github-token=$GITHUB_TOKEN"
@@ -152,6 +159,7 @@ jobs:
 jobs:
   lsif-node:
     docker:
+      # TODO: pin that container version!
       - image: sourcegraph/lsif-node
     steps:
       - checkout
@@ -181,6 +189,7 @@ jobs:
 jobs:
   lsif-node:
     docker:
+      # TODO: pin that container version!
       - image: sourcegraph/lsif-node
     steps:
       - checkout
@@ -208,6 +217,7 @@ jobs:
   include:
     - stage: lsif-node
       script:
+      # TODO: pin that container version!
       - |
         docker run --rm -v $(pwd):/src -w /src sourcegraph/lsif-node /bin/sh -c \
           "lsif-tsc -p .; src lsif upload -github-token=$GITHUB_TOKEN"

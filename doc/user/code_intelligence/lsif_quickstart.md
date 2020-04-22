@@ -10,7 +10,11 @@ We'll walk you through installing and generating LSIF data locally on your machi
 
 ## 1. Set up your environment
 
-1. Install the [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli) - used for uploading LSIF data to your Sourcegraph instance.
+1. Install the [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli) - used for uploading LSIF data to your Sourcegraph instance. This will work in a jiffy (replace `linux` with `darwin` for OSX):
+    ```console
+    curl -L https://sourcegraph.com/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src
+    chmod +x /usr/local/bin/src
+    ```
 1. Install the LSIF indexer for your repository's language:
      1. Go to https://lsif.dev
      1. Find the LSIF indexer for your language
@@ -28,11 +32,11 @@ You now need to generate the LSIF data for your repository. Each language's LSIF
 
 For all languages, the upload step is the same. Make sure the current working directory is somewhere inside your repository, then use the Sourcegraph CLI to run:
 
-```bash
-$ src \
-  -endpoint=https://sourcegraph.example.com \
-  lsif upload \
-  -file=<LSIF file (e.g. ./cmd/dump.lsif)>
+```console
+# for private instances
+$ src -endpoint=$SRC_ENDPOINT lsif upload -file=<LSIF file (e.g. dump.lsif)>
+# to upload to Sourcegraph.com
+$ src lsif upload -github-token=$GITHUB_TOKEN -file=<LSIF file (e.g. dump.lsif)>
 ```
 
 The upload command in the Sourcegraph CLI will try to infer the repository and git commit by invoking git commands on your local clone. If git is not installed, is older than version 2.7.0, or you are running on code outside of a git clone, you will need to also specify the `-repo` and `-commit` flags explicitly.
@@ -53,16 +57,13 @@ View processing status at <link to your Sourcegraph instance LSIF status>.
 
 Possible upload errors include:
 
+- Clone in progress: the instance doesn't have the necessary data to process your upload yet, retry in a few minutes
 - Unknown repository (404): check your `-endpoint` and make sure you can view the repository on your Sourcegraph instance
 - Invalid commit (404): try visiting the repository at that commit on your Sourcegraph instance to trigger an update
 - Invalid auth when using Sourcegraph.com or when [`lsifEnforceAuth`](https://docs.sourcegraph.com/admin/config/site_config#lsifEnforceAuth) is `true` (401 for an invalid token or 404 if the repository cannot be found on GitHub.com): make sure your GitHub token is valid and that the repository is correct
 - Unexpected errors (500s): [file an issue](https://github.com/sourcegraph/sourcegraph/issues/new)
 
 LSIF processing failures for a repository are listed in **Repository settings > Code intelligence > Activity for this repository**. Failures can occur if the LSIF data is invalid (e.g., malformed indexer output), or problems were encountered during processing (e.g., system-level bug, flaky connections, etc). Try again or [file an issue](https://github.com/sourcegraph/sourcegraph/issues/new) if the problem persists.
-
-### Proving ownership of a GitHub repository
-
-If you're uploading to Sourcegraph.com or another Sourcegraph instance with [`lsifEnforceAuth`](https://docs.sourcegraph.com/admin/config/site_config#lsifEnforceAuth) enabled, you must prove that you own the GitHub repository in order to upload LSIF data for it. To do so, authenticate your upload by passing a GitHub App installation access token or a GitHub access token with [`public_repo` scope](https://developer.github.com/apps/building-oauth-apps/understanding-scopes-for-oauth-apps/#available-scopes) as `-github-token=abc...`. You can create one at https://github.com/settings/tokens.
 
 ## 4. Test out code intelligence
 

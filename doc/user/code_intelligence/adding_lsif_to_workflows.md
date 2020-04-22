@@ -32,40 +32,47 @@ With periodic jobs, you should still receive precise code intelligence on non-in
 
 ## LSIF on GitHub
 
-You can use [GitHub Actions](https://help.github.com/en/github/automating-your-workflow-with-github-actions/about-github-actions) to (1) generate LSIF data and (2) upload it to a Sourcegraph instance, like [Sourcegraph.com](#uploading-lsif-data-to-sourcegraph-com).
-
-1. Actions to **Generate LSIF index data** for each language:
-
-    - [Go indexer action](https://github.com/marketplace/actions/sourcegraph-go-lsif-indexer)
-    - ...and more coming soon!
-
-2. Action to **[upload LSIF data](https://github.com/marketplace/actions/sourcegraph-lsif-uploader)**.
-
 ### Setup
 
 Create a [workflow file](https://help.github.com/en/github/automating-your-workflow-with-github-actions/configuring-a-workflow#creating-a-workflow-file) `.github/workflows/lsif.yaml` in your repository.
 
-You will need configure two actions to (1) generate the LSIF data and (2) upload it to Sourcegraph. Here's an example for generating LSIF data for a Go project:
+If you're using a language for which we provide an indexer, something like the following example for Go will work:
 
 ```yaml
-name: LSIF
-on:
-  - push
 jobs:
-  index:
+  lsif-go:
     runs-on: ubuntu-latest
+    # TODO: pin that container version!
+    container: sourcegraph/lsif-go
     steps:
       - uses: actions/checkout@v1
       - name: Generate LSIF data
-        uses: sourcegraph/lsif-go-action@master
+        run: lsif-go
       - name: Upload LSIF data
-        uses: sourcegraph/lsif-upload-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          endpoint: https://sourcegraph.com # use sourcegraph.com, or alternatively, your own instance
+        run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
 ```
 
-Depending on your code requirements, you may need to add additional steps after checkout but before indexing (installing dependencies, generating indexable assets, etc).
+Depending on your code requirements, you may need to add additional steps after checkout but before indexing (installing dependencies, generating indexable assets, etc). This might also need to happen in a separate container, in which case you can use our containers as github actions. Here's an example using our `lsif-node` container:
+```yaml
+jobs:
+  lsif-node:
+    runs-on: ubuntu-latest
+    container: my-awesome-container
+    steps:
+      - uses: actions/checkout@v1
+      - name: Install dependencies
+        run: <install dependencies>
+      - name: Generate LSIF data
+        # TODO: pin that container version!
+        uses: sourcegraph/lsif-node
+        with:
+          args: lsif-tsc -p .
+      - name: Upload LSIF data
+        # TODO: pin that container version!
+        uses: sourcegraph/src-cli
+        with:
+          args: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
+```
 
 Once that workflow is committed to your repository, you will start to see LSIF workflows in the Actions tab of your repository (e.g. https://github.com/sourcegraph/sourcegraph/actions).
 
