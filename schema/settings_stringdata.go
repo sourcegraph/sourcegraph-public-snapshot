@@ -3,7 +3,8 @@
 package schema
 
 // SettingsSchemaJSON is the content of the file "settings.schema.json".
-const SettingsSchemaJSON = `{
+const SettingsSchemaJSON = `
+{
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "settings.schema.json#",
   "title": "Settings",
@@ -37,12 +38,6 @@ const SettingsSchemaJSON = `{
         },
         "smartSearchField": {
           "description": "Enables displaying a search field that provides syntax highlighting, hover tooltips and diagnostics for search queries.",
-          "type": "boolean",
-          "default": false,
-          "!go": { "pointer": true }
-        },
-        "caseSensitiveSearch": {
-          "description": "Enables the search to be case sensitive. When true, patterns become case-sensitive.",
           "type": "boolean",
           "default": false,
           "!go": { "pointer": true }
@@ -182,6 +177,12 @@ const SettingsSchemaJSON = `{
       "description": "Whether to use the code host's native hover tooltips when they exist (GitHub's jump-to-definition tooltips, for example).",
       "type": "boolean",
       "default": false
+    },
+    "search.UpperCase": {
+      "description": "When active, any upper case characters in the pattern will make the entire query case-sensitive.",
+      "type": "boolean",
+      "default": false,
+      "!go": { "pointer": true }
     }
   },
   "definitions": {

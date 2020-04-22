@@ -901,6 +901,8 @@ type Settings struct {
 	Notices []*Notice `json:"notices,omitempty"`
 	// Quicklinks description: Links that should be accessible quickly from the home and search pages.
 	Quicklinks []*QuickLink `json:"quicklinks,omitempty"`
+	// SearchUpperCase description: When active, any upper case characters in the pattern will make the entire query case-sensitive.
+	SearchUpperCase *bool `json:"search.UpperCase,omitempty"`
 	// SearchContextLines description: The default number of lines to show as context below and above search results. Default is 1.
 	SearchContextLines int `json:"search.contextLines,omitempty"`
 	// SearchDefaultPatternType description: The default pattern type (literal or regexp) that search queries will be intepreted as.
@@ -919,8 +921,6 @@ type Settings struct {
 
 // SettingsExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 type SettingsExperimentalFeatures struct {
-	// CaseSensitiveSearch description: Enables the search to be case sensitive. When true, patterns become case-sensitive.
-	CaseSensitiveSearch *bool `json:"caseSensitiveSearch,omitempty"`
 	// SearchStats description: Enables a new page that shows language statistics about the results for a search query.
 	SearchStats *bool `json:"searchStats,omitempty"`
 	// ShowBadgeAttachments description: Enables the UI indicators for code intelligence precision.

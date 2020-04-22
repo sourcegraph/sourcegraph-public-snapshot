@@ -881,13 +881,13 @@ func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, e
 	case *query.OrdinaryQuery:
 		return r.evaluateLeaf(ctx)
 	case *query.AndOrQuery:
-		// get settings to check if CaseSensitiveSearch is active or not and, if so, run transformer
+		//get settings to check if SearchUpperCase is active or not and, if so, run transformer
 		settings, err := decodedViewerFinalSettings(context.Background())
 		if err != nil {
 			return nil, err
 		}
-		if *settings.ExperimentalFeatures.CaseSensitiveSearch {
-			q.Query = query.CaseSensitiveSearch(q.Query)
+		if *settings.SearchUpperCase {
+			q.Query = query.SearchUpperCase(q.Query)
 		}
 		return r.evaluate(ctx, q.Query)
 	}

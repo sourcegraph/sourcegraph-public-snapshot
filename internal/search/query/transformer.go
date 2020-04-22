@@ -84,8 +84,8 @@ func Hoist(nodes []Node) ([]Node, error) {
 	return append(scopeParameters, newOperator(pattern, expression.Kind)...), nil
 }
 
-// CaseSensitiveSearch adds case:yes to queries if any pattern is mixed-case.
-func CaseSensitiveSearch(nodes []Node) []Node {
+// SearchUpperCase adds case:yes to queries if any pattern is mixed-case.
+func SearchUpperCase(nodes []Node) []Node {
 	var foundMixedCase bool
 	VisitParameter(nodes, func(field, value string, negated, _ bool) {
 		if field == "" || field == "content" {
