@@ -49,7 +49,7 @@ func TestFindRanges(t *testing.T) {
 	for i, r := range ranges {
 		actual := findRanges(m, i, 4)
 		expected := []types.RangeData{r}
-		if diff := cmp.Diff(actual, expected); diff != "" {
+		if diff := cmp.Diff(expected, actual); diff != "" {
 			t.Errorf("unexpected findRanges result %d (-want +got):\n%s", i, diff)
 		}
 	}
@@ -96,7 +96,7 @@ func TestFindRangesOrder(t *testing.T) {
 
 	actual := findRanges(m, 2, 4)
 	expected := []types.RangeData{ranges[2], ranges[1], ranges[0]}
-	if diff := cmp.Diff(actual, expected); diff != "" {
+	if diff := cmp.Diff(expected, actual); diff != "" {
 		t.Errorf("unexpected findRanges result (-want +got):\n%s", diff)
 	}
 

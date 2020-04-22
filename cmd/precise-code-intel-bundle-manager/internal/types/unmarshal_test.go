@@ -75,7 +75,7 @@ func TestUnmarshalDocumentData(t *testing.T) {
 		},
 	}
 
-	if diff := cmp.Diff(actual, expected); diff != "" {
+	if diff := cmp.Diff(expected, actual); diff != "" {
 		t.Errorf("unexpected document data (-want +got):\n%s", diff)
 	}
 }
@@ -118,7 +118,7 @@ func TestUnmarshalResultChunkData(t *testing.T) {
 		},
 	}
 
-	if diff := cmp.Diff(actual, expected); diff != "" {
+	if diff := cmp.Diff(expected, actual); diff != "" {
 		t.Errorf("unexpected result chunk data (-want +got):\n%s", diff)
 	}
 }

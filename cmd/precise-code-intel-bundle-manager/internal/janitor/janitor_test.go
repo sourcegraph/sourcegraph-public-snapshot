@@ -44,7 +44,7 @@ func TestCleanFailedUploads(t *testing.T) {
 		}
 
 		expected := []string{"u3", "u4"}
-		if diff := cmp.Diff(names, expected); diff != "" {
+		if diff := cmp.Diff(expected, names); diff != "" {
 			t.Errorf("unexpected directory contents (-want +got):\n%s", diff)
 		}
 	})
@@ -91,12 +91,12 @@ func TestRemoveDeadDumps(t *testing.T) {
 		}
 
 		expectedNames := []string{"1.lsif.db", "2.lsif.db", "3.lsif.db", "4.lsif.db", "5.lsif.db"}
-		if diff := cmp.Diff(names, expectedNames); diff != "" {
-			t.Errorf("unexpected directory contents: want=%v have=%v", expectedNames, names)
+		if diff := cmp.Diff(expectedNames, names); diff != "" {
+			t.Errorf("unexpected directory contents (-want +got):\n%s", diff)
 		}
 
 		expectedArgs := [][]int{ids}
-		if diff := cmp.Diff(idArgs, expectedArgs); diff != "" {
+		if diff := cmp.Diff(expectedArgs, idArgs); diff != "" {
 			t.Errorf("unexpected arguments to statesFn (-want +got):\n%s", diff)
 		}
 	})
@@ -156,7 +156,7 @@ func TestRemoveDeadDumpsMaxRequestBatchSize(t *testing.T) {
 		}
 		sort.Ints(allArgs)
 
-		if diff := cmp.Diff(allArgs, ids); diff != "" {
+		if diff := cmp.Diff(ids, allArgs); diff != "" {
 			t.Errorf("unexpected flattened arguments to statesFn (-want +got):\n%s", diff)
 		}
 	})
@@ -204,7 +204,7 @@ func TestCleanOldDumpsStopsAfterFreeingDesiredSpace(t *testing.T) {
 		}
 
 		expected := []string{"10.lsif.db", "6.lsif.db", "7.lsif.db", "8.lsif.db", "9.lsif.db"}
-		if diff := cmp.Diff(names, expected); diff != "" {
+		if diff := cmp.Diff(expected, names); diff != "" {
 			t.Errorf("unexpected directory contents (-want +got):\n%s", diff)
 		}
 	})
@@ -257,7 +257,7 @@ func TestCleanOldDumpsStopsWithNoPrunableDatabases(t *testing.T) {
 		}
 
 		expected := []string{"10.lsif.db", "6.lsif.db", "7.lsif.db", "8.lsif.db", "9.lsif.db"}
-		if diff := cmp.Diff(names, expected); diff != "" {
+		if diff := cmp.Diff(expected, names); diff != "" {
 			t.Errorf("unexpected directory contents (-want +got):\n%s", diff)
 		}
 	})
@@ -267,7 +267,7 @@ func TestBatchIntSlice(t *testing.T) {
 	batches := batchIntSlice([]int{1, 2, 3, 4, 5, 6, 7, 8, 9}, 2)
 	expected := [][]int{{1, 2}, {3, 4}, {5, 6}, {7, 8}, {9}}
 
-	if diff := cmp.Diff(batches, expected); diff != "" {
+	if diff := cmp.Diff(expected, batches); diff != "" {
 		t.Errorf("unexpected batch layout (-want +got):\n%s", diff)
 	}
 }
@@ -290,11 +290,11 @@ func withRoot(t *testing.T, testFunc func(bundleDir string)) {
 }
 
 func makeFile(path string, mtimes time.Time) error {
-	if file, err := os.Create(path); err != nil {
+	file, err := os.Create(path)
+	if err != nil {
 		return err
-	} else {
-		file.Close()
 	}
+	file.Close()
 
 	return os.Chtimes(path, mtimes, mtimes)
 }

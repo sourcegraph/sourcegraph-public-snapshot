@@ -49,7 +49,7 @@ func TestDatabaseDefinitions(t *testing.T) {
 				},
 			}
 
-			if diff := cmp.Diff(actual, expected); diff != "" {
+			if diff := cmp.Diff(expected, actual); diff != "" {
 				t.Errorf("unexpected definitions locations (-want +got):\n%s", diff)
 			}
 		}
@@ -84,7 +84,7 @@ func TestDatabaseReferences(t *testing.T) {
 				},
 			}
 
-			if diff := cmp.Diff(actual, expected); diff != "" {
+			if diff := cmp.Diff(expected, actual); diff != "" {
 				t.Errorf("unexpected reference locations (-want +got):\n%s", diff)
 			}
 		}
@@ -110,7 +110,7 @@ func TestDatabaseHover(t *testing.T) {
 				t.Errorf("unexpected hover text. want=%s have=%s", expectedText, actualText)
 			}
 
-			if diff := cmp.Diff(actualRange, expectedRange); diff != "" {
+			if diff := cmp.Diff(expectedRange, actualRange); diff != "" {
 				t.Errorf("unexpected hover range (-want +got):\n%s", diff)
 			}
 		}
@@ -136,7 +136,7 @@ func TestDatabaseMonikersByPosition(t *testing.T) {
 				},
 			}
 
-			if diff := cmp.Diff(actual, expected); diff != "" {
+			if diff := cmp.Diff(expected, actual); diff != "" {
 				t.Errorf("unexpected moniker result (-want +got):\n%s", diff)
 			}
 		}
@@ -217,7 +217,7 @@ func TestDatabaseMonikerResults(t *testing.T) {
 					t.Errorf("unexpected moniker result total count for test case #%d. want=%d have=%d", i, testCase.expectedTotalCount, totalCount)
 				}
 
-				if diff := cmp.Diff(actual, testCase.expectedLocations); diff != "" {
+				if diff := cmp.Diff(testCase.expectedLocations, actual); diff != "" {
 					t.Errorf("unexpected moniker result locations for test case #%d (-want +got):\n%s", i, diff)
 				}
 			}
@@ -237,7 +237,7 @@ func TestDatabasePackageInformation(t *testing.T) {
 				Version: "v0.0.0-ad3507cbeb18",
 			}
 
-			if diff := cmp.Diff(actual, expected); diff != "" {
+			if diff := cmp.Diff(expected, actual); diff != "" {
 				t.Errorf("unexpected package information (-want +got):\n%s", diff)
 			}
 		}
