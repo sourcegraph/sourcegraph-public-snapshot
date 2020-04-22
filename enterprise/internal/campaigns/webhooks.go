@@ -809,7 +809,9 @@ func (h *BitbucketServerWebhook) syncWebhook(id int64, con *schema.BitbucketServ
 	}
 
 	if secret == "" {
-		// Secret is now blank, delete hook
+		// Secret now blank, delete hook.
+		// If this is the first iteration we don't know if the server
+		// has a hook configured or not. If not, the delete will be a noop
 		err = client.DeleteWebhook(ctx, h.Name)
 		if err != nil {
 			return errors.Wrap(err, "deleting webhook")
