@@ -882,7 +882,7 @@ func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, e
 		return r.evaluateLeaf(ctx)
 	case *query.AndOrQuery:
 		//get settings to check if SearchUpperCase is active or not and, if so, run transformer
-		settings, err := decodedViewerFinalSettings(context.Background())
+		settings, err := decodedViewerFinalSettings(ctx)
 		if err != nil {
 			return nil, err
 		}
