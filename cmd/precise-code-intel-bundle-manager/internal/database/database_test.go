@@ -26,7 +26,7 @@ func TestDatabaseExists(t *testing.T) {
 	withTestDatabase(t, func(db *Database) {
 		for _, testCase := range testCases {
 			if exists, err := db.Exists(testCase.path); err != nil {
-				t.Errorf("unexpected error %s", err)
+				t.Fatalf("unexpected error %s", err)
 			} else if exists != testCase.expected {
 				t.Errorf("unexpected exists result for %s. want=%v have=%v", testCase.path, testCase.expected, exists)
 			}
@@ -40,7 +40,7 @@ func TestDatabaseDefinitions(t *testing.T) {
 
 	withTestDatabase(t, func(db *Database) {
 		if actual, err := db.Definitions("cmd/lsif-go/main.go", 110, 22); err != nil {
-			t.Errorf("unexpected error %s", err)
+			t.Fatalf("unexpected error %s", err)
 		} else {
 			expected := []Location{
 				{
@@ -68,7 +68,7 @@ func TestDatabaseReferences(t *testing.T) {
 
 	withTestDatabase(t, func(db *Database) {
 		if actual, err := db.References("protocol/writer.go", 85, 20); err != nil {
-			t.Errorf("unexpected error %s", err)
+			t.Fatalf("unexpected error %s", err)
 		} else {
 			expected := []Location{
 				{
@@ -97,7 +97,7 @@ func TestDatabaseHover(t *testing.T) {
 
 	withTestDatabase(t, func(db *Database) {
 		if actualText, actualRange, exists, err := db.Hover("internal/index/indexer.go", 628, 20); err != nil {
-			t.Errorf("unexpected error %s", err)
+			t.Fatalf("unexpected error %s", err)
 		} else if !exists {
 			t.Errorf("no hover found")
 		} else {
@@ -123,7 +123,7 @@ func TestDatabaseMonikersByPosition(t *testing.T) {
 
 	withTestDatabase(t, func(db *Database) {
 		if actual, err := db.MonikersByPosition("protocol/protocol.go", 92, 10); err != nil {
-			t.Errorf("unexpected error %s", err)
+			t.Fatalf("unexpected error %s", err)
 		} else {
 			expected := [][]types.MonikerData{
 				{
@@ -211,7 +211,7 @@ func TestDatabaseMonikerResults(t *testing.T) {
 	withTestDatabase(t, func(db *Database) {
 		for i, testCase := range testCases {
 			if actual, totalCount, err := db.MonikerResults(testCase.tableName, testCase.scheme, testCase.identifier, testCase.skip, testCase.take); err != nil {
-				t.Errorf("unexpected error for test case #%d: %s", i, err)
+				t.Fatalf("unexpected error for test case #%d: %s", i, err)
 			} else {
 				if totalCount != testCase.expectedTotalCount {
 					t.Errorf("unexpected moniker result total count for test case #%d. want=%d have=%d", i, testCase.expectedTotalCount, totalCount)
@@ -228,7 +228,7 @@ func TestDatabaseMonikerResults(t *testing.T) {
 func TestDatabasePackageInformation(t *testing.T) {
 	withTestDatabase(t, func(db *Database) {
 		if actual, exists, err := db.PackageInformation("protocol/protocol.go", types.ID("213")); err != nil {
-			t.Errorf("unexpected error %s", err)
+			t.Fatalf("unexpected error %s", err)
 		} else if !exists {
 			t.Errorf("no package information")
 		} else {
