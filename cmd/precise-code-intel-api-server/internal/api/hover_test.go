@@ -43,7 +43,7 @@ func TestHoverUnknownDump(t *testing.T) {
 
 	api := New(mockDB, mockBundleManagerClient)
 	if _, _, _, err := api.Hover(context.Background(), "sub1/main.go", 10, 50, 42); err != ErrMissingDump {
-		t.Errorf("unexpected error getting hover text. want=%q have=%q", ErrMissingDump, err)
+		t.Fatalf("unexpected error getting hover text. want=%q have=%q", ErrMissingDump, err)
 	}
 }
 
@@ -100,7 +100,7 @@ func TestHoverUnknownDefinition(t *testing.T) {
 	api := New(mockDB, mockBundleManagerClient)
 	_, _, exists, err := api.Hover(context.Background(), "sub1/main.go", 10, 50, 42)
 	if err != nil {
-		t.Errorf("unexpected error getting hover text: %s", err)
+		t.Fatalf("unexpected error getting hover text: %s", err)
 	}
 	if exists {
 		t.Errorf("unexpected hover text")

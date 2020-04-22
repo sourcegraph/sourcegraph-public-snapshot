@@ -38,7 +38,7 @@ func TestFindClosestDatabase(t *testing.T) {
 	api := New(mockDB, mockBundleManagerClient)
 	dumps, err := api.FindClosestDumps(context.Background(), 42, testCommit, "s1/main.go")
 	if err != nil {
-		t.Errorf("unexpected error finding closest database: %s", err)
+		t.Fatalf("unexpected error finding closest database: %s", err)
 	}
 
 	expected := []db.Dump{

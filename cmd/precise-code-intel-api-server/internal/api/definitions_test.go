@@ -46,7 +46,7 @@ func TestDefinitionsUnknownDump(t *testing.T) {
 
 	api := New(mockDB, mockBundleManagerClient)
 	if _, err := api.Definitions(context.Background(), "sub1/main.go", 10, 50, 25); err != ErrMissingDump {
-		t.Errorf("unexpected error getting definitions. want=%q have=%q", ErrMissingDump, err)
+		t.Fatalf("unexpected error getting definitions. want=%q have=%q", ErrMissingDump, err)
 	}
 }
 
