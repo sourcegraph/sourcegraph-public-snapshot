@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"unicode"
 )
 
 // SubstituteAliases substitutes field name aliases for their canonical names.
@@ -81,4 +82,30 @@ func Hoist(nodes []Node) ([]Node, error) {
 		pattern = append(pattern, node)
 	}
 	return append(scopeParameters, newOperator(pattern, expression.Kind)...), nil
+}
+
+// SearchUpperCase adds case:yes to queries if any pattern is mixed-case.
+func SearchUpperCase(nodes []Node) []Node {
+	var foundMixedCase bool
+	VisitParameter(nodes, func(field, value string, negated, _ bool) {
+		if field == "" || field == "content" {
+			if match := containsUpperCase(value); match {
+				foundMixedCase = true
+			}
+		}
+	})
+	if foundMixedCase {
+		nodes = append(nodes, Parameter{Field: "case", Value: "yes"})
+		return newOperator(nodes, And)
+	}
+	return nodes
+}
+
+func containsUpperCase(s string) bool {
+	for _, r := range s {
+		if unicode.IsUpper(r) && unicode.IsLetter(r) {
+			return true
+		}
+	}
+	return false
 }

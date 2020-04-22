@@ -176,6 +176,12 @@ const SettingsSchemaJSON = `{
       "description": "Whether to use the code host's native hover tooltips when they exist (GitHub's jump-to-definition tooltips, for example).",
       "type": "boolean",
       "default": false
+    },
+    "search.UpperCase": {
+      "description": "When active, any upper case characters in the pattern will make the entire query case-sensitive.",
+      "type": "boolean",
+      "default": false,
+      "!go": { "pointer": true }
     }
   },
   "definitions": {
