@@ -56,6 +56,7 @@ require (
 	github.com/gorilla/securecookie v1.1.1
 	github.com/gorilla/sessions v1.2.0
 	github.com/goware/urlx v0.3.1
+	github.com/grafana-tools/sdk v0.0.0-00010101000000-000000000000
 	github.com/graph-gophers/graphql-go v0.0.0-20200309224638-dae41bde9ef9
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
 	github.com/hashicorp/go-hclog v0.12.2 // indirect
@@ -156,6 +157,9 @@ replace (
 	github.com/russellhaering/gosaml2 => github.com/sourcegraph/gosaml2 v0.3.2-0.20200109173551-5cfddeb48b17
 	github.com/uber/gonduit => github.com/sourcegraph/gonduit v0.4.0
 )
+
+// https://github.com/grafana-tools/sdk/pull/80
+replace github.com/grafana-tools/sdk => github.com/slimsag/sdk v0.0.0-20200402190125-fc52c0aed0b7
 
 replace github.com/russross/blackfriday => github.com/russross/blackfriday v1.5.2
 
