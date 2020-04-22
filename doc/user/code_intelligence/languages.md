@@ -1,4 +1,4 @@
-# Index
+# Languages
 - [Golang](#Golang)
 - [TypeScript and JavaScript](#TypeScript-and-JavaScript)
 
@@ -31,7 +31,7 @@ The upload command will provide a URL you can visit to see the upload's status, 
 
 We provide the docker images `sourcegraph/lsif-go` and `sourcegraph/src-cli` to make automating this process in your favorite CI framework as easy as possible. Note that the `lsif-go` image bundles `src-cli` so the second image may not be necessary.
 
-Here's some examples in a couple popular frameworks:
+Here's some examples in a couple popular frameworks, just substitute the indexer and upload commands with what works for your project locally:
 
 ### GitHub Actions
 ```yaml
@@ -46,6 +46,32 @@ jobs:
         run: lsif-go
       - name: Upload LSIF data
         run: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
+```
+
+### CircleCI
+```yaml
+jobs:
+  lsif-go:
+    docker:
+      - image: sourcegraph/lsif-go
+    steps:
+      - checkout
+      - run: lsif-go
+      - run: src lsif upload -github-token=<<parameters.github-token>>
+```
+
+### Travis CI
+```yaml
+services:
+  - docker
+
+jobs:
+  include:
+    - stage: lsif-go
+      script:
+      - |
+        docker run --rm -v $(pwd):/src -w /src sourcegraph/lsif-go /bin/sh -c \
+          "lsif-go; src lsif upload -github-token=$GITHUB_TOKEN"
 ```
 
 # TypeScript and JavaScript
@@ -81,7 +107,7 @@ The upload command will provide a URL you can visit to see the upload's status, 
 
 We provide the docker images `sourcegraph/lsif-node` and `sourcegraph/src-cli` to make automating this process in your favorite CI framework as easy as possible. Note that the `lsif-node` image bundles `src-cli` so the second image may not be necessary.
 
-Here's some examples in a couple popular frameworks:
+Here's some examples in a couple popular frameworks, just substitute the indexer and upload commands with what works for your project locally:
 
 ### GitHub Actions
 ```yaml
@@ -93,7 +119,7 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - name: Install dependencies
-        run: yarn
+        run: npm install
       - name: Generate LSIF data
         run: lsif-tsc -p .
       - name: Upload LSIF data
@@ -119,4 +145,70 @@ jobs:
         uses: sourcegraph/src-cli
         with:
           args: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
+```
+
+### CircleCI
+```yaml
+jobs:
+  lsif-node:
+    docker:
+      - image: sourcegraph/lsif-node
+    steps:
+      - checkout
+      - run: npm install
+      - run: lsif-tsc -p .
+      - run: src lsif upload -github-token=<<parameters.github-token>>
+
+workflows:
+  lsif-node:
+    jobs:
+      - lsif-node
+```
+Note that if you need to install your dependencies in a custom container, may need to use CircleCI's caching features to share the build environment with our container. It may alternately be easier to add our tools to your container, but here's an example using caches:
+```yaml
+jobs:
+  install-deps:
+    docker:
+      - image: my-awesome-container
+    steps:
+      - checkout
+      - <install dependencies>
+      - save_cache:
+          paths:
+            - node_modules
+          key: dependencies
+
+jobs:
+  lsif-node:
+    docker:
+      - image: sourcegraph/lsif-node
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - dependencies
+      - run: lsif-tsc -p .
+      - run: src lsif upload -github-token=<<parameters.github-token>>
+
+workflows:
+  lsif-node:
+    jobs:
+      - install-deps
+      - lsif-node:
+          requires:
+            - install-deps
+```
+
+# Travis CI
+```yaml
+services:
+  - docker
+
+jobs:
+  include:
+    - stage: lsif-node
+      script:
+      - |
+        docker run --rm -v $(pwd):/src -w /src sourcegraph/lsif-node /bin/sh -c \
+          "lsif-tsc -p .; src lsif upload -github-token=$GITHUB_TOKEN"
 ```
