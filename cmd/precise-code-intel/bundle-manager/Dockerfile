@@ -41,5 +41,6 @@ USER sourcegraph
 COPY --from=precise-code-intel-builder /precise-code-intel /precise-code-intel
 
 EXPOSE 3187
+VOLUME ["/lsif-storage"]
 ENV LOG_LEVEL=debug
 ENTRYPOINT ["/sbin/tini", "--", "node", "/precise-code-intel/out/bundle-manager/manager.js"]
