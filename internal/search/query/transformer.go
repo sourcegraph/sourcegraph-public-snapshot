@@ -3,8 +3,8 @@ package query
 import (
 	"errors"
 	"fmt"
-	"regexp"
 	"strings"
+	"unicode"
 )
 
 // SubstituteAliases substitutes field name aliases for their canonical names.
@@ -89,7 +89,7 @@ func CaseSensitiveSearch(nodes []Node) []Node {
 	var foundMixedCase bool
 	VisitParameter(nodes, func(field, value string, negated, _ bool) {
 		if field == "" || field == "content" {
-			if match, _ := regexp.MatchString(`^(.*[A-Z]).*$`, value); match {
+			if match := containsUpperCase(value); match {
 				foundMixedCase = true
 			}
 		}
@@ -99,4 +99,13 @@ func CaseSensitiveSearch(nodes []Node) []Node {
 		return newOperator(nodes, And)
 	}
 	return nodes
+}
+
+func containsUpperCase(s string) bool {
+	for _, r := range s {
+		if unicode.IsUpper(r) && unicode.IsLetter(r) {
+			return true
+		}
+	}
+	return false
 }
