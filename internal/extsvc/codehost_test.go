@@ -32,6 +32,11 @@ func TestCodeHostOf(t *testing.T) {
 		repo:      "GITHUB.COM/foo/bar",
 		codehosts: PublicCodeHosts,
 		want:      GitHubDotCom,
+	}, {
+		name:      "missing-path",
+		repo:      "github.com",
+		codehosts: PublicCodeHosts,
+		want:      nil,
 	}} {
 		t.Run(tc.name, func(t *testing.T) {
 			have := CodeHostOf(tc.repo, tc.codehosts...)
