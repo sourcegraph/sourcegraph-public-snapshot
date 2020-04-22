@@ -860,14 +860,6 @@ func (r *searchResolver) evaluatePatternExpression(ctx context.Context, scopePar
 
 // evaluate evaluates all expressions of a search query.
 func (r *searchResolver) evaluate(ctx context.Context, q []query.Node) (*SearchResultsResolver, error) {
-	// get settings to check if CaseSensitiveSearch is active or not and, if so, run transformer
-	settings, err := decodedViewerFinalSettings(context.Background())
-	if err != nil {
-		return nil, err
-	}
-	if *settings.ExperimentalFeatures.CaseSensitiveSearch {
-		q = query.CaseSensitiveSearch(q)
-	}
 	scopeParameters, pattern, err := query.PartitionSearchPattern(q)
 	if err != nil {
 		return &SearchResultsResolver{alert: alertForQuery("", err)}, nil
@@ -889,6 +881,14 @@ func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, e
 	case *query.OrdinaryQuery:
 		return r.evaluateLeaf(ctx)
 	case *query.AndOrQuery:
+		// get settings to check if CaseSensitiveSearch is active or not and, if so, run transformer
+		settings, err := decodedViewerFinalSettings(context.Background())
+		if err != nil {
+			return nil, err
+		}
+		if *settings.ExperimentalFeatures.CaseSensitiveSearch {
+			q.Query = query.CaseSensitiveSearch(q.Query)
+		}
 		return r.evaluate(ctx, q.Query)
 	}
 	// Unreachable.
