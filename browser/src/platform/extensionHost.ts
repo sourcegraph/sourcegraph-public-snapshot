@@ -1,4 +1,4 @@
-import * as MessageChannelAdapter from '@sourcegraph/comlink/messagechanneladapter'
+import * as MessageChannelAdapter from '../../../shared/src/api/extension/messageChannelAdapter'
 import { Observable } from 'rxjs'
 import * as uuid from 'uuid'
 import { EndpointPair } from '../../../shared/src/platform/context'
@@ -97,15 +97,16 @@ export function createExtensionHost(urls: Pick<SourcegraphIntegrationURLs, 'asse
  *
  */
 function endpointFromPort(port: browser.runtime.Port): MessagePort {
-    const messageListeners = new Map<(event: MessageEvent) => any, (message: unknown) => void>()
+    const messageListeners = new Map<EventListenerOrEventListenerObject, (message: unknown) => void>()
     return MessageChannelAdapter.wrap({
         send(data: string): void {
             port.postMessage(data)
         },
-        addEventListener(event: 'message', messageListener: (event: MessageEvent) => any): void {
+        addEventListener(event: string, listener: EventListenerOrEventListenerObject): void {
             if (event !== 'message') {
                 return
             }
+            const listenerFunction = typeof listener === 'function' ? listener : listener.handleEvent.bind(listener)
             const portListener = (data: unknown): void => {
                 // This callback is called *very* often (e.g., ~900 times per keystroke in a
                 // monitored textarea). Avoid creating unneeded objects here because GC
@@ -117,16 +118,16 @@ function endpointFromPort(port: browser.runtime.Port): MessagePort {
                 // to reduce the amount of garbage created. There are no callers that depend on
                 // other MessageEvent properties; they would be set to their default values anyway,
                 // so losing the properties is not a big problem.
-                messageListener.call(this, { data } as MessageEvent)
+                listenerFunction.call(this, { data } as MessageEvent)
             }
-            messageListeners.set(messageListener, portListener)
+            messageListeners.set(listener, portListener)
             port.onMessage.addListener(portListener)
         },
-        removeEventListener(event: 'message', messageListener: (event: MessageEvent) => any): void {
+        removeEventListener(event: string, listener: EventListenerOrEventListenerObject): void {
             if (event !== 'message') {
                 return
             }
-            const portListener = messageListeners.get(messageListener)
+            const portListener = messageListeners.get(listener)
             if (!portListener) {
                 return
             }

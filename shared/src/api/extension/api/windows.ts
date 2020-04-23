@@ -1,4 +1,4 @@
-import { ProxyResult, ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
+import { Remote, ProxyMarked, proxyMarker } from '@sourcegraph/comlink'
 import { sortBy } from 'lodash'
 import { BehaviorSubject, Observable, of } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
@@ -22,7 +22,7 @@ export class ExtWindow implements sourcegraph.Window {
     /** Map of editor key to editor. */
     private viewComponents = new Map<string, ExtCodeEditor>()
 
-    constructor(private proxy: ProxyResult<WindowsProxyData>, private documents: ExtDocuments, data: EditorUpdate[]) {
+    constructor(private proxy: Remote<WindowsProxyData>, private documents: ExtDocuments, data: EditorUpdate[]) {
         this.update(data)
     }
 
@@ -129,7 +129,7 @@ export class ExtWindow implements sourcegraph.Window {
 }
 
 /** @internal */
-export interface ExtWindowsAPI extends ProxyValue {
+export interface ExtWindowsAPI extends ProxyMarked {
     $acceptWindowData(editorUpdates: EditorUpdate[]): void
 }
 
@@ -137,15 +137,15 @@ export interface ExtWindowsAPI extends ProxyValue {
  * @internal
  * @todo Support more than 1 window.
  */
-export class ExtWindows implements ExtWindowsAPI, ProxyValue {
-    public readonly [proxyValueSymbol] = true
+export class ExtWindows implements ExtWindowsAPI, ProxyMarked {
+    public readonly [proxyMarker] = true
 
     public activeWindow: ExtWindow
     public readonly activeWindowChanges: Observable<sourcegraph.Window>
 
     /** @internal */
     constructor(
-        private proxy: ProxyResult<{ windows: ClientWindowsAPI; codeEditor: ClientCodeEditorAPI }>,
+        private proxy: Remote<{ windows: ClientWindowsAPI; codeEditor: ClientCodeEditorAPI }>,
         private documents: ExtDocuments
     ) {
         this.activeWindow = new ExtWindow(this.proxy, this.documents, [])

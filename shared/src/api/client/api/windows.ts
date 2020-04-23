@@ -1,4 +1,4 @@
-import { ProxyValue, proxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
+import { ProxyMarked, proxy, proxyMarker } from '@sourcegraph/comlink'
 import { Subject } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import {
@@ -10,16 +10,16 @@ import {
 } from '../services/notifications'
 
 /** @internal */
-export interface ClientWindowsAPI extends ProxyValue {
+export interface ClientWindowsAPI extends ProxyMarked {
     $showNotification(message: string, type: sourcegraph.NotificationType): void
     $showMessage(message: string): Promise<void>
     $showInputBox(options?: sourcegraph.InputBoxOptions): Promise<string | undefined>
-    $showProgress(options: sourcegraph.ProgressOptions): sourcegraph.ProgressReporter & ProxyValue
+    $showProgress(options: sourcegraph.ProgressOptions): sourcegraph.ProgressReporter & ProxyMarked
 }
 
 /** @internal */
 export class ClientWindows implements ClientWindowsAPI {
-    public readonly [proxyValueSymbol] = true
+    public readonly [proxyMarker] = true
 
     constructor(
         /** Called when the client receives a window/showMessage notification. */
@@ -61,7 +61,7 @@ export class ClientWindows implements ClientWindowsAPI {
         )
     }
 
-    public $showProgress(options: sourcegraph.ProgressOptions): sourcegraph.ProgressReporter & ProxyValue {
-        return proxyValue(this.createProgressReporter(options))
+    public $showProgress(options: sourcegraph.ProgressOptions): sourcegraph.ProgressReporter & ProxyMarked {
+        return proxy(this.createProgressReporter(options))
     }
 }

@@ -1971,10 +1971,10 @@
     rxjs "^6.5.5"
     ts-key-enum "^2.0.0"
 
-"@sourcegraph/comlink@^3.1.1-fork.3":
-  version "3.1.1-fork.3"
-  resolved "https://registry.npmjs.org/@sourcegraph/comlink/-/comlink-3.1.1-fork.3.tgz#1bd76bc74ca8a9b55f1dbf508c703053ee66c961"
-  integrity sha512-+vfSCJTS/GU391Hhdh2/s+wy5ok4hi6X+kizRQqQZwZI03Q1rR6SVLNFsbg4dhbX624mqr1UCRhwNnZdWHAR+A==
+"@sourcegraph/comlink@^4.2.0-fork.1":
+  version "4.2.0-fork.1"
+  resolved "https://registry.npmjs.org/@sourcegraph/comlink/-/comlink-4.2.0-fork.1.tgz#bb6de70aae69cfea431f8646eea10d0aba64572e"
+  integrity sha512-nuLxgeUhr5qUUX4OLG7DOlORviv0WRCfez3bJYlFSh9zUoIZKVRoRM6tv8qSuldUyu9I/L019IV1k14CIgxVfA==
 
 "@sourcegraph/eslint-config@^0.16.0":
   version "0.16.0"

@@ -1,13 +1,18 @@
 import * as sinon from 'sinon'
 import { ExtConfiguration } from './configuration'
-import { ProxyResult, proxyValueSymbol } from '@sourcegraph/comlink'
+import { Remote, proxyMarker, createEndpoint, releaseProxy } from '@sourcegraph/comlink'
 import { ClientConfigurationAPI } from '../../client/api/configuration'
+import { noop } from 'lodash'
+import { addProxyMethods } from '../../util'
 
 describe('ExtConfiguration', () => {
-    const PROXY: ProxyResult<ClientConfigurationAPI> = {
-        [proxyValueSymbol]: Promise.resolve(true),
-        $acceptConfigurationUpdate: sinon.stub(),
-    }
+    const PROXY: Remote<ClientConfigurationAPI> = addProxyMethods({
+        [proxyMarker]: Promise.resolve(true),
+        $acceptConfigurationUpdate: Object.assign(() => Promise.resolve(), {
+            [createEndpoint]: () => Promise.resolve(new MessagePort()),
+            [releaseProxy]: noop,
+        }),
+    })
     describe('get()', () => {
         test("throws if initial settings haven't been received", () => {
             const configuration = new ExtConfiguration(PROXY)
