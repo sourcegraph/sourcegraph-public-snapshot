@@ -1,6 +1,6 @@
 import '../../polyfills'
 
-import * as MessageChannelAdapter from './string-channel'
+import * as MessageChannelAdapter from '@sourcegraph/comlink/dist/umd/string-channel.experimental'
 import { fromEvent } from 'rxjs'
 import { take } from 'rxjs/operators'
 import { EndpointPair, isEndpointPair } from '../../platform/context'

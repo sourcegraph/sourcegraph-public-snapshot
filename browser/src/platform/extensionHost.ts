@@ -1,4 +1,4 @@
-import * as MessageChannelAdapter from '../../../shared/src/api/extension/string-channel'
+import * as MessageChannelAdapter from '@sourcegraph/comlink/dist/umd/string-channel.experimental'
 import { Observable } from 'rxjs'
 import * as uuid from 'uuid'
 import { EndpointPair } from '../../../shared/src/platform/context'
