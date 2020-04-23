@@ -16,35 +16,9 @@ on:
     - milestoned
     - demilestoned
 jobs:
-  code-intelligence:
+  sync-tracking-issues:
     runs-on: ubuntu-latest
     steps:
       - uses: docker://sourcegraph/tracking-issue:latest
-        with:
-          args: -milestone 3.16 -labels team/code-intelligence -update
-        env:
-          GITHUB_TOKEN: ${{ secrets.TRACKING_ISSUE_SYNCER_TOKEN }}
-  core-services:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: docker://sourcegraph/tracking-issue:latest
-        with:
-          args: -milestone 3.16 -labels team/core-services -update
-        env:
-          GITHUB_TOKEN: ${{ secrets.TRACKING_ISSUE_SYNCER_TOKEN }}
-  web:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: docker://sourcegraph/tracking-issue:latest
-        with:
-          args: -milestone 3.16 -labels team/web -update
-        env:
-          GITHUB_TOKEN: ${{ secrets.TRACKING_ISSUE_SYNCER_TOKEN }}
-  distribution:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: docker://sourcegraph/tracking-issue:latest
-        with:
-          args: -milestone 3.16 -labels team/distribution -update
         env:
           GITHUB_TOKEN: ${{ secrets.TRACKING_ISSUE_SYNCER_TOKEN }}
