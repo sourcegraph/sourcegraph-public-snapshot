@@ -23,37 +23,35 @@ func TestDatabaseExists(t *testing.T) {
 		{"missing.go", false},
 	}
 
-	withTestDatabase(t, func(db *Database) {
-		for _, testCase := range testCases {
-			if exists, err := db.Exists(testCase.path); err != nil {
-				t.Fatalf("unexpected error %s", err)
-			} else if exists != testCase.expected {
-				t.Errorf("unexpected exists result for %s. want=%v have=%v", testCase.path, testCase.expected, exists)
-			}
+	db := testOpenTestDatabase(t)
+	for _, testCase := range testCases {
+		if exists, err := db.Exists(testCase.path); err != nil {
+			t.Fatalf("unexpected error %s", err)
+		} else if exists != testCase.expected {
+			t.Errorf("unexpected exists result for %s. want=%v have=%v", testCase.path, testCase.expected, exists)
 		}
-	})
+	}
 }
 
 func TestDatabaseDefinitions(t *testing.T) {
 	// `\ts, err := indexer.Index()` -> `\t Index() (*Stats, error)`
 	//                      ^^^^^           ^^^^^
 
-	withTestDatabase(t, func(db *Database) {
-		if actual, err := db.Definitions("cmd/lsif-go/main.go", 110, 22); err != nil {
-			t.Fatalf("unexpected error %s", err)
-		} else {
-			expected := []Location{
-				{
-					Path:  "internal/index/indexer.go",
-					Range: newRange(20, 1, 20, 6),
-				},
-			}
-
-			if diff := cmp.Diff(expected, actual); diff != "" {
-				t.Errorf("unexpected definitions locations (-want +got):\n%s", diff)
-			}
+	db := testOpenTestDatabase(t)
+	if actual, err := db.Definitions("cmd/lsif-go/main.go", 110, 22); err != nil {
+		t.Fatalf("unexpected error %s", err)
+	} else {
+		expected := []Location{
+			{
+				Path:  "internal/index/indexer.go",
+				Range: newRange(20, 1, 20, 6),
+			},
 		}
-	})
+
+		if diff := cmp.Diff(expected, actual); diff != "" {
+			t.Errorf("unexpected definitions locations (-want +got):\n%s", diff)
+		}
+	}
 }
 
 func TestDatabaseReferences(t *testing.T) {
@@ -66,81 +64,78 @@ func TestDatabaseReferences(t *testing.T) {
 	// -> `\t\t\trangeID, err = i.w.EmitRange(lspRange(ipos, ident.Name, false))`
 	//                              ^^^^^^^^^
 
-	withTestDatabase(t, func(db *Database) {
-		if actual, err := db.References("protocol/writer.go", 85, 20); err != nil {
-			t.Fatalf("unexpected error %s", err)
-		} else {
-			expected := []Location{
-				{
-					Path:  "internal/index/indexer.go",
-					Range: newRange(529, 22, 529, 31),
-				}, {
-					Path:  "internal/index/indexer.go",
-					Range: newRange(380, 22, 380, 31),
-				},
-				{
-					Path:  "protocol/writer.go",
-					Range: newRange(85, 17, 85, 26),
-				},
-			}
-
-			if diff := cmp.Diff(expected, actual); diff != "" {
-				t.Errorf("unexpected reference locations (-want +got):\n%s", diff)
-			}
+	db := testOpenTestDatabase(t)
+	if actual, err := db.References("protocol/writer.go", 85, 20); err != nil {
+		t.Fatalf("unexpected error %s", err)
+	} else {
+		expected := []Location{
+			{
+				Path:  "internal/index/indexer.go",
+				Range: newRange(529, 22, 529, 31),
+			}, {
+				Path:  "internal/index/indexer.go",
+				Range: newRange(380, 22, 380, 31),
+			},
+			{
+				Path:  "protocol/writer.go",
+				Range: newRange(85, 17, 85, 26),
+			},
 		}
-	})
+
+		if diff := cmp.Diff(expected, actual); diff != "" {
+			t.Errorf("unexpected reference locations (-want +got):\n%s", diff)
+		}
+	}
 }
 
 func TestDatabaseHover(t *testing.T) {
 	// `\tcontents, err := findContents(pkgs, p, f, obj)`
 	//                     ^^^^^^^^^^^^
 
-	withTestDatabase(t, func(db *Database) {
-		if actualText, actualRange, exists, err := db.Hover("internal/index/indexer.go", 628, 20); err != nil {
-			t.Fatalf("unexpected error %s", err)
-		} else if !exists {
-			t.Errorf("no hover found")
-		} else {
-			docstring := "findContents returns contents used as hover info for given object."
-			signature := "func findContents(pkgs []*Package, p *Package, f *File, obj Object) ([]MarkedString, error)"
-			expectedText := "```go\n" + signature + "\n```\n\n---\n\n" + docstring
-			expectedRange := newRange(628, 18, 628, 30)
+	db := testOpenTestDatabase(t)
+	if actualText, actualRange, exists, err := db.Hover("internal/index/indexer.go", 628, 20); err != nil {
+		t.Fatalf("unexpected error %s", err)
+	} else if !exists {
+		t.Errorf("no hover found")
+	} else {
+		docstring := "findContents returns contents used as hover info for given object."
+		signature := "func findContents(pkgs []*Package, p *Package, f *File, obj Object) ([]MarkedString, error)"
+		expectedText := "```go\n" + signature + "\n```\n\n---\n\n" + docstring
+		expectedRange := newRange(628, 18, 628, 30)
 
-			if actualText != expectedText {
-				t.Errorf("unexpected hover text. want=%s have=%s", expectedText, actualText)
-			}
-
-			if diff := cmp.Diff(expectedRange, actualRange); diff != "" {
-				t.Errorf("unexpected hover range (-want +got):\n%s", diff)
-			}
+		if actualText != expectedText {
+			t.Errorf("unexpected hover text. want=%s have=%s", expectedText, actualText)
 		}
-	})
+
+		if diff := cmp.Diff(expectedRange, actualRange); diff != "" {
+			t.Errorf("unexpected hover range (-want +got):\n%s", diff)
+		}
+	}
 }
 
 func TestDatabaseMonikersByPosition(t *testing.T) {
 	// `func NewMetaData(id, root string, info ToolInfo) *MetaData {`
 	//       ^^^^^^^^^^^
 
-	withTestDatabase(t, func(db *Database) {
-		if actual, err := db.MonikersByPosition("protocol/protocol.go", 92, 10); err != nil {
-			t.Fatalf("unexpected error %s", err)
-		} else {
-			expected := [][]types.MonikerData{
+	db := testOpenTestDatabase(t)
+	if actual, err := db.MonikersByPosition("protocol/protocol.go", 92, 10); err != nil {
+		t.Fatalf("unexpected error %s", err)
+	} else {
+		expected := [][]types.MonikerData{
+			{
 				{
-					{
-						Kind:                 "export",
-						Scheme:               "gomod",
-						Identifier:           "github.com/sourcegraph/lsif-go/protocol:NewMetaData",
-						PackageInformationID: types.ID("213"),
-					},
+					Kind:                 "export",
+					Scheme:               "gomod",
+					Identifier:           "github.com/sourcegraph/lsif-go/protocol:NewMetaData",
+					PackageInformationID: types.ID("213"),
 				},
-			}
-
-			if diff := cmp.Diff(expected, actual); diff != "" {
-				t.Errorf("unexpected moniker result (-want +got):\n%s", diff)
-			}
+			},
 		}
-	})
+
+		if diff := cmp.Diff(expected, actual); diff != "" {
+			t.Errorf("unexpected moniker result (-want +got):\n%s", diff)
+		}
+	}
 }
 
 func TestDatabaseMonikerResults(t *testing.T) {
@@ -208,50 +203,48 @@ func TestDatabaseMonikerResults(t *testing.T) {
 		{"references", "gomod", "github.com/slimsag/godocmd:ToMarkdown", 0, 100, markdownLocations, 1},
 	}
 
-	withTestDatabase(t, func(db *Database) {
-		for i, testCase := range testCases {
-			if actual, totalCount, err := db.MonikerResults(testCase.tableName, testCase.scheme, testCase.identifier, testCase.skip, testCase.take); err != nil {
-				t.Fatalf("unexpected error for test case #%d: %s", i, err)
-			} else {
-				if totalCount != testCase.expectedTotalCount {
-					t.Errorf("unexpected moniker result total count for test case #%d. want=%d have=%d", i, testCase.expectedTotalCount, totalCount)
-				}
+	db := testOpenTestDatabase(t)
+	for i, testCase := range testCases {
+		if actual, totalCount, err := db.MonikerResults(testCase.tableName, testCase.scheme, testCase.identifier, testCase.skip, testCase.take); err != nil {
+			t.Fatalf("unexpected error for test case #%d: %s", i, err)
+		} else {
+			if totalCount != testCase.expectedTotalCount {
+				t.Errorf("unexpected moniker result total count for test case #%d. want=%d have=%d", i, testCase.expectedTotalCount, totalCount)
+			}
 
-				if diff := cmp.Diff(testCase.expectedLocations, actual); diff != "" {
-					t.Errorf("unexpected moniker result locations for test case #%d (-want +got):\n%s", i, diff)
-				}
+			if diff := cmp.Diff(testCase.expectedLocations, actual); diff != "" {
+				t.Errorf("unexpected moniker result locations for test case #%d (-want +got):\n%s", i, diff)
 			}
 		}
-	})
+	}
 }
 
 func TestDatabasePackageInformation(t *testing.T) {
-	withTestDatabase(t, func(db *Database) {
-		if actual, exists, err := db.PackageInformation("protocol/protocol.go", types.ID("213")); err != nil {
-			t.Fatalf("unexpected error %s", err)
-		} else if !exists {
-			t.Errorf("no package information")
-		} else {
-			expected := types.PackageInformationData{
-				Name:    "github.com/sourcegraph/lsif-go",
-				Version: "v0.0.0-ad3507cbeb18",
-			}
-
-			if diff := cmp.Diff(expected, actual); diff != "" {
-				t.Errorf("unexpected package information (-want +got):\n%s", diff)
-			}
+	db := testOpenTestDatabase(t)
+	if actual, exists, err := db.PackageInformation("protocol/protocol.go", types.ID("213")); err != nil {
+		t.Fatalf("unexpected error %s", err)
+	} else if !exists {
+		t.Errorf("no package information")
+	} else {
+		expected := types.PackageInformationData{
+			Name:    "github.com/sourcegraph/lsif-go",
+			Version: "v0.0.0-ad3507cbeb18",
 		}
-	})
+
+		if diff := cmp.Diff(expected, actual); diff != "" {
+			t.Errorf("unexpected package information (-want +got):\n%s", diff)
+		}
+	}
 }
 
-func withTestDatabase(t *testing.T, testFunc func(db *Database)) {
+func testOpenTestDatabase(t *testing.T) *Database {
 	db, err := openTestDatabase()
 	if err != nil {
-		t.Fatalf("failed to open database: %s", err)
+		t.Fatalf("unexpected error opening database: %s", err)
 	}
-	defer db.Close()
+	t.Cleanup(func() { _ = db.Close })
 
-	testFunc(db)
+	return db
 }
 
 func openTestDatabase() (*Database, error) {
