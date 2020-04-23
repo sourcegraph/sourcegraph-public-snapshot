@@ -17,7 +17,7 @@ After walking through the [LSIF quickstart guide](./lsif_quickstart.md), add a j
 
 ## Using indexer containers
 
-We're working on creating containers that bundle indexers and the [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli). All the languages in our [language-specific guides](langauges.md) are supported, and this section provides a general guide to using those containers. We've pinned the containers to the `latest` tag in these samples so they stay up to date, but make sure you pin them before going live to ensure reproducability.
+We're working on creating containers that bundle indexers and the [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli). All the languages in our [language-specific guides](languages.md) are supported, and this section provides a general guide to using those containers. We've pinned the containers to the `latest` tag in these samples so they stay up to date, but make sure you pin them before going live to ensure reproducability.
 
 ### Basic usage
 
