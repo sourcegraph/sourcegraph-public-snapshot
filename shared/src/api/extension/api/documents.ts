@@ -1,11 +1,11 @@
-import { ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
+import { ProxyMarked, proxyMarker } from '@sourcegraph/comlink'
 import { Subject } from 'rxjs'
 import { TextDocument } from 'sourcegraph'
 import { TextModelUpdate } from '../../client/services/modelService'
 import { ExtDocument } from './textDocument'
 
 /** @internal */
-export interface ExtDocumentsAPI extends ProxyValue {
+export interface ExtDocumentsAPI extends ProxyMarked {
     $acceptDocumentData(modelUpdates: readonly TextModelUpdate[]): void
 }
 
@@ -18,8 +18,8 @@ class DocumentNotFoundError extends Error {
 }
 
 /** @internal */
-export class ExtDocuments implements ExtDocumentsAPI, ProxyValue {
-    public readonly [proxyValueSymbol] = true
+export class ExtDocuments implements ExtDocumentsAPI, ProxyMarked {
+    public readonly [proxyMarker] = true
 
     private documents = new Map<string, ExtDocument>()
 

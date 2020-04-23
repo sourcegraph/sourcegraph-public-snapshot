@@ -1,4 +1,4 @@
-import { ProxyResult } from '@sourcegraph/comlink'
+import { Remote } from '@sourcegraph/comlink'
 import { from, Subscription } from 'rxjs'
 import { bufferCount, startWith } from 'rxjs/operators'
 import { ExtExtensionsAPI } from '../../extension/api/extensions'
@@ -15,7 +15,7 @@ export class ClientExtensions {
      * @param extensions An observable that emits the set of extensions that should be activated
      * upon subscription and whenever it changes.
      */
-    constructor(private proxy: ProxyResult<ExtExtensionsAPI>, extensionRegistry: ExtensionsService) {
+    constructor(private proxy: Remote<ExtExtensionsAPI>, extensionRegistry: ExtensionsService) {
         this.subscriptions.add(
             from(extensionRegistry.activeExtensions)
                 .pipe(startWith([] as ExecutableExtension[]), bufferCount(2, 1))

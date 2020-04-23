@@ -232,16 +232,15 @@ async function main(): Promise<void> {
                 // It's necessary to wrap endpoints because browser.runtime.Port objects do not support transferring MessagePorts.
                 // See https://github.com/GoogleChromeLabs/comlink/blob/master/messagechanneladapter.md
                 const { worker, clientEndpoints } = createExtensionHostWorker({ wrapEndpoints: true })
-                const connectPortAndEndpoint = (
-                    port: browser.runtime.Port,
-                    endpoint: Endpoint & Pick<MessagePort, 'start'>
-                ): void => {
-                    endpoint.start()
+                const connectPortAndEndpoint = (port: browser.runtime.Port, endpoint: Endpoint): void => {
+                    // False positive https://github.com/eslint/eslint/issues/12822
+                    // eslint-disable-next-line no-unused-expressions
+                    endpoint.start?.()
                     port.onMessage.addListener(message => {
                         endpoint.postMessage(message)
                     })
-                    endpoint.addEventListener('message', ({ data }) => {
-                        port.postMessage(data)
+                    endpoint.addEventListener('message', event => {
+                        port.postMessage((event as MessageEvent).data)
                     })
                 }
                 // Connect proxy client endpoint

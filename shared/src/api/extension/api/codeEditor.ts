@@ -1,4 +1,4 @@
-import { ProxyResult } from '@sourcegraph/comlink'
+import { Remote } from '@sourcegraph/comlink'
 import { Range, Selection } from '@sourcegraph/extension-api-classes'
 import * as clientType from '@sourcegraph/extension-api-types'
 import { BehaviorSubject } from 'rxjs'
@@ -30,7 +30,7 @@ export class ExtCodeEditor implements sourcegraph.CodeEditor {
 
     constructor(
         data: CodeEditorData & EditorId,
-        private proxy: ProxyResult<ClientCodeEditorAPI>,
+        private proxy: Remote<ClientCodeEditorAPI>,
         private documents: ExtDocuments
     ) {
         this.resource = data.resource

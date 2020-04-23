@@ -1,4 +1,4 @@
-import { ProxyValue } from '@sourcegraph/comlink'
+import { ProxyMarked } from '@sourcegraph/comlink'
 import { InitData } from '../extensionHost'
 import { ExtConfigurationAPI } from './configuration'
 import { ExtDocumentsAPI } from './documents'
@@ -8,7 +8,7 @@ import { ExtWindowsAPI } from './windows'
 
 export type ExtensionHostAPIFactory = (initData: InitData) => ExtensionHostAPI
 
-export interface ExtensionHostAPI extends ProxyValue {
+export interface ExtensionHostAPI extends ProxyMarked {
     ping(): 'pong'
 
     documents: ExtDocumentsAPI

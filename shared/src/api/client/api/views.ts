@@ -1,4 +1,4 @@
-import { ProxyValue, proxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
+import { ProxyMarked, proxy, proxyMarker } from '@sourcegraph/comlink'
 import { isEqual, omit } from 'lodash'
 import { combineLatest, from, ReplaySubject, Unsubscribable, ObservableInput } from 'rxjs'
 import { distinctUntilChanged, map, switchMap } from 'rxjs/operators'
@@ -13,18 +13,18 @@ import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 /** @internal */
 export interface PanelViewData extends Pick<PanelView, 'title' | 'content' | 'priority' | 'component'> {}
 
-export interface PanelUpdater extends Unsubscribable, ProxyValue {
+export interface PanelUpdater extends Unsubscribable, ProxyMarked {
     update(data: PanelViewData): void
 }
 
 /** @internal */
-export interface ClientViewsAPI extends ProxyValue {
+export interface ClientViewsAPI extends ProxyMarked {
     $registerPanelViewProvider(provider: { id: string }): PanelUpdater
 }
 
 /** @internal */
 export class ClientViews implements ClientViewsAPI {
-    public readonly [proxyValueSymbol] = true
+    public readonly [proxyMarker] = true
 
     constructor(
         private panelViewRegistry: PanelViewProviderRegistry,
@@ -76,7 +76,7 @@ export class ClientViews implements ClientViewsAPI {
                 })
             )
         )
-        return proxyValue({
+        return proxy({
             update: (data: PanelViewData) => {
                 panelView.next(data)
             },
