@@ -183,7 +183,7 @@ type Observable struct {
 	// In other words:
 	//
 	// 1. The preceding newline is removed.
-	// 2. The indention in the string literal is removed (based on the last line).
+	// 2. The indentation in the string literal is removed (based on the last line).
 	// 3. Single quotes become backticks.
 	// 4. The last line (which is all indention) is removed.
 	//
