@@ -166,12 +166,12 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 				serveError(w, r, err, http.StatusNotFound)
 				return nil, nil
 			}
-			if errcode.IsNotFound(err) || errors.Cause(err) == repoupdater.ErrNotFound {
+			if errcode.IsNotFound(err) {
 				// Repo does not exist.
 				serveError(w, r, err, http.StatusNotFound)
 				return nil, nil
 			}
-			if errors.Cause(err) == repoupdater.ErrUnauthorized {
+			if errcode.IsUnauthorized(err) {
 				// Not authorized to access repository.
 				serveError(w, r, err, http.StatusUnauthorized)
 				return nil, nil

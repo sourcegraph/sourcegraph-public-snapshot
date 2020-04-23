@@ -12,24 +12,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-)
-
-var (
-	// ErrNotFound is when a repository is not found.
-	ErrNotFound = errors.New("repository not found")
-
-	// ErrUnauthorized is when an authorization error occurred.
-	ErrUnauthorized = errors.New("not authorized")
-
-	// ErrTemporarilyUnavailable is when the repository was reported as being temporarily
-	// unavailable.
-	ErrTemporarilyUnavailable = errors.New("repository temporarily unavailable")
 )
 
 // CachedGitRepo returns a handle to the Git repository that does not know the remote URL. If
@@ -65,7 +54,7 @@ func GitRepo(ctx context.Context, repo *types.Repo) (gitserver.Repo, error) {
 		return gitserver.Repo{Name: repo.Name}, err
 	}
 	if result.Repo == nil {
-		return gitserver.Repo{Name: repo.Name}, ErrNotFound
+		return gitserver.Repo{Name: repo.Name}, &repoupdater.ErrNotFound{Repo: repo.Name, IsNotFound: true}
 	}
 	return gitserver.Repo{Name: result.Repo.Name, URL: result.Repo.VCS.URL}, nil
 }
@@ -214,18 +203,17 @@ func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.Co
 }
 
 func isIgnorableRepoUpdaterError(err error) bool {
-	err = errors.Cause(err)
-	return err == ErrNotFound || err == ErrUnauthorized || err == ErrTemporarilyUnavailable
+	return errcode.IsNotFound(err) || errcode.IsUnauthorized(err) || errcode.IsTemporary(err)
 }
 
 func maybeLogRepoUpdaterError(repo *types.Repo, err error) {
 	var msg string
-	switch c := errors.Cause(err); c {
-	case ErrNotFound:
+	switch {
+	case errcode.IsNotFound(err):
 		msg = "Repository host reported a repository as not found. If this repository was deleted on its origin, the site admin must explicitly delete it on Sourcegraph."
-	case ErrUnauthorized:
+	case errcode.IsUnauthorized(err):
 		msg = "Repository host rejected as unauthorized an attempt to retrieve a repository's metadata. Check the repository host credentials in site configuration."
-	case ErrTemporarilyUnavailable:
+	case errcode.IsTemporary(err):
 		msg = "Repository host was temporarily unavailable while retrieving repository information."
 	}
 	if msg != "" {

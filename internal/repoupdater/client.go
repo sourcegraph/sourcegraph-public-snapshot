@@ -109,18 +109,18 @@ func (c *Client) RepoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		switch {
 		case result.ErrorNotFound:
 			err = &ErrNotFound{
-				repo:     args.Repo,
-				notFound: true,
+				Repo:       args.Repo,
+				IsNotFound: true,
 			}
 		case result.ErrorUnauthorized:
 			err = &ErrUnauthorized{
-				repo:    args.Repo,
-				noAuthz: true,
+				Repo:    args.Repo,
+				NoAuthz: true,
 			}
 		case result.ErrorTemporarilyUnavailable:
 			err = &ErrTemporary{
-				repo:        args.Repo,
-				isTemporary: true,
+				Repo:        args.Repo,
+				IsTemporary: true,
 			}
 		}
 	}
