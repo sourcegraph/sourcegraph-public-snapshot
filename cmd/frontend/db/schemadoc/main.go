@@ -35,7 +35,7 @@ func generate(log *log.Logger) (string, error) {
 	)
 	// If we are using pg9.6 use it locally since it is faster (CI \o/)
 	versionRe := lazyregexp.New(fmt.Sprintf(`\b%s\b`, regexp.QuoteMeta("9.6")))
-	if out, _ := exec.Command("psql", "--version").CombinedOutput(); versionRe.Match(out) {
+	if out, _ := exec.Command("psql", fmt.Sprintf("-c %q", "COPY (SELECT version()) TO STDOUT")).CombinedOutput(); versionRe.Match(out) {
 		dataSource = "dbname=" + dbname
 		run = func(cmd ...string) (string, error) {
 			c := exec.Command(cmd[0], cmd[1:]...)
