@@ -1,17 +1,7 @@
-FROM alpine:3.10@sha256:e4355b66995c96b4b468159fc5c7e3540fcef961189ca13fee877798649f531a AS precise-code-intel-builder
+FROM alpine:3.10@sha256:e4355b66995c96b4b468159fc5c7e3540fcef961189ca13fee877798649f531a as libsqlite3-pcre
 
-RUN apk add --no-cache \
-    nodejs-current=12.4.0-r0 \
-    nodejs-npm=10.19.0-r0
-
-RUN npm install -g yarn@1.17.3
-
-COPY precise-code-intel/package.json precise-code-intel/yarn.lock precise-code-intel/tsconfig.json /precise-code-intel/
-RUN yarn --cwd /precise-code-intel --frozen-lockfile
-COPY precise-code-intel/src /precise-code-intel/src
-RUN yarn --cwd /precise-code-intel run build
-# Remove all devDependencies
-RUN yarn --cwd /precise-code-intel --frozen-lockfile --production
+COPY libsqlite3-pcre-install-alpine.sh /libsqlite3-pcre-install-alpine.sh
+RUN /libsqlite3-pcre-install-alpine.sh
 
 FROM sourcegraph/alpine:3.10@sha256:4d05cd5669726fc38823e92320659a6d1ef7879e62268adec5df658a0bacf65c
 
@@ -26,8 +16,13 @@ LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/comm
 
 # hadolint ignore=DL3018
 RUN apk update && apk add --no-cache \
-    nodejs-current=12.4.0-r0 \
     tini
+
+# hadolint ignore=DL3022
+COPY --from=libsqlite3-pcre /sqlite3-pcre/pcre.so /libsqlite3-pcre.so
+ENV LIBSQLITE3_PCRE /libsqlite3-pcre.so
+# hadolint ignore=DL3018
+RUN apk --no-cache add pcre-dev
 
 # Ensures that a directory with the correct permissions exist in the image. Without this, in Docker Compose
 # deployments the Docker daemon would first create the volume directory and it would be owned by `root` and
@@ -38,9 +33,9 @@ USER root
 RUN mkdir -p /lsif-storage && chown -R sourcegraph:sourcegraph /lsif-storage
 USER sourcegraph
 
-COPY --from=precise-code-intel-builder /precise-code-intel /precise-code-intel
+COPY ./precise-code-intel-bundle-manager /usr/local/bin/precise-code-intel-bundle-manager
 
 EXPOSE 3187
 VOLUME ["/lsif-storage"]
-ENV LOG_LEVEL=debug
-ENTRYPOINT ["/sbin/tini", "--", "node", "/precise-code-intel/out/bundle-manager/manager.js"]
+ENV GO111MODULES=on LANG=en_US.utf8 LOG_LEVEL=debug
+ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/precise-code-intel-bundle-manager"]
