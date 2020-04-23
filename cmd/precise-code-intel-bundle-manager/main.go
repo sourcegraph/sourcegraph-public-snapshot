@@ -23,13 +23,13 @@ func main() {
 	sqliteutil.MustRegisterSqlite3WithPcre()
 
 	var (
-		bundleDir                = mustGet(rawBundleDir, "BUNDLE_DIR")
-		databaseCacheSize        = mustParseInt(rawDatabaseCacheSize, "CONNECTION_CACHE_CAPACITY")
-		documentDataCacheSize    = mustParseInt(rawDocumentDataCacheSize, "DOCUMENT_CACHE_CAPACITY")
-		resultChunkDataCacheSize = mustParseInt(rawResultChunkDataCacheSize, "RESULT_CHUNK_CACHE_CAPACITY")
-		desiredPercentFree       = mustParsePercent(rawDesiredPercentFree, "DESIRED_PERCENT_FREE")
-		janitorInterval          = mustParseInterval(rawJanitorInterval, "JANITOR_INTERVAL")
-		maxUnconvertedUploadAge  = mustParseInterval(rawMaxUnconvertedUploadAge, "MAX_UNCONVERTED_UPLOAD_AGE")
+		bundleDir                = mustGet(rawBundleDir, "PRECISE_CODE_INTEL_BUNDLE_DIR")
+		databaseCacheSize        = mustParseInt(rawDatabaseCacheSize, "PRECISE_CODE_INTEL_CONNECTION_CACHE_CAPACITY")
+		documentDataCacheSize    = mustParseInt(rawDocumentDataCacheSize, "PRECISE_CODE_INTEL_DOCUMENT_CACHE_CAPACITY")
+		resultChunkDataCacheSize = mustParseInt(rawResultChunkDataCacheSize, "PRECISE_CODE_INTEL_RESULT_CHUNK_CACHE_CAPACITY")
+		desiredPercentFree       = mustParsePercent(rawDesiredPercentFree, "PRECISE_CODE_INTEL_DESIRED_PERCENT_FREE")
+		janitorInterval          = mustParseInterval(rawJanitorInterval, "PRECISE_CODE_INTEL_JANITOR_INTERVAL")
+		maxUnconvertedUploadAge  = mustParseInterval(rawMaxUnconvertedUploadAge, "PRECISE_CODE_INTEL_MAX_UNCONVERTED_UPLOAD_AGE")
 	)
 
 	if err := paths.PrepDirectories(bundleDir); err != nil {
