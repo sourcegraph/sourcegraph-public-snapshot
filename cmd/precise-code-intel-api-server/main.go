@@ -22,8 +22,8 @@ func main() {
 	tracer.Init()
 
 	var (
-		janitorInterval  = mustParseInterval(rawJanitorInterval, "JANITOR_INTERVAL")
-		bundleManagerURL = mustGet(rawBundleManagerURL, "BUNDLE_MANAGER_URL")
+		janitorInterval  = mustParseInterval(rawJanitorInterval, "PRECISE_CODE_INTEL_JANITOR_INTERVAL")
+		bundleManagerURL = mustGet(rawBundleManagerURL, "PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL")
 	)
 
 	db := mustInitializeDatabase()
