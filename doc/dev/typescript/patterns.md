@@ -4,15 +4,23 @@ This is a non-exhaustive lists of programming patterns used across our TypeScrip
 Since patterns are used everywhere, they are usually not documented with inline code comments.
 This document serves as the canonical place to document them.
 
+This document is specifically intended for patterns that are hard to detect automatically with static analysis.
+If possible, we generally prefer to encode our best practices in ESLint configuration.
+For automatically detectable patterns, please see the documentation of our [ESLint configuration](https://github.com/sourcegraph/eslint-config#principles).
+
+- [`Subscription` bag](#subscription-bag)
+- [Making invalid states impossible through union types](#making-invalid-states-impossible-through-union-types)
+- [Avoiding classes](#avoiding-classes)
+
 ## `Subscription` bag
 
-Classes or React components often register external subscriptions, usually with RxJS.
+Functions, classes or React class components often register external subscriptions, usually with RxJS.
 These Subscriptions must be cleaned up when the instance of the class is no longer in use,
 but won't be automatically through garbage collection, because the external emitter holds a (transitive) reference to the class instance, not the other way around.
 
 If the Subscriptions are not cleaned up, the garbage collector can not collect the class instance,
 and the subscribe callback may still run code operating on invalid state.
-In the case of React components, it may call `setState()` after the component was unmounted,
+In the case of React class components, it may call `setState()` after the component was unmounted,
 which causes React to throw an Error.
 
 If you forgot to handle a Subscription returned by Rx `observable.subscribe()`, the ESLint rule `rxjs/no-ignored-subscription` will warn you.
@@ -24,7 +32,7 @@ It handles all the edge cases like adding a Subscription after it was already un
 
 Subscriptions don't just accept other Subscriptions, they accept arbitrary cleanup functions to be run on unsubscription, so this pattern can also be used to clean up non-RxJS resources or listeners.
 
-Example of what this pattern typically looks like in a React component:
+Example of what this pattern typically looks like in a React class component:
 
 ```ts
 class MyComponent extends React.Component {
@@ -48,6 +56,8 @@ class MyComponent extends React.Component {
   }
 }
 ```
+
+The Subscription bag pattern is usually not needed when using React function components with our [`useObservable()` family of hooks](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/shared/src/util/useObservable.ts#L26:17), as they will handle the subscription under the hood.
 
 ## Making invalid states impossible through union types
 
@@ -109,3 +119,32 @@ We are now relying on the type system to enforce at compile time that it is impo
 
 **Caveat**: If you are using the `Error` type, make sure that the exception you are saving is actually an Error with our `asError()` utility.
 Exceptions in TypeScript are of type `any`, i.e. if a function deep down exhibits the bad practice of throwing e.g. a string, it could mess up the type checking logic.
+If you accidentally return an `any` typed error without using `asError()`, the ESLint rule `no-unsafe-return` will warn you.
+
+## Avoiding classes
+
+In traditional OOP programming languages, classes are often used for **encapsulation** and **polymorphism**.
+In TypeScript, classes are not needed to achieve these goals.
+Encapsulation can be easily achieved with modules (i.e. non-exported module members) and closures.
+Polymorphism is available without classes thanks to duck-typed interfaces and object literals.
+
+We found that when using classes as an encapsulation boundary in TypeScript, over time they often grow to violate the [Single Responsibility Principle](https://en.wikipedia.org/wiki/Single-responsibility_principle),  become hard to reason about and hard to test.
+Methods often get added to the class that only access a subset of the properties of the class.
+Splitting the class up afterwards into multiple smaller classes that draw better boundaries takes a lot of effort.
+
+Starting out from the beginning with **individual functions** (instead of methods) that take **just the data they need** as interface-typed parameters (instead of accessing class fields) avoids this problem.
+It makes it easy to evolve each function individually, increase or decrease their data dependencies, and split or merge them.
+Ideally these functions do not mutate the input object, but each produce a new result object instead.
+This makes it easy to compose them.
+Avoid having functions that take more data than they actually need just to return this part of the input verbatim, because it makes them harder to test and ties them to the context they are used in currently.
+This "merging" is better done by the caller.
+Instead of constructors, factory functions can be defined that create and return object literals (typed with an interface).
+These functions are conventionally named `create`+_name of interface_ (eg. [`createModelService()`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@b1ddeff4a2b94ceccda7cdf7021d5f82aa4522ed/-/blob/shared/src/api/client/services/modelService.ts#L99-167).
+
+There are a few places where we do use classes, e.g. [`ExtDocuments`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@fd9eef0b5893dfb3358d2a3358d15f3e9b14ca9e/-/blob/shared/src/api/extension/api/documents.ts#L21:20).
+These are usually where mutation is unavoidable.
+For example, our extension host web worker runs in a separate thread.
+We need to sync various data between the worker and the main thread, because requesting that data on demand every time  through message passing would not be performant.
+
+We also have a large number of React class components in our codebase predating [React hooks](https://reactjs.org/docs/hooks-intro.html).
+We are continuously refactoring these to function components using hooks.

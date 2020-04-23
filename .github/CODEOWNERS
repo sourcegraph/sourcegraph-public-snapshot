@@ -59,10 +59,10 @@
 /internal/buildkite @ggilmore
 /internal/httpcli @sourcegraph/core-services
 /dev/release-ping.sh @sourcegraph/distribution
-/dev/grafana.sh  @sourcegraph/distribution
-/dev/grafana  @sourcegraph/distribution
-/dev/prometheus.sh  @sourcegraph/distribution
-/dev/prometheus  @sourcegraph/distribution
+/dev/grafana.sh @sourcegraph/distribution
+/dev/grafana @sourcegraph/distribution
+/dev/prometheus.sh @sourcegraph/distribution
+/dev/prometheus @sourcegraph/distribution
 /dev/zoekt @sourcegraph/core-services
 /dev/src-expose @keegancsmith
 /dev/drop-test-databases.sh @efritz
@@ -194,6 +194,8 @@ Dockerfile @sourcegraph/distribution
 /README.md @sqs
 /doc/ @sourcegraph/distribution @ryan-blunden
 /doc/dev/ @nicksnyder
+/doc/dev/typescript/ @felixfbecker @sourcegraph/web
+/doc/dev/web_app.md @felixfbecker @sourcegraph/web
 
 # Browser extensions
 /browser/ @sourcegraph/web
