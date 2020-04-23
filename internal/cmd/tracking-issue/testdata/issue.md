@@ -36,7 +36,7 @@
 - [x] a8n/core: Extend CreateCampaignInput to accept Branch and persist it [#7687](https://github.com/sourcegraph/sourcegraph/issues/7687) __2d__ 🛠️
 - [x] Password-reset link not rendered for non-admin users [#7520](https://github.com/sourcegraph/sourcegraph/issues/7520) __0.5d__ 🐛
 - [x] Error fetching commit author info from GraphQL API [#5335](https://github.com/sourcegraph/sourcegraph/issues/5335) __1d__ [👩](https://app.hubspot.com/contacts/2762526/company/814799425)🐛
-- [x] Simplify Bitbucket Server plugin interaction with Sourcegraph [#7824](https://github.com/sourcegraph/sourcegraph/issues/7824) __3d__ 
+- [x] ~Simplify Bitbucket Server plugin interaction with Sourcegraph~ [#7824](https://github.com/sourcegraph/sourcegraph/issues/7824) __3d__ 
 
 @mrnugget: __10.00d__
 
@@ -57,7 +57,7 @@
 - [x] Enforce warnings for unsupported parameters and filters in structural search [#7293](https://github.com/sourcegraph/sourcegraph/issues/7293) __1d__ 🧶
 - [x] Backend returns invalid filter chip with space "lang:ignore list" [#6498](https://github.com/sourcegraph/sourcegraph/issues/6498) __2d__ [👩](https://app.hubspot.com/contacts/2762526/company/419771425)🐛
 - [x] Impossible to search for colons in literal search [#6490](https://github.com/sourcegraph/sourcegraph/issues/6490) __2d__ 🐛
-- [ ] search: Support AND / OR / NOT predicate language in search queries [#7823](https://github.com/sourcegraph/sourcegraph/issues/7823) 👩🛠️
+- [ ] ~search: Support AND / OR / NOT predicate language in search queries~ [#7823](https://github.com/sourcegraph/sourcegraph/issues/7823) 👩🛠️
 - [ ] ~search filter `archived`/`fork` "yes/no/only" values are confusing~ [#7003](https://github.com/sourcegraph/sourcegraph/issues/7003) __4d__ [👩](https://app.hubspot.com/contacts/2762526/company/1749284052)🛠️
 - [ ] ~Address repohascommitafter search filter performance bottleneck~ [#6745](https://github.com/sourcegraph/sourcegraph/issues/6745) __1d__ 👩🕵️
 
@@ -104,6 +104,6 @@
 - [x] postgresql: (Auto)tune DB pool sizes based on max_connections [#3473](https://github.com/sourcegraph/sourcegraph/issues/3473) __3d__ [👩](https://app.hubspot.com/contacts/2762526/company/419771425)
 - [ ] ~Make new pricing tiers reflected in feature access~ [#7927](https://github.com/sourcegraph/sourcegraph/issues/7927) __1d__ 🐛
 - [x] ~RFC 40: Add Prometheus metrics~ [#7827](https://github.com/sourcegraph/sourcegraph/issues/7827) __1d__ 🛠️
-- [x] sourcegraph/security-issues [#53](https://github.com/sourcegraph/security-issues/issues/53) 
+- [x] ~sourcegraph/security-issues~ [#53](https://github.com/sourcegraph/security-issues/issues/53) 
 - [x] ~Forbidden - CSRF token invalid~ [#7368](https://github.com/sourcegraph/sourcegraph/issues/7368) __2d__ 🐛
 - [ ] ~Auth: explicit session invalidation~ [#1126](https://github.com/sourcegraph/sourcegraph/issues/1126) __2d__ 🔒

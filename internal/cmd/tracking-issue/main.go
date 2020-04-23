@@ -279,10 +279,10 @@ func (t *TrackingIssue) Workloads() Workloads {
 			pr.LinkedIssues = append(pr.LinkedIssues, issue)
 		}
 
-		if issue.Milestone == t.Milestone {
+		if t.Milestone == "" || issue.Milestone == t.Milestone {
 			estimate := Estimate(issue.Labels)
 			w.Days += Days(estimate)
-		} else if issue.Milestone != "" {
+		} else {
 			issue.Deprioritised = true
 		}
 	}
@@ -564,7 +564,7 @@ func loadTrackingIssues(ctx context.Context, cli *graphql.Client, org string, is
 		if issue.Milestone == "" {
 			name := "tracking" + strconv.Itoa(issue.Number)
 			fmt.Fprintf(&q, "$%[1]sCount: Int!, $%[1]sCursor: String, $%[1]sQuery: String!,\n", name)
-			queries[strconv.Itoa(issue.Number)] = &query{
+			queries[name] = &query{
 				issue: issue,
 				count: 100,
 				query: listIssuesSearchQuery(org, "", issue.Labels, false),
