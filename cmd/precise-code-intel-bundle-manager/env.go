@@ -21,7 +21,7 @@ var (
 // mustGet returns the non-empty version of the given raw value fatally logs on failure.
 func mustGet(rawValue, name string) string {
 	if rawValue == "" {
-		log.Fatalf("invalid value %q for %s_%s: no value supplied", rawValue, name)
+		log.Fatalf("invalid value %q for %s: no value supplied", rawValue, name)
 	}
 
 	return rawValue
