@@ -2,7 +2,7 @@
 
 ## [Language Specific Guides](./languages.md)
 
-Check if we've created documentation for your language yet! If not, this general guide will help you through the process.
+We are working on creating guides for each language with an LSIF indexer, so make sure to check for the documentation for your language! If there is not a guide for your language, this general guide will help you through the LSIF setup process.
 
 ## Manual LSIF generation
 
@@ -10,7 +10,7 @@ We'll walk you through installing and generating LSIF data locally on your machi
 
 ## 1. Set up your environment
 
-1. Install the [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli) - used for uploading LSIF data to your Sourcegraph instance. This will work in a jiffy (replace `linux` with `darwin` for OSX):
+1. Install the [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli) - used for uploading LSIF data to your Sourcegraph instance. This will work in a jiffy (replace `linux` with `darwin` for macOS):
     ```console
     curl -L https://sourcegraph.com/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src
     chmod +x /usr/local/bin/src

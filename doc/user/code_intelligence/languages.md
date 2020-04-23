@@ -1,29 +1,38 @@
-# Languages
-- [Golang](#Golang)
-- [TypeScript and JavaScript](#TypeScript-and-JavaScript)
+# How to use these guides
 
-# Golang
+These guides are meant to provide specific instructions to get you producing index data in LSIF as quickly as possible. The [LSIF quick start](lsif_quickstart.md) and [CI configuration](adding_lsif_to_workflows.md) guides provide more in depth descriptions of each step and a lot of helpful context that we haven't duplicated in each language guide.
+
+# Languages
+- [Go](#go)
+- [TypeScript and JavaScript](#typescript-and-javascript)
+
+# Go
 
 ## Manual indexing
 
-Install [lsif-go](https://github.com/sourcegraph/lsif-go) with `go get github.com/sourcegraph/lsif-go/cmd/lsif-go` and ensure it's on your path.
+1. Install [lsif-go](https://github.com/sourcegraph/lsif-go) with `go get github.com/sourcegraph/lsif-go/cmd/lsif-go` and ensure it's on your path.
 
-Install [src-cli](https://github.com/sourcegraph/src-cli) with
-```console
-curl -L https://sourcegraph.com/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src
-chmod +x /usr/local/bin/src
-```
-OSX users can replace `linux` with `darwin` in the URL, and by replacing the endpoint with the Sourcegraph instance you intend to upload to you can guarantee tool compatibility. See the above linked repo for more info and Windows instructions.
+1. Install the [Sourcegraph CLI](https://github.com/sourcegraph/src-cli) with
+   ```console
+   curl -L https://sourcegraph.com/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src
+   chmod +x /usr/local/bin/src
+   ```
+   - **macOS**: replace `linux` with `darwin` in the URL
+   - **Windows**: visit [the CLI's repo](https://github.com/sourcegraph/src-cli) for further instructions
 
-Now `cd` into your Go project's root (where the go.mod file lives, if you have one) and run the following:
+1. `cd` into your Go project's root (where the go.mod file lives, if you have one) and run:
 ```console
 lsif-go # generates a file named dump.lsif
-# for private instances
-src -endpoint=$SRC_ENDPOINT lsif upload
-# for public instances
-src lsif upload -github-token=$GITHUB_TOKEN
 ```
-To upload LSIF data to the public sourcegraph.com instance, you must prove ownership of the repository with a GitHub token.
+
+1. Upload the data to a Sourcegraph instance with
+   ```console
+   # for private instances
+   src -endpoint=<your sourcegraph endpoint> lsif upload
+   # for public instances
+   src lsif upload -github-token=<your github token>
+   ```
+   Visit the [LSIF quickstart](./lsif_quickstart.md) for more information about the upload command.
 
 The upload command will provide a URL you can visit to see the upload's status, and when it's done you can visit the repo and check out the difference in code navigation quality! To troubleshoot issues, visit the more in depth [LSIF quickstart](./lsif_quickstart.md) guide and check out the documentation for the `lsif-go` and `src-cli` tools.
 
@@ -38,8 +47,7 @@ Here's some examples in a couple popular frameworks, just substitute the indexer
 jobs:
   lsif-go:
     runs-on: ubuntu-latest
-    # TODO: pin that container version!
-    container: sourcegraph/lsif-go
+    container: sourcegraph/lsif-go:latest
     steps:
       - uses: actions/checkout@v1
       - name: Generate LSIF data
@@ -53,8 +61,7 @@ jobs:
 jobs:
   lsif-go:
     docker:
-      # TODO: pin that container version!
-      - image: sourcegraph/lsif-go
+      - image: sourcegraph/lsif-go:latest
     steps:
       - checkout
       - run: lsif-go
@@ -75,9 +82,8 @@ jobs:
   include:
     - stage: lsif-go
       script:
-      # TODO: pin that container version!
       - |
-        docker run --rm -v $(pwd):/src -w /src sourcegraph/lsif-go /bin/sh -c \
+        docker run --rm -v $(pwd):/src -w /src sourcegraph/lsif-go:latest /bin/sh -c \
           "lsif-go; src lsif upload -github-token=$GITHUB_TOKEN"
 ```
 
@@ -85,28 +91,33 @@ jobs:
 
 ## Manual indexing
 
-Install [lsif-node](https://github.com/sourcegraph/lsif-node) with `npm install -g @sourcegraph/lsif-tsc` or your favorite method of installing npm packages.
+1. Install [lsif-node](https://github.com/sourcegraph/lsif-node) with `npm install -g @sourcegraph/lsif-tsc` or your favorite method of installing npm packages.
 
-Install [src-cli](https://github.com/sourcegraph/src-cli) with
-```console
-curl -L https://sourcegraph.com/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src
-chmod +x /usr/local/bin/src
-```
-OSX users can replace `linux` with `darwin` in the URL, and by replacing the endpoint with the Sourcegraph instance you intend to upload to you can guarantee tool compatibility. See the above linked repo for more info and Windows instructions.
+1. Install the [Sourcegraph CLI](https://github.com/sourcegraph/src-cli) with
+   ```console
+   curl -L https://sourcegraph.com/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src
+   chmod +x /usr/local/bin/src
+   ```
+   - **macOS**: replace `linux` with `darwin` in the URL
+   - **Windows**: visit [the CLI's repo](https://github.com/sourcegraph/src-cli) for further instructions
 
-Now `cd` into your project's root (where the package.json/tsconfig.json) and run the following:
-```console
-# for typescript projects
-lsif-tsc -p .
-# for javascript projects
-lsif-tsc **/*.js --allowJs --checkJs
+1. `cd` into your project's root (where the package.json/tsconfig.json) and run the following:
+   ```console
+   # for typescript projects
+   lsif-tsc -p .
+   # for javascript projects
+   lsif-tsc **/*.js --allowJs --checkJs
+   ```
+   Check out the tool's documentation if you're having trouble getting `lsif-tsc` to work. It accepts any options `tsc` does, so it shouldn't be too hard to get it running on your project.
 
-# for private instances
-src -endpoint=$SRC_ENDPOINT lsif upload
-# for public instances
-src lsif upload -github-token=$GITHUB_TOKEN
-```
-Check out the tool documentation if you're having trouble getting the `lsif-tsc` to work. It accepts any options `tsc` does, so it shouldn't be too hard to get it running on your project. To upload LSIF data to the public sourcegraph.com instance, you must prove ownership of the repository with a GitHub token.
+1. Upload the data to a Sourcegraph instance with
+   ```console
+   # for private instances
+   src -endpoint=<your sourcegraph endpoint> lsif upload
+   # for public instances
+   src lsif upload -github-token=<your github token>
+   ```
+   Visit the [LSIF quickstart](./lsif_quickstart.md) for more information about the upload command.
 
 The upload command will provide a URL you can visit to see the upload's status, and when it's done you can visit the repo and check out the difference in code navigation quality! To troubleshoot issues, visit the more in depth [LSIF quickstart](./lsif_quickstart.md) guide and check out the documentation for the `lsif-node` and `src-cli` tools.
 
@@ -121,8 +132,7 @@ Here's some examples in a couple popular frameworks, just substitute the indexer
 jobs:
   lsif-node:
     runs-on: ubuntu-latest
-    # TODO: pin that container version!
-    container: sourcegraph/lsif-node
+    container: sourcegraph/lsif-node:latest
     steps:
       - uses: actions/checkout@v1
       - name: Install dependencies
@@ -143,13 +153,11 @@ jobs:
       - name: Install dependencies
         run: <install dependencies>
       - name: Generate LSIF data
-        # TODO: pin that container version!
-        uses: sourcegraph/lsif-node
+        uses: sourcegraph/lsif-node:latest
         with:
           args: lsif-tsc -p .
       - name: Upload LSIF data
-        # TODO: pin that container version!
-        uses: sourcegraph/src-cli
+        uses: sourcegraph/src-cli:latest
         with:
           args: src lsif upload -github-token=${{ secrets.GITHUB_TOKEN }}
 ```
@@ -159,8 +167,7 @@ jobs:
 jobs:
   lsif-node:
     docker:
-      # TODO: pin that container version!
-      - image: sourcegraph/lsif-node
+      - image: sourcegraph/lsif-node:latest
     steps:
       - checkout
       - run: npm install
@@ -189,8 +196,7 @@ jobs:
 jobs:
   lsif-node:
     docker:
-      # TODO: pin that container version!
-      - image: sourcegraph/lsif-node
+      - image: sourcegraph/lsif-node:latest
     steps:
       - checkout
       - restore_cache:
@@ -217,8 +223,7 @@ jobs:
   include:
     - stage: lsif-node
       script:
-      # TODO: pin that container version!
       - |
-        docker run --rm -v $(pwd):/src -w /src sourcegraph/lsif-node /bin/sh -c \
+        docker run --rm -v $(pwd):/src -w /src sourcegraph/lsif-node:latest /bin/sh -c \
           "lsif-tsc -p .; src lsif upload -github-token=$GITHUB_TOKEN"
 ```

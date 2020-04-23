@@ -30,7 +30,7 @@ By spinning up Sourcegraph, you can get code intelligence:
 
 ### On a GitHub pull request
 
-Using our [integrations](../../integration/index.md), all these features will be available everywhere you read code!
+Using our [integrations](../../integration/index.md), all code intelligence features are available everywhere you read code!
 
 <img src="img/CodeReview.gif" width="450" style="margin-left:0;margin-right:0;"/>
 
