@@ -4,18 +4,22 @@
 
 ## What are Campaigns?
 
-Campaigns are part of [Sourcegraph code change management](https://about.sourcegraph.com/product/code-change-management) and let you make large-scale code changes across many repositories and different code hosts.
-
-You provide the code to make the change and Campaigns provide the plumbing to turn it into a large-scale code change campaign and monitor its progress.
-
-<div style="max-width: 400px;" class="mx-auto">
+<div style="max-width: 300px;" class="float-none float-xl-right ml-xl-3 mx-auto">
   <figure class="figure">
     <div class="figure-img">
-    <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/go_mod_tidy_campaign.png" width="500px"/>
+      <a href="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/go_mod_tidy_campaign.png">
+        <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/go_mod_tidy_campaign.png" width="500px"/>
+      </a>
     </div>
     <figcaption class="figure-caption text-center">Campaign to run <code>go mod tidy</code> in all Go projects.</figcaption>
   </figure>
 </div>
+
+Campaigns are part of [Sourcegraph code change management](https://about.sourcegraph.com/product/code-change-management) and let you make large-scale code changes across many repositories and different code hosts.
+
+You provide the code to make the change and Campaigns provide the plumbing to turn it into a large-scale code change campaign and monitor its progress.
+
+<div class="clearfix"></div>
 
 ## Are you a first time user of Campaigns?
 
@@ -34,16 +38,18 @@ Campaigns allow you to **leverage Sourcegraph's search powers** and **execute co
 
 The created set of patches can then be turned into multiple **changesets** (a generic name for what some code hosts call _pull requests_ and others _merge requests_) on different code hosts by creating a **campaign**.
 
-Once the campaign is created, you can track the **review state, CI status and open/closed/merged lifecycle of each changeset in the Sourcegraph UI**.
-
-<div style="max-width: 450px;" class="mx-auto">
+<div style="max-width: 300px;" class="float-none float-xl-right ml-xl-3 mx-auto">
   <figure class="figure">
     <div class="figure-img">
-      <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/manual_campaign.png" />
+      <a href="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/manual_campaign.png">
+        <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/manual_campaign.png" />
+      </a>
     </div>
     <figcaption class="figure-caption text-right">A campaign tracking multiple changesets in different repositories.</figcaption>
   </figure>
 </div>
+
+Once the campaign is created, you can track the **review state, CI status and open/closed/merged lifecycle of each changeset in the Sourcegraph UI**.
 
 You should use campaigns if you want to
 
@@ -51,6 +57,8 @@ You should use campaigns if you want to
 * keep track of a large number of pull requests and their status on GitHub or Bitbucket Server instances.
 * execute commands to upgrade dependencies in multiple repositories.
 * use Sourcegraph's search and replace matches by running code in the matched repositories.
+
+<div class="clearfix"></div>
 
 ## How it works
 
