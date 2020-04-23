@@ -24,4 +24,4 @@ deploy:
   skip_cleanup: true
   on:
     tags: true
-    condition: "$TRAVIS_OS_NAME = linux"
+    condition: "$TRAVIS_OS_NAME = linux && $TRAVIS_TAG != latest"
