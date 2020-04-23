@@ -5,6 +5,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -51,7 +52,7 @@ func (c *Container) validate() error {
 	}
 	for _, g := range c.Groups {
 		if err := g.validate(); err != nil {
-			return err
+			return fmt.Errorf("group %q: %v", g.Title, err)
 		}
 	}
 	return nil
@@ -79,9 +80,9 @@ func (g Group) validate() error {
 	if g.Title != upperFirst(g.Title) || g.Title == withPeriod(g.Title) {
 		return fmt.Errorf("Group.Title must start with an uppercase letter and not end with a period; found \"%s\"", g.Title)
 	}
-	for _, r := range g.Rows {
+	for i, r := range g.Rows {
 		if err := r.validate(); err != nil {
-			return err
+			return fmt.Errorf("row %d: %v", i, err)
 		}
 	}
 	return nil
@@ -96,7 +97,7 @@ func (r Row) validate() error {
 	}
 	for _, o := range r {
 		if err := o.validate(); err != nil {
-			return err
+			return fmt.Errorf("observable %q: %v", o.Name, err)
 		}
 	}
 	return nil
@@ -161,6 +162,33 @@ type Observable struct {
 	// something without at least a warning alert being defined.
 	Warning, Critical Alert
 
+	// PossibleSolutions is Markdown describing possible solutions in the event that the alert is
+	// firing. If there is no clear potential resolution, "none" must be explicitly stated.
+	//
+	// Contacting support should not be mentioned as part of a possible solution, as it is
+	// communicated elsewhere.
+	//
+	// To make writing the Markdown more friendly in Go, string literals like this:
+	//
+	// 	Observable{
+	// 		PossibleSolutions: `
+	// 			- Foobar 'some code'
+	// 		`
+	// 	}
+	//
+	// Becomes:
+	//
+	// 	- Foobar `some code`
+	//
+	// In other words:
+	//
+	// 1. The preceding newline is removed.
+	// 2. The indentation in the string literal is removed (based on the last line).
+	// 3. Single quotes become backticks.
+	// 4. The last line (which is all indention) is removed.
+	//
+	PossibleSolutions string
+
 	// PanelOptions describes some options for how to render the metric in the Grafana panel.
 	PanelOptions panelOptions
 }
@@ -180,6 +208,16 @@ func (o Observable) validate() error {
 	}
 	if err := o.Critical.validate(); err != nil && !o.Critical.isEmpty() {
 		return fmt.Errorf("Critical: %v", err)
+	}
+	if l := strings.ToLower(o.PossibleSolutions); strings.Contains(l, "contact support") || strings.Contains(l, "contact us") {
+		return fmt.Errorf("PossibleSolutions: should not include mentions of contacting support")
+	}
+	if o.PossibleSolutions == "" {
+		return fmt.Errorf(`PossibleSolutions: must list solutions or "none"`)
+	} else if o.PossibleSolutions != "none" {
+		if _, err := goMarkdown(o.PossibleSolutions); err != nil {
+			return fmt.Errorf("PossibleSolutions: %v", err)
+		}
 	}
 	return nil
 }
@@ -542,6 +580,21 @@ func (c *Container) dashboard() *sdk.Board {
 	return board
 }
 
+// alertDescription generates an alert description for the specified coontainer's alert.
+func (c *Container) alertDescription(o Observable, alert Alert) string {
+	if alert.isEmpty() {
+		panic("never here")
+	}
+	if alert.GreaterOrEqual != 0 {
+		// e.g. "zoekt-indexserver: 20+ indexed search request errors every 5m by code"
+		return fmt.Sprintf("%s: %v%s+ %s", c.Name, alert.GreaterOrEqual, o.PanelOptions.unitType.short(), o.Description)
+	} else if alert.LessOrEqual != 0 {
+		// e.g. "zoekt-indexserver: less than 20 indexed search requests every 5m by code"
+		return fmt.Sprintf("%s: less than %v%s %s", c.Name, alert.LessOrEqual, o.PanelOptions.unitType.short(), o.Description)
+	}
+	panic("never here")
+}
+
 // promAlertsFile generates the Prometheus rules file which defines our
 // high-level alerting metrics for the container. For more information about
 // how these work, see:
@@ -565,13 +618,12 @@ func (c *Container) promAlertsFile() *promRulesFile {
 					labels["service_name"] = c.Name
 					labels["level"] = level
 					labels["name"] = o.Name
+					labels["description"] = c.alertDescription(o, alert)
 
 					// The alertQuery must contribute a query that returns a value < 1 when it is not
 					// firing, or a value of >= 1 when it is firing.
 					var alertQuery string
 					if alert.GreaterOrEqual != 0 {
-						// e.g. "zoekt-indexserver: 20+ indexed search request errors every 5m by code"
-						labels["description"] = fmt.Sprintf("%s: %v%s+ %s", c.Name, alert.GreaterOrEqual, o.PanelOptions.unitType.short(), o.Description)
 						// By dividing the query value and the greaterOrEqual value, we produce a
 						// value of 1 when the query reaches the greaterOrEqual value and < 1
 						// otherwise. Examples:
@@ -594,8 +646,6 @@ func (c *Container) promAlertsFile() *promRulesFile {
 						}
 						alertQuery = fmt.Sprintf("((%s) >= 0) OR on() vector(%v)", alertQuery, fireOnNan)
 					} else if alert.LessOrEqual != 0 {
-						// e.g. "zoekt-indexserver: less than 20 indexed search requests every 5m by code"
-						labels["description"] = fmt.Sprintf("%s: less than %v%s %s", c.Name, alert.LessOrEqual, o.PanelOptions.unitType.short(), o.Description)
 						//
 						// 	lessOrEqual=50 / query_value=100 == 0.5
 						// 	lessOrEqual=50 / query_value=50 == 1.0
@@ -675,6 +725,78 @@ func withPeriod(s string) string {
 	return s
 }
 
+func generateDocs(containers []*Container) []byte {
+	var b bytes.Buffer
+	fmt.Fprintf(&b, `# Alert solutions
+
+This document contains possible solutions for when you find alerts are firing in Sourcegraph's monitoring.
+If your alert isn't mentioned here, or if the solution doesn't help, [contact us](mailto:support@sourcegraph.com)
+for assistance.
+
+<!-- DO NOT EDIT: generated via: go generate ./monitoring -->
+
+`)
+	for _, c := range containers {
+		for _, g := range c.Groups {
+			for _, r := range g.Rows {
+				for _, o := range r {
+					if o.PossibleSolutions == "none" {
+						continue
+					}
+
+					fmt.Fprintf(&b, "# %s: %s\n\n", c.Name, o.Name)
+
+					fmt.Fprintf(&b, "**Descriptions:**\n")
+					for _, alert := range []Alert{
+						o.Warning,
+						o.Critical,
+					} {
+						if alert.isEmpty() {
+							continue
+						}
+						fmt.Fprintf(&b, "\n- _%s_\n\n", c.alertDescription(o, alert))
+					}
+
+					fmt.Fprintf(&b, "**Possible solutions:**\n\n")
+					possibleSolutions, _ := goMarkdown(o.PossibleSolutions)
+					fmt.Fprintf(&b, "%s\n\n", possibleSolutions)
+				}
+			}
+		}
+	}
+	return b.Bytes()
+}
+
+func goMarkdown(m string) (string, error) {
+	m = strings.TrimPrefix(m, "\n")
+
+	// Replace single quotes with backticks.
+	// Replace escaped single quotes with single quotes.
+	m = strings.Replace(m, `\'`, `$ESCAPED_SINGLE_QUOTE`, -1)
+	m = strings.Replace(m, `'`, "`", -1)
+	m = strings.Replace(m, `$ESCAPED_SINGLE_QUOTE`, "'", -1)
+
+	// Unindent based on the indention of the last line.
+	lines := strings.Split(m, "\n")
+	baseIndention := lines[len(lines)-1]
+	if strings.TrimSpace(baseIndention) == "" {
+		if strings.Contains(baseIndention, " ") {
+			return "", errors.New("Go string literal indention must be tabs")
+		}
+		indentionLevel := strings.Count(baseIndention, "\t")
+		removeIndention := strings.Repeat("\t", indentionLevel+1)
+		for i, l := range lines[:len(lines)-1] {
+			newLine := strings.TrimPrefix(l, removeIndention)
+			if l == newLine {
+				return "", fmt.Errorf("inconsistent indention (line %d %q expected to start with %q)", i, l, removeIndention)
+			}
+			lines[i] = newLine
+		}
+		m = strings.Join(lines[:len(lines)-1], "\n")
+	}
+	return m, nil
+}
+
 var isDev, _ = strconv.ParseBool(os.Getenv("DEV"))
 
 func main() {
@@ -686,6 +808,10 @@ func main() {
 	if !ok {
 		prometheusDir = "../docker-images/prometheus/config/"
 	}
+	docSolutionsFile, ok := os.LookupEnv("DOC_SOLUTIONS_FILE")
+	if !ok {
+		docSolutionsFile = "../doc/admin/observability/alert_solutions.md"
+	}
 
 	reloadValue, ok := os.LookupEnv("RELOAD")
 	if !ok && isDev {
@@ -693,7 +819,7 @@ func main() {
 	}
 	reload, _ := strconv.ParseBool(reloadValue)
 
-	for _, container := range []*Container{
+	containers := []*Container{
 		Frontend(),
 		GitServer(),
 		GitHubProxy(),
@@ -708,7 +834,8 @@ func main() {
 		SyntectServer(),
 		ZoektIndexServer(),
 		ZoektWebServer(),
-	} {
+	}
+	for _, container := range containers {
 		if err := container.validate(); err != nil {
 			log.Fatal(err)
 		}
@@ -754,6 +881,14 @@ func main() {
 	}
 	if reload && grafanaDir != "" && prometheusDir != "" {
 		fmt.Println("Reloaded Prometheus rules & Grafana dashboards")
+	}
+
+	if docSolutionsFile != "" {
+		solutions := generateDocs(containers)
+		err := ioutil.WriteFile(docSolutionsFile, solutions, 0666)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 }
 

@@ -4,7 +4,7 @@ COPY monitoring /go/src/monitoring-generator
 WORKDIR /go/src/monitoring-generator
 RUN CGO_ENABLED=0 go build -o /go/bin/monitoring-generator
 RUN mkdir -p /generated/prometheus
-RUN PROMETHEUS_DIR=/generated/prometheus GRAFANA_DIR='' /go/bin/monitoring-generator
+RUN DOC_SOLUTIONS_FILE='' PROMETHEUS_DIR=/generated/prometheus GRAFANA_DIR='' /go/bin/monitoring-generator
 
 # This Dockerfile is adapted from https://github.com/prometheus/prometheus/blob/v2.15.2/Dockerfile with
 # our own customizations.
