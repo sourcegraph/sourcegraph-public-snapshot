@@ -61,7 +61,7 @@ func (j *Janitor) resetStalled() error {
 	}
 
 	for _, id := range ids {
-		log15.Info("Reset stalled upload", "uploadID", id)
+		log15.Debug("Reset stalled upload", "uploadID", id)
 	}
 
 	return nil
