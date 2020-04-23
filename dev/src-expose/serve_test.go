@@ -154,6 +154,27 @@ func gitInitRepos(t *testing.T, names ...string) string {
 	return root
 }
 
+func TestIgnoreGitSubmodules(t *testing.T) {
+	root, err := ioutil.TempDir("", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { os.RemoveAll(root) })
+
+	if err := os.MkdirAll(filepath.Join(root, "dir"), os.ModePerm); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := ioutil.WriteFile(filepath.Join(root, "dir", ".git"), []byte("ignore me please"), os.ModePerm); err != nil {
+		t.Fatal(err)
+	}
+
+	repos := configureRepos(testLogger(t), root)
+	if len(repos) != 0 {
+		t.Fatalf("expected no repos, got %v", repos)
+	}
+}
+
 func testLogger(t *testing.T) *log.Logger {
 	return log.New(testWriter{t}, "testLogger ", log.LstdFlags)
 }
