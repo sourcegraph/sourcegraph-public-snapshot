@@ -35,7 +35,10 @@ func generate(log *log.Logger) (string, error) {
 	)
 	// If we are using pg9.6 use it locally since it is faster (CI \o/)
 	versionRe := lazyregexp.New(fmt.Sprintf(`\b%s\b`, regexp.QuoteMeta("9.6")))
-	if out, _ := exec.Command("psql", fmt.Sprintf("-c %q", "COPY (SELECT version()) TO STDOUT")).CombinedOutput(); versionRe.Match(out) {
+	cmd := exec.Command("psql", "-c", "COPY (SELECT version()) TO STDOUT")
+	log.Println(cmd.String())
+	if out, _ := cmd.CombinedOutput(); versionRe.Match(out) {
+		log.Println(string(out))
 		dataSource = "dbname=" + dbname
 		run = func(cmd ...string) (string, error) {
 			c := exec.Command(cmd[0], cmd[1:]...)
@@ -45,6 +48,7 @@ func generate(log *log.Logger) (string, error) {
 		}
 		runIgnoreError("dropdb", dbname)
 		defer runIgnoreError("dropdb", dbname)
+
 	} else {
 		log.Printf("Running PostgreSQL 9.6 in docker since local version is %s", strings.TrimSpace(string(out)))
 		if err := exec.Command("docker", "image", "inspect", "postgres:9.6").Run(); err != nil {

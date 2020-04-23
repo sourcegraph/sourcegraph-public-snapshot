@@ -5,8 +5,11 @@ jobs:
   bash-syntax:
     name: ./dev/check/bash-syntax.sh
     env:
-      POSTGRES_HOST: localhost
-      POSTGRES_PORT: '5432'
+      PGHOST: localhost
+      PGPORT: '5416'
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGSSLMODE: disable
     runs-on: ubuntu-latest
     steps:
       - name: '[setup] checkout repository'
@@ -31,14 +34,17 @@ jobs:
           POSTGRES_PASSWORD: postgres
         image: postgres:9.6.17
         ports:
-          - 5432:5432
+          - 5416:5432
         options: --health-cmd pg_isready --health-interval 10s --health-timeout
           5s --health-retries 10
   build:
     name: ./dev/check/build.sh
     env:
-      POSTGRES_HOST: localhost
-      POSTGRES_PORT: '5432'
+      PGHOST: localhost
+      PGPORT: '5416'
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGSSLMODE: disable
     runs-on: ubuntu-latest
     steps:
       - name: '[setup] checkout repository'
@@ -63,14 +69,17 @@ jobs:
           POSTGRES_PASSWORD: postgres
         image: postgres:9.6.17
         ports:
-          - 5432:5432
+          - 5416:5432
         options: --health-cmd pg_isready --health-interval 10s --health-timeout
           5s --health-retries 10
   docsite:
     name: ./dev/check/docsite.sh
     env:
-      POSTGRES_HOST: localhost
-      POSTGRES_PORT: '5432'
+      PGHOST: localhost
+      PGPORT: '5416'
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGSSLMODE: disable
     runs-on: ubuntu-latest
     steps:
       - name: '[setup] checkout repository'
@@ -95,14 +104,17 @@ jobs:
           POSTGRES_PASSWORD: postgres
         image: postgres:9.6.17
         ports:
-          - 5432:5432
+          - 5416:5432
         options: --health-cmd pg_isready --health-interval 10s --health-timeout
           5s --health-retries 10
   go-db-conn-import:
     name: ./dev/check/go-dbconn-import.sh
     env:
-      POSTGRES_HOST: localhost
-      POSTGRES_PORT: '5432'
+      PGHOST: localhost
+      PGPORT: '5416'
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGSSLMODE: disable
     runs-on: ubuntu-latest
     steps:
       - name: '[setup] checkout repository'
@@ -127,14 +139,17 @@ jobs:
           POSTGRES_PASSWORD: postgres
         image: postgres:9.6.17
         ports:
-          - 5432:5432
+          - 5416:5432
         options: --health-cmd pg_isready --health-interval 10s --health-timeout
           5s --health-retries 10
   broken-urls:
     name: ./dev/check/broken-urls.bash
     env:
-      POSTGRES_HOST: localhost
-      POSTGRES_PORT: '5432'
+      PGHOST: localhost
+      PGPORT: '5416'
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGSSLMODE: disable
     runs-on: ubuntu-latest
     steps:
       - name: '[setup] checkout repository'
@@ -159,14 +174,17 @@ jobs:
           POSTGRES_PASSWORD: postgres
         image: postgres:9.6.17
         ports:
-          - 5432:5432
+          - 5416:5432
         options: --health-cmd pg_isready --health-interval 10s --health-timeout
           5s --health-retries 10
   check-owners:
     name: ./dev/check/check-owners.sh
     env:
-      POSTGRES_HOST: localhost
-      POSTGRES_PORT: '5432'
+      PGHOST: localhost
+      PGPORT: '5416'
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGSSLMODE: disable
     runs-on: ubuntu-latest
     steps:
       - name: '[setup] checkout repository'
@@ -191,14 +209,17 @@ jobs:
           POSTGRES_PASSWORD: postgres
         image: postgres:9.6.17
         ports:
-          - 5432:5432
+          - 5416:5432
         options: --health-cmd pg_isready --health-interval 10s --health-timeout
           5s --health-retries 10
   go-enterprise-import:
     name: ./dev/check/go-enterprise-import.sh
     env:
-      POSTGRES_HOST: localhost
-      POSTGRES_PORT: '5432'
+      PGHOST: localhost
+      PGPORT: '5416'
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGSSLMODE: disable
     runs-on: ubuntu-latest
     steps:
       - name: '[setup] checkout repository'
@@ -223,14 +244,17 @@ jobs:
           POSTGRES_PASSWORD: postgres
         image: postgres:9.6.17
         ports:
-          - 5432:5432
+          - 5416:5432
         options: --health-cmd pg_isready --health-interval 10s --health-timeout
           5s --health-retries 10
   go-generate:
     name: ./dev/check/go-generate.sh
     env:
-      POSTGRES_HOST: localhost
-      POSTGRES_PORT: '5432'
+      PGHOST: localhost
+      PGPORT: '5416'
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGSSLMODE: disable
     runs-on: ubuntu-latest
     steps:
       - name: '[setup] checkout repository'
@@ -255,14 +279,17 @@ jobs:
           POSTGRES_PASSWORD: postgres
         image: postgres:9.6.17
         ports:
-          - 5432:5432
+          - 5416:5432
         options: --health-cmd pg_isready --health-interval 10s --health-timeout
           5s --health-retries 10
   go-lint:
     name: ./dev/check/go-lint.sh
     env:
-      POSTGRES_HOST: localhost
-      POSTGRES_PORT: '5432'
+      PGHOST: localhost
+      PGPORT: '5416'
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGSSLMODE: disable
     runs-on: ubuntu-latest
     steps:
       - name: '[setup] checkout repository'
@@ -287,14 +314,17 @@ jobs:
           POSTGRES_PASSWORD: postgres
         image: postgres:9.6.17
         ports:
-          - 5432:5432
+          - 5416:5432
         options: --health-cmd pg_isready --health-interval 10s --health-timeout
           5s --health-retries 10
   gofmt:
     name: ./dev/check/gofmt.sh
     env:
-      POSTGRES_HOST: localhost
-      POSTGRES_PORT: '5432'
+      PGHOST: localhost
+      PGPORT: '5416'
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGSSLMODE: disable
     runs-on: ubuntu-latest
     steps:
       - name: '[setup] checkout repository'
@@ -319,14 +349,17 @@ jobs:
           POSTGRES_PASSWORD: postgres
         image: postgres:9.6.17
         ports:
-          - 5432:5432
+          - 5416:5432
         options: --health-cmd pg_isready --health-interval 10s --health-timeout
           5s --health-retries 10
   no-localhost-guard:
     name: ./dev/check/no-localhost-guard.sh
     env:
-      POSTGRES_HOST: localhost
-      POSTGRES_PORT: '5432'
+      PGHOST: localhost
+      PGPORT: '5416'
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGSSLMODE: disable
     runs-on: ubuntu-latest
     steps:
       - name: '[setup] checkout repository'
@@ -351,14 +384,17 @@ jobs:
           POSTGRES_PASSWORD: postgres
         image: postgres:9.6.17
         ports:
-          - 5432:5432
+          - 5416:5432
         options: --health-cmd pg_isready --health-interval 10s --health-timeout
           5s --health-retries 10
   template-inlines:
     name: ./dev/check/template-inlines.sh
     env:
-      POSTGRES_HOST: localhost
-      POSTGRES_PORT: '5432'
+      PGHOST: localhost
+      PGPORT: '5416'
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGSSLMODE: disable
     runs-on: ubuntu-latest
     steps:
       - name: '[setup] checkout repository'
@@ -383,14 +419,17 @@ jobs:
           POSTGRES_PASSWORD: postgres
         image: postgres:9.6.17
         ports:
-          - 5432:5432
+          - 5416:5432
         options: --health-cmd pg_isready --health-interval 10s --health-timeout
           5s --health-retries 10
   todo-security:
     name: ./dev/check/todo-security.sh
     env:
-      POSTGRES_HOST: localhost
-      POSTGRES_PORT: '5432'
+      PGHOST: localhost
+      PGPORT: '5416'
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGSSLMODE: disable
     runs-on: ubuntu-latest
     steps:
       - name: '[setup] checkout repository'
@@ -415,14 +454,17 @@ jobs:
           POSTGRES_PASSWORD: postgres
         image: postgres:9.6.17
         ports:
-          - 5432:5432
+          - 5416:5432
         options: --health-cmd pg_isready --health-interval 10s --health-timeout
           5s --health-retries 10
   yarn-deduplicate:
     name: ./dev/check/yarn-deduplicate.sh
     env:
-      POSTGRES_HOST: localhost
-      POSTGRES_PORT: '5432'
+      PGHOST: localhost
+      PGPORT: '5416'
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGSSLMODE: disable
     runs-on: ubuntu-latest
     steps:
       - name: '[setup] checkout repository'
@@ -447,14 +489,17 @@ jobs:
           POSTGRES_PASSWORD: postgres
         image: postgres:9.6.17
         ports:
-          - 5432:5432
+          - 5416:5432
         options: --health-cmd pg_isready --health-interval 10s --health-timeout
           5s --health-retries 10
   shfmt:
     name: ./dev/check/shfmt.sh
     env:
-      POSTGRES_HOST: localhost
-      POSTGRES_PORT: '5432'
+      PGHOST: localhost
+      PGPORT: '5416'
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGSSLMODE: disable
     runs-on: ubuntu-latest
     steps:
       - name: '[setup] checkout repository'
@@ -479,14 +524,17 @@ jobs:
           POSTGRES_PASSWORD: postgres
         image: postgres:9.6.17
         ports:
-          - 5432:5432
+          - 5416:5432
         options: --health-cmd pg_isready --health-interval 10s --health-timeout
           5s --health-retries 10
   shellcheck:
     name: ./dev/check/shellcheck.sh
     env:
-      POSTGRES_HOST: localhost
-      POSTGRES_PORT: '5432'
+      PGHOST: localhost
+      PGPORT: '5416'
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGSSLMODE: disable
     runs-on: ubuntu-latest
     steps:
       - name: '[setup] checkout repository'
@@ -511,14 +559,17 @@ jobs:
           POSTGRES_PASSWORD: postgres
         image: postgres:9.6.17
         ports:
-          - 5432:5432
+          - 5416:5432
         options: --health-cmd pg_isready --health-interval 10s --health-timeout
           5s --health-retries 10
   licenses:
     name: ./dev/check/licenses.sh
     env:
-      POSTGRES_HOST: localhost
-      POSTGRES_PORT: '5432'
+      PGHOST: localhost
+      PGPORT: '5416'
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGSSLMODE: disable
     runs-on: ubuntu-latest
     steps:
       - name: '[setup] checkout repository'
@@ -543,6 +594,6 @@ jobs:
           POSTGRES_PASSWORD: postgres
         image: postgres:9.6.17
         ports:
-          - 5432:5432
+          - 5416:5432
         options: --health-cmd pg_isready --health-interval 10s --health-timeout
           5s --health-retries 10
