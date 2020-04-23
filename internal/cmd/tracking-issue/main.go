@@ -23,28 +23,23 @@ import (
 func main() {
 	token := flag.String("token", os.Getenv("GITHUB_TOKEN"), "GitHub personal access token")
 	org := flag.String("org", "sourcegraph", "GitHub organization to list issues from")
-	milestone := flag.String("milestone", "", "GitHub milestone to filter issues by")
-	labels := flag.String("labels", "", "Comma separated list of labels to filter issues by")
-	update := flag.Bool("update", false, "Update GitHub tracking issue in-place")
+	dry := flag.Bool("dry", false, "If true, do not update GitHub tracking issues in-place, but print them to stdout")
+	verbose := flag.Bool("verbose", false, "If true, print the resulting tracking issue bodies to stdout")
 
 	flag.Parse()
 
-	if err := run(*token, *org, *milestone, *labels, *update); err != nil {
+	if err := run(*token, *org, *dry, *verbose); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func run(token, org, milestone, labels string, update bool) (err error) {
+func run(token, org string, dry, verbose bool) (err error) {
 	if token == "" {
 		return fmt.Errorf("no -token given")
 	}
 
 	if org == "" {
 		return fmt.Errorf("no -org given")
-	}
-
-	if milestone == "" {
-		return fmt.Errorf("no -milestone given")
 	}
 
 	ctx := context.Background()
@@ -59,12 +54,17 @@ func run(token, org, milestone, labels string, update bool) (err error) {
 		return err
 	}
 
+	if len(issues) == 0 {
+		log.Printf("No tracking issues found. Exiting.")
+		return nil
+	}
+
 	tracking := make([]*TrackingIssue, 0, len(issues))
 	for _, issue := range issues {
 		tracking = append(tracking, &TrackingIssue{Issue: issue})
 	}
 
-	err = loadTrackingIssues(ctx, cli, tracking)
+	err = loadTrackingIssues(ctx, cli, org, tracking)
 	if err != nil {
 		return err
 	}
@@ -73,31 +73,40 @@ func run(token, org, milestone, labels string, update bool) (err error) {
 	for _, issue := range tracking {
 		if updated, err := issue.UpdateWork(issue.Workloads().Markdown()); err != nil {
 			log.Printf("failed to patch work section in %q %s: %v", issue.Title, issue.URL, err)
-		} else if updated {
+		} else if !updated {
+			log.Printf("%q %s not modified.", issue.Title, issue.URL)
+		} else if !dry {
+			log.Printf("%q %s modified", issue.Title, issue.URL)
 			toUpdate = append(toUpdate, issue.Issue)
+		} else {
+			log.Printf("%q %s modified, but not updated due to -dry=true.", issue.Title, issue.URL)
+		}
+
+		if verbose {
+			log.Printf("%q %s body\n%s\n\n", issue.Title, issue.URL, issue.Body)
 		}
 	}
 
-	return updateIssues(ctx, cli, toUpdate)
+	if len(toUpdate) > 0 {
+		return updateIssues(ctx, cli, toUpdate)
+	}
+
+	return nil
 }
 
 func updateIssues(ctx context.Context, cli *graphql.Client, issues []*Issue) (err error) {
-	if len(issues) == 0 {
-		return nil
-	}
-
 	var q bytes.Buffer
 	q.WriteString("mutation(")
 
 	for _, issue := range issues {
-		fmt.Fprintf(&q, "$%dinput: UpdateIssueInput!,", issue.Number)
+		fmt.Fprintf(&q, "$issue%dInput: UpdateIssueInput!,", issue.Number)
 	}
 
 	q.Truncate(q.Len() - 1)
 	q.WriteString(") {")
 
 	for _, issue := range issues {
-		fmt.Fprintf(&q, "issue%[1]d: updateIssue(input: $%[1]dinput) { issue { updatedAt } }\n", issue.Number)
+		fmt.Fprintf(&q, "issue%[1]d: updateIssue(input: $issue%[1]dInput) { issue { updatedAt } }\n", issue.Number)
 	}
 
 	q.WriteString("}")
@@ -110,7 +119,7 @@ func updateIssues(ctx context.Context, cli *graphql.Client, issues []*Issue) (er
 	}
 
 	for _, issue := range issues {
-		r.Var(fmt.Sprintf("%dinput", issue.Number), &UpdateIssueInput{
+		r.Var(fmt.Sprintf("issue%dInput", issue.Number), &UpdateIssueInput{
 			ID:   issue.ID,
 			Body: issue.Body,
 		})
@@ -133,7 +142,7 @@ func patch(s, replacement, opening, closing string) (string, error) {
 	return s[:start+len(opening)] + replacement + s[end:], nil
 }
 
-type Workloads map[string]*Workloads
+type Workloads map[string]*Workload
 
 func (ws Workloads) Markdown() string {
 	assignees := make([]string, 0, len(ws))
@@ -273,7 +282,7 @@ func (t *TrackingIssue) Workloads() Workloads {
 		if issue.Milestone == t.Milestone {
 			estimate := Estimate(issue.Labels)
 			w.Days += Days(estimate)
-		} else {
+		} else if issue.Milestone != "" {
 			issue.Deprioritised = true
 		}
 	}
@@ -495,6 +504,7 @@ func Emoji(category string) string {
 		return "🧶"
 	case "spike":
 		return "🕵️"
+
 	case "bug":
 		return "🐛"
 	case "security":
@@ -538,72 +548,89 @@ type search struct {
 	Nodes []searchNode
 }
 
-func loadTrackingIssues(ctx context.Context, cli *graphql.Client, issues []*TrackingIssue) error {
-	var (
-		milestonedCount    = 100
-		demilestonedCount  = 100
-		milestonedCursor   string
-		demilestonedCursor string
-		milestonedQuery    = listIssuesSearchQuery(org, milestone, labels, false)
-		demilestonedQuery  = listIssuesSearchQuery(org, milestone, labels, true)
-	)
+func loadTrackingIssues(ctx context.Context, cli *graphql.Client, org string, issues []*TrackingIssue) error {
+	var q bytes.Buffer
+	q.WriteString("query(\n")
+
+	type query struct {
+		issue  *TrackingIssue
+		count  int
+		cursor string
+		query  string
+	}
+
+	queries := map[string]*query{}
+	for _, issue := range issues {
+		if issue.Milestone == "" {
+			name := "tracking" + strconv.Itoa(issue.Number)
+			fmt.Fprintf(&q, "$%[1]sCount: Int!, $%[1]sCursor: String, $%[1]sQuery: String!,\n", name)
+			queries[strconv.Itoa(issue.Number)] = &query{
+				issue: issue,
+				count: 100,
+				query: listIssuesSearchQuery(org, "", issue.Labels, false),
+			}
+		} else {
+			milestoned := "tracking" + strconv.Itoa(issue.Number) + "Milestoned"
+			fmt.Fprintf(&q, "$%[1]sCount: Int!, $%[1]sCursor: String, $%[1]sQuery: String!,\n", milestoned)
+
+			queries[milestoned] = &query{
+				issue: issue,
+				count: 100,
+				query: listIssuesSearchQuery(org, issue.Milestone, issue.Labels, false),
+			}
+
+			demilestoned := "tracking" + strconv.Itoa(issue.Number) + "Demilestoned"
+			fmt.Fprintf(&q, "$%[1]sCount: Int!, $%[1]sCursor: String, $%[1]sQuery: String!,\n", demilestoned)
+
+			queries[demilestoned] = &query{
+				issue: issue,
+				count: 100,
+				query: listIssuesSearchQuery(org, issue.Milestone, issue.Labels, true),
+			}
+		}
+	}
+
+	q.Truncate(q.Len() - 1) // Remove the trailing comma from the loop above.
+	q.WriteString(") {")
+
+	for query := range queries {
+		q.WriteString(searchGraphQLQuery(query))
+	}
+
+	q.WriteString("}")
 
 	for {
-		var data struct {
-			Milestoned, Demilestoned search
-		}
-
-		var q strings.Builder
-		q.WriteString("query(" +
-			"$demilestonedCount: Int!," +
-			"$demilestonedCursor: String," +
-			"$demilestonedQuery: String!," +
-			"$milestonedCount: Int!," +
-			"$milestonedCursor: String," +
-			"$milestonedQuery: String!) {\n")
-
-		q.WriteString(listIssuesGraphQLQuery("milestoned"))
-		q.WriteString(listIssuesGraphQLQuery("demilestoned"))
-
-		q.WriteString("}")
-
 		r := graphql.NewRequest(q.String())
-		r.Var("milestonedCount", milestonedCount)
-		r.Var("demilestonedCount", demilestonedCount)
 
-		if milestonedCursor != "" {
-			r.Var("milestonedCursor", milestonedCursor)
+		for query, args := range queries {
+			r.Var(query+"Count", args.count)
+			r.Var(query+"Query", args.query)
+			if args.cursor != "" {
+				r.Var(query+"Cursor", args.cursor)
+			}
 		}
 
-		if demilestonedCursor != "" {
-			r.Var("demilestonedCursor", demilestonedCursor)
-		}
-
-		r.Var("milestonedQuery", milestonedQuery)
-		r.Var("demilestonedQuery", demilestonedQuery)
+		var data map[string]search
 
 		err := cli.Run(ctx, r, &data)
 		if err != nil {
-			return nil, nil, err
+			return err
 		}
-
-		nodes := append(data.Milestoned.Nodes, data.Demilestoned.Nodes...)
-
-		issues, prs := unmarshalSearchNodes(nodes)
 
 		var hasNextPage bool
-		if data.Milestoned.PageInfo.HasNextPage {
-			hasNextPage = true
-			milestonedCursor = data.Milestoned.PageInfo.EndCursor
-		} else {
-			milestonedCount = 0
-		}
+		for query, s := range data {
+			q := queries[query]
 
-		if data.Demilestoned.PageInfo.HasNextPage {
-			hasNextPage = true
-			demilestonedCursor = data.Demilestoned.PageInfo.EndCursor
-		} else {
-			demilestonedCount = 0
+			if s.PageInfo.HasNextPage {
+				hasNextPage = true
+				q.cursor = s.PageInfo.EndCursor
+			} else {
+				q.count = 0
+			}
+
+			issues, prs := unmarshalSearchNodes(s.Nodes)
+			q.issue.Issues = append(q.issue.Issues, issues...)
+			q.issue.PRs = append(q.issue.PRs, prs...)
 		}
 
 		if !hasNextPage {
@@ -611,33 +638,33 @@ func loadTrackingIssues(ctx context.Context, cli *graphql.Client, issues []*Trac
 		}
 	}
 
-	return issues, prs, nil
+	return nil
 }
 
 func listTrackingIssues(ctx context.Context, cli *graphql.Client, org string) (all []*Issue, _ error) {
 	var q strings.Builder
-	q.WriteString("query($count: Int!, $cursor: String, $query: String!) {\n")
+	q.WriteString("query($trackingCount: Int!, $trackingCursor: String, $trackingQuery: String!) {\n")
 	q.WriteString(searchGraphQLQuery("tracking"))
 	q.WriteString("}")
 
 	r := graphql.NewRequest(q.String())
 
-	r.Var("count", 100)
-	r.Var("query", fmt.Sprintf("org:%q label:tracking is:open", org))
+	r.Var("trackingCount", 100)
+	r.Var("trackingQuery", fmt.Sprintf("org:%q label:tracking is:open", org))
 
 	for {
-		var data struct{ Issues search }
+		var data struct{ Tracking search }
 
 		err := cli.Run(ctx, r, &data)
 		if err != nil {
 			return nil, err
 		}
 
-		issues, _ := unmarshalSearchNodes(data.Issues.Nodes)
+		issues, _ := unmarshalSearchNodes(data.Tracking.Nodes)
 		all = append(all, issues...)
 
-		if data.Issues.PageInfo.HasNextPage {
-			r.Var("cursor", data.Issues.PageInfo.EndCursor)
+		if data.Tracking.PageInfo.HasNextPage {
+			r.Var("trackingCursor", data.Tracking.PageInfo.EndCursor)
 		} else {
 			break
 		}
@@ -762,14 +789,16 @@ func listIssuesSearchQuery(org, milestone string, labels []string, demilestoned 
 
 	fmt.Fprintf(&q, "org:%q", org)
 
-	if demilestoned {
-		fmt.Fprintf(&q, ` -milestone:%q label:"planned/%s"`, milestone, milestone)
-	} else {
-		fmt.Fprintf(&q, " milestone:%q", milestone)
+	if milestone != "" {
+		if demilestoned {
+			fmt.Fprintf(&q, ` -milestone:%q label:"planned/%s"`, milestone, milestone)
+		} else {
+			fmt.Fprintf(&q, " milestone:%q", milestone)
+		}
 	}
 
 	for _, label := range labels {
-		if label != "" {
+		if label != "" && label != "tracking" {
 			fmt.Fprintf(&q, " label:%q", label)
 		}
 	}
