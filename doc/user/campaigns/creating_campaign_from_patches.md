@@ -5,10 +5,26 @@ A campaign can be created from a set of patches, one per repository. For each pa
 Here is the short version for how to create a patch set and turn that into changesets by creating a campaign:
 
 1. Create an action JSON file (e.g. `action.json`) that contains an action definition.
-1. _Optional_: See repositories the action would run over: `src actions scope-query -f action.json`
-1. Create a set of patches by executing the action over repositories: `src actions exec -f action.json > patches.json`
-1. Save the patches in Sourcegraph by creating a patch set: `src campaign patchset create-from-patches < patches.json`
-1. Create a campaign based on the patch set: `src campaigns create -branch=<branch-name> -patchset=<patchset-ID-returned-by-previous-command>`
+1. _Optional_: See repositories the action would run over:
+
+  ```
+  src actions scope-query -f action.json
+  ```
+1. Create a set of patches by executing the action over repositories:
+
+  ```
+  src actions exec -f action.json > patches.json
+  ```
+1. Save the patches in Sourcegraph by creating a patch set:
+
+  ```
+  src campaign patchset create-from-patches < patches.json
+  ```
+1. Create a campaign based on the patch set:
+
+  ```
+  src campaigns create -branch=<branch-name> -patchset=<patchset-ID-returned-by-previous-command>
+  ```
 
 Read on detailed steps and documentation and see "[Actions](./actions.md)" for more information about how to define and execute actions.
 
