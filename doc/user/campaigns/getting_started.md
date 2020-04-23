@@ -12,7 +12,7 @@ Follow these steps to get started with campaigns on your Sourcegraph instance:
 
 1. **Setup the `src` CLI on your machine**: [Installation and setup instructions](https://github.com/sourcegraph/src-cli/#installation).
 
-  Now you're ready to [create a manual campaign](./creating_manual_campaign.md) or to [create a campaign from patches](./creating_campaign_from_patches.md).
+Now you're ready to [create a campaign from patches](./creating_campaign_from_patches.md) or to [create a manual campaign](./creating_manual_campaign.md). Make sure to also take a look at the [**example campaigns**](./examples/index.md).
 
 ---
 
