@@ -1,8 +1,9 @@
-// Command tracking-issue uses the GitHub API to produce an iteration's tracking issue task list.
+// Command tracking-issue uses the GitHub API to maintain open tracking issues.
 
 package main
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"flag"
@@ -68,43 +69,53 @@ func run(token, org, milestone, labels string, update bool) (err error) {
 		return err
 	}
 
+	var toUpdate []*Issue
 	for _, issue := range tracking {
-		updated, err := issue.UpdateWork(issue.Workloads().Markdown())
-		if err != nil {
+		if updated, err := issue.UpdateWork(issue.Workloads().Markdown()); err != nil {
 			log.Printf("failed to patch work section in %q %s: %v", issue.Title, issue.URL, err)
-			continue
-		}
-
-		if !updated {
-			continue
-		}
-
-		if err = updateIssue(cli, issue.Issue); err != nil {
-			log.Printf("failed to update %q %s: %v", issue.Title, issue.URL, err)
-		} else {
-			log.Printf("updated %q %s sucessfully", issue.Title, issue.URL)
+		} else if updated {
+			toUpdate = append(toUpdate, issue.Issue)
 		}
 	}
 
-	return nil
+	return updateIssues(ctx, cli, toUpdate)
 }
 
-func updateIssue(cli *graphql.Client, issue *Issue) (err error) {
-	r := graphql.NewRequest(`mutation($input: UpdateIssueInput!) {
-		updateIssue(input: $input) { issue { updatedAt } }
-	}`)
+func updateIssues(ctx context.Context, cli *graphql.Client, issues []*Issue) (err error) {
+	if len(issues) == 0 {
+		return nil
+	}
+
+	var q bytes.Buffer
+	q.WriteString("mutation(")
+
+	for _, issue := range issues {
+		fmt.Fprintf(&q, "$%dinput: UpdateIssueInput!,", issue.Number)
+	}
+
+	q.Truncate(q.Len() - 1)
+	q.WriteString(") {")
+
+	for _, issue := range issues {
+		fmt.Fprintf(&q, "issue%[1]d: updateIssue(input: $%[1]dinput) { issue { updatedAt } }\n", issue.Number)
+	}
+
+	q.WriteString("}")
+
+	r := graphql.NewRequest(q.String())
 
 	type UpdateIssueInput struct {
 		ID   string `json:"id"`
 		Body string `json:"body"`
 	}
 
-	r.Var("input", &UpdateIssueInput{
-		ID:   issue.ID,
-		Body: issue.Body,
-	})
+	for _, issue := range issues {
+		r.Var(fmt.Sprintf("%dinput", issue.Number), &UpdateIssueInput{
+			ID:   issue.ID,
+			Body: issue.Body,
+		})
+	}
 
-	ctx := context.Background()
 	return cli.Run(ctx, r, nil)
 }
 
