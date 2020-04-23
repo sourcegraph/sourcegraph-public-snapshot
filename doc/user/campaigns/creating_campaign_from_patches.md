@@ -4,29 +4,20 @@ A campaign can be created from a set of patches, one per repository. For each pa
 
 Here is the short version for how to create a patch set and turn that into changesets by creating a campaign:
 
-1. Create an action JSON file (e.g. `action.json`) that contains an action definition.
+1. Create an action definition and save to a JSON file (e.g. `action.json`).
 1. _Optional_: See repositories the action would run over:
 
   ```
   src actions scope-query -f action.json
   ```
-1. Create a set of patches by executing the action over repositories:
+1. Create a set of patches by executing the action:
 
   ```
-  src actions exec -f action.json > patches.json
+  src actions exec -f action.json -create-patchset
   ```
-1. Save the patches in Sourcegraph by creating a patch set:
+1. Click on the URL that's printed to create a campaign.
 
-  ```
-  src campaign patchset create-from-patches < patches.json
-  ```
-1. Create a campaign based on the patch set:
-
-  ```
-  src campaigns create -branch=<branch-name> -patchset=<patchset-ID-returned-by-previous-command>
-  ```
-
-Read on detailed steps and documentation and see "[Actions](./actions.md)" for more information about how to define and execute actions.
+Read on for more detailed steps and documentation and see "[Actions](./actions.md)" for more information about how to define and execute actions.
 
 ## Requirements
 
@@ -34,9 +25,7 @@ If you have not done so already, first [install](https://github.com/sourcegraph/
 
 ## 1. Defining an action
 
-The first thing we need is a definition of an "action". An action contains a list of steps to run in each repository returned by the results of the `scopeQuery` search string.
-
-There are two types of steps: `docker` and `command`. See "[Actions](./actions.md)" for more information.
+The first thing we need is a definition of an "action". An action contains a list of steps to run in each repository returned by the results of the `scopeQuery` search string. There are two types of steps: `docker` and `command`. See "[Actions](./actions.md)" for more information.
 
 Here is an example of a multi-step action definition using the `docker` and `command` types:
 
@@ -54,10 +43,6 @@ Here is an example of a multi-step action definition using the `docker` and `com
     },
     {
       "type": "docker",
-      "dockerfile": "FROM alpine:3 \n CMD find /work -iname '*.md' -type f | xargs -n 1 sed -i s/this/that/g"
-    },
-    {
-      "type": "docker",
       "image": "golang:1.13-alpine",
       "args": ["go", "fix", "/work/..."]
     }
@@ -65,25 +50,25 @@ Here is an example of a multi-step action definition using the `docker` and `com
 }
 ```
 
+**Save that definition in a file called `action.json` (or any other name of your choosing).**
+
 This action will be executed for each repository that has `go-` in its name and doesn't have an `INSTALL.md` file.
 
-1. The first step (a `command` step) creates an `INSTALL.md` file in the root directory of each repository by running `sh` in a temporary copy of each repository. **This is executed on the machine on which `src` is being run.** Note that the first element in `"args"` is the command itself.
+- **The first step** (a `command` step) creates an `INSTALL.md` file in the root directory of each repository by running `sh` in a temporary copy of each repository. This is executed on the machine on which `src` is being run.
+- **The second step**, again a `"command"` step, runs the `sed` command to replace text in the `README.md` file in the root of each repository (the `-i ''` argument is only necessary for BSD versions of `sed` that usually come with macOS).
 
-2. The second step, again a `"command"` step, runs the `sed` command to replace text in the `README.md` file in the root of each repository (the `-i ''` argument is only necessary for BSD versions of `sed` that usually come with macOS). Please note that the executed command is simply `sed` which means its arguments are _not_ expanded, as they would be in a shell. To achieve that, execute the `sed` as part of a shell invocation (using `sh -c` and passing in a single argument, for example, like in the first step).
+    > NOTE: The executed command is simply `sed` which means its arguments are _not_ expanded, as they would be in a shell. To achieve that, execute the `sed` as part of a shell invocation (using `sh -c` and passing in a single argument, for example, like in the first step).
 
-3. The third step builds a Docker image from the specified `"dockerfile"` and starts a container with this image in which the repository is mounted under `/work`.
-
-4. The fourth step starts a Docker container based on the `golang:1.13-alpine` image and runs `go fix /work/...` in it.
+- **The third step** starts a Docker container based on the `golang:1.13-alpine` image and runs `go fix /work/...` in it.
 
 As you can see from these examples, the "output" of an action is the modified, local copy of a repository.
 
-Save that definition in a file called `action.json` (or any other name of your choosing).
 
 ## 2. Executing an action to produce patches
 
 With our action file defined, we can now execute it:
 
-```sh
+```
 src actions exec -f action.json
 ```
 
@@ -97,14 +82,8 @@ This command is going to:
 
 The output, a set of patches, can either be saved into a file by redirecting it:
 
-```sh
-src actions exec -f action.json > patches.json
 ```
-
-Or it can be piped straight into the next command we're going to use to save the patches on the Sourcegraph instance:
-
-```sh
-src actions exec -f action.json | src campaign patchset create-from-patches
+src actions exec -f action.json > patches.json
 ```
 
 ## 3. Creating a patch set from patches
@@ -113,14 +92,20 @@ The next step is to save the set of patches on the Sourcegraph instance so they 
 
 To do that, run:
 
-```sh
+```
 src campaign patchset create-from-patches < patches.json
 ```
 
-Or, again, pipe the patches directly into it:
+Or leverage the cache of `src action exec` and re-run the command to pipe the patches directly into `src campaign patchset create-from-patches`:
 
-```sh
+```
 src actions exec -f action.json | src campaign patchset create-from-patches
+```
+
+You can also use `src action exec` with the `-create-patchset` flag, which is equivalent to the last command:
+
+```
+src actions exec -f action.json -create-patchset
 ```
 
 Once completed, the output will contain:
@@ -130,16 +115,20 @@ Once completed, the output will contain:
 
 ## 4. Publishing a campaign
 
-If you're happy with the preview of the campaign, it's time to trigger the creation of changesets (pull requests) on the code host(s) by creating and publishing the campaign:
+If you're happy with the preview of the campaign, it's time to trigger the creation of changesets (pull requests) on the code host(s).
 
-```sh
+That is done by creating and publishing a campaign with the given patchset.
+
+You can either do that in the Sourcegraph UI or on the CLI:
+
+```
 src campaigns create -name='My campaign name' \
-   -desc='My first CLI-created campaign' \
-   -patchset=Q2FtcGFpZ25QbGFuOjg= \
-   -branch=my-first-campaign
+  -desc='My first CLI-created campaign' \
+  -patchset=Q2FtcGFpZ25QbGFuOjg= \
+  -branch=my-first-campaign
 ```
 
-Creating this campaign will asynchronously create a pull request for each repository that has a patch in the patch set. You can check the progress of campaign completion by viewing the campaign on your Sourcegraph instance.
+Creating this campaign will asynchronously create a changeset (pull request) for each repository that has a patch in the patch set. You can check the progress of campaign completion by viewing the campaign on your Sourcegraph instance.
 
 The `-branch` flag specifies the branch name that will be used for each pull request. If a branch with that name already exists for a repository, a fallback will be generated by appending a counter at the end of the name, e.g.: `my-first-campaign-1`.
 
