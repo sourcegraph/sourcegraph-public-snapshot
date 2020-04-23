@@ -2,48 +2,17 @@ name: Check
 on:
   - push
 jobs:
-  build:
-    name: ./dev/check/build.sh
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: asdf-vm/actions/setup@v1.0.0
-      - name: '[setup] (asdf) configure .nvmrc'
-        run: bash -c "echo 'legacy_version_file = yes' > ~/.asdfrc"
-      - name: '[setup] (asdf) install nodejs plugin'
-        run: asdf plugin-add nodejs
-      - name: '[setup] (asdf) import nodejs keyring'
-        run: bash ~/.asdf/plugins/nodejs/bin/import-release-team-keyring
-      - name: '[setup] (asdf) add plugins'
-        uses: asdf-vm/actions/plugins-add@v1.0.0
-      - name: '[setup] (asdf) install tools'
-        run: asdf install
-      - name: ./dev/check/build.sh
-        run: ./dev/check/build.sh
-  docsite:
-    name: ./dev/check/docsite.sh
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: asdf-vm/actions/setup@v1.0.0
-      - name: '[setup] (asdf) configure .nvmrc'
-        run: bash -c "echo 'legacy_version_file = yes' > ~/.asdfrc"
-      - name: '[setup] (asdf) install nodejs plugin'
-        run: asdf plugin-add nodejs
-      - name: '[setup] (asdf) import nodejs keyring'
-        run: bash ~/.asdf/plugins/nodejs/bin/import-release-team-keyring
-      - name: '[setup] (asdf) add plugins'
-        uses: asdf-vm/actions/plugins-add@v1.0.0
-      - name: '[setup] (asdf) install tools'
-        run: asdf install
-      - name: ./dev/check/docsite.sh
-        run: ./dev/check/docsite.sh
   bash-syntax:
     name: ./dev/check/bash-syntax.sh
+    env:
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: '5432'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: asdf-vm/actions/setup@v1.0.0
+      - name: '[setup] checkout repository'
+        uses: actions/checkout@v2
+      - name: '[setup] install asdf'
+        uses: asdf-vm/actions/setup@v1.0.0
       - name: '[setup] (asdf) configure .nvmrc'
         run: bash -c "echo 'legacy_version_file = yes' > ~/.asdfrc"
       - name: '[setup] (asdf) install nodejs plugin'
@@ -54,14 +23,92 @@ jobs:
         uses: asdf-vm/actions/plugins-add@v1.0.0
       - name: '[setup] (asdf) install tools'
         run: asdf install
-      - name: ./dev/check/bash-syntax.sh
+      - name: bash-syntax.sh
         run: ./dev/check/bash-syntax.sh
+    services:
+      postgres:
+        env:
+          POSTGRES_PASSWORD: postgres
+        image: postgres:9.6.17
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout
+          5s --health-retries 10
+  build:
+    name: ./dev/check/build.sh
+    env:
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: '5432'
+    runs-on: ubuntu-latest
+    steps:
+      - name: '[setup] checkout repository'
+        uses: actions/checkout@v2
+      - name: '[setup] install asdf'
+        uses: asdf-vm/actions/setup@v1.0.0
+      - name: '[setup] (asdf) configure .nvmrc'
+        run: bash -c "echo 'legacy_version_file = yes' > ~/.asdfrc"
+      - name: '[setup] (asdf) install nodejs plugin'
+        run: asdf plugin-add nodejs
+      - name: '[setup] (asdf) import nodejs keyring'
+        run: bash ~/.asdf/plugins/nodejs/bin/import-release-team-keyring
+      - name: '[setup] (asdf) add plugins'
+        uses: asdf-vm/actions/plugins-add@v1.0.0
+      - name: '[setup] (asdf) install tools'
+        run: asdf install
+      - name: build.sh
+        run: ./dev/check/build.sh
+    services:
+      postgres:
+        env:
+          POSTGRES_PASSWORD: postgres
+        image: postgres:9.6.17
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout
+          5s --health-retries 10
+  docsite:
+    name: ./dev/check/docsite.sh
+    env:
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: '5432'
+    runs-on: ubuntu-latest
+    steps:
+      - name: '[setup] checkout repository'
+        uses: actions/checkout@v2
+      - name: '[setup] install asdf'
+        uses: asdf-vm/actions/setup@v1.0.0
+      - name: '[setup] (asdf) configure .nvmrc'
+        run: bash -c "echo 'legacy_version_file = yes' > ~/.asdfrc"
+      - name: '[setup] (asdf) install nodejs plugin'
+        run: asdf plugin-add nodejs
+      - name: '[setup] (asdf) import nodejs keyring'
+        run: bash ~/.asdf/plugins/nodejs/bin/import-release-team-keyring
+      - name: '[setup] (asdf) add plugins'
+        uses: asdf-vm/actions/plugins-add@v1.0.0
+      - name: '[setup] (asdf) install tools'
+        run: asdf install
+      - name: docsite.sh
+        run: ./dev/check/docsite.sh
+    services:
+      postgres:
+        env:
+          POSTGRES_PASSWORD: postgres
+        image: postgres:9.6.17
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout
+          5s --health-retries 10
   go-db-conn-import:
     name: ./dev/check/go-dbconn-import.sh
+    env:
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: '5432'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: asdf-vm/actions/setup@v1.0.0
+      - name: '[setup] checkout repository'
+        uses: actions/checkout@v2
+      - name: '[setup] install asdf'
+        uses: asdf-vm/actions/setup@v1.0.0
       - name: '[setup] (asdf) configure .nvmrc'
         run: bash -c "echo 'legacy_version_file = yes' > ~/.asdfrc"
       - name: '[setup] (asdf) install nodejs plugin'
@@ -72,14 +119,28 @@ jobs:
         uses: asdf-vm/actions/plugins-add@v1.0.0
       - name: '[setup] (asdf) install tools'
         run: asdf install
-      - name: ./dev/check/go-dbconn-import.sh
+      - name: go-dbconn-import.sh
         run: ./dev/check/go-dbconn-import.sh
+    services:
+      postgres:
+        env:
+          POSTGRES_PASSWORD: postgres
+        image: postgres:9.6.17
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout
+          5s --health-retries 10
   broken-urls:
     name: ./dev/check/broken-urls.bash
+    env:
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: '5432'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: asdf-vm/actions/setup@v1.0.0
+      - name: '[setup] checkout repository'
+        uses: actions/checkout@v2
+      - name: '[setup] install asdf'
+        uses: asdf-vm/actions/setup@v1.0.0
       - name: '[setup] (asdf) configure .nvmrc'
         run: bash -c "echo 'legacy_version_file = yes' > ~/.asdfrc"
       - name: '[setup] (asdf) install nodejs plugin'
@@ -90,14 +151,28 @@ jobs:
         uses: asdf-vm/actions/plugins-add@v1.0.0
       - name: '[setup] (asdf) install tools'
         run: asdf install
-      - name: ./dev/check/broken-urls.bash
+      - name: broken-urls.bash
         run: ./dev/check/broken-urls.bash
+    services:
+      postgres:
+        env:
+          POSTGRES_PASSWORD: postgres
+        image: postgres:9.6.17
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout
+          5s --health-retries 10
   check-owners:
     name: ./dev/check/check-owners.sh
+    env:
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: '5432'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: asdf-vm/actions/setup@v1.0.0
+      - name: '[setup] checkout repository'
+        uses: actions/checkout@v2
+      - name: '[setup] install asdf'
+        uses: asdf-vm/actions/setup@v1.0.0
       - name: '[setup] (asdf) configure .nvmrc'
         run: bash -c "echo 'legacy_version_file = yes' > ~/.asdfrc"
       - name: '[setup] (asdf) install nodejs plugin'
@@ -108,14 +183,28 @@ jobs:
         uses: asdf-vm/actions/plugins-add@v1.0.0
       - name: '[setup] (asdf) install tools'
         run: asdf install
-      - name: ./dev/check/check-owners.sh
+      - name: check-owners.sh
         run: ./dev/check/check-owners.sh
+    services:
+      postgres:
+        env:
+          POSTGRES_PASSWORD: postgres
+        image: postgres:9.6.17
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout
+          5s --health-retries 10
   go-enterprise-import:
     name: ./dev/check/go-enterprise-import.sh
+    env:
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: '5432'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: asdf-vm/actions/setup@v1.0.0
+      - name: '[setup] checkout repository'
+        uses: actions/checkout@v2
+      - name: '[setup] install asdf'
+        uses: asdf-vm/actions/setup@v1.0.0
       - name: '[setup] (asdf) configure .nvmrc'
         run: bash -c "echo 'legacy_version_file = yes' > ~/.asdfrc"
       - name: '[setup] (asdf) install nodejs plugin'
@@ -126,14 +215,28 @@ jobs:
         uses: asdf-vm/actions/plugins-add@v1.0.0
       - name: '[setup] (asdf) install tools'
         run: asdf install
-      - name: ./dev/check/go-enterprise-import.sh
+      - name: go-enterprise-import.sh
         run: ./dev/check/go-enterprise-import.sh
+    services:
+      postgres:
+        env:
+          POSTGRES_PASSWORD: postgres
+        image: postgres:9.6.17
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout
+          5s --health-retries 10
   go-generate:
     name: ./dev/check/go-generate.sh
+    env:
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: '5432'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: asdf-vm/actions/setup@v1.0.0
+      - name: '[setup] checkout repository'
+        uses: actions/checkout@v2
+      - name: '[setup] install asdf'
+        uses: asdf-vm/actions/setup@v1.0.0
       - name: '[setup] (asdf) configure .nvmrc'
         run: bash -c "echo 'legacy_version_file = yes' > ~/.asdfrc"
       - name: '[setup] (asdf) install nodejs plugin'
@@ -144,14 +247,28 @@ jobs:
         uses: asdf-vm/actions/plugins-add@v1.0.0
       - name: '[setup] (asdf) install tools'
         run: asdf install
-      - name: ./dev/check/go-generate.sh
+      - name: go-generate.sh
         run: ./dev/check/go-generate.sh
+    services:
+      postgres:
+        env:
+          POSTGRES_PASSWORD: postgres
+        image: postgres:9.6.17
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout
+          5s --health-retries 10
   go-lint:
     name: ./dev/check/go-lint.sh
+    env:
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: '5432'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: asdf-vm/actions/setup@v1.0.0
+      - name: '[setup] checkout repository'
+        uses: actions/checkout@v2
+      - name: '[setup] install asdf'
+        uses: asdf-vm/actions/setup@v1.0.0
       - name: '[setup] (asdf) configure .nvmrc'
         run: bash -c "echo 'legacy_version_file = yes' > ~/.asdfrc"
       - name: '[setup] (asdf) install nodejs plugin'
@@ -162,14 +279,28 @@ jobs:
         uses: asdf-vm/actions/plugins-add@v1.0.0
       - name: '[setup] (asdf) install tools'
         run: asdf install
-      - name: ./dev/check/go-lint.sh
+      - name: go-lint.sh
         run: ./dev/check/go-lint.sh
+    services:
+      postgres:
+        env:
+          POSTGRES_PASSWORD: postgres
+        image: postgres:9.6.17
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout
+          5s --health-retries 10
   gofmt:
     name: ./dev/check/gofmt.sh
+    env:
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: '5432'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: asdf-vm/actions/setup@v1.0.0
+      - name: '[setup] checkout repository'
+        uses: actions/checkout@v2
+      - name: '[setup] install asdf'
+        uses: asdf-vm/actions/setup@v1.0.0
       - name: '[setup] (asdf) configure .nvmrc'
         run: bash -c "echo 'legacy_version_file = yes' > ~/.asdfrc"
       - name: '[setup] (asdf) install nodejs plugin'
@@ -180,14 +311,28 @@ jobs:
         uses: asdf-vm/actions/plugins-add@v1.0.0
       - name: '[setup] (asdf) install tools'
         run: asdf install
-      - name: ./dev/check/gofmt.sh
+      - name: gofmt.sh
         run: ./dev/check/gofmt.sh
+    services:
+      postgres:
+        env:
+          POSTGRES_PASSWORD: postgres
+        image: postgres:9.6.17
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout
+          5s --health-retries 10
   no-localhost-guard:
     name: ./dev/check/no-localhost-guard.sh
+    env:
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: '5432'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: asdf-vm/actions/setup@v1.0.0
+      - name: '[setup] checkout repository'
+        uses: actions/checkout@v2
+      - name: '[setup] install asdf'
+        uses: asdf-vm/actions/setup@v1.0.0
       - name: '[setup] (asdf) configure .nvmrc'
         run: bash -c "echo 'legacy_version_file = yes' > ~/.asdfrc"
       - name: '[setup] (asdf) install nodejs plugin'
@@ -198,14 +343,28 @@ jobs:
         uses: asdf-vm/actions/plugins-add@v1.0.0
       - name: '[setup] (asdf) install tools'
         run: asdf install
-      - name: ./dev/check/no-localhost-guard.sh
+      - name: no-localhost-guard.sh
         run: ./dev/check/no-localhost-guard.sh
+    services:
+      postgres:
+        env:
+          POSTGRES_PASSWORD: postgres
+        image: postgres:9.6.17
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout
+          5s --health-retries 10
   template-inlines:
     name: ./dev/check/template-inlines.sh
+    env:
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: '5432'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: asdf-vm/actions/setup@v1.0.0
+      - name: '[setup] checkout repository'
+        uses: actions/checkout@v2
+      - name: '[setup] install asdf'
+        uses: asdf-vm/actions/setup@v1.0.0
       - name: '[setup] (asdf) configure .nvmrc'
         run: bash -c "echo 'legacy_version_file = yes' > ~/.asdfrc"
       - name: '[setup] (asdf) install nodejs plugin'
@@ -216,14 +375,28 @@ jobs:
         uses: asdf-vm/actions/plugins-add@v1.0.0
       - name: '[setup] (asdf) install tools'
         run: asdf install
-      - name: ./dev/check/template-inlines.sh
+      - name: template-inlines.sh
         run: ./dev/check/template-inlines.sh
+    services:
+      postgres:
+        env:
+          POSTGRES_PASSWORD: postgres
+        image: postgres:9.6.17
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout
+          5s --health-retries 10
   todo-security:
     name: ./dev/check/todo-security.sh
+    env:
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: '5432'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: asdf-vm/actions/setup@v1.0.0
+      - name: '[setup] checkout repository'
+        uses: actions/checkout@v2
+      - name: '[setup] install asdf'
+        uses: asdf-vm/actions/setup@v1.0.0
       - name: '[setup] (asdf) configure .nvmrc'
         run: bash -c "echo 'legacy_version_file = yes' > ~/.asdfrc"
       - name: '[setup] (asdf) install nodejs plugin'
@@ -234,14 +407,28 @@ jobs:
         uses: asdf-vm/actions/plugins-add@v1.0.0
       - name: '[setup] (asdf) install tools'
         run: asdf install
-      - name: ./dev/check/todo-security.sh
+      - name: todo-security.sh
         run: ./dev/check/todo-security.sh
+    services:
+      postgres:
+        env:
+          POSTGRES_PASSWORD: postgres
+        image: postgres:9.6.17
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout
+          5s --health-retries 10
   yarn-deduplicate:
     name: ./dev/check/yarn-deduplicate.sh
+    env:
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: '5432'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: asdf-vm/actions/setup@v1.0.0
+      - name: '[setup] checkout repository'
+        uses: actions/checkout@v2
+      - name: '[setup] install asdf'
+        uses: asdf-vm/actions/setup@v1.0.0
       - name: '[setup] (asdf) configure .nvmrc'
         run: bash -c "echo 'legacy_version_file = yes' > ~/.asdfrc"
       - name: '[setup] (asdf) install nodejs plugin'
@@ -252,5 +439,110 @@ jobs:
         uses: asdf-vm/actions/plugins-add@v1.0.0
       - name: '[setup] (asdf) install tools'
         run: asdf install
-      - name: ./dev/check/yarn-deduplicate.sh
+      - name: yarn-deduplicate.sh
         run: ./dev/check/yarn-deduplicate.sh
+    services:
+      postgres:
+        env:
+          POSTGRES_PASSWORD: postgres
+        image: postgres:9.6.17
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout
+          5s --health-retries 10
+  shfmt:
+    name: ./dev/check/shfmt.sh
+    env:
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: '5432'
+    runs-on: ubuntu-latest
+    steps:
+      - name: '[setup] checkout repository'
+        uses: actions/checkout@v2
+      - name: '[setup] install asdf'
+        uses: asdf-vm/actions/setup@v1.0.0
+      - name: '[setup] (asdf) configure .nvmrc'
+        run: bash -c "echo 'legacy_version_file = yes' > ~/.asdfrc"
+      - name: '[setup] (asdf) install nodejs plugin'
+        run: asdf plugin-add nodejs
+      - name: '[setup] (asdf) import nodejs keyring'
+        run: bash ~/.asdf/plugins/nodejs/bin/import-release-team-keyring
+      - name: '[setup] (asdf) add plugins'
+        uses: asdf-vm/actions/plugins-add@v1.0.0
+      - name: '[setup] (asdf) install tools'
+        run: asdf install
+      - name: shfmt.sh
+        run: ./dev/check/shfmt.sh
+    services:
+      postgres:
+        env:
+          POSTGRES_PASSWORD: postgres
+        image: postgres:9.6.17
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout
+          5s --health-retries 10
+  shellcheck:
+    name: ./dev/check/shellcheck.sh
+    env:
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: '5432'
+    runs-on: ubuntu-latest
+    steps:
+      - name: '[setup] checkout repository'
+        uses: actions/checkout@v2
+      - name: '[setup] install asdf'
+        uses: asdf-vm/actions/setup@v1.0.0
+      - name: '[setup] (asdf) configure .nvmrc'
+        run: bash -c "echo 'legacy_version_file = yes' > ~/.asdfrc"
+      - name: '[setup] (asdf) install nodejs plugin'
+        run: asdf plugin-add nodejs
+      - name: '[setup] (asdf) import nodejs keyring'
+        run: bash ~/.asdf/plugins/nodejs/bin/import-release-team-keyring
+      - name: '[setup] (asdf) add plugins'
+        uses: asdf-vm/actions/plugins-add@v1.0.0
+      - name: '[setup] (asdf) install tools'
+        run: asdf install
+      - name: shellcheck.sh
+        run: ./dev/check/shellcheck.sh
+    services:
+      postgres:
+        env:
+          POSTGRES_PASSWORD: postgres
+        image: postgres:9.6.17
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout
+          5s --health-retries 10
+  licenses:
+    name: ./dev/check/licenses.sh
+    env:
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: '5432'
+    runs-on: ubuntu-latest
+    steps:
+      - name: '[setup] checkout repository'
+        uses: actions/checkout@v2
+      - name: '[setup] install asdf'
+        uses: asdf-vm/actions/setup@v1.0.0
+      - name: '[setup] (asdf) configure .nvmrc'
+        run: bash -c "echo 'legacy_version_file = yes' > ~/.asdfrc"
+      - name: '[setup] (asdf) install nodejs plugin'
+        run: asdf plugin-add nodejs
+      - name: '[setup] (asdf) import nodejs keyring'
+        run: bash ~/.asdf/plugins/nodejs/bin/import-release-team-keyring
+      - name: '[setup] (asdf) add plugins'
+        uses: asdf-vm/actions/plugins-add@v1.0.0
+      - name: '[setup] (asdf) install tools'
+        run: asdf install
+      - name: licenses.sh
+        run: ./dev/check/licenses.sh
+    services:
+      postgres:
+        env:
+          POSTGRES_PASSWORD: postgres
+        image: postgres:9.6.17
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout
+          5s --health-retries 10
