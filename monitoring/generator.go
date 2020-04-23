@@ -213,7 +213,7 @@ func (o Observable) validate() error {
 		return fmt.Errorf("PossibleSolutions: should not include mentions of contacting support")
 	}
 	if o.PossibleSolutions == "" {
-		return fmt.Errorf(`PossibleSolutions: must list solutions or "None"`)
+		return fmt.Errorf(`PossibleSolutions: must list solutions or "none"`)
 	} else if o.PossibleSolutions != "none" {
 		if _, err := goMarkdown(o.PossibleSolutions); err != nil {
 			return fmt.Errorf("PossibleSolutions: %v", err)
