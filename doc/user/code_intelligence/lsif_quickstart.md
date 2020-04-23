@@ -34,9 +34,9 @@ For all languages, the upload step is the same. Make sure the current working di
 
 ```console
 # for private instances
-$ src -endpoint=$SRC_ENDPOINT lsif upload -file=<LSIF file (e.g. dump.lsif)>
+$ src -endpoint=<your sourcegraph endpoint> lsif upload -file=<LSIF file (e.g. dump.lsif)>
 # to upload to Sourcegraph.com
-$ src lsif upload -github-token=$GITHUB_TOKEN -file=<LSIF file (e.g. dump.lsif)>
+$ src lsif upload -github-token=<your github token> -file=<LSIF file (e.g. dump.lsif)>
 ```
 
 The upload command in the Sourcegraph CLI will try to infer the repository and git commit by invoking git commands on your local clone. If git is not installed, is older than version 2.7.0, or you are running on code outside of a git clone, you will need to also specify the `-repo` and `-commit` flags explicitly.
