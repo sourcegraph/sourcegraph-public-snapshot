@@ -2,7 +2,9 @@
 
 Our goal for this campaign is to add a GitHub Action that generates and uploads LSIF data to Sourcegraph by adding a `.github/workflows/lsif.yml` file to each repository that doesn't have it yet.
 
-The first thing we need is the definition of an action that we can execute with the [`src` CLI tool](https://github.com/sourcegraph/src-cli) and its `src actions exec` subcommand.
+The first thing we need is an action definition that we can execute with the [`src` CLI tool](https://github.com/sourcegraph/src-cli) and its `src actions exec` subcommand.
+
+>NOTE: See "[Actions](../actions.md)" for more details on how to define and execute actions.
 
 Here is an `action.json` file that runs a Docker container based on the Docker image called `add-lsif-to-build-pipeline-action` in each repository that has a `go.mod` file, `github` in its name and no `.github/workflows/lsif.yml` file:
 
@@ -41,7 +43,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-This is the definition of the GitHub action.
+This is the definition of the GitHub action that we want to add to every repository returned by our `"scopeQuery"`.
 
 Next we create the `Dockerfile`:
 
@@ -58,9 +60,16 @@ CMD mkdir -p .github/workflows && \
   fi
 ```
 
-Now we're ready to run the campaign:
+Now we're ready to run the action and create the campaign:
 
-1. Build the Docker image: `docker build -t add-lsif-to-build-pipeline-action .`
-1. Run the action and create a patch set: `src actions exec -f action.json | src campaign patchset create-from-patches`
-1. Follow the printed instructions to create and run the campaign on Sourcegraph
+1. Build the Docker image:
 
+  ```
+  docker build -t add-lsif-to-build-pipeline-action
+  ```
+1. Run the action and create a patch set:
+
+  ```
+  src actions exec -f action.json | src campaign patchset create-from-patches
+  ```
+1. Follow the printed instructions to create and run the campaign on Sourcegraph.

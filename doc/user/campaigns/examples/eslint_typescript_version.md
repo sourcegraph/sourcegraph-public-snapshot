@@ -79,12 +79,12 @@ src actions scope-query -f eslint-fix-typescript.action.json
 If that list looks good, we're ready to execute the action:
 
 ```sh
-src actions exec -timeout 15m -f eslint-fix-typescript.action.json | src campaign patchset create-from-patches
+src actions exec -f eslint-fix-typescript.action.json | src campaign patchset create-from-patches
 ```
 
-> **Note**: we're giving the action a generous timeout of 15 minutes per repository, since it needs to download and install all dependencies. With a still-empty caching directory that might take a few minutes.
+You should now see that the Docker container we built is being executed in a local, temporary copy of each repository.
 
-You should now see that the Docker container we built is being executed in a local, temporary copy of each repository. After executing, the patches it produced will be turned into a patch set you can preview on our Sourcegraph instance.
+After executing, the patches it produced will be turned into a patch set you can preview on our Sourcegraph instance.
 
 ## Caching dependencies across multiple steps using `cacheDirs`
 

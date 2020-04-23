@@ -12,53 +12,55 @@ If the campaign was created from a patch set and includes changesets that have a
 
 You can also apply a new patch set to an existing campaign and update its patches and, if already created, the diff of the changesets on the code hosts.
 
-To do that, you need to use the [`src` CLI](https://github.com/sourcegraph/src-cli) to create a new patch set that reflects the desired state of all patches/changesets in the campaign:
+1. Use the [`src` CLI](https://github.com/sourcegraph/src-cli) to create a new patch set that reflects the desired state of all patches/changesets in the campaign:
 
-```
-$ src action exec -f new-action-definition.json -create-patchset
+    ```
+    $ src action exec -f new-action-definition.json -create-patchset
 
-# Or:
+    # Or:
 
-$ src action exec -f new-action-definition.json | src campaign patchset create-from-patches
-```
+    $ src action exec -f new-action-definition.json | src campaign patchset create-from-patches
+    ```
 
-For example, the `new-action-definition.json` could have a `"scopeQuery"` that yields _more_ repositories and thus produces _more_ patches.
+    For example, the `new-action-definition.json` could have a `"scopeQuery"` that yields _more_ repositories and thus produces _more_ patches.
 
-Following the creation of the patch set with one of the two commands above, a URL will be printed that will guide you to the Sourcegraph web UI:
+2. Following the creation of the patch set with one of the two commands above, a URL will be printed that will guide you to the Sourcegraph web UI:
 
-<div style="max-width: 500px;" class="mx-auto">
-  <figure class="figure">
-    <div class="figure-img">
-    <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/update_patchset.png" width="500px"/>
+    <div style="max-width: 500px;" class="mx-auto">
+      <figure class="figure">
+        <div class="figure-img border">
+        <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/update_patchset.png" width="500px"/>
+        </div>
+      </figure>
     </div>
-  </figure>
-</div>
 
-In the UI you can then select which campaign should be updated to use the new patch set:
+3. In the UI you can then select which campaign should be updated to use the new patch set.
 
-<div style="max-width: 500px;" class="mx-auto">
-  <figure class="figure">
-    <div class="figure-img">
-    <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/update_select_campaign.png" width="500px"/>
+    Click **Preview** to select the campaign that should be updated.
+
+    <div style="max-width: 500px;" class="mx-auto">
+      <figure class="figure">
+        <div class="figure-img border">
+        <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/update_select_campaign.png" width="500px"/>
+        </div>
+        <figcaption class="figure-caption text-center">Select which campaign should be updated to use the new patch set.</figcaption>
+      </figure>
     </div>
-    <figcaption class="figure-caption text-center">Select which campaign should be updated to use the new patch set.</figcaption>
-  </figure>
-</div>
 
-On this page, click **Preview** to select the campaign that should be updated.
+4. You'll then see which changesets will be created, updated (on the code host), deleted and removed from the campaign or left untouched:
 
-You'll then see which changesets will be created, updated (on the code host), deleted and removed from the campaign or left untouched:
-
-<div style="max-width: 500px;" class="mx-auto">
-  <figure class="figure">
-    <div class="figure-img">
-    <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/update_preview_changes.png" width="500px"/>
+    <div style="max-width: 500px;" class="mx-auto">
+      <figure class="figure">
+        <div class="figure-img border">
+        <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/update_preview_changes.png" width="500px"/>
+        </div>
+        <figcaption class="figure-caption text-center">Preview of updating a campaign's patch set.</figcaption>
+      </figure>
     </div>
-    <figcaption class="figure-caption text-center">Preview of updating a campaign's patch set.</figcaption>
-  </figure>
-</div>
 
-When you click on **Update** the patches and changesets in a campaign will be updated:
+5. Click on **Update**.
+
+The patches and changesets in a campaign will be like this:
 
 * Patches (unpublished changesets) will be updated if their diff has changed.
 * Published changesets will be updated on the code host if their diff or the campaign's title or description has changed.

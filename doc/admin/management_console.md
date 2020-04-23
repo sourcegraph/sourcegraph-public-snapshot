@@ -82,13 +82,13 @@ Second, bcrypt your password on any machine:
 
     a. (**If you have Python 2**):
 
-    ```bash
+    ```
     PASSWORD='abc123' python -c "import bcrypt; import os; print(bcrypt.hashpw(os.environ['PASSWORD'], bcrypt.gensalt(15)))"
     ```
 
     b. (**If you have Python 3**): 
 
-    ```bash
+    ```
     PASSWORD='abc123' python -c "import bcrypt; import os; print(bcrypt.hashpw(os.environ['PASSWORD'].encode('utf-8'), bcrypt.gensalt(15)))"
     ```
 

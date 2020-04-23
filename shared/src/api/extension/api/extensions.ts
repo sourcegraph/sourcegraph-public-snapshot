@@ -1,10 +1,10 @@
-import { ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
+import { ProxyMarked, proxyMarker } from '@sourcegraph/comlink'
 import { Subscription, Unsubscribable } from 'rxjs'
 import { asError } from '../../../util/errors'
 import { tryCatchPromise } from '../../util'
 
 /** @internal */
-export interface ExtExtensionsAPI extends ProxyValue {
+export interface ExtExtensionsAPI extends ProxyMarked {
     $activateExtension(extensionID: string, bundleURL: string): Promise<void>
     $deactivateExtension(extensionID: string): Promise<void>
 }
@@ -13,8 +13,8 @@ export interface ExtExtensionsAPI extends ProxyValue {
 declare const self: any
 
 /** @internal */
-export class ExtExtensions implements ExtExtensionsAPI, Unsubscribable, ProxyValue {
-    public readonly [proxyValueSymbol] = true
+export class ExtExtensions implements ExtExtensionsAPI, Unsubscribable, ProxyMarked {
+    public readonly [proxyMarker] = true
 
     /** Extensions' deactivate functions. */
     private extensionDeactivate = new Map<string, () => void | Promise<void>>()

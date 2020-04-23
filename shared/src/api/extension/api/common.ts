@@ -1,4 +1,4 @@
-import { ProxyResult, ProxyValue, proxyValue, proxyValueSymbol, UnproxyOrClone } from '@sourcegraph/comlink'
+import { Remote, ProxyMarked, proxy, proxyMarker, UnproxyOrClone } from '@sourcegraph/comlink'
 import { from, isObservable, Observable, Observer, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { ProviderResult, Subscribable, Unsubscribable } from 'sourcegraph'
@@ -8,8 +8,8 @@ import { isPromiseLike, isSubscribable } from '../../util'
  * A Subscribable that can be exposed by comlink to the other thread.
  * Only allows full object Observers to avoid complex type checking against proxies.
  */
-export interface ProxySubscribable<T> extends ProxyValue {
-    subscribe(observer: ProxyResult<Observer<T> & ProxyValue>): Unsubscribable & ProxyValue
+export interface ProxySubscribable<T> extends ProxyMarked {
+    subscribe(observer: Remote<Observer<T> & ProxyMarked>): Unsubscribable & ProxyMarked
 }
 
 /**
@@ -18,9 +18,9 @@ export interface ProxySubscribable<T> extends ProxyValue {
  * @param subscribable A normal Subscribable (from this thread)
  */
 const proxySubscribable = <T>(subscribable: Subscribable<T>): ProxySubscribable<T> => ({
-    [proxyValueSymbol]: true,
-    subscribe(observer): Unsubscribable & ProxyValue {
-        return proxyValue(
+    [proxyMarker]: true,
+    subscribe(observer): Unsubscribable & ProxyMarked {
+        return proxy(
             // Don't pass the proxy to Rx directly because it will try to
             // access Symbol properties that cannot be proxied
             subscribable.subscribe({

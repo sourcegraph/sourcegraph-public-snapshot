@@ -125,3 +125,60 @@ func Test_Hoist(t *testing.T) {
 		})
 	}
 }
+
+func Test_SearchUpperCase(t *testing.T) {
+	cases := []struct {
+		input string
+		want  string
+	}{
+		{
+			input: `TeSt`,
+			want:  `(and "TeSt" "case:yes")`,
+		},
+		{
+			input: `test`,
+			want:  `"test"`,
+		},
+		{
+			input: `content:TeSt`,
+			want:  `(and "content:TeSt" "case:yes")`,
+		},
+		{
+			input: `content:test`,
+			want:  `"content:test"`,
+		},
+		{
+			input: `repo:foo TeSt`,
+			want:  `(and "repo:foo" "TeSt" "case:yes")`,
+		},
+		{
+			input: `repo:foo test`,
+			want:  `(and "repo:foo" "test")`,
+		},
+		{
+			input: `repo:foo content:TeSt`,
+			want:  `(and "repo:foo" "content:TeSt" "case:yes")`,
+		},
+		{
+			input: `repo:foo content:test`,
+			want:  `(and "repo:foo" "content:test")`,
+		},
+		{
+			input: `TeSt1 TesT2`,
+			want:  `(and (concat "TeSt1" "TesT2") "case:yes")`,
+		},
+		{
+			input: `TeSt1 test2`,
+			want:  `(and (concat "TeSt1" "test2") "case:yes")`,
+		},
+	}
+	for _, c := range cases {
+		t.Run("searchUpperCase", func(t *testing.T) {
+			query, _ := ParseAndOr(c.input)
+			got := prettyPrint(SearchUpperCase(query))
+			if diff := cmp.Diff(got, c.want); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}

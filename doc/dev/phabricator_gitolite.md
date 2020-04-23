@@ -151,23 +151,23 @@ will be `/opt/bitnami/phabricator`.
 
 3. Ensure `.arcconfig` has been added
 
-```json
-  {
-    "phabricator.uri" : "https://<your phabricator host>/"
-  }
-```
+    ```
+      {
+        "phabricator.uri" : "https://<your phabricator host>/"
+      }
+    ```
 
 4. Make some changes and push the diff to Phabricator's
 
     Use `arc` to create a new branch
 
-    ```shell
+    ```
     arc branch my-branch
     ```
 
     Make some changes, commit them, and upload the diff to Phabricator. DO NOT PUSH them to the git remote. If you push the changes to the git remote, we no longer are testing a critical feature of the Sourcegraph Phabricator integration, which is that it uses staging areas if configured or attempts to apply patchsets.
 
-    ```shell
+    ```
     git add . git commit -m "some changes" arc diff
     ```
 

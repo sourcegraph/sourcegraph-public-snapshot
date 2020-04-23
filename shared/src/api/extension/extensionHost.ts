@@ -121,7 +121,7 @@ function createExtensionAPI(
     registerComlinkTransferHandlers()
 
     /** Proxy to main thread */
-    const proxy = comlink.proxy<ClientAPI>(endpoints.proxy)
+    const proxy = comlink.wrap<ClientAPI>(endpoints.proxy)
 
     // For debugging/tests.
     const sync = async (): Promise<void> => {
@@ -144,7 +144,7 @@ function createExtensionAPI(
 
     // Expose the extension host API to the client (main thread)
     const extensionHostAPI: ExtensionHostAPI = {
-        [comlink.proxyValueSymbol]: true,
+        [comlink.proxyMarker]: true,
 
         ping: () => 'pong',
         configuration,

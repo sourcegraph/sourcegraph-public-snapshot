@@ -1,6 +1,6 @@
 import '../../polyfills'
 
-import * as MessageChannelAdapter from '@sourcegraph/comlink/messagechanneladapter'
+import * as MessageChannelAdapter from '@sourcegraph/comlink/dist/umd/string-channel.experimental'
 import { fromEvent } from 'rxjs'
 import { take } from 'rxjs/operators'
 import { EndpointPair, isEndpointPair } from '../../platform/context'
@@ -27,8 +27,7 @@ const isInitMessage = (value: unknown): value is InitMessage =>
 const wrapMessagePort = (port: MessagePort): MessagePort =>
     MessageChannelAdapter.wrap({
         send: data => port.postMessage(data),
-        addEventListener: (event, listener) => port.addEventListener(event, listener),
-        removeEventListener: (event, listener) => port.removeEventListener(event, listener),
+        addMessageListener: listener => port.addEventListener('message', event => listener(event.data)),
     })
 
 const wrapEndpoints = ({ proxy, expose }: InitMessage['endpoints']): EndpointPair => {

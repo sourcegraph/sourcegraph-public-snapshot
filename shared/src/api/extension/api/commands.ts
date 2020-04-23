@@ -1,4 +1,4 @@
-import { ProxyResult, proxyValue } from '@sourcegraph/comlink'
+import * as comlink from '@sourcegraph/comlink'
 import { Unsubscribable } from 'rxjs'
 import { ClientCommandsAPI } from '../../client/api/commands'
 import { syncSubscription } from '../../util'
@@ -10,7 +10,7 @@ interface CommandEntry {
 
 /** @internal */
 export class ExtCommands {
-    constructor(private proxy: ProxyResult<ClientCommandsAPI>) {}
+    constructor(private proxy: comlink.Remote<ClientCommandsAPI>) {}
 
     /**
      * Extension API method invoked directly when an extension wants to execute a command. It calls to the client
@@ -22,6 +22,6 @@ export class ExtCommands {
     }
 
     public registerCommand(entry: CommandEntry): Unsubscribable {
-        return syncSubscription(this.proxy.$registerCommand(entry.command, proxyValue(entry.callback)))
+        return syncSubscription(this.proxy.$registerCommand(entry.command, comlink.proxy(entry.callback)))
     }
 }

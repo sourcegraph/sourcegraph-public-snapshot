@@ -1,4 +1,4 @@
-import { ProxyResult, ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
+import { Remote, ProxyMarked, proxyMarker } from '@sourcegraph/comlink'
 import { ReplaySubject } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { SettingsCascade } from '../../../settings/settings'
@@ -9,7 +9,7 @@ import { ClientConfigurationAPI } from '../../client/api/configuration'
  * @template C - The configuration schema.
  */
 class ExtConfigurationSection<C extends object> implements sourcegraph.Configuration<C> {
-    constructor(private proxy: ProxyResult<ClientConfigurationAPI>, private data: C) {}
+    constructor(private proxy: Remote<ClientConfigurationAPI>, private data: C) {}
 
     public get<K extends keyof C>(key: K): C[K] | undefined {
         return this.data[key]
@@ -35,7 +35,7 @@ class ExtConfigurationSection<C extends object> implements sourcegraph.Configura
  * @internal
  * @template C - The configuration schema.
  */
-export interface ExtConfigurationAPI<C> extends ProxyValue {
+export interface ExtConfigurationAPI<C> extends ProxyMarked {
     $acceptConfigurationData(data: Readonly<SettingsCascade<C>>): void
 }
 
@@ -43,8 +43,8 @@ export interface ExtConfigurationAPI<C> extends ProxyValue {
  * @internal
  * @template C - The configuration schema.
  */
-export class ExtConfiguration<C extends object> implements ExtConfigurationAPI<C>, ProxyValue {
-    public readonly [proxyValueSymbol] = true
+export class ExtConfiguration<C extends object> implements ExtConfigurationAPI<C>, ProxyMarked {
+    public readonly [proxyMarker] = true
 
     /**
      * The settings data observable, assigned when the initial data is received from the client. Extensions should
@@ -57,7 +57,7 @@ export class ExtConfiguration<C extends object> implements ExtConfigurationAPI<C
     // - emits immediately on subscription after initial settings have been received.
     public readonly changes = new ReplaySubject<void>(1)
 
-    constructor(private proxy: ProxyResult<ClientConfigurationAPI>) {}
+    constructor(private proxy: Remote<ClientConfigurationAPI>) {}
 
     public $acceptConfigurationData(data: Readonly<SettingsCascade<C>>): void {
         this.data = Object.freeze(data)
