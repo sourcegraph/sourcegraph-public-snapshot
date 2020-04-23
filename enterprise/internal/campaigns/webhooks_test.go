@@ -122,13 +122,13 @@ func testGitHubWebhook(db *sql.DB) func(*testing.T) {
 
 		hook := NewGitHubWebhook(store, repoStore, clock)
 
-		matches, err := filepath.Glob("testdata/fixtures/webhooks/github/*.json")
+		testCases, err := filepath.Glob("testdata/fixtures/webhooks/github/*.json")
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		for _, match := range matches {
-			t.Run(match, func(t *testing.T) {
+		for _, tc := range testCases {
+			t.Run(tc, func(t *testing.T) {
 				_, err = db.Exec("ALTER SEQUENCE changeset_events_id_seq RESTART")
 				if err != nil {
 					t.Fatal(err)
@@ -138,7 +138,7 @@ func testGitHubWebhook(db *sql.DB) func(*testing.T) {
 					t.Fatal(err)
 				}
 
-				f := loadWebhookTestCase(t, match)
+				f := loadWebhookTestCase(t, tc)
 
 				for _, event := range f.Events {
 					req, err := http.NewRequest("POST", "", bytes.NewReader(event.Event))
