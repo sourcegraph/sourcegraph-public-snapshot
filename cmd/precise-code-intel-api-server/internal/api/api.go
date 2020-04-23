@@ -11,8 +11,8 @@ import (
 // CodeIntelAPI is the main interface into precise code intelligence data.
 type CodeIntelAPI interface {
 	// FindClosestDumps returns the set of dumps that can most accurately answer code intelligence
-	// queries for the given file. These IDs should be subsequently passed to invocations of Definitions,
-	// References, and Hover.
+	// queries for the given file. These dump IDs should be subsequently passed to invocations of
+	// Definitions, References, and Hover.
 	FindClosestDumps(ctx context.Context, repositoryID int, commit, file string) ([]db.Dump, error)
 
 	// Definitions returns the list of source locations that define the symbol at the given position.

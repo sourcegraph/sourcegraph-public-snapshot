@@ -8,8 +8,8 @@ import (
 )
 
 // FindClosestDumps returns the set of dumps that can most accurately answer code intelligence
-// queries for the given file. These IDs should be subsequently passed to invocations of Definitions,
-// References, and Hover.
+// queries for the given file. These dump IDs should be subsequently passed to invocations of
+// Definitions, References, and Hover.
 func (api *codeIntelAPI) FindClosestDumps(ctx context.Context, repositoryID int, commit, file string) ([]db.Dump, error) {
 	candidates, err := api.db.FindClosestDumps(ctx, repositoryID, commit, file)
 	if err != nil {
