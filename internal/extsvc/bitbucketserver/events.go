@@ -19,26 +19,27 @@ func WebhookEventType(r *http.Request) string {
 func ParseWebhookEvent(eventType string, payload []byte) (e interface{}, err error) {
 	switch eventType {
 	case "ping":
-		return PingEvent{}, nil
+		return WebhookEventPing{}, nil
 	case "repo:build_status":
-		e = &BuildStatusEvent{}
+		e = &WebhookEventBuildStatus{}
 		return e, json.Unmarshal(payload, e)
 	default:
-		e = &PullRequestEvent{}
+		e = &WebhookEventPullRequest{}
 		return e, json.Unmarshal(payload, e)
 	}
 }
 
-type PingEvent struct{}
+type WebhookEventPing struct{}
 
-type PullRequestEvent struct {
-	Date        time.Time   `json:"date"`
-	Actor       User        `json:"actor"`
-	PullRequest PullRequest `json:"pullRequest"`
-	Activity    *Activity   `json:"activity"`
+type WebhookEventPullRequest struct {
+	Date        time.Time      `json:"date"`
+	Actor       User           `json:"actor"`
+	PullRequest PullRequest    `json:"pullRequest"`
+	Action      ActivityAction `json:"action"`
+	Activity    *Activity      `json:"activity"`
 }
 
-type BuildStatusEvent struct {
+type WebhookEventBuildStatus struct {
 	Commit       string        `json:"commit"`
 	Status       BuildStatus   `json:"status"`
 	PullRequests []PullRequest `json:"pullRequests"`
