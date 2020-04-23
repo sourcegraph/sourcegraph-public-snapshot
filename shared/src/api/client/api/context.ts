@@ -1,14 +1,14 @@
-import { ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
+import { ProxyMarked, proxyMarker } from '@sourcegraph/comlink'
 import { ContextValues, Unsubscribable } from 'sourcegraph'
 
 /** @internal */
-export interface ClientContextAPI extends ProxyValue {
+export interface ClientContextAPI extends ProxyMarked {
     $acceptContextUpdates(updates: ContextValues): void
 }
 
 /** @internal */
 export class ClientContext implements ClientContextAPI, Unsubscribable {
-    public readonly [proxyValueSymbol] = true
+    public readonly [proxyMarker] = true
 
     /**
      * Context keys set by this server. To ensure that context values are cleaned up, all context properties that

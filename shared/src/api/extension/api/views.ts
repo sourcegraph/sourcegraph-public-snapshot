@@ -1,4 +1,4 @@
-import { ProxyResult, ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
+import { Remote, ProxyMarked, proxyMarker } from '@sourcegraph/comlink'
 import * as sourcegraph from 'sourcegraph'
 import { ClientViewsAPI, PanelUpdater, PanelViewData } from '../../client/api/views'
 
@@ -13,7 +13,7 @@ class ExtPanelView implements sourcegraph.PanelView {
         component: null,
     }
 
-    constructor(private proxyPromise: Promise<ProxyResult<PanelUpdater>>) {}
+    constructor(private proxyPromise: Promise<Remote<PanelUpdater>>) {}
 
     public get title(): string {
         return this.data.title
@@ -59,10 +59,10 @@ class ExtPanelView implements sourcegraph.PanelView {
 }
 
 /** @internal */
-export class ExtViews implements ProxyValue {
-    public readonly [proxyValueSymbol] = true
+export class ExtViews implements ProxyMarked {
+    public readonly [proxyMarker] = true
 
-    constructor(private proxy: ProxyResult<ClientViewsAPI>) {}
+    constructor(private proxy: Remote<ClientViewsAPI>) {}
 
     public createPanelView(id: string): ExtPanelView {
         const panelProxyPromise = this.proxy.$registerPanelViewProvider({ id })
