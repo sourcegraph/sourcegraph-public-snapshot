@@ -8,8 +8,8 @@ These **patches can then be turned into _changesets_ (pull requests)** on the co
 
 An _action_ is made up of two things:
 
-1. A Sourcegraph search query (the `scopeQuery`).
-1. A series of steps to be executed in each repository yielded by the search query.
+- A Sourcegraph search query (the `scopeQuery`).
+- A series of steps to be executed in each repository yielded by the search query.
 
 Here is an example definition of an action:
 
@@ -53,9 +53,9 @@ Since it is a `"command"`, the `goimports` step doesn't use a Docker container, 
 
 To execute actions with the `src` CLI the following is required:
 
-1. `src` CLI, setup to point to your Sourcegraph instance.
-1. [git](https://git-scm.com/).
-1. [Docker](https://www.docker.com/), if you want to execute Docker containers.
+- `src` CLI, setup to point to your Sourcegraph instance.
+- [git](https://git-scm.com/).
+- [Docker](https://www.docker.com/), if you want to execute Docker containers.
 
 ## Defining an action
 
