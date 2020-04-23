@@ -22,13 +22,13 @@ When you're done, clear the sideload URL from the extensions debug menu.
 1. Add `mkdirp` and `lnfs-cli` as dependencies (`npm install --save-dev mkdirp lnfs-cli`).
 2. Add the following npm script to your `package.json`:
 
-    ```json
+    ```
     "symlink-package": "mkdirp dist && lnfs ./package.json ./dist/package.json"
     ```
 
 3. Edit the `serve` npm script to run `symlink-package`:
 
-    ```json
+    ```
     "serve": "npm run symlink-package && parcel serve --no-hmr --out-file dist/your-extension.js src/your-extension.ts"
     ```
 
