@@ -47,9 +47,9 @@ var (
 )
 
 func setMockDBGetDumpByID(t *testing.T, mockDB *mocks.MockDB, dumps map[int]db.Dump) {
-	mockDB.GetDumpByIDFunc.SetDefaultHook(func(ctx context.Context, id int) (dump db.Dump, ok bool, _ error) {
-		dump, ok = dumps[id]
-		return
+	mockDB.GetDumpByIDFunc.SetDefaultHook(func(ctx context.Context, id int) (db.Dump, bool, error) {
+		dump, ok := dumps[id]
+		return dump, ok, nil
 	})
 }
 

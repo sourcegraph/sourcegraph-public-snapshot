@@ -44,7 +44,7 @@ var _ BundleClient = &bundleClientImpl{}
 // Exists determines if the given path exists in the dump.
 func (c *bundleClientImpl) Exists(ctx context.Context, path string) (exists bool, err error) {
 	err = c.request(ctx, "exists", map[string]interface{}{"path": path}, &exists)
-	return
+	return exists, err
 }
 
 // Definitions retrieves a list of definition locations for the symbol under the given location.
@@ -57,7 +57,7 @@ func (c *bundleClientImpl) Definitions(ctx context.Context, path string, line, c
 
 	err = c.request(ctx, "definitions", args, &locations)
 	c.addBundleIDToLocations(locations)
-	return
+	return locations, err
 }
 
 // Definitions retrieves a list of reference locations for the symbol under the given location.
@@ -70,7 +70,7 @@ func (c *bundleClientImpl) References(ctx context.Context, path string, line, ch
 
 	err = c.request(ctx, "references", args, &locations)
 	c.addBundleIDToLocations(locations)
-	return
+	return locations, err
 }
 
 // Hover retrieves the hover text for the symbol under the given location.
@@ -113,7 +113,7 @@ func (c *bundleClientImpl) MonikersByPosition(ctx context.Context, path string, 
 	}
 
 	err = c.request(ctx, "monikersByPosition", args, &target)
-	return
+	return target, err
 }
 
 // MonikerResults retrieves a page of locations attached to a moniker and a total count of such locations.
@@ -139,7 +139,7 @@ func (c *bundleClientImpl) MonikerResults(ctx context.Context, modelType, scheme
 	locations = target.Locations
 	count = target.Count
 	c.addBundleIDToLocations(locations)
-	return
+	return locations, count, err
 }
 
 // PackageInformation retrieves package information data by its identifier.
@@ -150,7 +150,7 @@ func (c *bundleClientImpl) PackageInformation(ctx context.Context, path, package
 	}
 
 	err = c.request(ctx, "packageInformation", args, &target)
-	return
+	return target, err
 }
 
 func (c *bundleClientImpl) request(ctx context.Context, path string, qs map[string]interface{}, target interface{}) error {

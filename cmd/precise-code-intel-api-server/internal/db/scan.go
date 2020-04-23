@@ -27,7 +27,7 @@ func scanDump(scanner Scanner) (dump Dump, err error) {
 		&dump.RepositoryID,
 		&dump.Indexer,
 	)
-	return
+	return dump, err
 }
 
 // scanDumps reads the given set of dump rows and returns a slice of resulting values.
@@ -69,7 +69,7 @@ func scanUpload(scanner Scanner) (upload Upload, err error) {
 		&upload.Indexer,
 		&upload.Rank,
 	)
-	return
+	return upload, err
 }
 
 // scanUploads reads the given set of upload rows and returns a slice of resulting
@@ -96,7 +96,7 @@ func scanUploads(rows *sql.Rows, err error) ([]Upload, error) {
 // scanReference populates a Reference value from the given scanner.
 func scanReference(scanner Scanner) (reference Reference, err error) {
 	err = scanner.Scan(&reference.DumpID, &reference.Filter)
-	return
+	return reference, err
 }
 
 // scanReferences reads the given set of reference rows and returns a slice of resulting
@@ -123,7 +123,7 @@ func scanReferences(rows *sql.Rows, err error) ([]Reference, error) {
 // scanInt populates an integer value from the given scanner.
 func scanInt(scanner Scanner) (value int, err error) {
 	err = scanner.Scan(&value)
-	return
+	return value, err
 }
 
 // scanInts reads the given set of `(int)` rows and returns a slice of resulting values.
@@ -150,7 +150,7 @@ func scanInts(rows *sql.Rows, err error) ([]int, error) {
 // scanState populates an integer and string from the given scanner.
 func scanState(scanner Scanner) (repositoryID int, state string, err error) {
 	err = scanner.Scan(&repositoryID, &state)
-	return
+	return repositoryID, state, err
 }
 
 // scanStates reads the given set of `(id, state)` rows and returns a map from id to its
@@ -177,7 +177,7 @@ func scanStates(rows *sql.Rows, err error) (map[int]string, error) {
 // scanVisibility populates an integer and boolean from the given scanner.
 func scanVisibility(scanner Scanner) (repositoryID int, visibleAtTip bool, err error) {
 	err = scanner.Scan(&repositoryID, &visibleAtTip)
-	return
+	return repositoryID, visibleAtTip, err
 }
 
 // scanVisibilities reads the given set of `(id, visible_at_tip)` rows and returns a map
