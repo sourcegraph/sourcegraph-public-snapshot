@@ -128,7 +128,7 @@ In TypeScript, classes are not needed to achieve these goals.
 Encapsulation can be easily achieved with modules (i.e. non-exported module members) and closures.
 Polymorphism is available without classes thanks to duck-typed interfaces and object literals.
 
-We found that when using classes as an encapsulation boundary in TypeScript, over time they often grow to violate SRP,  become hard to reason about and hard to test.
+We found that when using classes as an encapsulation boundary in TypeScript, over time they often grow to violate the [Single Responsibility Principle](https://en.wikipedia.org/wiki/Single-responsibility_principle),  become hard to reason about and hard to test.
 Methods often get added to the class that only access a subset of the properties of the class.
 Splitting the class up afterwards into multiple smaller classes that draw better boundaries takes a lot of effort.
 
