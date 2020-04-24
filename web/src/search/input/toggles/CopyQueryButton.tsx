@@ -1,8 +1,10 @@
 import copy from 'copy-to-clipboard'
 import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
-import React, { useState, useCallback } from 'react'
 import { Tooltip } from '../../../components/tooltip/Tooltip'
+import React, { useState, useCallback, useEffect, useMemo } from 'react'
 import classNames from 'classnames'
+import { Subject, merge, timer } from 'rxjs'
+import { delay, takeUntil, tap, debounceTime, map } from 'rxjs/operators'
 
 interface Props {
     fullQuery: string
@@ -14,27 +16,33 @@ interface Props {
  */
 export const CopyQueryButton: React.FunctionComponent<Props> = (props: Props) => {
     const [copied, setCopied] = useState<boolean>(false)
-    const onClick = useCallback(
-        (event: React.MouseEvent) => {
-            event.preventDefault()
-            copy(props.fullQuery)
-            setCopied(true)
-            Tooltip.forceUpdate()
-
-            setTimeout(() => {
-                setCopied(false)
-                Tooltip.forceUpdate()
-            }, 1000)
-        },
-        [props.fullQuery]
-    )
+    const click = useMemo(() => new Subject(), [])
+    // use this as onClick handler
+    const nextClick = useCallback(() => click.next(), [click])
+    useEffect(() => {
+        const sub = click
+            .pipe(
+                tap(() => {
+                    copy(props.fullQuery)
+                    setCopied(true)
+                    Tooltip.forceUpdate()
+                }),
+                debounceTime(1000),
+                tap(() => {
+                    setCopied(false)
+                    Tooltip.forceUpdate()
+                })
+            )
+            .subscribe()
+        return () => sub.unsubscribe()
+    }, [click, props.fullQuery])
 
     return (
         <button
             type="button"
             className={classNames('btn btn-icon icon-inline  btn-link-sm', props.className)}
             data-tooltip={copied ? 'Copied!' : 'Copy query to clipboard'}
-            onClick={onClick}
+            onClick={nextClick}
         >
             <ContentCopyIcon className="icon-inline" />
         </button>
