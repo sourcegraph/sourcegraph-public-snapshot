@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/bundles"
+	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
 )
 
 // Hover returns the hover text and range for the symbol at the given position.

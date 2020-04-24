@@ -4,14 +4,14 @@ package mocks
 
 import (
 	"context"
-	bundles "github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/bundles"
+	client "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
 	"io"
 	"sync"
 )
 
 // MockBundleManagerClient is a mock impelementation of the
 // BundleManagerClient interface (from the package
-// github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/bundles)
+// github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client)
 // used for unit testing.
 type MockBundleManagerClient struct {
 	// BundleClientFunc is an instance of a mock function object controlling
@@ -28,7 +28,7 @@ type MockBundleManagerClient struct {
 func NewMockBundleManagerClient() *MockBundleManagerClient {
 	return &MockBundleManagerClient{
 		BundleClientFunc: &BundleManagerClientBundleClientFunc{
-			defaultHook: func(int) bundles.BundleClient {
+			defaultHook: func(int) client.BundleClient {
 				return nil
 			},
 		},
@@ -43,7 +43,7 @@ func NewMockBundleManagerClient() *MockBundleManagerClient {
 // NewMockBundleManagerClientFrom creates a new mock of the
 // MockBundleManagerClient interface. All methods delegate to the given
 // implementation, unless overwritten.
-func NewMockBundleManagerClientFrom(i bundles.BundleManagerClient) *MockBundleManagerClient {
+func NewMockBundleManagerClientFrom(i client.BundleManagerClient) *MockBundleManagerClient {
 	return &MockBundleManagerClient{
 		BundleClientFunc: &BundleManagerClientBundleClientFunc{
 			defaultHook: i.BundleClient,
@@ -58,15 +58,15 @@ func NewMockBundleManagerClientFrom(i bundles.BundleManagerClient) *MockBundleMa
 // BundleClient method of the parent MockBundleManagerClient instance is
 // invoked.
 type BundleManagerClientBundleClientFunc struct {
-	defaultHook func(int) bundles.BundleClient
-	hooks       []func(int) bundles.BundleClient
+	defaultHook func(int) client.BundleClient
+	hooks       []func(int) client.BundleClient
 	history     []BundleManagerClientBundleClientFuncCall
 	mutex       sync.Mutex
 }
 
 // BundleClient delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockBundleManagerClient) BundleClient(v0 int) bundles.BundleClient {
+func (m *MockBundleManagerClient) BundleClient(v0 int) client.BundleClient {
 	r0 := m.BundleClientFunc.nextHook()(v0)
 	m.BundleClientFunc.appendCall(BundleManagerClientBundleClientFuncCall{v0, r0})
 	return r0
@@ -75,7 +75,7 @@ func (m *MockBundleManagerClient) BundleClient(v0 int) bundles.BundleClient {
 // SetDefaultHook sets function that is called when the BundleClient method
 // of the parent MockBundleManagerClient instance is invoked and the hook
 // queue is empty.
-func (f *BundleManagerClientBundleClientFunc) SetDefaultHook(hook func(int) bundles.BundleClient) {
+func (f *BundleManagerClientBundleClientFunc) SetDefaultHook(hook func(int) client.BundleClient) {
 	f.defaultHook = hook
 }
 
@@ -84,7 +84,7 @@ func (f *BundleManagerClientBundleClientFunc) SetDefaultHook(hook func(int) bund
 // inovkes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *BundleManagerClientBundleClientFunc) PushHook(hook func(int) bundles.BundleClient) {
+func (f *BundleManagerClientBundleClientFunc) PushHook(hook func(int) client.BundleClient) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -92,21 +92,21 @@ func (f *BundleManagerClientBundleClientFunc) PushHook(hook func(int) bundles.Bu
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *BundleManagerClientBundleClientFunc) SetDefaultReturn(r0 bundles.BundleClient) {
-	f.SetDefaultHook(func(int) bundles.BundleClient {
+func (f *BundleManagerClientBundleClientFunc) SetDefaultReturn(r0 client.BundleClient) {
+	f.SetDefaultHook(func(int) client.BundleClient {
 		return r0
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *BundleManagerClientBundleClientFunc) PushReturn(r0 bundles.BundleClient) {
-	f.PushHook(func(int) bundles.BundleClient {
+func (f *BundleManagerClientBundleClientFunc) PushReturn(r0 client.BundleClient) {
+	f.PushHook(func(int) client.BundleClient {
 		return r0
 	})
 }
 
-func (f *BundleManagerClientBundleClientFunc) nextHook() func(int) bundles.BundleClient {
+func (f *BundleManagerClientBundleClientFunc) nextHook() func(int) client.BundleClient {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -145,7 +145,7 @@ type BundleManagerClientBundleClientFuncCall struct {
 	Arg0 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 bundles.BundleClient
+	Result0 client.BundleClient
 }
 
 // Args returns an interface slice containing the arguments of this

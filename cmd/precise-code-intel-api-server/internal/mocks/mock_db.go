@@ -4,14 +4,14 @@ package mocks
 
 import (
 	"context"
-	db "github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/db"
+	db "github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 	"sync"
 	"time"
 )
 
 // MockDB is a mock impelementation of the DB interface (from the package
-// github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/db)
-// used for unit testing.
+// github.com/sourcegraph/sourcegraph/internal/codeintel/db) used for unit
+// testing.
 type MockDB struct {
 	// DeleteOldestDumpFunc is an instance of a mock function object
 	// controlling the behavior of the method DeleteOldestDump.

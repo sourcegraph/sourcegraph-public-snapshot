@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
-	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 )
 
 type Janitor struct {
