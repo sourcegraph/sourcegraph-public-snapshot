@@ -112,17 +112,17 @@ func (r *actionJobResolver) FileDiffs(ctx context.Context, args *graphqlutil.Con
 }
 
 func (r *actionJobResolver) ExecutionStart() *graphqlbackend.DateTime {
-	if r.job.ExecutionStart.IsZero() {
+	if r.job.ExecutionStartAt.IsZero() {
 		return nil
 	}
-	return &graphqlbackend.DateTime{Time: r.job.ExecutionStart}
+	return &graphqlbackend.DateTime{Time: r.job.ExecutionStartAt}
 }
 
 func (r *actionJobResolver) ExecutionEnd() *graphqlbackend.DateTime {
-	if r.job.ExecutionEnd.IsZero() {
+	if r.job.ExecutionEndAt.IsZero() {
 		return nil
 	}
-	return &graphqlbackend.DateTime{Time: r.job.ExecutionEnd}
+	return &graphqlbackend.DateTime{Time: r.job.ExecutionEndAt}
 }
 
 func (r *actionJobResolver) Log() *string {

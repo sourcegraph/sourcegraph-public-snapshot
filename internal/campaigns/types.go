@@ -1294,22 +1294,22 @@ type ActionExecution struct {
 	InvocationReason ActionExecutionInvocationReason
 	PatchSetID       *int64
 	ActionID         int64
-	ExecutionStart   time.Time
-	ExecutionEnd     time.Time
+	ExecutionStartAt time.Time
+	ExecutionEndAt   time.Time
 }
 
 type ActionJob struct {
-	ID             int64
-	Log            *string
-	ExecutionStart time.Time
-	ExecutionEnd   time.Time
-	AgentSeenAt    time.Time
-	Patch          *string
-	State          ActionJobState
-	RepoID         int32
-	ExecutionID    int64
-	BaseRevision   string
-	BaseReference  string
+	ID               int64
+	Log              *string
+	ExecutionStartAt time.Time
+	ExecutionEndAt   time.Time
+	AgentSeenAt      time.Time
+	Patch            *string
+	State            ActionJobState
+	RepoID           int32
+	ExecutionID      int64
+	BaseRevision     string
+	BaseReference    string
 }
 
 // ActionExecutionInvocationReason defines the possible reasons of an execution to be triggered from.

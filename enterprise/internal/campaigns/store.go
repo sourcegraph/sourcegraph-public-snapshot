@@ -2795,8 +2795,8 @@ func scanActionExecution(a *campaigns.ActionExecution, s scanner) error {
 		&a.InvocationReason,
 		&a.PatchSetID,
 		&a.ActionID,
-		&dbutil.NullTime{Time: &a.ExecutionStart},
-		&dbutil.NullTime{Time: &a.ExecutionEnd},
+		&dbutil.NullTime{Time: &a.ExecutionStartAt},
+		&dbutil.NullTime{Time: &a.ExecutionEndAt},
 	)
 }
 
@@ -2810,8 +2810,8 @@ func scanActionJob(a *campaigns.ActionJob, s scanner) error {
 	return s.Scan(
 		&a.ID,
 		&a.Log,
-		&dbutil.NullTime{Time: &a.ExecutionStart},
-		&dbutil.NullTime{Time: &a.ExecutionEnd},
+		&dbutil.NullTime{Time: &a.ExecutionStartAt},
+		&dbutil.NullTime{Time: &a.ExecutionEndAt},
 		&dbutil.NullTime{Time: &a.AgentSeenAt},
 		&a.Patch,
 		&a.State,
@@ -3204,9 +3204,9 @@ SELECT
 	action_executions.env,
 	action_executions.invocation_reason,
 	action_executions.patch_set_id,
-	action_executions.action,
-	(SELECT MIN(action_jobs.execution_start) FROM action_jobs WHERE action_jobs.execution = action_executions.id) AS execution_start,
-	(SELECT MAX(action_jobs.execution_end) FROM action_jobs WHERE action_jobs.execution = action_executions.id) AS execution_end
+	action_executions.action_id,
+	(SELECT MIN(action_jobs.execution_start_at) FROM action_jobs WHERE action_jobs.execution_id = action_executions.id) AS execution_start_at,
+	(SELECT MAX(action_jobs.execution_end_at) FROM action_jobs WHERE action_jobs.execution_id = action_executions.id) AS execution_end_at
 FROM
 	action_executions
 WHERE
@@ -3243,7 +3243,7 @@ func (s *Store) ListActionExecutions(ctx context.Context, opts ListActionExecuti
 	q = sqlf.Sprintf("SELECT COUNT(*) FROM action_executions")
 	countTemplate := "SELECT COUNT(*) FROM action_executions"
 	if opts.ActionID != nil {
-		countTemplate = countTemplate + " WHERE action = %d"
+		countTemplate = countTemplate + " WHERE action_id = %d"
 		q = sqlf.Sprintf(countTemplate, opts.ActionID)
 	} else {
 		q = sqlf.Sprintf(countTemplate)
@@ -3270,8 +3270,8 @@ SELECT
 	action_executions.invocation_reason,
 	action_executions.patch_set_id,
 	action_executions.action,
-	(SELECT MIN(action_jobs.execution_start) FROM action_jobs WHERE action_jobs.execution = action_executions.id) AS execution_start,
-	(SELECT MAX(action_jobs.execution_end) FROM action_jobs WHERE action_jobs.execution = action_executions.id) AS execution_end
+	(SELECT MIN(action_jobs.execution_start_at) FROM action_jobs WHERE action_jobs.execution_id = action_executions.id) AS execution_start_at,
+	(SELECT MAX(action_jobs.execution_end_at) FROM action_jobs WHERE action_jobs.execution_id = action_executions.id) AS execution_end_at
 FROM action_executions
 `
 
@@ -3296,7 +3296,7 @@ func listActionExecutionsQuery(opts *ListActionExecutionsOpts) *sqlf.Query {
 	}
 
 	if opts.ActionID != nil {
-		preds = append(preds, sqlf.Sprintf("action_executions.action = %s", opts.ActionID))
+		preds = append(preds, sqlf.Sprintf("action_executions.action_id = %s", opts.ActionID))
 	}
 
 	queryTemplate := listActionExecutionsQueryFmtstrSelect + listActionExecutionsQueryFmtstrConditions + limitClause
@@ -3331,7 +3331,7 @@ var createActionExecutionQueryFmtstrSelect = `
 -- source: enterprise/internal/campaigns/store.go:CreateActionExecution
 INSERT INTO
 	action_executions
-	(steps, env, invocation_reason, action)
+	(steps, env, invocation_reason, action_id)
 VALUES
 	(%s, %s::json, %s, %d)
 RETURNING
@@ -3340,9 +3340,9 @@ RETURNING
 	action_executions.env,
 	action_executions.invocation_reason,
 	action_executions.patch_set_id,
-	action_executions.action,
-	(SELECT MIN(action_jobs.execution_start) FROM action_jobs WHERE action_jobs.execution = action_executions.id) AS execution_start,
-	(SELECT MAX(action_jobs.execution_end) FROM action_jobs WHERE action_jobs.execution = action_executions.id) AS execution_end
+	action_executions.action_id,
+	(SELECT MIN(action_jobs.execution_start_at) FROM action_jobs WHERE action_jobs.execution_id = action_executions.id) AS execution_start_at,
+	(SELECT MAX(action_jobs.execution_end_at) FROM action_jobs WHERE action_jobs.execution_id = action_executions.id) AS execution_end_at
 `
 
 func createActionExecutionQuery(opts *CreateActionExecutionOpts) *sqlf.Query {
@@ -3377,19 +3377,19 @@ var createActionJobQueryFmtstrSelect = `
 -- source: enterprise/internal/campaigns/store.go:CreateActionJob
 INSERT INTO
 	action_jobs
-	(state, repository, execution, base_revision, base_reference)
+	(state, repository_id, execution_id, base_revision, base_reference)
 VALUES
 	('PENDING', %d, %d, %s, %s)
 RETURNING
 	action_jobs.id,
 	action_jobs.log,
-	action_jobs.execution_start,
-	action_jobs.execution_end,
+	action_jobs.execution_start_at,
+	action_jobs.execution_end_at,
 	action_jobs.agent_seen_at,
 	action_jobs.patch,
 	action_jobs.state,
-	action_jobs.repository,
-	action_jobs.execution,
+	action_jobs.repository_id,
+	action_jobs.execution_id,
 	action_jobs.base_revision,
 	action_jobs.base_reference
 `
@@ -3424,7 +3424,7 @@ func (s *Store) ListActionJobs(ctx context.Context, opts ListActionJobsOpts) (ac
 	q = sqlf.Sprintf("SELECT COUNT(*) FROM action_jobs")
 	countTemplate := "SELECT COUNT(*) FROM action_jobs"
 	if opts.ExecutionID != nil {
-		countTemplate = countTemplate + " WHERE execution = %d"
+		countTemplate = countTemplate + " WHERE execution_id = %d"
 		q = sqlf.Sprintf(countTemplate, opts.ExecutionID)
 	} else {
 		q = sqlf.Sprintf(countTemplate)
@@ -3447,13 +3447,13 @@ var listActionJobsQueryFmtstrSelect = `
 SELECT
 	action_jobs.id,
 	action_jobs.log,
-	action_jobs.execution_start,
-	action_jobs.execution_end,
+	action_jobs.execution_start_at,
+	action_jobs.execution_end_at,
 	action_jobs.agent_seen_at,
 	action_jobs.patch,
 	action_jobs.state,
-	action_jobs.repository,
-	action_jobs.execution,
+	action_jobs.repository_id,
+	action_jobs.execution_id,
 	action_jobs.base_revision,
 	action_jobs.base_reference
 FROM action_jobs
@@ -3480,7 +3480,7 @@ func listActionJobsQuery(opts *ListActionJobsOpts) *sqlf.Query {
 	}
 
 	if opts.ExecutionID != nil {
-		preds = append(preds, sqlf.Sprintf("action_jobs.execution = %s", opts.ExecutionID))
+		preds = append(preds, sqlf.Sprintf("action_jobs.execution_id = %s", opts.ExecutionID))
 	}
 
 	queryTemplate := listActionJobsQueryFmtstrSelect + listActionJobsQueryFmtstrConditions + limitClause
@@ -3521,10 +3521,10 @@ VALUES
 RETURNING
 	actions.id,
 	actions.name,
-	actions.campaign,
+	actions.campaign_id,
 	actions.schedule,
 	actions.cancel_previous,
-	actions.saved_search,
+	actions.saved_search_id,
 	actions.steps,
 	actions.env
 `
@@ -3568,10 +3568,10 @@ WHERE
 RETURNING
 	actions.id,
 	actions.name,
-	actions.campaign,
+	actions.campaign_id,
 	actions.schedule,
 	actions.cancel_previous,
-	actions.saved_search,
+	actions.saved_search_id,
 	actions.steps,
 	actions.env
 `
@@ -3618,9 +3618,9 @@ RETURNING
 	action_executions.env,
 	action_executions.invocation_reason,
 	action_executions.patch_set_id,
-	action_executions.action,
-	(SELECT MIN(action_jobs.execution_start) FROM action_jobs WHERE action_jobs.execution = action_executions.id) AS execution_start,
-	(SELECT MAX(action_jobs.execution_end) FROM action_jobs WHERE action_jobs.execution = action_executions.id) AS execution_end
+	action_executions.action_id,
+	(SELECT MIN(action_jobs.execution_start_at) FROM action_jobs WHERE action_jobs.execution_id = action_executions.id) AS execution_start_at,
+	(SELECT MAX(action_jobs.execution_end_at) FROM action_jobs WHERE action_jobs.execution_id = action_executions.id) AS execution_end_at
 `
 
 func updateActionExecutionQuery(opts *UpdateActionExecutionOpts) *sqlf.Query {
@@ -3661,18 +3661,18 @@ var listActionsBySavedSearchQueryQueryFmtstrSelect = `
 SELECT
 	actions.id,
 	actions.name,
-	actions.campaign,
+	actions.campaign_id,
 	actions.schedule,
 	actions.cancel_previous,
-	actions.saved_search,
+	actions.saved_search_id,
 	actions.steps,
 	actions.env
 FROM
 	actions
 WHERE
-	actions.saved_search IS NOT NULL
+	actions.saved_search_id IS NOT NULL
 AND
-	actions.saved_search IN (SELECT id FROM saved_searches WHERE query = %s)
+	actions.saved_search_id IN (SELECT id FROM saved_searches WHERE query = %s)
 ORDER BY actions.id ASC
 `
 
@@ -3726,7 +3726,7 @@ SELECT
 FROM
 	action_jobs
 WHERE
-	action_jobs.execution = %d
+	action_jobs.execution_id = %d
 `
 
 func actionExecutionStatusQuery(opts *ActionExecutionStatusOpts) *sqlf.Query {
@@ -3750,10 +3750,10 @@ var cancelActionExecutionQueryFmtstr = `
 UPDATE
 	action_jobs
 SET
-	execution_end = NOW(),
+	execution_end_at = NOW(),
 	state = 'CANCELED'
 WHERE
-	action_jobs.execution = %d
+	action_jobs.execution_id = %d
 	AND action_jobs.state IN ('RUNNING', 'PENDING');
 `
 

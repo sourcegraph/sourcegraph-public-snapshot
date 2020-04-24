@@ -117,17 +117,17 @@ func (r *actionExecutionResolver) Status(ctx context.Context) (*campaigns.Backgr
 }
 
 func (r *actionExecutionResolver) ExecutionStart() *graphqlbackend.DateTime {
-	if r.actionExecution.ExecutionStart.IsZero() {
+	if r.actionExecution.ExecutionStartAt.IsZero() {
 		return nil
 	}
-	return &graphqlbackend.DateTime{Time: r.actionExecution.ExecutionStart}
+	return &graphqlbackend.DateTime{Time: r.actionExecution.ExecutionStartAt}
 }
 
 func (r *actionExecutionResolver) ExecutionEnd() *graphqlbackend.DateTime {
-	if r.actionExecution.ExecutionEnd.IsZero() {
+	if r.actionExecution.ExecutionEndAt.IsZero() {
 		return nil
 	}
-	return &graphqlbackend.DateTime{Time: r.actionExecution.ExecutionEnd}
+	return &graphqlbackend.DateTime{Time: r.actionExecution.ExecutionEndAt}
 }
 
 func (r *actionExecutionResolver) PatchSet(ctx context.Context) (graphqlbackend.PatchSetResolver, error) {
