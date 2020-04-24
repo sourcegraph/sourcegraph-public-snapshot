@@ -48,13 +48,6 @@ const campaignFragment = gql`
                 __typename
                 id
                 state
-                diff {
-                    fileDiffs {
-                        diffStat {
-                            ...DiffStatFields
-                        }
-                    }
-                }
             }
         }
         patches(first: 10000) {
@@ -62,14 +55,6 @@ const campaignFragment = gql`
             nodes {
                 id
                 __typename
-                diff {
-                    fileDiffs {
-                        totalCount
-                        diffStat {
-                            ...DiffStatFields
-                        }
-                    }
-                }
             }
         }
         patchSet {
@@ -84,6 +69,9 @@ const campaignFragment = gql`
             openChangesRequested
             openPending
             total
+        }
+        diffStat {
+            ...DiffStatFields
         }
     }
 
