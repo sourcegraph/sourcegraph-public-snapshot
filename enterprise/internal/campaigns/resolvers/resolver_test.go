@@ -570,6 +570,7 @@ func TestCampaigns(t *testing.T) {
 		Namespace               UserOrg
 		Changesets              ChangesetConnection
 		ChangesetCountsOverTime []ChangesetCounts
+		DiffStat                DiffStat
 	}
 
 	var addChangesetsResult struct{ Campaign CampaignWithChangesets }
@@ -625,6 +626,11 @@ func TestCampaigns(t *testing.T) {
 				openApproved
 				openChangesRequested
 				openPending
+			}
+			diffStat {
+				added
+				changed
+				deleted
 			}
 		}
 		mutation() {
@@ -687,6 +693,14 @@ func TestCampaigns(t *testing.T) {
 			if have, want := c.Total, int32(1); have != want {
 				t.Errorf("wrong changeset counts total %d, have=%d", want, have)
 			}
+		}
+	}
+
+	{
+		have := addChangesetsResult.Campaign.DiffStat
+		want := DiffStat{Added: 0, Changed: 0, Deleted: 0}
+		if have != want {
+			t.Errorf("wrong campaign combined diffstat. want=%v, have=%v", want, have)
 		}
 	}
 
