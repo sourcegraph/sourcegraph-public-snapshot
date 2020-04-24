@@ -63,10 +63,10 @@ func (r *actionResolver) Definition() graphqlbackend.ActionDefinitionResolver {
 }
 
 func (r *actionResolver) SavedSearch(ctx context.Context) (*graphqlbackend.SavedSearchResolver, error) {
-	if r.action.SavedSearchID == nil {
+	if r.action.SavedSearchID == 0 {
 		return nil, nil
 	}
-	return graphqlbackend.SavedSearchByIDInt32(ctx, *r.action.SavedSearchID)
+	return graphqlbackend.SavedSearchByIDInt32(ctx, r.action.SavedSearchID)
 }
 
 func (r *actionResolver) Schedule() *string {
@@ -78,11 +78,11 @@ func (r *actionResolver) CancelPreviousScheduledExecution() bool {
 }
 
 func (r *actionResolver) Campaign(ctx context.Context) (graphqlbackend.CampaignResolver, error) {
-	if r.action.CampaignID == nil {
+	if r.action.CampaignID == 0 {
 		return nil, nil
 	}
 
-	campaign, err := r.store.GetCampaign(ctx, ee.GetCampaignOpts{ID: *r.action.CampaignID})
+	campaign, err := r.store.GetCampaign(ctx, ee.GetCampaignOpts{ID: r.action.CampaignID})
 	if err != nil {
 		return nil, err
 	}

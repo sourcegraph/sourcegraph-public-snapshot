@@ -131,10 +131,10 @@ func (r *actionExecutionResolver) ExecutionEnd() *graphqlbackend.DateTime {
 }
 
 func (r *actionExecutionResolver) PatchSet(ctx context.Context) (graphqlbackend.PatchSetResolver, error) {
-	if r.actionExecution.PatchSetID == nil {
+	if r.actionExecution.PatchSetID == 0 {
 		return nil, nil
 	}
-	patchSet, err := r.store.GetPatchSet(ctx, ee.GetPatchSetOpts{ID: *r.actionExecution.PatchSetID})
+	patchSet, err := r.store.GetPatchSet(ctx, ee.GetPatchSetOpts{ID: r.actionExecution.PatchSetID})
 	if err != nil {
 		return nil, err
 	}

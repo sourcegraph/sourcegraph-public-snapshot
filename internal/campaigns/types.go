@@ -157,12 +157,12 @@ func (b BackgroundProcessStatus) PendingCount() int32           { return b.Pendi
 func (b BackgroundProcessStatus) State() BackgroundProcessState { return b.ProcessState }
 func (b BackgroundProcessStatus) Errors() []string              { return b.ProcessErrors }
 
-// not exposed via graphql
+// Not exposed via graphql.
 func (b BackgroundProcessStatus) Finished() bool {
 	return b.ProcessState != BackgroundProcessStateProcessing
 }
 
-// not exposed via graphql
+// Not exposed via graphql.
 func (b BackgroundProcessStatus) Processing() bool {
 	return b.ProcessState == BackgroundProcessStateProcessing
 }
@@ -1278,13 +1278,12 @@ func unixMilliToTime(ms int64) time.Time {
 type Action struct {
 	ID             int64
 	Name           string
-	CampaignID     *int64
+	CampaignID     int64
 	Schedule       *string
 	CancelPrevious bool
-	// todo: 32 or 64? if 64 we have to truncate in the resolver of the action
-	SavedSearchID *int32
-	Steps         string
-	EnvStr        string
+	SavedSearchID  int32
+	Steps          string
+	EnvStr         string
 }
 
 type ActionExecution struct {
@@ -1292,7 +1291,7 @@ type ActionExecution struct {
 	Steps            string
 	EnvStr           *string
 	InvocationReason ActionExecutionInvocationReason
-	PatchSetID       *int64
+	PatchSetID       int64
 	ActionID         int64
 	ExecutionStartAt time.Time
 	ExecutionEndAt   time.Time

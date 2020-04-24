@@ -1148,9 +1148,9 @@ func (r *Resolver) UpdateActionJob(ctx context.Context, args *graphqlbackend.Upd
 			if err != nil {
 				return nil, err
 			}
-			if action.CampaignID != nil {
+			if action.CampaignID != 0 {
 				// todo: the tx is completed when the background go func of updateCampaign executes
-				if _, err = updateCampaign(ctx, tx, r.httpFactory, tr, ee.UpdateCampaignArgs{Campaign: *action.CampaignID, PatchSet: &patchSet.ID}); err != nil {
+				if _, err = updateCampaign(ctx, tx, r.httpFactory, tr, ee.UpdateCampaignArgs{Campaign: action.CampaignID, PatchSet: &patchSet.ID}); err != nil {
 					return nil, err
 				}
 			}
