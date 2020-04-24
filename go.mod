@@ -23,6 +23,7 @@ require (
 	github.com/dgraph-io/ristretto v0.0.2
 	github.com/dnaeon/go-vcr v1.0.1
 	github.com/docker/docker v1.4.2-0.20200213202729-31a86c4ab209
+	github.com/efritz/go-mockgen v0.0.0-20200420163638-0338f3dfc81c
 	github.com/emersion/go-imap v1.0.4
 	github.com/ericchiang/k8s v1.2.0
 	github.com/fatih/astrewrite v0.0.0-20191207154002-9094e544fcef
@@ -143,7 +144,7 @@ require (
 	golang.org/x/sync v0.0.0-20200317015054-43a5402ce75a
 	golang.org/x/sys v0.0.0-20200331124033-c3d80250170d
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0
-	golang.org/x/tools v0.0.0-20200403190813-44a64ad78b9b
+	golang.org/x/tools v0.0.0-20200420001825-978e26b7c37c
 	google.golang.org/api v0.21.0 // indirect
 	google.golang.org/genproto v0.0.0-20200403120447-c50568487044 // indirect
 	gopkg.in/jpoehls/gophermail.v0 v0.0.0-20160410235621-62941eab772c
