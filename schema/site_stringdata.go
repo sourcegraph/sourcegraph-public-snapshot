@@ -569,7 +569,7 @@ const SiteSchemaJSON = `{
       "group": "Misc."
     },
     "externalURL": {
-      "description": "The externally accessible URL for Sourcegraph (i.e., what you type into your browser). Previously called ` + "`" + `appURL` + "`" + `.",
+      "description": "The externally accessible URL for Sourcegraph (i.e., what you type into your browser). Previously called ` + "`" + `appURL` + "`" + `. Only root URLs are allowed.",
       "type": "string",
       "examples": ["https://sourcegraph.example.com"]
     },

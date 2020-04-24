@@ -1,6 +1,6 @@
 import { DiffPart } from '@sourcegraph/codeintellify'
 import { Range } from '@sourcegraph/extension-api-classes'
-import { uniqueId, noop } from 'lodash'
+import { uniqueId, noop, isEmpty } from 'lodash'
 import renderer from 'react-test-renderer'
 import { BehaviorSubject, from, NEVER, of, Subject, Subscription, throwError } from 'rxjs'
 import { filter, skip, switchMap, take, first } from 'rxjs/operators'
@@ -422,7 +422,7 @@ describe('code_intelligence', () => {
                 const decorated = (commit: string): Promise<TextDocumentDecoration[] | null> =>
                     services.textDocumentDecoration
                         .getDecorations({ uri: `git://foo?${commit}#/bar.ts` })
-                        .pipe(skip(1), take(1))
+                        .pipe(first(decorations => !isEmpty(decorations)))
                         .toPromise()
 
                 // Set decorations and verify that a decoration attachment has been added

@@ -174,7 +174,7 @@ func configureRepos(logger *log.Logger, root string) []string {
 		// A directory which also is a repository (have .git folder inside it)
 		// will contain nil error. If it does, proceed to configure.
 		gitdir := filepath.Join(path, ".git")
-		if _, err := os.Stat(gitdir); os.IsNotExist(err) {
+		if fi, err := os.Stat(gitdir); err != nil || !fi.IsDir() {
 			return nil
 		}
 

@@ -14,7 +14,7 @@ This tutorial shows you how to deploy Sourcegraph to a single EC2 instance on AW
 - Ensure the **Auto-assign Public IP** option is "Enable". This ensures your instance is accessible to the Internet.
 - Add the following user data (as text) in the **Advanced Details** section:
 
-   ```yaml
+   ```
    #cloud-config
    repo_update: true
    repo_upgrade: all

@@ -18,6 +18,9 @@ func GitServer() *Container {
 							Warning:         Alert{LessOrEqual: 25},
 							Critical:        Alert{LessOrEqual: 15},
 							PanelOptions:    PanelOptions().LegendFormat("{{instance}}").Unit(Percentage),
+							PossibleSolutions: `
+								- **Provision more disk space:** Sourcegraph will begin deleting least-used repository clones at 10% disk space remaining which may result in decreased performance, users having to wait for repositories to clone, etc.
+							`,
 						},
 						{
 							Name:            "running_git_commands",
@@ -27,6 +30,11 @@ func GitServer() *Container {
 							Warning:         Alert{GreaterOrEqual: 50},
 							Critical:        Alert{GreaterOrEqual: 100},
 							PanelOptions:    PanelOptions().LegendFormat("running commands"),
+							PossibleSolutions: `
+								- **Check if the problem may be an intermittent and temporary peak** using the "Container monitoring" section at the bottom of the Git Server dashboard.
+								- **Single container deployments:** Consider upgrading to a [Docker Compose deployment](../install/docker-compose/migrate.md) which offers better scalability and resource isolation.
+								- **Kubernetes and Docker Compose:** Check that you are running a similar number of git server replicas and that their CPU/memory limits are allocated according to what is shown in the [Sourcegraph resource estimator](../install/resource_estimator.md).
+							`,
 						},
 					}, {
 						{
@@ -36,6 +44,10 @@ func GitServer() *Container {
 							DataMayNotExist: true,
 							Warning:         Alert{GreaterOrEqual: 25},
 							PanelOptions:    PanelOptions().LegendFormat("queue size"),
+							PossibleSolutions: `
+								- **If you just added several repositories**, the warning may be expected.
+								- **Check which repositories need cloning**, by visiting e.g. https://sourcegraph.example.com/site-admin/repositories?filter=not-cloned
+							`,
 						},
 						{
 							Name:            "repository_existence_check_queue_size",
@@ -44,6 +56,11 @@ func GitServer() *Container {
 							DataMayNotExist: true,
 							Warning:         Alert{GreaterOrEqual: 25},
 							PanelOptions:    PanelOptions().LegendFormat("queue size"),
+							PossibleSolutions: `
+								- **Check the code host status indicator for errors:** on the Sourcegraph app homepage, when signed in as an admin click the cloud icon in the top right corner of the page.
+								- **Check if the issue continues to happen after 30 minutes**, it may be temporary.
+								- **Check the gitserver logs for more information.**
+							`,
 						},
 					}, {
 						{
@@ -54,15 +71,13 @@ func GitServer() *Container {
 							Warning:         Alert{GreaterOrEqual: 1.0},
 							Critical:        Alert{GreaterOrEqual: 2.0},
 							PanelOptions:    PanelOptions().LegendFormat("running commands").Unit(Seconds),
+							PossibleSolutions: `
+								- **Check if the problem may be an intermittent and temporary peak** using the "Container monitoring" section at the bottom of the Git Server dashboard.
+								- **Single container deployments:** Consider upgrading to a [Docker Compose deployment](../install/docker-compose/migrate.md) which offers better scalability and resource isolation.
+								- **Kubernetes and Docker Compose:** Check that you are running a similar number of git server replicas and that their CPU/memory limits are allocated according to what is shown in the [Sourcegraph resource estimator](../install/resource_estimator.md).
+							`,
 						},
-						{
-							Name:            "frontend_internal_api_error_responses",
-							Description:     "frontend-internal API error responses every 5m by route",
-							Query:           `sum by (category)(increase(src_frontend_internal_request_duration_seconds_count{job="gitserver",code!~"2.."}[5m]))`,
-							DataMayNotExist: true,
-							Warning:         Alert{GreaterOrEqual: 5},
-							PanelOptions:    PanelOptions().LegendFormat("{{category}}"),
-						},
+						sharedFrontendInternalAPIErrorResponses("gitserver"),
 					},
 				},
 			},
@@ -71,30 +86,9 @@ func GitServer() *Container {
 				Hidden: true,
 				Rows: []Row{
 					{
-						{
-							Name:            "container_restarts",
-							Description:     "container restarts every 5m by instance (not available on k8s or server)",
-							Query:           `increase(cadvisor_container_restart_count{name=~".*gitserver.*"}[5m])`,
-							DataMayNotExist: true,
-							Warning:         Alert{GreaterOrEqual: 1},
-							PanelOptions:    PanelOptions().LegendFormat("{{name}}"),
-						},
-						{
-							Name:            "container_memory_usage",
-							Description:     "container memory usage by instance (not available on k8s or server)",
-							Query:           `cadvisor_container_memory_usage_percentage_total{name=~".*gitserver.*"}`,
-							DataMayNotExist: true,
-							Warning:         Alert{GreaterOrEqual: 90},
-							PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage),
-						},
-						{
-							Name:            "container_cpu_usage",
-							Description:     "container cpu usage total (5m average) across all cores by instance (not available on k8s or server)",
-							Query:           `cadvisor_container_cpu_usage_percentage_total{name=~".*gitserver.*"}`,
-							DataMayNotExist: true,
-							Warning:         Alert{GreaterOrEqual: 90},
-							PanelOptions:    PanelOptions().LegendFormat("{{name}}").Unit(Percentage),
-						},
+						sharedContainerRestarts("gitserver"),
+						sharedContainerMemoryUsage("gitserver"),
+						sharedContainerCPUUsage("gitserver"),
 					},
 				},
 			},

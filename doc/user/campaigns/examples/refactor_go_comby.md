@@ -1,10 +1,26 @@
 # Example: Refactor Go code using Comby
 
-Our goal for this campaign is to simplify Go code by using [Comby](https://comby.dev/) to rewrite calls to `fmt.Sprintf("%d", arg)` with `strconv.Itoa(:[v])`. The semantics are the same, but one more cleanly expresses the intention behind the code.
+Our goal for this campaign is to simplify Go code by using [Comby](https://comby.dev/) to rewrite statements of this form
 
-> **Note**: Learn more about Comby and what it's capable of at [comby.dev](https://comby.dev/)
+```go
+fmt.Sprintf("%d", arg)
+```
 
-To do that we use two Docker containers. One container launches Comby to rewrite the the code in Go files and the other runs [goimports](https://godoc.org/golang.org/x/tools/cmd/goimports) to update the `import` statements in the updated Go code so that `strconv` is correctly imported and, possibly, `fmt` is removed.
+to this form:
+
+```go
+strconv.Itoa(arg)
+```
+
+The semantics are the same, but one more cleanly expresses the intention behind the code.
+
+We're going to use two Docker containers in our action.
+
+The first container launches Comby to rewrite the Go code.
+
+>NOTE: Learn more about Comby and what it's capable of at [comby.dev](https://comby.dev/)
+
+The second container runs [goimports](https://godoc.org/golang.org/x/tools/cmd/goimports) to update the `import` statements in the updated Go code so that `strconv` is correctly imported and, possibly, `fmt` is removed.
 
 Here is the `action.json` file that defines this as an action:
 
@@ -32,6 +48,14 @@ Save the definition in a file, for example `go-comby.action.json`.
 
 Now we can execute the action and turn it into a campaign:
 
-1. Make sure that the `"scopeQuery"` returns the repositories we want to run over: `src actions scope-query -f go-comby.action.json`
-1. Execute the action and create a patchset: `src actions exec -f action.json | src campaign patchset create-from-patches`
-1. Follow the printed instructions to create and run the campaign on Sourcegraph
+1. Make sure that the `"scopeQuery"` returns the repositories we want to run over:
+
+    ```
+    src actions scope-query -f go-comby.action.json
+    ```
+1. Execute the action and create a patchset:
+
+    ```
+    src actions exec -f action.json | src campaign patchset create-from-patches
+    ```
+1. Follow the printed instructions to create the campaign on Sourcegraph.

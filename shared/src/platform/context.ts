@@ -1,4 +1,4 @@
-import { Endpoint, isEndpoint } from '@sourcegraph/comlink'
+import { Endpoint } from '@sourcegraph/comlink'
 import { NextObserver, Observable, Subscribable } from 'rxjs'
 import { SettingsEdit } from '../api/client/services/settings'
 import { GraphQLResult } from '../graphql/graphql'
@@ -7,16 +7,32 @@ import { Settings, SettingsCascadeOrError } from '../settings/settings'
 import { TelemetryService } from '../telemetry/telemetryService'
 import { FileSpec, UIPositionSpec, RawRepoSpec, RepoSpec, RevSpec, ViewStateSpec } from '../util/url'
 import { DiffPart } from '@sourcegraph/codeintellify'
+import { isObject } from 'lodash'
+import { hasProperty } from '../util/types'
 
 export interface EndpointPair {
     /** The endpoint to proxy the API of the other thread from */
-    proxy: Endpoint & Pick<MessagePort, 'start'>
+    proxy: Endpoint
 
     /** The endpoint to expose the API of this thread to */
-    expose: Endpoint & Pick<MessagePort, 'start'>
+    expose: Endpoint
 }
-export const isEndpointPair = (val: any): val is EndpointPair =>
-    typeof val === 'object' && val !== null && isEndpoint(val.proxy) && isEndpoint(val.expose)
+
+const isEndpoint = (value: unknown): value is Endpoint =>
+    isObject(value) &&
+    hasProperty('addEventListener')(value) &&
+    hasProperty('removeEventListener')(value) &&
+    hasProperty('postMessage')(value) &&
+    typeof value.addEventListener === 'function' &&
+    typeof value.removeEventListener === 'function' &&
+    typeof value.postMessage === 'function'
+
+export const isEndpointPair = (value: unknown): value is EndpointPair =>
+    isObject(value) &&
+    hasProperty('proxy')(value) &&
+    hasProperty('expose')(value) &&
+    isEndpoint(value.proxy) &&
+    isEndpoint(value.expose)
 
 /**
  * Context information of an invocation of `urlToFile`

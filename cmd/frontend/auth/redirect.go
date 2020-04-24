@@ -2,6 +2,7 @@ package auth
 
 import (
 	"net/url"
+	"path"
 	"strings"
 )
 
@@ -14,6 +15,9 @@ func SafeRedirectURL(urlStr string) string {
 	if err != nil || !strings.HasPrefix(u.Path, "/") {
 		return "/"
 	}
+
+	// Make sure u.Path always starts with a single slash.
+	u.Path = path.Clean(u.Path)
 
 	// Only take certain known-safe fields.
 	u = &url.URL{Path: u.Path, RawQuery: u.RawQuery}

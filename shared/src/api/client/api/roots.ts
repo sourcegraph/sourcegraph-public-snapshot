@@ -1,4 +1,4 @@
-import { ProxyResult } from '@sourcegraph/comlink'
+import { Remote } from '@sourcegraph/comlink'
 import { Subscription } from 'rxjs'
 import { ExtRootsAPI } from '../../extension/api/roots'
 import { WorkspaceService } from '../services/workspaceService'
@@ -7,7 +7,7 @@ import { WorkspaceService } from '../services/workspaceService'
 export class ClientRoots {
     private subscriptions = new Subscription()
 
-    constructor(proxy: ProxyResult<ExtRootsAPI>, workspaceService: WorkspaceService) {
+    constructor(proxy: Remote<ExtRootsAPI>, workspaceService: WorkspaceService) {
         this.subscriptions.add(
             workspaceService.roots.subscribe(roots => {
                 // eslint-disable-next-line @typescript-eslint/no-floating-promises

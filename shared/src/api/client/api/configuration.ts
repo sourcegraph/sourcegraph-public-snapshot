@@ -1,4 +1,4 @@
-import { ProxyResult, ProxyValue, proxyValueSymbol } from '@sourcegraph/comlink'
+import { Remote, ProxyMarked, proxyMarker } from '@sourcegraph/comlink'
 import { from, Subscription } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import { isSettingsValid } from '../../../settings/settings'
@@ -6,7 +6,7 @@ import { ExtConfigurationAPI } from '../../extension/api/configuration'
 import { SettingsEdit, SettingsService } from '../services/settings'
 
 /** @internal */
-export interface ClientConfigurationAPI extends ProxyValue {
+export interface ClientConfigurationAPI extends ProxyMarked {
     $acceptConfigurationUpdate(edit: SettingsEdit): void
 }
 
@@ -14,12 +14,12 @@ export interface ClientConfigurationAPI extends ProxyValue {
  * @internal
  * @template C - The configuration schema.
  */
-export class ClientConfiguration<C> implements ClientConfigurationAPI, ProxyValue {
-    public readonly [proxyValueSymbol] = true
+export class ClientConfiguration<C> implements ClientConfigurationAPI, ProxyMarked {
+    public readonly [proxyMarker] = true
 
     private subscriptions = new Subscription()
 
-    constructor(private proxy: ProxyResult<ExtConfigurationAPI<C>>, private settingsService: SettingsService<C>) {
+    constructor(private proxy: Remote<ExtConfigurationAPI<C>>, private settingsService: SettingsService<C>) {
         this.subscriptions.add(
             from(settingsService.data)
                 .pipe(

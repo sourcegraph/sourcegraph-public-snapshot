@@ -2,15 +2,6 @@
 
 Manual campaigns provide the ability to manage and monitor changesets (pull requests) that already exist on code hosts.
 
-<div style="max-width: 450px;" class="mx-auto">
-  <figure class="figure">
-    <div class="figure-img">
-      <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/campaigns/manual_campaign.png" />
-    </div>
-    <figcaption class="figure-caption text-right">A campaign tracking multiple changesets in different repositories.</figcaption>
-  </figure>
-</div>
-
 In order to create a manual campaign, follow these steps:
 
 1. Go to `/campaigns` on your Sourcegraph instance and click on the **New campaign** button.

@@ -1,7 +1,15 @@
-import { ProxiedObject, ProxyValue, transferHandlers } from '@sourcegraph/comlink'
+import {
+    RemoteObject,
+    ProxyMarked,
+    transferHandlers,
+    ProxyMethods,
+    createEndpoint,
+    releaseProxy,
+} from '@sourcegraph/comlink'
 import { Subscription } from 'rxjs'
 import { Subscribable, Unsubscribable } from 'sourcegraph'
 import { hasProperty } from '../util/types'
+import { noop } from 'lodash'
 
 /**
  * Tests whether a value is a WHATWG URL object.
@@ -36,7 +44,7 @@ export function registerComlinkTransferHandlers(): void {
  * @param subscriptionPromise A Promise for a Subscription proxied from the other thread
  */
 export const syncSubscription = (
-    subscriptionPromise: Promise<ProxiedObject<Unsubscribable & ProxyValue>>
+    subscriptionPromise: Promise<RemoteObject<Unsubscribable & ProxyMarked>>
 ): Subscription =>
     // We cannot pass the proxy subscription directly to Rx because it is a Proxy that looks like a function
     new Subscription(() => {
@@ -67,3 +75,9 @@ export const isSubscribable = (value: unknown): value is Subscribable<unknown> =
     value !== null &&
     hasProperty('subscribe')(value) &&
     typeof value.subscribe === 'function'
+
+export const addProxyMethods = <T>(value: T): T & ProxyMethods =>
+    Object.assign(value, {
+        [createEndpoint]: () => Promise.resolve(new MessagePort()),
+        [releaseProxy]: noop,
+    })

@@ -28,7 +28,7 @@ Add the following to your `docker run` command:
 
 1. Add/modify the following environment variables to all of the `sourcegraph-frontend-*` services and the `sourcegraph-frontend-internal` service in ` [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/v3.14.2/docker-compose/docker-compose.yaml): 
 
-    ```yaml
+    ```
     sourcegraph-frontend-0:
       # ...
       environment:
@@ -41,11 +41,11 @@ Add the following to your `docker run` command:
       # ...
     ```
 
-    - See ["Environment variables in Compose"](https://docs.docker.com/compose/environment-variables/) for other ways to pass these environment variables to the relevant services (including from the command line, a `.env` file, etc.).
+    See ["Environment variables in Compose"](https://docs.docker.com/compose/environment-variables/) for other ways to pass these environment variables to the relevant services (including from the command line, a `.env` file, etc.).
 
 1. Comment out / remove the internal `pgsql` service in [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/v3.14.2/docker-compose/docker-compose.yaml) since Sourcegraph is using the external one now.
 
-    ```yaml
+    ```
     # # Description: PostgreSQL database for various data.
     # #
     # # Disk: 128GB / persistent SSD
