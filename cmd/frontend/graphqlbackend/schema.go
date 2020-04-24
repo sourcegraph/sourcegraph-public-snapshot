@@ -414,26 +414,17 @@ type Mutation {
         perm: RepositoryPermission = READ
     ): EmptyResponse!
 
-    # Create a new action
+    # Create a new action.
     createAction(
         # Human readable name.
         name: String!
+        # The action definition file content.
         definition: JSONCString!
-        # ID of a File, todo: make non nullable
-        workspace: ID
+        env: ActionEnv
     ): Action!
-    # TODO: add the following parameter:
-    # env: ActionEnv
-    updateAction(
-        action: ID!
-        newDefinition: JSONCString!
-        # ID of a File
-        workspace: ID
-    ): Action!
-    # Todo: Is GraphQL the best place to upload a ZIP archive?
-    # Also, we possibly have to chunk the upload into 2mb (TBD) chunks to bypass upload max size from nginx
-    # Brainstorm: Use HTTP header 'Content-Range: byte 0-chunkSize/totalSize' with a REST API (?)
-    uploadWorkspace(content: String!): File2!
+
+    # Update an existing action.
+    updateAction(action: ID!, newDefinition: JSONCString!): Action!
 
     # Create a new 'MANUAL' action execution from an action.
     createActionExecution(action: ID!): ActionExecution!
@@ -476,8 +467,6 @@ type ActionConnection {
 type ActionDefinition {
     # The actual definition document.
     steps: JSONCString!
-    # ZIP file containing the action workspace. TODO: Make not null once implemented
-    actionWorkspace: File2
     # Environment variables to be set during execution.
     # Caution: never print the envvar.value directly (they should even be REDACTED in the API response),
     # they can contain sensitive data

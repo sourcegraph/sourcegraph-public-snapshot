@@ -103,17 +103,11 @@ type ListActionJobsArgs struct {
 type CreateActionArgs struct {
 	Name       string
 	Definition string
-	Workspace  *graphql.ID
 }
 
 type UpdateActionArgs struct {
 	Action        graphql.ID
 	NewDefinition string
-	Workspace     *graphql.ID
-}
-
-type UploadWorkspaceArgs struct {
-	Content string
 }
 
 type CreateActionExecutionArgs struct {
@@ -170,7 +164,6 @@ type CampaignsResolver interface {
 	ActionJobs(ctx context.Context, args *ListActionJobsArgs) (ActionJobConnectionResolver, error)
 	CreateAction(ctx context.Context, args *CreateActionArgs) (ActionResolver, error)
 	UpdateAction(ctx context.Context, args *UpdateActionArgs) (ActionResolver, error)
-	UploadWorkspace(ctx context.Context, args *UploadWorkspaceArgs) (*GitTreeEntryResolver, error)
 	CreateActionExecution(ctx context.Context, args *CreateActionExecutionArgs) (ActionExecutionResolver, error)
 	CreateActionExecutionsForSavedSearch(ctx context.Context, args *CreateActionExecutionsForSavedSearchArgs) (*EmptyResponse, error)
 	CancelActionExecution(ctx context.Context, args *CancelActionExecutionArgs) (*EmptyResponse, error)
@@ -244,10 +237,6 @@ func (defaultCampaignsResolver) CreateAction(ctx context.Context, args *CreateAc
 }
 
 func (defaultCampaignsResolver) UpdateAction(ctx context.Context, args *UpdateActionArgs) (ActionResolver, error) {
-	return nil, campaignsOnlyInEnterprise
-}
-
-func (defaultCampaignsResolver) UploadWorkspace(ctx context.Context, args *UploadWorkspaceArgs) (*GitTreeEntryResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 
@@ -475,8 +464,6 @@ type ActionEnvVarResolver interface {
 type ActionDefinitionResolver interface {
 	Steps() JSONCString
 	Env() ([]ActionEnvVarResolver, error)
-	// TODO: Wrong return type
-	ActionWorkspace() *GitTreeEntryResolver
 }
 
 type ActionConnectionResolver interface {

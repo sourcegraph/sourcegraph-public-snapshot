@@ -974,22 +974,6 @@ func (r *Resolver) UpdateAction(ctx context.Context, args *graphqlbackend.Update
 	return &actionResolver{store: r.store, action: *action}, nil
 }
 
-// todo:
-func (r *Resolver) UploadWorkspace(ctx context.Context, args *graphqlbackend.UploadWorkspaceArgs) (_ *graphqlbackend.GitTreeEntryResolver, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.UploadWorkspace", fmt.Sprintf("Size: %d", len(args.Content)))
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
-	// 🚨 SECURITY: Only site admins may create executions for now
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, errors.Wrap(err, "checking if user is admin")
-	}
-
-	return nil, nil
-}
-
 func (r *Resolver) CreateActionExecution(ctx context.Context, args *graphqlbackend.CreateActionExecutionArgs) (_ graphqlbackend.ActionExecutionResolver, err error) {
 	tr, ctx := trace.New(ctx, "Resolver.CreateActionExecution", fmt.Sprintf("Action: %s", args.Action))
 	defer func() {
