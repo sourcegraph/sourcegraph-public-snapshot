@@ -966,10 +966,10 @@ func (r *Resolver) CreateActionExecution(ctx context.Context, args *graphqlbacke
 
 	action, err := r.store.ActionByID(ctx, ee.ActionByIDOpts{ID: actionID})
 	if err != nil {
+		if err == ee.ErrNoResults {
+			return nil, errors.New("Action not found")
+		}
 		return nil, err
-	}
-	if action.ID == 0 {
-		return nil, errors.New("Action not found")
 	}
 	actionExecution, actionJobs, err := createActionExecutionForAction(ctx, r.store, action, campaigns.ActionExecutionInvocationReasonManual)
 	if err != nil {
@@ -1146,6 +1146,9 @@ func (r *Resolver) UpdateActionJob(ctx context.Context, args *graphqlbackend.Upd
 			// check if action is associated to a campaign, then we update that directly with the plan from above
 			action, err := tx.ActionByID(ctx, ee.ActionByIDOpts{ID: actionExecution.ActionID})
 			if err != nil {
+				if err == ee.ErrNoResults {
+					return nil, errors.New("Action not found")
+				}
 				return nil, err
 			}
 			if action.CampaignID != 0 {

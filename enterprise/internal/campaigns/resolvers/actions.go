@@ -38,10 +38,10 @@ func (r *Resolver) ActionByID(ctx context.Context, id graphql.ID) (graphqlbacken
 		ID: dbId,
 	})
 	if err != nil {
+		if err == ee.ErrNoResults {
+			return nil, nil
+		}
 		return nil, err
-	}
-	if action.ID == 0 {
-		return nil, nil
 	}
 	return &actionResolver{store: r.store, action: *action}, nil
 }

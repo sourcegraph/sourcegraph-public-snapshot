@@ -68,6 +68,7 @@ func (r *actionExecutionResolver) Action(ctx context.Context) (graphqlbackend.Ac
 		return &actionResolver{store: r.store, action: *r.action}, nil
 	}
 	action, err := r.store.ActionByID(ctx, ee.ActionByIDOpts{ID: r.actionExecution.ActionID})
+	// todo: how do we treat not found errors here?
 	if err != nil {
 		return nil, err
 	}

@@ -3142,14 +3142,15 @@ func (s *Store) ActionByID(ctx context.Context, opts ActionByIDOpts) (*campaigns
 	q := actionByIDQuery(&opts)
 
 	var a campaigns.Action
-	_, _, err := s.query(ctx, q, func(sc scanner) (_, _ int64, err error) {
-		if err := scanAction(&a, sc); err != nil {
-			return 0, 0, err
-		}
-		return 0, 0, nil
+	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
+		return 0, 0, scanAction(&a, sc)
 	})
-
-	// todo handle empty ie not-found error
+	if err != nil {
+		return nil, err
+	}
+	if a.ID == 0 {
+		return nil, ErrNoResults
+	}
 
 	return &a, err
 }
