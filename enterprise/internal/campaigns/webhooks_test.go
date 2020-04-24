@@ -153,20 +153,23 @@ func testGitHubWebhook(db *sql.DB) func(*testing.T) {
 
 				tc := loadWebhookTestCase(t, fixtureFile)
 
-				for _, event := range tc.Events {
-					req, err := http.NewRequest("POST", "", bytes.NewReader(event.Event))
-					if err != nil {
-						t.Fatal(err)
-					}
-					req.Header.Set("X-Github-Event", event.EventType)
-					req.Header.Set("X-Hub-Signature", sign(t, event.Event, []byte(secret)))
+				// Send all events twice to ensure we are idempotent
+				for i := 0; i < 2; i++ {
+					for _, event := range tc.Events {
+						req, err := http.NewRequest("POST", "", bytes.NewReader(event.Event))
+						if err != nil {
+							t.Fatal(err)
+						}
+						req.Header.Set("X-Github-Event", event.EventType)
+						req.Header.Set("X-Hub-Signature", sign(t, event.Event, []byte(secret)))
 
-					rec := httptest.NewRecorder()
-					hook.ServeHTTP(rec, req)
-					resp := rec.Result()
+						rec := httptest.NewRecorder()
+						hook.ServeHTTP(rec, req)
+						resp := rec.Result()
 
-					if resp.StatusCode != http.StatusOK {
-						t.Fatalf("Non 200 code: %v", resp.StatusCode)
+						if resp.StatusCode != http.StatusOK {
+							t.Fatalf("Non 200 code: %v", resp.StatusCode)
+						}
 					}
 				}
 
