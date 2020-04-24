@@ -170,6 +170,8 @@
 /cmd/frontend/types/saved_searches.go @attfarhan
 
 # Distribution
+/dev/ci @sourcegraph/distribution
+/enterprise/dev/ci @sourcegraph/distribution
 ## Deployment
 Dockerfile @sourcegraph/distribution
 /monitoring @slimsag @sourcegraph/distribution
