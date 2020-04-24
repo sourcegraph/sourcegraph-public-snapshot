@@ -862,30 +862,30 @@ func (r *actionJobConnectionResolver) compute(ctx context.Context) ([]*campaigns
 	return r.jobs, r.totalCount, r.err
 }
 
-// runner resolver
+// agent resolver
 
-type runnerResolver struct {
+type agentResolver struct {
 	// todo
 }
 
-func (r *runnerResolver) ID() graphql.ID {
+func (r *agentResolver) ID() graphql.ID {
 	return "asd"
 }
 
-func (r *runnerResolver) Name() string {
-	return "runner-sg-dev-123"
+func (r *agentResolver) Name() string {
+	return "agent-sg-dev-123"
 }
 
-func (r *runnerResolver) Description() string {
+func (r *agentResolver) Description() string {
 	return "macOS 10.15.3, Docker 19.06.03, 8 CPU"
 }
 
-func (r *runnerResolver) State() campaigns.RunnerState {
-	return campaigns.RunnerStateOnline
+func (r *agentResolver) State() campaigns.AgentState {
+	return campaigns.AgentStateOnline
 }
 
-func (r *runnerResolver) RunningJobs() graphqlbackend.ActionJobConnectionResolver {
-	// todo: missing store and runner param
+func (r *agentResolver) RunningJobs() graphqlbackend.ActionJobConnectionResolver {
+	// todo: missing store and agent param
 	return &actionJobConnectionResolver{}
 }
 
@@ -998,7 +998,7 @@ func (r *Resolver) CreateActionExecution(ctx context.Context, args *graphqlbacke
 	if action.ID == 0 {
 		return nil, errors.New("Action not found")
 	}
-	actionExecution, actionJobs, err := createActionExecutionForAction(ctx, r.store, action, campaigns.ActionExecutionInvokationReasonManual)
+	actionExecution, actionJobs, err := createActionExecutionForAction(ctx, r.store, action, campaigns.ActionExecutionInvocationReasonManual)
 	if err != nil {
 		return nil, err
 	}
@@ -1012,7 +1012,7 @@ func (r *Resolver) CreateActionExecutionsForSavedSearch(ctx context.Context, arg
 		return nil, err
 	}
 	for _, action := range actions {
-		_, _, err := createActionExecutionForAction(ctx, r.store, action, campaigns.ActionExecutionInvokationReasonSavedSearch)
+		_, _, err := createActionExecutionForAction(ctx, r.store, action, campaigns.ActionExecutionInvocationReasonSavedSearch)
 		if err != nil {
 			return nil, err
 		}
@@ -1022,13 +1022,13 @@ func (r *Resolver) CreateActionExecutionsForSavedSearch(ctx context.Context, arg
 }
 
 func (r *Resolver) PullActionJob(ctx context.Context, args *graphqlbackend.PullActionJobArgs) (_ graphqlbackend.ActionJobResolver, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.PullActionJob", fmt.Sprintf("Runner: %q", args.Runner))
+	tr, ctx := trace.New(ctx, "Resolver.PullActionJob", fmt.Sprintf("Agent: %q", args.Agent))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	// 🚨 SECURITY: Only site admin tokens can register as a runner for now
+	// 🚨 SECURITY: Only site admin tokens can register as an agent for now
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, errors.Wrap(err, "checking if user is admin")
 	}
@@ -1043,7 +1043,7 @@ func (r *Resolver) PullActionJob(ctx context.Context, args *graphqlbackend.PullA
 		return nil, nil
 	}
 
-	// set runner = args.Runner
+	// set agent = args.Agent
 
 	return &actionJobResolver{store: r.store, job: *actionJob}, nil
 }
@@ -1193,7 +1193,7 @@ func (r *Resolver) AppendLog(ctx context.Context, args *graphqlbackend.AppendLog
 		tr.Finish()
 	}()
 
-	// 🚨 SECURITY: Only site admin tokens can register as a runner for now, todo: this should only be allowed to runners. (we set RunnerSeenAt: time.Now())
+	// 🚨 SECURITY: Only site admin tokens can register as a runner for now, todo: this should only be allowed to runners. (we set AgentSeenAt: time.Now())
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, errors.Wrap(err, "checking if user is admin")
 	}
@@ -1207,9 +1207,9 @@ func (r *Resolver) AppendLog(ctx context.Context, args *graphqlbackend.AppendLog
 
 	now := time.Now()
 	actionJob, err := r.store.UpdateActionJob(ctx, ee.UpdateActionJobOpts{
-		ID:           id,
-		Log:          &args.Content,
-		RunnerSeenAt: &now,
+		ID:          id,
+		Log:         &args.Content,
+		AgentSeenAt: &now,
 	})
 	if err != nil {
 		return nil, err
@@ -1277,5 +1277,13 @@ func (r *Resolver) CancelActionExecution(ctx context.Context, args *graphqlbacke
 		return nil, err
 	}
 
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func (r *Resolver) RegisterAgent(ctx context.Context, args *graphqlbackend.RegisterAgentArgs) (graphqlbackend.AgentResolver, error) {
+	return nil, nil
+}
+
+func (r *Resolver) UnregisterAgent(ctx context.Context, args *graphqlbackend.UnregisterAgentArgs) (*graphqlbackend.EmptyResponse, error) {
 	return &graphqlbackend.EmptyResponse{}, nil
 }

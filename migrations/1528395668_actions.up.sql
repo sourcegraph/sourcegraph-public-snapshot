@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS action_executions (
     id SERIAL PRIMARY KEY,
     steps text NOT NULL,
     env json,
-    invokation_reason text NOT NULL CHECK (invokation_reason = ANY (ARRAY['MANUAL'::text, 'SAVED_SEARCH'::text, 'SCHEDULE'::text])),
+    invocation_reason text NOT NULL CHECK (invocation_reason = ANY (ARRAY['MANUAL'::text, 'SAVED_SEARCH'::text, 'SCHEDULE'::text])),
     patch_set_id integer REFERENCES patch_sets(id) ON UPDATE CASCADE,
     action integer NOT NULL REFERENCES actions(id) ON UPDATE CASCADE
 );
@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS action_jobs (
     log text,
     execution_start timestamp with time zone,
     execution_end timestamp with time zone,
-    runner_seen_at timestamp with time zone,
+    agent_seen_at timestamp with time zone,
     patch text,
     state text NOT NULL DEFAULT 'PENDING'::text CHECK (state = ANY (ARRAY['PENDING'::text, 'RUNNING'::text, 'COMPLETED'::text, 'ERRORED'::text, 'TIMEOUT'::text, 'CANCELED'::text])),
     repository integer NOT NULL REFERENCES repo(id) ON UPDATE CASCADE,

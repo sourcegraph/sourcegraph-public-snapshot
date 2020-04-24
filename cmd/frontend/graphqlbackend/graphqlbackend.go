@@ -496,8 +496,8 @@ func (r *NodeResolver) ToActionExecution() (ActionExecutionResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToRunner() (RunnerResolver, bool) {
-	n, ok := r.Node.(RunnerResolver)
+func (r *NodeResolver) ToAgent() (AgentResolver, bool) {
+	n, ok := r.Node.(AgentResolver)
 	return n, ok
 }
 

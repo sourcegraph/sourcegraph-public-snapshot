@@ -7,7 +7,7 @@ import SyncIcon from 'mdi-react/SyncIcon'
 import CollapseAllIcon from 'mdi-react/CollapseAllIcon'
 
 export interface ActionNodeProps {
-    node: Pick<GQL.IActionExecution, 'id' | 'invokationReason' | 'status' | 'patchSet'>
+    node: Pick<GQL.IActionExecution, 'id' | 'invocationReason' | 'status' | 'patchSet'>
 }
 
 /**
@@ -22,7 +22,7 @@ export const ActionExecutionNode: React.FunctionComponent<ActionNodeProps> = ({ 
                         {node.id}
                     </Link>
                 </h3>
-                <p className="mb-0">{node.invokationReason}</p>
+                <p className="mb-0">{node.invocationReason}</p>
             </div>
             <div className="flex-grow-0">
                 <div className="d-flex justify-content-end">

@@ -53,14 +53,11 @@ export const fetchActionExecutionByID = (actionExecution: ID): Observable<IActio
                         }
                         definition {
                             steps
-                            actionWorkspace {
-                                name
-                            }
                             env {
                                 key
                             }
                         }
-                        invokationReason
+                        invocationReason
                         status {
                             errors
                             state
@@ -81,7 +78,7 @@ export const fetchActionExecutionByID = (actionExecution: ID): Observable<IActio
                                 }
                                 baseRevision
                                 state
-                                runner {
+                                agent {
                                     id
                                     name
                                     description
@@ -147,7 +144,7 @@ export const queryActions = ({ first }: IActionsOnQueryArguments): Observable<IA
                             totalCount
                             nodes {
                                 id
-                                invokationReason
+                                invocationReason
                                 status {
                                     errors
                                     state
@@ -183,9 +180,6 @@ export const fetchActionByID = (action: ID): Observable<IAction | null> =>
                         }
                         definition {
                             steps
-                            actionWorkspace {
-                                name
-                            }
                             env {
                                 key
                                 value
@@ -196,7 +190,7 @@ export const fetchActionByID = (action: ID): Observable<IAction | null> =>
                             totalCount
                             nodes {
                                 id
-                                invokationReason
+                                invocationReason
                                 status {
                                     errors
                                     state

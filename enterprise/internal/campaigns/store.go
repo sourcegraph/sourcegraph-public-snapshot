@@ -2792,7 +2792,7 @@ func scanActionExecution(a *campaigns.ActionExecution, s scanner) error {
 		&a.ID,
 		&a.Steps,
 		&a.EnvStr,
-		&a.InvokationReason,
+		&a.InvocationReason,
 		&a.PatchSetID,
 		&a.ActionID,
 		&dbutil.NullTime{Time: &a.ExecutionStart},
@@ -2812,7 +2812,7 @@ func scanActionJob(a *campaigns.ActionJob, s scanner) error {
 		&a.Log,
 		&dbutil.NullTime{Time: &a.ExecutionStart},
 		&dbutil.NullTime{Time: &a.ExecutionEnd},
-		&dbutil.NullTime{Time: &a.RunnerSeenAt},
+		&dbutil.NullTime{Time: &a.AgentSeenAt},
 		&a.Patch,
 		&a.State,
 		&a.RepoID,
@@ -2929,7 +2929,7 @@ type UpdateActionJobOpts struct {
 	Patch          *string
 	ExecutionStart *time.Time
 	ExecutionEnd   *time.Time
-	RunnerSeenAt   *time.Time
+	AgentSeenAt    *time.Time
 }
 
 // UpdateActionJob lists Actions with the given filters.
@@ -2960,7 +2960,7 @@ RETURNING
 	log,
 	execution_start,
 	execution_end,
-	runner_seen_at,
+	agent_seen_at,
 	patch,
 	state,
 	repository,
@@ -2999,13 +2999,13 @@ func updateActionJobQuery(opts *UpdateActionJobOpts) *sqlf.Query {
 			preds = append(preds, sqlf.Sprintf("execution_end = %s", time))
 		}
 	}
-	if opts.RunnerSeenAt != nil {
-		if (*opts.RunnerSeenAt).IsZero() {
-			preds = append(preds, sqlf.Sprintf("runner_seen_at = NULL"))
+	if opts.AgentSeenAt != nil {
+		if (*opts.AgentSeenAt).IsZero() {
+			preds = append(preds, sqlf.Sprintf("agent_seen_at = NULL"))
 		} else {
 			// todo may throw
-			time, _ := (*opts.RunnerSeenAt).MarshalText()
-			preds = append(preds, sqlf.Sprintf("runner_seen_at = %s", time))
+			time, _ := (*opts.AgentSeenAt).MarshalText()
+			preds = append(preds, sqlf.Sprintf("agent_seen_at = %s", time))
 		}
 	}
 
@@ -3034,7 +3034,7 @@ SET
 	log = NULL,
 	execution_start = NULL,
 	execution_end = NULL,
-	runner_seen_at = NULL,
+	agent_seen_at = NULL,
 	patch = NULL,
 	state = 'PENDING'
 WHERE action_jobs.id = %d
@@ -3045,7 +3045,7 @@ func clearActionJobQuery(opts *ClearActionJobOpts) *sqlf.Query {
 	return sqlf.Sprintf(queryTemplate, opts.ID)
 }
 
-// PullActionJob resets an action job so it is eventually retried by a runner.
+// PullActionJob resets an action job so it is eventually retried by an agent.
 func (s *Store) PullActionJob(ctx context.Context) (*campaigns.ActionJob, error) {
 	q := pullActionJobQuery()
 
@@ -3067,7 +3067,7 @@ UPDATE
 SET
 	execution_start = NOW(),
 	state = 'RUNNING',
-	runner_seen_at = NOW()
+	agent_seen_at = NOW()
 WHERE
 	action_jobs.id IN (SELECT id FROM action_jobs WHERE action_jobs.state = 'PENDING' ORDER BY action_jobs.id ASC LIMIT 1 FOR UPDATE SKIP LOCKED)
 RETURNING
@@ -3075,7 +3075,7 @@ RETURNING
 	log,
 	execution_start,
 	execution_end,
-	runner_seen_at,
+	agent_seen_at,
 	patch,
 	state,
 	repository,
@@ -3093,7 +3093,6 @@ type ActionJobByIDOpts struct {
 	ID int64
 }
 
-// ActionJobByID resets an action job so it is eventually retried by a runner.
 func (s *Store) ActionJobByID(ctx context.Context, opts ActionJobByIDOpts) (*campaigns.ActionJob, error) {
 	q := actionJobByIDQuery(&opts)
 
@@ -3117,7 +3116,7 @@ SELECT
 	action_jobs.log,
 	action_jobs.execution_start,
 	action_jobs.execution_end,
-	action_jobs.runner_seen_at,
+	action_jobs.agent_seen_at,
 	action_jobs.patch,
 	action_jobs.state,
 	action_jobs.repository,
@@ -3139,7 +3138,6 @@ type ActionByIDOpts struct {
 	ID int64
 }
 
-// ActionByID resets an action job so it is eventually retried by a runner.
 func (s *Store) ActionByID(ctx context.Context, opts ActionByIDOpts) (*campaigns.Action, error) {
 	q := actionByIDQuery(&opts)
 
@@ -3182,7 +3180,6 @@ type ActionExecutionByIDOpts struct {
 	ID int64
 }
 
-// ActionExecutionByID resets an action job so it is eventually retried by a runner.
 func (s *Store) ActionExecutionByID(ctx context.Context, opts ActionExecutionByIDOpts) (*campaigns.ActionExecution, error) {
 	q := actionExecutionByIDQuery(&opts)
 
@@ -3205,7 +3202,7 @@ SELECT
 	action_executions.id,
 	action_executions.steps,
 	action_executions.env,
-	action_executions.invokation_reason,
+	action_executions.invocation_reason,
 	action_executions.patch_set_id,
 	action_executions.action,
 	(SELECT MIN(action_jobs.execution_start) FROM action_jobs WHERE action_jobs.execution = action_executions.id) AS execution_start,
@@ -3270,7 +3267,7 @@ SELECT
 	action_executions.id,
 	action_executions.steps,
 	action_executions.env,
-	action_executions.invokation_reason,
+	action_executions.invocation_reason,
 	action_executions.patch_set_id,
 	action_executions.action,
 	(SELECT MIN(action_jobs.execution_start) FROM action_jobs WHERE action_jobs.execution = action_executions.id) AS execution_start,
@@ -3308,13 +3305,12 @@ func listActionExecutionsQuery(opts *ListActionExecutionsOpts) *sqlf.Query {
 }
 
 type CreateActionExecutionOpts struct {
-	InvokationReason campaigns.ActionExecutionInvokationReason
+	InvocationReason campaigns.ActionExecutionInvocationReason
 	Steps            string
 	EnvStr           string
 	ActionID         int64
 }
 
-// CreateActionExecution resets an action job so it is eventually retried by a runner.
 func (s *Store) CreateActionExecution(ctx context.Context, opts CreateActionExecutionOpts) (*campaigns.ActionExecution, error) {
 	q := createActionExecutionQuery(&opts)
 
@@ -3335,14 +3331,14 @@ var createActionExecutionQueryFmtstrSelect = `
 -- source: enterprise/internal/campaigns/store.go:CreateActionExecution
 INSERT INTO
 	action_executions
-	(steps, env, invokation_reason, action)
+	(steps, env, invocation_reason, action)
 VALUES
 	(%s, %s::json, %s, %d)
 RETURNING
 	action_executions.id,
 	action_executions.steps,
 	action_executions.env,
-	action_executions.invokation_reason,
+	action_executions.invocation_reason,
 	action_executions.patch_set_id,
 	action_executions.action,
 	(SELECT MIN(action_jobs.execution_start) FROM action_jobs WHERE action_jobs.execution = action_executions.id) AS execution_start,
@@ -3351,7 +3347,7 @@ RETURNING
 
 func createActionExecutionQuery(opts *CreateActionExecutionOpts) *sqlf.Query {
 	queryTemplate := createActionExecutionQueryFmtstrSelect
-	return sqlf.Sprintf(queryTemplate, opts.Steps, opts.EnvStr, string(opts.InvokationReason), opts.ActionID)
+	return sqlf.Sprintf(queryTemplate, opts.Steps, opts.EnvStr, string(opts.InvocationReason), opts.ActionID)
 }
 
 type CreateActionJobOpts struct {
@@ -3361,7 +3357,6 @@ type CreateActionJobOpts struct {
 	BaseReference string
 }
 
-// CreateActionJob resets an action job so it is eventually retried by a runner.
 func (s *Store) CreateActionJob(ctx context.Context, opts CreateActionJobOpts) (*campaigns.ActionJob, error) {
 	q := createActionJobQuery(&opts)
 
@@ -3390,7 +3385,7 @@ RETURNING
 	action_jobs.log,
 	action_jobs.execution_start,
 	action_jobs.execution_end,
-	action_jobs.runner_seen_at,
+	action_jobs.agent_seen_at,
 	action_jobs.patch,
 	action_jobs.state,
 	action_jobs.repository,
@@ -3454,7 +3449,7 @@ SELECT
 	action_jobs.log,
 	action_jobs.execution_start,
 	action_jobs.execution_end,
-	action_jobs.runner_seen_at,
+	action_jobs.agent_seen_at,
 	action_jobs.patch,
 	action_jobs.state,
 	action_jobs.repository,
@@ -3621,7 +3616,7 @@ RETURNING
 	action_executions.id,
 	action_executions.steps,
 	action_executions.env,
-	action_executions.invokation_reason,
+	action_executions.invocation_reason,
 	action_executions.patch_set_id,
 	action_executions.action,
 	(SELECT MIN(action_jobs.execution_start) FROM action_jobs WHERE action_jobs.execution = action_executions.id) AS execution_start,

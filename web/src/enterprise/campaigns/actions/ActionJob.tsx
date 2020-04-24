@@ -59,10 +59,10 @@ export const ActionJob: React.FunctionComponent<Props> = ({ isLightTheme, action
                             <div className="flex-grow-1">
                                 <h3 className="mb-1">Run on {actionJob.repository.name}</h3>
                                 <p className="mb-0">
-                                    {actionJob.runner ? (
-                                        <small className="text-monospace">Runner {actionJob.runner.name}</small>
+                                    {actionJob.agent ? (
+                                        <small className="text-monospace">Agent {actionJob.agent.name}</small>
                                     ) : (
-                                        <i>Awaiting runner assignment</i>
+                                        <i>Awaiting agent assignment</i>
                                     )}
                                 </p>
                             </div>
@@ -173,7 +173,7 @@ export const ActionJob: React.FunctionComponent<Props> = ({ isLightTheme, action
                                     maxHeight: '200px',
                                 }}
                             >
-                                <code dangerouslySetInnerHTML={{ __html: actionJob.log }}></code>
+                                <code dangerouslySetInnerHTML={{ __html: actionJob.log }} />
                                 {actionJob.state === GQL.ActionJobState.RUNNING && (
                                     <div>
                                         <SyncIcon className="icon-inline icon-spinning" />
@@ -196,7 +196,7 @@ export const ActionJob: React.FunctionComponent<Props> = ({ isLightTheme, action
                                     persistLines={false}
                                     // todo: is this a good key?
                                     key={fileDiffNode.internalID}
-                                ></FileDiffNode>
+                                />
                             ))
                         ) : (
                             <p className="text-muted">

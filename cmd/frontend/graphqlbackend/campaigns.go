@@ -100,14 +100,21 @@ type ListActionJobsArgs struct {
 	State campaigns.ActionJobState
 }
 
+type ActionEnvVarArgs struct {
+	Name  string
+	Value string
+}
+
 type CreateActionArgs struct {
 	Name       string
 	Definition string
+	env        []ActionEnvVarArgs
 }
 
 type UpdateActionArgs struct {
 	Action        graphql.ID
 	NewDefinition string
+	env           []ActionEnvVarArgs
 }
 
 type CreateActionExecutionArgs struct {
@@ -123,7 +130,7 @@ type CancelActionExecutionArgs struct {
 }
 
 type PullActionJobArgs struct {
-	Runner graphql.ID
+	Agent graphql.ID
 }
 
 type UpdateActionJobArgs struct {
@@ -139,6 +146,15 @@ type AppendLogArgs struct {
 
 type RetryActionJobArgs struct {
 	ActionJob graphql.ID
+}
+
+type RegisterAgentArgs struct {
+	ID    string
+	Specs string
+}
+
+type UnregisterAgentArgs struct {
+	Agent graphql.ID
 }
 
 type SyncChangesetArgs struct {
@@ -171,6 +187,8 @@ type CampaignsResolver interface {
 	UpdateActionJob(ctx context.Context, args *UpdateActionJobArgs) (ActionJobResolver, error)
 	AppendLog(ctx context.Context, args *AppendLogArgs) (ActionJobResolver, error)
 	RetryActionJob(ctx context.Context, args *RetryActionJobArgs) (*EmptyResponse, error)
+	RegisterAgent(ctx context.Context, args *RegisterAgentArgs) (AgentResolver, error)
+	UnregisterAgent(ctx context.Context, args *UnregisterAgentArgs) (*EmptyResponse, error)
 
 	CreateChangesets(ctx context.Context, args *CreateChangesetsArgs) ([]ExternalChangesetResolver, error)
 	ChangesetByID(ctx context.Context, id graphql.ID) (ExternalChangesetResolver, error)
@@ -265,6 +283,14 @@ func (defaultCampaignsResolver) AppendLog(ctx context.Context, args *AppendLogAr
 }
 
 func (defaultCampaignsResolver) RetryActionJob(ctx context.Context, args *RetryActionJobArgs) (*EmptyResponse, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+func (defaultCampaignsResolver) RegisterAgent(ctx context.Context, args *RegisterAgentArgs) (AgentResolver, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+func (defaultCampaignsResolver) UnregisterAgent(ctx context.Context, args *UnregisterAgentArgs) (*EmptyResponse, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 
@@ -475,6 +501,7 @@ type ActionResolver interface {
 	ID() graphql.ID
 	Name() string
 	Definition() ActionDefinitionResolver
+	Autoupdate() bool
 	SavedSearch(ctx context.Context) (*SavedSearchResolver, error)
 	Schedule() *string
 	CancelPreviousScheduledExecution() bool
@@ -490,7 +517,7 @@ type ActionExecutionConnectionResolver interface {
 type ActionExecutionResolver interface {
 	ID() graphql.ID
 	Action(ctx context.Context) (ActionResolver, error)
-	InvokationReason() campaigns.ActionExecutionInvokationReason
+	InvocationReason() campaigns.ActionExecutionInvocationReason
 	Definition() ActionDefinitionResolver
 	Jobs() ActionJobConnectionResolver
 	Status(ctx context.Context) (*campaigns.BackgroundProcessStatus, error)
@@ -510,7 +537,7 @@ type ActionJobResolver interface {
 	Repository(ctx context.Context) (*RepositoryResolver, error)
 	BaseRevision() string
 	State() campaigns.ActionJobState
-	Runner() RunnerResolver
+	Agent() AgentResolver
 
 	BaseRepository(ctx context.Context) (*RepositoryResolver, error)
 	Diff() ActionJobResolver
@@ -521,10 +548,10 @@ type ActionJobResolver interface {
 	Log() *string
 }
 
-type RunnerResolver interface {
+type AgentResolver interface {
 	ID() graphql.ID
 	Name() string
 	Description() string
-	State() campaigns.RunnerState
+	State() campaigns.AgentState
 	RunningJobs() ActionJobConnectionResolver
 }

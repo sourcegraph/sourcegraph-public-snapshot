@@ -427,10 +427,10 @@ type Mutation {
         name: String!
         # The action definition file content.
         definition: JSONCString!
-        # The new environment variables.
-        # Todo: implement
-        env: ActionEnv
-    ): Action!
+    ): # The new environment variables.
+    # Todo: implement
+    # env: [ActionEnvVar!]
+    Action!
 
     # Update an existing action.
     updateAction(
@@ -438,10 +438,10 @@ type Mutation {
         action: ID!
         # The new definition file contents.
         newDefinition: JSONCString!
-        # The new environment variables.
-        # Todo: implement
-        env: ActionEnv
-    ): Action!
+    ): # The new environment variables.
+    # Todo: implement
+    # env: [ActionEnvVar!]
+    Action!
 
     # Create a new 'MANUAL' action execution from an action.
     createActionExecution(action: ID!): ActionExecution!
@@ -520,7 +520,7 @@ type Action implements Node {
     savedSearch: SavedSearch
     # Cron schedule for repeating executions. Cannot be combined with `savedSearch`.
     schedule: String
-    # Respected when `schedule` or `savedSearch` is set. If `true`, any previous runs are cancelled and superseded on invokation.
+    # Respected when `schedule` or `savedSearch` is set. If `true`, any previous runs are cancelled and superseded on invocation.
     # Required to be true when `campaign` is set, otherwise race conditions may happen. todo: we can also handle that gracefully and simply return if a newer execution exists.
     cancelPreviousScheduledExecution: Boolean!
     # Use this flag to auto update the associated campaign. If it's false, the plan is retained but the UI shows an 'Apply' button instead of 'Create campaign'.
@@ -552,7 +552,7 @@ type ActionExecution implements Node {
     # Mirrored from the action, but persisted separately, so updating an action is safe.
     definition: ActionDefinition!
     # The initial reason this execution was created.
-    invokationReason: ActionExecutionInvocationReason!
+    invocationReason: ActionExecutionInvocationReason!
     # All associated jobs to run.
     jobs: ActionJobConnection!
     # Combined status of all jobs.

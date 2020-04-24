@@ -114,7 +114,7 @@
 <polygon fill="none" stroke="darkgreen" points="0.5,-215 0.5,-235 91.5,-235 91.5,-215 0.5,-215"/>
 <text text-anchor="start" x="15.28" y="-220.8" font-family="Times,serif" font-size="14.00" fill="darkgreen">finished_at</text>
 <polygon fill="none" stroke="darkgreen" points="0.5,-195 0.5,-215 91.5,-215 91.5,-195 0.5,-195"/>
-<text text-anchor="start" x="3.24" y="-200.8" font-family="Times,serif" font-size="14.00" fill="darkgreen">runner_seen_at</text>
+<text text-anchor="start" x="3.24" y="-200.8" font-family="Times,serif" font-size="14.00" fill="darkgreen">agent_seen_at</text>
 <polygon fill="none" stroke="darkgreen" points="0.5,-175 0.5,-195 91.5,-195 91.5,-175 0.5,-175"/>
 <text text-anchor="start" x="33.17" y="-180.8" font-family="Times,serif" font-size="14.00" fill="darkgreen">state</text>
 <polygon fill="none" stroke="darkgreen" points="0.5,-155 0.5,-175 91.5,-175 91.5,-155 0.5,-155"/>

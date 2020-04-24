@@ -54,6 +54,10 @@ func (r *actionResolver) Name() string {
 	return r.action.Name
 }
 
+func (r *actionResolver) Autoupdate() bool {
+	return false
+}
+
 func (r *actionResolver) Definition() graphqlbackend.ActionDefinitionResolver {
 	return &actionDefinitionResolver{envStr: r.action.EnvStr, steps: r.action.Steps}
 }

@@ -82,11 +82,11 @@ func (r *actionJobResolver) State() campaigns.ActionJobState {
 	return r.job.State
 }
 
-func (r *actionJobResolver) Runner() graphqlbackend.RunnerResolver {
+func (r *actionJobResolver) Agent() graphqlbackend.AgentResolver {
 	if r.job.State == campaigns.ActionJobStatePending {
 		return nil
 	}
-	return &runnerResolver{}
+	return &agentResolver{}
 }
 
 func (r *actionJobResolver) BaseRepository(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {

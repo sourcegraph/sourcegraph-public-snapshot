@@ -36,7 +36,7 @@ ActionJob [label=<
   <tr><td port="action_job_2"><font color="darkgreen">log</font></td></tr>
   <tr><td port="action_job_3"><font color="darkgreen">started_at</font></td></tr>
   <tr><td port="action_job_4"><font color="darkgreen">finished_at</font></td></tr>
-  <tr><td port="action_job_5"><font color="darkgreen">runner_seen_at</font></td></tr>
+  <tr><td port="action_job_5"><font color="darkgreen">agent_seen_at</font></td></tr>
   <tr><td port="action_job_6"><font color="darkgreen">state</font></td></tr>
   <tr><td port="action_job_7"><font color="darkgreen">execution_id</font></td></tr>
   <tr><td port="action_job_8"><font color="darkgreen">patch_id</font></td></tr>

@@ -1291,7 +1291,7 @@ type ActionExecution struct {
 	ID               int64
 	Steps            string
 	EnvStr           *string
-	InvokationReason ActionExecutionInvokationReason
+	InvocationReason ActionExecutionInvocationReason
 	PatchSetID       *int64
 	ActionID         int64
 	ExecutionStart   time.Time
@@ -1303,7 +1303,7 @@ type ActionJob struct {
 	Log            *string
 	ExecutionStart time.Time
 	ExecutionEnd   time.Time
-	RunnerSeenAt   time.Time
+	AgentSeenAt    time.Time
 	Patch          *string
 	State          ActionJobState
 	RepoID         int32
@@ -1312,23 +1312,23 @@ type ActionJob struct {
 	BaseReference  string
 }
 
-// ActionExecutionInvokationReason defines the possible reasons of an execution to be triggered from.
-type ActionExecutionInvokationReason string
+// ActionExecutionInvocationReason defines the possible reasons of an execution to be triggered from.
+type ActionExecutionInvocationReason string
 
-// ActionExecutionInvokationReason constants
+// ActionExecutionInvocationReason constants
 const (
-	ActionExecutionInvokationReasonManual      ActionExecutionInvokationReason = "MANUAL"
-	ActionExecutionInvokationReasonSchedule    ActionExecutionInvokationReason = "SCHEDULE"
-	ActionExecutionInvokationReasonSavedSearch ActionExecutionInvokationReason = "SAVED_SEARCH"
+	ActionExecutionInvocationReasonManual      ActionExecutionInvocationReason = "MANUAL"
+	ActionExecutionInvocationReasonSchedule    ActionExecutionInvocationReason = "SCHEDULE"
+	ActionExecutionInvocationReasonSavedSearch ActionExecutionInvocationReason = "SAVED_SEARCH"
 )
 
-// RunnerState defines the possible states of a runner.
-type RunnerState string
+// AgentState defines the possible states of an agent.
+type AgentState string
 
-// RunnerState constants
+// AgentState constants
 const (
-	RunnerStateOnline  RunnerState = "ONLINE"
-	RunnerStateOffline RunnerState = "OFFLINE"
+	AgentStateOnline  AgentState = "ONLINE"
+	AgentStateOffline AgentState = "OFFLINE"
 )
 
 // ActionJobState defines the possible states of a job.

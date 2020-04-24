@@ -100,14 +100,14 @@ export const ActionExecution: React.FunctionComponent<Props> = ({
                 )}
             </h1>
             {alertError && <ErrorAlert error={alertError} />}
-            {execution.invokationReason === GQL.ActionExecutionInvokationReason.SCHEDULE && (
+            {execution.invocationReason === GQL.ActionExecutionInvocationReason.SCHEDULE && (
                 <div className="alert alert-info">
                     This execution is part of a scheduled action.
                     <br />
                     <code>{execution.action.schedule}</code>
                 </div>
             )}
-            {execution.invokationReason === GQL.ActionExecutionInvokationReason.SAVED_SEARCH && (
+            {execution.invocationReason === GQL.ActionExecutionInvocationReason.SAVED_SEARCH && (
                 <div className="alert alert-info">
                     This execution is run because the results of saved search "
                     <a href="">
@@ -128,8 +128,8 @@ export const ActionExecution: React.FunctionComponent<Props> = ({
             <h2>Action status</h2>
             <div>
                 <div className="alert alert-info mt-1">
-                    <h3>Want faster execution? To add more runners:</h3>
-                    <p>Use the below token to register your runner to this Sourcegraph instance</p>
+                    <h3>Want faster execution? To add more agents:</h3>
+                    <p>Use the below token to register your agent to this Sourcegraph instance</p>
                     <input className="form-control mb-2" readOnly={true} value="KK3DK99AA1291S8" />
                     <div>
                         <code>
@@ -157,7 +157,7 @@ export const ActionExecution: React.FunctionComponent<Props> = ({
                                     {formatDistance(parseISO(execution.executionStart), new Date())}.
                                 </>
                             ) : (
-                                <>Execution is awaiting a runner to pick up jobs.</>
+                                <>Execution is awaiting an agent to pick up jobs.</>
                             )}
                         </p>
                         <button

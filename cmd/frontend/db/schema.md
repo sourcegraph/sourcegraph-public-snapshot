@@ -28,13 +28,13 @@ Foreign-key constraints:
  id                | integer | not null default nextval('action_executions_id_seq'::regclass)
  steps             | text    | not null
  env               | json    | 
- invokation_reason | text    | not null
+ invocation_reason | text    | not null
  patch_set_id      | integer | 
  action            | integer | not null
 Indexes:
     "action_executions_pkey" PRIMARY KEY, btree (id)
 Check constraints:
-    "action_executions_invokation_reason_check" CHECK (invokation_reason = ANY (ARRAY['MANUAL'::text, 'SAVED_SEARCH'::text, 'SCHEDULE'::text]))
+    "action_executions_invocation_reason_check" CHECK (invocation_reason = ANY (ARRAY['MANUAL'::text, 'SAVED_SEARCH'::text, 'SCHEDULE'::text]))
 Foreign-key constraints:
     "action_executions_action_fkey" FOREIGN KEY (action) REFERENCES actions(id) ON UPDATE CASCADE
     "action_executions_patch_set_id_fkey" FOREIGN KEY (patch_set_id) REFERENCES patch_sets(id) ON UPDATE CASCADE
@@ -51,7 +51,7 @@ Referenced by:
  log             | text                     | 
  execution_start | timestamp with time zone | 
  execution_end   | timestamp with time zone | 
- runner_seen_at  | timestamp with time zone | 
+ agent_seen_at   | timestamp with time zone | 
  patch           | text                     | 
  state           | text                     | not null default 'PENDING'::text
  repository      | integer                  | not null

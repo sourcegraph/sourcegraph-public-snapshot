@@ -74,17 +74,12 @@ func (r *actionExecutionResolver) Action(ctx context.Context) (graphqlbackend.Ac
 	return &actionResolver{store: r.store, action: *action}, nil
 }
 
-func (r *actionExecutionResolver) InvokationReason() campaigns.ActionExecutionInvokationReason {
-	return r.actionExecution.InvokationReason
+func (r *actionExecutionResolver) InvocationReason() campaigns.ActionExecutionInvocationReason {
+	return r.actionExecution.InvocationReason
 }
 
 func (r *actionExecutionResolver) Definition() graphqlbackend.ActionDefinitionResolver {
 	return &actionDefinitionResolver{steps: r.actionExecution.Steps, envStr: *r.actionExecution.EnvStr}
-}
-
-// todo:
-func (r *actionExecutionResolver) ActionWorkspace() *graphqlbackend.GitTreeEntryResolver {
-	return nil
 }
 
 func (r *actionExecutionResolver) Jobs() graphqlbackend.ActionJobConnectionResolver {
@@ -147,7 +142,7 @@ func (r *actionExecutionResolver) PatchSet(ctx context.Context) (graphqlbackend.
 	return &patchSetResolver{store: r.store, patchSet: patchSet}, nil
 }
 
-func createActionExecutionForAction(ctx context.Context, store *ee.Store, action *campaigns.Action, invokationReason campaigns.ActionExecutionInvokationReason) (*campaigns.ActionExecution, []*campaigns.ActionJob, error) {
+func createActionExecutionForAction(ctx context.Context, store *ee.Store, action *campaigns.Action, invocationReason campaigns.ActionExecutionInvocationReason) (*campaigns.ActionExecution, []*campaigns.ActionJob, error) {
 	scopeQuery, err := scopeQueryForSteps(action.Steps)
 	if err != nil {
 		return nil, nil, err
@@ -167,7 +162,7 @@ func createActionExecutionForAction(ctx context.Context, store *ee.Store, action
 	defer tx.Done(&err)
 
 	actionExecution, err := tx.CreateActionExecution(ctx, ee.CreateActionExecutionOpts{
-		InvokationReason: invokationReason,
+		InvocationReason: invocationReason,
 		Steps:            action.Steps,
 		EnvStr:           action.EnvStr,
 		ActionID:         action.ID,
