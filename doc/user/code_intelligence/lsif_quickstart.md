@@ -1,6 +1,6 @@
 # LSIF quickstart guide
 
-## [Language Specific Guides](./languages.md)
+## [Language-specific guides](languages/index.md)
 
 We are working on creating guides for each language with an LSIF indexer, so make sure to check for the documentation for your language! If there is not a guide for your language, this general guide will help you through the LSIF setup process.
 

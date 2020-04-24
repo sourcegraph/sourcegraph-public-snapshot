@@ -1,6 +1,6 @@
 # Adding LSIF to your workflows
 
-## [Language-specific guides](./languages.md)
+## [Language-specific guides](./languages/index.md)
 
 We are working on creating guides for each language with an LSIF indexer, so make sure to check for the documentation for your language! If there is not a guide for your language, this general guide will help you through the LSIF setup process.
 
@@ -17,7 +17,7 @@ After walking through the [LSIF quickstart guide](./lsif_quickstart.md), add a j
 
 ## Using indexer containers
 
-We're working on creating containers that bundle indexers and the [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli). All the languages in our [language-specific guides](languages.md) are supported, and this section provides a general guide to using those containers. We've pinned the containers to the `latest` tag in these samples so they stay up to date, but make sure you pin them before going live to ensure reproducibility.
+We're working on creating containers that bundle indexers and the [Sourcegraph CLI (`src`)](https://github.com/sourcegraph/src-cli). All the languages in our [language-specific guides](languages/index.md) are supported, and this section provides a general guide to using those containers. We've pinned the containers to the `latest` tag in these samples so they stay up to date, but make sure you pin them before going live to ensure reproducibility.
 
 ### Basic usage
 
@@ -121,7 +121,7 @@ workflows:
 
 ## CI from scratch
 
-If you're indexing a language we haven't documented yet in our [language-specific guides](languages.md), follow the instructions in this section. We want to have containers available for every language with a robust indexer, so please also consider [filing an issue](https://github.com/sourcegraph/sourcegraph/issues/new) to let us know we're missing one.
+If you're indexing a language we haven't documented yet in our [language-specific guides](languages/index.md), follow the instructions in this section. We want to have containers available for every language with a robust indexer, so please also consider [filing an issue](https://github.com/sourcegraph/sourcegraph/issues/new) to let us know we're missing one.
 
 ### Set up your CI machines
 
