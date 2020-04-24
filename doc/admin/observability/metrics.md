@@ -112,5 +112,5 @@ One of the primary benefits of using Sourcegraph's builtin Prometheus and Grafan
 
 Most commonly [Sourcegraph's monitoring is configured to send alerts to your own PagerDuty, Slack, email, etc.](alerting.md). Less common approaches include:
 
-- Using [the HTTP API to query which alerts are firing in Sourcegraph](alerting_custom_consumption.md) in order to pipe that information into your own monitoring platform
+- Using [the HTTP API to query which alerts are firing in Sourcegraph](alerting_custom_consumption.md) in order to pipe that information into your own monitoring platform.
 - Using [Prometheus federation](https://prometheus.io/docs/prometheus/latest/federation/) to pull in Sourcegraph's metrics into your own Prometheus instance, which includes our [high-level alerting metrics](metrics_guide.md) which we define via baked-in Prometheus rules.
