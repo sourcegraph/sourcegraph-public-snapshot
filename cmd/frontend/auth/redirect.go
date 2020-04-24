@@ -15,6 +15,9 @@ func SafeRedirectURL(urlStr string) string {
 		return "/"
 	}
 
+	// Make sure u.Path always starts with a single slash.
+	u.Path = "/" + strings.TrimLeft(u.Path, "/")
+
 	// Only take certain known-safe fields.
 	u = &url.URL{Path: u.Path, RawQuery: u.RawQuery}
 	return u.String()
