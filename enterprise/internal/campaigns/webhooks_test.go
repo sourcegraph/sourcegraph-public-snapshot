@@ -13,15 +13,15 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp/cmpopts"
-
 	"github.com/dnaeon/go-vcr/cassette"
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -62,8 +62,8 @@ func testGitHubWebhook(db *sql.DB) func(*testing.T) {
 			Config: marshalJSON(t, &schema.GitHubConnection{
 				Url:      "https://github.com",
 				Token:    os.Getenv("GITHUB_TOKEN"),
-				Repos:    []string{"oklog/ulid"},
-				Webhooks: []*schema.GitHubWebhook{{Org: "oklog", Secret: secret}},
+				Repos:    []string{"sourcegraph/sourcegraph"},
+				Webhooks: []*schema.GitHubWebhook{{Org: "sourcegraph", Secret: secret}},
 			}),
 		}
 
@@ -77,9 +77,20 @@ func testGitHubWebhook(db *sql.DB) func(*testing.T) {
 			t.Fatal(t)
 		}
 
-		githubRepo, err := githubSrc.GetRepo(ctx, "oklog/ulid")
+		githubRepo, err := githubSrc.GetRepo(ctx, "sourcegraph/sourcegraph")
 		if err != nil {
 			t.Fatal(err)
+		}
+
+		// Other tests may have already created the repo
+		repoList, err := repoStore.ListRepos(ctx, repos.StoreListReposArgs{
+			Names: []string{"github.com/sourcegraph/sourcegraph"},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(repoList) == 1 {
+			githubRepo.ID = repoList[0].ID
 		}
 
 		err = repoStore.UpsertRepos(ctx, githubRepo)
@@ -104,7 +115,7 @@ func testGitHubWebhook(db *sql.DB) func(*testing.T) {
 		changesets := []*campaigns.Changeset{
 			{
 				RepoID:              githubRepo.ID,
-				ExternalID:          "16",
+				ExternalID:          "10156",
 				ExternalServiceType: githubRepo.ExternalRepo.ServiceType,
 				CampaignIDs:         []int64{campaign.ID},
 			},
@@ -122,13 +133,15 @@ func testGitHubWebhook(db *sql.DB) func(*testing.T) {
 
 		hook := NewGitHubWebhook(store, repoStore, clock)
 
-		testCases, err := filepath.Glob("testdata/fixtures/webhooks/github/*.json")
+		fixtureFiles, err := filepath.Glob("testdata/fixtures/webhooks/github/*.json")
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		for _, tc := range testCases {
-			t.Run(tc, func(t *testing.T) {
+		for _, fixtureFile := range fixtureFiles {
+			_, name := path.Split(fixtureFile)
+			name = strings.TrimSuffix(name, ".json")
+			t.Run(name, func(t *testing.T) {
 				_, err = db.Exec("ALTER SEQUENCE changeset_events_id_seq RESTART")
 				if err != nil {
 					t.Fatal(err)
@@ -138,9 +151,9 @@ func testGitHubWebhook(db *sql.DB) func(*testing.T) {
 					t.Fatal(err)
 				}
 
-				f := loadWebhookTestCase(t, tc)
+				tc := loadWebhookTestCase(t, fixtureFile)
 
-				for _, event := range f.Events {
+				for _, event := range tc.Events {
 					req, err := http.NewRequest("POST", "", bytes.NewReader(event.Event))
 					if err != nil {
 						t.Fatal(err)
@@ -166,17 +179,21 @@ func testGitHubWebhook(db *sql.DB) func(*testing.T) {
 					cmpopts.IgnoreFields(campaigns.ChangesetEvent{}, "CreatedAt"),
 					cmpopts.IgnoreFields(campaigns.ChangesetEvent{}, "UpdatedAt"),
 				}
-				if diff := cmp.Diff(f.ChangesetEvents, have, opts...); diff != "" {
+				if diff := cmp.Diff(tc.ChangesetEvents, have, opts...); diff != "" {
 					t.Error(diff)
 				}
 
-				// Log the expected JSON so that it's easy to update our fixtures
-				if t.Failed() {
-					marshalled, err := json.Marshal(have)
+				// Overwrite and format test case
+				if *update {
+					tc.ChangesetEvents = have
+					data, err := json.MarshalIndent(tc, "  ", "  ")
 					if err != nil {
 						t.Fatal(err)
 					}
-					t.Log(string(marshalled))
+					err = ioutil.WriteFile(fixtureFile, data, 0666)
+					if err != nil {
+						t.Fatal(err)
+					}
 				}
 			})
 		}
