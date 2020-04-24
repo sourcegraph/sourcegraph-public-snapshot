@@ -2,6 +2,7 @@ package auth
 
 import (
 	"net/url"
+	"path"
 	"strings"
 )
 
