@@ -51,7 +51,7 @@ func validateCustom(cfg Unified) (problems Problems) {
 		}
 	}
 
-	// prevent usage of non-root externalURLs until we add their support
+	// Prevent usage of non-root externalURLs until we add their support:
 	// https://github.com/sourcegraph/sourcegraph/issues/7884
 	if cfg.ExternalURL != "" {
 		eURL, err := url.Parse(cfg.ExternalURL)
