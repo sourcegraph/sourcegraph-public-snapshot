@@ -391,7 +391,11 @@ func (issue *Issue) title() string {
 
 func (issue *Issue) LinkedPullRequests(prs []*PullRequest) (linked []*PullRequest) {
 	for _, pr := range prs {
-		if strings.Contains(pr.Body, "#"+strconv.Itoa(issue.Number)) {
+		hasMatch, err := regexp.MatchString(fmt.Sprintf(`#%d([^\d]|$)`, issue.Number), pr.Body)
+		if err != nil {
+			panic(err)
+		}
+		if hasMatch {
 			linked = append(linked, pr)
 		}
 	}
