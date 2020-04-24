@@ -9,9 +9,9 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
-	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/paths"
-	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/database"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 )
 
 const DefaultMonikerResultPageSize = 100

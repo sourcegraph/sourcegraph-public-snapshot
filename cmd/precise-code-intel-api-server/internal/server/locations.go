@@ -2,7 +2,7 @@ package server
 
 import (
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/api"
-	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/bundles"
+	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
 )
 
 type APILocation struct {

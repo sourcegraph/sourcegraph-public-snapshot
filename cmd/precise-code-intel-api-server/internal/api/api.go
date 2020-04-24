@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/bundles"
-	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/db"
+	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 )
 
 // CodeIntelAPI is the main interface into precise code intelligence data.

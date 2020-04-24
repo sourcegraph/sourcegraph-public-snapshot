@@ -3,14 +3,14 @@
 package mocks
 
 import (
-	db "github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/db"
+	db "github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 	"sync"
 )
 
 // MockReferencePager is a mock impelementation of the ReferencePager
 // interface (from the package
-// github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/db)
-// used for unit testing.
+// github.com/sourcegraph/sourcegraph/internal/codeintel/db) used for unit
+// testing.
 type MockReferencePager struct {
 	// CloseTxFunc is an instance of a mock function object controlling the
 	// behavior of the method CloseTx.

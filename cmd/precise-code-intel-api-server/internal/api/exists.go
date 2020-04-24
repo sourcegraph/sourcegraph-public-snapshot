@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/db"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 )
 
 // FindClosestDumps returns the set of dumps that can most accurately answer code intelligence
