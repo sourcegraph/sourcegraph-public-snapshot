@@ -1,6 +1,7 @@
 import * as React from 'react'
 import * as H from 'history'
 import RegexIcon from 'mdi-react/RegexIcon'
+import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 import classNames from 'classnames'
 import FormatLetterCaseIcon from 'mdi-react/FormatLetterCaseIcon'
 import { PatternTypeProps, CaseSensitivityProps, InteractiveSearchProps } from '../..'
@@ -11,6 +12,9 @@ import { submitSearch } from '../../helpers'
 import { QueryInputToggle } from './QueryInputToggle'
 import { isErrorLike } from '../../../../../shared/src/util/errors'
 import CodeBracketsIcon from 'mdi-react/CodeBracketsIcon'
+import { generateFiltersQuery } from '../../../../../shared/src/util/url'
+import copy from 'copy-to-clipboard'
+import { CopyQueryButton } from './CopyQueryButton'
 
 export interface TogglesProps
     extends PatternTypeProps,
@@ -89,8 +93,19 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
         submitOnToggle({ newPatternType })
     }
 
+    const generateQuery = (): string =>
+        [
+            props.navbarSearchQuery,
+            props.filtersInQuery && generateFiltersQuery(props.filtersInQuery),
+            `patternType:${props.patternType}`,
+            props.caseSensitive ? 'case:yes' : '',
+        ]
+            .filter(query => query && query.length > 0)
+            .join(' ')
+
     return (
         <div className={classNames('toggle-container', props.className)}>
+            <CopyQueryButton fullQuery={generateQuery()} className="toggle-container__toggle" />
             <QueryInputToggle
                 {...props}
                 title="Case sensitivity"
