@@ -218,6 +218,8 @@ type CampaignResolver interface {
 	ClosedAt() *DateTime
 	PublishedAt(ctx context.Context) (*DateTime, error)
 	Patches(ctx context.Context, args *graphqlutil.ConnectionArgs) PatchConnectionResolver
+
+	DiffStat(ctx context.Context) (*DiffStat, error)
 }
 
 type CampaignsConnectionResolver interface {

@@ -345,6 +345,7 @@ func (r *previewFileDiffConnectionResolver) DiffStat(ctx context.Context) (*grap
 	}
 	return stat, nil
 }
+
 func (r *previewFileDiffConnectionResolver) RawDiff(ctx context.Context) (string, error) {
 	fileDiffs, err := r.compute(ctx)
 	if err != nil {
