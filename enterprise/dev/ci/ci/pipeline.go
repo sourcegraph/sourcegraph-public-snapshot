@@ -94,7 +94,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addGoTests,
 			addGoBuild,
 			addDockerfileLint,
-			wait,
 		}
 
 	default:
