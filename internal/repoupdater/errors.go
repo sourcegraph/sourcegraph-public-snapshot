@@ -18,7 +18,7 @@ func (e *ErrNotFound) NotFound() bool {
 }
 
 func (e *ErrNotFound) Error() string {
-	return fmt.Sprintf("repo Not found (name=%s  notfound=%v) ", e.Repo, e.IsNotFound)
+	return fmt.Sprintf("repository not found (name=%s notfound=%v)", e.Repo, e.IsNotFound)
 }
 
 // ErrUnauthorized is an error that occurs when repo access is
@@ -34,7 +34,7 @@ func (e *ErrUnauthorized) Unauthorized() bool {
 }
 
 func (e *ErrUnauthorized) Error() string {
-	return fmt.Sprintf("repo access Not authorized (name=%s  noauthz=%v) ", e.Repo, e.NoAuthz)
+	return fmt.Sprintf("not authorized (name=%s noauthz=%v)", e.Repo, e.NoAuthz)
 }
 
 // ErrTemporary is an error that can be retried
@@ -50,5 +50,5 @@ func (e *ErrTemporary) Temporary() bool {
 }
 
 func (e *ErrTemporary) Error() string {
-	return fmt.Sprintf("repo temporary unavailable (name=%s  istemporary=%v) ", e.Repo, e.IsTemporary)
+	return fmt.Sprintf("repository temporarily unavailable (name=%s istemporary=%v)", e.Repo, e.IsTemporary)
 }
