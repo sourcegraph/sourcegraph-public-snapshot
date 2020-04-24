@@ -3692,10 +3692,11 @@ type ActionExecutionStatusOpts struct {
 
 // Result of the query for the status of an execution
 type ActionExecutionStatusResult struct {
-	Total    int64
-	Canceled bool
-	Pending  int64
-	Errored  bool
+	Total        int64
+	Canceled     bool
+	Pending      int64
+	Errored      bool
+	ProcessState campaigns.BackgroundProcessState
 }
 
 // ActionExecutionStatus lists ActionExecutions with the given filters.
@@ -3715,6 +3716,18 @@ func (s *Store) ActionExecutionStatus(ctx context.Context, opts ActionExecutionS
 	})
 	if err != nil {
 		return nil, err
+	}
+	result.ProcessState = campaigns.BackgroundProcessStateProcessing
+	// canceled has higher precendence than errored
+	if result.Canceled == true {
+		result.ProcessState = campaigns.BackgroundProcessStateCanceled
+	} else if result.Pending == 0 {
+		// todo: currently, still running has precedence over errored, revisit if that's useful
+		if result.Errored == true {
+			result.ProcessState = campaigns.BackgroundProcessStateErrored
+		} else {
+			result.ProcessState = campaigns.BackgroundProcessStateCompleted
+		}
 	}
 	return result, nil
 }

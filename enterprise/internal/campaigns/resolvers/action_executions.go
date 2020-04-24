@@ -93,25 +93,12 @@ func (r *actionExecutionResolver) Status(ctx context.Context) (*campaigns.Backgr
 		return nil, err
 	}
 
-	var processState campaigns.BackgroundProcessState = campaigns.BackgroundProcessStateProcessing
-	// canceled has higher precendence than errored
-	if status.Canceled == true {
-		processState = campaigns.BackgroundProcessStateCanceled
-	} else if status.Pending == 0 {
-		// todo: currently, still running has precedence over errored, revisit if that's useful
-		if status.Errored == true {
-			processState = campaigns.BackgroundProcessStateErrored
-		} else {
-			processState = campaigns.BackgroundProcessStateCompleted
-		}
-	}
-
 	return &campaigns.BackgroundProcessStatus{
 		Canceled:     status.Canceled,
 		Total:        int32(status.Total),
 		Completed:    int32(status.Total - status.Pending),
 		Pending:      int32(status.Pending),
-		ProcessState: processState,
+		ProcessState: status.ProcessState,
 		// todo: we don't have the errors as single line strings
 		ProcessErrors: []string{},
 	}, nil
