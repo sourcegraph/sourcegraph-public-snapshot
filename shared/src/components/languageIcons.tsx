@@ -36,6 +36,7 @@ export const languageIcons: Record<string, MdiReactIconComponentType | undefined
 
     bash: undefined,
     c: LanguageCIcon,
+    cobol: undefined,
     clojure: undefined,
     cpp: LanguageCppIcon,
     csharp: LanguageCsharpIcon,
@@ -57,6 +58,7 @@ export const languageIcons: Record<string, MdiReactIconComponentType | undefined
     ocaml: undefined,
     objectivec: undefined,
     php: LanguagePhpIcon,
+    protobuf: undefined,
     powershell: PowershellIcon,
     python: LanguagePythonIcon,
     r: LanguageRIcon,
