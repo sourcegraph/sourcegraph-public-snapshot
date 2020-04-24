@@ -247,6 +247,7 @@ Dockerfile @sourcegraph/distribution
 /ThirdPartyLicensesGo.csv @sourcegraph/core-services
 /ThirdPartyLicensesNpm.csv @sourcegraph/web
 /dev/licenses-npm.sh @sourcegraph/web
+/dev/codecov.yml @nicksnyder @tsenart @lguychard
 
 # Changes to the GraphQL API should be approved by both the team owning the backend and the consumers
 /cmd/frontend/graphqlbackend/schema.graphql @sourcegraph/web @sourcegraph/core-services
