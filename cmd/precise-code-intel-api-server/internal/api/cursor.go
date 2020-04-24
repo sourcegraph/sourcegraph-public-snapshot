@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/bundles"
-	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/db"
+	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 )
 
 // Cursor holds the complete state necessary to page through a reference result set.
