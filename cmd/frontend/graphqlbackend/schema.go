@@ -420,46 +420,75 @@ type Mutation {
         name: String!
         # The action definition file content.
         definition: JSONCString!
-        env: ActionEnv
-    ): Action!
+    ): # The new environment variables.
+    # Todo: implement
+    # env: [ActionEnvVar!]
+    Action!
 
     # Update an existing action.
-    updateAction(action: ID!, newDefinition: JSONCString!): Action!
+    updateAction(
+        # The action to update.
+        action: ID!
+        # The new definition file contents.
+        newDefinition: JSONCString!
+    ): # The new environment variables.
+    # Todo: implement
+    # env: [ActionEnvVar!]
+    Action!
 
     # Create a new 'MANUAL' action execution from an action.
     createActionExecution(action: ID!): ActionExecution!
-    # Called internally by the query-runner to trigger executions
+
+    # Called internally by the query-runner to trigger executions.
     createActionExecutionsForSavedSearch(savedSearchQuery: String!): EmptyResponse
+
+    # Cancel a running execution.
     cancelActionExecution(actionExecution: ID!): EmptyResponse
 
-    # Begin a job on a runner, if some are in the backlog.
-    pullActionJob(runner: ID!): ActionJob
+    # Used by agents. If a job is in the backlog, it's marked as running and returned to this agent.
+    pullActionJob(
+        # The agent that is asking for a new job.
+        agent: ID!
+    ): ActionJob
+
+    # Used by agents. On state change (error, completion, ..) this method is called to finalize the job.
     updateActionJob(
-        # The action job to update
+        # The action job to update.
         actionJob: ID!
-        # Probably hard-require this if state == completed, otherwise it must be empty
+        # The generated patch. Must be empty if state !== completed.
         patch: String
-        # The optional new state
+        # The optional new state.
         state: ActionJobState
     ): ActionJob!
-    # Append a log to a job. Runner-only API. Fails if state != 'RUNNING'. Returns empty if action job was not found.
+
+    # Used by agents. Append a piece of logs to a job. Fails if state != 'RUNNING'. Returns empty if action job was not found.
     appendLog(actionJob: ID!, content: String!): ActionJob
+
+    # Re-enqueue a job for processing. Can be used to fix timeout, etc. errors.
     retryActionJob(actionJob: ID!): EmptyResponse
+
+    # Registers a new agent.
+    registerAgent(
+        # String identifier for the agent.
+        id: String!
+        # Reported specs from the agent, used to display in the UI. May be used in the future for better scheduling.
+        specs: String!
+    ): Agent!
+    # Unregisters an agent. Removes it from the list of known agents.
+    unregisterAgent(agent: ID!): EmptyResponse
 }
 
-# An env var set for a action execution
+# An env var set for a action execution.
 type ActionEnvVar {
-    # Name of the env var
+    # Name of the env var.
     key: String!
-    # Content of the env var
+    # Content of the env var.
     value: String!
 }
 
-# List of actions
+# List of actions.
 type ActionConnection {
-    # Total number of actions in this connection
     totalCount: Int!
-    # The actions in the connection itself
     nodes: [Action!]!
 }
 
@@ -469,104 +498,111 @@ type ActionDefinition {
     steps: JSONCString!
     # Environment variables to be set during execution.
     # Caution: never print the envvar.value directly (they should even be REDACTED in the API response),
-    # they can contain sensitive data
+    # they can contain sensitive data.
     env: [ActionEnvVar!]!
 }
 
-# An action is run to create patches for campaigns
+# An action holds all executions to it's definition and maintains the connections to saved searches and campaigns.
 type Action implements Node {
     id: ID!
-    # A human friendly readable name
+    # A human-readable name.
     name: String!
-    # The current action definition
+    # The current action definition.
     definition: ActionDefinition!
-    # The saved search this was associated with, cannot be combined with `schedule`
+    # The saved search this was associated with, cannot be combined with `schedule`.
     savedSearch: SavedSearch
-    # Cron schedule for repeating executions.
+    # Cron schedule for repeating executions. Cannot be combined with `savedSearch`.
     schedule: String
-    # Respected when `schedule` or `savedSearch` is set. If `true`, any previous runs are cancelled and superseded on invokation.
+    # Respected when `schedule` or `savedSearch` is set. If `true`, any previous runs are cancelled and superseded on invocation.
     # Required to be true when `campaign` is set, otherwise race conditions may happen. todo: we can also handle that gracefully and simply return if a newer execution exists.
     cancelPreviousScheduledExecution: Boolean!
-    # todo: use this flag to auto update the associated campaign. If it's false, the plan is retained but the UI shows an 'Apply' button instead of 'Create campaign'
-    # autoupdate: Boolean
+    # Use this flag to auto update the associated campaign. If it's false, the plan is retained but the UI shows an 'Apply' button instead of 'Create campaign'.
+    autoupdate: Boolean!
     # Optional associated campaign to update on completion.
     campaign: Campaign
+    # All executions run from this action.
     actionExecutions(first: Int): ActionExecutionConnection!
 }
 
+# A list of executions.
 type ActionExecutionConnection {
     totalCount: Int!
     nodes: [ActionExecution!]!
 }
 
-enum ActionExecutionInvokationReason {
+# The reason an execution has been invoked.
+enum ActionExecutionInvocationReason {
     MANUAL
     SCHEDULE
     SAVED_SEARCH
 }
 
-# An action execution is one instance of an action
+# An action execution is one instance of an action. It's a container for all jobs generated from the definition.
 type ActionExecution implements Node {
     id: ID!
     # The parent action that this execution was derived from.
-    # TODO: Is this legit? It can cause an infinite resolver loop if there is no detection for that
     action: Action!
     # Mirrored from the action, but persisted separately, so updating an action is safe.
     definition: ActionDefinition!
-    invokationReason: ActionExecutionInvokationReason!
+    # The initial reason this execution was created.
+    invocationReason: ActionExecutionInvocationReason!
+    # All associated jobs to run.
     jobs: ActionJobConnection!
-    # Combined status of all jobs
+    # Combined status of all jobs.
     status: BackgroundProcessStatus!
-    # Time when execution started. Set once any job was accepted by a runner.
+    # Time when execution started. Set once any job was accepted by an agent.
     executionStart: DateTime
-    # Time when execution ended, this can be on timeout, error or completion and allows no assumption on the `state`
+    # Time when execution ended, this can be on timeout, error or completion and allows no assumption on the `state`.
     executionEnd: DateTime
     # Set when status is 'COMPLETED' and the parent action had no `campaign` set. Upon reporting the completion,
     # the patches are used with the API method `createPatchSetFromPatches` to populate this.
     patchSet: PatchSet
 }
 
-enum RunnerState {
+# The state of an agent. After no pings have been received from the agent in a while, it's set to 'OFFLINE'.
+enum AgentState {
     ONLINE
     OFFLINE
 }
 
-# A registered actions runner
-type Runner implements Node {
+# A registered agent running action jobs.
+type Agent implements Node {
     id: ID!
-    # Unique name to identify this runner
+    # Unique name to identify this agent.
     name: String!
-    # Reported information about the runner. This contains OS, Docker version and more.
+    # Reported information about the agent. This contains OS, Docker version and more.
     description: String!
-    # Set to 'offline' when no heartbeat was received for a log enough period (TBD what long enough might be)
-    state: RunnerState!
-    # All currently accepted jobs
+    # Set to 'offline' when no heartbeat was received for a log enough period (TBD what long enough might be).
+    state: AgentState!
+    # All currently accepted jobs.
     runningJobs: ActionJobConnection!
 }
 
+# A list of action jobs.
 type ActionJobConnection {
     totalCount: Int!
     nodes: [ActionJob!]!
 }
 
+# The state of an action job.
 enum ActionJobState {
-    # note yet picked up by a runner
+    # Not yet picked up by an agent.
     PENDING
-    # currently running
+    # Currently running.
     RUNNING
-    # finished successfully
+    # Finished successfully, might have created a patch.
     COMPLETED
-    # completed with errors, no patch allowed
+    # Completed with errors, no patch allowed.
     ERRORED
-    # did not complete within the given time boundaries
+    # Did not complete within the given time boundaries.
     TIMEOUT
-    # The job was canceled
+    # The job was canceled.
     CANCELED
 }
 
-# An action job is one run over a single repository within an execution
+# An action job is one run over a single repository within an execution.
 type ActionJob implements Node {
-    # Unique identifier for the job
+    # Unique identifier for the job.
     id: ID!
     # Mirrored from the parent execution, same datasource so they will always be equal. Used for queries that fetch the job directly.
     definition: ActionDefinition!
@@ -575,17 +611,17 @@ type ActionJob implements Node {
     # The base revision in the repository that this job runs over.
     # Todo: Make this a GitRef
     baseRevision: String!
-    # The current state of the action job
+    # The current state of the action job.
     state: ActionJobState!
-    # Set once accepted by a runner
-    runner: Runner
-    # Set when completed and patches have been uploaded
+    # Set once accepted by an agent.
+    agent: Agent
+    # Set when completed and patches have been uploaded.
     diff: PreviewRepositoryComparison
-    # Time when execution started. Set once accepted by a runner.
+    # Time when execution started. Set once accepted by an agent.
     executionStart: DateTime
-    # Time when execution ended, this can be on timeout, error or completion and allows no assumption on the `state`
+    # Time when execution ended, this can be on timeout, error or completion and allows no assumption on the `state`.
     executionEnd: DateTime
-    # The output logged to the runner
+    # The output logged to the agent.
     log: String
 }
 
@@ -1347,9 +1383,9 @@ type Query {
         hasPatchSet: Boolean
     ): CampaignConnection!
 
-    # TODO: Better filtering
+    # Get all actions.
     actions(first: Int): ActionConnection!
-    # Get action jobs by state, used in pending job queue list on runners page
+    # Get action jobs by state, used in pending job queue list on agents page.
     actionJobs(first: Int, state: ActionJobState!): ActionJobConnection!
 
     # Looks up a repository by either name or cloneURL.

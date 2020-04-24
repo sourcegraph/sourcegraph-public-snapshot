@@ -39,7 +39,7 @@ Foreign-key constraints:
     "action_executions_action_fkey" FOREIGN KEY (action) REFERENCES actions(id) ON UPDATE CASCADE
     "action_executions_patch_set_id_fkey" FOREIGN KEY (patch_set_id) REFERENCES patch_sets(id) ON UPDATE CASCADE
 Referenced by:
-    TABLE "action_jobs" CONSTRAINT "action_jobs_execution_fkey" FOREIGN KEY (execution) REFERENCES action_executions(id) ON UPDATE CASCADE
+    TABLE "action_jobs" CONSTRAINT "action_jobs_execution_fkey" FOREIGN KEY (execution) REFERENCES action_executions(id) ON UPDATE CASCADE ON DELETE CASCADE
 
 ```
 
@@ -63,7 +63,7 @@ Indexes:
 Check constraints:
     "action_jobs_state_check" CHECK (state = ANY (ARRAY['PENDING'::text, 'RUNNING'::text, 'COMPLETED'::text, 'ERRORED'::text, 'TIMEOUT'::text, 'CANCELED'::text]))
 Foreign-key constraints:
-    "action_jobs_execution_fkey" FOREIGN KEY (execution) REFERENCES action_executions(id) ON UPDATE CASCADE
+    "action_jobs_execution_fkey" FOREIGN KEY (execution) REFERENCES action_executions(id) ON UPDATE CASCADE ON DELETE CASCADE
     "action_jobs_repository_fkey" FOREIGN KEY (repository) REFERENCES repo(id) ON UPDATE CASCADE
 
 ```
@@ -73,6 +73,7 @@ Foreign-key constraints:
      Column      |  Type   |                      Modifiers                       
 -----------------+---------+------------------------------------------------------
  id              | integer | not null default nextval('actions_id_seq'::regclass)
+ name            | text    | not null
  campaign        | integer | 
  schedule        | text    | 
  cancel_previous | boolean | not null default false
