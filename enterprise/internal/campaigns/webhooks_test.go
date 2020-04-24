@@ -82,17 +82,6 @@ func testGitHubWebhook(db *sql.DB) func(*testing.T) {
 			t.Fatal(err)
 		}
 
-		// Other tests may have already created the repo
-		repoList, err := repoStore.ListRepos(ctx, repos.StoreListReposArgs{
-			Names: []string{"github.com/sourcegraph/sourcegraph"},
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-		if len(repoList) == 1 {
-			githubRepo.ID = repoList[0].ID
-		}
-
 		err = repoStore.UpsertRepos(ctx, githubRepo)
 		if err != nil {
 			t.Fatal(err)
