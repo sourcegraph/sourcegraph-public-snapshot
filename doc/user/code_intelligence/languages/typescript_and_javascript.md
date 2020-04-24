@@ -28,9 +28,9 @@
    # for public instances
    src lsif upload -github-token=<your github token>
    ```
-   Visit the [LSIF quickstart](./lsif_quickstart.md) for more information about the upload command.
+   Visit the [LSIF quickstart](../lsif_quickstart.md) for more information about the upload command.
 
-The upload command will provide a URL you can visit to see the upload's status, and when it's done you can visit the repo and check out the difference in code navigation quality! To troubleshoot issues, visit the more in depth [LSIF quickstart](./lsif_quickstart.md) guide and check out the documentation for the `lsif-node` and `src-cli` tools.
+The upload command will provide a URL you can visit to see the upload's status, and when it's done you can visit the repo and check out the difference in code navigation quality! To troubleshoot issues, visit the more in depth [LSIF quickstart](../lsif_quickstart.md) guide and check out the documentation for the `lsif-node` and `src-cli` tools.
 
 ## Automated indexing
 
