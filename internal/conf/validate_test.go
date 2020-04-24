@@ -41,6 +41,16 @@ func TestValidateCustom(t *testing.T) {
 			rawSite:     "{}",
 			wantErr:     "tagged union type must have a",
 		},
+		"valid externalURL": {
+			rawSite: `{"externalURL":"http://example.com"}`,
+		},
+		"valid externalURL ending with slash": {
+			rawSite: `{"externalURL":"http://example.com/"}`,
+		},
+		"non-root externalURL": {
+			rawSite:     `{"externalURL":"http://example.com/sourcegraph"}`,
+			wantProblem: "externalURL must not be a non-root URL",
+		},
 	}
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
