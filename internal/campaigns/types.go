@@ -1314,7 +1314,7 @@ type ActionJob struct {
 // ActionExecutionInvocationReason defines the possible reasons of an execution to be triggered from.
 type ActionExecutionInvocationReason string
 
-// ActionExecutionInvocationReason constants
+// ActionExecutionInvocationReason constants.
 const (
 	ActionExecutionInvocationReasonManual      ActionExecutionInvocationReason = "MANUAL"
 	ActionExecutionInvocationReasonSchedule    ActionExecutionInvocationReason = "SCHEDULE"
@@ -1324,7 +1324,7 @@ const (
 // AgentState defines the possible states of an agent.
 type AgentState string
 
-// AgentState constants
+// AgentState constants.
 const (
 	AgentStateOnline  AgentState = "ONLINE"
 	AgentStateOffline AgentState = "OFFLINE"
@@ -1333,7 +1333,7 @@ const (
 // ActionJobState defines the possible states of a job.
 type ActionJobState string
 
-// ActionJobState constants
+// ActionJobState constants.
 const (
 	ActionJobStatePending   ActionJobState = "PENDING"
 	ActionJobStateRunning   ActionJobState = "RUNNING"
