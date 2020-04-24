@@ -104,7 +104,7 @@ func (r *patchesConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend
 
 		resolver := &patchResolver{
 			store:         r.store,
-			job:           j,
+			patch:         j,
 			preloadedRepo: repo,
 			// We set this to true, because we tried to preload the
 			// changestJob, but maybe we couldn't find one.
@@ -182,7 +182,7 @@ func (r *patchesConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.
 type patchResolver struct {
 	store *ee.Store
 
-	job           *campaigns.Patch
+	patch         *campaigns.Patch
 	preloadedRepo *repos.Repo
 
 	// Set if we tried to preload the changesetjob
@@ -203,19 +203,19 @@ func (r *patchResolver) computeRepoCommit(ctx context.Context) (*graphqlbackend.
 		if r.preloadedRepo != nil {
 			r.repo = newRepositoryResolver(r.preloadedRepo)
 		} else {
-			r.repo, r.err = graphqlbackend.RepositoryByIDInt32(ctx, r.job.RepoID)
+			r.repo, r.err = graphqlbackend.RepositoryByIDInt32(ctx, r.patch.RepoID)
 			if r.err != nil {
 				return
 			}
 		}
-		args := &graphqlbackend.RepositoryCommitArgs{Rev: string(r.job.Rev)}
+		args := &graphqlbackend.RepositoryCommitArgs{Rev: string(r.patch.Rev)}
 		r.commit, r.err = r.repo.Commit(ctx, args)
 	})
 	return r.repo, r.commit, r.err
 }
 
 func (r *patchResolver) ID() graphql.ID {
-	return marshalPatchID(r.job.ID)
+	return marshalPatchID(r.patch.ID)
 }
 
 func (r *patchResolver) Repository(ctx context.Context) (*graphqlbackend.RepositoryResolver, error) {
@@ -237,7 +237,7 @@ func (r *patchResolver) FileDiffs(ctx context.Context, args *graphqlutil.Connect
 		return nil, err
 	}
 	return &previewFileDiffConnectionResolver{
-		job:    r.job,
+		patch:  r.patch,
 		commit: commit,
 		first:  args.First,
 	}, nil
@@ -252,7 +252,7 @@ func (r *patchResolver) PublicationEnqueued(ctx context.Context) (bool, error) {
 		return r.preloadedChangesetJob.FinishedAt.IsZero(), nil
 	}
 
-	cj, err := r.store.GetChangesetJob(ctx, ee.GetChangesetJobOpts{PatchID: r.job.ID})
+	cj, err := r.store.GetChangesetJob(ctx, ee.GetChangesetJobOpts{PatchID: r.patch.ID})
 	if err != nil && err != ee.ErrNoResults {
 		return false, err
 	}
@@ -267,7 +267,7 @@ func (r *patchResolver) PublicationEnqueued(ctx context.Context) (bool, error) {
 }
 
 type previewFileDiffConnectionResolver struct {
-	job    *campaigns.Patch
+	patch  *campaigns.Patch
 	commit *graphqlbackend.GitCommitResolver
 	first  *int32
 
@@ -280,7 +280,7 @@ type previewFileDiffConnectionResolver struct {
 
 func (r *previewFileDiffConnectionResolver) compute(ctx context.Context) ([]*diff.FileDiff, error) {
 	r.once.Do(func() {
-		r.fileDiffs, r.err = diff.ParseMultiFileDiff([]byte(r.job.Diff))
+		r.fileDiffs, r.err = diff.ParseMultiFileDiff([]byte(r.patch.Diff))
 		if r.err != nil {
 			return
 		}
