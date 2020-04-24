@@ -163,7 +163,6 @@ func (ws Workloads) Markdown(tracking *TrackingIssue) string {
 
 	var b strings.Builder
 
-
 	for _, label := range tracking.LabelWhitelist {
 		b.WriteString(fmt.Sprintf(labelMarkerFmt, label))
 	}
