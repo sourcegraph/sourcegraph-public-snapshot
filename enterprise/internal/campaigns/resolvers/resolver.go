@@ -964,7 +964,7 @@ func (r *Resolver) CreateActionExecution(ctx context.Context, args *graphqlbacke
 		return nil, err
 	}
 
-	action, err := r.store.ActionByID(ctx, ee.ActionByIDOpts{ID: actionID})
+	action, err := r.store.GetAction(ctx, ee.GetActionOpts{ID: actionID})
 	if err != nil {
 		if err == ee.ErrNoResults {
 			return nil, errors.New("Action not found")
@@ -1062,12 +1062,12 @@ func (r *Resolver) UpdateActionJob(ctx context.Context, args *graphqlbackend.Upd
 		}
 	}
 
-	actionJob, err := r.store.ActionJobByID(ctx, ee.ActionJobByIDOpts{ID: id})
+	actionJob, err := r.store.GetActionJob(ctx, ee.GetActionJobOpts{ID: id})
 	if err != nil {
+		if err == ee.ErrNoResults {
+			return nil, errors.New("ActionJob not found")
+		}
 		return nil, err
-	}
-	if actionJob == nil {
-		return nil, errors.New("ActionJob not found")
 	}
 
 	// check if is running, otherwise updating state is not allowed
@@ -1144,7 +1144,7 @@ func (r *Resolver) UpdateActionJob(ctx context.Context, args *graphqlbackend.Upd
 			}
 
 			// check if action is associated to a campaign, then we update that directly with the plan from above
-			action, err := tx.ActionByID(ctx, ee.ActionByIDOpts{ID: actionExecution.ActionID})
+			action, err := tx.GetAction(ctx, ee.GetActionOpts{ID: actionExecution.ActionID})
 			if err != nil {
 				if err == ee.ErrNoResults {
 					return nil, errors.New("Action not found")
@@ -1242,7 +1242,7 @@ func (r *Resolver) CancelActionExecution(ctx context.Context, args *graphqlbacke
 		return nil, err
 	}
 	// Probe if execution exists, so we don't swallow errors.
-	_, err = r.store.ActionExecutionByID(ctx, ee.ActionExecutionByIDOpts{ID: id})
+	_, err = r.store.GetActionExecution(ctx, ee.GetActionExecutionOpts{ID: id})
 	if err != nil {
 		return nil, err
 	}

@@ -46,14 +46,14 @@ func (r *Resolver) ActionExecutionByID(ctx context.Context, id graphql.ID) (grap
 		return nil, err
 	}
 
-	actionExecution, err := r.store.ActionExecutionByID(ctx, ee.ActionExecutionByIDOpts{
+	actionExecution, err := r.store.GetActionExecution(ctx, ee.GetActionExecutionOpts{
 		ID: dbId,
 	})
 	if err != nil {
+		if err == ee.ErrNoResults {
+			return nil, nil
+		}
 		return nil, err
-	}
-	if actionExecution.ID == 0 {
-		return nil, nil
 	}
 
 	return &actionExecutionResolver{store: r.store, actionExecution: *actionExecution}, nil
@@ -67,7 +67,7 @@ func (r *actionExecutionResolver) Action(ctx context.Context) (graphqlbackend.Ac
 	if r.action != nil {
 		return &actionResolver{store: r.store, action: *r.action}, nil
 	}
-	action, err := r.store.ActionByID(ctx, ee.ActionByIDOpts{ID: r.actionExecution.ActionID})
+	action, err := r.store.GetAction(ctx, ee.GetActionOpts{ID: r.actionExecution.ActionID})
 	// todo: how do we treat not found errors here?
 	if err != nil {
 		return nil, err

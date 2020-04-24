@@ -3089,28 +3089,29 @@ func pullActionJobQuery() *sqlf.Query {
 	return sqlf.Sprintf(queryTemplate)
 }
 
-type ActionJobByIDOpts struct {
+type GetActionJobOpts struct {
 	ID int64
 }
 
-func (s *Store) ActionJobByID(ctx context.Context, opts ActionJobByIDOpts) (*campaigns.ActionJob, error) {
-	q := actionJobByIDQuery(&opts)
+func (s *Store) GetActionJob(ctx context.Context, opts GetActionJobOpts) (*campaigns.ActionJob, error) {
+	q := getActionJobQuery(&opts)
 
 	var job campaigns.ActionJob
-	_, _, err := s.query(ctx, q, func(sc scanner) (_, _ int64, err error) {
-		if err := scanActionJob(&job, sc); err != nil {
-			return 0, 0, err
-		}
-		return 0, 0, nil
+	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
+		return 0, 0, scanActionJob(&job, sc)
 	})
-
-	// todo handle empty ie not-found error
+	if err != nil {
+		return nil, err
+	}
+	if job.ID == 0 {
+		return nil, ErrNoResults
+	}
 
 	return &job, err
 }
 
-var actionJobByIDQueryFmtstrSelect = `
--- source: enterprise/internal/campaigns/store.go:ActionJobByID
+var getActionJobQueryFmtstr = `
+-- source: enterprise/internal/campaigns/store.go:GetActionJob
 SELECT
 	action_jobs.id,
 	action_jobs.log,
@@ -3129,17 +3130,17 @@ WHERE
 	action_jobs.id = %d
 `
 
-func actionJobByIDQuery(opts *ActionJobByIDOpts) *sqlf.Query {
-	queryTemplate := actionJobByIDQueryFmtstrSelect
+func getActionJobQuery(opts *GetActionJobOpts) *sqlf.Query {
+	queryTemplate := getActionJobQueryFmtstr
 	return sqlf.Sprintf(queryTemplate, opts.ID)
 }
 
-type ActionByIDOpts struct {
+type GetActionOpts struct {
 	ID int64
 }
 
-func (s *Store) ActionByID(ctx context.Context, opts ActionByIDOpts) (*campaigns.Action, error) {
-	q := actionByIDQuery(&opts)
+func (s *Store) GetAction(ctx context.Context, opts GetActionOpts) (*campaigns.Action, error) {
+	q := getActionQuery(&opts)
 
 	var a campaigns.Action
 	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
@@ -3155,8 +3156,8 @@ func (s *Store) ActionByID(ctx context.Context, opts ActionByIDOpts) (*campaigns
 	return &a, err
 }
 
-var actionByIDQueryFmtstrSelect = `
--- source: enterprise/internal/campaigns/store.go:ActionByID
+var getActionQueryFmtstr = `
+-- source: enterprise/internal/campaigns/store.go:GetAction
 SELECT
 	actions.id,
 	actions.name,
@@ -3172,33 +3173,34 @@ WHERE
 	actions.id = %d
 `
 
-func actionByIDQuery(opts *ActionByIDOpts) *sqlf.Query {
-	queryTemplate := actionByIDQueryFmtstrSelect
+func getActionQuery(opts *GetActionOpts) *sqlf.Query {
+	queryTemplate := getActionQueryFmtstr
 	return sqlf.Sprintf(queryTemplate, opts.ID)
 }
 
-type ActionExecutionByIDOpts struct {
+type GetActionExecutionOpts struct {
 	ID int64
 }
 
-func (s *Store) ActionExecutionByID(ctx context.Context, opts ActionExecutionByIDOpts) (*campaigns.ActionExecution, error) {
-	q := actionExecutionByIDQuery(&opts)
+func (s *Store) GetActionExecution(ctx context.Context, opts GetActionExecutionOpts) (*campaigns.ActionExecution, error) {
+	q := getActionExecutionQuery(&opts)
 
 	var a campaigns.ActionExecution
-	_, _, err := s.query(ctx, q, func(sc scanner) (_, _ int64, err error) {
-		if err := scanActionExecution(&a, sc); err != nil {
-			return 0, 0, err
-		}
-		return 0, 0, nil
+	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
+		return 0, 0, scanActionExecution(&a, sc)
 	})
-
-	// todo handle empty ie not-found error
+	if err != nil {
+		return nil, err
+	}
+	if a.ID == 0 {
+		return nil, ErrNoResults
+	}
 
 	return &a, err
 }
 
-var actionExecutionByIDQueryFmtstrSelect = `
--- source: enterprise/internal/campaigns/store.go:ActionExecutionByID
+var getActionExecutionQueryFmtstr = `
+-- source: enterprise/internal/campaigns/store.go:GetActionExecution
 SELECT
 	action_executions.id,
 	action_executions.steps,
@@ -3214,8 +3216,8 @@ WHERE
 	action_executions.id = %d
 `
 
-func actionExecutionByIDQuery(opts *ActionExecutionByIDOpts) *sqlf.Query {
-	queryTemplate := actionExecutionByIDQueryFmtstrSelect
+func getActionExecutionQuery(opts *GetActionExecutionOpts) *sqlf.Query {
+	queryTemplate := getActionExecutionQueryFmtstr
 	return sqlf.Sprintf(queryTemplate, opts.ID)
 }
 

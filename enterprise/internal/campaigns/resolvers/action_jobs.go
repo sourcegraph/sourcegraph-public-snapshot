@@ -43,15 +43,16 @@ func (r *Resolver) ActionJobByID(ctx context.Context, id graphql.ID) (graphqlbac
 		return nil, err
 	}
 
-	actionJob, err := r.store.ActionJobByID(ctx, ee.ActionJobByIDOpts{
+	actionJob, err := r.store.GetActionJob(ctx, ee.GetActionJobOpts{
 		ID: dbId,
 	})
 	if err != nil {
+		if err == ee.ErrNoResults {
+			return nil, nil
+		}
 		return nil, err
 	}
-	if actionJob.ID == 0 {
-		return nil, nil
-	}
+
 	return &actionJobResolver{store: r.store, job: *actionJob}, nil
 }
 
@@ -63,7 +64,7 @@ func (r *actionJobResolver) Definition(ctx context.Context) (graphqlbackend.Acti
 	if r.actionExecution != nil {
 		return &actionDefinitionResolver{steps: r.actionExecution.Steps, envStr: *r.actionExecution.EnvStr}, nil
 	}
-	actionExecution, err := r.store.ActionExecutionByID(ctx, ee.ActionExecutionByIDOpts{ID: r.job.ExecutionID})
+	actionExecution, err := r.store.GetActionExecution(ctx, ee.GetActionExecutionOpts{ID: r.job.ExecutionID})
 	if err != nil {
 		return nil, err
 	}

@@ -34,7 +34,7 @@ func (r *Resolver) ActionByID(ctx context.Context, id graphql.ID) (graphqlbacken
 		return nil, err
 	}
 
-	action, err := r.store.ActionByID(ctx, ee.ActionByIDOpts{
+	action, err := r.store.GetAction(ctx, ee.GetActionOpts{
 		ID: dbId,
 	})
 	if err != nil {
