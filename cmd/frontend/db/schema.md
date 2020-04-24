@@ -30,41 +30,41 @@ Foreign-key constraints:
  env               | json    | 
  invocation_reason | text    | not null
  patch_set_id      | integer | 
- action            | integer | not null
+ action_id         | integer | not null
 Indexes:
     "action_executions_pkey" PRIMARY KEY, btree (id)
 Check constraints:
     "action_executions_invocation_reason_check" CHECK (invocation_reason = ANY (ARRAY['MANUAL'::text, 'SAVED_SEARCH'::text, 'SCHEDULE'::text]))
 Foreign-key constraints:
-    "action_executions_action_fkey" FOREIGN KEY (action) REFERENCES actions(id) ON UPDATE CASCADE
+    "action_executions_action_id_fkey" FOREIGN KEY (action_id) REFERENCES actions(id) ON UPDATE CASCADE
     "action_executions_patch_set_id_fkey" FOREIGN KEY (patch_set_id) REFERENCES patch_sets(id) ON UPDATE CASCADE
 Referenced by:
-    TABLE "action_jobs" CONSTRAINT "action_jobs_execution_fkey" FOREIGN KEY (execution) REFERENCES action_executions(id) ON UPDATE CASCADE ON DELETE CASCADE
+    TABLE "action_jobs" CONSTRAINT "action_jobs_execution_id_fkey" FOREIGN KEY (execution_id) REFERENCES action_executions(id) ON UPDATE CASCADE ON DELETE CASCADE
 
 ```
 
 # Table "public.action_jobs"
 ```
-     Column      |           Type           |                        Modifiers                         
------------------+--------------------------+----------------------------------------------------------
- id              | integer                  | not null default nextval('action_jobs_id_seq'::regclass)
- log             | text                     | 
- execution_start | timestamp with time zone | 
- execution_end   | timestamp with time zone | 
- agent_seen_at   | timestamp with time zone | 
- patch           | text                     | 
- state           | text                     | not null default 'PENDING'::text
- repository      | integer                  | not null
- execution       | integer                  | not null
- base_revision   | text                     | not null
- base_reference  | text                     | not null
+       Column       |           Type           |                        Modifiers                         
+--------------------+--------------------------+----------------------------------------------------------
+ id                 | integer                  | not null default nextval('action_jobs_id_seq'::regclass)
+ log                | text                     | 
+ execution_start_at | timestamp with time zone | 
+ execution_end_at   | timestamp with time zone | 
+ agent_seen_at      | timestamp with time zone | 
+ patch              | text                     | 
+ state              | text                     | not null default 'PENDING'::text
+ repository_id      | integer                  | not null
+ execution_id       | integer                  | not null
+ base_revision      | text                     | not null
+ base_reference     | text                     | not null
 Indexes:
     "action_jobs_pkey" PRIMARY KEY, btree (id)
 Check constraints:
     "action_jobs_state_check" CHECK (state = ANY (ARRAY['PENDING'::text, 'RUNNING'::text, 'COMPLETED'::text, 'ERRORED'::text, 'TIMEOUT'::text, 'CANCELED'::text]))
 Foreign-key constraints:
-    "action_jobs_execution_fkey" FOREIGN KEY (execution) REFERENCES action_executions(id) ON UPDATE CASCADE ON DELETE CASCADE
-    "action_jobs_repository_fkey" FOREIGN KEY (repository) REFERENCES repo(id) ON UPDATE CASCADE
+    "action_jobs_execution_id_fkey" FOREIGN KEY (execution_id) REFERENCES action_executions(id) ON UPDATE CASCADE ON DELETE CASCADE
+    "action_jobs_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON UPDATE CASCADE
 
 ```
 
@@ -74,19 +74,19 @@ Foreign-key constraints:
 -----------------+---------+------------------------------------------------------
  id              | integer | not null default nextval('actions_id_seq'::regclass)
  name            | text    | not null
- campaign        | integer | 
+ campaign_id     | integer | 
  schedule        | text    | 
  cancel_previous | boolean | not null default false
- saved_search    | integer | 
+ saved_search_id | integer | 
  steps           | text    | not null
  env             | json    | not null default '[]'::json
 Indexes:
     "actions_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
-    "actions_campaign_fkey" FOREIGN KEY (campaign) REFERENCES campaigns(id) ON UPDATE CASCADE
-    "actions_saved_search_fkey" FOREIGN KEY (saved_search) REFERENCES saved_searches(id) ON UPDATE CASCADE
+    "actions_campaign_id_fkey" FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON UPDATE CASCADE
+    "actions_saved_search_id_fkey" FOREIGN KEY (saved_search_id) REFERENCES saved_searches(id) ON UPDATE CASCADE
 Referenced by:
-    TABLE "action_executions" CONSTRAINT "action_executions_action_fkey" FOREIGN KEY (action) REFERENCES actions(id) ON UPDATE CASCADE
+    TABLE "action_executions" CONSTRAINT "action_executions_action_id_fkey" FOREIGN KEY (action_id) REFERENCES actions(id) ON UPDATE CASCADE
 
 ```
 
@@ -121,7 +121,7 @@ Foreign-key constraints:
     "campaigns_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE DEFERRABLE
     "campaigns_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
 Referenced by:
-    TABLE "actions" CONSTRAINT "actions_campaign_fkey" FOREIGN KEY (campaign) REFERENCES campaigns(id) ON UPDATE CASCADE
+    TABLE "actions" CONSTRAINT "actions_campaign_id_fkey" FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON UPDATE CASCADE
     TABLE "changeset_jobs" CONSTRAINT "changeset_jobs_campaign_id_fkey" FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE DEFERRABLE
 Triggers:
     trig_delete_campaign_reference_on_changesets AFTER DELETE ON campaigns FOR EACH ROW EXECUTE PROCEDURE delete_campaign_reference_on_changesets()
@@ -780,7 +780,7 @@ Check constraints:
     "repo_metadata_check" CHECK (jsonb_typeof(metadata) = 'object'::text)
     "repo_sources_check" CHECK (jsonb_typeof(sources) = 'object'::text)
 Referenced by:
-    TABLE "action_jobs" CONSTRAINT "action_jobs_repository_fkey" FOREIGN KEY (repository) REFERENCES repo(id) ON UPDATE CASCADE
+    TABLE "action_jobs" CONSTRAINT "action_jobs_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON UPDATE CASCADE
     TABLE "patches" CONSTRAINT "campaign_jobs_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
     TABLE "changesets" CONSTRAINT "changesets_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
     TABLE "default_repos" CONSTRAINT "default_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
@@ -850,7 +850,7 @@ Foreign-key constraints:
     "saved_searches_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id)
     "saved_searches_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
 Referenced by:
-    TABLE "actions" CONSTRAINT "actions_saved_search_fkey" FOREIGN KEY (saved_search) REFERENCES saved_searches(id) ON UPDATE CASCADE
+    TABLE "actions" CONSTRAINT "actions_saved_search_id_fkey" FOREIGN KEY (saved_search_id) REFERENCES saved_searches(id) ON UPDATE CASCADE
 
 ```
 
