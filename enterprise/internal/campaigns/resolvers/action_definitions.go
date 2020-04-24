@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"encoding/json"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -17,7 +18,7 @@ func (r *actionDefinitionResolver) Steps() graphqlbackend.JSONCString {
 }
 
 func (r *actionDefinitionResolver) Env() ([]graphqlbackend.ActionEnvVarResolver, error) {
-	if r.envStr == "" {
+	if strings.TrimSpace(r.envStr) == "" {
 		return []graphqlbackend.ActionEnvVarResolver{}, nil
 	}
 	var parsed []struct {
