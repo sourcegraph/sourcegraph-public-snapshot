@@ -85,7 +85,7 @@ func addWebApp(pipeline *bk.Pipeline) {
 	// Webapp tests
 	pipeline.AddStep(":jest::globe_with_meridians:",
 		bk.Cmd("dev/ci/yarn-test.sh web"),
-		bk.Cmd("bash <(curl -s https://codecov.io/bash) -cF web"))
+		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F web -F unit"))
 }
 
 // Builds and tests the browser extension.
@@ -97,14 +97,14 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 	// Browser extension tests
 	pipeline.AddStep(":jest::chrome:",
 		bk.Cmd("dev/ci/yarn-test.sh browser"),
-		bk.Cmd("bash <(curl -s https://codecov.io/bash) -cF browser"))
+		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F browser -F unit"))
 }
 
 // Tests the precise code intel system.
 func addPreciseCodeIntelSystem(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":jest:",
 		bk.Cmd("dev/ci/yarn-test-separate.sh cmd/precise-code-intel"),
-		bk.Cmd("bash <(curl -s https://codecov.io/bash) -cF codeintel"))
+		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F codeintel -F unit"))
 }
 
 // Adds the shared frontend tests (shared between the web app and browser extension).
@@ -112,7 +112,7 @@ func addSharedTests(pipeline *bk.Pipeline) {
 	// Shared tests
 	pipeline.AddStep(":jest:",
 		bk.Cmd("dev/ci/yarn-test.sh shared"),
-		bk.Cmd("bash <(curl -s https://codecov.io/bash) -cF sharedtypescript"))
+		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F sharedtypescript -F unit"))
 
 	// Storybook
 	pipeline.AddStep(":storybook:", bk.Cmd("dev/ci/yarn-run.sh storybook:smoke-test"))
@@ -128,7 +128,7 @@ func addPostgresBackcompat(pipeline *bk.Pipeline) {
 func addGoTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":go:",
 		bk.Cmd("./dev/ci/go-test.sh"),
-		bk.Cmd("bash <(curl -s https://codecov.io/bash) -cF go"))
+		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F go -F unit"))
 }
 
 // Builds the OSS and Enterprise Go commands.
