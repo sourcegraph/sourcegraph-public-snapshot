@@ -553,6 +553,8 @@ func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, err
 		return r.ChangesetByID(ctx, id)
 	case "Patch":
 		return r.PatchByID(ctx, id)
+	case "Agent":
+		return r.AgentByID(ctx, id)
 	case "Action":
 		return r.ActionByID(ctx, id)
 	case "ActionExecution":

@@ -862,33 +862,6 @@ func (r *actionJobConnectionResolver) compute(ctx context.Context) ([]*campaigns
 	return r.jobs, r.totalCount, r.err
 }
 
-// agent resolver
-
-type agentResolver struct {
-	// todo
-}
-
-func (r *agentResolver) ID() graphql.ID {
-	return "asd"
-}
-
-func (r *agentResolver) Name() string {
-	return "agent-sg-dev-123"
-}
-
-func (r *agentResolver) Description() string {
-	return "macOS 10.15.3, Docker 19.06.03, 8 CPU"
-}
-
-func (r *agentResolver) State() campaigns.AgentState {
-	return campaigns.AgentStateOnline
-}
-
-func (r *agentResolver) RunningJobs() graphqlbackend.ActionJobConnectionResolver {
-	// todo: missing store and agent param
-	return &actionJobConnectionResolver{}
-}
-
 // query and mutation resolvers
 
 func (r *Resolver) Actions(ctx context.Context, args *graphqlbackend.ListActionsArgs) (_ graphqlbackend.ActionConnectionResolver, err error) {
@@ -1281,9 +1254,11 @@ func (r *Resolver) CancelActionExecution(ctx context.Context, args *graphqlbacke
 }
 
 func (r *Resolver) RegisterAgent(ctx context.Context, args *graphqlbackend.RegisterAgentArgs) (graphqlbackend.AgentResolver, error) {
+	// todo
 	return nil, nil
 }
 
 func (r *Resolver) UnregisterAgent(ctx context.Context, args *graphqlbackend.UnregisterAgentArgs) (*graphqlbackend.EmptyResponse, error) {
+	// todo
 	return &graphqlbackend.EmptyResponse{}, nil
 }

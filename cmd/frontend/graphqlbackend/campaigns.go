@@ -173,6 +173,7 @@ type CampaignsResolver interface {
 	PublishChangeset(ctx context.Context, args *PublishChangesetArgs) (*EmptyResponse, error)
 	SyncChangeset(ctx context.Context, args *SyncChangesetArgs) (*EmptyResponse, error)
 
+	AgentByID(ctx context.Context, id graphql.ID) (AgentResolver, error)
 	ActionByID(ctx context.Context, id graphql.ID) (ActionResolver, error)
 	ActionExecutionByID(ctx context.Context, id graphql.ID) (ActionExecutionResolver, error)
 	ActionJobByID(ctx context.Context, id graphql.ID) (ActionJobResolver, error)
@@ -323,6 +324,10 @@ func (defaultCampaignsResolver) PatchSetByID(ctx context.Context, id graphql.ID)
 }
 
 func (defaultCampaignsResolver) PatchByID(ctx context.Context, id graphql.ID) (PatchResolver, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+func (defaultCampaignsResolver) AgentByID(ctx context.Context, id graphql.ID) (AgentResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 
