@@ -110,4 +110,7 @@ It is technically possible to consume all of Sourcegraph's Prometheus metrics in
 
 One of the primary benefits of using Sourcegraph's builtin Prometheus and Grafana monitoring is that you get builtin dashboards and alerting thresholds out-of-the-box, and as Sourcegraph's internals change with each update you can rest assured that the metrics and information you are monitoring is up-to-date.
 
-Most commonly [Sourcegraph's monitoring is configured to send alerts to your own PagerDuty, Slack, email, etc.](alerting.md) or, when that is not acceptable, using [the HTTP API to query which alerts are firing in Sourcegraph](alerting_custom_consumption.md) in order to pipe that information into your own monitoring platform.
+Most commonly [Sourcegraph's monitoring is configured to send alerts to your own PagerDuty, Slack, email, etc.](alerting.md). Less common approaches include:
+
+- Using [the HTTP API to query which alerts are firing in Sourcegraph](alerting_custom_consumption.md) in order to pipe that information into your own monitoring platform.
+- Using [Prometheus federation](https://prometheus.io/docs/prometheus/latest/federation/) to pull in Sourcegraph's metrics into your own Prometheus instance, which includes our [high-level alerting metrics](metrics_guide.md) which we define via baked-in Prometheus rules.
