@@ -542,7 +542,7 @@ type ActionJobResolver interface {
 	Repository(ctx context.Context) (*RepositoryResolver, error)
 	BaseRevision() string
 	State() campaigns.ActionJobState
-	Agent() AgentResolver
+	Agent(ctx context.Context) (AgentResolver, error)
 
 	BaseRepository(ctx context.Context) (*RepositoryResolver, error)
 	Diff() ActionJobResolver

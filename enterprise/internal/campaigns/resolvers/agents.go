@@ -38,7 +38,11 @@ func (r *Resolver) AgentByID(ctx context.Context, id graphql.ID) (graphqlbackend
 		return nil, err
 	}
 
-	agent, err := r.store.GetAgent(ctx, ee.GetAgentOpts{ID: dbId})
+	return AgentByIDInt64(ctx, r.store, dbId)
+}
+
+func AgentByIDInt64(ctx context.Context, store *ee.Store, id int64) (graphqlbackend.AgentResolver, error) {
+	agent, err := store.GetAgent(ctx, ee.GetAgentOpts{ID: id})
 
 	if err != nil {
 		if err == ee.ErrNoResults {
@@ -47,7 +51,7 @@ func (r *Resolver) AgentByID(ctx context.Context, id graphql.ID) (graphqlbackend
 		return nil, err
 	}
 
-	return &agentResolver{store: r.store, agent: agent}, nil
+	return &agentResolver{store: store, agent: agent}, nil
 }
 
 func (r *agentResolver) ID() graphql.ID {
