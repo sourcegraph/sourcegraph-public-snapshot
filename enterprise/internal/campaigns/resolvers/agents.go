@@ -8,6 +8,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 )
@@ -77,8 +78,9 @@ func (r *agentResolver) State() (campaigns.AgentState, error) {
 	return campaigns.AgentStateOnline, nil
 }
 
-func (r *agentResolver) RunningJobs() graphqlbackend.ActionJobConnectionResolver {
-	return &actionJobConnectionResolver{store: r.store, agentID: r.agent.ID}
+func (r *agentResolver) RunningJobs(args *graphqlutil.ConnectionArgs) graphqlbackend.ActionJobConnectionResolver {
+	runningState := campaigns.ActionJobStateRunning
+	return &actionJobConnectionResolver{store: r.store, agentID: r.agent.ID, first: args.First, state: &runningState}
 }
 
 // Connection resolver.
@@ -116,19 +118,16 @@ func (r *agentConnectionResolver) compute(ctx context.Context) ([]*campaigns.Age
 		if r.first != nil {
 			limit = int(*r.first)
 		}
-		agents, totalCount, err := r.store.ListAgents(ctx, ee.ListAgentsOpts{
+		r.agents, _, r.err = r.store.ListAgents(ctx, ee.ListAgentsOpts{
 			Limit: limit,
 			State: r.state,
 		})
-		if err != nil {
-			r.agents = nil
-			r.totalCount = 0
-			r.err = err
+		if r.err != nil {
 			return
 		}
-		r.agents = agents
-		r.totalCount = totalCount
-		r.err = nil
+		r.totalCount, r.err = r.store.CountAgents(ctx, ee.CountAgentsOpts{
+			State: r.state,
+		})
 	})
 	return r.agents, r.totalCount, r.err
 }

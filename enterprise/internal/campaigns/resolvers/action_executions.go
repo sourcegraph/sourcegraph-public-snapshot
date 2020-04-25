@@ -297,11 +297,17 @@ func (r *actionExecutionConnectionResolver) Nodes(ctx context.Context) ([]graphq
 
 func (r *actionExecutionConnectionResolver) compute(ctx context.Context) ([]*campaigns.ActionExecution, int64, error) {
 	r.once.Do(func() {
-		limit := -1
+		var limit int = -1
 		if r.first != nil {
 			limit = int(*r.first)
 		}
-		r.actionExecutions, r.totalCount, r.err = r.store.ListActionExecutions(ctx, ee.ListActionExecutionsOpts{Limit: limit, Cursor: 0, ActionID: r.actionID})
+		r.actionExecutions, _, r.err = r.store.ListActionExecutions(ctx, ee.ListActionExecutionsOpts{Limit: limit, ActionID: r.actionID})
+		if r.err != nil {
+			return
+		}
+		r.totalCount, r.err = r.store.CountActionExecutions(ctx, ee.CountActionExecutionsOpts{
+			ActionID: r.actionID,
+		})
 	})
 	return r.actionExecutions, r.totalCount, r.err
 }

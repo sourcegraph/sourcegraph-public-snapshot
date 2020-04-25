@@ -81,7 +81,7 @@ export const fetchActionExecutionByID = (actionExecution: ID): Observable<IActio
                                 agent {
                                     id
                                     name
-                                    description
+                                    specs
                                     state
                                 }
                                 executionStart

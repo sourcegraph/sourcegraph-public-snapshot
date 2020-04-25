@@ -2778,10 +2778,10 @@ func scanAction(a *campaigns.Action, s scanner) error {
 	return s.Scan(
 		&a.ID,
 		&a.Name,
-		&a.CampaignID,
+		&dbutil.NullInt64{N: &a.CampaignID},
 		&a.Schedule,
 		&a.CancelPrevious,
-		&a.SavedSearchID,
+		&dbutil.NullInt32{N: &a.SavedSearchID},
 		&a.Steps,
 		&a.EnvStr,
 	)
@@ -2793,16 +2793,10 @@ func scanActionExecution(a *campaigns.ActionExecution, s scanner) error {
 		&a.Steps,
 		&a.EnvStr,
 		&a.InvocationReason,
-		&a.PatchSetID,
+		&dbutil.NullInt64{N: &a.PatchSetID},
 		&a.ActionID,
 		&dbutil.NullTime{Time: &a.ExecutionStartAt},
 		&dbutil.NullTime{Time: &a.ExecutionEndAt},
-	)
-}
-
-func scanCount(count *int64, s scanner) error {
-	return s.Scan(
-		count,
 	)
 }
 
@@ -2818,7 +2812,7 @@ func scanActionJob(a *campaigns.ActionJob, s scanner) error {
 		&a.ExecutionID,
 		&a.BaseRevision,
 		&a.BaseReference,
-		&a.AgentID,
+		&dbutil.NullInt64{N: &a.AgentID},
 	)
 }
 
@@ -2855,6 +2849,21 @@ func jsonSetColumn(ids []int64) ([]byte, error) {
 	return json.Marshal(set)
 }
 
+// CountActions returns the number of agents in the database.
+func (s *Store) CountActions(ctx context.Context) (count int64, _ error) {
+	q := sqlf.Sprintf(countActionsQueryFmtstr)
+	return count, s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
+		err = sc.Scan(&count)
+		return 0, count, err
+	})
+}
+
+var countActionsQueryFmtstr = `
+-- source: enterprise/internal/campaigns/store.go:CountActions
+SELECT COUNT(id)
+FROM actions
+`
+
 // ListActionsOpts captures the query options needed for
 // listing actions.
 type ListActionsOpts struct {
@@ -2863,7 +2872,7 @@ type ListActionsOpts struct {
 }
 
 // ListActions lists Actions with the given filters.
-func (s *Store) ListActions(ctx context.Context, opts ListActionsOpts) (actions []*campaigns.Action, totalCount int64, err error) {
+func (s *Store) ListActions(ctx context.Context, opts ListActionsOpts) (actions []*campaigns.Action, next int64, err error) {
 	q := listActionsQuery(&opts)
 
 	actions = make([]*campaigns.Action, 0, opts.Limit)
@@ -2876,35 +2885,26 @@ func (s *Store) ListActions(ctx context.Context, opts ListActionsOpts) (actions 
 		return a.ID, 1, err
 	})
 
-	q = sqlf.Sprintf("SELECT COUNT(*) FROM actions")
-	_, _, err = s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
-		if err = scanCount(&totalCount, sc); err != nil {
-			return 0, 0, err
-		}
-		return 0, 0, err
-	})
-	if err != nil {
-		return nil, 0, err
+	if opts.Limit != 0 && len(actions) == opts.Limit {
+		next = actions[len(actions)-1].ID
+		actions = actions[:len(actions)-1]
 	}
 
-	return actions, totalCount, err
+	return actions, next, err
 }
 
-var listActionsQueryFmtstrSelect = `
+var listActionsQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:ListActions
 SELECT
 	actions.id,
 	actions.name,
-	actions.campaign,
+	actions.campaign_id,
 	actions.schedule,
 	actions.cancel_previous,
-	actions.saved_search,
+	actions.saved_search_id,
 	actions.steps,
 	actions.env
 FROM actions
-`
-
-var listActionsQueryFmtstrConditions = `
 WHERE %s
 ORDER BY actions.id ASC
 `
@@ -2921,12 +2921,12 @@ func listActionsQuery(opts *ListActionsOpts) *sqlf.Query {
 	}
 
 	preds := []*sqlf.Query{
-		sqlf.Sprintf("actions.id >= %s", opts.Cursor),
+		sqlf.Sprintf("actions.id >= %d", opts.Cursor),
 	}
 
-	queryTemplate := listActionsQueryFmtstrSelect + listActionsQueryFmtstrConditions + limitClause
+	queryTemplate := listActionsQueryFmtstr
 
-	return sqlf.Sprintf(queryTemplate, sqlf.Join(preds, "\n AND "))
+	return sqlf.Sprintf(queryTemplate+limitClause, sqlf.Join(preds, "\n AND "))
 }
 
 // UpdateActionJobOpts captures the query options needed for
@@ -3161,10 +3161,10 @@ var getActionQueryFmtstr = `
 SELECT
 	actions.id,
 	actions.name,
-	actions.campaign,
+	actions.campaign_id,
 	actions.schedule,
 	actions.cancel_previous,
-	actions.saved_search,
+	actions.saved_search_id,
 	actions.steps,
 	actions.env
 FROM
@@ -3260,16 +3260,53 @@ func getAgentQuery(opts *GetAgentOpts) *sqlf.Query {
 	return sqlf.Sprintf(queryTemplate, opts.ID)
 }
 
+// CountActionExecutionsOpts captures the query options needed for
+// counting action executions.
+type CountActionExecutionsOpts struct {
+	ActionID int64
+}
+
+// CountActionExecutions returns the number of campaigns in the database.
+func (s *Store) CountActionExecutions(ctx context.Context, opts CountActionExecutionsOpts) (count int64, _ error) {
+	q := countActionExecutionsQuery(&opts)
+	return count, s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
+		err = sc.Scan(&count)
+		return 0, count, err
+	})
+}
+
+var countActionExecutionsQueryFmtstr = `
+-- source: enterprise/internal/campaigns/store.go:CountActionExecutions
+SELECT COUNT(id)
+FROM action_executions
+WHERE %s
+`
+
+func countActionExecutionsQuery(opts *CountActionExecutionsOpts) *sqlf.Query {
+	var preds []*sqlf.Query
+
+	if opts.ActionID != 0 {
+		preds = append(preds, sqlf.Sprintf("action_id = %d", opts.ActionID))
+	}
+
+	if len(preds) == 0 {
+		preds = append(preds, sqlf.Sprintf("TRUE"))
+	}
+
+	return sqlf.Sprintf(countActionExecutionsQueryFmtstr, sqlf.Join(preds, "\n AND "))
+}
+
 // ListActionExecutionsOpts captures the query options needed for
 // listing action executions.
 type ListActionExecutionsOpts struct {
-	Cursor   int64
-	Limit    int
+	Cursor int64
+	Limit  int
+	// Only return executions for this action.
 	ActionID int64
 }
 
 // ListActionExecutions lists ActionExecutions with the given filters.
-func (s *Store) ListActionExecutions(ctx context.Context, opts ListActionExecutionsOpts) (actionExecutions []*campaigns.ActionExecution, totalCount int64, err error) {
+func (s *Store) ListActionExecutions(ctx context.Context, opts ListActionExecutionsOpts) (actionExecutions []*campaigns.ActionExecution, next int64, err error) {
 	q := listActionExecutionsQuery(&opts)
 
 	actionExecutions = make([]*campaigns.ActionExecution, 0, opts.Limit)
@@ -3282,28 +3319,15 @@ func (s *Store) ListActionExecutions(ctx context.Context, opts ListActionExecuti
 		return a.ID, 1, err
 	})
 
-	q = sqlf.Sprintf("SELECT COUNT(*) FROM action_executions")
-	countTemplate := "SELECT COUNT(*) FROM action_executions"
-	if opts.ActionID != 0 {
-		countTemplate = countTemplate + " WHERE action_id = %d"
-		q = sqlf.Sprintf(countTemplate, opts.ActionID)
-	} else {
-		q = sqlf.Sprintf(countTemplate)
-	}
-	_, _, err = s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
-		if err = scanCount(&totalCount, sc); err != nil {
-			return 0, 0, err
-		}
-		return 0, 0, err
-	})
-	if err != nil {
-		return nil, 0, err
+	if opts.Limit != 0 && len(actionExecutions) == opts.Limit {
+		next = actionExecutions[len(actionExecutions)-1].ID
+		actionExecutions = actionExecutions[:len(actionExecutions)-1]
 	}
 
-	return actionExecutions, totalCount, err
+	return actionExecutions, next, err
 }
 
-var listActionExecutionsQueryFmtstrSelect = `
+var listActionExecutionsQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:ListActionExecutions
 SELECT
 	action_executions.id,
@@ -3311,13 +3335,10 @@ SELECT
 	action_executions.env,
 	action_executions.invocation_reason,
 	action_executions.patch_set_id,
-	action_executions.action,
+	action_executions.action_id,
 	(SELECT MIN(action_jobs.execution_start_at) FROM action_jobs WHERE action_jobs.execution_id = action_executions.id) AS execution_start_at,
 	(SELECT MAX(action_jobs.execution_end_at) FROM action_jobs WHERE action_jobs.execution_id = action_executions.id) AS execution_end_at
 FROM action_executions
-`
-
-var listActionExecutionsQueryFmtstrConditions = `
 WHERE %s
 ORDER BY action_executions.id ASC
 `
@@ -3334,16 +3355,18 @@ func listActionExecutionsQuery(opts *ListActionExecutionsOpts) *sqlf.Query {
 	}
 
 	preds := []*sqlf.Query{
-		sqlf.Sprintf("action_executions.id >= %s", opts.Cursor),
+		sqlf.Sprintf("action_executions.id >= %d", opts.Cursor),
 	}
 
 	if opts.ActionID != 0 {
-		preds = append(preds, sqlf.Sprintf("action_executions.action_id = %s", opts.ActionID))
+		preds = append(preds, sqlf.Sprintf("action_executions.action_id = %d", opts.ActionID))
 	}
 
-	queryTemplate := listActionExecutionsQueryFmtstrSelect + listActionExecutionsQueryFmtstrConditions + limitClause
+	queryTemplate := listActionExecutionsQueryFmtstr
 
-	return sqlf.Sprintf(queryTemplate, sqlf.Join(preds, "\n AND "))
+	println(opts.Limit)
+
+	return sqlf.Sprintf(queryTemplate+limitClause, sqlf.Join(preds, "\n AND "))
 }
 
 type CreateActionExecutionOpts struct {
@@ -3441,6 +3464,50 @@ func createActionJobQuery(opts *CreateActionJobOpts) *sqlf.Query {
 	return sqlf.Sprintf(queryTemplate, opts.RepositoryID, opts.ExecutionID, opts.BaseRevision, opts.BaseReference)
 }
 
+// CountActionJobsOpts captures the query options needed for
+// counting action jobs.
+type CountActionJobsOpts struct {
+	ExecutionID int64
+	AgentID     int64
+	State       *campaigns.ActionJobState
+}
+
+// CountActionJobs returns the number of campaigns in the database.
+func (s *Store) CountActionJobs(ctx context.Context, opts CountActionJobsOpts) (count int64, _ error) {
+	q := countActionJobsQuery(&opts)
+	return count, s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
+		err = sc.Scan(&count)
+		return 0, count, err
+	})
+}
+
+var countActionJobsQueryFmtstr = `
+-- source: enterprise/internal/campaigns/store.go:CountActionJobs
+SELECT COUNT(id)
+FROM action_jobs
+WHERE %s
+`
+
+func countActionJobsQuery(opts *CountActionJobsOpts) *sqlf.Query {
+	var preds []*sqlf.Query
+
+	if opts.ExecutionID != 0 {
+		preds = append(preds, sqlf.Sprintf("execution_id = %d", opts.ExecutionID))
+	}
+	if opts.AgentID != 0 {
+		preds = append(preds, sqlf.Sprintf("agent_id = %d", opts.AgentID))
+	}
+	if opts.State != nil {
+		preds = append(preds, sqlf.Sprintf("state = %s", *opts.State))
+	}
+
+	if len(preds) == 0 {
+		preds = append(preds, sqlf.Sprintf("TRUE"))
+	}
+
+	return sqlf.Sprintf(countActionJobsQueryFmtstr, sqlf.Join(preds, "\n AND "))
+}
+
 // ListActionJobsOpts captures the query options needed for
 // listing action executions.
 type ListActionJobsOpts struct {
@@ -3448,10 +3515,11 @@ type ListActionJobsOpts struct {
 	Limit       int
 	ExecutionID int64
 	AgentID     int64
+	State       *campaigns.ActionJobState
 }
 
 // ListActionJobs lists ActionJobs with the given filters.
-func (s *Store) ListActionJobs(ctx context.Context, opts ListActionJobsOpts) (actionJobs []*campaigns.ActionJob, totalCount int64, err error) {
+func (s *Store) ListActionJobs(ctx context.Context, opts ListActionJobsOpts) (actionJobs []*campaigns.ActionJob, next int64, err error) {
 	q := listActionJobsQuery(&opts)
 
 	actionJobs = make([]*campaigns.ActionJob, 0, opts.Limit)
@@ -3464,30 +3532,15 @@ func (s *Store) ListActionJobs(ctx context.Context, opts ListActionJobsOpts) (ac
 		return a.ID, 1, err
 	})
 
-	q = sqlf.Sprintf("SELECT COUNT(*) FROM action_jobs")
-	countTemplate := "SELECT COUNT(*) FROM action_jobs"
-	if opts.ExecutionID != 0 {
-		countTemplate = countTemplate + " WHERE execution_id = %d"
-		q = sqlf.Sprintf(countTemplate, opts.ExecutionID)
-	}
-	if opts.AgentID != 0 {
-		countTemplate = countTemplate + " WHERE agent_id = %d"
-		q = sqlf.Sprintf(countTemplate, opts.AgentID)
-	}
-	_, _, err = s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
-		if err = scanCount(&totalCount, sc); err != nil {
-			return 0, 0, err
-		}
-		return 0, 0, err
-	})
-	if err != nil {
-		return nil, 0, err
+	if opts.Limit != 0 && len(actionJobs) == opts.Limit {
+		next = actionJobs[len(actionJobs)-1].ID
+		actionJobs = actionJobs[:len(actionJobs)-1]
 	}
 
-	return actionJobs, totalCount, err
+	return actionJobs, next, err
 }
 
-var listActionJobsQueryFmtstrSelect = `
+var listActionJobsQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:ListActionJobs
 SELECT
 	action_jobs.id,
@@ -3518,17 +3571,20 @@ func listActionJobsQuery(opts *ListActionJobsOpts) *sqlf.Query {
 	}
 
 	preds := []*sqlf.Query{
-		sqlf.Sprintf("action_jobs.id >= %s", opts.Cursor),
+		sqlf.Sprintf("action_jobs.id >= %d", opts.Cursor),
 	}
 
 	if opts.ExecutionID != 0 {
-		preds = append(preds, sqlf.Sprintf("action_jobs.execution_id = %s", opts.ExecutionID))
+		preds = append(preds, sqlf.Sprintf("action_jobs.execution_id = %d", opts.ExecutionID))
 	}
 	if opts.AgentID != 0 {
-		preds = append(preds, sqlf.Sprintf("action_jobs.agent_id = %s", opts.AgentID))
+		preds = append(preds, sqlf.Sprintf("action_jobs.agent_id = %d", opts.AgentID))
+	}
+	if opts.State != nil {
+		preds = append(preds, sqlf.Sprintf("action_jobs.state = %s", *opts.State))
 	}
 
-	queryTemplate := listActionJobsQueryFmtstrSelect + limitClause
+	queryTemplate := listActionJobsQueryFmtstr + limitClause
 
 	return sqlf.Sprintf(queryTemplate, sqlf.Join(preds, "\n AND "))
 }
@@ -3654,7 +3710,7 @@ var updateActionExecutionQueryFmtstrSelect = `
 UPDATE
 	action_executions
 SET
-	patch_set_id = %s
+	patch_set_id = %d
 WHERE
 	action_executions.id = %d
 RETURNING
@@ -3862,8 +3918,9 @@ func createAgentQuery(opts *CreateAgentOpts) *sqlf.Query {
 // ListAgentsOpts captures the query options needed for
 // listing agents.
 type ListAgentsOpts struct {
-	Limit int
-	State *campaigns.AgentState
+	Cursor int64
+	Limit  int
+	State  *campaigns.AgentState
 }
 
 // ListAgents lists Agents with the given filters.
@@ -3891,14 +3948,13 @@ func (s *Store) ListAgents(ctx context.Context, opts ListAgentsOpts) (agents []*
 var listAgentsQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:ListAgents
 SELECT
-  id,
-  name,
-  spec,
-  last_seen_at
+  agents.id,
+  agents.name,
+  agents.specs,
+  agents.last_seen_at
 FROM agents
 WHERE %s
-ORDER BY id ASC
-LIMIT %s
+ORDER BY agents.id ASC
 `
 
 func listAgentsQuery(opts *ListAgentsOpts) *sqlf.Query {
@@ -3907,20 +3963,67 @@ func listAgentsQuery(opts *ListAgentsOpts) *sqlf.Query {
 	}
 	opts.Limit++
 
-	preds := []*sqlf.Query{}
+	var limitClause string
+	if opts.Limit > 0 {
+		limitClause = fmt.Sprintf("LIMIT %d", opts.Limit)
+	}
+
+	preds := []*sqlf.Query{
+		sqlf.Sprintf("agents.id >= %d", opts.Cursor),
+	}
 
 	if opts.State != nil {
 		switch *opts.State {
 		case campaigns.AgentStateOnline:
-			preds = append(preds, sqlf.Sprintf("last_seen_at > NOW() - INTERVAL '2 minutes'"))
+			preds = append(preds, sqlf.Sprintf("agents.last_seen_at > NOW() - INTERVAL '2 minutes'"))
 		case campaigns.AgentStateOffline:
-			preds = append(preds, sqlf.Sprintf("last_seen_at <= NOW() - INTERVAL '2 minutes'"))
+			preds = append(preds, sqlf.Sprintf("agents.last_seen_at <= NOW() - INTERVAL '2 minutes'"))
 		}
 	}
 
 	return sqlf.Sprintf(
-		listCampaignsQueryFmtstr,
+		listAgentsQueryFmtstr+limitClause,
 		sqlf.Join(preds, "\n AND "),
-		opts.Limit,
 	)
+}
+
+// CountAgentsOpts captures the query options needed for
+// counting agents.
+type CountAgentsOpts struct {
+	State *campaigns.AgentState
+}
+
+// CountAgents returns the number of agents in the database.
+func (s *Store) CountAgents(ctx context.Context, opts CountAgentsOpts) (count int64, _ error) {
+	q := countAgentsQuery(&opts)
+	return count, s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
+		err = sc.Scan(&count)
+		return 0, count, err
+	})
+}
+
+var countAgentsQueryFmtstr = `
+-- source: enterprise/internal/campaigns/store.go:CountAgents
+SELECT COUNT(agents.id)
+FROM agents
+WHERE %s
+`
+
+func countAgentsQuery(opts *CountAgentsOpts) *sqlf.Query {
+	var preds []*sqlf.Query
+
+	if opts.State != nil {
+		switch *opts.State {
+		case campaigns.AgentStateOnline:
+			preds = append(preds, sqlf.Sprintf("agents.last_seen_at > NOW() - INTERVAL '2 minutes'"))
+		case campaigns.AgentStateOffline:
+			preds = append(preds, sqlf.Sprintf("agents.last_seen_at <= NOW() - INTERVAL '2 minutes'"))
+		}
+	}
+
+	if len(preds) == 0 {
+		preds = append(preds, sqlf.Sprintf("TRUE"))
+	}
+
+	return sqlf.Sprintf(countAgentsQueryFmtstr, sqlf.Join(preds, "\n AND "))
 }

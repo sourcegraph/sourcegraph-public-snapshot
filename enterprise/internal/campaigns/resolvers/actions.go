@@ -134,7 +134,11 @@ func (r *actionConnectionResolver) compute(ctx context.Context) ([]*campaigns.Ac
 		if r.first != nil {
 			limit = int(*r.first)
 		}
-		r.actions, r.totalCount, r.err = r.store.ListActions(ctx, ee.ListActionsOpts{Limit: limit, Cursor: 0})
+		r.actions, _, r.err = r.store.ListActions(ctx, ee.ListActionsOpts{Limit: limit})
+		if r.err != nil {
+			return
+		}
+		r.totalCount, r.err = r.store.CountActions(ctx)
 	})
 	return r.actions, r.totalCount, r.err
 }

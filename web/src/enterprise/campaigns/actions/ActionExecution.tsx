@@ -66,7 +66,12 @@ export const ActionExecution: React.FunctionComponent<Props> = ({
         }
     }
     if (execution === undefined) {
-        return <LoadingSpinner />
+        return (
+            <>
+                {alertError && <ErrorAlert error={alertError} />}
+                <LoadingSpinner />
+            </>
+        )
     }
     if (execution === null) {
         return <h3>Execution not found!</h3>

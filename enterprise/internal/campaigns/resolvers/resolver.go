@@ -727,24 +727,22 @@ func (r *Resolver) ActionJobs(ctx context.Context, args *graphqlbackend.ListActi
 		return nil, errors.Wrap(err, "checking if user is admin")
 	}
 
-	// todo: pass down args
-	return &actionJobConnectionResolver{store: r.store}, nil
+	return &actionJobConnectionResolver{store: r.store, first: args.First, state: args.State}, nil
 }
 
 func (r *Resolver) Agents(ctx context.Context, args *graphqlbackend.ListAgentsArgs) (_ graphqlbackend.AgentConnectionResolver, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.Agents", fmt.Sprintf("First: %d, State: %s", args.First, *args.State))
+	tr, ctx := trace.New(ctx, "Resolver.Agents", fmt.Sprintf("First: %d", args.First))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	// 🚨 SECURITY: Only site admins may create executions for now
+	// 🚨 SECURITY: Only site admins may list agents for now
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, errors.Wrap(err, "checking if user is admin")
 	}
 
-	// todo: pass down args
-	return &agentConnectionResolver{store: r.store}, nil
+	return &agentConnectionResolver{store: r.store, first: args.First, state: args.State}, nil
 }
 
 func (r *Resolver) CreateAction(ctx context.Context, args *graphqlbackend.CreateActionArgs) (_ graphqlbackend.ActionResolver, err error) {

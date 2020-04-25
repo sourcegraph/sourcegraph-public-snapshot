@@ -97,7 +97,7 @@ type ListActionExecutionsArgs struct {
 
 type ListActionJobsArgs struct {
 	First *int32
-	State campaigns.ActionJobState
+	State *campaigns.ActionJobState
 }
 
 type ActionEnvVarArgs struct {
@@ -573,5 +573,5 @@ type AgentResolver interface {
 	Name() string
 	Specs() string
 	State() (campaigns.AgentState, error)
-	RunningJobs() ActionJobConnectionResolver
+	RunningJobs(args *graphqlutil.ConnectionArgs) ActionJobConnectionResolver
 }

@@ -72,7 +72,7 @@ func TestService(t *testing.T) {
 			{RepoID: api.RepoID(rs[1].ID), Rev: "f00b4r", BaseRef: "refs/heads/master", Diff: patch},
 		}
 
-		patchSet, err := svc.CreatePatchSetFromPatches(ctx, patches, user.ID)
+		patchSet, err := svc.CreatePatchSetFromPatches(ctx, patches, user.ID, true)
 		if err != nil {
 			t.Fatal(err)
 		}

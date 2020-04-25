@@ -576,7 +576,7 @@ type Agent implements Node {
     # Set to 'offline' when no heartbeat was received for a log enough period (TBD what long enough might be).
     state: AgentState!
     # All currently accepted jobs.
-    runningJobs: ActionJobConnection!
+    runningJobs(first: Int): ActionJobConnection!
 }
 
 type AgentConnection {
@@ -1392,7 +1392,7 @@ type Query {
     # Get all actions.
     actions(first: Int): ActionConnection!
     # Get action jobs by state, used in pending job queue list on agents page.
-    actionJobs(first: Int, state: ActionJobState!): ActionJobConnection!
+    actionJobs(first: Int, state: ActionJobState): ActionJobConnection!
     # Get agents by state.
     agents(first: Int, state: AgentState): AgentConnection!
 
