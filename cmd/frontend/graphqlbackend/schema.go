@@ -419,10 +419,8 @@ type Mutation {
         # Human readable name.
         name: String!
         # The action definition file content.
-        definition: JSONCString!
-    ): # The new environment variables.
-    # Todo: implement
-    # env: [ActionEnvVar!]
+        definition: JSONCString! # The new environment variables. # Todo: implement
+    ): # env: [ActionEnvVar!]
     Action!
 
     # Update an existing action.
@@ -430,10 +428,8 @@ type Mutation {
         # The action to update.
         action: ID!
         # The new definition file contents.
-        newDefinition: JSONCString!
-    ): # The new environment variables.
-    # Todo: implement
-    # env: [ActionEnvVar!]
+        newDefinition: JSONCString! # The new environment variables. # Todo: implement
+    ): # env: [ActionEnvVar!]
     Action!
 
     # Create a new 'MANUAL' action execution from an action.
@@ -1387,6 +1383,8 @@ type Query {
     actions(first: Int): ActionConnection!
     # Get action jobs by state, used in pending job queue list on agents page.
     actionJobs(first: Int, state: ActionJobState!): ActionJobConnection!
+    # Get agents by state.
+    agents(first: Int, state: AgentState): AgentConnection!
 
     # Looks up a repository by either name or cloneURL.
     repository(

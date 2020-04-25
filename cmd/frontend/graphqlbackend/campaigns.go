@@ -157,6 +157,11 @@ type UnregisterAgentArgs struct {
 	Agent graphql.ID
 }
 
+type ListAgentsArgs struct {
+	First *int32
+	State *campaigns.AgentState
+}
+
 type SyncChangesetArgs struct {
 	Changeset graphql.ID
 }
@@ -179,6 +184,7 @@ type CampaignsResolver interface {
 	ActionJobByID(ctx context.Context, id graphql.ID) (ActionJobResolver, error)
 	Actions(ctx context.Context, args *ListActionsArgs) (ActionConnectionResolver, error)
 	ActionJobs(ctx context.Context, args *ListActionJobsArgs) (ActionJobConnectionResolver, error)
+	Agents(ctx context.Context, args *ListAgentsArgs) (AgentConnectionResolver, error)
 	CreateAction(ctx context.Context, args *CreateActionArgs) (ActionResolver, error)
 	UpdateAction(ctx context.Context, args *UpdateActionArgs) (ActionResolver, error)
 	CreateActionExecution(ctx context.Context, args *CreateActionExecutionArgs) (ActionExecutionResolver, error)
@@ -248,6 +254,10 @@ func (defaultCampaignsResolver) Actions(ctx context.Context, args *ListActionsAr
 }
 
 func (defaultCampaignsResolver) ActionJobs(ctx context.Context, args *ListActionJobsArgs) (ActionJobConnectionResolver, error) {
+	return nil, campaignsOnlyInEnterprise
+}
+
+func (defaultCampaignsResolver) Agents(ctx context.Context, args *ListAgentsArgs) (AgentConnectionResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 
@@ -551,6 +561,11 @@ type ActionJobResolver interface {
 	ExecutionStart() *DateTime
 	ExecutionEnd() *DateTime
 	Log() *string
+}
+
+type AgentConnectionResolver interface {
+	TotalCount(ctx context.Context) (int32, error)
+	Nodes(ctx context.Context) ([]AgentResolver, error)
 }
 
 type AgentResolver interface {

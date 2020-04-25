@@ -136,3 +136,65 @@ func (r *actionJobResolver) computeRepo(ctx context.Context) (*graphqlbackend.Re
 	})
 	return r.repo, r.repoErr
 }
+
+// Connection resolver.
+type actionJobConnectionResolver struct {
+	store *ee.Store
+	// Pass this in to avoid duplicate sql queries in job resolvers (for Definition()).
+	actionExecution *campaigns.ActionExecution
+	// Pass this to only retrieve jobs for this agent.
+	agentID int64
+
+	// Pass them in for caching.
+	knownJobs *[]*campaigns.ActionJob
+
+	once       sync.Once
+	jobs       []*campaigns.ActionJob
+	totalCount int64
+	err        error
+}
+
+func (r *actionJobConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+	_, totalCount, err := r.compute(ctx)
+	// todo: unsafe
+	return int32(totalCount), err
+}
+
+func (r *actionJobConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.ActionJobResolver, error) {
+	jobs, _, err := r.compute(ctx)
+	resolvers := make([]graphqlbackend.ActionJobResolver, len(jobs))
+	for i, job := range jobs {
+		resolvers[i] = &actionJobResolver{store: r.store, actionExecution: r.actionExecution, job: *job}
+	}
+	return resolvers, err
+}
+
+func (r *actionJobConnectionResolver) compute(ctx context.Context) ([]*campaigns.ActionJob, int64, error) {
+	// this might have been passed down (CreateActionExecution already knows all jobs, so why fetch them again. TODO: paginate those as well)
+	if r.knownJobs == nil {
+		r.once.Do(func() {
+			var executionID int64
+			if r.actionExecution != nil {
+				executionID = r.actionExecution.ID
+			}
+			actionJobs, totalCount, err := r.store.ListActionJobs(ctx, ee.ListActionJobsOpts{
+				ExecutionID: executionID,
+				AgentID:     r.agentID,
+				Limit:       -1,
+			})
+			if err != nil {
+				r.jobs = nil
+				r.totalCount = 0
+				r.err = err
+				return
+			}
+			r.jobs = actionJobs
+			r.totalCount = totalCount
+			r.err = nil
+		})
+	} else {
+		r.jobs = *r.knownJobs
+		r.totalCount = int64(len(r.jobs))
+	}
+	return r.jobs, r.totalCount, r.err
+}

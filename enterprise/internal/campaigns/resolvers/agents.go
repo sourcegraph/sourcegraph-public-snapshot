@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
@@ -26,7 +27,6 @@ func unmarshalAgentID(id graphql.ID) (agentID int64, err error) {
 
 type agentResolver struct {
 	agent *campaigns.Agent
-
 	store *ee.Store
 }
 
@@ -79,4 +79,56 @@ func (r *agentResolver) State() (campaigns.AgentState, error) {
 
 func (r *agentResolver) RunningJobs() graphqlbackend.ActionJobConnectionResolver {
 	return &actionJobConnectionResolver{store: r.store, agentID: r.agent.ID}
+}
+
+// Connection resolver.
+type agentConnectionResolver struct {
+	first *int32
+	// Pass to only retrieve agents in the given state.
+	state *campaigns.AgentState
+
+	store *ee.Store
+
+	once       sync.Once
+	agents     []*campaigns.Agent
+	totalCount int64
+	err        error
+}
+
+func (r *agentConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+	_, totalCount, err := r.compute(ctx)
+	// todo: unsafe
+	return int32(totalCount), err
+}
+
+func (r *agentConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.AgentResolver, error) {
+	agents, _, err := r.compute(ctx)
+	resolvers := make([]graphqlbackend.AgentResolver, len(agents))
+	for i, agent := range agents {
+		resolvers[i] = &agentResolver{store: r.store, agent: agent}
+	}
+	return resolvers, err
+}
+
+func (r *agentConnectionResolver) compute(ctx context.Context) ([]*campaigns.Agent, int64, error) {
+	r.once.Do(func() {
+		var limit = -1
+		if r.first != nil {
+			limit = int(*r.first)
+		}
+		agents, totalCount, err := r.store.ListAgents(ctx, ee.ListAgentsOpts{
+			Limit: limit,
+			State: r.state,
+		})
+		if err != nil {
+			r.agents = nil
+			r.totalCount = 0
+			r.err = err
+			return
+		}
+		r.agents = agents
+		r.totalCount = totalCount
+		r.err = nil
+	})
+	return r.agents, r.totalCount, r.err
 }

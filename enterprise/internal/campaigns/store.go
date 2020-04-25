@@ -3819,3 +3819,108 @@ func cancelActionExecutionQuery(opts *CancelActionExecutionOpts) *sqlf.Query {
 	queryTemplate := cancelActionExecutionQueryFmtstr
 	return sqlf.Sprintf(queryTemplate, opts.ExecutionID)
 }
+
+type CreateAgentOpts struct {
+	Name  string
+	Specs string
+}
+
+// CreateAgent creates a new agent in the database.
+func (s *Store) CreateAgent(ctx context.Context, opts CreateAgentOpts) (*campaigns.Agent, error) {
+	q := createAgentQuery(&opts)
+
+	var a campaigns.Agent
+	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
+		return 0, 0, scanAgent(&a, sc)
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &a, err
+}
+
+var createAgentQueryFmtstr = `
+-- source: enterprise/internal/campaigns/store.go:CreateAction
+INSERT INTO
+	agents
+	(name, specs)
+VALUES
+	(%s, %s)
+RETURNING
+	agents.id,
+	agents.name,
+	agents.specs,
+	agents.last_seen_at
+`
+
+func createAgentQuery(opts *CreateAgentOpts) *sqlf.Query {
+	queryTemplate := createAgentQueryFmtstr
+	return sqlf.Sprintf(queryTemplate, opts.Name, opts.Specs)
+}
+
+// ListAgentsOpts captures the query options needed for
+// listing agents.
+type ListAgentsOpts struct {
+	Limit int
+	State *campaigns.AgentState
+}
+
+// ListAgents lists Agents with the given filters.
+func (s *Store) ListAgents(ctx context.Context, opts ListAgentsOpts) (agents []*campaigns.Agent, next int64, err error) {
+	q := listAgentsQuery(&opts)
+
+	agents = make([]*campaigns.Agent, 0, opts.Limit)
+	_, _, err = s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
+		var a campaigns.Agent
+		if err = scanAgent(&a, sc); err != nil {
+			return 0, 0, err
+		}
+		agents = append(agents, &a)
+		return a.ID, 1, err
+	})
+
+	if opts.Limit != 0 && len(agents) == opts.Limit {
+		next = agents[len(agents)-1].ID
+		agents = agents[:len(agents)-1]
+	}
+
+	return agents, next, err
+}
+
+var listAgentsQueryFmtstr = `
+-- source: enterprise/internal/campaigns/store.go:ListAgents
+SELECT
+  id,
+  name,
+  spec,
+  last_seen_at
+FROM agents
+WHERE %s
+ORDER BY id ASC
+LIMIT %s
+`
+
+func listAgentsQuery(opts *ListAgentsOpts) *sqlf.Query {
+	if opts.Limit == 0 {
+		opts.Limit = defaultListLimit
+	}
+	opts.Limit++
+
+	preds := []*sqlf.Query{}
+
+	if opts.State != nil {
+		switch *opts.State {
+		case campaigns.AgentStateOnline:
+			preds = append(preds, sqlf.Sprintf("last_seen_at > NOW() - INTERVAL '2 minutes'"))
+		case campaigns.AgentStateOffline:
+			preds = append(preds, sqlf.Sprintf("last_seen_at <= NOW() - INTERVAL '2 minutes'"))
+		}
+	}
+
+	return sqlf.Sprintf(
+		listCampaignsQueryFmtstr,
+		sqlf.Join(preds, "\n AND "),
+		opts.Limit,
+	)
+}

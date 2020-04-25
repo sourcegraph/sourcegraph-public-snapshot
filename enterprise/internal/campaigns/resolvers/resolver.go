@@ -802,69 +802,6 @@ func (r *actionExecutionConnectionResolver) compute(ctx context.Context) ([]*cam
 	return r.actionExecutions, r.totalCount, r.err
 }
 
-// actionJobConnectionResolver
-
-type actionJobConnectionResolver struct {
-	store *ee.Store
-	// pass this in to avoid duplicate sql queries in job resolvers (for Definition())
-	actionExecution *campaigns.ActionExecution
-	// Pass this to only retrieve jobs for this agent.
-	agentID int64
-
-	// pass them in for caching
-	knownJobs *[]*campaigns.ActionJob
-
-	once       sync.Once
-	jobs       []*campaigns.ActionJob
-	totalCount int64
-	err        error
-}
-
-func (r *actionJobConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	_, totalCount, err := r.compute(ctx)
-	// todo: unsafe
-	return int32(totalCount), err
-}
-
-func (r *actionJobConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.ActionJobResolver, error) {
-	jobs, _, err := r.compute(ctx)
-	resolvers := make([]graphqlbackend.ActionJobResolver, len(jobs))
-	for i, job := range jobs {
-		resolvers[i] = &actionJobResolver{store: r.store, actionExecution: r.actionExecution, job: *job}
-	}
-	return resolvers, err
-}
-
-func (r *actionJobConnectionResolver) compute(ctx context.Context) ([]*campaigns.ActionJob, int64, error) {
-	// this might have been passed down (CreateActionExecution already knows all jobs, so why fetch them again. TODO: paginate those as well)
-	if r.knownJobs == nil {
-		r.once.Do(func() {
-			var executionID int64
-			if r.actionExecution != nil {
-				executionID = r.actionExecution.ID
-			}
-			actionJobs, totalCount, err := r.store.ListActionJobs(ctx, ee.ListActionJobsOpts{
-				ExecutionID: executionID,
-				AgentID:     r.agentID,
-				Limit:       -1,
-			})
-			if err != nil {
-				r.jobs = nil
-				r.totalCount = 0
-				r.err = err
-				return
-			}
-			r.jobs = actionJobs
-			r.totalCount = totalCount
-			r.err = nil
-		})
-	} else {
-		r.jobs = *r.knownJobs
-		r.totalCount = int64(len(r.jobs))
-	}
-	return r.jobs, r.totalCount, r.err
-}
-
 // query and mutation resolvers
 
 func (r *Resolver) Actions(ctx context.Context, args *graphqlbackend.ListActionsArgs) (_ graphqlbackend.ActionConnectionResolver, err error) {
@@ -898,6 +835,22 @@ func (r *Resolver) ActionJobs(ctx context.Context, args *graphqlbackend.ListActi
 	return &actionJobConnectionResolver{store: r.store}, nil
 }
 
+func (r *Resolver) Agents(ctx context.Context, args *graphqlbackend.ListAgentsArgs) (_ graphqlbackend.AgentConnectionResolver, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.Agents", fmt.Sprintf("First: %d, State: %s", args.First, *args.State))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	// 🚨 SECURITY: Only site admins may create executions for now
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, errors.Wrap(err, "checking if user is admin")
+	}
+
+	// todo: pass down args
+	return &agentConnectionResolver{store: r.store}, nil
+}
+
 func (r *Resolver) CreateAction(ctx context.Context, args *graphqlbackend.CreateActionArgs) (_ graphqlbackend.ActionResolver, err error) {
 	tr, ctx := trace.New(ctx, "Resolver.CreateAction", fmt.Sprintf("Definition: %s", args.Definition))
 	defer func() {
@@ -910,7 +863,6 @@ func (r *Resolver) CreateAction(ctx context.Context, args *graphqlbackend.Create
 		return nil, errors.Wrap(err, "checking if user is admin")
 	}
 
-	// todo: workspaceFile
 	action, err := r.store.CreateAction(ctx, ee.CreateActionOpts{
 		Name:  args.Name,
 		Steps: args.Definition,
@@ -1210,7 +1162,7 @@ func (r *Resolver) RetryActionJob(ctx context.Context, args *graphqlbackend.Retr
 		tr.Finish()
 	}()
 
-	// 🚨 SECURITY: Only site admins may create executions for now
+	// 🚨 SECURITY: Only site admins may retry jobs for now
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, errors.Wrap(err, "checking if user is admin")
 	}
@@ -1236,7 +1188,7 @@ func (r *Resolver) CancelActionExecution(ctx context.Context, args *graphqlbacke
 		tr.Finish()
 	}()
 
-	// 🚨 SECURITY: Only site admins may create executions for now
+	// 🚨 SECURITY: Only site admins may cancel executions for now
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, errors.Wrap(err, "checking if user is admin")
 	}
@@ -1260,12 +1212,37 @@ func (r *Resolver) CancelActionExecution(ctx context.Context, args *graphqlbacke
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
-func (r *Resolver) RegisterAgent(ctx context.Context, args *graphqlbackend.RegisterAgentArgs) (graphqlbackend.AgentResolver, error) {
-	// todo
-	return nil, nil
+func (r *Resolver) RegisterAgent(ctx context.Context, args *graphqlbackend.RegisterAgentArgs) (_ graphqlbackend.AgentResolver, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.RegisterAgent", fmt.Sprintf("Agent ID: %s", args.ID))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	// 🚨 SECURITY: Only site admins may register agents for now
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, errors.Wrap(err, "checking if user is admin")
+	}
+
+	agent, err := r.store.CreateAgent(ctx, ee.CreateAgentOpts{Name: args.ID, Specs: args.Specs})
+	if err != nil {
+		return nil, err
+	}
+	return &agentResolver{agent: agent, store: r.store}, nil
 }
 
-func (r *Resolver) UnregisterAgent(ctx context.Context, args *graphqlbackend.UnregisterAgentArgs) (*graphqlbackend.EmptyResponse, error) {
+func (r *Resolver) UnregisterAgent(ctx context.Context, args *graphqlbackend.UnregisterAgentArgs) (_ *graphqlbackend.EmptyResponse, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.UnregisterAgent", fmt.Sprintf("Agent ID: %s", args.Agent))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	// 🚨 SECURITY: Only site admins may unregister agents for now
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, errors.Wrap(err, "checking if user is admin")
+	}
+
 	// todo
 	return &graphqlbackend.EmptyResponse{}, nil
 }
