@@ -59,7 +59,7 @@ export const ViewPage: React.FunctionComponent<Props> = ({
                     contributions,
                     extensionsController.services.view
                 ),
-            [contributions, extensionsController.services.view, queryParams, viewID]
+            [_getView, contributions, extensionsController.services.view, queryParams, viewID]
         )
     )
 
