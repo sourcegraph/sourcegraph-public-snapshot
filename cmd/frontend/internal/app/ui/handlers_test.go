@@ -2,6 +2,7 @@ package ui
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -98,13 +99,13 @@ func TestNewCommon_repo_error(t *testing.T) {
 		code: 404,
 	}, {
 		name: "repoupdater-not-found",
-		err:  repoupdater.ErrNotFound,
-		want: repoupdater.ErrNotFound.Error(),
+		err:  &repoupdater.ErrNotFound{Repo: "repo-404", IsNotFound: true},
+		want: fmt.Sprintf("repository not found (name=%s notfound=%v)", "repo-404", true),
 		code: 404,
 	}, {
 		name: "repoupdater-unauthorized",
-		err:  repoupdater.ErrUnauthorized,
-		want: repoupdater.ErrUnauthorized.Error(),
+		err:  &repoupdater.ErrUnauthorized{Repo: "repo-unauth", NoAuthz: true},
+		want: fmt.Sprintf("not authorized (name=%s noauthz=%v)", "repo-unauth", true),
 		code: 401,
 	}, {
 		name: "github.com/sourcegraphtest/Always500Test",
