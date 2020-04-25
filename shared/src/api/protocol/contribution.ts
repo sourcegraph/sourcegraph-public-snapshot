@@ -308,9 +308,9 @@ export enum ContributableViewContainer {
     Panel = 'window/panel',
 
     /**
-     * A global view, displayed as a standalone page at `/views/ID`.
+     * A global page view, displayed as a standalone page at `/views/ID`.
      */
-    Global = 'global',
+    GlobalPage = 'global/page',
 }
 
 /**
@@ -328,5 +328,5 @@ export interface ViewContribution {
      * Currently only 'global' is supported; the other values of {@link ContributableViewContainer}
      * are intended for the panel view API (which will eventually be merged into the new view API).
      */
-    where: typeof ContributableViewContainer.Global
+    where: typeof ContributableViewContainer.GlobalPage
 }

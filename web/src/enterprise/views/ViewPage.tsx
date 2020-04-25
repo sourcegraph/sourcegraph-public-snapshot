@@ -46,7 +46,7 @@ export const ViewPage: React.FunctionComponent<Props> = ({
     )
     const view = _useView(
         viewID,
-        ContributableViewContainer.Global,
+        ContributableViewContainer.GlobalPage,
         queryParams,
         useMemo(() => extensionsController.services.contribution.getContributions(), [
             extensionsController.services.contribution,

@@ -218,9 +218,9 @@
                 "type": "string"
               },
               "where": {
-                "description": "Where the view is displayed. Currently the only supported value is 'global' (for views displayed as standalone pages at /views/ID).",
+                "description": "Where the view is displayed. Currently the only supported value is 'global/page' (for views displayed as standalone pages at /views/ID).",
                 "type": "string",
-                "enum": ["global"]
+                "enum": ["global/page"]
               }
             }
           }

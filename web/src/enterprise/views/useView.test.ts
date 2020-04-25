@@ -11,13 +11,13 @@ const EMPTY_PARAMS: Parameters<typeof useView>[2] = {}
 describe('useView', () => {
     test('returns view', () => {
         const contributions: Parameters<typeof useView>[3] = of({
-            views: [{ id: 'v', where: ContributableViewContainer.Global }],
+            views: [{ id: 'v', where: ContributableViewContainer.GlobalPage }],
         })
         const viewService: Parameters<typeof useView>[4] = {
             get: () => of(VIEW),
         }
         const { result } = renderHook(() =>
-            useView('v', ContributableViewContainer.Global, EMPTY_PARAMS, contributions, viewService)
+            useView('v', ContributableViewContainer.GlobalPage, EMPTY_PARAMS, contributions, viewService)
         )
         expect(result.current).toBe(VIEW)
     })
@@ -30,7 +30,7 @@ describe('useView', () => {
             get: () => of(null),
         }
         const { result } = renderHook(() =>
-            useView('v', ContributableViewContainer.Global, EMPTY_PARAMS, contributions, viewService)
+            useView('v', ContributableViewContainer.GlobalPage, EMPTY_PARAMS, contributions, viewService)
         )
         expect(result.current).toBe(undefined)
     })
