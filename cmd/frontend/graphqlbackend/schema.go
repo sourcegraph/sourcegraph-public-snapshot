@@ -482,7 +482,9 @@ type ActionEnvVar {
 
 # List of actions.
 type ActionConnection {
+    # The total number of actions in the connection.
     totalCount: Int!
+    # A list of actions.
     nodes: [Action!]!
 }
 
@@ -498,6 +500,7 @@ type ActionDefinition {
 
 # An action holds all executions to it's definition and maintains the connections to saved searches and campaigns.
 type Action implements Node {
+    # The unique ID for the action.
     id: ID!
     # A human-readable name.
     name: String!
@@ -520,7 +523,9 @@ type Action implements Node {
 
 # A list of executions.
 type ActionExecutionConnection {
+    # The total number of executions in the connection.
     totalCount: Int!
+    # A list of action executions.
     nodes: [ActionExecution!]!
 }
 
@@ -533,6 +538,7 @@ enum ActionExecutionInvocationReason {
 
 # An action execution is one instance of an action. It's a container for all jobs generated from the definition.
 type ActionExecution implements Node {
+    # The unique ID for the action execution.
     id: ID!
     # The parent action that this execution was derived from.
     action: Action!
@@ -561,6 +567,7 @@ enum AgentState {
 
 # A registered agent running action jobs.
 type Agent implements Node {
+    # The unique ID for the agent.
     id: ID!
     # Unique name to identify this agent.
     name: String!
@@ -572,14 +579,19 @@ type Agent implements Node {
     runningJobs(first: Int): ActionJobConnection!
 }
 
+# A list of agents.
 type AgentConnection {
+    # The total number of agents in the connection.
     totalCount: Int!
+    # A list of agents.
     nodes: [Agent!]!
 }
 
 # A list of action jobs.
 type ActionJobConnection {
+    # The total number of action jobs in the connection.
     totalCount: Int!
+    # A list of action jobs.
     nodes: [ActionJob!]!
 }
 
