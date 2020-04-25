@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"runtime"
 	"strings"
 	"sync"
 
@@ -105,14 +106,14 @@ func (r *actionExecutionResolver) Status(ctx context.Context) (*campaigns.Backgr
 	}, nil
 }
 
-func (r *actionExecutionResolver) ExecutionStart() *graphqlbackend.DateTime {
+func (r *actionExecutionResolver) ExecutionStartAt() *graphqlbackend.DateTime {
 	if r.actionExecution.ExecutionStartAt.IsZero() {
 		return nil
 	}
 	return &graphqlbackend.DateTime{Time: r.actionExecution.ExecutionStartAt}
 }
 
-func (r *actionExecutionResolver) ExecutionEnd() *graphqlbackend.DateTime {
+func (r *actionExecutionResolver) ExecutionEndAt() *graphqlbackend.DateTime {
 	if r.actionExecution.ExecutionEndAt.IsZero() {
 		return nil
 	}
@@ -212,6 +213,9 @@ func findRepos(ctx context.Context, scopeQuery string) ([]actionRepo, error) {
 		Version: "V2",
 		Query:   scopeQuery,
 	})
+	if err != nil {
+		return nil, err
+	}
 
 	resultsResolver, err := search.Results(ctx)
 	if err != nil {
@@ -232,11 +236,14 @@ func findRepos(ctx context.Context, scopeQuery string) ([]actionRepo, error) {
 	}
 	var wg sync.WaitGroup
 	var repoMutex sync.Mutex
-	sem := semaphore.NewWeighted(32)
+	sem := semaphore.NewWeighted(int64(runtime.NumCPU()))
 	repos := make([]actionRepo, 0)
 	for _, r := range repoMap {
 		wg.Add(1)
-		sem.Acquire(ctx, 1)
+		err := sem.Acquire(ctx, 1)
+		if err != nil {
+			return nil, err
+		}
 		go func(repo *graphqlbackend.RepositoryResolver) {
 			defer wg.Done()
 			defer sem.Release(1)

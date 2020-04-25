@@ -66,14 +66,14 @@ export const ActionJob: React.FunctionComponent<Props> = ({ isLightTheme, action
                                     )}
                                 </p>
                             </div>
-                            {actionJob.executionStart && !actionJob.executionEnd && (
+                            {actionJob.executionStartAt && !actionJob.executionEndAt && (
                                 <div className="flex-grow-0">
                                     <p className="m-0 text-right mr-2">
-                                        Started {formatDistance(parseISO(actionJob.executionStart), new Date())} ago
+                                        Started {formatDistance(parseISO(actionJob.executionStartAt), new Date())} ago
                                     </p>
                                 </div>
                             )}
-                            {actionJob.executionEnd && (
+                            {actionJob.executionEndAt && (
                                 <div className="flex-grow-0">
                                     <p className="m-0 text-right mr-2">
                                         {actionJob.state === GQL.ActionJobState.ERRORED
@@ -81,7 +81,7 @@ export const ActionJob: React.FunctionComponent<Props> = ({ isLightTheme, action
                                             : actionJob.state === GQL.ActionJobState.CANCELED
                                             ? 'Canceled'
                                             : 'Finished'}{' '}
-                                        {formatDistance(parseISO(actionJob.executionEnd), new Date())} ago
+                                        {formatDistance(parseISO(actionJob.executionEndAt), new Date())} ago
                                     </p>
                                 </div>
                             )}

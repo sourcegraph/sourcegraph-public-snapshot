@@ -105,6 +105,9 @@ func (r *actionJobResolver) FileDiffs(ctx context.Context, args *graphqlutil.Con
 		return nil, err
 	}
 	commit, err := repo.Commit(ctx, &graphqlbackend.RepositoryCommitArgs{Rev: r.BaseRevision()})
+	if err != nil {
+		return nil, err
+	}
 	return &previewFileDiffConnectionResolver{
 		diff:   r.job.Patch,
 		commit: commit,
@@ -112,14 +115,14 @@ func (r *actionJobResolver) FileDiffs(ctx context.Context, args *graphqlutil.Con
 	}, nil
 }
 
-func (r *actionJobResolver) ExecutionStart() *graphqlbackend.DateTime {
+func (r *actionJobResolver) ExecutionStartAt() *graphqlbackend.DateTime {
 	if r.job.ExecutionStartAt.IsZero() {
 		return nil
 	}
 	return &graphqlbackend.DateTime{Time: r.job.ExecutionStartAt}
 }
 
-func (r *actionJobResolver) ExecutionEnd() *graphqlbackend.DateTime {
+func (r *actionJobResolver) ExecutionEndAt() *graphqlbackend.DateTime {
 	if r.job.ExecutionEndAt.IsZero() {
 		return nil
 	}
@@ -174,35 +177,35 @@ func (r *actionJobConnectionResolver) Nodes(ctx context.Context) ([]graphqlbacke
 }
 
 func (r *actionJobConnectionResolver) compute(ctx context.Context) ([]*campaigns.ActionJob, int64, error) {
-	// This might have been passed down (CreateActionExecution already knows all jobs, so why fetch them again. TODO: paginate those as well).
-	if r.knownJobs == nil {
-		r.once.Do(func() {
-			var executionID int64
-			if r.actionExecution != nil {
-				executionID = r.actionExecution.ID
-			}
-			var limit int = -1
-			if r.first != nil {
-				limit = int(*r.first)
-			}
-			r.jobs, _, r.err = r.store.ListActionJobs(ctx, ee.ListActionJobsOpts{
-				ExecutionID: executionID,
-				AgentID:     r.agentID,
-				State:       r.state,
-				Limit:       limit,
-			})
-			if r.err != nil {
-				return
-			}
-			r.totalCount, r.err = r.store.CountActionJobs(ctx, ee.CountActionJobsOpts{
-				AgentID:     r.agentID,
-				ExecutionID: executionID,
-				State:       r.state,
-			})
+	r.once.Do(func() {
+		// This might have been passed down (CreateActionExecution already knows all jobs, so why fetch them again. TODO: paginate those as well).
+		if r.knownJobs != nil {
+			r.jobs = *r.knownJobs
+			r.totalCount = int64(len(r.jobs))
+			return
+		}
+		var executionID int64
+		if r.actionExecution != nil {
+			executionID = r.actionExecution.ID
+		}
+		var limit int = -1
+		if r.first != nil {
+			limit = int(*r.first)
+		}
+		r.jobs, _, r.err = r.store.ListActionJobs(ctx, ee.ListActionJobsOpts{
+			ExecutionID: executionID,
+			AgentID:     r.agentID,
+			State:       r.state,
+			Limit:       limit,
 		})
-	} else {
-		r.jobs = *r.knownJobs
-		r.totalCount = int64(len(r.jobs))
-	}
+		if r.err != nil {
+			return
+		}
+		r.totalCount, r.err = r.store.CountActionJobs(ctx, ee.CountActionJobsOpts{
+			AgentID:     r.agentID,
+			ExecutionID: executionID,
+			State:       r.state,
+		})
+	})
 	return r.jobs, r.totalCount, r.err
 }

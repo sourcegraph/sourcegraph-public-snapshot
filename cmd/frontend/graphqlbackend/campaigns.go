@@ -536,8 +536,8 @@ type ActionExecutionResolver interface {
 	Definition() ActionDefinitionResolver
 	Jobs() ActionJobConnectionResolver
 	Status(ctx context.Context) (*campaigns.BackgroundProcessStatus, error)
-	ExecutionStart() *DateTime
-	ExecutionEnd() *DateTime
+	ExecutionStartAt() *DateTime
+	ExecutionEndAt() *DateTime
 	PatchSet(ctx context.Context) (PatchSetResolver, error)
 }
 
@@ -558,8 +558,8 @@ type ActionJobResolver interface {
 	Diff() ActionJobResolver
 	FileDiffs(ctx context.Context, args *graphqlutil.ConnectionArgs) (PreviewFileDiffConnection, error)
 
-	ExecutionStart() *DateTime
-	ExecutionEnd() *DateTime
+	ExecutionStartAt() *DateTime
+	ExecutionEndAt() *DateTime
 	Log() *string
 }
 

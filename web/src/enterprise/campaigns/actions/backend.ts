@@ -64,8 +64,8 @@ export const fetchActionExecutionByID = (actionExecution: ID): Observable<IActio
                             pendingCount
                             completedCount
                         }
-                        executionStart
-                        executionEnd
+                        executionStartAt
+                        executionEndAt
                         patchSet {
                             id
                         }
@@ -84,8 +84,8 @@ export const fetchActionExecutionByID = (actionExecution: ID): Observable<IActio
                                     specs
                                     state
                                 }
-                                executionStart
-                                executionEnd
+                                executionStartAt
+                                executionEndAt
                                 log
                                 diff {
                                     fileDiffs {

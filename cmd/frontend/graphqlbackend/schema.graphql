@@ -558,9 +558,9 @@ type ActionExecution implements Node {
     # Combined status of all jobs.
     status: BackgroundProcessStatus!
     # Time when execution started. Set once any job was accepted by an agent.
-    executionStart: DateTime
+    executionStartAt: DateTime
     # Time when execution ended, this can be on timeout, error or completion and allows no assumption on the 'state'.
-    executionEnd: DateTime
+    executionEndAt: DateTime
     # Set when status is 'COMPLETED' and the parent action had no 'campaign' set. Upon reporting the completion,
     # the patches are used with the API method 'createPatchSetFromPatches' to populate this.
     patchSet: PatchSet
@@ -636,9 +636,9 @@ type ActionJob implements Node {
     # Set when completed and patches have been uploaded.
     diff: PreviewRepositoryComparison
     # Time when execution started. Set once accepted by an agent.
-    executionStart: DateTime
+    executionStartAt: DateTime
     # Time when execution ended, this can be on timeout, error or completion and allows no assumption on the 'state'.
-    executionEnd: DateTime
+    executionEndAt: DateTime
     # The output logged to the agent.
     log: String
 }

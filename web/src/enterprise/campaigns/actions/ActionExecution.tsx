@@ -156,10 +156,10 @@ export const ActionExecution: React.FunctionComponent<Props> = ({
                 {execution.status.state === GQL.BackgroundProcessState.PROCESSING && (
                     <div className="alert alert-info d-flex justify-content-between align-items-center">
                         <p>
-                            {execution.executionStart ? (
+                            {execution.executionStartAt ? (
                                 <>
                                     <SyncIcon className="icon-inline icon-spinning" /> Execution is running since{' '}
-                                    {formatDistance(parseISO(execution.executionStart), new Date())}.
+                                    {formatDistance(parseISO(execution.executionStartAt), new Date())}.
                                 </>
                             ) : (
                                 <>Execution is awaiting an agent to pick up jobs.</>
@@ -178,8 +178,8 @@ export const ActionExecution: React.FunctionComponent<Props> = ({
                 {execution.status.state === GQL.BackgroundProcessState.COMPLETED && (
                     <p>
                         <CheckCircleIcon className="icon-inline text-success" /> Execution finished
-                        {execution.executionEnd && (
-                            <> {formatDistance(parseISO(execution.executionEnd), new Date())} ago</>
+                        {execution.executionEndAt && (
+                            <> {formatDistance(parseISO(execution.executionEndAt), new Date())} ago</>
                         )}
                         .
                     </p>
