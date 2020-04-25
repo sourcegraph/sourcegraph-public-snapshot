@@ -855,17 +855,24 @@ func (r *Resolver) PullActionJob(ctx context.Context, args *graphqlbackend.PullA
 		return nil, errors.Wrap(err, "checking if user is admin")
 	}
 
-	actionJob, err := r.store.PullActionJob(ctx)
+	dbId, err := unmarshalAgentID(args.Agent)
 	if err != nil {
 		return nil, err
 	}
 
-	// todo better handling of this
-	if actionJob.ID == 0 {
-		return nil, nil
+	// Check if the agent actually exists.
+	agent, err := r.store.GetAgent(ctx, ee.GetAgentOpts{ID: dbId})
+	if err != nil {
+		return nil, err
 	}
 
-	// set agent = args.Agent
+	actionJob, err := r.store.PullActionJob(ctx, ee.PullActionJobOpts{AgentID: agent.ID})
+	if err != nil {
+		if err == ee.ErrNoResults {
+			return nil, nil
+		}
+		return nil, err
+	}
 
 	return &actionJobResolver{store: r.store, job: *actionJob}, nil
 }

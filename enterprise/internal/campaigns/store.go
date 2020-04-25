@@ -3045,48 +3045,56 @@ func clearActionJobQuery(opts *ClearActionJobOpts) *sqlf.Query {
 	return sqlf.Sprintf(queryTemplate, opts.ID)
 }
 
-// PullActionJob resets an action job so it is eventually retried by an agent.
-func (s *Store) PullActionJob(ctx context.Context) (*campaigns.ActionJob, error) {
-	q := pullActionJobQuery()
+// PullActionJobOpts represents the options needed to pull an action job.
+type PullActionJobOpts struct {
+	AgentID int64
+}
+
+// PullActionJob tries to find a pending job for an agent.
+func (s *Store) PullActionJob(ctx context.Context, opts PullActionJobOpts) (*campaigns.ActionJob, error) {
+	q := pullActionJobQuery(&opts)
 
 	var job campaigns.ActionJob
-	_, _, err := s.query(ctx, q, func(sc scanner) (_, _ int64, err error) {
-		if err := scanActionJob(&job, sc); err != nil {
-			return 0, 0, err
-		}
-		return 0, 0, nil
+	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
+		return 0, 0, scanActionJob(&job, sc)
 	})
+	if err != nil {
+		return nil, err
+	}
+	if job.ID == 0 {
+		return nil, ErrNoResults
+	}
 
 	return &job, err
 }
 
-var pullActionJobQueryFmtstrSelect = `
+var pullActionJobQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:PullActionJob
 UPDATE
 	action_jobs
 SET
-	execution_start = NOW(),
+	execution_start_at = NOW(),
 	state = 'RUNNING',
-	agent_seen_at = NOW()
+	agent_id = %d
 WHERE
 	action_jobs.id IN (SELECT id FROM action_jobs WHERE action_jobs.state = 'PENDING' ORDER BY action_jobs.id ASC LIMIT 1 FOR UPDATE SKIP LOCKED)
 RETURNING
 	id,
 	log,
-	execution_start,
-	execution_end,
+	execution_start_at,
+	execution_end_at,
 	patch,
 	state,
-	repository,
-	execution,
+	repository_id,
+	execution_id,
 	base_revision,
 	base_reference,
 	agent_id
 `
 
-func pullActionJobQuery() *sqlf.Query {
-	queryTemplate := pullActionJobQueryFmtstrSelect
-	return sqlf.Sprintf(queryTemplate)
+func pullActionJobQuery(opts *PullActionJobOpts) *sqlf.Query {
+	queryTemplate := pullActionJobQueryFmtstr
+	return sqlf.Sprintf(queryTemplate, opts.AgentID)
 }
 
 type GetActionJobOpts struct {
@@ -3363,8 +3371,6 @@ func listActionExecutionsQuery(opts *ListActionExecutionsOpts) *sqlf.Query {
 	}
 
 	queryTemplate := listActionExecutionsQueryFmtstr
-
-	println(opts.Limit)
 
 	return sqlf.Sprintf(queryTemplate+limitClause, sqlf.Join(preds, "\n AND "))
 }
