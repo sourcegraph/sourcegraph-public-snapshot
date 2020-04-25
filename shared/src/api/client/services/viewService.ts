@@ -15,7 +15,7 @@ export interface ViewService {
     /**
      * Register a view provider. Throws if the `id` is already registered.
      */
-    register(id: string, provider: (params: { [key: string]: string }) => Observable<View>): Unsubscribable
+    register(id: string, provider: (params: { [key: string]: string }) => Observable<View | null>): Unsubscribable
 
     /**
      * Get a view's content. The returned observable emits whenever the content changes. If there is
@@ -28,7 +28,7 @@ export interface ViewService {
  * Creates a new {@link ViewService}.
  */
 export const createViewService = (): ViewService => {
-    type Provider = (params: { [key: string]: string }) => Observable<View>
+    type Provider = (params: { [key: string]: string }) => Observable<View | null>
     const providers = new BehaviorSubject<Map<string, Provider>>(new Map())
 
     return {

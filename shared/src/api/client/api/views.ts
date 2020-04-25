@@ -27,7 +27,7 @@ export interface ClientViewsAPI extends comlink.ProxyMarked {
     $registerViewProvider(
         id: string,
         providerFunction: comlink.Remote<
-            ((params: { [key: string]: string }) => ProxySubscribable<View>) & comlink.ProxyMarked
+            ((params: { [key: string]: string }) => ProxySubscribable<View | null>) & comlink.ProxyMarked
         >
     ): Unsubscribable & comlink.ProxyMarked
 }
@@ -100,7 +100,7 @@ export class ClientViews implements ClientViewsAPI {
     public $registerViewProvider(
         id: string,
         providerFunction: comlink.Remote<
-            ((params: Record<string, string>) => ProxySubscribable<View>) & comlink.ProxyMarked
+            ((params: Record<string, string>) => ProxySubscribable<View | null>) & comlink.ProxyMarked
         >
     ): Unsubscribable & comlink.ProxyMarked {
         return comlink.proxy(this.viewService.register(id, params => wrapRemoteObservable(providerFunction(params))))
