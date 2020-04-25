@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"sync"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -92,4 +93,48 @@ func (r *actionResolver) Campaign(ctx context.Context) (graphqlbackend.CampaignR
 
 func (r *actionResolver) ActionExecutions(args *graphqlbackend.ListActionExecutionsArgs) graphqlbackend.ActionExecutionConnectionResolver {
 	return &actionExecutionConnectionResolver{store: r.store, first: args.First, actionID: r.action.ID}
+}
+
+// Connection resolver.
+type actionConnectionResolver struct {
+	once  sync.Once
+	store *ee.Store
+
+	first *int32
+
+	actions    []*campaigns.Action
+	totalCount int64
+	err        error
+}
+
+func (r *actionConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+	_, totalCount, err := r.compute(ctx)
+	if err != nil {
+		return 0, err
+	}
+	// todo: dangerous
+	return int32(totalCount), nil
+}
+
+func (r *actionConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.ActionResolver, error) {
+	nodes, _, err := r.compute(ctx)
+	if err != nil {
+		return nil, err
+	}
+	resolvers := make([]graphqlbackend.ActionResolver, len(nodes))
+	for i, node := range nodes {
+		resolvers[i] = &actionResolver{store: r.store, action: *node}
+	}
+	return resolvers, nil
+}
+
+func (r *actionConnectionResolver) compute(ctx context.Context) ([]*campaigns.Action, int64, error) {
+	r.once.Do(func() {
+		limit := -1
+		if r.first != nil {
+			limit = int(*r.first)
+		}
+		r.actions, r.totalCount, r.err = r.store.ListActions(ctx, ee.ListActionsOpts{Limit: limit, Cursor: 0})
+	})
+	return r.actions, r.totalCount, r.err
 }

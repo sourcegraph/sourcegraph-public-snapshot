@@ -263,3 +263,45 @@ func findRepos(ctx context.Context, scopeQuery string) ([]actionRepo, error) {
 	wg.Wait()
 	return repos, nil
 }
+
+// Connection resolver.
+type actionExecutionConnectionResolver struct {
+	store    *ee.Store
+	actionID int64
+	first    *int32
+
+	once sync.Once
+
+	actionExecutions []*campaigns.ActionExecution
+	totalCount       int64
+	err              error
+}
+
+func (r *actionExecutionConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+	_, totalCount, err := r.compute(ctx)
+	// todo: dangerous
+	return int32(totalCount), err
+}
+
+func (r *actionExecutionConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.ActionExecutionResolver, error) {
+	nodes, _, err := r.compute(ctx)
+	if err != nil {
+		return nil, err
+	}
+	resolvers := make([]graphqlbackend.ActionExecutionResolver, len(nodes))
+	for i, node := range nodes {
+		resolvers[i] = &actionExecutionResolver{store: r.store, actionExecution: node}
+	}
+	return resolvers, nil
+}
+
+func (r *actionExecutionConnectionResolver) compute(ctx context.Context) ([]*campaigns.ActionExecution, int64, error) {
+	r.once.Do(func() {
+		limit := -1
+		if r.first != nil {
+			limit = int(*r.first)
+		}
+		r.actionExecutions, r.totalCount, r.err = r.store.ListActionExecutions(ctx, ee.ListActionExecutionsOpts{Limit: limit, Cursor: 0, ActionID: r.actionID})
+	})
+	return r.actionExecutions, r.totalCount, r.err
+}

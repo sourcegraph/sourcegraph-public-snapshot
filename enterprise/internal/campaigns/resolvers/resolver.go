@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
@@ -712,94 +711,6 @@ func (r actionEnvVarResolver) Key() string {
 
 func (r actionEnvVarResolver) Value() string {
 	return r.value
-}
-
-// actionConnectionResolver
-
-type actionConnectionResolver struct {
-	once  sync.Once
-	store *ee.Store
-
-	first *int32
-
-	actions    []*campaigns.Action
-	totalCount int64
-	err        error
-}
-
-func (r *actionConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	_, totalCount, err := r.compute(ctx)
-	if err != nil {
-		return 0, err
-	}
-	// todo: dangerous
-	return int32(totalCount), nil
-}
-
-func (r *actionConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.ActionResolver, error) {
-	nodes, _, err := r.compute(ctx)
-	if err != nil {
-		return nil, err
-	}
-	resolvers := make([]graphqlbackend.ActionResolver, len(nodes))
-	for i, node := range nodes {
-		resolvers[i] = &actionResolver{store: r.store, action: *node}
-	}
-	return resolvers, nil
-}
-
-func (r *actionConnectionResolver) compute(ctx context.Context) ([]*campaigns.Action, int64, error) {
-	r.once.Do(func() {
-		limit := -1
-		if r.first != nil {
-			limit = int(*r.first)
-		}
-		r.actions, r.totalCount, r.err = r.store.ListActions(ctx, ee.ListActionsOpts{Limit: limit, Cursor: 0})
-	})
-	return r.actions, r.totalCount, r.err
-}
-
-// actionExecutionConnectionResolver
-
-type actionExecutionConnectionResolver struct {
-	store    *ee.Store
-	actionID int64
-	first    *int32
-
-	once sync.Once
-
-	actionExecutions []*campaigns.ActionExecution
-	totalCount       int64
-	err              error
-}
-
-func (r *actionExecutionConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	_, totalCount, err := r.compute(ctx)
-	// todo: dangerous
-	return int32(totalCount), err
-}
-
-func (r *actionExecutionConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.ActionExecutionResolver, error) {
-	nodes, _, err := r.compute(ctx)
-	if err != nil {
-		return nil, err
-	}
-	resolvers := make([]graphqlbackend.ActionExecutionResolver, len(nodes))
-	for i, node := range nodes {
-		resolvers[i] = &actionExecutionResolver{store: r.store, actionExecution: node}
-	}
-	return resolvers, nil
-}
-
-func (r *actionExecutionConnectionResolver) compute(ctx context.Context) ([]*campaigns.ActionExecution, int64, error) {
-	r.once.Do(func() {
-		limit := -1
-		if r.first != nil {
-			limit = int(*r.first)
-		}
-		r.actionExecutions, r.totalCount, r.err = r.store.ListActionExecutions(ctx, ee.ListActionExecutionsOpts{Limit: limit, Cursor: 0, ActionID: r.actionID})
-	})
-	return r.actionExecutions, r.totalCount, r.err
 }
 
 // query and mutation resolvers
