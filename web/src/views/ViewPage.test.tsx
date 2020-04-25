@@ -1,5 +1,5 @@
 import React from 'react'
-import renderer, { act } from 'react-test-renderer'
+import { create, act } from 'react-test-renderer'
 import { ViewPage } from './ViewPage'
 import * as H from 'history'
 import { SearchPatternType } from '../../../shared/src/graphql/schema'
@@ -23,23 +23,19 @@ const commonProps: Omit<React.ComponentProps<typeof ViewPage>, 'viewID' | 'extra
 
 describe('ViewPage', () => {
     test('view is loading', () => {
-        expect(
-            renderer
-                .create(<ViewPage {...commonProps} viewID="v" extraPath="" _getView={() => of(undefined)} />)
-                .toJSON()
-        ).toMatchSnapshot()
+        const renderer = create(<ViewPage {...commonProps} viewID="v" extraPath="" _getView={() => of(undefined)} />)
+        act(() => undefined)
+        expect(renderer.toJSON()).toMatchSnapshot()
     })
 
     test('view not found', () => {
-        const component = renderer.create(
-            <ViewPage {...commonProps} viewID="v" extraPath="" _getView={() => of(null)} />
-        )
+        const renderer = create(<ViewPage {...commonProps} viewID="v" extraPath="" _getView={() => of(null)} />)
         act(() => undefined)
-        expect(component.toJSON()).toMatchSnapshot()
+        expect(renderer.toJSON()).toMatchSnapshot()
     })
 
     test('renders view', () => {
-        const component = renderer.create(
+        const renderer = create(
             <ViewPage
                 {...commonProps}
                 viewID="v"
@@ -69,6 +65,6 @@ describe('ViewPage', () => {
             />
         )
         act(() => undefined)
-        expect(component.toJSON()).toMatchSnapshot()
+        expect(renderer.toJSON()).toMatchSnapshot()
     })
 })
