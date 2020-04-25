@@ -1,35 +1,46 @@
-import { ProxyMarked, proxy, proxyMarker } from '@sourcegraph/comlink'
+import * as comlink from '@sourcegraph/comlink'
 import { isEqual, omit } from 'lodash'
 import { combineLatest, from, ReplaySubject, Unsubscribable, ObservableInput } from 'rxjs'
 import { distinctUntilChanged, map, switchMap } from 'rxjs/operators'
-import { PanelView } from 'sourcegraph'
+import { PanelView, View } from 'sourcegraph'
 import { ContributableViewContainer } from '../../protocol'
 import { EditorService, getActiveCodeEditorPosition } from '../services/editorService'
 import { TextDocumentLocationProviderIDRegistry } from '../services/location'
 import { PanelViewWithComponent, PanelViewProviderRegistry } from '../services/panelViews'
 import { Location } from '@sourcegraph/extension-api-types'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
+import { ProxySubscribable } from '../../extension/api/common'
+import { wrapRemoteObservable } from './common'
+import { ViewService } from '../services/viewService'
 
 /** @internal */
 export interface PanelViewData extends Pick<PanelView, 'title' | 'content' | 'priority' | 'component'> {}
 
-export interface PanelUpdater extends Unsubscribable, ProxyMarked {
+export interface PanelUpdater extends Unsubscribable, comlink.ProxyMarked {
     update(data: PanelViewData): void
 }
 
 /** @internal */
-export interface ClientViewsAPI extends ProxyMarked {
+export interface ClientViewsAPI extends comlink.ProxyMarked {
     $registerPanelViewProvider(provider: { id: string }): PanelUpdater
+
+    $registerViewProvider(
+        id: string,
+        providerFunction: comlink.Remote<
+            ((params: { [key: string]: string }) => ProxySubscribable<View>) & comlink.ProxyMarked
+        >
+    ): Unsubscribable & comlink.ProxyMarked
 }
 
 /** @internal */
 export class ClientViews implements ClientViewsAPI {
-    public readonly [proxyMarker] = true
+    public readonly [comlink.proxyMarker] = true
 
     constructor(
         private panelViewRegistry: PanelViewProviderRegistry,
         private textDocumentLocations: TextDocumentLocationProviderIDRegistry,
-        private editorService: EditorService
+        private editorService: EditorService,
+        private viewService: ViewService
     ) {}
 
     public $registerPanelViewProvider(provider: { id: string }): PanelUpdater {
@@ -76,7 +87,7 @@ export class ClientViews implements ClientViewsAPI {
                 })
             )
         )
-        return proxy({
+        return comlink.proxy({
             update: (data: PanelViewData) => {
                 panelView.next(data)
             },
@@ -84,5 +95,14 @@ export class ClientViews implements ClientViewsAPI {
                 registryUnsubscribable.unsubscribe()
             },
         })
+    }
+
+    public $registerViewProvider(
+        id: string,
+        providerFunction: comlink.Remote<
+            ((params: Record<string, string>) => ProxySubscribable<View>) & comlink.ProxyMarked
+        >
+    ): Unsubscribable & comlink.ProxyMarked {
+        return comlink.proxy(this.viewService.register(id, params => wrapRemoteObservable(providerFunction(params))))
     }
 }

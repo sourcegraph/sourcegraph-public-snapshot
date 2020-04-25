@@ -698,6 +698,40 @@ declare module 'sourcegraph' {
     }
 
     /**
+     * A view is a page or partial page.
+     */
+    export interface View {
+        /** The title of the view. */
+        title: string
+
+        /**
+         * The content sections of the view. The sections are rendered in order.
+         *
+         * Support for non-MarkupContent elements is experimental and subject to change or removal
+         * without notice.
+         */
+        content: (
+            | MarkupContent
+            | { component: string; props: { [name: string]: string | number | boolean | null | undefined } }
+        )[]
+    }
+
+    /**
+     * A view provider registered with {@link sourcegraph.app.registerViewProvider}.
+     */
+    export interface ViewProvider {
+        /**
+         * Provide content for a view.
+         *
+         * @param params Parameters from the container that is rendering the view (such as URL query
+         * parameters). The schema of these parameters is experimental and subject to change without
+         * notice.
+         * @returns The view content.
+         */
+        provideView(params: { [key: string]: string }): ProviderResult<View>
+    }
+
+    /**
      * The client application that is running the extension.
      */
     export namespace app {
@@ -738,6 +772,17 @@ declare module 'sourcegraph' {
          * text editors using {@link setDecorations}.
          */
         export function createDecorationType(): TextDocumentDecorationType
+
+        /**
+         * Register a view provider, which provides the contents of a view.
+         *
+         * This API is experimental and is subject to change or removal without notice.
+         *
+         * @param id The ID of the view.
+         * @param provider A view provider.
+         * @returns An unsubscribable to unregister this provider.
+         */
+        export function registerViewProvider(id: string, provider: ViewProvider): Unsubscribable
     }
 
     /**
