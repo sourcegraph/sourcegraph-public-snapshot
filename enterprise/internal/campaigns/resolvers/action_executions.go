@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"strings"
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
@@ -134,6 +135,9 @@ func createActionExecutionForAction(ctx context.Context, store *ee.Store, action
 	scopeQuery, err := scopeQueryForSteps(action.Steps)
 	if err != nil {
 		return nil, nil, err
+	}
+	if strings.TrimSpace(scopeQuery) == "" {
+		return nil, nil, errors.New("Scope query cannot be empty")
 	}
 	repos, err := findRepos(ctx, scopeQuery)
 	if err != nil {
