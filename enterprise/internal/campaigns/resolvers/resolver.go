@@ -797,7 +797,7 @@ func (r *actionExecutionConnectionResolver) compute(ctx context.Context) ([]*cam
 		if r.first != nil {
 			limit = int(*r.first)
 		}
-		r.actionExecutions, r.totalCount, r.err = r.store.ListActionExecutions(ctx, ee.ListActionExecutionsOpts{Limit: limit, Cursor: 0, ActionID: &r.actionID})
+		r.actionExecutions, r.totalCount, r.err = r.store.ListActionExecutions(ctx, ee.ListActionExecutionsOpts{Limit: limit, Cursor: 0, ActionID: r.actionID})
 	})
 	return r.actionExecutions, r.totalCount, r.err
 }
@@ -837,9 +837,9 @@ func (r *actionJobConnectionResolver) compute(ctx context.Context) ([]*campaigns
 	// this might have been passed down (CreateActionExecution already knows all jobs, so why fetch them again. TODO: paginate those as well)
 	if r.knownJobs == nil {
 		r.once.Do(func() {
-			var executionID *int64
+			var executionID int64
 			if r.actionExecution != nil {
-				executionID = &r.actionExecution.ID
+				executionID = r.actionExecution.ID
 			}
 			actionJobs, totalCount, err := r.store.ListActionJobs(ctx, ee.ListActionJobsOpts{
 				ExecutionID: executionID,
@@ -1083,7 +1083,7 @@ func (r *Resolver) UpdateActionJob(ctx context.Context, args *graphqlbackend.Upd
 	// set end time on status change from "running".
 	if args.State != nil && *args.State != campaigns.ActionJobStateRunning {
 		now := time.Now()
-		opts.ExecutionEnd = &now
+		opts.ExecutionEndAt = &now
 	}
 
 	tx, err := r.store.Transact(ctx)
@@ -1103,7 +1103,7 @@ func (r *Resolver) UpdateActionJob(ctx context.Context, args *graphqlbackend.Upd
 	}
 	// check if ALL are completed, timeouted, or failed now, then proceed with patch generation.
 	actionJobs, _, err := tx.ListActionJobs(ctx, ee.ListActionJobsOpts{
-		ExecutionID: &actionJob.ExecutionID,
+		ExecutionID: actionJob.ExecutionID,
 		Limit:       -1,
 	})
 	if err != nil {

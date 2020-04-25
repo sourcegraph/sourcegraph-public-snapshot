@@ -2923,13 +2923,13 @@ func listActionsQuery(opts *ListActionsOpts) *sqlf.Query {
 // UpdateActionJobOpts captures the query options needed for
 // listing actions.
 type UpdateActionJobOpts struct {
-	ID             int64
-	State          *campaigns.ActionJobState
-	Log            *string
-	Patch          *string
-	ExecutionStart *time.Time
-	ExecutionEnd   *time.Time
-	AgentSeenAt    *time.Time
+	ID               int64
+	State            *campaigns.ActionJobState
+	Log              *string
+	Patch            *string
+	ExecutionStartAt *time.Time
+	ExecutionEndAt   *time.Time
+	AgentSeenAt      *time.Time
 }
 
 // UpdateActionJob lists Actions with the given filters.
@@ -2981,21 +2981,21 @@ func updateActionJobQuery(opts *UpdateActionJobOpts) *sqlf.Query {
 	if opts.Patch != nil {
 		preds = append(preds, sqlf.Sprintf("patch = %s", *opts.Patch))
 	}
-	if opts.ExecutionStart != nil {
-		if (*opts.ExecutionStart).IsZero() {
+	if opts.ExecutionStartAt != nil {
+		if (*opts.ExecutionStartAt).IsZero() {
 			preds = append(preds, sqlf.Sprintf("execution_start = NULL"))
 		} else {
 			// todo may throw
-			time, _ := (*opts.ExecutionStart).MarshalText()
+			time, _ := (*opts.ExecutionStartAt).MarshalText()
 			preds = append(preds, sqlf.Sprintf("execution_start = %s", time))
 		}
 	}
-	if opts.ExecutionEnd != nil {
-		if (*opts.ExecutionEnd).IsZero() {
+	if opts.ExecutionEndAt != nil {
+		if (*opts.ExecutionEndAt).IsZero() {
 			preds = append(preds, sqlf.Sprintf("execution_end = NULL"))
 		} else {
 			// todo may throw
-			time, _ := (*opts.ExecutionEnd).MarshalText()
+			time, _ := (*opts.ExecutionEndAt).MarshalText()
 			preds = append(preds, sqlf.Sprintf("execution_end = %s", time))
 		}
 	}
@@ -3226,7 +3226,7 @@ func getActionExecutionQuery(opts *GetActionExecutionOpts) *sqlf.Query {
 type ListActionExecutionsOpts struct {
 	Cursor   int64
 	Limit    int
-	ActionID *int64
+	ActionID int64
 }
 
 // ListActionExecutions lists ActionExecutions with the given filters.
@@ -3245,7 +3245,7 @@ func (s *Store) ListActionExecutions(ctx context.Context, opts ListActionExecuti
 
 	q = sqlf.Sprintf("SELECT COUNT(*) FROM action_executions")
 	countTemplate := "SELECT COUNT(*) FROM action_executions"
-	if opts.ActionID != nil {
+	if opts.ActionID != 0 {
 		countTemplate = countTemplate + " WHERE action_id = %d"
 		q = sqlf.Sprintf(countTemplate, opts.ActionID)
 	} else {
@@ -3298,7 +3298,7 @@ func listActionExecutionsQuery(opts *ListActionExecutionsOpts) *sqlf.Query {
 		sqlf.Sprintf("action_executions.id >= %s", opts.Cursor),
 	}
 
-	if opts.ActionID != nil {
+	if opts.ActionID != 0 {
 		preds = append(preds, sqlf.Sprintf("action_executions.action_id = %s", opts.ActionID))
 	}
 
@@ -3407,7 +3407,7 @@ func createActionJobQuery(opts *CreateActionJobOpts) *sqlf.Query {
 type ListActionJobsOpts struct {
 	Cursor      int64
 	Limit       int
-	ExecutionID *int64
+	ExecutionID int64
 }
 
 // ListActionJobs lists ActionJobs with the given filters.
@@ -3426,7 +3426,7 @@ func (s *Store) ListActionJobs(ctx context.Context, opts ListActionJobsOpts) (ac
 
 	q = sqlf.Sprintf("SELECT COUNT(*) FROM action_jobs")
 	countTemplate := "SELECT COUNT(*) FROM action_jobs"
-	if opts.ExecutionID != nil {
+	if opts.ExecutionID != 0 {
 		countTemplate = countTemplate + " WHERE execution_id = %d"
 		q = sqlf.Sprintf(countTemplate, opts.ExecutionID)
 	} else {
@@ -3460,9 +3460,6 @@ SELECT
 	action_jobs.base_revision,
 	action_jobs.base_reference
 FROM action_jobs
-`
-
-var listActionJobsQueryFmtstrConditions = `
 WHERE %s
 ORDER BY action_jobs.id ASC
 `
@@ -3482,11 +3479,11 @@ func listActionJobsQuery(opts *ListActionJobsOpts) *sqlf.Query {
 		sqlf.Sprintf("action_jobs.id >= %s", opts.Cursor),
 	}
 
-	if opts.ExecutionID != nil {
+	if opts.ExecutionID != 0 {
 		preds = append(preds, sqlf.Sprintf("action_jobs.execution_id = %s", opts.ExecutionID))
 	}
 
-	queryTemplate := listActionJobsQueryFmtstrSelect + listActionJobsQueryFmtstrConditions + limitClause
+	queryTemplate := listActionJobsQueryFmtstrSelect + limitClause
 
 	return sqlf.Sprintf(queryTemplate, sqlf.Join(preds, "\n AND "))
 }
