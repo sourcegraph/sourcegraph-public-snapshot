@@ -31,7 +31,7 @@ func unmarshalActionExecutionID(id graphql.ID) (actionExecutionID int64, err err
 type actionExecutionResolver struct {
 	store *ee.Store
 
-	actionExecution campaigns.ActionExecution
+	actionExecution *campaigns.ActionExecution
 
 	// todo: use this for passing down the action when a parent resolver was an action resolver
 	action *campaigns.Action
@@ -57,7 +57,7 @@ func (r *Resolver) ActionExecutionByID(ctx context.Context, id graphql.ID) (grap
 		return nil, err
 	}
 
-	return &actionExecutionResolver{store: r.store, actionExecution: *actionExecution}, nil
+	return &actionExecutionResolver{store: r.store, actionExecution: actionExecution}, nil
 }
 
 func (r *actionExecutionResolver) ID() graphql.ID {
@@ -85,7 +85,7 @@ func (r *actionExecutionResolver) Definition() graphqlbackend.ActionDefinitionRe
 }
 
 func (r *actionExecutionResolver) Jobs() graphqlbackend.ActionJobConnectionResolver {
-	return &actionJobConnectionResolver{store: r.store, actionExecution: &r.actionExecution, knownJobs: r.actionJobs}
+	return &actionJobConnectionResolver{store: r.store, actionExecution: r.actionExecution, knownJobs: r.actionJobs}
 }
 
 func (r *actionExecutionResolver) Status(ctx context.Context) (*campaigns.BackgroundProcessStatus, error) {

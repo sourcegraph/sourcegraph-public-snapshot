@@ -786,7 +786,7 @@ func (r *actionExecutionConnectionResolver) Nodes(ctx context.Context) ([]graphq
 	}
 	resolvers := make([]graphqlbackend.ActionExecutionResolver, len(nodes))
 	for i, node := range nodes {
-		resolvers[i] = &actionExecutionResolver{store: r.store, actionExecution: *node}
+		resolvers[i] = &actionExecutionResolver{store: r.store, actionExecution: node}
 	}
 	return resolvers, nil
 }
@@ -976,7 +976,7 @@ func (r *Resolver) CreateActionExecution(ctx context.Context, args *graphqlbacke
 		return nil, err
 	}
 
-	return &actionExecutionResolver{store: r.store, actionExecution: *actionExecution, actionJobs: &actionJobs}, nil
+	return &actionExecutionResolver{store: r.store, actionExecution: actionExecution, actionJobs: &actionJobs}, nil
 }
 
 func (r *Resolver) CreateActionExecutionsForSavedSearch(ctx context.Context, args *graphqlbackend.CreateActionExecutionsForSavedSearchArgs) (*graphqlbackend.EmptyResponse, error) {
