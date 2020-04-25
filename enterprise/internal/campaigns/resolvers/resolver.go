@@ -1097,66 +1097,69 @@ func (r *Resolver) UpdateActionJob(ctx context.Context, args *graphqlbackend.Upd
 		return nil, err
 	}
 
-	// check if ALL are completed, timeouted, or failed now, then proceed with patch generation
-	if actionJob.State != campaigns.ActionJobStatePending && actionJob.State != campaigns.ActionJobStateRunning {
-		actionJobs, _, err := tx.ListActionJobs(ctx, ee.ListActionJobsOpts{
-			ExecutionID: &actionJob.ExecutionID,
-			Limit:       -1,
-		})
-		if err != nil {
-			return nil, err
+	// If this job is not yet completed, no further action needs to be taken.
+	if actionJob.State == campaigns.ActionJobStatePending || actionJob.State == campaigns.ActionJobStateRunning {
+		return &actionJobResolver{store: r.store, job: *actionJob}, nil
+	}
+	// check if ALL are completed, timeouted, or failed now, then proceed with patch generation.
+	actionJobs, _, err := tx.ListActionJobs(ctx, ee.ListActionJobsOpts{
+		ExecutionID: &actionJob.ExecutionID,
+		Limit:       -1,
+	})
+	if err != nil {
+		return nil, err
+	}
+	allCompleted := true
+	patchCount := 0
+	for _, j := range actionJobs {
+		if j.Patch != nil {
+			patchCount = patchCount + 1
 		}
-		allCompleted := true
-		patchCount := 0
-		for _, j := range actionJobs {
-			if j.Patch != nil {
-				patchCount = patchCount + 1
-			}
-			// a job is completed, when it timeouted, failed, or completed
-			if j.State == campaigns.ActionJobStatePending || j.State == campaigns.ActionJobStateRunning {
-				allCompleted = false
-				break
-			}
+		// a job is completed, when it timeouted, failed, or completed
+		if j.State == campaigns.ActionJobStatePending || j.State == campaigns.ActionJobStateRunning {
+			allCompleted = false
+			break
 		}
-		if allCompleted {
-			var patches []*campaigns.Patch
-			for _, job := range actionJobs {
-				if job.Patch != nil {
-					patches = append(patches, &campaigns.Patch{
-						RepoID:  api.RepoID(job.RepoID),
-						Rev:     api.CommitID(job.BaseRevision),
-						BaseRef: job.BaseReference,
-						Diff:    *job.Patch,
-					})
-				}
-			}
-			svc := ee.NewService(tx, gitserver.DefaultClient, r.httpFactory)
-			// important: pass false for useTx, as our transaction will already be committed bu CreatePatchSetFromPatches
-			// otherwise, and we cannot update the execution within the tx anymore
-			patchSet, err := svc.CreatePatchSetFromPatches(ctx, patches, user.ID, false)
-			if err != nil {
-				return nil, err
-			}
-			// attach patch set to action execution
-			actionExecution, err := tx.UpdateActionExecution(ctx, ee.UpdateActionExecutionOpts{ExecutionID: actionJob.ExecutionID, PatchSetID: patchSet.ID})
-			if err != nil {
-				return nil, err
-			}
+	}
+	if !allCompleted {
+		return &actionJobResolver{store: r.store, job: *actionJob}, nil
+	}
+	var patches []*campaigns.Patch
+	for _, job := range actionJobs {
+		if job.Patch != nil {
+			patches = append(patches, &campaigns.Patch{
+				RepoID:  api.RepoID(job.RepoID),
+				Rev:     api.CommitID(job.BaseRevision),
+				BaseRef: job.BaseReference,
+				Diff:    *job.Patch,
+			})
+		}
+	}
+	svc := ee.NewService(tx, gitserver.DefaultClient, r.httpFactory)
+	// important: pass false for useTx, as our transaction will already be committed bu CreatePatchSetFromPatches
+	// otherwise, and we cannot update the execution within the tx anymore
+	patchSet, err := svc.CreatePatchSetFromPatches(ctx, patches, user.ID, false)
+	if err != nil {
+		return nil, err
+	}
+	// attach patch set to action execution
+	actionExecution, err := tx.UpdateActionExecution(ctx, ee.UpdateActionExecutionOpts{ExecutionID: actionJob.ExecutionID, PatchSetID: patchSet.ID})
+	if err != nil {
+		return nil, err
+	}
 
-			// check if action is associated to a campaign, then we update that directly with the plan from above
-			action, err := tx.GetAction(ctx, ee.GetActionOpts{ID: actionExecution.ActionID})
-			if err != nil {
-				if err == ee.ErrNoResults {
-					return nil, errors.New("Action not found")
-				}
-				return nil, err
-			}
-			if action.CampaignID != 0 {
-				// todo: the tx is completed when the background go func of updateCampaign executes
-				if _, err = updateCampaign(ctx, tx, r.httpFactory, tr, ee.UpdateCampaignArgs{Campaign: action.CampaignID, PatchSet: &patchSet.ID}); err != nil {
-					return nil, err
-				}
-			}
+	// check if action is associated to a campaign, then we update that directly with the plan from above
+	action, err := tx.GetAction(ctx, ee.GetActionOpts{ID: actionExecution.ActionID})
+	if err != nil {
+		if err == ee.ErrNoResults {
+			return nil, errors.New("Action not found")
+		}
+		return nil, err
+	}
+	if action.CampaignID != 0 {
+		// todo: the tx is completed when the background go func of updateCampaign executes
+		if _, err = updateCampaign(ctx, tx, r.httpFactory, tr, ee.UpdateCampaignArgs{Campaign: action.CampaignID, PatchSet: &patchSet.ID}); err != nil {
+			return nil, err
 		}
 	}
 	return &actionJobResolver{store: r.store, job: *actionJob}, nil
