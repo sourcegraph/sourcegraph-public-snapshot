@@ -185,7 +185,7 @@ func createActionExecutionForAction(ctx context.Context, store *ee.Store, action
 
 func scopeQueryForSteps(actionFile string) (string, error) {
 	var action struct {
-		ScopeQuery string `json:"scopeQuery,omitempty"`
+		ScopeQuery string `json:"scopeQuery"`
 	}
 	if err := jsonc.Unmarshal(string(actionFile), &action); err != nil {
 		return "", errors.Wrap(err, "invalid JSON action file")
