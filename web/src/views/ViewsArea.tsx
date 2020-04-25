@@ -1,9 +1,9 @@
 import React from 'react'
 import { Switch, Route, RouteComponentProps } from 'react-router'
 import { ViewPage } from './ViewPage'
-import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
-import { CaseSensitivityProps, PatternTypeProps } from '../../search'
-import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
+import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
+import { CaseSensitivityProps, PatternTypeProps } from '../search'
+import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
 
 interface Props
     extends RouteComponentProps<{}>,
