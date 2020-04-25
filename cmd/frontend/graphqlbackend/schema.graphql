@@ -510,12 +510,12 @@ type Action implements Node {
     name: String!
     # The current action definition.
     definition: ActionDefinition!
-    # The saved search this was associated with, cannot be combined with `schedule`.
+    # The saved search this was associated with, cannot be combined with 'schedule'.
     savedSearch: SavedSearch
-    # Cron schedule for repeating executions. Cannot be combined with `savedSearch`.
+    # Cron schedule for repeating executions. Cannot be combined with 'savedSearch'.
     schedule: String
-    # Respected when `schedule` or `savedSearch` is set. If `true`, any previous runs are cancelled and superseded on invocation.
-    # Required to be true when `campaign` is set, otherwise race conditions may happen. todo: we can also handle that gracefully and simply return if a newer execution exists.
+    # Respected when 'schedule' or 'savedSearch' is set. If 'true', any previous runs are cancelled and superseded on invocation.
+    # Required to be true when 'campaign' is set, otherwise race conditions may happen. todo: we can also handle that gracefully and simply return if a newer execution exists.
     cancelPreviousScheduledExecution: Boolean!
     # Use this flag to auto update the associated campaign. If it's false, the plan is retained but the UI shows an 'Apply' button instead of 'Create campaign'.
     autoupdate: Boolean!
@@ -553,10 +553,10 @@ type ActionExecution implements Node {
     status: BackgroundProcessStatus!
     # Time when execution started. Set once any job was accepted by an agent.
     executionStart: DateTime
-    # Time when execution ended, this can be on timeout, error or completion and allows no assumption on the `state`.
+    # Time when execution ended, this can be on timeout, error or completion and allows no assumption on the 'state'.
     executionEnd: DateTime
-    # Set when status is 'COMPLETED' and the parent action had no `campaign` set. Upon reporting the completion,
-    # the patches are used with the API method `createPatchSetFromPatches` to populate this.
+    # Set when status is 'COMPLETED' and the parent action had no 'campaign' set. Upon reporting the completion,
+    # the patches are used with the API method 'createPatchSetFromPatches' to populate this.
     patchSet: PatchSet
 }
 
@@ -625,7 +625,7 @@ type ActionJob implements Node {
     diff: PreviewRepositoryComparison
     # Time when execution started. Set once accepted by an agent.
     executionStart: DateTime
-    # Time when execution ended, this can be on timeout, error or completion and allows no assumption on the `state`.
+    # Time when execution ended, this can be on timeout, error or completion and allows no assumption on the 'state'.
     executionEnd: DateTime
     # The output logged to the agent.
     log: String
