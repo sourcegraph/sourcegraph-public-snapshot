@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
-import { useView } from './useView'
 import { Markdown } from '../../../../shared/src/components/Markdown'
 import { renderMarkdown } from '../../../../shared/src/util/markdown'
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
@@ -13,6 +12,8 @@ import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
 import { ContributableViewContainer } from '../../../../shared/src/api/protocol'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { hasProperty } from '../../../../shared/src/util/types'
+import { getView } from '../../../../shared/src/api/client/services/viewService'
+import { useObservable } from '../../../../shared/src/util/useObservable'
 
 interface Props
     extends ExtensionsControllerProps<'services'>,
@@ -26,7 +27,7 @@ interface Props
     history: H.History
 
     /** For mocking in tests. */
-    _useView?: typeof useView
+    _getView?: typeof getView
 }
 
 /**
@@ -37,21 +38,29 @@ export const ViewPage: React.FunctionComponent<Props> = ({
     extraPath,
     location,
     extensionsController,
-    _useView = useView,
+    _getView = getView,
     ...props
 }) => {
     const queryParams = useMemo<Record<string, string>>(
         () => ({ ...Object.fromEntries(new URLSearchParams(location.search).entries()), extraPath }),
         [extraPath, location.search]
     )
-    const view = _useView(
-        viewID,
-        ContributableViewContainer.GlobalPage,
-        queryParams,
-        useMemo(() => extensionsController.services.contribution.getContributions(), [
-            extensionsController.services.contribution,
-        ]),
-        extensionsController.services.view
+
+    const contributions = useMemo(() => extensionsController.services.contribution.getContributions(), [
+        extensionsController.services.contribution,
+    ])
+    const view = useObservable(
+        useMemo(
+            () =>
+                getView(
+                    viewID,
+                    ContributableViewContainer.GlobalPage,
+                    queryParams,
+                    contributions,
+                    extensionsController.services.view
+                ),
+            [contributions, extensionsController.services.view, queryParams, viewID]
+        )
     )
 
     if (view === undefined) {

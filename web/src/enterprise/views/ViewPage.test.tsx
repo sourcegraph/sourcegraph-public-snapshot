@@ -5,11 +5,12 @@ import * as H from 'history'
 import { SearchPatternType } from '../../../../shared/src/graphql/schema'
 import { Controller } from '../../../../shared/src/extensions/controller'
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
+import { of } from 'rxjs'
 
 jest.mock('@sourcegraph/react-loading-spinner', () => ({ LoadingSpinner: 'LoadingSpinner' }))
 jest.mock('./QueryInputInViewContent', () => ({ QueryInputInViewContent: 'QueryInputInViewContent' }))
 
-const commonProps: Omit<React.ComponentProps<typeof ViewPage>, 'viewID' | 'extraPath' | '_useView'> = {
+const commonProps: Omit<React.ComponentProps<typeof ViewPage>, 'viewID' | 'extraPath' | '_getView'> = {
     settingsCascade: { final: {}, subjects: [] },
     caseSensitive: false,
     patternType: SearchPatternType.literal,
@@ -23,13 +24,15 @@ const commonProps: Omit<React.ComponentProps<typeof ViewPage>, 'viewID' | 'extra
 describe('ViewPage', () => {
     test('view is loading', () => {
         expect(
-            renderer.create(<ViewPage {...commonProps} viewID="v" extraPath="" _useView={() => undefined} />).toJSON()
+            renderer
+                .create(<ViewPage {...commonProps} viewID="v" extraPath="" _getView={() => of(undefined)} />)
+                .toJSON()
         ).toMatchSnapshot()
     })
 
     test('view not found', () => {
         expect(
-            renderer.create(<ViewPage {...commonProps} viewID="v" extraPath="" _useView={() => null} />).toJSON()
+            renderer.create(<ViewPage {...commonProps} viewID="v" extraPath="" _getView={() => of(null)} />).toJSON()
         ).toMatchSnapshot()
     })
 
@@ -41,26 +44,28 @@ describe('ViewPage', () => {
                         {...commonProps}
                         viewID="v"
                         extraPath=""
-                        _useView={() => ({
-                            title: 't',
-                            content: [
-                                {
-                                    kind: MarkupKind.Markdown,
-                                    value: '**a**',
-                                },
-                                {
-                                    kind: MarkupKind.PlainText,
-                                    value: '*b*',
-                                },
-                                {
-                                    value: '*c*',
-                                },
-                                {
-                                    component: 'QueryInput',
-                                    props: { implicitQueryPrefix: 'x' },
-                                },
-                            ],
-                        })}
+                        _getView={() =>
+                            of({
+                                title: 't',
+                                content: [
+                                    {
+                                        kind: MarkupKind.Markdown,
+                                        value: '**a**',
+                                    },
+                                    {
+                                        kind: MarkupKind.PlainText,
+                                        value: '*b*',
+                                    },
+                                    {
+                                        value: '*c*',
+                                    },
+                                    {
+                                        component: 'QueryInput',
+                                        props: { implicitQueryPrefix: 'x' },
+                                    },
+                                ],
+                            })
+                        }
                     />
                 )
                 .toJSON()

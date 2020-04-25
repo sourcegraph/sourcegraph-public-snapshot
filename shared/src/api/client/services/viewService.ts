@@ -1,6 +1,7 @@
-import { Observable, Unsubscribable, BehaviorSubject, of } from 'rxjs'
+import { Observable, Unsubscribable, BehaviorSubject, of, combineLatest } from 'rxjs'
 import { View as ExtensionView } from 'sourcegraph'
-import { switchMap, map, distinctUntilChanged } from 'rxjs/operators'
+import { switchMap, map, distinctUntilChanged, startWith, delay } from 'rxjs/operators'
+import { ViewContribution, Evaluated, Contributions } from '../../protocol'
 
 /**
  * A view is a page or partial page.
@@ -58,3 +59,36 @@ export const createViewService = (): ViewService => {
             ),
     }
 }
+
+/**
+ * Returns an observable of the view and its associated contents, `undefined` if loading, and `null`
+ * if not found. The view must be both registered as a contribution and at runtime with the
+ * {@link ViewService}.
+ */
+export const getView = (
+    viewID: string,
+    viewContainer: ViewContribution['where'],
+    params: { [key: string]: string },
+    contributions: Observable<Pick<Evaluated<Contributions>, 'views'>>,
+    viewService: Pick<ViewService, 'get'>
+): Observable<View | undefined | null> =>
+    combineLatest([
+        contributions
+            .pipe(
+                map(contributions =>
+                    contributions.views?.some(({ id, where }) => id === viewID && where === viewContainer)
+                )
+            )
+            .pipe(distinctUntilChanged()),
+        viewService.get(viewID, params).pipe(distinctUntilChanged()),
+
+        // Wait for extensions to load for up to 5 seconds (grace period) before showing
+        // "not found", to avoid showing an error for a brief period during initial
+        // load.
+        of(false).pipe(delay(5000), startWith(true)),
+    ]).pipe(
+        map(([isContributed, view, isInitialLoadGracePeriod]) =>
+            isContributed && view ? view : isInitialLoadGracePeriod ? undefined : null
+        ),
+        distinctUntilChanged()
+    )
