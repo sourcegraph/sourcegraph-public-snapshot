@@ -37,3 +37,16 @@ func (r *actionDefinitionResolver) Env() ([]graphqlbackend.ActionEnvVarResolver,
 	}
 	return envs, nil
 }
+
+type actionEnvVarResolver struct {
+	key   string
+	value string
+}
+
+func (r actionEnvVarResolver) Key() string {
+	return r.key
+}
+
+func (r actionEnvVarResolver) Value() string {
+	return r.value
+}

@@ -698,21 +698,6 @@ func parseCampaignState(s *string) (campaigns.CampaignState, error) {
 	}
 }
 
-// actionEnvVarResolver
-
-type actionEnvVarResolver struct {
-	key   string
-	value string
-}
-
-func (r actionEnvVarResolver) Key() string {
-	return r.key
-}
-
-func (r actionEnvVarResolver) Value() string {
-	return r.value
-}
-
 // query and mutation resolvers
 
 func (r *Resolver) Actions(ctx context.Context, args *graphqlbackend.ListActionsArgs) (_ graphqlbackend.ActionConnectionResolver, err error) {
