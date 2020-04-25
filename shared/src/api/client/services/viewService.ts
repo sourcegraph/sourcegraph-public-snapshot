@@ -27,26 +27,34 @@ export interface ViewService {
  * Creates a new {@link ViewService}.
  */
 export const createViewService = (): ViewService => {
-    interface ProviderEntry {
-        id: string
-        provider: (params: { [key: string]: string }) => Observable<View>
-    }
-    const providers = new BehaviorSubject<ProviderEntry[]>([])
+    type Provider = (params: { [key: string]: string }) => Observable<View>
+    const providers = new BehaviorSubject<Map<string, Provider>>(new Map())
 
     return {
         register: (id, provider) => {
-            if (providers.value.some(e => e.id === id)) {
+            if (providers.value.has(id)) {
                 throw new Error(`view already exists with ID ${id}`)
             }
-            const entry: ProviderEntry = { id, provider }
-            providers.next([...providers.value, entry])
-            return { unsubscribe: () => providers.next(providers.value.filter(e => e !== entry)) }
+            providers.value.set(id, provider)
+            providers.next(providers.value)
+            return {
+                unsubscribe: () => {
+                    const p = providers.value.get(id)
+                    if (p === provider) {
+                        // Check equality to ensure we only unsubscribe the exact same provider we
+                        // registered, not some other provider that was registered later with the same
+                        // ID.
+                        providers.value.delete(id)
+                        providers.next(providers.value)
+                    }
+                },
+            }
         },
         get: (id, params) =>
             providers.pipe(
-                map(providers => providers.find(e => e.id === id)),
+                map(providers => providers.get(id)),
                 distinctUntilChanged(),
-                switchMap(e => (e ? e.provider(params) : of(null)))
+                switchMap(provider => (provider ? provider(params) : of(null)))
             ),
     }
 }

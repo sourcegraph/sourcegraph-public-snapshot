@@ -11,15 +11,37 @@ describe('ViewService', () => {
         expect(() => viewService.register('v', () => NEVER)).toThrow()
     })
 
-    test('get', () => {
+    test('get  nonexistent view', () => {
+        const viewService = createViewService()
+        scheduler().run(({ expectObservable }) => {
+            expectObservable(viewService.get('v', {})).toBe('a', {
+                a: null,
+            })
+        })
+    })
+
+    test('register then get', () => {
         const viewService = createViewService()
         scheduler().run(({ cold, expectObservable }) => {
             viewService.register('v', () =>
-                cold<View>('ab', { a: { title: 'a', content: [] }, b: { title: 'b', content: [] } })
+                cold<View>('bc', { b: { title: 'b', content: [] }, c: { title: 'c', content: [] } })
             )
-            expectObservable(viewService.get('v', {})).toBe('ab', {
-                a: { title: 'a', content: [] },
+            expectObservable(viewService.get('v', {})).toBe('bc', {
                 b: { title: 'b', content: [] },
+                c: { title: 'c', content: [] },
+            })
+        })
+    })
+
+    test('register, unsubscribe, then get', () => {
+        const viewService = createViewService()
+        scheduler().run(({ cold, expectObservable }) => {
+            const subscription = viewService.register('v', () =>
+                cold<View>('bc', { b: { title: 'b', content: [] }, c: { title: 'c', content: [] } })
+            )
+            subscription.unsubscribe()
+            expectObservable(viewService.get('v', {})).toBe('d', {
+                d: null,
             })
         })
     })
