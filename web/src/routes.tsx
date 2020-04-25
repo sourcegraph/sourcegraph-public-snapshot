@@ -153,6 +153,10 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         render: lazyComponent(() => import('./snippets/SnippetsPage'), 'SnippetsPage'),
     },
     {
+        path: '/views',
+        render: lazyComponent(() => import('./views/ViewsArea'), 'ViewsArea'),
+    },
+    {
         path: '/:repoRevAndRest+',
         render: lazyComponent(() => import('./repo/RepoContainer'), 'RepoContainer'),
     },

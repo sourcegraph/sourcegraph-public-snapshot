@@ -38,9 +38,5 @@ export const enterpriseRoutes: readonly LayoutRouteProps<{}>[] = [
             return Boolean(settings.experimentalFeatures?.searchStats)
         },
     },
-    {
-        path: '/views',
-        render: lazyComponent(() => import('./views/ViewsArea'), 'ViewsArea'),
-    },
     ...routes,
 ]

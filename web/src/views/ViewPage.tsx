@@ -1,19 +1,19 @@
 import React, { useMemo } from 'react'
-import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
-import { Markdown } from '../../../../shared/src/components/Markdown'
-import { renderMarkdown } from '../../../../shared/src/util/markdown'
+import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
+import { Markdown } from '../../../shared/src/components/Markdown'
+import { renderMarkdown } from '../../../shared/src/util/markdown'
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
-import { PageTitle } from '../../components/PageTitle'
+import { PageTitle } from '../components/PageTitle'
 import H from 'history'
 import { QueryInputInViewContent } from './QueryInputInViewContent'
 import { MarkupContent } from 'sourcegraph'
-import { CaseSensitivityProps, PatternTypeProps } from '../../search'
-import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
-import { ContributableViewContainer } from '../../../../shared/src/api/protocol'
+import { CaseSensitivityProps, PatternTypeProps } from '../search'
+import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
+import { ContributableViewContainer } from '../../../shared/src/api/protocol'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { hasProperty } from '../../../../shared/src/util/types'
-import { getView } from '../../../../shared/src/api/client/services/viewService'
-import { useObservable } from '../../../../shared/src/util/useObservable'
+import { hasProperty } from '../../../shared/src/util/types'
+import { getView } from '../../../shared/src/api/client/services/viewService'
+import { useObservable } from '../../../shared/src/util/useObservable'
 
 interface Props
     extends ExtensionsControllerProps<'services'>,
@@ -52,7 +52,7 @@ export const ViewPage: React.FunctionComponent<Props> = ({
     const view = useObservable(
         useMemo(
             () =>
-                getView(
+                _getView(
                     viewID,
                     ContributableViewContainer.GlobalPage,
                     queryParams,
