@@ -571,7 +571,7 @@ type Agent implements Node {
     # Unique name to identify this agent.
     name: String!
     # Reported information about the agent. This contains OS, Docker version and more.
-    description: String!
+    specs: String!
     # Set to 'offline' when no heartbeat was received for a log enough period (TBD what long enough might be).
     state: AgentState!
     # All currently accepted jobs.

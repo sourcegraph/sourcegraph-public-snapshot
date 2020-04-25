@@ -556,7 +556,7 @@ type ActionJobResolver interface {
 type AgentResolver interface {
 	ID() graphql.ID
 	Name() string
-	Description() string
-	State() campaigns.AgentState
+	Specs() string
+	State() (campaigns.AgentState, error)
 	RunningJobs() ActionJobConnectionResolver
 }

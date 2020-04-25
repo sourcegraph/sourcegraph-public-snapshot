@@ -2812,13 +2812,22 @@ func scanActionJob(a *campaigns.ActionJob, s scanner) error {
 		&a.Log,
 		&dbutil.NullTime{Time: &a.ExecutionStartAt},
 		&dbutil.NullTime{Time: &a.ExecutionEndAt},
-		&dbutil.NullTime{Time: &a.AgentSeenAt},
 		&a.Patch,
 		&a.State,
 		&a.RepoID,
 		&a.ExecutionID,
 		&a.BaseRevision,
 		&a.BaseReference,
+		&a.AgentID,
+	)
+}
+
+func scanAgent(a *campaigns.Agent, s scanner) error {
+	return s.Scan(
+		&a.ID,
+		&a.Name,
+		&a.Specs,
+		&dbutil.NullTime{Time: &a.LastSeenAt},
 	)
 }
 
@@ -2929,7 +2938,6 @@ type UpdateActionJobOpts struct {
 	Patch            *string
 	ExecutionStartAt *time.Time
 	ExecutionEndAt   *time.Time
-	AgentSeenAt      *time.Time
 }
 
 // UpdateActionJob lists Actions with the given filters.
@@ -2937,19 +2945,20 @@ func (s *Store) UpdateActionJob(ctx context.Context, opts UpdateActionJobOpts) (
 	q := updateActionJobQuery(&opts)
 
 	var job campaigns.ActionJob
-	_, _, err := s.query(ctx, q, func(sc scanner) (_, _ int64, err error) {
-		if err := scanActionJob(&job, sc); err != nil {
-			return 0, 0, err
-		}
-		return 0, 0, nil
+	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
+		return 0, 0, scanActionJob(&job, sc)
 	})
-
-	// todo handle empty ie not-found error
+	if err != nil {
+		return nil, err
+	}
+	if job.ID == 0 {
+		return nil, ErrNoResults
+	}
 
 	return &job, err
 }
 
-var updateActionJobQueryFmtstrSelect = `
+var updateActionJobQueryFmtstr = `
 -- source: enterprise/internal/campaigns/store.go:UpdateActionJob
 UPDATE
 	action_jobs
@@ -2960,13 +2969,13 @@ RETURNING
 	log,
 	execution_start,
 	execution_end,
-	agent_seen_at,
 	patch,
 	state,
 	repository,
 	execution,
 	base_revision,
-	base_reference
+	base_reference,
+	agent_id
 `
 
 func updateActionJobQuery(opts *UpdateActionJobOpts) *sqlf.Query {
@@ -2999,17 +3008,8 @@ func updateActionJobQuery(opts *UpdateActionJobOpts) *sqlf.Query {
 			preds = append(preds, sqlf.Sprintf("execution_end = %s", time))
 		}
 	}
-	if opts.AgentSeenAt != nil {
-		if (*opts.AgentSeenAt).IsZero() {
-			preds = append(preds, sqlf.Sprintf("agent_seen_at = NULL"))
-		} else {
-			// todo may throw
-			time, _ := (*opts.AgentSeenAt).MarshalText()
-			preds = append(preds, sqlf.Sprintf("agent_seen_at = %s", time))
-		}
-	}
 
-	queryTemplate := updateActionJobQueryFmtstrSelect
+	queryTemplate := updateActionJobQueryFmtstr
 
 	return sqlf.Sprintf(queryTemplate, sqlf.Join(preds, ",\n "), opts.ID)
 }
@@ -3075,13 +3075,13 @@ RETURNING
 	log,
 	execution_start,
 	execution_end,
-	agent_seen_at,
 	patch,
 	state,
 	repository,
 	execution,
 	base_revision,
-	base_reference
+	base_reference,
+	agent_id
 `
 
 func pullActionJobQuery() *sqlf.Query {
@@ -3117,13 +3117,13 @@ SELECT
 	action_jobs.log,
 	action_jobs.execution_start,
 	action_jobs.execution_end,
-	action_jobs.agent_seen_at,
 	action_jobs.patch,
 	action_jobs.state,
 	action_jobs.repository,
 	action_jobs.execution,
 	action_jobs.base_revision,
-	action_jobs.base_reference
+	action_jobs.base_reference,
+	action_jobs.agent_id
 FROM
 	action_jobs
 WHERE
@@ -3218,6 +3218,45 @@ WHERE
 
 func getActionExecutionQuery(opts *GetActionExecutionOpts) *sqlf.Query {
 	queryTemplate := getActionExecutionQueryFmtstr
+	return sqlf.Sprintf(queryTemplate, opts.ID)
+}
+
+type GetAgentOpts struct {
+	ID int64
+}
+
+func (s *Store) GetAgent(ctx context.Context, opts GetAgentOpts) (*campaigns.Agent, error) {
+	q := getAgentQuery(&opts)
+
+	var a campaigns.Agent
+	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
+		return 0, 0, scanAgent(&a, sc)
+	})
+	if err != nil {
+		return nil, err
+	}
+	if a.ID == 0 {
+		return nil, ErrNoResults
+	}
+
+	return &a, err
+}
+
+var getAgentQueryFmtstr = `
+-- source: enterprise/internal/campaigns/store.go:GetAgent
+SELECT
+	agents.id,
+	agents.name,
+	agents.specs,
+	agents.last_seen_at
+FROM
+	agents
+WHERE
+	agents.id = %d
+`
+
+func getAgentQuery(opts *GetAgentOpts) *sqlf.Query {
+	queryTemplate := getAgentQueryFmtstr
 	return sqlf.Sprintf(queryTemplate, opts.ID)
 }
 
@@ -3388,13 +3427,13 @@ RETURNING
 	action_jobs.log,
 	action_jobs.execution_start_at,
 	action_jobs.execution_end_at,
-	action_jobs.agent_seen_at,
 	action_jobs.patch,
 	action_jobs.state,
 	action_jobs.repository_id,
 	action_jobs.execution_id,
 	action_jobs.base_revision,
-	action_jobs.base_reference
+	action_jobs.base_reference,
+	action_jobs.agent_id
 `
 
 func createActionJobQuery(opts *CreateActionJobOpts) *sqlf.Query {
@@ -3408,6 +3447,7 @@ type ListActionJobsOpts struct {
 	Cursor      int64
 	Limit       int
 	ExecutionID int64
+	AgentID     int64
 }
 
 // ListActionJobs lists ActionJobs with the given filters.
@@ -3429,8 +3469,10 @@ func (s *Store) ListActionJobs(ctx context.Context, opts ListActionJobsOpts) (ac
 	if opts.ExecutionID != 0 {
 		countTemplate = countTemplate + " WHERE execution_id = %d"
 		q = sqlf.Sprintf(countTemplate, opts.ExecutionID)
-	} else {
-		q = sqlf.Sprintf(countTemplate)
+	}
+	if opts.AgentID != 0 {
+		countTemplate = countTemplate + " WHERE agent_id = %d"
+		q = sqlf.Sprintf(countTemplate, opts.AgentID)
 	}
 	_, _, err = s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
 		if err = scanCount(&totalCount, sc); err != nil {
@@ -3452,13 +3494,13 @@ SELECT
 	action_jobs.log,
 	action_jobs.execution_start_at,
 	action_jobs.execution_end_at,
-	action_jobs.agent_seen_at,
 	action_jobs.patch,
 	action_jobs.state,
 	action_jobs.repository_id,
 	action_jobs.execution_id,
 	action_jobs.base_revision,
-	action_jobs.base_reference
+	action_jobs.base_reference,
+	action_jobs.agent_id
 FROM action_jobs
 WHERE %s
 ORDER BY action_jobs.id ASC
@@ -3481,6 +3523,9 @@ func listActionJobsQuery(opts *ListActionJobsOpts) *sqlf.Query {
 
 	if opts.ExecutionID != 0 {
 		preds = append(preds, sqlf.Sprintf("action_jobs.execution_id = %s", opts.ExecutionID))
+	}
+	if opts.AgentID != 0 {
+		preds = append(preds, sqlf.Sprintf("action_jobs.agent_id = %s", opts.AgentID))
 	}
 
 	queryTemplate := listActionJobsQueryFmtstrSelect + limitClause

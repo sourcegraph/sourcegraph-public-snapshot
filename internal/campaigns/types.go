@@ -1275,6 +1275,13 @@ func unixMilliToTime(ms int64) time.Time {
 	return time.Unix(0, ms*int64(time.Millisecond))
 }
 
+type Agent struct {
+	ID         int64
+	Name       string
+	Specs      string
+	LastSeenAt time.Time
+}
+
 type Action struct {
 	ID             int64
 	Name           string
@@ -1302,13 +1309,13 @@ type ActionJob struct {
 	Log              *string
 	ExecutionStartAt time.Time
 	ExecutionEndAt   time.Time
-	AgentSeenAt      time.Time
 	Patch            *string
 	State            ActionJobState
 	RepoID           int32
 	ExecutionID      int64
 	BaseRevision     string
 	BaseReference    string
+	AgentID          int64
 }
 
 // ActionExecutionInvocationReason defines the possible reasons of an execution to be triggered from.

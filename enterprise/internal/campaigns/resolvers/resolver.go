@@ -808,6 +808,8 @@ type actionJobConnectionResolver struct {
 	store *ee.Store
 	// pass this in to avoid duplicate sql queries in job resolvers (for Definition())
 	actionExecution *campaigns.ActionExecution
+	// Pass this to only retrieve jobs for this agent.
+	agentID int64
 
 	// pass them in for caching
 	knownJobs *[]*campaigns.ActionJob
@@ -843,6 +845,7 @@ func (r *actionJobConnectionResolver) compute(ctx context.Context) ([]*campaigns
 			}
 			actionJobs, totalCount, err := r.store.ListActionJobs(ctx, ee.ListActionJobsOpts{
 				ExecutionID: executionID,
+				AgentID:     r.agentID,
 				Limit:       -1,
 			})
 			if err != nil {
@@ -1184,19 +1187,17 @@ func (r *Resolver) AppendLog(ctx context.Context, args *graphqlbackend.AppendLog
 
 	// todo: when is the threshold for appending missing logs hit and appending any further logs is forbidden?
 
-	now := time.Now()
 	actionJob, err := r.store.UpdateActionJob(ctx, ee.UpdateActionJobOpts{
-		ID:          id,
-		Log:         &args.Content,
-		AgentSeenAt: &now,
+		ID:  id,
+		Log: &args.Content,
 	})
+	// todo: update agent last_seen_at
 	if err != nil {
+		// Return null if the job doesn't exist. TODO: Rly?
+		if err == ee.ErrNoResults {
+			return nil, nil
+		}
 		return nil, err
-	}
-
-	// todo: test if this works
-	if actionJob.ID == 0 {
-		return nil, nil
 	}
 
 	return &actionJobResolver{store: r.store, job: *actionJob}, nil

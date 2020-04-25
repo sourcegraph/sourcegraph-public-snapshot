@@ -2,7 +2,7 @@ package resolvers
 
 import (
 	"context"
-	"errors"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -12,6 +12,8 @@ import (
 )
 
 const agentIDKind = "Agent"
+
+const agentOfflineTimeout = "2m"
 
 func marshalAgentID(id int64) graphql.ID {
 	return relay.MarshalID(agentIDKind, id)
@@ -23,7 +25,7 @@ func unmarshalAgentID(id graphql.ID) (agentID int64, err error) {
 }
 
 type agentResolver struct {
-	// todo
+	agent *campaigns.Agent
 
 	store *ee.Store
 }
@@ -36,31 +38,41 @@ func (r *Resolver) AgentByID(ctx context.Context, id graphql.ID) (graphqlbackend
 		return nil, err
 	}
 
-	// todo: fetch agent from DB and remove this statement
-	if dbId == 0 {
-		return nil, errors.New("Not implemented")
+	agent, err := r.store.GetAgent(ctx, ee.GetAgentOpts{ID: dbId})
+
+	if err != nil {
+		if err == ee.ErrNoResults {
+			return nil, nil
+		}
+		return nil, err
 	}
 
-	return &agentResolver{store: r.store}, nil
+	return &agentResolver{store: r.store, agent: agent}, nil
 }
 
 func (r *agentResolver) ID() graphql.ID {
-	return marshalAgentID(123)
+	return marshalAgentID(r.agent.ID)
 }
 
 func (r *agentResolver) Name() string {
-	return "agent-sg-dev-123"
+	return r.agent.Name
 }
 
-func (r *agentResolver) Description() string {
-	return "macOS 10.15.3, Docker 19.06.03, 8 CPU"
+func (r *agentResolver) Specs() string {
+	return r.agent.Specs
 }
 
-func (r *agentResolver) State() campaigns.AgentState {
-	return campaigns.AgentStateOnline
+func (r *agentResolver) State() (campaigns.AgentState, error) {
+	timeout, err := time.ParseDuration(agentOfflineTimeout)
+	if err != nil {
+		return campaigns.AgentStateOnline, err
+	}
+	if time.Since(r.agent.LastSeenAt) > timeout {
+		return campaigns.AgentStateOffline, nil
+	}
+	return campaigns.AgentStateOnline, nil
 }
 
 func (r *agentResolver) RunningJobs() graphqlbackend.ActionJobConnectionResolver {
-	// todo: missing agent param
-	return &actionJobConnectionResolver{store: r.store}
+	return &actionJobConnectionResolver{store: r.store, agentID: r.agent.ID}
 }
