@@ -184,7 +184,11 @@ export const ActionExecution: React.FunctionComponent<Props> = ({
                         .
                     </p>
                 )}
-                {execution.status.state === GQL.BackgroundProcessState.CANCELED && <p>Execution has been canceled.</p>}
+                {execution.status.state === GQL.BackgroundProcessState.CANCELED && (
+                    <div className="alert alert-warning">
+                        <strong>Execution has been canceled.</strong>
+                    </div>
+                )}
                 {execution.status.state === GQL.BackgroundProcessState.ERRORED && <p>Execution has errored.</p>}
             </div>
             {execution.status.state === GQL.BackgroundProcessState.PROCESSING && (

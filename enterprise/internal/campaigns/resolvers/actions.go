@@ -24,7 +24,7 @@ func unmarshalActionID(id graphql.ID) (actionID int64, err error) {
 
 type actionResolver struct {
 	store  *ee.Store
-	action campaigns.Action
+	action *campaigns.Action
 }
 
 func (r *Resolver) ActionByID(ctx context.Context, id graphql.ID) (graphqlbackend.ActionResolver, error) {
@@ -44,7 +44,7 @@ func (r *Resolver) ActionByID(ctx context.Context, id graphql.ID) (graphqlbacken
 		}
 		return nil, err
 	}
-	return &actionResolver{store: r.store, action: *action}, nil
+	return &actionResolver{store: r.store, action: action}, nil
 }
 
 func (r *actionResolver) ID() graphql.ID {
@@ -123,7 +123,7 @@ func (r *actionConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.
 	}
 	resolvers := make([]graphqlbackend.ActionResolver, len(nodes))
 	for i, node := range nodes {
-		resolvers[i] = &actionResolver{store: r.store, action: *node}
+		resolvers[i] = &actionResolver{store: r.store, action: node}
 	}
 	return resolvers, nil
 }

@@ -26,7 +26,7 @@ func unmarshalActionJobID(id graphql.ID) (actionJobID int64, err error) {
 
 type actionJobResolver struct {
 	store *ee.Store
-	job   campaigns.ActionJob
+	job   *campaigns.ActionJob
 	// todo: pass in from parent if known to avoid duplicate sql query
 	actionExecution *campaigns.ActionExecution
 
@@ -53,7 +53,7 @@ func (r *Resolver) ActionJobByID(ctx context.Context, id graphql.ID) (graphqlbac
 		return nil, err
 	}
 
-	return &actionJobResolver{store: r.store, job: *actionJob}, nil
+	return &actionJobResolver{store: r.store, job: actionJob}, nil
 }
 
 func (r *actionJobResolver) ID() graphql.ID {
@@ -168,7 +168,7 @@ func (r *actionJobConnectionResolver) Nodes(ctx context.Context) ([]graphqlbacke
 	jobs, _, err := r.compute(ctx)
 	resolvers := make([]graphqlbackend.ActionJobResolver, len(jobs))
 	for i, job := range jobs {
-		resolvers[i] = &actionJobResolver{store: r.store, actionExecution: r.actionExecution, job: *job}
+		resolvers[i] = &actionJobResolver{store: r.store, actionExecution: r.actionExecution, job: job}
 	}
 	return resolvers, err
 }

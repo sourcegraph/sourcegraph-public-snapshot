@@ -3020,10 +3020,21 @@ type ClearActionJobOpts struct {
 }
 
 // ClearActionJob resets an action job so it is retried.
-func (s *Store) ClearActionJob(ctx context.Context, opts ClearActionJobOpts) error {
+func (s *Store) ClearActionJob(ctx context.Context, opts ClearActionJobOpts) (*campaigns.ActionJob, error) {
 	q := clearActionJobQuery(&opts)
-	_, _, err := s.query(ctx, q, nil)
-	return err
+
+	var a campaigns.ActionJob
+	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
+		return 0, 0, scanActionJob(&a, sc)
+	})
+	if err != nil {
+		return nil, err
+	}
+	if a.ID == 0 {
+		return nil, ErrNoResults
+	}
+
+	return &a, err
 }
 
 var clearActionJobQueryFmtstrSelect = `
@@ -3032,12 +3043,24 @@ UPDATE
 	action_jobs
 SET
 	log = NULL,
-	execution_start = NULL,
-	execution_end = NULL,
+	execution_start_at = NULL,
+	execution_end_at = NULL,
 	agent_seen_at = NULL,
 	patch = NULL,
 	state = 'PENDING'
 WHERE action_jobs.id = %d
+RETURNING
+	id,
+	log,
+	execution_start_at,
+	execution_end_at,
+	patch,
+	state,
+	repository_id,
+	execution_id,
+	base_revision,
+	base_reference,
+	agent_id
 `
 
 func clearActionJobQuery(opts *ClearActionJobOpts) *sqlf.Query {
@@ -3386,14 +3409,12 @@ func (s *Store) CreateActionExecution(ctx context.Context, opts CreateActionExec
 	q := createActionExecutionQuery(&opts)
 
 	var a campaigns.ActionExecution
-	_, _, err := s.query(ctx, q, func(sc scanner) (_, _ int64, err error) {
-		if err := scanActionExecution(&a, sc); err != nil {
-			return 0, 0, err
-		}
-		return 0, 0, nil
+	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
+		return 0, 0, scanActionExecution(&a, sc)
 	})
-
-	// todo handle empty ie not-found error
+	if err != nil {
+		return nil, err
+	}
 
 	return &a, err
 }
@@ -3432,14 +3453,12 @@ func (s *Store) CreateActionJob(ctx context.Context, opts CreateActionJobOpts) (
 	q := createActionJobQuery(&opts)
 
 	var a campaigns.ActionJob
-	_, _, err := s.query(ctx, q, func(sc scanner) (_, _ int64, err error) {
-		if err := scanActionJob(&a, sc); err != nil {
-			return 0, 0, err
-		}
-		return 0, 0, nil
+	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
+		return 0, 0, scanActionJob(&a, sc)
 	})
-
-	// todo handle empty ie not-found error
+	if err != nil {
+		return nil, err
+	}
 
 	return &a, err
 }
@@ -3605,16 +3624,14 @@ func (s *Store) CreateAction(ctx context.Context, opts CreateActionOpts) (*campa
 	q := createActionQuery(&opts)
 
 	var a campaigns.Action
-	_, _, err := s.query(ctx, q, func(sc scanner) (_, _ int64, err error) {
-		if err := scanAction(&a, sc); err != nil {
-			return 0, 0, err
-		}
-		return 0, 0, nil
+	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
+		return 0, 0, scanAction(&a, sc)
 	})
+	if err != nil {
+		return nil, err
+	}
 
-	// todo handle empty ie not-found error
-
-	return &a, err
+	return &a, nil
 }
 
 // todo: pass env
@@ -3651,14 +3668,15 @@ func (s *Store) UpdateAction(ctx context.Context, opts UpdateActionOpts) (*campa
 	q := updateActionQuery(&opts)
 
 	var a campaigns.Action
-	_, _, err := s.query(ctx, q, func(sc scanner) (_, _ int64, err error) {
-		if err := scanAction(&a, sc); err != nil {
-			return 0, 0, err
-		}
-		return 0, 0, nil
+	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
+		return 0, 0, scanAction(&a, sc)
 	})
-
-	// todo handle empty ie not-found error
+	if err != nil {
+		return nil, err
+	}
+	if a.ID == 0 {
+		return nil, ErrNoResults
+	}
 
 	return &a, err
 }

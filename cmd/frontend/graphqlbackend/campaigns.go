@@ -193,7 +193,7 @@ type CampaignsResolver interface {
 	PullActionJob(ctx context.Context, args *PullActionJobArgs) (ActionJobResolver, error)
 	UpdateActionJob(ctx context.Context, args *UpdateActionJobArgs) (ActionJobResolver, error)
 	AppendLog(ctx context.Context, args *AppendLogArgs) (ActionJobResolver, error)
-	RetryActionJob(ctx context.Context, args *RetryActionJobArgs) (*EmptyResponse, error)
+	RetryActionJob(ctx context.Context, args *RetryActionJobArgs) (ActionJobResolver, error)
 	RegisterAgent(ctx context.Context, args *RegisterAgentArgs) (AgentResolver, error)
 	UnregisterAgent(ctx context.Context, args *UnregisterAgentArgs) (*EmptyResponse, error)
 
@@ -293,7 +293,7 @@ func (defaultCampaignsResolver) AppendLog(ctx context.Context, args *AppendLogAr
 	return nil, campaignsOnlyInEnterprise
 }
 
-func (defaultCampaignsResolver) RetryActionJob(ctx context.Context, args *RetryActionJobArgs) (*EmptyResponse, error) {
+func (defaultCampaignsResolver) RetryActionJob(ctx context.Context, args *RetryActionJobArgs) (ActionJobResolver, error) {
 	return nil, campaignsOnlyInEnterprise
 }
 

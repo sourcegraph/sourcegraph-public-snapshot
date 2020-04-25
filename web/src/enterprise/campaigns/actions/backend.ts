@@ -15,12 +15,12 @@ import {
 } from '../../../../../shared/src/graphql/schema'
 import { PreviewFileDiffFields, FileDiffHunkRangeFields, DiffStatFields } from '../../../backend/diff'
 
-export async function retryActionJob(actionJobID: ID): Promise<IEmptyResponse | null> {
+export async function retryActionJob(actionJobID: ID): Promise<IActionJob> {
     const result = await mutateGraphQL(
         gql`
             mutation RetryActionJob($actionJob: ID!) {
                 retryActionJob(actionJob: $actionJob) {
-                    alwaysNil
+                    id
                 }
             }
         `,

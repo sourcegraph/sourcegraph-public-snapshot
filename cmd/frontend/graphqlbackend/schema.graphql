@@ -466,7 +466,7 @@ type Mutation {
     appendLog(actionJob: ID!, content: String!): ActionJob
 
     # Re-enqueue a job for processing. Can be used to fix timeout, etc. errors.
-    retryActionJob(actionJob: ID!): EmptyResponse
+    retryActionJob(actionJob: ID!): ActionJob!
 
     # Registers a new agent.
     registerAgent(

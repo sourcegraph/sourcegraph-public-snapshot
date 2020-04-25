@@ -76,7 +76,11 @@ export const ActionJob: React.FunctionComponent<Props> = ({ isLightTheme, action
                             {actionJob.executionEnd && (
                                 <div className="flex-grow-0">
                                     <p className="m-0 text-right mr-2">
-                                        {actionJob.state === GQL.ActionJobState.ERRORED ? 'Failed' : 'Finished'}{' '}
+                                        {actionJob.state === GQL.ActionJobState.ERRORED
+                                            ? 'Failed'
+                                            : actionJob.state === GQL.ActionJobState.CANCELED
+                                            ? 'Canceled'
+                                            : 'Finished'}{' '}
                                         {formatDistance(parseISO(actionJob.executionEnd), new Date())} ago
                                     </p>
                                 </div>

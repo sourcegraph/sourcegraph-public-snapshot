@@ -698,8 +698,6 @@ func parseCampaignState(s *string) (campaigns.CampaignState, error) {
 	}
 }
 
-// query and mutation resolvers
-
 func (r *Resolver) Actions(ctx context.Context, args *graphqlbackend.ListActionsArgs) (_ graphqlbackend.ActionConnectionResolver, err error) {
 	tr, ctx := trace.New(ctx, "Resolver.Actions", fmt.Sprintf("First: %d", args.First))
 	defer func() {
@@ -707,7 +705,7 @@ func (r *Resolver) Actions(ctx context.Context, args *graphqlbackend.ListActions
 		tr.Finish()
 	}()
 
-	// 🚨 SECURITY: Only site admins may create executions for now
+	// 🚨 SECURITY: Only site admins may read actions for now.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, errors.Wrap(err, "checking if user is admin")
 	}
@@ -722,7 +720,7 @@ func (r *Resolver) ActionJobs(ctx context.Context, args *graphqlbackend.ListActi
 		tr.Finish()
 	}()
 
-	// 🚨 SECURITY: Only site admins may create executions for now
+	// 🚨 SECURITY: Only site admins may read jobs for now.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, errors.Wrap(err, "checking if user is admin")
 	}
@@ -737,7 +735,7 @@ func (r *Resolver) Agents(ctx context.Context, args *graphqlbackend.ListAgentsAr
 		tr.Finish()
 	}()
 
-	// 🚨 SECURITY: Only site admins may list agents for now
+	// 🚨 SECURITY: Only site admins may list agents for now.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, errors.Wrap(err, "checking if user is admin")
 	}
@@ -765,7 +763,7 @@ func (r *Resolver) CreateAction(ctx context.Context, args *graphqlbackend.Create
 		return nil, err
 	}
 
-	return &actionResolver{store: r.store, action: *action}, nil
+	return &actionResolver{store: r.store, action: action}, nil
 }
 
 func (r *Resolver) UpdateAction(ctx context.Context, args *graphqlbackend.UpdateActionArgs) (_ graphqlbackend.ActionResolver, err error) {
@@ -785,6 +783,12 @@ func (r *Resolver) UpdateAction(ctx context.Context, args *graphqlbackend.Update
 		return nil, err
 	}
 
+	// Check for existence.
+	_, err = r.store.GetAction(ctx, ee.GetActionOpts{ID: actionID})
+	if err != nil {
+		return nil, err
+	}
+
 	action, err := r.store.UpdateAction(ctx, ee.UpdateActionOpts{
 		ActionID: actionID,
 		Steps:    args.NewDefinition,
@@ -793,7 +797,7 @@ func (r *Resolver) UpdateAction(ctx context.Context, args *graphqlbackend.Update
 		return nil, err
 	}
 
-	return &actionResolver{store: r.store, action: *action}, nil
+	return &actionResolver{store: r.store, action: action}, nil
 }
 
 func (r *Resolver) CreateActionExecution(ctx context.Context, args *graphqlbackend.CreateActionExecutionArgs) (_ graphqlbackend.ActionExecutionResolver, err error) {
@@ -803,7 +807,7 @@ func (r *Resolver) CreateActionExecution(ctx context.Context, args *graphqlbacke
 		tr.Finish()
 	}()
 
-	// 🚨 SECURITY: Only site admins may create executions for now
+	// 🚨 SECURITY: Only site admins may create executions for now.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, errors.Wrap(err, "checking if user is admin")
 	}
@@ -813,11 +817,9 @@ func (r *Resolver) CreateActionExecution(ctx context.Context, args *graphqlbacke
 		return nil, err
 	}
 
+	// Check if exists.
 	action, err := r.store.GetAction(ctx, ee.GetActionOpts{ID: actionID})
 	if err != nil {
-		if err == ee.ErrNoResults {
-			return nil, errors.New("Action not found")
-		}
 		return nil, err
 	}
 	actionExecution, actionJobs, err := createActionExecutionForAction(ctx, r.store, action, campaigns.ActionExecutionInvocationReasonManual)
@@ -874,7 +876,7 @@ func (r *Resolver) PullActionJob(ctx context.Context, args *graphqlbackend.PullA
 		return nil, err
 	}
 
-	return &actionJobResolver{store: r.store, job: *actionJob}, nil
+	return &actionJobResolver{store: r.store, job: actionJob}, nil
 }
 
 func (r *Resolver) UpdateActionJob(ctx context.Context, args *graphqlbackend.UpdateActionJobArgs) (_ graphqlbackend.ActionJobResolver, err error) {
@@ -889,7 +891,7 @@ func (r *Resolver) UpdateActionJob(ctx context.Context, args *graphqlbackend.Upd
 		return nil, errors.Wrap(err, "checking if user is admin")
 	}
 
-	// todo: we need a user to associate the campaign plan with, but is the issuer of the runner token implicitly good enough?
+	// todo: we need a user to associate the patch set with, but is the issuer of the runner token implicitly good enough?
 	user, err := backend.CurrentUser(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "%v", backend.ErrNotAuthenticated)
@@ -936,7 +938,7 @@ func (r *Resolver) UpdateActionJob(ctx context.Context, args *graphqlbackend.Upd
 		State: args.State,
 		Patch: args.Patch,
 	}
-	// set end time on status change from "running".
+	// Set end time on status change from "running".
 	if args.State != nil && *args.State != campaigns.ActionJobStateRunning {
 		now := time.Now()
 		opts.ExecutionEndAt = &now
@@ -955,7 +957,7 @@ func (r *Resolver) UpdateActionJob(ctx context.Context, args *graphqlbackend.Upd
 
 	// If this job is not yet completed, no further action needs to be taken.
 	if actionJob.State == campaigns.ActionJobStatePending || actionJob.State == campaigns.ActionJobStateRunning {
-		return &actionJobResolver{store: r.store, job: *actionJob}, nil
+		return &actionJobResolver{store: r.store, job: actionJob}, nil
 	}
 	// check if ALL are completed, timeouted, or failed now, then proceed with patch generation.
 	actionJobs, _, err := tx.ListActionJobs(ctx, ee.ListActionJobsOpts{
@@ -971,16 +973,16 @@ func (r *Resolver) UpdateActionJob(ctx context.Context, args *graphqlbackend.Upd
 		if j.Patch != nil {
 			patchCount = patchCount + 1
 		}
-		// a job is completed, when it timeouted, failed, or completed
+		// a job is completed when it timeouted, failed, or completed
 		if j.State == campaigns.ActionJobStatePending || j.State == campaigns.ActionJobStateRunning {
 			allCompleted = false
 			break
 		}
 	}
 	if !allCompleted {
-		return &actionJobResolver{store: r.store, job: *actionJob}, nil
+		return &actionJobResolver{store: r.store, job: actionJob}, nil
 	}
-	var patches []*campaigns.Patch
+	patches := make([]*campaigns.Patch, patchCount)
 	for _, job := range actionJobs {
 		if job.Patch != nil {
 			patches = append(patches, &campaigns.Patch{
@@ -1018,7 +1020,7 @@ func (r *Resolver) UpdateActionJob(ctx context.Context, args *graphqlbackend.Upd
 			return nil, err
 		}
 	}
-	return &actionJobResolver{store: r.store, job: *actionJob}, nil
+	return &actionJobResolver{store: r.store, job: actionJob}, nil
 }
 
 func (r *Resolver) AppendLog(ctx context.Context, args *graphqlbackend.AppendLogArgs) (_ graphqlbackend.ActionJobResolver, err error) {
@@ -1053,17 +1055,17 @@ func (r *Resolver) AppendLog(ctx context.Context, args *graphqlbackend.AppendLog
 		return nil, err
 	}
 
-	return &actionJobResolver{store: r.store, job: *actionJob}, nil
+	return &actionJobResolver{store: r.store, job: actionJob}, nil
 }
 
-func (r *Resolver) RetryActionJob(ctx context.Context, args *graphqlbackend.RetryActionJobArgs) (_ *graphqlbackend.EmptyResponse, err error) {
+func (r *Resolver) RetryActionJob(ctx context.Context, args *graphqlbackend.RetryActionJobArgs) (_ graphqlbackend.ActionJobResolver, err error) {
 	tr, ctx := trace.New(ctx, "Resolver.RetryActionJob", fmt.Sprintf("Action job: %s", args.ActionJob))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	// 🚨 SECURITY: Only site admins may retry jobs for now
+	// 🚨 SECURITY: Only site admins may retry jobs for now.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, errors.Wrap(err, "checking if user is admin")
 	}
@@ -1073,13 +1075,20 @@ func (r *Resolver) RetryActionJob(ctx context.Context, args *graphqlbackend.Retr
 		return nil, err
 	}
 
-	if err := r.store.ClearActionJob(ctx, ee.ClearActionJobOpts{
-		ID: id,
-	}); err != nil {
+	// Check for existence.
+	_, err = r.store.GetActionJob(ctx, ee.GetActionJobOpts{ID: id})
+	if err != nil {
 		return nil, err
 	}
 
-	return &graphqlbackend.EmptyResponse{}, nil
+	job, err := r.store.ClearActionJob(ctx, ee.ClearActionJobOpts{
+		ID: id,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &actionJobResolver{store: r.store, job: job}, nil
 }
 
 func (r *Resolver) CancelActionExecution(ctx context.Context, args *graphqlbackend.CancelActionExecutionArgs) (_ *graphqlbackend.EmptyResponse, err error) {
@@ -1089,7 +1098,7 @@ func (r *Resolver) CancelActionExecution(ctx context.Context, args *graphqlbacke
 		tr.Finish()
 	}()
 
-	// 🚨 SECURITY: Only site admins may cancel executions for now
+	// 🚨 SECURITY: Only site admins may cancel executions for now.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, errors.Wrap(err, "checking if user is admin")
 	}
@@ -1104,7 +1113,7 @@ func (r *Resolver) CancelActionExecution(ctx context.Context, args *graphqlbacke
 		return nil, err
 	}
 
-	// Set all remaining unfinished tasks to canceled
+	// Set all remaining unfinished tasks to canceled.
 	err = r.store.CancelActionExecution(ctx, ee.CancelActionExecutionOpts{ExecutionID: id})
 	if err != nil {
 		return nil, err

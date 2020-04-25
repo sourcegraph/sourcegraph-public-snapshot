@@ -36,7 +36,7 @@ type actionExecutionResolver struct {
 	// todo: use this for passing down the action when a parent resolver was an action resolver
 	action *campaigns.Action
 
-	// pass this when the jobs are already known:
+	// Pass this when the jobs are already known.
 	actionJobs *[]*campaigns.ActionJob
 }
 
@@ -66,14 +66,14 @@ func (r *actionExecutionResolver) ID() graphql.ID {
 
 func (r *actionExecutionResolver) Action(ctx context.Context) (graphqlbackend.ActionResolver, error) {
 	if r.action != nil {
-		return &actionResolver{store: r.store, action: *r.action}, nil
+		return &actionResolver{store: r.store, action: r.action}, nil
 	}
 	action, err := r.store.GetAction(ctx, ee.GetActionOpts{ID: r.actionExecution.ActionID})
 	// todo: how do we treat not found errors here?
 	if err != nil {
 		return nil, err
 	}
-	return &actionResolver{store: r.store, action: *action}, nil
+	return &actionResolver{store: r.store, action: action}, nil
 }
 
 func (r *actionExecutionResolver) InvocationReason() campaigns.ActionExecutionInvocationReason {
