@@ -419,18 +419,16 @@ type Mutation {
         # Human readable name.
         name: String!
         # The action definition file content.
-        definition: JSONCString! # The new environment variables. # Todo: implement
-    ): # env: [ActionEnvVar!]
-    Action!
+        definition: JSONCString! # The new environment variables. # Todo: implement # env: [ActionEnvVar!]
+    ): Action!
 
     # Update an existing action.
     updateAction(
         # The action to update.
         action: ID!
         # The new definition file contents.
-        newDefinition: JSONCString! # The new environment variables. # Todo: implement
-    ): # env: [ActionEnvVar!]
-    Action!
+        newDefinition: JSONCString! # The new environment variables. # Todo: implement # env: [ActionEnvVar!]
+    ): Action!
 
     # Create a new 'MANUAL' action execution from an action.
     createActionExecution(action: ID!): ActionExecution!
@@ -461,7 +459,7 @@ type Mutation {
     appendLog(actionJob: ID!, content: String!): ActionJob
 
     # Re-enqueue a job for processing. Can be used to fix timeout, etc. errors.
-    retryActionJob(actionJob: ID!): EmptyResponse
+    retryActionJob(actionJob: ID!): ActionJob!
 
     # Registers a new agent.
     registerAgent(
@@ -571,7 +569,12 @@ type Agent implements Node {
     # Set to 'offline' when no heartbeat was received for a log enough period (TBD what long enough might be).
     state: AgentState!
     # All currently accepted jobs.
-    runningJobs: ActionJobConnection!
+    runningJobs(first: Int): ActionJobConnection!
+}
+
+type AgentConnection {
+    totalCount: Int!
+    nodes: [Agent!]!
 }
 
 # A list of action jobs.
@@ -1382,7 +1385,7 @@ type Query {
     # Get all actions.
     actions(first: Int): ActionConnection!
     # Get action jobs by state, used in pending job queue list on agents page.
-    actionJobs(first: Int, state: ActionJobState!): ActionJobConnection!
+    actionJobs(first: Int, state: ActionJobState): ActionJobConnection!
     # Get agents by state.
     agents(first: Int, state: AgentState): AgentConnection!
 

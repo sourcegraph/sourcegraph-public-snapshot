@@ -51,18 +51,19 @@ Referenced by:
  log                | text                     | 
  execution_start_at | timestamp with time zone | 
  execution_end_at   | timestamp with time zone | 
- agent_seen_at      | timestamp with time zone | 
  patch              | text                     | 
  state              | text                     | not null default 'PENDING'::text
  repository_id      | integer                  | not null
  execution_id       | integer                  | not null
  base_revision      | text                     | not null
  base_reference     | text                     | not null
+ agent_id           | integer                  | not null
 Indexes:
     "action_jobs_pkey" PRIMARY KEY, btree (id)
 Check constraints:
     "action_jobs_state_check" CHECK (state = ANY (ARRAY['PENDING'::text, 'RUNNING'::text, 'COMPLETED'::text, 'ERRORED'::text, 'TIMEOUT'::text, 'CANCELED'::text]))
 Foreign-key constraints:
+    "action_jobs_agent_id_fkey" FOREIGN KEY (agent_id) REFERENCES agents(id) ON UPDATE CASCADE ON DELETE SET NULL
     "action_jobs_execution_id_fkey" FOREIGN KEY (execution_id) REFERENCES action_executions(id) ON UPDATE CASCADE ON DELETE CASCADE
     "action_jobs_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON UPDATE CASCADE
 
@@ -87,6 +88,21 @@ Foreign-key constraints:
     "actions_saved_search_id_fkey" FOREIGN KEY (saved_search_id) REFERENCES saved_searches(id) ON UPDATE CASCADE
 Referenced by:
     TABLE "action_executions" CONSTRAINT "action_executions_action_id_fkey" FOREIGN KEY (action_id) REFERENCES actions(id) ON UPDATE CASCADE
+
+```
+
+# Table "public.agents"
+```
+    Column    |           Type           |                      Modifiers                      
+--------------+--------------------------+-----------------------------------------------------
+ id           | integer                  | not null default nextval('agents_id_seq'::regclass)
+ name         | text                     | not null
+ specs        | text                     | not null
+ last_seen_at | timestamp with time zone | not null default now()
+Indexes:
+    "agents_pkey" PRIMARY KEY, btree (id)
+Referenced by:
+    TABLE "action_jobs" CONSTRAINT "action_jobs_agent_id_fkey" FOREIGN KEY (agent_id) REFERENCES agents(id) ON UPDATE CASCADE ON DELETE SET NULL
 
 ```
 
