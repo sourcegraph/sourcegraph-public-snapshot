@@ -620,8 +620,7 @@ type ActionJob implements Node {
     # The repository that this job is running over.
     repository: Repository!
     # The base revision in the repository that this job runs over.
-    # Todo: Make this a GitRef
-    baseRevision: String!
+    baseRevision: GitCommit!
     # The current state of the action job.
     state: ActionJobState!
     # Set once accepted by an agent.

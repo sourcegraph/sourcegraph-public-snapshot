@@ -244,6 +244,12 @@ Array [
     </div>
     <a
       className="btn btn-primary ml-3"
+      href="/campaigns/actions"
+    >
+      Manage actions
+    </a>
+    <a
+      className="btn btn-primary ml-3"
       href="/campaigns/create"
     >
       <svg
@@ -326,6 +332,12 @@ Array [
         </a>
       </p>
     </div>
+    <a
+      className="btn btn-primary ml-3"
+      href="/campaigns/actions"
+    >
+      Manage actions
+    </a>
     <a
       className="btn btn-primary ml-3"
       href="/campaigns/create"
