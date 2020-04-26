@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS agents (
     id SERIAL PRIMARY KEY,
     name text NOT NULL,
     specs text NOT NULL,
-    last_seen_at timestamp with time zone NOT NULL DEFAULT NOW()
+    last_seen_at timestamp with time zone NOT NULL
 );
 CREATE UNIQUE INDEX IF NOT EXISTS agents_pkey ON agents(id int4_ops);
 

@@ -98,7 +98,7 @@ Referenced by:
  id           | integer                  | not null default nextval('agents_id_seq'::regclass)
  name         | text                     | not null
  specs        | text                     | not null
- last_seen_at | timestamp with time zone | not null default now()
+ last_seen_at | timestamp with time zone | not null
 Indexes:
     "agents_pkey" PRIMARY KEY, btree (id)
 Referenced by:

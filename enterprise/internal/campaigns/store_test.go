@@ -3069,6 +3069,19 @@ func testActions(db *sql.DB) func(*testing.T) {
 				t.Fatal(err)
 			}
 		})
+		t.Run("CountActions", func(t *testing.T) {
+			tx := dbtest.NewTx(t, db)
+			s := NewStoreWithClock(tx, clock)
+
+			have, err := s.CountActions(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var want int64 = 1
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatal(diff)
+			}
+		})
 		t.Run("UpdateAction", func(t *testing.T) {
 			tx := dbtest.NewTx(t, db)
 			s := NewStoreWithClock(tx, clock)
@@ -3126,6 +3139,50 @@ func testActions(db *sql.DB) func(*testing.T) {
 			}
 			if err != ErrNoResults {
 				t.Fatal(err)
+			}
+		})
+		t.Run("CountActionExecutions", func(t *testing.T) {
+			tx := dbtest.NewTx(t, db)
+			s := NewStoreWithClock(tx, clock)
+
+			// Create second execution under a different action.
+			a2, err := s.CreateAction(ctx, CreateActionOpts{Name: "Action2", Steps: ""})
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = s.CreateActionExecution(ctx, CreateActionExecutionOpts{ActionID: a2.ID, EnvStr: a2.EnvStr, InvocationReason: campaigns.ActionExecutionInvocationReasonManual, Steps: a2.Steps})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			// List all, regardless of action.
+			have, err := s.CountActionExecutions(ctx, CountActionExecutionsOpts{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			var want int64 = 2
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatal(diff)
+			}
+
+			// List by action 1.
+			have, err = s.CountActionExecutions(ctx, CountActionExecutionsOpts{ActionID: action.ID})
+			if err != nil {
+				t.Fatal(err)
+			}
+			want = 1
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatal(diff)
+			}
+
+			// List by action 2.
+			have, err = s.CountActionExecutions(ctx, CountActionExecutionsOpts{ActionID: a2.ID})
+			if err != nil {
+				t.Fatal(err)
+			}
+			want = 1
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatal(diff)
 			}
 		})
 		t.Run("UpdateActionExecution", func(t *testing.T) {
@@ -3191,6 +3248,104 @@ func testActions(db *sql.DB) func(*testing.T) {
 				t.Fatal(err)
 			}
 		})
+		t.Run("CountActionJobs", func(t *testing.T) {
+			tx := dbtest.NewTx(t, db)
+			s := NewStoreWithClock(tx, clock)
+
+			// Create second execution under a different action.
+			a2, err := s.CreateAction(ctx, CreateActionOpts{Name: "Action2", Steps: ""})
+			if err != nil {
+				t.Fatal(err)
+			}
+			e2, err := s.CreateActionExecution(ctx, CreateActionExecutionOpts{ActionID: a2.ID, EnvStr: a2.EnvStr, InvocationReason: campaigns.ActionExecutionInvocationReasonManual, Steps: a2.Steps})
+			if err != nil {
+				t.Fatal(err)
+			}
+			job2, err := s.CreateActionJob(ctx, CreateActionJobOpts{ExecutionID: actionExecution.ID, BaseReference: "", BaseRevision: "", RepositoryID: int64(repo.ID)})
+			if err != nil {
+				t.Fatal(err)
+			}
+			newState := campaigns.ActionJobStateTimeout
+			_, err = s.UpdateActionJob(ctx, UpdateActionJobOpts{ID: job2.ID, State: &newState, AgentID: agent.ID})
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = s.CreateActionJob(ctx, CreateActionJobOpts{ExecutionID: e2.ID, BaseReference: "", BaseRevision: "", RepositoryID: int64(repo.ID)})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			// List all.
+			have, err := s.CountActionJobs(ctx, CountActionJobsOpts{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			var want int64 = 3
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatal(diff)
+			}
+
+			// List by execution 1.
+			have, err = s.CountActionJobs(ctx, CountActionJobsOpts{ExecutionID: actionExecution.ID})
+			if err != nil {
+				t.Fatal(err)
+			}
+			want = 2
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatal(diff)
+			}
+
+			// List by execution 2.
+			have, err = s.CountActionJobs(ctx, CountActionJobsOpts{ExecutionID: e2.ID})
+			if err != nil {
+				t.Fatal(err)
+			}
+			want = 1
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatal(diff)
+			}
+
+			// List by PENDING state.
+			pendingState := campaigns.ActionJobStatePending
+			have, err = s.CountActionJobs(ctx, CountActionJobsOpts{State: &pendingState})
+			if err != nil {
+				t.Fatal(err)
+			}
+			want = 2
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatal(diff)
+			}
+
+			// List by TIMEOUT state.
+			have, err = s.CountActionJobs(ctx, CountActionJobsOpts{State: &newState})
+			if err != nil {
+				t.Fatal(err)
+			}
+			want = 1
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatal(diff)
+			}
+
+			// List by known agent.
+			have, err = s.CountActionJobs(ctx, CountActionJobsOpts{AgentID: agent.ID})
+			if err != nil {
+				t.Fatal(err)
+			}
+			want = 1
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatal(diff)
+			}
+
+			// List by unknown agent.
+			have, err = s.CountActionJobs(ctx, CountActionJobsOpts{AgentID: 123})
+			if err != nil {
+				t.Fatal(err)
+			}
+			want = 0
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatal(diff)
+			}
+		})
 		t.Run("UpdateActionJob", func(t *testing.T) {
 			tx := dbtest.NewTx(t, db)
 			s := NewStoreWithClock(tx, clock)
@@ -3199,7 +3354,7 @@ func testActions(db *sql.DB) func(*testing.T) {
 			newPatch := `diff`
 			newState := campaigns.ActionJobStateTimeout
 			now := s.now()
-			want, err := s.UpdateActionJob(ctx, UpdateActionJobOpts{ID: actionJob.ID, State: &newState, Log: &newLog, Patch: &newPatch, ExecutionEndAt: &now, ExecutionStartAt: &now})
+			want, err := s.UpdateActionJob(ctx, UpdateActionJobOpts{ID: actionJob.ID, State: &newState, Log: &newLog, Patch: &newPatch, ExecutionEndAt: &now, ExecutionStartAt: &now, AgentID: agent.ID})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -3224,6 +3379,9 @@ func testActions(db *sql.DB) func(*testing.T) {
 			}
 			if want.ExecutionEndAt != now {
 				t.Fatal(errors.New("ExecutionEndAt not properly updated"))
+			}
+			if want.AgentID != agent.ID {
+				t.Fatal(errors.New("AgentID not properly updated"))
 			}
 		})
 		t.Run("UpdateActionJobNotFound", func(t *testing.T) {
@@ -3263,6 +3421,55 @@ func testActions(db *sql.DB) func(*testing.T) {
 			}
 			if err != ErrNoResults {
 				t.Fatal(err)
+			}
+		})
+		t.Run("CountAgents", func(t *testing.T) {
+			tx := dbtest.NewTx(t, db)
+
+			now := time.Now()
+			var clockTime time.Time = now
+			clock := func() time.Time { return clockTime.UTC().Truncate(time.Microsecond) }
+			s := NewStoreWithClock(tx, clock)
+
+			// Tune back time so this runner is OFFLINE.
+			clockTime = now.Add(-2 * time.Hour)
+			_, err := s.CreateAgent(ctx, CreateAgentOpts{Name: "agent-2", Specs: "SourcegraphOS 15"})
+			if err != nil {
+				t.Fatal(err)
+			}
+			// Reset time so we look at the runners from the present again.
+			clockTime = now
+
+			// List all agents.
+			have, err := s.CountAgents(ctx, CountAgentsOpts{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			var want int64 = 2
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatal(diff)
+			}
+
+			// List all OFFLINE agents.
+			offlineState := campaigns.AgentStateOffline
+			have, err = s.CountAgents(ctx, CountAgentsOpts{State: &offlineState})
+			if err != nil {
+				t.Fatal(err)
+			}
+			want = 1
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatal(diff)
+			}
+
+			// List all ONLINE agents.
+			onlineState := campaigns.AgentStateOnline
+			have, err = s.CountAgents(ctx, CountAgentsOpts{State: &onlineState})
+			if err != nil {
+				t.Fatal(err)
+			}
+			want = 1
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatal(diff)
 			}
 		})
 

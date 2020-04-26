@@ -2938,6 +2938,7 @@ type UpdateActionJobOpts struct {
 	Patch            *string
 	ExecutionStartAt *time.Time
 	ExecutionEndAt   *time.Time
+	AgentID          int64
 }
 
 // UpdateActionJob lists Actions with the given filters.
@@ -2989,6 +2990,9 @@ func updateActionJobQuery(opts *UpdateActionJobOpts) *sqlf.Query {
 	}
 	if opts.Patch != nil {
 		preds = append(preds, sqlf.Sprintf("patch = %s", *opts.Patch))
+	}
+	if opts.AgentID != 0 {
+		preds = append(preds, sqlf.Sprintf("agent_id = %d", opts.AgentID))
 	}
 	if opts.ExecutionStartAt != nil {
 		if (*opts.ExecutionStartAt).IsZero() {
@@ -3904,7 +3908,7 @@ type CreateAgentOpts struct {
 
 // CreateAgent creates a new agent in the database.
 func (s *Store) CreateAgent(ctx context.Context, opts CreateAgentOpts) (*campaigns.Agent, error) {
-	q := createAgentQuery(&opts)
+	q := createAgentQuery(&opts, s.now())
 
 	var a campaigns.Agent
 	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
@@ -3918,12 +3922,12 @@ func (s *Store) CreateAgent(ctx context.Context, opts CreateAgentOpts) (*campaig
 }
 
 var createAgentQueryFmtstr = `
--- source: enterprise/internal/campaigns/store.go:CreateAction
+-- source: enterprise/internal/campaigns/store.go:CreateAgent
 INSERT INTO
 	agents
-	(name, specs)
+	(name, specs, last_seen_at)
 VALUES
-	(%s, %s)
+	(%s, %s, %s)
 RETURNING
 	agents.id,
 	agents.name,
@@ -3931,9 +3935,9 @@ RETURNING
 	agents.last_seen_at
 `
 
-func createAgentQuery(opts *CreateAgentOpts) *sqlf.Query {
+func createAgentQuery(opts *CreateAgentOpts, now time.Time) *sqlf.Query {
 	queryTemplate := createAgentQueryFmtstr
-	return sqlf.Sprintf(queryTemplate, opts.Name, opts.Specs)
+	return sqlf.Sprintf(queryTemplate, opts.Name, opts.Specs, now)
 }
 
 // ListAgentsOpts captures the query options needed for
@@ -3996,9 +4000,9 @@ func listAgentsQuery(opts *ListAgentsOpts, now time.Time) *sqlf.Query {
 	if opts.State != nil {
 		switch *opts.State {
 		case campaigns.AgentStateOnline:
-			preds = append(preds, sqlf.Sprintf("agents.last_seen_at > %s - INTERVAL '2 minutes'", now))
+			preds = append(preds, sqlf.Sprintf("agents.last_seen_at > %s::timestamp with time zone - INTERVAL '2 minutes'", now))
 		case campaigns.AgentStateOffline:
-			preds = append(preds, sqlf.Sprintf("agents.last_seen_at <= %s - INTERVAL '2 minutes'", now))
+			preds = append(preds, sqlf.Sprintf("agents.last_seen_at <= %s::timestamp with time zone - INTERVAL '2 minutes'", now))
 		}
 	}
 
@@ -4036,9 +4040,9 @@ func countAgentsQuery(opts *CountAgentsOpts, now time.Time) *sqlf.Query {
 	if opts.State != nil {
 		switch *opts.State {
 		case campaigns.AgentStateOnline:
-			preds = append(preds, sqlf.Sprintf("agents.last_seen_at > %s - INTERVAL '2 minutes'", now))
+			preds = append(preds, sqlf.Sprintf("agents.last_seen_at > %s::timestamp with time zone - INTERVAL '2 minutes'", now))
 		case campaigns.AgentStateOffline:
-			preds = append(preds, sqlf.Sprintf("agents.last_seen_at <= %s - INTERVAL '2 minutes'", now))
+			preds = append(preds, sqlf.Sprintf("agents.last_seen_at <= %s::timestamp with time zone - INTERVAL '2 minutes'", now))
 		}
 	}
 
