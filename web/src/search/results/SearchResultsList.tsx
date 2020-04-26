@@ -52,6 +52,10 @@ export interface SearchResultsListProps
     // Result list
     resultsOrError?: GQL.ISearchResults | ErrorLike
     onShowMoreResultsClick: () => void
+    onMorePaginatedResults?: (pageInfo: GQL.IPageInfo) => void
+
+    /** Whether or not the next page of paginated search results is loading. */
+    nextPageLoading: boolean
 
     // Expand all feature
     allExpanded: boolean
@@ -242,6 +246,25 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
             })
         )
 
+        // paginated search: show more results after more have been fetched
+        this.subscriptions.add(
+            this.componentUpdates
+                .pipe(
+                    distinctUntilChanged((a, b) => isEqual(a, b)),
+                    map(({ resultsOrError }) => resultsOrError),
+                    filter(isDefined),
+                    filter((resultsOrError): resultsOrError is GQL.ISearchResults => !isErrorLike(resultsOrError))
+                )
+                .subscribe(({ results }) => {
+                    this.setState(({ resultsShown }) => {
+                        if (results.length >= resultsShown) {
+                            return { resultsShown: Math.min(results.length, resultsShown + 10) }
+                        }
+                        return { resultsShown }
+                    })
+                })
+        )
+
         this.subscriptions.add(
             this.componentUpdates
                 .pipe(
@@ -277,7 +300,6 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                             }
                         }
                     }
-
                     this.setState({ fileMatchRepoDisplayNames })
                 })
         )
@@ -470,6 +492,12 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                         })()
                     )}
 
+                    {this.props.nextPageLoading && (
+                        <div className="text-center mt-2" data-testid="loading-container">
+                            <LoadingSpinner className="icon-inline" />
+                        </div>
+                    )}
+
                     <div className="pb-4" />
                     {this.props.resultsOrError !== undefined && (
                         <Link className="mb-4 p-3" to="/help/user/search">
@@ -524,10 +552,21 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
     }
 
     /** onBottomHit increments the amount of results to be shown when we have scrolled to the bottom of the list. */
-    private onBottomHit = (limit: number) => (): void =>
+    private onBottomHit = (limit: number) => (): void => {
+        if (
+            this.props.onMorePaginatedResults &&
+            this.props.resultsOrError &&
+            !isErrorLike(this.props.resultsOrError) &&
+            this.props.resultsOrError.pageInfo.hasNextPage &&
+            this.state.resultsShown >= this.props.resultsOrError.results.length
+        ) {
+            this.props.onMorePaginatedResults(this.props.resultsOrError.pageInfo)
+            return
+        }
         this.setState(({ resultsShown }) => ({
             resultsShown: Math.min(limit, resultsShown + 10),
         }))
+    }
 
     /**
      * getCheckpoint gets the location from the hash in the URL. It is used to scroll to the result on page load of the given URL.

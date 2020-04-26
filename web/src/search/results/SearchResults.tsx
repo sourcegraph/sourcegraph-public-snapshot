@@ -10,6 +10,7 @@ import {
     InteractiveSearchProps,
     CaseSensitivityProps,
     parseSearchURL,
+    parseSearchURLPage2,
 } from '..'
 import { Contributions, Evaluated } from '../../../../shared/src/api/protocol'
 import { FetchFileCtx } from '../../../../shared/src/components/CodeExcerpt'
@@ -50,7 +51,9 @@ export interface SearchResultsProps
         query: string,
         version: string,
         patternType: GQL.SearchPatternType,
-        { extensionsController }: ExtensionsControllerProps<'services'>
+        { extensionsController }: ExtensionsControllerProps<'services'>,
+        after?: string,
+        first?: number
     ) => Observable<GQL.ISearchResults | ErrorLike>
     isSourcegraphDotCom: boolean
     deployType: DeployType
@@ -67,6 +70,9 @@ interface SearchResultsState {
 
     /** The contributions, merged from all extensions, or undefined before the initial emission. */
     contributions?: Evaluated<Contributions>
+
+    /** Whether or not the next page is loading, only used for paginated search. */
+    nextPageLoading: boolean
 }
 
 /** All values that are valid for the `type:` filter. `null` represents default code search. */
@@ -109,17 +115,23 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
             this.componentUpdates
                 .pipe(
                     startWith(this.props),
-                    map(props => parseSearchURL(props.location.search)),
-                    // Search when a new search query was specified in the URL
+                    map(props => ({ parsedSearchURL: parseSearchURL(props.location.search), props: props })),
+                    // Search when a new search query was specified in the URL, or when the page changed.
+                    map(combined => ({
+                        afterPage: parseSearchURLPage2(combined.props.location.search),
+                        ...combined.parsedSearchURL,
+                    })),
                     distinctUntilChanged((a, b) => isEqual(a, b)),
                     filter(
                         (
-                            queryAndPatternTypeAndCase
-                        ): queryAndPatternTypeAndCase is {
+                            queryAndPatternTypeAndCaseAndPage
+                        ): queryAndPatternTypeAndCaseAndPage is {
                             query: string
                             patternType: GQL.SearchPatternType
                             caseSensitive: boolean
-                        } => !!queryAndPatternTypeAndCase.query && !!queryAndPatternTypeAndCase.patternType
+                            afterPage: string | undefined
+                        } =>
+                            !!queryAndPatternTypeAndCaseAndPage.query && !!queryAndPatternTypeAndCaseAndPage.patternType
                     ),
                     tap(({ query, caseSensitive }) => {
                         const query_data = queryTelemetryData(query, caseSensitive)
@@ -137,12 +149,17 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                             this.props.telemetryService.log('DiffSearchResultsQueried')
                         }
                     }),
-                    switchMap(({ query, patternType, caseSensitive }) =>
+                    map(v => ({ state: this.state, ...v })),
+                    switchMap(({ state, query, patternType, caseSensitive, afterPage }) =>
                         concat(
                             // Reset view state
                             [
                                 {
-                                    resultsOrError: undefined,
+                                    resultsOrError:
+                                        afterPage && state.resultsOrError && state.resultsOrError.pageInfo.endCursor
+                                            ? state.resultsOrError
+                                            : undefined,
+                                    nextPageLoading: afterPage ? true : false,
                                     didSave: false,
                                     activeType: getSearchTypeFromQuery(query),
                                 },
@@ -153,7 +170,9 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                     caseSensitive ? `${query} case:yes` : query,
                                     LATEST_VERSION,
                                     patternType,
-                                    this.props
+                                    this.props,
+                                    afterPage,
+                                    20
                                 )
                                 .pipe(
                                     // Log telemetry
@@ -187,7 +206,25 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                         }
                                     ),
                                     // Update view with results or error
-                                    map(resultsOrError => ({ resultsOrError })),
+                                    map(resultsOrError => {
+                                        if (afterPage && state.resultsOrError && !isErrorLike(resultsOrError)) {
+                                            console.log('paginated search')
+                                            if (state.resultsOrError) {
+                                                console.log('keep prior result set')
+                                                const nextResultsOrError = resultsOrError
+                                                resultsOrError = state.resultsOrError
+                                                resultsOrError.results = resultsOrError.results.concat(
+                                                    nextResultsOrError.results
+                                                )
+                                                resultsOrError.matchCount += nextResultsOrError.matchCount
+                                                resultsOrError.pageInfo = nextResultsOrError.pageInfo
+                                            }
+                                            if (!isErrorLike(resultsOrError) && resultsOrError.pageInfo.hasNextPage) {
+                                                resultsOrError.approximateResultCount = `${resultsOrError.matchCount}+`
+                                            }
+                                        }
+                                        return { resultsOrError, nextPageLoading: false }
+                                    }),
                                     catchError(error => [{ resultsOrError: error }])
                                 )
                         )
@@ -260,6 +297,8 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                     {...this.props}
                     resultsOrError={this.state.resultsOrError}
                     onShowMoreResultsClick={this.showMoreResults}
+                    onMorePaginatedResults={this.fetchMorePaginatedResults}
+                    nextPageLoading={this.state.nextPageLoading}
                     onExpandAllResultsToggle={this.onExpandAllResultsToggle}
                     allExpanded={this.state.allExpanded}
                     showSavedQueryModal={this.state.showSavedQueryModal}
@@ -308,6 +347,18 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
 
         return Array.from(filters.values())
     }
+
+    private fetchMorePaginatedResults = (pageInfo: GQL.IPageInfo): void => {
+        if (pageInfo.endCursor == null) {
+            return // no next page
+        }
+
+        // Query the next page.
+        const params = new URLSearchParams(this.props.location.search)
+        params.set('p', pageInfo.endCursor)
+        this.props.history.replace({ search: params.toString() })
+    }
+
     private showMoreResults = (): void => {
         // Requery with an increased max result count.
         const params = new URLSearchParams(this.props.location.search)

@@ -35,6 +35,12 @@
           "type": "boolean",
           "default": false,
           "!go": { "pointer": true }
+        },
+        "paginatedSearch": {
+          "description": "Enables paginated search in the web UI (may be slower for some search queries).",
+          "type": "boolean",
+          "default": false,
+          "!go": { "pointer": true }
         }
       },
       "group": "Experimental"

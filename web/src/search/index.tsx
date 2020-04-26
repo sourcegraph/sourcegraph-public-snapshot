@@ -22,6 +22,16 @@ export function parseSearchURLQuery(query: string): string | undefined {
 }
 
 /**
+ * Parses the page out of the URL search params (the 'p' parameter).
+ *
+ * @param query the URL query parameters
+ */
+export function parseSearchURLPage2(query: string): string | undefined {
+    const searchParams = new URLSearchParams(query)
+    return searchParams.get('p') || undefined
+}
+
+/**
  * Parses the pattern type out of the URL search params (the 'patternType' parameter). If the 'pattern' parameter
  * is not present, or it is an invalid value, it returns undefined.
  */

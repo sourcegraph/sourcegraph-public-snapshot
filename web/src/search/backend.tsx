@@ -36,7 +36,9 @@ export function search(
     query: string,
     version: string,
     patternType: GQL.SearchPatternType,
-    { extensionsController }: ExtensionsControllerProps<'services'>
+    { extensionsController }: ExtensionsControllerProps<'services'>,
+    after?: string,
+    first?: number
 ): Observable<GQL.ISearchResults | ErrorLike> {
     /**
      * Emits whenever a search is executed, and whenever an extension registers a query transformer.
@@ -50,8 +52,8 @@ export function search(
                 : ''
             return queryGraphQL(
                 gql`
-                    query Search($query: String!, $version: SearchVersion!, $patternType: SearchPatternType!) {
-                        search(query: $query, version: $version, patternType: $patternType) {
+                    query Search($query: String!, $version: SearchVersion!, $patternType: SearchPatternType!, $after: String, $first: Int) {
+                        search(query: $query, version: $version, patternType: $patternType, after: $after, first: $first) {
                             results {
                                 __typename
                                 limitHit
@@ -138,11 +140,15 @@ export function search(
                                     }
                                 }
                                 elapsedMilliseconds
+                                pageInfo {
+                                    endCursor
+                                    hasNextPage
+                                }
                             }
                         }
                     }
                 `,
-                { query, version, patternType }
+                { query, version, patternType, after, first }
             ).pipe(
                 map(({ data, errors }) => {
                     if (!data || !data.search || !data.search.results) {
