@@ -15,6 +15,7 @@ import { NotificationsService } from './services/notifications'
 import { QueryTransformerRegistry } from './services/queryTransformer'
 import { createSettingsService } from './services/settings'
 import { PanelViewProviderRegistry } from './services/panelViews'
+import { createViewService } from './services/viewService'
 import { createWorkspaceService } from './services/workspaceService'
 
 /**
@@ -51,4 +52,5 @@ export class Services {
     public readonly queryTransformer = new QueryTransformerRegistry()
     public readonly panelViews = new PanelViewProviderRegistry()
     public readonly completionItems = new CompletionItemProviderRegistry()
+    public readonly view = createViewService()
 }

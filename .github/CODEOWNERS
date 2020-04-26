@@ -118,7 +118,6 @@
 /internal/actor/ @beyang @unknwon
 
 # Core Services
-*git*/* @sourcegraph/core-services
 /cmd/frontend/authz/ @sourcegraph/core-services
 /cmd/frontend/db/ @sourcegraph/core-services
 /cmd/frontend/globals/ @sourcegraph/core-services @slimsag
@@ -170,6 +169,8 @@
 /cmd/frontend/types/saved_searches.go @attfarhan
 
 # Distribution
+/dev/ci @sourcegraph/distribution
+/enterprise/dev/ci @sourcegraph/distribution
 ## Deployment
 Dockerfile @sourcegraph/distribution
 /monitoring @slimsag @sourcegraph/distribution
@@ -242,6 +243,8 @@ Dockerfile @sourcegraph/distribution
 /babel.config.js @felixfbecker
 /internal/hubspot/ @dadlerj
 /internal/highlight/ @slimsag
+/dev/codecov.yml @nicksnyder @tsenart @lguychard @beyang
+/.github/CODEOWNERS @nicksnyder @tsenart @lguychard @beyang
 
 # Third party license lists
 /ThirdPartyLicensesGo.csv @sourcegraph/core-services

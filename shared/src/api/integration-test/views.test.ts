@@ -1,4 +1,4 @@
-import { NEVER } from 'rxjs'
+import { NEVER, of } from 'rxjs'
 import { first } from 'rxjs/operators'
 import { ContributableViewContainer } from '../protocol'
 import { assertToJSON, integrationTestContext } from './testHelpers'
@@ -60,5 +60,19 @@ describe('Views (integration)', () => {
                 ]
             )
         })
+    })
+
+    test('app.registerViewProvider', async () => {
+        const { extensionAPI, services } = await integrationTestContext()
+
+        extensionAPI.app.registerViewProvider('v', {
+            provideView: params => of({ title: `t${params.x}`, content: [] }),
+        })
+
+        const view = await services.view
+            .get('v', { x: 'y' })
+            .pipe(first(v => v !== null))
+            .toPromise()
+        expect(view).toEqual({ title: 'ty', content: [] })
     })
 })
