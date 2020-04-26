@@ -40,6 +40,7 @@ interface Props extends ExtensionsControllerProps {
      * button clicks.
      */
     onDelete?: (comment: GQL.IDiscussionComment) => Observable<void>
+    history: H.History
 }
 
 interface State {
@@ -147,7 +148,7 @@ export class DiscussionsComment extends React.PureComponent<Props> {
                         setElementTooltip={setElementTooltip}
                         linkPreviewContentClass={LINK_PREVIEW_CLASS}
                     >
-                        {props => <Markdown {...props} />}
+                        {props => <Markdown {...props} history={this.props.history} />}
                     </WithLinkPreviews>
                 </div>
             </div>

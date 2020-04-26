@@ -4,6 +4,7 @@ import { CampaignStatus } from './CampaignStatus'
 import { BackgroundProcessState } from '../../../../../shared/src/graphql/schema'
 import { action } from '@storybook/addon-actions'
 import { boolean } from '@storybook/addon-knobs'
+import { createMemoryHistory } from 'history'
 import webStyles from '../../../SourcegraphWebApp.scss'
 
 const { add } = storiesOf('CampaignStatus', module).addDecorator(story => (
@@ -40,5 +41,6 @@ add('Errored', () => (
         }}
         onPublish={action('Publish')}
         afterRetry={action('Retry')}
+        history={createMemoryHistory()}
     />
 ))

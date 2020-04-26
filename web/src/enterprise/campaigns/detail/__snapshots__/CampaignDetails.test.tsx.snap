@@ -691,6 +691,7 @@ Array [
 ",
           }
         }
+        onClick={[Function]}
       />
     </div>
   </div>,
@@ -1101,6 +1102,7 @@ Array [
 ",
           }
         }
+        onClick={[Function]}
       />
     </div>
   </div>,

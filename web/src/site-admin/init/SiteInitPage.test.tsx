@@ -2,6 +2,7 @@ import React from 'react'
 import renderer from 'react-test-renderer'
 import { SiteInitPage } from './SiteInitPage'
 import { MemoryRouter, Redirect } from 'react-router'
+import { createMemoryHistory } from 'history'
 
 describe('SiteInitPage', () => {
     const origContext = window.context
@@ -15,7 +16,12 @@ describe('SiteInitPage', () => {
     test('site already initialized', () => {
         const component = renderer.create(
             <MemoryRouter>
-                <SiteInitPage isLightTheme={true} needsSiteInit={false} authenticatedUser={null} />
+                <SiteInitPage
+                    isLightTheme={true}
+                    needsSiteInit={false}
+                    authenticatedUser={null}
+                    history={createMemoryHistory()}
+                />
             </MemoryRouter>
         )
         const redirect = component.root.findByType(Redirect)
@@ -27,13 +33,27 @@ describe('SiteInitPage', () => {
         expect(
             renderer
                 .create(
-                    <SiteInitPage isLightTheme={true} needsSiteInit={true} authenticatedUser={{ username: 'alice' }} />
+                    <SiteInitPage
+                        isLightTheme={true}
+                        needsSiteInit={true}
+                        authenticatedUser={{ username: 'alice' }}
+                        history={createMemoryHistory()}
+                    />
                 )
                 .toJSON()
         ).toMatchSnapshot())
 
     test('normal', () =>
         expect(
-            renderer.create(<SiteInitPage isLightTheme={true} needsSiteInit={true} authenticatedUser={null} />).toJSON()
+            renderer
+                .create(
+                    <SiteInitPage
+                        isLightTheme={true}
+                        needsSiteInit={true}
+                        authenticatedUser={null}
+                        history={createMemoryHistory()}
+                    />
+                )
+                .toJSON()
         ).toMatchSnapshot())
 })

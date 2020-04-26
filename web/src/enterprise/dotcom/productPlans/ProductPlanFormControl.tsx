@@ -10,6 +10,7 @@ import { ProductPlanPrice } from './ProductPlanPrice'
 import { ProductPlanTiered } from './ProductPlanTiered'
 import { ErrorAlert } from '../../../components/alerts'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
+import * as H from 'history'
 
 interface Props {
     /** The selected plan's billing ID. */
@@ -20,6 +21,7 @@ interface Props {
 
     disabled?: boolean
     className?: string
+    history: H.History
 
     /** For mocking in tests only. */
     _queryProductPlans?: typeof queryProductPlans
@@ -35,6 +37,7 @@ export const ProductPlanFormControl: React.FunctionComponent<Props> = ({
     onChange,
     disabled,
     className = '',
+    history,
     _queryProductPlans = queryProductPlans,
 }) => {
     /**
@@ -72,7 +75,7 @@ export const ProductPlanFormControl: React.FunctionComponent<Props> = ({
             {plans === LOADING ? (
                 <LoadingSpinner className="icon-inline" />
             ) : isErrorLike(plans) ? (
-                <ErrorAlert error={plans.message} />
+                <ErrorAlert error={plans.message} history={history} />
             ) : (
                 <>
                     <div className="list-group">

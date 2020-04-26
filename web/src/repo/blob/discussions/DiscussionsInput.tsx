@@ -312,7 +312,9 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                     </div>
                     <div key="preview" className="discussions-input__preview">
                         {previewLoading && <LoadingSpinner className="icon-inline" />}
-                        {!previewLoading && previewHTML && <Markdown dangerousInnerHTML={previewHTML} />}
+                        {!previewLoading && previewHTML && (
+                            <Markdown dangerousInnerHTML={previewHTML} history={this.props.history} />
+                        )}
                     </div>
                 </TabsWithLocalStorageViewStatePersistence>
                 <div className="discussions-input__row">
@@ -324,7 +326,9 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                         {this.props.submitLabel}
                     </button>
                 </div>
-                {error && <ErrorAlert className="discussions-input__error" error={error} />}
+                {error && (
+                    <ErrorAlert className="discussions-input__error" error={error} history={this.props.history} />
+                )}
             </Form>
         )
     }

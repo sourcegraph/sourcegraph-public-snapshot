@@ -7,6 +7,7 @@ import { RepoNotFoundError } from '../../../../../shared/src/backend/errors'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { asError } from '../../../../../shared/src/util/errors'
 import { ErrorAlert } from '../../../components/alerts'
+import * as H from 'history'
 
 async function addChangeset({
     campaignID,
@@ -63,9 +64,10 @@ async function addChangeset({
 /**
  * Simple, temporary form to add changesets.
  */
-export const AddChangesetForm: React.FunctionComponent<{ campaignID: ID; onAdd: () => void }> = ({
+export const AddChangesetForm: React.FunctionComponent<{ campaignID: ID; onAdd: () => void; history: H.History }> = ({
     campaignID,
     onAdd,
+    history,
 }) => {
     const [error, setError] = useState<Error>()
     const [repoName, setRepoName] = useState('')
@@ -135,7 +137,7 @@ export const AddChangesetForm: React.FunctionComponent<{ campaignID: ID; onAdd: 
                     {isLoading && <LoadingSpinner className="ml-2 icon-inline" />}
                 </button>
             </Form>
-            {error && <ErrorAlert error={error} className="mt-2" />}
+            {error && <ErrorAlert error={error} className="mt-2" history={history} />}
         </>
     )
 }

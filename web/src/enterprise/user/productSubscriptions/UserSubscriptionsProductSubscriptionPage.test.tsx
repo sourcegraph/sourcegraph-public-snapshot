@@ -4,6 +4,7 @@ import renderer, { act } from 'react-test-renderer'
 import { UserSubscriptionsProductSubscriptionPage } from './UserSubscriptionsProductSubscriptionPage'
 import { of } from 'rxjs'
 import { MemoryRouter } from 'react-router'
+import { createMemoryHistory } from 'history'
 
 jest.mock('./BackToAllSubscriptionsLink', () => ({
     BackToAllSubscriptionsLink: 'BackToAllSubscriptionsLink',
@@ -37,6 +38,7 @@ describe('UserSubscriptionsProductSubscriptionPage', () => {
                             __typename: 'ProductSubscription',
                         } as GQL.IProductSubscription)
                     }
+                    history={createMemoryHistory()}
                 />
             </MemoryRouter>
         )

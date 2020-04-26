@@ -17,6 +17,7 @@ import { productSubscriptionInputForLocationHash } from './UserSubscriptionsNewP
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { ErrorAlert } from '../../../components/alerts'
 import { useEventObservable } from '../../../../../shared/src/util/useObservable'
+import * as H from 'history'
 
 /**
  * The form data that is submitted by the ProductSubscriptionForm component.
@@ -62,6 +63,8 @@ interface Props extends ThemeProps {
 
     /** A fragment to render below the form's primary button. */
     afterPrimaryButton?: React.ReactFragment
+
+    history: H.History
 }
 
 const DEFAULT_USER_COUNT = 1
@@ -79,6 +82,7 @@ const _ProductSubscriptionForm: React.FunctionComponent<Props & ReactStripeEleme
     afterPrimaryButton,
     isLightTheme,
     stripe,
+    history,
 }) => {
     if (!stripe) {
         throw new Error('billing service is not available')
@@ -184,7 +188,7 @@ const _ProductSubscriptionForm: React.FunctionComponent<Props & ReactStripeEleme
                     <div className="col-md-6">
                         <ProductSubscriptionUserCountFormControl value={userCount} onChange={setUserCount} />
                         <h4 className="mt-2 mb-0">Plan</h4>
-                        <ProductPlanFormControl value={billingPlanID} onChange={setBillingPlanID} />
+                        <ProductPlanFormControl value={billingPlanID} onChange={setBillingPlanID} history={history} />
                     </div>
                     <div className="col-md-6 mt-3 mt-md-0">
                         <h3 className="mt-2 mb-0">Billing</h3>
@@ -238,8 +242,8 @@ const _ProductSubscriptionForm: React.FunctionComponent<Props & ReactStripeEleme
                     </div>
                 </div>
             </Form>
-            {isErrorLike(paymentToken) && <ErrorAlert className="mt-3" error={paymentToken} />}
-            {isErrorLike(submissionState) && <ErrorAlert className="mt-3" error={submissionState} />}
+            {isErrorLike(paymentToken) && <ErrorAlert className="mt-3" error={paymentToken} history={history} />}
+            {isErrorLike(submissionState) && <ErrorAlert className="mt-3" error={submissionState} history={history} />}
         </div>
     )
 }
