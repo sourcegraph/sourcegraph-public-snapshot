@@ -1827,6 +1827,8 @@ type Repository implements Node & GenericSearchResultInterface {
     isFork: Boolean!
     # Whether the repository has been archived.
     isArchived: Boolean!
+    # Whether the repository is private.
+    isPrivate: Boolean!
     # Lists all external services which yield this repository.
     externalServices(
         # Returns the first n external services from the list.
@@ -1951,6 +1953,19 @@ type Repository implements Node & GenericSearchResultInterface {
         # Opaque pagination cursor.
         after: String
     ): UserConnection!
+
+    # The permissions information of the repository.
+    permissionsInfo: PermissionsInfo
+}
+
+# Permissions information of a repository or a user.
+type PermissionsInfo {
+    # Permission that users has on the repository.
+    perm: RepositoryPermission!
+    # The last repository-centric synced time.
+    syncedAt: DateTime
+    # The last updated time.
+    updatedAt: DateTime!
 }
 
 # A reference to another Sourcegraph instance.
