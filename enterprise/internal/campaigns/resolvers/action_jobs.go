@@ -33,6 +33,10 @@ type actionJobResolver struct {
 	repoOnce sync.Once
 	repo     *graphqlbackend.RepositoryResolver
 	repoErr  error
+
+	commitOnce sync.Once
+	commit     *graphqlbackend.GitCommitResolver
+	commitErr  error
 }
 
 func (r *Resolver) ActionJobByID(ctx context.Context, id graphql.ID) (graphqlbackend.ActionJobResolver, error) {
@@ -75,8 +79,8 @@ func (r *actionJobResolver) Repository(ctx context.Context) (*graphqlbackend.Rep
 	return r.computeRepo(ctx)
 }
 
-func (r *actionJobResolver) BaseRevision() string {
-	return r.job.BaseRevision
+func (r *actionJobResolver) BaseRevision(ctx context.Context) (*graphqlbackend.GitCommitResolver, error) {
+	return r.computeCommit(ctx)
 }
 
 func (r *actionJobResolver) State() campaigns.ActionJobState {
@@ -100,11 +104,7 @@ func (r *actionJobResolver) Diff() graphqlbackend.ActionJobResolver {
 	return nil
 }
 func (r *actionJobResolver) FileDiffs(ctx context.Context, args *graphqlutil.ConnectionArgs) (graphqlbackend.PreviewFileDiffConnection, error) {
-	repo, err := r.computeRepo(ctx)
-	if err != nil {
-		return nil, err
-	}
-	commit, err := repo.Commit(ctx, &graphqlbackend.RepositoryCommitArgs{Rev: r.BaseRevision()})
+	commit, err := r.computeCommit(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -138,6 +138,18 @@ func (r *actionJobResolver) computeRepo(ctx context.Context) (*graphqlbackend.Re
 		r.repo, r.repoErr = graphqlbackend.RepositoryByIDInt32(ctx, api.RepoID(r.job.RepoID))
 	})
 	return r.repo, r.repoErr
+}
+
+func (r *actionJobResolver) computeCommit(ctx context.Context) (*graphqlbackend.GitCommitResolver, error) {
+	r.commitOnce.Do(func() {
+		repo, err := r.computeRepo(ctx)
+		r.commitErr = err
+		if r.commitErr != nil {
+			return
+		}
+		r.commit, r.commitErr = repo.Commit(ctx, &graphqlbackend.RepositoryCommitArgs{Rev: r.job.BaseRevision})
+	})
+	return r.commit, r.commitErr
 }
 
 // Connection resolver.

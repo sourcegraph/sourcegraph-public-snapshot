@@ -2849,7 +2849,7 @@ func jsonSetColumn(ids []int64) ([]byte, error) {
 	return json.Marshal(set)
 }
 
-// CountActions returns the number of agents in the database.
+// CountActions returns the number of actions in the database.
 func (s *Store) CountActions(ctx context.Context) (count int64, _ error) {
 	q := sqlf.Sprintf(countActionsQueryFmtstr)
 	return count, s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {

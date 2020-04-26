@@ -108,13 +108,13 @@ type ActionEnvVarArgs struct {
 type CreateActionArgs struct {
 	Name       string
 	Definition string
-	env        []ActionEnvVarArgs
+	Env        []ActionEnvVarArgs
 }
 
 type UpdateActionArgs struct {
 	Action        graphql.ID
 	NewDefinition string
-	env           []ActionEnvVarArgs
+	Env           []ActionEnvVarArgs
 }
 
 type CreateActionExecutionArgs struct {
@@ -550,7 +550,7 @@ type ActionJobResolver interface {
 	ID() graphql.ID
 	Definition(ctx context.Context) (ActionDefinitionResolver, error)
 	Repository(ctx context.Context) (*RepositoryResolver, error)
-	BaseRevision() string
+	BaseRevision(ctx context.Context) (*GitCommitResolver, error)
 	State() campaigns.ActionJobState
 	Agent(ctx context.Context) (AgentResolver, error)
 
