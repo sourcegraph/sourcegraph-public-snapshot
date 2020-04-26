@@ -57,7 +57,7 @@ Referenced by:
  execution_id       | integer                  | not null
  base_revision      | text                     | not null
  base_reference     | text                     | not null
- agent_id           | integer                  | not null
+ agent_id           | integer                  | 
 Indexes:
     "action_jobs_pkey" PRIMARY KEY, btree (id)
 Check constraints:
