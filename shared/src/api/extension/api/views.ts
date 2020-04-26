@@ -76,7 +76,7 @@ export class ExtViews implements comlink.ProxyMarked {
         const providerFunction: comlink.Local<
             Parameters<ClientViewsAPI['$registerViewProvider']>[1]
         > = comlink.proxy((params: { [key: string]: string }) =>
-            toProxyableSubscribable(provider.provideView(params), view => view!)
+            toProxyableSubscribable(provider.provideView(params), result => result || null)
         )
         return syncSubscription(this.proxy.$registerViewProvider(id, providerFunction))
     }
