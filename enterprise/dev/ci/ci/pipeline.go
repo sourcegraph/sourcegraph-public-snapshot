@@ -116,8 +116,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addPreciseCodeIntelSystem, // ~1.5m
 			addCheck,                  // ~1m
 			addGoBuild,                // ~0.5m
-			addPostgresBackcompat,     // ~0.25m
-			addDockerfileLint,         // ~0.2m
+			// addPostgresBackcompat,     // ~0.25m
+			addDockerfileLint, // ~0.2m
 			addDockerImages(c, false),
 			wait,
 			addCodeCov,
