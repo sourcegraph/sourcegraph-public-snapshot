@@ -17,7 +17,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
-- Potential open redirect vulnerability in the authentication workflow. [#10167](https://github.com/sourcegraph/sourcegraph/pull/10167)
+- A potential security vulnerability with in the authentication workflow has been fixed. [#10167](https://github.com/sourcegraph/sourcegraph/pull/10167)
 
 ### Removed
 
