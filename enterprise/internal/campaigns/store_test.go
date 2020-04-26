@@ -3082,6 +3082,54 @@ func testActions(db *sql.DB) func(*testing.T) {
 				t.Fatal(diff)
 			}
 		})
+		t.Run("ListActions", func(t *testing.T) {
+			tx := dbtest.NewTx(t, db)
+			s := NewStoreWithClock(tx, clock)
+			action2, err := s.CreateAction(ctx, CreateActionOpts{Name: "Action 2", Steps: "{}"})
+			if err != nil {
+				t.Fatal(err)
+			}
+			action3, err := s.CreateAction(ctx, CreateActionOpts{Name: "Action 3", Steps: "{}"})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			allActions := []*campaigns.Action{action, action2, action3}
+
+			// Retrieve all.
+			have, haveNext, err := s.ListActions(ctx, ListActionsOpts{Limit: -1})
+			if err != nil {
+				t.Fatal(err)
+			}
+			want := allActions
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatal(diff)
+			}
+			var wantNext int64 = 0
+			if diff := cmp.Diff(haveNext, wantNext); diff != "" {
+				t.Fatal(diff)
+			}
+
+			// Retrieve using cursor pagination, 1 after each other.
+			for i := 0; i < len(allActions); i++ {
+				have, haveNext, err = s.ListActions(ctx, ListActionsOpts{Limit: 1, Cursor: wantNext})
+				if err != nil {
+					t.Fatal(err)
+				}
+				want = []*campaigns.Action{allActions[i]}
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatal(diff)
+				}
+				wantNext = 0
+				// Only at the end of the list the cursor should be 0.
+				if i != len(allActions)-1 {
+					wantNext = int64(allActions[i+1].ID)
+				}
+				if diff := cmp.Diff(haveNext, wantNext); diff != "" {
+					t.Fatal(diff)
+				}
+			}
+		})
 		t.Run("UpdateAction", func(t *testing.T) {
 			tx := dbtest.NewTx(t, db)
 			s := NewStoreWithClock(tx, clock)
@@ -3183,6 +3231,83 @@ func testActions(db *sql.DB) func(*testing.T) {
 			want = 1
 			if diff := cmp.Diff(have, want); diff != "" {
 				t.Fatal(diff)
+			}
+		})
+		t.Run("ListActionExecutions", func(t *testing.T) {
+			tx := dbtest.NewTx(t, db)
+			s := NewStoreWithClock(tx, clock)
+			action2, err := s.CreateAction(ctx, CreateActionOpts{Name: "Action2", Steps: "{}"})
+			if err != nil {
+				t.Fatal(err)
+			}
+			ae2, err := s.CreateActionExecution(ctx, CreateActionExecutionOpts{InvocationReason: campaigns.ActionExecutionInvocationReasonManual, Steps: action.Steps, EnvStr: action.EnvStr, ActionID: action.ID})
+			if err != nil {
+				t.Fatal(err)
+			}
+			ae3, err := s.CreateActionExecution(ctx, CreateActionExecutionOpts{InvocationReason: campaigns.ActionExecutionInvocationReasonManual, Steps: action.Steps, EnvStr: action.EnvStr, ActionID: action.ID})
+			if err != nil {
+				t.Fatal(err)
+			}
+			ae4, err := s.CreateActionExecution(ctx, CreateActionExecutionOpts{InvocationReason: campaigns.ActionExecutionInvocationReasonManual, Steps: action2.Steps, EnvStr: action2.EnvStr, ActionID: action2.ID})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			allExecutions := []*campaigns.ActionExecution{actionExecution, ae2, ae3, ae4}
+
+			// Retrieve all.
+			have, haveNext, err := s.ListActionExecutions(ctx, ListActionExecutionsOpts{Limit: -1})
+			if err != nil {
+				t.Fatal(err)
+			}
+			want := allExecutions
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatal(diff)
+			}
+			var wantNext int64 = 0
+			if diff := cmp.Diff(haveNext, wantNext); diff != "" {
+				t.Fatal(diff)
+			}
+
+			// Retrieve using cursor pagination, 1 after each other.
+			for i := 0; i < len(allExecutions); i++ {
+				have, haveNext, err = s.ListActionExecutions(ctx, ListActionExecutionsOpts{Limit: 1, Cursor: wantNext})
+				if err != nil {
+					t.Fatal(err)
+				}
+				want = []*campaigns.ActionExecution{allExecutions[i]}
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatal(diff)
+				}
+				wantNext = 0
+				// Only at the end of the list the cursor should be 0.
+				if i != len(allExecutions)-1 {
+					wantNext = int64(allExecutions[i+1].ID)
+				}
+				if diff := cmp.Diff(haveNext, wantNext); diff != "" {
+					t.Fatal(diff)
+				}
+			}
+
+			// Retrieve using cursor pagination for specific action, 1 after each other.
+			allExecutions = allExecutions[:len(allExecutions)-1]
+			for i := 0; i < len(allExecutions); i++ {
+				have, haveNext, err = s.ListActionExecutions(ctx, ListActionExecutionsOpts{Limit: 1, Cursor: wantNext, ActionID: action.ID})
+				if err != nil {
+					t.Fatal(err)
+				}
+				want = []*campaigns.ActionExecution{allExecutions[i]}
+				if diff := cmp.Diff(have, want); diff != "" {
+					t.Fatal(diff)
+				}
+				wantNext = 0
+				// Only at the end of the list the cursor should be 0.
+				if i != len(allExecutions)-1 {
+					wantNext = int64(allExecutions[i+1].ID)
+				}
+				if diff := cmp.Diff(haveNext, wantNext); diff != "" {
+					t.Fatal(diff)
+				}
 			}
 		})
 		t.Run("UpdateActionExecution", func(t *testing.T) {
