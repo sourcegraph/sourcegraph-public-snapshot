@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
@@ -2993,5 +2994,305 @@ func testStoreLocking(db *sql.DB) func(*testing.T) {
 		if !ok {
 			t.Fatal("Could not acquire lock")
 		}
+	}
+}
+
+func testActions(db *sql.DB) func(*testing.T) {
+	return func(t *testing.T) {
+		dbtesting.SetupGlobalTestDB(t)
+
+		now := time.Now().UTC().Truncate(time.Microsecond)
+		clock := func() time.Time { return now.UTC().Truncate(time.Microsecond) }
+		ctx := context.Background()
+
+		s := NewStoreWithClock(db, clock)
+
+		// Create a test repo
+		reposStore := repos.NewDBStore(db, sql.TxOptions{})
+		repo := &repos.Repo{
+			Name: "github.com/sourcegraph/sourcegraph",
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "external-id",
+				ServiceType: "github",
+				ServiceID:   "https://github.com/",
+			},
+			Sources: map[string]*repos.SourceInfo{
+				"extsvc:github:4": {
+					ID:       "extsvc:github:4",
+					CloneURL: "https://secrettoken@github.com/sourcegraph/sourcegraph",
+				},
+			},
+		}
+		if err := reposStore.UpsertRepos(context.Background(), repo); err != nil {
+			t.Fatal(err)
+		}
+
+		action, err := s.CreateAction(context.Background(), CreateActionOpts{Name: "Test action", Steps: `{"scopeQuery": "abc"}`})
+		if err != nil {
+			t.Fatal(err)
+		}
+		actionExecution, err := s.CreateActionExecution(context.Background(), CreateActionExecutionOpts{ActionID: action.ID, InvocationReason: campaigns.ActionExecutionInvocationReasonManual, Steps: action.Steps, EnvStr: action.EnvStr})
+		if err != nil {
+			t.Fatal(err)
+		}
+		actionJob, err := s.CreateActionJob(context.Background(), CreateActionJobOpts{ExecutionID: actionExecution.ID, BaseReference: "123", BaseRevision: "456", RepositoryID: int64(repo.ID)})
+		if err != nil {
+			t.Fatal(err)
+		}
+		agent, err := s.CreateAgent(context.Background(), CreateAgentOpts{Name: "Runner-1", Specs: "SourcegraphOS 13"})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		t.Run("GetActionFound", func(t *testing.T) {
+			tx := dbtest.NewTx(t, db)
+			s := NewStoreWithClock(tx, clock)
+
+			have, err := s.GetAction(ctx, GetActionOpts{ID: action.ID})
+			if err != nil {
+				t.Fatal(err)
+			}
+			want := action
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+		t.Run("GetActionNotFound", func(t *testing.T) {
+			tx := dbtest.NewTx(t, db)
+			s := NewStoreWithClock(tx, clock)
+
+			_, err := s.GetAction(ctx, GetActionOpts{ID: 123})
+			if err == nil {
+				t.Fatal(errors.New("No error thrown"))
+			}
+			if err != ErrNoResults {
+				t.Fatal(err)
+			}
+		})
+		t.Run("UpdateAction", func(t *testing.T) {
+			tx := dbtest.NewTx(t, db)
+			s := NewStoreWithClock(tx, clock)
+
+			newSteps := `{"scopeQuery": "new jobs"}`
+
+			want, err := s.UpdateAction(ctx, UpdateActionOpts{ActionID: action.ID, Steps: newSteps})
+			if err != nil {
+				t.Fatal(err)
+			}
+			have, err := s.GetAction(ctx, GetActionOpts{ID: action.ID})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatal(diff)
+			}
+			if want.Steps != newSteps {
+				t.Fatal(errors.New("Steps not properly updated"))
+			}
+		})
+		t.Run("UpdateActionNotFound", func(t *testing.T) {
+			tx := dbtest.NewTx(t, db)
+			s := NewStoreWithClock(tx, clock)
+
+			_, err := s.UpdateAction(ctx, UpdateActionOpts{ActionID: 123, Steps: `{"scopeQuery": "new jobs"}`})
+			if err == nil {
+				t.Fatal(errors.New("No error returned"))
+			}
+			if err != ErrNoResults {
+				t.Fatal(err)
+			}
+		})
+
+		t.Run("GetActionExecutionFound", func(t *testing.T) {
+			tx := dbtest.NewTx(t, db)
+			s := NewStoreWithClock(tx, clock)
+
+			have, err := s.GetActionExecution(ctx, GetActionExecutionOpts{ID: actionExecution.ID})
+			if err != nil {
+				t.Fatal(err)
+			}
+			want := actionExecution
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+		t.Run("GetActionExecutionNotFound", func(t *testing.T) {
+			tx := dbtest.NewTx(t, db)
+			s := NewStoreWithClock(tx, clock)
+
+			_, err := s.GetActionExecution(ctx, GetActionExecutionOpts{ID: 123})
+			if err == nil {
+				t.Fatal(errors.New("No error thrown"))
+			}
+			if err != ErrNoResults {
+				t.Fatal(err)
+			}
+		})
+		t.Run("UpdateActionExecution", func(t *testing.T) {
+			tx := dbtest.NewTx(t, db)
+			s := NewStoreWithClock(tx, clock)
+
+			patchSet := &cmpgn.PatchSet{}
+			err := s.CreatePatchSet(ctx, patchSet)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			want, err := s.UpdateActionExecution(ctx, UpdateActionExecutionOpts{ExecutionID: actionExecution.ID, PatchSetID: patchSet.ID})
+			if err != nil {
+				t.Fatal(err)
+			}
+			have, err := s.GetActionExecution(ctx, GetActionExecutionOpts{ID: actionExecution.ID})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatal(diff)
+			}
+			if want.PatchSetID != patchSet.ID {
+				t.Fatal(errors.New("PatchSet not properly updated"))
+			}
+		})
+		t.Run("UpdateActionExecutionNotFound", func(t *testing.T) {
+			tx := dbtest.NewTx(t, db)
+			s := NewStoreWithClock(tx, clock)
+
+			_, err := s.UpdateActionExecution(ctx, UpdateActionExecutionOpts{ExecutionID: 123, PatchSetID: 123})
+			if err == nil {
+				t.Fatal(errors.New("No error returned"))
+			}
+			if err != ErrNoResults {
+				t.Fatal(err)
+			}
+		})
+
+		t.Run("GetActionJobFound", func(t *testing.T) {
+			tx := dbtest.NewTx(t, db)
+			s := NewStoreWithClock(tx, clock)
+
+			have, err := s.GetActionJob(ctx, GetActionJobOpts{ID: actionJob.ID})
+			if err != nil {
+				t.Fatal(err)
+			}
+			want := actionJob
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+		t.Run("GetActionJobNotFound", func(t *testing.T) {
+			tx := dbtest.NewTx(t, db)
+			s := NewStoreWithClock(tx, clock)
+
+			_, err := s.GetActionJob(ctx, GetActionJobOpts{ID: 123})
+			if err == nil {
+				t.Fatal(errors.New("No error thrown"))
+			}
+			if err != ErrNoResults {
+				t.Fatal(err)
+			}
+		})
+		t.Run("UpdateActionJob", func(t *testing.T) {
+			tx := dbtest.NewTx(t, db)
+			s := NewStoreWithClock(tx, clock)
+
+			newLog := `LOG !!!`
+			newPatch := `diff`
+			newState := campaigns.ActionJobStateTimeout
+			now := s.now()
+			want, err := s.UpdateActionJob(ctx, UpdateActionJobOpts{ID: actionJob.ID, State: &newState, Log: &newLog, Patch: &newPatch, ExecutionEndAt: &now, ExecutionStartAt: &now})
+			if err != nil {
+				t.Fatal(err)
+			}
+			have, err := s.GetActionJob(ctx, GetActionJobOpts{ID: actionJob.ID})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatal(diff)
+			}
+			if want.Log == nil || *want.Log != newLog {
+				t.Fatal(errors.New("Log not properly updated"))
+			}
+			if want.State != newState {
+				t.Fatal(errors.New("State not properly updated"))
+			}
+			if want.Patch == nil || *want.Patch != newPatch {
+				t.Fatal(errors.New("Patch not properly updated"))
+			}
+			if want.ExecutionStartAt != now {
+				t.Fatal(errors.New("ExecutionStartAt not properly updated"))
+			}
+			if want.ExecutionEndAt != now {
+				t.Fatal(errors.New("ExecutionEndAt not properly updated"))
+			}
+		})
+		t.Run("UpdateActionJobNotFound", func(t *testing.T) {
+			tx := dbtest.NewTx(t, db)
+			s := NewStoreWithClock(tx, clock)
+
+			newState := campaigns.ActionJobStateTimeout
+			_, err := s.UpdateActionJob(ctx, UpdateActionJobOpts{ID: 123, State: &newState})
+			if err == nil {
+				t.Fatal(errors.New("No error returned"))
+			}
+			if err != ErrNoResults {
+				t.Fatal(err)
+			}
+		})
+
+		t.Run("GetAgentFound", func(t *testing.T) {
+			tx := dbtest.NewTx(t, db)
+			s := NewStoreWithClock(tx, clock)
+
+			have, err := s.GetAgent(ctx, GetAgentOpts{ID: agent.ID})
+			if err != nil {
+				t.Fatal(err)
+			}
+			want := agent
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+		t.Run("GetAgentNotFound", func(t *testing.T) {
+			tx := dbtest.NewTx(t, db)
+			s := NewStoreWithClock(tx, clock)
+
+			_, err := s.GetAgent(ctx, GetAgentOpts{ID: 123})
+			if err == nil {
+				t.Fatal(errors.New("No error thrown"))
+			}
+			if err != ErrNoResults {
+				t.Fatal(err)
+			}
+		})
+
+		t.Run("PullActionJobFromQueue", func(t *testing.T) {
+			tx := dbtest.NewTx(t, db)
+			s := NewStoreWithClock(tx, clock)
+
+			have, err := s.PullActionJob(ctx, PullActionJobOpts{AgentID: agent.ID})
+			if err != nil {
+				t.Fatal(err)
+			}
+			want := actionJob.Clone()
+			want.State = campaigns.ActionJobStateRunning
+			want.AgentID = agent.ID
+			want.ExecutionStartAt = s.now()
+			if diff := cmp.Diff(have, &want); diff != "" {
+				t.Fatal(diff)
+			}
+
+			// Pull again, expect no job to be returned now.
+			have, err = s.PullActionJob(ctx, PullActionJobOpts{AgentID: agent.ID})
+			if have != nil {
+				t.Fatal(errors.New("Job returned but queue should be empty"))
+			}
+			if err == nil {
+				t.Fatal(errors.New("No error returned"))
+			}
+			if err != ErrNoResults {
+				t.Fatal(err)
+			}
+		})
 	}
 }

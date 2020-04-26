@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS action_jobs (
     execution_id integer NOT NULL REFERENCES action_executions(id) ON UPDATE CASCADE ON DELETE CASCADE,
     base_revision text NOT NULL,
     base_reference text NOT NULL,
-    agent_id integer NOT NULL REFERENCES agents(id) ON UPDATE CASCADE ON DELETE SET NULL
+    agent_id integer REFERENCES agents(id) ON UPDATE CASCADE ON DELETE SET NULL
 );
 CREATE UNIQUE INDEX IF NOT EXISTS action_jobs_pkey ON action_jobs(id int4_ops);
 

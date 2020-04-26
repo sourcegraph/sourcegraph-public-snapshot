@@ -1282,6 +1282,15 @@ type Agent struct {
 	LastSeenAt time.Time
 }
 
+func (r *Agent) Clone() Agent {
+	var clone Agent
+	clone.ID = r.ID
+	clone.Name = r.Name
+	clone.Specs = r.Specs
+	clone.LastSeenAt = r.LastSeenAt
+	return clone
+}
+
 type Action struct {
 	ID             int64
 	Name           string
@@ -1293,6 +1302,19 @@ type Action struct {
 	EnvStr         string
 }
 
+func (r *Action) Clone() Action {
+	var clone Action
+	clone.ID = r.ID
+	clone.Name = r.Name
+	clone.CampaignID = r.CampaignID
+	clone.Schedule = r.Schedule
+	clone.CancelPrevious = r.CancelPrevious
+	clone.SavedSearchID = r.SavedSearchID
+	clone.Steps = r.Steps
+	clone.EnvStr = r.EnvStr
+	return clone
+}
+
 type ActionExecution struct {
 	ID               int64
 	Steps            string
@@ -1302,6 +1324,19 @@ type ActionExecution struct {
 	ActionID         int64
 	ExecutionStartAt time.Time
 	ExecutionEndAt   time.Time
+}
+
+func (r *ActionExecution) Clone() ActionExecution {
+	var clone ActionExecution
+	clone.ID = r.ID
+	clone.Steps = r.Steps
+	clone.EnvStr = r.EnvStr
+	clone.InvocationReason = r.InvocationReason
+	clone.PatchSetID = r.PatchSetID
+	clone.ActionID = r.ActionID
+	clone.ExecutionStartAt = r.ExecutionStartAt
+	clone.ExecutionEndAt = r.ExecutionEndAt
+	return clone
 }
 
 type ActionJob struct {
@@ -1316,6 +1351,22 @@ type ActionJob struct {
 	BaseRevision     string
 	BaseReference    string
 	AgentID          int64
+}
+
+func (r *ActionJob) Clone() ActionJob {
+	var clone ActionJob
+	clone.ID = r.ID
+	clone.Log = r.Log
+	clone.ExecutionStartAt = r.ExecutionStartAt
+	clone.ExecutionEndAt = r.ExecutionEndAt
+	clone.Patch = r.Patch
+	clone.State = r.State
+	clone.RepoID = r.RepoID
+	clone.ExecutionID = r.ExecutionID
+	clone.BaseRevision = r.BaseRevision
+	clone.BaseReference = r.BaseReference
+	clone.AgentID = r.AgentID
+	return clone
 }
 
 // ActionExecutionInvocationReason defines the possible reasons of an execution to be triggered from.

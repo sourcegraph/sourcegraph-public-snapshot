@@ -2967,12 +2967,12 @@ WHERE action_jobs.id = %d
 RETURNING
 	id,
 	log,
-	execution_start,
-	execution_end,
+	execution_start_at,
+	execution_end_at,
 	patch,
 	state,
-	repository,
-	execution,
+	repository_id,
+	execution_id,
 	base_revision,
 	base_reference,
 	agent_id
@@ -2992,20 +2992,16 @@ func updateActionJobQuery(opts *UpdateActionJobOpts) *sqlf.Query {
 	}
 	if opts.ExecutionStartAt != nil {
 		if (*opts.ExecutionStartAt).IsZero() {
-			preds = append(preds, sqlf.Sprintf("execution_start = NULL"))
+			preds = append(preds, sqlf.Sprintf("execution_start_at = NULL"))
 		} else {
-			// todo may throw
-			time, _ := (*opts.ExecutionStartAt).MarshalText()
-			preds = append(preds, sqlf.Sprintf("execution_start = %s", time))
+			preds = append(preds, sqlf.Sprintf("execution_start_at = %s", *opts.ExecutionStartAt))
 		}
 	}
 	if opts.ExecutionEndAt != nil {
 		if (*opts.ExecutionEndAt).IsZero() {
-			preds = append(preds, sqlf.Sprintf("execution_end = NULL"))
+			preds = append(preds, sqlf.Sprintf("execution_end_at = NULL"))
 		} else {
-			// todo may throw
-			time, _ := (*opts.ExecutionEndAt).MarshalText()
-			preds = append(preds, sqlf.Sprintf("execution_end = %s", time))
+			preds = append(preds, sqlf.Sprintf("execution_end_at = %s", *opts.ExecutionEndAt))
 		}
 	}
 
@@ -3075,7 +3071,7 @@ type PullActionJobOpts struct {
 
 // PullActionJob tries to find a pending job for an agent.
 func (s *Store) PullActionJob(ctx context.Context, opts PullActionJobOpts) (*campaigns.ActionJob, error) {
-	q := pullActionJobQuery(&opts)
+	q := pullActionJobQuery(&opts, s.now())
 
 	var job campaigns.ActionJob
 	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
@@ -3096,7 +3092,7 @@ var pullActionJobQueryFmtstr = `
 UPDATE
 	action_jobs
 SET
-	execution_start_at = NOW(),
+	execution_start_at = %s,
 	state = 'RUNNING',
 	agent_id = %d
 WHERE
@@ -3115,9 +3111,9 @@ RETURNING
 	agent_id
 `
 
-func pullActionJobQuery(opts *PullActionJobOpts) *sqlf.Query {
+func pullActionJobQuery(opts *PullActionJobOpts, now time.Time) *sqlf.Query {
 	queryTemplate := pullActionJobQueryFmtstr
-	return sqlf.Sprintf(queryTemplate, opts.AgentID)
+	return sqlf.Sprintf(queryTemplate, now, opts.AgentID)
 }
 
 type GetActionJobOpts struct {
@@ -3146,12 +3142,12 @@ var getActionJobQueryFmtstr = `
 SELECT
 	action_jobs.id,
 	action_jobs.log,
-	action_jobs.execution_start,
-	action_jobs.execution_end,
+	action_jobs.execution_start_at,
+	action_jobs.execution_end_at,
 	action_jobs.patch,
 	action_jobs.state,
-	action_jobs.repository,
-	action_jobs.execution,
+	action_jobs.repository_id,
+	action_jobs.execution_id,
 	action_jobs.base_revision,
 	action_jobs.base_reference,
 	action_jobs.agent_id
@@ -3716,14 +3712,15 @@ func (s *Store) UpdateActionExecution(ctx context.Context, opts UpdateActionExec
 	q := updateActionExecutionQuery(&opts)
 
 	var a campaigns.ActionExecution
-	_, _, err := s.query(ctx, q, func(sc scanner) (_, _ int64, err error) {
-		if err := scanActionExecution(&a, sc); err != nil {
-			return 0, 0, err
-		}
-		return 0, 0, nil
+	err := s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
+		return 0, 0, scanActionExecution(&a, sc)
 	})
-
-	// todo handle empty ie not-found error
+	if err != nil {
+		return nil, err
+	}
+	if a.ID == 0 {
+		return nil, ErrNoResults
+	}
 
 	return &a, err
 }
@@ -3821,7 +3818,7 @@ type ActionExecutionStatusResult struct {
 	ProcessState campaigns.BackgroundProcessState
 }
 
-// ActionExecutionStatus lists ActionExecutions with the given filters.
+// ActionExecutionStatus returns the status of an execution.
 func (s *Store) ActionExecutionStatus(ctx context.Context, opts ActionExecutionStatusOpts) (result *ActionExecutionStatusResult, err error) {
 	q := actionExecutionStatusQuery(&opts)
 	result = &ActionExecutionStatusResult{}
@@ -3841,11 +3838,11 @@ func (s *Store) ActionExecutionStatus(ctx context.Context, opts ActionExecutionS
 	}
 	result.ProcessState = campaigns.BackgroundProcessStateProcessing
 	// canceled has higher precendence than errored
-	if result.Canceled == true {
+	if result.Canceled {
 		result.ProcessState = campaigns.BackgroundProcessStateCanceled
 	} else if result.Pending == 0 {
 		// todo: currently, still running has precedence over errored, revisit if that's useful
-		if result.Errored == true {
+		if result.Errored {
 			result.ProcessState = campaigns.BackgroundProcessStateErrored
 		} else {
 			result.ProcessState = campaigns.BackgroundProcessStateCompleted
@@ -3878,7 +3875,7 @@ type CancelActionExecutionOpts struct {
 
 // CancelActionExecutionOpts cancels all still running jobs of an execution.
 func (s *Store) CancelActionExecution(ctx context.Context, opts CancelActionExecutionOpts) error {
-	q := cancelActionExecutionQuery(&opts)
+	q := cancelActionExecutionQuery(&opts, s.now())
 	_, _, err := s.query(ctx, q, nil)
 	return err
 }
@@ -3888,16 +3885,16 @@ var cancelActionExecutionQueryFmtstr = `
 UPDATE
 	action_jobs
 SET
-	execution_end_at = NOW(),
+	execution_end_at = %s,
 	state = 'CANCELED'
 WHERE
 	action_jobs.execution_id = %d
 	AND action_jobs.state IN ('RUNNING', 'PENDING');
 `
 
-func cancelActionExecutionQuery(opts *CancelActionExecutionOpts) *sqlf.Query {
+func cancelActionExecutionQuery(opts *CancelActionExecutionOpts, now time.Time) *sqlf.Query {
 	queryTemplate := cancelActionExecutionQueryFmtstr
-	return sqlf.Sprintf(queryTemplate, opts.ExecutionID)
+	return sqlf.Sprintf(queryTemplate, now, opts.ExecutionID)
 }
 
 type CreateAgentOpts struct {
@@ -3949,7 +3946,7 @@ type ListAgentsOpts struct {
 
 // ListAgents lists Agents with the given filters.
 func (s *Store) ListAgents(ctx context.Context, opts ListAgentsOpts) (agents []*campaigns.Agent, next int64, err error) {
-	q := listAgentsQuery(&opts)
+	q := listAgentsQuery(&opts, s.now())
 
 	agents = make([]*campaigns.Agent, 0, opts.Limit)
 	_, _, err = s.query(ctx, q, func(sc scanner) (last, count int64, err error) {
@@ -3981,7 +3978,7 @@ WHERE %s
 ORDER BY agents.id ASC
 `
 
-func listAgentsQuery(opts *ListAgentsOpts) *sqlf.Query {
+func listAgentsQuery(opts *ListAgentsOpts, now time.Time) *sqlf.Query {
 	if opts.Limit == 0 {
 		opts.Limit = defaultListLimit
 	}
@@ -3999,9 +3996,9 @@ func listAgentsQuery(opts *ListAgentsOpts) *sqlf.Query {
 	if opts.State != nil {
 		switch *opts.State {
 		case campaigns.AgentStateOnline:
-			preds = append(preds, sqlf.Sprintf("agents.last_seen_at > NOW() - INTERVAL '2 minutes'"))
+			preds = append(preds, sqlf.Sprintf("agents.last_seen_at > %s - INTERVAL '2 minutes'", now))
 		case campaigns.AgentStateOffline:
-			preds = append(preds, sqlf.Sprintf("agents.last_seen_at <= NOW() - INTERVAL '2 minutes'"))
+			preds = append(preds, sqlf.Sprintf("agents.last_seen_at <= %s - INTERVAL '2 minutes'", now))
 		}
 	}
 
@@ -4019,7 +4016,7 @@ type CountAgentsOpts struct {
 
 // CountAgents returns the number of agents in the database.
 func (s *Store) CountAgents(ctx context.Context, opts CountAgentsOpts) (count int64, _ error) {
-	q := countAgentsQuery(&opts)
+	q := countAgentsQuery(&opts, s.now())
 	return count, s.exec(ctx, q, func(sc scanner) (_, _ int64, err error) {
 		err = sc.Scan(&count)
 		return 0, count, err
@@ -4033,15 +4030,15 @@ FROM agents
 WHERE %s
 `
 
-func countAgentsQuery(opts *CountAgentsOpts) *sqlf.Query {
+func countAgentsQuery(opts *CountAgentsOpts, now time.Time) *sqlf.Query {
 	var preds []*sqlf.Query
 
 	if opts.State != nil {
 		switch *opts.State {
 		case campaigns.AgentStateOnline:
-			preds = append(preds, sqlf.Sprintf("agents.last_seen_at > NOW() - INTERVAL '2 minutes'"))
+			preds = append(preds, sqlf.Sprintf("agents.last_seen_at > %s - INTERVAL '2 minutes'", now))
 		case campaigns.AgentStateOffline:
-			preds = append(preds, sqlf.Sprintf("agents.last_seen_at <= NOW() - INTERVAL '2 minutes'"))
+			preds = append(preds, sqlf.Sprintf("agents.last_seen_at <= %s - INTERVAL '2 minutes'", now))
 		}
 	}
 
