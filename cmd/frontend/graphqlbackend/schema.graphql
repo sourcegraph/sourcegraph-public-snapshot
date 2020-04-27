@@ -1967,11 +1967,13 @@ type Repository implements Node & GenericSearchResultInterface {
 
 # Permissions information of a repository or a user.
 type PermissionsInfo {
-    # Permission that users has on the repository.
-    perm: RepositoryPermission!
-    # The last repository-centric synced time.
+    # The permission level that a user has on the repository.
+    permission: RepositoryPermission!
+    # The last complete synced time, the value is updated only after a user- or repo-
+    # centric sync of permissions. It is null when the complete sync never happened.
     syncedAt: DateTime
-    # The last updated time.
+    # The last updated time of permissions, the value is updated whenever there is a
+    # change to the database row (i.e. incremental update).
     updatedAt: DateTime!
 }
 

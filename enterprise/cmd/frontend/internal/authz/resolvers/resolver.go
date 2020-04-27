@@ -230,7 +230,7 @@ type permissionsInfoResolver struct {
 	updatedAt time.Time
 }
 
-func (r *permissionsInfoResolver) Perm() string {
+func (r *permissionsInfoResolver) Permission() string {
 	return strings.ToUpper(r.perm.String())
 }
 
