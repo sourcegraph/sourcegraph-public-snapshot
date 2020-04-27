@@ -222,10 +222,10 @@ func (wl *Workload) Markdown(tracking *TrackingIssue) string {
 
 var issueURLMatcher = regexp.MustCompile(`https://github.com/.+/.+/issues/\d+`)
 
-func (wl *Workload) FillIssuesFromPrevTracking(prevTracking *TrackingIssue) {
-	lines := prevTracking.BodyLines()
+func (wl *Workload) FillExistingIssuesFromTrackingBody(tracking *TrackingIssue) {
+	lines, err := tracking.WorkItems()
 
-	if lines == nil {
+	if err != nil {
 		return
 	}
 
@@ -245,12 +245,13 @@ func (wl *Workload) FillIssuesFromPrevTracking(prevTracking *TrackingIssue) {
 			break
 		}
 
-		issueURL := issueURLMatcher.FindString(line)
-		if issueURL == "" {
+		parsedIssueURL := issueURLMatcher.FindString(line)
+		if parsedIssueURL == "" {
 			continue
 		}
-		for _, issue := range prevTracking.Issues {
-			if issueURL == issue.URL {
+
+		for _, issue := range tracking.Issues {
+			if parsedIssueURL == issue.URL {
 				wl.AddIssue(issue)
 			}
 		}
@@ -296,25 +297,25 @@ type TrackingIssue struct {
 	LabelWhitelist []string
 }
 
-func (t *TrackingIssue) WorkItems() []string {
+func (t *TrackingIssue) WorkItems() ([]string, error) {
 	start, err := findMarker(t.Body, openingMarker)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
 	end, _ := findMarker(t.Body, closingMarker)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
 	prevWork := t.Body[start+len(openingMarker) : end]
-	return strings.Split(prevWork, "\n")
+	return strings.Split(prevWork, "\n"), nil
 }
 
 var labelMatcher = regexp.MustCompile(labelMarkerRegexp)
 
 func (t *TrackingIssue) FillLabelWhitelist() {
-	lines := t.BodyLines()
+	lines := strings.Split(t.Body, "\n")
 	for _, line := range lines {
 		matches := labelMatcher.FindStringSubmatch(line)
 		if matches != nil {
@@ -343,7 +344,7 @@ func (t *TrackingIssue) Workloads() Workloads {
 		if w == nil {
 			w = &Workload{Assignee: assignee}
 			workloads[assignee] = w
-			w.FillIssuesFromPrevTracking(t)
+			w.FillExistingIssuesFromTrackingBody(t)
 		}
 		return w
 	}
