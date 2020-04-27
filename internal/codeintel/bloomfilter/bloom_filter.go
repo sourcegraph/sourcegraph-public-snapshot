@@ -1,4 +1,4 @@
-package api
+package bloomfilter
 
 import (
 	"bytes"
@@ -10,25 +10,34 @@ import (
 	"unicode/utf16"
 )
 
+// BloomFilterBits is the number of bits allocated for new bloom filters.
+//
+// This parameter, along with BloomFilterNumHashFunctions (defined below),
+// gives us a 1 in 1.38x10^9 false positive rate if we assume that the number
+// of unique URIs referrable by an external package is of the order of 10k.
+//
+// See the following link for a bloom calculator: https://hur.st/bloomfilter.
+const BloomFilterBits = 64 * 1024
+
+// BloomFilterNumHashFunctions is the number of hash functions to use to
+// determine if a value is a member of the filter.
+const BloomFilterNumHashFunctions = 16
+
+// TODO(efritz) - document
+func CreateFilter(identifiers []string) ([]byte, error) {
+	buckets := make([]int, BloomFilterBits)
+	for _, identifier := range identifiers {
+		addToFilter(buckets, BloomFilterNumHashFunctions, identifier)
+	}
+
+	return encodeFilter(buckets, int32(BloomFilterNumHashFunctions))
+}
+
 // decodeAndTestFilter decodes the filter and determines if identifier is a member of the underlying
 // set. Returns an error if the encoded filter is malformed (improperly compressed or invalid JSON).
-func decodeAndTestFilter(encodedFilter []byte, identifier string) (bool, error) {
-	payload := struct {
-		Buckets          []int `json:"buckets"`
-		NumHashFunctions int32 `json:"numHashFunctions"`
-	}{}
-
-	r, err := gzip.NewReader(bytes.NewReader(encodedFilter))
+func DecodeAndTestFilter(encodedFilter []byte, identifier string) (bool, error) {
+	buckets, numHashFunctions, err := decodeFilter(encodedFilter)
 	if err != nil {
-		return false, err
-	}
-
-	f, err := ioutil.ReadAll(r)
-	if err != nil {
-		return false, err
-	}
-
-	if err := json.Unmarshal(f, &payload); err != nil {
 		return false, err
 	}
 
@@ -36,19 +45,83 @@ func decodeAndTestFilter(encodedFilter []byte, identifier string) (bool, error) 
 	// TODO - document bloom filter behaviors
 	//
 
+	return testFilter(buckets, numHashFunctions, identifier), nil
+}
+
+// TODO(efritz) - document
+func decodeFilter(encodedFilter []byte) ([]int, int32, error) {
+	payload := struct {
+		Buckets          []int `json:"buckets"`
+		NumHashFunctions int32 `json:"numHashFunctions"`
+	}{}
+
+	r, err := gzip.NewReader(bytes.NewReader(encodedFilter))
+	if err != nil {
+		return nil, 0, err
+	}
+
+	f, err := ioutil.ReadAll(r)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	if err := json.Unmarshal(f, &payload); err != nil {
+		return nil, 0, err
+	}
+
+	return payload.Buckets, payload.NumHashFunctions, nil
+}
+
+// TODO(efritz) - document
+func encodeFilter(buckets []int, numHashFunctions int32) ([]byte, error) {
+	serialized, err := json.Marshal(map[string]interface{}{
+		"buckets":          buckets,
+		"numHashFunctions": numHashFunctions,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var buf bytes.Buffer
+	w := gzip.NewWriter(&buf)
+	if _, err := w.Write(serialized); err != nil {
+		return nil, err
+	}
+	if err := w.Close(); err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
+}
+
+// TODO(efritz) - document
+func testFilter(buckets []int, numHashFunctions int32, identifier string) bool {
 	locations := hashLocations(
 		identifier,
-		int32(math.Ceil(float64(len(payload.Buckets)))*32),
-		payload.NumHashFunctions,
+		int32(len(buckets))*32,
+		numHashFunctions,
 	)
 
 	for _, b := range locations {
-		if (payload.Buckets[int(math.Floor(float64(b)/32))] & (1 << (b % 32))) == 0 {
-			return false, nil
+		if (buckets[int(math.Floor(float64(b)/32))] & (1 << (b % 32))) == 0 {
+			return false
 		}
 	}
 
-	return true, nil
+	return true
+}
+
+// TODO(efritz) - document
+func addToFilter(buckets []int, numHashFunctions int, identifier string) {
+	locations := hashLocations(
+		identifier,
+		int32(BloomFilterBits)*32,
+		int32(BloomFilterNumHashFunctions),
+	)
+
+	for _, b := range locations {
+		buckets[int(math.Floor(float64(b)/32))] |= (1 << (b % 32))
+	}
 }
 
 // The following code is a port of bloomfilter 0.0.18 from npm. We chose not to recreate all the bloom

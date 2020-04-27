@@ -1,9 +1,50 @@
-package api
+package bloomfilter
 
 import (
 	"fmt"
 	"testing"
 )
+
+func TestCreateFilter(t *testing.T) {
+	testCases := []struct {
+		includeFile  string
+		excludeFiles []string
+	}{
+		{includeFile: "lorem-ipsum", excludeFiles: []string{"corporate-ipsum", "emojis"}},
+		{includeFile: "corporate-ipsum", excludeFiles: []string{"lorem-ipsum", "emojis"}},
+		{includeFile: "emojis", excludeFiles: []string{"lorem-ipsum", "corporate-ipsum"}},
+	}
+
+	for _, testCase := range testCases {
+		name := fmt.Sprintf("includeFile=%s", testCase.includeFile)
+
+		t.Run(name, func(t *testing.T) {
+			filter, err := CreateFilter(readTestWords(t, testCase.includeFile))
+			if err != nil {
+				t.Fatalf("unexpected error creating filter: %s", filter)
+			}
+
+			buckets, numFilterFunctions, err := decodeFilter(filter)
+			if err != nil {
+				t.Fatalf("unexpected error decoding filter: %s", err)
+			}
+
+			for _, v := range readTestWords(t, testCase.includeFile) {
+				if !testFilter(buckets, numFilterFunctions, v) {
+					t.Errorf("expected %s to be in bloom filter", v)
+				}
+			}
+
+			for _, excludeFile := range testCase.excludeFiles {
+				for _, v := range readTestWords(t, excludeFile) {
+					if testFilter(buckets, numFilterFunctions, v) {
+						t.Errorf("expected %s not to be in bloom filter", v)
+					}
+				}
+			}
+		})
+	}
+}
 
 func TestTestTypeScriptGeneratedBloomFilters(t *testing.T) {
 	testCases := []struct {
@@ -34,18 +75,19 @@ func TestTestTypeScriptGeneratedBloomFilters(t *testing.T) {
 		name := fmt.Sprintf("filter=%s", testCase.filterFile)
 
 		t.Run(name, func(t *testing.T) {
+			buckets, numFilterFunctions, err := decodeFilter(readTestFilter(t, "stress", testCase.filterFile))
+			if err != nil {
+				t.Fatalf("unexpected error decoding filter: %s", err)
+			}
+
 			for _, v := range readTestWords(t, testCase.includeFile) {
-				if exists, err := decodeAndTestFilter(readTestFilter(t, "stress", testCase.filterFile), v); err != nil {
-					t.Fatalf("unexpected error decoding filter: %s", err)
-				} else if !exists {
+				if !testFilter(buckets, numFilterFunctions, v) {
 					t.Errorf("expected %s to be in bloom filter", v)
 				}
 			}
 
 			for _, v := range readTestWords(t, testCase.excludeFile) {
-				if exists, err := decodeAndTestFilter(readTestFilter(t, "stress", testCase.filterFile), v); err != nil {
-					t.Fatalf("unexpected error decoding filter: %s", err)
-				} else if exists {
+				if testFilter(buckets, numFilterFunctions, v) {
 					t.Errorf("expected %s not to be in bloom filter", v)
 				}
 			}
