@@ -55,10 +55,10 @@ export function testSingleFilePage({
 
             // Trigger tokenization of the line.
             const lineNumber = 16
-            const line = await getDriver().page.waitForSelector(`${lineSelector}:nth-child(${lineNumber})`, {
+            const line = (await getDriver().page.waitForSelector(`${lineSelector}:nth-child(${lineNumber})`, {
                 timeout: 10000,
-            })
-            const [token] = await line.$x('//span[text()="CallOption"]')
+            }))!
+            const [token] = await line.$$('//span[text()="CallOption"]')
             await token.hover()
             await getDriver().page.waitForSelector('.e2e-tooltip-go-to-definition')
             await retry(async () => {

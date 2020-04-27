@@ -1,10 +1,31 @@
-import { ConsoleMessage, ConsoleMessageType } from 'puppeteer'
+import { ConsoleMessage } from 'playwright'
 import chalk, { Chalk } from 'chalk'
 import * as util from 'util'
 import terminalSize from 'term-size'
 import stringWidth from 'string-width'
 import { identity } from 'lodash'
 import { asError } from '../util/errors'
+
+/* Taken from type defintion of `ConsoleMessage.type` */
+type ConsoleMessageType =
+    | 'log'
+    | 'debug'
+    | 'info'
+    | 'error'
+    | 'warning'
+    | 'dir'
+    | 'dirxml'
+    | 'table'
+    | 'trace'
+    | 'clear'
+    | 'startGroup'
+    | 'startGroupCollapsed'
+    | 'endGroup'
+    | 'assert'
+    | 'profile'
+    | 'profileEnd'
+    | 'count'
+    | 'timeEnd'
 
 const colors: Partial<Record<ConsoleMessageType, Chalk>> = {
     error: chalk.red,
@@ -21,9 +42,9 @@ const icons: Partial<Record<ConsoleMessageType, string>> = {
  * Formats a console message that was logged in a Puppeteer Chrome instance for output on the NodeJS terminal.
  * Tries to mirror Chrome's console output as closely as possible and makes sense.
  */
-export async function formatPuppeteerConsoleMessage(message: ConsoleMessage): Promise<string> {
-    const color = colors[message.type()] ?? identity
-    const icon = icons[message.type()] ?? ''
+export async function formatPlaywrightConsoleMessage(message: ConsoleMessage): Promise<string> {
+    const color = colors[message.type() as ConsoleMessageType] ?? identity
+    const icon = icons[message.type() as ConsoleMessageType] ?? ''
     const formattedLocation =
         'at ' +
         chalk.underline(

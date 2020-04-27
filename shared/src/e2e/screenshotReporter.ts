@@ -1,13 +1,13 @@
 import mkdirp from 'mkdirp-promise'
 import * as path from 'path'
-import * as puppeteer from 'puppeteer'
+import { Page } from 'playwright'
 import { afterEach } from 'mocha'
 
 /**
  * Registers an `afterEach` hook (for use with Mocha) that takes a screenshot of
  * the browser when a test fails. It is used by e2e tests.
  */
-export function saveScreenshotsUponFailures(getPage: () => puppeteer.Page): void {
+export function saveScreenshotsUponFailures(getPage: () => Page): void {
     afterEach('Save screenshot', async function () {
         if (this.currentTest && this.currentTest.state === 'failed') {
             await takeScreenshot({
@@ -26,7 +26,7 @@ async function takeScreenshot({
     screenshotDir,
     testName,
 }: {
-    page: puppeteer.Page
+    page: Page
     repoRootDir: string
     screenshotDir: string
     testName: string

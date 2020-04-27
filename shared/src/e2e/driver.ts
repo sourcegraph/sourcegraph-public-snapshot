@@ -1,42 +1,41 @@
 import expect from 'expect'
+import * as puppeteer from 'puppeteer'
 import { percySnapshot as realPercySnapshot } from '@percy/puppeteer'
 import * as jsonc from '@sqs/jsonc-parser'
 import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
 import * as os from 'os'
-import puppeteer, {
-    PageEventObj,
+import {
     Page,
-    Serializable,
     LaunchOptions,
-    PageFnOptions,
     ConsoleMessage,
-    Target,
-} from 'puppeteer'
+    chromium,
+    firefox,
+    ElementHandle,
+    webkit,
+    BrowserContext,
+} from 'playwright'
 import { Key } from 'ts-key-enum'
 import { dataOrThrowErrors, gql, GraphQLResult } from '../graphql/graphql'
 import { IMutation, IQuery, ExternalServiceKind, IRepository, IPatchSet, IPatchInput } from '../graphql/schema'
 import { readEnvBoolean, retry } from './e2e-test-utils'
-import { formatPuppeteerConsoleMessage } from './console'
+import { formatPlaywrightConsoleMessage } from './console'
 import * as path from 'path'
 import { escapeRegExp } from 'lodash'
-import { readFile, appendFile } from 'mz/fs'
+import { readFile } from 'mz/fs'
 import { Settings } from '../settings/settings'
-import { fromEvent, merge } from 'rxjs'
+import { merge, of, fromEventPattern } from 'rxjs'
 import { filter, map, concatAll, mergeMap } from 'rxjs/operators'
-import mkdirpPromise from 'mkdirp-promise'
 import getFreePort from 'get-port'
-import puppeteerFirefox from 'puppeteer-firefox'
 import webExt from 'web-ext'
-import { isDefined } from '../util/types'
 
 /**
  * Returns a Promise for the next emission of the given event on the given Puppeteer page.
  */
-export const oncePageEvent = <E extends keyof PageEventObj>(page: Page, eventName: E): Promise<PageEventObj[E]> =>
-    new Promise(resolve => page.once(eventName, resolve))
+export const oncePageEvent = <E extends keyof any>(page: Page, eventName: E): Promise<any> =>
+    new Promise(resolve => page.once(eventName as any, resolve))
 
 export const percySnapshot = readEnvBoolean({ variable: 'PERCY_ON', defaultValue: false })
-    ? realPercySnapshot
+    ? (page: Page, name: string, options?: any) => realPercySnapshot((page as any) as puppeteer.Page, name, options)
     : () => Promise.resolve()
 
 export const BROWSER_EXTENSION_DEV_ID = 'bmfbcejdknlknpncfpeloejonjoledha'
@@ -76,7 +75,7 @@ interface FindElementOptions {
     /**
      * Specifies whether to wait (and how long) for the element to appear.
      */
-    wait?: PageFnOptions | boolean
+    wait?: { timeout?: number } | boolean
 }
 
 function findElementRegexpStrings(
@@ -103,7 +102,7 @@ function findElementRegexpStrings(
     return regexps
 }
 
-function findElementMatchingRegexps(tag: string, regexps: string[]): HTMLElement | null {
+function findElementMatchingRegexps([tag, regexps]: [string, string[]]): HTMLElement | null {
     for (const regexpString of regexps) {
         const regexp = new RegExp(regexpString)
         for (const el of document.querySelectorAll<HTMLElement>(tag)) {
@@ -130,19 +129,19 @@ export class Driver {
     public visitedPages: Readonly<URL>[] = []
 
     constructor(
-        public browser: puppeteer.Browser,
-        public page: puppeteer.Page,
+        public browser: BrowserContext,
+        public page: Page,
         public sourcegraphBaseUrl: string,
         public keepBrowser?: boolean
     ) {
-        const recordVisitedPage = (target: Target): void => {
-            if (target.type() !== 'page') {
-                return
-            }
-            this.visitedPages.push(new URL(target.url()))
-        }
-        browser.on('targetchanged', recordVisitedPage)
-        browser.on('targetcreated', recordVisitedPage)
+        // const recordVisitedPage = (target: Target): void => {
+        //     if (target.type() !== 'page') {
+        //         return
+        //     }
+        //     this.visitedPages.push(new URL(target.url()))
+        // }
+        // browser.on('targetchanged', recordVisitedPage)
+        // browser.on('targetcreated', recordVisitedPage)
     }
 
     public async ensureLoggedIn({
@@ -300,7 +299,7 @@ export class Driver {
         if (externalServices.totalCount !== 0) {
             await this.page.goto(this.sourcegraphBaseUrl + '/site-admin/external-services')
             await this.page.waitFor('.e2e-filtered-connection')
-            await this.page.waitForSelector('.e2e-filtered-connection__loader', { hidden: true })
+            await this.page.waitForSelector('.e2e-filtered-connection__loader', { waitFor: 'hidden' })
 
             // Matches buttons for deleting external services named ${displayName}.
             const deleteButtonSelector = `[data-e2e-external-service-name="${displayName}"] .e2e-delete-external-service-button`
@@ -313,7 +312,7 @@ export class Driver {
         console.log('Adding external service of kind', kind)
         await this.page.goto(this.sourcegraphBaseUrl + '/site-admin/external-services/new')
         await this.page.waitForSelector(`[data-e2e-external-service-card-link="${kind.toUpperCase()}"]`, {
-            visible: true,
+            waitFor: 'visible',
         })
         await this.page.evaluate(selector => {
             const element = document.querySelector<HTMLElement>(selector)
@@ -342,7 +341,9 @@ export class Driver {
                 await this.page.goto(
                     this.sourcegraphBaseUrl + `/site-admin/repositories?query=${encodeURIComponent(slug)}`
                 )
-                await this.page.waitForSelector(`.repository-node[data-e2e-repository='${slug}']`, { visible: true })
+                await this.page.waitForSelector(`.repository-node[data-e2e-repository='${slug}']`, {
+                    waitFor: 'visible',
+                })
                 // Workaround for https://github.com/sourcegraph/sourcegraph/issues/5286
                 await this.page.goto(`${this.sourcegraphBaseUrl}/${slug}`)
             }
@@ -375,7 +376,7 @@ export class Driver {
     }
 
     public async assertStickyHighlightedToken(label: string): Promise<void> {
-        await this.page.waitForSelector('.selection-highlight-sticky', { visible: true }) // make sure matched token is highlighted
+        await this.page.waitForSelector('.selection-highlight-sticky', { waitFor: 'visible' }) // make sure matched token is highlighted
         await retry(async () =>
             expect(
                 await this.page.evaluate(() => document.querySelector('.selection-highlight-sticky')!.textContent)
@@ -392,24 +393,29 @@ export class Driver {
 
     public async assertNonemptyLocalRefs(): Promise<void> {
         // verify active group is references
-        await this.page.waitForXPath(
+        await this.page.waitFor(
             "//*[contains(@class, 'panel__tabs')]//*[contains(@class, 'tab-bar__tab--active') and contains(text(), 'References')]"
         )
         // verify there are some references
-        await this.page.waitForSelector('.panel__tabs-content .file-match-children__item', { visible: true })
+        await this.page.waitForSelector('.panel__tabs-content .file-match-children__item', { waitFor: 'visible' })
     }
 
     public async assertNonemptyExternalRefs(): Promise<void> {
         // verify active group is references
-        await this.page.waitForXPath(
+        await this.page.waitFor(
             "//*[contains(@class, 'panel__tabs')]//*[contains(@class, 'tab-bar__tab--active') and contains(text(), 'References')]"
         )
         // verify there are some references
-        await this.page.waitForSelector('.panel__tabs-content .hierarchical-locations-view__item', { visible: true })
+        await this.page.waitForSelector('.panel__tabs-content .hierarchical-locations-view__item', {
+            waitFor: 'visible',
+        })
     }
 
-    private async makeRequest<T = void>({ url, init }: { url: string; init: RequestInit & Serializable }): Promise<T> {
-        const handle = await this.page.evaluateHandle((url, init) => fetch(url, init).then(r => r.json()), url, init)
+    private async makeRequest<T = void>({ url, init }: { url: string; init: RequestInit }): Promise<T> {
+        const handle = await this.page.evaluateHandle(([url, init]) => fetch(url, init).then(r => r.json()), [
+            url,
+            init,
+        ] as [string, RequestInit])
         return (await handle.jsonValue()) as T
     }
 
@@ -569,7 +575,7 @@ export class Driver {
     public async findElementWithText(
         text: string,
         options: FindElementOptions & { action?: 'click' } = {}
-    ): Promise<puppeteer.ElementHandle<Element>> {
+    ): Promise<ElementHandle<Element>> {
         const { selector: tagName, fuzziness, wait } = options
         const tag = tagName || '*'
         const regexps = findElementRegexpStrings(text, { fuzziness })
@@ -589,14 +595,13 @@ export class Driver {
                     ? this.page
                           .waitForFunction(
                               findElementMatchingRegexps,
-                              typeof wait === 'object' ? wait : {},
-                              tag,
-                              regexps
+                              [tag, regexps] as [string, string[]],
+                              typeof wait === 'object' ? wait : {}
                           )
                           .catch(err => {
                               throw notFoundErr(err)
                           })
-                    : this.page.evaluateHandle(findElementMatchingRegexps, tag, regexps)
+                    : this.page.evaluateHandle(findElementMatchingRegexps, [tag, regexps] as [string, string[]])
 
                 const el = (await handlePromise).asElement()
                 if (!el) {
@@ -618,8 +623,8 @@ export class Driver {
         )
     }
 
-    public async waitUntilURL(url: string, options: PageFnOptions = {}): Promise<void> {
-        await this.page.waitForFunction(url => document.location.href === url, options, url)
+    public async waitUntilURL(url: string, options: { timeout?: number } = {}): Promise<void> {
+        await this.page.waitForFunction(url => document.location.href === url, url, options)
     }
 }
 
@@ -636,24 +641,24 @@ export function modifyJSONC(text: string, path: jsonc.JSONPath, f: (oldValue: js
 }
 
 // Copied from node_modules/puppeteer-firefox/misc/install-preferences.js
-async function getFirefoxCfgPath(): Promise<string> {
-    const firefoxFolder = path.dirname(puppeteerFirefox.executablePath())
-    let configPath: string
-    if (process.platform === 'darwin') {
-        configPath = path.join(firefoxFolder, '..', 'Resources')
-    } else if (process.platform === 'linux') {
-        await mkdirpPromise(path.join(firefoxFolder, 'browser', 'defaults', 'preferences'))
-        configPath = firefoxFolder
-    } else if (process.platform === 'win32') {
-        configPath = firefoxFolder
-    } else {
-        throw new Error('Unsupported platform: ' + process.platform)
-    }
-    return path.join(configPath, 'puppeteer.cfg')
-}
+// async function getFirefoxCfgPath(): Promise<string> {
+//     const firefoxFolder = path.dirname(firefox.executablePath())
+//     let configPath: string
+//     if (process.platform === 'darwin') {
+//         configPath = path.join(firefoxFolder, '..', 'Resources')
+//     } else if (process.platform === 'linux') {
+//         await mkdirpPromise(path.join(firefoxFolder, 'browser', 'defaults', 'preferences'))
+//         configPath = firefoxFolder
+//     } else if (process.platform === 'win32') {
+//         configPath = firefoxFolder
+//     } else {
+//         throw new Error('Unsupported platform: ' + process.platform)
+//     }
+//     return path.join(configPath, 'puppeteer.cfg')
+// }
 
 interface DriverOptions extends LaunchOptions {
-    browser?: 'chrome' | 'firefox'
+    browser?: 'chromium' | 'firefox' | 'webkit'
 
     /** If true, load the Sourcegraph browser extension. */
     loadExtension?: boolean
@@ -670,23 +675,26 @@ interface DriverOptions extends LaunchOptions {
 export async function createDriverForTest(options: DriverOptions): Promise<Driver> {
     const { loadExtension, sourcegraphBaseUrl, logBrowserConsole, keepBrowser } = options
     const args: string[] = []
-    const launchOptions: puppeteer.LaunchOptions = {
+    const launchOptions: LaunchOptions = {
         ...options,
         args,
         headless: readEnvBoolean({ variable: 'HEADLESS', defaultValue: false }),
-        defaultViewport: null,
+        // defaultViewport: null,
     }
-    let browser: puppeteer.Browser
+    const userDataDir = path.join(os.tmpdir(), 'playwright-' + Math.random() * 10000000)
+    let browser: BrowserContext
     if (options.browser === 'firefox') {
         // Make sure CSP is disabled in FF preferences,
         // because Puppeteer uses new Function() to evaluate code
         // which is not allowed by the github.com CSP.
         // The pref option does not work to disable CSP for some reason.
-        const cfgPath = await getFirefoxCfgPath()
-        const disableCspPreference = '\npref("security.csp.enable", false);\n'
-        if (!(await readFile(cfgPath, 'utf-8')).includes(disableCspPreference)) {
-            await appendFile(cfgPath, disableCspPreference)
-        }
+        // const cfgPath = await getFirefoxCfgPath()
+        // const disableCspPreference = '\npref("security.csp.enable", false);\n'
+        // if (!(await exists(cfgPath))) {
+        //     await writeFile(cfgPath, disableCspPreference, { encoding: 'utf-8' })
+        // } else if (!(await readFile(cfgPath, 'utf-8')).includes(disableCspPreference)) {
+        //     await appendFile(cfgPath, disableCspPreference)
+        // }
         if (loadExtension) {
             const cdpPort = await getFreePort()
             const firefoxExtensionPath = path.resolve(__dirname, '..', '..', '..', 'browser', 'build', 'firefox')
@@ -698,17 +706,17 @@ export async function createDriverForTest(options: DriverOptions): Promise<Drive
             await webExt.cmd.run(
                 {
                     sourceDir: firefoxExtensionPath,
-                    firefox: puppeteerFirefox.executablePath(),
+                    firefox: firefox.executablePath(),
                     args,
                 },
                 { shouldExitProgram: false }
             )
-            const browserWSEndpoint = `ws://127.0.0.1:${cdpPort}`
-            browser = await puppeteerFirefox.connect({ browserWSEndpoint })
+            const wsEndpoint = `ws://127.0.0.1:${cdpPort}`
+            browser = await (await firefox.connect({ wsEndpoint })).newContext()
         } else {
-            browser = await puppeteerFirefox.launch(launchOptions)
+            browser = await (await firefox.launch(launchOptions)).newContext({})
         }
-    } else {
+    } else if (options.browser === 'chromium') {
         // Chrome
         args.push('--window-size=1280,1024')
         if (process.getuid() === 0) {
@@ -728,20 +736,29 @@ export async function createDriverForTest(options: DriverOptions): Promise<Drive
             }
             args.push(`--disable-extensions-except=${chromeExtensionPath}`, `--load-extension=${chromeExtensionPath}`)
         }
-        browser = await puppeteer.launch(launchOptions)
+        browser = await chromium.launchPersistentContext(userDataDir, launchOptions)
+    } else {
+        browser = await (await webkit.launch(launchOptions)).newContext()
     }
 
     const page = await browser.newPage()
     if (logBrowserConsole) {
         merge(
-            await browser.pages(),
-            fromEvent<Target>(browser, 'targetcreated').pipe(
-                mergeMap(target => target.page()),
-                filter(isDefined)
-            )
+            of(page)
+            // fromEventPattern<Page>(
+            //     handler => context.addListener('page', handler),
+            //     // todo: correct?
+            //     handler => handler()
+            // )
         )
             .pipe(
-                mergeMap(page => fromEvent<ConsoleMessage>(page, 'console')),
+                mergeMap(page =>
+                    fromEventPattern<ConsoleMessage>(
+                        handler => page.addListener('console', handler),
+                        // todo: correct?
+                        handler => handler()
+                    )
+                ),
                 filter(
                     message =>
                         !message.text().includes('Download the React DevTools') &&
@@ -750,7 +767,7 @@ export async function createDriverForTest(options: DriverOptions): Promise<Drive
                         !message.text().includes('Warning: componentWillReceiveProps has been renamed')
                 ),
                 // Immediately format remote handles to strings, but maintain order.
-                map(formatPuppeteerConsoleMessage),
+                map(formatPlaywrightConsoleMessage),
                 concatAll()
             )
             // eslint-disable-next-line rxjs/no-ignored-subscription

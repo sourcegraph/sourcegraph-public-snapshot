@@ -3563,6 +3563,13 @@
   dependencies:
     "@types/yargs-parser" "*"
 
+"@types/yauzl@^2.9.1":
+  version "2.9.1"
+  resolved "https://registry.npmjs.org/@types/yauzl/-/yauzl-2.9.1.tgz#d10f69f9f522eef3cf98e30afb684a1e1ec923af"
+  integrity sha512-A1b8SU4D10uoPjwb0lnHmmu8wZhR9d+9o2PKBQT2jU5YPTKsxac6M2qGAdY7VcL+dHHhARVUDmeg0rOrcd9EjA==
+  dependencies:
+    "@types/node" "*"
+
 "@typescript-eslint/eslint-plugin@^2.27.0":
   version "2.27.0"
   resolved "https://registry.npmjs.org/@typescript-eslint/eslint-plugin/-/eslint-plugin-2.27.0.tgz#e479cdc4c9cf46f96b4c287755733311b0d0ba4b"
@@ -8820,6 +8827,17 @@ extract-zip@^1.6.6:
     mkdirp "0.5.1"
     yauzl "2.4.1"
 
+extract-zip@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.npmjs.org/extract-zip/-/extract-zip-2.0.0.tgz#f53b71d44f4ff5a4527a2259ade000fb8b303492"
+  integrity sha512-i42GQ498yibjdvIhivUsRslx608whtGoFIhF26Z7O4MYncBxp8CwalOs1lnHy21A9sIohWO2+uiE4SRtC9JXDg==
+  dependencies:
+    debug "^4.1.1"
+    get-stream "^5.1.0"
+    yauzl "^2.10.0"
+  optionalDependencies:
+    "@types/yauzl" "^2.9.1"
+
 extsprintf@1.3.0, extsprintf@^1.2.0:
   version "1.3.0"
   resolved "https://registry.npmjs.org/extsprintf/-/extsprintf-1.3.0.tgz#96918440e3041a7a414f8c52e3c574eb3c3e1e05"
@@ -12272,6 +12290,11 @@ jetpack-id@1.0.0:
   resolved "https://registry.npmjs.org/jetpack-id/-/jetpack-id-1.0.0.tgz#2cf9fbae46d8074fc16b7de0071c8efebca473a6"
   integrity sha1-LPn7rkbYB0/Ba33gBxyO/rykc6Y=
 
+jpeg-js@^0.3.7:
+  version "0.3.7"
+  resolved "https://registry.npmjs.org/jpeg-js/-/jpeg-js-0.3.7.tgz#471a89d06011640592d314158608690172b1028d"
+  integrity sha512-9IXdWudL61npZjvLuVe/ktHiA41iE8qFyLB+4VDTblEsWBzeg8WQTlktdUK4CdncUqtUgUg0bbOmTE2bKBKaBQ==
+
 js-base64@^2.1.8:
   version "2.5.1"
   resolved "https://registry.npmjs.org/js-base64/-/js-base64-2.5.1.tgz#1efa39ef2c5f7980bb1784ade4a8af2de3291121"
@@ -15684,6 +15707,29 @@ pkg-up@2.0.0, pkg-up@^2.0.0:
   dependencies:
     find-up "^2.1.0"
 
+playwright-core@=0.15.0:
+  version "0.15.0"
+  resolved "https://registry.npmjs.org/playwright-core/-/playwright-core-0.15.0.tgz#c605c98a13c81d5a2e2691f15d04758cf302c20a"
+  integrity sha512-uTm4PoF2U3iXkLMMG9vlTxlGfO8atQGAHDxqi8xV7hEjNSYeLTU7c6HN5zwadeHRVuBbNsZ4yqu9u4hoqC7uxQ==
+  dependencies:
+    debug "^4.1.1"
+    extract-zip "^2.0.0"
+    https-proxy-agent "^3.0.0"
+    jpeg-js "^0.3.7"
+    mime "^2.4.4"
+    pngjs "^5.0.0"
+    progress "^2.0.3"
+    proxy-from-env "^1.1.0"
+    rimraf "^3.0.2"
+    ws "^6.1.0"
+
+playwright@^0.15.0:
+  version "0.15.0"
+  resolved "https://registry.npmjs.org/playwright/-/playwright-0.15.0.tgz#bf5c3bb8404975aba78459310742388c08438431"
+  integrity sha512-UGHkQz8DT43uJ0KgMh2rmj8BI4FE5ReQJ9nm5mG68tt1Cj2sXPdM2b05qptfYYBPtQRetQqtJTauZ6rlCDemaQ==
+  dependencies:
+    playwright-core "=0.15.0"
+
 pluralize@^1.2.1:
   version "1.2.1"
   resolved "https://registry.npmjs.org/pluralize/-/pluralize-1.2.1.tgz#d1a21483fd22bb41e58a12fa3421823140897c45"
@@ -15693,6 +15739,11 @@ pn@^1.1.0:
   version "1.1.0"
   resolved "https://registry.npmjs.org/pn/-/pn-1.1.0.tgz#e2f4cef0e219f463c179ab37463e4e1ecdccbafb"
   integrity sha512-2qHaIQr2VLRFoxe2nASzsV6ef4yOOH+Fi9FBOVH6cqeSgUnoyySPZkxzLuzd+RYOQTRpROA0ztTMqxROKSb/nA==
+
+pngjs@^5.0.0:
+  version "5.0.0"
+  resolved "https://registry.npmjs.org/pngjs/-/pngjs-5.0.0.tgz#e79dd2b215767fd9c04561c01236df960bce7fbb"
+  integrity sha512-40QW5YalBNfQo5yRYmiw7Yz6TKKVr3h6970B2YE+3fQpsWcrbj1PzJgxeJ19DRQjhMbKPIuMY8rFaXc8moolVw==
 
 pnp-webpack-plugin@1.5.0:
   version "1.5.0"
@@ -16422,6 +16473,11 @@ proxy-from-env@^1.0.0:
   resolved "https://registry.npmjs.org/proxy-from-env/-/proxy-from-env-1.0.0.tgz#33c50398f70ea7eb96d21f7b817630a55791c7ee"
   integrity sha1-M8UDmPcOp+uW0h97gXYwpVeRx+4=
 
+proxy-from-env@^1.1.0:
+  version "1.1.0"
+  resolved "https://registry.npmjs.org/proxy-from-env/-/proxy-from-env-1.1.0.tgz#e102f16ca355424865755d2c9e8ea4f24d58c3e2"
+  integrity sha512-D+zkORCbA9f1tdWRK0RaCR3GPv50cMxcrz4X8k5LTSUD1Dkw47mKJEZQNunItRTkWwgtaUSo1RVFRIG9ZXiFYg==
+
 prr@~1.0.1:
   version "1.0.1"
   resolved "https://registry.npmjs.org/prr/-/prr-1.0.1.tgz#d3fc114ba06995a45ec6893f484ceb1d78f5f476"
@@ -16496,20 +16552,6 @@ punycode@^2.1.0, punycode@^2.1.1:
   version "2.1.1"
   resolved "https://registry.npmjs.org/punycode/-/punycode-2.1.1.tgz#b58b010ac40c22c5657616c8d2c2c02c7bf479ec"
   integrity sha512-XRsRjdf+j5ml+y/6GKHPZbrF/8p2Yga0JPtdqTIY2Xe5ohJPD9saDJJLPvp9+NSBprVvevdXZybnj2cv8OEd0A==
-
-puppeteer-firefox@^0.5.1:
-  version "0.5.1"
-  resolved "https://registry.npmjs.org/puppeteer-firefox/-/puppeteer-firefox-0.5.1.tgz#ceaf2058adbaa1f83443041fed6efef7162df75f"
-  integrity sha512-3BIgcBPoSzlmmzG0+xGRlYjq8ow0H9Avi6pHHfdYqaQOtUjdxqHfnGmKuHjdO4QdzCipvh68n8Pk9OZWl19f3g==
-  dependencies:
-    debug "^4.1.0"
-    extract-zip "^1.6.6"
-    https-proxy-agent "^2.2.1"
-    mime "^2.0.3"
-    progress "^2.0.1"
-    proxy-from-env "^1.0.0"
-    rimraf "^2.6.1"
-    ws "^6.1.0"
 
 puppeteer@2.0.0:
   version "2.0.0"
@@ -17894,6 +17936,13 @@ rimraf@^3.0.0:
   version "3.0.1"
   resolved "https://registry.npmjs.org/rimraf/-/rimraf-3.0.1.tgz#48d3d4cb46c80d388ab26cd61b1b466ae9ae225a"
   integrity sha512-IQ4ikL8SjBiEDZfk+DFVwqRK8md24RWMEJkdSlgNLkyyAImcjf8SWvU1qFMDOb4igBClbTQ/ugPqXcRwdFTxZw==
+  dependencies:
+    glob "^7.1.3"
+
+rimraf@^3.0.2:
+  version "3.0.2"
+  resolved "https://registry.npmjs.org/rimraf/-/rimraf-3.0.2.tgz#f1a5402ba6220ad52cc1282bac1ae3aa49fd061a"
+  integrity sha512-JZkJMZkAGFFPP2YqXZXPbMlMBgsxzE8ILs4lMIX/2o0L9UBw9O/Y3o6wFw/i9YLapcUJWwqbi3kdxIPdC62TIA==
   dependencies:
     glob "^7.1.3"
 
@@ -21522,7 +21571,7 @@ yarn-deduplicate@^2.0.0:
     commander "^4.1.1"
     semver "7.1.3"
 
-yauzl@2.10.0:
+yauzl@2.10.0, yauzl@^2.10.0:
   version "2.10.0"
   resolved "https://registry.npmjs.org/yauzl/-/yauzl-2.10.0.tgz#c7eb17c93e112cb1086fa6d8e51fb0667b79a5f9"
   integrity sha1-x+sXyT4RLLEIb6bY5R+wZnt5pfk=

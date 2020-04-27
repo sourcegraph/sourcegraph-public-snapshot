@@ -16,6 +16,7 @@ describe('Sourcegraph browser extension on github.com', function () {
     before('Open browser', async function () {
         this.timeout(90 * 1000)
         driver = await createDriverForTest({ loadExtension: true, browser, sourcegraphBaseUrl, ...restConfig })
+        await driver.ensureLoggedIn({ username: 'test', password: 'testtesttest' })
         if (sourcegraphBaseUrl !== 'https://sourcegraph.com') {
             await driver.setExtensionSourcegraphUrl()
         }
@@ -70,18 +71,17 @@ describe('Sourcegraph browser extension on github.com', function () {
                                 timeout: 10000,
                             })
                             const row = (await driver.page.evaluateHandle(
-                                (element: Element) => element.closest('tr'),
+                                element => element.closest('tr'),
                                 lineNumberElement
                             ))!.asElement()!
                             assert(row, 'Expected row to exist')
                             const tokenElement = (
                                 await driver.page.evaluateHandle(
-                                    (row: Element, token: string) =>
+                                    ([row, token]) =>
                                         Array.from(row.querySelectorAll('span')).find(
                                             element => element.textContent === token
                                         ),
-                                    row,
-                                    token
+                                    [row, token] as [HTMLTableRowElement, string]
                                 )
                             ).asElement()
                             assert(tokenElement, 'Expected token element to exist')

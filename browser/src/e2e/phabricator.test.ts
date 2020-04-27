@@ -64,8 +64,8 @@ async function addPhabricatorRepo(driver: Driver): Promise<void> {
     await driver.page.goto(PHABRICATOR_BASE_URL + '/source/jrpc/uri/edit/')
     await driver.page.waitForSelector('input[name=uri]')
     await driver.page.type('input[name=uri]', 'https://github.com/sourcegraph/jsonrpc2.git')
-    await driver.page.select('select[name=io]', 'observe')
-    await driver.page.select('select[name=display]', 'always')
+    await driver.page.selectOption('select[name=io]', 'observe')
+    await driver.page.selectOption('select[name=display]', 'always')
     await driver.page.click('button[type="submit"][name="__submit__"]')
 
     // Activate the repo and wait for it to clone
@@ -121,7 +121,7 @@ async function configureSourcegraphIntegration(driver: Driver): Promise<void> {
 
     // Enable Sourcegraph native integration
     await driver.page.goto(PHABRICATOR_BASE_URL + '/config/edit/sourcegraph.enabled/')
-    await driver.page.select('select[name="value"]', 'true')
+    await driver.page.selectOption('select[name="value"]', 'true')
     await Promise.all([driver.page.waitForNavigation(), driver.page.click('button[type="submit"]')])
 }
 
