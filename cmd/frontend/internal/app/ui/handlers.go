@@ -310,6 +310,7 @@ func serveTree(title func(c *Common, r *http.Request) string) handlerFunc {
 		if common == nil {
 			return nil // request was handled
 		}
+
 		handled, err := redirectTreeOrBlob(routeTree, common, r, w)
 		if handled {
 			return nil
