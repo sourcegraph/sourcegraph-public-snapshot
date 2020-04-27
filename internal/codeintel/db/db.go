@@ -60,6 +60,10 @@ type DB interface {
 	// and reference the package with the given scheme, name, and version. All resulting dumps are visible at the tip of their repository's
 	// default branch.
 	PackageReferencePager(ctx context.Context, scheme, name, version string, repositoryID, limit int) (int, ReferencePager, error)
+
+	// RepoName returns the name for the repo with the given identifier. This is the only method
+	// in this package that touches any table that does not start with `lsif_`.
+	RepoName(ctx context.Context, repositoryID int) (string, error)
 }
 
 type dbImpl struct {
