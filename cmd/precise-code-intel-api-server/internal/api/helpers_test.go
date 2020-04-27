@@ -8,9 +8,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/mocks"
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
+	bundlemocks "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
+	dbmocks "github.com/sourcegraph/sourcegraph/internal/codeintel/db/mocks"
 )
 
 var (
@@ -46,14 +47,14 @@ var (
 	}
 )
 
-func setMockDBGetDumpByID(t *testing.T, mockDB *mocks.MockDB, dumps map[int]db.Dump) {
+func setMockDBGetDumpByID(t *testing.T, mockDB *dbmocks.MockDB, dumps map[int]db.Dump) {
 	mockDB.GetDumpByIDFunc.SetDefaultHook(func(ctx context.Context, id int) (db.Dump, bool, error) {
 		dump, ok := dumps[id]
 		return dump, ok, nil
 	})
 }
 
-func setMockDBGetPackage(t *testing.T, mockDB *mocks.MockDB, expectedScheme, expectedName, expectedVersion string, dump db.Dump, exists bool) {
+func setMockDBGetPackage(t *testing.T, mockDB *dbmocks.MockDB, expectedScheme, expectedName, expectedVersion string, dump db.Dump, exists bool) {
 	mockDB.GetPackageFunc.SetDefaultHook(func(ctx context.Context, scheme, name, version string) (db.Dump, bool, error) {
 		if scheme != expectedScheme {
 			t.Errorf("unexpected scheme for GetPackage. want=%s have=%s", expectedScheme, scheme)
@@ -68,7 +69,7 @@ func setMockDBGetPackage(t *testing.T, mockDB *mocks.MockDB, expectedScheme, exp
 	})
 }
 
-func setMockDBFindClosestDumps(t *testing.T, mockDB *mocks.MockDB, expectedRepositoryID int, expectedCommit, expectedFile string, dumps []db.Dump) {
+func setMockDBFindClosestDumps(t *testing.T, mockDB *dbmocks.MockDB, expectedRepositoryID int, expectedCommit, expectedFile string, dumps []db.Dump) {
 	mockDB.FindClosestDumpsFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit, file string) ([]db.Dump, error) {
 		if repositoryID != expectedRepositoryID {
 			t.Errorf("unexpected repository id for FindClosestDumps. want=%d have=%d", expectedRepositoryID, repositoryID)
@@ -83,7 +84,7 @@ func setMockDBFindClosestDumps(t *testing.T, mockDB *mocks.MockDB, expectedRepos
 	})
 }
 
-func setMockDBSameRepoPager(t *testing.T, mockDB *mocks.MockDB, expectedRepositoryID int, expectedCommit, expectedScheme, expectedName, expectedVersion string, expectedLimit, totalCount int, pager db.ReferencePager) {
+func setMockDBSameRepoPager(t *testing.T, mockDB *dbmocks.MockDB, expectedRepositoryID int, expectedCommit, expectedScheme, expectedName, expectedVersion string, expectedLimit, totalCount int, pager db.ReferencePager) {
 	mockDB.SameRepoPagerFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit, scheme, name, version string, limit int) (int, db.ReferencePager, error) {
 		if repositoryID != expectedRepositoryID {
 			t.Errorf("unexpected repository id for SameRepoPager. want=%v have=%v", expectedRepositoryID, repositoryID)
@@ -107,7 +108,7 @@ func setMockDBSameRepoPager(t *testing.T, mockDB *mocks.MockDB, expectedReposito
 	})
 }
 
-func setMockDBPackageReferencePager(t *testing.T, mockDB *mocks.MockDB, expectedScheme, expectedName, expectedVersion string, expectedRepositoryID, expectedLimit int, totalCount int, pager db.ReferencePager) {
+func setMockDBPackageReferencePager(t *testing.T, mockDB *dbmocks.MockDB, expectedScheme, expectedName, expectedVersion string, expectedRepositoryID, expectedLimit int, totalCount int, pager db.ReferencePager) {
 	mockDB.PackageReferencePagerFunc.SetDefaultHook(func(ctx context.Context, scheme, name, version string, repositoryID, limit int) (int, db.ReferencePager, error) {
 		if scheme != expectedScheme {
 			t.Errorf("unexpected scheme for PackageReferencePager. want=%s have=%s", expectedScheme, scheme)
@@ -128,7 +129,7 @@ func setMockDBPackageReferencePager(t *testing.T, mockDB *mocks.MockDB, expected
 	})
 }
 
-func setMockReferencePagerPageFromOffset(t *testing.T, mockReferencePager *mocks.MockReferencePager, expectedOffset int, references []db.Reference) {
+func setMockReferencePagerPageFromOffset(t *testing.T, mockReferencePager *dbmocks.MockReferencePager, expectedOffset int, references []db.Reference) {
 	mockReferencePager.PageFromOffsetFunc.SetDefaultHook(func(offset int) ([]db.Reference, error) {
 		if offset != expectedOffset {
 			t.Errorf("unexpected offset for PageFromOffset. want=%d have=%d", expectedOffset, offset)
@@ -137,7 +138,7 @@ func setMockReferencePagerPageFromOffset(t *testing.T, mockReferencePager *mocks
 	})
 }
 
-func setMockBundleManagerClientBundleClient(t *testing.T, mockBundleManagerClient *mocks.MockBundleManagerClient, bundleClients map[int]bundles.BundleClient) {
+func setMockBundleManagerClientBundleClient(t *testing.T, mockBundleManagerClient *bundlemocks.MockBundleManagerClient, bundleClients map[int]bundles.BundleClient) {
 	mockBundleManagerClient.BundleClientFunc.SetDefaultHook(func(bundleID int) bundles.BundleClient {
 		bundleClient, ok := bundleClients[bundleID]
 		if !ok {
@@ -148,7 +149,7 @@ func setMockBundleManagerClientBundleClient(t *testing.T, mockBundleManagerClien
 	})
 }
 
-func setMockBundleClientExists(t *testing.T, mockBundleClient *mocks.MockBundleClient, expectedPath string, exists bool) {
+func setMockBundleClientExists(t *testing.T, mockBundleClient *bundlemocks.MockBundleClient, expectedPath string, exists bool) {
 	mockBundleClient.ExistsFunc.SetDefaultHook(func(ctx context.Context, path string) (bool, error) {
 		if path != expectedPath {
 			t.Errorf("unexpected path for Exists. want=%s have=%s", expectedPath, path)
@@ -157,7 +158,7 @@ func setMockBundleClientExists(t *testing.T, mockBundleClient *mocks.MockBundleC
 	})
 }
 
-func setMockBundleClientDefinitions(t *testing.T, mockBundleClient *mocks.MockBundleClient, expectedPath string, expectedLine, expectedCharacter int, locations []bundles.Location) {
+func setMockBundleClientDefinitions(t *testing.T, mockBundleClient *bundlemocks.MockBundleClient, expectedPath string, expectedLine, expectedCharacter int, locations []bundles.Location) {
 	mockBundleClient.DefinitionsFunc.SetDefaultHook(func(ctx context.Context, path string, line, character int) ([]bundles.Location, error) {
 		if path != expectedPath {
 			t.Errorf("unexpected path for Definitions. want=%s have=%s", expectedPath, path)
@@ -172,7 +173,7 @@ func setMockBundleClientDefinitions(t *testing.T, mockBundleClient *mocks.MockBu
 	})
 }
 
-func setMockBundleClientReferences(t *testing.T, mockBundleClient *mocks.MockBundleClient, expectedPath string, expectedLine, expectedCharacter int, locations []bundles.Location) {
+func setMockBundleClientReferences(t *testing.T, mockBundleClient *bundlemocks.MockBundleClient, expectedPath string, expectedLine, expectedCharacter int, locations []bundles.Location) {
 	mockBundleClient.ReferencesFunc.SetDefaultHook(func(ctx context.Context, path string, line, character int) ([]bundles.Location, error) {
 		if path != expectedPath {
 			t.Errorf("unexpected path for References. want=%s have=%s", expectedPath, path)
@@ -187,7 +188,7 @@ func setMockBundleClientReferences(t *testing.T, mockBundleClient *mocks.MockBun
 	})
 }
 
-func setMockBundleClientHover(t *testing.T, mockBundleClient *mocks.MockBundleClient, expectedPath string, expectedLine, expectedCharacter int, text string, r bundles.Range, exists bool) {
+func setMockBundleClientHover(t *testing.T, mockBundleClient *bundlemocks.MockBundleClient, expectedPath string, expectedLine, expectedCharacter int, text string, r bundles.Range, exists bool) {
 	mockBundleClient.HoverFunc.SetDefaultHook(func(ctx context.Context, path string, line, character int) (string, bundles.Range, bool, error) {
 		if path != expectedPath {
 			t.Errorf("unexpected path Hover. want=%s have=%s", expectedPath, path)
@@ -202,7 +203,7 @@ func setMockBundleClientHover(t *testing.T, mockBundleClient *mocks.MockBundleCl
 	})
 }
 
-func setMockBundleClientMonikersByPosition(t *testing.T, mockBundleClient *mocks.MockBundleClient, expectedPath string, expectedLine, expectedCharacter int, monikers [][]bundles.MonikerData) {
+func setMockBundleClientMonikersByPosition(t *testing.T, mockBundleClient *bundlemocks.MockBundleClient, expectedPath string, expectedLine, expectedCharacter int, monikers [][]bundles.MonikerData) {
 	mockBundleClient.MonikersByPositionFunc.SetDefaultHook(func(ctx context.Context, path string, line, character int) ([][]bundles.MonikerData, error) {
 		if path != expectedPath {
 			t.Fatalf("unexpected path for MonikersByPosition. want=%s have=%s", expectedPath, path)
@@ -218,7 +219,7 @@ func setMockBundleClientMonikersByPosition(t *testing.T, mockBundleClient *mocks
 	})
 }
 
-func setMockBundleClientMonikerResults(t *testing.T, mockBundleClient *mocks.MockBundleClient, expectedModelType, expectedScheme, expectedIdentifier string, expectedSkip, expectedTake int, locations []bundles.Location, totalCount int) {
+func setMockBundleClientMonikerResults(t *testing.T, mockBundleClient *bundlemocks.MockBundleClient, expectedModelType, expectedScheme, expectedIdentifier string, expectedSkip, expectedTake int, locations []bundles.Location, totalCount int) {
 	mockBundleClient.MonikerResultsFunc.SetDefaultHook(func(ctx context.Context, modelType, scheme, identifier string, skip, take int) ([]bundles.Location, int, error) {
 		if modelType != expectedModelType {
 			t.Errorf("unexpected model type for MonikerResults. want=%s have=%s", expectedModelType, modelType)
@@ -239,7 +240,7 @@ func setMockBundleClientMonikerResults(t *testing.T, mockBundleClient *mocks.Moc
 	})
 }
 
-func setMockBundleClientPackageInformation(t *testing.T, mockBundleClient *mocks.MockBundleClient, expectedPath, expectedPackageInformationID string, packageInformation bundles.PackageInformationData) {
+func setMockBundleClientPackageInformation(t *testing.T, mockBundleClient *bundlemocks.MockBundleClient, expectedPath, expectedPackageInformationID string, packageInformation bundles.PackageInformationData) {
 	mockBundleClient.PackageInformationFunc.SetDefaultHook(func(ctx context.Context, path, packageInformationID string) (bundles.PackageInformationData, error) {
 		if path != expectedPath {
 			t.Errorf("unexpected path for PackageInformation. want=%s have=%s", expectedPath, path)
