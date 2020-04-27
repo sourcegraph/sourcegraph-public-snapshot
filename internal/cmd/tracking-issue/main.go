@@ -308,7 +308,7 @@ type TrackingIssue struct {
 	LabelWhitelist []string
 }
 
-func (t *TrackingIssue) BodyLines() []string {
+func (t *TrackingIssue) WorkItems() []string {
 	start, err := findMarker(t.Body, openingMarker)
 	if err != nil {
 		return nil
