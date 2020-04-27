@@ -34,7 +34,10 @@ export class PanelView extends React.PureComponent<Props, State> {
             >
                 {this.props.panelView.content && (
                     <div className="px-2 pt-2">
-                        <Markdown dangerousInnerHTML={renderMarkdown(this.props.panelView.content)} />
+                        <Markdown
+                            dangerousInnerHTML={renderMarkdown(this.props.panelView.content)}
+                            history={this.props.history}
+                        />
                     </div>
                 )}
                 {this.props.panelView.reactElement}

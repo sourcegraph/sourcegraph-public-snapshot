@@ -111,6 +111,7 @@ export class NavLinks extends React.PureComponent<Props> {
                             <StatusMessagesNavItem
                                 fetchMessages={fetchAllStatusMessages}
                                 isSiteAdmin={this.props.authenticatedUser.siteAdmin}
+                                history={this.props.history}
                             />
                         </li>
                     )}

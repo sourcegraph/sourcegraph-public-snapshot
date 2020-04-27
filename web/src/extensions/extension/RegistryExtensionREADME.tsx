@@ -5,6 +5,7 @@ import { ConfiguredRegistryExtension } from '../../../../shared/src/extensions/e
 import { isErrorLike } from '../../../../shared/src/util/errors'
 import { renderMarkdown } from '../../../../shared/src/util/markdown'
 import { ExtensionNoManifestAlert } from './RegistryExtensionManifestPage'
+import * as H from 'history'
 
 const PublishNewManifestAlert: React.FunctionComponent<{
     extension: ConfiguredRegistryExtension
@@ -27,7 +28,8 @@ const PublishNewManifestAlert: React.FunctionComponent<{
 
 export const ExtensionREADME: React.FunctionComponent<{
     extension: ConfiguredRegistryExtension
-}> = ({ extension }) => {
+    history: H.History
+}> = ({ extension, history }) => {
     if (!extension.rawManifest) {
         return <ExtensionNoManifestAlert extension={extension} />
     }
@@ -59,7 +61,7 @@ export const ExtensionREADME: React.FunctionComponent<{
 
     try {
         const html = renderMarkdown(manifest.readme)
-        return <Markdown dangerousInnerHTML={html} />
+        return <Markdown dangerousInnerHTML={html} history={history} />
     } catch (err) {
         return (
             <PublishNewManifestAlert

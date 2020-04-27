@@ -15,6 +15,7 @@ interface Props extends RouteComponentProps<{ id: string }> {}
  * A page displaying metadata about an LSIF upload.
  */
 export const SiteAdminLsifUploadPage: FunctionComponent<Props> = ({
+    history,
     match: {
         params: { id },
     },
@@ -31,9 +32,13 @@ export const SiteAdminLsifUploadPage: FunctionComponent<Props> = ({
             {!uploadOrError ? (
                 <LoadingSpinner className="icon-inline" />
             ) : isErrorLike(uploadOrError) ? (
-                <ErrorAlert prefix="Error loading LSIF upload" error={uploadOrError} />
+                <ErrorAlert prefix="Error loading LSIF upload" error={uploadOrError} history={history} />
             ) : !uploadOrError.projectRoot ? (
-                <ErrorAlert prefix="Error loading LSIF upload" error={{ message: 'Cannot resolve project root' }} />
+                <ErrorAlert
+                    prefix="Error loading LSIF upload"
+                    error={{ message: 'Cannot resolve project root' }}
+                    history={history}
+                />
             ) : (
                 <Redirect
                     to={`${uploadOrError.projectRoot.commit.repository.url}/-/settings/code-intelligence/lsif-uploads/${id}`}

@@ -1,6 +1,7 @@
 import React from 'react'
 import renderer from 'react-test-renderer'
 import { Notices } from './Notices'
+import * as H from 'history'
 
 describe('Notices', () => {
     test('shows notices for location', () =>
@@ -19,6 +20,7 @@ describe('Notices', () => {
                                 ],
                             },
                         }}
+                        history={H.createMemoryHistory()}
                     />
                 )
                 .toJSON()
@@ -27,7 +29,13 @@ describe('Notices', () => {
     test('no notices', () =>
         expect(
             renderer
-                .create(<Notices location="home" settingsCascade={{ subjects: [], final: { notices: null } }} />)
+                .create(
+                    <Notices
+                        location="home"
+                        history={H.createMemoryHistory()}
+                        settingsCascade={{ subjects: [], final: { notices: null } }}
+                    />
+                )
                 .toJSON()
         ).toMatchSnapshot())
 })

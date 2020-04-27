@@ -14,6 +14,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { gitRefFragment, GitRefNode } from '../GitRef'
 import { RepositoryBranchesAreaPageProps } from './RepositoryBranchesArea'
 import { ErrorAlert } from '../../components/alerts'
+import * as H from 'history'
 
 interface Data {
     defaultBranch: GQL.IGitRef | null
@@ -67,7 +68,9 @@ const queryGitBranches = memoizeObservable(
     args => `${args.repo}:${args.first}`
 )
 
-interface Props extends RepositoryBranchesAreaPageProps, RouteComponentProps<{}> {}
+interface Props extends RepositoryBranchesAreaPageProps, RouteComponentProps<{}> {
+    history: H.History
+}
 
 interface State {
     /** The page content, undefined while loading, or an error. */
@@ -120,7 +123,7 @@ export class RepositoryBranchesOverviewPage extends React.PureComponent<Props, S
                 {this.state.dataOrError === undefined ? (
                     <LoadingSpinner className="icon-inline mt-2" />
                 ) : isErrorLike(this.state.dataOrError) ? (
-                    <ErrorAlert className="mt-2" error={this.state.dataOrError} />
+                    <ErrorAlert className="mt-2" error={this.state.dataOrError} history={this.props.history} />
                 ) : (
                     <div className="repository-branches-page__cards">
                         {this.state.dataOrError.defaultBranch && (

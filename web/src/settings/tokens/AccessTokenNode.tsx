@@ -6,11 +6,11 @@ import { gql } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../shared/src/util/errors'
 import { mutateGraphQL } from '../../backend/graphql'
-import { FilteredConnection } from '../../components/FilteredConnection'
 import { Timestamp } from '../../components/time/Timestamp'
 import { userURL } from '../../user'
 import { AccessTokenCreatedAlert } from './AccessTokenCreatedAlert'
 import { ErrorAlert } from '../../components/alerts'
+import * as H from 'history'
 
 export const accessTokenFragment = gql`
     fragment AccessTokenFields on AccessToken {
@@ -60,6 +60,7 @@ export interface AccessTokenNodeProps {
     newToken?: GQL.ICreateAccessTokenResult
 
     onDidUpdate: () => void
+    history: H.History
 }
 
 interface AccessTokenNodeState {
@@ -159,7 +160,11 @@ export class AccessTokenNode extends React.PureComponent<AccessTokenNodeProps, A
                             Delete
                         </button>
                         {isErrorLike(this.state.deletionOrError) && (
-                            <ErrorAlert className="mt-2" error={this.state.deletionOrError} />
+                            <ErrorAlert
+                                className="mt-2"
+                                error={this.state.deletionOrError}
+                                history={this.props.history}
+                            />
                         )}
                     </div>
                 </div>
@@ -176,8 +181,3 @@ export class AccessTokenNode extends React.PureComponent<AccessTokenNodeProps, A
 
     private deleteAccessToken = (): void => this.deletes.next()
 }
-
-export class FilteredAccessTokenConnection extends FilteredConnection<
-    GQL.IAccessToken,
-    Pick<AccessTokenNodeProps, 'onDidUpdate'>
-> {}
