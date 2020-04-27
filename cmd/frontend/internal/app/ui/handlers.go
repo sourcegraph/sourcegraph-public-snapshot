@@ -300,7 +300,7 @@ func redirectTreeOrBlob(routeName string, common *Common, r *http.Request, w htt
 	return false, nil
 }
 
-// serveTree serves the tree (directory) pages
+// serveTree serves the tree (directory) pages.
 func serveTree(title func(c *Common, r *http.Request) string) handlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		common, err := newCommon(w, r, "", serveError)
