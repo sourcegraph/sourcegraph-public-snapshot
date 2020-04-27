@@ -264,12 +264,3 @@ func readTestFilter(t *testing.T, dirname, filename string) []byte {
 
 	return raw
 }
-
-func readTestWords(t *testing.T, filename string) []string {
-	content, err := ioutil.ReadFile(fmt.Sprintf("../../testdata/words/%s", filename))
-	if err != nil {
-		t.Fatalf("unexpected error reading %s: %s", filename, err)
-	}
-
-	return strings.Split(strings.TrimSpace(string(content)), "\n")
-}
