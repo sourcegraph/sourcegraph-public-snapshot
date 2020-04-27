@@ -82,15 +82,15 @@ func (prometheusTracer) TraceQuery(ctx context.Context, queryString string, oper
 	lvl("serving GraphQL request", "name", requestName, "user", currentUserName, "source", requestSource)
 	if !disableLog && requestName == "unknown" {
 		log.Printf(`logging complete query for unnamed GraphQL request above name=%s user=%s source=%s:
-	QUERY
-	-----
-	%s
+QUERY
+-----
+%s
 
-	VARIABLES
-	---------
-	%v
+VARIABLES
+---------
+%v
 
-	`, requestName, currentUserName, requestSource, queryString, variables)
+`, requestName, currentUserName, requestSource, queryString, variables)
 	}
 	return ctx, func(err []*gqlerrors.QueryError) {
 		if finish != nil {
@@ -100,7 +100,7 @@ func (prometheusTracer) TraceQuery(ctx context.Context, queryString string, oper
 		if v := conf.Get().ObservabilityLogSlowGraphQLRequests; v != 0 && d.Milliseconds() > int64(v) {
 			encodedVariables, _ := json.Marshal(variables)
 			log15.Warn("slow GraphQL request", "time", d, "name", requestName, "user", currentUserName, "source", requestSource, "error", err, "variables", string(encodedVariables))
-			if !disableLog && requestName == "unknown" {
+			if requestName == "unknown" {
 				log.Printf(`logging complete query for slow GraphQL request above time=%v name=%s user=%s source=%s error=%v:
 QUERY
 -----
