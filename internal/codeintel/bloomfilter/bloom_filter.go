@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
-	"io/ioutil"
 	"math"
 	"unicode"
 	"unicode/utf16"
@@ -12,20 +11,28 @@ import (
 
 // BloomFilterBits is the number of bits allocated for new bloom filters.
 //
-// This parameter, along with BloomFilterNumHashFunctions (defined below),
-// gives us a 1 in 1.38x10^9 false positive rate if we assume that the number
-// of unique URIs referrable by an external package is of the order of 10k.
-//
-// See the following link for a bloom calculator: https://hur.st/bloomfilter.
+// This parameter, along with BloomFilterNumHashFunctions (defined below), gives us a 1 in 1.38x10^9
+// false positive rate if we assume that the number of unique URIs referrable by an external package
+// is of the order of 10k. See the following link for a bloom calculator: https://hur.st/bloomfilter.
 const BloomFilterBits = 64 * 1024
 
-// BloomFilterNumHashFunctions is the number of hash functions to use to
-// determine if a value is a member of the filter.
+// BloomFilterNumHashFunctions is the number of hash functions to use to determine if a value is a
+// member of the filter.
 const BloomFilterNumHashFunctions = 16
 
-// TODO(efritz) - document
+// encodedFilterPayload holds the state and parameters necessary to revive an encoded bloom filter.
+// This includes the bitstring encoded as arrays of 32-bit integers as well as the number of hash
+// functions each identifier is identified with. This is necessary to encode as increasing its value
+// after its created will make all inserted identifiers un-findable.
+type encodedFilterPayload struct {
+	Buckets          []int32 `json:"buckets"`
+	NumHashFunctions int32   `json:"numHashFunctions"`
+}
+
+// CreateFilter allocates a new bloom filter and inserts all of the given identifiers. The returned
+// value is an encoded and compressed payload that can be passed to DecodeAndTestFilter.
 func CreateFilter(identifiers []string) ([]byte, error) {
-	buckets := make([]int, BloomFilterBits)
+	buckets := make([]int32, BloomFilterBits)
 	for _, identifier := range identifiers {
 		addToFilter(buckets, BloomFilterNumHashFunctions, identifier)
 	}
@@ -41,87 +48,46 @@ func DecodeAndTestFilter(encodedFilter []byte, identifier string) (bool, error) 
 		return false, err
 	}
 
-	//
-	// TODO - document bloom filter behaviors
-	//
-
 	return testFilter(buckets, numHashFunctions, identifier), nil
 }
 
-// TODO(efritz) - document
-func decodeFilter(encodedFilter []byte) ([]int, int32, error) {
-	payload := struct {
-		Buckets          []int `json:"buckets"`
-		NumHashFunctions int32 `json:"numHashFunctions"`
-	}{}
-
+// decodeFilter returns the buckets and the number of hash functions that were used to initially
+// populate the bloom filter from the given compressed payload.
+func decodeFilter(encodedFilter []byte) ([]int32, int32, error) {
 	r, err := gzip.NewReader(bytes.NewReader(encodedFilter))
 	if err != nil {
 		return nil, 0, err
 	}
 
-	f, err := ioutil.ReadAll(r)
-	if err != nil {
-		return nil, 0, err
-	}
-
-	if err := json.Unmarshal(f, &payload); err != nil {
+	var payload encodedFilterPayload
+	if err := json.NewDecoder(r).Decode(&payload); err != nil {
 		return nil, 0, err
 	}
 
 	return payload.Buckets, payload.NumHashFunctions, nil
 }
 
-// TODO(efritz) - document
-func encodeFilter(buckets []int, numHashFunctions int32) ([]byte, error) {
-	serialized, err := json.Marshal(map[string]interface{}{
-		"buckets":          buckets,
-		"numHashFunctions": numHashFunctions,
-	})
-	if err != nil {
-		return nil, err
+// encodeFilters marshalls and compresses the given bloom filter state.
+func encodeFilter(buckets []int32, numHashFunctions int32) ([]byte, error) {
+	payload := encodedFilterPayload{
+		Buckets:          buckets,
+		NumHashFunctions: numHashFunctions,
 	}
 
 	var buf bytes.Buffer
-	w := gzip.NewWriter(&buf)
-	if _, err := w.Write(serialized); err != nil {
+	gzipWriter := gzip.NewWriter(&buf)
+
+	// Encode payload through gzip writer
+	if err := json.NewEncoder(gzipWriter).Encode(payload); err != nil {
 		return nil, err
 	}
-	if err := w.Close(); err != nil {
+
+	// Ensure gzip trailer is flushed to underlying buffer
+	if err := gzipWriter.Close(); err != nil {
 		return nil, err
 	}
 
 	return buf.Bytes(), nil
-}
-
-// TODO(efritz) - document
-func testFilter(buckets []int, numHashFunctions int32, identifier string) bool {
-	locations := hashLocations(
-		identifier,
-		int32(len(buckets))*32,
-		numHashFunctions,
-	)
-
-	for _, b := range locations {
-		if (buckets[int(math.Floor(float64(b)/32))] & (1 << (b % 32))) == 0 {
-			return false
-		}
-	}
-
-	return true
-}
-
-// TODO(efritz) - document
-func addToFilter(buckets []int, numHashFunctions int, identifier string) {
-	locations := hashLocations(
-		identifier,
-		int32(BloomFilterBits)*32,
-		int32(BloomFilterNumHashFunctions),
-	)
-
-	for _, b := range locations {
-		buckets[int(math.Floor(float64(b)/32))] |= (1 << (b % 32))
-	}
 }
 
 // The following code is a port of bloomfilter 0.0.18 from npm. We chose not to recreate all the bloom
@@ -134,6 +100,40 @@ func addToFilter(buckets []int, numHashFunctions int, identifier string) {
 // simplify this dependency, but it is in no way urgent.
 //
 // The original code available at https://github.com/jasondavies/bloomfilter.js.
+
+// addToFilter sets k bits in the given buckets representing the k hash locations for the given identifier.
+func addToFilter(buckets []int32, numHashFunctions int32, identifier string) {
+	for _, b := range hashLocations(identifier, int32(len(buckets))*32, numHashFunctions) {
+		bucketIndex, indexInBucket := index(b)
+		buckets[bucketIndex] |= (1 << indexInBucket)
+	}
+}
+
+// testFilter determines i the k bits representing the k hash locations for the given identifier
+// have been set.
+func testFilter(buckets []int32, numHashFunctions int32, identifier string) bool {
+	for _, b := range hashLocations(identifier, int32(len(buckets))*32, numHashFunctions) {
+		bucketIndex, indexInBucket := index(b)
+
+		// If any location is NOT set, then the identifier is guaranateed not to be a member of this
+		// bloom filter. If all locations are set, it is unlikely but possible that this identifier
+		// was not inserted into this bloom filter.
+		if buckets[bucketIndex]&(1<<indexInBucket) == 0 {
+			return false
+		}
+	}
+
+	return true
+}
+
+// index returns the bucket index and the index within the bucket for a target bit.
+//
+// The bloom filter bucket's array represents a long bitstring of length len(buckets)*32. In
+// order to set or check a single bit in this bitstring, we find the bucket that contains the
+// target bit and the index within that bucket.
+func index(b int32) (int32, int32) {
+	return int32(math.Floor(float64(b) / 32)), (b % 32)
+}
 
 // Original notes:
 // See http://willwhim.wpengine.com/2011/09/03/producing-n-hash-functions-by-hashing-only-once/.
