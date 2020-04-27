@@ -70,7 +70,9 @@ type DocumentIDRangeID struct {
 	RangeID ID
 }
 
-// TODO
+// DefinitionReferenceRow represents a linking between a definition of a symbol or
+// a reference of an externally defined symbol the source location in which the
+// symbol definition or use can be found within a particular bundle.
 type DefinitionReferenceRow struct {
 	Scheme         string
 	Identifier     string
@@ -79,21 +81,4 @@ type DefinitionReferenceRow struct {
 	StartCharacter int
 	EndLine        int
 	EndCharacter   int
-}
-
-// TODO
-type Package struct {
-	DumpID  int
-	Scheme  string
-	Name    string
-	Version string
-}
-
-// TODO
-type PackageReference struct {
-	DumpID  int
-	Scheme  string
-	Name    string
-	Version string
-	Filter  []byte
 }
