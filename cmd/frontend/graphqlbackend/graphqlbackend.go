@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
+	"os"
 	"strconv"
 	"time"
 
@@ -57,6 +58,8 @@ func (prometheusTracer) TraceQuery(ctx context.Context, queryString string, oper
 		ctx, finish = trace.OpenTracingTracer{}.TraceQuery(ctx, queryString, operationName, variables, varTypes)
 	}
 
+	_, disableLog := os.LookupEnv("NO_GRAPHQL_LOG")
+
 	// Note: We don't care about the error here, we just extract the username if
 	// we get a non-nil user object.
 	currentUser, _ := CurrentUser(ctx)
@@ -77,7 +80,7 @@ func (prometheusTracer) TraceQuery(ctx context.Context, queryString string, oper
 	}
 	requestSource := sgtrace.RequestSource(ctx)
 	lvl("serving GraphQL request", "name", requestName, "user", currentUserName, "source", requestSource)
-	if requestName == "unknown" {
+	if !disableLog && requestName == "unknown" {
 		log.Printf(`logging complete query for unnamed GraphQL request above name=%s user=%s source=%s:
 QUERY
 -----
