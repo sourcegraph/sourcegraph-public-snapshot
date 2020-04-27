@@ -1,7 +1,7 @@
 {
   "ID": "MDU6SXNzdWU2MDExOTMyMzk=",
   "Title": "Code intelligence: 3.16 tracking issue",
-  "Body": "\u003c!-- BEGIN WORK --\u003e\n\u003c!-- LABEL: lsif-reliability --\u003e\n@Unassigned\n\n- [x] Alert admins if LSIF uploads are too large for DBS_DIR_MAXIMUM_SIZE_BYTES [#9989](https://github.com/sourcegraph/sourcegraph/issues/9989) \n\n@efritz\n\n- [ ] Port precise-code-intel-worker to Go [#9965](https://github.com/sourcegraph/sourcegraph/issues/9965) \n- [x] Fix docs for LSIF option DBS_DIR_MAXIMUM_SIZE_BYTES [#9987](https://github.com/sourcegraph/sourcegraph/issues/9987) 🐛\n- [ ] Port precise-code-intel-bundle-manager to Go [#9964](https://github.com/sourcegraph/sourcegraph/issues/9964) \n- [ ] Port precise-code-intel-api-server to Go [#9963](https://github.com/sourcegraph/sourcegraph/issues/9963) \n- [ ] TypeScript cross-repository go to definition broken with LSIF [#9952](https://github.com/sourcegraph/sourcegraph/issues/9952) 🐛\n- [ ] Basic code intel definition ranges are off [#9936](https://github.com/sourcegraph/sourcegraph/issues/9936) 🐛\n- [ ] Update and expand the code intelligence team roadmap [#9922](https://github.com/sourcegraph/sourcegraph/issues/9922) \n- [ ] Code intelligence: 3.16 tracking issue [#9917](https://github.com/sourcegraph/sourcegraph/issues/9917) \n- [ ] GraphQL code intel doesn't work [#9756](https://github.com/sourcegraph/sourcegraph/issues/9756) 🐛\n- [ ] RFC 139: Remove language servers [#9742](https://github.com/sourcegraph/sourcegraph/issues/9742) \n- [ ] LSIF upload: 413 Request Entity Too Large [#9739](https://github.com/sourcegraph/sourcegraph/issues/9739) \n- [ ] Document LSIF data expectations [#9719](https://github.com/sourcegraph/sourcegraph/issues/9719) \n- [ ] Create docs page for codeintel showcase repos [#9609](https://github.com/sourcegraph/sourcegraph/issues/9609) \n- [ ] Finished processing timestamp on LSIF upload details page is wrong [#9596](https://github.com/sourcegraph/sourcegraph/issues/9596) \n- [ ] RFC 122: Integrate LSIF indexing into supportive Go and TypeScript repositories [#9288](https://github.com/sourcegraph/sourcegraph/issues/9288) \n- [ ] Improve LSIF root boundaries [#8383](https://github.com/sourcegraph/sourcegraph/issues/8383) \n- [ ] Weird highlighting on multiple go to definition results with basic code intel [#7668](https://github.com/sourcegraph/sourcegraph/issues/7668) 🐛\n- [ ] LSIF plaintext hover support [#7099](https://github.com/sourcegraph/sourcegraph/issues/7099) \n\n@gbrik\n\n- [ ] Use campaigns to get all of our repositories uploading LSIF indexes to sourcegraph.com [#10137](https://github.com/sourcegraph/sourcegraph/issues/10137) \n  - [ ] Update LSIF documentation and associated CI workflows [#10138](https://github.com/sourcegraph/sourcegraph/pull/10138) :shipit:\n- [ ] Precise code intel mono repo support [#10087](https://github.com/sourcegraph/sourcegraph/issues/10087) \n- [ ] Improve visual clarity and add CTAs re precise code intel [#10083](https://github.com/sourcegraph/sourcegraph/issues/10083) \n- [ ] improve our issue tracking process [#10082](https://github.com/sourcegraph/sourcegraph/issues/10082) \n- [ ] Write precise code intel delivery plans [#10081](https://github.com/sourcegraph/sourcegraph/issues/10081) \n- [ ] Process pending LSIF uploads in reverse-chronological order? [#9985](https://github.com/sourcegraph/sourcegraph/issues/9985) \n- [ ] Use a clangd-indexer fork instead [#9](https://github.com/sourcegraph/lsif-cpp/issues/9) \n  - [ ] Update LSIF documentation and associated CI workflows [#10138](https://github.com/sourcegraph/sourcegraph/pull/10138) :shipit:\n- [ ] Index a super cool Go repo and its transitive dependencies [#9746](https://github.com/sourcegraph/sourcegraph/issues/9746) \n- [ ] Minor: Retry lsif index upload when clone is in progress [#9700](https://github.com/sourcegraph/sourcegraph/issues/9700) \n- [ ] RFC 122: Write detailed LSIF integration instructions for Go and TypeScript [#9289](https://github.com/sourcegraph/sourcegraph/issues/9289) \n  - [ ] Update LSIF documentation and associated CI workflows [#10138](https://github.com/sourcegraph/sourcegraph/pull/10138) :shipit:\n\u003c!-- END WORK --\u003e",
+  "Body": "\u003c!-- LABEL: lsif-reliability --\u003e\n\u003c!-- BEGIN WORK --\u003e\n@Unassigned\n\n- [x] Alert admins if LSIF uploads are too large for DBS_DIR_MAXIMUM_SIZE_BYTES [#9989](https://github.com/sourcegraph/sourcegraph/issues/9989) \n\n@efritz\n\n- [ ] Port precise-code-intel-worker to Go [#9965](https://github.com/sourcegraph/sourcegraph/issues/9965) \n- [x] Fix docs for LSIF option DBS_DIR_MAXIMUM_SIZE_BYTES [#9987](https://github.com/sourcegraph/sourcegraph/issues/9987) 🐛\n- [x] Port precise-code-intel-api-server to Go [#9963](https://github.com/sourcegraph/sourcegraph/issues/9963) \n- [ ] TypeScript cross-repository go to definition broken with LSIF [#9952](https://github.com/sourcegraph/sourcegraph/issues/9952) 🐛\n- [ ] Basic code intel definition ranges are off [#9936](https://github.com/sourcegraph/sourcegraph/issues/9936) 🐛\n- [ ] Update and expand the code intelligence team roadmap [#9922](https://github.com/sourcegraph/sourcegraph/issues/9922) \n- [ ] Code intelligence: 3.16 tracking issue [#9917](https://github.com/sourcegraph/sourcegraph/issues/9917) \n- [ ] GraphQL code intel doesn't work [#9756](https://github.com/sourcegraph/sourcegraph/issues/9756) 🐛\n- [ ] RFC 139: Remove language servers [#9742](https://github.com/sourcegraph/sourcegraph/issues/9742) \n- [ ] LSIF upload: 413 Request Entity Too Large [#9739](https://github.com/sourcegraph/sourcegraph/issues/9739) \n- [ ] Document LSIF data expectations [#9719](https://github.com/sourcegraph/sourcegraph/issues/9719) \n- [ ] Create docs page for codeintel showcase repos [#9609](https://github.com/sourcegraph/sourcegraph/issues/9609) \n- [ ] Finished processing timestamp on LSIF upload details page is wrong [#9596](https://github.com/sourcegraph/sourcegraph/issues/9596) \n- [ ] Improve performance of LSIF upload processing [#9593](https://github.com/sourcegraph/sourcegraph/issues/9593) \n- [ ] RFC 122: Integrate LSIF indexing into supportive Go and TypeScript repositories [#9288](https://github.com/sourcegraph/sourcegraph/issues/9288) \n- [ ] Improve LSIF root boundaries [#8383](https://github.com/sourcegraph/sourcegraph/issues/8383) \n- [ ] Weird highlighting on multiple go to definition results with basic code intel [#7668](https://github.com/sourcegraph/sourcegraph/issues/7668) 🐛\n- [ ] LSIF plaintext hover support [#7099](https://github.com/sourcegraph/sourcegraph/issues/7099) \n\n@gbrik\n\n- [ ] Use campaigns to get all of our repositories uploading LSIF indexes to sourcegraph.com [#10137](https://github.com/sourcegraph/sourcegraph/issues/10137) \n  - [x] Update LSIF documentation and associated CI workflows [#10138](https://github.com/sourcegraph/sourcegraph/pull/10138) :shipit:\n- [ ] Precise code intel mono repo support [#10087](https://github.com/sourcegraph/sourcegraph/issues/10087) \n- [ ] Improve visual clarity and add CTAs re code intel [#10083](https://github.com/sourcegraph/sourcegraph/issues/10083) \n- [ ] improve our issue tracking process [#10082](https://github.com/sourcegraph/sourcegraph/issues/10082) \n  - [ ] Update tracking issue tool to preserve issue order and display whitelisted labels [#10166](https://github.com/sourcegraph/sourcegraph/pull/10166) :shipit:\n- [ ] Write precise code intel delivery plans [#10081](https://github.com/sourcegraph/sourcegraph/issues/10081) \n- [ ] Process pending LSIF uploads in reverse-chronological order? [#9985](https://github.com/sourcegraph/sourcegraph/issues/9985) \n- [ ] Prototype a new LSIF indexer for C++ based on clangd-indexer [#10175](https://github.com/sourcegraph/sourcegraph/issues/10175) \n- [ ] Index a super cool Go repo and its transitive dependencies [#9746](https://github.com/sourcegraph/sourcegraph/issues/9746) \n- [ ] Minor: Retry lsif index upload when clone is in progress [#9700](https://github.com/sourcegraph/sourcegraph/issues/9700) \n- [x] RFC 122: Write detailed LSIF integration instructions for Go and TypeScript [#9289](https://github.com/sourcegraph/sourcegraph/issues/9289) \n  - [x] Update LSIF documentation and associated CI workflows [#10138](https://github.com/sourcegraph/sourcegraph/pull/10138) :shipit:\n\u003c!-- END WORK --\u003e",
   "Number": 9917,
   "URL": "https://github.com/sourcegraph/sourcegraph/issues/9917",
   "State": "OPEN",
@@ -66,7 +66,7 @@
    },
    {
     "ID": "MDU6SXNzdWU2MDQwNjE2MDY=",
-    "Title": "Improve visual clarity and add CTAs re precise code intel",
+    "Title": "Improve visual clarity and add CTAs re code intel",
     "Body": "The current UI leaves a lot of room for confusion when using hovers, go-to-defs, and find-refs. I want  the status of code intelligence to be visually clear both passively and when doing code intel things. I also want there to be specific explanations/instructions to improve the status of code intel when relevant. Some of this already exists.\r\n\r\nIf I were purely optimizing for precise code intel usability and adoption, I would want the following specific things:\r\n- Badge/indicator somewhere prominent on the page, with 3 states: basic code intel, loading precise code intel, precise code intel\r\n  - The basic code intel badge shouldn't be angry, but the precise code intel badge should be very happy :)\r\n  - On the website, this lives in the top right bar next to git blame. (Or somewhere better? I don't UI enough to know how to place buttons).\r\n  - In the code host extensions, this lives in the sourcegraph badge.\r\n  - When hovering the badge:\r\n    - the basic code intel state contains an explanation + CTA to add LSIF data\r\n    - the loading badge contains more information about indexing progress\r\n    - the precise code intel badge says which commit the data is coming from\r\n  - This information is only relevant for source files in languages we currently have good precise code intel support, so we should show it selectively\r\n- When hovering symbols:\r\n  - When code intel isn't yet available, there is an error/loading indicator with an explanation for why it's not available\r\n  - Otherwise, the hover card + find-ref results both also have the above badge\r\n\r\nBut I'm open to pushback/alternatives on everything.\r\n\r\ncc @sourcegraph/web, thoughts on all of this? and if you were to implement it, what would the timeline be?\r\n\r\nassigned to me while in planning phase, will re-assign/re-assess milestone when we decide what implementation looks like.",
     "Number": 10083,
     "URL": "https://github.com/sourcegraph/sourcegraph/issues/10083",
@@ -74,6 +74,7 @@
     "Repository": "sourcegraph/sourcegraph",
     "Private": false,
     "Labels": [
+     "needs-design",
      "team/code-intelligence"
     ],
     "Assignees": [
@@ -222,7 +223,7 @@
     "Body": "",
     "Number": 9964,
     "URL": "https://github.com/sourcegraph/sourcegraph/issues/9964",
-    "State": "OPEN",
+    "State": "CLOSED",
     "Repository": "sourcegraph/sourcegraph",
     "Private": false,
     "Labels": [
@@ -235,7 +236,7 @@
     "Author": "efritz",
     "CreatedAt": "2020-04-17T17:00:04Z",
     "UpdatedAt": "0001-01-01T00:00:00Z",
-    "ClosedAt": "0001-01-01T00:00:00Z"
+    "ClosedAt": "2020-04-24T19:33:38Z"
    },
    {
     "ID": "MDU6SXNzdWU2MDIxMTE3Mzc=",
@@ -243,7 +244,7 @@
     "Body": "",
     "Number": 9963,
     "URL": "https://github.com/sourcegraph/sourcegraph/issues/9963",
-    "State": "OPEN",
+    "State": "CLOSED",
     "Repository": "sourcegraph/sourcegraph",
     "Private": false,
     "Labels": [
@@ -256,7 +257,7 @@
     "Author": "efritz",
     "CreatedAt": "2020-04-17T16:59:24Z",
     "UpdatedAt": "0001-01-01T00:00:00Z",
-    "ClosedAt": "0001-01-01T00:00:00Z"
+    "ClosedAt": "2020-04-24T19:33:36Z"
    },
    {
     "ID": "MDU6SXNzdWU2MDE5NDgzNDM=",
@@ -326,7 +327,7 @@
    {
     "ID": "MDU6SXNzdWU2MDExOTMyMzk=",
     "Title": "Code intelligence: 3.16 tracking issue",
-    "Body": "\u003c!-- BEGIN WORK --\u003e\n@Unassigned\n\n- [x] Alert admins if LSIF uploads are too large for DBS_DIR_MAXIMUM_SIZE_BYTES [#9989](https://github.com/sourcegraph/sourcegraph/issues/9989) \n\n@efritz\n\n- [x] Fix docs for LSIF option DBS_DIR_MAXIMUM_SIZE_BYTES [#9987](https://github.com/sourcegraph/sourcegraph/issues/9987) 🐛\n- [ ] Port precise-code-intel-worker to Go [#9965](https://github.com/sourcegraph/sourcegraph/issues/9965) \n- [ ] Port precise-code-intel-bundle-manager to Go [#9964](https://github.com/sourcegraph/sourcegraph/issues/9964) \n- [ ] Port precise-code-intel-api-server to Go [#9963](https://github.com/sourcegraph/sourcegraph/issues/9963) \n- [ ] TypeScript cross-repository go to definition broken with LSIF [#9952](https://github.com/sourcegraph/sourcegraph/issues/9952) 🐛\n- [ ] Basic code intel definition ranges are off [#9936](https://github.com/sourcegraph/sourcegraph/issues/9936) 🐛\n- [ ] Update and expand the code intelligence team roadmap [#9922](https://github.com/sourcegraph/sourcegraph/issues/9922) \n- [ ] Code intelligence: 3.16 tracking issue [#9917](https://github.com/sourcegraph/sourcegraph/issues/9917) \n- [ ] GraphQL code intel doesn't work [#9756](https://github.com/sourcegraph/sourcegraph/issues/9756) 🐛\n- [ ] RFC 139: Remove language servers [#9742](https://github.com/sourcegraph/sourcegraph/issues/9742) \n- [ ] LSIF upload: 413 Request Entity Too Large [#9739](https://github.com/sourcegraph/sourcegraph/issues/9739) \n- [ ] Document LSIF data expectations [#9719](https://github.com/sourcegraph/sourcegraph/issues/9719) \n- [ ] Create docs page for codeintel showcase repos [#9609](https://github.com/sourcegraph/sourcegraph/issues/9609) \n- [ ] Finished processing timestamp on LSIF upload details page is wrong [#9596](https://github.com/sourcegraph/sourcegraph/issues/9596) \n- [ ] Improve performance of LSIF upload processing [#9593](https://github.com/sourcegraph/sourcegraph/issues/9593) \n- [ ] RFC 122: Integrate LSIF indexing into supportive Go and TypeScript repositories [#9288](https://github.com/sourcegraph/sourcegraph/issues/9288) \n- [ ] Improve LSIF root boundaries [#8383](https://github.com/sourcegraph/sourcegraph/issues/8383) \n- [ ] Weird highlighting on multiple go to definition results with basic code intel [#7668](https://github.com/sourcegraph/sourcegraph/issues/7668) 🐛\n- [ ] LSIF plaintext hover support [#7099](https://github.com/sourcegraph/sourcegraph/issues/7099) \n\n@gbrik\n\n- [ ] Use campaigns to get all of our repositories uploading LSIF indexes to sourcegraph.com [#10137](https://github.com/sourcegraph/sourcegraph/issues/10137) \n  - [ ] Update LSIF documentation and associated CI workflows [#10138](https://github.com/sourcegraph/sourcegraph/pull/10138) :shipit:\n- [ ] Precise code intel mono repo support [#10087](https://github.com/sourcegraph/sourcegraph/issues/10087) \n- [ ] Improve visual clarity and add CTAs re precise code intel [#10083](https://github.com/sourcegraph/sourcegraph/issues/10083) \n- [ ] improve our issue tracking process [#10082](https://github.com/sourcegraph/sourcegraph/issues/10082) \n- [ ] Write precise code intel delivery plans [#10081](https://github.com/sourcegraph/sourcegraph/issues/10081) \n- [ ] Process pending LSIF uploads in reverse-chronological order? [#9985](https://github.com/sourcegraph/sourcegraph/issues/9985) \n- [ ] Use a clangd-indexer fork instead [#9](https://github.com/sourcegraph/lsif-cpp/issues/9) \n  - [ ] Update LSIF documentation and associated CI workflows [#10138](https://github.com/sourcegraph/sourcegraph/pull/10138) :shipit:\n- [ ] Index a super cool Go repo and its transitive dependencies [#9746](https://github.com/sourcegraph/sourcegraph/issues/9746) \n- [ ] Minor: Retry lsif index upload when clone is in progress [#9700](https://github.com/sourcegraph/sourcegraph/issues/9700) \n- [ ] RFC 122: Write detailed LSIF integration instructions for Go and TypeScript [#9289](https://github.com/sourcegraph/sourcegraph/issues/9289) \n  - [ ] Update LSIF documentation and associated CI workflows [#10138](https://github.com/sourcegraph/sourcegraph/pull/10138) :shipit:\n\u003c!-- END WORK --\u003e",
+    "Body": "\u003c!-- BEGIN WORK --\u003e\n@Unassigned\n\n- [x] Alert admins if LSIF uploads are too large for DBS_DIR_MAXIMUM_SIZE_BYTES [#9989](https://github.com/sourcegraph/sourcegraph/issues/9989) \n\n@efritz\n\n- [x] Fix docs for LSIF option DBS_DIR_MAXIMUM_SIZE_BYTES [#9987](https://github.com/sourcegraph/sourcegraph/issues/9987) 🐛\n- [ ] Port precise-code-intel-worker to Go [#9965](https://github.com/sourcegraph/sourcegraph/issues/9965) \n- [x] Port precise-code-intel-bundle-manager to Go [#9964](https://github.com/sourcegraph/sourcegraph/issues/9964) \n- [x] Port precise-code-intel-api-server to Go [#9963](https://github.com/sourcegraph/sourcegraph/issues/9963) \n- [ ] TypeScript cross-repository go to definition broken with LSIF [#9952](https://github.com/sourcegraph/sourcegraph/issues/9952) 🐛\n- [ ] Basic code intel definition ranges are off [#9936](https://github.com/sourcegraph/sourcegraph/issues/9936) 🐛\n- [ ] Update and expand the code intelligence team roadmap [#9922](https://github.com/sourcegraph/sourcegraph/issues/9922) \n- [ ] Code intelligence: 3.16 tracking issue [#9917](https://github.com/sourcegraph/sourcegraph/issues/9917) \n- [ ] GraphQL code intel doesn't work [#9756](https://github.com/sourcegraph/sourcegraph/issues/9756) 🐛\n- [ ] RFC 139: Remove language servers [#9742](https://github.com/sourcegraph/sourcegraph/issues/9742) \n- [ ] LSIF upload: 413 Request Entity Too Large [#9739](https://github.com/sourcegraph/sourcegraph/issues/9739) \n- [ ] Document LSIF data expectations [#9719](https://github.com/sourcegraph/sourcegraph/issues/9719) \n- [ ] Create docs page for codeintel showcase repos [#9609](https://github.com/sourcegraph/sourcegraph/issues/9609) \n- [ ] Finished processing timestamp on LSIF upload details page is wrong [#9596](https://github.com/sourcegraph/sourcegraph/issues/9596) \n- [ ] Improve performance of LSIF upload processing [#9593](https://github.com/sourcegraph/sourcegraph/issues/9593) \n- [ ] RFC 122: Integrate LSIF indexing into supportive Go and TypeScript repositories [#9288](https://github.com/sourcegraph/sourcegraph/issues/9288) \n- [ ] Improve LSIF root boundaries [#8383](https://github.com/sourcegraph/sourcegraph/issues/8383) \n- [ ] Weird highlighting on multiple go to definition results with basic code intel [#7668](https://github.com/sourcegraph/sourcegraph/issues/7668) 🐛\n- [ ] LSIF plaintext hover support [#7099](https://github.com/sourcegraph/sourcegraph/issues/7099) \n\n@gbrik\n\n- [ ] Use campaigns to get all of our repositories uploading LSIF indexes to sourcegraph.com [#10137](https://github.com/sourcegraph/sourcegraph/issues/10137) \n  - [x] Update LSIF documentation and associated CI workflows [#10138](https://github.com/sourcegraph/sourcegraph/pull/10138) :shipit:\n- [ ] Precise code intel mono repo support [#10087](https://github.com/sourcegraph/sourcegraph/issues/10087) \n- [ ] Improve visual clarity and add CTAs re code intel [#10083](https://github.com/sourcegraph/sourcegraph/issues/10083) \n- [ ] improve our issue tracking process [#10082](https://github.com/sourcegraph/sourcegraph/issues/10082) \n  - [ ] Update tracking issue tool to preserve issue order and display whitelisted labels [#10166](https://github.com/sourcegraph/sourcegraph/pull/10166) :shipit:\n- [ ] Write precise code intel delivery plans [#10081](https://github.com/sourcegraph/sourcegraph/issues/10081) \n- [ ] Process pending LSIF uploads in reverse-chronological order? [#9985](https://github.com/sourcegraph/sourcegraph/issues/9985) \n- [ ] Prototype a new LSIF indexer for C++ based on clangd-indexer [#10175](https://github.com/sourcegraph/sourcegraph/issues/10175) \n- [ ] Index a super cool Go repo and its transitive dependencies [#9746](https://github.com/sourcegraph/sourcegraph/issues/9746) \n- [ ] Minor: Retry lsif index upload when clone is in progress [#9700](https://github.com/sourcegraph/sourcegraph/issues/9700) \n- [x] RFC 122: Write detailed LSIF integration instructions for Go and TypeScript [#9289](https://github.com/sourcegraph/sourcegraph/issues/9289) \n  - [x] Update LSIF documentation and associated CI workflows [#10138](https://github.com/sourcegraph/sourcegraph/pull/10138) :shipit:\n\u003c!-- END WORK --\u003e",
     "Number": 9917,
     "URL": "https://github.com/sourcegraph/sourcegraph/issues/9917",
     "State": "OPEN",
@@ -370,13 +371,13 @@
     "ClosedAt": "0001-01-01T00:00:00Z"
    },
    {
-    "ID": "MDU6SXNzdWU1OTgwOTY2NjM=",
-    "Title": "Use a clangd-indexer fork instead",
+    "ID": "MDU6SXNzdWU2MDY1NTU2MjE=",
+    "Title": "Prototype a new LSIF indexer for C++ based on clangd-indexer",
     "Body": "https://clangd.llvm.org/design/indexing.html",
-    "Number": 9,
-    "URL": "https://github.com/sourcegraph/lsif-cpp/issues/9",
+    "Number": 10175,
+    "URL": "https://github.com/sourcegraph/sourcegraph/issues/10175",
     "State": "OPEN",
-    "Repository": "sourcegraph/lsif-cpp",
+    "Repository": "sourcegraph/sourcegraph",
     "Private": false,
     "Labels": [
      "team/code-intelligence"
@@ -568,7 +569,7 @@
     "Body": "See [Milestone 3 of RFC 122](https://docs.google.com/document/d/1W8uR0vQBYtdkNynMxEq24CFdzPTWkGijCURsosdvzAM/edit#heading=h.ylem6ffdsey1).",
     "Number": 9289,
     "URL": "https://github.com/sourcegraph/sourcegraph/issues/9289",
-    "State": "OPEN",
+    "State": "CLOSED",
     "Repository": "sourcegraph/sourcegraph",
     "Private": false,
     "Labels": [
@@ -581,7 +582,7 @@
     "Author": "creachadair",
     "CreatedAt": "2020-03-24T22:23:55Z",
     "UpdatedAt": "0001-01-01T00:00:00Z",
-    "ClosedAt": "0001-01-01T00:00:00Z"
+    "ClosedAt": "2020-04-24T15:43:16Z"
    },
    {
     "ID": "MDU6SXNzdWU1ODczMTUyOTk=",
@@ -672,12 +673,34 @@
   ],
   "PRs": [
    {
+    "ID": "MDExOlB1bGxSZXF1ZXN0NDA4MzQxMzYz",
+    "Title": "Update tracking issue tool to preserve issue order and display whitelisted labels",
+    "Body": "new features on the tracking issue tool:\r\n- preserves order of issues that were already in the tracking issue body (new issues go to the bottom, but I can put them on top if we prefer)\r\n- you can add a new comment `\u003c!-- LABEL: \u003clabel name\u003e --\u003e`, and then issues with that label will have it appended as an inline code element on the end (couldn't figure out a way to embed the pretty colored label block). i want to use this to track issue phase (planning, implementing, blocked, etc) but could see plenty of different uses.\r\n\r\nso won't change anything (other than new issues going to the bottom) for people who continue using as is, but a couple nifty new features.\r\n\r\npotential drawbacks:\r\n- requires re-parsing the issue markdown which is super inelegant, but it does it based on the issue URLs which i think are reasonably canonical\r\n- adding the labels will make it way more likely for issues to take up multiple lines, which might look ugly. but it's opt in\r\n\r\ni wasn't super duper careful about code hygiene given the context the code lives in, let me know if you think it's worth the time to clean it up a bit\r\n\r\nCloses #10082 ",
+    "Number": 10166,
+    "URL": "https://github.com/sourcegraph/sourcegraph/pull/10166",
+    "State": "OPEN",
+    "Repository": "sourcegraph/sourcegraph",
+    "Private": false,
+    "Labels": [
+     "team/code-intelligence"
+    ],
+    "Assignees": [
+     "gbrik"
+    ],
+    "Milestone": "3.16",
+    "Author": "gbrik",
+    "CreatedAt": "2020-04-24T05:38:11Z",
+    "UpdatedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "0001-01-01T00:00:00Z",
+    "BeganAt": "2020-04-24T05:23:10Z"
+   },
+   {
     "ID": "MDExOlB1bGxSZXF1ZXN0NDA3NDc0Mjkx",
     "Title": "Update LSIF documentation and associated CI workflows",
     "Body": "`lsif.yml` shows what an LSIF workflow looks like with the new recommended CI setup.\r\n\r\nThe main doc update is the addition of language specific guides. Also removed references to lang servers and made a few small changes throughout the code intel doc tree.\r\n\r\nOnce this is merged I'll work on trying to write a campaign to get all of our repos indexing with the same method #10137\r\n\r\nCloses #9289 ",
     "Number": 10138,
     "URL": "https://github.com/sourcegraph/sourcegraph/pull/10138",
-    "State": "OPEN",
+    "State": "MERGED",
     "Repository": "sourcegraph/sourcegraph",
     "Private": false,
     "Labels": [
@@ -690,7 +713,7 @@
     "Author": "gbrik",
     "CreatedAt": "2020-04-22T18:53:07Z",
     "UpdatedAt": "0001-01-01T00:00:00Z",
-    "ClosedAt": "0001-01-01T00:00:00Z",
+    "ClosedAt": "2020-04-24T15:43:17Z",
     "BeganAt": "2020-04-20T15:01:29Z"
    }
   ],
