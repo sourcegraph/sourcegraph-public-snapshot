@@ -389,7 +389,7 @@ func (db *Database) getResultByID(id types.ID) ([]documentPathRangeID, error) {
 // This method caches result chunk data by a unique key prefixed by the database filename.
 func (db *Database) getResultChunkByResultID(id types.ID) (types.ResultChunkData, bool, error) {
 	resultChunkData, err := db.resultChunkDataCache.GetOrCreate(fmt.Sprintf("%s::%s", db.filename, id), func() (types.ResultChunkData, error) {
-		query := sqlf.Sprintf("SELECT data FROM resultChunks WHERE id = %s", hashKey(id, db.numResultChunks))
+		query := sqlf.Sprintf("SELECT data FROM resultChunks WHERE id = %s", types.HashKey(id, db.numResultChunks))
 
 		var data string
 		if err := db.db.Get(&data, query.Query(sqlf.SimpleBindVar), query.Args()...); err != nil {

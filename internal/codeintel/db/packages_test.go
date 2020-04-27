@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 )
@@ -59,7 +60,7 @@ func TestGetPackage(t *testing.T) {
 		Indexer:           expected.Indexer,
 	})
 
-	insertPackages(t, db.db, PackageModel{
+	insertPackages(t, db.db, types.Package{
 		Scheme:  "gomod",
 		Name:    "leftpad",
 		Version: "0.1.0",
