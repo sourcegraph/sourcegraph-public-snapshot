@@ -1,8 +1,27 @@
 import { renderMarkdown } from './markdown'
 
 describe('renderMarkdown', () => {
-    test('plainText option', () => {
+    it('renders to plain text with plainText: true', () => {
         expect(renderMarkdown('A **b**', { plainText: true })).toBe('A b\n')
+    })
+    it('sanitizes script tags', () => {
+        expect(renderMarkdown('<script>evil();</script>')).toBe('')
+    })
+    it('sanitizes event handlers', () => {
+        expect(renderMarkdown('<svg><rect onclick="evil()"></rect></svg>')).toBe('<p><svg><rect></rect></svg></p>\n')
+    })
+    it('sanitizes non-SVG <object> tags', () => {
+        expect(renderMarkdown('<object data="something"></object>')).toBe('<p></p>\n')
+    })
+    it('allows SVG <object> tags', () => {
+        expect(renderMarkdown('<object data="something" type="image/svg+xml"></object>')).toBe(
+            '<p><object data="something" type="image/svg+xml"></object></p>\n'
+        )
+    })
+    it('allows <svg> tags', () => {
+        const input =
+            '<svg viewbox="10 10 10 10" width="100"><rect x="37.5" y="7.5" width="675.0" height="16.875" fill="#e05d44" stroke="white" stroke-width="1"><title>/</title></rect></svg>'
+        expect(renderMarkdown(input)).toBe(`<p>${input}</p>\n`)
     })
 
     describe('allowDataUriLinksAndDownloads option', () => {

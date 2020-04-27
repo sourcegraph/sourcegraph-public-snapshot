@@ -4,6 +4,7 @@ import { without } from 'lodash'
 // eslint-disable-next-line no-restricted-imports
 import marked from 'marked'
 import sanitize from 'sanitize-html'
+import { Overwrite } from 'utility-types'
 
 /**
  * Escapes HTML by replacing characters like `<` with their HTML escape sequences like `&lt;`
@@ -67,12 +68,14 @@ export const renderMarkdown = (
         highlight: (code, language) => highlightCodeSafe(code, language),
     })
 
-    let opt: sanitize.IDefaults
+    let opt: Overwrite<sanitize.IOptions, sanitize.IDefaults>
     if (options.plainText) {
         opt = { allowedAttributes: {}, allowedSchemes: [], allowedSchemesByTag: {}, allowedTags: [], selfClosing: [] }
     } else {
         opt = {
             ...sanitize.defaults,
+            // Ensure <object> must have type attribute set
+            exclusiveFilter: ({ tag, attribs }) => tag === 'object' && !attribs.type,
 
             // Allow highligh.js styles, e.g.
             // <span class="hljs-keyword">
