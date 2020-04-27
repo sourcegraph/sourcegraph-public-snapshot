@@ -29,10 +29,10 @@ type RangeData struct {
 
 // MonikerData represent a unique name (eventually) attached to a range.
 type MonikerData struct {
-	Kind                 string `json:"kind"`                 // local, import, export
-	Scheme               string `json:"scheme"`               // name of the package manager type
-	Identifier           string `json:"identifier"`           // unique identifier
-	PackageInformationID ID     `json:"packageInformationId"` // possibly empty
+	Kind                 string // local, import, export
+	Scheme               string // name of the package manager type
+	Identifier           string // unique identifier
+	PackageInformationID ID     // possibly empty
 }
 
 // PackageInformationData indicates a globally unique namespace for a moniker.
@@ -68,4 +68,32 @@ type DocumentIDRangeID struct {
 
 	// The identifier of the range.
 	RangeID ID
+}
+
+// TODO
+type DefinitionReferenceRow struct {
+	Scheme         string
+	Identifier     string
+	URI            string
+	StartLine      int
+	StartCharacter int
+	EndLine        int
+	EndCharacter   int
+}
+
+// TODO
+type Package struct {
+	DumpID  int
+	Scheme  string
+	Name    string
+	Version string
+}
+
+// TODO
+type PackageReference struct {
+	DumpID  int
+	Scheme  string
+	Name    string
+	Version string
+	Filter  []byte
 }
