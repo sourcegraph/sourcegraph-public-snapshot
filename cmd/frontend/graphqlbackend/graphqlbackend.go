@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
+	"os"
 	"strconv"
 	"time"
 
@@ -57,6 +58,8 @@ func (prometheusTracer) TraceQuery(ctx context.Context, queryString string, oper
 		ctx, finish = trace.OpenTracingTracer{}.TraceQuery(ctx, queryString, operationName, variables, varTypes)
 	}
 
+	_, disableLog := os.LookupEnv("NO_GRAPHQL_LOG")
+
 	// Note: We don't care about the error here, we just extract the username if
 	// we get a non-nil user object.
 	currentUser, _ := CurrentUser(ctx)
@@ -77,17 +80,17 @@ func (prometheusTracer) TraceQuery(ctx context.Context, queryString string, oper
 	}
 	requestSource := sgtrace.RequestSource(ctx)
 	lvl("serving GraphQL request", "name", requestName, "user", currentUserName, "source", requestSource)
-	if requestName == "unknown" {
+	if !disableLog && requestName == "unknown" {
 		log.Printf(`logging complete query for unnamed GraphQL request above name=%s user=%s source=%s:
-QUERY
------
-%s
+	QUERY
+	-----
+	%s
 
-VARIABLES
----------
-%v
+	VARIABLES
+	---------
+	%v
 
-`, requestName, currentUserName, requestSource, queryString, variables)
+	`, requestName, currentUserName, requestSource, queryString, variables)
 	}
 	return ctx, func(err []*gqlerrors.QueryError) {
 		if finish != nil {
@@ -97,7 +100,7 @@ VARIABLES
 		if v := conf.Get().ObservabilityLogSlowGraphQLRequests; v != 0 && d.Milliseconds() > int64(v) {
 			encodedVariables, _ := json.Marshal(variables)
 			log15.Warn("slow GraphQL request", "time", d, "name", requestName, "user", currentUserName, "source", requestSource, "error", err, "variables", string(encodedVariables))
-			if requestName == "unknown" {
+			if !disableLog && requestName == "unknown" {
 				log.Printf(`logging complete query for slow GraphQL request above time=%v name=%s user=%s source=%s error=%v:
 QUERY
 -----

@@ -1313,7 +1313,9 @@ func exec(
 		return r.Errors
 	}
 
-	if testing.Verbose() {
+	_, disableLog := os.LookupEnv("NO_GRAPHQL_LOG")
+
+	if testing.Verbose() && !disableLog {
 		t.Logf("\n---- GraphQL Query ----\n%s\n\nVars: %s\n---- GraphQL Result ----\n%s\n -----------", query, toJSON(t, in), r.Data)
 	}
 
