@@ -15,7 +15,9 @@ export const RepoSettingsPermissionsPage: React.FunctionComponent<{ repo: GQL.IR
             <PageTitle title="Permissions" />
             <h2>Permissions</h2>
             {!repo.isPrivate ? (
-                <div className="alert alert-info">This is a public repository and can be viewed by everyone.</div>
+                <div className="alert alert-info">
+                    Access to this repository is not restricted, all Sourcegraph users have access.
+                </div>
             ) : !repo.permissionsInfo ? (
                 <div className="alert alert-info">
                     This repository is queued to sync permissions, only site admins will have access to it until syncing
