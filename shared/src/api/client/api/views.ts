@@ -11,7 +11,7 @@ import { Location } from '@sourcegraph/extension-api-types'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { ProxySubscribable } from '../../extension/api/common'
 import { wrapRemoteObservable } from './common'
-import { ViewService } from '../services/viewService'
+import { ViewService, ViewContexts } from '../services/viewService'
 
 /** @internal */
 export interface PanelViewData extends Pick<PanelView, 'title' | 'content' | 'priority' | 'component'> {}
@@ -24,10 +24,11 @@ export interface PanelUpdater extends Unsubscribable, comlink.ProxyMarked {
 export interface ClientViewsAPI extends comlink.ProxyMarked {
     $registerPanelViewProvider(provider: { id: string }): PanelUpdater
 
-    $registerViewProvider(
+    $registerViewProvider<W extends ContributableViewContainer>(
         id: string,
+        where: W,
         providerFunction: comlink.Remote<
-            ((params: { [key: string]: string }) => ProxySubscribable<View | null>) & comlink.ProxyMarked
+            ((context: ViewContexts[W]) => ProxySubscribable<View | null>) & comlink.ProxyMarked
         >
     ): Unsubscribable & comlink.ProxyMarked
 }
@@ -97,12 +98,15 @@ export class ClientViews implements ClientViewsAPI {
         })
     }
 
-    public $registerViewProvider(
+    public $registerViewProvider<W extends ContributableViewContainer>(
         id: string,
+        where: W,
         providerFunction: comlink.Remote<
-            ((params: Record<string, string>) => ProxySubscribable<View | null>) & comlink.ProxyMarked
+            ((context: ViewContexts[W]) => ProxySubscribable<View | null>) & comlink.ProxyMarked
         >
     ): Unsubscribable & comlink.ProxyMarked {
-        return comlink.proxy(this.viewService.register(id, params => wrapRemoteObservable(providerFunction(params))))
+        return comlink.proxy(
+            this.viewService.register(id, where, context => wrapRemoteObservable(providerFunction(context as any))) // TODO find type-safe way
+        )
     }
 }

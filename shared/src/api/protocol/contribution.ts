@@ -311,6 +311,11 @@ export enum ContributableViewContainer {
      * A global page view, displayed as a standalone page at `/views/ID`.
      */
     GlobalPage = 'global/page',
+
+    /**
+     * A view on directory pages.
+     */
+    Directory = 'directory',
 }
 
 /**
@@ -323,10 +328,7 @@ export interface ViewContribution {
     id: string
 
     /**
-     * The title of this view.
-     *
-     * Currently only 'global' is supported; the other values of {@link ContributableViewContainer}
-     * are intended for the panel view API (which will eventually be merged into the new view API).
+     * Where this view will be displayed.
      */
-    where: typeof ContributableViewContainer.GlobalPage
+    where: ContributableViewContainer
 }

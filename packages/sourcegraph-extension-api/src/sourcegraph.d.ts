@@ -719,16 +719,40 @@ declare module 'sourcegraph' {
     /**
      * A view provider registered with {@link sourcegraph.app.registerViewProvider}.
      */
-    export interface ViewProvider {
+    export type ViewProvider = GlobalPageViewProvider | DirectoryViewProvider
+
+    /**
+     * Experimental global view provider. Global view providers are shown on a dedicated page in the app.
+     * This API is experimtal subject to change or removal without notice.
+     */
+    export interface GlobalPageViewProvider {
+        where: 'global/page'
+
+        /**
+         * Provide content for the view.
+         *
+         * @param params Parameters from the page (such as URL query parameters). The schema of these parameters is
+         * experimental and subject to change without notice.
+         * @returns The view content.
+         */
+        provideView(context: { [param: string]: string }): ProviderResult<View>
+    }
+
+    /**
+     * Experimental view provider for directory pages.
+     * This API is experimtal subject to change or removal without notice.
+     */
+    export interface DirectoryViewProvider {
+        where: 'directory'
+
         /**
          * Provide content for a view.
          *
-         * @param params Parameters from the container that is rendering the view (such as URL query
-         * parameters). The schema of these parameters is experimental and subject to change without
-         * notice.
+         * @param context The context of the directory. The schema of these parameters is experimental and subject to
+         * change without notice.
          * @returns The view content.
          */
-        provideView(params: { [key: string]: string }): ProviderResult<View>
+        provideView(context: { workspace: WorkspaceRoot }): ProviderResult<View>
     }
 
     /**

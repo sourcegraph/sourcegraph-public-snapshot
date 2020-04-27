@@ -9,8 +9,8 @@ const scheduler = (): TestScheduler => new TestScheduler((actual, expected) => e
 describe('ViewService', () => {
     test('throws on ID conflict', () => {
         const viewService = createViewService()
-        viewService.register('v', () => NEVER)
-        expect(() => viewService.register('v', () => NEVER)).toThrow()
+        viewService.register('v', ContributableViewContainer.GlobalPage, () => NEVER)
+        expect(() => viewService.register('v', ContributableViewContainer.GlobalPage, () => NEVER)).toThrow()
     })
 
     test('get  nonexistent view', () => {
@@ -25,7 +25,7 @@ describe('ViewService', () => {
     test('register then get', () => {
         const viewService = createViewService()
         scheduler().run(({ cold, expectObservable }) => {
-            viewService.register('v', () =>
+            viewService.register('v', ContributableViewContainer.GlobalPage, () =>
                 cold<View>('bc', { b: { title: 'b', content: [] }, c: { title: 'c', content: [] } })
             )
             expectObservable(viewService.get('v', {})).toBe('bc', {
@@ -38,7 +38,7 @@ describe('ViewService', () => {
     test('register, unsubscribe, then get', () => {
         const viewService = createViewService()
         scheduler().run(({ cold, expectObservable }) => {
-            const subscription = viewService.register('v', () =>
+            const subscription = viewService.register('v', ContributableViewContainer.GlobalPage, () =>
                 cold<View>('bc', { b: { title: 'b', content: [] }, c: { title: 'c', content: [] } })
             )
             subscription.unsubscribe()

@@ -3,7 +3,8 @@ import * as sourcegraph from 'sourcegraph'
 import { ClientViewsAPI, PanelUpdater, PanelViewData } from '../../client/api/views'
 import { syncSubscription } from '../../util'
 import { Unsubscribable } from 'rxjs'
-import { toProxyableSubscribable } from './common'
+import { toProxyableSubscribable, ProxySubscribable } from './common'
+import { ContributableViewContainer } from '../../protocol'
 
 /**
  * @internal
@@ -73,11 +74,17 @@ export class ExtViews implements comlink.ProxyMarked {
     }
 
     public registerViewProvider(id: string, provider: sourcegraph.ViewProvider): Unsubscribable {
-        const providerFunction: comlink.Local<
-            Parameters<ClientViewsAPI['$registerViewProvider']>[1]
-        > = comlink.proxy((params: { [key: string]: string }) =>
-            toProxyableSubscribable(provider.provideView(params), result => result || null)
+        const providerFunction: comlink.Local<comlink.Remote<
+            ((context: any) => ProxySubscribable<sourcegraph.View | null>) & comlink.ProxyMarked
+        >> = comlink.proxy((context: any) => {
+            const rehydrated =
+                provider.where === 'directory'
+                    ? { workspace: ((): sourcegraph.WorkspaceRoot => ({ uri: new URL(context.workspace.uri) }))() }
+                    : context
+            return toProxyableSubscribable(provider.provideView(rehydrated), result => result || null)
+        })
+        return syncSubscription(
+            this.proxy.$registerViewProvider(id, provider.where as ContributableViewContainer, providerFunction)
         )
-        return syncSubscription(this.proxy.$registerViewProvider(id, providerFunction))
     }
 }
