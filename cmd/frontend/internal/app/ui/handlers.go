@@ -264,10 +264,7 @@ func redirectTreeOrBlob(routeName string, common *Common, r *http.Request, w htt
 	if path == "/" || path == "" {
 		if routeName != routeRepo {
 			// Redirect to repo route
-			target := "/" + string(common.Repo.Name)
-			if common.Rev != "" {
-				target += common.Rev
-			}
+			target := "/" + string(common.Repo.Name) + common.Rev
 			http.Redirect(w, r, target, http.StatusTemporaryRedirect)
 			return true, nil
 		}
