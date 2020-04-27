@@ -26,11 +26,11 @@ func TestSameRepoPager(t *testing.T) {
 	)
 
 	expected := []types.PackageReference{
-		types.PackageReference{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 1, Filter: []byte("f1")},
-		types.PackageReference{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 2, Filter: []byte("f2")},
-		types.PackageReference{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 3, Filter: []byte("f3")},
-		types.PackageReference{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 4, Filter: []byte("f4")},
-		types.PackageReference{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 5, Filter: []byte("f5")},
+		{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 1, Filter: []byte("f1")},
+		{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 2, Filter: []byte("f2")},
+		{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 3, Filter: []byte("f3")},
+		{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 4, Filter: []byte("f4")},
+		{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 5, Filter: []byte("f5")},
 	}
 	insertReferences(t, db.db, expected...)
 
@@ -96,15 +96,15 @@ func TestSameRepoPagerMultiplePages(t *testing.T) {
 	)
 
 	expected := []types.PackageReference{
-		types.PackageReference{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 1, Filter: []byte("f1")},
-		types.PackageReference{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 2, Filter: []byte("f2")},
-		types.PackageReference{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 3, Filter: []byte("f3")},
-		types.PackageReference{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 4, Filter: []byte("f4")},
-		types.PackageReference{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 5, Filter: []byte("f5")},
-		types.PackageReference{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 6, Filter: []byte("f6")},
-		types.PackageReference{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 7, Filter: []byte("f7")},
-		types.PackageReference{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 8, Filter: []byte("f8")},
-		types.PackageReference{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 9, Filter: []byte("f9")},
+		{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 1, Filter: []byte("f1")},
+		{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 2, Filter: []byte("f2")},
+		{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 3, Filter: []byte("f3")},
+		{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 4, Filter: []byte("f4")},
+		{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 5, Filter: []byte("f5")},
+		{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 6, Filter: []byte("f6")},
+		{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 7, Filter: []byte("f7")},
+		{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 8, Filter: []byte("f8")},
+		{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 9, Filter: []byte("f9")},
 	}
 	insertReferences(t, db.db, expected...)
 
@@ -152,13 +152,13 @@ func TestSameRepoPagerVisibility(t *testing.T) {
 	)
 
 	expected := []types.PackageReference{
-		types.PackageReference{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 3, Filter: []byte("f3")},
-		types.PackageReference{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 4, Filter: []byte("f4")},
-		types.PackageReference{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 5, Filter: []byte("f5")},
+		{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 3, Filter: []byte("f3")},
+		{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 4, Filter: []byte("f4")},
+		{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 5, Filter: []byte("f5")},
 	}
 	insertReferences(t, db.db, append([]types.PackageReference{
-		types.PackageReference{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 1, Filter: []byte("f1")},
-		types.PackageReference{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 2, Filter: []byte("f2")},
+		{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 1, Filter: []byte("f1")},
+		{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 2, Filter: []byte("f2")},
 	}, expected...)...)
 
 	insertCommits(t, db.db, map[string][]string{
@@ -205,15 +205,15 @@ func TestPackageReferencePager(t *testing.T) {
 	)
 
 	expected := []types.PackageReference{
-		types.PackageReference{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 2, Filter: []byte("f2")},
-		types.PackageReference{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 3, Filter: []byte("f3")},
-		types.PackageReference{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 4, Filter: []byte("f4")},
-		types.PackageReference{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 5, Filter: []byte("f5")},
-		types.PackageReference{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 7, Filter: []byte("f7")},
+		{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 2, Filter: []byte("f2")},
+		{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 3, Filter: []byte("f3")},
+		{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 4, Filter: []byte("f4")},
+		{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 5, Filter: []byte("f5")},
+		{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 7, Filter: []byte("f7")},
 	}
 	insertReferences(t, db.db, append([]types.PackageReference{
-		types.PackageReference{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 1, Filter: []byte("f1")},
-		types.PackageReference{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 6, Filter: []byte("f6")},
+		{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 1, Filter: []byte("f1")},
+		{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 6, Filter: []byte("f6")},
 	}, expected...)...)
 
 	totalCount, pager, err := db.PackageReferencePager(context.Background(), "gomod", "leftpad", "0.1.0", 50, 5)
@@ -271,15 +271,15 @@ func TestPackageReferencePagerPages(t *testing.T) {
 	)
 
 	expected := []types.PackageReference{
-		types.PackageReference{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 1, Filter: []byte("f1")},
-		types.PackageReference{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 2, Filter: []byte("f2")},
-		types.PackageReference{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 3, Filter: []byte("f3")},
-		types.PackageReference{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 4, Filter: []byte("f4")},
-		types.PackageReference{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 5, Filter: []byte("f5")},
-		types.PackageReference{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 6, Filter: []byte("f6")},
-		types.PackageReference{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 7, Filter: []byte("f7")},
-		types.PackageReference{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 8, Filter: []byte("f8")},
-		types.PackageReference{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 9, Filter: []byte("f9")},
+		{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 1, Filter: []byte("f1")},
+		{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 2, Filter: []byte("f2")},
+		{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 3, Filter: []byte("f3")},
+		{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 4, Filter: []byte("f4")},
+		{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 5, Filter: []byte("f5")},
+		{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 6, Filter: []byte("f6")},
+		{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 7, Filter: []byte("f7")},
+		{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 8, Filter: []byte("f8")},
+		{Scheme: "gomod", Name: "leftpad", Version: "0.1.0", DumpID: 9, Filter: []byte("f9")},
 	}
 	insertReferences(t, db.db, expected...)
 
