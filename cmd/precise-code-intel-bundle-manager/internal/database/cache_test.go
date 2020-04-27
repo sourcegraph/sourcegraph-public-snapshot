@@ -10,14 +10,14 @@ import (
 
 func TestDatabaseCacheEvictionWhileHeld(t *testing.T) {
 	// keep track of what db mocks are closed
-	closed := map[IDatabase]bool{}
+	closed := map[Database]bool{}
 	// protected concurrent access to closed map
 	var mutex sync.Mutex
 
-	// openTestDatabase creates a new IDatabase that inserts an entry
+	// openTestDatabase creates a new Database that inserts an entry
 	// for itself into the close map when its Close method is called.
-	openTestDatabase := func() (IDatabase, error) {
-		db := NewMockIDatabase()
+	openTestDatabase := func() (Database, error) {
+		db := NewMockDatabase()
 		db.CloseFunc.SetDefaultHook(func() error {
 			mutex.Lock()
 			defer mutex.Unlock()
@@ -29,7 +29,7 @@ func TestDatabaseCacheEvictionWhileHeld(t *testing.T) {
 	}
 
 	// isOpen returns true if the database has not yet been closed.
-	isOpen := func(db IDatabase) bool {
+	isOpen := func(db Database) bool {
 		mutex.Lock()
 		defer mutex.Unlock()
 		return !closed[db]
@@ -38,7 +38,7 @@ func TestDatabaseCacheEvictionWhileHeld(t *testing.T) {
 	// isOpenFor100ms will call isOpen for the given database until it
 	// has closed or 250ms has elapsed. This is used to test whether or
 	// not a database handle has been closed by an LRU eviction.
-	isOpenFor250ms := func(db IDatabase) bool {
+	isOpenFor250ms := func(db Database) bool {
 		for i := 0; i < 100; i++ {
 			if isOpen(db) {
 				time.Sleep(time.Millisecond)
@@ -57,16 +57,16 @@ func TestDatabaseCacheEvictionWhileHeld(t *testing.T) {
 	}
 
 	// reference to a db handle that outlives the cache entry
-	var dbRef IDatabase
+	var dbRef Database
 
 	// cache: foo
-	if err := cache.WithDatabase("foo", openTestDatabase, func(db1 IDatabase) error {
+	if err := cache.WithDatabase("foo", openTestDatabase, func(db1 Database) error {
 		dbRef = db1
 
 	outer:
 		for {
 			// cache: bar,foo
-			if err := cache.WithDatabase("bar", openTestDatabase, func(_ IDatabase) error {
+			if err := cache.WithDatabase("bar", openTestDatabase, func(_ Database) error {
 				return nil
 			}); err != nil {
 				return err
@@ -75,7 +75,7 @@ func TestDatabaseCacheEvictionWhileHeld(t *testing.T) {
 			// cache: baz, bar
 			// expected: foo was evicted but should not be closed
 			// possible: another key was evicted instead due to ristretto's heuristic counters
-			if err := cache.WithDatabase("baz", openTestDatabase, func(_ IDatabase) error {
+			if err := cache.WithDatabase("baz", openTestDatabase, func(_ Database) error {
 				return nil
 			}); err != nil {
 				return err
@@ -105,7 +105,7 @@ func TestDatabaseCacheEvictionWhileHeld(t *testing.T) {
 
 		// cache: foo, bar
 		// note: this version of foo should be a fresh connection
-		return cache.WithDatabase("foo", openTestDatabase, func(db2 IDatabase) error {
+		return cache.WithDatabase("foo", openTestDatabase, func(db2 Database) error {
 			if db1 == db2 {
 				return errors.New("unexpected cached database")
 			}

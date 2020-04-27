@@ -7,77 +7,77 @@ import (
 	"sync"
 )
 
-// MockIDatabase is a mock impelementation of the IDatabase interface (from
+// MockDatabase is a mock impelementation of the Database interface (from
 // the package
 // github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/database)
 // used for unit testing.
-type MockIDatabase struct {
+type MockDatabase struct {
 	// CloseFunc is an instance of a mock function object controlling the
 	// behavior of the method Close.
-	CloseFunc *IDatabaseCloseFunc
+	CloseFunc *DatabaseCloseFunc
 	// DefinitionsFunc is an instance of a mock function object controlling
 	// the behavior of the method Definitions.
-	DefinitionsFunc *IDatabaseDefinitionsFunc
+	DefinitionsFunc *DatabaseDefinitionsFunc
 	// ExistsFunc is an instance of a mock function object controlling the
 	// behavior of the method Exists.
-	ExistsFunc *IDatabaseExistsFunc
+	ExistsFunc *DatabaseExistsFunc
 	// HoverFunc is an instance of a mock function object controlling the
 	// behavior of the method Hover.
-	HoverFunc *IDatabaseHoverFunc
+	HoverFunc *DatabaseHoverFunc
 	// MonikerResultsFunc is an instance of a mock function object
 	// controlling the behavior of the method MonikerResults.
-	MonikerResultsFunc *IDatabaseMonikerResultsFunc
+	MonikerResultsFunc *DatabaseMonikerResultsFunc
 	// MonikersByPositionFunc is an instance of a mock function object
 	// controlling the behavior of the method MonikersByPosition.
-	MonikersByPositionFunc *IDatabaseMonikersByPositionFunc
+	MonikersByPositionFunc *DatabaseMonikersByPositionFunc
 	// PackageInformationFunc is an instance of a mock function object
 	// controlling the behavior of the method PackageInformation.
-	PackageInformationFunc *IDatabasePackageInformationFunc
+	PackageInformationFunc *DatabasePackageInformationFunc
 	// ReferencesFunc is an instance of a mock function object controlling
 	// the behavior of the method References.
-	ReferencesFunc *IDatabaseReferencesFunc
+	ReferencesFunc *DatabaseReferencesFunc
 }
 
-// NewMockIDatabase creates a new mock of the IDatabase interface. All
-// methods return zero values for all results, unless overwritten.
-func NewMockIDatabase() *MockIDatabase {
-	return &MockIDatabase{
-		CloseFunc: &IDatabaseCloseFunc{
+// NewMockDatabase creates a new mock of the Database interface. All methods
+// return zero values for all results, unless overwritten.
+func NewMockDatabase() *MockDatabase {
+	return &MockDatabase{
+		CloseFunc: &DatabaseCloseFunc{
 			defaultHook: func() error {
 				return nil
 			},
 		},
-		DefinitionsFunc: &IDatabaseDefinitionsFunc{
+		DefinitionsFunc: &DatabaseDefinitionsFunc{
 			defaultHook: func(string, int, int) ([]Location, error) {
 				return nil, nil
 			},
 		},
-		ExistsFunc: &IDatabaseExistsFunc{
+		ExistsFunc: &DatabaseExistsFunc{
 			defaultHook: func(string) (bool, error) {
 				return false, nil
 			},
 		},
-		HoverFunc: &IDatabaseHoverFunc{
+		HoverFunc: &DatabaseHoverFunc{
 			defaultHook: func(string, int, int) (string, Range, bool, error) {
 				return "", Range{}, false, nil
 			},
 		},
-		MonikerResultsFunc: &IDatabaseMonikerResultsFunc{
+		MonikerResultsFunc: &DatabaseMonikerResultsFunc{
 			defaultHook: func(string, string, string, int, int) ([]Location, int, error) {
 				return nil, 0, nil
 			},
 		},
-		MonikersByPositionFunc: &IDatabaseMonikersByPositionFunc{
+		MonikersByPositionFunc: &DatabaseMonikersByPositionFunc{
 			defaultHook: func(string, int, int) ([][]types.MonikerData, error) {
 				return nil, nil
 			},
 		},
-		PackageInformationFunc: &IDatabasePackageInformationFunc{
+		PackageInformationFunc: &DatabasePackageInformationFunc{
 			defaultHook: func(string, types.ID) (types.PackageInformationData, bool, error) {
 				return types.PackageInformationData{}, false, nil
 			},
 		},
-		ReferencesFunc: &IDatabaseReferencesFunc{
+		ReferencesFunc: &DatabaseReferencesFunc{
 			defaultHook: func(string, int, int) ([]Location, error) {
 				return nil, nil
 			},
@@ -85,65 +85,65 @@ func NewMockIDatabase() *MockIDatabase {
 	}
 }
 
-// NewMockIDatabaseFrom creates a new mock of the MockIDatabase interface.
-// All methods delegate to the given implementation, unless overwritten.
-func NewMockIDatabaseFrom(i IDatabase) *MockIDatabase {
-	return &MockIDatabase{
-		CloseFunc: &IDatabaseCloseFunc{
+// NewMockDatabaseFrom creates a new mock of the MockDatabase interface. All
+// methods delegate to the given implementation, unless overwritten.
+func NewMockDatabaseFrom(i Database) *MockDatabase {
+	return &MockDatabase{
+		CloseFunc: &DatabaseCloseFunc{
 			defaultHook: i.Close,
 		},
-		DefinitionsFunc: &IDatabaseDefinitionsFunc{
+		DefinitionsFunc: &DatabaseDefinitionsFunc{
 			defaultHook: i.Definitions,
 		},
-		ExistsFunc: &IDatabaseExistsFunc{
+		ExistsFunc: &DatabaseExistsFunc{
 			defaultHook: i.Exists,
 		},
-		HoverFunc: &IDatabaseHoverFunc{
+		HoverFunc: &DatabaseHoverFunc{
 			defaultHook: i.Hover,
 		},
-		MonikerResultsFunc: &IDatabaseMonikerResultsFunc{
+		MonikerResultsFunc: &DatabaseMonikerResultsFunc{
 			defaultHook: i.MonikerResults,
 		},
-		MonikersByPositionFunc: &IDatabaseMonikersByPositionFunc{
+		MonikersByPositionFunc: &DatabaseMonikersByPositionFunc{
 			defaultHook: i.MonikersByPosition,
 		},
-		PackageInformationFunc: &IDatabasePackageInformationFunc{
+		PackageInformationFunc: &DatabasePackageInformationFunc{
 			defaultHook: i.PackageInformation,
 		},
-		ReferencesFunc: &IDatabaseReferencesFunc{
+		ReferencesFunc: &DatabaseReferencesFunc{
 			defaultHook: i.References,
 		},
 	}
 }
 
-// IDatabaseCloseFunc describes the behavior when the Close method of the
-// parent MockIDatabase instance is invoked.
-type IDatabaseCloseFunc struct {
+// DatabaseCloseFunc describes the behavior when the Close method of the
+// parent MockDatabase instance is invoked.
+type DatabaseCloseFunc struct {
 	defaultHook func() error
 	hooks       []func() error
-	history     []IDatabaseCloseFuncCall
+	history     []DatabaseCloseFuncCall
 	mutex       sync.Mutex
 }
 
 // Close delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockIDatabase) Close() error {
+func (m *MockDatabase) Close() error {
 	r0 := m.CloseFunc.nextHook()()
-	m.CloseFunc.appendCall(IDatabaseCloseFuncCall{r0})
+	m.CloseFunc.appendCall(DatabaseCloseFuncCall{r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the Close method of the
-// parent MockIDatabase instance is invoked and the hook queue is empty.
-func (f *IDatabaseCloseFunc) SetDefaultHook(hook func() error) {
+// parent MockDatabase instance is invoked and the hook queue is empty.
+func (f *DatabaseCloseFunc) SetDefaultHook(hook func() error) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Close method of the parent MockIDatabase instance inovkes the hook at the
+// Close method of the parent MockDatabase instance inovkes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *IDatabaseCloseFunc) PushHook(hook func() error) {
+func (f *DatabaseCloseFunc) PushHook(hook func() error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -151,7 +151,7 @@ func (f *IDatabaseCloseFunc) PushHook(hook func() error) {
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *IDatabaseCloseFunc) SetDefaultReturn(r0 error) {
+func (f *DatabaseCloseFunc) SetDefaultReturn(r0 error) {
 	f.SetDefaultHook(func() error {
 		return r0
 	})
@@ -159,13 +159,13 @@ func (f *IDatabaseCloseFunc) SetDefaultReturn(r0 error) {
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *IDatabaseCloseFunc) PushReturn(r0 error) {
+func (f *DatabaseCloseFunc) PushReturn(r0 error) {
 	f.PushHook(func() error {
 		return r0
 	})
 }
 
-func (f *IDatabaseCloseFunc) nextHook() func() error {
+func (f *DatabaseCloseFunc) nextHook() func() error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -178,26 +178,26 @@ func (f *IDatabaseCloseFunc) nextHook() func() error {
 	return hook
 }
 
-func (f *IDatabaseCloseFunc) appendCall(r0 IDatabaseCloseFuncCall) {
+func (f *DatabaseCloseFunc) appendCall(r0 DatabaseCloseFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of IDatabaseCloseFuncCall objects describing
+// History returns a sequence of DatabaseCloseFuncCall objects describing
 // the invocations of this function.
-func (f *IDatabaseCloseFunc) History() []IDatabaseCloseFuncCall {
+func (f *DatabaseCloseFunc) History() []DatabaseCloseFuncCall {
 	f.mutex.Lock()
-	history := make([]IDatabaseCloseFuncCall, len(f.history))
+	history := make([]DatabaseCloseFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// IDatabaseCloseFuncCall is an object that describes an invocation of
-// method Close on an instance of MockIDatabase.
-type IDatabaseCloseFuncCall struct {
+// DatabaseCloseFuncCall is an object that describes an invocation of method
+// Close on an instance of MockDatabase.
+type DatabaseCloseFuncCall struct {
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -205,45 +205,45 @@ type IDatabaseCloseFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c IDatabaseCloseFuncCall) Args() []interface{} {
+func (c DatabaseCloseFuncCall) Args() []interface{} {
 	return []interface{}{}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c IDatabaseCloseFuncCall) Results() []interface{} {
+func (c DatabaseCloseFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// IDatabaseDefinitionsFunc describes the behavior when the Definitions
-// method of the parent MockIDatabase instance is invoked.
-type IDatabaseDefinitionsFunc struct {
+// DatabaseDefinitionsFunc describes the behavior when the Definitions
+// method of the parent MockDatabase instance is invoked.
+type DatabaseDefinitionsFunc struct {
 	defaultHook func(string, int, int) ([]Location, error)
 	hooks       []func(string, int, int) ([]Location, error)
-	history     []IDatabaseDefinitionsFuncCall
+	history     []DatabaseDefinitionsFuncCall
 	mutex       sync.Mutex
 }
 
 // Definitions delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockIDatabase) Definitions(v0 string, v1 int, v2 int) ([]Location, error) {
+func (m *MockDatabase) Definitions(v0 string, v1 int, v2 int) ([]Location, error) {
 	r0, r1 := m.DefinitionsFunc.nextHook()(v0, v1, v2)
-	m.DefinitionsFunc.appendCall(IDatabaseDefinitionsFuncCall{v0, v1, v2, r0, r1})
+	m.DefinitionsFunc.appendCall(DatabaseDefinitionsFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the Definitions method
-// of the parent MockIDatabase instance is invoked and the hook queue is
+// of the parent MockDatabase instance is invoked and the hook queue is
 // empty.
-func (f *IDatabaseDefinitionsFunc) SetDefaultHook(hook func(string, int, int) ([]Location, error)) {
+func (f *DatabaseDefinitionsFunc) SetDefaultHook(hook func(string, int, int) ([]Location, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Definitions method of the parent MockIDatabase instance inovkes the hook
+// Definitions method of the parent MockDatabase instance inovkes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *IDatabaseDefinitionsFunc) PushHook(hook func(string, int, int) ([]Location, error)) {
+func (f *DatabaseDefinitionsFunc) PushHook(hook func(string, int, int) ([]Location, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -251,7 +251,7 @@ func (f *IDatabaseDefinitionsFunc) PushHook(hook func(string, int, int) ([]Locat
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *IDatabaseDefinitionsFunc) SetDefaultReturn(r0 []Location, r1 error) {
+func (f *DatabaseDefinitionsFunc) SetDefaultReturn(r0 []Location, r1 error) {
 	f.SetDefaultHook(func(string, int, int) ([]Location, error) {
 		return r0, r1
 	})
@@ -259,13 +259,13 @@ func (f *IDatabaseDefinitionsFunc) SetDefaultReturn(r0 []Location, r1 error) {
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *IDatabaseDefinitionsFunc) PushReturn(r0 []Location, r1 error) {
+func (f *DatabaseDefinitionsFunc) PushReturn(r0 []Location, r1 error) {
 	f.PushHook(func(string, int, int) ([]Location, error) {
 		return r0, r1
 	})
 }
 
-func (f *IDatabaseDefinitionsFunc) nextHook() func(string, int, int) ([]Location, error) {
+func (f *DatabaseDefinitionsFunc) nextHook() func(string, int, int) ([]Location, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -278,26 +278,26 @@ func (f *IDatabaseDefinitionsFunc) nextHook() func(string, int, int) ([]Location
 	return hook
 }
 
-func (f *IDatabaseDefinitionsFunc) appendCall(r0 IDatabaseDefinitionsFuncCall) {
+func (f *DatabaseDefinitionsFunc) appendCall(r0 DatabaseDefinitionsFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of IDatabaseDefinitionsFuncCall objects
+// History returns a sequence of DatabaseDefinitionsFuncCall objects
 // describing the invocations of this function.
-func (f *IDatabaseDefinitionsFunc) History() []IDatabaseDefinitionsFuncCall {
+func (f *DatabaseDefinitionsFunc) History() []DatabaseDefinitionsFuncCall {
 	f.mutex.Lock()
-	history := make([]IDatabaseDefinitionsFuncCall, len(f.history))
+	history := make([]DatabaseDefinitionsFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// IDatabaseDefinitionsFuncCall is an object that describes an invocation of
-// method Definitions on an instance of MockIDatabase.
-type IDatabaseDefinitionsFuncCall struct {
+// DatabaseDefinitionsFuncCall is an object that describes an invocation of
+// method Definitions on an instance of MockDatabase.
+type DatabaseDefinitionsFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 string
@@ -317,44 +317,44 @@ type IDatabaseDefinitionsFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c IDatabaseDefinitionsFuncCall) Args() []interface{} {
+func (c DatabaseDefinitionsFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c IDatabaseDefinitionsFuncCall) Results() []interface{} {
+func (c DatabaseDefinitionsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// IDatabaseExistsFunc describes the behavior when the Exists method of the
-// parent MockIDatabase instance is invoked.
-type IDatabaseExistsFunc struct {
+// DatabaseExistsFunc describes the behavior when the Exists method of the
+// parent MockDatabase instance is invoked.
+type DatabaseExistsFunc struct {
 	defaultHook func(string) (bool, error)
 	hooks       []func(string) (bool, error)
-	history     []IDatabaseExistsFuncCall
+	history     []DatabaseExistsFuncCall
 	mutex       sync.Mutex
 }
 
 // Exists delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockIDatabase) Exists(v0 string) (bool, error) {
+func (m *MockDatabase) Exists(v0 string) (bool, error) {
 	r0, r1 := m.ExistsFunc.nextHook()(v0)
-	m.ExistsFunc.appendCall(IDatabaseExistsFuncCall{v0, r0, r1})
+	m.ExistsFunc.appendCall(DatabaseExistsFuncCall{v0, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the Exists method of the
-// parent MockIDatabase instance is invoked and the hook queue is empty.
-func (f *IDatabaseExistsFunc) SetDefaultHook(hook func(string) (bool, error)) {
+// parent MockDatabase instance is invoked and the hook queue is empty.
+func (f *DatabaseExistsFunc) SetDefaultHook(hook func(string) (bool, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Exists method of the parent MockIDatabase instance inovkes the hook at
-// the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *IDatabaseExistsFunc) PushHook(hook func(string) (bool, error)) {
+// Exists method of the parent MockDatabase instance inovkes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *DatabaseExistsFunc) PushHook(hook func(string) (bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -362,7 +362,7 @@ func (f *IDatabaseExistsFunc) PushHook(hook func(string) (bool, error)) {
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *IDatabaseExistsFunc) SetDefaultReturn(r0 bool, r1 error) {
+func (f *DatabaseExistsFunc) SetDefaultReturn(r0 bool, r1 error) {
 	f.SetDefaultHook(func(string) (bool, error) {
 		return r0, r1
 	})
@@ -370,13 +370,13 @@ func (f *IDatabaseExistsFunc) SetDefaultReturn(r0 bool, r1 error) {
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *IDatabaseExistsFunc) PushReturn(r0 bool, r1 error) {
+func (f *DatabaseExistsFunc) PushReturn(r0 bool, r1 error) {
 	f.PushHook(func(string) (bool, error) {
 		return r0, r1
 	})
 }
 
-func (f *IDatabaseExistsFunc) nextHook() func(string) (bool, error) {
+func (f *DatabaseExistsFunc) nextHook() func(string) (bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -389,26 +389,26 @@ func (f *IDatabaseExistsFunc) nextHook() func(string) (bool, error) {
 	return hook
 }
 
-func (f *IDatabaseExistsFunc) appendCall(r0 IDatabaseExistsFuncCall) {
+func (f *DatabaseExistsFunc) appendCall(r0 DatabaseExistsFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of IDatabaseExistsFuncCall objects describing
+// History returns a sequence of DatabaseExistsFuncCall objects describing
 // the invocations of this function.
-func (f *IDatabaseExistsFunc) History() []IDatabaseExistsFuncCall {
+func (f *DatabaseExistsFunc) History() []DatabaseExistsFuncCall {
 	f.mutex.Lock()
-	history := make([]IDatabaseExistsFuncCall, len(f.history))
+	history := make([]DatabaseExistsFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// IDatabaseExistsFuncCall is an object that describes an invocation of
-// method Exists on an instance of MockIDatabase.
-type IDatabaseExistsFuncCall struct {
+// DatabaseExistsFuncCall is an object that describes an invocation of
+// method Exists on an instance of MockDatabase.
+type DatabaseExistsFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 string
@@ -422,44 +422,44 @@ type IDatabaseExistsFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c IDatabaseExistsFuncCall) Args() []interface{} {
+func (c DatabaseExistsFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c IDatabaseExistsFuncCall) Results() []interface{} {
+func (c DatabaseExistsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// IDatabaseHoverFunc describes the behavior when the Hover method of the
-// parent MockIDatabase instance is invoked.
-type IDatabaseHoverFunc struct {
+// DatabaseHoverFunc describes the behavior when the Hover method of the
+// parent MockDatabase instance is invoked.
+type DatabaseHoverFunc struct {
 	defaultHook func(string, int, int) (string, Range, bool, error)
 	hooks       []func(string, int, int) (string, Range, bool, error)
-	history     []IDatabaseHoverFuncCall
+	history     []DatabaseHoverFuncCall
 	mutex       sync.Mutex
 }
 
 // Hover delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockIDatabase) Hover(v0 string, v1 int, v2 int) (string, Range, bool, error) {
+func (m *MockDatabase) Hover(v0 string, v1 int, v2 int) (string, Range, bool, error) {
 	r0, r1, r2, r3 := m.HoverFunc.nextHook()(v0, v1, v2)
-	m.HoverFunc.appendCall(IDatabaseHoverFuncCall{v0, v1, v2, r0, r1, r2, r3})
+	m.HoverFunc.appendCall(DatabaseHoverFuncCall{v0, v1, v2, r0, r1, r2, r3})
 	return r0, r1, r2, r3
 }
 
 // SetDefaultHook sets function that is called when the Hover method of the
-// parent MockIDatabase instance is invoked and the hook queue is empty.
-func (f *IDatabaseHoverFunc) SetDefaultHook(hook func(string, int, int) (string, Range, bool, error)) {
+// parent MockDatabase instance is invoked and the hook queue is empty.
+func (f *DatabaseHoverFunc) SetDefaultHook(hook func(string, int, int) (string, Range, bool, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Hover method of the parent MockIDatabase instance inovkes the hook at the
+// Hover method of the parent MockDatabase instance inovkes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *IDatabaseHoverFunc) PushHook(hook func(string, int, int) (string, Range, bool, error)) {
+func (f *DatabaseHoverFunc) PushHook(hook func(string, int, int) (string, Range, bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -467,7 +467,7 @@ func (f *IDatabaseHoverFunc) PushHook(hook func(string, int, int) (string, Range
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *IDatabaseHoverFunc) SetDefaultReturn(r0 string, r1 Range, r2 bool, r3 error) {
+func (f *DatabaseHoverFunc) SetDefaultReturn(r0 string, r1 Range, r2 bool, r3 error) {
 	f.SetDefaultHook(func(string, int, int) (string, Range, bool, error) {
 		return r0, r1, r2, r3
 	})
@@ -475,13 +475,13 @@ func (f *IDatabaseHoverFunc) SetDefaultReturn(r0 string, r1 Range, r2 bool, r3 e
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *IDatabaseHoverFunc) PushReturn(r0 string, r1 Range, r2 bool, r3 error) {
+func (f *DatabaseHoverFunc) PushReturn(r0 string, r1 Range, r2 bool, r3 error) {
 	f.PushHook(func(string, int, int) (string, Range, bool, error) {
 		return r0, r1, r2, r3
 	})
 }
 
-func (f *IDatabaseHoverFunc) nextHook() func(string, int, int) (string, Range, bool, error) {
+func (f *DatabaseHoverFunc) nextHook() func(string, int, int) (string, Range, bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -494,26 +494,26 @@ func (f *IDatabaseHoverFunc) nextHook() func(string, int, int) (string, Range, b
 	return hook
 }
 
-func (f *IDatabaseHoverFunc) appendCall(r0 IDatabaseHoverFuncCall) {
+func (f *DatabaseHoverFunc) appendCall(r0 DatabaseHoverFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of IDatabaseHoverFuncCall objects describing
+// History returns a sequence of DatabaseHoverFuncCall objects describing
 // the invocations of this function.
-func (f *IDatabaseHoverFunc) History() []IDatabaseHoverFuncCall {
+func (f *DatabaseHoverFunc) History() []DatabaseHoverFuncCall {
 	f.mutex.Lock()
-	history := make([]IDatabaseHoverFuncCall, len(f.history))
+	history := make([]DatabaseHoverFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// IDatabaseHoverFuncCall is an object that describes an invocation of
-// method Hover on an instance of MockIDatabase.
-type IDatabaseHoverFuncCall struct {
+// DatabaseHoverFuncCall is an object that describes an invocation of method
+// Hover on an instance of MockDatabase.
+type DatabaseHoverFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 string
@@ -539,45 +539,45 @@ type IDatabaseHoverFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c IDatabaseHoverFuncCall) Args() []interface{} {
+func (c DatabaseHoverFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c IDatabaseHoverFuncCall) Results() []interface{} {
+func (c DatabaseHoverFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2, c.Result3}
 }
 
-// IDatabaseMonikerResultsFunc describes the behavior when the
-// MonikerResults method of the parent MockIDatabase instance is invoked.
-type IDatabaseMonikerResultsFunc struct {
+// DatabaseMonikerResultsFunc describes the behavior when the MonikerResults
+// method of the parent MockDatabase instance is invoked.
+type DatabaseMonikerResultsFunc struct {
 	defaultHook func(string, string, string, int, int) ([]Location, int, error)
 	hooks       []func(string, string, string, int, int) ([]Location, int, error)
-	history     []IDatabaseMonikerResultsFuncCall
+	history     []DatabaseMonikerResultsFuncCall
 	mutex       sync.Mutex
 }
 
 // MonikerResults delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockIDatabase) MonikerResults(v0 string, v1 string, v2 string, v3 int, v4 int) ([]Location, int, error) {
+func (m *MockDatabase) MonikerResults(v0 string, v1 string, v2 string, v3 int, v4 int) ([]Location, int, error) {
 	r0, r1, r2 := m.MonikerResultsFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.MonikerResultsFunc.appendCall(IDatabaseMonikerResultsFuncCall{v0, v1, v2, v3, v4, r0, r1, r2})
+	m.MonikerResultsFunc.appendCall(DatabaseMonikerResultsFuncCall{v0, v1, v2, v3, v4, r0, r1, r2})
 	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the MonikerResults
-// method of the parent MockIDatabase instance is invoked and the hook queue
+// method of the parent MockDatabase instance is invoked and the hook queue
 // is empty.
-func (f *IDatabaseMonikerResultsFunc) SetDefaultHook(hook func(string, string, string, int, int) ([]Location, int, error)) {
+func (f *DatabaseMonikerResultsFunc) SetDefaultHook(hook func(string, string, string, int, int) ([]Location, int, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// MonikerResults method of the parent MockIDatabase instance inovkes the
+// MonikerResults method of the parent MockDatabase instance inovkes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *IDatabaseMonikerResultsFunc) PushHook(hook func(string, string, string, int, int) ([]Location, int, error)) {
+func (f *DatabaseMonikerResultsFunc) PushHook(hook func(string, string, string, int, int) ([]Location, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -585,7 +585,7 @@ func (f *IDatabaseMonikerResultsFunc) PushHook(hook func(string, string, string,
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *IDatabaseMonikerResultsFunc) SetDefaultReturn(r0 []Location, r1 int, r2 error) {
+func (f *DatabaseMonikerResultsFunc) SetDefaultReturn(r0 []Location, r1 int, r2 error) {
 	f.SetDefaultHook(func(string, string, string, int, int) ([]Location, int, error) {
 		return r0, r1, r2
 	})
@@ -593,13 +593,13 @@ func (f *IDatabaseMonikerResultsFunc) SetDefaultReturn(r0 []Location, r1 int, r2
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *IDatabaseMonikerResultsFunc) PushReturn(r0 []Location, r1 int, r2 error) {
+func (f *DatabaseMonikerResultsFunc) PushReturn(r0 []Location, r1 int, r2 error) {
 	f.PushHook(func(string, string, string, int, int) ([]Location, int, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *IDatabaseMonikerResultsFunc) nextHook() func(string, string, string, int, int) ([]Location, int, error) {
+func (f *DatabaseMonikerResultsFunc) nextHook() func(string, string, string, int, int) ([]Location, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -612,26 +612,26 @@ func (f *IDatabaseMonikerResultsFunc) nextHook() func(string, string, string, in
 	return hook
 }
 
-func (f *IDatabaseMonikerResultsFunc) appendCall(r0 IDatabaseMonikerResultsFuncCall) {
+func (f *DatabaseMonikerResultsFunc) appendCall(r0 DatabaseMonikerResultsFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of IDatabaseMonikerResultsFuncCall objects
+// History returns a sequence of DatabaseMonikerResultsFuncCall objects
 // describing the invocations of this function.
-func (f *IDatabaseMonikerResultsFunc) History() []IDatabaseMonikerResultsFuncCall {
+func (f *DatabaseMonikerResultsFunc) History() []DatabaseMonikerResultsFuncCall {
 	f.mutex.Lock()
-	history := make([]IDatabaseMonikerResultsFuncCall, len(f.history))
+	history := make([]DatabaseMonikerResultsFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// IDatabaseMonikerResultsFuncCall is an object that describes an invocation
-// of method MonikerResults on an instance of MockIDatabase.
-type IDatabaseMonikerResultsFuncCall struct {
+// DatabaseMonikerResultsFuncCall is an object that describes an invocation
+// of method MonikerResults on an instance of MockDatabase.
+type DatabaseMonikerResultsFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 string
@@ -660,46 +660,45 @@ type IDatabaseMonikerResultsFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c IDatabaseMonikerResultsFuncCall) Args() []interface{} {
+func (c DatabaseMonikerResultsFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c IDatabaseMonikerResultsFuncCall) Results() []interface{} {
+func (c DatabaseMonikerResultsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
-// IDatabaseMonikersByPositionFunc describes the behavior when the
-// MonikersByPosition method of the parent MockIDatabase instance is
-// invoked.
-type IDatabaseMonikersByPositionFunc struct {
+// DatabaseMonikersByPositionFunc describes the behavior when the
+// MonikersByPosition method of the parent MockDatabase instance is invoked.
+type DatabaseMonikersByPositionFunc struct {
 	defaultHook func(string, int, int) ([][]types.MonikerData, error)
 	hooks       []func(string, int, int) ([][]types.MonikerData, error)
-	history     []IDatabaseMonikersByPositionFuncCall
+	history     []DatabaseMonikersByPositionFuncCall
 	mutex       sync.Mutex
 }
 
 // MonikersByPosition delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockIDatabase) MonikersByPosition(v0 string, v1 int, v2 int) ([][]types.MonikerData, error) {
+func (m *MockDatabase) MonikersByPosition(v0 string, v1 int, v2 int) ([][]types.MonikerData, error) {
 	r0, r1 := m.MonikersByPositionFunc.nextHook()(v0, v1, v2)
-	m.MonikersByPositionFunc.appendCall(IDatabaseMonikersByPositionFuncCall{v0, v1, v2, r0, r1})
+	m.MonikersByPositionFunc.appendCall(DatabaseMonikersByPositionFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the MonikersByPosition
-// method of the parent MockIDatabase instance is invoked and the hook queue
+// method of the parent MockDatabase instance is invoked and the hook queue
 // is empty.
-func (f *IDatabaseMonikersByPositionFunc) SetDefaultHook(hook func(string, int, int) ([][]types.MonikerData, error)) {
+func (f *DatabaseMonikersByPositionFunc) SetDefaultHook(hook func(string, int, int) ([][]types.MonikerData, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// MonikersByPosition method of the parent MockIDatabase instance inovkes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *IDatabaseMonikersByPositionFunc) PushHook(hook func(string, int, int) ([][]types.MonikerData, error)) {
+// MonikersByPosition method of the parent MockDatabase instance inovkes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *DatabaseMonikersByPositionFunc) PushHook(hook func(string, int, int) ([][]types.MonikerData, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -707,7 +706,7 @@ func (f *IDatabaseMonikersByPositionFunc) PushHook(hook func(string, int, int) (
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *IDatabaseMonikersByPositionFunc) SetDefaultReturn(r0 [][]types.MonikerData, r1 error) {
+func (f *DatabaseMonikersByPositionFunc) SetDefaultReturn(r0 [][]types.MonikerData, r1 error) {
 	f.SetDefaultHook(func(string, int, int) ([][]types.MonikerData, error) {
 		return r0, r1
 	})
@@ -715,13 +714,13 @@ func (f *IDatabaseMonikersByPositionFunc) SetDefaultReturn(r0 [][]types.MonikerD
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *IDatabaseMonikersByPositionFunc) PushReturn(r0 [][]types.MonikerData, r1 error) {
+func (f *DatabaseMonikersByPositionFunc) PushReturn(r0 [][]types.MonikerData, r1 error) {
 	f.PushHook(func(string, int, int) ([][]types.MonikerData, error) {
 		return r0, r1
 	})
 }
 
-func (f *IDatabaseMonikersByPositionFunc) nextHook() func(string, int, int) ([][]types.MonikerData, error) {
+func (f *DatabaseMonikersByPositionFunc) nextHook() func(string, int, int) ([][]types.MonikerData, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -734,26 +733,26 @@ func (f *IDatabaseMonikersByPositionFunc) nextHook() func(string, int, int) ([][
 	return hook
 }
 
-func (f *IDatabaseMonikersByPositionFunc) appendCall(r0 IDatabaseMonikersByPositionFuncCall) {
+func (f *DatabaseMonikersByPositionFunc) appendCall(r0 DatabaseMonikersByPositionFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of IDatabaseMonikersByPositionFuncCall objects
+// History returns a sequence of DatabaseMonikersByPositionFuncCall objects
 // describing the invocations of this function.
-func (f *IDatabaseMonikersByPositionFunc) History() []IDatabaseMonikersByPositionFuncCall {
+func (f *DatabaseMonikersByPositionFunc) History() []DatabaseMonikersByPositionFuncCall {
 	f.mutex.Lock()
-	history := make([]IDatabaseMonikersByPositionFuncCall, len(f.history))
+	history := make([]DatabaseMonikersByPositionFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// IDatabaseMonikersByPositionFuncCall is an object that describes an
-// invocation of method MonikersByPosition on an instance of MockIDatabase.
-type IDatabaseMonikersByPositionFuncCall struct {
+// DatabaseMonikersByPositionFuncCall is an object that describes an
+// invocation of method MonikersByPosition on an instance of MockDatabase.
+type DatabaseMonikersByPositionFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 string
@@ -773,46 +772,45 @@ type IDatabaseMonikersByPositionFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c IDatabaseMonikersByPositionFuncCall) Args() []interface{} {
+func (c DatabaseMonikersByPositionFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c IDatabaseMonikersByPositionFuncCall) Results() []interface{} {
+func (c DatabaseMonikersByPositionFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// IDatabasePackageInformationFunc describes the behavior when the
-// PackageInformation method of the parent MockIDatabase instance is
-// invoked.
-type IDatabasePackageInformationFunc struct {
+// DatabasePackageInformationFunc describes the behavior when the
+// PackageInformation method of the parent MockDatabase instance is invoked.
+type DatabasePackageInformationFunc struct {
 	defaultHook func(string, types.ID) (types.PackageInformationData, bool, error)
 	hooks       []func(string, types.ID) (types.PackageInformationData, bool, error)
-	history     []IDatabasePackageInformationFuncCall
+	history     []DatabasePackageInformationFuncCall
 	mutex       sync.Mutex
 }
 
 // PackageInformation delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockIDatabase) PackageInformation(v0 string, v1 types.ID) (types.PackageInformationData, bool, error) {
+func (m *MockDatabase) PackageInformation(v0 string, v1 types.ID) (types.PackageInformationData, bool, error) {
 	r0, r1, r2 := m.PackageInformationFunc.nextHook()(v0, v1)
-	m.PackageInformationFunc.appendCall(IDatabasePackageInformationFuncCall{v0, v1, r0, r1, r2})
+	m.PackageInformationFunc.appendCall(DatabasePackageInformationFuncCall{v0, v1, r0, r1, r2})
 	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the PackageInformation
-// method of the parent MockIDatabase instance is invoked and the hook queue
+// method of the parent MockDatabase instance is invoked and the hook queue
 // is empty.
-func (f *IDatabasePackageInformationFunc) SetDefaultHook(hook func(string, types.ID) (types.PackageInformationData, bool, error)) {
+func (f *DatabasePackageInformationFunc) SetDefaultHook(hook func(string, types.ID) (types.PackageInformationData, bool, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// PackageInformation method of the parent MockIDatabase instance inovkes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *IDatabasePackageInformationFunc) PushHook(hook func(string, types.ID) (types.PackageInformationData, bool, error)) {
+// PackageInformation method of the parent MockDatabase instance inovkes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *DatabasePackageInformationFunc) PushHook(hook func(string, types.ID) (types.PackageInformationData, bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -820,7 +818,7 @@ func (f *IDatabasePackageInformationFunc) PushHook(hook func(string, types.ID) (
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *IDatabasePackageInformationFunc) SetDefaultReturn(r0 types.PackageInformationData, r1 bool, r2 error) {
+func (f *DatabasePackageInformationFunc) SetDefaultReturn(r0 types.PackageInformationData, r1 bool, r2 error) {
 	f.SetDefaultHook(func(string, types.ID) (types.PackageInformationData, bool, error) {
 		return r0, r1, r2
 	})
@@ -828,13 +826,13 @@ func (f *IDatabasePackageInformationFunc) SetDefaultReturn(r0 types.PackageInfor
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *IDatabasePackageInformationFunc) PushReturn(r0 types.PackageInformationData, r1 bool, r2 error) {
+func (f *DatabasePackageInformationFunc) PushReturn(r0 types.PackageInformationData, r1 bool, r2 error) {
 	f.PushHook(func(string, types.ID) (types.PackageInformationData, bool, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *IDatabasePackageInformationFunc) nextHook() func(string, types.ID) (types.PackageInformationData, bool, error) {
+func (f *DatabasePackageInformationFunc) nextHook() func(string, types.ID) (types.PackageInformationData, bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -847,26 +845,26 @@ func (f *IDatabasePackageInformationFunc) nextHook() func(string, types.ID) (typ
 	return hook
 }
 
-func (f *IDatabasePackageInformationFunc) appendCall(r0 IDatabasePackageInformationFuncCall) {
+func (f *DatabasePackageInformationFunc) appendCall(r0 DatabasePackageInformationFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of IDatabasePackageInformationFuncCall objects
+// History returns a sequence of DatabasePackageInformationFuncCall objects
 // describing the invocations of this function.
-func (f *IDatabasePackageInformationFunc) History() []IDatabasePackageInformationFuncCall {
+func (f *DatabasePackageInformationFunc) History() []DatabasePackageInformationFuncCall {
 	f.mutex.Lock()
-	history := make([]IDatabasePackageInformationFuncCall, len(f.history))
+	history := make([]DatabasePackageInformationFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// IDatabasePackageInformationFuncCall is an object that describes an
-// invocation of method PackageInformation on an instance of MockIDatabase.
-type IDatabasePackageInformationFuncCall struct {
+// DatabasePackageInformationFuncCall is an object that describes an
+// invocation of method PackageInformation on an instance of MockDatabase.
+type DatabasePackageInformationFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 string
@@ -886,44 +884,44 @@ type IDatabasePackageInformationFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c IDatabasePackageInformationFuncCall) Args() []interface{} {
+func (c DatabasePackageInformationFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c IDatabasePackageInformationFuncCall) Results() []interface{} {
+func (c DatabasePackageInformationFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
-// IDatabaseReferencesFunc describes the behavior when the References method
-// of the parent MockIDatabase instance is invoked.
-type IDatabaseReferencesFunc struct {
+// DatabaseReferencesFunc describes the behavior when the References method
+// of the parent MockDatabase instance is invoked.
+type DatabaseReferencesFunc struct {
 	defaultHook func(string, int, int) ([]Location, error)
 	hooks       []func(string, int, int) ([]Location, error)
-	history     []IDatabaseReferencesFuncCall
+	history     []DatabaseReferencesFuncCall
 	mutex       sync.Mutex
 }
 
 // References delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockIDatabase) References(v0 string, v1 int, v2 int) ([]Location, error) {
+func (m *MockDatabase) References(v0 string, v1 int, v2 int) ([]Location, error) {
 	r0, r1 := m.ReferencesFunc.nextHook()(v0, v1, v2)
-	m.ReferencesFunc.appendCall(IDatabaseReferencesFuncCall{v0, v1, v2, r0, r1})
+	m.ReferencesFunc.appendCall(DatabaseReferencesFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the References method of
-// the parent MockIDatabase instance is invoked and the hook queue is empty.
-func (f *IDatabaseReferencesFunc) SetDefaultHook(hook func(string, int, int) ([]Location, error)) {
+// the parent MockDatabase instance is invoked and the hook queue is empty.
+func (f *DatabaseReferencesFunc) SetDefaultHook(hook func(string, int, int) ([]Location, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// References method of the parent MockIDatabase instance inovkes the hook
-// at the front of the queue and discards it. After the queue is empty, the
+// References method of the parent MockDatabase instance inovkes the hook at
+// the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *IDatabaseReferencesFunc) PushHook(hook func(string, int, int) ([]Location, error)) {
+func (f *DatabaseReferencesFunc) PushHook(hook func(string, int, int) ([]Location, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -931,7 +929,7 @@ func (f *IDatabaseReferencesFunc) PushHook(hook func(string, int, int) ([]Locati
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *IDatabaseReferencesFunc) SetDefaultReturn(r0 []Location, r1 error) {
+func (f *DatabaseReferencesFunc) SetDefaultReturn(r0 []Location, r1 error) {
 	f.SetDefaultHook(func(string, int, int) ([]Location, error) {
 		return r0, r1
 	})
@@ -939,13 +937,13 @@ func (f *IDatabaseReferencesFunc) SetDefaultReturn(r0 []Location, r1 error) {
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *IDatabaseReferencesFunc) PushReturn(r0 []Location, r1 error) {
+func (f *DatabaseReferencesFunc) PushReturn(r0 []Location, r1 error) {
 	f.PushHook(func(string, int, int) ([]Location, error) {
 		return r0, r1
 	})
 }
 
-func (f *IDatabaseReferencesFunc) nextHook() func(string, int, int) ([]Location, error) {
+func (f *DatabaseReferencesFunc) nextHook() func(string, int, int) ([]Location, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -958,26 +956,26 @@ func (f *IDatabaseReferencesFunc) nextHook() func(string, int, int) ([]Location,
 	return hook
 }
 
-func (f *IDatabaseReferencesFunc) appendCall(r0 IDatabaseReferencesFuncCall) {
+func (f *DatabaseReferencesFunc) appendCall(r0 DatabaseReferencesFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of IDatabaseReferencesFuncCall objects
+// History returns a sequence of DatabaseReferencesFuncCall objects
 // describing the invocations of this function.
-func (f *IDatabaseReferencesFunc) History() []IDatabaseReferencesFuncCall {
+func (f *DatabaseReferencesFunc) History() []DatabaseReferencesFuncCall {
 	f.mutex.Lock()
-	history := make([]IDatabaseReferencesFuncCall, len(f.history))
+	history := make([]DatabaseReferencesFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// IDatabaseReferencesFuncCall is an object that describes an invocation of
-// method References on an instance of MockIDatabase.
-type IDatabaseReferencesFuncCall struct {
+// DatabaseReferencesFuncCall is an object that describes an invocation of
+// method References on an instance of MockDatabase.
+type DatabaseReferencesFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 string
@@ -997,12 +995,12 @@ type IDatabaseReferencesFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c IDatabaseReferencesFuncCall) Args() []interface{} {
+func (c DatabaseReferencesFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c IDatabaseReferencesFuncCall) Results() []interface{} {
+func (c DatabaseReferencesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }

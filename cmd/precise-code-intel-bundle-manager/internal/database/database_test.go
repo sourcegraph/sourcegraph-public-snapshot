@@ -237,7 +237,7 @@ func TestDatabasePackageInformation(t *testing.T) {
 	}
 }
 
-func openTestDatabase(t *testing.T) IDatabase {
+func openTestDatabase(t *testing.T) Database {
 	documentDataCache, err := NewDocumentDataCache(1)
 	if err != nil {
 		t.Fatalf("unexpected error creating cache: %s", err)

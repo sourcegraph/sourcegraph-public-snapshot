@@ -11,20 +11,38 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 )
 
-// TODO - eew rework this
-type IDatabase interface {
+// Database wraps access to a single processed bundle.
+type Database interface {
+	// Close closes the underlying reader.
 	Close() error
+
+	// Exists determines if the path exists in the database.
 	Exists(path string) (bool, error)
+
+	// Definitions returns the set of locations defining the symbol at the given position.
 	Definitions(path string, line, character int) ([]Location, error)
+
+	// References returns the set of locations referencing the symbol at the given position.
 	References(path string, line, character int) ([]Location, error)
+
+	// Hover returns the hover text of the symbol at the given position.
 	Hover(path string, line, character int) (string, Range, bool, error)
+
+	// MonikersByPosition returns all monikers attached ranges containing the given position. If multiple
+	// ranges contain the position, then this method will return multiple sets of monikers. Each slice
+	// of monikers are attached to a single range. The order of the output slice is "outside-in", so that
+	// the range attached to earlier monikers enclose the range attached to later monikers.
 	MonikersByPosition(path string, line, character int) ([][]types.MonikerData, error)
+
+	// MonikerResults returns the locations that define or reference the given moniker. This method
+	// also returns the size of the complete result set to aid in pagination (along with skip and take).
 	MonikerResults(tableName, scheme, identifier string, skip, take int) ([]Location, int, error)
+
+	// PackageInformation looks up package information data by identifier.
 	PackageInformation(path string, packageInformationID types.ID) (types.PackageInformationData, bool, error)
 }
 
-// Database wraps access to a single processed bundle.
-type Database struct {
+type databaseImpl struct {
 	filename             string
 	documentDataCache    *DocumentDataCache    // shared cache
 	resultChunkDataCache *ResultChunkDataCache // shared cache
@@ -32,7 +50,7 @@ type Database struct {
 	numResultChunks      int                   // numResultChunks value from meta row
 }
 
-var _ IDatabase = &Database{}
+var _ Database = &databaseImpl{}
 
 type Location struct {
 	Path  string `json:"path"`
@@ -83,7 +101,7 @@ func (e ErrMalformedBundle) Error() string {
 }
 
 // OpenDatabase opens a handle to the bundle file at the given path.
-func OpenDatabase(filename string, documentDataCache *DocumentDataCache, resultChunkDataCache *ResultChunkDataCache) (*Database, error) {
+func OpenDatabase(filename string, documentDataCache *DocumentDataCache, resultChunkDataCache *ResultChunkDataCache) (Database, error) {
 	// TODO - What is the behavior if the db is missing? Should we stat first or clean up after?
 	reader, err := reader.NewSQLiteReader(filename, serializer.NewDefaultSerializer())
 	if err != nil {
@@ -95,7 +113,7 @@ func OpenDatabase(filename string, documentDataCache *DocumentDataCache, resultC
 		return nil, err
 	}
 
-	return &Database{
+	return &databaseImpl{
 		filename:             filename,
 		documentDataCache:    documentDataCache,
 		resultChunkDataCache: resultChunkDataCache,
@@ -105,18 +123,18 @@ func OpenDatabase(filename string, documentDataCache *DocumentDataCache, resultC
 }
 
 // Close closes the underlying reader.
-func (db *Database) Close() error {
+func (db *databaseImpl) Close() error {
 	return db.reader.Close()
 }
 
 // Exists determines if the path exists in the database.
-func (db *Database) Exists(path string) (bool, error) {
+func (db *databaseImpl) Exists(path string) (bool, error) {
 	_, exists, err := db.getDocumentData(path)
 	return exists, err
 }
 
 // Definitions returns the set of locations defining the symbol at the given position.
-func (db *Database) Definitions(path string, line, character int) ([]Location, error) {
+func (db *databaseImpl) Definitions(path string, line, character int) ([]Location, error) {
 	_, ranges, exists, err := db.getRangeByPosition(path, line, character)
 	if err != nil || !exists {
 		return nil, err
@@ -139,7 +157,7 @@ func (db *Database) Definitions(path string, line, character int) ([]Location, e
 }
 
 // References returns the set of locations referencing the symbol at the given position.
-func (db *Database) References(path string, line, character int) ([]Location, error) {
+func (db *databaseImpl) References(path string, line, character int) ([]Location, error) {
 	_, ranges, exists, err := db.getRangeByPosition(path, line, character)
 	if err != nil || !exists {
 		return nil, err
@@ -168,7 +186,7 @@ func (db *Database) References(path string, line, character int) ([]Location, er
 }
 
 // Hover returns the hover text of the symbol at the given position.
-func (db *Database) Hover(path string, line, character int) (string, Range, bool, error) {
+func (db *databaseImpl) Hover(path string, line, character int) (string, Range, bool, error) {
 	documentData, ranges, exists, err := db.getRangeByPosition(path, line, character)
 	if err != nil || !exists {
 		return "", Range{}, false, err
@@ -199,7 +217,7 @@ func (db *Database) Hover(path string, line, character int) (string, Range, bool
 // ranges contain the position, then this method will return multiple sets of monikers. Each slice
 // of monikers are attached to a single range. The order of the output slice is "outside-in", so that
 // the range attached to earlier monikers enclose the range attached to later monikers.
-func (db *Database) MonikersByPosition(path string, line, character int) ([][]types.MonikerData, error) {
+func (db *databaseImpl) MonikersByPosition(path string, line, character int) ([][]types.MonikerData, error) {
 	documentData, ranges, exists, err := db.getRangeByPosition(path, line, character)
 	if err != nil || !exists {
 		return nil, err
@@ -230,7 +248,7 @@ func (db *Database) MonikersByPosition(path string, line, character int) ([][]ty
 
 // MonikerResults returns the locations that define or reference the given moniker. This method
 // also returns the size of the complete result set to aid in pagination (along with skip and take).
-func (db *Database) MonikerResults(tableName, scheme, identifier string, skip, take int) ([]Location, int, error) {
+func (db *databaseImpl) MonikerResults(tableName, scheme, identifier string, skip, take int) ([]Location, int, error) {
 	// TODO - gross
 	var rows []types.DefinitionReferenceRow
 	var totalCount int
@@ -257,7 +275,7 @@ func (db *Database) MonikerResults(tableName, scheme, identifier string, skip, t
 }
 
 // PackageInformation looks up package information data by identifier.
-func (db *Database) PackageInformation(path string, packageInformationID types.ID) (types.PackageInformationData, bool, error) {
+func (db *databaseImpl) PackageInformation(path string, packageInformationID types.ID) (types.PackageInformationData, bool, error) {
 	documentData, exists, err := db.getDocumentData(path)
 	if err != nil {
 		return types.PackageInformationData{}, false, err
@@ -273,7 +291,7 @@ func (db *Database) PackageInformation(path string, packageInformationID types.I
 
 // getDocumentData fetches and unmarshals the document data or the given path. This method caches
 // document data by a unique key prefixed by the database filename.
-func (db *Database) getDocumentData(path string) (types.DocumentData, bool, error) {
+func (db *databaseImpl) getDocumentData(path string) (types.DocumentData, bool, error) {
 	documentData, err := db.documentDataCache.GetOrCreate(fmt.Sprintf("%s::%s", db.filename, path), func() (types.DocumentData, error) {
 		data, ok, err := db.reader.ReadDocument(context.Background(), path)
 		if err != nil {
@@ -298,7 +316,7 @@ func (db *Database) getDocumentData(path string) (types.DocumentData, bool, erro
 
 // getRangeByPosition returns the ranges the given position. The order of the output slice is "outside-in",
 // so that earlier ranges properly enclose later ranges.
-func (db *Database) getRangeByPosition(path string, line, character int) (types.DocumentData, []types.RangeData, bool, error) {
+func (db *databaseImpl) getRangeByPosition(path string, line, character int) (types.DocumentData, []types.RangeData, bool, error) {
 	documentData, exists, err := db.getDocumentData(path)
 	if err != nil {
 		return types.DocumentData{}, nil, false, err
@@ -313,7 +331,7 @@ func (db *Database) getRangeByPosition(path string, line, character int) (types.
 
 // getResultByID fetches and unmarshals a definition or reference result by identifier.
 // This method caches result chunk data by a unique key prefixed by the database filename.
-func (db *Database) getResultByID(id types.ID) ([]documentPathRangeID, error) {
+func (db *databaseImpl) getResultByID(id types.ID) ([]documentPathRangeID, error) {
 	resultChunkData, exists, err := db.getResultChunkByResultID(id)
 	if err != nil {
 		return nil, err
@@ -360,7 +378,7 @@ func (db *Database) getResultByID(id types.ID) ([]documentPathRangeID, error) {
 
 // getResultChunkByResultID fetches and unmarshals the result chunk data with the given identifier.
 // This method caches result chunk data by a unique key prefixed by the database filename.
-func (db *Database) getResultChunkByResultID(id types.ID) (types.ResultChunkData, bool, error) {
+func (db *databaseImpl) getResultChunkByResultID(id types.ID) (types.ResultChunkData, bool, error) {
 	resultChunkData, err := db.resultChunkDataCache.GetOrCreate(fmt.Sprintf("%s::%s", db.filename, id), func() (types.ResultChunkData, error) {
 		data, ok, err := db.reader.ReadResultChunk(context.Background(), hashKey(id, db.numResultChunks))
 		if err != nil {
@@ -387,7 +405,7 @@ func (db *Database) getResultChunkByResultID(id types.ID) (types.ResultChunkData
 
 // convertRangesToLocations converts pairs of document paths and range identifiers
 // to a list of locations.
-func (db *Database) convertRangesToLocations(resultData []documentPathRangeID) ([]Location, error) {
+func (db *databaseImpl) convertRangesToLocations(resultData []documentPathRangeID) ([]Location, error) {
 	// We potentially have to open a lot of documents. Reduce possible pressure on the
 	// cache by ordering our queries so we only have to read and unmarshal each document
 	// once.

@@ -15,7 +15,7 @@ type DatabaseCache struct {
 
 type databaseCacheEntry struct {
 	filename string
-	db       IDatabase
+	db       Database
 	wg       sync.WaitGroup // user ref count
 	once     sync.Once      // guards db.Close()
 }
@@ -56,7 +56,7 @@ func NewDatabaseCache(size int64) (*DatabaseCache, error) {
 // This method is goroutine-safe and the database instance is guaranteed to remain
 // open until the handler has returned, regardless of the cache entry's eviction
 // status.
-func (c *DatabaseCache) WithDatabase(filename string, openDatabase func() (IDatabase, error), handler func(db IDatabase) error) error {
+func (c *DatabaseCache) WithDatabase(filename string, openDatabase func() (Database, error), handler func(db Database) error) error {
 	if value, ok := c.cache.Get(filename); ok {
 		entry := value.(*databaseCacheEntry)
 		entry.wg.Add(1)
