@@ -272,18 +272,6 @@ func Estimate(labels []string) string {
 	return ""
 }
 
-func RenderedLabels(labels []string, tracking *TrackingIssue) (rendered string) {
-	for _, label := range labels {
-		for _, whitelistedLabel := range tracking.LabelWhitelist {
-			if whitelistedLabel == label {
-				rendered = rendered + fmt.Sprintf("`%s` ", label)
-				break
-			}
-		}
-	}
-	return
-}
-
 var customerMatcher = regexp.MustCompile(`https://app\.hubspot\.com/contacts/2762526/company/\d+`)
 
 func Customer(body string) string {
@@ -392,6 +380,19 @@ func (t *TrackingIssue) Workloads() Workloads {
 	return workloads
 }
 
+func (tracking *TrackingIssue) RenderedLabels(labels []string) string {
+	var b strings.Builder
+	for _, label := range labels {
+		for _, whitelistedLabel := range tracking.LabelWhitelist {
+			if whitelistedLabel == label {
+				b.WriteString(fmt.Sprintf("`%s` ", label))
+				break
+			}
+		}
+	}
+	return b.String()
+}
+
 type Issue struct {
 	ID         string
 	Title      string
@@ -425,7 +426,7 @@ func (issue *Issue) Markdown(tracking *TrackingIssue) string {
 		estimate = "__" + estimate + "__ "
 	}
 
-	labels := RenderedLabels(issue.Labels, tracking)
+	labels := tracking.RenderedLabels(issue.Labels)
 
 	return fmt.Sprintf("- [%s] %s [#%d](%s) %s%s%s\n",
 		state,
