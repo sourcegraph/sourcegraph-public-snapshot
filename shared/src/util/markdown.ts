@@ -62,7 +62,7 @@ export const renderMarkdown = (
 ): string => {
     const rendered = marked(markdown, {
         gfm: true,
-        breaks: true,
+        breaks: false,
         sanitize: false,
         highlight: (code, language) => highlightCodeSafe(code, language),
     })
@@ -77,9 +77,23 @@ export const renderMarkdown = (
             // Allow highligh.js styles, e.g.
             // <span class="hljs-keyword">
             // <code class="language-javascript">
-            allowedTags: [...without(sanitize.defaults.allowedTags, 'iframe'), 'h1', 'h2', 'span', 'img'],
+            allowedTags: [
+                ...without(sanitize.defaults.allowedTags, 'iframe'),
+                'h1',
+                'h2',
+                'span',
+                'img',
+                'object',
+                'svg',
+                'rect',
+                'title',
+            ],
             allowedAttributes: {
                 ...sanitize.defaults.allowedAttributes,
+                a: [...sanitize.defaults.allowedAttributes.a, 'title'],
+                object: ['data', { name: 'type', values: ['image/svg+xml'] }, 'width'],
+                svg: ['width', 'height', 'viewbox', 'version'],
+                rect: ['x', 'y', 'width', 'height', 'fill', 'stroke', 'stroke-width'],
                 span: ['class'],
                 code: ['class'],
                 h1: ['id'],
@@ -91,7 +105,7 @@ export const renderMarkdown = (
             },
         }
         if (options.allowDataUriLinksAndDownloads) {
-            opt.allowedAttributes.a = [...sanitize.defaults.allowedAttributes.a, 'download']
+            opt.allowedAttributes.a = [...opt.allowedAttributes.a, 'download']
             opt.allowedSchemesByTag = {
                 ...opt.allowedSchemesByTag,
                 a: [...(opt.allowedSchemesByTag.a || opt.allowedSchemes), 'data'],
