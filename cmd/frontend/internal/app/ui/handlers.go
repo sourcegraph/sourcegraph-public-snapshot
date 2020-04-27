@@ -285,7 +285,7 @@ func redirectTreeOrBlob(routeName string, common *Common, r *http.Request, w htt
 		}
 		return false, err
 	}
-	expectedDir := (routeName == routeTree)
+	expectedDir := routeName == routeTree
 	if stat.Mode().IsDir() != expectedDir {
 		target := "/" + string(common.Repo.Name) + common.Rev + "/-/"
 		if expectedDir {
