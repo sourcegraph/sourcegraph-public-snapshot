@@ -318,6 +318,7 @@ func serveTree(title func(c *Common, r *http.Request) string) handlerFunc {
 		if err != nil {
 			return err
 		}
+
 		common.Title = title(common, r)
 		return renderTemplate(w, "app.html", common)
 	}
