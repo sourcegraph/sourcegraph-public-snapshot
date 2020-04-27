@@ -18,6 +18,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - A potential security vulnerability with in the authentication workflow has been fixed. [#10167](https://github.com/sourcegraph/sourcegraph/pull/10167)
+- An issue that caused the search result type tabs to be overlapped in Safari.
 
 ### Removed
 
