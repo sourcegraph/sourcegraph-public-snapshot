@@ -21,7 +21,7 @@ export const CopyQueryButton: React.FunctionComponent<Props> = (props: Props) =>
             (clicks: Observable<React.MouseEvent>) =>
                 clicks.pipe(
                     tap(() => copy(props.fullQuery)),
-                    switchMapTo(merge(of(true), timer(1000).pipe(switchMapTo(of(false))))),
+                    switchMapTo(merge(of(true), of(false).pipe(delay(1000))),
                     tap(() => Tooltip.forceUpdate()),
                     startWith(false)
                 ),
