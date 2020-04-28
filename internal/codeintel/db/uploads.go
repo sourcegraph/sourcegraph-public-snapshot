@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -174,6 +175,80 @@ func (db *dbImpl) Enqueue(ctx context.Context, commit, root, tracingContext stri
 	return id, &txCloser{tw.tx}, nil
 }
 
+// Dequeue selects the oldest queued upload and locks it with a transaction. If there is such an upload, the
+// upload is returned along with a JobHandle instance which wraps the transaction. This handle must be closed.
+// If there is no such unlocked upload, a zero-value upload and nil-job handle will be returned alogn with a
+// false-valued flag.
+func (db *dbImpl) Dequeue(ctx context.Context) (Upload, JobHandle, bool, error) {
+	selectionQuery := `
+		UPDATE lsif_uploads u SET state = 'processing', started_at = now() WHERE id = (
+			SELECT id FROM lsif_uploads
+			WHERE state = 'queued'
+			ORDER BY uploaded_at
+			FOR UPDATE SKIP LOCKED LIMIT 1
+		)
+		RETURNING u.id
+	`
+
+	for {
+		// First, we try to select an eligible upload record outside of a transaction. This will skip
+		// any rows that are currently locked inside of a transaction of another worker process.
+		id, err := scanInt(db.queryRow(ctx, sqlf.Sprintf(selectionQuery)))
+		if err != nil {
+			return Upload{}, nil, false, ignoreErrNoRows(err)
+		}
+
+		upload, jobHandle, ok, err := db.dequeue(ctx, id)
+		if err != nil {
+			// This will occur if we selected an ID that raced with another worker. If both workers
+			// select the same ID and the other process begins its transaction first, this condition
+			// will occur. We'll re-try the process by selecting a fresh ID.
+			if err == sql.ErrNoRows {
+				continue
+			}
+
+			return Upload{}, nil, false, err
+		}
+
+		return upload, jobHandle, ok, nil
+	}
+}
+
+// dequeue begins a transaction to lock an upload record for updating. This marks the upload as
+// uneligible for a dequeue to other worker processes. All updates to the database while this record
+// is being processes should happen through the JobHandle's transaction, which must be explicitly
+// closed (via CloseTx) at the end of processing by the caller.
+func (db *dbImpl) dequeue(ctx context.Context, id int) (_ Upload, _ JobHandle, _ bool, err error) {
+	tw, err := db.beginTx(ctx)
+	if err != nil {
+		return Upload{}, nil, false, err
+	}
+	defer func() {
+		if err != nil {
+			err = closeTx(tw.tx, err)
+		}
+	}()
+
+	// SKIP LOCKED is necessary not to block on this select. We allow the database driver to return
+	// sql.ErrNoRows on this condition so we can determine if we need to select a new upload to process
+	// on race conditions with other worker processes.
+	fetchQuery := `SELECT u.*, NULL FROM lsif_uploads u WHERE id = %s FOR UPDATE SKIP LOCKED LIMIT 1`
+
+	upload, err := scanUpload(tw.queryRow(ctx, sqlf.Sprintf(fetchQuery, id)))
+	if err != nil {
+		return Upload{}, nil, false, err
+	}
+
+	jobHandle := &jobHandleImpl{
+		ctx:      ctx,
+		id:       id,
+		tw:       tw,
+		txCloser: &txCloser{tw.tx},
+	}
+
+	return upload, jobHandle, true, nil
+}
+
 // GetStates returns the states for the uploads with the given identifiers.
 func (db *dbImpl) GetStates(ctx context.Context, ids []int) (map[int]string, error) {
 	query := `SELECT id, state FROM lsif_uploads WHERE id IN (%s)`
@@ -212,7 +287,7 @@ func (db *dbImpl) DeleteUploadByID(ctx context.Context, id int, getTipCommit fun
 		return false, err
 	}
 
-	if err := db.updateDumpsVisibleFromTip(ctx, tw, repositoryID, tipCommit); err != nil {
+	if err := db.UpdateDumpsVisibleFromTip(ctx, tw.tx, repositoryID, tipCommit); err != nil {
 		return false, err
 	}
 

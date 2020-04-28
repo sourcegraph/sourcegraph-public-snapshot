@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -142,17 +143,18 @@ func (db *dbImpl) DeleteOldestDump(ctx context.Context) (int, bool, error) {
 	return id, true, nil
 }
 
-// updateDumpsVisibleFromTip recalculates the visible_at_tip flag of all dumps of the given repository.
-func (db *dbImpl) updateDumpsVisibleFromTip(ctx context.Context, tw *transactionWrapper, repositoryID int, tipCommit string) (err error) {
-	if tw == nil {
-		tw, err = db.beginTx(ctx)
+// UpdateDumpsVisibleFromTip recalculates the visible_at_tip flag of all dumps of the given repository.
+func (db *dbImpl) UpdateDumpsVisibleFromTip(ctx context.Context, tx *sql.Tx, repositoryID int, tipCommit string) (err error) {
+	if tx == nil {
+		tx, err = db.db.BeginTx(ctx, nil)
 		if err != nil {
 			return err
 		}
 		defer func() {
-			err = closeTx(tw.tx, err)
+			err = closeTx(tx, err)
 		}()
 	}
+	tw := &transactionWrapper{tx}
 
 	// Update dump records by:
 	//   (1) unsetting the visibility flag of all previously visible dumps, and
@@ -164,5 +166,29 @@ func (db *dbImpl) updateDumpsVisibleFromTip(ctx context.Context, tw *transaction
 	`
 
 	_, err = tw.exec(ctx, withAncestorLineage(query, repositoryID, tipCommit, repositoryID))
+	return err
+}
+
+// DeleteOverlapapingDumps deletes all completed uploads for the given repository with the same
+// commit, root, and indexer. This is necessary to perform during conversions before changing
+// the state of a processing upload to completed as there is a unique index on these four columns.
+func (db *dbImpl) DeleteOverlappingDumps(ctx context.Context, tx *sql.Tx, repositoryID int, commit, root, indexer string) (err error) {
+	if tx == nil {
+		tx, err = db.db.BeginTx(ctx, nil)
+		if err != nil {
+			return err
+		}
+		defer func() {
+			err = closeTx(tx, err)
+		}()
+	}
+	tw := &transactionWrapper{tx}
+
+	query := `
+		DELETE from lsif_uploads
+		WHERE repository_id = %d AND commit = %s AND root = %s AND indexer = %s AND state = 'completed'
+	`
+
+	_, err = tw.exec(ctx, sqlf.Sprintf(query, repositoryID, commit, root, indexer))
 	return err
 }
