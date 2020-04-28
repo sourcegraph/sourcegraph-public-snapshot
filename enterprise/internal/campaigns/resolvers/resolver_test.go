@@ -1532,11 +1532,11 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 
 	gitClient := &dummyGitserverClient{response: headRef, responseErr: nil}
 
-	sourcer := repos.NewFakeSourcer(nil, fakeChangesetSource{
-		svc:          ext,
-		wantHeadRef:  headRef,
-		wantBaseRef:  testBaseRef,
-		fakeMetadata: fakePR,
+	sourcer := repos.NewFakeSourcer(nil, ee.FakeChangesetSource{
+		Svc:          ext,
+		WantHeadRef:  headRef,
+		WantBaseRef:  testBaseRef,
+		FakeMetadata: fakePR,
 	})
 
 	job := changesetJobs[0]
@@ -1823,65 +1823,6 @@ func newGitHubTestRepo(name string, externalID int) *repos.Repo {
 			},
 		},
 	}
-}
-
-// This is copied from campaigns/workers_test.go. We should probably find a better place for this?
-type fakeChangesetSource struct {
-	svc *repos.ExternalService
-
-	wantHeadRef string
-	wantBaseRef string
-
-	fakeMetadata interface{}
-	exists       bool
-	err          error
-}
-
-func (s fakeChangesetSource) CreateChangeset(ctx context.Context, c *repos.Changeset) (bool, error) {
-	if s.err != nil {
-		return s.exists, s.err
-	}
-
-	if c.HeadRef != s.wantHeadRef {
-		return s.exists, fmt.Errorf("wrong HeadRef. want=%s, have=%s", s.wantHeadRef, c.HeadRef)
-	}
-
-	if c.BaseRef != s.wantBaseRef {
-		return s.exists, fmt.Errorf("wrong BaseRef. want=%s, have=%s", s.wantBaseRef, c.BaseRef)
-	}
-
-	c.SetMetadata(s.fakeMetadata)
-
-	return s.exists, s.err
-}
-
-func (s fakeChangesetSource) UpdateChangeset(ctx context.Context, c *repos.Changeset) error {
-	if s.err != nil {
-		return s.err
-	}
-
-	if c.BaseRef != s.wantBaseRef {
-		return fmt.Errorf("wrong BaseRef. want=%s, have=%s", s.wantBaseRef, c.BaseRef)
-	}
-
-	c.SetMetadata(s.fakeMetadata)
-	return nil
-}
-
-var fakeNotImplemented = errors.New("not implement in fakeChangesetSource")
-
-func (s fakeChangesetSource) ListRepos(ctx context.Context, results chan repos.SourceResult) {
-	results <- repos.SourceResult{Source: s, Err: fakeNotImplemented}
-}
-
-func (s fakeChangesetSource) ExternalServices() repos.ExternalServices {
-	return repos.ExternalServices{s.svc}
-}
-func (s fakeChangesetSource) LoadChangesets(ctx context.Context, cs ...*repos.Changeset) error {
-	return fakeNotImplemented
-}
-func (s fakeChangesetSource) CloseChangeset(ctx context.Context, c *repos.Changeset) error {
-	return fakeNotImplemented
 }
 
 // This is copied from campaigns/service_test.go
