@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 )
 
@@ -26,6 +27,12 @@ type DB interface {
 
 	// Enqueue inserts a new upload with a "queued" state, returning its identifier and a TxCloser that must be closed to commit the transaction.
 	Enqueue(ctx context.Context, commit, root, tracingContext string, repositoryID int, indexerName string) (int, TxCloser, error)
+
+	// Dequeue selects the oldest queued upload and locks it with a transaction. If there is such an upload, the
+	// upload is returned along with a JobHandle instance which wraps the transaction. This handle must be closed.
+	// If there is no such unlocked upload, a zero-value upload and nil-job handle will be returned alogn with a
+	// false-valued flag.
+	Dequeue(ctx context.Context) (Upload, JobHandle, bool, error)
 
 	// GetStates returns the states for the uploads with the given identifiers.
 	GetStates(ctx context.Context, ids []int) (map[int]string, error)
@@ -49,17 +56,34 @@ type DB interface {
 	// This method returns the deleted dump's identifier and a flag indicating its (previous) existence.
 	DeleteOldestDump(ctx context.Context) (int, bool, error)
 
+	// UpdateDumpsVisibleFromTip recalculates the visible_at_tip flag of all dumps of the given repository.
+	UpdateDumpsVisibleFromTip(ctx context.Context, tx *sql.Tx, repositoryID int, tipCommit string) (err error)
+
+	// DeleteOverlapapingDumps deletes all completed uploads for the given repository with the same
+	// commit, root, and indexer. This is necessary to perform during conversions before changing
+	// the state of a processing upload to completed as there is a unique index on these four columns.
+	DeleteOverlappingDumps(ctx context.Context, tx *sql.Tx, repositoryID int, commit, root, indexer string) error
+
 	// GetPackage returns the dump that provides the package with the given scheme, name, and version and a flag indicating its existence.
 	GetPackage(ctx context.Context, scheme, name, version string) (Dump, bool, error)
+
+	// UpdatePackages bulk upserts package data.
+	UpdatePackages(ctx context.Context, tx *sql.Tx, packages []types.Package) error
 
 	// SameRepoPager returns a ReferencePager for dumps that belong to the given repository and commit and reference the package with the
 	// given scheme, name, and version.
 	SameRepoPager(ctx context.Context, repositoryID int, commit, scheme, name, version string, limit int) (int, ReferencePager, error)
 
+	// UpdatePackageReferences bulk inserts package reference data.
+	UpdatePackageReferences(ctx context.Context, tx *sql.Tx, packageReferences []types.PackageReference) error
+
 	// PackageReferencePager returns a ReferencePager for dumps that belong to a remote repository (distinct from the given repository id)
 	// and reference the package with the given scheme, name, and version. All resulting dumps are visible at the tip of their repository's
 	// default branch.
 	PackageReferencePager(ctx context.Context, scheme, name, version string, repositoryID, limit int) (int, ReferencePager, error)
+
+	// UpdateCommits upserts commits/parent-commit relations for the given repository ID.
+	UpdateCommits(ctx context.Context, tx *sql.Tx, repositoryID int, commits map[string][]string) error
 
 	// RepoName returns the name for the repo with the given identifier. This is the only method
 	// in this package that touches any table that does not start with `lsif_`.
@@ -82,14 +106,19 @@ func New(postgresDSN string) (DB, error) {
 	return &dbImpl{db: db}, nil
 }
 
-// query performs Query on the underlying connection.
+// query performs QueryContext on the underlying connection.
 func (db *dbImpl) query(ctx context.Context, query *sqlf.Query) (*sql.Rows, error) {
 	return db.db.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 }
 
-// queryRow performs QueryRow on the underlying connection.
+// queryRow performs QueryRowContext on the underlying connection.
 func (db *dbImpl) queryRow(ctx context.Context, query *sqlf.Query) *sql.Row {
 	return db.db.QueryRowContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+}
+
+// exec performs ExecContext on the underlying connection.
+func (db *dbImpl) exec(ctx context.Context, query *sqlf.Query) (sql.Result, error) {
+	return db.db.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 }
 
 // beginTx performs BeginTx on the underlying connection and wraps the transaction.

@@ -85,7 +85,7 @@ func addWebApp(pipeline *bk.Pipeline) {
 	// Webapp tests
 	pipeline.AddStep(":jest::globe_with_meridians:",
 		bk.Cmd("dev/ci/yarn-test.sh web"),
-		bk.ArtifactPaths("web/coverage/coverage-final.json"))
+		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F typescript -F unit"))
 }
 
 // Builds and tests the browser extension.
@@ -97,14 +97,14 @@ func addBrowserExt(pipeline *bk.Pipeline) {
 	// Browser extension tests
 	pipeline.AddStep(":jest::chrome:",
 		bk.Cmd("dev/ci/yarn-test.sh browser"),
-		bk.ArtifactPaths("browser/coverage/coverage-final.json"))
+		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F typescript -F unit"))
 }
 
 // Tests the precise code intel system.
 func addPreciseCodeIntelSystem(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":jest:",
 		bk.Cmd("dev/ci/yarn-test-separate.sh cmd/precise-code-intel"),
-		bk.ArtifactPaths("cmd/precise-code-intel/coverage/coverage-final.json"))
+		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F unit"))
 }
 
 // Adds the shared frontend tests (shared between the web app and browser extension).
@@ -112,7 +112,7 @@ func addSharedTests(pipeline *bk.Pipeline) {
 	// Shared tests
 	pipeline.AddStep(":jest:",
 		bk.Cmd("dev/ci/yarn-test.sh shared"),
-		bk.ArtifactPaths("shared/coverage/coverage-final.json"))
+		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F typescript -F unit"))
 
 	// Storybook
 	pipeline.AddStep(":storybook:", bk.Cmd("dev/ci/yarn-run.sh storybook:smoke-test"))
@@ -128,7 +128,7 @@ func addPostgresBackcompat(pipeline *bk.Pipeline) {
 func addGoTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":go:",
 		bk.Cmd("./dev/ci/go-test.sh"),
-		bk.ArtifactPaths("coverage.txt"))
+		bk.Cmd("bash <(curl -s https://codecov.io/bash) -c -F go -F unit"))
 }
 
 // Builds the OSS and Enterprise Go commands.
@@ -142,14 +142,6 @@ func addGoBuild(pipeline *bk.Pipeline) {
 func addDockerfileLint(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":docker:",
 		bk.Cmd("./dev/ci/docker-lint.sh"))
-}
-
-// Code coverage.
-func addCodeCov(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":codecov:",
-		bk.Cmd("buildkite-agent artifact download 'coverage.txt' . || true"), // ignore error when no report exists
-		bk.Cmd("buildkite-agent artifact download '*/coverage-final.json' . || true"),
-		bk.Cmd("bash <(curl -s https://codecov.io/bash) -X gcov -X coveragepy -X xcode -F unit"))
 }
 
 // Release the browser extension.
