@@ -9,6 +9,8 @@ import (
 )
 
 func TestDatabaseCacheEvictionWhileHeld(t *testing.T) {
+	t.Skip("Flaky test")
+
 	// keep track of what db mocks are closed
 	closed := map[Database]bool{}
 	// protected concurrent access to closed map
