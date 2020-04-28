@@ -15,27 +15,22 @@ interface Props {
  * A repository header action that copies the current page's URL to the clipboard.
  */
 export const CopyQueryButton: React.FunctionComponent<Props> = (props: Props) => {
-    const [copied, setCopied] = useState<boolean>(false)
-    const click = useMemo(() => new Subject(), [])
-    // use this as onClick handler
-    const nextClick = useCallback(() => click.next(), [click])
-    useEffect(() => {
-        const sub = click
-            .pipe(
-                tap(() => {
-                    copy(props.fullQuery)
-                    setCopied(true)
-                    Tooltip.forceUpdate()
-                }),
-                debounceTime(1000),
-                tap(() => {
-                    setCopied(false)
-                    Tooltip.forceUpdate()
-                })
-            )
-            .subscribe()
-        return () => sub.unsubscribe()
-    }, [click, props.fullQuery])
+    const [nextClick, copied] = useEventObservable(
+        useCallback(
+            (clicks: Observable<React.MouseEvent>) => clicks.pipe(
+                tap(() => copy(props.fullQuery)),
+                switchMapTo(merge(
+                    of(true),
+                    timer(1000).pipe(
+                        switchMapTo(false)
+                    )
+                )),
+                tap(() => Tooltip.forceUpdate()),
+                startWith(false)
+            ),
+            [props.fullQuery]
+        )
+    )
 
     return (
         <button
