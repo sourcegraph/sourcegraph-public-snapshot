@@ -18,7 +18,7 @@ func NewDefaultSerializer() Serializer {
 	return &defaultSerializer{}
 }
 
-func (_ *defaultSerializer) MarshalDocumentData(d types.DocumentData) ([]byte, error) {
+func ( *defaultSerializer) MarshalDocumentData(d types.DocumentData) ([]byte, error) {
 	rangePairs := []interface{}{}
 	for k, v := range d.Ranges {
 		if v.MonikerIDs == nil {
@@ -67,7 +67,7 @@ func (_ *defaultSerializer) MarshalDocumentData(d types.DocumentData) ([]byte, e
 	return compress(encoded)
 }
 
-func (_ *defaultSerializer) MarshalResultChunkData(rc types.ResultChunkData) ([]byte, error) {
+func (defaultSerializer) MarshalResultChunkData(rc types.ResultChunkData) ([]byte, error) {
 	documentPathPairs := []interface{}{}
 	for k, v := range rc.DocumentPaths {
 		documentPathPairs = append(documentPathPairs, []interface{}{k, v})
@@ -89,7 +89,7 @@ func (_ *defaultSerializer) MarshalResultChunkData(rc types.ResultChunkData) ([]
 	return compress(encoded)
 }
 
-func (_ *defaultSerializer) UnmarshalDocumentData(data []byte) (types.DocumentData, error) {
+func (defaultSerializer) UnmarshalDocumentData(data []byte) (types.DocumentData, error) {
 	payload := struct {
 		Ranges             wrappedMapValue `json:"ranges"`
 		HoverResults       wrappedMapValue `json:"hoverResults"`
@@ -129,7 +129,7 @@ func (_ *defaultSerializer) UnmarshalDocumentData(data []byte) (types.DocumentDa
 	}, nil
 }
 
-func (_ *defaultSerializer) UnmarshalResultChunkData(data []byte) (types.ResultChunkData, error) {
+func (defaultSerializer) UnmarshalResultChunkData(data []byte) (types.ResultChunkData, error) {
 	payload := struct {
 		DocumentPaths      wrappedMapValue `json:"documentPaths"`
 		DocumentIDRangeIDs wrappedMapValue `json:"documentIdRangeIds"`
