@@ -10,7 +10,7 @@ import (
 
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
 	bundlemocks "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/mocks"
-	 "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 	dbmocks "github.com/sourcegraph/sourcegraph/internal/codeintel/db/mocks"
 )
