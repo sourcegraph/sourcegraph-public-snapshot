@@ -80,14 +80,6 @@ func (r savedSearchResolver) Description() string { return r.s.Description }
 
 func (r savedSearchResolver) Query() string { return r.s.Query }
 
-func (r savedSearchResolver) User(ctx context.Context) (*UserResolver, error) {
-	if r.s.UserID == nil {
-		return nil, nil
-	}
-
-	return UserByIDInt32(ctx, *r.s.UserID)
-}
-
 func (r savedSearchResolver) Namespace(ctx context.Context) (*NamespaceResolver, error) {
 	if r.s.OrgID != nil {
 		n, err := NamespaceByID(ctx, marshalOrgID(*r.s.OrgID))
@@ -104,13 +96,6 @@ func (r savedSearchResolver) Namespace(ctx context.Context) (*NamespaceResolver,
 		return &NamespaceResolver{n}, nil
 	}
 	return nil, nil
-}
-
-func (r savedSearchResolver) Org(ctx context.Context) (*OrgResolver, error) {
-	if r.s.OrgID == nil {
-		return nil, nil
-	}
-	return OrgByIDInt32(ctx, *r.s.OrgID)
 }
 
 func (r savedSearchResolver) SlackWebhookURL() *string { return r.s.SlackWebhookURL }
