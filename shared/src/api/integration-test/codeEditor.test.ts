@@ -1,9 +1,9 @@
 import { Range, Selection } from '@sourcegraph/extension-api-classes'
 import * as clientType from '@sourcegraph/extension-api-types'
 import { from } from 'rxjs'
-import { distinctUntilChanged, first, switchMap, take, toArray } from 'rxjs/operators'
+import { distinctUntilChanged, first, switchMap, take, toArray, filter } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
-import { isDefined } from '../../util/types'
+import { isDefined, isTaggedUnionMember } from '../../util/types'
 import { assertToJSON, integrationTestContext } from './testHelpers'
 
 describe('CodeEditor (integration)', () => {
@@ -19,7 +19,7 @@ describe('CodeEditor (integration)', () => {
 
             const values = await from(extensionAPI.app.windows[0].activeViewComponentChanges)
                 .pipe(
-                    switchMap(c => (c ? c.selectionsChanges : [])),
+                    switchMap(c => (c && c.type === 'CodeEditor' ? c.selectionsChanges : [])),
                     distinctUntilChanged(),
                     take(3),
                     toArray()
@@ -193,7 +193,8 @@ async function getFirstCodeEditor(extensionAPI: typeof sourcegraph): Promise<sou
         .pipe(
             first(isDefined),
             switchMap(win => win.activeViewComponentChanges),
-            first(isDefined)
+            filter(isDefined),
+            filter(isTaggedUnionMember('type', 'CodeEditor' as const))
         )
         .toPromise()
 }

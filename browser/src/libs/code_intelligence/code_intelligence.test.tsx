@@ -14,7 +14,7 @@ import { SuccessGraphQLResult } from '../../../../shared/src/graphql/graphql'
 import { IQuery } from '../../../../shared/src/graphql/schema'
 import { NOOP_TELEMETRY_SERVICE } from '../../../../shared/src/telemetry/telemetryService'
 import { resetAllMemoizationCaches } from '../../../../shared/src/util/memoizeObservable'
-import { isDefined, subTypeOf } from '../../../../shared/src/util/types'
+import { isDefined, subTypeOf, allOf, check, isTaggedUnionMember } from '../../../../shared/src/util/types'
 import { DEFAULT_SOURCEGRAPH_URL } from '../../shared/util/context'
 import { MutationRecordLike } from '../../shared/util/dom'
 import {
@@ -311,6 +311,9 @@ describe('code_intelligence', () => {
                         take(1)
                     )
                     .toPromise()
+                if (activeEditor.type !== 'CodeEditor') {
+                    throw new Error(`Expected active editor to be CodeEditor, got ${activeEditor.type}`)
+                }
                 const decorationType = extensionAPI.app.createDecorationType()
                 const decorated = (): Promise<TextDocumentDecoration[] | null> =>
                     services.textDocumentDecoration
@@ -429,7 +432,12 @@ describe('code_intelligence', () => {
                 const editors = extensionAPI.app.activeWindow!.visibleViewComponents
                 expect(editors).toHaveLength(2)
 
-                const baseEditor = editors.find(e => e.document.uri === 'git://foo?1#/bar.ts')!
+                const baseEditor = editors.find(
+                    allOf(
+                        isTaggedUnionMember('type', 'CodeEditor' as const),
+                        check(e => e.document.uri === 'git://foo?1#/bar.ts')
+                    )
+                )!
                 const baseDecorations = [
                     {
                         range: new Range(0, 0, 0, 0),
@@ -458,7 +466,12 @@ describe('code_intelligence', () => {
                 ]
                 baseEditor.setDecorations(decorationType, baseDecorations)
 
-                const headEditor = editors.find(e => e.document.uri === 'git://foo?2#/bar.ts')!
+                const headEditor = editors.find(
+                    allOf(
+                        isTaggedUnionMember('type', 'CodeEditor' as const),
+                        check(e => e.document.uri === 'git://foo?2#/bar.ts')
+                    )
+                )!
                 const headDecorations = [
                     {
                         range: new Range(0, 0, 0, 0),

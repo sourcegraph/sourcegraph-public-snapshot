@@ -41,6 +41,7 @@ import { toPrettyBlobURL } from '../../../shared/src/util/url'
 import { isDefined } from '../../../shared/src/util/types'
 import { getViewsForContainer } from '../../../shared/src/api/client/services/viewService'
 import { ViewContent } from '../views/ViewContent'
+import { toURIWithPath } from '../../../shared/src/util/url'
 
 const TreeEntry: React.FunctionComponent<{
     isDir: boolean
@@ -198,15 +199,39 @@ export const TreePage: React.FunctionComponent<Props> = ({
     )
 
     const { services } = props.extensionsController
+
+    // Add DirectoryViewer
+    const uri = toURIWithPath({ repoName, commitID, filePath })
+    useEffect(() => {
+        const editorId = services.editor.addEditor({
+            type: 'DirectoryViewer',
+            isActive: true,
+            resource: uri,
+        })
+        return () => services.editor.removeEditor(editorId)
+    }, [services.editor, services.model, uri])
+
+    // Observe directory views
+    const workspaceUri = services.workspace.roots.value[0].uri
     const views = useObservable(
         useMemo(
             () =>
                 getViewsForContainer(
                     ContributableViewContainer.Directory,
-                    { workspace: services.workspace.roots.value[0] },
+                    {
+                        editor: {
+                            type: 'DirectoryViewer',
+                            directory: {
+                                uri,
+                            },
+                        },
+                        workspace: {
+                            uri: workspaceUri,
+                        },
+                    },
                     services.view
                 ).pipe(map(views => views.filter(isDefined))),
-            [services.view, services.workspace.roots.value]
+            [services.view, workspaceUri, uri]
         )
     )
 
@@ -321,7 +346,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                     <div className="tree-page__section d-flex">
                         {views === undefined ? (
                             <div className="card flex-grow-1">
-                                <div className="card-body d-flex flex-column align-items-center">
+                                <div className="card-body d-flex flex-column align-items-center p-5">
                                     <div>
                                         <LoadingSpinner className="icon-inline" />
                                     </div>

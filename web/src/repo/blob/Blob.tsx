@@ -29,6 +29,7 @@ import {
     ResolvedRevSpec,
     RevSpec,
     toPositionOrRangeHash,
+    toURIWithPath,
 } from '../../../../shared/src/util/url'
 import { getHover } from '../../backend/features'
 import { WebHoverOverlay } from '../../components/shared'
@@ -305,7 +306,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
         // Update the Sourcegraph extensions model to reflect the current file.
         this.subscriptions.add(
             combineLatest([modelChanges, locationPositions]).subscribe(([model, pos]) => {
-                const uri = `git://${model.repoName}?${model.commitID}#${model.filePath}`
+                const uri = toURIWithPath(model)
                 if (!this.props.extensionsController.services.model.hasModel(uri)) {
                     this.props.extensionsController.services.model.addModel({
                         uri,

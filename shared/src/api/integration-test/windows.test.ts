@@ -202,7 +202,7 @@ describe('Windows (integration)', () => {
                     )
                     .toPromise()
                 assertToJSON(
-                    values.map(c => (c ? c.document.uri : null)),
+                    values.map(c => (c && c.type === 'CodeEditor' ? c.document.uri : null)),
                     [null, 'foo', null, 'bar']
                 )
             })

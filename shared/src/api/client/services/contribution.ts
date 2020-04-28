@@ -5,7 +5,7 @@ import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefaul
 import { ContributableMenu, Contributions, Evaluated, MenuItemContribution, Raw } from '../../protocol'
 import { Context, ContributionScope, getComputedContextProperty } from '../context/context'
 import { ComputedContext, Expression, parse, parseTemplate } from '../context/expr/evaluator'
-import { EditorService } from './editorService'
+import { EditorService, EditorWithPartialModel } from './editorService'
 import { SettingsService } from './settings'
 import { ModelService } from './modelService'
 
@@ -113,11 +113,20 @@ export class ContributionRegistry {
                 )
             ),
             from(this.editorService.activeEditorUpdates).pipe(
-                map(activeEditor =>
-                    activeEditor
-                        ? { ...activeEditor, model: this.modelService.getPartialModel(activeEditor.resource) }
-                        : undefined
-                )
+                map((activeEditor): EditorWithPartialModel | undefined => {
+                    if (!activeEditor) {
+                        return undefined
+                    }
+                    switch (activeEditor.type) {
+                        case 'CodeEditor':
+                            return {
+                                ...activeEditor,
+                                model: this.modelService.getPartialModel(activeEditor.resource),
+                            }
+                        case 'DirectoryEditor':
+                            return activeEditor
+                    }
+                })
             ),
             this.settingsService.data,
             this.context,

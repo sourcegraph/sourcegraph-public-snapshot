@@ -1,11 +1,10 @@
 import { Observable, Unsubscribable, BehaviorSubject, of, combineLatest } from 'rxjs'
-import { View as ExtensionView } from 'sourcegraph'
+import { View as ExtensionView, DirectoryViewContext } from 'sourcegraph'
 import { switchMap, map, distinctUntilChanged, startWith, delay, catchError } from 'rxjs/operators'
 import { Evaluated, Contributions, ContributableViewContainer } from '../../protocol'
 import { isEqual } from 'lodash'
-import { WorkspaceRoot } from '@sourcegraph/extension-api-types'
 import { asError, ErrorLike } from '../../../util/errors'
-import { isDefined } from '../../../util/types'
+import { isDefined, DeepReplace } from '../../../util/types'
 
 /**
  * A view is a page or partial page.
@@ -13,12 +12,12 @@ import { isDefined } from '../../../util/types'
 export interface View extends ExtensionView {}
 
 /**
- * The types of the context parameter by container.
+ * The types of the context parameter by the container (internally).
  */
 export interface ViewContexts {
     [ContributableViewContainer.Panel]: never
     [ContributableViewContainer.GlobalPage]: Record<string, string>
-    [ContributableViewContainer.Directory]: { workspace: WorkspaceRoot }
+    [ContributableViewContainer.Directory]: DeepReplace<DirectoryViewContext, URL, string>
 }
 
 export type ViewProviderFunction<C> = (context: C) => Observable<View | null>

@@ -534,7 +534,7 @@ declare module 'sourcegraph' {
      * Each {@link ViewComponent} has a distinct {@link ViewComponent#type} value that indicates what kind of
      * component it is ({@link CodeEditor}, etc.).
      */
-    export type ViewComponent = CodeEditor
+    export type ViewComponent = CodeEditor | DirectoryEditor
 
     /**
      * A style for a {@link TextDocumentDecoration}.
@@ -619,6 +619,30 @@ declare module 'sourcegraph' {
     export interface TextDocumentDecorationType {
         /** An opaque identifier. */
         readonly key: string
+    }
+
+    export interface Directory {
+        /**
+         * The URI of the directory.
+         *
+         * @todo The format of this URI will be changed in the future. It must not be relied on.
+         */
+        readonly uri: URL
+    }
+
+    /**
+     * An editor object representing directory pages.
+     *
+     * This API is experimental and subject to change.
+     */
+    export interface DirectoryEditor {
+        readonly type: 'DirectoryEditor'
+
+        /**
+         * The directory shown in the directory viewer.
+         * This currently only exposes the URI of the directory.
+         */
+        readonly directory: Directory
     }
 
     /**
@@ -726,7 +750,7 @@ declare module 'sourcegraph' {
      * This API is experimtal subject to change or removal without notice.
      */
     export interface GlobalPageViewProvider {
-        where: 'global/page'
+        readonly where: 'global/page'
 
         /**
          * Provide content for the view.
@@ -739,11 +763,24 @@ declare module 'sourcegraph' {
     }
 
     /**
+     * Context passed to directory view providers.
+     *
+     * The schema of these parameters is experimental and subject to change without notice.
+     */
+    export interface DirectoryViewContext {
+        /** The directory viewer displaying the view. */
+        editor: DirectoryEditor
+
+        /** The workspace of the directory. */
+        workspace: WorkspaceRoot
+    }
+
+    /**
      * Experimental view provider for directory pages.
      * This API is experimtal subject to change or removal without notice.
      */
     export interface DirectoryViewProvider {
-        where: 'directory'
+        readonly where: 'directory'
 
         /**
          * Provide content for a view.
@@ -752,7 +789,7 @@ declare module 'sourcegraph' {
          * change without notice.
          * @returns The view content.
          */
-        provideView(context: { workspace: WorkspaceRoot }): ProviderResult<View>
+        provideView(context: DirectoryViewContext): ProviderResult<View>
     }
 
     /**

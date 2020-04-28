@@ -19,8 +19,8 @@ interface WindowsProxyData {
  * @internal
  */
 export class ExtWindow implements sourcegraph.Window {
-    /** Map of editor key to editor. */
-    private viewComponents = new Map<string, ExtCodeEditor>()
+    /** Mutable map of editor ID to editor. */
+    private viewComponents = new Map<string, ExtCodeEditor | sourcegraph.DirectoryEditor>()
 
     constructor(private proxy: Remote<WindowsProxyData>, private documents: ExtDocuments, data: EditorUpdate[]) {
         this.update(data)
@@ -96,13 +96,30 @@ export class ExtWindow implements sourcegraph.Window {
             const { editorId } = update
             switch (update.type) {
                 case 'added': {
-                    const editor = new ExtCodeEditor(
-                        { editorId, ...update.editorData },
-                        this.proxy.codeEditor,
-                        this.documents
-                    )
+                    const { editorData } = update
+                    let editor: ExtCodeEditor | sourcegraph.DirectoryEditor
+                    switch (editorData.type) {
+                        case 'CodeEditor':
+                            editor = new ExtCodeEditor(
+                                { editorId, ...editorData },
+                                this.proxy.codeEditor,
+                                this.documents
+                            )
+                            break
+                        case 'DirectoryEditor':
+                            editor = {
+                                type: 'DirectoryEditor',
+                                // Since directories don't have any state beyond the immutable URI,
+                                // we can set the model to a static object for now and don't need to track directory models in a Map.
+                                directory: {
+                                    uri: new URL(editorData.resource),
+                                },
+                            }
+                            break
+                    }
+                    console.log('new viewcomponent', editor)
                     this.viewComponents.set(editorId, editor)
-                    if (update.editorData.isActive) {
+                    if (editorData.isActive) {
                         this.activeViewComponentChanges.next(editor)
                     }
                     break
@@ -111,6 +128,11 @@ export class ExtWindow implements sourcegraph.Window {
                     const editor = this.viewComponents.get(editorId)
                     if (!editor) {
                         throw new Error(`Could not perform update: editor ${editorId} not found`)
+                    }
+                    if (editor.type !== 'CodeEditor') {
+                        throw new Error(
+                            `Could not perform update: editor ${editorId} is type ${editor.type}, not CodeEditor`
+                        )
                     }
                     editor.update(update.editorData)
                     break

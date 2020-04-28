@@ -106,8 +106,7 @@ describe('EditorService', () => {
                 selections: [],
                 isActive: true,
             })
-            const changes = editorService
-                .observeEditor(editorId)
+            const changes = (editorService.observeEditor(editorId) as Observable<CodeEditorData>)
                 .pipe(
                     map(({ selections }) => selections),
                     bufferCount(2),

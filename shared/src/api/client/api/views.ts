@@ -24,11 +24,19 @@ export interface PanelUpdater extends Unsubscribable, comlink.ProxyMarked {
 export interface ClientViewsAPI extends comlink.ProxyMarked {
     $registerPanelViewProvider(provider: { id: string }): PanelUpdater
 
-    $registerViewProvider<W extends ContributableViewContainer>(
+    $registerDirectoryViewProvider(
         id: string,
-        where: W,
-        providerFunction: comlink.Remote<
-            ((context: ViewContexts[W]) => ProxySubscribable<View | null>) & comlink.ProxyMarked
+        provider: comlink.Remote<
+            ((context: ViewContexts[typeof ContributableViewContainer.Directory]) => ProxySubscribable<View | null>) &
+                comlink.ProxyMarked
+        >
+    ): Unsubscribable & comlink.ProxyMarked
+
+    $registerGlobalPageViewProvider(
+        id: string,
+        provider: comlink.Remote<
+            ((context: ViewContexts[typeof ContributableViewContainer.GlobalPage]) => ProxySubscribable<View | null>) &
+                comlink.ProxyMarked
         >
     ): Unsubscribable & comlink.ProxyMarked
 }
@@ -98,15 +106,33 @@ export class ClientViews implements ClientViewsAPI {
         })
     }
 
-    public $registerViewProvider<W extends ContributableViewContainer>(
+    public $registerDirectoryViewProvider(
         id: string,
-        where: W,
-        providerFunction: comlink.Remote<
-            ((context: ViewContexts[W]) => ProxySubscribable<View | null>) & comlink.ProxyMarked
+        provider: comlink.Remote<
+            (
+                context: ViewContexts[typeof ContributableViewContainer.Directory]
+            ) => ProxySubscribable<View | null> & comlink.ProxyMarked
         >
     ): Unsubscribable & comlink.ProxyMarked {
         return comlink.proxy(
-            this.viewService.register(id, where, context => wrapRemoteObservable(providerFunction(context as any))) // TODO find type-safe way
+            this.viewService.register(id, ContributableViewContainer.Directory, context =>
+                wrapRemoteObservable(provider(context))
+            )
+        )
+    }
+
+    public $registerGlobalPageViewProvider(
+        id: string,
+        provider: comlink.Remote<
+            (
+                context: ViewContexts[typeof ContributableViewContainer.GlobalPage]
+            ) => ProxySubscribable<View | null> & comlink.ProxyMarked
+        >
+    ): Unsubscribable & comlink.ProxyMarked {
+        return comlink.proxy(
+            this.viewService.register(id, ContributableViewContainer.GlobalPage, context =>
+                wrapRemoteObservable(provider(context))
+            )
         )
     }
 }

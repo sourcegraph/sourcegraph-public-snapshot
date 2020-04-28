@@ -5,6 +5,9 @@ import { TextDocumentPositionParams } from '../../protocol'
 import { ModelService, TextModel, PartialModel } from './modelService'
 import { RefCount } from '../../../util/RefCount'
 
+export type Editor = CodeEditor | DirectoryEditor
+export type EditorData = CodeEditorData | DirectoryEditorData
+
 /**
  * EditorId exposes the unique ID of an editor.
  */
@@ -13,23 +16,39 @@ export interface EditorId {
     readonly editorId: string
 }
 
+export interface BaseEditorData {
+    readonly isActive: boolean
+}
+
+export interface DirectoryEditorData extends BaseEditorData {
+    readonly type: 'DirectoryEditor'
+    /** The URI of the directory that this editor is displaying. */
+    readonly resource: string
+}
+
 /**
  * Describes a code editor to be created.
  */
-export interface CodeEditorData {
+export interface CodeEditorData extends BaseEditorData {
     readonly type: 'CodeEditor'
 
     /** The URI of the model that this editor is displaying. */
     readonly resource: string
 
     readonly selections: Selection[]
-    readonly isActive: boolean
 }
 
 /**
  * Describes a code editor that has been added to the {@link EditorService}.
  */
 export interface CodeEditor extends EditorId, CodeEditorData {}
+
+/**
+ * Describes a directory editor that has been added to the {@link EditorService}.
+ */
+export interface DirectoryEditor extends EditorId, DirectoryEditorData {}
+
+export type EditorWithPartialModel = CodeEditorWithPartialModel | DirectoryEditor // Directories don't have a model
 
 /**
  * A code editor with a partial model.
@@ -49,7 +68,7 @@ export interface CodeEditorWithModel extends CodeEditor {
 }
 
 export type EditorUpdate =
-    | ({ type: 'added'; editorData: CodeEditorData } & EditorId)
+    | ({ type: 'added'; editorData: EditorData } & EditorId)
     | ({ type: 'updated'; editorData: Pick<CodeEditorData, 'selections'> } & EditorId)
     | ({ type: 'deleted' } & EditorId)
 
@@ -63,7 +82,7 @@ export interface EditorService {
      * This is mostly used for testing, most consumers should use
      * {@link EditorService#editorUpdates} or {@link EditorService#activeEditorUpdates}
      */
-    readonly editors: ReadonlyMap<string, CodeEditor>
+    readonly editors: ReadonlyMap<string, Editor>
 
     /**
      * An observable of all editor updates.
@@ -77,7 +96,7 @@ export interface EditorService {
      *
      * Emits the active editor if there is one, or `undefined` otherwise.
      */
-    readonly activeEditorUpdates: Subscribable<CodeEditor | undefined>
+    readonly activeEditorUpdates: Subscribable<Editor | undefined>
 
     /**
      * Add an editor.
@@ -86,7 +105,7 @@ export interface EditorService {
      * @returns The added code editor (which must be passed as the first argument to other
      * {@link EditorService} methods to operate on this editor).
      */
-    addEditor(editor: CodeEditorData): EditorId
+    addEditor(editor: EditorData): EditorId
 
     /**
      * Observe an editor for changes.
@@ -96,14 +115,15 @@ export interface EditorService {
      * and completes when the editor is removed.
      * If no such editor exists, it emits an error.
      */
-    observeEditor(editor: EditorId): Observable<CodeEditorData>
+    observeEditor(editor: EditorId): Observable<EditorData>
 
     /**
-     * Sets the selections for an editor.
+     * Sets the selections for a CodeEditor.
      *
      * @param editor The editor for which to set the selections.
      * @param selections The new selections to apply.
      * @throws if no editor exists with the given editor ID.
+     * @throws if the editor ID is not a CodeEditor.
      */
     setSelections(editor: EditorId, selections: Selection[]): void
 
@@ -139,14 +159,14 @@ export function createEditorService(modelService: Pick<ModelService, 'removeMode
     const nextId = (): string => `editor#${id++}`
 
     /** A map of editor ids to code editors. */
-    const editors = new Map<string, CodeEditor>()
+    const editors = new Map<string, Editor>()
     const editorUpdates = new Subject<EditorUpdate[]>()
-    const activeEditorUpdates = new BehaviorSubject<CodeEditor | undefined>(undefined)
+    const activeEditorUpdates = new BehaviorSubject<Editor | undefined>(undefined)
     /**
-     * Returns the CodeEditor with the given editorId.
+     * Returns the Editor with the given editorId.
      * Throws if no editor exists with the given editorId.
      */
-    const getEditor = (editorId: EditorId['editorId']): CodeEditor => {
+    const getEditor = (editorId: EditorId['editorId']): Editor => {
         const editor = editors.get(editorId)
         if (!editor) {
             throw new EditorNotFoundError(editorId)
@@ -161,8 +181,10 @@ export function createEditorService(modelService: Pick<ModelService, 'removeMode
         activeEditorUpdates,
         addEditor: editorData => {
             const editorId = nextId()
-            modelRefs.increment(editorData.resource)
-            const editor: CodeEditor = {
+            if (editorData.type === 'CodeEditor') {
+                modelRefs.increment(editorData.resource)
+            }
+            const editor: Editor = {
                 ...editorData,
                 editorId,
             }
@@ -171,7 +193,7 @@ export function createEditorService(modelService: Pick<ModelService, 'removeMode
             if (editorData.isActive) {
                 activeEditorUpdates.next(editor)
             }
-            return { editorId }
+            return editor
         },
         observeEditor: ({ editorId }) => {
             try {
@@ -188,10 +210,10 @@ export function createEditorService(modelService: Pick<ModelService, 'removeMode
         },
         setSelections({ editorId }: EditorId, selections: Selection[]): void {
             const editor = getEditor(editorId)
-            editors.set(editorId, {
-                ...editor,
-                selections,
-            })
+            if (editor.type !== 'CodeEditor') {
+                throw new Error(`Editor ID ${editorId} is type ${String(editor.type)}, expected CodeEditor`)
+            }
+            editors.set(editorId, { ...editor, selections })
             editorUpdates.next([{ type: 'updated', editorId, editorData: { selections } }])
         },
         removeEditor({ editorId }: EditorId): void {
@@ -202,7 +224,7 @@ export function createEditorService(modelService: Pick<ModelService, 'removeMode
             if (activeEditorUpdates.value && activeEditorUpdates.value.editorId === editorId) {
                 activeEditorUpdates.next(undefined)
             }
-            if (modelRefs.decrement(editor.resource)) {
+            if (editor.type === 'CodeEditor' && modelRefs.decrement(editor.resource)) {
                 modelService.removeModel(editor.resource)
             }
         },
@@ -219,8 +241,8 @@ export function createEditorService(modelService: Pick<ModelService, 'removeMode
  * {@link EditorService#editors}. If there is no active editor or it has no position, it returns
  * null.
  */
-export function getActiveCodeEditorPosition(activeEditor: CodeEditor | undefined): TextDocumentPositionParams | null {
-    if (!activeEditor) {
+export function getActiveCodeEditorPosition(activeEditor: Editor | undefined): TextDocumentPositionParams | null {
+    if (!activeEditor || activeEditor.type !== 'CodeEditor') {
         return null
     }
     const sel = activeEditor.selections[0]
@@ -244,6 +266,8 @@ export function getActiveCodeEditorPosition(activeEditor: CodeEditor | undefined
 
 /**
  * Observe an editor and its model for changes.
+ *
+ * @param editorId The ID of a **CodeEditor**.
  */
 export function observeEditorAndModel(
     { editorId }: EditorId,
@@ -251,6 +275,12 @@ export function observeEditorAndModel(
     { observeModel }: Pick<ModelService, 'observeModel'>
 ): Observable<CodeEditorWithModel> {
     return observeEditor({ editorId }).pipe(
+        map(editor => {
+            if (editor.type !== 'CodeEditor') {
+                throw new Error(`Editor ID ${editorId} is type ${String(editor.type)}, expected CodeEditor`)
+            }
+            return editor
+        }),
         switchMap(editor => observeModel(editor.resource).pipe(map(model => ({ editorId, ...editor, model }))))
     )
 }

@@ -3,8 +3,9 @@ import * as sourcegraph from 'sourcegraph'
 import { ClientViewsAPI, PanelUpdater, PanelViewData } from '../../client/api/views'
 import { syncSubscription } from '../../util'
 import { Unsubscribable } from 'rxjs'
-import { toProxyableSubscribable, ProxySubscribable } from './common'
+import { toProxyableSubscribable } from './common'
 import { ContributableViewContainer } from '../../protocol'
+import { ViewContexts } from '../../client/services/viewService'
 
 /**
  * @internal
@@ -74,17 +75,41 @@ export class ExtViews implements comlink.ProxyMarked {
     }
 
     public registerViewProvider(id: string, provider: sourcegraph.ViewProvider): Unsubscribable {
-        const providerFunction: comlink.Local<comlink.Remote<
-            ((context: any) => ProxySubscribable<sourcegraph.View | null>) & comlink.ProxyMarked
-        >> = comlink.proxy((context: any) => {
-            const rehydrated =
-                provider.where === 'directory'
-                    ? { workspace: ((): sourcegraph.WorkspaceRoot => ({ uri: new URL(context.workspace.uri) }))() }
-                    : context
-            return toProxyableSubscribable(provider.provideView(rehydrated), result => result || null)
-        })
-        return syncSubscription(
-            this.proxy.$registerViewProvider(id, provider.where as ContributableViewContainer, providerFunction)
-        )
+        switch (provider.where) {
+            case ContributableViewContainer.Directory: {
+                return syncSubscription(
+                    this.proxy.$registerDirectoryViewProvider(
+                        id,
+                        comlink.proxy((context: ViewContexts[typeof ContributableViewContainer.Directory]) =>
+                            toProxyableSubscribable(
+                                provider.provideView({
+                                    editor: {
+                                        ...context.editor,
+                                        directory: {
+                                            ...context.editor.directory,
+                                            uri: new URL(context.editor.directory.uri),
+                                        },
+                                    },
+                                    workspace: {
+                                        uri: new URL(context.workspace.uri),
+                                    },
+                                }),
+                                result => result || null
+                            )
+                        )
+                    )
+                )
+            }
+            case ContributableViewContainer.GlobalPage: {
+                return syncSubscription(
+                    this.proxy.$registerGlobalPageViewProvider(
+                        id,
+                        comlink.proxy((context: ViewContexts[typeof ContributableViewContainer.GlobalPage]) =>
+                            toProxyableSubscribable(provider.provideView(context), result => result || null)
+                        )
+                    )
+                )
+            }
+        }
     }
 }

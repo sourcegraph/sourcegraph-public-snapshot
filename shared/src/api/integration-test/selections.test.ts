@@ -1,6 +1,6 @@
 import { from } from 'rxjs'
 import { distinctUntilChanged, filter, switchMap } from 'rxjs/operators'
-import { isDefined } from '../../util/types'
+import { isDefined, isTaggedUnionMember } from '../../util/types'
 import { assertToJSON, collectSubscribableValues, integrationTestContext } from './testHelpers'
 
 describe('Selections (integration)', () => {
@@ -15,6 +15,7 @@ describe('Selections (integration)', () => {
                 filter(isDefined),
                 switchMap(window => window.activeViewComponentChanges),
                 filter(isDefined),
+                filter(isTaggedUnionMember('type', 'CodeEditor' as const)),
                 distinctUntilChanged(),
                 switchMap(editor => editor.selectionsChanges)
             )
