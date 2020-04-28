@@ -59,6 +59,7 @@ func TestBatchInserter(t *testing.T) {
 		return nil
 	})
 }
+
 func BenchmarkSQLiteInsertion(b *testing.B) {
 	var expectedValues [][]interface{}
 	for i := 0; i < b.N; i++ {
