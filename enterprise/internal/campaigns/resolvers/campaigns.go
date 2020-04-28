@@ -280,6 +280,66 @@ func (r *campaignResolver) RepositoryDiffs(
 	return &changesetDiffsConnectionResolver{changesetsConnection}, nil
 }
 
+func (r *campaignResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffStat, error) {
+	changesetsConnection := &changesetsConnectionResolver{
+		store: r.store,
+		opts: ee.ListChangesetsOpts{
+			CampaignID: r.Campaign.ID,
+			Limit:      -1, // Get all changesets
+		},
+	}
+
+	changesetDiffs := &changesetDiffsConnectionResolver{changesetsConnection}
+	repoComparisons, err := changesetDiffs.Nodes(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	totalStat := &graphqlbackend.DiffStat{}
+
+	for _, repoComp := range repoComparisons {
+		fileDiffs := repoComp.FileDiffs(&graphqlutil.ConnectionArgs{})
+		s, err := fileDiffs.DiffStat(ctx)
+		if err != nil {
+			return nil, err
+		}
+		totalStat.AddDiffStat(s)
+	}
+
+	// We don't have a patch set, so we don't have patches and can return
+	if r.Campaign.PatchSetID == 0 {
+		return totalStat, nil
+	}
+
+	patchesConnection := &patchesConnectionResolver{
+		store: r.store,
+		opts: ee.ListPatchesOpts{
+			PatchSetID:                r.Campaign.PatchSetID,
+			Limit:                     -1, // Get all patches
+			OnlyWithDiff:              true,
+			OnlyUnpublishedInCampaign: r.Campaign.ID,
+		},
+	}
+
+	patches, err := patchesConnection.Nodes(ctx)
+	for _, p := range patches {
+
+		fileDiffs, err := p.FileDiffs(ctx, &graphqlutil.ConnectionArgs{})
+		if err != nil {
+			return nil, err
+		}
+
+		s, err := fileDiffs.DiffStat(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		totalStat.AddDiffStat(s)
+	}
+
+	return totalStat, nil
+}
+
 func (r *campaignResolver) Status(ctx context.Context) (graphqlbackend.BackgroundProcessStatus, error) {
 	return r.store.GetCampaignStatus(ctx, r.Campaign.ID)
 }

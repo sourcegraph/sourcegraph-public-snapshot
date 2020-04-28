@@ -8,6 +8,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/mocks"
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 )
 
@@ -239,7 +240,7 @@ func TestHandleSameRepoCursor(t *testing.T) {
 	setMockDBGetDumpByID(t, mockDB, map[int]db.Dump{42: testDump1, 50: testDump2, 51: testDump3, 52: testDump4})
 	setMockBundleManagerClientBundleClient(t, mockBundleManagerClient, map[int]bundles.BundleClient{50: mockBundleClient1, 51: mockBundleClient2, 52: mockBundleClient3})
 	setMockDBSameRepoPager(t, mockDB, 100, testCommit, "gomod", "leftpad", "0.1.0", 5, 3, mockReferencePager)
-	setMockReferencePagerPageFromOffset(t, mockReferencePager, 0, []db.Reference{
+	setMockReferencePagerPageFromOffset(t, mockReferencePager, 0, []types.PackageReference{
 		{DumpID: 50, Filter: readTestFilter(t, "normal", "1")},
 		{DumpID: 51, Filter: readTestFilter(t, "normal", "1")},
 		{DumpID: 52, Filter: readTestFilter(t, "normal", "1")},
@@ -376,7 +377,7 @@ func TestHandleSameRepoCursorMultipleDumpBatches(t *testing.T) {
 	setMockDBGetDumpByID(t, mockDB, map[int]db.Dump{42: testDump1, 50: testDump2, 51: testDump3, 52: testDump4})
 	setMockBundleManagerClientBundleClient(t, mockBundleManagerClient, map[int]bundles.BundleClient{51: mockBundleClient})
 	setMockDBSameRepoPager(t, mockDB, 100, testCommit, "gomod", "leftpad", "0.1.0", 2, 3, mockReferencePager)
-	setMockReferencePagerPageFromOffset(t, mockReferencePager, 0, []db.Reference{
+	setMockReferencePagerPageFromOffset(t, mockReferencePager, 0, []types.PackageReference{
 		{DumpID: 50, Filter: readTestFilter(t, "normal", "1")},
 		{DumpID: 51, Filter: readTestFilter(t, "normal", "1")},
 	})
@@ -455,7 +456,7 @@ func TestHandleRemoteRepoCursor(t *testing.T) {
 	setMockDBGetDumpByID(t, mockDB, map[int]db.Dump{42: testDump1, 50: testDump2, 51: testDump3, 52: testDump4})
 	setMockBundleManagerClientBundleClient(t, mockBundleManagerClient, map[int]bundles.BundleClient{50: mockBundleClient1, 51: mockBundleClient2, 52: mockBundleClient3})
 	setMockDBPackageReferencePager(t, mockDB, "gomod", "leftpad", "0.1.0", 100, 5, 3, mockReferencePager)
-	setMockReferencePagerPageFromOffset(t, mockReferencePager, 0, []db.Reference{
+	setMockReferencePagerPageFromOffset(t, mockReferencePager, 0, []types.PackageReference{
 		{DumpID: 50, Filter: readTestFilter(t, "normal", "1")},
 		{DumpID: 51, Filter: readTestFilter(t, "normal", "1")},
 		{DumpID: 52, Filter: readTestFilter(t, "normal", "1")},
@@ -581,7 +582,7 @@ func TestHandleRemoteRepoCursorMultipleDumpBatches(t *testing.T) {
 	setMockDBGetDumpByID(t, mockDB, map[int]db.Dump{42: testDump1, 50: testDump2, 51: testDump3, 52: testDump4})
 	setMockBundleManagerClientBundleClient(t, mockBundleManagerClient, map[int]bundles.BundleClient{51: mockBundleClient})
 	setMockDBPackageReferencePager(t, mockDB, "gomod", "leftpad", "0.1.0", 100, 2, 3, mockReferencePager)
-	setMockReferencePagerPageFromOffset(t, mockReferencePager, 0, []db.Reference{
+	setMockReferencePagerPageFromOffset(t, mockReferencePager, 0, []types.PackageReference{
 		{DumpID: 50, Filter: readTestFilter(t, "normal", "1")},
 		{DumpID: 51, Filter: readTestFilter(t, "normal", "1")},
 	})
@@ -645,7 +646,7 @@ func TestHandleRemoteRepoCursorMultipleDumpBatches(t *testing.T) {
 }
 
 func TestApplyBloomFilter(t *testing.T) {
-	references := []db.Reference{
+	references := []types.PackageReference{
 		{DumpID: 1, Filter: readTestFilter(t, "normal", "1")},   // bar
 		{DumpID: 2, Filter: readTestFilter(t, "normal", "2")},   // no bar
 		{DumpID: 3, Filter: readTestFilter(t, "normal", "3")},   // bar

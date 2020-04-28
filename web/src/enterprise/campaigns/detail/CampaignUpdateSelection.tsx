@@ -45,6 +45,7 @@ export const CampaignUpdateSelection: React.FunctionComponent<Props> = ({ histor
                 nodeComponent={CampaignNode}
                 nodeComponentProps={{
                     selection: { buttonLabel: 'Preview', enabled: true, onSelect: selectCampaign },
+                    history,
                 }}
                 queryConnection={queryConnection}
                 useURLQuery={false}

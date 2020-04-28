@@ -7,22 +7,8 @@ import (
 	"testing"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 )
-
-type PackageModel struct {
-	Scheme  string
-	Name    string
-	Version string
-	DumpID  int
-}
-
-type ReferenceModel struct {
-	Scheme  string
-	Name    string
-	Version string
-	DumpID  int
-	Filter  []byte
-}
 
 // insertUploads populates the lsif_uploads table with the given upload models.
 func insertUploads(t *testing.T, db *sql.DB, uploads ...Upload) {
@@ -79,7 +65,7 @@ func insertUploads(t *testing.T, db *sql.DB, uploads ...Upload) {
 }
 
 // insertPackages populates the lsif_packages table with the given package models.
-func insertPackages(t *testing.T, db *sql.DB, packages ...PackageModel) {
+func insertPackages(t *testing.T, db *sql.DB, packages ...types.Package) {
 	for _, pkg := range packages {
 		query := sqlf.Sprintf(`
 			INSERT INTO lsif_packages (
@@ -102,7 +88,7 @@ func insertPackages(t *testing.T, db *sql.DB, packages ...PackageModel) {
 }
 
 // insertReferences populates the lsif_references table with the given reference models.
-func insertReferences(t *testing.T, db *sql.DB, references ...ReferenceModel) {
+func insertReferences(t *testing.T, db *sql.DB, references ...types.PackageReference) {
 	for _, reference := range references {
 		query := sqlf.Sprintf(`
 			INSERT INTO lsif_references (

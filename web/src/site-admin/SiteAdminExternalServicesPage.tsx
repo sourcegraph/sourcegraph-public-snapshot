@@ -17,6 +17,7 @@ import { refreshSiteFlags } from '../site/backend'
 import { eventLogger } from '../tracking/eventLogger'
 import { ErrorAlert } from '../components/alerts'
 import { useEventObservable } from '../../../shared/src/util/useObservable'
+import * as H from 'history'
 
 async function deleteExternalService(externalService: GQL.ID): Promise<void> {
     const result = await mutateGraphQL(
@@ -35,9 +36,10 @@ async function deleteExternalService(externalService: GQL.ID): Promise<void> {
 interface ExternalServiceNodeProps {
     node: GQL.IExternalService
     onDidUpdate: () => void
+    history: H.History
 }
 
-const ExternalServiceNode: React.FunctionComponent<ExternalServiceNodeProps> = ({ node, onDidUpdate }) => {
+const ExternalServiceNode: React.FunctionComponent<ExternalServiceNodeProps> = ({ node, onDidUpdate, history }) => {
     const [nextDeleteClick, deletedOrError] = useEventObservable(
         useCallback(
             (clicks: Observable<React.MouseEvent>) =>
@@ -82,12 +84,14 @@ const ExternalServiceNode: React.FunctionComponent<ExternalServiceNodeProps> = (
                     </button>
                 </div>
             </div>
-            {isErrorLike(deletedOrError) && <ErrorAlert className="mt-2" error={deletedOrError} />}
+            {isErrorLike(deletedOrError) && <ErrorAlert className="mt-2" error={deletedOrError} history={history} />}
         </li>
     )
 }
 
-interface Props extends RouteComponentProps<{}>, ActivationProps {}
+interface Props extends RouteComponentProps<{}>, ActivationProps {
+    history: H.History
+}
 
 interface State {
     noExternalServices?: boolean
@@ -152,8 +156,9 @@ export class SiteAdminExternalServicesPage extends React.PureComponent<Props, St
         )
 
     public render(): JSX.Element | null {
-        const nodeProps: Pick<ExternalServiceNodeProps, 'onDidUpdate'> = {
+        const nodeProps: Omit<ExternalServiceNodeProps, 'node'> = {
             onDidUpdate: this.onDidUpdateExternalServices,
+            history: this.props.history,
         }
 
         if (this.state.noExternalServices) {
@@ -172,7 +177,7 @@ export class SiteAdminExternalServicesPage extends React.PureComponent<Props, St
                     </Link>
                 </div>
                 <p className="mt-2">Manage code host connections to sync repositories.</p>
-                <FilteredConnection<GQL.IExternalService, Pick<ExternalServiceNodeProps, 'onDidUpdate'>>
+                <FilteredConnection<GQL.IExternalService, Omit<ExternalServiceNodeProps, 'node'>>
                     className="list-group list-group-flush mt-3"
                     noun="external service"
                     pluralNoun="external services"

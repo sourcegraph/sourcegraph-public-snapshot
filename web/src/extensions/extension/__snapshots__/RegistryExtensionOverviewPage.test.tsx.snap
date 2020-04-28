@@ -15,6 +15,7 @@ exports[`RegistryExtensionOverviewPage renders 1`] = `
 ",
         }
       }
+      onClick={[Function]}
     />
   </div>
   <aside

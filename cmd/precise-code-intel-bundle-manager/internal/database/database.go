@@ -380,7 +380,7 @@ func (db *databaseImpl) getResultByID(id types.ID) ([]documentPathRangeID, error
 // This method caches result chunk data by a unique key prefixed by the database filename.
 func (db *databaseImpl) getResultChunkByResultID(id types.ID) (types.ResultChunkData, bool, error) {
 	resultChunkData, err := db.resultChunkDataCache.GetOrCreate(fmt.Sprintf("%s::%s", db.filename, id), func() (types.ResultChunkData, error) {
-		data, ok, err := db.reader.ReadResultChunk(context.Background(), hashKey(id, db.numResultChunks))
+		data, ok, err := db.reader.ReadResultChunk(context.Background(), types.HashKey(id, db.numResultChunks))
 		if err != nil {
 			return types.ResultChunkData{}, err
 		}

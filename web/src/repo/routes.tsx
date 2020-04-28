@@ -35,7 +35,7 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
     {
         path: '/-/commit/:revspec+',
         render: context => (
-            <RepositoryGitDataContainer repoName={context.repo.name}>
+            <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
                 <RepositoryCommitPage {...context} />
             </RepositoryGitDataContainer>
         ),
@@ -43,7 +43,7 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
     {
         path: '/-/branches',
         render: context => (
-            <RepositoryGitDataContainer repoName={context.repo.name}>
+            <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
                 <RepositoryBranchesArea {...context} />
             </RepositoryGitDataContainer>
         ),
@@ -51,7 +51,7 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
     {
         path: '/-/tags',
         render: context => (
-            <RepositoryGitDataContainer repoName={context.repo.name}>
+            <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
                 <RepositoryReleasesArea {...context} />
             </RepositoryGitDataContainer>
         ),
@@ -59,7 +59,7 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
     {
         path: '/-/compare/:spec*',
         render: context => (
-            <RepositoryGitDataContainer repoName={context.repo.name}>
+            <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
                 <RepositoryCompareArea {...context} />
             </RepositoryGitDataContainer>
         ),
@@ -67,7 +67,7 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
     {
         path: '/-/stats',
         render: context => (
-            <RepositoryGitDataContainer repoName={context.repo.name}>
+            <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
                 <RepositoryStatsArea {...context} />
             </RepositoryGitDataContainer>
         ),
@@ -75,7 +75,7 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
     {
         path: '/-/settings',
         render: context => (
-            <RepositoryGitDataContainer repoName={context.repo.name}>
+            <RepositoryGitDataContainer {...context} repoName={context.repo.name}>
                 <RepoSettingsArea {...context} />
             </RepositoryGitDataContainer>
         ),

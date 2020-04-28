@@ -70,6 +70,23 @@ type DocumentIDRangeID struct {
 	RangeID ID
 }
 
+// Package pairs a package name and the dump that provides it.
+type Package struct {
+	DumpID  int
+	Scheme  string
+	Name    string
+	Version string
+}
+
+// PackageReferences pairs a package name/version with a dump that depends on it.
+type PackageReference struct {
+	DumpID  int
+	Scheme  string
+	Name    string
+	Version string
+	Filter  []byte // a bloom filter of identifiers imported by this dependent
+}
+
 // DefinitionReferenceRow represents a linking between a definition of a symbol or
 // a reference of an externally defined symbol the source location in which the
 // symbol definition or use can be found within a particular bundle.

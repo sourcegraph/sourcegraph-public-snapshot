@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bloomfilter"
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 )
 
@@ -248,8 +250,8 @@ func (s *ReferencePageResolver) resolveLocationsViaReferencePager(ctx context.Co
 		limit := s.remoteDumpLimit
 		newOffset := offset
 
-		var packageRefs []db.Reference
-		for len(packageRefs) < limit && newOffset < totalCount {
+		var packageReferences []types.PackageReference
+		for len(packageReferences) < limit && newOffset < totalCount {
 			page, err := pager.PageFromOffset(newOffset)
 			if err != nil {
 				return nil, Cursor{}, false, pager.CloseTx(err)
@@ -261,13 +263,13 @@ func (s *ReferencePageResolver) resolveLocationsViaReferencePager(ctx context.Co
 				break
 			}
 
-			filtered, scanned := applyBloomFilter(page, identifier, limit-len(packageRefs))
-			packageRefs = append(packageRefs, filtered...)
+			filtered, scanned := applyBloomFilter(page, identifier, limit-len(packageReferences))
+			packageReferences = append(packageReferences, filtered...)
 			newOffset += scanned
 		}
 
 		var dumpIDs []int
-		for _, ref := range packageRefs {
+		for _, ref := range packageReferences {
 			dumpIDs = append(dumpIDs, ref.DumpID)
 		}
 
@@ -332,10 +334,10 @@ func (s *ReferencePageResolver) resolveLocationsViaReferencePager(ctx context.Co
 	return nil, Cursor{}, false, nil
 }
 
-func applyBloomFilter(refs []db.Reference, identifier string, limit int) ([]db.Reference, int) {
-	var filteredReferences []db.Reference
-	for i, ref := range refs {
-		test, err := decodeAndTestFilter([]byte(ref.Filter), identifier)
+func applyBloomFilter(packageReferences []types.PackageReference, identifier string, limit int) ([]types.PackageReference, int) {
+	var filteredReferences []types.PackageReference
+	for i, ref := range packageReferences {
+		test, err := bloomfilter.DecodeAndTestFilter([]byte(ref.Filter), identifier)
 		if err != nil || !test {
 			continue
 		}
@@ -347,5 +349,5 @@ func applyBloomFilter(refs []db.Reference, identifier string, limit int) ([]db.R
 		}
 	}
 
-	return filteredReferences, len(refs)
+	return filteredReferences, len(packageReferences)
 }
