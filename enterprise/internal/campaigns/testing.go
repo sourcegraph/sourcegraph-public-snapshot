@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 )
 
 // FakeChangesetSource is a fake implementation of the repos.ChangesetSource
@@ -75,4 +76,15 @@ func (s FakeChangesetSource) LoadChangesets(ctx context.Context, cs ...*repos.Ch
 }
 func (s FakeChangesetSource) CloseChangeset(ctx context.Context, c *repos.Changeset) error {
 	return fakeNotImplemented
+}
+
+// FakeGitserverClient is a test implementation of the GitserverClient
+// interface required by ExecChangesetJob.
+type FakeGitserverClient struct {
+	Response    string
+	ResponseErr error
+}
+
+func (f *FakeGitserverClient) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (string, error) {
+	return f.Response, f.ResponseErr
 }

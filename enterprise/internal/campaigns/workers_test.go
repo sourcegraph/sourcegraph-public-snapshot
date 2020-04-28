@@ -109,7 +109,7 @@ func TestExecChangesetJob(t *testing.T) {
 				}
 			}
 
-			gitClient := &dummyGitserverClient{response: headRef, responseErr: nil}
+			gitClient := &FakeGitserverClient{Response: headRef, ResponseErr: nil}
 
 			sourcer := repos.NewFakeSourcer(nil, FakeChangesetSource{
 				Svc:             extSvc,

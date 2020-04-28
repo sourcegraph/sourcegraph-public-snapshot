@@ -42,7 +42,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 
-	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -1530,7 +1529,7 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 		UpdatedAt: now,
 	}
 
-	gitClient := &dummyGitserverClient{response: headRef, responseErr: nil}
+	gitClient := &ee.FakeGitserverClient{Response: headRef, ResponseErr: nil}
 
 	sourcer := repos.NewFakeSourcer(nil, ee.FakeChangesetSource{
 		Svc:          ext,
@@ -1823,14 +1822,4 @@ func newGitHubTestRepo(name string, externalID int) *repos.Repo {
 			},
 		},
 	}
-}
-
-// This is copied from campaigns/service_test.go
-type dummyGitserverClient struct {
-	response    string
-	responseErr error
-}
-
-func (d *dummyGitserverClient) CreateCommitFromPatch(ctx context.Context, req gitprotocol.CreateCommitFromPatchRequest) (string, error) {
-	return d.response, d.responseErr
 }
