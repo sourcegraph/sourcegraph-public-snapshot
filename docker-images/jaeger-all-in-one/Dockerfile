@@ -6,8 +6,7 @@ ARG JAEGER_VERSION
 FROM jaegertracing/all-in-one:${JAEGER_VERSION} as base
 
 FROM alpine:3.11.5@sha256:cb8a924afdf0229ef7515d9e5b3024e23b3eb03ddbba287f4a19c6ac90b8d221
-RUN apk update
-RUN apk add bash curl
+RUN apk add --no-cache bash=5.0.11-r1 curl=7.67.0-r0
 
 COPY --from=base /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=base /go/bin/all-in-one-linux  /go/bin/all-in-one-linux
