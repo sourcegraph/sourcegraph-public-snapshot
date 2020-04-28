@@ -1476,7 +1476,7 @@ describe('e2e test suite', () => {
         })
     })
 
-    describe('Campaigns', () => {
+    describe.skip('Campaigns', () => {
         let previousExperimentalFeatures: any
         before(async () => {
             await driver.setConfig(['experimentalFeatures'], prev => {
