@@ -2,10 +2,10 @@
   "changeset_events": [
 
   ],
-  "events": [
+  "payloads": [
     {
-      "event_type": "issue_comment",
-      "event": {
+      "payload_type": "issue_comment",
+      "data": {
         "action": "created",
         "issue": {
           "url": "https://api.github.com/repos/sourcegraph/sourcegraph/issues/10156",

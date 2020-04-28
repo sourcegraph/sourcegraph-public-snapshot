@@ -37,10 +37,10 @@
       }
     }
   ],
-  "events": [
+  "payloads": [
     {
-      "event_type": "pull_request_review",
-      "event": {
+      "payload_type": "pull_request_review",
+      "data": {
         "action": "submitted",
         "review": {
           "id": 399960082,

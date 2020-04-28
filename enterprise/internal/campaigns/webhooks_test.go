@@ -144,13 +144,13 @@ func testGitHubWebhook(db *sql.DB) func(*testing.T) {
 
 				// Send all events twice to ensure we are idempotent
 				for i := 0; i < 2; i++ {
-					for _, event := range tc.Events {
-						req, err := http.NewRequest("POST", "", bytes.NewReader(event.Event))
+					for _, event := range tc.Payloads {
+						req, err := http.NewRequest("POST", "", bytes.NewReader(event.Data))
 						if err != nil {
 							t.Fatal(err)
 						}
-						req.Header.Set("X-Github-Event", event.EventType)
-						req.Header.Set("X-Hub-Signature", sign(t, event.Event, []byte(secret)))
+						req.Header.Set("X-Github-Event", event.PayloadType)
+						req.Header.Set("X-Hub-Signature", sign(t, event.Data, []byte(secret)))
 
 						rec := httptest.NewRecorder()
 						hook.ServeHTTP(rec, req)
@@ -193,10 +193,10 @@ func testGitHubWebhook(db *sql.DB) func(*testing.T) {
 }
 
 type webhookTestCase struct {
-	Events []struct {
-		EventType string          `json:"event_type"`
-		Event     json.RawMessage `json:"event"`
-	} `json:"events"`
+	Payloads []struct {
+		PayloadType string          `json:"payload_type"`
+		Data        json.RawMessage `json:"data"`
+	} `json:"payloads"`
 	ChangesetEvents []*campaigns.ChangesetEvent `json:"changeset_events"`
 }
 
