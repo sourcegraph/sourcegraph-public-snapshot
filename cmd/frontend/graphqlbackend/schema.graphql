@@ -1961,7 +1961,7 @@ type Repository implements Node & GenericSearchResultInterface {
         after: String
     ): UserConnection!
 
-    # The permissions information of the repository.
+    # The permissions information of the repository for the authenticated user.
     permissionsInfo: PermissionsInfo
 }
 

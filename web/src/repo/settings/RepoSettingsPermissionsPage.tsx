@@ -35,14 +35,14 @@ export const RepoSettingsPermissionsPage: React.FunctionComponent<{ repo: GQL.IR
                                     'Never'
                                 )}
                             </td>
-                            <td className="text-muted">Updated by repository-centric syncing</td>
+                            <td className="text-muted">Updated by repository permissions syncing</td>
                         </tr>
                         <tr>
                             <th>Last incremental sync</th>
                             <td>
                                 <Timestamp date={repo.permissionsInfo.updatedAt} />
                             </td>
-                            <td className="text-muted">Updated by user-centric syncing</td>
+                            <td className="text-muted">Updated by user permissions syncing</td>
                         </tr>
                     </tbody>
                 </table>
