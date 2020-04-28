@@ -117,7 +117,6 @@ export class ExtWindow implements sourcegraph.Window {
                             }
                             break
                     }
-                    console.log('new viewcomponent', editor)
                     this.viewComponents.set(editorId, editor)
                     if (editorData.isActive) {
                         this.activeViewComponentChanges.next(editor)
