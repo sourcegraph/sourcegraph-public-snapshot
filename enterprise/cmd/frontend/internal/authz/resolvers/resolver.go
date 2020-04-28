@@ -255,7 +255,7 @@ func (r *Resolver) RepositoryPermissionsInfo(ctx context.Context, id graphql.ID)
 	if err != nil {
 		return nil, err
 	}
-	// Make sure the repo ID is valid.
+	// Make sure the repo ID is valid and not soft-deleted.
 	if _, err = db.Repos.Get(ctx, repoID); err != nil {
 		return nil, err
 	}
