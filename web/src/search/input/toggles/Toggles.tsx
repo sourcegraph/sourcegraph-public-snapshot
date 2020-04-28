@@ -91,19 +91,18 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
         submitOnToggle({ newPatternType })
     }
 
-    const generateQuery = (): string =>
-        [
-            props.navbarSearchQuery,
-            props.filtersInQuery && generateFiltersQuery(props.filtersInQuery),
-            `patternType:${props.patternType}`,
-            props.caseSensitive ? 'case:yes' : '',
-        ]
-            .filter(query => query && query.length > 0)
-            .join(' ')
+    const fullQuery = [
+        props.navbarSearchQuery,
+        props.filtersInQuery && generateFiltersQuery(props.filtersInQuery),
+        `patternType:${props.patternType}`,
+        props.caseSensitive ? 'case:yes' : '',
+    ]
+        .filter(query => query && query.length > 0)
+        .join(' ')
 
     return (
         <div className={classNames('toggle-container', props.className)}>
-            <CopyQueryButton fullQuery={generateQuery()} className="toggle-container__toggle" />
+            <CopyQueryButton fullQuery={fullQuery} className="toggle-container__toggle" />
             <QueryInputToggle
                 {...props}
                 title="Case sensitivity"
