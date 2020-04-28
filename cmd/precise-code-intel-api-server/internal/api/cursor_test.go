@@ -4,9 +4,10 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/mocks"
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
+	bundlemocks "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
+	dbmocks "github.com/sourcegraph/sourcegraph/internal/codeintel/db/mocks"
 )
 
 func TestSerializationRoundTrip(t *testing.T) {
@@ -44,9 +45,9 @@ func TestSerializationRoundTrip(t *testing.T) {
 }
 
 func TestDecodeOrCreateCursor(t *testing.T) {
-	mockDB := mocks.NewMockDB()
-	mockBundleManagerClient := mocks.NewMockBundleManagerClient()
-	mockBundleClient := mocks.NewMockBundleClient()
+	mockDB := dbmocks.NewMockDB()
+	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
+	mockBundleClient := bundlemocks.NewMockBundleClient()
 
 	setMockDBGetDumpByID(t, mockDB, map[int]db.Dump{42: testDump1})
 	setMockBundleManagerClientBundleClient(t, mockBundleManagerClient, map[int]bundles.BundleClient{42: mockBundleClient})
@@ -69,8 +70,8 @@ func TestDecodeOrCreateCursor(t *testing.T) {
 }
 
 func TestDecodeOrCreateCursorUnknownDump(t *testing.T) {
-	mockDB := mocks.NewMockDB()
-	mockBundleManagerClient := mocks.NewMockBundleManagerClient()
+	mockDB := dbmocks.NewMockDB()
+	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
 	setMockDBGetDumpByID(t, mockDB, nil)
 
 	if _, err := DecodeOrCreateCursor("sub1/main.go", 10, 20, 42, "", mockDB, mockBundleManagerClient); err != ErrMissingDump {
@@ -102,8 +103,8 @@ func TestDecodeOrCreateCursorExisting(t *testing.T) {
 		SkipResultsInDump:      2,
 	}
 
-	mockDB := mocks.NewMockDB()
-	mockBundleManagerClient := mocks.NewMockBundleManagerClient()
+	mockDB := dbmocks.NewMockDB()
+	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
 
 	if cursor, err := DecodeOrCreateCursor("", 0, 0, 0, EncodeCursor(expectedCursor), mockDB, mockBundleManagerClient); err != nil {
 		t.Fatalf("unexpected error decoding cursor: %s", err)

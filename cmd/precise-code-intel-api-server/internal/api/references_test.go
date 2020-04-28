@@ -6,16 +6,18 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/mocks"
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
+	bundlemocks "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/db/mocks"
+	dbmocks "github.com/sourcegraph/sourcegraph/internal/codeintel/db/mocks"
 )
 
 func TestHandleSameDumpCursor(t *testing.T) {
-	mockDB := mocks.NewMockDB()
-	mockBundleManagerClient := mocks.NewMockBundleManagerClient()
-	mockBundleClient := mocks.NewMockBundleClient()
+	mockDB := dbmocks.NewMockDB()
+	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
+	mockBundleClient := bundlemocks.NewMockBundleClient()
 
 	setMockDBGetDumpByID(t, mockDB, map[int]db.Dump{42: testDump1})
 	setMockBundleManagerClientBundleClient(t, mockBundleManagerClient, map[int]bundles.BundleClient{42: mockBundleClient})
@@ -119,10 +121,10 @@ func TestHandleSameDumpCursor(t *testing.T) {
 }
 
 func TestHandleDefinitionMonikersCursor(t *testing.T) {
-	mockDB := mocks.NewMockDB()
-	mockBundleManagerClient := mocks.NewMockBundleManagerClient()
-	mockBundleClient1 := mocks.NewMockBundleClient()
-	mockBundleClient2 := mocks.NewMockBundleClient()
+	mockDB := dbmocks.NewMockDB()
+	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
+	mockBundleClient1 := bundlemocks.NewMockBundleClient()
+	mockBundleClient2 := bundlemocks.NewMockBundleClient()
 
 	setMockDBGetDumpByID(t, mockDB, map[int]db.Dump{42: testDump1, 50: testDump2})
 	setMockBundleManagerClientBundleClient(t, mockBundleManagerClient, map[int]bundles.BundleClient{42: mockBundleClient1, 50: mockBundleClient2})
@@ -230,11 +232,11 @@ func TestHandleDefinitionMonikersCursor(t *testing.T) {
 }
 
 func TestHandleSameRepoCursor(t *testing.T) {
-	mockDB := mocks.NewMockDB()
-	mockBundleManagerClient := mocks.NewMockBundleManagerClient()
-	mockBundleClient1 := mocks.NewMockBundleClient()
-	mockBundleClient2 := mocks.NewMockBundleClient()
-	mockBundleClient3 := mocks.NewMockBundleClient()
+	mockDB := dbmocks.NewMockDB()
+	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
+	mockBundleClient1 := bundlemocks.NewMockBundleClient()
+	mockBundleClient2 := bundlemocks.NewMockBundleClient()
+	mockBundleClient3 := bundlemocks.NewMockBundleClient()
 	mockReferencePager := mocks.NewMockReferencePager()
 
 	setMockDBGetDumpByID(t, mockDB, map[int]db.Dump{42: testDump1, 50: testDump2, 51: testDump3, 52: testDump4})
@@ -369,9 +371,9 @@ func TestHandleSameRepoCursor(t *testing.T) {
 }
 
 func TestHandleSameRepoCursorMultipleDumpBatches(t *testing.T) {
-	mockDB := mocks.NewMockDB()
-	mockBundleManagerClient := mocks.NewMockBundleManagerClient()
-	mockBundleClient := mocks.NewMockBundleClient()
+	mockDB := dbmocks.NewMockDB()
+	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
+	mockBundleClient := bundlemocks.NewMockBundleClient()
 	mockReferencePager := mocks.NewMockReferencePager()
 
 	setMockDBGetDumpByID(t, mockDB, map[int]db.Dump{42: testDump1, 50: testDump2, 51: testDump3, 52: testDump4})
@@ -446,11 +448,11 @@ func TestHandleSameRepoCursorMultipleDumpBatches(t *testing.T) {
 //
 
 func TestHandleRemoteRepoCursor(t *testing.T) {
-	mockDB := mocks.NewMockDB()
-	mockBundleManagerClient := mocks.NewMockBundleManagerClient()
-	mockBundleClient1 := mocks.NewMockBundleClient()
-	mockBundleClient2 := mocks.NewMockBundleClient()
-	mockBundleClient3 := mocks.NewMockBundleClient()
+	mockDB := dbmocks.NewMockDB()
+	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
+	mockBundleClient1 := bundlemocks.NewMockBundleClient()
+	mockBundleClient2 := bundlemocks.NewMockBundleClient()
+	mockBundleClient3 := bundlemocks.NewMockBundleClient()
 	mockReferencePager := mocks.NewMockReferencePager()
 
 	setMockDBGetDumpByID(t, mockDB, map[int]db.Dump{42: testDump1, 50: testDump2, 51: testDump3, 52: testDump4})
@@ -574,9 +576,9 @@ func TestHandleRemoteRepoCursor(t *testing.T) {
 }
 
 func TestHandleRemoteRepoCursorMultipleDumpBatches(t *testing.T) {
-	mockDB := mocks.NewMockDB()
-	mockBundleManagerClient := mocks.NewMockBundleManagerClient()
-	mockBundleClient := mocks.NewMockBundleClient()
+	mockDB := dbmocks.NewMockDB()
+	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
+	mockBundleClient := bundlemocks.NewMockBundleClient()
 	mockReferencePager := mocks.NewMockReferencePager()
 
 	setMockDBGetDumpByID(t, mockDB, map[int]db.Dump{42: testDump1, 50: testDump2, 51: testDump3, 52: testDump4})
