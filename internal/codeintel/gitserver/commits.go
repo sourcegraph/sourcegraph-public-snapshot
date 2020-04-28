@@ -52,7 +52,7 @@ func CommitsNear(db db.DB, repositoryID int, commit string) (map[string][]string
 }
 
 // parseCommitsNear converts the output of git log into a map from commits to parent commits.
-// If a commit is listed but has no ancestors then its parent slice is empty  but is still
+// If a commit is listed but has no ancestors then its parent slice is empty but is still
 // present in the map.
 func parseCommitsNear(pair []string) map[string][]string {
 	commits := map[string][]string{}
