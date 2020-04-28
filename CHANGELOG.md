@@ -17,7 +17,6 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
-
 ### Removed
 
 ## 3.15.1
