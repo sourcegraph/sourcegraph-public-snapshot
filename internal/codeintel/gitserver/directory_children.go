@@ -54,7 +54,8 @@ func cleanDirectoriesForLsTree(dirnames []string) []string {
 
 // parseDirectoryChildren converts the flat list of files from git ls-tree into a map. The keys of the
 // resulting map are the input (unsanitized) dirnames, and the value of that key are the files nested
-// under that directory.
+// under that directory. If dirnames contains a directory that encloses another, then the paths will
+// be placed into the key sharing the longest path prefix.
 func parseDirectoryChildren(dirnames []string, paths []string) map[string][]string {
 	childrenMap := map[string][]string{}
 
