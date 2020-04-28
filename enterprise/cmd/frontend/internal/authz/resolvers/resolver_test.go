@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -31,15 +32,23 @@ func clock() time.Time {
 	return time.Unix(0, atomic.LoadInt64(&now)).Truncate(time.Microsecond)
 }
 
+var (
+	parseSchemaOnce sync.Once
+	parseSchemaErr  error
+	parsedSchema    *graphql.Schema
+)
+
 func mustParseGraphQLSchema(t *testing.T, db *sql.DB) *graphql.Schema {
 	t.Helper()
 
-	schema, err := graphqlbackend.NewSchema(nil, nil, NewResolver(db, clock))
-	if err != nil {
-		t.Fatal(err)
+	parseSchemaOnce.Do(func() {
+		parsedSchema, parseSchemaErr = graphqlbackend.NewSchema(nil, nil, NewResolver(db, clock))
+	})
+	if parseSchemaErr != nil {
+		t.Fatal(parseSchemaErr)
 	}
 
-	return schema
+	return parsedSchema
 }
 
 func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
