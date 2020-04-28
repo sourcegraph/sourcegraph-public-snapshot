@@ -2,6 +2,8 @@ package db
 
 import (
 	"database/sql"
+
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 )
 
 // Scanner is the common interface shared by *sql.Row and *sql.Rows.
@@ -93,23 +95,23 @@ func scanUploads(rows *sql.Rows, err error) ([]Upload, error) {
 	return uploads, nil
 }
 
-// scanReference populates a Reference value from the given scanner.
-func scanReference(scanner Scanner) (reference Reference, err error) {
-	err = scanner.Scan(&reference.DumpID, &reference.Filter)
+// scanPackageReference populates a package reference value from the given scanner.
+func scanPackageReference(scanner Scanner) (reference types.PackageReference, err error) {
+	err = scanner.Scan(&reference.DumpID, &reference.Scheme, &reference.Name, &reference.Version, &reference.Filter)
 	return reference, err
 }
 
-// scanReferences reads the given set of reference rows and returns a slice of resulting
+// scanPackageReferences reads the given set of reference rows and returns a slice of resulting
 // values. This method should be called directly with the return value of `*db.queryRows`.
-func scanReferences(rows *sql.Rows, err error) ([]Reference, error) {
+func scanPackageReferences(rows *sql.Rows, err error) ([]types.PackageReference, error) {
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var references []Reference
+	var references []types.PackageReference
 	for rows.Next() {
-		reference, err := scanReference(rows)
+		reference, err := scanPackageReference(rows)
 		if err != nil {
 			return nil, err
 		}

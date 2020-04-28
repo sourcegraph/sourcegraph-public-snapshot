@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/mocks"
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 )
 
@@ -128,8 +129,8 @@ func setMockDBPackageReferencePager(t *testing.T, mockDB *mocks.MockDB, expected
 	})
 }
 
-func setMockReferencePagerPageFromOffset(t *testing.T, mockReferencePager *mocks.MockReferencePager, expectedOffset int, references []db.Reference) {
-	mockReferencePager.PageFromOffsetFunc.SetDefaultHook(func(offset int) ([]db.Reference, error) {
+func setMockReferencePagerPageFromOffset(t *testing.T, mockReferencePager *mocks.MockReferencePager, expectedOffset int, references []types.PackageReference) {
+	mockReferencePager.PageFromOffsetFunc.SetDefaultHook(func(offset int) ([]types.PackageReference, error) {
 		if offset != expectedOffset {
 			t.Errorf("unexpected offset for PageFromOffset. want=%d have=%d", expectedOffset, offset)
 		}

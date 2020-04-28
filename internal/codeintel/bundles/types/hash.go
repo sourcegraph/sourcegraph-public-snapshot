@@ -1,15 +1,11 @@
-package database
+package types
 
-import (
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
-)
-
-// hashKey hashes a string identifier into the range [0, maxIndex)`. The
+// HashKey hashes a string identifier into the range [0, maxIndex)`. The
 // hash algorithm here is similar ot the one used in Java's String.hashCode.
 // This implementation is identical to the TypeScript version used before
 // the port to Go so that we can continue to read old conversions without
 // a migration.
-func hashKey(id types.ID, maxIndex int) int {
+func HashKey(id ID, maxIndex int) int {
 	hash := int32(0)
 	for _, c := range string(id) {
 		hash = (hash << 5) - hash + int32(c)
