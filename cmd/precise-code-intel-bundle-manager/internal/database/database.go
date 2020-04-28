@@ -17,29 +17,29 @@ type Database interface {
 	Close() error
 
 	// Exists determines if the path exists in the database.
-	Exists(path string) (bool, error)
+	Exists(ctx context.Context, path string) (bool, error)
 
 	// Definitions returns the set of locations defining the symbol at the given position.
-	Definitions(path string, line, character int) ([]Location, error)
+	Definitions(ctx context.Context, path string, line, character int) ([]Location, error)
 
 	// References returns the set of locations referencing the symbol at the given position.
-	References(path string, line, character int) ([]Location, error)
+	References(ctx context.Context, path string, line, character int) ([]Location, error)
 
 	// Hover returns the hover text of the symbol at the given position.
-	Hover(path string, line, character int) (string, Range, bool, error)
+	Hover(ctx context.Context, path string, line, character int) (string, Range, bool, error)
 
 	// MonikersByPosition returns all monikers attached ranges containing the given position. If multiple
 	// ranges contain the position, then this method will return multiple sets of monikers. Each slice
 	// of monikers are attached to a single range. The order of the output slice is "outside-in", so that
 	// the range attached to earlier monikers enclose the range attached to later monikers.
-	MonikersByPosition(path string, line, character int) ([][]types.MonikerData, error)
+	MonikersByPosition(ctx context.Context, path string, line, character int) ([][]types.MonikerData, error)
 
 	// MonikerResults returns the locations that define or reference the given moniker. This method
 	// also returns the size of the complete result set to aid in pagination (along with skip and take).
-	MonikerResults(tableName, scheme, identifier string, skip, take int) ([]Location, int, error)
+	MonikerResults(ctx context.Context, tableName, scheme, identifier string, skip, take int) ([]Location, int, error)
 
 	// PackageInformation looks up package information data by identifier.
-	PackageInformation(path string, packageInformationID types.ID) (types.PackageInformationData, bool, error)
+	PackageInformation(ctx context.Context, path string, packageInformationID types.ID) (types.PackageInformationData, bool, error)
 }
 
 type databaseImpl struct {
@@ -101,14 +101,14 @@ func (e ErrMalformedBundle) Error() string {
 }
 
 // OpenDatabase opens a handle to the bundle file at the given path.
-func OpenDatabase(filename string, documentDataCache *DocumentDataCache, resultChunkDataCache *ResultChunkDataCache) (Database, error) {
+func OpenDatabase(ctx context.Context, filename string, documentDataCache *DocumentDataCache, resultChunkDataCache *ResultChunkDataCache) (Database, error) {
 	// TODO - What is the behavior if the db is missing? Should we stat first or clean up after?
 	reader, err := reader.NewSQLiteReader(filename, serializer.NewDefaultSerializer())
 	if err != nil {
 		return nil, err
 	}
 
-	_, _, numResultChunks, err := reader.ReadMeta(context.Background())
+	_, _, numResultChunks, err := reader.ReadMeta(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -128,14 +128,14 @@ func (db *databaseImpl) Close() error {
 }
 
 // Exists determines if the path exists in the database.
-func (db *databaseImpl) Exists(path string) (bool, error) {
-	_, exists, err := db.getDocumentData(path)
+func (db *databaseImpl) Exists(ctx context.Context, path string) (bool, error) {
+	_, exists, err := db.getDocumentData(ctx, path)
 	return exists, err
 }
 
 // Definitions returns the set of locations defining the symbol at the given position.
-func (db *databaseImpl) Definitions(path string, line, character int) ([]Location, error) {
-	_, ranges, exists, err := db.getRangeByPosition(path, line, character)
+func (db *databaseImpl) Definitions(ctx context.Context, path string, line, character int) ([]Location, error) {
+	_, ranges, exists, err := db.getRangeByPosition(ctx, path, line, character)
 	if err != nil || !exists {
 		return nil, err
 	}
@@ -145,20 +145,20 @@ func (db *databaseImpl) Definitions(path string, line, character int) ([]Locatio
 			continue
 		}
 
-		definitionResults, err := db.getResultByID(r.DefinitionResultID)
+		definitionResults, err := db.getResultByID(ctx, r.DefinitionResultID)
 		if err != nil {
 			return nil, err
 		}
 
-		return db.convertRangesToLocations(definitionResults)
+		return db.convertRangesToLocations(ctx, definitionResults)
 	}
 
 	return []Location{}, nil
 }
 
 // References returns the set of locations referencing the symbol at the given position.
-func (db *databaseImpl) References(path string, line, character int) ([]Location, error) {
-	_, ranges, exists, err := db.getRangeByPosition(path, line, character)
+func (db *databaseImpl) References(ctx context.Context, path string, line, character int) ([]Location, error) {
+	_, ranges, exists, err := db.getRangeByPosition(ctx, path, line, character)
 	if err != nil || !exists {
 		return nil, err
 	}
@@ -169,12 +169,12 @@ func (db *databaseImpl) References(path string, line, character int) ([]Location
 			continue
 		}
 
-		referenceResults, err := db.getResultByID(r.ReferenceResultID)
+		referenceResults, err := db.getResultByID(ctx, r.ReferenceResultID)
 		if err != nil {
 			return nil, err
 		}
 
-		locations, err := db.convertRangesToLocations(referenceResults)
+		locations, err := db.convertRangesToLocations(ctx, referenceResults)
 		if err != nil {
 			return nil, err
 		}
@@ -186,8 +186,8 @@ func (db *databaseImpl) References(path string, line, character int) ([]Location
 }
 
 // Hover returns the hover text of the symbol at the given position.
-func (db *databaseImpl) Hover(path string, line, character int) (string, Range, bool, error) {
-	documentData, ranges, exists, err := db.getRangeByPosition(path, line, character)
+func (db *databaseImpl) Hover(ctx context.Context, path string, line, character int) (string, Range, bool, error) {
+	documentData, ranges, exists, err := db.getRangeByPosition(ctx, path, line, character)
 	if err != nil || !exists {
 		return "", Range{}, false, err
 	}
@@ -217,8 +217,8 @@ func (db *databaseImpl) Hover(path string, line, character int) (string, Range, 
 // ranges contain the position, then this method will return multiple sets of monikers. Each slice
 // of monikers are attached to a single range. The order of the output slice is "outside-in", so that
 // the range attached to earlier monikers enclose the range attached to later monikers.
-func (db *databaseImpl) MonikersByPosition(path string, line, character int) ([][]types.MonikerData, error) {
-	documentData, ranges, exists, err := db.getRangeByPosition(path, line, character)
+func (db *databaseImpl) MonikersByPosition(ctx context.Context, path string, line, character int) ([][]types.MonikerData, error) {
+	documentData, ranges, exists, err := db.getRangeByPosition(ctx, path, line, character)
 	if err != nil || !exists {
 		return nil, err
 	}
@@ -248,15 +248,15 @@ func (db *databaseImpl) MonikersByPosition(path string, line, character int) ([]
 
 // MonikerResults returns the locations that define or reference the given moniker. This method
 // also returns the size of the complete result set to aid in pagination (along with skip and take).
-func (db *databaseImpl) MonikerResults(tableName, scheme, identifier string, skip, take int) ([]Location, int, error) {
+func (db *databaseImpl) MonikerResults(ctx context.Context, tableName, scheme, identifier string, skip, take int) ([]Location, int, error) {
 	// TODO - gross
 	var rows []types.DefinitionReferenceRow
 	var totalCount int
 	var err error
 	if tableName == "definitions" {
-		rows, totalCount, err = db.reader.ReadDefinitions(context.Background(), scheme, identifier, skip, take)
+		rows, totalCount, err = db.reader.ReadDefinitions(ctx, scheme, identifier, skip, take)
 	} else if tableName == "references" {
-		rows, totalCount, err = db.reader.ReadReferences(context.Background(), scheme, identifier, skip, take)
+		rows, totalCount, err = db.reader.ReadReferences(ctx, scheme, identifier, skip, take)
 	}
 
 	if err != nil {
@@ -275,8 +275,8 @@ func (db *databaseImpl) MonikerResults(tableName, scheme, identifier string, ski
 }
 
 // PackageInformation looks up package information data by identifier.
-func (db *databaseImpl) PackageInformation(path string, packageInformationID types.ID) (types.PackageInformationData, bool, error) {
-	documentData, exists, err := db.getDocumentData(path)
+func (db *databaseImpl) PackageInformation(ctx context.Context, path string, packageInformationID types.ID) (types.PackageInformationData, bool, error) {
+	documentData, exists, err := db.getDocumentData(ctx, path)
 	if err != nil {
 		return types.PackageInformationData{}, false, err
 	}
@@ -291,9 +291,9 @@ func (db *databaseImpl) PackageInformation(path string, packageInformationID typ
 
 // getDocumentData fetches and unmarshals the document data or the given path. This method caches
 // document data by a unique key prefixed by the database filename.
-func (db *databaseImpl) getDocumentData(path string) (types.DocumentData, bool, error) {
+func (db *databaseImpl) getDocumentData(ctx context.Context, path string) (types.DocumentData, bool, error) {
 	documentData, err := db.documentDataCache.GetOrCreate(fmt.Sprintf("%s::%s", db.filename, path), func() (types.DocumentData, error) {
-		data, ok, err := db.reader.ReadDocument(context.Background(), path)
+		data, ok, err := db.reader.ReadDocument(ctx, path)
 		if err != nil {
 			return types.DocumentData{}, err
 		}
@@ -316,8 +316,8 @@ func (db *databaseImpl) getDocumentData(path string) (types.DocumentData, bool, 
 
 // getRangeByPosition returns the ranges the given position. The order of the output slice is "outside-in",
 // so that earlier ranges properly enclose later ranges.
-func (db *databaseImpl) getRangeByPosition(path string, line, character int) (types.DocumentData, []types.RangeData, bool, error) {
-	documentData, exists, err := db.getDocumentData(path)
+func (db *databaseImpl) getRangeByPosition(ctx context.Context, path string, line, character int) (types.DocumentData, []types.RangeData, bool, error) {
+	documentData, exists, err := db.getDocumentData(ctx, path)
 	if err != nil {
 		return types.DocumentData{}, nil, false, err
 	}
@@ -331,8 +331,8 @@ func (db *databaseImpl) getRangeByPosition(path string, line, character int) (ty
 
 // getResultByID fetches and unmarshals a definition or reference result by identifier.
 // This method caches result chunk data by a unique key prefixed by the database filename.
-func (db *databaseImpl) getResultByID(id types.ID) ([]documentPathRangeID, error) {
-	resultChunkData, exists, err := db.getResultChunkByResultID(id)
+func (db *databaseImpl) getResultByID(ctx context.Context, id types.ID) ([]documentPathRangeID, error) {
+	resultChunkData, exists, err := db.getResultChunkByResultID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -378,9 +378,9 @@ func (db *databaseImpl) getResultByID(id types.ID) ([]documentPathRangeID, error
 
 // getResultChunkByResultID fetches and unmarshals the result chunk data with the given identifier.
 // This method caches result chunk data by a unique key prefixed by the database filename.
-func (db *databaseImpl) getResultChunkByResultID(id types.ID) (types.ResultChunkData, bool, error) {
+func (db *databaseImpl) getResultChunkByResultID(ctx context.Context, id types.ID) (types.ResultChunkData, bool, error) {
 	resultChunkData, err := db.resultChunkDataCache.GetOrCreate(fmt.Sprintf("%s::%s", db.filename, id), func() (types.ResultChunkData, error) {
-		data, ok, err := db.reader.ReadResultChunk(context.Background(), types.HashKey(id, db.numResultChunks))
+		data, ok, err := db.reader.ReadResultChunk(ctx, types.HashKey(id, db.numResultChunks))
 		if err != nil {
 			return types.ResultChunkData{}, err
 		}
@@ -405,7 +405,7 @@ func (db *databaseImpl) getResultChunkByResultID(id types.ID) (types.ResultChunk
 
 // convertRangesToLocations converts pairs of document paths and range identifiers
 // to a list of locations.
-func (db *databaseImpl) convertRangesToLocations(resultData []documentPathRangeID) ([]Location, error) {
+func (db *databaseImpl) convertRangesToLocations(ctx context.Context, resultData []documentPathRangeID) ([]Location, error) {
 	// We potentially have to open a lot of documents. Reduce possible pressure on the
 	// cache by ordering our queries so we only have to read and unmarshal each document
 	// once.
@@ -423,7 +423,7 @@ func (db *databaseImpl) convertRangesToLocations(resultData []documentPathRangeI
 
 	var locations []Location
 	for _, path := range paths {
-		documentData, exists, err := db.getDocumentData(path)
+		documentData, exists, err := db.getDocumentData(ctx, path)
 		if err != nil {
 			return nil, err
 		}
