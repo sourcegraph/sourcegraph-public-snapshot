@@ -124,7 +124,7 @@ export function allOf<T0, T1 extends T0, T2 extends T1, T3 extends T2, T4 extend
     t4: (value: T3) => value is T4
 ): (value: T0) => value is T1 & T2 & T3 & T4
 export function allOf(...typeGuards: any[]): any {
-    return (value: unknown) => typeGuards.some((guard: (value: unknown) => boolean) => guard(value))
+    return (value: unknown) => typeGuards.every((guard: (value: unknown) => boolean) => guard(value))
 }
 
 /**
