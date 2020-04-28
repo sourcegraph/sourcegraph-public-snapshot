@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
@@ -100,4 +101,35 @@ func (db *dbImpl) PackageReferencePager(ctx context.Context, scheme, name, versi
 	}
 
 	return totalCount, newReferencePager(tw.tx, pageFromOffset), nil
+}
+
+// UpdatePackageReferences inserts reference data tied to the given upload.
+func (db *dbImpl) UpdatePackageReferences(ctx context.Context, tx *sql.Tx, references []types.PackageReference) (err error) {
+	if len(references) == 0 {
+		return nil
+	}
+
+	if tx == nil {
+		tx, err = db.db.BeginTx(ctx, nil)
+		if err != nil {
+			return err
+		}
+		defer func() {
+			err = closeTx(tx, err)
+		}()
+	}
+	tw := &transactionWrapper{tx}
+
+	query := `
+		INSERT INTO lsif_references (dump_id, scheme, name, version, filter)
+		VALUES %s
+	`
+
+	var values []*sqlf.Query
+	for _, r := range references {
+		values = append(values, sqlf.Sprintf("(%s, %s, %s, %s, %s)", r.DumpID, r.Scheme, r.Name, r.Version, r.Filter))
+	}
+
+	_, err = tw.exec(ctx, sqlf.Sprintf(query, sqlf.Join(values, ",")))
+	return err
 }

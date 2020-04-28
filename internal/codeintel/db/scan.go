@@ -33,7 +33,7 @@ func scanDump(scanner Scanner) (dump Dump, err error) {
 }
 
 // scanDumps reads the given set of dump rows and returns a slice of resulting values.
-// This method should be called directly with the return value of `*db.queryRows`.
+// This method should be called directly with the return value of `*db.query`.
 func scanDumps(rows *sql.Rows, err error) ([]Dump, error) {
 	if err != nil {
 		return nil, err
@@ -75,7 +75,7 @@ func scanUpload(scanner Scanner) (upload Upload, err error) {
 }
 
 // scanUploads reads the given set of upload rows and returns a slice of resulting
-// values. This method should be called directly with the return value of `*db.queryRows`.
+// values. This method should be called directly with the return value of `*db.query`.
 func scanUploads(rows *sql.Rows, err error) ([]Upload, error) {
 	if err != nil {
 		return nil, err
@@ -135,7 +135,7 @@ func scanInt(scanner Scanner) (value int, err error) {
 }
 
 // scanInts reads the given set of `(int)` rows and returns a slice of resulting values.
-// This method should be called directly with the return value of `*db.queryRows`.
+// This method should be called directly with the return value of `*db.query`.
 func scanInts(rows *sql.Rows, err error) ([]int, error) {
 	if err != nil {
 		return nil, err
@@ -162,7 +162,7 @@ func scanState(scanner Scanner) (repositoryID int, state string, err error) {
 }
 
 // scanStates reads the given set of `(id, state)` rows and returns a map from id to its
-// state. This method should be called directly with the return value of `*db.queryRows`.
+// state. This method should be called directly with the return value of `*db.query`.
 func scanStates(rows *sql.Rows, err error) (map[int]string, error) {
 	if err != nil {
 		return nil, err
@@ -190,7 +190,7 @@ func scanVisibility(scanner Scanner) (repositoryID int, visibleAtTip bool, err e
 
 // scanVisibilities reads the given set of `(id, visible_at_tip)` rows and returns a map
 // from id to its visibility. This method should be called directly with the return value
-// of `*db.queryRows`.
+// of `*db.query`.
 func scanVisibilities(rows *sql.Rows, err error) (map[int]bool, error) {
 	if err != nil {
 		return nil, err
