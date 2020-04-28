@@ -31,8 +31,12 @@ func (db *dbImpl) UpdateCommits(ctx context.Context, tx *sql.Tx, repositoryID in
 		}
 	}
 
-	// TODO(efritz) - add a test for conflicting commits
-	query := `INSERT INTO lsif_commits (repository_id, "commit", parent_commit) VALUES %s ON CONFLICT DO NOTHING`
+	query := `
+		INSERT INTO lsif_commits (repository_id, "commit", parent_commit)
+		VALUES %s
+		ON CONFLICT DO NOTHING
+	`
+
 	_, err = tw.exec(ctx, sqlf.Sprintf(query, sqlf.Join(rows, ",")))
 	return err
 }
