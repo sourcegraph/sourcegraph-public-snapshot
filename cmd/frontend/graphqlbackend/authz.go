@@ -59,7 +59,7 @@ type AuthorizedRepoArgs struct {
 }
 
 type PermissionsInfoResolver interface {
-	Permission() string
+	Permissions() []string
 	SyncedAt() *DateTime
 	UpdatedAt() DateTime
 }

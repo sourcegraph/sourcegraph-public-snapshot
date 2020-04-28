@@ -225,13 +225,13 @@ func (r *Resolver) AuthorizedUsers(ctx context.Context, args *graphqlbackend.Rep
 }
 
 type permissionsInfoResolver struct {
-	perm      authz.Perms
+	perms     authz.Perms
 	syncedAt  time.Time
 	updatedAt time.Time
 }
 
-func (r *permissionsInfoResolver) Permission() string {
-	return strings.ToUpper(r.perm.String())
+func (r *permissionsInfoResolver) Permissions() []string {
+	return strings.Split(strings.ToUpper(r.perms.String()), ",")
 }
 
 func (r *permissionsInfoResolver) SyncedAt() *graphqlbackend.DateTime {
@@ -274,7 +274,7 @@ func (r *Resolver) RepositoryPermissionsInfo(ctx context.Context, id graphql.ID)
 	}
 
 	return &permissionsInfoResolver{
-		perm:      p.Perm,
+		perms:     p.Perm,
 		syncedAt:  p.SyncedAt,
 		updatedAt: p.UpdatedAt,
 	}, nil

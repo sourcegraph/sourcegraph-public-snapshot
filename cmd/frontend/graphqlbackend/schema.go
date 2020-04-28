@@ -1954,14 +1954,14 @@ type Repository implements Node & GenericSearchResultInterface {
         after: String
     ): UserConnection!
 
-    # The permissions information of the repository.
+    # The permissions information of the repository for the authenticated user.
     permissionsInfo: PermissionsInfo
 }
 
 # Permissions information of a repository or a user.
 type PermissionsInfo {
-    # The permission level that a user has on the repository.
-    permission: RepositoryPermission!
+    # The permission levels that a user has on the repository.
+    permissions: [RepositoryPermission!]!
     # The last complete synced time, the value is updated only after a user- or repo-
     # centric sync of permissions. It is null when the complete sync never happened.
     syncedAt: DateTime
