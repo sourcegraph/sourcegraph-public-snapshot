@@ -19,8 +19,6 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
-- A potential security vulnerability with in the authentication workflow has been fixed. [#10167](https://github.com/sourcegraph/sourcegraph/pull/10167)
-
 ### Removed
 
 ## 3.15.0
@@ -77,6 +75,16 @@ All notable changes to Sourcegraph are documented in this file.
 - monitoring: the Syntect Server dashboard's "Worker timeouts" no longer incorrectly shows multiple values. [#9524](https://github.com/sourcegraph/sourcegraph/issues/9524)
 - monitoring: the Syntect Server dashboard's panels are no longer compacted, for improved visibility. [#9525](https://github.com/sourcegraph/sourcegraph/issues/9525)
 - The Phabricator integration no longer makes duplicate requests to Phabricator's API on diff views. [#8849](https://github.com/sourcegraph/sourcegraph/issues/8849)
+
+### Removed
+
+## 3.14.1
+
+### Added
+
+### Fixed
+
+- A potential security vulnerability with in the authentication workflow has been fixed. [#10167](https://github.com/sourcegraph/sourcegraph/pull/10167)
 
 ### Removed
 
