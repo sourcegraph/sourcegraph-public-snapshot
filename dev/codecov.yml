@@ -1,7 +1,23 @@
 coverage:
   range: 50...75
   status:
-    project: off
+    project:
+      default:
+        informational: true
+      codeintel:
+        informational: true
+        paths:
+          - cmd/precise-code-intel-*
+          - internal/codeintel
+          - enterprise/internal/codeintel
+      typescript:
+        informational: true
+        flags:
+          - typescript
+      go:
+        informational: true
+        flags:
+          - go
     patch:
       default:
         target: 5%
