@@ -51,6 +51,7 @@ export QUERY_RUNNER_URL=http://localhost:3183
 export SYMBOLS_URL=http://localhost:3184
 export PRECISE_CODE_INTEL_API_SERVER_URL=http://localhost:3186
 export PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL=http://localhost:3187
+export JOB_RUNNER_URL=http://localhost:3190
 export SRC_SYNTECT_SERVER=http://localhost:9238
 export SRC_FRONTEND_INTERNAL=localhost:3090
 export SRC_PROF_HTTP=

@@ -8,6 +8,7 @@ generate_dashboards=false
 generate_monitoring=false
 generate_schema=false
 generate_ctags_image=false
+rebuild_job_runner=false
 cmdlist=()
 all_cmds=false
 failed=false
@@ -32,6 +33,9 @@ for i; do
     cmd/precise-code-intel/*)
       # noop (uses tsc-watch).
       exit
+      ;;
+    cmd/job-runner/*)
+      rebuild_job_runner=true
       ;;
     cmd/*)
       cmd=${i#cmd/}
@@ -64,6 +68,11 @@ elif [ ${#cmdlist[@]} -gt 0 ]; then
   if ! mapfile -t rebuilt < <(./dev/go-install.sh -v "${cmdlist[@]}"); then
     failed=true
   fi
+fi
+
+if [ $rebuild_job_runner ]; then
+  WATCH_TRIGGER=true ./dev/job-runner.sh
+  echo "Rebuilt job-runner"
 fi
 
 if [ ${#rebuilt[@]} -gt 0 ]; then

@@ -50,6 +50,11 @@
     # precise-code-intel-worker
     - host.docker.internal:3188
 - labels:
+    job: job-runner
+  targets:
+    # job-runner
+    - host.docker.internal:3190
+- labels:
     job: postgres_exporter
   targets:
     # postgres exporter
