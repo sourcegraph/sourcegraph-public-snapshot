@@ -97,7 +97,7 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
         `patternType:${props.patternType}`,
         props.caseSensitive ? 'case:yes' : '',
     ]
-        .filter(query => query && query.length > 0)
+        .filter(queryPart => !!queryPart)
         .join(' ')
 
     return (
