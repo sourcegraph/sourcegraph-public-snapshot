@@ -1328,6 +1328,12 @@ type Query {
         # The search query (such as "foo" or "repo:myrepo foo").
         query: String = ""
 
+        # PREVIEW: Optionally specify the versionContext. If not specified the
+        # default version context is used (all repositories on the default branch).
+        #
+        # GraphQL experts: Should this be the name or the ID?
+        versionContext: ID
+
         # (experimental) Sourcegraph 3.9 added support for cursor-based paginated
         # search requests when this field is specified. For details, see
         # https://docs.sourcegraph.com/api/graphql/search
@@ -1352,6 +1358,13 @@ type Query {
     savedSearches: [SavedSearch!]!
     # All repository groups for the current user, merged from all configurations.
     repoGroups: [RepoGroup!]!
+    # PREVIEW: All version contexts.
+    #
+    # graphql experts: I made this a dumb list since I don't expect this to be a
+    # large list. If it ever does become a large list, I assume it is fine to
+    # just update the schema to be connection based. Or should we avoid just
+    # simple lists?
+    versionContexts: [VersionContext!]!
     # The current site.
     site: Site!
     # Retrieve responses to surveys.
@@ -2035,6 +2048,24 @@ type ExternalRepository {
     #
     # Example: For GitHub.com, this is "https://github.com/".
     serviceID: String!
+}
+
+# PREVIEW: A version context. Used to change the set of default repository and
+# revisions searched.
+#
+# Note: We do not expose the list of repositories and revisions in the version
+# context. This is intentional. However, if a need arises we can add it in.
+type VersionContext implements Node {
+    # The version context's unique ID.
+    id: ID!
+
+    # The name of the version context.
+    #
+    # Should this be unique?
+    name: String!
+
+    # The description of the version context.
+    description: String!
 }
 
 # Information about a repository's text search index.
