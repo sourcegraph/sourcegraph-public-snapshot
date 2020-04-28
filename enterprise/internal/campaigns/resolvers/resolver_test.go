@@ -19,8 +19,6 @@ import (
 
 	"github.com/dnaeon/go-vcr/cassette"
 	"github.com/google/go-cmp/cmp"
-	graphql "github.com/graph-gophers/graphql-go"
-	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -29,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -37,7 +36,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -79,19 +77,13 @@ func TestCampaigns(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	type User struct {
-		ID         string
-		DatabaseID int32
-		SiteAdmin  bool
-	}
-
 	var users struct {
 		Admin, User struct {
-			User `json:"user"`
+			apitest.User `json:"user"`
 		}
 	}
 
-	mustExec(ctx, t, s, nil, &users, `
+	apitest.MustExec(ctx, t, s, nil, &users, `
 		fragment u on User { id, databaseID, siteAdmin }
 		mutation {
 			admin: createUser(username: "admin") {
@@ -107,42 +99,19 @@ func TestCampaigns(t *testing.T) {
 		t.Fatal("admin must be a site-admin, since it was the first user created")
 	}
 
-	type Org struct {
-		ID   string
-		Name string
-	}
-
 	var orgs struct {
-		ACME Org
+		ACME apitest.Org
 	}
 
 	ctx = actor.WithActor(ctx, actor.FromUser(users.Admin.DatabaseID))
-	mustExec(ctx, t, s, nil, &orgs, `
+	apitest.MustExec(ctx, t, s, nil, &orgs, `
 		fragment o on Org { id, name }
 		mutation {
 			acme: createOrganization(name: "ACME") { ...o }
 		}
 	`)
 
-	type UserOrg struct {
-		ID         string
-		DatabaseID int32
-		SiteAdmin  bool
-		Name       string
-	}
-
-	type Campaign struct {
-		ID          string
-		Name        string
-		Description string
-		Author      User
-		CreatedAt   string
-		UpdatedAt   string
-		PublishedAt string
-		Namespace   UserOrg
-	}
-
-	var campaigns struct{ Admin, Org Campaign }
+	var campaigns struct{ Admin, Org apitest.Campaign }
 
 	input := map[string]interface{}{
 		"admin": map[string]interface{}{
@@ -157,7 +126,7 @@ func TestCampaigns(t *testing.T) {
 		},
 	}
 
-	mustExec(ctx, t, s, input, &campaigns, `
+	apitest.MustExec(ctx, t, s, input, &campaigns, `
 		fragment u on User { id, databaseID, siteAdmin }
 		fragment o on Org  { id, name }
 		fragment c on Campaign {
@@ -182,19 +151,8 @@ func TestCampaigns(t *testing.T) {
 		t.Fatalf("have orgs's campaign namespace id %q, want %q", have, want)
 	}
 
-	type CampaignConnection struct {
-		Nodes      []Campaign
-		TotalCount int
-		PageInfo   struct {
-			HasNextPage bool
-		}
-	}
-
-	var listed struct {
-		First, All CampaignConnection
-	}
-
-	mustExec(ctx, t, s, nil, &listed, `
+	var listed struct{ First, All apitest.CampaignConnection }
+	apitest.MustExec(ctx, t, s, nil, &listed, `
 		fragment u on User { id, databaseID, siteAdmin }
 		fragment o on Org  { id, name }
 		fragment c on Campaign {
@@ -217,7 +175,7 @@ func TestCampaigns(t *testing.T) {
 	`)
 
 	have := listed.First.Nodes
-	want := []Campaign{campaigns.Admin}
+	want := []apitest.Campaign{campaigns.Admin}
 	if !reflect.DeepEqual(have, want) {
 		t.Errorf("wrong campaigns listed. diff=%s", cmp.Diff(have, want))
 	}
@@ -227,7 +185,7 @@ func TestCampaigns(t *testing.T) {
 	}
 
 	have = listed.All.Nodes
-	want = []Campaign{campaigns.Admin, campaigns.Org}
+	want = []apitest.Campaign{campaigns.Admin, campaigns.Org}
 	if !reflect.DeepEqual(have, want) {
 		t.Errorf("wrong campaigns listed. diff=%s", cmp.Diff(have, want))
 	}
@@ -245,11 +203,9 @@ func TestCampaigns(t *testing.T) {
 			"description": campaigns.Admin.Description,
 		},
 	}
-	var updated struct {
-		UpdateCampaign Campaign
-	}
+	var updated struct{ UpdateCampaign apitest.Campaign }
 
-	mustExec(ctx, t, s, updateInput, &updated, `
+	apitest.MustExec(ctx, t, s, updateInput, &updated, `
 		fragment u on User { id, databaseID, siteAdmin }
 		fragment o on Org  { id, name }
 		fragment c on Campaign {
@@ -329,10 +285,6 @@ func TestCampaigns(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	type ChangesetEventConnection struct {
-		TotalCount int
-	}
-
 	git.Mocks.ResolveRevision = func(spec string, opt *git.ResolveRevisionOptions) (api.CommitID, error) {
 		return "mockcommitid", nil
 	}
@@ -345,45 +297,8 @@ func TestCampaigns(t *testing.T) {
 	}
 	defer func() { repoupdater.MockRepoLookup = nil }()
 
-	type GitTarget struct {
-		OID            string
-		AbbreviatedOID string
-		TargetType     string `json:"type"`
-	}
-
-	type GitRef struct {
-		Name        string
-		AbbrevName  string
-		DisplayName string
-		Prefix      string
-		RefType     string `json:"type"`
-		Repository  struct{ ID string }
-		URL         string
-		Target      GitTarget
-	}
-
-	type Changeset struct {
-		ID          string
-		Repository  struct{ ID string }
-		Campaigns   CampaignConnection
-		CreatedAt   string
-		UpdatedAt   string
-		Title       string
-		Body        string
-		State       string
-		ExternalURL struct {
-			URL         string
-			ServiceType string
-		}
-		ReviewState string
-		CheckState  string
-		Events      ChangesetEventConnection
-		Head        GitRef
-		Base        GitRef
-	}
-
 	var result struct {
-		Changesets []Changeset
+		Changesets []apitest.Changeset
 	}
 
 	graphqlGithubRepoID := string(graphqlbackend.MarshalRepositoryID(api.RepoID(githubRepo.ID)))
@@ -395,7 +310,7 @@ func TestCampaigns(t *testing.T) {
 		graphqlBBSRepoID, "2",
 	)
 
-	mustExec(ctx, t, s, nil, &result, fmt.Sprintf(`
+	apitest.MustExec(ctx, t, s, nil, &result, fmt.Sprintf(`
 		fragment gitRef on GitRef {
 			name
 			abbrevName
@@ -438,7 +353,7 @@ func TestCampaigns(t *testing.T) {
 	`, in))
 
 	{
-		want := []Changeset{
+		want := []apitest.Changeset{
 			{
 				Repository: struct{ ID string }{ID: graphqlGithubRepoID},
 				CreatedAt:  now.Format(time.RFC3339),
@@ -452,10 +367,10 @@ func TestCampaigns(t *testing.T) {
 				},
 				ReviewState: "APPROVED",
 				CheckState:  "PASSED",
-				Events: ChangesetEventConnection{
+				Events: apitest.ChangesetEventConnection{
 					TotalCount: 57,
 				},
-				Head: GitRef{
+				Head: apitest.GitRef{
 					Name:        "refs/heads/vo/add-type-issue-filter",
 					AbbrevName:  "vo/add-type-issue-filter",
 					DisplayName: "vo/add-type-issue-filter",
@@ -464,13 +379,13 @@ func TestCampaigns(t *testing.T) {
 					Repository:  struct{ ID string }{ID: "UmVwb3NpdG9yeTox"},
 					URL:         "/github.com/sourcegraph/sourcegraph@vo/add-type-issue-filter",
 
-					Target: GitTarget{
+					Target: apitest.GitTarget{
 						OID:            "7db302f07955e41d50e656d5faebefb4d87bce8a",
 						AbbreviatedOID: "7db302f",
 						TargetType:     "GIT_COMMIT",
 					},
 				},
-				Base: GitRef{
+				Base: apitest.GitRef{
 					Name:        "refs/heads/master",
 					AbbrevName:  "master",
 					DisplayName: "master",
@@ -478,7 +393,7 @@ func TestCampaigns(t *testing.T) {
 					RefType:     "GIT_BRANCH",
 					Repository:  struct{ ID string }{ID: "UmVwb3NpdG9yeTox"},
 					URL:         "/github.com/sourcegraph/sourcegraph@master",
-					Target: GitTarget{
+					Target: apitest.GitTarget{
 						OID:            "fa3815ba9ddd49db9111c5e9691e16d27e8f1f60",
 						AbbreviatedOID: "fa3815b",
 						TargetType:     "GIT_COMMIT",
@@ -498,10 +413,10 @@ func TestCampaigns(t *testing.T) {
 				},
 				ReviewState: "PENDING",
 				CheckState:  "PENDING",
-				Events: ChangesetEventConnection{
+				Events: apitest.ChangesetEventConnection{
 					TotalCount: 10,
 				},
-				Head: GitRef{
+				Head: apitest.GitRef{
 					Name:        "refs/heads/release-testing-pr",
 					AbbrevName:  "release-testing-pr",
 					DisplayName: "release-testing-pr",
@@ -509,13 +424,13 @@ func TestCampaigns(t *testing.T) {
 					RefType:     "GIT_BRANCH",
 					Repository:  struct{ ID string }{ID: "UmVwb3NpdG9yeToy"},
 					URL:         "/bitbucket.sgdev.org/SOUR/vegeta@release-testing-pr",
-					Target: GitTarget{
+					Target: apitest.GitTarget{
 						OID:            "mockcommitid",
 						AbbreviatedOID: "mockcom",
 						TargetType:     "GIT_COMMIT",
 					},
 				},
-				Base: GitRef{
+				Base: apitest.GitRef{
 					Name:        "refs/heads/master",
 					AbbrevName:  "master",
 					DisplayName: "master",
@@ -523,7 +438,7 @@ func TestCampaigns(t *testing.T) {
 					RefType:     "GIT_BRANCH",
 					Repository:  struct{ ID string }{ID: "UmVwb3NpdG9yeToy"},
 					URL:         "/bitbucket.sgdev.org/SOUR/vegeta@master",
-					Target: GitTarget{
+					Target: apitest.GitTarget{
 						OID:            "mockcommitid",
 						AbbreviatedOID: "mockcom",
 						TargetType:     "GIT_COMMIT",
@@ -532,7 +447,7 @@ func TestCampaigns(t *testing.T) {
 			},
 		}
 
-		have := make([]Changeset, 0, len(result.Changesets))
+		have := make([]apitest.Changeset, 0, len(result.Changesets))
 		for _, c := range result.Changesets {
 			if c.ID == "" {
 				t.Fatal("Changeset ID is empty")
@@ -546,39 +461,7 @@ func TestCampaigns(t *testing.T) {
 		}
 	}
 
-	type ChangesetConnection struct {
-		Nodes      []Changeset
-		TotalCount int
-		PageInfo   struct {
-			HasNextPage bool
-		}
-	}
-
-	type ChangesetCounts struct {
-		Date                 graphqlbackend.DateTime
-		Total                int32
-		Merged               int32
-		Closed               int32
-		Open                 int32
-		OpenApproved         int32
-		OpenChangesRequested int32
-		OpenPending          int32
-	}
-
-	type CampaignWithChangesets struct {
-		ID                      string
-		Name                    string
-		Description             string
-		Author                  User
-		CreatedAt               string
-		UpdatedAt               string
-		Namespace               UserOrg
-		Changesets              ChangesetConnection
-		ChangesetCountsOverTime []ChangesetCounts
-		DiffStat                DiffStat
-	}
-
-	var addChangesetsResult struct{ Campaign CampaignWithChangesets }
+	var addChangesetsResult struct{ Campaign apitest.Campaign }
 
 	changesetIDs := make([]string, 0, len(result.Changesets))
 	for _, c := range result.Changesets {
@@ -590,7 +473,7 @@ func TestCampaigns(t *testing.T) {
 	// Date when PR #999 from above was merged
 	countsTo := parseJSONTime(t, "2018-12-04T08:10:07Z")
 
-	mustExec(ctx, t, s, nil, &addChangesetsResult, fmt.Sprintf(`
+	apitest.MustExec(ctx, t, s, nil, &addChangesetsResult, fmt.Sprintf(`
 		fragment u on User { id, databaseID, siteAdmin }
 		fragment o on Org  { id, name }
 
@@ -705,14 +588,14 @@ func TestCampaigns(t *testing.T) {
 		have := addChangesetsResult.Campaign.DiffStat
 		// Expected DiffStat is zeros, because we don't return diffstats for
 		// closed changesets
-		want := DiffStat{Added: 0, Changed: 0, Deleted: 0}
+		want := apitest.DiffStat{Added: 0, Changed: 0, Deleted: 0}
 		if have != want {
 			t.Errorf("wrong campaign combined diffstat. want=%v, have=%v", want, have)
 		}
 	}
 
 	deleteInput := map[string]interface{}{"id": campaigns.Admin.ID}
-	mustExec(ctx, t, s, deleteInput, &struct{}{}, `
+	apitest.MustExec(ctx, t, s, deleteInput, &struct{}{}, `
 		mutation($id: ID!){
 			deleteCampaign(campaign: $id) { alwaysNil }
 		}
@@ -724,7 +607,7 @@ func TestCampaigns(t *testing.T) {
 		}
 	}
 
-	mustExec(ctx, t, s, nil, &campaignsAfterDelete, `
+	apitest.MustExec(ctx, t, s, nil, &campaignsAfterDelete, `
 		query { campaigns { totalCount } }
 	`)
 
@@ -892,81 +775,37 @@ index 6f8b5d9..17400bc 100644
 `
 
 // wantFileDiffs is the parsed representation of testDiff.
-var wantFileDiffs = FileDiffs{
+var wantFileDiffs = apitest.FileDiffs{
 	RawDiff:  testDiff,
-	DiffStat: DiffStat{Changed: 2},
-	Nodes: []FileDiff{
+	DiffStat: apitest.DiffStat{Changed: 2},
+	Nodes: []apitest.FileDiff{
 		{
 			OldPath: "README.md",
 			NewPath: "README.md",
-			OldFile: File{Name: "README.md"},
-			Hunks: []FileDiffHunk{
+			OldFile: apitest.File{Name: "README.md"},
+			Hunks: []apitest.FileDiffHunk{
 				{
 					Body:     " # README\n-This file is hosted at example.com and is a test file.\n+This file is hosted at sourcegraph.com and is a test file.\n",
-					OldRange: DiffRange{StartLine: 1, Lines: 2},
-					NewRange: DiffRange{StartLine: 1, Lines: 2},
+					OldRange: apitest.DiffRange{StartLine: 1, Lines: 2},
+					NewRange: apitest.DiffRange{StartLine: 1, Lines: 2},
 				},
 			},
-			Stat: DiffStat{Changed: 1},
+			Stat: apitest.DiffStat{Changed: 1},
 		},
 		{
 			OldPath: "urls.txt",
 			NewPath: "urls.txt",
-			OldFile: File{Name: "urls.txt"},
-			Hunks: []FileDiffHunk{
+			OldFile: apitest.File{Name: "urls.txt"},
+			Hunks: []apitest.FileDiffHunk{
 				{
 					Body:     " another-url.com\n-example.com\n+sourcegraph.com\n never-touch-the-mouse.com\n",
-					OldRange: DiffRange{StartLine: 1, Lines: 3},
-					NewRange: DiffRange{StartLine: 1, Lines: 3},
+					OldRange: apitest.DiffRange{StartLine: 1, Lines: 3},
+					NewRange: apitest.DiffRange{StartLine: 1, Lines: 3},
 				},
 			},
-			Stat: DiffStat{Changed: 1},
+			Stat: apitest.DiffStat{Changed: 1},
 		},
 	},
-}
-
-type DiffRange struct{ StartLine, Lines int }
-
-type FileDiffHunk struct {
-	Body, Section      string
-	OldNoNewlineAt     bool
-	OldRange, NewRange DiffRange
-}
-
-type DiffStat struct{ Added, Deleted, Changed int }
-
-type File struct {
-	Name string
-	// Ignoring other fields of File2, since that would require gitserver
-}
-
-type FileDiff struct {
-	OldPath, NewPath string
-	Hunks            []FileDiffHunk
-	Stat             DiffStat
-	OldFile          File
-}
-
-type FileDiffs struct {
-	RawDiff  string
-	DiffStat DiffStat
-	Nodes    []FileDiff
-}
-
-type Patch struct {
-	PublicationEnqueued bool
-	Repository          struct{ Name, URL string }
-	Diff                struct {
-		FileDiffs FileDiffs
-	}
-}
-
-type PatchSet struct {
-	ID      string
-	Patches struct {
-		Nodes []Patch
-	}
-	PreviewURL string
 }
 
 func TestCreatePatchSetFromPatchesResolver(t *testing.T) {
@@ -1038,9 +877,9 @@ func TestCreatePatchSetFromPatchesResolver(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		var response struct{ CreatePatchSetFromPatches PatchSet }
+		var response struct{ CreatePatchSetFromPatches apitest.PatchSet }
 
-		mustExec(ctx, t, s, nil, &response, fmt.Sprintf(`
+		apitest.MustExec(ctx, t, s, nil, &response, fmt.Sprintf(`
       mutation {
 		createPatchSetFromPatches(patches: [{repository: %q, baseRevision: "f00b4r", baseRef: "master", patch: %q}]) {
           ... on PatchSet {
@@ -1093,10 +932,10 @@ func TestCreatePatchSetFromPatchesResolver(t *testing.T) {
 
 		result := response.CreatePatchSetFromPatches
 
-		wantPatches := []Patch{
+		wantPatches := []apitest.Patch{
 			{
 				Repository: struct{ Name, URL string }{Name: repo.Name},
-				Diff:       struct{ FileDiffs FileDiffs }{FileDiffs: wantFileDiffs},
+				Diff:       struct{ FileDiffs apitest.FileDiffs }{FileDiffs: wantFileDiffs},
 			},
 		}
 		if !cmp.Equal(result.Patches.Nodes, wantPatches) {
@@ -1181,19 +1020,15 @@ func TestPatchSetResolver(t *testing.T) {
 		jobs = append(jobs, job)
 	}
 
-	type Response struct {
-		Node PatchSet
-	}
-
 	sr := &Resolver{store: store}
 	s, err := graphqlbackend.NewSchema(sr, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	var response Response
+	var response struct{ Node apitest.PatchSet }
 
-	mustExec(ctx, t, s, nil, &response, fmt.Sprintf(`
+	apitest.MustExec(ctx, t, s, nil, &response, fmt.Sprintf(`
       query {
         node(id: %q) {
           ... on PatchSet {
@@ -1330,8 +1165,8 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 	}
 
 	// Start test
-	var createPatchSetResponse struct{ CreatePatchSetFromPatches PatchSet }
-	mustExec(ctx, t, s, nil, &createPatchSetResponse, fmt.Sprintf(`
+	var createPatchSetResponse struct{ CreatePatchSetFromPatches apitest.PatchSet }
+	apitest.MustExec(ctx, t, s, nil, &createPatchSetResponse, fmt.Sprintf(`
 		mutation {
 			createPatchSetFromPatches(patches: [{repository: %q, baseRevision: %q, baseRef: %q, patch: %q}]) {
 				... on PatchSet {
@@ -1344,42 +1179,7 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 
 	patchSetID := createPatchSetResponse.CreatePatchSetFromPatches.ID
 
-	type Changeset struct {
-		ID          string
-		Title       string
-		Body        string
-		State       string
-		ExternalURL struct {
-			URL         string
-			ServiceType string
-		}
-		ReviewState string
-		CheckState  string
-		Diff        struct {
-			FileDiffs FileDiffs
-		}
-	}
-
-	type Campaign struct {
-		ID     string
-		Name   string
-		Branch string
-		Status struct {
-			State string
-		}
-		Description string
-		Patches     struct {
-			Nodes      []Patch
-			TotalCount int
-		}
-		Changesets struct {
-			Nodes      []Changeset
-			TotalCount int
-		}
-		DiffStat DiffStat
-	}
-
-	var createCampaignResponse struct{ CreateCampaign Campaign }
+	var createCampaignResponse struct{ CreateCampaign apitest.Campaign }
 
 	input := map[string]interface{}{
 		"input": map[string]interface{}{
@@ -1392,7 +1192,7 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 		},
 	}
 
-	mustExec(ctx, t, s, input, &createCampaignResponse, `
+	apitest.MustExec(ctx, t, s, input, &createCampaignResponse, `
     fragment c on Campaign {
       id
       branch
@@ -1472,8 +1272,8 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 		t.Errorf("patch PublicationEnqueued is true, want false")
 	}
 
-	var publishCampaignResponse struct{ PublishCampaign Campaign }
-	mustExec(ctx, t, s, nil, &publishCampaignResponse, fmt.Sprintf(`
+	var publishCampaignResponse struct{ PublishCampaign apitest.Campaign }
+	apitest.MustExec(ctx, t, s, nil, &publishCampaignResponse, fmt.Sprintf(`
       mutation {
         publishCampaign(campaign: %q) {
           id
@@ -1581,11 +1381,9 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 	}
 	defer func() { git.Mocks.ExecReader = nil }()
 
-	var queryCampaignResponse struct {
-		Node Campaign
-	}
+	var queryCampaignResponse struct{ Node apitest.Campaign }
 
-	mustExec(ctx, t, s, nil, &queryCampaignResponse, fmt.Sprintf(`
+	apitest.MustExec(ctx, t, s, nil, &queryCampaignResponse, fmt.Sprintf(`
 	    fragment c on Campaign {
 	      id
 	      status { state }
@@ -1641,64 +1439,6 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 	if have, want := campaign.DiffStat, changeset.Diff.FileDiffs.DiffStat; have != want {
 		t.Errorf("wrong campaign combined diffstat. want=%v, have=%v", want, have)
 	}
-}
-
-func mustExec(
-	ctx context.Context,
-	t testing.TB,
-	s *graphql.Schema,
-	in map[string]interface{},
-	out interface{},
-	query string,
-) {
-	t.Helper()
-	if errs := exec(ctx, t, s, in, out, query); len(errs) > 0 {
-		t.Fatalf("unexpected graphql query errors: %v", errs)
-	}
-}
-
-func exec(
-	ctx context.Context,
-	t testing.TB,
-	s *graphql.Schema,
-	in map[string]interface{},
-	out interface{},
-	query string,
-) []*gqlerrors.QueryError {
-	t.Helper()
-
-	query = strings.Replace(query, "\t", "  ", -1)
-
-	r := s.Exec(ctx, query, "", in)
-	if len(r.Errors) != 0 {
-		return r.Errors
-	}
-
-	_, disableLog := os.LookupEnv("NO_GRAPHQL_LOG")
-
-	if testing.Verbose() && !disableLog {
-		t.Logf("\n---- GraphQL Query ----\n%s\n\nVars: %s\n---- GraphQL Result ----\n%s\n -----------", query, toJSON(t, in), r.Data)
-	}
-
-	if err := json.Unmarshal(r.Data, out); err != nil {
-		t.Fatalf("failed to unmarshal graphql data: %v", err)
-	}
-
-	return nil
-}
-
-func toJSON(t testing.TB, v interface{}) string {
-	data, err := json.Marshal(v)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	formatted, err := jsonc.Format(string(data), nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	return formatted
 }
 
 func newGithubClientFactory(t testing.TB, name string) (*httpcli.Factory, func()) {
