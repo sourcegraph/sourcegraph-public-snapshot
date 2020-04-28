@@ -7,7 +7,7 @@ coverage:
       codeintel:
         informational: true
         paths:
-          - cmd/precise-code-intel-*
+          - cmd/precise-code-intel-.*
           - internal/codeintel
           - enterprise/internal/codeintel
       typescript:
