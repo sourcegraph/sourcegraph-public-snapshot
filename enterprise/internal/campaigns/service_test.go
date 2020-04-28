@@ -38,7 +38,6 @@ func TestService(t *testing.T) {
 		return now.UTC().Truncate(time.Microsecond)
 	}
 
-	gitClient := &FakeGitserverClient{Response: "testresponse", ResponseErr: nil}
 	cf := httpcli.NewExternalHTTPClientFactory()
 
 	user := createTestUser(ctx, t)
@@ -57,7 +56,7 @@ func TestService(t *testing.T) {
 	}
 
 	t.Run("CreatePatchSetFromPatches", func(t *testing.T) {
-		svc := NewServiceWithClock(store, nil, nil, clock)
+		svc := NewServiceWithClock(store, nil, clock)
 
 		const patch = `diff f f
 --- f
@@ -112,7 +111,7 @@ func TestService(t *testing.T) {
 		}
 
 		campaign := testCampaign(user.ID, patchSet.ID)
-		svc := NewServiceWithClock(store, gitClient, cf, clock)
+		svc := NewServiceWithClock(store, cf, clock)
 
 		// Without Patches it should fail
 		err = svc.CreateCampaign(ctx, campaign, false)
@@ -170,7 +169,7 @@ func TestService(t *testing.T) {
 
 		campaign := testCampaign(user.ID, patchSet.ID)
 
-		svc := NewServiceWithClock(store, gitClient, cf, clock)
+		svc := NewServiceWithClock(store, cf, clock)
 		err = svc.CreateCampaign(ctx, campaign, true)
 		if err != nil {
 			t.Fatal(err)
@@ -208,7 +207,7 @@ func TestService(t *testing.T) {
 		}
 
 		campaign := testCampaign(user.ID, patchSet.ID)
-		svc := NewServiceWithClock(store, gitClient, cf, clock)
+		svc := NewServiceWithClock(store, cf, clock)
 
 		err = svc.CreateCampaign(ctx, campaign, false)
 		if err != nil {
@@ -241,7 +240,7 @@ func TestService(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		svc := NewServiceWithClock(store, gitClient, cf, clock)
+		svc := NewServiceWithClock(store, cf, clock)
 		err = svc.CreateChangesetJobForPatch(ctx, patch.ID)
 		if err != nil {
 			t.Fatal(err)
@@ -336,7 +335,7 @@ func TestService(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				svc := NewServiceWithClock(store, gitClient, cf, clock)
+				svc := NewServiceWithClock(store, cf, clock)
 				campaign := testCampaign(user.ID, patchSet.ID)
 
 				if tc.closed {
@@ -400,7 +399,7 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("UpdateCampaignWithPatchSetAttachedToOtherCampaign", func(t *testing.T) {
-		svc := NewServiceWithClock(store, gitClient, cf, clock)
+		svc := NewServiceWithClock(store, cf, clock)
 
 		patchSet := &campaigns.PatchSet{UserID: user.ID}
 		err = store.CreatePatchSet(ctx, patchSet)
@@ -466,7 +465,6 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 		return now.UTC().Truncate(time.Microsecond)
 	}
 
-	gitClient := &FakeGitserverClient{Response: "testresponse", ResponseErr: nil}
 	cf := httpcli.NewExternalHTTPClientFactory()
 
 	user := createTestUser(ctx, t)
@@ -719,7 +717,7 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			store := NewStoreWithClock(dbconn.Global, clock)
-			svc := NewServiceWithClock(store, gitClient, cf, clock)
+			svc := NewServiceWithClock(store, cf, clock)
 
 			var (
 				campaign    *campaigns.Campaign
