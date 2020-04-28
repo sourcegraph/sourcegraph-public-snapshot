@@ -194,7 +194,8 @@ async function getFirstCodeEditor(extensionAPI: typeof sourcegraph): Promise<sou
             first(isDefined),
             switchMap(win => win.activeViewComponentChanges),
             filter(isDefined),
-            filter(isTaggedUnionMember('type', 'CodeEditor' as const))
+            filter(isTaggedUnionMember('type', 'CodeEditor' as const)),
+            take(1)
         )
         .toPromise()
 }
