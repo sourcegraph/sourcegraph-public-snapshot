@@ -6,6 +6,9 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -31,12 +34,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -570,6 +575,7 @@ func TestCampaigns(t *testing.T) {
 		Namespace               UserOrg
 		Changesets              ChangesetConnection
 		ChangesetCountsOverTime []ChangesetCounts
+		DiffStat                DiffStat
 	}
 
 	var addChangesetsResult struct{ Campaign CampaignWithChangesets }
@@ -625,6 +631,11 @@ func TestCampaigns(t *testing.T) {
 				openApproved
 				openChangesRequested
 				openPending
+			}
+			diffStat {
+				added
+				changed
+				deleted
 			}
 		}
 		mutation() {
@@ -690,6 +701,16 @@ func TestCampaigns(t *testing.T) {
 		}
 	}
 
+	{
+		have := addChangesetsResult.Campaign.DiffStat
+		// Expected DiffStat is zeros, because we don't return diffstats for
+		// closed changesets
+		want := DiffStat{Added: 0, Changed: 0, Deleted: 0}
+		if have != want {
+			t.Errorf("wrong campaign combined diffstat. want=%v, have=%v", want, have)
+		}
+	}
+
 	deleteInput := map[string]interface{}{"id": campaigns.Admin.ID}
 	mustExec(ctx, t, s, deleteInput, &struct{}{}, `
 		mutation($id: ID!){
@@ -731,16 +752,7 @@ func TestChangesetCountsOverTime(t *testing.T) {
 		return now.UTC().Truncate(time.Microsecond)
 	}
 
-	u, err := db.Users.Create(ctx, db.NewUser{
-		Email:                 "thorsten@sourcegraph.com",
-		Username:              "thorsten",
-		DisplayName:           "thorsten",
-		Password:              "1234",
-		EmailVerificationCode: "foobar",
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	u := createTestUser(ctx, t)
 
 	repoStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
 	githubExtSvc := &repos.ExternalService{
@@ -753,7 +765,7 @@ func TestChangesetCountsOverTime(t *testing.T) {
 		}),
 	}
 
-	err = repoStore.UpsertExternalServices(ctx, githubExtSvc)
+	err := repoStore.UpsertExternalServices(ctx, githubExtSvc)
 	if err != nil {
 		t.Fatal(t)
 	}
@@ -942,8 +954,9 @@ type FileDiffs struct {
 }
 
 type Patch struct {
-	Repository struct{ Name, URL string }
-	Diff       struct {
+	PublicationEnqueued bool
+	Repository          struct{ Name, URL string }
+	Diff                struct {
 		FileDiffs FileDiffs
 	}
 }
@@ -1012,20 +1025,7 @@ func TestCreatePatchSetFromPatchesResolver(t *testing.T) {
 		defer func() { backend.Mocks.Repos.GetCommit = nil }()
 
 		reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
-		repo := &repos.Repo{
-			Name: "github.com/sourcegraph/sourcegraph",
-			ExternalRepo: api.ExternalRepoSpec{
-				ID:          "external-id",
-				ServiceType: "github",
-				ServiceID:   "https://github.com/",
-			},
-			Sources: map[string]*repos.SourceInfo{
-				"extsvc:github:4": {
-					ID:       "extsvc:github:4",
-					CloneURL: "https://secrettoken@github.com/sourcegraph/sourcegraph",
-				},
-			},
-		}
+		repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", 1)
 		if err := reposStore.UpsertRepos(ctx, repo); err != nil {
 			t.Fatal(err)
 		}
@@ -1147,22 +1147,7 @@ func TestPatchSetResolver(t *testing.T) {
 
 	var rs []*repos.Repo
 	for i := 0; i < 3; i++ {
-		repo := &repos.Repo{
-			Name:        fmt.Sprintf("github.com/sourcegraph/sourcegraph-%d", i),
-			URI:         fmt.Sprintf("github.com/sourcegraph/sourcegraph-%d", i),
-			Description: "Code search and navigation tool",
-			ExternalRepo: api.ExternalRepoSpec{
-				ID:          fmt.Sprintf("external-id-%d", i),
-				ServiceType: "github",
-				ServiceID:   "https://github.com/",
-			},
-			Sources: map[string]*repos.SourceInfo{
-				"extsvc:github:4": {
-					ID:       "extsvc:github:4",
-					CloneURL: "https://secrettoken@github.com/sourcegraph/sourcegraph",
-				},
-			},
-		}
+		repo := newGitHubTestRepo(fmt.Sprintf("github.com/sourcegraph/sourcegraph-%d", i), i)
 		err := reposStore.UpsertRepos(ctx, repo)
 		if err != nil {
 			t.Fatal(err)
@@ -1279,6 +1264,382 @@ func TestPatchSetResolver(t *testing.T) {
 		if !reflect.DeepEqual(haveFileDiffs, wantFileDiffs) {
 			t.Fatal(cmp.Diff(haveFileDiffs, wantFileDiffs))
 		}
+	}
+}
+
+func TestCreateCampaignWithPatchSet(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	dbtesting.SetupGlobalTestDB(t)
+	rcache.SetupForTest(t)
+
+	ctx := backend.WithAuthzBypass(context.Background())
+	user := createTestUser(ctx, t)
+	act := actor.FromUser(user.ID)
+	ctx = actor.WithActor(ctx, act)
+
+	now := time.Now().UTC().Truncate(time.Microsecond)
+	clock := func() time.Time {
+		return now.UTC().Truncate(time.Microsecond)
+	}
+
+	testBaseRevision := api.CommitID("24f7ca7c1190835519e261d7eefa09df55ceea4f")
+	testBaseRef := "refs/heads/master"
+
+	// gitserver Mocks
+	backend.Mocks.Repos.ResolveRev = func(_ context.Context, _ *types.Repo, _ string) (api.CommitID, error) {
+		return testBaseRevision, nil
+	}
+	defer func() { backend.Mocks.Repos.ResolveRev = nil }()
+
+	backend.Mocks.Repos.GetCommit = func(_ context.Context, _ *types.Repo, _ api.CommitID) (*git.Commit, error) {
+		return &git.Commit{ID: testBaseRevision}, nil
+	}
+	defer func() { backend.Mocks.Repos.GetCommit = nil }()
+
+	// repo & external service setup
+	reposStore := repos.NewDBStore(dbconn.Global, sql.TxOptions{})
+	ext := &repos.ExternalService{
+		Kind:        github.ServiceType,
+		DisplayName: "GitHub",
+		Config: marshalJSON(t, &schema.GitHubConnection{
+			Url:   "https://github.com",
+			Token: "SECRETTOKEN",
+		}),
+	}
+
+	if err := reposStore.UpsertExternalServices(ctx, ext); err != nil {
+		t.Fatal(err)
+	}
+
+	repo := newGitHubTestRepo("github.com/sourcegraph/sourcegraph", 1)
+	repo.Sources = map[string]*repos.SourceInfo{ext.URN(): {ID: ext.URN()}}
+
+	if err := reposStore.UpsertRepos(ctx, repo); err != nil {
+		t.Fatal(err)
+	}
+
+	// Setup schema resolver
+	store := ee.NewStoreWithClock(dbconn.Global, clock)
+	sr := &Resolver{store: store}
+	s, err := graphqlbackend.NewSchema(sr, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Start test
+	var createPatchSetResponse struct{ CreatePatchSetFromPatches PatchSet }
+	mustExec(ctx, t, s, nil, &createPatchSetResponse, fmt.Sprintf(`
+		mutation {
+			createPatchSetFromPatches(patches: [{repository: %q, baseRevision: %q, baseRef: %q, patch: %q}]) {
+				... on PatchSet {
+					id
+					previewURL
+				}
+			}
+		}
+	`, graphqlbackend.MarshalRepositoryID(api.RepoID(repo.ID)), testBaseRevision, testBaseRef, testDiff))
+
+	patchSetID := createPatchSetResponse.CreatePatchSetFromPatches.ID
+
+	type Changeset struct {
+		ID          string
+		Title       string
+		Body        string
+		State       string
+		ExternalURL struct {
+			URL         string
+			ServiceType string
+		}
+		ReviewState string
+		CheckState  string
+		Diff        struct {
+			FileDiffs FileDiffs
+		}
+	}
+
+	type Campaign struct {
+		ID     string
+		Name   string
+		Branch string
+		Status struct {
+			State string
+		}
+		Description string
+		Patches     struct {
+			Nodes      []Patch
+			TotalCount int
+		}
+		Changesets struct {
+			Nodes      []Changeset
+			TotalCount int
+		}
+		DiffStat DiffStat
+	}
+
+	var createCampaignResponse struct{ CreateCampaign Campaign }
+
+	input := map[string]interface{}{
+		"input": map[string]interface{}{
+			"namespace":   string(graphqlbackend.MarshalUserID(user.ID)),
+			"name":        "Campaign with PatchSet",
+			"description": "This campaign has a patchset",
+			"draft":       true,
+			"patchSet":    patchSetID,
+			"branch":      "my-cool-branch",
+		},
+	}
+
+	mustExec(ctx, t, s, input, &createCampaignResponse, `
+    fragment c on Campaign {
+      id
+      branch
+      status { state }
+      patches {
+        nodes {
+          publicationEnqueued
+          repository {
+            name
+          }
+          diff {
+            fileDiffs {
+              rawDiff
+              diffStat {
+                added
+                deleted
+                changed
+              }
+              nodes {
+                oldPath
+                newPath
+                hunks {
+                  body
+                  section
+                  newRange { startLine, lines }
+                  oldRange { startLine, lines }
+                  oldNoNewlineAt
+                }
+                stat {
+                  added
+                  deleted
+                  changed
+                }
+                oldFile {
+                  name
+                  externalURLs {
+                    serviceType
+                    url
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      diffStat {
+        added
+        deleted
+        changed
+      }
+    }
+
+    mutation($input: CreateCampaignInput!) {
+      createCampaign(input: $input) { ...c }
+    }
+	`)
+
+	campaign := createCampaignResponse.CreateCampaign
+	if campaign.ID == "" {
+		log.Fatalf("Campaign does not have ID!")
+	}
+
+	if have, want := len(campaign.Patches.Nodes), 1; have != want {
+		log.Fatalf("wrong length of patches. want=%d, have=%d", want, have)
+	}
+
+	if campaign.DiffStat.Changed != 2 {
+		t.Fatalf("diffstat is wrong: %+v", campaign.DiffStat)
+	}
+
+	patch := campaign.Patches.Nodes[0]
+	if have, want := campaign.DiffStat, patch.Diff.FileDiffs.DiffStat; have != want {
+		t.Errorf("wrong campaign combined diffstat. want=%v, have=%v", want, have)
+	}
+
+	if patch.PublicationEnqueued {
+		t.Errorf("patch PublicationEnqueued is true, want false")
+	}
+
+	var publishCampaignResponse struct{ PublishCampaign Campaign }
+	mustExec(ctx, t, s, nil, &publishCampaignResponse, fmt.Sprintf(`
+      mutation {
+        publishCampaign(campaign: %q) {
+          id
+          status { state }
+          branch
+          patches {
+            nodes {
+              publicationEnqueued
+            }
+          }
+        }
+      }
+	`, campaign.ID))
+
+	publishedCampaign := publishCampaignResponse.PublishCampaign
+	if publishedCampaign.Status.State != "PROCESSING" {
+		t.Fatalf("campaign is not in state 'PROCESSING': %q", publishedCampaign.Status.State)
+	}
+	enqueuedPatch := publishedCampaign.Patches.Nodes[0]
+	if !enqueuedPatch.PublicationEnqueued {
+		t.Fatalf("patch is not enqueued for publication")
+	}
+
+	// Now we need to run the created ChangsetJob
+	changesetJobs, _, err := store.ListChangesetJobs(ctx, ee.ListChangesetJobsOpts{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(changesetJobs) != 1 {
+		t.Fatalf("more than 1 changeset jobs created: %d", len(changesetJobs))
+	}
+
+	headRef := "refs/heads/" + campaign.Branch
+
+	fakePR := &github.PullRequest{
+		ID:          "FOOBARID",
+		Title:       campaign.Name,
+		Body:        campaign.Description,
+		HeadRefName: git.AbbreviateRef(headRef),
+		Number:      12345,
+		State:       "OPEN",
+		TimelineItems: []github.TimelineItem{
+			{Type: "PullRequestCommit", Item: &github.PullRequestCommit{
+				Commit: github.Commit{
+					OID:           "new-f00bar",
+					PushedDate:    now,
+					CommittedDate: now,
+				},
+			}},
+		},
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+
+	gitClient := &ee.FakeGitserverClient{Response: headRef, ResponseErr: nil}
+
+	sourcer := repos.NewFakeSourcer(nil, ee.FakeChangesetSource{
+		Svc:          ext,
+		WantHeadRef:  headRef,
+		WantBaseRef:  testBaseRef,
+		FakeMetadata: fakePR,
+	})
+
+	job := changesetJobs[0]
+
+	c, err := store.GetCampaign(ctx, ee.GetCampaignOpts{ID: job.CampaignID})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// TODO: We need a transaction here because ExecChangesetJob expects a
+	// wrapping tx. We can remove that assertion from ExecChangesetJob though
+	// and then remove the tx here.
+	tx, err := store.Transact(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = ee.ExecChangesetJob(ctx, clock, tx, gitClient, sourcer, c, job)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tx.Done(nil)
+
+	updatedJob, err := store.GetChangesetJob(ctx, ee.GetChangesetJobOpts{ID: job.ID})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if updatedJob.ChangesetID == 0 {
+		t.Fatal("ChangesetJob.ChangesetID has not been updated")
+	}
+
+	// We need to setup these mocks because the GraphQL now needs to talk to
+	// gitserver to calculate the diff for a changeset.
+	git.Mocks.GetCommit = func(api.CommitID) (*git.Commit, error) {
+		return &git.Commit{ID: testBaseRevision}, nil
+	}
+	defer func() { git.Mocks.GetCommit = nil }()
+
+	git.Mocks.ExecReader = func(args []string) (io.ReadCloser, error) {
+		if len(args) < 1 && args[0] != "diff" {
+			t.Fatalf("gitserver.ExecReader received wrong args: %v", args)
+		}
+		return ioutil.NopCloser(strings.NewReader(testDiff)), nil
+	}
+	defer func() { git.Mocks.ExecReader = nil }()
+
+	var queryCampaignResponse struct {
+		Node Campaign
+	}
+
+	mustExec(ctx, t, s, nil, &queryCampaignResponse, fmt.Sprintf(`
+	    fragment c on Campaign {
+	      id
+	      status { state }
+	      branch
+	      patches {
+	        totalCount
+	      }
+	      changesets {
+	        nodes {
+	          state
+	          diff {
+	            fileDiffs {
+	              diffStat {
+	                added
+	                deleted
+	                changed
+	              }
+	            }
+	          }
+	        }
+	        totalCount
+	      }
+	      diffStat {
+	        added
+	        deleted
+	        changed
+	      }
+	    }
+
+	    query {
+	      node(id: %q) { ...c }
+	    }
+	`, campaign.ID))
+
+	campaign = queryCampaignResponse.Node
+	if campaign.Status.State != "COMPLETED" {
+		t.Fatalf("campaign is not in state 'COMPLETED': %q", campaign.Status.State)
+	}
+
+	if campaign.Patches.TotalCount != 0 {
+		t.Fatalf("campaign.Patches.TotalCount is not zero: %d", campaign.Patches.TotalCount)
+	}
+
+	if campaign.Changesets.TotalCount != 1 {
+		t.Fatalf("campaign.Patches.TotalCount is not zero: %d", campaign.Patches.TotalCount)
+	}
+
+	if campaign.DiffStat.Changed != 2 {
+		t.Fatalf("diffstat is wrong: %+v", campaign.DiffStat)
+	}
+
+	changeset := campaign.Changesets.Nodes[0]
+	if have, want := campaign.DiffStat, changeset.Diff.FileDiffs.DiffStat; have != want {
+		t.Errorf("wrong campaign combined diffstat. want=%v, have=%v", want, have)
 	}
 }
 
@@ -1444,4 +1805,21 @@ func createTestUser(ctx context.Context, t *testing.T) *types.User {
 		t.Fatal(err)
 	}
 	return user
+}
+
+func newGitHubTestRepo(name string, externalID int) *repos.Repo {
+	return &repos.Repo{
+		Name: name,
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          fmt.Sprintf("external-id-%d", externalID),
+			ServiceType: "github",
+			ServiceID:   "https://github.com/",
+		},
+		Sources: map[string]*repos.SourceInfo{
+			"extsvc:github:4": {
+				ID:       "extsvc:github:4",
+				CloneURL: fmt.Sprintf("https://secrettoken@%s", name),
+			},
+		},
+	}
 }

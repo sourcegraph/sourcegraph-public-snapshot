@@ -622,6 +622,9 @@ type Campaign implements Node {
     # Campaign.status increments with every Patch turned into an
     # ExternalChangeset.
     patches(first: Int): PatchConnection!
+
+    # The diff stat for all the patches and changesets in the Campaign.
+    diffStat: DiffStat!
 }
 
 # The counts of changesets in certain states at a specific point in time.

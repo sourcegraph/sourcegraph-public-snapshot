@@ -104,7 +104,7 @@ func (r *Resolver) PatchByID(ctx context.Context, id graphql.ID) (graphqlbackend
 		return nil, err
 	}
 
-	job, err := r.store.GetPatch(ctx, ee.GetPatchOpts{ID: patchID})
+	patch, err := r.store.GetPatch(ctx, ee.GetPatchOpts{ID: patchID})
 	if err != nil {
 		if err == ee.ErrNoResults {
 			return nil, nil
@@ -112,7 +112,7 @@ func (r *Resolver) PatchByID(ctx context.Context, id graphql.ID) (graphqlbackend
 		return nil, err
 	}
 
-	return &patchResolver{store: r.store, job: job}, nil
+	return &patchResolver{store: r.store, patch: patch}, nil
 }
 
 func (r *Resolver) PatchSetByID(ctx context.Context, id graphql.ID) (graphqlbackend.PatchSetResolver, error) {

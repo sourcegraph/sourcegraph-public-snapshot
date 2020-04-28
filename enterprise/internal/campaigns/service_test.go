@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
@@ -39,7 +38,7 @@ func TestService(t *testing.T) {
 		return now.UTC().Truncate(time.Microsecond)
 	}
 
-	gitClient := &dummyGitserverClient{response: "testresponse", responseErr: nil}
+	gitClient := &FakeGitserverClient{Response: "testresponse", ResponseErr: nil}
 	cf := httpcli.NewExternalHTTPClientFactory()
 
 	user := createTestUser(ctx, t)
@@ -467,7 +466,7 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 		return now.UTC().Truncate(time.Microsecond)
 	}
 
-	gitClient := &dummyGitserverClient{response: "testresponse", responseErr: nil}
+	gitClient := &FakeGitserverClient{Response: "testresponse", ResponseErr: nil}
 	cf := httpcli.NewExternalHTTPClientFactory()
 
 	user := createTestUser(ctx, t)
@@ -1170,13 +1169,4 @@ func testChangeset(repoID api.RepoID, campaign int64, changesetJob int64, state 
 		Metadata:            pr,
 		ExternalState:       state,
 	}
-}
-
-type dummyGitserverClient struct {
-	response    string
-	responseErr error
-}
-
-func (d *dummyGitserverClient) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (string, error) {
-	return d.response, d.responseErr
 }
