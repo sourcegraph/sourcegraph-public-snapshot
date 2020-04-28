@@ -48,6 +48,26 @@ func TestParseDirectoryChildrenNonRoot(t *testing.T) {
 	}
 }
 
+func TestParseDirectoryChildrenDifferentDepths(t *testing.T) {
+	dirnames := []string{"cmd/", "protocol/", "cmd/protocol/"}
+	paths := []string{
+		"cmd/lsif-go",
+		"protocol/protocol.go",
+		"protocol/writer.go",
+		"cmd/protocol/main.go",
+	}
+
+	expected := map[string][]string{
+		"cmd/":          {"cmd/lsif-go"},
+		"protocol/":     {"protocol/protocol.go", "protocol/writer.go"},
+		"cmd/protocol/": {"cmd/protocol/main.go"},
+	}
+
+	if diff := cmp.Diff(expected, parseDirectoryChildren(dirnames, paths)); diff != "" {
+		t.Errorf("unexpected directory children result (-want +got):\n%s", diff)
+	}
+}
+
 func TestCleanDirectoriesForLsTree(t *testing.T) {
 	args := []string{"", "foo", "bar/", "baz"}
 	actual := cleanDirectoriesForLsTree(args)
