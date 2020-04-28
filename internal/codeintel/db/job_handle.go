@@ -14,7 +14,7 @@ var ErrNoSavepoint = errors.New("no savepoint defined")
 var ErrJobNotFinalized = errors.New("job not finalized")
 
 // JobHandle wraps a transaction used by the upload converter. This transaction marks the upload as
-// uneligible for a dequeue to other worker processes. All updates to the database while this record
+// ineligible for a dequeue to other worker processes. All updates to the database while this record
 // is being processes should happen through the JobHandle's transaction, which must be explicitly
 // closed (via CloseTx) at the end of processing by the caller.
 //
@@ -46,12 +46,13 @@ type JobHandle interface {
 }
 
 type jobHandleImpl struct {
-	ctx        context.Context
-	id         int
-	tw         *transactionWrapper
-	txCloser   TxCloser
-	marked     bool
-	savepoints []string
+	ctx             context.Context
+	id              int
+	tw              *transactionWrapper
+	txCloser        TxCloser
+	savepoints      []string
+	marked          bool
+	markedSavepoint string
 }
 
 var _ JobHandle = &jobHandleImpl{}
@@ -62,7 +63,6 @@ var _ JobHandle = &jobHandleImpl{}
 // MarkErrored were invoked, this method returns an error.
 func (h *jobHandleImpl) CloseTx(err error) error {
 	if err == nil && !h.marked {
-		// TODO(efritz) - handle detecting when a Mark* method was called within a rollback'd savepoint
 		err = ErrJobNotFinalized
 	}
 
@@ -94,14 +94,24 @@ func (h *jobHandleImpl) Savepoint() error {
 // last call to Savepoint. This method returns an error if there is no live savepoint in this
 // transaction.
 func (h *jobHandleImpl) RollbackToLastSavepoint() error {
-	if n := len(h.savepoints); n > 0 {
-		var savepointID string
-		savepointID, h.savepoints = h.savepoints[n-1], h.savepoints[:n-1]
-		_, err := h.tw.exec(h.ctx, sqlf.Sprintf(`ROLLBACK TO SAVEPOINT %s`, savepointID))
-		return err
+	n := len(h.savepoints)
+	if n == 0 {
+		return ErrNoSavepoint
 	}
 
-	return ErrNoSavepoint
+	// Pop savepoint id to rollback
+	savepointID := h.savepoints[n-1]
+	h.savepoints = h.savepoints[:n-1]
+
+	// Clear marked flag if we're rolling back the mark
+	if savepointID == h.markedSavepoint {
+		h.marked = false
+		h.markedSavepoint = ""
+	}
+
+	// Perform rollback
+	_, err := h.tw.exec(h.ctx, sqlf.Sprintf(`ROLLBACK TO SAVEPOINT %s`, savepointID))
+	return err
 }
 
 // MarkComplete updates the state of the upload to complete.
@@ -112,7 +122,7 @@ func (h *jobHandleImpl) MarkComplete() (err error) {
 		WHERE id = %s
 	`
 
-	h.marked = true
+	h.mark()
 	_, err = h.tw.exec(h.ctx, sqlf.Sprintf(query, h.id))
 	return err
 }
@@ -125,7 +135,19 @@ func (h *jobHandleImpl) MarkErrored(failureSummary, failureStacktrace string) (e
 		WHERE id = %s
 	`
 
-	h.marked = true
+	h.mark()
 	_, err = h.tw.exec(h.ctx, sqlf.Sprintf(query, failureSummary, failureStacktrace, h.id))
 	return err
+}
+
+func (h *jobHandleImpl) mark() {
+	h.marked = true
+
+	if len(h.savepoints) == 0 {
+		h.markedSavepoint = ""
+	} else {
+		// Mark the current savepoint we're inside so we can unset
+		// the marked flag if we later perform a rollback on error.
+		h.markedSavepoint = h.savepoints[len(h.savepoints)-1]
+	}
 }
