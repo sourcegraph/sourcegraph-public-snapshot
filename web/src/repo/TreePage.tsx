@@ -219,7 +219,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                 getViewsForContainer(
                     ContributableViewContainer.Directory,
                     {
-                        editor: {
+                        viewer: {
                             type: 'DirectoryViewer',
                             directory: {
                                 uri,

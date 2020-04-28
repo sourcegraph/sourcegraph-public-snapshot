@@ -83,11 +83,11 @@ export class ExtViews implements comlink.ProxyMarked {
                         comlink.proxy((context: ViewContexts[typeof ContributableViewContainer.Directory]) =>
                             toProxyableSubscribable(
                                 provider.provideView({
-                                    editor: {
-                                        ...context.editor,
+                                    viewer: {
+                                        ...context.viewer,
                                         directory: {
-                                            ...context.editor.directory,
-                                            uri: new URL(context.editor.directory.uri),
+                                            ...context.viewer.directory,
+                                            uri: new URL(context.viewer.directory.uri),
                                         },
                                     },
                                     workspace: {
