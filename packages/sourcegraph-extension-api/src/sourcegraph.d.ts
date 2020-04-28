@@ -534,7 +534,7 @@ declare module 'sourcegraph' {
      * Each {@link ViewComponent} has a distinct {@link ViewComponent#type} value that indicates what kind of
      * component it is ({@link CodeEditor}, etc.).
      */
-    export type ViewComponent = CodeEditor | DirectoryEditor
+    export type ViewComponent = CodeEditor | DirectoryViewer
 
     /**
      * A style for a {@link TextDocumentDecoration}.
@@ -631,12 +631,12 @@ declare module 'sourcegraph' {
     }
 
     /**
-     * An editor object representing directory pages.
+     * A viewer for directories.
      *
      * This API is experimental and subject to change.
      */
-    export interface DirectoryEditor {
-        readonly type: 'DirectoryEditor'
+    export interface DirectoryViewer {
+        readonly type: 'DirectoryViewer'
 
         /**
          * The directory shown in the directory viewer.
@@ -769,7 +769,7 @@ declare module 'sourcegraph' {
      */
     export interface DirectoryViewContext {
         /** The directory viewer displaying the view. */
-        editor: DirectoryEditor
+        editor: DirectoryViewer
 
         /** The workspace of the directory. */
         workspace: WorkspaceRoot

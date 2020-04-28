@@ -5,8 +5,8 @@ import { TextDocumentPositionParams } from '../../protocol'
 import { ModelService, TextModel, PartialModel } from './modelService'
 import { RefCount } from '../../../util/RefCount'
 
-export type Editor = CodeEditor | DirectoryEditor
-export type EditorData = CodeEditorData | DirectoryEditorData
+export type Editor = CodeEditor | DirectoryViewer
+export type EditorData = CodeEditorData | DirectoryViewerData
 
 /**
  * EditorId exposes the unique ID of an editor.
@@ -20,8 +20,8 @@ export interface BaseEditorData {
     readonly isActive: boolean
 }
 
-export interface DirectoryEditorData extends BaseEditorData {
-    readonly type: 'DirectoryEditor'
+export interface DirectoryViewerData extends BaseEditorData {
+    readonly type: 'DirectoryViewer'
     /** The URI of the directory that this editor is displaying. */
     readonly resource: string
 }
@@ -46,9 +46,9 @@ export interface CodeEditor extends EditorId, CodeEditorData {}
 /**
  * Describes a directory editor that has been added to the {@link EditorService}.
  */
-export interface DirectoryEditor extends EditorId, DirectoryEditorData {}
+export interface DirectoryViewer extends EditorId, DirectoryViewerData {}
 
-export type EditorWithPartialModel = CodeEditorWithPartialModel | DirectoryEditor // Directories don't have a model
+export type EditorWithPartialModel = CodeEditorWithPartialModel | DirectoryViewer // Directories don't have a model
 
 /**
  * A code editor with a partial model.

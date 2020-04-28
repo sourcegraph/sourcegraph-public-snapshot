@@ -20,7 +20,7 @@ interface WindowsProxyData {
  */
 export class ExtWindow implements sourcegraph.Window {
     /** Mutable map of editor ID to editor. */
-    private viewComponents = new Map<string, ExtCodeEditor | sourcegraph.DirectoryEditor>()
+    private viewComponents = new Map<string, ExtCodeEditor | sourcegraph.DirectoryViewer>()
 
     constructor(private proxy: Remote<WindowsProxyData>, private documents: ExtDocuments, data: EditorUpdate[]) {
         this.update(data)
@@ -97,7 +97,7 @@ export class ExtWindow implements sourcegraph.Window {
             switch (update.type) {
                 case 'added': {
                     const { editorData } = update
-                    let editor: ExtCodeEditor | sourcegraph.DirectoryEditor
+                    let editor: ExtCodeEditor | sourcegraph.DirectoryViewer
                     switch (editorData.type) {
                         case 'CodeEditor':
                             editor = new ExtCodeEditor(
@@ -106,9 +106,9 @@ export class ExtWindow implements sourcegraph.Window {
                                 this.documents
                             )
                             break
-                        case 'DirectoryEditor':
+                        case 'DirectoryViewer':
                             editor = {
-                                type: 'DirectoryEditor',
+                                type: 'DirectoryViewer',
                                 // Since directories don't have any state beyond the immutable URI,
                                 // we can set the model to a static object for now and don't need to track directory models in a Map.
                                 directory: {

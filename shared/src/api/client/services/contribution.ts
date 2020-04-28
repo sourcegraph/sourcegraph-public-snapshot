@@ -123,7 +123,7 @@ export class ContributionRegistry {
                                 ...activeEditor,
                                 model: this.modelService.getPartialModel(activeEditor.resource),
                             }
-                        case 'DirectoryEditor':
+                        case 'DirectoryViewer':
                             return activeEditor
                     }
                 })
