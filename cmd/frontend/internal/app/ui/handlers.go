@@ -259,7 +259,7 @@ func serveSignIn(w http.ResponseWriter, r *http.Request) error {
 
 // redirectTreeOrBlob redirects a blob page to a tree page if the file is actually a directory,
 // or a tree page to a blob page if the directory is actually a file.
-func redirectTreeOrBlob(routeName string, common *Common, r *http.Request, w http.ResponseWriter) (requestHandled bool, err error) {
+func redirectTreeOrBlob(routeName string, common *Common, w http.ResponseWriter, r *http.Request) (requestHandled bool, err error) {
 	path := mux.Vars(r)["Path"]
 	if path == "/" || path == "" {
 		if routeName != routeRepo {
@@ -308,7 +308,7 @@ func serveTree(title func(c *Common, r *http.Request) string) handlerFunc {
 			return nil // request was handled
 		}
 
-		handled, err := redirectTreeOrBlob(routeTree, common, r, w)
+		handled, err := redirectTreeOrBlob(routeTree, common, w, r)
 		if handled {
 			return nil
 		}
@@ -331,7 +331,7 @@ func serveRepoOrBlob(routeName string, title func(c *Common, r *http.Request) st
 			return nil // request was handled
 		}
 
-		handled, err := redirectTreeOrBlob(routeName, common, r, w)
+		handled, err := redirectTreeOrBlob(routeName, common, w, r)
 		if handled {
 			return nil
 		}
