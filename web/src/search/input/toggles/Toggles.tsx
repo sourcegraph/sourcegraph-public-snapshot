@@ -1,7 +1,6 @@
 import * as React from 'react'
 import * as H from 'history'
 import RegexIcon from 'mdi-react/RegexIcon'
-import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 import classNames from 'classnames'
 import FormatLetterCaseIcon from 'mdi-react/FormatLetterCaseIcon'
 import { PatternTypeProps, CaseSensitivityProps, InteractiveSearchProps } from '../..'
@@ -13,7 +12,6 @@ import { QueryInputToggle } from './QueryInputToggle'
 import { isErrorLike } from '../../../../../shared/src/util/errors'
 import CodeBracketsIcon from 'mdi-react/CodeBracketsIcon'
 import { generateFiltersQuery } from '../../../../../shared/src/util/url'
-import copy from 'copy-to-clipboard'
 import { CopyQueryButton } from './CopyQueryButton'
 
 export interface TogglesProps
