@@ -105,6 +105,7 @@ func (r savedSearchResolver) Namespace(ctx context.Context) (*NamespaceResolver,
 	}
 	return nil, nil
 }
+
 func (r savedSearchResolver) Org(ctx context.Context) (*OrgResolver, error) {
 	if r.s.OrgID == nil {
 		return nil, nil
