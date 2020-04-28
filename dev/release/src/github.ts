@@ -157,7 +157,8 @@ export async function getAuthenticatedGitHubClient(): Promise<Octokit> {
         'Enter a GitHub personal access token with "repo" scope (https://github.com/settings/tokens/new): ',
         '.secrets/github.txt'
     )
-    return new Octokit({ auth: githubPAT })
+    const trimmedGithubPAT = githubPAT.trim()
+    return new Octokit({ auth: trimmedGithubPAT })
 }
 
 export async function getIssueByTitle(octokit: Octokit, title: string): Promise<string | null> {
