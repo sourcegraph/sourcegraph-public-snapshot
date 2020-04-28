@@ -19,8 +19,6 @@ import (
 
 	"github.com/dnaeon/go-vcr/cassette"
 	"github.com/google/go-cmp/cmp"
-	graphql "github.com/graph-gophers/graphql-go"
-	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -38,7 +36,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -113,7 +110,7 @@ func TestCampaigns(t *testing.T) {
 		}
 	}
 
-	mustExec(ctx, t, s, nil, &users, `
+	apitest.MustExec(ctx, t, s, nil, &users, `
 		fragment u on User { id, databaseID, siteAdmin }
 		mutation {
 			admin: createUser(username: "admin") {
@@ -134,7 +131,7 @@ func TestCampaigns(t *testing.T) {
 	}
 
 	ctx = actor.WithActor(ctx, actor.FromUser(users.Admin.DatabaseID))
-	mustExec(ctx, t, s, nil, &orgs, `
+	apitest.MustExec(ctx, t, s, nil, &orgs, `
 		fragment o on Org { id, name }
 		mutation {
 			acme: createOrganization(name: "ACME") { ...o }
@@ -156,7 +153,7 @@ func TestCampaigns(t *testing.T) {
 		},
 	}
 
-	mustExec(ctx, t, s, input, &campaigns, `
+	apitest.MustExec(ctx, t, s, input, &campaigns, `
 		fragment u on User { id, databaseID, siteAdmin }
 		fragment o on Org  { id, name }
 		fragment c on Campaign {
@@ -185,7 +182,7 @@ func TestCampaigns(t *testing.T) {
 		First, All CampaignConnection
 	}
 
-	mustExec(ctx, t, s, nil, &listed, `
+	apitest.MustExec(ctx, t, s, nil, &listed, `
 		fragment u on User { id, databaseID, siteAdmin }
 		fragment o on Org  { id, name }
 		fragment c on Campaign {
@@ -240,7 +237,7 @@ func TestCampaigns(t *testing.T) {
 		UpdateCampaign Campaign
 	}
 
-	mustExec(ctx, t, s, updateInput, &updated, `
+	apitest.MustExec(ctx, t, s, updateInput, &updated, `
 		fragment u on User { id, databaseID, siteAdmin }
 		fragment o on Org  { id, name }
 		fragment c on Campaign {
@@ -345,7 +342,7 @@ func TestCampaigns(t *testing.T) {
 		graphqlBBSRepoID, "2",
 	)
 
-	mustExec(ctx, t, s, nil, &result, fmt.Sprintf(`
+	apitest.MustExec(ctx, t, s, nil, &result, fmt.Sprintf(`
 		fragment gitRef on GitRef {
 			name
 			abbrevName
@@ -508,7 +505,7 @@ func TestCampaigns(t *testing.T) {
 	// Date when PR #999 from above was merged
 	countsTo := parseJSONTime(t, "2018-12-04T08:10:07Z")
 
-	mustExec(ctx, t, s, nil, &addChangesetsResult, fmt.Sprintf(`
+	apitest.MustExec(ctx, t, s, nil, &addChangesetsResult, fmt.Sprintf(`
 		fragment u on User { id, databaseID, siteAdmin }
 		fragment o on Org  { id, name }
 
@@ -630,7 +627,7 @@ func TestCampaigns(t *testing.T) {
 	}
 
 	deleteInput := map[string]interface{}{"id": campaigns.Admin.ID}
-	mustExec(ctx, t, s, deleteInput, &struct{}{}, `
+	apitest.MustExec(ctx, t, s, deleteInput, &struct{}{}, `
 		mutation($id: ID!){
 			deleteCampaign(campaign: $id) { alwaysNil }
 		}
@@ -642,7 +639,7 @@ func TestCampaigns(t *testing.T) {
 		}
 	}
 
-	mustExec(ctx, t, s, nil, &campaignsAfterDelete, `
+	apitest.MustExec(ctx, t, s, nil, &campaignsAfterDelete, `
 		query { campaigns { totalCount } }
 	`)
 
@@ -914,7 +911,7 @@ func TestCreatePatchSetFromPatchesResolver(t *testing.T) {
 
 		var response struct{ CreatePatchSetFromPatches PatchSet }
 
-		mustExec(ctx, t, s, nil, &response, fmt.Sprintf(`
+		apitest.MustExec(ctx, t, s, nil, &response, fmt.Sprintf(`
       mutation {
 		createPatchSetFromPatches(patches: [{repository: %q, baseRevision: "f00b4r", baseRef: "master", patch: %q}]) {
           ... on PatchSet {
@@ -1065,7 +1062,7 @@ func TestPatchSetResolver(t *testing.T) {
 		Node PatchSet
 	}
 
-	mustExec(ctx, t, s, nil, &response, fmt.Sprintf(`
+	apitest.MustExec(ctx, t, s, nil, &response, fmt.Sprintf(`
       query {
         node(id: %q) {
           ... on PatchSet {
@@ -1203,7 +1200,7 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 
 	// Start test
 	var createPatchSetResponse struct{ CreatePatchSetFromPatches PatchSet }
-	mustExec(ctx, t, s, nil, &createPatchSetResponse, fmt.Sprintf(`
+	apitest.MustExec(ctx, t, s, nil, &createPatchSetResponse, fmt.Sprintf(`
 		mutation {
 			createPatchSetFromPatches(patches: [{repository: %q, baseRevision: %q, baseRef: %q, patch: %q}]) {
 				... on PatchSet {
@@ -1229,7 +1226,7 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 		},
 	}
 
-	mustExec(ctx, t, s, input, &createCampaignResponse, `
+	apitest.MustExec(ctx, t, s, input, &createCampaignResponse, `
     fragment c on Campaign {
       id
       branch
@@ -1310,7 +1307,7 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 	}
 
 	var publishCampaignResponse struct{ PublishCampaign Campaign }
-	mustExec(ctx, t, s, nil, &publishCampaignResponse, fmt.Sprintf(`
+	apitest.MustExec(ctx, t, s, nil, &publishCampaignResponse, fmt.Sprintf(`
       mutation {
         publishCampaign(campaign: %q) {
           id
@@ -1422,7 +1419,7 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 		Node Campaign
 	}
 
-	mustExec(ctx, t, s, nil, &queryCampaignResponse, fmt.Sprintf(`
+	apitest.MustExec(ctx, t, s, nil, &queryCampaignResponse, fmt.Sprintf(`
 	    fragment c on Campaign {
 	      id
 	      status { state }
@@ -1478,64 +1475,6 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 	if have, want := campaign.DiffStat, changeset.Diff.FileDiffs.DiffStat; have != want {
 		t.Errorf("wrong campaign combined diffstat. want=%v, have=%v", want, have)
 	}
-}
-
-func mustExec(
-	ctx context.Context,
-	t testing.TB,
-	s *graphql.Schema,
-	in map[string]interface{},
-	out interface{},
-	query string,
-) {
-	t.Helper()
-	if errs := exec(ctx, t, s, in, out, query); len(errs) > 0 {
-		t.Fatalf("unexpected graphql query errors: %v", errs)
-	}
-}
-
-func exec(
-	ctx context.Context,
-	t testing.TB,
-	s *graphql.Schema,
-	in map[string]interface{},
-	out interface{},
-	query string,
-) []*gqlerrors.QueryError {
-	t.Helper()
-
-	query = strings.Replace(query, "\t", "  ", -1)
-
-	r := s.Exec(ctx, query, "", in)
-	if len(r.Errors) != 0 {
-		return r.Errors
-	}
-
-	_, disableLog := os.LookupEnv("NO_GRAPHQL_LOG")
-
-	if testing.Verbose() && !disableLog {
-		t.Logf("\n---- GraphQL Query ----\n%s\n\nVars: %s\n---- GraphQL Result ----\n%s\n -----------", query, toJSON(t, in), r.Data)
-	}
-
-	if err := json.Unmarshal(r.Data, out); err != nil {
-		t.Fatalf("failed to unmarshal graphql data: %v", err)
-	}
-
-	return nil
-}
-
-func toJSON(t testing.TB, v interface{}) string {
-	data, err := json.Marshal(v)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	formatted, err := jsonc.Format(string(data), nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	return formatted
 }
 
 func newGithubClientFactory(t testing.TB, name string) (*httpcli.Factory, func()) {
