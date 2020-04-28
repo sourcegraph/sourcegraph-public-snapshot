@@ -21,11 +21,11 @@ import (
 )
 
 const (
-	beginWorkMarker     = "<!-- BEGIN WORK -->"
-	endWorkMarker     = "<!-- END WORK -->"
-	labelMarkerRegexp = "<!-- LABEL: (.*) -->"
+	beginWorkMarker        = "<!-- BEGIN WORK -->"
+	endWorkMarker          = "<!-- END WORK -->"
+	labelMarkerRegexp      = "<!-- LABEL: (.*) -->"
 	beginAssigneeMarkerFmt = "<!-- BEGIN ASSIGNEE: %s -->"
-	endAssigneeMarker = "<!-- END ASSIGNEE -->"
+	endAssigneeMarker      = "<!-- END ASSIGNEE -->"
 )
 
 func main() {
@@ -197,7 +197,7 @@ func (wl *Workload) Markdown(labelWhitelist []string) string {
 		days = fmt.Sprintf(": __%.2fd__", wl.Days)
 	}
 
-	fmt.Fprintf(&b, "\n" + beginAssigneeMarkerFmt + "\n", wl.Assignee)
+	fmt.Fprintf(&b, "\n"+beginAssigneeMarkerFmt+"\n", wl.Assignee)
 	fmt.Fprintf(&b, "@%s%s\n\n", wl.Assignee, days)
 
 	for _, issue := range wl.Issues {
@@ -419,7 +419,6 @@ func (issue *Issue) RenderedLabels(labelWhitelist []string) string {
 	}
 	return b.String()
 }
-
 
 func (issue *Issue) Emojis() string {
 	categories := Categories(issue.Labels, issue.Repository, issue.Body)
