@@ -38,7 +38,7 @@ func TestDatabaseCacheEvictionWhileHeld(t *testing.T) {
 	// isOpenForLoop will call isOpen for the given database until it
 	// has closed or n-ms has elapsed. This is used to test whether or
 	// not a database handle has been closed by an LRU eviction.
-	isOpenLoop := func(db Database,n int) bool {
+	isOpenLoop := func(db Database, n int) bool {
 		for i := 0; i < n; i++ {
 			if isOpen(db) {
 				time.Sleep(time.Millisecond)
@@ -111,7 +111,7 @@ func TestDatabaseCacheEvictionWhileHeld(t *testing.T) {
 			}
 
 			// evicted database stays open while held
-			if !isOpenLoop(db1,250) {
+			if !isOpenLoop(db1, 250) {
 				return fmt.Errorf("db1 unexpectedly closed")
 			}
 			if !isOpen(db2) {
@@ -125,7 +125,7 @@ func TestDatabaseCacheEvictionWhileHeld(t *testing.T) {
 	}
 
 	// evicted database is eventually closed
-	if isOpenLoop(dbRef,250) {
+	if isOpenLoop(dbRef, 250) {
 		t.Fatalf("database remained unexpectedly open")
 	}
 }

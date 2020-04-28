@@ -18,7 +18,7 @@ func NewDefaultSerializer() Serializer {
 	return &defaultSerializer{}
 }
 
-func ( *defaultSerializer) MarshalDocumentData(d types.DocumentData) ([]byte, error) {
+func (*defaultSerializer) MarshalDocumentData(d types.DocumentData) ([]byte, error) {
 	rangePairs := []interface{}{}
 	for k, v := range d.Ranges {
 		if v.MonikerIDs == nil {
