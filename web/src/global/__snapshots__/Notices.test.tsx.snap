@@ -17,6 +17,7 @@ exports[`Notices shows notices for location 1`] = `
 ",
         }
       }
+      onClick={[Function]}
     />
   </div>
   <div
@@ -33,6 +34,7 @@ exports[`Notices shows notices for location 1`] = `
 ",
           }
         }
+        onClick={[Function]}
       />
     </div>
     <button

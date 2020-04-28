@@ -1,4 +1,4 @@
-import H from 'history'
+import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React, { useEffect, useCallback } from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -23,6 +23,7 @@ interface Props extends RouteComponentProps<{}>, ThemeProps {
      * authenticated user and this page is accessed at /subscriptions/new.
      */
     user: GQL.IUser | null
+    history: H.History
 }
 
 const LOADING = 'loading' as const
@@ -97,6 +98,7 @@ export const UserSubscriptionsNewProductSubscriptionPage: React.FunctionComponen
                         </Link>
                     </small>
                 }
+                history={history}
             />
         </div>
     )

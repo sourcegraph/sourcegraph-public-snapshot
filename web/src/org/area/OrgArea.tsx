@@ -21,6 +21,7 @@ import { OrgInvitationPage } from './OrgInvitationPage'
 import { PatternTypeProps } from '../../search'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { ErrorMessage } from '../../components/alerts'
+import * as H from 'history'
 
 function queryOrganization(args: { name: string }): Observable<GQL.IOrg> {
     return queryGraphQL(
@@ -81,6 +82,7 @@ interface Props
      * The currently authenticated user.
      */
     authenticatedUser: GQL.IUser | null
+    history: H.History
 }
 
 interface State {
@@ -169,7 +171,7 @@ export class OrgArea extends React.Component<Props> {
                 <HeroPage
                     icon={AlertCircleIcon}
                     title="Error"
-                    subtitle={<ErrorMessage error={this.state.orgOrError} />}
+                    subtitle={<ErrorMessage error={this.state.orgOrError} history={this.props.history} />}
                 />
             )
         }
@@ -188,7 +190,13 @@ export class OrgArea extends React.Component<Props> {
 
         if (this.props.location.pathname === `${this.props.match.url}/invitation`) {
             // The OrgInvitationPage is displayed without the OrgHeader because it is modal-like.
-            return <OrgInvitationPage {...context} onDidRespondToInvitation={this.onDidRespondToInvitation} />
+            return (
+                <OrgInvitationPage
+                    {...context}
+                    onDidRespondToInvitation={this.onDidRespondToInvitation}
+                    history={this.props.history}
+                />
+            )
         }
 
         return (

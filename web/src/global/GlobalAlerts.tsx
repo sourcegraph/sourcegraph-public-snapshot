@@ -16,6 +16,7 @@ import { NeedsRepositoryConfigurationAlert } from '../site/NeedsRepositoryConfig
 import { UpdateAvailableAlert } from '../site/UpdateAvailableAlert'
 import { GlobalAlert } from './GlobalAlert'
 import { Notices } from './Notices'
+import * as H from 'history'
 
 // This module is not in @types/semver yet. We can't use the top-level semver module because it uses
 // dynamic requires, which Webpack complains about.
@@ -25,6 +26,7 @@ import { Notices } from './Notices'
 import semverParse from 'semver/functions/parse'
 
 interface Props extends SettingsCascadeProps {
+    history: H.History
     isSiteAdmin: boolean
 }
 
@@ -82,7 +84,12 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
                         {/* Only show if the user has already added repositories; if not yet, the user wouldn't experience any Docker for Mac perf issues anyway. */}
                         {window.context.likelyDockerOnMac && <DockerForMacAlert className="global-alerts__alert" />}
                         {this.state.siteFlags.alerts.map((alert, i) => (
-                            <GlobalAlert key={i} alert={alert} className="global-alerts__alert" />
+                            <GlobalAlert
+                                key={i}
+                                alert={alert}
+                                className="global-alerts__alert"
+                                history={this.props.history}
+                            />
                         ))}
                         {this.state.siteFlags.productSubscription.license &&
                             (() => {
@@ -108,13 +115,14 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
                             partialStorageKey={`motd.${m}`}
                             className="alert alert-info global-alerts__alert"
                         >
-                            <Markdown dangerousInnerHTML={renderMarkdown(m)} />
+                            <Markdown dangerousInnerHTML={renderMarkdown(m)} history={this.props.history} />
                         </DismissibleAlert>
                     ))}
                 <Notices
                     alertClassName="global-alerts__alert"
                     location="top"
                     settingsCascade={this.props.settingsCascade}
+                    history={this.props.history}
                 />
             </div>
         )

@@ -199,7 +199,11 @@ export class UserSettingsCreateAccessTokenPage extends React.PureComponent<Props
                     </Link>
                 </Form>
                 {isErrorLike(this.state.creationOrError) && (
-                    <ErrorAlert className="invite-form__alert" error={this.state.creationOrError} />
+                    <ErrorAlert
+                        className="invite-form__alert"
+                        error={this.state.creationOrError}
+                        history={this.props.history}
+                    />
                 )}
             </div>
         )

@@ -13,32 +13,26 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 // NewService returns a Service.
-func NewService(store *Store, git GitserverClient, cf *httpcli.Factory) *Service {
-	return NewServiceWithClock(store, git, cf, store.Clock())
+func NewService(store *Store, cf *httpcli.Factory) *Service {
+	return NewServiceWithClock(store, cf, store.Clock())
 }
 
 // NewServiceWithClock returns a Service the given clock used
 // to generate timestamps.
-func NewServiceWithClock(store *Store, git GitserverClient, cf *httpcli.Factory, clock func() time.Time) *Service {
-	svc := &Service{store: store, git: git, cf: cf, clock: clock}
+func NewServiceWithClock(store *Store, cf *httpcli.Factory, clock func() time.Time) *Service {
+	svc := &Service{store: store, cf: cf, clock: clock}
 
 	return svc
 }
 
-type GitserverClient interface {
-	CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (string, error)
-}
-
 type Service struct {
 	store *Store
-	git   GitserverClient
 	cf    *httpcli.Factory
 
 	clock func() time.Time

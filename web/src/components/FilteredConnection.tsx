@@ -770,7 +770,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                     <div className="alert alert-danger filtered-connection__error">
                         {errors.map((error, i) => (
                             <React.Fragment key={i}>
-                                <ErrorMessage error={error} />
+                                <ErrorMessage error={error} history={this.props.history} />
                             </React.Fragment>
                         ))}
                     </div>

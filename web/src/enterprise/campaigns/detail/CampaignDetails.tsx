@@ -66,6 +66,7 @@ interface Campaign
     changesets: Pick<GQL.ICampaign['changesets'], 'nodes' | 'totalCount'>
     patches: Pick<GQL.ICampaign['patches'], 'nodes' | 'totalCount'>
     status: Pick<GQL.ICampaign['status'], 'completedCount' | 'pendingCount' | 'errors' | 'state'>
+    diffStat: Pick<GQL.ICampaign['diffStat'], 'added' | 'deleted' | 'changed'>
 }
 
 interface PatchSet extends Pick<GQL.IPatchSet, '__typename' | 'id'> {
@@ -404,9 +405,9 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                 onDelete={onDelete}
                 formID={campaignFormID}
             />
-            {alertError && <ErrorAlert error={alertError} />}
+            {alertError && <ErrorAlert error={alertError} history={history} />}
             {campaign && !patchSet && !['saving', 'editing'].includes(mode) && (
-                <CampaignStatus campaign={campaign} onPublish={onPublish} afterRetry={afterRetry} />
+                <CampaignStatus campaign={campaign} onPublish={onPublish} afterRetry={afterRetry} history={history} />
             )}
             <Form id={campaignFormID} onSubmit={onSubmit} onReset={onCancel} className="e2e-campaign-form">
                 {['saving', 'editing'].includes(mode) && (
@@ -549,6 +550,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                 <div className="card-body">
                                     <Markdown
                                         dangerousInnerHTML={renderMarkdown(campaign.description || '_No description_')}
+                                        history={history}
                                     />
                                 </div>
                             </div>
@@ -570,7 +572,11 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
                                             Add a changeset to get started.
                                         </div>
                                     )}
-                                    <AddChangesetForm campaignID={campaign.id} onAdd={onAddChangeset} />
+                                    <AddChangesetForm
+                                        campaignID={campaign.id}
+                                        onAdd={onAddChangeset}
+                                        history={history}
+                                    />
                                 </>
                             )}
                         </>

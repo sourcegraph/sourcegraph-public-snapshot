@@ -20,6 +20,7 @@ import { RepositoryCompareCommitsPage } from './RepositoryCompareCommitsPage'
 import { RepositoryCompareDiffPage } from './RepositoryCompareDiffPage'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { ErrorAlert } from '../../components/alerts'
+import * as H from 'history'
 
 function queryRepositoryComparison(args: {
     repo: GQL.ID
@@ -86,6 +87,7 @@ interface Props
     /** The head of the comparison. */
     head: { repoName: string; repoID: GQL.ID; rev?: string | null }
     hoverifier: Hoverifier<RepoSpec & RevSpec & FileSpec & ResolvedRevSpec, HoverMerged, ActionItemAction>
+    history: H.History
 }
 
 interface State {
@@ -151,7 +153,7 @@ export class RepositoryCompareOverviewPage extends React.PureComponent<Props, St
                 ) : this.state.rangeOrError === undefined ? (
                     <LoadingSpinner className="icon-inline" />
                 ) : isErrorLike(this.state.rangeOrError) ? (
-                    <ErrorAlert className="mt-2" error={this.state.rangeOrError} />
+                    <ErrorAlert className="mt-2" error={this.state.rangeOrError} history={this.props.history} />
                 ) : (
                     <>
                         <RepositoryCompareCommitsPage {...this.props} />

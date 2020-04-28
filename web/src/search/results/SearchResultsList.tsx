@@ -345,6 +345,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                             className="m-2"
                             data-testid="search-results-list-error"
                             error={this.props.resultsOrError}
+                            history={this.props.history}
                         />
                     ) : (
                         (() => {
@@ -520,7 +521,14 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                     />
                 )
         }
-        return <SearchResult key={result.url} result={result} isLightTheme={this.props.isLightTheme} />
+        return (
+            <SearchResult
+                key={result.url}
+                result={result}
+                isLightTheme={this.props.isLightTheme}
+                history={this.props.history}
+            />
+        )
     }
 
     /** onBottomHit increments the amount of results to be shown when we have scrolled to the bottom of the list. */

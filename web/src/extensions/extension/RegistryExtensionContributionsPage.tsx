@@ -10,8 +10,11 @@ import { ExtensionNoManifestAlert } from './RegistryExtensionManifestPage'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { ErrorAlert } from '../../components/alerts'
 import { hasProperty } from '../../../../shared/src/util/types'
+import * as H from 'history'
 
-interface Props extends ExtensionAreaRouteContext, RouteComponentProps<{}>, ThemeProps {}
+interface Props extends ExtensionAreaRouteContext, RouteComponentProps<{}>, ThemeProps {
+    history: H.History
+}
 
 interface ContributionGroup {
     title: string
@@ -20,8 +23,9 @@ interface ContributionGroup {
     rows: (React.ReactFragment | null)[][]
 }
 
-const ContributionsTable: React.FunctionComponent<{ contributionGroups: ContributionGroup[] }> = ({
+const ContributionsTable: React.FunctionComponent<{ contributionGroups: ContributionGroup[]; history: H.History }> = ({
     contributionGroups,
+    history,
 }) => (
     <div>
         {contributionGroups.length === 0 && (
@@ -34,7 +38,7 @@ const ContributionsTable: React.FunctionComponent<{ contributionGroups: Contribu
                         <h3>
                             {group.title} ({group.rows.length})
                         </h3>
-                        {group.error && <ErrorAlert className="mt-1" error={group.error} />}
+                        {group.error && <ErrorAlert className="mt-1" error={group.error} history={history} />}
                         <table className="table mb-5">
                             <thead>
                                 <tr>
@@ -155,9 +159,16 @@ export class RegistryExtensionContributionsPage extends React.PureComponent<Prop
                     {this.props.extension.manifest === null ? (
                         <ExtensionNoManifestAlert extension={this.props.extension} />
                     ) : isErrorLike(this.props.extension.manifest) ? (
-                        <ErrorAlert error={this.props.extension.manifest} prefix="Error parsing extension manifest" />
+                        <ErrorAlert
+                            error={this.props.extension.manifest}
+                            prefix="Error parsing extension manifest"
+                            history={this.props.history}
+                        />
                     ) : (
-                        <ContributionsTable contributionGroups={toContributionsGroups(this.props.extension.manifest)} />
+                        <ContributionsTable
+                            contributionGroups={toContributionsGroups(this.props.extension.manifest)}
+                            history={this.props.history}
+                        />
                     )}
                 </div>
             </div>

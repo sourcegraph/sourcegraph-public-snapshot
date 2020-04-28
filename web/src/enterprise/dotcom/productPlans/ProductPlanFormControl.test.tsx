@@ -3,6 +3,7 @@ import * as GQL from '../../../../../shared/src/graphql/schema'
 import renderer, { act } from 'react-test-renderer'
 import { ProductPlanFormControl } from './ProductPlanFormControl'
 import { of } from 'rxjs'
+import { createMemoryHistory } from 'history'
 
 jest.mock('./ProductPlanPrice', () => ({
     ProductPlanPrice: 'ProductPlanPrice',
@@ -44,6 +45,7 @@ describe('ProductPlanFormControl', () => {
                         },
                     ])
                 }
+                history={createMemoryHistory()}
             />
         )
         act(() => undefined)

@@ -9,35 +9,10 @@ describe('CampaignDiffStat', () => {
                 <CampaignDiffStat
                     campaign={{
                         __typename: 'Campaign' as const,
-                        changesets: {
-                            nodes: [
-                                {
-                                    diff: {
-                                        fileDiffs: {
-                                            diffStat: {
-                                                added: 10,
-                                                changed: 10,
-                                                deleted: 10,
-                                            },
-                                        },
-                                    },
-                                },
-                            ],
-                        },
-                        patches: {
-                            nodes: [
-                                {
-                                    diff: {
-                                        fileDiffs: {
-                                            diffStat: {
-                                                added: 10,
-                                                changed: 10,
-                                                deleted: 10,
-                                            },
-                                        },
-                                    },
-                                },
-                            ],
+                        diffStat: {
+                            added: 888,
+                            deleted: 777,
+                            changed: 999,
                         },
                     }}
                     className="abc"
@@ -50,35 +25,10 @@ describe('CampaignDiffStat', () => {
                 <CampaignDiffStat
                     campaign={{
                         __typename: 'Campaign' as const,
-                        changesets: {
-                            nodes: [
-                                {
-                                    diff: {
-                                        fileDiffs: {
-                                            diffStat: {
-                                                added: 0,
-                                                changed: 0,
-                                                deleted: 0,
-                                            },
-                                        },
-                                    },
-                                },
-                            ],
-                        },
-                        patches: {
-                            nodes: [
-                                {
-                                    diff: {
-                                        fileDiffs: {
-                                            diffStat: {
-                                                added: 0,
-                                                changed: 0,
-                                                deleted: 0,
-                                            },
-                                        },
-                                    },
-                                },
-                            ],
+                        diffStat: {
+                            added: 0,
+                            deleted: 0,
+                            changed: 0,
                         },
                     }}
                     className="abc"
@@ -97,9 +47,9 @@ describe('CampaignDiffStat', () => {
                                     diff: {
                                         fileDiffs: {
                                             diffStat: {
-                                                added: 10,
-                                                changed: 10,
-                                                deleted: 10,
+                                                added: 888,
+                                                changed: 777,
+                                                deleted: 999,
                                             },
                                         },
                                     },

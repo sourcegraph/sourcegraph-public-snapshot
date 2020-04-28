@@ -9,14 +9,11 @@ import * as GQL from '../../../../../shared/src/graphql/schema'
 import { createAggregateError } from '../../../../../shared/src/util/errors'
 import { queryGraphQL } from '../../../backend/graphql'
 import { PageTitle } from '../../../components/PageTitle'
-import {
-    accessTokenFragment,
-    AccessTokenNode,
-    AccessTokenNodeProps,
-    FilteredAccessTokenConnection,
-} from '../../../settings/tokens/AccessTokenNode'
+import { accessTokenFragment, AccessTokenNode, AccessTokenNodeProps } from '../../../settings/tokens/AccessTokenNode'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { UserAreaRouteContext } from '../../area/UserArea'
+import { FilteredConnection } from '../../../components/FilteredConnection'
+import * as H from 'history'
 
 interface Props extends UserAreaRouteContext, RouteComponentProps<{}> {
     /**
@@ -30,6 +27,7 @@ interface Props extends UserAreaRouteContext, RouteComponentProps<{}> {
      * from all state (and not displayed to the user anymore).
      */
     onDidPresentNewToken: () => void
+    history: H.History
 }
 
 interface State {}
@@ -59,9 +57,10 @@ export class UserSettingsTokensPage extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        const nodeProps: Pick<AccessTokenNodeProps, 'onDidUpdate' | 'newToken'> = {
+        const nodeProps: Omit<AccessTokenNodeProps, 'node'> = {
             onDidUpdate: this.onDidUpdateAccessToken,
             newToken: this.props.newToken,
+            history: this.props.history,
         }
 
         return (
@@ -74,7 +73,7 @@ export class UserSettingsTokensPage extends React.PureComponent<Props, State> {
                     </Link>
                 </div>
                 <p>Access tokens may be used to access the Sourcegraph API.</p>
-                <FilteredAccessTokenConnection
+                <FilteredConnection<GQL.IAccessToken, Omit<AccessTokenNodeProps, 'node'>>
                     listClassName="list-group list-group-flush"
                     noun="access token"
                     pluralNoun="access tokens"
