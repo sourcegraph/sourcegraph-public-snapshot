@@ -23,6 +23,7 @@ import { asError, isErrorLike } from '../../../shared/src/util/errors'
 import { useObservable } from '../../../shared/src/util/useObservable'
 import { Markdown } from '../../../shared/src/components/Markdown'
 import { pluralize } from '../../../shared/src/util/strings'
+import * as H from 'history'
 
 const ScopeNotFound: React.FunctionComponent = () => (
     <HeroPage
@@ -45,6 +46,7 @@ interface Props
         CaseSensitivityProps {
     authenticatedUser: GQL.IUser | null
     onNavbarQueryChange: (queryState: QueryState) => void
+    history: H.History
 }
 
 /**
@@ -107,7 +109,9 @@ export const ScopePage: React.FunctionComponent<Props> = ({ settingsCascade, onN
             <PageTitle title={searchScope.name} />
             <header>
                 <h1>{searchScope.name}</h1>
-                {searchScope.description && <Markdown dangerousInnerHTML={renderMarkdown(searchScope.description)} />}
+                {searchScope.description && (
+                    <Markdown dangerousInnerHTML={renderMarkdown(searchScope.description)} history={props.history} />
+                )}
             </header>
             <section className="mb-5">
                 <Form className="d-flex" onSubmit={onSubmit}>
@@ -131,7 +135,7 @@ export const ScopePage: React.FunctionComponent<Props> = ({ settingsCascade, onN
             </section>
 
             {isErrorLike(scopeRepositories) ? (
-                <ErrorAlert error={scopeRepositories} />
+                <ErrorAlert error={scopeRepositories} history={props.history} />
             ) : (
                 scopeRepositories &&
                 (scopeRepositories.length > 0 ? (

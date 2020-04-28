@@ -9,6 +9,7 @@ import { changesetStateIcons, changesetStatusColorClasses } from '../detail/chan
 import formatDistance from 'date-fns/formatDistance'
 import parseISO from 'date-fns/parseISO'
 import { DraftBadge } from '../DraftBadge'
+import * as H from 'history'
 
 export type CampaignNodeCampaign = Pick<
     GQL.ICampaign,
@@ -30,12 +31,18 @@ export interface CampaignNodeProps {
     }
     /** Used for testing purposes. Sets the current date */
     now?: Date
+    history: H.History
 }
 
 /**
  * An item in the list of campaigns.
  */
-export const CampaignNode: React.FunctionComponent<CampaignNodeProps> = ({ node, selection, now = new Date() }) => {
+export const CampaignNode: React.FunctionComponent<CampaignNodeProps> = ({
+    node,
+    selection,
+    history,
+    now = new Date(),
+}) => {
     const campaignIconClass = node.closedAt ? 'text-danger' : 'text-success'
     const OpenChangesetIcon = changesetStateIcons[GQL.ChangesetState.OPEN]
     const MergedChangesetIcon = changesetStateIcons[GQL.ChangesetState.MERGED]
@@ -63,6 +70,7 @@ export const CampaignNode: React.FunctionComponent<CampaignNodeProps> = ({ node,
                         dangerousInnerHTML={
                             node.description ? renderMarkdown(node.description, { plainText: true }) : 'No description'
                         }
+                        history={history}
                     />
                 </div>
                 <div data-tooltip="Open changesets">

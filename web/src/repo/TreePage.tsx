@@ -252,7 +252,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                     <LoadingSpinner className="icon-inline tree-page__entries-loader" /> Loading files and directories
                 </div>
             ) : isErrorLike(treeOrError) ? (
-                <ErrorAlert error={treeOrError} />
+                <ErrorAlert error={treeOrError} history={props.history} />
             ) : (
                 <>
                     {treeOrError.isRoot ? (

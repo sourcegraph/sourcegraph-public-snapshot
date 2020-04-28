@@ -622,6 +622,9 @@ type Campaign implements Node {
     # Campaign.status increments with every Patch turned into an
     # ExternalChangeset.
     patches(first: Int): PatchConnection!
+
+    # The diff stat for all the patches and changesets in the Campaign.
+    diffStat: DiffStat!
 }
 
 # The counts of changesets in certain states at a specific point in time.
@@ -1619,10 +1622,8 @@ type SavedSearch implements Node {
     notify: Boolean!
     # Whether or not to notify on Slack.
     notifySlack: Boolean!
-    # The user ID of the owner if the owner is a user.
-    userID: ID
-    # The organization ID of the owner if the owner is an org.
-    orgID: ID
+    # The user or org that owns this saved search.
+    namespace: Namespace!
     # The Slack webhook URL associated with this saved search, if any.
     slackWebhookURL: String
 }

@@ -7,6 +7,7 @@ import { retryCampaign } from './backend'
 import { asError, isErrorLike } from '../../../../../shared/src/util/errors'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import ErrorIcon from 'mdi-react/ErrorIcon'
+import * as H from 'history'
 
 export interface CampaignStatusProps {
     campaign: Pick<GQL.ICampaign, 'id' | 'closedAt' | 'viewerCanAdminister' | 'publishedAt'> & {
@@ -18,6 +19,7 @@ export interface CampaignStatusProps {
     onPublish: () => void
     /** Called when the "Retry failed jobs" button is clicked. */
     afterRetry: (updatedCampaign: GQL.ICampaign) => void
+    history: H.History
 }
 
 type CampaignState = 'closed' | 'errored' | 'processing' | 'completed'
@@ -25,7 +27,12 @@ type CampaignState = 'closed' | 'errored' | 'processing' | 'completed'
 /**
  * The status of a campaign's jobs, plus its closed state and errors.
  */
-export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({ campaign, onPublish, afterRetry }) => {
+export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({
+    campaign,
+    onPublish,
+    afterRetry,
+    history,
+}) => {
     const { status } = campaign
 
     const progress = (status.completedCount / (status.pendingCount + status.completedCount)) * 100
@@ -47,7 +54,7 @@ export const CampaignStatus: React.FunctionComponent<CampaignStatusProps> = ({ c
             {status.errors.map((error, i) => (
                 <li className="mb-2" key={i}>
                     <p className="mb-0">
-                        <ErrorMessage error={error} />
+                        <ErrorMessage error={error} history={history} />
                     </p>
                 </li>
             ))}

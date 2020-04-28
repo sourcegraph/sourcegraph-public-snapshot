@@ -14,6 +14,7 @@ import { NamespaceProps } from '../namespaces'
 import { deleteSavedSearch, fetchSavedSearches } from '../search/backend'
 import { PatternTypeProps } from '../search'
 import { ErrorAlert } from '../components/alerts'
+import * as H from 'history'
 
 interface NodeProps extends RouteComponentProps, Omit<PatternTypeProps, 'setPatternType'> {
     savedSearch: GQL.ISavedSearch
@@ -102,7 +103,9 @@ interface State {
     savedSearchesOrError?: GQL.ISavedSearch[] | ErrorLike
 }
 
-interface Props extends RouteComponentProps<{}>, NamespaceProps, Omit<PatternTypeProps, 'setPatternType'> {}
+interface Props extends RouteComponentProps<{}>, NamespaceProps, Omit<PatternTypeProps, 'setPatternType'> {
+    history: H.History
+}
 
 export class SavedSearchListPage extends React.Component<Props, State> {
     public subscriptions = new Subscription()
@@ -147,18 +150,14 @@ export class SavedSearchListPage extends React.Component<Props, State> {
                     </div>
                 </div>
                 {this.state.savedSearchesOrError && isErrorLike(this.state.savedSearchesOrError) && (
-                    <ErrorAlert className="mb-3" error={this.state.savedSearchesOrError} />
+                    <ErrorAlert className="mb-3" error={this.state.savedSearchesOrError} history={this.props.history} />
                 )}
                 <div className="list-group list-group-flush">
                     {this.state.savedSearchesOrError &&
                         !isErrorLike(this.state.savedSearchesOrError) &&
                         this.state.savedSearchesOrError.length > 0 &&
                         this.state.savedSearchesOrError
-                            .filter(
-                                search =>
-                                    search.orgID === this.props.namespace.id ||
-                                    search.userID === this.props.namespace.id
-                            )
+                            .filter(search => this.props.namespace.id === search.namespace.id)
                             .map(search => (
                                 <SavedSearchNode
                                     key={search.id}

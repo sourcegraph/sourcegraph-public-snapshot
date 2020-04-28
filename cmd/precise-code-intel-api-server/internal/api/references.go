@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bloomfilter"
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
@@ -336,7 +337,7 @@ func (s *ReferencePageResolver) resolveLocationsViaReferencePager(ctx context.Co
 func applyBloomFilter(packageReferences []types.PackageReference, identifier string, limit int) ([]types.PackageReference, int) {
 	var filteredReferences []types.PackageReference
 	for i, ref := range packageReferences {
-		test, err := decodeAndTestFilter([]byte(ref.Filter), identifier)
+		test, err := bloomfilter.DecodeAndTestFilter([]byte(ref.Filter), identifier)
 		if err != nil || !test {
 			continue
 		}

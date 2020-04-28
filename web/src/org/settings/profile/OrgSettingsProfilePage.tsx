@@ -10,8 +10,11 @@ import { eventLogger } from '../../../tracking/eventLogger'
 import { OrgAreaPageProps } from '../../area/OrgArea'
 import { updateOrganization } from '../../backend'
 import { ErrorAlert } from '../../../components/alerts'
+import * as H from 'history'
 
-interface Props extends OrgAreaPageProps, RouteComponentProps<{}> {}
+interface Props extends OrgAreaPageProps, RouteComponentProps<{}> {
+    history: H.History
+}
 
 interface State {
     displayName: string
@@ -119,7 +122,7 @@ export class OrgSettingsProfilePage extends React.PureComponent<Props, State> {
                     >
                         <small>Updated!</small>
                     </div>
-                    {this.state.error && <ErrorAlert error={this.state.error} />}
+                    {this.state.error && <ErrorAlert error={this.state.error} history={this.props.history} />}
                 </Form>
             </div>
         )

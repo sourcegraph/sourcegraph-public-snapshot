@@ -17,12 +17,14 @@ import { fetchRepository } from './backend'
 import { ActionContainer, BaseActionContainer } from './components/ActionContainer'
 import { ErrorAlert } from '../../components/alerts'
 import { asError } from '../../../../shared/src/util/errors'
+import * as H from 'history'
 
 interface UpdateMirrorRepositoryActionContainerProps {
     repo: GQL.IRepository
     onDidUpdateRepository: () => void
     disabled: boolean
     disabledReason: string | undefined
+    history: H.History
 }
 
 class UpdateMirrorRepositoryActionContainer extends React.PureComponent<UpdateMirrorRepositoryActionContainerProps> {
@@ -112,6 +114,7 @@ class UpdateMirrorRepositoryActionContainer extends React.PureComponent<UpdateMi
                 flashText="Added to queue"
                 info={info}
                 run={this.updateMirrorRepository}
+                history={this.props.history}
             />
         )
     }
@@ -125,6 +128,7 @@ class UpdateMirrorRepositoryActionContainer extends React.PureComponent<UpdateMi
 interface CheckMirrorRepositoryConnectionActionContainerProps {
     repo: GQL.IRepository
     onDidUpdateReachability: (reachable: boolean | undefined) => void
+    history: H.History
 }
 
 interface CheckMirrorRepositoryConnectionActionContainerState {
@@ -199,7 +203,11 @@ class CheckMirrorRepositoryConnectionActionContainer extends React.PureComponent
                 details={
                     <>
                         {this.state.errorDescription && (
-                            <ErrorAlert className="action-container__alert" error={this.state.errorDescription} />
+                            <ErrorAlert
+                                className="action-container__alert"
+                                error={this.state.errorDescription}
+                                history={this.props.history}
+                            />
                         )}
                         {this.state.loading && (
                             <div className="alert alert-primary action-container__alert">
@@ -233,6 +241,7 @@ class CheckMirrorRepositoryConnectionActionContainer extends React.PureComponent
 interface Props extends RouteComponentProps<{}> {
     repo: GQL.IRepository
     onDidUpdateRepository: (update: Partial<GQL.IRepository>) => void
+    history: H.History
 }
 
 interface State {
@@ -287,7 +296,7 @@ export class RepoSettingsMirrorPage extends React.PureComponent<Props, State> {
                 <PageTitle title="Mirror settings" />
                 <h2>Mirroring and cloning</h2>
                 {this.state.loading && <LoadingSpinner className="icon-inline" />}
-                {this.state.error && <ErrorAlert error={this.state.error} />}
+                {this.state.error && <ErrorAlert error={this.state.error} history={this.props.history} />}
                 <div className="form-group">
                     <label>
                         Remote repository URL{' '}
@@ -314,10 +323,12 @@ export class RepoSettingsMirrorPage extends React.PureComponent<Props, State> {
                     disabledReason={
                         typeof this.state.reachable === 'boolean' && !this.state.reachable ? 'Not reachable' : undefined
                     }
+                    history={this.props.history}
                 />
                 <CheckMirrorRepositoryConnectionActionContainer
                     repo={this.state.repo}
                     onDidUpdateReachability={this.onDidUpdateReachability}
+                    history={this.props.history}
                 />
                 {typeof this.state.reachable === 'boolean' && !this.state.reachable && (
                     <div className="alert alert-info repo-settings-mirror-page__troubleshooting">

@@ -3,6 +3,7 @@ import renderer from 'react-test-renderer'
 import { of, Observable } from 'rxjs'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { StatusMessagesNavItem } from './StatusMessagesNavItem'
+import { createMemoryHistory } from 'history'
 
 jest.mock('mdi-react/CloudAlertIcon', () => 'CloudAlertIcon')
 jest.mock('mdi-react/CloudCheckIcon', () => 'CloudCheckIcon')
@@ -12,7 +13,15 @@ describe('StatusMessagesNavItem', () => {
     test('no messages', () => {
         const fetchMessages = (): Observable<GQL.StatusMessage[]> => of([])
         expect(
-            renderer.create(<StatusMessagesNavItem fetchMessages={fetchMessages} isSiteAdmin={false} />).toJSON()
+            renderer
+                .create(
+                    <StatusMessagesNavItem
+                        fetchMessages={fetchMessages}
+                        isSiteAdmin={false}
+                        history={createMemoryHistory()}
+                    />
+                )
+                .toJSON()
         ).toMatchSnapshot()
     })
 
@@ -25,13 +34,29 @@ describe('StatusMessagesNavItem', () => {
         const fetchMessages = (): Observable<GQL.StatusMessage[]> => of([message])
         test('as non-site admin', () => {
             expect(
-                renderer.create(<StatusMessagesNavItem fetchMessages={fetchMessages} isSiteAdmin={false} />).toJSON()
+                renderer
+                    .create(
+                        <StatusMessagesNavItem
+                            fetchMessages={fetchMessages}
+                            isSiteAdmin={false}
+                            history={createMemoryHistory()}
+                        />
+                    )
+                    .toJSON()
             ).toMatchSnapshot()
         })
 
         test('as site admin', () => {
             expect(
-                renderer.create(<StatusMessagesNavItem fetchMessages={fetchMessages} isSiteAdmin={true} />).toJSON()
+                renderer
+                    .create(
+                        <StatusMessagesNavItem
+                            fetchMessages={fetchMessages}
+                            isSiteAdmin={true}
+                            history={createMemoryHistory()}
+                        />
+                    )
+                    .toJSON()
             ).toMatchSnapshot()
         })
     })
@@ -55,13 +80,29 @@ describe('StatusMessagesNavItem', () => {
         const fetchMessages = () => of([message])
         test('as non-site admin', () => {
             expect(
-                renderer.create(<StatusMessagesNavItem fetchMessages={fetchMessages} isSiteAdmin={false} />).toJSON()
+                renderer
+                    .create(
+                        <StatusMessagesNavItem
+                            fetchMessages={fetchMessages}
+                            isSiteAdmin={false}
+                            history={createMemoryHistory()}
+                        />
+                    )
+                    .toJSON()
             ).toMatchSnapshot()
         })
 
         test('as site admin', () => {
             expect(
-                renderer.create(<StatusMessagesNavItem fetchMessages={fetchMessages} isSiteAdmin={true} />).toJSON()
+                renderer
+                    .create(
+                        <StatusMessagesNavItem
+                            fetchMessages={fetchMessages}
+                            isSiteAdmin={true}
+                            history={createMemoryHistory()}
+                        />
+                    )
+                    .toJSON()
             ).toMatchSnapshot()
         })
     })
@@ -75,13 +116,29 @@ describe('StatusMessagesNavItem', () => {
         const fetchMessages = () => of([message])
         test('as non-site admin', () => {
             expect(
-                renderer.create(<StatusMessagesNavItem fetchMessages={fetchMessages} isSiteAdmin={false} />).toJSON()
+                renderer
+                    .create(
+                        <StatusMessagesNavItem
+                            fetchMessages={fetchMessages}
+                            isSiteAdmin={false}
+                            history={createMemoryHistory()}
+                        />
+                    )
+                    .toJSON()
             ).toMatchSnapshot()
         })
 
         test('as site admin', () => {
             expect(
-                renderer.create(<StatusMessagesNavItem fetchMessages={fetchMessages} isSiteAdmin={true} />).toJSON()
+                renderer
+                    .create(
+                        <StatusMessagesNavItem
+                            fetchMessages={fetchMessages}
+                            isSiteAdmin={true}
+                            history={createMemoryHistory()}
+                        />
+                    )
+                    .toJSON()
             ).toMatchSnapshot()
         })
     })

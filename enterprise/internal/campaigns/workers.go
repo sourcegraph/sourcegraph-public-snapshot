@@ -27,6 +27,10 @@ var maxWorkers = env.Get("CAMPAIGNS_MAX_WORKERS", "8", "maximum number of reposi
 
 const defaultWorkerCount = 8
 
+type GitserverClient interface {
+	CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (string, error)
+}
+
 // RunWorkers should be executed in a background goroutine and is responsible
 // for finding pending ChangesetJobs and executing them.
 // ctx should be canceled to terminate the function.

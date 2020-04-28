@@ -193,7 +193,7 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
                 <HeroPage
                     icon={AlertCircleIcon}
                     title="Error"
-                    subtitle={<ErrorMessage error={this.state.userOrError} />}
+                    subtitle={<ErrorMessage error={this.state.userOrError} history={this.props.history} />}
                 />
             )
         }

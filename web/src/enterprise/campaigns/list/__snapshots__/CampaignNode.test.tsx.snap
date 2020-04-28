@@ -46,6 +46,7 @@ and renders in markdown
 ",
           }
         }
+        onClick={[Function]}
       />
     </div>
     <div
@@ -139,6 +140,7 @@ and renders in markdown
 ",
           }
         }
+        onClick={[Function]}
       />
     </div>
     <div
@@ -221,6 +223,7 @@ exports[`CampaignNode campaign without description 1`] = `
             "__html": "No description",
           }
         }
+        onClick={[Function]}
       />
     </div>
     <div
@@ -307,6 +310,7 @@ and renders in markdown
 ",
           }
         }
+        onClick={[Function]}
       />
     </div>
     <div
@@ -398,6 +402,7 @@ and renders in markdown
 ",
           }
         }
+        onClick={[Function]}
       />
     </div>
     <div
@@ -484,6 +489,7 @@ and renders in markdown
 ",
           }
         }
+        onClick={[Function]}
       />
     </div>
     <div
@@ -575,6 +581,7 @@ and renders in markdown
 ",
           }
         }
+        onClick={[Function]}
       />
     </div>
     <div

@@ -269,7 +269,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
                     <HeroPage
                         icon={AlertCircleIcon}
                         title="Error"
-                        subtitle={<ErrorMessage error={this.state.blobOrError} />}
+                        subtitle={<ErrorMessage error={this.state.blobOrError} history={this.props.history} />}
                     />
                 </>
             )
@@ -298,7 +298,11 @@ export class BlobPage extends React.PureComponent<Props, State> {
                     />
                 )}
                 {this.state.blobOrError.richHTML && renderMode === 'rendered' && (
-                    <RenderedFile dangerousInnerHTML={this.state.blobOrError.richHTML} location={this.props.location} />
+                    <RenderedFile
+                        dangerousInnerHTML={this.state.blobOrError.richHTML}
+                        location={this.props.location}
+                        history={this.props.history}
+                    />
                 )}
                 {!this.state.blobOrError.richHTML && this.state.blobOrError.highlight.aborted && (
                     <div className="blob-page__aborted">

@@ -52,7 +52,7 @@ export class ExtensionViewsExploreSection extends React.PureComponent<Props, Sta
                     <div key={i} className="mt-5">
                         <h2>{view.title}</h2>
                         <div onClick={createLinkClickHandler(this.props.history)}>
-                            <Markdown dangerousInnerHTML={renderMarkdown(view.content)} />
+                            <Markdown dangerousInnerHTML={renderMarkdown(view.content)} history={this.props.history} />
                         </div>
                     </div>
                 ))}

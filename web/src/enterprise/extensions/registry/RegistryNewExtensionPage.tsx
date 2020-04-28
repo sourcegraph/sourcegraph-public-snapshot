@@ -19,6 +19,7 @@ import { RegistryExtensionNameFormGroup, RegistryPublisherFormGroup } from '../e
 import { queryViewerRegistryPublishers } from './backend'
 import { RegistryAreaPageProps } from './RegistryArea'
 import { ErrorAlert } from '../../../components/alerts'
+import * as H from 'history'
 
 function createExtension(publisher: GQL.ID, name: string): Observable<GQL.IExtensionRegistryCreateExtensionResult> {
     return mutateGraphQL(
@@ -53,6 +54,7 @@ function createExtension(publisher: GQL.ID, name: string): Observable<GQL.IExten
 
 interface Props extends RegistryAreaPageProps, RouteComponentProps<{}> {
     authenticatedUser: GQL.IUser
+    history: H.History
 }
 
 interface State {
@@ -155,6 +157,7 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
                                 publishersOrError={this.state.publishersOrError}
                                 onChange={this.onPublisherChange}
                                 disabled={this.state.creationOrError === 'loading'}
+                                history={this.props.history}
                             />
                             <RegistryExtensionNameFormGroup
                                 value={this.state.name}
@@ -195,7 +198,11 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
                             </button>
                         </Form>
                         {isErrorLike(this.state.creationOrError) && (
-                            <ErrorAlert className="mt-3" error={this.state.creationOrError} />
+                            <ErrorAlert
+                                className="mt-3"
+                                error={this.state.creationOrError}
+                                history={this.props.history}
+                            />
                         )}
                     </ModalPage>
                 </>

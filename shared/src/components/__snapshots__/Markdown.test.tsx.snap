@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Markdown render 1`] = `
+exports[`Markdown renders 1`] = `
 <div
   className="markdown"
   dangerouslySetInnerHTML={
@@ -8,5 +8,6 @@ exports[`Markdown render 1`] = `
       "__html": "hello",
     }
   }
+  onClick={[Function]}
 />
 `;

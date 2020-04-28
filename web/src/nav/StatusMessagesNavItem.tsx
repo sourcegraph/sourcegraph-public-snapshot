@@ -12,6 +12,7 @@ import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors
 import { queryGraphQL } from '../backend/graphql'
 import classNames from 'classnames'
 import { ErrorAlert } from '../components/alerts'
+import * as H from 'history'
 
 export function fetchAllStatusMessages(): Observable<GQL.StatusMessage[]> {
     return queryGraphQL(
@@ -93,6 +94,7 @@ const StatusMessagesNavItemEntry: React.FunctionComponent<StatusMessageEntryProp
 interface Props {
     fetchMessages: () => Observable<GQL.StatusMessage[]>
     isSiteAdmin: boolean
+    history: H.History
 }
 
 interface State {
@@ -234,6 +236,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                                 className="status-messages-nav-item__entry"
                                 prefix="Failed to load status messages"
                                 error={this.state.messagesOrError}
+                                history={this.props.history}
                             />
                         ) : this.state.messagesOrError.length > 0 ? (
                             this.state.messagesOrError.map((m, i) => this.renderMessage(m, i))

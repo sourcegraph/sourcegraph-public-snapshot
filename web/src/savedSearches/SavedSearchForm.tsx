@@ -170,7 +170,7 @@ export class SavedSearchForm extends React.Component<Props, State> {
                         {this.props.submitLabel}
                     </button>
                     {this.props.error && !this.props.loading && (
-                        <ErrorAlert className="mb-3" error={this.props.error} />
+                        <ErrorAlert className="mb-3" error={this.props.error} history={this.props.history} />
                     )}
                 </Form>
             </div>
