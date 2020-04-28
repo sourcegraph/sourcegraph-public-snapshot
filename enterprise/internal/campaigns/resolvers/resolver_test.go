@@ -29,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	ee "github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/campaigns/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
@@ -44,6 +45,33 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
+)
+
+type (
+	GitTarget = apitest.GitTarget
+	GitRef    = apitest.GitRef
+
+	DiffRange = apitest.DiffRange
+	DiffStat  = apitest.DiffStat
+
+	File         = apitest.File
+	FileDiffHunk = apitest.FileDiffHunk
+	FileDiff     = apitest.FileDiff
+	FileDiffs    = apitest.FileDiffs
+
+	Patch    = apitest.Patch
+	PatchSet = apitest.PatchSet
+
+	User    = apitest.User
+	Org     = apitest.Org
+	UserOrg = apitest.UserOrg
+
+	Campaign           = apitest.Campaign
+	CampaignConnection = apitest.CampaignConnection
+
+	ChangesetEventConnection = apitest.ChangesetEventConnection
+
+	Changeset = apitest.Changeset
 )
 
 func init() {
@@ -79,12 +107,6 @@ func TestCampaigns(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	type User struct {
-		ID         string
-		DatabaseID int32
-		SiteAdmin  bool
-	}
-
 	var users struct {
 		Admin, User struct {
 			User `json:"user"`
@@ -107,11 +129,6 @@ func TestCampaigns(t *testing.T) {
 		t.Fatal("admin must be a site-admin, since it was the first user created")
 	}
 
-	type Org struct {
-		ID   string
-		Name string
-	}
-
 	var orgs struct {
 		ACME Org
 	}
@@ -123,24 +140,6 @@ func TestCampaigns(t *testing.T) {
 			acme: createOrganization(name: "ACME") { ...o }
 		}
 	`)
-
-	type UserOrg struct {
-		ID         string
-		DatabaseID int32
-		SiteAdmin  bool
-		Name       string
-	}
-
-	type Campaign struct {
-		ID          string
-		Name        string
-		Description string
-		Author      User
-		CreatedAt   string
-		UpdatedAt   string
-		PublishedAt string
-		Namespace   UserOrg
-	}
 
 	var campaigns struct{ Admin, Org Campaign }
 
@@ -180,14 +179,6 @@ func TestCampaigns(t *testing.T) {
 
 	if have, want := campaigns.Org.Namespace.ID, orgs.ACME.ID; have != want {
 		t.Fatalf("have orgs's campaign namespace id %q, want %q", have, want)
-	}
-
-	type CampaignConnection struct {
-		Nodes      []Campaign
-		TotalCount int
-		PageInfo   struct {
-			HasNextPage bool
-		}
 	}
 
 	var listed struct {
@@ -329,10 +320,6 @@ func TestCampaigns(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	type ChangesetEventConnection struct {
-		TotalCount int
-	}
-
 	git.Mocks.ResolveRevision = func(spec string, opt *git.ResolveRevisionOptions) (api.CommitID, error) {
 		return "mockcommitid", nil
 	}
@@ -344,43 +331,6 @@ func TestCampaigns(t *testing.T) {
 		}, nil
 	}
 	defer func() { repoupdater.MockRepoLookup = nil }()
-
-	type GitTarget struct {
-		OID            string
-		AbbreviatedOID string
-		TargetType     string `json:"type"`
-	}
-
-	type GitRef struct {
-		Name        string
-		AbbrevName  string
-		DisplayName string
-		Prefix      string
-		RefType     string `json:"type"`
-		Repository  struct{ ID string }
-		URL         string
-		Target      GitTarget
-	}
-
-	type Changeset struct {
-		ID          string
-		Repository  struct{ ID string }
-		Campaigns   CampaignConnection
-		CreatedAt   string
-		UpdatedAt   string
-		Title       string
-		Body        string
-		State       string
-		ExternalURL struct {
-			URL         string
-			ServiceType string
-		}
-		ReviewState string
-		CheckState  string
-		Events      ChangesetEventConnection
-		Head        GitRef
-		Base        GitRef
-	}
 
 	var result struct {
 		Changesets []Changeset
@@ -546,39 +496,7 @@ func TestCampaigns(t *testing.T) {
 		}
 	}
 
-	type ChangesetConnection struct {
-		Nodes      []Changeset
-		TotalCount int
-		PageInfo   struct {
-			HasNextPage bool
-		}
-	}
-
-	type ChangesetCounts struct {
-		Date                 graphqlbackend.DateTime
-		Total                int32
-		Merged               int32
-		Closed               int32
-		Open                 int32
-		OpenApproved         int32
-		OpenChangesRequested int32
-		OpenPending          int32
-	}
-
-	type CampaignWithChangesets struct {
-		ID                      string
-		Name                    string
-		Description             string
-		Author                  User
-		CreatedAt               string
-		UpdatedAt               string
-		Namespace               UserOrg
-		Changesets              ChangesetConnection
-		ChangesetCountsOverTime []ChangesetCounts
-		DiffStat                DiffStat
-	}
-
-	var addChangesetsResult struct{ Campaign CampaignWithChangesets }
+	var addChangesetsResult struct{ Campaign Campaign }
 
 	changesetIDs := make([]string, 0, len(result.Changesets))
 	for _, c := range result.Changesets {
@@ -925,50 +843,6 @@ var wantFileDiffs = FileDiffs{
 	},
 }
 
-type DiffRange struct{ StartLine, Lines int }
-
-type FileDiffHunk struct {
-	Body, Section      string
-	OldNoNewlineAt     bool
-	OldRange, NewRange DiffRange
-}
-
-type DiffStat struct{ Added, Deleted, Changed int }
-
-type File struct {
-	Name string
-	// Ignoring other fields of File2, since that would require gitserver
-}
-
-type FileDiff struct {
-	OldPath, NewPath string
-	Hunks            []FileDiffHunk
-	Stat             DiffStat
-	OldFile          File
-}
-
-type FileDiffs struct {
-	RawDiff  string
-	DiffStat DiffStat
-	Nodes    []FileDiff
-}
-
-type Patch struct {
-	PublicationEnqueued bool
-	Repository          struct{ Name, URL string }
-	Diff                struct {
-		FileDiffs FileDiffs
-	}
-}
-
-type PatchSet struct {
-	ID      string
-	Patches struct {
-		Nodes []Patch
-	}
-	PreviewURL string
-}
-
 func TestCreatePatchSetFromPatchesResolver(t *testing.T) {
 	ctx := backend.WithAuthzBypass(context.Background())
 
@@ -1181,17 +1055,15 @@ func TestPatchSetResolver(t *testing.T) {
 		jobs = append(jobs, job)
 	}
 
-	type Response struct {
-		Node PatchSet
-	}
-
 	sr := &Resolver{store: store}
 	s, err := graphqlbackend.NewSchema(sr, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	var response Response
+	var response struct {
+		Node PatchSet
+	}
 
 	mustExec(ctx, t, s, nil, &response, fmt.Sprintf(`
       query {
@@ -1343,41 +1215,6 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 	`, graphqlbackend.MarshalRepositoryID(api.RepoID(repo.ID)), testBaseRevision, testBaseRef, testDiff))
 
 	patchSetID := createPatchSetResponse.CreatePatchSetFromPatches.ID
-
-	type Changeset struct {
-		ID          string
-		Title       string
-		Body        string
-		State       string
-		ExternalURL struct {
-			URL         string
-			ServiceType string
-		}
-		ReviewState string
-		CheckState  string
-		Diff        struct {
-			FileDiffs FileDiffs
-		}
-	}
-
-	type Campaign struct {
-		ID     string
-		Name   string
-		Branch string
-		Status struct {
-			State string
-		}
-		Description string
-		Patches     struct {
-			Nodes      []Patch
-			TotalCount int
-		}
-		Changesets struct {
-			Nodes      []Changeset
-			TotalCount int
-		}
-		DiffStat DiffStat
-	}
 
 	var createCampaignResponse struct{ CreateCampaign Campaign }
 
