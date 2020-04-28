@@ -3,8 +3,8 @@ import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 import { Tooltip } from '../../../components/tooltip/Tooltip'
 import React, { useState, useCallback, useEffect, useMemo } from 'react'
 import classNames from 'classnames'
-import { Subject, merge, timer } from 'rxjs'
-import { delay, takeUntil, tap, debounceTime, map } from 'rxjs/operators'
+import { Subject } from 'rxjs'
+import { tap, debounceTime } from 'rxjs/operators'
 
 interface Props {
     fullQuery: string
