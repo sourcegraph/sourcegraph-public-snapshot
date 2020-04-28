@@ -15,6 +15,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Users and site administrators can now view a log of their actions/events in the user settings.
 - monitoring: new Permissions dashboard to show stats of repository permissions.
+
 ### Changed
 
 ### Fixed
