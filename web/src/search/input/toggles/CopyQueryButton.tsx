@@ -3,8 +3,8 @@ import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 import { Tooltip } from '../../../components/tooltip/Tooltip'
 import React, { useCallback } from 'react'
 import classNames from 'classnames'
-import { Observable, merge, of, timer } from 'rxjs'
-import { tap, switchMapTo, startWith } from 'rxjs/operators'
+import { Observable, merge, of } from 'rxjs'
+import { tap, switchMapTo, startWith, delay } from 'rxjs/operators'
 import { useEventObservable } from '../../../../../shared/src/util/useObservable'
 
 interface Props {
@@ -21,7 +21,7 @@ export const CopyQueryButton: React.FunctionComponent<Props> = (props: Props) =>
             (clicks: Observable<React.MouseEvent>) =>
                 clicks.pipe(
                     tap(() => copy(props.fullQuery)),
-                    switchMapTo(merge(of(true), of(false).pipe(delay(1000))),
+                    switchMapTo(merge(of(true), of(false).pipe(delay(1000)))),
                     tap(() => Tooltip.forceUpdate()),
                     startWith(false)
                 ),
