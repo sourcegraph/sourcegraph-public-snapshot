@@ -43,6 +43,9 @@ type MockDB struct {
 	// PackageReferencePagerFunc is an instance of a mock function object
 	// controlling the behavior of the method PackageReferencePager.
 	PackageReferencePagerFunc *DBPackageReferencePagerFunc
+	// RepoNameFunc is an instance of a mock function object controlling the
+	// behavior of the method RepoName.
+	RepoNameFunc *DBRepoNameFunc
 	// ResetStalledFunc is an instance of a mock function object controlling
 	// the behavior of the method ResetStalled.
 	ResetStalledFunc *DBResetStalledFunc
@@ -105,6 +108,11 @@ func NewMockDB() *MockDB {
 				return 0, nil, nil
 			},
 		},
+		RepoNameFunc: &DBRepoNameFunc{
+			defaultHook: func(context.Context, int) (string, error) {
+				return "", nil
+			},
+		},
 		ResetStalledFunc: &DBResetStalledFunc{
 			defaultHook: func(context.Context, time.Time) ([]int, error) {
 				return nil, nil
@@ -151,6 +159,9 @@ func NewMockDBFrom(i db.DB) *MockDB {
 		},
 		PackageReferencePagerFunc: &DBPackageReferencePagerFunc{
 			defaultHook: i.PackageReferencePager,
+		},
+		RepoNameFunc: &DBRepoNameFunc{
+			defaultHook: i.RepoName,
 		},
 		ResetStalledFunc: &DBResetStalledFunc{
 			defaultHook: i.ResetStalled,
@@ -1316,6 +1327,114 @@ func (c DBPackageReferencePagerFuncCall) Args() []interface{} {
 // invocation.
 func (c DBPackageReferencePagerFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// DBRepoNameFunc describes the behavior when the RepoName method of the
+// parent MockDB instance is invoked.
+type DBRepoNameFunc struct {
+	defaultHook func(context.Context, int) (string, error)
+	hooks       []func(context.Context, int) (string, error)
+	history     []DBRepoNameFuncCall
+	mutex       sync.Mutex
+}
+
+// RepoName delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockDB) RepoName(v0 context.Context, v1 int) (string, error) {
+	r0, r1 := m.RepoNameFunc.nextHook()(v0, v1)
+	m.RepoNameFunc.appendCall(DBRepoNameFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the RepoName method of
+// the parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBRepoNameFunc) SetDefaultHook(hook func(context.Context, int) (string, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RepoName method of the parent MockDB instance inovkes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *DBRepoNameFunc) PushHook(hook func(context.Context, int) (string, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBRepoNameFunc) SetDefaultReturn(r0 string, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) (string, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBRepoNameFunc) PushReturn(r0 string, r1 error) {
+	f.PushHook(func(context.Context, int) (string, error) {
+		return r0, r1
+	})
+}
+
+func (f *DBRepoNameFunc) nextHook() func(context.Context, int) (string, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBRepoNameFunc) appendCall(r0 DBRepoNameFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBRepoNameFuncCall objects describing the
+// invocations of this function.
+func (f *DBRepoNameFunc) History() []DBRepoNameFuncCall {
+	f.mutex.Lock()
+	history := make([]DBRepoNameFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBRepoNameFuncCall is an object that describes an invocation of method
+// RepoName on an instance of MockDB.
+type DBRepoNameFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 string
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBRepoNameFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBRepoNameFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // DBResetStalledFunc describes the behavior when the ResetStalled method of

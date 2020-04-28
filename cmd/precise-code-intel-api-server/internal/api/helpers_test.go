@@ -10,6 +10,7 @@ import (
 
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
 	bundlemocks "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/mocks"
+	 "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 	dbmocks "github.com/sourcegraph/sourcegraph/internal/codeintel/db/mocks"
 )
@@ -129,8 +130,8 @@ func setMockDBPackageReferencePager(t *testing.T, mockDB *dbmocks.MockDB, expect
 	})
 }
 
-func setMockReferencePagerPageFromOffset(t *testing.T, mockReferencePager *dbmocks.MockReferencePager, expectedOffset int, references []db.Reference) {
-	mockReferencePager.PageFromOffsetFunc.SetDefaultHook(func(offset int) ([]db.Reference, error) {
+func setMockReferencePagerPageFromOffset(t *testing.T, mockReferencePager *dbmocks.MockReferencePager, expectedOffset int, references []types.PackageReference) {
+	mockReferencePager.PageFromOffsetFunc.SetDefaultHook(func(offset int) ([]types.PackageReference, error) {
 		if offset != expectedOffset {
 			t.Errorf("unexpected offset for PageFromOffset. want=%d have=%d", expectedOffset, offset)
 		}
