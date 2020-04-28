@@ -17,9 +17,14 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
-- A potential security vulnerability with in the authentication workflow has been fixed. [#10167](https://github.com/sourcegraph/sourcegraph/pull/10167)
-
 ### Removed
+
+## 3.15.1 (not released)
+
+### Fixed
+
+- A potential security vulnerability with in the authentication workflow has been fixed. [#10167](https://github.com/sourcegraph/sourcegraph/pull/10167)
+- An issue where `sourcegraph/postgres-11.4:3.15.0` was incorrectly an older version of the image incompatible with non-root Kubernetes deployments. `sourcegraph/postgres-11.4:3.15.1` now matches the same image version found in Sourcegraph 3.14.3 (`20-04-07_56b20163`).
 
 ## 3.15.0
 
