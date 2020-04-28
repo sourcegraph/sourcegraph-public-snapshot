@@ -15,6 +15,7 @@ export function fetchRepository(name: string): Observable<GQL.IRepository> {
                 repository(name: $name) {
                     id
                     name
+                    isPrivate
                     viewerCanAdminister
                     mirrorInfo {
                         remoteURL
@@ -39,6 +40,10 @@ export function fetchRepository(name: string): Observable<GQL.IRepository> {
                             kind
                             displayName
                         }
+                    }
+                    permissionsInfo {
+                        syncedAt
+                        updatedAt
                     }
                 }
             }

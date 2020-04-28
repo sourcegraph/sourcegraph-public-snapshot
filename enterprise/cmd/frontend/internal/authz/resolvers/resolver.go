@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/RoaringBitmap/roaring"
+	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -220,5 +221,61 @@ func (r *Resolver) AuthorizedUsers(ctx context.Context, args *graphqlbackend.Rep
 		ids:   p.UserIDs,
 		first: args.First,
 		after: args.After,
+	}, nil
+}
+
+type permissionsInfoResolver struct {
+	perms     authz.Perms
+	syncedAt  time.Time
+	updatedAt time.Time
+}
+
+func (r *permissionsInfoResolver) Permissions() []string {
+	return strings.Split(strings.ToUpper(r.perms.String()), ",")
+}
+
+func (r *permissionsInfoResolver) SyncedAt() *graphqlbackend.DateTime {
+	if r.syncedAt.IsZero() {
+		return nil
+	}
+	return &graphqlbackend.DateTime{Time: r.syncedAt}
+}
+
+func (r *permissionsInfoResolver) UpdatedAt() graphqlbackend.DateTime {
+	return graphqlbackend.DateTime{Time: r.updatedAt}
+}
+
+func (r *Resolver) RepositoryPermissionsInfo(ctx context.Context, id graphql.ID) (graphqlbackend.PermissionsInfoResolver, error) {
+	// 🚨 SECURITY: Only site admins can query repository permissions.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	repoID, err := graphqlbackend.UnmarshalRepositoryID(id)
+	if err != nil {
+		return nil, err
+	}
+	// Make sure the repo ID is valid and not soft-deleted.
+	if _, err = db.Repos.Get(ctx, repoID); err != nil {
+		return nil, err
+	}
+
+	p := &authz.RepoPermissions{
+		RepoID: int32(repoID),
+		Perm:   authz.Read, // Note: We currently only support read for repository permissions.
+	}
+	err = r.store.LoadRepoPermissions(ctx, p)
+	if err != nil && err != authz.ErrPermsNotFound {
+		return nil, err
+	}
+
+	if err == authz.ErrPermsNotFound {
+		return nil, nil // It is acceptable to have no permissions information, i.e. nullable.
+	}
+
+	return &permissionsInfoResolver{
+		perms:     p.Perm,
+		syncedAt:  p.SyncedAt,
+		updatedAt: p.UpdatedAt,
 	}, nil
 }
