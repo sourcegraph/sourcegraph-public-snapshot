@@ -1,6 +1,7 @@
 package database
 
 import (
+	"context"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -25,7 +26,7 @@ func TestDatabaseExists(t *testing.T) {
 
 	db := openTestDatabase(t)
 	for _, testCase := range testCases {
-		if exists, err := db.Exists(testCase.path); err != nil {
+		if exists, err := db.Exists(context.Background(), testCase.path); err != nil {
 			t.Fatalf("unexpected error %s", err)
 		} else if exists != testCase.expected {
 			t.Errorf("unexpected exists result for %s. want=%v have=%v", testCase.path, testCase.expected, exists)
@@ -38,7 +39,7 @@ func TestDatabaseDefinitions(t *testing.T) {
 	//                      ^^^^^           ^^^^^
 
 	db := openTestDatabase(t)
-	if actual, err := db.Definitions("cmd/lsif-go/main.go", 110, 22); err != nil {
+	if actual, err := db.Definitions(context.Background(), "cmd/lsif-go/main.go", 110, 22); err != nil {
 		t.Fatalf("unexpected error %s", err)
 	} else {
 		expected := []Location{
@@ -65,7 +66,7 @@ func TestDatabaseReferences(t *testing.T) {
 	//                              ^^^^^^^^^
 
 	db := openTestDatabase(t)
-	if actual, err := db.References("protocol/writer.go", 85, 20); err != nil {
+	if actual, err := db.References(context.Background(), "protocol/writer.go", 85, 20); err != nil {
 		t.Fatalf("unexpected error %s", err)
 	} else {
 		expected := []Location{
@@ -93,7 +94,7 @@ func TestDatabaseHover(t *testing.T) {
 	//                     ^^^^^^^^^^^^
 
 	db := openTestDatabase(t)
-	if actualText, actualRange, exists, err := db.Hover("internal/index/indexer.go", 628, 20); err != nil {
+	if actualText, actualRange, exists, err := db.Hover(context.Background(), "internal/index/indexer.go", 628, 20); err != nil {
 		t.Fatalf("unexpected error %s", err)
 	} else if !exists {
 		t.Errorf("no hover found")
@@ -118,7 +119,7 @@ func TestDatabaseMonikersByPosition(t *testing.T) {
 	//       ^^^^^^^^^^^
 
 	db := openTestDatabase(t)
-	if actual, err := db.MonikersByPosition("protocol/protocol.go", 92, 10); err != nil {
+	if actual, err := db.MonikersByPosition(context.Background(), "protocol/protocol.go", 92, 10); err != nil {
 		t.Fatalf("unexpected error %s", err)
 	} else {
 		expected := [][]types.MonikerData{
@@ -205,7 +206,7 @@ func TestDatabaseMonikerResults(t *testing.T) {
 
 	db := openTestDatabase(t)
 	for i, testCase := range testCases {
-		if actual, totalCount, err := db.MonikerResults(testCase.tableName, testCase.scheme, testCase.identifier, testCase.skip, testCase.take); err != nil {
+		if actual, totalCount, err := db.MonikerResults(context.Background(), testCase.tableName, testCase.scheme, testCase.identifier, testCase.skip, testCase.take); err != nil {
 			t.Fatalf("unexpected error for test case #%d: %s", i, err)
 		} else {
 			if totalCount != testCase.expectedTotalCount {
@@ -221,7 +222,7 @@ func TestDatabaseMonikerResults(t *testing.T) {
 
 func TestDatabasePackageInformation(t *testing.T) {
 	db := openTestDatabase(t)
-	if actual, exists, err := db.PackageInformation("protocol/protocol.go", types.ID("213")); err != nil {
+	if actual, exists, err := db.PackageInformation(context.Background(), "protocol/protocol.go", types.ID("213")); err != nil {
 		t.Fatalf("unexpected error %s", err)
 	} else if !exists {
 		t.Errorf("no package information")
@@ -248,7 +249,7 @@ func openTestDatabase(t *testing.T) Database {
 		t.Fatalf("unexpected error creating cache: %s", err)
 	}
 
-	db, err := OpenDatabase("../../../../internal/codeintel/bundles/testdata/lsif-go@ad3507cb.lsif.db", documentDataCache, resultChunkDataCache)
+	db, err := OpenDatabase(context.Background(), "../../../../internal/codeintel/bundles/testdata/lsif-go@ad3507cb.lsif.db", documentDataCache, resultChunkDataCache)
 	if err != nil {
 		t.Fatalf("unexpected error opening database: %s", err)
 	}
