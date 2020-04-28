@@ -30,7 +30,7 @@ func TestIntegration(t *testing.T) {
 
 	loadTrackingIssueFixtures(t, "sourcegraph", ti)
 
-	got := ti.Workloads().Markdown(ti)
+	got := ti.Workloads().Markdown(ti.LabelWhitelist)
 	path := filepath.Join("testdata", "issue.md")
 	testutil.AssertGolden(t, path, *update, got)
 }

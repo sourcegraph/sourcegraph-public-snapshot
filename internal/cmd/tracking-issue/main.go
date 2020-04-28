@@ -21,10 +21,11 @@ import (
 )
 
 const (
-	openingMarker     = "<!-- BEGIN WORK -->"
-	closingMarker     = "<!-- END WORK -->"
+	beginWorkMarker     = "<!-- BEGIN WORK -->"
+	endWorkMarker     = "<!-- END WORK -->"
 	labelMarkerRegexp = "<!-- LABEL: (.*) -->"
-	labelMarkerFmt    = "<!-- LABEL: %s -->\n"
+	beginAssigneeMarkerFmt = "<!-- BEGIN ASSIGNEE: %s -->"
+	endAssigneeMarker = "<!-- END ASSIGNEE -->"
 )
 
 func main() {
@@ -73,7 +74,8 @@ func run(token, org string, dry, verbose bool) (err error) {
 
 	var toUpdate []*Issue
 	for _, issue := range tracking {
-		if updated, err := issue.UpdateWork(issue.Workloads().Markdown(issue)); err != nil {
+		work := issue.Workloads().Markdown(issue.LabelWhitelist)
+		if updated, err := issue.UpdateWork(work); err != nil {
 			log.Printf("failed to patch work section in %q %s: %v", issue.Title, issue.URL, err)
 		} else if !updated {
 			log.Printf("%q %s not modified.", issue.Title, issue.URL)
@@ -139,21 +141,21 @@ func findMarker(s, marker string) (int, error) {
 }
 
 func patch(s, replacement string) (string, error) {
-	start, err := findMarker(s, openingMarker)
+	start, err := findMarker(s, beginWorkMarker)
 	if err != nil {
 		return s, err
 	}
-	end, err := findMarker(s, closingMarker)
+	end, err := findMarker(s, endWorkMarker)
 	if err != nil {
 		return s, err
 	}
 
-	return s[:start+len(openingMarker)] + replacement + s[end:], nil
+	return s[:start+len(beginWorkMarker)] + replacement + s[end:], nil
 }
 
 type Workloads map[string]*Workload
 
-func (ws Workloads) Markdown(tracking *TrackingIssue) string {
+func (ws Workloads) Markdown(labelWhitelist []string) string {
 	assignees := make([]string, 0, len(ws))
 	for assignee := range ws {
 		assignees = append(assignees, assignee)
@@ -163,12 +165,8 @@ func (ws Workloads) Markdown(tracking *TrackingIssue) string {
 
 	var b strings.Builder
 
-	for _, label := range tracking.LabelWhitelist {
-		b.WriteString(fmt.Sprintf(labelMarkerFmt, label))
-	}
-
 	for _, assignee := range assignees {
-		b.WriteString(ws[assignee].Markdown(tracking))
+		b.WriteString(ws[assignee].Markdown(labelWhitelist))
 	}
 
 	return b.String()
@@ -191,7 +189,7 @@ func (wl *Workload) AddIssue(newIssue *Issue) {
 	wl.Issues = append(wl.Issues, newIssue)
 }
 
-func (wl *Workload) Markdown(tracking *TrackingIssue) string {
+func (wl *Workload) Markdown(labelWhitelist []string) string {
 	var b strings.Builder
 
 	var days string
@@ -199,10 +197,11 @@ func (wl *Workload) Markdown(tracking *TrackingIssue) string {
 		days = fmt.Sprintf(": __%.2fd__", wl.Days)
 	}
 
-	fmt.Fprintf(&b, "\n@%s%s\n\n", wl.Assignee, days)
+	fmt.Fprintf(&b, "\n" + beginAssigneeMarkerFmt + "\n", wl.Assignee)
+	fmt.Fprintf(&b, "@%s%s\n\n", wl.Assignee, days)
 
 	for _, issue := range wl.Issues {
-		b.WriteString(issue.Markdown(tracking))
+		b.WriteString(issue.Markdown(labelWhitelist))
 
 		for _, pr := range issue.LinkedPRs {
 			b.WriteString("  ") // Nested list
@@ -217,34 +216,29 @@ func (wl *Workload) Markdown(tracking *TrackingIssue) string {
 		}
 	}
 
+	fmt.Fprintf(&b, "%s\n", endAssigneeMarker)
+
 	return b.String()
 }
 
 var issueURLMatcher = regexp.MustCompile(`https://github.com/.+/.+/issues/\d+`)
 
 func (wl *Workload) FillExistingIssuesFromTrackingBody(tracking *TrackingIssue) {
-	lines, err := tracking.WorkItems()
+	beginAssigneeMarker := fmt.Sprintf(beginAssigneeMarkerFmt, wl.Assignee)
 
+	start, err := findMarker(tracking.Body, beginAssigneeMarker)
 	if err != nil {
 		return
 	}
 
-	startIdx := -1
-	for i := range lines {
-		if strings.HasPrefix(lines[i], "@"+wl.Assignee) {
-			startIdx = i + 1
-			break
-		}
-	}
-	if startIdx == -1 {
+	end, err := findMarker(tracking.Body[start:], endAssigneeMarker)
+	if err != nil {
 		return
 	}
 
-	for _, line := range lines[startIdx:] {
-		if strings.HasPrefix(line, "@") {
-			break
-		}
+	lines := strings.Split(tracking.Body[start:start+end], "\n")
 
+	for _, line := range lines {
 		parsedIssueURL := issueURLMatcher.FindString(line)
 		if parsedIssueURL == "" {
 			continue
@@ -297,23 +291,9 @@ type TrackingIssue struct {
 	LabelWhitelist []string
 }
 
-func (t *TrackingIssue) WorkItems() ([]string, error) {
-	start, err := findMarker(t.Body, openingMarker)
-	if err != nil {
-		return nil, err
-	}
-
-	end, _ := findMarker(t.Body, closingMarker)
-	if err != nil {
-		return nil, err
-	}
-
-	prevWork := t.Body[start+len(openingMarker) : end]
-	return strings.Split(prevWork, "\n"), nil
-}
-
 var labelMatcher = regexp.MustCompile(labelMarkerRegexp)
 
+// NOTE: labels specified inside the WORK section will be silently discarded
 func (t *TrackingIssue) FillLabelWhitelist() {
 	lines := strings.Split(t.Body, "\n")
 	for _, line := range lines {
@@ -381,19 +361,6 @@ func (t *TrackingIssue) Workloads() Workloads {
 	return workloads
 }
 
-func (tracking *TrackingIssue) RenderedLabels(labels []string) string {
-	var b strings.Builder
-	for _, label := range labels {
-		for _, whitelistedLabel := range tracking.LabelWhitelist {
-			if whitelistedLabel == label {
-				b.WriteString(fmt.Sprintf("`%s` ", label))
-				break
-			}
-		}
-	}
-	return b.String()
-}
-
 type Issue struct {
 	ID         string
 	Title      string
@@ -415,7 +382,7 @@ type Issue struct {
 	LinkedPRs     []*PullRequest `json:"-"`
 }
 
-func (issue *Issue) Markdown(tracking *TrackingIssue) string {
+func (issue *Issue) Markdown(labelWhitelist []string) string {
 	state := " "
 	if strings.EqualFold(issue.State, "closed") {
 		state = "x"
@@ -427,7 +394,7 @@ func (issue *Issue) Markdown(tracking *TrackingIssue) string {
 		estimate = "__" + estimate + "__ "
 	}
 
-	labels := tracking.RenderedLabels(issue.Labels)
+	labels := issue.RenderedLabels(labelWhitelist)
 
 	return fmt.Sprintf("- [%s] %s [#%d](%s) %s%s%s\n",
 		state,
@@ -439,6 +406,20 @@ func (issue *Issue) Markdown(tracking *TrackingIssue) string {
 		issue.Emojis(),
 	)
 }
+
+func (issue *Issue) RenderedLabels(labelWhitelist []string) string {
+	var b strings.Builder
+	for _, label := range issue.Labels {
+		for _, whitelistedLabel := range labelWhitelist {
+			if whitelistedLabel == label {
+				b.WriteString(fmt.Sprintf("`%s` ", label))
+				break
+			}
+		}
+	}
+	return b.String()
+}
+
 
 func (issue *Issue) Emojis() string {
 	categories := Categories(issue.Labels, issue.Repository, issue.Body)

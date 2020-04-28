@@ -1,9 +1,11 @@
-<!-- LABEL: lsif-reliability -->
 
+<!-- BEGIN ASSIGNEE: Unassigned -->
 @Unassigned
 
 - [x] Alert admins if LSIF uploads are too large for DBS_DIR_MAXIMUM_SIZE_BYTES [#9989](https://github.com/sourcegraph/sourcegraph/issues/9989) `lsif-reliability` 
+<!-- END ASSIGNEE -->
 
+<!-- BEGIN ASSIGNEE: efritz -->
 @efritz
 
 - [ ] Port precise-code-intel-worker to Go [#9965](https://github.com/sourcegraph/sourcegraph/issues/9965) 
@@ -25,7 +27,9 @@
 - [ ] Weird highlighting on multiple go to definition results with basic code intel [#7668](https://github.com/sourcegraph/sourcegraph/issues/7668) 🐛
 - [ ] LSIF plaintext hover support [#7099](https://github.com/sourcegraph/sourcegraph/issues/7099) 
 - [x] Port precise-code-intel-bundle-manager to Go [#9964](https://github.com/sourcegraph/sourcegraph/issues/9964) 
+<!-- END ASSIGNEE -->
 
+<!-- BEGIN ASSIGNEE: gbrik -->
 @gbrik
 
 - [ ] Use campaigns to get all of our repositories uploading LSIF indexes to sourcegraph.com [#10137](https://github.com/sourcegraph/sourcegraph/issues/10137) 
@@ -41,3 +45,4 @@
 - [ ] Minor: Retry lsif index upload when clone is in progress [#9700](https://github.com/sourcegraph/sourcegraph/issues/9700) `lsif-reliability` 
 - [x] RFC 122: Write detailed LSIF integration instructions for Go and TypeScript [#9289](https://github.com/sourcegraph/sourcegraph/issues/9289) 
   - [x] Update LSIF documentation and associated CI workflows [#10138](https://github.com/sourcegraph/sourcegraph/pull/10138) :shipit:
+<!-- END ASSIGNEE -->
