@@ -44,33 +44,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-type (
-	GitTarget = apitest.GitTarget
-	GitRef    = apitest.GitRef
-
-	DiffRange = apitest.DiffRange
-	DiffStat  = apitest.DiffStat
-
-	File         = apitest.File
-	FileDiffHunk = apitest.FileDiffHunk
-	FileDiff     = apitest.FileDiff
-	FileDiffs    = apitest.FileDiffs
-
-	Patch    = apitest.Patch
-	PatchSet = apitest.PatchSet
-
-	User    = apitest.User
-	Org     = apitest.Org
-	UserOrg = apitest.UserOrg
-
-	Campaign           = apitest.Campaign
-	CampaignConnection = apitest.CampaignConnection
-
-	ChangesetEventConnection = apitest.ChangesetEventConnection
-
-	Changeset = apitest.Changeset
-)
-
 func init() {
 	dbtesting.DBNameSuffix = "campaignsresolversdb"
 }
@@ -106,7 +79,7 @@ func TestCampaigns(t *testing.T) {
 
 	var users struct {
 		Admin, User struct {
-			User `json:"user"`
+			apitest.User `json:"user"`
 		}
 	}
 
@@ -127,7 +100,7 @@ func TestCampaigns(t *testing.T) {
 	}
 
 	var orgs struct {
-		ACME Org
+		ACME apitest.Org
 	}
 
 	ctx = actor.WithActor(ctx, actor.FromUser(users.Admin.DatabaseID))
@@ -138,7 +111,7 @@ func TestCampaigns(t *testing.T) {
 		}
 	`)
 
-	var campaigns struct{ Admin, Org Campaign }
+	var campaigns struct{ Admin, Org apitest.Campaign }
 
 	input := map[string]interface{}{
 		"admin": map[string]interface{}{
@@ -178,10 +151,7 @@ func TestCampaigns(t *testing.T) {
 		t.Fatalf("have orgs's campaign namespace id %q, want %q", have, want)
 	}
 
-	var listed struct {
-		First, All CampaignConnection
-	}
-
+	var listed struct{ First, All apitest.CampaignConnection }
 	apitest.MustExec(ctx, t, s, nil, &listed, `
 		fragment u on User { id, databaseID, siteAdmin }
 		fragment o on Org  { id, name }
@@ -205,7 +175,7 @@ func TestCampaigns(t *testing.T) {
 	`)
 
 	have := listed.First.Nodes
-	want := []Campaign{campaigns.Admin}
+	want := []apitest.Campaign{campaigns.Admin}
 	if !reflect.DeepEqual(have, want) {
 		t.Errorf("wrong campaigns listed. diff=%s", cmp.Diff(have, want))
 	}
@@ -215,7 +185,7 @@ func TestCampaigns(t *testing.T) {
 	}
 
 	have = listed.All.Nodes
-	want = []Campaign{campaigns.Admin, campaigns.Org}
+	want = []apitest.Campaign{campaigns.Admin, campaigns.Org}
 	if !reflect.DeepEqual(have, want) {
 		t.Errorf("wrong campaigns listed. diff=%s", cmp.Diff(have, want))
 	}
@@ -233,9 +203,7 @@ func TestCampaigns(t *testing.T) {
 			"description": campaigns.Admin.Description,
 		},
 	}
-	var updated struct {
-		UpdateCampaign Campaign
-	}
+	var updated struct{ UpdateCampaign apitest.Campaign }
 
 	apitest.MustExec(ctx, t, s, updateInput, &updated, `
 		fragment u on User { id, databaseID, siteAdmin }
@@ -330,7 +298,7 @@ func TestCampaigns(t *testing.T) {
 	defer func() { repoupdater.MockRepoLookup = nil }()
 
 	var result struct {
-		Changesets []Changeset
+		Changesets []apitest.Changeset
 	}
 
 	graphqlGithubRepoID := string(graphqlbackend.MarshalRepositoryID(api.RepoID(githubRepo.ID)))
@@ -385,7 +353,7 @@ func TestCampaigns(t *testing.T) {
 	`, in))
 
 	{
-		want := []Changeset{
+		want := []apitest.Changeset{
 			{
 				Repository: struct{ ID string }{ID: graphqlGithubRepoID},
 				CreatedAt:  now.Format(time.RFC3339),
@@ -399,10 +367,10 @@ func TestCampaigns(t *testing.T) {
 				},
 				ReviewState: "APPROVED",
 				CheckState:  "PASSED",
-				Events: ChangesetEventConnection{
+				Events: apitest.ChangesetEventConnection{
 					TotalCount: 57,
 				},
-				Head: GitRef{
+				Head: apitest.GitRef{
 					Name:        "refs/heads/vo/add-type-issue-filter",
 					AbbrevName:  "vo/add-type-issue-filter",
 					DisplayName: "vo/add-type-issue-filter",
@@ -411,13 +379,13 @@ func TestCampaigns(t *testing.T) {
 					Repository:  struct{ ID string }{ID: "UmVwb3NpdG9yeTox"},
 					URL:         "/github.com/sourcegraph/sourcegraph@vo/add-type-issue-filter",
 
-					Target: GitTarget{
+					Target: apitest.GitTarget{
 						OID:            "7db302f07955e41d50e656d5faebefb4d87bce8a",
 						AbbreviatedOID: "7db302f",
 						TargetType:     "GIT_COMMIT",
 					},
 				},
-				Base: GitRef{
+				Base: apitest.GitRef{
 					Name:        "refs/heads/master",
 					AbbrevName:  "master",
 					DisplayName: "master",
@@ -425,7 +393,7 @@ func TestCampaigns(t *testing.T) {
 					RefType:     "GIT_BRANCH",
 					Repository:  struct{ ID string }{ID: "UmVwb3NpdG9yeTox"},
 					URL:         "/github.com/sourcegraph/sourcegraph@master",
-					Target: GitTarget{
+					Target: apitest.GitTarget{
 						OID:            "fa3815ba9ddd49db9111c5e9691e16d27e8f1f60",
 						AbbreviatedOID: "fa3815b",
 						TargetType:     "GIT_COMMIT",
@@ -445,10 +413,10 @@ func TestCampaigns(t *testing.T) {
 				},
 				ReviewState: "PENDING",
 				CheckState:  "PENDING",
-				Events: ChangesetEventConnection{
+				Events: apitest.ChangesetEventConnection{
 					TotalCount: 10,
 				},
-				Head: GitRef{
+				Head: apitest.GitRef{
 					Name:        "refs/heads/release-testing-pr",
 					AbbrevName:  "release-testing-pr",
 					DisplayName: "release-testing-pr",
@@ -456,13 +424,13 @@ func TestCampaigns(t *testing.T) {
 					RefType:     "GIT_BRANCH",
 					Repository:  struct{ ID string }{ID: "UmVwb3NpdG9yeToy"},
 					URL:         "/bitbucket.sgdev.org/SOUR/vegeta@release-testing-pr",
-					Target: GitTarget{
+					Target: apitest.GitTarget{
 						OID:            "mockcommitid",
 						AbbreviatedOID: "mockcom",
 						TargetType:     "GIT_COMMIT",
 					},
 				},
-				Base: GitRef{
+				Base: apitest.GitRef{
 					Name:        "refs/heads/master",
 					AbbrevName:  "master",
 					DisplayName: "master",
@@ -470,7 +438,7 @@ func TestCampaigns(t *testing.T) {
 					RefType:     "GIT_BRANCH",
 					Repository:  struct{ ID string }{ID: "UmVwb3NpdG9yeToy"},
 					URL:         "/bitbucket.sgdev.org/SOUR/vegeta@master",
-					Target: GitTarget{
+					Target: apitest.GitTarget{
 						OID:            "mockcommitid",
 						AbbreviatedOID: "mockcom",
 						TargetType:     "GIT_COMMIT",
@@ -479,7 +447,7 @@ func TestCampaigns(t *testing.T) {
 			},
 		}
 
-		have := make([]Changeset, 0, len(result.Changesets))
+		have := make([]apitest.Changeset, 0, len(result.Changesets))
 		for _, c := range result.Changesets {
 			if c.ID == "" {
 				t.Fatal("Changeset ID is empty")
@@ -493,7 +461,7 @@ func TestCampaigns(t *testing.T) {
 		}
 	}
 
-	var addChangesetsResult struct{ Campaign Campaign }
+	var addChangesetsResult struct{ Campaign apitest.Campaign }
 
 	changesetIDs := make([]string, 0, len(result.Changesets))
 	for _, c := range result.Changesets {
@@ -620,7 +588,7 @@ func TestCampaigns(t *testing.T) {
 		have := addChangesetsResult.Campaign.DiffStat
 		// Expected DiffStat is zeros, because we don't return diffstats for
 		// closed changesets
-		want := DiffStat{Added: 0, Changed: 0, Deleted: 0}
+		want := apitest.DiffStat{Added: 0, Changed: 0, Deleted: 0}
 		if have != want {
 			t.Errorf("wrong campaign combined diffstat. want=%v, have=%v", want, have)
 		}
@@ -807,35 +775,35 @@ index 6f8b5d9..17400bc 100644
 `
 
 // wantFileDiffs is the parsed representation of testDiff.
-var wantFileDiffs = FileDiffs{
+var wantFileDiffs = apitest.FileDiffs{
 	RawDiff:  testDiff,
-	DiffStat: DiffStat{Changed: 2},
-	Nodes: []FileDiff{
+	DiffStat: apitest.DiffStat{Changed: 2},
+	Nodes: []apitest.FileDiff{
 		{
 			OldPath: "README.md",
 			NewPath: "README.md",
-			OldFile: File{Name: "README.md"},
-			Hunks: []FileDiffHunk{
+			OldFile: apitest.File{Name: "README.md"},
+			Hunks: []apitest.FileDiffHunk{
 				{
 					Body:     " # README\n-This file is hosted at example.com and is a test file.\n+This file is hosted at sourcegraph.com and is a test file.\n",
-					OldRange: DiffRange{StartLine: 1, Lines: 2},
-					NewRange: DiffRange{StartLine: 1, Lines: 2},
+					OldRange: apitest.DiffRange{StartLine: 1, Lines: 2},
+					NewRange: apitest.DiffRange{StartLine: 1, Lines: 2},
 				},
 			},
-			Stat: DiffStat{Changed: 1},
+			Stat: apitest.DiffStat{Changed: 1},
 		},
 		{
 			OldPath: "urls.txt",
 			NewPath: "urls.txt",
-			OldFile: File{Name: "urls.txt"},
-			Hunks: []FileDiffHunk{
+			OldFile: apitest.File{Name: "urls.txt"},
+			Hunks: []apitest.FileDiffHunk{
 				{
 					Body:     " another-url.com\n-example.com\n+sourcegraph.com\n never-touch-the-mouse.com\n",
-					OldRange: DiffRange{StartLine: 1, Lines: 3},
-					NewRange: DiffRange{StartLine: 1, Lines: 3},
+					OldRange: apitest.DiffRange{StartLine: 1, Lines: 3},
+					NewRange: apitest.DiffRange{StartLine: 1, Lines: 3},
 				},
 			},
-			Stat: DiffStat{Changed: 1},
+			Stat: apitest.DiffStat{Changed: 1},
 		},
 	},
 }
@@ -909,7 +877,7 @@ func TestCreatePatchSetFromPatchesResolver(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		var response struct{ CreatePatchSetFromPatches PatchSet }
+		var response struct{ CreatePatchSetFromPatches apitest.PatchSet }
 
 		apitest.MustExec(ctx, t, s, nil, &response, fmt.Sprintf(`
       mutation {
@@ -964,10 +932,10 @@ func TestCreatePatchSetFromPatchesResolver(t *testing.T) {
 
 		result := response.CreatePatchSetFromPatches
 
-		wantPatches := []Patch{
+		wantPatches := []apitest.Patch{
 			{
 				Repository: struct{ Name, URL string }{Name: repo.Name},
-				Diff:       struct{ FileDiffs FileDiffs }{FileDiffs: wantFileDiffs},
+				Diff:       struct{ FileDiffs apitest.FileDiffs }{FileDiffs: wantFileDiffs},
 			},
 		}
 		if !cmp.Equal(result.Patches.Nodes, wantPatches) {
@@ -1058,9 +1026,7 @@ func TestPatchSetResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var response struct {
-		Node PatchSet
-	}
+	var response struct{ Node apitest.PatchSet }
 
 	apitest.MustExec(ctx, t, s, nil, &response, fmt.Sprintf(`
       query {
@@ -1199,7 +1165,7 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 	}
 
 	// Start test
-	var createPatchSetResponse struct{ CreatePatchSetFromPatches PatchSet }
+	var createPatchSetResponse struct{ CreatePatchSetFromPatches apitest.PatchSet }
 	apitest.MustExec(ctx, t, s, nil, &createPatchSetResponse, fmt.Sprintf(`
 		mutation {
 			createPatchSetFromPatches(patches: [{repository: %q, baseRevision: %q, baseRef: %q, patch: %q}]) {
@@ -1213,7 +1179,7 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 
 	patchSetID := createPatchSetResponse.CreatePatchSetFromPatches.ID
 
-	var createCampaignResponse struct{ CreateCampaign Campaign }
+	var createCampaignResponse struct{ CreateCampaign apitest.Campaign }
 
 	input := map[string]interface{}{
 		"input": map[string]interface{}{
@@ -1306,7 +1272,7 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 		t.Errorf("patch PublicationEnqueued is true, want false")
 	}
 
-	var publishCampaignResponse struct{ PublishCampaign Campaign }
+	var publishCampaignResponse struct{ PublishCampaign apitest.Campaign }
 	apitest.MustExec(ctx, t, s, nil, &publishCampaignResponse, fmt.Sprintf(`
       mutation {
         publishCampaign(campaign: %q) {
@@ -1415,9 +1381,7 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 	}
 	defer func() { git.Mocks.ExecReader = nil }()
 
-	var queryCampaignResponse struct {
-		Node Campaign
-	}
+	var queryCampaignResponse struct{ Node apitest.Campaign }
 
 	apitest.MustExec(ctx, t, s, nil, &queryCampaignResponse, fmt.Sprintf(`
 	    fragment c on Campaign {
