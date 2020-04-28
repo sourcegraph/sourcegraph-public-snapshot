@@ -5,7 +5,6 @@ import "github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 // Client is an interface that wraps all of the queries to gitserver needed by the
 // precise-code-intel services.
 type Client interface {
-
 	// Head determines the tip commit of the default branch for the given repository.
 	Head(db db.DB, repositoryID int) (string, error)
 
