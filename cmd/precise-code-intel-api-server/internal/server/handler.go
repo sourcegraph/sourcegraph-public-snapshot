@@ -11,6 +11,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/gitserver"
 )
 
 const DefaultUploadPageSize = 50
@@ -51,7 +52,9 @@ func (s *Server) handleGetUploadByID(w http.ResponseWriter, r *http.Request) {
 
 // DELETE /uploads/{id:[0-9]+}
 func (s *Server) handleDeleteUploadByID(w http.ResponseWriter, r *http.Request) {
-	exists, err := s.db.DeleteUploadByID(r.Context(), int(idFromRequest(r)), getTipCommit)
+	exists, err := s.db.DeleteUploadByID(r.Context(), int(idFromRequest(r)), func(repositoryID int) (string, error) {
+		return gitserver.Head(s.db, repositoryID)
+	})
 	if err != nil {
 		log15.Error("Failed to delete upload", "error", err)
 		http.Error(w, fmt.Sprintf("failed to delete upload: %s", err.Error()), http.StatusInternalServerError)

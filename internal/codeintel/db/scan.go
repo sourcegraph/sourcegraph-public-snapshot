@@ -120,6 +120,12 @@ func scanReferences(rows *sql.Rows, err error) ([]Reference, error) {
 	return references, nil
 }
 
+// scanString populates a string value from the given scanner.
+func scanString(scanner Scanner) (value string, err error) {
+	err = scanner.Scan(&value)
+	return value, err
+}
+
 // scanInt populates an integer value from the given scanner.
 func scanInt(scanner Scanner) (value int, err error) {
 	err = scanner.Scan(&value)
