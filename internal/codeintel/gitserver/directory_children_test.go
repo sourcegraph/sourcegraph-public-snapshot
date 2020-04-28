@@ -30,7 +30,7 @@ func TestParseDirectoryChildrenRoot(t *testing.T) {
 }
 
 func TestParseDirectoryChildrenNonRoot(t *testing.T) {
-	dirnames := []string{"cmd/", "protocol/"}
+	dirnames := []string{"cmd/", "protocol/", "cmd/protocol/"}
 	paths := []string{
 		"cmd/lsif-go",
 		"protocol/protocol.go",
@@ -38,8 +38,9 @@ func TestParseDirectoryChildrenNonRoot(t *testing.T) {
 	}
 
 	expected := map[string][]string{
-		"cmd/":      {"cmd/lsif-go"},
-		"protocol/": {"protocol/protocol.go", "protocol/writer.go"},
+		"cmd/":          {"cmd/lsif-go"},
+		"protocol/":     {"protocol/protocol.go", "protocol/writer.go"},
+		"cmd/protocol/": nil,
 	}
 
 	if diff := cmp.Diff(expected, parseDirectoryChildren(dirnames, paths)); diff != "" {
