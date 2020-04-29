@@ -1345,18 +1345,10 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// TODO: We need a transaction here because ExecChangesetJob expects a
-	// wrapping tx. We can remove that assertion from ExecChangesetJob though
-	// and then remove the tx here.
-	tx, err := store.Transact(ctx)
+	err = ee.ExecChangesetJob(ctx, clock, store, gitClient, sourcer, c, job)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = ee.ExecChangesetJob(ctx, clock, tx, gitClient, sourcer, c, job)
-	if err != nil {
-		t.Fatal(err)
-	}
-	tx.Done(nil)
 
 	updatedJob, err := store.GetChangesetJob(ctx, ee.GetChangesetJobOpts{ID: job.ID})
 	if err != nil {
