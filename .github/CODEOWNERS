@@ -100,10 +100,10 @@
 /internal/eventlogger @dadlerj
 
 # Campaigns
-/cmd/frontend/graphqlbackend/campaigns.go @sourcegraph/campaigns-core
-/enterprise/internal/campaigns @sourcegraph/campaigns-core
-/internal/campaigns @sourcegraph/campaigns-core
-/web/**/campaigns/** @sourcegraph/campaigns-web @mrnugget @sourcegraph/web
+/cmd/frontend/graphqlbackend/campaigns.go @sourcegraph/campaigns
+/enterprise/internal/campaigns @sourcegraph/campaigns
+/internal/campaigns @sourcegraph/campaigns
+/web/**/campaigns/** @sourcegraph/campaigns
 
 # Auth
 /cmd/frontend/auth/ @beyang @unknwon
