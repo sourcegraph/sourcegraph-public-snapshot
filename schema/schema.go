@@ -1047,6 +1047,8 @@ type SiteConfiguration struct {
 	UpdateChannel string `json:"update.channel,omitempty"`
 	// UseJaeger description: DEPRECATED. Use `"observability.tracing": { "sampling": "all" }`, instead. Enables Jaeger tracing.
 	UseJaeger bool `json:"useJaeger,omitempty"`
+	// VersionContexts description: List of version contexts
+	VersionContexts []*VersionContext `json:"versionContexts,omitempty"`
 }
 
 // TlsExternal description: Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.
@@ -1059,6 +1061,22 @@ type TlsExternal struct {
 }
 type UsernameIdentity struct {
 	Type string `json:"type"`
+}
+
+// VersionContext description: Description of the version context
+type VersionContext struct {
+	// Name description: Name of the version context, it must be unique.
+	Name string `json:"name"`
+	// Revisions description: List of repositories of the version context
+	Revisions []*VersionContextRevision `json:"revisions"`
+}
+
+// VersionContextRevision description: Description of the chosen repository and revision
+type VersionContextRevision struct {
+	// Ref description: Branch, tag, or commit hash
+	Ref string `json:"ref"`
+	// Repo description: Repository name
+	Repo string `json:"repo"`
 }
 
 // Webhooks description: DEPRECATED: Switch to "plugin.webhooks"
