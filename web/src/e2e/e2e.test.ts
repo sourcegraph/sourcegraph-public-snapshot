@@ -1494,7 +1494,7 @@ describe('e2e test suite', () => {
                 await driver.page.goto(sourcegraphBaseUrl + '/campaigns/new')
                 try {
                     // wait for splash page to disappear
-                    await driver.page.waitForSelector('.e2e-campaign-form', { visible: true, timeout: 1000 })
+                    await driver.page.waitForSelector('.e2e-campaign-form', { waitFor: 'visible', timeout: 1000 })
                 } catch (error) {
                     await new Promise(resolve => setTimeout(resolve, 1000))
                     throw asError(error)

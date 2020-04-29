@@ -76,7 +76,7 @@ async function addPhabricatorRepo(driver: Driver): Promise<void> {
     if (buttonLabel === 'Activate Repository') {
         await activateButton.click()
         await driver.page.waitForSelector('form[action="/source/jrpc/edit/activate/"]')
-        await (await driver.page.$x('//button[text()="Activate Repository"]'))[0].click()
+        await (await driver.page.$$('//button[text()="Activate Repository"]'))[0].click()
         await driver.page.waitForNavigation()
         await waitUntilRepositoryCloned(driver)
     }
@@ -198,7 +198,7 @@ describe('Sourcegraph Phabricator extension', () => {
         await codeLine.hover()
 
         // Once the line is tokenized, we can click on the individual token we want a hover for.
-        const codeElement = await driver.page.waitForXPath(`//tbody/tr[${lineNumber}]//span[text()="CallOption"]`)
+        const codeElement = await driver.page.waitForSelector(`//tbody/tr[${lineNumber}]//span[text()="CallOption"]`)
         await codeElement.click()
         await driver.page.waitForSelector('.e2e-tooltip-go-to-definition')
     })

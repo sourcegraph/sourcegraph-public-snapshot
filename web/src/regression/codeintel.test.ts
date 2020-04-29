@@ -2,7 +2,7 @@ import expect from 'expect'
 import { describe, before, after, test } from 'mocha'
 import * as path from 'path'
 import { range } from 'lodash'
-import { ElementHandle } from 'puppeteer'
+import { ElementHandle } from 'playwright'
 import { map } from 'rxjs/operators'
 import * as child_process from 'mz/child_process'
 import { applyEdits } from '@sqs/jsonc-parser'
@@ -497,11 +497,9 @@ async function testCodeNavigation(
             expect(defLinks).toContainEqual(definition)
         }
     } else {
-        await driver.page.waitForFunction(
-            defURL => document.location.href.endsWith(defURL),
-            { timeout: 2000 },
-            expectedDefinition.url
-        )
+        await driver.page.waitForFunction(defURL => document.location.href.endsWith(defURL), expectedDefinition.url, {
+            timeout: 2000,
+        })
         await driver.page.goBack()
     }
 
@@ -514,7 +512,7 @@ async function testCodeNavigation(
  * sequence.
  */
 async function collectLinks(driver: Driver): Promise<Set<TestLocation>> {
-    await driver.page.waitForSelector('.e2e-loading-spinner', { hidden: true })
+    await driver.page.waitForSelector('.e2e-loading-spinner', { waitFor: 'hidden' })
 
     const panelTabTitles = await getPanelTabTitles(driver)
     if (panelTabTitles.length === 0) {
@@ -794,7 +792,7 @@ async function ensureUpload(driver: Driver, uploadUrl: string): Promise<void> {
         () => document.querySelector('.e2e-upload-state')?.textContent === 'Upload processed successfully.'
     )
 
-    const isLatestForRepoText = await (await driver.page.waitFor('.e2e-is-latest-for-repo')).evaluate(
+    const isLatestForRepoText = await (await driver.page.waitForSelector('.e2e-is-latest-for-repo')).evaluate(
         elem => elem.textContent
     )
     expect(isLatestForRepoText).toEqual('yes')

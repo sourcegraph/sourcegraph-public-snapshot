@@ -16,7 +16,6 @@ describe('Sourcegraph browser extension on github.com', function () {
     before('Open browser', async function () {
         this.timeout(90 * 1000)
         driver = await createDriverForTest({ loadExtension: true, browser, sourcegraphBaseUrl, ...restConfig })
-        await driver.ensureLoggedIn({ username: 'test', password: 'testtesttest' })
         if (sourcegraphBaseUrl !== 'https://sourcegraph.com') {
             await driver.setExtensionSourcegraphUrl()
         }
@@ -67,9 +66,10 @@ describe('Sourcegraph browser extension on github.com', function () {
                         // If it's not enough, the retry will catch it.
                         await driver.page.waitFor(1500)
                         const tokenElement = await retry(async () => {
-                            const lineNumberElement = await driver.page.waitForSelector(`#${lineId}`, {
+                            const lineNumberElement = (await driver.page.waitForSelector(`#${lineId}`, {
                                 timeout: 10000,
-                            })
+                            }))!
+                            assert(lineNumberElement, 'Expected line number element to exist')
                             const row = (await driver.page.evaluateHandle(
                                 element => element.closest('tr'),
                                 lineNumberElement
@@ -77,15 +77,16 @@ describe('Sourcegraph browser extension on github.com', function () {
                             assert(row, 'Expected row to exist')
                             const tokenElement = (
                                 await driver.page.evaluateHandle(
-                                    ([row, token]) =>
+                                    ({ row, token }) =>
                                         Array.from(row.querySelectorAll('span')).find(
                                             element => element.textContent === token
                                         ),
-                                    [row, token] as [HTMLTableRowElement, string]
+                                    { row, token }
                                 )
                             ).asElement()
                             assert(tokenElement, 'Expected token element to exist')
-                            return tokenElement!
+                            // return tokenElement!
+                            return lineNumberElement
                         })
                         // Retry is here to wait for listeners to be registered
                         await retry(async () => {

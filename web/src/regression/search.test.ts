@@ -573,8 +573,8 @@ describe('Search regression test suite', () => {
                         const query = url.searchParams.get('q')
                         return query && query.trim() === expectedQuery
                     },
-                    { timeout: 5000 },
-                    `${origQuery} ${token}`
+                    `${origQuery} ${token}`,
+                    { timeout: 5000 }
                 )
             }
         })
@@ -716,7 +716,7 @@ describe('Search regression test suite', () => {
         test('Adding a language filter from the dropdown correctly returns results', async () => {
             await driver.page.waitForSelector('.add-filter-dropdown')
             await driver.page.click('.add-filter-dropdown')
-            await driver.page.select('.e2e-filter-dropdown', 'lang')
+            await driver.page.selectOption('.e2e-filter-dropdown', 'lang')
             await driver.page.waitForSelector('.filter-input__input-field')
             await driver.page.keyboard.type('markdown')
             await driver.page.keyboard.press('Enter')
@@ -869,9 +869,9 @@ describe('Search regression test suite', () => {
 
         test('Filter input suggestions', async () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/search')
-            await driver.page.waitForSelector('.e2e-add-filter-button-repo', { visible: true })
+            await driver.page.waitForSelector('.e2e-add-filter-button-repo', { waitFor: 'visible' })
             await driver.page.click('.e2e-add-filter-button-repo')
-            await driver.page.waitForSelector('.filter-input', { visible: true })
+            await driver.page.waitForSelector('.filter-input', { waitFor: 'visible' })
             await driver.page.waitForSelector('.filter-input__input-field')
             await driver.page.keyboard.type('auth0/go-jwt-middlewa')
             await driver.page.waitForSelector('.e2e-filter-input__suggestions')
@@ -899,7 +899,7 @@ describe('Search regression test suite', () => {
             await driver.page.goto(config.sourcegraphBaseUrl + '/search?q=test&patternType=literal')
             await driver.page.waitForSelector('.add-filter-dropdown')
             await driver.page.click('.add-filter-dropdown')
-            await driver.page.select('.e2e-filter-dropdown', 'fork')
+            await driver.page.selectOption('.e2e-filter-dropdown', 'fork')
             await driver.page.waitForSelector('.e2e-filter-input-finite-form')
             await driver.page.waitForSelector('.e2e-filter-input-radio-button-no')
             await driver.page.click('.e2e-filter-input-radio-button-no')

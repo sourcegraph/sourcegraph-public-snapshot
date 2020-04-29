@@ -1,9 +1,30 @@
 import { Driver } from '../../../../shared/src/e2e/driver'
-import { BoundingBox } from 'puppeteer'
 
 interface ExpectedScreenshot {
     screenshotFile: string
     description: string
+}
+
+interface BoundingBox {
+    /**
+     * x-coordinate of top-left corner of clip area
+     */
+    x: number
+
+    /**
+     * y-coordinate of top-left corner of clip area
+     */
+    y: number
+
+    /**
+     * width of clipping area
+     */
+    width: number
+
+    /**
+     * height of clipping area
+     */
+    height: number
 }
 
 /**
@@ -56,8 +77,8 @@ export class ScreenshotVerifier {
                     const { width, height } = element.getBoundingClientRect()
                     return width > 0 && height > 0
                 },
-                { timeout: waitForSelectorToBeVisibleTimeout },
-                selector
+                selector,
+                { timeout: waitForSelectorToBeVisibleTimeout }
             )
         }
 

@@ -267,11 +267,9 @@ export async function login(
     if (driver.page.url() !== sourcegraphBaseUrl + '/search') {
         await loginToAuthProvider()
         try {
-            await driver.page.waitForFunction(
-                url => document.location.href === url,
-                { timeout: 5 * 1000 },
-                sourcegraphBaseUrl + '/search'
-            )
+            await driver.page.waitForFunction(url => document.location.href === url, sourcegraphBaseUrl + '/search', {
+                timeout: 5 * 1000,
+            })
         } catch (err) {
             throw new Error('unsuccessful login')
         }

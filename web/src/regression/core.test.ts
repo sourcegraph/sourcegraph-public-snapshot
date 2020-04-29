@@ -168,14 +168,10 @@ describe('Core functionality regression test suite', () => {
         })
         await driver.findElementWithText('Update profile', { action: 'click' })
         await driver.page.reload()
-        await driver.page.waitForFunction(
-            displayName => {
-                const el = document.querySelector('.e2e-user-area-header__display-name')
-                return el?.textContent && el.textContent.trim() === displayName
-            },
-            undefined,
-            displayName
-        )
+        await driver.page.waitForFunction(displayName => {
+            const el = document.querySelector('.e2e-user-area-header__display-name')
+            return el?.textContent && el.textContent.trim() === displayName
+        }, displayName)
 
         await screenshots.verifySelector(
             'navbar-toggle-is-bart-simpson.png',

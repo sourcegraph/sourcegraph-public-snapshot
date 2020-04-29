@@ -203,8 +203,8 @@ describe('Onboarding', () => {
         )
         // await driver.page.mouse.move(100, 100)
         const defTokenXPath = '//*[contains(@class, "blob-page__blob")]//span[starts-with(text(), "TokenExtractor")]'
-        await driver.page.waitForXPath(defTokenXPath)
-        const elems = await driver.page.$x(defTokenXPath)
+        await driver.page.waitFor(defTokenXPath)
+        const elems = await driver.page.$$(defTokenXPath)
         await Promise.all(elems.map(e => e.click()))
         await Promise.all(elems.map(elem => elem.dispose()))
         const findRefsSelector = '.e2e-tooltip-find-references'
@@ -235,8 +235,8 @@ describe('Onboarding', () => {
                 const { width, height } = element.getBoundingClientRect()
                 return width === 0 && height === 0
             },
-            { timeout: 100000 },
-            statusBarSelector
+            statusBarSelector,
+            { timeout: 100000 }
         )
     })
 })

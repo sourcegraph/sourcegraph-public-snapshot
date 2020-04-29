@@ -1,5 +1,5 @@
 import expect from 'expect'
-import * as puppeteer from 'puppeteer'
+// import * as puppeteer from 'puppeteer'
 import { percySnapshot as realPercySnapshot } from '@percy/puppeteer'
 import * as jsonc from '@sqs/jsonc-parser'
 import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
@@ -35,7 +35,7 @@ export const oncePageEvent = <E extends keyof any>(page: Page, eventName: E): Pr
     new Promise(resolve => page.once(eventName as any, resolve))
 
 export const percySnapshot = readEnvBoolean({ variable: 'PERCY_ON', defaultValue: false })
-    ? (page: Page, name: string, options?: any) => realPercySnapshot((page as any) as puppeteer.Page, name, options)
+    ? (page: Page, name: string, options?: any) => realPercySnapshot(page as any, name, options)
     : () => Promise.resolve()
 
 export const BROWSER_EXTENSION_DEV_ID = 'bmfbcejdknlknpncfpeloejonjoledha'
