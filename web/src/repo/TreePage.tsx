@@ -9,7 +9,7 @@ import TagIcon from 'mdi-react/TagIcon'
 import UserIcon from 'mdi-react/UserIcon'
 import React, { useState, useMemo, useCallback, useEffect } from 'react'
 import { Link, Redirect } from 'react-router-dom'
-import { Observable } from 'rxjs'
+import { Observable, EMPTY } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 import { ActionItem } from '../../../shared/src/actions/ActionItem'
 import { ActionsContainer } from '../../../shared/src/actions/ActionsContainer'
@@ -211,25 +211,27 @@ export const TreePage: React.FunctionComponent<Props> = ({
     }, [services.editor, services.model, uri])
 
     // Observe directory views
-    const workspaceUri = services.workspace.roots.value[0].uri
+    const workspaceUri = services.workspace.roots.value[0]?.uri
     const views = useObservable(
         useMemo(
             () =>
-                getViewsForContainer(
-                    ContributableViewContainer.Directory,
-                    {
-                        viewer: {
-                            type: 'DirectoryViewer',
-                            directory: {
-                                uri,
-                            },
-                        },
-                        workspace: {
-                            uri: workspaceUri,
-                        },
-                    },
-                    services.view
-                ).pipe(map(views => views.filter(isDefined))),
+                workspaceUri
+                    ? getViewsForContainer(
+                          ContributableViewContainer.Directory,
+                          {
+                              viewer: {
+                                  type: 'DirectoryViewer',
+                                  directory: {
+                                      uri,
+                                  },
+                              },
+                              workspace: {
+                                  uri: workspaceUri,
+                              },
+                          },
+                          services.view
+                      ).pipe(map(views => views.filter(isDefined)))
+                    : EMPTY,
             [services.view, workspaceUri, uri]
         )
     )
@@ -345,7 +347,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                     <div className="tree-page__section d-flex">
                         {views === undefined ? (
                             <div className="card flex-grow-1">
-                                <div className="card-body d-flex flex-column align-items-center p-5">
+                                <div className="card-body d-flex flex-column align-items-center p-3">
                                     <div>
                                         <LoadingSpinner className="icon-inline" />
                                     </div>
@@ -355,22 +357,20 @@ export const TreePage: React.FunctionComponent<Props> = ({
                         ) : (
                             views.map((view, i) => (
                                 <div key={i} className="card flex-grow-1">
-                                    <div className="card-body">
-                                        {isErrorLike(view) ? (
-                                            <ErrorAlert className="m-0" error={view} history={props.history} />
-                                        ) : (
-                                            <>
-                                                <h3>{view.title}</h3>
-                                                <ViewContent
-                                                    {...props}
-                                                    viewContent={view.content}
-                                                    settingsCascade={settingsCascade}
-                                                    caseSensitive={caseSensitive}
-                                                    patternType={patternType}
-                                                />{' '}
-                                            </>
-                                        )}
-                                    </div>
+                                    {isErrorLike(view) ? (
+                                        <ErrorAlert className="m-0" error={view} history={props.history} />
+                                    ) : (
+                                        <div className="card-body">
+                                            <h3 className="tree-page__view-title">{view.title}</h3>
+                                            <ViewContent
+                                                {...props}
+                                                viewContent={view.content}
+                                                settingsCascade={settingsCascade}
+                                                caseSensitive={caseSensitive}
+                                                patternType={patternType}
+                                            />{' '}
+                                        </div>
+                                    )}
                                 </div>
                             ))
                         )}
