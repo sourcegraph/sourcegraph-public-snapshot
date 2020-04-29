@@ -23,6 +23,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
+- The deprecated feature discussions has been removed. [#9649](https://github.com/sourcegraph/sourcegraph/issues/9649)
+
 ## 3.15.1
 
 ### Fixed
