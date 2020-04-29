@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/paths"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/server"
@@ -60,7 +61,13 @@ func main() {
 		MaxUnconvertedUploadAge: maxUnconvertedUploadAge,
 	})
 
-	go serverInst.Start()
+	go func() {
+		if err := serverInst.Start(); err != nil {
+			log15.Error("Failed to start server", "err", err)
+			os.Exit(1)
+		}
+	}()
+
 	go janitorInst.Start()
 	go debugserver.Start()
 	waitForSignal()

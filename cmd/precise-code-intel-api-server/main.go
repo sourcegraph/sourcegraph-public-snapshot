@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/server"
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
@@ -45,7 +46,13 @@ func main() {
 		JanitorInterval: janitorInterval,
 	})
 
-	go serverInst.Start()
+	go func() {
+		if err := serverImpl.Start(); err != nil {
+			log15.Error("Failed to start server", "err", err)
+			os.Exit(1)
+		}
+	}()
+
 	go janitorInst.Start()
 	go debugserver.Start()
 	waitForSignal()

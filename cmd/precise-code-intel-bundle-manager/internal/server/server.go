@@ -3,7 +3,6 @@ package server
 import (
 	"net"
 	"net/http"
-	"os"
 	"strconv"
 
 	"github.com/inconshreveable/log15"
@@ -60,8 +59,6 @@ func (s *Server) Start() {
 	handler := ot.Middleware(s.handler())
 	server := &http.Server{Addr: addr, Handler: handler}
 
-	if err := server.ListenAndServe(); err != http.ErrServerClosed {
-		log15.Error("Failed to start server", "err", err)
-		os.Exit(1)
-	}
+	log15.Info("precise-code-intel-bundle-manager: listening", "addr", addr)
+	return server.ListenAndServe()
 }

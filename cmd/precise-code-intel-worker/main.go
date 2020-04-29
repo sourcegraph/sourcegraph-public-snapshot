@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker/internal/worker"
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
@@ -38,7 +39,13 @@ func main() {
 		PollInterval:        pollInterval,
 	})
 
-	go func() { _ = workerImpl.Start() }()
+	go func() {
+		if err := workerImpl.Start(); err != nil {
+			log15.Error("Worker process encountered a fatal error", "err", err)
+			os.Exit(1)
+		}
+	}()
+
 	go debugserver.Start()
 	waitForSignal()
 }
