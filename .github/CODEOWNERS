@@ -103,7 +103,7 @@
 /cmd/frontend/graphqlbackend/campaigns.go @sourcegraph/campaigns
 /enterprise/internal/campaigns @sourcegraph/campaigns
 /internal/campaigns @sourcegraph/campaigns
-/web/**/campaigns/** @sourcegraph/campaigns @eseliger
+/web/**/campaigns/** @sourcegraph/campaigns
 
 # Auth
 /cmd/frontend/auth/ @beyang @unknwon
