@@ -7,6 +7,7 @@ import (
 	"syscall"
 
 	"github.com/inconshreveable/log15"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/server"
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
@@ -41,9 +42,18 @@ func main() {
 		BundleManagerClient: bundles.New(bundleManagerURL),
 	})
 
+	janitorMetrics := janitor.NewJanitorMetrics()
+	for _, c := range []prometheus.Counter{
+		janitorMetrics.StalledJobs,
+		janitorMetrics.Errors,
+	} {
+		prometheus.DefaultRegisterer.MustRegister(c)
+	}
+
 	janitorInst := janitor.NewJanitor(janitor.JanitorOpts{
 		DB:              db,
 		JanitorInterval: janitorInterval,
+		Metrics:         janitorMetrics,
 	})
 
 	go func() {

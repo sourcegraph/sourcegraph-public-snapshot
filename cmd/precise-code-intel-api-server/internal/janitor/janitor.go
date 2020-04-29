@@ -5,23 +5,49 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 )
+
+type JanitorMetrics struct {
+	StalledJobs prometheus.Counter
+	Errors      prometheus.Counter
+}
+
+func NewJanitorMetrics() JanitorMetrics {
+	return JanitorMetrics{
+		StalledJobs: prometheus.NewCounter(prometheus.CounterOpts{
+			Namespace: "src",
+			Subsystem: "precise-code-intel-api-server",
+			Name:      "janitor_stalled_jobs",
+			Help:      "Total number of reset stalled jobs",
+		}),
+		Errors: prometheus.NewCounter(prometheus.CounterOpts{
+			Namespace: "src",
+			Subsystem: "precise-code-intel-api-server",
+			Name:      "janitor_errors",
+			Help:      "Total number of errors when running the janitor",
+		}),
+	}
+}
 
 type Janitor struct {
 	db              db.DB
 	janitorInterval time.Duration
+	metrics         JanitorMetrics
 }
 
 type JanitorOpts struct {
 	DB              db.DB
 	JanitorInterval time.Duration
+	Metrics         JanitorMetrics
 }
 
 func NewJanitor(opts JanitorOpts) *Janitor {
 	return &Janitor{
 		db:              opts.DB,
 		janitorInterval: opts.JanitorInterval,
+		metrics:         opts.Metrics,
 	}
 }
 
@@ -57,6 +83,7 @@ func (j *Janitor) step() error {
 func (j *Janitor) resetStalled() error {
 	ids, err := j.db.ResetStalled(context.Background(), time.Now())
 	if err != nil {
+		j.metrics.Errors.Inc()
 		return err
 	}
 
@@ -64,5 +91,6 @@ func (j *Janitor) resetStalled() error {
 		log15.Debug("Reset stalled upload", "uploadID", id)
 	}
 
+	j.metrics.StalledJobs.Add(float64(len(ids)))
 	return nil
 }

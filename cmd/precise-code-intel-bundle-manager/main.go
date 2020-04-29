@@ -7,11 +7,13 @@ import (
 	"syscall"
 
 	"github.com/inconshreveable/log15"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/paths"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/server"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/sqliteutil"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 )
@@ -42,6 +44,8 @@ func main() {
 		host = "127.0.0.1"
 	}
 
+	metrics.MustRegisterDiskMonitor(bundleDir)
+
 	serverInst, err := server.New(server.ServerOpts{
 		Host:                     host,
 		Port:                     3187,
@@ -54,11 +58,22 @@ func main() {
 		log.Fatal(err)
 	}
 
+	janitorMetrics := janitor.NewJanitorMetrics()
+	for _, c := range []prometheus.Counter{
+		janitorMetrics.FailedUploads,
+		janitorMetrics.DeadDumps,
+		janitorMetrics.OldDumps,
+		janitorMetrics.Errors,
+	} {
+		prometheus.DefaultRegisterer.MustRegister(c)
+	}
+
 	janitorInst := janitor.NewJanitor(janitor.JanitorOpts{
 		BundleDir:               bundleDir,
 		DesiredPercentFree:      desiredPercentFree,
 		JanitorInterval:         janitorInterval,
 		MaxUnconvertedUploadAge: maxUnconvertedUploadAge,
+		Metrics:                 janitorMetrics,
 	})
 
 	go func() {

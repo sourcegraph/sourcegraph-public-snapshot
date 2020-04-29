@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/paths"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/lsifserver/client"
 )
@@ -19,11 +20,48 @@ import (
 // the precise-code-intel-api-server.
 const DeadDumpBatchSize = 100
 
+type JanitorMetrics struct {
+	FailedUploads prometheus.Counter
+	DeadDumps     prometheus.Counter
+	OldDumps      prometheus.Counter
+	Errors        prometheus.Counter
+}
+
+func NewJanitorMetrics() JanitorMetrics {
+	return JanitorMetrics{
+		FailedUploads: prometheus.NewCounter(prometheus.CounterOpts{
+			Namespace: "src",
+			Subsystem: "precise-code-intel-bundle-manager",
+			Name:      "janitor_failed_uploads",
+			Help:      "Total number of failed upload removed",
+		}),
+		DeadDumps: prometheus.NewCounter(prometheus.CounterOpts{
+			Namespace: "src",
+			Subsystem: "precise-code-intel-bundle-manager",
+			Name:      "janitor_dead_dumps",
+			Help:      "Total number of dead dumps removed",
+		}),
+		OldDumps: prometheus.NewCounter(prometheus.CounterOpts{
+			Namespace: "src",
+			Subsystem: "precise-code-intel-bundle-manager",
+			Name:      "janitor_old_dumps",
+			Help:      "Total number of old dumps removed",
+		}),
+		Errors: prometheus.NewCounter(prometheus.CounterOpts{
+			Namespace: "src",
+			Subsystem: "precise-code-intel-bundle-manager",
+			Name:      "janitor_errors",
+			Help:      "Total number of errors when running the janitor",
+		}),
+	}
+}
+
 type Janitor struct {
 	bundleDir               string
 	desiredPercentFree      int
 	janitorInterval         time.Duration
 	maxUnconvertedUploadAge time.Duration
+	metrics                 JanitorMetrics
 }
 
 type JanitorOpts struct {
@@ -31,6 +69,7 @@ type JanitorOpts struct {
 	DesiredPercentFree      int
 	JanitorInterval         time.Duration
 	MaxUnconvertedUploadAge time.Duration
+	Metrics                 JanitorMetrics
 }
 
 func NewJanitor(opts JanitorOpts) *Janitor {
@@ -39,12 +78,14 @@ func NewJanitor(opts JanitorOpts) *Janitor {
 		desiredPercentFree:      opts.DesiredPercentFree,
 		janitorInterval:         opts.JanitorInterval,
 		maxUnconvertedUploadAge: opts.MaxUnconvertedUploadAge,
+		metrics:                 opts.Metrics,
 	}
 }
 
 func (j *Janitor) Start() {
 	for {
 		if err := j.step(); err != nil {
+			j.metrics.Errors.Inc()
 			log15.Error("Failed to run janitor process", "err", err)
 		}
 
@@ -80,6 +121,7 @@ func (j *Janitor) cleanFailedUploads() error {
 		return err
 	}
 
+	count := 0
 	for _, fileInfo := range fileInfos {
 		if time.Since(fileInfo.ModTime()) < j.maxUnconvertedUploadAge {
 			continue
@@ -88,8 +130,11 @@ func (j *Janitor) cleanFailedUploads() error {
 		if err := os.Remove(filepath.Join(paths.UploadsDir(j.bundleDir), fileInfo.Name())); err != nil {
 			return err
 		}
+
+		count++
 	}
 
+	j.metrics.FailedUploads.Add(float64(count))
 	return nil
 }
 
@@ -107,6 +152,7 @@ func (j *Janitor) removeDeadDumps(statesFn func(ctx context.Context, ids []int) 
 		ids = append(ids, id)
 	}
 
+	count := 0
 	allStates := map[int]string{}
 	for _, batch := range batchIntSlice(ids, DeadDumpBatchSize) {
 		states, err := statesFn(context.Background(), batch)
@@ -124,9 +170,12 @@ func (j *Janitor) removeDeadDumps(statesFn func(ctx context.Context, ids []int) 
 			if err := os.Remove(path); err != nil {
 				return err
 			}
+
+			count++
 		}
 	}
 
+	j.metrics.DeadDumps.Add(float64(count))
 	return nil
 }
 
@@ -209,6 +258,7 @@ func (j *Janitor) cleanOldDump(pruneFn func(ctx context.Context) (int64, bool, e
 		return 0, false, err
 	}
 
+	j.metrics.OldDumps.Add(1)
 	return uint64(fileInfo.Size()), true, nil
 }
 
