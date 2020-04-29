@@ -32,6 +32,7 @@ func TestCleanFailedUploads(t *testing.T) {
 		j := &Janitor{
 			bundleDir:               bundleDir,
 			maxUnconvertedUploadAge: time.Minute,
+			metrics:                 NewJanitorMetrics(),
 		}
 
 		if err := j.cleanFailedUploads(); err != nil {
@@ -63,6 +64,7 @@ func TestRemoveDeadDumps(t *testing.T) {
 
 		j := &Janitor{
 			bundleDir: bundleDir,
+			metrics:   NewJanitorMetrics(),
 		}
 
 		var idArgs [][]int
@@ -118,6 +120,7 @@ func TestRemoveDeadDumpsMaxRequestBatchSize(t *testing.T) {
 
 		j := &Janitor{
 			bundleDir: bundleDir,
+			metrics:   NewJanitorMetrics(),
 		}
 
 		var idArgs [][]int
@@ -192,6 +195,7 @@ func TestCleanOldDumpsStopsAfterFreeingDesiredSpace(t *testing.T) {
 
 		j := &Janitor{
 			bundleDir: bundleDir,
+			metrics:   NewJanitorMetrics(),
 		}
 
 		if err := j.cleanOldDumps(pruneFn, 100); err != nil {
@@ -245,6 +249,7 @@ func TestCleanOldDumpsStopsWithNoPrunableDatabases(t *testing.T) {
 
 		j := &Janitor{
 			bundleDir: bundleDir,
+			metrics:   NewJanitorMetrics(),
 		}
 
 		if err := j.cleanOldDumps(pruneFn, 100); err != nil {

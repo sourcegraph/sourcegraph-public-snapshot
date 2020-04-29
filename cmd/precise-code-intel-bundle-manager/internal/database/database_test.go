@@ -239,12 +239,12 @@ func TestDatabasePackageInformation(t *testing.T) {
 }
 
 func openTestDatabase(t *testing.T) Database {
-	documentDataCache, err := NewDocumentDataCache(1)
+	documentDataCache, _, err := NewDocumentDataCache(1)
 	if err != nil {
 		t.Fatalf("unexpected error creating cache: %s", err)
 	}
 
-	resultChunkDataCache, err := NewResultChunkDataCache(1)
+	resultChunkDataCache, _, err := NewResultChunkDataCache(1)
 	if err != nil {
 		t.Fatalf("unexpected error creating cache: %s", err)
 	}
