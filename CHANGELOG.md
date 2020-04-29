@@ -116,6 +116,12 @@ All notable changes to Sourcegraph are documented in this file.
 
 - The experimental feature discussions is marked as deprecated. GraphQL and configuration fields related to it will be removed in 3.16. [#9649](https://github.com/sourcegraph/sourcegraph/issues/9649)
 
+## 3.14.4
+
+### Fixed
+
+- A potential security vulnerability with in the authentication workflow has been fixed. [#10167](https://github.com/sourcegraph/sourcegraph/pull/10167)
+
 ## 3.14.3
 
 ### Fixed
