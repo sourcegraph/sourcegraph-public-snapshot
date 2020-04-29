@@ -5,7 +5,7 @@ import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefaul
 import { ContributableMenu, Contributions, Evaluated, MenuItemContribution, Raw } from '../../protocol'
 import { Context, ContributionScope, getComputedContextProperty } from '../context/context'
 import { ComputedContext, Expression, parse, parseTemplate } from '../context/expr/evaluator'
-import { EditorService, EditorWithPartialModel } from './editorService'
+import { ViewerService, EditorWithPartialModel } from './viewerService'
 import { SettingsService } from './settings'
 import { ModelService } from './modelService'
 
@@ -35,7 +35,7 @@ export class ContributionRegistry {
     private _entries = new BehaviorSubject<ContributionsEntry[]>([])
 
     constructor(
-        private editorService: Pick<EditorService, 'activeEditorUpdates'>,
+        private viewerService: Pick<ViewerService, 'activeViewerUpdates'>,
         private modelService: Pick<ModelService, 'getPartialModel'>,
         private settingsService: Pick<SettingsService, 'data'>,
         private context: Subscribable<Context<any>>
@@ -112,7 +112,7 @@ export class ContributionRegistry {
                     )
                 )
             ),
-            from(this.editorService.activeEditorUpdates).pipe(
+            from(this.viewerService.activeViewerUpdates).pipe(
                 map((activeEditor): EditorWithPartialModel | undefined => {
                     if (!activeEditor) {
                         return undefined

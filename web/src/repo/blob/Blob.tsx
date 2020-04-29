@@ -314,8 +314,8 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                         text: model.content,
                     })
                 }
-                this.props.extensionsController.services.editor.removeAllEditors()
-                this.props.extensionsController.services.editor.addEditor({
+                this.props.extensionsController.services.viewer.removeAllViewers()
+                this.props.extensionsController.services.viewer.addViewer({
                     type: 'CodeEditor' as const,
                     resource: uri,
                     selections: lprToSelectionsZeroIndexed(pos),

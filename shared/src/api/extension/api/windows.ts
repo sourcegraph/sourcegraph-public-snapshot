@@ -5,7 +5,7 @@ import * as sourcegraph from 'sourcegraph'
 import { asError } from '../../../util/errors'
 import { ClientCodeEditorAPI } from '../../client/api/codeEditor'
 import { ClientWindowsAPI } from '../../client/api/windows'
-import { EditorUpdate } from '../../client/services/editorService'
+import { ViewerUpdate } from '../../client/services/viewerService'
 import { ExtCodeEditor } from './codeEditor'
 import { ExtDocuments } from './documents'
 
@@ -19,10 +19,10 @@ interface WindowsProxyData {
  * @internal
  */
 export class ExtWindow implements sourcegraph.Window {
-    /** Mutable map of editor ID to editor. */
+    /** Mutable map of viewer ID to viewer. */
     private viewComponents = new Map<string, ExtCodeEditor | sourcegraph.DirectoryViewer>()
 
-    constructor(private proxy: Remote<WindowsProxyData>, private documents: ExtDocuments, data: EditorUpdate[]) {
+    constructor(private proxy: Remote<WindowsProxyData>, private documents: ExtDocuments, data: ViewerUpdate[]) {
         this.update(data)
     }
 
@@ -91,53 +91,53 @@ export class ExtWindow implements sourcegraph.Window {
     /**
      * Perform a delta update (update/add/delete) of this window's view components.
      */
-    public update(data: EditorUpdate[]): void {
+    public update(data: ViewerUpdate[]): void {
         for (const update of data) {
-            const { editorId } = update
+            const { viewerId } = update
             switch (update.type) {
                 case 'added': {
-                    const { editorData } = update
-                    let editor: ExtCodeEditor | sourcegraph.DirectoryViewer
-                    switch (editorData.type) {
+                    const { viewerData } = update
+                    let viewer: ExtCodeEditor | sourcegraph.DirectoryViewer
+                    switch (viewerData.type) {
                         case 'CodeEditor':
-                            editor = new ExtCodeEditor(
-                                { editorId, ...editorData },
+                            viewer = new ExtCodeEditor(
+                                { viewerId, ...viewerData },
                                 this.proxy.codeEditor,
                                 this.documents
                             )
                             break
                         case 'DirectoryViewer':
-                            editor = {
+                            viewer = {
                                 type: 'DirectoryViewer',
                                 // Since directories don't have any state beyond the immutable URI,
                                 // we can set the model to a static object for now and don't need to track directory models in a Map.
                                 directory: {
-                                    uri: new URL(editorData.resource),
+                                    uri: new URL(viewerData.resource),
                                 },
                             }
                             break
                     }
-                    this.viewComponents.set(editorId, editor)
-                    if (editorData.isActive) {
-                        this.activeViewComponentChanges.next(editor)
+                    this.viewComponents.set(viewerId, viewer)
+                    if (viewerData.isActive) {
+                        this.activeViewComponentChanges.next(viewer)
                     }
                     break
                 }
                 case 'updated': {
-                    const editor = this.viewComponents.get(editorId)
+                    const editor = this.viewComponents.get(viewerId)
                     if (!editor) {
-                        throw new Error(`Could not perform update: editor ${editorId} not found`)
+                        throw new Error(`Could not perform update: viewer ${viewerId} not found`)
                     }
                     if (editor.type !== 'CodeEditor') {
                         throw new Error(
-                            `Could not perform update: editor ${editorId} is type ${editor.type}, not CodeEditor`
+                            `Could not perform update: viewer ${viewerId} is type ${editor.type}, not CodeEditor`
                         )
                     }
-                    editor.update(update.editorData)
+                    editor.update(update.viewerData)
                     break
                 }
                 case 'deleted': {
-                    this.viewComponents.delete(editorId)
+                    this.viewComponents.delete(viewerId)
                     break
                 }
             }
@@ -151,7 +151,7 @@ export class ExtWindow implements sourcegraph.Window {
 
 /** @internal */
 export interface ExtWindowsAPI extends ProxyMarked {
-    $acceptWindowData(editorUpdates: EditorUpdate[]): void
+    $acceptWindowData(viewerUpdates: ViewerUpdate[]): void
 }
 
 /**
@@ -183,7 +183,7 @@ export class ExtWindows implements ExtWindowsAPI, ProxyMarked {
     }
 
     /** @internal */
-    public $acceptWindowData(editorUpdates: EditorUpdate[]): void {
-        this.activeWindow.update(editorUpdates)
+    public $acceptWindowData(viewerUpdates: ViewerUpdate[]): void {
+        this.activeWindow.update(viewerUpdates)
     }
 }

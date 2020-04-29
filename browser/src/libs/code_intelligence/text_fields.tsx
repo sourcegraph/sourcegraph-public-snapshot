@@ -57,7 +57,7 @@ function synchronizeTextField(
     { element }: TextField
 ): Unsubscribable {
     const {
-        services: { editor: editorService, model: modelService },
+        services: { viewer: viewerService, model: modelService },
     } = extensionsController
 
     const subscriptions = new Subscription()
@@ -66,13 +66,13 @@ function synchronizeTextField(
     const modelUri = nextModelUri()
     const { text, selections } = EditorTextFieldUtils.getEditorDataFromElement(element)
     modelService.addModel({ uri: modelUri, languageId: 'plaintext', text })
-    const editor = editorService.addEditor({
+    const editor = viewerService.addViewer({
         type: 'CodeEditor',
         resource: modelUri,
         selections,
         isActive: true,
     })
-    subscriptions.add(() => editorService.removeEditor(editor))
+    subscriptions.add(() => viewerService.removeViewer(editor))
 
     // Keep the text field in sync with the editor and model.
     subscriptions.add(
@@ -80,19 +80,19 @@ function synchronizeTextField(
             .pipe(observeOn(animationFrameScheduler))
             .subscribe(() => {
                 EditorTextFieldUtils.updateModelFromElement(modelService, modelUri, element)
-                EditorTextFieldUtils.updateEditorSelectionFromElement(editorService, editor, element)
+                EditorTextFieldUtils.updateEditorSelectionFromElement(viewerService, editor, element)
             })
     )
     subscriptions.add(
         fromEvent(element, 'keydown')
             .pipe(observeOn(animationFrameScheduler))
             .subscribe(() => {
-                EditorTextFieldUtils.updateEditorSelectionFromElement(editorService, editor, element)
+                EditorTextFieldUtils.updateEditorSelectionFromElement(viewerService, editor, element)
             })
     )
     subscriptions.add(
         EditorTextFieldUtils.updateElementOnEditorOrModelChanges(
-            editorService,
+            viewerService,
             modelService,
             editor,
             text => {
@@ -110,7 +110,7 @@ function synchronizeTextField(
         <EditorCompletionWidget
             {...completionWidgetClassProps}
             textArea={element}
-            editorId={editor.editorId}
+            viewerId={editor.viewerId}
             extensionsController={extensionsController}
         />,
         completionWidgetMount

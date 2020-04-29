@@ -25,7 +25,7 @@ import {
     ShowNotificationParams,
 } from './services/notifications'
 import { TextModelUpdate } from './services/modelService'
-import { EditorUpdate } from './services/editorService'
+import { ViewerUpdate } from './services/viewerService'
 import { registerComlinkTransferHandlers } from '../util'
 
 export interface ExtensionHostClientConnection {
@@ -74,7 +74,7 @@ export async function createExtensionHostClientConnection(
     const clientContext = new ClientContext((updates: ContextValues) => services.context.updateContext(updates))
     subscription.add(clientContext)
 
-    // Sync models and editors to the extension host
+    // Sync models and viewers to the extension host
     subscription.add(
         merge(
             of([...services.model.models.entries()].map(([, model]): TextModelUpdate => ({ type: 'added', ...model }))),
@@ -86,17 +86,17 @@ export async function createExtensionHostClientConnection(
     subscription.add(
         merge(
             of(
-                [...services.editor.editors.entries()].map(
-                    ([editorId, editorData]): EditorUpdate => ({
+                [...services.viewer.viewers.entries()].map(
+                    ([viewerId, viewerData]): ViewerUpdate => ({
                         type: 'added',
-                        editorId,
-                        editorData,
+                        viewerId,
+                        viewerData,
                     })
                 )
             ),
-            from(services.editor.editorUpdates)
+            from(services.viewer.viewerUpdates)
         )
-            .pipe(concatMap(editorUpdates => proxy.windows.$acceptWindowData(editorUpdates)))
+            .pipe(concatMap(viewerUpdates => proxy.windows.$acceptWindowData(viewerUpdates)))
             .subscribe()
     )
 
@@ -120,7 +120,7 @@ export async function createExtensionHostClientConnection(
     const clientViews = new ClientViews(
         services.panelViews,
         services.textDocumentLocations,
-        services.editor,
+        services.viewer,
         services.view
     )
 

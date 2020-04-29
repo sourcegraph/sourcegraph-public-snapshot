@@ -202,13 +202,13 @@ export const TreePage: React.FunctionComponent<Props> = ({
     // Add DirectoryViewer
     const uri = toURIWithPath({ repoName, commitID, filePath })
     useEffect(() => {
-        const editorId = services.editor.addEditor({
+        const viewerId = services.viewer.addViewer({
             type: 'DirectoryViewer',
             isActive: true,
             resource: uri,
         })
-        return () => services.editor.removeEditor(editorId)
-    }, [services.editor, services.model, uri])
+        return () => services.viewer.removeViewer(viewerId)
+    }, [services.viewer, services.model, uri])
 
     // Observe directory views
     const workspaceUri = services.workspace.roots.value[0]?.uri

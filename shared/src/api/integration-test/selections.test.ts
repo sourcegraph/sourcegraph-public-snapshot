@@ -7,10 +7,10 @@ describe('Selections (integration)', () => {
     describe('editor.selectionsChanged', () => {
         test('reflects changes to the current selections', async () => {
             const {
-                services: { editor: editorService },
+                services: { viewer: viewerService },
                 extensionAPI,
             } = await integrationTestContext()
-            const editor = editorService.editors.get('editor#0')!
+            const editor = viewerService.viewers.get('viewer#0')!
             const selectionChanges = from(extensionAPI.app.activeWindowChanges).pipe(
                 filter(isDefined),
                 switchMap(window => window.activeViewComponentChanges),
@@ -30,7 +30,7 @@ describe('Selections (integration)', () => {
                 [],
             ]
             for (const selections of testValues) {
-                editorService.setSelections(
+                viewerService.setSelections(
                     editor,
                     selections.map(({ start, end }) => ({
                         start: {

@@ -10,12 +10,12 @@ describe('CodeEditor (integration)', () => {
     describe('selection', () => {
         test('observe changes', async () => {
             const {
-                services: { editor: editorService },
+                services: { viewer: viewerService },
                 extensionAPI,
             } = await integrationTestContext()
-            const editor = editorService.editors.get('editor#0')!
-            editorService.setSelections(editor, [new Selection(1, 2, 3, 4)])
-            editorService.setSelections(editor, [])
+            const editor = viewerService.viewers.get('viewer#0')!
+            viewerService.setSelections(editor, [new Selection(1, 2, 3, 4)])
+            viewerService.setSelections(editor, [])
 
             const values = await from(extensionAPI.app.windows[0].activeViewComponentChanges)
                 .pipe(

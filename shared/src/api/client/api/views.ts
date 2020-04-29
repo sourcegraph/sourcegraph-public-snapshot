@@ -4,7 +4,7 @@ import { combineLatest, from, ReplaySubject, Unsubscribable, ObservableInput } f
 import { distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import { PanelView, View } from 'sourcegraph'
 import { ContributableViewContainer } from '../../protocol'
-import { EditorService, getActiveCodeEditorPosition } from '../services/editorService'
+import { ViewerService, getActiveCodeEditorPosition } from '../services/viewerService'
 import { TextDocumentLocationProviderIDRegistry } from '../services/location'
 import { PanelViewWithComponent, PanelViewProviderRegistry } from '../services/panelViews'
 import { Location } from '@sourcegraph/extension-api-types'
@@ -48,7 +48,7 @@ export class ClientViews implements ClientViewsAPI {
     constructor(
         private panelViewRegistry: PanelViewProviderRegistry,
         private textDocumentLocations: TextDocumentLocationProviderIDRegistry,
-        private editorService: EditorService,
+        private viewerService: ViewerService,
         private viewService: ViewService
     ) {}
 
@@ -71,7 +71,7 @@ export class ClientViews implements ClientViewsAPI {
                             return undefined
                         }
 
-                        return from(this.editorService.activeEditorUpdates).pipe(
+                        return from(this.viewerService.activeViewerUpdates).pipe(
                             map(getActiveCodeEditorPosition),
                             switchMap(
                                 (params): ObservableInput<MaybeLoadingResult<Location[]>> => {
