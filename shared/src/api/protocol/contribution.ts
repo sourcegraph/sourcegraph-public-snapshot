@@ -329,7 +329,7 @@ export interface ViewContribution {
     id: string
 
     /**
-     * Where this view will be displayed.
+     * The container where this view will be displayed.
      */
     where: ContributableViewContainer
 }
