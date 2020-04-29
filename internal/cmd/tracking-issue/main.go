@@ -732,7 +732,7 @@ func loadTrackingIssues(ctx context.Context, cli *graphql.Client, org string, is
 	return nil
 }
 
-func listTrackingIssues(ctx context.Context, cli *graphql.Client, issueQuery string) ([]*TrackingIssue, error) {
+func listTrackingIssues(ctx context.Context, cli *graphql.Client, org string) ([]*TrackingIssue, error) {
 	var q strings.Builder
 	q.WriteString("query($trackingCount: Int!, $trackingCursor: String, $trackingQuery: String!) {\n")
 	q.WriteString(searchGraphQLQuery("tracking"))
@@ -741,7 +741,7 @@ func listTrackingIssues(ctx context.Context, cli *graphql.Client, issueQuery str
 	r := graphql.NewRequest(q.String())
 
 	r.Var("trackingCount", 100)
-	r.Var("trackingQuery", issueQuery)
+	r.Var("trackingQuery", fmt.Sprintf("org:%q label:tracking is:open", org))
 
 	var all []*Issue
 
@@ -770,24 +770,6 @@ func listTrackingIssues(ctx context.Context, cli *graphql.Client, issueQuery str
 	}
 
 	return tracking, nil
-}
-
-func listOpenTrackingIssuesForOrg(ctx context.Context, cli *graphql.Client, org string) ([]*TrackingIssue, error) {
-	return listTrackingIssues(ctx, cli, fmt.Sprintf("org:%q label:tracking is:open", org))
-}
-
-func fillTrackingIssue(ctx context.Context, cli *graphql.Client, t *TrackingIssue, org string) error {
-	issues, err := listTrackingIssues(ctx, cli, fmt.Sprintf("org:%q label:tracking %d", org, t.Number))
-	if err != nil {
-		return err
-	}
-	for _, issue := range issues {
-		if issue.Number == t.Number {
-			t.Issue = issue.Issue
-			return nil
-		}
-	}
-	return errors.New("Couldn't find tracking issue.")
 }
 
 func unmarshalSearchNodes(nodes []searchNode) (issues []*Issue, prs []*PullRequest) {
