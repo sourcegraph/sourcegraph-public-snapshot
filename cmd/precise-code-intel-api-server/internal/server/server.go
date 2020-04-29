@@ -37,7 +37,7 @@ func New(opts ServerOpts) *Server {
 	}
 }
 
-func (s *Server) Start() {
+func (s *Server) Start() error {
 	addr := net.JoinHostPort(s.host, strconv.FormatInt(int64(s.port), 10))
 	handler := ot.Middleware(s.handler())
 	server := &http.Server{Addr: addr, Handler: handler}
