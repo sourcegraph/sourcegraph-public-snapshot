@@ -269,6 +269,11 @@ func (t *TrackingIssue) Workloads() Workloads {
 	}
 
 	for _, issue := range t.Issues {
+		// Exclude listing the tracking issue in the tracking issue.
+		if issue.URL == t.Issue.URL {
+			continue
+		}
+
 		w := workload(Assignee(issue.Assignees))
 
 		w.Issues = append(w.Issues, issue)
