@@ -1487,10 +1487,8 @@ describe('e2e test suite', () => {
             await retry(async () => {
                 await driver.page.goto(sourcegraphBaseUrl + '/campaigns/new')
                 try {
-                    assert.notStrictEqual(
-                        await driver.page.evaluate(() => document.querySelectorAll('.e2e-campaign-nav-entry').length),
-                        0
-                    )
+                    // wait for splash page to disappear
+                    await driver.page.waitForSelector('.e2e-campaign-form', { visible: true, timeout: 1000 })
                 } catch (error) {
                     await new Promise(resolve => setTimeout(resolve, 1000))
                     throw asError(error)
