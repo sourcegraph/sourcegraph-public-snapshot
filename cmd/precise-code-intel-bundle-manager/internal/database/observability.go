@@ -61,13 +61,13 @@ func NewDatabaseMetrics() DatabaseMetrics {
 				Namespace: "src",
 				Subsystem: "precise-code-intel-bundle-manager",
 				Name:      "database_exists",
-				Help:      "Time spent on exists queries",
+				Help:      "Time spent performing exists queries",
 			}, []string{}),
 			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
 				Namespace: "src",
 				Subsystem: "precise-code-intel-bundle-manager",
 				Name:      "database_exists",
-				Help:      "Total number of exists queries performed",
+				Help:      "Total number of exists queries",
 			}, []string{}),
 			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
 				Namespace: "src",
@@ -81,13 +81,13 @@ func NewDatabaseMetrics() DatabaseMetrics {
 				Namespace: "src",
 				Subsystem: "precise-code-intel-bundle-manager",
 				Name:      "database_definitions",
-				Help:      "Time spent on definitions queries",
+				Help:      "Time spent performing definitions queries",
 			}, []string{}),
 			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
 				Namespace: "src",
 				Subsystem: "precise-code-intel-bundle-manager",
 				Name:      "database_definitions",
-				Help:      "Total number of definitions returned",
+				Help:      "Total number of definitions queries",
 			}, []string{}),
 			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
 				Namespace: "src",
@@ -101,13 +101,13 @@ func NewDatabaseMetrics() DatabaseMetrics {
 				Namespace: "src",
 				Subsystem: "precise-code-intel-bundle-manager",
 				Name:      "database_references",
-				Help:      "Time spent on references queries",
+				Help:      "Time spent performing references queries",
 			}, []string{}),
 			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
 				Namespace: "src",
 				Subsystem: "precise-code-intel-bundle-manager",
 				Name:      "database_references",
-				Help:      "Total number of references returned",
+				Help:      "Total number of references queries",
 			}, []string{}),
 			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
 				Namespace: "src",
@@ -121,13 +121,13 @@ func NewDatabaseMetrics() DatabaseMetrics {
 				Namespace: "src",
 				Subsystem: "precise-code-intel-bundle-manager",
 				Name:      "database_hover",
-				Help:      "Time spent on hover queries",
+				Help:      "Time spent performing hover queries",
 			}, []string{}),
 			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
 				Namespace: "src",
 				Subsystem: "precise-code-intel-bundle-manager",
 				Name:      "database_hover",
-				Help:      "Total number of hover results returned",
+				Help:      "Total number of hover queries",
 			}, []string{}),
 			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
 				Namespace: "src",
@@ -141,19 +141,19 @@ func NewDatabaseMetrics() DatabaseMetrics {
 				Namespace: "src",
 				Subsystem: "precise-code-intel-bundle-manager",
 				Name:      "database_monikers_by_position",
-				Help:      "Time spent on moniker queries",
+				Help:      "Time spent performing monikers by position queries",
 			}, []string{}),
 			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
 				Namespace: "src",
 				Subsystem: "precise-code-intel-bundle-manager",
 				Name:      "database_monikers_by_position",
-				Help:      "Total number of monikers returned",
+				Help:      "Total number of monikers by position queries",
 			}, []string{}),
 			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
 				Namespace: "src",
 				Subsystem: "precise-code-intel-bundle-manager",
 				Name:      "database_monikers_by_position",
-				Help:      "Total number of errors when performing moniker queries",
+				Help:      "Total number of errors when performing monikers by position queries",
 			}, []string{}),
 		},
 		MonikerResults: &OperationMetrics{
@@ -161,19 +161,19 @@ func NewDatabaseMetrics() DatabaseMetrics {
 				Namespace: "src",
 				Subsystem: "precise-code-intel-bundle-manager",
 				Name:      "database_moniker_results",
-				Help:      "Time spent on moniker result queries",
+				Help:      "Time spent performing moniker results queries",
 			}, []string{}),
 			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
 				Namespace: "src",
 				Subsystem: "precise-code-intel-bundle-manager",
 				Name:      "database_moniker_results",
-				Help:      "Total number of moniker results returned",
+				Help:      "Total number of moniker results queries",
 			}, []string{}),
 			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
 				Namespace: "src",
 				Subsystem: "precise-code-intel-bundle-manager",
 				Name:      "database_moniker_results",
-				Help:      "Total number of errors when performing moniker result queries",
+				Help:      "Total number of errors when performing moniker results queries",
 			}, []string{}),
 		},
 		PackageInformation: &OperationMetrics{
@@ -181,13 +181,13 @@ func NewDatabaseMetrics() DatabaseMetrics {
 				Namespace: "src",
 				Subsystem: "precise-code-intel-bundle-manager",
 				Name:      "database_package_information",
-				Help:      "Time spent on package information queries",
+				Help:      "Time spent performing package information queries",
 			}, []string{}),
 			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
 				Namespace: "src",
 				Subsystem: "precise-code-intel-bundle-manager",
 				Name:      "database_package_information",
-				Help:      "Total number of package informations returned",
+				Help:      "Total number of package information queries",
 			}, []string{}),
 			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
 				Namespace: "src",
@@ -232,12 +232,12 @@ func (db *ObservedDatabase) Exists(ctx context.Context, path string) (_ bool, er
 	return db.database.Exists(ctx, path)
 }
 
-func (db *ObservedDatabase) Definitions(ctx context.Context, path string, line, character int) (definitions []Location, err error) {
+func (db *ObservedDatabase) Definitions(ctx context.Context, path string, line, character int) (_ []Location, err error) {
 	tr, ctx := db.tracer.New(ctx, "Database.Definitions", "")
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
-		db.metrics.Definitions.Observe(secs, float64(len(definitions)), err)
-		log(db.logger, "database.definitions", err, "count", len(definitions))
+		db.metrics.Definitions.Observe(secs, 1, err)
+		log(db.logger, "database.definitions", err)
 		tr.SetError(err)
 		tr.Finish()
 	}(time.Now())
@@ -245,12 +245,12 @@ func (db *ObservedDatabase) Definitions(ctx context.Context, path string, line, 
 	return db.database.Definitions(ctx, path, line, character)
 }
 
-func (db *ObservedDatabase) References(ctx context.Context, path string, line, character int) (references []Location, err error) {
+func (db *ObservedDatabase) References(ctx context.Context, path string, line, character int) (_ []Location, err error) {
 	tr, ctx := db.tracer.New(ctx, "Database.References", "")
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
-		db.metrics.References.Observe(secs, float64(len(references)), err)
-		log(db.logger, "database.references", err, "count", len(references))
+		db.metrics.References.Observe(secs, 1, err)
+		log(db.logger, "database.references", err)
 		tr.SetError(err)
 		tr.Finish()
 	}(time.Now())
@@ -271,17 +271,12 @@ func (db *ObservedDatabase) Hover(ctx context.Context, path string, line, charac
 	return db.database.Hover(ctx, path, line, character)
 }
 
-func (db *ObservedDatabase) MonikersByPosition(ctx context.Context, path string, line, character int) (monikers [][]types.MonikerData, err error) {
+func (db *ObservedDatabase) MonikersByPosition(ctx context.Context, path string, line, character int) (_ [][]types.MonikerData, err error) {
 	tr, ctx := db.tracer.New(ctx, "Database.MonikersByPosition", "")
 	defer func(began time.Time) {
-		count := 0
-		for _, monikerGroup := range monikers {
-			count += len(monikerGroup)
-		}
-
 		secs := time.Since(began).Seconds()
-		db.metrics.MonikersByPosition.Observe(secs, float64(count), err)
-		log(db.logger, "database.monikers-by-position", err, "count", count)
+		db.metrics.MonikersByPosition.Observe(secs, 1, err)
+		log(db.logger, "database.monikers-by-position", err)
 		tr.SetError(err)
 		tr.Finish()
 	}(time.Now())
@@ -289,12 +284,12 @@ func (db *ObservedDatabase) MonikersByPosition(ctx context.Context, path string,
 	return db.database.MonikersByPosition(ctx, path, line, character)
 }
 
-func (db *ObservedDatabase) MonikerResults(ctx context.Context, tableName, scheme, identifier string, skip, take int) (locations []Location, _ int, err error) {
+func (db *ObservedDatabase) MonikerResults(ctx context.Context, tableName, scheme, identifier string, skip, take int) (_ []Location, _ int, err error) {
 	tr, ctx := db.tracer.New(ctx, "Database.MonikerResults", "")
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
-		db.metrics.MonikerResults.Observe(secs, float64(len(locations)), err)
-		log(db.logger, "database.moniker-results", err, "count", len(locations))
+		db.metrics.MonikerResults.Observe(secs, 1, err)
+		log(db.logger, "database.moniker-results", err)
 		tr.SetError(err)
 		tr.Finish()
 	}(time.Now())
