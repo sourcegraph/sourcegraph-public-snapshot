@@ -48,7 +48,7 @@ export interface CodeEditor extends ViewerId, CodeEditorData {}
  */
 export interface DirectoryViewer extends ViewerId, DirectoryViewerData {}
 
-export type EditorWithPartialModel = CodeEditorWithPartialModel | DirectoryViewer // Directories don't have a model
+export type ViewerWithPartialModel = CodeEditorWithPartialModel | DirectoryViewer // Directories don't have a model
 
 /**
  * A code editor with a partial model.

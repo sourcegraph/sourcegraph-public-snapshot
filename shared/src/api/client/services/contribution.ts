@@ -5,7 +5,7 @@ import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefaul
 import { ContributableMenu, Contributions, Evaluated, MenuItemContribution, Raw } from '../../protocol'
 import { Context, ContributionScope, getComputedContextProperty } from '../context/context'
 import { ComputedContext, Expression, parse, parseTemplate } from '../context/expr/evaluator'
-import { ViewerService, EditorWithPartialModel } from './viewerService'
+import { ViewerService, ViewerWithPartialModel } from './viewerService'
 import { SettingsService } from './settings'
 import { ModelService } from './modelService'
 
@@ -113,7 +113,7 @@ export class ContributionRegistry {
                 )
             ),
             from(this.viewerService.activeViewerUpdates).pipe(
-                map((activeEditor): EditorWithPartialModel | undefined => {
+                map((activeEditor): ViewerWithPartialModel | undefined => {
                     if (!activeEditor) {
                         return undefined
                     }
