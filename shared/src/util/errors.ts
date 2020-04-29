@@ -46,7 +46,7 @@ export const createAggregateError = (errors: ErrorLike[] = []): Error =>
     errors.length === 1
         ? asError(errors[0])
         : Object.assign(new Error(errors.map(e => e.message).join('\n')), {
-              name: EAGGREGATEERROR,
+              name: AGGREGATE_ERROR_NAME,
               errors: errors.map(asError),
           })
 
