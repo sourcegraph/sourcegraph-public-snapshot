@@ -4,16 +4,17 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/mocks"
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
+	bundlemocks "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
+	dbmocks "github.com/sourcegraph/sourcegraph/internal/codeintel/db/mocks"
 )
 
 func TestLookupMoniker(t *testing.T) {
-	mockDB := mocks.NewMockDB()
-	mockBundleManagerClient := mocks.NewMockBundleManagerClient()
-	mockBundleClient1 := mocks.NewMockBundleClient()
-	mockBundleClient2 := mocks.NewMockBundleClient()
+	mockDB := dbmocks.NewMockDB()
+	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
+	mockBundleClient1 := bundlemocks.NewMockBundleClient()
+	mockBundleClient2 := bundlemocks.NewMockBundleClient()
 
 	setMockBundleManagerClientBundleClient(t, mockBundleManagerClient, map[int]bundles.BundleClient{42: mockBundleClient1, 50: mockBundleClient2})
 	setMockBundleClientPackageInformation(t, mockBundleClient1, "sub2/main.go", "1234", testPackageInformation)
@@ -47,8 +48,8 @@ func TestLookupMoniker(t *testing.T) {
 }
 
 func TestLookupMonikerNoPackageInformationID(t *testing.T) {
-	mockDB := mocks.NewMockDB()
-	mockBundleManagerClient := mocks.NewMockBundleManagerClient()
+	mockDB := dbmocks.NewMockDB()
+	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
 
 	_, totalCount, err := lookupMoniker(mockDB, mockBundleManagerClient, 42, "sub/main.go", "definitions", testMoniker3, 10, 5)
 	if err != nil {
@@ -60,9 +61,9 @@ func TestLookupMonikerNoPackageInformationID(t *testing.T) {
 }
 
 func TestLookupMonikerNoPackage(t *testing.T) {
-	mockDB := mocks.NewMockDB()
-	mockBundleManagerClient := mocks.NewMockBundleManagerClient()
-	mockBundleClient := mocks.NewMockBundleClient()
+	mockDB := dbmocks.NewMockDB()
+	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
+	mockBundleClient := bundlemocks.NewMockBundleClient()
 
 	setMockBundleManagerClientBundleClient(t, mockBundleManagerClient, map[int]bundles.BundleClient{42: mockBundleClient})
 	setMockBundleClientPackageInformation(t, mockBundleClient, "main.go", "1234", testPackageInformation)

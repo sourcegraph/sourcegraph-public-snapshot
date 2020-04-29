@@ -15,12 +15,21 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
+- The `userID` and `orgID` fields in the SavedSearch type in the GraphQL API have been replaced with a `namespace` field. To get the ID of the user or org that owns the saved search, use `namespace.id`. [#5327](https://github.com/sourcegraph/sourcegraph/pull/5327)
+- Tree pages now redirect to blob pages if the path is not a tree and vice versa. [#10193](https://github.com/sourcegraph/sourcegraph/pull/10193)
+- Files and directories that are not found now return a 404 status code. [#10193](https://github.com/sourcegraph/sourcegraph/pull/10193)
+
+### Fixed
+
+### Removed
+
+## 3.15.1
+
 ### Fixed
 
 - A potential security vulnerability with in the authentication workflow has been fixed. [#10167](https://github.com/sourcegraph/sourcegraph/pull/10167)
-- An issue that caused the search result type tabs to be overlapped in Safari.
-
-### Removed
+- An issue where `sourcegraph/postgres-11.4:3.15.0` was incorrectly an older version of the image incompatible with non-root Kubernetes deployments. `sourcegraph/postgres-11.4:3.15.1` now matches the same image version found in Sourcegraph 3.14.3 (`20-04-07_56b20163`).
+- An issue that caused the search result type tabs to be overlapped in Safari. [#10191](https://github.com/sourcegraph/sourcegraph/pull/10191)
 
 ## 3.15.0
 

@@ -324,26 +324,30 @@ func TestUrlRedactor(t *testing.T) {
 	}
 }
 
+func runCmd(t *testing.T, dir string, cmd string, arg ...string) string {
+	t.Helper()
+	c := exec.Command(cmd, arg...)
+	c.Dir = dir
+	c.Env = []string{
+		"GIT_COMMITTER_NAME=a",
+		"GIT_COMMITTER_EMAIL=a@a.com",
+		"GIT_AUTHOR_NAME=a",
+		"GIT_AUTHOR_EMAIL=a@a.com",
+	}
+	b, err := c.CombinedOutput()
+	if err != nil {
+		t.Fatalf("%s %s failed: %s", cmd, strings.Join(arg, " "), err)
+	}
+	return string(b)
+}
+
 func TestCloneRepo(t *testing.T) {
-	remote, cleanup1 := tmpDir(t)
-	defer cleanup1()
+	remote := tmpDir(t)
 
 	repo := remote
 	cmd := func(name string, arg ...string) string {
 		t.Helper()
-		c := exec.Command(name, arg...)
-		c.Dir = repo
-		c.Env = []string{
-			"GIT_COMMITTER_NAME=a",
-			"GIT_COMMITTER_EMAIL=a@a.com",
-			"GIT_AUTHOR_NAME=a",
-			"GIT_AUTHOR_EMAIL=a@a.com",
-		}
-		b, err := c.CombinedOutput()
-		if err != nil {
-			t.Fatalf("%s %s failed: %s", name, strings.Join(arg, " "), err)
-		}
-		return string(b)
+		return runCmd(t, repo, name, arg...)
 	}
 
 	// Setup a repo with a commit so we can see if we can clone it.
@@ -355,8 +359,7 @@ func TestCloneRepo(t *testing.T) {
 	// Add a bad tag
 	cmd("git", "tag", "HEAD")
 
-	reposDir, cleanup2 := tmpDir(t)
-	defer cleanup2()
+	reposDir := tmpDir(t)
 
 	s := &Server{
 		ReposDir:         reposDir,
@@ -414,25 +417,12 @@ func TestCloneRepo(t *testing.T) {
 }
 
 func TestRemoveBadRefs(t *testing.T) {
-	dir, cleanup := tmpDir(t)
-	defer cleanup()
+	dir := tmpDir(t)
 	gitDir := GitDir(filepath.Join(dir, ".git"))
 
 	cmd := func(name string, arg ...string) string {
 		t.Helper()
-		c := exec.Command(name, arg...)
-		c.Dir = dir
-		c.Env = []string{
-			"GIT_COMMITTER_NAME=a",
-			"GIT_COMMITTER_EMAIL=a@a.com",
-			"GIT_AUTHOR_NAME=a",
-			"GIT_AUTHOR_EMAIL=a@a.com",
-		}
-		b, err := c.CombinedOutput()
-		if err != nil {
-			t.Fatalf("%s %s failed: %s", name, strings.Join(arg, " "), err)
-		}
-		return string(b)
+		return runCmd(t, dir, name, arg...)
 	}
 
 	// Setup a repo with a commit so we can add bad refs

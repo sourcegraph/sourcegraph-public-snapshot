@@ -28,7 +28,7 @@ export const ViewContent: React.FunctionComponent<ViewContentProps> = ({ viewCon
             isMarkupContent(content) ? (
                 <section key={i} className="mt-3">
                     {content.kind === MarkupKind.Markdown || !content.kind ? (
-                        <Markdown dangerousInnerHTML={renderMarkdown(content.value)} />
+                        <Markdown dangerousInnerHTML={renderMarkdown(content.value)} history={props.history} />
                     ) : (
                         content.value
                     )}

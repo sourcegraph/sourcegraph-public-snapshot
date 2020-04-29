@@ -27,7 +27,7 @@ interface Props extends ExtensionsControllerProps {
  * to allow experimentation with extensions that listen for changes in documents and display
  * Markdown-formatted text.
  */
-export const SnippetsPage: React.FunctionComponent<Props> = ({ location, extensionsController, ...props }) => {
+export const SnippetsPage: React.FunctionComponent<Props> = ({ location, history, extensionsController }) => {
     const [textArea, setTextArea] = useState<HTMLTextAreaElement | null>(null)
     const textAreaRef = createRef<HTMLTextAreaElement>()
     useLayoutEffect(() => setTextArea(textAreaRef.current), [textAreaRef])
@@ -128,14 +128,14 @@ export const SnippetsPage: React.FunctionComponent<Props> = ({ location, extensi
                 allPanelViews.map((view, i) => (
                     <div key={i} className="mt-3 card">
                         <h3 className="card-header">{view.title}</h3>
-                        <div className="card-body" onClick={createLinkClickHandler(props.history)}>
+                        <div className="card-body" onClick={createLinkClickHandler(history)}>
                             <WithLinkPreviews
                                 dangerousInnerHTML={renderMarkdown(view.content)}
                                 extensionsController={extensionsController}
                                 setElementTooltip={setElementTooltip}
                                 linkPreviewContentClass={LINK_PREVIEW_CLASS}
                             >
-                                {props => <Markdown {...props} />}
+                                {props => <Markdown {...props} history={history} />}
                             </WithLinkPreviews>
                         </div>
                     </div>

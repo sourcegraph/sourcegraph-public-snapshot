@@ -12,8 +12,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"net/http/httputil"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -21,10 +21,9 @@ import (
 
 	"github.com/dnaeon/go-vcr/cassette"
 	"github.com/google/go-cmp/cmp"
-	gh "github.com/google/go-github/github"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -63,8 +62,8 @@ func testGitHubWebhook(db *sql.DB) func(*testing.T) {
 			Config: marshalJSON(t, &schema.GitHubConnection{
 				Url:      "https://github.com",
 				Token:    os.Getenv("GITHUB_TOKEN"),
-				Repos:    []string{"oklog/ulid"},
-				Webhooks: []*schema.GitHubWebhook{{Org: "oklog", Secret: secret}},
+				Repos:    []string{"sourcegraph/sourcegraph"},
+				Webhooks: []*schema.GitHubWebhook{{Org: "sourcegraph", Secret: secret}},
 			}),
 		}
 
@@ -78,7 +77,7 @@ func testGitHubWebhook(db *sql.DB) func(*testing.T) {
 			t.Fatal(t)
 		}
 
-		githubRepo, err := githubSrc.GetRepo(ctx, "oklog/ulid")
+		githubRepo, err := githubSrc.GetRepo(ctx, "sourcegraph/sourcegraph")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -105,7 +104,7 @@ func testGitHubWebhook(db *sql.DB) func(*testing.T) {
 		changesets := []*campaigns.Changeset{
 			{
 				RepoID:              githubRepo.ID,
-				ExternalID:          "16",
+				ExternalID:          "10156",
 				ExternalServiceType: githubRepo.ExternalRepo.ServiceType,
 				CampaignIDs:         []int64{campaign.ID},
 			},
@@ -121,133 +120,46 @@ func testGitHubWebhook(db *sql.DB) func(*testing.T) {
 			t.Fatal(err)
 		}
 
-		_, err = db.Exec("DELETE FROM changeset_events")
+		hook := NewGitHubWebhook(store, repoStore, clock)
+
+		fixtureFiles, err := filepath.Glob("testdata/fixtures/webhooks/github/*.json")
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		fs := loadFixtures(t)
-		hook := NewGitHubWebhook(store, repoStore, clock)
-		issueComment := github.IssueComment{
-			DatabaseID: 540540777,
-			Author: github.Actor{
-				AvatarURL: "https://avatars2.githubusercontent.com/u/67471?v=4",
-				Login:     "tsenart",
-				URL:       "https://api.github.com/users/tsenart",
-			},
-			Editor: &github.Actor{
-				AvatarURL: "https://avatars2.githubusercontent.com/u/67471?v=4",
-				Login:     "tsenart",
-				URL:       "https://api.github.com/users/tsenart",
-			},
-			AuthorAssociation:   "CONTRIBUTOR",
-			Body:                "A comment on an old event. Aaaand it was updated. Twice. Thrice. Four times even.",
-			URL:                 "https://api.github.com/repos/oklog/ulid/issues/comments/540540777",
-			CreatedAt:           parseTimestamp(t, "2019-10-10T12:06:54Z"),
-			UpdatedAt:           parseTimestamp(t, "2019-10-10T12:15:20Z"),
-			IncludesCreatedEdit: true,
-		}
-
-		events := []*campaigns.ChangesetEvent{
-			{
-				ID:          7,
-				ChangesetID: changesets[0].ID,
-				Kind:        campaigns.ChangesetEventKindGitHubCommented,
-				Key:         "540540777",
-				CreatedAt:   now,
-				UpdatedAt:   now,
-				Metadata: func() interface{} {
-					m := issueComment
-					return &m
-				}(),
-			},
-		}
-
-		for _, tc := range []struct {
-			name   string
-			secret string
-			event  event
-			code   int
-			want   []*campaigns.ChangesetEvent
-		}{
-			{
-				name:   "unauthorized",
-				secret: "wrong-secret",
-				event:  fs["issue_comment-edited"],
-				code:   http.StatusUnauthorized,
-				want:   []*campaigns.ChangesetEvent{},
-			},
-			{
-				name:   "non-existent-changeset",
-				secret: secret,
-				event: func() event {
-					e := fs["issue_comment-edited"]
-					clone := *(e.event.(*gh.IssueCommentEvent))
-					issue := *clone.Issue
-					clone.Issue = &issue
-					nonExistingPRNumber := 999999
-					issue.Number = &nonExistingPRNumber
-					return event{name: e.name, event: &clone}
-				}(),
-				code: http.StatusOK,
-				want: []*campaigns.ChangesetEvent{},
-			},
-			{
-				name:   "non-existent-changeset-event",
-				secret: secret,
-				event:  fs["issue_comment-edited"],
-				code:   http.StatusOK,
-				want:   events,
-			},
-			{
-				name:   "existent-changeset-event",
-				secret: secret,
-				event: func() event {
-					e := fs["issue_comment-edited"]
-					clone := *(e.event.(*gh.IssueCommentEvent))
-					comment := *clone.Comment
-					clone.Comment = &comment
-					body := "Foo bar"
-					comment.Body = &body
-					return event{name: e.name, event: &clone}
-				}(),
-				code: http.StatusOK,
-				want: func() []*campaigns.ChangesetEvent {
-					m := issueComment
-					m.Body = "Foo bar"
-					e := events[0].Clone()
-					e.Metadata = &m
-					return []*campaigns.ChangesetEvent{e}
-				}(),
-			},
-		} {
-			tc := tc
-			t.Run(tc.name, func(t *testing.T) {
-				body, err := json.Marshal(tc.event.event)
+		for _, fixtureFile := range fixtureFiles {
+			_, name := path.Split(fixtureFile)
+			name = strings.TrimSuffix(name, ".json")
+			t.Run(name, func(t *testing.T) {
+				_, err = db.Exec("ALTER SEQUENCE changeset_events_id_seq RESTART")
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = db.Exec("TRUNCATE TABLE changeset_events")
 				if err != nil {
 					t.Fatal(err)
 				}
 
-				req, err := http.NewRequest("POST", "", bytes.NewReader(body))
-				if err != nil {
-					t.Fatal(err)
-				}
+				tc := loadWebhookTestCase(t, fixtureFile)
 
-				req.Header.Set("X-Github-Event", tc.event.name)
-				req.Header.Set("X-Hub-Signature", sign(t, body, []byte(tc.secret)))
+				// Send all events twice to ensure we are idempotent
+				for i := 0; i < 2; i++ {
+					for _, event := range tc.Payloads {
+						req, err := http.NewRequest("POST", "", bytes.NewReader(event.Data))
+						if err != nil {
+							t.Fatal(err)
+						}
+						req.Header.Set("X-Github-Event", event.PayloadType)
+						req.Header.Set("X-Hub-Signature", sign(t, event.Data, []byte(secret)))
 
-				rec := httptest.NewRecorder()
-				hook.ServeHTTP(rec, req)
-				resp := rec.Result()
+						rec := httptest.NewRecorder()
+						hook.ServeHTTP(rec, req)
+						resp := rec.Result()
 
-				if tc.code != 0 && tc.code != resp.StatusCode {
-					bs, err := httputil.DumpResponse(resp, true)
-					if err != nil {
-						t.Fatal(err)
+						if resp.StatusCode != http.StatusOK {
+							t.Fatalf("Non 200 code: %v", resp.StatusCode)
+						}
 					}
-
-					t.Log(string(bs))
-					t.Errorf("have status code %d, want %d", resp.StatusCode, tc.code)
 				}
 
 				have, _, err := store.ListChangesetEvents(ctx, ListChangesetEventsOpts{Limit: 1000})
@@ -255,51 +167,69 @@ func testGitHubWebhook(db *sql.DB) func(*testing.T) {
 					t.Fatal(err)
 				}
 
-				if diff := cmp.Diff(have, tc.want); diff != "" {
+				// Overwrite and format test case
+				if *update {
+					tc.ChangesetEvents = have
+					data, err := json.MarshalIndent(tc, "  ", "  ")
+					if err != nil {
+						t.Fatal(err)
+					}
+					err = ioutil.WriteFile(fixtureFile, data, 0666)
+					if err != nil {
+						t.Fatal(err)
+					}
+				}
+
+				opts := []cmp.Option{
+					cmpopts.IgnoreFields(campaigns.ChangesetEvent{}, "CreatedAt"),
+					cmpopts.IgnoreFields(campaigns.ChangesetEvent{}, "UpdatedAt"),
+				}
+				if diff := cmp.Diff(tc.ChangesetEvents, have, opts...); diff != "" {
 					t.Error(diff)
 				}
+
 			})
 		}
 	}
 }
 
-type event struct {
-	name  string
-	event interface{}
+type webhookTestCase struct {
+	Payloads []struct {
+		PayloadType string          `json:"payload_type"`
+		Data        json.RawMessage `json:"data"`
+	} `json:"payloads"`
+	ChangesetEvents []*campaigns.ChangesetEvent `json:"changeset_events"`
 }
 
-func loadFixtures(t testing.TB) map[string]event {
+func loadWebhookTestCase(t testing.TB, path string) webhookTestCase {
 	t.Helper()
 
-	matches, err := filepath.Glob("testdata/fixtures/*")
+	bs, err := ioutil.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	fs := make(map[string]event, len(matches))
-	for _, m := range matches {
-		bs, err := ioutil.ReadFile(m)
+	var tc webhookTestCase
+	if err := json.Unmarshal(bs, &tc); err != nil {
+		t.Fatal(err)
+	}
+	for i, ev := range tc.ChangesetEvents {
+		meta, err := campaigns.NewChangesetEventMetadata(ev.Kind)
 		if err != nil {
 			t.Fatal(err)
 		}
-
-		base := filepath.Base(m)
-		name := strings.TrimSuffix(base, filepath.Ext(base))
-		parts := strings.SplitN(name, "-", 2)
-
-		if len(parts) != 2 {
-			t.Fatalf("unexpected fixture file name format: %s", m)
-		}
-
-		ev, err := gh.ParseWebHook(parts[0], bs)
+		raw, err := json.Marshal(ev.Metadata)
 		if err != nil {
 			t.Fatal(err)
 		}
-
-		fs[name] = event{name: parts[0], event: ev}
+		err = json.Unmarshal(raw, &meta)
+		if err != nil {
+			t.Fatal(err)
+		}
+		tc.ChangesetEvents[i].Metadata = meta
 	}
 
-	return fs
+	return tc
 }
 
 func TestBitbucketWebhookUpsert(t *testing.T) {

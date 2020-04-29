@@ -12,8 +12,7 @@ interface NodesWithDiffStat {
 
 export interface CampaignDiffstatProps {
     campaign?: Pick<GQL.ICampaign, '__typename'> & {
-        changesets: NodesWithDiffStat
-        patches: NodesWithDiffStat
+        diffStat: { added: number; changed: number; deleted: number }
     }
     patchSet?: Pick<GQL.IPatchSet, '__typename'> & {
         patches: NodesWithDiffStat
@@ -29,13 +28,18 @@ const sumDiffStat = (nodes: NodesWithDiffStat['nodes'], field: 'added' | 'change
  * Total diff stat of a campaign or patchset, including all changesets and patches
  */
 export const CampaignDiffStat: React.FunctionComponent<CampaignDiffstatProps> = ({ campaign, patchSet, className }) => {
-    const nodesWithDiffStat = useMemo(
-        () => (campaign ? [...campaign.changesets.nodes, ...campaign.patches.nodes] : patchSet!.patches.nodes),
-        [campaign, patchSet]
-    )
-    const added = useMemo(() => sumDiffStat(nodesWithDiffStat, 'added'), [nodesWithDiffStat])
-    const changed = useMemo(() => sumDiffStat(nodesWithDiffStat, 'changed'), [nodesWithDiffStat])
-    const deleted = useMemo(() => sumDiffStat(nodesWithDiffStat, 'deleted'), [nodesWithDiffStat])
+    const { added, changed, deleted } = useMemo(() => {
+        if (campaign) {
+            return campaign.diffStat
+        }
+        const nodesWithDiffStat = patchSet!.patches.nodes
+        const patchsetDiffStat = {
+            added: sumDiffStat(nodesWithDiffStat, 'added'),
+            deleted: sumDiffStat(nodesWithDiffStat, 'deleted'),
+            changed: sumDiffStat(nodesWithDiffStat, 'changed'),
+        }
+        return patchsetDiffStat
+    }, [campaign, patchSet])
 
     if (added + changed + deleted === 0) {
         return <></>

@@ -5,18 +5,19 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/mocks"
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
+	bundlemocks "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
+	dbmocks "github.com/sourcegraph/sourcegraph/internal/codeintel/db/mocks"
 )
 
 func TestFindClosestDatabase(t *testing.T) {
-	mockDB := mocks.NewMockDB()
-	mockBundleManagerClient := mocks.NewMockBundleManagerClient()
-	mockBundleClient1 := mocks.NewMockBundleClient()
-	mockBundleClient2 := mocks.NewMockBundleClient()
-	mockBundleClient3 := mocks.NewMockBundleClient()
-	mockBundleClient4 := mocks.NewMockBundleClient()
+	mockDB := dbmocks.NewMockDB()
+	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
+	mockBundleClient1 := bundlemocks.NewMockBundleClient()
+	mockBundleClient2 := bundlemocks.NewMockBundleClient()
+	mockBundleClient3 := bundlemocks.NewMockBundleClient()
+	mockBundleClient4 := bundlemocks.NewMockBundleClient()
 
 	setMockDBFindClosestDumps(t, mockDB, 42, testCommit, "s1/main.go", []db.Dump{
 		{ID: 50, Root: "s1/"},

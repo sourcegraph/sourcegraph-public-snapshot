@@ -102,7 +102,12 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
                 <DiscussionsNavbar {...this.props} threadTitle={thread ? thread.title : undefined} />
                 {loading && <LoadingSpinner className="icon-inline" />}
                 {error && (
-                    <ErrorAlert className="discussions-thread__error" prefix="Error loading thread" error={error} />
+                    <ErrorAlert
+                        className="discussions-thread__error"
+                        prefix="Error loading thread"
+                        error={error}
+                        history={this.props.history}
+                    />
                 )}
                 {thread && (
                     <div className="discussions-thread__comments">

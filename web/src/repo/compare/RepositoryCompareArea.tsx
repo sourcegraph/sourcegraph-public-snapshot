@@ -35,6 +35,7 @@ import { RepositoryCompareHeader } from './RepositoryCompareHeader'
 import { RepositoryCompareOverviewPage } from './RepositoryCompareOverviewPage'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { ErrorMessage } from '../../components/alerts'
+import * as H from 'history'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
@@ -52,6 +53,7 @@ interface RepositoryCompareAreaProps
         ExtensionsControllerProps,
         ThemeProps {
     repo: GQL.IRepository
+    history: H.History
 }
 
 interface State extends HoverState<HoverContext, HoverMerged, ActionItemAction> {
@@ -157,7 +159,11 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
     public render(): JSX.Element | null {
         if (this.state.error) {
             return (
-                <HeroPage icon={AlertCircleIcon} title="Error" subtitle={<ErrorMessage error={this.state.error} />} />
+                <HeroPage
+                    icon={AlertCircleIcon}
+                    title="Error"
+                    subtitle={<ErrorMessage error={this.state.error} history={this.props.history} />}
+                />
             )
         }
 

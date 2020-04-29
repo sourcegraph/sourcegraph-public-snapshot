@@ -2,18 +2,11 @@ package db
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 )
-
-// Reference is a subset of the lsif_references table which links a dump to a package from
-// which it imports. The filter field encodes a bloom filter of the set of identifiers it
-// imports from the package, which can be used to quickly filter out (on the server side)
-// dumps that improt a package but not the target identifier.
-type Reference struct {
-	DumpID int
-	Filter []byte
-}
 
 // SameRepoPager returns a ReferencePager for dumps that belong to the given repository and commit and reference the package with the
 // given scheme, name, and version.
@@ -51,14 +44,14 @@ func (db *dbImpl) SameRepoPager(ctx context.Context, repositoryID int, commit, s
 		return 0, nil, err
 	}
 
-	pageFromOffset := func(offset int) ([]Reference, error) {
+	pageFromOffset := func(offset int) ([]types.PackageReference, error) {
 		query := `
-			SELECT d.id, r.filter FROM lsif_references r
+			SELECT d.id, r.scheme, r.name, r.version, r.filter FROM lsif_references r
 			LEFT JOIN lsif_dumps d on r.dump_id = d.id
 			WHERE %s ORDER BY d.root LIMIT %d OFFSET %d
 		`
 
-		return scanReferences(tw.query(ctx, sqlf.Sprintf(query, sqlf.Join(conds, " AND "), limit, offset)))
+		return scanPackageReferences(tw.query(ctx, sqlf.Sprintf(query, sqlf.Join(conds, " AND "), limit, offset)))
 	}
 
 	return totalCount, newReferencePager(tw.tx, pageFromOffset), nil
@@ -97,15 +90,46 @@ func (db *dbImpl) PackageReferencePager(ctx context.Context, scheme, name, versi
 		return 0, nil, err
 	}
 
-	pageFromOffset := func(offset int) ([]Reference, error) {
+	pageFromOffset := func(offset int) ([]types.PackageReference, error) {
 		query := `
-			SELECT d.id, r.filter FROM lsif_references r
+			SELECT d.id, r.scheme, r.name, r.version, r.filter FROM lsif_references r
 			LEFT JOIN lsif_dumps d ON r.dump_id = d.id
 			WHERE %s ORDER BY d.repository_id, d.root LIMIT %d OFFSET %d
 		`
 
-		return scanReferences(tw.query(ctx, sqlf.Sprintf(query, sqlf.Join(conds, " AND "), limit, offset)))
+		return scanPackageReferences(tw.query(ctx, sqlf.Sprintf(query, sqlf.Join(conds, " AND "), limit, offset)))
 	}
 
 	return totalCount, newReferencePager(tw.tx, pageFromOffset), nil
+}
+
+// UpdatePackageReferences inserts reference data tied to the given upload.
+func (db *dbImpl) UpdatePackageReferences(ctx context.Context, tx *sql.Tx, references []types.PackageReference) (err error) {
+	if len(references) == 0 {
+		return nil
+	}
+
+	if tx == nil {
+		tx, err = db.db.BeginTx(ctx, nil)
+		if err != nil {
+			return err
+		}
+		defer func() {
+			err = closeTx(tx, err)
+		}()
+	}
+	tw := &transactionWrapper{tx}
+
+	query := `
+		INSERT INTO lsif_references (dump_id, scheme, name, version, filter)
+		VALUES %s
+	`
+
+	var values []*sqlf.Query
+	for _, r := range references {
+		values = append(values, sqlf.Sprintf("(%s, %s, %s, %s, %s)", r.DumpID, r.Scheme, r.Name, r.Version, r.Filter))
+	}
+
+	_, err = tw.exec(ctx, sqlf.Sprintf(query, sqlf.Join(values, ",")))
+	return err
 }

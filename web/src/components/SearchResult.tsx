@@ -6,6 +6,7 @@ import * as GQL from '../../../shared/src/graphql/schema'
 import { renderMarkdown } from '../../../shared/src/util/markdown'
 import { SearchResultMatch } from './SearchResultMatch'
 import { ThemeProps } from '../../../shared/src/theme'
+import * as H from 'history'
 
 export interface HighlightRange {
     /**
@@ -24,6 +25,7 @@ export interface HighlightRange {
 
 interface Props extends ThemeProps {
     result: GQL.GenericSearchResultInterface
+    history: H.History
 }
 
 export class SearchResult extends React.Component<Props> {
@@ -69,6 +71,7 @@ export class SearchResult extends React.Component<Props> {
                         item={match}
                         highlightRanges={highlightRanges}
                         isLightTheme={this.props.isLightTheme}
+                        history={this.props.history}
                     />
                 )
             })}

@@ -7,5 +7,6 @@
     "build": "tsc -b .",
     "watch": "tsc -b . -w",
     "eslint": "../../node_modules/.bin/eslint 'src/**/*.ts'"
-  }
+  },
+  "dependencies": {}
 }

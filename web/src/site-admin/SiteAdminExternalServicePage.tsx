@@ -15,9 +15,11 @@ import { SiteAdminExternalServiceForm } from './SiteAdminExternalServiceForm'
 import { ErrorAlert } from '../components/alerts'
 import { defaultExternalServices, codeHostExternalServices } from './externalServices'
 import { hasProperty } from '../../../shared/src/util/types'
+import * as H from 'history'
 
 interface Props extends RouteComponentProps<{ id: GQL.ID }> {
     isLightTheme: boolean
+    history: H.History
 }
 
 const LOADING = 'loading' as const
@@ -136,7 +138,11 @@ export class SiteAdminExternalServicePage extends React.Component<Props, State> 
                 <h2>Update synced repositories</h2>
                 {this.state.externalServiceOrError === LOADING && <LoadingSpinner className="icon-inline" />}
                 {isErrorLike(this.state.externalServiceOrError) && (
-                    <ErrorAlert className="mb-3" error={this.state.externalServiceOrError} />
+                    <ErrorAlert
+                        className="mb-3"
+                        error={this.state.externalServiceOrError}
+                        history={this.props.history}
+                    />
                 )}
                 {externalServiceCategory && (
                     <div className="mb-3">

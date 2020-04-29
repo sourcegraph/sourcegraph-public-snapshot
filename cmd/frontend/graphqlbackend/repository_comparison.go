@@ -401,6 +401,12 @@ func (r *DiffStat) AddStat(s diff.Stat) {
 	r.deleted += s.Deleted
 }
 
+func (r *DiffStat) AddDiffStat(s *DiffStat) {
+	r.added += s.Added()
+	r.changed += s.Changed()
+	r.deleted += s.Deleted()
+}
+
 func (r *DiffStat) Added() int32   { return r.added }
 func (r *DiffStat) Changed() int32 { return r.changed }
 func (r *DiffStat) Deleted() int32 { return r.deleted }
