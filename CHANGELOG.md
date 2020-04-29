@@ -19,6 +19,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
+- GraphQL APIs are blocking forever in OSS version. [#3487](https://github.com/sourcegraph/sourcegraph/issues/3487)
+
 ### Removed
 
 ## 3.15.1
