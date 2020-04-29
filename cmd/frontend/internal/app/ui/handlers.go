@@ -15,6 +15,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
@@ -291,7 +292,7 @@ func redirectTreeOrBlob(routeName string, common *Common, w http.ResponseWriter,
 			target += "tree"
 		}
 		target += path
-		http.Redirect(w, r, target, http.StatusTemporaryRedirect)
+		http.Redirect(w, r, auth.SafeRedirectURL(target), http.StatusTemporaryRedirect)
 		return true, nil
 	}
 	return false, nil
