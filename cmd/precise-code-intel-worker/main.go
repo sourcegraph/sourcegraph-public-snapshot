@@ -32,7 +32,7 @@ func main() {
 
 	db := mustInitializeDatabase()
 
-	workerImpl := worker.New(worker.WorkerOpts{
+	workerInst := worker.New(worker.WorkerOpts{
 		DB:                  db,
 		BundleManagerClient: bundles.New(bundleManagerURL),
 		GitserverClient:     gitserver.DefaultClient,
@@ -40,7 +40,7 @@ func main() {
 	})
 
 	go func() {
-		if err := workerImpl.Start(); err != nil {
+		if err := workerInst.Start(); err != nil {
 			log15.Error("Worker process encountered a fatal error", "err", err)
 			os.Exit(1)
 		}

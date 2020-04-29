@@ -47,7 +47,7 @@ func main() {
 	})
 
 	go func() {
-		if err := serverImpl.Start(); err != nil {
+		if err := serverInst.Start(); err != nil {
 			log15.Error("Failed to start server", "err", err)
 			os.Exit(1)
 		}
