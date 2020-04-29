@@ -5,7 +5,6 @@ package main
 import (
 	"bytes"
 	"context"
-	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -135,7 +134,7 @@ func updateIssues(ctx context.Context, cli *graphql.Client, issues []*Issue) (er
 func findMarker(s, marker string) (int, error) {
 	location := strings.Index(s, marker)
 	if location == -1 {
-		return -1, errors.New(fmt.Sprintf("could not find marker %s in issue body", marker))
+		return -1, fmt.Errorf("could not find marker %s in issue body", marker)
 	}
 	return location, nil
 }
@@ -448,15 +447,6 @@ func Emojis(categories map[string]string) string {
 	}
 
 	return string(s)
-}
-
-func has(label string, labels []string) bool {
-	for _, l := range labels {
-		if label == l {
-			return true
-		}
-	}
-	return false
 }
 
 func (issue *Issue) title() string {
