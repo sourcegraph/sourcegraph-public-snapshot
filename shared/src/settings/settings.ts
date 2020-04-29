@@ -245,6 +245,6 @@ export function isSettingsValid<S extends Settings>(
 /**
  * React partial props for components needing the settings cascade.
  */
-export interface SettingsCascadeProps {
-    settingsCascade: SettingsCascadeOrError
+export interface SettingsCascadeProps<S extends Settings = Settings> {
+    settingsCascade: SettingsCascadeOrError<S>
 }

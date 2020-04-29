@@ -41,6 +41,7 @@ import { toPrettyBlobURL, toURIWithPath } from '../../../shared/src/util/url'
 import { isDefined } from '../../../shared/src/util/types'
 import { getViewsForContainer } from '../../../shared/src/api/client/services/viewService'
 import { ViewContent } from '../views/ViewContent'
+import { Settings } from '../schema/settings.schema'
 
 const TreeEntry: React.FunctionComponent<{
     isDir: boolean
@@ -134,7 +135,7 @@ const fetchTreeCommits = memoizeObservable(
 )
 
 interface Props
-    extends SettingsCascadeProps,
+    extends SettingsCascadeProps<Settings>,
         ExtensionsControllerProps,
         PlatformContextProps,
         ThemeProps,
@@ -199,23 +200,29 @@ export const TreePage: React.FunctionComponent<Props> = ({
 
     const { services } = props.extensionsController
 
+    const codeInsightsEnabled =
+        isErrorLike(settingsCascade.final) || !settingsCascade.final?.experimentalFeatures?.codeInsights
+
     // Add DirectoryViewer
     const uri = toURIWithPath({ repoName, commitID, filePath })
     useEffect(() => {
+        if (codeInsightsEnabled) {
+            return
+        }
         const viewerId = services.viewer.addViewer({
             type: 'DirectoryViewer',
             isActive: true,
             resource: uri,
         })
         return () => services.viewer.removeViewer(viewerId)
-    }, [services.viewer, services.model, uri])
+    }, [services.viewer, services.model, uri, codeInsightsEnabled])
 
     // Observe directory views
     const workspaceUri = services.workspace.roots.value[0]?.uri
     const views = useObservable(
         useMemo(
             () =>
-                workspaceUri
+                codeInsightsEnabled && workspaceUri
                     ? getViewsForContainer(
                           ContributableViewContainer.Directory,
                           {
@@ -232,7 +239,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                           services.view
                       ).pipe(map(views => views.filter(isDefined)))
                     : EMPTY,
-            [services.view, workspaceUri, uri]
+            [codeInsightsEnabled, workspaceUri, uri, services.view]
         )
     )
 
