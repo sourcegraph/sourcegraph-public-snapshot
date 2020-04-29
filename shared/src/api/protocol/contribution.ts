@@ -313,7 +313,7 @@ export const ContributableViewContainer = {
     GlobalPage: 'global/page',
 
     /**
-     * A view on directory pages.
+     * A view contributed to directory pages.
      */
     Directory: 'directory',
 } as const
