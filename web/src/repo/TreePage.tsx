@@ -37,11 +37,10 @@ import { ErrorAlert } from '../components/alerts'
 import { subYears, formatISO } from 'date-fns'
 import { pluralize } from '../../../shared/src/util/strings'
 import { useObservable } from '../../../shared/src/util/useObservable'
-import { toPrettyBlobURL } from '../../../shared/src/util/url'
+import { toPrettyBlobURL, toURIWithPath } from '../../../shared/src/util/url'
 import { isDefined } from '../../../shared/src/util/types'
 import { getViewsForContainer } from '../../../shared/src/api/client/services/viewService'
 import { ViewContent } from '../views/ViewContent'
-import { toURIWithPath } from '../../../shared/src/util/url'
 
 const TreeEntry: React.FunctionComponent<{
     isDir: boolean
@@ -358,7 +357,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                 <div key={i} className="card flex-grow-1">
                                     <div className="card-body">
                                         {isErrorLike(view) ? (
-                                            <ErrorAlert error={view} history={props.history} />
+                                            <ErrorAlert className="m-0" error={view} history={props.history} />
                                         ) : (
                                             <>
                                                 <h3>{view.title}</h3>
