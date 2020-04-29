@@ -18,6 +18,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Extensions can contribute content to directory pages through the experimental `ViewProvier` API. [#10236](https://github.com/sourcegraph/sourcegraph/pull/10236)
 - If the experimental feature flag `codeInsights` is enabled, extensions can contribute content to directory pages through the experimental `ViewProvier` API. [#10236](https://github.com/sourcegraph/sourcegraph/pull/10236)
   - Directory pages are then represented as an experimental `DirectoryViewer` in the `visibleViewComponents` of the extension API. **Note: This may break extensions that were assuming `visibleViewComponents` were always `CodeEditor`s and did not check the `type` property.** Extensions checking the `type` property will continue to work. [#10236](https://github.com/sourcegraph/sourcegraph/pull/10236)
+- If the experimental feature flag `codeInsights` is enabled, extensions can contribute content to directory pages through the experimental `ViewProvier` API and directory pages represented as an experimental `DirectoryViewer` in the `visibleViewComponents` of the extension API. **Note: This may break extensions that were assuming `visibleViewComponents` were always `CodeEditor`s and did not check the `type` property.** Extensions checking the `type` property will continue to work. [#10236](https://github.com/sourcegraph/sourcegraph/pull/10236)
 
 ### Changed
 
