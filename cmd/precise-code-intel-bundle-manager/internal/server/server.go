@@ -18,6 +18,7 @@ type Server struct {
 	databaseCache        *database.DatabaseCache
 	documentDataCache    *database.DocumentDataCache
 	resultChunkDataCache *database.ResultChunkDataCache
+	databaseMetrics      database.DatabaseMetrics
 }
 
 type ServerOpts struct {
@@ -27,6 +28,7 @@ type ServerOpts struct {
 	DatabaseCacheSize        int64
 	DocumentDataCacheSize    int64
 	ResultChunkDataCacheSize int64
+	DatabaseMetrics          database.DatabaseMetrics
 }
 
 func New(opts ServerOpts) (*Server, error) {
@@ -52,6 +54,7 @@ func New(opts ServerOpts) (*Server, error) {
 		databaseCache:        databaseCache,
 		documentDataCache:    documentDataCache,
 		resultChunkDataCache: resultChunkDataCache,
+		databaseMetrics:      opts.DatabaseMetrics,
 	}, nil
 }
 

@@ -6,6 +6,8 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/paths"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/server"
@@ -41,6 +43,19 @@ func main() {
 		host = "127.0.0.1"
 	}
 
+	databaseMetrics := database.NewDatabaseMetrics()
+	for _, om := range []*database.OperationMetrics{
+		databaseMetrics.Exists,
+		databaseMetrics.Definitions,
+		databaseMetrics.References,
+		databaseMetrics.Hover,
+		databaseMetrics.MonikersByPosition,
+		databaseMetrics.MonikerResults,
+		databaseMetrics.PackageInformation,
+	} {
+		om.MustRegister(prometheus.DefaultRegisterer)
+	}
+
 	serverInst, err := server.New(server.ServerOpts{
 		Host:                     host,
 		Port:                     3187,
@@ -48,6 +63,7 @@ func main() {
 		DatabaseCacheSize:        int64(databaseCacheSize),
 		DocumentDataCacheSize:    int64(documentDataCacheSize),
 		ResultChunkDataCacheSize: int64(resultChunkDataCacheSize),
+		DatabaseMetrics:          databaseMetrics,
 	})
 	if err != nil {
 		log.Fatal(err)

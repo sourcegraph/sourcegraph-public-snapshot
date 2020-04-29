@@ -13,9 +13,6 @@ import (
 
 // Database wraps access to a single processed bundle.
 type Database interface {
-	// Close closes the underlying reader.
-	Close() error
-
 	// Exists determines if the path exists in the database.
 	Exists(ctx context.Context, path string) (bool, error)
 
@@ -40,6 +37,9 @@ type Database interface {
 
 	// PackageInformation looks up package information data by identifier.
 	PackageInformation(ctx context.Context, path string, packageInformationID types.ID) (types.PackageInformationData, bool, error)
+
+	// Close closes the underlying reader.
+	Close() error
 }
 
 type databaseImpl struct {

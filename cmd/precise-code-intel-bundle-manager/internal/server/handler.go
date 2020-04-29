@@ -10,9 +10,11 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/paths"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 const DefaultMonikerResultPageSize = 100
@@ -168,7 +170,12 @@ func (s *Server) dbQuery(w http.ResponseWriter, r *http.Request, handler func(ct
 	filename := paths.DBFilename(s.bundleDir, idFromRequest(r))
 
 	openDatabase := func() (database.Database, error) {
-		return database.OpenDatabase(ctx, filename, s.documentDataCache, s.resultChunkDataCache)
+		database, err := database.OpenDatabase(ctx, filename, s.documentDataCache, s.resultChunkDataCache)
+		if err != nil {
+			return nil, err
+		}
+
+		return s.wrapDatabase(database), nil
 	}
 
 	cacheHandler := func(db database.Database) error {
@@ -185,4 +192,13 @@ func (s *Server) dbQuery(w http.ResponseWriter, r *http.Request, handler func(ct
 		http.Error(w, fmt.Sprintf("failed to handle query: %s", err.Error()), http.StatusInternalServerError)
 		return
 	}
+}
+
+func (s *Server) wrapDatabase(innerDatabase database.Database) database.Database {
+	return database.NewObservedDatabase(
+		innerDatabase,
+		log15.Root(),
+		s.databaseMetrics,
+		trace.Tracer{Tracer: opentracing.GlobalTracer()},
+	)
 }
