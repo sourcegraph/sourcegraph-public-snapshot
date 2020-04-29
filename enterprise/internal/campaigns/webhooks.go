@@ -926,7 +926,7 @@ func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *repo
 
 	e, err := bbs.ParseWebhookEvent(bbs.WebhookEventType(r), payload)
 	if err != nil {
-		return nil, nil, &httpError{http.StatusBadRequest, err}
+		return nil, nil, &httpError{http.StatusBadRequest, errors.Wrap(err, "parsing webhook")}
 	}
 	return e, extSvc, nil
 }

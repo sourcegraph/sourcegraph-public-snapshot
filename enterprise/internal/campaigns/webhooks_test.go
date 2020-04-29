@@ -289,6 +289,12 @@ func testBitbucketWebhook(db *sql.DB) func(*testing.T) {
 				ExternalServiceType: bitbucketRepo.ExternalRepo.ServiceType,
 				CampaignIDs:         []int64{campaign.ID},
 			},
+			{
+				RepoID:              bitbucketRepo.ID,
+				ExternalID:          "19",
+				ExternalServiceType: bitbucketRepo.ExternalRepo.ServiceType,
+				CampaignIDs:         []int64{campaign.ID},
+			},
 		}
 
 		err = store.CreateChangesets(ctx, changesets...)
@@ -597,15 +603,4 @@ func githubProxyRedirectMiddleware(cli httpcli.Doer) httpcli.Doer {
 		}
 		return cli.Do(req)
 	})
-}
-
-func parseTimestamp(t testing.TB, ts string) time.Time {
-	t.Helper()
-
-	timestamp, err := time.Parse(time.RFC3339, ts)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	return timestamp
 }
