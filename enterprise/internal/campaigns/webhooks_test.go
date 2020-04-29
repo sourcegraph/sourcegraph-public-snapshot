@@ -32,7 +32,7 @@ import (
 
 var update = flag.Bool("update", false, "update testdata")
 
-// Ran in integration_test.go
+// Run from integration_test.go
 func testGitHubWebhook(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		now := time.Now()
@@ -150,6 +150,186 @@ func testGitHubWebhook(db *sql.DB) func(*testing.T) {
 							t.Fatal(err)
 						}
 						req.Header.Set("X-Github-Event", event.PayloadType)
+						req.Header.Set("X-Hub-Signature", sign(t, event.Data, []byte(secret)))
+
+						rec := httptest.NewRecorder()
+						hook.ServeHTTP(rec, req)
+						resp := rec.Result()
+
+						if resp.StatusCode != http.StatusOK {
+							t.Fatalf("Non 200 code: %v", resp.StatusCode)
+						}
+					}
+				}
+
+				have, _, err := store.ListChangesetEvents(ctx, ListChangesetEventsOpts{Limit: 1000})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				// Overwrite and format test case
+				if *update {
+					tc.ChangesetEvents = have
+					data, err := json.MarshalIndent(tc, "  ", "  ")
+					if err != nil {
+						t.Fatal(err)
+					}
+					err = ioutil.WriteFile(fixtureFile, data, 0666)
+					if err != nil {
+						t.Fatal(err)
+					}
+				}
+
+				opts := []cmp.Option{
+					cmpopts.IgnoreFields(campaigns.ChangesetEvent{}, "CreatedAt"),
+					cmpopts.IgnoreFields(campaigns.ChangesetEvent{}, "UpdatedAt"),
+				}
+				if diff := cmp.Diff(tc.ChangesetEvents, have, opts...); diff != "" {
+					t.Error(diff)
+				}
+
+			})
+		}
+	}
+}
+
+// Run from integration_test.go
+func testBitbucketWebhook(db *sql.DB) func(*testing.T) {
+	return func(t *testing.T) {
+		now := time.Now()
+		clock := func() time.Time {
+			return now.UTC().Truncate(time.Microsecond)
+		}
+		now = clock()
+
+		ctx := context.Background()
+
+		rcache.SetupForTest(t)
+
+		cf, save := newGithubClientFactory(t, "bitbucket-webhooks")
+		defer save()
+
+		var userID int32
+		err := db.QueryRow("INSERT INTO users (username) VALUES ('admin') RETURNING id").Scan(&userID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		secret := "secret"
+		repoStore := repos.NewDBStore(db, sql.TxOptions{})
+		githubExtSvc := &repos.ExternalService{
+			Kind:        "BITBUCKETSERVER",
+			DisplayName: "Bitbucket",
+			Config: marshalJSON(t, &schema.BitbucketServerConnection{
+				Url:   "https://bitbucket.sgdev.org",
+				Token: os.Getenv("BITBUCKET_SERVER_TOKEN"),
+				Repos: []string{"SOUR/automation-testing"},
+				Webhooks: &schema.Webhooks{
+					Secret: "longrandomsecret",
+				},
+			}),
+		}
+
+		err = repoStore.UpsertExternalServices(ctx, githubExtSvc)
+		if err != nil {
+			t.Fatal(t)
+		}
+
+		bitbucketSource, err := repos.NewBitbucketServerSource(githubExtSvc, cf, nil)
+		if err != nil {
+			t.Fatal(t)
+		}
+
+		repoChan := make(chan repos.SourceResult)
+		go func() {
+			bitbucketSource.ListRepos(ctx, repoChan)
+			close(repoChan)
+		}()
+
+		var bitbucketRepo *repos.Repo
+		for result := range repoChan {
+			if result.Err != nil {
+				t.Fatal(result.Err)
+			}
+			if result.Repo == nil {
+				continue
+			}
+			if result.Repo.Name == "bitbucket.sgdev.org/SOUR/automation-testing" {
+				bitbucketRepo = result.Repo
+			}
+		}
+
+		if bitbucketRepo == nil {
+			t.Fatal("repo not found")
+		}
+
+		err = repoStore.UpsertRepos(ctx, bitbucketRepo)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		store := NewStoreWithClock(db, clock)
+
+		campaign := &campaigns.Campaign{
+			Name:            "Test campaign",
+			Description:     "Testing THE WEBHOOKS",
+			AuthorID:        userID,
+			NamespaceUserID: userID,
+		}
+
+		err = store.CreateCampaign(ctx, campaign)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		changesets := []*campaigns.Changeset{
+			{
+				RepoID:              bitbucketRepo.ID,
+				ExternalID:          "10156",
+				ExternalServiceType: bitbucketRepo.ExternalRepo.ServiceType,
+				CampaignIDs:         []int64{campaign.ID},
+			},
+		}
+
+		err = store.CreateChangesets(ctx, changesets...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = SyncChangesets(ctx, repoStore, store, cf, changesets...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		hook := NewBitbucketServerWebhook(store, repoStore, clock, "testhook")
+
+		fixtureFiles, err := filepath.Glob("testdata/fixtures/webhooks/bitbucketserver/*.json")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		for _, fixtureFile := range fixtureFiles {
+			_, name := path.Split(fixtureFile)
+			name = strings.TrimSuffix(name, ".json")
+			t.Run(name, func(t *testing.T) {
+				_, err = db.Exec("ALTER SEQUENCE changeset_events_id_seq RESTART")
+				if err != nil {
+					t.Fatal(err)
+				}
+				_, err = db.Exec("TRUNCATE TABLE changeset_events")
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				tc := loadWebhookTestCase(t, fixtureFile)
+
+				// Send all events twice to ensure we are idempotent
+				for i := 0; i < 2; i++ {
+					for _, event := range tc.Payloads {
+						req, err := http.NewRequest("POST", "", bytes.NewReader(event.Data))
+						if err != nil {
+							t.Fatal(err)
+						}
 						req.Header.Set("X-Hub-Signature", sign(t, event.Data, []byte(secret)))
 
 						rec := httptest.NewRecorder()

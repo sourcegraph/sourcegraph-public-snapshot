@@ -1,0 +1,145 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://bitbucket.sgdev.org/rest/api/1.0/labels/archived/labeled?REPOSITORY=&limit=1000
+    method: GET
+  response:
+    body: '{"size":1,"limit":1000,"isLastPage":true,"values":[{"slug":"archived-repo","id":10073,"name":"archived-repo","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"PUBLIC","id":4,"name":"Public","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/PUBLIC"}]}},"public":false,"labelableType":"REPOSITORY","links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/public/archived-repo.git","name":"http"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/PUBLIC/repos/archived-repo/browse"}]}}],"start":0}'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Cf-Cache-Status:
+      - DYNAMIC
+      Cf-Ray:
+      - 58b984277db4491a-CPT
+      Cf-Request-Id:
+      - 0267d0ecae0000491a2fb0d200000001
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Wed, 29 Apr 2020 13:54:40 GMT
+      Expect-Ct:
+      - max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
+      Pragma:
+      - no-cache
+      Server:
+      - cloudflare
+      Vary:
+      - X-AUSERNAME,Accept-Encoding
+      X-Arequestid:
+      - '@MWNSEUx834x1957254x0'
+      X-Asen:
+      - SEN-11363689
+      X-Asessionid:
+      - 11pcb7g
+      X-Auserid:
+      - "1"
+      X-Ausername:
+      - milton
+      X-Content-Type-Options:
+      - nosniff
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://bitbucket.sgdev.org/rest/api/1.0/projects/SOUR/repos/automation-testing
+    method: GET
+  response:
+    body: '{"slug":"automation-testing","id":10070,"name":"automation-testing","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"SOUR","id":1,"name":"sourcegraph","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR"}]}},"public":false,"links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/sour/automation-testing.git","name":"http"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/browse"}]}}'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Cf-Cache-Status:
+      - DYNAMIC
+      Cf-Ray:
+      - 58b9842d18e7491a-CPT
+      Cf-Request-Id:
+      - 0267d0f0310000491a2fb34200000001
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Wed, 29 Apr 2020 13:54:41 GMT
+      Expect-Ct:
+      - max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
+      Pragma:
+      - no-cache
+      Server:
+      - cloudflare
+      Vary:
+      - X-AUSERNAME,Accept-Encoding
+      X-Arequestid:
+      - '@MWNSEUx834x1957255x0'
+      X-Asen:
+      - SEN-11363689
+      X-Asessionid:
+      - 18ln1mo
+      X-Auserid:
+      - "1"
+      X-Ausername:
+      - milton
+      X-Content-Type-Options:
+      - nosniff
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://bitbucket.sgdev.org/rest/api/1.0/projects/SOUR/repos/automation-testing/pull-requests/10156
+    method: GET
+  response:
+    body: '{"errors":[{"context":null,"message":"Pull request 10156 does not exist
+      in SOUR/automation-testing.","exceptionName":"com.atlassian.bitbucket.pull.NoSuchPullRequestException"}]}'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Cf-Cache-Status:
+      - DYNAMIC
+      Cf-Ray:
+      - 58b984330d3f491a-CPT
+      Cf-Request-Id:
+      - 0267d0f3e40000491a2fb84200000001
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Wed, 29 Apr 2020 13:54:42 GMT
+      Expect-Ct:
+      - max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
+      Pragma:
+      - no-cache
+      Server:
+      - cloudflare
+      Vary:
+      - X-AUSERNAME,Accept-Encoding
+      X-Arequestid:
+      - '@MWNSEUx834x1957257x0'
+      X-Asen:
+      - SEN-11363689
+      X-Asessionid:
+      - wqrkzw
+      X-Auserid:
+      - "1"
+      X-Ausername:
+      - milton
+      X-Content-Type-Options:
+      - nosniff
+    status: 404 Not Found
+    code: 404
+    duration: ""
