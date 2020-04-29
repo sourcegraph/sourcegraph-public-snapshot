@@ -216,8 +216,6 @@ Dockerfile @sourcegraph/distribution
 
 # Code discussions
 **/*discussion* @slimsag
-/web/src/discussions @slimsag
-/web/src/repo/blob/discussions @slimsag
 /cmd/frontend/types/discussions.go @slimsag
 /cmd/frontend/internal/pkg/discussions @slimsag
 /cmd/frontend/graphqlbackend/discussion* @slimsag

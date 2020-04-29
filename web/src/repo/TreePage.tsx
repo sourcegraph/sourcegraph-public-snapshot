@@ -26,8 +26,6 @@ import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
 import { queryGraphQL } from '../backend/graphql'
 import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
-import { isDiscussionsEnabled } from '../discussions'
-import { DiscussionsList } from '../discussions/DiscussionsList'
 import { PatternTypeProps, CaseSensitivityProps } from '../search'
 import { eventLogger, EventLoggerProps } from '../tracking/eventLogger'
 import { basename } from '../util/path'
@@ -309,22 +307,6 @@ export const TreePage: React.FunctionComponent<Props> = ({
                         parentPath={filePath}
                         entries={treeOrError.entries}
                     />
-                    {isDiscussionsEnabled(settingsCascade) && (
-                        <div className="tree-page__section mt-2 tree-page__section--discussions">
-                            <h3 className="tree-page__section-header">Discussions</h3>
-                            <DiscussionsList
-                                {...props}
-                                repoID={repoID}
-                                rev={rev}
-                                filePath={filePath + '/**' || undefined}
-                                noun="discussion in this tree"
-                                pluralNoun="discussions in this tree"
-                                defaultFirst={2}
-                                hideSearch={true}
-                                compact={false}
-                            />
-                        </div>
-                    )}
                     {/* eslint-disable react/jsx-no-bind */}
                     <ActionsContainer
                         {...props}
