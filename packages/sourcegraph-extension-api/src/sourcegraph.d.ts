@@ -747,7 +747,7 @@ declare module 'sourcegraph' {
 
     /**
      * Experimental global view provider. Global view providers are shown on a dedicated page in the app.
-     * This API is experimtal subject to change or removal without notice.
+     * This API is experimental and is subject to change or removal without notice.
      */
     export interface GlobalPageViewProvider {
         readonly where: 'global/page'
