@@ -161,7 +161,7 @@ export function fetchAllRepositoriesAndPollIfEmptyOrAnyCloning(
                 result.nodes &&
                 result.nodes.length > 0 &&
                 result.nodes.every(n => !n.mirrorInfo.cloneInProgress && n.mirrorInfo.cloned),
-            5000
+            { delay: 5000 }
         )
     )
 }

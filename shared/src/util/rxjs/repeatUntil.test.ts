@@ -29,7 +29,7 @@ describe('repeatUntil()', () => {
     it('delays resubscription if delay is provided', () => {
         scheduler().run(({ cold, expectObservable }) => {
             let n = 0
-            expectObservable(defer(() => cold('a|', { a: ++n })).pipe(repeatUntil(v => v === 5, 5000))).toBe(
+            expectObservable(defer(() => cold('a|', { a: ++n })).pipe(repeatUntil(v => v === 5, { delay: 5000 }))).toBe(
                 'a 5s b 5s c 5s d 5s (e|)',
                 {
                     a: 1,
