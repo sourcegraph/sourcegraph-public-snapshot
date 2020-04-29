@@ -198,14 +198,6 @@ func NewGitHubWebhook(store *Store, repos repos.Store, now func() time.Time) *Gi
 	return &GitHubWebhook{&Webhook{store, repos, now, github.ServiceType}}
 }
 
-func NewBitbucketServerWebhook(store *Store, repos repos.Store, now func() time.Time, name string) *BitbucketServerWebhook {
-	return &BitbucketServerWebhook{
-		Webhook: &Webhook{store, repos, now, bbs.ServiceType},
-		Name:    name,
-		secrets: make(map[int64]string),
-	}
-}
-
 // ServeHTTP implements the http.Handler interface.
 func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	e, extSvc, httpErr := h.parseEvent(r)
@@ -754,6 +746,14 @@ func (*GitHubWebhook) checkRunEvent(cr *gh.CheckRun) *github.CheckRun {
 		Status:     cr.GetStatus(),
 		Conclusion: cr.GetConclusion(),
 		ReceivedAt: time.Now(),
+	}
+}
+
+func NewBitbucketServerWebhook(store *Store, repos repos.Store, now func() time.Time, name string) *BitbucketServerWebhook {
+	return &BitbucketServerWebhook{
+		Webhook: &Webhook{store, repos, now, bbs.ServiceType},
+		Name:    name,
+		secrets: make(map[int64]string),
 	}
 }
 

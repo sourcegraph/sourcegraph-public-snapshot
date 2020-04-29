@@ -225,7 +225,7 @@ func testBitbucketWebhook(db *sql.DB) func(*testing.T) {
 				Token: os.Getenv("BITBUCKET_SERVER_TOKEN"),
 				Repos: []string{"SOUR/automation-testing"},
 				Webhooks: &schema.Webhooks{
-					Secret: "longrandomsecret",
+					Secret: secret,
 				},
 			}),
 		}
@@ -285,7 +285,7 @@ func testBitbucketWebhook(db *sql.DB) func(*testing.T) {
 		changesets := []*campaigns.Changeset{
 			{
 				RepoID:              bitbucketRepo.ID,
-				ExternalID:          "10156",
+				ExternalID:          "69",
 				ExternalServiceType: bitbucketRepo.ExternalRepo.ServiceType,
 				CampaignIDs:         []int64{campaign.ID},
 			},
