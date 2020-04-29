@@ -342,8 +342,7 @@ func runCmd(t *testing.T, dir string, cmd string, arg ...string) string {
 }
 
 func TestCloneRepo(t *testing.T) {
-	remote, cleanup1 := tmpDir(t)
-	defer cleanup1()
+	remote := tmpDir(t)
 
 	repo := remote
 	cmd := func(name string, arg ...string) string {
@@ -360,8 +359,7 @@ func TestCloneRepo(t *testing.T) {
 	// Add a bad tag
 	cmd("git", "tag", "HEAD")
 
-	reposDir, cleanup2 := tmpDir(t)
-	defer cleanup2()
+	reposDir := tmpDir(t)
 
 	s := &Server{
 		ReposDir:         reposDir,
@@ -419,8 +417,7 @@ func TestCloneRepo(t *testing.T) {
 }
 
 func TestRemoveBadRefs(t *testing.T) {
-	dir, cleanup := tmpDir(t)
-	defer cleanup()
+	dir := tmpDir(t)
 	gitDir := GitDir(filepath.Join(dir, ".git"))
 
 	cmd := func(name string, arg ...string) string {
