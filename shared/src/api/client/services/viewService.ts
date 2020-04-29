@@ -12,7 +12,7 @@ import { isDefined, DeepReplace } from '../../../util/types'
 export interface View extends ExtensionView {}
 
 /**
- * The types of the context parameter by the container (internally).
+ * A map from type of container names to the internal type of the context parameter provided by the container.
  */
 export interface ViewContexts {
     [ContributableViewContainer.Panel]: never
