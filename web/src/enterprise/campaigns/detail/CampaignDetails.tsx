@@ -27,7 +27,7 @@ import { Subject, of, merge, Observable, NEVER } from 'rxjs'
 import { renderMarkdown, highlightCodeSafe } from '../../../../../shared/src/util/markdown'
 import { ErrorAlert } from '../../../components/alerts'
 import { Markdown } from '../../../../../shared/src/components/Markdown'
-import { switchMap, tap, takeWhile, repeatWhen, delay, distinctUntilChanged } from 'rxjs/operators'
+import { switchMap, distinctUntilChanged } from 'rxjs/operators'
 import { ThemeProps } from '../../../../../shared/src/theme'
 import { CampaignDescriptionField } from './form/CampaignDescriptionField'
 import { CampaignStatus } from './CampaignStatus'
@@ -43,6 +43,7 @@ import { TelemetryProps } from '../../../../../shared/src/telemetry/telemetrySer
 import { CampaignPatches } from './patches/CampaignPatches'
 import { PatchSetPatches } from './patches/PatchSetPatches'
 import { CampaignBranchField } from './form/CampaignBranchField'
+import { repeatUntil } from '../../../../../shared/src/util/rxjs/repeatUntil'
 
 export type CampaignUIMode = 'viewing' | 'editing' | 'saving' | 'deleting' | 'closing' | 'publishing'
 
@@ -129,24 +130,15 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
         // on the very first fetch, a reload of the changesets is not required
         let isFirstCampaignFetch = true
 
-        let currentCampaign: Campaign | null
         // Fetch campaign if ID was given
         const subscription = merge(of(undefined), _noSubject ? new Observable<void>() : campaignUpdates)
             .pipe(
                 switchMap(() =>
                     _fetchCampaignById(campaignID).pipe(
-                        tap(campaign => {
-                            currentCampaign = campaign
-                        }),
                         // repeat fetching the campaign as long as the state is still processing
-                        repeatWhen(obs =>
-                            obs.pipe(
-                                takeWhile(
-                                    () => currentCampaign?.status?.state === GQL.BackgroundProcessState.PROCESSING
-                                ),
-                                delay(2000)
-                            )
-                        )
+                        repeatUntil(campaign => campaign?.status?.state !== GQL.BackgroundProcessState.PROCESSING, {
+                            delay: 2000,
+                        })
                     )
                 ),
                 distinctUntilChanged((a, b) => isEqual(a, b))
