@@ -21,7 +21,7 @@ export const asError = (value: unknown): Error => {
     return new Error(String(value))
 }
 
-const EAGGREGATEERROR = 'AggregateError'
+const AGGREGATE_ERROR_NAME = 'AggregateError'
 
 /**
  * An Error that aggregates multiple errors
