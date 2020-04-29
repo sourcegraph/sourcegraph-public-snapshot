@@ -32,10 +32,8 @@ import {
 } from '../../../../shared/src/util/url'
 import { getHover } from '../../backend/features'
 import { WebHoverOverlay } from '../../components/shared'
-import { isDiscussionsEnabled } from '../../discussions'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { EventLoggerProps } from '../../tracking/eventLogger'
-import { DiscussionsGutterOverlay } from './discussions/DiscussionsGutterOverlay'
 import { LineDecorationAttachment } from './LineDecorationAttachment'
 
 /**
@@ -65,9 +63,6 @@ interface BlobProps
 }
 
 interface BlobState extends HoverState<HoverContext, HoverMerged, ActionItemAction> {
-    /** The desired position of the discussions gutter overlay */
-    discussionsGutterOverlayPosition?: { left: number; top: number }
-
     /**
      * lineDecorationAttachmentIDs is a map from line numbers with portal nodes created to portal IDs. It's used to
      * render the portals for {@link LineDecorationAttachment}. The line numbers are taken from the blob so they
@@ -295,16 +290,6 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                     const row = element.parentElement as HTMLTableRowElement
                     row.classList.add('selected')
                 }
-
-                // Update overlay position for discussions gutter icon.
-                if (codeCells.length > 0) {
-                    const blobBounds = codeView.parentElement!.getBoundingClientRect()
-                    const row = codeCells[0].element.parentElement as HTMLTableRowElement
-                    const targetBounds = row.cells[0].getBoundingClientRect()
-                    const left = targetBounds.left - blobBounds.left
-                    const top = targetBounds.top + codeView.parentElement!.scrollTop - blobBounds.top
-                    this.setState({ discussionsGutterOverlayPosition: { left, top } })
-                }
             })
         )
 
@@ -518,15 +503,6 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                                 />
                             )
                         })}
-                {isDiscussionsEnabled(this.props.settingsCascade) &&
-                    this.state.selectedPosition &&
-                    this.state.selectedPosition.line !== undefined && (
-                        <DiscussionsGutterOverlay
-                            overlayPosition={this.state.discussionsGutterOverlayPosition}
-                            selectedPosition={this.state.selectedPosition}
-                            {...this.props}
-                        />
-                    )}
             </div>
         )
     }

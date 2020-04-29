@@ -18,10 +18,8 @@ import * as GQL from '../../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../../shared/src/settings/settings'
 import { AbsoluteRepoFile, ModeSpec, parseHash, UIPositionSpec } from '../../../../../shared/src/util/url'
-import { isDiscussionsEnabled } from '../../../discussions'
 import { RepoHeaderContributionsLifecycleProps } from '../../RepoHeader'
 import { RepoRevSidebarCommits } from '../../RepoRevSidebarCommits'
-import { DiscussionsTree } from '../discussions/DiscussionsTree'
 import { ThemeProps } from '../../../../../shared/src/theme'
 interface Props
     extends AbsoluteRepoFile,
@@ -41,7 +39,7 @@ interface Props
     authenticatedUser: GQL.IUser | null
 }
 
-export type BlobPanelTabID = 'info' | 'def' | 'references' | 'discussions' | 'impl' | 'typedef' | 'history'
+export type BlobPanelTabID = 'info' | 'def' | 'references' | 'impl' | 'typedef' | 'history'
 
 /** The subject (what the contextual information refers to). */
 interface PanelSubject extends AbsoluteRepoFile, ModeSpec, Partial<UIPositionSpec> {
@@ -178,36 +176,6 @@ export class BlobPanel extends React.PureComponent<Props> {
                                     />
                                 ),
                             }))
-                        ),
-                    },
-
-                    {
-                        // Code discussions view.
-                        registrationOptions: { id: 'discussions', container: ContributableViewContainer.Panel },
-                        provider: subjectChanges.pipe(
-                            map((subject: PanelSubject) =>
-                                isDiscussionsEnabled(this.props.settingsCascade)
-                                    ? {
-                                          title: 'Discussions',
-                                          content: '',
-                                          priority: 140,
-                                          locationProvider: null,
-                                          reactElement: (
-                                              <DiscussionsTree
-                                                  repoID={this.props.repoID}
-                                                  repoName={subject.repoName}
-                                                  commitID={subject.commitID}
-                                                  rev={subject.rev}
-                                                  filePath={subject.filePath}
-                                                  history={this.props.history}
-                                                  location={this.props.location}
-                                                  compact={true}
-                                                  extensionsController={this.props.extensionsController}
-                                              />
-                                          ),
-                                      }
-                                    : null
-                            )
                         ),
                     },
                 ].filter(

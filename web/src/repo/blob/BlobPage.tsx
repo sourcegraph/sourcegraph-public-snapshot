@@ -22,11 +22,9 @@ import {
 import { queryGraphQL } from '../../backend/graphql'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
-import { isDiscussionsEnabled } from '../../discussions'
 import { eventLogger, EventLoggerProps } from '../../tracking/eventLogger'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
-import { ToggleDiscussionsPanel } from './actions/ToggleDiscussions'
 import { ToggleHistoryPanel } from './actions/ToggleHistoryPanel'
 import { ToggleLineWrap } from './actions/ToggleLineWrap'
 import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
@@ -226,20 +224,6 @@ export class BlobPage extends React.PureComponent<Props, State> {
                         position="right"
                         priority={99}
                         element={<ToggleLineWrap key="toggle-line-wrap" onDidUpdate={this.onDidUpdateLineWrap} />}
-                        repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
-                    />
-                )}
-                {isDiscussionsEnabled(this.props.settingsCascade) && (
-                    <RepoHeaderContributionPortal
-                        position="right"
-                        priority={20}
-                        element={
-                            <ToggleDiscussionsPanel
-                                key="toggle-blob-discussion-panel"
-                                location={this.props.location}
-                                history={this.props.history}
-                            />
-                        }
                         repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
                     />
                 )}
