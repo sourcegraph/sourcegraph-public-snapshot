@@ -34,7 +34,7 @@ interface AggregateError extends Error {
 /**
  * A type guard checking whether the given value is an {@link AggregateError}
  */
-export const isAggregateError = (e: any): e is AggregateError => isErrorLike(e) && e.code === EAGGREGATEERROR
+export const isAggregateError = (e: any): e is AggregateError => isErrorLike(e) && e.name === EAGGREGATEERROR
 
 /**
  * DEPRECATED: use dataOrThrowErrors instead
@@ -47,7 +47,6 @@ export const createAggregateError = (errors: ErrorLike[] = []): Error =>
         ? asError(errors[0])
         : Object.assign(new Error(errors.map(e => e.message).join('\n')), {
               name: EAGGREGATEERROR,
-              code: EAGGREGATEERROR,
               errors: errors.map(asError),
           })
 
