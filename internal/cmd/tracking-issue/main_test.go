@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/machinebox/graphql"
@@ -46,11 +48,26 @@ func loadTrackingIssueFixtures(t testing.TB, org string, issue *TrackingIssue) {
 				&oauth2.Token{AccessToken: os.Getenv("GITHUB_TOKEN")},
 			))),
 		)
-		if err := fillTrackingIssue(ctx, cli, issue, org); err != nil {
+
+		var q strings.Builder
+		fmt.Fprintf(&q, "org:sourcegraph milestone:%s", issue.Milestone)
+		for _, label := range issue.Labels {
+			fmt.Fprintf(&q, " label:%s", label)
+		}
+
+		tracking, err := listTrackingIssues(ctx, cli, q.String())
+		if err != nil {
 			t.Fatal(err)
 		}
 
-		err := loadTrackingIssues(ctx, cli, org, []*TrackingIssue{issue})
+		for _, ti := range tracking {
+			if ti.Number == issue.Number {
+				issue = ti
+				break
+			}
+		}
+
+		err = loadTrackingIssues(ctx, cli, org, []*TrackingIssue{issue})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -75,5 +92,6 @@ func loadTrackingIssueFixtures(t testing.TB, org string, issue *TrackingIssue) {
 	if err := json.NewDecoder(f).Decode(issue); err != nil {
 		t.Fatal(err)
 	}
+
 	issue.FillLabelWhitelist()
 }

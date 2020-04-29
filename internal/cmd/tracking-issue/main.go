@@ -57,7 +57,7 @@ func run(token, org string, dry, verbose bool) (err error) {
 		))),
 	)
 
-	tracking, err := listTrackingIssues(ctx, cli, org)
+	tracking, err := listTrackingIssues(ctx, cli, fmt.Sprintf("org:%q label:tracking is:open", org))
 	if err != nil {
 		return err
 	}
@@ -289,6 +289,12 @@ type TrackingIssue struct {
 	Issues         []*Issue
 	PRs            []*PullRequest
 	LabelWhitelist []string
+}
+
+func NewTrackingIssue(issue *Issue) *TrackingIssue {
+	t := &TrackingIssue{Issue: issue}
+	t.FillLabelWhitelist()
+	return t
 }
 
 var labelMatcher = regexp.MustCompile(labelMarkerRegexp)
@@ -732,7 +738,7 @@ func loadTrackingIssues(ctx context.Context, cli *graphql.Client, org string, is
 	return nil
 }
 
-func listTrackingIssues(ctx context.Context, cli *graphql.Client, org string) ([]*TrackingIssue, error) {
+func listTrackingIssues(ctx context.Context, cli *graphql.Client, issuesQuery string) (all []*TrackingIssue, _ error) {
 	var q strings.Builder
 	q.WriteString("query($trackingCount: Int!, $trackingCursor: String, $trackingQuery: String!) {\n")
 	q.WriteString(searchGraphQLQuery("tracking"))
@@ -741,9 +747,7 @@ func listTrackingIssues(ctx context.Context, cli *graphql.Client, org string) ([
 	r := graphql.NewRequest(q.String())
 
 	r.Var("trackingCount", 100)
-	r.Var("trackingQuery", fmt.Sprintf("org:%q label:tracking is:open", org))
-
-	var all []*Issue
+	r.Var("trackingQuery", issuesQuery)
 
 	for {
 		var data struct{ Tracking search }
@@ -754,7 +758,10 @@ func listTrackingIssues(ctx context.Context, cli *graphql.Client, org string) ([
 		}
 
 		issues, _ := unmarshalSearchNodes(data.Tracking.Nodes)
-		all = append(all, issues...)
+
+		for _, issue := range issues {
+			all = append(all, NewTrackingIssue(issue))
+		}
 
 		if data.Tracking.PageInfo.HasNextPage {
 			r.Var("trackingCursor", data.Tracking.PageInfo.EndCursor)
@@ -762,14 +769,8 @@ func listTrackingIssues(ctx context.Context, cli *graphql.Client, org string) ([
 			break
 		}
 	}
-	tracking := make([]*TrackingIssue, 0, len(all))
-	for _, issue := range all {
-		newIssue := &TrackingIssue{Issue: issue}
-		newIssue.FillLabelWhitelist()
-		tracking = append(tracking, newIssue)
-	}
 
-	return tracking, nil
+	return all, nil
 }
 
 func unmarshalSearchNodes(nodes []searchNode) (issues []*Issue, prs []*PullRequest) {
