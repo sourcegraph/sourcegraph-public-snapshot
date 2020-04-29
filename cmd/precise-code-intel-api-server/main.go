@@ -6,6 +6,10 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/api"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/server"
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
@@ -13,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 )
 
@@ -33,11 +38,27 @@ func main() {
 		host = "127.0.0.1"
 	}
 
+	codeIntelAPIMetrics := api.NewCodeIntelAPIMetrics()
+	for _, om := range []*api.OperationMetrics{
+		codeIntelAPIMetrics.FindClosestDumps,
+		codeIntelAPIMetrics.Definitions,
+		codeIntelAPIMetrics.References,
+		codeIntelAPIMetrics.Hover,
+	} {
+		om.MustRegister(prometheus.DefaultRegisterer)
+	}
+
+	codeIntelAPI := api.NewObservedCodeIntelAPI(
+		api.New(db, bundles.New(bundleManagerURL)),
+		log15.Root(),
+		codeIntelAPIMetrics,
+		trace.Tracer{Tracer: opentracing.GlobalTracer()},
+	)
+
 	serverInst := server.New(server.ServerOpts{
-		Host:                host,
-		Port:                3186,
-		DB:                  db,
-		BundleManagerClient: bundles.New(bundleManagerURL),
+		Host:         host,
+		Port:         3186,
+		CodeIntelAPI: codeIntelAPI,
 	})
 
 	janitorInst := janitor.NewJanitor(janitor.JanitorOpts{

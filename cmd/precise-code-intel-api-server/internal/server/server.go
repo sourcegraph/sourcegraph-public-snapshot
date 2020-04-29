@@ -18,23 +18,20 @@ type Server struct {
 	port                int
 	db                  db.DB
 	bundleManagerClient bundles.BundleManagerClient
-	api                 api.CodeIntelAPI
+	codeIntelAPI        api.CodeIntelAPI
 }
 
 type ServerOpts struct {
-	Host                string
-	Port                int
-	DB                  db.DB
-	BundleManagerClient bundles.BundleManagerClient
+	Host         string
+	Port         int
+	CodeIntelAPI api.CodeIntelAPI
 }
 
 func New(opts ServerOpts) *Server {
 	return &Server{
-		host:                opts.Host,
-		port:                opts.Port,
-		db:                  opts.DB,
-		bundleManagerClient: opts.BundleManagerClient,
-		api:                 api.New(opts.DB, opts.BundleManagerClient),
+		host:         opts.Host,
+		port:         opts.Port,
+		codeIntelAPI: opts.CodeIntelAPI,
 	}
 }
 
