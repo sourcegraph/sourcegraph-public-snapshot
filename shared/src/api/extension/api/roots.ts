@@ -15,20 +15,6 @@ export class ExtRoots implements ExtRootsAPI, ProxyMarked {
     private roots: readonly sourcegraph.WorkspaceRoot[] = []
 
     /**
-     * Returns a single workspace root by URI.
-     *
-     * @internal
-     */
-    public getByUri(uri: string): sourcegraph.WorkspaceRoot {
-        // Not efficient for many workspaces, but currently we only support one workspace.
-        const root = this.roots.find(root => root.uri.href === uri)
-        if (!root) {
-            throw new Error(`Workspace root with URI ${uri} does not exist`)
-        }
-        return root
-    }
-
-    /**
      * Returns all workspace roots.
      *
      * @internal
