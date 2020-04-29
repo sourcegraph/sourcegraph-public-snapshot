@@ -1134,7 +1134,7 @@ var createTestUser = func() func(context.Context, *testing.T) *types.User {
 func testPatch(patchSet int64, repo api.RepoID, t time.Time) *campaigns.Patch {
 	return &campaigns.Patch{
 		PatchSetID: patchSet,
-		RepoID:     api.RepoID(repo),
+		RepoID:     repo,
 		Rev:        "deadbeef",
 		BaseRef:    "refs/heads/master",
 		Diff:       "cool diff",

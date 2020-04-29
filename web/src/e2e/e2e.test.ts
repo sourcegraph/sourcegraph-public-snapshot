@@ -820,11 +820,10 @@ describe('e2e test suite', () => {
         })
 
         describe('directory page', () => {
-            // TODO(slimsag:discussions): temporarily disabled because the discussions feature flag removes this component.
-            /*
             it('shows a row for each file in the directory', async () => {
-                await driver.page.goto(sourcegraphBaseUrl + '/github.com/gorilla/securecookie@e59506cc896acb7f7bf732d4fdf5e25f7ccd8983')
-                await enableOrAddRepositoryIfNeeded()
+                await driver.page.goto(
+                    sourcegraphBaseUrl + '/github.com/gorilla/securecookie@e59506cc896acb7f7bf732d4fdf5e25f7ccd8983'
+                )
                 await driver.page.waitForSelector('.tree-page__entries-directories', { visible: true })
                 await retry(async () =>
                     assert.equal(
@@ -843,7 +842,6 @@ describe('e2e test suite', () => {
                     )
                 )
             })
-            */
 
             test('shows commit information on a row', async () => {
                 await driver.page.goto(
@@ -878,19 +876,17 @@ describe('e2e test suite', () => {
                 )
             })
 
-            // TODO(slimsag:discussions): temporarily disabled because the discussions feature flag removes this component.
-            /*
             it('navigates when clicking on a row', async () => {
-                await driver.page.goto(sourcegraphBaseUrl + '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d')
-                await enableOrAddRepositoryIfNeeded()
+                await driver.page.goto(
+                    sourcegraphBaseUrl + '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d'
+                )
                 // click on directory
                 await driver.page.waitForSelector('.tree-entry', { visible: true })
                 await driver.page.click('.tree-entry')
-                await assertWindowLocation(
+                await driver.assertWindowLocation(
                     '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d/-/tree/websocket'
                 )
             })
-            */
         })
 
         describe('rev resolution', () => {

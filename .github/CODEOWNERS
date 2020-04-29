@@ -100,10 +100,10 @@
 /internal/eventlogger @dadlerj
 
 # Campaigns
-/cmd/frontend/graphqlbackend/campaigns.go @sourcegraph/campaigns-core
-/enterprise/internal/campaigns @sourcegraph/campaigns-core
-/internal/campaigns @sourcegraph/campaigns-core
-/web/**/campaigns/** @sourcegraph/campaigns-web @mrnugget @sourcegraph/web
+/cmd/frontend/graphqlbackend/campaigns.go @sourcegraph/campaigns
+/enterprise/internal/campaigns @sourcegraph/campaigns
+/internal/campaigns @sourcegraph/campaigns
+/web/**/campaigns/** @sourcegraph/campaigns
 
 # Auth
 /cmd/frontend/auth/ @beyang @unknwon
@@ -216,8 +216,6 @@ Dockerfile @sourcegraph/distribution
 
 # Code discussions
 **/*discussion* @slimsag
-/web/src/discussions @slimsag
-/web/src/repo/blob/discussions @slimsag
 /cmd/frontend/types/discussions.go @slimsag
 /cmd/frontend/internal/pkg/discussions @slimsag
 /cmd/frontend/graphqlbackend/discussion* @slimsag

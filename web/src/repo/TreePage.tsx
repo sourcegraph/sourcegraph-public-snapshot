@@ -8,7 +8,7 @@ import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import TagIcon from 'mdi-react/TagIcon'
 import UserIcon from 'mdi-react/UserIcon'
 import React, { useState, useMemo, useCallback, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, Redirect } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 import { ActionItem } from '../../../shared/src/actions/ActionItem'
@@ -17,17 +17,15 @@ import { ContributableMenu } from '../../../shared/src/api/protocol'
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 import { displayRepoName } from '../../../shared/src/components/RepoFileLink'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
-import { gql } from '../../../shared/src/graphql/graphql'
+import { gql, dataOrThrowErrors } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
+import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
 import { queryGraphQL } from '../backend/graphql'
 import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
-import { isDiscussionsEnabled } from '../discussions'
-import { DiscussionsList } from '../discussions/DiscussionsList'
 import { PatternTypeProps, CaseSensitivityProps } from '../search'
 import { eventLogger, EventLoggerProps } from '../tracking/eventLogger'
 import { basename } from '../util/path'
@@ -39,6 +37,7 @@ import { ErrorAlert } from '../components/alerts'
 import { subYears, formatISO } from 'date-fns'
 import { pluralize } from '../../../shared/src/util/strings'
 import { useObservable } from '../../../shared/src/util/useObservable'
+import { toPrettyBlobURL } from '../../../shared/src/util/url'
 
 const TreeEntry: React.FunctionComponent<{
     isDir: boolean
@@ -95,6 +94,7 @@ const fetchTreeCommits = memoizeObservable(
             gql`
                 query TreeCommits($repo: ID!, $revspec: String!, $first: Int, $filePath: String, $after: String) {
                     node(id: $repo) {
+                        __typename
                         ... on Repository {
                             commit(rev: $revspec) {
                                 ancestors(first: $first, path: $filePath, after: $after) {
@@ -113,15 +113,18 @@ const fetchTreeCommits = memoizeObservable(
             `,
             args
         ).pipe(
-            map(({ data, errors }) => {
-                if (!data || !data.node) {
-                    throw createAggregateError(errors)
+            map(dataOrThrowErrors),
+            map(data => {
+                if (!data.node) {
+                    throw new Error('Repository not found')
                 }
-                const repo = data.node as GQL.IRepository
-                if (!repo.commit || !repo.commit.ancestors || !repo.commit.ancestors.nodes) {
-                    throw createAggregateError(errors)
+                if (data.node.__typename !== 'Repository') {
+                    throw new Error('Node is not a Repository')
                 }
-                return repo.commit.ancestors
+                if (!data.node.commit) {
+                    throw new Error('Commit not found')
+                }
+                return data.node.commit.ancestors
             })
         ),
     args => `${args.repo}:${args.revspec}:${String(args.first)}:${String(args.filePath)}:${String(args.after)}`
@@ -252,7 +255,13 @@ export const TreePage: React.FunctionComponent<Props> = ({
                     <LoadingSpinner className="icon-inline tree-page__entries-loader" /> Loading files and directories
                 </div>
             ) : isErrorLike(treeOrError) ? (
-                <ErrorAlert error={treeOrError} history={props.history} />
+                // If the tree is actually a blob, be helpful and redirect to the blob page.
+                // We don't have error names on GraphQL errors.
+                /not a directory/i.test(treeOrError.message) ? (
+                    <Redirect to={toPrettyBlobURL({ repoName, rev, commitID, filePath })} />
+                ) : (
+                    <ErrorAlert error={treeOrError} history={props.history} />
+                )
             ) : (
                 <>
                     {treeOrError.isRoot ? (
@@ -298,22 +307,6 @@ export const TreePage: React.FunctionComponent<Props> = ({
                         parentPath={filePath}
                         entries={treeOrError.entries}
                     />
-                    {isDiscussionsEnabled(settingsCascade) && (
-                        <div className="tree-page__section mt-2 tree-page__section--discussions">
-                            <h3 className="tree-page__section-header">Discussions</h3>
-                            <DiscussionsList
-                                {...props}
-                                repoID={repoID}
-                                rev={rev}
-                                filePath={filePath + '/**' || undefined}
-                                noun="discussion in this tree"
-                                pluralNoun="discussions in this tree"
-                                defaultFirst={2}
-                                hideSearch={true}
-                                compact={false}
-                            />
-                        </div>
-                    )}
                     {/* eslint-disable react/jsx-no-bind */}
                     <ActionsContainer
                         {...props}

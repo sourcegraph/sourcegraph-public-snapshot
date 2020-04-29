@@ -40,6 +40,9 @@ func RunWorkers(ctx context.Context, s *Store, clock func() time.Time, gitClient
 		log15.Error("Parsing max worker count failed. Falling back to default.", "default", defaultWorkerCount, "err", err)
 		workerCount = defaultWorkerCount
 	}
+
+	// process is executed inside a database transaction that's opened by
+	// ProcessPendingChangesetJobs.
 	process := func(ctx context.Context, s *Store, job campaigns.ChangesetJob) error {
 		c, err := s.GetCampaign(ctx, GetCampaignOpts{
 			ID: job.CampaignID,
@@ -80,6 +83,10 @@ func RunWorkers(ctx context.Context, s *Store, clock func() time.Time, gitClient
 // ExecChangesetJob will execute the given ChangesetJob for the given campaign.
 // It is idempotent and if the job has already been executed it will not be
 // executed.
+// It needs to be executed inside a transaction. ProcessPendingChangesetJobs
+// opens a transaction before ultimately calling ExecChangesetJob. If
+// ExecChangesetJob is called outside of that context, a transaction needs to
+// be opened.
 func ExecChangesetJob(
 	ctx context.Context,
 	clock func() time.Time,
@@ -89,12 +96,6 @@ func ExecChangesetJob(
 	c *campaigns.Campaign,
 	job *campaigns.ChangesetJob,
 ) (err error) {
-	// Store should already have an open transaction but ensure here anyway
-	store, err = store.Transact(ctx)
-	if err != nil {
-		return errors.Wrap(err, "creating transaction")
-	}
-
 	tr, ctx := trace.New(ctx, "service.ExecChangesetJob", fmt.Sprintf("job_id: %d", job.ID))
 	defer func() {
 		tr.SetError(err)

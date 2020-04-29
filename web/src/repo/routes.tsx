@@ -1,7 +1,7 @@
 import React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { getModeFromPath } from '../../../shared/src/languages'
-import { isLegacyFragment, parseHash } from '../../../shared/src/util/url'
+import { isLegacyFragment, parseHash, toRepoURL } from '../../../shared/src/util/url'
 import { lazyComponent } from '../util/lazyComponent'
 import { formatHash } from '../util/url'
 import { RepoContainerRoute } from './RepoContainer'
@@ -86,7 +86,7 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
 const hideRepoRevContent = localStorage.getItem('hideRepoRevContent')
 
 export const repoRevContainerRoutes: readonly RepoRevContainerRoute[] = [
-    ...['', '/-/:objectType(blob|tree)/:filePath+'].map(routePath => ({
+    ...['', '/-/:objectType(blob|tree)/:filePath*'].map(routePath => ({
         path: routePath,
         exact: routePath === '',
         render: ({
@@ -103,12 +103,17 @@ export const repoRevContainerRoutes: readonly RepoRevContainerRoute[] = [
                 objectType: 'blob' | 'tree' | undefined
                 filePath: string | undefined
             }>) => {
-            const objectType: 'blob' | 'tree' = match.params.objectType || 'tree'
-
             // The decoding depends on the pinned `history` version.
             // See https://github.com/sourcegraph/sourcegraph/issues/4408
             // and https://github.com/ReactTraining/history/issues/505
             const filePath = decodeURIComponent(match.params.filePath || '') // empty string is root
+
+            // Redirect tree and blob routes pointing to the root to the repo page
+            if (match.params.objectType && filePath.replace(/\/+$/g, '') === '') {
+                return <Redirect to={toRepoURL({ repoName, rev: context.rev })} />
+            }
+
+            const objectType: 'blob' | 'tree' = match.params.objectType || 'tree'
 
             const mode = getModeFromPath(filePath)
 
