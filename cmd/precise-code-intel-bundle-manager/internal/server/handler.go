@@ -10,9 +10,11 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go/ext"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/paths"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 const DefaultMonikerResultPageSize = 100
@@ -59,28 +61,28 @@ func (s *Server) handlePostDatabase(w http.ResponseWriter, r *http.Request) {
 
 // GET /dbs/{id:[0-9]+}/exists
 func (s *Server) handleExists(w http.ResponseWriter, r *http.Request) {
-	s.dbQuery(w, r, func(ctx context.Context, db database.Database) (interface{}, error) {
+	s.queryBundle(w, r, func(ctx context.Context, db database.Database) (interface{}, error) {
 		return db.Exists(ctx, getQuery(r, "path"))
 	})
 }
 
 // GET /dbs/{id:[0-9]+}/definitions
 func (s *Server) handleDefinitions(w http.ResponseWriter, r *http.Request) {
-	s.dbQuery(w, r, func(ctx context.Context, db database.Database) (interface{}, error) {
+	s.queryBundle(w, r, func(ctx context.Context, db database.Database) (interface{}, error) {
 		return db.Definitions(ctx, getQuery(r, "path"), getQueryInt(r, "line"), getQueryInt(r, "character"))
 	})
 }
 
 // GET /dbs/{id:[0-9]+}/references
 func (s *Server) handleReferences(w http.ResponseWriter, r *http.Request) {
-	s.dbQuery(w, r, func(ctx context.Context, db database.Database) (interface{}, error) {
+	s.queryBundle(w, r, func(ctx context.Context, db database.Database) (interface{}, error) {
 		return db.References(ctx, getQuery(r, "path"), getQueryInt(r, "line"), getQueryInt(r, "character"))
 	})
 }
 
 // GET /dbs/{id:[0-9]+}/hover
 func (s *Server) handleHover(w http.ResponseWriter, r *http.Request) {
-	s.dbQuery(w, r, func(ctx context.Context, db database.Database) (interface{}, error) {
+	s.queryBundle(w, r, func(ctx context.Context, db database.Database) (interface{}, error) {
 		text, hoverRange, exists, err := db.Hover(ctx, getQuery(r, "path"), getQueryInt(r, "line"), getQueryInt(r, "character"))
 		if err != nil || !exists {
 			return nil, err
@@ -92,14 +94,14 @@ func (s *Server) handleHover(w http.ResponseWriter, r *http.Request) {
 
 // GET /dbs/{id:[0-9]+}/monikersByPosition
 func (s *Server) handleMonikersByPosition(w http.ResponseWriter, r *http.Request) {
-	s.dbQuery(w, r, func(ctx context.Context, db database.Database) (interface{}, error) {
+	s.queryBundle(w, r, func(ctx context.Context, db database.Database) (interface{}, error) {
 		return db.MonikersByPosition(ctx, getQuery(r, "path"), getQueryInt(r, "line"), getQueryInt(r, "character"))
 	})
 }
 
 // GET /dbs/{id:[0-9]+}/monikerResults
 func (s *Server) handleMonikerResults(w http.ResponseWriter, r *http.Request) {
-	s.dbQuery(w, r, func(ctx context.Context, db database.Database) (interface{}, error) {
+	s.queryBundle(w, r, func(ctx context.Context, db database.Database) (interface{}, error) {
 		var tableName string
 		switch getQuery(r, "modelType") {
 		case "definition":
@@ -128,7 +130,7 @@ func (s *Server) handleMonikerResults(w http.ResponseWriter, r *http.Request) {
 
 // GET /dbs/{id:[0-9]+}/packageInformation
 func (s *Server) handlePackageInformation(w http.ResponseWriter, r *http.Request) {
-	s.dbQuery(w, r, func(ctx context.Context, db database.Database) (interface{}, error) {
+	s.queryBundle(w, r, func(ctx context.Context, db database.Database) (interface{}, error) {
 		packageInformationData, exists, err := db.PackageInformation(
 			ctx,
 			getQuery(r, "path"),
@@ -161,17 +163,43 @@ func (s *Server) doUpload(w http.ResponseWriter, r *http.Request, makeFilename f
 	}
 }
 
-// dbQuery invokes the given handler with the database instance chosen from the
-// route's id value and serializes the resulting value to the response writer.
-func (s *Server) dbQuery(w http.ResponseWriter, r *http.Request, handler func(ctx context.Context, db database.Database) (interface{}, error)) {
-	ctx := r.Context()
-	filename := paths.DBFilename(s.bundleDir, idFromRequest(r))
+type queryBundleHandlerFn func(ctx context.Context, db database.Database) (interface{}, error)
+
+// queryBundle invokes the given handler with the database instance chosen from the
+// route's id value and serializes the resulting value to the response writer. If an
+// error occurs it will be written to the body of a 500-level response.
+func (s *Server) queryBundle(w http.ResponseWriter, r *http.Request, handler queryBundleHandlerFn) {
+	if err := s.queryBundleErr(w, r, handler); err != nil {
+		http.Error(w, fmt.Sprintf("failed to handle query: %s", err.Error()), http.StatusInternalServerError)
+		return
+	}
+}
+
+// queryBundleErr invokes the given handler with the database instance chosen from the
+// route's id value and serializes the resulting value to the response writer. If an
+// error occurs it will be returned.
+func (s *Server) queryBundleErr(w http.ResponseWriter, r *http.Request, handler queryBundleHandlerFn) (err error) {
+	bundleID := idFromRequest(r)
+	filename := paths.DBFilename(s.bundleDir, bundleID)
+
+	cached := true
+	span, ctx := ot.StartSpanFromContext(r.Context(), "queryBundle")
+	span.SetTag("bundleID", bundleID)
+	defer func() {
+		span.SetTag("cached", cached)
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
+		}
+		span.Finish()
+	}()
 
 	openDatabase := func() (database.Database, error) {
+		cached = false
 		return database.OpenDatabase(ctx, filename, s.documentDataCache, s.resultChunkDataCache)
 	}
 
-	cacheHandler := func(db database.Database) error {
+	return s.databaseCache.WithDatabase(filename, openDatabase, func(db database.Database) error {
 		payload, err := handler(ctx, db)
 		if err != nil {
 			return err
@@ -179,10 +207,5 @@ func (s *Server) dbQuery(w http.ResponseWriter, r *http.Request, handler func(ct
 
 		writeJSON(w, payload)
 		return nil
-	}
-
-	if err := s.databaseCache.WithDatabase(filename, openDatabase, cacheHandler); err != nil {
-		http.Error(w, fmt.Sprintf("failed to handle query: %s", err.Error()), http.StatusInternalServerError)
-		return
-	}
+	})
 }
