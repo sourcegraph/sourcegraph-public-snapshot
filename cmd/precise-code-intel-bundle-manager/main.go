@@ -6,8 +6,10 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/dgraph-io/ristretto"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/paths"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/server"
@@ -46,17 +48,35 @@ func main() {
 
 	metrics.MustRegisterDiskMonitor(bundleDir)
 
-	serverInst, err := server.New(server.ServerOpts{
-		Host:                     host,
-		Port:                     3187,
-		BundleDir:                bundleDir,
-		DatabaseCacheSize:        int64(databaseCacheSize),
-		DocumentDataCacheSize:    int64(documentDataCacheSize),
-		ResultChunkDataCacheSize: int64(resultChunkDataCacheSize),
-	})
+	// TODO - pass in so we can get metrics?
+
+	databaseCache, databaseCacheMetrics, err := database.NewDatabaseCache(int64(databaseCacheSize))
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to create database cache: %s", err)
 	}
+
+	documentDataCache, documentDataCacheMetrics, err := database.NewDocumentDataCache(int64(documentDataCacheSize))
+	if err != nil {
+		log.Fatalf("failed to create document data cache: %s", err)
+	}
+
+	resultChunkDataCache, resultChunkDataCacheMetrics, err := database.NewResultChunkDataCache(int64(resultChunkDataCacheSize))
+	if err != nil {
+		log.Fatalf("failed to create result chunk data cache: %s", err)
+	}
+
+	MustRegisterCacheMonitor("database", databaseCacheMetrics)
+	MustRegisterCacheMonitor("documentdata", documentDataCacheMetrics)
+	MustRegisterCacheMonitor("resultchunkdata", resultChunkDataCacheMetrics)
+
+	serverInst := server.New(server.ServerOpts{
+		Host:                 host,
+		Port:                 3187,
+		BundleDir:            bundleDir,
+		DatabaseCache:        databaseCache,
+		DocumentDataCache:    documentDataCache,
+		ResultChunkDataCache: resultChunkDataCache,
+	})
 
 	janitorMetrics := janitor.NewJanitorMetrics()
 	for _, c := range []prometheus.Counter{
@@ -97,4 +117,40 @@ func waitForSignal() {
 	}
 
 	os.Exit(0)
+}
+
+func MustRegisterCacheMonitor(cache string, metrics *ristretto.Metrics) {
+	mustRegisterOnce(prometheus.NewCounterFunc(prometheus.CounterOpts{
+		Name:        "src_cache_hit",
+		Help:        "Number of cache hits.",
+		ConstLabels: prometheus.Labels{"cache": cache},
+	}, func() float64 {
+		return float64(metrics.Hits())
+	}))
+
+	mustRegisterOnce(prometheus.NewCounterFunc(prometheus.CounterOpts{
+		Name:        "src_cache_miss",
+		Help:        "Number of cache misses.",
+		ConstLabels: prometheus.Labels{"cache": cache},
+	}, func() float64 {
+		return float64(metrics.Misses())
+	}))
+
+	mustRegisterOnce(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+		Name:        "src_cache_size",
+		Help:        "Total cost of the cache.",
+		ConstLabels: prometheus.Labels{"cache": cache},
+	}, func() float64 {
+		return float64(metrics.CostAdded() - metrics.CostEvicted())
+	}))
+}
+
+func mustRegisterOnce(c prometheus.Collector) {
+	err := prometheus.DefaultRegisterer.Register(c)
+	if err != nil {
+		if _, ok := err.(prometheus.AlreadyRegisteredError); ok {
+			return
+		}
+		panic(err)
+	}
 }
