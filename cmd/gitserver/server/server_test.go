@@ -324,6 +324,23 @@ func TestUrlRedactor(t *testing.T) {
 	}
 }
 
+func runCmd(t *testing.T, dir string, cmd string, arg ...string) string {
+	t.Helper()
+	c := exec.Command(cmd, arg...)
+	c.Dir = dir
+	c.Env = []string{
+		"GIT_COMMITTER_NAME=a",
+		"GIT_COMMITTER_EMAIL=a@a.com",
+		"GIT_AUTHOR_NAME=a",
+		"GIT_AUTHOR_EMAIL=a@a.com",
+	}
+	b, err := c.CombinedOutput()
+	if err != nil {
+		t.Fatalf("%s %s failed: %s", cmd, strings.Join(arg, " "), err)
+	}
+	return string(b)
+}
+
 func TestCloneRepo(t *testing.T) {
 	remote, cleanup1 := tmpDir(t)
 	defer cleanup1()
@@ -331,19 +348,7 @@ func TestCloneRepo(t *testing.T) {
 	repo := remote
 	cmd := func(name string, arg ...string) string {
 		t.Helper()
-		c := exec.Command(name, arg...)
-		c.Dir = repo
-		c.Env = []string{
-			"GIT_COMMITTER_NAME=a",
-			"GIT_COMMITTER_EMAIL=a@a.com",
-			"GIT_AUTHOR_NAME=a",
-			"GIT_AUTHOR_EMAIL=a@a.com",
-		}
-		b, err := c.CombinedOutput()
-		if err != nil {
-			t.Fatalf("%s %s failed: %s", name, strings.Join(arg, " "), err)
-		}
-		return string(b)
+		return runCmd(t, repo, name, arg...)
 	}
 
 	// Setup a repo with a commit so we can see if we can clone it.
@@ -420,19 +425,7 @@ func TestRemoveBadRefs(t *testing.T) {
 
 	cmd := func(name string, arg ...string) string {
 		t.Helper()
-		c := exec.Command(name, arg...)
-		c.Dir = dir
-		c.Env = []string{
-			"GIT_COMMITTER_NAME=a",
-			"GIT_COMMITTER_EMAIL=a@a.com",
-			"GIT_AUTHOR_NAME=a",
-			"GIT_AUTHOR_EMAIL=a@a.com",
-		}
-		b, err := c.CombinedOutput()
-		if err != nil {
-			t.Fatalf("%s %s failed: %s", name, strings.Join(arg, " "), err)
-		}
-		return string(b)
+		return runCmd(t, dir, name, arg...)
 	}
 
 	// Setup a repo with a commit so we can add bad refs
