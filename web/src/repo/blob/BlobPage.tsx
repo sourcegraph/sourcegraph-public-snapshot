@@ -5,11 +5,11 @@ import * as React from 'react'
 import { combineLatest, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
-import { gql } from '../../../../shared/src/graphql/graphql'
+import { gql, dataOrThrowErrors } from '../../../../shared/src/graphql/graphql'
 import * as GQL from '../../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../shared/src/settings/settings'
-import { createAggregateError, ErrorLike, isErrorLike, asError } from '../../../../shared/src/util/errors'
+import { ErrorLike, isErrorLike, asError } from '../../../../shared/src/util/errors'
 import { memoizeObservable } from '../../../../shared/src/util/memoizeObservable'
 import {
     AbsoluteRepoFile,
@@ -36,6 +36,8 @@ import { GoToRawAction } from './GoToRawAction'
 import { RenderedFile } from './RenderedFile'
 import { ThemeProps } from '../../../../shared/src/theme'
 import { ErrorMessage } from '../../components/alerts'
+import { Redirect } from 'react-router'
+import { toTreeURL } from '../../util/url'
 
 function fetchBlobCacheKey(parsed: ParsedRepoURI & { isLightTheme: boolean; disableTimeout: boolean }): string {
     return makeRepoURI(parsed) + String(parsed.isLightTheme) + String(parsed.disableTimeout)
@@ -74,15 +76,10 @@ const fetchBlob = memoizeObservable(
             `,
             args
         ).pipe(
-            map(({ data, errors }) => {
-                if (
-                    !data ||
-                    !data.repository ||
-                    !data.repository.commit ||
-                    !data.repository.commit.file ||
-                    !data.repository.commit.file.highlight
-                ) {
-                    throw createAggregateError(errors)
+            map(dataOrThrowErrors),
+            map(data => {
+                if (!data.repository?.commit?.file?.highlight) {
+                    throw new Error('Not found')
                 }
                 return data.repository.commit.file
             })
@@ -263,6 +260,13 @@ export class BlobPage extends React.PureComponent<Props, State> {
         )
 
         if (isErrorLike(this.state.blobOrError)) {
+            // Be helpful if the URL was actually a tree and redirect.
+            // Some extensions may optimistically construct blob URLs because
+            // they cannot easily determine eagerly if a file path is a tree or a blob.
+            // We don't have error names on GraphQL errors.
+            if (/not a blob/i.test(this.state.blobOrError.message)) {
+                return <Redirect to={toTreeURL(this.props)} />
+            }
             return (
                 <>
                     {alwaysRender}

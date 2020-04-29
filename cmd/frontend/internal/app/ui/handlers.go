@@ -30,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/routevar"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 type InjectedHTML struct {
@@ -256,6 +257,70 @@ func serveSignIn(w http.ResponseWriter, r *http.Request) error {
 	return renderTemplate(w, "app.html", common)
 }
 
+// redirectTreeOrBlob redirects a blob page to a tree page if the file is actually a directory,
+// or a tree page to a blob page if the directory is actually a file.
+func redirectTreeOrBlob(routeName string, common *Common, w http.ResponseWriter, r *http.Request) (requestHandled bool, err error) {
+	path := mux.Vars(r)["Path"]
+	if path == "/" || path == "" {
+		if routeName != routeRepo {
+			// Redirect to repo route
+			target := "/" + string(common.Repo.Name) + common.Rev
+			http.Redirect(w, r, target, http.StatusTemporaryRedirect)
+			return true, nil
+		}
+		return false, nil
+	}
+	cachedRepo, err := backend.CachedGitRepo(r.Context(), common.Repo)
+	if err != nil {
+		return false, err
+	}
+	stat, err := git.Stat(r.Context(), *cachedRepo, common.CommitID, path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			serveError(w, r, err, http.StatusNotFound)
+			return true, nil
+		}
+		return false, err
+	}
+	expectedDir := routeName == routeTree
+	if stat.Mode().IsDir() != expectedDir {
+		target := "/" + string(common.Repo.Name) + common.Rev + "/-/"
+		if expectedDir {
+			target += "blob"
+		} else {
+			target += "tree"
+		}
+		target += path
+		http.Redirect(w, r, target, http.StatusTemporaryRedirect)
+		return true, nil
+	}
+	return false, nil
+}
+
+// serveTree serves the tree (directory) pages.
+func serveTree(title func(c *Common, r *http.Request) string) handlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		common, err := newCommon(w, r, "", serveError)
+		if err != nil {
+			return err
+		}
+		if common == nil {
+			return nil // request was handled
+		}
+
+		handled, err := redirectTreeOrBlob(routeTree, common, w, r)
+		if handled {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+
+		common.Title = title(common, r)
+		return renderTemplate(w, "app.html", common)
+	}
+}
+
 func serveRepoOrBlob(routeName string, title func(c *Common, r *http.Request) string) handlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		common, err := newCommon(w, r, "", serveError)
@@ -265,6 +330,15 @@ func serveRepoOrBlob(routeName string, title func(c *Common, r *http.Request) st
 		if common == nil {
 			return nil // request was handled
 		}
+
+		handled, err := redirectTreeOrBlob(routeName, common, w, r)
+		if handled {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+
 		common.Title = title(common, r)
 
 		q := r.URL.Query()
