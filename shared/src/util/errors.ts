@@ -27,7 +27,7 @@ const AGGREGATE_ERROR_NAME = 'AggregateError'
  * An Error that aggregates multiple errors
  */
 interface AggregateError extends Error {
-    name: typeof EAGGREGATEERROR
+    name: typeof AGGREGATE_ERROR_NAME
     errors: Error[]
 }
 
