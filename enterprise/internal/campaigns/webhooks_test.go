@@ -167,14 +167,6 @@ func testGitHubWebhook(db *sql.DB) func(*testing.T) {
 					t.Fatal(err)
 				}
 
-				opts := []cmp.Option{
-					cmpopts.IgnoreFields(campaigns.ChangesetEvent{}, "CreatedAt"),
-					cmpopts.IgnoreFields(campaigns.ChangesetEvent{}, "UpdatedAt"),
-				}
-				if diff := cmp.Diff(tc.ChangesetEvents, have, opts...); diff != "" {
-					t.Error(diff)
-				}
-
 				// Overwrite and format test case
 				if *update {
 					tc.ChangesetEvents = have
@@ -187,6 +179,15 @@ func testGitHubWebhook(db *sql.DB) func(*testing.T) {
 						t.Fatal(err)
 					}
 				}
+
+				opts := []cmp.Option{
+					cmpopts.IgnoreFields(campaigns.ChangesetEvent{}, "CreatedAt"),
+					cmpopts.IgnoreFields(campaigns.ChangesetEvent{}, "UpdatedAt"),
+				}
+				if diff := cmp.Diff(tc.ChangesetEvents, have, opts...); diff != "" {
+					t.Error(diff)
+				}
+
 			})
 		}
 	}
