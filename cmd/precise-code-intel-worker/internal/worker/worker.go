@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go/ext"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker/internal/correlation"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker/internal/existence"
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
@@ -19,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/writer"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 type WorkerOpts struct {
@@ -70,13 +72,14 @@ func (w *Worker) dequeueAndProcess() (_ bool, err error) {
 	}()
 
 	if err = process(context.Background(), w.db, w.bundleManagerClient, w.gitserverClient, upload, jobHandle); err != nil {
-		log15.Warn("Failed to process upload", "id", upload.ID, "err", err)
+		log15.Error("Failed to process upload", "id", upload.ID, "err", err)
 
 		if markErr := jobHandle.MarkErrored(err.Error(), ""); markErr != nil {
 			return false, markErr
 		}
 	}
 
+	log15.Debug("Processed upload", "id", upload.ID)
 	return true, nil
 }
 
@@ -89,6 +92,16 @@ func process(
 	upload db.Upload,
 	jobHandle db.JobHandle,
 ) (err error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "process")
+	span.SetTag("uploadID", upload.ID)
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
+		}
+		span.Finish()
+	}()
+
 	// Create scratch directory that we can clean on completion/failure
 	name, err := ioutil.TempDir("", "")
 	if err != nil {
@@ -105,6 +118,8 @@ func process(
 	if err != nil {
 		return err
 	}
+
+	span.LogKV("event", "Received upload")
 
 	// Create target file for converted database
 	uuid, err := uuid.NewRandom()
@@ -128,6 +143,8 @@ func process(
 	if err != nil {
 		return err
 	}
+
+	span.LogKV("event", "Finished conversion")
 
 	// At this point we haven't touched the database. We're going to start a nested transaction
 	// with Postgres savepoints. In the event that something after this point fails, we want to
@@ -153,6 +170,8 @@ func process(
 		return err
 	}
 
+	span.LogKV("event", "Updated cross-bundle data in Postgres")
+
 	// Before we mark the upload as complete, we need to delete any existing completed uploads
 	// that have the same repository_id, commit, root, and indexer values. Otherwise the transaction
 	// will fail as these values form a unique constraint.
@@ -174,6 +193,8 @@ func process(
 		return err
 	}
 
+	span.LogKV("event", "Updated visibility for repository")
+
 	f, err := os.Open(newFilename)
 	if err != nil {
 		return err
@@ -185,6 +206,7 @@ func process(
 		return err
 	}
 
+	span.LogKV("event", "Posted processed database")
 	return nil
 }
 
@@ -237,10 +259,21 @@ func convert(
 	root string,
 	getChildren existence.GetChildrenFunc,
 ) (_ []types.Package, _ []types.PackageReference, err error) {
-	correlatedTypes, err := correlation.Correlate(filename, dumpID, root, getChildren)
+	span, ctx := ot.StartSpanFromContext(ctx, "convert")
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
+		}
+		span.Finish()
+	}()
+
+	correlatedTypes, err := correlation.Correlate(ctx, filename, dumpID, root, getChildren)
 	if err != nil {
 		return nil, nil, err
 	}
+
+	span.LogKV("event", "Finished correlation")
 
 	if err := write(ctx, newFilename, correlatedTypes); err != nil {
 		return nil, nil, err

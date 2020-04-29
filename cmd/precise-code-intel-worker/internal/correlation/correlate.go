@@ -3,19 +3,22 @@ package correlation
 import (
 	"bufio"
 	"compress/gzip"
+	"context"
 	"fmt"
 	"io"
 	"os"
 
 	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go/ext"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker/internal/correlation/datastructures"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker/internal/correlation/lsif"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker/internal/existence"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 // Correlate reads the given gzipped upload file and returns a correlation state object with the
 // same data canonicalized and pruned for storage.
-func Correlate(filename string, dumpID int, root string, getChildren existence.GetChildrenFunc) (*CorrelatedTypes, error) {
+func Correlate(ctx context.Context, filename string, dumpID int, root string, getChildren existence.GetChildrenFunc) (*CorrelatedTypes, error) {
 	f, err := os.Open(filename)
 	if err != nil {
 		return nil, err
@@ -27,25 +30,41 @@ func Correlate(filename string, dumpID int, root string, getChildren existence.G
 		return nil, err
 	}
 
+	span, ctx := ot.StartSpanFromContext(ctx, "correlate")
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
+		}
+		span.Finish()
+	}()
+
 	// Read raw upload stream and return a correlation state
 	state, err := correlateFromReader(gzipReader, root)
 	if err != nil {
 		return nil, err
 	}
 
+	span.LogKV("event", "Finished reading input")
+
 	// Remove duplicate elements, collapse linked elements
 	canonicalize(state)
+
+	span.LogKV("event", "Finished canonicalization")
 
 	// Remove elements we don't need to store
 	if err := prune(state, root, getChildren); err != nil {
 		return nil, err
 	}
 
+	span.LogKV("event", "Finished prune step")
+
 	converted, err := convert(state, dumpID)
 	if err != nil {
 		return nil, err
 	}
 
+	span.LogKV("event", "Finished conversion")
 	return converted, nil
 }
 
