@@ -18,7 +18,7 @@ type Server struct {
 	port                int
 	db                  db.DB
 	bundleManagerClient bundles.BundleManagerClient
-	api                 api.CodeIntelAPI
+	codeIntelAPI        api.CodeIntelAPI
 }
 
 type ServerOpts struct {
@@ -26,6 +26,7 @@ type ServerOpts struct {
 	Port                int
 	DB                  db.DB
 	BundleManagerClient bundles.BundleManagerClient
+	CodeIntelAPI        api.CodeIntelAPI
 }
 
 func New(opts ServerOpts) *Server {
@@ -34,7 +35,7 @@ func New(opts ServerOpts) *Server {
 		port:                opts.Port,
 		db:                  opts.DB,
 		bundleManagerClient: opts.BundleManagerClient,
-		api:                 api.New(opts.DB, opts.BundleManagerClient),
+		codeIntelAPI:        opts.CodeIntelAPI,
 	}
 }
 
