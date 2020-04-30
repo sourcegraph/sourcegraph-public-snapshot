@@ -198,14 +198,6 @@ func NewGitHubWebhook(store *Store, repos repos.Store, now func() time.Time) *Gi
 	return &GitHubWebhook{&Webhook{store, repos, now, github.ServiceType}}
 }
 
-func NewBitbucketServerWebhook(store *Store, repos repos.Store, now func() time.Time, name string) *BitbucketServerWebhook {
-	return &BitbucketServerWebhook{
-		Webhook: &Webhook{store, repos, now, bbs.ServiceType},
-		Name:    name,
-		secrets: make(map[int64]string),
-	}
-}
-
 // ServeHTTP implements the http.Handler interface.
 func (h *GitHubWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	e, extSvc, httpErr := h.parseEvent(r)
@@ -757,6 +749,14 @@ func (*GitHubWebhook) checkRunEvent(cr *gh.CheckRun) *github.CheckRun {
 	}
 }
 
+func NewBitbucketServerWebhook(store *Store, repos repos.Store, now func() time.Time, name string) *BitbucketServerWebhook {
+	return &BitbucketServerWebhook{
+		Webhook: &Webhook{store, repos, now, bbs.ServiceType},
+		Name:    name,
+		secrets: make(map[int64]string),
+	}
+}
+
 // SyncWebhooks ensures the creation / deletion of the BitbucketServer campaigns webhook.
 // This happens periodically at the specified interval.
 func (h *BitbucketServerWebhook) SyncWebhooks(every time.Duration) {
@@ -926,7 +926,7 @@ func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *repo
 
 	e, err := bbs.ParseWebhookEvent(bbs.WebhookEventType(r), payload)
 	if err != nil {
-		return nil, nil, &httpError{http.StatusBadRequest, err}
+		return nil, nil, &httpError{http.StatusBadRequest, errors.Wrap(err, "parsing webhook")}
 	}
 	return e, extSvc, nil
 }

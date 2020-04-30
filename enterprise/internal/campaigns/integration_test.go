@@ -20,6 +20,7 @@ func TestIntegration(t *testing.T) {
 
 	t.Run("Store", testStore(db))
 	t.Run("GitHubWebhook", testGitHubWebhook(dbtest.NewDB(t, *dsn)))
+	t.Run("BitbucketWebhook", testBitbucketWebhook(dbtest.NewDB(t, *dsn)))
 
 	// The following tests need to be separate because testStore above wraps everything in a global transaction
 	t.Run("StoreLocking", testStoreLocking(db))
