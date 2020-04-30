@@ -44,7 +44,7 @@ func (db *dbImpl) SameRepoPager(ctx context.Context, repositoryID int, commit, s
 		return 0, nil, err
 	}
 
-	pageFromOffset := func(offset int) ([]types.PackageReference, error) {
+	pageFromOffset := func(ctx context.Context, offset int) ([]types.PackageReference, error) {
 		query := `
 			SELECT d.id, r.scheme, r.name, r.version, r.filter FROM lsif_references r
 			LEFT JOIN lsif_dumps d on r.dump_id = d.id
@@ -90,7 +90,7 @@ func (db *dbImpl) PackageReferencePager(ctx context.Context, scheme, name, versi
 		return 0, nil, err
 	}
 
-	pageFromOffset := func(offset int) ([]types.PackageReference, error) {
+	pageFromOffset := func(ctx context.Context, offset int) ([]types.PackageReference, error) {
 		query := `
 			SELECT d.id, r.scheme, r.name, r.version, r.filter FROM lsif_references r
 			LEFT JOIN lsif_dumps d ON r.dump_id = d.id

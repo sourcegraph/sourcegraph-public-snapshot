@@ -3,6 +3,7 @@
 package mocks
 
 import (
+	"context"
 	types "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 	db "github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 	"sync"
@@ -31,7 +32,7 @@ func NewMockReferencePager() *MockReferencePager {
 			},
 		},
 		PageFromOffsetFunc: &ReferencePagerPageFromOffsetFunc{
-			defaultHook: func(int) ([]types.PackageReference, error) {
+			defaultHook: func(context.Context, int) ([]types.PackageReference, error) {
 				return nil, nil
 			},
 		},
@@ -159,24 +160,24 @@ func (c ReferencePagerCloseTxFuncCall) Results() []interface{} {
 // PageFromOffset method of the parent MockReferencePager instance is
 // invoked.
 type ReferencePagerPageFromOffsetFunc struct {
-	defaultHook func(int) ([]types.PackageReference, error)
-	hooks       []func(int) ([]types.PackageReference, error)
+	defaultHook func(context.Context, int) ([]types.PackageReference, error)
+	hooks       []func(context.Context, int) ([]types.PackageReference, error)
 	history     []ReferencePagerPageFromOffsetFuncCall
 	mutex       sync.Mutex
 }
 
 // PageFromOffset delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockReferencePager) PageFromOffset(v0 int) ([]types.PackageReference, error) {
-	r0, r1 := m.PageFromOffsetFunc.nextHook()(v0)
-	m.PageFromOffsetFunc.appendCall(ReferencePagerPageFromOffsetFuncCall{v0, r0, r1})
+func (m *MockReferencePager) PageFromOffset(v0 context.Context, v1 int) ([]types.PackageReference, error) {
+	r0, r1 := m.PageFromOffsetFunc.nextHook()(v0, v1)
+	m.PageFromOffsetFunc.appendCall(ReferencePagerPageFromOffsetFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the PageFromOffset
 // method of the parent MockReferencePager instance is invoked and the hook
 // queue is empty.
-func (f *ReferencePagerPageFromOffsetFunc) SetDefaultHook(hook func(int) ([]types.PackageReference, error)) {
+func (f *ReferencePagerPageFromOffsetFunc) SetDefaultHook(hook func(context.Context, int) ([]types.PackageReference, error)) {
 	f.defaultHook = hook
 }
 
@@ -184,7 +185,7 @@ func (f *ReferencePagerPageFromOffsetFunc) SetDefaultHook(hook func(int) ([]type
 // PageFromOffset method of the parent MockReferencePager instance inovkes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *ReferencePagerPageFromOffsetFunc) PushHook(hook func(int) ([]types.PackageReference, error)) {
+func (f *ReferencePagerPageFromOffsetFunc) PushHook(hook func(context.Context, int) ([]types.PackageReference, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -193,7 +194,7 @@ func (f *ReferencePagerPageFromOffsetFunc) PushHook(hook func(int) ([]types.Pack
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *ReferencePagerPageFromOffsetFunc) SetDefaultReturn(r0 []types.PackageReference, r1 error) {
-	f.SetDefaultHook(func(int) ([]types.PackageReference, error) {
+	f.SetDefaultHook(func(context.Context, int) ([]types.PackageReference, error) {
 		return r0, r1
 	})
 }
@@ -201,12 +202,12 @@ func (f *ReferencePagerPageFromOffsetFunc) SetDefaultReturn(r0 []types.PackageRe
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *ReferencePagerPageFromOffsetFunc) PushReturn(r0 []types.PackageReference, r1 error) {
-	f.PushHook(func(int) ([]types.PackageReference, error) {
+	f.PushHook(func(context.Context, int) ([]types.PackageReference, error) {
 		return r0, r1
 	})
 }
 
-func (f *ReferencePagerPageFromOffsetFunc) nextHook() func(int) ([]types.PackageReference, error) {
+func (f *ReferencePagerPageFromOffsetFunc) nextHook() func(context.Context, int) ([]types.PackageReference, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -241,7 +242,10 @@ func (f *ReferencePagerPageFromOffsetFunc) History() []ReferencePagerPageFromOff
 type ReferencePagerPageFromOffsetFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
-	Arg0 int
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []types.PackageReference
@@ -253,7 +257,7 @@ type ReferencePagerPageFromOffsetFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c ReferencePagerPageFromOffsetFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this

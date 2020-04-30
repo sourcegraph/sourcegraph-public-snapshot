@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"database/sql"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
@@ -12,20 +13,22 @@ type ReferencePager interface {
 	TxCloser
 
 	// PageFromOffset returns the page of package references that starts at the given offset.
-	PageFromOffset(offset int) ([]types.PackageReference, error)
+	PageFromOffset(ctx context.Context, offset int) ([]types.PackageReference, error)
 }
+
+type PageFromOffsetFn func(ctx context.Context, offset int) ([]types.PackageReference, error)
 
 type referencePager struct {
 	*txCloser
-	pageFromOffset func(offset int) ([]types.PackageReference, error)
+	pageFromOffset PageFromOffsetFn
 }
 
 // PageFromOffset returns the page of package references that starts at the given offset.
-func (rp *referencePager) PageFromOffset(offset int) ([]types.PackageReference, error) {
-	return rp.pageFromOffset(offset)
+func (rp *referencePager) PageFromOffset(ctx context.Context, offset int) ([]types.PackageReference, error) {
+	return rp.pageFromOffset(ctx, offset)
 }
 
-func newReferencePager(tx *sql.Tx, pageFromOffset func(offset int) ([]types.PackageReference, error)) ReferencePager {
+func newReferencePager(tx *sql.Tx, pageFromOffset PageFromOffsetFn) ReferencePager {
 	return &referencePager{
 		txCloser:       &txCloser{tx},
 		pageFromOffset: pageFromOffset,
@@ -33,7 +36,7 @@ func newReferencePager(tx *sql.Tx, pageFromOffset func(offset int) ([]types.Pack
 }
 
 func newEmptyReferencePager(tx *sql.Tx) ReferencePager {
-	return newReferencePager(tx, func(offset int) ([]types.PackageReference, error) {
+	return newReferencePager(tx, func(ctx context.Context, offset int) ([]types.PackageReference, error) {
 		return nil, nil
 	})
 }

@@ -53,7 +53,7 @@ func TestSameRepoPager(t *testing.T) {
 		t.Errorf("unexpected dump. want=%d have=%d", 5, totalCount)
 	}
 
-	if references, err := pager.PageFromOffset(0); err != nil {
+	if references, err := pager.PageFromOffset(context.Background(), 0); err != nil {
 		t.Fatalf("unexpected error getting next page: %s", err)
 	} else if diff := cmp.Diff(expected, references); diff != "" {
 		t.Errorf("unexpected references (-want +got):\n%s", diff)
@@ -132,7 +132,7 @@ func TestSameRepoPagerMultiplePages(t *testing.T) {
 			hi = len(expected)
 		}
 
-		if references, err := pager.PageFromOffset(lo); err != nil {
+		if references, err := pager.PageFromOffset(context.Background(), lo); err != nil {
 			t.Fatalf("unexpected error getting page at offset %d: %s", lo, err)
 		} else if diff := cmp.Diff(expected[lo:hi], references); diff != "" {
 			t.Errorf("unexpected references at offset %d (-want +got):\n%s", lo, diff)
@@ -186,7 +186,7 @@ func TestSameRepoPagerVisibility(t *testing.T) {
 		t.Errorf("unexpected dump. want=%d have=%d", 5, totalCount)
 	}
 
-	if references, err := pager.PageFromOffset(0); err != nil {
+	if references, err := pager.PageFromOffset(context.Background(), 0); err != nil {
 		t.Fatalf("unexpected error getting next page: %s", err)
 	} else if diff := cmp.Diff(expected, references); diff != "" {
 		t.Errorf("unexpected references (-want +got):\n%s", diff)
@@ -232,7 +232,7 @@ func TestPackageReferencePager(t *testing.T) {
 		t.Errorf("unexpected dump. want=%d have=%d", 5, totalCount)
 	}
 
-	if references, err := pager.PageFromOffset(0); err != nil {
+	if references, err := pager.PageFromOffset(context.Background(), 0); err != nil {
 		t.Fatalf("unexpected error getting next page: %s", err)
 	} else if diff := cmp.Diff(expected, references); diff != "" {
 		t.Errorf("unexpected references (-want +got):\n%s", diff)
@@ -316,7 +316,7 @@ func TestPackageReferencePagerPages(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		if references, err := pager.PageFromOffset(testCase.offset); err != nil {
+		if references, err := pager.PageFromOffset(context.Background(), testCase.offset); err != nil {
 			t.Fatalf("unexpected error getting page at offset %d: %s", testCase.offset, err)
 		} else if diff := cmp.Diff(expected[testCase.lo:testCase.hi], references); diff != "" {
 			t.Errorf("unexpected references at offset %d (-want +got):\n%s", testCase.offset, diff)
