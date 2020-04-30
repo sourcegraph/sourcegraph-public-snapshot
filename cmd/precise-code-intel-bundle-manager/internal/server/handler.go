@@ -110,13 +110,23 @@ func (s *Server) handleMonikerResults(w http.ResponseWriter, r *http.Request) {
 			return nil, errors.New("illegal tableName supplied")
 		}
 
+		skip := getQueryInt(r, "skip")
+		if skip < 0 {
+			return nil, errors.New("illegal skip supplied")
+		}
+
+		take := getQueryIntDefault(r, "take", DefaultMonikerResultPageSize)
+		if take <= 0 {
+			return nil, errors.New("illegal take supplied")
+		}
+
 		locations, count, err := db.MonikerResults(
 			ctx,
 			tableName,
 			getQuery(r, "scheme"),
 			getQuery(r, "identifier"),
-			getQueryInt(r, "skip"),
-			getQueryIntDefault(r, "take", DefaultMonikerResultPageSize),
+			skip,
+			take,
 		)
 		if err != nil {
 			return nil, err
