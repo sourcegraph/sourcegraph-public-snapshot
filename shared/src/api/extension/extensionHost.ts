@@ -52,6 +52,7 @@ export function startExtensionHost(
     let initialized = false
     const extensionAPI = new Promise<typeof sourcegraph>(resolve => {
         const factory: ExtensionHostAPIFactory = initData => {
+            console.log('extension host factory invoked', initData)
             if (initialized) {
                 throw new Error('extension host is already initialized')
             }
@@ -122,6 +123,8 @@ function createExtensionAPI(
 
     /** Proxy to main thread */
     const proxy = comlink.wrap<ClientAPI>(endpoints.proxy)
+    ;(endpoints.proxy as any).role = 'proxy'
+    ;(endpoints.proxy as any).side = 'ext-host'
 
     // For debugging/tests.
     const sync = async (): Promise<void> => {
@@ -146,7 +149,10 @@ function createExtensionAPI(
     const extensionHostAPI: ExtensionHostAPI = {
         [comlink.proxyMarker]: true,
 
-        ping: () => 'pong',
+        ping: () => {
+            console.log('extension host worker received ping, responding pong')
+            return 'pong'
+        },
         configuration,
         documents,
         extensions,

@@ -5,6 +5,7 @@ import {
     ProxyMethods,
     createEndpoint,
     releaseProxy,
+    TransferHandler,
 } from '@sourcegraph/comlink'
 import { Subscription } from 'rxjs'
 import { Subscribable, Unsubscribable } from 'sourcegraph'
@@ -29,13 +30,12 @@ export const isURL = (value: unknown): value is URL =>
  * Idempotent.
  */
 export function registerComlinkTransferHandlers(): void {
-    transferHandlers.set('URL', {
+    const urlTransferHandler: TransferHandler<URL, string> = {
         canHandle: isURL,
-        // TODO the comlink types could be better here to avoid the any
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access
-        serialize: (url: any) => url.href,
-        deserialize: (urlString: any) => new URL(urlString),
-    })
+        serialize: url => [url.href, []],
+        deserialize: urlString => new URL(urlString),
+    }
+    transferHandlers.set('URL', urlTransferHandler)
 }
 
 /**

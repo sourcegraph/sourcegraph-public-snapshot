@@ -19,6 +19,7 @@ import { observeSourcegraphURL } from '../../shared/util/context'
 import { assertEnv } from '../envAssertion'
 import { observeStorageKey, storage } from '../../browser/storage'
 import { isDefined } from '../../../../shared/src/util/types'
+import { browserPortToMessagePort, findAllTransferables } from '../../platform/ports'
 
 const IS_EXTENSION = true
 
@@ -188,7 +189,7 @@ async function main(): Promise<void> {
      * This listens to events on browser.runtime.onConnect, pairs emitted ports using their naming pattern,
      * and emits pairs. Each pair of ports represents a connection with an instance of the content script.
      */
-    const endpointPairs: Observable<Record<'proxy' | 'expose', browser.runtime.Port>> = fromBrowserEvent(
+    const browserPortPairs: Observable<Record<'proxy' | 'expose', browser.runtime.PortWithSender>> = fromBrowserEvent(
         browser.runtime.onConnect
     ).pipe(
         map(([port]) => port),
@@ -226,30 +227,55 @@ async function main(): Promise<void> {
     // when a port disconnects, the worker is terminated. This means there should always be exactly one
     // extension host worker per active instance of the content script.
     subscriptions.add(
-        endpointPairs.subscribe(
-            ({ proxy, expose }) => {
+        browserPortPairs.subscribe(
+            browserPortPair => {
                 console.log('Extension host client connected')
-                // It's necessary to wrap endpoints because browser.runtime.Port objects do not support transferring MessagePorts.
-                // See https://github.com/GoogleChromeLabs/comlink/blob/master/messagechanneladapter.md
-                const { worker, clientEndpoints } = createExtensionHostWorker({ wrapEndpoints: true })
-                const connectPortAndEndpoint = (port: browser.runtime.Port, endpoint: Endpoint): void => {
+                const { worker, clientEndpoints } = createExtensionHostWorker()
+
+                /**
+                 * Forwards all messages between two endpoints, in both directions.
+                 */
+                const forwardEndpoints = (contentScriptEndpoint: Endpoint, workerEndpoint: Endpoint): void => {
+                    contentScriptEndpoint.addEventListener('message', event => {
+                        const { data } = event as MessageEvent
+                        console.log('receive from content script, post to extension host worker')
+                        workerEndpoint.postMessage(data, [...findAllTransferables(data)])
+                    })
+                    workerEndpoint.addEventListener('message', event => {
+                        const { data } = event as MessageEvent
+                        console.log('receive from extension host worker, post to content script', data)
+                        contentScriptEndpoint.postMessage(data, [...findAllTransferables(data)])
+                    })
                     // False positive https://github.com/eslint/eslint/issues/12822
                     // eslint-disable-next-line no-unused-expressions
-                    endpoint.start?.()
-                    port.onMessage.addListener(message => {
-                        endpoint.postMessage(message)
-                    })
-                    endpoint.addEventListener('message', event => {
-                        port.postMessage((event as MessageEvent).data)
+                    contentScriptEndpoint.start?.()
+                    // eslint-disable-next-line no-unused-expressions
+                    workerEndpoint.start?.()
+                }
+
+                const linkPortAndEndpoint = (browserPort: browser.runtime.PortWithSender, endpoint: Endpoint): void => {
+                    const tabId = browserPort.sender.tab?.id
+                    if (!tabId) {
+                        throw new Error('Expected Port to come from tab')
+                    }
+                    forwardEndpoints(
+                        browserPortToMessagePort(browserPort, name => {
+                            console.log('connecting to content page', name)
+                            return browser.tabs.connect(tabId, { name })
+                        }),
+                        endpoint
+                    )
+                    // Kill worker when either port disconnects
+                    browserPort.onDisconnect.addListener(() => {
+                        console.log('port disconnected')
+                        worker.terminate()
                     })
                 }
+
                 // Connect proxy client endpoint
-                connectPortAndEndpoint(proxy, clientEndpoints.proxy)
+                linkPortAndEndpoint(browserPortPair.proxy, clientEndpoints.proxy)
                 // Connect expose client endpoint
-                connectPortAndEndpoint(expose, clientEndpoints.expose)
-                // Kill worker when either port disconnects
-                proxy.onDisconnect.addListener(() => worker.terminate())
-                expose.onDisconnect.addListener(() => worker.terminate())
+                linkPortAndEndpoint(browserPortPair.expose, clientEndpoints.expose)
             },
             err => {
                 console.error('Error handling extension host client connection', err)
