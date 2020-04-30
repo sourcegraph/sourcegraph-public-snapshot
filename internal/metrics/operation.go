@@ -34,10 +34,10 @@ func (m *OperationMetrics) MustRegister(r prometheus.Registerer) {
 	r.MustRegister(m.Errors)
 }
 
-// NewBasicOperationMetrics creates an OperationMetrics value without any
+// NewOperationMetrics creates an OperationMetrics value without any
 // specific labels. The supplied operationName should be underscore_cased
 // as it is used in the metric name.
-func NewBasicOperationMetrics(subsystem, metricPrefix, operationName string) *OperationMetrics {
+func NewOperationMetrics(subsystem, metricPrefix, operationName string) *OperationMetrics {
 	return &OperationMetrics{
 		Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
 			Namespace: "src",
