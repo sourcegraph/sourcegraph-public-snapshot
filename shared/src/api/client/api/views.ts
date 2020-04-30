@@ -1,4 +1,4 @@
-import * as comlink from '@sourcegraph/comlink'
+import * as comlink from 'comlink'
 import { isEqual, omit } from 'lodash'
 import { combineLatest, from, ReplaySubject, Unsubscribable, ObservableInput } from 'rxjs'
 import { distinctUntilChanged, map, switchMap } from 'rxjs/operators'

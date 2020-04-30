@@ -1,4 +1,4 @@
-import { Remote, ProxyMarked, proxy, proxyMarker } from '@sourcegraph/comlink'
+import { Remote, ProxyMarked, proxy, proxyMarker } from 'comlink'
 import { Hover, Location } from '@sourcegraph/extension-api-types'
 import { CompletionList, DocumentSelector, Unsubscribable } from 'sourcegraph'
 import { ProxySubscribable } from '../../extension/api/common'

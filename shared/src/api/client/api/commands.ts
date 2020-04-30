@@ -1,4 +1,4 @@
-import { ProxyMarked, proxy, proxyMarker } from '@sourcegraph/comlink'
+import { ProxyMarked, proxy, proxyMarker } from 'comlink'
 import { Unsubscribable } from 'sourcegraph'
 import { CommandRegistry } from '../services/command'
 

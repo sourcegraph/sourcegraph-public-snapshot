@@ -6,7 +6,7 @@ import {
     createEndpoint,
     releaseProxy,
     TransferHandler,
-} from '@sourcegraph/comlink'
+} from 'comlink'
 import { Subscription } from 'rxjs'
 import { Subscribable, Unsubscribable } from 'sourcegraph'
 import { hasProperty } from '../util/types'

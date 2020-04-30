@@ -1,4 +1,4 @@
-import { Remote, ProxyMarked, proxy, proxyMarker, UnproxyOrClone } from '@sourcegraph/comlink'
+import { Remote, ProxyMarked, proxy, proxyMarker, UnproxyOrClone } from 'comlink'
 import { from, isObservable, Observable, Observer, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { ProviderResult, Subscribable, Unsubscribable } from 'sourcegraph'

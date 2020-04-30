@@ -1,4 +1,4 @@
-import { Remote, ProxyMarked, proxy, proxyMarker } from '@sourcegraph/comlink'
+import { Remote, ProxyMarked, proxy, proxyMarker } from 'comlink'
 import { LinkPreview, Unsubscribable } from 'sourcegraph'
 import { ProxySubscribable } from '../../extension/api/common'
 import { LinkPreviewProviderRegistry } from '../services/linkPreview'

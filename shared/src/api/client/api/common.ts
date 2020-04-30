@@ -1,4 +1,4 @@
-import { Remote, proxyMarker } from '@sourcegraph/comlink'
+import { Remote, proxyMarker } from 'comlink'
 import { noop } from 'lodash'
 import { from, Observable, observable, Subscription } from 'rxjs'
 import { mergeMap } from 'rxjs/operators'

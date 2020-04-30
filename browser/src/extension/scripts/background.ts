@@ -1,7 +1,7 @@
 // We want to polyfill first.
 import '../polyfills'
 
-import { Endpoint } from '@sourcegraph/comlink'
+import { Endpoint } from 'comlink'
 import { without } from 'lodash'
 import { noop, Observable, Subscription } from 'rxjs'
 import { bufferCount, filter, groupBy, map, mergeMap, switchMap, take, concatMap } from 'rxjs/operators'

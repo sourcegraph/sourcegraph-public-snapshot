@@ -1,5 +1,5 @@
 /* eslint-disable no-sync */
-import * as comlink from '@sourcegraph/comlink'
+import * as comlink from 'comlink'
 import * as clientType from '@sourcegraph/extension-api-types'
 import { Unsubscribable } from 'rxjs'
 import {

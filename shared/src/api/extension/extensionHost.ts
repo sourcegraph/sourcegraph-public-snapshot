@@ -1,4 +1,4 @@
-import * as comlink from '@sourcegraph/comlink'
+import * as comlink from 'comlink'
 import { Location, MarkupKind, Position, Range, Selection } from '@sourcegraph/extension-api-classes'
 import { Subscription, Unsubscribable } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'

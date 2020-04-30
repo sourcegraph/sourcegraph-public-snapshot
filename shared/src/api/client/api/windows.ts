@@ -1,4 +1,4 @@
-import { ProxyMarked, proxy, proxyMarker } from '@sourcegraph/comlink'
+import { ProxyMarked, proxy, proxyMarker } from 'comlink'
 import { Subject } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import {
