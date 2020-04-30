@@ -1408,6 +1408,9 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 	        }
 	        totalCount
 	      }
+	      openChangesets {
+	        totalCount
+	      }
 	      diffStat {
 	        added
 	        deleted
@@ -1429,8 +1432,11 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 		t.Fatalf("campaign.Patches.TotalCount is not zero: %d", campaign.Patches.TotalCount)
 	}
 
+	if campaign.OpenChangesets.TotalCount != 1 {
+		t.Fatalf("campaign.OpenChangesets.TotalCount is not 1: %d", campaign.OpenChangesets.TotalCount)
+	}
 	if campaign.Changesets.TotalCount != 1 {
-		t.Fatalf("campaign.Patches.TotalCount is not zero: %d", campaign.Patches.TotalCount)
+		t.Fatalf("campaign.Changesets.TotalCount is not 1: %d", campaign.Changesets.TotalCount)
 	}
 
 	if campaign.DiffStat.Changed != 2 {

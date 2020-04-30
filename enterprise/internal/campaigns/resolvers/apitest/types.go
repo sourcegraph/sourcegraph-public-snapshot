@@ -103,6 +103,7 @@ type Campaign struct {
 	}
 	Patches                 PatchConnection
 	Changesets              ChangesetConnection
+	OpenChangesets          ChangesetConnection
 	ChangesetCountsOverTime []ChangesetCounts
 	DiffStat                DiffStat
 }

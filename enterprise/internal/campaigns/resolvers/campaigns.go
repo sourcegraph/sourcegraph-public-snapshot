@@ -172,6 +172,18 @@ func (r *campaignResolver) Changesets(
 	}, nil
 }
 
+func (r *campaignResolver) OpenChangesets(ctx context.Context) (graphqlbackend.ExternalChangesetsConnectionResolver, error) {
+	state := campaigns.ChangesetStateOpen
+	return &changesetsConnectionResolver{
+		store: r.store,
+		opts: ee.ListChangesetsOpts{
+			CampaignID:    r.Campaign.ID,
+			ExternalState: &state,
+			Limit:         -1,
+		},
+	}, nil
+}
+
 func (r *campaignResolver) Patches(
 	ctx context.Context,
 	args *graphqlutil.ConnectionArgs,
