@@ -10,20 +10,20 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 // HandlerMetrics encapsulates the Prometheus metrics of an http.Handler.
 type HandlerMetrics struct {
-	ServeHTTP *repos.OperationMetrics
+	ServeHTTP *metrics.OperationMetrics
 }
 
 // NewHandlerMetrics returns HandlerMetrics that need to be registered
 // in a Prometheus registry.
 func NewHandlerMetrics() HandlerMetrics {
 	return HandlerMetrics{
-		ServeHTTP: &repos.OperationMetrics{
+		ServeHTTP: &metrics.OperationMetrics{
 			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
 				Namespace: "src",
 				Subsystem: "repoupdater",
