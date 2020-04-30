@@ -253,8 +253,22 @@ func (h *GitHubWebhook) parseEvent(r *http.Request) (interface{}, *repos.Externa
 
 	sig := r.Header.Get("X-Hub-Signature")
 
+	rawID := r.FormValue(externalServiceIDParam)
+	var externalServiceID int64
+	// Older hook URL's may not contain the external service
+	if rawID != "" {
+		externalServiceID, err = strconv.ParseInt(rawID, 10, 64)
+		if err != nil {
+			return nil, nil, &httpError{http.StatusBadRequest, errors.Wrap(err, "invalid external service id")}
+		}
+	}
+
 	var extSvc *repos.ExternalService
 	for _, e := range es {
+		if externalServiceID != 0 && e.ID != externalServiceID {
+			continue
+		}
+
 		c, _ := e.Configuration()
 		for _, hook := range c.(*schema.GitHubConnection).Webhooks {
 			if hook.Secret == "" {
