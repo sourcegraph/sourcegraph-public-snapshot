@@ -927,10 +927,6 @@ func setPanelPos(p *sdk.Panel, x, y int) {
 	p.GridPos.Y = &y
 }
 
-func uintPtr(x uint) *uint {
-	return &x
-}
-
 func stringPtr(s string) *string {
 	return &s
 }

@@ -277,12 +277,6 @@ func createCampaignPatch(t *testing.T, ctx context.Context, now time.Time, s *St
 	return campaign, patch
 }
 
-var githubActor = github.Actor{
-	AvatarURL: "https://avatars2.githubusercontent.com/u/1185253",
-	Login:     "mrnugget",
-	URL:       "https://github.com/mrnugget",
-}
-
 func buildGithubPR(now time.Time, c *cmpgn.Campaign, headRef string) interface{} {
 	return &github.PullRequest{
 		ID:          "FOOBARID",
