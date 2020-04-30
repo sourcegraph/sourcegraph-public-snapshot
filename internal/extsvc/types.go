@@ -114,5 +114,6 @@ func WebhookURL(kind string, externalServiceID int64) (string, error) {
 	default:
 		return "", fmt.Errorf("unknown external service kind: %q", kind)
 	}
-	return fmt.Sprintf("https://%s/%s?%s=%d", host, path, IDParam, externalServiceID), nil
+	// eg. https://example.com/.api/github-webhooks?externalServiceID=1
+	return fmt.Sprintf("%s/.api/%s?%s=%d", host, path, IDParam, externalServiceID), nil
 }
