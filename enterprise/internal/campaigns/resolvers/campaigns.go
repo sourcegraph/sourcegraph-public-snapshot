@@ -322,6 +322,10 @@ func (r *campaignResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffSt
 	}
 
 	patches, err := patchesConnection.Nodes(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	for _, p := range patches {
 
 		fileDiffs, err := p.FileDiffs(ctx, &graphqlutil.ConnectionArgs{})
