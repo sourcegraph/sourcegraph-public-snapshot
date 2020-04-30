@@ -330,6 +330,7 @@ func testBitbucketWebhook(db *sql.DB) func(*testing.T) {
 						if err != nil {
 							t.Fatal(err)
 						}
+						req.Header.Set("X-Event-Key", event.PayloadType)
 						req.Header.Set("X-Hub-Signature", sign(t, event.Data, []byte(secret)))
 
 						rec := httptest.NewRecorder()
