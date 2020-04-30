@@ -35,11 +35,8 @@ var update = flag.Bool("update", false, "update testdata")
 // Run from integration_test.go
 func testGitHubWebhook(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
-		now := time.Now()
-		clock := func() time.Time {
-			return now.UTC().Truncate(time.Microsecond)
-		}
-		now = clock()
+		now := time.Now().UTC().Truncate(time.Microsecond)
+		clock := func() time.Time { return now }
 
 		ctx := context.Background()
 
@@ -196,11 +193,8 @@ func testGitHubWebhook(db *sql.DB) func(*testing.T) {
 // Run from integration_test.go
 func testBitbucketWebhook(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
-		now := time.Now()
-		clock := func() time.Time {
-			return now.UTC().Truncate(time.Microsecond)
-		}
-		now = clock()
+		now := time.Now().UTC().Truncate(time.Microsecond)
+		clock := func() time.Time { return now }
 
 		ctx := context.Background()
 
