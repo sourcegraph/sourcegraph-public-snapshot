@@ -99,7 +99,7 @@ func ParseConfig(kind, config string) (cfg interface{}, _ error) {
 	return cfg, jsonc.Unmarshal(config, cfg)
 }
 
-const ExternalServiceIDParam = "externalServiceID"
+const IDParam = "externalServiceID"
 
 func WebhookURL(kind string, externalServiceID int64) (string, error) {
 	host := conf.Cached(func() interface{} {
@@ -114,5 +114,5 @@ func WebhookURL(kind string, externalServiceID int64) (string, error) {
 	default:
 		return "", fmt.Errorf("unknown external service kind: %q", kind)
 	}
-	return fmt.Sprintf("https://%s/%s?%s=%d", host, path, ExternalServiceIDParam, externalServiceID), nil
+	return fmt.Sprintf("https://%s/%s?%s=%d", host, path, IDParam, externalServiceID), nil
 }

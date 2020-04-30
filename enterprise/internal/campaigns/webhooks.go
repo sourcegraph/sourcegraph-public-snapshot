@@ -253,7 +253,7 @@ func (h *GitHubWebhook) parseEvent(r *http.Request) (interface{}, *repos.Externa
 
 	sig := r.Header.Get("X-Hub-Signature")
 
-	rawID := r.FormValue(extsvc.ExternalServiceIDParam)
+	rawID := r.FormValue(extsvc.IDParam)
 	var externalServiceID int64
 	// If a webhook was setup before we introduced the externalServiceID as part of the URL,
 	// the webhook requests may not contain the external service ID, so we need to fall back.
@@ -897,7 +897,7 @@ func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *repo
 
 	sig := r.Header.Get("X-Hub-Signature")
 
-	rawID := r.FormValue(extsvc.ExternalServiceIDParam)
+	rawID := r.FormValue(extsvc.IDParam)
 	var externalServiceID int64
 	// id could be blank temporarily if we haven't updated the hook url to include the param yet
 	if rawID != "" {
