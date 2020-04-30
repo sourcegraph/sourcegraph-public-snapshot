@@ -92,10 +92,10 @@ func (r *externalServiceResolver) CampaignWebhookURL() *string {
 		u := campaigns.WebhookURL(r.externalService.ID)
 		switch c := parsed.(type) {
 		case *schema.BitbucketServerConnection:
-			if c.Webhooks != nil && c.Webhooks.Secret != "" {
+			if c.Webhooks != nil {
 				r.webhookURL = u
 			}
-			if c.Plugin != nil && c.Plugin.Webhooks != nil && c.Plugin.Webhooks.Secret != "" {
+			if c.Plugin != nil && c.Plugin.Webhooks != nil {
 				r.webhookURL = u
 			}
 		case *schema.GitHubConnection:
