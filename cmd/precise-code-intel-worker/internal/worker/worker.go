@@ -237,20 +237,20 @@ func convert(
 	root string,
 	getChildren existence.GetChildrenFunc,
 ) (_ []types.Package, _ []types.PackageReference, err error) {
-	correlatedTypes, err := correlation.Correlate(filename, dumpID, root, getChildren)
+	groupedBundleData, err := correlation.Correlate(filename, dumpID, root, getChildren)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	if err := write(ctx, newFilename, correlatedTypes); err != nil {
+	if err := write(ctx, newFilename, groupedBundleData); err != nil {
 		return nil, nil, err
 	}
 
-	return correlatedTypes.Packages, correlatedTypes.PackageReferences, nil
+	return groupedBundleData.Packages, groupedBundleData.PackageReferences, nil
 }
 
 // write commits the correlated data to disk.
-func write(ctx context.Context, filename string, correlatedTypes *correlation.CorrelatedTypes) error {
+func write(ctx context.Context, filename string, groupedBundleData *correlation.GroupedBundleData) error {
 	writer, err := writer.NewSQLiteWriter(filename, serializer.NewDefaultSerializer())
 	if err != nil {
 		return err
@@ -263,12 +263,12 @@ func write(ctx context.Context, filename string, correlatedTypes *correlation.Co
 
 	fns := []func() error{
 		func() error {
-			return writer.WriteMeta(ctx, correlatedTypes.LSIFVersion, correlatedTypes.NumResultChunks)
+			return writer.WriteMeta(ctx, groupedBundleData.LSIFVersion, groupedBundleData.NumResultChunks)
 		},
-		func() error { return writer.WriteDocuments(ctx, correlatedTypes.Documents) },
-		func() error { return writer.WriteResultChunks(ctx, correlatedTypes.ResultChunks) },
-		func() error { return writer.WriteDefinitions(ctx, correlatedTypes.Definitions) },
-		func() error { return writer.WriteReferences(ctx, correlatedTypes.References) },
+		func() error { return writer.WriteDocuments(ctx, groupedBundleData.Documents) },
+		func() error { return writer.WriteResultChunks(ctx, groupedBundleData.ResultChunks) },
+		func() error { return writer.WriteDefinitions(ctx, groupedBundleData.Definitions) },
+		func() error { return writer.WriteReferences(ctx, groupedBundleData.References) },
 		func() error { return writer.Flush(ctx) },
 	}
 

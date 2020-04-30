@@ -11,10 +11,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 )
 
-// CorrelatedTypes is a view of a correlation State that sorts data by it containing document
+// GroupedBundleData is a view of a correlation State that sorts data by it containing document
 // and shared data into shareded result chunks. The fields of this type are what is written to
 // persistent storage and what is read in the query path.
-type CorrelatedTypes struct {
+type GroupedBundleData struct {
 	LSIFVersion       string
 	NumResultChunks   int
 	Documents         map[string]types.DocumentData
@@ -28,7 +28,8 @@ type CorrelatedTypes struct {
 const MaxNumResultChunks = 1000
 const ResultsPerResultChunk = 500
 
-func convert(state *State, dumpID int) (*CorrelatedTypes, error) {
+// groupBundleData converts a raw (but canonicalized) correlation State into a GroupedBundleData.
+func groupBundleData(state *State, dumpID int) (*GroupedBundleData, error) {
 	numResults := len(state.DefinitionData) + len(state.ReferenceData)
 	numResultChunks := int(math.Min(
 		MaxNumResultChunks,
@@ -68,7 +69,7 @@ func convert(state *State, dumpID int) (*CorrelatedTypes, error) {
 		return nil, err
 	}
 
-	return &CorrelatedTypes{
+	return &GroupedBundleData{
 		LSIFVersion:       state.LSIFVersion,
 		NumResultChunks:   numResultChunks,
 		Documents:         documents,

@@ -15,7 +15,7 @@ import (
 
 // Correlate reads the given gzipped upload file and returns a correlation state object with the
 // same data canonicalized and pruned for storage.
-func Correlate(filename string, dumpID int, root string, getChildren existence.GetChildrenFunc) (*CorrelatedTypes, error) {
+func Correlate(filename string, dumpID int, root string, getChildren existence.GetChildrenFunc) (*GroupedBundleData, error) {
 	f, err := os.Open(filename)
 	if err != nil {
 		return nil, err
@@ -41,12 +41,12 @@ func Correlate(filename string, dumpID int, root string, getChildren existence.G
 		return nil, err
 	}
 
-	converted, err := convert(state, dumpID)
+	groupedBundleData, err := groupBundleData(state, dumpID)
 	if err != nil {
 		return nil, err
 	}
 
-	return converted, nil
+	return groupedBundleData, nil
 }
 
 // correlateFromReader reads the given upload stream and returns a correlation state object.
