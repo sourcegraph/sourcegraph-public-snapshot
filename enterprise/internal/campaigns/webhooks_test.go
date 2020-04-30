@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -326,7 +327,8 @@ func testBitbucketWebhook(db *sql.DB) func(*testing.T) {
 				// Send all events twice to ensure we are idempotent
 				for i := 0; i < 2; i++ {
 					for _, event := range tc.Payloads {
-						req, err := http.NewRequest("POST", "", bytes.NewReader(event.Data))
+						u := fmt.Sprintf("http://example.com/?%s=%d", externalServiceIDParam, githubExtSvc.ID)
+						req, err := http.NewRequest("POST", u, bytes.NewReader(event.Data))
 						if err != nil {
 							t.Fatal(err)
 						}
