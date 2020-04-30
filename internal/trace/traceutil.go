@@ -94,6 +94,14 @@ func (t *Trace) LogFields(fields ...log.Field) {
 }
 
 // SetError declares that this trace and span resulted in an error.
+func (t *Trace) SetErrorPtr(err *error) {
+	if err == nil || *err == nil {
+		return
+	}
+	t.SetError(*err)
+}
+
+// SetError declares that this trace and span resulted in an error.
 func (t *Trace) SetError(err error) {
 	if err == nil {
 		return
