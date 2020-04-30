@@ -252,7 +252,7 @@ func (s *ReferencePageResolver) resolveLocationsViaReferencePager(ctx context.Co
 
 		var packageReferences []types.PackageReference
 		for len(packageReferences) < limit && newOffset < totalCount {
-			page, err := pager.PageFromOffset(newOffset)
+			page, err := pager.PageFromOffset(ctx, newOffset)
 			if err != nil {
 				return nil, Cursor{}, false, pager.CloseTx(err)
 			}

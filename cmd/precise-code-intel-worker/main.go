@@ -6,6 +6,9 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker/internal/worker"
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
@@ -14,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/sqliteutil"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 )
 
@@ -29,7 +33,38 @@ func main() {
 		bundleManagerURL = mustGet(rawBundleManagerURL, "PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL")
 	)
 
-	db := mustInitializeDatabase()
+	dbMetrics := db.NewDatabaseMetrics("precise-code-intel-api-server")
+	for _, om := range []*db.OperationMetrics{
+		dbMetrics.GetUploadByID,
+		dbMetrics.GetUploadsByRepo,
+		dbMetrics.Enqueue,
+		dbMetrics.Dequeue,
+		dbMetrics.GetStates,
+		dbMetrics.DeleteUploadByID,
+		dbMetrics.ResetStalled,
+		dbMetrics.GetDumpByID,
+		dbMetrics.FindClosestDumps,
+		dbMetrics.DeleteOldestDump,
+		dbMetrics.UpdateDumpsVisibleFromTip,
+		dbMetrics.DeleteOverlappingDumps,
+		dbMetrics.GetPackage,
+		dbMetrics.UpdatePackages,
+		dbMetrics.SameRepoPager,
+		dbMetrics.UpdatePackageReferences,
+		dbMetrics.PackageReferencePager,
+		dbMetrics.UpdateCommits,
+		dbMetrics.RepoName,
+		dbMetrics.PageFromOffset,
+	} {
+		om.MustRegister(prometheus.DefaultRegisterer)
+	}
+
+	db := db.NewObservedDatabase(
+		mustInitializeDatabase(),
+		log15.Root(),
+		dbMetrics,
+		trace.Tracer{Tracer: opentracing.GlobalTracer()},
+	)
 
 	workerImpl := worker.New(worker.WorkerOpts{
 		DB:                  db,
