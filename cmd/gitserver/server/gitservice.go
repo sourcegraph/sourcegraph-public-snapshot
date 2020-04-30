@@ -26,7 +26,7 @@ var uploadPackArgs = []string{
 	"--stateless-rpc", "--strict",
 }
 
-// handleGitService is a smart Git HTTP transfer protocol as documented at
+// gitServiceHandler is a smart Git HTTP transfer protocol as documented at
 // https://www.git-scm.com/docs/http-protocol.
 //
 // This allows users to clone any git repo. We only support the smart
