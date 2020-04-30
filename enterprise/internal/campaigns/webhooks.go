@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	bbs "github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -836,7 +837,7 @@ func (h *BitbucketServerWebhook) syncWebhook(externalServiceID int64, con *schem
 	}
 
 	// Secret has changed to a non blank value, upsert
-	endpoint, err := extsvc.WebhookURL("bitbucketserver", externalServiceID)
+	endpoint, err := extsvc.WebhookURL(bitbucketserver.ServiceType, externalServiceID)
 	if err != nil {
 		return errors.Wrap(err, "getting webhook URL")
 	}

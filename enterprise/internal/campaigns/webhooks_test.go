@@ -19,6 +19,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+
 	"github.com/dnaeon/go-vcr/cassette"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -143,7 +147,7 @@ func testGitHubWebhook(db *sql.DB) func(*testing.T) {
 				// Send all events twice to ensure we are idempotent
 				for i := 0; i < 2; i++ {
 					for _, event := range tc.Payloads {
-						u, err := extsvc.WebhookURL("github", extSvc.ID)
+						u, err := extsvc.WebhookURL(github.ServiceType, extSvc.ID)
 						if err != nil {
 							t.Fatal(err)
 						}
@@ -318,7 +322,7 @@ func testBitbucketWebhook(db *sql.DB) func(*testing.T) {
 				// Send all events twice to ensure we are idempotent
 				for i := 0; i < 2; i++ {
 					for _, event := range tc.Payloads {
-						u, err := extsvc.WebhookURL("bitbucketserver", extSvc.ID)
+						u, err := extsvc.WebhookURL(bitbucketserver.ServiceType, extSvc.ID)
 						if err != nil {
 							t.Fatal(err)
 						}
