@@ -11,8 +11,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-
 	gh "github.com/google/go-github/v28/github"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
@@ -24,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	bbs "github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -253,9 +252,10 @@ func (h *GitHubWebhook) parseEvent(r *http.Request) (interface{}, *repos.Externa
 
 	sig := r.Header.Get("X-Hub-Signature")
 
-	rawID := r.FormValue(campaigns.ExternalServiceIDParam)
+	rawID := r.FormValue(extsvc.ExternalServiceIDParam)
 	var externalServiceID int64
-	// Older hook URL's may not contain the external service
+	// If a webhook was setup before we introduced the externalServiceID as part of the URL,
+	// the webhook requests may not contain the external service ID, so we need to fall back.
 	if rawID != "" {
 		externalServiceID, err = strconv.ParseInt(rawID, 10, 64)
 		if err != nil {
@@ -836,7 +836,10 @@ func (h *BitbucketServerWebhook) syncWebhook(externalServiceID int64, con *schem
 	}
 
 	// Secret has changed to a non blank value, upsert
-	endpoint := campaigns.WebhookURL(externalServiceID)
+	endpoint, err := extsvc.WebhookURL("bitbucketserver", externalServiceID)
+	if err != nil {
+		return errors.Wrap(err, "getting webhook URL")
+	}
 	wh := bbs.Webhook{
 		Name:     h.Name,
 		Scope:    "global",
@@ -893,7 +896,7 @@ func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *repo
 
 	sig := r.Header.Get("X-Hub-Signature")
 
-	rawID := r.FormValue(campaigns.ExternalServiceIDParam)
+	rawID := r.FormValue(extsvc.ExternalServiceIDParam)
 	var externalServiceID int64
 	// id could be blank temporarily if we haven't updated the hook url to include the param yet
 	if rawID != "" {

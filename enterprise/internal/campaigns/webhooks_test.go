@@ -24,6 +24,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -142,7 +143,11 @@ func testGitHubWebhook(db *sql.DB) func(*testing.T) {
 				// Send all events twice to ensure we are idempotent
 				for i := 0; i < 2; i++ {
 					for _, event := range tc.Payloads {
-						u := campaigns.WebhookURL(extSvc.ID)
+						u, err := extsvc.WebhookURL("github", extSvc.ID)
+						if err != nil {
+							t.Fatal(err)
+						}
+
 						req, err := http.NewRequest("POST", u, bytes.NewReader(event.Data))
 						if err != nil {
 							t.Fatal(err)
@@ -313,7 +318,10 @@ func testBitbucketWebhook(db *sql.DB) func(*testing.T) {
 				// Send all events twice to ensure we are idempotent
 				for i := 0; i < 2; i++ {
 					for _, event := range tc.Payloads {
-						u := campaigns.WebhookURL(extSvc.ID)
+						u, err := extsvc.WebhookURL("bitbucketserver", extSvc.ID)
+						if err != nil {
+							t.Fatal(err)
+						}
 						req, err := http.NewRequest("POST", u, bytes.NewReader(event.Data))
 						if err != nil {
 							t.Fatal(err)

@@ -8,6 +8,7 @@ import (
 
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -75,8 +76,7 @@ type AccountID string
 // Server) or a GraphQL ID (e.g. GitHub) depends on the code host type.
 type RepoID string
 
-// ParseConfig attempts to parse external service config into a strong typed
-// schema value.
+// ParseConfig attempts to unmarshal the given JSON config into a configuration struct defined in the schema package.
 func ParseConfig(kind, config string) (cfg interface{}, _ error) {
 	switch strings.ToLower(kind) {
 	case "awscodecommit":
@@ -97,4 +97,22 @@ func ParseConfig(kind, config string) (cfg interface{}, _ error) {
 		return nil, fmt.Errorf("unknown external service kind %q", kind)
 	}
 	return cfg, jsonc.Unmarshal(config, cfg)
+}
+
+const ExternalServiceIDParam = "externalServiceID"
+
+func WebhookURL(kind string, externalServiceID int64) (string, error) {
+	host := conf.Cached(func() interface{} {
+		return conf.Get().ExternalURL
+	})().(string)
+	var path string
+	switch strings.ToLower(kind) {
+	case "github":
+		path = "github-webhooks"
+	case "bitbucketserver":
+		path = "bitbucket-server-webhooks"
+	default:
+		return "", fmt.Errorf("uknown external service kind: %q", kind)
+	}
+	return fmt.Sprintf("https://%s/%s?%s=%d", host, path, ExternalServiceIDParam, externalServiceID), nil
 }
