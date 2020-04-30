@@ -2,10 +2,14 @@ package extsvc
 
 import (
 	"encoding/json"
+	"fmt"
+	"strings"
 	"time"
 
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // Account represents a row in the `user_external_accounts` table. See the GraphQL API's
@@ -70,3 +74,27 @@ type AccountID string
 // code host. It can be the string representation of an integer (e.g. GitLab and Bitbucket
 // Server) or a GraphQL ID (e.g. GitHub) depends on the code host type.
 type RepoID string
+
+// ParseConfig attempts to parse external service config into a strong typed
+// schema value.
+func ParseConfig(kind, config string) (cfg interface{}, _ error) {
+	switch strings.ToLower(kind) {
+	case "awscodecommit":
+		cfg = &schema.AWSCodeCommitConnection{}
+	case "bitbucketserver":
+		cfg = &schema.BitbucketServerConnection{}
+	case "github":
+		cfg = &schema.GitHubConnection{}
+	case "gitlab":
+		cfg = &schema.GitLabConnection{}
+	case "gitolite":
+		cfg = &schema.GitoliteConnection{}
+	case "phabricator":
+		cfg = &schema.PhabricatorConnection{}
+	case "other":
+		cfg = &schema.OtherExternalServiceConnection{}
+	default:
+		return nil, fmt.Errorf("unknown external service kind %q", kind)
+	}
+	return cfg, jsonc.Unmarshal(config, cfg)
+}

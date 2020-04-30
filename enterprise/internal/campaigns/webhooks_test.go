@@ -9,7 +9,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"flag"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -143,7 +142,7 @@ func testGitHubWebhook(db *sql.DB) func(*testing.T) {
 				// Send all events twice to ensure we are idempotent
 				for i := 0; i < 2; i++ {
 					for _, event := range tc.Payloads {
-						u := fmt.Sprintf("https://example.com/?%s=%d", externalServiceIDParam, extSvc.ID)
+						u := campaigns.WebhookURL(extSvc.ID)
 						req, err := http.NewRequest("POST", u, bytes.NewReader(event.Data))
 						if err != nil {
 							t.Fatal(err)
@@ -314,7 +313,7 @@ func testBitbucketWebhook(db *sql.DB) func(*testing.T) {
 				// Send all events twice to ensure we are idempotent
 				for i := 0; i < 2; i++ {
 					for _, event := range tc.Payloads {
-						u := fmt.Sprintf("https://example.com/?%s=%d", externalServiceIDParam, extSvc.ID)
+						u := campaigns.WebhookURL(extSvc.ID)
 						req, err := http.NewRequest("POST", u, bytes.NewReader(event.Data))
 						if err != nil {
 							t.Fatal(err)

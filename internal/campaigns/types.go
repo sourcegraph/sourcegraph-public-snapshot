@@ -1,18 +1,19 @@
 package campaigns
 
 import (
+	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-
 	"github.com/inconshreveable/log15"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 // SupportedExternalServices are the external service types currently supported
@@ -1269,4 +1270,13 @@ type ChangesetSyncData struct {
 
 func unixMilliToTime(ms int64) time.Time {
 	return time.Unix(0, ms*int64(time.Millisecond))
+}
+
+const ExternalServiceIDParam = "externalServiceID"
+
+func WebhookURL(externalServiceID int64) string {
+	host := conf.Cached(func() interface{} {
+		return conf.Get().ExternalURL
+	})().(string)
+	return fmt.Sprintf("https://%s/?%s=%d", host, ExternalServiceIDParam, externalServiceID)
 }

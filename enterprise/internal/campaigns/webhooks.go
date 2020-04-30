@@ -253,7 +253,7 @@ func (h *GitHubWebhook) parseEvent(r *http.Request) (interface{}, *repos.Externa
 
 	sig := r.Header.Get("X-Hub-Signature")
 
-	rawID := r.FormValue(externalServiceIDParam)
+	rawID := r.FormValue(campaigns.ExternalServiceIDParam)
 	var externalServiceID int64
 	// Older hook URL's may not contain the external service
 	if rawID != "" {
@@ -804,8 +804,6 @@ func (h *BitbucketServerWebhook) SyncWebhooks(every time.Duration) {
 	}
 }
 
-const externalServiceIDParam = "externalServiceID"
-
 // syncWebhook ensures that the webhook has been configured correctly on Bitbucket. If no secret has been set, we delete
 // the existing webhook config.
 func (h *BitbucketServerWebhook) syncWebhook(externalServiceID int64, con *schema.BitbucketServerConnection, externalURL string) error {
@@ -838,7 +836,7 @@ func (h *BitbucketServerWebhook) syncWebhook(externalServiceID int64, con *schem
 	}
 
 	// Secret has changed to a non blank value, upsert
-	endpoint := fmt.Sprintf("%s/.api/bitbucket-server-webhooks?%s=%d", externalURL, externalServiceIDParam, externalServiceID)
+	endpoint := campaigns.WebhookURL(externalServiceID)
 	wh := bbs.Webhook{
 		Name:     h.Name,
 		Scope:    "global",
@@ -895,7 +893,7 @@ func (h *BitbucketServerWebhook) parseEvent(r *http.Request) (interface{}, *repo
 
 	sig := r.Header.Get("X-Hub-Signature")
 
-	rawID := r.FormValue(externalServiceIDParam)
+	rawID := r.FormValue(campaigns.ExternalServiceIDParam)
 	var externalServiceID int64
 	// id could be blank temporarily if we haven't updated the hook url to include the param yet
 	if rawID != "" {
