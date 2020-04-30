@@ -15,11 +15,18 @@ import {
     IPatchSet,
     IPatchesOnCampaignArguments,
     IPatchConnection,
+    IExternalChangesetConnection,
 } from '../../../../../shared/src/graphql/schema'
 import { DiffStatFields, FileDiffHunkRangeFields, PreviewFileDiffFields, FileDiffFields } from '../../../backend/diff'
 import { Connection, FilteredConnectionQueryArgs } from '../../../components/FilteredConnection'
 
 export type CampaignType = 'comby' | 'credentials' | 'regexSearchReplace'
+
+export type Campaign = ICampaign & { openChangesets: Pick<IExternalChangesetConnection, 'totalCount'> }
+
+function augmentOpenChangesets(campaign: ICampaign): Campaign {
+    return campaign as Campaign
+}
 
 const campaignFragment = gql`
     fragment CampaignFields on Campaign {
@@ -42,20 +49,14 @@ const campaignFragment = gql`
         publishedAt
         closedAt
         viewerCanAdminister
-        changesets(first: 10000) {
+        changesets {
             totalCount
-            nodes {
-                __typename
-                id
-                state
-            }
         }
-        patches(first: 10000) {
+        openChangesets: changesets(state: OPEN) {
             totalCount
-            nodes {
-                id
-                __typename
-            }
+        }
+        patches {
+            totalCount
         }
         patchSet {
             id
@@ -85,19 +86,15 @@ const patchSetFragment = gql`
         diffStat {
             ...DiffStatFields
         }
-        patches(first: 10000) {
+        patches {
             totalCount
-            nodes {
-                id
-                __typename
-            }
         }
     }
 
     ${DiffStatFields}
 `
 
-export async function updateCampaign(update: IUpdateCampaignInput): Promise<ICampaign> {
+export async function updateCampaign(update: IUpdateCampaignInput): Promise<Campaign> {
     const result = await mutateGraphQL(
         gql`
             mutation UpdateCampaign($update: UpdateCampaignInput!) {
@@ -109,10 +106,10 @@ export async function updateCampaign(update: IUpdateCampaignInput): Promise<ICam
         `,
         { update }
     ).toPromise()
-    return dataOrThrowErrors(result).updateCampaign
+    return augmentOpenChangesets(dataOrThrowErrors(result).updateCampaign)
 }
 
-export async function createCampaign(input: ICreateCampaignInput): Promise<ICampaign> {
+export async function createCampaign(input: ICreateCampaignInput): Promise<Campaign> {
     const result = await mutateGraphQL(
         gql`
             mutation CreateCampaign($input: CreateCampaignInput!) {
@@ -124,10 +121,10 @@ export async function createCampaign(input: ICreateCampaignInput): Promise<ICamp
         `,
         { input }
     ).toPromise()
-    return dataOrThrowErrors(result).createCampaign
+    return augmentOpenChangesets(dataOrThrowErrors(result).createCampaign)
 }
 
-export async function retryCampaign(campaignID: ID): Promise<ICampaign> {
+export async function retryCampaign(campaignID: ID): Promise<Campaign> {
     const result = await mutateGraphQL(
         gql`
             mutation RetryCampaign($campaign: ID!) {
@@ -140,7 +137,7 @@ export async function retryCampaign(campaignID: ID): Promise<ICampaign> {
         `,
         { campaign: campaignID }
     ).toPromise()
-    return dataOrThrowErrors(result).retryCampaign
+    return augmentOpenChangesets(dataOrThrowErrors(result).retryCampaign)
 }
 
 export async function closeCampaign(campaign: ID, closeChangesets = false): Promise<void> {
@@ -171,7 +168,7 @@ export async function deleteCampaign(campaign: ID, closeChangesets = false): Pro
     dataOrThrowErrors(result)
 }
 
-export const fetchCampaignById = (campaign: ID): Observable<ICampaign | null> =>
+export const fetchCampaignById = (campaign: ID): Observable<Campaign | null> =>
     queryGraphQL(
         gql`
             query CampaignByID($campaign: ID!) {
@@ -194,7 +191,7 @@ export const fetchCampaignById = (campaign: ID): Observable<ICampaign | null> =>
             if (node.__typename !== 'Campaign') {
                 throw new Error(`The given ID is a ${node.__typename}, not a Campaign`)
             }
-            return node
+            return augmentOpenChangesets(node)
         })
     )
 
@@ -408,7 +405,7 @@ export const queryPatchesFromPatchSet = (
         })
     )
 
-export async function publishCampaign(campaign: ID): Promise<ICampaign> {
+export async function publishCampaign(campaign: ID): Promise<Campaign> {
     const result = await mutateGraphQL(
         gql`
             mutation PublishCampaign($campaign: ID!) {
@@ -420,7 +417,7 @@ export async function publishCampaign(campaign: ID): Promise<ICampaign> {
         `,
         { campaign }
     ).toPromise()
-    return dataOrThrowErrors(result).publishCampaign
+    return augmentOpenChangesets(dataOrThrowErrors(result).publishCampaign)
 }
 
 export async function publishChangeset(patch: ID): Promise<IEmptyResponse> {

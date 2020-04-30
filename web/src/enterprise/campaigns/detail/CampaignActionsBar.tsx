@@ -5,15 +5,13 @@ import { Link } from '../../../../../shared/src/components/Link'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { CloseDeleteCampaignPrompt } from './form/CloseDeleteCampaignPrompt'
 import { CampaignUIMode } from './CampaignDetails'
+import { Campaign } from './backend'
 
 interface Props {
     mode: CampaignUIMode
     previewingPatchSet: boolean
 
-    campaign?: Pick<GQL.ICampaign, 'name' | 'closedAt' | 'viewerCanAdminister' | 'publishedAt'> & {
-        changesets: Pick<GQL.ICampaign['changesets'], 'totalCount'> & {
-            nodes: Pick<GQL.IExternalChangeset, 'state'>[]
-        }
+    campaign?: Pick<Campaign, 'name' | 'closedAt' | 'viewerCanAdminister' | 'publishedAt' | 'openChangesets'> & {
         status: Pick<GQL.ICampaign['status'], 'state'>
     }
 
@@ -40,8 +38,7 @@ export const CampaignActionsBar: React.FunctionComponent<Props> = ({
     const campaignProcessing = campaign ? campaign.status.state === GQL.BackgroundProcessState.PROCESSING : false
     const actionsDisabled = mode === 'deleting' || mode === 'closing' || mode === 'publishing' || campaignProcessing
 
-    const openChangesetsCount =
-        campaign?.changesets.nodes.filter(changeset => changeset.state === GQL.ChangesetState.OPEN).length ?? 0
+    const openChangesetsCount = campaign?.openChangesets.totalCount ?? 0
 
     let stateBadge: JSX.Element
 

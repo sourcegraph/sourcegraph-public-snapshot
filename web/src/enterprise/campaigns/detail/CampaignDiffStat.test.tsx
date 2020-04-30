@@ -8,7 +8,6 @@ describe('CampaignDiffStat', () => {
             createRenderer().render(
                 <CampaignDiffStat
                     campaign={{
-                        __typename: 'Campaign' as const,
                         diffStat: {
                             added: 888,
                             deleted: 777,
@@ -24,7 +23,6 @@ describe('CampaignDiffStat', () => {
             createRenderer().render(
                 <CampaignDiffStat
                     campaign={{
-                        __typename: 'Campaign' as const,
                         diffStat: {
                             added: 0,
                             deleted: 0,
@@ -40,7 +38,6 @@ describe('CampaignDiffStat', () => {
             createRenderer().render(
                 <CampaignDiffStat
                     patchSet={{
-                        __typename: 'PatchSet' as const,
                         diffStat: {
                             added: 888,
                             changed: 777,
@@ -56,7 +53,6 @@ describe('CampaignDiffStat', () => {
             createRenderer().render(
                 <CampaignDiffStat
                     patchSet={{
-                        __typename: 'PatchSet' as const,
                         diffStat: {
                             added: 0,
                             changed: 0,

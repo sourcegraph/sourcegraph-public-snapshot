@@ -3,11 +3,11 @@ import * as GQL from '../../../../../shared/src/graphql/schema'
 import { DiffStat } from '../../../components/diff/DiffStat'
 
 export interface CampaignDiffstatProps {
-    campaign?: Pick<GQL.ICampaign, '__typename'> & {
-        diffStat: { added: number; changed: number; deleted: number }
+    campaign?: {
+        diffStat: Pick<GQL.IDiffStat, 'added' | 'changed' | 'deleted'>
     }
-    patchSet?: Pick<GQL.IPatchSet, '__typename'> & {
-        diffStat: { added: number; changed: number; deleted: number }
+    patchSet?: {
+        diffStat: Pick<GQL.IDiffStat, 'added' | 'changed' | 'deleted'>
     }
 
     className?: string

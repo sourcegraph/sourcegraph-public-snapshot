@@ -507,7 +507,6 @@ Array [
         "branch": "awesome-branch",
         "changesetCountsOverTime": Array [],
         "changesets": Object {
-          "nodes": Array [],
           "totalCount": 2,
         },
         "closedAt": null,
@@ -521,11 +520,13 @@ Array [
         },
         "id": "c",
         "name": "n",
+        "openChangesets": Object {
+          "totalCount": 0,
+        },
         "patchSet": Object {
           "id": "p",
         },
         "patches": Object {
-          "nodes": Array [],
           "totalCount": 2,
         },
         "publishedAt": "2020-01-01",
@@ -615,7 +616,6 @@ Array [
         "branch": "awesome-branch",
         "changesetCountsOverTime": Array [],
         "changesets": Object {
-          "nodes": Array [],
           "totalCount": 2,
         },
         "closedAt": null,
@@ -629,11 +629,13 @@ Array [
         },
         "id": "c",
         "name": "n",
+        "openChangesets": Object {
+          "totalCount": 0,
+        },
         "patchSet": Object {
           "id": "p",
         },
         "patches": Object {
-          "nodes": Array [],
           "totalCount": 2,
         },
         "publishedAt": "2020-01-01",
@@ -886,7 +888,6 @@ Array [
         "branch": "awesome-branch",
         "changesetCountsOverTime": Array [],
         "changesets": Object {
-          "nodes": Array [],
           "totalCount": 2,
         },
         "closedAt": null,
@@ -900,11 +901,13 @@ Array [
         },
         "id": "c",
         "name": "n",
+        "openChangesets": Object {
+          "totalCount": 0,
+        },
         "patchSet": Object {
           "id": "p",
         },
         "patches": Object {
-          "nodes": Array [],
           "totalCount": 2,
         },
         "publishedAt": "2020-01-01",
@@ -994,7 +997,6 @@ Array [
         "branch": "awesome-branch",
         "changesetCountsOverTime": Array [],
         "changesets": Object {
-          "nodes": Array [],
           "totalCount": 2,
         },
         "closedAt": null,
@@ -1008,11 +1010,13 @@ Array [
         },
         "id": "c",
         "name": "n",
+        "openChangesets": Object {
+          "totalCount": 0,
+        },
         "patchSet": Object {
           "id": "p",
         },
         "patches": Object {
-          "nodes": Array [],
           "totalCount": 2,
         },
         "publishedAt": "2020-01-01",
@@ -1355,7 +1359,6 @@ Array [
         "branch": "awesome-branch",
         "changesetCountsOverTime": Array [],
         "changesets": Object {
-          "nodes": Array [],
           "totalCount": 2,
         },
         "closedAt": null,
@@ -1369,11 +1372,13 @@ Array [
         },
         "id": "c",
         "name": "n",
+        "openChangesets": Object {
+          "totalCount": 0,
+        },
         "patchSet": Object {
           "id": "p",
         },
         "patches": Object {
-          "nodes": Array [],
           "totalCount": 2,
         },
         "publishedAt": "2020-01-01",
@@ -1463,7 +1468,6 @@ Array [
         "branch": "awesome-branch",
         "changesetCountsOverTime": Array [],
         "changesets": Object {
-          "nodes": Array [],
           "totalCount": 2,
         },
         "closedAt": null,
@@ -1477,11 +1481,13 @@ Array [
         },
         "id": "c",
         "name": "n",
+        "openChangesets": Object {
+          "totalCount": 0,
+        },
         "patchSet": Object {
           "id": "p",
         },
         "patches": Object {
-          "nodes": Array [],
           "totalCount": 2,
         },
         "publishedAt": "2020-01-01",
