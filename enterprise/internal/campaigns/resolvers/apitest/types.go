@@ -67,6 +67,7 @@ type PatchSet struct {
 	ID         string
 	Patches    PatchConnection
 	PreviewURL string
+	DiffStat   DiffStat
 }
 
 type User struct {

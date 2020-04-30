@@ -1033,12 +1033,17 @@ func TestPatchSetResolver(t *testing.T) {
         node(id: %q) {
           ... on PatchSet {
             id
+            diffStat {
+              added
+              deleted
+              changed
+            }
             patches(first: %d) {
               nodes {
                 repository {
                   name
                 }
-				diff {
+                diff {
                   fileDiffs {
                     rawDiff
                     diffStat {
@@ -1070,7 +1075,7 @@ func TestPatchSetResolver(t *testing.T) {
                       }
                     }
                   }
-				}
+                }
               }
             }
           }
@@ -1080,6 +1085,10 @@ func TestPatchSetResolver(t *testing.T) {
 
 	if have, want := len(response.Node.Patches.Nodes), len(jobs); have != want {
 		t.Fatalf("have %d patches, want %d", have, want)
+	}
+
+	if have, want := response.Node.DiffStat.Changed, 4; have != want {
+		t.Fatalf("wrong PatchSet.DiffStat.Changed %d, want=%d", have, want)
 	}
 
 	for i, patch := range response.Node.Patches.Nodes {

@@ -493,6 +493,9 @@ type PatchSet implements Node {
 
     # The URL where the PatchSet can be previewed and a campaign can be created from it.
     previewURL: String!
+
+    # The diff stat for all the patches in the patch set.
+    diffStat: DiffStat!
 }
 
 # A paginated list of repository diffs committed to git.

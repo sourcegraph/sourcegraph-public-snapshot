@@ -313,6 +313,7 @@ type PatchSetResolver interface {
 	Patches(ctx context.Context, args *graphqlutil.ConnectionArgs) PatchConnectionResolver
 
 	PreviewURL() string
+	DiffStat(ctx context.Context) (*DiffStat, error)
 }
 
 type PreviewFileDiff interface {

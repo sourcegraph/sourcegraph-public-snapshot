@@ -311,35 +311,16 @@ func (r *campaignResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffSt
 		return totalStat, nil
 	}
 
-	patchesConnection := &patchesConnectionResolver{
-		store: r.store,
-		opts: ee.ListPatchesOpts{
-			PatchSetID:                r.Campaign.PatchSetID,
-			Limit:                     -1, // Get all patches
-			OnlyWithDiff:              true,
-			OnlyUnpublishedInCampaign: r.Campaign.ID,
-		},
-	}
-
-	patches, err := patchesConnection.Nodes(ctx)
+	patchSetStat, err := patchSetDiffStat(ctx, r.store, ee.ListPatchesOpts{
+		PatchSetID:                r.Campaign.PatchSetID,
+		Limit:                     -1, // Fetch all patches in a patch set
+		OnlyWithDiff:              true,
+		OnlyUnpublishedInCampaign: r.Campaign.ID,
+	})
 	if err != nil {
 		return nil, err
 	}
-
-	for _, p := range patches {
-
-		fileDiffs, err := p.FileDiffs(ctx, &graphqlutil.ConnectionArgs{})
-		if err != nil {
-			return nil, err
-		}
-
-		s, err := fileDiffs.DiffStat(ctx)
-		if err != nil {
-			return nil, err
-		}
-
-		totalStat.AddDiffStat(s)
-	}
+	totalStat.AddDiffStat(patchSetStat)
 
 	return totalStat, nil
 }
