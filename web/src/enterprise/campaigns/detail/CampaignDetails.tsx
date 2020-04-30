@@ -199,7 +199,7 @@ export const CampaignDetails: React.FunctionComponent<Props> = ({
     const onNameChange = useCallback(
         (newName: string): void => {
             if (!branchModified) {
-                setBranch(slugify(newName, { lower: true }))
+                setBranch(slugify(newName, { remove: /[*+~\\^.()'"!:@]/g, lower: true }))
             }
             setName(newName)
         },
