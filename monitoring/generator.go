@@ -862,6 +862,9 @@ func main() {
 		if prometheusDir != "" {
 			promAlertsFile := container.promAlertsFile()
 			data, err := yaml.Marshal(promAlertsFile)
+			if err != nil {
+				log.Fatal(err)
+			}
 			fileName := strings.Replace(container.Name, "-", "_", -1) + "_alert_rules.yml"
 			err = ioutil.WriteFile(filepath.Join(prometheusDir, fileName), data, 0666)
 			if err != nil {
