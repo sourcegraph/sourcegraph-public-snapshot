@@ -112,7 +112,7 @@ func WebhookURL(kind string, externalServiceID int64) (string, error) {
 	case "bitbucketserver":
 		path = "bitbucket-server-webhooks"
 	default:
-		return "", fmt.Errorf("uknown external service kind: %q", kind)
+		return "", fmt.Errorf("unknown external service kind: %q", kind)
 	}
 	return fmt.Sprintf("https://%s/%s?%s=%d", host, path, ExternalServiceIDParam, externalServiceID), nil
 }
