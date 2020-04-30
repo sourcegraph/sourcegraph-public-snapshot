@@ -235,23 +235,9 @@ func testBitbucketWebhook(db *sql.DB) func(*testing.T) {
 			t.Fatal(t)
 		}
 
-		repoChan := make(chan repos.SourceResult)
-		go func() {
-			bitbucketSource.ListRepos(ctx, repoChan)
-			close(repoChan)
-		}()
-
-		var bitbucketRepo *repos.Repo
-		for result := range repoChan {
-			if result.Err != nil {
-				t.Fatal(result.Err)
-			}
-			if result.Repo == nil {
-				continue
-			}
-			if result.Repo.Name == "bitbucket.sgdev.org/SOUR/automation-testing" {
-				bitbucketRepo = result.Repo
-			}
+		bitbucketRepo, err := getSingleRepo(ctx, bitbucketSource, "bitbucket.sgdev.org/SOUR/automation-testing")
+		if err != nil {
+			t.Fatal(err)
 		}
 
 		if bitbucketRepo == nil {
@@ -374,6 +360,29 @@ func testBitbucketWebhook(db *sql.DB) func(*testing.T) {
 			})
 		}
 	}
+}
+
+func getSingleRepo(ctx context.Context, bitbucketSource *repos.BitbucketServerSource, name string) (*repos.Repo, error) {
+	repoChan := make(chan repos.SourceResult)
+	go func() {
+		bitbucketSource.ListRepos(ctx, repoChan)
+		close(repoChan)
+	}()
+
+	var bitbucketRepo *repos.Repo
+	for result := range repoChan {
+		if result.Err != nil {
+			return nil, result.Err
+		}
+		if result.Repo == nil {
+			continue
+		}
+		if result.Repo.Name == name {
+			bitbucketRepo = result.Repo
+		}
+	}
+
+	return bitbucketRepo, nil
 }
 
 type webhookTestCase struct {
