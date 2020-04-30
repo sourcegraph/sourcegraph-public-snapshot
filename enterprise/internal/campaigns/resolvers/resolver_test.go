@@ -1003,9 +1003,9 @@ func TestPatchSetResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var jobs []*campaigns.Patch
+	var patches []*campaigns.Patch
 	for _, repo := range rs {
-		job := &campaigns.Patch{
+		patch := &campaigns.Patch{
 			PatchSetID: patchSet.ID,
 			RepoID:     repo.ID,
 			Rev:        testingRev,
@@ -1013,11 +1013,11 @@ func TestPatchSetResolver(t *testing.T) {
 			Diff:       testDiff,
 		}
 
-		err := store.CreatePatch(ctx, job)
+		err := store.CreatePatch(ctx, patch)
 		if err != nil {
 			t.Fatal(err)
 		}
-		jobs = append(jobs, job)
+		patches = append(patches, patch)
 	}
 
 	sr := &Resolver{store: store}
@@ -1081,13 +1081,14 @@ func TestPatchSetResolver(t *testing.T) {
           }
         }
       }
-	`, marshalPatchSetID(patchSet.ID), len(jobs)))
+	`, marshalPatchSetID(patchSet.ID), len(patches)))
 
-	if have, want := len(response.Node.Patches.Nodes), len(jobs); have != want {
+	if have, want := len(response.Node.Patches.Nodes), len(patches); have != want {
 		t.Fatalf("have %d patches, want %d", have, want)
 	}
 
-	if have, want := response.Node.DiffStat.Changed, 4; have != want {
+	// Each patch has testDiff as diff, each with 2 lines changed
+	if have, want := response.Node.DiffStat.Changed, len(patches)*2; have != want {
 		t.Fatalf("wrong PatchSet.DiffStat.Changed %d, want=%d", have, want)
 	}
 
