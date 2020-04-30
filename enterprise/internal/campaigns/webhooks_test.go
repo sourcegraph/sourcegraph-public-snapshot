@@ -159,7 +159,7 @@ func testGitHubWebhook(db *sql.DB) func(*testing.T) {
 					}
 				}
 
-				have, _, err := store.ListChangesetEvents(ctx, ListChangesetEventsOpts{Limit: 1000})
+				have, _, err := store.ListChangesetEvents(ctx, ListChangesetEventsOpts{Limit: -1})
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -342,7 +342,7 @@ func testBitbucketWebhook(db *sql.DB) func(*testing.T) {
 					}
 				}
 
-				have, _, err := store.ListChangesetEvents(ctx, ListChangesetEventsOpts{Limit: 1000})
+				have, _, err := store.ListChangesetEvents(ctx, ListChangesetEventsOpts{Limit: -1})
 				if err != nil {
 					t.Fatal(err)
 				}
