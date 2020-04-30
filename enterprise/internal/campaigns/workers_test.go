@@ -100,7 +100,9 @@ func TestExecChangesetJob(t *testing.T) {
 				}
 				// This sets ExternalID, which we need to trigger the
 				// AlreadyExistsError.
-				ch.SetMetadata(meta)
+				if err := ch.SetMetadata(meta); err != nil {
+					t.Fatal(err)
+				}
 				// Now we can remove metadata.
 				ch.Metadata = nil
 
