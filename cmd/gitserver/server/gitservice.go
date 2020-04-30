@@ -79,8 +79,8 @@ func (s *gitServiceHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch svc {
 	case "/info/refs":
 		w.Header().Set("Content-Type", "application/x-git-upload-pack-advertisement")
-		w.Write(packetWrite("# service=git-upload-pack\n"))
-		w.Write([]byte("0000"))
+		_, _ = w.Write(packetWrite("# service=git-upload-pack\n"))
+		_, _ = w.Write([]byte("0000"))
 		args = append(args, "--advertise-refs")
 	case "/git-upload-pack":
 		w.Header().Set("Content-Type", "application/x-git-upload-pack-result")
