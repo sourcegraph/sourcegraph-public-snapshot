@@ -82,19 +82,14 @@ const patchSetFragment = gql`
     fragment PatchSetFields on PatchSet {
         __typename
         id
+        diffStat {
+            ...DiffStatFields
+        }
         patches(first: 10000) {
             totalCount
             nodes {
                 id
                 __typename
-                diff {
-                    fileDiffs {
-                        totalCount
-                        diffStat {
-                            ...DiffStatFields
-                        }
-                    }
-                }
             }
         }
     }

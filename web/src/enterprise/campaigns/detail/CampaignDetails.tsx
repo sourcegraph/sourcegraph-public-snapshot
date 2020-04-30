@@ -71,6 +71,7 @@ interface Campaign
 }
 
 interface PatchSet extends Pick<GQL.IPatchSet, '__typename' | 'id'> {
+    diffStat: Pick<GQL.IPatchSet['diffStat'], 'added' | 'deleted' | 'changed'>
     patches: Pick<GQL.IPatchSet['patches'], 'nodes' | 'totalCount'>
 }
 

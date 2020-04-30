@@ -61,6 +61,11 @@ describe('CampaignDetails', () => {
                     of({
                         __typename: 'PatchSet' as const,
                         id: 'c',
+                        diffStat: {
+                            added: 0,
+                            changed: 18,
+                            deleted: 999,
+                        },
                         patches: { nodes: [] as GQL.IPatch[], totalCount: 2 },
                     })
                 }
