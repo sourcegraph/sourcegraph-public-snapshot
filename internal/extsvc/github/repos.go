@@ -159,10 +159,8 @@ func (c *Client) cachedGetRepository(ctx context.Context, key string, getReposit
 }
 
 var reposGitHubCacheCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
-	Namespace: "src",
-	Subsystem: "repos",
-	Name:      "github_cache_hit",
-	Help:      "Counts cache hits and misses for GitHub repo metadata.",
+	Name: "src_repos_github_cache_hit",
+	Help: "Counts cache hits and misses for GitHub repo metadata.",
 }, []string{"type"})
 
 func init() {

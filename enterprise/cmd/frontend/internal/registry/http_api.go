@@ -198,16 +198,12 @@ func handleRegistry(w http.ResponseWriter, r *http.Request) (err error) {
 
 var (
 	registryRequestsSuccessCounter = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: "src",
-		Subsystem: "registry",
-		Name:      "requests_success",
-		Help:      "Number of successful requests (HTTP 200) to the HTTP registry API",
+		Name: "src_registry_requests_success",
+		Help: "Number of successful requests (HTTP 200) to the HTTP registry API",
 	})
 	registryRequestsErrorCounter = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: "src",
-		Subsystem: "registry",
-		Name:      "requests_error",
-		Help:      "Number of failed (non-HTTP 200) requests to the HTTP registry API",
+		Name: "src_registry_requests_error",
+		Help: "Number of failed (non-HTTP 200) requests to the HTTP registry API",
 	})
 )
 
