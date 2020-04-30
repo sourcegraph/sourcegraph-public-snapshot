@@ -31,13 +31,17 @@ func main() {
 		bundleManagerURL = mustGet(rawBundleManagerURL, "PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL")
 	)
 
-	db := mustInitializeDatabase()
 	bundleManagerClient := bundles.New(bundleManagerURL)
 
-	host := ""
-	if env.InsecureDev {
-		host = "127.0.0.1"
-	}
+	dbMetrics := db.NewDBMetrics("precise_code_intel_api_server")
+	dbMetrics.MustRegister(prometheus.DefaultRegisterer)
+
+	db := db.NewObservedDB(
+		mustInitializeDatabase(),
+		log15.Root(),
+		dbMetrics,
+		trace.Tracer{Tracer: opentracing.GlobalTracer()},
+	)
 
 	codeIntelAPIMetrics := api.NewCodeIntelAPIMetrics("precise_code_intel_api_server")
 	codeIntelAPIMetrics.MustRegister(prometheus.DefaultRegisterer)
@@ -48,6 +52,11 @@ func main() {
 		codeIntelAPIMetrics,
 		trace.Tracer{Tracer: opentracing.GlobalTracer()},
 	)
+
+	host := ""
+	if env.InsecureDev {
+		host = "127.0.0.1"
+	}
 
 	serverInst := server.New(server.ServerOpts{
 		Host:                host,

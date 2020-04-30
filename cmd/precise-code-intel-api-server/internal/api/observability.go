@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-// CodeIntelAPIMetrics encapsulates the Prometheus metrics of a Reader.
+// CodeIntelAPIMetrics encapsulates the Prometheus metrics of a CodeIntelAPI.
 type CodeIntelAPIMetrics struct {
 	FindClosestDumps *metrics.OperationMetrics
 	Definitions      *metrics.OperationMetrics
@@ -23,12 +23,12 @@ type CodeIntelAPIMetrics struct {
 
 // MustRegister registers all metrics in CodeIntelAPIMetrics in the given
 // prometheus.Registerer. It panics in case of failure.
-func (rm CodeIntelAPIMetrics) MustRegister(r prometheus.Registerer) {
+func (apim CodeIntelAPIMetrics) MustRegister(r prometheus.Registerer) {
 	for _, om := range []*metrics.OperationMetrics{
-		rm.FindClosestDumps,
-		rm.Definitions,
-		rm.References,
-		rm.Hover,
+		apim.FindClosestDumps,
+		apim.Definitions,
+		apim.References,
+		apim.Hover,
 	} {
 		om.MustRegister(prometheus.DefaultRegisterer)
 	}
@@ -66,31 +66,37 @@ func NewObservedCodeIntelAPI(codeIntelAPI CodeIntelAPI, logger logging.ErrorLogg
 
 // FindClosestDumps calls into the inner CodeIntelAPI and registers the observed results.
 func (api *ObservedCodeIntelAPI) FindClosestDumps(ctx context.Context, repositoryID int, commit, file string) (dumps []db.Dump, err error) {
-	ctx, endTrace := api.prepTrace(ctx, &err, api.metrics.FindClosestDumps, "CodeIntelAPI.FindClosestDumps", "codeIntelAPI.find-closest-dumps")
-	defer func() { endTrace(float64(len(dumps))) }()
+	ctx, endTrace := api.prepTrace(ctx, &err, api.metrics.FindClosestDumps, "CodeIntelAPI.FindClosestDumps", "code-intel-api.find-closest-dumps")
+	defer func() {
+		endTrace(float64(len(dumps)))
+	}()
 
 	return api.codeIntelAPI.FindClosestDumps(ctx, repositoryID, commit, file)
 }
 
 // Definitions calls into the inner CodeIntelAPI and registers the observed results.
 func (api *ObservedCodeIntelAPI) Definitions(ctx context.Context, file string, line, character, uploadID int) (definitions []ResolvedLocation, err error) {
-	ctx, endTrace := api.prepTrace(ctx, &err, api.metrics.Definitions, "CodeIntelAPI.Definitions", "codeIntelAPI.definitions")
-	defer func() { endTrace(float64(len(definitions))) }()
+	ctx, endTrace := api.prepTrace(ctx, &err, api.metrics.Definitions, "CodeIntelAPI.Definitions", "code-intel-api.definitions")
+	defer func() {
+		endTrace(float64(len(definitions)))
+	}()
 
 	return api.codeIntelAPI.Definitions(ctx, file, line, character, uploadID)
 }
 
 // References calls into the inner CodeIntelAPI and registers the observed results.
 func (api *ObservedCodeIntelAPI) References(ctx context.Context, repositoryID int, commit string, limit int, cursor Cursor) (references []ResolvedLocation, _ Cursor, _ bool, err error) {
-	ctx, endTrace := api.prepTrace(ctx, &err, api.metrics.References, "CodeIntelAPI.References", "codeIntelAPI.references")
-	defer func() { endTrace(float64(len(references))) }()
+	ctx, endTrace := api.prepTrace(ctx, &err, api.metrics.References, "CodeIntelAPI.References", "code-intel-api.references")
+	defer func() {
+		endTrace(float64(len(references)))
+	}()
 
 	return api.codeIntelAPI.References(ctx, repositoryID, commit, limit, cursor)
 }
 
 // Hover calls into the inner CodeIntelAPI and registers the observed results.
 func (api *ObservedCodeIntelAPI) Hover(ctx context.Context, file string, line, character, uploadID int) (_ string, _ bundles.Range, _ bool, err error) {
-	ctx, endTrace := api.prepTrace(ctx, &err, api.metrics.Hover, "CodeIntelAPI.Hover", "codeIntelAPI.hover")
+	ctx, endTrace := api.prepTrace(ctx, &err, api.metrics.Hover, "CodeIntelAPI.Hover", "code-intel-api.hover")
 	defer endTrace(1)
 
 	return api.codeIntelAPI.Hover(ctx, file, line, character, uploadID)

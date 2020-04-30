@@ -7,6 +7,7 @@ import (
 	"syscall"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/paths"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-bundle-manager/internal/server"
@@ -43,6 +44,9 @@ func main() {
 		host = "127.0.0.1"
 	}
 
+	databaseMetrics := database.NewDatabaseMetrics("precise_code_intel_bundle_manager")
+	databaseMetrics.MustRegister(prometheus.DefaultRegisterer)
+
 	readerMetrics := reader.NewReaderMetrics("precise_code_intel_bundle_manager")
 	readerMetrics.MustRegister(prometheus.DefaultRegisterer)
 
@@ -54,6 +58,7 @@ func main() {
 		DocumentDataCacheSize:    int64(documentDataCacheSize),
 		ResultChunkDataCacheSize: int64(resultChunkDataCacheSize),
 		ReaderMetrics:            readerMetrics,
+		DatabaseMetrics:          databaseMetrics,
 	})
 	if err != nil {
 		log.Fatal(err)

@@ -178,7 +178,12 @@ func (s *Server) dbQuery(w http.ResponseWriter, r *http.Request, handler func(ct
 			return nil, err
 		}
 
-		return database.OpenDatabase(ctx, filename, s.wrapReader(sqliteReader), s.documentDataCache, s.resultChunkDataCache)
+		database, err := database.OpenDatabase(ctx, filename, s.wrapReader(sqliteReader), s.documentDataCache, s.resultChunkDataCache)
+		if err != nil {
+			return nil, err
+		}
+
+		return s.wrapDatabase(database), nil
 	}
 
 	cacheHandler := func(db database.Database) error {
@@ -202,6 +207,15 @@ func (s *Server) wrapReader(innerReader reader.Reader) reader.Reader {
 		innerReader,
 		log15.Root(),
 		s.readerMetrics,
+		trace.Tracer{Tracer: opentracing.GlobalTracer()},
+	)
+}
+
+func (s *Server) wrapDatabase(innerDatabase database.Database) database.Database {
+	return database.NewObservedDatabase(
+		innerDatabase,
+		log15.Root(),
+		s.databaseMetrics,
 		trace.Tracer{Tracer: opentracing.GlobalTracer()},
 	)
 }

@@ -93,7 +93,9 @@ func (r *ObservedReader) ReadResultChunk(ctx context.Context, id int) (_ types.R
 // ReadDefinitions calls into the inner Reader and registers the observed results.
 func (r *ObservedReader) ReadDefinitions(ctx context.Context, scheme, identifier string, skip, take int) (definitions []types.DefinitionReferenceRow, _ int, err error) {
 	ctx, endTrace := r.prepTrace(ctx, &err, r.metrics.ReadDefinitions, "Reader.ReadDefinitions", "reader.read-definitions")
-	defer func() { endTrace(float64(len(definitions))) }()
+	defer func() {
+		endTrace(float64(len(definitions)))
+	}()
 
 	return r.reader.ReadDefinitions(ctx, scheme, identifier, skip, take)
 }
@@ -101,7 +103,9 @@ func (r *ObservedReader) ReadDefinitions(ctx context.Context, scheme, identifier
 // ReadReferences calls into the inner Reader and registers the observed results.
 func (r *ObservedReader) ReadReferences(ctx context.Context, scheme, identifier string, skip, take int) (references []types.DefinitionReferenceRow, _ int, err error) {
 	ctx, endTrace := r.prepTrace(ctx, &err, r.metrics.ReadReferences, "Reader.ReadReferences", "reader.read-references")
-	defer func() { endTrace(float64(len(references))) }()
+	defer func() {
+		endTrace(float64(len(references)))
+	}()
 
 	return r.reader.ReadReferences(ctx, scheme, identifier, skip, take)
 }
