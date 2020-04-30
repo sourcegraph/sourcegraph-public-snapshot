@@ -54,7 +54,7 @@ func testGitHubWebhook(db *sql.DB) func(*testing.T) {
 
 		secret := "secret"
 		repoStore := repos.NewDBStore(db, sql.TxOptions{})
-		githubExtSvc := &repos.ExternalService{
+		extSvc := &repos.ExternalService{
 			Kind:        "GITHUB",
 			DisplayName: "GitHub",
 			Config: marshalJSON(t, &schema.GitHubConnection{
@@ -65,12 +65,12 @@ func testGitHubWebhook(db *sql.DB) func(*testing.T) {
 			}),
 		}
 
-		err = repoStore.UpsertExternalServices(ctx, githubExtSvc)
+		err = repoStore.UpsertExternalServices(ctx, extSvc)
 		if err != nil {
 			t.Fatal(t)
 		}
 
-		githubSrc, err := repos.NewGithubSource(githubExtSvc, cf, nil)
+		githubSrc, err := repos.NewGithubSource(extSvc, cf, nil)
 		if err != nil {
 			t.Fatal(t)
 		}
@@ -212,7 +212,7 @@ func testBitbucketWebhook(db *sql.DB) func(*testing.T) {
 
 		secret := "secret"
 		repoStore := repos.NewDBStore(db, sql.TxOptions{})
-		githubExtSvc := &repos.ExternalService{
+		extSvc := &repos.ExternalService{
 			Kind:        "BITBUCKETSERVER",
 			DisplayName: "Bitbucket",
 			Config: marshalJSON(t, &schema.BitbucketServerConnection{
@@ -225,12 +225,12 @@ func testBitbucketWebhook(db *sql.DB) func(*testing.T) {
 			}),
 		}
 
-		err = repoStore.UpsertExternalServices(ctx, githubExtSvc)
+		err = repoStore.UpsertExternalServices(ctx, extSvc)
 		if err != nil {
 			t.Fatal(t)
 		}
 
-		bitbucketSource, err := repos.NewBitbucketServerSource(githubExtSvc, cf, nil)
+		bitbucketSource, err := repos.NewBitbucketServerSource(extSvc, cf, nil)
 		if err != nil {
 			t.Fatal(t)
 		}
@@ -327,7 +327,7 @@ func testBitbucketWebhook(db *sql.DB) func(*testing.T) {
 				// Send all events twice to ensure we are idempotent
 				for i := 0; i < 2; i++ {
 					for _, event := range tc.Payloads {
-						u := fmt.Sprintf("http://example.com/?%s=%d", externalServiceIDParam, githubExtSvc.ID)
+						u := fmt.Sprintf("http://example.com/?%s=%d", externalServiceIDParam, extSvc.ID)
 						req, err := http.NewRequest("POST", u, bytes.NewReader(event.Data))
 						if err != nil {
 							t.Fatal(err)
