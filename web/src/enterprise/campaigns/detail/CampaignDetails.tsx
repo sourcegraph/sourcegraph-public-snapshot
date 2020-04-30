@@ -64,14 +64,16 @@ interface Campaign
         | 'branch'
     > {
     patchSet: Pick<GQL.IPatchSet, 'id'> | null
-    changesets: Pick<GQL.ICampaign['changesets'], 'nodes' | 'totalCount'>
-    patches: Pick<GQL.ICampaign['patches'], 'nodes' | 'totalCount'>
+    changesets: Pick<GQL.ICampaign['changesets'], 'totalCount'>
+    openChangesets: Pick<GQL.ICampaign['openChangesets'], 'totalCount'>
+    patches: Pick<GQL.ICampaign['patches'], 'totalCount'>
     status: Pick<GQL.ICampaign['status'], 'completedCount' | 'pendingCount' | 'errors' | 'state'>
     diffStat: Pick<GQL.ICampaign['diffStat'], 'added' | 'deleted' | 'changed'>
 }
 
 interface PatchSet extends Pick<GQL.IPatchSet, '__typename' | 'id'> {
-    patches: Pick<GQL.IPatchSet['patches'], 'nodes' | 'totalCount'>
+    diffStat: Pick<GQL.IPatchSet['diffStat'], 'added' | 'deleted' | 'changed'>
+    patches: Pick<GQL.IPatchSet['patches'], 'totalCount'>
 }
 
 interface Props extends ThemeProps, ExtensionsControllerProps, PlatformContextProps, TelemetryProps {
