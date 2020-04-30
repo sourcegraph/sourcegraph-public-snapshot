@@ -722,7 +722,6 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 			var (
 				campaign    *campaigns.Campaign
 				oldPatches  []*campaigns.Patch
-				newPatches  []*campaigns.Patch
 				patchesByID map[int64]*campaigns.Patch
 
 				changesetStateByPatchID map[int64]campaigns.ChangesetState
@@ -829,7 +828,6 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				newPatches = append(newPatches, j)
 				patchesByID[j.ID] = j
 			}
 
