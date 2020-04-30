@@ -336,7 +336,7 @@ func runCmd(t *testing.T, dir string, cmd string, arg ...string) string {
 	}
 	b, err := c.CombinedOutput()
 	if err != nil {
-		t.Fatalf("%s %s failed: %s", cmd, strings.Join(arg, " "), err)
+		t.Fatalf("%s %s failed: %s\nOutput: %s", cmd, strings.Join(arg, " "), err, b)
 	}
 	return string(b)
 }
