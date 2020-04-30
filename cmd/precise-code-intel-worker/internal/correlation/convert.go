@@ -11,8 +11,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 )
 
-// TODO(efritz) - document, test
-// TODO(efritz) - rename?
+// CorrelatedTypes is a view of a correlation State that sorts data by it containing document
+// and shared data into shareded result chunks. The fields of this type are what is written to
+// persistent storage and what is read in the query path.
 type CorrelatedTypes struct {
 	LSIFVersion       string
 	NumResultChunks   int
