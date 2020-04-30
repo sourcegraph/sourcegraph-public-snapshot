@@ -1,4 +1,4 @@
-package metrics
+package logging
 
 // ErrorLogger captures the method required for logging an error.
 type ErrorLogger interface {

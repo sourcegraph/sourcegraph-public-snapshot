@@ -10,13 +10,14 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 // ObservedSource returns a decorator that wraps a Source
 // with error logging, Prometheus metrics and tracing.
-func ObservedSource(l metrics.ErrorLogger, m SourceMetrics) func(Source) Source {
+func ObservedSource(l logging.ErrorLogger, m SourceMetrics) func(Source) Source {
 	return func(s Source) Source {
 		return &observedSource{
 			Source:  s,
@@ -31,7 +32,7 @@ func ObservedSource(l metrics.ErrorLogger, m SourceMetrics) func(Source) Source 
 type observedSource struct {
 	Source
 	metrics SourceMetrics
-	log     metrics.ErrorLogger
+	log     logging.ErrorLogger
 }
 
 // SourceMetrics encapsulates the Prometheus metrics of a Source.
@@ -76,7 +77,7 @@ func (o *observedSource) ListRepos(ctx context.Context, results chan SourceResul
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
 		o.metrics.ListRepos.Observe(secs, count, &err)
-		metrics.Log(o.log, "source.list-repos", &err)
+		logging.Log(o.log, "source.list-repos", &err)
 	}(time.Now())
 
 	uncounted := make(chan SourceResult)
@@ -99,7 +100,7 @@ func (o *observedSource) ListRepos(ctx context.Context, results chan SourceResul
 // Prometheus metrics and tracing.
 func NewObservedStore(
 	s Store,
-	l metrics.ErrorLogger,
+	l logging.ErrorLogger,
 	m StoreMetrics,
 	t trace.Tracer,
 ) *ObservedStore {
@@ -115,7 +116,7 @@ func NewObservedStore(
 // Prometheus metrics and tracing.
 type ObservedStore struct {
 	store   Store
-	log     metrics.ErrorLogger
+	log     logging.ErrorLogger
 	metrics StoreMetrics
 	tracer  trace.Tracer
 	txtrace *trace.Trace
@@ -304,7 +305,7 @@ func (o *ObservedStore) Transact(ctx context.Context) (s TxStore, err error) {
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
 		o.metrics.Transact.Observe(secs, 1, &err)
-		metrics.Log(o.log, "store.transact", &err)
+		logging.Log(o.log, "store.transact", &err)
 		if err != nil {
 			tr.SetError(err)
 			// Finish is called in Done in the non-error case
@@ -341,7 +342,7 @@ func (o *ObservedStore) Done(errs ...*error) {
 				done = true
 				tr.SetError(*err)
 				o.metrics.Done.Observe(secs, 1, err)
-				metrics.Log(o.log, "store.done", err)
+				logging.Log(o.log, "store.done", err)
 			}
 		}
 
@@ -368,7 +369,7 @@ func (o *ObservedStore) ListExternalServices(ctx context.Context, args StoreList
 		count := float64(len(es))
 
 		o.metrics.ListExternalServices.Observe(secs, count, &err)
-		metrics.Log(o.log, "store.list-external-services", &err,
+		logging.Log(o.log, "store.list-external-services", &err,
 			"args", fmt.Sprintf("%+v", args),
 			"count", len(es),
 		)
@@ -399,7 +400,7 @@ func (o *ObservedStore) UpsertExternalServices(ctx context.Context, svcs ...*Ext
 		count := float64(len(svcs))
 
 		o.metrics.UpsertExternalServices.Observe(secs, count, &err)
-		metrics.Log(o.log, "store.upsert-external-services", &err,
+		logging.Log(o.log, "store.upsert-external-services", &err,
 			"count", len(svcs),
 			"names", ExternalServices(svcs).DisplayNames(),
 		)
@@ -425,7 +426,7 @@ func (o *ObservedStore) ListRepos(ctx context.Context, args StoreListReposArgs) 
 		count := float64(len(rs))
 
 		o.metrics.ListRepos.Observe(secs, count, &err)
-		metrics.Log(o.log, "store.list-repos", &err,
+		logging.Log(o.log, "store.list-repos", &err,
 			"args", fmt.Sprintf("%+v", args),
 			"count", len(rs),
 		)
@@ -447,7 +448,7 @@ func (o *ObservedStore) ListAllRepoNames(ctx context.Context) (names []api.RepoN
 		count := float64(len(names))
 
 		o.metrics.ListAllRepoNames.Observe(secs, count, &err)
-		metrics.Log(o.log, "store.list-all-repo-names", &err, "count", len(names))
+		logging.Log(o.log, "store.list-all-repo-names", &err, "count", len(names))
 
 		tr.LogFields(otlog.Int("count", len(names)))
 		tr.SetError(err)
@@ -467,7 +468,7 @@ func (o *ObservedStore) UpsertRepos(ctx context.Context, repos ...*Repo) (err er
 		count := float64(len(repos))
 
 		o.metrics.UpsertRepos.Observe(secs, count, &err)
-		metrics.Log(o.log, "store.upsert-repos", &err, "count", len(repos))
+		logging.Log(o.log, "store.upsert-repos", &err, "count", len(repos))
 
 		tr.SetError(err)
 		tr.Finish()
