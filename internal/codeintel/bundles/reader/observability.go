@@ -66,6 +66,7 @@ func NewObservedReader(reader Reader, logger logging.ErrorLogger, metrics Reader
 	}
 }
 
+// ReadMeta calls into the inner Reader and registers the observed results.
 func (r *ObservedReader) ReadMeta(ctx context.Context) (_ string, _ string, _ int, err error) {
 	ctx, endTrace := r.prepTrace(ctx, &err, r.metrics.ReadMeta, "Reader.ReadMeta", "reader.read-meta")
 	defer endTrace(1)
@@ -73,6 +74,7 @@ func (r *ObservedReader) ReadMeta(ctx context.Context) (_ string, _ string, _ in
 	return r.reader.ReadMeta(ctx)
 }
 
+// ReadDocument calls into the inner Reader and registers the observed results.
 func (r *ObservedReader) ReadDocument(ctx context.Context, path string) (_ types.DocumentData, _ bool, err error) {
 	ctx, endTrace := r.prepTrace(ctx, &err, r.metrics.ReadDocument, "Reader.ReadDocument", "reader.read-document")
 	defer endTrace(1)
@@ -80,6 +82,7 @@ func (r *ObservedReader) ReadDocument(ctx context.Context, path string) (_ types
 	return r.reader.ReadDocument(ctx, path)
 }
 
+// ReadResultChunk calls into the inner Reader and registers the observed results.
 func (r *ObservedReader) ReadResultChunk(ctx context.Context, id int) (_ types.ResultChunkData, _ bool, err error) {
 	ctx, endTrace := r.prepTrace(ctx, &err, r.metrics.ReadResultChunk, "Reader.ReadResultChunk", "reader.read-result-chunk")
 	defer endTrace(1)
@@ -87,6 +90,7 @@ func (r *ObservedReader) ReadResultChunk(ctx context.Context, id int) (_ types.R
 	return r.reader.ReadResultChunk(ctx, id)
 }
 
+// ReadDefinitions calls into the inner Reader and registers the observed results.
 func (r *ObservedReader) ReadDefinitions(ctx context.Context, scheme, identifier string, skip, take int) (definitions []types.DefinitionReferenceRow, _ int, err error) {
 	ctx, endTrace := r.prepTrace(ctx, &err, r.metrics.ReadDefinitions, "Reader.ReadDefinitions", "reader.read-definitions")
 	defer func() { endTrace(float64(len(definitions))) }()
@@ -94,6 +98,7 @@ func (r *ObservedReader) ReadDefinitions(ctx context.Context, scheme, identifier
 	return r.reader.ReadDefinitions(ctx, scheme, identifier, skip, take)
 }
 
+// ReadReferences calls into the inner Reader and registers the observed results.
 func (r *ObservedReader) ReadReferences(ctx context.Context, scheme, identifier string, skip, take int) (references []types.DefinitionReferenceRow, _ int, err error) {
 	ctx, endTrace := r.prepTrace(ctx, &err, r.metrics.ReadReferences, "Reader.ReadReferences", "reader.read-references")
 	defer func() { endTrace(float64(len(references))) }()
@@ -105,6 +110,13 @@ func (r *ObservedReader) Close() error {
 	return r.reader.Close()
 }
 
-func (r *ObservedReader) prepTrace(ctx context.Context, err *error, metrics *metrics.OperationMetrics, traceName string, logName string, preFields ...log.Field) (context.Context, observability.EndTraceFn) {
+func (r *ObservedReader) prepTrace(
+	ctx context.Context,
+	err *error,
+	metrics *metrics.OperationMetrics,
+	traceName string,
+	logName string,
+	preFields ...log.Field,
+) (context.Context, observability.EndTraceFn) {
 	return observability.PrepTrace(ctx, r.logger, metrics, r.tracer, err, traceName, logName, preFields...)
 }
