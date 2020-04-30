@@ -5,13 +5,13 @@ import { Link } from '../../../../../shared/src/components/Link'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { CloseDeleteCampaignPrompt } from './form/CloseDeleteCampaignPrompt'
 import { CampaignUIMode } from './CampaignDetails'
-import { Campaign } from './backend'
 
 interface Props {
     mode: CampaignUIMode
     previewingPatchSet: boolean
 
-    campaign?: Pick<Campaign, 'name' | 'closedAt' | 'viewerCanAdminister' | 'publishedAt' | 'openChangesets'> & {
+    campaign?: Pick<GQL.ICampaign, 'name' | 'closedAt' | 'viewerCanAdminister' | 'publishedAt'> & {
+        openChangesets: Pick<GQL.ICampaign['openChangesets'], 'totalCount'>
         status: Pick<GQL.ICampaign['status'], 'state'>
     }
 

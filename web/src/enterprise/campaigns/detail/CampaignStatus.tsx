@@ -3,7 +3,7 @@ import * as GQL from '../../../../../shared/src/graphql/schema'
 import { ErrorMessage } from '../../../components/alerts'
 import SyncIcon from 'mdi-react/SyncIcon'
 import { pluralize } from '../../../../../shared/src/util/strings'
-import { retryCampaign, Campaign } from './backend'
+import { retryCampaign } from './backend'
 import { asError, isErrorLike } from '../../../../../shared/src/util/errors'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import ErrorIcon from 'mdi-react/ErrorIcon'
@@ -18,7 +18,7 @@ export interface CampaignStatusProps {
     /** Called when the "Publish campaign" button is clicked. */
     onPublish: () => void
     /** Called when the "Retry failed jobs" button is clicked. */
-    afterRetry: (updatedCampaign: Campaign) => void
+    afterRetry: (updatedCampaign: GQL.ICampaign) => void
     history: H.History
 }
 

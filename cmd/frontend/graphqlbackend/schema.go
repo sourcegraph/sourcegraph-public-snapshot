@@ -591,9 +591,8 @@ type Campaign implements Node {
         checkState: ChangesetCheckState
     ): ExternalChangesetConnection!
 
-
     # All the changesets in this campaign whose state is ChangesetState.OPEN.
-    openChangesets: ExternalChangesetConnection
+    openChangesets: ExternalChangesetConnection!
 
     # The changeset counts over time, in 1 day intervals backwards from the point in time given in 'to'.
     changesetCountsOverTime(

@@ -17,7 +17,6 @@ import {
     closeCampaign,
     publishCampaign,
     fetchPatchSetById,
-    Campaign as BackendCampaign,
 } from './backend'
 import { useError, useObservable } from '../../../../../shared/src/util/useObservable'
 import { asError } from '../../../../../shared/src/util/errors'
@@ -50,7 +49,7 @@ export type CampaignUIMode = 'viewing' | 'editing' | 'saving' | 'deleting' | 'cl
 
 interface Campaign
     extends Pick<
-        BackendCampaign,
+        GQL.ICampaign,
         | '__typename'
         | 'id'
         | 'name'
@@ -63,10 +62,10 @@ interface Campaign
         | 'closedAt'
         | 'viewerCanAdminister'
         | 'branch'
-        | 'openChangesets'
     > {
     patchSet: Pick<GQL.IPatchSet, 'id'> | null
     changesets: Pick<GQL.ICampaign['changesets'], 'totalCount'>
+    openChangesets: Pick<GQL.ICampaign['openChangesets'], 'totalCount'>
     patches: Pick<GQL.ICampaign['patches'], 'totalCount'>
     status: Pick<GQL.ICampaign['status'], 'completedCount' | 'pendingCount' | 'errors' | 'state'>
     diffStat: Pick<GQL.ICampaign['diffStat'], 'added' | 'deleted' | 'changed'>
