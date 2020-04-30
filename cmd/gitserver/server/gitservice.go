@@ -117,13 +117,13 @@ func packetWrite(str string) []byte {
 
 var (
 	metricServiceDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Name:    "src_gitserver_service_duration_seconds",
+		Name:    "src_gitserver_gitservice_duration_seconds",
 		Help:    "A histogram of latencies for the git service (upload-pack for internal clones) endpoint.",
 		Buckets: prometheus.ExponentialBuckets(.1, 5, 5), // 100ms -> 62s
 	}, []string{"type"})
 
 	metricServiceRunning = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "src_gitserver_service_running",
+		Name: "src_gitserver_gitservice_running",
 		Help: "A histogram of latencies for the git service (upload-pack for internal clones) endpoint.",
 	}, []string{"type"})
 )
