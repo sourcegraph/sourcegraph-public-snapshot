@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 
 	"github.com/google/uuid"
+	"github.com/hashicorp/go-multierror"
 )
 
 // BundleManagerClient is the interface to the precise-code-intel-bundle-manager service.
@@ -70,8 +71,8 @@ func (c *bundleManagerClientImpl) GetUpload(ctx context.Context, bundleID int, d
 		return "", err
 	}
 	defer func() {
-		if closeErr := f.Close(); err == nil {
-			err = closeErr
+		if closeErr := f.Close(); closeErr != nil {
+			err = multierror.Append(err, closeErr)
 		}
 	}()
 

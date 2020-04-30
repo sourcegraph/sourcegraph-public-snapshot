@@ -56,14 +56,21 @@ func correlateFromReader(r io.Reader, root string) (*State, error) {
 	scanner := bufio.NewScanner(r)
 	scanner.Split(bufio.ScanLines)
 
+	lineNumber := 0
 	for scanner.Scan() {
-		element, err := lsif.UnmarshalElement(scanner.Bytes())
+		lineNumber++
+		line := scanner.Bytes()
+		if len(line) == 0 {
+			continue
+		}
+
+		element, err := lsif.UnmarshalElement(line)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("dump malformed on line %d: %s", lineNumber, err)
 		}
 
 		if err := correlateElement(wrappedState, element); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("dump malformed on line %d: %s", lineNumber, err)
 		}
 	}
 

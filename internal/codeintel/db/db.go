@@ -116,11 +116,6 @@ func (db *dbImpl) queryRow(ctx context.Context, query *sqlf.Query) *sql.Row {
 	return db.db.QueryRowContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 }
 
-// exec performs ExecContext on the underlying connection.
-func (db *dbImpl) exec(ctx context.Context, query *sqlf.Query) (sql.Result, error) {
-	return db.db.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
-}
-
 // beginTx performs BeginTx on the underlying connection and wraps the transaction.
 func (db *dbImpl) beginTx(ctx context.Context) (*transactionWrapper, error) {
 	tx, err := db.db.BeginTx(ctx, nil)

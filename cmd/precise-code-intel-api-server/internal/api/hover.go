@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	"github.com/pkg/errors"
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
 )
 
@@ -11,7 +12,7 @@ import (
 func (api *codeIntelAPI) Hover(ctx context.Context, file string, line, character, uploadID int) (string, bundles.Range, bool, error) {
 	dump, exists, err := api.db.GetDumpByID(ctx, uploadID)
 	if err != nil {
-		return "", bundles.Range{}, false, err
+		return "", bundles.Range{}, false, errors.Wrap(err, "db.GetDumpByID")
 	}
 	if !exists {
 		return "", bundles.Range{}, false, ErrMissingDump
@@ -22,7 +23,7 @@ func (api *codeIntelAPI) Hover(ctx context.Context, file string, line, character
 
 	text, rn, exists, err := bundleClient.Hover(ctx, pathInBundle, line, character)
 	if err != nil {
-		return "", bundles.Range{}, false, err
+		return "", bundles.Range{}, false, errors.Wrap(err, "bundleClient.Hover")
 	}
 	if exists {
 		return text, rn, true, nil
@@ -30,11 +31,16 @@ func (api *codeIntelAPI) Hover(ctx context.Context, file string, line, character
 
 	definition, exists, err := api.definitionRaw(ctx, dump, bundleClient, pathInBundle, line, character)
 	if err != nil || !exists {
-		return "", bundles.Range{}, false, err
+		return "", bundles.Range{}, false, errors.Wrap(err, "api.definitionRaw")
 	}
 
 	pathInDefinitionBundle := strings.TrimPrefix(definition.Path, definition.Dump.Root)
 	definitionBundleClient := api.bundleManagerClient.BundleClient(definition.Dump.ID)
 
-	return definitionBundleClient.Hover(ctx, pathInDefinitionBundle, definition.Range.Start.Line, definition.Range.Start.Character)
+	text, rn, exists, err = definitionBundleClient.Hover(ctx, pathInDefinitionBundle, definition.Range.Start.Line, definition.Range.Start.Character)
+	if err != nil {
+		return "", bundles.Range{}, false, errors.Wrap(err, "definitionBundleClient.Hover")
+	}
+
+	return text, rn, exists, nil
 }

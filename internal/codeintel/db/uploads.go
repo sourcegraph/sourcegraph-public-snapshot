@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/pkg/errors"
 )
 
 // StalledUploadMaxAge is the maximum allowable duration between updating the state of an
@@ -207,7 +208,7 @@ func (db *dbImpl) Dequeue(ctx context.Context) (Upload, JobHandle, bool, error) 
 				continue
 			}
 
-			return Upload{}, nil, false, err
+			return Upload{}, nil, false, errors.Wrap(err, "db.dequeue")
 		}
 
 		return upload, jobHandle, ok, nil
@@ -288,7 +289,7 @@ func (db *dbImpl) DeleteUploadByID(ctx context.Context, id int, getTipCommit fun
 	}
 
 	if err := db.UpdateDumpsVisibleFromTip(ctx, tw.tx, repositoryID, tipCommit); err != nil {
-		return false, err
+		return false, errors.Wrap(err, "db.UpdateDumpsVisibleFromTip")
 	}
 
 	return true, nil

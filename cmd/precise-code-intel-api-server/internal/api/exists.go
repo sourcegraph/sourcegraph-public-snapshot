@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 )
 
@@ -13,14 +14,14 @@ import (
 func (api *codeIntelAPI) FindClosestDumps(ctx context.Context, repositoryID int, commit, file string) ([]db.Dump, error) {
 	candidates, err := api.db.FindClosestDumps(ctx, repositoryID, commit, file)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "db.FindClosestDumps")
 	}
 
 	var dumps []db.Dump
 	for _, dump := range candidates {
 		exists, err := api.bundleManagerClient.BundleClient(dump.ID).Exists(ctx, strings.TrimPrefix(file, dump.Root))
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "bundleManagerClient.BundleClient")
 		}
 		if !exists {
 			continue
