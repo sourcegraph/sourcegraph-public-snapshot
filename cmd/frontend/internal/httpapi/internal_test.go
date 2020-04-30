@@ -24,7 +24,7 @@ func TestGitServiceHandlers(t *testing.T) {
 	m := apirouter.NewInternal(mux.NewRouter())
 
 	gitService := &gitServiceHandler{
-		GitServer: mockAddrForRepo{},
+		Gitserver: mockAddrForRepo{},
 	}
 	m.Get(apirouter.GitInfoRefs).Handler(http.HandlerFunc(gitService.serveInfoRefs))
 	m.Get(apirouter.GitUploadPack).Handler(http.HandlerFunc(gitService.serveGitUploadPack))

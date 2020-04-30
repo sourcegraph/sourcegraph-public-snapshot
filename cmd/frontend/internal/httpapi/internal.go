@@ -581,7 +581,7 @@ func serveGitExec(w http.ResponseWriter, r *http.Request) error {
 // gitServiceHandler are handlers which proxy git clone requests to the
 // gitserver for the repo.
 type gitServiceHandler struct {
-	GitServer interface {
+	Gitserver interface {
 		AddrForRepo(context.Context, api.RepoName) string
 	}
 }
@@ -599,7 +599,7 @@ func (s *gitServiceHandler) redirectToGitServer(w http.ResponseWriter, r *http.R
 
 	u := &url.URL{
 		Scheme:   "http",
-		Host:     s.GitServer.AddrForRepo(r.Context(), api.RepoName(repo)),
+		Host:     s.Gitserver.AddrForRepo(r.Context(), api.RepoName(repo)),
 		Path:     path.Join("/git", repo, gitPath),
 		RawQuery: r.URL.RawQuery,
 	}
