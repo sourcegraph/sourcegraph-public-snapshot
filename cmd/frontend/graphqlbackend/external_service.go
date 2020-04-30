@@ -87,6 +87,7 @@ func (r *externalServiceResolver) CampaignWebhookURL() *string {
 		parsed, err := extsvc.ParseConfig(r.externalService.Kind, r.externalService.Config)
 		if err != nil {
 			log15.Error("parsing external service config", "err", err)
+			return
 		}
 		u := campaigns.WebhookURL(r.externalService.ID)
 		switch c := parsed.(type) {
