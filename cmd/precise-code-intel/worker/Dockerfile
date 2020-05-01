@@ -1,7 +1,7 @@
 # keep this in sync with docker-images/prometheus/Dockerfile
 FROM prom/prometheus:v2.15.2@sha256:35c52c0c2b76433bbfc44a5a7abc294c2f032ed80250be02b441db5dd91b203a AS prometheus
 
-FROM alpine:3.10@sha256:e4355b66995c96b4b468159fc5c7e3540fcef961189ca13fee877798649f531a AS precise-code-intel-builder
+FROM alpine:3.11@sha256:39eda93d15866957feaee28f8fc5adb545276a64147445c64992ef69804dbf01 AS precise-code-intel-builder
 
 RUN apk add --no-cache \
     nodejs-current=12.4.0-r0 \
