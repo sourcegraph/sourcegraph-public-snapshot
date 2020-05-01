@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/observability"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -154,8 +154,8 @@ func (db *ObservedDatabase) prepObservation(
 	traceName string,
 	logName string,
 	preFields ...log.Field,
-) (context.Context, observability.FinishFn) {
-	return observability.WithObservation(ctx, observability.ObservationArgs{
+) (context.Context, observation.FinishFn) {
+	return observation.With(ctx, observation.Args{
 		Logger:    db.logger,
 		Metrics:   metrics,
 		Tracer:    &db.tracer,

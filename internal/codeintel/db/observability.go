@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"database/sql"
 	"time"
 
 	"github.com/opentracing/opentracing-go/log"
@@ -10,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/observability"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -110,6 +109,16 @@ func NewObservedDB(db DB, logger logging.ErrorLogger, metrics DBMetrics, tracer 
 	}
 }
 
+// Transact calls into the inner DB.
+func (db *ObservedDB) Transact(ctx context.Context) (DB, error) {
+	return db.db.Transact(ctx)
+}
+
+// Done calls into the inner DB.
+func (db *ObservedDB) Done(err error) error {
+	return db.db.Done(err)
+}
+
 // GetUploadByID calls into the inner DB and registers the observed results.
 func (db *ObservedDB) GetUploadByID(ctx context.Context, id int) (_ Upload, _ bool, err error) {
 	ctx, endObservation := db.prepObservation(ctx, &err, db.metrics.GetUploadByID, "DB.GetUploadByID", "db.get-upload-by-id")
@@ -129,7 +138,7 @@ func (db *ObservedDB) GetUploadsByRepo(ctx context.Context, repositoryID int, st
 }
 
 // Enqueue calls into the inner DB and registers the observed results.
-func (db *ObservedDB) Enqueue(ctx context.Context, commit, root, tracingContext string, repositoryID int, indexerName string) (_ int, _ TxCloser, err error) {
+func (db *ObservedDB) Enqueue(ctx context.Context, commit, root, tracingContext string, repositoryID int, indexerName string) (_ int, err error) {
 	ctx, endObservation := db.prepObservation(ctx, &err, db.metrics.Enqueue, "DB.Enqueue", "db.enqueue")
 	defer endObservation(1)
 
@@ -155,7 +164,7 @@ func (db *ObservedDB) GetStates(ctx context.Context, ids []int) (states map[int]
 }
 
 // DeleteUploadByID calls into the inner DB and registers the observed results.
-func (db *ObservedDB) DeleteUploadByID(ctx context.Context, id int, getTipCommit func(repositoryID int) (string, error)) (_ bool, err error) {
+func (db *ObservedDB) DeleteUploadByID(ctx context.Context, id int, getTipCommit GetTipCommitFn) (_ bool, err error) {
 	ctx, endObservation := db.prepObservation(ctx, &err, db.metrics.DeleteUploadByID, "DB.DeleteUploadByID", "db.delete-upload-by-id")
 	defer endObservation(1)
 
@@ -199,19 +208,19 @@ func (db *ObservedDB) DeleteOldestDump(ctx context.Context) (_ int, _ bool, err 
 }
 
 // UpdateDumpsVisibleFromTip calls into the inner DB and registers the observed results.
-func (db *ObservedDB) UpdateDumpsVisibleFromTip(ctx context.Context, tx *sql.Tx, repositoryID int, tipCommit string) (err error) {
+func (db *ObservedDB) UpdateDumpsVisibleFromTip(ctx context.Context, repositoryID int, tipCommit string) (err error) {
 	ctx, endObservation := db.prepObservation(ctx, &err, db.metrics.UpdateDumpsVisibleFromTip, "DB.UpdateDumpsVisibleFromTip", "db.update-dumps-visible-from-tip")
 	defer endObservation(1)
 
-	return db.db.UpdateDumpsVisibleFromTip(ctx, tx, repositoryID, tipCommit)
+	return db.db.UpdateDumpsVisibleFromTip(ctx, repositoryID, tipCommit)
 }
 
 // DeleteOverlappingDumps calls into the inner DB and registers the observed results.
-func (db *ObservedDB) DeleteOverlappingDumps(ctx context.Context, tx *sql.Tx, repositoryID int, commit, root, indexer string) (err error) {
+func (db *ObservedDB) DeleteOverlappingDumps(ctx context.Context, repositoryID int, commit, root, indexer string) (err error) {
 	ctx, endObservation := db.prepObservation(ctx, &err, db.metrics.DeleteOverlappingDumps, "DB.DeleteOverlappingDumps", "db.delete-overlapping-dumps")
 	defer endObservation(1)
 
-	return db.db.DeleteOverlappingDumps(ctx, tx, repositoryID, commit, root, indexer)
+	return db.db.DeleteOverlappingDumps(ctx, repositoryID, commit, root, indexer)
 }
 
 // GetPackage calls into the inner DB and registers the observed results.
@@ -223,11 +232,11 @@ func (db *ObservedDB) GetPackage(ctx context.Context, scheme, name, version stri
 }
 
 // UpdatePackages calls into the inner DB and registers the observed results.
-func (db *ObservedDB) UpdatePackages(ctx context.Context, tx *sql.Tx, packages []types.Package) (err error) {
+func (db *ObservedDB) UpdatePackages(ctx context.Context, packages []types.Package) (err error) {
 	ctx, endObservation := db.prepObservation(ctx, &err, db.metrics.UpdatePackages, "DB.UpdatePackages", "db.update-packages")
 	defer endObservation(1)
 
-	return db.db.UpdatePackages(ctx, tx, packages)
+	return db.db.UpdatePackages(ctx, packages)
 }
 
 // SameRepoPager calls into the inner DB and registers the observed results.
@@ -239,11 +248,11 @@ func (db *ObservedDB) SameRepoPager(ctx context.Context, repositoryID int, commi
 }
 
 // UpdatePackageReferences calls into the inner DB and registers the observed results.
-func (db *ObservedDB) UpdatePackageReferences(ctx context.Context, tx *sql.Tx, packageReferences []types.PackageReference) (err error) {
+func (db *ObservedDB) UpdatePackageReferences(ctx context.Context, packageReferences []types.PackageReference) (err error) {
 	ctx, endObservation := db.prepObservation(ctx, &err, db.metrics.UpdatePackageReferences, "DB.UpdatePackageReferences", "db.update-package-references")
 	defer endObservation(1)
 
-	return db.db.UpdatePackageReferences(ctx, tx, packageReferences)
+	return db.db.UpdatePackageReferences(ctx, packageReferences)
 }
 
 // PackageReferencePager calls into the inner DB and registers the observed results.
@@ -255,11 +264,11 @@ func (db *ObservedDB) PackageReferencePager(ctx context.Context, scheme, name, v
 }
 
 // UpdateCommits calls into the inner DB and registers the observed results.
-func (db *ObservedDB) UpdateCommits(ctx context.Context, tx *sql.Tx, repositoryID int, commits map[string][]string) (err error) {
+func (db *ObservedDB) UpdateCommits(ctx context.Context, repositoryID int, commits map[string][]string) (err error) {
 	ctx, endObservation := db.prepObservation(ctx, &err, db.metrics.UpdateCommits, "DB.UpdateCommits", "db.update-commits")
 	defer endObservation(1)
 
-	return db.db.UpdateCommits(ctx, tx, repositoryID, commits)
+	return db.db.UpdateCommits(ctx, repositoryID, commits)
 }
 
 // RepoName calls into the inner DB and registers the observed results.
@@ -277,8 +286,8 @@ func (db *ObservedDB) prepObservation(
 	traceName string,
 	logName string,
 	preFields ...log.Field,
-) (context.Context, observability.FinishFn) {
-	return observability.WithObservation(ctx, observability.ObservationArgs{
+) (context.Context, observation.FinishFn) {
+	return observation.With(ctx, observation.Args{
 		Logger:    db.logger,
 		Metrics:   metrics,
 		Tracer:    &db.tracer,
