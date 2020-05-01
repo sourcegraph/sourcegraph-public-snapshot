@@ -10,24 +10,24 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-// EndObservationFn is the shape of the function returned by PrepObservation and should be
+// FinishFn is the shape of the function returned by WIthObservation and should be
 // invoked within a defer directly before the observed function returns.
-type EndObservationFn func(
+type FinishFn func(
 	// The number of things processed.
 	count float64,
 	// Fields to log after the operation is performed.
 	logFields ...log.Field,
 )
 
-// PrepObservation prepares the necessary timers, loggers, and metrics to observe an
+// WIthObservation prepares the necessary timers, loggers, and metrics to observe an
 // operation. This returns a decorated context, which should be used in place of the input
-// context in the observed operation, and ah EndObservationFn function. This function should
+// context in the observed operation, and ah FinishFn function. This function should
 // be invoked  on defer. If your function does not process a variable number of items and the
 // counting metric counts invocations, the method should be deferred as follows:
 //
 //     func observedFoo(ctx context.Context) (err error) {
-//         ctx, endObservation := PrepObservation(ctx, &err, logger, metrics, tracer, "TraceName", "log-name")
-//         defer endObservation(1)
+//         ctx, finish := WIthObservation(ctx, &err, logger, metrics, tracer, "TraceName", "log-name")
+//         defer finish(1)
 //
 //         return realFoo()
 //     }
@@ -36,17 +36,17 @@ type EndObservationFn func(
 // operation completes, the method should be deferred as follows:
 //
 //     func observedFoo(ctx context.Context) (items []Foo err error) {
-//         ctx, endObservation := PrepObservation(ctx, &err, logger, metrics, tracer, "TraceName", "log-name")
+//         ctx, finish := WIthObservation(ctx, &err, logger, metrics, tracer, "TraceName", "log-name")
 //         defer func() {
-//             endObservation(float64(len(items)))
+//             finish(float64(len(items)))
 //         }()
 //
 //         return realFoo()
 //     }
 //
-// Both PrepObservation and endObservation can be supplied a variable number of log fields which
+// Both WIthObservation and finish can be supplied a variable number of log fields which
 // will be logged in the trace and when an error occurs.
-func PrepObservation(
+func WIthObservation(
 	// The input context.
 	ctx context.Context,
 	// The error logger instance.
@@ -63,12 +63,12 @@ func PrepObservation(
 	logName string,
 	// Fields to log before the operation is performed.
 	preFields ...log.Field,
-) (context.Context, EndObservationFn) {
+) (context.Context, FinishFn) {
 	began := time.Now()
 	tr, ctx := tracer.New(ctx, traceName, "")
 	tr.LogFields(preFields...)
 
-	endObservation := func(count float64, postFields ...log.Field) {
+	finish := func(count float64, postFields ...log.Field) {
 		elapsed := time.Since(began).Seconds()
 
 		logFields := append(append(append(
@@ -93,5 +93,5 @@ func PrepObservation(
 		tr.Finish()
 	}
 
-	return ctx, endObservation
+	return ctx, finish
 }
