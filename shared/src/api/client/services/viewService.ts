@@ -1,4 +1,4 @@
-import { Observable, Unsubscribable, BehaviorSubject, of, combineLatest } from 'rxjs'
+import { Observable, Unsubscribable, BehaviorSubject, of, combineLatest, concat } from 'rxjs'
 import { View as ExtensionView, DirectoryViewContext } from 'sourcegraph'
 import { switchMap, map, distinctUntilChanged, startWith, delay, catchError } from 'rxjs/operators'
 import { Evaluated, Contributions, ContributableViewContainer } from '../../protocol'
@@ -138,16 +138,20 @@ export const getViewsForContainer = <W extends ContributableViewContainer>(
 ): Observable<(View | null | ErrorLike)[]> =>
     viewService.getWhere(where).pipe(
         switchMap(providers =>
-            combineLatest(
-                providers.map(provider =>
-                    provider(params).pipe(
-                        catchError((err): [ErrorLike] => {
-                            console.error('View provider errored:', err)
-                            return [asError(err)]
-                        })
+            combineLatest([
+                of(null), // don't block forever if no providers
+                ...providers.map(provider =>
+                    concat(
+                        [null], // don't block on first emission
+                        provider(params).pipe(
+                            catchError((err): [ErrorLike] => {
+                                console.error('View provider errored:', err)
+                                return [asError(err)]
+                            })
+                        )
                     )
-                )
-            )
+                ),
+            ])
         ),
         map(views => views.filter(isDefined))
     )
