@@ -1,4 +1,4 @@
-package observability
+package observation
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-// ObservationArgs are the arguments to the WithObservation function.
+// ObservationArgs are the arguments to the With function.
 type ObservationArgs struct {
 	Logger  logging.ErrorLogger
 	Metrics *metrics.OperationMetrics
@@ -23,7 +23,7 @@ type ObservationArgs struct {
 	LogFields []log.Field
 }
 
-// FinishFn is the shape of the function returned by WithObservation and should be
+// FinishFn is the shape of the function returned by With and should be
 // invoked within a defer directly before the observed function returns.
 type FinishFn func(
 	// The number of things processed.
@@ -32,14 +32,14 @@ type FinishFn func(
 	additionalLogFields ...log.Field,
 )
 
-// WithObservation prepares the necessary timers, loggers, and metrics to observe an
+// With prepares the necessary timers, loggers, and metrics to observe an
 // operation.
 //
 // If your function does not process a variable number of items and the
 // counting metric counts invocations, the method should be deferred as follows:
 //
 //     func observedFoo(ctx context.Context) (err error) {
-//         ctx, finish := WithObservation(ctx, ObservationArgs{
+//         ctx, finish := With(ctx, ObservationArgs{
 //             Err: &err,
 //             Logger: logger,
 //             Metrics: metrics,
@@ -56,7 +56,7 @@ type FinishFn func(
 // operation completes, the method should be deferred as follows:
 //
 //     func observedFoo(ctx context.Context) (items []Foo err error) {
-//         ctx, finish := WithObservation(ctx, ObservationArgs{
+//         ctx, finish := With(ctx, ObservationArgs{
 //             Err: &err,
 //             Logger: logger,
 //             Metrics: metrics,
@@ -71,9 +71,9 @@ type FinishFn func(
 //         return realFoo()
 //     }
 //
-// Both WithObservation and finish can be supplied a variable number of log fields which
+// Both With and finish can be supplied a variable number of log fields which
 // will be logged in the trace and when an error occurs.
-func WithObservation(ctx context.Context, args ObservationArgs) (context.Context, FinishFn) {
+func With(ctx context.Context, args ObservationArgs) (context.Context, FinishFn) {
 	began := time.Now()
 
 	var tr *trace.Trace
