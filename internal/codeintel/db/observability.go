@@ -277,6 +277,14 @@ func (db *ObservedDB) prepObservation(
 	traceName string,
 	logName string,
 	preFields ...log.Field,
-) (context.Context, observability.EndObservationFn) {
-	return observability.PrepObservation(ctx, db.logger, metrics, db.tracer, err, traceName, logName, preFields...)
+) (context.Context, observability.FinishFn) {
+	return observability.WithObservation(ctx, observability.ObservationArgs{
+		Logger:    db.logger,
+		Metrics:   metrics,
+		Tracer:    &db.tracer,
+		Err:       err,
+		TraceName: traceName,
+		LogName:   logName,
+		LogFields: preFields,
+	})
 }

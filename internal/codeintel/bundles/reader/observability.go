@@ -121,6 +121,14 @@ func (r *ObservedReader) prepObservation(
 	traceName string,
 	logName string,
 	preFields ...log.Field,
-) (context.Context, observability.EndObservationFn) {
-	return observability.PrepObservation(ctx, r.logger, metrics, r.tracer, err, traceName, logName, preFields...)
+) (context.Context, observability.FinishFn) {
+	return observability.WithObservation(ctx, observability.ObservationArgs{
+		Logger:    r.logger,
+		Metrics:   metrics,
+		Tracer:    &r.tracer,
+		Err:       err,
+		TraceName: traceName,
+		LogName:   logName,
+		LogFields: preFields,
+	})
 }

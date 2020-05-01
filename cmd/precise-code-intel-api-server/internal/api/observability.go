@@ -109,6 +109,14 @@ func (api *ObservedCodeIntelAPI) prepObservation(
 	traceName string,
 	logName string,
 	preFields ...log.Field,
-) (context.Context, observability.EndObservationFn) {
-	return observability.PrepObservation(ctx, api.logger, metrics, api.tracer, err, traceName, logName, preFields...)
+) (context.Context, observability.FinishFn) {
+	return observability.WithObservation(ctx, observability.ObservationArgs{
+		Logger:    api.logger,
+		Metrics:   metrics,
+		Tracer:    &api.tracer,
+		Err:       err,
+		TraceName: traceName,
+		LogName:   logName,
+		LogFields: preFields,
+	})
 }
