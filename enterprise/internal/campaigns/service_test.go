@@ -722,7 +722,6 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 			var (
 				campaign    *campaigns.Campaign
 				oldPatches  []*campaigns.Patch
-				newPatches  []*campaigns.Patch
 				patchesByID map[int64]*campaigns.Patch
 
 				changesetStateByPatchID map[int64]campaigns.ChangesetState
@@ -829,7 +828,6 @@ func TestService_UpdateCampaignWithNewPatchSetID(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				newPatches = append(newPatches, j)
 				patchesByID[j.ID] = j
 			}
 
@@ -1134,7 +1132,7 @@ var createTestUser = func() func(context.Context, *testing.T) *types.User {
 func testPatch(patchSet int64, repo api.RepoID, t time.Time) *campaigns.Patch {
 	return &campaigns.Patch{
 		PatchSetID: patchSet,
-		RepoID:     api.RepoID(repo),
+		RepoID:     repo,
 		Rev:        "deadbeef",
 		BaseRef:    "refs/heads/master",
 		Diff:       "cool diff",

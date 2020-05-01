@@ -13,13 +13,23 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- Autocompletion for `repogroup` filters in search queries. [#10141](https://github.com/sourcegraph/sourcegraph/pull/10286)
+- If the experimental feature flag `codeInsights` is enabled, extensions can contribute content to directory pages through the experimental `ViewProvier` API. [#10236](https://github.com/sourcegraph/sourcegraph/pull/10236)
+  - Directory pages are then represented as an experimental `DirectoryViewer` in the `visibleViewComponents` of the extension API. **Note: This may break extensions that were assuming `visibleViewComponents` were always `CodeEditor`s and did not check the `type` property.** Extensions checking the `type` property will continue to work. [#10236](https://github.com/sourcegraph/sourcegraph/pull/10236)
+
 ### Changed
 
 - The `userID` and `orgID` fields in the SavedSearch type in the GraphQL API have been replaced with a `namespace` field. To get the ID of the user or org that owns the saved search, use `namespace.id`. [#5327](https://github.com/sourcegraph/sourcegraph/pull/5327)
+- Tree pages now redirect to blob pages if the path is not a tree and vice versa. [#10193](https://github.com/sourcegraph/sourcegraph/pull/10193)
+- Files and directories that are not found now return a 404 status code. [#10193](https://github.com/sourcegraph/sourcegraph/pull/10193)
 
 ### Fixed
 
+- In the OSS version of Sourcegraph, authorization providers are properly initialized and GraphQL APIs are no longer blocked. [#3487](https://github.com/sourcegraph/sourcegraph/issues/3487)
+
 ### Removed
+
+- The deprecated feature discussions has been removed. [#9649](https://github.com/sourcegraph/sourcegraph/issues/9649)
 
 ## 3.15.1
 
@@ -113,6 +123,12 @@ All notable changes to Sourcegraph are documented in this file.
 ### Removed
 
 - The experimental feature discussions is marked as deprecated. GraphQL and configuration fields related to it will be removed in 3.16. [#9649](https://github.com/sourcegraph/sourcegraph/issues/9649)
+
+## 3.14.4
+
+### Fixed
+
+- A potential security vulnerability with in the authentication workflow has been fixed. [#10167](https://github.com/sourcegraph/sourcegraph/pull/10167)
 
 ## 3.14.3
 

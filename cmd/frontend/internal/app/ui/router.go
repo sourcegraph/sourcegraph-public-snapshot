@@ -275,7 +275,7 @@ func initRouter() {
 	}))
 
 	// tree
-	router.Get(routeTree).Handler(handler(serveBasicPage(func(c *Common, r *http.Request) string {
+	router.Get(routeTree).Handler(handler(serveTree(func(c *Common, r *http.Request) string {
 		// e.g. "src - gorilla/mux - Sourcegraph"
 		dirName := path.Base(mux.Vars(r)["Path"])
 		return brandNameSubtitle(dirName, repoShortName(c.Repo.Name))

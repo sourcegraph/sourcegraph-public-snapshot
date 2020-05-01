@@ -4,53 +4,54 @@ import { from, Observable } from 'rxjs'
 import { first, tap, bufferCount, map } from 'rxjs/operators'
 import { TestScheduler } from 'rxjs/testing'
 import {
-    createEditorService,
-    EditorService,
+    createViewerService,
+    ViewerService,
     getActiveCodeEditorPosition,
     CodeEditorData,
-    EditorUpdate,
-} from './editorService'
+    ViewerUpdate,
+    ViewerData,
+} from './viewerService'
 import { ModelService } from './modelService'
 
 const FIXTURE_MODEL_SERVICE: Pick<ModelService, 'removeModel'> = {
     removeModel: sinon.spy(),
 }
 
-export function createTestEditorService({
+export function createTestViewerService({
     modelService,
-    editors,
+    viewers,
     updates,
 }: {
     modelService?: ModelService
-    editors?: CodeEditorData[]
-    updates?: Observable<EditorUpdate[]>
-}): EditorService {
-    const editorService = createEditorService(modelService || FIXTURE_MODEL_SERVICE)
-    if (editors) {
-        for (const e of editors) {
-            editorService.addEditor(e)
+    viewers?: ViewerData[]
+    updates?: Observable<ViewerUpdate[]>
+}): ViewerService {
+    const viewerService = createViewerService(modelService || FIXTURE_MODEL_SERVICE)
+    if (viewers) {
+        for (const e of viewers) {
+            viewerService.addViewer(e)
         }
     }
-    const editorUpdates = updates
+    const viewerUpdates = updates
         ? from(updates).pipe(
               tap(updates => {
                   for (const update of updates) {
                       switch (update.type) {
                           case 'added':
-                              editorService.addEditor(update.editorData)
+                              viewerService.addViewer(update.viewerData)
                               break
                           case 'updated':
-                              editorService.setSelections(update, update.editorData.selections)
+                              viewerService.setSelections(update, update.viewerData.selections)
                               break
                           case 'deleted':
-                              editorService.removeEditor(update)
+                              viewerService.removeViewer(update)
                               break
                       }
                   }
               })
           )
-        : editorService.editorUpdates
-    return { ...editorService, editorUpdates }
+        : viewerService.viewerUpdates
+    return { ...viewerService, viewerUpdates }
 }
 
 const scheduler = (): TestScheduler => new TestScheduler((a, b) => expect(a).toEqual(b))
@@ -65,150 +66,149 @@ const SELECTIONS: Selection[] = [
     },
 ]
 
-describe('EditorService', () => {
-    test('addEditor', async () => {
-        const editorService = createEditorService(FIXTURE_MODEL_SERVICE)
-        const editorData: CodeEditorData = {
+describe('viewerService', () => {
+    test('addViewer', async () => {
+        const viewerService = createViewerService(FIXTURE_MODEL_SERVICE)
+        const viewerData: CodeEditorData = {
             type: 'CodeEditor',
             resource: 'u',
             selections: [],
             isActive: true,
         }
-        const editorAdded = from(editorService.editorUpdates).pipe(first()).toPromise()
-        const { editorId } = editorService.addEditor(editorData)
-        expect(editorId).toEqual('editor#0')
+        const editorAdded = from(viewerService.viewerUpdates).pipe(first()).toPromise()
+        const { viewerId } = viewerService.addViewer(viewerData)
+        expect(viewerId).toEqual('viewer#0')
         expect(await editorAdded).toEqual([
             {
                 type: 'added',
-                editorId,
-                editorData,
+                viewerId,
+                viewerData,
             },
-        ] as EditorUpdate[])
+        ] as ViewerUpdate[])
     })
 
-    describe('observeEditor', () => {
+    describe('observeViewer', () => {
         test('emits error if editor does not exist', () => {
             scheduler().run(({ expectObservable }) => {
-                const editorService = createEditorService(FIXTURE_MODEL_SERVICE)
-                expectObservable(from(editorService.observeEditor({ editorId: 'x' }))).toBe(
+                const viewerService = createViewerService(FIXTURE_MODEL_SERVICE)
+                expectObservable(from(viewerService.observeViewer({ viewerId: 'x' }))).toBe(
                     '#',
                     {},
-                    new Error('editor not found: x')
+                    new Error('Viewer not found: x')
                 )
             })
         })
 
         test('emits on selections changes', async () => {
-            const editorService = createEditorService(FIXTURE_MODEL_SERVICE)
-            const editorId = editorService.addEditor({
+            const viewerService = createViewerService(FIXTURE_MODEL_SERVICE)
+            const viewerId = viewerService.addViewer({
                 type: 'CodeEditor',
                 resource: 'r',
                 selections: [],
                 isActive: true,
             })
-            const changes = editorService
-                .observeEditor(editorId)
+            const changes = (viewerService.observeViewer(viewerId) as Observable<CodeEditorData>)
                 .pipe(
                     map(({ selections }) => selections),
                     bufferCount(2),
                     first()
                 )
                 .toPromise()
-            editorService.setSelections(editorId, SELECTIONS)
+            viewerService.setSelections(viewerId, SELECTIONS)
             expect(await changes).toMatchObject([[], SELECTIONS])
         })
 
         test('completes when the editor is removed', async () => {
-            const editorService = createEditorService(FIXTURE_MODEL_SERVICE)
-            const editorId = editorService.addEditor({
+            const viewerService = createViewerService(FIXTURE_MODEL_SERVICE)
+            const viewerId = viewerService.addViewer({
                 type: 'CodeEditor',
                 resource: 'u',
                 selections: [],
                 isActive: true,
             })
-            const removed = editorService.observeEditor(editorId).toPromise()
-            editorService.removeEditor(editorId)
+            const removed = viewerService.observeViewer(viewerId).toPromise()
+            viewerService.removeViewer(viewerId)
             await removed
         })
     })
 
     describe('setSelections', () => {
         test('ok', async () => {
-            const editorService = createEditorService(FIXTURE_MODEL_SERVICE)
+            const viewerService = createViewerService(FIXTURE_MODEL_SERVICE)
             const editor: CodeEditorData = {
                 type: 'CodeEditor',
                 resource: 'u',
                 selections: [],
                 isActive: true,
             }
-            const { editorId } = editorService.addEditor(editor)
-            const selectionsSet = from(editorService.editorUpdates).pipe(first()).toPromise()
-            editorService.setSelections({ editorId }, SELECTIONS)
+            const { viewerId } = viewerService.addViewer(editor)
+            const selectionsSet = from(viewerService.viewerUpdates).pipe(first()).toPromise()
+            viewerService.setSelections({ viewerId }, SELECTIONS)
             expect(await selectionsSet).toMatchObject([
-                { type: 'updated', editorId, editorData: { selections: SELECTIONS } },
-            ] as EditorUpdate[])
+                { type: 'updated', viewerId, viewerData: { selections: SELECTIONS } },
+            ] as ViewerUpdate[])
         })
         test('not found', () => {
-            const editorService = createEditorService(FIXTURE_MODEL_SERVICE)
-            expect(() => editorService.setSelections({ editorId: 'x' }, [])).toThrowError('editor not found: x')
+            const viewerService = createViewerService(FIXTURE_MODEL_SERVICE)
+            expect(() => viewerService.setSelections({ viewerId: 'x' }, [])).toThrowError('Viewer not found: x')
         })
     })
 
-    describe('removeEditor', () => {
+    describe('removeViewer', () => {
         test('ok', () => {
-            const editorService = createEditorService(FIXTURE_MODEL_SERVICE)
-            const editor = editorService.addEditor({
+            const viewerService = createViewerService(FIXTURE_MODEL_SERVICE)
+            const editor = viewerService.addViewer({
                 type: 'CodeEditor',
                 resource: 'u',
                 selections: [],
                 isActive: true,
             })
-            editorService.removeEditor(editor)
-            expect(editorService.editors.size).toBe(0)
+            viewerService.removeViewer(editor)
+            expect(viewerService.viewers.size).toBe(0)
         })
         test('not found', () => {
-            const editorService = createEditorService(FIXTURE_MODEL_SERVICE)
-            expect(() => editorService.removeEditor({ editorId: 'x' })).toThrowError('editor not found: x')
+            const viewerService = createViewerService(FIXTURE_MODEL_SERVICE)
+            expect(() => viewerService.removeViewer({ viewerId: 'x' })).toThrowError('Viewer not found: x')
         })
 
         it('calls removeModel() when removing an editor', () => {
             const removeModel = sinon.spy((uri: string) => {
                 /* noop */
             })
-            const editorService = createEditorService({
+            const viewerService = createViewerService({
                 removeModel,
             })
-            const editor1 = editorService.addEditor({
+            const editor1 = viewerService.addViewer({
                 type: 'CodeEditor',
                 resource: 'u',
                 selections: [],
                 isActive: true,
             })
-            const editor2 = editorService.addEditor({
+            const editor2 = viewerService.addViewer({
                 type: 'CodeEditor',
                 resource: 'u',
                 selections: [],
                 isActive: true,
             })
-            editorService.removeEditor(editor1)
-            editorService.removeEditor(editor2)
+            viewerService.removeViewer(editor1)
+            viewerService.removeViewer(editor2)
             sinon.assert.calledOnce(removeModel)
             sinon.assert.calledWith(removeModel, 'u')
         })
     })
 
-    test('removeAllEditors', async () => {
-        const editorService = createEditorService(FIXTURE_MODEL_SERVICE)
+    test('removeAllViewers', async () => {
+        const viewerService = createViewerService(FIXTURE_MODEL_SERVICE)
         const editor: CodeEditorData = { type: 'CodeEditor', resource: 'u', selections: [], isActive: true }
-        editorService.addEditor(editor)
-        editorService.addEditor(editor)
-        editorService.addEditor(editor)
-        const editorsRemoved = from(editorService.editorUpdates).pipe(first()).toPromise()
-        editorService.removeAllEditors()
+        viewerService.addViewer(editor)
+        viewerService.addViewer(editor)
+        viewerService.addViewer(editor)
+        const editorsRemoved = from(viewerService.viewerUpdates).pipe(first()).toPromise()
+        viewerService.removeAllViewers()
         expect(await editorsRemoved).toMatchObject([
-            { type: 'deleted', editorId: 'editor#0' },
-            { type: 'deleted', editorId: 'editor#1' },
-            { type: 'deleted', editorId: 'editor#2' },
+            { type: 'deleted', viewerId: 'viewer#0' },
+            { type: 'deleted', viewerId: 'viewer#1' },
+            { type: 'deleted', viewerId: 'viewer#2' },
         ])
     })
 })
@@ -221,7 +221,7 @@ describe('getActiveCodeEditorPosition', () => {
     test('null if active code editor has no selection', () => {
         expect(
             getActiveCodeEditorPosition({
-                editorId: '1',
+                viewerId: '1',
                 type: 'CodeEditor',
                 isActive: true,
                 selections: [],
@@ -233,7 +233,7 @@ describe('getActiveCodeEditorPosition', () => {
     test('null if active code editor has empty selection', () => {
         expect(
             getActiveCodeEditorPosition({
-                editorId: '1',
+                viewerId: '1',
                 type: 'CodeEditor',
                 isActive: true,
                 selections: [
@@ -253,7 +253,7 @@ describe('getActiveCodeEditorPosition', () => {
     test('equivalent params', () => {
         expect(
             getActiveCodeEditorPosition({
-                editorId: '1',
+                viewerId: '1',
                 type: 'CodeEditor',
                 isActive: true,
                 selections: [

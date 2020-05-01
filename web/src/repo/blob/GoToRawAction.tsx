@@ -13,7 +13,7 @@ interface Props {
  */
 export class GoToRawAction extends React.PureComponent<Props> {
     public render(): JSX.Element {
-        const to = `/${encodeRepoRev(this.props.repoName, this.props.rev)}/-/raw/${this.props.filePath}`
+        const to = `/${encodeRepoRev(this.props)}/-/raw/${this.props.filePath}`
         return (
             <a href={to} className="nav-link" data-tooltip="Raw (download file)" download={true}>
                 <FileDownloadIcon className="icon-inline" />

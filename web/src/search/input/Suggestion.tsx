@@ -9,6 +9,7 @@ import { SymbolIcon } from '../../../../shared/src/symbols/SymbolIcon'
 import { SuggestionType, NonFilterSuggestionType } from '../../../../shared/src/search/suggestions/util'
 import { escapeRegExp } from 'lodash'
 import { FilterType } from '../../../../shared/src/search/interactive/util'
+import { SearchSuggestion } from '../../../../shared/src/search/suggestions'
 
 export const filterAliases: Record<string, FilterSuggestionTypes | undefined> = {
     r: FilterType.repo,
@@ -71,7 +72,7 @@ interface SuggestionIconProps {
  */
 const formatRegExp = (value: string): string => '^' + escapeRegExp(value) + '$'
 
-export function createSuggestion(item: GQL.SearchSuggestion): Suggestion | undefined {
+export function createSuggestion(item: SearchSuggestion): Suggestion | undefined {
     switch (item.__typename) {
         case 'Repository': {
             return {
@@ -121,6 +122,11 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion | undef
                 label: 'go to definition',
             }
         }
+        case 'RepoGroup':
+            return {
+                type: FilterType.repogroup,
+                value: item.name,
+            }
         default:
             return undefined
     }
@@ -131,6 +137,7 @@ const SuggestionIcon: React.FunctionComponent<SuggestionIconProps> = ({ suggesti
         case NonFilterSuggestionType.filters:
             return <FilterIcon {...props} />
         case FilterType.repo:
+        case FilterType.repogroup:
             return <SourceRepositoryIcon {...props} />
         case FilterType.file:
             return <FileIcon {...props} />

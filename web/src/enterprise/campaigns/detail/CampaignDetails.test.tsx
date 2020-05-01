@@ -61,6 +61,11 @@ describe('CampaignDetails', () => {
                     of({
                         __typename: 'PatchSet' as const,
                         id: 'c',
+                        diffStat: {
+                            added: 0,
+                            changed: 18,
+                            deleted: 999,
+                        },
                         patches: { nodes: [] as GQL.IPatch[], totalCount: 2 },
                     })
                 }
@@ -90,8 +95,9 @@ describe('CampaignDetails', () => {
                     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
                     author: { username: 'alice' } as GQL.IUser,
                     patchSet: { id: 'p' },
-                    changesets: { nodes: [] as GQL.IExternalChangeset[], totalCount: 2 },
-                    patches: { nodes: [] as GQL.IPatch[], totalCount: 2 },
+                    changesets: { totalCount: 2 },
+                    openChangesets: { totalCount: 0 },
+                    patches: { totalCount: 2 },
                     changesetCountsOverTime: [] as GQL.IChangesetCounts[],
                     viewerCanAdminister,
                     branch: 'awesome-branch',

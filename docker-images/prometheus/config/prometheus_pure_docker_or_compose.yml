@@ -30,13 +30,13 @@ scrape_configs:
 # control part of the precise code intel worker in Go to leverage application-level
 # concurrency control.
 
-- job_name: federate
-  honor_labels: true
-  metrics_path: /federate
-  params:
-    'match[]':
-      - '{__name__=~'lsif_.*'}'
+  - job_name: federate
+    honor_labels: true
+    metrics_path: /federate
+    params:
+      'match[]':
+        - "{__name__=~'lsif_.*'}"
 
-  static_configs:
-    - targets:
-      - precise-code-intel-worker:9090
+    static_configs:
+      - targets:
+        - precise-code-intel-worker:9090

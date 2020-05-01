@@ -10,11 +10,11 @@ import sanitizeHtml from 'sanitize-html'
 import { Markdown } from '../../../shared/src/components/Markdown'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { highlightNode } from '../../../shared/src/util/dom'
-import { renderMarkdown } from '../discussions/backend'
 import { highlightCode } from '../search/backend'
 import { HighlightRange } from './SearchResult'
 import { ThemeProps } from '../../../shared/src/theme'
 import * as H from 'history'
+import { renderMarkdown } from '../../../shared/src/util/markdown'
 
 interface SearchResultMatchProps extends ThemeProps {
     item: GQL.ISearchResultMatch
@@ -57,12 +57,10 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                 .pipe(
                     filter(([, isVisible]) => isVisible),
                     distinctUntilChanged((a, b) => isEqual(a, b)),
-                    switchMap(([props]) =>
-                        props.item.body.html
-                            ? of(sanitizeHtml(props.item.body.html))
-                            : renderMarkdown({ markdown: props.item.body.text })
-                    ),
-                    switchMap(markdownHTML => {
+                    switchMap(([props]) => {
+                        const markdownHTML = props.item.body.html
+                            ? sanitizeHtml(props.item.body.html)
+                            : renderMarkdown(props.item.body.text)
                         if (this.bodyIsCode()) {
                             const lang = this.getLanguage() || 'txt'
                             const parser = new DOMParser()
@@ -75,7 +73,7 @@ export class SearchResultMatch extends React.Component<SearchResultMatchProps, S
                                     code: codeContent,
                                     fuzzyLanguage: lang,
                                     disableTimeout: false,
-                                    isLightTheme: this.props.isLightTheme,
+                                    isLightTheme: props.isLightTheme,
                                 }).pipe(
                                     switchMap(highlightedStr => {
                                         const highlightedMarkdown = decode(markdownHTML).replace(

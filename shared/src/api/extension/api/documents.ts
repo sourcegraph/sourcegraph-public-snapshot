@@ -44,6 +44,8 @@ export class ExtDocuments implements ExtDocumentsAPI, ProxyMarked {
      *
      * @todo This is necessary because hovers can be sent before the document is loaded, and it will cause a
      * "document not found" error.
+     *
+     * @deprecated `getSync()` makes no additional guarantees over `get()` anymore.
      */
     public async getSync(resource: string): Promise<ExtDocument> {
         const doc = this.documents.get(resource)

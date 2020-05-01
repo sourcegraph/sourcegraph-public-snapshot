@@ -171,6 +171,52 @@ Array [
      
     Patches
      
+    <div
+      className="ml-2 mb-0"
+    >
+      <div
+        className="diff-stat "
+        data-tooltip="18 changes, 999 deletions"
+      >
+        <span
+          className="diff-stat__total font-weight-bold"
+        >
+          <span
+            className="diff-stat__text-added mr-1"
+          >
+            +
+            0
+          </span>
+          <span
+            className="diff-stat__text-changed mr-1"
+          >
+            •
+            18
+          </span>
+          <span
+            className="diff-stat__text-deleted mr-1"
+          >
+            −
+            999
+          </span>
+        </span>
+        <div
+          className="diff-stat__square diff-stat__changed"
+        />
+        <div
+          className="diff-stat__square diff-stat__deleted"
+        />
+        <div
+          className="diff-stat__square diff-stat__deleted"
+        />
+        <div
+          className="diff-stat__square diff-stat__deleted"
+        />
+        <div
+          className="diff-stat__square diff-stat__deleted"
+        />
+      </div>
+    </div>
   </h3>,
   <PatchSetPatches
     campaignUpdates={
@@ -239,6 +285,11 @@ Array [
     patchSet={
       Object {
         "__typename": "PatchSet",
+        "diffStat": Object {
+          "added": 0,
+          "changed": 18,
+          "deleted": 999,
+        },
         "id": "c",
         "patches": Object {
           "nodes": Array [],
@@ -456,7 +507,6 @@ Array [
         "branch": "awesome-branch",
         "changesetCountsOverTime": Array [],
         "changesets": Object {
-          "nodes": Array [],
           "totalCount": 2,
         },
         "closedAt": null,
@@ -470,11 +520,13 @@ Array [
         },
         "id": "c",
         "name": "n",
+        "openChangesets": Object {
+          "totalCount": 0,
+        },
         "patchSet": Object {
           "id": "p",
         },
         "patches": Object {
-          "nodes": Array [],
           "totalCount": 2,
         },
         "publishedAt": "2020-01-01",
@@ -564,7 +616,6 @@ Array [
         "branch": "awesome-branch",
         "changesetCountsOverTime": Array [],
         "changesets": Object {
-          "nodes": Array [],
           "totalCount": 2,
         },
         "closedAt": null,
@@ -578,11 +629,13 @@ Array [
         },
         "id": "c",
         "name": "n",
+        "openChangesets": Object {
+          "totalCount": 0,
+        },
         "patchSet": Object {
           "id": "p",
         },
         "patches": Object {
-          "nodes": Array [],
           "totalCount": 2,
         },
         "publishedAt": "2020-01-01",
@@ -835,7 +888,6 @@ Array [
         "branch": "awesome-branch",
         "changesetCountsOverTime": Array [],
         "changesets": Object {
-          "nodes": Array [],
           "totalCount": 2,
         },
         "closedAt": null,
@@ -849,11 +901,13 @@ Array [
         },
         "id": "c",
         "name": "n",
+        "openChangesets": Object {
+          "totalCount": 0,
+        },
         "patchSet": Object {
           "id": "p",
         },
         "patches": Object {
-          "nodes": Array [],
           "totalCount": 2,
         },
         "publishedAt": "2020-01-01",
@@ -943,7 +997,6 @@ Array [
         "branch": "awesome-branch",
         "changesetCountsOverTime": Array [],
         "changesets": Object {
-          "nodes": Array [],
           "totalCount": 2,
         },
         "closedAt": null,
@@ -957,11 +1010,13 @@ Array [
         },
         "id": "c",
         "name": "n",
+        "openChangesets": Object {
+          "totalCount": 0,
+        },
         "patchSet": Object {
           "id": "p",
         },
         "patches": Object {
-          "nodes": Array [],
           "totalCount": 2,
         },
         "publishedAt": "2020-01-01",
@@ -1304,7 +1359,6 @@ Array [
         "branch": "awesome-branch",
         "changesetCountsOverTime": Array [],
         "changesets": Object {
-          "nodes": Array [],
           "totalCount": 2,
         },
         "closedAt": null,
@@ -1318,11 +1372,13 @@ Array [
         },
         "id": "c",
         "name": "n",
+        "openChangesets": Object {
+          "totalCount": 0,
+        },
         "patchSet": Object {
           "id": "p",
         },
         "patches": Object {
-          "nodes": Array [],
           "totalCount": 2,
         },
         "publishedAt": "2020-01-01",
@@ -1412,7 +1468,6 @@ Array [
         "branch": "awesome-branch",
         "changesetCountsOverTime": Array [],
         "changesets": Object {
-          "nodes": Array [],
           "totalCount": 2,
         },
         "closedAt": null,
@@ -1426,11 +1481,13 @@ Array [
         },
         "id": "c",
         "name": "n",
+        "openChangesets": Object {
+          "totalCount": 0,
+        },
         "patchSet": Object {
           "id": "p",
         },
         "patches": Object {
-          "nodes": Array [],
           "totalCount": 2,
         },
         "publishedAt": "2020-01-01",

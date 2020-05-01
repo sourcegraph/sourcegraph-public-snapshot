@@ -558,7 +558,19 @@ func SyncChangesetsWithSources(ctx context.Context, store SyncStore, bySource []
 			csEvents := c.Events()
 			SetDerivedState(c.Changeset, csEvents)
 
-			events = append(events, csEvents...)
+			// Deduplicate events per changeset based on their Kind+Key to avoid
+			// conflicts when inserting into database.
+			uniqueEvents := make(map[string]struct{}, len(csEvents))
+			for _, e := range csEvents {
+				k := string(e.Kind) + e.Key
+				if _, ok := uniqueEvents[k]; ok {
+					log15.Info("dropping duplicate changeset event", "changeset_id", e.ChangesetID, "kind", e.Kind, "key", e.Key)
+					continue
+				}
+				uniqueEvents[k] = struct{}{}
+				events = append(events, e)
+			}
+
 			cs = append(cs, c.Changeset)
 		}
 	}

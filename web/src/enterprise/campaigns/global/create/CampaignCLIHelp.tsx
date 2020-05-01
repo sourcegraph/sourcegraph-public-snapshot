@@ -9,7 +9,7 @@ const srcInstall = `# Configure your Sourcegraph instance:
 $ export SRC_ENDPOINT=${window.location.protocol}//${window.location.host}
 
 # Download the src binary for macOS:
-$ curl -L $SRC_ENDPOINT/.api/src-cli/src_dawin_amd64 -o /usr/local/bin/src
+$ curl -L $SRC_ENDPOINT/.api/src-cli/src_darwin_amd64 -o /usr/local/bin/src
 # Download the src binary for Linux:
 $ curl -L $SRC_ENDPOINT/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src
 

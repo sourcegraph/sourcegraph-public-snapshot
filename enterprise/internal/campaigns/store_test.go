@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	cmpgn "github.com/sourcegraph/sourcegraph/internal/campaigns"
 	"github.com/sourcegraph/sourcegraph/internal/db/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
@@ -2798,8 +2797,6 @@ func testStore(db *sql.DB) func(*testing.T) {
 
 func testProcessChangesetJob(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
-		dbtesting.SetupGlobalTestDB(t)
-
 		now := time.Now().UTC().Truncate(time.Microsecond)
 		clock := func() time.Time { return now.UTC().Truncate(time.Microsecond) }
 		ctx := context.Background()
@@ -2824,11 +2821,15 @@ func testProcessChangesetJob(db *sql.DB) func(*testing.T) {
 			t.Fatal(err)
 		}
 
-		user := createTestUser(ctx, t)
+		var userID int32
+		err := db.QueryRow("INSERT INTO users (username) VALUES ('admin') RETURNING id").Scan(&userID)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		s := NewStoreWithClock(db, clock)
-		patchSet := &cmpgn.PatchSet{UserID: user.ID}
-		err := s.CreatePatchSet(context.Background(), patchSet)
+		patchSet := &cmpgn.PatchSet{UserID: userID}
+		err = s.CreatePatchSet(context.Background(), patchSet)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -2847,8 +2848,8 @@ func testProcessChangesetJob(db *sql.DB) func(*testing.T) {
 			PatchSetID:      patchSet.ID,
 			Name:            "testcampaign",
 			Description:     "testcampaign",
-			AuthorID:        user.ID,
-			NamespaceUserID: user.ID,
+			AuthorID:        userID,
+			NamespaceUserID: userID,
 		}
 		err = s.CreateCampaign(context.Background(), campaign)
 		if err != nil {

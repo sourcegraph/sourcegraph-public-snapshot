@@ -4,7 +4,7 @@ import { catchError, map, switchMap, defaultIfEmpty } from 'rxjs/operators'
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
 import { TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
 import { match, TextDocumentIdentifier } from '../types/textDocument'
-import { CodeEditorWithPartialModel } from './editorService'
+import { CodeEditorWithPartialModel } from './viewerService'
 import { DocumentFeatureProviderRegistry } from './registry'
 import { MaybeLoadingResult, LOADING } from '@sourcegraph/codeintellify'
 

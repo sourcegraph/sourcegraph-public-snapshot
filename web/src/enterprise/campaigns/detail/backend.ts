@@ -19,8 +19,6 @@ import {
 import { DiffStatFields, FileDiffHunkRangeFields, PreviewFileDiffFields, FileDiffFields } from '../../../backend/diff'
 import { Connection, FilteredConnectionQueryArgs } from '../../../components/FilteredConnection'
 
-export type CampaignType = 'comby' | 'credentials' | 'regexSearchReplace'
-
 const campaignFragment = gql`
     fragment CampaignFields on Campaign {
         __typename
@@ -42,20 +40,14 @@ const campaignFragment = gql`
         publishedAt
         closedAt
         viewerCanAdminister
-        changesets(first: 10000) {
+        changesets {
             totalCount
-            nodes {
-                __typename
-                id
-                state
-            }
         }
-        patches(first: 10000) {
+        openChangesets {
             totalCount
-            nodes {
-                id
-                __typename
-            }
+        }
+        patches {
+            totalCount
         }
         patchSet {
             id
@@ -82,20 +74,11 @@ const patchSetFragment = gql`
     fragment PatchSetFields on PatchSet {
         __typename
         id
-        patches(first: 10000) {
+        diffStat {
+            ...DiffStatFields
+        }
+        patches {
             totalCount
-            nodes {
-                id
-                __typename
-                diff {
-                    fileDiffs {
-                        totalCount
-                        diffStat {
-                            ...DiffStatFields
-                        }
-                    }
-                }
-            }
         }
     }
 

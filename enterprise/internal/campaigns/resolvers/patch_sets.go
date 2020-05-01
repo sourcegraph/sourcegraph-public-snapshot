@@ -68,6 +68,40 @@ func (r *patchSetResolver) Patches(
 	}
 }
 
+func (r *patchSetResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffStat, error) {
+	return patchSetDiffStat(ctx, r.store, ee.ListPatchesOpts{
+		PatchSetID:   r.patchSet.ID,
+		Limit:        -1, // Fetch all patches in a patch set
+		OnlyWithDiff: true,
+	})
+}
+
+func patchSetDiffStat(ctx context.Context, store *ee.Store, opts ee.ListPatchesOpts) (*graphqlbackend.DiffStat, error) {
+	patchesConnection := &patchesConnectionResolver{store: store, opts: opts}
+
+	patches, err := patchesConnection.Nodes(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	total := &graphqlbackend.DiffStat{}
+	for _, p := range patches {
+		fileDiffs, err := p.FileDiffs(ctx, &graphqlutil.ConnectionArgs{})
+		if err != nil {
+			return nil, err
+		}
+
+		s, err := fileDiffs.DiffStat(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		total.AddDiffStat(s)
+	}
+
+	return total, nil
+}
+
 func (r *patchSetResolver) PreviewURL() string {
 	u := globals.ExternalURL().ResolveReference(&url.URL{Path: "/campaigns/new"})
 	q := url.Values{}

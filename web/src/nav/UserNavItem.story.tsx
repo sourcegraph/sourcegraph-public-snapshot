@@ -48,7 +48,6 @@ add('Site admin', () => (
             themePreference={ThemePreference.Light}
             location={H.createMemoryHistory().location}
             onThemePreferenceChange={onThemePreferenceChange}
-            showDiscussions={true}
             showDotComMarketing={true}
         />
     </MemoryRouter>
