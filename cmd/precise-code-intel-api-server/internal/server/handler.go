@@ -126,7 +126,12 @@ func (s *Server) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	id, closer, err := s.db.Enqueue(
+	tx, err := s.db.Transact(r.Context())
+	if err != nil {
+		log15.Error("Failed to start transaction", "error", err)
+		http.Error(w, fmt.Sprintf("failed to start transaction: %s", err.Error()), http.StatusInternalServerError)
+	}
+	id, err := tx.Enqueue(
 		r.Context(),
 		getQuery(r, "commit"),
 		sanitizeRoot(getQuery(r, "root")),
@@ -135,7 +140,7 @@ func (s *Server) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 		indexerName,
 	)
 	if err == nil {
-		err = closer.CloseTx(s.bundleManagerClient.SendUpload(r.Context(), id, f))
+		err = tx.Done(s.bundleManagerClient.SendUpload(r.Context(), id, f))
 	}
 	if err != nil {
 		log15.Error("Failed to enqueue payload", "error", err)

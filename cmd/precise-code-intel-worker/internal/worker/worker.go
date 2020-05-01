@@ -2,7 +2,6 @@ package worker
 
 import (
 	"context"
-	"database/sql"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -46,7 +45,7 @@ func New(opts WorkerOpts) *Worker {
 
 func (w *Worker) Start() error {
 	for {
-		if ok, err := w.dequeueAndProcess(); err != nil {
+		if ok, err := w.dequeueAndProcess(context.Background()); err != nil {
 			return err
 		} else if !ok {
 			time.Sleep(w.pollInterval)
@@ -58,21 +57,21 @@ func (w *Worker) Start() error {
 // to process, this method returns a false-valued flag. Only critical errors are returned.
 // Processing errors are only written to the upload record and are not expected to be handled
 // by the calling function.
-func (w *Worker) dequeueAndProcess() (_ bool, err error) {
-	upload, jobHandle, ok, err := w.db.Dequeue(context.Background())
+func (w *Worker) dequeueAndProcess(ctx context.Context) (_ bool, err error) {
+	upload, jobHandle, ok, err := w.db.Dequeue(ctx)
 	if err != nil || !ok {
 		return false, err
 	}
 	defer func() {
-		if closeErr := jobHandle.CloseTx(err); closeErr != nil {
+		if closeErr := jobHandle.Done(err); closeErr != nil {
 			err = multierror.Append(err, closeErr)
 		}
 	}()
 
-	if err = process(context.Background(), w.db, w.bundleManagerClient, w.gitserverClient, upload, jobHandle); err != nil {
+	if err = process(ctx, jobHandle.DB(), w.bundleManagerClient, w.gitserverClient, upload, jobHandle); err != nil {
 		log15.Warn("Failed to process upload", "id", upload.ID, "err", err)
 
-		if markErr := jobHandle.MarkErrored(err.Error(), ""); markErr != nil {
+		if markErr := jobHandle.MarkErrored(ctx, err.Error(), ""); markErr != nil {
 			return false, markErr
 		}
 	}
@@ -116,7 +115,7 @@ func process(
 	// Read raw upload and write converted database to newFilename. This process also correlates
 	// and returns the  data we need to insert into Postgres to support cross-dump/repo queries.
 	packages, packageReferences, err := convert(
-		context.Background(),
+		ctx,
 		filename,
 		newFilename,
 		upload.ID,
@@ -134,29 +133,29 @@ func process(
 	// update the upload record with an error message but do not want to alter any other data in
 	// the database. Rolling back to this savepoint will allow us to discard any other changes
 	// but still commit the transaction as a whole.
-	if err := jobHandle.Savepoint(); err != nil {
+	if err := jobHandle.Savepoint(ctx); err != nil {
 		return err
 	}
 	defer func() {
 		if err != nil {
-			if rollbackErr := jobHandle.RollbackToLastSavepoint(); rollbackErr != nil {
+			if rollbackErr := jobHandle.RollbackToLastSavepoint(ctx); rollbackErr != nil {
 				err = multierror.Append(err, rollbackErr)
 			}
 		}
 	}()
 
 	// Update package and package reference data to support cross-repo queries.
-	if err := db.UpdatePackages(context.Background(), jobHandle.Tx(), packages); err != nil {
+	if err := db.UpdatePackages(ctx, packages); err != nil {
 		return err
 	}
-	if err := db.UpdatePackageReferences(context.Background(), jobHandle.Tx(), packageReferences); err != nil {
+	if err := db.UpdatePackageReferences(ctx, packageReferences); err != nil {
 		return err
 	}
 
 	// Before we mark the upload as complete, we need to delete any existing completed uploads
 	// that have the same repository_id, commit, root, and indexer values. Otherwise the transaction
 	// will fail as these values form a unique constraint.
-	if err := db.DeleteOverlappingDumps(ctx, jobHandle.Tx(), upload.RepositoryID, upload.Commit, upload.Root, upload.Indexer); err != nil {
+	if err := db.DeleteOverlappingDumps(ctx, upload.RepositoryID, upload.Commit, upload.Root, upload.Indexer); err != nil {
 		return err
 	}
 
@@ -164,13 +163,13 @@ func process(
 	// the visibility of the dumps for this repository. This requires that the new dump be available in
 	// the lsif_dumps view, which requires a change of state. In the event of a future failure we can
 	// still roll back to the save point and mark the upload as errored.
-	if err := jobHandle.MarkComplete(); err != nil {
+	if err := jobHandle.MarkComplete(ctx); err != nil {
 		return err
 	}
 
 	// Discover commits around the current tip commit and the commit of this upload. Upsert these
 	// commits into the lsif_commits table, then update the visibility of all dumps for this repository.
-	if err := updateCommitsAndVisibility(ctx, db, gitserverClient, jobHandle.Tx(), upload.RepositoryID, upload.Commit); err != nil {
+	if err := updateCommitsAndVisibility(ctx, db, gitserverClient, upload.RepositoryID, upload.Commit); err != nil {
 		return err
 	}
 
@@ -190,7 +189,7 @@ func process(
 
 // updateCommits updates the lsif_commits table with the current data known to gitserver, then updates the
 // visibility of all dumps for the given repository.
-func updateCommitsAndVisibility(ctx context.Context, db db.DB, gitserverClient gitserver.Client, tx *sql.Tx, repositoryID int, commit string) error {
+func updateCommitsAndVisibility(ctx context.Context, db db.DB, gitserverClient gitserver.Client, repositoryID int, commit string) error {
 	tipCommit, err := gitserverClient.Head(db, repositoryID)
 	if err != nil {
 		return err
@@ -215,13 +214,11 @@ func updateCommitsAndVisibility(ctx context.Context, db db.DB, gitserverClient g
 		}
 	}
 
-	// TODO - need to do same discover on query
-	// TODO - determine if we know about these commits first
-	if err := db.UpdateCommits(ctx, tx, repositoryID, newCommits); err != nil {
+	if err := db.UpdateCommits(ctx, repositoryID, newCommits); err != nil {
 		return err
 	}
 
-	if err := db.UpdateDumpsVisibleFromTip(ctx, tx, repositoryID, tipCommit); err != nil {
+	if err := db.UpdateDumpsVisibleFromTip(ctx, repositoryID, tipCommit); err != nil {
 		return err
 	}
 
