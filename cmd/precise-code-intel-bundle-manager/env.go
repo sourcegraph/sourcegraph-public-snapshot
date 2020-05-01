@@ -15,7 +15,7 @@ var (
 	rawResultChunkDataCacheSize = env.Get("PRECISE_CODE_INTEL_RESULT_CHUNK_CACHE_CAPACITY", "100", "Maximum number of decoded result chunks that can be held in memory at once.")
 	rawDesiredPercentFree       = env.Get("PRECISE_CODE_INTEL_DESIRED_PERCENT_FREE", "10", "Target percentage of free space on disk.")
 	rawJanitorInterval          = env.Get("PRECISE_CODE_INTEL_JANITOR_INTERVAL", "1m", "Interval between cleanup runs.")
-	rawMaxUnconvertedUploadAge  = env.Get("PRECISE_CODE_INTEL_MAX_UNCONVERTED_UPLOAD_AGE", "24h", "The maximum time an unconverted upload can sit on disk.")
+	rawMaxUploadAge             = env.Get("PRECISE_CODE_INTEL_MAX_UPLOAD_AGE", "24h", "The maximum time an upload can sit on disk.")
 )
 
 // mustGet returns the non-empty version of the given raw value fatally logs on failure.
