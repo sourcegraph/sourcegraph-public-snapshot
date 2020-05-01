@@ -190,8 +190,12 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
                 ? this.props.action.actionItem.pressed
                 : undefined
 
-        const primaryTo = urlForClientCommandOpen(this.props.action, this.props.location)
         const altTo = this.props.altAction && urlForClientCommandOpen(this.props.altAction, this.props.location)
+        const to = urlForClientCommandOpen(this.props.action, this.props.location) || altTo
+
+        const isExternalLink = !!(
+            to && tryCatch(() => new URL(to, window.location.href).origin !== window.location.origin)
+        )
 
         return (
             <LinkOrButton
@@ -212,16 +216,15 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
                     pressed && ['action-item--pressed', this.props.pressedClassName]
                 )}
                 pressed={pressed}
+                onSelect={this.runAction}
                 // If the command is 'open' or 'openXyz' (builtin commands), render it as a link. Otherwise render
                 // it as a button that executes the command.
-                to={primaryTo || altTo}
-                onSelect={this.runAction}
+                to={to}
+                // Open in new tab if an external link
+                target={isExternalLink ? '_blank' : undefined}
+                rel={isExternalLink ? 'noopener noreferrer' : undefined}
             >
-                {content}{' '}
-                {primaryTo &&
-                    tryCatch(() => new URL(primaryTo, window.location.href).origin !== window.location.origin) && (
-                        <OpenInNewIcon className={this.props.iconClassName} />
-                    )}
+                {content} {isExternalLink && <OpenInNewIcon className={this.props.iconClassName} />}
                 {showLoadingSpinner && (
                     <div className="action-item__loader">
                         <LoadingSpinner className={this.props.iconClassName} />
