@@ -188,7 +188,7 @@ func process(
 	return nil
 }
 
-// updateCommits updates the lsif_commits table with the current data known to gitserer, then updates the
+// updateCommits updates the lsif_commits table with the current data known to gitserver, then updates the
 // visibility of all dumps for the given repository.
 func updateCommitsAndVisibility(ctx context.Context, db db.DB, gitserverClient gitserver.Client, tx *sql.Tx, repositoryID int, commit string) error {
 	tipCommit, err := gitserverClient.Head(db, repositoryID)
