@@ -1,6 +1,6 @@
 import { basename, dirname, extname } from 'path'
 import { isSettingsValid, SettingsCascadeOrError } from '../../../settings/settings'
-import { CodeEditorWithPartialModel } from '../services/editorService'
+import { ViewerWithPartialModel } from '../services/viewerService'
 
 /**
  * Context is an arbitrary, immutable set of key-value pairs. Its value can be any JSON object.
@@ -16,7 +16,7 @@ export interface Context<T = never>
     > {}
 
 export type ContributionScope =
-    | CodeEditorWithPartialModel
+    | ViewerWithPartialModel
     | {
           type: 'panelView'
           id: string
@@ -31,7 +31,7 @@ export type ContributionScope =
  * @param scope the user interface component in whose scope this computation should occur
  */
 export function getComputedContextProperty(
-    activeEditor: CodeEditorWithPartialModel | undefined,
+    activeEditor: ViewerWithPartialModel | undefined,
     settings: SettingsCascadeOrError,
     context: Context<any>,
     key: string,

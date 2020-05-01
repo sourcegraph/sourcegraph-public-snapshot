@@ -32,7 +32,7 @@ export class FileDiffConnection extends React.PureComponent<Props> {
         const dummyText = ''
 
         if (nodeProps.extensionInfo) {
-            nodeProps.extensionInfo.extensionsController.services.editor.removeAllEditors()
+            nodeProps.extensionInfo.extensionsController.services.viewer.removeAllViewers()
 
             if (fileDiffsOrError && !isErrorLike(fileDiffsOrError)) {
                 for (const fileDiff of fileDiffsOrError.nodes) {
@@ -45,7 +45,7 @@ export class FileDiffConnection extends React.PureComponent<Props> {
                                 text: dummyText,
                             })
                         }
-                        nodeProps.extensionInfo.extensionsController.services.editor.addEditor({
+                        nodeProps.extensionInfo.extensionsController.services.viewer.addViewer({
                             type: 'CodeEditor',
                             resource: uri,
                             selections: [],
@@ -61,7 +61,7 @@ export class FileDiffConnection extends React.PureComponent<Props> {
                                 text: dummyText,
                             })
                         }
-                        nodeProps.extensionInfo.extensionsController.services.editor.addEditor({
+                        nodeProps.extensionInfo.extensionsController.services.viewer.addViewer({
                             type: 'CodeEditor',
                             resource: uri,
                             selections: [],

@@ -9,11 +9,11 @@ import TagIcon from 'mdi-react/TagIcon'
 import UserIcon from 'mdi-react/UserIcon'
 import React, { useState, useMemo, useCallback, useEffect } from 'react'
 import { Link, Redirect } from 'react-router-dom'
-import { Observable } from 'rxjs'
+import { Observable, EMPTY } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 import { ActionItem } from '../../../shared/src/actions/ActionItem'
 import { ActionsContainer } from '../../../shared/src/actions/ActionsContainer'
-import { ContributableMenu } from '../../../shared/src/api/protocol'
+import { ContributableMenu, ContributableViewContainer } from '../../../shared/src/api/protocol'
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 import { displayRepoName } from '../../../shared/src/components/RepoFileLink'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
@@ -37,7 +37,11 @@ import { ErrorAlert } from '../components/alerts'
 import { subYears, formatISO } from 'date-fns'
 import { pluralize } from '../../../shared/src/util/strings'
 import { useObservable } from '../../../shared/src/util/useObservable'
-import { toPrettyBlobURL } from '../../../shared/src/util/url'
+import { toPrettyBlobURL, toURIWithPath } from '../../../shared/src/util/url'
+import { isDefined } from '../../../shared/src/util/types'
+import { getViewsForContainer } from '../../../shared/src/api/client/services/viewService'
+import { ViewContent } from '../views/ViewContent'
+import { Settings } from '../schema/settings.schema'
 
 const TreeEntry: React.FunctionComponent<{
     isDir: boolean
@@ -131,7 +135,7 @@ const fetchTreeCommits = memoizeObservable(
 )
 
 interface Props
-    extends SettingsCascadeProps,
+    extends SettingsCascadeProps<Settings>,
         ExtensionsControllerProps,
         PlatformContextProps,
         ThemeProps,
@@ -191,6 +195,51 @@ export const TreePage: React.FunctionComponent<Props> = ({
                     first: 2500,
                 }).pipe(catchError((err): [ErrorLike] => [asError(err)])),
             [repoName, commitID, rev, filePath]
+        )
+    )
+
+    const { services } = props.extensionsController
+
+    const codeInsightsEnabled =
+        !isErrorLike(settingsCascade.final) && !!settingsCascade.final?.experimentalFeatures?.codeInsights
+
+    // Add DirectoryViewer
+    const uri = toURIWithPath({ repoName, commitID, filePath })
+    useEffect(() => {
+        if (!codeInsightsEnabled) {
+            return
+        }
+        const viewerId = services.viewer.addViewer({
+            type: 'DirectoryViewer',
+            isActive: true,
+            resource: uri,
+        })
+        return () => services.viewer.removeViewer(viewerId)
+    }, [services.viewer, services.model, uri, codeInsightsEnabled])
+
+    // Observe directory views
+    const workspaceUri = services.workspace.roots.value[0]?.uri
+    const views = useObservable(
+        useMemo(
+            () =>
+                codeInsightsEnabled && workspaceUri
+                    ? getViewsForContainer(
+                          ContributableViewContainer.Directory,
+                          {
+                              viewer: {
+                                  type: 'DirectoryViewer',
+                                  directory: {
+                                      uri,
+                                  },
+                              },
+                              workspace: {
+                                  uri: workspaceUri,
+                              },
+                          },
+                          services.view
+                      ).pipe(map(views => views.filter(isDefined)))
+                    : EMPTY,
+            [codeInsightsEnabled, workspaceUri, uri, services.view]
         )
     )
 
@@ -301,6 +350,39 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                 <FolderIcon className="icon-inline" /> {filePath}
                             </h2>
                         </header>
+                    )}
+                    {codeInsightsEnabled && (
+                        <div className="tree-page__section d-flex">
+                            {views === undefined ? (
+                                <div className="card flex-grow-1">
+                                    <div className="card-body d-flex flex-column align-items-center p-3">
+                                        <div>
+                                            <LoadingSpinner className="icon-inline" />
+                                        </div>
+                                        <div>Loading code insights</div>
+                                    </div>
+                                </div>
+                            ) : (
+                                views.map((view, i) => (
+                                    <div key={i} className="card flex-grow-1">
+                                        {isErrorLike(view) ? (
+                                            <ErrorAlert className="m-0" error={view} history={props.history} />
+                                        ) : (
+                                            <div className="card-body">
+                                                <h3 className="tree-page__view-title">{view.title}</h3>
+                                                <ViewContent
+                                                    {...props}
+                                                    viewContent={view.content}
+                                                    settingsCascade={settingsCascade}
+                                                    caseSensitive={caseSensitive}
+                                                    patternType={patternType}
+                                                />{' '}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))
+                            )}
+                        </div>
                     )}
                     <TreeEntriesSection
                         title="Files and directories"

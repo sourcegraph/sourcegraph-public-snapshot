@@ -51,7 +51,7 @@ describe('TextDocumentLocationProviderRegistry', () => {
                 expectObservable(
                     registry.hasProvidersForActiveTextDocument({
                         isActive: true,
-                        editorId: 'editor#0',
+                        viewerId: 'viewer#0',
                         type: 'CodeEditor' as const,
                         selections: [new Selection(1, 2, 3, 4).toPlain()],
                         resource: 'file:///g',
@@ -73,7 +73,7 @@ describe('TextDocumentLocationProviderRegistry', () => {
                 expectObservable(
                     registry.hasProvidersForActiveTextDocument({
                         isActive: true,
-                        editorId: 'editor#0',
+                        viewerId: 'viewer#0',
                         type: 'CodeEditor' as const,
                         selections: [new Selection(1, 2, 3, 4).toPlain()],
                         resource: 'file:///g',

@@ -93,7 +93,11 @@ export const renderMarkdown = (
             ],
             allowedAttributes: {
                 ...sanitize.defaults.allowedAttributes,
-                a: [...sanitize.defaults.allowedAttributes.a, 'title'],
+                a: [
+                    ...sanitize.defaults.allowedAttributes.a,
+                    'title',
+                    'data-tooltip', // TODO support fancy tooltips through native titles
+                ],
                 object: ['data', { name: 'type', values: ['image/svg+xml'] }, 'width'],
                 svg: ['width', 'height', 'viewbox', 'version'],
                 rect: ['x', 'y', 'width', 'height', 'fill', 'stroke', 'stroke-width'],
