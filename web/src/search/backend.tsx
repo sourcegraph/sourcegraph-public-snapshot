@@ -9,28 +9,28 @@ import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
 import { USE_CODEMOD } from '../enterprise/codemod'
 import { SearchSuggestion } from '../../../shared/src/search/suggestions'
 
-const genericSearchResultInterfaceFields = gql`
-  __typename
-  label {
-      html
-  }
-  url
-  icon
-  detail {
-      html
-  }
-  matches {
-      url
-      body {
-          text
-          html
-      }
-      highlights {
-          line
-          character
-          length
-      }
-  }
+const genericSearchResultInterfaceFields = `
+    __typename
+    label {
+        html
+    }
+    url
+    icon
+    detail {
+        html
+    }
+    matches {
+        url
+        body {
+            text
+            html
+        }
+        highlights {
+            line
+            character
+            length
+        }
+    }
 `
 
 export function search(
@@ -43,15 +43,10 @@ export function search(
      * Emits whenever a search is executed, and whenever an extension registers a query transformer.
      */
     return extensionsController.services.queryTransformer.transformQuery(query).pipe(
-        switchMap(query => {
-            const codemodActive = USE_CODEMOD
-                ? `... on CodemodResult {
-                ${genericSearchResultInterfaceFields}
-            }`
-                : ''
-            return queryGraphQL(
+        switchMap(query =>
+            queryGraphQL(
                 gql`
-                    query Search($query: String!, $version: SearchVersion!, $patternType: SearchPatternType!) {
+                    query Search($query: String!, $version: SearchVersion!, $patternType: SearchPatternType!, $useCodemod: Boolean!) {
                         search(query: $query, version: $version, patternType: $patternType) {
                             results {
                                 __typename
@@ -128,7 +123,9 @@ export function search(
                                     ... on CommitSearchResult {
                                         ${genericSearchResultInterfaceFields}
                                     }
-                                    ${codemodActive}
+                                    ...on CodemodResult @include(if: $useCodemod) {
+                                        ${genericSearchResultInterfaceFields}
+                                    }
                                 }
                                 alert {
                                     title
@@ -143,7 +140,7 @@ export function search(
                         }
                     }
                 `,
-                { query, version, patternType }
+                { query, version, patternType, useCodemod: USE_CODEMOD }
             ).pipe(
                 map(({ data, errors }) => {
                     if (!data || !data.search || !data.search.results) {
@@ -153,7 +150,7 @@ export function search(
                 }),
                 catchError(error => [asError(error)])
             )
-        })
+        )
     )
 }
 

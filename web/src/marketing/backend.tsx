@@ -30,7 +30,7 @@ export function submitSurvey(input: SurveyResponse): Observable<void> {
 export function fetchAllSurveyResponses(args: { first?: number }): Observable<GQL.ISurveyResponseConnection> {
     return queryGraphQL(
         gql`
-            query FetchSurveyResponses() {
+            query FetchSurveyResponses {
                 surveyResponses {
                     nodes {
                         user {
@@ -104,7 +104,7 @@ export type SurveyResponseConnectionAggregates = Exclude<GQL.ISurveyResponseConn
 export function fetchSurveyResponseAggregates(): Observable<SurveyResponseConnectionAggregates> {
     return queryGraphQL(
         gql`
-            query FetchSurveyResponseAggregates() {
+            query FetchSurveyResponseAggregates {
                 surveyResponses {
                     totalCount
                     last30DaysCount

@@ -4,7 +4,6 @@ import { first } from 'rxjs/operators'
 import { Services } from '../api/client/services'
 import { KeyPath, SettingsEdit } from '../api/client/services/settings'
 import { ActionContributionClientCommandUpdateConfiguration, Evaluated } from '../api/protocol'
-import { gql } from '../graphql/graphql'
 import { PlatformContext } from '../platform/context'
 
 /**
@@ -91,9 +90,7 @@ export function registerBuiltinClientCommands(
                 // from being sent to Sourcegraph.com.
                 from(
                     context.requestGraphQL({
-                        request: gql`
-                            ${query}
-                        `,
+                        request: query,
                         variables,
                         mightContainPrivateInfo: true,
                     })
