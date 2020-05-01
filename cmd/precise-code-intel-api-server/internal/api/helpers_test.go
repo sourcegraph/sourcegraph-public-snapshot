@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	testCommit             = "0000000000000000000000000000000000000000"
+	testCommit             = makeCommit(0)
 	testDump1              = db.Dump{ID: 42, Root: "sub1/"}
 	testDump2              = db.Dump{ID: 50, Root: "sub2/"}
 	testDump3              = db.Dump{ID: 51, Root: "sub3/"}
@@ -47,6 +47,11 @@ var (
 		End:   bundles.Position{Line: 14, Character: 55},
 	}
 )
+
+// makeCommit formats an integer as a 40-character git commit hash.
+func makeCommit(i int) string {
+	return fmt.Sprintf("%040d", i)
+}
 
 func setMockDBGetDumpByID(t *testing.T, mockDB *dbmocks.MockDB, dumps map[int]db.Dump) {
 	mockDB.GetDumpByIDFunc.SetDefaultHook(func(ctx context.Context, id int) (db.Dump, bool, error) {
@@ -127,6 +132,18 @@ func setMockDBPackageReferencePager(t *testing.T, mockDB *dbmocks.MockDB, expect
 			t.Errorf("unexpected limit for PackageReferencePager. want=%d have=%d", expectedLimit, limit)
 		}
 		return totalCount, pager, nil
+	})
+}
+
+func setMockDBHasCommit(t *testing.T, mockDB *dbmocks.MockDB, expectedRepositoryID int, expectedCommit string, exists bool) {
+	mockDB.HasCommitFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit string) (bool, error) {
+		if repositoryID != expectedRepositoryID {
+			t.Errorf("unexpected repository id for HasCommit. want=%d have=%d", expectedRepositoryID, repositoryID)
+		}
+		if commit != expectedCommit {
+			t.Errorf("unexpected commit for HasCommit. want=%s have=%s", expectedCommit, commit)
+		}
+		return exists, nil
 	})
 }
 
