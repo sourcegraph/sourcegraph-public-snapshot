@@ -19,7 +19,8 @@ import { observeSourcegraphURL } from '../../shared/util/context'
 import { assertEnv } from '../envAssertion'
 import { observeStorageKey, storage } from '../../browser/storage'
 import { isDefined } from '../../../../shared/src/util/types'
-import { browserPortToMessagePort, findAllTransferables } from '../../platform/ports'
+import { browserPortToMessagePort, findMessagePorts } from '../../platform/ports'
+import { EndpointPair } from '../../../../shared/src/platform/context'
 
 const IS_EXTENSION = true
 
@@ -238,13 +239,11 @@ async function main(): Promise<void> {
                 const forwardEndpoints = (contentScriptEndpoint: Endpoint, workerEndpoint: Endpoint): void => {
                     contentScriptEndpoint.addEventListener('message', event => {
                         const { data } = event as MessageEvent
-                        console.log('receive from content script, post to extension host worker')
-                        workerEndpoint.postMessage(data, [...findAllTransferables(data)])
+                        workerEndpoint.postMessage(data, [...findMessagePorts(data)])
                     })
                     workerEndpoint.addEventListener('message', event => {
                         const { data } = event as MessageEvent
-                        console.log('receive from extension host worker, post to content script', data)
-                        contentScriptEndpoint.postMessage(data, [...findAllTransferables(data)])
+                        contentScriptEndpoint.postMessage(data, [...findMessagePorts(data)])
                     })
                     // False positive https://github.com/eslint/eslint/issues/12822
                     // eslint-disable-next-line no-unused-expressions
@@ -253,29 +252,29 @@ async function main(): Promise<void> {
                     workerEndpoint.start?.()
                 }
 
-                const linkPortAndEndpoint = (browserPort: browser.runtime.PortWithSender, endpoint: Endpoint): void => {
+                const linkPortAndEndpoint = (role: keyof EndpointPair): void => {
+                    const browserPort = browserPortPair[role]
+                    const endpoint = clientEndpoints[role]
                     const tabId = browserPort.sender.tab?.id
                     if (!tabId) {
                         throw new Error('Expected Port to come from tab')
                     }
                     forwardEndpoints(
-                        browserPortToMessagePort(browserPort, name => {
-                            console.log('connecting to content page', name)
-                            return browser.tabs.connect(tabId, { name })
-                        }),
+                        browserPortToMessagePort(browserPort, `comlink-${role}-`, name =>
+                            browser.tabs.connect(tabId, { name })
+                        ),
                         endpoint
                     )
                     // Kill worker when either port disconnects
                     browserPort.onDisconnect.addListener(() => {
-                        console.log('port disconnected')
                         worker.terminate()
                     })
                 }
 
                 // Connect proxy client endpoint
-                linkPortAndEndpoint(browserPortPair.proxy, clientEndpoints.proxy)
+                linkPortAndEndpoint('proxy')
                 // Connect expose client endpoint
-                linkPortAndEndpoint(browserPortPair.expose, clientEndpoints.expose)
+                linkPortAndEndpoint('expose')
             },
             err => {
                 console.error('Error handling extension host client connection', err)

@@ -67,8 +67,6 @@ export async function createExtensionHostClientConnection(
     /** Proxy to the exposed extension host API */
     const initializeExtensionHost = comlink.wrap<ExtensionHostAPIFactory>(endpoints.proxy)
     const proxy = await initializeExtensionHost(initData)
-    console.log('ping')
-    console.log(await proxy.ping())
 
     const clientConfiguration = new ClientConfiguration<any>(proxy.configuration, services.settings)
     subscription.add(clientConfiguration)

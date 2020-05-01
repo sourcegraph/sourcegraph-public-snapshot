@@ -77,13 +77,10 @@ export function createExtensionHost(urls: Pick<SourcegraphIntegrationURLs, 'asse
         // This is run in the content script
         const proxyPort = browser.runtime.connect({ name: `proxy-${id}` })
         const exposePort = browser.runtime.connect({ name: `expose-${id}` })
-        const connect = (name: string): browser.runtime.Port => {
-            console.log('connecting to background page', name)
-            return browser.runtime.connect({ name })
-        }
+        const connect = (name: string): browser.runtime.Port => browser.runtime.connect({ name })
         subscriber.next({
-            proxy: browserPortToMessagePort(proxyPort, connect),
-            expose: browserPortToMessagePort(exposePort, connect),
+            proxy: browserPortToMessagePort(proxyPort, 'comlink-proxy-', connect),
+            expose: browserPortToMessagePort(exposePort, 'comlink-expose-', connect),
         })
         return () => {
             proxyPort.disconnect()
