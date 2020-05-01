@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/google/uuid"
@@ -84,9 +85,10 @@ func (h *jobHandleImpl) Savepoint() error {
 		return err
 	}
 
-	savepointID := strings.ReplaceAll(id.String(), "-", "_")
+	savepointID := fmt.Sprintf("sp_%s", strings.ReplaceAll(id.String(), "-", "_"))
 	h.savepoints = append(h.savepoints, savepointID)
-	_, err = h.tw.exec(h.ctx, sqlf.Sprintf(`SAVEPOINT %s`, savepointID))
+	// Unfortunately, it's a syntax error to supply this as a param
+	_, err = h.tw.exec(h.ctx, sqlf.Sprintf("SAVEPOINT "+savepointID))
 	return err
 }
 
@@ -110,7 +112,7 @@ func (h *jobHandleImpl) RollbackToLastSavepoint() error {
 	}
 
 	// Perform rollback
-	_, err := h.tw.exec(h.ctx, sqlf.Sprintf(`ROLLBACK TO SAVEPOINT %s`, savepointID))
+	_, err := h.tw.exec(h.ctx, sqlf.Sprintf("ROLLBACK TO SAVEPOINT "+savepointID))
 	return err
 }
 
