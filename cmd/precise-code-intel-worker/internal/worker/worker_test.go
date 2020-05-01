@@ -80,7 +80,7 @@ func TestProcess(t *testing.T) {
 	}
 	if len(mockDB.UpdatePackagesFunc.History()) != 1 {
 		t.Errorf("unexpected number of UpdatePackagesFunc calls. want=%d have=%d", 1, len(mockDB.UpdatePackagesFunc.History()))
-	} else if diff := cmp.Diff(expectedPackages, mockDB.UpdatePackagesFunc.History()[0].Arg2); diff != "" {
+	} else if diff := cmp.Diff(expectedPackages, mockDB.UpdatePackagesFunc.History()[0].Arg1); diff != "" {
 		t.Errorf("unexpected UpdatePackagesFuncargs (-want +got):\n%s", diff)
 	}
 
@@ -98,20 +98,20 @@ func TestProcess(t *testing.T) {
 	}
 	if len(mockDB.UpdatePackageReferencesFunc.History()) != 1 {
 		t.Errorf("unexpected number of UpdatePackageReferencesFunc calls. want=%d have=%d", 1, len(mockDB.UpdatePackageReferencesFunc.History()))
-	} else if diff := cmp.Diff(expectedPackageReferences, mockDB.UpdatePackageReferencesFunc.History()[0].Arg2); diff != "" {
+	} else if diff := cmp.Diff(expectedPackageReferences, mockDB.UpdatePackageReferencesFunc.History()[0].Arg1); diff != "" {
 		t.Errorf("unexpected UpdatePackageReferencesFunc args (-want +got):\n%s", diff)
 	}
 
 	if len(mockDB.DeleteOverlappingDumpsFunc.History()) != 1 {
 		t.Errorf("unexpected number of DeleteOverlappingDumpsFunc calls. want=%d have=%d", 1, len(mockDB.DeleteOverlappingDumpsFunc.History()))
-	} else if mockDB.DeleteOverlappingDumpsFunc.History()[0].Arg2 != 50 {
-		t.Errorf("unexpected value for repository id. want=%d have=%d", 50, mockDB.DeleteOverlappingDumpsFunc.History()[0].Arg2)
-	} else if mockDB.DeleteOverlappingDumpsFunc.History()[0].Arg3 != makeCommit(1) {
-		t.Errorf("unexpected value for commit. want=%s have=%s", makeCommit(1), mockDB.DeleteOverlappingDumpsFunc.History()[0].Arg3)
-	} else if mockDB.DeleteOverlappingDumpsFunc.History()[0].Arg4 != "root/" {
-		t.Errorf("unexpected value for root. want=%s have=%s", "root/", mockDB.DeleteOverlappingDumpsFunc.History()[0].Arg4)
-	} else if mockDB.DeleteOverlappingDumpsFunc.History()[0].Arg5 != "lsif-go" {
-		t.Errorf("unexpected value for indexer. want=%s have=%s", "lsif-go", mockDB.DeleteOverlappingDumpsFunc.History()[0].Arg5)
+	} else if mockDB.DeleteOverlappingDumpsFunc.History()[0].Arg1 != 50 {
+		t.Errorf("unexpected value for repository id. want=%d have=%d", 50, mockDB.DeleteOverlappingDumpsFunc.History()[0].Arg1)
+	} else if mockDB.DeleteOverlappingDumpsFunc.History()[0].Arg2 != makeCommit(1) {
+		t.Errorf("unexpected value for commit. want=%s have=%s", makeCommit(1), mockDB.DeleteOverlappingDumpsFunc.History()[0].Arg2)
+	} else if mockDB.DeleteOverlappingDumpsFunc.History()[0].Arg3 != "root/" {
+		t.Errorf("unexpected value for root. want=%s have=%s", "root/", mockDB.DeleteOverlappingDumpsFunc.History()[0].Arg3)
+	} else if mockDB.DeleteOverlappingDumpsFunc.History()[0].Arg4 != "lsif-go" {
+		t.Errorf("unexpected value for indexer. want=%s have=%s", "lsif-go", mockDB.DeleteOverlappingDumpsFunc.History()[0].Arg4)
 	}
 
 	offsets := []int{1, 30}
@@ -123,16 +123,16 @@ func TestProcess(t *testing.T) {
 	}
 	if len(mockDB.UpdateCommitsFunc.History()) != 1 {
 		t.Errorf("unexpected number of update UpdateCommitsFunc calls. want=%d have=%d", 1, len(mockDB.UpdateCommitsFunc.History()))
-	} else if diff := cmp.Diff(expectedCommits, mockDB.UpdateCommitsFunc.History()[0].Arg3); diff != "" {
+	} else if diff := cmp.Diff(expectedCommits, mockDB.UpdateCommitsFunc.History()[0].Arg2); diff != "" {
 		t.Errorf("unexpected update UpdateCommitsFunc args (-want +got):\n%s", diff)
 	}
 
 	if len(mockDB.UpdateDumpsVisibleFromTipFunc.History()) != 1 {
 		t.Errorf("unexpected number of UpdateDumpsVisibleFromTipFunc calls. want=%d have=%d", 1, len(mockDB.UpdateDumpsVisibleFromTipFunc.History()))
-	} else if mockDB.UpdateDumpsVisibleFromTipFunc.History()[0].Arg2 != 50 {
-		t.Errorf("unexpected value for repository id. want=%d have=%d", 50, mockDB.UpdateDumpsVisibleFromTipFunc.History()[0].Arg2)
-	} else if mockDB.UpdateDumpsVisibleFromTipFunc.History()[0].Arg3 != makeCommit(30) {
-		t.Errorf("unexpected value for tip commit. want=%s have=%s", makeCommit(30), mockDB.UpdateDumpsVisibleFromTipFunc.History()[0].Arg3)
+	} else if mockDB.UpdateDumpsVisibleFromTipFunc.History()[0].Arg1 != 50 {
+		t.Errorf("unexpected value for repository id. want=%d have=%d", 50, mockDB.UpdateDumpsVisibleFromTipFunc.History()[0].Arg1)
+	} else if mockDB.UpdateDumpsVisibleFromTipFunc.History()[0].Arg2 != makeCommit(30) {
+		t.Errorf("unexpected value for tip commit. want=%s have=%s", makeCommit(30), mockDB.UpdateDumpsVisibleFromTipFunc.History()[0].Arg2)
 	}
 
 	if len(bundleManagerClient.SendDBFunc.History()) != 1 {
