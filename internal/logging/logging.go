@@ -7,7 +7,7 @@ type ErrorLogger interface {
 
 // Log logs the given message and context when the given error is defined.
 func Log(lg ErrorLogger, msg string, err *error, ctx ...interface{}) {
-	if err == nil || *err == nil {
+	if lg == nil || err == nil || *err == nil {
 		return
 	}
 

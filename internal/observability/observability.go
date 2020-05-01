@@ -10,13 +10,31 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
+// ObservationArgs are the arguments to the WithObservation function.
+type ObservationArgs struct {
+	// The error logger instance.
+	Logger logging.ErrorLogger
+	// The OperationMetrics to observe.
+	Metrics *metrics.OperationMetrics
+	// The root tracer.
+	Tracer *trace.Tracer
+	// The pointer to the operation's error value.
+	Err *error
+	// The name of the trace.
+	TraceName string
+	// The prefix of the error log mesage.
+	LogName string
+	// Fields to log before the operation is performed.
+	LogFields []log.Field
+}
+
 // FinishFn is the shape of the function returned by WithObservation and should be
 // invoked within a defer directly before the observed function returns.
 type FinishFn func(
 	// The number of things processed.
 	count float64,
 	// Fields to log after the operation is performed.
-	logFields ...log.Field,
+	additionalLogFields ...log.Field,
 )
 
 // WithObservation prepares the necessary timers, loggers, and metrics to observe an
@@ -26,7 +44,14 @@ type FinishFn func(
 // counting metric counts invocations, the method should be deferred as follows:
 //
 //     func observedFoo(ctx context.Context) (err error) {
-//         ctx, finish := WithObservation(ctx, &err, logger, metrics, tracer, "TraceName", "log-name")
+//         ctx, finish := WithObservation(ctx, ObservationArgs{
+//             Err: &err,
+//             Logger: logger,
+//             Metrics: metrics,
+//             Tracer: tracer,
+//             TraceName: "TraceName",
+//             LogName: "log-name"
+//         })
 //         defer finish(1)
 //
 //         return realFoo()
@@ -36,7 +61,14 @@ type FinishFn func(
 // operation completes, the method should be deferred as follows:
 //
 //     func observedFoo(ctx context.Context) (items []Foo err error) {
-//         ctx, finish := WithObservation(ctx, &err, logger, metrics, tracer, "TraceName", "log-name")
+//         ctx, finish := WithObservation(ctx, ObservationArgs{
+//             Err: &err,
+//             Logger: logger,
+//             Metrics: metrics,
+//             Tracer: tracer,
+//             TraceName: "TraceName",
+//             LogName: "log-name"
+//         })
 //         defer func() {
 //             finish(float64(len(items)))
 //         }()
@@ -46,51 +78,37 @@ type FinishFn func(
 //
 // Both WithObservation and finish can be supplied a variable number of log fields which
 // will be logged in the trace and when an error occurs.
-func WithObservation(
-	// The input context.
-	ctx context.Context,
-	// The error logger instance.
-	logger logging.ErrorLogger,
-	// The OperationMetrics to observe.
-	metrics *metrics.OperationMetrics,
-	// The root tracer.
-	tracer trace.Tracer,
-	// The pointer to the operation's error value.
-	err *error,
-	// The name of the trace.
-	traceName string,
-	// The prefix of the error log mesage.
-	logName string,
-	// Fields to log before the operation is performed.
-	preFields ...log.Field,
-) (context.Context, FinishFn) {
+func WithObservation(ctx context.Context, args ObservationArgs) (context.Context, FinishFn) {
 	began := time.Now()
-	tr, ctx := tracer.New(ctx, traceName, "")
-	tr.LogFields(preFields...)
 
-	finish := func(count float64, postFields ...log.Field) {
+	var tr *trace.Trace
+	if args.Tracer != nil {
+		tr, ctx = args.Tracer.New(ctx, args.TraceName, "")
+		tr.LogFields(args.LogFields...)
+	}
+
+	finish := func(count float64, additionalLogFields ...log.Field) {
 		elapsed := time.Since(began).Seconds()
 
 		logFields := append(append(append(
-			make([]log.Field, 0, len(preFields)+len(postFields)+1),
-			preFields...),
+			make([]log.Field, 0, len(args.LogFields)+len(additionalLogFields)+1),
+			args.LogFields...),
 			log.Float64("count", count)),
-			postFields...,
+			additionalLogFields...,
 		)
-
 		kvs := make([]interface{}, 0, len(logFields)*2)
 		for _, field := range logFields {
 			kvs = append(kvs, field.Key(), field.Value())
 		}
 
-		if metrics != nil {
-			metrics.Observe(elapsed, count, err)
-		}
+		args.Metrics.Observe(elapsed, count, args.Err)
+		logging.Log(args.Logger, args.LogName, args.Err, kvs...)
 
-		logging.Log(logger, logName, err, kvs...)
-		tr.LogFields(logFields...)
-		tr.SetErrorPtr(err)
-		tr.Finish()
+		if tr != nil {
+			tr.LogFields(logFields...)
+			tr.SetErrorPtr(args.Err)
+			tr.Finish()
+		}
 	}
 
 	return ctx, finish
