@@ -11,7 +11,6 @@ import { EditorTextField } from '../../../shared/src/components/editorTextField/
 import { WithLinkPreviews } from '../../../shared/src/components/linkPreviews/WithLinkPreviews'
 import { Markdown } from '../../../shared/src/components/Markdown'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
-import { createLinkClickHandler } from '../../../shared/src/util/linkClickHandler'
 import { renderMarkdown } from '../../../shared/src/util/markdown'
 import { LINK_PREVIEW_CLASS } from '../components/linkPreviews/styles'
 import { WebEditorCompletionWidget } from '../components/shared'
@@ -128,7 +127,7 @@ export const SnippetsPage: React.FunctionComponent<Props> = ({ location, history
                 allPanelViews.map((view, i) => (
                     <div key={i} className="mt-3 card">
                         <h3 className="card-header">{view.title}</h3>
-                        <div className="card-body" onClick={createLinkClickHandler(history)}>
+                        <div className="card-body">
                             <WithLinkPreviews
                                 dangerousInnerHTML={renderMarkdown(view.content)}
                                 extensionsController={extensionsController}
