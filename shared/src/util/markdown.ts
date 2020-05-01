@@ -39,6 +39,8 @@ export const highlightCodeSafe = (code: string, language?: string): string => {
     }
 }
 
+const svgPresentationAttributes = ['fill', 'stroke', 'stroke-width'] as const
+
 /**
  * Renders the given markdown to HTML, highlighting code and sanitizing dangerous HTML.
  * Can throw an exception on parse errors.
@@ -89,6 +91,8 @@ export const renderMarkdown = (
                 'object',
                 'svg',
                 'rect',
+                'circle',
+                'path',
                 'title',
             ],
             allowedAttributes: {
@@ -100,7 +104,9 @@ export const renderMarkdown = (
                 ],
                 object: ['data', { name: 'type', values: ['image/svg+xml'] }, 'width'],
                 svg: ['width', 'height', 'viewbox', 'version'],
-                rect: ['x', 'y', 'width', 'height', 'fill', 'stroke', 'stroke-width'],
+                rect: ['x', 'y', 'width', 'height', ...svgPresentationAttributes],
+                path: ['d', ...svgPresentationAttributes],
+                circle: ['cx', 'cy', ...svgPresentationAttributes],
                 span: ['class'],
                 code: ['class'],
                 h1: ['id'],
