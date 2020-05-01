@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bloomfilter"
@@ -10,9 +11,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 )
 
+var ErrIllegalLimit = errors.New("limit must be positive")
+
 // References returns the list of source locations that reference the symbol at the given position.
 // This may include references from other dumps and repositories.
 func (api *codeIntelAPI) References(ctx context.Context, repositoryID int, commit string, limit int, cursor Cursor) ([]ResolvedLocation, Cursor, bool, error) {
+	if limit <= 0 {
+		return nil, Cursor{}, false, ErrIllegalLimit
+	}
+
 	rpr := &ReferencePageResolver{
 		db:                  api.db,
 		bundleManagerClient: api.bundleManagerClient,
