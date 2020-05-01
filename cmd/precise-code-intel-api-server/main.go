@@ -41,7 +41,6 @@ func main() {
 		BundleManagerClient: bundles.New(bundleManagerURL),
 	})
 
-	// TODO - rename
 	resetterMetrics := resetter.NewResetterMetrics()
 	resetterMetrics.MustRegister(prometheus.DefaultRegisterer)
 
