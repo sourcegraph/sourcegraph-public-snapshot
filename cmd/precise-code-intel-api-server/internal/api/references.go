@@ -259,9 +259,9 @@ func (s *ReferencePageResolver) resolveLocationsViaReferencePager(ctx context.Co
 
 		var packageReferences []types.PackageReference
 		for len(packageReferences) < limit && newOffset < totalCount {
-			page, err := pager.PageFromOffset(newOffset)
+			page, err := pager.PageFromOffset(ctx, newOffset)
 			if err != nil {
-				return nil, Cursor{}, false, pager.CloseTx(err)
+				return nil, Cursor{}, false, pager.Done(err)
 			}
 
 			if len(page) == 0 {
@@ -284,7 +284,7 @@ func (s *ReferencePageResolver) resolveLocationsViaReferencePager(ctx context.Co
 		cursor.SkipDumpsWhenBatching = newOffset
 		cursor.TotalDumpsWhenBatching = totalCount
 
-		if err := pager.CloseTx(nil); err != nil {
+		if err := pager.Done(nil); err != nil {
 			return nil, Cursor{}, false, err
 		}
 	}

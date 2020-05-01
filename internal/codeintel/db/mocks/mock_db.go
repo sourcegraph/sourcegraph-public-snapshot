@@ -4,7 +4,6 @@ package mocks
 
 import (
 	"context"
-	"database/sql"
 	types "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 	db "github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 	"sync"
@@ -27,6 +26,9 @@ type MockDB struct {
 	// DequeueFunc is an instance of a mock function object controlling the
 	// behavior of the method Dequeue.
 	DequeueFunc *DBDequeueFunc
+	// DoneFunc is an instance of a mock function object controlling the
+	// behavior of the method Done.
+	DoneFunc *DBDoneFunc
 	// EnqueueFunc is an instance of a mock function object controlling the
 	// behavior of the method Enqueue.
 	EnqueueFunc *DBEnqueueFunc
@@ -60,6 +62,9 @@ type MockDB struct {
 	// SameRepoPagerFunc is an instance of a mock function object
 	// controlling the behavior of the method SameRepoPager.
 	SameRepoPagerFunc *DBSameRepoPagerFunc
+	// TransactFunc is an instance of a mock function object controlling the
+	// behavior of the method Transact.
+	TransactFunc *DBTransactFunc
 	// UpdateCommitsFunc is an instance of a mock function object
 	// controlling the behavior of the method UpdateCommits.
 	UpdateCommitsFunc *DBUpdateCommitsFunc
@@ -85,12 +90,12 @@ func NewMockDB() *MockDB {
 			},
 		},
 		DeleteOverlappingDumpsFunc: &DBDeleteOverlappingDumpsFunc{
-			defaultHook: func(context.Context, *sql.Tx, int, string, string, string) error {
+			defaultHook: func(context.Context, int, string, string, string) error {
 				return nil
 			},
 		},
 		DeleteUploadByIDFunc: &DBDeleteUploadByIDFunc{
-			defaultHook: func(context.Context, int, func(repositoryID int) (string, error)) (bool, error) {
+			defaultHook: func(context.Context, int, db.GetTipCommitFn) (bool, error) {
 				return false, nil
 			},
 		},
@@ -99,9 +104,14 @@ func NewMockDB() *MockDB {
 				return db.Upload{}, nil, false, nil
 			},
 		},
+		DoneFunc: &DBDoneFunc{
+			defaultHook: func(error) error {
+				return nil
+			},
+		},
 		EnqueueFunc: &DBEnqueueFunc{
-			defaultHook: func(context.Context, string, string, string, int, string) (int, db.TxCloser, error) {
-				return 0, nil, nil
+			defaultHook: func(context.Context, string, string, string, int, string) (int, error) {
+				return 0, nil
 			},
 		},
 		FindClosestDumpsFunc: &DBFindClosestDumpsFunc{
@@ -154,23 +164,28 @@ func NewMockDB() *MockDB {
 				return 0, nil, nil
 			},
 		},
+		TransactFunc: &DBTransactFunc{
+			defaultHook: func(context.Context) (db.DB, error) {
+				return nil, nil
+			},
+		},
 		UpdateCommitsFunc: &DBUpdateCommitsFunc{
-			defaultHook: func(context.Context, *sql.Tx, int, map[string][]string) error {
+			defaultHook: func(context.Context, int, map[string][]string) error {
 				return nil
 			},
 		},
 		UpdateDumpsVisibleFromTipFunc: &DBUpdateDumpsVisibleFromTipFunc{
-			defaultHook: func(context.Context, *sql.Tx, int, string) error {
+			defaultHook: func(context.Context, int, string) error {
 				return nil
 			},
 		},
 		UpdatePackageReferencesFunc: &DBUpdatePackageReferencesFunc{
-			defaultHook: func(context.Context, *sql.Tx, []types.PackageReference) error {
+			defaultHook: func(context.Context, []types.PackageReference) error {
 				return nil
 			},
 		},
 		UpdatePackagesFunc: &DBUpdatePackagesFunc{
-			defaultHook: func(context.Context, *sql.Tx, []types.Package) error {
+			defaultHook: func(context.Context, []types.Package) error {
 				return nil
 			},
 		},
@@ -192,6 +207,9 @@ func NewMockDBFrom(i db.DB) *MockDB {
 		},
 		DequeueFunc: &DBDequeueFunc{
 			defaultHook: i.Dequeue,
+		},
+		DoneFunc: &DBDoneFunc{
+			defaultHook: i.Done,
 		},
 		EnqueueFunc: &DBEnqueueFunc{
 			defaultHook: i.Enqueue,
@@ -225,6 +243,9 @@ func NewMockDBFrom(i db.DB) *MockDB {
 		},
 		SameRepoPagerFunc: &DBSameRepoPagerFunc{
 			defaultHook: i.SameRepoPager,
+		},
+		TransactFunc: &DBTransactFunc{
+			defaultHook: i.Transact,
 		},
 		UpdateCommitsFunc: &DBUpdateCommitsFunc{
 			defaultHook: i.UpdateCommits,
@@ -353,24 +374,24 @@ func (c DBDeleteOldestDumpFuncCall) Results() []interface{} {
 // DBDeleteOverlappingDumpsFunc describes the behavior when the
 // DeleteOverlappingDumps method of the parent MockDB instance is invoked.
 type DBDeleteOverlappingDumpsFunc struct {
-	defaultHook func(context.Context, *sql.Tx, int, string, string, string) error
-	hooks       []func(context.Context, *sql.Tx, int, string, string, string) error
+	defaultHook func(context.Context, int, string, string, string) error
+	hooks       []func(context.Context, int, string, string, string) error
 	history     []DBDeleteOverlappingDumpsFuncCall
 	mutex       sync.Mutex
 }
 
 // DeleteOverlappingDumps delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockDB) DeleteOverlappingDumps(v0 context.Context, v1 *sql.Tx, v2 int, v3 string, v4 string, v5 string) error {
-	r0 := m.DeleteOverlappingDumpsFunc.nextHook()(v0, v1, v2, v3, v4, v5)
-	m.DeleteOverlappingDumpsFunc.appendCall(DBDeleteOverlappingDumpsFuncCall{v0, v1, v2, v3, v4, v5, r0})
+func (m *MockDB) DeleteOverlappingDumps(v0 context.Context, v1 int, v2 string, v3 string, v4 string) error {
+	r0 := m.DeleteOverlappingDumpsFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.DeleteOverlappingDumpsFunc.appendCall(DBDeleteOverlappingDumpsFuncCall{v0, v1, v2, v3, v4, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the
 // DeleteOverlappingDumps method of the parent MockDB instance is invoked
 // and the hook queue is empty.
-func (f *DBDeleteOverlappingDumpsFunc) SetDefaultHook(hook func(context.Context, *sql.Tx, int, string, string, string) error) {
+func (f *DBDeleteOverlappingDumpsFunc) SetDefaultHook(hook func(context.Context, int, string, string, string) error) {
 	f.defaultHook = hook
 }
 
@@ -378,7 +399,7 @@ func (f *DBDeleteOverlappingDumpsFunc) SetDefaultHook(hook func(context.Context,
 // DeleteOverlappingDumps method of the parent MockDB instance inovkes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *DBDeleteOverlappingDumpsFunc) PushHook(hook func(context.Context, *sql.Tx, int, string, string, string) error) {
+func (f *DBDeleteOverlappingDumpsFunc) PushHook(hook func(context.Context, int, string, string, string) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -387,7 +408,7 @@ func (f *DBDeleteOverlappingDumpsFunc) PushHook(hook func(context.Context, *sql.
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *DBDeleteOverlappingDumpsFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, *sql.Tx, int, string, string, string) error {
+	f.SetDefaultHook(func(context.Context, int, string, string, string) error {
 		return r0
 	})
 }
@@ -395,12 +416,12 @@ func (f *DBDeleteOverlappingDumpsFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *DBDeleteOverlappingDumpsFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, *sql.Tx, int, string, string, string) error {
+	f.PushHook(func(context.Context, int, string, string, string) error {
 		return r0
 	})
 }
 
-func (f *DBDeleteOverlappingDumpsFunc) nextHook() func(context.Context, *sql.Tx, int, string, string, string) error {
+func (f *DBDeleteOverlappingDumpsFunc) nextHook() func(context.Context, int, string, string, string) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -438,19 +459,16 @@ type DBDeleteOverlappingDumpsFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 *sql.Tx
+	Arg1 int
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 int
+	Arg2 string
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
 	Arg3 string
 	// Arg4 is the value of the 5th argument passed to this method
 	// invocation.
 	Arg4 string
-	// Arg5 is the value of the 6th argument passed to this method
-	// invocation.
-	Arg5 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -459,7 +477,7 @@ type DBDeleteOverlappingDumpsFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c DBDeleteOverlappingDumpsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
 }
 
 // Results returns an interface slice containing the results of this
@@ -471,15 +489,15 @@ func (c DBDeleteOverlappingDumpsFuncCall) Results() []interface{} {
 // DBDeleteUploadByIDFunc describes the behavior when the DeleteUploadByID
 // method of the parent MockDB instance is invoked.
 type DBDeleteUploadByIDFunc struct {
-	defaultHook func(context.Context, int, func(repositoryID int) (string, error)) (bool, error)
-	hooks       []func(context.Context, int, func(repositoryID int) (string, error)) (bool, error)
+	defaultHook func(context.Context, int, db.GetTipCommitFn) (bool, error)
+	hooks       []func(context.Context, int, db.GetTipCommitFn) (bool, error)
 	history     []DBDeleteUploadByIDFuncCall
 	mutex       sync.Mutex
 }
 
 // DeleteUploadByID delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockDB) DeleteUploadByID(v0 context.Context, v1 int, v2 func(repositoryID int) (string, error)) (bool, error) {
+func (m *MockDB) DeleteUploadByID(v0 context.Context, v1 int, v2 db.GetTipCommitFn) (bool, error) {
 	r0, r1 := m.DeleteUploadByIDFunc.nextHook()(v0, v1, v2)
 	m.DeleteUploadByIDFunc.appendCall(DBDeleteUploadByIDFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
@@ -488,7 +506,7 @@ func (m *MockDB) DeleteUploadByID(v0 context.Context, v1 int, v2 func(repository
 // SetDefaultHook sets function that is called when the DeleteUploadByID
 // method of the parent MockDB instance is invoked and the hook queue is
 // empty.
-func (f *DBDeleteUploadByIDFunc) SetDefaultHook(hook func(context.Context, int, func(repositoryID int) (string, error)) (bool, error)) {
+func (f *DBDeleteUploadByIDFunc) SetDefaultHook(hook func(context.Context, int, db.GetTipCommitFn) (bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -496,7 +514,7 @@ func (f *DBDeleteUploadByIDFunc) SetDefaultHook(hook func(context.Context, int, 
 // DeleteUploadByID method of the parent MockDB instance inovkes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *DBDeleteUploadByIDFunc) PushHook(hook func(context.Context, int, func(repositoryID int) (string, error)) (bool, error)) {
+func (f *DBDeleteUploadByIDFunc) PushHook(hook func(context.Context, int, db.GetTipCommitFn) (bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -505,7 +523,7 @@ func (f *DBDeleteUploadByIDFunc) PushHook(hook func(context.Context, int, func(r
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *DBDeleteUploadByIDFunc) SetDefaultReturn(r0 bool, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, func(repositoryID int) (string, error)) (bool, error) {
+	f.SetDefaultHook(func(context.Context, int, db.GetTipCommitFn) (bool, error) {
 		return r0, r1
 	})
 }
@@ -513,12 +531,12 @@ func (f *DBDeleteUploadByIDFunc) SetDefaultReturn(r0 bool, r1 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *DBDeleteUploadByIDFunc) PushReturn(r0 bool, r1 error) {
-	f.PushHook(func(context.Context, int, func(repositoryID int) (string, error)) (bool, error) {
+	f.PushHook(func(context.Context, int, db.GetTipCommitFn) (bool, error) {
 		return r0, r1
 	})
 }
 
-func (f *DBDeleteUploadByIDFunc) nextHook() func(context.Context, int, func(repositoryID int) (string, error)) (bool, error) {
+func (f *DBDeleteUploadByIDFunc) nextHook() func(context.Context, int, db.GetTipCommitFn) (bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -559,7 +577,7 @@ type DBDeleteUploadByIDFuncCall struct {
 	Arg1 int
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 func(repositoryID int) (string, error)
+	Arg2 db.GetTipCommitFn
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 bool
@@ -691,34 +709,34 @@ func (c DBDequeueFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2, c.Result3}
 }
 
-// DBEnqueueFunc describes the behavior when the Enqueue method of the
-// parent MockDB instance is invoked.
-type DBEnqueueFunc struct {
-	defaultHook func(context.Context, string, string, string, int, string) (int, db.TxCloser, error)
-	hooks       []func(context.Context, string, string, string, int, string) (int, db.TxCloser, error)
-	history     []DBEnqueueFuncCall
+// DBDoneFunc describes the behavior when the Done method of the parent
+// MockDB instance is invoked.
+type DBDoneFunc struct {
+	defaultHook func(error) error
+	hooks       []func(error) error
+	history     []DBDoneFuncCall
 	mutex       sync.Mutex
 }
 
-// Enqueue delegates to the next hook function in the queue and stores the
+// Done delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockDB) Enqueue(v0 context.Context, v1 string, v2 string, v3 string, v4 int, v5 string) (int, db.TxCloser, error) {
-	r0, r1, r2 := m.EnqueueFunc.nextHook()(v0, v1, v2, v3, v4, v5)
-	m.EnqueueFunc.appendCall(DBEnqueueFuncCall{v0, v1, v2, v3, v4, v5, r0, r1, r2})
-	return r0, r1, r2
+func (m *MockDB) Done(v0 error) error {
+	r0 := m.DoneFunc.nextHook()(v0)
+	m.DoneFunc.appendCall(DBDoneFuncCall{v0, r0})
+	return r0
 }
 
-// SetDefaultHook sets function that is called when the Enqueue method of
-// the parent MockDB instance is invoked and the hook queue is empty.
-func (f *DBEnqueueFunc) SetDefaultHook(hook func(context.Context, string, string, string, int, string) (int, db.TxCloser, error)) {
+// SetDefaultHook sets function that is called when the Done method of the
+// parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBDoneFunc) SetDefaultHook(hook func(error) error) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Enqueue method of the parent MockDB instance inovkes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *DBEnqueueFunc) PushHook(hook func(context.Context, string, string, string, int, string) (int, db.TxCloser, error)) {
+// Done method of the parent MockDB instance inovkes the hook at the front
+// of the queue and discards it. After the queue is empty, the default hook
+// function is invoked for any future action.
+func (f *DBDoneFunc) PushHook(hook func(error) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -726,21 +744,123 @@ func (f *DBEnqueueFunc) PushHook(hook func(context.Context, string, string, stri
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *DBEnqueueFunc) SetDefaultReturn(r0 int, r1 db.TxCloser, r2 error) {
-	f.SetDefaultHook(func(context.Context, string, string, string, int, string) (int, db.TxCloser, error) {
-		return r0, r1, r2
+func (f *DBDoneFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(error) error {
+		return r0
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *DBEnqueueFunc) PushReturn(r0 int, r1 db.TxCloser, r2 error) {
-	f.PushHook(func(context.Context, string, string, string, int, string) (int, db.TxCloser, error) {
-		return r0, r1, r2
+func (f *DBDoneFunc) PushReturn(r0 error) {
+	f.PushHook(func(error) error {
+		return r0
 	})
 }
 
-func (f *DBEnqueueFunc) nextHook() func(context.Context, string, string, string, int, string) (int, db.TxCloser, error) {
+func (f *DBDoneFunc) nextHook() func(error) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBDoneFunc) appendCall(r0 DBDoneFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBDoneFuncCall objects describing the
+// invocations of this function.
+func (f *DBDoneFunc) History() []DBDoneFuncCall {
+	f.mutex.Lock()
+	history := make([]DBDoneFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBDoneFuncCall is an object that describes an invocation of method Done
+// on an instance of MockDB.
+type DBDoneFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 error
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBDoneFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBDoneFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBEnqueueFunc describes the behavior when the Enqueue method of the
+// parent MockDB instance is invoked.
+type DBEnqueueFunc struct {
+	defaultHook func(context.Context, string, string, string, int, string) (int, error)
+	hooks       []func(context.Context, string, string, string, int, string) (int, error)
+	history     []DBEnqueueFuncCall
+	mutex       sync.Mutex
+}
+
+// Enqueue delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockDB) Enqueue(v0 context.Context, v1 string, v2 string, v3 string, v4 int, v5 string) (int, error) {
+	r0, r1 := m.EnqueueFunc.nextHook()(v0, v1, v2, v3, v4, v5)
+	m.EnqueueFunc.appendCall(DBEnqueueFuncCall{v0, v1, v2, v3, v4, v5, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Enqueue method of
+// the parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBEnqueueFunc) SetDefaultHook(hook func(context.Context, string, string, string, int, string) (int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Enqueue method of the parent MockDB instance inovkes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *DBEnqueueFunc) PushHook(hook func(context.Context, string, string, string, int, string) (int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBEnqueueFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context, string, string, string, int, string) (int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBEnqueueFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context, string, string, string, int, string) (int, error) {
+		return r0, r1
+	})
+}
+
+func (f *DBEnqueueFunc) nextHook() func(context.Context, string, string, string, int, string) (int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -796,10 +916,7 @@ type DBEnqueueFuncCall struct {
 	Result0 int
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 db.TxCloser
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 error
+	Result1 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -811,7 +928,7 @@ func (c DBEnqueueFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBEnqueueFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2}
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // DBFindClosestDumpsFunc describes the behavior when the FindClosestDumps
@@ -1969,26 +2086,131 @@ func (c DBSameRepoPagerFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
+// DBTransactFunc describes the behavior when the Transact method of the
+// parent MockDB instance is invoked.
+type DBTransactFunc struct {
+	defaultHook func(context.Context) (db.DB, error)
+	hooks       []func(context.Context) (db.DB, error)
+	history     []DBTransactFuncCall
+	mutex       sync.Mutex
+}
+
+// Transact delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockDB) Transact(v0 context.Context) (db.DB, error) {
+	r0, r1 := m.TransactFunc.nextHook()(v0)
+	m.TransactFunc.appendCall(DBTransactFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Transact method of
+// the parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBTransactFunc) SetDefaultHook(hook func(context.Context) (db.DB, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Transact method of the parent MockDB instance inovkes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *DBTransactFunc) PushHook(hook func(context.Context) (db.DB, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBTransactFunc) SetDefaultReturn(r0 db.DB, r1 error) {
+	f.SetDefaultHook(func(context.Context) (db.DB, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBTransactFunc) PushReturn(r0 db.DB, r1 error) {
+	f.PushHook(func(context.Context) (db.DB, error) {
+		return r0, r1
+	})
+}
+
+func (f *DBTransactFunc) nextHook() func(context.Context) (db.DB, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBTransactFunc) appendCall(r0 DBTransactFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBTransactFuncCall objects describing the
+// invocations of this function.
+func (f *DBTransactFunc) History() []DBTransactFuncCall {
+	f.mutex.Lock()
+	history := make([]DBTransactFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBTransactFuncCall is an object that describes an invocation of method
+// Transact on an instance of MockDB.
+type DBTransactFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 db.DB
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBTransactFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBTransactFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // DBUpdateCommitsFunc describes the behavior when the UpdateCommits method
 // of the parent MockDB instance is invoked.
 type DBUpdateCommitsFunc struct {
-	defaultHook func(context.Context, *sql.Tx, int, map[string][]string) error
-	hooks       []func(context.Context, *sql.Tx, int, map[string][]string) error
+	defaultHook func(context.Context, int, map[string][]string) error
+	hooks       []func(context.Context, int, map[string][]string) error
 	history     []DBUpdateCommitsFuncCall
 	mutex       sync.Mutex
 }
 
 // UpdateCommits delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockDB) UpdateCommits(v0 context.Context, v1 *sql.Tx, v2 int, v3 map[string][]string) error {
-	r0 := m.UpdateCommitsFunc.nextHook()(v0, v1, v2, v3)
-	m.UpdateCommitsFunc.appendCall(DBUpdateCommitsFuncCall{v0, v1, v2, v3, r0})
+func (m *MockDB) UpdateCommits(v0 context.Context, v1 int, v2 map[string][]string) error {
+	r0 := m.UpdateCommitsFunc.nextHook()(v0, v1, v2)
+	m.UpdateCommitsFunc.appendCall(DBUpdateCommitsFuncCall{v0, v1, v2, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the UpdateCommits method
 // of the parent MockDB instance is invoked and the hook queue is empty.
-func (f *DBUpdateCommitsFunc) SetDefaultHook(hook func(context.Context, *sql.Tx, int, map[string][]string) error) {
+func (f *DBUpdateCommitsFunc) SetDefaultHook(hook func(context.Context, int, map[string][]string) error) {
 	f.defaultHook = hook
 }
 
@@ -1996,7 +2218,7 @@ func (f *DBUpdateCommitsFunc) SetDefaultHook(hook func(context.Context, *sql.Tx,
 // UpdateCommits method of the parent MockDB instance inovkes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *DBUpdateCommitsFunc) PushHook(hook func(context.Context, *sql.Tx, int, map[string][]string) error) {
+func (f *DBUpdateCommitsFunc) PushHook(hook func(context.Context, int, map[string][]string) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2005,7 +2227,7 @@ func (f *DBUpdateCommitsFunc) PushHook(hook func(context.Context, *sql.Tx, int, 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *DBUpdateCommitsFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, *sql.Tx, int, map[string][]string) error {
+	f.SetDefaultHook(func(context.Context, int, map[string][]string) error {
 		return r0
 	})
 }
@@ -2013,12 +2235,12 @@ func (f *DBUpdateCommitsFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *DBUpdateCommitsFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, *sql.Tx, int, map[string][]string) error {
+	f.PushHook(func(context.Context, int, map[string][]string) error {
 		return r0
 	})
 }
 
-func (f *DBUpdateCommitsFunc) nextHook() func(context.Context, *sql.Tx, int, map[string][]string) error {
+func (f *DBUpdateCommitsFunc) nextHook() func(context.Context, int, map[string][]string) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2056,13 +2278,10 @@ type DBUpdateCommitsFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 *sql.Tx
+	Arg1 int
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 int
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 map[string][]string
+	Arg2 map[string][]string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -2071,7 +2290,7 @@ type DBUpdateCommitsFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c DBUpdateCommitsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
@@ -2084,24 +2303,24 @@ func (c DBUpdateCommitsFuncCall) Results() []interface{} {
 // UpdateDumpsVisibleFromTip method of the parent MockDB instance is
 // invoked.
 type DBUpdateDumpsVisibleFromTipFunc struct {
-	defaultHook func(context.Context, *sql.Tx, int, string) error
-	hooks       []func(context.Context, *sql.Tx, int, string) error
+	defaultHook func(context.Context, int, string) error
+	hooks       []func(context.Context, int, string) error
 	history     []DBUpdateDumpsVisibleFromTipFuncCall
 	mutex       sync.Mutex
 }
 
 // UpdateDumpsVisibleFromTip delegates to the next hook function in the
 // queue and stores the parameter and result values of this invocation.
-func (m *MockDB) UpdateDumpsVisibleFromTip(v0 context.Context, v1 *sql.Tx, v2 int, v3 string) error {
-	r0 := m.UpdateDumpsVisibleFromTipFunc.nextHook()(v0, v1, v2, v3)
-	m.UpdateDumpsVisibleFromTipFunc.appendCall(DBUpdateDumpsVisibleFromTipFuncCall{v0, v1, v2, v3, r0})
+func (m *MockDB) UpdateDumpsVisibleFromTip(v0 context.Context, v1 int, v2 string) error {
+	r0 := m.UpdateDumpsVisibleFromTipFunc.nextHook()(v0, v1, v2)
+	m.UpdateDumpsVisibleFromTipFunc.appendCall(DBUpdateDumpsVisibleFromTipFuncCall{v0, v1, v2, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the
 // UpdateDumpsVisibleFromTip method of the parent MockDB instance is invoked
 // and the hook queue is empty.
-func (f *DBUpdateDumpsVisibleFromTipFunc) SetDefaultHook(hook func(context.Context, *sql.Tx, int, string) error) {
+func (f *DBUpdateDumpsVisibleFromTipFunc) SetDefaultHook(hook func(context.Context, int, string) error) {
 	f.defaultHook = hook
 }
 
@@ -2109,7 +2328,7 @@ func (f *DBUpdateDumpsVisibleFromTipFunc) SetDefaultHook(hook func(context.Conte
 // UpdateDumpsVisibleFromTip method of the parent MockDB instance inovkes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *DBUpdateDumpsVisibleFromTipFunc) PushHook(hook func(context.Context, *sql.Tx, int, string) error) {
+func (f *DBUpdateDumpsVisibleFromTipFunc) PushHook(hook func(context.Context, int, string) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2118,7 +2337,7 @@ func (f *DBUpdateDumpsVisibleFromTipFunc) PushHook(hook func(context.Context, *s
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *DBUpdateDumpsVisibleFromTipFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, *sql.Tx, int, string) error {
+	f.SetDefaultHook(func(context.Context, int, string) error {
 		return r0
 	})
 }
@@ -2126,12 +2345,12 @@ func (f *DBUpdateDumpsVisibleFromTipFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *DBUpdateDumpsVisibleFromTipFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, *sql.Tx, int, string) error {
+	f.PushHook(func(context.Context, int, string) error {
 		return r0
 	})
 }
 
-func (f *DBUpdateDumpsVisibleFromTipFunc) nextHook() func(context.Context, *sql.Tx, int, string) error {
+func (f *DBUpdateDumpsVisibleFromTipFunc) nextHook() func(context.Context, int, string) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2169,13 +2388,10 @@ type DBUpdateDumpsVisibleFromTipFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 *sql.Tx
+	Arg1 int
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 int
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 string
+	Arg2 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -2184,7 +2400,7 @@ type DBUpdateDumpsVisibleFromTipFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c DBUpdateDumpsVisibleFromTipFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
@@ -2196,24 +2412,24 @@ func (c DBUpdateDumpsVisibleFromTipFuncCall) Results() []interface{} {
 // DBUpdatePackageReferencesFunc describes the behavior when the
 // UpdatePackageReferences method of the parent MockDB instance is invoked.
 type DBUpdatePackageReferencesFunc struct {
-	defaultHook func(context.Context, *sql.Tx, []types.PackageReference) error
-	hooks       []func(context.Context, *sql.Tx, []types.PackageReference) error
+	defaultHook func(context.Context, []types.PackageReference) error
+	hooks       []func(context.Context, []types.PackageReference) error
 	history     []DBUpdatePackageReferencesFuncCall
 	mutex       sync.Mutex
 }
 
 // UpdatePackageReferences delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockDB) UpdatePackageReferences(v0 context.Context, v1 *sql.Tx, v2 []types.PackageReference) error {
-	r0 := m.UpdatePackageReferencesFunc.nextHook()(v0, v1, v2)
-	m.UpdatePackageReferencesFunc.appendCall(DBUpdatePackageReferencesFuncCall{v0, v1, v2, r0})
+func (m *MockDB) UpdatePackageReferences(v0 context.Context, v1 []types.PackageReference) error {
+	r0 := m.UpdatePackageReferencesFunc.nextHook()(v0, v1)
+	m.UpdatePackageReferencesFunc.appendCall(DBUpdatePackageReferencesFuncCall{v0, v1, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the
 // UpdatePackageReferences method of the parent MockDB instance is invoked
 // and the hook queue is empty.
-func (f *DBUpdatePackageReferencesFunc) SetDefaultHook(hook func(context.Context, *sql.Tx, []types.PackageReference) error) {
+func (f *DBUpdatePackageReferencesFunc) SetDefaultHook(hook func(context.Context, []types.PackageReference) error) {
 	f.defaultHook = hook
 }
 
@@ -2221,7 +2437,7 @@ func (f *DBUpdatePackageReferencesFunc) SetDefaultHook(hook func(context.Context
 // UpdatePackageReferences method of the parent MockDB instance inovkes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *DBUpdatePackageReferencesFunc) PushHook(hook func(context.Context, *sql.Tx, []types.PackageReference) error) {
+func (f *DBUpdatePackageReferencesFunc) PushHook(hook func(context.Context, []types.PackageReference) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2230,7 +2446,7 @@ func (f *DBUpdatePackageReferencesFunc) PushHook(hook func(context.Context, *sql
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *DBUpdatePackageReferencesFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, *sql.Tx, []types.PackageReference) error {
+	f.SetDefaultHook(func(context.Context, []types.PackageReference) error {
 		return r0
 	})
 }
@@ -2238,12 +2454,12 @@ func (f *DBUpdatePackageReferencesFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *DBUpdatePackageReferencesFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, *sql.Tx, []types.PackageReference) error {
+	f.PushHook(func(context.Context, []types.PackageReference) error {
 		return r0
 	})
 }
 
-func (f *DBUpdatePackageReferencesFunc) nextHook() func(context.Context, *sql.Tx, []types.PackageReference) error {
+func (f *DBUpdatePackageReferencesFunc) nextHook() func(context.Context, []types.PackageReference) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2281,10 +2497,7 @@ type DBUpdatePackageReferencesFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 *sql.Tx
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 []types.PackageReference
+	Arg1 []types.PackageReference
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -2293,7 +2506,7 @@ type DBUpdatePackageReferencesFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c DBUpdatePackageReferencesFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
@@ -2305,24 +2518,24 @@ func (c DBUpdatePackageReferencesFuncCall) Results() []interface{} {
 // DBUpdatePackagesFunc describes the behavior when the UpdatePackages
 // method of the parent MockDB instance is invoked.
 type DBUpdatePackagesFunc struct {
-	defaultHook func(context.Context, *sql.Tx, []types.Package) error
-	hooks       []func(context.Context, *sql.Tx, []types.Package) error
+	defaultHook func(context.Context, []types.Package) error
+	hooks       []func(context.Context, []types.Package) error
 	history     []DBUpdatePackagesFuncCall
 	mutex       sync.Mutex
 }
 
 // UpdatePackages delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockDB) UpdatePackages(v0 context.Context, v1 *sql.Tx, v2 []types.Package) error {
-	r0 := m.UpdatePackagesFunc.nextHook()(v0, v1, v2)
-	m.UpdatePackagesFunc.appendCall(DBUpdatePackagesFuncCall{v0, v1, v2, r0})
+func (m *MockDB) UpdatePackages(v0 context.Context, v1 []types.Package) error {
+	r0 := m.UpdatePackagesFunc.nextHook()(v0, v1)
+	m.UpdatePackagesFunc.appendCall(DBUpdatePackagesFuncCall{v0, v1, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the UpdatePackages
 // method of the parent MockDB instance is invoked and the hook queue is
 // empty.
-func (f *DBUpdatePackagesFunc) SetDefaultHook(hook func(context.Context, *sql.Tx, []types.Package) error) {
+func (f *DBUpdatePackagesFunc) SetDefaultHook(hook func(context.Context, []types.Package) error) {
 	f.defaultHook = hook
 }
 
@@ -2330,7 +2543,7 @@ func (f *DBUpdatePackagesFunc) SetDefaultHook(hook func(context.Context, *sql.Tx
 // UpdatePackages method of the parent MockDB instance inovkes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *DBUpdatePackagesFunc) PushHook(hook func(context.Context, *sql.Tx, []types.Package) error) {
+func (f *DBUpdatePackagesFunc) PushHook(hook func(context.Context, []types.Package) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2339,7 +2552,7 @@ func (f *DBUpdatePackagesFunc) PushHook(hook func(context.Context, *sql.Tx, []ty
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *DBUpdatePackagesFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, *sql.Tx, []types.Package) error {
+	f.SetDefaultHook(func(context.Context, []types.Package) error {
 		return r0
 	})
 }
@@ -2347,12 +2560,12 @@ func (f *DBUpdatePackagesFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *DBUpdatePackagesFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, *sql.Tx, []types.Package) error {
+	f.PushHook(func(context.Context, []types.Package) error {
 		return r0
 	})
 }
 
-func (f *DBUpdatePackagesFunc) nextHook() func(context.Context, *sql.Tx, []types.Package) error {
+func (f *DBUpdatePackagesFunc) nextHook() func(context.Context, []types.Package) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2390,10 +2603,7 @@ type DBUpdatePackagesFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 *sql.Tx
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 []types.Package
+	Arg1 []types.Package
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -2402,7 +2612,7 @@ type DBUpdatePackagesFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c DBUpdatePackagesFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this

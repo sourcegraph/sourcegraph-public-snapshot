@@ -3,7 +3,7 @@
 package mocks
 
 import (
-	"database/sql"
+	"context"
 	db "github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 	"sync"
 )
@@ -12,9 +12,12 @@ import (
 // the package github.com/sourcegraph/sourcegraph/internal/codeintel/db)
 // used for unit testing.
 type MockJobHandle struct {
-	// CloseTxFunc is an instance of a mock function object controlling the
-	// behavior of the method CloseTx.
-	CloseTxFunc *JobHandleCloseTxFunc
+	// DBFunc is an instance of a mock function object controlling the
+	// behavior of the method DB.
+	DBFunc *JobHandleDBFunc
+	// DoneFunc is an instance of a mock function object controlling the
+	// behavior of the method Done.
+	DoneFunc *JobHandleDoneFunc
 	// MarkCompleteFunc is an instance of a mock function object controlling
 	// the behavior of the method MarkComplete.
 	MarkCompleteFunc *JobHandleMarkCompleteFunc
@@ -27,42 +30,39 @@ type MockJobHandle struct {
 	// SavepointFunc is an instance of a mock function object controlling
 	// the behavior of the method Savepoint.
 	SavepointFunc *JobHandleSavepointFunc
-	// TxFunc is an instance of a mock function object controlling the
-	// behavior of the method Tx.
-	TxFunc *JobHandleTxFunc
 }
 
 // NewMockJobHandle creates a new mock of the JobHandle interface. All
 // methods return zero values for all results, unless overwritten.
 func NewMockJobHandle() *MockJobHandle {
 	return &MockJobHandle{
-		CloseTxFunc: &JobHandleCloseTxFunc{
+		DBFunc: &JobHandleDBFunc{
+			defaultHook: func() db.DB {
+				return nil
+			},
+		},
+		DoneFunc: &JobHandleDoneFunc{
 			defaultHook: func(error) error {
 				return nil
 			},
 		},
 		MarkCompleteFunc: &JobHandleMarkCompleteFunc{
-			defaultHook: func() error {
+			defaultHook: func(context.Context) error {
 				return nil
 			},
 		},
 		MarkErroredFunc: &JobHandleMarkErroredFunc{
-			defaultHook: func(string, string) error {
+			defaultHook: func(context.Context, string, string) error {
 				return nil
 			},
 		},
 		RollbackToLastSavepointFunc: &JobHandleRollbackToLastSavepointFunc{
-			defaultHook: func() error {
+			defaultHook: func(context.Context) error {
 				return nil
 			},
 		},
 		SavepointFunc: &JobHandleSavepointFunc{
-			defaultHook: func() error {
-				return nil
-			},
-		},
-		TxFunc: &JobHandleTxFunc{
-			defaultHook: func() *sql.Tx {
+			defaultHook: func(context.Context) error {
 				return nil
 			},
 		},
@@ -73,8 +73,11 @@ func NewMockJobHandle() *MockJobHandle {
 // All methods delegate to the given implementation, unless overwritten.
 func NewMockJobHandleFrom(i db.JobHandle) *MockJobHandle {
 	return &MockJobHandle{
-		CloseTxFunc: &JobHandleCloseTxFunc{
-			defaultHook: i.CloseTx,
+		DBFunc: &JobHandleDBFunc{
+			defaultHook: i.DB,
+		},
+		DoneFunc: &JobHandleDoneFunc{
+			defaultHook: i.Done,
 		},
 		MarkCompleteFunc: &JobHandleMarkCompleteFunc{
 			defaultHook: i.MarkComplete,
@@ -88,40 +91,37 @@ func NewMockJobHandleFrom(i db.JobHandle) *MockJobHandle {
 		SavepointFunc: &JobHandleSavepointFunc{
 			defaultHook: i.Savepoint,
 		},
-		TxFunc: &JobHandleTxFunc{
-			defaultHook: i.Tx,
-		},
 	}
 }
 
-// JobHandleCloseTxFunc describes the behavior when the CloseTx method of
-// the parent MockJobHandle instance is invoked.
-type JobHandleCloseTxFunc struct {
-	defaultHook func(error) error
-	hooks       []func(error) error
-	history     []JobHandleCloseTxFuncCall
+// JobHandleDBFunc describes the behavior when the DB method of the parent
+// MockJobHandle instance is invoked.
+type JobHandleDBFunc struct {
+	defaultHook func() db.DB
+	hooks       []func() db.DB
+	history     []JobHandleDBFuncCall
 	mutex       sync.Mutex
 }
 
-// CloseTx delegates to the next hook function in the queue and stores the
+// DB delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockJobHandle) CloseTx(v0 error) error {
-	r0 := m.CloseTxFunc.nextHook()(v0)
-	m.CloseTxFunc.appendCall(JobHandleCloseTxFuncCall{v0, r0})
+func (m *MockJobHandle) DB() db.DB {
+	r0 := m.DBFunc.nextHook()()
+	m.DBFunc.appendCall(JobHandleDBFuncCall{r0})
 	return r0
 }
 
-// SetDefaultHook sets function that is called when the CloseTx method of
-// the parent MockJobHandle instance is invoked and the hook queue is empty.
-func (f *JobHandleCloseTxFunc) SetDefaultHook(hook func(error) error) {
+// SetDefaultHook sets function that is called when the DB method of the
+// parent MockJobHandle instance is invoked and the hook queue is empty.
+func (f *JobHandleDBFunc) SetDefaultHook(hook func() db.DB) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// CloseTx method of the parent MockJobHandle instance inovkes the hook at
-// the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *JobHandleCloseTxFunc) PushHook(hook func(error) error) {
+// DB method of the parent MockJobHandle instance inovkes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *JobHandleDBFunc) PushHook(hook func() db.DB) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -129,21 +129,21 @@ func (f *JobHandleCloseTxFunc) PushHook(hook func(error) error) {
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *JobHandleCloseTxFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(error) error {
+func (f *JobHandleDBFunc) SetDefaultReturn(r0 db.DB) {
+	f.SetDefaultHook(func() db.DB {
 		return r0
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *JobHandleCloseTxFunc) PushReturn(r0 error) {
-	f.PushHook(func(error) error {
+func (f *JobHandleDBFunc) PushReturn(r0 db.DB) {
+	f.PushHook(func() db.DB {
 		return r0
 	})
 }
 
-func (f *JobHandleCloseTxFunc) nextHook() func(error) error {
+func (f *JobHandleDBFunc) nextHook() func() db.DB {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -156,26 +156,125 @@ func (f *JobHandleCloseTxFunc) nextHook() func(error) error {
 	return hook
 }
 
-func (f *JobHandleCloseTxFunc) appendCall(r0 JobHandleCloseTxFuncCall) {
+func (f *JobHandleDBFunc) appendCall(r0 JobHandleDBFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of JobHandleCloseTxFuncCall objects describing
-// the invocations of this function.
-func (f *JobHandleCloseTxFunc) History() []JobHandleCloseTxFuncCall {
+// History returns a sequence of JobHandleDBFuncCall objects describing the
+// invocations of this function.
+func (f *JobHandleDBFunc) History() []JobHandleDBFuncCall {
 	f.mutex.Lock()
-	history := make([]JobHandleCloseTxFuncCall, len(f.history))
+	history := make([]JobHandleDBFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// JobHandleCloseTxFuncCall is an object that describes an invocation of
-// method CloseTx on an instance of MockJobHandle.
-type JobHandleCloseTxFuncCall struct {
+// JobHandleDBFuncCall is an object that describes an invocation of method
+// DB on an instance of MockJobHandle.
+type JobHandleDBFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 db.DB
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c JobHandleDBFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c JobHandleDBFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// JobHandleDoneFunc describes the behavior when the Done method of the
+// parent MockJobHandle instance is invoked.
+type JobHandleDoneFunc struct {
+	defaultHook func(error) error
+	hooks       []func(error) error
+	history     []JobHandleDoneFuncCall
+	mutex       sync.Mutex
+}
+
+// Done delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockJobHandle) Done(v0 error) error {
+	r0 := m.DoneFunc.nextHook()(v0)
+	m.DoneFunc.appendCall(JobHandleDoneFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Done method of the
+// parent MockJobHandle instance is invoked and the hook queue is empty.
+func (f *JobHandleDoneFunc) SetDefaultHook(hook func(error) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Done method of the parent MockJobHandle instance inovkes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *JobHandleDoneFunc) PushHook(hook func(error) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *JobHandleDoneFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(error) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *JobHandleDoneFunc) PushReturn(r0 error) {
+	f.PushHook(func(error) error {
+		return r0
+	})
+}
+
+func (f *JobHandleDoneFunc) nextHook() func(error) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *JobHandleDoneFunc) appendCall(r0 JobHandleDoneFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of JobHandleDoneFuncCall objects describing
+// the invocations of this function.
+func (f *JobHandleDoneFunc) History() []JobHandleDoneFuncCall {
+	f.mutex.Lock()
+	history := make([]JobHandleDoneFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// JobHandleDoneFuncCall is an object that describes an invocation of method
+// Done on an instance of MockJobHandle.
+type JobHandleDoneFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 error
@@ -186,37 +285,37 @@ type JobHandleCloseTxFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c JobHandleCloseTxFuncCall) Args() []interface{} {
+func (c JobHandleDoneFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c JobHandleCloseTxFuncCall) Results() []interface{} {
+func (c JobHandleDoneFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
 // JobHandleMarkCompleteFunc describes the behavior when the MarkComplete
 // method of the parent MockJobHandle instance is invoked.
 type JobHandleMarkCompleteFunc struct {
-	defaultHook func() error
-	hooks       []func() error
+	defaultHook func(context.Context) error
+	hooks       []func(context.Context) error
 	history     []JobHandleMarkCompleteFuncCall
 	mutex       sync.Mutex
 }
 
 // MarkComplete delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockJobHandle) MarkComplete() error {
-	r0 := m.MarkCompleteFunc.nextHook()()
-	m.MarkCompleteFunc.appendCall(JobHandleMarkCompleteFuncCall{r0})
+func (m *MockJobHandle) MarkComplete(v0 context.Context) error {
+	r0 := m.MarkCompleteFunc.nextHook()(v0)
+	m.MarkCompleteFunc.appendCall(JobHandleMarkCompleteFuncCall{v0, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the MarkComplete method
 // of the parent MockJobHandle instance is invoked and the hook queue is
 // empty.
-func (f *JobHandleMarkCompleteFunc) SetDefaultHook(hook func() error) {
+func (f *JobHandleMarkCompleteFunc) SetDefaultHook(hook func(context.Context) error) {
 	f.defaultHook = hook
 }
 
@@ -224,7 +323,7 @@ func (f *JobHandleMarkCompleteFunc) SetDefaultHook(hook func() error) {
 // MarkComplete method of the parent MockJobHandle instance inovkes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *JobHandleMarkCompleteFunc) PushHook(hook func() error) {
+func (f *JobHandleMarkCompleteFunc) PushHook(hook func(context.Context) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -233,7 +332,7 @@ func (f *JobHandleMarkCompleteFunc) PushHook(hook func() error) {
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *JobHandleMarkCompleteFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func() error {
+	f.SetDefaultHook(func(context.Context) error {
 		return r0
 	})
 }
@@ -241,12 +340,12 @@ func (f *JobHandleMarkCompleteFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *JobHandleMarkCompleteFunc) PushReturn(r0 error) {
-	f.PushHook(func() error {
+	f.PushHook(func(context.Context) error {
 		return r0
 	})
 }
 
-func (f *JobHandleMarkCompleteFunc) nextHook() func() error {
+func (f *JobHandleMarkCompleteFunc) nextHook() func(context.Context) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -279,6 +378,9 @@ func (f *JobHandleMarkCompleteFunc) History() []JobHandleMarkCompleteFuncCall {
 // JobHandleMarkCompleteFuncCall is an object that describes an invocation
 // of method MarkComplete on an instance of MockJobHandle.
 type JobHandleMarkCompleteFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -287,7 +389,7 @@ type JobHandleMarkCompleteFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c JobHandleMarkCompleteFuncCall) Args() []interface{} {
-	return []interface{}{}
+	return []interface{}{c.Arg0}
 }
 
 // Results returns an interface slice containing the results of this
@@ -299,24 +401,24 @@ func (c JobHandleMarkCompleteFuncCall) Results() []interface{} {
 // JobHandleMarkErroredFunc describes the behavior when the MarkErrored
 // method of the parent MockJobHandle instance is invoked.
 type JobHandleMarkErroredFunc struct {
-	defaultHook func(string, string) error
-	hooks       []func(string, string) error
+	defaultHook func(context.Context, string, string) error
+	hooks       []func(context.Context, string, string) error
 	history     []JobHandleMarkErroredFuncCall
 	mutex       sync.Mutex
 }
 
 // MarkErrored delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockJobHandle) MarkErrored(v0 string, v1 string) error {
-	r0 := m.MarkErroredFunc.nextHook()(v0, v1)
-	m.MarkErroredFunc.appendCall(JobHandleMarkErroredFuncCall{v0, v1, r0})
+func (m *MockJobHandle) MarkErrored(v0 context.Context, v1 string, v2 string) error {
+	r0 := m.MarkErroredFunc.nextHook()(v0, v1, v2)
+	m.MarkErroredFunc.appendCall(JobHandleMarkErroredFuncCall{v0, v1, v2, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the MarkErrored method
 // of the parent MockJobHandle instance is invoked and the hook queue is
 // empty.
-func (f *JobHandleMarkErroredFunc) SetDefaultHook(hook func(string, string) error) {
+func (f *JobHandleMarkErroredFunc) SetDefaultHook(hook func(context.Context, string, string) error) {
 	f.defaultHook = hook
 }
 
@@ -324,7 +426,7 @@ func (f *JobHandleMarkErroredFunc) SetDefaultHook(hook func(string, string) erro
 // MarkErrored method of the parent MockJobHandle instance inovkes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *JobHandleMarkErroredFunc) PushHook(hook func(string, string) error) {
+func (f *JobHandleMarkErroredFunc) PushHook(hook func(context.Context, string, string) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -333,7 +435,7 @@ func (f *JobHandleMarkErroredFunc) PushHook(hook func(string, string) error) {
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *JobHandleMarkErroredFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(string, string) error {
+	f.SetDefaultHook(func(context.Context, string, string) error {
 		return r0
 	})
 }
@@ -341,12 +443,12 @@ func (f *JobHandleMarkErroredFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *JobHandleMarkErroredFunc) PushReturn(r0 error) {
-	f.PushHook(func(string, string) error {
+	f.PushHook(func(context.Context, string, string) error {
 		return r0
 	})
 }
 
-func (f *JobHandleMarkErroredFunc) nextHook() func(string, string) error {
+func (f *JobHandleMarkErroredFunc) nextHook() func(context.Context, string, string) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -381,10 +483,13 @@ func (f *JobHandleMarkErroredFunc) History() []JobHandleMarkErroredFuncCall {
 type JobHandleMarkErroredFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
-	Arg0 string
+	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
 	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -393,7 +498,7 @@ type JobHandleMarkErroredFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c JobHandleMarkErroredFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
@@ -406,24 +511,24 @@ func (c JobHandleMarkErroredFuncCall) Results() []interface{} {
 // RollbackToLastSavepoint method of the parent MockJobHandle instance is
 // invoked.
 type JobHandleRollbackToLastSavepointFunc struct {
-	defaultHook func() error
-	hooks       []func() error
+	defaultHook func(context.Context) error
+	hooks       []func(context.Context) error
 	history     []JobHandleRollbackToLastSavepointFuncCall
 	mutex       sync.Mutex
 }
 
 // RollbackToLastSavepoint delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockJobHandle) RollbackToLastSavepoint() error {
-	r0 := m.RollbackToLastSavepointFunc.nextHook()()
-	m.RollbackToLastSavepointFunc.appendCall(JobHandleRollbackToLastSavepointFuncCall{r0})
+func (m *MockJobHandle) RollbackToLastSavepoint(v0 context.Context) error {
+	r0 := m.RollbackToLastSavepointFunc.nextHook()(v0)
+	m.RollbackToLastSavepointFunc.appendCall(JobHandleRollbackToLastSavepointFuncCall{v0, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the
 // RollbackToLastSavepoint method of the parent MockJobHandle instance is
 // invoked and the hook queue is empty.
-func (f *JobHandleRollbackToLastSavepointFunc) SetDefaultHook(hook func() error) {
+func (f *JobHandleRollbackToLastSavepointFunc) SetDefaultHook(hook func(context.Context) error) {
 	f.defaultHook = hook
 }
 
@@ -432,7 +537,7 @@ func (f *JobHandleRollbackToLastSavepointFunc) SetDefaultHook(hook func() error)
 // inovkes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *JobHandleRollbackToLastSavepointFunc) PushHook(hook func() error) {
+func (f *JobHandleRollbackToLastSavepointFunc) PushHook(hook func(context.Context) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -441,7 +546,7 @@ func (f *JobHandleRollbackToLastSavepointFunc) PushHook(hook func() error) {
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *JobHandleRollbackToLastSavepointFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func() error {
+	f.SetDefaultHook(func(context.Context) error {
 		return r0
 	})
 }
@@ -449,12 +554,12 @@ func (f *JobHandleRollbackToLastSavepointFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *JobHandleRollbackToLastSavepointFunc) PushReturn(r0 error) {
-	f.PushHook(func() error {
+	f.PushHook(func(context.Context) error {
 		return r0
 	})
 }
 
-func (f *JobHandleRollbackToLastSavepointFunc) nextHook() func() error {
+func (f *JobHandleRollbackToLastSavepointFunc) nextHook() func(context.Context) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -488,6 +593,9 @@ func (f *JobHandleRollbackToLastSavepointFunc) History() []JobHandleRollbackToLa
 // invocation of method RollbackToLastSavepoint on an instance of
 // MockJobHandle.
 type JobHandleRollbackToLastSavepointFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -496,7 +604,7 @@ type JobHandleRollbackToLastSavepointFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c JobHandleRollbackToLastSavepointFuncCall) Args() []interface{} {
-	return []interface{}{}
+	return []interface{}{c.Arg0}
 }
 
 // Results returns an interface slice containing the results of this
@@ -508,23 +616,23 @@ func (c JobHandleRollbackToLastSavepointFuncCall) Results() []interface{} {
 // JobHandleSavepointFunc describes the behavior when the Savepoint method
 // of the parent MockJobHandle instance is invoked.
 type JobHandleSavepointFunc struct {
-	defaultHook func() error
-	hooks       []func() error
+	defaultHook func(context.Context) error
+	hooks       []func(context.Context) error
 	history     []JobHandleSavepointFuncCall
 	mutex       sync.Mutex
 }
 
 // Savepoint delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockJobHandle) Savepoint() error {
-	r0 := m.SavepointFunc.nextHook()()
-	m.SavepointFunc.appendCall(JobHandleSavepointFuncCall{r0})
+func (m *MockJobHandle) Savepoint(v0 context.Context) error {
+	r0 := m.SavepointFunc.nextHook()(v0)
+	m.SavepointFunc.appendCall(JobHandleSavepointFuncCall{v0, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the Savepoint method of
 // the parent MockJobHandle instance is invoked and the hook queue is empty.
-func (f *JobHandleSavepointFunc) SetDefaultHook(hook func() error) {
+func (f *JobHandleSavepointFunc) SetDefaultHook(hook func(context.Context) error) {
 	f.defaultHook = hook
 }
 
@@ -532,7 +640,7 @@ func (f *JobHandleSavepointFunc) SetDefaultHook(hook func() error) {
 // Savepoint method of the parent MockJobHandle instance inovkes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *JobHandleSavepointFunc) PushHook(hook func() error) {
+func (f *JobHandleSavepointFunc) PushHook(hook func(context.Context) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -541,7 +649,7 @@ func (f *JobHandleSavepointFunc) PushHook(hook func() error) {
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *JobHandleSavepointFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func() error {
+	f.SetDefaultHook(func(context.Context) error {
 		return r0
 	})
 }
@@ -549,12 +657,12 @@ func (f *JobHandleSavepointFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *JobHandleSavepointFunc) PushReturn(r0 error) {
-	f.PushHook(func() error {
+	f.PushHook(func(context.Context) error {
 		return r0
 	})
 }
 
-func (f *JobHandleSavepointFunc) nextHook() func() error {
+func (f *JobHandleSavepointFunc) nextHook() func(context.Context) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -587,6 +695,9 @@ func (f *JobHandleSavepointFunc) History() []JobHandleSavepointFuncCall {
 // JobHandleSavepointFuncCall is an object that describes an invocation of
 // method Savepoint on an instance of MockJobHandle.
 type JobHandleSavepointFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -595,110 +706,11 @@ type JobHandleSavepointFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c JobHandleSavepointFuncCall) Args() []interface{} {
-	return []interface{}{}
+	return []interface{}{c.Arg0}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c JobHandleSavepointFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
-// JobHandleTxFunc describes the behavior when the Tx method of the parent
-// MockJobHandle instance is invoked.
-type JobHandleTxFunc struct {
-	defaultHook func() *sql.Tx
-	hooks       []func() *sql.Tx
-	history     []JobHandleTxFuncCall
-	mutex       sync.Mutex
-}
-
-// Tx delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockJobHandle) Tx() *sql.Tx {
-	r0 := m.TxFunc.nextHook()()
-	m.TxFunc.appendCall(JobHandleTxFuncCall{r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the Tx method of the
-// parent MockJobHandle instance is invoked and the hook queue is empty.
-func (f *JobHandleTxFunc) SetDefaultHook(hook func() *sql.Tx) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Tx method of the parent MockJobHandle instance inovkes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *JobHandleTxFunc) PushHook(hook func() *sql.Tx) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
-func (f *JobHandleTxFunc) SetDefaultReturn(r0 *sql.Tx) {
-	f.SetDefaultHook(func() *sql.Tx {
-		return r0
-	})
-}
-
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
-func (f *JobHandleTxFunc) PushReturn(r0 *sql.Tx) {
-	f.PushHook(func() *sql.Tx {
-		return r0
-	})
-}
-
-func (f *JobHandleTxFunc) nextHook() func() *sql.Tx {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *JobHandleTxFunc) appendCall(r0 JobHandleTxFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of JobHandleTxFuncCall objects describing the
-// invocations of this function.
-func (f *JobHandleTxFunc) History() []JobHandleTxFuncCall {
-	f.mutex.Lock()
-	history := make([]JobHandleTxFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// JobHandleTxFuncCall is an object that describes an invocation of method
-// Tx on an instance of MockJobHandle.
-type JobHandleTxFuncCall struct {
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 *sql.Tx
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c JobHandleTxFuncCall) Args() []interface{} {
-	return []interface{}{}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c JobHandleTxFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
