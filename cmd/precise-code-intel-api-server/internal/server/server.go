@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/api"
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
@@ -26,6 +27,7 @@ type ServerOpts struct {
 	Port                int
 	DB                  db.DB
 	BundleManagerClient bundles.BundleManagerClient
+	GitserverClient     gitserver.Client
 }
 
 func New(opts ServerOpts) *Server {
@@ -34,7 +36,7 @@ func New(opts ServerOpts) *Server {
 		port:                opts.Port,
 		db:                  opts.DB,
 		bundleManagerClient: opts.BundleManagerClient,
-		api:                 api.New(opts.DB, opts.BundleManagerClient),
+		api:                 api.New(opts.DB, opts.BundleManagerClient, opts.GitserverClient),
 	}
 }
 

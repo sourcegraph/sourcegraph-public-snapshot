@@ -7,6 +7,12 @@ import (
 	"github.com/keegancsmith/sqlf"
 )
 
+// HasCommit determines if the given commit is known for the given repository.
+func (db *dbImpl) HasCommit(ctx context.Context, repositoryID int, commit string) (bool, error) {
+	count, err := scanInt(db.queryRow(ctx, sqlf.Sprintf(`SELECT COUNT(*) FROM lsif_commits WHERE repository_id = %s and commit = %s`, repositoryID, commit)))
+	return count > 0, err
+}
+
 // UpdateCommits upserts commits/parent-commit relations for the given repository ID.
 func (db *dbImpl) UpdateCommits(ctx context.Context, tx *sql.Tx, repositoryID int, commits map[string][]string) (err error) {
 	if tx == nil {
