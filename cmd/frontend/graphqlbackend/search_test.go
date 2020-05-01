@@ -478,3 +478,67 @@ func Test_queryForStableResults(t *testing.T) {
 		})
 	}
 }
+
+func TestVersionContext(t *testing.T) {
+	tcs := []struct {
+		name               string
+		searchQuery        string
+		versionContext     string
+		reposGetByNameMock func(ctx context.Context, repo api.RepoName) (*types.Repo, error)
+		wantResults        []*search.RepositoryRevisions
+	}{
+		{
+			name:           "query with version context should return the right repositories",
+			searchQuery:    "foo",
+			versionContext: "ctx-1",
+			reposGetByNameMock: func(ctx context.Context, repo api.RepoName) (*types.Repo, error) {
+				return &types.Repo{Name: repo}, nil
+			},
+			wantResults: []*search.RepositoryRevisions{
+				{Repo: &types.Repo{Name: "github.com/sourcegraph/foo"}, Revs: []search.RevisionSpecifier{{RevSpec: "some-branch"}}},
+				{Repo: &types.Repo{Name: "github.com/sourcegraph/bar"}, Revs: []search.RevisionSpecifier{{RevSpec: "e62b6218f61cc1564d6ebcae19f9dafdf1357567"}}},
+			},
+		},
+	}
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			conf.Mock(&conf.Unified{
+				SiteConfiguration: schema.SiteConfiguration{
+					VersionContexts: []*schema.VersionContext{
+						{
+							Name: "ctx-1",
+							Revisions: []*schema.VersionContextRevision{
+								{Repo: "github.com/sourcegraph/foo", Ref: "some-branch"},
+								{Repo: "github.com/sourcegraph/bar", Ref: "e62b6218f61cc1564d6ebcae19f9dafdf1357567"},
+							},
+						},
+					},
+				},
+			})
+			defer conf.Mock(nil)
+
+			mockDecodedViewerFinalSettings = &schema.Settings{}
+			defer func() { mockDecodedViewerFinalSettings = nil }()
+
+			qinfo, err := query.ParseAndCheck(tc.searchQuery)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			resolver := searchResolver{
+				query:            qinfo,
+				versionContextID: &tc.versionContext,
+			}
+
+			db.Mocks.Repos.GetByName = tc.reposGetByNameMock
+			gotResults, _, _, err := resolver.resolveRepositories(context.Background(), nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if !reflect.DeepEqual(gotResults, tc.wantResults) {
+				t.Fatalf("results = %+v, want %+v", gotResults, tc.wantResults)
+			}
+		})
+	}
+}

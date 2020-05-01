@@ -52,11 +52,12 @@ func maxReposToSearch() int {
 }
 
 type SearchArgs struct {
-	Version     string
-	PatternType *string
-	Query       string
-	After       *string
-	First       *int32
+	Version        string
+	PatternType    *string
+	Query          string
+	After          *string
+	First          *int32
+	VersionContext *string
 }
 
 type SearchImplementer interface {
@@ -121,12 +122,13 @@ func NewSearchImplementer(args *SearchArgs) (SearchImplementer, error) {
 	}
 
 	return &searchResolver{
-		query:         queryInfo,
-		originalQuery: args.Query,
-		pagination:    pagination,
-		patternType:   searchType,
-		zoekt:         search.Indexed(),
-		searcherURLs:  search.SearcherURLs(),
+		query:            queryInfo,
+		originalQuery:    args.Query,
+		versionContextID: args.VersionContext,
+		pagination:       pagination,
+		patternType:      searchType,
+		zoekt:            search.Indexed(),
+		searcherURLs:     search.SearcherURLs(),
 	}, nil
 }
 
@@ -234,10 +236,11 @@ func detectSearchType(version string, patternType *string, input string) (query.
 
 // searchResolver is a resolver for the GraphQL type `Search`
 type searchResolver struct {
-	query         query.QueryInfo       // the query, either containing and/or expressions or otherwise ordinary
-	originalQuery string                // the raw string of the original search query
-	pagination    *searchPaginationInfo // pagination information, or nil if the request is not paginated.
-	patternType   query.SearchType
+	query            query.QueryInfo       // the query, either containing and/or expressions or otherwise ordinary
+	originalQuery    string                // the raw string of the original search query
+	pagination       *searchPaginationInfo // pagination information, or nil if the request is not paginated.
+	patternType      query.SearchType
+	versionContextID *string
 
 	// Cached resolveRepositories results.
 	reposMu                   sync.Mutex
@@ -329,6 +332,16 @@ func resolveRepoGroups(ctx context.Context) (map[string][]*types.Repo, error) {
 	return groups, nil
 }
 
+func resolveVersionContext(versionContext string) (*schema.VersionContext, error) {
+	for _, vc := range conf.Get().VersionContexts {
+		if vc.Name == versionContext {
+			return vc, nil
+		}
+	}
+
+	return nil, errors.New("version context not found")
+}
+
 // Cf. golang/go/src/regexp/syntax/parse.go.
 const regexpFlags regexpsyntax.Flags = regexpsyntax.ClassNL | regexpsyntax.PerlX | regexpsyntax.UnicodeGroups
 
@@ -417,18 +430,24 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 
 	commitAfter, _ := r.query.StringValue(query.FieldRepoHasCommitAfter)
 
+	var versionContextName string
+	if r.versionContextID != nil {
+		versionContextName = *r.versionContextID
+	}
+
 	tr.LazyPrintf("resolveRepositories - start")
 	repoRevs, missingRepoRevs, overLimit, err = resolveRepositories(ctx, resolveRepoOp{
-		repoFilters:      repoFilters,
-		minusRepoFilters: minusRepoFilters,
-		repoGroupFilters: repoGroupFilters,
-		onlyForks:        fork == Only || fork == True,
-		noForks:          fork == No || fork == False,
-		onlyArchived:     archived == Only || archived == True,
-		noArchived:       archived == No || archived == False,
-		onlyPrivate:      visibility == query.Private,
-		onlyPublic:       visibility == query.Public,
-		commitAfter:      commitAfter,
+		repoFilters:        repoFilters,
+		minusRepoFilters:   minusRepoFilters,
+		repoGroupFilters:   repoGroupFilters,
+		versionContextName: versionContextName,
+		onlyForks:          fork == Only || fork == True,
+		noForks:            fork == No || fork == False,
+		onlyArchived:       archived == Only || archived == True,
+		noArchived:         archived == No || archived == False,
+		onlyPrivate:        visibility == query.Private,
+		onlyPublic:         visibility == query.Public,
+		commitAfter:        commitAfter,
 	})
 	tr.LazyPrintf("resolveRepositories - done")
 	if effectiveRepoFieldValues == nil {
@@ -534,16 +553,17 @@ func findPatternRevs(includePatterns []string) (includePatternRevs []patternRevs
 }
 
 type resolveRepoOp struct {
-	repoFilters      []string
-	minusRepoFilters []string
-	repoGroupFilters []string
-	noForks          bool
-	onlyForks        bool
-	noArchived       bool
-	onlyArchived     bool
-	commitAfter      string
-	onlyPrivate      bool
-	onlyPublic       bool
+	repoFilters        []string
+	minusRepoFilters   []string
+	repoGroupFilters   []string
+	versionContextName string
+	noForks            bool
+	onlyForks          bool
+	noArchived         bool
+	onlyArchived       bool
+	commitAfter        string
+	onlyPrivate        bool
+	onlyPublic         bool
 }
 
 func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, missingRepoRevisions []*search.RepositoryRevisions, overLimit bool, err error) {
@@ -562,6 +582,30 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 	excludePatterns := op.minusRepoFilters
 
 	maxRepoListSize := maxReposToSearch()
+
+	if op.versionContextName != "" {
+		vc, err := resolveVersionContext(op.versionContextName)
+		if err != nil {
+			return nil, nil, false, err
+		}
+
+		var repoRevisions []*search.RepositoryRevisions
+		for _, revision := range vc.Revisions {
+			repo, err := db.Repos.GetByName(ctx, api.RepoName(revision.Repo))
+			if err != nil {
+				return nil, nil, false, err
+			}
+
+			repoRevisions = append(repoRevisions, &search.RepositoryRevisions{
+				Repo: repo,
+				Revs: []search.RevisionSpecifier{
+					{RevSpec: revision.Ref},
+				},
+			})
+		}
+
+		return repoRevisions, nil, len(repoRevisions) > maxRepoListSize, nil
+	}
 
 	// If any repo groups are specified, take the intersection of the repo
 	// groups and the set of repos specified with repo:. (If none are specified
