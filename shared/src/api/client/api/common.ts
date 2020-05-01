@@ -1,27 +1,35 @@
-import { Remote, proxyMarker } from 'comlink'
+import { Remote, proxyMarker, releaseProxy, ProxyMethods } from 'comlink'
 import { noop } from 'lodash'
-import { from, Observable, observable, Subscription } from 'rxjs'
-import { mergeMap } from 'rxjs/operators'
+import { from, Observable, observable as symbolObservable, Subscription } from 'rxjs'
+import { mergeMap, finalize } from 'rxjs/operators'
 import { Subscribable } from 'sourcegraph'
 import { ProxySubscribable } from '../../extension/api/common'
 import { syncSubscription } from '../../util'
 import { asError } from '../../../util/errors'
 
 /**
+ * An ordinary Observable linked to an Observable in another thread through a `MessagePort`.
+ */
+export interface RemoteObservable<T> extends Observable<T>, Pick<ProxyMethods, typeof releaseProxy> {}
+
+/**
  * When a Subscribable is returned from the other thread (wrapped with `proxySubscribable()`),
  * this thread gets a `Promise` for a `Subscribable` _proxy_ where `subscribe()` returns a `Promise<Unsubscribable>`.
- * This function wraps that proxy in a real Rx Observable where `subscribe()` returns an `Unsubscribable` directly as expected.
+ * This function wraps that proxy in a real Rx Observable where `subscribe()` returns a `Subscription` directly as expected.
+ *
+ * The returned Observable is augmented with the `releaseProxy` method from comlink to release the underlying `MessagePort`.
  *
  * @param proxyPromise The proxy to the `ProxyObservable` in the other thread
  */
-export const wrapRemoteObservable = <T>(proxyPromise: Promise<Remote<ProxySubscribable<T>>>): Observable<T> =>
-    from(proxyPromise).pipe(
+export const wrapRemoteObservable = <T>(proxyPromise: Promise<Remote<ProxySubscribable<T>>>): RemoteObservable<T> => {
+    const proxyReleaseSubscription = new Subscription()
+    const observable = from(proxyPromise).pipe(
         mergeMap(
-            proxySubscribable =>
-                // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-                ({
+            (proxySubscribable): Subscribable<T> => {
+                proxyReleaseSubscription.add(() => proxySubscribable[releaseProxy]())
+                return {
                     // Needed for Rx type check
-                    [observable](): Subscribable<T> {
+                    [symbolObservable](): Subscribable<T> {
                         return this
                     },
                     subscribe(...args: any[]): Subscription {
@@ -47,6 +55,29 @@ export const wrapRemoteObservable = <T>(proxyPromise: Promise<Remote<ProxySubscr
                         }
                         return syncSubscription(proxySubscribable.subscribe(proxyObserver))
                     },
-                } as Subscribable<T>)
+                }
+            }
         )
     )
+    return Object.assign(observable, {
+        [releaseProxy]: () => proxyReleaseSubscription.unsubscribe(),
+    })
+}
+
+/**
+ * Releases the underlying MessagePort of a remote Observable when it completes or is unsubscribed from.
+ *
+ * Important: This will prevent resubscribing to the Observable. Only use this operator in a scope where it is known
+ * that no resubscriptions can happen after completion, e.g. in a `switchMap()` callback.
+ *
+ * Must be used as the first parameter to `pipe()`, because the source must be a `RemoteObservable`.
+ */
+export const finallyReleaseProxy = <T>() => (
+    source: Observable<T> & Partial<Pick<ProxyMethods, typeof releaseProxy>>
+) => {
+    if (!source[releaseProxy]) {
+        console.warn('finallyReleaseProxy() used on Observable with no [releaseProxy] method')
+        return source
+    }
+    return source.pipe(finalize(() => source[releaseProxy]!()))
+}

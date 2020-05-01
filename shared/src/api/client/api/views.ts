@@ -1,6 +1,6 @@
 import * as comlink from 'comlink'
 import { isEqual, omit } from 'lodash'
-import { combineLatest, from, ReplaySubject, Unsubscribable, ObservableInput } from 'rxjs'
+import { combineLatest, from, ReplaySubject, Unsubscribable, ObservableInput, Subscription } from 'rxjs'
 import { distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import { PanelView, View } from 'sourcegraph'
 import { ContributableViewContainer } from '../../protocol'
@@ -114,11 +114,16 @@ export class ClientViews implements ClientViewsAPI {
             ) => ProxySubscribable<View | null> & comlink.ProxyMarked
         >
     ): Unsubscribable & comlink.ProxyMarked {
-        return comlink.proxy(
-            this.viewService.register(id, ContributableViewContainer.Directory, context =>
-                wrapRemoteObservable(provider(context))
-            )
+        const subscription = new Subscription()
+        subscription.add(
+            this.viewService.register(id, ContributableViewContainer.Directory, context => {
+                const remoteObservable = wrapRemoteObservable(provider(context))
+                subscription.add(() => remoteObservable[comlink.releaseProxy]())
+                return remoteObservable
+            })
         )
+        subscription.add(() => provider[comlink.releaseProxy]())
+        return comlink.proxy(subscription)
     }
 
     public $registerGlobalPageViewProvider(
@@ -129,10 +134,15 @@ export class ClientViews implements ClientViewsAPI {
             ) => ProxySubscribable<View | null> & comlink.ProxyMarked
         >
     ): Unsubscribable & comlink.ProxyMarked {
-        return comlink.proxy(
-            this.viewService.register(id, ContributableViewContainer.GlobalPage, context =>
-                wrapRemoteObservable(provider(context))
-            )
+        const subscription = new Subscription()
+        subscription.add(
+            this.viewService.register(id, ContributableViewContainer.GlobalPage, context => {
+                const remoteObservable = wrapRemoteObservable(provider(context))
+                subscription.add(() => remoteObservable[comlink.releaseProxy]())
+                return remoteObservable
+            })
         )
+        subscription.add(() => provider[comlink.releaseProxy]())
+        return comlink.proxy(subscription)
     }
 }

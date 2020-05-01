@@ -6,6 +6,7 @@ import { renderMarkdown } from '../../../util/markdown'
 import { combineLatestOrDefault } from '../../../util/rxjs/combineLatestOrDefault'
 import { property, isDefined } from '../../../util/types'
 import { FeatureProviderRegistry } from './registry'
+import { finallyReleaseProxy } from '../api/common'
 
 interface MarkupContentPlainTextOnly extends Pick<sourcegraph.MarkupContent, 'value'> {
     kind: sourcegraph.MarkupKind.PlainText
@@ -87,6 +88,7 @@ export function provideLinkPreview(
                 providers.map(provider =>
                     from(
                         provider(url).pipe(
+                            finallyReleaseProxy(),
                             catchError(err => {
                                 if (logErrors) {
                                     console.error(err)
