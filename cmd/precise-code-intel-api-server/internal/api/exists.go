@@ -52,7 +52,7 @@ func (api *codeIntelAPI) updateCommitsAndVisibility(ctx context.Context, reposit
 
 	newCommits, err := api.gitserverClient.CommitsNear(api.db, repositoryID, commit)
 	if err != nil {
-		return errors.Wrap(err, " gitserverClient.CommitsNear")
+		return errors.Wrap(err, "gitserverClient.CommitsNear")
 	}
 	if err := api.db.UpdateCommits(ctx, nil, repositoryID, newCommits); err != nil {
 		return errors.Wrap(err, "db.UpdateCommits")
