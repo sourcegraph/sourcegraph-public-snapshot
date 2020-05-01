@@ -10,10 +10,11 @@ type StringSet map[string]struct{}
 // GetChildrenFunc returns a map of directory contents for a set of directory names.
 type GetChildrenFunc func(dirnames []string) (map[string][]string, error)
 
-// directoryContents constructs a mapping from directory names to a set that directory's contents from
-// a list of files present in an LSIF index. This function calls the given GetChildrenFunc a minimal
-// number of times by (and with minimal argument lengths) by pruning missing subtrees from subsequent
-// request batches. This can save a lot of work for large uncommitted subtrees (e.g. node_modules).
+// directoryContents takes in a list of files present in an LSIF index and constructs a mapping from
+// directory  names to sets containing that directory's contents. This function calls the given
+// GetChildrenFunc a minimal number of times (and with minimal argument lengths) by pruning missing
+// subtrees from subsequent request batches. This can save a lot of work for large uncommitted subtrees
+// (e.g. node_modules).
 func directoryContents(root string, paths []string, getChildren GetChildrenFunc) (map[string]StringSet, error) {
 	contents := map[string]StringSet{}
 

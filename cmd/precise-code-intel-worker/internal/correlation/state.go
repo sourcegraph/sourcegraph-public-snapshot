@@ -17,11 +17,11 @@ type State struct {
 	HoverData              map[string]string
 	MonikerData            map[string]lsif.MonikerData
 	PackageInformationData map[string]lsif.PackageInformationData
-	NextData               map[string]string
-	ImportedMonikers       datastructures.IDSet
-	ExportedMonikers       datastructures.IDSet
-	LinkedMonikers         datastructures.DisjointIDSet
-	LinkedReferenceResults datastructures.DisjointIDSet
+	NextData               map[string]string            // maps vertices related via next edges
+	ImportedMonikers       datastructures.IDSet         // moniker ids that have kind "import"
+	ExportedMonikers       datastructures.IDSet         // moniker ids that have kind "export"
+	LinkedMonikers         datastructures.DisjointIDSet // tracks which moniker ids are related via next edges
+	LinkedReferenceResults datastructures.DisjointIDSet // tracks which reference result ids are related via next edges
 }
 
 // newState create a new State with zero-valued map fields.

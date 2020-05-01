@@ -19,7 +19,7 @@ func TestLookupMoniker(t *testing.T) {
 	setMockBundleManagerClientBundleClient(t, mockBundleManagerClient, map[int]bundles.BundleClient{42: mockBundleClient1, 50: mockBundleClient2})
 	setMockBundleClientPackageInformation(t, mockBundleClient1, "sub2/main.go", "1234", testPackageInformation)
 	setMockDBGetPackage(t, mockDB, "gomod", "leftpad", "0.1.0", testDump2, true)
-	setMockBundleClientMonikerResults(t, mockBundleClient2, "definitions", "gomod", "pad", 10, 5, []bundles.Location{
+	setMockBundleClientMonikerResults(t, mockBundleClient2, "definition", "gomod", "pad", 10, 5, []bundles.Location{
 		{DumpID: 42, Path: "foo.go", Range: testRange1},
 		{DumpID: 42, Path: "bar.go", Range: testRange2},
 		{DumpID: 42, Path: "baz.go", Range: testRange3},
@@ -27,7 +27,7 @@ func TestLookupMoniker(t *testing.T) {
 		{DumpID: 42, Path: "baz.go", Range: testRange5},
 	}, 15)
 
-	locations, totalCount, err := lookupMoniker(mockDB, mockBundleManagerClient, 42, "sub2/main.go", "definitions", testMoniker2, 10, 5)
+	locations, totalCount, err := lookupMoniker(mockDB, mockBundleManagerClient, 42, "sub2/main.go", "definition", testMoniker2, 10, 5)
 	if err != nil {
 		t.Fatalf("unexpected error querying moniker: %s", err)
 	}
@@ -51,7 +51,7 @@ func TestLookupMonikerNoPackageInformationID(t *testing.T) {
 	mockDB := dbmocks.NewMockDB()
 	mockBundleManagerClient := bundlemocks.NewMockBundleManagerClient()
 
-	_, totalCount, err := lookupMoniker(mockDB, mockBundleManagerClient, 42, "sub/main.go", "definitions", testMoniker3, 10, 5)
+	_, totalCount, err := lookupMoniker(mockDB, mockBundleManagerClient, 42, "sub/main.go", "definition", testMoniker3, 10, 5)
 	if err != nil {
 		t.Fatalf("unexpected error querying moniker: %s", err)
 	}
@@ -69,7 +69,7 @@ func TestLookupMonikerNoPackage(t *testing.T) {
 	setMockBundleClientPackageInformation(t, mockBundleClient, "main.go", "1234", testPackageInformation)
 	setMockDBGetPackage(t, mockDB, "gomod", "leftpad", "0.1.0", db.Dump{}, false)
 
-	_, totalCount, err := lookupMoniker(mockDB, mockBundleManagerClient, 42, "main.go", "definitions", testMoniker1, 10, 5)
+	_, totalCount, err := lookupMoniker(mockDB, mockBundleManagerClient, 42, "main.go", "definition", testMoniker1, 10, 5)
 	if err != nil {
 		t.Fatalf("unexpected error querying moniker: %s", err)
 	}

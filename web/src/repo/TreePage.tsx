@@ -8,26 +8,24 @@ import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import TagIcon from 'mdi-react/TagIcon'
 import UserIcon from 'mdi-react/UserIcon'
 import React, { useState, useMemo, useCallback, useEffect } from 'react'
-import { Link } from 'react-router-dom'
-import { Observable } from 'rxjs'
+import { Link, Redirect } from 'react-router-dom'
+import { Observable, EMPTY } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 import { ActionItem } from '../../../shared/src/actions/ActionItem'
 import { ActionsContainer } from '../../../shared/src/actions/ActionsContainer'
-import { ContributableMenu } from '../../../shared/src/api/protocol'
+import { ContributableMenu, ContributableViewContainer } from '../../../shared/src/api/protocol'
 import { ActivationProps } from '../../../shared/src/components/activation/Activation'
 import { displayRepoName } from '../../../shared/src/components/RepoFileLink'
 import { ExtensionsControllerProps } from '../../../shared/src/extensions/controller'
-import { gql } from '../../../shared/src/graphql/graphql'
+import { gql, dataOrThrowErrors } from '../../../shared/src/graphql/graphql'
 import * as GQL from '../../../shared/src/graphql/schema'
 import { PlatformContextProps } from '../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../shared/src/settings/settings'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
+import { asError, ErrorLike, isErrorLike } from '../../../shared/src/util/errors'
 import { memoizeObservable } from '../../../shared/src/util/memoizeObservable'
 import { queryGraphQL } from '../backend/graphql'
 import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
-import { isDiscussionsEnabled } from '../discussions'
-import { DiscussionsList } from '../discussions/DiscussionsList'
 import { PatternTypeProps, CaseSensitivityProps } from '../search'
 import { eventLogger, EventLoggerProps } from '../tracking/eventLogger'
 import { basename } from '../util/path'
@@ -39,6 +37,11 @@ import { ErrorAlert } from '../components/alerts'
 import { subYears, formatISO } from 'date-fns'
 import { pluralize } from '../../../shared/src/util/strings'
 import { useObservable } from '../../../shared/src/util/useObservable'
+import { toPrettyBlobURL, toURIWithPath } from '../../../shared/src/util/url'
+import { isDefined } from '../../../shared/src/util/types'
+import { getViewsForContainer } from '../../../shared/src/api/client/services/viewService'
+import { ViewContent } from '../views/ViewContent'
+import { Settings } from '../schema/settings.schema'
 
 const TreeEntry: React.FunctionComponent<{
     isDir: boolean
@@ -95,6 +98,7 @@ const fetchTreeCommits = memoizeObservable(
             gql`
                 query TreeCommits($repo: ID!, $revspec: String!, $first: Int, $filePath: String, $after: String) {
                     node(id: $repo) {
+                        __typename
                         ... on Repository {
                             commit(rev: $revspec) {
                                 ancestors(first: $first, path: $filePath, after: $after) {
@@ -113,22 +117,25 @@ const fetchTreeCommits = memoizeObservable(
             `,
             args
         ).pipe(
-            map(({ data, errors }) => {
-                if (!data || !data.node) {
-                    throw createAggregateError(errors)
+            map(dataOrThrowErrors),
+            map(data => {
+                if (!data.node) {
+                    throw new Error('Repository not found')
                 }
-                const repo = data.node as GQL.IRepository
-                if (!repo.commit || !repo.commit.ancestors || !repo.commit.ancestors.nodes) {
-                    throw createAggregateError(errors)
+                if (data.node.__typename !== 'Repository') {
+                    throw new Error('Node is not a Repository')
                 }
-                return repo.commit.ancestors
+                if (!data.node.commit) {
+                    throw new Error('Commit not found')
+                }
+                return data.node.commit.ancestors
             })
         ),
     args => `${args.repo}:${args.revspec}:${String(args.first)}:${String(args.filePath)}:${String(args.after)}`
 )
 
 interface Props
-    extends SettingsCascadeProps,
+    extends SettingsCascadeProps<Settings>,
         ExtensionsControllerProps,
         PlatformContextProps,
         ThemeProps,
@@ -188,6 +195,51 @@ export const TreePage: React.FunctionComponent<Props> = ({
                     first: 2500,
                 }).pipe(catchError((err): [ErrorLike] => [asError(err)])),
             [repoName, commitID, rev, filePath]
+        )
+    )
+
+    const { services } = props.extensionsController
+
+    const codeInsightsEnabled =
+        !isErrorLike(settingsCascade.final) && !!settingsCascade.final?.experimentalFeatures?.codeInsights
+
+    // Add DirectoryViewer
+    const uri = toURIWithPath({ repoName, commitID, filePath })
+    useEffect(() => {
+        if (!codeInsightsEnabled) {
+            return
+        }
+        const viewerId = services.viewer.addViewer({
+            type: 'DirectoryViewer',
+            isActive: true,
+            resource: uri,
+        })
+        return () => services.viewer.removeViewer(viewerId)
+    }, [services.viewer, services.model, uri, codeInsightsEnabled])
+
+    // Observe directory views
+    const workspaceUri = services.workspace.roots.value[0]?.uri
+    const views = useObservable(
+        useMemo(
+            () =>
+                codeInsightsEnabled && workspaceUri
+                    ? getViewsForContainer(
+                          ContributableViewContainer.Directory,
+                          {
+                              viewer: {
+                                  type: 'DirectoryViewer',
+                                  directory: {
+                                      uri,
+                                  },
+                              },
+                              workspace: {
+                                  uri: workspaceUri,
+                              },
+                          },
+                          services.view
+                      ).pipe(map(views => views.filter(isDefined)))
+                    : EMPTY,
+            [codeInsightsEnabled, workspaceUri, uri, services.view]
         )
     )
 
@@ -252,7 +304,13 @@ export const TreePage: React.FunctionComponent<Props> = ({
                     <LoadingSpinner className="icon-inline tree-page__entries-loader" /> Loading files and directories
                 </div>
             ) : isErrorLike(treeOrError) ? (
-                <ErrorAlert error={treeOrError} history={props.history} />
+                // If the tree is actually a blob, be helpful and redirect to the blob page.
+                // We don't have error names on GraphQL errors.
+                /not a directory/i.test(treeOrError.message) ? (
+                    <Redirect to={toPrettyBlobURL({ repoName, rev, commitID, filePath })} />
+                ) : (
+                    <ErrorAlert error={treeOrError} history={props.history} />
+                )
             ) : (
                 <>
                     {treeOrError.isRoot ? (
@@ -293,27 +351,44 @@ export const TreePage: React.FunctionComponent<Props> = ({
                             </h2>
                         </header>
                     )}
+                    {codeInsightsEnabled && (
+                        <div className="tree-page__section d-flex">
+                            {views === undefined ? (
+                                <div className="card flex-grow-1">
+                                    <div className="card-body d-flex flex-column align-items-center p-3">
+                                        <div>
+                                            <LoadingSpinner className="icon-inline" />
+                                        </div>
+                                        <div>Loading code insights</div>
+                                    </div>
+                                </div>
+                            ) : (
+                                views.map((view, i) => (
+                                    <div key={i} className="card flex-grow-1">
+                                        {isErrorLike(view) ? (
+                                            <ErrorAlert className="m-0" error={view} history={props.history} />
+                                        ) : (
+                                            <div className="card-body">
+                                                <h3 className="tree-page__view-title">{view.title}</h3>
+                                                <ViewContent
+                                                    {...props}
+                                                    viewContent={view.content}
+                                                    settingsCascade={settingsCascade}
+                                                    caseSensitive={caseSensitive}
+                                                    patternType={patternType}
+                                                />{' '}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    )}
                     <TreeEntriesSection
                         title="Files and directories"
                         parentPath={filePath}
                         entries={treeOrError.entries}
                     />
-                    {isDiscussionsEnabled(settingsCascade) && (
-                        <div className="tree-page__section mt-2 tree-page__section--discussions">
-                            <h3 className="tree-page__section-header">Discussions</h3>
-                            <DiscussionsList
-                                {...props}
-                                repoID={repoID}
-                                rev={rev}
-                                filePath={filePath + '/**' || undefined}
-                                noun="discussion in this tree"
-                                pluralNoun="discussions in this tree"
-                                defaultFirst={2}
-                                hideSearch={true}
-                                compact={false}
-                            />
-                        </div>
-                    )}
                     {/* eslint-disable react/jsx-no-bind */}
                     <ActionsContainer
                         {...props}

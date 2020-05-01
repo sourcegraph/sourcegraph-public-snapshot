@@ -436,6 +436,19 @@ func (c *Changeset) Events() (events []*ChangesetEvent) {
 					ev.Metadata = c
 					events = append(events, &ev)
 				}
+
+			case *github.ReviewRequestedEvent:
+				// If the reviewer of a ReviewRequestedEvent has been deleted,
+				// the fields are blank and we cannot match the event to an
+				// entry in the database and/or reliably use it, so we drop it.
+				if e.ReviewerDeleted() {
+					continue
+				}
+				ev.Key = e.Key()
+				ev.Kind = ChangesetEventKindFor(e)
+				ev.Metadata = e
+				events = append(events, &ev)
+
 			default:
 				ev.Key = ti.Item.(Keyer).Key()
 				ev.Kind = ChangesetEventKindFor(ti.Item)

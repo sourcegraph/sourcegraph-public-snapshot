@@ -16,6 +16,7 @@ import (
 )
 
 const DefaultUploadPageSize = 50
+const DefaultReferencesPageSize = 100
 
 func (s *Server) handler() http.Handler {
 	mux := mux.NewRouter()
@@ -205,7 +206,7 @@ func (s *Server) handleReferences(w http.ResponseWriter, r *http.Request) {
 		getQueryInt(r, "line"),
 		getQueryInt(r, "character"),
 		getQueryInt(r, "uploadId"),
-		getQuery(r, "rawCursor"),
+		getQuery(r, "cursor"),
 		s.db,
 		s.bundleManagerClient,
 	)
@@ -220,11 +221,17 @@ func (s *Server) handleReferences(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	limit := getQueryIntDefault(r, "limit", DefaultReferencesPageSize)
+	if limit <= 0 {
+		http.Error(w, "illegal limit", http.StatusBadRequest)
+		return
+	}
+
 	locations, newCursor, hasNewCursor, err := s.api.References(
 		r.Context(),
 		getQueryInt(r, "repositoryId"),
 		getQuery(r, "commit"),
-		getQueryInt(r, "limit"),
+		limit,
 		cursor,
 	)
 	if err != nil {

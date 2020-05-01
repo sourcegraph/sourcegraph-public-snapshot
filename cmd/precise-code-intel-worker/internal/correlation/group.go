@@ -12,9 +12,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/types"
 )
 
-// TODO(efritz) - document, test
-// TODO(efritz) - rename?
-type CorrelatedTypes struct {
+// GroupedBundleData is a view of a correlation State that sorts data by it containing document
+// and shared data into shareded result chunks. The fields of this type are what is written to
+// persistent storage and what is read in the query path.
+type GroupedBundleData struct {
 	LSIFVersion       string
 	NumResultChunks   int
 	Documents         map[string]types.DocumentData
@@ -28,7 +29,8 @@ type CorrelatedTypes struct {
 const MaxNumResultChunks = 1000
 const ResultsPerResultChunk = 500
 
-func convert(state *State, dumpID int) (*CorrelatedTypes, error) {
+// groupBundleData converts a raw (but canonicalized) correlation State into a GroupedBundleData.
+func groupBundleData(state *State, dumpID int) (*GroupedBundleData, error) {
 	numResults := len(state.DefinitionData) + len(state.ReferenceData)
 	numResultChunks := int(math.Min(
 		MaxNumResultChunks,
@@ -38,17 +40,37 @@ func convert(state *State, dumpID int) (*CorrelatedTypes, error) {
 		),
 	))
 
-	documents := serializeBundleDocuments(state)
-	resultChunks := serializeResultChunks(state, numResultChunks)
-	definitionRows := gatherMonikersByResult(state, state.DefinitionData, getDefinitionResultID)
-	referenceRows := gatherMonikersByResult(state, state.ReferenceData, getReferenceResultID)
-	packages := gatherPackages(state, dumpID)
+	documents, err := serializeBundleDocuments(state)
+	if err != nil {
+		return nil, err
+	}
+
+	resultChunks, err := serializeResultChunks(state, numResultChunks)
+	if err != nil {
+		return nil, err
+	}
+
+	definitionRows, err := gatherMonikersByResult(state, state.DefinitionData, getDefinitionResultID)
+	if err != nil {
+		return nil, err
+	}
+
+	referenceRows, err := gatherMonikersByResult(state, state.ReferenceData, getReferenceResultID)
+	if err != nil {
+		return nil, err
+	}
+
+	packages, err := gatherPackages(state, dumpID)
+	if err != nil {
+		return nil, err
+	}
+
 	packageReferences, err := gatherPackageReferences(state, dumpID)
 	if err != nil {
 		return nil, err
 	}
 
-	return &CorrelatedTypes{
+	return &GroupedBundleData{
 		LSIFVersion:       state.LSIFVersion,
 		NumResultChunks:   numResultChunks,
 		Documents:         documents,
@@ -60,21 +82,26 @@ func convert(state *State, dumpID int) (*CorrelatedTypes, error) {
 	}, nil
 }
 
-func serializeBundleDocuments(state *State) map[string]types.DocumentData {
+func serializeBundleDocuments(state *State) (map[string]types.DocumentData, error) {
 	out := map[string]types.DocumentData{}
 	for _, doc := range state.DocumentData {
 		if strings.HasPrefix(doc.URI, "..") {
 			continue
 		}
 
-		out[doc.URI] = serializeDocument(state, doc)
+		data, err := serializeDocument(state, doc)
+		if err != nil {
+			return nil, err
+		}
+
+		out[doc.URI] = data
 
 	}
 
-	return out
+	return out, nil
 }
 
-func serializeDocument(state *State, doc lsif.DocumentData) types.DocumentData {
+func serializeDocument(state *State, doc lsif.DocumentData) (types.DocumentData, error) {
 	document := types.DocumentData{
 		Ranges:             map[types.ID]types.RangeData{},
 		HoverResults:       map[types.ID]string{},
@@ -126,10 +153,10 @@ func serializeDocument(state *State, doc lsif.DocumentData) types.DocumentData {
 		}
 	}
 
-	return document
+	return document, nil
 }
 
-func serializeResultChunks(state *State, numResultChunks int) map[int]types.ResultChunkData {
+func serializeResultChunks(state *State, numResultChunks int) (map[int]types.ResultChunkData, error) {
 	var resultChunks []types.ResultChunkData
 	for i := 0; i < numResultChunks; i++ {
 		resultChunks = append(resultChunks, types.ResultChunkData{
@@ -150,7 +177,7 @@ func serializeResultChunks(state *State, numResultChunks int) map[int]types.Resu
 		out[id] = resultChunk
 	}
 
-	return out
+	return out, nil
 }
 
 func addToChunk(state *State, resultChunks []types.ResultChunkData, data map[string]datastructures.DefaultIDSetMap) {
@@ -176,7 +203,7 @@ var (
 	getReferenceResultID  = func(r lsif.RangeData) string { return r.ReferenceResultID }
 )
 
-func gatherMonikersByResult(state *State, data map[string]datastructures.DefaultIDSetMap, xr func(r lsif.RangeData) string) []types.DefinitionReferenceRow {
+func gatherMonikersByResult(state *State, data map[string]datastructures.DefaultIDSetMap, xr func(r lsif.RangeData) string) ([]types.DefinitionReferenceRow, error) {
 	var rows []types.DefinitionReferenceRow
 
 	monikers := datastructures.DefaultIDSetMap{}
@@ -223,18 +250,17 @@ func gatherMonikersByResult(state *State, data map[string]datastructures.Default
 		}
 	}
 
-	return rows
+	return rows, nil
 }
 
 // TODO(efritz) - document
-func gatherPackages(state *State, dumpID int) []types.Package {
+func gatherPackages(state *State, dumpID int) ([]types.Package, error) {
 	uniques := map[string]types.Package{}
 	for id := range state.ExportedMonikers {
 		source := state.MonikerData[id]
 		packageInfo := state.PackageInformationData[source.PackageInformationID]
-		key := fmt.Sprintf("%s:%s:%s", source.Scheme, packageInfo.Name, packageInfo.Version)
 
-		uniques[key] = types.Package{
+		uniques[fmt.Sprintf("%s:%s:%s", source.Scheme, packageInfo.Name, packageInfo.Version)] = types.Package{
 			DumpID:  dumpID,
 			Scheme:  source.Scheme,
 			Name:    packageInfo.Name,
@@ -247,7 +273,7 @@ func gatherPackages(state *State, dumpID int) []types.Package {
 		packages = append(packages, v)
 	}
 
-	return packages
+	return packages, nil
 }
 
 // TODO(efritz) - document
@@ -263,8 +289,8 @@ func gatherPackageReferences(state *State, dumpID int) ([]types.PackageReference
 	for id := range state.ImportedMonikers {
 		source := state.MonikerData[id]
 		packageInfo := state.PackageInformationData[source.PackageInformationID]
-		key := fmt.Sprintf("%s:%s:%s", source.Scheme, packageInfo.Name, packageInfo.Version)
 
+		key := fmt.Sprintf("%s:%s:%s", source.Scheme, packageInfo.Name, packageInfo.Version)
 		uniques[key] = ExpandedPackageReference{
 			Scheme:      source.Scheme,
 			Name:        packageInfo.Name,

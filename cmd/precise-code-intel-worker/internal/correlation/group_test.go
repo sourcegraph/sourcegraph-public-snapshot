@@ -60,19 +60,19 @@ func TestConvert(t *testing.T) {
 		ExportedMonikers: datastructures.IDSet{"m03": {}},
 	}
 
-	actualTypes, err := convert(state, 42)
+	actualBundleData, err := groupBundleData(state, 42)
 	if err != nil {
 		t.Fatalf("unexpected error converting correlation state to types: %s", err)
 	}
 	// Ensure arrays have deterministic order so we can compare with a canned expected object structure
-	normalizeCorrelatedTypes(actualTypes)
+	normalizeGroupedBundleData(actualBundleData)
 
 	expectedFilter, err := bloomfilter.CreateFilter([]string{"ident A"})
 	if err != nil {
 		t.Fatalf("unexpected error creating bloom filter: %s", err)
 	}
 
-	expectedTypes := &CorrelatedTypes{
+	expectedBundleData := &GroupedBundleData{
 		LSIFVersion:     "0.4.3",
 		NumResultChunks: 1,
 		Documents: map[string]types.DocumentData{
@@ -185,29 +185,29 @@ func TestConvert(t *testing.T) {
 		},
 	}
 
-	if diff := cmp.Diff(expectedTypes, actualTypes); diff != "" {
-		t.Errorf("unexpected result correlated types (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedBundleData, actualBundleData); diff != "" {
+		t.Errorf("unexpected bundle data (-want +got):\n%s", diff)
 	}
 }
 
 //
 //
 
-func normalizeCorrelatedTypes(types *CorrelatedTypes) {
-	for _, document := range types.Documents {
+func normalizeGroupedBundleData(groupedBundleData *GroupedBundleData) {
+	for _, document := range groupedBundleData.Documents {
 		for _, r := range document.Ranges {
 			sortMonikerIDs(r.MonikerIDs)
 		}
 	}
 
-	for _, resultChunk := range types.ResultChunks {
+	for _, resultChunk := range groupedBundleData.ResultChunks {
 		for _, documentRanges := range resultChunk.DocumentIDRangeIDs {
 			sortDocumentIDRangeIDs(documentRanges)
 		}
 	}
 
-	sortDefinitionReferenceRows(types.Definitions)
-	sortDefinitionReferenceRows(types.References)
+	sortDefinitionReferenceRows(groupedBundleData.Definitions)
+	sortDefinitionReferenceRows(groupedBundleData.References)
 }
 
 func sortMonikerIDs(s []types.ID) {

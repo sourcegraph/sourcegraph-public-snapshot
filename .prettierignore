@@ -24,3 +24,5 @@ shared/dev/**/*.js
 **/__snapshots__
 **/*.html
 client/contrib/GH2SG.bookmarklet.js
+docker-images/grafana/jsonnet/*.json
+docker-images/grafana/grafonnet-lib/

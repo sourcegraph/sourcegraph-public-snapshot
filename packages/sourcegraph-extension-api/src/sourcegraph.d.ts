@@ -534,7 +534,7 @@ declare module 'sourcegraph' {
      * Each {@link ViewComponent} has a distinct {@link ViewComponent#type} value that indicates what kind of
      * component it is ({@link CodeEditor}, etc.).
      */
-    export type ViewComponent = CodeEditor
+    export type ViewComponent = CodeEditor | DirectoryViewer
 
     /**
      * A style for a {@link TextDocumentDecoration}.
@@ -619,6 +619,30 @@ declare module 'sourcegraph' {
     export interface TextDocumentDecorationType {
         /** An opaque identifier. */
         readonly key: string
+    }
+
+    export interface Directory {
+        /**
+         * The URI of the directory.
+         *
+         * @todo The format of this URI will be changed in the future. It must not be relied on.
+         */
+        readonly uri: URL
+    }
+
+    /**
+     * A viewer for directories.
+     *
+     * This API is experimental and subject to change.
+     */
+    export interface DirectoryViewer {
+        readonly type: 'DirectoryViewer'
+
+        /**
+         * The directory shown in the directory viewer.
+         * This currently only exposes the URI of the directory.
+         */
+        readonly directory: Directory
     }
 
     /**
@@ -719,16 +743,53 @@ declare module 'sourcegraph' {
     /**
      * A view provider registered with {@link sourcegraph.app.registerViewProvider}.
      */
-    export interface ViewProvider {
+    export type ViewProvider = GlobalPageViewProvider | DirectoryViewProvider
+
+    /**
+     * Experimental global view provider. Global view providers are shown on a dedicated page in the app.
+     * This API is experimental and is subject to change or removal without notice.
+     */
+    export interface GlobalPageViewProvider {
+        readonly where: 'global/page'
+
+        /**
+         * Provide content for the view.
+         *
+         * @param params Parameters from the page (such as URL query parameters). The schema of these parameters is
+         * experimental and subject to change without notice.
+         * @returns The view content.
+         */
+        provideView(context: { [param: string]: string }): ProviderResult<View>
+    }
+
+    /**
+     * Context passed to directory view providers.
+     *
+     * The schema of these parameters is experimental and subject to change without notice.
+     */
+    export interface DirectoryViewContext {
+        /** The directory viewer displaying the view. */
+        viewer: DirectoryViewer
+
+        /** The workspace of the directory. */
+        workspace: WorkspaceRoot
+    }
+
+    /**
+     * Experimental view provider for directory pages.
+     * This API is experimtal subject to change or removal without notice.
+     */
+    export interface DirectoryViewProvider {
+        readonly where: 'directory'
+
         /**
          * Provide content for a view.
          *
-         * @param params Parameters from the container that is rendering the view (such as URL query
-         * parameters). The schema of these parameters is experimental and subject to change without
-         * notice.
+         * @param context The context of the directory. The schema of these parameters is experimental and subject to
+         * change without notice.
          * @returns The view content.
          */
-        provideView(params: { [key: string]: string }): ProviderResult<View>
+        provideView(context: DirectoryViewContext): ProviderResult<View>
     }
 
     /**

@@ -193,7 +193,7 @@ func process(
 	return nil
 }
 
-// updateCommits updates the lsif_commits table with the current data known to gitserer, then updates the
+// updateCommits updates the lsif_commits table with the current data known to gitserver, then updates the
 // visibility of all dumps for the given repository.
 func updateCommitsAndVisibility(ctx context.Context, db db.DB, gitserverClient gitserver.Client, tx *sql.Tx, repositoryID int, commit string) error {
 	tipCommit, err := gitserverClient.Head(db, repositoryID)
@@ -242,20 +242,20 @@ func convert(
 	root string,
 	getChildren existence.GetChildrenFunc,
 ) (_ []types.Package, _ []types.PackageReference, err error) {
-	correlatedTypes, err := correlation.Correlate(filename, dumpID, root, getChildren)
+	groupedBundleData, err := correlation.Correlate(filename, dumpID, root, getChildren)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "correlation.Correlate")
 	}
 
-	if err := write(ctx, newFilename, correlatedTypes); err != nil {
+	if err := write(ctx, newFilename, groupedBundleData); err != nil {
 		return nil, nil, err
 	}
 
-	return correlatedTypes.Packages, correlatedTypes.PackageReferences, nil
+	return groupedBundleData.Packages, groupedBundleData.PackageReferences, nil
 }
 
 // write commits the correlated data to disk.
-func write(ctx context.Context, filename string, correlatedTypes *correlation.CorrelatedTypes) error {
+func write(ctx context.Context, filename string, groupedBundleData *correlation.GroupedBundleData) error {
 	writer, err := writer.NewSQLiteWriter(filename, serializer.NewDefaultSerializer())
 	if err != nil {
 		return err
@@ -266,19 +266,19 @@ func write(ctx context.Context, filename string, correlatedTypes *correlation.Co
 		}
 	}()
 
-	if err := writer.WriteMeta(ctx, correlatedTypes.LSIFVersion, correlatedTypes.NumResultChunks); err != nil {
+	if err := writer.WriteMeta(ctx, groupedBundleData.LSIFVersion, groupedBundleData.NumResultChunks); err != nil {
 		return errors.Wrap(err, "writer.WriteMeta")
 	}
-	if err := writer.WriteDocuments(ctx, correlatedTypes.Documents); err != nil {
+	if err := writer.WriteDocuments(ctx, groupedBundleData.Documents); err != nil {
 		return errors.Wrap(err, "writer.WriteDocuments")
 	}
-	if err := writer.WriteResultChunks(ctx, correlatedTypes.ResultChunks); err != nil {
+	if err := writer.WriteResultChunks(ctx, groupedBundleData.ResultChunks); err != nil {
 		return errors.Wrap(err, "writer.WriteResultChunks")
 	}
-	if err := writer.WriteDefinitions(ctx, correlatedTypes.Definitions); err != nil {
+	if err := writer.WriteDefinitions(ctx, groupedBundleData.Definitions); err != nil {
 		return errors.Wrap(err, "writer.WriteDefinitions")
 	}
-	if err := writer.WriteReferences(ctx, correlatedTypes.References); err != nil {
+	if err := writer.WriteReferences(ctx, groupedBundleData.References); err != nil {
 		return errors.Wrap(err, "writer.WriteReferences")
 	}
 

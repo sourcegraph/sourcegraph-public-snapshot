@@ -1003,9 +1003,9 @@ func TestPatchSetResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var jobs []*campaigns.Patch
+	var patches []*campaigns.Patch
 	for _, repo := range rs {
-		job := &campaigns.Patch{
+		patch := &campaigns.Patch{
 			PatchSetID: patchSet.ID,
 			RepoID:     repo.ID,
 			Rev:        testingRev,
@@ -1013,11 +1013,11 @@ func TestPatchSetResolver(t *testing.T) {
 			Diff:       testDiff,
 		}
 
-		err := store.CreatePatch(ctx, job)
+		err := store.CreatePatch(ctx, patch)
 		if err != nil {
 			t.Fatal(err)
 		}
-		jobs = append(jobs, job)
+		patches = append(patches, patch)
 	}
 
 	sr := &Resolver{store: store}
@@ -1033,12 +1033,17 @@ func TestPatchSetResolver(t *testing.T) {
         node(id: %q) {
           ... on PatchSet {
             id
+            diffStat {
+              added
+              deleted
+              changed
+            }
             patches(first: %d) {
               nodes {
                 repository {
                   name
                 }
-				diff {
+                diff {
                   fileDiffs {
                     rawDiff
                     diffStat {
@@ -1070,16 +1075,21 @@ func TestPatchSetResolver(t *testing.T) {
                       }
                     }
                   }
-				}
+                }
               }
             }
           }
         }
       }
-	`, marshalPatchSetID(patchSet.ID), len(jobs)))
+	`, marshalPatchSetID(patchSet.ID), len(patches)))
 
-	if have, want := len(response.Node.Patches.Nodes), len(jobs); have != want {
+	if have, want := len(response.Node.Patches.Nodes), len(patches); have != want {
 		t.Fatalf("have %d patches, want %d", have, want)
+	}
+
+	// Each patch has testDiff as diff, each with 2 lines changed
+	if have, want := response.Node.DiffStat.Changed, len(patches)*2; have != want {
+		t.Fatalf("wrong PatchSet.DiffStat.Changed %d, want=%d", have, want)
 	}
 
 	for i, patch := range response.Node.Patches.Nodes {
@@ -1345,18 +1355,10 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// TODO: We need a transaction here because ExecChangesetJob expects a
-	// wrapping tx. We can remove that assertion from ExecChangesetJob though
-	// and then remove the tx here.
-	tx, err := store.Transact(ctx)
+	err = ee.ExecChangesetJob(ctx, clock, store, gitClient, sourcer, c, job)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = ee.ExecChangesetJob(ctx, clock, tx, gitClient, sourcer, c, job)
-	if err != nil {
-		t.Fatal(err)
-	}
-	tx.Done(nil)
 
 	updatedJob, err := store.GetChangesetJob(ctx, ee.GetChangesetJobOpts{ID: job.ID})
 	if err != nil {
@@ -1406,6 +1408,9 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 	        }
 	        totalCount
 	      }
+	      openChangesets {
+	        totalCount
+	      }
 	      diffStat {
 	        added
 	        deleted
@@ -1427,8 +1432,11 @@ func TestCreateCampaignWithPatchSet(t *testing.T) {
 		t.Fatalf("campaign.Patches.TotalCount is not zero: %d", campaign.Patches.TotalCount)
 	}
 
+	if campaign.OpenChangesets.TotalCount != 1 {
+		t.Fatalf("campaign.OpenChangesets.TotalCount is not 1: %d", campaign.OpenChangesets.TotalCount)
+	}
 	if campaign.Changesets.TotalCount != 1 {
-		t.Fatalf("campaign.Patches.TotalCount is not zero: %d", campaign.Patches.TotalCount)
+		t.Fatalf("campaign.Changesets.TotalCount is not 1: %d", campaign.Changesets.TotalCount)
 	}
 
 	if campaign.DiffStat.Changed != 2 {
