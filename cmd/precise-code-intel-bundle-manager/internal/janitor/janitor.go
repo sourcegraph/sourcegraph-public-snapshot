@@ -12,6 +12,7 @@ type Janitor struct {
 	desiredPercentFree int
 	janitorInterval    time.Duration
 	maxUploadAge       time.Duration
+	metrics            JanitorMetrics
 }
 
 type JanitorOpts struct {
@@ -19,6 +20,7 @@ type JanitorOpts struct {
 	DesiredPercentFree int
 	JanitorInterval    time.Duration
 	MaxUploadAge       time.Duration
+	Metrics            JanitorMetrics
 }
 
 func NewJanitor(opts JanitorOpts) *Janitor {
@@ -27,6 +29,7 @@ func NewJanitor(opts JanitorOpts) *Janitor {
 		desiredPercentFree: opts.DesiredPercentFree,
 		janitorInterval:    opts.JanitorInterval,
 		maxUploadAge:       opts.MaxUploadAge,
+		metrics:            opts.Metrics,
 	}
 }
 
@@ -36,6 +39,7 @@ func NewJanitor(opts JanitorOpts) *Janitor {
 func (j *Janitor) Run() {
 	for {
 		if err := j.run(); err != nil {
+			j.metrics.Errors.Inc()
 			log15.Error("Failed to run janitor process", "err", err)
 		}
 

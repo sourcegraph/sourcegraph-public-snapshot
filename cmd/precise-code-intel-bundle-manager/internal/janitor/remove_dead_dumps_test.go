@@ -24,6 +24,7 @@ func TestRemoveDeadDumps(t *testing.T) {
 
 		j := &Janitor{
 			bundleDir: bundleDir,
+			metrics:   NewJanitorMetrics(),
 		}
 
 		var idArgs [][]int
@@ -79,6 +80,7 @@ func TestRemoveDeadDumpsMaxRequestBatchSize(t *testing.T) {
 
 		j := &Janitor{
 			bundleDir: bundleDir,
+			metrics:   NewJanitorMetrics(),
 		}
 
 		var idArgs [][]int

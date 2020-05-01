@@ -55,16 +55,19 @@ func (j *Janitor) removeDeadDumps(statesFn StatesFn) error {
 		}
 	}
 
+	count := 0
 	for id, path := range pathsByID {
 		if state, exists := allStates[id]; !exists || state == "errored" {
 			if err := os.Remove(path); err != nil {
 				return err
 			}
 
+			count++
 			log15.Debug("Removed dead dump", "id", id)
 		}
 	}
 
+	j.metrics.DeadDumps.Add(float64(count))
 	return nil
 }
 

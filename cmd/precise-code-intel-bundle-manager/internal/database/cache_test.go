@@ -53,7 +53,7 @@ func TestDatabaseCacheEvictionWhileHeld(t *testing.T) {
 		return true
 	}
 
-	cache, err := NewDatabaseCache(2)
+	cache, _, err := NewDatabaseCache(2)
 	if err != nil {
 		t.Fatalf("unexpected error creating database cache: %s", err)
 	}
