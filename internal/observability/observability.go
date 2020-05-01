@@ -83,7 +83,10 @@ func PrepObservation(
 			kvs = append(kvs, field.Key(), field.Value())
 		}
 
-		metrics.Observe(elapsed, count, err)
+		if metrics != nil {
+			metrics.Observe(elapsed, count, err)
+		}
+
 		logging.Log(logger, logName, err, kvs...)
 		tr.LogFields(logFields...)
 		tr.SetErrorPtr(err)
