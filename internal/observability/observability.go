@@ -101,7 +101,9 @@ func WithObservation(ctx context.Context, args ObservationArgs) (context.Context
 
 		if tr != nil {
 			tr.LogFields(logFields...)
-			tr.SetErrorPtr(args.Err)
+			if args.Err != nil {
+				tr.SetError(*args.Err)
+			}
 			tr.Finish()
 		}
 	}
