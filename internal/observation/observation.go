@@ -10,8 +10,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-// ObservationArgs are the arguments to the With function.
-type ObservationArgs struct {
+// Args are the arguments to the With function.
+type Args struct {
 	Logger  logging.ErrorLogger
 	Metrics *metrics.OperationMetrics
 	Tracer  *trace.Tracer
@@ -39,7 +39,7 @@ type FinishFn func(
 // counting metric counts invocations, the method should be deferred as follows:
 //
 //     func observedFoo(ctx context.Context) (err error) {
-//         ctx, finish := With(ctx, ObservationArgs{
+//         ctx, finish := observation.With(ctx, observation.Args{
 //             Err: &err,
 //             Logger: logger,
 //             Metrics: metrics,
@@ -56,7 +56,7 @@ type FinishFn func(
 // operation completes, the method should be deferred as follows:
 //
 //     func observedFoo(ctx context.Context) (items []Foo err error) {
-//         ctx, finish := With(ctx, ObservationArgs{
+//         ctx, finish := observation.With(ctx, observation.Args{
 //             Err: &err,
 //             Logger: logger,
 //             Metrics: metrics,
@@ -71,8 +71,8 @@ type FinishFn func(
 //         return realFoo()
 //     }
 //
-// Both With and finish can be supplied a variable number of log fields which
-// will be logged in the trace and when an error occurs.
+// The finish function can be supplied a variable number of log fields which will be logged
+// in the trace and when an error occurs.
 func With(ctx context.Context, args ObservationArgs) (context.Context, FinishFn) {
 	began := time.Now()
 
