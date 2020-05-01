@@ -210,7 +210,7 @@ func TestMonikersByPosition(t *testing.T) {
 func TestMonikerResults(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assertRequest(t, r, "GET", "/dbs/42/monikerResults", map[string]string{
-			"modelType":  "definitions",
+			"modelType":  "definition",
 			"scheme":     "gomod",
 			"identifier": "leftpad",
 			"take":       "25",
@@ -233,7 +233,7 @@ func TestMonikerResults(t *testing.T) {
 	}
 
 	client := &bundleClientImpl{bundleManagerURL: ts.URL, bundleID: 42}
-	locations, count, err := client.MonikerResults(context.Background(), "definitions", "gomod", "leftpad", 0, 25)
+	locations, count, err := client.MonikerResults(context.Background(), "definition", "gomod", "leftpad", 0, 25)
 	if err != nil {
 		t.Fatalf("unexpected error querying moniker results: %s", err)
 	}
