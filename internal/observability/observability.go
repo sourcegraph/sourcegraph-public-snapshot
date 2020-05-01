@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-// FinishFn is the shape of the function returned by WIthObservation and should be
+// FinishFn is the shape of the function returned by WithObservation and should be
 // invoked within a defer directly before the observed function returns.
 type FinishFn func(
 	// The number of things processed.
@@ -19,14 +19,14 @@ type FinishFn func(
 	logFields ...log.Field,
 )
 
-// WIthObservation prepares the necessary timers, loggers, and metrics to observe an
+// WithObservation prepares the necessary timers, loggers, and metrics to observe an
 // operation. This returns a decorated context, which should be used in place of the input
 // context in the observed operation, and ah FinishFn function. This function should
 // be invoked  on defer. If your function does not process a variable number of items and the
 // counting metric counts invocations, the method should be deferred as follows:
 //
 //     func observedFoo(ctx context.Context) (err error) {
-//         ctx, finish := WIthObservation(ctx, &err, logger, metrics, tracer, "TraceName", "log-name")
+//         ctx, finish := WithObservation(ctx, &err, logger, metrics, tracer, "TraceName", "log-name")
 //         defer finish(1)
 //
 //         return realFoo()
@@ -36,7 +36,7 @@ type FinishFn func(
 // operation completes, the method should be deferred as follows:
 //
 //     func observedFoo(ctx context.Context) (items []Foo err error) {
-//         ctx, finish := WIthObservation(ctx, &err, logger, metrics, tracer, "TraceName", "log-name")
+//         ctx, finish := WithObservation(ctx, &err, logger, metrics, tracer, "TraceName", "log-name")
 //         defer func() {
 //             finish(float64(len(items)))
 //         }()
@@ -44,9 +44,9 @@ type FinishFn func(
 //         return realFoo()
 //     }
 //
-// Both WIthObservation and finish can be supplied a variable number of log fields which
+// Both WithObservation and finish can be supplied a variable number of log fields which
 // will be logged in the trace and when an error occurs.
-func WIthObservation(
+func WithObservation(
 	// The input context.
 	ctx context.Context,
 	// The error logger instance.
