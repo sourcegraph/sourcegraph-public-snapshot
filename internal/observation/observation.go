@@ -73,7 +73,7 @@ type FinishFn func(
 //
 // The finish function can be supplied a variable number of log fields which will be logged
 // in the trace and when an error occurs.
-func With(ctx context.Context, args ObservationArgs) (context.Context, FinishFn) {
+func With(ctx context.Context, args Args) (context.Context, FinishFn) {
 	began := time.Now()
 
 	var tr *trace.Trace
