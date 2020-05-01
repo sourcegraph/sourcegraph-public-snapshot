@@ -44,7 +44,9 @@ func (s FakeChangesetSource) CreateChangeset(ctx context.Context, c *repos.Chang
 		return s.ChangesetExists, fmt.Errorf("wrong BaseRef. want=%s, have=%s", s.WantBaseRef, c.BaseRef)
 	}
 
-	c.SetMetadata(s.FakeMetadata)
+	if err := c.SetMetadata(s.FakeMetadata); err != nil {
+		return s.ChangesetExists, err
+	}
 
 	return s.ChangesetExists, s.Err
 }
@@ -58,8 +60,7 @@ func (s FakeChangesetSource) UpdateChangeset(ctx context.Context, c *repos.Chang
 		return fmt.Errorf("wrong BaseRef. want=%s, have=%s", s.WantBaseRef, c.BaseRef)
 	}
 
-	c.SetMetadata(s.FakeMetadata)
-	return nil
+	return c.SetMetadata(s.FakeMetadata)
 }
 
 var fakeNotImplemented = errors.New("not implement in FakeChangesetSource")

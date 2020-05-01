@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -28,11 +29,16 @@ type BundleManagerClient interface {
 	SendDB(ctx context.Context, bundleID int, r io.Reader) error
 }
 
+type baseClient interface {
+	QueryBundle(ctx context.Context, bundleID int, op string, qs map[string]interface{}, target interface{}) error
+}
+
 type bundleManagerClientImpl struct {
 	bundleManagerURL string
 }
 
 var _ BundleManagerClient = &bundleManagerClientImpl{}
+var _ baseClient = &bundleManagerClientImpl{}
 
 func New(bundleManagerURL string) BundleManagerClient {
 	return &bundleManagerClientImpl{bundleManagerURL: bundleManagerURL}
@@ -41,14 +47,19 @@ func New(bundleManagerURL string) BundleManagerClient {
 // BundleClient creates a client that can answer intelligence queries for a single dump.
 func (c *bundleManagerClientImpl) BundleClient(bundleID int) BundleClient {
 	return &bundleClientImpl{
-		bundleManagerURL: c.bundleManagerURL,
-		bundleID:         bundleID,
+		base:     c,
+		bundleID: bundleID,
 	}
 }
 
 // SendUpload transfers a raw LSIF upload to the bundle manager to be stored on disk.
 func (c *bundleManagerClientImpl) SendUpload(ctx context.Context, bundleID int, r io.Reader) error {
-	body, err := c.request(ctx, "POST", fmt.Sprintf("uploads/%d", bundleID), r)
+	url, err := makeURL(c.bundleManagerURL, fmt.Sprintf("uploads/%d", bundleID), nil)
+	if err != nil {
+		return err
+	}
+
+	body, err := c.do(ctx, "POST", url, r)
 	if err != nil {
 		return err
 	}
@@ -59,7 +70,12 @@ func (c *bundleManagerClientImpl) SendUpload(ctx context.Context, bundleID int, 
 // GetUploads retrieves a raw LSIF upload from disk. The file is written to a file in the
 // given directory with a random filename. The generated filename is returned on success.
 func (c *bundleManagerClientImpl) GetUpload(ctx context.Context, bundleID int, dir string) (_ string, err error) {
-	body, err := c.request(ctx, "GET", fmt.Sprintf("uploads/%d", bundleID), nil)
+	url, err := makeURL(c.bundleManagerURL, fmt.Sprintf("uploads/%d", bundleID), nil)
+	if err != nil {
+		return "", err
+	}
+
+	body, err := c.do(ctx, "GET", url, nil)
 	if err != nil {
 		return "", err
 	}
@@ -84,7 +100,12 @@ func (c *bundleManagerClientImpl) GetUpload(ctx context.Context, bundleID int, d
 
 // SendDB transfers a converted databse to the bundle manager to be stored on disk.
 func (c *bundleManagerClientImpl) SendDB(ctx context.Context, bundleID int, r io.Reader) error {
-	body, err := c.request(ctx, "POST", fmt.Sprintf("dbs/%d", bundleID), r)
+	url, err := makeURL(c.bundleManagerURL, fmt.Sprintf("dbs/%d", bundleID), nil)
+	if err != nil {
+		return err
+	}
+
+	body, err := c.do(ctx, "POST", url, r)
 	if err != nil {
 		return err
 	}
@@ -92,18 +113,31 @@ func (c *bundleManagerClientImpl) SendDB(ctx context.Context, bundleID int, r io
 	return nil
 }
 
-func (c *bundleManagerClientImpl) request(ctx context.Context, method, path string, body io.Reader) (io.ReadCloser, error) {
-	url, err := url.Parse(fmt.Sprintf("%s/%s", c.bundleManagerURL, path))
+func (c *bundleManagerClientImpl) QueryBundle(ctx context.Context, bundleID int, op string, qs map[string]interface{}, target interface{}) (err error) {
+	url, err := makeBundleURL(c.bundleManagerURL, bundleID, op, qs)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
+	body, err := c.do(ctx, "GET", url, nil)
+	if err != nil {
+		return err
+	}
+	defer body.Close()
+
+	return json.NewDecoder(body).Decode(&target)
+}
+
+// TODO - trace
+func (c *bundleManagerClientImpl) do(ctx context.Context, method string, url *url.URL, body io.Reader) (_ io.ReadCloser, err error) {
 	req, err := http.NewRequest(method, url.String(), body)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO - use context
+	req.Header.Set("Content-Type", "application/json")
+	req = req.WithContext(ctx)
+
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
@@ -111,7 +145,7 @@ func (c *bundleManagerClientImpl) request(ctx context.Context, method, path stri
 
 	if resp.StatusCode != http.StatusOK {
 		resp.Body.Close()
-		return nil, fmt.Errorf("unexpected status %d", resp.StatusCode)
+		return nil, fmt.Errorf("unexpected status code %d", resp.StatusCode)
 	}
 
 	return resp.Body, nil
@@ -124,4 +158,22 @@ func openRandomFile(dir string) (*os.File, error) {
 	}
 
 	return os.Create(filepath.Join(dir, uuid.String()))
+}
+
+func makeURL(baseURL, path string, qs map[string]interface{}) (*url.URL, error) {
+	values := url.Values{}
+	for k, v := range qs {
+		values[k] = []string{fmt.Sprintf("%v", v)}
+	}
+
+	url, err := url.Parse(fmt.Sprintf("%s/%s", baseURL, path))
+	if err != nil {
+		return nil, err
+	}
+	url.RawQuery = values.Encode()
+	return url, nil
+}
+
+func makeBundleURL(baseURL string, bundleID int, op string, qs map[string]interface{}) (*url.URL, error) {
+	return makeURL(baseURL, fmt.Sprintf("dbs/%d/%s", bundleID, op), qs)
 }

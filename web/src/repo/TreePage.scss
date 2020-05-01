@@ -31,6 +31,10 @@
         }
     }
 
+    &__view-title:last-child {
+        margin-bottom: 0;
+    }
+
     // To avoid having empty columns (and thus the items appearing not flush with the left margin),
     // the component only applies this class when there are >= 6 items. This number is chosen
     // because it is greater than the maximum number of columns that will be shown and ensures that

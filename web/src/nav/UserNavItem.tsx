@@ -16,7 +16,6 @@ interface Props extends ThemeProps, ThemePreferenceProps {
         'username' | 'avatarURL' | 'settingsURL' | 'organizations' | 'siteAdmin' | 'session'
     >
     showDotComMarketing: boolean
-    showDiscussions: boolean
     keyboardShortcutForSwitchTheme?: KeyboardShortcut
 }
 
@@ -68,11 +67,6 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                     <Link to="/extensions" className="dropdown-item">
                         Extensions
                     </Link>
-                    {this.props.showDiscussions && (
-                        <Link to="/discussions" className="dropdown-item">
-                            Discussions
-                        </Link>
-                    )}
                     <Link to={`/users/${this.props.authenticatedUser.username}/searches`} className="dropdown-item">
                         Saved searches
                     </Link>

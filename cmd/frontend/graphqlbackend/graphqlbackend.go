@@ -218,7 +218,6 @@ var whitelistedPrometheusFieldNames = map[[2]string]struct{}{
 	{"Mutation", "logUserEvent"}:                {},
 	{"Query", "clientConfiguration"}:            {},
 	{"Query", "currentUser"}:                    {},
-	{"Query", "discussionThreads"}:              {},
 	{"Query", "dotcom"}:                         {},
 	{"Query", "extensionRegistry"}:              {},
 	{"Query", "highlightCode"}:                  {},
@@ -407,16 +406,6 @@ func (r *NodeResolver) ToChangesetEvent() (ChangesetEventResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToDiscussionComment() (*discussionCommentResolver, bool) {
-	n, ok := r.Node.(*discussionCommentResolver)
-	return n, ok
-}
-
-func (r *NodeResolver) ToDiscussionThread() (*discussionThreadResolver, bool) {
-	n, ok := r.Node.(*discussionThreadResolver)
-	return n, ok
-}
-
 func (r *NodeResolver) ToProductLicense() (ProductLicense, bool) {
 	n, ok := r.Node.(ProductLicense)
 	return n, ok
@@ -536,10 +525,6 @@ func (r *schemaResolver) nodeByID(ctx context.Context, id graphql.ID) (Node, err
 		return r.ChangesetByID(ctx, id)
 	case "Patch":
 		return r.PatchByID(ctx, id)
-	case "DiscussionComment":
-		return discussionCommentByID(ctx, id)
-	case "DiscussionThread":
-		return discussionThreadByID(ctx, id)
 	case "ProductLicense":
 		if f := ProductLicenseByID; f != nil {
 			return f(ctx, id)

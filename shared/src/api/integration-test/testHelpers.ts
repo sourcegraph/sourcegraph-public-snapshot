@@ -8,7 +8,7 @@ import { isDefined } from '../../util/types'
 import { ExtensionHostClient } from '../client/client'
 import { createExtensionHostClientConnection } from '../client/connection'
 import { Services } from '../client/services'
-import { CodeEditorData } from '../client/services/editorService'
+import { ViewerData } from '../client/services/viewerService'
 import { TextModel } from '../client/services/modelService'
 import { WorkspaceRootWithMetadata } from '../client/services/workspaceService'
 import { InitData, startExtensionHost } from '../extension/extensionHost'
@@ -22,13 +22,13 @@ export function assertToJSON(a: any, expected: any): void {
 interface TestInitData {
     roots: readonly WorkspaceRootWithMetadata[]
     models?: readonly TextModel[]
-    editors: readonly CodeEditorData[]
+    viewers: readonly ViewerData[]
 }
 
 const FIXTURE_INIT_DATA: TestInitData = {
     roots: [{ uri: 'file:///' }],
     models: [{ uri: 'file:///f', text: 't', languageId: 'l' }],
-    editors: [
+    viewers: [
         {
             type: 'CodeEditor',
             resource: 'file:///f',
@@ -99,22 +99,22 @@ export async function integrationTestContext(
             services.model.addModel(model)
         }
     }
-    for (const editor of initModel.editors) {
-        services.editor.addEditor(editor)
+    for (const editor of initModel.viewers) {
+        services.viewer.addViewer(editor)
     }
     services.workspace.roots.next(initModel.roots)
 
     // Wait for initModel to be initialized
-    if (initModel.editors.length) {
+    if (initModel.viewers.length) {
         await Promise.all([
-            from(extensionAPI.workspace.openedTextDocuments).pipe(take(initModel.editors.length)).toPromise(),
+            from(extensionAPI.workspace.openedTextDocuments).pipe(take(initModel.viewers.length)).toPromise(),
             from(extensionAPI.app.activeWindowChanges)
                 .pipe(
                     first(isDefined),
                     switchMap(activeWindow =>
                         from(activeWindow.activeViewComponentChanges).pipe(
                             filter(isDefined),
-                            take(initModel.editors.length)
+                            take(initModel.viewers.length)
                         )
                     )
                 )

@@ -67,6 +67,7 @@ type PatchSet struct {
 	ID         string
 	Patches    PatchConnection
 	PreviewURL string
+	DiffStat   DiffStat
 }
 
 type User struct {
@@ -102,6 +103,7 @@ type Campaign struct {
 	}
 	Patches                 PatchConnection
 	Changesets              ChangesetConnection
+	OpenChangesets          ChangesetConnection
 	ChangesetCountsOverTime []ChangesetCounts
 	DiffStat                DiffStat
 }

@@ -4,7 +4,8 @@ import { FILTERS, resolveFilter } from './filters'
 import { Sequence, toMonacoRange } from './parser'
 import { Omit } from 'utility-types'
 import { Observable } from 'rxjs'
-import { SearchSuggestion, IRepository, IFile, ISymbol, ILanguage, SymbolKind } from '../../graphql/schema'
+import { IRepository, IFile, ISymbol, ILanguage, IRepoGroup, SymbolKind } from '../../graphql/schema'
+import { SearchSuggestion } from '../suggestions'
 import { isDefined } from '../../util/types'
 import { FilterType, isNegatableFilter } from '../interactive/util'
 import { first } from 'rxjs/operators'
@@ -121,6 +122,13 @@ const languageToCompletion = ({ name }: ILanguage): PartialCompletionItem | unde
           }
         : undefined
 
+const repoGroupToCompletion = ({ name }: IRepoGroup): PartialCompletionItem => ({
+    label: name,
+    kind: repositoryCompletionItemKind,
+    insertText: name,
+    filterText: name,
+})
+
 const suggestionToCompletionItem = (
     suggestion: SearchSuggestion,
     options: { isFilterValue: boolean }
@@ -134,6 +142,8 @@ const suggestionToCompletionItem = (
             return symbolToCompletion(suggestion)
         case 'Language':
             return languageToCompletion(suggestion)
+        case 'RepoGroup':
+            return repoGroupToCompletion(suggestion)
     }
 }
 

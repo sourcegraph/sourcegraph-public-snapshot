@@ -1,5 +1,5 @@
 import { Filter } from './parser'
-import { SearchSuggestion } from '../../graphql/schema'
+import { SearchSuggestion } from '../suggestions'
 import {
     FilterType,
     isNegatedFilter,
@@ -121,6 +121,7 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
     [FilterType.repogroup]: {
         description: 'group-name (include results from the named group)',
         singular: true,
+        suggestions: 'RepoGroup',
     },
     [FilterType.repohascommitafter]: {
         description: '"string specifying time frame" (filter out stale repositories without recent commits)',

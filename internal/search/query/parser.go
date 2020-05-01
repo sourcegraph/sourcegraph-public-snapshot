@@ -8,8 +8,6 @@ import (
 	"strings"
 	"unicode"
 	"unicode/utf8"
-
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
 type ExpectedOperand struct {
@@ -320,8 +318,6 @@ func ScanField(buf []byte) (string, int) {
 	}
 	return string(result), count
 }
-
-var fieldValuePattern = lazyregexp.New("(^-?[a-zA-Z0-9]+):(.*)")
 
 // ScanSearchPatternHeuristic scans for a pattern using a heuristic that allows it to
 // contain parentheses, if balanced, with appropriate lexical handling for

@@ -100,7 +100,9 @@ func TestExecChangesetJob(t *testing.T) {
 				}
 				// This sets ExternalID, which we need to trigger the
 				// AlreadyExistsError.
-				ch.SetMetadata(meta)
+				if err := ch.SetMetadata(meta); err != nil {
+					t.Fatal(err)
+				}
 				// Now we can remove metadata.
 				ch.Metadata = nil
 
@@ -273,12 +275,6 @@ func createCampaignPatch(t *testing.T, ctx context.Context, now time.Time, s *St
 	}
 
 	return campaign, patch
-}
-
-var githubActor = github.Actor{
-	AvatarURL: "https://avatars2.githubusercontent.com/u/1185253",
-	Login:     "mrnugget",
-	URL:       "https://github.com/mrnugget",
 }
 
 func buildGithubPR(now time.Time, c *cmpgn.Campaign, headRef string) interface{} {
