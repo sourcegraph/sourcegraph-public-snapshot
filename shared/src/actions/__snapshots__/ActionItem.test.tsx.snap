@@ -111,7 +111,9 @@ exports[`ActionItem render as link with icon for "open" command with different o
   href="https://other.com/foo"
   onClick={[Function]}
   onKeyPress={[Function]}
+  rel="noopener noreferrer"
   tabIndex={0}
+  target="_blank"
 >
    
   

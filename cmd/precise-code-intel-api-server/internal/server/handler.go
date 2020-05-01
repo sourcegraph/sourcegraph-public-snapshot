@@ -200,7 +200,7 @@ func (s *Server) handleReferences(w http.ResponseWriter, r *http.Request) {
 		getQueryInt(r, "line"),
 		getQueryInt(r, "character"),
 		getQueryInt(r, "uploadId"),
-		getQuery(r, "rawCursor"),
+		getQuery(r, "cursor"),
 		s.db,
 		s.bundleManagerClient,
 	)
