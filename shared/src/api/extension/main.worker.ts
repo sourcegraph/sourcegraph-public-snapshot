@@ -24,7 +24,6 @@ const isInitMessage = (value: unknown): value is InitMessage =>
 async function extensionHostMain(): Promise<void> {
     try {
         const event = await fromEvent<MessageEvent>(self, 'message').pipe(take(1)).toPromise()
-        console.log('extension host received init message', event.data)
         if (!isInitMessage(event.data)) {
             throw new Error('First message event in extension host worker was not a well-formed InitMessage')
         }
