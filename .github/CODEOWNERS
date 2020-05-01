@@ -213,6 +213,8 @@ Dockerfile @sourcegraph/distribution
 /internal/redispool/ @keegancsmith
 /internal/store/ @keegancsmith
 /internal/metrics @keegancsmith @slimsag
+/internal/logging @keegancsmith @slimsag
+/internal/observation @keegancsmith @slimsag
 
 # Code discussions
 **/*discussion* @slimsag
