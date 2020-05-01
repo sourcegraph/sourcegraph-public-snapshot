@@ -12,19 +12,14 @@ import (
 
 // ObservationArgs are the arguments to the WithObservation function.
 type ObservationArgs struct {
-	// The error logger instance.
-	Logger logging.ErrorLogger
-	// The OperationMetrics to observe.
+	Logger  logging.ErrorLogger
 	Metrics *metrics.OperationMetrics
-	// The root tracer.
-	Tracer *trace.Tracer
-	// The pointer to the operation's error value.
-	Err *error
-	// The name of the trace.
+	Tracer  *trace.Tracer
+	// Err is a pointer to the operation's err result.
+	Err       *error
 	TraceName string
-	// The prefix of the error log mesage.
-	LogName string
-	// Fields to log before the operation is performed.
+	LogName   string
+	// LogFields are logged prior to the operation being performed.
 	LogFields []log.Field
 }
 
@@ -38,9 +33,9 @@ type FinishFn func(
 )
 
 // WithObservation prepares the necessary timers, loggers, and metrics to observe an
-// operation. This returns a decorated context, which should be used in place of the input
-// context in the observed operation, and ah FinishFn function. This function should
-// be invoked  on defer. If your function does not process a variable number of items and the
+// operation.
+//
+// If your function does not process a variable number of items and the
 // counting metric counts invocations, the method should be deferred as follows:
 //
 //     func observedFoo(ctx context.Context) (err error) {
@@ -87,7 +82,7 @@ func WithObservation(ctx context.Context, args ObservationArgs) (context.Context
 		tr.LogFields(args.LogFields...)
 	}
 
-	finish := func(count float64, additionalLogFields ...log.Field) {
+	return ctx, func(count float64, additionalLogFields ...log.Field) {
 		elapsed := time.Since(began).Seconds()
 
 		logFields := append(append(append(
@@ -110,6 +105,4 @@ func WithObservation(ctx context.Context, args ObservationArgs) (context.Context
 			tr.Finish()
 		}
 	}
-
-	return ctx, finish
 }
