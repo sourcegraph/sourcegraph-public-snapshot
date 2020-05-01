@@ -62,7 +62,7 @@ func WithErrorsHelp(text string) OperationMetricsOption {
 // be underscore_cased as it is used in the metric name.
 func NewOperationMetrics(subsystem, metricPrefix, operationName string, fns ...OperationMetricsOption) *OperationMetrics {
 	options := &operationMetricOptions{
-		durationHelp: fmt.Sprintf("Time spent performing %s operations", operationName),
+		durationHelp: fmt.Sprintf("Time in seconds spent performing %s operations", operationName),
 		countHelp:    fmt.Sprintf("Total number of %s operations", operationName),
 		errorsHelp:   fmt.Sprintf("Total number of errors when performing %s operations", operationName),
 	}
