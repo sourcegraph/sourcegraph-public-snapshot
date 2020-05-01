@@ -4,6 +4,8 @@ import { ClientViewsAPI, PanelUpdater, PanelViewData } from '../../client/api/vi
 import { syncSubscription } from '../../util'
 import { Unsubscribable } from 'rxjs'
 import { toProxyableSubscribable } from './common'
+import { ContributableViewContainer } from '../../protocol'
+import { ViewContexts } from '../../client/services/viewService'
 
 /**
  * @internal
@@ -73,11 +75,41 @@ export class ExtViews implements comlink.ProxyMarked {
     }
 
     public registerViewProvider(id: string, provider: sourcegraph.ViewProvider): Unsubscribable {
-        const providerFunction: comlink.Local<
-            Parameters<ClientViewsAPI['$registerViewProvider']>[1]
-        > = comlink.proxy((params: { [key: string]: string }) =>
-            toProxyableSubscribable(provider.provideView(params), result => result || null)
-        )
-        return syncSubscription(this.proxy.$registerViewProvider(id, providerFunction))
+        switch (provider.where) {
+            case ContributableViewContainer.Directory: {
+                return syncSubscription(
+                    this.proxy.$registerDirectoryViewProvider(
+                        id,
+                        comlink.proxy((context: ViewContexts[typeof ContributableViewContainer.Directory]) =>
+                            toProxyableSubscribable(
+                                provider.provideView({
+                                    viewer: {
+                                        ...context.viewer,
+                                        directory: {
+                                            ...context.viewer.directory,
+                                            uri: new URL(context.viewer.directory.uri),
+                                        },
+                                    },
+                                    workspace: {
+                                        uri: new URL(context.workspace.uri),
+                                    },
+                                }),
+                                result => result || null
+                            )
+                        )
+                    )
+                )
+            }
+            case ContributableViewContainer.GlobalPage: {
+                return syncSubscription(
+                    this.proxy.$registerGlobalPageViewProvider(
+                        id,
+                        comlink.proxy((context: ViewContexts[typeof ContributableViewContainer.GlobalPage]) =>
+                            toProxyableSubscribable(provider.provideView(context), result => result || null)
+                        )
+                    )
+                )
+            }
+        }
     }
 }

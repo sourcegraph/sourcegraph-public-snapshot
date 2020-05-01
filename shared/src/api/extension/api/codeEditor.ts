@@ -4,7 +4,7 @@ import * as clientType from '@sourcegraph/extension-api-types'
 import { BehaviorSubject } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { ClientCodeEditorAPI } from '../../client/api/codeEditor'
-import { CodeEditorData, EditorId } from '../../client/services/editorService'
+import { CodeEditorData, ViewerId } from '../../client/services/viewerService'
 import { createDecorationType } from './decorations'
 import { ExtDocuments } from './documents'
 
@@ -29,7 +29,7 @@ export class ExtCodeEditor implements sourcegraph.CodeEditor {
     private resource: string
 
     constructor(
-        data: CodeEditorData & EditorId,
+        data: CodeEditorData & ViewerId,
         private proxy: Remote<ClientCodeEditorAPI>,
         private documents: ExtDocuments
     ) {

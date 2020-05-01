@@ -44,7 +44,7 @@ func TestGetPackage(t *testing.T) {
 		Indexer:           "lsif-go",
 	}
 
-	insertUploads(t, db.db, Upload{
+	insertUploads(t, dbconn.Global, Upload{
 		ID:                expected.ID,
 		Commit:            expected.Commit,
 		Root:              expected.Root,
@@ -60,7 +60,7 @@ func TestGetPackage(t *testing.T) {
 		Indexer:           expected.Indexer,
 	})
 
-	if err := db.UpdatePackages(context.Background(), nil, []types.Package{
+	if err := db.UpdatePackages(context.Background(), []types.Package{
 		{DumpID: 1, Scheme: "gomod", Name: "leftpad", Version: "0.1.0"},
 	}); err != nil {
 		t.Fatalf("unexpected error updating packages: %s", err)
@@ -83,9 +83,9 @@ func TestUpdatePackages(t *testing.T) {
 	db := &dbImpl{db: dbconn.Global}
 
 	// for foreign key relation
-	insertUploads(t, db.db, Upload{ID: 42})
+	insertUploads(t, dbconn.Global, Upload{ID: 42})
 
-	if err := db.UpdatePackages(context.Background(), nil, []types.Package{
+	if err := db.UpdatePackages(context.Background(), []types.Package{
 		{DumpID: 42, Scheme: "s0", Name: "n0", Version: "v0"},
 		{DumpID: 42, Scheme: "s1", Name: "n1", Version: "v1"},
 		{DumpID: 42, Scheme: "s2", Name: "n2", Version: "v2"},
@@ -100,7 +100,7 @@ func TestUpdatePackages(t *testing.T) {
 		t.Fatalf("unexpected error updating packages: %s", err)
 	}
 
-	count, err := scanInt(db.db.QueryRow("SELECT COUNT(*) FROM lsif_packages"))
+	count, err := scanInt(dbconn.Global.QueryRow("SELECT COUNT(*) FROM lsif_packages"))
 	if err != nil {
 		t.Fatalf("unexpected error checking package count: %s", err)
 	}
@@ -116,11 +116,11 @@ func TestUpdatePackagesEmpty(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	db := &dbImpl{db: dbconn.Global}
 
-	if err := db.UpdatePackages(context.Background(), nil, nil); err != nil {
+	if err := db.UpdatePackages(context.Background(), nil); err != nil {
 		t.Fatalf("unexpected error updating packages: %s", err)
 	}
 
-	count, err := scanInt(db.db.QueryRow("SELECT COUNT(*) FROM lsif_packages"))
+	count, err := scanInt(dbconn.Global.QueryRow("SELECT COUNT(*) FROM lsif_packages"))
 	if err != nil {
 		t.Fatalf("unexpected error checking package count: %s", err)
 	}
@@ -137,9 +137,9 @@ func TestUpdatePackagesWithConflicts(t *testing.T) {
 	db := &dbImpl{db: dbconn.Global}
 
 	// for foreign key relation
-	insertUploads(t, db.db, Upload{ID: 42})
+	insertUploads(t, dbconn.Global, Upload{ID: 42})
 
-	if err := db.UpdatePackages(context.Background(), nil, []types.Package{
+	if err := db.UpdatePackages(context.Background(), []types.Package{
 		{DumpID: 42, Scheme: "s0", Name: "n0", Version: "v0"},
 		{DumpID: 42, Scheme: "s1", Name: "n1", Version: "v1"},
 		{DumpID: 42, Scheme: "s2", Name: "n2", Version: "v2"},
@@ -148,7 +148,7 @@ func TestUpdatePackagesWithConflicts(t *testing.T) {
 		t.Fatalf("unexpected error updating packages: %s", err)
 	}
 
-	if err := db.UpdatePackages(context.Background(), nil, []types.Package{
+	if err := db.UpdatePackages(context.Background(), []types.Package{
 		{DumpID: 42, Scheme: "s0", Name: "n0", Version: "v0"}, // duplicate
 		{DumpID: 42, Scheme: "s2", Name: "n2", Version: "v2"}, // duplicate
 		{DumpID: 42, Scheme: "s4", Name: "n4", Version: "v4"},
@@ -161,7 +161,7 @@ func TestUpdatePackagesWithConflicts(t *testing.T) {
 		t.Fatalf("unexpected error updating packages: %s", err)
 	}
 
-	count, err := scanInt(db.db.QueryRow("SELECT COUNT(*) FROM lsif_packages"))
+	count, err := scanInt(dbconn.Global.QueryRow("SELECT COUNT(*) FROM lsif_packages"))
 	if err != nil {
 		t.Fatalf("unexpected error checking package count: %s", err)
 	}

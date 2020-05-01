@@ -6,7 +6,6 @@ import { PanelViewWithComponent } from '../../../../shared/src/api/client/servic
 import { ContributableViewContainer } from '../../../../shared/src/api/protocol'
 import { Markdown } from '../../../../shared/src/components/Markdown'
 import { ExtensionsControllerProps } from '../../../../shared/src/extensions/controller'
-import { createLinkClickHandler } from '../../../../shared/src/util/linkClickHandler'
 import { renderMarkdown } from '../../../../shared/src/util/markdown'
 
 interface Props extends ExtensionsControllerProps {
@@ -51,9 +50,7 @@ export class ExtensionViewsExploreSection extends React.PureComponent<Props, Sta
                 {this.state.views.map((view, i) => (
                     <div key={i} className="mt-5">
                         <h2>{view.title}</h2>
-                        <div onClick={createLinkClickHandler(this.props.history)}>
-                            <Markdown dangerousInnerHTML={renderMarkdown(view.content)} history={this.props.history} />
-                        </div>
+                        <Markdown dangerousInnerHTML={renderMarkdown(view.content)} history={this.props.history} />
                     </div>
                 ))}
             </div>

@@ -1,5 +1,5 @@
 import { of } from 'rxjs'
-import { EditorId, CodeEditorData } from '../../api/client/services/editorService'
+import { ViewerId, CodeEditorData } from '../../api/client/services/viewerService'
 import { EditorTextFieldUtils } from './EditorTextField'
 import { Selection } from '@sourcegraph/extension-api-types'
 import * as sinon from 'sinon'
@@ -65,10 +65,10 @@ describe('EditorTextFieldUtils', () => {
         const e = document.createElement('textarea')
         e.value = 'abc'
         e.setSelectionRange(2, 3, 'backward')
-        const setSelections = sinon.spy<(editor: EditorId, selections: Selection[]) => void>(noop)
-        EditorTextFieldUtils.updateEditorSelectionFromElement({ setSelections }, { editorId: 'e' }, e)
+        const setSelections = sinon.spy<(editor: ViewerId, selections: Selection[]) => void>(noop)
+        EditorTextFieldUtils.updateEditorSelectionFromElement({ setSelections }, { viewerId: 'e' }, e)
         sinon.assert.calledOnce(setSelections)
-        expect(setSelections.args[0][0]).toEqual({ editorId: 'e' })
+        expect(setSelections.args[0][0]).toEqual({ viewerId: 'e' })
         expect(setSelections.args[0][1]).toEqual([
             {
                 anchor: { line: 0, character: 3 },
@@ -98,7 +98,7 @@ describe('EditorTextFieldUtils', () => {
             const setValue = sinon.spy<(value: string) => void>(noop)
             const subscription = EditorTextFieldUtils.updateElementOnEditorOrModelChanges(
                 {
-                    observeEditor: () =>
+                    observeViewer: () =>
                         of<CodeEditorData>({
                             type: 'CodeEditor',
                             resource: 'u',
@@ -117,7 +117,7 @@ describe('EditorTextFieldUtils', () => {
                 {
                     observeModel: () => of<TextModel>({ uri: 'u', languageId: 'l', text: 'xyz' }),
                 },
-                { editorId: 'e' },
+                { viewerId: 'e' },
                 setValue,
                 { current: e }
             )
@@ -134,7 +134,7 @@ describe('EditorTextFieldUtils', () => {
             const setValue = sinon.spy<(value: string) => void>(noop)
             const subscription = EditorTextFieldUtils.updateElementOnEditorOrModelChanges(
                 {
-                    observeEditor: () =>
+                    observeViewer: () =>
                         of<CodeEditorData>({
                             type: 'CodeEditor',
                             resource: 'u',
@@ -153,7 +153,7 @@ describe('EditorTextFieldUtils', () => {
                 {
                     observeModel: () => of<TextModel>({ uri: 'u', languageId: 'l', text: 'xyz' }),
                 },
-                { editorId: 'e' },
+                { viewerId: 'e' },
                 setValue,
                 { current: e }
             )
