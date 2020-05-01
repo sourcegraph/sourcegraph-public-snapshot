@@ -16,7 +16,7 @@ func TestUpdateCommits(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	db := &dbImpl{db: dbconn.Global}
 
-	if err := db.UpdateCommits(context.Background(), nil, 50, map[string][]string{
+	if err := db.UpdateCommits(context.Background(), 50, map[string][]string{
 		makeCommit(1): {},
 		makeCommit(2): {makeCommit(1)},
 		makeCommit(3): {makeCommit(1)},
@@ -32,7 +32,7 @@ func TestUpdateCommits(t *testing.T) {
 		ORDER BY "commit", "parent_commit"
 	`
 
-	rows, err := db.db.Query(query)
+	rows, err := dbconn.Global.Query(query)
 	if err != nil {
 		t.Fatalf("unexpected error querying commits: %s", err)
 	}
@@ -73,7 +73,7 @@ func TestUpdateCommitsWithConflicts(t *testing.T) {
 	dbtesting.SetupGlobalTestDB(t)
 	db := &dbImpl{db: dbconn.Global}
 
-	if err := db.UpdateCommits(context.Background(), nil, 50, map[string][]string{
+	if err := db.UpdateCommits(context.Background(), 50, map[string][]string{
 		makeCommit(1): {},
 		makeCommit(2): {makeCommit(1)},
 		makeCommit(3): {makeCommit(1)},
@@ -82,7 +82,7 @@ func TestUpdateCommitsWithConflicts(t *testing.T) {
 		t.Fatalf("unexpected error updating commits: %s", err)
 	}
 
-	if err := db.UpdateCommits(context.Background(), nil, 50, map[string][]string{
+	if err := db.UpdateCommits(context.Background(), 50, map[string][]string{
 		makeCommit(3): {makeCommit(1)},
 		makeCommit(4): {makeCommit(3), makeCommit(5)},
 		makeCommit(5): {makeCommit(6), makeCommit(7)},
@@ -97,7 +97,7 @@ func TestUpdateCommitsWithConflicts(t *testing.T) {
 		ORDER BY "commit", "parent_commit"
 	`
 
-	rows, err := db.db.Query(query)
+	rows, err := dbconn.Global.Query(query)
 	if err != nil {
 		t.Fatalf("unexpected error querying commits: %s", err)
 	}

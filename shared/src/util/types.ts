@@ -1,4 +1,16 @@
 /**
+ * Replaces `T` with `R` if it is assignable to `M`.
+ */
+type Replace<T, M, R> = T extends M ? R : T
+
+/**
+ * Recursively replaces all values in `T` assignable to `M` with `R`.
+ */
+export type DeepReplace<T, M, R> = {
+    [K in keyof T]: DeepReplace<Replace<T[K], M, R>, M, R>
+}
+
+/**
  * Identity-function helper to ensure a value `T` is a subtype of `U`.
  *
  * @template U The type to check for (explicitly specify this)
@@ -15,7 +27,7 @@ export const isDefined = <T>(val: T): val is NonNullable<T> => val !== undefined
  * Returns a type guard that checks whether the given value is strictly equal to a specific value.
  * This can for example be used with `isNot()` to exclude string literals like `"loading"`.
  *
- * @param constant The value to compare to.
+ * @param constant The value to compare to. Pass this with `as const` to improve type inference.
  */
 export const isExactly = <T, C extends T>(constant: C) => (value: T): value is C => value === constant
 
@@ -48,7 +60,14 @@ export const hasProperty = <O extends object, K extends string | number | symbol
 export const property = <O extends object, K extends keyof O, T extends O[K]>(
     key: K,
     isType: (value: O[K]) => value is T
-) => (object: O): object is O & { [k in K]: T } => isType(object[key])
+) => (object: O): object is O & Record<K, T> => isType(object[key])
+
+/**
+ * Resolves a tagged union type to a specific member of the union identified by the given tag value.
+ */
+export const isTaggedUnionMember = <O extends object, K extends keyof O, V extends O[K]>(key: K, tagValue: V) => (
+    object: O
+): object is Extract<O, Record<K, V>> => object[key] === tagValue
 
 /**
  * Returns a function that returns `true` if the given value is an instance of the given class.
@@ -85,3 +104,30 @@ export function anyOf<
 export function anyOf(...typeGuards: any[]): any {
     return (value: unknown) => typeGuards.some((guard: (value: unknown) => boolean) => guard(value))
 }
+
+/**
+ * Combines multiple type guards into one type guard that checks if the value passes all of the provided type guards.
+ */
+export function allOf<T0, T1 extends T0, T2 extends T1>(
+    t1: (value: T0) => value is T1,
+    t2: (value: T1) => value is T2
+): (value: T0) => value is T1 & T2
+export function allOf<T0, T1 extends T0, T2 extends T1, T3 extends T2>(
+    t1: (value: T0) => value is T1,
+    t2: (value: T1) => value is T2,
+    t3: (value: T2) => value is T3
+): (value: T0) => value is T1 & T2 & T3
+export function allOf<T0, T1 extends T0, T2 extends T1, T3 extends T2, T4 extends T3>(
+    t1: (value: T0) => value is T1,
+    t2: (value: T1) => value is T2,
+    t3: (value: T2) => value is T3,
+    t4: (value: T3) => value is T4
+): (value: T0) => value is T1 & T2 & T3 & T4
+export function allOf(...typeGuards: any[]): any {
+    return (value: unknown) => typeGuards.every((guard: (value: unknown) => boolean) => guard(value))
+}
+
+/**
+ * Returns a type guard for a simple condition that does not check the type of the argument (but something about the value).
+ */
+export const check = <T>(simpleCondition: (value: T) => boolean) => (value: T): value is T => simpleCondition(value)

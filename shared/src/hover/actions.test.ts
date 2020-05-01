@@ -9,7 +9,7 @@ import { ActionItemAction } from '../actions/ActionItem'
 import { Services } from '../api/client/services'
 import { CommandRegistry } from '../api/client/services/command'
 import { ContributionRegistry } from '../api/client/services/contribution'
-import { createTestEditorService } from '../api/client/services/editorService.test'
+import { createTestViewerService } from '../api/client/services/viewerService.test'
 import { ProvideTextDocumentLocationSignature } from '../api/client/services/location'
 import { WorkspaceRootWithMetadata, WorkspaceService } from '../api/client/services/workspaceService'
 import { ContributableMenu, ReferenceParams, TextDocumentPositionParams } from '../api/protocol'
@@ -558,7 +558,7 @@ describe('getDefinitionURL', () => {
 describe('registerHoverContributions()', () => {
     beforeEach(() => resetAllMemoizationCaches())
     const contribution = new ContributionRegistry(
-        createTestEditorService({}),
+        createTestViewerService({}),
         {
             getPartialModel: () => ({ languageId: 'x' }),
         },

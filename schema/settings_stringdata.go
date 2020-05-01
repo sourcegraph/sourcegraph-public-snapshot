@@ -23,6 +23,12 @@ const SettingsSchemaJSON = `{
           "default": true,
           "!go": { "pointer": true }
         },
+        "codeInsights": {
+          "description": "Enables code insights on directory pages.",
+          "type": "boolean",
+          "default": false,
+          "!go": { "pointer": true }
+        },
         "searchStats": {
           "description": "Enables a new page that shows language statistics about the results for a search query.",
           "type": "boolean",

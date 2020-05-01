@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/bloomfilter"
@@ -10,9 +11,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
 )
 
+var ErrIllegalLimit = errors.New("limit must be positive")
+
 // References returns the list of source locations that reference the symbol at the given position.
 // This may include references from other dumps and repositories.
 func (api *codeIntelAPI) References(ctx context.Context, repositoryID int, commit string, limit int, cursor Cursor) ([]ResolvedLocation, Cursor, bool, error) {
+	if limit <= 0 {
+		return nil, Cursor{}, false, ErrIllegalLimit
+	}
+
 	rpr := &ReferencePageResolver{
 		db:                  api.db,
 		bundleManagerClient: api.bundleManagerClient,
@@ -252,9 +259,9 @@ func (s *ReferencePageResolver) resolveLocationsViaReferencePager(ctx context.Co
 
 		var packageReferences []types.PackageReference
 		for len(packageReferences) < limit && newOffset < totalCount {
-			page, err := pager.PageFromOffset(newOffset)
+			page, err := pager.PageFromOffset(ctx, newOffset)
 			if err != nil {
-				return nil, Cursor{}, false, pager.CloseTx(err)
+				return nil, Cursor{}, false, pager.Done(err)
 			}
 
 			if len(page) == 0 {
@@ -277,7 +284,7 @@ func (s *ReferencePageResolver) resolveLocationsViaReferencePager(ctx context.Co
 		cursor.SkipDumpsWhenBatching = newOffset
 		cursor.TotalDumpsWhenBatching = totalCount
 
-		if err := pager.CloseTx(nil); err != nil {
+		if err := pager.Done(nil); err != nil {
 			return nil, Cursor{}, false, err
 		}
 	}

@@ -42,7 +42,7 @@ import {
 } from 'rxjs/operators'
 import { ActionItemAction } from '../../../../shared/src/actions/ActionItem'
 import { DecorationMapByLine } from '../../../../shared/src/api/client/services/decoration'
-import { CodeEditorData, CodeEditorWithPartialModel } from '../../../../shared/src/api/client/services/editorService'
+import { CodeEditorData, CodeEditorWithPartialModel } from '../../../../shared/src/api/client/services/viewerService'
 import {
     isPrivateRepoPublicSourcegraphComErrorLike,
     isRepoNotFoundErrorLike,
@@ -844,7 +844,7 @@ export function handleCodeHost({
                 selections: codeViewEvent.getSelections ? codeViewEvent.getSelections(codeViewEvent.element) : [],
                 isActive: true,
             }
-            const editorId = extensionsController.services.editor.addEditor(editorData)
+            const editorId = extensionsController.services.viewer.addViewer(editorData)
             const scope: CodeEditorWithPartialModel = {
                 ...editorData,
                 ...editorId,
@@ -854,7 +854,7 @@ export function handleCodeHost({
             addRootRef(rootURI, fileInfo.rev)
             codeViewEvent.subscriptions.add(() => {
                 deleteRootRef(rootURI)
-                extensionsController.services.editor.removeEditor(editorId)
+                extensionsController.services.viewer.removeViewer(editorId)
             })
 
             if (codeViewEvent.observeSelections) {
@@ -862,7 +862,7 @@ export function handleCodeHost({
                     // This nested subscription is necessary, it is managed correctly through `codeViewEvent.subscriptions`
                     // eslint-disable-next-line rxjs/no-nested-subscribe
                     codeViewEvent.observeSelections(codeViewEvent.element).subscribe(selections => {
-                        extensionsController.services.editor.setSelections(editorId, selections)
+                        extensionsController.services.viewer.setSelections(editorId, selections)
                     })
                 )
             }
@@ -883,7 +883,7 @@ export function handleCodeHost({
                         text: fileInfo.baseContent,
                     })
                 }
-                const editor = extensionsController.services.editor.addEditor({
+                const editor = extensionsController.services.viewer.addViewer({
                     type: 'CodeEditor' as const,
                     resource: uri,
                     // There is no notion of a selection on diff views yet, so this is empty.
@@ -897,7 +897,7 @@ export function handleCodeHost({
                 addRootRef(baseRootURI, fileInfo.baseRev)
                 codeViewEvent.subscriptions.add(() => {
                     deleteRootRef(baseRootURI)
-                    extensionsController.services.editor.removeEditor(editor)
+                    extensionsController.services.viewer.removeViewer(editor)
                 })
             }
 

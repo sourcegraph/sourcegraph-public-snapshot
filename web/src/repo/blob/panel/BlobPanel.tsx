@@ -3,7 +3,7 @@ import { isEqual } from 'lodash'
 import * as React from 'react'
 import { from, Observable, Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, map, startWith, switchMap, tap } from 'rxjs/operators'
-import { getActiveCodeEditorPosition } from '../../../../../shared/src/api/client/services/editorService'
+import { getActiveCodeEditorPosition } from '../../../../../shared/src/api/client/services/viewerService'
 import { TextDocumentLocationProviderRegistry } from '../../../../../shared/src/api/client/services/location'
 import { Entry } from '../../../../../shared/src/api/client/services/registry'
 import {
@@ -21,6 +21,7 @@ import { AbsoluteRepoFile, ModeSpec, parseHash, UIPositionSpec } from '../../../
 import { RepoHeaderContributionsLifecycleProps } from '../../RepoHeader'
 import { RepoRevSidebarCommits } from '../../RepoRevSidebarCommits'
 import { ThemeProps } from '../../../../../shared/src/theme'
+
 interface Props
     extends AbsoluteRepoFile,
         Partial<UIPositionSpec>,
@@ -93,9 +94,9 @@ export class BlobPanel extends React.PureComponent<Props> {
             extraParams?: Pick<P, Exclude<keyof P, keyof TextDocumentPositionParams>>
         ): Entry<PanelViewProviderRegistrationOptions, ProvidePanelViewSignature> => ({
             registrationOptions: { id, container: ContributableViewContainer.Panel },
-            provider: from(this.props.extensionsController.services.editor.activeEditorUpdates).pipe(
+            provider: from(this.props.extensionsController.services.viewer.activeViewerUpdates).pipe(
                 map(activeEditor =>
-                    activeEditor
+                    activeEditor && activeEditor.type === 'CodeEditor'
                         ? {
                               ...activeEditor,
                               model: this.props.extensionsController.services.model.getPartialModel(

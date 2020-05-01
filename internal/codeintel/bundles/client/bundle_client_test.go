@@ -20,7 +20,7 @@ func TestExists(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client := &bundleClientImpl{bundleManagerURL: ts.URL, bundleID: 42}
+	client := &bundleClientImpl{base: &bundleManagerClientImpl{bundleManagerURL: ts.URL}, bundleID: 42}
 	exists, err := client.Exists(context.Background(), "main.go")
 	if err != nil {
 		t.Fatalf("unexpected error querying exists: %s", err)
@@ -35,7 +35,7 @@ func TestExistsBadResponse(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client := &bundleClientImpl{bundleManagerURL: ts.URL, bundleID: 42}
+	client := &bundleClientImpl{base: &bundleManagerClientImpl{bundleManagerURL: ts.URL}, bundleID: 42}
 	_, err := client.Exists(context.Background(), "main.go")
 	if err == nil {
 		t.Fatalf("unexpected nil error querying exists")
@@ -62,7 +62,7 @@ func TestDefinitions(t *testing.T) {
 		{DumpID: 42, Path: "bar.go", Range: Range{Start: Position{5, 6}, End: Position{7, 8}}},
 	}
 
-	client := &bundleClientImpl{bundleManagerURL: ts.URL, bundleID: 42}
+	client := &bundleClientImpl{base: &bundleManagerClientImpl{bundleManagerURL: ts.URL}, bundleID: 42}
 	definitions, err := client.Definitions(context.Background(), "main.go", 10, 20)
 	if err != nil {
 		t.Fatalf("unexpected error querying definitions: %s", err)
@@ -91,7 +91,7 @@ func TestReferences(t *testing.T) {
 		{DumpID: 42, Path: "bar.go", Range: Range{Start: Position{5, 6}, End: Position{7, 8}}},
 	}
 
-	client := &bundleClientImpl{bundleManagerURL: ts.URL, bundleID: 42}
+	client := &bundleClientImpl{base: &bundleManagerClientImpl{bundleManagerURL: ts.URL}, bundleID: 42}
 	references, err := client.References(context.Background(), "main.go", 10, 20)
 	if err != nil {
 		t.Fatalf("unexpected error querying references: %s", err)
@@ -121,7 +121,7 @@ func TestHover(t *testing.T) {
 		End:   Position{3, 4},
 	}
 
-	client := &bundleClientImpl{bundleManagerURL: ts.URL, bundleID: 42}
+	client := &bundleClientImpl{base: &bundleManagerClientImpl{bundleManagerURL: ts.URL}, bundleID: 42}
 	text, r, exists, err := client.Hover(context.Background(), "main.go", 10, 20)
 	if err != nil {
 		t.Fatalf("unexpected error querying hover: %s", err)
@@ -150,7 +150,7 @@ func TestHoverNull(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	client := &bundleClientImpl{bundleManagerURL: ts.URL, bundleID: 42}
+	client := &bundleClientImpl{base: &bundleManagerClientImpl{bundleManagerURL: ts.URL}, bundleID: 42}
 	_, _, exists, err := client.Hover(context.Background(), "main.go", 10, 20)
 	if err != nil {
 		t.Fatalf("unexpected error querying hover: %s", err)
@@ -198,7 +198,7 @@ func TestMonikersByPosition(t *testing.T) {
 		},
 	}
 
-	client := &bundleClientImpl{bundleManagerURL: ts.URL, bundleID: 42}
+	client := &bundleClientImpl{base: &bundleManagerClientImpl{bundleManagerURL: ts.URL}, bundleID: 42}
 	monikers, err := client.MonikersByPosition(context.Background(), "main.go", 10, 20)
 	if err != nil {
 		t.Fatalf("unexpected error querying monikers by position: %s", err)
@@ -210,7 +210,7 @@ func TestMonikersByPosition(t *testing.T) {
 func TestMonikerResults(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assertRequest(t, r, "GET", "/dbs/42/monikerResults", map[string]string{
-			"modelType":  "definitions",
+			"modelType":  "definition",
 			"scheme":     "gomod",
 			"identifier": "leftpad",
 			"take":       "25",
@@ -232,8 +232,8 @@ func TestMonikerResults(t *testing.T) {
 		{DumpID: 42, Path: "bar.go", Range: Range{Start: Position{5, 6}, End: Position{7, 8}}},
 	}
 
-	client := &bundleClientImpl{bundleManagerURL: ts.URL, bundleID: 42}
-	locations, count, err := client.MonikerResults(context.Background(), "definitions", "gomod", "leftpad", 0, 25)
+	client := &bundleClientImpl{base: &bundleManagerClientImpl{bundleManagerURL: ts.URL}, bundleID: 42}
+	locations, count, err := client.MonikerResults(context.Background(), "definition", "gomod", "leftpad", 0, 25)
 	if err != nil {
 		t.Fatalf("unexpected error querying moniker results: %s", err)
 	}
@@ -261,7 +261,7 @@ func TestPackageInformation(t *testing.T) {
 		Version: "0.1.0",
 	}
 
-	client := &bundleClientImpl{bundleManagerURL: ts.URL, bundleID: 42}
+	client := &bundleClientImpl{base: &bundleManagerClientImpl{bundleManagerURL: ts.URL}, bundleID: 42}
 	packageInformation, err := client.PackageInformation(context.Background(), "main.go", "123")
 	if err != nil {
 		t.Fatalf("unexpected error querying package information: %s", err)

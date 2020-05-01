@@ -131,7 +131,7 @@ func setMockDBPackageReferencePager(t *testing.T, mockDB *dbmocks.MockDB, expect
 }
 
 func setMockReferencePagerPageFromOffset(t *testing.T, mockReferencePager *dbmocks.MockReferencePager, expectedOffset int, references []types.PackageReference) {
-	mockReferencePager.PageFromOffsetFunc.SetDefaultHook(func(offset int) ([]types.PackageReference, error) {
+	mockReferencePager.PageFromOffsetFunc.SetDefaultHook(func(ctx context.Context, offset int) ([]types.PackageReference, error) {
 		if offset != expectedOffset {
 			t.Errorf("unexpected offset for PageFromOffset. want=%d have=%d", expectedOffset, offset)
 		}

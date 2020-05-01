@@ -1,6 +1,6 @@
 import { Selection } from '@sourcegraph/extension-api-types'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '../../../settings/settings'
-import { CodeEditorWithPartialModel } from '../services/editorService'
+import { CodeEditorWithPartialModel } from '../services/viewerService'
 import { getComputedContextProperty } from './context'
 
 describe('getComputedContextProperty', () => {
@@ -21,7 +21,7 @@ describe('getComputedContextProperty', () => {
 
     describe('with code editors', () => {
         const editor: CodeEditorWithPartialModel = {
-            editorId: 'editor2',
+            viewerId: 'editor2',
             type: 'CodeEditor',
             resource: 'file:///a/b.c',
             model: { languageId: 'l' },
@@ -141,7 +141,7 @@ describe('getComputedContextProperty', () => {
 
             test('returns null when there is no selection', () => {
                 assertNoSelection({
-                    editorId: 'editor1',
+                    viewerId: 'editor1',
                     type: 'CodeEditor' as const,
                     resource: 'file:///a/b.c',
                     model: { languageId: 'l' },

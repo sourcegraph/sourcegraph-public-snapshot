@@ -214,7 +214,7 @@ Dockerfile @sourcegraph/distribution
 /internal/store/ @keegancsmith
 /internal/metrics @keegancsmith @slimsag
 /internal/logging @keegancsmith @slimsag
-/internal/observability @keegancsmith @slimsag
+/internal/observation @keegancsmith @slimsag
 
 # Code discussions
 **/*discussion* @slimsag
@@ -227,6 +227,7 @@ Dockerfile @sourcegraph/distribution
 /cmd/precise-code-intel/ @sourcegraph/code-intel
 /cmd/precise-code-intel-api-server/ @sourcegraph/code-intel
 /cmd/precise-code-intel-bundle-manager/ @sourcegraph/code-intel
+/cmd/precise-code-intel-worker/ @sourcegraph/code-intel
 /internal/lsif @sourcegraph/code-intel
 /internal/codeintel @sourcegraph/code-intel
 /enterprise/internal/codeintel @sourcegraph/code-intel

@@ -10,7 +10,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/api"
-	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/janitor"
+	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/resetter"
 	"github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-api-server/internal/server"
 	bundles "github.com/sourcegraph/sourcegraph/internal/codeintel/bundles/client"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/db"
@@ -27,8 +27,8 @@ func main() {
 	tracer.Init()
 
 	var (
-		janitorInterval  = mustParseInterval(rawJanitorInterval, "PRECISE_CODE_INTEL_JANITOR_INTERVAL")
 		bundleManagerURL = mustGet(rawBundleManagerURL, "PRECISE_CODE_INTEL_BUNDLE_MANAGER_URL")
+		resetInterval    = mustParseInterval(rawResetInterval, "PRECISE_CODE_INTEL_RESET_INTERVAL")
 	)
 
 	bundleManagerClient := bundles.New(bundleManagerURL)
@@ -66,13 +66,13 @@ func main() {
 		CodeIntelAPI:        codeIntelAPI,
 	})
 
-	janitorInst := janitor.NewJanitor(janitor.JanitorOpts{
-		DB:              db,
-		JanitorInterval: janitorInterval,
+	uploadResetterInst := resetter.NewUploadResetter(resetter.UploadResetterOpts{
+		DB:            db,
+		ResetInterval: resetInterval,
 	})
 
 	go serverInst.Start()
-	go janitorInst.Start()
+	go uploadResetterInst.Run()
 	go debugserver.Start()
 	waitForSignal()
 }

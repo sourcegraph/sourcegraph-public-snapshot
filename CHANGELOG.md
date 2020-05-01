@@ -14,6 +14,8 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - Autocompletion for `repogroup` filters in search queries. [#10141](https://github.com/sourcegraph/sourcegraph/pull/10286)
+- If the experimental feature flag `codeInsights` is enabled, extensions can contribute content to directory pages through the experimental `ViewProvier` API. [#10236](https://github.com/sourcegraph/sourcegraph/pull/10236)
+  - Directory pages are then represented as an experimental `DirectoryViewer` in the `visibleViewComponents` of the extension API. **Note: This may break extensions that were assuming `visibleViewComponents` were always `CodeEditor`s and did not check the `type` property.** Extensions checking the `type` property will continue to work. [#10236](https://github.com/sourcegraph/sourcegraph/pull/10236)
 
 ### Changed
 
@@ -22,6 +24,8 @@ All notable changes to Sourcegraph are documented in this file.
 - Files and directories that are not found now return a 404 status code. [#10193](https://github.com/sourcegraph/sourcegraph/pull/10193)
 
 ### Fixed
+
+- In the OSS version of Sourcegraph, authorization providers are properly initialized and GraphQL APIs are no longer blocked. [#3487](https://github.com/sourcegraph/sourcegraph/issues/3487)
 
 ### Removed
 
