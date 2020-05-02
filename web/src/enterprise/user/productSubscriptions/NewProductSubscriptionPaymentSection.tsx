@@ -14,6 +14,7 @@ import { queryGraphQL } from '../../../backend/graphql'
 import { formatUserCount, mailtoSales } from '../../productSubscription/helpers'
 import { ProductSubscriptionBeforeAfterInvoiceItem } from './ProductSubscriptionBeforeAfterInvoiceItem'
 import { useObservable } from '../../../../../shared/src/util/useObservable'
+import { PaymentValidity } from './ProductSubscriptionForm'
 
 interface Props {
     /**
@@ -32,9 +33,9 @@ interface Props {
 
     /**
      * Called when the validity state of the payment and billing information changes. Initially it
-     * is always false.
+     * is always Invalid.
      */
-    onValidityChange: (value: boolean) => void
+    onValidityChange: (value: PaymentValidity) => void
 
     /** For mocking in tests only. */
     _queryPreviewProductSubscriptionInvoice?: typeof queryPreviewProductSubscriptionInvoice
@@ -44,14 +45,16 @@ const LOADING = 'loading' as const
 
 type PreviewInvoiceOrError = GQL.IProductSubscriptionPreviewInvoice | null | typeof LOADING | ErrorLike
 
-const isPreviewInvoiceInvalid = (previewInvoice: PreviewInvoiceOrError): boolean =>
-    Boolean(
-        previewInvoice === null ||
-            previewInvoice === LOADING ||
-            isErrorLike(previewInvoice) ||
-            isEqual(previewInvoice.beforeInvoiceItem, previewInvoice.afterInvoiceItem) ||
-            previewInvoice.isDowngradeRequiringManualIntervention
-    )
+const previewInvoiceValidity = (previewInvoice: PreviewInvoiceOrError): PaymentValidity =>
+    previewInvoice === null ||
+    previewInvoice === LOADING ||
+    isErrorLike(previewInvoice) ||
+    isEqual(previewInvoice.beforeInvoiceItem, previewInvoice.afterInvoiceItem) ||
+    previewInvoice.isDowngradeRequiringManualIntervention
+        ? PaymentValidity.Invalid
+        : previewInvoice.price === 0
+        ? PaymentValidity.NoPaymentRequired
+        : PaymentValidity.Valid
 
 const undefinedIsLoading = <T extends any>(value: T | undefined): T | typeof LOADING =>
     value === undefined ? LOADING : value
@@ -89,7 +92,7 @@ export const NewProductSubscriptionPaymentSection: React.FunctionComponent<Props
     )
 
     useEffect(() => {
-        onValidityChange(!isPreviewInvoiceInvalid(previewInvoice))
+        onValidityChange(previewInvoiceValidity(previewInvoice))
     }, [onValidityChange, previewInvoice])
 
     return (

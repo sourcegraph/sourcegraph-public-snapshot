@@ -117,9 +117,12 @@ func (BillingResolver) ProductPlans(ctx context.Context) ([]graphqlbackend.Produ
 		return nil, err
 	}
 
-	// Sort cheapest first (a reasonable assumption).
+	// Sort free first, cheapest first (a reasonable assumption).
 	sort.Slice(gqlPlans, func(i, j int) bool {
-		return gqlPlans[i].PricePerUserPerYear() < gqlPlans[j].PricePerUserPerYear()
+		fi := gqlPlans[i].PlanTiers() == nil && gqlPlans[i].PricePerUserPerYear() == 0
+		fj := gqlPlans[j].PlanTiers() == nil && gqlPlans[j].PricePerUserPerYear() == 0
+		return (fi && !fj) || (fi == fj &&
+			gqlPlans[i].PricePerUserPerYear() < gqlPlans[j].PricePerUserPerYear())
 	})
 
 	return gqlPlans, nil

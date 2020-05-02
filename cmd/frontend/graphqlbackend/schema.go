@@ -3987,8 +3987,9 @@ type DotcomMutation {
         accountID: ID!
         # The details of the product subscription.
         productSubscription: ProductSubscriptionInput!
-        # The token that represents the payment method used to purchase this product subscription.
-        paymentToken: String!
+        # The token that represents the payment method used to purchase this product subscription,
+        # or null if no payment is required.
+        paymentToken: String
     ): CreatePaidProductSubscriptionResult!
     # Updates a new product subscription and credits or debits the associated payment method.
     #
@@ -4004,8 +4005,8 @@ type DotcomMutation {
         # value").
         update: ProductSubscriptionInput!
         # The token that represents the payment method used to pay for (or receive credit for) this
-        # product subscription update.
-        paymentToken: String!
+        # product subscription update, or null if no payment is required.
+        paymentToken: String
     ): UpdatePaidProductSubscriptionResult!
     # Archives an existing product subscription.
     #

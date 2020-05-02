@@ -262,11 +262,13 @@ func (ProductSubscriptionLicensingResolver) CreatePaidProductSubscription(ctx co
 	custUpdateParams := &stripe.CustomerParams{
 		Params: stripe.Params{Context: ctx},
 	}
-	if err := custUpdateParams.SetSource(args.PaymentToken); err != nil {
-		return nil, err
-	}
-	if _, err := customer.Update(custID, custUpdateParams); err != nil {
-		return nil, err
+	if args.PaymentToken != nil {
+		if err := custUpdateParams.SetSource(*args.PaymentToken); err != nil {
+			return nil, err
+		}
+		if _, err := customer.Update(custID, custUpdateParams); err != nil {
+			return nil, err
+		}
 	}
 
 	// Create the billing subscription.
@@ -343,11 +345,13 @@ func (ProductSubscriptionLicensingResolver) UpdatePaidProductSubscription(ctx co
 	custUpdateParams := &stripe.CustomerParams{
 		Params: stripe.Params{Context: ctx},
 	}
-	if err := custUpdateParams.SetSource(args.PaymentToken); err != nil {
-		return nil, err
-	}
-	if _, err := customer.Update(custID, custUpdateParams); err != nil {
-		return nil, err
+	if args.PaymentToken != nil {
+		if err := custUpdateParams.SetSource(*args.PaymentToken); err != nil {
+			return nil, err
+		}
+		if _, err := customer.Update(custID, custUpdateParams); err != nil {
+			return nil, err
+		}
 	}
 
 	if subToUpdate.v.BillingSubscriptionID == nil {
@@ -395,12 +399,15 @@ func (ProductSubscriptionLicensingResolver) UpdatePaidProductSubscription(ctx co
 			Customer:     stripe.String(custID),
 			Subscription: stripe.String(*subToUpdate.v.BillingSubscriptionID),
 		})
-		if err != nil {
-			return nil, err
+		if err == nil {
+			_, err = invoice.Pay(inv.ID, &stripe.InvoicePayParams{
+				Params: stripe.Params{Context: ctx},
+			})
 		}
-		if _, err := invoice.Pay(inv.ID, &stripe.InvoicePayParams{
-			Params: stripe.Params{Context: ctx},
-		}); err != nil {
+		if e, ok := err.(*stripe.Error); ok && e.Code == stripe.ErrorCodeInvoiceNoSubscriptionLineItems {
+			// Proceed (with updating subscription and issuing new license key). There was no
+			// payment required and therefore no invoice required.
+		} else if err != nil {
 			return nil, err
 		}
 	}
