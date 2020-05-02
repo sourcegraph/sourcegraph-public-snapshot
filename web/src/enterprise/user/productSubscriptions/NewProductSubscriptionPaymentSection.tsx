@@ -148,7 +148,7 @@ function queryPreviewProductSubscriptionInvoice(
     return queryGraphQL(
         gql`
             query PreviewProductSubscriptionInvoice(
-                $account: ID!
+                $account: ID
                 $subscriptionToUpdate: ID
                 $productSubscription: ProductSubscriptionInput!
             ) {
