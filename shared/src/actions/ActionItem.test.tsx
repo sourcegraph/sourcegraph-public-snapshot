@@ -204,33 +204,51 @@ describe('ActionItem', () => {
         expect(tree).toMatchSnapshot()
     })
 
-    test('render as link for "open" command', () => {
-        jsdom.reconfigure({ url: 'https://example.com/foo' })
+    describe('"open" command', () => {
+        it('renders as link', () => {
+            jsdom.reconfigure({ url: 'https://example.com/foo' })
 
-        const component = renderer.create(
-            <ActionItem
-                action={{ id: 'c', command: 'open', commandArguments: ['https://example.com/bar'], title: 't' }}
-                telemetryService={NOOP_TELEMETRY_SERVICE}
-                location={history.location}
-                extensionsController={NOOP_EXTENSIONS_CONTROLLER}
-                platformContext={NOOP_PLATFORM_CONTEXT}
-            />
-        )
-        expect(component.toJSON()).toMatchSnapshot()
-    })
+            const component = renderer.create(
+                <ActionItem
+                    action={{ id: 'c', command: 'open', commandArguments: ['https://example.com/bar'], title: 't' }}
+                    telemetryService={NOOP_TELEMETRY_SERVICE}
+                    location={history.location}
+                    extensionsController={NOOP_EXTENSIONS_CONTROLLER}
+                    platformContext={NOOP_PLATFORM_CONTEXT}
+                />
+            )
+            expect(component.toJSON()).toMatchSnapshot()
+        })
 
-    test('render as link with icon for "open" command with different origin', () => {
-        jsdom.reconfigure({ url: 'https://example.com/foo' })
+        it('renders as link with icon and opens a new tab for a different origin', () => {
+            jsdom.reconfigure({ url: 'https://example.com/foo' })
 
-        const component = renderer.create(
-            <ActionItem
-                action={{ id: 'c', command: 'open', commandArguments: ['https://other.com/foo'], title: 't' }}
-                telemetryService={NOOP_TELEMETRY_SERVICE}
-                location={history.location}
-                extensionsController={NOOP_EXTENSIONS_CONTROLLER}
-                platformContext={NOOP_PLATFORM_CONTEXT}
-            />
-        )
-        expect(component.toJSON()).toMatchSnapshot()
+            const component = renderer.create(
+                <ActionItem
+                    action={{ id: 'c', command: 'open', commandArguments: ['https://other.com/foo'], title: 't' }}
+                    telemetryService={NOOP_TELEMETRY_SERVICE}
+                    location={history.location}
+                    extensionsController={NOOP_EXTENSIONS_CONTROLLER}
+                    platformContext={NOOP_PLATFORM_CONTEXT}
+                />
+            )
+            expect(component.toJSON()).toMatchSnapshot()
+        })
+
+        it('renders as link that opens in a new tab, but without icon for a different origin as the alt action and a primary action defined', () => {
+            jsdom.reconfigure({ url: 'https://example.com/foo' })
+
+            const component = renderer.create(
+                <ActionItem
+                    action={{ id: 'c1', command: 'whatever', title: 'primary' }}
+                    altAction={{ id: 'c2', command: 'open', commandArguments: ['https://other.com/foo'], title: 'alt' }}
+                    telemetryService={NOOP_TELEMETRY_SERVICE}
+                    location={history.location}
+                    extensionsController={NOOP_EXTENSIONS_CONTROLLER}
+                    platformContext={NOOP_PLATFORM_CONTEXT}
+                />
+            )
+            expect(component.toJSON()).toMatchSnapshot()
+        })
     })
 })
