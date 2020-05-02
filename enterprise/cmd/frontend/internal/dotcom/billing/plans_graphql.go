@@ -58,9 +58,6 @@ func ToProductPlan(plan *stripe.Plan) (graphqlbackend.ProductPlan, error) {
 	if plan.Currency != stripe.CurrencyUSD {
 		return nil, fmt.Errorf("unexpected currency %q for plan %q", plan.Currency, plan.ID)
 	}
-	if plan.Interval != stripe.PlanIntervalYear {
-		return nil, fmt.Errorf("unexpected plan interval %q for plan %q", plan.Interval, plan.ID)
-	}
 	if plan.IntervalCount != 1 {
 		return nil, fmt.Errorf("unexpected plan interval count %d for plan %q", plan.IntervalCount, plan.ID)
 	}
