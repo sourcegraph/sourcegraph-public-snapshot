@@ -480,6 +480,18 @@ export function toPrettyBlobURL(
 }
 
 /**
+ * Returns an absolute URL to the blob (file) on the Sourcegraph instance.
+ */
+export function toAbsoluteBlobURL(
+    sourcegraphURL: string,
+    ctx: RepoSpec & RevSpec & FileSpec & Partial<UIPositionSpec> & Partial<ViewStateSpec>
+): string {
+    // toPrettyBlobURL() always returns an URL starting with a forward slash,
+    // no need to add one here
+    return `${sourcegraphURL.replace(/\/$/, '')}${toPrettyBlobURL(ctx)}`
+}
+
+/**
  * Returns the URL path for the given repository name.
  *
  * @deprecated Obtain the repository's URL from the GraphQL Repository.url field instead.

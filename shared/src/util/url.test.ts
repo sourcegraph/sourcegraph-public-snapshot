@@ -7,6 +7,7 @@ import {
     toPrettyBlobURL,
     withWorkspaceRootInputRevision,
     isExternalLink,
+    toAbsoluteBlobURL,
 } from './url'
 import { SearchPatternType } from '../graphql/schema'
 
@@ -15,7 +16,7 @@ import { SearchPatternType } from '../graphql/schema'
  * prototype (because that causes 2 object literals to fail the test) and (2) treats undefined properties as
  * missing.
  */
-function assertDeepStrictEqual(actual: any, expected: any, message?: string): void {
+function assertDeepStrictEqual(actual: any, expected: any): void {
     actual = JSON.parse(JSON.stringify(actual))
     expected = JSON.parse(JSON.stringify(expected))
     expect(actual).toEqual(expected)
@@ -251,6 +252,34 @@ describe('util/url', () => {
         test('formats url with view state', () => {
             expect(toPrettyBlobURL({ ...ctx, position: lineCharPosition, viewState: 'references' })).toBe(
                 '/github.com/gorilla/mux/-/blob/mux.go#L1:1&tab=references'
+            )
+        })
+    })
+
+    describe('toAbsoluteBlobURL', () => {
+        const target = {
+            repoName: 'github.com/gorilla/mux',
+            rev: '',
+            commitID: '24fca303ac6da784b9e8269f724ddeb0b2eea5e7',
+            filePath: 'mux.go',
+        }
+        const sourcegraphUrl = 'https://sourcegraph.com'
+
+        test('default sourcegraph URL, default context', () => {
+            expect(toAbsoluteBlobURL(sourcegraphUrl, target)).toBe(
+                'https://sourcegraph.com/github.com/gorilla/mux/-/blob/mux.go'
+            )
+        })
+
+        test('default sourcegraph URL, specified rev', () => {
+            expect(toAbsoluteBlobURL(sourcegraphUrl, { ...target, rev: 'branch' })).toBe(
+                'https://sourcegraph.com/github.com/gorilla/mux@branch/-/blob/mux.go'
+            )
+        })
+
+        test('default sourcegraph URL, with position', () => {
+            expect(toAbsoluteBlobURL(sourcegraphUrl, { ...target, position: { line: 1, character: 1 } })).toBe(
+                'https://sourcegraph.com/github.com/gorilla/mux/-/blob/mux.go#L1:1'
             )
         })
     })

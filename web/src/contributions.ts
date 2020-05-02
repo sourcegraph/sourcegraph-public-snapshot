@@ -20,7 +20,9 @@ export class GlobalContributions extends React.Component<Props> {
 
     public componentDidMount(): void {
         registerHighlightContributions() // no way to unregister these
-        this.subscriptions.add(registerHoverContributions(this.props))
+        this.subscriptions.add(
+            registerHoverContributions({ ...this.props, locationAssign: location.assign.bind(location) })
+        )
         this.subscriptions.add(registerSearchStatsContributions(this.props))
     }
 
