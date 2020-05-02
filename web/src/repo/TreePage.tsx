@@ -351,39 +351,6 @@ export const TreePage: React.FunctionComponent<Props> = ({
                             </h2>
                         </header>
                     )}
-                    {codeInsightsEnabled && (
-                        <div className="tree-page__section d-flex">
-                            {views === undefined ? (
-                                <div className="card flex-grow-1">
-                                    <div className="card-body d-flex flex-column align-items-center p-3">
-                                        <div>
-                                            <LoadingSpinner className="icon-inline" />
-                                        </div>
-                                        <div>Loading code insights</div>
-                                    </div>
-                                </div>
-                            ) : (
-                                views.map((view, i) => (
-                                    <div key={i} className="card flex-grow-1">
-                                        {isErrorLike(view) ? (
-                                            <ErrorAlert className="m-0" error={view} history={props.history} />
-                                        ) : (
-                                            <div className="card-body">
-                                                <h3 className="tree-page__view-title">{view.title}</h3>
-                                                <ViewContent
-                                                    {...props}
-                                                    viewContent={view.content}
-                                                    settingsCascade={settingsCascade}
-                                                    caseSensitive={caseSensitive}
-                                                    patternType={patternType}
-                                                />{' '}
-                                            </div>
-                                        )}
-                                    </div>
-                                ))
-                            )}
-                        </div>
-                    )}
                     <TreeEntriesSection
                         title="Files and directories"
                         parentPath={filePath}
@@ -432,6 +399,39 @@ export const TreePage: React.FunctionComponent<Props> = ({
                             totalCountSummaryComponent={TotalCountSummary}
                         />
                     </div>
+                    {codeInsightsEnabled && (
+                        <div className="tree-page__section d-flex">
+                            {views === undefined ? (
+                                <div className="card flex-grow-1">
+                                    <div className="card-body d-flex flex-column align-items-center p-3">
+                                        <div>
+                                            <LoadingSpinner className="icon-inline" />
+                                        </div>
+                                        <div>Loading code insights</div>
+                                    </div>
+                                </div>
+                            ) : (
+                                views.map((view, i) => (
+                                    <div key={i} className="card flex-grow-1">
+                                        {isErrorLike(view) ? (
+                                            <ErrorAlert className="m-0" error={view} history={props.history} />
+                                        ) : (
+                                            <div className="card-body">
+                                                <h3 className="tree-page__view-title">{view.title}</h3>
+                                                <ViewContent
+                                                    {...props}
+                                                    viewContent={view.content}
+                                                    settingsCascade={settingsCascade}
+                                                    caseSensitive={caseSensitive}
+                                                    patternType={patternType}
+                                                />{' '}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    )}
                 </>
             )}
         </div>
