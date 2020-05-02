@@ -20,9 +20,9 @@ import { useEventObservable } from '../../../../../shared/src/util/useObservable
 import * as H from 'history'
 
 export enum PaymentValidity {
-    Valid,
-    Invalid,
-    NoPaymentRequired,
+    Valid = 'Valid',
+    Invalid = 'Invalid',
+    NoPaymentRequired = 'NoPaymentRequired',
 }
 
 /**

@@ -3,8 +3,8 @@ import * as GQL from '../../../../../shared/src/graphql/schema'
 
 /** Displays the price of a tiered plan. */
 export const ProductPlanTiered: React.FunctionComponent<{
-    plan: Pick<GQL.IProductPlan, 'planTiers' | 'tiersMode' | 'minQuantity' | 'maxQuantity'>
-}> = ({ plan: { planTiers, tiersMode, minQuantity, maxQuantity } }) => (
+    plan: Pick<GQL.IProductPlan, 'planTiers' | 'tiersMode' | 'minQuantity'>
+}> = ({ plan: { planTiers, tiersMode, minQuantity } }) => (
     <>
         {planTiers.map((tier, i) => (
             <div key={i}>

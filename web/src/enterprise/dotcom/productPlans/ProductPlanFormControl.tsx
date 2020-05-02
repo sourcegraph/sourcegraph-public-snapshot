@@ -39,10 +39,11 @@ export const ProductPlanFormControl: React.FunctionComponent<Props> = ({
     history,
     _queryProductPlans = queryProductPlans,
 }) => {
+    const noPlanSelected = value === null // don't recompute observable below on every value change
+
     /**
      * The list of all possible product plans, loading, or an error.
      */
-    const noPlanSelected = value === null // don't recompute observable below on every value change
     const plans =
         useObservable(
             useMemo(
