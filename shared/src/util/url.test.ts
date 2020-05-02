@@ -6,6 +6,7 @@ import {
     parseRepoURI,
     toPrettyBlobURL,
     withWorkspaceRootInputRevision,
+    isExternalLink,
 } from './url'
 import { SearchPatternType } from '../graphql/schema'
 
@@ -434,5 +435,25 @@ describe('lprToSelectionsZeroIndexed', () => {
                 },
             ]
         )
+    })
+})
+
+describe('isExternalLink', () => {
+    it('returns false for the same site', () => {
+        jsdom.reconfigure({ url: 'https://github.com/here' })
+        expect(isExternalLink('https://github.com/there')).toBe(false)
+    })
+    it('returns false for relative links', () => {
+        jsdom.reconfigure({ url: 'https://github.com/here' })
+        expect(isExternalLink('/there')).toBe(false)
+    })
+    it('returns false for invalid URLs', () => {
+        jsdom.reconfigure({ url: 'https://github.com/here' })
+
+        expect(isExternalLink(' ')).toBe(false)
+    })
+    it('returns true for a different site', () => {
+        jsdom.reconfigure({ url: 'https://github.com/here' })
+        expect(isExternalLink('https://sourcegraph.com/here')).toBe(true)
     })
 })
