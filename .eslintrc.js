@@ -42,7 +42,7 @@ const config = {
           'rxjs/ajax',
           {
             name: 'rxjs',
-            importNames: 'animationFrameScheduler',
+            importNames: ['animationFrameScheduler'],
             message: 'Code using animationFrameScheduler breaks in Firefox when using Sentry.',
           },
           {
