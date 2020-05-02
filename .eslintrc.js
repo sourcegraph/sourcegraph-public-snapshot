@@ -43,7 +43,7 @@ const config = {
           {
             name: 'rxjs',
             importNames: 'animationFrameScheduler',
-            message: 'Code using animationFrameScheduler with breaks in Firefox when using Sentry.',
+            message: 'Code using animationFrameScheduler breaks in Firefox when using Sentry.',
           },
           {
             name: 'rxjs/fetch',
