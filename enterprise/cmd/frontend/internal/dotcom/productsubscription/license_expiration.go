@@ -25,10 +25,8 @@ func StartCheckForUpcomingLicenseExpirations() {
 	client := slack.New(SourcegraphOrgWebhookURL)
 
 	ctx := context.Background()
-	const delay = 30 * time.Second
+	const delay = 24 * time.Hour
 	for {
-		time.Sleep(delay)
-
 		allDBSubscriptions, err := dbSubscriptions{}.List(ctx, dbSubscriptionsListOptions{
 			IncludeArchived: false,
 		})
