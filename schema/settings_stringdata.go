@@ -183,8 +183,8 @@ const SettingsSchemaJSON = `{
       "type": "boolean",
       "default": false
     },
-    "search.UpperCase": {
-      "description": "When active, any upper case characters in the pattern will make the entire query case-sensitive.",
+    "search.uppercase": {
+      "description": "When active, any uppercase characters in the pattern will make the entire query case-sensitive.",
       "type": "boolean",
       "default": false,
       "!go": { "pointer": true }

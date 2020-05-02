@@ -84,12 +84,12 @@ func Hoist(nodes []Node) ([]Node, error) {
 	return append(scopeParameters, newOperator(pattern, expression.Kind)...), nil
 }
 
-// SearchUpperCase adds case:yes to queries if any pattern is mixed-case.
-func SearchUpperCase(nodes []Node) []Node {
+// SearchUppercase adds case:yes to queries if any pattern is mixed-case.
+func SearchUppercase(nodes []Node) []Node {
 	var foundMixedCase bool
 	VisitParameter(nodes, func(field, value string, negated, _ bool) {
 		if field == "" || field == "content" {
-			if match := containsUpperCase(value); match {
+			if match := containsUppercase(value); match {
 				foundMixedCase = true
 			}
 		}
@@ -101,7 +101,7 @@ func SearchUpperCase(nodes []Node) []Node {
 	return nodes
 }
 
-func containsUpperCase(s string) bool {
+func containsUppercase(s string) bool {
 	for _, r := range s {
 		if unicode.IsUpper(r) && unicode.IsLetter(r) {
 			return true
