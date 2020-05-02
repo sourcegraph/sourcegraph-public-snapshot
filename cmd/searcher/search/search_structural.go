@@ -220,10 +220,8 @@ func structuralSearch(ctx context.Context, zipPath, pattern, rule string, langua
 }
 
 var requestTotalStructuralSearch = prometheus.NewCounterVec(prometheus.CounterOpts{
-	Namespace: "searcher",
-	Subsystem: "service",
-	Name:      "request_total_structural_search",
-	Help:      "Number of returned structural search requests.",
+	Name: "searcher_service_request_total_structural_search",
+	Help: "Number of returned structural search requests.",
 }, []string{"language"})
 
 func init() {

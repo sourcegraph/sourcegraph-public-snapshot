@@ -25,22 +25,16 @@ func NewHandlerMetrics() HandlerMetrics {
 	return HandlerMetrics{
 		ServeHTTP: &metrics.OperationMetrics{
 			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
-				Namespace: "src",
-				Subsystem: "repoupdater",
-				Name:      "http_handler_duration_seconds",
-				Help:      "Time spent handling an HTTP request",
+				Name: "src_repoupdater_http_handler_duration_seconds",
+				Help: "Time spent handling an HTTP request",
 			}, []string{"path", "code"}),
 			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Namespace: "src",
-				Subsystem: "repoupdater",
-				Name:      "http_handler_requests_total",
-				Help:      "Total number of HTTP requests",
+				Name: "src_repoupdater_http_handler_requests_total",
+				Help: "Total number of HTTP requests",
 			}, []string{"path", "code"}),
 			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Namespace: "src",
-				Subsystem: "repoupdater",
-				Name:      "http_handler_errors_total",
-				Help:      "Total number of HTTP error responses (code >= 400)",
+				Name: "src_repoupdater_http_handler_errors_total",
+				Help: "Total number of HTTP error responses (code >= 400)",
 			}, []string{"path", "code"}),
 		},
 	}

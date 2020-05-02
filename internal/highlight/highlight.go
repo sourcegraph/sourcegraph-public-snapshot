@@ -226,10 +226,8 @@ func Code(ctx context.Context, p Params) (h template.HTML, aborted bool, err err
 }
 
 var requestCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
-	Namespace: "src",
-	Subsystem: "syntax_highlighting",
-	Name:      "requests",
-	Help:      "Counts syntax highlighting requests and their success vs. failure rate.",
+	Name: "src_syntax_highlighting_requests",
+	Help: "Counts syntax highlighting requests and their success vs. failure rate.",
 }, []string{"status"})
 
 func init() {

@@ -44,18 +44,14 @@ var trackOrigin = "https://gitlab.com"
 
 var metricLabels = []string{"route", "method", "code", "repo", "origin"}
 var requestDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-	Namespace: "src",
-	Subsystem: "http",
-	Name:      "request_duration_seconds",
-	Help:      "The HTTP request latencies in seconds.",
-	Buckets:   UserLatencyBuckets,
+	Name:    "src_http_request_duration_seconds",
+	Help:    "The HTTP request latencies in seconds.",
+	Buckets: UserLatencyBuckets,
 }, metricLabels)
 
 var requestHeartbeat = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-	Namespace: "src",
-	Subsystem: "http",
-	Name:      "requests_last_timestamp_unixtime",
-	Help:      "Last time a request finished for a http endpoint.",
+	Name: "src_http_requests_last_timestamp_unixtime",
+	Help: "Last time a request finished for a http endpoint.",
 }, metricLabels)
 
 func init() {

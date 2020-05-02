@@ -18,11 +18,9 @@ import (
 )
 
 var requestDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-	Namespace: "src",
-	Subsystem: "phabricator",
-	Name:      "request_duration_seconds",
-	Help:      "Time (in seconds) spent on request.",
-	Buckets:   prometheus.DefBuckets,
+	Name:    "src_phabricator_request_duration_seconds",
+	Help:    "Time (in seconds) spent on request.",
+	Buckets: prometheus.DefBuckets,
 }, []string{"category", "code"})
 
 func init() {

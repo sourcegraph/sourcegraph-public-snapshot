@@ -470,10 +470,8 @@ loop:
 }
 
 var searchResponseCounter = promauto.NewCounterVec(prometheus.CounterOpts{
-	Namespace: "src",
-	Subsystem: "graphql",
-	Name:      "search_response",
-	Help:      "Number of searches that have ended in the given status (success, error, timeout, partial_timeout).",
+	Name: "src_graphql_search_response",
+	Help: "Number of searches that have ended in the given status (success, error, timeout, partial_timeout).",
 }, []string{"status", "alert_type", "source", "request_name"})
 
 // logSearchLatency records search durations in the event database. This
@@ -979,10 +977,8 @@ func (srs *searchResultsStats) Sparkline() []int32             { return srs.JSpa
 var (
 	searchResultsStatsCache   = rcache.NewWithTTL("search_results_stats", 3600) // 1h
 	searchResultsStatsCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: "src",
-		Subsystem: "graphql",
-		Name:      "search_results_stats_cache_hit",
-		Help:      "Counts cache hits and misses for search results stats (e.g. sparklines).",
+		Name: "src_graphql_search_results_stats_cache_hit",
+		Help: "Counts cache hits and misses for search results stats (e.g. sparklines).",
 	}, []string{"type"})
 )
 

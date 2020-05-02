@@ -135,22 +135,16 @@ func (s *Service) fetchRepositoryArchive(ctx context.Context, repo api.RepoName,
 
 var (
 	fetching = prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: "symbols",
-		Subsystem: "store",
-		Name:      "fetching",
-		Help:      "The number of fetches currently running.",
+		Name: "symbols_store_fetching",
+		Help: "The number of fetches currently running.",
 	})
 	fetchQueueSize = prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: "symbols",
-		Subsystem: "store",
-		Name:      "fetch_queue_size",
-		Help:      "The number of fetch jobs enqueued.",
+		Name: "symbols_store_fetch_queue_size",
+		Help: "The number of fetch jobs enqueued.",
 	})
 	fetchFailed = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: "symbols",
-		Subsystem: "store",
-		Name:      "fetch_failed",
-		Help:      "The total number of archive fetches that failed.",
+		Name: "symbols_store_fetch_failed",
+		Help: "The total number of archive fetches that failed.",
 	})
 )
 

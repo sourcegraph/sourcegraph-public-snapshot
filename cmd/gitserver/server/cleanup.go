@@ -40,17 +40,13 @@ const (
 )
 
 var reposRemoved = prometheus.NewCounter(prometheus.CounterOpts{
-	Namespace: "src",
-	Subsystem: "gitserver",
-	Name:      "repos_removed",
-	Help:      "number of repos removed during cleanup",
+	Name: "src_gitserver_repos_removed",
+	Help: "number of repos removed during cleanup",
 })
 
 var reposRecloned = prometheus.NewCounter(prometheus.CounterOpts{
-	Namespace: "src",
-	Subsystem: "gitserver",
-	Name:      "repos_recloned",
-	Help:      "number of repos removed and recloned due to age",
+	Name: "src_gitserver_repos_recloned",
+	Help: "number of repos removed and recloned due to age",
 })
 
 // cleanupRepos walks the repos directory and performs maintenance tasks:
