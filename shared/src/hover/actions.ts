@@ -27,7 +27,7 @@ import { getContributedActionItems } from '../contributions/contributions'
 import { ExtensionsControllerProps } from '../extensions/controller'
 import { PlatformContext, PlatformContextProps, URLToFileContext } from '../platform/context'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
-import { makeRepoURI, parseRepoURI, withWorkspaceRootInputRevision } from '../util/url'
+import { makeRepoURI, parseRepoURI, withWorkspaceRootInputRevision, isExternalLink } from '../util/url'
 import { HoverContext } from './HoverOverlay'
 
 const LOADING = 'loading' as const
@@ -289,6 +289,7 @@ export function registerHoverContributions({
     extensionsController,
     platformContext: { urlToFile, requestGraphQL },
     history,
+    locationAssign,
 }: (
     | (ExtensionsControllerProps & PlatformContextProps)
     | {
@@ -304,6 +305,8 @@ export function registerHoverContributions({
       }
 ) & {
     history: H.History
+    /** Implementation of `window.location.assign()` used to navigate to external URLs. */
+    locationAssign: typeof location.assign
 }): Unsubscribable {
     const subscriptions = new Subscription()
 
@@ -396,7 +399,13 @@ export function registerHoverContributions({
                     }
                     throw new Error('Already at the definition.')
                 }
-                history.push(result.url)
+                if (isExternalLink(result.url)) {
+                    // External links must be navigated to through the browser
+                    locationAssign(result.url)
+                } else {
+                    // Use history library to handle in-app navigation
+                    history.push(result.url)
+                }
             },
         })
     )

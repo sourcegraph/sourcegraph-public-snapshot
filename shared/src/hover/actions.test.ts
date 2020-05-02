@@ -1,7 +1,7 @@
 import { HoveredToken, LOADER_DELAY, MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { Location } from '@sourcegraph/extension-api-types'
-import { createMemoryHistory } from 'history'
-import { BehaviorSubject, from, Observable, of, throwError } from 'rxjs'
+import { createMemoryHistory, MemoryHistory, createPath } from 'history'
+import { BehaviorSubject, from, Observable, of, throwError, Subscription } from 'rxjs'
 import { first, map } from 'rxjs/operators'
 import { TestScheduler } from 'rxjs/testing'
 import * as sinon from 'sinon'
@@ -20,7 +20,16 @@ import { IMutation, IQuery } from '../graphql/schema'
 import { PlatformContext, URLToFileContext } from '../platform/context'
 import { EMPTY_SETTINGS_CASCADE } from '../settings/settings'
 import { resetAllMemoizationCaches } from '../util/memoizeObservable'
-import { FileSpec, UIPositionSpec, RawRepoSpec, RepoSpec, RevSpec, toPrettyBlobURL, ViewStateSpec } from '../util/url'
+import {
+    FileSpec,
+    UIPositionSpec,
+    RawRepoSpec,
+    RepoSpec,
+    RevSpec,
+    ViewStateSpec,
+    toAbsoluteBlobURL,
+    toPrettyBlobURL,
+} from '../util/url'
 import { getDefinitionURL, getHoverActionsContext, HoverActionsContext, registerHoverContributions } from './actions'
 import { HoverContext } from './HoverOverlay'
 
@@ -55,7 +64,12 @@ function testWorkspaceService(
 
 // Use toPrettyBlobURL as the urlToFile passed to these functions because it results in the most readable/familiar
 // expected test output.
-const urlToFile = toPrettyBlobURL
+// Some tests may override this with .callsFake()
+let urlToFile!: sinon.SinonStub<Parameters<PlatformContext['urlToFile']>, string>
+beforeEach(() => {
+    urlToFile = sinon.stub<Parameters<PlatformContext['urlToFile']>, string>().callsFake(toPrettyBlobURL)
+})
+
 const requestGraphQL: PlatformContext['requestGraphQL'] = <R extends IQuery | IMutation>({
     variables,
 }: {
@@ -403,7 +417,7 @@ describe('getDefinitionURL', () => {
                 } as SuccessGraphQLResult<R>)
             const urlToFile = sinon.spy(
                 (
-                    location: RepoSpec &
+                    _location: RepoSpec &
                         Partial<RawRepoSpec> &
                         RevSpec &
                         FileSpec &
@@ -556,31 +570,43 @@ describe('getDefinitionURL', () => {
 })
 
 describe('registerHoverContributions()', () => {
-    beforeEach(() => resetAllMemoizationCaches())
-    const contribution = new ContributionRegistry(
-        createTestViewerService({}),
-        {
-            getPartialModel: () => ({ languageId: 'x' }),
-        },
-        { data: of(EMPTY_SETTINGS_CASCADE) },
-        of({})
-    )
-    const commands = new CommandRegistry()
-    const textDocumentDefinition: Pick<Services['textDocumentDefinition'], 'getLocations'> = {
-        getLocations: () => of({ isLoading: false, result: [] }),
-    }
-    const history = createMemoryHistory()
-    const subscription = registerHoverContributions({
-        extensionsController: {
-            services: {
-                contribution,
-                commands,
-                workspace: testWorkspaceService(),
-                textDocumentDefinition,
+    const subscription = new Subscription()
+    let history!: MemoryHistory
+    let contribution!: ContributionRegistry
+    let commands!: CommandRegistry
+    let textDocumentDefinition!: Pick<Services['textDocumentDefinition'], 'getLocations'>
+    let locationAssign!: sinon.SinonSpy<[string], void>
+    beforeEach(() => {
+        resetAllMemoizationCaches()
+        contribution = new ContributionRegistry(
+            createTestViewerService({}),
+            {
+                getPartialModel: () => ({ languageId: 'x' }),
             },
-        },
-        platformContext: { urlToFile, requestGraphQL },
-        history,
+            { data: of(EMPTY_SETTINGS_CASCADE) },
+            of({})
+        )
+        commands = new CommandRegistry()
+        textDocumentDefinition = {
+            getLocations: () => of({ isLoading: false, result: [] }),
+        }
+        history = createMemoryHistory()
+        locationAssign = sinon.spy((_url: string) => undefined)
+        subscription.add(
+            registerHoverContributions({
+                extensionsController: {
+                    services: {
+                        contribution,
+                        commands,
+                        workspace: testWorkspaceService(),
+                        textDocumentDefinition,
+                    },
+                },
+                platformContext: { urlToFile, requestGraphQL },
+                history,
+                locationAssign,
+            })
+        )
     })
     afterAll(() => subscription.unsubscribe())
 
@@ -729,6 +755,30 @@ describe('registerHoverContributions()', () => {
             await expect(
                 commands.executeCommand({ command: 'goToDefinition', arguments: [JSON.stringify(FIXTURE_PARAMS)] })
             ).rejects.toMatchObject({ message: 'No definition found.' })
+        })
+
+        test('navigates to an in-app URL using the passed history object', async () => {
+            jsdom.reconfigure({ url: 'https://sourcegraph.test/r2@c2/-/blob/f1' })
+            history.replace('/r2@c2/-/blob/f1')
+            expect(history).toHaveLength(1)
+            textDocumentDefinition.getLocations = () => of({ isLoading: false, result: [FIXTURE_LOCATION] }) // mock
+            await commands.executeCommand({ command: 'goToDefinition', arguments: [JSON.stringify(FIXTURE_PARAMS)] })
+            sinon.assert.notCalled(locationAssign)
+            expect(history).toHaveLength(2)
+            expect(createPath(history.location)).toBe('/r2@c2/-/blob/f2#L3:3')
+        })
+
+        test('navigates to an external URL using the global location object', async () => {
+            jsdom.reconfigure({ url: 'https://github.test/r2@c2/-/blob/f1' })
+            history.replace('/r2@c2/-/blob/f1')
+            expect(history).toHaveLength(1)
+            urlToFile.callsFake(toAbsoluteBlobURL.bind(null, 'https://sourcegraph.test'))
+            textDocumentDefinition.getLocations = () =>
+                of({ isLoading: false, result: [FIXTURE_LOCATION, { ...FIXTURE_LOCATION, uri: 'git://r3?v3#f3' }] }) // mock
+            await commands.executeCommand({ command: 'goToDefinition', arguments: [JSON.stringify(FIXTURE_PARAMS)] })
+            sinon.assert.calledOnce(locationAssign)
+            sinon.assert.calledWith(locationAssign, 'https://sourcegraph.test/r@c/-/blob/f#L2:2&tab=def')
+            expect(history).toHaveLength(1)
         })
 
         test('reports panel already visible', async () => {
