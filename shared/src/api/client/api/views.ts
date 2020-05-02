@@ -10,7 +10,7 @@ import { PanelViewWithComponent, PanelViewProviderRegistry } from '../services/p
 import { Location } from '@sourcegraph/extension-api-types'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { ProxySubscribable } from '../../extension/api/common'
-import { wrapRemoteObservable } from './common'
+import { wrapRemoteObservable, ProxySubscription } from './common'
 import { ViewService, ViewContexts } from '../services/viewService'
 
 /** @internal */
@@ -118,11 +118,11 @@ export class ClientViews implements ClientViewsAPI {
         subscription.add(
             this.viewService.register(id, ContributableViewContainer.Directory, context => {
                 const remoteObservable = wrapRemoteObservable(provider(context))
-                subscription.add(() => remoteObservable[comlink.releaseProxy]())
+                subscription.add(remoteObservable.proxySubscription)
                 return remoteObservable
             })
         )
-        subscription.add(() => provider[comlink.releaseProxy]())
+        subscription.add(new ProxySubscription(provider))
         return comlink.proxy(subscription)
     }
 
@@ -138,11 +138,11 @@ export class ClientViews implements ClientViewsAPI {
         subscription.add(
             this.viewService.register(id, ContributableViewContainer.GlobalPage, context => {
                 const remoteObservable = wrapRemoteObservable(provider(context))
-                subscription.add(() => remoteObservable[comlink.releaseProxy]())
+                subscription.add(remoteObservable.proxySubscription)
                 return remoteObservable
             })
         )
-        subscription.add(() => provider[comlink.releaseProxy]())
+        subscription.add(new ProxySubscription(provider))
         return comlink.proxy(subscription)
     }
 }

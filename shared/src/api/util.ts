@@ -46,10 +46,13 @@ export function registerComlinkTransferHandlers(): void {
 export const syncSubscription = (subscriptionPromise: Promise<Remote<Unsubscribable & ProxyMarked>>): Subscription =>
     // We cannot pass the proxy subscription directly to Rx because it is a Proxy that looks like a function
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
-    new Subscription(async () => {
-        const proxySubscription = await subscriptionPromise
-        await proxySubscription.unsubscribe()
-        proxySubscription[releaseProxy]()
+    new Subscription(async function (this: any) {
+        const subscriptionProxy = await subscriptionPromise
+        await subscriptionProxy.unsubscribe()
+        subscriptionProxy[releaseProxy]()
+
+        this._unsubscribe = null // Workaround: rxjs doesn't null out the reference to this callback
+        ;(subscriptionPromise as any) = null
     })
 
 /**

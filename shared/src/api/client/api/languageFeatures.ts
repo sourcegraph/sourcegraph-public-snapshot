@@ -1,4 +1,4 @@
-import { Remote, ProxyMarked, proxy, proxyMarker, releaseProxy } from 'comlink'
+import { Remote, ProxyMarked, proxy, proxyMarker } from 'comlink'
 import { Hover, Location } from '@sourcegraph/extension-api-types'
 import { CompletionList, DocumentSelector, Unsubscribable } from 'sourcegraph'
 import { ProxySubscribable } from '../../extension/api/common'
@@ -7,7 +7,7 @@ import { ProvideCompletionItemSignature } from '../services/completion'
 import { ProvideTextDocumentHoverSignature } from '../services/hover'
 import { TextDocumentLocationProviderIDRegistry, TextDocumentLocationProviderRegistry } from '../services/location'
 import { FeatureProviderRegistry } from '../services/registry'
-import { wrapRemoteObservable } from './common'
+import { wrapRemoteObservable, ProxySubscription } from './common'
 import { Subscription } from 'rxjs'
 
 /** @internal */
@@ -73,11 +73,11 @@ export class ClientLanguageFeatures implements ClientLanguageFeaturesAPI, ProxyM
         subscription.add(
             this.hoverRegistry.registerProvider({ documentSelector }, params => {
                 const remoteObservable = wrapRemoteObservable(providerFunction(params))
-                subscription.add(() => remoteObservable[releaseProxy]())
+                subscription.add(remoteObservable.proxySubscription)
                 return remoteObservable
             })
         )
-        subscription.add(() => providerFunction[releaseProxy]())
+        subscription.add(new ProxySubscription(providerFunction))
         return proxy(subscription)
     }
 
@@ -89,11 +89,11 @@ export class ClientLanguageFeatures implements ClientLanguageFeaturesAPI, ProxyM
         subscription.add(
             this.definitionRegistry.registerProvider({ documentSelector }, params => {
                 const remoteObservable = wrapRemoteObservable(providerFunction(params))
-                subscription.add(() => remoteObservable[releaseProxy]())
+                subscription.add(remoteObservable.proxySubscription)
                 return remoteObservable
             })
         )
-        subscription.add(() => providerFunction[releaseProxy]())
+        subscription.add(new ProxySubscription(providerFunction))
         return proxy(subscription)
     }
 
@@ -105,11 +105,11 @@ export class ClientLanguageFeatures implements ClientLanguageFeaturesAPI, ProxyM
         subscription.add(
             this.referencesRegistry.registerProvider({ documentSelector }, params => {
                 const remoteObservable = wrapRemoteObservable(providerFunction(params))
-                subscription.add(() => remoteObservable[releaseProxy]())
+                subscription.add(remoteObservable.proxySubscription)
                 return remoteObservable
             })
         )
-        subscription.add(() => providerFunction[releaseProxy]())
+        subscription.add(new ProxySubscription(providerFunction))
         return proxy(subscription)
     }
 
@@ -122,11 +122,11 @@ export class ClientLanguageFeatures implements ClientLanguageFeaturesAPI, ProxyM
         subscription.add(
             this.locationRegistry.registerProvider({ id, documentSelector }, params => {
                 const remoteObservable = wrapRemoteObservable(providerFunction(params))
-                subscription.add(() => remoteObservable[releaseProxy]())
+                subscription.add(remoteObservable.proxySubscription)
                 return remoteObservable
             })
         )
-        subscription.add(() => providerFunction[releaseProxy]())
+        subscription.add(new ProxySubscription(providerFunction))
         return proxy(subscription)
     }
 
@@ -140,11 +140,11 @@ export class ClientLanguageFeatures implements ClientLanguageFeaturesAPI, ProxyM
         subscription.add(
             this.completionItemsRegistry.registerProvider({ documentSelector }, params => {
                 const remoteObservable = wrapRemoteObservable(providerFunction(params))
-                subscription.add(() => remoteObservable[releaseProxy]())
+                subscription.add(remoteObservable.proxySubscription)
                 return remoteObservable
             })
         )
-        subscription.add(() => providerFunction[releaseProxy]())
+        subscription.add(new ProxySubscription(providerFunction))
         return proxy(subscription)
     }
 }

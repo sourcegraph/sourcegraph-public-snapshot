@@ -1,7 +1,8 @@
-import { ProxyMarked, proxy, proxyMarker, Remote, releaseProxy } from 'comlink'
+import { ProxyMarked, proxy, proxyMarker, Remote } from 'comlink'
 import { Unsubscribable } from 'sourcegraph'
 import { CommandRegistry } from '../services/command'
 import { Subscription } from 'rxjs'
+import { ProxySubscription } from './common'
 
 /** @internal */
 export interface ClientCommandsAPI extends ProxyMarked {
@@ -18,7 +19,7 @@ export class ClientCommands implements ClientCommandsAPI, ProxyMarked {
     public $registerCommand(command: string, run: Remote<(...args: any) => any>): Unsubscribable & ProxyMarked {
         const subscription = new Subscription()
         subscription.add(this.registry.registerCommand({ command, run }))
-        subscription.add(() => run[releaseProxy]())
+        subscription.add(new ProxySubscription(run))
         return proxy(subscription)
     }
 

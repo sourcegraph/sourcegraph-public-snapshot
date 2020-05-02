@@ -1,8 +1,8 @@
-import { Remote, ProxyMarked, proxy, proxyMarker, releaseProxy } from 'comlink'
+import { Remote, ProxyMarked, proxy, proxyMarker } from 'comlink'
 import { LinkPreview, Unsubscribable } from 'sourcegraph'
 import { ProxySubscribable } from '../../extension/api/common'
 import { LinkPreviewProviderRegistry } from '../services/linkPreview'
-import { wrapRemoteObservable } from './common'
+import { wrapRemoteObservable, ProxySubscription } from './common'
 import { Subscription } from 'rxjs'
 
 /** @internal */
@@ -22,11 +22,11 @@ export function createClientContent(registry: LinkPreviewProviderRegistry): Clie
             subscription.add(
                 registry.registerProvider({ urlMatchPattern }, url => {
                     const remoteObservable = wrapRemoteObservable(providerFunction(url))
-                    subscription.add(() => remoteObservable[releaseProxy]())
+                    subscription.add(remoteObservable.proxySubscription)
                     return remoteObservable
                 })
             )
-            subscription.add(() => providerFunction[releaseProxy]())
+            subscription.add(new ProxySubscription(providerFunction))
             return proxy(subscription)
         },
     }
