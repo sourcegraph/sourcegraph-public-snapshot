@@ -235,15 +235,18 @@ func (ProductSubscriptionLicensingResolver) CreatePaidProductSubscription(ctx co
 		return nil, err
 	}
 
-	// Determine which license tags and min quantity to use for the purchased plan. Do this early on
-	// because it's the most likely place for a stupid mistake to cause a bug, and doing it early
-	// means the user hasn't been charged if there is an error.
-	licenseTags, minQuantity, err := billing.InfoForProductPlan(ctx, args.ProductSubscription.BillingPlanID)
+	// Determine which license tags and min/max quantities to use for the purchased plan. Do this
+	// early on because it's the most likely place for a stupid mistake to cause a bug, and doing it
+	// early means the user hasn't been charged if there is an error.
+	licenseTags, minQuantity, maxQuantity, err := billing.InfoForProductPlan(ctx, args.ProductSubscription.BillingPlanID)
 	if err != nil {
 		return nil, err
 	}
 	if minQuantity != nil && args.ProductSubscription.UserCount < *minQuantity {
 		args.ProductSubscription.UserCount = *minQuantity
+	}
+	if maxQuantity != nil && args.ProductSubscription.UserCount > *maxQuantity {
+		return nil, userCountExceedsPlanMaxError(args.ProductSubscription.UserCount, *maxQuantity)
 	}
 
 	// Create the subscription in our database first, before processing payment. If payment fails,
@@ -319,15 +322,18 @@ func (ProductSubscriptionLicensingResolver) UpdatePaidProductSubscription(ctx co
 		return nil, err
 	}
 
-	// Determine which license tags and min quantity to use for the purchased plan. Do this early on
-	// because it's the most likely place for a stupid mistake to cause a bug, and doing it early
-	// means the user hasn't been charged if there is an error.
-	licenseTags, minQuantity, err := billing.InfoForProductPlan(ctx, args.Update.BillingPlanID)
+	// Determine which license tags and min/max quantities to use for the purchased plan. Do this
+	// early on because it's the most likely place for a stupid mistake to cause a bug, and doing it
+	// early means the user hasn't been charged if there is an error.
+	licenseTags, minQuantity, maxQuantity, err := billing.InfoForProductPlan(ctx, args.Update.BillingPlanID)
 	if err != nil {
 		return nil, err
 	}
 	if minQuantity != nil && args.Update.UserCount < *minQuantity {
 		args.Update.UserCount = *minQuantity
+	}
+	if maxQuantity != nil && args.Update.UserCount > *maxQuantity {
+		return nil, userCountExceedsPlanMaxError(args.Update.UserCount, *maxQuantity)
 	}
 
 	params := &stripe.SubscriptionParams{

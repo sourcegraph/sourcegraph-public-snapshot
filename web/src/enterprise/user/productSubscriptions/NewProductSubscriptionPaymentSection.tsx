@@ -135,7 +135,7 @@ export const NewProductSubscriptionPaymentSection: React.FunctionComponent<Props
                     <>
                         Total: ${numberWithCommas(previewInvoice.price / 100)} for{' '}
                         {formatDistanceStrict(parseISO(previewInvoice.afterInvoiceItem.expiresAt), Date.now())} (
-                        {formatUserCount(productSubscription.userCount)})
+                        {formatUserCount(previewInvoice.afterInvoiceItem.userCount)})
                         {/* Include invisible LoadingSpinner to ensure that the height remains constant between loading and total. */}
                         <LoadingSpinner className="icon-inline invisible" />
                     </>
