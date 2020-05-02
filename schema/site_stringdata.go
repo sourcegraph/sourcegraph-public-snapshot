@@ -643,6 +643,18 @@ const SiteSchemaJSON = `{
       "type": "string",
       "group": "Sourcegraph Enterprise license"
     },
+    "dotcom": {
+      "description": "Internal use only. Configuration options for Sourcegraph.com.",
+      "type": "object",
+      "properties": {
+        "slackLicenseExpirationWebhook": {
+          "description": "Slack webhook for upcoming license expiration notifications.",
+          "type": "string",
+          "group": "Sourcegraph.com"
+        }
+      },
+      "group": "Sourcegraph.com"
+    },
     "auth.providers": {
       "description": "The authentication providers to use for identifying and signing in users. See instructions below for configuring SAML, OpenID Connect (including G Suite), and HTTP authentication proxies. Multiple authentication providers are supported (by specifying multiple elements in this array).",
       "type": "array",

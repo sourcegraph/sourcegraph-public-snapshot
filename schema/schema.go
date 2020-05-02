@@ -338,6 +338,12 @@ type Discussions struct {
 	// AbuseProtection description: Enable abuse protection features (for public instances like Sourcegraph.com, not recommended for private instances).
 	AbuseProtection bool `json:"abuseProtection,omitempty"`
 }
+
+// Dotcom description: Internal use only. Configuration options for Sourcegraph.com.
+type Dotcom struct {
+	// SlackLicenseExpirationWebhook description: Slack webhook for upcoming license expiration notifications.
+	SlackLicenseExpirationWebhook string `json:"slackLicenseExpirationWebhook,omitempty"`
+}
 type ExcludedAWSCodeCommitRepo struct {
 	// Id description: The ID of an AWS Code Commit repository (as returned by the AWS API) to exclude from mirroring. Use this to exclude the repository, even if renamed, or to differentiate between repositories with the same name in multiple regions.
 	Id string `json:"id,omitempty"`
@@ -983,6 +989,8 @@ type SiteConfiguration struct {
 	Discussions *Discussions `json:"discussions,omitempty"`
 	// DontIncludeSymbolResultsByDefault description: Set to `true` to not include symbol results if no `type:` filter was given
 	DontIncludeSymbolResultsByDefault bool `json:"dontIncludeSymbolResultsByDefault,omitempty"`
+	// Dotcom description: Internal use only. Configuration options for Sourcegraph.com.
+	Dotcom *Dotcom `json:"dotcom,omitempty"`
 	// EmailAddress description: The "from" address for emails sent by this server.
 	EmailAddress string `json:"email.address,omitempty"`
 	// EmailImap description: Optional. The IMAP server used to retrieve emails (such as code discussion reply emails).
