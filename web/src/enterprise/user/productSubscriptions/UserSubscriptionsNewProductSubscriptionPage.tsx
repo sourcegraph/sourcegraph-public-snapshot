@@ -84,9 +84,10 @@ export const UserSubscriptionsNewProductSubscriptionPage: React.FunctionComponen
                 onSubmit={nextCreation}
                 submissionState={creation}
                 primaryButtonText="Buy subscription"
+                primaryButtonTextNoPaymentRequired="Create subscription"
                 afterPrimaryButton={
                     <small className="form-text text-muted">
-                        Your license key will be available immediately after payment.
+                        Your license key will be available immediately.
                         <br />
                         <br />
                         <Link to="/terms" target="_blank">
@@ -144,7 +145,7 @@ function createPaidProductSubscription(
             mutation CreatePaidProductSubscription(
                 $accountID: ID!
                 $productSubscription: ProductSubscriptionInput!
-                $paymentToken: String!
+                $paymentToken: String
             ) {
                 dotcom {
                     createPaidProductSubscription(

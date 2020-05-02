@@ -2,6 +2,7 @@ package productsubscription
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
@@ -37,6 +38,10 @@ func (r *productSubscriptionPreviewInvoice) IsDowngradeRequiringManualInterventi
 
 func isDowngradeRequiringManualIntervention(beforeUserCount int32, beforePlanPrice int64, afterUserCount int32, afterPlanPrice int64) bool {
 	return afterUserCount < beforeUserCount || afterPlanPrice < beforePlanPrice
+}
+
+func userCountExceedsPlanMaxError(userCount, max int32) error {
+	return fmt.Errorf("user count (%d) exceeds maximum allowed in this plan (%d)", userCount, max)
 }
 
 func (r *productSubscriptionPreviewInvoice) BeforeInvoiceItem() graphqlbackend.ProductSubscriptionInvoiceItem {
@@ -91,8 +96,14 @@ func (ProductSubscriptionLicensingResolver) PreviewProductSubscriptionInvoice(ct
 	if err != nil {
 		return nil, err
 	}
-	if minQuantity := billing.ProductPlanMinQuantity(plan); minQuantity != nil && args.ProductSubscription.UserCount < *minQuantity {
-		args.ProductSubscription.UserCount = *minQuantity
+	{
+		minQuantity, maxQuantity := billing.ProductPlanMinMaxQuantity(plan)
+		if minQuantity != nil && args.ProductSubscription.UserCount < *minQuantity {
+			args.ProductSubscription.UserCount = *minQuantity
+		}
+		if maxQuantity != nil && args.ProductSubscription.UserCount > *maxQuantity {
+			return nil, userCountExceedsPlanMaxError(args.ProductSubscription.UserCount, *maxQuantity)
+		}
 	}
 	result := productSubscriptionPreviewInvoice{
 		after: &productSubscriptionInvoiceItem{

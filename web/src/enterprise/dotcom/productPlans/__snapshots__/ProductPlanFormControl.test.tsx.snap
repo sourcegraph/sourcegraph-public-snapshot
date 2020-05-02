@@ -33,7 +33,20 @@ exports[`ProductPlanFormControl new subscription 1`] = `
             className="text-muted"
           >
             <ProductPlanPrice
-              pricePerUserPerYear={123}
+              plan={
+                Object {
+                  "__typename": "ProductPlan",
+                  "billingPlanID": "p0",
+                  "maxQuantity": 10,
+                  "minQuantity": null,
+                  "name": "n0",
+                  "nameWithBrand": "nb0",
+                  "planTiers": Array [],
+                  "pricePerUserPerYear": 123,
+                  "productPlanID": "pp0",
+                  "tiersMode": "volume",
+                }
+              }
             />
           </div>
         </div>
@@ -65,7 +78,20 @@ exports[`ProductPlanFormControl new subscription 1`] = `
             className="text-muted"
           >
             <ProductPlanPrice
-              pricePerUserPerYear={456}
+              plan={
+                Object {
+                  "__typename": "ProductPlan",
+                  "billingPlanID": "p1",
+                  "maxQuantity": null,
+                  "minQuantity": null,
+                  "name": "n1",
+                  "nameWithBrand": "nb1",
+                  "planTiers": Array [],
+                  "pricePerUserPerYear": 456,
+                  "productPlanID": "pp1",
+                  "tiersMode": "volume",
+                }
+              }
             />
           </div>
         </div>

@@ -3987,8 +3987,9 @@ type DotcomMutation {
         accountID: ID!
         # The details of the product subscription.
         productSubscription: ProductSubscriptionInput!
-        # The token that represents the payment method used to purchase this product subscription.
-        paymentToken: String!
+        # The token that represents the payment method used to purchase this product subscription,
+        # or null if no payment is required.
+        paymentToken: String
     ): CreatePaidProductSubscriptionResult!
     # Updates a new product subscription and credits or debits the associated payment method.
     #
@@ -4004,8 +4005,8 @@ type DotcomMutation {
         # value").
         update: ProductSubscriptionInput!
         # The token that represents the payment method used to pay for (or receive credit for) this
-        # product subscription update.
-        paymentToken: String!
+        # product subscription update, or null if no payment is required.
+        paymentToken: String
     ): UpdatePaidProductSubscriptionResult!
     # Archives an existing product subscription.
     #
@@ -4211,6 +4212,8 @@ type ProductPlan {
     pricePerUserPerYear: Int!
     # The minimum quantity (user count) that can be purchased. Only applies when using tiered pricing.
     minQuantity: Int
+    # The maximum quantity (user count) that can be purchased. Only applies when using tiered pricing.
+    maxQuantity: Int
     # Defines if the tiering price should be graduated or volume based.
     tiersMode: String!
     # The tiered pricing for the plan.
@@ -4221,11 +4224,11 @@ type ProductPlan {
 #
 # FOR INTERNAL USE ONLY.
 type PlanTier {
-    # The per-user amount.
+    # The per-user amount for this tier.
     unitAmount: Int!
     # The maximum number of users that this tier applies to.
     upTo: Int!
-    # The base fee that this tier applies to.
+    # The flat fee for this tier.
     flatAmount: Int!
 }
 
