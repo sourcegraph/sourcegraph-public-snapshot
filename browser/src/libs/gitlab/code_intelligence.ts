@@ -7,9 +7,9 @@ import { diffDOMFunctions, singleFileDOMFunctions } from './dom_functions'
 import { getCommandPaletteMount } from './extensions'
 import { resolveCommitFileInfo, resolveDiffFileInfo, resolveFileInfo } from './file_info'
 import { getPageInfo, GitLabPageKind, getFilePathsFromCodeView } from './scrape'
-import { toAbsoluteBlobURL } from '../../shared/util/url'
 import { subTypeOf } from '../../../../shared/src/util/types'
 import { NotificationType } from '../../../../shared/src/api/client/services/notifications'
+import { toAbsoluteBlobURL } from '../../../../shared/src/util/url'
 
 const toolbarButtonProps = {
     className: 'btn btn-default btn-sm',
