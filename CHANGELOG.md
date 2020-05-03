@@ -19,9 +19,11 @@ All notable changes to Sourcegraph are documented in this file.
 - [Major syntax highlighting improvements](https://github.com/sourcegraph/syntect_server/pull/29), including:
   - 228 commits / 1 year of improvements to the syntax highlighter library Sourcegraph uses ([syntect](https://github.com/trishume/syntect)).
   - 432 commits / 1 year of improvements to the base syntax definitions for ~36 languages Sourcegraph uses ([sublimehq/Packages](https://github.com/sublimehq/Packages)).
-  - 30 new file extensions/names now properly detected.
-  - Added support for: ASP vb.NET, ASP.net HTML, COBOL, jcl, CUDA C++, Solidity/Vyper (Ethereum), Smarty
-  - Likely fixes other major instability and language support issues.
+  - 30 new file extensions/names now detected.
+  - Likely fixes other major instability and language support issues. #9557
+  - Added [Smarty](#2885), [Ethereum / Solidity / Vyper)](#2440), [Cuda](#5907), [COBOL](#10154), [vb.NET](#4901), and [ASP.NET](#4262) syntax highlighting.
+  - Fixed OCaml syntax highlighting #3545
+  - Bazel/Starlark support improved (.star, BUILD, and many more extensions now properly highlighted). #8123
 
 ### Changed
 
