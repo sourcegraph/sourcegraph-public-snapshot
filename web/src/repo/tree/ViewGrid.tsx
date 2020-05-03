@@ -14,11 +14,11 @@ interface ViewGridProps extends Omit<ViewContentProps, 'viewContent'> {
 }
 
 export const ViewGrid: React.FunctionComponent<ViewGridProps> = ({ views, className, ...props }) => (
-    <div className={classNames(className, 'd-flex', 'flex-wrap')}>
-        {views?.map((view, i) => (
-            <div key={i} className="card flex-grow-1 mr-2 mt-2">
+    <div className={classNames(className, 'view-grid')}>
+        {views.map((view, i) => (
+            <div key={i} className="card">
                 {view === undefined ? (
-                    <div className="card-body d-flex flex-column align-items-center p-3">
+                    <div className="card-body d-flex flex-column align-items-center p-5">
                         <LoadingSpinner /> Loading code insight
                     </div>
                 ) : isErrorLike(view) ? (
