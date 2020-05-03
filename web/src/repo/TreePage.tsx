@@ -38,7 +38,6 @@ import { subYears, formatISO } from 'date-fns'
 import { pluralize } from '../../../shared/src/util/strings'
 import { useObservable } from '../../../shared/src/util/useObservable'
 import { toPrettyBlobURL, toURIWithPath } from '../../../shared/src/util/url'
-import { isDefined } from '../../../shared/src/util/types'
 import { getViewsForContainer } from '../../../shared/src/api/client/services/viewService'
 import { ViewContent } from '../views/ViewContent'
 import { Settings } from '../schema/settings.schema'
@@ -237,7 +236,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                               },
                           },
                           services.view
-                      ).pipe(map(views => views.filter(isDefined)))
+                      )
                     : EMPTY,
             [codeInsightsEnabled, workspaceUri, uri, services.view]
         )
@@ -352,36 +351,29 @@ export const TreePage: React.FunctionComponent<Props> = ({
                         </header>
                     )}
                     {codeInsightsEnabled && (
-                        <div className="tree-page__section d-flex">
-                            {views === undefined ? (
-                                <div className="card flex-grow-1">
-                                    <div className="card-body d-flex flex-column align-items-center p-3">
-                                        <div>
-                                            <LoadingSpinner className="icon-inline" />
+                        <div className="tree-page__section d-flex flex-wrap">
+                            {views?.map((view, i) => (
+                                <div key={i} className="card flex-grow-1 mr-2 mt-2">
+                                    {view === undefined ? (
+                                        <div className="card-body d-flex flex-column align-items-center p-3">
+                                            <LoadingSpinner /> Loading code insight
                                         </div>
-                                        <div>Loading code insights</div>
-                                    </div>
+                                    ) : isErrorLike(view) ? (
+                                        <ErrorAlert className="m-0" error={view} history={props.history} />
+                                    ) : (
+                                        <div className="card-body">
+                                            <h3 className="tree-page__view-title">{view.title}</h3>
+                                            <ViewContent
+                                                {...props}
+                                                viewContent={view.content}
+                                                settingsCascade={settingsCascade}
+                                                caseSensitive={caseSensitive}
+                                                patternType={patternType}
+                                            />{' '}
+                                        </div>
+                                    )}
                                 </div>
-                            ) : (
-                                views.map((view, i) => (
-                                    <div key={i} className="card flex-grow-1">
-                                        {isErrorLike(view) ? (
-                                            <ErrorAlert className="m-0" error={view} history={props.history} />
-                                        ) : (
-                                            <div className="card-body">
-                                                <h3 className="tree-page__view-title">{view.title}</h3>
-                                                <ViewContent
-                                                    {...props}
-                                                    viewContent={view.content}
-                                                    settingsCascade={settingsCascade}
-                                                    caseSensitive={caseSensitive}
-                                                    patternType={patternType}
-                                                />{' '}
-                                            </div>
-                                        )}
-                                    </div>
-                                ))
-                            )}
+                            ))}
                         </div>
                     )}
                     <TreeEntriesSection
