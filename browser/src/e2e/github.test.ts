@@ -6,7 +6,7 @@ import { testSingleFilePage } from './shared'
 import { retry } from '../../../shared/src/e2e/e2e-test-utils'
 import { getConfig } from '../../../shared/src/e2e/config'
 import { fromEvent } from 'rxjs'
-import { first, flatMap, filter, timeout } from 'rxjs/operators'
+import { first, filter, timeout, mergeMap } from 'rxjs/operators'
 import { Target, Page } from 'puppeteer'
 import { isDefined } from '../../../shared/src/util/types'
 
@@ -118,7 +118,7 @@ describe('Sourcegraph browser extension on github.com', function () {
                                 fromEvent<Target>(driver.browser, 'targetcreated')
                                     .pipe(
                                         timeout(5000),
-                                        flatMap(target => target.page()),
+                                        mergeMap(target => target.page()),
                                         filter(isDefined),
                                         first()
                                     )
