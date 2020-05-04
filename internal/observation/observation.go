@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/opentracing/opentracing-go/log"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -16,9 +17,10 @@ type Args struct {
 	Metrics *metrics.OperationMetrics
 	Tracer  *trace.Tracer
 	// Err is a pointer to the operation's err result.
-	Err       *error
-	TraceName string
-	LogName   string
+	Err          *error
+	TraceName    string
+	LogName      string
+	MetricLabels []string
 	// LogFields are logged prior to the operation being performed.
 	LogFields []log.Field
 }
@@ -96,7 +98,7 @@ func With(ctx context.Context, args Args) (context.Context, FinishFn) {
 			kvs = append(kvs, field.Key(), field.Value())
 		}
 
-		args.Metrics.Observe(elapsed, count, args.Err)
+		args.Metrics.Observe(elapsed, count, args.Err, args.MetricLabels...)
 		logging.Log(args.Logger, args.LogName, args.Err, kvs...)
 
 		if tr != nil {
@@ -107,4 +109,74 @@ func With(ctx context.Context, args Args) (context.Context, FinishFn) {
 			tr.Finish()
 		}
 	}
+}
+
+// Spec specifies observation.Args for a single operation.
+type Spec struct {
+	LogName      string
+	TraceName    string
+	Metrics      *metrics.OperationMetrics
+	MetricLabels []string
+}
+
+// Specs encapsulates the operation args for an observed struct.
+type Specs struct {
+	logger  logging.ErrorLogger
+	tracer  trace.Tracer
+	specs   map[string]Spec
+	metrics []*metrics.OperationMetrics
+}
+
+// NewSpecs creates a new Specs object that can be used with an observed struct. Before use,
+// the metrics in each Spec must be registered in a Prometheus registry via MustRegister.
+func NewSpecs(logger logging.ErrorLogger, tracer trace.Tracer, specs map[string]Spec) Specs {
+	uniqueMetrics := map[*metrics.OperationMetrics]struct{}{}
+	for _, spec := range specs {
+		uniqueMetrics[spec.Metrics] = struct{}{}
+	}
+
+	var metrics []*metrics.OperationMetrics
+	for k := range uniqueMetrics {
+		metrics = append(metrics, k)
+	}
+
+	return Specs{
+		logger:  logger,
+		tracer:  tracer,
+		specs:   specs,
+		metrics: metrics,
+	}
+}
+
+// MustRegister registers all metrics in OperationSpecs in the given
+// prometheus.Registerer. It panics in case of failure.
+func (s Specs) MustRegister(r prometheus.Registerer) {
+	for _, om := range s.metrics {
+		om.MustRegister(prometheus.DefaultRegisterer)
+	}
+}
+
+// With prepares the necessary timers, loggers, and metrics to observe
+// an operation. For usage details, see the With function in this package.
+func (s Specs) With(
+	ctx context.Context,
+	err *error,
+	operationName string,
+	preFields ...log.Field,
+) (context.Context, FinishFn) {
+	spec, ok := s.specs[operationName]
+	if !ok {
+		return ctx, func(count float64, additionalLogFields ...log.Field) {}
+	}
+
+	return With(ctx, Args{
+		Logger:       s.logger,
+		Metrics:      spec.Metrics,
+		Tracer:       &s.tracer,
+		Err:          err,
+		TraceName:    spec.TraceName,
+		LogName:      spec.LogName,
+		MetricLabels: spec.MetricLabels,
+		LogFields:    preFields,
+	})
 }
