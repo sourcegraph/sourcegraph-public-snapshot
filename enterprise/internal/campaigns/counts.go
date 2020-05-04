@@ -5,7 +5,6 @@ import (
 	"sort"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/internal/campaigns"
 )
 
@@ -104,7 +103,7 @@ func CalcCounts(start, end time.Time, cs []*campaigns.Changeset, es ...*campaign
 				continue
 			}
 
-			err := computeCounts(c, csEvents)
+			err := computeCounts(c, changeset, csEvents)
 			if err != nil {
 				return counts, err
 			}
@@ -114,169 +113,34 @@ func CalcCounts(start, end time.Time, cs []*campaigns.Changeset, es ...*campaign
 	return counts, nil
 }
 
-func computeCounts(c *ChangesetCounts, csEvents ChangesetEvents) error {
-	var (
-		// Since "Merged" and "Closed" are exclusive events and cancel each others
-		// effects on ChangesetCounts out, we need to keep track of when a
-		// changeset was closed, so we can undo the effect of the "Closed" event
-		// when we come across a "Merge" (since, on GitHub, a PR can be closed AND
-		// merged)
-		closed = false
+func computeCounts(c *ChangesetCounts, ch *campaigns.Changeset, csEvents ChangesetEvents) error {
+	history, err := computeHistory(ch, csEvents)
+	if err != nil {
+		return err
+	}
 
-		lastReviewByAuthor = map[string]campaigns.ChangesetReviewState{}
-	)
+	var states changesetStatesAtTime
 
-	c.Total++
-	c.Open++
-	c.OpenPending++
-
-	for _, e := range csEvents {
-		et := e.Timestamp()
-		if et.IsZero() {
-			continue
+	for _, s := range history {
+		if s.t.After(c.Time) {
+			break
 		}
-		// Event happened after point in time we're looking at, no need to look
-		// at the events in future
-		if et.After(c.Time) {
-			return nil
-		}
+		states = s
+	}
 
-		// Compute current overall review state
-		currentReviewState := computeReviewState(lastReviewByAuthor)
+	if states.t.After(c.Time) {
+		return nil
+	}
 
-		switch e.Type() {
-		case campaigns.ChangesetEventKindGitHubClosed,
-			campaigns.ChangesetEventKindBitbucketServerDeclined:
-
-			c.Open--
-			c.Closed++
-			closed = true
-
-			c.AddReviewState(currentReviewState, -1)
-
-		case campaigns.ChangesetEventKindGitHubReopened,
-			campaigns.ChangesetEventKindBitbucketServerReopened:
-
-			c.Open++
-			c.Closed--
-			closed = false
-
-			c.AddReviewState(currentReviewState, 1)
-
-		case campaigns.ChangesetEventKindGitHubMerged,
-			campaigns.ChangesetEventKindBitbucketServerMerged:
-
-			// If it was closed, all "review counts" have been updated by the
-			// closed events and we just need to reverse these two counts
-			if closed {
-				c.Closed--
-				c.Merged++
-				return nil
-			}
-
-			c.AddReviewState(currentReviewState, -1)
-
-			c.Merged++
-			c.Open--
-
-			// Merged is a final state, we return here and don't need to look at
-			// other events
-			return nil
-
-		case campaigns.ChangesetEventKindGitHubReviewed,
-			campaigns.ChangesetEventKindBitbucketServerApproved,
-			campaigns.ChangesetEventKindBitbucketServerReviewed:
-
-			s, err := e.ReviewState()
-			if err != nil {
-				return err
-			}
-
-			// We only care about "Approved", "ChangesRequested" or "Dismissed" reviews
-			if s != campaigns.ChangesetReviewStateApproved &&
-				s != campaigns.ChangesetReviewStateChangesRequested &&
-				s != campaigns.ChangesetReviewStateDismissed {
-				continue
-			}
-
-			author, err := e.ReviewAuthor()
-			if err != nil {
-				return err
-			}
-			if author == "" {
-				continue
-			}
-
-			// Save current review state, then insert new review or delete
-			// dismissed review, then recompute overall review state
-			oldReviewState := currentReviewState
-
-			if s == campaigns.ChangesetReviewStateDismissed {
-				// In case of a dismissed review we dismiss _all_ of the
-				// previous reviews by the author, since that is what GitHub
-				// does in its UI.
-				delete(lastReviewByAuthor, author)
-			} else {
-				lastReviewByAuthor[author] = s
-			}
-
-			newReviewState := computeReviewState(lastReviewByAuthor)
-
-			if newReviewState != oldReviewState {
-				// Decrement the counts increased by old review state
-				c.AddReviewState(oldReviewState, -1)
-
-				// Increase the counts for new review state
-				c.AddReviewState(newReviewState, 1)
-			}
-
-		case campaigns.ChangesetEventKindBitbucketServerUnapproved:
-			// We specifically ignore ChangesetEventKindGitHubReviewDismissed
-			// events since GitHub updates the original
-			// ChangesetEventKindGitHubReviewed event when a review has been
-			// dismissed.
-
-			author, err := e.ReviewAuthor()
-			if err != nil {
-				return err
-			}
-			if author == "" {
-				continue
-			}
-
-			if e.Type() == campaigns.ChangesetEventKindBitbucketServerUnapproved {
-				// A BitbucketServer Unapproved can only follow a previous Approved by
-				// the same author.
-				lastReview, ok := lastReviewByAuthor[author]
-				if !ok || lastReview != campaigns.ChangesetReviewStateApproved {
-					log15.Warn("Bitbucket Server Unapproval not following an Approval", "event", e)
-					continue
-				}
-			}
-
-			if e.Type() == campaigns.ChangesetEventKindGitHubReviewDismissed {
-				// A GitHub Review Dismissed can only follow a previous review by
-				// the author of the review included in the event.
-				_, ok := lastReviewByAuthor[author]
-				if !ok {
-					log15.Warn("GitHub review dismissal not following a review", "event", e)
-					continue
-				}
-			}
-
-			// Save current review state, then remove last approval and
-			// recompute overall review state
-			oldReviewState := currentReviewState
-			delete(lastReviewByAuthor, author)
-			newReviewState := computeReviewState(lastReviewByAuthor)
-			if newReviewState != oldReviewState {
-				// Decrement the counts increased by old review state
-				c.AddReviewState(oldReviewState, -1)
-
-				// Increase the counts for new review state
-				c.AddReviewState(newReviewState, 1)
-			}
-		}
+	c.Total += 1
+	switch states.state {
+	case campaigns.ChangesetStateOpen:
+		c.Open += 1
+		c.AddReviewState(states.reviewState, 1)
+	case campaigns.ChangesetStateMerged:
+		c.Merged += 1
+	case campaigns.ChangesetStateClosed:
+		c.Closed += 1
 	}
 
 	return nil
