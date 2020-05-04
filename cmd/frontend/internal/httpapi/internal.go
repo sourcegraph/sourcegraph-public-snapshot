@@ -578,7 +578,7 @@ func serveGitExec(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-// gitServiceHandler are handlers which proxy git clone requests to the
+// gitServiceHandler are handlers which redirect git clone requests to the
 // gitserver for the repo.
 type gitServiceHandler struct {
 	Gitserver interface {
