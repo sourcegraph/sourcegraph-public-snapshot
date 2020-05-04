@@ -61,7 +61,7 @@ export class SiteAdminPingsPage extends React.Component<Props, State> {
                 <p>
                     By default, Sourcegraph also aggregates usage and performance metrics for some product features. No
                     personal or specific information is ever included. Starting in May 2020 (Sourcegraph version 3.16),
-                    Sourcegraph admins can disable the telemetry items below by setting the
+                    Sourcegraph admins can disable the telemetry items below by setting the{' '}
                     <code>DisableNonCriticalTelemetry</code> setting to <code>true</code> on the{' '}
                     <Link to="/site-admin/configuration">Site configuration page</Link>.
                 </p>
