@@ -81,12 +81,12 @@ func RunWorkers(ctx context.Context, s *Store, clock func() time.Time, gitClient
 }
 
 // ExecChangesetJob will execute the given ChangesetJob for the given campaign.
+// It must be executed inside a transaction.
 // It is idempotent and if the job has already been executed it will not be
 // executed.
-// It needs to be executed inside a transaction. ProcessPendingChangesetJobs
-// opens a transaction before ultimately calling ExecChangesetJob. If
-// ExecChangesetJob is called outside of that context, a transaction needs to
-// be opened.
+// ProcessPendingChangesetJobs opens a transaction before ultimately calling
+// ExecChangesetJob. If ExecChangesetJob is called outside of that context, a
+// transaction needs to be opened.
 func ExecChangesetJob(
 	ctx context.Context,
 	clock func() time.Time,
