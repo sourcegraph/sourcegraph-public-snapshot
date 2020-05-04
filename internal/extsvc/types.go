@@ -102,9 +102,6 @@ func ParseConfig(kind, config string) (cfg interface{}, _ error) {
 const IDParam = "externalServiceID"
 
 func WebhookURL(kind string, externalServiceID int64) (string, error) {
-	host := conf.Cached(func() interface{} {
-		return conf.Get().ExternalURL
-	})().(string)
 	var path string
 	switch strings.ToLower(kind) {
 	case "github":
@@ -115,5 +112,5 @@ func WebhookURL(kind string, externalServiceID int64) (string, error) {
 		return "", fmt.Errorf("unknown external service kind: %q", kind)
 	}
 	// eg. https://example.com/.api/github-webhooks?externalServiceID=1
-	return fmt.Sprintf("%s/.api/%s?%s=%d", host, path, IDParam, externalServiceID), nil
+	return fmt.Sprintf("%s/.api/%s?%s=%d", conf.ExternalURL(), path, IDParam, externalServiceID), nil
 }
