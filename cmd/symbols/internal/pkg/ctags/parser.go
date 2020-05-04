@@ -79,7 +79,7 @@ func New() (Parser, error) {
 	proc := ctagsProcess{
 		cmd:     cmd,
 		in:      in,
-		out:     &scanner{r: bufio.NewReader(out)},
+		out:     &scanner{r: bufio.NewReaderSize(out, 4096)},
 		outPipe: out,
 	}
 
