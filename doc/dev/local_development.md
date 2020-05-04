@@ -51,7 +51,8 @@ Have a look around, our code is on [GitHub](https://sourcegraph.com/github.com/s
 Sourcegraph server is a collection of smaller binaries. The development server, [dev/start.sh](https://github.com/sourcegraph/sourcegraph/blob/master/dev/start.sh), initializes the environment and starts a process manager that runs all of the binaries. See the [Architecture doc](architecture/index.md) for a full description of what each of these services does. The sections below describe the dependencies you need to run `dev/start.sh`.
 
 ### For Sourcegraph employees
-[dev-private](https://github.com/sourcegraph/dev-private) repo has convenient preconfigured repositories on an enterprise account. You'll need to clone it to the same directory that contains this repository. After the initial setup you can run `enterprise/dev/start.sh` instead of `dev/start.sh`.
+
+[dev-private](https://github.com/sourcegraph/dev-private) repository has convenient preconfigured settings and external services on an enterprise account. You'll need to clone it to the same directory that contains this repository. After the initial setup you can run `enterprise/dev/start.sh` instead of `dev/start.sh`.
 
 ## Step 1: Install dependencies
 
@@ -474,17 +475,20 @@ We use Caddy 2 to setup HTTPS for local development. It creates self-signed cert
 1. If you have completed the previous step and your browser still complains about the certificate, try restarting your browser or your local machine.
 
 #### Running out of disk space
-if you see errors similar to this:
+
+If you see errors similar to this:
+
 ```
 gitserver | ERROR cleanup: error freeing up space, error: only freed 1124101958 bytes, wanted to free 29905298227
 ```
-you are probably low on disk space. By default it tries to cleanup when there is less than 10% of available disk space.
-You can override that by setting this env variable
+
+You are probably low on disk space. By default it tries to cleanup when there is less than 10% of available disk space.
+You can override that by setting this env variable:
+
 ```bash
 # means 5%. You may want to put that into .bashrc for convinience
 SRC_REPOS_DESIRED_PERCENT_FREE=5
 ```
-
 
 ## How to Run Tests
 
@@ -509,7 +513,6 @@ If you're running macOS 10.15.x (Catalina) reinstalling the Xcode Command Line T
 2. Reinstall it with `xcode-select --install`
 3. Go to `sourcegraph/sourcegraph`’s root directory and run `rm -rf node_modules`
 3. Re-run the launch script (`./dev/start.sh`)
-
 
 ## How to debug live code
 
