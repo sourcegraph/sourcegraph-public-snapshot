@@ -4,30 +4,60 @@ Have a look around, our code is on [GitHub](https://sourcegraph.com/github.com/s
 
 ## Outline
 
-- [Environment](#environment)
-- [Step 1: Install dependencies](#step-1-install-dependencies)
-- [Step 2: Initialize your database](#step-2-initialize-your-database)
-- [Step 3: (macOS) Start Docker](#step-3-macos-start-docker)
-- [Step 4: Get the code](#step-4-get-the-code)
-- [Step 5: Configure HTTPS reverse proxy](#step-5-configure-https-reverse-proxy)
-- [Step 6: Start the server](#step-6-start-the-server)
-- [Troubleshooting](#troubleshooting)
-- [How to Run Tests](#how-to-run-tests)
-- [CPU/RAM/bandwidth/battery usage](#cpurambandwidthbattery-usage)
-- [How to debug live code](#how-to-debug-live-code)
-- [Go dependency management](#go-dependency-management)
-- [Codegen](#codegen)
-- [Windows support](#windows-support)
-- [Other nice things](#other-nice-things)
+- [Getting started with developing Sourcegraph](#getting-started-with-developing-sourcegraph)
+  - [Outline](#outline)
+  - [Environment](#environment)
+    - [For Sourcegraph employees](#for-sourcegraph-employees)
+  - [Step 1: Install dependencies](#step-1-install-dependencies)
+    - [macOS](#macos)
+    - [Ubuntu](#ubuntu)
+    - [(optional) asdf](#optional-asdf)
+      - [Install](#install)
+        - [asdf binary](#asdf-binary)
+        - [Plugins](#plugins)
+      - [Usage instructions](#usage-instructions)
+  - [Step 2: Initialize your database](#step-2-initialize-your-database)
+    - [More info](#more-info)
+  - [Step 3: (macOS) Start Docker](#step-3-macos-start-docker)
+      - [Option A: Docker for Mac](#option-a-docker-for-mac)
+      - [Option B: docker-machine](#option-b-docker-machine)
+  - [Step 4: Get the code](#step-4-get-the-code)
+  - [Step 5: Configure HTTPS reverse proxy](#step-5-configure-https-reverse-proxy)
+    - [Prerequisites](#prerequisites)
+      - [Add `sourcegraph.test` to `/etc/hosts`](#add-sourcegraphtest-to-etchosts)
+      - [Initialize Caddy 2](#initialize-caddy-2)
+  - [Step 6: Start the server](#step-6-start-the-server)
+  - [Troubleshooting](#troubleshooting)
+      - [Problems with node_modules or Javascript packages](#problems-with-nodemodules-or-javascript-packages)
+      - [dial tcp 127.0.0.1:3090: connect: connection refused](#dial-tcp-1270013090-connect-connection-refused)
+      - [Database migration failures](#database-migration-failures)
+      - [Internal Server Error](#internal-server-error)
+      - [Increase maximum available file descriptors.](#increase-maximum-available-file-descriptors)
+    - [Caddy 2 certificate problems](#caddy-2-certificate-problems)
+  - [How to Run Tests](#how-to-run-tests)
+  - [CPU/RAM/bandwidth/battery usage](#cpurambandwidthbattery-usage)
+  - [Running out of disk space](#running-out-of-disk-space)
+  - [How to debug live code](#how-to-debug-live-code)
+    - [Debug TypeScript code](#debug-typescript-code)
+    - [Debug Go code](#debug-go-code)
+  - [Go dependency management](#go-dependency-management)
+  - [Codegen](#codegen)
+  - [Windows support](#windows-support)
+  - [Other nice things](#other-nice-things)
+    - [Offline development](#offline-development)
 
 ## Environment
 
 Sourcegraph server is a collection of smaller binaries. The development server, [dev/start.sh](https://github.com/sourcegraph/sourcegraph/blob/master/dev/start.sh), initializes the environment and starts a process manager that runs all of the binaries. See the [Architecture doc](architecture/index.md) for a full description of what each of these services does. The sections below describe the dependencies you need to run `dev/start.sh`.
 
+### For Sourcegraph employees
+[dev-private](https://github.com/sourcegraph/dev-private) repo has convenient preconfigured repositories on an enterprise account. You'll need to clone it to the same directory that contains this repository. After the initial setup you can run `enterprise/dev/start.sh` instead of `dev/start.sh`.
+
 ## Step 1: Install dependencies
 
-Sourcegraph has the following dependencies:
 
+Sourcegraph has the following dependencies:
+> for install instruction see the section below
 - [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) (v2.18 or higher)
 - [Go](https://golang.org/doc/install) (v1.14 or higher)
 - [Node JS](https://nodejs.org/en/download/) (see current recommended version in [.nvmrc](https://github.com/sourcegraph/sourcegraph/blob/master/.nvmrc))
@@ -466,6 +496,18 @@ If you're running macOS 10.15.x (Catalina) reinstalling the Xcode Command Line T
 2. Reinstall it with `xcode-select --install`
 3. Go to `sourcegraph/sourcegraph`’s root directory and run `rm -rf node_modules`
 3. Re-run the launch script (`./dev/start.sh`)
+
+## Running out of disk space
+if you see errors similar to this:
+```
+gitserver | ERROR cleanup: error freeing up space, error: only freed 1124101958 bytes, wanted to free 29905298227
+```
+you are probably low on disk space. By default it tries to cleanup when there is less than 10% of available disk space.
+You can override that by setting this env variable
+```bash
+# means 5%. You may want to put that into .bashrc for convinience
+SRC_REPOS_DESIRED_PERCENT_FREE=5
+```
 
 ## How to debug live code
 
