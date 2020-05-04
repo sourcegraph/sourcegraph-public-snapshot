@@ -129,13 +129,11 @@ func computeHistory(ch *cmpgn.Changeset, ce ChangesetEvents) ([]changesetStatesA
 			}
 
 		case campaigns.ChangesetEventKindBitbucketServerUnapproved:
-			// TODO: What about webhook events?
-			//
-			//
 			// We specifically ignore ChangesetEventKindGitHubReviewDismissed
 			// events since GitHub updates the original
 			// ChangesetEventKindGitHubReviewed event when a review has been
 			// dismissed.
+			// See: https://github.com/sourcegraph/sourcegraph/pull/9461
 
 			author, err := e.ReviewAuthor()
 			if err != nil {
