@@ -1,55 +1,49 @@
+<!-- omit in toc -->
 # Getting started with developing Sourcegraph
 
 Have a look around, our code is on [GitHub](https://sourcegraph.com/github.com/sourcegraph/sourcegraph).
 
+<!-- omit in toc -->
 ## Outline
 
-- [Getting started with developing Sourcegraph](#getting-started-with-developing-sourcegraph)
-  - [Outline](#outline)
-  - [Environment](#environment)
-    - [For Sourcegraph employees](#for-sourcegraph-employees)
-  - [Step 1: Install dependencies](#step-1-install-dependencies)
-    - [macOS](#macos)
-    - [Ubuntu](#ubuntu)
-    - [(optional) asdf](#optional-asdf)
-      - [Install](#install)
-        - [asdf binary](#asdf-binary)
-        - [Plugins](#plugins)
-      - [Usage instructions](#usage-instructions)
-  - [Step 2: Initialize your database](#step-2-initialize-your-database)
-    - [More info](#more-info)
-  - [Step 3: (macOS) Start Docker](#step-3-macos-start-docker)
-      - [Option A: Docker for Mac](#option-a-docker-for-mac)
-      - [Option B: docker-machine](#option-b-docker-machine)
-  - [Step 4: Get the code](#step-4-get-the-code)
-  - [Step 5: Configure HTTPS reverse proxy](#step-5-configure-https-reverse-proxy)
-    - [Prerequisites](#prerequisites)
-      - [Add `sourcegraph.test` to `/etc/hosts`](#add-sourcegraphtest-to-etchosts)
-      - [Initialize Caddy 2](#initialize-caddy-2)
-  - [Step 6: Start the server](#step-6-start-the-server)
-  - [Troubleshooting](#troubleshooting)
-      - [Problems with node_modules or Javascript packages](#problems-with-nodemodules-or-javascript-packages)
-      - [dial tcp 127.0.0.1:3090: connect: connection refused](#dial-tcp-1270013090-connect-connection-refused)
-      - [Database migration failures](#database-migration-failures)
-      - [Internal Server Error](#internal-server-error)
-      - [Increase maximum available file descriptors.](#increase-maximum-available-file-descriptors)
-      - [Caddy 2 certificate problems](#caddy-2-certificate-problems)
-      - [Running out of disk space](#running-out-of-disk-space)
-  - [How to Run Tests](#how-to-run-tests)
-  - [CPU/RAM/bandwidth/battery usage](#cpurambandwidthbattery-usage)
-  - [How to debug live code](#how-to-debug-live-code)
-    - [Debug TypeScript code](#debug-typescript-code)
-    - [Debug Go code](#debug-go-code)
-  - [Go dependency management](#go-dependency-management)
-  - [Codegen](#codegen)
-  - [Windows support](#windows-support)
-  - [Other nice things](#other-nice-things)
-    - [Offline development](#offline-development)
+- [Environment](#environment)
+- [Step 1: Install dependencies](#step-1-install-dependencies)
+  - [macOS](#macos)
+  - [Ubuntu](#ubuntu)
+  - [(optional) asdf](#optional-asdf)
+- [Step 2: Initialize your database](#step-2-initialize-your-database)
+  - [More info](#more-info)
+- [Step 3: (macOS) Start Docker](#step-3-macos-start-docker)
+- [Step 4: Get the code](#step-4-get-the-code)
+- [Step 5: Configure HTTPS reverse proxy](#step-5-configure-https-reverse-proxy)
+  - [Prerequisites](#prerequisites)
+    - [Add `sourcegraph.test` to `/etc/hosts`](#add-sourcegraphtest-to-etchosts)
+    - [Initialize Caddy 2](#initialize-caddy-2)
+- [Step 6: Start the server](#step-6-start-the-server)
+- [Troubleshooting](#troubleshooting)
+    - [Problems with node_modules or Javascript packages](#problems-with-nodemodules-or-javascript-packages)
+    - [dial tcp 127.0.0.1:3090: connect: connection refused](#dial-tcp-1270013090-connect-connection-refused)
+    - [Database migration failures](#database-migration-failures)
+    - [Internal Server Error](#internal-server-error)
+    - [Increase maximum available file descriptors.](#increase-maximum-available-file-descriptors)
+    - [Caddy 2 certificate problems](#caddy-2-certificate-problems)
+    - [Running out of disk space](#running-out-of-disk-space)
+- [How to Run Tests](#how-to-run-tests)
+- [CPU/RAM/bandwidth/battery usage](#cpurambandwidthbattery-usage)
+- [How to debug live code](#how-to-debug-live-code)
+  - [Debug TypeScript code](#debug-typescript-code)
+  - [Debug Go code](#debug-go-code)
+- [Go dependency management](#go-dependency-management)
+- [Codegen](#codegen)
+- [Windows support](#windows-support)
+- [Other nice things](#other-nice-things)
+  - [Offline development](#offline-development)
 
 ## Environment
 
 Sourcegraph server is a collection of smaller binaries. The development server, [dev/start.sh](https://github.com/sourcegraph/sourcegraph/blob/master/dev/start.sh), initializes the environment and starts a process manager that runs all of the binaries. See the [Architecture doc](architecture/index.md) for a full description of what each of these services does. The sections below describe the dependencies you need to run `dev/start.sh`.
 
+<!-- omit in toc -->
 ### For Sourcegraph employees
 
 [dev-private](https://github.com/sourcegraph/dev-private) repository has convenient preconfigured settings and external services on an enterprise account. You'll need to clone it to the same directory that contains this repository. After the initial setup you can run `enterprise/dev/start.sh` instead of `dev/start.sh`.
@@ -58,7 +52,7 @@ Sourcegraph server is a collection of smaller binaries. The development server, 
 
 
 Sourcegraph has the following dependencies:
-> for install instruction see the section below
+> install instructions: [macOS](#macos), [Ubuntu](#ubuntu)
 - [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) (v2.18 or higher)
 - [Go](https://golang.org/doc/install) (v1.14 or higher)
 - [Node JS](https://nodejs.org/en/download/) (see current recommended version in [.nvmrc](https://github.com/sourcegraph/sourcegraph/blob/master/.nvmrc))
@@ -213,12 +207,15 @@ The following are two recommendations for installing these dependencies:
 
 We use asdf in buildkite to lock the versions of the tools that we use on a per-commit basis.
 
+<!-- omit in toc -->
 #### Install
 
+<!-- omit in toc -->
 ##### asdf binary
 
 See the [installation instructions on the official asdf documentation](https://asdf-vm.com/#/core-manage-asdf-vm?id=install-asdf-vm).
 
+<!-- omit in toc -->
 ##### Plugins
 
 sourcegraph/sourcegraph uses the following plugins:
@@ -248,6 +245,7 @@ legacy_version_file = yes
 asdf plugin add yarn
 ```
 
+<!-- omit in toc -->
 #### Usage instructions
 
 [asdf](https://github.com/asdf-vm/asdf) uses versions specified in [.tool-versions](https://github.com/sourcegraph/sourcegraph/blob/master/.tool-versions) whenever a command is run from one of `sourcegraph/sourcegraph`'s subdirectories.
@@ -313,10 +311,12 @@ Migrations are applied automatically.
 
 ## Step 3: (macOS) Start Docker
 
+<!-- omit in toc -->
 #### Option A: Docker for Mac
 
 This is the easy way - just launch Docker.app and wait for it to finish loading.
 
+<!-- omit in toc -->
 #### Option B: docker-machine
 
 The Docker daemon should be running in the background, which you can test by
