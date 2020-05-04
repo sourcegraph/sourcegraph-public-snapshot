@@ -319,14 +319,14 @@ func Start() {
 	}
 
 	ctx := context.Background()
-	const delay = 30 * time.Second
+	const delay = 30 * time.Minute
 	for {
 		ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
 		_, _ = check(ctx) // updates global state on its own, can safely ignore return value
 		cancel()
 
 		// Randomize sleep to prevent thundering herds.
-		randomDelay := time.Duration(1) * time.Second
+		randomDelay := time.Duration(rand.Intn(600)) * time.Second
 		time.Sleep(delay + randomDelay)
 	}
 }
