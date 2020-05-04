@@ -35,9 +35,8 @@ describe('Sourcegraph browser extension on Gitlab Server', () => {
                 }),
                 ensureRepos: [REPO_PATH_PREFIX + '/sourcegraph/jsonrpc2'],
             })
+            await driver.ensureHasCORSOrigin({ corsOriginURL: GITLAB_BASE_URL })
         }
-
-        await driver.ensureHasCORSOrigin({ corsOriginURL: GITLAB_BASE_URL })
     })
 
     after(async () => {
