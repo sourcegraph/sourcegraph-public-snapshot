@@ -98,10 +98,8 @@ export function browserPortToMessagePort(
             for (const portRef of portRefs) {
                 const { port1: comlinkMessagePort, port2: intermediateMessagePort } = new MessageChannel()
 
-                // Add back MessagePorts at the port references that get hooked up to a browser Port
+                // Replace the port reference at the given path with a MessagePort that will be transferred. 
                 replaceValueAtPath(message, portRef.path, comlinkMessagePort)
-
-                // Need to mention them in the transfer parameter too
                 transfer.push(comlinkMessagePort)
 
                 // Once the port with the mentioned ID is connected, link it up
