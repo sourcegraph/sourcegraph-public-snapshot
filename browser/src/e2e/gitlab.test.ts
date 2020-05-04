@@ -25,18 +25,18 @@ describe('Sourcegraph browser extension on Gitlab Server', () => {
                 await driver.ensureLoggedIn({ username: 'test', password: restConfig.testUserPassword })
             }
             await driver.setExtensionSourcegraphUrl()
+            await driver.ensureHasExternalService({
+                kind: ExternalServiceKind.GITLAB,
+                displayName: 'Gitlab',
+                config: JSON.stringify({
+                    url: GITLAB_BASE_URL,
+                    token: GITLAB_TOKEN,
+                    projectQuery: ['groups/sourcegraph/projects?search=jsonrpc2'],
+                }),
+                ensureRepos: [REPO_PATH_PREFIX + '/sourcegraph/jsonrpc2'],
+            })
         }
 
-        await driver.ensureHasExternalService({
-            kind: ExternalServiceKind.GITLAB,
-            displayName: 'Gitlab',
-            config: JSON.stringify({
-                url: GITLAB_BASE_URL,
-                token: GITLAB_TOKEN,
-                projectQuery: ['groups/sourcegraph/projects?search=jsonrpc2'],
-            }),
-            ensureRepos: [REPO_PATH_PREFIX + '/sourcegraph/jsonrpc2'],
-        })
         await driver.ensureHasCORSOrigin({ corsOriginURL: GITLAB_BASE_URL })
     })
 
