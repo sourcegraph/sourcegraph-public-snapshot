@@ -14,7 +14,8 @@ import { asError } from '../../../util/errors'
 // Subscriptions notify parent Subscriptions when they are unsubscribed.
 
 /**
- * A Subscription representing the subscription to the `MessagePort` a comlink proxy is backed by.
+ * A `Subscription` representing the `MessagePort` used by a comlink proxy.
+ * Unsubscribing will send a RELEASE message over the MessagePort, then close it and remove all event listeners from it.
  */
 export class ProxySubscription extends Subscription {
     constructor(proxy: Pick<ProxyMethods, typeof releaseProxy>) {
